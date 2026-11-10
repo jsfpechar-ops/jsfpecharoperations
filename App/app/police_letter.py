@@ -92,10 +92,12 @@ _TAIL_RES = {
 }
 
 # Candidates in the whole text, with or without a label.
-# A chain: digit groups joined by single separators (one "-", "." or "/", or
-# a run of spaces or tabs). Greedy from its first digit, so it is maximal.
-_DIGIT_CHAIN_RE = re.compile(r"[0-9]+(?:(?:[-./]|[ \t]+)[0-9]+)*")
-_CHAIN_SEPARATOR_RE = re.compile(r"[-./ \t]+")
+_DIGIT_RUN_RE = re.compile(r"[0-9]+")
+# A chain: digit groups joined by single separators (one "-", en dash, ".",
+# ",", "/" or "_", with or without spaces around it, or a run of spaces or
+# tabs). Greedy from its first digit, so it is maximal.
+_DIGIT_CHAIN_RE = re.compile(r"[0-9]+(?:(?:[ \t]*[-\u2013.,/_][ \t]*|[ \t]+)[0-9]+)*")
+_CHAIN_SEPARATOR_RE = re.compile(r"[-\u2013.,/_ \t]+")
 # The data-box barcode at the foot of every letter: never an IDUB.
 _DS_BARCODE_RE = re.compile(r"[0-9]{3}\.[0-9]{4}\.[0-9]{7}")
 # Any dash, and spaces around it: such a token is never a value, but it is a
@@ -174,6 +176,14 @@ def _candidates(name: str, text: str) -> list[tuple[str, int]]:
             if text[: match.start()].rstrip(" \t").endswith("+"):
                 continue  # a phone number
             found.append((chain, match.end()))
+        # Every unbroken run of 12 to 14 digits counts too, also inside a
+        # longer chain or a phone number, and so does a run of 12 or more
+        # digits right after a "+": never a value, but a second number.
+        for match in _DIGIT_RUN_RE.finditer(text):
+            size = len(match.group(0))
+            plus = match.start() > 0 and text[match.start() - 1] == "+"
+            if 12 <= size <= 14 or (plus and size >= 12):
+                found.append((match.group(0), match.end()))
     else:
         for match in _LOGIN_TOKEN_RE.finditer(text):
             found.append((match.group(0).upper(), match.end()))
@@ -306,7 +316,7 @@ def _mark_conflicts(lines: list[str], derived: str) -> list[int]:
     wanted = derived.upper()
     conflicts = []
     for index, line in enumerate(lines):
-        if _MARK_WORD not in _plain(line):
+        if _MARK_WORD not in _plain(line.replace(_SOFT_HYPHEN, "")):
             continue
         number = index + 1
         soft = _SOFT_HYPHEN in line

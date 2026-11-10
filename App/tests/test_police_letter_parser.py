@@ -621,7 +621,11 @@ ROWS = [
     # --- 1088: chains that are not candidates (placed before the letter: a
     # digit line right after the IDUB is the wrap guard, kept from 1083) ---
     ("h_plus_phone", "+420 777 000 111\n" + OFFICIAL, OK_ALL),
-    ("h_plus_phone_unbroken", "+420777000111\n" + OFFICIAL, OK_ALL),
+    (
+        "h_plus_phone_unbroken",
+        "+420777000111\n" + OFFICIAL,
+        exp(UNREADABLE, found(SAMPLE_WS_USER), derived(SAMPLE_ZKRATKA)),
+    ),
     ("h_plus_phone_callout", FULL_LETTER + f"{SAMPLE_CONTACT}\n", OK_ALL),
     ("h_ds_barcode", "380.0000.0000001\n" + OFFICIAL, OK_ALL),
     (
@@ -698,6 +702,44 @@ ROWS = [
         exp(idub=found(SAMPLE_IDUB)),
     ),
     ("h_pipe_before_label", f"| IDUB: {SAMPLE_IDUB}\n", exp(idub=found(SAMPLE_IDUB))),
+    # --- 1088 attempt 2: runs inside chains, "+" runs, more separators ---
+    (
+        "h2_run_in_longer_chain",
+        "IDUB: 934857203948\n\nevid. 209988776655/2026\n",
+        exp(idub=UNREADABLE),
+    ),
+    (
+        "h2_numeric_password_in_chain",
+        f"{L_PW}\nIDUB: 934857203948\n\nDEMO1 209988776655 15 3\n",
+        exp(idub=UNREADABLE),
+    ),
+    ("h2_plus_run", "IDUB: 934857203948\n\n+209988776655\n", exp(idub=UNREADABLE)),
+    (
+        "h2_plus_long_run",
+        "IDUB: 934857203948\n\n+2099887766551234\n",
+        exp(idub=UNREADABLE),
+    ),
+    (
+        "h2_en_dash_chain",
+        "IDUB: 934857203948\n\n1111\u20132222\u20133333\n",
+        exp(idub=UNREADABLE),
+    ),
+    (
+        "h2_spaced_hyphen_chain",
+        "IDUB: 934857203948\n\n1111 - 2222 - 3333\n",
+        exp(idub=UNREADABLE),
+    ),
+    ("h2_comma_chain", "IDUB: 934857203948\n\n1111,2222,3333\n", exp(idub=UNREADABLE)),
+    (
+        "h2_underscore_chain",
+        "IDUB: 934857203948\n\n1111_2222_3333\n",
+        exp(idub=UNREADABLE),
+    ),
+    (
+        "h2_mark_soft_hyphen_in_label",
+        OFFICIAL + f"Zkrat{SOFT}ka: XYZ12\n",
+        exp(found(SAMPLE_IDUB), CONFLICT, CONFLICT),
+    ),
 ]
 
 STATUS = {

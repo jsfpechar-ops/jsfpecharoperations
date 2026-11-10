@@ -54,7 +54,7 @@ Today's behaviour, checked by running the parser on 71448224:
    - **Candidate:** a chain whose digits, joined, number 12 to 14. A chain of one unbroken group is today's digit run.
    - **Not a candidate:**
      - a chain right after a `+` (only spaces between): a phone number such as `+420 777 000 111`
-     - an unbroken digit run right after a `+` (for example `+420777000111`) is excluded the same way; step 2 adds a row for it
+     - attempt 2 (review, replaces the earlier `+420777000111` clarification): every unbroken run of 12 to 14 digits anywhere is a candidate, also inside a longer chain, and so is a run of 12 or more digits right after a `+`. Only the spaced phone shape after `+` is excluded. Chain separators also include the en dash, `,`, `_` and a separator with spaces around it. A soft hyphen is removed before the "zkratka" match.
      - a chain of exactly the shape `[0-9]{3}\.[0-9]{4}\.[0-9]{7}`: the data-box barcode (`SAMPLE_DS_BARCODE = "380.0000.0000001"`, `ubyport_sample_pdf.py:37`), printed at the foot of every letter
    - Only an unbroken group right after a label can be the value. The rest of rule 12A (exactly one distinct candidate) is unchanged.
    - Replace `_SPACED_DIGITS_RE` with the chain pattern. Keep `_DIGIT_RUN_RE` if it is still used.
