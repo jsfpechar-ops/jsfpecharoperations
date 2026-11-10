@@ -1,6 +1,6 @@
 # 1076: Plain labels near filing (Q10) and one reason line on the guest e-mail screen (Q16, S9)
 
-Status: todo
+Status: review
 Tier: C | Depends on: none | Base commit: ae60568e | Branch: claude/1076-plain-labels-email-reason
 Executor: Sonnet, medium effort. Rule: 3 attempts per failing step, then stop and report. Fits one session: 30 tool calls, 60k tokens; command output stays at 150 lines or fewer.
 
