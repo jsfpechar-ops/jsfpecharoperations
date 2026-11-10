@@ -871,7 +871,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
 
     },
     "cs": {
-        "title": "Registrace ubytovaného",
+        "title": "Registrace hosta",
         "language_label": "Jazyk",
         "date_placeholder": "DD.MM.RRRR",
         "legal_intro": "Podle zákona musí ubytovatel zaregistrovat každého hosta včetně dětí a cizince ohlásit policii.",
@@ -2172,7 +2172,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
     "es": {
         "mail_payment_request_subject": "Solicitud de pago de su anfitrión (%(amount)s CZK)",
         "mail_payment_request_text": "Buenos días:\n\nSu anfitrión le solicita un pago de %(amount)s CZK por: %(reason)s.\nPague aquí: %(link)s\n\nSi no esperaba este mensaje, ignórelo.\n",
-        "title": "Registro de huéspedes",
+        "title": "Ficha de huésped",
         "language_label": "Idioma",
         "date_placeholder": "DD.MM.AAAA",
         "legal_intro": "La ley checa exige que su anfitrión registre a cada huésped, incluidos los niños, y comunique los huéspedes extranjeros a la policía.",
@@ -2715,7 +2715,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
     "fr": {
         "mail_payment_request_subject": "Demande de paiement de votre hôte (%(amount)s CZK)",
         "mail_payment_request_text": "Bonjour,\n\nVotre hôte vous demande un paiement de %(amount)s CZK pour : %(reason)s.\nPayez ici : %(link)s\n\nSi vous n'attendiez pas ce message, ignorez-le.\n",
-        "title": "Enregistrement des voyageurs",
+        "title": "Fiche voyageur",
         "language_label": "Langue",
         "date_placeholder": "JJ.MM.AAAA",
         "legal_intro": "La loi tchèque impose à votre hôte d'enregistrer chaque voyageur, enfants compris, et de déclarer les voyageurs étrangers à la police.",
