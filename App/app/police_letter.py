@@ -162,7 +162,8 @@ def _candidates(name: str, text: str) -> list[tuple[str, int]]:
     found = []
     if name == "uby_idub":
         # A separated chain ("2099-8877-6655") is never a value, but it is a
-        # second number.
+        # second number. Chains are compared as written, with no separator
+        # folding: the same digits written with separators are a second one.
         for match in _DIGIT_CHAIN_RE.finditer(text):
             chain = match.group(0)
             joined = _CHAIN_SEPARATOR_RE.sub("", chain)
@@ -172,7 +173,7 @@ def _candidates(name: str, text: str) -> list[tuple[str, int]]:
                 continue  # the data-box barcode
             if text[: match.start()].rstrip(" \t").endswith("+"):
                 continue  # a phone number
-            found.append((joined, match.end()))
+            found.append((chain, match.end()))
     else:
         for match in _LOGIN_TOKEN_RE.finditer(text):
             found.append((match.group(0).upper(), match.end()))
