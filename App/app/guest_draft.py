@@ -19,7 +19,8 @@ log = logging.getLogger(__name__)
 
 MAX_AGE_DAYS = 7
 MAX_FIELD_LENGTH = 60
-MAX_OWNED = 40
+MAX_PER_RESERVATION = 20
+_OWNED_STORAGE_MAX = 2**31 - 1  # fits every integer column; not a product limit
 DRAFT_FIELDS = (
     "party_size",
     "first_name",
@@ -56,7 +57,7 @@ def clamp_owned(value) -> int:
         number = int(value)
     except (TypeError, ValueError):
         return 0
-    return max(0, min(MAX_OWNED, number))
+    return max(0, min(_OWNED_STORAGE_MAX, number))
 
 
 def _clean(fields) -> Dict[str, str]:
@@ -94,6 +95,14 @@ def save(reservation_id: int, device_hash: str, generation: int, owned_count: in
             now,
             now,
         ),
+    )
+    # At most MAX_PER_RESERVATION drafts per stay: a post without the cookie
+    # makes a row no device can reach again, so the oldest go first.
+    db.execute_rowcount(
+        "DELETE FROM guest_form_draft WHERE reservation_id = ? AND device_key_hash <> ? AND id NOT IN "
+        "(SELECT id FROM guest_form_draft WHERE reservation_id = ? "
+        f"ORDER BY updated_at DESC, id DESC LIMIT {MAX_PER_RESERVATION})",
+        (reservation_id, device_hash, reservation_id),
     )
     return True
 
@@ -135,7 +144,7 @@ def load(
     if fresh:
         try:
             value = json.loads(db.decrypt_field(row["fields_enc"]) or "")
-        except (ValueError, TypeError):
+        except (ValueError, TypeError, db.DecryptionError):
             value = None
     if not fresh or not isinstance(value, dict):
         db.execute_rowcount("DELETE FROM guest_form_draft WHERE id = ?", (row["id"],))

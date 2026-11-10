@@ -280,10 +280,15 @@ def test_a_draft_is_restored_only_on_the_device_that_wrote_it(stay, contexts):
     assert contexts[-1]["draft_restored"] is True
     assert contexts[-1]["draft_url"].startswith(f"/l/{TOKEN}/{rid}/draft")
     assert contexts[-1]["draft_owned"] == 0
-    # A second post keeps the key: no new cookie.
+    # Every save renews the same key for 7 more days (review item 3).
     again = _draft(device_a, rid, surname="Zzdraftsur")
-    assert "ubyhost_draft" not in again.headers.get("set-cookie", "")
+    renewed = again.headers.get("set-cookie", "")
+    assert f"ubyhost_draft={key}" in renewed
+    assert f"max-age={guest.DRAFT_COOKIE_MAX_AGE}" in renewed.lower()
     assert device_a.cookies.get(guest.DRAFT_COOKIE) == key
+    # Nothing stored: no cookie.
+    empty = _draft(TestClient(app), rid, party_size="2")
+    assert empty.status_code == 204 and "ubyhost_draft" not in empty.headers.get("set-cookie", "")
 
 
 # --- d: filing never reads drafts ------------------------------------------
@@ -369,7 +374,7 @@ def test_a_late_autosave_of_the_sent_page_is_not_restored(stay, contexts):
     assert contexts[-1]["draft_restored"] is True
 
 
-@pytest.mark.parametrize("posted, stored", [("-5", 0), ("abc", 0), ("999", 40)])
+@pytest.mark.parametrize("posted, stored", [("-5", 0), ("abc", 0), ("999", 999)])
 def test_the_posted_owned_count_is_clamped(stay, posted, stored):
     _apartment_id, rid = stay
     assert _draft(TestClient(app), rid, surname="Zzdraftsur", draft_owned=posted).status_code == 204
@@ -510,3 +515,102 @@ def test_the_host_preview_has_no_draft(stay, contexts):
     page = _new(host, rid)
     assert page.status_code == 200
     assert "draft_url" not in contexts[-1] and contexts[-1]["draft_restored"] is False
+
+
+# --- review, attempt 2 ------------------------------------------------------
+
+def test_an_undecryptable_draft_is_deleted_and_the_form_still_opens(stay, contexts):
+    _apartment_id, rid = stay
+    device = TestClient(app)
+    assert _draft(device, rid, surname="Zzdraftsur").status_code == 204
+    db.execute("UPDATE guest_form_draft SET fields_enc = ? WHERE reservation_id = ?", ("gAAAAA-not-a-token", rid))
+    page = _new(device, rid)
+    assert page.status_code == 200
+    assert contexts[-1]["draft_restored"] is False
+    assert _count(rid) == 0
+
+    guest_draft.save(rid, DEVICE_A, 0, 0, {"surname": "Zzdraft"})
+    token = _row(rid)["fields_enc"]
+    db.execute(
+        "UPDATE guest_form_draft SET fields_enc = ? WHERE reservation_id = ?",
+        (token[:-6] + ("AAAAAA" if not token.endswith("AAAAAA") else "BBBBBB"), rid),
+    )
+    assert guest_draft.load(rid, DEVICE_A, 0, 0) is None
+    assert _count(rid) == 0
+
+
+def test_a_stay_past_check_out_takes_no_draft(stay):
+    apartment_id, _rid = stay
+    ended = _stay(apartment_id, "draft-1082-ended", days_to_end=-1)
+    today = _stay(apartment_id, "draft-1082-today", days_to_end=0)
+    answer = _draft(TestClient(app), ended, surname="Zzdraftsur")
+    if answer.status_code == 204:
+        assert "ubyhost_draft" not in answer.headers.get("set-cookie", "")
+    else:
+        # The link no longer opens an ended stay at all.
+        assert answer.status_code == 404
+    assert _count(ended) == 0
+    assert _draft(TestClient(app), today, surname="Zzdraftsur").status_code == 204
+    assert _count(today) == 1
+
+
+def test_the_route_refuses_past_check_out_even_when_the_stay_resolves(stay, monkeypatch):
+    apartment_id, rid = stay
+    real_today = claim.prague_today()
+    monkeypatch.setattr(claim, "prague_today", lambda: real_today + timedelta(days=4))
+    monkeypatch.setattr(
+        guest, "_reservation_for_guest",
+        lambda apartment, reservation_id, request=None: db.query_one(
+            "SELECT * FROM reservation WHERE id = ?", (reservation_id,)
+        ),
+    )
+    monkeypatch.setattr(guest, "_require_claim_session", lambda *args, **kwargs: None)
+    answer = _draft(TestClient(app), rid, surname="Zzdraftsur")
+    assert answer.status_code == 204
+    assert "ubyhost_draft" not in answer.headers.get("set-cookie", "")
+    assert _count(rid) == 0
+
+
+def test_a_stay_keeps_at_most_twenty_drafts_and_drops_the_oldest(stay):
+    _apartment_id, rid = stay
+    hashes = [guest_draft.key_hash(f"device-{n:02d}" + "x" * 40) for n in range(guest_draft.MAX_PER_RESERVATION + 3)]
+    for n, device_hash in enumerate(hashes):
+        guest_draft.save(rid, device_hash, 0, 0, {"surname": f"Zz{n}"})
+        stamp = (datetime.now(timezone.utc) - timedelta(minutes=100 - n)).replace(microsecond=0).isoformat()
+        db.execute("UPDATE guest_form_draft SET updated_at = ? WHERE device_key_hash = ?", (stamp, device_hash))
+    guest_draft.save(rid, hashes[-1], 0, 0, {"surname": "Zzlast"})
+    assert _count(rid) == guest_draft.MAX_PER_RESERVATION
+    for gone in hashes[:3]:
+        assert guest_draft.load(rid, gone, 0, 0) is None
+    assert guest_draft.load(rid, hashes[3], 0, 0) == {"surname": "Zz3"}
+    assert guest_draft.load(rid, hashes[-1], 0, 0) == {"surname": "Zzlast"}
+    # Posts without a cookie cannot grow the table past the cap.
+    for n in range(5):
+        assert _draft(TestClient(app), rid, surname=f"Zzorphan{n}").status_code == 204
+    assert _count(rid) == guest_draft.MAX_PER_RESERVATION
+
+
+def test_sending_a_guest_on_another_stay_keeps_this_stays_draft(stay, contexts):
+    apartment_id, rid = stay
+    other = _stay(apartment_id, "draft-1082-other")
+    device = TestClient(app)
+    assert _draft(device, rid, surname="Zzkeepsur", draft_owned="0").status_code == 204
+    assert _save(device, other, doc_number="SYN1082OTH", surname="Otherstay").status_code == 303
+    assert _count(rid) == 1
+    page = _new(device, rid)
+    assert 'value="Zzkeepsur"' in page.text
+    assert contexts[-1]["draft_restored"] is True
+    assert contexts[-1]["draft_owned"] == 0
+    _new(device, other)
+    assert contexts[-1]["draft_owned"] == 1
+
+
+def test_the_owned_count_has_no_limit_of_forty(stay):
+    _apartment_id, rid = stay
+    assert not hasattr(guest_draft, "MAX_OWNED")
+    assert guest_draft.clamp_owned(41) == 41
+    guest_draft.save(rid, DEVICE_A, 0, 41, {"surname": "Zzdraft"})
+    assert guest_draft.load(rid, DEVICE_A, 0, 40) is None
+    guest_draft.save(rid, DEVICE_A, 0, 41, {"surname": "Zzdraft"})
+    assert guest_draft.load(rid, DEVICE_A, 0, 41) == {"surname": "Zzdraft"}
+    assert guest_draft.clamp_owned("9" * 40) == 2**31 - 1

@@ -331,8 +331,17 @@ def _draft_generation(reservation) -> int:
     return int(row["token_version"] or 0) if row else 0
 
 
-def _draft_owned(request: Request) -> int:
-    return guest_draft.clamp_owned(len(_owned_ids(request)))
+def _draft_owned(request: Request, reservation_id: int) -> int:
+    """How many guests of this stay this device has already sent."""
+    ids = _owned_ids(request)
+    if not ids:
+        return 0
+    marks = ", ".join("?" for _ in ids)
+    row = db.query_one(
+        f"SELECT COUNT(*) AS n FROM guest WHERE reservation_id = ? AND id IN ({marks})",
+        (int(reservation_id), *ids),
+    )
+    return guest_draft.clamp_owned(row["n"] if row else 0)
 
 
 def _load_draft(request: Request, reservation, guests) -> Optional[dict]:
@@ -343,7 +352,7 @@ def _load_draft(request: Request, reservation, guests) -> Optional[dict]:
         return None
     device_hash = guest_draft.key_hash(key)
     values = guest_draft.load(
-        reservation["id"], device_hash, _draft_generation(reservation), _draft_owned(request)
+        reservation["id"], device_hash, _draft_generation(reservation), _draft_owned(request, reservation["id"])
     )
     if not values:
         return None
@@ -1877,7 +1886,7 @@ def guest_form_new(token: str, reservation_id: int, request: Request):
     if draft_on:
         new_context["draft_url"] = f"/l/{token}/{reservation_id}/draft" + _lang_q(lang)
         new_context["draft_fields"] = " ".join(guest_draft.DRAFT_FIELDS)
-        new_context["draft_owned"] = _draft_owned(request)
+        new_context["draft_owned"] = _draft_owned(request, reservation_id)
     return _with_lang(render_guest(request, "guest/form.html", new_context), lang)
 
 
@@ -2442,6 +2451,9 @@ async def guest_form_draft(token: str, reservation_id: int, request: Request):
         content_length = 0
     if content_length > 16384:
         return Response(status_code=413)
+    if str(reservation["date_to"])[:10] < claim.prague_today().isoformat():
+        # Past check-out: the purge would delete it at once, so store nothing.
+        return Response(status_code=204)
     form = await request.form()
     raw_guest_id = form.get("guest_id")
     if isinstance(raw_guest_id, str) and raw_guest_id.strip():
@@ -2455,7 +2467,7 @@ async def guest_form_draft(token: str, reservation_id: int, request: Request):
         for name in guest_draft.DRAFT_FIELDS
         if isinstance(form.get(name), str)
     }
-    guest_draft.save(
+    stored = guest_draft.save(
         reservation_id,
         guest_draft.key_hash(device_key),
         _draft_generation(reservation),
@@ -2463,7 +2475,9 @@ async def guest_form_draft(token: str, reservation_id: int, request: Request):
         fields,
     )
     response = Response(status_code=204)
-    if new_key:
+    if stored:
+        # Every save renews the cookie: it lives 7 days after the last change,
+        # like the row. Nothing stored: no cookie.
         _remember_draft_key(response, device_key)
     return response
 

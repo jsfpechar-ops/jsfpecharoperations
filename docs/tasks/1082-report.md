@@ -36,6 +36,16 @@ Edited: `App/app/scheduler.py`, `App/app/retention.py`, `App/app/routes/guest.py
 - Goose itself is not installed locally; the goose twin was exercised only through `test_db_postgres.py`. CI runs `goose up`.
 - No PR opened and no fresh-reviewer step run (left to the orchestrator).
 
+## Attempt 2 (review fixes, each with a test in `test_guest_form_draft_1082.py`)
+
+1. `guest_draft.load` also catches `db.DecryptionError`: an undecryptable row is deleted and `/new` opens (was a 500).
+2. `/draft` answers 204 and stores nothing when today (Prague) is after `date_to`.
+3. Every successful save sets `ubyhost_draft` again (7 days from the last change). Nothing stored: no cookie, also for a new key.
+4. `guest_draft.MAX_PER_RESERVATION = 20`: after each save the oldest rows of the stay beyond 20 are deleted (never the row just written).
+5. `_draft_owned(request, reservation_id)` counts only this device's sent guests of this stay; `MAX_OWNED` (40) is gone. `clamp_owned` keeps 0 as the floor and a storage bound of 2^31-1 so a huge posted number cannot overflow the integer column.
+
+Commands after attempt 2: A `40 passed, 55 skipped`; B `102 passed in 6.72s`; C `118 passed in 12.01s`; the draft tests on local PostgreSQL `31 passed in 8.48s`.
+
 ## Questions
 
 None.
