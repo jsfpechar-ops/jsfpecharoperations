@@ -1,6 +1,6 @@
 # 1085: G6 police letter, part 2 of 3: the paste, check and confirm flow, and the automatic connection test
 
-Status: todo
+Status: review
 Tier: A | Depends on: 1083 (merged, PR #877) and **1088** (parser hardening, `FieldResult.source`; merge it, or merge main after it lands, before step 1) | Base commit: 71448224 (origin/main) | Branch: claude/1085-police-letter-flow
 Executor: Fable 5.2 (owner tier override in decisions.md) | Attempts: 3 at most | Fits one session: stop at 60 tool calls or 60k tokens (section 8); reads stay at 150 lines or fewer
 Review: an extremely strict fresh Fable diff review (owner's words) before the PR opens, on filing safety, privacy and the no-JavaScript flow.
