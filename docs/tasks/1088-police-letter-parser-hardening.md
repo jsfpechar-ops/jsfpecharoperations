@@ -1,6 +1,6 @@
 # 1088: G6 police letter: parser hardening (source slices, separated numbers, dash logins, wider mark conflict, full-letter paste)
 
-Status: todo
+Status: review
 Tier: A | Depends on: 1083 (merged, PR #877) | Base commit: 71448224 | Branch: claude/1088-police-letter-hardening
 Executor: Fable 5.2 (owner tier override in decisions.md) | Attempts: 3 at most | Fits one session: stop at 60 tool calls or 60k tokens (section 8); reads stay at 150 lines or fewer
 Review: an extremely strict fresh Fable diff review (owner's words) before the PR opens, on filing safety and the parser.
