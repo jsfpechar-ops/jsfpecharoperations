@@ -1,7 +1,7 @@
 # 1085: G6 police letter, part 2 of 3: the paste, check and confirm flow, and the automatic connection test
 
 Status: todo
-Tier: A | Depends on: 1083 (`App/app/police_letter.py` merged; rebase this branch on main first) | Base commit: f1ca4288 | Branch: claude/1085-police-letter-flow
+Tier: A | Depends on: 1083 (merged, PR #877; main is merged into this branch) | Base commit: 71448224 (origin/main) | Branch: claude/1085-police-letter-flow
 Executor: Fable 5.2 (owner tier override in decisions.md) | Attempts: 3 at most | Fits one session: stop at 25 tool calls or 60k tokens (section 8); reads stay at 150 lines or fewer
 Review: an extremely strict fresh Fable diff review (owner's words) before the PR opens, on filing safety, privacy and the no-JavaScript flow.
 Report: docs/tasks/1085-report.md
@@ -11,8 +11,8 @@ Report: docs/tasks/1085-report.md
 Plan [speed-and-ease](../plans/speed-and-ease.md) G6, part 2. It wires the 1083 parser into the property editor, in section "Reporting & fees", card `#ubyport` (`_property_editor.html:305-342`). It adds:
 
 1. A folded **"Where do I find these?"** card with a drawn, generic picture of the web-service letter, with the real labels and fake values.
-2. A folded **"Paste the letter text"** box. The server parses the text (1083's `parse_letter`) and does not store it.
-3. **Check answers:** the values come back pre-filled and **not saved**, each with its source and its own "Matches my letter" tick. The save is refused until every pre-filled value is ticked.
+2. A folded **"Paste the letter text"** box. The server parses the text (1083's `parse_letter`, hardened first by step 1 below) and does not store it.
+3. **Check answers:** the values come back pre-filled and **not saved**. Each value shows the exact source line from the pasted text, the plain words "Check this against your letter", and its own "Matches my letter" tick. The save is refused until every pre-filled value is ticked.
 4. **Automatic connection test after the save, but only when the host typed a password in that same save** (lockout guard). The result is in plain words, with a different message for "the login was refused" and "the service could not be reached".
 
 Part 3 (1086) adds the browser tests, the screenshots and the UX gate on top of this branch. This brief has no browser test.
@@ -27,6 +27,17 @@ Part 3 (1086) adds the browser tests, the screenshots and the UX gate on top of 
 - `ubyport/client.py:174-194`: those three methods send only `TestDostupnosti`, `MaximalniDelkaSeznamu` and `DejMiCiselnik`. Filing is only `submit` (`client.py:196`, `ZapisUbytovane`). `_save_apartment_form` (`admin.py:2711`) calls no `reporting.submit_*`.
 - **Unchanged:** once the details are right, the regular sweep may file guests that were already waiting (G1, owner decision 2), exactly as after any save on main.
 - **Lockout guard:** an empty password field keeps the stored password (`admin.py:2866-2878`). An automatic test with a new login and an old password could fail again and again, and the police may lock the account. So the auto test runs **only** when `_form_str(form, "uby_ws_password")` is not empty in the same post, at most once per save, with no retry.
+
+### The parser on main (1083, PR #877; read `App/app/police_letter.py`, final rules in `docs/tasks/1083-police-letter.md` rule 12)
+
+- Exports: `parse_letter(text) -> LetterResult`, `confirmed_fields(form) -> (listed, unconfirmed)`, `line_from_form(form, name) -> int | None`, `FIELDS = ("uby_idub", "uby_ws_user", "uby_mark")`, `FILLED_STATES = {"found", "derived"}` and `MAX_LETTER_CHARS = 20000`. None of them raises on any input.
+- `LetterResult(status, fields)`: `status` is `ok`, `empty` or `too_long`. `FieldResult(state, value, line, label, lines)`.
+- **States as built:**
+  - IDUB and login: `found`, `missing`, `unreadable` (zero or several candidates in the whole text, or a wrapped value) or `ambiguous` (a password word on the lines from the label to the value)
+  - Short name: only `derived` (from a `found` login, through `mark_from_ws_user`, with the login's `line` and `label`), `missing`, or `conflict`
+  - A zkratka word in the text that differs from the derived mark makes the login **and** the mark `conflict`
+- **A printed mark is never the value.** The flow has no "printed mark found" case. The short-name row is either the derived value (from the login) or a plain line.
+- Step 1 adds one field, `FieldResult.source: tuple[str, ...] = ()`, and hardens four cases (section 4 step 1).
 
 ### Turbo and status codes
 
@@ -50,13 +61,16 @@ Without JavaScript, browsers render 422 and 400 pages normally.
 - **`extra`:** `letter_check` (the `LetterResult`), plus what opens `#sec-police` and the settings view. Read `_property_view_state` (grep it, about 40 lines); `inline_flash_section="police"` opens the details (template line 301).
 - **Pre-fill:** each of the three `text_field` calls (lines 311, 314, 332) shows the letter value when its state is in `police_letter.FILLED_STATES`, else the saved value. The password input never gets a value.
 - **Check-answers card:** at the top of `#ubyport`, inside the big form, only with `letter_check`. Heading `check_title`. Rows in the order IDUB, login, short name, password:
-  - `found`: the field label, the value in the mono token style, and the `source` line. Add `saved_now` when a different value is saved. A checkbox `letter_ok_<field>` with value `1`, `required`, labelled `confirm`.
-  - `derived` (short name only): the same, with `source_login` in place of `source`.
-  - `missing`, `ambiguous`, `unreadable` and `conflict`: one plain line (keys below). No checkbox, and the field keeps the saved value.
+  - `found` (IDUB, login) or `derived` (short name): the field label and the value in the mono token style.
+    - Next to it, the **exact source line**: `source` (the line number), then each string of `FieldResult.source` in a `<code>` (autoescaped, never `|safe`). For `derived`, the login's source lines, introduced by `source_login`.
+    - Then `check_against`, always, for every value.
+    - Add `saved_now` when a different value is saved.
+    - A checkbox `letter_ok_<field>`, value `1`, `required`, labelled `confirm`.
+  - `missing`, `ambiguous`, `unreadable` and `conflict`: one plain line (keys below), with no line text. No checkbox, and the field keeps the saved value.
   - The password row always says `by_hand`.
-  - Hidden inputs: `letter_fields` (comma list of the filled names) and `letter_line_<field>` (the line number).
+  - Hidden inputs: `letter_fields` (comma list of the filled names), `letter_line_<field>` (the line number) and `letter_src_<field>` (the source lines joined with `\n`, at most 240 characters). On a refused save the card shows `letter_src_*` again, autoescaped, with control characters other than `\n` removed; it is the host's own text, sent back to the host only.
   - The card has **no button** (rule 5). The actions are the existing "Save and test connection" (line 340) and the form's one Save.
-- **Confirm on save, on both paths:** at the start of `_save_apartment_form`, right after the apartment is found, call `listed, unconfirmed = police_letter.confirmed_fields(form)`. If `unconfirmed` is not empty, save nothing: return `_refuse_apartment_save(..., letter_unconfirmed=unconfirmed)` (`admin.py:2240`, new keyword, default `None`). It re-renders the posted values and rebuilds the card from the form: values from the posted inputs, lines from `police_letter.line_from_form`, and no source text when that gives `None`. It adds `_save_error("police", "letter_ok_<first>")` and the `confirm_missing` text under each unticked box, status 400. This also covers "Save and test connection", which has `formnovalidate`.
+- **Confirm on save, on both paths:** at the start of `_save_apartment_form`, right after the apartment is found, call `listed, unconfirmed = police_letter.confirmed_fields(form)`. If `unconfirmed` is not empty, save nothing: return `_refuse_apartment_save(..., letter_unconfirmed=unconfirmed)` (`admin.py:2240`, new keyword, default `None`). It re-renders the posted values and rebuilds the card from the form: values from the posted inputs, lines from `police_letter.line_from_form` (no line text when that gives `None`), and source text from `letter_src_*`. It adds `_save_error("police", "letter_ok_<first>")` and the `confirm_missing` text under each unticked box, status 400. This also covers "Save and test connection", which has `formnovalidate`.
 - **Automatic test:** move the test body of `test_connection` verbatim (from `client = reporting.client_for(apartment)` at `:3390` to the end of the code-list refresh, `:3415`) into `async def _run_connection_test(request, apartment_id, apartment) -> str`. It returns `"ok"`, `"auth"` (caught `UbyportAuthError`, checked **first**, since it subclasses `UbyportTransportError`) or `"unreachable"` (any other `UbyportTransportError` or `UbyportError`). The same audit rows as today in each branch.
   - `test_connection` maps `"ok"` to its existing `connection_ok` and anything else to its existing `connection_failed`, so its behaviour does not change.
   - In `apartment_update` (`admin.py:2472`), after a successful save:
@@ -98,13 +112,14 @@ Without JavaScript, browsers render 422 and 400 pages normally.
 | `police_letter.paste_help` | UbyHost reads the text once on its own server and does not keep it. It picks out the login and the IDUB. It never reads the password. | UbyHost text jednou přečte na vlastním serveru a neuchová ho. Vybere z něj přihlašovací jméno a IDUB. Heslo nikdy nečte. |
 | `police_letter.read_button` | Read the letter | Přečíst dopis |
 | `police_letter.check_title` | Check what we found | Zkontrolujte, co jsme našli |
-| `police_letter.source` | Line %(line)s, after “%(label)s” | Řádek %(line)s, za „%(label)s“ |
-| `police_letter.source_login` | From the login on line %(line)s | Z přihlašovacího jména na řádku %(line)s |
+| `police_letter.source` | From line %(line)s of your text: | Z řádku %(line)s vašeho textu: |
+| `police_letter.check_against` | Check this against your letter. | Zkontrolujte to podle dopisu. |
+| `police_letter.source_login` | Taken from the login on line %(line)s: | Odvozeno z přihlašovacího jména na řádku %(line)s: |
 | `police_letter.saved_now` | Saved now: %(value)s | Teď uloženo: %(value)s |
 | `police_letter.confirm` | Matches my letter | Souhlasí s dopisem |
 | `police_letter.missing` | Not in the text. Type it from the letter. | V textu není. Opište ho z dopisu. |
-| `police_letter.ambiguous` | Different values on lines %(lines)s. Type the right one yourself. | Různé hodnoty na řádcích %(lines)s. Opište tu správnou sami. |
-| `police_letter.unreadable` | Line %(line)s could not be read safely. Type it from the letter. | Řádek %(line)s nejde spolehlivě přečíst. Opište ho z dopisu. |
+| `police_letter.ambiguous` | It sits next to the password, so it was not taken. Type it from the letter. | Je u hesla, proto se nepřevzal. Opište ho z dopisu. |
+| `police_letter.unreadable` | Could not be read safely from this text. Type it from the letter. | Z tohoto textu nejde spolehlivě přečíst. Opište ho z dopisu. |
 | `police_letter.conflict` | The short name and the login do not match. Type both from the letter. | Zkratka a přihlašovací jméno si neodpovídají. Opište obojí z dopisu. |
 | `police_letter.empty` | Paste the letter text first. | Nejdřív vložte text dopisu. |
 | `police_letter.too_long` | This is longer than one letter. Paste only the letter. | Text je delší než jeden dopis. Vložte jen dopis. |
@@ -118,13 +133,13 @@ Without JavaScript, browsers render 422 and 400 pages normally.
 ### Privacy and rules
 
 - No new column, cookie, script, outbound request or dependency, and no migration.
-- The pasted text lives only in the request: not stored, logged, audited or echoed. So it needs no retention line (rule 2).
+- The pasted text lives only in the request: not stored, logged or audited. The only echo is the source lines of filled values (each passed the parser's password-word guard), in the reply and in hidden inputs, never the full text. So it needs no retention line (rule 2).
 - The responses are `no-store`.
 - Test letters use the fake `SAMPLE_*` values or `000011112222` and `UBY-WS_ABCDE`, never real ones.
 
-### Anchors (verified on f1ca4288; re-check each with `grep -nF`)
+### Anchors (verified on 24c704fd, main 71448224 merged in; re-check each with `grep -nF`)
 
-1. `App/app/police_letter.py` exists, with `def parse_letter(`, `def confirmed_fields(`, `def line_from_form(` and `FILLED_STATES` (from 1083). If not: STOP.
+1. `App/app/police_letter.py` (on main): `def parse_letter(text: str) -> LetterResult:`, `def confirmed_fields(form)`, `def line_from_form(form, name: str)`, `FILLED_STATES = frozenset({"found", "derived"})`, `class FieldResult:`, `def _mark_conflicts(`, `_LOGIN_TOKEN_RE = re.compile(` and `_SPACED_DIGITS_RE = re.compile(`. If one is missing: STOP.
 2. `App/app/templates/_property_editor.html:305` `id="ubyport"`; `:311` `{{ text_field('uby_idub',`; `:314` `{{ text_field('uby_ws_user',`; `:332` `{{ text_field('uby_mark',`; `:340` `formaction="{{ base_url }}/test-connection"`; `:431` `</form>`
 3. `App/app/routes/admin.py:3373` `@router.post("/apartments/{apartment_id}/test-connection")`; `:3390` `    client = reporting.client_for(apartment)`; `:3416` `    return _back(return_to, msg=_flash(request, "flash.apartments.connection_ok"))`
 4. `admin.py:2711` `def _save_apartment_form(`; `:2240` `def _refuse_apartment_save(`; `:2320` `if (operator_error or address_errors or shared_time_error or lock_times_error)`; `:2211` `def _render_property_detail(`; `:2472` `@router.post("/apartments/{apartment_id}")`; `:2866` `    password = _form_str(form, "uby_ws_password")`
@@ -138,6 +153,8 @@ Line numbers move after a rebase on main. Trust `grep -nF`, not the number.
 
 | Path | Action | What |
 |---|---|---|
+| `App/app/police_letter.py` | edit | step 1 only: `FieldResult.source` and the four hardening rules |
+| `App/tests/test_police_letter_parser.py` | edit | step 1 rows; existing rows stay green |
 | `App/app/routes/admin.py` | edit | the paste route; `_run_connection_test`, moved verbatim; the confirm check; `letter_unconfirmed`; the auto test |
 | `App/app/templates/_property_editor.html` | edit | the two `details`, the check-answers card, the pre-fill, `#police-letter-form` |
 | `App/app/templates/_police_letter_figure.html` | create | the SVG and its legend |
@@ -151,11 +168,26 @@ Line numbers move after a rebase on main. Trust `grep -nF`, not the number.
 
 ## 4. Steps (commit after each: `1085 step k`)
 
-1. Rebase on `origin/main`. Confirm anchors 1 to 7 with `grep -nF`; if one is missing, STOP. Read `_property_view_state` (about 40 lines) and `_refuse_apartment_save` (about 80 lines), and nothing else in admin.py beyond the anchors.
-2. Copy: add the section 2 keys in `en`, `cs` and `vi`, then run `test_host_i18n.py`.
-3. Template, figure and CSS per section 2. Bump the `host.css` key to `20261110-1085`, then from `App/` run `.venv/bin/python tests/test_static_versions.py --write 2>&1 | tail -30`. Its diff must change only the `host.css` entry. If you edit `host.css` again later, use `20261110-1085b` and rerun the command.
-4. Routes per section 2. Then write `test_police_letter_flow.py`, with fixtures modelled on `test_property_form_save.py` (read its first 80 lines only):
-   a. A POST of the official-layout letter (the `SAMPLE_*` values) gives 422 and `no-store`. The IDUB and login inputs carry the values; the short name carries `SAMPLE_ZKRATKA` with the `source_login` text; there are three `letter_ok_*` boxes, a password row, and an empty password input. A unique marker line from the paste and `SAMPLE_WS_PASSWORD` are both absent from the HTML. The apartment row (`SELECT *`) is identical before and after, and no `audit` row holds the IDUB, the login, the password or the marker.
+1. **Parser hardening** (`police_letter.py` and its test file only). Confirm anchor 1 with `grep -nF`, then run the parser test file; it must be green before you change anything. Then:
+   - **`source`:** a new `FieldResult` field, `source: tuple[str, ...] = ()`. For a filled value it holds the label line through the value line (one line, or two for a next-line value), each stripped and cut to 120 characters. A derived mark carries the login's `source`. The field is empty for every other state.
+   - **IDUB candidates also include separated digits:** groups of ASCII digits joined by a single `-`, `.` or `/`, or by one or more spaces, that add up to 12 to 14 digits. So `2099-8877-6655`, `2099.8877.6655` and `2099  8877  6655` count as candidates. Only an unbroken run can be the value. A numeric password written that way under `Přístupové heslo:`, next to a valid `IDUB:` line, now gives `unreadable`.
+   - **Login candidates also include dash and space variants:** `uby` followed by optional spaces, any dash (`-`, U+2010, U+2011, U+2012, U+2013 `–`, U+2014, U+2212), optional spaces, then `t?ws`, matched without case. So `UBY–WS_DEMO1` and `UBY - WS_DEMO1` count as candidates. Candidates are compared as written (case-folded only), so either one next to `UBY-WS_DEMO1` gives two distinct candidates and the login is `unreadable`. Only the plain `uby-ws…` form can be the value.
+   - **Mark conflict is wider:** on a zkratka line (or the next non-blank line, as today), a soft hyphen (U+00AD) anywhere is a `conflict`. So is a word, after any soft hyphen is removed, of **4 to 7** ASCII letters or digits that is not a form of `zkratk…` and differs from the derived mark (case-insensitive). 5 and 6 are no longer the only lengths.
+   - **Wrap guard for the login:** the login is `unreadable` when the next line, after leading non-alphanumerics are removed, starts with a word (Unicode letters or digits, `[^\W_]+`) of 1 to 3 characters. So `Přihlašovací jméno: UBY-WS_ABCDE\nF    Přístupové heslo: xx` is `unreadable`. The official next line `Přístupové heslo:` (first word of 10 characters) stays fine.
+   - **Rows added to `test_police_letter_parser.py`** (expected states):
+     - `IDUB: 209988776655` plus `Přístupové heslo: 2099-8877-6655`, the same with `2099.8877.6655` and with `2099  8877  6655`: IDUB `unreadable`
+     - `IDUB: 2099-8877-6655` alone: `unreadable`
+     - the official letter plus a line `UBY–WS_DEMO1`, and plus `UBY - WS_DEMO1`: login `unreadable`, mark `missing`
+     - the official letter plus `Zkratka ubytovacího zařízení: DEMO`, `…: DEMO1XY`, and `…: DE\u00adMO1`: login and mark `conflict`
+     - `…: DEMO1` (equal): mark `derived`
+     - `Přihlašovací jméno: UBY-WS_ABCDE\nF    Přístupové heslo: xx`: login `unreadable`
+     - the official letter: `source` of the IDUB is `("IDUB: 209988776655",)`; a next-line layout gives two strings; no `source` string contains `SAMPLE_WS_PASSWORD`
+   - Rerun the parser file and the old rows: all green. An old row that now fails on purpose because of these rules: change its expectation and name it in the report.
+2. Merge `origin/main` again if it moved since 71448224. Confirm anchors 2 to 7 with `grep -nF`; if one is missing, STOP. Read `_property_view_state` (about 40 lines) and `_refuse_apartment_save` (about 80 lines), and nothing else in admin.py beyond the anchors.
+3. Copy: add the section 2 keys in `en`, `cs` and `vi`, then run `test_host_i18n.py`.
+4. Template, figure and CSS per section 2. Bump the `host.css` key to `20261110-1085`, then from `App/` run `.venv/bin/python tests/test_static_versions.py --write 2>&1 | tail -30`. Its diff must change only the `host.css` entry. If you edit `host.css` again later, use `20261110-1085b` and rerun the command.
+5. Routes per section 2. Then write `test_police_letter_flow.py`, with fixtures modelled on `test_property_form_save.py` (read its first 80 lines only):
+   a. A POST of the official-layout letter (the `SAMPLE_*` values) gives 422 and `no-store`. Each filled row shows its exact source line in a `<code>` and the `check_against` text (count: one per filled value). A source line holding `<b>` comes back escaped. The IDUB and login inputs carry the values; the short name carries `SAMPLE_ZKRATKA` with the `source_login` text; there are three `letter_ok_*` boxes, a password row, and an empty password input. A unique marker line from the paste and `SAMPLE_WS_PASSWORD` are both absent from the HTML. The apartment row (`SELECT *`) is identical before and after, and no `audit` row holds the IDUB, the login, the password or the marker.
    b. Ambiguous, unreadable and conflict letters: the field keeps the saved value, there is no box, and the plain line is shown. `empty` and `too_long`: 422 with their line.
    c. A parser exception (monkeypatch `police_letter.parse_letter` to raise `ValueError(<marker>)`): 422 with `failed`. The marker is absent from the captured logs (`caplog`) and from the audit rows.
    d. No `_csrf`: refused like other host posts, and not parsed. Logged out: the login redirect. Another host's property: not parsed, no values in the page.
@@ -173,11 +205,11 @@ Line numbers move after a rebase on main. Trust `grep -nF`, not the number.
       - no submission row was added
       - (source pin) `_run_connection_test` and `test_connection` contain no `submit` and no `ZapisUbytovane`
    h. Idempotency: the same confirmed save twice gives one apartment row with the same values. Concurrency: two threads with two clients save letter values for two different properties of one host at the same moment; each row keeps its own IDUB.
-5. Run section 6, then write the report.
+6. Run section 6, then write the report.
 
 ## 5. Do not touch
 
-`police_letter.py` (it is 1083's; a bug there is a STOP), `validation.py`, `reporting.py`, `ubyport/*`, `submit_*`, `billing_trial.py`, `alerts.py`, `codelists.py`, `ubyport_sample_pdf.py`, the onboarding wizard police step, guest templates, `db.py`, migrations, any dependency, and `#police-sample-link`. No browser test here (1086). Never push to `main`.
+`police_letter.py` beyond step 1, `validation.py`, `reporting.py`, `ubyport/*`, `submit_*`, `billing_trial.py`, `alerts.py`, `codelists.py`, `ubyport_sample_pdf.py`, the onboarding wizard police step, guest templates, `db.py`, migrations, any dependency, and `#police-sample-link`. No browser test here (1086). Never push to `main`.
 
 ## 6. Commands (each ends `2>&1 | tail -30`)
 
@@ -185,6 +217,8 @@ From `App/`: `.venv/bin/python -m pytest tests/test_police_letter_flow.py tests/
 
 ## 7. Acceptance
 
+- [ ] Step 1 rows green: separated-digit IDUB candidates, dash and space login variants, a 4 or 7-character or soft-hyphen zkratka conflict, the short-fragment wrap guard, and `source`.
+- [ ] Each filled value shows its exact source line and "Check this against your letter". No printed mark is ever filled.
 - [ ] Nothing saves until each pre-filled value is ticked, on both the Save and the "Save and test connection" paths; a forged line number never crashes.
 - [ ] The auto test runs only with a password posted in the same save, once. It reports ok, refused or unreachable in plain words. Saves without letter values behave as on main.
 - [ ] Read-only proof green: only the three read-only methods are sent, no guest changes, no submission.
@@ -194,7 +228,7 @@ From `App/`: `.venv/bin/python -m pytest tests/test_police_letter_flow.py tests/
 
 ## 8. Stop and ask
 
-STOP and report `blocked` if: an anchor is missing (above all anchor 1); the test path calls anything beyond the three read-only methods; the change needs `police_letter.py`, `validation.py`, `reporting.py`, a migration or a dependency; the check-answers card cannot be shown without JavaScript; a test fails twice on the same cause (attempt 3 of 3); 25 tool calls or 60k tokens (finish the step, commit, `Done: steps 1 to k. Left: steps k+1 to n.`).
+STOP and report `blocked` if: an anchor is missing (above all anchor 1); the test path calls anything beyond the three read-only methods; the change needs `police_letter.py` beyond step 1, `validation.py`, `reporting.py`, a migration or a dependency; the check-answers card cannot be shown without JavaScript; a test fails twice on the same cause (attempt 3 of 3); 25 tool calls or 60k tokens (finish the step, commit, `Done: steps 1 to k. Left: steps k+1 to n.`).
 
 ## 9. Report
 
