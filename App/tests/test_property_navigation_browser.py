@@ -64,13 +64,16 @@ class _Forms(HTMLParser):
         if tag == "form":
             if self.stack:
                 self.nested = True
-            form = {"action": a.get("action"), "method": (a.get("method") or "get").lower(), "fields": []}
+            form = {"id": a.get("id"), "action": a.get("action"), "method": (a.get("method") or "get").lower(), "fields": []}
             self.forms.append(form)
             self.stack.append(form)
             return
         if not self.stack:
             return
         form = self.stack[-1]
+        if a.get("form") and a["form"] != form["id"]:
+            # 1085: a control that names another form (form="police-letter-form") is not sent with this one.
+            return
         if tag == "input" and a.get("name") and "disabled" not in a:
             kind = a.get("type", "text")
             if kind in ("checkbox", "radio") and "checked" not in a:

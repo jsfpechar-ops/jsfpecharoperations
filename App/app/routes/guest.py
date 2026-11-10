@@ -14,6 +14,7 @@ guest's personal data.
 from __future__ import annotations
 
 import asyncio
+import logging
 import time
 from datetime import timedelta
 from typing import Any, Dict, List, Optional
@@ -27,11 +28,13 @@ from itsdangerous import BadSignature, URLSafeSerializer
 import posixpath
 import re
 import secrets
-from .. import alerts, auth, claim, codelists, config, cookie_inventory, db, doc_ocr, door_codes, guest_slug, guest_uk_i18n, guest_draft, host_i18n, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n, workflow
+from .. import alerts, auth, claim, codelists, config, cookie_inventory, db, doc_ocr, door_codes, guest_slug, guest_uk_i18n, guest_draft, headcount, host_i18n, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n, workflow
 from .. import ruian as ruian_lookup  # 0911: guest RUIAN suggestions
 from ..templating import render_guest
 from .admin_helpers import guest_form_raw as _guest_form_raw
 from .admin_helpers import kept_signature as _kept_signature
+
+_log = logging.getLogger("ubyhost.guest")
 
 router = APIRouter(dependencies=[Depends(security.protect_guest_post)])
 
@@ -396,6 +399,76 @@ def _add_draft_keys(context, request: Request, apartment, existing, token: str, 
     context["draft_url"] = f"/l/{token}/{reservation_id}/draft" + _lang_q(lang)
     context["draft_fields"] = " ".join(guest_draft.DRAFT_FIELDS)
     context["draft_owned"] = _draft_owned(request, reservation_id)
+
+
+def _as_int(raw) -> Optional[int]:
+    try:
+        return int(str(raw).strip())
+    except (TypeError, ValueError):
+        return None
+
+
+def _sign_for_fields(request, reservation, signer_raw, role_raw, now) -> Dict[str, Any]:
+    """Brief 1089, § 103(u): the four ``signed_for_*`` columns for a child's form, or ``{}``.
+
+    The signer must be a guest this device saved, on this reservation, 18 or
+    over on arrival and holding their own valid drawn signature; the role must
+    be one of ``reporting.SIGN_FOR_ROLES``.
+    """
+    signer_id = _as_int(signer_raw)
+    role = (role_raw or "").strip()
+    if signer_id is None or role not in reporting.SIGN_FOR_ROLES:
+        return {}
+    if signer_id not in _owned_ids(request):
+        return {}
+    row = db.query_one(
+        "SELECT * FROM guest WHERE id = ? AND reservation_id = ? AND archived_at IS NULL",
+        (signer_id, reservation["id"]),
+    )
+    if not row or not validation.is_valid_signature(row["signature_png"]):
+        return {}
+    arrival = reporting._stay_dates(row, reservation)[0]
+    if not validation.certainly_at_least_age(
+        row["birth_date"], arrival, reporting.ADULT_SIGNER_AGE
+    ):
+        return {}
+    return {
+        "signed_for_guest_id": signer_id,
+        "signed_for_role": role,
+        "signed_for_at": now,
+        "signed_for_wording": reporting.SIGN_FOR_WORDING_VERSION,
+    }
+
+
+def _link_signed_children(request, reservation, adult_id, ids_raw, role_raw, now) -> None:
+    """Brief 1089, § 103(u): record that the adult just saved signs for these children.
+
+    Only children this device saved, on this reservation, under 15 on arrival
+    and not yet linked (the first adult wins). Writes the four ``signed_for_*``
+    columns only, so a filed child gets the house-book line without being refiled.
+    """
+    role = (role_raw or "").strip()
+    if role not in reporting.SIGN_FOR_ROLES:
+        return
+    owned = _owned_ids(request)
+    seen = set()
+    for raw in ids_raw or []:
+        child_id = _as_int(raw)
+        if child_id is None or child_id in seen or child_id == adult_id or child_id not in owned:
+            continue
+        seen.add(child_id)
+        row = db.query_one(
+            "SELECT * FROM guest WHERE id = ? AND reservation_id = ?",
+            (child_id, reservation["id"]),
+        )
+        if not row or not reporting.guest_under_15(row, reservation):
+            continue
+        db.execute(
+            "UPDATE guest SET signed_for_guest_id = ?, signed_for_role = ?, "
+            "signed_for_at = ?, signed_for_wording = ? "
+            "WHERE id = ? AND reservation_id = ? AND signed_for_guest_id IS NULL",
+            (adult_id, role, now, reporting.SIGN_FOR_WORDING_VERSION, child_id, reservation["id"]),
+        )
 
 
 def _with_lang(response, lang: str):
@@ -1183,18 +1256,10 @@ def _require_claim_session(request: Request, reservation, token: str, lang: str)
     return None
 
 
-def _set_declared_guests(reservation, count: int) -> None:
-    if reservation["expected_guests_override"]:
-        return
-    if count < 1 or count > 60:
-        return
-    db.update(
-        "reservation",
-        reservation["id"],
-        {"declared_guests": count, "updated_at": db.utcnow()},
-    )
-    reporting.submit_stay_if_complete(
-        reservation["apartment_id"], reservation["id"]
+def _set_declared_guests(reservation, count: int, *, source: str, owner_user_id) -> str:
+    """1092: the guest's count goes through headcount (lock, floor, ceiling, audit)."""
+    return headcount.set_declared_guests(
+        int(reservation["id"]), count, source=source, owner_user_id=owner_user_id
     )
 
 
@@ -1423,11 +1488,17 @@ def stay_overview(token: str, reservation_id: int, request: Request):
     if not claim.guest_access_open(reservation, claim_row):
         return _unavailable(request, lang, "stay_gone", 404, token)
     context = _shared(request, token, lang, apartment)
+    # 1092: confirm() clears the count held on the claim row, so after a host
+    # release that row holds none. The claim form's prefill must then be the
+    # stay's own count: a default of 1 confirmed unread would lower it.
+    claim_view = {key: claim_row[key] for key in claim_row.keys()}
+    if claim_view.get("declared_guests") is None:
+        claim_view["declared_guests"] = reservation["declared_guests"]
     context.update(
         {
             "apartment": apartment,
             "reservation": reservation,
-            "claim": claim_row,
+            "claim": claim_view,
             "can_pick_other": _can_pick_other_stays(apartment),
             "mail_enabled": mail.mail_enabled(),
             "claim_error": request.query_params.get("claim_error") or "",
@@ -1594,6 +1665,17 @@ async def claim_confirm(token: str, reservation_id: int, request: Request):
             ),
             lang,
         )
+    # 1092: confirm applied the count the guest typed with the claim. A stay
+    # whose people the host already entered may be complete now; file it here,
+    # after confirm's transaction has committed.
+    # The link is spent by now: a failure here must not cost the guest the
+    # claim cookie and the redirect. The sweep files the stay later.
+    try:
+        await run_in_threadpool(
+            reporting.submit_stay_if_complete, apartment["id"], reservation_id
+        )
+    except Exception:
+        _log.exception("submit after claim confirm failed reservation=%s", reservation_id)
     response = RedirectResponse(
         _guest_link(token, reservation_id) + _lang_q(lang), status_code=303
     )
@@ -1632,10 +1714,15 @@ async def set_party_size(token: str, reservation_id: int, request: Request):
                 ),
                 lang,
             )
-        await run_in_threadpool(_set_declared_guests, reservation, count)
+        code = await run_in_threadpool(
+            lambda: _set_declared_guests(
+                reservation, count, source="party", owner_user_id=apartment["owner_user_id"]
+            )
+        )
         return _with_lang(
             RedirectResponse(
-                _guest_link(token, reservation_id) + _lang_q(lang),
+                _guest_link(token, reservation_id)
+                + _lang_q(lang, "" if code in headcount.ACCEPTED else "&party_error=1"),
                 status_code=303,
             ),
             lang,
@@ -1707,9 +1794,18 @@ async def set_party_size(token: str, reservation_id: int, request: Request):
             ),
             lang,
         )
-    await run_in_threadpool(_set_declared_guests, reservation, count)
+    code = await run_in_threadpool(
+        lambda: _set_declared_guests(
+            reservation, count, source="party", owner_user_id=apartment["owner_user_id"]
+        )
+    )
     return _with_lang(
-        RedirectResponse(_guest_link(token, reservation_id) + _lang_q(lang), status_code=303), lang
+        RedirectResponse(
+            _guest_link(token, reservation_id)
+            + _lang_q(lang, "" if code in headcount.ACCEPTED else "&party_error=1"),
+            status_code=303,
+        ),
+        lang,
     )
 
 
@@ -1739,7 +1835,14 @@ async def add_another_person(token: str, reservation_id: int, request: Request):
         )
     progress = reporting.reservation_progress(reservation)
     current = progress["expected"] or progress["filled"] or 1
-    _set_declared_guests(reservation, min(current + 1, 60))
+    await run_in_threadpool(
+        lambda: _set_declared_guests(
+            reservation,
+            min(current + 1, headcount.MAX_GUESTS),
+            source="another",
+            owner_user_id=apartment["owner_user_id"],
+        )
+    )
     return _with_lang(
         RedirectResponse(_guest_link(token, reservation_id) + "/new" + _lang_q(lang), status_code=303),
         lang,
@@ -1747,6 +1850,34 @@ async def add_another_person(token: str, reservation_id: int, request: Request):
 
 
 # --- guest form ----------------------------------------------------------
+
+def _under15_lists(request, reservation, guest_id):
+    """Brief 1090: (adults who may sign for a child, children nobody signed for).
+
+    Only people this device saved on this reservation, never ``guest_id``
+    itself. 1089: an archived adult is no signer; an archived child needs none.
+    """
+    child_signers: List[Dict[str, Any]] = []
+    pending_children: List[Dict[str, Any]] = []
+    owned = set(_owned_ids(request))
+    if not owned:
+        return child_signers, pending_children
+    rows = db.query("SELECT * FROM guest WHERE reservation_id = ?", (reservation["id"],))
+    for row in rows:
+        if row["id"] not in owned or row["id"] == guest_id or row["archived_at"]:
+            continue
+        entry = {"id": row["id"], "name": f"{row['first_name']} {row['surname']}".strip()}
+        if validation.is_valid_signature(
+            row["signature_png"]
+        ) and validation.certainly_at_least_age(
+            row["birth_date"], reporting._stay_dates(row, reservation)[0],
+            reporting.ADULT_SIGNER_AGE,
+        ):
+            child_signers.append(entry)
+        elif reporting.guest_under_15(row, reservation) and not row["signed_for_guest_id"]:
+            pending_children.append(entry)
+    return child_signers, pending_children
+
 
 def _form_context(
     request: Request,
@@ -1861,6 +1992,34 @@ def _form_context(
             "save_action_key": save_action_key,
             # The previous guest's save sent us here; say so without a hub stop.
             "just_saved": request.query_params.get("saved") == "1",
+        }
+    )
+    # Brief 1090: a guest under 15 does not sign; an adult this phone saved
+    # confirms for them. The lists hold only people this device saved.
+    vals = values or {}
+    birth = vals.get("birth_date") or (guest["birth_date"] if guest else "")
+    arrival = validation.parse_iso_date(
+        vals.get("stay_from") or (guest["stay_from"] if guest else "") or reservation["date_from"]
+    )
+    child_signers, pending_children = _under15_lists(
+        request, reservation, guest["id"] if guest is not None else None
+    )
+    context.update(
+        {
+            "under15": (
+                validation.certainly_under_age(birth, arrival, reporting.UNDER_SIGN_AGE)
+                if birth else None
+            ),
+            "adult_signer": (
+                validation.certainly_at_least_age(birth, arrival, reporting.ADULT_SIGNER_AGE)
+                if birth else None
+            ),
+            "child_signers": child_signers,
+            "pending_children": pending_children,
+            "pending_children_names": ", ".join(c["name"] for c in pending_children),
+            "selected_signer": vals.get("signed_by", ""),
+            "selected_child_role": vals.get("child_sign_role", ""),
+            "selected_sign_for_role": vals.get("sign_for_role", ""),
         }
     )
     return context
@@ -2043,6 +2202,13 @@ async def guest_remove(token: str, reservation_id: int, guest_id: int, request: 
     )
     if not removed:
         return _unavailable(request, lang, "already_filed", 403, token)
+    # 1089: a removed adult no longer stands behind the children they signed for.
+    db.execute(
+        "UPDATE guest SET signed_for_guest_id = NULL, signed_for_role = NULL, "
+        "signed_for_at = NULL, signed_for_wording = NULL "
+        "WHERE signed_for_guest_id = ? AND reservation_id = ?",
+        (guest_id, reservation_id),
+    )
     passport_photos.delete_photo(guest_id)
     db.audit(
         "guest_removed_by_guest",
@@ -2200,6 +2366,13 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
     values = validation.normalise_guest(raw, clamp=False)
     stay_from, stay_to = _locked_stay_dates(reservation, existing)
     signature = _kept_signature(form.get("signature"), existing["signature_png"] if existing else None)
+    child = validation.certainly_under_age(
+        values["birth_date"], validation.parse_iso_date(stay_from), reporting.UNDER_SIGN_AGE
+    )
+    if child:
+        # 1089, § 103(b): a child's signature is neither asked for nor kept,
+        # even one posted or stored before.
+        signature = ""
 
     party_raw = (form.get("party_size") or "").strip()
     try:
@@ -2241,10 +2414,19 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
     # A guest may not declare their own paper import: that marker is the host's
     # attestation, and accepting it here stored an unsigned record as signed.
     signature_issue = reporting.guest_signature_issue(
-        signature, translate, allow_imported=False
+        signature, translate, allow_imported=False, under_15=child
     )
     if signature_issue:
         issues.append(signature_issue)
+    # Brief 1090: a role ticked with several adults to choose from and none
+    # chosen would be dropped without a word; ask instead.
+    if (
+        child
+        and (form.get("child_sign_role") or "").strip() in reporting.SIGN_FOR_ROLES
+        and not str(form.get("signed_by") or "").strip()
+        and len(_under15_lists(request, reservation, existing["id"] if existing else None)[0]) > 1
+    ):
+        issues.append(validation.Issue("signed_by", translate("sign_for_who_missing")))
     if not form.get("legal_ack"):
         issues.append(validation.Issue("legal_ack", translate("legal_ack_missing")))
 
@@ -2297,6 +2479,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
             back_url=_form_back_url(token, apartment, reservation_id, lang, editing=bool(existing)),
             token=token,
         )
+        signed_by_echo = str(form.get("signed_by") or "")
         context["values"].update(
             {
                 "stay_from": stay_from,
@@ -2308,14 +2491,18 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
                 "signature": signature if validation.is_valid_signature(signature) else "",
                 "party_size": party_raw,
                 "legal_ack": form.get("legal_ack") or "",
+                # Brief 1090: echo only a whitelisted signer id and role.
+                "signed_by": signed_by_echo if signed_by_echo.isascii() and signed_by_echo.isdigit() else "",
+                "child_sign_role": form.get("child_sign_role") if form.get("child_sign_role") in reporting.SIGN_FOR_ROLES else "",
+                "sign_for_role": form.get("sign_for_role") if form.get("sign_for_role") in reporting.SIGN_FOR_ROLES else "",
             }
         )
+        context["selected_signer"] = context["values"]["signed_by"]
+        context["selected_child_role"] = context["values"]["child_sign_role"]
+        context["selected_sign_for_role"] = context["values"]["sign_for_role"]
         _keep_unreadable_text(context["values"], raw)
         _add_draft_keys(context, request, apartment, existing, token, reservation_id, lang)
         return _with_lang(render_guest(request, "guest/form.html", context, status_code=422), lang)
-
-    if reporting.expected_guest_count(reservation) is None and not existing:
-        _set_declared_guests(reservation, party_size)
 
     now = db.utcnow()
     payload = dict(values)
@@ -2324,7 +2511,8 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
             "stay_from": stay_from,
             "stay_to": stay_to,
             "signature_png": signature,
-            "signed_at": now,
+            # 1089: nobody signed a child's form; filled_at keeps the time.
+            "signed_at": None if child else now,
             "notice_version": config.GUEST_NOTICE_VERSION,
             "notice_lang": lang,
             "notice_ack_at": now,
@@ -2340,6 +2528,24 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
             "last_errors": None,
         }
     )
+    if child:
+        # 1089: an empty result adds nothing, so an edit without a posted
+        # signer keeps an earlier link.
+        payload.update(
+            _sign_for_fields(
+                request, reservation, form.get("signed_by"), form.get("child_sign_role"), now
+            )
+        )
+    else:
+        # A guest corrected to 15 or over loses the link and must sign.
+        payload.update(
+            {
+                "signed_for_guest_id": None,
+                "signed_for_role": None,
+                "signed_for_at": None,
+                "signed_for_wording": None,
+            }
+        )
     if reporting.guest_correction_resets_attempts(existing):
         # Rule 10.4(5): a correction makes the record sendable again, and a
         # guest fixing their own form is a correction like any other. Without
@@ -2368,21 +2574,73 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         # Two phones can each open /new while one slot is free. /new checks
         # capacity on GET; re-check here so the party cannot overshoot the
         # declared headcount and report a guest nobody expected.
-        fresh = reporting.reservation_progress(reservation)
-        if fresh["expected"] is not None and fresh["filled"] >= fresh["expected"]:
+        #
+        # 1092: the check, the first form's count and the insert are one
+        # transaction under the reservation key, on rows read fresh inside it,
+        # so two phones cannot both pass. Everything in the block uses ``cur``;
+        # the audit row, the submit and the mails run after it has committed.
+        saved_id = None
+        count_code, count_old = "", None
+
+        def _fresh_reservation(cur):
+            cur.execute("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+            found = cur.fetchall()
+            return db._hydrate(found[0]) if found else None
+
+        with db.immediate() as cur:
+            db.lock_key(cur, "reservation", reservation_id)
+            fresh_row = _fresh_reservation(cur)
+            refused = fresh_row is None
+            if not refused and reporting.expected_guest_count(fresh_row) is None:
+                count_code, count_old = headcount.apply_declared_in(
+                    cur, reservation_id, party_size
+                )
+                refused = count_code != headcount.SAVED
+                fresh_row = _fresh_reservation(cur)
+            if not refused:
+                cur.execute(
+                    "SELECT * FROM guest WHERE reservation_id = ? AND archived_at IS NULL "
+                    "ORDER BY is_lead DESC, id",
+                    (reservation_id,),
+                )
+                live = [db._hydrate(g) for g in cur.fetchall()]
+                fresh = reporting.reservation_progress(fresh_row, guests=live)
+                refused = fresh["expected"] is not None and fresh["filled"] >= fresh["expected"]
+            if not refused:
+                cur.execute(
+                    "SELECT 1 AS x FROM guest WHERE reservation_id = ?", (reservation_id,)
+                )
+                is_first = not cur.fetchall()
+                payload.update(
+                    {
+                        "reservation_id": reservation_id,
+                        "is_lead": 1 if is_first else 0,
+                        "created_at": now,
+                    }
+                )
+                saved_id = db.insert_in(cur, "guest", payload)
+        if count_code:
+            headcount.record(
+                reservation_id,
+                count_code,
+                count_old,
+                party_size,
+                source="first_form",
+                owner_user_id=apartment["owner_user_id"],
+            )
+        if saved_id is None:
+            if count_code == headcount.SAVED:
+                # The count was saved but the group is already full: the stay
+                # may be complete now, so try to file it, as before 1092.
+                await run_in_threadpool(
+                    reporting.submit_stay_if_complete, apartment["id"], reservation_id
+                )
             return _with_lang(
                 RedirectResponse(
                     _guest_link(token, reservation_id) + _lang_q(lang), status_code=303
                 ),
                 lang,
             )
-        is_first = not db.query_one(
-            "SELECT 1 AS x FROM guest WHERE reservation_id = ?", (reservation_id,)
-        )
-        payload.update(
-            {"reservation_id": reservation_id, "is_lead": 1 if is_first else 0, "created_at": now}
-        )
-        saved_id = db.insert("guest", payload)
 
     if passport_bytes and passport_type:
         passport_photos.save_photo(saved_id, passport_bytes, passport_type, prepared=True)
@@ -2390,6 +2648,15 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
             "guest",
             saved_id,
             {"passport_photo_at": now, "updated_at": now},
+        )
+
+    if not child and validation.certainly_at_least_age(
+        values["birth_date"], validation.parse_iso_date(stay_from), reporting.ADULT_SIGNER_AGE
+    ):
+        # 1089: the adult's own signature was validated above.
+        _link_signed_children(
+            request, reservation, saved_id, form.getlist("sign_for_ids"),
+            form.get("sign_for_role"), now,
         )
 
     db.audit(

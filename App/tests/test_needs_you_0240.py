@@ -42,7 +42,7 @@ def test_each_stay_gets_one_plain_line_with_the_exact_button():
     ]
     lines = {line["stay_id"]: line for line in _build(rows)["lines"]}
     assert lines[1]["text"] == "Police report failed" and lines[1]["href"].endswith("#guests")
-    assert lines[2]["action"] == "Send the report" and lines[2]["href"].endswith("#now")
+    assert lines[2]["action"] == "Review and send" and lines[2]["href"].endswith("#now")
     assert lines[3]["text"] == "Guests not registered"
     assert lines[3]["href"] == "/reservations/3?return_to=/#now"
     assert lines[4]["tone"] == "red" and lines[4]["text"] == "Police overdue"

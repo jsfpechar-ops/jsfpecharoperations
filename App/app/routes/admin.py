@@ -14,6 +14,7 @@ import logging
 import re
 import secrets
 import time
+import unicodedata
 from datetime import date, timedelta
 from typing import Any, Dict, List, Optional
 from urllib.parse import parse_qsl, unquote, urlencode, urlparse, urlsplit, urlunsplit
@@ -50,6 +51,7 @@ from .. import (
     passport_photos,
     payments,
     property_health,
+    police_letter,
     property_setup,
     rate_limit,
     reporting,
@@ -65,7 +67,7 @@ from .. import (
 from .. import ruian as ruian_lookup  # 0884
 from ..templating import render
 from .guest_guide import leon_card_state as _leon_card_state  # 0396
-from ..ubyport.client import UbyportError, UbyportTransportError
+from ..ubyport.client import UbyportAuthError, UbyportError, UbyportTransportError
 from . import admin_accounts, api, dashboard_calendar, exports, guest, onboarding, privacy_requests
 from . import passkeys as passkey_routes
 from . import push as push_routes
@@ -2237,6 +2239,78 @@ def _save_error(section: str, target: str) -> Dict[str, str]:
     return {"section": section, "target": target}
 
 
+def _letter_form_text(form, key: str, limit: int = 120) -> str:
+    """1085: one posted letter value, shown back to the host who sent it.
+
+    Read only if it is a str; every control or format character is removed
+    and the rest is cut to ``limit``. Never raises.
+    """
+    try:
+        raw = form.get(key)
+    except Exception:  # noqa: BLE001 - a forged form must never crash the re-render
+        return ""
+    if not isinstance(raw, str):
+        return ""
+    kept = "".join(ch for ch in raw[:4000] if unicodedata.category(ch)[0] != "C")
+    return kept.strip()[:limit]
+
+
+def _letter_saved_now(apartment, name: str, value: str) -> str:
+    saved = (apartment[name] or "").strip()
+    return saved if saved and saved != value else ""
+
+
+def _letter_rows_from_result(result, apartment) -> List[Dict[str, Any]]:
+    """1085: the check-answers rows for a parsed letter. Only filled rows carry text."""
+    rows = []
+    for name in police_letter.FIELDS:
+        found = result.fields.get(name)
+        state = found.state if found else "missing"
+        filled = bool(found and state in police_letter.FILLED_STATES and found.value)
+        rows.append(
+            {
+                "name": name,
+                "state": state if state in ("missing", "ambiguous", "unreadable", "conflict") or filled else "missing",
+                "filled": filled,
+                "value": found.value if filled else "",
+                "line": found.line if filled else None,
+                "source": [text[:120] for text in found.source[:2]] if filled and found.line else [],
+                "saved": _letter_saved_now(apartment, name, found.value) if filled else "",
+                "ticked": False,
+                "error": False,
+            }
+        )
+    return rows
+
+
+def _letter_rows_from_form(form, apartment, listed: List[str], unconfirmed: List[str]) -> List[Dict[str, Any]]:
+    """1085: the same rows rebuilt from a refused save: the host's own posted values."""
+    rows = []
+    for name in listed:
+        value = _letter_form_text(form, name, 64)
+        line = police_letter.line_from_form(form, name)
+        source = []
+        if line is not None:
+            for index in (1, 2):
+                text = _letter_form_text(form, f"letter_src_{name}_{index}")
+                if text:
+                    source.append(text)
+        rows.append(
+            {
+                "name": name,
+                "state": "derived" if name == "uby_mark" else "found",
+                "filled": True,
+                "value": value,
+                "line": line,
+                "source": source,
+                "saved": _letter_saved_now(apartment, name, value),
+                "ticked": name not in unconfirmed,
+                "error": name in unconfirmed,
+            }
+        )
+    return rows
+
+
 def _refuse_apartment_save(
     request: Request,
     apartment: Dict[str, Any],
@@ -2245,6 +2319,7 @@ def _refuse_apartment_save(
     address_errors: Optional[Dict[str, str]] = None,
     shared_time_error: Optional[str] = None,
     lock_times_error: bool = False,
+    letter_unconfirmed: Optional[List[str]] = None,
 ):
     """Render the property page again with the host's unsaved values."""
     draft = dict(apartment)
@@ -2298,6 +2373,19 @@ def _refuse_apartment_save(
         save_errors.append(_save_error("basics", "checkin_hour"))
     if lock_times_error:
         save_errors.append(_save_error("lock", "lock_checkin_hour"))
+    if letter_unconfirmed:
+        # 1085: a pre-filled letter value saves only with its own tick.
+        listed, _unticked = police_letter.confirmed_fields(form)
+        save_errors.extend(
+            _save_error("police", f"letter_ok_{name}") for name in letter_unconfirmed
+        )
+        extra.update(
+            {
+                "settings_section": "reporting",
+                "letter_check": True,
+                "letter_rows": _letter_rows_from_form(form, apartment, listed, letter_unconfirmed),
+            }
+        )
     extra["save_errors"] = save_errors
     if lock_times_error:
         # 0397: door codes need both times; stay on the Door lock tab with
@@ -2317,7 +2405,7 @@ def _refuse_apartment_save(
         operator_error=operator_error,
         extra=extra,
         status_code=400
-        if (operator_error or address_errors or shared_time_error or lock_times_error)
+        if (operator_error or address_errors or shared_time_error or lock_times_error or letter_unconfirmed)
         else 200,
     )
 
@@ -2518,6 +2606,22 @@ async def apartment_update(apartment_id: int, request: Request):
     # 1024: ?saved=1 lets the page show "Saved" beside the Save bar instead of a toast.
     path, hash_, fragment = return_to.partition("#")
     path += ("&" if "?" in path else "?") + "saved=1"
+    # 1085: values confirmed from the police letter. The read-only connection
+    # test runs once, and only when the password was typed in this same save:
+    # a new login with the old password could lock the police account.
+    letter_listed, _letter_unticked = police_letter.confirmed_fields(form)
+    if letter_listed and not _form_str(form, "setup_step"):
+        if not _form_str(form, "uby_ws_password"):
+            return _back(
+                path + "#ubyport",
+                msg=_flash(request, "flash.apartments.letter_saved_untested"),
+            )
+        outcome = await _run_connection_test(request, apartment_id, apartment)
+        if outcome == "ok":
+            return _back(path + "#ubyport", msg=_flash(request, "flash.apartments.letter_test_ok"))
+        if outcome == "auth":
+            return _back(path + "#ubyport", err=_flash(request, "flash.error.letter_test_failed"))
+        return _back(path + "#ubyport", err=_flash(request, "flash.error.letter_test_unreachable"))
     return _back(path + hash_ + fragment, msg=msg)
 
 
@@ -2717,6 +2821,12 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
     apartment = access.apartment(request, apartment_id)
     if not apartment:
         return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment")), False
+    # 1085: a value pre-filled from the police letter saves only with its tick.
+    _letter_listed, letter_unconfirmed = police_letter.confirmed_fields(form)
+    if letter_unconfirmed:
+        return _refuse_apartment_save(
+            request, apartment, form, None, letter_unconfirmed=letter_unconfirmed
+        ), False
     form = _with_lock_tab_hours(form, apartment)
     if _form_str(form, "setup_step") in property_setup.RETIRED_STEPS:
         # 0884: a page left open from the old eight-step wizard saves nothing.
@@ -3380,23 +3490,57 @@ async def test_connection(apartment_id: int, request: Request):
     # A host pastes the credentials from the police letter and clicks the test.
     # Testing the saved values while the typed ones sat in the form was a
     # silent data loss, so the typed values are saved first and then tested.
+    # 1085: the login saved before this post, for the lockout guard below.
+    letter_listed, _letter_unticked = police_letter.confirmed_fields(form)
+    before = access.apartment(request, apartment_id)
+    login_before = ((before["uby_ws_user"] if before else "") or "").strip().lower()
+    saved_now = False
     if _posted_credentials(form):
         rejected, _address_mismatch = _save_apartment_form(apartment_id, request, form)
         if rejected:
             return rejected
+        saved_now = True
     apartment = access.apartment(request, apartment_id)
     if not apartment:
         return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
+    if (
+        saved_now
+        and "uby_ws_user" in letter_listed
+        and not _form_str(form, "uby_ws_password")
+        and _form_str(form, "uby_ws_user").lower() != login_before
+    ):
+        # 1085: a new login from the letter with the old stored password is not
+        # tested: repeated refusals could lock the police account.
+        return _back(
+            return_to, msg=_flash(request, "flash.apartments.letter_new_login_no_password")
+        )
+    outcome = await _run_connection_test(request, apartment_id, apartment)
+    if outcome != "ok":
+        return _back(return_to, err=_flash(request, "flash.error.connection_failed"))
+    return _back(return_to, msg=_flash(request, "flash.apartments.connection_ok"))
+
+
+async def _run_connection_test(request: Request, apartment_id: int, apartment) -> str:
+    """The read-only connection test: "ok", "auth" or "unreachable".
+
+    Sends only TestDostupnosti, MaximalniDelkaSeznamu and DejMiCiselnik.
+    """
     client = reporting.client_for(apartment)
     try:
         available = await run_in_threadpool(client.test_availability)
         limit = await run_in_threadpool(client.max_batch_size)
+    except UbyportAuthError as exc:
+        db.audit(
+            "ubyport_connection_failed",
+            f"apartment={apartment_id} endpoint={client.endpoint} error={exc}",
+        )
+        return "auth"
     except (UbyportTransportError, UbyportError) as exc:
         db.audit(
             "ubyport_connection_failed",
             f"apartment={apartment_id} endpoint={client.endpoint} error={exc}",
         )
-        return _back(return_to, err=_flash(request, "flash.error.connection_failed"))
+        return "unreachable"
     # The endpoint and the batch size are developer detail: the host only needs
     # to know the login worked, so the numbers go to the activity log.
     db.audit(
@@ -3419,7 +3563,55 @@ async def test_connection(apartment_id: int, request: Request):
             codelists.store(codelists.KIND_ERRORS, rows)
     except Exception as exc:  # noqa: BLE001 - never fail a passed connection test
         db.audit("ubyport_codebook_refresh_failed", f"apartment={apartment_id} error={exc}")
-    return _back(return_to, msg=_flash(request, "flash.apartments.connection_ok"))
+    return "ok"
+
+
+@router.post("/apartments/{apartment_id}/police-letter")
+async def police_letter_read(apartment_id: int, request: Request):
+    """1085: read a pasted police letter and show the values to check. Saves nothing.
+
+    The text lives only in this request: it is not stored, logged, audited or
+    echoed. Only the source slices of filled values go back to the host.
+    """
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment = access.apartment(request, apartment_id)
+    if not apartment:
+        return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
+    form = await request.form()
+    letter_text = form.get("letter_text")
+    if not isinstance(letter_text, str):
+        letter_text = ""
+    extra: Dict[str, Any] = {"property_view": "settings", "settings_section": "reporting"}
+    failed_name = ""
+    try:
+        result = police_letter.parse_letter(letter_text)
+        if result.status == "ok":
+            rows = _letter_rows_from_result(result, apartment)
+            filled = [row["name"] for row in rows if row["filled"]]
+            extra["letter_rows"] = rows
+            extra["letter_prefill"] = {row["name"]: row["value"] for row in rows if row["filled"]}
+            extra["letter_check"] = result if filled else None
+        else:
+            filled = []
+            extra["letter_status"] = result.status if result.status in ("empty", "too_long") else "failed"
+    except Exception as exc:  # noqa: BLE001 - a traceback here would print the pasted text
+        failed_name = type(exc).__name__
+        del exc
+    del letter_text, form
+    if failed_name:
+        extra = {
+            "property_view": "settings",
+            "settings_section": "reporting",
+            "letter_status": "failed",
+        }
+        db.audit("police_letter_failed", f"apartment={apartment_id} error={failed_name}")
+    elif filled:
+        db.audit("police_letter_read", f"apartment={apartment_id} filled={','.join(filled)}")
+    response = _render_property_detail(apartment_id, request, extra=extra, status_code=422)
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 @router.post("/apartments/{apartment_id}/refresh-codelists")

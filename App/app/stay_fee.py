@@ -539,7 +539,9 @@ def property_period(
     # period's guests a second time for unsigned_stays().
     unsigned = 0
     for row in db.query(_GUESTS_SQL, (apartment["id"], last.isoformat(), first.isoformat())):
-        if not reporting.guest_has_signature(row):
+        if not reporting.guest_signature_settled(
+            row, {"date_from": row["res_from"], "date_to": row["res_to"]}
+        ):
             unsigned += 1
         share = guest_period(row, {"date_from": row["res_from"], "date_to": row["res_to"]},
                              first, last, apartment=apartment, schedule=schedule)
@@ -798,13 +800,19 @@ def unsigned_stays(
     ):
         return period["unsigned_guests"]
     rows = db.query(
-        "SELECT g.* FROM guest g JOIN reservation r ON r.id = g.reservation_id "
+        "SELECT g.*, r.date_from AS res_from, r.date_to AS res_to "
+        "FROM guest g JOIN reservation r ON r.id = g.reservation_id "
         "WHERE r.apartment_id = ? AND r.status = 'active' AND g.archived_at IS NULL "
         "AND COALESCE(r.source, '') != 'demo' "
         "AND COALESCE(g.stay_from, r.date_from) <= ? AND COALESCE(g.stay_to, r.date_to) >= ?",
         (apartment_id, last.isoformat(), first.isoformat()),
     )
-    return sum(1 for row in rows if not reporting.guest_has_signature(row))
+    return sum(
+        1 for row in rows
+        if not reporting.guest_signature_settled(
+            row, {"date_from": row["res_from"], "date_to": row["res_to"]}
+        )
+    )
 
 
 def payment_details(group) -> Optional[Dict[str, Any]]:

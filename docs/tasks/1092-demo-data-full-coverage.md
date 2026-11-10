@@ -184,7 +184,7 @@ Stop, and write the report, if:
 
 ## 9. Report
 
-Write `docs/tasks/1092-report.md` (600 tokens at most) and set `Status: review`, per TEMPLATE.md §9.
+Write `docs/tasks/1092-demo-report.md` (600 tokens at most; main took the plain `1092-report.md` name) and set `Status: review`, per TEMPLATE.md §9.
 
 ## Risk list (for the reviewer)
 

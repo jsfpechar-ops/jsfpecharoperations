@@ -120,7 +120,7 @@
             <p class="small housebook-fact"><span class="muted">{{ t('housebook.document') }}:</span> <span class="mono">{{ guest_identifier(row.doc_number, row._guest_id) }}{% if row.visa_number %}, {{ t('housebook.visa', number=guest_identifier(row.visa_number, row._guest_id)) }}{% endif %}</span></p>
             <p class="small housebook-fact"><span class="muted">{{ t('housebook.residence') }}:</span> {{ res_parts | join(', ') or '—' }}</p>
             <p class="small housebook-fact"><span class="muted">{{ t('housebook.purpose') }}:</span> {{ purpose_label(row._purpose_code, lang) or '—' }}</p>
-            <p class="small housebook-fact"><span class="muted">{{ t('housebook.signed') }}:</span> {% if row.signed == 'yes' %}<span class="pill p-ok">{{ t('customers.yes') }}</span>{% else %}<span class="pill p-warn">{{ t('customers.no') }}</span>{% endif %}</p>
+            <p class="small housebook-fact"><span class="muted">{{ t('housebook.signed') }}:</span> {% if row.signed == 'yes' %}<span class="pill p-ok">{{ t('customers.yes') }}</span>{% elif row.signed == 'by adult' %}<span class="pill p-ok">{{ t('housebook.signed_by_adult') }}</span>{% elif row.signed == 'not required' %}<span class="pill p-ok">{{ t('housebook.signed_not_required') }}</span>{% else %}<span class="pill p-warn">{{ t('customers.no') }}</span>{% endif %}</p>
             <button class="ui-btn ui-btn-secondary ui-btn-compact" type="button" popovertarget="{{ facts_id }}" popovertargetaction="hide">{{ t('common.close') }}</button>
           </div>
         </td>

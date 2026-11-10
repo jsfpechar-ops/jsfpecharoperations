@@ -39,7 +39,7 @@ if REQUIRE_BROWSER:
 else:
     sync_api = pytest.importorskip("playwright.sync_api")
 
-from app import claim, db, guest_slug, i18n, mail  # noqa: E402
+from app import claim, db, guest_slug, i18n, mail, reporting  # noqa: E402
 from tests.browser_support import chromium_launch_kwargs
 from tests.v2_mockup import WIDTHS as GEOMETRY_WIDTHS, spacing_findings  # noqa: E402
 
@@ -413,7 +413,12 @@ class Guest:
         self.check_help_beside_title("signature", widths=all_widths if number == 2 else ())
         if number == 2:
             self.check_spacing("person 2, signature", all_widths)
-        self.sign()
+        if page.locator("#sig-block").is_hidden():
+            # 1090: a guest under 15 gets a note instead of the pad.
+            assert int(birth[4:]) > 2010, f"the pad is hidden for an adult born {birth[4:]}"
+            assert page.locator("#u15-note").is_visible()
+        else:
+            self.sign()
         self.check_layout(f"guest {number}, signature")
         # The legal notice moved onto the signature step and is collapsed by
         # default; the acknowledgement must stay visible outside that fold.
@@ -551,7 +556,17 @@ def _register_a_group_of_three(live_server, browser, width, token_prefix, readab
 
         stored = db.query("SELECT * FROM guest WHERE reservation_id = ?", (stay,))
         assert sorted(row["first_name"].upper() for row in stored) == ["ANNA", "JONAS", "LENA"]
-        assert all(row["signature_png"].startswith("data:image/png;base64,") for row in stored)
+        # 1089: Lena (born 2015) is under 15 on arrival, so no signature is kept for her.
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (stay,))
+        for row in stored:
+            kind = reporting.signature_record(row, reservation)["kind"]
+            if reporting.guest_under_15(row, reservation):
+                assert row["first_name"].upper() == "LENA"
+                assert row["signature_png"] is None and row["signed_at"] is None
+                assert kind in ("exempt", "signed_for")
+            else:
+                assert row["signature_png"].startswith("data:image/png;base64,")
+                assert kind == "own"
         assert i18n.translator(lang)("all_done_title") in page.inner_text("body")
         guest.check_layout("done")
         _shot(page, "completion-summary-390.png")

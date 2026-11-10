@@ -2281,6 +2281,30 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     }
   }
 
+  /* 1085: reading the police letter reloads the page, so ask before unsaved edits or a typed password are lost. */
+  function initPoliceLetterForm() {
+    var letterForm = document.getElementById("police-letter-form");
+    if (!letterForm || !claimNode(letterForm, "initPoliceLetterForm")) return;
+    // The reply to "Read the letter" lands at the page top: bring the result (or the error) into view.
+    // A refused save has its own summary and focus, so it is left alone.
+    var landed = document.getElementById("police-letter-check") || document.getElementById("letter_text-error");
+    if (landed && !document.querySelector("[data-save-summary]")) {
+      window.setTimeout(function () {
+        landed.scrollIntoView({ block: landed.id === "police-letter-check" ? "start" : "center" });
+      }, 0);
+    }
+    letterForm.addEventListener("submit", function (event) {
+      var settings = document.getElementById("property-settings-form");
+      var password = document.getElementById("uby_ws_password");
+      var unsaved = (settings && settings.getAttribute("data-dirty") === "1") || (password && password.value);
+      if (unsaved && !window.confirm(letterForm.dataset.discardWarning)) {
+        event.preventDefault();
+        return;
+      }
+      if (settings) settings._ubySubmitting = true;
+    });
+  }
+
   /* 0540: on the phone the property page opens with every section closed, as the mockup.
      Only a section opened by default (no ?section=) is closed; a requested one stays open. */
   function initPhoneDefaultClosed() {
@@ -2803,6 +2827,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     initAutomationFields();
     initControllerFields();
     initUnsavedForms();
+    initPoliceLetterForm();
     initUnsavedDialog();
     initSectionNotice();
     initSaveSummary();
