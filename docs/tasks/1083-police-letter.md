@@ -34,7 +34,7 @@ The title line `Přihlašovací údaje pro robotické vkládání Ubyport Webov�
 
 `parse_letter(text: str) -> LetterResult`. No database, request, logging, file or global state. The same input always gives the same output.
 
-1. **Size:** empty after strip gives `status="empty"`. Over `MAX_LETTER_CHARS = 20000` characters gives `status="too_long"` and nothing is parsed. Otherwise `status="ok"`. Under `empty` and `too_long`, all three fields are `missing`.
+1. **Never raises:** `None` or any non-`str` input (bytes, int, …) gives `status="empty"`. A lone surrogate, NUL or any other code point must not raise; each is just a character that matches no value. Size: empty after strip gives `status="empty"`. Over `MAX_LETTER_CHARS = 20000` characters gives `status="too_long"` and nothing is parsed. Otherwise `status="ok"`. Under `empty` and `too_long`, all three fields are `missing`.
 2. **Normalise:** `unicodedata.normalize("NFC", text)`. `\r\n` and `\r` become `\n`. NBSP (U+00A0), narrow NBSP (U+202F), thin space (U+2009) and tab become a space. Nothing else changes: no NFKC (it would turn `²` or full-width digits into digits), no diacritic stripping of values, and no O-to-0 or l-to-1 repair. A value that needs a repair does not match.
 3. **Pattern per field:** search the whole normalised text with `re.IGNORECASE`. Each pattern is `LABEL + GAP + VALUE + END`:
    - `GAP` = `[ \t]*[:.\-–]?[ \t]*(?:\n[ \t]*)?`: optional punctuation, then at most **one** line break.
@@ -42,10 +42,11 @@ The title line `Přihlašovací údaje pro robotické vkládání Ubyport Webov�
 
    | Field | LABEL | VALUE |
    |---|---|---|
-   | `uby_idub` | `(?<![A-Za-z0-9])IDUB(?![A-Za-z0-9])` | `(\d{12,14})` |
+   | `uby_idub` | `(?<![A-Za-z0-9])IDUB(?![A-Za-z0-9])` | `([0-9]{12,14})` (never `\d`: it matches full-width and Arabic-Indic digits) |
    | `uby_ws_user` | `p[rř][ií]hla[sš]ovac[ií]\s+jm[eé]no` | `(uby-t?ws_?[A-Za-z0-9]{5,6})`, kept only if `_WS_USER_RE.fullmatch`, returned as written |
    | `uby_mark` (printed) | `zkratka\s+ubytovac[ií]ho\s+za[rř][ií]zen[ií]`; `\s+` may cross a line break; a bare `Zkratka` is not a label | `([A-Za-z0-9]{5,6})`, returned upper-cased |
 
+   **ASCII only:** with `re.IGNORECASE`, `[A-Za-z0-9]` also matches U+212A (Kelvin sign) and U+017F (long s). So every captured IDUB, mark and login must also pass `value.isascii()`. A value that fails the check counts as no valid value (rule 4), so the field is `unreadable`.
 4. **A label with no valid value:** a label that matches with `LABEL` but not with the full pattern (15 digits, spaces or a letter inside, words after the value, the value two lines down) is `unreadable` at that line. **Unreadable wins:** if one `IDUB` label reads fine and another is unreadable, the field is `unreadable` and empty.
 5. **One answer or none:** exactly one distinct value (repeats count once; the login and the mark compare case-insensitively) gives `found`, with the line number (1-based) and the label of the first occurrence. Two or more distinct values give `ambiguous`, with all their line numbers and **no value**. No label gives `missing`.
 6. **Password guard:** a value whose line also contains `heslo`, `password` or `passwort` (any case) makes that field `ambiguous`. There is no password field, and no pattern for `Přístupové heslo`. The password text must never appear in the result.
@@ -58,8 +59,8 @@ The title line `Přihlašovací údaje pro robotické vkládání Ubyport Webov�
    - Login not `found`: no derivation; the mark keeps its own state.
    - Printed mark `unreadable` or `ambiguous`: it stays so, and nothing is derived.
 8. **Result types (frozen dataclasses):** `LetterResult(status, fields)`, where `fields` is a dict keyed `uby_idub`, `uby_ws_user`, `uby_mark`. Each value is `FieldResult(state, value, line, label, lines)`. `state` is one of `found derived missing ambiguous unreadable conflict`. `value` is `""` unless `found` or `derived`. `line` is an int or `None`, `label` is the matched label text or `""`, and `lines` is a tuple of ints. Constants: `FIELDS = ("uby_idub", "uby_ws_user", "uby_mark")`, `FILLED_STATES = frozenset({"found", "derived"})`.
-9. **`confirmed_fields(form) -> tuple[list[str], list[str]]`** returns (listed, unconfirmed). `form` is any mapping with `.get`. It reads the hidden `letter_fields` (a comma list; keeps only names in `FIELDS`, in `FIELDS` order, without duplicates) and counts a field confirmed only if `letter_ok_<name> == "1"`.
-10. **`line_from_form(form, name) -> int | None`:** `letter_line_<name>` read as an int from 1 to 100000 only (`str.isdigit()`, at most 6 characters), else `None`. 1085 uses it so a forged value can never crash the re-render.
+9. **`confirmed_fields(form) -> tuple[list[str], list[str]]`** returns (listed, unconfirmed). `form` is any mapping with `.get`. It reads the hidden `letter_fields` (a comma list; keeps only names in `FIELDS`, in `FIELDS` order, without duplicates) and counts a field confirmed only if `letter_ok_<name> == "1"`. Never raises: a missing form, or a value that is not a `str` (a list, bytes, `None`), counts as empty or unconfirmed.
+10. **`line_from_form(form, name) -> int | None`:** `letter_line_<name>` read as an int from 1 to 100000 only, and only if the value is a `str` with `isascii()` and `isdigit()` and at most 6 characters (`"²".isdigit()` is True and `int("²")` raises), else `None`. It never raises. 1085 uses it so a forged value can never crash the re-render.
 
 ### Anchors (verified on f1ca4288; re-check each with `grep -nF`)
 
@@ -88,8 +89,10 @@ The title line `Přihlašovací údaje pro robotické vkládání Ubyport Webov�
    - **Password never out:** every row's `repr(result)` contains neither `SAMPLE_WS_PASSWORD` nor `Zz9!fake-pass`. A separate row has `Přístupové heslo: UBY-WS_ZZZZZ` (a password that looks like a login): the login must not be `UBY-WS_ZZZZZ`.
    - **OCR-like noise:** stray `|` and `_`, doubled spaces, a soft hyphen inside the title line, a label in capitals. The expected values do not change.
    - **Size:** empty and spaces only give `empty`. Exactly 20000 characters with a valid letter: `ok`. 20001 characters: `too_long`, all `missing`.
+   - **Never raises:** `None`, `b"IDUB: 000011112222"` and `12345` give `empty`. Text with a lone surrogate `"\ud800"` or a NUL `"\x00"` next to a valid letter gives the right values and no exception. `"IDUB:" * 4000` (exactly 20000 characters) is `ok`, with the IDUB `unreadable`, and it finishes in under 1 s.
+   - **Unicode look-alikes:** `Přihlašovací jméno: UBY-WS_ABCD\u212a` (Kelvin sign) and `Zkratka ubytovacího zařízení: abcd\u017f` (long s) are both `unreadable`. `IDUB: ` followed by twelve Arabic-Indic digits (`\u0661`…) is `unreadable`.
    - **Purity:** the same input twice gives equal results. With `socket.socket` monkeypatched to raise, a full parse still passes.
-   Add a `confirmed_fields` table (unknown names ignored, duplicates folded, `letter_ok_x=0` and a missing tick count as unconfirmed) and a `line_from_form` table (`7` gives 7; `0`, `-1`, `1e3`, `999999999`, `abc`, `""` and `"٣"` give `None`).
+   Add a `confirmed_fields` table (unknown names ignored, duplicates folded, `letter_ok_x=0` and a missing tick count as unconfirmed) and a `line_from_form` table (`7` gives 7; `0`, `-1`, `1e3`, `999999999`, `abc`, `""`, `"٣"`, `"²"`, `None`, `["7"]` and `b"7"` give `None`, and none raises). In the `confirmed_fields` table, a form whose `letter_fields` is `None` or a list, and `letter_ok_*` as bytes, count as unconfirmed with no exception.
 3. Run section 6, then write the report.
 
 ## 5. Do not touch
@@ -103,6 +106,7 @@ From `App/`: `.venv/bin/python -m pytest tests/test_police_letter_parser.py test
 ## 7. Acceptance
 
 - [ ] A field is filled only for exactly one valid value that ends its line after its label. Two values, an unreadable label, a password-line value or a mark that conflicts with the login fill nothing.
+- [ ] `parse_letter`, `confirmed_fields` and `line_from_form` never raise on any input. ASCII-only values; the IDUB uses `[0-9]`.
 - [ ] Digits-only IDUB. No repair and no NFKC. The zkratka is derived only through `mark_from_ws_user`, and is marked `derived`.
 - [ ] The password never appears in any result. The module has no I/O.
 - [ ] At least 50 table rows, plus the `confirmed_fields` and `line_from_form` tables, all green.
