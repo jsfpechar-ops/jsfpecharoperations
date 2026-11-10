@@ -386,6 +386,18 @@ def _load_draft(request: Request, reservation, guests) -> Optional[dict]:
     return values
 
 
+def _add_draft_keys(context, request: Request, apartment, existing, token: str, reservation_id: int, lang: str) -> None:
+    """Brief 1087: keep autosave on after a language switch or a validation error.
+
+    New guests only, never the host preview, and never the welcome line.
+    """
+    if existing or _host_owns_apartment(request, apartment):
+        return
+    context["draft_url"] = f"/l/{token}/{reservation_id}/draft" + _lang_q(lang)
+    context["draft_fields"] = " ".join(guest_draft.DRAFT_FIELDS)
+    context["draft_owned"] = _draft_owned(request, reservation_id)
+
+
 def _with_lang(response, lang: str):
     response.set_cookie(
         LANG_COOKIE,
@@ -2126,6 +2138,7 @@ async def guest_form_relang(token: str, reservation_id: int, request: Request):
     context["values"].update({field: raw.get(field) or "" for field in typed_fields})
     step = (form.get("_step") or "").strip()
     context["start_step"] = int(step) if step.isdigit() and len(step) <= 2 else 0
+    _add_draft_keys(context, request, apartment, existing, token, reservation_id, lang)
     return _with_lang(render_guest(request, "guest/form.html", context), lang)
 
 
@@ -2298,6 +2311,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
             }
         )
         _keep_unreadable_text(context["values"], raw)
+        _add_draft_keys(context, request, apartment, existing, token, reservation_id, lang)
         return _with_lang(render_guest(request, "guest/form.html", context, status_code=422), lang)
 
     if reporting.expected_guest_count(reservation) is None and not existing:
