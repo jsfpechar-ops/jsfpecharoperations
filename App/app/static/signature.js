@@ -923,6 +923,78 @@ function initSignature() {
     window.addEventListener("online", function () { note.hidden = true; });
   }
 
+  /* Brief 1087: the unfinished new-guest form is saved as a draft while the
+     guest types, so closing the page and opening it again on the same device
+     brings the typed answers back. It only posts the fields the server lists
+     in data-draft-fields, and it only reads the form. Without JavaScript
+     there is no draft. The document picture and the drawn name are never
+     part of it. */
+  function initGuestDraft() {
+    var form = document.getElementById("guest-form");
+    if (!form || !form.hasAttribute("data-draft-url") || !window.fetch || !window.FormData) return;
+    var url = form.getAttribute("data-draft-url");
+    var names = (form.getAttribute("data-draft-fields") || "").split(" ").filter(function (name) { return name; });
+    var DEBOUNCE_MS = 2000;
+    var MIN_GAP_MS = 15000;
+    var timer = null;
+    var last = 0;
+    var dirty = false;
+    var stopped = false;
+
+    function body() {
+      var data = new FormData();
+      data.append("_csrf", form.elements._csrf.value);
+      data.append("draft_owned", form.getAttribute("data-draft-owned") || "0");
+      names.forEach(function (name) {
+        var el = form.elements[name];
+        if (!el) return;
+        if (el.type === "checkbox") {
+          if (el.checked) data.append(name, "1");
+          return;
+        }
+        data.append(name, el.value);
+      });
+      return data;
+    }
+
+    function send(keepalive) {
+      if (stopped || !dirty) return;
+      dirty = false;
+      last = Date.now();
+      fetch(url, { method: "POST", body: body(), credentials: "same-origin", keepalive: !!keepalive })
+        .catch(function () { dirty = true; });
+    }
+
+    function schedule(event) {
+      if (stopped) return;
+      if (!event.target || names.indexOf(event.target.name) < 0) return;
+      dirty = true;
+      clearTimeout(timer);
+      timer = setTimeout(function () { send(false); }, Math.max(DEBOUNCE_MS, MIN_GAP_MS - (Date.now() - last)));
+    }
+
+    function flush() {
+      clearTimeout(timer);
+      send(true);
+    }
+
+    form.addEventListener("input", schedule);
+    form.addEventListener("change", schedule);
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "hidden") flush();
+    });
+    form.addEventListener("submit", function (event) {
+      if (event.defaultPrevented) return;
+      if (event.submitter && event.submitter.hasAttribute("data-lang-draft")) {
+        flush();
+        return;
+      }
+      stopped = true;
+      clearTimeout(timer);
+    });
+  }
+
   /* The wide check-in layout shows the stay summary and the step list beside
      the active form. The list is built from the same data-step-title elements
      the wizard walks, so it can never disagree with the bar, and each visited
@@ -994,6 +1066,7 @@ function initSignature() {
     initErrorSummary();
     initGuestReview();
     initLegalAck();
+    initGuestDraft();
     focusFirstError();
   });
 })();
