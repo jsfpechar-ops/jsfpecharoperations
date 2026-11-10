@@ -2113,6 +2113,11 @@ body.v2 .invoice-more > summary{color:var(--brand);font-size:13.5px;font-weight:
 body.v2 .invoice-more > summary::-webkit-details-marker{display:none}
 body.v2 .invoice-more > summary::marker{content:""}
 body.v2 .invoice-more-body{display:grid;gap:8px;max-width:700px;padding-top:10px}
+/* 1075-cont-1: in this fold the hint is plain text (0543): the label wraps as normal text and the hint is its own block under it */
+body.v2 details.invoice-more .field-label-row .tip-tail{display:inline;white-space:normal}
+body.v2 details.invoice-more .field-label-row .help-tip{display:block;margin-left:0}
+/* 1075 CI: the fold summary on the entity form must reach 4.5:1; brand-ink keeps the link tone */
+body.v2 details.ui-details-box.invoice-more > summary{color:var(--brand-ink)}
 body.v2 .invoice-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 18px;margin-top:18px;box-shadow:0 1px 2px rgba(32,32,30,.06);position:static;bottom:auto;z-index:1}
 body.v2 .wrap.with-sidebar .invoice-workspace{max-width:1050px;margin-left:auto;margin-right:auto}
 @media (max-width:767px){

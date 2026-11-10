@@ -32,7 +32,7 @@
         {% for s in stays %}<option value="{{ s.id }}"{% if selected_reservation_id == s.id %} selected{% endif %}>{{ s.label }}</option>{% endfor %}
       </select></div>
     <div class="ui-field"><label for="pay-new-guest_email">{{ t('payments.field.guest_email') }}</label>
-      <input id="pay-new-guest_email" type="email" name="guest_email"></div>
+      <input id="pay-new-guest_email" type="email" name="guest_email" autocomplete="off" autocapitalize="none" spellcheck="false"{% if guest_email_prefill %} value="{{ guest_email_prefill }}"{% endif %}></div>
     <fieldset class="ui-field">
       <legend>{{ t('payments.field.rail') }}</legend>
       <div class="ui-chips payments-seg">

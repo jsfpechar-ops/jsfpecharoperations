@@ -276,6 +276,8 @@ CONTROLS_JS = """
     for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
       if (n.matches('.help-tip-body, [popover], .tab-bar, .bottom-tabs, .help-fab, .fab-help, nav.tabbar, .ui-tabbar')) return true;
       if (getComputedStyle(n).position === 'fixed') return true;
+      // content of a closed details is not rendered, but Chrome keeps a stale box for it
+      if (n.tagName !== 'SUMMARY' && n.parentElement && n.parentElement.matches('details:not([open])')) return true;
     }
     return false;
   };

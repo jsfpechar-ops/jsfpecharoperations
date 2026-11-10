@@ -928,8 +928,10 @@ def _entities_page(
             "entity": edit_entity,
             **invoice_routes.invoice_bank_view(edit_entity),
         }
+    account_user = auth.current_user(request)
     context.update(
         {
+            "account_email": (account_user["email"] or "") if account_user else "",
             "edit_entity": edit_entity,
             "new_entity": new_entity,
             "signature_preview": signature_preview,
