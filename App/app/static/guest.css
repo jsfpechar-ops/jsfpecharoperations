@@ -1654,3 +1654,28 @@ details.g-summary > summary.g-summary-fold::after { --g-mask: var(--g-ico-chev-d
 details.g-summary[open] > summary.g-summary-fold::after { --g-mask: var(--g-ico-chev-up); }
 .g-guide-link::after { --g-mask: var(--g-ico-arrow-right); margin-left: 6px; }
 .g-leon-jump::after { --g-mask: var(--g-ico-arrow-down); margin-left: 6px; }
+
+/* 1074: scan feedback. The spinner shows only while a document is being read;
+   the chip marks a field the scan filled until the guest edits it. */
+.g-spin {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 8px;
+  border: 2px solid var(--g-line-2);
+  border-top-color: var(--brand-action);
+  border-radius: 50%;
+  vertical-align: -2px;
+  animation: g-spin 0.8s linear infinite;
+}
+@keyframes g-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .g-spin { animation: none; border-top-color: var(--g-line-2); }
+}
+.g-chip.g-scan-chip {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  margin: 6px 0 0;
+  white-space: normal;
+}
