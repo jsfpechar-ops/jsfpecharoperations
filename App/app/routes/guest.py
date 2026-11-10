@@ -27,7 +27,7 @@ from itsdangerous import BadSignature, URLSafeSerializer
 import posixpath
 import re
 import secrets
-from .. import alerts, auth, claim, codelists, config, cookie_inventory, db, doc_ocr, door_codes, guest_slug, guest_uk_i18n, guest_draft, host_i18n, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n, workflow
+from .. import alerts, auth, claim, codelists, config, cookie_inventory, db, doc_ocr, door_codes, guest_slug, guest_uk_i18n, guest_draft, headcount, host_i18n, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n, workflow
 from .. import ruian as ruian_lookup  # 0911: guest RUIAN suggestions
 from ..templating import render_guest
 from .admin_helpers import guest_form_raw as _guest_form_raw
@@ -1183,18 +1183,10 @@ def _require_claim_session(request: Request, reservation, token: str, lang: str)
     return None
 
 
-def _set_declared_guests(reservation, count: int) -> None:
-    if reservation["expected_guests_override"]:
-        return
-    if count < 1 or count > 60:
-        return
-    db.update(
-        "reservation",
-        reservation["id"],
-        {"declared_guests": count, "updated_at": db.utcnow()},
-    )
-    reporting.submit_stay_if_complete(
-        reservation["apartment_id"], reservation["id"]
+def _set_declared_guests(reservation, count: int, *, source: str, owner_user_id) -> str:
+    """1092: the guest's count goes through headcount (lock, floor, ceiling, audit)."""
+    return headcount.set_declared_guests(
+        int(reservation["id"]), count, source=source, owner_user_id=owner_user_id
     )
 
 
@@ -1594,6 +1586,10 @@ async def claim_confirm(token: str, reservation_id: int, request: Request):
             ),
             lang,
         )
+    # 1092: confirm applied the count the guest typed with the claim. A stay
+    # whose people the host already entered may be complete now; file it here,
+    # after confirm's transaction has committed.
+    await run_in_threadpool(reporting.submit_stay_if_complete, apartment["id"], reservation_id)
     response = RedirectResponse(
         _guest_link(token, reservation_id) + _lang_q(lang), status_code=303
     )
@@ -1632,10 +1628,15 @@ async def set_party_size(token: str, reservation_id: int, request: Request):
                 ),
                 lang,
             )
-        await run_in_threadpool(_set_declared_guests, reservation, count)
+        code = await run_in_threadpool(
+            lambda: _set_declared_guests(
+                reservation, count, source="party", owner_user_id=apartment["owner_user_id"]
+            )
+        )
         return _with_lang(
             RedirectResponse(
-                _guest_link(token, reservation_id) + _lang_q(lang),
+                _guest_link(token, reservation_id)
+                + _lang_q(lang, "" if code in headcount.ACCEPTED else "&party_error=1"),
                 status_code=303,
             ),
             lang,
@@ -1707,9 +1708,18 @@ async def set_party_size(token: str, reservation_id: int, request: Request):
             ),
             lang,
         )
-    await run_in_threadpool(_set_declared_guests, reservation, count)
+    code = await run_in_threadpool(
+        lambda: _set_declared_guests(
+            reservation, count, source="party", owner_user_id=apartment["owner_user_id"]
+        )
+    )
     return _with_lang(
-        RedirectResponse(_guest_link(token, reservation_id) + _lang_q(lang), status_code=303), lang
+        RedirectResponse(
+            _guest_link(token, reservation_id)
+            + _lang_q(lang, "" if code in headcount.ACCEPTED else "&party_error=1"),
+            status_code=303,
+        ),
+        lang,
     )
 
 
@@ -1739,7 +1749,14 @@ async def add_another_person(token: str, reservation_id: int, request: Request):
         )
     progress = reporting.reservation_progress(reservation)
     current = progress["expected"] or progress["filled"] or 1
-    _set_declared_guests(reservation, min(current + 1, 60))
+    await run_in_threadpool(
+        lambda: _set_declared_guests(
+            reservation,
+            min(current + 1, headcount.MAX_GUESTS),
+            source="another",
+            owner_user_id=apartment["owner_user_id"],
+        )
+    )
     return _with_lang(
         RedirectResponse(_guest_link(token, reservation_id) + "/new" + _lang_q(lang), status_code=303),
         lang,
@@ -2314,9 +2331,6 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         _add_draft_keys(context, request, apartment, existing, token, reservation_id, lang)
         return _with_lang(render_guest(request, "guest/form.html", context, status_code=422), lang)
 
-    if reporting.expected_guest_count(reservation) is None and not existing:
-        _set_declared_guests(reservation, party_size)
-
     now = db.utcnow()
     payload = dict(values)
     payload.update(
@@ -2368,21 +2382,67 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         # Two phones can each open /new while one slot is free. /new checks
         # capacity on GET; re-check here so the party cannot overshoot the
         # declared headcount and report a guest nobody expected.
-        fresh = reporting.reservation_progress(reservation)
-        if fresh["expected"] is not None and fresh["filled"] >= fresh["expected"]:
+        #
+        # 1092: the check, the first form's count and the insert are one
+        # transaction under the reservation key, on rows read fresh inside it,
+        # so two phones cannot both pass. Everything in the block uses ``cur``;
+        # the audit row, the submit and the mails run after it has committed.
+        saved_id = None
+        count_code, count_old = "", None
+
+        def _fresh_reservation(cur):
+            cur.execute("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+            found = cur.fetchall()
+            return db._hydrate(found[0]) if found else None
+
+        with db.immediate() as cur:
+            db.lock_key(cur, "reservation", reservation_id)
+            fresh_row = _fresh_reservation(cur)
+            refused = fresh_row is None
+            if not refused and reporting.expected_guest_count(fresh_row) is None:
+                count_code, count_old = headcount.apply_declared_in(
+                    cur, reservation_id, party_size
+                )
+                refused = count_code != headcount.SAVED
+                fresh_row = _fresh_reservation(cur)
+            if not refused:
+                cur.execute(
+                    "SELECT * FROM guest WHERE reservation_id = ? AND archived_at IS NULL "
+                    "ORDER BY is_lead DESC, id",
+                    (reservation_id,),
+                )
+                live = [db._hydrate(g) for g in cur.fetchall()]
+                fresh = reporting.reservation_progress(fresh_row, guests=live)
+                refused = fresh["expected"] is not None and fresh["filled"] >= fresh["expected"]
+            if not refused:
+                cur.execute(
+                    "SELECT 1 AS x FROM guest WHERE reservation_id = ?", (reservation_id,)
+                )
+                is_first = not cur.fetchall()
+                payload.update(
+                    {
+                        "reservation_id": reservation_id,
+                        "is_lead": 1 if is_first else 0,
+                        "created_at": now,
+                    }
+                )
+                saved_id = db.insert_in(cur, "guest", payload)
+        if count_code:
+            headcount.record(
+                reservation_id,
+                count_code,
+                count_old,
+                party_size,
+                source="first_form",
+                owner_user_id=apartment["owner_user_id"],
+            )
+        if saved_id is None:
             return _with_lang(
                 RedirectResponse(
                     _guest_link(token, reservation_id) + _lang_q(lang), status_code=303
                 ),
                 lang,
             )
-        is_first = not db.query_one(
-            "SELECT 1 AS x FROM guest WHERE reservation_id = ?", (reservation_id,)
-        )
-        payload.update(
-            {"reservation_id": reservation_id, "is_lead": 1 if is_first else 0, "created_at": now}
-        )
-        saved_id = db.insert("guest", payload)
 
     if passport_bytes and passport_type:
         passport_photos.save_photo(saved_id, passport_bytes, passport_type, prepared=True)
