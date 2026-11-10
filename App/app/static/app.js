@@ -2239,6 +2239,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     forms.forEach(function (form) {
       if (!claimNode(form, "initUnsavedForms")) return;
       form._ubyBase = formSnapshot(form);
+      recomputeDirty(form);
       var mark = function () { recomputeDirty(form); };
       form.addEventListener("input", mark);
       form.addEventListener("change", mark);

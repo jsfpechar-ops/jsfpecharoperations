@@ -103,3 +103,34 @@ def test_the_check_answers_page_starts_dirty_and_warns_on_leaving(live, no_clien
     assert not page.is_closed()
     assert page.locator("#police-letter-check").is_visible()
     assert no_client == []
+
+
+SAVE_ROW = ".savebar[data-for='property-settings-form']"
+DIRTY = "() => document.querySelector('#property-settings-form').dataset.dirty === '1'"
+
+
+def test_the_check_answers_page_shows_the_save_row_and_warns_with_no_input(live, no_client):  # noqa: F811
+    page, seen = _open(live, [False])
+    with page.expect_response(lambda r: r.url.endswith("/police-letter")):
+        page.locator(READ_BUTTON).click()
+    page.wait_for_selector("#police-letter-check")
+    # Nothing ticked, typed or focused.
+    page.wait_for_function(DIRTY)
+    assert page.locator(SAVE_ROW).is_visible()
+    # One click on plain text, so Chromium treats the page as touched.
+    page.locator("#police-letter-check .police-letter-check-title").click()
+    assert page.locator("#property-settings-form").get_attribute("data-dirty") == "1"
+    assert seen == []
+    with page.expect_event("dialog"):
+        page.close(run_before_unload=True)
+    page.wait_for_timeout(300)
+    assert [kind for kind, _ in seen] == ["beforeunload"]
+    assert not page.is_closed()
+
+    # A clean page stays clean at load.
+    clean = live.open(WIDTH)
+    clean.goto(live.url)
+    clean.wait_for_selector("#property-settings-form")
+    assert clean.locator("#property-settings-form").get_attribute("data-dirty") is None
+    assert not clean.locator(SAVE_ROW).is_visible()
+    assert no_client == []
