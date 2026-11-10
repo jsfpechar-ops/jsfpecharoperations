@@ -126,6 +126,14 @@ def payments_new_page(request: Request):
     raw_stay = str(request.query_params.get("reservation_id") or "")
     selected_reservation_id = int(raw_stay) if raw_stay.isdigit() else None
     prefill = payment_services.get(owner_id, str(request.query_params.get("service") or ""))
+    guest_email_prefill = ""
+    if selected_reservation_id:
+        stay_row = db.query_one(
+            "SELECT r.guest_email FROM reservation r JOIN apartment a ON a.id = r.apartment_id"
+            " WHERE r.id = ? AND a.owner_user_id = ?",
+            (selected_reservation_id, owner_id),
+        )
+        guest_email_prefill = ((stay_row["guest_email"] if stay_row else "") or "").strip()
     return render(
         request,
         "payments_new.html",
@@ -137,6 +145,7 @@ def payments_new_page(request: Request):
                 {"id": s["id"], "label": _stay_label(s)} for s in _stays(owner_id)
             ],
             "selected_reservation_id": selected_reservation_id,
+            "guest_email_prefill": guest_email_prefill,
             "prefill": prefill,
         },
     )
