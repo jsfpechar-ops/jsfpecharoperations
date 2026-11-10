@@ -3892,7 +3892,7 @@ STRINGS.update({
     "needs_you.when.tomorrow": "đến ngày mai",
     "needs_you.when.arrived": "đã đến",
     "needs_you.action.fix": "Sửa khai báo",
-    "needs_you.action.send": "Gửi khai báo",
+    "needs_you.action.send": "Xem lại và gửi",
     "needs_you.action.open": "Mở lượt lưu trú",
     "needs_you.action.send_link": "Gửi liên kết cho khách",
     "needs_you.action.setup": "Hoàn tất thiết lập",
