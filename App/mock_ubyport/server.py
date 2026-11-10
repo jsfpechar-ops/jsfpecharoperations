@@ -520,6 +520,7 @@ def sample_calendar():
         content=sample_airbnb_ics(), media_type="text/calendar; charset=utf-8"
     )
 
+
 @app.post("/reset")
 def reset():
     """Forget the duplicate history, so a test scenario can be replayed."""

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-from app import auth, claim, config, db, demo, stay_fee_filing
+from app import auth, claim, config, db, demo
 
 
 def _clear_demo() -> None:
@@ -76,7 +76,8 @@ def test_seed_imports_stays_without_fetching_the_calendar(monkeypatch):
             "SELECT * FROM reservation WHERE apartment_id = ? ORDER BY date_from",
             (apartment_id,),
         )
-        assert len(stays) == 9
+        # 9 feed stays plus the paid site booking's own reservation.
+        assert len(stays) == 10
         dates = {stay["date_from"] for stay in stays}
         assert today.isoformat() in dates
         assert (today - timedelta(days=1)).isoformat() in dates
@@ -170,17 +171,9 @@ def test_seed_imports_stays_without_fetching_the_calendar(monkeypatch):
         assert db.query_one(
             "SELECT 1 AS x FROM stay_fee_rate WHERE apartment_id = ?", (apartment_id,)
         )
-        last_month = today.replace(day=1) - timedelta(days=1)
-        key = stay_fee_filing.period_key("monthly", last_month)
-        filing = db.query_one(
-            "SELECT * FROM stay_fee_filing WHERE apartment_id = ? AND period_key = ?",
-            (apartment_id, key),
-        )
-        assert filing and filing["total_due_czk"] == 2000
-        assert db.query_one(
-            "SELECT 1 AS x FROM stay_fee_adjustment WHERE apartment_id = ? AND period_key = ? "
-            "AND filing_id = ?",
-            (apartment_id, key, filing["id"]),
+        # No sealed filing: invented rows cannot produce an honest PDF/CSV payload.
+        assert not db.query_one(
+            "SELECT 1 AS x FROM stay_fee_filing WHERE apartment_id = ?", (apartment_id,)
         )
 
         # Guest pay: today's lead guest is charged; two QR payment requests.
@@ -197,9 +190,13 @@ def test_seed_imports_stays_without_fetching_the_calendar(monkeypatch):
         assert all(r["rail"] == "qr" and r["variable_symbol"] for r in requests)
 
         # Door code, cleaning, published property page, one paid site booking.
-        assert db.query_one(
-            "SELECT 1 AS x FROM door_code WHERE reservation_id = ?", (today_stay["id"],)
+        door_code = db.query_one(
+            "SELECT * FROM door_code WHERE reservation_id = ?", (today_stay["id"],)
         )
+        assert door_code
+        # The window matches the one-night stay and is not due before it opens.
+        assert door_code["valid_to"] == (today + timedelta(days=1)).isoformat() + "T11:00:00+00:00"
+        assert door_code["next_attempt_at"] == door_code["valid_to"]
         assert db.query(
             "SELECT 1 AS x FROM cleaning_property WHERE apartment_id IN (?, ?)",
             (apartment_id, loft["id"]),
@@ -221,10 +218,18 @@ def test_seed_imports_stays_without_fetching_the_calendar(monkeypatch):
             "SELECT * FROM property_page WHERE apartment_id = ? AND published = 1", (apartment_id,)
         )
         assert page and page["nightly_price_czk"] == 1500
+        assert page["hide_from_search"] == 1
         booking = db.query_one(
             "SELECT * FROM site_booking WHERE apartment_id = ? AND status = 'paid'", (apartment_id,)
         )
         assert booking and booking["total_czk"] == 3000
+        # A paid booking owns a reservation, so its dates are blocked and it
+        # shows in Stays (booking_direct does the same on payment).
+        assert booking["reservation_id"]
+        site_stay = db.query_one(
+            "SELECT * FROM reservation WHERE id = ?", (booking["reservation_id"],)
+        )
+        assert site_stay and site_stay["source"] == "site" and site_stay["status"] == "active"
 
         assert demo.clear()
         assert not db.query_one(
@@ -252,5 +257,36 @@ def test_seed_imports_stays_without_fetching_the_calendar(monkeypatch):
                 f"SELECT 1 AS x FROM {table} WHERE apartment_id IN (?, ?)",
                 (apartment_id, loft["id"]),
             )
+    finally:
+        _clear_demo()
+
+
+def test_booking_checkout_refuses_demo_apartments(monkeypatch):
+    """A demo property is never publicly bookable, even off the mock."""
+    db.init_db()
+    _clear_demo()
+    monkeypatch.setattr(config, "UBYPORT_ENV", "mock")
+    from app import booking_checkout
+
+    try:
+        owner = auth.create_account(
+            "demo-book@example.test", "Demo Book", role="host", username="demo-book"
+        )
+        studio = demo.seed(owner)
+        assert studio
+        q = {"date_from": "2099-01-01", "date_to": "2099-01-03", "total_czk": 100}
+        assert booking_checkout.start(
+            studio, "slug", q, guest_name="X", guest_email="x@example.test", lang="en"
+        ) == {"error": "unavailable"}
+        assert booking_checkout.start_direct(
+            studio, q, guest_name="X", guest_email="x@example.test", lang="en"
+        ) == {"error": "unavailable"}
+        assert not db.query_one(
+            "SELECT 1 AS x FROM booking_hold WHERE apartment_id = ?", (studio,)
+        )
+        assert not db.query_one(
+            "SELECT 1 AS x FROM site_booking WHERE apartment_id = ? AND status != 'paid'",
+            (studio,),
+        )
     finally:
         _clear_demo()

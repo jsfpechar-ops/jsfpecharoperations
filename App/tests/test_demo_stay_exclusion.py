@@ -408,7 +408,7 @@ def test_demo_seed_extras_are_never_filed(world, monkeypatch):
     assert studio_id
     try:
         assert db.query("SELECT * FROM payment_request WHERE apartment_id = ?", (studio_id,))
-        assert db.query("SELECT * FROM stay_fee_filing WHERE apartment_id = ?", (studio_id,))
+        assert db.query("SELECT * FROM stay_fee_rate WHERE apartment_id = ?", (studio_id,))
         assert db.query("SELECT * FROM cleaning_event WHERE apartment_id = ?", (studio_id,))
         _demo_stay_id, demo_guest = _demo_stay(studio_id)
         reporting.submit_for_apartment(studio_id, mode="demo", ignore_automation=True)

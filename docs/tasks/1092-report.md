@@ -40,3 +40,16 @@ Status: review (implemented by the orchestrator under the owner's exact-phrase o
 
 1. Review PR #886 (branch `vibe/demo-coverage-9320c3`), merge via `scripts/merge-pr-on-green.sh` when CI is green.
 2. On staging: sign in, "Load demo data"; click through Stay fee (filing + adjustment), Payments (paid + awaiting), Door codes, Cleaning, the Stays list (no double-booked property) and the public property page; then "Clear demo data" and confirm an empty dashboard.
+
+## Review round 2 (owner review of PR #886, 2026-11-10) — all fixed
+
+1. Paid `site_booking` now creates the linked `reservation` (source='site', like `booking_direct`), so +14..+16 are blocked and the booking appears in Stays; no guest rows, and demo apartments are never filed.
+2. Demo property page seeds with `hide_from_search=1`, and `booking_checkout.start`/`start_direct` refuse demo apartments (`demo.is_demo_apartment`) before holding dates — pinned by `test_booking_checkout_refuses_demo_apartments`.
+3. Sealed `stay_fee_filing`/`stay_fee_adjustment` removed: invented rows cannot produce an honest sealed PDF/CSV; the live fee pages compute from the demo stays. `stay_fee_rate` + config remain.
+4. Door-code window now ends at the one-night stay's check-out (today+1 11:00) and `next_attempt_at` is set, so `door_codes.reconcile` does not churn on it.
+5. `uby_mark` is derived via `validation.mark_from_ws_user(uby_ws_user)` in `_seed_apartment` (param removed).
+6. The no-overlap feed assertion was already in `test_sample_calendar.py::test_sample_airbnb_ics_never_double_books` (line 39) since the first push; kept, plus the seed-level check.
+7. Moot after (3): no adjustment row anymore.
+8. Blank line restored before `@app.post("/reset")` in the mock server.
+
+Re-run: demo rows 24 passed; booking/property-page rows 116 passed; stay-fee/door-code/payments rows 1088 passed; ruff clean; context_lint OK. Reservation count is now 19 (site booking's own reservation); README updated.

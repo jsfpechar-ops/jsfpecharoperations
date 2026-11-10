@@ -222,7 +222,6 @@ def _seed_apartment(
     internal_name: str,
     city_en: str,
     uby_idub: str,
-    uby_mark: str,
     uby_name: str,
     addr_okres: str,
     addr_obec_cast: str,
@@ -245,7 +244,8 @@ def _seed_apartment(
             "internal_name": internal_name,
             "city_en": city_en,
             "uby_idub": uby_idub,
-            "uby_mark": uby_mark,
+            # The zkratka always follows the WS login (validation.mark_from_ws_user).
+            "uby_mark": validation.mark_from_ws_user(uby_ws_user),
             "uby_name": uby_name,
             "uby_contact": "host@example.com",
             "addr_okres": addr_okres,
@@ -542,7 +542,7 @@ def _enrich_loft(apartment_id: int) -> None:
 
 def _enrich_extras(studio_id: int, loft_id: int, owner_user_id: Optional[int]) -> None:
     """Stay fee, guest pay, payment requests, door code, cleaning, property page."""
-    from . import payment_request, property_page, stay_fee_filing
+    from . import payment_request, property_page
 
     now = db.utcnow()
     today = claim.prague_today()
@@ -576,38 +576,9 @@ def _enrich_extras(studio_id: int, loft_id: int, owner_user_id: Optional[int]) -
             "created_at": now,
         },
     )
-    last_month = today.replace(day=1) - timedelta(days=1)
-    period_key = stay_fee_filing.period_key("monthly", last_month)
-    filing_id = db.insert(
-        "stay_fee_filing",
-        {
-            "apartment_id": studio_id,
-            "period_key": period_key,
-            "version": 1,
-            "cadence": "monthly",
-            "rate_czk": 500,
-            "liable_days": 4,
-            "exempt_days": 1,
-            "total_due_czk": 2000,
-            "total_collected_czk": 1500,
-            "created_at": now,
-        },
-    )
-    db.insert(
-        "stay_fee_adjustment",
-        {
-            "apartment_id": studio_id,
-            "period_key": period_key,
-            "direction": "add",
-            "mode": "people",
-            "people_count": 1,
-            "bed_days": 2,
-            "reason_enc": db.encrypt_secret("Two extra person-days from the demo house book."),
-            "created_by": owner_user_id,
-            "created_at": now,
-            "filing_id": filing_id,
-        },
-    )
+    # No sealed stay_fee_filing: a sealed period needs real past-month stays and
+    # a generated PDF/CSV payload (stay_fee_filing.save), which invented rows
+    # cannot produce honestly. The live fee pages compute from the demo stays.
 
     today_stay = _stay_on(studio_id, today)
     loft_today = _stay_on(loft_id, today)
@@ -662,7 +633,11 @@ def _enrich_extras(studio_id: int, loft_id: int, owner_user_id: Optional[int]) -
                 "state": "pending",
                 "pin_enc": db.encrypt_secret("864209"),
                 "valid_from": f"{today.isoformat()}T15:00:00+00:00",
-                "valid_to": f"{(today + timedelta(days=2)).isoformat()}T11:00:00+00:00",
+                # One-night stay: the window ends at its check-out, and
+                # next_attempt_at is set so reconcile does not pick the row up
+                # every run before the window opens.
+                "valid_to": f"{(today + timedelta(days=1)).isoformat()}T11:00:00+00:00",
+                "next_attempt_at": f"{(today + timedelta(days=1)).isoformat()}T11:00:00+00:00",
                 "created_at": now,
                 "updated_at": now,
             },
@@ -715,7 +690,9 @@ def _enrich_extras(studio_id: int, loft_id: int, owner_user_id: Optional[int]) -
             "checkin_text": "Check-in from 15:00, self check-in with the PIN.",
             "checkout_text": "Check-out by 11:00.",
             "published": 0,
-            "hide_from_search": 0,
+            # Never in the sitemap: a demo flat must not be publicly bookable,
+            # and booking_checkout refuses demo apartments anyway.
+            "hide_from_search": 1,
             "nightly_price_czk": 1500,
             "house_rules": "No smoking. Quiet hours after 22:00.",
             "created_at": now,
@@ -724,7 +701,7 @@ def _enrich_extras(studio_id: int, loft_id: int, owner_user_id: Optional[int]) -
     )
     property_page.publish_page(studio_id, published=True)
     if owner_user_id is not None:
-        db.insert(
+        booking_id = db.insert(
             "site_booking",
             {
                 "apartment_id": studio_id,
@@ -748,6 +725,30 @@ def _enrich_extras(studio_id: int, loft_id: int, owner_user_id: Optional[int]) -
                 "created_at": now,
                 "updated_at": now,
             },
+        )
+        # A paid booking owns a reservation (booking_direct does the same), so
+        # the dates are blocked and the booking shows in Stays. No guest rows,
+        # and demo apartments are never filed, so nothing reaches the police.
+        reservation_id = db.insert(
+            "reservation",
+            {
+                "apartment_id": studio_id,
+                "source": "site",
+                "uid": f"site-{booking_id}",
+                "date_from": (today + timedelta(days=14)).isoformat(),
+                "date_to": (today + timedelta(days=16)).isoformat(),
+                "summary": "Demo Site Guest",
+                "expected_guests_override": 2,
+                "guest_email": "site.guest@demo.ubyhost.test",
+                "status": "active",
+                "created_at": now,
+                "updated_at": now,
+            },
+        )
+        db.update(
+            "site_booking",
+            booking_id,
+            {"reservation_id": reservation_id, "updated_at": now},
         )
 
 
@@ -810,7 +811,6 @@ def seed(owner_user_id: Optional[int] = None) -> Optional[int]:
         internal_name=DEMO_APARTMENT,
         city_en="Prague",
         uby_idub="100227887600",
-        uby_mark="12CDEF",
         uby_name="Vinohrady Studio",
         addr_okres="Praha 2",
         addr_obec_cast="Vinohrady",
@@ -835,7 +835,6 @@ def seed(owner_user_id: Optional[int] = None) -> Optional[int]:
         internal_name=DEMO_LOFT,
         city_en="Prague",
         uby_idub="100227887601",
-        uby_mark="34ABCD",
         uby_name="Karlín Loft",
         addr_okres="Praha 8",
         addr_obec_cast="Karlín",
