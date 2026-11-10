@@ -55,19 +55,9 @@ Commit once at the end: `1094: H0 answers`. Run every command with `| tail -30` 
 
 Everything under `App/`, `go/`, `scripts/`, `docs/` other than the answers file and this brief's `Status` line. No test run, no server start, no dependency. Never push to `main`.
 
-## 6. Output format of the answers file
+## 6. Commands
 
-One `##` heading per question (`## (a)` to `## (f)`, then `## Tests per route`), each starting with a two-line verdict, then a table:
-
-- (a): `Route | Method | Function file:line | Fields written | Posted from template | Claim checked | Lead checked | Class | Audit event`
-- (b): `Where file:line | Language | Read or write | Via headcount or bypass or host or sync | Copies the rule`
-- (c): `Path | Insert writes count | Update writes count | Evidence file:line | Effect on a lowered count`
-- (d): `Reader file:line | Empty or NULL means | Default` (plus the recommended fallback)
-- (e): `File | Function | Current rule | Columns Go reads | Test table`
-- (f): `Item | Held in | Survives a stateless confirm | Evidence | Option`
-- Tests: `Route | Test file | Test names or none`
-
-Last section `## Needs a code change` (never made here): one line per finding, `file:line | what is wrong | which brief (H1 to H4) should fix it`. A bypassing writer, a route with no claim or lead check, or a count copy not listed in the plan goes here. Evidence is `file:line`, never a guess: write `not found` when grep finds nothing. No guest data, names, IDUBs or addresses in the file (public repo). Keep it under 300 lines.
+Only greps and reads (section 4), then from the repo root: `python3 scripts/context_lint.py | tail -30`. No pytest, no `go test`.
 
 ## 7. Acceptance
 
@@ -82,3 +72,17 @@ Last section `## Needs a code change` (never made here): one line per finding, `
 ## 8. Stop and ask
 
 STOP and report `blocked` if: a file named here does not exist and grep finds no replacement; you would need to run the app. If any finding would need a code change, write it down in `## Needs a code change` and carry on: never make it. At 30 tool calls or 60k tokens: write what you have, mark the open questions `not answered`, commit, and end with `Done: (a) to (k). Left: ...`.
+
+## 9. Report (output format of the answers file)
+
+One `##` heading per question (`## (a)` to `## (f)`, then `## Tests per route`), each starting with a two-line verdict, then a table:
+
+- (a): `Route | Method | Function file:line | Fields written | Posted from template | Claim checked | Lead checked | Class | Audit event`
+- (b): `Where file:line | Language | Read or write | Via headcount or bypass or host or sync | Copies the rule`
+- (c): `Path | Insert writes count | Update writes count | Evidence file:line | Effect on a lowered count`
+- (d): `Reader file:line | Empty or NULL means | Default` (plus the recommended fallback)
+- (e): `File | Function | Current rule | Columns Go reads | Test table`
+- (f): `Item | Held in | Survives a stateless confirm | Evidence | Option`
+- Tests: `Route | Test file | Test names or none`
+
+Last section `## Needs a code change` (never made here): one line per finding, `file:line | what is wrong | which brief (H1 to H4) should fix it`. A bypassing writer, a route with no claim or lead check, or a count copy not listed in the plan goes here. Evidence is `file:line`, never a guess: write `not found` when grep finds nothing. No guest data, names, IDUBs or addresses in the file (public repo). Keep it under 300 lines.
