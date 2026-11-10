@@ -194,6 +194,7 @@ def _days_ago_iso(days: int) -> str:
 
 
 # 0947: ubyhost_device (cookie: account id and random id, 30 days, nothing stored server-side) needs no purge; it expires with the cookie and "log out of all devices" clears it.
+# 1082: guest_form_draft (an unfinished guest form, encrypted) goes when the form is sent, else 7 days after its last change or the day after check-out, whichever comes first (guest_draft.purge in the 12-hour photo sweep, never a dry run; workspace deletion below).
 # 0396: apartment.leon_terms_* (the host's Leon terms acceptance) are kept while the property exists.
 def _audit_retention_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
     """Delete audit rows past the window, but never the acceptance evidence.
@@ -340,6 +341,11 @@ def _delete_workspace(owner_id: int) -> None:
         guest_ids = [row["id"] for row in cur.fetchall()]
         cur.execute(
             "DELETE FROM guest WHERE reservation_id IN "
+            f"(SELECT id FROM reservation WHERE apartment_id IN {apartments})",
+            (owner_id,),
+        )
+        cur.execute(
+            "DELETE FROM guest_form_draft WHERE reservation_id IN "
             f"(SELECT id FROM reservation WHERE apartment_id IN {apartments})",
             (owner_id,),
         )

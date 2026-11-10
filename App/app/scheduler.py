@@ -22,6 +22,7 @@ from . import (
     dsr,
     fee_update,
     filing_watchdog,
+    guest_draft,
     guest_guide_import,
     guest_guide_merge,
     guide_photos,
@@ -330,6 +331,11 @@ def _job_photo_sweep() -> None:
         # WP20: unconfirmed sign-ups after 7 days, ad click IDs after the
         # Google Ads import window. Runs with sign-up off too, so switching
         # the feature off never leaves a click ID behind.
+        # Brief 1082: the owner rule for unfinished guest forms (7 days after
+        # the last change or the day after check-out). Runs with autopurge off too.
+        drafts = guest_draft.purge()
+        if drafts:
+            log.info("guest draft purge deleted %s draft(s)", drafts)
         signup_counts = signup.purge()
         if any(signup_counts.values()):
             log.info("signup purge: %s", signup_counts)

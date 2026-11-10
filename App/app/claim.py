@@ -386,9 +386,7 @@ def _completion_fee(apartment, reservation) -> Optional[Dict]:
             for line in charge["lines"]
             if int(line["liable_nights"]) > 0
         ]
-        ways = stay_fee.guest_pay_ways(
-            apartment, reservation, charge, stay_fee.qr_offered_for_reservation(reservation)
-        )
+        ways = stay_fee.guest_pay_ways(apartment, reservation, charge)
         return {
             "total": int(charge["total_czk"]),
             "lines": lines,
