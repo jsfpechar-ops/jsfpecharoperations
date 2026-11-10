@@ -1080,6 +1080,12 @@ def test_the_receipt_shows_the_fee_and_its_calculation_without_naming_a_method()
         "lines": [(2, 600)],
         "rate": 300,
         "rails": ["iban", "revolut", "cash"],
+        "ways": [
+            {"key": "iban", "payee": "Host s.r.o.", "account": "CZ65 0800 0000 1920 0014 5399",
+             "spayd": ""},
+            {"key": "revolut", "link": "https://revolut.me/host"},
+            {"key": "cash", "note": ""},
+        ],
         "vs": "1234",
     }
     content = _completion_with_fee(fee)
@@ -1087,8 +1093,8 @@ def test_the_receipt_shows_the_fee_and_its_calculation_without_naming_a_method()
     assert "Local stay fee" in text
     assert "600 CZK" in text
     assert "Guest 1: 2 nights" in text
-    assert "Bank transfer: use variable symbol 1234." in text
-    assert "payment details are on your stay page" in text
+    assert "Variable symbol: 1234" in text
+    assert "Cash: Pay in cash when you arrive." in text
     assert "paid by" not in text.lower()
     assert "used" not in text.lower()
     assert "Local stay fee" in html.unescape(content["html"])
@@ -1097,12 +1103,13 @@ def test_the_receipt_shows_the_fee_and_its_calculation_without_naming_a_method()
 def test_the_receipt_without_a_fee_has_no_fee_heading():
     content = _completion_content("en")
     assert "Local stay fee" not in content["text"]
-    assert "Pay by:" not in content["text"]
+    assert "Already paid?" not in content["text"]
 
 
 def test_the_receipt_without_bank_transfer_has_no_variable_symbol_line():
-    fee = {"total": 600, "lines": [(2, 600)], "rate": 300, "rails": ["cash"], "vs": "1234"}
+    fee = {"total": 600, "lines": [(2, 600)], "rate": 300, "rails": ["cash"],
+           "ways": [{"key": "cash", "note": "At the reception desk."}], "vs": "1234"}
     text = _completion_with_fee(fee)["text"]
-    assert "Pay by: Cash." in text
-    assert "payment details are on your stay page" in text
+    assert "Cash: At the reception desk." in text
+    assert "Variable symbol" not in text
     assert "variable symbol" not in text

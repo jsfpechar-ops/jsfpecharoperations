@@ -306,14 +306,36 @@ def _send_code_mail(door_code_id: int) -> None:
     if not shown or shown.get("state") != "issued":
         return
     lang = claim["lang"] or "en"
-    content = mail_notify.build_door_code(
+    build = dict(
         lang=lang,
         property_name=apartment["internal_name"] or "",
         checkin=shown["checkin"],
         checkout=shown["checkout"],
         first_use_by=shown["first_use_by"],
     )
+    # The fee block rides along only when the completion mail (the bill) has
+    # gone and the group is still whole: a partial group is not billed. Any
+    # failure drops the fee block, never the code mail.
+    content = None
+    try:
+        if claim["completion_notified_at"]:
+            from . import claim as claim_module  # `claim` is the row here; the modules import each other
+            from . import reporting
+
+            progress = reporting.reservation_progress(reservation)
+            expected = progress["expected"]
+            if expected is not None and progress["filled"] >= expected:
+                fee = claim_module._completion_fee(apartment, reservation)
+                if fee:
+                    content = mail_notify.build_door_code(**build, fee=fee)
+    except Exception:
+        log.exception("door code %s: fee block dropped from the code mail", door_code_id)
+        content = None
+    if content is None:
+        content = mail_notify.build_door_code(**build)
     payload = mail_notify.guest_payload(apartment, content, lang)
+    if content.get("qr_spayd"):
+        payload[mail.QR_SPAYD_KEY] = content["qr_spayd"]
     payload[mail.DOOR_CODE_KEY] = row["pin_enc"]
     outbox_id = mail.enqueue(
         kind="door_code",

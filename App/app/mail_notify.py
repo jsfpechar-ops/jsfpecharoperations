@@ -1431,6 +1431,79 @@ def build_claim_link(
     }
 
 
+def _fee_block(lang: str, fee: Dict[str, Any]) -> Tuple[List[str], List[str], str]:
+    """The stay fee as a bill: HTML blocks, plain-text lines and the SPAYD string.
+
+    Lists only the pay ways that work, each with its full details, and ends
+    with a question, because the app cannot see whether the guest has paid.
+    The QR is an inline ``cid:`` attachment built from the returned SPAYD
+    string; "" means no QR.
+    """
+    blocks: List[str] = []
+    text_lines: List[str] = []
+    spayd = ""
+    fee_heading = _guest_text(lang, "mail_completion_fee_heading")
+    fee_total = _guest_text(lang, "mail_completion_fee_total", total=fee["total"])
+    blocks.extend([_block_heading(fee_heading), _block_paragraph(fee_total)])
+    text_lines.extend([fee_heading, fee_total])
+    fee_rows: List[Tuple[str, str]] = [
+        (
+            _guest_text(lang, "fee_guest_n", n=index),
+            _guest_text(
+                lang, "fee_person_line", days=days, rate=fee["rate"], amount=amount
+            ),
+        )
+        for index, (days, amount) in enumerate(fee["lines"], start=1)
+    ]
+    calc_title = _guest_text(lang, "mail_completion_fee_calc_title")
+    blocks.append(_block_panel(calc_title, fee_rows))
+    text_lines.extend(["", calc_title, *(f"{label}: {value}" for label, value in fee_rows)])
+    ways = fee.get("ways") or []
+    amount_text = _guest_text(lang, "fee_amount", amount=fee["total"])
+    if not ways:
+        no_rails = _guest_text(lang, "fee_no_rails")
+        blocks.append(_block_paragraph(no_rails))
+        text_lines.extend(["", no_rails])
+    else:
+        once = _guest_text(lang, "mail_completion_fee_once")
+        blocks.append(_block_paragraph(once))
+        text_lines.extend(["", once])
+        for way in ways:
+            if way["key"] == "iban":
+                title = _guest_text(lang, "fee_rail_iban")
+                rows: List[Tuple[str, ...]] = []
+                if way.get("payee"):
+                    rows.append((_guest_text(lang, "fee_payee"), way["payee"]))
+                rows.extend([
+                    (_guest_text(lang, "fee_iban"), way["account"], True),
+                    (_guest_text(lang, "fee_amount_label"), amount_text),
+                    (_guest_text(lang, "fee_vs_label"), fee["vs"], True),
+                ])
+                blocks.append(_block_panel(title, rows))
+                text_lines.extend(["", title, *(f"{row[0]}: {row[1]}" for row in rows)])
+                if way.get("spayd"):
+                    qr_alt = _guest_text(lang, "fee_qr_alt")
+                    blocks.append(
+                        f'<tr><td style="padding:8px 24px 0 24px;">'
+                        f'<img src="cid:{mail.QR_CONTENT_ID}" width="200" height="200" alt="{_esc(qr_alt)}" '
+                        f'style="display:block;border:0;width:200px;height:200px;"></td></tr>'
+                    )
+                    spayd = way["spayd"]
+            elif way["key"] == "revolut":
+                label = _guest_text(lang, "fee_revolut_button", amount=amount_text)
+                blocks.append(_block_button(way["link"], label))
+                text_lines.extend(["", f"{label}: {way['link']}"])
+            elif way["key"] == "cash":
+                note = way.get("note") or _guest_text(lang, "fee_cash_default")
+                line = f"{_guest_text(lang, 'fee_rail_cash')}: {note}"
+                blocks.append(_block_paragraph(line))
+                text_lines.extend(["", line])
+    already = _guest_text(lang, "mail_completion_fee_already")
+    blocks.append(_block_paragraph(already))
+    text_lines.extend(["", already])
+    return blocks, text_lines, spayd
+
+
 def build_door_code(
     *,
     lang: str,
@@ -1439,6 +1512,7 @@ def build_door_code(
     checkout: str,
     first_use_by: str,
     host: Optional[Dict[str, str]] = None,
+    fee: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, str]:
     subject = _guest_text(lang, "mail_door_code_subject", property=property_name)
     title = _guest_text(lang, "door_code_title")
@@ -1455,8 +1529,13 @@ def build_door_code(
         first_use = _guest_text(lang, "door_code_first_use", deadline=first_use_by)
         blocks.append(_block_paragraph(first_use))
         text_lines.append(first_use)
+    spayd = ""
+    if fee:
+        fee_blocks, fee_text, spayd = _fee_block(lang, fee)
+        blocks.extend(fee_blocks)
+        text_lines.extend(["", *fee_text])
     text = "\n".join([*text_lines, "", "--", *_footer_text(footer_lines)])
-    return {
+    content = {
         "subject": subject,
         "text": text,
         "html": _shell(
@@ -1467,6 +1546,9 @@ def build_door_code(
             footer_lines=footer_lines,
         ),
     }
+    if spayd:
+        content["qr_spayd"] = spayd
+    return content
 
 
 def door_code_notice(door_code_id: int, variant: str) -> Optional[int]:
@@ -1645,20 +1727,32 @@ def build_completion(
     have to be minted here; a receipt is the wrong place to rotate the guest's
     access. The stay address works on the device that confirmed, which is where
     the guest just finished filling the form in. An invoice is its own mail
-    (``build_invoice_issued``), so the receipt stays buttonless and closed.
+    (``build_invoice_issued``), so the receipt stays buttonless unless a fee has a Revolut way, and closed.
 
     The only link is for the copied host and opens the stay in the app; the guest gets no link, because their stay page is already on their device.
     """
-    subject = _guest_text(lang, "mail_completion_subject", property=property_name)
-    intro = _guest_text(
-        lang, "mail_completion_intro", property=property_name, dates=dates
-    )
+    if fee:
+        subject = _guest_text(
+            lang, "mail_completion_subject_fee", property=property_name, total=fee["total"]
+        )
+        intro = _guest_text(
+            lang, "mail_completion_intro_fee", property=property_name, dates=dates
+        )
+        heading = _guest_text(lang, "mail_completion_heading_fee")
+        preheader = _guest_text(lang, "mail_completion_preheader_fee")
+    else:
+        subject = _guest_text(lang, "mail_completion_subject", property=property_name)
+        intro = _guest_text(
+            lang, "mail_completion_intro", property=property_name, dates=dates
+        )
+        heading = _guest_text(lang, "mail_completion_heading")
+        preheader = _guest_text(lang, "mail_completion_preheader")
     note = _guest_text(lang, "mail_completion_note")
     footer_lines = _guest_footer_lines(lang, property_name, host)
 
-    # Slot 1: the status. Deliberately buttonless -- see the card rules above.
+    # Slot 1: the status. Deliberately buttonless unless a fee has a Revolut way -- see the card rules above.
     blocks = [
-        _block_heading(_guest_text(lang, "mail_completion_heading")),
+        _block_heading(heading),
         _block_paragraph(intro),
     ]
     text_lines = [intro]
@@ -1682,34 +1776,11 @@ def build_completion(
         blocks.append(_block_panel(_guest_text(lang, "mail_completion_panel_title"), rows))
         text_lines.extend(["", *(f"{label}: {value}" for label, value in rows)])
 
+    spayd = ""
     if fee:
-        fee_heading = _guest_text(lang, "mail_completion_fee_heading")
-        fee_total = _guest_text(lang, "mail_completion_fee_total", total=fee["total"])
-        blocks.extend([_block_heading(fee_heading), _block_paragraph(fee_total)])
-        text_lines.extend(["", fee_heading, fee_total])
-        fee_rows: List[Tuple[str, str]] = [
-            (
-                _guest_text(lang, "fee_guest_n", n=index),
-                _guest_text(
-                    lang, "fee_person_line", days=days, rate=fee["rate"], amount=amount
-                ),
-            )
-            for index, (days, amount) in enumerate(fee["lines"], start=1)
-        ]
-        calc_title = _guest_text(lang, "mail_completion_fee_calc_title")
-        blocks.append(_block_panel(calc_title, fee_rows))
-        text_lines.extend(["", calc_title, *(f"{label}: {value}" for label, value in fee_rows)])
-        # The app cannot see how the guest pays, so this lists the enabled
-        # ways only and never names the one that was used.
-        ways = [_guest_text(lang, f"fee_rail_{key}") for key in fee["rails"]]
-        if ways:
-            ways_line = _guest_text(lang, "mail_completion_fee_ways", ways=", ".join(ways))
-            blocks.append(_block_paragraph(ways_line))
-            text_lines.append(ways_line)
-        if "iban" in fee["rails"]:
-            vs_line = _guest_text(lang, "mail_completion_fee_vs", vs=fee["vs"])
-            blocks.append(_block_paragraph(vs_line))
-            text_lines.append(vs_line)
+        fee_blocks, fee_text, spayd = _fee_block(lang, fee)
+        blocks.extend(fee_blocks)
+        text_lines.extend(["", *fee_text])
 
     if door_code:
         code_title = _guest_text(lang, "door_code_title")
@@ -1742,17 +1813,20 @@ def build_completion(
     text_lines.extend(["", note])
 
     text = "\n".join([*text_lines, "", "--", *_footer_text(footer_lines)])
-    return {
+    content = {
         "subject": subject,
         "text": text,
         "html": _shell(
             lang=lang,
             title=property_name,
-            preheader=_guest_text(lang, "mail_completion_preheader"),
+            preheader=preheader,
             blocks=blocks,
             footer_lines=footer_lines,
         ),
     }
+    if spayd:
+        content["qr_spayd"] = spayd
+    return content
 
 
 def build_fee_update(
