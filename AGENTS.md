@@ -25,7 +25,7 @@ Read this file, then [status](docs/context/status.md). Open nothing else unless 
 5. SQL only through `App/app/db.py` helpers, Postgres-portable. A schema change is a new `App/app/migrations/` file.
 6. Light mode only. Auth forms work without JavaScript.
 7. Template, CSS or guest-page change: the browser and geometry tests for the changed pages pass with 0 skipped, plus one 390 px screenshot per changed page in the report.
-8. Never push to `main`. Merge only with `scripts/merge-pr-on-green.sh`. Production deploy is manual, done by the owner.
+8. Never push to `main`. Merge only with `scripts/merge-pr-on-green.sh`. Green merges auto-deploy; keep drafts until they may ship.
 9. Copy: one explanation lives in one place; no sentence the button already says; write "no tracking cookies", never "no cookies".
 10. UX gate (owner does not review UX; you do): a PR touching a host page merges only after you ran `test_layout_lint_browser.py` green, opened the 390/768/1280 screenshots of each touched page, and wrote per page in the PR what you saw. Never ask the owner, never silence a finding. Tick the [design-system checklist](docs/design/design-system.md) in the PR. [Steps](docs/context/workflow.md#ux-gate).
 

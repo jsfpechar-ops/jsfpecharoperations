@@ -10,7 +10,7 @@ Updated: 2026-11-10.
 - AI: `havel,leon,guide_import` (`guide_translate` off). Stripe test. Guest QR 404 on both when the owner has no IBAN.
 
 ## Now
-- 11-10: [Speed](../plans/speed-and-ease.md)/[group](../plans/guest-group-registration.md) overnight build: merged #854-#867 (not deployed). **Owner:** read-only server count before deploying #859 (K-F20). Held drafts for copy review: #868 (F1 bill mail), #869 (F3 fee update mail); 1079 (S15 child box) in build.
+- 11-10: [Speed](../plans/speed-and-ease.md)/[group](../plans/guest-group-registration.md) overnight build: merged and auto-deployed #854-#867, #871; late-filing count was 0. Held drafts for copy review: #868 (F1 bill mail), #869 (F3 fee update mail).
 - 11-09: 1051 stay-fee month filter (cache `20261109-1051a`), 1053 stay-fee rows + centred editor (`20261109-1053a`): draft PRs.
 - 11-06: #790 OCR tip + inline-flex help-tip. [handoff](../tasks/ux-remediation-handoff.md).
 - 11-07: 0990-0992 (throttle, PG indexes 00008, edge cache) in review. **Owner:** deploy, `pg_schema.py apply`, CF rule, Grafana.
