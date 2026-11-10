@@ -2376,7 +2376,9 @@ def _refuse_apartment_save(
     if letter_unconfirmed:
         # 1085: a pre-filled letter value saves only with its own tick.
         listed, _unticked = police_letter.confirmed_fields(form)
-        save_errors.append(_save_error("police", f"letter_ok_{letter_unconfirmed[0]}"))
+        save_errors.extend(
+            _save_error("police", f"letter_ok_{name}") for name in letter_unconfirmed
+        )
         extra.update(
             {
                 "settings_section": "reporting",

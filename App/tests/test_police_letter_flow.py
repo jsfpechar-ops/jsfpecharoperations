@@ -267,7 +267,8 @@ def test_paste_shows_the_values_to_check_and_saves_nothing(host, no_client):
     assert _en("police_letter.source_login", line=3) in mark_row
     assert f"<code>Přihlašovací jméno: {SAMPLE_WS_USER}</code>" in mark_row
     assert _en("police_letter.source", line=5) in _row(page, "uby_idub")
-    assert page.count(_en("police_letter.check_against")) == 3
+    assert "Check this against your letter" not in page
+    assert page.count(_en("police_letter.confirm")) == 3
     assert _en("police_letter.saved_now", value=SAVED_IDUB) in _row(page, "uby_idub")
 
     boxes = re.findall(r'<input type="checkbox" id="(letter_ok_[a-z_]+)"[^>]*>', page)
@@ -275,7 +276,7 @@ def test_paste_shows_the_values_to_check_and_saves_nothing(host, no_client):
     for box in re.findall(r'<input type="checkbox" id="letter_ok_[^>]*>', page):
         assert " required" in box and " checked" not in box
     assert 'name="letter_fields" value="uby_idub,uby_ws_user,uby_mark"' in page
-    assert _en("police_letter.by_hand") in _row(page, "uby_ws_password")
+    assert 'data-letter-row="uby_ws_password"' not in page
 
     password_input = re.search(r'<input type="password" id="uby_ws_password"[^>]*>', page).group(0)
     assert "value=" not in password_input
@@ -883,3 +884,159 @@ def test_the_figure_uses_real_labels_and_fake_values(host):
     assert 'role="img" aria-labelledby="pl-fig-t"' in figure
     assert "style=" not in figure and "<style" not in figure and "#" not in figure
     assert SAMPLE_WS_PASSWORD not in figure
+
+
+def test_two_missing_ticks_are_two_errors(host, no_client):
+    """S3: the summary counts every unticked value, and the refusal is a 400."""
+    before = dict(_apartment())
+    response = host.post(
+        f"/apartments/{before['id']}",
+        data=_letter_payload(letter_ok_uby_idub=None, letter_ok_uby_mark=None),
+        follow_redirects=False,
+    )
+    assert response.status_code == 400
+    page = response.text
+    assert 'id="letter_ok_uby_idub-error"' in page
+    assert 'id="letter_ok_uby_mark-error"' in page
+    assert 'id="letter_ok_uby_ws_user-error"' not in page
+    assert 'data-first-error="letter_ok_uby_idub"' in page
+    summary = re.search(r"data-save-summary[^>]*><span class=\"grow\">([^<]*)<", page).group(1)
+    assert html.unescape(summary) == str(
+        host_i18n.translate_plural("en", "property_page.save_failed", 2)
+    )
+    assert dict(_apartment()) == before
+
+
+# --- browser: the v2 stylesheet really styles the helper (1085 attempt 2) ---
+
+
+def test_the_letter_helper_is_styled_in_the_browser(host, no_client):
+    """The property editor is a v2 page: the rules must live in app2.css.
+
+    Set UBYHOST_SHOT_DIR to also write the 390/768/1280 review screenshots.
+    """
+    import os
+    import socket
+    import time
+
+    import uvicorn
+
+    if os.environ.get("UBYHOST_REQUIRE_BROWSER") == "1":
+        import playwright.sync_api as sync_api
+    else:
+        sync_api = pytest.importorskip("playwright.sync_api")
+    from tests.browser_support import chromium_launch_kwargs, settle_motion
+
+    apartment = _apartment()
+    with socket.socket() as sock:
+        sock.bind(("127.0.0.1", 0))
+        port = sock.getsockname()[1]
+    server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, log_level="error"))
+    thread = threading.Thread(target=server.run, daemon=True)
+    thread.start()
+    deadline = time.time() + 15
+    while not server.started and time.time() < deadline:
+        time.sleep(0.05)
+    assert server.started, "the test server did not start"
+    base = f"http://127.0.0.1:{port}"
+    shot_dir = os.environ.get("UBYHOST_SHOT_DIR")
+    url = f"{base}/apartments/{apartment['id']}?view=settings&section=reporting#ubyport"
+
+    def shot(page, name, width):
+        if shot_dir:
+            page.wait_for_timeout(700)
+            Path(shot_dir).mkdir(parents=True, exist_ok=True)
+            page.locator("#ubyport").screenshot(path=str(Path(shot_dir) / f"{name}-{width}.png"))
+
+    def fits(page):
+        return page.evaluate(
+            "() => document.documentElement.scrollWidth <= document.documentElement.clientWidth"
+        )
+
+    try:
+        with sync_api.sync_playwright() as playwright:
+            browser = playwright.chromium.launch(**chromium_launch_kwargs())
+            for width in (390, 768, 1280):
+                context = browser.new_context(viewport={"width": width, "height": 1000})
+                context.add_cookies(
+                    [{"name": auth.SESSION_COOKIE, "value": host.cookies.get(auth.SESSION_COOKIE), "url": base + "/"}]
+                )
+                page = context.new_page()
+                page.goto(url)
+                page.locator("details.police-letter-find > summary").click()
+                page.locator("details.police-letter-paste > summary").click()
+                page.wait_for_timeout(400)
+                settle_motion(page)
+                style = page.evaluate(
+                    """() => {
+                      const css = (sel) => getComputedStyle(document.querySelector(sel));
+                      const box = (sel) => document.querySelector(sel).getBoundingClientRect();
+                      const find = css('details.police-letter-find');
+                      return {
+                        fill: css('.pl-sheet').fill,
+                        svgWidth: box('.police-letter-svg').width,
+                        findBorderLeft: find.borderLeftWidth,
+                        findRadius: find.borderTopLeftRadius,
+                        summaryHeight: box('details.police-letter-find > summary').height,
+                        summaryLeft: box('details.police-letter-paste > summary').left,
+                        textareaLeft: box('#letter_text').left,
+                        buttonBottom: box('details.police-letter-paste .actions button').bottom,
+                        idubTop: box('#uby_idub').top,
+                      };
+                    }"""
+                )
+                assert style["fill"] != "rgb(0, 0, 0)", "the figure is unstyled (dead CSS)"
+                assert 100 < style["svgWidth"] <= 360.5
+                assert style["findBorderLeft"] == "0px" and style["findRadius"] == "0px"
+                assert style["summaryHeight"] >= 44
+                assert abs(style["summaryLeft"] - style["textareaLeft"]) < 1
+                assert style["idubTop"] - style["buttonBottom"] >= 12
+                assert fits(page)
+                shot(page, "helpers-open", width)
+
+                page.fill("#letter_text", LETTER)
+                with page.expect_response(lambda r: r.url.endswith("/police-letter")) as pasted:
+                    page.locator("details.police-letter-paste .actions button").click()
+                assert pasted.value.status == 422
+                page.wait_for_selector("#police-letter-check")
+                check = page.evaluate(
+                    """() => {
+                      const label = document.querySelector('label[for=letter_ok_uby_idub]');
+                      const input = document.querySelector('#letter_ok_uby_idub');
+                      return {
+                        nameDisplay: getComputedStyle(document.querySelector('.police-letter-name')).display,
+                        labelDisplay: getComputedStyle(label).display,
+                        labelHeight: label.getBoundingClientRect().height,
+                        boxWidth: input.getBoundingClientRect().width,
+                        boxHeight: input.getBoundingClientRect().height,
+                        value: document.querySelector('#uby_idub').value,
+                        password: document.querySelector('#uby_ws_password').value,
+                        text: document.querySelector('#letter_text').value,
+                      };
+                    }"""
+                )
+                assert check["nameDisplay"] == "block"
+                assert check["labelDisplay"] == "flex" and check["labelHeight"] >= 44
+                assert (check["boxWidth"], check["boxHeight"]) == (20, 20)
+                assert check["value"] == SAMPLE_IDUB
+                assert check["password"] == "" and check["text"] == ""
+                assert fits(page)
+                shot(page, "check-block", width)
+
+                page.check("#letter_ok_uby_ws_user")
+                with page.expect_response(lambda r: r.url.endswith("/test-connection")) as refused:
+                    page.locator('button[formaction$="/test-connection"]').click()
+                assert refused.value.status == 400
+                page.wait_for_selector("#letter_ok_uby_idub-error")
+                assert page.locator("#letter_ok_uby_mark-error").count() == 1
+                assert page.locator("#letter_ok_uby_ws_user-error").count() == 0
+                assert page.locator("#letter_ok_uby_ws_user").is_checked()
+                assert fits(page)
+                shot(page, "refused-save", width)
+                context.close()
+            browser.close()
+    finally:
+        server.should_exit = True
+        thread.join(timeout=5)
+    assert no_client == []
+    assert _apartment()["uby_idub"] == SAVED_IDUB

@@ -127,7 +127,7 @@
 <div class="form prop-form-single property-detail">
 <div class="form-main">
 {#- 1030: at >=768 one section shows at a time; a hash-less "Reporting & fees" link means the Stay fee (police links carry #ubyport). -#}
-<div class="prop-layout"{% if settings_section == 'reporting' %} data-start-section="sec-fee"{% endif %}>
+<div class="prop-layout"{% if letter_rows or letter_status %} data-start-section="sec-police"{% elif settings_section == 'reporting' %} data-start-section="sec-fee"{% endif %}>
 <nav class="prop-nav prop-wide-only" aria-label="{{ t('nav.settings') }}">
 <a href="#sec-basics"><span class="dot {{ 'g' if address_text else 'r' }}" aria-hidden="true"></span>{{ t('property_page.sec.basics.title') }}</a>
 <a href="#sec-police"><span class="dot {{ 'g' if police_ok else 'r' }}" aria-hidden="true"></span>{{ t('property_page.sec.police.title') }}</a>
@@ -338,19 +338,14 @@
           <p class="police-letter-src small">{{ t('police_letter.source_login' if row.name == 'uby_mark' else 'police_letter.source', line=row.line) }}
             {%- for src in row.source %}<code>{{ src }}</code><input type="hidden" name="letter_src_{{ row.name }}_{{ loop.index }}" value="{{ src }}">{% endfor %}</p>
           {% endif %}
-          <p class="small">{{ t('police_letter.check_against') }}</p>
           {% if row.saved %}<p class="small muted">{{ t('police_letter.saved_now', value=row.saved) }}</p>{% endif %}
-          <label class="checkline" for="letter_ok_{{ row.name }}"><input type="checkbox" id="letter_ok_{{ row.name }}" name="letter_ok_{{ row.name }}" value="1" required{% if row.ticked %} checked{% endif %}{% if row.error %} aria-invalid="true" aria-describedby="letter_ok_{{ row.name }}-error"{% endif %}>{{ t('police_letter.confirm') }}</label>
+          <div class="checkline"><input type="checkbox" id="letter_ok_{{ row.name }}" name="letter_ok_{{ row.name }}" value="1" required{% if row.ticked %} checked{% endif %}{% if row.error %} aria-invalid="true" aria-describedby="letter_ok_{{ row.name }}-error"{% endif %}><label for="letter_ok_{{ row.name }}">{{ t('police_letter.confirm') }}<span class="req-star" aria-hidden="true">*</span></label></div>
           {% if row.error %}<p class="err-text" id="letter_ok_{{ row.name }}-error" role="alert" data-field-error>{{ t('police_letter.confirm_missing') }}</p>{% endif %}
           {% else %}
           <p class="small">{{ t('police_letter.' ~ row.state) }}</p>
           {% endif %}
         </div>
         {% endfor %}
-        <div class="police-letter-row" data-letter-row="uby_ws_password">
-          <span class="police-letter-name">{{ t('automation.password') }}</span>
-          <p class="small">{{ t('police_letter.by_hand') }}</p>
-        </div>
       </div>
       {% endif %}
       <div class="grid">

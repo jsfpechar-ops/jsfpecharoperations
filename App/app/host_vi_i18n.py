@@ -1921,7 +1921,6 @@ STRINGS: Dict[str, str] = {
     "police_letter.read_button": "Đọc thư",
     "police_letter.check_title": "Kiểm tra những gì chúng tôi tìm thấy",
     "police_letter.source": "Từ dòng %(line)s trong nội dung của bạn:",
-    "police_letter.check_against": "Hãy đối chiếu với thư của bạn.",
     "police_letter.source_login": "Lấy từ tên đăng nhập ở dòng %(line)s:",
     "police_letter.saved_now": "Hiện đang lưu: %(value)s",
     "police_letter.confirm": "Khớp với thư của tôi",
