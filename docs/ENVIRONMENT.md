@@ -165,6 +165,7 @@ Platform admins see full guest data and all downloads while previewing; optional
 | `UBYHOST_TTLOCK_CLIENT_ID` | unset | TTLock Open Platform client id. |
 | `UBYHOST_TTLOCK_CLIENT_SECRET` | unset | Secret. Set in Lightsail `.env` or Render Environment only, never in git. |
 | `UBYHOST_DOOR_CODES_LIVE` | `0` | `1`, `true` or `yes` issues door codes for calendar stays too. Leave off until manual-stay acceptance passes. |
+| `UBYHOST_HEADCOUNT_LEAD_LIVE` | `0` | `1`, `true` or `yes` lets a lead guest lower the head count (brief 1095). Leave off until the host notice (H3) is live. |
 | `UBYHOST_TTLOCK_MONTHLY_CALLS` | `30000` | Shared monthly API call budget (all hosts). |
 
 On **Render `ubyhost-staging`**, keep `UBYHOST_UBYPORT_ENV=mock`, set

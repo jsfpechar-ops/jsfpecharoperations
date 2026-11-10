@@ -89,6 +89,7 @@ def _platform_invoice_step(today: date, dry_run: bool, owner_user_id: Optional[i
 
 
 # ``reservation_claim.fee_*`` (brief 1078) hold an amount and timestamps, are not personal data and go with the claim row.
+# ``reservation.lead_reduced_*`` (brief 1095) hold numbers and a timestamp, are not personal data and go with the reservation row.
 def _claim_email_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
     """Null ``reservation_claim.email`` once the stay is past the grace window."""
     cutoff = (today - timedelta(days=CLAIM_EMAIL_GRACE_DAYS)).isoformat()

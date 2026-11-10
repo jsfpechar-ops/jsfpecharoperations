@@ -363,6 +363,7 @@ WEB_PUSH = os.environ.get("UBYHOST_WEB_PUSH", "1").strip().lower() not in ("0", 
 DOOR_CODE_BUFFER_HOURS = 1
 # Until this is on, only stays added by hand (reservation.source = 'manual') get a door code.
 DOOR_CODES_LIVE = os.environ.get("UBYHOST_DOOR_CODES_LIVE", "0") in ("1", "true", "yes")
+HEADCOUNT_LEAD_LIVE = os.environ.get("UBYHOST_HEADCOUNT_LEAD_LIVE", "0") in ("1", "true", "yes")
 
 # Used to build the guest permalink shown to hosts for copy/paste.
 PUBLIC_BASE_URL = os.environ.get("UBYHOST_PUBLIC_BASE_URL", "http://127.0.0.1:8080").rstrip("/")
