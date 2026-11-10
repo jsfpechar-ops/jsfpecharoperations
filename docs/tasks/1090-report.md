@@ -63,3 +63,8 @@ Merge 1089 first, then this branch's PR with `scripts/merge-pr-on-green.sh`.
 - New screenshot `child-two-adults-390.png`: the 422 with two adult rows, the red line "Choose the adult who is signing." under them, then the role rows; all rows 12 px apart. `adult-signs-for-*`: the sentence now clears the pad by 16 px. The top summary link for the new error has no field id to jump to.
 - Commands, one file at a time, 0 skipped: `test_under15_signature_1090.py` 31 passed; `test_under15_signature_1090_browser.py` 11; `test_guest_browser_e2e.py` 55; `test_a11y_guard_browser.py` 4; `test_layout_lint_browser.py` 4; `test_guest_form_draft_1087_browser.py` 10; `test_static_versions.py` 3; `test_guest_title_1091_browser.py` 10; `test_guest_languages.py` 47; ruff: All checks passed.
 - Acceptance: "1089 on main and merged in" now holds. `git diff --stat origin/main` still includes `tests/test_guest_browser_e2e.py` (deviation 5).
+
+## Attempt 3
+
+- The 422 summary link `#signed_by` now lands on the first adult radio (it carries `id="signed_by"`); `#sign-for-who` gets `aria-invalid` and `aria-describedby` from the `invalid` macro. No CSS or script change, no cache bump.
+- `test_under15_signature_1090.py` 31 passed; `test_under15_signature_1090_browser.py` 11 passed; `test_guest_browser_e2e.py` 55 passed; `test_a11y_guard_browser.py` 4 passed; 0 skipped; ruff: All checks passed.

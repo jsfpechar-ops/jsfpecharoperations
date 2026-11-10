@@ -477,6 +477,10 @@ def test_two_adults_are_two_named_groups(live_server, browser, monkeypatch):
         assert _state(page)["childRole"] == ["parent"]
         gaps = page.evaluate(GAPS_JS)
         assert min(gaps["rows"]) >= 12 and gaps["groups"] >= 12, gaps
+        # The summary's link lands on the adult choice.
+        page.locator('a[href="#signed_by"]').click()
+        page.wait_for_timeout(600)
+        assert page.evaluate("() => document.activeElement.name") == "signed_by"
         _shot(page, "child-two-adults-390.png")
 
         page.locator('#sign-for-who input[type=radio]').nth(1).check()

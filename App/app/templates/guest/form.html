@@ -337,11 +337,11 @@
       <div class="g-field" id="sign-for-child">
         <p class="g-intro" id="sign-for-child-text" data-template="{{ t('sign_for_child', names='{names}') }}">{{ t('sign_for_child', names=(val('first_name') ~ ' ' ~ val('surname')).strip()) }}</p>
         {% if child_signers|length > 1 %}
-        <div id="sign-for-who" role="radiogroup" aria-labelledby="sign-for-who-text">
+        <div id="sign-for-who" role="radiogroup" aria-labelledby="sign-for-who-text" {{ invalid('signed_by') }}>
           <p class="g-intro" id="sign-for-who-text">{{ t('sign_for_who') }}</p>
           {% for a in child_signers %}
           <label class="checkline">
-            <input type="radio" name="signed_by" value="{{ a.id }}"{% if selected_signer == a.id|string %} checked{% endif %}>
+            <input type="radio" name="signed_by" value="{{ a.id }}"{% if loop.first %} id="signed_by"{% endif %}{% if selected_signer == a.id|string %} checked{% endif %}>
             <span>{{ a.name }}</span>
           </label>
           {% endfor %}

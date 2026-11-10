@@ -141,12 +141,16 @@ def test_several_adults_become_radios(stay):
     second = _save(browser, stay, "Auntie", "1.1.1985")
     html = _new(browser, stay)
     for row in (first, second):
-        assert f'<input type="radio" name="signed_by" value="{row["id"]}">' in html
+        assert re.search(
+            r'<input type="radio" name="signed_by" value="%d"( id="signed_by")?>' % row["id"], html
+        )
+    # The error summary's "#signed_by" link lands on the first adult.
+    assert html.count('id="signed_by"') == 1
     assert i18n.translator("en")("sign_for_who") in html
     assert '<input type="hidden" name="signed_by"' not in html
     # Two groups, each named: the adults by their heading, the roles by the sentence.
     assert _tag(html, "sign-for-who") == (
-        '<div id="sign-for-who" role="radiogroup" aria-labelledby="sign-for-who-text">'
+        '<div id="sign-for-who" role="radiogroup" aria-labelledby="sign-for-who-text" >'
     )
     assert _tag(html, "sign-for-role") == (
         '<div id="sign-for-role" role="radiogroup" aria-labelledby="sign-for-child-text">'
@@ -165,6 +169,10 @@ def test_a_role_with_several_adults_and_none_chosen_is_asked_for(stay):
     assert response.status_code == 422
     message = i18n.translator("en")("sign_for_who_missing")
     assert f'id="signed_by-error">{message}</div>' in response.text
+    assert response.text.count('id="signed_by"') == 1
+    assert '<a href="#signed_by">' in response.text
+    who = _tag(response.text, "sign-for-who")
+    assert 'aria-invalid="true"' in who and 'aria-describedby="signed_by-error"' in who
     assert 'name="child_sign_role" value="parent" checked' in response.text
     rows = db.query("SELECT * FROM guest WHERE reservation_id = ?", (stay["reservation_id"],))
     assert not [r for r in rows if r["first_name"].upper() == "KID"]
@@ -258,8 +266,9 @@ def test_a_rerender_keeps_the_ticks_and_a_language_switch_does_not(stay):
         browser, stay, "Kid", _child_birth(stay), signature="",
         signed_by=str(second["id"]), child_sign_role="responsible_adult",
     )
-    assert f'name="signed_by" value="{second["id"]}" checked' in html
-    assert f'name="signed_by" value="{first["id"]}">' in html
+    assert re.search(r'name="signed_by" value="%d"( id="signed_by")? checked' % second["id"], html)
+    assert re.search(r'name="signed_by" value="%d"( id="signed_by")?>' % first["id"], html)
+    assert html.count('id="signed_by"') == 1
     assert 'name="child_sign_role" value="responsible_adult" checked' in html
     assert 'name="child_sign_role" value="parent">' in html
     # The sentence carries the child's own name from step one.
