@@ -1,6 +1,6 @@
 # 1091: S17 guest form title on one line at 390 px (guest form option B)
 
-Status: todo
+Status: review
 Tier: C | Depends on: none (goes first among the open briefs that name `guest.css`, `guest/base.html` or `static_versions.json`; 0885 is already in main, its `g-head-help` rules are in `guest.css`; a later brief re-bumps the key from `20261110-1091a`) | Base: origin/main | Branch: claude/1091-guest-title-one-line
 Executor: Sonnet (Tier C) | Attempts: 3 at most | Fits one session: stop at 60 tool calls or 60k tokens (section 8); reads stay at 150 lines or fewer
 Review: orchestrator checks the diff and the screenshots against the mockup before the PR opens.
