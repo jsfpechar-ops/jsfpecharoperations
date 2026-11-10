@@ -14,6 +14,7 @@ from starlette.testclient import TestClient
 
 from app import auth, cookie_inventory, db, host_i18n, security
 from app.main import app
+from app.routes import guest as guest_routes
 
 APP = Path(__file__).resolve().parents[1] / "app"
 
@@ -74,6 +75,8 @@ def test_the_published_lifetimes_match_the_code_constants():
     assert security.CSRF_MAX_AGE == auth.SESSION_REMEMBER_MAX_AGE
     for name in ("ubyhost_owned", "ubyhost_claim", "ubyhost_guest_lang"):
         assert "60 days" in rows[name]["lifetime"]["en"]
+    assert "7 days" in rows["ubyhost_draft"]["lifetime"]["en"]
+    assert guest_routes.DRAFT_COOKIE_MAX_AGE == 60 * 60 * 24 * 7
 
 
 def test_the_inventory_is_fully_translated():

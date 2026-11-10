@@ -20,13 +20,14 @@ from typing import Any, Dict, List, Optional
 from urllib.parse import quote, urlsplit, urlunsplit
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse, Response
 from starlette.concurrency import run_in_threadpool
 from itsdangerous import BadSignature, URLSafeSerializer
 
 import posixpath
 import re
-from .. import alerts, auth, claim, codelists, config, cookie_inventory, db, doc_ocr, door_codes, guest_slug, guest_uk_i18n, host_i18n, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n, workflow
+import secrets
+from .. import alerts, auth, claim, codelists, config, cookie_inventory, db, doc_ocr, door_codes, guest_slug, guest_uk_i18n, guest_draft, host_i18n, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n, workflow
 from .. import ruian as ruian_lookup  # 0911: guest RUIAN suggestions
 from ..templating import render_guest
 from .admin_helpers import guest_form_raw as _guest_form_raw
@@ -40,12 +41,15 @@ router = APIRouter(dependencies=[Depends(security.protect_guest_post)])
 LANG_COOKIE = "ubyhost_guest_lang"
 OWNED_COOKIE = "ubyhost_owned"
 CLAIM_COOKIE = "ubyhost_claim"
+DRAFT_COOKIE = "ubyhost_draft"
+DRAFT_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
 
 # Per-(address, link) budget for the guest POSTs that write something. Deliberately
 # loose: a guest fixing validation errors saves repeatedly, so this bounds
 # hammering rather than pacing a careful person. The PIN and the claim cookie are
 # the controls on *who* may post; this only bounds how often.
 GUEST_POST_MAX_ATTEMPTS = 30
+GUEST_DRAFT_MAX_WRITES = 120
 
 CS_PASSPORT_UPLOAD_MESSAGES = {
     "Upload a JPEG, PNG, or WebP photo of your passport ID page, or a PDF "
@@ -298,6 +302,88 @@ def _remember_claim(response, reservation_id: int, request: Optional[Request] = 
         secure=auth.secure_cookies(),
         path="/",
     )
+
+
+def _draft_key(request: Request) -> Optional[str]:
+    """Brief 1082: the device key of the draft cookie, or None."""
+    value = request.cookies.get(DRAFT_COOKIE) or ""
+    if re.fullmatch(r"[A-Za-z0-9_-]{32,64}", value):
+        return value
+    return None
+
+
+def _remember_draft_key(response, key: str) -> None:
+    response.set_cookie(
+        DRAFT_COOKIE,
+        key,
+        max_age=DRAFT_COOKIE_MAX_AGE,
+        httponly=True,
+        samesite="lax",
+        secure=auth.secure_cookies(),
+        path="/",
+    )
+
+
+def _draft_generation(reservation) -> int:
+    if not mail.mail_enabled():
+        return 0
+    row = claim.ensure_row(reservation["id"])
+    return int(row["token_version"] or 0) if row else 0
+
+
+def _draft_owned(request: Request, reservation_id: int) -> int:
+    """How many guests of this stay this device has already sent."""
+    ids = _owned_ids(request)
+    if not ids:
+        return 0
+    marks = ", ".join("?" for _ in ids)
+    row = db.query_one(
+        f"SELECT COUNT(*) AS n FROM guest WHERE reservation_id = ? AND id IN ({marks})",
+        (int(reservation_id), *ids),
+    )
+    return guest_draft.clamp_owned(row["n"] if row else 0)
+
+
+def _draft_is_sent_guest(values, guests) -> bool:
+    """Brief 1082: the draft is a guest already on the stay (same document
+    number, or same first name, surname and birth date)."""
+
+    def fold(value) -> str:
+        return str(value or "").strip().casefold()
+
+    def birth(value) -> str:
+        # The guest row holds the normalised date; the draft holds what was typed.
+        return validation.normalise_birth_date(str(value or "")) or fold(value)
+
+    def who(source) -> tuple:
+        return (fold(source["first_name"]), fold(source["surname"]), birth(source["birth_date"]))
+
+    doc = str(values.get("doc_number") or "").strip().upper()
+    person = who({name: values.get(name) for name in ("first_name", "surname", "birth_date")})
+    for guest in guests:
+        guest_doc = str(guest["doc_number"] or "").strip().upper()
+        guest_person = who(guest)
+        if (doc and doc == guest_doc) or (all(person) and person == guest_person):
+            return True
+    return False
+
+
+def _load_draft(request: Request, reservation, guests) -> Optional[dict]:
+    """Brief 1082: this device's draft for the stay, unless it is a guest
+    already on the stay (then it is deleted)."""
+    key = _draft_key(request)
+    if not key:
+        return None
+    device_hash = guest_draft.key_hash(key)
+    values = guest_draft.load(
+        reservation["id"], device_hash, _draft_generation(reservation), _draft_owned(request, reservation["id"])
+    )
+    if not values:
+        return None
+    if _draft_is_sent_guest(values, guests):
+        guest_draft.delete(reservation["id"], device_hash)
+        return None
+    return values
 
 
 def _with_lang(response, lang: str):
@@ -1793,6 +1879,10 @@ def guest_form_new(token: str, reservation_id: int, request: Request):
             lang,
         )
     prefill, copied_from = _residence_prefill(request, reservation)
+    draft_on = not _host_owns_apartment(request, apartment)
+    draft_values = _load_draft(request, reservation, progress["guests"]) if draft_on else None
+    if draft_values:
+        prefill = {**dict(prefill or {}), **draft_values}
     new_context = _form_context(
         request,
         apartment,
@@ -1807,6 +1897,11 @@ def guest_form_new(token: str, reservation_id: int, request: Request):
     new_context["dup_warnings"] = _duplicate_warnings(
         progress["guests"], set(_owned_ids(request)), i18n.translator(lang)
     )
+    new_context["draft_restored"] = bool(draft_values)
+    if draft_on:
+        new_context["draft_url"] = f"/l/{token}/{reservation_id}/draft" + _lang_q(lang)
+        new_context["draft_fields"] = " ".join(guest_draft.DRAFT_FIELDS)
+        new_context["draft_owned"] = _draft_owned(request, reservation_id)
     return _with_lang(render_guest(request, "guest/form.html", new_context), lang)
 
 
@@ -2331,11 +2426,79 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
     response = RedirectResponse(
         destination + _lang_q(lang, "&saved=1") + fragment, status_code=303
     )
+    if not guest_id:
+        draft_key = _draft_key(request)
+        if draft_key:
+            guest_draft.delete(reservation_id, guest_draft.key_hash(draft_key))
     _remember_owned(response, _owned_ids(request) + [saved_id])
     return _with_lang(response, lang)
 
 
 # --- document scanning (OCR, Max plan) ------------------------------------
+
+@router.post("/l/{token}/{reservation_id}/draft")
+async def guest_form_draft(token: str, reservation_id: int, request: Request):
+    """Brief 1082: autosave of the unfinished new-guest form. Never filed."""
+    lang = _language(request)
+    apartment, token, early = _open_link(request, token, lang)
+    if early:
+        return early
+    pin_guard = _require_pin(request, token, lang)
+    if pin_guard:
+        return pin_guard
+    reservation = _reservation_for_guest(apartment, reservation_id, request)
+    if not reservation:
+        return Response(status_code=404)
+    key = rate_limit.client_key(request, f"guest_draft:{_lock_token(token)}")
+    if rate_limit.blocked("guest_draft", key, GUEST_DRAFT_MAX_WRITES):
+        return Response(status_code=429)
+    rate_limit.record("guest_draft", key)
+    if _require_claim_session(request, reservation, token, lang):
+        return Response(status_code=403)
+    if _host_owns_apartment(request, apartment):
+        return Response(status_code=204)
+    try:
+        content_length = int(request.headers.get("content-length") or 0)
+    except ValueError:
+        content_length = 0
+    if content_length > 16384:
+        return Response(status_code=413)
+    if str(reservation["date_to"])[:10] < claim.prague_today().isoformat():
+        # Past check-out: the purge would delete it at once, so store nothing.
+        return Response(status_code=204)
+    form = await request.form()
+    raw_guest_id = form.get("guest_id")
+    if isinstance(raw_guest_id, str) and raw_guest_id.strip():
+        return Response(status_code=204)
+    device_key = _draft_key(request)
+    new_key = device_key is None
+    if new_key:
+        device_key = secrets.token_urlsafe(32)
+    fields = {
+        name: form.get(name)
+        for name in guest_draft.DRAFT_FIELDS
+        if isinstance(form.get(name), str)
+    }
+    if _draft_is_sent_guest(fields, reporting.reservation_progress(reservation)["guests"]):
+        # An autosave that lands after /save: the person is already on the
+        # stay, so nothing is stored (and an older row of this device goes).
+        if not new_key:
+            guest_draft.delete(reservation_id, guest_draft.key_hash(device_key))
+        return Response(status_code=204)
+    stored = guest_draft.save(
+        reservation_id,
+        guest_draft.key_hash(device_key),
+        _draft_generation(reservation),
+        form.get("draft_owned") or 0,
+        fields,
+    )
+    response = Response(status_code=204)
+    if stored:
+        # Every save renews the cookie: it lives 7 days after the last change,
+        # like the row. Nothing stored: no cookie.
+        _remember_draft_key(response, device_key)
+    return response
+
 
 @router.post("/l/{token}/{reservation_id}/scan")
 async def guest_document_scan(token: str, reservation_id: int, request: Request):
