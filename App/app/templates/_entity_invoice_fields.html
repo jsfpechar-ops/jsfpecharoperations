@@ -38,6 +38,8 @@
                placeholder="{{ t('entities.registry.trade') }}">
       </div>
     </div>
+    <details class="ui-details-box invoice-more"{% if entity.invoice_prefix or entity.invoice_next_number %} open{% endif %}>
+      <summary><span>{{ t('entities.invoice_more') }}</span></summary>
     <div class="grid">
       <div class="field">
         <label for="invoice_prefix">{{ t('entities.invoice_prefix.label') }}</label>
@@ -48,7 +50,10 @@
         <div class="field-label-row"><label for="invoice_next_number">{{ t('entities.invoice_next.label') }} <span class="opt">{{ t('common.optional') }}</span>{{ help_tip('invoice-next-number-help', t('entities.invoice_next.hint')) }}</label></div>
         <input type="number" id="invoice_next_number" name="invoice_next_number" min="1" inputmode="numeric"
                value="{{ entity.invoice_next_number if entity.invoice_next_number else '' }}">
-              </div>
+      </div>
+    </div>
+    </details>
+    <div class="grid">
       <div class="field">
         <label for="invoice_due_days">{{ t('entities.invoice_due.label') }}</label>
         <input type="number" id="invoice_due_days" name="invoice_due_days" min="0" max="365" inputmode="numeric"
