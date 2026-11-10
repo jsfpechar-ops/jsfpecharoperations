@@ -40,12 +40,12 @@ Guest e-mail line, new key `claim_email_why`, replacing the hint on the claim sc
 
 | Lang | Text |
 |---|---|
-| en | We send your private link, door code and receipt here, and it keeps this booking yours. No marketing. |
-| cs | Pošleme sem soukromý odkaz, kód ke dveřím a potvrzení a díky e-mailu zůstane tato rezervace vaše. Žádný marketing. |
-| de | Hierhin senden wir Ihren privaten Link, den Türcode und die Bestätigung. So bleibt diese Buchung Ihre. Kein Marketing. |
-| es | Aquí le enviamos su enlace privado, el código de la puerta y el justificante. Así esta reserva sigue siendo suya. Sin publicidad. |
-| fr | Nous y envoyons votre lien privé, votre code de porte et votre récapitulatif. Ainsi, cette réservation reste la vôtre. Pas de marketing. |
-| uk | Сюди ми надішлемо ваше особисте посилання, код від дверей і підтвердження, і так це бронювання залишається вашим. Жодної реклами. |
+| en | We send your private link and receipt here, and it keeps this booking yours. No marketing. |
+| cs | Pošleme sem soukromý odkaz a potvrzení a díky e-mailu zůstane tato rezervace vaše. Žádný marketing. |
+| de | Hierhin senden wir Ihren privaten Link und die Bestätigung. So bleibt diese Buchung Ihre. Kein Marketing. |
+| es | Aquí le enviamos su enlace privado y el justificante. Así esta reserva sigue siendo suya. Sin publicidad. |
+| fr | Nous y envoyons votre lien privé et votre récapitulatif. Ainsi, cette réservation reste la vôtre. Pas de marketing. |
+| uk | Сюди ми надішлемо ваше особисте посилання і підтвердження, і так це бронювання залишається вашим. Жодної реклами. |
 
 ## 3. Files
 
@@ -71,8 +71,8 @@ One step, one commit (`1076 step k`). Paths are under `App/`. Find every anchor 
    - `tests/test_property_readiness.py`: `:197` and `:234` `"Missing: IDUB"` become `"Missing: Police accommodation number (IDUB)"`; `:198` becomes `"Missing: Short name from the police"`; `:260` `("uby_idub", None, "text"),` becomes `("uby_idub", "apartment.form.ubyport.idub_label", "text"),` (line 276 stays).
    - `tests/test_property_navigation_browser.py:654` and `:778`: `"Missing: IDUB"` becomes `"Missing: Police accommodation number (IDUB)"`.
    - `tests/test_operator_naming.py:78` (`"Who runs the accommodation", "Kdo ubytování provozuje"`) and `:245` (en).
-   - `tests/test_claim_mail.py:216`: `"We send your private link, door code and receipt here"`.
-   - `tests/test_claim_copy.py`: keep the `tw_email_short` entry of `AUDIT_COPY` and add a `"claim_email_why"` entry with the en and cs texts; in `CLAIM_HINT_KEYS` (`:57`) replace `"tw_email_short"` with `"claim_email_why"`; in the word-budget test change `(("en", 55), ("cs", 50))` to `(("en", 60), ("cs", 58))` and add the comment `# 1076: the e-mail line now says why (Q16)`. Line 125 (assigned screen) stays.
+   - `tests/test_claim_mail.py:216`: `"We send your private link and receipt here"`.
+   - `tests/test_claim_copy.py`: keep the `tw_email_short` entry of `AUDIT_COPY` and add a `"claim_email_why"` entry with the en and cs texts; in `CLAIM_HINT_KEYS` (`:57`) replace `"tw_email_short"` with `"claim_email_why"`; in the word-budget test change `(("en", 55), ("cs", 50))` to the measured new counts, at most `(("en", 58), ("cs", 55))` (stop and report if more is needed) and add the comment `# 1076: the e-mail line now says why (Q16)`. Line 125 (assigned screen) stays.
    - `tests/test_guest_browser_e2e.py:696` stays: it reads the guest key `fee_vs_label`.
    If a further test pins old text, fix it the same way and list it in the report. A filing test: STOP.
 8. Payload check, run unedited: the filing row of the test-map (section 6). Nothing in it may need an edit; if one does, STOP.
@@ -99,7 +99,7 @@ Layout, CSS, field order, `name` and `id` attributes, validation, stored values,
 - [ ] Filing and claim row green, no filing test edited.
 - [ ] Guest and host browser and geometry tests green, 0 skipped; layout lint green.
 - [ ] Screenshots at 390/768/1280 of each page in step 9 are in `docs/tasks/screenshots-1076/`; the guest claim screen looks the same as before except the hint text.
-- [ ] `grep -rn "door code and receipt here" -i App/app/templates | tail -5` finds nothing hard-coded (copy comes from i18n).
+- [ ] `grep -rn "private link and receipt here" -i App/app/templates | tail -5` finds nothing hard-coded (copy comes from i18n).
 
 ## 8. Stop and ask
 
@@ -107,7 +107,7 @@ An anchor not found; a filing test needs an edit; a test outside section 3 fails
 
 ## 9. Report
 
-`docs/tasks/1076-report.md`, 600 tokens at most: files changed, each command with its last 5 lines, section 7 ticked, one line per page seen, deviations, questions, and a `Follow-ups` list with these three lines: (1) `claim_email_help` also mentions the receipt; a later brief may trim it; (2) the claim line promises a door code at every property, also one with no smart lock; owner to confirm the wording; (3) `stay_fees.payment.vs_hint` still says "this symbol" next to the new label. Tick the [design-system checklist](../design/design-system.md) in the PR (rule 10). Then set `Status: review` and open one PR.
+`docs/tasks/1076-report.md`, 600 tokens at most: files changed, each command with its last 5 lines, section 7 ticked, one line per page seen, deviations, questions, and a `Follow-ups` list with these three lines: (1) `claim_email_help` also mentions the receipt; a later brief may trim it; (2) the claim line leaves out the door code on purpose (not every property has a smart lock); (3) `stay_fees.payment.vs_hint` still says "this symbol" next to the new label. Tick the [design-system checklist](../design/design-system.md) in the PR (rule 10). Then set `Status: review` and open one PR.
 
 ## Owner steps
 
