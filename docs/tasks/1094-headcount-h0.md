@@ -4,11 +4,11 @@ Status: review
 Tier: C | Depends on: 1092 (merged in #884; `App/app/headcount.py` is in main) | Base: origin/main | Branch: claude/1094-headcount-h0
 Executor: Sonnet (Tier C), effort medium | Attempts: 1 | Fits one session: stop at 30 tool calls or 60k tokens (section 8); reads stay at 150 lines or fewer
 Review: orchestrator reads the answers file before it writes H1.
-Report: docs/tasks/1094-headcount-h0-answers.md (the answers file is the report; no separate report file)
+Report: docs/tasks/1094-report.md (the answers file is the report; no separate report file)
 
 ## 1. Objective
 
-Read-only investigation. You change NO code, template, test, migration or doc except one new file, `docs/tasks/1094-headcount-h0-answers.md`. It answers the six H0 questions (a) to (f) of the head-count plan ("Fewer people coming?") with `file:line` evidence, so the orchestrator can write the H1 to H4 briefs. Do not fix anything you find: write it down.
+Read-only investigation. You change NO code, template, test, migration or doc except one new file, `docs/tasks/1094-report.md`. It answers the six H0 questions (a) to (f) of the head-count plan ("Fewer people coming?") with `file:line` evidence, so the orchestrator can write the H1 to H4 briefs. Do not fix anything you find: write it down.
 
 Owner decisions that shape the questions (2026-11-10):
 - Every change a lead makes to saved data after claiming gets a "Check your changes" confirm step (old and new value side by side; "Confirm changes" / "Go back"; a server page, works without JavaScript). Nothing is saved or mailed before the confirm. A first registration is NOT covered (Q8).
@@ -29,7 +29,7 @@ Owner decisions that shape the questions (2026-11-10):
 
 | Path | Action |
 |---|---|
-| `docs/tasks/1094-headcount-h0-answers.md` | create (the only change) |
+| `docs/tasks/1094-report.md` | create (the only change) |
 | everything else | read only |
 
 ## 4. Steps
@@ -72,7 +72,7 @@ Commit once at the end: `1094: H0 answers`. Run every command with `| tail -30` 
 7. **(f) Signature and passport photo in the lead edit form.** Read how the form that edits an existing guest posts `/save` and `/scan`: where the signature and the passport photo are held between steps (hidden field, session, temp file, database; `/draft`, `guest_form_draft` at `guest.py:2721`, is a server-side draft: say what it stores, where, for how long, and whether it holds the signature or the photo), what happens when the edit is posted without a new signature or photo (kept or cleared), size and format. Decide, with evidence, whether a stateless confirm page (hidden fields only, no server draft) can work for an edit: (i) for text fields only, (ii) with a new signature, (iii) with a new photo. If a photo or signature cannot be a hidden field, say what the smallest honest option is (for example: the confirm step shows "new photo" without a preview and carries a token, or editing the photo stays outside the confirm and gets a digest line only). Give one recommendation for H2b.
 8. **Tests per route.** For every route in (a), plus the count routes of (b): the test files and test names that cover it (`grep -ln` the path in `App/tests`), or `none`. One table for H1 to H4.
 9. **Pointers for H3 and H4** (only if you are under 24 tool calls; `file:line` only, three lines each at most): the audit write helper and the audit table columns (the digest reads them); the function that sends a host mail today and any existing "one mail per N minutes" limit; `claim.sweep_reminders` (`claim.py:854`) and the template of its mail; how a feature flag is read in `App/app` today (one example).
-10. Write `docs/tasks/1094-headcount-h0-answers.md` (format below), set this brief `Status: review`, run `python3 scripts/context_lint.py | tail -30` from the repo root and fix findings in the answers file, commit, push (`git push -u origin claude/1094-headcount-h0`). No PR.
+10. Write `docs/tasks/1094-report.md` (format below), set this brief `Status: review`, run `python3 scripts/context_lint.py | tail -30` from the repo root and fix findings in the answers file, commit, push (`git push -u origin claude/1094-headcount-h0`). No PR.
 
 ## 5. Do not touch
 
