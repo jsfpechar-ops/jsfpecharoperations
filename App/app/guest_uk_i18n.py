@@ -50,7 +50,7 @@ PASSPORT_UPLOAD: Dict[str, str] = {
 # Keyed by the English sentence validation.py writes, like GUEST_MESSAGES.
 VALIDATION: Dict[str, str] = {
     "Date of birth is required.": "Дата народження обов’язкова.",
-    "Enter the full date as DD.MM.YYYY.": "Дата народження: введіть повну дату у форматі ДД.ММ.РРРР.",
+    "Enter the full date as DD.MM.YYYY.": "Дата народження: введіть повну дату у форматі ДД.ММ.РРРР, наприклад 14.03.1961.",
     "Year must be 1900 or later.": "Дата народження: рік має бути 1900 або пізніший.",
     "Month must be between 01 and 12.": "Дата народження: місяць має бути від 01 до 12.",
     "Day must be between 01 and 31.": "Дата народження: день має бути від 01 до 31.",
@@ -367,8 +367,10 @@ STRINGS: Dict[str, str] = {
     "passport_photo_missing": "Будь ласка, завантажте фото паспорта або посвідчення особи.",
     "ocr_scan_button": "Сканувати паспорт або ID-картку",
     "ocr_scan_hint": "Заповнює форму за вас за фото паспорта або ID-картки. Фото не зберігається.",
-    "ocr_scan_working": "Читаємо документ…",
+    "ocr_scan_working": "Читаємо ваш документ. Це триває близько 10 секунд.",
     "ocr_scan_done": "Заповнено з фото. Перевірте кожне поле перед надсиланням.",
+    "ocr_filled_chip": "Перевірте, будь ласка",
+    "ocr_nationality_missing": "Ми не змогли прочитати ваше громадянство. Виберіть його зі списку.",
     "ocr_no_file": "Спочатку виберіть фото документа.",
     "ocr_bad_file": "Використовуйте фото документа (JPEG, PNG або WebP), а не PDF.",
     "ocr_failed": "Фото не вдалося прочитати. Заповніть поля вручну.",

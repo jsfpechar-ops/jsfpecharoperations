@@ -553,6 +553,21 @@ def resolve_by_id(alert_id: int, user_dismissed: bool = False) -> None:
 SYSTEM_ALERT_KINDS = frozenset({"job_failed", "turnstile_unavailable", "ttlock_budget"})
 
 
+# 1072: the most alerts, besides the critical ones, a page other than the
+# dashboard turns into cards. The rest is only counted in the summary line.
+SHELL_ALERT_LIMIT = 12
+
+
+def shell_slice(rows: List, limit: int = SHELL_ALERT_LIMIT) -> tuple:
+    """(rows to present, how many were left out). Critical rows are never left out.
+
+    ``rows`` arrive ordered by level, so the critical ones come first.
+    """
+    critical = sum(1 for row in rows if row["level"] == "critical")
+    keep = critical + limit
+    return rows[:keep], max(0, len(rows) - keep)
+
+
 def open_alerts(owner_user_id: Optional[int] = None) -> List:
     # Two query shapes (0993): a `? IS NULL OR ...` test hides owner_user_id from the planner.
     if owner_user_id is None:

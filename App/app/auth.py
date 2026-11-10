@@ -330,6 +330,9 @@ def current_user(request: Request):
 
 
 def workspace_user(request: Request):
+    cached = getattr(request.state, "workspace_account", None)
+    if cached is not None:
+        return cached
     account = current_user(request)
     if not account:
         return None
@@ -345,7 +348,9 @@ def workspace_user(request: Request):
             "SELECT * FROM user_account WHERE id = ? AND active = 1", (target_id,)
         )
         if target:
+            request.state.workspace_account = target
             return target
+    request.state.workspace_account = account
     return account
 
 
