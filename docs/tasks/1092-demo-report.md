@@ -45,3 +45,12 @@ Status: review
 - N1: `/save` calls `submit_stay_if_complete` (threadpool, after commit) when the first form's count was saved but the insert was refused as full.
 - N2: the submit call after `claim.confirm` is wrapped in `try/except` with `log.exception`; the cookie and redirect still happen. `guest.py` gained a module logger.
 - Three tests added, one per fix. Rerun: `test_claim_*` 106 passed; `test_guest_pin.py` 10 passed; `test_endtoend.py` alone 28 passed; filing row without `test_endtoend.py` 593 passed; guest row 596 passed, 10 skipped.
+
+## Merge note (2026-11-10)
+
+Merged origin/main into the branch (main had moved; only conflict was the
+`1092-report.md` filename, taken on main by a different task — this report
+moved to `1092-demo-report.md`). First merged-head CI run failed one unrelated
+browser test (`test_0282_signature_dialog_browser`, playwright navigation
+timeout; the same test passed on main's CI run 42909753737). Retriggered via
+an empty commit; see the final run on PR #886.
