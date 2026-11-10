@@ -74,6 +74,7 @@ def _dev_link_visible() -> bool:
 
 def _login_page_context(request: Request) -> dict:
     ctx: dict = {}
+    ctx["skip_turnstile"] = auth.device_cookie_valid(request)
     if config.DEPLOYMENT == "staging":
         ctx["staging_login_email"] = auth.staging_admin_login_email()
         ctx["staging_password_enabled"] = bool(auth.staging_expected_password())
@@ -126,7 +127,7 @@ async def login_submit(request: Request):
         return render(
             request,
             "login.html",
-            {"error": error, "email": raw_email, "next": next_path, **_login_page_context(request)},
+            {"error": error, "email": raw_email, "next": next_path, **_login_page_context(request), **({"skip_turnstile": False} if error == "auth.error.turnstile" else {})},
             status_code=status_code,
         )
 
