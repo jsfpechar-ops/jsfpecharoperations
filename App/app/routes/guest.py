@@ -398,6 +398,76 @@ def _add_draft_keys(context, request: Request, apartment, existing, token: str, 
     context["draft_owned"] = _draft_owned(request, reservation_id)
 
 
+def _as_int(raw) -> Optional[int]:
+    try:
+        return int(str(raw).strip())
+    except (TypeError, ValueError):
+        return None
+
+
+def _sign_for_fields(request, reservation, signer_raw, role_raw, now) -> Dict[str, Any]:
+    """Brief 1089, § 103(u): the four ``signed_for_*`` columns for a child's form, or ``{}``.
+
+    The signer must be a guest this device saved, on this reservation, 18 or
+    over on arrival and holding their own valid drawn signature; the role must
+    be one of ``reporting.SIGN_FOR_ROLES``.
+    """
+    signer_id = _as_int(signer_raw)
+    role = (role_raw or "").strip()
+    if signer_id is None or role not in reporting.SIGN_FOR_ROLES:
+        return {}
+    if signer_id not in _owned_ids(request):
+        return {}
+    row = db.query_one(
+        "SELECT * FROM guest WHERE id = ? AND reservation_id = ?",
+        (signer_id, reservation["id"]),
+    )
+    if not row or not validation.is_valid_signature(row["signature_png"]):
+        return {}
+    arrival = reporting._stay_dates(row, reservation)[0]
+    if not validation.certainly_at_least_age(
+        row["birth_date"], arrival, reporting.ADULT_SIGNER_AGE
+    ):
+        return {}
+    return {
+        "signed_for_guest_id": signer_id,
+        "signed_for_role": role,
+        "signed_for_at": now,
+        "signed_for_wording": reporting.SIGN_FOR_WORDING_VERSION,
+    }
+
+
+def _link_signed_children(request, reservation, adult_id, ids_raw, role_raw, now) -> None:
+    """Brief 1089, § 103(u): record that the adult just saved signs for these children.
+
+    Only children this device saved, on this reservation, under 15 on arrival
+    and not yet linked (the first adult wins). Writes the four ``signed_for_*``
+    columns only, so a filed child gets the house-book line without being refiled.
+    """
+    role = (role_raw or "").strip()
+    if role not in reporting.SIGN_FOR_ROLES:
+        return
+    owned = _owned_ids(request)
+    seen = set()
+    for raw in ids_raw or []:
+        child_id = _as_int(raw)
+        if child_id is None or child_id in seen or child_id == adult_id or child_id not in owned:
+            continue
+        seen.add(child_id)
+        row = db.query_one(
+            "SELECT * FROM guest WHERE id = ? AND reservation_id = ?",
+            (child_id, reservation["id"]),
+        )
+        if not row or not reporting.guest_under_15(row, reservation):
+            continue
+        db.execute(
+            "UPDATE guest SET signed_for_guest_id = ?, signed_for_role = ?, "
+            "signed_for_at = ?, signed_for_wording = ? "
+            "WHERE id = ? AND reservation_id = ? AND signed_for_guest_id IS NULL",
+            (adult_id, role, now, reporting.SIGN_FOR_WORDING_VERSION, child_id, reservation["id"]),
+        )
+
+
 def _with_lang(response, lang: str):
     response.set_cookie(
         LANG_COOKIE,
@@ -2043,6 +2113,13 @@ async def guest_remove(token: str, reservation_id: int, guest_id: int, request: 
     )
     if not removed:
         return _unavailable(request, lang, "already_filed", 403, token)
+    # 1089: a removed adult no longer stands behind the children they signed for.
+    db.execute(
+        "UPDATE guest SET signed_for_guest_id = NULL, signed_for_role = NULL, "
+        "signed_for_at = NULL, signed_for_wording = NULL "
+        "WHERE signed_for_guest_id = ? AND reservation_id = ?",
+        (guest_id, reservation_id),
+    )
     passport_photos.delete_photo(guest_id)
     db.audit(
         "guest_removed_by_guest",
@@ -2200,6 +2277,13 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
     values = validation.normalise_guest(raw, clamp=False)
     stay_from, stay_to = _locked_stay_dates(reservation, existing)
     signature = _kept_signature(form.get("signature"), existing["signature_png"] if existing else None)
+    child = validation.certainly_under_age(
+        values["birth_date"], validation.parse_iso_date(stay_from), reporting.UNDER_SIGN_AGE
+    )
+    if child:
+        # 1089, § 103(b): a child's signature is neither asked for nor kept,
+        # even one posted or stored before.
+        signature = ""
 
     party_raw = (form.get("party_size") or "").strip()
     try:
@@ -2241,7 +2325,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
     # A guest may not declare their own paper import: that marker is the host's
     # attestation, and accepting it here stored an unsigned record as signed.
     signature_issue = reporting.guest_signature_issue(
-        signature, translate, allow_imported=False
+        signature, translate, allow_imported=False, under_15=child
     )
     if signature_issue:
         issues.append(signature_issue)
@@ -2324,7 +2408,8 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
             "stay_from": stay_from,
             "stay_to": stay_to,
             "signature_png": signature,
-            "signed_at": now,
+            # 1089: nobody signed a child's form; filled_at keeps the time.
+            "signed_at": None if child else now,
             "notice_version": config.GUEST_NOTICE_VERSION,
             "notice_lang": lang,
             "notice_ack_at": now,
@@ -2340,6 +2425,24 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
             "last_errors": None,
         }
     )
+    if child:
+        # 1089: an empty result adds nothing, so an edit without a posted
+        # signer keeps an earlier link.
+        payload.update(
+            _sign_for_fields(
+                request, reservation, form.get("signed_by"), form.get("child_sign_role"), now
+            )
+        )
+    else:
+        # A guest corrected to 15 or over loses the link and must sign.
+        payload.update(
+            {
+                "signed_for_guest_id": None,
+                "signed_for_role": None,
+                "signed_for_at": None,
+                "signed_for_wording": None,
+            }
+        )
     if reporting.guest_correction_resets_attempts(existing):
         # Rule 10.4(5): a correction makes the record sendable again, and a
         # guest fixing their own form is a correction like any other. Without
@@ -2390,6 +2493,15 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
             "guest",
             saved_id,
             {"passport_photo_at": now, "updated_at": now},
+        )
+
+    if not child and validation.certainly_at_least_age(
+        values["birth_date"], validation.parse_iso_date(stay_from), reporting.ADULT_SIGNER_AGE
+    ):
+        # 1089: the adult's own signature was validated above.
+        _link_signed_children(
+            request, reservation, saved_id, form.getlist("sign_for_ids"),
+            form.get("sign_for_role"), now,
         )
 
     db.audit(
