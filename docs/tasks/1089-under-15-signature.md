@@ -1,6 +1,6 @@
 # 1089: Under-15 guests do not sign: server, storage, filing check and house book
 
-Status: todo
+Status: review
 Tier: A | Depends on: none | Base: origin/main | Branch: claude/1089-under-15-signature
 Executor: Fable 5.2 (owner tier override in decisions.md) | Attempts: 3 at most | Fits one session: stop at 60 tool calls or 60k tokens (section 8); reads stay at 150 lines or fewer
 Review: a fresh Fable reviews the diff against this brief before the PR opens.

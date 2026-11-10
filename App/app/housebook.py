@@ -20,7 +20,7 @@ from typing import Any, Dict, Iterator, List, Optional
 
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
-from reportlab.lib.utils import ImageReader
+from reportlab.lib.utils import ImageReader, simpleSplit
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas as pdfcanvas
@@ -390,8 +390,11 @@ def registration_form_pdf(guest_id: int) -> bytes:
         guest, {"date_from": guest["res_from"], "date_to": guest["res_to"]}
     )
     if record["kind"] in ("signed_for", "exempt"):
+        # The "Signed by ..." sentence is wider than the page: wrap it, last line at y + 8.
         pdf.setFont(FONT_REGULAR, 9)
-        pdf.drawString(left, y + 8, record["text"])
+        record_lines = simpleSplit(record["text"], FONT_REGULAR, 9, width - 2 * left)
+        for index, text_line in enumerate(reversed(record_lines)):
+            pdf.drawString(left, y + 8 + 11 * index, text_line)
     elif guest["signature_png"]:
         try:
             raw = guest["signature_png"].split(",", 1)[-1]
@@ -407,7 +410,10 @@ def registration_form_pdf(guest_id: int) -> bytes:
     pdf.setFillGray(0.4)
     signed = guest["signed_at"] or guest["filled_at"] or ""
     if record["kind"] in ("signed_for", "exempt"):
-        pdf.drawString(left, y - 7 * mm, record["text"])
+        # The reporting status is right-aligned on this baseline, so only a
+        # sentence as short as the rule above repeats here.
+        if pdfmetrics.stringWidth(record["text"], FONT_REGULAR, 8) <= 80 * mm:
+            pdf.drawString(left, y - 7 * mm, record["text"])
     else:
         pdf.drawString(left, y - 7 * mm, f"Signed electronically: {signed}")
 
