@@ -158,7 +158,6 @@ Line numbers move after a rebase on main. Trust `grep -nF`, not the number.
 | Path | Action | What |
 |---|---|---|
 | `App/app/static/app.js` | edit | the discard warning listener only |
-| `App/tests/test_host_police_letter_guard_browser.py` | create | the discard warning test (step 4j) |
 | `App/app/routes/admin.py` | edit | the paste route; `_run_connection_test`, moved verbatim; the confirm check; `letter_unconfirmed`; the auto test |
 | `App/app/templates/_property_editor.html` | edit | the two `details`, the check-answers card, the pre-fill, `#police-letter-form` |
 | `App/app/templates/_police_letter_figure.html` | create | the SVG and its legend |
@@ -174,7 +173,7 @@ Line numbers move after a rebase on main. Trust `grep -nF`, not the number.
 
 1. Merge `origin/main` again if it moved since 71448224. Merge 1088 (or main after it). Confirm `class FieldResult:` holds `source`; if not, STOP. Confirm anchors 1 to 7 with `grep -nF`; if one is missing, STOP. Read `_property_view_state` (about 40 lines) and `_refuse_apartment_save` (about 80 lines), and nothing else in admin.py beyond the anchors.
 2. Copy: add the section 2 keys in `en`, `cs` and `vi`, then run `test_host_i18n.py`.
-3. Template, figure and CSS per section 2. Bump the `host.css` key to `20261110-1085`, then from `App/` run `.venv/bin/python tests/test_static_versions.py --write 2>&1 | tail -30`. Its diff must change only the `host.css` and `app.js` entries. If you edit `host.css` again later, use `20261110-1085b` and rerun the command.
+3. Template, figure and CSS per section 2. Bump the `host.css` key **and** the `app.js` key (`base.html:47`, `?v=20261109-qa3`) to `20261110-1085`, then from `App/` run `.venv/bin/python tests/test_static_versions.py --write 2>&1 | tail -30`. Its diff must change only the `host.css` and `app.js` entries. If you edit `host.css` or `app.js` again later, bump that key to `20261110-1085b` and rerun the command.
 4. Routes per section 2. Then write `test_police_letter_flow.py`, with fixtures modelled on `test_property_form_save.py` (read its first 80 lines only):
    a. A POST of the official-layout letter (the `SAMPLE_*` values) gives 422 and `no-store`. Each filled row shows its exact source line in a `<code>` and the `check_against` text (count: one per filled value). A source line holding `<b>` comes back escaped. The IDUB and login inputs carry the values; the short name carries `SAMPLE_ZKRATKA` with the `source_login` text; there are three `letter_ok_*` boxes, a password row, and an empty password input. A unique marker line from the paste and `SAMPLE_WS_PASSWORD` are both absent from the HTML. The apartment row (`SELECT *`) is identical before and after, and no `audit` row holds the IDUB, the login, the password or the marker.
    b. Ambiguous, unreadable and conflict letters: the field keeps the saved value, there is no box, and the plain line is shown. `empty` and `too_long`: 422 with their line.
@@ -195,7 +194,7 @@ Line numbers move after a rebase on main. Trust `grep -nF`, not the number.
       - (source pin) `_run_connection_test` and `test_connection` contain no `submit` and no `ZapisUbytovane`
    h. **Final exit only:** a letter save with a password that also posts `setup_step=police` runs no test (client monkeypatched to raise). A letter save that returns through `fee_return_to` runs no test. **`/test-connection` guard:** `letter_fields=uby_ws_user`, ticked, a new login and no password: saved, the client is never called, flash `letter_new_login_no_password`. The same with a password: tested.
    i. Idempotency: the same confirmed save twice gives one apartment row with the same values. Concurrency: two threads with two clients save letter values for two different properties of one host at the same moment; each row keeps its own IDUB.
-   j. `test_host_police_letter_guard_browser.py` (0 skipped; imports and fixtures as in `test_0833_property_editor_browser.py`, first 60 lines; one width, 1280): type into the facility name, then click "Read the letter" and dismiss the dialog. The page stays and the typed value is kept. Accept it: the check-answers page loads. With only a typed password, the dialog shows too. With no edits, there is no dialog. On the check-answers page `#property-settings-form` has `data-dirty-start="1"`.
+   j. Source pin for the discard warning (no browser here; 1086 tests it in the browser): `app.js` holds the `police-letter-form` submit listener with `window.confirm` and `preventDefault`, and the check-answers HTML has `data-dirty-start="1"` on `#property-settings-form` and `data-discard-warning` on `#police-letter-form`.
 5. Run section 6, then write the report.
 
 ## 5. Do not touch
@@ -204,12 +203,12 @@ Line numbers move after a rebase on main. Trust `grep -nF`, not the number.
 
 ## 6. Commands (each ends `2>&1 | tail -30`)
 
-From `App/`: `.venv/bin/python -m pytest tests/test_police_letter_flow.py tests/test_police_letter_parser.py tests/test_property_form_save.py tests/test_property_operator_defaults.py tests/test_flash_next_step.py tests/test_property_hub.py tests/test_remove_legacy_actions.py tests/test_ubyport_sample_pdf.py tests/test_reporting_help_0097.py tests/test_host_i18n.py tests/test_static_versions.py -q --tb=short -x`. Filing row: `.venv/bin/python -m pytest tests/test_ubyport_*.py tests/test_police_*.py tests/test_endtoend.py tests/test_submission_*.py -q --tb=short -x`. Host pages row: `.venv/bin/python -m pytest tests/test_host_*.py -q --tb=short -x`. Browser, 0 skipped: `UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_host_police_letter_guard_browser.py -q --tb=short -rs`. Repo root: `python3 scripts/context_lint.py 2>&1 | tail -30`.
+From `App/`: `.venv/bin/python -m pytest tests/test_police_letter_flow.py tests/test_police_letter_parser.py tests/test_property_form_save.py tests/test_property_operator_defaults.py tests/test_flash_next_step.py tests/test_property_hub.py tests/test_remove_legacy_actions.py tests/test_ubyport_sample_pdf.py tests/test_reporting_help_0097.py tests/test_host_i18n.py tests/test_static_versions.py -q --tb=short -x`. Filing row: `.venv/bin/python -m pytest tests/test_ubyport_*.py tests/test_police_*.py tests/test_endtoend.py tests/test_submission_*.py -q --tb=short -x`. Host pages row: `.venv/bin/python -m pytest tests/test_host_*.py -q --tb=short -x`. Repo root: `python3 scripts/context_lint.py 2>&1 | tail -30`.
 
 ## 7. Acceptance
 
 - [ ] The auto test runs only at `apartment_update`'s final success exit, never with `setup_step`; `/test-connection` skips a new letter login with no password.
-- [ ] The discard warning shows for unsaved edits or a typed password, and the check-answers page starts dirty.
+- [ ] The discard warning is wired (source pin, step 4j), and the check-answers page starts dirty; 1086 proves it in the browser.
 - [ ] Each filled value shows its exact source line and "Check this against your letter". No printed mark is ever filled.
 - [ ] Nothing saves until each pre-filled value is ticked, on both the Save and the "Save and test connection" paths; a forged line number never crashes.
 - [ ] The auto test runs only with a password posted in the same save, once. It reports ok, refused or unreachable in plain words. Saves without letter values behave as on main.
@@ -224,7 +223,7 @@ STOP and report `blocked` if: an anchor is missing (above all anchor 1); the tes
 
 ## 9. Report
 
-`docs/tasks/1085-report.md`, 600 tokens at most: files, each command with its last 5 lines, section 7 ticked, deviations and questions. Set this brief `Status: review`. After the strict fresh Fable review, open one PR as a **draft**. It is a host page, so it stays a draft until 1086 (built on this branch) passes the UX gate. Then the orchestrator marks it ready and merges it, and 1086 is rebased and merged after it. Body: **a new automatic outbound trigger (rule 2): a confirmed letter save with a typed password sends `TestDostupnosti`, `MaximalniDelkaSeznamu` and `DejMiCiselnik` to the police endpoint, the same read-only calls as the test button**; filing path untouched, the connection test is read-only (`test_police_letter_flow.py` step g), the text is not stored, no new request, field or dependency. Merge only with `scripts/merge-pr-on-green.sh`.
+`docs/tasks/1085-report.md`, 600 tokens at most: files, each command with its last 5 lines, section 7 ticked, deviations and questions. Set this brief `Status: review`. After the strict fresh Fable review, open one PR as a **draft**. It is a host page, so it stays a draft until 1086 (built on this branch) passes the UX gate. Then the orchestrator marks it ready and merges it, and 1086 is rebased and merged after it. Body: **a new automatic outbound trigger (rule 2): a confirmed letter save with a typed password sends `TestDostupnosti`, `MaximalniDelkaSeznamu` and `DejMiCiselnik` to the police endpoint, the same read-only calls as the test button**; filing path untouched, the connection test is read-only (`test_police_letter_flow.py` step g), the text is not stored, no new field or dependency. Merge only with `scripts/merge-pr-on-green.sh`.
 
 ## 10. Open questions (not blocking)
 
