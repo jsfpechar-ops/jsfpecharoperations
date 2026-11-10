@@ -2084,6 +2084,20 @@ def update_if(
         return conn.execute(sql, params).rowcount == 1
 
 
+def insert_in(cur, table: str, values: Dict[str, Any]) -> Optional[int]:
+    """insert(), but on a cursor from cursor()/immediate(), inside its transaction."""
+    values = _write_values(table, values)
+    cols = ", ".join(values)
+    marks = ", ".join("?" for _ in values)
+    sql = f"INSERT INTO {table} ({cols}) VALUES ({marks})"
+    if table in _TABLES_WITHOUT_ID:
+        cur.execute(sql, list(values.values()))
+        return None
+    cur.execute(sql + " RETURNING id", list(values.values()))
+    rows = cur.fetchall()
+    return int(rows[0][0])
+
+
 def update_in(cur, table: str, row_id: int, values: Dict[str, Any]) -> None:
     """update(), but on a cursor from cursor()/immediate(), inside its transaction."""
     if not values:
