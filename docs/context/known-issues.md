@@ -26,10 +26,10 @@
 | K-F17 | Low unverified | reporting.py claim TTL; :1683 recover_stale_submissions | Lease may expire in slow batches | P A16, A30 |
 | K-F19 | Low open | codelists.py error_severities | Before a successful Refresh only 1/112/150 known | police A1-A2 |
 | K-F18 | High decision HR | reporting.py:859 signature_dates_stale | Stale signed dates: safety net or re-signing (T48–T50)? | P Q6 |
-| K-F20 | High open HR | reporting.py:1099 due_for_automatic_send | Shortfall or no count: cap waits 12 quiet h; late write files after deadline | 1069 bug 9 |
+| K-F20 | High open HR | reporting.py:1099 due_for_automatic_send | Fixed in #859 (merged, not deployed) | 1069 bug 9 |
 | K-L01 | High decision | retention.py:218,237 | Deletion 30+30 days; Terms s19 export wording: lawyer needed | P Q9, G G-D11 |
 | K-L02 | High decision | retention.py ~306 | Termination deletes legal_acceptance rows; G-D7 says keep 3 yrs | F BE-10 |
-| K-L03 | High decision | retention.py, housebook.py expired_guest_ids | Retention anchor per guest vs 6 years from the last entry | G G-D4 |
+| K-L03 | High decision | retention.py, housebook.py expired_guest_ids | Retention anchor: per guest vs 6 y from last entry | G G-D4 |
 | K-L04 | High decision | reporting.py guest_signature_issue | Foreigners under 15 may be exempt; signature forced | C |
 | K-L05 | High decision | passport_photos.py | Legal basis: ID image copies, drawn signatures | C P0 2-3 |
 | K-L06 | High decision | deadlines.py add_working_days | §100(c) inclusive working-day reading needs counsel | F D3 |
@@ -87,7 +87,7 @@
 | K-D02 | Low open | door_codes `_handle_moves` | Move replace: gateway retried every 15 min, uncapped; guest keeps old PIN | 0037 |
 | K-D03 | Med decision | door_codes `_handle_moves` | Move permission/reauth/config/disabled: no retry once access fixed (0037) | 0037 |
 | K-D04 | High open | door_codes `issue`, `_handle_moves` | Same-hours rebooking can get cancelled PIN via `get` | 0069 |
-| K-U15 | Med review | Host forms/navigation | Staging fixed; 0084 incl. K-U14; owner review | [plan](../plans/host-ux-combined-staging.md) |
+| K-U15 | Med review | Host forms/navigation | Owner review (0084) | [plan](../plans/host-ux-combined-staging.md) |
 | K-T01 | Low open | Tests | Order-dependent tests (also 3 in test_host_i18n.py) | 0080 |
 | K-U16 | Review | Host UI | #389 polish; CI pending | 0102 |
 | K-PG04 | Low open | scripts/reencrypt_data_key.py | Refuses on PG (no verified backup source); fix before first PG key rotation | 0462 |
@@ -101,4 +101,4 @@
 
 - 0897 guest pay gaps: Slovak QR, PG migration 00007 unrun, no mark-as-paid, no e-mail link, copy, legal sign-off.
 - K-SE: plans/speed-and-ease.md end
-- K-PICK: guest-enhancements.js:207 blur timer never cleared; refocus <120 ms closes list. Fix: clearTimeout on focus (1079).
+- K-PICK: guest-enhancements.js:207 blur timer not cleared on refocus (1079).
