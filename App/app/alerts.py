@@ -339,6 +339,7 @@ _ACTIONS = {
     "guest_pin_challenged": ("notification.action.guest_link", "/apartments/{apartment}?view=settings&section=guests#communication"),
     "submission_stuck": ("notification.action.guests", "/reservations/{reservation}#guests"),
     "guest_question": ("notification.action.guest_questions", "/apartments/{apartment}/guide/questions"),
+    "stay_fee_no_pay_way": ("notification.action.stay_fee_pay", "/apartments/{apartment}?view=settings&section=reporting#stay-fee-settings"),
 }
 
 
