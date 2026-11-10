@@ -1,6 +1,6 @@
 # 1074: Guest form scan (primary button, feedback, smaller photo, nationality prompt) and a date-error example
 
-Status: todo
+Status: review
 Tier: B | Depends on: none | Base commit: 2d265364 | Branch: claude/1074-guest-scan-errors
 Executor: Opus 5.5 (Tier B owner override, [workflow] decision 2026-11-09) | Fits one session: 30 tool calls, 60k tokens. The Haiku caps do not apply to Opus; command output and file reads stay at 150 lines or fewer.
 
