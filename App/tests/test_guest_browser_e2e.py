@@ -413,7 +413,12 @@ class Guest:
         self.check_help_beside_title("signature", widths=all_widths if number == 2 else ())
         if number == 2:
             self.check_spacing("person 2, signature", all_widths)
-        self.sign()
+        if page.locator("#sig-block").is_hidden():
+            # 1090: a guest under 15 gets a note instead of the pad.
+            assert int(birth[4:]) > 2010, f"the pad is hidden for an adult born {birth[4:]}"
+            assert page.locator("#u15-note").is_visible()
+        else:
+            self.sign()
         self.check_layout(f"guest {number}, signature")
         # The legal notice moved onto the signature step and is collapsed by
         # default; the acknowledgement must stay visible outside that fold.

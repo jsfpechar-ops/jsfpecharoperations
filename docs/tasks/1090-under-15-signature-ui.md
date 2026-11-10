@@ -1,6 +1,6 @@
 # 1090: Under-15 guests do not sign: the guest form note and the adult's role tick
 
-Status: todo
+Status: review
 Tier: A | Depends on: [1089](1089-under-15-signature.md) (server half, merged first) | Base: claude/1089-under-15-signature plus origin/main (step 0) | Branch: claude/1090-under-15-signature-ui
 Executor: Fable 5.2 (owner tier override in decisions.md) | Attempts: 3 at most | Fits one session: stop at 60 tool calls or 60k tokens (section 8); reads stay at 150 lines or fewer
 Review: a fresh Fable reviews the diff against this brief before the PR opens.
