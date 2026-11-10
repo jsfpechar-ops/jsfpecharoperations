@@ -542,7 +542,7 @@ def test_unreadable_nationality_says_so_and_opens_the_picker(base, world, browse
         page.route(SCAN, lambda route: _answer(route, {"kind": "values", "values": values}))
         page.set_input_files("#ocr-scan-file", TINY)
         page.wait_for_function(
-            "document.activeElement && document.activeElement.id === 'nationality_search'"
+            "() => document.activeElement && document.activeElement.id === 'nationality_search'"
         )
         assert page.locator("#nationality_list").is_visible()
         assert "choose it from the list" in page.locator("#ocr-scan-status").inner_text()
@@ -565,18 +565,18 @@ def test_unread_nationality_is_said_even_when_an_earlier_scan_filled_it(base, wo
         page.route(SCAN, lambda route: _answer(route, {"kind": "values", "values": answers.pop(0)}))
         page.set_input_files("#ocr-scan-file", TINY)
         page.wait_for_selector(".g-scan-chip")
-        page.wait_for_function("!document.querySelector('#ocr-scan-file').disabled")
+        page.wait_for_function("() => !document.querySelector('#ocr-scan-file').disabled")
         page.locator("#surname").focus()
         page.set_input_files("#ocr-scan-file", TINY)
         page.wait_for_function(
-            "document.querySelector('#ocr-scan-status').textContent.includes('choose it from the list')"
+            "() => document.querySelector('#ocr-scan-status').textContent.includes('choose it from the list')"
         )
         assert page.locator("#nationality").input_value() == "DEU"
         assert page.locator("#nationality_error").is_visible()
         assert "choose it from the list" in page.locator("#nationality_error").inner_text()
         assert page.evaluate("document.activeElement && document.activeElement.id") != "nationality_search"
         assert page.locator(".g-scan-chip").count() == 4
-        page.wait_for_function("!document.querySelector('#ocr-scan-file').disabled")
+        page.wait_for_function("() => !document.querySelector('#ocr-scan-file').disabled")
         assert page.locator("#nationality_error").is_visible(), "clearing chips must keep the prompt"
     finally:
         context.close()
@@ -612,7 +612,7 @@ def test_big_photo_is_shrunk_upright_before_upload(base, world, browser):
         page.route(SCAN, grab)
         page.set_input_files("#ocr-scan-file",
                              {"name": "big.jpg", "mimeType": "image/jpeg", "buffer": original})
-        page.wait_for_function("document.querySelector('#ocr-scan-status').textContent.includes('stub')")
+        page.wait_for_function("() => document.querySelector('#ocr-scan-status').textContent.includes('stub')")
     finally:
         context.close()
     body = seen[0]
@@ -634,7 +634,7 @@ def test_unreadable_image_is_sent_as_it_was(base, world, browser):
         _goto_form(page, base, world)
         page.route(SCAN, grab)
         page.set_input_files("#ocr-scan-file", TINY)
-        page.wait_for_function("document.querySelector('#ocr-scan-status').textContent.includes('stub')")
+        page.wait_for_function("() => document.querySelector('#ocr-scan-status').textContent.includes('stub')")
     finally:
         context.close()
     assert b"\xff\xd8\xff\xd9" in seen[0]
