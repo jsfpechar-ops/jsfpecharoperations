@@ -324,10 +324,11 @@ def test_share_block_lists_steps_before_warnings(client, owner, monkeypatch):
     now = db.utcnow()
     db.insert("lock_account", {"owner_user_id": owner, "provider": "ttlock", "username": "x_prefill1075",
                                "status": "ok", "locks_json": json.dumps([]), "created_at": now, "updated_at": now})
-    html = client.get("/smart-locks?lang=en").text
+    html = client.get(f"/apartments/{_flat(owner)}?view=settings&section=lock&lang=en").text
     start = html.index('id="smart-locks-share"')
-    steps = html.index("Open your lock in TTLock.", start)
-    assert html.index("x_prefill1075", start) < steps < html.index("Only the owner of the lock", start)
+    steps = html.index("In the TTLock app, add UbyHost as eAdmin", start)
+    owner_warning = html.index("Only the owner of the lock can do this.", start)
+    assert html.index("x_prefill1075", start) < steps < owner_warning < html.index("Do not use eKeys", start)
 ```
 Payments need no Stripe state for the GET page; if `/payments/new` redirects for a missing consent or Stripe setup, STOP and report (do not mock around it).
 Command: `cd App && .venv/bin/python -m pytest tests/test_1075_prefill_more_options.py -q --tb=short -x -rs 2>&1 | tail -30`. Expected: 6 passed, 0 skipped.
