@@ -52,3 +52,14 @@ Design-system checklist: no new class, no inline style, no new colour; 390/768/1
 ## Owner steps left
 
 Merge 1089 first, then this branch's PR with `scripts/merge-pr-on-green.sh`.
+
+## Attempt 2 (review findings)
+
+- B1: `origin/main` merged (1089 and 1091 now on main); `guest.css` and `signature.js` keys are `20261111-1090b`, `static_versions.json` regenerated.
+- B2: four rules in `guest.css` (orchestrator allowed, over the one-selector limit): 16 px above `#sign-for-children`, 12 px between role rows, 16 px between the two groups, 12 px above the choice error. Plain px, as the rest of `guest.css`; it has no spacing tokens. Test 6g asserts row gaps and the gap under the pad are 12 px or more at 390, 768, 1280.
+- S1: `#sign-for-who` (labelled by "Signing adult") and `#sign-for-role` (labelled by the sentence) are each a `radiogroup`; `#sign-for-child` no longer is one.
+- S2: a valid role, no `signed_by` and more than one candidate returns the 422 with `sign_for_who_missing` on `signed_by` (six languages). This is a second edit in `guest_form_save`; the lists moved into `_under15_lists`, shared with `_form_context`.
+- N1: `fillName` replaces with a function.
+- New screenshot `child-two-adults-390.png`: the 422 with two adult rows, the red line "Choose the adult who is signing." under them, then the role rows; all rows 12 px apart. `adult-signs-for-*`: the sentence now clears the pad by 16 px. The top summary link for the new error has no field id to jump to.
+- Commands, one file at a time, 0 skipped: `test_under15_signature_1090.py` 31 passed; `test_under15_signature_1090_browser.py` 11; `test_guest_browser_e2e.py` 55; `test_a11y_guard_browser.py` 4; `test_layout_lint_browser.py` 4; `test_guest_form_draft_1087_browser.py` 10; `test_static_versions.py` 3; `test_guest_title_1091_browser.py` 10; `test_guest_languages.py` 47; ruff: All checks passed.
+- Acceptance: "1089 on main and merged in" now holds. `git diff --stat origin/main` still includes `tests/test_guest_browser_e2e.py` (deviation 5).
