@@ -136,7 +136,7 @@
 <a href="#sec-lock"><span class="dot {{ 'g' if door_code and door_code.state == 'on' else 'n' }}" aria-hidden="true"></span>{{ t('property_page.sec.lock.title') }}</a>
 <a href="#sec-fee"><span class="dot {{ 'g' if apartment.stay_fee_rate_czk else 'n' }}" aria-hidden="true"></span>{{ t('property_page.sec.fee.title') }}</a>
 </nav>
-<form method="post" action="{{ base_url }}" enctype="multipart/form-data" class="property-settings-form" id="property-settings-form" data-property-settings-form data-unsaved-guard{% if operator_error %} data-dirty-start="1"{% endif %}>
+<form method="post" action="{{ base_url }}" enctype="multipart/form-data" class="property-settings-form" id="property-settings-form" data-property-settings-form data-unsaved-guard{% if operator_error or letter_check %} data-dirty-start="1"{% endif %}>
   <p class="required-legend">{{ t('common.required_legend') }}</p>
   <p class="prop-fixline" data-prop-fixline hidden data-text-many="{{ t('property_page.fix_fields') }}" data-text-one="{{ t('property_page.fix_fields_one') }}"></p>
   <input type="hidden" name="return_to" value="{{ base_url }}?view=settings&amp;section={{ settings_section }}" data-property-return>
@@ -307,11 +307,57 @@
         <a class="ui-btn ui-btn-secondary ui-btn-compact police-sample-link" id="police-sample-link" href="/static/docs/ubyport-ws-credential-sample.pdf?v=20261004a" target="_blank" rel="noopener">{{ t('apartment.form.ubyport.sample_link') }}</a></div>
       <p class="ui-sub">{{ t('why.police') }}</p>
       <p class="ui-sub"><a href="{{ base_url }}?view=settings&amp;section=automation#automation">{{ t('automation.timing_title') }} </a></p>
+      {%- set letter_fill = letter_prefill or {} -%}
+      {%- set letter_names = {'uby_idub': t('apartment.form.ubyport.idub_label'), 'uby_ws_user': t('automation.login'), 'uby_mark': t('apartment.form.ubyport.mark_label')} -%}
+      <details class="police-letter-find">
+        <summary>{{ t('police_letter.find_title') }}</summary>
+        {% include "_police_letter_figure.html" %}
+      </details>
+      <details class="police-letter-paste" id="police-letter-paste"{% if letter_status in ['empty', 'too_long', 'failed'] %} open{% endif %}>
+        <summary>{{ t('police_letter.paste_title') }}</summary>
+        <div class="field">
+          <div class="field-label-row"><label for="letter_text">{{ t('police_letter.paste_label') }}{{ help_tip('police-letter-help', t('police_letter.paste_help')) }}</label></div>
+          <textarea id="letter_text" name="letter_text" form="police-letter-form" rows="6" maxlength="20000" autocomplete="off" spellcheck="false"{% if letter_status in ['empty', 'too_long', 'failed'] %} aria-invalid="true" aria-describedby="letter_text-error"{% endif %}></textarea>
+          {% if letter_status in ['empty', 'too_long', 'failed'] %}<p class="err-text" id="letter_text-error" role="alert">{{ t('police_letter.' ~ letter_status) }}</p>{% endif %}
+        </div>
+        <div class="actions">
+          <button class="ui-btn ui-btn-secondary" type="submit" form="police-letter-form">{{ t('police_letter.read_button') }}</button>
+        </div>
+      </details>
+      {% if letter_rows %}
+      <div class="police-letter-check" id="police-letter-check">
+        <h3 class="police-letter-check-title">{{ t('police_letter.check_title') }}</h3>
+        <input type="hidden" name="letter_fields" value="{{ letter_rows | selectattr('filled') | map(attribute='name') | join(',') }}">
+        {% for row in letter_rows %}
+        <div class="police-letter-row" data-letter-row="{{ row.name }}">
+          <span class="police-letter-name">{{ letter_names[row.name] }}</span>
+          {% if row.filled %}
+          <span class="police-letter-value">{{ row.value }}</span>
+          {% if row.line %}
+          <input type="hidden" name="letter_line_{{ row.name }}" value="{{ row.line }}">
+          <p class="police-letter-src small">{{ t('police_letter.source_login' if row.name == 'uby_mark' else 'police_letter.source', line=row.line) }}
+            {%- for src in row.source %}<code>{{ src }}</code><input type="hidden" name="letter_src_{{ row.name }}_{{ loop.index }}" value="{{ src }}">{% endfor %}</p>
+          {% endif %}
+          <p class="small">{{ t('police_letter.check_against') }}</p>
+          {% if row.saved %}<p class="small muted">{{ t('police_letter.saved_now', value=row.saved) }}</p>{% endif %}
+          <label class="checkline" for="letter_ok_{{ row.name }}"><input type="checkbox" id="letter_ok_{{ row.name }}" name="letter_ok_{{ row.name }}" value="1" required{% if row.ticked %} checked{% endif %}{% if row.error %} aria-invalid="true" aria-describedby="letter_ok_{{ row.name }}-error"{% endif %}>{{ t('police_letter.confirm') }}</label>
+          {% if row.error %}<p class="err-text" id="letter_ok_{{ row.name }}-error" role="alert" data-field-error>{{ t('police_letter.confirm_missing') }}</p>{% endif %}
+          {% else %}
+          <p class="small">{{ t('police_letter.' ~ row.state) }}</p>
+          {% endif %}
+        </div>
+        {% endfor %}
+        <div class="police-letter-row" data-letter-row="uby_ws_password">
+          <span class="police-letter-name">{{ t('automation.password') }}</span>
+          <p class="small">{{ t('police_letter.by_hand') }}</p>
+        </div>
+      </div>
+      {% endif %}
       <div class="grid">
-        {{ text_field('uby_idub', t('apartment.form.ubyport.idub_label'), apartment.uby_idub, t('apartment.form.ubyport.idub_hint'), false, 14, required=true) }}
+        {{ text_field('uby_idub', t('apartment.form.ubyport.idub_label'), letter_fill['uby_idub'] if 'uby_idub' in letter_fill else apartment.uby_idub, t('apartment.form.ubyport.idub_hint'), false, 14, required=true) }}
       </div>
       <div class="grid two">
-        {{ text_field('uby_ws_user', t('automation.login'), apartment.uby_ws_user, t('apartment.form.ubyport.login_hint'), required=true) }}
+        {{ text_field('uby_ws_user', t('automation.login'), letter_fill['uby_ws_user'] if 'uby_ws_user' in letter_fill else apartment.uby_ws_user, t('apartment.form.ubyport.login_hint'), required=true) }}
         <div class="field">
           {{ field_label('uby_ws_password', t('automation.password'), t('apartment.form.ubyport.password_help'), false, '', not has_password) }}
           <input type="password" id="uby_ws_password" name="uby_ws_password" autocomplete="new-password"
@@ -329,7 +375,7 @@
         <a href="https://policie.gov.cz/reditelstvi-sluzby-cizinecke-policie/jake-jsou-moznosti-zasilani-dat-aplikaci-ubyport" target="_blank" rel="noopener">{{ t('apartment.form.ubyport.no_credentials_link') }}</a></p>
       <div class="field-label-row"><h2 class="property-section-title">{{ t('property_page.police.facility') }}</h2></div>
       <div class="grid">
-        {{ text_field('uby_mark', t('apartment.form.ubyport.mark_label'), apartment.uby_mark, t('apartment.form.ubyport.mark_hint'), false, 6, required=true) }}
+        {{ text_field('uby_mark', t('apartment.form.ubyport.mark_label'), letter_fill['uby_mark'] if 'uby_mark' in letter_fill else apartment.uby_mark, t('apartment.form.ubyport.mark_hint'), false, 6, required=true) }}
       </div>
       <div class="grid two">
         {%- set facility_help -%}{{ t('apartment.form.ubyport.name_hint') }} <span class="facility-example"><span class="facility-example-label">{{ t('apartment.form.ubyport.name_example') }}</span>Ubytovací zařízení: <mark>BYT Č. [2] FIKTVNÍ 1234/56 (PRAHA,</mark> PRAHA 2, FIKTVNÍ, 1234/56)</span>{%- endset %}
@@ -428,6 +474,9 @@
 
   {# ---- Automation ---------------------------------------------------- #}
 
+</form>
+<form id="police-letter-form" method="post" action="{{ base_url }}/police-letter" data-discard-warning="{{ t('police_letter.discard_warning') }}">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
 </form>
 <details class="prop-sec" id="sec-calendars"{% if inline_flash_section == 'calendars' %} open{% endif %}{% if (property_view == 'bookings') or (save_errors and save_errors|selectattr('section','equalto','calendars')|list) %} open{% endif %}><summary><span class="dot {{ 'r' if calendar_errors else ('g' if feeds_count else 'n') }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.calendars.title') }}</b></div><small class="sec-state">{{ tp('apartment.form.calendars_count', feeds_count) }}</small></summary>
   <div class="fields-wrap">

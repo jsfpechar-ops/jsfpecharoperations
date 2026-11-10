@@ -1,0 +1,29 @@
+{# 1085: a drawn, generic web-service letter. Real labels, fake values, no crest, logo or names. #}
+<figure class="police-letter-figure">
+  <svg class="police-letter-svg" viewBox="0 0 320 200" role="img" aria-labelledby="pl-fig-t">
+    <title id="pl-fig-t">{{ t('police_letter.figure_title') }}</title>
+    <rect class="pl-sheet" x="4" y="4" width="312" height="192" rx="6"/>
+    <rect class="pl-bar" x="20" y="16" width="90" height="6" rx="3"/>
+    <rect class="pl-bar" x="20" y="27" width="60" height="5" rx="2.5"/>
+    <rect class="pl-bar" x="230" y="16" width="70" height="5" rx="2.5"/>
+    <text class="pl-title" x="160" y="52" text-anchor="middle">Přihlašovací údaje pro robotické vkládání</text>
+    <text class="pl-title" x="160" y="64" text-anchor="middle">Ubyport Webová služba</text>
+    <circle class="pl-num" cx="30" cy="88" r="9"/><text class="pl-num-text" x="30" y="91.5" text-anchor="middle">1</text>
+    <text class="pl-label" x="46" y="91.5">Přihlašovací jméno:</text><text class="pl-value" x="160" y="91.5">UBY-WS_ABCDE</text>
+    <circle class="pl-num" cx="30" cy="114" r="9"/><text class="pl-num-text" x="30" y="117.5" text-anchor="middle">2</text>
+    <text class="pl-label" x="46" y="117.5">Přístupové heslo:</text><text class="pl-value" x="160" y="117.5">••••••••</text>
+    <circle class="pl-num" cx="30" cy="140" r="9"/><text class="pl-num-text" x="30" y="143.5" text-anchor="middle">3</text>
+    <text class="pl-label" x="46" y="143.5">IDUB:</text><text class="pl-value" x="160" y="143.5">000000000000</text>
+    <rect class="pl-bar" x="20" y="162" width="280" height="5" rx="2.5"/>
+    <rect class="pl-bar" x="20" y="173" width="250" height="5" rx="2.5"/>
+    <rect class="pl-bar" x="20" y="184" width="120" height="5" rx="2.5"/>
+  </svg>
+  <figcaption class="police-letter-legend">
+    <ol>
+      <li>{{ t('automation.login') }}</li>
+      <li>{{ t('automation.password') }}: {{ t('police_letter.by_hand') }}</li>
+      <li>{{ t('apartment.form.ubyport.idub_label') }}</li>
+    </ol>
+    <p class="small muted">{{ t('apartment.form.ubyport.mark_label') }}: {{ t('police_letter.mark_note') }}</p>
+  </figcaption>
+</figure>

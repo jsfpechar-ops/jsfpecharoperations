@@ -1568,3 +1568,27 @@ body.host-workspace {
   .host-workspace .bsite-bookings dd .ui-btn-group { display: grid; grid-template-columns: repeat(2, max-content); justify-items: start; }
   .host-workspace .bsite-bookings dd .ui-btn-group > .ui-badge { grid-column: 1 / -1; }
 }
+/* 1085: the police letter helper inside #ubyport. Plain blocks, tokens only. */
+.host-workspace .police-letter-find, .host-workspace .police-letter-paste, .host-workspace .police-letter-check { margin: var(--space-3) 0; min-width: 0; }
+.host-workspace .police-letter-find > summary, .host-workspace .police-letter-paste > summary { cursor: pointer; font-weight: 600; padding: var(--space-3) 0; color: var(--ink); }
+.host-workspace .police-letter-figure { margin: 0 0 var(--space-3); }
+.host-workspace .police-letter-svg { display: block; width: 100%; max-width: 360px; height: auto; }
+.host-workspace .police-letter-svg .pl-sheet { fill: var(--surface); stroke: var(--border-strong); stroke-width: 1; }
+.host-workspace .police-letter-svg .pl-bar { fill: var(--surface-active); }
+.host-workspace .police-letter-svg .pl-title { fill: var(--ink); font-size: 8px; font-weight: 700; }
+.host-workspace .police-letter-svg .pl-label { fill: var(--ink-secondary); font-size: 9px; }
+.host-workspace .police-letter-svg .pl-value { fill: var(--ink); font-size: 9px; font-family: var(--font-mono); font-weight: 700; }
+.host-workspace .police-letter-svg .pl-num { fill: var(--brand-soft); stroke: var(--brand); stroke-width: 1; }
+.host-workspace .police-letter-svg .pl-num-text { fill: var(--brand-ink); font-size: 9px; font-weight: 700; }
+.host-workspace .police-letter-legend ol { margin: var(--space-3) 0 var(--space-2); padding-left: var(--space-5); }
+.host-workspace .police-letter-legend p { margin: 0; overflow-wrap: anywhere; }
+.host-workspace .police-letter-paste textarea { width: 100%; max-width: 100%; font-family: var(--font-mono); font-size: 13px; }
+.host-workspace .police-letter-paste .actions { margin-top: var(--space-3); }
+.host-workspace .police-letter-check { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: var(--space-3) 0; }
+.host-workspace .police-letter-check-title { margin: 0 0 var(--space-2); font-size: 15px; font-weight: 700; }
+.host-workspace .police-letter-row { padding: var(--space-3) 0; border-top: 1px solid var(--line); min-width: 0; }
+.host-workspace .police-letter-row p { margin: var(--space-1) 0 0; overflow-wrap: anywhere; }
+.host-workspace .police-letter-name { display: block; font-weight: 600; }
+.host-workspace .police-letter-value { display: block; font-family: var(--font-mono); font-size: 15px; overflow-wrap: anywhere; }
+.host-workspace .police-letter-src code { display: block; margin-top: var(--space-1); padding: var(--space-1) var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--canvas-subtle); font-family: var(--font-mono); font-size: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.host-workspace .police-letter-row .checkline { margin-top: var(--space-2); min-height: var(--action-height); align-items: center; }
