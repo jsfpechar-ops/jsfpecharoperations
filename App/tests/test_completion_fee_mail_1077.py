@@ -179,6 +179,7 @@ def test_a_malformed_bank_account_drops_the_bank_way_only():
             RESERVATION, CHARGE, True,
         )
         assert [way["key"] for way in ways] == ["revolut", "cash"]
+        assert stay_fee.payout_account(_apartment(legal_entity_id=bad)) == ("", "Fee Ways 1077")
     finally:
         db.execute("DELETE FROM legal_entity WHERE id = ?", (bad,))
 

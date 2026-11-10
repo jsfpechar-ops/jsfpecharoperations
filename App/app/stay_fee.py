@@ -87,7 +87,13 @@ def payout_account(apartment) -> Tuple[str, str]:
             if entity["iban"]:
                 account = entity["iban"]
             elif entity["bank_account"]:
-                account = payments.normalise_account(entity["bank_account"])[1]
+                try:
+                    account = payments.normalise_account(entity["bank_account"])[1]
+                except ValueError:
+                    # Same as guest_pay_ways: a malformed stored account is
+                    # not a pay way. Raising here 500s the guest hub and the
+                    # host save that reconciles the no-pay-way alert.
+                    account = ""
     return account, payee
 
 
