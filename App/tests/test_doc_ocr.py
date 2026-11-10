@@ -313,7 +313,7 @@ def test_the_scan_button_is_a_plain_button_in_the_first_step():
     part = (here / "app" / "templates" / "guest" / "_ocr_scan.html").read_text(encoding="utf-8")
     assert "guest/_ocr_scan.html" in form
     assert 'data-step-title="{{ t(\'your_details\') }}"' in form
-    assert '<label class="g-btn secondary" for="ocr-scan-file">' in part
+    assert '<label class="g-btn" for="ocr-scan-file">' in part
     assert "{{ t('ocr_scan_button') }}" in part
     assert 'id="ocr-scan-status" role="status" aria-live="polite"' in part
     assert "ocr-scan-toggle" not in form

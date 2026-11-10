@@ -148,7 +148,7 @@ GUEST_EN_MESSAGES: Dict[str, str] = {
     "Nationality is required.": "Choose your nationality.",
     "Country is required.": "Choose the country of your home address.",
     "Enter the full date as DD.MM.YYYY.": (
-        "Date of birth: enter the full date as DD.MM.YYYY."
+        "Date of birth: enter the full date as DD.MM.YYYY, for example 14.03.1961."
     ),
     "Year must be 1900 or later.": "Date of birth: year must be 1900 or later.",
     "Month must be between 01 and 12.": "Date of birth: month must be between 01 and 12.",
@@ -162,7 +162,7 @@ GUEST_CS_MESSAGES: Dict[str, str] = {
     "Nationality is required.": "Vyberte státní občanství.",
     "Country is required.": "Vyberte stát trvalého bydliště.",
     "Enter the full date as DD.MM.YYYY.": (
-        "Datum narození: zadejte celé datum ve formátu DD.MM.RRRR."
+        "Datum narození: zadejte celé datum ve formátu DD.MM.RRRR, například 14.03.1961."
     ),
     "Year must be 1900 or later.": "Datum narození: rok musí být 1900 nebo pozdější.",
     "Month must be between 01 and 12.": "Datum narození: měsíc musí být mezi 01 a 12.",
@@ -182,7 +182,7 @@ GUEST_CS_MESSAGES: Dict[str, str] = {
 GUEST_MESSAGES: Dict[str, Dict[str, str]] = {
     "de": {
         "Date of birth is required.": "Das Geburtsdatum ist erforderlich.",
-        "Enter the full date as DD.MM.YYYY.": "Geburtsdatum: Geben Sie das vollständige Datum als TT.MM.JJJJ ein.",
+        "Enter the full date as DD.MM.YYYY.": "Geburtsdatum: Geben Sie das vollständige Datum als TT.MM.JJJJ ein, zum Beispiel 14.03.1961.",
         "Year must be 1900 or later.": "Geburtsdatum: Das Jahr muss 1900 oder später sein.",
         "Month must be between 01 and 12.": "Geburtsdatum: Der Monat muss zwischen 01 und 12 liegen.",
         "Day must be between 01 and 31.": "Geburtsdatum: Der Tag muss zwischen 01 und 31 liegen.",
@@ -220,7 +220,7 @@ GUEST_MESSAGES: Dict[str, Dict[str, str]] = {
     },
     "es": {
         "Date of birth is required.": "La fecha de nacimiento es obligatoria.",
-        "Enter the full date as DD.MM.YYYY.": "Fecha de nacimiento: introduzca la fecha completa como DD.MM.AAAA.",
+        "Enter the full date as DD.MM.YYYY.": "Fecha de nacimiento: introduzca la fecha completa como DD.MM.AAAA, por ejemplo 14.03.1961.",
         "Year must be 1900 or later.": "Fecha de nacimiento: el año debe ser 1900 o posterior.",
         "Month must be between 01 and 12.": "Fecha de nacimiento: el mes debe estar entre 01 y 12.",
         "Day must be between 01 and 31.": "Fecha de nacimiento: el día debe estar entre 01 y 31.",
@@ -258,7 +258,7 @@ GUEST_MESSAGES: Dict[str, Dict[str, str]] = {
     },
     "fr": {
         "Date of birth is required.": "La date de naissance est obligatoire.",
-        "Enter the full date as DD.MM.YYYY.": "Date de naissance : saisissez la date complète au format JJ.MM.AAAA.",
+        "Enter the full date as DD.MM.YYYY.": "Date de naissance : saisissez la date complète au format JJ.MM.AAAA, par exemple 14.03.1961.",
         "Year must be 1900 or later.": "Date de naissance : l'année doit être 1900 ou postérieure.",
         "Month must be between 01 and 12.": "Date de naissance : le mois doit être compris entre 01 et 12.",
         "Day must be between 01 and 31.": "Date de naissance : le jour doit être compris entre 01 et 31.",

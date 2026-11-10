@@ -18,6 +18,7 @@ func TestBack(t *testing.T) {
 		{"msg only", "/a", Flash{Text: "Ok"}, Flash{}, "/a?msg=Ok"},
 		{"err only", "/a", Flash{}, Flash{Text: "Bad"}, "/a?err=Bad"},
 		{"both", "/a", Flash{Text: "Ok"}, Flash{Text: "Bad"}, "/a?msg=Ok&err=Bad"},
+		{"err with fix", "/a", Flash{}, Flash{Text: "Bad", Fix: "bank"}, "/a?err=Bad&fix=bank"},
 		{"success key", "/a", saved, Flash{}, "/a?msg=Saved&toast_kind=success"},
 		{"sticky warning", "/a", Flash{Text: "Saved", Key: "flash.apartments.saved"}, Flash{}, "/a?msg=Saved&toast_kind=warning&toast_sticky=1"},
 		{"partial", "/a", Flash{Text: "Some", Key: "flash.reservations.accepted", Count: 2}, Flash{}, "/a?msg=Some&toast_kind=partial&toast_sticky=1"},

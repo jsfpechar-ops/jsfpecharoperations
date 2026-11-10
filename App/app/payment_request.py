@@ -157,6 +157,18 @@ def expire_sweep(today: date) -> int:
     return len(expired)
 
 
+NO_ACCOUNT_BODY = "No bank account is set up for this payment request.\n"
+
+
+def has_bank_account(owner_user_id: int) -> bool:
+    """True when the owner's legal entity carries an IBAN or a Czech account."""
+    entity = db.query_one(
+        "SELECT iban, bank_account FROM legal_entity WHERE owner_user_id = ?",
+        (owner_user_id,),
+    )
+    return bool(entity and (entity["iban"] or entity["bank_account"]))
+
+
 def qr_payload(request: Dict[str, Any]) -> tuple:
     """(SPAYD payload, QR PNG bytes) for a QR request, from the owner's IBAN."""
     if request["rail"] != "qr":

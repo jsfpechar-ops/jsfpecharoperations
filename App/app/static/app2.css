@@ -2582,6 +2582,7 @@ body.v2 .payments-new legend,body.v2 .payments-new .ui-field>label{display:block
 body.v2 .payments-amount input::-webkit-inner-spin-button,body.v2 .payments-amount input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}body.v2 .payments-new .payments-amount input[type=number][name=amount_czk][id]:focus{outline:0;border-bottom-color:var(--acc);box-shadow:0 2px 0 0 var(--acc)}
 body.v2 .payments-new .ui-chip{position:relative;border:0;background:#f4f3ef;padding:0 18px;box-shadow:none}body.v2 .payments-new .ui-chip input{position:absolute;left:0;top:0;width:1px;height:1px;margin:0;opacity:0}
 body.v2 .payments-new .ui-chip:has(input:checked){background:var(--ink);color:#fff;box-shadow:none}body.v2 .payments-new .ui-chip:has(input:focus-visible){outline:2px solid var(--acc);outline-offset:2px}
+body.v2 .payments-new .ui-chip:has(input:disabled){opacity:.5;cursor:not-allowed}
 body.v2 .payments-seg{display:grid;grid-template-columns:1fr 1fr}body.v2 .payments-seg .ui-chip{justify-content:center}
 body.v2 .payments-new .ui-form-actions{display:block;margin-top:8px}body.v2 .payments-new .ui-form-actions .ui-btn{width:100%;min-height:50px;justify-content:center}
 @media (min-width:1024px){body.v2 .payments-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}}
@@ -2940,6 +2941,7 @@ body.v2 :is(.success-notice-close, .toast-stack .toast[data-toast-kind="success"
 body.v2 .toast-stack .toast[data-toast-kind] > [data-toast-close] { flex: 0 0 32px; display: inline-grid; place-items: center; width: 32px; height: 32px; min-width: 32px; min-height: 32px; margin: 0 0 0 auto; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--ink-secondary, #5b5a55); font-size: 16px; line-height: 1; cursor: pointer; }
 body.v2 .toast-stack .toast[data-toast-kind] > [data-toast-close]:hover { background: var(--surface-hover, #f1f0ec); color: var(--ink); }
 @media (max-width:767px){body.v2 .toast-stack .toast[data-toast-kind] > [data-toast-close]{flex-basis:44px;width:44px;height:44px;min-width:44px;min-height:44px}}
+body.v2 .toast-stack .toast[data-toast-kind] > a.ui-btn{margin-right:8px}
 body.v2 .toast-stack .toast .toast-pill { min-height: 44px; padding: 8px 18px; border: 0; border-radius: 999px; background: var(--s); color: var(--ink); font-size: 14px; font-weight: 700; text-decoration: none; }
 body.v2 .toast-stack .toast .toast-pill:hover { color: var(--ink); }
 body.v2 .toast-stack .toast .toast-pill:focus-visible { outline: 2px solid #d0452d; outline-offset: 2px; }

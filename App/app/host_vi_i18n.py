@@ -1519,7 +1519,7 @@ STRINGS: Dict[str, str] = {
     "invoice.lang.cs": "Tiếng Séc",
     "invoice.lang.en": "Tiếng Anh (kèm nhãn tiếng Séc)",
     "invoice.issue_confirm": "Sau khi xuất, hóa đơn không thể thay đổi. Sai sót được sửa bằng chứng từ hủy hoặc chứng từ điều chỉnh.",
-    "invoice.warn_no_iban": "Đơn vị vận hành chưa có tài khoản ngân hàng nên hóa đơn sẽ không có mã QR.",
+    "invoice.warn_no_iban": "Hóa đơn này sẽ không có mã QR thanh toán.",
     "invoice.err.no_entity": "Hãy gán đơn vị vận hành cho chỗ ở này trước.",
     "invoice.err.seller_seat": "Đơn vị vận hành cần có địa chỉ đăng ký (sídlo).",
     "invoice.err.registry": "Thêm thông tin đăng ký cho đơn vị vận hành (vd. \"Fyzická osoba zapsaná v živnostenském rejstříku\").",
