@@ -11107,6 +11107,7 @@ _SHORT_EDITOR_1099_STRINGS = {
         "setup.label.facility": "Facility name on the letter",
         "setup.ready.title": "You're ready",
         "setup.ready.text": "Send this link and PIN to your guests.",
+        "setup.ready.text_no_pin": "Send this link to your guests.",
         "setup.ready.qr_alt": "QR code for the guest link",
     },
     "cs": {
@@ -11122,6 +11123,7 @@ _SHORT_EDITOR_1099_STRINGS = {
         "setup.label.facility": "Název zařízení z dopisu",
         "setup.ready.title": "Máte hotovo",
         "setup.ready.text": "Pošlete hostům tento odkaz a PIN.",
+        "setup.ready.text_no_pin": "Pošlete hostům tento odkaz.",
         "setup.ready.qr_alt": "QR kód odkazu pro hosty",
     },
 }

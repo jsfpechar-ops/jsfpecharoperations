@@ -99,6 +99,15 @@ def test_new_property(live, width):
         assert any("min" in text for text in state["states"])
     else:
         assert state["visible"] == ["sec-police"], state
+    # The letter comes first: the picture sits above any "Missing" list in the police section.
+    order = page.evaluate(
+        """() => ({
+          figure: document.querySelector('#sec-police details.police-letter-find').getBoundingClientRect().top,
+          missing: [...document.querySelectorAll('#sec-police .prop-sec-missing')]
+            .filter(el => el.getBoundingClientRect().height > 0).map(el => el.getBoundingClientRect().top),
+        })"""
+    )
+    assert all(order["figure"] < top for top in order["missing"]), order
     _shot(page, "new", width)
 
 
@@ -137,6 +146,16 @@ def test_ready_card(live, fake, width):  # noqa: F811
     below = copy["top"] >= qr["bottom"] + 12 - 0.5
     assert beside or below, box
     assert page.locator(".ready-card-link").is_visible() and page.locator(".ready-card-pin").is_visible()
+    card = page.evaluate(
+        """() => {
+          const c = getComputedStyle(document.querySelector('[data-ready-card]'));
+          return {bg: c.backgroundColor, border: c.borderTopWidth,
+                  primary: document.querySelectorAll('[data-ready-card] .ui-btn-primary, [data-ready-card] .btn').length};
+        }"""
+    )
+    assert card["primary"] == 0, card
+    if width >= 768:  # ui-section-card is a bordered card from 768 px; flat on the phone, like the other section cards
+        assert card["bg"] == "rgb(255, 255, 255)" and card["border"] == "1px", card
     # At 768 and up the tabs show one section (app.js opens it); the phone accordion stays closed.
     assert _state(page)["open"] == ([] if width < 768 else ["sec-basics"])
     _shot(page, "ready", width)

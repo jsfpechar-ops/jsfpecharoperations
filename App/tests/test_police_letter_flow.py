@@ -1066,6 +1066,10 @@ def test_the_letter_helper_is_styled_in_the_browser(host, no_client):
                 page = context.new_page()
                 page.goto(url)
                 # 1099: on a first-setup property both disclosures already start open.
+                # 1099: both start open in first setup; close and reopen "Where do I find these?" with real clicks.
+                page.locator("details.police-letter-find > summary").click()
+                assert page.locator("details.police-letter-find").evaluate("d => d.open") is False
+                page.locator("details.police-letter-find > summary").click()
                 page.evaluate(
                     "document.querySelectorAll('details.police-letter-find, details.police-letter-paste')"
                     ".forEach((d) => { d.open = true; })"

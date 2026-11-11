@@ -3495,6 +3495,5 @@ body.v2 .ready-card-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 1
 body.v2 .ready-card-row:last-child{margin-bottom:0}
 body.v2 .ready-card-row .muted{flex:0 0 100%;color:var(--ink3);font-size:13px}
 body.v2 .ready-card-link{overflow-wrap:anywhere;min-width:0}
-body.v2 section.ready-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;margin:0 0 16px}
 /* 1099: the state line keeps one line at 320 px (state and minutes). */
 @media (max-width:359px){body.v2 .prop-sec>summary>.sec-state{font-size:13px;line-height:calc(14px * 1.35);letter-spacing:-0.1px}}

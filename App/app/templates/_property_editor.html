@@ -142,12 +142,16 @@
 {% if ready_card %}
 <section class="ui-section-card ready-card" id="setup-ready" aria-labelledby="setup-ready-title" data-ready-card>
   <h2 class="ui-section-h" id="setup-ready-title">{{ t('setup.ready.title') }}</h2>
-  <p class="ui-sub">{{ t('setup.ready.text') }}</p>
+  <p class="ui-sub">{{ t('setup.ready.text') if pin else t('setup.ready.text_no_pin') }}</p>
   <div class="ready-card-body">
     <img class="ready-card-qr" src="{{ ready_qr }}" width="160" height="160" alt="{{ t('setup.ready.qr_alt') }}">
     <div class="ready-card-copy">
-      <p class="ready-card-row"><span class="muted">{{ t('property_page.guest_link.title') }}</span> <code class="ready-card-link">{{ permalink }}</code> {{ copy_inline('ready-link', permalink) }}</p>
-      {% if pin %}<p class="ready-card-row"><span class="muted">{{ t('havel.card.pin') }}</span> <b class="ready-card-pin">{{ pin }}</b> {{ copy_inline('ready-pin', pin, t('property_page.guest_link.copy_pin')) }}</p>{% endif %}
+      <p class="ready-card-row"><span class="muted">{{ t('property_page.guest_link.title') }}</span> <code class="ready-card-link">{{ permalink }}</code>
+        <input class="sr-only" type="text" id="ready-link" readonly value="{{ permalink }}" tabindex="-1" aria-hidden="true">
+        <button class="ui-btn ui-btn-secondary" type="button" data-copy="ready-link" data-copy-label="{{ t('common.copy_link') }}" data-copied-label="{{ t('common.copied') }}">{{ t('common.copy_link') }}</button></p>
+      {% if pin %}<p class="ready-card-row"><span class="muted">{{ t('havel.card.pin') }}</span> <b class="ready-card-pin">{{ pin }}</b>
+        <input class="sr-only" type="text" id="ready-pin" readonly value="{{ pin }}" tabindex="-1" aria-hidden="true">
+        <button class="ui-btn ui-btn-secondary" type="button" data-copy="ready-pin" data-copy-label="{{ t('property_page.guest_link.copy_pin') }}" data-copied-label="{{ t('common.copied') }}">{{ t('property_page.guest_link.copy_pin') }}</button></p>{% endif %}
     </div>
   </div>
 </section>
@@ -329,7 +333,7 @@
 <details class="prop-sec" id="sec-police"{{ sec_open('sec-police') }}><summary><span class="dot {{ 'g' if police_ok else 'r' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.police.title') }}</b></div>{{ sec_state('police', (tp('property_nav.report_missing', report_missing) if not police_reported else (t('setup.sec.done') if section_done.police else t('setup.sec.police_untested'))) if first_setup else (t('property_nav.report_ready') if police_ok else tp('property_nav.report_missing', report_missing))) }}</summary>
   <div class="fields-wrap">
   {{ section_notice('police') }}
-  {{ section_missing(miss['police'], 'police') }}
+  {% if not (first_setup and not section_done.police and not letter_rows and not letter_status) %}{{ section_missing(miss['police'], 'police') }}{% endif %}
     <section class="panel property-section ui-section" id="ubyport">
       <div class="field-label-row police-section-head"><h2 class="property-section-title">{{ t('property_page.police.connection') }}{{ help_tip('ubyport-help', t('apartment.form.ubyport.credentials_help_heading'), '/guide#ubyport-credentials') }}</h2>
         <a class="ui-btn ui-btn-secondary ui-btn-compact police-sample-link" id="police-sample-link" href="/static/docs/ubyport-ws-credential-sample.pdf?v=20261004a" target="_blank" rel="noopener">{{ t('apartment.form.ubyport.sample_link') }}</a></div>
