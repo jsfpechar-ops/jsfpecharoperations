@@ -37,6 +37,7 @@ NO_JS_LOADS = (
 
 # The successful controls of the one property form, by name.
 SETTINGS_NAMES = {
+    "letter_fields",  # 1100: the hidden letter_fields always renders (empty on a GET)
     "signature_drawn", "signature_name", "fee_signature_section", "signature_file", "return_to", "_csrf", "internal_name", "city_en", "legal_entity_id", "data_controller_entity_id",
     "addr_okres", "addr_obec", "addr_obec_cast", "addr_street", "addr_house_no", "addr_orient_no", "addr_zip",
     "notes", "permalink_pin", "guest_message", "permalink_window_days",

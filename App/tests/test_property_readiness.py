@@ -265,7 +265,7 @@ def test_the_eight_reporting_fields_keep_localized_labels_and_controls_without_b
         ("addr_zip", "apartment.form.addr.zip", "text"),
         ("addr_obec", "apartment.form.addr.obec", "text"),
         ("uby_ws_user", "setup.label.login", "text"),
-        ("uby_ws_password", "setup.label.password", "password"),
+        ("uby_ws_password", "setup.label.password", "text"),
     )
 
     for lang in ("en", "cs"):
