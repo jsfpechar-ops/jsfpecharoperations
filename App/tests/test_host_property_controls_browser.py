@@ -973,7 +973,7 @@ def test_1104_feed_url_and_copy_button_share_one_row(host, base):
                     elif width == 768:
                         assert info["urlWidth"] >= 120 and info["btnHeight"] >= 44, (width, info)
                     else:
-                        assert info["urlWidth"] >= 120 and info["btnHeight"] >= 36, (width, info)
+                        assert info["urlWidth"] >= 160 and info["btnHeight"] >= 36, (width, info)
                     page.locator(f".copy-btn[data-copy='{fid}']").click()
                     page.wait_for_function(
                         "(id) => document.querySelector(\"[data-copy='\" + id + \"']\").classList.contains('copied')",

@@ -2977,6 +2977,7 @@ body.v2 .feed-table .feed-url-row{display:flex;flex-wrap:nowrap;align-items:cent
 body.v2 .feed-table .feed-url-row .feed-url-value{flex:1 1 auto;width:0;min-width:0;max-width:none;margin:0;padding:0 12px;height:40px;display:flex;align-items:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;word-break:normal;overflow-wrap:normal}
 body.v2 .feed-table .feed-url-row .copy-btn{flex:none;width:auto;height:40px;min-height:40px;padding:0 14px;margin:0;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:var(--radius-md,8px)}
 @media (max-width:1023px){body.v2 .feed-table .feed-url-row .feed-url-value,body.v2 .feed-table .feed-url-row .copy-btn{height:44px;min-height:44px}}
+@media (min-width:1024px){body.v2 .feed-table td.feed-url{width:100%}body.v2 .feed-table td:nth-child(3){white-space:normal}body.v2 .feed-table .feed-url-row .feed-url-value{height:36px}body.v2 .feed-table .feed-url-row .copy-btn{height:36px;min-height:36px;padding:0 12px}}
 /* 0996: signature dialog and terms line on v2 pages (host2.css and app.css are not loaded there) */
 body.v2 .ui-dialog.signature-dialog{border:0;padding:0;background:transparent;max-width:none;width:min(720px,calc(100vw - 32px));margin:auto}
 body.v2 .ui-dialog.signature-dialog::backdrop{background:var(--scrim,rgba(32,32,30,.4))}
