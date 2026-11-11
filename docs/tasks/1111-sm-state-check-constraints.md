@@ -1,7 +1,7 @@
 # 1111: CHECK constraints for the state columns that have none (PostgreSQL goose file)
 
 Status: blocked (owner must run the query in section "Owner step first" and paste the result)
-Depends on: 1103-1110 | Base commit: 0417f799 | Branch: task/1111-sm-state-check-constraints
+Depends on: round 1 (1103-1110, PR #920) and 1120 (migration 00016 must exist first) | Base commit: 0417f799 | Branch: task/1111-sm-state-check-constraints
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 **HIGH RISK migration.** A CHECK that rejects a value already in production makes `pg_schema.py apply` fail and the app refuses to start while the file is pending. A CHECK that omits a value the code writes breaks filing, door codes or mail at run time. Both are prevented by the order below: the owner runs the query first (Part A), the executor only starts Part B when the pasted result shows no value outside the allowed sets.
@@ -45,7 +45,7 @@ Add nine named CHECK constraints (one per column below) in a new PostgreSQL goos
 ### 2.1 How migrations work here (evidence)
 
 - Production runs PostgreSQL: `docs/context/status.md` line 7 says "Postgres cutover done". `docs/context/rules.md` line 37 still says "Production stays on SQLite pending owner cutover" and line 44 says `App/app/migrations/` "is frozen at 0033"; both lines are stale (files `0034` to `0043` exist, newest `App/app/migrations/0043_guest_signed_for.sql`). See Open questions 1.
-- A PostgreSQL schema change is a goose file `App/migrations_pg/NNNNN_name.sql`, next number = highest + 1 (`docs/context/rules.md` line 44). The highest today is `App/migrations_pg/00014_guest_signed_for.sql`, so the new file is **00015**.
+- A PostgreSQL schema change is a goose file `App/migrations_pg/NNNNN_name.sql`, next number = highest + 1 (`docs/context/rules.md` line 44). `00015_lead_reduced_guests.sql` exists on main, 00016 is taken by brief 1120 (runs first), so this brief uses **00017**.
 - `App/app/db.py` line 1516: `GOOSE_DIR = Path(__file__).resolve().parent.parent / "migrations_pg"`; `goose_files()` (line 1558) lists them and refuses duplicate versions; `apply_postgresql_schema()` (line 1809) applies every pending goose file inside one transaction (`BEGIN IMMEDIATE` ... `COMMIT`, rollback on any error), so a failing constraint leaves nothing behind.
 - The owner applies it after the deploy: `docker compose run --rm --no-deps ubyhost python scripts/pg_schema.py apply --expect-database ubyhost` (`docs/LIGHTSAIL.md` line 224). The app will not start while a goose file is pending.
 - Goose files must be additive so the previous image keeps working (`docs/context/rules.md` line 47). A CHECK limited to values the previous image also writes keeps that true.
@@ -103,7 +103,7 @@ Why each replacement keeps the test meaning: the palette tests only need "a subm
 
 | Path | Action | What |
 |---|---|---|
-| `App/migrations_pg/00015_state_check_constraints.sql` | create | nine constraints, Up and Down |
+| `App/migrations_pg/00017_state_check_constraints.sql` | create | nine constraints, Up and Down |
 | `App/tests/test_sm_state_check_constraints.py` | create | static test, runs on SQLite |
 | `App/tests/test_goose_migrations.py` | append | one PostgreSQL-only test |
 | `go/internal/palette/palette_test.go` | edit | line 110, `'done'` to `'ok'` |
@@ -124,7 +124,7 @@ Open section "Owner result (paste here)" at the bottom of this file.
 - For every row, check `value` is in the allowed list of its `col` in section 2.2. Any row outside (for example a `guest.submit_state` of `ok`, a `submission.state` of `done`, or a `<NULL>` anywhere except `ad_click.send_state`): **STOP. Create nothing. Write the report with the exact `col`, `value`, `n` of each such row** and tell the owner. Do not widen a set to make it fit: the orchestrator decides.
 - Check the earlier briefs landed: command `ls App/tests | grep '^test_sm_' | tail -30`. Expected: files for the machines of 1103 to 1110. Nothing listed: STOP and report.
 
-**Step 1. Create the goose file** `App/migrations_pg/00015_state_check_constraints.sql` with exactly this content:
+**Step 1. Create the goose file** `App/migrations_pg/00017_state_check_constraints.sql` with exactly this content:
 
 ```sql
 -- +goose Up
@@ -173,8 +173,8 @@ ALTER TABLE submission DROP CONSTRAINT IF EXISTS submission_state_check;
 ALTER TABLE guest DROP CONSTRAINT IF EXISTS guest_submit_state_check;
 ```
 
-Check: `ls App/migrations_pg | tail -2 | cat` prints `00014_guest_signed_for.sql` then `00015_state_check_constraints.sql`. If a `00015_*` file already existed before this step: STOP (another brief took the number).
-Command: `grep -c "ADD CONSTRAINT" App/migrations_pg/00015_state_check_constraints.sql | tail -30`. Expected: `9`.
+Check: `ls App/migrations_pg | tail -2 | cat` prints `00016_<the 1120 observe trigger file>` then `00017_state_check_constraints.sql`. If a `00017_*` file already existed before this step: STOP (another brief took the number).
+Command: `grep -c "ADD CONSTRAINT" App/migrations_pg/00017_state_check_constraints.sql | tail -30`. Expected: `9`.
 
 **Step 2. Create the static test** `App/tests/test_sm_state_check_constraints.py` with exactly this content:
 
@@ -192,7 +192,7 @@ from pathlib import Path
 
 from app import booking_site, door_codes, mail, meta_capi, reporting
 
-GOOSE_FILE = Path(__file__).resolve().parent.parent / "migrations_pg" / "00015_state_check_constraints.sql"
+GOOSE_FILE = Path(__file__).resolve().parent.parent / "migrations_pg" / "00017_state_check_constraints.sql"
 
 ALLOWED = {
     ("guest", "submit_state"): {"pending", "sent", "error", "blocked", "not_required"},
@@ -348,7 +348,7 @@ Command: `grep -nF "UPDATE guest SET submit_state = 'sent' WHERE id = \$1" go/in
 ## 5. Do not touch
 
 - Every writer: `App/app/reporting.py`, `mail.py`, `door_codes.py`, `cleaning_codes.py`, `booking_site.py`, `meta_capi.py`, `ttlock.py`, `signup.py`, `claim.py`, `icalsync.py`, and every non-test file under `go/`.
-- `App/app/db.py` (`SCHEMA` and `ADDED_COLUMNS` never change, rules.md line 44), `App/app/migrations/` (no new SQLite file: SQLite cannot add a constraint), `App/migrations_pg/00001` to `00014`.
+- `App/app/db.py` (`SCHEMA` and `ADDED_COLUMNS` never change, rules.md line 44), `App/app/migrations/` (no new SQLite file: SQLite cannot add a constraint), `App/migrations_pg/00001` to `00016`.
 - Hard rules: 1 (filing correctness wins: if in doubt about a filing value, STOP), 3 (the pasted owner result holds only state words and counts; remove anything else before committing), 4 (no new dependency), 5 (SQL only through `db.py` helpers; the new file is a goose file, Postgres only).
 - Never widen an allowed set, never add `NOT VALID`, never drop a constraint to make a test pass.
 
@@ -365,7 +365,7 @@ From the repo root: `python3 scripts/context_lint.py 2>&1 | tail -30`.
 ## 7. Acceptance
 
 - [ ] Step 0 passed: the owner result is pasted and every value is inside the allowed sets (or the report is `blocked` with the odd rows).
-- [ ] `App/migrations_pg/00015_state_check_constraints.sql` exists, has 9 `ADD CONSTRAINT` and 18 `DROP CONSTRAINT IF EXISTS` lines in total (9 in Up, 9 in Down); `grep -c "DROP CONSTRAINT IF EXISTS" App/migrations_pg/00015_state_check_constraints.sql | tail -30` prints `18`.
+- [ ] `App/migrations_pg/00017_state_check_constraints.sql` exists, has 9 `ADD CONSTRAINT` and 18 `DROP CONSTRAINT IF EXISTS` lines in total (9 in Up, 9 in Down); `grep -c "DROP CONSTRAINT IF EXISTS" App/migrations_pg/00017_state_check_constraints.sql | tail -30` prints `18`.
 - [ ] `test_sm_state_check_constraints.py`: 6 passed.
 - [ ] `test_goose_migrations.py`: no failure (the PostgreSQL tests are skipped for the executor, run by CI).
 - [ ] `grep -rn "'done'" go/internal --include=*_test.go | tail -30` prints nothing.
@@ -377,7 +377,7 @@ Stop, and write the report, if:
 
 - the owner result is missing, or any value is outside its allowed set (Step 0): create nothing;
 - an excerpt or anchor is not found, or a grep count differs from the stated one;
-- another `00015_*` goose file exists;
+- another `00017_*` goose file exists, or `00016_*` (brief 1120) is missing;
 - a test fails twice;
 - you reach 25 tool calls or about 50k tokens (write the report as `blocked`, see executor.md);
 - a new dependency seems needed;
@@ -405,10 +405,11 @@ Write `docs/tasks/1111-report.md` (600 tokens at most) and set `Status: review`.
 4. **`door_code` `period_taken`/`period_shared`** are exception kinds and `last_error` prefixes, not states (`door_codes.py:392`, `459`, `524`, `552`). Excluded. Part A would show them if production holds them as a state.
 5. **Go fixtures.** Four Go test fixtures write values outside the sets (section 2.3) and are fixed in steps 5 to 8. Go fixtures that pass the state as a `$n` parameter cannot be found by grep; the Go test run in CI with `UBYHOST_TEST_DATABASE_URL` set is the check. The executor cannot run it.
 6. **Lock and size.** `ADD CONSTRAINT ... CHECK` takes an exclusive lock and scans the whole table inside the apply transaction. The tables are small today; the Part A counts show how small. If any `n` total is above about 1,000,000 rows, the orchestrator decides whether to use `NOT VALID` plus a later `VALIDATE CONSTRAINT`.
+7. **Renumbered.** Renumbered from 00015 to 00017 on 2026-11-11; if another migration lands first, the executor stops and reports rather than picking a number.
 
 ## Risk list (for the reviewer)
 
-- `App/migrations_pg/00015_state_check_constraints.sql`: each value list against section 2.2 and the pasted owner result.
+- `App/migrations_pg/00017_state_check_constraints.sql`: each value list against section 2.2 and the pasted owner result.
 - `App/tests/test_sm_state_check_constraints.py`: the `ALLOWED` sets equal the migration.
 - The four one-line Go test edits.
 
