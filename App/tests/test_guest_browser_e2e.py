@@ -108,12 +108,10 @@ LAYOUT_JS = r"""
   for (let i = 1; i < fields.length; i++) {
     const a = R(fields[i - 1]), b = R(fields[i]);
     if (Math.abs(a.top - b.top) < 2) continue;
-    const row = fields[i - 1].closest('.g-row');
-    if (row && row === fields[i].closest('.g-row')) continue;
     gaps.push(Math.round(b.top - a.bottom));
   }
   const rhythm = gaps.filter(g => g > 2);
-  if (rhythm.length > 1 && Math.max(...rhythm) - Math.min(...rhythm) > 6)
+  if (rhythm.length > 1 && Math.max(...rhythm) - Math.min(...rhythm) > 2)
     out.push(`the space between fields is uneven: ${gaps.join(', ')}px`);
 
   scope.querySelectorAll('button, a.g-btn').forEach(el => {

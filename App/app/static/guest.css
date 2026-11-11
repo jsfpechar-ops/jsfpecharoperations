@@ -632,6 +632,11 @@ select {
 /* 0896: a row's last field has no bottom margin, so the row keeps the 16 px field rhythm itself */
 .g-row { margin-bottom: 16px; }
 .g-row:last-child { margin-bottom: 0; }
+/* 1098: a field in a row is a grid item, so its margin never collapses; the row gap is the
+   one space between them and an empty read-back adds nothing. */
+.g-row { gap: 16px 14px; }
+.g-row > .g-field { margin-bottom: 0; }
+.g-field .hint:empty { margin: 0; }
 @media (max-width: 430px) { .g-row { grid-template-columns: 1fr; } }
 
 /* A checkbox is the control a thumb misses most, so the whole row is the
