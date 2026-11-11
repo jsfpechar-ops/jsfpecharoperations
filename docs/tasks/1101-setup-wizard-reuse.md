@@ -75,11 +75,7 @@ So: a new property goes back into the existing step wizard (`/apartments/{id}/se
 | existing tests (section 6) | revert the #899 create-redirect expectations only |
 | `docs/tasks/screenshots-1101/`, `docs/tasks/1101-report.md` | create |
 
-## 4. Do not touch
-
-`_run_connection_test` and the save/test logic of `test_connection` (only the added branch), credential handling (`uby_ws_password*`, encryption, the password never rendered), `App/app/ubyport/`, `reporting.py`, `police_letter.py` parsing, filing and `submit_state`, 1100's paste/autofill code and JS, `app.js`, `STEPS`/`RETIRED_STEPS`, `setup_action`, `mark_tested`, `onboarding.py`, `db.py`, migrations, `retention.py` (`tested` is a non-personal boolean), any dependency, `ALLOW` in `test_layout_lint_browser.py`. Never push to `main`.
-
-## 5. Steps (commit after each: `1101 step k`)
+## 4. Steps (commit after each: `1101 step k`)
 
 1. `git fetch origin main && git merge origin/main`. `git log origin/main --oneline | grep -i 1100 | head -3`: **empty means 1100 has not merged: STOP**, write the report `Status: blocked: 1100 not merged`, commit, end. Re-grep each anchor in section 2 by its quoted text; a missing one: STOP.
 2. Write `test_setup_wizard_reuse_1101.py` (list in step 6) and run it once: it must fail on the unchanged code; put the count in the report.
@@ -101,6 +97,10 @@ So: a new property goes back into the existing step wizard (`/apartments/{id}/se
 8. `test_setup_wizard_reuse_1101_browser.py` (`UBYHOST_REQUIRE_BROWSER=1`; widths 390, 768, 1280; model the server thread on `test_onboarding_wizard_browser.py`): create a property in the browser and walk calendar → police (paste the sample letter text 1100's tests use, see the fields fill, test with the fake client) → guest link → done with the card; no sideways scroll; footer buttons at least 44 px tall; Back and primary do not overlap; QR at least 120 px and inside the viewport. Once with `java_script_enabled=False` at 390: every step is reachable by its buttons, police is filled by hand, the test passes, the card shows. Screenshots `docs/tasks/screenshots-1101/{calendar,police,guest_link,done}-{390,768,1280}.png` (12, `full_page=True`).
 9. UX gate (rules 7 and 10): from `App/`: `UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/shots .venv/bin/python -m pytest tests/test_layout_lint_browser.py -q -rs -x 2>&1 | tail -30`: green, 0 skipped, no new `ALLOW`. Open the 12 screenshots once each. In the report **and the PR** write per page (calendar, police, guest link, done, and the editor of a first-setup property) and per width what you saw. Paste and tick the design-system checklist (`docs/design/design-system.md`, grep the checklist heading, read that range only). A finding is fixed in the template or `app2.css`, never silenced.
 10. Section 6 commands, then the report.
+
+## 5. Do not touch
+
+`_run_connection_test` and the save/test logic of `test_connection` (only the added branch), credential handling (`uby_ws_password*`, encryption, the password never rendered), `App/app/ubyport/`, `reporting.py`, `police_letter.py` parsing, filing and `submit_state`, 1100's paste/autofill code and JS, `app.js`, `STEPS`/`RETIRED_STEPS`, `setup_action`, `mark_tested`, `onboarding.py`, `db.py`, migrations, `retention.py` (`tested` is a non-personal boolean), any dependency, `ALLOW` in `test_layout_lint_browser.py`. Never push to `main`.
 
 ## 6. Commands (each ends `2>&1 | tail -30`; never the full suite)
 
@@ -129,7 +129,11 @@ Known failures on clean main (name them, do not fix): `test_host_ux_acceptance.p
 
 STOP and report `blocked` if: 1100 has not merged; an anchor is missing; 1100's police block cannot be included in the wizard form without changing 1100's JS or field names; a step needs `app.js`, a migration, a dependency or a change to the test logic; `permalink` or `pin` is missing from the done context; a test fails twice on the same cause; more than 6 existing test files need edits; 30 tool calls (finish the step, commit, `Done: steps 1 to k. Left: steps k+1 to 10.`).
 
-## 9. Open questions for the owner (do not block the build)
+## 9. Report
+
+`docs/tasks/1101-report.md` (executor.md format): files changed, each command with its last 5 lines and counts (0 skipped), the failing count from step 2, the per-page and per-width notes, the ticked checklist, the 12 screenshot names, every existing test expectation changed (names), and anything left.
+
+## 10. Open questions for the owner (do not block the build)
 
 - Q1: The guest message template on the guest link step says "Find your apartment" and "in the apartment" (it is text the host sends to guests). Change it to "property" too, or keep it as guest-facing wording?
 - Q2: The wizard asks for the calendar before police (its 0270 order). Keep that, or police first?
