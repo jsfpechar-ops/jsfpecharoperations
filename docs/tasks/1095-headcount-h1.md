@@ -1,6 +1,6 @@
 # 1095: head-count H1, the server count rule (lead reduction, one rule in Python and Go)
 
-Status: todo
+Status: review
 Tier: A | Depends on: 1092 (merged), 1094 report (PR #893) | Base commit: 30a2ef45 | Branch: claude/1095-headcount-h1
 Executor: Fable 5.2 (owner tier override in decisions.md) | Attempts: 3 at most | Fits one session: stop at 60 tool calls or 60k tokens (section 8); reads stay at 150 lines or fewer
 Review: a strict fresh Fable diff review before the PR opens, on filing timing, the lock and Python and Go agreeing.
