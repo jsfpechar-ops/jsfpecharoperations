@@ -3780,8 +3780,18 @@ def reservations_list(request: Request):
     page_count = max(1, (total + RESERVATION_PAGE_SIZE - 1) // RESERVATION_PAGE_SIZE)
     page = max(1, min(_query_int(request, "page") or 1, page_count))
     offset = (page - 1) * RESERVATION_PAGE_SIZE
-    sql += " ORDER BY r.date_from ASC, r.date_to ASC, r.id ASC LIMIT ? OFFSET ?"
-    reservations = db.query(sql, [*params, RESERVATION_PAGE_SIZE, offset])
+    # 1100: in house first (leaving soonest), then upcoming (arriving soonest), then past (latest first).
+    group = (
+        "CASE WHEN r.date_from <= ? AND r.date_to >= ? THEN 0 "
+        "WHEN r.date_from > ? THEN 1 ELSE 2 END"
+    )
+    sql += (
+        f" ORDER BY {group},"
+        f" CASE WHEN {group} = 0 THEN r.date_to WHEN {group} = 1 THEN r.date_from END ASC,"
+        f" CASE WHEN {group} = 2 THEN r.date_to END DESC,"
+        " r.date_from ASC, r.id ASC LIMIT ? OFFSET ?"
+    )
+    reservations = db.query(sql, [*params, *([today] * 12), RESERVATION_PAGE_SIZE, offset])
     rows = []
     # One guest query for the page, and each property read once, instead of
     # both again for every stay on it.
