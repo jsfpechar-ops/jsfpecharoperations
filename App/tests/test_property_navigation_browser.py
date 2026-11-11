@@ -495,7 +495,6 @@ def test_create_offers_the_calendar_first_and_works_without_js(host, base):
         page.wait_for_load_state()
         # 1101: create lands in the wizard.
         assert "/setup/calendar" in page.url
-        created_id = re.search(r"/apartments/(\d+)", page.url).group(1)
         assert "/setup/calendar" in page.url
         assert not page.locator(".property-first-use").count()
         assert page.locator("[data-setup-wizard]").is_visible()
