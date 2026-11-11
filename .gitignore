@@ -37,3 +37,5 @@ App/data/*
 !App/data/.gitkeep
 .codex/
 .obsidian/
+# mock UbyPort runtime state (prelaunch finding A60)
+App/mock_ubyport/mock_state.json

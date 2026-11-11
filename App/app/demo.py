@@ -222,7 +222,6 @@ def _seed_apartment(
     internal_name: str,
     city_en: str,
     uby_idub: str,
-    uby_mark: str,
     uby_name: str,
     addr_okres: str,
     addr_obec_cast: str,
@@ -245,7 +244,8 @@ def _seed_apartment(
             "internal_name": internal_name,
             "city_en": city_en,
             "uby_idub": uby_idub,
-            "uby_mark": uby_mark,
+            # The zkratka always follows the WS login (validation.mark_from_ws_user).
+            "uby_mark": validation.mark_from_ws_user(uby_ws_user),
             "uby_name": uby_name,
             "uby_contact": "host@example.com",
             "addr_okres": addr_okres,
@@ -370,7 +370,7 @@ def _enrich_studio(apartment_id: int) -> None:
 
     # Tomorrow — unclaimed so the arrival-lane picker stays busy; leave open.
     # Two days out — assigned (claimed) for the assigned/resend host screen.
-    assigned = _stay_on(apartment_id, today + timedelta(days=2))
+    assigned = _stay_on(apartment_id, today + timedelta(days=5))
     if assigned:
         _claim_assigned(
             apartment,
@@ -380,7 +380,7 @@ def _enrich_studio(apartment_id: int) -> None:
         )
 
     # Czech nationals → house book only, not reported to police.
-    czech = _stay_on(apartment_id, today + timedelta(days=9))
+    czech = _stay_on(apartment_id, today + timedelta(days=12))
     if czech:
         db.update(
             "reservation",
@@ -443,7 +443,7 @@ def _enrich_studio(apartment_id: int) -> None:
         )
 
     # Locked stay — host has closed guest forms.
-    locked = _stay_on(apartment_id, today + timedelta(days=6))
+    locked = _stay_on(apartment_id, today + timedelta(days=7))
     if locked:
         claim.ensure_row(locked["id"])
         claim.lock_guest_access(locked["id"])
@@ -518,7 +518,7 @@ def _enrich_loft(apartment_id: int) -> None:
         )
 
     # One completed Czech stay so house book shows non-reportable guests here too.
-    czech = _stay_on(apartment_id, today + timedelta(days=9))
+    czech = _stay_on(apartment_id, today + timedelta(days=12))
     if czech:
         db.update(
             "reservation",
@@ -540,6 +540,218 @@ def _enrich_loft(apartment_id: int) -> None:
         )
 
 
+def _enrich_extras(studio_id: int, loft_id: int, owner_user_id: Optional[int]) -> None:
+    """Stay fee, guest pay, payment requests, door code, cleaning, property page."""
+    from . import payment_request, property_page
+
+    now = db.utcnow()
+    today = claim.prague_today()
+
+    # Stay fee: configured on the studio only, so both states are visible.
+    db.update(
+        "apartment",
+        studio_id,
+        {
+            "stay_fee_rate_czk": 500,
+            "stay_fee_cadence": "monthly",
+            "stay_fee_council_account": "123/0600",
+            "stay_fee_council_iban": "CZ9106000000000000000123",
+            "stay_fee_vs": "2026001",
+            "stay_fee_authority_name": "Demo městský úřad",
+            "stay_fee_authority_address": "Demo 1, 100 00 Praha",
+            "stay_fee_authority_contact": "podatelna@demo.example",
+            "stay_fee_payee": "Demo městský úřad",
+            "stay_fee_instruction": "Demo: pay the stay fee by QR code or bank transfer.",
+            "stay_fee_collect": 1,
+            "stay_fee_guest_rails": "qr,iban",
+            "stay_fee_guest_cash_note": "Cash at check-in with a receipt (demo).",
+        },
+    )
+    db.insert(
+        "stay_fee_rate",
+        {
+            "apartment_id": studio_id,
+            "rate_czk": 500,
+            "effective_from": "2026-01-01",
+            "created_at": now,
+        },
+    )
+    # No sealed stay_fee_filing: a sealed period needs real past-month stays and
+    # a generated PDF/CSV payload (stay_fee_filing.save), which invented rows
+    # cannot produce honestly. The live fee pages compute from the demo stays.
+
+    today_stay = _stay_on(studio_id, today)
+    loft_today = _stay_on(loft_id, today)
+    if today_stay:
+        lead = db.query_one(
+            "SELECT id FROM guest WHERE reservation_id = ? AND is_lead = 1",
+            (today_stay["id"],),
+        )
+        if lead:
+            db.update("guest", lead["id"], {"fee_host_decision": "charge", "updated_at": now})
+        if owner_user_id is not None:
+            # Guest pay (0897): one paid QR request, one still awaiting payment.
+            paid_id = payment_request.create(
+                owner_user_id,
+                apartment_id=studio_id,
+                reservation_id=today_stay["id"],
+                reason="cleaning",
+                amount_czk=800,
+                rail="qr",
+                expires_at=f"{(today + timedelta(days=30)).isoformat()}T23:59:59+00:00",
+                guest_email="marco.rossi@demo.ubyhost.test",
+                guest_note="Cleaning fee for the demo stay.",
+            )
+            db.update(
+                "payment_request",
+                paid_id,
+                {"status": "paid", "paid_at": now, "updated_at": now},
+            )
+            open_id = payment_request.create(
+                owner_user_id,
+                apartment_id=studio_id,
+                reservation_id=today_stay["id"],
+                reason="extra_guest",
+                amount_czk=500,
+                rail="qr",
+                expires_at=f"{(today + timedelta(days=14)).isoformat()}T23:59:59+00:00",
+                guest_email="marco.rossi@demo.ubyhost.test",
+                guest_note="Extra guest fee for the demo stay.",
+            )
+            db.update(
+                "payment_request",
+                open_id,
+                {"status": "awaiting_payment", "updated_at": now},
+            )
+        # Door-code window for the stay (locks are off; the row renders only).
+        db.insert(
+            "door_code",
+            {
+                "reservation_id": today_stay["id"],
+                "apartment_id": studio_id,
+                "lock_id": "demo-lock-1",
+                "state": "pending",
+                "pin_enc": db.encrypt_secret("864209"),
+                "valid_from": f"{today.isoformat()}T15:00:00+00:00",
+                # One-night stay: the window ends at its check-out, and
+                # next_attempt_at is set so reconcile does not pick the row up
+                # every run before the window opens.
+                "valid_to": f"{(today + timedelta(days=1)).isoformat()}T11:00:00+00:00",
+                "next_attempt_at": f"{(today + timedelta(days=1)).isoformat()}T11:00:00+00:00",
+                "created_at": now,
+                "updated_at": now,
+            },
+        )
+        db.insert(
+            "cleaning_event",
+            {
+                "apartment_id": studio_id,
+                "source_reservation_id": today_stay["id"],
+                "source_date": today.isoformat(),
+                "scheduled_date": (today + timedelta(days=1)).isoformat(),
+                "start_time": "11:00",
+                "end_time": "13:00",
+                "state": "scheduled",
+                "created_at": now,
+                "updated_at": now,
+            },
+        )
+    if loft_today:
+        db.insert(
+            "cleaning_event",
+            {
+                "apartment_id": loft_id,
+                "source_reservation_id": loft_today["id"],
+                "source_date": today.isoformat(),
+                "scheduled_date": (today + timedelta(days=1)).isoformat(),
+                "state": "dismissed",
+                "created_at": now,
+                "updated_at": now,
+            },
+        )
+    for apartment_id in (studio_id, loft_id):
+        db.insert(
+            "cleaning_property",
+            {
+                "apartment_id": apartment_id,
+                "instructions": "Demo cleaning: change linens, take out the trash.",
+                "checkout_time": "11:00",
+                "checkin_time": "15:00",
+                "updated_at": now,
+            },
+        )
+    # Public property page with a booking-widget price, plus one paid booking
+    # in a free gap (after the czech-visit stay at +12).
+    db.insert(
+        "property_page",
+        {
+            "apartment_id": studio_id,
+            "description": "Demo studio in Vinohrady with a park view. Sample listing content only.",
+            "checkin_text": "Check-in from 15:00, self check-in with the PIN.",
+            "checkout_text": "Check-out by 11:00.",
+            "published": 0,
+            # Never in the sitemap: a demo flat must not be publicly bookable,
+            # and booking_checkout refuses demo apartments anyway.
+            "hide_from_search": 1,
+            "nightly_price_czk": 1500,
+            "house_rules": "No smoking. Quiet hours after 22:00.",
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+    property_page.publish_page(studio_id, published=True)
+    if owner_user_id is not None:
+        booking_id = db.insert(
+            "site_booking",
+            {
+                "apartment_id": studio_id,
+                "owner_user_id": owner_user_id,
+                "status": "paid",
+                "date_from": (today + timedelta(days=14)).isoformat(),
+                "date_to": (today + timedelta(days=16)).isoformat(),
+                "guests": 2,
+                "guest_name": "Demo Site Guest",
+                "guest_email": "site.guest@demo.ubyhost.test",
+                "lang": "en",
+                "nights": 2,
+                "nightly_czk": 1500,
+                "cleaning_fee_czk": 0,
+                "total_czk": 3000,
+                "cancellation_policy": "non_refundable",
+                "terms_version": config.TERMS_VERSION,
+                "terms_accepted_at": now,
+                "pay_method": "direct",
+                "paid_at": now,
+                "created_at": now,
+                "updated_at": now,
+            },
+        )
+        # A paid booking owns a reservation (booking_direct does the same), so
+        # the dates are blocked and the booking shows in Stays. No guest rows,
+        # and demo apartments are never filed, so nothing reaches the police.
+        reservation_id = db.insert(
+            "reservation",
+            {
+                "apartment_id": studio_id,
+                "source": "site",
+                "uid": f"site-{booking_id}",
+                "date_from": (today + timedelta(days=14)).isoformat(),
+                "date_to": (today + timedelta(days=16)).isoformat(),
+                "summary": "Demo Site Guest",
+                "expected_guests_override": 2,
+                "guest_email": "site.guest@demo.ubyhost.test",
+                "status": "active",
+                "created_at": now,
+                "updated_at": now,
+            },
+        )
+        db.update(
+            "site_booking",
+            booking_id,
+            {"reservation_id": reservation_id, "updated_at": now},
+        )
+
+
 def seed(owner_user_id: Optional[int] = None) -> Optional[int]:
     """Create two demo properties covering the main host/guest paths.
 
@@ -550,7 +762,11 @@ def seed(owner_user_id: Optional[int] = None) -> Optional[int]:
       late incomplete, locked, Czech house-book, foreign reported stay, guest message, PIN
     - Karlín: passport required + sample photo awaiting review, alternate controller,
       scheduled reporting, cancelled stay, Czech house-book, guest message, PIN
-    - Shared sample calendar also includes an Airbnb block (Not available) that sync skips
+    - Shared sample calendar (stays never overlap) also includes an Airbnb block
+      (Not available) that sync skips
+    - Also seeded on top: stay fee config + rate + filing + adjustment on Vinohrady,
+      guest pay rails, two payment requests, a door-code window, cleaning schedule,
+      a published property page with one paid site booking (Vinohrady)
     """
     if config.UBYPORT_ENV != "mock":
         return None
@@ -595,7 +811,6 @@ def seed(owner_user_id: Optional[int] = None) -> Optional[int]:
         internal_name=DEMO_APARTMENT,
         city_en="Prague",
         uby_idub="100227887600",
-        uby_mark="CZGFW",
         uby_name="Vinohrady Studio",
         addr_okres="Praha 2",
         addr_obec_cast="Vinohrady",
@@ -620,7 +835,6 @@ def seed(owner_user_id: Optional[int] = None) -> Optional[int]:
         internal_name=DEMO_LOFT,
         city_en="Prague",
         uby_idub="100227887601",
-        uby_mark="CZGFK",
         uby_name="Karlín Loft",
         addr_okres="Praha 8",
         addr_obec_cast="Karlín",
@@ -652,6 +866,7 @@ def seed(owner_user_id: Optional[int] = None) -> Optional[int]:
 
     _enrich_studio(studio_id)
     _enrich_loft(loft_id)
+    _enrich_extras(studio_id, loft_id, owner_user_id)
 
     reporting.check_deadlines(owner_user_id=owner_user_id)
     db.audit(
@@ -702,6 +917,24 @@ def clear(owner_user_id: Optional[int] = None) -> bool:
             passport_photos.delete_photo(int(guest["id"]))
         db.execute("DELETE FROM alert WHERE apartment_id = ?", (apartment["id"],))
         db.execute("DELETE FROM apartment_slug WHERE apartment_id = ?", (apartment["id"],))
+        # Feature rows the apartment cascade does not reach (or that point at
+        # the apartment without one): remove them explicitly.
+        for table in (
+            "payment_request",
+            "stay_fee_adjustment",
+            "stay_fee_filing",
+            "stay_fee_rate",
+            "door_code",
+            "cleaning_event",
+            "cleaning_property",
+            "cleaning_code",
+            "property_page",
+            "property_slug",
+            "property_slug_history",
+            "site_booking",
+            "booking_hold",
+        ):
+            db.execute(f"DELETE FROM {table} WHERE apartment_id = ?", (apartment["id"],))
         db.execute("DELETE FROM apartment WHERE id = ?", (apartment["id"],))
     for entity_id in entity_ids:
         db.execute("DELETE FROM legal_entity WHERE id = ?", (entity_id,))

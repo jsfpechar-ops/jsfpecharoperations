@@ -33,7 +33,7 @@
       <label for="party_size">{{ t('party_question') }}</label>
       <input type="number" id="party_size" name="party_size" min="1" max="60"
              required inputmode="numeric" autocomplete="off"
-             value="{{ claim.declared_guests or reservation.expected_guests_override or 1 }}">
+             value="{{ claim.declared_guests or 1 }}">
       <div class="hint">{{ t('party_help') }}</div>
       <details class="g-why" data-purpose-help="guest-count">
         <summary class="g-why-summary">{{ t('guest_count_purpose_help_label') }}</summary>
