@@ -426,3 +426,137 @@ def test_outside_lock_control_counts_and_the_lock_buttons_do_not(browser, base, 
     assert page.url.split("#")[0] == f"{url}?view=settings&section=lock&lang=en"
     assert int(_stored(host, "checkin_hour")) == 15
     page.context.close()
+
+
+# 1100 step 5: Stay, Discard and Save on the property editor, including a page that
+# loads dirty (no-JS letter read), a Turbo visit after a Save, and a paste fill.
+LEAVE = "a.airbnb-back"
+SAVE_ROW_1100 = ".savebar[data-for='property-settings-form']"
+POLICE_COLUMNS = ("uby_idub", "uby_ws_user", "uby_mark", "uby_name")
+
+
+def _police_reset(host):
+    db.execute(
+        "UPDATE apartment SET internal_name = ?, uby_idub = NULL, uby_ws_user = NULL, uby_mark = NULL, "
+        "uby_name = NULL WHERE id = ?",
+        (NAME, host["apartment"]),
+    )
+
+
+def _police_stored(host):
+    row = db.query_one(f"SELECT {', '.join(POLICE_COLUMNS)} FROM apartment WHERE id = ?", (host["apartment"],))
+    return {name: row[name] for name in POLICE_COLUMNS}
+
+
+def _open_police(page):
+    page.evaluate("() => { for (const d of document.querySelectorAll("
+                  "'#sec-police, details.police-letter-paste')) d.open = true; }")
+
+
+def _discard_leaves(page):
+    """Click the crumb, see the dialog, press Discard: the page must reach /apartments."""
+    page.locator(LEAVE).click()
+    try:
+        page.wait_for_function("() => document.getElementById('unsaved-dialog').open", timeout=3000)
+    except Exception as exc:
+        state = page.evaluate("() => ({url: location.href, dirty: [...document.querySelectorAll('form[data-unsaved-guard]')].map(f => f.id + ':' + f.dataset.dirty), n: document.querySelectorAll('#unsaved-dialog').length})")
+        raise AssertionError(f"the leave dialog did not open: {state}") from exc
+    page.locator("#unsaved-dialog [data-unsaved-discard]").click()
+    page.wait_for_url(lambda u: urlparse(u).path.rstrip("/") == "/apartments", timeout=5000)
+
+
+@pytest.mark.parametrize("width", [390, 1280])
+def test_1100_stay_discard_save_on_the_property_editor(browser, base, host, width):
+    """(a) Stay keeps the edit and the focus, (b) Discard leaves unsaved, (c) Save saves and leaves."""
+    _police_reset(host)
+    url = f"{base}/apartments/{host['apartment']}?view=settings&section=property&lang=en"
+    page = _page(browser, base, host, width, 900)
+    page.goto(url)
+    page.fill("#internal_name", "Typed 1100 draft")
+    page.locator(LEAVE).click()
+    assert _open(page)
+    page.locator("#unsaved-dialog [data-unsaved-stay]").click()
+    assert not _open(page) and page.input_value("#internal_name") == "Typed 1100 draft"
+    assert _focus_is(page, LEAVE)
+
+    _discard_leaves(page)
+    assert _stored(host, "internal_name") == NAME
+    page.goto(url)
+    assert page.input_value("#internal_name") == NAME
+
+    page.fill("#internal_name", f"Saved 1100 {width}")
+    page.locator(LEAVE).click()
+    assert _open(page)
+    with page.expect_navigation():
+        page.locator("#unsaved-dialog [data-unsaved-save]").click()
+    assert _stored(host, "internal_name") == f"Saved 1100 {width}"
+    assert page.native_dialogs == []
+    page.context.close()
+
+
+@pytest.mark.parametrize("width", [390, 1280])
+def test_1100_discard_leaves_a_page_that_loads_dirty(browser, base, host, width):
+    """(d) The no-JS letter read answer (data-dirty-start="1") opened with JS: Discard still leaves."""
+    from tests.test_police_letter_flow import LETTER
+
+    _police_reset(host)
+    page = _page(browser, base, host, width, 900)
+    page.goto(f"{base}/apartments/{host['apartment']}?view=settings&section=reporting&lang=en#ubyport")
+    assert not page.locator("[data-letter-read]").is_visible()
+    page.evaluate("(text) => { document.getElementById('letter_text').value = text; }", LETTER)
+    with page.expect_navigation():
+        page.evaluate("() => HTMLFormElement.prototype.submit.call(document.getElementById('police-letter-form'))")
+    assert page.locator("#property-settings-form").get_attribute("data-dirty-start") == "1"
+    assert page.input_value("#uby_idub")
+    _discard_leaves(page)
+    assert _police_stored(host) == dict.fromkeys(POLICE_COLUMNS)
+    assert page.native_dialogs == []
+    page.context.close()
+
+
+@pytest.mark.parametrize("width", [390, 1280])
+def test_1100_discard_leaves_after_a_turbo_visit_that_followed_a_save(browser, base, host, width):
+    """(e) Save the business editor once, reach the property editor by an in-app Turbo link, edit, Discard."""
+    _police_reset(host)
+    page = _page(browser, base, host, width, 900)
+    page.goto(f"{base}/entities?edit={host['entity']}&lang=en")
+    page.fill("#edit_contact_phone", "+420 111 000 222")
+    page.locator("#entity-edit button[type=submit]").first.click()
+    page.wait_for_function("() => !location.search.includes('edit=')", timeout=5000)
+    page.wait_for_load_state()
+    page.evaluate("() => { window.__uby1100 = 1; }")
+    link = page.locator(f'a[href^="/apartments/{host["apartment"]}?view=settings"]').first
+    link.click()
+    page.wait_for_selector("#property-settings-form #internal_name")
+    # Turbo swaps the body before turbo:load wires the form; a person cannot type in between.
+    page.wait_for_function("() => !!document.getElementById('property-settings-form')._ubyBase")
+    assert page.evaluate("() => window.__uby1100") == 1, "the property editor must be reached by a Turbo visit"
+    page.evaluate("() => { document.getElementById('sec-basics').open = true; }")
+    page.fill("#internal_name", "Turbo 1100 draft")
+    _discard_leaves(page)
+    assert _stored(host, "internal_name") == NAME
+    db.execute("UPDATE legal_entity SET contact_phone = ? WHERE id = ?", (PHONE, host["entity"]))
+    page.context.close()
+
+
+@pytest.mark.parametrize("width", [390, 1280])
+def test_1100_discard_leaves_after_a_paste_fill(browser, base, host, width):
+    """(f) Paste fills the boxes, then Discard leaves and the reloaded page shows the stored values."""
+    from app.ubyport_sample_pdf import SAMPLE_IDUB
+    from tests.test_police_letter_flow import LETTER
+
+    _police_reset(host)
+    url = f"{base}/apartments/{host['apartment']}?view=settings&section=reporting&lang=en#ubyport"
+    page = _page(browser, base, host, width, 900)
+    page.goto(url)
+    _open_police(page)
+    page.fill("#letter_text", LETTER)
+    page.dispatch_event("#letter_text", "paste")
+    page.wait_for_function(f"() => document.getElementById('uby_idub').value === '{SAMPLE_IDUB}'", timeout=3000)
+    assert page.locator(SAVE_ROW_1100).is_visible()
+    _discard_leaves(page)
+    assert _police_stored(host) == dict.fromkeys(POLICE_COLUMNS)
+    page.goto(url)
+    assert page.input_value("#uby_idub") == ""
+    assert page.native_dialogs == []
+    page.context.close()

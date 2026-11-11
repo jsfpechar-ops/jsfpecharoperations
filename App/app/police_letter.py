@@ -8,10 +8,16 @@ is only ever derived from the login with ``validation.mark_from_ws_user``; a
 printed one is never taken, it can only refuse the derived one.
 
 A value is filled only when it is the single value of its shape in the whole
-text and it follows its label. The password is never read: there is no pattern
-for it, and a value that shares a line with a password word is dropped. A
-password that looks like an IDUB or a login is a second candidate, so nothing
-is filled.
+text and it follows its label. An IDUB or login that shares a line with a
+password word is dropped. A password that looks like an IDUB or a login is a
+second candidate, so nothing is filled.
+
+1100: the web-service password and the facility name (first line) are read
+too, into ``LetterResult.password`` and ``LetterResult.facility``. The
+password is taken only after its label and a colon, whole, as one token; it
+never goes into a source slice, a label or ``repr()``, and this module never
+logs or stores anything. A password that looks like an IDUB or a login fills
+nothing.
 
 A wrong value would file guests under the wrong account, so the rule is: when
 in doubt, return nothing for that field. The host then types it.
@@ -45,10 +51,16 @@ class FieldResult:
     source: tuple[str, ...] = ()
 
 
+_MISSING = FieldResult()
+
+
 @dataclass(frozen=True)
 class LetterResult:
     status: str
     fields: dict[str, FieldResult] = field(default_factory=dict)
+    # 1100: kept out of repr() so a logged result never shows the password.
+    password: FieldResult = field(default=_MISSING, repr=False)
+    facility: FieldResult = field(default=_MISSING, repr=False)
 
 
 # Non-ASCII characters that NFC would turn into ASCII (singleton
@@ -119,7 +131,17 @@ _WORD_RE = re.compile(r"[^\W_]+")
 _LEADING_NOISE_RE = re.compile(r"^[\W_]+")
 _TRAILING_NOISE_RE = re.compile(r"[\W_]+$")
 
-_MISSING = FieldResult()
+# 1100: the password label needs a colon; the value is one printable ASCII
+# token that ends its line (no _END: a trailing "." may be part of it).
+_PW_LABEL_RE = re.compile(
+    r"(?:p[rř][ií]stupov[eé][ \t]+heslo|\bheslo\b|\bpassword\b)[ \t]*:", _FLAGS
+)
+_PW_VALUE_RE = re.compile(r"[ \t]*(?:\n[ \t]*)?([!-~]{6,64})[ \t]*(?=\n|\Z)")
+_IDUB_SHAPE_RE = re.compile(r"\d{12,14}")
+_FACILITY_LABEL_RE = re.compile(
+    r"^[ \t]*Ubytovac[ií][ \t]+za[rř][ií]zen[ií][ \t]*:", _FLAGS | re.MULTILINE
+)
+_MAX_FACILITY = 35
 
 
 def _all_missing() -> dict[str, FieldResult]:
@@ -296,6 +318,62 @@ def _parse_field(
     )
 
 
+def _parse_password(
+    text: str, starts: list[int], fields: dict[str, FieldResult]
+) -> FieldResult:
+    """The web-service password after its label and colon, or nothing."""
+    labels = list(_PW_LABEL_RE.finditer(text))
+    if not labels:
+        return _MISSING
+    values = []
+    bad = False
+    value_line = None
+    for label_match in labels:
+        tail = _PW_VALUE_RE.match(text, label_match.end())
+        if not tail:
+            bad = True
+            continue
+        values.append(tail.group(1))
+        value_line = bisect_right(starts, tail.start(1))
+    first_line = bisect_right(starts, labels[0].start())
+    distinct = set(values)
+    if len(distinct) > 1:
+        return FieldResult(state="ambiguous", line=first_line)
+    if bad or not distinct:
+        return FieldResult(state="unreadable", line=first_line)
+    value = values[0]
+    known = {fields[name].value for name in ("uby_idub", "uby_ws_user")}
+    if (
+        value in known
+        or value.upper() in known
+        or _IDUB_SHAPE_RE.fullmatch(value)
+        or _WS_USER_RE.fullmatch(value)
+        or _WS_USER_RE.fullmatch(value.upper())
+    ):
+        return FieldResult(state="unreadable", line=first_line)
+    return FieldResult(state="found", value=value, line=value_line)
+
+
+def _parse_facility(text: str, starts: list[int], lines: list[str]) -> FieldResult:
+    """The first line of the facility name after "Ubytovací zařízení:"."""
+    labels = list(_FACILITY_LABEL_RE.finditer(text))
+    if not labels:
+        return _MISSING
+    label_line = bisect_right(starts, labels[0].start())
+    if len(labels) > 1:
+        return FieldResult(state="ambiguous", line=label_line)
+    rest = text[labels[0].end() : starts[label_line] if label_line < len(starts) else len(text)]
+    value, value_line = rest.strip(), label_line
+    if not value:
+        for number in range(label_line + 1, len(lines) + 1):
+            if lines[number - 1].strip():
+                value, value_line = lines[number - 1].strip(), number
+                break
+    if not value or len(value) > _MAX_FACILITY:
+        return FieldResult(state="unreadable", line=label_line)
+    return FieldResult(state="found", value=value, line=value_line)
+
+
 def _mark_words(line: str) -> list[str]:
     """Words of 4 to 7 characters that could be a printed short name."""
     return [
@@ -336,9 +414,10 @@ def _mark_conflicts(lines: list[str], derived: str) -> list[int]:
 
 
 def parse_letter(text: str) -> LetterResult:
-    """Read the IDUB and the login from the pasted letter, and derive the short name.
+    """Read the IDUB, the login, the password and the facility name; derive the short name.
 
-    Never raises. The password is never read.
+    Never raises. The password is returned only in ``result.password`` (never
+    in a source slice or repr) and is never logged or stored here.
     """
     if not isinstance(text, str) or not text.strip():
         return LetterResult(status="empty", fields=_all_missing())
@@ -373,7 +452,12 @@ def parse_letter(text: str) -> LetterResult:
                     lines=user.lines,
                     source=user.source,
                 )
-    return LetterResult(status="ok", fields=fields)
+    return LetterResult(
+        status="ok",
+        fields=fields,
+        password=_parse_password(normalised, starts, fields),
+        facility=_parse_facility(normalised, starts, lines),
+    )
 
 
 def _form_get(form, key: str):
@@ -384,19 +468,16 @@ def _form_get(form, key: str):
 
 
 def confirmed_fields(form) -> tuple[list[str], list[str]]:
-    """(listed, unconfirmed) from the hidden letter_fields and the one tick.
+    """(listed, unconfirmed) from the hidden letter_fields.
 
-    1097: one tick, letter_ok, confirms every listed value; without it every
-    listed value is unconfirmed. Old per-field letter_ok_<name> keys are
-    ignored, so a stale page cannot confirm. Never raises: a missing form or
-    a value that is not a str counts as empty or unconfirmed.
+    1100: there is no confirm tick any more (owner, reverses 1097); every
+    value is its own editable box, so nothing is ever unconfirmed and the
+    second list is always empty. The signature stays for the callers. Never
+    raises: a missing form or a value that is not a str counts as empty.
     """
     raw = _form_get(form, "letter_fields")
     names = {part.strip() for part in raw.split(",")} if isinstance(raw, str) else set()
     listed = [name for name in FIELDS if name in names]
-    tick = _form_get(form, "letter_ok")
-    if listed and not (isinstance(tick, str) and tick == "1"):
-        return listed, list(listed)
     return listed, []
 
 
