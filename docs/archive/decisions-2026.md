@@ -61,3 +61,9 @@ Moved from docs/context/decisions.md during compaction.
 - 2026-10-27 | [Max policy](../reports/max-159-fivefold-ai.md); [original layout, 229 monthly](../reports/original-pricing-229.md) | owner
 - 2026-10-27 | Direct payments folded into FastAPI; requests first, page booking second; QR rail = tech provider only | owner | plan direct-payments-build-plan, 0425
 - 2026-11-02 | [workflow] Read hook: 350+ lines needs a limit | owner | 0810
+- 2026-10-06 | Staging may use the police test env; creds only in staging | LIGHTSAIL
+- 2026-10-06 | Abbreviation check: 5-6 alphanumerics; facility suffix after UBY-WS_ | police, owner | validation.py, 0043
+- 2026-10-08 | Invoices per stay only, replaces 09-26 | scope | [plan](../plans/stay-only-invoices.md)
+- 2026-10-08 | Staging: `UBYHOST_STAGING_NO_LOGIN=1` skips login; door-code alert after 10 min | test-only | [ENVIRONMENT](../ENVIRONMENT.md)
+- 2026-10-09 | #331: no ID-check step (host checks ID); guest link default 1 day ahead | K-F12
+- 2026-10-10 | PostHog replaces Umami; privacy settings in the snippet | owner | [plan](../plans/posthog-analytics.md), [0039](../tasks/0039-posthog-hardening.md)

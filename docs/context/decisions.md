@@ -3,14 +3,8 @@
 Append-only.
 - 2026-10-06 | UbyPort: 0-2 accepted, 4-6 not; 112 = late = accepted | OPERATIONS
 - 2026-10-06 | Sweep: one send per refused record, then host fix | OPERATIONS
-- 2026-10-06 | Staging may use the police test env; creds only in staging | LIGHTSAIL
-- 2026-10-06 | Abbreviation check: 5-6 alphanumerics; facility suffix after UBY-WS_ | police, owner | validation.py, 0043
-- 2026-10-08/12 | Door codes (TTLock pilot): timed codes, test mode until live; one 1-min job, no polling, weekly `queryDate`; taken type-3 period: `add` only, host warned (0037); -1026 = created/deleted; host provider, no SCCs; retry deletion (0067-69) | owner | [plan](../plans/ttlock-door-codes.md), [legal](../privacy/DOOR_CODES_LEGAL.md)
-- 2026-10-08 | Invoices per stay only, replaces 09-26 | scope | [plan](../plans/stay-only-invoices.md)
-- 2026-10-08 | Staging: `UBYHOST_STAGING_NO_LOGIN=1` skips login; door-code alert after 10 min | test-only | [ENVIRONMENT](../ENVIRONMENT.md)
+- 2026-10-08/12 | Door codes (TTLock pilot): timed codes, test mode until live; one 1-min job, no polling; taken type-3 period: `add` only, host warned (0037); -1026 = created/deleted; no SCCs; retry deletion (0067-69) | owner | [plan](../plans/ttlock-door-codes.md), [legal](../privacy/DOOR_CODES_LEGAL.md)
 - 2026-10-09 | [workflow] One brief per copy text; executors skip non-todo; lint warns on overlap; status `replaced` = newer brief took over | [workflow](workflow.md)
-- 2026-10-09 | #331: no ID-check step (host checks ID); guest link default 1 day ahead | K-F12
-- 2026-10-10 | PostHog replaces Umami; privacy settings in the snippet | owner | [plan](../plans/posthog-analytics.md), [0039](../tasks/0039-posthog-hardening.md)
 - 2026-10-11 | ARES lookup on host click; sends only the IČO; 24 h cache; 20/h per user | owner | 0055
 - 2026-10-15 | Watchdog digest every 72 h (server 10-15, repo 10-20) | owner | [OPERATIONS](../OPERATIONS.md)
 - 2026-10-16 | #397: white workspace; Property hours; fractional stays; Dashboard stays only; Cleaning markers; in-page creation | PR #397
@@ -24,7 +18,7 @@ Append-only.
 - 2026-10-26 | Unpaid = read-only, filing never blocked | owner | 0415
 - 2026-10-27 Grafana Cloud (EU free tier): subprocessor for ops logs/metrics (PII-free, OPS-3); compose profile "monitoring" (owner).
 - 2026-10-28 | [deps] `stripe` 16.0.1 pinned+hashed in requirements.lock (owner); calls via `App/app/stripe_connect.py`; shared monthly cap `UBYHOST_STRIPE_MONTHLY_API_CALLS` | 0428
-- 2026-10-28 | Property pages: Apify scrape-first prefill, no AI, host reviews once (0431); Airbnb-style layout, no Airbnb assets; photos re-hosted, max 10, EXIF stripped, host confirms rights (0432); no-JS widget, Stripe checkout on host account (0434); English only, OTA copy verbatim | owner
+- 2026-10-28 | Property pages: Apify prefill, no AI, host reviews once (0431); no Airbnb assets; photos re-hosted, max 10, EXIF stripped, host confirms rights (0432); no-JS widget, Stripe checkout on host account (0434); English only | owner
 - 2026-11-02 | OCR: Tesseract only, local, MRZ check digits, Max only; band crop; Paddle if ocr_readrate <90% | owner | test_doc_ocr
 - 2026-10-29 | Trials are extendable by the operator, 1-365 days | owner | 0448
 - 2026-10-29 | Stripe Accounts v2, responsibilities immutable, companies via business_type (0437); Connect: full Dashboard + collectors, Express rejected (0439) | owner
@@ -46,7 +40,7 @@ Append-only.
 - [auth] 2026-11-04: log out is per device; "all devices" is separate (0947).
 - 11-04: stay fee pay v4; [workflow] Sonnet briefs, Haiku executes (owner)
 - 2026-11-04 [dashboard] no per-property "No guest has used the link" card; "You are ready" only with one property (0949); six-card status strip replaces aside cards, guest copy button in the strip (0948) | owner
-- 2026-11-04/05 [ui] Smart lock: one accordion #sec-lock, controls use form="property-settings-form" (0952); step one says eAdmin, door_code.state drives the status block (0954). Notices inline; Save row sticks; Preview sticks >=1024 (0957). #786: no stay times, 4 wizard steps, Stays filters wrap (0950-fix-1)
+- 2026-11-04/05 [ui] Smart lock: one accordion #sec-lock (0952); door_code.state drives the status block (0954). Save row sticks; Preview sticks >=1024 (0957). #786: no stay times, 4 wizard steps (0950-fix-1)
 - [wizard] 2026-11-04: wizard shows the old look on the current 4-step flow; red star marks mandatory fields; operator e-mail has no purpose text. Source: brief 0953.
 - [ui] 2026-11-06 [owner]: property page keeps main's header and tile grid; the setup progress card sits full width below the grid (0986).
 - 2026-11-06 [owner] lock connected but codes off shows main's "Turn on" row; "Connect my lock" only for first-time setup (0987).
@@ -57,6 +51,12 @@ Append-only.
 - 2026-11-09 [guest] Guest edits/removes own added people until filed (SENT, incl. by hand); then locked, "Message host" (owner)
 - 2026-11-09 | [ux] Stay fees: current month default, pick navigates | owner | 1051
 - 2026-11-09 [ux] [Speed plan](../plans/speed-and-ease.md): answers §10.
-- 2026-11-09 | [workflow] Speed and group plans only (owner): executor by tier. A (filing, concurrency, guest-data access): Fable 5.2 executor, Opus writes brief, fresh Fable reviews diff vs brief before PR. B (multi-file, mail, payments, privacy, new component): Opus executor, Sonnet brief. C (attributes, copy, prefill, CSS): Sonnet executor at medium effort, Sonnet brief. 100k cap = Haiku only; output and read ranges <=150 lines. From 11-09 21:35 a fresh Fable reviews every new brief before it goes to an executor | [workflow](workflow.md#roles-and-models)
-- 2026-11-09 [filing] Registered guests are filed by the deadline cap (deadline - 6 h) even when the stay is short or has no expected count; no 12 quiet hours wait past the cap; valid co-guests filed while another form is invalid; reverses the reporting.py:1093 "never because this code was deployed" rule: stays already past their cap are filed by the first sweep (backlog: all, owner 22:14) (owner, K-F20) | 1070
-- 2026-11-09 [workflow] Owner asleep: orchestrator takes recommended answers and merges green, reviewed PRs itself (this build only). Assumed: F3, F4 yes; G11 no stored preference; guest draft deleted 7 d after last change or day after check-out, whichever first; STAY_FEE_GUEST_PAY treated as on; S17 skipped (design unchanged). G6, G13 parked; G4 not released
+- 2026-11-09 | [workflow] Speed and group plans only (owner): executor by tier. A (filing, concurrency, guest-data access): Fable 5.2 executor, Opus brief, fresh Fable reviews diff before PR. B (multi-file, mail, payments, privacy, new component): Opus executor, Sonnet brief. C (attributes, copy, prefill, CSS): Sonnet executor, medium effort, Sonnet brief. 100k cap = Haiku only. From 11-09 21:35 a fresh Fable reviews every new brief | [workflow](workflow.md#roles-and-models)
+- 2026-11-09 [filing] Registered guests are filed by the deadline cap (deadline - 6 h) even when the stay is short or has no expected count; no 12 quiet hours past the cap; valid co-guests filed while another form is invalid; reverses the reporting.py:1093 rule; stays past their cap are filed by the first sweep (owner, K-F20) | 1070
+- 2026-11-09 [workflow] Owner asleep: orchestrator takes recommended answers and merges green, reviewed PRs itself (this build only). Assumed: F3, F4 yes; guest draft deleted 7 d after last change or day after check-out; G6, G13 parked; G4 not released
+- 2026-11-10 [guest] Guest form: B now, then C (owner).
+- 2026-11-10 [guest] Under-15s skip the signature; any adult on the booking signs and ticks a role ("parent or guardian" / "adult responsible for the child on this stay"). A child with no adult link is filed "no signature required" (owner).
+- 2026-11-10 [guest] Titles: cs "Registrace hosta", es "Ficha de huésped", fr "Fiche voyageur" (owner).
+- 2026-11-10 [head-count] Lower count with a stay fee: show new fee and "new bill will be e-mailed", confirm. Every lead change: "Check your changes" confirm. Host digest mail lists changed field names (not values), links to the stay page; changes only, not first registrations. Small Go change allowed. Early door-code risk accepted (mail guard covers it) (owner).
+- 2026-11-10 [workflow] Plan: project file plans/head-count-change.md (not in repo); each complete plan gets a Fable review before building (owner).
+- 2026-11-10 [guest] 1086: unsaved prefilled values warn on leave (beforeunload) even before input (orchestrator).
