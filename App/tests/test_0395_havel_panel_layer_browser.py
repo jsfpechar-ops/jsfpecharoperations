@@ -102,7 +102,7 @@ def test_stale_start_screen_not_restored(origin):
         page.reload()
         dialog = page.locator("#havel-sheet[open]")
         dialog.wait_for()
-        sync_api.expect(dialog.locator("[data-havel-other]")).to_be_visible()
+        sync_api.expect(dialog.locator("[data-havel-topics] .havel-chip").first).to_be_visible()
         assert "STALE" not in dialog.inner_text()
 
         _set_saved(

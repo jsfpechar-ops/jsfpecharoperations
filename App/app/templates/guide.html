@@ -9,7 +9,13 @@
 {% block body %}
 
 {% set sections = ['finding', 'overview', 'statuses', 'setup', 'business', 'stays', 'cleaning', 'guests', 'guest_links', 'reporting', 'filters', 'housebook', 'stay_fee', 'invoices', 'payments', 'settings', 'archive', 'privacy_requests', 'door-codes', 'faster', 'faq', 'glossary', 'legal'] + (['havel'] if havel_on else []) + (['demo'] if demo_available else []) %}
-{% from "_components.html" import help_tip with context %}<div class="head guide-head"><div><div class="heading-with-tip"><h1 class="big">{{ t('guide.title') }}{{ help_tip('guide-lede-help', t('guide.lede')) }}</h1></div></div>{% if havel_on %}{{ ui_button(t('havel.launcher'), 'secondary', href='/havel', icon_name='message-circle-question', attrs='data-sheet-open="havel-sheet" data-havel-launcher') }}{% endif %}</div>
+{% from "_components.html" import help_tip with context %}<div class="head guide-head"><div><div class="heading-with-tip"><h1 class="big">{{ t('guide.title') }}{{ help_tip('guide-lede-help', t('guide.lede')) }}</h1></div></div></div>
+{% if havel_on %}<form method="post" action="/havel" class="guide-ask" data-havel-guide-ask>
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}"><input type="hidden" name="page" value="guide"><input type="hidden" name="return_to" value="/guide">
+  <label class="sr-only" for="guide-ask-q">{{ t('guide.ask.label') }}</label>
+  <input class="ui-input" id="guide-ask-q" name="message" type="text" maxlength="600" required placeholder="{{ t('guide.ask.placeholder') }}" autocomplete="off">
+  <button class="ui-btn ui-btn-primary" type="submit">{{ t('nav.ask_havel') }}</button>
+</form>{% endif %}
 <div class="guide-layout">
   <nav class="guide-nav card" aria-label="{{ t('guide.title') }}">
     {% for key in sections %}<a href="#{{ key }}" class="guide-nav-link">{{ t('guide.nav.' ~ key) }}</a>{% endfor %}
@@ -17,7 +23,7 @@
 
   <div class="guide-content">
     <input type="search" class="guide-search" id="guide-search" hidden placeholder="{{ t('guide.search.placeholder') }}" aria-label="{{ t('guide.search.placeholder') }}" autocomplete="off">
-    <p class="guide-search-empty ui-sub" hidden>{{ t('guide.search.empty') }}</p>
+    <p class="guide-search-empty ui-sub" hidden>{{ t('guide.search.empty') }}{% if havel_on %} <a href="/havel" data-sheet-open="havel-sheet" data-havel-launcher>{{ t('guide.search.ask') }}</a>{% endif %}</p>
     <details class="guide-section card ui-section ui-section-plain guide-topic" id="finding">
       <summary><h2>{{ t('guide.nav.finding') }}</h2></summary>
       <p>{{ t('guide.finding.what') }}</p>

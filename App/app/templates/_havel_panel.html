@@ -5,6 +5,8 @@
 {% set havel_fresh = true %}
 {% set havel_show_topics = true %}
 {% set havel_max = 600 %}
+{% set _hp = havel_panel_state(request) %}
+{% set havel_locked = false %}{% set havel_history = _hp.history %}{% set havel_history_sig = _hp.sig %}{% set havel_topic = '' %}{% set havel_q = '' %}{% set havel_state = _hp.state %}{% set havel_error = none %}
 {% set havel_page = nav | default('') %}
 {% set havel_return_to = request.url.path %}
 {% set havel_topics = havel_topics_for(nav | default('')) %}
@@ -22,7 +24,8 @@
     <div class="havel-thread" role="log" aria-live="polite" data-havel-thread>
       {% include "_havel_topics.html" %}
     </div>
-    {#- The composer loads on first open (havel.js), so a host page keeps its one primary button. -#}
-    <div data-havel-form-wrap></div>
+    {#- The composer is there from the first open. Its send button is secondary until text is typed (havel.js), so a host page keeps one primary button. -#}
+    <div data-havel-form-wrap>{% include "_havel_form.html" %}</div>
+    <a class="havel-guide-link" href="/guide">{{ t('havel.guide_link') }}</a>
   </div>
 </dialog>{% endif %}

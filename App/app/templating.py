@@ -452,6 +452,30 @@ templates.env.filters["money_czk"] = _money_czk
 templates.env.filters["weekday"] = _weekday
 templates.env.filters["date_long"] = date_long
 templates.env.globals["havel_topics_for"] = havel_topics.ordered  # 0324: topics for the panel in base.html
+
+
+def _havel_on(request: Request) -> bool:
+    """Havel is on for the signed-in host (same test as routes/havel.py)."""
+    from . import ai, havel
+
+    user = auth.current_user(request)
+    return bool(user) and ai.enabled_for(havel.FEATURE, user["email"] or "")
+
+
+def _havel_panel_state(request: Request) -> Dict[str, Any]:
+    """The panel include in base.html: the off/limit state, computed like routes/havel.py, and an empty history."""
+    from . import havel
+
+    user = auth.current_user(request)
+    if not user:
+        return {"state": "off", "history": "", "sig": ""}
+    uid = int(user["id"])
+    state = "off" if not _havel_on(request) else havel.limit_state(uid)
+    # No history yet: an empty payload reads as an empty chat on the server, and havel.js restores a saved chat over it.
+    return {"state": state, "history": "", "sig": ""}
+
+
+templates.env.globals["havel_panel_state"] = _havel_panel_state
 templates.env.filters["datetime_local"] = _datetime_local
 templates.env.filters["from_json"] = _from_json
 templates.env.filters["legal_links"] = _legal_links
@@ -674,6 +698,7 @@ def render(request: Request, name: str, context: Optional[Dict[str, Any]] = None
     data["csrf_token"] = security.csrf_token(request)
     data.setdefault("current_user", auth.current_user(request))
     data.setdefault("workspace_user", auth.workspace_user(request))
+    data.setdefault("havel_on", _havel_on(request) if data["current_user"] else False)
     # A visitor who has not chosen a language yet gets Czech on the signed-out
     # pages; inside the app the existing fallback stays in place.
     fallback = (

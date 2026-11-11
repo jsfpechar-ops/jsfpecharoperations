@@ -48,12 +48,12 @@ def test_page_aware_order_and_read_keys():
 
 def test_topics_render_on_the_page_and_as_fragments(host):
     page = html.unescape(host.get("/havel?lang=en").text)
-    assert page.count('data-havel-topic-link') == 6  # 0391: five topics + "Other topic"
+    assert page.count('data-havel-topic-link') == 5  # five topics; the composer is always there
     questions = html.unescape(host.get("/havel?topic=guest_link&lang=en").text)
     assert 'href="/havel?topic=guest_link&q=how"' in questions
     answer = html.unescape(host.get("/havel?topic=guest_link&q=where&lang=en", headers={"X-Havel": "1"}).text)
     assert "<html" not in answer and 'data-mode="replace"' in answer
-    assert 'href="/havel?topic=guest_link&q=where&ask=1" data-havel-topic-link data-havel-ask-open' in answer
+    assert 'href="/havel?topic=guest_link&q=where&ask=1" data-havel-ask-open' in answer
     assert host_i18n.translate("en", "havel.short.guest_link.where")[:20] in answer or \
         host_i18n.translate("cs", "havel.short.guest_link.where")[:20] in answer
     support = html.unescape(host.get("/havel?topic=wrong&q=error&lang=en").text)

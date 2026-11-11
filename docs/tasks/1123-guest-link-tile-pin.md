@@ -1,7 +1,7 @@
-# 1103: property page "Guest link" tile, calm look and PIN next to the link
+# 1123: property page "Guest link" tile, calm look and PIN next to the link
 
 Status: review
-Depends on: none | Base commit: origin/main | Branch: task/1103-guest-link-tile-pin
+Depends on: none | Base commit: origin/main | Branch: task/1123-guest-link-tile-pin
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (3 steps of at most 6 calls)
 Brief by Sonnet 5.5, 2026-11-11. Owner Josef reported both points from a screenshot.
 
@@ -31,7 +31,7 @@ Message format to mirror exactly (from `wizard.guest_link.message_template`): th
 |---|---|
 | `App/app/static/app2.css` | edit lines 2642, 2649, 3165, add rules after 2654 |
 | `App/app/templates/_property_editor.html` | edit the tile (line ~75) |
-| `App/app/templates/base.html` | bump `app2.css?v=` (line 23, now `20261111-1100a`) to `20261111-1103a` |
+| `App/app/templates/base.html` | bump `app2.css?v=` (line 23, now `20261111-1100a`) to `20261111-1123a` |
 | `App/app/host_i18n.py` | add 1 key, en and cs blocks |
 | `App/app/host_vi_i18n.py` | add the same key in vi |
 | `App/tests/test_0534_property_page_v2.py` | add one test |
@@ -121,4 +121,4 @@ See "Done when" above.
 An anchor is not found, a test fails twice, or two readings of a step are possible.
 
 ## 9. Report
-`docs/tasks/1103-report.md`, 600 tokens at most (written).
+`docs/tasks/1123-report.md`, 600 tokens at most (written).
