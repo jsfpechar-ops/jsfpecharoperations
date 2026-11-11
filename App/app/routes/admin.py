@@ -14,7 +14,6 @@ import logging
 import re
 import secrets
 import time
-import unicodedata
 from datetime import date, timedelta
 from typing import Any, Dict, List, Optional
 from urllib.parse import parse_qsl, unquote, urlencode, urlparse, urlsplit, urlunsplit
