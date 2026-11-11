@@ -3750,6 +3750,7 @@ def reservations_list(request: Request):
         params.append(apartment_id)
     # A stay counts as inside the window when it overlaps it, so a guest who is
     # in the flat right now still shows under "upcoming".
+    overdue_ids: list = []
     if date_from and date_range == "upcoming":
         # WP33: a stay whose police deadline has passed with a guest still
         # unfiled stays in the default view until it is filed, however long
@@ -3780,8 +3781,26 @@ def reservations_list(request: Request):
     page_count = max(1, (total + RESERVATION_PAGE_SIZE - 1) // RESERVATION_PAGE_SIZE)
     page = max(1, min(_query_int(request, "page") or 1, page_count))
     offset = (page - 1) * RESERVATION_PAGE_SIZE
-    sql += " ORDER BY r.date_from ASC, r.date_to ASC, r.id ASC LIMIT ? OFFSET ?"
-    reservations = db.query(sql, [*params, RESERVATION_PAGE_SIZE, offset])
+    # 1100: overdue unfiled stays first, then in house (leaving soonest), then upcoming (arriving soonest), then past (latest first).
+    group = (
+        "CASE WHEN r.date_from <= ? AND r.date_to >= ? THEN 0 "
+        "WHEN r.date_from > ? THEN 1 ELSE 2 END"
+    )
+    overdue_first = ""
+    overdue_params: list = []
+    if overdue_ids:
+        overdue_marks = ",".join("?" for _ in overdue_ids)
+        overdue_first = f"CASE WHEN r.id IN ({overdue_marks}) THEN 0 ELSE 1 END, "
+        overdue_params = list(overdue_ids)
+    sql += (
+        f" ORDER BY {overdue_first}{group},"
+        f" CASE WHEN {group} = 0 THEN r.date_to WHEN {group} = 1 THEN r.date_from END ASC,"
+        f" CASE WHEN {group} = 2 THEN r.date_to END DESC,"
+        " r.date_from ASC, r.id ASC LIMIT ? OFFSET ?"
+    )
+    reservations = db.query(
+        sql, [*params, *overdue_params, *([today] * 12), RESERVATION_PAGE_SIZE, offset]
+    )
     rows = []
     # One guest query for the page, and each property read once, instead of
     # both again for every stay on it.
