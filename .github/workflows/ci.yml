@@ -38,7 +38,27 @@ jobs:
             App/requirements-dev.txt
 
       - name: Install system tools used by tests
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends age sqlite3
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5; do
+            if sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends age sqlite3; then
+              age --version
+              sqlite3 --version
+              exit 0
+            fi
+            echo "apt install attempt ${attempt} failed; retrying in $((attempt * 20))s"
+            sleep $((attempt * 20))
+          done
+          # Runner DNS to Ubuntu archives is flaky; install age from GitHub if apt never succeeds.
+          ver=1.2.1
+          tmp="$(mktemp -d)"
+          curl -fsSL "https://github.com/FiloSottile/age/releases/download/v${ver}/age-v${ver}-linux-amd64.tar.gz" \
+            | tar -xzf - -C "${tmp}"
+          sudo install -m 0755 "${tmp}/age/age" "${tmp}/age/age-keygen" /usr/local/bin/
+          rm -rf "${tmp}"
+          command -v sqlite3 >/dev/null || sudo apt-get install -y --no-install-recommends sqlite3
+          age --version
+          sqlite3 --version
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
