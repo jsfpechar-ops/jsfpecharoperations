@@ -196,6 +196,8 @@ a { color: var(--g-accent); text-underline-offset: 2px; }
   .g-checkin-main { grid-column: 2; }
   /* The inline strip repeats what the rail now says all the time. */
   .g-checkin-page .g-form-line { display: none; }
+  /* 1098: the rail carries "Not your dates?" beside the dates card from here on. */
+  .g-checkin-page .g-checkin-main .g-dates-link { display: none; }
 }
 
 .g-checkin-stay {
@@ -1302,6 +1304,17 @@ details.g-head-help > .g-intro { margin: 10px 0 0; }
 .g-foot { font-size: 12.5px; color: var(--g-muted); text-align: center; margin-top: 26px; }
 .g-foot p { margin: 5px 0; }
 
+/* 1098: "Not your dates?" is a coral text link with the dates (rule 9), a full tap target. */
+.g-dates-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--g-accent);
+  font-size: 14.5px;
+  font-weight: 600;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+}
 .g-back {
   display: inline-flex;
   align-items: center;
