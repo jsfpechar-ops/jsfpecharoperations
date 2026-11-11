@@ -1,6 +1,6 @@
 # 1106: Declare and pin the submission.state machine
 
-Status: todo
+Status: review
 Depends on: none | Base commit: 5e034303 | Branch: task/1106-sm-submission-state
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
