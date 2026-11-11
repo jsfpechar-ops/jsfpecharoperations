@@ -31,7 +31,7 @@ These touch different files and run in any order. 1113 first helps every other P
 | 1120 | Observe mode in Postgres: one trigger per state column that records, and never blocks, a state change the table does not allow, into a small log table. Covers Python and Go writers with no writer change | Postgres | HIGH RISK migration | Opus |
 | 1111 | CHECK constraints (written in round 1; its migration number `00015` is now taken and must be renumbered before it runs) | Postgres | HIGH RISK migration | written |
 
-1120 is Postgres only, which bends rule 5 (Postgres-portable SQL). It is `blocked` until the owner says yes in decisions. 1120 runs after 1119.
+1120 is Postgres only, which bends rule 5 (Postgres-portable SQL). Owner agreed 2026-11-11: Postgres only. 1120 runs after 1119 and takes migration `00016`; 1111 is renumbered to `00017` and runs after it.
 
 ## Round 4: enforce (cannot be briefed yet)
 
@@ -39,6 +39,6 @@ After 1120 has run in production with no recorded violation for a machine, that 
 
 ## Owner decisions needed
 
-1. 1118 lists the filing moves that the doc and the code disagree on; say which are intended. One looks like a bug: a guest blocked as a duplicate returns to `pending` after any edit.
-2. 1120: is a Postgres-only trigger acceptable?
+1. Owner, 2026-11-11: "do the recommended". The orchestrator gives a recommendation per item once 1118 lists them. 1118 lists the filing moves that the doc and the code disagree on; say which are intended. One looks like a bug: a guest blocked as a duplicate returns to `pending` after any edit.
+2. 1120: Postgres-only trigger. Answered yes (owner, 2026-11-11).
 3. 1111: run its production query; merge only when ready to run `pg_schema.py apply` at once.
