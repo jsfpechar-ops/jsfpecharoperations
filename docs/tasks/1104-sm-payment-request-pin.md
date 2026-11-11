@@ -1,6 +1,6 @@
 # 1104: Pin every writer of payment_request.status against the Python table
 
-Status: todo
+Status: review
 Depends on: none | Base commit: 5e034303 | Branch: task/1104-sm-payment-request-pin
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
