@@ -63,7 +63,7 @@ def stored_body(payload: Dict[str, Any]) -> str:
 | App/app/i18n.py | edit | 3 keys in en, cs, de, es, fr |
 | App/app/guest_uk_i18n.py | edit | 3 keys in uk |
 | App/tests/test_guest_receipt_sent_mail.py | create | new focused tests |
-| docs/tasks/1122-report.md | create | report |
+| docs/tasks/1122-guest-receipt-report.md | create | report |
 
 No other file may change.
 
@@ -458,7 +458,7 @@ Stop, and write the report, if:
 
 ## 9. Report
 
-Write `docs/tasks/1122-report.md` (600 tokens at most) and set `Status: review`. The report has:
+Write `docs/tasks/1122-guest-receipt-report.md` (600 tokens at most) and set `Status: review`. The report has:
 
 1. The files changed (`git diff --stat`).
 2. Each command, with the last 5 lines of its output.

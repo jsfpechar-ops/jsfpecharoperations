@@ -25,6 +25,23 @@ FAILED = "failed"
 BOUNCED = "bounced"
 COMPLAINED = "complained"
 
+# Every move email_outbox.state makes today (brief 1110), derived from the code, not
+# designed. Nothing reads this at runtime; tests/test_sm_queues.py pins the writers.
+# A row is created queued by enqueue() here and by EnqueueMail in go/internal/ubyport/notify.go.
+OUTBOX_TRANSITIONS = {
+    # drain() and send_now() claim a row; claim.expire_on_cancel() and
+    # expireOnCancel in go/internal/ical/reconcile.go fail a queued one
+    QUEUED: {SENDING, FAILED},
+    # _deliver(): sent, last attempt failed, or back to queued for a retry;
+    # drain() also resets a claim older than 10 minutes to queued
+    SENDING: {SENT, FAILED, QUEUED},
+    SENT: set(),
+    FAILED: set(),
+    BOUNCED: set(),  # no code sets bounced or complained today; admin_ops reads them
+    COMPLAINED: set(),
+}
+
+
 KINDS = (
     "claim",
     "claim_resend",

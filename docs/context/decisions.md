@@ -51,18 +51,15 @@ Append-only.
 - 2026-11-09 [guest] Guest edits/removes own added people until filed (SENT, incl. by hand); then locked, "Message host" (owner)
 - 2026-11-09 | [ux] Stay fees: current month default, pick navigates | owner | 1051
 - 2026-11-09 [ux] [Speed plan](../plans/speed-and-ease.md): answers §10.
-- 2026-11-09 | [workflow] Speed/group plans only (owner): executor by tier. A (filing, concurrency, guest data): Fable 5.2 executor, Opus brief, fresh Fable reviews diff pre-PR. B (multi-file, mail, payments, privacy, new component): Opus executor, Sonnet brief. C (attributes, copy, prefill, CSS): Sonnet executor, medium effort, Sonnet brief. 100k cap = Haiku only. Since 11-09 a fresh Fable reviews every new brief | [workflow](workflow.md#roles-and-models)
-- 2026-11-09 [filing] Registered guests are filed by the deadline cap (deadline - 6 h) even for a short stay or with no expected count; no 12 quiet hours past the cap; valid co-guests filed though another form is invalid; reverses the reporting.py:1093 rule; stays past their cap: filed by the first sweep (owner, K-F20) | 1070
-- 2026-11-09 [workflow] Owner asleep: orchestrator takes recommended answers, merges green reviewed PRs itself (this build only). Assumed: F3, F4 yes; guest draft deleted 7 d after last change or day after check-out; G6, G13 parked; G4 not released
+- 2026-11-09 | [workflow] Speed and group plans only (owner): executor by tier. A (filing, concurrency, guest-data access): Fable 5.2 executor, Opus brief, fresh Fable reviews diff before PR. B (multi-file, mail, payments, privacy, new component): Opus executor, Sonnet brief. C (attributes, copy, prefill, CSS): Sonnet executor, medium effort, Sonnet brief. 100k cap = Haiku only. From 11-09 21:35 a fresh Fable reviews every new brief | [workflow](workflow.md#roles-and-models)
+- 2026-11-09 [filing] Registered guests are filed by the deadline cap (deadline - 6 h) even when the stay is short or has no expected count; no 12 quiet hours past the cap; valid co-guests filed while another form is invalid; reverses the reporting.py:1093 rule; stays past their cap are filed by the first sweep (owner, K-F20) | 1070
+- 2026-11-09 [workflow] Owner asleep: orchestrator takes recommended answers and merges green, reviewed PRs itself (this build only). Assumed: F3, F4 yes; guest draft deleted 7 d after last change or day after check-out; G6, G13 parked; G4 not released
 - 2026-11-10 [guest] Guest form: B now, then C (owner).
 - 2026-11-10 [guest] Under-15s skip the signature; any adult on the booking signs and ticks a role ("parent or guardian" / "adult responsible for the child on this stay"). A child with no adult link is filed "no signature required" (owner).
 - 2026-11-10 [guest] Titles: cs "Registrace hosta", es "Ficha de huésped", fr "Fiche voyageur" (owner).
-- 2026-11-10 [head-count] Lower count with stay fee: show new fee, "new bill will be e-mailed", confirm. Every lead change: "Check your changes" confirm. Host digest mail: changed field names (not values), stay link; not first registrations. Small Go change allowed. Early door-code risk accepted, mail guard covers it (owner).
+- 2026-11-10 [head-count] Lower count with a stay fee: show new fee and "new bill will be e-mailed", confirm. Every lead change: "Check your changes" confirm. Host digest mail lists changed field names (not values), links to the stay page; changes only, not first registrations. Small Go change allowed. Early door-code risk accepted (mail guard covers it) (owner).
 - 2026-11-10 [workflow] Plan: project file plans/head-count-change.md (not in repo); each complete plan gets a Fable review before building (owner).
-- 2026-11-10 [guest] 1086: unsaved prefilled values warn on leave (beforeunload) even before input (orchestrator).
-- 2026-11-11 [police] 1100: no tick, values in boxes; parser reads password+facility, never logged/stored (owner; reverses 1097, 1085).
-<<<<<<< HEAD
-- 2026-11-11 [ux] 1101 wizard reuse.
-=======
-- 2026-11-10 | [demo] Demo seed covers all current features; mock-only, cleared by Clear demo | owner | 1092
->>>>>>> origin/main
+- 2026-11-10 [guest] 1086: unsaved prefilled values warn on leave (beforeunload) even before input.
+- 2026-11-11 [police] 1100: no tick, values in boxes; parser reads password+facility, never stored (owner; reverses 1097, 1085).
+- 2026-11-10 [demo] Demo seed covers current features; mock-only, cleared by Clear demo (owner, 1092)
+- 2026-11-11 [ux] 1101: wizard reuse
