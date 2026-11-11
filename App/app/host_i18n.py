@@ -11091,3 +11091,41 @@ _STAY_FEE_GUEST_PAY_STRINGS = {
 }
 for _lang, _strings in _STAY_FEE_GUEST_PAY_STRINGS.items():
     STRINGS.setdefault(_lang, {}).update(_strings)
+
+# 1099: short property editor (first setup included).
+_SHORT_EDITOR_1099_STRINGS = {
+    "en": {
+        "setup.sec.done": "Done",
+        "setup.sec.minutes": "about %(n)s min",
+        "setup.sec.optional": "Optional",
+        "setup.sec.recommended": "Recommended",
+        "setup.sec.police_untested": "Saved, not tested yet",
+        "setup.label.idub": "Accommodation number (IDUB)",
+        "setup.label.login": "Login from the police letter",
+        "setup.label.password": "Password from the police letter",
+        "setup.label.mark": "Short name (zkratka)",
+        "setup.label.facility": "Facility name on the letter",
+        "setup.ready.title": "You're ready",
+        "setup.ready.text": "Send this link and PIN to your guests.",
+        "setup.ready.text_no_pin": "Send this link to your guests.",
+        "setup.ready.qr_alt": "QR code for the guest link",
+    },
+    "cs": {
+        "setup.sec.done": "Hotovo",
+        "setup.sec.minutes": "asi %(n)s min",
+        "setup.sec.optional": "Nepovinné",
+        "setup.sec.recommended": "Doporučeno",
+        "setup.sec.police_untested": "Uloženo, zatím netestováno",
+        "setup.label.idub": "Číslo ubytování (IDUB)",
+        "setup.label.login": "Přihlášení z dopisu od policie",
+        "setup.label.password": "Heslo z dopisu od policie",
+        "setup.label.mark": "Krátký název (zkratka)",
+        "setup.label.facility": "Název zařízení z dopisu",
+        "setup.ready.title": "Máte hotovo",
+        "setup.ready.text": "Pošlete hostům tento odkaz a PIN.",
+        "setup.ready.text_no_pin": "Pošlete hostům tento odkaz.",
+        "setup.ready.qr_alt": "QR kód odkazu pro hosty",
+    },
+}
+for _lang, _strings in _SHORT_EDITOR_1099_STRINGS.items():
+    STRINGS[_lang].update(_strings)

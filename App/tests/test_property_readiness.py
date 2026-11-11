@@ -258,14 +258,14 @@ def test_the_eight_reporting_fields_keep_localized_labels_and_controls_without_b
     client, apartment_id = host
 
     fields = (
-        ("uby_idub", "apartment.form.ubyport.idub_label", "text"),
-        ("uby_mark", "apartment.form.ubyport.mark_label", "text"),
-        ("uby_name", "automation.facility_name", "text"),
+        ("uby_idub", "setup.label.idub", "text"),
+        ("uby_mark", "setup.label.mark", "text"),
+        ("uby_name", "setup.label.facility", "text"),
         ("addr_house_no", "apartment.form.addr.house_no", "text"),
         ("addr_zip", "apartment.form.addr.zip", "text"),
         ("addr_obec", "apartment.form.addr.obec", "text"),
-        ("uby_ws_user", "automation.login", "text"),
-        ("uby_ws_password", "automation.password", "password"),
+        ("uby_ws_user", "setup.label.login", "text"),
+        ("uby_ws_password", "setup.label.password", "password"),
     )
 
     for lang in ("en", "cs"):

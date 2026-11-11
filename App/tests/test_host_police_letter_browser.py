@@ -115,7 +115,7 @@ def fits(page) -> bool:
 
 def paste(page, expect_status=422):
     """Open the paste row, paste the fake letter and read it."""
-    page.locator("details.police-letter-paste > summary").click()
+    page.locator("details.police-letter-paste").evaluate("d => { d.open = true; }")  # 1099: may start open
     page.fill("#letter_text", LETTER)
     with page.expect_response(lambda r: r.url.endswith("/police-letter")) as reply:
         page.locator(READ_BUTTON).click()
@@ -167,7 +167,7 @@ def assert_check_block(page):
 def test_the_find_card_shows_the_drawn_letter(live, no_client, width):  # noqa: F811
     page = live.open(width)
     page.goto(live.url)
-    page.locator("details.police-letter-find > summary").click()
+    page.locator("details.police-letter-find").evaluate("d => { d.open = true; }")  # 1099: may start open
     page.wait_for_timeout(400)
     settle_motion(page)
     assert page.locator(".police-letter-svg").is_visible()
@@ -321,7 +321,8 @@ def test_paste_check_and_confirm_without_javascript(live, fake_client, width):  
 def test_the_letter_helper_geometry(live, no_client, width):  # noqa: F811
     page = live.open(width)
     page.goto(live.url)
-    page.locator("details.police-letter-paste > summary").click()
+    page.locator("details.police-letter-paste").evaluate("d => { d.open = true; }")  # 1099: may start open
+    page.locator("details.police-letter-find").evaluate("d => { d.open = false; }")  # 1099: starts open in first setup
     page.wait_for_timeout(400)
     settle_motion(page)
     if width == 390:
@@ -356,7 +357,7 @@ def test_the_letter_helper_geometry(live, no_client, width):  # noqa: F811
     with page.expect_response(lambda r: r.url.endswith("/police-letter")):
         page.locator(READ_BUTTON).click()
     page.wait_for_selector("#police-letter-check")
-    page.locator("details.police-letter-paste > summary").click()
+    page.locator("details.police-letter-paste").evaluate("d => { d.open = true; }")  # 1099: may start open
     page.wait_for_timeout(400)
     settle_motion(page)
     seen = page.evaluate(

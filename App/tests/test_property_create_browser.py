@@ -123,8 +123,9 @@ def test_one_operator_is_chosen_and_one_submit_creates_a_manual_property():
     )
     assert response.status_code == 303
     (row,) = _rows(host["owner"])
-    assert f"/apartments/{row['id']}/setup/calendar" in response.headers["location"]
-    assert "/setup/calendar" in response.headers["location"]
+    # 1099: a new property lands on the short editor in first setup, not the wizard.
+    assert f"/apartments/{row['id']}?view=settings" in response.headers["location"]
+    assert "/setup/" not in response.headers["location"]
     assert row["internal_name"] == "Synthetic Loft" and row["city_en"] == "Prague"  # 0204: from the town
     assert row["legal_entity_id"] == host["entities"][0]
     assert row["data_controller_entity_id"] is None
@@ -132,10 +133,13 @@ def test_one_operator_is_chosen_and_one_submit_creates_a_manual_property():
     assert row["guest_message"] == host_i18n.translate("en", "apartment.form.guest_message.default")
     assert row["lock_provider"] is None and not row["uby_ws_password_enc"]
     assert (row["addr_obec"], row["addr_house_no"], row["addr_zip"]) == ("Praha", "12", "11000")
-    # 0102: new properties land on the calendar wizard step (query may carry the create toast).
+    # 1099: the editor opens in first setup (query may carry the create toast).
     location_path = urlparse(response.headers["location"]).path
-    assert location_path == f"/apartments/{row['id']}/setup/calendar"
-    detail = host["client"].get(response.headers["location"]).text
+    assert location_path == f"/apartments/{row['id']}"
+    editor = host["client"].get(response.headers["location"]).text
+    assert 'data-start-section="sec-' in editor and "data-setup-wizard" not in editor
+    # The wizard is still reachable directly.
+    detail = host["client"].get(f"/apartments/{row['id']}/setup/calendar").text
     assert 'class="panel property-first-use"' not in detail
     assert "data-setup-wizard" in detail
     assert 'id="calendar-add"' in detail
@@ -433,6 +437,11 @@ def test_create_page_fits_and_follow_ups_move_below_when_narrow(base):
         page.locator("#addr_street").fill("Synthetic")
         page.locator(".property-create-actions .ui-btn-primary").click()
         page.wait_for_load_state()
+        # 1099: create lands on the editor; the wizard is opened directly.
+        assert "view=settings" in page.url and "/setup/" not in page.url
+        created_id = re.search(r"/apartments/(\d+)", page.url).group(1)
+        page.goto(f"{base}/apartments/{created_id}/setup/calendar?lang=en")
+        page.wait_for_load_state()
         assert "/setup/calendar" in page.url
         assert page.locator("[data-setup-wizard]").is_visible()
         _shot(page, "created-1280-en")
@@ -459,7 +468,7 @@ def test_create_page_works_without_javascript(base):
         page.locator("#addr_zip").fill("11000")
         page.locator(".property-create-actions .ui-btn-primary").click()
         page.wait_for_load_state()
-        assert "/setup/calendar" in page.url
+        assert "view=settings" in page.url and "/setup/" not in page.url  # 1099: lands on the editor
         row = db.query_one("SELECT * FROM apartment WHERE owner_user_id = ?", (host["owner"],))
         assert row["internal_name"] == "Synthetic No-JS Flat" and row["addr_obec"] == "Praha"
         browser.close()

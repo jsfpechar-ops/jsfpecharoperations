@@ -393,6 +393,8 @@ def test_without_javascript_nothing_changes(browser, base, host):
         page.locator(".savebar a[data-unsaved-reset]").click()
     assert page.input_value("#internal_name") == "No JS O1 name"
     assert page.url.split("?")[0].endswith(f"/apartments/{host['apartment']}")
+    # 1099: sections start closed on a bare /apartments/N; open Basic details by its link.
+    page.goto(f"{url}?view=settings&section=property&lang=en")
     page.fill("#internal_name", "No JS unsaved")
     with page.expect_navigation():
         page.locator('a.airbnb-back[href="/apartments"]').click()
