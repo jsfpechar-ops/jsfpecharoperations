@@ -414,7 +414,7 @@ Expected: first `665 passed, 1 skipped` (counts may differ slightly on newer mai
 
 ### Step 12. Context lint
 
-From the repo root: `python3 scripts/context_lint.py 2>&1 | tail -30`. Expected: no errors.
+From the repo root: `python3 scripts/context_lint.py 2>&1 | tail -30`. Expected: no `ERROR` or `WARN` line that names `1114` or a file in §3. An `ERROR` about `docs/context/decisions.md` being over its token cap was already there before this brief (seen on main 2026-11-11); note it in the report and do not fix it here.
 
 ### Step 13. Report
 
@@ -436,7 +436,7 @@ Write `docs/tasks/1114-report.md` (§9) and set this brief's `Status: review`. C
 | 8 | `test -z "$(gofmt -l .)" && echo fmt-ok; go vet ./... 2>&1 \| tail -30; go test ./internal/ubyport -run TestRecover -count=1 -v 2>&1 \| tail -30` (go/) | `fmt-ok`, `ok`, SKIP or PASS |
 | 10 | `.venv/bin/python -m pytest tests/test_sm_submission_state.py tests/test_stale_submission.py -q --tb=short -x 2>&1 \| tail -30` (App/) | `23 passed` |
 | 11 | the two commands of step 11 (App/) | 0 failed |
-| 12 | `python3 scripts/context_lint.py 2>&1 \| tail -30` (root) | no errors |
+| 12 | `python3 scripts/context_lint.py 2>&1 \| tail -30` (root) | nothing naming 1114 or a §3 file (see step 12) |
 
 The Go test runs against Postgres only in CI job `go` (`.github/workflows/ci.yml`, `go test ./... -count=1` with `UBYHOST_TEST_DATABASE_URL`). The Python test also runs on Postgres in CI job `test-postgres-full`.
 
