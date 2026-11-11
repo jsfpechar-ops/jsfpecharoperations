@@ -2733,6 +2733,28 @@ def build_receipts_zip(rows: List[Any], dest_path: str) -> int:
 # row moves to one of these, so a 'running' row has no envelope to purge.
 TERMINAL_SUBMISSION_STATES = ("ok", "ok_duplicate", "partial", "error", "transport_error", "outcome_unknown")
 
+# Every move of submission.state the code makes today (brief 1106). Declared
+# only: nothing reads this at runtime, and tests/test_sm_submission_state.py
+# fails when a writer changes. None is the INSERT that creates the row. Every
+# later write matches the row by id alone, with no state check in SQL; the
+# source state is the one the writer's code path holds.
+SUBMISSION_TRANSITIONS = {
+    # submit_batch; go store.go InsertSubmission
+    None: ("running",),
+    "running": (
+        # submit_batch (state from plan_outcome); go store.go RecordOutcome (plan.State)
+        "ok",
+        "ok_duplicate",
+        "partial",
+        "error",
+        # submit_batch; go store.go RecordTransportError
+        "transport_error",
+        # submit_batch, recover_stale_submissions; go store.go RecordOutcomeUnknown,
+        # go recover.go RecoverStaleSubmissions
+        "outcome_unknown",
+    ),
+}
+
 # The envelope is the only thing in the row that carries guest data, and the
 # row outlives the six-year purge of the guests it describes, so it goes far
 # sooner than they do.
