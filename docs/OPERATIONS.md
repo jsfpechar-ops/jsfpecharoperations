@@ -72,40 +72,122 @@ keep the copies that were filed if those settings later change.
 One value per guest row, defined in `App/app/reporting.py`. It is the record of
 whether that individual has been reported.
 
+**Source of truth.** The `TRANSITIONS` table in `App/app/reporting.py` and the
+pin test `App/tests/test_sm_guest_submit_state.py` say what the code does. This
+section describes them. If this section and the table differ, the table is
+right and this section is stale. The test fails when a writer is added, removed
+or changed without the table; it does not read this section.
+
+This section lists what happens today. Four moves carry a ruling by the owner
+(2026-11-11), listed at the end of this section.
+
 | State | Meaning |
 | --- | --- |
 | `pending` | Not yet accepted by UbyPort. The default, and where a record sits between the guest signing and the next sweep. |
-| `sent` | UbyPort holds this record. Never resent automatically. |
+| `sent` | UbyPort holds this record. The sweep never resends it. A host resend or a hand-filing undo can still move it (see the table). |
 | `error` | Rejected in a way that correcting the data can fix. |
-| `blocked` | Rejected in a way resending will not fix — in practice code 150, a duplicate. 112 does **not** belong here: it is an accept; see below. |
+| `blocked` | Rejected with a code that resending will not fix: a header-level 150, or a code the code book calls non-correctable. A record-level 150 does **not** give `blocked`: it gives `sent`. 112 is an accept, not a refusal; see the next section. |
 | `not_required` | Czech national: house book only, no reporting duty. |
 
-Transitions:
+### Writers
 
-- `pending → sent` — the response carried no error codes for this record, or
-  only codes of severity 0-2 (for example 112, reported late).
-- `pending → error` — code(s) of severity 4-6, or of unknown severity, returned.
-- `pending → blocked` — a non-correctable code (150, or a codebook text
-  matching `duplic`/`pozd`/`late`).
-- `error`/`blocked`/`pending` **→ `sent`** when the response says duplicate
-  (code 150). See below.
-- `error`/`blocked`/`not_required` → `pending` when a host edits the guest —
-  rule 10.4(5), correcting a rejected record must make it sendable again. A host
-  edit of a reportable guest also stamps `identity_verified_at`, and it resets
-  `submit_attempts` to 0.
+Each move below is made by one of these. `UbyPort outcome` means the answer to
+a send is written back to the guest rows.
+
+| Short name | Python | Go |
+| --- | --- | --- |
+| outcome | `App/app/reporting.py:plan_outcome`, applied by `submit_batch` | `go/internal/ubyport/outcome.go:PlanOutcome`, applied by `RecordOutcome` in `go/internal/ubyport/store.go` |
+| collect | `App/app/reporting.py:collect_sendable` | `go/internal/ubyport/collect.go:CollectSendable` |
+| hand mark | `App/app/reporting.py:mark_filed_by_hand` | none |
+| hand undo | `App/app/reporting.py:undo_filed_by_hand` | none |
+| host edit | `App/app/routes/admin.py:guest_update` | none |
+| guest form | `App/app/routes/guest.py:guest_form_save` | none |
+
+The outcome write has no state test in its SQL, so it can move a guest from any
+state. Collect also writes without a state test; it only acts on `pending`,
+`error` and `blocked` guests. The hand mark, hand undo, host edit and guest form
+writes only apply if the row still has the state they read.
+
+### Moves
+
+Every move in `TRANSITIONS`: 19 from-to pairs. A write that leaves the state the same
+is not a move and is not listed.
+
+| From | To | Made by | When |
+| --- | --- | --- | --- |
+| `pending` | `sent` | outcome (Python and Go); hand mark | Outcome: no error codes, only codes of severity 0-2, or a record-level duplicate (150). Hand mark: the host marks the guest as filed by hand. |
+| `pending` | `error` | outcome (Python and Go) | A correctable refusal. |
+| `pending` | `blocked` | outcome (Python and Go) | A non-correctable refusal that is not a record-level duplicate. |
+| `pending` | `not_required` | collect (Python and Go); host edit; guest form | The nationality is not reportable. |
+| `error` | `sent` | outcome (Python and Go); hand mark | As for `pending` to `sent`. |
+| `error` | `blocked` | outcome (Python and Go) | A non-correctable refusal. |
+| `error` | `pending` | host edit; guest form | A correction. Rule 10.4(5): a corrected record must be sendable again. |
+| `error` | `not_required` | collect (Python and Go); host edit; guest form | The nationality is not reportable. |
+| `blocked` | `sent` | outcome (Python and Go); hand mark | As for `pending` to `sent`. The outcome only reaches a `blocked` guest on a host resend. |
+| `blocked` | `error` | outcome (Python and Go) | A correctable refusal, on a host resend. |
+| `blocked` | `pending` | host edit; guest form | A correction. For a guest blocked as a duplicate this changes with brief 1121 (see 1 below). |
+| `blocked` | `not_required` | collect (Python and Go); host edit; guest form | The nationality is not reportable. |
+| `sent` | `pending` | hand undo | The host undoes a hand filing; the guest returns to the state it had before, or `pending`. |
+| `sent` | `error` | hand undo; outcome (Python and Go) | Undo to a prior `error`; or a host resend that came back refused. Kept for now (see 3 below). |
+| `sent` | `blocked` | hand undo; outcome (Python and Go) | Undo to a prior `blocked`; or a host resend refused with a non-correctable code. Kept for now (see 3 below). |
+| `not_required` | `pending` | host edit; guest form | The nationality is now reportable. |
+| `not_required` | `sent` | outcome (Python and Go) | A guest who is reportable but still marked `not_required` was sent. Intended (see 4 below). |
+| `not_required` | `error` | outcome (Python and Go) | Same. |
+| `not_required` | `blocked` | outcome (Python and Go) | Same. |
+
+No writer moves `sent` to `not_required`. A host edit of a `sent` row saves the
+fields and keeps the state; collect skips a `sent` row.
+
+A new guest row starts `pending`, or `not_required` for a Czech national. It is
+inserted by `guest_create` (`App/app/routes/admin.py`), `guest_form_save`
+(`App/app/routes/guest.py`) and the setup-guide demo (`App/app/demo.py:_guest`).
+Go never inserts a guest.
+
+### Rules that go with the moves
+
+- **Accepted.** A record with no error codes, or only codes of severity 0-2
+  (for example 112, reported late), becomes `sent`.
+- **Duplicate.** A duplicate answer in the record's own codes (150, or a code
+  the code book names as a duplicate) becomes `sent`, not `blocked`. A
+  duplicate named only in the batch header becomes `blocked`. Intended
+  (see 2 below).
+- **Host edit.** A host edit of a reportable guest in `error`, `blocked` or
+  `not_required` sets `pending`, clears the stored error text and sets
+  `submit_attempts` to 0. It also stamps `identity_verified_at`. The guest form
+  does the same reset when the guest saves their own form.
+- **Collect.** When the nationality is not reportable, collect sets
+  `not_required` on any state except `sent` and `not_required`. This happens
+  during every sweep, not only on an edit.
 - **Nothing changes state when the automatic sweep gives a record up.** After
-  one refusal the sweep stops offering it (`submit_attempts`), but the row
-  stays `error` and a host send still works. See the severity rule below.
-- anything → `not_required` when the nationality is changed to Czech.
+  `SUBMISSION_MAX_AUTO_ATTEMPTS` refusals the sweep stops offering the record,
+  but the row stays `error` and a host send still works.
 - **A transport failure changes nothing.** The guest stays `pending` and the
-  `submission` row is marked `transport_error`, so the next sweep retries. This
-  is deliberate: rule 10.2(e) forbids losing the queue on a network blip.
+  `submission` row is marked `transport_error`, so the next sweep retries. Rule
+  10.2(e) forbids losing the queue on a network blip.
+- **Resend.** A host resend of a `sent` or `blocked` guest needs an explicit
+  confirmation in the UI. Collect skips a `blocked` guest whose stored error
+  text names a duplicate, even on a resend, and skips a `sent` guest filed by
+  hand. That skip depends on the stored error text, which an edit clears (see 1
+  below).
+- **Edit and delete of a `sent` row.** The guest form and the host delete
+  paths refuse a `sent` row. The host edit saves it and keeps the state.
 
-`sent` rows refuse edit and delete from both the host and guest surfaces. A
-deliberate resend of a `sent` or `blocked` record requires an explicit
-confirmation in the UI, and a record blocked *as a duplicate* is refused even
-then, because a second duplicate cannot be accepted and duplicates count
-against the host's web-service access.
+### Rulings
+
+The owner ruled on these on 2026-11-11. Brief 1118 gives an example for each.
+
+1. A guest blocked as a duplicate returns to `pending` after any host or guest
+   edit, which removes the refusal to resend. This is today's behaviour.
+   Changes with brief 1121: an edit that changes no field reported to the police will
+   leave the guest `blocked`; an edit to a reported field may still reset it.
+2. A record-level duplicate (150) becomes `sent`. Intended: it follows the
+   police letter of 24 September 2026 (C2) cited in the comment in
+   `plan_outcome`.
+3. `sent` can move to `error` or `blocked` after a host resend is refused. Kept
+   for now: it shows the host that the correction was refused. Known cost: the
+   guest shows as not filed although the register holds the first record.
+4. A reportable guest still marked `not_required` can be sent. Intended: it is
+   the safe direction for the filing duty.
 
 ## UbyPort error codes, and what 112 and 150 really do
 
