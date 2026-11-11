@@ -75,7 +75,7 @@ def test_editor_police_fields_are_starred_and_aria_required():
     macro = text[text.index("{% macro text_field"):text.index("{% endmacro %}")]
     assert "field_label(name, label, help, optional, '', required)" in macro
     assert 'aria-required="true"' in macro
-    assert "uby_ws_password', t('automation.password')" in text and "not has_password" in text
+    assert "uby_ws_password', t('setup.label.password')" in text and "not has_password" in text  # 1099 label
 
 
 def test_street_is_starred_and_other_optional_address_fields_stay_unstarred():

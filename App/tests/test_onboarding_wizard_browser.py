@@ -108,7 +108,9 @@ def _create(host, name="Synthetic Garden Flat"):
         follow_redirects=False,
     )
     assert response.status_code == 303
-    assert "/setup/calendar" in response.headers["location"]
+    # 1099: a new property lands in the short editor; the tests open the wizard directly.
+    assert "?view=settings" in response.headers["location"]
+    assert "/setup/" not in response.headers["location"]
     return db.query_one(
         "SELECT * FROM apartment WHERE owner_user_id = ? ORDER BY id DESC LIMIT 1", (host["owner"],)
     )
@@ -122,6 +124,14 @@ def _shot(page, name: str):
 
 def _overflow_js():
     return """() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"""
+
+
+def test_create_lands_on_the_editor_in_first_setup(host):
+    """1099: the create redirect opens the short editor in first-setup mode."""
+    flat = _create(host)
+    page = host["client"].get(f"/apartments/{flat['id']}?view=settings&lang=en").text
+    assert 'data-start-section="sec-' in page
+    assert "data-setup-wizard" not in page
 
 
 def test_create_lands_on_calendar_step_two(host):
