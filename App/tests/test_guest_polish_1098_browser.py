@@ -107,7 +107,6 @@ def test_1098_5_even_field_gaps(live_server, browser, monkeypatch):
                 bad[width] = gaps
         finally:
             page.close()
-    print("GAPS", bad)
     assert not bad, bad
 
 
@@ -141,6 +140,7 @@ def test_1098_6_dates_link(live_server, browser, monkeypatch):
 
 
 def _assert_neutral(page, scope):
+    page.wait_for_timeout(400)  # the row's 0.14 s colour transition ends first
     checked = f"{scope} .checkline:has(input:checked)"
     accent, soft = _colour(page, "--g-accent"), _colour(page, "--g-accent-soft")
     background = _style(page, checked, "backgroundColor")
