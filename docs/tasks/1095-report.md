@@ -4,7 +4,7 @@ Status: review
 
 ## Files changed
 
-Section 3 files only, plus one deviation: `App/tests/test_migrations.py` (the pin `test_python_runner_is_frozen` 43 to 44, as 1082 and 1089 did in their step 1).
+Section 3 files only, plus two deviations: the version pins 43 to 44 in `App/tests/test_migrations.py` and `App/tests/test_db_postgres.py`, as 1082 and 1089 did.
 
 ## Step 1 callers
 
@@ -12,7 +12,7 @@ No Python caller of `expected_guest_count` or `reservation_progress` feeds it fr
 
 ## Commands (last lines)
 
-- `test_headcount_1095.py test_party_count_1092.py`: `68 passed` (46 new, the 22 of 1092 untouched).
+- `test_headcount_1095.py test_party_count_1092.py`: `68 passed` (48 new, the 22 of 1092 untouched).
 - Filing row with the two files above: `13 failed, 717 passed, 1 skipped`. All 13 are `test_endtoend.py` test_06 to test_23, an order dependence that is the same on the untouched base (`13 failed, 671 passed, 1 skipped` on the 1094 checkout). `test_endtoend.py` alone: `28 passed`.
 - Database row: `136 passed, 55 skipped` (Postgres-only and browser rows of that list; no local `UBYHOST_DATABASE_URL`).
 - Retention and door codes: `6 failed, 219 passed`; all 6 are `[*-webkit]` cases of `test_door_code_window_browser.py` (no WebKit in this container; same before the change).
@@ -39,12 +39,15 @@ No Python caller of `expected_guest_count` or `reservation_progress` feeds it fr
 
 ## Deviations
 
-- `test_migrations.py` pin 43 to 44 (not in section 3).
+- Version pins 43 to 44 in `test_migrations.py` and `test_db_postgres.py` (not in section 3).
+- Fix round 1: goose 00015 integer columns are BIGINT, as in 00014 and `db.postgres_schema_status` (the brief said INTEGER). Local Postgres 16: `test_db_postgres.py` 55 passed; after the goose Up sections, 0 column mismatches at version 44 (no goose binary here, so `pg_schema.py check` itself is left to CI).
 - Steps 1 to 8 are one commit, not one commit per step.
 - Two phones: tested in both orders one after the other plus a `lock_key` spy, not with two threads.
-- Not tested: "the deadline-cap filing time is the same with and without a later restore". The brief names no file for the deadline cap and the change does not touch it.
-- Claim prefill: with no count on the claim row, the form now shows the host count when it differs from the declared count (before: the declared count). Display only; a host-set stay ignores the typed number (`host_set`).
 - The first baseline run overlapped my first edits; the base result above was taken again on an untouched checkout.
+
+## Deploy order
+
+`deploy/lightsail/scripts/deploy.sh` applies the goose files with the new image (line 219) before `docker compose up` starts the new containers (line 253), so 00015 is in place before the Go code selects `lead_reduced_guests`.
 
 ## Questions for the owner (flag stays off)
 

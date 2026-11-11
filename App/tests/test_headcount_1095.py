@@ -680,3 +680,43 @@ def test_the_1092_floors_hold_with_the_flag_off_and_on(stay, monkeypatch, flag):
         _row(stay_id), apartment, email="other@example.test", party_size=1, lang="en", resend=False
     )
     assert dict(_row(stay_id)) == before
+
+
+@pytest.mark.parametrize("stamped", [True, False])
+def test_the_deadline_cap_send_time_ignores_a_restore(stay, live, stamped):
+    from datetime import timezone
+    from zoneinfo import ZoneInfo
+
+    from app import deadlines
+
+    token, stay_id = stay
+    browser = _host_four(token, stay_id)
+    apartment_id = p92._apartment(token)["id"]
+    db.update("apartment", apartment_id, {"automation_mode": "scheduled", "submit_after_hours": 24})
+    apartment = p92._apartment(token)
+    anchor = reporting.reservation_deadline_anchor(dict(_row(stay_id)))
+    latest = (
+        (deadlines.reporting_deadline(anchor) - timedelta(hours=reporting.AUTOMATIC_SEND_DEADLINE_MARGIN_HOURS))
+        .replace(tzinfo=ZoneInfo(config.TIMEZONE))
+        .astimezone(timezone.utc)
+    )
+    stamp = (latest - timedelta(hours=1)).isoformat() if stamped else None
+    db.update("reservation", stay_id, {"registration_completed_at": stamp})
+
+    def _due():
+        row = _row(stay_id)
+        assert row["registration_completed_at"] == stamp
+        return (
+            reporting.due_for_automatic_send(apartment, row, now=latest - timedelta(minutes=1)),
+            reporting.due_for_automatic_send(apartment, row, now=latest),
+        )
+
+    untouched = _due()
+    assert untouched[1] is True
+    assert _code(_lead(browser, token, stay_id, 2, 4)) == "lowered"
+    db.update("reservation", stay_id, {"registration_completed_at": stamp})
+    lowered = _due()
+    assert _code(_lead(browser, token, stay_id, 4, 2)) == "restored"
+    db.update("reservation", stay_id, {"registration_completed_at": stamp})
+    assert _due() == untouched
+    assert lowered[1] is True
