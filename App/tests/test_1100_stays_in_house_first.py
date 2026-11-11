@@ -6,12 +6,12 @@ set in SQL, so paging cuts the same sequence on every page.
 """
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import timedelta
 
 import pytest
 from fastapi.testclient import TestClient
 
-from app import auth, db, host_i18n, reporting
+from app import auth, db, deadlines, host_i18n, reporting
 from app.main import app
 from app.routes import admin
 from tests.conftest import login_as
@@ -54,7 +54,7 @@ def _seed() -> TestClient:
     db.init_db()
     _cleanup()
     now = db.utcnow()
-    today = date.today()
+    today = deadlines.local_now().date()
     existing = db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,))
     user_id = (
         existing["id"]
@@ -177,7 +177,7 @@ def test_overdue_unfiled_stay_comes_first_and_stays_on_page_one(stays_client, mo
     monkeypatch.setattr(admin, "RESERVATION_PAGE_SIZE", 2)
     apartment = db.query_one("SELECT * FROM apartment WHERE permalink_token = ?", (TOKEN,))
     now = db.utcnow()
-    today = date.today()
+    today = deadlines.local_now().date()
     arrival = today - timedelta(days=12)
     departure = today - timedelta(days=10)
     assert deadlines.reporting_deadline(arrival) < deadlines.local_now()
