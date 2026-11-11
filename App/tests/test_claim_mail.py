@@ -216,7 +216,7 @@ def test_claim_form_and_privacy_notice_disclose_email_and_cookies(monkeypatch):
         assert "We send your private link and receipt here" in claim_page.text
         assert "Only your group can open the forms." in claim_page.text
         assert "one reminder the day before arrival if forms are missing" in claim_page.text
-        assert "a receipt (your host gets a copy)" in claim_page.text
+        assert "Your host receives your registration details by e-mail." in claim_page.text
         assert "Only necessary cookies" in claim_page.text
         assert "PIN access (7 days)" in claim_page.text
         assert "this stay (60 days)" in claim_page.text
