@@ -77,10 +77,23 @@ Tests:
 
 Run: `cd App && .venv/bin/python -m pytest tests/test_1100_stays_in_house_first.py tests/test_deadline_after_reporting.py -q --tb=short -x 2>&1 | tail -30`
 
-## 5. Done when
+## 5. Do not touch
 
-Both commands pass. Write `docs/tasks/1100-report.md` (status, tests run, deviations). Do not push, merge or touch anything else.
+The COUNT query, the filters, templates, CSS, `app.js`, copy, migrations, other tests, secrets, deploy.
 
-## 6. Stop rules
+## 6. Commands
+
+- `cd App && .venv/bin/python -m pytest tests/test_1100_stays_in_house_first.py tests/test_deadline_after_reporting.py -q --tb=short -x 2>&1 | tail -30`
+- From the repo root: `python3 scripts/context_lint.py 2>&1 | tail -30`
+
+## 7. Acceptance
+
+Both pytest files pass with 0 skipped; the order is in house (leaving soonest), upcoming (arriving soonest), past (latest first), across pages and every range.
+
+## 8. Stop and ask
 
 A test fails twice, an anchor is missing, or the stays row has no printable text to order by: STOP and report.
+
+## 9. Report
+
+Write `docs/tasks/1100-report.md` (status, tests run, deviations). Do not push, merge or touch anything else.
