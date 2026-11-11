@@ -33,7 +33,11 @@ Rules for every brief:
 | 1110 | Queues: `email_outbox.state`, `push_outbox.state`, `ad_click.send_state`, `guide_import.status` | low | Sonnet |
 | 1111 | CHECK constraints for state columns that have none. Blocked until the owner runs the distinct-values query the brief gives | HIGH RISK migration | Sonnet |
 
-1103 to 1110 touch different files and can run in any order. 1111 runs last.
+Run order: 1105 before 1106 (both add a table to `App/app/reporting.py`, at different anchors). The others touch different files and run in any order. 1107 and 1109 both name `ensure_row`, but these are two functions (`door_codes.ensure_row`, `claim.ensure_row`), so the context-lint warning is expected. 1111 runs last.
+
+The two existing tables keep their name `_TRANSITIONS` (`booking_site.py`, `payment_request.py`); 1103 and 1104 do not rename them.
+
+1111 is Postgres only and, per its own text, the app does not start after its merge until the owner runs `pg_schema.py apply`. Merge it only when the owner is ready to run that command at once.
 
 The orchestrator adds the [test-map](../context/test-map.md) rows at review, so no brief edits that file.
 

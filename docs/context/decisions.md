@@ -60,3 +60,5 @@ Append-only.
 - 2026-11-10 [head-count] Lower count with a stay fee: show new fee and "new bill will be e-mailed", confirm. Every lead change: "Check your changes" confirm. Host digest mail lists changed field names (not values), links to the stay page; changes only, not first registrations. Small Go change allowed. Early door-code risk accepted (mail guard covers it) (owner).
 - 2026-11-10 [workflow] Plan: project file plans/head-count-change.md (not in repo); each complete plan gets a Fable review before building (owner).
 - 2026-11-10 [guest] 1086: unsaved prefilled values warn on leave (beforeunload) even before input (orchestrator).
+- 2026-11-11 [state-machines] Round 1 only declares each machine's transition table in its owning module and pins every writer (Python and Go) with a source-reading test; no writer or runtime behaviour changes. Runtime guards and CHECK constraints come after (owner asked for the plan; orchestrator chose the scope).
+- 2026-11-11 [workflow] State-machine briefs 1103-1111: Opus wrote the filing, door-code and claim briefs (1105, 1106, 1107, 1109), Sonnet the rest; no Fable-written briefs (owner).
