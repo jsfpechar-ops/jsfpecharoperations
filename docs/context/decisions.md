@@ -60,4 +60,4 @@ Append-only.
 - 2026-11-10 [head-count] Lower count with a stay fee: show new fee and "new bill will be e-mailed", confirm. Every lead change: "Check your changes" confirm. Host digest mail lists changed field names (not values), links to the stay page; changes only, not first registrations. Small Go change allowed. Early door-code risk accepted (mail guard covers it) (owner).
 - 2026-11-10 [workflow] Plan: project file plans/head-count-change.md (not in repo); each complete plan gets a Fable review before building (owner).
 - 2026-11-10 [guest] 1086: unsaved prefilled values warn on leave (beforeunload) even before input (orchestrator).
-- 2026-11-11 [mail] Host mail names guests, full details default on; wording, date, executor: owner | [plan](../plans/guest-details-mail.md)
+- 2026-11-11 [police] 1100: no tick, values in boxes; parser reads password+facility, never logged/stored (owner; reverses 1097, 1085).

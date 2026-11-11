@@ -40,5 +40,6 @@ def test_the_stay_detail_keeps_one_send_and_moves_the_rest_into_the_menu():
 
 def test_code_list_refresh_is_gone_and_test_connection_and_clear_demo_stay():
     assert "refresh-codelists" not in _t("_property_editor.html")
-    assert "test-connection" in _t("_property_editor.html")  # item 10: kept in UbyPort setup
+    assert "test-connection" in _t("_police_fields.html")  # item 10: kept in UbyPort setup (1100: in the police partial)
+    assert '{% include "_police_fields.html" %}' in _t("_property_editor.html")
     assert _t("dashboard.html").count("/demo/reset") == 1  # item 7 kept, once

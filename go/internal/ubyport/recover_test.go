@@ -223,3 +223,53 @@ func TestRefreshRegistrationCompletedAt(t *testing.T) {
 		})
 	}
 }
+
+// 1095: a lead reduction below the host count completes the stay; without one
+// the host count still gates it, and a stored stamp never moves.
+func TestRefreshRegistrationCompletedAtLeadReduction(t *testing.T) {
+	const (
+		recent = "2026-11-01T11:00:00+00:00" // 1 hour before the pinned clock
+		old    = "2026-10-30T10:00:00+00:00"
+	)
+	cases := []struct {
+		name     string
+		reduced  any
+		existing any
+		want     string // "" nil, "new" any new stamp, else that stored value
+	}{
+		{"reduction reaches the count", 2, nil, "new"},
+		{"no reduction, host count not reached", nil, nil, ""},
+		{"reduction keeps a stored stamp", 2, old, old},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			pool := claimTestPool(t)
+			ctx := context.Background()
+			res := refreshFixture(t, pool, nil, 2, 0, recent, c.existing)
+			if _, err := pool.Exec(ctx,
+				`UPDATE reservation SET expected_guests_override = $2, lead_reduced_guests = $3 WHERE id = $1`,
+				res, 4, c.reduced); err != nil {
+				t.Fatal(err)
+			}
+			got, err := RefreshRegistrationCompletedAt(ctx, pool, res, nil, recoverNow)
+			if err != nil {
+				t.Fatal(err)
+			}
+			col := storeRead(t, pool, "reservation", res, "registration_completed_at")["registration_completed_at"]
+			switch c.want {
+			case "":
+				if got != nil || col != "<nil>" {
+					t.Fatalf("want no stamp, got %v, column %q", got, col)
+				}
+			case "new":
+				if got == nil || *got == "" || col != *got {
+					t.Fatalf("want a new stamp, got %v, column %q", got, col)
+				}
+			default:
+				if got == nil || *got != c.want || col != c.want {
+					t.Fatalf("want %q kept, got %v, column %q", c.want, got, col)
+				}
+			}
+		})
+	}
+}

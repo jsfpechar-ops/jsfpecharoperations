@@ -14,7 +14,6 @@ import logging
 import re
 import secrets
 import time
-import unicodedata
 from datetime import date, timedelta
 from typing import Any, Dict, List, Optional
 from urllib.parse import parse_qsl, unquote, urlencode, urlparse, urlsplit, urlunsplit
@@ -2276,76 +2275,49 @@ def _save_error(section: str, target: str) -> Dict[str, str]:
     return {"section": section, "target": target}
 
 
-def _letter_form_text(form, key: str, limit: int = 120) -> str:
-    """1085: one posted letter value, shown back to the host who sent it.
-
-    Read only if it is a str; every control or format character is removed
-    and the rest is cut to ``limit``. Never raises.
-    """
-    try:
-        raw = form.get(key)
-    except Exception:  # noqa: BLE001 - a forged form must never crash the re-render
-        return ""
-    if not isinstance(raw, str):
-        return ""
-    kept = "".join(ch for ch in raw[:4000] if unicodedata.category(ch)[0] != "C")
-    return kept.strip()[:limit]
-
-
 def _letter_saved_now(apartment, name: str, value: str) -> str:
     saved = (apartment[name] or "").strip()
     return saved if saved and saved != value else ""
 
 
-def _letter_rows_from_result(result, apartment) -> List[Dict[str, Any]]:
-    """1085: the check-answers rows for a parsed letter. Only filled rows carry text."""
-    rows = []
-    for name in police_letter.FIELDS:
-        found = result.fields.get(name)
-        state = found.state if found else "missing"
-        filled = bool(found and state in police_letter.FILLED_STATES and found.value)
-        rows.append(
-            {
-                "name": name,
-                "state": state if state in ("missing", "ambiguous", "unreadable", "conflict") or filled else "missing",
-                "filled": filled,
-                "value": found.value if filled else "",
-                "line": found.line if filled else None,
-                "source": [text[:120] for text in found.source[:2]] if filled and found.line else [],
-                "saved": _letter_saved_now(apartment, name, found.value) if filled else "",
-                "ticked": False,
-                "error": False,
-            }
-        )
-    return rows
+_LETTER_BOX_LABELS = (
+    ("uby_idub", "setup.label.idub"),
+    ("uby_ws_user", "setup.label.login"),
+    ("uby_ws_password", "setup.label.password"),
+    ("uby_mark", "setup.label.mark"),
+    ("uby_name", "setup.label.facility"),
+)
 
 
-def _letter_rows_from_form(form, apartment, listed: List[str], unconfirmed: List[str]) -> List[Dict[str, Any]]:
-    """1085: the same rows rebuilt from a refused save: the host's own posted values."""
-    rows = []
-    for name in listed:
-        value = _letter_form_text(form, name, 64)
-        line = police_letter.line_from_form(form, name)
-        source = []
-        if line is not None:
-            for index in (1, 2):
-                text = _letter_form_text(form, f"letter_src_{name}_{index}")
-                if text:
-                    source.append(text)
-        rows.append(
-            {
-                "name": name,
-                "state": "derived" if name == "uby_mark" else "found",
-                "filled": True,
-                "value": value,
-                "line": line,
-                "source": source,
-                "saved": _letter_saved_now(apartment, name, value),
-                "ticked": name not in unconfirmed,
-                "error": name in unconfirmed,
-            }
-        )
-    return rows
+def _letter_fill(result) -> Dict[str, Dict[str, str]]:
+    """1100: the five boxes from a parsed letter: {name: {"state", "value"}}.
+
+    Values only for filled states. The password value lives only in this
+    request's answer to the host's own paste; it is never logged or stored.
+    """
+    items = dict(result.fields)
+    items["uby_ws_password"] = result.password
+    items["uby_name"] = result.facility
+    out: Dict[str, Dict[str, str]] = {}
+    for name, _key in _LETTER_BOX_LABELS:
+        item = items.get(name)
+        state = item.state if item else "missing"
+        filled = bool(item and state in police_letter.FILLED_STATES and item.value)
+        out[name] = {"state": state, "value": item.value if filled else ""}
+    return out
+
+
+def _letter_message(lang: str, filled: List[str], missing: List[str]) -> str:
+    """1100: one status line: what was filled and what to type."""
+    labels = dict(_LETTER_BOX_LABELS)
+    parts = []
+    if filled:
+        names = ", ".join(host_i18n.translate(lang, labels[name]) for name in filled)
+        parts.append(host_i18n.translate(lang, "police_letter.filled", names=names))
+    if missing:
+        names = ", ".join(host_i18n.translate(lang, labels[name]) for name in missing)
+        parts.append(host_i18n.translate(lang, "police_letter.type_rest", names=names))
+    return " ".join(parts)
 
 
 def _refuse_apartment_save(
@@ -2356,7 +2328,6 @@ def _refuse_apartment_save(
     address_errors: Optional[Dict[str, str]] = None,
     shared_time_error: Optional[str] = None,
     lock_times_error: bool = False,
-    letter_unconfirmed: Optional[List[str]] = None,
 ):
     """Render the property page again with the host's unsaved values."""
     draft = dict(apartment)
@@ -2410,18 +2381,6 @@ def _refuse_apartment_save(
         save_errors.append(_save_error("basics", "checkin_hour"))
     if lock_times_error:
         save_errors.append(_save_error("lock", "lock_checkin_hour"))
-    if letter_unconfirmed:
-        # 1085/1097: pre-filled letter values save only with the one tick.
-        listed, _unticked = police_letter.confirmed_fields(form)
-        save_errors.append(_save_error("police", "letter_ok"))
-        extra.update(
-            {
-                "settings_section": "reporting",
-                "letter_check": True,
-                "letter_error": True,
-                "letter_rows": _letter_rows_from_form(form, apartment, listed, letter_unconfirmed),
-            }
-        )
     extra["save_errors"] = save_errors
     if lock_times_error:
         # 0397: door codes need both times; stay on the Door lock tab with
@@ -2441,7 +2400,7 @@ def _refuse_apartment_save(
         operator_error=operator_error,
         extra=extra,
         status_code=400
-        if (operator_error or address_errors or shared_time_error or lock_times_error or letter_unconfirmed)
+        if (operator_error or address_errors or shared_time_error or lock_times_error)
         else 200,
     )
 
@@ -2858,12 +2817,6 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
     apartment = access.apartment(request, apartment_id)
     if not apartment:
         return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment")), False
-    # 1085: a value pre-filled from the police letter saves only with its tick.
-    _letter_listed, letter_unconfirmed = police_letter.confirmed_fields(form)
-    if letter_unconfirmed:
-        return _refuse_apartment_save(
-            request, apartment, form, None, letter_unconfirmed=letter_unconfirmed
-        ), False
     form = _with_lock_tab_hours(form, apartment)
     if _form_str(form, "setup_step") in property_setup.RETIRED_STEPS:
         # 0884: a page left open from the old eight-step wizard saves nothing.
@@ -3606,10 +3559,12 @@ async def _run_connection_test(request: Request, apartment_id: int, apartment) -
 
 @router.post("/apartments/{apartment_id}/police-letter")
 async def police_letter_read(apartment_id: int, request: Request):
-    """1085: read a pasted police letter and show the values to check. Saves nothing.
+    """1085/1100: read a pasted police letter and fill the boxes. Saves nothing.
 
     The text lives only in this request: it is not stored, logged, audited or
-    echoed. Only the source slices of filled values go back to the host.
+    echoed. Only the values read from it go back to the host, in this answer
+    (1100: the password too, with no-store). ``Accept: application/json``
+    answers JSON for the paste-fills-at-once script; else the HTML page.
     """
     guard = auth.require_login(request)
     if guard:
@@ -3617,28 +3572,47 @@ async def police_letter_read(apartment_id: int, request: Request):
     apartment = access.apartment(request, apartment_id)
     if not apartment:
         return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
+    wants_json = "application/json" in (request.headers.get("accept") or "")
+    lang = host_i18n.lang_from_request(request)
     form = await request.form()
     letter_text = form.get("letter_text")
     if not isinstance(letter_text, str):
         letter_text = ""
     extra: Dict[str, Any] = {"property_view": "settings", "settings_section": "reporting"}
     failed_name = ""
+    status = "failed"
+    boxes: Dict[str, Dict[str, str]] = {}
+    filled: List[str] = []
+    missing: List[str] = []
     try:
         result = police_letter.parse_letter(letter_text)
         if result.status == "ok":
-            rows = _letter_rows_from_result(result, apartment)
-            filled = [row["name"] for row in rows if row["filled"]]
-            extra["letter_rows"] = rows
-            extra["letter_prefill"] = {row["name"]: row["value"] for row in rows if row["filled"]}
-            extra["letter_check"] = result if filled else None
+            status = "ok"
+            boxes = _letter_fill(result)
+            filled = [name for name, box in boxes.items() if box["value"]]
+            missing = [name for name, box in boxes.items() if not box["value"]]
+            prefill = {name: boxes[name]["value"] for name in filled}
+            extra["letter_read"] = True
+            extra["letter_prefill"] = prefill
+            extra["letter_fields_value"] = ",".join(
+                name for name in police_letter.FIELDS if name in prefill
+            )
+            extra["letter_saved"] = {
+                name: _letter_saved_now(apartment, name, value)
+                for name, value in prefill.items()
+                if name != "uby_ws_password"
+            }
+            extra["letter_message"] = _letter_message(lang, filled, missing)
+            extra["letter_check"] = bool(filled)
         else:
-            filled = []
-            extra["letter_status"] = result.status if result.status in ("empty", "too_long") else "failed"
+            status = result.status if result.status in ("empty", "too_long") else "failed"
+            extra["letter_status"] = status
     except Exception as exc:  # noqa: BLE001 - a traceback here would print the pasted text
         failed_name = type(exc).__name__
         del exc
     del letter_text, form
     if failed_name:
+        status, boxes, filled, missing = "failed", {}, [], []
         extra = {
             "property_view": "settings",
             "settings_section": "reporting",
@@ -3647,7 +3621,22 @@ async def police_letter_read(apartment_id: int, request: Request):
         db.audit("police_letter_failed", f"apartment={apartment_id} error={failed_name}")
     elif filled:
         db.audit("police_letter_read", f"apartment={apartment_id} filled={','.join(filled)}")
-    response = _render_property_detail(apartment_id, request, extra=extra, status_code=422)
+    if wants_json:
+        if status == "ok":
+            message = extra.get("letter_message", "")
+        else:
+            message = host_i18n.translate(lang, f"police_letter.{status}")
+        response = JSONResponse(
+            {
+                "status": status,
+                "fields": boxes,
+                "filled": filled,
+                "missing": missing,
+                "message": message,
+            }
+        )
+    else:
+        response = _render_property_detail(apartment_id, request, extra=extra, status_code=422)
     response.headers["Cache-Control"] = "no-store"
     return response
 
@@ -3750,6 +3739,7 @@ def reservations_list(request: Request):
         params.append(apartment_id)
     # A stay counts as inside the window when it overlaps it, so a guest who is
     # in the flat right now still shows under "upcoming".
+    overdue_ids: list = []
     if date_from and date_range == "upcoming":
         # WP33: a stay whose police deadline has passed with a guest still
         # unfiled stays in the default view until it is filed, however long
@@ -3780,8 +3770,26 @@ def reservations_list(request: Request):
     page_count = max(1, (total + RESERVATION_PAGE_SIZE - 1) // RESERVATION_PAGE_SIZE)
     page = max(1, min(_query_int(request, "page") or 1, page_count))
     offset = (page - 1) * RESERVATION_PAGE_SIZE
-    sql += " ORDER BY r.date_from ASC, r.date_to ASC, r.id ASC LIMIT ? OFFSET ?"
-    reservations = db.query(sql, [*params, RESERVATION_PAGE_SIZE, offset])
+    # 1100: overdue unfiled stays first, then in house (leaving soonest), then upcoming (arriving soonest), then past (latest first).
+    group = (
+        "CASE WHEN r.date_from <= ? AND r.date_to >= ? THEN 0 "
+        "WHEN r.date_from > ? THEN 1 ELSE 2 END"
+    )
+    overdue_first = ""
+    overdue_params: list = []
+    if overdue_ids:
+        overdue_marks = ",".join("?" for _ in overdue_ids)
+        overdue_first = f"CASE WHEN r.id IN ({overdue_marks}) THEN 0 ELSE 1 END, "
+        overdue_params = list(overdue_ids)
+    sql += (
+        f" ORDER BY {overdue_first}{group},"
+        f" CASE WHEN {group} = 0 THEN r.date_to WHEN {group} = 1 THEN r.date_from END ASC,"
+        f" CASE WHEN {group} = 2 THEN r.date_to END DESC,"
+        " r.date_from ASC, r.id ASC LIMIT ? OFFSET ?"
+    )
+    reservations = db.query(
+        sql, [*params, *overdue_params, *([today] * 12), RESERVATION_PAGE_SIZE, offset]
+    )
     rows = []
     # One guest query for the page, and each property read once, instead of
     # both again for every stay on it.
@@ -4102,12 +4110,33 @@ def reservation_detail(reservation_id: int, request: Request):
     )
 
 
+def _keep_or_clear_lead_reduction(reservation, payload: Dict[str, Any]) -> None:
+    """1095: a host count edit on a stay the lead reduced.
+
+    Re-saving the number shown keeps the reduction (the override is not
+    written); any other number is the host's decision and clears it.
+    """
+    try:
+        reduced = reservation["lead_reduced_guests"]
+    except (KeyError, IndexError):
+        reduced = None
+    if not reduced:
+        return
+    if payload["expected_guests_override"] == reporting.expected_guest_count(reservation):
+        del payload["expected_guests_override"]
+        return
+    payload["lead_reduced_guests"] = None
+    payload["lead_reduced_from"] = None
+    payload["lead_reduced_at"] = None
+
+
 @router.post("/reservations/{reservation_id}")
 async def reservation_update(reservation_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    if not access.reservation(request, reservation_id):
+    reservation = access.reservation(request, reservation_id)
+    if not reservation:
         return _back("/reservations", err=_flash(request, "flash.error.no_such_stay"))
     form = await request.form()
     payload: Dict[str, Any] = {
@@ -4122,6 +4151,7 @@ async def reservation_update(reservation_id: int, request: Request):
         if expected is not None and not 1 <= expected <= 60:
             return JSONResponse({"ok": False}, status_code=422)
         payload["expected_guests_override"] = expected
+        _keep_or_clear_lead_reduction(reservation, payload)
     status = _form_str(form, "status")
     if status in ("active", "cancelled", "ignored"):
         payload["status"] = status
@@ -4166,9 +4196,12 @@ async def reservation_remove_empty_slot(reservation_id: int, request: Request):
     if expected is None or not 2 <= expected <= 60:
         return _back(back, err=_flash(request, "host.count_changed"))
     changed = db.execute_rowcount(
-        "UPDATE reservation SET expected_guests_override = ?, updated_at = ? "
+        "UPDATE reservation SET expected_guests_override = ?, updated_at = ?, "
+        "lead_reduced_guests = NULL, lead_reduced_from = NULL, lead_reduced_at = NULL "
         "WHERE id = ? AND status = 'active' AND archived_at IS NULL "
-        "AND COALESCE(NULLIF(expected_guests_override, 0), declared_guests) = ? "
+        "AND CASE WHEN lead_reduced_guests IS NOT NULL AND lead_reduced_guests > 0 "
+        "AND lead_reduced_guests < COALESCE(NULLIF(expected_guests_override, 0), declared_guests) "
+        "THEN lead_reduced_guests ELSE COALESCE(NULLIF(expected_guests_override, 0), declared_guests) END = ? "
         "AND (SELECT COUNT(*) FROM guest WHERE reservation_id = reservation.id "
         "AND archived_at IS NULL) < ? "
         f"AND apartment_id IN (SELECT id FROM apartment WHERE {db.null_safe_eq('owner_user_id')})",
@@ -4178,6 +4211,16 @@ async def reservation_remove_empty_slot(reservation_id: int, request: Request):
         return _back(back, err=_flash(request, "host.count_changed"))
     db.audit("reservation_headcount_corrected", f"id={reservation_id} expected={expected - 1}")
     await run_in_threadpool(reporting.submit_stay_if_complete, reservation["apartment_id"], reservation_id)
+    if config.HEADCOUNT_LEAD_LIVE:
+        # 1095 (owner Q7): a lower count can complete the stay, so the door code
+        # and the bill follow the submit, in the order of the guest save.
+        await run_in_threadpool(door_codes.on_registration_complete, reservation_id)
+        fresh = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+        apartment = db.query_one(
+            "SELECT * FROM apartment WHERE id = ?", (reservation["apartment_id"],)
+        )
+        if fresh and apartment:
+            await run_in_threadpool(claim.maybe_notify_completion, fresh, apartment)
     return _back(back, msg=_flash(request, "flash.reservations.saved"))
 
 
@@ -4198,6 +4241,7 @@ async def reservation_quick_edit(reservation_id: int, request: Request):
         if expected is not None and not 1 <= expected <= 60:
             return JSONResponse({"ok": False}, status_code=422)
         payload["expected_guests_override"] = expected
+        _keep_or_clear_lead_reduction(reservation, payload)
     db.update("reservation", reservation_id, payload)
     await run_in_threadpool(
         reporting.submit_stay_if_complete,

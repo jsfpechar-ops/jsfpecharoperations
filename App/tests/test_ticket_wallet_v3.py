@@ -41,7 +41,10 @@ def test_the_claim_page_opens_the_group_size_at_one():
 
 
 def test_every_party_size_box_has_a_starting_number():
-    assert "claim.declared_guests or reservation.expected_guests_override or 1" in CLAIM
+    # 1095: the route fills claim.declared_guests from the one count rule, so the
+    # template needs no second fallback that could disagree with it.
+    assert 'value="{{ claim.declared_guests or 1 }}"' in CLAIM
+    assert "expected_guests_override" not in CLAIM
     assert 'autocomplete="off" value="1">' in STAY
     assert "values.get('party_size') or 1" in FORM
 

@@ -170,7 +170,7 @@ func loadGuests(ctx context.Context, pool *pgxpool.Pool, ids []int64, fields *fi
 func events(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string, owner *int64, from, to time.Time, property *int64, at time.Time) ([]eventOut, error) {
 	args := []any{owner, to.Format("2006-01-02"), from.Format("2006-01-02")}
 	sql := `SELECT r.id, r.apartment_id, a.internal_name, r.date_from, r.date_to, COALESCE(r.summary,''),
-		r.source, r.declared_guests, r.expected_guests_override, a.checkin_hour::text, a.checkout_hour::text
+		r.source, r.declared_guests, r.expected_guests_override, r.lead_reduced_guests, a.checkin_hour::text, a.checkout_hour::text
 		FROM reservation r JOIN apartment a ON a.id = r.apartment_id
 		WHERE a.owner_user_id IS NOT DISTINCT FROM $1 AND a.active = 1
 		AND a.archived_at IS NULL AND r.archived_at IS NULL AND r.status = 'active'
@@ -189,7 +189,7 @@ func events(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string,
 	for rows.Next() {
 		var s stayRow
 		if err := rows.Scan(&s.id, &s.propertyID, &s.property, &s.dateFrom, &s.dateTo, &s.label,
-			&s.source, &s.declared, &s.override, &s.checkinHour, &s.checkoutHour); err != nil {
+			&s.source, &s.declared, &s.override, &s.reduced, &s.checkinHour, &s.checkoutHour); err != nil {
 			rows.Close()
 			return nil, err
 		}

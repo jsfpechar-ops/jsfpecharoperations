@@ -3,6 +3,7 @@ package calendar
 import (
 	"time"
 
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/headcount"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
 )
@@ -72,6 +73,7 @@ type stayRow struct {
 	source           *string
 	declared         *int64
 	override         *int64
+	reduced          *int64
 }
 
 // progressResult is the part of reporting.reservation_progress the calendar needs.
@@ -84,16 +86,13 @@ type progressResult struct {
 	reportable []guestRow
 }
 
-// expectedCount mirrors reporting.expected_guest_count: a non-zero override wins.
+// expectedCount mirrors reporting.expected_guest_count through the one shared rule.
 func expectedCount(stay stayRow) *int {
-	if stay.override != nil && *stay.override != 0 {
-		n := int(*stay.override)
-		return &n
-	}
-	if stay.declared == nil {
+	expected := headcount.Expected(stay.override, stay.declared, stay.reduced)
+	if expected == nil {
 		return nil
 	}
-	n := int(*stay.declared)
+	n := int(*expected)
 	return &n
 }
 
