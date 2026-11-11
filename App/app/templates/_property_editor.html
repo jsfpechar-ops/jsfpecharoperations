@@ -11,7 +11,7 @@
 {%- set key = id[4:] -%}
 {%- set explicit_map = {'property': ['sec-basics'], 'guests': ['sec-messages'], 'reporting': ['sec-police', 'sec-fee'], 'automation': ['sec-police'], 'lock': ['sec-lock']} -%}
 {%- if (save_errors and save_errors|selectattr('section','equalto',key)|list)
-  or (id == 'sec-police' and (letter_rows or letter_status))
+  or (id == 'sec-police' and (letter_read or letter_status))
   or (inline_flash_section == key and (flash_error or not (first_setup or ready_card)))
   or (section_explicit and id in explicit_map.get(settings_section, []))
   or (id == 'sec-calendars' and property_view == 'bookings')
@@ -159,7 +159,7 @@
 <div class="form prop-form-single property-detail">
 <div class="form-main">
 {#- 1030: at >=768 one section shows at a time; a hash-less "Reporting & fees" link means the Stay fee (police links carry #ubyport). -#}
-<div class="prop-layout"{% if letter_rows or letter_status %} data-start-section="sec-police"{% elif first_setup and setup_open and not section_explicit %} data-start-section="{{ setup_open }}"{% elif settings_section == 'reporting' %} data-start-section="sec-fee"{% endif %}>
+<div class="prop-layout"{% if letter_read or letter_status %} data-start-section="sec-police"{% elif first_setup and setup_open and not section_explicit %} data-start-section="{{ setup_open }}"{% elif settings_section == 'reporting' %} data-start-section="sec-fee"{% endif %}>
 <nav class="prop-nav prop-wide-only" aria-label="{{ t('nav.settings') }}">
 <a href="#sec-basics"><span class="dot {{ 'g' if address_text else 'r' }}" aria-hidden="true"></span>{{ t('property_page.sec.basics.title') }}</a>
 <a href="#sec-police"><span class="dot {{ 'g' if police_ok else 'r' }}" aria-hidden="true"></span>{{ t('property_page.sec.police.title') }}</a>
@@ -333,104 +333,14 @@
 <details class="prop-sec" id="sec-police"{{ sec_open('sec-police') }}><summary><span class="dot {{ 'g' if police_ok else 'r' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.police.title') }}</b></div>{{ sec_state('police', (tp('property_nav.report_missing', report_missing) if not police_reported else (t('setup.sec.done') if section_done.police else t('setup.sec.police_untested'))) if first_setup else (t('property_nav.report_ready') if police_ok else tp('property_nav.report_missing', report_missing))) }}</summary>
   <div class="fields-wrap">
   {{ section_notice('police') }}
-  {% if not (first_setup and not section_done.police and not letter_rows and not letter_status) %}{{ section_missing(miss['police'], 'police') }}{% endif %}
+  {% if not (first_setup and not section_done.police and not letter_read and not letter_status) %}{{ section_missing(miss['police'], 'police') }}{% endif %}
     <section class="panel property-section ui-section" id="ubyport">
       <div class="field-label-row police-section-head"><h2 class="property-section-title">{{ t('property_page.police.connection') }}{{ help_tip('ubyport-help', t('apartment.form.ubyport.credentials_help_heading'), '/guide#ubyport-credentials') }}</h2>
         <a class="ui-btn ui-btn-secondary ui-btn-compact police-sample-link" id="police-sample-link" href="/static/docs/ubyport-ws-credential-sample.pdf?v=20261004a" target="_blank" rel="noopener">{{ t('apartment.form.ubyport.sample_link') }}</a></div>
       <p class="ui-sub">{{ t('why.police') }}</p>
       <p class="ui-sub"><a href="{{ base_url }}?view=settings&amp;section=automation#automation">{{ t('automation.timing_title') }} </a></p>
-      {%- set letter_fill = letter_prefill or {} -%}
-      {%- set letter_names = {'uby_idub': t('apartment.form.ubyport.idub_label'), 'uby_ws_user': t('automation.login'), 'uby_mark': t('apartment.form.ubyport.mark_label')} -%}
-      <div class="police-letter-helpers">
-      {%- set letter_first = first_setup and not section_done.police and not letter_rows and not letter_status -%}
-      <details class="police-letter-find"{% if letter_first %} open{% endif %}>
-        <summary>{{ t('police_letter.find_title') }}</summary>
-        {% include "_police_letter_figure.html" %}
-      </details>
-      <details class="police-letter-paste" id="police-letter-paste"{% if letter_status in ['empty', 'too_long', 'failed'] or letter_first %} open{% endif %}>
-        <summary>{{ t('police_letter.paste_title') }}</summary>
-        <div class="field">
-          <div class="field-label-row"><label for="letter_text">{{ t('police_letter.paste_label') }}{{ help_tip('police-letter-help', t('police_letter.paste_help')) }}</label></div>
-          <textarea id="letter_text" name="letter_text" form="police-letter-form" rows="6" maxlength="20000" autocomplete="off" spellcheck="false"{% if letter_status in ['empty', 'too_long', 'failed'] %} aria-invalid="true" aria-describedby="letter_text-error" autofocus{% endif %}></textarea>
-          {% if letter_status in ['empty', 'too_long', 'failed'] %}<p class="err-text" id="letter_text-error" role="alert">{{ t('police_letter.' ~ letter_status) }}</p>{% endif %}
-        </div>
-        <div class="actions">
-          <button class="ui-btn ui-btn-secondary" type="submit" form="police-letter-form">{{ t('police_letter.read_button') }}</button>
-        </div>
-      </details>
-      </div>
-      {%- set letter_shown = (letter_rows | selectattr('filled') | map(attribute='name') | list) if letter_rows else [] -%}
-      {% if letter_rows %}
-      <div class="police-letter-check" id="police-letter-check">
-        <h3 class="police-letter-check-title">{{ t('police_letter.check_title') }}</h3>
-        <input type="hidden" name="letter_fields" value="{{ letter_rows | selectattr('filled') | map(attribute='name') | join(',') }}">
-        {% for row in letter_rows %}
-        <div class="police-letter-row" data-letter-row="{{ row.name }}">
-          {% if row.filled %}
-          <label class="police-letter-name" for="{{ row.name }}">{{ letter_names[row.name] }}</label>
-          <span class="police-letter-value">{{ row.value }}</span>
-          {% if row.line %}
-          <input type="hidden" name="letter_line_{{ row.name }}" value="{{ row.line }}">
-          <p class="police-letter-src small">{{ t('police_letter.source_login' if row.name == 'uby_mark' else 'police_letter.source', line=row.line) }}
-            {%- for src in row.source %}<code>{{ src }}</code><input type="hidden" name="letter_src_{{ row.name }}_{{ loop.index }}" value="{{ src }}">{% endfor %}</p>
-          {% endif %}
-          {% if row.saved %}<p class="police-letter-note">{{ t('police_letter.saved_now', value=row.saved) }}</p>{% endif %}
-          <details class="police-letter-edit">
-            <summary>{{ t('common.edit') }}<span class="sr-only"> {{ letter_names[row.name] }}</span></summary>
-            <input type="text" id="{{ row.name }}" name="{{ row.name }}" value="{{ (letter_fill[row.name] if row.name in letter_fill else apartment[row.name]) or '' }}" autocomplete="off"
-                   {%- if row.name == 'uby_idub' %} maxlength="14"{% elif row.name == 'uby_mark' %} maxlength="6"{% endif %} aria-required="true">
-          </details>
-          {% else %}
-          <span class="police-letter-name">{{ letter_names[row.name] }}</span>
-          <p class="small">{{ t('police_letter.' ~ row.state) }}</p>
-          {% endif %}
-        </div>
-        {% endfor %}
-        {% if letter_shown %}
-        <div class="checkline"><input type="checkbox" id="letter_ok" name="letter_ok" value="1" required autofocus{% if letter_error %} aria-invalid="true" aria-describedby="letter_ok-error"{% endif %}><label for="letter_ok">{{ t('police_letter.confirm_all') }}<span class="req-star" aria-hidden="true">*</span></label></div>
-        {% if letter_error %}<p class="err-text" id="letter_ok-error" role="alert" data-field-error>{{ t('police_letter.confirm_missing') }}</p>{% endif %}
-        {% endif %}
-      </div>
-      {% endif %}
-      {% if 'uby_idub' not in letter_shown %}
-      <div class="grid">
-        {{ text_field('uby_idub', t('setup.label.idub'), letter_fill['uby_idub'] if 'uby_idub' in letter_fill else apartment.uby_idub, t('apartment.form.ubyport.idub_hint'), false, 14, required=true) }}
-      </div>
-      {% endif %}
-      <div class="grid two">
-        {% if 'uby_ws_user' not in letter_shown %}
-        {{ text_field('uby_ws_user', t('setup.label.login'), letter_fill['uby_ws_user'] if 'uby_ws_user' in letter_fill else apartment.uby_ws_user, t('apartment.form.ubyport.login_hint'), required=true) }}
-        {% endif %}
-        <div class="field">
-          {{ field_label('uby_ws_password', t('setup.label.password'), t('apartment.form.ubyport.password_help'), false, '', not has_password) }}
-          <input type="password" id="uby_ws_password" name="uby_ws_password" autocomplete="new-password"
-                 {% if has_password %}placeholder="••••••••" {% endif %}{% if not has_password %}aria-required="true" {% endif %}aria-describedby="uby_ws_password-help uby_ws_password-hint">
-          <div class="hint" id="uby_ws_password-hint">
-            {% if has_password %}
-            {{ t('apartment.form.ubyport.password_edit_hint') }}
-            {% else %}
-            {{ t('apartment.form.ubyport.password_new_hint') }}
-            {% endif %}
-          </div>
-        </div>
-      </div>
-      <p class="small muted police-no-credentials">{{ t('apartment.form.ubyport.no_credentials') }}
-        <a href="https://policie.gov.cz/reditelstvi-sluzby-cizinecke-policie/jake-jsou-moznosti-zasilani-dat-aplikaci-ubyport" target="_blank" rel="noopener">{{ t('apartment.form.ubyport.no_credentials_link') }}</a></p>
-      <div class="field-label-row"><h2 class="property-section-title">{{ t('property_page.police.facility') }}</h2></div>
-      {% if 'uby_mark' not in letter_shown %}
-      <div class="grid">
-        {{ text_field('uby_mark', t('setup.label.mark'), letter_fill['uby_mark'] if 'uby_mark' in letter_fill else apartment.uby_mark, t('apartment.form.ubyport.mark_hint'), false, 6, required=true) }}
-      </div>
-      {% endif %}
-      <div class="grid two">
-        {%- set facility_help -%}{{ t('apartment.form.ubyport.name_hint') }} <span class="facility-example"><span class="facility-example-label">{{ t('apartment.form.ubyport.name_example') }}</span>Ubytovací zařízení: <mark>BYT Č. [2] FIKTVNÍ 1234/56 (PRAHA,</mark> PRAHA 2, FIKTVNÍ, 1234/56)</span>{%- endset %}
-        {{ text_field('uby_name', t('setup.label.facility'), apartment.uby_name, facility_help, false, 35, required=true) }}
-        {{ text_field('uby_contact', t('automation.contact'), apartment.uby_contact, t('apartment.form.ubyport.contact_hint'), true, 50) }}
-      </div>
-      <div class="actions">
-        <button class="ui-btn ui-btn-secondary" type="submit" formaction="{{ base_url }}/test-connection"
-                formmethod="post" formnovalidate>{{ t('apartment.form.test_connection') }}</button>
-      </div>
+      {%- set letter_first = first_setup and not section_done.police and not letter_read and not letter_status -%}
+      {% include "_police_fields.html" %}
     </section>
 
     <section class="panel property-section ui-section" id="automation">
@@ -439,18 +349,17 @@
       <div class="grid two">
         <div class="field">
           <label for="automation_mode">{{ t('automation.timing_label') }}</label>
-          <select id="automation_mode" name="automation_mode"
+          <select id="automation_mode" name="automation_mode" aria-describedby="automation_mode-hint"
                   data-automation-mode data-hours-target="submit_after_hours">
-            <option value="manual" {% if apartment.automation_mode == 'manual' %}selected{% endif %}>
-              {{ t('automation.mode_short.manual') }}</option>
-            <option value="scheduled" {% if apartment.automation_mode == 'scheduled' %}selected{% endif %}>
-              {{ t('automation.mode_short.scheduled') }}</option>
-            <option value="immediate" {% if apartment.automation_mode == 'immediate' %}selected{% endif %}>
-              {{ t('automation.mode_short.immediate') }}</option>
+            {%- for mode in ['manual', 'scheduled', 'immediate'] %}
+            <option value="{{ mode }}" data-hint="{{ t('automation.mode_hint.' ~ mode) }}" {% if apartment.automation_mode == mode %}selected{% endif %}>
+              {{ t('automation.mode_short.' ~ mode) }}</option>
+            {%- endfor %}
           </select>
+          <p class="hint" id="automation_mode-hint" data-automation-hint>{{ t('automation.mode_hint.' ~ (apartment.automation_mode if apartment.automation_mode in ['manual', 'scheduled', 'immediate'] else 'manual')) }}</p>
         </div>
         <div class="field">
-          <label for="submit_after_hours">{{ t('automation.hours') }}</label>
+          <label for="submit_after_hours">{{ t('automation.hours_delay') }}</label>
           <input type="number" id="submit_after_hours" name="submit_after_hours"
                  min="0" max="48" value="{{ apartment.submit_after_hours }}">
         </div>

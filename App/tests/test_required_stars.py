@@ -68,11 +68,13 @@ def test_every_star_has_a_required_control():
 
 
 def test_editor_police_fields_are_starred_and_aria_required():
-    text = _text("_property_editor.html")
+    # 1100: the police boxes live in the _police_fields.html partial, built by its police_box macro.
+    assert '{% include "_police_fields.html" %}' in _text("_property_editor.html")
+    text = _text("_police_fields.html")
     for fid in ("uby_idub", "uby_ws_user", "uby_mark", "uby_name"):
-        line = next(ln for ln in text.splitlines() if f"text_field('{fid}'" in ln)
+        line = next(ln for ln in text.splitlines() if f"police_box('{fid}'" in ln)
         assert "required=true" in line, fid
-    macro = text[text.index("{% macro text_field"):text.index("{% endmacro %}")]
+    macro = text[text.index("{% macro police_box"):text.index("{% endmacro %}")]
     assert "field_label(name, label, help, optional, '', required)" in macro
     assert 'aria-required="true"' in macro
     assert "uby_ws_password', t('setup.label.password')" in text and "not has_password" in text  # 1099 label

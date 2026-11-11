@@ -1,0 +1,81 @@
+{#- 1100: the police credential UI, shared by the property editor (and, from
+    brief 1101, the setup wizard's police step).
+
+    Reads: apartment (stored row), letter_prefill (dict of values read from a
+    pasted letter, this request only), letter_fields_value (filled names
+    among uby_idub, uby_ws_user, uby_mark), letter_saved (name -> stored
+    value that differs), letter_message (status line after a read),
+    letter_status (empty | too_long | failed), has_password, base_url,
+    letter_first (open the helpers on a first setup), t. Builds facility_help
+    itself.
+
+    The page must also render the separate form#police-letter-form (with
+    _csrf) outside the settings form: forms cannot nest, so the textarea
+    joins it with form="police-letter-form". JS uses only data-letter-* hooks
+    and finds the settings form from the boxes (uby_idub.form).
+-#}
+{%- from "_components.html" import field_label, help_tip with context -%}
+{%- set letter_fill = letter_prefill or {} -%}
+{%- set letter_saved = letter_saved or {} -%}
+{% macro police_box(name, label, value, help='', optional=false, maxlength=none, required=false) %}
+  <div class="field">
+    {{ field_label(name, label, help, optional, '', required) }}
+    <input type="text" id="{{ name }}" name="{{ name }}" value="{{ value or '' }}"
+           {%- if maxlength %} maxlength="{{ maxlength }}"{% endif %}
+           {%- if required %} aria-required="true"{% endif %}
+           {%- if help %} aria-describedby="{{ name }}-help"{% endif %}>
+    {% if letter_saved.get(name) %}<p class="police-letter-note">{{ t('police_letter.saved_now', value=letter_saved[name]) }}</p>{% endif %}
+  </div>
+{% endmacro %}
+      <div class="police-letter-helpers">
+      <details class="police-letter-find"{% if letter_first %} open{% endif %}>
+        <summary>{{ t('police_letter.find_title') }}</summary>
+        {% include "_police_letter_figure.html" %}
+      </details>
+      <details class="police-letter-paste" id="police-letter-paste"{% if letter_status in ['empty', 'too_long', 'failed'] or letter_first %} open{% endif %}>
+        <summary>{{ t('police_letter.paste_title') }}</summary>
+        <div class="field">
+          <div class="field-label-row"><label for="letter_text">{{ t('police_letter.paste_label') }}{{ help_tip('police-letter-help', t('police_letter.paste_help')) }}</label></div>
+          <textarea id="letter_text" name="letter_text" form="police-letter-form" rows="6" maxlength="20000" autocomplete="off" spellcheck="false" data-letter-paste{% if letter_status in ['empty', 'too_long', 'failed'] %} aria-invalid="true" aria-describedby="letter_text-error" autofocus{% endif %}></textarea>
+          {% if letter_status in ['empty', 'too_long', 'failed'] %}<p class="err-text" id="letter_text-error" role="alert">{{ t('police_letter.' ~ letter_status) }}</p>{% endif %}
+        </div>
+        <div class="actions">
+          <button class="ui-btn ui-btn-secondary" type="submit" form="police-letter-form" data-letter-read>{{ t('police_letter.read_button') }}</button>
+        </div>
+      </details>
+      </div>
+      <p class="police-letter-status small" id="police-letter-status" role="status" aria-live="polite" data-letter-status data-read-failed="{{ t('police_letter.read_failed') }}" data-saved-now="{{ t('police_letter.saved_now', value='%s') }}">{{ letter_message or '' }}</p>
+      <input type="hidden" name="letter_fields" value="{{ letter_fields_value or '' }}" data-letter-fields data-letter-fields-initial="{{ letter_fields_value or '' }}">
+      <div class="grid">
+        {{ police_box('uby_idub', t('setup.label.idub'), letter_fill['uby_idub'] if 'uby_idub' in letter_fill else apartment.uby_idub, t('apartment.form.ubyport.idub_hint'), false, 14, required=true) }}
+      </div>
+      <div class="grid two">
+        {{ police_box('uby_ws_user', t('setup.label.login'), letter_fill['uby_ws_user'] if 'uby_ws_user' in letter_fill else apartment.uby_ws_user, t('apartment.form.ubyport.login_hint'), required=true) }}
+        <div class="field">
+          {{ field_label('uby_ws_password', t('setup.label.password'), t('apartment.form.ubyport.password_help'), false, '', not has_password) }}
+          <input type="text" id="uby_ws_password" name="uby_ws_password" autocomplete="off" autocapitalize="off" spellcheck="false"
+                 {% if letter_fill.get('uby_ws_password') %}value="{{ letter_fill['uby_ws_password'] }}" {% endif %}{% if has_password %}placeholder="••••••••" {% endif %}{% if not has_password %}aria-required="true" {% endif %}aria-describedby="uby_ws_password-help uby_ws_password-hint">
+          <div class="hint" id="uby_ws_password-hint">
+            {% if has_password %}
+            {{ t('apartment.form.ubyport.password_edit_hint') }}
+            {% else %}
+            {{ t('apartment.form.ubyport.password_new_hint') }}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <p class="small muted police-no-credentials">{{ t('apartment.form.ubyport.no_credentials') }}
+        <a href="https://policie.gov.cz/reditelstvi-sluzby-cizinecke-policie/jake-jsou-moznosti-zasilani-dat-aplikaci-ubyport" target="_blank" rel="noopener">{{ t('apartment.form.ubyport.no_credentials_link') }}</a></p>
+      <div class="field-label-row"><h2 class="property-section-title">{{ t('property_page.police.facility') }}</h2></div>
+      <div class="grid">
+        {{ police_box('uby_mark', t('setup.label.mark'), letter_fill['uby_mark'] if 'uby_mark' in letter_fill else apartment.uby_mark, t('apartment.form.ubyport.mark_hint'), false, 6, required=true) }}
+      </div>
+      <div class="grid two">
+        {%- set facility_help -%}{{ t('apartment.form.ubyport.name_hint') }} <span class="facility-example"><span class="facility-example-label">{{ t('apartment.form.ubyport.name_example') }}</span>Ubytovací zařízení: <mark>BYT Č. [2] FIKTVNÍ 1234/56 (PRAHA,</mark> PRAHA 2, FIKTVNÍ, 1234/56)</span>{%- endset %}
+        {{ police_box('uby_name', t('setup.label.facility'), letter_fill['uby_name'] if 'uby_name' in letter_fill else apartment.uby_name, facility_help, false, 35, required=true) }}
+        {{ police_box('uby_contact', t('automation.contact'), apartment.uby_contact, t('apartment.form.ubyport.contact_hint'), true, 50) }}
+      </div>
+      <div class="actions">
+        <button class="ui-btn ui-btn-secondary" type="submit" formaction="{{ base_url }}/test-connection"
+                formmethod="post" formnovalidate>{{ t('apartment.form.test_connection') }}</button>
+      </div>
