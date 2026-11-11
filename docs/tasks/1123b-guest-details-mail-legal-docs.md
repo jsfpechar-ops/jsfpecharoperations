@@ -14,7 +14,7 @@ Record the host confirmation mail in ROPA and RETENTION, bump the DPA and Privac
 
 ## 2. Context
 
-What a version bump does (verified in code, `App/app/auth.py` in `require_login`, and `App/app/acceptance.py`): `acceptance.pending(user_id)` lists each document whose CURRENT version the account has no `legal_acceptance` row for. `require_login` redirects every signed-in host to `/account/accept` on **the next request to any host page** (not only at the next sign-in, which is what the plan says) until they tick the box; exempt paths are `/account/accept`, `/account/2fa/setup`, `/logout`, `/terms`, `/privacy`, `/dpa`, `/legal`, `/subprocessors` and the like; an admin impersonating a workspace is not redirected. The accept page lists the pending documents: with this brief `dpa` and `privacy` (Terms stays 1.7). New sign-ups accept at sign-up. Guest pages are not affected. Until a host accepts, `full_details(owner)` is False, so their host mail shows names only.
+What a version bump does (verified in code, `App/app/auth.py` in `require_login`, and `App/app/acceptance.py`): `acceptance.pending(user_id)` lists each document whose CURRENT version the account has no `legal_acceptance` row for. `require_login` redirects every signed-in host to `/account/accept` on **the next request to any host page** (not only at the next sign-in, which is what the plan says) until they tick the box; exempt paths are `/account/accept`, `/account/2fa/setup`, `/logout`, `/terms`, `/privacy`, `/dpa`, `/legal`, `/subprocessors` and the like; an admin impersonating a workspace is not redirected. The accept page lists the pending documents: with this brief `dpa` and `privacy` (Terms stays 1.7). New sign-ups accept at sign-up. Guest pages are not affected. Until a host accepts, `full_details(owner)` is False (it needs a `dpa` acceptance at 1.8 or later; hosts who accepted 1.7 stay False), so their host mail shows names only.
 
 The effective date is ONE shared setting (`config.LEGAL_EFFECTIVE_DATE`, env `UBYHOST_LEGAL_EFFECTIVE_DATE`, default `2026-10-05`) printed on /terms, /privacy and /dpa. A new DPA text with the old date is wrong, so the owner sets the date in production `.env` BEFORE the merge (owner steps). Terms section 22 gives 30 days' notice to hosts; the owner decides. The code default is NOT changed here.
 
@@ -174,6 +174,7 @@ As in the steps; all end `| tail -30`. No full suite.
 - [ ] `config.TERMS_VERSION, PRIVACY_VERSION, DPA_VERSION` print `1.7 1.8 1.8`.
 - [ ] The test commands of steps 7 and 12 pass; context lint shows no new error.
 - [ ] `git diff --stat` lists only the §3 files.
+- [ ] After the bump to 1.8, an owner who accepts it gets `guest_mail_pref.full_details(owner)` True (accepting writes a `dpa` row at 1.8, which meets `MIN_DPA_VERSION`).
 - [ ] PR opened as DRAFT; first report line "DRAFT, waiting for the lawyer".
 
 ## 8. Stop and ask

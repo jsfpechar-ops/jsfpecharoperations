@@ -8,7 +8,7 @@ Split note: the plan's brief 1120 would not fit 30 tool calls (two migrations, a
 
 ## 1. Objective
 
-Add a per-workspace-owner switch "full guest details in the confirmation e-mail" (a boolean, on by default) and the one function the mail briefs call, `guest_mail_pref.full_details(owner_user_id)`. The function is True only when the switch is on and the owner has accepted the current DPA, so no guest detail leaves in a mail before the DPA that describes it is accepted.
+Add a per-workspace-owner switch "full guest details in the confirmation e-mail" (a boolean, on by default) and the one function the mail briefs call, `guest_mail_pref.full_details(owner_user_id)`. The function is True only when the switch is on and the owner has accepted a DPA version at or above `MIN_DPA_VERSION = "1.8"` (the version 1123b introduces), so no guest detail leaves in a mail before the DPA that describes it is accepted. Existing hosts accepted 1.7, so they stay False until they accept 1.8.
 
 ## 2. Context
 
@@ -60,7 +60,7 @@ If an excerpt is not found verbatim, STOP (§8).
 | App/migrations_pg/00015_guest_details_mail.sql | create | goose twin |
 | App/tests/test_migrations.py | edit | pin 43 becomes 44 |
 | App/app/guest_mail_pref.py | create | `full_details`, `set_full_details` |
-| App/tests/test_guest_mail_pref.py | create | three behaviour tests plus a setter test |
+| App/tests/test_guest_mail_pref.py | create | eight gate and setter tests |
 
 No other file may change.
 
@@ -98,13 +98,24 @@ Command: `cd App && .venv/bin/python -m pytest tests/test_migrations.py -q --tb=
 """Whether the host's confirmation mail carries full guest details (brief 1120).
 
 The switch is ``user_account.guest_details_mail`` of the workspace owner, on by
-default. Full details leave only after the owner accepted the DPA version that
-describes them, so ``full_details`` also reads ``acceptance.pending``. Other
+default. Full details leave only after the owner accepted DPA 1.8 or later, the version that
+describes them, so ``full_details`` also reads ``acceptance.accepted``. Other
 modules call this function and never read the column.
 """
 from __future__ import annotations
 
 from . import acceptance, db
+
+# The first DPA version that describes guest details by e-mail (brief 1123b).
+MIN_DPA_VERSION = "1.8"
+
+
+def _version_tuple(version: str):
+    """"1.8" -> (1, 8); None when the text is not dot-separated integers."""
+    try:
+        return tuple(int(part) for part in str(version).strip().split("."))
+    except ValueError:
+        return None
 
 
 def switch_on(owner_user_id: int) -> bool:
@@ -115,11 +126,21 @@ def switch_on(owner_user_id: int) -> bool:
     return bool(row) and bool(row["guest_details_mail"])
 
 
+def dpa_accepted(owner_user_id: int) -> bool:
+    """True when the owner has a dpa acceptance row at MIN_DPA_VERSION or above."""
+    minimum = _version_tuple(MIN_DPA_VERSION)
+    for row in acceptance.accepted(owner_user_id):
+        if row["document"] != "dpa":
+            continue
+        found = _version_tuple(row["version"])
+        if found is not None and found >= minimum:
+            return True
+    return False
+
+
 def full_details(owner_user_id: int) -> bool:
-    """True when the workspace switch is on AND the owner accepted the current DPA."""
-    if not switch_on(owner_user_id):
-        return False
-    return "dpa" not in acceptance.pending(owner_user_id)
+    """True when the workspace switch is on AND the owner accepted DPA MIN_DPA_VERSION or later."""
+    return switch_on(owner_user_id) and dpa_accepted(owner_user_id)
 
 
 def set_full_details(owner_user_id: int, enabled: bool, *, actor: str) -> None:
@@ -138,12 +159,12 @@ Command: `cd App && .venv/bin/python -c "from app import guest_mail_pref; print(
 
 5. Create `App/tests/test_guest_mail_pref.py` with exactly:
 ```python
-"""1120: the guest-details mail switch and the DPA gate behind full_details."""
+"""1120: the guest-details mail switch and the DPA version gate behind full_details."""
 from __future__ import annotations
 
 import pytest
 
-from app import acceptance, auth, db, guest_mail_pref
+from app import auth, db, guest_mail_pref
 
 USERNAME = "guest-mail-pref-owner"
 
@@ -168,19 +189,36 @@ def owner():
         _cleanup()
 
 
-def _accept_everything(owner_id):
-    acceptance.record(owner_id, acceptance.DOCUMENTS, "test")
-    assert acceptance.pending(owner_id) == []
+def _accept_dpa(owner_id, version):
+    db.execute(
+        "INSERT INTO legal_acceptance "
+        "(user_account_id, document, version, accepted_at, method, ip, user_agent) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (owner_id, "dpa", version, db.utcnow(), "test", "", ""),
+    )
 
 
 def test_the_switch_is_on_by_default(owner):
     assert guest_mail_pref.switch_on(owner) is True
-    _accept_everything(owner)
+
+
+def test_on_with_dpa_1_7_accepted_gives_false(owner):
+    _accept_dpa(owner, "1.7")
+    assert guest_mail_pref.full_details(owner) is False
+
+
+def test_on_with_dpa_1_8_accepted_gives_true(owner):
+    _accept_dpa(owner, "1.8")
     assert guest_mail_pref.full_details(owner) is True
 
 
-def test_switching_off_gives_false(owner):
-    _accept_everything(owner)
+def test_on_with_dpa_2_0_accepted_gives_true(owner):
+    _accept_dpa(owner, "2.0")
+    assert guest_mail_pref.full_details(owner) is True
+
+
+def test_off_with_dpa_1_8_accepted_gives_false(owner):
+    _accept_dpa(owner, "1.8")
     guest_mail_pref.set_full_details(owner, False, actor=USERNAME)
     assert guest_mail_pref.switch_on(owner) is False
     assert guest_mail_pref.full_details(owner) is False
@@ -188,21 +226,20 @@ def test_switching_off_gives_false(owner):
     assert guest_mail_pref.full_details(owner) is True
 
 
-def test_on_but_dpa_pending_gives_false(owner):
-    assert "dpa" in acceptance.pending(owner)
-    assert guest_mail_pref.switch_on(owner) is True
+def test_no_acceptance_row_gives_false(owner):
     assert guest_mail_pref.full_details(owner) is False
-    acceptance.record(owner, ["terms", "privacy"], "test")
+
+
+def test_a_malformed_version_counts_as_not_accepted(owner):
+    _accept_dpa(owner, "one.eight")
     assert guest_mail_pref.full_details(owner) is False
-    acceptance.record(owner, ["dpa"], "test")
-    assert guest_mail_pref.full_details(owner) is True
 
 
 def test_an_unknown_account_gives_false():
     db.init_db()
     assert guest_mail_pref.full_details(999999999) is False
 ```
-Command: `cd App && .venv/bin/python -m pytest tests/test_guest_mail_pref.py -q --tb=short -x 2>&1 | tail -30`. Expected: `4 passed`.
+Command: `cd App && .venv/bin/python -m pytest tests/test_guest_mail_pref.py -q --tb=short -x 2>&1 | tail -30`. Expected: `8 passed`.
 
 6. Run the test-map row for the changed area (Database, migrations) plus the goose name check.
 Command: `cd App && .venv/bin/python -m pytest tests/test_migrations.py tests/test_db_*.py tests/test_goose_migrations.py -q --tb=short -x 2>&1 | tail -30`. Expected: no failures (Postgres-only tests may show as skipped; that is fine here, they are not browser tests).
@@ -222,7 +259,7 @@ As in the steps; all end `| tail -30`. Run only these. No full suite, no browser
 ## 7. Acceptance
 
 - [ ] `0044_guest_details_mail.sql` and `00015_guest_details_mail.sql` exist and match §4 exactly.
-- [ ] `tests/test_guest_mail_pref.py` shows `4 passed`.
+- [ ] `tests/test_guest_mail_pref.py` shows `8 passed`: DPA 1.7 accepted gives False, 1.8 and 2.0 give True, off gives False, no row gives False.
 - [ ] `tests/test_migrations.py tests/test_db_*.py tests/test_goose_migrations.py` pass.
 - [ ] `git diff --stat` lists only the five files of §3.
 
@@ -257,4 +294,4 @@ Write `docs/tasks/1120-report.md` (600 tokens at most) and set `Status: review`.
 
 ## Owner steps
 
-None. Merge with `scripts/merge-pr-on-green.sh`. Nothing is visible to hosts until 1120b and 1121 ship.
+None. Merge with `scripts/merge-pr-on-green.sh`. Nothing is visible to hosts until 1120b and 1121 ship, and no host gets full details before accepting DPA 1.8 (1123b).
