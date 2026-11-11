@@ -599,12 +599,14 @@ def meta_capi_enabled() -> bool:
 # analytics with opt-out, own retention periods and roles. A bump makes the
 # policy pending again, so every host is sent to /account/accept once.
 # 1.7 (Task 0005): auth data updated for e-mail link login and passkeys.
-PRIVACY_VERSION = os.environ.get("UBYHOST_PRIVACY_VERSION", "1.7")
+# 1.8 (brief 1123): the host confirmation mail is named among the recipients.
+PRIVACY_VERSION = os.environ.get("UBYHOST_PRIVACY_VERSION", "1.8")
 
 # Bumped when the Data Processing Agreement changes materially. 1.6 (WP24):
 # § 11 names Render and Google Drive only as "only if used" subprocessors.
 # 1.7 (Task 0005): § 10 updated for e-mail link login; mailbox security duty.
-DPA_VERSION = os.environ.get("UBYHOST_DPA_VERSION", "1.7")
+# 1.8 (brief 1123): § 4 names guest details by e-mail to the Controller's contact address.
+DPA_VERSION = os.environ.get("UBYHOST_DPA_VERSION", "1.8")
 
 # WP24: the one effective date shown on /terms, /privacy and /dpa. Terms 1.6,
 # Privacy 1.6 and DPA 1.6 take effect together, so every host accepts all

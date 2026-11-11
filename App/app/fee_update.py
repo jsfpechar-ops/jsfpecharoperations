@@ -185,7 +185,6 @@ def sweep_fee_updates(now: Optional[datetime] = None) -> Dict[str, int]:
                     f"completion_update:{reservation_id}:{due['mailed_at']}:{live}"
                 ),
                 to_email=due["email"],
-                cc_email=payload.get("reply_to", ""),
                 subject=content["subject"],
                 payload=payload,
                 reservation_id=reservation_id,

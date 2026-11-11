@@ -576,10 +576,10 @@ def test_dpa_page_shows_operator_and_article_28():
 
 
 def test_release_legal_versions_are_coordinated():
-    # Task 0005 bumps all three together to 1.7 (e-mail link login, passkeys).
+    # Task 0005 moved all three to 1.7; brief 1123 moves Privacy and DPA to 1.8 (host confirmation mail).
     assert config.TERMS_VERSION == "1.7"
-    assert config.PRIVACY_VERSION == "1.7"
-    assert config.DPA_VERSION == "1.7"
+    assert config.PRIVACY_VERSION == "1.8"
+    assert config.DPA_VERSION == "1.8"
 
 
 def test_public_legal_pages_cross_link_dpa():

@@ -133,7 +133,7 @@ def test_completion_with_a_fee_records_the_mailed_total(stay):
     total, mailed_at, pending_total, pending_since = stay.fee_columns()
     assert total == 400 and mailed_at
     assert pending_total is None and pending_since is None
-    (row,) = stay.outbox()
+    (row,) = stay.outbox("completion")
     assert row["kind"] == "completion"
     assert "400 CZK" in stay.text(row)
 
@@ -146,7 +146,7 @@ def test_without_a_fee_the_completion_path_is_as_on_main(stay, monkeypatch, off)
         db.update("apartment", stay.apartment_id, {"stay_fee_collect": 0})
     stay.complete()
     assert stay.fee_columns() == (None, None, None, None)
-    (row,) = stay.outbox()
+    (row,) = stay.outbox("completion")
     assert row["kind"] == "completion"
     assert row["idempotency_key"] == f"completion:{stay.id}:1"
     assert row["subject"] == i18n.translator("en")(
@@ -158,7 +158,7 @@ def test_without_a_fee_the_completion_path_is_as_on_main(stay, monkeypatch, off)
     stay.total = 550
     assert fee_update.sweep_fee_updates(now=_at(1)) == {"queued": 0, "pending": 0}
     assert fee_update.sweep_fee_updates(now=_at(30)) == {"queued": 0, "pending": 0}
-    assert len(stay.outbox()) == 1
+    assert len(stay.outbox("completion")) == 1
     assert stay.fee_columns() == (None, None, None, None)
 
 
@@ -213,7 +213,7 @@ def test_a_changed_total_mails_once_after_ten_quiet_minutes(stay, monkeypatch):
     (row,) = stay.updates()
     assert row["idempotency_key"] == f"completion_update:{stay.id}:{baseline_at}:550"
     assert row["to_email"] == "lead@claim.test"
-    assert row["cc_email"] == "host@claim.test"
+    assert row["cc_email"] is None
     assert row["subject"] == "Stay fee for Claim flat changed: now 550 CZK"
     text = stay.text(row)
     assert "is now 550 CZK. It was 400 CZK." in text
