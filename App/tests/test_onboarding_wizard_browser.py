@@ -25,6 +25,7 @@ from app import auth, config, db, feed_url, host_i18n, icalsync, property_setup,
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
 from tests.conftest import login_as, mark_security_prompt_seen
+from tests.test_police_letter_flow import fake_client  # noqa: F401
 from tests.wizard_walk import walk_to
 
 EVIDENCE = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "0102-evidence"
@@ -108,9 +109,8 @@ def _create(host, name="Synthetic Garden Flat"):
         follow_redirects=False,
     )
     assert response.status_code == 303
-    # 1099: a new property lands in the short editor; the tests open the wizard directly.
-    assert "?view=settings" in response.headers["location"]
-    assert "/setup/" not in response.headers["location"]
+    # 1101: a new property lands in the setup wizard.
+    assert "/setup/calendar" in response.headers["location"]
     return db.query_one(
         "SELECT * FROM apartment WHERE owner_user_id = ? ORDER BY id DESC LIMIT 1", (host["owner"],)
     )
@@ -126,12 +126,11 @@ def _overflow_js():
     return """() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"""
 
 
-def test_create_lands_on_the_editor_in_first_setup(host):
-    """1099: the create redirect opens the short editor in first-setup mode."""
+def test_create_lands_in_the_wizard(host):
+    """1101: the create redirect opens the setup wizard at the calendar step."""
     flat = _create(host)
-    page = host["client"].get(f"/apartments/{flat['id']}?view=settings&lang=en").text
-    assert 'data-start-section="sec-' in page
-    assert "data-setup-wizard" not in page
+    page = host["client"].get(f"/apartments/{flat['id']}/setup/calendar?lang=en").text
+    assert 'data-setup-step="calendar"' in page
 
 
 def test_create_lands_on_calendar_step_two(host):
@@ -167,7 +166,7 @@ def base_url():
 
 @pytest.mark.parametrize("lang", ["en", "cs"])
 @pytest.mark.parametrize("width", [390, 1280])
-def test_wizard_journey_and_geometry(host, base_url, lang, width):
+def test_wizard_journey_and_geometry(host, base_url, lang, width, fake_client):  # noqa: F811
     if not REQUIRE_BROWSER:
         pytest.skip("browser not required")
     flat = _create(host)
@@ -193,7 +192,7 @@ def test_wizard_journey_and_geometry(host, base_url, lang, width):
         page.fill("#uby_ws_password", POLICE["uby_ws_password"])
         page.fill("#uby_mark", POLICE["uby_mark"])
         page.fill("#uby_name", POLICE["uby_name"])
-        # 0884: the police step carries the automation choice; it saves straight to guest link.
+        # 1101: the primary is the connection test (fake client); a passing test goes to guest link.
         page.locator('button[form="police-form"]:not([value=wait]):not([value=wait])').click()
         page.wait_for_url("**/setup/guest_link**")
         _shot(page, f"02-guest-link-{tag}.png")

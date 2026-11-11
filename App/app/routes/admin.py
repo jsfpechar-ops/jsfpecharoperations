@@ -967,8 +967,6 @@ async def entity_invoice_details(entity_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    if not auth.session_is_fresh(request):
-        return _back("/settings/security#settings-security", err=_flash(request, "auth.error.recent_login"))
     entity = access.entity(request, entity_id)
     if not entity or entity["archived_at"]:
         return _back("/entities", err=_flash(request, "flash.error.no_such_entity"))
@@ -1010,36 +1008,13 @@ def _entity_post_payload(form) -> Dict[str, Any]:
     return payload
 
 
-_BANK_FORM_KEYS = (
-    "bank_account",
-    "iban",
-    "account_prefix",
-    "account_number",
-    "account_bank",
-)
-
-
-def _form_sets_bank(form) -> bool:
-    """True when this POST carries a bank account field (0947: needs a fresh login)."""
-    return any(key in form for key in _BANK_FORM_KEYS)
-
-
 def _entity_details_payload(request: Request, payload: Dict[str, Any], form):
     """Normalise the detail fields a POST actually carried.
 
     Every detail (bank, VAT, registry, numbering) is touched only when the
     form sent it, so the short operator form can update the identity block
-    without wiping the stored details. Returns an error or None.
+    without wiping the stored details.
     """
-    # 0947 guarded POST /entities/{id}/invoice; this helper is the other write
-    # path for bank_account (the identity POST). A stale 30-day session must
-    # not redirect payouts or stay-fee QR payments to a new account.
-    if _form_sets_bank(form) and not auth.session_is_fresh(request):
-        return _back(
-            "/settings/security#settings-security",
-            err=_flash(request, "auth.error.recent_login"),
-        )
-
     ico = (payload.get("ico") or "").strip()
     if ico and not validation.ico_ok(ico):
         return _back(
@@ -1873,7 +1848,7 @@ async def apartment_create(request: Request):
     # 0096: a new property starts its guided setup at the calendar.
     property_setup.start(apartment_id)
     return _back(
-        f"/apartments/{apartment_id}?view=settings",
+        f"/apartments/{apartment_id}/setup/calendar",
         msg=_flash(request, "flash.apartments.created"),
     )
 
@@ -2989,11 +2964,6 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
             stay_fee_routes.apply_guest_operator_account(apartment, form, payload, request)
         except ValueError as exc:
             msg = str(exc)
-            if msg == stay_fee_routes.GUEST_OPERATOR_ACCOUNT_STALE:
-                return _back(
-                    "/settings/security#settings-security",
-                    err=_flash(request, "auth.error.recent_login"),
-                ), False
             link_error = msg == stay_fee_routes.GUEST_LINK_INVALID
             operator_account_error = msg == stay_fee_routes.GUEST_OPERATOR_ACCOUNT_INVALID
             rate_error = msg == stay_fee_routes.GUEST_RATE_REQUIRED
@@ -3508,6 +3478,23 @@ async def test_connection(apartment_id: int, request: Request):
     if outcome != "ok":
         return _back(return_to, err=_flash(request, "flash.error.connection_failed"))
     property_setup.mark_tested(apartment_id)
+    from .onboarding_wizard import wizard_setup_prefix
+
+    if return_to.startswith(wizard_setup_prefix(apartment_id)) and _form_str(form, "setup_step") == "police":
+        property_setup.mark_tested_in_wizard(apartment_id)
+        stored = property_setup.load(apartment_id)
+        nxt = "done" if stored and stored["finished"] else (
+            property_setup.next_applicable_step("police", apartment, lock_available=False) or "done"
+        )
+        advanced = _setup_after_save(
+            request,
+            apartment_id,
+            form,
+            property_setup.wizard_url(apartment_id, nxt),
+            saved_message=_flash(request, "flash.apartments.connection_ok"),
+        )
+        if advanced is not None:
+            return advanced
     return _back(return_to, msg=_flash(request, "flash.apartments.connection_ok"))
 
 
@@ -3610,6 +3597,7 @@ async def police_letter_read(apartment_id: int, request: Request):
     except Exception as exc:  # noqa: BLE001 - a traceback here would print the pasted text
         failed_name = type(exc).__name__
         del exc
+    wizard = _form_str(form, "setup_step") == "police"
     del letter_text, form
     if failed_name:
         status, boxes, filled, missing = "failed", {}, [], []
@@ -3636,7 +3624,12 @@ async def police_letter_read(apartment_id: int, request: Request):
             }
         )
     else:
-        response = _render_property_detail(apartment_id, request, extra=extra, status_code=422)
+        if wizard:
+            from .onboarding_wizard import render_wizard
+
+            response = render_wizard(request, apartment_id, "police", extra=extra, status_code=422)
+        else:
+            response = _render_property_detail(apartment_id, request, extra=extra, status_code=422)
     response.headers["Cache-Control"] = "no-store"
     return response
 

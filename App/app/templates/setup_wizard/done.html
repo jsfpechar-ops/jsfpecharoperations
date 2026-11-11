@@ -5,6 +5,10 @@
 {% set missing_row = checklist | selectattr('status', 'in', ['waiting', 'todo']) | first %}
 {% set link_next = next_stay_window(apartment) %}
 {% block wizard_content %}
+{% if wizard_ready and not missing_row %}
+{% if celebrate %}<span class="setup-wizard-confetti" aria-hidden="true">{% for n in range(12) %}<i></i>{% endfor %}</span>{% endif %}
+{% include "_setup_ready_card.html" %}
+{% else %}
 <div class="ui-banner setup-wizard-celebrate{{ ' is-partial' if missing_row }}" role="status" data-setup-celebrate="{{ 'partial' if missing_row else 'done' }}">
   {% if celebrate and not missing_row %}<span class="setup-wizard-confetti" aria-hidden="true">{% for n in range(12) %}<i></i>{% endfor %}</span>{% endif %}
   <span class="setup-wizard-celebrate-mark" aria-hidden="true">{{ icon('triangle-alert' if missing_row else 'check', 20) }}</span>
@@ -13,6 +17,7 @@
     {% if missing_row %}<span>{{ t('wizard.done.left.police') if missing_row.key == 'police' else t('wizard.done.left.step') }}</span>{% endif %}
   </div>
 </div>
+{% endif %}
 <details class="setup-done-workflow">
   <summary>{{ t('workflow.title') }}</summary>
   {{ workflow_strip(apartment, heading=false) }}

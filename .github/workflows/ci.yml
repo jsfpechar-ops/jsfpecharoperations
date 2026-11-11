@@ -38,7 +38,26 @@ jobs:
             App/requirements-dev.txt
 
       - name: Install system tools used by tests
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends age sqlite3
+        run: |
+          set -euo pipefail
+          install_age_binary() {
+            ver=1.2.1
+            tmp="$(mktemp -d)"
+            curl -fsSL "https://github.com/FiloSottile/age/releases/download/v${ver}/age-v${ver}-linux-amd64.tar.gz" \
+              | tar -xzf - -C "${tmp}"
+            sudo install -m 0755 "${tmp}/age/age" "${tmp}/age/age-keygen" /usr/local/bin/
+            rm -rf "${tmp}"
+          }
+          if ! command -v age >/dev/null; then
+            if ! (timeout 90s sudo apt-get update -qq && timeout 90s sudo apt-get install -y --no-install-recommends age); then
+              install_age_binary
+            fi
+          fi
+          if ! command -v sqlite3 >/dev/null; then
+            timeout 90s sudo apt-get update -qq && timeout 90s sudo apt-get install -y --no-install-recommends sqlite3 || true
+          fi
+          age --version
+          sqlite3 --version
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:

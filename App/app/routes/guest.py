@@ -28,7 +28,7 @@ from itsdangerous import BadSignature, URLSafeSerializer
 import posixpath
 import re
 import secrets
-from .. import alerts, auth, claim, codelists, config, cookie_inventory, db, doc_ocr, door_codes, guest_slug, guest_uk_i18n, guest_draft, headcount, host_i18n, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n, workflow
+from .. import alerts, auth, claim, codelists, config, cookie_inventory, db, doc_ocr, door_codes, guest_slug, guest_uk_i18n, guest_draft, guest_guide, headcount, host_i18n, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n, workflow
 from .. import ruian as ruian_lookup  # 0911: guest RUIAN suggestions
 from ..templating import render_guest
 from .admin_helpers import guest_form_raw as _guest_form_raw
@@ -1471,6 +1471,14 @@ def demo_pin_preview(token: str, reservation_id: int, request: Request):
     )
 
 
+def _guide_is_live(apartment_id: int) -> bool:
+    """1102: the guide link is shown only once the host's guide is live; never break the stay page over it."""
+    try:
+        return bool(guest_guide.progress(apartment_id)["live"])
+    except Exception:  # noqa: BLE001 - a guide hiccup hides the link, nothing more
+        return False
+
+
 @router.get("/l/{token}/{reservation_id}")
 def stay_overview(token: str, reservation_id: int, request: Request):
     lang = _language(request)
@@ -1567,6 +1575,7 @@ def stay_overview(token: str, reservation_id: int, request: Request):
                 and any(person["mine"] and person["sent"] for person in people)
             ),
             "door_code": door_codes.view(reservation, apartment),
+            "guide_live": _guide_is_live(apartment["id"]),
         }
     )
     context["fee_panel"] = (
