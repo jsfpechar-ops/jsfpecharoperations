@@ -53,6 +53,23 @@ _CONFIG_CODES = {10, 190, 200, 803}
 
 PENDING, SENDING, SENT, FAILED, EXPIRED = "pending", "sending", "sent", "failed", "expired"
 
+# Every move ad_click.send_state makes today (brief 1110), derived from the code, not
+# designed. None means not queued. Nothing reads this at runtime;
+# tests/test_sm_queues.py pins the writers.
+SEND_TRANSITIONS = {
+    None: {PENDING},  # enqueue()
+    # send_pending() claims a row; expire_unsendable(); signup.withdraw_consent()
+    PENDING: {SENDING, EXPIRED, "withdrawn"},
+    # send_pending(): sent, failed, or back to pending for a retry or a stale claim;
+    # signup.withdraw_consent()
+    SENDING: {SENT, FAILED, PENDING, "withdrawn"},
+    SENT: set(),
+    FAILED: set(),
+    EXPIRED: set(),
+    "withdrawn": set(),  # only signup.withdraw_consent() writes it, with no constant
+}
+
+
 
 class _Retry(Exception):
     """A send that may succeed later."""
