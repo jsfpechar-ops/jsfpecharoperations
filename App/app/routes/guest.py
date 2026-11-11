@@ -1501,7 +1501,7 @@ def stay_overview(token: str, reservation_id: int, request: Request):
     # stay's own count: a default of 1 confirmed unread would lower it.
     claim_view = {key: claim_row[key] for key in claim_row.keys()}
     if claim_view.get("declared_guests") is None:
-        claim_view["declared_guests"] = reservation["declared_guests"]
+        claim_view["declared_guests"] = reporting.expected_guest_count(reservation)
     context.update(
         {
             "apartment": apartment,
@@ -1815,6 +1815,51 @@ async def set_party_size(token: str, reservation_id: int, request: Request):
             status_code=303,
         ),
         lang,
+    )
+
+
+@router.post("/l/{token}/{reservation_id}/count")
+async def lead_change_count(token: str, reservation_id: int, request: Request):
+    """1095: the lead guest lowers or restores the head count. No page of its own (H2a)."""
+    if not config.HEADCOUNT_LEAD_LIVE:
+        return Response(status_code=404)
+    lang = _language(request)
+    apartment, token, early = _open_link(request, token, lang)
+    if early:
+        return early
+    pin_guard = _require_pin(request, token, lang)
+    if pin_guard:
+        return pin_guard
+    reservation = _reservation_for_guest(apartment, reservation_id, request)
+    if not reservation:
+        return _unavailable(request, lang, "stay_gone", 404, token)
+    throttle = _throttle_guest_post(request, token, "guest_party", lang)
+    if throttle:
+        return throttle
+    form = await request.form()
+    # These two come before the claim check, which lets both through.
+    if not mail.mail_enabled():
+        return Response(status_code=404)
+    if _host_owns_apartment(request, apartment):
+        return Response(status_code=403)
+    claim_guard = _require_claim_session(request, reservation, token, lang)
+    if claim_guard:
+        return claim_guard
+
+    def _int(name: str) -> int:
+        try:
+            return int((form.get(name) or "").strip())
+        except (ValueError, AttributeError):
+            return 0
+
+    count, shown = _int("count"), _int("shown")
+    code = await run_in_threadpool(
+        lambda: headcount.change_by_lead(
+            reservation_id, count, shown, owner_user_id=apartment["owner_user_id"]
+        )
+    )
+    return RedirectResponse(
+        _guest_link(token, reservation_id) + _lang_q(lang, f"&count={code}"), status_code=303
     )
 
 

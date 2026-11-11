@@ -1,0 +1,15 @@
+[
+  {"name": "no count", "override": null, "declared": null, "reduced": null, "want": null},
+  {"name": "declared only", "override": null, "declared": 3, "reduced": null, "want": 3},
+  {"name": "override only", "override": 4, "declared": null, "reduced": null, "want": 4},
+  {"name": "override 0 with declared", "override": 0, "declared": 3, "reduced": null, "want": 3},
+  {"name": "override wins over declared", "override": 4, "declared": 2, "reduced": null, "want": 4},
+  {"name": "override below declared still wins", "override": 2, "declared": 5, "reduced": null, "want": 2},
+  {"name": "reduction below declared", "override": null, "declared": 4, "reduced": 2, "want": 2},
+  {"name": "reduction below override", "override": 4, "declared": 6, "reduced": 3, "want": 3},
+  {"name": "reduction equal to base", "override": 4, "declared": null, "reduced": 4, "want": 4},
+  {"name": "reduction above base (base wins)", "override": null, "declared": 2, "reduced": 5, "want": 2},
+  {"name": "reduction 0 ignored", "override": 4, "declared": 2, "reduced": 0, "want": 4},
+  {"name": "reduction with override 0 and declared", "override": 0, "declared": 5, "reduced": 2, "want": 2},
+  {"name": "reduction with no base", "override": null, "declared": null, "reduced": 2, "want": 2}
+]
