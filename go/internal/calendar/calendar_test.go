@@ -182,6 +182,20 @@ func TestProgressStatuses(t *testing.T) {
 	}
 }
 
+// 1095: a lead reduction below the base wins; one above it is ignored.
+func TestExpectedCountLeadReduction(t *testing.T) {
+	override, declared, low, high := int64(4), int64(6), int64(2), int64(9)
+	if got := expectedCount(stayRow{override: &override, declared: &declared, reduced: &low}); got == nil || *got != 2 {
+		t.Fatalf("reduction below the host count: got %v, want 2", got)
+	}
+	if got := expectedCount(stayRow{override: &override, declared: &declared, reduced: &high}); got == nil || *got != 4 {
+		t.Fatalf("reduction above the host count: got %v, want 4", got)
+	}
+	if got := expectedCount(stayRow{declared: &declared}); got == nil || *got != 6 {
+		t.Fatalf("no reduction: got %v, want 6", got)
+	}
+}
+
 func TestEventKeyOrder(t *testing.T) {
 	b, err := json.Marshal(eventOut{ID: 1, PropertyID: 2, Property: "A", URL: "/x"})
 	if err != nil {

@@ -360,9 +360,7 @@ def resend_to_verified_email(reservation, apartment) -> Tuple[bool, str]:
 
 def _declared_count(reservation, row) -> int:
     """The headcount a resend keeps: the host's override, else the declared one."""
-    if reservation["expected_guests_override"]:
-        return int(reservation["expected_guests_override"])
-    expected = reporting.reservation_progress(reservation)["expected"]
+    expected = reporting.expected_guest_count(reservation)
     return int(expected or row["declared_guests"] or 1)
 
 

@@ -4110,12 +4110,33 @@ def reservation_detail(reservation_id: int, request: Request):
     )
 
 
+def _keep_or_clear_lead_reduction(reservation, payload: Dict[str, Any]) -> None:
+    """1095: a host count edit on a stay the lead reduced.
+
+    Re-saving the number shown keeps the reduction (the override is not
+    written); any other number is the host's decision and clears it.
+    """
+    try:
+        reduced = reservation["lead_reduced_guests"]
+    except (KeyError, IndexError):
+        reduced = None
+    if not reduced:
+        return
+    if payload["expected_guests_override"] == reporting.expected_guest_count(reservation):
+        del payload["expected_guests_override"]
+        return
+    payload["lead_reduced_guests"] = None
+    payload["lead_reduced_from"] = None
+    payload["lead_reduced_at"] = None
+
+
 @router.post("/reservations/{reservation_id}")
 async def reservation_update(reservation_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    if not access.reservation(request, reservation_id):
+    reservation = access.reservation(request, reservation_id)
+    if not reservation:
         return _back("/reservations", err=_flash(request, "flash.error.no_such_stay"))
     form = await request.form()
     payload: Dict[str, Any] = {
@@ -4130,6 +4151,7 @@ async def reservation_update(reservation_id: int, request: Request):
         if expected is not None and not 1 <= expected <= 60:
             return JSONResponse({"ok": False}, status_code=422)
         payload["expected_guests_override"] = expected
+        _keep_or_clear_lead_reduction(reservation, payload)
     status = _form_str(form, "status")
     if status in ("active", "cancelled", "ignored"):
         payload["status"] = status
@@ -4174,9 +4196,12 @@ async def reservation_remove_empty_slot(reservation_id: int, request: Request):
     if expected is None or not 2 <= expected <= 60:
         return _back(back, err=_flash(request, "host.count_changed"))
     changed = db.execute_rowcount(
-        "UPDATE reservation SET expected_guests_override = ?, updated_at = ? "
+        "UPDATE reservation SET expected_guests_override = ?, updated_at = ?, "
+        "lead_reduced_guests = NULL, lead_reduced_from = NULL, lead_reduced_at = NULL "
         "WHERE id = ? AND status = 'active' AND archived_at IS NULL "
-        "AND COALESCE(NULLIF(expected_guests_override, 0), declared_guests) = ? "
+        "AND CASE WHEN lead_reduced_guests IS NOT NULL AND lead_reduced_guests > 0 "
+        "AND lead_reduced_guests < COALESCE(NULLIF(expected_guests_override, 0), declared_guests) "
+        "THEN lead_reduced_guests ELSE COALESCE(NULLIF(expected_guests_override, 0), declared_guests) END = ? "
         "AND (SELECT COUNT(*) FROM guest WHERE reservation_id = reservation.id "
         "AND archived_at IS NULL) < ? "
         f"AND apartment_id IN (SELECT id FROM apartment WHERE {db.null_safe_eq('owner_user_id')})",
@@ -4186,6 +4211,16 @@ async def reservation_remove_empty_slot(reservation_id: int, request: Request):
         return _back(back, err=_flash(request, "host.count_changed"))
     db.audit("reservation_headcount_corrected", f"id={reservation_id} expected={expected - 1}")
     await run_in_threadpool(reporting.submit_stay_if_complete, reservation["apartment_id"], reservation_id)
+    if config.HEADCOUNT_LEAD_LIVE:
+        # 1095 (owner Q7): a lower count can complete the stay, so the door code
+        # and the bill follow the submit, in the order of the guest save.
+        await run_in_threadpool(door_codes.on_registration_complete, reservation_id)
+        fresh = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+        apartment = db.query_one(
+            "SELECT * FROM apartment WHERE id = ?", (reservation["apartment_id"],)
+        )
+        if fresh and apartment:
+            await run_in_threadpool(claim.maybe_notify_completion, fresh, apartment)
     return _back(back, msg=_flash(request, "flash.reservations.saved"))
 
 
@@ -4206,6 +4241,7 @@ async def reservation_quick_edit(reservation_id: int, request: Request):
         if expected is not None and not 1 <= expected <= 60:
             return JSONResponse({"ok": False}, status_code=422)
         payload["expected_guests_override"] = expected
+        _keep_or_clear_lead_reduction(reservation, payload)
     db.update("reservation", reservation_id, payload)
     await run_in_threadpool(
         reporting.submit_stay_if_complete,

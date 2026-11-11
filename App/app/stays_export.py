@@ -5,6 +5,7 @@ import csv
 import io
 from typing import Any, Iterator, List, Optional
 
+from . import reporting
 from .csv_safety import csv_safe
 
 STAY_COLUMNS = [
@@ -53,7 +54,7 @@ def iter_export_csv_rows(rows: List[Any]) -> Iterator[bytes]:
     buffer.seek(0)
     buffer.truncate(0)
     for row in rows:
-        guests = row["expected_guests_override"] or row["declared_guests"]
+        guests = reporting.expected_guest_count(row)
         writer.writerow(
             [
                 csv_safe(row["apartment_name"]),
