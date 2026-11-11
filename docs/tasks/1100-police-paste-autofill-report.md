@@ -18,7 +18,7 @@ Cases a-f in `test_host_unsaved_changes_browser.py` (`test_1100_*`, 390 and 1280
 ## Tests
 - Server row (+ `test_remove_legacy_actions`, `test_required_stars`, `test_shortcut_hint_no_flash`): 713 passed, 57 skipped (browser files, run in the browser row).
 - Filing row: 396 passed.
-- Browser row: BROWSER_RESULT
+- Browser row: 332 passed, 4 failed, 0 skipped (22 min, merged head). None from 1100: `test_host_ux_acceptance` (known on clean main), `test_design_guardrails_browser` guest-new 390 "Cancel" 43<44 (known local-only), `test_host_flash_outcomes::test_browser_renders_saved_warning_as_sticky_amber` (fails the same on origin/main, checked in a main worktree), `test_host_filter_panels_browser` stays filter (flaky: passes alone). All 1100 browser files green: police_letter 18, guard 3, paste 17, unsaved 1100 cases 8.
 - Layout lint 4 passed, 0 skipped, no new `ALLOW`. `design_lint` OK, `context_lint` OK.
 
 ## UX gate
