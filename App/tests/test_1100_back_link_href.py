@@ -1,4 +1,4 @@
-"""1001: the host page back link points at its parent list, not an empty href."""
+"""1100: the host page back link points at its parent list, not an empty href."""
 from __future__ import annotations
 
 from tests.test_stay_fee_detail import _property, _stay, host  # noqa: F401
