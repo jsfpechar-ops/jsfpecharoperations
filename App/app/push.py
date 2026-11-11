@@ -30,6 +30,19 @@ log = logging.getLogger("ubyhost.push")
 KINDS = ("filing_problem", "deadline_at_risk", "door_code", "cancelled_with_guests")
 TEST_KIND = "test"
 
+# Every move push_outbox.state makes today (brief 1110), derived from the code, not
+# designed. Nothing reads this at runtime; tests/test_sm_queues.py pins the writers.
+# There is no claimed state: drain() claims a row by raising attempts and
+# next_attempt_at, and _retry() does the same for a retry; the row stays queued.
+# A row is created queued by notify() and send_test() here and by QueuePush and
+# SendTest in go/internal.
+PUSH_TRANSITIONS = {
+    "queued": {"sent", "failed"},  # _finish() here, finish() in go/internal/pushsend/pushsend.go
+    "sent": set(),
+    "failed": set(),
+}
+
+
 # The push services browsers use. Any other address is refused, or a visitor
 # could make the server send requests wherever they like.
 PUSH_HOST_SUFFIXES = (

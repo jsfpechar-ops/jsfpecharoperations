@@ -1,6 +1,6 @@
 # 1122: PR #920 pins account for the demo seeder's writes
 
-Status: todo
+Status: in-progress
 Depends on: none | Base commit: 86c807fd (head of branch task/sm-round1-combined, PR #920, main already merged in) | Branch: task/sm-round1-combined (the existing PR branch, no new branch)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
