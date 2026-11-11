@@ -16,7 +16,7 @@ Replace the section "The `submit_state` state machine" in `docs/OPERATIONS.md` s
 
 ## 2. Context
 
-Rules that bind this brief: this section describes, it does not decide ([plan](../plans/explicit-state-machines.md) rule 1: derive, never design). Moves that may be wrong are described as current behaviour and marked "Owner ruling pending", never as intended. Plain words, short sentences. Write "no tracking cookies", never "no cookies" (no such text is in this section). The heading text must not change: `AGENTS.md`, `docs/context/glossary.md` and `docs/integrations/ubyport-police-api.md` link to `#the-submit_state-state-machine`.
+Rules that bind this brief: this section describes, it does not decide ([plan](../plans/explicit-state-machines.md) rule 1: derive, never design). Each of the four moves in "Rulings" is described as the owner ruled: kept as intended, or current and changing with brief 1121. Plain words, short sentences. Write "no tracking cookies", never "no cookies" (no such text is in this section). The heading text must not change: `AGENTS.md`, `docs/context/glossary.md` and `docs/integrations/ubyport-police-api.md` link to `#the-submit_state-state-machine`.
 
 Size and link rules checked: `docs/context/rules.md` has no cap or link rule for `docs/OPERATIONS.md`, and `scripts/context_lint.py` has no entry for it in `CAPS` and does not list it in `CHECKED`. This brief itself is capped at 12000 tokens by the lint.
 
@@ -120,8 +120,8 @@ section describes them. If this section and the table differ, the table is
 right and this section is stale. The test fails when a writer is added, removed
 or changed without the table; it does not read this section.
 
-This section lists what happens today. It does not say each move is right. The
-moves marked "owner ruling pending" below are open questions, not decisions.
+This section lists what happens today. Four moves carry a ruling by the owner
+(2026-11-11), listed at the end of this section.
 
 | State | Meaning |
 | --- | --- |
@@ -167,13 +167,13 @@ is not a move and is not listed.
 | `error` | `not_required` | collect (Python and Go); host edit; guest form | The nationality is not reportable. |
 | `blocked` | `sent` | outcome (Python and Go); hand mark | As for `pending` to `sent`. The outcome only reaches a `blocked` guest on a host resend. |
 | `blocked` | `error` | outcome (Python and Go) | A correctable refusal, on a host resend. |
-| `blocked` | `pending` | host edit; guest form | A correction. Owner ruling pending (see 1 below). |
+| `blocked` | `pending` | host edit; guest form | A correction. For a guest blocked as a duplicate this changes with brief 1121 (see 1 below). |
 | `blocked` | `not_required` | collect (Python and Go); host edit; guest form | The nationality is not reportable. |
 | `sent` | `pending` | hand undo | The host undoes a hand filing; the guest returns to the state it had before, or `pending`. |
-| `sent` | `error` | hand undo; outcome (Python and Go) | Undo to a prior `error`; or a host resend that came back refused. Owner ruling pending (see 3 below). |
-| `sent` | `blocked` | hand undo; outcome (Python and Go) | Undo to a prior `blocked`; or a host resend refused with a non-correctable code. Owner ruling pending (see 3 below). |
+| `sent` | `error` | hand undo; outcome (Python and Go) | Undo to a prior `error`; or a host resend that came back refused. Kept for now (see 3 below). |
+| `sent` | `blocked` | hand undo; outcome (Python and Go) | Undo to a prior `blocked`; or a host resend refused with a non-correctable code. Kept for now (see 3 below). |
 | `not_required` | `pending` | host edit; guest form | The nationality is now reportable. |
-| `not_required` | `sent` | outcome (Python and Go) | A guest who is reportable but still marked `not_required` was sent. Owner ruling pending (see 4 below). |
+| `not_required` | `sent` | outcome (Python and Go) | A guest who is reportable but still marked `not_required` was sent. Intended (see 4 below). |
 | `not_required` | `error` | outcome (Python and Go) | Same. |
 | `not_required` | `blocked` | outcome (Python and Go) | Same. |
 
@@ -191,8 +191,8 @@ Go never inserts a guest.
   (for example 112, reported late), becomes `sent`.
 - **Duplicate.** A duplicate answer in the record's own codes (150, or a code
   the code book names as a duplicate) becomes `sent`, not `blocked`. A
-  duplicate named only in the batch header becomes `blocked`. Owner ruling
-  pending (see 2 below).
+  duplicate named only in the batch header becomes `blocked`. Intended
+  (see 2 below).
 - **Host edit.** A host edit of a reportable guest in `error`, `blocked` or
   `not_required` sets `pending`, clears the stored error text and sets
   `submit_attempts` to 0. It also stamps `identity_verified_at`. The guest form
@@ -214,16 +214,22 @@ Go never inserts a guest.
 - **Edit and delete of a `sent` row.** The guest form and the host delete
   paths refuse a `sent` row. The host edit saves it and keeps the state.
 
-### Owner ruling pending
+### Rulings
 
-These are current behaviour. None is called intended here. Brief 1118 gives an
-example for each.
+The owner ruled on these on 2026-11-11. Brief 1118 gives an example for each.
 
 1. A guest blocked as a duplicate returns to `pending` after any host or guest
-   edit, which removes the refusal to resend.
-2. A record-level duplicate (150) becomes `sent`.
-3. `sent` can move to `error` or `blocked` after a host resend is refused.
-4. A reportable guest still marked `not_required` can be sent.
+   edit, which removes the refusal to resend. This is today's behaviour.
+   Changes with brief 1121: an edit that changes no field reported to the police will
+   leave the guest `blocked`; an edit to a reported field may still reset it.
+2. A record-level duplicate (150) becomes `sent`. Intended: it follows the
+   police letter of 24 September 2026 (C2) cited in the comment in
+   `plan_outcome`.
+3. `sent` can move to `error` or `blocked` after a host resend is refused. Kept
+   for now: it shows the host that the correction was refused. Known cost: the
+   guest shows as not filed although the register holds the first record.
+4. A reportable guest still marked `not_required` can be sent. Intended: it is
+   the safe direction for the filing duty.
    `````
 
    Command: `git diff --stat docs/OPERATIONS.md | tail -30`. Expected: one file changed, only `docs/OPERATIONS.md`.
@@ -233,11 +239,11 @@ example for each.
    ```
    grep -cF 'in practice code 150, a duplicate' docs/OPERATIONS.md | tail -30
    grep -cF '## The `submit_state` state machine' docs/OPERATIONS.md | tail -30
-   grep -cF 'Owner ruling pending' docs/OPERATIONS.md | tail -30
+   grep -cF 'Changes with brief 1121' docs/OPERATIONS.md | tail -30
    grep -cF 'anything → `not_required` when the nationality is changed to Czech' docs/OPERATIONS.md | tail -30
    ```
 
-   Expected: `0`, `1`, `5` or more, `0`.
+   Expected: `0`, `1`, `1`, `0`.
 
 4. Check every function the new section names still exists.
 
@@ -315,30 +321,30 @@ Write `docs/tasks/1118-report.md` (600 tokens at most) and set `Status: review`.
 
 Read in full: `docs/OPERATIONS.md` (the replaced section only), and compare its table against `TRANSITIONS` in `App/app/reporting.py` and `PINNED` in `App/tests/test_sm_guest_submit_state.py`.
 
-## Owner must rule on
+## Rulings (owner: do the recommended, 2026-11-11; recommendations by the orchestrator)
 
-Behaviours where the old doc and the code disagree and the CODE may be the wrong one. The new section describes each as current behaviour and does not call it intended. Names in the examples are made up. Answer each yes or no; the answer becomes a fix brief.
+Behaviours where the old doc and the code disagree. The new section describes each as ruled below. Names in the examples are made up. Only item 1 needs a code change; that is brief 1121, not this brief.
 
 1. **A guest blocked as a duplicate returns to `pending` after any host or guest edit.**
    - What happens today: a `blocked` guest whose stored error text names a duplicate is skipped even on a deliberate resend (`App/app/reporting.py:collect_sendable`, `blocked_as_duplicate`). A host edit (`App/app/routes/admin.py:guest_update`) or a guest form save (`App/app/routes/guest.py:guest_form_save`) sets `pending`, clears the error text and sets `submit_attempts` to 0. The skip reads that error text, so it no longer applies.
    - Example: the register answers a batch for Anna Novak with a header-level 150, so she is `blocked`. The host fixes a typo in her phone number. She is `pending` with no error text, and the next sweep sends her again.
    - Why it may be wrong for police filing: the old doc says a second duplicate cannot be accepted and duplicates count against the host's web-service access. The edit gets round the refusal without any change to the data that matters.
-   - Question: should an edit leave a record blocked as a duplicate in `blocked` (yes or no)? If yes, which edits (all, or only changes to the identity fields)?
+   - Ruling: change the code (brief 1121). An edit that changes no field reported to the police must leave a duplicate-blocked guest `blocked`; an edit to a reported field may reset it. Reason: a second duplicate cannot be accepted and counts against the host.
 
 2. **A record-level duplicate (150) becomes `sent`.**
    - What happens today: `plan_outcome` and Go `PlanOutcome` write `sent` when the record's own codes include 150 or a code the code book names as a duplicate. The code comment cites the police letter of 24 September 2026 (C2) that a duplicate answer proves the register accepted the record earlier. The old doc said `blocked`.
    - Example: a send for Ben Carter times out after the register took it. The next send returns 150 for him. He becomes `sent` and the house book shows him as filed.
    - Why it may be wrong: a false `sent` is a guest who was never filed. A 150 for a different person with the same document number would also read as filed.
-   - Question: is a record-level 150 proof that this guest is filed (yes or no)?
+   - Ruling: keep the code. Reason: it follows the police letter of 24 September 2026 (C2) cited in the `plan_outcome` comment.
 
 3. **`sent` can move to `error` or `blocked` after a host resend is refused.**
    - What happens today: a host can resend a `sent` guest (not one filed by hand) after a confirmation. If the register refuses that resend with a non-duplicate code, the outcome write sets `error` or `blocked`.
    - Example: Carla Dvorak is `sent`. The host resends her after correcting a field; the register refuses the resend with a severity 4 code. She becomes `error` although the register holds her first record.
    - Why it may be wrong: she disappears from the filed count and may show as a stranded record, though she was filed. The old doc listed no move out of `sent`.
-   - Question: should a refused resend leave a `sent` guest `sent` (yes or no)?
+   - Ruling: keep the code for now. Reason: it shows the host that the correction was refused. Known cost: the guest shows as not filed although the first record is held.
 
 4. **A reportable guest still marked `not_required` can be sent.**
    - What happens today: neither `collect_sendable` nor Go `CollectSendable` skips a reportable guest whose state is `not_required`, and the outcome write has no state test, so the guest moves to `sent`, `error` or `blocked`.
    - Example: Dmitri Ivanov was saved with a nationality the code treated as Czech, so he is `not_required`. A code list change makes that nationality reportable. The next sweep sends him with no host edit.
    - Why it may be wrong: this is the safe direction for the filing duty, but nothing in the code says it is meant. A guest who was never meant to be filed could be sent.
-   - Question: is it right that such a guest is sent without a host edit first (yes or no)?
+   - Ruling: keep the code. Reason: it is the safe direction for the filing duty.
