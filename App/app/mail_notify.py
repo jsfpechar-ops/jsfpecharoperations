@@ -28,7 +28,7 @@ import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
-from . import config, db, deadlines, host_i18n, i18n, mail, validation
+from . import codelists, config, db, deadlines, host_i18n, i18n, mail, validation
 
 log = logging.getLogger("ubyhost.mail_notify")
 
@@ -1869,6 +1869,19 @@ def _guest_name(guest: Dict[str, Any], lang: str) -> str:
     return " ".join(p for p in parts if p) or _text(lang, "mail.guest_details_host.unnamed")
 
 
+def _doc_type_label(code: Optional[str], lang: str) -> str:
+    """Document type for mail: validation keys and short legacy codes (P, ID)."""
+    raw = str(code or "").strip()
+    if not raw:
+        return ""
+    key = raw.lower()
+    aliases = {"p": "pas", "id": "op"}
+    key = aliases.get(key, key)
+    if key in validation.DOC_TYPES:
+        return _text(lang, f"guest.doc_type.{key}")
+    return raw
+
+
 def _guest_detail_rows(guest: Dict[str, Any], lang: str, full: bool) -> List[Tuple[str, str]]:
     state = str(guest.get("submit_state") or "pending")
     state_text = (
@@ -1878,7 +1891,7 @@ def _guest_detail_rows(guest: Dict[str, Any], lang: str, full: bool) -> List[Tup
     )
     rows: List[Tuple[str, str]] = [
         (_text(lang, "mail.guest_details_host.nationality_label"),
-         str(guest.get("nationality") or "").strip() or "\u2013"),
+         codelists.nationality_label(guest.get("nationality"), lang) or "\u2013"),
         (_text(lang, "mail.guest_details_host.state_label"), state_text),
     ]
     if not full:
@@ -1896,7 +1909,9 @@ def _guest_detail_rows(guest: Dict[str, Any], lang: str, full: bool) -> List[Tup
     if address:
         rows.append((_text(lang, "mail.guest_details_host.address_label"), address))
     if guest.get("doc_type"):
-        rows.append((_text(lang, "mail.guest_details_host.doc_type_label"), str(guest["doc_type"])))
+        label = _doc_type_label(guest.get("doc_type"), lang)
+        if label:
+            rows.append((_text(lang, "mail.guest_details_host.doc_type_label"), label))
     masked = mask_document_number(guest.get("doc_number"))
     if masked:
         rows.append((_text(lang, "mail.guest_details_host.doc_number_label"), masked))

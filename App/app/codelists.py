@@ -165,6 +165,17 @@ def nationality_options(lang: str = "en") -> List[Dict[str, str]]:
     return _all_countries(lang)
 
 
+def nationality_label(code: Optional[str], lang: str = "en") -> str:
+    """The human-readable country name for a three-letter code, or the code."""
+    raw = str(code or "").strip().upper()
+    if not raw:
+        return ""
+    for option in nationality_options(lang):
+        if option["code"] == raw:
+            return option["label"]
+    return raw
+
+
 def country_groups(lang: str = "en") -> List[Dict[str, object]]:
     """The country list as two optgroups: the usual ones, then the rest.
 

@@ -129,7 +129,7 @@ def test_always_content_names_the_guests_and_nothing_more(monkeypatch):
     for part in (text, page):
         assert "Jana Testova" in part
         assert "Petr Ukazka" in part
-        assert "DEU" in part
+        assert "Germany" in part
         assert "Not filed yet" in part
         assert "2 of 2 registered" in part
         for absent in ("4567", "4321", "Testgasse", "Date of birth", MASK):
