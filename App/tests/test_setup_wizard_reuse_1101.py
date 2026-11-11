@@ -1,9 +1,10 @@
 """1101: a new property walks the setup wizard to the ready card (server side, no JavaScript)."""
 from __future__ import annotations
 
+import html
 import re
 
-from app import db, property_setup
+from app import db, host_i18n, property_setup
 from app.ubyport.client import UbyportAuthError
 from app.ubyport_sample_pdf import SAMPLE_IDUB, SAMPLE_WS_PASSWORD, SAMPLE_WS_USER, SAMPLE_ZKRATKA
 from tests.test_onboarding_wizard_survival import host  # noqa: F401
@@ -153,6 +154,10 @@ def test_failed_test_stays_on_police(host, fake_client):  # noqa: F811
     response = _test(host, apartment_id)
     assert response.status_code == 303
     assert _path(response).endswith("/setup/police")
+    shown = host["client"].get(response.headers["location"], follow_redirects=False)
+    assert shown.status_code == 200
+    assert html.escape(host_i18n.translate("en", "flash.error.connection_failed"), quote=False) in html.unescape(shown.text) \
+        or host_i18n.translate("en", "flash.error.connection_failed") in html.unescape(shown.text)
     state = property_setup.load(apartment_id)
     assert not state.get("tested") and state["steps"].get("police") != "done"
 
@@ -244,7 +249,8 @@ def test_finished_property_editor_keeps_archive_and_test_button(host, fake_clien
     property_setup.finish(apartment_id)
     editor = host["client"].get(f"/apartments/{apartment_id}?view=settings&lang=en").text
     assert 'id="sec-archive"' in editor
-    assert "Save and test connection" in editor or "test-connection" in editor
+    assert re.search(r'<button[^>]*formaction="/apartments/\d+/test-connection"', editor)
+    assert "Save and test connection" in editor
 
 
 def test_no_visible_apartment_word_on_setup_pages(host, fake_client):  # noqa: F811
@@ -258,3 +264,16 @@ def test_no_visible_apartment_word_on_setup_pages(host, fake_client):  # noqa: F
     assert "apartment" not in _visible(_page(host, apartment_id, "done"))
     page = _page(host, apartment_id, "guest_link")
     assert "Find your property" in page
+
+
+def test_new_login_without_password_is_not_tested_and_stays_on_police(host, fake_client):  # noqa: F811
+    apartment_id = _create(host)
+    assert _test(host, apartment_id).status_code == 303
+    made = len(fake_client["made"])
+    response = _test(
+        host, apartment_id, uby_ws_user="UBY-WS_OTHER1", uby_ws_password="", letter_fields="uby_ws_user",
+    )
+    assert response.status_code == 303 and _path(response).endswith("/setup/police")
+    assert len(fake_client["made"]) == made
+    shown = host["client"].get(response.headers["location"], follow_redirects=False)
+    assert host_i18n.translate("en", "flash.apartments.letter_new_login_no_password") in html.unescape(shown.text)

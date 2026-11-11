@@ -156,7 +156,6 @@ def test_whole_walk_works_without_javascript(live, fake_client):  # noqa: F811
     page.goto(f"{base}/apartments/{apartment_id}/setup/calendar?lang=en")
     page.locator(SKIP).click()
     page.wait_for_url("**/setup/police**")
-    page.locator("details.police-letter-paste").evaluate("d => { d.open = true; }") if False else None
     read = page.locator("[data-letter-read]")
     assert read.is_visible()
     page.fill("#letter_text", FULL_LETTER)
@@ -171,3 +170,21 @@ def test_whole_walk_works_without_javascript(live, fake_client):  # noqa: F811
     page.wait_for_url("**/setup/done**")
     assert page.locator("[data-ready-card]").is_visible()
     assert fits(page)
+
+
+def test_enter_in_a_police_box_runs_the_test_not_wait(live, fake_client):  # noqa: F811
+    base = live.plain.split("/apartments")[0]
+    apartment_id = new_property(live_host(live), "Enter Key")
+    page = live.open(390)
+    page.goto(f"{base}/apartments/{apartment_id}/setup/calendar?lang=en")
+    page.locator(SKIP).click()
+    page.wait_for_url("**/setup/police**")
+    paste_js(page)
+    page.fill("#uby_contact", "typed@example.test")
+    with page.expect_response(lambda r: r.url.endswith("/test-connection")) as reply:
+        page.press("#uby_contact", "Enter")
+    assert reply.value.status == 303
+    page.wait_for_url("**/setup/guest_link**")
+    assert len(fake_client["made"]) >= 1
+    row = db.query_one("SELECT uby_contact, uby_idub FROM apartment WHERE id = ?", (apartment_id,))
+    assert row["uby_contact"] == "typed@example.test" and row["uby_idub"]

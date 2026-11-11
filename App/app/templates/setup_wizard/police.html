@@ -8,12 +8,10 @@
 {% for field, message in police_errors.items() %}
 <p class="err-text" id="{{ field }}-error" role="alert">{{ validation_message(message) }}</p>
 {% endfor %}
-<div class="field-label-row police-section-head">
-  <h2 class="setup-wizard-section-title">{{ t('setup_guide.reporting.title') }}</h2>
-  <a class="ui-btn ui-btn-secondary ui-btn-compact police-sample-link" href="/static/docs/ubyport-ws-credential-sample.pdf?v=20261004a" target="_blank" rel="noopener">{{ t('apartment.form.ubyport.sample_link') }}</a>
-</div>
 
 <form method="post" action="/apartments/{{ apartment.id }}" class="setup-wizard-form" id="police-form">
+  {#- 1101: Enter in a box runs the test (the first submit button), never Wait. -#}
+  <button class="sr-only" type="submit" tabindex="-1" aria-hidden="true" formaction="/apartments/{{ apartment.id }}/test-connection" formmethod="post" formnovalidate></button>
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <input type="hidden" name="return_to" value="/apartments/{{ apartment.id }}/setup/police">
   <input type="hidden" name="setup_step" value="police">
