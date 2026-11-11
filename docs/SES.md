@@ -82,13 +82,16 @@ Region: **Europe (Frankfurt) `eu-central-1`**.
    `ses:SendRawEmail` in this region. Create access keys for Lightsail; never
    commit them.
 
-7. **Require TLS** (the host confirmation mail carries guest details). In
-   **SES → Configuration → Configuration sets** create `ubyhost-tls-required`,
-   open it, **Delivery options**, set **TLS policy** to **Required**, save. Then
-   **SES → Configuration → Identities → `ubyhost.com` → Configuration set**,
-   **Edit**, choose `ubyhost-tls-required` as the default, save. It applies to
-   every mail from the domain; a recipient server without TLS then gets
-   nothing, and bounces are not handled yet (see below).
+7. **Require TLS**: done (owner, 2026-11-11). The host confirmation mail
+   carries guest details, so mail from the domain must use TLS. In AWS
+   CloudShell, region eu-central-1, these two commands were run:
+
+   ```
+   aws sesv2 create-configuration-set --configuration-set-name ubyhost-tls-required --delivery-options TlsPolicy=REQUIRE --region eu-central-1
+   aws sesv2 put-email-identity-configuration-set-attributes --email-identity ubyhost.com --configuration-set-name ubyhost-tls-required --region eu-central-1
+   ```
+
+   Check: `aws sesv2 get-configuration-set --configuration-set-name ubyhost-tls-required --region eu-central-1` shows `"TlsPolicy": "REQUIRE"`, and `aws sesv2 get-email-identity --email-identity ubyhost.com --region eu-central-1 --query ConfigurationSetName` prints `"ubyhost-tls-required"`. It applies to every mail from the domain; a recipient server without TLS then gets nothing, and bounces are not handled yet (see below).
 
 Optional later: SNS → SQS bounce/complaint feedback. The reserved
 `UBYHOST_SES_FEEDBACK_QUEUE_URL` setting was removed because nothing read it;

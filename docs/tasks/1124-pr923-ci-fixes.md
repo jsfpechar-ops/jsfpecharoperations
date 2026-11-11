@@ -1,6 +1,6 @@
 # 1124: CI fixes for PR 923 (guest details mail)
 
-Status: todo
+Status: review
 Depends on: 1123 | Base commit: cf4d3c4e | Branch: task/1120-1123-guest-details-mail
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
