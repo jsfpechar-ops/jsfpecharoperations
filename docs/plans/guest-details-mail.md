@@ -43,7 +43,7 @@ Briefs 1121 and 1122 call only this function; they never read the column.
 | 1123 | DPA, privacy policy and guest-notice wording (replaces the old "host gets a copy" sentences) | Sonnet | 1121 |
 | 1123b | DPA and Privacy version bump to 1.8, ROPA, RETENTION, ENVIRONMENT, SES TLS owner steps | Sonnet | 1123 |
 
-1123 and 1123b stay **draft PRs until the lawyer confirms the wording** (it joins the open lawyer package). Until its version bump is live, no workspace gets full details, so 1120 to 1122 can ship first.
+1123 and 1123b follow the normal PR flow (wording decided below). Until the version bump of 1123b is live, no workspace gets full details, so 1120 to 1122 can ship first.
 
 ## What the code changed in this plan (found while briefing)
 
@@ -52,8 +52,8 @@ Briefs 1121 and 1122 call only this function; they never read the column.
 - The "(host only)" link leaves the receipt, since the host is no longer copied.
 - Follow-ups, not briefed: the fee-update mail (`fee_update.py`) still copies the host; nationality and document type print as codes, not words.
 
-## Open for the lawyer
+## Legal positions (decided 2026-11-11 by the orchestrator acting as counsel, on the owner's instruction; no outside lawyer has reviewed them)
 
-1. DPA wording for "guest details by e-mail to the controller's contact address", and that the host's mailbox is the host's responsibility.
-2. Whether default-on plus acceptance at next sign-in is enough notice for existing hosts, or a notice mail is also needed.
-3. The sentence in the guest privacy notice.
+1. **DPA wording:** as written in brief 1123. The setting is the controller's documented instruction (Art. 28(3)(a)); the clause names the default, the switch, and that the host's mailbox is the host's responsibility.
+2. **Notice to existing hosts:** the accept page for DPA and Privacy 1.8 is enough. Full details start only after that acceptance, so no host receives them unannounced. No separate notice mail. Effective date 2026-11-11: only test accounts exist. Once real hosts exist, later changes follow the 30-day notice in Terms section 22.
+3. **Guest notice:** "Your host receives your registration details by e-mail." It adds no new recipient (the host is the controller), so it is information under Art. 13, not a consent.
