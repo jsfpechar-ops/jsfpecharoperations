@@ -171,21 +171,20 @@ def test_1103_empty_lookup_says_so_instead_of_staying_silent(base, dashboard_ric
         for width in WIDTHS_0850:
             context, page = _open_settings(browser, base, cookie, apartment_id, width)
 
-            def slow_empty(route):
-                import time as _t
-
-                _t.sleep(0.6)
-                route.fulfill(status=200, content_type="application/json", body="[]")
-
-            page.route("**/apartments/ruian-suggest*", slow_empty)
+            held = []
+            page.route("**/apartments/ruian-suggest*", lambda route: held.append(route))
             page.locator("#addr_street").fill("Nowhereville")
             status = page.locator("#addr_street-suggest-status")
-            status.wait_for(state="visible", timeout=3000)
-            if "…" not in status.inner_text():
+            status.wait_for(state="visible", timeout=5000)
+            if "\u2026" not in status.inner_text():
                 problems.append(f"{width}: no loading line while the lookup runs")
+            page.wait_for_function("() => true")
+            while not held:
+                page.wait_for_timeout(50)
+            held[0].fulfill(status=200, content_type="application/json", body="[]")
             page.wait_for_function(
                 "() => { const s = document.getElementById('addr_street-suggest-status');"
-                " return s && !s.hidden && !s.textContent.includes('\u2026'); }", timeout=5000)
+                " return s && !s.hidden && !s.textContent.includes('\\u2026'); }", timeout=5000)
             if not page.locator(LIST).is_hidden():
                 problems.append(f"{width}: empty list is shown")
             context.close()
