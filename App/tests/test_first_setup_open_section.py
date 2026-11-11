@@ -240,7 +240,7 @@ def test_tested_cannot_be_posted(host, fake):
 
 def test_letter_saved_untested_does_not_mark(host, fake):
     apt_id = _apt()["id"]
-    data = _police(uby_ws_password="", letter_fields="uby_idub", letter_ok="1", letter_line_uby_idub="5")
+    data = _police(uby_ws_password="", letter_fields="uby_idub", letter_line_uby_idub="5")
     host.post(f"/apartments/{apt_id}", data=data, follow_redirects=False)
     assert property_setup.load(apt_id)["tested"] is False
 

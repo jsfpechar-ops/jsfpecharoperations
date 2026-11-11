@@ -25,6 +25,7 @@ from app.routes import admin
 from app.ubyport import soap
 from app.ubyport.client import UbyportAuthError, UbyportClient, UbyportTransportError
 from app.ubyport_sample_pdf import (
+    SAMPLE_FACILITY_LINE1,
     SAMPLE_IDUB,
     SAMPLE_WS_PASSWORD,
     SAMPLE_WS_USER,
@@ -125,13 +126,12 @@ def _payload(username=USERNAME, **overrides):
 
 
 def _letter_payload(**overrides):
-    """A save of the three confirmed letter values."""
+    """A save of the three letter values (1100: no tick)."""
     data = _payload(
         uby_idub=SAMPLE_IDUB,
         uby_ws_user=SAMPLE_WS_USER,
         uby_mark=SAMPLE_ZKRATKA,
         letter_fields="uby_idub,uby_ws_user,uby_mark",
-        letter_ok="1",
         letter_line_uby_idub="5",
         letter_line_uby_ws_user="3",
         letter_line_uby_mark="3",
@@ -226,10 +226,18 @@ def _input_value(page: str, name: str) -> str:
     return html.unescape(match.group(1))
 
 
-def _row(page: str, name: str) -> str:
-    start = page.index(f'data-letter-row="{name}"')
-    end = page.find('data-letter-row="', start + 10)
-    return page[start : end if end != -1 else page.index("</section>", start)]
+def _password_input(page: str) -> str:
+    return re.search(r'<input type="text" id="uby_ws_password"[^>]*>', page).group(0)
+
+
+def _status_line(page: str) -> str:
+    match = re.search(r'<p class="police-letter-status[^"]*"[^>]*>(.*?)</p>', page, re.S)
+    assert match, "no status line"
+    return html.unescape(match.group(1))
+
+
+def _label(name: str) -> str:
+    return dict(admin._LETTER_BOX_LABELS)[name]
 
 
 def _flash(response) -> str:
@@ -249,9 +257,11 @@ def _audit_text(username=USERNAME) -> str:
 # --- a. the paste: check answers, nothing saved, nothing kept ---------------
 
 
-def test_paste_shows_the_values_to_check_and_saves_nothing(host, no_client):
+def test_paste_fills_the_five_boxes_and_saves_nothing(host, no_client):
+    """1100: the no-JS read fills every box; no check block, no tick."""
     before = dict(_apartment())
-    response = _paste(host, before["id"])
+    text = LETTER + f"Ubytovací zařízení:\n{SAMPLE_FACILITY_LINE1}\n"
+    response = _paste(host, before["id"], text)
     assert response.status_code == 422
     assert response.headers["cache-control"] == "no-store"
     page = response.text
@@ -259,46 +269,105 @@ def test_paste_shows_the_values_to_check_and_saves_nothing(host, no_client):
     assert _input_value(page, "uby_idub") == SAMPLE_IDUB
     assert _input_value(page, "uby_ws_user") == SAMPLE_WS_USER
     assert _input_value(page, "uby_mark") == SAMPLE_ZKRATKA
-    assert f"<code>IDUB: {SAMPLE_IDUB}</code>" in _row(page, "uby_idub")
-    assert f"<code>Přihlašovací jméno: {SAMPLE_WS_USER}</code>" in _row(page, "uby_ws_user")
-    mark_row = _row(page, "uby_mark")
-    assert _en("police_letter.source_login", line=3) in mark_row
-    assert f"<code>Přihlašovací jméno: {SAMPLE_WS_USER}</code>" in mark_row
-    assert _en("police_letter.source", line=5) in _row(page, "uby_idub")
-    assert "Check this against your letter" not in page
-    assert page.count(_en("police_letter.confirm_all")) == 1
-    assert "Matches my letter" not in page
-    assert _en("police_letter.saved_now", value=SAVED_IDUB) in _row(page, "uby_idub")
-
-    boxes = re.findall(r'<input type="checkbox" id="(letter_ok[a-z_]*)"[^>]*>', page)
-    assert boxes == ["letter_ok"]
-    box = re.search(r'<input type="checkbox" id="letter_ok"[^>]*>', page).group(0)
-    assert " required" in box and " checked" not in box
-    assert "letter_ok_" not in page
-    assert page.count(" autofocus") == 1, "no-JS: the one tick takes the focus"
-    assert re.search(r'id="letter_ok"[^>]* autofocus', page)
+    assert _input_value(page, "uby_name") == SAMPLE_FACILITY_LINE1
+    assert f'value="{SAMPLE_WS_PASSWORD}"' in _password_input(page)
+    assert 'autocomplete="off" autocapitalize="off" spellcheck="false"' in _password_input(page)
     assert 'name="letter_fields" value="uby_idub,uby_ws_user,uby_mark"' in page
-    assert 'data-letter-row="uby_ws_password"' not in page
+    assert "police-letter-check" not in page
+    assert "letter_ok" not in page
+    assert "<code>" not in page[page.index('id="sec-police"') : page.index('id="automation"')]
+    status = _status_line(page)
+    assert status.startswith(_en("police_letter.filled", names="").split(":")[0])
+    for name in ("uby_idub", "uby_ws_user", "uby_ws_password", "uby_mark", "uby_name"):
+        assert _en(_label(name)) in status
+    assert _en("police_letter.saved_now", value=SAVED_IDUB) in page
+    settings_form = re.search(r'<form[^>]*id="property-settings-form"[^>]*>', page).group(0)
+    assert 'data-dirty-start="1"' in settings_form
+    assert re.search(r'<details class="prop-sec" id="sec-police"[^>]* open', page)
 
-    password_input = re.search(r'<input type="password" id="uby_ws_password"[^>]*>', page).group(0)
-    assert "value=" not in password_input
     textarea = re.search(r'<textarea id="letter_text"[^>]*>(.*?)</textarea>', page, re.S)
     assert textarea.group(1) == ""
     assert MARKER not in page
-    assert SAMPLE_WS_PASSWORD not in page
 
     assert dict(_apartment()) == before
     audit = _audit_text()
-    for secret in (SAMPLE_IDUB, SAMPLE_WS_USER, SAMPLE_WS_PASSWORD, MARKER):
+    for secret in (SAMPLE_IDUB, SAMPLE_WS_USER, SAMPLE_WS_PASSWORD, SAMPLE_FACILITY_LINE1, MARKER):
         assert secret not in audit
     assert "police_letter_read" in audit
     assert no_client == []
 
 
-def test_a_source_line_with_markup_comes_back_escaped(host, monkeypatch):
+def test_paste_as_json_answers_the_five_values(host, no_client):
+    """1100 (D-d): the same route answers JSON for the paste script."""
+    before = dict(_apartment())
+    text = LETTER + f"Ubytovací zařízení: {SAMPLE_FACILITY_LINE1}\n"
+    response = host.post(
+        f"/apartments/{before['id']}/police-letter",
+        data={"letter_text": text},
+        headers={"Accept": "application/json"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("application/json")
+    assert response.headers["cache-control"] == "no-store"
+    body = response.json()
+    assert body["status"] == "ok"
+    assert {name: item["value"] for name, item in body["fields"].items()} == {
+        "uby_idub": SAMPLE_IDUB,
+        "uby_ws_user": SAMPLE_WS_USER,
+        "uby_ws_password": SAMPLE_WS_PASSWORD,
+        "uby_mark": SAMPLE_ZKRATKA,
+        "uby_name": SAMPLE_FACILITY_LINE1,
+    }
+    assert body["missing"] == []
+    assert set(body["filled"]) == set(body["fields"])
+    assert MARKER not in response.text and "Přihlašovací jméno" not in response.text
+    assert _en("police_letter.filled", names="").split(":")[0] in body["message"]
+    assert dict(_apartment()) == before
+    audit = _audit_text()
+    for secret in (SAMPLE_IDUB, SAMPLE_WS_USER, SAMPLE_WS_PASSWORD, SAMPLE_FACILITY_LINE1, MARKER):
+        assert secret not in audit
+
+    empty = host.post(
+        f"/apartments/{before['id']}/police-letter",
+        data={"letter_text": "  "},
+        headers={"Accept": "application/json"},
+    ).json()
+    assert empty["status"] == "empty" and empty["message"] == _en("police_letter.empty")
+    assert all(not item["value"] for item in empty["fields"].values())
+
+    stranger = TestClient(app)
+    logged_out = stranger.post(
+        f"/apartments/{before['id']}/police-letter",
+        data={"letter_text": text},
+        headers={"Accept": "application/json"},
+        follow_redirects=False,
+    )
+    assert not logged_out.headers.get("content-type", "").startswith("application/json")
+    assert SAMPLE_WS_PASSWORD not in logged_out.text and SAMPLE_IDUB not in logged_out.text
+
+
+def test_the_password_box_has_no_value_on_a_get_or_a_refused_save(host, no_client):
+    """1100 (D-c): only the answer to a paste carries the read password."""
+    apartment = _apartment()
+    host.post(f"/apartments/{apartment['id']}", data=_payload(uby_ws_password="Stored-Pass-1"), follow_redirects=False)
+    get = host.get(f"/apartments/{apartment['id']}?view=settings&section=reporting").text
+    assert "value=" not in _password_input(get)
+    assert "Stored-Pass-1" not in get
+    refused = host.post(
+        f"/apartments/{apartment['id']}",
+        data=_payload(uby_ws_password="Typed-Pass-2", legal_entity_id=""),
+        follow_redirects=False,
+    )
+    assert refused.status_code == 400
+    assert "value=" not in _password_input(refused.text)
+    assert "Typed-Pass-2" not in refused.text and "Stored-Pass-1" not in refused.text
+
+
+def test_a_value_with_markup_comes_back_escaped(host, monkeypatch):
     """The parser never yields markup; the template must not trust that."""
     found = FieldResult(
-        state="found", value=SAMPLE_IDUB, line=2, label="IDUB", lines=(2,),
+        state="found", value="<b>" + SAMPLE_IDUB, line=2, label="IDUB", lines=(2,),
         source=("IDUB: <b>" + SAMPLE_IDUB,),
     )
     monkeypatch.setattr(
@@ -308,9 +377,9 @@ def test_a_source_line_with_markup_comes_back_escaped(host, monkeypatch):
     )
     response = _paste(host, _apartment()["id"])
     assert response.status_code == 422
-    assert f"<code>IDUB: &lt;b&gt;{SAMPLE_IDUB}</code>" in response.text
     assert "<b>" + SAMPLE_IDUB not in response.text
-    assert f'value="IDUB: &lt;b&gt;{SAMPLE_IDUB}"' in response.text
+    assert f'value="&lt;b&gt;{SAMPLE_IDUB}"' in response.text
+    assert "IDUB: &lt;b&gt;" not in response.text
 
 
 # --- b. values that are not taken ------------------------------------------
@@ -343,10 +412,8 @@ def test_a_value_that_is_not_safe_keeps_the_saved_one(host, text, field, state):
     assert response.status_code == 422
     page = response.text
     assert _input_value(page, field) == apartment[field]
-    row = _row(page, field)
-    assert _en(f"police_letter.{parsed}") in row
-    assert f"letter_ok_{field}" not in page
-    assert "<code>" not in row
+    assert _en(_label(field)) in _status_line(page).split(":", 2)[-1]
+    assert "letter_ok" not in page
     assert dict(_apartment()) == dict(apartment)
 
 
@@ -361,10 +428,9 @@ def test_an_ambiguous_state_shows_its_plain_line(host, monkeypatch):
         ),
     )
     page = _paste(host, apartment["id"]).text
-    assert _en("police_letter.ambiguous") in _row(page, "uby_ws_user")
     assert _input_value(page, "uby_ws_user") == SAVED_LOGIN
     assert "LEAK" not in page
-    assert "letter_ok_" not in page
+    assert "letter_ok" not in page
 
 
 @pytest.mark.parametrize(
@@ -465,44 +531,29 @@ def test_another_hosts_property_is_not_parsed(host, spy_parser):
 
 
 @pytest.mark.parametrize("path", ["", "/test-connection"])
-def test_a_missing_tick_refuses_the_save_on_both_paths(host, no_client, path):
+def test_letter_values_save_without_a_tick_on_both_paths(host, fake_client, path):
+    """1100: no tick; a letter save with a password is tested once on either path."""
     before = dict(_apartment())
     response = host.post(
         f"/apartments/{before['id']}{path}",
         data=_payload(
             uby_idub=SAMPLE_IDUB,
             uby_ws_user=SAMPLE_WS_USER,
+            uby_mark=SAMPLE_ZKRATKA,
             uby_ws_password="typed-password",
-            internal_name="Must Not Save",
-            letter_fields="uby_idub,uby_ws_user",
-            letter_line_uby_idub="5",
-            letter_line_uby_ws_user="3",
-            letter_src_uby_idub_1="IDUB: <b>\x00\x1b" + SAMPLE_IDUB,
-            letter_src_uby_ws_user_1="y" * 300,
+            letter_fields="uby_idub,uby_ws_user,uby_mark",
         ),
         follow_redirects=False,
     )
-    assert response.status_code == 400
-    page = response.text
-    assert dict(_apartment()) == before, "an unconfirmed letter value was saved"
-    assert no_client == []
-    assert _input_value(page, "uby_idub") == SAMPLE_IDUB
-    assert _input_value(page, "uby_ws_user") == SAMPLE_WS_USER
-    assert page.count('id="letter_ok-error"') == 1
-    assert "letter_ok_" not in page
-    assert html.unescape(page).count(_en("police_letter.confirm_missing")) == 1
-    assert 'data-first-error="letter_ok"' in page
-    assert not re.search(r'id="letter_ok"[^>]* checked', page)
-    assert f"<code>IDUB: &lt;b&gt;{SAMPLE_IDUB}</code>" in page
-    assert "<b>" + SAMPLE_IDUB not in page
-    assert "<code>" + "y" * 120 + "</code>" in page
-    assert "typed-password" not in page
-    assert 'data-dirty-start="1"' in page
-    assert re.search(r'<details class="prop-sec" id="sec-police"[^>]* open', page)
+    assert response.status_code == 303, response.text[:300]
+    saved = _apartment()
+    assert saved["uby_idub"] == SAMPLE_IDUB and saved["uby_ws_user"] == SAMPLE_WS_USER
+    assert len(fake_client["made"]) == 1
+    assert "typed-password" not in _audit_text()
 
 
 @pytest.mark.parametrize("line", ["abc", "99999999999", "-1", "0", "5\n"])
-def test_a_forged_line_number_never_crashes(host, line):
+def test_a_forged_line_number_never_crashes(host, no_client, line):
     before = dict(_apartment())
     response = host.post(
         f"/apartments/{before['id']}",
@@ -514,12 +565,11 @@ def test_a_forged_line_number_never_crashes(host, line):
         ),
         follow_redirects=False,
     )
-    assert response.status_code == 400
-    row = _row(response.text, "uby_idub")
+    assert response.status_code == 303, response.text[:300]
     assert "FORGED-SOURCE-TEXT" not in response.text
-    assert "<code>" not in row
-    assert "From line" not in row
-    assert dict(_apartment()) == before
+    page = host.get(f"/apartments/{before['id']}?view=settings&section=reporting").text
+    assert "FORGED-SOURCE-TEXT" not in page
+    assert _apartment()["uby_idub"] == SAMPLE_IDUB
 
 
 # --- f. the automatic test -------------------------------------------------
@@ -865,14 +915,15 @@ def test_the_discard_warning_is_wired(host):
     assert _en("police_letter.discard_warning") in html.unescape(letter_form)
     assert 'name="letter_text" form="police-letter-form"' in plain
     assert 'id="police-sample-link"' in plain
-    assert "letter_fields" not in plain
+    assert 'name="letter_fields" value=""' in plain
+    assert re.search(r'<button[^>]*data-letter-read', plain)
 
     page = _paste(host, apartment["id"]).text
     settings_form = re.search(r'<form[^>]*id="property-settings-form"[^>]*>', page).group(0)
     assert 'data-dirty-start="1"' in settings_form
     assert "data-discard-warning=" in re.search(r'<form id="police-letter-form"[^>]*>', page).group(0)
     # The letter form sits after the big form: forms cannot nest.
-    assert page.index('id="police-letter-form"') > page.index('id="police-letter-check"')
+    assert page.index('id="police-letter-form"') > page.index('id="police-letter-status"')
 
 
 def test_the_figure_uses_real_labels_and_fake_values(host):
@@ -887,78 +938,35 @@ def test_the_figure_uses_real_labels_and_fake_values(host):
     assert SAMPLE_WS_PASSWORD not in figure
 
 
-def test_one_missing_tick_is_one_error(host, no_client):
-    """1097: one tick for all listed values, so one error, and the refusal is a 400."""
+def test_no_tick_is_needed_and_no_tick_renders(host, no_client):
+    """1100: a letter save with no letter_ok saves; nothing on the page asks for a tick."""
     before = dict(_apartment())
     for fields in ("uby_idub,uby_mark", "uby_idub,uby_ws_user,uby_mark"):
         response = host.post(
             f"/apartments/{before['id']}",
-            data=_letter_payload(letter_ok=None, letter_fields=fields),
+            data=_letter_payload(letter_fields=fields),
             follow_redirects=False,
         )
-        assert response.status_code == 400
-        page = response.text
-        assert page.count('id="letter_ok-error"') == 1
-        assert page.count("data-field-error") == 1
-        assert "letter_ok_" not in page
-        assert 'data-first-error="letter_ok"' in page
-        summary = re.search(r"data-save-summary[^>]*><span class=\"grow\">([^<]*)<", page).group(1)
-        assert html.unescape(summary) == str(
-            host_i18n.translate_plural("en", "property_page.save_failed", 1)
-        )
-    assert dict(_apartment()) == before
+        assert response.status_code == 303, response.text[:300]
+    assert _apartment()["uby_idub"] == SAMPLE_IDUB
+    page = host.get(f"/apartments/{before['id']}?view=settings&section=reporting").text
+    assert "letter_ok" not in page
 
 
-def test_a_stale_per_field_tick_does_not_confirm(host, no_client):
-    """1097: an old page's letter_ok_<name> ticks never confirm."""
-    before = dict(_apartment())
-    response = host.post(
-        f"/apartments/{before['id']}",
-        data=_letter_payload(
-            letter_ok=None,
-            letter_ok_uby_idub="1",
-            letter_ok_uby_ws_user="1",
-            letter_ok_uby_mark="1",
-        ),
-        follow_redirects=False,
-    )
-    assert response.status_code == 400
-    assert dict(_apartment()) == before
 
 
-def _check_block(page: str) -> str:
-    start = page.index('id="police-letter-check"')
-    return page[start : page.index("</label></div>", page.index('id="letter_ok"', start))]
 
 
-def _assert_each_value_once(page: str, values: dict) -> None:
-    block = _check_block(page)
-    assert page.count('id="letter_ok"') == 1
-    assert "letter_ok_uby_" not in page
-    assert block.count("req-star") == 1
-    assert not re.search(r'id="letter_ok"[^>]* checked', page)
-    for name, value in values.items():
-        assert page.count(f'name="{name}"') == 1, name
-        assert _input_value(page, name) == value
-        row = _row(page, name)
-        assert row.count('<details class="police-letter-edit">') == 1, name
-        edit = row[row.index('<details class="police-letter-edit">') : row.index("</details>")]
-        assert f'name="{name}"' in edit, name
-        assert row.count(f'<span class="police-letter-value">{value}</span>') == 1, name
-        assert page.count(f">{value}</span>") == 1, name
 
 
-def test_the_check_block_shows_each_value_once(host, no_client):
+
+
+
+def test_each_box_renders_once(host, no_client):
     apartment = _apartment()
-    values = {"uby_idub": SAMPLE_IDUB, "uby_ws_user": SAMPLE_WS_USER, "uby_mark": SAMPLE_ZKRATKA}
-    _assert_each_value_once(_paste(host, apartment["id"]).text, values)
-    refused = host.post(
-        f"/apartments/{apartment['id']}",
-        data=_letter_payload(letter_ok=None),
-        follow_redirects=False,
-    )
-    assert refused.status_code == 400
-    _assert_each_value_once(refused.text, values)
+    page = _paste(host, apartment["id"]).text
+    for name in ("uby_idub", "uby_ws_user", "uby_ws_password", "uby_mark", "uby_name", "letter_fields"):
+        assert page.count(f'name="{name}"') == 1, name
 
 
 def test_edit_value_is_saved_with_the_tick(host, no_client):
@@ -978,12 +986,10 @@ def test_an_unfound_value_keeps_its_own_field(host, no_client):
     apartment = _apartment()
     text = "\n".join(line for line in LETTER.splitlines() if "IDUB" not in line)
     page = _paste(host, apartment["id"], text).text
-    block = _check_block(page)
     assert page.count('name="uby_idub"') == 1
-    assert 'name="uby_idub"' not in block
     assert _input_value(page, "uby_idub") == apartment["uby_idub"]
     assert 'name="letter_fields" value="uby_ws_user,uby_mark"' in page
-    assert 'name="uby_ws_user"' in block and 'name="uby_mark"' in block
+    assert _en(_label("uby_idub")) in _status_line(page)
 
 
 def test_an_untouched_save_keeps_all_three_values(host, no_client):
@@ -995,12 +1001,13 @@ def test_an_untouched_save_keeps_all_three_values(host, no_client):
         name = re.search(r'name="([^"]+)"', tag)
         if not name or re.search(r'type="(checkbox|radio|file|submit|password)"', tag):
             continue
+        if name.group(1) == "uby_ws_password":
+            continue  # a typed password would run the connection test
         value = re.search(r'value="([^"]*)"', tag)
         data.setdefault(name.group(1), html.unescape(value.group(1)) if value else "")
     for name in ("uby_idub", "uby_ws_user", "uby_mark"):
         assert len(re.findall(rf'<input\b[^>]*name="{name}"', form_html)) == 1, name
     payload = _payload(**{k: v for k, v in data.items() if k.startswith(("uby_", "letter_"))})
-    payload["letter_ok"] = "1"
     response = host.post(f"/apartments/{apartment['id']}", data=payload, follow_redirects=False)
     assert response.status_code == 303, response.text[:300]
     saved = _apartment()
@@ -1104,66 +1111,30 @@ def test_the_letter_helper_is_styled_in_the_browser(host, no_client):
                 shot(page, "helpers-open", width)
 
                 page.fill("#letter_text", LETTER)
-                with page.expect_response(lambda r: r.url.endswith("/police-letter")) as pasted:
-                    page.locator("details.police-letter-paste .actions button").click()
-                assert pasted.value.status == 422
-                page.wait_for_selector("#police-letter-check")
+                page.locator("#letter_text").dispatch_event("paste")
+                page.wait_for_function(
+                    "v => document.querySelector('#uby_idub').value === v", arg=SAMPLE_IDUB, timeout=5000
+                )
                 check = page.evaluate(
-                    """() => {
-                      const label = document.querySelector('label[for=letter_ok]');
-                      const input = document.querySelector('#letter_ok');
-                      return {
-                        nameDisplay: getComputedStyle(document.querySelector('.police-letter-name')).display,
-                        labelDisplay: getComputedStyle(label).display,
-                        labelHeight: label.getBoundingClientRect().height,
-                        boxWidth: input.getBoundingClientRect().width,
-                        boxHeight: input.getBoundingClientRect().height,
-                        value: document.querySelector('#uby_idub').value,
-                        password: document.querySelector('#uby_ws_password').value,
-                        text: document.querySelector('#letter_text').value,
-                      };
-                    }"""
+                    """() => ({
+                      status: document.querySelector('#police-letter-status').textContent,
+                      password: document.querySelector('#uby_ws_password').value,
+                      passwordType: document.querySelector('#uby_ws_password').type,
+                      readHidden: document.querySelector('[data-letter-read]').hidden,
+                    })"""
                 )
-                assert check["nameDisplay"] == "block"
-                # N1: the result is in view, not 2,000 px below a page that looks unchanged.
-                page.wait_for_timeout(300)
-                landing = page.evaluate(
-                    """() => {
-                      const r = (sel) => document.querySelector(sel).getBoundingClientRect();
-                      const box = r('#letter_ok');
-                      const text = r('label[for=letter_ok]');
-                      return {
-                        top: r('#police-letter-check').top,
-                        height: window.innerHeight,
-                        boxMid: box.top + box.height / 2,
-                        textMid: text.top + text.height / 2,
-                      };
-                    }"""
-                )
-                assert 0 <= landing["top"] < landing["height"] / 2, landing
-                assert abs(landing["boxMid"] - landing["textMid"]) <= 2, landing
-                if shot_dir:
-                    page.screenshot(path=str(Path(shot_dir) / f"landing-{width}.png"))
-                assert check["labelDisplay"] == "flex" and check["labelHeight"] >= 44
-                assert (check["boxWidth"], check["boxHeight"]) == (20, 20)
-                assert check["value"] == SAMPLE_IDUB
-                assert check["password"] == "" and check["text"] == ""
+                assert check["password"] == SAMPLE_WS_PASSWORD and check["passwordType"] == "text"
+                assert check["readHidden"] is True
+                assert _en(_label("uby_idub")) in check["status"]
                 assert fits(page)
-                shot(page, "check-block", width)
+                shot(page, "after-paste", width)
 
-                with page.expect_response(lambda r: r.url.endswith("/test-connection")) as refused:
-                    page.locator('button[formaction$="/test-connection"]').click()
-                assert refused.value.status == 400
-                page.wait_for_selector("#letter_ok-error")
-                assert page.locator("[data-field-error]").count() == 1
-                assert not page.locator("#letter_ok").is_checked()
-                assert fits(page)
-                shot(page, "refused-save", width)
-
-                # N1: an empty paste lands on its error, too.
+                # N1: an empty read with the button lands on its error, too.
+                page.on("dialog", lambda dialog: dialog.accept())
                 page.goto(url)
                 page.locator("details.police-letter-paste").evaluate("d => { d.open = true; }")  # 1099: may start open
                 with page.expect_response(lambda r: r.url.endswith("/police-letter")) as empty:
+                    page.evaluate("() => { document.querySelector('#letter_text').value = ''; document.querySelector('[data-letter-read]').hidden = false; }")
                     page.locator("details.police-letter-paste .actions button").click()
                 assert empty.value.status == 422
                 page.wait_for_selector("#letter_text-error")
