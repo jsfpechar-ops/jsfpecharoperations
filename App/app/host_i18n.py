@@ -8075,6 +8075,7 @@ _PROPERTY_NAV_0094_STRINGS = {
     "en": {
         "property_page.guest_link.title": "Guest link",
         "property_page.guest_link.copy_pin": "Copy PIN",
+        "property_page.guest_link.copy_both": "Copy link and PIN",
         "property_page.sec.basics.title": "Basic details",
         "property_page.fix_fields": "Fix {n} fields:",
         "property_page.fix_fields_one": "Fix 1 field:",
@@ -8122,6 +8123,7 @@ _PROPERTY_NAV_0094_STRINGS = {
     "cs": {
         "property_page.guest_link.title": "Odkaz pro hosty",
         "property_page.guest_link.copy_pin": "Kopírovat PIN",
+        "property_page.guest_link.copy_both": "Kopírovat odkaz a PIN",
         "property_page.sec.basics.title": "Základní údaje",
         "property_page.fix_fields": "K opravě ({n}):",
         "property_page.fix_fields_one": "K opravě (1):",
