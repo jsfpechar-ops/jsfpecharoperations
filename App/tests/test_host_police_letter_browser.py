@@ -324,6 +324,8 @@ def test_the_letter_helper_geometry(live, no_client, width):  # noqa: F811
     page.locator("details.police-letter-paste > summary").click()
     page.wait_for_timeout(400)
     settle_motion(page)
+    if width == 390:
+        shot(page, "paste-open", width)
     closed = page.evaluate(
         """() => {
           const r = (sel) => document.querySelector(sel).getBoundingClientRect();
