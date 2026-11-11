@@ -131,9 +131,7 @@ def _letter_payload(**overrides):
         uby_ws_user=SAMPLE_WS_USER,
         uby_mark=SAMPLE_ZKRATKA,
         letter_fields="uby_idub,uby_ws_user,uby_mark",
-        letter_ok_uby_idub="1",
-        letter_ok_uby_ws_user="1",
-        letter_ok_uby_mark="1",
+        letter_ok="1",
         letter_line_uby_idub="5",
         letter_line_uby_ws_user="3",
         letter_line_uby_mark="3",
@@ -268,15 +266,17 @@ def test_paste_shows_the_values_to_check_and_saves_nothing(host, no_client):
     assert f"<code>Přihlašovací jméno: {SAMPLE_WS_USER}</code>" in mark_row
     assert _en("police_letter.source", line=5) in _row(page, "uby_idub")
     assert "Check this against your letter" not in page
-    assert page.count(_en("police_letter.confirm")) == 3
+    assert page.count(_en("police_letter.confirm_all")) == 1
+    assert "Matches my letter" not in page
     assert _en("police_letter.saved_now", value=SAVED_IDUB) in _row(page, "uby_idub")
 
-    boxes = re.findall(r'<input type="checkbox" id="(letter_ok_[a-z_]+)"[^>]*>', page)
-    assert boxes == ["letter_ok_uby_idub", "letter_ok_uby_ws_user", "letter_ok_uby_mark"]
-    for box in re.findall(r'<input type="checkbox" id="letter_ok_[^>]*>', page):
-        assert " required" in box and " checked" not in box
-    assert page.count(" autofocus") == 1, "no-JS: only the first unticked box takes the focus"
-    assert re.search(r'id="letter_ok_uby_idub"[^>]* autofocus', page)
+    boxes = re.findall(r'<input type="checkbox" id="(letter_ok[a-z_]*)"[^>]*>', page)
+    assert boxes == ["letter_ok"]
+    box = re.search(r'<input type="checkbox" id="letter_ok"[^>]*>', page).group(0)
+    assert " required" in box and " checked" not in box
+    assert "letter_ok_" not in page
+    assert page.count(" autofocus") == 1, "no-JS: the one tick takes the focus"
+    assert re.search(r'id="letter_ok"[^>]* autofocus', page)
     assert 'name="letter_fields" value="uby_idub,uby_ws_user,uby_mark"' in page
     assert 'data-letter-row="uby_ws_password"' not in page
 
@@ -475,7 +475,6 @@ def test_a_missing_tick_refuses_the_save_on_both_paths(host, no_client, path):
             uby_ws_password="typed-password",
             internal_name="Must Not Save",
             letter_fields="uby_idub,uby_ws_user",
-            letter_ok_uby_idub="1",
             letter_line_uby_idub="5",
             letter_line_uby_ws_user="3",
             letter_src_uby_idub_1="IDUB: <b>\x00\x1b" + SAMPLE_IDUB,
@@ -489,12 +488,11 @@ def test_a_missing_tick_refuses_the_save_on_both_paths(host, no_client, path):
     assert no_client == []
     assert _input_value(page, "uby_idub") == SAMPLE_IDUB
     assert _input_value(page, "uby_ws_user") == SAMPLE_WS_USER
-    assert 'id="letter_ok_uby_ws_user-error"' in page
-    assert 'id="letter_ok_uby_idub-error"' not in page
-    assert _en("police_letter.confirm_missing") in html.unescape(_row(page, "uby_ws_user"))
-    assert 'data-first-error="letter_ok_uby_ws_user"' in page
-    assert re.search(r'id="letter_ok_uby_idub"[^>]* checked', page)
-    assert not re.search(r'id="letter_ok_uby_ws_user"[^>]* checked', page)
+    assert page.count('id="letter_ok-error"') == 1
+    assert "letter_ok_" not in page
+    assert html.unescape(page).count(_en("police_letter.confirm_missing")) == 1
+    assert 'data-first-error="letter_ok"' in page
+    assert not re.search(r'id="letter_ok"[^>]* checked', page)
     assert f"<code>IDUB: &lt;b&gt;{SAMPLE_IDUB}</code>" in page
     assert "<b>" + SAMPLE_IDUB not in page
     assert "<code>" + "y" * 120 + "</code>" in page
@@ -747,7 +745,7 @@ def test_the_test_button_skips_a_new_login_without_a_password(host, no_client):
             data=_payload(
                 uby_ws_user=SAMPLE_WS_USER,
                 letter_fields="uby_ws_user",
-                letter_ok_uby_ws_user="1",
+                letter_ok="1",
             ),
             follow_redirects=False,
         )
@@ -769,7 +767,7 @@ def test_the_test_button_tests_a_new_login_with_a_password(host, fake_client):
                 uby_ws_user=SAMPLE_WS_USER,
                 uby_ws_password="typed-password",
                 letter_fields="uby_ws_user",
-                letter_ok_uby_ws_user="1",
+                letter_ok="1",
             ),
             follow_redirects=False,
         )
@@ -787,7 +785,7 @@ def test_the_test_button_still_tests_the_same_login_without_a_password(host, fak
             data=_payload(
                 uby_ws_user=f"  {SAVED_LOGIN.lower()} ",
                 letter_fields="uby_ws_user",
-                letter_ok_uby_ws_user="1",
+                letter_ok="1",
             ),
             follow_redirects=False,
         )
@@ -889,25 +887,126 @@ def test_the_figure_uses_real_labels_and_fake_values(host):
     assert SAMPLE_WS_PASSWORD not in figure
 
 
-def test_two_missing_ticks_are_two_errors(host, no_client):
-    """S3: the summary counts every unticked value, and the refusal is a 400."""
+def test_one_missing_tick_is_one_error(host, no_client):
+    """1097: one tick for all listed values, so one error, and the refusal is a 400."""
+    before = dict(_apartment())
+    for fields in ("uby_idub,uby_mark", "uby_idub,uby_ws_user,uby_mark"):
+        response = host.post(
+            f"/apartments/{before['id']}",
+            data=_letter_payload(letter_ok=None, letter_fields=fields),
+            follow_redirects=False,
+        )
+        assert response.status_code == 400
+        page = response.text
+        assert page.count('id="letter_ok-error"') == 1
+        assert page.count("data-field-error") == 1
+        assert "letter_ok_" not in page
+        assert 'data-first-error="letter_ok"' in page
+        summary = re.search(r"data-save-summary[^>]*><span class=\"grow\">([^<]*)<", page).group(1)
+        assert html.unescape(summary) == str(
+            host_i18n.translate_plural("en", "property_page.save_failed", 1)
+        )
+    assert dict(_apartment()) == before
+
+
+def test_a_stale_per_field_tick_does_not_confirm(host, no_client):
+    """1097: an old page's letter_ok_<name> ticks never confirm."""
     before = dict(_apartment())
     response = host.post(
         f"/apartments/{before['id']}",
-        data=_letter_payload(letter_ok_uby_idub=None, letter_ok_uby_mark=None),
+        data=_letter_payload(
+            letter_ok=None,
+            letter_ok_uby_idub="1",
+            letter_ok_uby_ws_user="1",
+            letter_ok_uby_mark="1",
+        ),
         follow_redirects=False,
     )
     assert response.status_code == 400
-    page = response.text
-    assert 'id="letter_ok_uby_idub-error"' in page
-    assert 'id="letter_ok_uby_mark-error"' in page
-    assert 'id="letter_ok_uby_ws_user-error"' not in page
-    assert 'data-first-error="letter_ok_uby_idub"' in page
-    summary = re.search(r"data-save-summary[^>]*><span class=\"grow\">([^<]*)<", page).group(1)
-    assert html.unescape(summary) == str(
-        host_i18n.translate_plural("en", "property_page.save_failed", 2)
-    )
     assert dict(_apartment()) == before
+
+
+def _check_block(page: str) -> str:
+    start = page.index('id="police-letter-check"')
+    return page[start : page.index("</label></div>", page.index('id="letter_ok"', start))]
+
+
+def _assert_each_value_once(page: str, values: dict) -> None:
+    block = _check_block(page)
+    assert page.count('id="letter_ok"') == 1
+    assert "letter_ok_uby_" not in page
+    assert block.count("req-star") == 1
+    assert not re.search(r'id="letter_ok"[^>]* checked', page)
+    for name, value in values.items():
+        assert page.count(f'name="{name}"') == 1, name
+        assert _input_value(page, name) == value
+        row = _row(page, name)
+        assert row.count('<details class="police-letter-edit">') == 1, name
+        edit = row[row.index('<details class="police-letter-edit">') : row.index("</details>")]
+        assert f'name="{name}"' in edit, name
+        assert row.count(f'<span class="police-letter-value">{value}</span>') == 1, name
+        assert page.count(f">{value}</span>") == 1, name
+
+
+def test_the_check_block_shows_each_value_once(host, no_client):
+    apartment = _apartment()
+    values = {"uby_idub": SAMPLE_IDUB, "uby_ws_user": SAMPLE_WS_USER, "uby_mark": SAMPLE_ZKRATKA}
+    _assert_each_value_once(_paste(host, apartment["id"]).text, values)
+    refused = host.post(
+        f"/apartments/{apartment['id']}",
+        data=_letter_payload(letter_ok=None),
+        follow_redirects=False,
+    )
+    assert refused.status_code == 400
+    _assert_each_value_once(refused.text, values)
+
+
+def test_edit_value_is_saved_with_the_tick(host, no_client):
+    apartment = _apartment()
+    assert _paste(host, apartment["id"]).status_code == 422
+    new_idub = "987654321098"
+    assert new_idub not in (SAMPLE_IDUB, SAVED_IDUB)
+    response = _save(host, apartment["id"], uby_idub=new_idub)
+    assert response.status_code == 303, response.text[:300]
+    saved = _apartment()
+    assert saved["uby_idub"] == new_idub
+    assert saved["uby_ws_user"] == SAMPLE_WS_USER
+    assert saved["uby_mark"] == SAMPLE_ZKRATKA
+
+
+def test_an_unfound_value_keeps_its_own_field(host, no_client):
+    apartment = _apartment()
+    text = "\n".join(line for line in LETTER.splitlines() if "IDUB" not in line)
+    page = _paste(host, apartment["id"], text).text
+    block = _check_block(page)
+    assert page.count('name="uby_idub"') == 1
+    assert 'name="uby_idub"' not in block
+    assert _input_value(page, "uby_idub") == apartment["uby_idub"]
+    assert 'name="letter_fields" value="uby_ws_user,uby_mark"' in page
+    assert 'name="uby_ws_user"' in block and 'name="uby_mark"' in block
+
+
+def test_an_untouched_save_keeps_all_three_values(host, no_client):
+    apartment = _apartment()
+    page = _paste(host, apartment["id"]).text
+    form_html = page[page.index('id="property-settings-form"') : page.index("</form>", page.index('id="property-settings-form"'))]
+    data = {}
+    for tag in re.findall(r"<input\b[^>]*>", form_html):
+        name = re.search(r'name="([^"]+)"', tag)
+        if not name or re.search(r'type="(checkbox|radio|file|submit|password)"', tag):
+            continue
+        value = re.search(r'value="([^"]*)"', tag)
+        data.setdefault(name.group(1), html.unescape(value.group(1)) if value else "")
+    for name in ("uby_idub", "uby_ws_user", "uby_mark"):
+        assert len(re.findall(rf'<input\b[^>]*name="{name}"', form_html)) == 1, name
+    payload = _payload(**{k: v for k, v in data.items() if k.startswith(("uby_", "letter_"))})
+    payload["letter_ok"] = "1"
+    response = host.post(f"/apartments/{apartment['id']}", data=payload, follow_redirects=False)
+    assert response.status_code == 303, response.text[:300]
+    saved = _apartment()
+    assert saved["uby_idub"] == SAMPLE_IDUB
+    assert saved["uby_ws_user"] == SAMPLE_WS_USER
+    assert saved["uby_mark"] == SAMPLE_ZKRATKA
 
 
 # --- browser: the v2 stylesheet really styles the helper (1085 attempt 2) ---
@@ -1004,8 +1103,8 @@ def test_the_letter_helper_is_styled_in_the_browser(host, no_client):
                 page.wait_for_selector("#police-letter-check")
                 check = page.evaluate(
                     """() => {
-                      const label = document.querySelector('label[for=letter_ok_uby_idub]');
-                      const input = document.querySelector('#letter_ok_uby_idub');
+                      const label = document.querySelector('label[for=letter_ok]');
+                      const input = document.querySelector('#letter_ok');
                       return {
                         nameDisplay: getComputedStyle(document.querySelector('.police-letter-name')).display,
                         labelDisplay: getComputedStyle(label).display,
@@ -1024,8 +1123,8 @@ def test_the_letter_helper_is_styled_in_the_browser(host, no_client):
                 landing = page.evaluate(
                     """() => {
                       const r = (sel) => document.querySelector(sel).getBoundingClientRect();
-                      const box = r('#letter_ok_uby_idub');
-                      const text = r('label[for=letter_ok_uby_idub]');
+                      const box = r('#letter_ok');
+                      const text = r('label[for=letter_ok]');
                       return {
                         top: r('#police-letter-check').top,
                         height: window.innerHeight,
@@ -1045,14 +1144,12 @@ def test_the_letter_helper_is_styled_in_the_browser(host, no_client):
                 assert fits(page)
                 shot(page, "check-block", width)
 
-                page.check("#letter_ok_uby_ws_user")
                 with page.expect_response(lambda r: r.url.endswith("/test-connection")) as refused:
                     page.locator('button[formaction$="/test-connection"]').click()
                 assert refused.value.status == 400
-                page.wait_for_selector("#letter_ok_uby_idub-error")
-                assert page.locator("#letter_ok_uby_mark-error").count() == 1
-                assert page.locator("#letter_ok_uby_ws_user-error").count() == 0
-                assert page.locator("#letter_ok_uby_ws_user").is_checked()
+                page.wait_for_selector("#letter_ok-error")
+                assert page.locator("[data-field-error]").count() == 1
+                assert not page.locator("#letter_ok").is_checked()
                 assert fits(page)
                 shot(page, "refused-save", width)
 
