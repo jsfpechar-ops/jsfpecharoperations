@@ -2540,11 +2540,15 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
      Settings, in-page #anchors) do not ask. Tab close, reload and
      other sites keep the browser's own prompt. Without JavaScript nothing here
      runs and the forms post as before. */
+  /* 1100: one leave guard per document. Turbo keeps the document across visits, so a
+     listener per visit kept old forms and an old dialog; these read the current DOM. */
+  function guardForms() {
+    return Array.prototype.slice.call(document.querySelectorAll("form[data-unsaved-guard]"));
+  }
   function initUnsavedDialog() {
-    var forms = Array.prototype.slice.call(document.querySelectorAll("form[data-unsaved-guard]"));
+    var forms = guardForms();
     var dialog = document.getElementById("unsaved-dialog");
     if (!forms.length) return;
-    var pendingLink = null;
 
     function isDirty(form) { return form.getAttribute("data-dirty") === "1"; }
     // 0955: the property Save bar sits outside its form, linked by data-for="<form id>".
@@ -2556,11 +2560,11 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       formBars(form).forEach(function (bar) { out = out.concat(Array.prototype.slice.call(bar.querySelectorAll("[data-unsaved-reset]"))); });
       return out;
     }
-    function dirtyForms() { return forms.filter(isDirty); }
+    function dirtyForms() { return guardForms().filter(isDirty); }
 
     // The "Discard changes" button beside Save shows only while its form is dirty.
     function syncResetButtons() {
-      forms.forEach(function (form) {
+      guardForms().forEach(function (form) {
         formBars(form).concat(Array.prototype.slice.call(form.querySelectorAll(".savebar"))).forEach(function (bar) {
           bar.classList.toggle("is-dirty", isDirty(form));
         });
@@ -2582,19 +2586,18 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       recomputeDirty(form);
     }
 
-    // True when following this link keeps the draft on screen.
-    function keepsDraft(url) {
-      var here = window.location;
-      return url.pathname === here.pathname && url.search === here.search && !!url.hash;
-    }
-
     // 0952: same as initUnsavedForms, for controls outside the form: update the Save bar and reset buttons.
     if (!document._ubyOutsideSync) {
       document._ubyOutsideSync = true;
       var syncOutside = function (event) {
         var owner = event.target && event.target.form;
-        if (owner && forms.indexOf(owner) > -1 && !owner.contains(event.target)) {
-          syncResetButtons();
+        if (owner && owner.hasAttribute("data-unsaved-guard") && !owner.contains(event.target)) {
+          guardForms().forEach(function (form) {
+            var bars = form.id ? Array.prototype.slice.call(document.querySelectorAll('.savebar[data-for="' + form.id + '"]')) : [];
+            bars.concat(Array.prototype.slice.call(form.querySelectorAll(".savebar"))).forEach(function (bar) {
+              bar.classList.toggle("is-dirty", form.getAttribute("data-dirty") === "1");
+            });
+          });
         }
       };
       document.addEventListener("input", syncOutside);
@@ -2626,30 +2629,39 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
 
     function close(returnFocus) {
       if (dialog.open) dialog.close();
-      var link = pendingLink;
-      pendingLink = null;
+      var link = dialog._ubyPendingLink || null;
+      dialog._ubyPendingLink = null;
       if (returnFocus && link) link.focus();
       return link;
     }
 
-    document.addEventListener("click", function (event) {
-      if (event.defaultPrevented || event.button !== 0) return;
-      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-      var link = event.target.closest && event.target.closest("a[href]");
-      if (!link || dialog.contains(link)) return;
-      // 0955: Cancel resets the form in place; it is not a page change to guard.
-      if (link.hasAttribute("data-unsaved-reset")) return;
-      if ((link.target && link.target !== "_self") || link.hasAttribute("download")) return;
-      if (!dirtyForms().length) return;
-      var url;
-      try { url = new URL(link.href, window.location.href); } catch (_) { return; }
-      if (url.origin !== window.location.origin || keepsDraft(url)) return;
-      event.preventDefault();
-      event.stopPropagation();
-      pendingLink = link;
-      dialog.showModal();
-      stay.focus();
-    }, true);
+    if (!document._ubyLeaveGuard) {
+      document._ubyLeaveGuard = true;
+      document.addEventListener("click", function (event) {
+        // Discard is following its link: let it go.
+        if (document._ubyLeaving) return;
+        if (event.defaultPrevented || event.button !== 0) return;
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        var current = document.getElementById("unsaved-dialog");
+        if (!current || typeof current.showModal !== "function" || current.open) return;
+        var link = event.target.closest && event.target.closest("a[href]");
+        if (!link || current.contains(link)) return;
+        // 0955: Cancel resets the form in place; it is not a page change to guard.
+        if (link.hasAttribute("data-unsaved-reset")) return;
+        if ((link.target && link.target !== "_self") || link.hasAttribute("download")) return;
+        if (!guardForms().some(function (form) { return form.getAttribute("data-dirty") === "1"; })) return;
+        var url;
+        try { url = new URL(link.href, window.location.href); } catch (_) { return; }
+        var here = window.location;
+        if (url.origin !== here.origin || (url.pathname === here.pathname && url.search === here.search && !!url.hash)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        current._ubyPendingLink = link;
+        current.showModal();
+        var stayBtn = current.querySelector("[data-unsaved-stay]");
+        if (stayBtn) stayBtn.focus();
+      }, true);
+    }
 
     stay.addEventListener("click", function () { close(true); });
     // Esc is Stay.
@@ -2661,7 +2673,12 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
       dirtyForms().forEach(discard);
       syncResetButtons();
       var link = close(false);
-      if (link) link.click();
+      if (!link) return;
+      // 1100: a form that loaded dirty (data-dirty-start) stays dirty after reset, so neither the
+      // leave guard nor beforeunload may catch this leave again.
+      guardForms().forEach(function (form) { form._ubySubmitting = true; });
+      document._ubyLeaving = true;
+      try { link.click(); } finally { document._ubyLeaving = false; }
     });
     save.addEventListener("click", function () {
       var form = dirtyForms()[0];
