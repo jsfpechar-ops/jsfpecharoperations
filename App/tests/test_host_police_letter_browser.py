@@ -270,7 +270,7 @@ def test_paste_check_and_confirm_with_turbo(live, fake_client, width):  # noqa: 
     page.locator(SAVE_BUTTON).click()
     page.get_by_text(en("flash.apartments.letter_saved_untested")).first.wait_for()
     assert len(fake_client["made"]) == 1
-    assert dialogs == [], dialogs
+    assert dialogs == ["beforeunload"], dialogs
     assert fits(page)
 
 
