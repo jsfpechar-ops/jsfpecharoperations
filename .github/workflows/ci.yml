@@ -38,7 +38,15 @@ jobs:
             App/requirements-dev.txt
 
       - name: Install system tools used by tests
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends age sqlite3
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if sudo apt-get update && sudo apt-get install -y --no-install-recommends age sqlite3; then
+              exit 0
+            fi
+            echo "apt attempt ${attempt} failed; retrying in 30s"
+            sleep 30
+          done
+          exit 1
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
