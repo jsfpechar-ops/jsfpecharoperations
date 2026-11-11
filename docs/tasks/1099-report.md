@@ -30,3 +30,10 @@ Existing tests edited (open-state only): test_police_letter_flow.py, test_host_p
 ## Other
 - 320 px: the state line wrapped (v2 mockup check), so it is 13 px with the same line height under 360 px. app2.css key 20261111-1099d.
 
+
+## Fix round 2
+- Letter first: in first setup the police "Missing" list is hidden while the letter picture and paste box lead; new geometry assertion (picture above any visible missing block).
+- Ready card: Copy link and Copy PIN are `ui-btn-secondary` (no primary on the card); the custom card rule with raw `#fff` is gone (`ui-section-card` styles it from 768 px; flat on phone like other section cards); 16 px gap below on phone; text without "PIN" when there is no PIN (new key `setup.ready.text_no_pin`, en+cs). app2.css key 20261111-1099f.
+- test_police_letter_flow.py: one real summary click restored (close and reopen "Where do I find these?").
+- test_property_create_browser.py: create redirect asserts the editor in first setup; wizard steps opened directly. The Page.fill timeout had the same cause. 13 passed, 0 skipped.
+- Runs: layout lint 4 passed; v2 row + static versions 186 passed; browser row 220 passed, 1 failed (known local guest-new "Cancel" 43<44); all 0 skipped. Short-editor browser file and static versions rerun after the last margin fix: 18 passed.
