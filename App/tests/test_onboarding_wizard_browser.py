@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import base64
 import os
+import re
 import secrets
 import socket
 import threading
@@ -840,7 +841,8 @@ def test_no_js_calendar_skip(host):
     assert "/setup/police" in skipped.headers["location"]
     overview = client.get(f"/apartments/{flat['id']}?view=overview&lang=en").text
     assert "setup-continue-card" in overview
-    assert "/l/" not in overview.split("overview-guest-url")[0] if "overview-guest-url" in overview else True
+    guest_id = r"overview-guest-(?:url|both)"
+    assert "/l/" not in re.split(guest_id, overview, maxsplit=1)[0] if re.search(guest_id, overview) else True
 
 
 def test_review_fixes_in_the_browser(host, base_url):
