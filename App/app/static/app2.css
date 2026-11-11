@@ -3499,3 +3499,11 @@ body.v2 .ready-card-row .muted{flex:0 0 100%;color:var(--ink3);font-size:13px}
 body.v2 .ready-card-link{overflow-wrap:anywhere;min-width:0}
 /* 1099: the state line keeps one line at 320 px (state and minutes). */
 @media (max-width:359px){body.v2 .prop-sec>summary>.sec-state{font-size:13px;line-height:calc(14px * 1.35);letter-spacing:-0.1px}}
+/* 1103: on the Add property page and in the setup wizard the help "?" ring is painted by the button itself.
+   The old ring was a ::after positioned with left/top/inset/transform, which several rules above fight over
+   (and which iOS Safari placed ~17 px up-left, so loose circles floated around the labels). No pseudo-element
+   left to misplace; the 44 px (24 px on desktop) tap area is still the button. */
+body.v2 :is(.prop-new,.wiz-page) button.help-tip-btn::after{content:none}
+body.v2 :is(.prop-new,.wiz-page) button.help-tip-btn{background:radial-gradient(circle at 50% 50%,transparent 7.5px,var(--line) 8px,var(--line) 9px,transparent 9.5px)}
+@media (max-width:1023px){body.v2 :is(.prop-new,.wiz-page) button.help-tip-btn{background:radial-gradient(circle at 9px 50%,transparent 7.5px,var(--line) 8px,var(--line) 9px,transparent 9.5px)}}
+body.v2 .ruian-status{margin:4px 0 12px}

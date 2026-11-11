@@ -30,6 +30,17 @@
     list.setAttribute('role', 'listbox');
     list.hidden = true;
     input.insertAdjacentElement('afterend', list);
+    // Visible status so a slow or empty lookup is never silent (the service can take a few seconds).
+    var status = document.createElement('p');
+    status.className = 'hint ruian-status';
+    status.id = listId + '-status';
+    status.setAttribute('role', 'status');
+    status.hidden = true;
+    list.insertAdjacentElement('afterend', status);
+    function say(text) {
+      status.textContent = text || '';
+      status.hidden = !text;
+    }
     input.setAttribute('role', 'combobox');
     input.setAttribute('aria-autocomplete', 'list');
     input.setAttribute('aria-expanded', 'false');
@@ -49,6 +60,7 @@
     }
 
     function close() {
+      say('');
       list.hidden = true;
       list.textContent = '';
       items = [];
@@ -112,8 +124,14 @@
       setActive(-1);
     }
 
+    function noMatch() {
+      close();
+      say(input.getAttribute('data-ruian-none'));
+    }
+
     function load(q) {
       var mine = seq;
+      say(input.getAttribute('data-ruian-loading'));
       controller = typeof AbortController === 'function' ? new AbortController() : null;
       var opts = { credentials: 'same-origin', headers: { Accept: 'application/json' } };
       if (controller) opts.signal = controller.signal;
@@ -121,14 +139,15 @@
         .then(function (r) { return r.ok ? r.json() : []; })
         .then(function (data) {
           if (mine !== seq) return;
-          if (!Array.isArray(data)) return close();
+          if (!Array.isArray(data)) return noMatch();
           var valid = data.filter(function (x) {
             return x && typeof x.label === 'string' && x.fields && typeof x.fields === 'object';
           }).slice(0, MAX_ITEMS);
-          if (!valid.length) return close();
+          if (!valid.length) return noMatch();
+          say('');
           render(valid);
         })
-        .catch(function () { if (mine === seq) close(); });
+        .catch(function () { if (mine === seq) noMatch(); });
     }
 
     input.addEventListener('input', function () {
