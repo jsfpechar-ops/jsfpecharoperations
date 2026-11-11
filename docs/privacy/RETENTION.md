@@ -27,7 +27,7 @@ under the GDPR storage-limitation principle, also a ceiling.
 | Invoices | `invoice`, `invoice_item` | issue date | 10 years | `invoices.purge_expired` | Accounting law |
 | UbyHost's own invoices to hosts and the bank payments for them (buyer name, address, IČO/DIČ, e-mail as printed; amount, VS, payer account and message) | `platform_invoice`, `bank_payment` | issue / receipt date | 10 years from the end of the year of issue; when the workspace is deleted the invoice keeps its printed copy and loses the account link | `retention.py` workspace deletion (link only); `retention.py` `platform_invoices` step (`billing_invoices.purge_expired`), first due 2037 | Accounting law (§ 35 zákon 235/2004 Sb.) |
 | Billing details and plan (buyer name, address, IČO/DIČ, e-mail; plan, apartments, dates) | `billing_account` | account | life of the account | `retention.py` workspace deletion | Contract |
-| Mail rows | `email_outbox`, `console_mail_log` | created | 14 days | `mail.purge_old` | Minimisation |
+| Mail rows (the guest receipt and the host confirmation mail hold ids only, no guest field values; the body is rendered at send time) | `email_outbox`, `console_mail_log` | created | 14 days | `mail.purge_old` | Minimisation |
 | Audit rows | `audit` | created | 3 years, except `legal_accepted` (G-D7) | `retention.py` audit step | Accountability |
 | Acceptance evidence | `legal_acceptance` | account disabled + 3 years | life of account + 3 years (G-D7) | `retention.py` acceptance step | Accountability |
 | Resolved alerts | `alert` | resolved | 12 months (G-D7) | `retention.py` alert step | Operations |

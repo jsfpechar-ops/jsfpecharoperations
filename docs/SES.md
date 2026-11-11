@@ -82,6 +82,14 @@ Region: **Europe (Frankfurt) `eu-central-1`**.
    `ses:SendRawEmail` in this region. Create access keys for Lightsail; never
    commit them.
 
+7. **Require TLS** (the host confirmation mail carries guest details). In
+   **SES → Configuration → Configuration sets** create `ubyhost-tls-required`,
+   open it, **Delivery options**, set **TLS policy** to **Required**, save. Then
+   **SES → Configuration → Identities → `ubyhost.com` → Configuration set**,
+   **Edit**, choose `ubyhost-tls-required` as the default, save. It applies to
+   every mail from the domain; a recipient server without TLS then gets
+   nothing, and bounces are not handled yet (see below).
+
 Optional later: SNS → SQS bounce/complaint feedback. The reserved
 `UBYHOST_SES_FEEDBACK_QUEUE_URL` setting was removed because nothing read it;
 bounce/complaint handling is still unimplemented.
