@@ -30,6 +30,13 @@ REDUCTION = ("lead_reduced_guests", "lead_reduced_from", "lead_reduced_at")
 OLD_STAMP = "2026-01-01T00:00:00+00:00"
 
 
+@pytest.fixture(autouse=True)
+def _leave_no_throttle_rows():
+    """The count route shares the guest_party bucket; other files count its rows."""
+    yield
+    db.execute("DELETE FROM rate_limit_event")
+
+
 @pytest.fixture
 def stay():
     token, stay_id, _right = nav._make_apartment_with_stays()

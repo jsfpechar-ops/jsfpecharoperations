@@ -41,6 +41,7 @@ No Python caller of `expected_guest_count` or `reservation_progress` feeds it fr
 
 - Version pins 43 to 44 in `test_migrations.py` and `test_db_postgres.py` (not in section 3).
 - Fix round 1: goose 00015 integer columns are BIGINT, as in 00014 and `db.postgres_schema_status` (the brief said INTEGER). Local Postgres 16: `test_db_postgres.py` 55 passed; after the goose Up sections, 0 column mismatches at version 44 (no goose binary here, so `pg_schema.py check` itself is left to CI).
+- `App/tests/test_ticket_wallet_v3.py`: the pin on the claim template's starting number follows the new expression (`claim.declared_guests or 1`; the route fills it from the one rule).
 - Steps 1 to 8 are one commit, not one commit per step.
 - Two phones: tested in both orders one after the other plus a `lock_key` spy, not with two threads.
 - The first baseline run overlapped my first edits; the base result above was taken again on an untouched checkout.
