@@ -170,6 +170,10 @@ DOOR_CODE_KEY = "door_code_enc"
 GUEST_DETAILS_MARKER = "{{guest_details}}"
 GUEST_DETAILS_KEY = "guest_details_reservation_id"
 
+# 1122: the guest receipt's "What you sent" block, rendered the same way.
+RECEIPT_DETAILS_MARKER = "{{receipt_details}}"
+RECEIPT_DETAILS_KEY = "receipt_details_reservation_id"
+
 
 class MailConfigError(RuntimeError):
     """Mail environment is unsafe to start."""
@@ -364,6 +368,21 @@ def _with_guest_details(value: str, payload: Dict[str, Any], *, as_html: bool) -
     return value.replace(GUEST_DETAILS_MARKER, block)
 
 
+def _with_receipt_details(value: str, payload: Dict[str, Any], *, as_html: bool) -> str:
+    """Render the receipt's "What you sent" block at send time (1122)."""
+    if RECEIPT_DETAILS_MARKER not in value:
+        return value
+    reservation_id = payload.get(RECEIPT_DETAILS_KEY)
+    if not reservation_id:
+        raise db.DecryptionError("outbox payload has a receipt block with no stay")
+    from . import mail_notify
+
+    block = mail_notify.render_receipt_details(
+        int(reservation_id), lang=str(payload.get("lang") or "en"), as_html=as_html
+    )
+    return value.replace(RECEIPT_DETAILS_MARKER, block)
+
+
 def stored_body(payload: Dict[str, Any]) -> str:
     """The text part as it is stored: a claim link with its secret left out."""
     return payload.get("text") or ""
@@ -380,8 +399,12 @@ def delivery_body(payload: Dict[str, Any]) -> str:
     A body with no marker either never had a secret or was queued by the
     release before this one, and is passed through untouched.
     """
-    return _with_guest_details(
-        _with_door_code(_with_secret(stored_body(payload), payload), payload),
+    return _with_receipt_details(
+        _with_guest_details(
+            _with_door_code(_with_secret(stored_body(payload), payload), payload),
+            payload,
+            as_html=False,
+        ),
         payload,
         as_html=False,
     )
@@ -393,8 +416,12 @@ def delivery_html(payload: Dict[str, Any]) -> str:
     The secret is substituted here too, so a future HTML mail that carries a
     claim link cannot leak the marker into a delivered message.
     """
-    return _with_guest_details(
-        _with_door_code(_with_secret(stored_html(payload), payload), payload),
+    return _with_receipt_details(
+        _with_guest_details(
+            _with_door_code(_with_secret(stored_html(payload), payload), payload),
+            payload,
+            as_html=True,
+        ),
         payload,
         as_html=True,
     )

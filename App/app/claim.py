@@ -512,6 +512,7 @@ def _guest_mail_content(
                 filled=filled,
                 expected=expected,
                 fee=_completion_fee(apartment, reservation),
+                sent_details=True,
                 **_completion_facts(apartment, reservation, lang),
             )
         if kind == "reminder_guest":
@@ -813,6 +814,9 @@ def maybe_notify_completion(reservation, apartment, *, force: bool = False) -> N
         payload[mail.QR_SPAYD_KEY] = content["qr_spayd"]
     if code_row is not None:
         payload[mail.DOOR_CODE_KEY] = code_row["pin_enc"]
+    if mail.RECEIPT_DETAILS_MARKER in payload.get("text", ""):
+        # 1122: ids only; the guest names are read when the mail is sent.
+        payload[mail.RECEIPT_DETAILS_KEY] = int(reservation["id"])
     outbox_id = mail.enqueue(
         kind="completion",
         idempotency_key=f"completion:{reservation['id']}:{progress['filled']}",

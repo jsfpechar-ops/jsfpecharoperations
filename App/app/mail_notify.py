@@ -1720,6 +1720,7 @@ def build_completion(
     checkout: str = "",
     host_url: str = "",
     fee: Optional[Dict[str, Any]] = None,
+    sent_details: bool = False,
 ) -> Dict[str, str]:
     """The receipt. It points at the stay, not at a new claim link.
 
@@ -1775,6 +1776,11 @@ def build_completion(
     if rows:
         blocks.append(_block_panel(_guest_text(lang, "mail_completion_panel_title"), rows))
         text_lines.extend(["", *(f"{label}: {value}" for label, value in rows)])
+
+    # 1122: "What you sent", filled in at send time (render_receipt_details).
+    if sent_details:
+        blocks.append(mail.RECEIPT_DETAILS_MARKER)
+        text_lines.extend(["", mail.RECEIPT_DETAILS_MARKER])
 
     spayd = ""
     if fee:
@@ -2021,6 +2027,51 @@ def host_guest_details(
         apartment_id=apartment["id"],
         owner_user_id=apartment["owner_user_id"],
     )
+
+
+# --- 1122: "What you sent" on the guest receipt --------------------------------
+
+_RECEIPT_GUEST_COLUMNS = "id, first_name, surname, doc_number, doc_number_enc, entered_by, created_at"
+
+
+def render_receipt_details(reservation_id: int, *, lang: str, as_html: bool) -> str:
+    """The receipt's "What you sent" block, read from the database at send time.
+
+    The claim does not record which guest row is the person behind the claim
+    address, so no birth date or address is shown for anyone. A guest typed in
+    through the guest form since the claim was confirmed shows the masked
+    document number; anyone else (entered by the host, imported, or typed in
+    before the current claim) is shown by name only.
+    """
+    title = _guest_text(lang, "mail_completion_sent_title")
+    claim_row = db.query_one(
+        "SELECT claimed_at FROM reservation_claim WHERE reservation_id = ?", (reservation_id,)
+    )
+    since = str((claim_row["claimed_at"] if claim_row else "") or "")
+    guests = db.query(
+        f"SELECT {_RECEIPT_GUEST_COLUMNS} FROM guest "
+        "WHERE reservation_id = ? AND archived_at IS NULL ORDER BY is_lead DESC, id",
+        (reservation_id,),
+    )
+    lines: List[str] = []
+    for row in guests:
+        guest = dict(row)
+        parts = (str(guest.get("first_name") or "").strip(), str(guest.get("surname") or "").strip())
+        line = " ".join(p for p in parts if p) or _guest_text(lang, "mail_completion_sent_unnamed")
+        typed_here = (
+            guest.get("entered_by") == "guest"
+            and bool(since)
+            and str(guest.get("created_at") or "") >= since
+        )
+        masked = mask_document_number(guest.get("doc_number")) if typed_here else ""
+        if masked:
+            line = f"{line} – {_guest_text(lang, 'mail_completion_sent_doc_label')}: {masked}"
+        lines.append(line)
+    if not lines:
+        return ""
+    if as_html:
+        return _block_section(title, lines[0]) + "".join(_block_paragraph(l) for l in lines[1:])
+    return "\n".join([title, *lines])
 
 
 def build_fee_update(
