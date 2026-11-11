@@ -371,7 +371,8 @@ def _run_one(row) -> None:
         if len(data) <= 1:
             raise GuideImportError("empty")
         db.execute(
-            "UPDATE guide_import SET status = 'done', raw_json = ?, finished_at = ? WHERE id = ?",
+            "UPDATE guide_import SET status = 'done', raw_json = ?, finished_at = ? "
+            "WHERE id = ? AND status = 'running'",
             (json.dumps(data, ensure_ascii=False), db.utcnow(), import_id),
         )
         log.info("guide import id=%s source=%s done", import_id, row["source"])
@@ -390,7 +391,8 @@ def _run_one(row) -> None:
             log.info("guide import id=%s: page prefill skipped", import_id, exc_info=True)
     except GuideImportError as exc:
         db.execute(
-            "UPDATE guide_import SET status = 'failed', error = ?, finished_at = ? WHERE id = ?",
+            "UPDATE guide_import SET status = 'failed', error = ?, finished_at = ? "
+            "WHERE id = ? AND status = 'running'",
             (exc.key[:40], db.utcnow(), import_id),
         )
         log.warning("guide import id=%s source=%s failed kind=%s", import_id, row["source"], exc.key)

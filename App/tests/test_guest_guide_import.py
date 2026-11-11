@@ -364,3 +364,47 @@ def test_a_row_left_running_is_failed_after_the_cutoff_and_a_fresh_one_is_not(ws
     assert (row["status"], row["error"], row["finished_at"]) == ("running", None, None)
     assert calls == []  # nothing was fetched again: a dead run is never re-run on its own
     assert gi.in_progress(ws["home"])  # the fresh row still counts as busy
+
+
+
+def test_a_late_done_write_does_not_overwrite_a_stale_failure(ws, monkeypatch):
+    """Review of 1117: a slow worker must not revive a row the stale reset failed."""
+    monkeypatch.setattr(gi.requests, "post", _fake_post([], body=[AIRBNB_ITEM]))
+    import_id = gi.request_import(ws["home"], AIRBNB)
+    real_fetch = gi._fetch
+
+    def fetch_after_stale(source, url):
+        item = real_fetch(source, url)
+        assert db.execute(
+            "UPDATE guide_import SET status = 'failed', error = 'stale', finished_at = ? "
+            "WHERE id = ? AND status = 'running'",
+            (db.utcnow(), import_id),
+        ) == 1
+        return item
+
+    monkeypatch.setattr(gi, "_fetch", fetch_after_stale)
+    assert gi.process_queue() == 1
+    row = db.query_one(
+        "SELECT status, error, raw_json FROM guide_import WHERE id = ?", (import_id,)
+    )
+    assert (row["status"], row["error"], row["raw_json"]) == ("failed", "stale", None)
+
+
+def test_a_late_failure_write_does_not_overwrite_a_stale_failure(ws, monkeypatch):
+    """Review of 1117: the failed write is guarded the same way as done."""
+    import_id = gi.request_import(ws["home"], AIRBNB)
+
+    def fetch_stale_then_error(source, url):
+        assert db.execute(
+            "UPDATE guide_import SET status = 'failed', error = 'stale', finished_at = ? "
+            "WHERE id = ? AND status = 'running'",
+            (db.utcnow(), import_id),
+        ) == 1
+        raise gi.GuideImportError("network")
+
+    monkeypatch.setattr(gi, "_fetch", fetch_stale_then_error)
+    assert gi.process_queue() == 1
+    row = db.query_one(
+        "SELECT status, error FROM guide_import WHERE id = ?", (import_id,)
+    )
+    assert (row["status"], row["error"]) == ("failed", "stale")

@@ -50,13 +50,15 @@ jobs:
           }
           apt_install() {
             local attempt
-            for attempt in 1 2 3; do
-              if timeout 90s sudo apt-get -o Acquire::Retries=5 update -qq \
-                && timeout 90s sudo apt-get -o Acquire::Retries=5 install -y --no-install-recommends "$@"; then
+            # 2 attempts and 45s caps keep the worst case under the test job's
+            # 15-minute timeout so age's curl fallback can still run (PR review).
+            for attempt in 1 2; do
+              if timeout 45s sudo apt-get -o Acquire::Retries=5 update -qq \
+                && timeout 45s sudo apt-get -o Acquire::Retries=5 install -y --no-install-recommends "$@"; then
                 return 0
               fi
-              echo "apt attempt ${attempt} of 3 failed for: $*" >&2
-              if [ "${attempt}" -lt 3 ]; then
+              echo "apt attempt ${attempt} of 2 failed for: $*" >&2
+              if [ "${attempt}" -lt 2 ]; then
                 sleep 10
               fi
             done
