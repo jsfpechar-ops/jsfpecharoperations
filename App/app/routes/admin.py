@@ -2989,11 +2989,6 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
             stay_fee_routes.apply_guest_operator_account(apartment, form, payload, request)
         except ValueError as exc:
             msg = str(exc)
-            if msg == stay_fee_routes.GUEST_OPERATOR_ACCOUNT_STALE:
-                return _back(
-                    "/settings/security#settings-security",
-                    err=_flash(request, "auth.error.recent_login"),
-                ), False
             link_error = msg == stay_fee_routes.GUEST_LINK_INVALID
             operator_account_error = msg == stay_fee_routes.GUEST_OPERATOR_ACCOUNT_INVALID
             rate_error = msg == stay_fee_routes.GUEST_RATE_REQUIRED

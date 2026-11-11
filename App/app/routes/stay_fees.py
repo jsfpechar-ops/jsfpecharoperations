@@ -255,7 +255,6 @@ GUEST_LINK_INVALID = "stay_fee_guest_link_invalid"
 GUEST_LINK_HOSTS = ("revolut.me", "revolut.com")
 GUEST_OPERATOR_ACCOUNT_RAW = "_stay_fee_guest_operator_account_raw"
 GUEST_OPERATOR_ACCOUNT_INVALID = "stay_fee_guest_operator_account_invalid"
-GUEST_OPERATOR_ACCOUNT_STALE = "stay_fee_guest_operator_account_stale"
 GUEST_OPERATOR_SAMPLE_VS = "1234567890"
 GUEST_RATE_REQUIRED = "stay_fee_guest_rate_required"
 
@@ -607,9 +606,11 @@ def apply_guest_operator_account(apartment, form, values: dict, request) -> None
 
     Writes the account onto the operator this save will leave on the property
     (``values['legal_entity_id']`` when posted), not the operator still on the
-    apartment row. A change of payout destination needs a fresh login (same
-    rule as POST /entities/{id}/invoice). Re-posting the account already on
-    file does not; the property form always sends the field.
+    apartment row. Re-posting the account already on file does not write again;
+    the property form always sends the field. Saving this form stays on the
+    property page. A stale login must not send the host to Security or drop
+    the IBAN they just typed. The operator invoice screen still requires a
+    fresh login before it changes the same account.
     """
     from .. import db
 
@@ -660,8 +661,7 @@ def apply_guest_operator_account(apartment, form, values: dict, request) -> None
             existing_iban = ""
         if existing_iban == iban:
             return
-    if not auth.session_is_fresh(request):
-        raise ValueError(GUEST_OPERATOR_ACCOUNT_STALE)
+
     old_account = entity.get("bank_account") or ""
     old_iban = entity.get("iban") or ""
     db.update("legal_entity", entity_id, {"bank_account": bank_account, "iban": iban})
