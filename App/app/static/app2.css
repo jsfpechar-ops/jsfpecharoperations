@@ -2655,6 +2655,8 @@ body.v2 .prop-strip .sc-actions{margin:0;padding:0;flex:0 0 auto}
 body.v2 .prop-strip .sc-actions .btn{min-height:44px}
 body.v2 .prop-strip .sc-main .sc-pin{grid-column:2;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;letter-spacing:.06em;color:var(--ink2)}
 body.v2 .prop-strip .sc-actions{display:flex;flex-wrap:wrap;gap:8px}
+body.v2 .prop-strip .sc-link .sc-actions{flex:1 1 100%;min-width:0}
+body.v2 .prop-strip .sc-link .sc-actions .btn{min-width:0;max-width:100%;white-space:normal;text-align:center;box-sizing:border-box}
 body.v2 .airbnb-actions{display:flex;gap:10px;align-items:center;margin-left:auto}
 body.v2 .prop-new-head{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
 body.v2 .prop-new-head .airbnb-actions{margin-left:auto}
