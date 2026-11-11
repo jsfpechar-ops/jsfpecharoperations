@@ -12,6 +12,57 @@ from datetime import datetime, timedelta, timezone
 
 from . import auth, cleaning, db, ttlock
 
+# Declared state machine for cleaning_code.state. Derived from the writers in
+# this module (round 1 of docs/plans/explicit-state-machines.md); nothing reads
+# it at runtime. App/tests/test_sm_cleaning_code_state.py pins every writer to it.
+# A new row is inserted as 'pending' (queue_permanent) or 'active' (save_manual).
+STATES = (
+    "pending", "issuing", "active", "retrying", "failed",
+    "revoke_pending", "revoking", "revoked", "revoke_failed", "detached",
+)
+TRANSITIONS = {
+    "pending": {
+        "issuing",         # process_queue: claim
+        "revoke_pending",  # save_manual, remove: replaced or removed before issuing
+        "revoked",         # process_queue: lock no longer bound, nothing attempted yet
+    },
+    "retrying": {
+        "issuing",         # process_queue: claim
+        "revoke_pending",  # save_manual, remove, process_queue (lock no longer bound)
+    },
+    "issuing": {
+        "active",          # _activate
+        "revoke_pending",  # _activate: binding changed while issuing
+        "retrying",        # _failure (transient), process_queue (stale claim)
+        "failed",          # _failure
+    },
+    "active": {
+        "active",          # _activate: save_manual inserts 'active', then activates it
+        "revoke_pending",  # process_queue (binding lost), _activate (replaced), remove
+        "revoked",         # _activate (replaced manual code), remove (manual code)
+        "detached",        # _activate: same physical PIN taken over by a manual code
+    },
+    "failed": {
+        "retrying",        # queue_permanent
+        "revoke_pending",  # save_manual, remove
+    },
+    "revoke_pending": {
+        "revoking",        # process_queue: claim
+        "revoke_pending",  # remove on a code that is already queued
+    },
+    "revoking": {
+        "revoked",         # process_queue
+        "revoke_pending",  # _failure (transient), process_queue (stale claim)
+        "revoke_failed",   # _failure
+    },
+    "revoke_failed": {
+        "revoke_pending",  # remove
+    },
+    "revoked": {
+        "revoke_pending",  # remove: the property can still point at a revoked ttlock code
+    },
+    "detached": set(),
+}
 
 def _activate(cur, row: dict) -> None:
     current = cur.execute(
