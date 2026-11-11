@@ -359,7 +359,7 @@ From `App/`: the command in §6. Expected: no failure. If only `tests/test_endto
 
 ### Step 13. Context lint
 
-From the repo root: `python3 scripts/context_lint.py 2>&1 | tail -30`. Expected: no error.
+From the repo root: `python3 scripts/context_lint.py 2>&1 | tail -30`. Expected: no `ERROR` line that names a file of §3. (On 2026-11-11 main already had an unrelated `ERROR docs/context/decisions.md` cap line and a `WARN` that 0245 also names `App/app/claim.py`; note those under Deviations, do not fix them.)
 
 ### Step 14. Report
 
