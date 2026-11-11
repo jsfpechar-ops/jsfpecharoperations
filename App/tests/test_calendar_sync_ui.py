@@ -174,3 +174,40 @@ def test_sync_forms_embed_their_return_to_on_dashboard_and_properties():
     finally:
         db.execute("DELETE FROM ical_feed WHERE apartment_id = ?", (apartment_id,))
         db.execute("DELETE FROM apartment WHERE id = ?", (apartment_id,))
+
+
+def test_1104_feed_url_and_copy_button_share_one_row():
+    client = _host()
+    owner_id = db.query_one(
+        "SELECT id FROM user_account WHERE username = ?", (USERNAME,)
+    )["id"]
+    now = db.utcnow()
+    apartment_id = db.insert(
+        "apartment",
+        {
+            "internal_name": "Copy row property",
+            "automation_mode": "manual",
+            "active": 1,
+            "owner_user_id": owner_id,
+            "created_at": now,
+        },
+    )
+    feed_id = db.insert(
+        "ical_feed",
+        {
+            "apartment_id": apartment_id,
+            "url": "https://calendar.example/copy-row.ics",
+            "active": 1,
+            "created_at": now,
+        },
+    )
+    try:
+        page = client.get(f"/apartments/{apartment_id}?lang=en").text
+        row_start = page.index('class="feed-url-row"')
+        row = page[row_start : page.index("</td>", row_start)]
+        assert f'id="feed-url-{feed_id}"' in row
+        assert f'data-copy="feed-url-{feed_id}"' in row
+        assert row.count(">Copy link<") == 1
+    finally:
+        db.execute("DELETE FROM ical_feed WHERE apartment_id = ?", (apartment_id,))
+        db.execute("DELETE FROM apartment WHERE id = ?", (apartment_id,))
