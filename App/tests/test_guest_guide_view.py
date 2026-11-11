@@ -222,6 +222,43 @@ def test_the_stay_page_links_to_the_guide():
     assert "t('guide_title')" in stay
 
 
+def _hub_html(ws, lang="en"):
+    """The stay page with one guest on it (a stay with no guest redirects to the form)."""
+    reservation_id = _stay(ws["home"], 0)
+    now = db.utcnow()
+    db.insert("guest", {
+        "reservation_id": reservation_id, "is_lead": 1, "first_name": "Ada", "surname": "Guest",
+        "created_at": now, "updated_at": now,
+    })
+    response = ws["client"].get(f"/l/{TOKEN}/{reservation_id}?lang={lang}")
+    assert response.status_code == 200
+    return response.text
+
+
+def test_the_stay_page_hides_the_guide_link_until_live(ws):
+    html = _hub_html(ws)
+    assert "data-guide-link" not in html
+    assert "/guide?lang=" not in html
+
+
+def test_the_stay_page_shows_the_guide_link_once_live(ws):
+    _go_live(ws["home"])
+    html = _hub_html(ws)
+    assert html.count("data-guide-link") == 1
+    assert "/guide?lang=en" in html
+
+
+def test_the_guide_link_comes_after_the_registration_block(ws):
+    _go_live(ws["home"])
+    html = _hub_html(ws)
+    # g-summary-row is the guest line of the registration block; the link follows it.
+    assert "g-summary-row" in html
+    assert html.index("g-summary-row") < html.index("data-guide-link")
+    stay = (TEMPLATES / "stay.html").read_text(encoding="utf-8")
+    assert "{% if guide_live %}" in stay
+    assert stay.index("{% if guide_live %}") > stay.index("{{ t('add_person') }}")
+
+
 # --- photos --------------------------------------------------------------------
 
 def _photos(ws):
