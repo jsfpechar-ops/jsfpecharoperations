@@ -94,7 +94,7 @@ def test_the_check_answers_page_starts_dirty_and_warns_on_leaving(live, no_clien
     form = page.locator("#property-settings-form")
     assert form.get_attribute("data-dirty-start") == "1"
     # A real tick first: the browser only warns on a page the user has touched.
-    page.check("#letter_ok_uby_idub")
+    page.check("#letter_ok")
     page.wait_for_function("() => document.querySelector('#property-settings-form').dataset.dirty === '1'")
     with page.expect_event("dialog"):
         page.close(run_before_unload=True)
