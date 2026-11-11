@@ -197,7 +197,12 @@ def test_reservations_sorted_earliest_first():
             (int(year), int(month), int(day))
             for day, month, year in (d.split(".") for d in dates)
         ]
-        assert parsed == sorted(parsed)
+        # 1100: upcoming stays first (earliest arrival first), departed stays last (latest first).
+        today = date.today()
+        today_key = (today.year, today.month, today.day)
+        upcoming = sorted(d for d in parsed if d >= today_key)
+        past = sorted((d for d in parsed if d < today_key), reverse=True)
+        assert parsed == upcoming + past
     finally:
         _cleanup()
 

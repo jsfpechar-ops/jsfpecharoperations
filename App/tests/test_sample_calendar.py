@@ -21,7 +21,7 @@ def test_sample_airbnb_ics_contains_expected_stays():
         f"DTSTART;VALUE=DATE:{(today - timedelta(days=1)):%Y%m%d}" in body
     )
     assert f"DTSTART;VALUE=DATE:{(today + timedelta(days=1)):%Y%m%d}" in body
-    assert f"DTSTART;VALUE=DATE:{(today + timedelta(days=2)):%Y%m%d}" in body
+    assert f"DTSTART;VALUE=DATE:{(today + timedelta(days=3)):%Y%m%d}" in body
     assert f"DTSTART;VALUE=DATE:{(today - timedelta(days=8)):%Y%m%d}" in body
     assert "SUMMARY:Reserved" in body
     assert "SUMMARY:Airbnb (Not available)" in body
@@ -34,6 +34,16 @@ def test_sample_airbnb_ics_parses_into_reservations():
     reservations = [event for event in events if not event["is_block"]]
     assert len(reservations) == 9
     assert all(event["date_from"] and event["date_to"] for event in reservations)
+
+
+def test_sample_airbnb_ics_never_double_books():
+    """One property cannot hold two overlapping stays (owner, 2026-11-10)."""
+    events = icalsync.parse_events(sample_airbnb_ics())
+    reserved = sorted(
+        (event["date_from"], event["date_to"]) for event in events if not event["is_block"]
+    )
+    for (_, end), (start, _) in zip(reserved, reserved[1:]):
+        assert start >= end, f"stays overlap: {end} > {start}"
 
 
 def test_sample_calendar_endpoint_serves_ics():

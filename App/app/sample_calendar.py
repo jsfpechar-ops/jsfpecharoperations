@@ -17,17 +17,20 @@ def sample_airbnb_ics() -> str:
         "VERSION:2.0",
         "X-WR-CALNAME:UbyHost sample calendar",
     ]
+    # One property cannot be booked twice: Reserved stays never overlap
+    # (each DTSTART >= the previous DTEND, checkout day is exclusive). The
+    # "Not available" block may sit in a gap; it is skipped at sync anyway.
     stays = [
-        ("arriving-today", today, 4, "Reserved", "0431"),
-        ("arrived-yesterday", today - timedelta(days=1), 3, "Reserved", "7788"),
-        ("tomorrow", today + timedelta(days=1), 3, "Reserved", "2201"),
-        ("two-days", today + timedelta(days=2), 2, "Reserved", "2202"),
-        ("next-week", today + timedelta(days=7), 5, "Reserved", "1290"),
-        ("czech-visit", today + timedelta(days=9), 2, "Reserved", "3301"),
         ("past-open", today - timedelta(days=8), 3, "Reserved", "4401"),
-        ("lock-me", today + timedelta(days=6), 2, "Reserved", "5501"),
+        ("arrived-yesterday", today - timedelta(days=1), 1, "Reserved", "7788"),
+        ("arriving-today", today, 1, "Reserved", "0431"),
+        ("tomorrow", today + timedelta(days=1), 2, "Reserved", "2201"),
+        ("later", today + timedelta(days=3), 2, "Reserved", "2202"),
+        ("assigned", today + timedelta(days=5), 2, "Reserved", "2203"),
+        ("lock-me", today + timedelta(days=7), 2, "Reserved", "5501"),
+        ("czech-visit", today + timedelta(days=12), 2, "Reserved", "3301"),
         ("far-ahead", today + timedelta(days=45), 4, "Reserved", "6601"),
-        ("blocked", today + timedelta(days=3), 2, "Airbnb (Not available)", None),
+        ("blocked", today + timedelta(days=20), 2, "Airbnb (Not available)", None),
     ]
     for name, start, nights, summary, phone in stays:
         lines += [

@@ -3458,6 +3458,7 @@ body.v2 .police-letter-legend p{margin:0;font-size:var(--text-sm);overflow-wrap:
 body.v2 .police-letter-paste .field{margin:0}
 body.v2 .police-letter-paste textarea{display:block;width:100%;max-width:100%;box-sizing:border-box;font-family:var(--font-mono);font-size:var(--text-md)}
 body.v2 .police-letter-paste .actions{margin:var(--space-3) 0 var(--space-4)}
+body.v2 .police-letter-status:empty{position:absolute;width:1px;height:1px;margin:0;overflow:hidden;clip-path:inset(50%)}
 body.v2 .police-letter-check{margin:0 0 var(--space-4);min-width:0}
 body.v2 .police-letter-check-title{margin:0 0 var(--space-2);font-size:var(--text-md);font-weight:700}
 body.v2 .police-letter-row{padding:var(--space-3) 0;border-top:1px solid var(--line);min-width:0}

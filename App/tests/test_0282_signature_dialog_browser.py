@@ -89,7 +89,13 @@ def test_signature_stays_locked_until_edit_and_saves_draw_or_type(base):
             assert hidden.input_value().startswith("data:image/png;base64,"), tag
 
             with page.expect_navigation():
-                block.evaluate("b => b.closest('form').requestSubmit()")
+                block.evaluate(
+                    """b => {
+                      const f = b.closest('form');
+                      f.noValidate = true;
+                      f.requestSubmit();
+                    }"""
+                )
             page.goto(base + path)
             src = page.locator("[data-signature-preview]").get_attribute("src")
             assert src and src.startswith("data:image/"), tag

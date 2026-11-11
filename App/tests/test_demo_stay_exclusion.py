@@ -396,3 +396,26 @@ def test_the_guide_shows_the_copy_for_the_property_mode(world):
             assert expected.replace("“", "&#8220;") in page or expected in page, (mode, lang)
             assert host_i18n.translate(lang, "setup_guide.reporting.wait_deadline") in page
             assert 'href="/guide#manual-filing"' in page
+
+
+def test_demo_seed_extras_are_never_filed(world, monkeypatch):
+    """1092: demo-seeded fee, payment and cleaning rows never enter a filing."""
+    monkeypatch.setattr(config, "UBYPORT_ENV", "mock")
+    other = auth.create_account(
+        "demo-ex-fees@example.test", "Demo Ex Fees", role="host", username="demo-ex-fees"
+    )
+    studio_id = demo.seed(other)
+    assert studio_id
+    try:
+        assert db.query("SELECT * FROM payment_request WHERE apartment_id = ?", (studio_id,))
+        assert db.query("SELECT * FROM stay_fee_rate WHERE apartment_id = ?", (studio_id,))
+        assert db.query("SELECT * FROM cleaning_event WHERE apartment_id = ?", (studio_id,))
+        _demo_stay_id, demo_guest = _demo_stay(studio_id)
+        reporting.submit_for_apartment(studio_id, mode="demo", ignore_automation=True)
+        payloads = _sent_payloads(world)
+        assert not any("Demoperson" in batch for batch in payloads)
+        assert _state(demo_guest)["submission_id"] is None
+        for row in db.query("SELECT guest_ids FROM submission WHERE apartment_id = ?", (studio_id,)):
+            assert demo_guest not in json.loads(row["guest_ids"])
+    finally:
+        assert demo.clear(other)
