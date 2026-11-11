@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import json
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 
 import pytest
 from fastapi.testclient import TestClient
@@ -335,3 +335,32 @@ def test_the_import_section_comes_first_while_it_has_work(ws):
 def test_next_leon_redirects_to_the_setup_import_step(ws):
     r = _post2(ws, booking=BOOKING, next_="leon")
     assert r.headers["location"].startswith(f"/apartments/{ws['home']}/leon/setup/import")
+
+
+# --- 1117: a row left running by a dead worker --------------------------------
+
+
+def test_a_row_left_running_is_failed_after_the_cutoff_and_a_fresh_one_is_not(ws, monkeypatch):
+    calls = []
+    monkeypatch.setattr(gi.requests, "post", _fake_post(calls, body=[AIRBNB_ITEM]))
+    now = datetime.now(timezone.utc)
+
+    def stamp(seconds_ago):
+        return (now - timedelta(seconds=seconds_ago)).replace(microsecond=0).isoformat()
+
+    old = db.insert("guide_import", {
+        "apartment_id": ws["home"], "source": "booking", "url": "https://www.booking.com/hotel/cz/vivus-3.html",
+        "status": "running", "created_at": stamp(7200), "started_at": stamp(3600),
+    })
+    fresh = db.insert("guide_import", {
+        "apartment_id": ws["home"], "source": "airbnb", "url": "https://www.airbnb.com/rooms/53997462",
+        "status": "running", "created_at": stamp(60), "started_at": stamp(60),
+    })
+    assert gi.process_queue() == 0
+    row = db.query_one("SELECT status, error, finished_at, raw_json FROM guide_import WHERE id = ?", (old,))
+    assert (row["status"], row["error"], row["raw_json"]) == ("failed", "stale", None)
+    assert row["finished_at"]
+    row = db.query_one("SELECT status, error, finished_at FROM guide_import WHERE id = ?", (fresh,))
+    assert (row["status"], row["error"], row["finished_at"]) == ("running", None, None)
+    assert calls == []  # nothing was fetched again: a dead run is never re-run on its own
+    assert gi.in_progress(ws["home"])  # the fresh row still counts as busy

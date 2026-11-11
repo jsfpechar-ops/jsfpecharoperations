@@ -27,8 +27,9 @@ brief 1110, the pins do not depend on them):
   with WHERE id = ? only; :393, process_queue() writes failed the same way.
 - Nothing sets email_outbox.state to bounced or complained, yet admin_ops.py
   reads both and purge_old() deletes them.
-- Nothing moves a guide_import row out of running except _run_one() itself, so
-  a worker that dies mid-run leaves the row running for good.
+- guide_import: a worker that dies mid-run leaves the row running; since brief
+  1117 process_queue() fails such a row (guarded, started_at older than
+  STALE_RUNNING). _run_one() still writes done / failed with WHERE id = ? only.
 """
 import re
 from collections import Counter
@@ -236,7 +237,7 @@ IMPORT_SITES = {
     (IMPORT, "request_imports"): 1,
     (IMPORT, "mark_used"): 1,
     (IMPORT, "_run_one"): 3,
-    (IMPORT, "process_queue"): 1,
+    (IMPORT, "process_queue"): 2,
     (IMPORT, "purge"): 1,
     (MERGE, "_note_failure"): 1,
 }
@@ -247,6 +248,7 @@ IMPORT_MOVES = [
     (IMPORT, "_run_one", "SET status = 'done', raw_json = ?", ANY, "done"),
     (IMPORT, "_run_one", "SET status = 'failed', error = ?, finished_at = ?", ANY, "failed"),
     (IMPORT, "process_queue", "SET status = 'failed', error = 'budget'", ANY, "failed"),
+    (IMPORT, "process_queue", "SET status = 'failed', error = 'stale'", ("running",), "failed"),
     (IMPORT, "purge", "WHEN status = 'done' THEN 'expired'", ("done",), "expired"),
     (MERGE, "_note_failure", "SET status = 'failed', error = ?, raw_json = NULL", ("done",), "failed"),
 ]
