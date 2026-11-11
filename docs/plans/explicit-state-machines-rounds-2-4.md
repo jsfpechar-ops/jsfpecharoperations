@@ -22,7 +22,7 @@ Each brief starts with a test that fails on today's code and shows the fault, th
 | 1118 | `docs/OPERATIONS.md` submit_state section: make it describe the code; list the moves the owner must rule on | docs | filing doc | Sonnet |
 | 1121 | A guest blocked as a duplicate stays `blocked` when an edit changes no field reported to the police (ruling 1 below) | Python | HIGH RISK filing | Opus |
 
-These touch different files and run in any order. 1113 first helps every other PR's CI.
+Run order: 1113 first (it helps every other PR's CI). 1114 before 1121 (both edit `App/app/reporting.py`, at different places). 1115 and the older open brief 0245 both name `claim.py`; whoever runs second stops at a missing anchor and gets a correction brief. The rest run in any order.
 
 ## Round 3: one source that survives the port, and observation in production
 
