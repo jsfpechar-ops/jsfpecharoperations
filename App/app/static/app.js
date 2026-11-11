@@ -595,6 +595,13 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     var scheduled = select.value === "scheduled";
     hours.disabled = !scheduled;
     field.classList.toggle("field-disabled", !scheduled);
+    // 1100: the hours only matter for the delay option.
+    field.hidden = !scheduled;
+    var hint = document.getElementById(select.getAttribute("aria-describedby") || "");
+    var option = select.options[select.selectedIndex];
+    if (hint && hint.hasAttribute("data-automation-hint") && option && option.getAttribute("data-hint")) {
+      hint.textContent = option.getAttribute("data-hint");
+    }
   }
 
   function initAutomationFields() {
@@ -2282,20 +2289,24 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     }
   }
 
-  /* 1085: reading the police letter reloads the page, so ask before unsaved edits or a typed password are lost. */
+  /* 1085: reading the police letter with the button reloads the page, so ask before unsaved edits or a typed password are lost.
+     1100: with JavaScript the paste fills the boxes at once (same route, JSON); the button stays as the no-JS fallback. */
+  var LETTER_BOXES = ["uby_idub", "uby_ws_user", "uby_ws_password", "uby_mark", "uby_name"];
+  var LETTER_LISTED = ["uby_idub", "uby_ws_user", "uby_mark"];
   function initPoliceLetterForm() {
     var letterForm = document.getElementById("police-letter-form");
     if (!letterForm || !claimNode(letterForm, "initPoliceLetterForm")) return;
+    var status = document.querySelector("[data-letter-status]");
     // The reply to "Read the letter" lands at the page top: bring the result (or the error) into view.
     // A refused save has its own summary and focus, so it is left alone.
-    var landed = document.getElementById("police-letter-check") || document.getElementById("letter_text-error");
+    var landed = document.getElementById("letter_text-error") ||
+      (status && status.textContent.trim() ? status : null);
     if (landed && !document.querySelector("[data-save-summary]")) {
-      window.setTimeout(function () {
-        landed.scrollIntoView({ block: landed.id === "police-letter-check" ? "start" : "center" });
-      }, 0);
+      window.setTimeout(function () { landed.scrollIntoView({ block: "center" }); }, 0);
     }
     letterForm.addEventListener("submit", function (event) {
-      var settings = document.getElementById("property-settings-form");
+      var idub = document.getElementById("uby_idub");
+      var settings = idub ? idub.form : null;
       var password = document.getElementById("uby_ws_password");
       var unsaved = (settings && settings.getAttribute("data-dirty") === "1") || (password && password.value);
       if (unsaved && !window.confirm(letterForm.dataset.discardWarning)) {
@@ -2303,6 +2314,109 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
         return;
       }
       if (settings) settings._ubySubmitting = true;
+    });
+    initLetterPaste(letterForm, status);
+  }
+
+  function initLetterPaste(letterForm, status) {
+    var paste = document.querySelector("[data-letter-paste]");
+    var readBtn = document.querySelector("[data-letter-read]");
+    var idub = document.getElementById("uby_idub");
+    var target = idub ? idub.form : null;
+    var listed = document.querySelector("[data-letter-fields]");
+    if (!paste || !target || !status || !window.fetch || !window.FormData) return;
+    if (readBtn) readBtn.hidden = true;
+    var controller = null;
+    var timer = null;
+    var lastPassword = "";
+    var say = function (text) { status.textContent = text || ""; };
+    var failed = function () {
+      say(status.getAttribute("data-read-failed"));
+      if (readBtn) readBtn.hidden = false;
+    };
+    var dropNotes = function () {
+      target.querySelectorAll("[data-letter-note]").forEach(function (note) { note.remove(); });
+    };
+    var mayFill = function (box, name) {
+      if (box.value === box.defaultValue) return true;
+      if (name === "uby_ws_password") return lastPassword !== "" && box.value === lastPassword;
+      return box.hasAttribute("data-letter-filled-value") && box.value === box.getAttribute("data-letter-filled-value");
+    };
+    var apply = function (data) {
+      if (!data || typeof data !== "object") { failed(); return; }
+      if (data.status !== "ok") { say(data.message); return; }
+      dropNotes();
+      var fields = data.fields || {};
+      var filledListed = [];
+      LETTER_BOXES.forEach(function (name) {
+        var item = fields[name];
+        var box = document.getElementById(name);
+        if (!box || !item || !item.value) return;
+        if (LETTER_LISTED.indexOf(name) !== -1) filledListed.push(name);
+        if (!mayFill(box, name)) return;
+        box.value = item.value;
+        if (name === "uby_ws_password") {
+          lastPassword = item.value;
+        } else {
+          box.setAttribute("data-letter-filled-value", item.value);
+          var stored = box.defaultValue;
+          if (stored && stored !== item.value && box.parentNode) {
+            var note = document.createElement("p");
+            note.className = "police-letter-note";
+            note.setAttribute("data-letter-note", "");
+            note.textContent = (status.getAttribute("data-saved-now") || "").replace("%s", stored);
+            box.parentNode.appendChild(note);
+          }
+        }
+        box.dispatchEvent(new Event("input", { bubbles: true }));
+        box.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      if (listed) {
+        listed.value = filledListed.join(",");
+        listed.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+      say(data.message);
+    };
+    var send = function () {
+      if (controller) controller.abort();
+      controller = window.AbortController ? new AbortController() : null;
+      var options = {
+        method: "POST",
+        body: new FormData(letterForm),
+        headers: { Accept: "application/json" },
+        credentials: "same-origin"
+      };
+      if (controller) options.signal = controller.signal;
+      window.fetch(letterForm.action, options).then(function (response) {
+        var type = response.headers.get("content-type") || "";
+        if (response.status !== 200 || type.indexOf("application/json") === -1) { failed(); return null; }
+        return response.json().then(apply, failed);
+      }).catch(function (error) {
+        if (error && error.name === "AbortError") return;
+        failed();
+      });
+    };
+    var pasted = false;
+    paste.addEventListener("paste", function () {
+      pasted = true;
+      window.clearTimeout(timer);
+      timer = window.setTimeout(function () { pasted = false; send(); }, 0);
+    });
+    paste.addEventListener("input", function () {
+      if (pasted) return;
+      window.clearTimeout(timer);
+      if (paste.value.length < 20) return;
+      timer = window.setTimeout(send, 600);
+    });
+    // Discard and the Save-bar Cancel call form.reset(); a hidden input is not restored by reset().
+    target.addEventListener("reset", function () {
+      if (listed) listed.value = listed.getAttribute("data-letter-fields-initial") || "";
+      dropNotes();
+      lastPassword = "";
+      LETTER_BOXES.forEach(function (name) {
+        var box = document.getElementById(name);
+        if (box) box.removeAttribute("data-letter-filled-value");
+      });
     });
   }
 
