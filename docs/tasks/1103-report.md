@@ -44,7 +44,7 @@ Branch: claude/project-thread-xhr13f (commits f1cc9b98 step 1, cb4f3b7b step 2, 
 
 ## Deviations
 
-- Browser test check (a) passed for the overflow at 1280 only. The first attempt excluded `.sr-only` elements from the overflow check; it did not change the result, so the failing elements are visible buttons, not hidden copy fields.
+- Overflow check (b) in the browser test uses `.sc-link *:not(.sr-only)`. A first version without the `:not(.sr-only)` filter failed at 390 px; with the filter the 390 px failure is unchanged, so the offending elements are visible (the "Copy link and PIN" button), not the hidden copy fields.
 - Empty-PIN second half of the 0534 test was not added (PIN-set state only).
 
 ## Questions
