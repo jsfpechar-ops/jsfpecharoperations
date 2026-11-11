@@ -46,8 +46,7 @@
               {% if feed.last_error %}<div class="small err-text">{{ feed.last_error }}</div>{% endif %}
             </td>
             <td class="small feed-url" data-label="{{ t('apartment.form.feed.url') }}">
-              <span class="mono feed-url-value" id="feed-url-{{ feed.id }}" title="{{ feed.url }}">{{ feed.url }}</span>
-              {{ copy_button('feed-url-' ~ feed.id, t('common.copy_link')) }}
+              <div class="feed-url-row"><span class="mono feed-url-value" id="feed-url-{{ feed.id }}" title="{{ feed.url }}">{{ feed.url }}</span>{{ copy_button('feed-url-' ~ feed.id, t('common.copy_link')) }}</div>
             </td>
             <td class="row-actions" data-label="">
               <form method="post" action="/feeds/{{ feed.id }}/delete" class="inline"
