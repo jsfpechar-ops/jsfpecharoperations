@@ -384,20 +384,20 @@ def _form_get(form, key: str):
 
 
 def confirmed_fields(form) -> tuple[list[str], list[str]]:
-    """(listed, unconfirmed) from the hidden letter_fields and the ticks.
+    """(listed, unconfirmed) from the hidden letter_fields and the one tick.
 
-    Never raises: a missing form or a value that is not a str counts as empty
-    or unconfirmed.
+    1097: one tick, letter_ok, confirms every listed value; without it every
+    listed value is unconfirmed. Old per-field letter_ok_<name> keys are
+    ignored, so a stale page cannot confirm. Never raises: a missing form or
+    a value that is not a str counts as empty or unconfirmed.
     """
     raw = _form_get(form, "letter_fields")
     names = {part.strip() for part in raw.split(",")} if isinstance(raw, str) else set()
     listed = [name for name in FIELDS if name in names]
-    unconfirmed = []
-    for name in listed:
-        tick = _form_get(form, f"letter_ok_{name}")
-        if not (isinstance(tick, str) and tick == "1"):
-            unconfirmed.append(name)
-    return listed, unconfirmed
+    tick = _form_get(form, "letter_ok")
+    if listed and not (isinstance(tick, str) and tick == "1"):
+        return listed, list(listed)
+    return listed, []
 
 
 def line_from_form(form, name: str) -> int | None:
