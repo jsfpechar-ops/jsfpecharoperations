@@ -135,6 +135,44 @@ def test_recovery_alone_never_submits(monkeypatch):
     assert calls == []
 
 
+def test_recovery_keeps_an_outcome_recorded_after_its_scan(monkeypatch):
+    """Brief 1114: the send records ok between recovery's scan and its write."""
+    db.init_db()
+    now = db.utcnow()
+    apartment = db.insert("apartment", {"internal_name": "Late answer", "created_at": now})
+    reservation = db.insert(
+        "reservation",
+        {"apartment_id": apartment, "uid": "late-1", "date_from": "2026-01-01",
+         "date_to": "2026-01-03", "status": "active", "created_at": now, "updated_at": now},
+    )
+    guest_id = _guest(reservation, "Late", now)
+    # No claim on the guest, so the scan counts the batch as stale.
+    batch = _batch(apartment, [guest_id], now)
+    real_lock_key = db.lock_key
+    locks = []
+
+    def lock_then_answer(cur, name, key):
+        real_lock_key(cur, name, key)
+        if name != "submit_apartment":
+            return
+        locks.append(key)
+        if len(locks) == 2:
+            # The scan has committed and the write transaction has begun: the
+            # send records its answer now, before recovery writes.
+            cur.execute(
+                "UPDATE submission SET state = 'ok', finished_at = ? WHERE id = ?",
+                (db.utcnow(), batch),
+            )
+
+    monkeypatch.setattr(db, "lock_key", lock_then_answer)
+
+    assert reporting.recover_stale_submissions(apartment) == 0
+    assert len(locks) == 2
+    assert db.query_one("SELECT state FROM submission WHERE id = ?", (batch,))["state"] == "ok"
+    assert db.query_one("SELECT submission_id FROM guest WHERE id = ?", (guest_id,))["submission_id"] is None
+    assert alerts.open_alert(f"submission_outcome_unknown:{apartment}") is None
+
+
 def _sweep_apartment(monkeypatch):
     now = db.utcnow()
     today = date.today()

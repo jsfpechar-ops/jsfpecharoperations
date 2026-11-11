@@ -46,6 +46,11 @@ func parseGuestIDs(raw *string) ([]int64, error) {
 	return ids, nil
 }
 
+// afterRecoverScan runs after RecoverStaleSubmissions has committed its scan and
+// before its first write. It does nothing; tests replace it to record an outcome
+// in between (brief 1114).
+var afterRecoverScan = func() {}
+
 // RecoverStaleSubmissions marks the running batches of one apartment whose
 // guests hold no live claim (claimed_at within the last 300 s) as
 // outcome_unknown, points their guests at them, and raises one critical alert
@@ -112,18 +117,27 @@ func RecoverStaleSubmissions(ctx context.Context, pool *pgxpool.Pool, aptID int6
 	if err != nil {
 		return 0, err
 	}
+	afterRecoverScan()
 
 	var stale []int64
 	for _, c := range candidates {
+		marked := false
 		err := withTx(ctx, pool, func(tx pgx.Tx) error {
 			if err := lockSubmitApartment(ctx, tx, aptID); err != nil {
 				return err
 			}
-			if _, err := tx.Exec(ctx,
-				`UPDATE submission SET state = 'outcome_unknown', finished_at = $1, error_text = $2 WHERE id = $3`,
-				UTCNow(), staleSubmissionReason, c.id); err != nil {
+			tag, err := tx.Exec(ctx,
+				`UPDATE submission SET state = 'outcome_unknown', finished_at = $1, error_text = $2 WHERE id = $3 AND state = 'running'`,
+				UTCNow(), staleSubmissionReason, c.id)
+			if err != nil {
 				return err
 			}
+			if tag.RowsAffected() == 0 {
+				// The send recorded its own outcome after the scan (brief 1114):
+				// that outcome stands, and its guests are left alone.
+				return nil
+			}
+			marked = true
 			for _, guestID := range c.guestIDs {
 				if _, err := tx.Exec(ctx,
 					`UPDATE guest SET submission_id = $1 WHERE id = $2 AND submit_state != 'sent'
@@ -137,7 +151,9 @@ func RecoverStaleSubmissions(ctx context.Context, pool *pgxpool.Pool, aptID int6
 		if err != nil {
 			return 0, err
 		}
-		stale = append(stale, c.id)
+		if marked {
+			stale = append(stale, c.id)
+		}
 	}
 
 	if len(stale) == 0 {

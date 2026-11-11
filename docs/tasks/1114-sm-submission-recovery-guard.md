@@ -1,6 +1,6 @@
 # 1114: Stale-submission recovery must not overwrite an outcome recorded after its scan
 
-Status: todo
+Status: review
 Depends on: PR #920 merged to main (tables and pin tests present) | Base commit: main after PR #920 | Branch: task/1114-sm-submission-recovery-guard
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
