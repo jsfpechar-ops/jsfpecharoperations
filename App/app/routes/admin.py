@@ -1848,7 +1848,7 @@ async def apartment_create(request: Request):
     # 0096: a new property starts its guided setup at the calendar.
     property_setup.start(apartment_id)
     return _back(
-        f"/apartments/{apartment_id}?view=settings",
+        f"/apartments/{apartment_id}/setup/calendar",
         msg=_flash(request, "flash.apartments.created"),
     )
 
@@ -3478,6 +3478,23 @@ async def test_connection(apartment_id: int, request: Request):
     if outcome != "ok":
         return _back(return_to, err=_flash(request, "flash.error.connection_failed"))
     property_setup.mark_tested(apartment_id)
+    from .onboarding_wizard import wizard_setup_prefix
+
+    if return_to.startswith(wizard_setup_prefix(apartment_id)) and _form_str(form, "setup_step") == "police":
+        property_setup.mark_tested_in_wizard(apartment_id)
+        stored = property_setup.load(apartment_id)
+        nxt = "done" if stored and stored["finished"] else (
+            property_setup.next_applicable_step("police", apartment, lock_available=False) or "done"
+        )
+        advanced = _setup_after_save(
+            request,
+            apartment_id,
+            form,
+            property_setup.wizard_url(apartment_id, nxt),
+            saved_message=_flash(request, "flash.apartments.connection_ok"),
+        )
+        if advanced is not None:
+            return advanced
     return _back(return_to, msg=_flash(request, "flash.apartments.connection_ok"))
 
 
@@ -3580,6 +3597,7 @@ async def police_letter_read(apartment_id: int, request: Request):
     except Exception as exc:  # noqa: BLE001 - a traceback here would print the pasted text
         failed_name = type(exc).__name__
         del exc
+    wizard = _form_str(form, "setup_step") == "police"
     del letter_text, form
     if failed_name:
         status, boxes, filled, missing = "failed", {}, [], []
@@ -3606,7 +3624,12 @@ async def police_letter_read(apartment_id: int, request: Request):
             }
         )
     else:
-        response = _render_property_detail(apartment_id, request, extra=extra, status_code=422)
+        if wizard:
+            from .onboarding_wizard import render_wizard
+
+            response = render_wizard(request, apartment_id, "police", extra=extra, status_code=422)
+        else:
+            response = _render_property_detail(apartment_id, request, extra=extra, status_code=422)
     response.headers["Cache-Control"] = "no-store"
     return response
 
