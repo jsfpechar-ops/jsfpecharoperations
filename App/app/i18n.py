@@ -167,7 +167,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "claim_title": "How many people, and your e-mail",
         "claim_help": "Only your group can open the forms.",
         "claim_email": "What is your e-mail address?",
-        "claim_email_help": "Also one reminder the day before arrival if forms are missing, and a receipt (your host gets a copy). Shown masked elsewhere.",
+        "claim_email_help": "Also one reminder the day before arrival if forms are missing, and a receipt. Shown masked elsewhere.",
         "claim_cookie_help": (
             "Only necessary cookies: PIN access (7 days), your language and this stay "
             "(60 days)."
@@ -536,7 +536,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "privacy_email_body": (
             "Your e-mail secures the reservation and is used to send the private form link, one "
             "day-before reminder if the declared forms remain incomplete, and a completion receipt. "
-            "The property manager receives a copy of the completion receipt. The full address "
+            "Your host receives your registration details by e-mail. The full address "
             "is available to the configured data controller and to the delivery provider "
             "where enabled; public guest screens display only a masked address. It is not used for marketing."
         ),
@@ -672,6 +672,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_completion_heading_fee": "One thing left: the stay fee",
         "mail_completion_intro_fee": "Everyone for %(property)s is registered. Only the local stay fee below is left.",
         "mail_completion_fee_once": "Choose one way to pay:",
+        "mail_completion_sent_title": "What you sent",
+        "mail_completion_sent_doc_label": "Document number",
+        "mail_completion_sent_unnamed": "Guest",
         "mail_completion_fee_already": "Already paid? Then there is nothing more to do.",
         "mail_completion_subject": (
             "You're registered for %(property)s: nothing else to do"
@@ -940,7 +943,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "claim_title": "Počet osob a váš e-mail",
         "claim_help": "Formuláře otevře jen vaše skupina.",
         "claim_email": "Jaký je váš e-mail?",
-        "claim_email_help": "Dále jedno připomenutí den před příjezdem, pokud formuláře chybí, a potvrzení (kopii dostane i hostitel). Jinde se adresa zobrazuje zakrytě.",
+        "claim_email_help": "Dále jedno připomenutí den před příjezdem, pokud formuláře chybí, a potvrzení. Jinde se adresa zobrazuje zakrytě.",
         "claim_cookie_help": (
             "Jen nezbytné cookies: přístup přes PIN (7 dní), jazyk a tento pobyt (60 dní)."
         ),
@@ -1301,7 +1304,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "privacy_email_body": (
             "E-mail zabezpečuje rezervaci a používá se k zaslání soukromého odkazu, jednoho "
             "upozornění den před příjezdem, pokud formuláře zůstávají neúplné, a potvrzení o "
-            "dokončení. Správce objektu obdrží kopii potvrzení. Plná adresa je dostupná "
+            "dokončení. Ubytovatel obdrží vaše registrační údaje e-mailem. Plná adresa je dostupná "
             "nastavenému správci osobních údajů a případně poskytovateli doručení e-mailu; "
             "veřejné obrazovky pro hosty zobrazují jen zastřenou adresu. K marketingu se nepoužívá."
         ),
@@ -1439,6 +1442,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_completion_heading_fee": "Zbývá jediná věc: poplatek za pobyt",
         "mail_completion_intro_fee": "Všichni hosté pro %(property)s jsou zaregistrovaní. Zbývá jen místní poplatek za pobyt níže.",
         "mail_completion_fee_once": "Vyberte si jeden způsob platby:",
+        "mail_completion_sent_title": "Co jste odeslali",
+        "mail_completion_sent_doc_label": "Číslo dokladu",
+        "mail_completion_sent_unnamed": "Host",
         "mail_completion_fee_already": "Už máte zaplaceno? Pak už nemusíte nic dalšího dělat.",
         "mail_completion_subject": (
             "Registrace hotová – %(property)s. Nic dalšího nemusíte dělat"
@@ -2022,6 +2028,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_completion_heading_fee": "Nur noch eines: die Aufenthaltsgebühr",
         "mail_completion_intro_fee": "Alle Gäste für %(property)s sind registriert. Es fehlt nur noch die örtliche Aufenthaltsgebühr unten.",
         "mail_completion_fee_once": "Wählen Sie eine Zahlungsart:",
+        "mail_completion_sent_title": "Was Sie gesendet haben",
+        "mail_completion_sent_doc_label": "Dokumentnummer",
+        "mail_completion_sent_unnamed": "Gast",
         "mail_completion_fee_already": "Schon bezahlt? Dann müssen Sie nichts weiter tun.",
         "mail_completion_subject": "Sie sind für %(property)s registriert: nichts weiter zu tun",
         "mail_completion_preheader": "Alle Gäste dieses Aufenthalts sind registriert. Nichts weiter zu tun.",
@@ -2571,6 +2580,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_completion_heading_fee": "Solo queda una cosa: la tasa de estancia",
         "mail_completion_intro_fee": "Todos los huéspedes de %(property)s están registrados. Solo queda la tasa local de estancia que figura abajo.",
         "mail_completion_fee_once": "Elija una forma de pago:",
+        "mail_completion_sent_title": "Lo que ha enviado",
+        "mail_completion_sent_doc_label": "Número de documento",
+        "mail_completion_sent_unnamed": "Huésped",
         "mail_completion_fee_already": "¿Ya ha pagado? Entonces no tiene que hacer nada más.",
         "mail_completion_subject": "Registro completado para %(property)s: no tiene que hacer nada más",
         "mail_completion_preheader": "Todos los huéspedes de esta estancia están registrados. No tiene que hacer nada más.",
@@ -3120,6 +3132,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_completion_heading_fee": "Une dernière chose : la taxe de séjour",
         "mail_completion_intro_fee": "Tous les voyageurs pour %(property)s sont enregistrés. Il ne reste que la taxe de séjour locale ci-dessous.",
         "mail_completion_fee_once": "Choisissez un moyen de paiement :",
+        "mail_completion_sent_title": "Ce que vous avez envoyé",
+        "mail_completion_sent_doc_label": "Numéro du document",
+        "mail_completion_sent_unnamed": "Voyageur",
         "mail_completion_fee_already": "Déjà payé ? Alors vous n'avez plus rien à faire.",
         "mail_completion_subject": "Vous êtes enregistré pour %(property)s : rien d'autre à faire",
         "mail_completion_preheader": "Tous les voyageurs de ce séjour sont enregistrés. Rien d'autre à faire.",
