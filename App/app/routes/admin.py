@@ -1874,7 +1874,7 @@ async def apartment_create(request: Request):
     # 0096: a new property starts its guided setup at the calendar.
     property_setup.start(apartment_id)
     return _back(
-        f"/apartments/{apartment_id}/setup/calendar",
+        f"/apartments/{apartment_id}?view=settings",
         msg=_flash(request, "flash.apartments.created"),
     )
 
@@ -2038,7 +2038,12 @@ def _setup_progress(
             "continue_url": property_setup.wizard_url(apartment["id"], "calendar"),
         }
     guide = bundle["guide"]
-    if guide is None and not state["finished"] and property_setup.load(apartment["id"]):
+    if (
+        guide is None
+        and not state["finished"]
+        and property_setup.load(apartment["id"])
+        and (state.get("legacy") or state.get("tested"))
+    ):
         property_setup.finish(apartment["id"])
         return None
     if not guide:
@@ -2142,6 +2147,37 @@ def _render_apartment_detail(
     door_code = _door_code_context(apartment, apartment_id)
     readiness = _readiness(apartment, entities, issues, has_stays)
     setup_bundle = _setup_guide_bundle(apartment, feeds=feeds, lock_available=door_code is not None)
+    # 1099: the short editor. First setup opens one section at a time; the
+    # setup completes only after a passing connection test (``tested``).
+    setup_state = setup_bundle["state"]
+    setup_facts = {**setup_bundle["facts_payload"], "door_code": door_code["state"] if door_code else ""}
+    ready_card = False
+    if property_setup.is_first_setup(setup_state) and property_setup.setup_complete(
+        apartment, setup_facts, setup_state
+    ):
+        property_setup.finish(apartment_id)
+        ready_card = property_setup.celebrate_once(apartment_id)
+        setup_bundle = _setup_guide_bundle(apartment, feeds=feeds, lock_available=door_code is not None)
+        setup_state = setup_bundle["state"]
+    first_setup = property_setup.is_first_setup(setup_state) and not ready_card
+    setup_open_key = property_setup.open_section(apartment, setup_facts, setup_state) if first_setup else None
+    query = request.query_params
+    section_explicit = (
+        "section" in query and not ready_card and not (first_setup and query.get("saved") == "1")
+    )
+    short_editor = {
+        "first_setup": first_setup,
+        "setup_open": f"sec-{setup_open_key}" if setup_open_key else "",
+        "section_explicit": section_explicit,
+        "section_minutes": property_setup.SECTION_MINUTES,
+        "section_done": {
+            key: property_setup.section_done(key, apartment, setup_facts, setup_state)
+            for key in property_setup.SECTION_MINUTES
+        },
+        "police_reported": bool(setup_facts.get("report_complete")),
+        "ready_card": ready_card,
+        "ready_qr": payments.qr_data_uri(f"{config.PUBLIC_BASE_URL}/l/{link_key}") if ready_card else "",
+    }
     setup_progress = _setup_progress(
         apartment, feeds, readiness, door_code is not None, bundle=setup_bundle
     )
@@ -2203,6 +2239,7 @@ def _render_apartment_detail(
             ),
             "setup_finished": bool(setup_stored and setup_stored.get("finished")),
             "setup_hidden": bool(setup_progress and setup_progress.get("hidden")),
+            **short_editor,
             **(extra or {}),
             **_property_view_state(request, extra, lock_available=door_code is not None),
         },
@@ -2617,6 +2654,7 @@ async def apartment_update(apartment_id: int, request: Request):
             )
         outcome = await _run_connection_test(request, apartment_id, apartment)
         if outcome == "ok":
+            property_setup.mark_tested(apartment_id)
             return _back(path + "#ubyport", msg=_flash(request, "flash.apartments.letter_test_ok"))
         if outcome == "auth":
             return _back(path + "#ubyport", err=_flash(request, "flash.error.letter_test_failed"))
@@ -3516,6 +3554,7 @@ async def test_connection(apartment_id: int, request: Request):
     outcome = await _run_connection_test(request, apartment_id, apartment)
     if outcome != "ok":
         return _back(return_to, err=_flash(request, "flash.error.connection_failed"))
+    property_setup.mark_tested(apartment_id)
     return _back(return_to, msg=_flash(request, "flash.apartments.connection_ok"))
 
 

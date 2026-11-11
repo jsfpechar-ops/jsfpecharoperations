@@ -109,6 +109,7 @@ def load(apartment_id: int) -> Optional[Dict[str, Any]]:
         "hidden": bool(state.get("hidden")),
         "legacy": bool(state.get("legacy")),
         "celebrated": bool(state.get("celebrated")),
+        "tested": bool(state.get("tested")),
     }
 
 
@@ -126,6 +127,7 @@ def _save(apartment_id: int, state: Dict[str, Any]) -> None:
                 "hidden": bool(state.get("hidden")),
                 "legacy": bool(state.get("legacy")),
                 "celebrated": bool(state.get("celebrated")),
+                "tested": bool(state.get("tested")),
             },
             sort_keys=True,
         ),
@@ -170,6 +172,53 @@ def celebrate_once(apartment_id: int) -> bool:
     state["celebrated"] = True
     _save(apartment_id, state)
     return True
+
+
+# 1099: short editor. Minutes per section and the sections that open one after another.
+SECTION_MINUTES = {"basics": 2, "police": 3, "calendars": 1, "messages": 2, "fee": 3, "lock": 5}
+SETUP_ORDER = ("basics", "police")
+
+
+def mark_tested(apartment_id: int) -> None:
+    """1099: the only writer of ``tested``; called after a passing connection test."""
+    state = load(apartment_id) or legacy_state()
+    if state["finished"]:
+        return
+    state["tested"] = True
+    _save(apartment_id, state)
+
+
+def is_first_setup(state: Optional[Dict[str, Any]]) -> bool:
+    return bool(state is not None and not state.get("finished") and not state.get("hidden"))
+
+
+def section_done(key: str, apartment, facts: Dict[str, Any], state: Optional[Dict[str, Any]]) -> bool:
+    if key == "basics":
+        return property_details_complete(apartment)
+    if key == "police":
+        if not facts.get("report_complete"):
+            return False
+        if is_first_setup(state):
+            return bool(state.get("tested"))
+        return True
+    if key == "calendars":
+        return int(facts.get("feeds") or 0) > 0 or int(facts.get("stays") or 0) > 0
+    if key == "fee":
+        return int(apartment["stay_fee_rate_czk"] or 0) > 0
+    if key == "lock":
+        return facts.get("door_code") == "on"
+    return False
+
+
+def open_section(apartment, facts: Dict[str, Any], state: Optional[Dict[str, Any]]) -> Optional[str]:
+    for key in SETUP_ORDER:
+        if not section_done(key, apartment, facts, state):
+            return key
+    return None
+
+
+def setup_complete(apartment, facts: Dict[str, Any], state: Optional[Dict[str, Any]]) -> bool:
+    return all(section_done(key, apartment, facts, state) for key in SETUP_ORDER)
 
 
 def wizard_url(apartment_id: int, step: str) -> str:

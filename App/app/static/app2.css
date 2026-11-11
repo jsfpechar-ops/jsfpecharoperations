@@ -3485,3 +3485,13 @@ body.v2 details.police-letter-edit>input{display:block;width:100%;max-width:100%
 /* 1097 F2, F3 (design-system rules 4, 8): property editor phone fixes */
 body.v2 .property-settings-form #automation_mode{min-width:0;width:100%;max-width:100%;text-overflow:clip;padding-inline:var(--space-3) var(--space-8)}
 @media (max-width:767px){body.v2 .property-settings-form #ubyport .actions .ui-btn{display:flex;width:100%;min-height:44px;justify-content:center;white-space:normal}}
+
+/* 1099: "You're ready" card after first setup (shown once). */
+body.v2 .ready-card .ui-sub{margin:0 0 12px}
+body.v2 .ready-card-body{display:flex;flex-wrap:wrap;align-items:flex-start;gap:12px 16px}
+body.v2 .ready-card-qr{display:block;width:160px;height:160px;flex:0 0 auto;image-rendering:pixelated}
+body.v2 .ready-card-copy{flex:1 1 220px;min-width:0}
+body.v2 .ready-card-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:0 0 12px}
+body.v2 .ready-card-row:last-child{margin-bottom:0}
+body.v2 .ready-card-row .muted{flex:0 0 100%;color:var(--ink3);font-size:13px}
+body.v2 .ready-card-link{overflow-wrap:anywhere;min-width:0}
