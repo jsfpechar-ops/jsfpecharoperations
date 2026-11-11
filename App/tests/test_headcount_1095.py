@@ -33,6 +33,7 @@ OLD_STAMP = "2026-01-01T00:00:00+00:00"
 @pytest.fixture(autouse=True)
 def _leave_no_throttle_rows():
     """The count route shares the guest_party bucket; other files count its rows."""
+    db.init_db()
     yield
     db.execute("DELETE FROM rate_limit_event")
 
