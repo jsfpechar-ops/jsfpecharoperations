@@ -5,7 +5,7 @@ import json
 
 import pytest
 
-from app import auth, config, db
+from app import auth, config, db, property_setup
 from tests.test_0710_v2_mockup_match_browser import (  # noqa: F401  (0541 browser fixtures)
     _open_app,
     _path,
@@ -44,6 +44,9 @@ def test_0547_phone_property_switch_invalid_field_calendar_and_return(base, dash
     apartment = _path(spec, dashboard_rich_host)
     apartment_id = _placeholders(dashboard_rich_host)["first_property"]
     owner = db.query_one("SELECT owner_user_id FROM apartment WHERE id = ?", (apartment_id,))["owner_user_id"]
+    # 1099: the later-edit rules (return_to keeps section=) hold once setup is finished.
+    property_setup.mark_tested(apartment_id)
+    property_setup.finish(apartment_id)
     # Seed one door-code lock on this property (as the host fixture in test_property_navigation_browser.py does) so the switch renders.
     monkeypatch.setattr(config, "DOOR_CODES_ENABLED", True)
     monkeypatch.setattr(config, "TTLOCK_CLIENT_ID", "cid")

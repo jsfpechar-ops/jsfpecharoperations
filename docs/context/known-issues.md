@@ -13,20 +13,13 @@
 | K-F04 | Med open | icalsync.py | Duplicate feeds: two stays, one overdue forever | P A22 |
 | K-F05 | Med open | icalsync.py, routes/admin.py | Manual and scheduled sync clash on UNIQUE; loser marked error | P A23 |
 | K-F06 | Med open | validation.py country_codes() | Some police country codes missing; Kosovo XKX unconfirmed | P A27 |
-| K-F07 | Low open HR | routes/guest.py immediate mode | Guest save waits for UbyPort (60 s+) | P A75 |
-| K-F08 | Low open | icalsync.py:304 | DTEND ≤ DTSTART stored; those guests never validate | P A31 |
-| K-F09 | Low open | routes/admin.py:1927 | Manual send inspects only the first batch | P A36 |
-| K-F10 | Low open | routes/admin.py calendar delete | Deleted calendar's future stays stay active and alert | P A34 |
 | K-F11 | Med open | reporting.py:829-845 | Surplus blank guest form blocks automatic filing | F |
 | K-F12 | Med accepted | reporting.py | ID check dropped (PR #331); host verifies documents | F |
 | K-F13 | Med open | production | 112 = accepted late; never resend. `reconcile_accepted_codes.py` dry run, then `--apply`. | F |
 | K-F14 | Med unverified | reporting.py due_for_automatic_send | 48 h send cap not compared with legal deadline | AR-06 |
 | K-F15 | Med unverified | icalsync.py ~750 | Vanished bookings may keep a live guest link | AR-27 |
 | K-F16 | Med unverified | icalsync.py ~549-642 | Date-move reconcile not atomic; re-sign alert can be lost | AR-38 |
-| K-F17 | Low unverified | reporting.py claim TTL; :1683 recover_stale_submissions | Lease may expire in slow batches | P A16, A30 |
-| K-F19 | Low open | codelists.py error_severities | Before a successful Refresh only 1/112/150 known | police A1-A2 |
 | K-F18 | High decision HR | reporting.py:859 signature_dates_stale | Stale signed dates: safety net or re-signing (T48–T50)? | P Q6 |
-| K-F20 | High open HR | reporting.py:1099 due_for_automatic_send | Fixed in #859 (deployed 11-10) | 1069 bug 9 |
 | K-L01 | High decision | retention.py:218,237 | Deletion 30+30 days; Terms s19 export wording: lawyer needed | P Q9, G G-D11 |
 | K-L02 | High decision | retention.py ~306 | Termination deletes legal_acceptance rows; G-D7 says keep 3 yrs | F BE-10 |
 | K-L03 | High decision | retention.py, housebook.py expired_guest_ids | Retention anchor: per guest vs 6 y from last entry | G G-D4 |
@@ -42,7 +35,6 @@
 | K-P03 | High open | backup-gdrive.sh | Drive backups need Workspace DPA or removal; DPA §11 lists Render | G OPS-2 |
 | K-P04 | Med open | db.py guests | Names, birth date, address in plaintext at rest | F W2.2 |
 | K-P05 | Med open | db.py | Dead plaintext doc_number/visa_number columns remain | G BE-11 |
-| K-P06 | Low open | routes/stay_fees.py:576 | fee_host_reason_reference unencrypted | P A46 |
 | K-P07 | Med open | docs/vendors/README.md | Vendor DPA evidence is only a README | G LD-9 |
 | K-P08 | Med decision | posthog_sync.py | Account deletion leaves the PostHog person; manual for now | 0039 |
 | K-S01 | Med open | .cursor/mcp.json | Agents held a production Cloudflare MCP (removed by 0001) | AR-41 |
@@ -50,12 +42,7 @@
 | K-S03 | Med accepted | routes/guest.py | One link + PIN reveals dates of overlapping stays | S UH-21 |
 | K-S04 | Med unverified | routes/guest.py claim routes | Claim routes skip the reach-back bound (id oracle) | R #106 |
 | K-S05 | Med unverified | admin console | Admin console shows working guest claim links | F W2.4 |
-| K-S06 | Low open | main.py:167 | CSP script-src allows 'unsafe-inline' | P A42 |
-| K-S07 | Low decision | auth.py:498,618 | BOOTSTRAP_ADMIN=0, no accounts: host UI may stay open | P A47 |
-| K-S08 | Low unverified | rate_limit.py:79 | No per-account login lockout across addresses | P A44 |
-| K-S09 | Low open | deploy-production.yml | GITHUB_TOKEN stays in server's git remote | P A58 |
 | K-S10 | High decision | server .env | Owner: confirm UBYHOST_SECRET_KEY rotated after history leak | AR-01 |
-| K-I02 | Low open | invoices.py:51-63 _parse_decimal | "1.000" parses as 1 | X |
 | K-I03 | Low open | invoices.py cancel | Concurrent cancel returns 500 | P A10 |
 | K-I04 | Low open | invoices.py | Unvalidated duzp/due/correction dates give 500 | P A11 |
 | K-I05 | Low open | invoices.py:299 | Invoice year from server date, not Prague | P A12 |
@@ -70,7 +57,6 @@
 | K-U05 | Med unverified | test_guest_browser_e2e.py | Local browser pass; CI pending | X |
 | K-U06 | Low open | apartment_form.html | Pills aligned; CI/staging pending | UI §3 |
 | K-U07 | Low decision | entities.html | Visible Delete/explanation; guard kept; CI | UI §4 |
-| K-U08-10 | Low open | invoice_form, dashboard, app.js copy | Fixed; CI pending | UI §6, §9, §12 |
 | K-U11 | Med open | host.css | Geometry checked locally; CI/staging pending | 0040 |
 | K-U12 | Med open | reservations.html, dashboard.html | 1280px overflow; mobile menu closes | 0041 |
 | K-U13 | Med review | browser tests | CI import 0042; UI fails | 0042 |
@@ -98,7 +84,13 @@
 - K-PK0290: passkey fix open.
 - K-CF01: mid-session challenge: see CLOUDFLARE Rule 3.
 - K-PG-ORDER: goose tests fail after icalsync locally; CI OK.
-
 - 0897 guest pay gaps: Slovak QR, PG migration 00007 unrun, no mark-as-paid, no e-mail link, copy, legal sign-off.
-- K-SE: plans/speed-and-ease.md end
 - K-PICK: guest-enhancements.js:207 blur timer not cleared on refocus (1079).
+
+- K-BIRTH-DIGITS: Python `validate_birth_date` accepts non-ASCII digits, Go rejects them; stay marked complete, never filed. Filing-critical; needs a brief.
+- K-HOUSEBOOK: house book Details popover unreachable at 390/768 (zero-size trigger).
+- K-FLAKY-DC: flaky `test_door_codes_safeguards::test_an_undeleted_old_code_after_a_move_tells_the_host` (test-postgres-full); passed on rerun.
+- K-GUEST-DATES: es/fr guest dates row wraps at 375, 360 px.
+- K-1091D: `test_1091_d` name no longer matches its test.
+- K-TAP43: local only (CI green): `test_design_guardrails_browser.py` guest-new 390 "Cancel" tap target 43 < 44.
+- K-H0: from tasks/1094-report.md: `checkin_hour` NULL can raise TypeError in door_codes.py (~179, 436); `/save` with a non-owned guest_id becomes a new person; `guest_form_saved` audit has no field names.

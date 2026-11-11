@@ -173,7 +173,7 @@ def age_on(birth: date, when: date) -> int:
 def _birth_bounds(raw: Optional[str], latest: bool) -> Optional[date]:
     """The earliest (or latest) birthday a partial ``DDMMYYYY`` allows, or None."""
     digits = normalise_birth_date(raw)
-    if len(digits) != 8 or not digits.isdigit():
+    if len(digits) != 8 or not digits.isascii() or not digits.isdigit():
         return None
     day, month, year = int(digits[:2]), int(digits[2:4]), int(digits[4:])
     if year == 0:
@@ -371,13 +371,32 @@ _DATABOX_RE = re.compile(r"[a-z0-9]{7}")
 
 # --- birth date ----------------------------------------------------------
 
+def _ascii_decimals(value: str, keep: str = "") -> str:
+    """Map decimal digits in any script to ASCII 0-9.
+
+    Go's submit worker is ASCII-only. Python ``str.isdigit()`` also keeps
+    Arabic-Indic and fullwidth digits, so a phone numeric keypad could store a
+    date the filer then rejects, and superscripts (``isdigit`` but not
+    decimal) made ``int()`` raise. Drop anything that is not a decimal digit.
+    """
+    out: List[str] = []
+    for ch in value:
+        if ch in keep:
+            out.append(ch)
+        elif "0" <= ch <= "9":
+            out.append(ch)
+        elif ch.isdecimal():
+            out.append(str(unicodedata.decimal(ch)))
+    return "".join(out)
+
+
 def normalise_birth_date(value: Optional[str]) -> str:
     """Return DDMMYYYY. Accepts / . - as separators; 0 means unknown."""
     raw = strip_forbidden(value).strip()
     if not raw:
         return ""
     separated = raw.replace("/", ".").replace("-", ".")
-    digits_and_dots = "".join(ch for ch in separated if ch.isdigit() or ch == ".")
+    digits_and_dots = _ascii_decimals(separated, keep=".")
     if "." in digits_and_dots:
         parts = [p for p in digits_and_dots.split(".") if p != ""]
         if len(parts) == 3:
@@ -385,7 +404,7 @@ def normalise_birth_date(value: Optional[str]) -> str:
             if len(year) == 2:
                 year = _expand_two_digit_year(year)
             return f"{int(day or 0):02d}{int(month or 0):02d}{year.zfill(4)}"
-    digits = "".join(ch for ch in raw if ch.isdigit())
+    digits = _ascii_decimals(raw)
     if len(digits) == 8:
         return digits
     if len(digits) == 6:  # DDMMYY
@@ -435,7 +454,7 @@ def display_birth_date(value: Optional[str]) -> str:
 def validate_birth_date(ddmmyyyy: str, stay_from: Optional[date]) -> List[Issue]:
     if not ddmmyyyy:
         return [Issue("birth_date", "Date of birth is required.")]
-    if len(ddmmyyyy) != 8 or not ddmmyyyy.isdigit():
+    if len(ddmmyyyy) != 8 or not ddmmyyyy.isascii() or not ddmmyyyy.isdigit():
         return [Issue("birth_date", "Enter the full date as DD.MM.YYYY.")]
     day, month, year = int(ddmmyyyy[:2]), int(ddmmyyyy[2:4]), int(ddmmyyyy[4:])
     if year and year < 1900:

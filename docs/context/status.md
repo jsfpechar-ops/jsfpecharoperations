@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-11-10.
+Updated: 2026-11-11.
 
 ## Production
 - Magic-link 1–2 done; access log off. `/healthz` 1.1.0. Host 2026-11-09 16:56 Europe/Prague: `aa6bbbf0` (#840) on `master`, same as `origin/main`.
@@ -10,10 +10,11 @@ Updated: 2026-11-10.
 - AI: `havel,leon,guide_import` (`guide_translate` off). Stripe test. Guest QR 404 on both when the owner has no IBAN.
 
 ## Now
+- 11-10 live: 1085/1086 police letter paste (#882, #892); 1089/1090 under-15 signature (#885, #888); 1091/1093 short guest titles (#883, #887); 1092 head-count single writer (#884); 1094 H0 check (#893); 1096 Save row, leave warning (#894).
+- Building: 1095 head-count H1 (flag `UBYHOST_HEADCOUNT_LEAD_LIVE` off). Next: H2a, H2b, H3, H4, guest form C.
 - 11-10: demo full-coverage brief [1092](../tasks/1092-demo-data-full-coverage.md) (stay fee + guest pay 0897, payments, door codes, cleaning, property page; also fixes A60 mock_state tracking and the demo mark/login mismatch) — implemented by the orchestrator under the exact-phrase override; PR #886 in review.
 - 11-10: [Speed](../plans/speed-and-ease.md)/[group](../plans/guest-group-registration.md) overnight build: merged and auto-deployed #854-#867, #871; late-filing count was 0. Held drafts for copy review: #868 (F1 bill mail), #869 (F3 fee update mail).
 - 11-09: 1051 stay-fee month filter (cache `20261109-1051a`), 1053 stay-fee rows + centred editor (`20261109-1053a`): draft PRs.
-- 11-06: #790 OCR tip + inline-flex help-tip. [handoff](../tasks/ux-remediation-handoff.md).
 - 11-07: 0990-0992 (throttle, PG indexes 00008, edge cache) in review. **Owner:** deploy, `pg_schema.py apply`, CF rule, Grafana.
 - UX gate live (layout lint + AGENTS rule 10). Stripe onboarding live; extras merged. **Owner:** deploy; booking site v1 next.
 - 11-09: backups live (daily pg_dump, WAL-G 7-day PITR); restore drills passed, repeat every 3 months.

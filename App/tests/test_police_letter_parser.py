@@ -901,12 +901,14 @@ CONFIRMED_ROWS = [
     ("fields_none", {"letter_fields": None}, ([], [])),
     (
         "fields_list",
-        {"letter_fields": ["uby_idub"], "letter_ok_uby_idub": "1"},
+        {"letter_fields": ["uby_idub"], "letter_ok": "1"},
         ([], []),
     ),
     ("fields_bytes", {"letter_fields": b"uby_idub"}, ([], [])),
+    ("all_ticked", {"letter_fields": ALL, "letter_ok": "1"}, (list(FIELDS), [])),
+    ("none_ticked", {"letter_fields": ALL}, (list(FIELDS), [])),
     (
-        "all_ticked",
+        "stale_per_field_ticks",
         {
             "letter_fields": ALL,
             "letter_ok_uby_idub": "1",
@@ -915,50 +917,17 @@ CONFIRMED_ROWS = [
         },
         (list(FIELDS), []),
     ),
-    ("none_ticked", {"letter_fields": ALL}, (list(FIELDS), list(FIELDS))),
-    (
-        "tick_zero",
-        {"letter_fields": "uby_idub", "letter_ok_uby_idub": "0"},
-        (["uby_idub"], ["uby_idub"]),
-    ),
-    (
-        "tick_on",
-        {"letter_fields": "uby_idub", "letter_ok_uby_idub": "on"},
-        (["uby_idub"], ["uby_idub"]),
-    ),
-    (
-        "tick_bytes",
-        {"letter_fields": "uby_idub", "letter_ok_uby_idub": b"1"},
-        (["uby_idub"], ["uby_idub"]),
-    ),
-    (
-        "tick_int",
-        {"letter_fields": "uby_idub", "letter_ok_uby_idub": 1},
-        (["uby_idub"], ["uby_idub"]),
-    ),
-    (
-        "tick_list",
-        {"letter_fields": "uby_idub", "letter_ok_uby_idub": ["1"]},
-        (["uby_idub"], ["uby_idub"]),
-    ),
+    ("tick_zero", {"letter_fields": "uby_idub", "letter_ok": "0"}, (["uby_idub"], [])),
+    ("tick_on", {"letter_fields": "uby_idub", "letter_ok": "on"}, (["uby_idub"], [])),
+    ("tick_bytes", {"letter_fields": "uby_idub", "letter_ok": b"1"}, (["uby_idub"], [])),
+    ("tick_int", {"letter_fields": "uby_idub", "letter_ok": 1}, (["uby_idub"], [])),
+    ("tick_list", {"letter_fields": "uby_idub", "letter_ok": ["1"]}, (["uby_idub"], [])),
     (
         "unknown_ignored_order_duplicates",
-        {
-            "letter_fields": "uby_mark, password,uby_idub,uby_mark,,uby_ws_password",
-            "letter_ok_uby_mark": "1",
-            "letter_ok_password": "1",
-        },
-        (["uby_idub", "uby_mark"], ["uby_idub"]),
+        {"letter_fields": "uby_mark, password,uby_idub,uby_mark,,uby_ws_password", "letter_ok": "1"},
+        (["uby_idub", "uby_mark"], []),
     ),
-    (
-        "tick_for_unlisted_field",
-        {
-            "letter_fields": "uby_idub",
-            "letter_ok_uby_idub": "1",
-            "letter_ok_uby_mark": "1",
-        },
-        (["uby_idub"], []),
-    ),
+    ("tick_with_nothing_listed", {"letter_fields": "", "letter_ok": "0"}, ([], [])),
 ]
 
 
@@ -1017,3 +986,89 @@ def test_nfc_never_turns_a_character_into_ascii():
     assert to_ascii == set(_NFC_KEEP)
     for char in to_ascii:
         assert _normalise(f"a{char}b") == f"a{char}b"
+
+
+# 1100: the parser also reads the web-service password and the facility name.
+
+PW_TEXTS = [
+    ("official", OFFICIAL),
+    ("official_next_line", OFFICIAL_NEXT_LINE),
+    ("full_body", FULL_BODY),
+    ("full_letter", FULL_LETTER),
+]
+
+
+@pytest.mark.parametrize("row_id,text", PW_TEXTS, ids=[r[0] for r in PW_TEXTS])
+def test_password_read_from_letter(row_id, text):
+    result = parse_letter(text)
+    assert result.password.state == "found"
+    assert result.password.value == SAMPLE_WS_PASSWORD
+    assert result.password.source == ()
+    assert SAMPLE_WS_PASSWORD not in repr(result)
+    assert SAMPLE_WS_PASSWORD not in result.password.label
+    assert tuple(result.fields) == FIELDS
+
+
+def test_facility_read_from_full_letter():
+    result = parse_letter(FULL_LETTER)
+    assert result.facility.state == "found"
+    assert result.facility.value == SAMPLE_FACILITY_LINE1
+    assert result.facility.source == ()
+
+
+def _pw(text):
+    item = parse_letter(text).password
+    return (item.state, item.value)
+
+
+def _fac(text):
+    item = parse_letter(text).facility
+    return (item.state, item.value)
+
+
+def test_poučení_prose_heslo_is_not_a_label():
+    text = "Ztratí-li nebo zapomene-li uživatel heslo, může požádat o nové heslo.\n"
+    assert _pw(text) == MISSING
+
+
+def test_password_two_values_ambiguous():
+    text = f"{L_PW} {FAKE_PW}\n{L_PW} Other-Pass-99\n"
+    assert _pw(text) == AMBIGUOUS
+
+
+def test_password_label_without_value_unreadable():
+    assert _pw(f"{L_PW}\n\n") == UNREADABLE
+
+
+def test_password_equal_to_idub_unreadable():
+    text = f"IDUB: {SAMPLE_IDUB}\n{L_PW}\n{SAMPLE_IDUB}\n"
+    assert _pw(text) == UNREADABLE
+
+
+@pytest.mark.parametrize("value", ["123456789012", "UBY-WS_ZZZZZ"])
+def test_password_shaped_like_idub_or_login_unreadable(value):
+    assert _pw(f"{L_PW} {value}\n") == UNREADABLE
+
+
+def test_password_trailing_dot_read_whole():
+    assert _pw(f"{L_PW} Ab3x9q.\n") == found("Ab3x9q.")
+
+
+def test_facility_over_35_unreadable():
+    long_name = "B" * 36
+    assert _fac(f"Ubytovací zařízení:\n{long_name}\n") == UNREADABLE
+
+
+def test_facility_zkratka_and_prose_not_label():
+    assert _fac(f"{L_MARK} X\n") == MISSING
+    assert _fac("Údaje pro ubytovací zařízení: viz níže\n") == MISSING
+
+
+def test_facility_same_line_and_next_line():
+    assert _fac(f"Ubytovací zařízení: {SAMPLE_FACILITY_LINE1}\n") == found(SAMPLE_FACILITY_LINE1)
+    assert _fac(f"Ubytovací zařízení:\n{SAMPLE_FACILITY_LINE1}\n") == found(SAMPLE_FACILITY_LINE1)
+
+
+def test_no_labels_both_missing():
+    result = parse_letter("Dobrý den, nic tu není.\n")
+    assert (result.password.state, result.facility.state) == ("missing", "missing")

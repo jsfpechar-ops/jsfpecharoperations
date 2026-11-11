@@ -24,6 +24,9 @@
     {% endfor %}
   </div>
 {% endif %}
+{# 1098: "Not your dates?" sits with the dates card, once per width; "Back" keeps g-back. #}
+{% set dates_link = (back_url if not guest else none) if back_url else pick_url %}
+{% set dates_link = dates_link if can_pick_other else none %}
 <aside class="g-checkin-rail" aria-label="{{ t('stay_label') }}">
   <div class="g-checkin-stay">
     {% if facility %}<span class="g-property-mark property-tone-{{ facility_tone }}" aria-hidden="true">{{ facility[:1] }}</span>{% endif %}
@@ -33,16 +36,15 @@
       <span>{{ nights_label(reservation.date_from, reservation.date_to) }}{% if person_number and expected_people %} &middot; {{ t('person_progress', current=person_number, total=expected_people) }}{% endif %}</span>
     </div>
   </div>
+  {% if dates_link %}<a class="g-dates-link" href="{{ dates_link }}">{{ t('wrong_dates') }}</a>{% endif %}
   <h2 class="g-checkin-steps-title">{{ t('steps_label') }}</h2>
   <ol class="g-checkin-steps" data-checkin-steps
       data-done-label="{{ t('step_done') }}" data-edit-label="{{ t('review_edit') }}"></ol>
 </aside>
 
 <div class="g-checkin-main">
-{% if back_url %}
-  <a class="g-back" href="{{ back_url }}">{{ t('wrong_dates') if can_pick_other and not guest else t('back') }}</a>
-{% elif can_pick_other %}
-  <a class="g-back" href="{{ pick_url }}">{{ t('wrong_dates') }}</a>
+{% if back_url and not (can_pick_other and not guest) %}
+  <a class="g-back" href="{{ back_url }}">{{ t('back') }}</a>
 {% endif %}
 
 {% if issues | selectattr('is_error') | list %}
@@ -82,6 +84,7 @@
       <span>{{ t('person_progress', current=person_number, total=expected_people) }}</span>
     {% endif %}
   </p>
+  {% if dates_link %}<a class="g-dates-link" href="{{ dates_link }}">{{ t('wrong_dates') }}</a>{% endif %}
   {% if just_saved %}
   <p class="hint g-saved-strip" role="status">{{ t('person_saved') }}</p>
   {% endif %}

@@ -22,3 +22,5 @@ These files are historical and are not read by default. Their open findings were
 | `SKILL.md`, `LOGO_PROMPT.md`, `NEXT_MAIL_RELEASE.md` | Review-council skill, old logo brief, mail release record | - |
 
 Still live in `docs/UbyHost_workplan/`: `04_legal_positions.md` (legal decisions), `03_when_triggered.md` (later items: S3 blobs, Postgres, Stripe) and `compliance/`.
+
+Compaction 2026-11-11: `decisions-2026.md` (oldest October decisions) and `known-issues-low-2026.md` (12 Low rows) moved out of `docs/context/`.

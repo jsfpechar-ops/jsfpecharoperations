@@ -19,7 +19,7 @@ if REQUIRE_BROWSER:
 else:
     sync_api = pytest.importorskip("playwright.sync_api")
 
-from app import auth, db
+from app import auth, db, property_setup
 from tests.conftest import mark_security_prompt_seen
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
@@ -37,6 +37,7 @@ NO_JS_LOADS = (
 
 # The successful controls of the one property form, by name.
 SETTINGS_NAMES = {
+    "letter_fields",  # 1100: the hidden letter_fields always renders (empty on a GET)
     "signature_drawn", "signature_name", "fee_signature_section", "signature_file", "return_to", "_csrf", "internal_name", "city_en", "legal_entity_id", "data_controller_entity_id",
     "addr_okres", "addr_obec", "addr_obec_cast", "addr_street", "addr_house_no", "addr_orient_no", "addr_zip",
     "notes", "permalink_pin", "guest_message", "permalink_window_days",
@@ -162,6 +163,9 @@ def test_guest_pay_controls_exist_only_when_the_deployment_has_them_on(host, mon
 
 
 def test_three_views_four_groups_one_editor_and_unique_ids(host):
+    # 1099: Basic details opens by default only once setup is finished.
+    property_setup.mark_tested(host["apartment"])
+    property_setup.finish(host["apartment"])
     html = _page(host, "?lang=en")
     for key in ("sec-basics", "sec-messages", "sec-lock", "sec-police", "sec-fee", "sec-calendars", "sec-archive"):
         assert f'id="{key}"' in html, key
@@ -178,7 +182,10 @@ def test_three_views_four_groups_one_editor_and_unique_ids(host):
     assert len(names) == len(set(names)), "a setting is submitted twice"
     calendar = [f for f in parsed.forms if f["action"] == f"/apartments/{host['apartment']}/feeds"]
     assert len(calendar) == 1
-    assert _open_ids(html) == ["sec-basics"]
+    # 1099: a finished property opens every section closed (later edits);
+    # Basic details opens when it is asked for.
+    assert _open_ids(html) == []
+    assert _open_ids(_page(host, "?lang=en&section=property")) == ["sec-basics"]
     # No suggested portal message and no shadow form in the status strip.
     aside = _strip(html)
     assert "message-template" not in html and "copy_message" not in html
@@ -486,6 +493,11 @@ def test_create_offers_the_calendar_first_and_works_without_js(host, base):
             page.fill(f"#{field}", value)
         page.locator(".property-create-actions .ui-btn-primary").click()
         page.wait_for_load_state()
+        # 1099: create lands on the short editor; the wizard is opened directly.
+        assert "view=settings" in page.url and "/setup/" not in page.url
+        created_id = re.search(r"/apartments/(\d+)", page.url).group(1)
+        page.goto(f"{base}/apartments/{created_id}/setup/calendar?lang=en")
+        page.wait_for_load_state()
         assert "/setup/calendar" in page.url
         assert not page.locator(".property-first-use").count()
         assert page.locator("[data-setup-wizard]").is_visible()
@@ -510,7 +522,8 @@ def test_create_offers_the_calendar_first_and_works_without_js(host, base):
             query = f"view={view}" + (f"&section={group}" if group else "")
             page.goto(f"{url}?{query}&lang=cs")
             assert page.locator(f"#sec-{key}").get_attribute("open") is not None, key
-        page.goto(f"{url}?lang=cs")
+        # 1099: Basic details is not open by default any more; ask for it.
+        page.goto(f"{url}?view=settings&section=property&lang=cs")
         page.fill("#notes", "No-JS synthetic note")
         page.locator(".savebar button[type=submit]").click()
         page.wait_for_load_state()

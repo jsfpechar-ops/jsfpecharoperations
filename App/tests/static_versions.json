@@ -24,12 +24,12 @@
     "v": "20261109-1200"
   },
   "app.js": {
-    "sha256": "368fcfa71ec7c93dc651c98b59e163663c2ed084b25f79f40dab1682a84e5586",
-    "v": "20261110-1085b"
+    "sha256": "c1198fbc83b1833d456214fe2f457d6afc76eb04901d2acf757f8d0fe14e017d",
+    "v": "20261111-1100b"
   },
   "app2.css": {
-    "sha256": "a4750f012bc0683948f4b07ed9e8d3892c7bcc0d1a46f80e3642e3e6438513b1",
-    "v": "20261110-1085i"
+    "sha256": "6c0b358921da0cac017480048a2bcbe5cd07f5ff2fd2112ab607f336f585b30e",
+    "v": "20261111-1100a"
   },
   "apple-touch-icon.png": {
     "sha256": "8b487f53a3a7522a9620ed5c26ab1fd77ee6a08cae12fcd087cb9f7a0c03c250",
@@ -92,8 +92,8 @@
     "v": "20261025-0393b"
   },
   "guest.css": {
-    "sha256": "49bbd972f1e9d2dfe6904d59c0aa16d86a33f6c859646e20bba557706daa3a52",
-    "v": "20261111-1090b"
+    "sha256": "f0634a186db843f3f570ba629ab95cf28e09320828e5a83daaf32bb3a321f6b9",
+    "v": "20261111-1098a"
   },
   "guide.js": {
     "sha256": "7bc163abd236d8032c1f7a094aadf4993774920b24b4a0817768dd27fa0cefab",

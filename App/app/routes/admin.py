@@ -14,7 +14,6 @@ import logging
 import re
 import secrets
 import time
-import unicodedata
 from datetime import date, timedelta
 from typing import Any, Dict, List, Optional
 from urllib.parse import parse_qsl, unquote, urlencode, urlparse, urlsplit, urlunsplit
@@ -1874,7 +1873,7 @@ async def apartment_create(request: Request):
     # 0096: a new property starts its guided setup at the calendar.
     property_setup.start(apartment_id)
     return _back(
-        f"/apartments/{apartment_id}/setup/calendar",
+        f"/apartments/{apartment_id}?view=settings",
         msg=_flash(request, "flash.apartments.created"),
     )
 
@@ -2038,7 +2037,12 @@ def _setup_progress(
             "continue_url": property_setup.wizard_url(apartment["id"], "calendar"),
         }
     guide = bundle["guide"]
-    if guide is None and not state["finished"] and property_setup.load(apartment["id"]):
+    if (
+        guide is None
+        and not state["finished"]
+        and property_setup.load(apartment["id"])
+        and (state.get("legacy") or state.get("tested"))
+    ):
         property_setup.finish(apartment["id"])
         return None
     if not guide:
@@ -2142,6 +2146,37 @@ def _render_apartment_detail(
     door_code = _door_code_context(apartment, apartment_id)
     readiness = _readiness(apartment, entities, issues, has_stays)
     setup_bundle = _setup_guide_bundle(apartment, feeds=feeds, lock_available=door_code is not None)
+    # 1099: the short editor. First setup opens one section at a time; the
+    # setup completes only after a passing connection test (``tested``).
+    setup_state = setup_bundle["state"]
+    setup_facts = {**setup_bundle["facts_payload"], "door_code": door_code["state"] if door_code else ""}
+    ready_card = False
+    if property_setup.is_first_setup(setup_state) and property_setup.setup_complete(
+        apartment, setup_facts, setup_state
+    ):
+        property_setup.finish(apartment_id)
+        ready_card = property_setup.celebrate_once(apartment_id)
+        setup_bundle = _setup_guide_bundle(apartment, feeds=feeds, lock_available=door_code is not None)
+        setup_state = setup_bundle["state"]
+    first_setup = property_setup.is_first_setup(setup_state) and not ready_card
+    setup_open_key = property_setup.open_section(apartment, setup_facts, setup_state) if first_setup else None
+    query = request.query_params
+    section_explicit = (
+        "section" in query and not ready_card and not (first_setup and query.get("saved") == "1")
+    )
+    short_editor = {
+        "first_setup": first_setup,
+        "setup_open": f"sec-{setup_open_key}" if setup_open_key else "",
+        "section_explicit": section_explicit,
+        "section_minutes": property_setup.SECTION_MINUTES,
+        "section_done": {
+            key: property_setup.section_done(key, apartment, setup_facts, setup_state)
+            for key in property_setup.SECTION_MINUTES
+        },
+        "police_reported": bool(setup_facts.get("report_complete")),
+        "ready_card": ready_card,
+        "ready_qr": payments.qr_data_uri(f"{config.PUBLIC_BASE_URL}/l/{link_key}") if ready_card else "",
+    }
     setup_progress = _setup_progress(
         apartment, feeds, readiness, door_code is not None, bundle=setup_bundle
     )
@@ -2203,6 +2238,7 @@ def _render_apartment_detail(
             ),
             "setup_finished": bool(setup_stored and setup_stored.get("finished")),
             "setup_hidden": bool(setup_progress and setup_progress.get("hidden")),
+            **short_editor,
             **(extra or {}),
             **_property_view_state(request, extra, lock_available=door_code is not None),
         },
@@ -2239,76 +2275,49 @@ def _save_error(section: str, target: str) -> Dict[str, str]:
     return {"section": section, "target": target}
 
 
-def _letter_form_text(form, key: str, limit: int = 120) -> str:
-    """1085: one posted letter value, shown back to the host who sent it.
-
-    Read only if it is a str; every control or format character is removed
-    and the rest is cut to ``limit``. Never raises.
-    """
-    try:
-        raw = form.get(key)
-    except Exception:  # noqa: BLE001 - a forged form must never crash the re-render
-        return ""
-    if not isinstance(raw, str):
-        return ""
-    kept = "".join(ch for ch in raw[:4000] if unicodedata.category(ch)[0] != "C")
-    return kept.strip()[:limit]
-
-
 def _letter_saved_now(apartment, name: str, value: str) -> str:
     saved = (apartment[name] or "").strip()
     return saved if saved and saved != value else ""
 
 
-def _letter_rows_from_result(result, apartment) -> List[Dict[str, Any]]:
-    """1085: the check-answers rows for a parsed letter. Only filled rows carry text."""
-    rows = []
-    for name in police_letter.FIELDS:
-        found = result.fields.get(name)
-        state = found.state if found else "missing"
-        filled = bool(found and state in police_letter.FILLED_STATES and found.value)
-        rows.append(
-            {
-                "name": name,
-                "state": state if state in ("missing", "ambiguous", "unreadable", "conflict") or filled else "missing",
-                "filled": filled,
-                "value": found.value if filled else "",
-                "line": found.line if filled else None,
-                "source": [text[:120] for text in found.source[:2]] if filled and found.line else [],
-                "saved": _letter_saved_now(apartment, name, found.value) if filled else "",
-                "ticked": False,
-                "error": False,
-            }
-        )
-    return rows
+_LETTER_BOX_LABELS = (
+    ("uby_idub", "setup.label.idub"),
+    ("uby_ws_user", "setup.label.login"),
+    ("uby_ws_password", "setup.label.password"),
+    ("uby_mark", "setup.label.mark"),
+    ("uby_name", "setup.label.facility"),
+)
 
 
-def _letter_rows_from_form(form, apartment, listed: List[str], unconfirmed: List[str]) -> List[Dict[str, Any]]:
-    """1085: the same rows rebuilt from a refused save: the host's own posted values."""
-    rows = []
-    for name in listed:
-        value = _letter_form_text(form, name, 64)
-        line = police_letter.line_from_form(form, name)
-        source = []
-        if line is not None:
-            for index in (1, 2):
-                text = _letter_form_text(form, f"letter_src_{name}_{index}")
-                if text:
-                    source.append(text)
-        rows.append(
-            {
-                "name": name,
-                "state": "derived" if name == "uby_mark" else "found",
-                "filled": True,
-                "value": value,
-                "line": line,
-                "source": source,
-                "saved": _letter_saved_now(apartment, name, value),
-                "ticked": name not in unconfirmed,
-                "error": name in unconfirmed,
-            }
-        )
-    return rows
+def _letter_fill(result) -> Dict[str, Dict[str, str]]:
+    """1100: the five boxes from a parsed letter: {name: {"state", "value"}}.
+
+    Values only for filled states. The password value lives only in this
+    request's answer to the host's own paste; it is never logged or stored.
+    """
+    items = dict(result.fields)
+    items["uby_ws_password"] = result.password
+    items["uby_name"] = result.facility
+    out: Dict[str, Dict[str, str]] = {}
+    for name, _key in _LETTER_BOX_LABELS:
+        item = items.get(name)
+        state = item.state if item else "missing"
+        filled = bool(item and state in police_letter.FILLED_STATES and item.value)
+        out[name] = {"state": state, "value": item.value if filled else ""}
+    return out
+
+
+def _letter_message(lang: str, filled: List[str], missing: List[str]) -> str:
+    """1100: one status line: what was filled and what to type."""
+    labels = dict(_LETTER_BOX_LABELS)
+    parts = []
+    if filled:
+        names = ", ".join(host_i18n.translate(lang, labels[name]) for name in filled)
+        parts.append(host_i18n.translate(lang, "police_letter.filled", names=names))
+    if missing:
+        names = ", ".join(host_i18n.translate(lang, labels[name]) for name in missing)
+        parts.append(host_i18n.translate(lang, "police_letter.type_rest", names=names))
+    return " ".join(parts)
 
 
 def _refuse_apartment_save(
@@ -2319,7 +2328,6 @@ def _refuse_apartment_save(
     address_errors: Optional[Dict[str, str]] = None,
     shared_time_error: Optional[str] = None,
     lock_times_error: bool = False,
-    letter_unconfirmed: Optional[List[str]] = None,
 ):
     """Render the property page again with the host's unsaved values."""
     draft = dict(apartment)
@@ -2373,19 +2381,6 @@ def _refuse_apartment_save(
         save_errors.append(_save_error("basics", "checkin_hour"))
     if lock_times_error:
         save_errors.append(_save_error("lock", "lock_checkin_hour"))
-    if letter_unconfirmed:
-        # 1085: a pre-filled letter value saves only with its own tick.
-        listed, _unticked = police_letter.confirmed_fields(form)
-        save_errors.extend(
-            _save_error("police", f"letter_ok_{name}") for name in letter_unconfirmed
-        )
-        extra.update(
-            {
-                "settings_section": "reporting",
-                "letter_check": True,
-                "letter_rows": _letter_rows_from_form(form, apartment, listed, letter_unconfirmed),
-            }
-        )
     extra["save_errors"] = save_errors
     if lock_times_error:
         # 0397: door codes need both times; stay on the Door lock tab with
@@ -2405,7 +2400,7 @@ def _refuse_apartment_save(
         operator_error=operator_error,
         extra=extra,
         status_code=400
-        if (operator_error or address_errors or shared_time_error or lock_times_error or letter_unconfirmed)
+        if (operator_error or address_errors or shared_time_error or lock_times_error)
         else 200,
     )
 
@@ -2618,6 +2613,7 @@ async def apartment_update(apartment_id: int, request: Request):
             )
         outcome = await _run_connection_test(request, apartment_id, apartment)
         if outcome == "ok":
+            property_setup.mark_tested(apartment_id)
             return _back(path + "#ubyport", msg=_flash(request, "flash.apartments.letter_test_ok"))
         if outcome == "auth":
             return _back(path + "#ubyport", err=_flash(request, "flash.error.letter_test_failed"))
@@ -2821,12 +2817,6 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
     apartment = access.apartment(request, apartment_id)
     if not apartment:
         return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment")), False
-    # 1085: a value pre-filled from the police letter saves only with its tick.
-    _letter_listed, letter_unconfirmed = police_letter.confirmed_fields(form)
-    if letter_unconfirmed:
-        return _refuse_apartment_save(
-            request, apartment, form, None, letter_unconfirmed=letter_unconfirmed
-        ), False
     form = _with_lock_tab_hours(form, apartment)
     if _form_str(form, "setup_step") in property_setup.RETIRED_STEPS:
         # 0884: a page left open from the old eight-step wizard saves nothing.
@@ -3517,6 +3507,7 @@ async def test_connection(apartment_id: int, request: Request):
     outcome = await _run_connection_test(request, apartment_id, apartment)
     if outcome != "ok":
         return _back(return_to, err=_flash(request, "flash.error.connection_failed"))
+    property_setup.mark_tested(apartment_id)
     return _back(return_to, msg=_flash(request, "flash.apartments.connection_ok"))
 
 
@@ -3568,10 +3559,12 @@ async def _run_connection_test(request: Request, apartment_id: int, apartment) -
 
 @router.post("/apartments/{apartment_id}/police-letter")
 async def police_letter_read(apartment_id: int, request: Request):
-    """1085: read a pasted police letter and show the values to check. Saves nothing.
+    """1085/1100: read a pasted police letter and fill the boxes. Saves nothing.
 
     The text lives only in this request: it is not stored, logged, audited or
-    echoed. Only the source slices of filled values go back to the host.
+    echoed. Only the values read from it go back to the host, in this answer
+    (1100: the password too, with no-store). ``Accept: application/json``
+    answers JSON for the paste-fills-at-once script; else the HTML page.
     """
     guard = auth.require_login(request)
     if guard:
@@ -3579,28 +3572,47 @@ async def police_letter_read(apartment_id: int, request: Request):
     apartment = access.apartment(request, apartment_id)
     if not apartment:
         return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
+    wants_json = "application/json" in (request.headers.get("accept") or "")
+    lang = host_i18n.lang_from_request(request)
     form = await request.form()
     letter_text = form.get("letter_text")
     if not isinstance(letter_text, str):
         letter_text = ""
     extra: Dict[str, Any] = {"property_view": "settings", "settings_section": "reporting"}
     failed_name = ""
+    status = "failed"
+    boxes: Dict[str, Dict[str, str]] = {}
+    filled: List[str] = []
+    missing: List[str] = []
     try:
         result = police_letter.parse_letter(letter_text)
         if result.status == "ok":
-            rows = _letter_rows_from_result(result, apartment)
-            filled = [row["name"] for row in rows if row["filled"]]
-            extra["letter_rows"] = rows
-            extra["letter_prefill"] = {row["name"]: row["value"] for row in rows if row["filled"]}
-            extra["letter_check"] = result if filled else None
+            status = "ok"
+            boxes = _letter_fill(result)
+            filled = [name for name, box in boxes.items() if box["value"]]
+            missing = [name for name, box in boxes.items() if not box["value"]]
+            prefill = {name: boxes[name]["value"] for name in filled}
+            extra["letter_read"] = True
+            extra["letter_prefill"] = prefill
+            extra["letter_fields_value"] = ",".join(
+                name for name in police_letter.FIELDS if name in prefill
+            )
+            extra["letter_saved"] = {
+                name: _letter_saved_now(apartment, name, value)
+                for name, value in prefill.items()
+                if name != "uby_ws_password"
+            }
+            extra["letter_message"] = _letter_message(lang, filled, missing)
+            extra["letter_check"] = bool(filled)
         else:
-            filled = []
-            extra["letter_status"] = result.status if result.status in ("empty", "too_long") else "failed"
+            status = result.status if result.status in ("empty", "too_long") else "failed"
+            extra["letter_status"] = status
     except Exception as exc:  # noqa: BLE001 - a traceback here would print the pasted text
         failed_name = type(exc).__name__
         del exc
     del letter_text, form
     if failed_name:
+        status, boxes, filled, missing = "failed", {}, [], []
         extra = {
             "property_view": "settings",
             "settings_section": "reporting",
@@ -3609,7 +3621,22 @@ async def police_letter_read(apartment_id: int, request: Request):
         db.audit("police_letter_failed", f"apartment={apartment_id} error={failed_name}")
     elif filled:
         db.audit("police_letter_read", f"apartment={apartment_id} filled={','.join(filled)}")
-    response = _render_property_detail(apartment_id, request, extra=extra, status_code=422)
+    if wants_json:
+        if status == "ok":
+            message = extra.get("letter_message", "")
+        else:
+            message = host_i18n.translate(lang, f"police_letter.{status}")
+        response = JSONResponse(
+            {
+                "status": status,
+                "fields": boxes,
+                "filled": filled,
+                "missing": missing,
+                "message": message,
+            }
+        )
+    else:
+        response = _render_property_detail(apartment_id, request, extra=extra, status_code=422)
     response.headers["Cache-Control"] = "no-store"
     return response
 
@@ -3712,6 +3739,7 @@ def reservations_list(request: Request):
         params.append(apartment_id)
     # A stay counts as inside the window when it overlaps it, so a guest who is
     # in the flat right now still shows under "upcoming".
+    overdue_ids: list = []
     if date_from and date_range == "upcoming":
         # WP33: a stay whose police deadline has passed with a guest still
         # unfiled stays in the default view until it is filed, however long
@@ -3742,8 +3770,26 @@ def reservations_list(request: Request):
     page_count = max(1, (total + RESERVATION_PAGE_SIZE - 1) // RESERVATION_PAGE_SIZE)
     page = max(1, min(_query_int(request, "page") or 1, page_count))
     offset = (page - 1) * RESERVATION_PAGE_SIZE
-    sql += " ORDER BY r.date_from ASC, r.date_to ASC, r.id ASC LIMIT ? OFFSET ?"
-    reservations = db.query(sql, [*params, RESERVATION_PAGE_SIZE, offset])
+    # 1100: overdue unfiled stays first, then in house (leaving soonest), then upcoming (arriving soonest), then past (latest first).
+    group = (
+        "CASE WHEN r.date_from <= ? AND r.date_to >= ? THEN 0 "
+        "WHEN r.date_from > ? THEN 1 ELSE 2 END"
+    )
+    overdue_first = ""
+    overdue_params: list = []
+    if overdue_ids:
+        overdue_marks = ",".join("?" for _ in overdue_ids)
+        overdue_first = f"CASE WHEN r.id IN ({overdue_marks}) THEN 0 ELSE 1 END, "
+        overdue_params = list(overdue_ids)
+    sql += (
+        f" ORDER BY {overdue_first}{group},"
+        f" CASE WHEN {group} = 0 THEN r.date_to WHEN {group} = 1 THEN r.date_from END ASC,"
+        f" CASE WHEN {group} = 2 THEN r.date_to END DESC,"
+        " r.date_from ASC, r.id ASC LIMIT ? OFFSET ?"
+    )
+    reservations = db.query(
+        sql, [*params, *overdue_params, *([today] * 12), RESERVATION_PAGE_SIZE, offset]
+    )
     rows = []
     # One guest query for the page, and each property read once, instead of
     # both again for every stay on it.

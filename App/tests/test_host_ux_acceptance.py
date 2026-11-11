@@ -40,7 +40,7 @@ if REQUIRE_BROWSER:
 else:
     sync_api = pytest.importorskip("playwright.sync_api")
 
-from app import auth, claim, config, db
+from app import auth, claim, config, db, property_setup
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
 from tests.conftest import login_as, mark_security_prompt_seen
@@ -216,6 +216,9 @@ def acc():
     one_property = _property(one_owner, one_entity, "Only Property")
     one_archived = _property(one_owner, one_entity, "Old Archived", active=0, archived_at=now)
     none_name, none_owner = _account("acc-none")
+    # 1099: p1 is a set-up property (later edits), not one in first setup.
+    property_setup.mark_tested(p1)
+    property_setup.finish(p1)
     client = _client(username)
     data = {
         "username": username, "owner": owner, "client": client, "e1": e1, "e2": e2,
@@ -629,6 +632,8 @@ def test_page_families_through_rail_cards_search_and_back(acc, base):
             page.wait_for_url(re.compile(r"/apartments(\?.*)?$"))
             page.locator(f'a.row-primary-link[href^="/apartments/{p1}"]').first.click()
             page.wait_for_url(re.compile(rf"/apartments/{p1}"))
+            # 1099: a set-up property opens with every section closed; open Basic details by its link.
+            page.goto(f"{base}/apartments/{p1}?view=settings&section=property&lang={lang}")
             _settle(page)
             assert page.locator("details#sec-basics[open]").count() == 1
             # One page: the business link in the operator block opens the one entity editor.
@@ -741,7 +746,8 @@ def test_without_javascript_tabs_reload_and_the_shared_editors_save(acc, base):
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
         context = _context(browser, base, acc["cookie"], java_script_enabled=False)
         page = context.new_page()
-        page.goto(f"{base}/apartments/{p1}?lang=en")
+        # 1099: without JavaScript a set-up property opens closed; Basic details opens when asked for.
+        page.goto(f"{base}/apartments/{p1}?view=settings&section=property&lang=en")
         assert page.locator("details#sec-basics[open]").count() == 1
         assert page.locator("#internal_name").is_visible()
         # 0101: links carry ?view=&section=; the hash only scrolls.
