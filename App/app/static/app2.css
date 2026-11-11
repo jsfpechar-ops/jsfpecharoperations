@@ -3515,3 +3515,11 @@ body.v2 .guide-ask .ui-btn{margin: 0; height: var(--control-h); box-sizing: bord
 body.v2 .havel-dialog .havel-chip[data-havel-ask-open]{border-radius:var(--radius-pill,999px);min-height:44px;padding:0 var(--space-4);align-self:flex-start;border:1px solid var(--coral-200);background:var(--surface);color:var(--accent-ink);font-weight:600}
 body.v2 .havel-ask-line{margin: var(--space-2) 0 0;}
 body.v2 .submissions-page .havel-ask-line{text-align:center;}
+/* 1103: on the Add property page and in the setup wizard the help "?" ring is painted by the button itself.
+   The old ring was a ::after positioned with left/top/inset/transform, which several rules above fight over
+   (and which iOS Safari placed ~17 px up-left, so loose circles floated around the labels). The old ::after stays only as an invisible box (transparent border), so a misplaced one can no longer show; the 44 px (24 px on desktop) tap area is still the button. */
+body.v2 :is(.prop-new,.wiz-page) button.help-tip-btn::after{border-color:transparent}
+body.v2 :is(.prop-new,.wiz-page) button.help-tip-btn{background:radial-gradient(circle at 50% 50%,transparent 7.5px,var(--line) 8px,var(--line) 9px,transparent 9.5px)}
+@media (max-width:1023px){body.v2 :is(.prop-new,.wiz-page) button.help-tip-btn{background:radial-gradient(circle at 9px 50%,transparent 7.5px,var(--line) 8px,var(--line) 9px,transparent 9.5px)}}
+body.v2 .ruian-status{margin:4px 0 12px}
+
