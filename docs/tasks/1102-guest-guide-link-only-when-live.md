@@ -1,6 +1,6 @@
 # 1102: guest stay page, show the guide link only when the guide is live, and below registration
 
-Status: todo
+Status: review
 Depends on: none | Base commit: origin/main | Branch: task/1102-guide-link-when-live
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Owner Josef agreed to this fix. Brief by Sonnet 5.5, 2026-11-11.

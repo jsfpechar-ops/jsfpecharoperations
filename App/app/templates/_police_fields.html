@@ -75,7 +75,9 @@
         {{ police_box('uby_name', t('setup.label.facility'), letter_fill['uby_name'] if 'uby_name' in letter_fill else apartment.uby_name, facility_help, false, 35, required=true) }}
         {{ police_box('uby_contact', t('automation.contact'), apartment.uby_contact, t('apartment.form.ubyport.contact_hint'), true, 50) }}
       </div>
+      {% if not police_in_wizard %}
       <div class="actions">
         <button class="ui-btn ui-btn-secondary" type="submit" formaction="{{ base_url }}/test-connection"
                 formmethod="post" formnovalidate>{{ t('apartment.form.test_connection') }}</button>
       </div>
+      {% endif %}

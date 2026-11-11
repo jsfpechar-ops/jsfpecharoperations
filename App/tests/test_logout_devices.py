@@ -1,6 +1,7 @@
 """0947: "log out" ends this browser only; "log out of all devices" ends every session.
 
-Exports and bank-detail changes need a login made within the last 10 minutes.
+Exports of personal data still need a login made within the last 10 minutes.
+Saving a bank account does not open Security.
 """
 from __future__ import annotations
 
@@ -95,15 +96,28 @@ def test_guest_export_json_needs_a_recent_login_and_passes_when_fresh(monkeypatc
     assert fresh.status_code == 404
 
 
-def test_bank_details_change_needs_a_recent_login(monkeypatch):
+def test_invoice_bank_save_stays_off_security(monkeypatch):
+    """The invoice form always posts the account. A stale login must save it, not open Security."""
     username = _new_host()
+    entity_id = _entity_for(username)
     client = _signed_in(username)
     monkeypatch.setattr(auth, "FRESH_LOGIN_SECONDS", -1)
 
-    response = client.post("/entities/999999/invoice", data={}, follow_redirects=False)
+    response = client.post(
+        f"/entities/{entity_id}/invoice",
+        data={
+            "account_prefix": "19",
+            "account_number": "2000781379",
+            "account_bank": "0800",
+        },
+        follow_redirects=False,
+    )
 
-    assert response.status_code == 303
-    assert _recent_login_redirect(response)
+    assert response.status_code == 303, response.text
+    assert not _recent_login_redirect(response)
+    row = db.query_one("SELECT bank_account, iban FROM legal_entity WHERE id = ?", (entity_id,))
+    assert row["bank_account"] == "19-2000781379/0800"
+    assert (row["iban"] or "").startswith("CZ")
 
 
 def _entity_for(username: str, **fields) -> int:
@@ -119,24 +133,24 @@ def _entity_for(username: str, **fields) -> int:
     return db.insert("legal_entity", values)
 
 
-def test_identity_post_cannot_change_bank_with_a_stale_session(monkeypatch):
-    """POST /entities/{id} also writes bank_account; 0947 only guarded /invoice."""
+def test_identity_post_saves_bank_on_a_stale_session(monkeypatch):
+    """POST /entities/{id} writes bank_account. A stale login must not open Security."""
     username = _new_host()
     entity_id = _entity_for(username)
     client = _signed_in(username)
     monkeypatch.setattr(auth, "FRESH_LOGIN_SECONDS", -1)
 
-    stolen = client.post(
+    response = client.post(
         f"/entities/{entity_id}",
         data={"name": "Devices s.r.o.", "bank_account": "19-2000781379/0800"},
         follow_redirects=False,
     )
 
-    assert stolen.status_code == 303
-    assert _recent_login_redirect(stolen)
+    assert response.status_code == 303, response.text
+    assert not _recent_login_redirect(response)
     row = db.query_one("SELECT bank_account, iban FROM legal_entity WHERE id = ?", (entity_id,))
-    assert row["bank_account"] == "123/0600"
-    assert row["iban"] == "CZ9106000000000000000123"
+    assert row["bank_account"] == "19-2000781379/0800"
+    assert (row["iban"] or "").startswith("CZ")
 
 
 def test_identity_post_still_saves_the_name_when_the_session_is_stale(monkeypatch):
@@ -173,32 +187,33 @@ def test_identity_post_changes_bank_when_the_login_is_fresh():
     assert row["bank_account"] == "19-2000781379/0800"
 
 
-def test_identity_post_cannot_change_iban_with_a_stale_session(monkeypatch):
+def test_identity_post_ignores_a_bare_iban_field_without_opening_security(monkeypatch):
+    """This form stores bank_account, not a lone iban field, and must not open Security."""
     username = _new_host()
     entity_id = _entity_for(username)
     client = _signed_in(username)
     monkeypatch.setattr(auth, "FRESH_LOGIN_SECONDS", -1)
 
-    stolen = client.post(
+    response = client.post(
         f"/entities/{entity_id}",
         data={"name": "Devices s.r.o.", "iban": "CZ1753060000000012345678"},
         follow_redirects=False,
     )
 
-    assert stolen.status_code == 303
-    assert _recent_login_redirect(stolen)
+    assert response.status_code == 303, response.text
+    assert not _recent_login_redirect(response)
     row = db.query_one("SELECT iban FROM legal_entity WHERE id = ?", (entity_id,))
     assert row["iban"] == "CZ9106000000000000000123"
 
 
-def test_identity_post_cannot_change_split_account_with_a_stale_session(monkeypatch):
-    """The invoice-style prefix/number/bank fields also count as a bank write."""
+def test_identity_post_ignores_split_account_fields_without_opening_security(monkeypatch):
+    """Prefix, number and bank belong on the invoice form. Here they must not open Security."""
     username = _new_host()
     entity_id = _entity_for(username)
     client = _signed_in(username)
     monkeypatch.setattr(auth, "FRESH_LOGIN_SECONDS", -1)
 
-    stolen = client.post(
+    response = client.post(
         f"/entities/{entity_id}",
         data={
             "name": "Devices s.r.o.",
@@ -209,8 +224,8 @@ def test_identity_post_cannot_change_split_account_with_a_stale_session(monkeypa
         follow_redirects=False,
     )
 
-    assert stolen.status_code == 303
-    assert _recent_login_redirect(stolen)
+    assert response.status_code == 303, response.text
+    assert not _recent_login_redirect(response)
     row = db.query_one(
         "SELECT bank_account, iban FROM legal_entity WHERE id = ?", (entity_id,)
     )

@@ -28,7 +28,7 @@ from itsdangerous import BadSignature, URLSafeSerializer
 import posixpath
 import re
 import secrets
-from .. import alerts, auth, claim, codelists, config, cookie_inventory, db, doc_ocr, door_codes, guest_slug, guest_uk_i18n, guest_draft, headcount, host_i18n, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n, workflow
+from .. import alerts, auth, claim, codelists, config, cookie_inventory, db, doc_ocr, door_codes, guest_slug, guest_uk_i18n, guest_draft, guest_guide, headcount, host_i18n, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n, workflow
 from .. import ruian as ruian_lookup  # 0911: guest RUIAN suggestions
 from ..templating import render_guest
 from .admin_helpers import guest_form_raw as _guest_form_raw
@@ -1471,6 +1471,14 @@ def demo_pin_preview(token: str, reservation_id: int, request: Request):
     )
 
 
+def _guide_is_live(apartment_id: int) -> bool:
+    """1102: the guide link is shown only once the host's guide is live; never break the stay page over it."""
+    try:
+        return bool(guest_guide.progress(apartment_id)["live"])
+    except Exception:  # noqa: BLE001 - a guide hiccup hides the link, nothing more
+        return False
+
+
 @router.get("/l/{token}/{reservation_id}")
 def stay_overview(token: str, reservation_id: int, request: Request):
     lang = _language(request)
@@ -1493,7 +1501,7 @@ def stay_overview(token: str, reservation_id: int, request: Request):
     # stay's own count: a default of 1 confirmed unread would lower it.
     claim_view = {key: claim_row[key] for key in claim_row.keys()}
     if claim_view.get("declared_guests") is None:
-        claim_view["declared_guests"] = reservation["declared_guests"]
+        claim_view["declared_guests"] = reporting.expected_guest_count(reservation)
     context.update(
         {
             "apartment": apartment,
@@ -1567,6 +1575,7 @@ def stay_overview(token: str, reservation_id: int, request: Request):
                 and any(person["mine"] and person["sent"] for person in people)
             ),
             "door_code": door_codes.view(reservation, apartment),
+            "guide_live": _guide_is_live(apartment["id"]),
         }
     )
     context["fee_panel"] = (
@@ -1806,6 +1815,51 @@ async def set_party_size(token: str, reservation_id: int, request: Request):
             status_code=303,
         ),
         lang,
+    )
+
+
+@router.post("/l/{token}/{reservation_id}/count")
+async def lead_change_count(token: str, reservation_id: int, request: Request):
+    """1095: the lead guest lowers or restores the head count. No page of its own (H2a)."""
+    if not config.HEADCOUNT_LEAD_LIVE:
+        return Response(status_code=404)
+    lang = _language(request)
+    apartment, token, early = _open_link(request, token, lang)
+    if early:
+        return early
+    pin_guard = _require_pin(request, token, lang)
+    if pin_guard:
+        return pin_guard
+    reservation = _reservation_for_guest(apartment, reservation_id, request)
+    if not reservation:
+        return _unavailable(request, lang, "stay_gone", 404, token)
+    throttle = _throttle_guest_post(request, token, "guest_party", lang)
+    if throttle:
+        return throttle
+    form = await request.form()
+    # These two come before the claim check, which lets both through.
+    if not mail.mail_enabled():
+        return Response(status_code=404)
+    if _host_owns_apartment(request, apartment):
+        return Response(status_code=403)
+    claim_guard = _require_claim_session(request, reservation, token, lang)
+    if claim_guard:
+        return claim_guard
+
+    def _int(name: str) -> int:
+        try:
+            return int((form.get(name) or "").strip())
+        except (ValueError, AttributeError):
+            return 0
+
+    count, shown = _int("count"), _int("shown")
+    code = await run_in_threadpool(
+        lambda: headcount.change_by_lead(
+            reservation_id, count, shown, owner_user_id=apartment["owner_user_id"]
+        )
+    )
+    return RedirectResponse(
+        _guest_link(token, reservation_id) + _lang_q(lang, f"&count={code}"), status_code=303
     )
 
 

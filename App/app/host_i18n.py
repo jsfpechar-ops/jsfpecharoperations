@@ -369,7 +369,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "setup.banner.aria": "First-flat setup",
         "setup.banner.line": "Continue setup",
         "demo.load": "Explore with demo data",
-        "demo.load_detail": "Two sample properties. Nothing is sent to the police.",
+        "demo.load_detail": "Two sample properties with stays, stay fee, payments, cleaning and a public page. Nothing is sent to the police.",
         "demo.clear": "Clear demo data",
         "data.export_csv_title": "Export CSV",
         "data.export_csv_help": "Choose the date range to include in the export.",
@@ -2524,7 +2524,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "setup.banner.aria": "Nastavení prvního ubytování",
         "setup.banner.line": "Pokračovat v nastavení",
         "demo.load": "Prohlédnout s ukázkovými daty",
-        "demo.load_detail": "Dvě ukázková ubytování. Na policii se nic neodešle.",
+        "demo.load_detail": "Dvě ukázková ubytování s pobyty, poplatkem, platbami, úklidem a veřejnou stránkou. Na policii se nic neodešle.",
         "demo.clear": "Smazat ukázková data",
         "data.export_csv_title": "Export CSV",
         "data.export_csv_help": "Vyberte rozsah dat, který chcete exportovat.",
@@ -8555,7 +8555,7 @@ _WIZARD_0102_STRINGS = {
         "wizard.guest_link.copy_pin": "Copy PIN",
         "wizard.guest_link.message_help": "Replace the bracketed examples with your own key collection, directions and quiet hours before sending.",
         "wizard.guest_link.operator_placeholder": "[Your first name]",
-        "wizard.guest_link.message_template": "Hi [FIRST_NAME],\n\nWe're looking forward to welcoming you to %(property_name)s! 👋\n\n1. Complete your online registration (about 2 minutes)\nPlease fill in the guest form before you arrive. Czech law requires foreign guests to be registered with the police. Completing the form also helps us prepare a smooth check-in.\n%(url)s\nPIN: %(pin)s\nPlease keep the link and PIN private.\n\n2. Collect your keys\n[Example: collect your keys from the key safe at the entrance. Replace this with your own collection instructions.]\n\n3. Find your apartment\n[Example: use the main entrance and follow the signs to your apartment. Replace this with your own directions.]\n\n4. Quiet hours\n[Add your quiet hours, e.g. 22:00–06:00.] Please keep noise down in the apartment and shared areas. No parties or loud music. Thank you for being considerate of our neighbours.\n\nWhat time do you expect to arrive? If anything is unclear, just send us a message.\n\nWe look forward to hosting you!\n\nBest regards,\n%(operator_first_name)s",
+        "wizard.guest_link.message_template": "Hi [FIRST_NAME],\n\nWe're looking forward to welcoming you to %(property_name)s! 👋\n\n1. Complete your online registration (about 2 minutes)\nPlease fill in the guest form before you arrive. Czech law requires foreign guests to be registered with the police. Completing the form also helps us prepare a smooth check-in.\n%(url)s\nPIN: %(pin)s\nPlease keep the link and PIN private.\n\n2. Collect your keys\n[Example: collect your keys from the key safe at the entrance. Replace this with your own collection instructions.]\n\n3. Find your property\n[Example: use the main entrance and follow the signs to the property. Replace this with your own directions.]\n\n4. Quiet hours\n[Add your quiet hours, e.g. 22:00–06:00.] Please keep noise down at the property and in shared areas. No parties or loud music. Thank you for being considerate of our neighbours.\n\nWhat time do you expect to arrive? If anything is unclear, just send us a message.\n\nWe look forward to hosting you!\n\nBest regards,\n%(operator_first_name)s",
     },
     "cs": {
         "wizard.title": "Nastavení: %(name)s",
@@ -8624,7 +8624,7 @@ _WIZARD_0102_STRINGS = {
         "wizard.guest_link.copy_pin": "Kopírovat PIN",
         "wizard.guest_link.message_help": "Před odesláním nahraďte příklady v hranatých závorkách vlastním předáním klíčů, pokyny k cestě a dobou nočního klidu.",
         "wizard.guest_link.operator_placeholder": "[Vaše křestní jméno]",
-        "wizard.guest_link.message_template": "Dobrý den, [FIRST_NAME],\n\ntěšíme se na vás v ubytování %(property_name)s! 👋\n\n1. Vyplňte online registraci (asi 2 minuty)\nProsíme o vyplnění formuláře pro hosty ještě před příjezdem. Český zákon vyžaduje přihlášení cizinců k pobytu na policii. Vyplnění formuláře nám také pomůže připravit hladké ubytování.\n%(url)s\nPIN: %(pin)s\nOdkaz a PIN si prosím ponechte v soukromí.\n\n2. Vyzvedněte si klíče\n[Příklad: klíče si vyzvednete ze schránky u vchodu. Nahraďte vlastními pokyny k předání klíčů.]\n\n3. Najděte svůj apartmán\n[Příklad: použijte hlavní vchod a pokračujte podle označení apartmánu. Nahraďte vlastními pokyny k cestě.]\n\n4. Noční klid\n[Doplňte dobu nočního klidu, např. 22:00–06:00.] Prosíme o ticho v apartmánu i společných prostorách. Večírky a hlasitá hudba nejsou povoleny. Děkujeme za ohleduplnost k sousedům.\n\nV kolik hodin plánujete přijet? Pokud je něco nejasné, napište nám.\n\nTěšíme se na vás!\n\nS pozdravem\n%(operator_first_name)s",
+        "wizard.guest_link.message_template": "Dobrý den, [FIRST_NAME],\n\ntěšíme se na vás v ubytování %(property_name)s! 👋\n\n1. Vyplňte online registraci (asi 2 minuty)\nProsíme o vyplnění formuláře pro hosty ještě před příjezdem. Český zákon vyžaduje přihlášení cizinců k pobytu na policii. Vyplnění formuláře nám také pomůže připravit hladké ubytování.\n%(url)s\nPIN: %(pin)s\nOdkaz a PIN si prosím ponechte v soukromí.\n\n2. Vyzvedněte si klíče\n[Příklad: klíče si vyzvednete ze schránky u vchodu. Nahraďte vlastními pokyny k předání klíčů.]\n\n3. Cesta k ubytování\n[Příklad: použijte hlavní vchod a pokračujte podle označení ubytování. Nahraďte vlastními pokyny k cestě.]\n\n4. Noční klid\n[Doplňte dobu nočního klidu, např. 22:00–06:00.] Prosíme o ticho v ubytování i ve společných prostorách. Večírky a hlasitá hudba nejsou povoleny. Děkujeme za ohleduplnost k sousedům.\n\nV kolik hodin plánujete přijet? Pokud je něco nejasné, napište nám.\n\nTěšíme se na vás!\n\nS pozdravem\n%(operator_first_name)s",
     },
 }
 for _lang, _strings in _WIZARD_0102_STRINGS.items():

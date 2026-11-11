@@ -3,7 +3,7 @@
 Append-only.
 - 2026-10-06 | UbyPort: 0-2 accepted, 4-6 not; 112 = late = accepted | OPERATIONS
 - 2026-10-06 | Sweep: one send per refused record, then host fix | OPERATIONS
-- 2026-10-08/12 | Door codes (TTLock pilot): timed codes, test mode until live; one 1-min job, no polling; taken type-3 period: `add` only, host warned (0037); -1026 = created/deleted; no SCCs; retry deletion (0067-69) | owner | [plan](../plans/ttlock-door-codes.md), [legal](../privacy/DOOR_CODES_LEGAL.md)
+- 2026-10-08/12 | Door codes (TTLock pilot): timed codes, test mode until live; one 1-min job, no polling; details 0037, 0067-69 | owner | [plan](../plans/ttlock-door-codes.md), [legal](../privacy/DOOR_CODES_LEGAL.md)
 - 2026-10-09 | [workflow] One brief per copy text; executors skip non-todo; lint warns on overlap; status `replaced` = newer brief took over | [workflow](workflow.md)
 - 2026-10-11 | ARES lookup on host click; sends only the IČO; 24 h cache; 20/h per user | owner | 0055
 - 2026-10-15 | Watchdog digest every 72 h (server 10-15, repo 10-20) | owner | [OPERATIONS](../OPERATIONS.md)
@@ -57,7 +57,12 @@ Append-only.
 - 2026-11-10 [guest] Guest form: B now, then C (owner).
 - 2026-11-10 [guest] Under-15s skip the signature; any adult on the booking signs and ticks a role ("parent or guardian" / "adult responsible for the child on this stay"). A child with no adult link is filed "no signature required" (owner).
 - 2026-11-10 [guest] Titles: cs "Registrace hosta", es "Ficha de huésped", fr "Fiche voyageur" (owner).
-- 2026-11-10 [head-count] Lower count with a stay fee: show new fee and "new bill will be e-mailed", confirm. Every lead change: "Check your changes" confirm. Host digest mail lists changed field names (not values), links to the stay page; changes only, not first registrations. Small Go change allowed. Early door-code risk accepted (mail guard covers it) (owner).
+- 2026-11-10 [head-count] Lower count with a stay fee: show new fee and "new bill will be e-mailed", confirm. Every lead change: "Check your changes" confirm. Host digest mail lists changed field names (not values), links to the stay page; not first registrations. Small Go change allowed. Early door-code risk accepted (mail guard covers it) (owner).
 - 2026-11-10 [workflow] Plan: project file plans/head-count-change.md (not in repo); each complete plan gets a Fable review before building (owner).
 - 2026-11-10 [guest] 1086: unsaved prefilled values warn on leave (beforeunload) even before input (orchestrator).
 - 2026-11-11 [police] 1100: no tick, values in boxes; parser reads password+facility, never logged/stored (owner; reverses 1097, 1085).
+<<<<<<< HEAD
+- 2026-11-11 [ux] 1101 wizard reuse.
+=======
+- 2026-11-10 | [demo] Demo seed covers all current features; mock-only, cleared by Clear demo | owner | 1092
+>>>>>>> origin/main

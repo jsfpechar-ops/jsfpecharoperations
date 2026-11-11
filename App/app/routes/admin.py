@@ -967,8 +967,6 @@ async def entity_invoice_details(entity_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    if not auth.session_is_fresh(request):
-        return _back("/settings/security#settings-security", err=_flash(request, "auth.error.recent_login"))
     entity = access.entity(request, entity_id)
     if not entity or entity["archived_at"]:
         return _back("/entities", err=_flash(request, "flash.error.no_such_entity"))
@@ -1010,36 +1008,13 @@ def _entity_post_payload(form) -> Dict[str, Any]:
     return payload
 
 
-_BANK_FORM_KEYS = (
-    "bank_account",
-    "iban",
-    "account_prefix",
-    "account_number",
-    "account_bank",
-)
-
-
-def _form_sets_bank(form) -> bool:
-    """True when this POST carries a bank account field (0947: needs a fresh login)."""
-    return any(key in form for key in _BANK_FORM_KEYS)
-
-
 def _entity_details_payload(request: Request, payload: Dict[str, Any], form):
     """Normalise the detail fields a POST actually carried.
 
     Every detail (bank, VAT, registry, numbering) is touched only when the
     form sent it, so the short operator form can update the identity block
-    without wiping the stored details. Returns an error or None.
+    without wiping the stored details.
     """
-    # 0947 guarded POST /entities/{id}/invoice; this helper is the other write
-    # path for bank_account (the identity POST). A stale 30-day session must
-    # not redirect payouts or stay-fee QR payments to a new account.
-    if _form_sets_bank(form) and not auth.session_is_fresh(request):
-        return _back(
-            "/settings/security#settings-security",
-            err=_flash(request, "auth.error.recent_login"),
-        )
-
     ico = (payload.get("ico") or "").strip()
     if ico and not validation.ico_ok(ico):
         return _back(
@@ -1873,7 +1848,7 @@ async def apartment_create(request: Request):
     # 0096: a new property starts its guided setup at the calendar.
     property_setup.start(apartment_id)
     return _back(
-        f"/apartments/{apartment_id}?view=settings",
+        f"/apartments/{apartment_id}/setup/calendar",
         msg=_flash(request, "flash.apartments.created"),
     )
 
@@ -2989,11 +2964,6 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
             stay_fee_routes.apply_guest_operator_account(apartment, form, payload, request)
         except ValueError as exc:
             msg = str(exc)
-            if msg == stay_fee_routes.GUEST_OPERATOR_ACCOUNT_STALE:
-                return _back(
-                    "/settings/security#settings-security",
-                    err=_flash(request, "auth.error.recent_login"),
-                ), False
             link_error = msg == stay_fee_routes.GUEST_LINK_INVALID
             operator_account_error = msg == stay_fee_routes.GUEST_OPERATOR_ACCOUNT_INVALID
             rate_error = msg == stay_fee_routes.GUEST_RATE_REQUIRED
@@ -3508,6 +3478,23 @@ async def test_connection(apartment_id: int, request: Request):
     if outcome != "ok":
         return _back(return_to, err=_flash(request, "flash.error.connection_failed"))
     property_setup.mark_tested(apartment_id)
+    from .onboarding_wizard import wizard_setup_prefix
+
+    if return_to.startswith(wizard_setup_prefix(apartment_id)) and _form_str(form, "setup_step") == "police":
+        property_setup.mark_tested_in_wizard(apartment_id)
+        stored = property_setup.load(apartment_id)
+        nxt = "done" if stored and stored["finished"] else (
+            property_setup.next_applicable_step("police", apartment, lock_available=False) or "done"
+        )
+        advanced = _setup_after_save(
+            request,
+            apartment_id,
+            form,
+            property_setup.wizard_url(apartment_id, nxt),
+            saved_message=_flash(request, "flash.apartments.connection_ok"),
+        )
+        if advanced is not None:
+            return advanced
     return _back(return_to, msg=_flash(request, "flash.apartments.connection_ok"))
 
 
@@ -3610,6 +3597,7 @@ async def police_letter_read(apartment_id: int, request: Request):
     except Exception as exc:  # noqa: BLE001 - a traceback here would print the pasted text
         failed_name = type(exc).__name__
         del exc
+    wizard = _form_str(form, "setup_step") == "police"
     del letter_text, form
     if failed_name:
         status, boxes, filled, missing = "failed", {}, [], []
@@ -3636,7 +3624,12 @@ async def police_letter_read(apartment_id: int, request: Request):
             }
         )
     else:
-        response = _render_property_detail(apartment_id, request, extra=extra, status_code=422)
+        if wizard:
+            from .onboarding_wizard import render_wizard
+
+            response = render_wizard(request, apartment_id, "police", extra=extra, status_code=422)
+        else:
+            response = _render_property_detail(apartment_id, request, extra=extra, status_code=422)
     response.headers["Cache-Control"] = "no-store"
     return response
 
@@ -4110,12 +4103,33 @@ def reservation_detail(reservation_id: int, request: Request):
     )
 
 
+def _keep_or_clear_lead_reduction(reservation, payload: Dict[str, Any]) -> None:
+    """1095: a host count edit on a stay the lead reduced.
+
+    Re-saving the number shown keeps the reduction (the override is not
+    written); any other number is the host's decision and clears it.
+    """
+    try:
+        reduced = reservation["lead_reduced_guests"]
+    except (KeyError, IndexError):
+        reduced = None
+    if not reduced:
+        return
+    if payload["expected_guests_override"] == reporting.expected_guest_count(reservation):
+        del payload["expected_guests_override"]
+        return
+    payload["lead_reduced_guests"] = None
+    payload["lead_reduced_from"] = None
+    payload["lead_reduced_at"] = None
+
+
 @router.post("/reservations/{reservation_id}")
 async def reservation_update(reservation_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    if not access.reservation(request, reservation_id):
+    reservation = access.reservation(request, reservation_id)
+    if not reservation:
         return _back("/reservations", err=_flash(request, "flash.error.no_such_stay"))
     form = await request.form()
     payload: Dict[str, Any] = {
@@ -4130,6 +4144,7 @@ async def reservation_update(reservation_id: int, request: Request):
         if expected is not None and not 1 <= expected <= 60:
             return JSONResponse({"ok": False}, status_code=422)
         payload["expected_guests_override"] = expected
+        _keep_or_clear_lead_reduction(reservation, payload)
     status = _form_str(form, "status")
     if status in ("active", "cancelled", "ignored"):
         payload["status"] = status
@@ -4174,9 +4189,12 @@ async def reservation_remove_empty_slot(reservation_id: int, request: Request):
     if expected is None or not 2 <= expected <= 60:
         return _back(back, err=_flash(request, "host.count_changed"))
     changed = db.execute_rowcount(
-        "UPDATE reservation SET expected_guests_override = ?, updated_at = ? "
+        "UPDATE reservation SET expected_guests_override = ?, updated_at = ?, "
+        "lead_reduced_guests = NULL, lead_reduced_from = NULL, lead_reduced_at = NULL "
         "WHERE id = ? AND status = 'active' AND archived_at IS NULL "
-        "AND COALESCE(NULLIF(expected_guests_override, 0), declared_guests) = ? "
+        "AND CASE WHEN lead_reduced_guests IS NOT NULL AND lead_reduced_guests > 0 "
+        "AND lead_reduced_guests < COALESCE(NULLIF(expected_guests_override, 0), declared_guests) "
+        "THEN lead_reduced_guests ELSE COALESCE(NULLIF(expected_guests_override, 0), declared_guests) END = ? "
         "AND (SELECT COUNT(*) FROM guest WHERE reservation_id = reservation.id "
         "AND archived_at IS NULL) < ? "
         f"AND apartment_id IN (SELECT id FROM apartment WHERE {db.null_safe_eq('owner_user_id')})",
@@ -4186,6 +4204,16 @@ async def reservation_remove_empty_slot(reservation_id: int, request: Request):
         return _back(back, err=_flash(request, "host.count_changed"))
     db.audit("reservation_headcount_corrected", f"id={reservation_id} expected={expected - 1}")
     await run_in_threadpool(reporting.submit_stay_if_complete, reservation["apartment_id"], reservation_id)
+    if config.HEADCOUNT_LEAD_LIVE:
+        # 1095 (owner Q7): a lower count can complete the stay, so the door code
+        # and the bill follow the submit, in the order of the guest save.
+        await run_in_threadpool(door_codes.on_registration_complete, reservation_id)
+        fresh = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+        apartment = db.query_one(
+            "SELECT * FROM apartment WHERE id = ?", (reservation["apartment_id"],)
+        )
+        if fresh and apartment:
+            await run_in_threadpool(claim.maybe_notify_completion, fresh, apartment)
     return _back(back, msg=_flash(request, "flash.reservations.saved"))
 
 
@@ -4206,6 +4234,7 @@ async def reservation_quick_edit(reservation_id: int, request: Request):
         if expected is not None and not 1 <= expected <= 60:
             return JSONResponse({"ok": False}, status_code=422)
         payload["expected_guests_override"] = expected
+        _keep_or_clear_lead_reduction(reservation, payload)
     db.update("reservation", reservation_id, payload)
     await run_in_threadpool(
         reporting.submit_stay_if_complete,
