@@ -18,6 +18,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/headcount"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
 )
 
@@ -166,12 +167,12 @@ func RecoverStaleSubmissions(ctx context.Context, pool *pgxpool.Pool, aptID int6
 func RefreshRegistrationCompletedAt(ctx context.Context, pool *pgxpool.Pool, reservationID int64, decrypt FieldDecrypter, now func() time.Time) (*string, error) {
 	var dateFrom, dateTo string
 	var existing *string
-	var override, declared *int64
+	var override, declared, reduced *int64
 	err := pool.QueryRow(ctx,
 		`SELECT COALESCE(date_from,''), COALESCE(date_to,''), registration_completed_at,
-		        expected_guests_override, declared_guests
+		        expected_guests_override, declared_guests, lead_reduced_guests
 		   FROM reservation WHERE id = $1`, reservationID,
-	).Scan(&dateFrom, &dateTo, &existing, &override, &declared)
+	).Scan(&dateFrom, &dateTo, &existing, &override, &declared, &reduced)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
@@ -181,11 +182,8 @@ func RefreshRegistrationCompletedAt(ctx context.Context, pool *pgxpool.Pool, res
 	if existing != nil && *existing == "" {
 		existing = nil
 	}
-	// expected_guest_count: the host override wins when it is truthy.
-	expected := declared
-	if override != nil && *override != 0 {
-		expected = override
-	}
+	// expected_guest_count: the one rule, shared with Python (brief 1095).
+	expected := headcount.Expected(override, declared, reduced)
 
 	guests, err := LoadGuests(ctx, pool, GuestScope{ReservationID: reservationID}, decrypt)
 	if err != nil {
