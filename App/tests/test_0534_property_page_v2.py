@@ -186,7 +186,7 @@ def test_0545_guest_card_shows_pin_and_copy_button(host):
     db.update("apartment", apartment_id, {"permalink_pin": "482915"})
     html = _page(client, apartment_id)
     assert 'data-copy="overview-guest-url"' in _guest_strip(html)
-    assert "482915" not in _guest_strip(html)
+    assert 'data-guest-pin>PIN 482915<' in _guest_strip(html)
     assert 'value="482915"' in html
 
 

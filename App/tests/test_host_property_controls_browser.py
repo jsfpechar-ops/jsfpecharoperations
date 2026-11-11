@@ -860,3 +860,62 @@ def test_0984_calendar_rows_keep_state_and_actions_with_a_long_url(host, base):
             browser.close()
     finally:
         db.execute("DELETE FROM ical_feed WHERE id IN (?, ?)", (healthy, failed))
+
+
+SHOTS_1103 = os.environ.get("UBYHOST_SHOTS_1103")
+
+
+@pytest.mark.parametrize("width", [390, 768, 1280])
+def test_1103_guest_link_tile_fits_and_stays_neutral(host, base, width):
+    apartment = host["apartment"]
+    db.update("apartment", apartment, {"permalink_pin": "123456"})
+    with sync_api.sync_playwright() as playwright:
+        browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        try:
+            context = browser.new_context(viewport={"width": width, "height": 900})
+            context.add_cookies([{"name": auth.SESSION_COOKIE, "value": _session_cookie(host), "url": base + "/"}])
+            page = context.new_page()
+            page.goto(f"{base}/apartments/{apartment}")
+            page.wait_for_load_state("networkidle")
+            if SHOTS_1103:
+                Path(SHOTS_1103).mkdir(parents=True, exist_ok=True)
+                page.screenshot(path=str(Path(SHOTS_1103) / f"{width}.png"))
+            # (a) no horizontal page overflow
+            assert page.evaluate("() => document.documentElement.scrollWidth <= window.innerWidth")
+            # (b) tile children stay inside the tile
+            overflow = page.evaluate(
+                """() => {
+                    const t = document.querySelector('.sc-link').getBoundingClientRect().right;
+                    return [...document.querySelectorAll('.sc-link *:not(.sr-only)')]
+                        .map(e => e.getBoundingClientRect().right - t).filter(d => d > 1);
+                }"""
+            )
+            assert overflow == []
+            # (c) no red ring after a mouse click
+            page.locator(".sc-link .sc-main").click()
+            outline = page.locator(".sc-link .sc-main").evaluate("e => getComputedStyle(e).outlineStyle")
+            assert outline == "none"
+            # (d) the scroll-spy class must not paint the tile with the accent colour
+            page.goto(f"{base}/apartments/{apartment}")
+            page.wait_for_load_state("networkidle")
+            accent = page.evaluate(
+                """() => {
+                    const d = document.createElement('i');
+                    d.style.color = 'var(--acc)';
+                    document.body.appendChild(d);
+                    const c = getComputedStyle(d).color;
+                    d.remove();
+                    return c;
+                }"""
+            )
+            link = page.locator(".sc-link")
+            link.evaluate("e => e.classList.add('is-current')")
+            styles = link.evaluate(
+                "e => ({bg: getComputedStyle(e).backgroundColor, border: getComputedStyle(e).borderTopColor})"
+            )
+            assert styles["border"] != accent
+            assert styles["bg"] != accent
+            if SHOTS_1103:
+                page.screenshot(path=str(Path(SHOTS_1103) / f"{width}-is-current.png"))
+        finally:
+            browser.close()
