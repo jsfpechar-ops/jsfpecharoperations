@@ -456,10 +456,18 @@ def guest_form_locked(guest, reservation) -> bool:
 
 
 def expected_guest_count(reservation) -> Optional[int]:
-    """Host override wins over what the lead guest declared."""
+    """Host override, else the declared count; a lower lead reduction wins over both."""
     if reservation["expected_guests_override"]:
-        return reservation["expected_guests_override"]
-    return reservation["declared_guests"]
+        base = reservation["expected_guests_override"]
+    else:
+        base = reservation["declared_guests"]
+    try:
+        reduced = reservation["lead_reduced_guests"]
+    except (KeyError, IndexError):
+        reduced = None
+    if reduced and (base is None or reduced < base):
+        return reduced
+    return base
 
 
 # Well under SQLite's bound-parameter limit (999 on old builds).
