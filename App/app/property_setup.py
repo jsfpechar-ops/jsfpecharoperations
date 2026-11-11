@@ -180,9 +180,18 @@ SETUP_ORDER = ("basics", "police")
 
 
 def mark_tested(apartment_id: int) -> None:
-    """1099: the only writer of ``tested``; called after a passing connection test."""
+    """1099: set ``tested`` after a passing test while setup is open (see ``mark_tested_in_wizard``)."""
     state = load(apartment_id) or legacy_state()
     if state["finished"]:
+        return
+    state["tested"] = True
+    _save(apartment_id, state)
+
+
+def mark_tested_in_wizard(apartment_id: int) -> None:
+    """1101: a passing test from the wizard police step, finished or not."""
+    state = load(apartment_id)
+    if state is None:
         return
     state["tested"] = True
     _save(apartment_id, state)

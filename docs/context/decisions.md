@@ -57,8 +57,12 @@ Append-only.
 - 2026-11-10 [guest] Guest form: B now, then C (owner).
 - 2026-11-10 [guest] Under-15s skip the signature; any adult on the booking signs and ticks a role ("parent or guardian" / "adult responsible for the child on this stay"). A child with no adult link is filed "no signature required" (owner).
 - 2026-11-10 [guest] Titles: cs "Registrace hosta", es "Ficha de huésped", fr "Fiche voyageur" (owner).
-- 2026-11-10 [head-count] Lower count with a stay fee: show new fee and "new bill will be e-mailed", confirm. Every lead change: "Check your changes" confirm. Host digest mail lists changed field names (not values), links to the stay page; changes only, not first registrations. Small Go change allowed. Early door-code risk accepted (mail guard covers it) (owner).
+- 2026-11-10 [head-count] Lower count with a stay fee: show new fee and "new bill will be e-mailed", confirm. Every lead change: "Check your changes" confirm. Host digest mail lists changed field names (not values), links to the stay page; not first registrations. Small Go change allowed. Early door-code risk accepted (mail guard covers it) (owner).
 - 2026-11-10 [workflow] Plan: project file plans/head-count-change.md (not in repo); each complete plan gets a Fable review before building (owner).
 - 2026-11-10 [guest] 1086: unsaved prefilled values warn on leave (beforeunload) even before input (orchestrator).
 - 2026-11-11 [police] 1100: no tick, values in boxes; parser reads password+facility, never logged/stored (owner; reverses 1097, 1085).
+<<<<<<< HEAD
+- 2026-11-11 [ux] 1101 wizard reuse.
+=======
 - 2026-11-10 | [demo] Demo seed covers all current features; mock-only, cleared by Clear demo | owner | 1092
+>>>>>>> origin/main

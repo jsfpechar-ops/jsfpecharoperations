@@ -1,14 +1,6 @@
 {% extends "setup_wizard/_layout.html" %}
 {% set values = draft if draft is defined else apartment %}
 {% from "_components.html" import field_label, help_tip, choice_card with context %}
-{% macro text_field(name, label, value, help='', optional=false, maxlength=none, required=false) %}
-  <div class="field">
-    {{ field_label(name, label, help, optional, '', required) }}
-    <input type="text" id="{{ name }}" name="{{ name }}" value="{{ value or '' }}"
-           {%- if maxlength %} maxlength="{{ maxlength }}"{% endif %}
-           {%- if required %} required{% endif %}>
-  </div>
-{% endmacro %}
 {% set police_errors = police_errors or {} %}
 {% block wizard_help %}{% from "_components.html" import help_tip with context %}{{ help_tip('wiz-why-police', t('why.police') ~ ' ' ~ t('why.police_wait')) }}{% endblock %}
 {% block wizard_content %}
@@ -16,35 +8,22 @@
 {% for field, message in police_errors.items() %}
 <p class="err-text" id="{{ field }}-error" role="alert">{{ validation_message(message) }}</p>
 {% endfor %}
-<div class="field-label-row police-section-head">
-  <h2 class="setup-wizard-section-title">{{ t('setup_guide.reporting.title') }}{{ help_tip('wizard-police-credentials-help', t('apartment.form.ubyport.no_credentials'), 'https://policie.gov.cz/reditelstvi-sluzby-cizinecke-policie/jake-jsou-moznosti-zasilani-dat-aplikaci-ubyport') }}</h2>
-  <a class="ui-btn ui-btn-secondary ui-btn-compact police-sample-link" href="/static/docs/ubyport-ws-credential-sample.pdf?v=20261004a" target="_blank" rel="noopener">{{ t('apartment.form.ubyport.sample_link') }}</a>
-</div>
 
 <form method="post" action="/apartments/{{ apartment.id }}" class="setup-wizard-form" id="police-form">
+  {#- 1101: Enter in a box runs the test (the first submit button), never Wait. -#}
+  <button class="sr-only" type="submit" tabindex="-1" aria-hidden="true" formaction="/apartments/{{ apartment.id }}/test-connection" formmethod="post" formnovalidate></button>
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-  <input type="hidden" name="return_to" value="{{ wizard_next_return_to }}">
+  <input type="hidden" name="return_to" value="/apartments/{{ apartment.id }}/setup/police">
   <input type="hidden" name="setup_step" value="police">
   <input type="hidden" name="internal_name" value="{{ values.internal_name }}">
   <input type="hidden" name="legal_entity_id" value="{{ values.legal_entity_id }}">
   <input type="hidden" name="city_en" value="{{ values.city_en or '' }}">
   <input type="hidden" name="default_purpose" value="{{ values.default_purpose or '10' }}">
   <input type="hidden" name="step" value="police">
-  <div class="grid">{{ text_field('uby_idub', t('apartment.form.ubyport.idub_label'), values.uby_idub, t('apartment.form.ubyport.idub_hint'), false, 14, true) }}
-  </div>
-  <div class="grid two">
-    {{ text_field('uby_ws_user', t('automation.login'), values.uby_ws_user, t('apartment.form.ubyport.login_hint'), false, none, true) }}
-    <div class="field">
-      {{ field_label('uby_ws_password', t('automation.password'), t('apartment.form.ubyport.password_help'), false, '', not has_password) }}
-      <input type="password" id="uby_ws_password" name="uby_ws_password" autocomplete="new-password"{% if has_password %} placeholder="••••••••"{% else %} required{% endif %}>
-    </div>
-  </div>
-  <div class="grid">{{ text_field('uby_mark', t('apartment.form.ubyport.mark_label'), values.uby_mark, t('apartment.form.ubyport.mark_hint'), false, 6, true) }}</div>
-  <div class="grid two">
-    {%- set facility_help -%}{{ t('apartment.form.ubyport.name_hint') }} <span class="facility-example"><span class="facility-example-label">{{ t('apartment.form.ubyport.name_example') }}</span>Ubytovací zařízení: <mark>BYT Č. [2] FIKTVNÍ 1234/56 (PRAHA,</mark> PRAHA 2, FIKTVNÍ, 1234/56)</span>{%- endset %}
-    {{ text_field('uby_name', t('automation.facility_name'), values.uby_name, facility_help, false, 35, true) }}
-    {{ text_field('uby_contact', t('automation.contact'), values.uby_contact, t('apartment.form.ubyport.contact_hint'), true, 50) }}
-  </div>
+  {% set police_in_wizard = true %}
+  {% set base_url = '/apartments/' ~ apartment.id %}
+  {% set letter_first = not letter_status %}
+  {% with apartment = values %}{% include "_police_fields.html" %}{% endwith %}
   {#- 0884: the former automation step. The stored mode is shown; a new property stores manual. -#}
   {% set auto_mode = values.automation_mode if values.automation_mode in ('manual', 'scheduled', 'immediate') else 'manual' %}
   <h3 class="property-section-title">{{ t('wizard.question.automation') }}{{ help_tip('wiz-why-automation', t('why.automation')) }}</h3>
@@ -59,11 +38,15 @@
     {{ choice_card('automation_mode', 'immediate', t('automation.mode.immediate'), auto_mode == 'immediate', 'wizard-immediate-help', t('wizard.automation.immediate_detail')) }}
   </div>
 </form>
+<form id="police-letter-form" method="post" action="/apartments/{{ apartment.id }}/police-letter" data-discard-warning="{{ t('police_letter.discard_warning') }}">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <input type="hidden" name="setup_step" value="police">
+</form>
 {% endblock %}
 {% block wizard_actions %}
 <div class="setup-wizard-actions">
   <button class="ui-btn ui-btn-secondary setup-wizard-wait" type="submit" form="police-form" formaction="/apartments/{{ apartment.id }}/setup" name="action" value="wait" formnovalidate>{{ t('setup_guide.reporting.wait') }}</button>
-  <button class="ui-btn ui-btn-primary" type="submit" form="police-form">{{ t('wizard.save_continue') }}</button>
+  <button class="ui-btn ui-btn-primary" type="submit" form="police-form" formaction="/apartments/{{ apartment.id }}/test-connection" formmethod="post" formnovalidate>{{ t('apartment.form.test_connection') }}</button>
 </div>
 {% endblock %}
 {% block wizard_notes %}

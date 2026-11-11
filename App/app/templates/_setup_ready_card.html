@@ -1,0 +1,15 @@
+<section class="ui-section-card ready-card" id="setup-ready" aria-labelledby="setup-ready-title" data-ready-card>
+  <h2 class="ui-section-h" id="setup-ready-title">{{ t('setup.ready.title') }}</h2>
+  <p class="ui-sub">{{ t('setup.ready.text') if pin else t('setup.ready.text_no_pin') }}</p>
+  <div class="ready-card-body">
+    <img class="ready-card-qr" src="{{ ready_qr }}" width="160" height="160" alt="{{ t('setup.ready.qr_alt') }}">
+    <div class="ready-card-copy">
+      <p class="ready-card-row"><span class="muted">{{ t('property_page.guest_link.title') }}</span> <code class="ready-card-link">{{ permalink }}</code>
+        <input class="sr-only" type="text" id="ready-link" readonly value="{{ permalink }}" tabindex="-1" aria-hidden="true">
+        <button class="ui-btn ui-btn-secondary" type="button" data-copy="ready-link" data-copy-label="{{ t('common.copy_link') }}" data-copied-label="{{ t('common.copied') }}">{{ t('common.copy_link') }}</button></p>
+      {% if pin %}<p class="ready-card-row"><span class="muted">{{ t('havel.card.pin') }}</span> <b class="ready-card-pin">{{ pin }}</b>
+        <input class="sr-only" type="text" id="ready-pin" readonly value="{{ pin }}" tabindex="-1" aria-hidden="true">
+        <button class="ui-btn ui-btn-secondary" type="button" data-copy="ready-pin" data-copy-label="{{ t('property_page.guest_link.copy_pin') }}" data-copied-label="{{ t('common.copied') }}">{{ t('property_page.guest_link.copy_pin') }}</button></p>{% endif %}
+    </div>
+  </div>
+</section>

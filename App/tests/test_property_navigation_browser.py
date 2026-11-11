@@ -493,11 +493,8 @@ def test_create_offers_the_calendar_first_and_works_without_js(host, base):
             page.fill(f"#{field}", value)
         page.locator(".property-create-actions .ui-btn-primary").click()
         page.wait_for_load_state()
-        # 1099: create lands on the short editor; the wizard is opened directly.
-        assert "view=settings" in page.url and "/setup/" not in page.url
-        created_id = re.search(r"/apartments/(\d+)", page.url).group(1)
-        page.goto(f"{base}/apartments/{created_id}/setup/calendar?lang=en")
-        page.wait_for_load_state()
+        # 1101: create lands in the wizard.
+        assert "/setup/calendar" in page.url
         assert "/setup/calendar" in page.url
         assert not page.locator(".property-first-use").count()
         assert page.locator("[data-setup-wizard]").is_visible()
