@@ -1,6 +1,6 @@
 # 1120b: Guest details mail, part b: the switch on the settings page
 
-Status: todo
+Status: review
 Depends on: 1120 (the column and `App/app/guest_mail_pref.py` must be in your checkout; if `App/app/guest_mail_pref.py` is missing, STOP) | Base commit: 169ee203 | Branch: task/1120b-guest-details-mail-settings-page
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

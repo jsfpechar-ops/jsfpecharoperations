@@ -59,6 +59,7 @@ from .. import (
     signup,
     stay_fee,
     stay_fee_auto,
+    guest_mail_pref,
     ttlock,
     validation,
     welcome_back,
@@ -5356,6 +5357,7 @@ def _settings_page(request: Request, group: str):
             "backup_status": _backup_status(request),
             "onboarding_emails": _onboarding_emails(request),
             "stay_fee_emails": _stay_fee_emails(request),
+            "guest_details_mail": _guest_details_mail(request),
             # WP20: Settings > Privacy, the ad measurement consents given at sign-up.
             "ad_consents": (
                 signup.consents_for(access.owner_id(request))
@@ -5426,6 +5428,20 @@ def _stay_fee_emails(request: Request):
     if not stay_fee_auto.workspace_has_fee_property(account["id"]):
         return None
     return stay_fee_auto.emails_enabled(account["id"])
+
+
+def _guest_details_mail(request: Request):
+    """The "Guest details in the confirmation e-mail" switch: True or False, None when hidden.
+
+    Same guards as the onboarding switch: a host, on their own account, no preview.
+    """
+    account = auth.current_user(request)
+    workspace = auth.workspace_user(request)
+    if not account or account["role"] != "host":
+        return None
+    if workspace and workspace["id"] != account["id"]:
+        return None
+    return guest_mail_pref.switch_on(account["id"])
 
 
 def _backup_status(request: Request):
