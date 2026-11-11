@@ -45,6 +45,13 @@ Briefs 1121 and 1122 call only this function; they never read the column.
 
 1123 and 1123b stay **draft PRs until the lawyer confirms the wording** (it joins the open lawyer package). Until its version bump is live, no workspace gets full details, so 1120 to 1122 can ship first.
 
+## What the code changed in this plan (found while briefing)
+
+- The host mail goes **once per completed stay**, when the receipt goes (`completion_notified_at`), not once per form.
+- The code cannot tell which guest row is the person who claimed the stay. So the receipt shows a masked document number for guests typed in by the guest after the claim, names only for everyone else, and **no date of birth or address for anyone**.
+- The "(host only)" link leaves the receipt, since the host is no longer copied.
+- Follow-ups, not briefed: the fee-update mail (`fee_update.py`) still copies the host; nationality and document type print as codes, not words.
+
 ## Open for the lawyer
 
 1. DPA wording for "guest details by e-mail to the controller's contact address", and that the host's mailbox is the host's responsibility.
