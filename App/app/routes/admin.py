@@ -967,8 +967,6 @@ async def entity_invoice_details(entity_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    if not auth.session_is_fresh(request):
-        return _back("/settings/security#settings-security", err=_flash(request, "auth.error.recent_login"))
     entity = access.entity(request, entity_id)
     if not entity or entity["archived_at"]:
         return _back("/entities", err=_flash(request, "flash.error.no_such_entity"))
@@ -1010,36 +1008,13 @@ def _entity_post_payload(form) -> Dict[str, Any]:
     return payload
 
 
-_BANK_FORM_KEYS = (
-    "bank_account",
-    "iban",
-    "account_prefix",
-    "account_number",
-    "account_bank",
-)
-
-
-def _form_sets_bank(form) -> bool:
-    """True when this POST carries a bank account field (0947: needs a fresh login)."""
-    return any(key in form for key in _BANK_FORM_KEYS)
-
-
 def _entity_details_payload(request: Request, payload: Dict[str, Any], form):
     """Normalise the detail fields a POST actually carried.
 
     Every detail (bank, VAT, registry, numbering) is touched only when the
     form sent it, so the short operator form can update the identity block
-    without wiping the stored details. Returns an error or None.
+    without wiping the stored details.
     """
-    # 0947 guarded POST /entities/{id}/invoice; this helper is the other write
-    # path for bank_account (the identity POST). A stale 30-day session must
-    # not redirect payouts or stay-fee QR payments to a new account.
-    if _form_sets_bank(form) and not auth.session_is_fresh(request):
-        return _back(
-            "/settings/security#settings-security",
-            err=_flash(request, "auth.error.recent_login"),
-        )
-
     ico = (payload.get("ico") or "").strip()
     if ico and not validation.ico_ok(ico):
         return _back(

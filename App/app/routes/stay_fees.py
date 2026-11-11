@@ -609,8 +609,7 @@ def apply_guest_operator_account(apartment, form, values: dict, request) -> None
     apartment row. Re-posting the account already on file does not write again;
     the property form always sends the field. Saving this form stays on the
     property page. A stale login must not send the host to Security or drop
-    the IBAN they just typed. The operator invoice screen still requires a
-    fresh login before it changes the same account.
+    the IBAN they just typed. The operator invoice screen saves the same account without opening Security.
     """
     from .. import db
 
