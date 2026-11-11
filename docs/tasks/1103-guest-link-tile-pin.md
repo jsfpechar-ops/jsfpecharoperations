@@ -107,3 +107,18 @@ For `/apartments/<id>` (one property with a PIN) take screenshots at 390, 768 an
 - Tests in section 5 green, 0 skipped; screenshots attached; PR is a draft until the UX notes are written; merge only with `scripts/merge-pr-on-green.sh`, never push to `main`.
 - Report: files changed, test tail lines, the three screenshot descriptions. Add nothing to status, decisions or known-issues (the orchestrator does that).
 - Out of scope: the Guest links section, the setup wizard, stay-level copy buttons.
+
+## 5. Do not touch
+The Guest links section field `permalink_pin`, setup wizard templates, any other `.sc` tile, any page other than the property page.
+
+## 6. Commands
+See the Tests section above; every command ends with `| tail -30`.
+
+## 7. Acceptance
+See "Done when" above.
+
+## 8. Stop and ask
+An anchor is not found, a test fails twice, or two readings of a step are possible.
+
+## 9. Report
+`docs/tasks/1103-report.md`, 600 tokens at most (written).
