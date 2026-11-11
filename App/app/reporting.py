@@ -50,6 +50,44 @@ ERROR = "error"
 BLOCKED = "blocked"  # rejected in a way that resending cannot fix
 NOT_REQUIRED = "not_required"  # Czech nationals: house book only
 
+# Every move of guest.submit_state a writer makes today, derived from the code
+# (brief 1105). Nothing reads this at runtime: test_sm_guest_submit_state.py
+# pins each write against it, so a new move fails CI until it is listed here.
+# "outcome" is plan_outcome here and PlanOutcome in go/internal/ubyport/outcome.go;
+# its write has no state guard and collect admits every state. A new row starts
+# PENDING or NOT_REQUIRED (guest_create, the guest form, demo._guest).
+TRANSITIONS = {
+    PENDING: {
+        SENT,  # outcome (accepted, or duplicate 150); mark_filed_by_hand
+        ERROR,  # outcome (correctable refusal)
+        BLOCKED,  # outcome (not correctable)
+        NOT_REQUIRED,  # collect_sendable and collect.go; host guest_update; guest form
+    },
+    ERROR: {
+        SENT,  # outcome; mark_filed_by_hand
+        BLOCKED,  # outcome
+        PENDING,  # host guest_update (rule 10.4(5)); guest form
+        NOT_REQUIRED,  # collect_sendable and collect.go; host guest_update; guest form
+    },
+    BLOCKED: {
+        SENT,  # outcome, on a host resend; mark_filed_by_hand
+        ERROR,  # outcome, on a host resend
+        PENDING,  # host guest_update (rule 10.4(5)); guest form
+        NOT_REQUIRED,  # collect_sendable and collect.go; host guest_update; guest form
+    },
+    SENT: {
+        PENDING,  # undo_filed_by_hand (manual_prev_state, else pending)
+        ERROR,  # undo_filed_by_hand; outcome, on a host resend refused
+        BLOCKED,  # undo_filed_by_hand; outcome, on a host resend refused
+    },
+    NOT_REQUIRED: {
+        PENDING,  # host guest_update; guest form (nationality now reportable)
+        SENT,  # outcome, for a reportable guest still marked not_required
+        ERROR,  # outcome, same
+        BLOCKED,  # outcome, same
+    },
+}
+
 # A guest the host filed by hand in the UbyPort web application (WP23) is
 # ``SENT`` like any filed guest, so every guard that keeps UbyHost from filing a
 # record twice (collect_sendable, claim_sendable, the sweep, the watchdog)
