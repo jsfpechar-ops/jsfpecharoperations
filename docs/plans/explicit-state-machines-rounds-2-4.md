@@ -20,6 +20,7 @@ Each brief starts with a test that fails on today's code and shows the fault, th
 | 1116 | `door_codes._handle_cancellations` read-then-write: guard the write | Python | concurrency | Opus |
 | 1117 | `guide_import` row stays `running` when its worker dies: stale reset | Python | low | Sonnet |
 | 1118 | `docs/OPERATIONS.md` submit_state section: make it describe the code; list the moves the owner must rule on | docs | filing doc | Sonnet |
+| 1121 | A guest blocked as a duplicate stays `blocked` when an edit changes no field reported to the police (ruling 1 below) | Python | HIGH RISK filing | Opus |
 
 These touch different files and run in any order. 1113 first helps every other PR's CI.
 
@@ -39,6 +40,10 @@ After 1120 has run in production with no recorded violation for a machine, that 
 
 ## Owner decisions needed
 
-1. Owner, 2026-11-11: "do the recommended". The orchestrator gives a recommendation per item once 1118 lists them. 1118 lists the filing moves that the doc and the code disagree on; say which are intended. One looks like a bug: a guest blocked as a duplicate returns to `pending` after any edit.
+1. Filing rulings from 1118. Owner, 2026-11-11: "do the recommended"; the recommendations are the orchestrator's:
+   - Duplicate-blocked guest returns to `pending` after any edit: change the code (brief 1121). Only an edit to a reported field may reset it.
+   - A record-level 150 becomes `sent`: keep. It follows the police letter the code comment cites.
+   - `sent` moves to `error` or `blocked` after a refused host resend: keep for now. It shows the host their correction was refused.
+   - A reportable guest still marked `not_required` is sent: keep. It is the safe direction for the filing duty.
 2. 1120: Postgres-only trigger. Answered yes (owner, 2026-11-11).
 3. 1111: run its production query; merge only when ready to run `pg_schema.py apply` at once.
