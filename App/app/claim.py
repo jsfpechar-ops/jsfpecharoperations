@@ -511,7 +511,6 @@ def _guest_mail_content(
                 door_code=door_code,
                 filled=filled,
                 expected=expected,
-                host_url=f"{config.app_base_url()}/reservations/{reservation['id']}",
                 fee=_completion_fee(apartment, reservation),
                 **_completion_facts(apartment, reservation, lang),
             )
@@ -818,15 +817,26 @@ def maybe_notify_completion(reservation, apartment, *, force: bool = False) -> N
         kind="completion",
         idempotency_key=f"completion:{reservation['id']}:{progress['filled']}",
         to_email=claim["email"],
-        # The host is copied on the receipt as well as being the reply address,
-        # so the guest's own record of the stay reaches them either way.
-        cc_email=payload.get("reply_to", ""),
+        # 1121: the host has their own mail (mail_notify.host_guest_details),
+        # so the receipt is not copied to them. payload["reply_to"] still sends
+        # the guest's answer to the host.
         subject=content["subject"],
         payload=payload,
         reservation_id=reservation["id"],
         apartment_id=apartment["id"],
         owner_user_id=apartment["owner_user_id"],
     )
+    try:
+        fee_now = _completion_fee(apartment, reservation)
+        mail_notify.host_guest_details(
+            apartment,
+            reservation,
+            filled=progress["filled"],
+            expected=expected,
+            fee_total=fee_now["total"] if fee_now else None,
+        )
+    except Exception:  # the host mail must never cost the guest their receipt
+        log.exception("host guest details not queued reservation_id=%s", reservation["id"])
     db.execute(
         "UPDATE reservation_claim SET completion_notified_at = ?, updated_at = ? "
         "WHERE reservation_id = ?",

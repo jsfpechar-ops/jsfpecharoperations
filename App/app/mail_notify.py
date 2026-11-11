@@ -1829,6 +1829,200 @@ def build_completion(
     return content
 
 
+# --- 1121: who registered, to the host ----------------------------------------
+#
+# The stored body carries mail.GUEST_DETAILS_MARKER; render_guest_details fills
+# it in at send time. Visa number, signature and photo are never selected.
+
+GUEST_DETAILS_HOST_KIND = "guest_details_host"
+_DOC_MASK = "\u2022\u2022\u2022\u2022"
+_GUEST_STATE_KEYS = ("pending", "sent", "error", "blocked", "not_required")
+_GUEST_DETAIL_COLUMNS = (
+    "id, first_name, surname, nationality, submit_state, doc_type, "
+    "doc_number, doc_number_enc, birth_date, birth_date_enc, "
+    "res_street, res_street_enc, res_city, res_city_enc, res_country"
+)
+
+
+def mask_document_number(number: Optional[str]) -> str:
+    """``\u2022\u2022\u2022\u2022 1234``: the last four characters only.
+
+    Spaces are ignored. A number shorter than five characters shows no
+    characters at all (four of four would be the whole number). Empty stays empty.
+    """
+    clean = "".join(str(number or "").split())
+    if not clean:
+        return ""
+    if len(clean) < 5:
+        return _DOC_MASK
+    return f"{_DOC_MASK} {clean[-4:]}"
+
+
+def _guest_name(guest: Dict[str, Any], lang: str) -> str:
+    parts = (str(guest.get("first_name") or "").strip(), str(guest.get("surname") or "").strip())
+    return " ".join(p for p in parts if p) or _text(lang, "mail.guest_details_host.unnamed")
+
+
+def _guest_detail_rows(guest: Dict[str, Any], lang: str, full: bool) -> List[Tuple[str, str]]:
+    state = str(guest.get("submit_state") or "pending")
+    state_text = (
+        _text(lang, f"mail.guest_details_host.state.{state}")
+        if state in _GUEST_STATE_KEYS
+        else state
+    )
+    rows: List[Tuple[str, str]] = [
+        (_text(lang, "mail.guest_details_host.nationality_label"),
+         str(guest.get("nationality") or "").strip() or "\u2013"),
+        (_text(lang, "mail.guest_details_host.state_label"), state_text),
+    ]
+    if not full:
+        return rows
+    born = _fmt_date(guest.get("birth_date")) if guest.get("birth_date") else ""
+    if born:
+        rows.append((_text(lang, "mail.guest_details_host.birth_label"), born))
+    address = ", ".join(
+        p for p in (
+            str(guest.get("res_street") or "").strip(),
+            str(guest.get("res_city") or "").strip(),
+            str(guest.get("res_country") or "").strip(),
+        ) if p
+    )
+    if address:
+        rows.append((_text(lang, "mail.guest_details_host.address_label"), address))
+    if guest.get("doc_type"):
+        rows.append((_text(lang, "mail.guest_details_host.doc_type_label"), str(guest["doc_type"])))
+    masked = mask_document_number(guest.get("doc_number"))
+    if masked:
+        rows.append((_text(lang, "mail.guest_details_host.doc_number_label"), masked))
+    return rows
+
+
+def render_guest_details(reservation_id: int, *, lang: str, as_html: bool) -> str:
+    """The per-guest part of the host mail, read from the database at send time."""
+    from . import guest_mail_pref
+
+    lang = host_i18n.normalise_language(lang)
+    stay = db.query_one(
+        "SELECT r.id, a.owner_user_id FROM reservation r "
+        "JOIN apartment a ON a.id = r.apartment_id WHERE r.id = ?",
+        (reservation_id,),
+    )
+    guests = (
+        db.query(
+            f"SELECT {_GUEST_DETAIL_COLUMNS} FROM guest "
+            "WHERE reservation_id = ? AND archived_at IS NULL ORDER BY is_lead DESC, id",
+            (reservation_id,),
+        )
+        if stay
+        else []
+    )
+    if not guests:
+        gone = _text(lang, "mail.guest_details_host.gone")
+        return _block_paragraph(gone) if as_html else gone
+    owner = stay["owner_user_id"]
+    full = bool(owner) and guest_mail_pref.full_details(int(owner))
+    parts: List[str] = []
+    for row in guests:
+        guest = dict(row)
+        name = _guest_name(guest, lang)
+        detail_rows = _guest_detail_rows(guest, lang, full)
+        if as_html:
+            parts.append(_block_panel(name, detail_rows))
+        else:
+            parts.append("\n".join([name, *(f"  {label}: {value}" for label, value in detail_rows)]))
+    return "".join(parts) if as_html else "\n\n".join(parts)
+
+
+def build_host_guest_details(
+    *,
+    lang: str,
+    property_name: str,
+    dates: str,
+    filled: int,
+    expected: Optional[int],
+    stay_url: str,
+    fee_total: Optional[int] = None,
+) -> Dict[str, str]:
+    """The host mail around the guest list. It holds no guest field value."""
+    lang = host_i18n.normalise_language(lang)
+    subject = _text(lang, "mail.guest_details_host.subject", property=property_name)
+    heading = _text(lang, "mail.guest_details_host.heading")
+    intro = _text(lang, "mail.guest_details_host.intro", property=property_name, dates=dates)
+    action = _text(lang, "mail.guest_details_host.action")
+    footer = _text(lang, "mail.guest_details_host.footer")
+    rows: List[Tuple[str, str]] = []
+    if expected:
+        rows.append((
+            _text(lang, "mail.guest_details_host.count_label"),
+            _text(lang, "mail.guest_details_host.count_value", filled=filled, expected=expected),
+        ))
+    if fee_total:
+        rows.append((
+            _text(lang, "mail.guest_details_host.fee_label"),
+            _text(lang, "mail.guest_details_host.fee_value", total=fee_total),
+        ))
+    blocks = [_block_heading(heading), _block_paragraph(intro)]
+    text_lines = [intro]
+    if rows:
+        blocks.append(_block_panel(_text(lang, "mail.guest_details_host.stay_title"), rows))
+        text_lines.extend(["", *(f"{label}: {value}" for label, value in rows)])
+    blocks.append(mail.GUEST_DETAILS_MARKER)
+    text_lines.extend(["", mail.GUEST_DETAILS_MARKER])
+    blocks.append(_block_button(stay_url, action))
+    text_lines.extend(["", f"{action}: {stay_url}"])
+    text = "\n".join([*text_lines, "", "--", "UbyHost", footer])
+    return {
+        "subject": subject,
+        "text": text,
+        "html": _shell(
+            lang=lang,
+            title=property_name,
+            preheader=intro,
+            blocks=blocks,
+            footer_lines=["UbyHost", footer],
+        ),
+    }
+
+
+def host_guest_details(
+    apartment: Any,
+    reservation: Any,
+    *,
+    filled: int,
+    expected: Optional[int],
+    fee_total: Optional[int] = None,
+) -> Optional[int]:
+    """Queue the host's mail of who registered. Called next to the receipt, so once per stay."""
+    to_email = _entity_contact_email(apartment["legal_entity_id"] if apartment else None)
+    if not to_email:
+        return None
+    lang = HOST_MAIL_LANGUAGE
+    content = build_host_guest_details(
+        lang=lang,
+        property_name=property_label(apartment, lang),
+        dates=validation.fmt_date_range(reservation["date_from"], reservation["date_to"]),
+        filled=filled,
+        expected=expected,
+        stay_url=_app(f"/reservations/{reservation['id']}"),
+        fee_total=fee_total,
+    )
+    return mail.enqueue(
+        kind=GUEST_DETAILS_HOST_KIND,
+        idempotency_key=f"{GUEST_DETAILS_HOST_KIND}:{reservation['id']}:{filled}",
+        to_email=to_email,
+        subject=content["subject"],
+        payload={
+            "text": content["text"],
+            "html": content["html"],
+            "lang": lang,
+            mail.GUEST_DETAILS_KEY: int(reservation["id"]),
+        },
+        reservation_id=reservation["id"],
+        apartment_id=apartment["id"],
+        owner_user_id=apartment["owner_user_id"],
+    )
+
+
 def build_fee_update(
     *,
     lang: str,
