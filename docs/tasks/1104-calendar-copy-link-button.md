@@ -1,6 +1,6 @@
 # 1104: property page Calendars table, copy link button beside the URL, same look as the other buttons
 
-Status: todo
+Status: review
 Depends on: none | Base commit: origin/main | Branch: task/1104-calendar-copy-link-button
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (3 steps of at most 6 calls)
 Brief by Sonnet 5.5, 2026-11-11. Owner Josef: "the copy link button is ugly, make it better".

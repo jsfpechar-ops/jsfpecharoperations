@@ -1,6 +1,6 @@
 # 1103: property page "Guest link" tile, calm look and PIN next to the link
 
-Status: ready
+Status: review
 Depends on: none | Base commit: origin/main | Branch: task/1103-guest-link-tile-pin
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (3 steps of at most 6 calls)
 Brief by Sonnet 5.5, 2026-11-11. Owner Josef reported both points from a screenshot.
