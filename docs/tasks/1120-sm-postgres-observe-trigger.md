@@ -9,7 +9,7 @@ Executor: Haiku 5.5 | Fits one session per part: 30 tool calls, 60k tokens. Part
 ## Owner decisions
 
 1. **A Postgres-only trigger** (bends hard rule 5 "Postgres-portable SQL", and `docs/context/rules.md` line 40 "No new triggers"). SQLite, which is kept only for rollback, gets nothing. **Answered yes on 2026-11-11** (the orchestrator passed this on). The orchestrator writes the decision line in `docs/context/decisions.md`. Step A0 checks that the line is there.
-2. **Retention period for `state_transition_violation`.** Default in this brief: **90 days** after the row was written, deleted by the nightly retention run. Still open. To pick another period, change `STATE_VIOLATION_DAYS` in Step B9 and the RETENTION.md row in Step B13 before Part B runs.
+2. **Retention period for `state_transition_violation`.** Default: **90 days** after the row was written (nightly retention run). Open: another period changes Step B9 and Step B13 before Part B runs.
 
 ## Why two parts (read this first)
 
@@ -57,17 +57,15 @@ Record in production every state change on the 11 round 1 state columns that the
 | `sm_observe_ad_click_send_state` | `ad_click.send_state` (nullable) | `id` | `App/app/meta_capi.py` line 59 `SEND_TRANSITIONS` |
 | `sm_observe_guide_import_status` | `guide_import.status` | `id` | `App/app/guest_guide_import.py` line 28 `IMPORT_TRANSITIONS` |
 
-`None` keys in the tables (`SUBMISSION_TRANSITIONS`, claim `TRANSITIONS`: the INSERT; `SEND_TRANSITIONS`: NULL) become `''`. Self-pairs (`claimed>claimed`, `active>active`, ...) are copied as they are. They never fire, but copying them keeps the file exactly equal to the tables. The pair lists in Step B1 were generated from these tables with an `ast` script and checked against them.
+`None` keys (`SUBMISSION_TRANSITIONS`, claim: the INSERT; `SEND_TRANSITIONS`: NULL) become `''`. Self-pairs (`claimed>claimed`, ...) are copied: they never fire, but the file stays exactly equal to the tables. Step B1's lists were generated from these tables with an `ast` script.
 
-### 2.5 Personal data and retention (hard rule 2)
+### 2.4 Personal data and retention (hard rule 2)
 
-A row holds a table name, a column name, the row's key and two state words. For `guest`, `reservation_claim` (key = `reservation_id`) and `ad_click` (points at a `user_account`), the key identifies one guest, stay or account when joined. That makes the row pseudonymous personal data (GDPR Art. 4(5), recital 26). So it gets a `retention.py` line and a fixed period. It is pruned where the other log-like tables are pruned: `App/app/retention.py` `STEPS` (lines 543-565, next to `rate_limit_events` and `havel_gap`), with an audit line from `_cutoffs` (lines 568-598; `tests/test_retention_alignment.py` `test_every_step_of_the_run_writes_class_count_and_cutoff` requires a cutoff for every step). The step does nothing on SQLite (the table exists only in PostgreSQL) and on an owner-scoped run (the table has no owner), like `_havel_gap_step` (lines 260-268). The retention run is a dry run unless `UBYHOST_RETENTION_AUTOPURGE=1` (`docs/privacy/RETENTION.md` lines 3-5), the same as every other step.
+The row's key of a `guest`, `reservation_claim` or `ad_click` row identifies a guest, stay or account when joined: pseudonymous personal data (GDPR Art. 4(5)). So: a `retention.py` line and a fixed period, pruned where the other log-like tables are, `retention.py` `STEPS` (lines 543-565, beside `havel_gap`), with a `_cutoffs` entry (lines 568-598; `test_retention_alignment.py` `test_every_step_of_the_run_writes_class_count_and_cutoff` needs one per step). The step returns 0 on SQLite and on owner-scoped runs, like `_havel_gap_step` (lines 260-268). Runs are dry unless `UBYHOST_RETENTION_AUTOPURGE=1` (`RETENTION.md` lines 3-5), as for every step.
 
-### 2.6 Performance (honest)
+### 2.5 Performance (honest)
 
-Per UPDATE that names a covered column, PostgreSQL evaluates the `WHEN` clause (a C-level comparison, negligible). Only when the state really changes does the function run: two `to_jsonb` row conversions and a scan of at most 22 short strings, in the order of microseconds to tens of microseconds. `to_jsonb` reads the whole row, so large columns are read too: `email_outbox.payload`, `submission.request_xml` and `response_xml`, and the encrypted `guest` fields. These rows were usually just read or written, so their pages are normally in memory. A violating update adds one subtransaction and one small INSERT.
-
-Hot tables, by state changes per day: **`email_outbox`** (every mail: `queued>sending>sent`, 2 firings), **`guest.submit_state`** and **`submission.state`** (every UbyPort batch: one firing per guest and one per batch), **`push_outbox`** (one per alert), `door_code` (a few per stay). The rest (`site_booking`, `payment_request`, `reservation_claim`, `cleaning_code`, `ad_click`, `guide_import`) change rarely. Expected total: a few thousand firings a day at most. Filing correctness is unaffected: the trigger cannot fail and changes no row it fires on.
+Every UPDATE naming a covered column evaluates the `WHEN` clause (negligible). On a real state change the function runs: two `to_jsonb` conversions of the whole row (large columns included: `email_outbox.payload`, `submission.request_xml`/`response_xml`, encrypted `guest` fields, normally already in memory) and a scan of at most 22 strings: microseconds to tens of microseconds. A violation adds one subtransaction and one small INSERT. Hot tables: **`email_outbox`** (2 firings per mail), **`guest.submit_state`** and **`submission.state`** (per UbyPort batch: one per guest, one per batch), **`push_outbox`** (one per alert), `door_code` (a few per stay); the rest change rarely. A few thousand firings a day at most. Filing is unaffected: the trigger cannot fail and changes no row.
 
 ## 3. Files
 
@@ -467,7 +465,7 @@ def test_the_trigger_can_never_make_the_write_fail():
     assert function.count("RETURN NULL;") == 2
 ```
 
-Command: `cd App && .venv/bin/python -m pytest tests/test_sm_state_observe_trigger.py -q --tb=short -x 2>&1 | tail -30`. Expected: `5 passed`. If the first test fails with a table key: one pair in Step B1 differs from that Python table. Compare it once against section 2.4. If they still differ, STOP; never change a Python table.
+Command: `cd App && .venv/bin/python -m pytest tests/test_sm_state_observe_trigger.py -q --tb=short -x 2>&1 | tail -30`. Expected: `5 passed`. If the first test fails with a table key: one pair in Step B1 differs from that Python table. Compare it once against section 2.3. If they still differ, STOP; never change a Python table.
 
 **Step B3. Append to `App/tests/test_goose_migrations.py`.** The file now ends with Part A's test, whose last line is `    assert db.postgres_schema_status()["current"] is False` (check with `tail -1`; if it differs: STOP). Append exactly the following. The first two lines are empty lines; the file ends with a newline.
 
@@ -550,7 +548,7 @@ def test_retention_deletes_violations_older_than_ninety_days(pg_goose):
     assert [row["row_id"] for row in _violations()] == [2]
 ```
 
-Command: run it after Step B12 (it needs the retention step). Nothing to run now.
+Nothing to run yet (it needs Step B12).
 
 **Step B4. Edit `App/tests/test_db_postgres.py` line 251.** Anchor: `grep -nF 'status["actual_tables"] == 71  # + job (goose 00003, PostgreSQL only)' App/tests/test_db_postgres.py | tail -30` (one line, 251). Replace the line with:
 
@@ -576,7 +574,7 @@ Command: run it after Step B12 (it needs the retention step). Nothing to run now
     assert len([name for name in triggers if name.startswith("sm_observe_")]) == 11  # brief 1120
 ```
 
-Command: `sed -n 250,253p App/tests/test_db_postgres.py; sed -n 276,288p App/tests/test_db_postgres.py | cat`. Expected: the four edited lines in place, the six invoice names unchanged.
+Command: `sed -n 276,288p App/tests/test_db_postgres.py | cat`. Expected: the edits in place, the six invoice names unchanged.
 
 **Step B8. Edit `App/app/retention.py`: personal-data line.** Anchor (one line, 38): `grep -nF '# purged with the row 7 days after done/dead (jobqueue.purge).' App/app/retention.py | tail -30`. Insert after line 38 an empty line and then these four lines:
 
@@ -708,47 +706,26 @@ Stop, and write the report, if:
 
 ## Rollback
 
-- **Part B's deploy fails its health check:** `deploy.sh` rolls back to `ubyhost:previous`, which is Part A's image. That image accepts the triggers, so the site comes back. The triggers stay and keep recording; that is harmless.
-- **Stop observing (triggers off), on the server**, from `/opt/ubyhost/deploy/lightsail`:
-
-  ```bash
-  docker compose exec -T postgres psql -U ubyhost -d ubyhost -v ON_ERROR_STOP=1 <<'SQL'
-  BEGIN;
-  SET LOCAL lock_timeout = '5s';
-  DROP TRIGGER IF EXISTS sm_observe_guide_import_status ON guide_import;
-  DROP TRIGGER IF EXISTS sm_observe_ad_click_send_state ON ad_click;
-  DROP TRIGGER IF EXISTS sm_observe_push_outbox_state ON push_outbox;
-  DROP TRIGGER IF EXISTS sm_observe_email_outbox_state ON email_outbox;
-  DROP TRIGGER IF EXISTS sm_observe_payment_request_status ON payment_request;
-  DROP TRIGGER IF EXISTS sm_observe_site_booking_status ON site_booking;
-  DROP TRIGGER IF EXISTS sm_observe_cleaning_code_state ON cleaning_code;
-  DROP TRIGGER IF EXISTS sm_observe_door_code_state ON door_code;
-  DROP TRIGGER IF EXISTS sm_observe_reservation_claim_state ON reservation_claim;
-  DROP TRIGGER IF EXISTS sm_observe_submission_state ON submission;
-  DROP TRIGGER IF EXISTS sm_observe_guest_submit_state ON guest;
-  DROP FUNCTION IF EXISTS ubyhost_state_transition_observe();
-  COMMIT;
-  SQL
-  ```
-
-  Keep the table: the nightly retention step reads it and would fail without it. The app stays `current`, because Part A ignores `sm_observe_*` triggers, missing ones included. Goose still lists 16 as applied, so nothing reinstalls them. To remove them for good, the orchestrator writes a later goose file that drops them.
-- **Never roll the app image back to a build older than Part A while the triggers exist.** That image refuses to start (strict trigger check). Run the block above first.
-- SQLite rollback (`pg-cutover.sh rollback`) is unaffected: SQLite never had these objects.
+- **Part B's deploy fails its health check:** `deploy.sh` returns to `ubyhost:previous` = Part A's image, which accepts the triggers. They stay and keep recording (harmless).
+- **Turn observing off**, on the server in `/opt/ubyhost/deploy/lightsail` (the repo root is `/opt/ubyhost`). This runs the file's Down lines except `DROP TABLE`:
+  `{ echo "BEGIN; SET LOCAL lock_timeout = '5s';"; sed -n '/^-- +goose Down/,$p' ../../App/migrations_pg/00016_state_transition_observe.sql | grep -v '^DROP TABLE'; echo "COMMIT;"; } | docker compose exec -T postgres psql -U ubyhost -d ubyhost -v ON_ERROR_STOP=1`
+  Keep the table (the retention step reads it). The app stays current (Part A ignores missing `sm_observe_*` too); goose still lists 16, so nothing reinstalls them. Removing them for good is a later goose file.
+- **Never run an image older than Part A while the triggers exist** (it refuses to start). Turn observing off first.
+- SQLite rollback (`pg-cutover.sh rollback`) is unaffected.
 
 ## Open questions
 
-1. **Two PRs instead of one** (`db.py` lines 1338-1362, `deploy.sh` lines 40-41 and 219-227, `rules.md` line 47). Without Part A first, a failed deploy of Part B would leave the site down. If the orchestrator prefers two briefs, split at "Part B gate".
-2. **`rules.md` line 40 "No new triggers"** is bent as well as hard rule 5. The decision line should name both. `rules.md` line 37 is stale (as 1111 noted).
-3. **Moves that will show up at once, by design:** `claim.start_claim` turning `claimed` back into `provisional` (the 1115 fault; `claim.py` `TRANSITIONS` lists only `claimed>claimed`, `claimed>unclaimed`) is recorded until 1115 lands. Any fault from 1114, 1116 or 1117 that writes a move missing from its table shows up the same way. That confirms those briefs.
-4. **Not covered:** `billing_account.status` (`App/app/billing.py` line 18 `TRANSITIONS`, already enforced in Python at line 170, not a round 1 machine), `reservation.status`, `lock_account.status`. Add them in round 4 if wanted.
-5. **Main working tree: `docs/context/decisions.md` lines 64-68 hold unresolved merge-conflict markers** (`<<<<<<< HEAD` ... `>>>>>>> origin/main`). Step A0 stops on them. The orchestrator fixes them before writing decision 1's line.
-6. **`to_jsonb` reads the whole row** (section 2.6), large columns included. If production ever shows trigger time in slow-query logs, a later goose file can give `email_outbox` its own small function that reads `OLD.state` and `NEW.state` directly.
-7. **Sanity-run by the brief writer** on a scratch PostgreSQL 16 (outside both trees): every goose Up file 00001-00015 plus this file applied cleanly. The file applied a second time with no error (idempotent), and Down then Up worked. The function and 11 triggers came out as expected. Allowed, same-state and disallowed updates gave 0, 0 and 1 violation rows. The disallowed write stayed in place. With the log table renamed away, a disallowed write still succeeded. A rolled-back write left no row. NULL to `pending` was allowed, `sending` to NULL was recorded with `new_state` NULL. Each of the 25 statements from a copy of `db._goose_up_statements` ran on its own. The parity test logic passed against the real tables (via `ast`) and failed when one pair was added. Not run: the app's pytest, the goose binary, and the Go tests (no `.venv`, no goose here). CI runs them.
+1. **Two PRs, not one** (`db.py` 1338-1362, `deploy.sh` 40-41 and 219-227, `rules.md` 47). The orchestrator may split this brief at "Part B gate".
+2. **`rules.md` line 40 "No new triggers"** is bent too; the decision line should name it and hard rule 5.
+3. **Expected rows at once:** `reservation_claim` `claimed>provisional` (the 1115 fault; `claim.py` lists only `claimed>claimed`, `claimed>unclaimed`) until 1115 lands; likewise any 1114/1116/1117 fault that writes an unlisted move.
+4. **Not covered:** `billing_account.status` (`billing.py` line 18, already enforced at line 170), `reservation.status`, `lock_account.status`.
+5. **Main tree `docs/context/decisions.md` lines 64-68 hold merge-conflict markers**; Step A0 stops on them. Context lint also reports decisions.md over its cap.
+6. **Sanity-run by the writer** on a scratch PostgreSQL 16: goose Up 00001-00015 plus this file applied; applied twice (idempotent); Down then Up; 11 triggers; allowed, same-state and disallowed updates gave 0, 0, 1 rows; the disallowed write stayed; with the log table renamed away the write still succeeded; a rolled-back write left no row; NULL to `pending` allowed, `sending` to NULL recorded. Each of the 25 statements from a copy of `db._goose_up_statements` ran alone. The parity test passed against the real tables (via `ast`) and failed on one added pair. Not run: the app's pytest, the goose binary, Go tests (no `.venv`, no goose here).
 
 ## Risk list (for the reviewer)
 
 Read in full:
-- `App/migrations_pg/00016_state_transition_observe.sql`: each pair list against its table in section 2.4; the function (no `RAISE`, exception block only around the insert, `RETURN NULL`); `SET LOCAL lock_timeout`; Down drops all 11 triggers, the function and the table.
+- `App/migrations_pg/00016_state_transition_observe.sql`: each pair list against its table in section 2.3; the function (no `RAISE`, exception block only around the insert, `RETURN NULL`); `SET LOCAL lock_timeout`; Down drops all 11 triggers, the function and the table.
 - `App/app/db.py` (the Part A hunk): only `sm_observe_`-prefixed names are ignored; the six invoice guards are still required exactly.
 - `App/tests/test_sm_state_observe_trigger.py`: `MACHINES` names the right table for each column, and the right key (`reservation_id` for `reservation_claim`).
 - `App/app/retention.py` hunks: the step returns 0 on SQLite and on owner-scoped runs; `CAST(? AS timestamptz)`.
@@ -781,5 +758,5 @@ Part B:
    SQL
    ```
 
-5. **What the result means.** `(0 rows)`: every state change since the deploy was a move the tables allow. Good. Run it again weekly. A row means a writer (Python or Go) made that move `n` times. Nothing was blocked and no guest was affected. Either the code has a fault, or the table is missing a move the code is meant to make. Paste the result to the orchestrator, who writes a brief that fixes either the writer or the table. Rows for `guest.submit_state` or `submission.state` are about police filing: send them the same day. Expect `reservation_claim provisional` rows from `claimed` until brief 1115 is merged.
+5. **What the result means.** `(0 rows)`: every state change since the deploy was allowed. Run it weekly. A row: a writer (Python or Go) made that move `n` times. Nothing was blocked. Either the code has a fault or the table misses a move the code means to make. Paste it to the orchestrator, who writes the fix brief. `guest.submit_state` or `submission.state` rows concern police filing: send them the same day. `reservation_claim` `claimed` to `provisional` rows are expected until 1115 is merged.
 6. After about a month with no rows for a table, tell the orchestrator. That table can then move to round 4 ("refuse").
