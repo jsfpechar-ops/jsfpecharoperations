@@ -113,6 +113,36 @@ def test_birth_date_validation():
     assert not errors(v.validate_birth_date("00001950", stay))
 
 
+def test_unicode_decimal_digits_normalise_to_ascii():
+    """Phone numeric keypads (Arabic, fullwidth) must store what Go can file."""
+    stay = date(2026, 10, 21)
+    arabic = "٠١٠١١٩٩٠"
+    fullwidth = "０１０１１９９０"
+    dotted = "٠١.٠١.١٩٩٠"
+    assert v.normalise_birth_date(arabic) == "01011990"
+    assert v.normalise_birth_date(fullwidth) == "01011990"
+    assert v.normalise_birth_date(dotted) == "01011990"
+    stored = v.normalise_guest({"birth_date": arabic})["birth_date"]
+    assert stored == "01011990"
+    assert stored.isascii()
+    assert not errors(v.validate_birth_date(stored, stay))
+    # A child typed on an Arabic keypad still skips the signature, and the
+    # stored value is ASCII so the Go worker will file it.
+    child = "٠١٠١٢٠١٥"
+    assert v.normalise_birth_date(child) == "01012015"
+    assert v.certainly_under_age(child, stay, 15)
+
+
+def test_superscript_digits_do_not_crash_or_validate():
+    """str.isdigit() is true for superscripts; int() is not. Refuse, don't 500."""
+    stay = date(2026, 6, 1)
+    weird = "⁰¹⁰¹¹⁹⁹⁰"
+    assert v.normalise_birth_date(weird) == ""
+    assert v.certainly_under_age(weird, stay, 15) is False
+    assert errors(v.validate_birth_date(weird, stay)) == {"birth_date"}
+    assert errors(v.validate_birth_date(v.normalise_birth_date(weird), stay)) == {"birth_date"}
+
+
 def good_guest(**overrides):
     guest = {
         "surname": "SMITH",
