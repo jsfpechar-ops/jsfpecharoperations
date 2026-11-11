@@ -180,11 +180,17 @@ def _wizard_context(
             property_setup.next_applicable_step(step, apartment, lock_available=lock_available)
             or "done",
         ),
+        "wizard_ready": bool(
+            step == "done" and state and state.get("tested") and report_complete
+        ),
         "entities": entities,
         "message_operator_first_name": operator_first_name,
         "nav": "apartments",
         "show_nav": True,
     }
+    ctx["ready_qr"] = (
+        payments.qr_data_uri(ctx["permalink"]) if ctx["wizard_ready"] else ""
+    )
     if extra:
         ctx.update(extra)
     return ctx, None

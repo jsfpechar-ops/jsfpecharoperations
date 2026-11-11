@@ -188,6 +188,15 @@ def mark_tested(apartment_id: int) -> None:
     _save(apartment_id, state)
 
 
+def mark_tested_in_wizard(apartment_id: int) -> None:
+    """1101: a passing test from the wizard police step, finished or not."""
+    state = load(apartment_id)
+    if state is None:
+        return
+    state["tested"] = True
+    _save(apartment_id, state)
+
+
 def is_first_setup(state: Optional[Dict[str, Any]]) -> bool:
     return bool(state is not None and not state.get("finished") and not state.get("hidden"))
 
