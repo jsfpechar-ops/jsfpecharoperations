@@ -34,7 +34,7 @@ def _open(live, answers):  # noqa: F811
 
     page.on("dialog", on_dialog)
     page.goto(live.url)
-    page.locator("details.police-letter-paste > summary").click()
+    page.locator("details.police-letter-paste").evaluate("d => { d.open = true; }")  # 1099: may start open
     page.fill("#letter_text", LETTER)
     return page, seen
 

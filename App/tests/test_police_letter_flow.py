@@ -1065,8 +1065,11 @@ def test_the_letter_helper_is_styled_in_the_browser(host, no_client):
                 )
                 page = context.new_page()
                 page.goto(url)
-                page.locator("details.police-letter-find > summary").click()
-                page.locator("details.police-letter-paste > summary").click()
+                # 1099: on a first-setup property both disclosures already start open.
+                page.evaluate(
+                    "document.querySelectorAll('details.police-letter-find, details.police-letter-paste')"
+                    ".forEach((d) => { d.open = true; })"
+                )
                 page.wait_for_timeout(400)
                 settle_motion(page)
                 style = page.evaluate(
@@ -1155,7 +1158,7 @@ def test_the_letter_helper_is_styled_in_the_browser(host, no_client):
 
                 # N1: an empty paste lands on its error, too.
                 page.goto(url)
-                page.locator("details.police-letter-paste > summary").click()
+                page.locator("details.police-letter-paste").evaluate("d => { d.open = true; }")  # 1099: may start open
                 with page.expect_response(lambda r: r.url.endswith("/police-letter")) as empty:
                     page.locator("details.police-letter-paste .actions button").click()
                 assert empty.value.status == 422

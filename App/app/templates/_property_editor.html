@@ -15,7 +15,7 @@
   or (inline_flash_section == key and (flash_error or not (first_setup or ready_card)))
   or (section_explicit and id in explicit_map.get(settings_section, []))
   or (id == 'sec-calendars' and property_view == 'bookings')
-  or (first_setup and id == setup_open) %} open{% endif -%}
+  or (first_setup and id == setup_open and not section_explicit and property_view != 'bookings') %} open{% endif -%}
 {%- endmacro -%}
 {#- 1099: one header line, the state and, when the section is not done, the minutes. -#}
 {%- macro sec_state(key, text) -%}
