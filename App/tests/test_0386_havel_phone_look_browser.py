@@ -52,7 +52,7 @@ def test_topics_are_chips(origin):
         page.goto(origin[0] + "/")
         sheet = _open_sheet(page)
         chips = sheet.locator(".havel-chip[data-havel-topic-link]")
-        assert chips.count() == 6  # 0391: five topics + "Other topic"
+        assert chips.count() == 5  # five topics; the composer is always there
         assert sheet.locator(".ui-menu-panel").count() == 0
         for i in range(chips.count()):
             sync_api.expect(chips.nth(i)).to_be_visible()
@@ -82,7 +82,6 @@ def test_pill_composer(origin):
         page = context.new_page()
         page.goto(origin[0] + "/")
         sheet = _open_sheet(page)
-        sheet.locator("[data-havel-other]").click()
         textarea = sheet.locator("#havel-message")
         textarea.wait_for()
         assert sheet.locator(".havel-input #havel-message").count() == 1
@@ -110,8 +109,7 @@ def test_off_state_has_support_button(origin, monkeypatch):
         page = context.new_page()
         page.goto(origin[0] + "/")
         sheet = _open_sheet(page)
-        # 0391: the status and support button show once the host taps "Other topic".
-        sheet.locator("[data-havel-other]").click()
+        # The off state is up front: status line and support button, no composer.
         sheet.locator(".havel-support-open").wait_for()
         assert sheet.locator("#havel-message").count() == 0
         assert sheet.locator(".havel-note").count() == 0
@@ -131,6 +129,6 @@ def test_cs_home_1280(origin):
         page = context.new_page()
         page.goto(origin[0] + "/?lang=cs")
         sheet = _open_sheet(page)
-        assert sheet.locator(".havel-chip[data-havel-topic-link]").count() == 6
+        assert sheet.locator(".havel-chip[data-havel-topic-link]").count() == 5
         page.screenshot(path=str(SHOTS / "home-cs-1280.png"))
         browser.close()

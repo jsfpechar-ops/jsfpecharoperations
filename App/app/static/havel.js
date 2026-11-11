@@ -287,6 +287,8 @@
     counter.hidden = true;
     (ta.closest(".havel-input") || ta).insertAdjacentElement("afterend", counter);
     ta.addEventListener("input", function () {
+      var sb = ta.closest("form") && ta.closest("form").querySelector("[data-havel-send]");
+      if (sb) { var has = ta.value.trim() !== ""; sb.classList.toggle("ui-btn-primary", has); sb.classList.toggle("ui-btn-secondary", !has); }
       var n = ta.value.length;
       counter.hidden = n < max - 100;
       counter.textContent = n + " / " + max;
@@ -324,6 +326,8 @@
   function onRootClick(event) {
     var link = event.target.closest ? event.target.closest("[data-havel-topic-link]") : null;
     if (link) { event.preventDefault(); load(link.getAttribute("href"), "replace"); return; }
+    var askOpen = event.target.closest ? event.target.closest("[data-havel-ask-open]") : null;
+    if (askOpen) { var box = textarea(); if (box) { event.preventDefault(); box.focus(); } return; }
     var cancel = event.target.closest ? event.target.closest("[data-havel-cancel]") : null;
     if (cancel) { var card = cancel.closest(".havel-card"); if (card) card.remove(); var ta = textarea(); if (ta) ta.focus(); return; }
     var retry = event.target.closest ? event.target.closest("[data-havel-retry]") : null;
@@ -335,7 +339,12 @@
     var launcher = event.target.closest ? event.target.closest('[data-sheet-open="havel-sheet"]') : null;
     if (launcher) {
       opener = launcher;
-      ensureForm(function () { hideFab(); focusPanel(); });
+      var topic = launcher.getAttribute("data-havel-topic");
+      ensureForm(function () {
+        hideFab();
+        if (topic && /^[a-z_]+$/.test(topic)) load("/havel?topic=" + topic, "replace");
+        focusPanel();
+      });
     }
     var more = event.target.closest ? event.target.closest("[data-havel-more]") : null;
     if (!more || !panel || typeof panel.show !== "function") return;
@@ -350,6 +359,23 @@
   function onDocumentSubmit(event) {
     if (!root) return;
     if (event.target && event.target.matches && event.target.matches('form[action="/logout"]')) clear();
+    var ask = event.target && event.target.closest ? event.target.closest("[data-havel-guide-ask]") : null;
+    if (ask && panel && typeof panel.show === "function") {
+      var input = ask.querySelector("input[name=message]");
+      var text = input ? input.value.trim() : "";
+      if (!text) return;
+      event.preventDefault();
+      opener = input;
+      if (!panel.open) panel.show();
+      ensureForm(function () {
+        hideFab();
+        openComposer();
+        var ta = textarea();
+        if (ta) { ta.value = text; ta.dispatchEvent(new Event("input")); }
+        send();
+        input.value = "";
+      });
+    }
   }
 
   function onPanelClose() {
