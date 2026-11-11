@@ -11,7 +11,7 @@ import time
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 
-from . import booking_site, config, db, stripe_connect
+from . import booking_site, config, db, demo, stripe_connect
 
 log = logging.getLogger(__name__)
 
@@ -67,9 +67,12 @@ def start(apartment_id: int, slug: str, q: Dict[str, Any], *,
           guest_name: str, guest_email: str, lang: str) -> Dict[str, Any]:
     """{"url": <Stripe URL>, "booking_id": n} or {"error": "taken"|"unavailable"}."""
     apartment = db.query_one(
-        "SELECT owner_user_id, internal_name FROM apartment WHERE id = ?", (apartment_id,)
+        "SELECT owner_user_id, internal_name, legal_entity_id FROM apartment WHERE id = ?",
+        (apartment_id,),
     )
-    if apartment is None:
+    if apartment is None or demo.is_demo_apartment(apartment):
+        # A demo property is never publicly bookable, even if it survived a
+        # switch from mock to a real UbyPort environment.
         return {"error": "unavailable"}
     owner = int(apartment["owner_user_id"])
     account = stripe_connect.account_for_owner(owner)
@@ -133,8 +136,14 @@ def start_direct(apartment_id: int, q: Dict[str, Any], *, guest_name: str,
     24 hours and stores a `requested` booking. No reservation yet (0998)."""
     from . import booking_rails
 
-    apartment = db.query_one("SELECT owner_user_id FROM apartment WHERE id = ?", (apartment_id,))
-    if apartment is None or not booking_rails.ready(apartment_id):
+    apartment = db.query_one(
+        "SELECT owner_user_id, internal_name, legal_entity_id FROM apartment WHERE id = ?",
+        (apartment_id,),
+    )
+    if apartment is None or demo.is_demo_apartment(apartment):
+        # A demo property is never publicly bookable.
+        return {"error": "unavailable"}
+    if not booking_rails.ready(apartment_id):
         return {"error": "unavailable"}
     hold_id = hold_dates(apartment_id, q["date_from"], q["date_to"], minutes=REQUEST_HOURS * 60)
     if hold_id is None:
