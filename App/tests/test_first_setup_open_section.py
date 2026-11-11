@@ -149,10 +149,8 @@ def test_open_section_and_section_done_pure():
 
 # ---- first setup -------------------------------------------------------------
 
-def test_create_redirects_to_the_editor(host):
-    assert host.created_location.split("?")[0].endswith(f"/apartments/{_apt()['id']}")
-    assert "view=settings" in host.created_location
-    assert "/setup/" not in host.created_location
+def test_create_redirects_to_the_wizard(host):
+    assert host.created_location.split("?")[0].endswith(f"/apartments/{_apt()['id']}/setup/calendar")
 
 
 def test_new_property_opens_police_only(host):
