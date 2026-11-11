@@ -30,7 +30,8 @@ The existing filters are unchanged. `range=past` has only group 2, `range=curren
 
 ## 3. Files
 
-- `App/app/routes/admin.py` (the ORDER BY line only)
+- `App/app/routes/admin.py` (the ORDER BY and the `overdue_ids` init)
+- `App/tests/test_overhaul.py` (already updated: earliest-first assertion now grouped)
 - new: `App/tests/test_1100_stays_in_house_first.py`
 
 ## 4. Steps
@@ -76,6 +77,16 @@ Tests:
 5. Paging: monkeypatch `RESERVATION_PAGE_SIZE` in `app.routes.admin` to 2; page 1 of `range=all` holds B and A, page 2 holds D and C.
 
 Run: `cd App && .venv/bin/python -m pytest tests/test_1100_stays_in_house_first.py tests/test_deadline_after_reporting.py -q --tb=short -x 2>&1 | tail -30`
+
+### Step 3: overdue unfiled stays stay on page 1 (CI found this)
+
+`tests/test_host_filter_panels_browser.py::test_default_stays_tab_label_names_overdue_and_the_note_only_shows_there` fails: the default view keeps stays whose police deadline passed with a guest unfiled (`overdue_ids = _overdue_unfinished_ids(request)`, WP33, "hiding it is how a host misses a fine"), and the new order pushed them to the last page. Fix: those stays sort first, before the in-house group.
+
+In `reservations_list`: set `overdue_ids: list = []` before the `if date_from and date_range == "upcoming":` block (the block keeps assigning it). In the ORDER BY from step 1, when `overdue_ids` is not empty, prefix the order with `CASE WHEN r.id IN (<marks>) THEN 0 ELSE 1 END,` and put the `overdue_ids` values in the params list before the twelve `today` values. When empty, the ORDER BY is exactly as in step 1. Update the comment line to say overdue unfiled stays come first.
+
+Add one test to `App/tests/test_1100_stays_in_house_first.py`: an unfiled stay that left 10 days ago (past the deadline; copy the "unfiled" seeding Haiku used for the default-view test, inverted) sorts before the in-house stay on `/reservations`, and stays on page 1 with page size 2. Update the docstring order list in the brief's section 2 mentally: overdue unfiled first, then groups 0, 1, 2.
+
+Run: `cd App && .venv/bin/python -m pytest tests/test_1100_stays_in_house_first.py tests/test_overhaul.py tests/test_deadline_after_reporting.py -q --tb=short -x 2>&1 | tail -30` and then `cd App && .venv/bin/python -m pytest tests/test_host_filter_panels_browser.py -q -rs --tb=short -x 2>&1 | tail -30` (0 skipped).
 
 ## 5. Do not touch
 
