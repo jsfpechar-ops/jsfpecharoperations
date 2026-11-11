@@ -22,6 +22,21 @@ from . import config, db
 
 log = logging.getLogger("ubyhost.guide_import")
 
+# Every move guide_import.status makes today (brief 1110), derived from the code, not
+# designed. Nothing reads this at runtime; tests/test_sm_queues.py pins the writers.
+# A row is created queued by request_imports().
+IMPORT_TRANSITIONS = {
+    # _run_one() claims a row; process_queue() fails it when the monthly budget is gone
+    "queued": {"running", "failed"},
+    "running": {"done", "failed"},  # _run_one()
+    # mark_used(); guest_guide_merge._note_failure(); purge() after RAW_DAYS
+    "done": {"used", "failed", "expired"},
+    "failed": set(),
+    "used": set(),
+    "expired": set(),
+}
+
+
 # Apify's API host is a constant: the only URL this module ever opens.
 APIFY_API = "https://api.apify.com/v2/acts/"
 # Actor ids (owner~name) checked 2026-10-24 on apify.com; pay per result.

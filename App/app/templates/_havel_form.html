@@ -17,7 +17,7 @@
   <label for="havel-message" class="sr-only">{{ t('havel.placeholder') }}</label>
   <div class="havel-input">
     <textarea id="havel-message" name="message" rows="1" maxlength="{{ havel_max }}" placeholder="{{ t('havel.placeholder') }}" required{% if havel_error %} aria-invalid="true" aria-describedby="havel-error"{% endif %}></textarea>
-    <button class="ui-btn ui-btn-primary ui-btn-icon havel-send" type="submit" data-havel-send aria-label="{{ t('havel.send') }}">{{ icon('arrow-up', 20) }}</button>
+    <button class="ui-btn ui-btn-secondary ui-btn-icon havel-send" type="submit" data-havel-send aria-label="{{ t('havel.send') }}">{{ icon('arrow-up', 20) }}</button>
   </div>
   {% if havel_error %}<p id="havel-error" class="havel-error">{{ havel_error }}</p>{% endif %}
   {% if not havel_fresh %}<div class="havel-actions"><button class="ui-btn ui-btn-quiet ui-btn-compact" type="submit" name="reset" value="1" formnovalidate>{{ t('havel.new') }}</button></div>{% endif %}
