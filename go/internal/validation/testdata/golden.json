@@ -2215,6 +2215,66 @@
    "date_from": "2026-10-20",
    "date_to": "2026-10-25",
    "guest": {
+    "birth_date": "٠١٠١١٩٩٠",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "99",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstrasse 5",
+    "signature_png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAAAAACMmsGiAAAAC0lEQVR42mNgwAQAABQAAe5aaQkAAAAASUVORK5CYII=",
+    "stay_from": "",
+    "stay_to": "",
+    "surname": "NOVAK",
+    "visa_number": ""
+   },
+   "issues": [
+    [
+     "birth_date",
+     "Enter the full date as DD.MM.YYYY.",
+     "error"
+    ]
+   ],
+   "name": "birth_arabic_indic",
+   "raw": null
+  },
+  {
+   "complete": false,
+   "date_from": "2026-10-20",
+   "date_to": "2026-10-25",
+   "guest": {
+    "birth_date": "０１０１１９９０",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "99",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstrasse 5",
+    "signature_png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAAAAACMmsGiAAAAC0lEQVR42mNgwAQAABQAAe5aaQkAAAAASUVORK5CYII=",
+    "stay_from": "",
+    "stay_to": "",
+    "surname": "NOVAK",
+    "visa_number": ""
+   },
+   "issues": [
+    [
+     "birth_date",
+     "Enter the full date as DD.MM.YYYY.",
+     "error"
+    ]
+   ],
+   "name": "birth_fullwidth",
+   "raw": null
+  },
+  {
+   "complete": false,
+   "date_from": "2026-10-20",
+   "date_to": "2026-10-25",
+   "guest": {
     "birth_date": "01011899",
     "doc_number": "C01X00T47",
     "first_name": "JAN",

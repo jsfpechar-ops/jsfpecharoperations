@@ -1,7 +1,7 @@
-# 1124: property page Calendars table, copy link button beside the URL, same look as the other buttons
+# 1131: property page Calendars table, copy link button beside the URL, same look as the other buttons
 
 Status: review
-Depends on: none | Base commit: origin/main | Branch: task/1124-calendar-copy-link-button
+Depends on: none | Base commit: origin/main | Branch: task/1131-calendar-copy-link-button
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (3 steps of at most 6 calls)
 Brief by Sonnet 5.5, 2026-11-11. Owner Josef: "the copy link button is ugly, make it better".
 
@@ -35,7 +35,7 @@ Reference pattern (Guest links section, do not edit): `app2.css` 2700-2707 (`.gu
 |---|---|
 | `App/app/templates/_property_calendars.html` | wrap span and button in one div (lines 48-51) |
 | `App/app/static/app2.css` | edit line 2974-2975, add rules after 2975 |
-| `App/app/templates/base.html` | bump `app2.css?v=` (line 23, now `20261111-1103a`) to `20261111-1124a` |
+| `App/app/templates/base.html` | bump `app2.css?v=` (line 23, now `20261111-1103a`) to `20261111-1131a` |
 | `App/tests/test_host_property_controls_browser.py` | add one browser test |
 | `App/tests/test_calendar_sync_ui.py` | add one template test |
 

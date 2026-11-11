@@ -167,7 +167,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "claim_title": "How many people, and your e-mail",
         "claim_help": "Only your group can open the forms.",
         "claim_email": "What is your e-mail address?",
-        "claim_email_help": "Also one reminder the day before arrival if forms are missing, and a receipt (your host gets a copy). Shown masked elsewhere.",
+        "claim_email_help": "Also one reminder the day before arrival if forms are missing, and a receipt. Shown masked elsewhere.",
         "claim_cookie_help": (
             "Only necessary cookies: PIN access (7 days), your language and this stay "
             "(60 days)."
@@ -536,7 +536,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "privacy_email_body": (
             "Your e-mail secures the reservation and is used to send the private form link, one "
             "day-before reminder if the declared forms remain incomplete, and a completion receipt. "
-            "The property manager receives a copy of the completion receipt. The full address "
+            "Your host receives your registration details by e-mail. The full address "
             "is available to the configured data controller and to the delivery provider "
             "where enabled; public guest screens display only a masked address. It is not used for marketing."
         ),
@@ -672,6 +672,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_completion_heading_fee": "One thing left: the stay fee",
         "mail_completion_intro_fee": "Everyone for %(property)s is registered. Only the local stay fee below is left.",
         "mail_completion_fee_once": "Choose one way to pay:",
+        "mail_completion_sent_title": "What you sent",
+        "mail_completion_sent_doc_label": "Document number",
+        "mail_completion_sent_unnamed": "Guest",
         "mail_completion_fee_already": "Already paid? Then there is nothing more to do.",
         "mail_completion_subject": (
             "You're registered for %(property)s: nothing else to do"
@@ -940,7 +943,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "claim_title": "Počet osob a váš e-mail",
         "claim_help": "Formuláře otevře jen vaše skupina.",
         "claim_email": "Jaký je váš e-mail?",
-        "claim_email_help": "Dále jedno připomenutí den před příjezdem, pokud formuláře chybí, a potvrzení (kopii dostane i hostitel). Jinde se adresa zobrazuje zakrytě.",
+        "claim_email_help": "Dále jedno připomenutí den před příjezdem, pokud formuláře chybí, a potvrzení. Jinde se adresa zobrazuje zakrytě.",
         "claim_cookie_help": (
             "Jen nezbytné cookies: přístup přes PIN (7 dní), jazyk a tento pobyt (60 dní)."
         ),
@@ -1301,7 +1304,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "privacy_email_body": (
             "E-mail zabezpečuje rezervaci a používá se k zaslání soukromého odkazu, jednoho "
             "upozornění den před příjezdem, pokud formuláře zůstávají neúplné, a potvrzení o "
-            "dokončení. Správce objektu obdrží kopii potvrzení. Plná adresa je dostupná "
+            "dokončení. Ubytovatel obdrží vaše registrační údaje e-mailem. Plná adresa je dostupná "
             "nastavenému správci osobních údajů a případně poskytovateli doručení e-mailu; "
             "veřejné obrazovky pro hosty zobrazují jen zastřenou adresu. K marketingu se nepoužívá."
         ),
@@ -1439,6 +1442,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_completion_heading_fee": "Zbývá jediná věc: poplatek za pobyt",
         "mail_completion_intro_fee": "Všichni hosté pro %(property)s jsou zaregistrovaní. Zbývá jen místní poplatek za pobyt níže.",
         "mail_completion_fee_once": "Vyberte si jeden způsob platby:",
+        "mail_completion_sent_title": "Co jste odeslali",
+        "mail_completion_sent_doc_label": "Číslo dokladu",
+        "mail_completion_sent_unnamed": "Host",
         "mail_completion_fee_already": "Už máte zaplaceno? Pak už nemusíte nic dalšího dělat.",
         "mail_completion_subject": (
             "Registrace hotová – %(property)s. Nic dalšího nemusíte dělat"
@@ -1697,7 +1703,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "claim_title": "Personenzahl und Ihre E-Mail",
         "claim_help": "Nur Ihre Gruppe kann die Formulare öffnen.",
         "claim_email": "Wie lautet Ihre E-Mail-Adresse?",
-        "claim_email_help": "Außerdem eine Erinnerung am Tag vor der Anreise, falls Formulare fehlen, und eine Bestätigung (Ihr Gastgeber erhält eine Kopie). An anderer Stelle wird sie maskiert angezeigt.",
+        "claim_email_help": "Außerdem eine Erinnerung am Tag vor der Anreise, falls Formulare fehlen, und eine Bestätigung. Ihr Gastgeber erhält Ihre Meldedaten per E-Mail. An anderer Stelle wird sie maskiert angezeigt.",
         "claim_cookie_help": "Nur notwendige Cookies: PIN-Zugang (7 Tage), Ihre Sprache und dieser Aufenthalt (60 Tage).",
         "claim_submit": "Formular-Link senden",
         "claim_sent_title": "Prüfen Sie Ihre E-Mails",
@@ -1966,7 +1972,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "privacy_data_body": "Vor- und Nachname, Geburtsdatum, Staatsangehörigkeit, Nummer des Reisedokuments, Visumnummer (falls erteilt), ständige Wohnanschrift im Ausland, Aufenthaltszweck, Beginn und Ende Ihres Aufenthalts, Unterschrift, angegebene Personenzahl und die E-Mail-Adresse, mit der die Reservierung beansprucht wurde. Die Personenzahl dient dazu festzustellen, ob alle erwarteten Gastformulare vollständig sind, und wird mit dem Aufenthaltseintrag aufbewahrt.",
         "privacy_data_body_no_email": "Vor- und Nachname, Geburtsdatum, Staatsangehörigkeit, Nummer des Reisedokuments, Visumnummer (falls erteilt), ständige Wohnanschrift im Ausland, Aufenthaltszweck, Beginn und Ende Ihres Aufenthalts, Unterschrift und angegebene Personenzahl. Diese Version des Formulars erhebt Ihre E-Mail-Adresse nicht. Die Personenzahl dient dazu festzustellen, ob alle erwarteten Gastformulare vollständig sind, und wird mit dem Aufenthaltseintrag aufbewahrt.",
         "privacy_email_title": "E-Mails und Maskierung",
-        "privacy_email_body": "Ihre E-Mail sichert die Reservierung und wird verwendet, um den privaten Formular-Link, eine Erinnerung am Vortag, falls die angegebenen Formulare unvollständig bleiben, und eine Abschlussbestätigung zu senden. Der Unterkunftsverwalter erhält eine Kopie der Abschlussbestätigung. Die vollständige Adresse ist für den eingerichteten Verantwortlichen und, sofern aktiviert, für den Zustelldienstleister zugänglich; öffentliche Gastseiten zeigen nur eine maskierte Adresse. Sie wird nicht für Marketing verwendet.",
+        "privacy_email_body": "Ihre E-Mail sichert die Reservierung und wird verwendet, um den privaten Formular-Link, eine Erinnerung am Vortag, falls die angegebenen Formulare unvollständig bleiben, und eine Abschlussbestätigung zu senden. Ihr Gastgeber erhält Ihre Meldedaten per E-Mail. Die vollständige Adresse ist für den eingerichteten Verantwortlichen und, sofern aktiviert, für den Zustelldienstleister zugänglich; öffentliche Gastseiten zeigen nur eine maskierte Adresse. Sie wird nicht für Marketing verwendet.",
         "privacy_cookies_title": "Notwendige Cookies",
         "privacy.cookies.table_intro": "Die folgende Tabelle listet alle Cookies und lokal gespeicherten Einträge auf, die der Dienst setzt.",
         "cookies.table.name": "Name",
@@ -2022,6 +2028,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_completion_heading_fee": "Nur noch eines: die Aufenthaltsgebühr",
         "mail_completion_intro_fee": "Alle Gäste für %(property)s sind registriert. Es fehlt nur noch die örtliche Aufenthaltsgebühr unten.",
         "mail_completion_fee_once": "Wählen Sie eine Zahlungsart:",
+        "mail_completion_sent_title": "Was Sie gesendet haben",
+        "mail_completion_sent_doc_label": "Dokumentnummer",
+        "mail_completion_sent_unnamed": "Gast",
         "mail_completion_fee_already": "Schon bezahlt? Dann müssen Sie nichts weiter tun.",
         "mail_completion_subject": "Sie sind für %(property)s registriert: nichts weiter zu tun",
         "mail_completion_preheader": "Alle Gäste dieses Aufenthalts sind registriert. Nichts weiter zu tun.",
@@ -2246,7 +2255,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "claim_title": "Cuántas personas y su e-mail",
         "claim_help": "Solo su grupo puede abrir los formularios.",
         "claim_email": "¿Cuál es su dirección de e-mail?",
-        "claim_email_help": "Además, un recordatorio el día antes de la llegada si faltan formularios y un justificante (su anfitrión recibe una copia). En otros lugares se muestra enmascarada.",
+        "claim_email_help": "Además, un recordatorio el día antes de la llegada si faltan formularios y un justificante. Su anfitrión recibe sus datos de registro por correo electrónico. En otros lugares se muestra enmascarada.",
         "claim_cookie_help": "Solo cookies necesarias: acceso con PIN (7 días), su idioma y esta estancia (60 días).",
         "claim_submit": "Enviarme el enlace",
         "claim_sent_title": "Revise su e-mail",
@@ -2515,7 +2524,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "privacy_data_body": "Nombre y apellidos, fecha de nacimiento, nacionalidad, número del documento de viaje, número de visado si se expidió, domicilio permanente en el extranjero, motivo de la estancia, inicio y fin de la estancia, firma, número de personas declarado y la dirección de e-mail utilizada para reclamar la reserva. El número de personas se utiliza para determinar si están completos todos los formularios de huéspedes esperados y se conserva con el registro de la estancia.",
         "privacy_data_body_no_email": "Nombre y apellidos, fecha de nacimiento, nacionalidad, número del documento de viaje, número de visado si se expidió, domicilio permanente en el extranjero, motivo de la estancia, inicio y fin de la estancia, firma y número de personas declarado. Esta versión del formulario no recoge su dirección de e-mail. El número de personas se utiliza para determinar si están completos todos los formularios de huéspedes esperados y se conserva con el registro de la estancia.",
         "privacy_email_title": "Mensajes de e-mail y enmascaramiento",
-        "privacy_email_body": "Su e-mail asegura la reserva y se utiliza para enviar el enlace privado al formulario, un recordatorio el día antes si los formularios declarados siguen incompletos y un justificante de finalización. El gestor del alojamiento recibe una copia del justificante de finalización. La dirección completa está disponible para el responsable del tratamiento configurado y, cuando está activado, para el proveedor de envío de e-mails; las pantallas públicas para huéspedes solo muestran una dirección enmascarada. No se utiliza con fines de marketing.",
+        "privacy_email_body": "Su e-mail asegura la reserva y se utiliza para enviar el enlace privado al formulario, un recordatorio el día antes si los formularios declarados siguen incompletos y un justificante de finalización. Su anfitrión recibe sus datos de registro por correo electrónico. La dirección completa está disponible para el responsable del tratamiento configurado y, cuando está activado, para el proveedor de envío de e-mails; las pantallas públicas para huéspedes solo muestran una dirección enmascarada. No se utiliza con fines de marketing.",
         "privacy_cookies_title": "Cookies necesarias",
         "privacy.cookies.table_intro": "La siguiente tabla enumera todas las cookies y elementos de almacenamiento local que establece el servicio.",
         "cookies.table.name": "Nombre",
@@ -2571,6 +2580,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_completion_heading_fee": "Solo queda una cosa: la tasa de estancia",
         "mail_completion_intro_fee": "Todos los huéspedes de %(property)s están registrados. Solo queda la tasa local de estancia que figura abajo.",
         "mail_completion_fee_once": "Elija una forma de pago:",
+        "mail_completion_sent_title": "Lo que ha enviado",
+        "mail_completion_sent_doc_label": "Número de documento",
+        "mail_completion_sent_unnamed": "Huésped",
         "mail_completion_fee_already": "¿Ya ha pagado? Entonces no tiene que hacer nada más.",
         "mail_completion_subject": "Registro completado para %(property)s: no tiene que hacer nada más",
         "mail_completion_preheader": "Todos los huéspedes de esta estancia están registrados. No tiene que hacer nada más.",
@@ -2795,7 +2807,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "claim_title": "Nombre de personnes et votre e-mail",
         "claim_help": "Seul votre groupe peut ouvrir les formulaires.",
         "claim_email": "Quelle est votre adresse e-mail ?",
-        "claim_email_help": "Également un rappel la veille de l'arrivée si des formulaires manquent, et un récapitulatif (votre hôte en reçoit une copie). Ailleurs, elle est masquée.",
+        "claim_email_help": "Également un rappel la veille de l'arrivée si des formulaires manquent, et un récapitulatif. Votre hôte reçoit vos données d'enregistrement par e-mail. Ailleurs, elle est masquée.",
         "claim_cookie_help": "Uniquement des cookies nécessaires : accès par PIN (7 jours), votre langue et ce séjour (60 jours).",
         "claim_submit": "M'envoyer le lien",
         "claim_sent_title": "Consultez vos e-mails",
@@ -3064,7 +3076,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "privacy_data_body": "Prénom et nom, date de naissance, nationalité, numéro du document de voyage, numéro de visa s'il en a été délivré un, adresse de domicile permanent à l'étranger, motif du séjour, début et fin de votre séjour, signature, nombre de personnes déclaré et adresse e-mail utilisée pour revendiquer la réservation. Le nombre de personnes sert à déterminer si tous les formulaires attendus sont complets et est conservé avec la fiche du séjour.",
         "privacy_data_body_no_email": "Prénom et nom, date de naissance, nationalité, numéro du document de voyage, numéro de visa s'il en a été délivré un, adresse de domicile permanent à l'étranger, motif du séjour, début et fin de votre séjour, signature et nombre de personnes déclaré. Cette version du formulaire ne collecte pas votre adresse e-mail. Le nombre de personnes sert à déterminer si tous les formulaires attendus sont complets et est conservé avec la fiche du séjour.",
         "privacy_email_title": "E-mails et masquage",
-        "privacy_email_body": "Votre e-mail sécurise la réservation et sert à envoyer le lien privé vers le formulaire, un rappel la veille si les formulaires déclarés restent incomplets, et un récapitulatif une fois l'enregistrement terminé. Le gestionnaire du logement reçoit une copie de ce récapitulatif. L'adresse complète est accessible au responsable du traitement configuré et, le cas échéant, au prestataire d'envoi ; les écrans publics destinés aux voyageurs n'affichent qu'une adresse masquée. Elle n'est pas utilisée à des fins marketing.",
+        "privacy_email_body": "Votre e-mail sécurise la réservation et sert à envoyer le lien privé vers le formulaire, un rappel la veille si les formulaires déclarés restent incomplets, et un récapitulatif une fois l'enregistrement terminé. Votre hôte reçoit vos données d'enregistrement par e-mail. L'adresse complète est accessible au responsable du traitement configuré et, le cas échéant, au prestataire d'envoi ; les écrans publics destinés aux voyageurs n'affichent qu'une adresse masquée. Elle n'est pas utilisée à des fins marketing.",
         "privacy_cookies_title": "Cookies nécessaires",
         "privacy.cookies.table_intro": "Le tableau ci-dessous liste chaque cookie et chaque élément de stockage local que le service définit.",
         "cookies.table.name": "Nom",
@@ -3120,6 +3132,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_completion_heading_fee": "Une dernière chose : la taxe de séjour",
         "mail_completion_intro_fee": "Tous les voyageurs pour %(property)s sont enregistrés. Il ne reste que la taxe de séjour locale ci-dessous.",
         "mail_completion_fee_once": "Choisissez un moyen de paiement :",
+        "mail_completion_sent_title": "Ce que vous avez envoyé",
+        "mail_completion_sent_doc_label": "Numéro du document",
+        "mail_completion_sent_unnamed": "Voyageur",
         "mail_completion_fee_already": "Déjà payé ? Alors vous n'avez plus rien à faire.",
         "mail_completion_subject": "Vous êtes enregistré pour %(property)s : rien d'autre à faire",
         "mail_completion_preheader": "Tous les voyageurs de ce séjour sont enregistrés. Rien d'autre à faire.",

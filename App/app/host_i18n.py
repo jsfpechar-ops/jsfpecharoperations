@@ -7273,6 +7273,11 @@ _LIFECYCLE_MAIL_STRINGS = {
         "settings.account.stay_fee_emails_save": "Save",
         "flash.accounts.stay_fee_emails_on": "We will email you each stay fee report.",
         "flash.accounts.stay_fee_emails_off": "Stay fee emails are off. Confirm each period on the Stay fee page.",
+        "settings.account.guest_details_mail": "Guest details in the confirmation e-mail",
+        "settings.account.guest_details_mail_help": "Date of birth, address and the last 4 digits of the document number. Off: names only.",
+        "settings.account.guest_details_mail_save": "Save",
+        "flash.accounts.guest_details_mail_on": "Guest details are in the confirmation e-mail.",
+        "flash.accounts.guest_details_mail_off": "The confirmation e-mail shows names only.",
         "stay_fees.list.email_on": "Complete reports are emailed to you on the 2nd day after each period.",
         "stay_fees.list.email_off": "Stay fee emails are off.",
         "stay_fees.list.email_change": "Change in Settings",
@@ -7316,6 +7321,11 @@ _LIFECYCLE_MAIL_STRINGS = {
         "settings.account.stay_fee_emails_save": "Uložit",
         "flash.accounts.stay_fee_emails_on": "Hlášení poplatku vám budeme posílat e-mailem.",
         "flash.accounts.stay_fee_emails_off": "E-maily s hlášením jsou vypnuté. Každé období potvrďte na stránce Poplatek z pobytu.",
+        "settings.account.guest_details_mail": "Údaje o hostech v potvrzovacím e-mailu",
+        "settings.account.guest_details_mail_help": "Datum narození, adresa a poslední 4 číslice čísla dokladu. Vypnuto: jen jména.",
+        "settings.account.guest_details_mail_save": "Uložit",
+        "flash.accounts.guest_details_mail_on": "Potvrzovací e-mail obsahuje údaje o hostech.",
+        "flash.accounts.guest_details_mail_off": "Potvrzovací e-mail obsahuje jen jména.",
         "stay_fees.list.email_on": "Úplná hlášení vám pošleme e-mailem 2. den po skončení období.",
         "stay_fees.list.email_off": "E-maily s hlášením jsou vypnuté.",
         "stay_fees.list.email_change": "Změnit v Nastavení",
@@ -10895,6 +10905,65 @@ _CUSTOMER_STRINGS = {
 }
 for _lang, _strings in _CUSTOMER_STRINGS.items():
     STRINGS[_lang].update(_strings)
+
+# 1121: the host's mail of who registered (mail_notify.build_host_guest_details).
+_GUEST_DETAILS_HOST_STRINGS = {
+    "en": {
+        "notification.mail_kind.guest_details_host": "guest details to the host",
+        "mail.guest_details_host.subject": "%(property)s: guests registered",
+        "mail.guest_details_host.heading": "Your guests have registered",
+        "mail.guest_details_host.intro": "Everyone on the stay at %(property)s, %(dates)s, has filled in the form.",
+        "mail.guest_details_host.stay_title": "Stay",
+        "mail.guest_details_host.count_label": "Guests",
+        "mail.guest_details_host.count_value": "%(filled)s of %(expected)s registered",
+        "mail.guest_details_host.fee_label": "Stay fee",
+        "mail.guest_details_host.fee_value": "%(total)s CZK",
+        "mail.guest_details_host.nationality_label": "Nationality",
+        "mail.guest_details_host.state_label": "Police filing",
+        "mail.guest_details_host.state.pending": "Not filed yet",
+        "mail.guest_details_host.state.sent": "Filed",
+        "mail.guest_details_host.state.error": "Filing failed",
+        "mail.guest_details_host.state.blocked": "Refused by the register",
+        "mail.guest_details_host.state.not_required": "Not required",
+        "mail.guest_details_host.birth_label": "Date of birth",
+        "mail.guest_details_host.address_label": "Home address",
+        "mail.guest_details_host.doc_type_label": "Document type",
+        "mail.guest_details_host.doc_number_label": "Document number",
+        "mail.guest_details_host.unnamed": "Guest without a name",
+        "mail.guest_details_host.gone": "The guest list is no longer available.",
+        "mail.guest_details_host.action": "Open the stay",
+        "mail.guest_details_host.footer": "You are receiving this because a guest finished the check-in form for your property.",
+    },
+    "cs": {
+        "notification.mail_kind.guest_details_host": "\u00fadaje o hostech pro ubytovatele",
+        "mail.guest_details_host.subject": "%(property)s: host\u00e9 jsou zaregistrovan\u00ed",
+        "mail.guest_details_host.heading": "Va\u0161i host\u00e9 se zaregistrovali",
+        "mail.guest_details_host.intro": "V\u0161ichni host\u00e9 pobytu v %(property)s, %(dates)s, vypln\u0115n\u00ed formul\u00e1\u0159.",
+        "mail.guest_details_host.stay_title": "Pobyt",
+        "mail.guest_details_host.count_label": "Host\u00e9",
+        "mail.guest_details_host.count_value": "zaregistrov\u00e1no %(filled)s z %(expected)s",
+        "mail.guest_details_host.fee_label": "Poplatek z pobytu",
+        "mail.guest_details_host.fee_value": "%(total)s K\u010d",
+        "mail.guest_details_host.nationality_label": "St\u00e1tn\u00ed ob\u010danstv\u00ed",
+        "mail.guest_details_host.state_label": "Hl\u00e1\u0161en\u00ed cizineck\u00e9 policii",
+        "mail.guest_details_host.state.pending": "Zat\u00edm neodeslan\u00e9",
+        "mail.guest_details_host.state.sent": "Odeslan\u00e9",
+        "mail.guest_details_host.state.error": "Odeslan\u00ed selhalo",
+        "mail.guest_details_host.state.blocked": "Odm\u00edtnuto registrem",
+        "mail.guest_details_host.state.not_required": "Nen\u00ed pot\u0159eba",
+        "mail.guest_details_host.birth_label": "Datum narozen\u00ed",
+        "mail.guest_details_host.address_label": "Adresa bydli\u0161t\u011b",
+        "mail.guest_details_host.doc_type_label": "Druh dokladu",
+        "mail.guest_details_host.doc_number_label": "\u010c\u00edslo dokladu",
+        "mail.guest_details_host.unnamed": "Host bez jm\u00e9na",
+        "mail.guest_details_host.gone": "Seznam host\u016f u\u017e nen\u00ed k dispozici.",
+        "mail.guest_details_host.action": "Otev\u0159\u00edt pobyt",
+        "mail.guest_details_host.footer": "Tento e-mail dost\u00e1v\u00e1te, proto\u017ee host dokon\u010dil registra\u010dn\u00ed formul\u00e1\u0159 pro va\u0161e ubytov\u00e1n\u00ed.",
+    },
+}
+for _lang, _strings in _GUEST_DETAILS_HOST_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 
 def normalise_language(value: str | None) -> str:
     value = (value or "").lower()[:2]

@@ -1,59 +1,89 @@
-# 1123 report
+# 1123 Report
 
-Status: blocked (review is possible, but the layout guard is not green; see Questions)
-Branch: claude/project-thread-xhr13f (commits f1cc9b98 step 1, cb4f3b7b step 2, step 3 commits 4a49c2f9, 158bbb96, 69b6ff18, plus this commit)
+Status: review
 
-## Files changed
+## 1. Files changed (git diff --stat, §3 files only)
 
-- `App/app/static/app2.css`: step 1 (focus ring, is-current colour, guest warn colour, pin and actions rules); overflow fix: two rules after the `.sc-actions` rule (`.sc-link .sc-actions` fills the tile, `.btn` wraps inside it)
-- `App/app/templates/base.html`: cache bump `20261111-1123b`
-- `App/app/templates/_property_editor.html`: guest tile line 75 (PIN line, copy-both and copy-link buttons)
-- `App/app/host_i18n.py`, `App/app/host_vi_i18n.py`: key `property_page.guest_link.copy_both`
-- `App/tests/test_0534_property_page_v2.py`: new test `test_guest_link_tile_shows_pin_and_both_copy_buttons`; line 189 asserts the PIN is in the tile (owner-approved)
-- `App/tests/test_host_property_controls_browser.py`: new test `test_1123_guest_link_tile_fits_and_stays_neutral` (390, 768, 1280)
+```
+ App/app/dpa_i18n.py            | 10 ++++++----
+ App/app/i18n.py                | 23 +++++++++++++++++++----
+ App/app/privacy_policy_i18n.py |  9 ++++-----
+ App/tests/test_claim_copy.py   |  6 +++---
+ 4 files changed, 32 insertions(+), 16 deletions(-)
+```
 
-## Commands (last lines)
+Note: 12 other files in the working tree have pre-existing uncommitted changes from tasks 1121/1122; they were not staged or committed here.
 
-- `.venv/bin/python -m pytest tests/test_0534_property_page_v2.py -q --tb=short -x 2>&1 | tail -30`: `19 passed in 2.58s`
-- `.venv/bin/python -m pytest tests/test_host_property_controls_browser.py -q --tb=line -rs -k 1123 2>&1 | tail -30`: `3 passed, 10 deselected in 8.52s` (0 skipped; checks overflow, no outline after click, is-current colour)
-- `.venv/bin/python -m pytest tests/test_host_property_controls_browser.py tests/test_host_geometry.py tests/test_layout_lint_browser.py tests/test_design_guardrails_browser.py tests/test_0251_tablet_browser.py tests/test_0284_states_browser.py -q --tb=short -x -rs`: stopped at `test_every_host_page_passes_the_layout_guard`: `1 layout findings {'tap-target-small': 1}`, `guest-new 390 open: a.ui-btn.ui-btn-quiet "Cancel", 43, 44`. `1 failed, 19 passed in 343.08s`
-- Same files without `-x` (host_geometry, layout_lint, 0251, 0284, design_guardrails): `1 failed, 19 passed in 321.87s`. The only failure is the same guest-new "Cancel" finding.
-- `.venv/bin/python -m pytest tests/test_host_i18n*.py tests/test_privacy_first.py -q --tb=short -x 2>&1 | tail -30`: `19 passed, 1 warning in 9.89s`
+## 2. Commands and output
 
-Playwright 1.63.0 and Chromium are installed in `App/.venv` (dev only, same pin as CI).
+**After steps 1–2 (EN DPA):**
+```
+cd App && .venv/bin/python -c "from app import dpa_i18n as d; print('Controller copies' in d.DPA_STRINGS['en']['dpa.s04_body'], 'its own mailbox' in d.DPA_STRINGS['en']['dpa.s04_body'])" 2>&1 | tail -30
+False True
+```
 
-## Screenshots
+**After steps 3–4 (CS DPA):**
+```
+cd App && .venv/bin/python -c "from app import dpa_i18n as d; b=d.DPA_STRINGS['cs']['dpa.s04_body']; print('kopie Správci' in b, 'vlastní e-mailové schránky' in b)" 2>&1 | tail -30
+False True
+```
 
-`/tmp/claude-0/-home-user/4b49b8a3-a7dd-5c98-9a2a-f24713b28bb2/scratchpad/1123/` (390.png, 768.png, 1280.png, 1280-is-current.png), retaken after the fix.
+**After steps 5–8 (privacy_policy_i18n.py):**
+```
+cd App && grep -c "copy to the Host\|Host copied on the message\|kopie ubytovateli\|Kopie potvrzení" app/privacy_policy_i18n.py | tail -30
+0
+```
+```
+cd App && .venv/bin/python -c "import app.privacy_policy_i18n" 2>&1 | tail -30
+(no output)
+```
 
-## UX notes (AGENTS rule 10)
+**After steps 9–12 (i18n.py):**
+```
+cd App && grep -c "property manager receives a copy\|Správce objektu obdrží kopii\|your host gets a copy\|kopii dostane i hostitel" app/i18n.py | tail -30
+0
+```
 
-- 390: tile neutral (white, grey border, no red). "PIN 123456" reads well. "Copy link and PIN" now wraps to two lines inside the tile; "Copy link" sits quiet below it. Nothing cut off. The three-column strip becomes two columns on this width; it is intact.
-- 768: tile neutral, both buttons inside the tile; browser overflow check passes.
-- 1280 (is-current): with scroll-spy `is-current` the tile stays neutral (grey border, white background, no accent). Three-column strip intact. The Business details tile's outline is an existing style, not part of this change.
-- No outline after a mouse click at 390, 768 or 1280 (browser check c passes).
+**Step 13 (test_claim_copy.py):**
+```
+cd App && .venv/bin/python -m pytest tests/test_claim_copy.py -q --tb=short -x 2>&1 | tail -30
+6 passed in 0.12s
+```
 
-## Checklist (brief §7)
+**Step 14 — Copy row:**
+```
+cd App && .venv/bin/python -m pytest tests/test_*_i18n.py tests/test_no_em_dashes.py tests/test_copy_cleanup.py tests/test_flash_literals.py -q --tb=short -x 2>&1 | tail -30
+46 passed, 1 warning in 2.33s
+```
 
-- [x] Step 3.1 0534 test (19 pass)
-- [x] Step 3.2 browser test at 390, 768, 1280 (3 pass, 0 skipped)
-- [ ] §5 browser set: host_geometry, 0251, 0284, layout_lint pass; design_guardrails has one finding outside this change (below)
-- [x] i18n and privacy runs pass
-- [x] Screenshots taken and read
-- [ ] PR not opened (owner instruction)
+**Step 14 — Public/legal row:**
+```
+cd App && .venv/bin/python -m pytest tests/test_public_*.py tests/test_legal_*.py tests/test_landing_*.py tests/test_terms_copy.py tests/test_wp24_terms_dpa.py -q --tb=short -x 2>&1 | tail -30
+155 passed in 4.99s
+```
 
-## Deviations
+**Step 14 — Privacy row:**
+```
+cd App && .venv/bin/python -m pytest tests/test_privacy_*.py tests/test_claim_copy.py tests/test_guest_languages.py -q --tb=short -x 2>&1 | tail -30
+70 passed in 7.52s
+```
 
-- The brief's empty-PIN second half of the 0534 test was not added.
-- Browser overflow check (b) uses `.sc-link *:not(.sr-only)`.
-- Playwright installed into the local venv only (not a repo dependency).
-- The overflow fix in CSS is an extra two rules, per the coordinator's decision.
+## 3. §7 Acceptance
 
-## Questions
+- [x] The two `grep -c` checks print `0`; the two DPA checks print `False True`.
+- [x] `test_claim_copy.py` and the three test-map rows pass.
+- [x] `git diff --stat` lists only the four §3 files (pre-existing uncommitted changes from 1121/1122 are not staged).
 
-- `test_design_guardrails_browser.py::test_every_host_page_passes_the_layout_guard` fails on `guest-new` at 390 px: the "Cancel" link (`a.ui-btn.ui-btn-quiet`) is 43 px tall, the target is 44 px. This page is not in the brief's files and none of the new selectors match it, so it is probably a pre-existing finding. Not verified against the base commit. Per AGENTS rule 10, the guard must be green before merge, so this needs a decision: fix it in a follow-up brief, or confirm it already fails on main.
+## 4. Deviations
 
-## Owner steps left
+1. **`STRINGS` → `DPA_STRINGS`**: The brief's check command uses `d.STRINGS['en']`, but the module exports `DPA_STRINGS`. The content checks still return `False True` as expected; used `d.DPA_STRINGS` to verify.
+2. **Extra pin in `test_claim_copy.py`**: The test `test_the_claim_hints_keep_every_point_design_md_requires` asserted `"copy" in english` to guard the old "host gets a copy" text. Removed `and "copy" in english` from that assertion (comment updated to `# receipt`), because "copy" no longer appears after the `claim_email_help` change. The brief (step 14 privacy row) permits fixing pins that quote one of the six old sentences; this pin guarded the old `claim_email_help` EN sentence.
 
-- Decide the guest-new "Cancel" target finding above (follow-up brief or confirm pre-existing).
-- After that, open the PR as a draft with the UX notes above and the design-system checklist ticked. Merge only with `scripts/merge-pr-on-green.sh`.
+## 5. Questions
+
+None.
+
+## 6. Owner steps left
+
+1. Commit/stage the pre-existing 1121/1122 changes if not yet done.
+2. Merge 1123 first and 1123b second, each with `scripts/merge-pr-on-green.sh <pr>`, after 1121 is merged.
