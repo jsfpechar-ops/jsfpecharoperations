@@ -46,8 +46,10 @@ def test_no_match_opens_havel_with_the_query(origin):
                 page.screenshot(path=str(SHOTS / "guide-ask-390.png"))
             else:
                 assert page.locator(".guide-ask").is_visible()
-            if width == 390:  # no visible search control on the v2 phone shell: the keyboard shortcut opens the palette
+            if width == 390:  # the v2 phone shell (.tabs) has no visible search control: the shortcut opens the palette
+                assert not page.locator("[data-command-open]:visible").count()
                 page.keyboard.press("Control+k")
+                sync_api.expect(page.locator("[data-command-input]")).to_be_visible()
             else:
                 page.locator("[data-command-open]:visible").first.click()
             page.fill("[data-command-input]", "how do i zzqx")

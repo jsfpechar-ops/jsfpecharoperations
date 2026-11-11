@@ -286,7 +286,7 @@
   {# 0529: police card. The text is the old "Now" note; the deadline sits under it. #}
   <div id="police-card" class="card police-card{% if progress.status == 'failed' %} police-failed{% endif %}">
     <b>{% if progress.status == 'failed' %}{{ t('hint.failed') }}{% elif send_controls.send_enabled %}{{ tp('stay.detail.ready_count', send_controls.pending_count) }}{% elif progress.not_registered %}{{ tp('host.missing', progress.not_registered) }}{% else %}{{ t(send_controls.send_hint_key, filled=progress.filled, expected=progress.expected) }}{% endif %}</b>
-    {% if progress.status == 'failed' %}<p class="havel-ask-line"><a class="havel-ask-link" href="/havel?topic=reporting" data-sheet-open="havel-sheet" data-havel-launcher data-havel-topic="reporting">{{ t('nav.ask_havel') }}</a></p>{% endif %}
+    {% if progress.status == 'failed' and havel_on %}<p class="havel-ask-line"><a class="havel-ask-link" href="/havel?topic=reporting" data-sheet-open="havel-sheet" data-havel-launcher data-havel-topic="reporting">{{ t('nav.ask_havel') }}</a></p>{% endif %}
     {% if not stay_inactive and cell.state != 'none' %}
     <span class="police-deadline-row"><small class="police-deadline">{{ t('stay.detail.metric.deadline') }} {{ deadline_badge(cell) }}</small>{% if deadline %}{{ help_tip('police-deadline-help', t('stay.detail.metric.deadline_note', when=deadline.strftime('%d.%m.%Y %H:%M'))) }}{% endif %}</span>
     {% endif %}

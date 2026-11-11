@@ -12,8 +12,8 @@
 {% from "_components.html" import help_tip with context %}<div class="head guide-head"><div><div class="heading-with-tip"><h1 class="big">{{ t('guide.title') }}{{ help_tip('guide-lede-help', t('guide.lede')) }}</h1></div></div></div>
 {% if havel_on %}<form method="post" action="/havel" class="guide-ask" data-havel-guide-ask>
   <input type="hidden" name="_csrf" value="{{ csrf_token }}"><input type="hidden" name="page" value="guide"><input type="hidden" name="return_to" value="/guide">
-  <label class="sr-only" for="guide-ask-q">{{ t('havel.placeholder') }}</label>
-  <input class="ui-input" id="guide-ask-q" name="message" type="text" maxlength="600" required placeholder="{{ t('havel.placeholder') }}" autocomplete="off">
+  <label class="sr-only" for="guide-ask-q">{{ t('guide.ask.label') }}</label>
+  <input class="ui-input" id="guide-ask-q" name="message" type="text" maxlength="600" required placeholder="{{ t('guide.ask.placeholder') }}" autocomplete="off">
   <button class="ui-btn ui-btn-primary" type="submit">{{ t('nav.ask_havel') }}</button>
 </form>{% endif %}
 <div class="guide-layout">

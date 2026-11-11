@@ -1,4 +1,4 @@
-"""0391: Havel starts with topics; the box opens after "Other topic" or "Didn't help? Ask Havel"."""
+"""0391: the composer is there from the first open, below the topics; "Didn't help? Ask Havel" only focuses it."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -26,7 +26,7 @@ def _open(page):
 
 
 @pytest.mark.parametrize("width", [390, 1280])
-def test_topics_first_then_box(origin, width):
+def test_composer_visible_with_topics_and_ask_chip_focuses_it(origin, width):
     SHOTS.mkdir(parents=True, exist_ok=True)
     with sync_api.sync_playwright() as pw:
         browser, context = _context(pw, origin, width)
@@ -35,11 +35,11 @@ def test_topics_first_then_box(origin, width):
         dialog = _open(page)
         message = dialog.locator("#havel-message")
         sync_api.expect(message).to_be_visible()  # composer is visible on first open
-        sync_api.expect(dialog.locator("[data-havel-other]")).to_be_visible()
-        assert dialog.locator(".havel-chips > a").last.get_attribute("data-havel-other") is not None
+        assert dialog.locator("[data-havel-other]").count() == 0  # no "Other topic" chip: the box is already there
+        assert dialog.locator(".havel-chips > a").count() == 5
         page.screenshot(path=str(SHOTS / f"topics-{width}.png"))
 
-        # A topic's answer, then "Didn't help? Ask Havel" opens the box.
+        # A topic's answer, then "Didn't help? Ask Havel" focuses the box (no extra Havel bubble).
         dialog.locator("[data-havel-topic-link]", has_text="stay").first.click()
         dialog.locator("[data-havel-topic-link][href*='q=cancelled']").wait_for()
         dialog.locator("[data-havel-topic-link][href*='q=cancelled']").click()
@@ -50,23 +50,19 @@ def test_topics_first_then_box(origin, width):
         ask_chip.click()
         sync_api.expect(message).to_be_visible()
         sync_api.expect(message).to_be_focused()
-        sync_api.expect(dialog.locator(".havel-bubble", has_text=ASK_PROMPT)).to_be_visible()
+        assert dialog.locator(".havel-bubble", has_text=ASK_PROMPT).count() == 0
+        assert ask_chip.evaluate("el => parseFloat(getComputedStyle(el).borderTopLeftRadius)") >= 20  # rounded chip
         if width == 390:
             page.screenshot(path=str(SHOTS / "answer-ask-390.png"))
 
-        # A fresh chat: "Other topic" opens the box at once and the host can ask right away.
+        # A fresh chat: the host can ask right away, without tapping anything first.
         page.evaluate("sessionStorage.clear()")
         page.goto(origin[0] + "/")
         dialog = _open(page)
         message = dialog.locator("#havel-message")
         sync_api.expect(message).to_be_visible()
-        dialog.locator("[data-havel-other]").click()
-        sync_api.expect(dialog.locator(".havel-msg-host", has_text="Other topic")).to_be_visible()
-        sync_api.expect(dialog.locator(".havel-bubble", has_text=OTHER_PROMPT)).to_be_visible()
-        sync_api.expect(message).to_be_visible()
+        message.click()
         sync_api.expect(message).to_be_focused()
-        if width == 390:
-            page.screenshot(path=str(SHOTS / "other-390.png"))
         page.keyboard.type("How do I add a stay?")
         page.keyboard.press("Enter")
         dialog.locator(".havel-msg-havel:not([data-havel-writing])").last.wait_for()
@@ -85,5 +81,5 @@ def test_topics_first_then_box(origin, width):
         assert "data-havel-locked" in locked
         unlocked = page.request.get(origin[0] + "/havel?ask=1").text()
         assert "data-havel-locked" not in unlocked
-        assert OTHER_PROMPT in unlocked
+        assert OTHER_PROMPT in unlocked and "Other topic" not in unlocked
         browser.close()

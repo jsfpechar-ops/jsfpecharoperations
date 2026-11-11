@@ -849,7 +849,7 @@ body.v2 .havel-topics > .havel-chip{align-self: flex-start;}
 @media (max-width: 767px){
 body.v2 .havel-dialog:has(.havel-thread > .havel-msg:not(.havel-greeting)) .ui-sheet{height: calc(100dvh - var(--space-12));}
 }
-body.v2 .havel-guide-link{display: block; margin: var(--space-1) 0 0; padding: var(--space-2) 0; text-align: center; font-size: var(--size-13); color: var(--ink-2); text-decoration: underline;}
+body.v2 .havel-guide-link{display: flex; align-items: center; justify-content: center; min-height: 44px; box-sizing: border-box; margin: var(--space-1) 0 0; padding: var(--space-2) 0; text-align: center; font-size: var(--size-13); color: var(--ink-2); text-decoration: underline;}
 body.v2 .havel-guide-link:hover{color: var(--accent-ink);}
 body.v2 .havel-send.ui-btn-secondary{background: var(--surface); border: 1px solid var(--line-strong); color: var(--ink-2);}
 body.v2 .havel-ask-link{display:inline-flex;align-items:center;min-height:44px;margin: var(--space-2) 0 0; font-size: var(--size-14, var(--size-15));color:var(--accent-ink,var(--accent));font-weight:600;text-decoration:underline;text-underline-offset:3px;}
@@ -3507,7 +3507,11 @@ body.v2 .ready-card-row .muted{flex:0 0 100%;color:var(--ink3);font-size:13px}
 body.v2 .ready-card-link{overflow-wrap:anywhere;min-width:0}
 /* 1099: the state line keeps one line at 320 px (state and minutes). */
 @media (max-width:359px){body.v2 .prop-sec>summary>.sec-state{font-size:13px;line-height:calc(14px * 1.35);letter-spacing:-0.1px}}
-body.v2 .guide-ask{display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0 0 var(--space-4);}
-body.v2 .guide-ask .ui-input{flex: 1 1 220px; min-width: 0;}
+body.v2 .guide-ask{display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: 0 0 var(--space-4);}
+body.v2 .guide-ask .ui-input{flex: 1 1 220px; min-width: 0; margin: 0; height: var(--control-h); box-sizing: border-box; font-size: var(--size-16);}
+body.v2 .guide-ask .ui-btn{margin: 0; height: var(--control-h); box-sizing: border-box;}
+@media (max-width:767px){body.v2 .guide-ask .ui-input,body.v2 .guide-ask .ui-btn{height:var(--control-h-phone,44px);min-height:44px}body.v2 .guide-ask .ui-input{font-size:16px}}
+@media (min-width:768px) and (max-width:1023px){body.v2 .havel-dialog{inset:auto var(--space-6) calc(var(--tabbar-h) + var(--tabbar-safe) + var(--space-4)) auto}body.v2 .havel-dialog .ui-sheet{max-height:min(var(--havel-h),calc(100dvh - var(--tabbar-h) - var(--tabbar-safe) - var(--space-12)))}body.v2 .havel-dialog:has(.havel-thread > .havel-msg:not(.havel-greeting)) .ui-sheet{height:min(var(--havel-h),calc(100dvh - var(--tabbar-h) - var(--tabbar-safe) - var(--space-12)))}}
+body.v2 .havel-dialog .havel-chip[data-havel-ask-open]{border-radius:var(--radius-pill,999px);min-height:44px;padding:0 var(--space-4);align-self:flex-start;border:1px solid var(--coral-200);background:var(--surface);color:var(--accent-ink);font-weight:600}
 body.v2 .havel-ask-line{margin: var(--space-2) 0 0;}
 body.v2 .submissions-page .havel-ask-line{text-align:center;}

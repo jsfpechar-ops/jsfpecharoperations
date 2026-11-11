@@ -326,6 +326,8 @@
   function onRootClick(event) {
     var link = event.target.closest ? event.target.closest("[data-havel-topic-link]") : null;
     if (link) { event.preventDefault(); load(link.getAttribute("href"), "replace"); return; }
+    var askOpen = event.target.closest ? event.target.closest("[data-havel-ask-open]") : null;
+    if (askOpen) { var box = textarea(); if (box) { event.preventDefault(); box.focus(); } return; }
     var cancel = event.target.closest ? event.target.closest("[data-havel-cancel]") : null;
     if (cancel) { var card = cancel.closest(".havel-card"); if (card) card.remove(); var ta = textarea(); if (ta) ta.focus(); return; }
     var retry = event.target.closest ? event.target.closest("[data-havel-retry]") : null;
