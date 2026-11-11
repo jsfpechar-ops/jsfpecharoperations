@@ -1,6 +1,6 @@
 # 1121: Host mail with the guest details, and no host copy on the receipt
 
-Status: todo
+Status: review
 Depends on: 1120 | Base commit: 169ee203 (start from `main` once 1120 is merged) | Branch: task/1121-host-guest-details-mail
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

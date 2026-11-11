@@ -46,9 +46,9 @@ AUDIT_COPY = {
     ),
     "claim_email_help": (
         "Also one reminder the day before arrival if forms are missing, and a "
-        "receipt (your host gets a copy). Shown masked elsewhere.",
+        "receipt. Shown masked elsewhere.",
         "Dále jedno připomenutí den před příjezdem, pokud formuláře chybí, a "
-        "potvrzení (kopii dostane i hostitel). Jinde se adresa zobrazuje "
+        "potvrzení. Jinde se adresa zobrazuje "
         "zakrytě.",
     ),
     "claim_cookie_help": (
@@ -104,7 +104,7 @@ def test_the_claim_hints_keep_every_point_design_md_requires():
     )
     assert "private link" in english  # the link is private
     assert "reminder" in english  # exactly one reminder
-    assert "receipt" in english and "copy" in english  # receipt + host copy
+    assert "receipt" in english  # receipt
     assert "masked" in english  # shown masked elsewhere
     assert "no marketing" in english
     assert "cookies" in english and "7 days" in english and "60 days" in english

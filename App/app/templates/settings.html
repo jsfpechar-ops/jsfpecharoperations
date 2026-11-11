@@ -81,6 +81,13 @@
             <noscript><button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('settings.account.stay_fee_emails_save') }}</button></noscript>
           </form>
         {% endif %}
+        {% if guest_details_mail is not none %}
+          <form method="post" action="/account/guest-details-mail" class="settings-toggle-form" id="settings-guest-details-mail">
+            {% set control %}<input type="checkbox" name="enabled" value="1" data-toggle-submit aria-label="{{ t('settings.account.guest_details_mail') }}"{% if guest_details_mail %} checked{% endif %}>{% endset %}
+            {% with label=t('settings.account.guest_details_mail'), help_id='settings-guest-details-mail-help', help_text=t('settings.account.guest_details_mail_help'), control=control %}{% include "partials/settings_toggle_row.html" %}{% endwith %}
+            <noscript><button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('settings.account.guest_details_mail_save') }}</button></noscript>
+          </form>
+        {% endif %}
         {% if current_user.role == 'admin' %}
           <div class="settings-action-row">
             <div>{{ tip_label(t('settings.account.users'), 'settings-users-help', t('settings.account.users_help')) }}</div>

@@ -1,6 +1,6 @@
 # 1120: Guest details mail, part a: column and `guest_mail_pref` module
 
-Status: todo
+Status: review
 Depends on: none | Base commit: 169ee203 | Branch: task/1120-guest-details-mail-setting
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

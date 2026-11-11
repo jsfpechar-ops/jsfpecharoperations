@@ -78,7 +78,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "and travel document details, dates of stay, nationality, addresses, signatures, "
             "reservation-claim e-mail addresses, declared party size, optional passport photos or "
             "PDFs uploaded when the property requires them, house book entries, claim links, "
-            "incomplete-registration reminders, completion receipts (including a copy to the Host), and "
+            "incomplete-registration reminders, completion receipts, and "
             "data formatted for transmission toward UbyPort or related police reporting channels "
             "when enabled. Purposes, legal bases, and retention for Guests are determined by the "
             "Host as controller and explained in the guest privacy notice. The Operator implements "
@@ -179,7 +179,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "privacy.s09_title": "9. Recipients and subprocessors",
         "privacy.s09_body": (
-            "Personal data is accessed by authorised Operator personnel and contractors bound by confidentiality. We use infrastructure subprocessors to host the Service, including Amazon Web Services (AWS Lightsail or comparable hosting in the EEA for production), Render.com (demo hosting), DNS or CDN providers such as Cloudflare (including Turnstile, managed challenges, leaked-credential mitigation, client-side script monitoring, and HSTS when enabled for the production zone), Google Drive and/or Amazon S3 when the Operator configures off-site backups, and a transactional e-mail provider (including Amazon SES when enabled) or support tools. Completion receipts may disclose the guest recipient address to the Host copied on the message. Guest Data may be transmitted to the Czech Police UbyPort systems or related endpoints when a Host enables reporting. That transmission occurs on the Host's instructions as processor. We require subprocessors that process personal data on our behalf to provide appropriate safeguards (GDPR Art. 28). The current register, purposes, possible data and transfer notes are at /subprocessors. Material changes are published there and reflected in this Policy. Urgent alerts you turn on are delivered through the push service of your browser's maker (Apple for Safari on iPhone, Google for Chrome, Mozilla for Firefox, Microsoft for Edge). Your browser chooses that service, not us. It receives each alert end-to-end encrypted, with the device address, the time and our contact address, and cannot read the text. It is a recipient under the browser maker's own terms, may process data outside the EEA, and is not our subprocessor. Alerts name the property and a date, never a guest."
+            "Personal data is accessed by authorised Operator personnel and contractors bound by confidentiality. We use infrastructure subprocessors to host the Service, including Amazon Web Services (AWS Lightsail or comparable hosting in the EEA for production), Render.com (demo hosting), DNS or CDN providers such as Cloudflare (including Turnstile, managed challenges, leaked-credential mitigation, client-side script monitoring, and HSTS when enabled for the production zone), Google Drive and/or Amazon S3 when the Operator configures off-site backups, and a transactional e-mail provider (including Amazon SES when enabled) or support tools. On the Host's instruction, set in Settings, we e-mail the details of each stay's registration to the Host's contact address and a receipt to the Guest; the Host's own mailbox is outside our deletion. Guest Data may be transmitted to the Czech Police UbyPort systems or related endpoints when a Host enables reporting. That transmission occurs on the Host's instructions as processor. We require subprocessors that process personal data on our behalf to provide appropriate safeguards (GDPR Art. 28). The current register, purposes, possible data and transfer notes are at /subprocessors. Material changes are published there and reflected in this Policy. Urgent alerts you turn on are delivered through the push service of your browser's maker (Apple for Safari on iPhone, Google for Chrome, Mozilla for Firefox, Microsoft for Edge). Your browser chooses that service, not us. It receives each alert end-to-end encrypted, with the device address, the time and our contact address, and cannot read the text. It is a recipient under the browser maker's own terms, may process data outside the EEA, and is not our subprocessor. Alerts name the property and a date, never a guest."
         ),
         "privacy.s10_title": "10. International transfers",
         "privacy.s10_body": (
@@ -369,7 +369,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "doklady, termíny pobytu, státní příslušnost, adresy, podpisy, e-maily k převzetí rezervace, "
             "nahlášený počet hostů, fotografie nebo PDF pasu jen při zapnutí této povinnosti u ubytování, "
             "záznamy domovní knihy, odkazy k převzetí, upozornění na nedokončení, potvrzení o dokončení "
-            "(včetně kopie ubytovateli) a data pro přenos do UbyPortu či souvisejících systémů "
+            "a data pro přenos do UbyPortu či souvisejících systémů "
             "policie, pokud je funkce zapnuta. Účely, právní základy a dobu uchování pro hosty "
             "určuje ubytovatel jako správce v informaci pro hosty. Provozovatel zajišťuje technická "
             "a organizační opatření, ale ne rozhoduje o účelu zpracování údajů hostů ve smyslu GDPR."
@@ -464,8 +464,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "Cloudflare (včetně Turnstile, řízených výzev, kontroly uniklých přihlašovacích údajů, "
             "monitoringu skriptů na straně klienta a HSTS v produkční zóně), Google Drive a/nebo Amazon S3 při nastavených "
             "off-site zálohách, poskytovatel transakčních e-mailů (včetně Amazon SES po zapnutí) "
-            "a případně podpora. Kopie potvrzení o dokončení může ubytovateli zpřístupnit adresu "
-            "hosta uvedenou jako příjemce. Údaje hostů mohou být přeneseny do "
+            "a případně podpora. Na pokyn ubytovatele daný v Nastavení posíláme údaje z registrace ke každému pobytu e-mailem na kontaktní adresu ubytovatele a hostovi potvrzení; schránka ubytovatele je mimo naše mazání. Údaje hostů mohou být přeneseny do "
             "UbyPort Policie ČR na pokyn ubytovatele jako zpracovatele. Subzpracovatelé musí mít "
             "vhodné záruky (čl. 28 GDPR). Aktuální seznam, účely, možné údaje a informace o předání "
             "jsou na /subprocessors. Podstatné změny zveřejníme tam a promítneme do těchto Zásad. Naléhavá upozornění, která zapnete, doručuje push služba výrobce vašeho prohlížeče (Apple u Safari na iPhonu, Google u Chrome, Mozilla u Firefoxu, Microsoft u Edge). Tuto službu volí váš prohlížeč, ne my. Každé upozornění dostává koncově šifrované, s adresou zařízení, časem a naší kontaktní adresou, a jeho text přečíst nemůže. Je příjemcem podle podmínek výrobce prohlížeče, může údaje zpracovávat mimo EHP a není naším subzpracovatelem. Upozornění uvádí ubytování a datum, nikdy jméno hosta."

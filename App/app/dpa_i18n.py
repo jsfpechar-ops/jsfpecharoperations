@@ -73,12 +73,13 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
             "and optional police reporting integrations. Duration: for the term of the Controller's "
             "use of the Service and until Guest Data is deleted or returned per Section 15. Nature "
             "of processing: collection, storage, organisation, retrieval, transactional e-mail "
-            "delivery (claim links, incomplete reminders, completion receipts and Controller copies), transmission, encryption "
+            "delivery (claim links, incomplete reminders, completion receipts), transmission, encryption "
             "of credentials, display to authorised Controller users, formatting for export, and "
             "transmission toward UbyPort or related endpoints when the Controller enables such features. "
             "Optional passport/ID files are restricted to authorised Host users in the application, "
             "excluded from UbyPort payloads, and deleted after verification, otherwise 7 days after "
-            "check-in and never later than 30 days after upload."
+            "check-in and never later than 30 days after upload. "
+            "On the Controller's instruction, given by the Service setting \"Guest details in the confirmation e-mail\" (on by default, switchable in Settings), the Processor sends the guest details of each stay's registration by e-mail to the Controller's contact address; the Controller is responsible for the security of its own mailbox, which the Processor's deletion under Section 15 does not reach."
         ),
         "dpa.s05_title": "5. Details of processing (Annex summary)",
         "dpa.s05_body": (
@@ -326,11 +327,12 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
             "Předmět: hostovaný software pro domovní knihu, formuláře hostů, pobyty a volitelné hlášení "
             "policii. Doba: po dobu používání Služby a do smazání/vrácení dle čl. 15. Povaha: "
             "shromažďování, uložení, uspořádání, vyhledávání, doručování transakčních e-mailů "
-            "(odkazy k převzetí, upozornění na nedokončení, potvrzení a kopie Správci), přenos, šifrování přihlašovacích údajů, "
+            "(odkazy k převzetí, upozornění na nedokončení, potvrzení), přenos, šifrování přihlašovacích údajů, "
             "zobrazení oprávněným uživatelům, export a přenos do UbyPortu při zapnutí. Volitelné "
             "soubory pasů a dokladů jsou v aplikaci omezeny na oprávněné uživatele ubytovatele, "
             "nejsou součástí dat pro UbyPort a mažou se po ověření, jinak do 7 dnů od příjezdu, "
-            "nejpozději 30 dní od nahrání."
+            "nejpozději 30 dní od nahrání. "
+            "Na pokyn Správce daný nastavením Služby „Údaje o hostech v potvrzovacím e-mailu“ (ve výchozím stavu zapnuto, lze vypnout v Nastavení) Zpracovatel posílá údaje hostů z registrace ke každému pobytu e-mailem na kontaktní adresu Správce; za zabezpečení vlastní e-mailové schránky odpovídá Správce a mazání Zpracovatele podle čl. 15 se na ni nevztahuje."
         ),
         "dpa.s05_title": "5. Podrobnosti zpracování (shrnutí přílohy)",
         "dpa.s05_body": (
