@@ -1,6 +1,6 @@
 # 1097: police letter check step, one tick for all three values, one Edit per value, and the Police section phone fixes
 
-Status: todo
+Status: review
 Tier: B | Depends on: 1085, 1086, 1096 (all on main; base `c02b9510`) | Base: origin/main | Branch: claude/1097-police-one-tick
 Executor: Opus (Tier B) | Attempts: 3 at most | Fits one session: stop at 60 tool calls (section 8); reads stay at 150 lines or fewer
 Review: the orchestrator checks the diff, the screenshots and the PR notes before the PR opens.
@@ -17,7 +17,7 @@ Owner decision (Josef, 2026-11-10 23:46) for the "Check what we found" step on t
 
 Plus three phone fixes in the same Police section, from the design check (`/mnt/project-files/reviews/design-check-2026-11-10/findings.md`, findings 1 to 3; finding 4 is item 3 above). Rule numbers are from [design-system](../design/design-system.md) section 1:
 
-- **F1 (rule 7, rule 3).** At 390 the help "?" is a 44 px white circle that pushes the input about 40 px down. Rule 7: "The '?' is a plain 18 px icon on the same line right after its label, never below it; the tap target is an invisible hit area." Rule 3: "A label sits 6 px above its input, never glued to it." Make it a plain 18 px icon with an invisible 44 px hit area and the label 6 px above the input.
+- **F1: deferred to a follow-up brief** (a 44 px hit box does not fit in the 38 px between the H2 and the input, and it conflicts with the 0833 12 px rule.) **(rule 7, rule 3).** At 390 the help "?" is a 44 px white circle that pushes the input about 40 px down. Rule 7: "The '?' is a plain 18 px icon on the same line right after its label, never below it; the tap target is an invisible hit area." Rule 3: "A label sits 6 px above its input, never glued to it." Make it a plain 18 px icon with an invisible 44 px hit area and the label 6 px above the input.
 - **F2 (rule 8).** At 390 the "Send timing" select text is cut off ("...from completior"). Rule 8: "Never truncate a label. Text that matters wraps or the layout changes."
 - **F3 (rule 4).** At 390 "Save and test connection" is a grey pill on the right. Rule 4: "On phone the primary goes full width"; "no button wraps to two lines". Make it full width and 44 px high on the phone. It **stays `ui-btn-secondary`** (review, 2026-11-11): the form's one coral primary is the Save row (rules 4, 5 and 9), and 1096 shows that Save row at load in the check state, so a coral test button would always compete with it.
 
