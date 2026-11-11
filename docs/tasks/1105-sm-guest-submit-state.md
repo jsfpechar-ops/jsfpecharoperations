@@ -1,6 +1,6 @@
 # 1105: Declare and pin the guest.submit_state transitions
 
-Status: todo
+Status: review
 Depends on: none | Base commit: 5e034303 | Branch: task/1105-sm-guest-submit-state
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
