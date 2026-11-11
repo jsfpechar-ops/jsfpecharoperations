@@ -4743,6 +4743,11 @@ async def guest_update(guest_id: int, request: Request):
         pass
     elif not validation.guest_is_reportable(payload["nationality"]):
         payload["submit_state"] = reporting.NOT_REQUIRED
+    elif reporting.edit_keeps_duplicate_block(guest, {**dict(guest), **payload}, reservation):
+        # Brief 1121: the register refused this record as one it already holds,
+        # and this edit changes nothing it reports. The state, the error text
+        # and the retry count are kept; the other columns are saved.
+        pass
     elif guest["submit_state"] in (reporting.ERROR, reporting.BLOCKED, reporting.NOT_REQUIRED):
         # Rule 10.4(5): correcting a rejected record must make it sendable again.
         payload["submit_state"] = reporting.PENDING

@@ -1,6 +1,6 @@
 # 1121: A guest blocked as a duplicate stays blocked when an edit changes no reported field
 
-Status: todo
+Status: review
 Depends on: PR #920 merged to main (tables and pin tests present) | Base commit: main after PR #920 | Branch: task/1121-sm-duplicate-blocked-edit
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

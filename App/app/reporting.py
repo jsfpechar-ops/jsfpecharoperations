@@ -1309,6 +1309,24 @@ def blocked_as_duplicate(guest) -> bool:
     return any(uby_errors.is_duplicate(part) for part in stored.split(" | "))
 
 
+def edit_keeps_duplicate_block(stored, proposed, reservation) -> bool:
+    """Brief 1121: does this edit leave a duplicate block in place?
+
+    True when ``stored`` is blocked because the register already holds the
+    record (the test collect_sendable uses to refuse a resend) and saving
+    ``proposed`` changes no field reported to the police (filed_record_changed).
+    Such an edit is not a corrected record, so it must not reopen the record
+    for sending: a second duplicate cannot be accepted and counts against the
+    host. An edit that changes a reported field is a new record and resets as
+    before.
+    """
+    return (
+        _field(stored, "submit_state") == BLOCKED
+        and blocked_as_duplicate(stored)
+        and not filed_record_changed(stored, proposed, reservation)
+    )
+
+
 def receipt_submission_id(previous_submission_id: Optional[int]) -> Optional[int]:
     """Where this guest's Dorucenka lives, given the submission that carried it.
 
