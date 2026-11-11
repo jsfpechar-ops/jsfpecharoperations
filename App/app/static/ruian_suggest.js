@@ -166,6 +166,9 @@
           list.hidden = false;
           input.setAttribute('aria-expanded', 'true');
           setActive(0);
+        } else if (e.key === 'Escape') {
+          cancel();
+          close();
         }
         return;
       }
