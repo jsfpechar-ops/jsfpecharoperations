@@ -3,7 +3,7 @@
 Status: todo
 Tier: B | Depends on: 1085, 1086, 1096, 1097, 1099 (all on main) | Base commit: 169ee203 (anchors below are at this commit; re-grep by the quoted text) | Branch: claude/1100-police-autofill
 Executor: Opus (Tier B) | Attempts: 3 at most | Fits one session: stop at 60 tool calls (section 8); reads stay at 150 lines or fewer
-Report: docs/tasks/1100-report.md
+Report: docs/tasks/1100-police-paste-autofill-report.md (1100-report.md is the stays brief's, number collision)
 Review: the orchestrator checks the diff, the screenshots and the PR notes before the PR opens.
 
 ## 1. Objective
