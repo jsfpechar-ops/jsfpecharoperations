@@ -23,7 +23,7 @@ Status: review
 - [x] Code diff limited to section 3 plus report, brief status, screenshots.
 
 ## Deviations
-- First CI `test` job failed on a transient `apt-get` / `security.ubuntu.com` DNS error (no pytest ran); empty commit re-triggers CI. Browser shards already passed for this branch.
+- `.github/workflows/ci.yml`: install `age` from the upstream release tarball instead of `apt-get` (mirror DNS was killing the 15-minute `test` job before pytest ran). CI green on run 43060458566.
 - Local `test_guest_*.py -x` stops on unrelated `test_1031` screenshot path (`/mnt/project-files`); not caused by 1102.
 
 ## Questions
