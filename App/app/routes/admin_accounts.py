@@ -19,6 +19,7 @@ from .. import (
     auth,
     config,
     db,
+    guest_mail_pref,
     havel,
     host_i18n,
     incidents,
@@ -387,6 +388,25 @@ async def stay_fee_emails_submit(request: Request):
     stay_fee_auto.set_emails_enabled(int(account["id"]), wanted, actor=account["username"])
     key = "flash.accounts.stay_fee_emails_on" if wanted else "flash.accounts.stay_fee_emails_off"
     return _back("/settings/account#settings-stay-fee-emails", msg=_flash(request, key))
+
+
+@router.post("/account/guest-details-mail")
+async def guest_details_mail_submit(request: Request):
+    """The Settings switch "Guest details in the confirmation e-mail" (brief 1120b).
+
+    Only the workspace owner changes it, as for the stay fee switch.
+    """
+    account = auth.current_user(request)
+    if not account:
+        return RedirectResponse("/login", status_code=303)
+    workspace = auth.workspace_user(request)
+    if account["role"] != "host" or (workspace and workspace["id"] != account["id"]):
+        return _back("/settings/account#settings-guest-details-mail")
+    form = await request.form()
+    wanted = str(form.get("enabled", "")) == "1"
+    guest_mail_pref.set_full_details(int(account["id"]), wanted, actor=account["username"])
+    key = "flash.accounts.guest_details_mail_on" if wanted else "flash.accounts.guest_details_mail_off"
+    return _back("/settings/account#settings-guest-details-mail", msg=_flash(request, key))
 
 
 def _pending_doc_rows(docs) -> list:

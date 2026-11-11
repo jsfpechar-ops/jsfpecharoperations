@@ -255,9 +255,9 @@ own public-register entry, or the legal pages will name the wrong company.
 
 | Variable | Default |
 | --- | --- |
-| `UBYHOST_TERMS_VERSION` | `1.6` |
-| `UBYHOST_PRIVACY_VERSION` | `1.6` |
-| `UBYHOST_DPA_VERSION` | `1.6` |
+| `UBYHOST_TERMS_VERSION` | `1.7` |
+| `UBYHOST_PRIVACY_VERSION` | `1.8` |
+| `UBYHOST_DPA_VERSION` | `1.8` |
 | `UBYHOST_LEGAL_EFFECTIVE_DATE` | `2026-10-05` |
 
 These override the version number displayed and logged against user acceptance.

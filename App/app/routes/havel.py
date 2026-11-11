@@ -149,6 +149,7 @@ def havel_page(request: Request):
                         return_to=security.safe_local_path(request.query_params.get("return_to", ""), "/havel"))
     if request.headers.get("x-havel") == "1":
         ctx["havel_fragment"] = True
+        ctx["havel_locked"] = False
         return render(request, "_havel_fragment.html", ctx)
     return render(request, "havel.html", ctx)
 
@@ -264,6 +265,7 @@ async def havel_send(request: Request):
         ctx = _page_context(request, uid, last["items"] if last else [], exchanges, topic=topic, q=q, page=page,
                             return_to=return_to, error=error, ask=form.get("reset") != "1")
         ctx["havel_fragment"] = True
+        ctx["havel_locked"] = False
         return render(request, "_havel_fragment.html", ctx)
     ctx = _page_context(request, uid, _thread(request, exchanges, last), exchanges, topic=topic, q=q, page=page,
                         return_to=return_to, error=error, ask=form.get("reset") != "1")

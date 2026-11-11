@@ -519,6 +519,10 @@
     "havel-chip-ico",
     "havel-chip-text",
     "havel-close",
+    "havel-ask-line",
+    "havel-ask-link",
+    "havel-guide-link",
+    "guide-ask",
     "guest-name-link",
     "bsite-bookings"
   ],

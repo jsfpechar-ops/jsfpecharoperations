@@ -17,7 +17,8 @@
            {%- if required %} required aria-required="true"{% endif %}
            {%- if described %} aria-describedby="{{ described | join(' ') }}"{% endif %}
            {%- if address_errors.get(name) %} aria-invalid="true"{% endif %}
-           {%- if extra %} {{ extra }}{% endif %}>
+           {%- if extra %} {{ extra }}{% endif %}
+           {%- if 'data-ruian-suggest' in extra %} data-ruian-loading="{{ t('apartment.form.addr.suggest_loading') }}" data-ruian-none="{{ t('apartment.form.addr.suggest_none') }}"{% endif %}>
     {% if address_errors.get(name) %}<p class="err-text" id="{{ name }}-error" role="alert">{{ validation_message(address_errors[name]) }}</p>{% endif %}
   </div>
 {% endmacro %}

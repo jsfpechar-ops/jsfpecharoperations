@@ -1,52 +1,99 @@
-# 1121 report
+# 1121 Report
 
 Status: review
 
-## Files changed
+## 1. Files changed
 
 ```
- App/app/reporting.py                              | helper added
- App/app/routes/admin.py                           | +5
- App/app/routes/guest.py                           | +10/-1
- App/tests/test_submission_duplicate_blocked_edit.py | new
- docs/tasks/1121-sm-duplicate-blocked-edit.md
- docs/tasks/1121-report.md
+ App/app/claim.py                          |  18 +++-
+ App/app/host_i18n.py                      |  59 +++++++++++++
+ App/app/mail.py                           |  39 ++++++++-
+ App/app/mail_notify.py                    | 194 +++++++++++++++++++++++++++++++++++++++++++
+ App/tests/test_claim_mail.py              |   2 +
+ App/tests/test_host_guest_details_mail.py |  (new)
+ 5 modified + 1 created, 306 insertions(+), 6 deletions(-)
 ```
 
-(`test_sm_guest_submit_state.py` unchanged.)
+## 2. Commands and output
 
-## Commands (last lines)
+**Step 2 verify** (`grep -n '"guest_details_host"' App/app/mail.py`):
+```
+42:    "guest_details_host",
+109:    "guest_details_host",
+```
 
-- Step 1: `assert 'pending' == 'blocked'` ×2; `2 failed, 4 passed` (host unreported-field + guest resave)
-- Helper smoke: `False`
-- After fix: `6 passed in 1.73s`
-- Pin: `10 passed in 0.45s`
-- Neighbours: `53 passed in 3.05s`
-- Filing without endtoend: `667 passed`; endtoend alone: `28 passed`
-- Guest non-browser: `614 passed in 33.98s`
-- Guest with `test_guest_browser_e2e.py`: fails mkdir `/mnt/project-files` (PermissionError); not caused by this change
-- `context lint: OK`; `edit_keeps_duplicate_block` counts 1/1/1
+**Step 7 verify** (import mail.py):
+```
+(no output)
+```
 
-## §7 Acceptance
+**Step 8 verify** (mask_document_number):
+```
+•••• 4567 ••••
+```
 
-- [x] Step 1: two named tests failed at BLOCKED assertion
-- [x] New file: 6 passed
-- [x] Pin test passes; not in diff
-- [x] Only §3 files
-- [x] Helper greps 1,1,1
-- [x] Filing 0 failed; guest non-browser 0 failed
-- [x] Context lint: no ERROR naming 1121
+**Step 9 verify** (host_i18n translate):
+```
+Otevřít pobyt
+```
 
-## Deviations
+**Step 10 verify** (`grep -n 'cc_email' App/app/claim.py`):
+```
+(no output)
+```
 
-- Guest browser e2e cannot write `/mnt/project-files/ux-shots` in this environment. Non-browser guest row: 614 passed. No template change.
-- Endtoend run separately (known trap).
+**Step 11 verify** (`grep -n 'host_guest_details' App/app/claim.py`):
+```
+831:        mail_notify.host_guest_details(
+```
 
-## Questions
+**Step 12 verify** (`grep -n 'host_url' App/app/claim.py`):
+```
+(no output)
+```
 
-None (open questions 1–6 for owner/orchestrator).
+**Step 13 verify** (`grep -n '"guest_details_host"' App/tests/test_claim_mail.py`):
+```
+1821:        "guest_details_host",
+```
 
-## Owner steps left
+**Step 14** (`pytest tests/test_host_guest_details_mail.py -q --tb=short -x`):
+```
+......
+6 passed in 0.39s
+```
 
-1. Merge combined PR when green.
-2. Later: host banner copy (open question 1); OPERATIONS.md tense (open question 5).
+**Step 15** (mail + claim + host_i18n + completion_fee tests):
+```
+402 passed, 6 warnings in 6.58s
+```
+
+**Context lint**:
+```
+context lint: OK
+```
+
+## 3. Acceptance §7
+
+- [x] `grep -n 'cc_email' App/app/claim.py` prints nothing.
+- [x] `grep -c 'guest_details_host' App/app/mail.py` prints 2.
+- [x] `tests/test_host_guest_details_mail.py`: 6 passed.
+- [x] Step 15 command: 0 failed.
+- [x] `git diff --stat origin/main` lists only the §3 files.
+
+## 4. Deviations
+
+- The context lint reports `next free: migration 0046`; the brief mentioned watching for migration 45 vs 44. This task creates no migration, so no deviation.
+- Czech strings in `_GUEST_DETAILS_HOST_STRINGS` use unicode escape sequences in the source (Python `\uXXXX`). The `test_host_i18n.py` key-equality test passes; the string values are functionally correct.
+- `_DOC_MASK` uses `\u2022\u2022\u2022\u2022` (bullet characters) rather than literal `••••` in the source, identical at runtime.
+
+## 5. Questions
+
+- `App/app/fee_update.py`: `completion_update` still copies the host via `cc_email`. That is out of scope for 1121 per §5.
+
+## 6. Owner steps
+
+1. Open the draft PR for `task/1120-1123-guest-details-mail` on GitHub.
+2. When CI is green and the review is done, click "Ready for review".
+3. Merge with `scripts/merge-pr-on-green.sh <PR number>` from the repo root.
+4. Full details stay off for every workspace until 1123b's DPA version bump is live.
