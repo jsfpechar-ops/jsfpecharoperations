@@ -28,8 +28,8 @@
     "v": "20261111-1100b"
   },
   "app2.css": {
-    "sha256": "6c0b358921da0cac017480048a2bcbe5cd07f5ff2fd2112ab607f336f585b30e",
-    "v": "20261111-1100a"
+    "sha256": "ba70d76a988d2af37518bd5f3afac6023f467c87eb1ddd267f5b88d15848af28",
+    "v": "20261111-1103a"
   },
   "apple-touch-icon.png": {
     "sha256": "8b487f53a3a7522a9620ed5c26ab1fd77ee6a08cae12fcd087cb9f7a0c03c250",
@@ -152,8 +152,8 @@
     "v": "20261102-0511"
   },
   "ruian_suggest.js": {
-    "sha256": "9975473a4761c06b6aeb421c82931d7e179e78e7659ad26ab9eaab73d8b34660",
-    "v": "20261102-0835"
+    "sha256": "03e605aed58a06feb7dab8619489df46ecf7c4f2c4bacb8648f01488fb251fa2",
+    "v": "20261111-1103b"
   },
   "shell.js": {
     "sha256": "17d08de32baf5dd03f38508a0f88f4cf09e47e54cea2a0a1dff0421d23e3989b",
