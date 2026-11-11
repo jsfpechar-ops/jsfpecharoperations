@@ -94,9 +94,6 @@
 - K-1091D: `test_1091_d` name no longer matches its test.
 - K-TAP43: local only (CI green): `test_design_guardrails_browser.py` guest-new 390 "Cancel" tap target 43 < 44.
 - K-H0: from tasks/1094-report.md: `checkin_hour` NULL can raise TypeError in door_codes.py (~179, 436); `/save` with a non-owned guest_id becomes a new person; `guest_form_saved` audit has no field names.
-- K-SM1 (from brief 1106, not reproduced): stale-submission recovery reads then writes `submission.state` in separate transactions with no state guard (`reporting.py` ~1977/1998, `go/internal/ubyport/recover.go` ~68/122); `ok` and `outcome_unknown` can overwrite each other.
-- K-SM2 (from brief 1105): `docs/OPERATIONS.md` submit_state section disagrees with the code in 9 places (duplicate 150 becomes `sent` not `blocked`; moves out of `sent`; hand-filing; guest-form reset; a duplicate-blocked row returns to `pending` after an edit). List in the brief's "Open questions".
-- K-SM3 (from brief 1109, not reproduced): `claim.start_claim` (~280) writes after an unlocked read, so a `claimed` row can return to `provisional`; host release (`routes/admin.py` ~4343) does not check claim state.
-- K-SM4 (from briefs 1107, 1108): 15 of 18 `door_code.state` writes and 8 of 16 `cleaning_code.state` writes have no state guard; `door_codes._handle_cancellations` (~839) is read-then-write.
-- K-SM5 (from brief 1110): a `guide_import` row stays `running` if its worker dies; nothing writes `email_outbox` `bounced` or `complained`.
-- K-SM6 (from brief 1111): `docs/context/rules.md` lines 37 and 44 still say production is SQLite and migrations are frozen at 0033.
+- K-SM1 (briefs 1105-1110 "Open questions", not reproduced): unguarded read-then-write races on `submission.state` (recovery), `reservation_claim.state` (`start_claim`), `door_code.state` (`_handle_cancellations`); most door/cleaning code writes have no state guard; a `guide_import` row stays `running` if its worker dies.
+- K-SM2 (brief 1105): OPERATIONS.md submit_state section disagrees with the code in 9 places.
+- K-SM3 (brief 1111): rules.md lines 37, 44 still say production is SQLite, migrations frozen at 0033.
