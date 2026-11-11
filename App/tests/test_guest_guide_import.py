@@ -372,6 +372,7 @@ def test_a_late_done_write_does_not_overwrite_a_stale_failure(ws, monkeypatch):
     monkeypatch.setattr(gi.requests, "post", _fake_post([], body=[AIRBNB_ITEM]))
     import_id = gi.request_import(ws["home"], AIRBNB)
     real_fetch = gi._fetch
+    prefills = []
 
     def fetch_after_stale(source, url):
         item = real_fetch(source, url)
@@ -383,11 +384,21 @@ def test_a_late_done_write_does_not_overwrite_a_stale_failure(ws, monkeypatch):
         return item
 
     monkeypatch.setattr(gi, "_fetch", fetch_after_stale)
+    # Import inside the worker path; patch after the module is loadable.
+    from app import property_page
+
+    monkeypatch.setattr(
+        property_page, "prefill_from_import", lambda *a, **k: prefills.append("prefill")
+    )
+    monkeypatch.setattr(
+        property_page, "download_listing_photos", lambda *a, **k: prefills.append("photos")
+    )
     assert gi.process_queue() == 1
     row = db.query_one(
         "SELECT status, error, raw_json FROM guide_import WHERE id = ?", (import_id,)
     )
     assert (row["status"], row["error"], row["raw_json"]) == ("failed", "stale", None)
+    assert prefills == []  # page must not be filled from a dropped result
 
 
 def test_a_late_failure_write_does_not_overwrite_a_stale_failure(ws, monkeypatch):

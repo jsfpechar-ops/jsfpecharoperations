@@ -370,11 +370,18 @@ def _run_one(row) -> None:
         data = trim(row["source"], item)
         if len(data) <= 1:
             raise GuideImportError("empty")
-        db.execute(
+        if not db.execute(
             "UPDATE guide_import SET status = 'done', raw_json = ?, finished_at = ? "
             "WHERE id = ? AND status = 'running'",
             (json.dumps(data, ensure_ascii=False), db.utcnow(), import_id),
-        )
+        ):
+            # Stale cleanup already marked the row failed: do not log done or
+            # fill the host's page from a result the app shows as failed.
+            log.warning(
+                "guide import id=%s finished after the stale cutoff; result dropped",
+                import_id,
+            )
+            return
         log.info("guide import id=%s source=%s done", import_id, row["source"])
         # 0432: one fetch feeds both consumers — the page photos ride this
         # same run; a failure here never fails the import (the text stands).
