@@ -13,7 +13,7 @@ def test_panel_max_matches_the_engine_constant():
 
 def test_fab_and_greeting_on_the_dashboard_but_not_on_havel(host):
     page = html.unescape(host.get("/?lang=en").text)
-    assert 'id="havel-sheet"' in page and page.count('data-sheet-open="havel-sheet"') == 1
+    assert 'id="havel-sheet"' in page and page.count('data-sheet-open="havel-sheet"') == 2  # the FAB and the Help entry in the account menu
     assert page.count("data-havel-fab") == 1 and "data-havel-modeless" in page
     assert 'class="host-help havel-launcher"' not in page and "ui-btn-icon havel-launcher" not in page
     assert "data-havel-more" in page and "/static/havel.js?v=" in page

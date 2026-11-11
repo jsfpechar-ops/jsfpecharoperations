@@ -34,7 +34,7 @@ def test_topics_first_then_box(origin, width):
         page.goto(origin[0] + "/")
         dialog = _open(page)
         message = dialog.locator("#havel-message")
-        sync_api.expect(message).to_be_hidden()
+        sync_api.expect(message).to_be_visible()  # composer is visible on first open
         sync_api.expect(dialog.locator("[data-havel-other]")).to_be_visible()
         assert dialog.locator(".havel-chips > a").last.get_attribute("data-havel-other") is not None
         page.screenshot(path=str(SHOTS / f"topics-{width}.png"))
@@ -44,7 +44,7 @@ def test_topics_first_then_box(origin, width):
         dialog.locator("[data-havel-topic-link][href*='q=cancelled']").wait_for()
         dialog.locator("[data-havel-topic-link][href*='q=cancelled']").click()
         dialog.locator(".havel-answer").wait_for()
-        sync_api.expect(message).to_be_hidden()
+        sync_api.expect(message).to_be_visible()
         ask_chip = dialog.locator("[data-havel-ask-open]")
         sync_api.expect(ask_chip).to_have_text("Didn't help? Ask Havel")
         ask_chip.click()
@@ -59,7 +59,7 @@ def test_topics_first_then_box(origin, width):
         page.goto(origin[0] + "/")
         dialog = _open(page)
         message = dialog.locator("#havel-message")
-        sync_api.expect(message).to_be_hidden()
+        sync_api.expect(message).to_be_visible()
         dialog.locator("[data-havel-other]").click()
         sync_api.expect(dialog.locator(".havel-msg-host", has_text="Other topic")).to_be_visible()
         sync_api.expect(dialog.locator(".havel-bubble", has_text=OTHER_PROMPT)).to_be_visible()

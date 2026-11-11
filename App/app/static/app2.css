@@ -852,7 +852,7 @@ body.v2 .havel-dialog:has(.havel-thread > .havel-msg:not(.havel-greeting)) .ui-s
 body.v2 .havel-guide-link{display: block; margin: var(--space-1) 0 0; padding: var(--space-2) 0; text-align: center; font-size: var(--size-13); color: var(--ink-2); text-decoration: underline;}
 body.v2 .havel-guide-link:hover{color: var(--accent-ink);}
 body.v2 .havel-send.ui-btn-secondary{background: var(--surface); border: 1px solid var(--line-strong); color: var(--ink-2);}
-body.v2 .havel-ask-link{margin: var(--space-2) 0 0; font-size: var(--size-14, var(--size-15));}
+body.v2 .havel-ask-link{display:inline-flex;align-items:center;min-height:44px;margin: var(--space-2) 0 0; font-size: var(--size-14, var(--size-15));color:var(--accent-ink,var(--accent));font-weight:600;text-decoration:underline;text-underline-offset:3px;}
 
 /* v2 shared: onboarding intro logo (width rules from app.css, which v2 does not load) */
 body.v2 .onboarding-intro .onboarding-logo{width: 64px; height: auto; max-width: 100%; margin: 0;}
@@ -3510,3 +3510,4 @@ body.v2 .ready-card-link{overflow-wrap:anywhere;min-width:0}
 body.v2 .guide-ask{display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0 0 var(--space-4);}
 body.v2 .guide-ask .ui-input{flex: 1 1 220px; min-width: 0;}
 body.v2 .havel-ask-line{margin: var(--space-2) 0 0;}
+body.v2 .submissions-page .havel-ask-line{text-align:center;}

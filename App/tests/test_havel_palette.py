@@ -46,7 +46,10 @@ def test_no_match_opens_havel_with_the_query(origin):
                 page.screenshot(path=str(SHOTS / "guide-ask-390.png"))
             else:
                 assert page.locator(".guide-ask").is_visible()
-            page.locator("[data-command-open]:visible").first.click()
+            if width == 390:  # no visible search control on the v2 phone shell: the keyboard shortcut opens the palette
+                page.keyboard.press("Control+k")
+            else:
+                page.locator("[data-command-open]:visible").first.click()
             page.fill("[data-command-input]", "how do i zzqx")
             option = page.locator(".command-option").first
             option.wait_for()

@@ -126,8 +126,9 @@ def test_phone_launcher_and_sheet(origin):
         dialog.wait_for()
         settle_motion(page)
         sheet = dialog.locator(".ui-sheet").bounding_box()
-        assert sheet["width"] == 390 and sheet["height"] >= 900 - 48 - 2
-        assert sheet["y"] <= 48 + 1
+        # Auto height: the sheet fits its content, sits at the bottom edge and never exceeds the viewport.
+        assert sheet["width"] == 390 and 200 <= sheet["height"] <= 900 - 48 + 1
+        assert sheet["y"] + sheet["height"] >= 900 - 1
         assert not fab.is_visible()
         assert dialog.locator("[data-havel-device]").input_value() == "phone"
         assert page.evaluate("document.documentElement.scrollWidth") <= 390
