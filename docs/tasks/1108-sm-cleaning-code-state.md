@@ -16,7 +16,7 @@ Rules that apply (plan, "Rules for every brief"): the table lists exactly the mo
 
 Every writer is in `App/app/cleaning_codes.py`. Nothing else writes the column: `App/app/cleaning.py`, `App/app/routes/cleaning.py` and `App/app/scheduler.py` only read it or call this module, and `go/` has no reference. The last test in step 2 checks this.
 
-Anchor for step 1, in `App/app/cleaning_codes.py` (line 12, verbatim):
+Anchor for step 1, in `App/app/cleaning_codes.py` (line 13, verbatim):
 
 ```
 from . import auth, cleaning, db, ttlock
@@ -37,7 +37,7 @@ No other file may change.
 
 ### Step 1: add STATES and TRANSITIONS to cleaning_codes.py
 
-1. Confirm the anchor, from the repo root: `grep -nF "from . import auth, cleaning, db, ttlock" App/app/cleaning_codes.py 2>&1 | tail -30`. Expected: one line, `12:from . import auth, cleaning, db, ttlock`. Not found: STOP.
+1. Confirm the anchor, from the repo root: `grep -nF "from . import auth, cleaning, db, ttlock" App/app/cleaning_codes.py 2>&1 | tail -30`. Expected: one line, `13:from . import auth, cleaning, db, ttlock`. Not found: STOP.
 2. In `App/app/cleaning_codes.py`, insert the block below directly after that line. The block starts with one blank line and ends with `}`; the file's existing blank lines before `def _activate` stay as they are. Change nothing else.
 
 ```python
@@ -96,7 +96,7 @@ TRANSITIONS = {
 ```
 
 3. Check import and sizes, from `App/`: `.venv/bin/python -c "from app import cleaning_codes as c; print(len(c.STATES), len(c.TRANSITIONS))" 2>&1 | tail -30`. Expected output: `10 10`.
-4. Check the writers did not move relative to the block, from the repo root: `grep -n "^def _activate" App/app/cleaning_codes.py 2>&1 | tail -30`. Expected: `66:def _activate(cur, row: dict) -> None:`.
+4. Check the writers did not move relative to the block, from the repo root: `grep -n "^def _activate" App/app/cleaning_codes.py 2>&1 | tail -30`. Expected: `68:def _activate(cur, row: dict) -> None:`.
 5. Commit: `git add App/app/cleaning_codes.py && git commit -m "1108 step 1" 2>&1 | tail -30`.
 
 ### Step 2: create the test
