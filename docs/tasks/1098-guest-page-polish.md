@@ -1,6 +1,6 @@
 # 1098: guest page polish (design-check findings 5 to 11)
 
-Status: blocked
+Status: review
 Tier: B | Depends on: 1090 (merged, under-15 screens) and 1093 (merged, titles); do not undo either | Base: origin/main | Branch: claude/1098-guest-polish
 Executor: Opus (Tier B) | Attempts: 3 at most | Fits one session: stop at 60 tool calls (section 8); reads stay at 150 lines or fewer
 Review: orchestrator checks the diff, the report and every screenshot before the PR opens. Brief by Sonnet 5.5, 2026-11-11; reviewed by a fresh Fable 5.2 against origin/main c02b9510, 2026-11-11.

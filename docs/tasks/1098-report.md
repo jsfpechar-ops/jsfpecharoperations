@@ -1,6 +1,6 @@
 # 1098 report: guest page polish (design check 5 to 11)
 
-Status: blocked
+Status: review
 
 ## Per item
 
@@ -15,7 +15,7 @@ Status: blocked
 ## Commands (last lines)
 
 1. 1098 + 1084 + 1090 + 1091 browser: `47 passed`, 0 skipped.
-2. Guest suite: `2 failed, 838 passed`, 0 skipped. Failing: `test_guest_form_draft_1087_browser.py::test_1087_the_form_design_is_the_same_apart_from_the_one_line[390]` and `[768]`: `assert 14.5 <= 1` (removing `#draft-welcome` moves `#first_name` by 64.5 px, the line's height plus margins is 79). Cause: with "Not your dates?" no longer a `g-back` anchor at the top of `.g-checkin-main`, the welcome line is its first child and its top margin collapses through the column, so the test's margin sum overcounts. 1280 passes (no inline link there either; the rail carries it).
+2. Guest suite: `840 passed`, 0 skipped (after the 1087 test change below).
 3. Layout lint + OCR + 0896: `27 passed`, 0 skipped.
 4. i18n/copy/static versions: `96 passed, 1 warning`.
 5. `context lint: OK`.
@@ -30,9 +30,9 @@ Status: blocked
 
 None on the touched pages. The form's fee estimate (`_fee_estimate.html`) still nests a white panel in the grey box (out of scope).
 
-## STOP (section 8)
+## Test changed outside section 3 (orchestrator decision, option b)
 
-A pin outside the two named ones fails because of item 6's markup change. Not fixed: options are (a) keep a zero-height element or `display: flow-root` on `.g-checkin-main` so the welcome margin does not collapse (a layout change outside the brief), or (b) let the 1087 test read the line's real push (a test change outside section 3). Orchestrator to choose.
+`test_guest_form_draft_1087_browser.py` was changed outside section 3: the margin collapse made the old height-plus-margins formula wrong, so it now measures the real push (card top with and without the line) and still asserts the first field moves by exactly that push (<= 1 px). No layout CSS change.
 
 ## Deviations
 
