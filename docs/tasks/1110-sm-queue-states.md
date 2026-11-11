@@ -1,6 +1,6 @@
 # 1110: Queue state tables (email_outbox, push_outbox, ad_click, guide_import)
 
-Status: todo
+Status: review
 Depends on: none | Base commit: 70fe25b0 | Branch: task/1110-sm-queue-states
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
