@@ -1,6 +1,6 @@
 # 1107: declare and pin the `door_code.state` machine
 
-Status: todo
+Status: review
 Depends on: none | Base commit: 5e034303 | Branch: task/1107-sm-door-code-state
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Plan: [explicit state machines](../plans/explicit-state-machines.md), round 1. Brief by Opus 5.5, 2026-11-11.
