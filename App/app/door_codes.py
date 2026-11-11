@@ -21,6 +21,51 @@ PENDING, ISSUING, RETRYING, ISSUED, FAILED, EXPIRED = (
 REVOKE_PENDING = "revoke_pending"
 REVOKED = "revoked"
 REVOKE_FAILED = "revoke_failed"
+STATES = (
+    PENDING,
+    ISSUING,
+    RETRYING,
+    ISSUED,
+    FAILED,
+    EXPIRED,
+    REVOKE_PENDING,
+    REVOKED,
+    REVOKE_FAILED,
+)
+# Declared, not enforced: every move the code makes today (brief 1107).
+# App/tests/test_sm_door_code_state.py pins each writer against this table.
+TRANSITIONS = {
+    PENDING: {
+        ISSUING,  # issue: claim
+        REVOKED,  # _handle_cancellations: stay cancelled before a code exists
+    },
+    RETRYING: {
+        ISSUING,  # issue: claim
+        REVOKED,  # _handle_cancellations: stay cancelled before a code exists
+    },
+    ISSUING: {
+        PENDING,  # _release_issue_claim: not eligible, no account, bad window
+        EXPIRED,  # issue: the stay window has already ended
+        RETRYING,  # issue: gateway error or period taken; reconcile: lease expired
+        ISSUED,  # issue: code created on the lock
+        FAILED,  # issue: out of attempts or a permanent error
+    },
+    ISSUED: {
+        REVOKE_PENDING,  # _handle_cancellations: stay cancelled before valid_to
+        EXPIRED,  # reconcile: valid_to has passed
+    },
+    REVOKE_PENDING: {
+        ISSUED,  # _keep_issued: the stay is live again
+        REVOKED,  # _revoke_one: code deleted from the lock
+        REVOKE_FAILED,  # _revoke_one: no account, permanent error, or past valid_to
+    },
+    REVOKE_FAILED: {
+        ISSUED,  # _keep_issued: the stay is live again
+    },
+    FAILED: set(),
+    EXPIRED: set(),
+    REVOKED: set(),
+}
 
 BACKOFF_MINUTES = (1, 5, 15, 60, 240)
 # A failed code is handed to the host after this many tries (1 min apart).

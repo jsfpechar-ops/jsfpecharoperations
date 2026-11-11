@@ -15,6 +15,28 @@ log = logging.getLogger("ubyhost.claim")
 UNCLAIMED = "unclaimed"
 PROVISIONAL = "provisional"
 CLAIMED = "claimed"
+
+# Every state move the code makes today (brief 1109), derived from the writers
+# and pinned by tests/test_sm_reservation_claim_state.py. Nothing reads this at
+# runtime. None means "no row yet".
+TRANSITIONS = {
+    None: {
+        UNCLAIMED,  # ensure_row: the first INSERT
+    },
+    UNCLAIMED: {
+        PROVISIONAL,  # start_claim: a link is sent
+        UNCLAIMED,  # release: no state check
+    },
+    PROVISIONAL: {
+        PROVISIONAL,  # start_claim: guest resend, or another address after the takeover window
+        CLAIMED,  # confirm
+        UNCLAIMED,  # expire_holds; release
+    },
+    CLAIMED: {
+        CLAIMED,  # start_claim: resend to the verified address; confirm of that link
+        UNCLAIMED,  # release
+    },
+}
 HOLD_MINUTES = 30
 # How long an unconfirmed hold keeps a *different* address out. Long enough to
 # stop two people racing the same booking, short enough that a guest who
@@ -360,7 +382,9 @@ def resend_to_verified_email(reservation, apartment) -> Tuple[bool, str]:
 
 def _declared_count(reservation, row) -> int:
     """The headcount a resend keeps: the host's override, else the declared one."""
-    expected = reporting.expected_guest_count(reservation)
+    if reservation["expected_guests_override"]:
+        return int(reservation["expected_guests_override"])
+    expected = reporting.reservation_progress(reservation)["expected"]
     return int(expected or row["declared_guests"] or 1)
 
 
