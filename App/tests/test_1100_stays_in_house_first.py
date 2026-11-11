@@ -166,3 +166,64 @@ def test_paging_cuts_the_same_sequence(stays_client, monkeypatch):
     second = stays_client.get("/reservations?range=all&page=2").text
     assert _order(first, ALL_IN_ORDER) == ["STAYB", "STAYA"]
     assert _order(second, ALL_IN_ORDER) == ["STAYD", "STAYC"]
+
+
+def test_overdue_unfiled_stay_comes_first_and_stays_on_page_one(stays_client, monkeypatch):
+    # 1100 step 3: overdue unfiled stays sort ahead of the other groups. STAYB (in house, unfiled,
+    # arrived 2 days ago) is overdue too, so inside the overdue bucket the group order applies:
+    # STAYB (in house) before STAYOVERDUE (past). STAYA, D and C are not overdue and wait for page 2.
+    from app import deadlines
+
+    monkeypatch.setattr(admin, "RESERVATION_PAGE_SIZE", 2)
+    apartment = db.query_one("SELECT * FROM apartment WHERE permalink_token = ?", (TOKEN,))
+    now = db.utcnow()
+    today = date.today()
+    arrival = today - timedelta(days=12)
+    departure = today - timedelta(days=10)
+    assert deadlines.reporting_deadline(arrival) < deadlines.local_now()
+    reservation_id = db.insert(
+        "reservation",
+        {
+            "apartment_id": apartment["id"],
+            "source": "manual",
+            "uid": "order-STAYOVERDUE",
+            "date_from": arrival.isoformat(),
+            "date_to": departure.isoformat(),
+            "status": "active",
+            "expected_guests_override": 1,
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+    db.insert(
+        "guest",
+        {
+            "reservation_id": reservation_id,
+            "surname": "STAYOVERDUE",
+            "first_name": "TEST",
+            "birth_date": "01011990",
+            "nationality": "VNM",
+            "doc_number": "P9988773",
+            "res_street": "Le Loi 5",
+            "res_city": "Hanoi",
+            "res_country": "VNM",
+            "purpose": "10",
+            "is_lead": 1,
+            "entered_by": "guest",
+            "signature_png": "imported",
+            "signed_at": now,
+            "passport_photo_at": now,
+            "identity_verified_at": now,
+            "stay_from": arrival.isoformat(),
+            "stay_to": departure.isoformat(),
+            "submit_state": reporting.PENDING,
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+    page = stays_client.get("/reservations").text
+    assert _order(page, ["STAYOVERDUE", "STAYB", "STAYA", "STAYD", "STAYC"]) == [
+        "STAYB",
+        "STAYOVERDUE",
+    ]
+    assert "STAYA" not in page
