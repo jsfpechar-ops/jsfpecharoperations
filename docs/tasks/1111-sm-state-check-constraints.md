@@ -48,7 +48,7 @@ Add nine named CHECK constraints (one per column below) in a new PostgreSQL goos
 - A PostgreSQL schema change is a goose file `App/migrations_pg/NNNNN_name.sql`, next number = highest + 1 (`docs/context/rules.md` line 44). The highest today is `App/migrations_pg/00014_guest_signed_for.sql`, so the new file is **00015**.
 - `App/app/db.py` line 1516: `GOOSE_DIR = Path(__file__).resolve().parent.parent / "migrations_pg"`; `goose_files()` (line 1558) lists them and refuses duplicate versions; `apply_postgresql_schema()` (line 1809) applies every pending goose file inside one transaction (`BEGIN IMMEDIATE` ... `COMMIT`, rollback on any error), so a failing constraint leaves nothing behind.
 - The owner applies it after the deploy: `docker compose run --rm --no-deps ubyhost python scripts/pg_schema.py apply --expect-database ubyhost` (`docs/LIGHTSAIL.md` line 224). The app will not start while a goose file is pending.
-- Goose files must be additive so the previous image keeps working (`docs/context/rules.md` line 48). A CHECK limited to values the previous image also writes keeps that true.
+- Goose files must be additive so the previous image keeps working (`docs/context/rules.md` line 47). A CHECK limited to values the previous image also writes keeps that true.
 - **No SQLite twin.** SQLite cannot `ALTER TABLE ... ADD CONSTRAINT`, and the repo has no pattern for adding a CHECK to an existing table on either engine: `grep -n "ADD CONSTRAINT" App/migrations_pg/*.sql App/app/migrations/*.sql` finds nothing outside the baseline dump `App/migrations_pg/00001_baseline.sql`. SQLite files only add a CHECK inside `CREATE TABLE` or `ADD COLUMN ... CHECK (...)` (for example `App/app/migrations/0031_billing_discount_snapshot.sql` lines 27-28). So this brief covers PostgreSQL only. SQLite databases (local runs and the default test run) get no constraint.
 - Precedent for a goose file with no SQLite twin: `App/migrations_pg/00008_full_scan_indexes.sql` (header comment "no SQLite twin ... the previous image keeps working"; no `schema_migrations` row). Follow it: **no `schema_migrations` insert**.
 - The goose file must be re-runnable: `App/tests/test_goose_migrations.py` line 91 (`test_a_current_schema_without_goose_table_adopts_baseline`) drops `goose_db_version` and re-applies every file. PostgreSQL has no `ADD CONSTRAINT IF NOT EXISTS`, so every constraint is written as `DROP CONSTRAINT IF EXISTS` followed by `ADD CONSTRAINT`.
@@ -173,7 +173,7 @@ ALTER TABLE submission DROP CONSTRAINT IF EXISTS submission_state_check;
 ALTER TABLE guest DROP CONSTRAINT IF EXISTS guest_submit_state_check;
 ```
 
-Check: `ls App/migrations_pg | tail -3 | cat` shows `00014_guest_signed_for.sql` then `00015_state_check_constraints.sql` (the third-last line is `00013_guest_form_draft.sql`). If a `00015_*` file already existed before this step: STOP (another brief took the number).
+Check: `ls App/migrations_pg | tail -2 | cat` prints `00014_guest_signed_for.sql` then `00015_state_check_constraints.sql`. If a `00015_*` file already existed before this step: STOP (another brief took the number).
 Command: `grep -c "ADD CONSTRAINT" App/migrations_pg/00015_state_check_constraints.sql | tail -30`. Expected: `9`.
 
 **Step 2. Create the static test** `App/tests/test_sm_state_check_constraints.py` with exactly this content:

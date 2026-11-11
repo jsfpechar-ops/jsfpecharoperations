@@ -457,7 +457,7 @@ Write `docs/tasks/1106-report.md` (§9), then change the line `Status: todo` in 
 ## 7. Acceptance
 
 - [ ] `grep -rn SUBMISSION_TRANSITIONS App/app go | head -50` prints exactly one line, in `App/app/reporting.py`.
-- [ ] `git diff 5e034303 -- App/app/reporting.py | grep '^[-+]' | grep -v '^+++\|^---' | grep '^-' | head -50` prints nothing (only added lines).
+- [ ] `git diff 5e034303 -- App/app/reporting.py | grep -c '^-[^-]' | tail -30` prints `0` (only added lines).
 - [ ] `git diff --stat 5e034303 -- go | tail -30` prints nothing.
 - [ ] Step 3 command: `7 passed`.
 - [ ] Step 4 command: `passed`, no `failed`, no `error`.
