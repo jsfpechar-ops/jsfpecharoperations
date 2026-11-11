@@ -262,16 +262,18 @@ GEOMETRY_JS = """() => {
   const card = document.querySelector('[data-guest-step]');
   const box = (el) => { const r = el.getBoundingClientRect(); return {top: r.top + scrollY, left: r.left, width: r.width, height: r.height}; };
   const line = document.querySelector('#draft-welcome');
-  let lineSpace = 0;
+  let lineSpace = 0, lineHeight = 0;
   if (line) {
     const style = getComputedStyle(line);
-    lineSpace = line.getBoundingClientRect().height + parseFloat(style.marginTop) + parseFloat(style.marginBottom);
+    lineHeight = line.getBoundingClientRect().height;
+    lineSpace = lineHeight + parseFloat(style.marginTop) + parseFloat(style.marginBottom);
   }
   return {
     first: box(document.querySelector('#first_name')),
     card: box(card),
     fields: Array.from(card.querySelectorAll('.g-field')).map(box),
     lineSpace: lineSpace,
+    lineHeight: lineHeight,
   };
 }"""
 
@@ -303,12 +305,12 @@ def test_1087_the_form_design_is_the_same_apart_from_the_one_line(live_server, b
         with_line = page.evaluate(GEOMETRY_JS)
         page.evaluate("() => document.querySelector('#draft-welcome').remove()")
         without = page.evaluate(GEOMETRY_JS)
-        space = with_line["lineSpace"]
-        assert space > 0
-        # The line sits above the first card: it pushes the card down by its own
-        # height and margins and changes nothing inside it.
+        # The line sits above the first card: it pushes the card down and changes
+        # nothing inside it. The push is measured, not summed from the line's
+        # margins: those can collapse with the column's edge (1098).
+        space = with_line["card"]["top"] - without["card"]["top"]
+        assert with_line["lineHeight"] - 1 <= space <= with_line["lineSpace"] + 1, (with_line, without)
         assert abs((with_line["first"]["top"] - without["first"]["top"]) - space) <= 1, (with_line, without)
-        assert abs((with_line["card"]["top"] - without["card"]["top"]) - space) <= 1
         assert abs(with_line["card"]["height"] - without["card"]["height"]) <= 1
         assert len(with_line["fields"]) == len(without["fields"]) > 0
         for a, b in zip(with_line["fields"], without["fields"]):
