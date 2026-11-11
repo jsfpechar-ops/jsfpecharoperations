@@ -2374,15 +2374,14 @@ def _refuse_apartment_save(
     if lock_times_error:
         save_errors.append(_save_error("lock", "lock_checkin_hour"))
     if letter_unconfirmed:
-        # 1085: a pre-filled letter value saves only with its own tick.
+        # 1085/1097: pre-filled letter values save only with the one tick.
         listed, _unticked = police_letter.confirmed_fields(form)
-        save_errors.extend(
-            _save_error("police", f"letter_ok_{name}") for name in letter_unconfirmed
-        )
+        save_errors.append(_save_error("police", "letter_ok"))
         extra.update(
             {
                 "settings_section": "reporting",
                 "letter_check": True,
+                "letter_error": True,
                 "letter_rows": _letter_rows_from_form(form, apartment, listed, letter_unconfirmed),
             }
         )

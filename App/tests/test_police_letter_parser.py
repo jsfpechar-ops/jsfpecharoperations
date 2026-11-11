@@ -901,64 +901,33 @@ CONFIRMED_ROWS = [
     ("fields_none", {"letter_fields": None}, ([], [])),
     (
         "fields_list",
-        {"letter_fields": ["uby_idub"], "letter_ok_uby_idub": "1"},
+        {"letter_fields": ["uby_idub"], "letter_ok": "1"},
         ([], []),
     ),
     ("fields_bytes", {"letter_fields": b"uby_idub"}, ([], [])),
+    ("all_ticked", {"letter_fields": ALL, "letter_ok": "1"}, (list(FIELDS), [])),
+    ("none_ticked", {"letter_fields": ALL}, (list(FIELDS), list(FIELDS))),
     (
-        "all_ticked",
+        "stale_per_field_ticks",
         {
             "letter_fields": ALL,
             "letter_ok_uby_idub": "1",
             "letter_ok_uby_ws_user": "1",
             "letter_ok_uby_mark": "1",
         },
-        (list(FIELDS), []),
+        (list(FIELDS), list(FIELDS)),
     ),
-    ("none_ticked", {"letter_fields": ALL}, (list(FIELDS), list(FIELDS))),
-    (
-        "tick_zero",
-        {"letter_fields": "uby_idub", "letter_ok_uby_idub": "0"},
-        (["uby_idub"], ["uby_idub"]),
-    ),
-    (
-        "tick_on",
-        {"letter_fields": "uby_idub", "letter_ok_uby_idub": "on"},
-        (["uby_idub"], ["uby_idub"]),
-    ),
-    (
-        "tick_bytes",
-        {"letter_fields": "uby_idub", "letter_ok_uby_idub": b"1"},
-        (["uby_idub"], ["uby_idub"]),
-    ),
-    (
-        "tick_int",
-        {"letter_fields": "uby_idub", "letter_ok_uby_idub": 1},
-        (["uby_idub"], ["uby_idub"]),
-    ),
-    (
-        "tick_list",
-        {"letter_fields": "uby_idub", "letter_ok_uby_idub": ["1"]},
-        (["uby_idub"], ["uby_idub"]),
-    ),
+    ("tick_zero", {"letter_fields": "uby_idub", "letter_ok": "0"}, (["uby_idub"], ["uby_idub"])),
+    ("tick_on", {"letter_fields": "uby_idub", "letter_ok": "on"}, (["uby_idub"], ["uby_idub"])),
+    ("tick_bytes", {"letter_fields": "uby_idub", "letter_ok": b"1"}, (["uby_idub"], ["uby_idub"])),
+    ("tick_int", {"letter_fields": "uby_idub", "letter_ok": 1}, (["uby_idub"], ["uby_idub"])),
+    ("tick_list", {"letter_fields": "uby_idub", "letter_ok": ["1"]}, (["uby_idub"], ["uby_idub"])),
     (
         "unknown_ignored_order_duplicates",
-        {
-            "letter_fields": "uby_mark, password,uby_idub,uby_mark,,uby_ws_password",
-            "letter_ok_uby_mark": "1",
-            "letter_ok_password": "1",
-        },
-        (["uby_idub", "uby_mark"], ["uby_idub"]),
+        {"letter_fields": "uby_mark, password,uby_idub,uby_mark,,uby_ws_password", "letter_ok": "1"},
+        (["uby_idub", "uby_mark"], []),
     ),
-    (
-        "tick_for_unlisted_field",
-        {
-            "letter_fields": "uby_idub",
-            "letter_ok_uby_idub": "1",
-            "letter_ok_uby_mark": "1",
-        },
-        (["uby_idub"], []),
-    ),
+    ("tick_with_nothing_listed", {"letter_fields": "", "letter_ok": "0"}, ([], [])),
 ]
 
 

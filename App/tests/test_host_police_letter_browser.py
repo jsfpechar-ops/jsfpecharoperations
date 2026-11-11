@@ -2,7 +2,7 @@
 
 Filing HIGH RISK: a wrong value means filings under the wrong account. Every
 value here is a fake ``SAMPLE_*`` one and the police client is always a fake.
-Set UBYHOST_SHOTS_1086 to a folder to also write the review screenshots.
+Set UBYHOST_SHOTS_1097 (or UBYHOST_SHOTS_1086) to a folder to also write the review screenshots.
 """
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ else:
 WIDTHS = [390, 768, 1280]
 FIELDS = ("uby_idub", "uby_ws_user", "uby_mark")
 READ_ONLY = {"TestDostupnosti", "MaximalniDelkaSeznamu", "DejMiCiselnik"}
-SHOTS = os.environ.get("UBYHOST_SHOTS_1086")
+SHOTS = os.environ.get("UBYHOST_SHOTS_1097") or os.environ.get("UBYHOST_SHOTS_1086")
 TYPED_PASSWORD = "typed-by-hand-1086"
 READ_BUTTON = "details.police-letter-paste .actions button"
 TEST_BUTTON = 'button[formaction$="/test-connection"]'
@@ -125,12 +125,11 @@ def paste(page, expect_status=422):
 
 
 def tick_all(page):
-    for name in FIELDS:
-        page.check(f"#letter_ok_{name}")
+    page.check("#letter_ok")
 
 
 def assert_check_block(page):
-    """The three rows, each with its source and its required tick; never the password."""
+    """The three rows, each shown once with its source and its Edit, one required tick; never the password."""
     rows = page.locator("#police-letter-check [data-letter-row]")
     assert rows.evaluate_all("els => els.map(e => e.dataset.letterRow)") == list(FIELDS)
     assert page.input_value("#uby_idub") == SAMPLE_IDUB
@@ -142,10 +141,19 @@ def assert_check_block(page):
         row = page.locator(f'[data-letter-row="{name}"]')
         assert row.locator(".police-letter-src code").count() >= 1, name
         assert row.locator(".police-letter-src code").first.inner_text().strip(), name
-        assert row.locator(f"#letter_ok_{name}[required]").count() == 1, name
-        label = row.locator(f'label[for="letter_ok_{name}"]')
-        assert en("police_letter.confirm") in label.inner_text(), name
-        assert label.locator(".req-star").count() == 1, name
+        assert row.locator(f"details.police-letter-edit:not([open]) #{name}").count() == 1, name
+        assert row.locator("details.police-letter-edit > summary").inner_text().strip().startswith(en("common.edit")), name
+        assert page.locator(f'[name="{name}"]').count() == 1, name
+        assert not page.locator(f"#{name}").is_visible(), name
+        assert row.locator(".police-letter-value").is_visible(), name
+    check = page.locator("#police-letter-check")
+    assert check.locator("input[type=checkbox]").count() == 1
+    assert check.locator("#letter_ok[required]").count() == 1
+    label = check.locator('label[for="letter_ok"]')
+    assert en("police_letter.confirm_all") in label.inner_text()
+    assert check.locator(".req-star").count() == 1
+    assert "Matches my letter" not in check.inner_text()
+    assert page.locator("[id^=letter_ok_]").count() == 0
     mark = page.locator('[data-letter-row="uby_mark"]')
     assert mark.locator(".police-letter-value").inner_text().strip() == SAMPLE_ZKRATKA
     line = mark.locator('input[name="letter_line_uby_mark"]').get_attribute("value")
@@ -230,26 +238,24 @@ def test_paste_check_and_confirm_with_turbo(live, fake_client, width):  # noqa: 
     page.goto(live.url)
     paste(page)
     # Save with no tick: the browser refuses it, so nothing is posted.
-    # (The Save row appears with the first tick.)
-    page.check("#letter_ok_uby_idub")
+    # (1096: the Save row shows at load in the check state.)
     sent = len(posts)
     page.locator(SAVE_BUTTON).click()
     page.wait_for_timeout(300)
     assert len(posts) == sent
-    assert page.evaluate("() => document.querySelector('#letter_ok_uby_ws_user').validity.valueMissing")
-    page.uncheck("#letter_ok_uby_idub")
+    assert page.evaluate("() => document.querySelector('#letter_ok').validity.valueMissing")
     # "Save and test connection" skips the browser check: the server refuses it.
     with page.expect_response(lambda r: r.url.endswith("/test-connection")) as refused:
         page.locator(TEST_BUTTON).click()
     assert refused.value.status == 400
-    page.wait_for_selector("#letter_ok_uby_idub-error")
+    page.wait_for_selector("#letter_ok-error")
     assert page.locator("#police-letter-check").is_visible()
-    for name in FIELDS:
-        assert page.locator(f"#letter_ok_{name}-error").count() == 1, name
-    assert page.locator("#police-letter-check [data-field-error]").count() == 3
+    assert page.locator("#police-letter-check [data-field-error]").count() == 1
+    assert not page.locator("#letter_ok").is_checked()
     assert saved_row() == before
     assert fake_client["made"] == []
     assert fits(page)
+    shot(page, "error", width)
 
     # Ticked, with a typed password: saved, and tested once with read-only calls.
     tick_all(page)
@@ -282,7 +288,7 @@ def test_paste_check_and_confirm_without_javascript(live, fake_client, width):  
     paste(page)
     assert page.url.endswith("/police-letter")
     assert page.locator("#police-letter-check").is_visible()
-    assert page.locator("#letter_ok_uby_idub:focus").count() == 1, "the first unticked box has no focus"
+    assert page.locator("#letter_ok:focus").count() == 1, "the one tick has no focus"
     assert page.locator("#property-settings-form").get_attribute("data-dirty-start") == "1"
     assert_check_block(page)
 
@@ -295,8 +301,8 @@ def test_paste_check_and_confirm_without_javascript(live, fake_client, width):  
     with page.expect_response(lambda r: r.url.endswith("/test-connection")) as refused:
         page.locator(TEST_BUTTON).click()
     assert refused.value.status == 400
-    for name in FIELDS:
-        assert page.locator(f"#letter_ok_{name}-error").count() == 1, name
+    assert page.locator("#letter_ok-error").count() == 1
+    assert page.locator("[data-field-error]").count() == 1
     assert page.locator("#police-letter-check").is_visible()
     assert saved_row() == before
     assert fake_client["made"] == []
@@ -318,6 +324,8 @@ def test_the_letter_helper_geometry(live, no_client, width):  # noqa: F811
     page.locator("details.police-letter-paste > summary").click()
     page.wait_for_timeout(400)
     settle_motion(page)
+    if width == 390:
+        shot(page, "paste-open", width)
     closed = page.evaluate(
         """() => {
           const r = (sel) => document.querySelector(sel).getBoundingClientRect();
@@ -364,8 +372,16 @@ def test_the_letter_helper_geometry(live, no_client, width):  # noqa: F811
             pasteBottom: r(one('details.police-letter-paste')).bottom,
             blockTop: block.top,
             blockBottom: block.bottom,
-            fieldTop: r(one('label[for=uby_idub]')).top,
+            fieldTop: r(one('label[for=uby_ws_password]')).top,
             ticks: tall('#police-letter-check .checkline label'),
+            edits: tall('#police-letter-check details.police-letter-edit > summary'),
+            rows: all('#police-letter-check .police-letter-row').map(e => [r(e).top, r(e).bottom]),
+            editGaps: all('#police-letter-check details.police-letter-edit').map(d => {
+              const prev = d.previousElementSibling; return r(d).top - r(prev).bottom; }),
+            tickGap: r(one('#police-letter-check > .checkline')).top
+              - r(all('#police-letter-check .police-letter-row').pop()).bottom,
+            idubInBlock: !!one('#police-letter-check #uby_idub') && all('[name=uby_idub]').length === 1,
+            idubVisible: one('#uby_idub').checkVisibility(),
             summaries: tall('#ubyport details.police-letter-find > summary, #ubyport details.police-letter-paste > summary'),
             buttons: tall('#ubyport button.ui-btn'),
             cut: all('#ubyport label, #ubyport .police-letter-name, #ubyport summary')
@@ -381,16 +397,20 @@ def test_the_letter_helper_geometry(live, no_client, width):  # noqa: F811
     assert seen["blockTop"] - seen["buttonBottom"] >= 12, seen
     assert seen["blockTop"] >= seen["pasteBottom"], seen
     assert seen["fieldTop"] - seen["blockBottom"] >= 12, seen
-    assert len(seen["ticks"]) == 3 and seen["cut"] == [], seen
+    assert len(seen["ticks"]) == 1 and len(seen["edits"]) == 3 and seen["cut"] == [], seen
+    assert all(gap >= 12 for gap in seen["editGaps"]), seen["editGaps"]
+    assert seen["tickGap"] >= 12, seen
+    assert seen["idubInBlock"] and not seen["idubVisible"], seen
     if width < 768:
-        for name in ("ticks", "summaries", "buttons"):
+        for name in ("ticks", "edits", "summaries", "buttons"):
             assert seen[name] and min(seen[name]) >= 44, (name, seen[name])
     assert seen["codes"] and all(c["inside"] and c["scroll"] for c in seen["codes"]), seen
     assert seen["card"] and fits(page)
 
-    # The focus ring shows on a tick box reached with Tab.
+    # The focus ring shows on the tick box reached with Tab (past the three Edit summaries).
     page.locator(READ_BUTTON).focus()
-    page.keyboard.press("Tab")
+    for _ in range(4):
+        page.keyboard.press("Tab")
     ring = page.evaluate(
         """() => {
           const el = document.activeElement;
@@ -403,6 +423,77 @@ def test_the_letter_helper_geometry(live, no_client, width):  # noqa: F811
           };
         }"""
     )
-    assert ring["id"] == "letter_ok_uby_idub" and ring["visible"], ring
+    assert ring["id"] == "letter_ok" and ring["visible"], ring
     assert ring["outline"] or ring["shadow"], ring
     assert no_client == []
+
+
+@pytest.mark.parametrize("width", WIDTHS)
+def test_edit_without_javascript_opens_one_way_and_saves(live, no_client, width):  # noqa: F811
+    """1097: Edit is a details; once open the text hides, the summary is gone, the typed value saves."""
+    page = live.open(width, js=False)
+    page.goto(live.url)
+    paste(page)
+    row = page.locator('[data-letter-row="uby_idub"]')
+    assert not page.locator("#uby_idub").is_visible()
+    row.locator("details.police-letter-edit > summary").click()
+    assert page.locator("#uby_idub").is_visible()
+    assert not row.locator(".police-letter-value").is_visible()
+    assert not row.locator("details.police-letter-edit > summary").is_visible()
+    assert row.locator("details.police-letter-edit[open]").count() == 1
+    assert fits(page)
+    if width == 390:
+        shot(page, "check-edit", width)
+    new_idub = "987654321098"
+    page.fill("#uby_idub", new_idub)
+    tick_all(page)
+    page.locator(SAVE_BUTTON).click()
+    page.get_by_text(en("flash.apartments.letter_saved_untested")).first.wait_for()
+    assert saved_row() == {"uby_idub": new_idub, "uby_ws_user": SAMPLE_WS_USER, "uby_mark": SAMPLE_ZKRATKA}
+    assert no_client == []
+
+
+@pytest.mark.parametrize("width", WIDTHS)
+def test_the_police_section_phone_fixes(live, no_client, width):  # noqa: F811
+    """1097 F2 (Send timing text) and F3 (full-width test button). F1 is blocked, see docs/tasks/1097-report.md."""
+    page = live.open(width)
+    page.goto(live.url)
+    settle_motion(page)
+    if width == 390:
+        shot(page, "plain", width)
+    f3 = page.evaluate(
+        """() => {
+          const btn = document.querySelector('#ubyport button[formaction$="/test-connection"]');
+          const box = btn.parentElement.getBoundingClientRect();
+          const b = btn.getBoundingClientRect();
+          const lh = parseFloat(getComputedStyle(btn).lineHeight) || 20;
+          const range = document.createRange(); range.selectNodeContents(btn);
+          return {w: b.width, h: b.height, parent: box.width, lines: range.getClientRects().length,
+                  secondary: btn.classList.contains('ui-btn-secondary'), lh};
+        }"""
+    )
+    assert f3["secondary"], f3
+    if width < 768:
+        assert abs(f3["w"] - f3["parent"]) <= 1 and f3["h"] >= 44 and f3["lines"] == 1, f3
+    else:
+        assert f3["w"] < f3["parent"] - 1, f3
+
+    if width == 390:
+        for lang in ("cs", "en"):
+            page.goto(live.plain + f"?view=settings&section=reporting&lang={lang}#automation")
+            for value in ("manual", "scheduled", "immediate"):
+                page.select_option("#automation_mode", value)
+                fit = page.evaluate(
+                    """() => {
+                      const sel = document.querySelector('#automation_mode');
+                      const style = getComputedStyle(sel);
+                      const ctx = document.createElement('canvas').getContext('2d');
+                      ctx.font = style.font || `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+                      const text = sel.options[sel.selectedIndex].text.trim();
+                      const room = sel.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+                      return {text, width: ctx.measureText(text).width, room, overflow: style.textOverflow};
+                    }"""
+                )
+                assert fit["width"] <= fit["room"], (lang, value, fit)
+                assert fit["overflow"] != "ellipsis", fit
+            assert fits(page)
