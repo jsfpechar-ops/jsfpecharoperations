@@ -597,10 +597,10 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     field.classList.toggle("field-disabled", !scheduled);
     // 1100: the hours only matter for the delay option.
     field.hidden = !scheduled;
-    var hint = document.getElementById(select.getAttribute("aria-describedby") || "");
+    var timingHint = document.getElementById(select.getAttribute("aria-describedby") || "");
     var option = select.options[select.selectedIndex];
-    if (hint && hint.hasAttribute("data-automation-hint") && option && option.getAttribute("data-hint")) {
-      hint.textContent = option.getAttribute("data-hint");
+    if (timingHint && timingHint.hasAttribute("data-automation-hint") && option && option.getAttribute("data-hint")) {
+      timingHint.textContent = option.getAttribute("data-hint");
     }
   }
 
