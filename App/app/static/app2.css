@@ -2268,7 +2268,7 @@ body.v2 .archive-type-filters{gap:12px !important}
 body.v2 .ui-empty .ui-form-actions{gap:12px}
 body.v2 .settings-help-line .help-tip-btn{width:24px;height:24px;min-width:24px;min-height:24px}
 @media (max-width:1023px){body.v2 .settings-help-line .help-tip-btn{position:relative}body.v2 .settings-help-line .help-tip-btn::after{content:"";position:absolute;inset:-10px}}
-@media (max-width:1023px){body.v2 .property-settings-form .help-tip-btn{position:relative}body.v2 .property-settings-form .help-tip-btn::after{content:"";position:absolute;inset:auto;left:50%;top:50%;width:18px;height:18px;transform:translate(-50%,-50%);border:1px solid var(--line);border-radius:50%;box-sizing:border-box}}
+@media (max-width:1023px){body.v2 .property-settings-form .help-tip-btn{position:relative}body.v2 .property-settings-form .help-tip-btn::after{content:"";position:absolute;inset:-10px}}
 /* 0789c step 5: sub-page link rows (go somewhere) are bordered cards with a chevron */
 body.v2 .settings-lane .set-row,body.v2 .settings-lane .document-links a{display:flex;justify-content:space-between;align-items:center;gap:16px;min-height:0;margin:0 0 12px;padding:20px;border:1px solid var(--line);border-radius:12px;color:var(--ink);text-decoration:none;box-sizing:border-box}
 body.v2 .settings-lane .document-links{border-top:0;margin-top:0}
@@ -2281,7 +2281,7 @@ body.v2 .property-settings-form .help-tip-btn::after{content:"";position:absolut
 body.v2 .property-settings-form .help-tip-btn:hover,body.v2 .property-settings-form .help-tip-btn[aria-expanded=true]{background:var(--brand-soft);border-color:var(--brand);color:var(--brand-ink)}
 body.v2 .property-settings-form .help-tip-btn:focus-visible{outline:3px solid var(--brand-ring,var(--brand));outline-offset:2px}
 /* Phone/tablet: property detail still matches settings-lane :has() rules that force 24×24; override so geometry + 0833 agree on 44px (WCAG min target). */
-@media (max-width:1023px){body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .property-settings-form .help-tip-btn,body.v2 .property-settings-form .help-tip-btn{width:44px;height:44px;min-width:44px;min-height:44px;margin:-13px 0 -13px -10px;background:transparent;border:0}body.v2 .property-settings-form .help-tip-btn:hover,body.v2 .property-settings-form .help-tip-btn[aria-expanded=true]{background:transparent}body.v2 .property-settings-form .help-tip-btn:hover::after,body.v2 .property-settings-form .help-tip-btn[aria-expanded=true]::after{border-color:var(--brand);background:var(--brand-soft);z-index:-1}body.v2 .property-settings-form .help-tip-btn{isolation:isolate}}
+@media (max-width:1023px){body.v2:has(.settings-lane,.pr-lane,.entities-page,.archive-type-filters) .property-settings-form .help-tip-btn,body.v2 .property-settings-form .help-tip-btn{width:44px;height:44px;min-width:44px;min-height:44px;margin:0 0 0 8px}}
 body.v2 .property-settings-form .help-tip-body{display:none;position:absolute;z-index:70;left:0;top:100%;box-sizing:border-box;width:min(320px,calc(100vw - 16px));max-width:calc(100vw - 16px);padding:10px 12px;background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow-popover);font-size:13px;font-weight:400;line-height:1.45;text-align:left;white-space:normal;overflow-wrap:anywhere}
 body.v2 .property-settings-form .help-tip-body a{color:var(--brand-ink);font-weight:650}
 body.v2 .property-settings-form .help-tip:not([data-js]):hover>.help-tip-body,body.v2 .property-settings-form .help-tip:not([data-js]):focus-within>.help-tip-body,body.v2 .property-settings-form .help-tip.is-open>.help-tip-body{display:block}
@@ -3474,7 +3474,7 @@ body.v2 .police-letter-note{color:var(--ink-secondary)}
 body.v2 .form.prop-form-single details.prop-sec .police-letter-check .checkline label{margin:0}
 /* 1097: one Edit per found value; opens one way so the shown text never differs from the posted value */
 body.v2 .police-letter-check>.checkline{margin:12px 0 0}
-body.v2 details.police-letter-edit{margin:12px 0 0;min-width:0}
+body.v2 details.police-letter-edit{margin:12px 0 0;padding:0;min-width:0;background:none;border:0;border-radius:0}
 body.v2 details.police-letter-edit>summary{display:inline-flex;align-items:center;min-height:44px;padding:0;margin:0;border:0;background:none;list-style:none;cursor:pointer;color:var(--brand-ink);font-size:var(--text-base);font-weight:600;text-decoration:underline;text-underline-offset:3px}
 body.v2 details.police-letter-edit>summary::-webkit-details-marker{display:none}
 body.v2 details.police-letter-edit>summary::marker{content:""}
@@ -3482,7 +3482,6 @@ body.v2 details.police-letter-edit>summary:after,body.v2 details.police-letter-e
 body.v2 .police-letter-edit[open]>summary{display:none}
 body.v2 .police-letter-row:has(.police-letter-edit[open]) .police-letter-value{display:none}
 body.v2 details.police-letter-edit>input{display:block;width:100%;max-width:100%;min-width:0;box-sizing:border-box}
-/* 1097 F1-F3 (design-system rules 3, 4, 7, 8): property editor phone fixes */
-@media (max-width:1023px){body.v2 .form.prop-form-single .property-settings-form details.prop-sec .field>.field-label-row{margin:0 0 6px}body.v2 .form.prop-form-single .property-settings-form details.prop-sec .field>.field-label-row>label{margin:0}body.v2 .form.prop-form-single .property-settings-form details.prop-sec .field>.field-label-row+:is(input,select,textarea){margin-top:0}}
+/* 1097 F2, F3 (design-system rules 4, 8): property editor phone fixes */
 body.v2 .property-settings-form #automation_mode{min-width:0;width:100%;max-width:100%;text-overflow:clip;padding-inline:var(--space-3) var(--space-8)}
 @media (max-width:767px){body.v2 .property-settings-form #ubyport .actions .ui-btn{display:flex;width:100%;min-height:44px;justify-content:center;white-space:normal}}
