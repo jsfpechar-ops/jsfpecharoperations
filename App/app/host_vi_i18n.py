@@ -603,7 +603,7 @@ STRINGS: Dict[str, str] = {
     "setup.banner.aria": "Thiết lập căn hộ đầu tiên",
     "setup.banner.line": "Tiếp tục thiết lập",
     "demo.load": "Khám phá với dữ liệu mẫu",
-    "demo.load_detail": "Hai chỗ ở mẫu. Không gửi gì cho cảnh sát.",
+    "demo.load_detail": "Hai chỗ ở mẫu với lưu trú, phí lưu trú, thanh toán, dọn dẹp và một trang công khai. Không gửi gì cho cảnh sát.",
     "demo.clear": "Xóa dữ liệu mẫu",
     "data.export_csv_title": "Xuất CSV",
     "data.export_csv_help": "Chọn khoảng ngày cần xuất.",
