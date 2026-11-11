@@ -72,6 +72,7 @@
 {% else %}
 <div class="submissions-page">
   {{ empty_state(t('reports.empty_title'), t('reports.empty_body'), '/reservations', t('reports.empty_action')) }}
+  <p class="havel-ask-line"><a class="havel-ask-link" href="/havel?topic=reporting" data-sheet-open="havel-sheet" data-havel-launcher data-havel-topic="reporting">{{ t('nav.ask_havel') }}</a></p>
 </div>
 {% endif %}
 {% endblock %}

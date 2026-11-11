@@ -321,6 +321,7 @@
 <details class="prop-sec" id="sec-police"{{ sec_open('sec-police') }}><summary><span class="dot {{ 'g' if police_ok else 'r' }}" aria-hidden="true"></span><div><b>{{ t('property_page.sec.police.title') }}</b></div>{{ sec_state('police', (tp('property_nav.report_missing', report_missing) if not police_reported else (t('setup.sec.done') if section_done.police else t('setup.sec.police_untested'))) if first_setup else (t('property_nav.report_ready') if police_ok else tp('property_nav.report_missing', report_missing))) }}</summary>
   <div class="fields-wrap">
   {{ section_notice('police') }}
+  {% if not police_ok %}<p class="havel-ask-line"><a class="havel-ask-link" href="/havel?topic=reporting" data-sheet-open="havel-sheet" data-havel-launcher data-havel-topic="reporting">{{ t('nav.ask_havel') }}</a></p>{% endif %}
   {% if not (first_setup and not section_done.police and not letter_read and not letter_status) %}{{ section_missing(miss['police'], 'police') }}{% endif %}
     <section class="panel property-section ui-section" id="ubyport">
       <div class="field-label-row police-section-head"><h2 class="property-section-title">{{ t('property_page.police.connection') }}{{ help_tip('ubyport-help', t('apartment.form.ubyport.credentials_help_heading'), '/guide#ubyport-credentials') }}</h2>
