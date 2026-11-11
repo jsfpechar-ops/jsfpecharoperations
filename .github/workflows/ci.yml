@@ -48,14 +48,29 @@ jobs:
             sudo install -m 0755 "${tmp}/age/age" "${tmp}/age/age-keygen" /usr/local/bin/
             rm -rf "${tmp}"
           }
+          apt_install() {
+            local attempt
+            for attempt in 1 2 3; do
+              if timeout 90s sudo apt-get -o Acquire::Retries=5 update -qq \
+                && timeout 90s sudo apt-get -o Acquire::Retries=5 install -y --no-install-recommends "$@"; then
+                return 0
+              fi
+              echo "apt attempt ${attempt} of 3 failed for: $*" >&2
+              if [ "${attempt}" -lt 3 ]; then
+                sleep 10
+              fi
+            done
+            return 1
+          }
           if ! command -v age >/dev/null; then
-            if ! (timeout 90s sudo apt-get update -qq && timeout 90s sudo apt-get install -y --no-install-recommends age); then
+            if ! apt_install age; then
               install_age_binary
             fi
           fi
           if ! command -v sqlite3 >/dev/null; then
-            timeout 90s sudo apt-get update -qq && timeout 90s sudo apt-get install -y --no-install-recommends sqlite3 || true
+            apt_install sqlite3 || true
           fi
+          command -v age >/dev/null
           age --version
           sqlite3 --version
 

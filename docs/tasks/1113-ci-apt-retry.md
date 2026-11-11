@@ -1,6 +1,6 @@
 # 1113: CI `test` job: retry apt, keep the age check
 
-Status: todo
+Status: review
 Depends on: none (does not need PR #920) | Base commit: current main (22c5d255 at writing) | Branch: task/1113-ci-apt-retry
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
