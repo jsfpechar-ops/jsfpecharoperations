@@ -3,7 +3,7 @@
 pytest==9.2.0
 httpx==0.28.1
 pdfplumber>=0.11.10
-pypdf>=6.21.4
+pypdf>=7.0.0
 pytest-cov==7.1.0
 ruff==0.17.4
 mypy==2.4.1
