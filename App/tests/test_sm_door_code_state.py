@@ -210,6 +210,40 @@ def test_no_other_python_file_writes_door_code_state():
     assert others == []
 
 
+# The demo seeder (mock-only, removed by "Clear demo") is the one file outside
+# door_codes.py that writes door_code, through the db helpers. It INSERTs one row
+# directly in the initial state; it never UPDATEs one, so no transition is used.
+# (file, function, helper, state the new row is in)
+PINNED_DEMO_HELPER_WRITES = [
+    ("App/app/demo.py", "_enrich_extras", "insert", "pending"),
+]
+
+
+def _demo_helper_writes(path: Path, table: str) -> list:
+    """(file, function, helper, state literal or None) for db.insert/update calls on ``table``."""
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    out = []
+    for func in tree.body:
+        if not isinstance(func, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        for node in ast.walk(func):
+            if not (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Attribute)
+                and node.func.attr in {"update", "update_if", "update_in", "insert", "insert_in"}
+                and any(isinstance(a, ast.Constant) and a.value == table for a in node.args[:2])
+            ):
+                continue
+            state = None
+            for arg in node.args:
+                if isinstance(arg, ast.Dict):
+                    for key, value in zip(arg.keys, arg.values):
+                        if isinstance(key, ast.Constant) and key.value == "state" and isinstance(value, ast.Constant):
+                            state = value.value
+            out.append((str(path.relative_to(REPO)), func.name, node.func.attr, state))
+    return out
+
+
 def test_no_dict_helper_writes_door_code():
     helper = re.compile(
         r"\b(?:update|update_if|update_in|insert|insert_in)\(\s*(?:cur\s*,\s*)?['\"]door_code['\"]"
@@ -219,7 +253,13 @@ def test_no_dict_helper_writes_door_code():
         for path in sorted((APP / "app").rglob("*.py"))
         if helper.search(path.read_text(encoding="utf-8"))
     ]
-    assert hits == []
+    assert hits == sorted({f for f, *_ in PINNED_DEMO_HELPER_WRITES})
+    assert sorted(_demo_helper_writes(APP / "app" / "demo.py", "door_code")) == sorted(PINNED_DEMO_HELPER_WRITES)
+
+
+def test_demo_door_code_state_is_the_initial_state():
+    for _file, _func, helper, state in PINNED_DEMO_HELPER_WRITES:
+        assert helper == "insert" and state == door_codes.PENDING
 
 
 def test_no_go_file_writes_door_code():

@@ -93,7 +93,19 @@ PINNED_WRITERS = {
     "go/internal/payments/requests.go": {"status_updates": 1, "inserts": 1},
     "go/internal/payments/sweep.go": {"status_updates": 1},
     "go/internal/payments/webhook.go": {"status_updates": 1},
+    # demo seeder: two db.update("payment_request", ...) calls, see DEMO_ONLY_MOVES
+    "App/app/demo.py": {"helper_updates": 2},
 }
+
+# The demo seeder (mock-only, removed by "Clear demo") creates two requests with
+# payment_request.create (born draft) and then sets their status with a direct
+# db.update, skipping set_status. Neither move is in _TRANSITIONS, so each is a
+# named demo-only exception here; the production table is not widened.
+# (file, function, from-state, to-state)
+DEMO_ONLY_MOVES = [
+    ("App/app/demo.py", "_enrich_extras", "draft", "paid"),
+    ("App/app/demo.py", "_enrich_extras", "draft", "awaiting_payment"),
+]
 
 # Where the status-writing functions and SQL constants are used.
 PINNED_PY_CALLERS = {
@@ -201,3 +213,43 @@ def test_go_callers_match_the_pins():
         if n:
             found[_rel(path)] = n
     assert found == PINNED_GO_SETSTATUS
+
+
+def _demo_status_updates():
+    """(file, function, status literal) for each db.update("payment_request", ...) in demo.py."""
+    import ast
+
+    path = APP_DIR / "app" / "demo.py"
+    out = []
+    for func in ast.parse(path.read_text(encoding="utf-8")).body:
+        if not isinstance(func, ast.FunctionDef):
+            continue
+        for node in ast.walk(func):
+            if not (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Attribute)
+                and node.func.attr in {"update", "update_if", "update_in", "insert", "insert_in"}
+                and any(isinstance(a, ast.Constant) and a.value == "payment_request" for a in node.args[:2])
+            ):
+                continue
+            status = None
+            for arg in node.args:
+                if isinstance(arg, ast.Dict):
+                    for key, value in zip(arg.keys, arg.values):
+                        if isinstance(key, ast.Constant) and key.value == "status" and isinstance(value, ast.Constant):
+                            status = value.value
+            out.append((_rel(path), func.name, node.func.attr, status))
+    return out
+
+
+def test_demo_seeder_writes_match_the_pinned_demo_only_moves():
+    found = _demo_status_updates()
+    assert all(helper == "update" for _f, _fn, helper, _s in found), found
+    assert sorted((f, fn, s) for f, fn, _h, s in found) == sorted((f, fn, to) for f, fn, _frm, to in DEMO_ONLY_MOVES)
+    # rows are born draft (payment_request.create), so draft is the from-state
+    assert all(frm == "draft" for _f, _fn, frm, _to in DEMO_ONLY_MOVES)
+
+
+def test_demo_only_moves_are_exactly_the_ones_the_table_lacks():
+    for _f, _fn, frm, to in DEMO_ONLY_MOVES:
+        assert to not in TABLE[frm], f"{frm} -> {to} is now in the table: drop it from DEMO_ONLY_MOVES"

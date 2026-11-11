@@ -6,6 +6,7 @@ edited by this test; the table lists only what the code does today.
 """
 from __future__ import annotations
 
+import ast
 import re
 from pathlib import Path
 
@@ -46,6 +47,16 @@ UNUSED_TABLE_MOVES = {("paid", "refunded"), ("paid", "clash_refunded")}
 # 4. Row creation: the only place a status is first written.
 PINNED_INSERT_FILES = ["booking_site.py"]
 PINNED_INSERT_STATES = {"pending", "requested"}
+
+# 5. The demo seeder (mock-only, removed by "Clear demo") inserts one booking
+#    directly as 'paid' (a new row, not a move) and later sets reservation_id
+#    on it with no status change. Pinned by function, helper and state.
+#    (file, function, helper, status written or None)
+PINNED_DEMO_HELPER_WRITES = [
+    ("demo.py", "_enrich_extras", "insert", "paid"),
+    ("demo.py", "_enrich_extras", "update", None),
+]
+PINNED_DEMO_NAME_MENTIONS = 1  # the "Clear demo" table list, a DELETE by apartment_id
 
 
 def _py_files():
@@ -129,6 +140,32 @@ def test_set_status_callers_are_pinned():
     )
 
 
+def _demo_helper_writes(table: str = "site_booking"):
+    """(file, function, helper, status literal or None) for db.insert/update calls on the table in demo.py."""
+    path = APP_PKG / "demo.py"
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    out = []
+    for func in tree.body:
+        if not isinstance(func, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        for node in ast.walk(func):
+            if not (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Attribute)
+                and node.func.attr in {"update", "update_if", "update_in", "insert", "insert_in"}
+                and any(isinstance(a, ast.Constant) and a.value == table for a in node.args[:2])
+            ):
+                continue
+            status = None
+            for arg in node.args:
+                if isinstance(arg, ast.Dict):
+                    for key, value in zip(arg.keys, arg.values):
+                        if isinstance(key, ast.Constant) and key.value == "status" and isinstance(value, ast.Constant):
+                            status = value.value
+            out.append((path.name, func.name, node.func.attr, status))
+    return out
+
+
 def test_no_other_code_touches_the_table_by_helper():
     """db.insert/update/update_in helpers take the table name as a string."""
     found = []
@@ -136,12 +173,25 @@ def test_no_other_code_touches_the_table_by_helper():
         text = path.read_text(encoding="utf-8")
         if re.search(r"""["']site_booking["']""", text):
             found.append(path.name)
-    assert sorted(found) == sorted(PINNED_INSERT_FILES), found
+    assert sorted(found) == sorted(PINNED_INSERT_FILES + ["demo.py"]), found
     source = (APP_PKG / "booking_site.py").read_text(encoding="utf-8")
     assert len(re.findall(r"""db\.\w+\(\s*["']site_booking["']""", source)) == 1
     assert 'db.insert("site_booking"' in source
     assert 'if status not in ("pending", "requested"):' in source
     assert PINNED_INSERT_STATES == {"pending", "requested"}
+
+
+def test_demo_seeder_site_booking_writes_are_pinned():
+    """demo.py is allowed exactly the pinned writes, by function, helper and state."""
+    assert sorted(_demo_helper_writes()) == sorted(PINNED_DEMO_HELPER_WRITES)
+    text = (APP_PKG / "demo.py").read_text(encoding="utf-8")
+    mentions = len(re.findall(r"""["']site_booking["']""", text))
+    assert mentions == len(PINNED_DEMO_HELPER_WRITES) + PINNED_DEMO_NAME_MENTIONS
+    # a seeded status is a created row, so it must still be a real status
+    for _f, _fn, helper, status in PINNED_DEMO_HELPER_WRITES:
+        if helper == "insert":
+            assert status in booking_site.STATUSES
+    assert not re.search(r"UPDATE\s+site_booking|INSERT\s+INTO\s+site_booking", text, re.I)
 
 
 def test_go_and_migrations_do_not_write_site_booking_status():
