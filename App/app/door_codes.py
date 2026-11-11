@@ -880,17 +880,20 @@ def _handle_cancellations(now_iso: str) -> None:
     for row in rows:
         state = row["state"]
         if state in (PENDING, RETRYING):
+            # Guarded: issue() may have claimed the row since the SELECT. Zero
+            # rows updated leaves it to issue(); the next run sees its new state.
             db.execute(
-                "UPDATE door_code SET state = ?, claimed_at = NULL, updated_at = ? WHERE id = ?",
-                (REVOKED, now_iso, row["id"]),
+                "UPDATE door_code SET state = ?, claimed_at = NULL, updated_at = ? "
+                "WHERE id = ? AND state IN (?, ?)",
+                (REVOKED, now_iso, row["id"], PENDING, RETRYING),
             )
         elif state == ISSUED and row["valid_to"]:
             end_ms = _iso_to_ms(row["valid_to"])
             if end_ms > int(_now().timestamp() * 1000):
                 db.execute(
                     "UPDATE door_code SET state = ?, attempts = 0, next_attempt_at = ?, "
-                    "claimed_at = NULL, updated_at = ? WHERE id = ?",
-                    (REVOKE_PENDING, now_iso, now_iso, row["id"]),
+                    "claimed_at = NULL, updated_at = ? WHERE id = ? AND state = ?",
+                    (REVOKE_PENDING, now_iso, now_iso, row["id"], ISSUED),
                 )
 
     # A calendar revival or archive undo can bring the stay back while a

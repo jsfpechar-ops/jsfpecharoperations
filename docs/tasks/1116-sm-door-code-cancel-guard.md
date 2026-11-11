@@ -1,6 +1,6 @@
 # 1116: `_handle_cancellations` overwrites a door code that `issue` has just claimed: guard both writes
 
-Status: todo
+Status: review
 Depends on: PR #920 merged to main (tables and pin tests present) | Base commit: main after PR #920 | Branch: task/1116-sm-door-code-cancel-guard
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
