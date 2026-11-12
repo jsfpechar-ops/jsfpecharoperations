@@ -871,6 +871,7 @@ def sync_feed(
                 existing["date_from"] != event["date_from"]
                 or existing["date_to"] != event["date_to"]
             )
+            move = None
             if dates_changed and _send_in_flight(existing["id"]):
                 # Keep the stored window until the send is resolved. Applying
                 # the feed now would desync the house book from what went to
@@ -901,7 +902,12 @@ def sync_feed(
                 changed["updated_at"] = now
                 applied = False
                 if dates_changed:
-                    applied = _update_reservation_unless_claimed(existing, changed)
+                    move = {
+                        "apartment_id": feed["apartment_id"],
+                        "new_from": event["date_from"],
+                        "new_to": event["date_to"],
+                    }
+                    applied = _update_reservation_unless_claimed(existing, changed, move)
                     if not applied:
                         # A claim landed after the pre-check: keep the stored
                         # dates and let the next poll retry the move.
@@ -910,8 +916,11 @@ def sync_feed(
                         dates_changed = False
                         deferred_in_flight = True
                         log.warning(
-                            "ical_dates_deferred_in_flight apartment_id=%s reservation_id=%s "
+                            "%s apartment_id=%s reservation_id=%s "
                             "stored=%s..%s calendar=%s..%s",
+                            "ical_dates_deferred_changed"
+                            if move.get("reason") == "changed"
+                            else "ical_dates_deferred_in_flight",
                             feed["apartment_id"],
                             existing["id"],
                             existing["date_from"],
@@ -937,13 +946,7 @@ def sync_feed(
                         existing["id"],
                     )
             if dates_changed:
-                moved = _fit_unsent_guest_windows(
-                    existing["id"],
-                    feed["apartment_id"],
-                    event["date_from"],
-                    event["date_to"],
-                    now,
-                )
+                moved = move["moved"] if move else 0
                 if moved:
                     log.info(
                         "ical_dates_moved_guests apartment_id=%s reservation_id=%s guests=%s",
