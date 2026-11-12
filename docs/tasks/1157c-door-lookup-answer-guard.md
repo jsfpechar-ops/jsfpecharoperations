@@ -1,6 +1,6 @@
 # 1157c: a lock answer without a list is unknown, and a full page always reads on
 
-Status: todo
+Status: review
 Depends on: 1157b (merged) | Base commit: HEAD of branch claude/zealous-maxwell-a7ub54 | Branch: task/1157c-door-lookup-answer-guard
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
