@@ -174,3 +174,27 @@ def test_a_lookup_that_fails_once_and_then_works_still_re_issues(world, monkeypa
     _expire_lease(row)
     _tick()
     _assert_new_working_pin(lock, row, sent)
+
+
+def test_a_minus_1007_after_a_timed_out_delete_with_an_unconfirmed_lookup_still_re_issues(world, monkeypatch):
+    lock, stay, row, sent = world
+    _delete_then(monkeypatch, lock, ttlock.TTLockError("timeout", kind="network"))
+    door_codes._revoke_one(row)  # delete 1 ran on the lock, the answer was lost
+    assert _row(row)["last_error"] == "network" and lock.pins == {}
+    db.execute("UPDATE door_code SET next_attempt_at = NULL WHERE id = ?", (row,))
+    lock.lookup_error = ttlock.TTLockError("busy", kind="transient")
+
+    def refuse(*a, **k):
+        raise ttlock.TTLockError("no password data", code=-1007, kind=ttlock.CODE_MISSING)
+
+    monkeypatch.setattr(ttlock, "delete_code", refuse)  # delete 2: -1007, confirmation fails
+    door_codes._revoke_one(row)
+    held = _row(row)
+    assert held["state"] == door_codes.REVOKE_PENDING and held["last_error"] == "code_missing"
+    assert lock.lookups == 1
+    lock.lookups = 0
+    lock.lookup_error = None
+    _revive(stay)
+    _tick()
+    _assert_new_working_pin(lock, row, sent)
+    assert lock.lookups == 1

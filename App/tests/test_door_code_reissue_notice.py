@@ -1,4 +1,4 @@
-"""1156, 1157b: the host is told once, without the PIN, after a lost door code is replaced."""
+"""1156, 1160b: the host is told once, without the PIN, after a lost door code is replaced."""
 from __future__ import annotations
 
 import json

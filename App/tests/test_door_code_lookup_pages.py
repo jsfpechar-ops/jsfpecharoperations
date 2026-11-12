@@ -1,4 +1,4 @@
-"""1157: a door code is called gone only when the lock's whole answer says so.
+"""1160: a door code is called gone only when the lock's whole answer says so.
 
 A fake lock answers /v3/lock/listKeyboardPwd like TTLock: a fuzzy searchStr, 20 codes a
 page, with pages and total. UH-<id> also matches UH-<id>0 and UH-<id>1, so on a busy lock

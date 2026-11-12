@@ -1630,6 +1630,7 @@ _DOOR_CODE_REASONS = (
     "permission",
     "storage",
     "budget",
+    "lock_setup",
 )
 # TTLock error kinds (ttlock.ERROR_KINDS) as the reason a host reads.
 _DOOR_CODE_REASON_KINDS = {
@@ -1642,6 +1643,11 @@ _DOOR_CODE_REASON_KINDS = {
     "reauth": "no_account",
     "storage": "storage",
     "budget": "budget",
+    # The account or the server's TTLock setting is wrong: the connection is set up again.
+    "config": "no_account",
+    # A refused request or a code the lock does not have: the generic text and the raw token.
+    "bug": "other",
+    "code_missing": "other",
 }
 # Reasons where nothing is retried: the late mail keeps the "failed" text.
 _DOOR_CODE_NO_RETRY = ("not_set_up", "not_eligible", "bad_window")
