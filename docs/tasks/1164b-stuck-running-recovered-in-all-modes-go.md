@@ -1,26 +1,26 @@
-# 1161b: a crash-stuck `running` filing is recovered in every apartment mode (K-F23), Go twin of 1161
+# 1164b: a crash-stuck `running` filing is recovered in every apartment mode (K-F23), Go twin of 1164
 
 Status: review
-Depends on: 1161 (Python twin, same rule) | Base commit: 174db7a2 (HEAD of branch claude/zealous-maxwell-a7ub54) | Branch: task/1161b-stuck-running-all-modes-go
+Depends on: 1164 (Python twin, same rule) | Base commit: 174db7a2 (HEAD of branch claude/zealous-maxwell-a7ub54) | Branch: task/1164b-stuck-running-all-modes-go
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
-HIGH RISK filing path: the reviewer reads every diff line in the Risk list. This is the brief that fixes production: the Go service runs the live `submit` job. Do both 1161 and 1161b before merging either.
+HIGH RISK filing path: the reviewer reads every diff line in the Risk list. This is the brief that fixes production: the Go service runs the live `submit` job. Do both 1164 and 1164b before merging either.
 
 ## 1. Objective
 
-Make the Go sweep (`go/internal/ubyport`, job `submit`) behave exactly as Python does after brief 1161: before its normal loop it runs `RecoverStaleSubmissions` for every apartment that has a `running` batch, whatever its `automation_mode`, `active` flag or `ubyport_auth_failed` alert. Today `Sweep` skips those apartments, so a crash-stuck `running` batch there stays invisible and the iCal date move it holds (1154b) is deferred with only a log line. Recovery rewrites the row to `outcome_unknown` and raises the existing critical alert; it never sends.
+Make the Go sweep (`go/internal/ubyport`, job `submit`) behave exactly as Python does after brief 1164: before its normal loop it runs `RecoverStaleSubmissions` for every apartment that has a `running` batch, whatever its `automation_mode`, `active` flag or `ubyport_auth_failed` alert. Today `Sweep` skips those apartments, so a crash-stuck `running` batch there stays invisible and the iCal date move it holds (1154b) is deferred with only a log line. Recovery rewrites the row to `outcome_unknown` and raises the existing critical alert; it never sends.
 
 ## 2. Context
 
 Rule 1: UbyPort filing correctness beats every other feature. Read nothing else; the reasoning is here.
 
-**Which runtime runs the sweep in production: Go.** `docs/context/status.md`: "Go jobs = queue: billing_snapshot, stripe_sweep, ical, push, submit". `go/cmd/ubyhost-web/main.go`: `goIntervals` has `"submit": 10` and the `"submit"` handler calls `ubyport.Sweep(ctx, d, nil)` (line ~308). `UBYHOST_GO_JOB_KINDS` (docs/ENVIRONMENT.md) must include `submit` and Python's `jobqueue` skips Go kinds. The Python sweep (1161) only runs on rollback.
+**Which runtime runs the sweep in production: Go.** `docs/context/status.md`: "Go jobs = queue: billing_snapshot, stripe_sweep, ical, push, submit". `go/cmd/ubyhost-web/main.go`: `goIntervals` has `"submit": 10` and the `"submit"` handler calls `ubyport.Sweep(ctx, d, nil)` (line ~308). `UBYHOST_GO_JOB_KINDS` (docs/ENVIRONMENT.md) must include `submit` and Python's `jobqueue` skips Go kinds. The Python sweep (1164) only runs on rollback.
 
 **Why `RecoverStaleSubmissions(ctx, pool, aptID, now)` is safe for any apartment** (`go/internal/ubyport/recover.go`):
 - Staleness is the send claim only: a `running` batch whose guests hold a claim with `claimed_at >= now - SubmissionClaimTTL` (300 s) is skipped, so a live send is never touched (`TestRecoverLiveClaimLeftAlone`).
 - Scan and each write run under `lockSubmitApartment` (`pg_advisory_xact_lock(hashtext('submit_apartment'), aptID)`), the lock a send holds; the write is `UPDATE ... WHERE id = $3 AND state = 'running'` and an outcome recorded after the scan stands (`TestRecoverKeepsAnOutcomeRecordedAfterTheScan`).
 - It is idempotent: a second run finds nothing and returns 0 without a new alert (`TestRecoverStaleBatches`, "second run").
-- It never sends: it sets `outcome_unknown`, points unsent guests at the row and raises the critical alert `submission_outcome_unknown:<apt>` with the existing copy keys. No new copy (see 1161 section 2: the alert detail says the system resends; in manual mode it does not; owner decision, not changed here).
+- It never sends: it sets `outcome_unknown`, points unsent guests at the row and raises the critical alert `submission_outcome_unknown:<apt>` with the existing copy keys. No new copy (see 1164 section 2: the alert detail says the system resends; in manual mode it does not; owner decision, not changed here).
 
 **Where it goes.** `Sweep` (sweep.go, `func Sweep(ctx context.Context, d SweepDeps, ownerUserID *int64) (SweepSummary, error)`, line 776) selects only `active = 1 AND automation_mode != 'manual'` apartments and skips an open `ubyport_auth_failed` alert. A new unexported helper `recoverStuckRunningBatches` is called once at the top of `Sweep`, before that query. It selects `DISTINCT s.apartment_id` from `submission s JOIN apartment a` with `s.state = 'running'` (scoped to `ownerUserID` when given), calls `RecoverStaleSubmissions` per apartment, and logs and continues on an error (one broken apartment must not stop every other apartment's filing, as `Sweep` already contains per-apartment failures). `sweepApartment` still calls `RecoverStaleSubmissions` itself; that stays and is a no-op after the pre-pass.
 
@@ -45,14 +45,14 @@ Test helpers already in the package (`go/internal/ubyport/*_test.go`): `claimTes
 | go/internal/ubyport/sweep.go | edit | new `recoverStuckRunningBatches`, one call in `Sweep` |
 | go/internal/ubyport/sweep_test.go | edit | append 1 helper and 4 test functions (one with 4 subtests) |
 | docs/context/known-issues.md | edit | K-F23 line closed |
-| docs/tasks/1161b-stuck-running-recovered-in-all-modes-go.md | status | `review` at the end |
-| docs/tasks/1161b-report.md | create | report |
+| docs/tasks/1164b-stuck-running-recovered-in-all-modes-go.md | status | `review` at the end |
+| docs/tasks/1164b-report.md | create | report |
 
 No other file may change. No schema, no copy, no dependency.
 
 ## 4. Steps
 
-Commit after each step: `git add -A && git commit -qm "1161b step N"`. Work from `go/` for every command. Every `go test` needs `UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest` in front (start Postgres first if `pg_isready -h localhost` says no response: `pg_ctlcluster 16 main start`).
+Commit after each step: `git add -A && git commit -qm "1164b step N"`. Work from `go/` for every command. Every `go test` needs `UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest` in front (start Postgres first if `pg_isready -h localhost` says no response: `pg_ctlcluster 16 main start`).
 
 **Step 1. Tests first (they must fail before the fix).** Append this block to the end of `go/internal/ubyport/sweep_test.go` (the file currently ends with the function whose last lines are `t.Fatalf("open card = %d, want 0", got)`, then `}`, then `}`; append after that final `}` with one blank line between):
 ```go
@@ -256,18 +256,18 @@ Bite command (all three): `UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhos
 (c) In `recoverStuckRunningBatches` replace the line `		if _, err := RecoverStaleSubmissions(ctx, pool, id, now); err != nil {` with ``		if _, err := pool.Exec(ctx, `UPDATE submission SET state = 'outcome_unknown' WHERE state = 'running' AND apartment_id = $1`, id); err != nil {`` (a recovery that ignores the claim). Expected: `--- FAIL` for `TestSweepRecoversAStuckRunningBatchWhereItSkipsTheApartment`, `TestSweepNeverRecoversALiveClaimInManualMode` and `TestSweepRecoversAnAutoApartmentStuckBatchOnce`. (`now` becomes unused only if the compiler complains: it is a parameter, so it compiles.)
 
 **Step 4. Close K-F23 in the docs.** In `docs/context/known-issues.md` replace the whole line starting `- K-F23 (937 review):` with
-`- K-F23 closed (1161, 1161b): the sweep now rewrites a crash-stuck running filing to outcome_unknown for every apartment, manual, inactive or auth-failed included, so the critical alert shows and the date move keeps waiting; recovery never sends.`
+`- K-F23 closed (1164, 1164b): the sweep now rewrites a crash-stuck running filing to outcome_unknown for every apartment, manual, inactive or auth-failed included, so the critical alert shows and the date move keeps waiting; recovery never sends.`
 Command: `grep -c 'K-F23 closed' ../docs/context/known-issues.md`. Expected `1`. From the repo root: `python3 scripts/context_lint.py | tail -3`. Expected `context lint: OK` (a status.md WARN is the orchestrator's).
 
 **Step 5. Final checks.** `gofmt -l internal/ubyport` and `go vet ./internal/ubyport/ 2>&1 | tail -30`: no output. `UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest go test ./internal/ubyport/ ./internal/ical/ -count=1 -v 2>&1 | grep -c '^--- SKIP'`: expected `0`. Then `UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest go test ./internal/ubyport/ ./internal/ical/ -count=1 2>&1 | tail -30`: both `ok`.
 
 ## 5. Do not touch
 
-`recover.go`, `RecoverStaleSubmissions`, `sweepApartment`, `RetryOutcomeUnknownBatches`, `go/internal/ical`, `go/cmd`, Python files (1161 owns them), copy files. Hard rules from AGENTS.md: 1 (filing correctness), 2 (no new outbound request or personal-data field), 4 (no dependency), 5 (SQL Postgres-portable, no schema change), 9 (no new copy).
+`recover.go`, `RecoverStaleSubmissions`, `sweepApartment`, `RetryOutcomeUnknownBatches`, `go/internal/ical`, `go/cmd`, Python files (1164 owns them), copy files. Hard rules from AGENTS.md: 1 (filing correctness), 2 (no new outbound request or personal-data field), 4 (no dependency), 5 (SQL Postgres-portable, no schema change), 9 (no new copy).
 
 ## 6. Commands
 
-All from `go/` with the test database URL as above. Step 1 (expect the four subtests failing), Step 2 (gofmt, vet silent; `ok`), Step 3 bites (as written, each restored to `ok`), Step 5 (SKIP count `0`; both packages `ok`). Python gates are in 1161.
+All from `go/` with the test database URL as above. Step 1 (expect the four subtests failing), Step 2 (gofmt, vet silent; `ok`), Step 3 bites (as written, each restored to `ok`), Step 5 (SKIP count `0`; both packages `ok`). Python gates are in 1164.
 
 ## 7. Acceptance
 
@@ -293,7 +293,7 @@ Stop, and write the report, if:
 
 ## 9. Report
 
-Write `docs/tasks/1161b-report.md` (600 tokens at most) and set `Status: review`. The report has: the files changed (`git diff --stat`); each command with the last 5 lines of its output; section 7 ticked; deviations; questions; owner steps left.
+Write `docs/tasks/1164b-report.md` (600 tokens at most) and set `Status: review`. The report has: the files changed (`git diff --stat`); each command with the last 5 lines of its output; section 7 ticked; deviations; questions; owner steps left.
 
 ## Risk list (for the reviewer)
 
@@ -302,5 +302,5 @@ Write `docs/tasks/1161b-report.md` (600 tokens at most) and set `Status: review`
 
 ## Owner steps
 
-1. Push `task/1161b-stuck-running-all-modes-go` and open a draft PR; keep it draft until 1161 is ready.
+1. Push `task/1164b-stuck-running-all-modes-go` and open a draft PR; keep it draft until 1164 is ready.
 2. Merge both with `scripts/merge-pr-on-green.sh`. Green merges auto-deploy; the Go service picks the fix up on its next restart, and the next `submit` run (within 10 minutes) rewrites any stuck row. No `.env` change.

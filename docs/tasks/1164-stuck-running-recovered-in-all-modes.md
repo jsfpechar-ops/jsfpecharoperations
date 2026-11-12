@@ -1,10 +1,10 @@
-# 1161: a crash-stuck `running` filing is recovered in every apartment mode (K-F23), Python
+# 1164: a crash-stuck `running` filing is recovered in every apartment mode (K-F23), Python
 
 Status: review (Postgres area run left to CI; local ubytest unreliable)
-Depends on: 1154 (merged: an iCal date move waits while a `running` row lists an unsent guest of the stay) | Base commit: 174db7a2 (HEAD of branch claude/zealous-maxwell-a7ub54) | Branch: task/1161-stuck-running-all-modes
+Depends on: 1154 (merged: an iCal date move waits while a `running` row lists an unsent guest of the stay) | Base commit: 174db7a2 (HEAD of branch claude/zealous-maxwell-a7ub54) | Branch: task/1164-stuck-running-all-modes
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
-HIGH RISK filing path: the reviewer reads every diff line in the Risk list. Go twin: brief 1161b (the Go service runs the live `submit` job, so 1161b is the one that fixes production). Do both before merging either. Run 1161 first.
+HIGH RISK filing path: the reviewer reads every diff line in the Risk list. Go twin: brief 1164b (the Go service runs the live `submit` job, so 1164b is the one that fixes production). Do both before merging either. Run 1164 first.
 
 ## 1. Objective
 
@@ -44,14 +44,14 @@ Test helpers already in `App/tests/test_stale_submission.py` (imports `json, sql
 | App/app/reporting.py | edit | new `_recover_stuck_running_batches`, one call in `sweep()` |
 | App/tests/test_stale_submission.py | edit | append 7 test cases (3 test functions plus one parametrized by 4) and 3 helpers |
 | docs/OPERATIONS.md | edit | one sentence in the `submit` job row |
-| docs/tasks/1161-stuck-running-recovered-in-all-modes.md | status | `review` at the end |
-| docs/tasks/1161-report.md | create | report |
+| docs/tasks/1164-stuck-running-recovered-in-all-modes.md | status | `review` at the end |
+| docs/tasks/1164-report.md | create | report |
 
 No other file may change. No copy, no migration, no alert kind, no dependency, no new outbound request, no new personal-data field.
 
 ## 4. Steps
 
-Commit after each step: `git add -A && git commit -qm "1161 step N"`. Work from `App/` for every command. Postgres run uses `UBYHOST_DATABASE_URL=postgresql://uby:uby@localhost:5432/ubytest` (start it first if `pg_isready -h localhost` says no response: `pg_ctlcluster 16 main start`).
+Commit after each step: `git add -A && git commit -qm "1164 step N"`. Work from `App/` for every command. Postgres run uses `UBYHOST_DATABASE_URL=postgresql://uby:uby@localhost:5432/ubytest` (start it first if `pg_isready -h localhost` says no response: `pg_ctlcluster 16 main start`).
 
 **Step 1. Tests first (they must fail before the fix).** Append this block to the end of `App/tests/test_stale_submission.py` (the file currently ends with the line `    assert client.calls == 1`; keep two blank lines before the block):
 ```python
@@ -275,7 +275,7 @@ Stop, and write the report, if:
 
 ## 9. Report
 
-Write `docs/tasks/1161-report.md` (600 tokens at most) and set `Status: review`. The report has: the files changed (`git diff --stat`); each command with the last 5 lines of its output; section 7 ticked; deviations; questions; owner steps left.
+Write `docs/tasks/1164-report.md` (600 tokens at most) and set `Status: review`. The report has: the files changed (`git diff --stat`); each command with the last 5 lines of its output; section 7 ticked; deviations; questions; owner steps left.
 
 ## Risk list (for the reviewer)
 
@@ -284,5 +284,5 @@ Write `docs/tasks/1161-report.md` (600 tokens at most) and set `Status: review`.
 
 ## Owner steps
 
-1. Push `task/1161-stuck-running-all-modes` and open a draft PR; keep it draft until 1161b is also ready.
-2. Merge both with `scripts/merge-pr-on-green.sh`; green merges auto-deploy. No server step: the Go service (1161b) is what the live `submit` job runs.
+1. Push `task/1164-stuck-running-all-modes` and open a draft PR; keep it draft until 1164b is also ready.
+2. Merge both with `scripts/merge-pr-on-green.sh`; green merges auto-deploy. No server step: the Go service (1164b) is what the live `submit` job runs.

@@ -1,10 +1,10 @@
-# 1161b report: stuck running filing recovered in every apartment mode (Go)
+# 1164b report: stuck running filing recovered in every apartment mode (Go)
 
 Status: blocked (one question, see Questions)
 
 ## Files changed
 
-Commits on task/1161b-stuck-running-all-modes-go: steps 1, 2, 4 (bite runs leave no change).
+Commits on task/1164b-stuck-running-all-modes-go: steps 1, 2, 4 (bite runs leave no change).
 Changed files:
  docs/context/known-issues.md      |   2 +-
  go/internal/ubyport/sweep.go      |  40 +++++++++++
