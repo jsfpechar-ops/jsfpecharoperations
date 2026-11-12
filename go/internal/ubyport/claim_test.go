@@ -275,3 +275,87 @@ func TestReleaseFreesGuest(t *testing.T) {
 		t.Fatalf("guest was not freed by release: got %d pairs", len(got))
 	}
 }
+
+func claimedAt(t *testing.T, pool *pgxpool.Pool, id int64) float64 {
+	t.Helper()
+	var v float64
+	if err := pool.QueryRow(context.Background(),
+		`SELECT claimed_at FROM submission_claim WHERE guest_id = $1`, id).Scan(&v); err != nil {
+		t.Fatal(err)
+	}
+	return v
+}
+
+func TestRefreshRenewsOwnClaimAndNeverResurrects(t *testing.T) {
+	pool := claimTestPool(t)
+	ctx := context.Background()
+	id := seedGuest(t, pool)
+	pairs := []ClaimPair{{GuestID: id, SubmitState: "pending", Built: builtOf(t, pool, id)}}
+	tok, got, err := ClaimSendable(ctx, pool, pairs)
+	if err != nil || len(got) != 1 {
+		t.Fatalf("claim: %v, %d pairs", err, len(got))
+	}
+	if _, err := pool.Exec(ctx, `UPDATE submission_claim SET claimed_at = claimed_at - 600 WHERE guest_id = $1`, id); err != nil {
+		t.Fatal(err)
+	}
+	if n, err := RefreshSendableClaim(ctx, pool, tok); err != nil || n != 1 {
+		t.Fatalf("refresh own claim: %d, %v", n, err)
+	}
+	if age := nowSeconds() - claimedAt(t, pool, id); age > 60 {
+		t.Fatalf("claim not renewed, age %.0f s", age)
+	}
+	if n, err := RefreshSendableClaim(ctx, pool, "someone-else"); err != nil || n != 0 {
+		t.Fatalf("refresh foreign token: %d, %v", n, err)
+	}
+	if err := ReleaseSendableClaim(ctx, pool, tok); err != nil {
+		t.Fatal(err)
+	}
+	if n, err := RefreshSendableClaim(ctx, pool, tok); err != nil || n != 0 {
+		t.Fatalf("refresh released claim: %d, %v", n, err)
+	}
+	if c := claimCount(t, pool, id); c != 0 {
+		t.Fatalf("released claim came back: %d rows", c)
+	}
+}
+
+func TestSendClaimedBatchesRefreshesBeforeEachBatchAndStopsWhenLost(t *testing.T) {
+	pool := claimTestPool(t)
+	ctx := context.Background()
+	id := seedGuest(t, pool)
+	pairs := []ClaimPair{{GuestID: id, SubmitState: "pending", Built: builtOf(t, pool, id)}}
+	tok, _, err := ClaimSendable(ctx, pool, pairs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var ages []float64
+	send := func([]BatchPair) (BatchResult, error) {
+		ages = append(ages, nowSeconds()-claimedAt(t, pool, id))
+		// Pretend this batch took ten minutes.
+		if _, err := pool.Exec(ctx, `UPDATE submission_claim SET claimed_at = claimed_at - 600 WHERE guest_id = $1`, id); err != nil {
+			t.Fatal(err)
+		}
+		return BatchResult{Submitted: 1}, nil
+	}
+	results, err := sendClaimedBatches(ctx, pool, tok, make([]BatchPair, 3), 1, send)
+	if err != nil || len(results) != 3 {
+		t.Fatalf("results %d, err %v", len(results), err)
+	}
+	for i, age := range ages {
+		if age > 60 {
+			t.Fatalf("batch %d ran under a stale claim, age %.0f s", i, age)
+		}
+	}
+
+	if err := ReleaseSendableClaim(ctx, pool, tok); err != nil {
+		t.Fatal(err)
+	}
+	called := 0
+	results, err = sendClaimedBatches(ctx, pool, tok, make([]BatchPair, 2), 1,
+		func([]BatchPair) (BatchResult, error) { called++; return BatchResult{}, nil })
+	if err != nil || len(results) != 0 || called != 0 {
+		t.Fatalf("lost claim: results %d, called %d, err %v", len(results), called, err)
+	}
+	if c := claimCount(t, pool, id); c != 0 {
+		t.Fatalf("lost claim was resurrected: %d rows", c)
+	}
+}
