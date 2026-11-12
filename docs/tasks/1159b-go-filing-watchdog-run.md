@@ -1,7 +1,7 @@
 # 1159b: Go port of the filing watchdog actions (`notify_hosts`, `send_operator_digest`, `run`) and its two mails, parity-checked against Python
 
 Status: todo
-Depends on: 1159 (merged) | Base commit: the main commit that merged 1159 | Branch: claude/go-filing-watchdog-run
+Depends on: 1159 and 1159-fix-1 (merged) | Base commit: the main commit that merged 1159 | Branch: claude/go-filing-watchdog-run
 Report: docs/tasks/1159b-report.md
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
@@ -30,7 +30,7 @@ Rules that apply (AGENTS.md): 1 filing correctness (the watchdog is what tells a
 **Verified by the brief writer** on a scratch copy of 4e56401 with 1159's files applied: the files below with the sha256 values in §4, generation deterministic (same hash with `TZ=America/New_York`), `gofmt -l` empty, `go vet ./...` clean, `go test ./internal/calendar/ ./internal/mail/` ok **with a local PostgreSQL 16** (`--- PASS: TestRunFilingWatchdogMatchesPython`, `--- PASS: TestBuildDeadlineDigestMatchesPython`), the Python test green on SQLite and on PostgreSQL, and these mutations each made a Go test fail: digest window without the `age >= 0` bound, `<=` instead of `<` 72 h, naive stamp read as none, the mail-off check removed, "" stamp counted as mailed, a wrong push date, one style in `blockFact`, 51 digest rows, the fallback label, unknown stays not notified, `watchdogAddress` replaced by `ubyport.NormaliseEmail`.
 
 Anchors that must exist verbatim (step 0):
-- the 1159 files with these sha256: `App/scripts/filing_watchdog_golden.py` `4b162294c0ee7823f519d28fe713cef2197add024e15a104ccc04a24fc099172`, `go/internal/calendar/filing_watchdog.go` `21884e766b0b5d700f40c8581960b4ee590e36328d273821ce56f2dfd9ef4978`, `go/internal/calendar/filing_watchdog_test.go` `21f36464acd80ad07ed1027c69e0ed01fa8f20c8de1755c5a8298c04b90ff011`
+- the 1159 files with these sha256: `App/scripts/filing_watchdog_golden.py` `d751ed495c29245c040402b06e7e644aa19b6026663058ae577edaa48d97317f`, `go/internal/calendar/filing_watchdog.go` `b61e9aefa8214498ff911309f13babe1321fb5908d34d15bd132c5596e7f2b74`, `go/internal/calendar/filing_watchdog_test.go` `6e64ea523cde046c7a5e70006d1ffcac1f41797a2b3e08290c83ed6e7f358cff`
 - `func EnqueueMail(ctx context.Context, pool *pgxpool.Pool, m OutboxMail) (int64, error) {`, `func QueuePush(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string,` in go/internal/ubyport/notify.go
 - `func shell(publicBaseURL, pageTitle, preheader string, blocks, footerLines []string) string {`, `func blockNote(label, body string) string {` and `func blockSection(label, body string) string {` in go/internal/mail/submission_problem.go
 - `def notify_hosts(stays: List[Dict[str, Any]], now: Optional[datetime] = None) -> int:`, `def send_operator_digest(` and `def run(now: Optional[datetime] = None) -> Dict[str, int]:` in App/app/filing_watchdog.py; `def build_deadline_at_risk(` and `def build_deadline_digest(` in App/app/mail_notify.py
