@@ -88,6 +88,34 @@ func updateRow(ctx context.Context, pool *pgxpool.Pool, table string, id int64, 
 	return err
 }
 
+// updateReservationUnlessClaimed writes a date move only while no live
+// submission_claim covers the stay (one UPDATE, so no check-then-write race).
+// False means skipped; the caller keeps the stored dates and the next sync retries.
+func updateReservationUnlessClaimed(ctx context.Context, pool *pgxpool.Pool, id int64, cols map[string]any) (bool, error) {
+	keys := make([]string, 0, len(cols))
+	for k := range cols {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	sets := make([]string, len(keys))
+	args := make([]any, 0, len(keys)+2)
+	for i, k := range keys {
+		sets[i] = fmt.Sprintf("%s = $%d", k, i+1)
+		args = append(args, cols[k])
+	}
+	args = append(args, id, liveClaimAfter())
+	tag, err := pool.Exec(ctx,
+		fmt.Sprintf(`UPDATE reservation SET %s WHERE id = $%d
+		  AND NOT EXISTS (SELECT 1 FROM submission_claim c JOIN guest g ON g.id = c.guest_id
+		    WHERE g.reservation_id = reservation.id AND g.archived_at IS NULL AND c.claimed_at >= $%d)`,
+			strings.Join(sets, ", "), len(keys)+1, len(keys)+2),
+		args...)
+	if err != nil {
+		return false, err
+	}
+	return tag.RowsAffected() == 1, nil
+}
+
 func anyStr(p *string) any {
 	if p == nil {
 		return nil
