@@ -42,7 +42,7 @@ Files 1159b and the brief itself were already on the branch from the brief commi
 ## 4. Deviations
 - Step 5 PostgreSQL: the scratch directory /tmp/claude-0/pg1159 was not usable. /tmp/claude-0 is root 0700, so the postgres user could not read its data directory, and the first start crashed (PANIC on pg_control, see log). The data directory was moved to /var/tmp/pg1159 (the brief's own path), port 55432. The first crashed attempt failed only for this reason; no test result came from it.
 - Step 5 tests ran with the same Go code and golden file; nothing was edited to make them pass.
-- Step 5 commit: 1a73ff0 (brief status and this report).
+- Step 5 commit: ff8da0c (brief status and this report; amended from 1a73ff0).
 
 ## 5. Questions
 None.
