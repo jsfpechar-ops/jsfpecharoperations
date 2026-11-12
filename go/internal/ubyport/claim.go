@@ -125,12 +125,16 @@ func ReleaseSendableClaim(ctx context.Context, pool *pgxpool.Pool, token string)
 }
 
 // RefreshSendableClaim renews the lease of the claim that carries token and
-// returns how many rows it renewed. One UPDATE keyed by the token, so a
-// released or taken-over claim matches nothing and is never resurrected.
+// returns how many rows it renewed. One UPDATE keyed by the token and the live
+// cutoff (claimed_at >= now - SubmissionClaimTTL, the one ClaimSendable and the
+// iCal guards use), so a released, taken-over or stale claim matches nothing and
+// is never revived. The caller compares the count with the guests it claimed.
 // Python: refresh_sendable_claim.
 func RefreshSendableClaim(ctx context.Context, pool *pgxpool.Pool, token string) (int64, error) {
+	now := nowSeconds()
 	tag, err := pool.Exec(ctx,
-		`UPDATE submission_claim SET claimed_at = $1 WHERE claim_token = $2`, nowSeconds(), token)
+		`UPDATE submission_claim SET claimed_at = $1 WHERE claim_token = $2 AND claimed_at >= $3`,
+		now, token, now-SubmissionClaimTTL.Seconds())
 	if err != nil {
 		return 0, err
 	}
