@@ -95,6 +95,4 @@
 - K-H0: from tasks/1094-report.md: `checkin_hour` NULL can raise TypeError in door_codes.py (~179, 436); `/save` with a non-owned guest_id becomes a new person; `guest_form_saved` audit has no field names.
 - K-SM2 (brief 1105): OPERATIONS.md submit_state section disagrees with the code in 9 places.
 - K-SM3 (brief 1111): rules.md lines 37, 44 still say production is SQLite, migrations frozen at 0033.
-- K-DC-AMBIG (1149 S8/S9): delete timeout or crash, then revival: issued, PIN gone, no audit. Owner.
-- K-F22 closed (1154, 1154b): an iCal date move now waits for a crash-stuck running filing (found through submission.guest_ids, any age), same as for outcome_unknown.
-- K-DC-RECANCEL (937 review): re-cancel after a lost race re-deletes a gone code; check TTLock not-found = success.
+- K-DC-ERRCODE (1155b): TTLock "passcode not found" errcode unknown; an unmapped delete error costs one lookup. Map it in ttlock.ERROR_KINDS when seen in logs.
