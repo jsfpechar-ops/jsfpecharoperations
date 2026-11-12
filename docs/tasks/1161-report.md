@@ -1,40 +1,56 @@
-# 1161 report: crash-stuck running batch recovered in every mode (K-F23), Python
+# 1161 report: pg-restore.sh --file
 
-Status: blocked (Postgres run not possible: the ubytest schema is absent; SQLite run green)
+Status: review
 
-## Files changed
-- App/app/reporting.py: `_recover_stuck_running_batches` plus one call at the top of `sweep()`
-- App/tests/test_stale_submission.py: 3 helpers and 7 test cases (4 parametrized)
-- docs/OPERATIONS.md: one sentence in the `submit` row
-- docs/tasks/1161-report.md (this file)
+## 1. Files changed (`git diff --stat 5b3685b HEAD`)
 
-## Commands (last lines)
-- Step 1 (expect 4 failed, 3 passed): `4 failed, 3 passed, 16 deselected`
-- Step 2 (expect 23 passed): `23 passed in 0.69s`
-- Step 3 (expect 1): `1`; the 7 targeted tests then `7 passed`
-- Step 4 bites, each restored with `git checkout` and back to `7 passed`:
-  - BITE a FAIL: `4 failed, 3 passed` (PASS after restore: `7 passed`)
-  - BITE b FAIL: `1 failed, 6 passed` (PASS after restore: `7 passed`)
-  - BITE c FAIL: `6 failed, 1 passed` (PASS after restore: `7 passed`)
-- Ruff (E9,F63,F7,F82,F401,F841): `All checks passed!`
-- SQLite area run: `258 passed, 2 warnings in 18.27s`, 0 skipped
-- Postgres area run: ERROR at setup. `RuntimeError: PostgreSQL schema is absent, outdated, or incompatible` on `UBYHOST_DATABASE_URL=postgresql://uby:uby@localhost:5432/ubytest`. Postgres accepts connections; the schema is missing. `scripts/pg_schema.py` does not exist on this branch, so the schema could not be applied as the brief expects.
-- `python3 scripts/context_lint.py`: `context lint: OK` (WARN: 6 App/ commits after the last status.md update; orchestrator's to fix)
+```
+ App/tests/test_pg_backup_scripts.py      | 55 +++++++++++++++++++++++++++
+ deploy/lightsail/scripts/pg-restore.sh   | 65 +++++++++++++++++++++++++-------
+ docs/DISASTER_RECOVERY.md                | 10 ++---
+ docs/LIGHTSAIL.md                        |  2 +-
+ docs/plans/portable-disaster-recovery.md |  4 +-
+ 5 files changed, 113 insertions(+), 23 deletions(-)
+```
 
-## Acceptance (section 7)
-- [x] stuck row in manual, inactive and auth-failed apartments becomes outcome_unknown, pointer set, critical alert, `_send_in_flight` True, no send (tested)
-- [x] live claim (10 s) in manual mode left alone
-- [x] auto apartment: two sweeps leave one alert
-- [x] other workspace untouched
-- [x] bites a, b, c as above
-- [ ] Postgres area run (blocked, see above)
+Plus this report (docs/tasks/1161-report.md). Commits: step 1 bc59c9a, step 2 9a5d201, step 3 183de53, step 4 3ccdff7, step 5 cf54109.
 
-## Deviations
-- Bite (b): the brief's two anchors are not unique (the same tuple line appears 3 times in reporting.py). The mutation used the two-line anchor at the new helper's query instead. Same intent.
-- Postgres run not executed (schema absent, no pg_schema script). Done: steps 1 to 5 except the Postgres run.
+## 2. Commands (last lines of output)
 
-## Questions
-- Should the ubytest Postgres schema be applied, and by which command, so the Postgres area run can be done?
+- `cd App && .venv/bin/python -m pytest tests/test_pg_backup_scripts.py -q --tb=short -x --noconftest -rs`
+  ```
+  ....................ssss................                                 [100%]
+  =========================== short test summary info ============================
+  SKIPPED [4] tests/test_pg_backup_scripts.py:242: could not import 'yaml': No module named 'yaml'
+  36 passed, 4 skipped in 0.64s
+  ```
+- `bash -n deploy/lightsail/scripts/pg-restore.sh` : no output, exit 0.
+- `shellcheck -S error ...` : not installed, not run.
+- `python3 scripts/context_lint.py` : `context lint: OK` (WARN lines are pre-existing; the last one is the orchestrator's status.md note).
+- `grep -c 'docker cp' deploy/lightsail/scripts/pg-restore.sh` : 1.
 
-## Owner steps left
-- None from this brief. Brief 1161b (Go) is still to do before merge.
+## 3. Acceptance (§7)
+
+- [x] `bash -n` prints nothing.
+- [x] Pytest passes; existing stamp tests unchanged (new tests only added).
+- [x] `docker cp` count is 1 (stamp branch only).
+- [x] `--file` found in DISASTER_RECOVERY.md, LIGHTSAIL.md and the plan file.
+- [x] context_lint ends without errors.
+- [x] `git diff --stat` lists only §3 files.
+
+## 4. Deviations
+
+- Pytest run with `--noconftest`: `App/tests/conftest.py` imports `requests`, which the brief's venv (pytest only) does not have. The test file itself needs only stdlib and pytest. §6 command as written fails at collection in this venv.
+- 4 tests skipped at line 242 (`yaml` not installed). They are outside the new code. Not installed, because that would be a new dependency for this run.
+- shellcheck not installed; not run.
+- No push and no PR: the task said do not push. Owner or orchestrator opens the PR.
+- Commit trailer: the commit messages use the Co-Authored-By line from the task instructions (Opus 5.5).
+
+## 5. Questions
+
+None.
+
+## 6. Owner steps left
+
+- Push the branch and open the PR (draft is fine).
+- After merge, use the `--file` form in the step-8 timed drill (`docs/plans/portable-disaster-recovery.md`).

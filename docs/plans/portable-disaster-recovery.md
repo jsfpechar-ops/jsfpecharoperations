@@ -12,7 +12,7 @@ If AWS is gone, a fresh EU Ubuntu box (Hetzner as example, not a decision) runs 
 - Encryption: age public recipient in `.env`; private identity in the password manager plus one offline copy, never on the server (`docs/OPERATIONS.md:596-615`).
 - Drive copy: daily, 04:00 UTC (changed from weekly by brief 1151, 2026-11-12), optional cron, `*.age` only, 30-day retention, no snapshot of its own (`backup-gdrive.sh`, `setup-server.sh:75`). S3 copy: daily, `backup-s3.sh`.
 - WAL-G: S3 only, 7 days, key `WALG_LIBSODIUM_KEY` (separate from age) (`OPERATIONS.md:652-655`).
-- Restore: `pg-restore.sh <stamp>` reads the dump from the app volume, not from a file (`pg-restore.sh:44-55`). Rebuild steps and a quarterly drill: `docs/LIGHTSAIL.md:286-310`.
+- Restore: `pg-restore.sh <stamp>` reads the dump from the app volume; `pg-restore.sh --file <path>.age` restores from a local file on the host, no volume and no AWS (brief 1161, 2026-11-12). Rebuild steps and a quarterly drill: `docs/LIGHTSAIL.md:286-310`.
 - Cloudflare proxies the site (`CLOUDFLARE_PROXY=1`, `docs/CLOUDFLARE.md`).
 
 ## Gaps (most important first)
@@ -41,7 +41,7 @@ AWS dependencies and what happens in an outage:
 |---|---|---|---|---|
 | 1 | Runbook `docs/DISASTER_RECOVERY.md` (brief 1150) | M | Haiku brief | none |
 | 2 | Check Drive cron runs; list what is in Drive; confirm age key opens a Drive file | S | owner | none |
-| 3 | `pg-restore.sh` option to restore from a local `.age` file (no volume stamp, no AWS) | M | Haiku brief | 1 |
+| 3 | `pg-restore.sh` option to restore from a local `.age` file (no volume stamp, no AWS) (brief 1161, done) | M | Haiku brief | 1 |
 | 4 | Drive copy daily instead of weekly (cron line change, doc) (brief 1151) | S | Haiku brief + owner | 2 |
 | 5 | Cloudflare "we're down" page (static, Worker or custom error page) | S | Haiku brief + owner | 1 |
 | 6 | Filing guard: runbook step plus a check in `deploy.sh`/preflight that warns when `submit` is in `UBYHOST_GO_JOB_KINDS` on a restored box | M | Haiku brief | 3 |

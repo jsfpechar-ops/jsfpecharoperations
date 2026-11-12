@@ -82,16 +82,12 @@ rclone copy gdrive:UbyHost-backups/<stamp> ./restore-in
 ./scripts/deploy.sh
 ```
 
-11. Place the dump in the volume (workaround until brief for a restore-from-file option):
+11. The dump from step 8 is already on the server in `restore-in`. Keep it outside the volume: the restore reads it straight from the host and writes no plaintext file. If you downloaded it elsewhere, copy it to the server first (any path ending in `.age` works).
+
+12. Restore the database from that file. The script refuses while `.env` contains `UBYHOST_DB=`:
 
 ```bash
-docker run --rm -v ubyhost-data:/data -v "$PWD/restore-in":/in alpine sh -c 'mkdir -p /data/backups/<stamp> && cp /in/ubyhost-pg.dump.age /data/backups/<stamp>/'
-```
-
-12. Restore the database. The script refuses while `.env` contains `UBYHOST_DB=`:
-
-```bash
-RESTORE_CONFIRM=yes AGE_IDENTITY_FILE=/root/ubyhost-backup.agekey ./scripts/pg-restore.sh <stamp>
+RESTORE_CONFIRM=yes AGE_IDENTITY_FILE=/root/ubyhost-backup.agekey ./scripts/pg-restore.sh --file ./restore-in/ubyhost-pg.dump.age
 ```
 
 13. Delete the identity file from the server:
