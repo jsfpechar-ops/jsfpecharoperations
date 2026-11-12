@@ -72,8 +72,8 @@ Next steps (as ${DEPLOY_USER} or root):
   5. Optional — daily on-volume backup cron (03:00 UTC):
        (crontab -l 2>/dev/null; echo "0 3 * * * cd ${INSTALL_DIR}/deploy/lightsail && ./scripts/backup.sh >> /home/${DEPLOY_USER}/ubyhost-backup.log 2>&1") | crontab -
 
-  6. Optional — weekly Google Drive off-site copy (Sunday 04:00 UTC), after rclone config:
-       (crontab -l 2>/dev/null; echo "0 4 * * 0 cd ${INSTALL_DIR}/deploy/lightsail && ./scripts/backup-gdrive.sh >> /home/${DEPLOY_USER}/ubyhost-gdrive.log 2>&1") | crontab -
+  6. Optional — daily Google Drive off-site copy (04:00 UTC, after the 03:00 backup), after rclone config:
+       (crontab -l 2>/dev/null; echo "0 4 * * * cd ${INSTALL_DIR}/deploy/lightsail && ./scripts/backup-gdrive.sh >> /home/${DEPLOY_USER}/ubyhost-gdrive.log 2>&1") | crontab -
 
   7. Keep an eye on disk (small bundles fill quickly with photos, logs, and backups):
        df -h
