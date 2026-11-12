@@ -94,10 +94,13 @@ func ClaimSendable(ctx context.Context, pool *pgxpool.Pool, pairs []ClaimPair) (
 			gUpd != b.GuestUpdated || dFrom != b.DateFrom || dTo != b.DateTo || rUpd != b.ResUpdated {
 			continue
 		}
+		// Read the clock again here: the lock waits above can take long, and
+		// a claim stamped with the time before them is born already aged.
+		claimedNow := nowSeconds()
 		tag, err := tx.Exec(ctx,
 			`INSERT INTO submission_claim (guest_id, claim_token, claimed_at) VALUES ($1, $2, $3)
 			 ON CONFLICT (guest_id) DO NOTHING`,
-			p.GuestID, token, now)
+			p.GuestID, token, claimedNow)
 		if err != nil {
 			return "", nil, err
 		}
