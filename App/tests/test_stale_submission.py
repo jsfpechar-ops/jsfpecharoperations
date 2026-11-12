@@ -577,3 +577,129 @@ def test_an_accepted_resend_resolves_everything(monkeypatch, answer):
     for _ in range(2):
         reporting.sweep(owner_user_id=owner_id)
     assert client.calls == 1
+
+
+# --- K-F23: a crash-stuck running batch is recovered in every mode -----------
+
+
+def _stuck_apartment(*, mode="manual", active=1, auth_failed=False, claim_age=None):
+    """One apartment with a stay, an unsent guest and a ``running`` batch (no pointer).
+
+    ``claim_age`` None means no claim row (a crash); a number is the claim's age
+    in seconds.
+    """
+    db.init_db()
+    now = db.utcnow()
+    owner_id = db.insert(
+        "user_account",
+        {"username": "stale-sweep-owner", "password_hash": "x", "role": "host",
+         "active": 1, "created_at": now},
+    )
+    apartment_id = db.insert(
+        "apartment",
+        {"owner_user_id": owner_id, "internal_name": "Stuck flat",
+         "permalink_token": "stale-sweep", "automation_mode": mode,
+         "active": active, "created_at": now},
+    )
+    reservation_id = db.insert(
+        "reservation",
+        {"apartment_id": apartment_id, "uid": "stuck-1", "date_from": "2099-01-10",
+         "date_to": "2099-01-12", "status": "active", "created_at": now, "updated_at": now},
+    )
+    guest_id = _guest(reservation_id, "Stuck", now)
+    batch_id = _batch(apartment_id, [guest_id], now)
+    if claim_age is not None:
+        db.insert(
+            "submission_claim",
+            {"guest_id": guest_id, "claim_token": "t", "claimed_at": time.time() - claim_age},
+        )
+    if auth_failed:
+        alerts.raise_alert(
+            "critical", "ubyport_auth_failed", "Auth failed", "Bad password",
+            dedupe_key=f"ubyport_auth_failed:{apartment_id}", apartment_id=apartment_id,
+        )
+    return owner_id, apartment_id, reservation_id, guest_id, batch_id
+
+
+def _no_send(monkeypatch):
+    """Record every send path; the recovery pass must call none of them."""
+    calls = []
+    for name in ("submit_batch", "submit_for_apartment", "_retry_outcome_unknown_batches"):
+        monkeypatch.setattr(reporting, name, lambda *a, _n=name, **k: calls.append(_n) or [])
+    return calls
+
+
+def _state(batch_id):
+    return db.query_one("SELECT state FROM submission WHERE id = ?", (batch_id,))["state"]
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"mode": "manual"},
+        {"mode": "manual", "claim_age": 600},
+        {"mode": "immediate", "active": 0},
+        {"mode": "immediate", "auth_failed": True},
+    ],
+    ids=["manual", "manual-stale-claim", "inactive", "auth-failed"],
+)
+def test_a_stuck_running_batch_is_recovered_when_the_sweep_skips_the_apartment(
+    monkeypatch, kwargs
+):
+    from app import icalsync
+
+    owner_id, apartment_id, reservation_id, guest_id, batch_id = _stuck_apartment(**kwargs)
+    calls = _no_send(monkeypatch)
+    assert not alerts.open_alert(f"submission_outcome_unknown:{apartment_id}")
+
+    reporting.sweep(owner_user_id=owner_id)
+
+    assert _state(batch_id) == "outcome_unknown"
+    assert db.query_one("SELECT submission_id FROM guest WHERE id = ?", (guest_id,))[
+        "submission_id"
+    ] == batch_id
+    alert = alerts.open_alert(f"submission_outcome_unknown:{apartment_id}")
+    assert alert and alert["level"] == "critical"
+    assert icalsync._send_in_flight(reservation_id), "the date move keeps waiting"
+    assert calls == [], "recovery rewrites the row, it never sends"
+
+
+def test_an_auto_apartment_stuck_batch_is_still_recovered_once(monkeypatch):
+    owner_id, apartment_id, _reservation_id, _guest_id, batch_id = _stuck_apartment(
+        mode="immediate"
+    )
+    _no_send(monkeypatch)
+
+    reporting.sweep(owner_user_id=owner_id)
+    reporting.sweep(owner_user_id=owner_id)
+
+    assert _state(batch_id) == "outcome_unknown"
+    assert db.query_one(
+        "SELECT COUNT(*) AS n FROM alert WHERE dedupe_key = ?",
+        (f"submission_outcome_unknown:{apartment_id}",),
+    )["n"] == 1
+
+
+def test_a_live_claim_is_never_recovered_in_manual_mode(monkeypatch):
+    owner_id, apartment_id, _reservation_id, guest_id, batch_id = _stuck_apartment(
+        mode="manual", claim_age=10
+    )
+    _no_send(monkeypatch)
+
+    reporting.sweep(owner_user_id=owner_id)
+
+    assert _state(batch_id) == "running"
+    assert db.query_one("SELECT submission_id FROM guest WHERE id = ?", (guest_id,))[
+        "submission_id"
+    ] is None
+    assert not alerts.open_alert(f"submission_outcome_unknown:{apartment_id}")
+
+
+def test_the_recovery_pass_stays_inside_the_workspace_it_was_asked_for(monkeypatch):
+    owner_id, apartment_id, _reservation_id, _guest_id, batch_id = _stuck_apartment()
+    _no_send(monkeypatch)
+
+    reporting.sweep(owner_user_id=owner_id + 100000)
+
+    assert _state(batch_id) == "running"
+    assert not alerts.open_alert(f"submission_outcome_unknown:{apartment_id}")
