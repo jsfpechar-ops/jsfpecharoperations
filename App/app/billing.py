@@ -16,7 +16,9 @@ from . import config, db
 
 STATUSES = ("trial_pending", "trialing", "active", "overdue", "canceling", "paused")
 TRANSITIONS = {
-    "trial_pending": {"trialing"},
+    # paused: place_for_operator (operator assigns a plan to a legacy host, no trial;
+    # owner decision 2026-10-29)
+    "trial_pending": {"trialing", "paused"},
     "trialing": {"active", "paused"},
     "active": {"overdue", "canceling"},
     "overdue": {"active", "paused"},
