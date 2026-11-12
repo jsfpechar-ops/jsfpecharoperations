@@ -18,6 +18,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/deadlines"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
 )
 
@@ -366,38 +367,17 @@ func DueForAutomaticSend(mode string, submitAfterHours int, completedAt string, 
 	return !now.Before(sendAt)
 }
 
-// ReportingDeadline is deadlines.reporting_deadline: 23:59:59 Prague wall time on
-// the third working day of the window that opens on checkIn (its Y/M/D are used).
+// ReportingDeadline is deadlines.reporting_deadline as a real instant: the
+// naive wall clock of deadlines.ReportingDeadline (23:59:59 on the third
+// working day of the window that opens on checkIn, its Y/M/D are used) read
+// in Europe/Prague. The returned time is in the Prague zone.
 func ReportingDeadline(checkIn time.Time) time.Time {
 	loc, err := time.LoadLocation(pragueZone)
 	if err != nil {
 		panic("collect: embedded Prague zone missing: " + err.Error())
 	}
-	start := time.Date(checkIn.Year(), checkIn.Month(), checkIn.Day(), 0, 0, 0, 0, time.UTC)
-	day := addWorkingDays(start, reportingWorkingDays)
-	return time.Date(day.Year(), day.Month(), day.Day(), 23, 59, 59, 0, loc)
-}
-
-const reportingWorkingDays = 3 // deadlines.REPORTING_WORKING_DAYS
-
-// addWorkingDays is deadlines.add_working_days: Monday to Friday; holidays count.
-func addWorkingDays(start time.Time, count int) time.Time {
-	current := start
-	remaining := count
-	if isWorkingDay(current) {
-		remaining = count - 1
-	}
-	for remaining > 0 {
-		current = current.AddDate(0, 0, 1)
-		if isWorkingDay(current) {
-			remaining--
-		}
-	}
-	return current
-}
-
-func isWorkingDay(d time.Time) bool {
-	return d.Weekday() != time.Saturday && d.Weekday() != time.Sunday
+	d := deadlines.ReportingDeadline(checkIn)
+	return time.Date(d.Year(), d.Month(), d.Day(), d.Hour(), d.Minute(), d.Second(), 0, loc)
 }
 
 // ParseStoredUTC is parseStoredUTC for the calendar (reporting._as_utc).

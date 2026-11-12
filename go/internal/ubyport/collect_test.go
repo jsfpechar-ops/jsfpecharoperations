@@ -287,6 +287,9 @@ func TestReportingDeadline(t *testing.T) {
 		if got := ReportingDeadline(in).UTC().Format(time.RFC3339); got != c.want {
 			t.Errorf("check-in %s: deadline %s, want %s", c.checkIn, got, c.want)
 		}
+		if zone := ReportingDeadline(in).Location().String(); zone != "Europe/Prague" {
+			t.Errorf("check-in %s: deadline zone %s, want Europe/Prague", c.checkIn, zone)
+		}
 	}
 }
 
