@@ -233,3 +233,55 @@ def test_a_stale_error_on_an_issued_row_does_not_hide_a_lost_pin(world):
     after = _row(row)
     assert after["state"] == door_codes.ISSUED and after["provider_code_id"] != CODE
     assert lock.made == 1
+
+
+def test_a_code_with_the_same_name_but_another_id_is_gone(world):
+    lock, stay, row, sent = world
+    lock.add("7777", f"UH-{row}")  # same name as the row's code, not its id
+    assert _fresh_row(row) == door_codes.PIN_GONE
+    lock.add(CODE, f"UH-{row}")
+    assert _fresh_row(row) == door_codes.PIN_PRESENT
+
+
+NO_LIST = [{}, {"list": None, "pages": 0}, {"pages": 1}, {"list": "oops", "pages": 1}, {"list": {"a": 1}}]
+
+
+@pytest.mark.parametrize("answer", NO_LIST)
+def test_an_answer_without_a_list_is_unknown_and_never_revokes(world, monkeypatch, answer):
+    lock, stay, row, sent = world
+    real_call = lock.call
+
+    def broken(account_id, path, data, priority):
+        if path == "/v3/lock/listKeyboardPwd":
+            lock.list_calls += 1
+            return dict(answer)
+        if path == "/v3/keyboardPwd/delete":
+            raise ttlock.TTLockError("odd", code=UNMAPPED, kind="transient")
+        return real_call(account_id, path, data, priority)
+
+    monkeypatch.setattr(ttlock, "_call", broken)
+    assert ttlock.code_is_listed(1, "1", f"UH-{row}", CODE) is None
+    assert _fresh_row(row) == door_codes.PIN_UNKNOWN
+    door_codes._revoke_one(row)
+    assert _state(row) == door_codes.REVOKE_PENDING and _audits("door_code_revoked") == 0
+
+
+def test_an_empty_list_is_the_end_even_when_pages_is_not_a_number(world, monkeypatch):
+    lock, stay, row, sent = world
+    monkeypatch.setattr(ttlock, "_call", lambda *a, **k: {"list": [], "pages": "x"})
+    assert ttlock.code_is_listed(1, "1", f"UH-{row}", CODE) is False
+
+
+def test_a_full_page_is_read_past_even_when_pages_says_one(world, monkeypatch):
+    lock, stay, row, sent = world
+    _busy(lock, row)
+    real = lock.call
+
+    def pages_one(account_id, path, data, priority):
+        answer = real(account_id, path, data, priority)
+        answer["pages"] = 1
+        return answer
+
+    monkeypatch.setattr(ttlock, "_call", pages_one)
+    assert _fresh_row(row) == door_codes.PIN_PRESENT
+    assert lock.list_calls == 2
