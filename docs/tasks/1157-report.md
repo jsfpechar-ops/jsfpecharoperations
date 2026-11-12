@@ -1,6 +1,6 @@
 # 1157 report
 
-Status: blocked
+Status: review
 
 ## 1. Diff stat
 See git diff --stat bccafce..HEAD (commits 1157 step 1 to step 5).
@@ -30,3 +30,9 @@ Should test-map.md be compacted (in this PR or a separate one) before lint can p
 
 ## 6. Owner steps left
 None until the lint blocker is resolved. Nothing is wired; brief E adds the job kind.
+
+## 7. Orchestrator follow-up (resolves the blocker)
+- test-map.md: replaced `test_dsr_audit.py test_dsr_due_golden.py` with `test_dsr_*.py` (matches exactly those two files); `context_lint.py` now OK.
+- Step 6 run by the orchestrator on local PostgreSQL 16: `--- PASS: TestRaiseDSRDueAlertsMatchesPython`, package ok.
+- Freshness command: `git status --short ../go` empty. pytest `test_dsr_audit.py test_dsr_due_golden.py`: 2 passed.
+- Status: review.

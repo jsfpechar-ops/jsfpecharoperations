@@ -1,6 +1,6 @@
 # 1157: Go port of `dsr.raise_due_alerts` (the data-subject-request due alerts), parity-checked against Python
 
-Status: todo
+Status: review
 Depends on: 1132, 1153 (merged, PR #935) | Base commit: bccafce | Branch: claude/go-dsr-due-alerts-1157
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
