@@ -79,6 +79,13 @@ PERIOD_TAKEN_RETRY_MINUTES = (1, 5)
 PERIOD_TAKEN_MAX_ATTEMPTS = 4
 GATEWAY_RETRY_KINDS = ("offline", "transient", "network", "rate", "budget")
 LEASE_MINUTES = 2
+# 1155: a revived row whose delete may have run is checked on the lock before it is shown.
+PIN_PRESENT, PIN_GONE, PIN_UNKNOWN = "present", "gone", "unknown"
+LOOKUP_FAILED = "lookup_failed"
+LOOKUP_MAX_TRIES = 3
+# last_error values that leave a delete's result unknown: none (a crash after the claim),
+# a timeout or non-JSON answer (network), a server fault (transient), or a lookup that failed.
+AMBIGUOUS_DELETE_ERRORS = ("", "network", "transient", LOOKUP_FAILED)
 # A guest who has finished registering must not wait longer than this in silence.
 DELAY_MINUTES = 5
 BATCH = 20
