@@ -505,15 +505,24 @@ func cancelExistingStay(ctx context.Context, pool *pgxpool.Pool, getenv func(str
 			fmt.Sprintf("cancelled_after_report:%d", res.ID), &aid, &rid, nil,
 			ubyport.AlertParams{"date": res.DateFrom, "variant": "cancelled"})
 	}
-	cancelled, err := cancelReservationUnlessClaimed(ctx, pool, res.ID, ubyport.UTCNow())
+	deferRunning, err := runningDefersCancel(ctx, pool, res.ID)
 	if err != nil {
 		return false, err
+	}
+	cancelled := false
+	if !deferRunning {
+		if cancelled, err = cancelReservationUnlessClaimed(ctx, pool, res.ID, ubyport.UTCNow()); err != nil {
+			return false, err
+		}
 	}
 	if !cancelled {
 		log.Printf("ical_cancel_deferred_in_flight apartment_id=%d reservation_id=%d", apartmentID, res.ID)
 		return true, nil
 	}
 	if err := expireOnCancel(ctx, pool, res.ID); err != nil {
+		return false, err
+	}
+	if err := alertIfFilingInDoubt(ctx, pool, res, apartmentID); err != nil {
 		return false, err
 	}
 	if err := warnIfGuestsRegistered(ctx, pool, getenv, res, apartmentID, "cancelled"); err != nil {
