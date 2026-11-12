@@ -1,6 +1,6 @@
 # 1169: DR filing guard on a restored box
 
-Status: todo
+Status: review
 Depends on: 1161, 1166 (both on main) | Base commit: cd8bf5f | Branch: claude/dr-filing-guard
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
