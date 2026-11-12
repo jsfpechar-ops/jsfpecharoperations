@@ -350,10 +350,32 @@ func SyncFeed(ctx context.Context, pool *pgxpool.Pool, getenv func(string) strin
 		}
 		if len(changed) > 0 {
 			changed["updated_at"] = now
-			if err := updateRow(ctx, pool, "reservation", s.ID, changed); err != nil {
-				return stats, err
+			applied := false
+			if datesChanged {
+				ok, err := updateReservationUnlessClaimed(ctx, pool, s.ID, changed)
+				if err != nil {
+					return stats, err
+				}
+				applied = ok
+				if !applied {
+					// A claim landed after the pre-check: keep the stored dates; the next sync retries.
+					delete(changed, "date_from")
+					delete(changed, "date_to")
+					datesChanged = false
+					deferredInFlight = true
+					log.Printf("ical_dates_deferred_in_flight apartment_id=%d reservation_id=%d stored=%s..%s calendar=%s..%s",
+						feed.ApartmentID, s.ID, s.DateFrom, s.DateTo, ev.DateFrom, ev.DateTo)
+				}
 			}
-			stats.Updated++
+			if !applied && len(changed) > 1 {
+				if err := updateRow(ctx, pool, "reservation", s.ID, changed); err != nil {
+					return stats, err
+				}
+				applied = true
+			}
+			if applied {
+				stats.Updated++
+			}
 		}
 		if s.Status == "cancelled" {
 			// The stay is back: reopen guest access that the cancellation closed.
