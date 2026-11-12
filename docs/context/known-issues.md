@@ -89,14 +89,14 @@
 
 - K-HOUSEBOOK: house book Details popover unreachable at 390/768 (zero-size trigger).
 - K-FLAKY-DC: flaky `test_door_codes_safeguards::test_an_undeleted_old_code_after_a_move_tells_the_host` (test-postgres-full); passed on rerun.
-- K-E2E-ORDER: `test_endtoend.py` fails 13 tests (test_06..23) when run after the filing/claim file mix in brief 1142 §6; passes alone and in CI order. Same on main (11-12).
+- K-E2E-ORDER: test_endtoend.py fails 13 after the 1142 §6 file mix; passes alone, in CI, same on main.
 - K-GUEST-DATES: es/fr guest dates row wraps at 375, 360 px.
 - K-1091D: `test_1091_d` name no longer matches its test.
 - K-TAP43: local only (CI green): `test_design_guardrails_browser.py` guest-new 390 "Cancel" tap target 43 < 44.
 - K-H0: from tasks/1094-report.md: `checkin_hour` NULL can raise TypeError in door_codes.py (~179, 436); `/save` with a non-owned guest_id becomes a new person; `guest_form_saved` audit has no field names.
 - K-F19 (1138): `passport_photos.py:299`, `stay_fees.py:1164` skip `updated_at`, which the claim re-check uses.
 - K-F20 (1139): `outcome_unknown` without a live claim does not defer an iCal cancel. Owner.
-- K-F21 (1142 review): Go `ClaimSendable` stamps `claimed_at` before the advisory-lock waits (claim.go:48); a long wait makes the claim born aged so the first refresh fails. Safe (nothing sent), delays filing. Fix: `nowSeconds()` at the INSERT.
+- K-F21 (1142): Go claim.go:48 stamps claimed_at before lock waits; first refresh may fail (safe, delays filing).
 - K-SM2 (brief 1105): OPERATIONS.md submit_state section disagrees with the code in 9 places.
 - K-SM3 (brief 1111): rules.md lines 37, 44 still say production is SQLite, migrations frozen at 0033.
-- K-DC-LOST (1141): revoke lost race writes only `door_code_revoke_lost_race` audit; row may show `issued` while the PIN is deleted. Nothing reads it. Owner: re-issue or notify.
+- K-DC-LOST (1141): revoke lost race only audits; row may show issued with the PIN deleted.
