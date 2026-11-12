@@ -59,6 +59,15 @@ fi
 [ -f "${IDENTITY}" ] || die "AGE_IDENTITY_FILE=${IDENTITY} does not exist on the host"
 command -v age >/dev/null 2>&1 || die "the 'age' binary is missing on the host"
 
+if [ "${MODE}" = "file" ]; then
+  # Brief 1169: a restore from a file means a rebuilt box, and the old server may
+  # still be filing. The marker stays until the owner removes it
+  # (docs/DISASTER_RECOVERY.md, "Two servers never file at once").
+  printf 'restored %s from %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(basename "${DUMP_FILE}")" > .restored-box
+  bash "${ROOT}/scripts/filing-guard.sh" \
+    || die "turn automatic filing off in .env first (UBYHOST_ENABLE_SCHEDULER=0, submit in neither job list)" 3
+fi
+
 if [ "${MODE}" = "stamp" ]; then
   docker compose run --rm --no-deps -T --entrypoint sh ubyhost \
     -c "test -f /data/backups/${STAMP}/ubyhost-pg.dump.age" >/dev/null 2>&1 \
