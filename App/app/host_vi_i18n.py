@@ -810,6 +810,8 @@ STRINGS: Dict[str, str] = {
     "notification.cancelled_after_report.title.cancelled": "Lượt lưu trú từ %(date)s bị hủy sau khi đã khai báo.",
     "notification.cancelled_after_report.title.disappeared": "Lượt lưu trú từ %(date)s biến mất khỏi lịch sau khai báo.",
     "notification.cancelled_after_report.detail": "Hãy kiểm tra xem đặt phòng bị hủy hay chỉ bị dời.",
+    "notification.cancelled_filing_unconfirmed.title": "Lượt lưu trú từ %(date)s bị hủy khi chưa rõ cảnh sát đã nhận khai báo hay chưa.",
+    "notification.cancelled_filing_unconfirmed.detail": "UbyPort có thể đã có khách của lượt lưu trú này và chúng tôi sẽ không gửi lại. Hãy kiểm tra trong UbyPort xem họ có trong danh sách không. Nếu có, sổ đăng ký đang lưu khách của một lượt lưu trú đã hủy.",
     "notification.cancelled_with_guests.title.cancelled": "Lượt lưu trú từ %(date)s có biểu mẫu khách bị hủy.",
     "notification.cancelled_with_guests.title.disappeared": "Lượt lưu trú từ %(date)s có biểu mẫu khách đã biến mất.",
     "notification.cancelled_with_guests.detail": "Sẽ không có gì được khai báo cho lượt này. Nếu đặt phòng chỉ bị dời, hãy đặt lượt lưu trú về Đang hoạt động.",
