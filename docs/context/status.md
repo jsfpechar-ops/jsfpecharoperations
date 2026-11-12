@@ -10,6 +10,7 @@ Updated: 2026-11-12.
 - AI: `havel,leon,guide_import` (`guide_translate` off). Stripe test. Guest QR 404 on both when the owner has no IBAN.
 
 ## Now
+- 11-12: PR #933 draft, state-machine hardening 1133-1139 (K-F02 date move + cancel vs send claim, claim re-check, billing operator move, door-code guards). Fable review next; owner merges.
 - 11-10 live: 1085/1086 police letter paste (#882, #892); 1089/1090 under-15 signature (#885, #888); 1091/1093 short guest titles (#883, #887); 1092 head-count single writer (#884); 1094 H0 check (#893); 1096 Save row, leave warning (#894).
 - 1120-1123b ready
 - Building: 1095 head-count H1 (flag `UBYHOST_HEADCOUNT_LEAD_LIVE` off). Next: H2a, H2b, H3, H4, guest form C.

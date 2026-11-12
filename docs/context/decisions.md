@@ -63,3 +63,5 @@ Append-only.
 - 2026-11-11 [police] 1100: no tick, values in boxes; parser reads password+facility, never stored (owner; reverses 1097, 1085).
 - 2026-11-10 [demo] Demo seed covers current features; mock-only, cleared by Clear demo (owner, 1092)
 - 2026-11-11 [ux] 1101: wizard reuse
+- 2026-11-12 [billing] 1137: `trial_pending -> paused` only via `billing.operator_pause()` (operator plan assignment), not in `TRANSITIONS` (owner).
+- 2026-11-12 [filing] 1138: claim fails closed when the built-from values are missing or changed; no retry, next sweep sends fresh data (orchestrator, owner said do as recommended).
