@@ -1,7 +1,7 @@
-# 1133: iCal date move: close the claim race on the reservation row
+# 1143: iCal date move: close the claim race on the reservation row
 
 Status: review
-Depends on: none | Base commit: 7b8ff2ae | Branch: task/1133-ical-claim-race
+Depends on: none | Base commit: 7b8ff2ae | Branch: task/1143-ical-claim-race
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
@@ -306,11 +306,11 @@ Stop, and write the report, if:
 
 ## 9. Report
 
-Write `docs/tasks/1133-report.md` (600 tokens at most) and set `Status: review`: files changed (`git diff --stat`), each command with the last 5 lines, §7 ticked, deviations, questions, owner steps left.
+Write `docs/tasks/1143-report.md` (600 tokens at most) and set `Status: review`: files changed (`git diff --stat`), each command with the last 5 lines, §7 ticked, deviations, questions, owner steps left.
 
 ## Open questions (owner decision, not for Haiku)
 
-1. K-F02 is partly stale: the pre-check and guest-window guard already exist and are tested. After merge the orchestrator should reword K-F02 to "reservation write was racy, fixed by 1133" or close it. Confirm.
+1. K-F02 is partly stale: the pre-check and guest-window guard already exist and are tested. After merge the orchestrator should reword K-F02 to "reservation write was racy, fixed by 1143" or close it. Confirm.
 2. The cancel path (`db.update(... "status": "cancelled")` in Python, `expireOnCancel`/`cancelExistingStay` in Go) also ignores a live claim. Out of scope here; it changes status, not dates. Separate brief?
 3. Race on `submission.state` running/outcome_unknown is not covered by the atomic write (only live claims). A live claim is held for the whole send, so this should be enough; confirm with UBYPORT_CORE owner.
 

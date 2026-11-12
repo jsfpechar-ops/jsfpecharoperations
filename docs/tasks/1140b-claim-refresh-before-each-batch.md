@@ -8,7 +8,7 @@ HIGH RISK filing path: the reviewer reads every diff line in the Risk list. Seco
 
 ## 1. Objective
 
-Keep a submission claim live for the whole multi-batch send: refresh `claimed_at` for the worker's own claim before each batch, in Python and Go, so the iCal date-move and cancel guards (1133/1136/1139) and the claim-steal in `claim_sendable` never see a still-running send as stale. If the claim is gone (released, or taken over), stop sending further batches.
+Keep a submission claim live for the whole multi-batch send: refresh `claimed_at` for the worker's own claim before each batch, in Python and Go, so the iCal date-move and cancel guards (1143/1136/1139) and the claim-steal in `claim_sendable` never see a still-running send as stale. If the claim is gone (released, or taken over), stop sending further batches.
 
 ## 2. Context
 

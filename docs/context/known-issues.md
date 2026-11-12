@@ -8,7 +8,7 @@
 |---|---|---|---|---|
 | K-DOM01 | Pending | App URLs | CI + phone check | owner |
 | K-F01 | High open | reporting.py:1356-1413, ubyport/client.py:166 | Non-401 4xx retried each sweep, uncapped | P A28-29 |
-| K-F02 | High review HR | icalsync.py, go/internal/ical | Date move/cancel ignored submission_claim. Fixed in PR #933 (1133, 1136 locks, 1138 claim re-check, 1139 cancel); close on merge | P A24 |
+| K-F02 | Closed (#933, 11-12) | icalsync.py, go/internal/ical | Date move/cancel ignored submission_claim. Fixed in PR #933 (1143 guard, 1136 locks, 1138 claim re-check, 1139 cancel) | P A24 |
 | K-F03 | Med open HR | icalsync.py ~805-830 | Lone vanished future booking stays "suspect" forever | P A19 |
 | K-F04 | Med open | icalsync.py | Duplicate feeds: two stays, one overdue forever | P A22 |
 | K-F05 | Med open | icalsync.py, routes/admin.py | Manual and scheduled sync clash on UNIQUE; loser marked error | P A23 |

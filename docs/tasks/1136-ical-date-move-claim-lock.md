@@ -1,16 +1,16 @@
 # 1136: iCal date move: take the claim path's per-guest locks, add call-site tests, align Go with Python
 
 Status: review
-Depends on: 1133 | Base commit: HEAD of branch claude/clever-fermi-tudhnt (PR #933) | Branch: task/1136-ical-claim-lock
+Depends on: 1143 | Base commit: HEAD of branch claude/clever-fermi-tudhnt (PR #933) | Branch: task/1136-ical-claim-lock
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
 
-Make the guarded iCal date-move UPDATE (brief 1133) truly atomic on Postgres by taking the same per-guest advisory locks the claim path takes, in one transaction with the UPDATE, in Python and Go. Also add one call-site test per language (reverting the sync call site must fail a test) and make the Go UPDATE require the stored dates unchanged, as Python already does.
+Make the guarded iCal date-move UPDATE (brief 1143) truly atomic on Postgres by taking the same per-guest advisory locks the claim path takes, in one transaction with the UPDATE, in Python and Go. Also add one call-site test per language (reverting the sync call site must fail a test) and make the Go UPDATE require the stored dates unchanged, as Python already does.
 
 ## 2. Context
 
-Brief 1133 added `_update_reservation_unless_claimed` (Python) and `updateReservationUnlessClaimed` (Go): one UPDATE with `NOT EXISTS (live submission_claim on the stay's guests)`. Review found three gaps.
+Brief 1143 added `_update_reservation_unless_claimed` (Python) and `updateReservationUnlessClaimed` (Go): one UPDATE with `NOT EXISTS (live submission_claim on the stay's guests)`. Review found three gaps.
 
 1. Not atomic on Postgres. Under READ COMMITTED the `NOT EXISTS` sees the statement snapshot. The claim path takes `pg_advisory_xact_lock(hashtext('guest'), id)` per guest (Python `db.lock_key(cur, "guest", id)`, ids ascending; Go `ubyport/claim.go` line 62 with `int32(id)`) and then INSERTs into `submission_claim`; nothing conflicts with the reservation row. A claim committing just after the UPDATE's snapshot lets the move land. Fix: in one transaction take the same locks for every guest of the reservation in ascending id order (the claim path at `reporting.py` ~2497 locks `SELECT id FROM guest WHERE reservation_id = ? ORDER BY id`), then run the guarded UPDATE. The lock is held to commit, so a claim that committed first is visible to the UPDATE, and a claim that comes later waits for us. SQLite: `lock_key` is a no-op and `BEGIN IMMEDIATE` already serialises.
 2. Tests only call the helper. Reverting the `sync_feed` / `SyncFeed` call site to a plain update keeps all tests green.
