@@ -20,6 +20,7 @@ echo "$*" >> "$STUB_LOG"
 case "$*" in
   *"ps -q --status running postgres"*) [ "${PG_RUNNING:-0}" = 1 ] && echo pgid ;;
   *"ps -aq ubyhost"*) echo ubyhostid ;;
+  *"config --services"*) echo ubyhost; echo worker; [ "${GO_PROFILE:-0}" = 1 ] && echo ubyhost-go ;;
   *"pg_dump"*) echo DUMP ;;
   *"pg_restore"*) cat >/dev/null ;;
   *"cat >"*) cat >/dev/null ;;
@@ -123,10 +124,38 @@ def test_pg_restore_file_form_streams_host_file_without_docker_cp(tmp_path):
     assert result.returncode == 0, result.stderr
     recorded = calls(log)
     assert "cp " not in recorded
-    assert "stop worker ubyhost" in recorded
+    assert "stop worker ubyhost\n" in recorded
+    assert "ubyhost-go" not in recorded
     assert "pg_restore -U ubyhost -d ubyhost --clean --if-exists --single-transaction" in recorded
-    assert "up -d ubyhost worker" in recorded
+    assert "compose up -d\n" in recorded
     assert "from ubyhost-pg.dump.age" in (root / ".restored-box").read_text()
+
+
+def test_pg_restore_file_form_also_stops_the_go_service(tmp_path):
+    root, bindir, log = make_tree(tmp_path, PG_ENV + FILING_OFF)
+    identity = tmp_path / "agekey"
+    identity.write_text("stub")
+    dump = make_dump_file(tmp_path)
+    result = run_script("pg-restore.sh", root, bindir, log, args=["--file", str(dump)],
+                        extra_env={"AGE_IDENTITY_FILE": str(identity), "RESTORE_CONFIRM": "yes", "GO_PROFILE": "1"})
+    assert result.returncode == 0, result.stderr
+    recorded = calls(log)
+    assert "stop worker ubyhost-go ubyhost" in recorded
+    assert recorded.index("stop worker ubyhost-go ubyhost") < recorded.index("pg_restore")
+    assert "compose up -d\n" in recorded
+
+
+def test_pg_restore_file_form_rerun_with_marker_present(tmp_path):
+    root, bindir, log = make_tree(tmp_path, PG_ENV + FILING_OFF)
+    (root / ".restored-box").write_text("restored 2026-11-01T00:00:00Z from old.dump.age\n")
+    identity = tmp_path / "agekey"
+    identity.write_text("stub")
+    dump = make_dump_file(tmp_path)
+    result = run_script("pg-restore.sh", root, bindir, log, args=["--file", str(dump)],
+                        extra_env={"AGE_IDENTITY_FILE": str(identity), "RESTORE_CONFIRM": "yes"})
+    assert result.returncode == 0, result.stderr
+    assert "from ubyhost-pg.dump.age" in (root / ".restored-box").read_text()
+    assert "pg_restore" in calls(log)
 
 
 def test_pg_restore_file_form_refuses_while_filing_is_on(tmp_path):
@@ -138,7 +167,21 @@ def test_pg_restore_file_form_refuses_while_filing_is_on(tmp_path):
                         extra_env={"AGE_IDENTITY_FILE": str(identity), "RESTORE_CONFIRM": "yes"})
     assert result.returncode == 3, result.stderr
     assert "RESTORED BOX" in result.stderr
-    assert (root / ".restored-box").exists()
+    assert not (root / ".restored-box").exists()
+    assert "stop" not in calls(log)
+
+
+def test_pg_restore_file_form_refuses_submit_in_the_shell_environment(tmp_path):
+    root, bindir, log = make_tree(tmp_path, PG_ENV + "UBYHOST_ENABLE_SCHEDULER=0\n")
+    identity = tmp_path / "agekey"
+    identity.write_text("stub")
+    dump = make_dump_file(tmp_path)
+    result = run_script("pg-restore.sh", root, bindir, log, args=["--file", str(dump)],
+                        extra_env={"AGE_IDENTITY_FILE": str(identity), "RESTORE_CONFIRM": "yes",
+                                   "UBYHOST_GO_JOB_KINDS": "ical,submit"})
+    assert result.returncode == 3, result.stderr
+    assert "in the shell environment" in result.stderr
+    assert not (root / ".restored-box").exists()
     assert "stop" not in calls(log)
 
 
@@ -203,11 +246,11 @@ def make_guard_tree(tmp_path, env_text, marker):
     return root
 
 
-def run_guard(root, script="filing-guard.sh", extra_env=None):
+def run_guard(root, script="filing-guard.sh", extra_env=None, args=()):
     env = {"PATH": os.environ["PATH"], "UBYHOST_ALLOW_SMALL_HOST": "1"}
     env.update(extra_env or {})
     return subprocess.run(
-        ["bash", str(root / "scripts" / script)],
+        ["bash", str(root / "scripts" / script), *args],
         cwd=root, env=env, capture_output=True, text=True, timeout=60, stdin=subprocess.DEVNULL,
     )
 
@@ -224,6 +267,8 @@ def test_filing_guard_without_marker_is_silent_even_with_submit(tmp_path):
     "UBYHOST_ENABLE_SCHEDULER=1\n",
     "UBYHOST_ENABLE_SCHEDULER=0\nUBYHOST_GO_JOB_KINDS=\"ical, submit\"\n",
     "UBYHOST_ENABLE_SCHEDULER=0\nUBYHOST_JOB_QUEUE_KINDS=submit\n",
+    "UBYHOST_ENABLE_SCHEDULER=0\nexport UBYHOST_ENABLE_SCHEDULER=1\n",
+    "UBYHOST_ENABLE_SCHEDULER=0\nexport UBYHOST_GO_JOB_KINDS=submit\n",
 ])
 def test_filing_guard_blocks_restored_box_while_filing_can_run(tmp_path, env_text):
     root = make_guard_tree(tmp_path, env_text, marker=True)
@@ -233,12 +278,58 @@ def test_filing_guard_blocks_restored_box_while_filing_can_run(tmp_path, env_tex
     assert "ERROR: automatic filing stays blocked" in result.stderr
 
 
-def test_filing_guard_allows_restored_box_with_filing_off(tmp_path):
-    root = make_guard_tree(tmp_path, FILING_OFF, marker=True)
+@pytest.mark.parametrize("scheduler", ["0", "false", "no"])
+def test_filing_guard_allows_restored_box_with_filing_off(tmp_path, scheduler):
+    env_text = FILING_OFF.replace("UBYHOST_ENABLE_SCHEDULER=0", f"UBYHOST_ENABLE_SCHEDULER={scheduler}")
+    root = make_guard_tree(tmp_path, env_text, marker=True)
     result = run_guard(root)
     assert result.returncode == 0, result.stderr
     assert "NOTE: restored box" in result.stderr
+    assert "scheduled filing is off; apartments in immediate mode still file" in result.stderr
     assert "RESTORED BOX" not in result.stderr
+
+
+def test_filing_guard_blocks_submit_in_the_shell_environment(tmp_path):
+    root = make_guard_tree(tmp_path, FILING_OFF, marker=True)
+    for name in ("UBYHOST_GO_JOB_KINDS", "UBYHOST_JOB_QUEUE_KINDS"):
+        result = run_guard(root, extra_env={name: "ical,submit"})
+        assert result.returncode == 3, result.stderr
+        assert f"submit is in {name} in the shell environment" in result.stderr
+
+
+def test_filing_guard_marker_without_env_file_exits_3(tmp_path):
+    root = make_guard_tree(tmp_path, FILING_OFF, marker=True)
+    (root / ".env").unlink()
+    result = run_guard(root)
+    assert result.returncode == 3, result.stderr
+    assert "no .env" in result.stderr
+
+
+def test_filing_guard_env_file_that_fails_to_source_is_not_ok(tmp_path):
+    root = make_guard_tree(tmp_path, FILING_OFF + "BROKEN=\"unterminated\n", marker=True)
+    result = run_guard(root)
+    assert result.returncode != 0, result.stderr
+    assert "NOTE: restored box" not in result.stderr
+
+
+def test_filing_guard_env_file_cannot_overwrite_marker_or_override(tmp_path):
+    root = make_guard_tree(tmp_path, SUBMIT_ON + "MARKER=nothing-here\nOVERRIDE=1\n", marker=True)
+    result = run_guard(root)
+    assert result.returncode == 3, result.stderr
+    assert "readonly variable" in result.stderr
+    assert "WARNING" not in result.stderr
+
+
+def test_filing_guard_assume_restored_checks_without_marker(tmp_path):
+    root = make_guard_tree(tmp_path, SUBMIT_ON, marker=False)
+    result = run_guard(root, args=["--assume-restored"])
+    assert result.returncode == 3, result.stderr
+    assert "RESTORED BOX" in result.stderr
+    root_off = make_guard_tree(tmp_path / "off", FILING_OFF, marker=False)
+    result = run_guard(root_off, args=["--assume-restored"])
+    assert result.returncode == 0, result.stderr
+    assert "NOTE: restored box" in result.stderr
+    assert not (root_off / ".restored-box").exists()
 
 
 def test_filing_guard_reads_env_file_not_the_caller(tmp_path):
