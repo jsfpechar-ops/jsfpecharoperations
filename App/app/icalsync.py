@@ -695,7 +695,9 @@ def _cancel_existing_stay(apartment_id: int, uid: str, date_from: str, now: str,
             params={"date": existing["date_from"], "variant": "cancelled"},
         )
         return False
-    if not _cancel_reservation_unless_claimed(existing["id"], now):
+    if _running_defers_cancel(existing["id"]) or not _cancel_reservation_unless_claimed(
+        existing["id"], now
+    ):
         log.warning(
             "ical_cancel_deferred_in_flight apartment_id=%s reservation_id=%s",
             apartment_id,
@@ -705,6 +707,7 @@ def _cancel_existing_stay(apartment_id: int, uid: str, date_from: str, now: str,
     from . import claim as stay_claim
 
     stay_claim.expire_on_cancel(existing)
+    _alert_if_filing_in_doubt(existing, apartment_id)
     _warn_if_guests_registered(existing, apartment_id, "cancelled")
     stats["cancelled"] += 1
     return False
