@@ -123,7 +123,7 @@ func TestClaimOnlyOnce(t *testing.T) {
 	pool := claimTestPool(t)
 	ctx := context.Background()
 	id := seedGuest(t, pool)
-	pairs := []ClaimPair{{GuestID: id, SubmitState: "pending"}}
+	pairs := []ClaimPair{{GuestID: id, SubmitState: "pending", Built: builtOf(t, pool, id)}}
 
 	tok, got, err := ClaimSendable(ctx, pool, pairs)
 	if err != nil {
@@ -153,7 +153,7 @@ func TestClaimReplacesStaleLease(t *testing.T) {
 		id, nowSeconds()-400); err != nil {
 		t.Fatal(err)
 	}
-	_, got, err := ClaimSendable(ctx, pool, []ClaimPair{{GuestID: id, SubmitState: "pending"}})
+	_, got, err := ClaimSendable(ctx, pool, []ClaimPair{{GuestID: id, SubmitState: "pending", Built: builtOf(t, pool, id)}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -177,9 +177,9 @@ func TestClaimSkipsRowsThatMovedOn(t *testing.T) {
 		t.Fatal(err)
 	}
 	pairs := []ClaimPair{
-		{GuestID: changed, SubmitState: "sent"}, // row is pending, the list said sent
-		{GuestID: archived, SubmitState: "pending"},
-		{GuestID: filed, SubmitState: "pending"},
+		{GuestID: changed, SubmitState: "sent", Built: builtOf(t, pool, changed)}, // row is pending, the list said sent
+		{GuestID: archived, SubmitState: "pending", Built: builtOf(t, pool, archived)},
+		{GuestID: filed, SubmitState: "pending", Built: builtOf(t, pool, filed)},
 		{GuestID: 9999999, SubmitState: "pending"}, // row is gone
 	}
 	_, got, err := ClaimSendable(ctx, pool, pairs)
@@ -196,11 +196,70 @@ func TestClaimSkipsRowsThatMovedOn(t *testing.T) {
 	}
 }
 
+func builtOf(t *testing.T, pool *pgxpool.Pool, id int64) *ClaimBuilt {
+	t.Helper()
+	var b ClaimBuilt
+	if err := pool.QueryRow(context.Background(),
+		`SELECT COALESCE(g.stay_from,''), COALESCE(g.stay_to,''), COALESCE(g.updated_at,''),
+		        COALESCE(r.date_from,''), COALESCE(r.date_to,''), COALESCE(r.updated_at,'')
+		   FROM guest g JOIN reservation r ON r.id = g.reservation_id WHERE g.id = $1`, id,
+	).Scan(&b.StayFrom, &b.StayTo, &b.GuestUpdated, &b.DateFrom, &b.DateTo, &b.ResUpdated); err != nil {
+		t.Fatal(err)
+	}
+	return &b
+}
+
+func TestClaimDropsGuestWhoseWindowMovedAfterBuild(t *testing.T) {
+	pool := claimTestPool(t)
+	ctx := context.Background()
+	id := seedGuest(t, pool)
+	pairs := []ClaimPair{{GuestID: id, SubmitState: "pending", Built: builtOf(t, pool, id)}}
+	if _, err := pool.Exec(ctx,
+		`UPDATE reservation SET date_to = '2026-12-09' WHERE id = (SELECT reservation_id FROM guest WHERE id = $1)`, id); err != nil {
+		t.Fatal(err)
+	}
+	_, got, err := ClaimSendable(ctx, pool, pairs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 0 || claimCount(t, pool, id) != 0 {
+		t.Fatalf("moved window: claimed %d pairs, %d claim rows", len(got), claimCount(t, pool, id))
+	}
+}
+
+func TestClaimDropsPairWithoutBuiltValues(t *testing.T) {
+	pool := claimTestPool(t)
+	ctx := context.Background()
+	id := seedGuest(t, pool)
+	_, got, err := ClaimSendable(ctx, pool, []ClaimPair{{GuestID: id, SubmitState: "pending"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 0 || claimCount(t, pool, id) != 0 {
+		t.Fatalf("nil Built: claimed %d pairs, %d claim rows", len(got), claimCount(t, pool, id))
+	}
+}
+
+func TestClaimKeepsGuestWhoseBuiltValuesStillMatch(t *testing.T) {
+	pool := claimTestPool(t)
+	ctx := context.Background()
+	id := seedGuest(t, pool)
+	tok, got, err := ClaimSendable(ctx, pool,
+		[]ClaimPair{{GuestID: id, SubmitState: "pending", Built: builtOf(t, pool, id)}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 {
+		t.Fatalf("unchanged guest: claimed %d pairs", len(got))
+	}
+	_ = ReleaseSendableClaim(ctx, pool, tok)
+}
+
 func TestReleaseFreesGuest(t *testing.T) {
 	pool := claimTestPool(t)
 	ctx := context.Background()
 	id := seedGuest(t, pool)
-	pairs := []ClaimPair{{GuestID: id, SubmitState: "pending"}}
+	pairs := []ClaimPair{{GuestID: id, SubmitState: "pending", Built: builtOf(t, pool, id)}}
 	tok, _, err := ClaimSendable(ctx, pool, pairs)
 	if err != nil {
 		t.Fatal(err)
