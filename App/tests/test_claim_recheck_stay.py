@@ -202,3 +202,24 @@ def test_a_claim_missing_one_guest_row_is_treated_as_lost(fresh_db, monkeypatch)
 
     assert calls == []
     reporting.release_sendable_claim(token)
+
+
+def test_refresh_boundary_is_inclusive_at_exactly_the_ttl(fresh_db, monkeypatch):
+    """claimed_at == now - TTL is still live; one millisecond older is stale."""
+    rid, gid = _stay()
+    token, _claimed = reporting.claim_sendable(_pairs(gid, rid))
+    now = 1_900_000_000.0
+    monkeypatch.setattr(reporting.time, "time", lambda: now)
+    cutoff = now - reporting.SUBMISSION_CLAIM_TTL_SECONDS
+
+    db.execute("UPDATE submission_claim SET claimed_at = ? WHERE claim_token = ?", (cutoff, token))
+    assert reporting.refresh_sendable_claim(token, 1) is True
+    row = db.query_one("SELECT claimed_at FROM submission_claim WHERE claim_token = ?", (token,))
+    assert row["claimed_at"] == now
+
+    stale = cutoff - 0.001
+    db.execute("UPDATE submission_claim SET claimed_at = ? WHERE claim_token = ?", (stale, token))
+    assert reporting.refresh_sendable_claim(token, 1) is False
+    row = db.query_one("SELECT claimed_at FROM submission_claim WHERE claim_token = ?", (token,))
+    assert row["claimed_at"] == stale
+    reporting.release_sendable_claim(token)
