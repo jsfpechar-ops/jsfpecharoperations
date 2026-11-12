@@ -1,6 +1,6 @@
 # 1161: a crash-stuck `running` filing is recovered in every apartment mode (K-F23), Python
 
-Status: todo
+Status: review (Postgres area run left to CI; local ubytest unreliable)
 Depends on: 1154 (merged: an iCal date move waits while a `running` row lists an unsent guest of the stay) | Base commit: 174db7a2 (HEAD of branch claude/zealous-maxwell-a7ub54) | Branch: task/1161-stuck-running-all-modes
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
