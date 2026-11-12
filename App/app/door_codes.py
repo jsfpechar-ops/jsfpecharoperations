@@ -1046,14 +1046,14 @@ def _handle_cancellations(now_iso: str) -> None:
     # valid_to, so without this abort the guest's working PIN is removed
     # hours later. Restore before the due query so the stay page shows it.
     revived = db.query(
-        "SELECT dc.id FROM door_code dc "
+        "SELECT dc.* FROM door_code dc "
         "JOIN reservation r ON r.id = dc.reservation_id "
         "WHERE dc.state IN (?, ?) AND r.status = 'active' AND r.archived_at IS NULL "
         "AND dc.pin_enc IS NOT NULL",
         (REVOKE_PENDING, REVOKE_FAILED),
     )
     for item in revived:
-        if _keep_issued(int(item["id"]), now_iso):
+        if _revive_one(item, now_iso):
             db.audit("door_code_revoke_aborted", f"door_code={item['id']}", actor="system")
 
     due = db.query(
