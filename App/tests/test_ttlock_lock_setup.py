@@ -167,11 +167,12 @@ def test_host_mails_say_what_to_do_for_the_new_kinds():
         return mail_notify._door_code_reason(lang, text)
 
     assert "gateway" in reason("en", "lock_setup:-3034") and "TTLock app" in reason("en", "lock_setup:-3034")
+    assert reason("en", "lock_setup:-3034").startswith("the lock is not fully set up in TTLock")
     assert reason("en", "lock_setup:-3034").endswith("[lock_setup:-3034]")
-    assert reason("en", "config:-4063").startswith("the TTLock connection needs to be set up again")
+    assert reason("en", "config:-4063").startswith("this is a setting on the UbyHost side")
     assert reason("en", "bug:-3006").startswith("TTLock's cloud refused")
     assert reason("en", "code_missing").startswith("TTLock's cloud refused")
-    assert reason("en", "period_taken:lock_setup:-4037").startswith("the lock's own TTLock setup")
+    assert reason("en", "period_taken:lock_setup:-4037").startswith("the lock is not fully set up in TTLock")
     for lang in ("cs", "vi"):
         assert reason(lang, "lock_setup:-3034") != reason("en", "lock_setup:-3034")
-        assert reason(lang, "config:-4063").split(" [")[0] == reason(lang, "reauth").split(" [")[0]
+        assert reason(lang, "config:-4063") != reason(lang, "reauth")
