@@ -1,38 +1,57 @@
 # 1138 report
 
-Status: blocked
-Last commit: 6ac46357 (`1138 step 1`)
+Status: review
+Last commit: 58299851 (`1138 step 5`); the report commit follows it.
 
-## 1. Files changed
+## 1. Files changed (steps 1 to 5, against the step-1 parent)
 
-- App/app/reporting.py (step 1 only): `claim_sendable` re-reads the guest stay window and `updated_at`, and the reservation dates and `updated_at`, and drops a pair that differs from what the payload was built from.
+- App/app/reporting.py: `claim_sendable` re-reads stay window and `updated_at` of guest and reservation.
+- App/tests/test_claim_recheck_stay.py (new): 4 tests.
+- go/internal/ubyport/submit.go: `ClaimBuilt` type, `BatchPair.Built`.
+- go/internal/ubyport/collect.go: reads `updated_at`, fills `Built`.
+- go/internal/ubyport/claim.go: `ClaimPair.Built`, recheck in the claim, fail closed on nil.
+- go/internal/ubyport/sweep.go: passes `Built`.
+- go/internal/ubyport/claim_test.go: 4 edited tests, `builtOf` helper, 3 new tests.
 
-No Go file changed. No test file created. Steps 2 to 5 not started.
+`git log 116def7d..HEAD` also lists brief commits for 1136 and 1137 and earlier 1138 brief commits. Those were already on the branch, not made in this run.
 
-## 2. Commands
+## 2. Commands (last lines of output)
 
 - Step 1: `cd App && .venv/bin/python -m pytest tests/test_filed_by_hand.py tests/test_connection_reuse.py -q --tb=short -x 2>&1 | tail -30`
-  ```
-  ...............................                                          [100%]
-  31 passed in 6.01s
-  ```
-- Steps 2 to 6: not run.
+  `31 passed in 6.01s`
+- Step 2: `cd App && .venv/bin/python -m pytest tests/test_claim_recheck_stay.py -q --tb=short -x -rs 2>&1 | tail -30`
+  `4 passed in 0.84s`
+- Step 3: `cd go && go build ./internal/ubyport/` and `gofmt -l`: no output.
+- Step 4: `cd go && go vet ./internal/ubyport/`: no output.
+- Step 5: `UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest go test ./internal/ubyport/ -count=1 -run 'Claim' -v`
+  PASS: TestClaimOnlyOnce, TestClaimReplacesStaleLease, TestClaimSkipsRowsThatMovedOn, TestClaimDropsGuestWhoseWindowMovedAfterBuild, TestClaimDropsPairWithoutBuiltValues, TestClaimKeepsGuestWhoseBuiltValuesStillMatch. TestReleaseFreesGuest PASS (run by name). Go package full run: `ok ... 37.581s`, 0 SKIP.
+- Step 6 gate: `.venv/bin/python -m pytest tests/test_ubyport_*.py tests/test_submission_*.py tests/test_stale_submission.py tests/test_filed_by_hand.py tests/test_claim_*.py tests/test_connection_reuse.py tests/test_zz_review.py tests/test_sm_go_parity.py tests/test_sm_guest_submit_state.py tests/test_sm_submission_state.py -q --tb=line -rs`
+  `1 failed, 293 passed, 3 warnings`. Failure: `test_sm_go_parity.py::test_machine_matches_go[billing_account.status]`: `trial_pending`/`paused` in Python, not in Go tables.go. This branch does not touch `go/internal/statemachine` or billing code, so the failure is not caused by this change (not re-checked at base).
+- Lint: `python3 scripts/context_lint.py 2>&1 | tail -3`: `context lint: OK`.
 
 ## 3. Acceptance (§7)
 
-0 of 7 ticked. Item 1 (`grep -n "stay_from" App/app/reporting.py` shows the new compare) is satisfied by step 1 but the brief's item list was not completed.
+- [x] `stay_from` compare in `claim_sendable`.
+- [x] test_claim_recheck_stay.py: 4 passed.
+- [x] Go: three new tests PASS, package ok, 0 SKIP.
+- [x] `ClaimPair{` pairs carry `Built:` except the gone-row and nil-Built pairs (not re-grepped).
+- [ ] Step 6 gate: one unrelated failure (billing_account parity, see above).
+- [x] context lint OK.
+- [x] diff limited to §3 files (plus brief status and this report).
 
 ## 4. Deviations
 
-Done: steps 1. Left: steps 2 to 6.
-
-Stopped at step 2 under §8. Step 2 creates `App/tests/test_claim_recheck_stay.py`, which uses the `fresh_db` fixture. That fixture exists only as a module-local fixture in `App/tests/test_connection_reuse.py` (and also in `App/tests/test_deadline_cap_filing.py`). There is no `conftest.py` that defines it, so pytest cannot resolve it from the new file. The brief says to stop when `fresh_db` is not found. The file was not created.
+1. Step 2: `fresh_db` copied verbatim (fixture only, plus `import pytest` and `from app import config, db, reporting`) into the new test file, per orchestrator decision. conftest.py untouched.
+2. Step 3: brief anchor `stayTo string` is gofmt-aligned as `stayTo       string` in collect.go; the field `updated string` was added directly below it.
+3. Step 5: the new `builtOf`/new tests were inserted before `TestReleaseFreesGuest` instead of appended at file end (same package, no effect).
+4. Brief Status set to `in-progress` during the run, then `review`.
 
 ## 5. Questions
 
-1. Should `fresh_db` be copied into `test_claim_recheck_stay.py`, or moved to `App/tests/conftest.py`? The second option touches a file outside §3. The brief names neither.
+1. Is the billing_account parity failure known (test_sm_go_parity)? It is outside §3; it needs an owner or other-brief decision.
 
 ## 6. Owner steps left
 
-1. Answer question 1, then the orchestrator updates the brief and a fresh executor session continues from step 2.
-2. No push, PR or merge has been made.
+1. Review the PR diff of the four files named in the brief's risk list.
+2. Decide on the billing parity failure before merge.
+3. Push and open the PR yourself (not done by the executor).
