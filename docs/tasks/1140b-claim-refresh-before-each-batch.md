@@ -1,6 +1,6 @@
 # 1140b: renew the submission claim before each batch send
 
-Status: todo
+Status: review
 Depends on: 1140 | Base commit: 8e512d47 (HEAD of branch claude/clever-fermi-tudhnt, PR #933) | Branch: task/1140b-claim-refresh
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
