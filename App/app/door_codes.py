@@ -1333,9 +1333,12 @@ def _handle_moves(now_iso: str) -> None:
                     (_iso(_now() + timedelta(minutes=delay)), last_error, now_iso, row["id"]),
                 )
                 if kind == ttlock.LOCK_SETUP:
-                    # The guest keeps the old code while the hourly retry runs: tell the host
-                    # once (the mail queue's idempotency key per row and variant).
-                    mail_notify.door_code_notice(int(row["id"]), "moved_failed")
+                    # The guest keeps the old code while the retry runs: tell the host once per
+                    # target window (the mail queue's idempotency key), so a later move to other
+                    # dates that fails again mails again.
+                    mail_notify.door_code_notice(
+                        int(row["id"]), "moved_failed", key_suffix=f"{start_ms}-{end_ms}"
+                    )
                     mail.drain(limit=4)
 
 

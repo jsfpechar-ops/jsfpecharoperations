@@ -6,6 +6,7 @@ An unconfirmed revived code (warning card, one mail), a date move that cannot re
 from __future__ import annotations
 
 import json
+from datetime import datetime, timedelta
 
 import pytest
 
@@ -29,7 +30,7 @@ def _cards(stay):
 def _mails(stay, variant):
     return db.query(
         "SELECT * FROM email_outbox WHERE reservation_id = ? AND idempotency_key LIKE ?",
-        (stay, f"%:{variant}"),
+        (stay, f"%:{variant}%"),
     )
 
 
@@ -117,6 +118,24 @@ def test_a_lock_setup_failure_on_a_move_mails_the_host_once_and_keeps_retrying(m
     assert len(_mails(stay, "moved_failed")) == 1
     row = _code_row(stay)
     assert row["last_error"] == "lock_setup:-3034" and row["next_attempt_at"] is not None
+    db.execute("DELETE FROM email_outbox WHERE reservation_id = ?", (stay,))
+
+
+def test_a_failed_move_mails_again_only_for_a_different_target_window(monkeypatch):
+    stay, _ = _moved_stay(monkeypatch)
+    db.execute("DELETE FROM email_outbox WHERE reservation_id = ?", (stay,))
+    monkeypatch.setattr(ttlock, "create_period_code", _refuse(-3034))
+    door_codes.reconcile()
+    assert len(_mails(stay, "moved_failed")) == 1
+    db.execute("UPDATE door_code SET next_attempt_at = NULL WHERE reservation_id = ?", (stay,))
+    door_codes.reconcile()  # the same window retried: still one mail
+    assert len(_mails(stay, "moved_failed")) == 1
+    res = db.query_one("SELECT date_to FROM reservation WHERE id = ?", (stay,))
+    later = (datetime.fromisoformat(res["date_to"]).date() + timedelta(days=1)).isoformat()
+    db.execute("UPDATE reservation SET date_to = ? WHERE id = ?", (later, stay))
+    db.execute("UPDATE door_code SET next_attempt_at = NULL WHERE reservation_id = ?", (stay,))
+    door_codes.reconcile()  # a new target window that fails too: a second mail
+    assert len(_mails(stay, "moved_failed")) == 2
     db.execute("DELETE FROM email_outbox WHERE reservation_id = ?", (stay,))
 
 
