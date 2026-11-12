@@ -13,8 +13,6 @@ def fresh_db(monkeypatch, tmp_path):
     db.close_connections()
     monkeypatch.setattr(config, "DB_PATH", tmp_path / "wp14.sqlite3")
     db.init_db()
-    db.execute("CREATE TABLE counter (id INTEGER PRIMARY KEY, n INTEGER NOT NULL)")
-    db.execute("INSERT INTO counter (id, n) VALUES (1, 0)")
     yield tmp_path
     db.close_connections()
 
