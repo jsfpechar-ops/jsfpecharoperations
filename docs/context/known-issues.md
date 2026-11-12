@@ -94,7 +94,7 @@
 - K-1091D: `test_1091_d` name no longer matches its test.
 - K-TAP43: local only (CI green): `test_design_guardrails_browser.py` guest-new 390 "Cancel" tap target 43 < 44.
 - K-H0: from tasks/1094-report.md: `checkin_hour` NULL can raise TypeError in door_codes.py (~179, 436); `/save` with a non-owned guest_id becomes a new person; `guest_form_saved` audit has no field names.
-- K-F19 (1138): `passport_photos.py:299`, `stay_fees.py:1164` skip `updated_at`, which the claim re-check uses.
+- K-F19 closed 11-12 (1145): no payload field skips `updated_at`.
 - K-F20 (1139): `outcome_unknown` without a live claim does not defer an iCal cancel. Owner.
 - K-F21 (1142): Go claim.go:48 stamps claimed_at before lock waits; first refresh may fail (safe, delays filing).
 - K-SM2 (brief 1105): OPERATIONS.md submit_state section disagrees with the code in 9 places.
