@@ -260,6 +260,9 @@ def test_15_to_17_and_adults_see_todays_step(live_server, browser, monkeypatch):
 
 def test_typing_and_changing_the_birth_date(live_server, browser, monkeypatch):
     token, stay = _stay(monkeypatch, "typing")
+    # The page's rule is the stay's own arrival day. Read it from the seeded booking: a
+    # clock taken at import can be a day behind when the shard crosses Prague midnight.
+    arrival = date.fromisoformat(db.query_one("SELECT date_from FROM reservation WHERE id = ?", (stay,))["date_from"][:10])
     page, guest = _open(browser, live_server, token, stay)
 
     def hidden():
