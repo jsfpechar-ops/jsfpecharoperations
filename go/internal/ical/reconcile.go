@@ -310,45 +310,106 @@ func expireOnCancel(ctx context.Context, pool *pgxpool.Pool, reservationID int64
 	return err
 }
 
-// cancelExistingStay is _cancel_existing_stay (icalsync.py 497-529). A stay
-// that already has a sent guest is not cancelled; an alert is raised instead.
+// lockStayGuests takes the claim path's per-guest advisory locks (all the
+// stay's guests, ascending id) in tx. Python's db.lock_key takes the id as a
+// 32-bit integer; the key matches ubyport.ClaimSendable.
+func lockStayGuests(ctx context.Context, tx pgx.Tx, reservationID int64) error {
+	rows, err := tx.Query(ctx, `SELECT id FROM guest WHERE reservation_id = $1 ORDER BY id`, reservationID)
+	if err != nil {
+		return err
+	}
+	var guestIDs []int64
+	for rows.Next() {
+		var gid int64
+		if err := rows.Scan(&gid); err != nil {
+			rows.Close()
+			return err
+		}
+		guestIDs = append(guestIDs, gid)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	for _, gid := range guestIDs {
+		if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtext($1), $2)`, "guest", int32(gid)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// cancelReservationUnlessClaimed sets status 'cancelled' only while the stay
+// is active and no live submission_claim covers it. One transaction: the
+// per-guest locks, then one UPDATE. False means skipped (the stay stays
+// active and the next sync retries). Python: _cancel_reservation_unless_claimed.
+func cancelReservationUnlessClaimed(ctx context.Context, pool *pgxpool.Pool, id int64, now string) (bool, error) {
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	if err := lockStayGuests(ctx, tx, id); err != nil {
+		return false, err
+	}
+	tag, err := tx.Exec(ctx,
+		`UPDATE reservation SET status = 'cancelled', updated_at = $1
+		  WHERE id = $2 AND status = 'active'
+		  AND NOT EXISTS (SELECT 1 FROM submission_claim c JOIN guest g ON g.id = c.guest_id
+		    WHERE g.reservation_id = reservation.id AND g.archived_at IS NULL AND c.claimed_at >= $3)`,
+		now, id, liveClaimAfter())
+	if err != nil {
+		return false, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return false, err
+	}
+	return tag.RowsAffected() == 1, nil
+}
+
+// cancelExistingStay is _cancel_existing_stay (icalsync.py). A stay already
+// has a sent guest is not cancelled; an alert is raised instead. The bool is
+// true when the cancel was deferred because a send is in flight.
 func cancelExistingStay(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string,
-	apartmentID int64, uid string, stats *SyncStats) error {
+	apartmentID int64, uid string, stats *SyncStats) (bool, error) {
 	res, found, err := selectReservation(ctx, pool, apartmentID, uid)
 	if err != nil || !found || res.Status != "active" {
-		return err
+		return false, err
 	}
 	today := time.Now().In(prague).Format(dateLayout)
 	if res.DateFrom < today {
-		return nil
+		return false, nil
 	}
 	reported, err := exists(ctx, pool,
 		`SELECT 1 FROM guest WHERE reservation_id = $1 AND submit_state = $2 LIMIT 1`,
 		res.ID, guestSent)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if reported {
 		aid, rid := apartmentID, res.ID
-		return ubyport.RaiseAlert(ctx, pool, "warning", "cancelled_after_report",
+		return false, ubyport.RaiseAlert(ctx, pool, "warning", "cancelled_after_report",
 			fmt.Sprintf("A stay from %s was cancelled in the calendar after it had already been reported to the police.", res.DateFrom),
 			"Check whether the booking was cancelled or merely moved.",
 			fmt.Sprintf("cancelled_after_report:%d", res.ID), &aid, &rid, nil,
 			ubyport.AlertParams{"date": res.DateFrom, "variant": "cancelled"})
 	}
-	if _, err := pool.Exec(ctx,
-		`UPDATE reservation SET status = 'cancelled', updated_at = $1 WHERE id = $2`,
-		ubyport.UTCNow(), res.ID); err != nil {
-		return err
+	cancelled, err := cancelReservationUnlessClaimed(ctx, pool, res.ID, ubyport.UTCNow())
+	if err != nil {
+		return false, err
+	}
+	if !cancelled {
+		log.Printf("ical_cancel_deferred_in_flight apartment_id=%d reservation_id=%d", apartmentID, res.ID)
+		return true, nil
 	}
 	if err := expireOnCancel(ctx, pool, res.ID); err != nil {
-		return err
+		return false, err
 	}
 	if err := warnIfGuestsRegistered(ctx, pool, getenv, res, apartmentID, "cancelled"); err != nil {
-		return err
+		return false, err
 	}
 	stats.Cancelled++
-	return nil
+	return false, nil
 }
 
 // existingReservation is _existing_reservation (icalsync.py 532-569). A
