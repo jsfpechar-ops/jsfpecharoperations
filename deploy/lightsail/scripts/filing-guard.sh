@@ -51,6 +51,16 @@ if grep -Eq '^[[:space:]]*(export[[:space:]]+)?UBYHOST_FILING_GUARD_OVERRIDE=' .
   exit 3
 fi
 
+# Brief 1169-cont-2: `if ! source .env` turns set -e off inside .env, so a failing
+# line (`UBYHOST_GO_JOB_KINDS = ical,submit`, or one that sets a readonly name
+# above) would be skipped and the guard could pass. Read .env first in a strict
+# child shell with the same names readonly: any failing line exits 3. Its output
+# is dropped, because errors can show .env text and this runs in deploy logs.
+if ! bash -euc 'readonly MARKER OVERRIDE CALLER_GO_JOB_KINDS CALLER_JOB_QUEUE_KINDS ASSUME_RESTORED; set -a; . ./.env' >/dev/null 2>&1; then
+  echo "ERROR: restored box and a line in ${ROOT}/.env fails (for example \`NAME = value\` with spaces, or a name the guard uses). Find it on the box with: bash -euc 'set -a; . ./.env'" >&2
+  exit 3
+fi
+
 # .env is what the containers get (env_file); the caller lists are checked too.
 unset UBYHOST_ENABLE_SCHEDULER UBYHOST_GO_JOB_KINDS UBYHOST_JOB_QUEUE_KINDS
 set -a
