@@ -72,3 +72,4 @@ Moved from docs/context/decisions.md during compaction.
 - 2026-10-11 | ARES lookup on host click; sends only the IČO; 24 h cache; 20/h per user | owner | 0055
 - 2026-10-15 | Watchdog digest every 72 h (server 10-15, repo 10-20) | owner | [OPERATIONS](../OPERATIONS.md)
 - 2026-10-16 | #397: white workspace; Property hours; fractional stays; Dashboard stays only; Cleaning markers; in-page creation | PR #397
+- 2026-11-09 | [workflow] Speed and group plans only (owner): executor by tier. A (filing, concurrency, guest-data access): Fable 5.2 executor, Opus brief, fresh Fable reviews diff before PR. B (multi-file, mail, payments, privacy, new component): Opus executor, Sonnet brief. C (attributes, copy, prefill, CSS): Sonnet executor, medium effort, Sonnet brief. 100k cap = Haiku only. From 11-09 21:35 a fresh Fable reviews every new brief | [workflow](workflow.md#roles-and-models) (superseded by 2026-11-12 [workflow] risk tier; archived 11-12)

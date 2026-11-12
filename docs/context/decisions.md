@@ -46,7 +46,6 @@ Append-only.
 - 2026-11-09 [guest] Guest edits/removes own added people until filed (SENT, incl. by hand); then locked, "Message host" (owner)
 - 2026-11-09 | [ux] Stay fees: current month default, pick navigates | owner | 1051
 - 2026-11-09 [ux] [Speed plan](../plans/speed-and-ease.md): answers §10.
-- 2026-11-09 | [workflow] Speed and group plans only (owner): executor by tier. A (filing, concurrency, guest-data access): Fable 5.2 executor, Opus brief, fresh Fable reviews diff before PR. B (multi-file, mail, payments, privacy, new component): Opus executor, Sonnet brief. C (attributes, copy, prefill, CSS): Sonnet executor, medium effort, Sonnet brief. 100k cap = Haiku only. From 11-09 21:35 a fresh Fable reviews every new brief | [workflow](workflow.md#roles-and-models)
 - 2026-11-09 [filing] Registered guests are filed by the deadline cap (deadline - 6 h) even when the stay is short or has no expected count; no 12 quiet hours past the cap; valid co-guests filed while another form is invalid; reverses the reporting.py:1093 rule; stays past their cap are filed by the first sweep (owner, K-F20) | 1070
 - 2026-11-09 [workflow] Owner asleep: orchestrator takes recommended answers and merges green, reviewed PRs itself (this build only). Assumed: F3, F4 yes; guest draft deleted 7 d after last change or day after check-out; G6, G13 parked; G4 not released
 - 2026-11-10 [guest] Guest form: B now, then C (owner).
@@ -61,3 +60,5 @@ Append-only.
 - 2026-11-12 [billing] 1137: trial_pending->paused only via operator_pause().
 - 2026-11-12 [filing] 1138: claim fails closed; no retry.
 - 2026-11-12 [workflow] Orchestrator model chosen by brief risk tier (A: Opus 5.5 thread, Opus brief, Haiku executes, fresh Fable reviews diff; B: Opus 5.5, Sonnet brief, Haiku; C: Sonnet 5.5, Sonnet brief, Haiku); threads run in parallel, max 3, one per lane, no shared files; unsure = higher tier | owner | [workflow](workflow.md#roles-and-models)
+- 2026-11-12 [filing] 1148: cancel waits on `running` <30 min, else cancels + `cancelled_filing_unconfirmed` (owner).
+- 2026-11-12 [door] 1149: lost revoke race re-issues code if stay live (owner).

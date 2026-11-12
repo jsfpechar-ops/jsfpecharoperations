@@ -89,14 +89,15 @@
 
 - K-HOUSEBOOK: house book Details popover unreachable at 390/768 (zero-size trigger).
 - K-FLAKY-DC: flaky `test_door_codes_safeguards::test_an_undeleted_old_code_after_a_move_tells_the_host` (test-postgres-full); passed on rerun.
-- K-E2E-ORDER: test_endtoend.py fails 13 after the 1142 §6 file mix; passes alone, in CI, same on main.
+- K-E2E-ORDER closed (1146): private DB for test_endtoend.
 - K-GUEST-DATES: es/fr guest dates row wraps at 375, 360 px.
 - K-1091D: `test_1091_d` name no longer matches its test.
 - K-TAP43: local only (CI green): `test_design_guardrails_browser.py` guest-new 390 "Cancel" tap target 43 < 44.
 - K-H0: from tasks/1094-report.md: `checkin_hour` NULL can raise TypeError in door_codes.py (~179, 436); `/save` with a non-owned guest_id becomes a new person; `guest_form_saved` audit has no field names.
 - K-F19 closed 11-12 (1145): no payload field skips `updated_at`.
 - K-F20 closed (1148, 1148b): a fresh running filing defers an iCal cancel; a cancel over a running or outcome_unknown filing raises cancelled_filing_unconfirmed.
-- K-F21 (1142): Go claim.go:48 stamps claimed_at before lock waits; first refresh may fail (safe, delays filing).
+- K-F21 closed (1144): Go claim stamps claimed_at at the INSERT.
 - K-SM2 (brief 1105): OPERATIONS.md submit_state section disagrees with the code in 9 places.
 - K-SM3 (brief 1111): rules.md lines 37, 44 still say production is SQLite, migrations frozen at 0033.
-- K-DC-LOST (1141): revoke lost race only audits; row may show issued with the PIN deleted.
+- K-DC-LOST closed (1149): lost revoke race re-issues the code when the stay is live.
+- K-DC-AMBIG (1149 S8/S9): delete timeout or crash, then revival: issued, PIN gone, no audit. Owner.
