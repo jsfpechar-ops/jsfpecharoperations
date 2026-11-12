@@ -1,5 +1,5 @@
 # 0645: Go: the `ical` job kind (sync every active feed), off in production
-Status: review
+Status: done (code on main and live in production, server on #928, 2026-11-12; closed in bulk by the orchestrator)
 Depends on: 0644 | Base commit: task/0644-go-ical-sync-feed | Branch: task/0645-go-ical-job
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 90k tokens
 ## 1. Objective

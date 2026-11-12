@@ -1,4 +1,6 @@
-# Migration to Go (proposal, not started)
+# Migration to Go (historical proposal, superseded)
+
+> Superseded. The port is under way: the plan is [migration plan v4](plans/postgresql/migration-plan-v4.md) §3 steps 13-18; what runs on Go today is in [status](context/status.md). Kept for the blocker list below.
 
 > ⚠️ UNKNOWN — needs human input: the repository contains **no Go code and no
 > recorded decision** to migrate to Go + River + Caddy. The brief describes this

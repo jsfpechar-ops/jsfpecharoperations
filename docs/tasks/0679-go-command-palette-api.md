@@ -1,5 +1,5 @@
 # 0679: Go command-palette JSON API
-Status: review
+Status: done (code on main and live in production, server on #928, 2026-11-12; closed in bulk by the orchestrator)
 Depends on: 0676 (hostweb) | Base commit: task/0676-go-hostweb | Branch: task/0679-go-command-palette
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 70k tokens
 ## 1. Objective

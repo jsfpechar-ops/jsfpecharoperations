@@ -1,5 +1,5 @@
 # 0682: Go dashboard calendar JSON
-Status: review
+Status: done (code on main and live in production, server on #928, 2026-11-12; closed in bulk by the orchestrator)
 Depends on: 0676 (hostweb, on main) | Base commit: origin/main | Branch: task/0682-go-calendar
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 80k tokens
 ## 1. Objective

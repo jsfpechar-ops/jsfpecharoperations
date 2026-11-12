@@ -1,5 +1,5 @@
 # 0481: Go G5c: UbyPort NTLM transport, Submit and the submission claim in Go
-Status: todo
+Status: done (code on main and live in production, server on #928, 2026-11-12; closed in bulk by the orchestrator)
 Depends on: 0480 (#635) | Base commit: main | Branch: claude/project-thread-n5om1z
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 90k tokens
 ## 1. Objective

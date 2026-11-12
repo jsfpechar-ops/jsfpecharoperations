@@ -1,5 +1,5 @@
 # 0556: Go police: collect_sendable, guest decrypt and the send schedule
-Status: todo
+Status: done (code on main and live in production, server on #928, 2026-11-12; closed in bulk by the orchestrator)
 Depends on: 0555 | Base commit: main | Branch: claude/project-thread-dwlrdj
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 90k tokens
 ## 1. Objective

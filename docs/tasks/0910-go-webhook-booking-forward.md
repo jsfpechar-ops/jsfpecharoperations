@@ -1,6 +1,6 @@
 # 0910: Go Stripe webhook forwards booking events to Python
 
-Status: todo. Owner OK: 2026-11-04 (Josef asked to speed up the Stripe step; the fix was announced in the thread). Executor: Haiku 5.5, one run. CRITICAL: payments (a missed booking event loses a paid reservation).
+Status: done (code on main and live in production, server on #928, 2026-11-12; closed in bulk by the orchestrator)
 
 ## 1. Objective
 Stripe will send ALL events to `/webhooks/stripe`. Python handles booking-site events (`App/app/booking_webhook.py`: confirm reservation, automatic refund when nights sold, mails, expire holds). Go's webhook (`go/internal/payments/webhook.go`) does not, and would record such an event as seen and do nothing. Make Go forward booking events untouched to Python and answer with Python's answer. Everything else stays in Go as it is.
