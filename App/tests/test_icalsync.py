@@ -1350,3 +1350,28 @@ def test_a_stay_that_vanishes_loses_its_guest_link(monkeypatch, tmp_path):
         "SELECT token_hash FROM reservation_claim WHERE reservation_id = ?",
         (vanished["id"],),
     )["token_hash"] is None
+
+
+def test_reservation_date_write_is_skipped_while_a_claim_is_live(monkeypatch, tmp_path):
+    """The date write is one conditional UPDATE: a claim taken after the pre-check wins."""
+    feed_id, reservation_id, guest_id = _moved_stay(tmp_path, monkeypatch)
+    existing = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+    moved = {"date_from": "2099-03-10", "date_to": "2099-03-12", "updated_at": "x"}
+    db.execute(
+        "INSERT INTO submission_claim (guest_id, claim_token, claimed_at) "
+        "VALUES (?, 'race', ?)",
+        (guest_id, time.time()),
+    )
+    try:
+        assert icalsync._update_reservation_unless_claimed(existing, moved) is False
+        row = db.query_one(
+            "SELECT date_from, date_to FROM reservation WHERE id = ?", (reservation_id,)
+        )
+        assert (row["date_from"], row["date_to"]) == (existing["date_from"], existing["date_to"])
+    finally:
+        db.execute("DELETE FROM submission_claim WHERE guest_id = ?", (guest_id,))
+    assert icalsync._update_reservation_unless_claimed(existing, moved) is True
+    row = db.query_one(
+        "SELECT date_from, date_to FROM reservation WHERE id = ?", (reservation_id,)
+    )
+    assert (row["date_from"], row["date_to"]) == ("2099-03-10", "2099-03-12")
