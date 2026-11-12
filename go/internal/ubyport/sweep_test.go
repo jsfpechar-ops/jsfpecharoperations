@@ -500,3 +500,138 @@ func TestChainResolvesCardWhenNoGuestWaits(t *testing.T) {
 		t.Fatalf("open card = %d, want 0", got)
 	}
 }
+
+// stuckRunning seeds an apartment (mode, active), one stay with an unsent guest and a
+// running batch nobody points at, as a crash leaves it. claimAge < 0 means no claim row;
+// otherwise it is the claim's age in seconds at the sweep clock.
+func stuckRunning(t *testing.T, pool *pgxpool.Pool, d SweepDeps, mode string, active int, claimAge int) (ApartmentRef, int64, int64) {
+	t.Helper()
+	ctx := context.Background()
+	ref := sweepFixtureApartment(t, pool, ptrString("host@example.test"))
+	if _, err := pool.Exec(ctx, `UPDATE apartment SET automation_mode = $1, active = $2 WHERE id = $3`, mode, active, ref.ID); err != nil {
+		t.Fatal(err)
+	}
+	_, guest := notifyStay(t, pool, ref.ID, fmt.Sprintf("stuck-%d", time.Now().UnixNano()), "2099-01-10", "2099-01-12")
+	sub, err := InsertSubmission(ctx, pool, ref.ID, "auto", []int64{guest}, "ep", "2026-11-01T09:00:00+00:00")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if claimAge >= 0 {
+		if _, err := pool.Exec(ctx,
+			`INSERT INTO submission_claim (guest_id, claim_token, claimed_at) VALUES ($1, 't', $2)`,
+			guest, float64(d.Batch.Now().Unix())-float64(claimAge)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return ref, guest, sub
+}
+
+func TestSweepRecoversAStuckRunningBatchWhereItSkipsTheApartment(t *testing.T) {
+	cases := []struct {
+		name     string
+		mode     string
+		active   int
+		claimAge int
+		authFail bool
+	}{
+		{"manual", "manual", 1, -1, false},
+		{"manual stale claim", "manual", 1, 600, false},
+		{"inactive", "immediate", 0, -1, false},
+		{"auth failed", "immediate", 1, -1, true},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			ctx := context.Background()
+			pool := claimTestPool(t)
+			s := &sweepSender{}
+			d := sweepDeps(t, pool, "pw", s)
+			ref, guest, sub := stuckRunning(t, pool, d, c.mode, c.active, c.claimAge)
+			if c.authFail {
+				if err := RaiseAlert(ctx, pool, "critical", "ubyport_auth_failed", "login refused", "",
+					fmt.Sprintf("ubyport_auth_failed:%d", ref.ID), &ref.ID, nil, nil, nil); err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			if _, err := Sweep(ctx, d, ref.OwnerUserID); err != nil {
+				t.Fatal(err)
+			}
+
+			if st := storeRead(t, pool, "submission", sub, "state")["state"]; st != "outcome_unknown" {
+				t.Fatalf("state %q, want outcome_unknown", st)
+			}
+			if got := storeRead(t, pool, "guest", guest, "submission_id")["submission_id"]; got != fmt.Sprint(sub) {
+				t.Fatalf("guest points at %q, want %d", got, sub)
+			}
+			key := fmt.Sprintf("submission_outcome_unknown:%d", ref.ID)
+			if n := effectsCount(t, pool, `SELECT count(*) FROM alert WHERE dedupe_key = $1 AND resolved_at IS NULL AND level = 'critical'`, key); n != 1 {
+				t.Fatalf("critical alerts open = %d, want 1", n)
+			}
+			if len(s.sizes) != 0 {
+				t.Fatalf("recovery sent %v, want nothing", s.sizes)
+			}
+		})
+	}
+}
+
+func TestSweepNeverRecoversALiveClaimInManualMode(t *testing.T) {
+	ctx := context.Background()
+	pool := claimTestPool(t)
+	s := &sweepSender{}
+	d := sweepDeps(t, pool, "pw", s)
+	ref, guest, sub := stuckRunning(t, pool, d, "manual", 1, 10)
+
+	if _, err := Sweep(ctx, d, ref.OwnerUserID); err != nil {
+		t.Fatal(err)
+	}
+
+	if st := storeRead(t, pool, "submission", sub, "state")["state"]; st != "running" {
+		t.Fatalf("live claim: state %q, want running", st)
+	}
+	if got := storeRead(t, pool, "guest", guest, "submission_id")["submission_id"]; got != "<nil>" {
+		t.Fatalf("live claim: guest pointed at %q", got)
+	}
+	if n := batchOpenAlert(t, pool, fmt.Sprintf("submission_outcome_unknown:%d", ref.ID)); n != 0 {
+		t.Fatalf("live claim raised %d alerts", n)
+	}
+}
+
+func TestSweepRecoversAnAutoApartmentStuckBatchOnce(t *testing.T) {
+	ctx := context.Background()
+	pool := claimTestPool(t)
+	s := &sweepSender{}
+	d := sweepDeps(t, pool, "pw", s)
+	ref, _, sub := stuckRunning(t, pool, d, "immediate", 1, -1)
+
+	for i := 0; i < 2; i++ {
+		if _, err := Sweep(ctx, d, ref.OwnerUserID); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if st := storeRead(t, pool, "submission", sub, "state")["state"]; st != "outcome_unknown" {
+		t.Fatalf("state %q, want outcome_unknown", st)
+	}
+	// The retry pass may settle the alert itself in auto mode; the recovery pass
+	// must not raise a second one.
+	if n := effectsCount(t, pool, `SELECT count(*) FROM alert WHERE dedupe_key = $1`,
+		fmt.Sprintf("submission_outcome_unknown:%d", ref.ID)); n != 1 {
+		t.Fatalf("alert rows = %d, want 1", n)
+	}
+}
+
+func TestSweepRecoveryStaysInsideTheRequestedWorkspace(t *testing.T) {
+	ctx := context.Background()
+	pool := claimTestPool(t)
+	d := sweepDeps(t, pool, "pw", &sweepSender{})
+	ref, _, sub := stuckRunning(t, pool, d, "manual", 1, -1)
+	other := *ref.OwnerUserID + 100000
+
+	if _, err := Sweep(ctx, d, &other); err != nil {
+		t.Fatal(err)
+	}
+
+	if st := storeRead(t, pool, "submission", sub, "state")["state"]; st != "running" {
+		t.Fatalf("state %q, want running for another workspace's sweep", st)
+	}
+}

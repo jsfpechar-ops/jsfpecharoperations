@@ -1,6 +1,6 @@
 # 1161b: a crash-stuck `running` filing is recovered in every apartment mode (K-F23), Go twin of 1161
 
-Status: todo
+Status: blocked
 Depends on: 1161 (Python twin, same rule) | Base commit: 174db7a2 (HEAD of branch claude/zealous-maxwell-a7ub54) | Branch: task/1161b-stuck-running-all-modes-go
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
