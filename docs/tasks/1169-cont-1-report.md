@@ -1,27 +1,54 @@
-# 1169-cont-1 report (blocked)
+# 1169-cont-1 report (review)
 
-Status: blocked at the executor cap (brief §8: about 50k tokens reached).
+Status: review. Steps 1 to 5 done by the second executor (steps 1 and 2 from the earlier session, commits 04e6b90 and 5613939; blocked report 4f58c59 superseded).
 
-## Done
+## Files changed (git diff --stat 7280a83, §3 files)
 
-- Step 1 committed: `deploy/lightsail/scripts/filing-guard.sh` replaced (mode 100755 kept, `bash -n` clean). Commit `04e6b90`.
-- Step 2 committed: `deploy/lightsail/scripts/pg-restore.sh` (guard first with `--assume-restored`, marker written before stop, Go service stopped when listed, `up -d` of every service in `--file` mode). `bash -n` clean, `grep -c restored-box` prints 1. Commit `5613939`.
+- deploy/lightsail/scripts/filing-guard.sh (step 1)
+- deploy/lightsail/scripts/pg-restore.sh (step 2)
+- App/tests/test_pg_backup_scripts.py (step 3, Edits 4 to 9)
+- docs/DISASTER_RECOVERY.md, docs/LIGHTSAIL.md, docs/ENVIRONMENT.md (step 4, Edits 10 to 16)
+- docs/tasks/1169-cont-1.md (Status line only)
+- docs/tasks/1169-cont-1-report.md (this file)
 
-## Not done
+Commits: 8e82e6a (step 3), 1bb81f0 (step 4), step 5 commit follows this file.
 
-- Step 3 (`App/tests/test_pg_backup_scripts.py`, Edits 4 to 9): not applied. No test was run for steps 1 and 2 either.
-- Step 4 (`docs/DISASTER_RECOVERY.md`, `docs/LIGHTSAIL.md`, `docs/ENVIRONMENT.md`, Edits 10 to 16): not applied.
-- Step 5: the brief `Status:` line was not changed (still `todo`). This report is the only file written in step 5.
-- Lint, shellcheck and the §7 acceptance checks were not run.
+## Commands (last lines of output)
 
-## Cause
+pytest, App/ (`/tmp/v1169c/bin/python -m pytest tests/test_pg_backup_scripts.py -q --tb=short -x --noconftest`):
 
-One helper command in the executor session read from stdin (a `cat >` with no input) and hung for 120 s. Nothing was applied by it: `git status` was clean afterwards. The remaining Before/After pairs were not re-applied because the token cap was reached.
+    63 passed, 4 skipped in 1.25s
 
-## Next step for a fresh executor
+bash -n filing-guard.sh and pg-restore.sh: no output, exit 0.
 
-Start from commit `5613939` on `claude/dr-filing-guard`. Apply Step 3 and Step 4 of `docs/tasks/1169-cont-1.md` exactly (Before text must be found once), then run the §6 commands and write the final report.
+shellcheck: not installed in this container (CI runs it).
 
-## Owner steps
+context lint (`python3 scripts/context_lint.py`), last lines:
 
-None yet.
+    WARN  2 commit(s) touched App/ after the last status.md update. Orchestrator: update docs/context/status.md at review.
+    next free: task 1170 | migration 0046
+    context lint: OK
+
+## §7 acceptance
+
+- [x] filing-guard.sh index mode 100755
+- [x] pytest 0 failed (63 passed, 4 skipped, pytest-only venv)
+- [x] `grep -c restored-box pg-restore.sh` = 1
+- [x] `grep -n assume-restored pg-restore.sh` = 1 match
+- [x] `grep -c 'immediate mode' filing-guard.sh` = 2; DISASTER_RECOVERY.md = 1
+- [x] context lint ends `context lint: OK`
+- [x] diff lists only §3 files (plus the brief Status line and this report)
+
+## Deviations
+
+- The brief file itself appears in `git diff --stat 7280a83` because it was added after the base commit. Not a content change beyond Status.
+- shellcheck not run (not installed).
+- Not pushed.
+
+## Questions
+
+None.
+
+## Owner steps left
+
+Read "Two servers never file at once" in docs/DISASTER_RECOVERY.md once, then review and merge the draft PR. On the live box, read the `pg-restore.sh` row in docs/LIGHTSAIL.md before any `--file` run.
