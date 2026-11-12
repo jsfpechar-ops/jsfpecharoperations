@@ -1,6 +1,6 @@
 # 1133: Repoint the Go deadline copies in ubyport and calendar to `deadlines`
 
-Status: todo
+Status: review
 Depends on: 1132 (merged) | Base commit: main d353dec | Branch: the orchestrator's branch (work on the current branch)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
