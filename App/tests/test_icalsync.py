@@ -1,9 +1,10 @@
 import json
 import time
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from app import config, db, icalsync
+from app import alerts, config, db, icalsync
 
 AIRBNB = """BEGIN:VCALENDAR
 PRODID;X-RICAL-TZSOURCE=TZINFO:-//Airbnb Inc//Hosting Calendar 0.8.8//EN
@@ -1596,3 +1597,148 @@ def test_a_claim_landing_after_the_precheck_logs_deferred_in_flight(
         _sync(feed_id)
     assert "ical_dates_deferred_in_flight" in caplog.text
     assert "ical_dates_deferred_changed" not in caplog.text
+
+
+def _cancel_feed(monkeypatch):
+    monkeypatch.setattr(
+        icalsync,
+        "fetch_feed",
+        lambda _url: MOVED_STAY_FEED.replace(
+            "SUMMARY:Reserved", "SUMMARY:Reserved\nSTATUS:CANCELLED"
+        ),
+    )
+
+
+def _seed_submission(reservation_id, guest_id, state, *, hours_old=0, point=False):
+    apartment_id = db.query_one(
+        "SELECT apartment_id FROM reservation WHERE id = ?", (reservation_id,)
+    )["apartment_id"]
+    created = (
+        (datetime.now(timezone.utc) - timedelta(hours=hours_old))
+        .replace(microsecond=0)
+        .isoformat()
+    )
+    submission_id = db.insert(
+        "submission",
+        {
+            "apartment_id": apartment_id,
+            "created_at": created,
+            "mode": "auto",
+            "state": state,
+            "guest_ids": json.dumps([guest_id]),
+        },
+    )
+    if point:
+        db.update("guest", guest_id, {"submission_id": submission_id})
+    return submission_id
+
+
+def _status(reservation_id):
+    return db.query_one("SELECT status FROM reservation WHERE id = ?", (reservation_id,))["status"]
+
+
+def test_a_cancel_event_with_an_unconfirmed_filing_cancels_and_alerts(monkeypatch, tmp_path):
+    feed_id, reservation_id, guest_id = _moved_stay(tmp_path, monkeypatch)
+    _seed_submission(reservation_id, guest_id, "outcome_unknown", point=True)
+    _cancel_feed(monkeypatch)
+
+    stats = _sync(feed_id)
+
+    assert _status(reservation_id) == "cancelled"
+    assert stats["cancelled"] == 1
+    alert = alerts.open_alert(f"cancelled_filing_unconfirmed:{reservation_id}")
+    assert alert is not None and alert["level"] == "warning"
+
+
+def test_a_cancel_event_with_a_settled_filing_raises_no_unconfirmed_alert(monkeypatch, tmp_path):
+    feed_id, reservation_id, guest_id = _moved_stay(tmp_path, monkeypatch)
+    _seed_submission(reservation_id, guest_id, "ok", point=True)
+    _cancel_feed(monkeypatch)
+
+    _sync(feed_id)
+
+    assert _status(reservation_id) == "cancelled"
+    assert alerts.open_alert(f"cancelled_filing_unconfirmed:{reservation_id}") is None
+
+
+def test_a_fresh_running_filing_defers_the_cancel_until_the_sweep_recovers_it(monkeypatch, tmp_path):
+    feed_id, reservation_id, guest_id = _moved_stay(tmp_path, monkeypatch)
+    submission_id = _seed_submission(reservation_id, guest_id, "running")
+    db.execute(
+        "INSERT INTO submission_claim (guest_id, claim_token, claimed_at) VALUES (?, 'old', ?)",
+        (guest_id, time.time() - 3600),
+    )
+    _cancel_feed(monkeypatch)
+
+    stats = _sync(feed_id)
+
+    assert _status(reservation_id) == "active"
+    assert stats["cancelled"] == 0
+    assert db.query_one("SELECT body_sha256 FROM ical_feed WHERE id = ?", (feed_id,))["body_sha256"] is None
+    assert alerts.open_alert(f"cancelled_filing_unconfirmed:{reservation_id}") is None
+
+    db.update("submission", submission_id, {"state": "outcome_unknown"})
+    db.update("guest", guest_id, {"submission_id": submission_id})
+    stats = _sync(feed_id)
+
+    assert _status(reservation_id) == "cancelled"
+    assert stats["cancelled"] == 1
+    assert alerts.open_alert(f"cancelled_filing_unconfirmed:{reservation_id}") is not None
+
+
+def test_an_old_running_filing_does_not_hold_the_cancel_for_ever(monkeypatch, tmp_path):
+    feed_id, reservation_id, guest_id = _moved_stay(tmp_path, monkeypatch)
+    _seed_submission(reservation_id, guest_id, "running", hours_old=2)
+    _cancel_feed(monkeypatch)
+
+    stats = _sync(feed_id)
+
+    assert _status(reservation_id) == "cancelled"
+    assert stats["cancelled"] == 1
+    assert alerts.open_alert(f"cancelled_filing_unconfirmed:{reservation_id}") is not None
+
+
+def _vanished_stay_with_guest(tmp_path, monkeypatch, name):
+    feed_id, apartment_id, uids = _stored_stays(
+        tmp_path, monkeypatch, name, stored=10, returned=9
+    )
+    gone = db.query_one(
+        "SELECT id FROM reservation WHERE apartment_id = ? AND uid = ?",
+        (apartment_id, uids[9]),
+    )["id"]
+    now = db.utcnow()
+    guest_id = db.insert(
+        "guest",
+        {
+            "reservation_id": gone,
+            "stay_from": "2099-03-01",
+            "stay_to": "2099-03-05",
+            "entered_by": "guest",
+            "submit_state": "pending",
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+    return feed_id, gone, guest_id
+
+
+def test_a_vanished_stay_with_an_unconfirmed_filing_cancels_and_alerts(monkeypatch, tmp_path):
+    feed_id, gone, guest_id = _vanished_stay_with_guest(tmp_path, monkeypatch, "sweep-unknown.sqlite3")
+    _seed_submission(gone, guest_id, "outcome_unknown", point=True)
+
+    stats = _sync(feed_id)
+
+    assert _status(gone) == "cancelled"
+    assert stats["cancelled"] == 1
+    assert alerts.open_alert(f"cancelled_filing_unconfirmed:{gone}") is not None
+
+
+def test_a_vanished_stay_with_a_fresh_running_filing_is_deferred(monkeypatch, tmp_path):
+    feed_id, gone, guest_id = _vanished_stay_with_guest(tmp_path, monkeypatch, "sweep-running.sqlite3")
+    _seed_submission(gone, guest_id, "running")
+
+    stats = _sync(feed_id)
+
+    assert _status(gone) == "active"
+    assert stats["cancelled"] == 0
+    assert db.query_one("SELECT body_sha256 FROM ical_feed WHERE id = ?", (feed_id,))["body_sha256"] is None
