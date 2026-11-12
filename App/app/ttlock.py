@@ -80,12 +80,15 @@ ERROR_KINDS: Dict[int, str] = {
     -3036: "offline",
     -3037: "offline",
     -2025: "offline",
-    # The host (or the server's region setting) must fix the setup: no retry.
-    -1003: "config",
-    -4037: "config",
-    -4043: "config",
-    -3034: "config",
-    -4067: "config",
+    # The lock's own setup is missing (no gateway, network, NB registration, lock not found,
+    # function not supported). The host can fix it later, so it is retried slowly like a
+    # transient answer, and a failure is handed to the host at the usual threshold.
+    -1003: "lock_setup",
+    -4037: "lock_setup",
+    -4043: "lock_setup",
+    -3034: "lock_setup",
+    -4067: "lock_setup",
+    # The account or the server's region setting is wrong: no retry, the host or operator fixes it.
     -4063: "config",
     30008: "config",
     # Our request was malformed or the code is unusable: a UbyHost bug, no endless retry.
@@ -96,6 +99,7 @@ ERROR_KINDS: Dict[int, str] = {
     -3045: "bug",
 }
 CODE_MISSING = "code_missing"
+LOCK_SETUP = "lock_setup"
 NO_PASSCODE_DATA = -1007
 # A PIN the lock refuses is replaced once by a new random PIN (the second refusal is raised).
 NEW_PIN_ERRCODES = (-3007, -2032)
@@ -609,8 +613,9 @@ def _read_listing(
     when a short or empty page ended the list, or, with ``stop_at_first``, at the first kept
     entry. None when an answer has no ``list`` array, or when the page limit ran out first:
     the list is then incomplete and nothing may be concluded from it. TTLock errors are
-    raised as they are, except -1007 ("No password data of this lock") on page 1: the lock
-    has no codes at all, an empty list (the kept entries are then none).
+    raised as they are, except -1007 ("No password data of this lock") on any page: that is
+    not evidence about one code (a delete just answered it too), so the list is unknown (None),
+    never empty.
     """
     kept: List[dict] = []
     for page in range(1, LIST_MAX_PAGES + 1):
@@ -628,8 +633,8 @@ def _read_listing(
                 NORMAL,
             )
         except TTLockError as exc:
-            if exc.code == NO_PASSCODE_DATA and page == 1:
-                return kept
+            if exc.code == NO_PASSCODE_DATA:
+                return None
             raise
         items = answer.get("list")
         if not isinstance(items, list):
