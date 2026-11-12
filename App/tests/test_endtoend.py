@@ -17,7 +17,7 @@ import pytest
 import requests
 from fastapi.testclient import TestClient
 
-from app import auth, claim, codelists, db, reporting
+from app import auth, claim, codelists, config, db, reporting
 from app.host_i18n import STRINGS as HOST_STRINGS
 from app.main import app
 from tests.conftest import complete_guest_claim
