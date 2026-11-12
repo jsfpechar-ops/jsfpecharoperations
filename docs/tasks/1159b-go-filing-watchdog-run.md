@@ -1,7 +1,7 @@
 # 1159b: Go port of the filing watchdog actions (`notify_hosts`, `send_operator_digest`, `run`) and its two mails, parity-checked against Python
 
-Status: todo
-Depends on: 1159 and 1159-fix-1 (merged) | Base commit: the main commit that merged 1159 | Branch: claude/go-filing-watchdog-run
+Status: review
+Depends on: 1159 and 1159-fix-1 (merged) | Base commit: 6d1521731 | Branch: claude/go-filing-watchdog-run
 Report: docs/tasks/1159b-report.md
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
