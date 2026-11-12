@@ -148,7 +148,10 @@ func updateReservationUnlessClaimed(ctx context.Context, pool *pgxpool.Pool, id 
 	var owner *int64
 	if move != nil {
 		if applied {
-			now, _ := cols["updated_at"].(string)
+			now, ok := cols["updated_at"].(string)
+			if !ok || now == "" {
+				return false, fmt.Errorf("updateReservationUnlessClaimed: cols[updated_at] must be a non-empty string, got %T", cols["updated_at"])
+			}
 			if details, owner, err = fitUnsentGuestWindows(ctx, tx, id, move.ApartmentID, move.NewFrom, move.NewTo, now); err != nil {
 				return false, err
 			}

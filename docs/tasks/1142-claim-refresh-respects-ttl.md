@@ -1,6 +1,6 @@
 # 1142: the claim refresh must respect the TTL and cover every guest
 
-Status: todo
+Status: review
 Depends on: 1140b | Base commit: HEAD of branch claude/clever-fermi-tudhnt (PR #933) | Branch: task/1142-claim-refresh-respects-ttl
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

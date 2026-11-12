@@ -1710,21 +1710,23 @@ def release_sendable_claim(token: str) -> None:
     db.execute("DELETE FROM submission_claim WHERE claim_token = ?", (token,))
 
 
-def refresh_sendable_claim(token: str) -> bool:
-    """Renew the lease of a claim this worker still holds; False when it is gone.
+def refresh_sendable_claim(token: str, expected: int) -> bool:
+    """Renew a claim this worker still holds; False when it is lost.
 
-    One UPDATE keyed by the claim token: a released or taken-over claim matches
-    no row, so it is never resurrected. Called before each batch of a long send
-    so the date-move and cancel guards and ``claim_sendable`` keep seeing it as
-    live (the TTL is 5 minutes, one batch can take 60 s).
+    One UPDATE keyed by the claim token AND the live cutoff the guards and
+    ``claim_sendable`` use (``claimed_at >= now - TTL``): a stale claim is not
+    revived, because by then the iCal guard may have moved the reservation and
+    the in-memory pairs are out of date. It is renewed only when every one of
+    its ``expected`` guest rows was renewed; a released, taken-over, stale or
+    partly deleted claim is lost. Called before each batch of a long send.
     """
-    return (
-        db.execute(
-            "UPDATE submission_claim SET claimed_at = ? WHERE claim_token = ?",
-            (time.time(), token),
-        )
-        > 0
+    now = time.time()
+    renewed = db.execute(
+        "UPDATE submission_claim SET claimed_at = ? "
+        "WHERE claim_token = ? AND claimed_at >= ?",
+        (now, token, now - SUBMISSION_CLAIM_TTL_SECONDS),
     )
+    return renewed == expected
 
 
 def _send_claimed_batches(
@@ -1737,8 +1739,9 @@ def _send_claimed_batches(
     """
     limit = config.UBYPORT_MAX_BATCH
     results: List[Dict[str, Any]] = []
+    guest_count = len({pair[0]["id"] for pair in pairs})
     for start in range(0, len(pairs), limit):
-        if not refresh_sendable_claim(claim_token):
+        if not refresh_sendable_claim(claim_token, guest_count):
             log.warning(
                 "submission_claim_lost apartment_id=%s sent_batches=%s remaining=%s",
                 apartment["id"],
