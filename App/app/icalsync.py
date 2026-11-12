@@ -1148,7 +1148,9 @@ def sync_feed(
                 params={"date": row["date_from"], "variant": "disappeared"},
             )
             continue
-        if not _cancel_reservation_unless_claimed(row["id"], now):
+        if _running_defers_cancel(row["id"]) or not _cancel_reservation_unless_claimed(
+            row["id"], now
+        ):
             deferred_in_flight = True
             log.warning(
                 "ical_cancel_deferred_in_flight apartment_id=%s reservation_id=%s",
@@ -1159,6 +1161,7 @@ def sync_feed(
         from . import claim as stay_claim
 
         stay_claim.expire_on_cancel(row)
+        _alert_if_filing_in_doubt(row, feed["apartment_id"])
         _warn_if_guests_registered(row, feed["apartment_id"], "disappeared")
         stats["cancelled"] += 1
 
