@@ -83,9 +83,9 @@ def test_a_multi_batch_send_keeps_the_claim_live(fresh_db, monkeypatch):
             "SELECT claimed_at FROM submission_claim WHERE claim_token = ?", (token,)
         )
         seen.append(row["claimed_at"])
-        # Pretend this batch took ten minutes.
+        # Pretend this batch took four minutes (still inside the 5 minute TTL).
         db.execute(
-            "UPDATE submission_claim SET claimed_at = claimed_at - 600 "
+            "UPDATE submission_claim SET claimed_at = claimed_at - 240 "
             "WHERE claim_token = ?",
             (token,),
         )
@@ -141,11 +141,59 @@ def test_refresh_does_not_touch_another_workers_claim_and_stale_ones_are_stolen(
         "SELECT claimed_at FROM submission_claim WHERE guest_id = ?", (gid,)
     )["claimed_at"]
 
-    assert reporting.refresh_sendable_claim(token) is False
+    assert reporting.refresh_sendable_claim(token, 1) is False
 
     row = db.query_one(
         "SELECT claim_token, claimed_at FROM submission_claim WHERE guest_id = ?", (gid,)
     )
     assert (row["claim_token"], row["claimed_at"]) == (other_token, before)
-    assert reporting.refresh_sendable_claim(other_token) is True
+    assert reporting.refresh_sendable_claim(other_token, 1) is True
     reporting.release_sendable_claim(other_token)
+
+
+def test_an_expired_claim_is_not_refreshed_and_no_batch_is_sent(fresh_db, monkeypatch):
+    """Rows of a stale claim are still there; refreshing must not revive them."""
+    rid, gid = _stay()
+    token, claimed = reporting.claim_sendable(_pairs(gid, rid))
+    stale = time.time() - reporting.SUBMISSION_CLAIM_TTL_SECONDS - 5
+    db.execute(
+        "UPDATE submission_claim SET claimed_at = ? WHERE claim_token = ?",
+        (stale, token),
+    )
+    calls = []
+    monkeypatch.setattr(
+        reporting, "submit_batch", lambda *args, **kwargs: calls.append(1) or {}
+    )
+    monkeypatch.setattr(config, "UBYPORT_MAX_BATCH", 1)
+
+    assert reporting.refresh_sendable_claim(token, 1) is False
+    assert reporting._send_claimed_batches(
+        {"id": 1}, claimed * 2, token, mode="auto", env=None
+    ) == []
+
+    assert calls == []
+    row = db.query_one(
+        "SELECT claimed_at FROM submission_claim WHERE claim_token = ?", (token,)
+    )
+    assert row["claimed_at"] == stale
+    reporting.release_sendable_claim(token)
+
+
+def test_a_claim_missing_one_guest_row_is_treated_as_lost(fresh_db, monkeypatch):
+    rid, gid = _stay()
+    token, claimed = reporting.claim_sendable(_pairs(gid, rid))
+    # Two guests in this claim, but only one row exists (the other was deleted).
+    two_guests = claimed + [({"id": gid + 1000}, claimed[0][1])]
+    calls = []
+    monkeypatch.setattr(
+        reporting, "submit_batch", lambda *args, **kwargs: calls.append(1) or {}
+    )
+    monkeypatch.setattr(config, "UBYPORT_MAX_BATCH", 1)
+
+    assert reporting.refresh_sendable_claim(token, 2) is False
+    assert reporting._send_claimed_batches(
+        {"id": 1}, two_guests, token, mode="auto", env=None
+    ) == []
+
+    assert calls == []
+    reporting.release_sendable_claim(token)
