@@ -405,7 +405,9 @@ def _send_in_flight(reservation_id: int) -> bool:
     )
 
 
-def _update_reservation_unless_claimed(existing, values: dict) -> bool:
+def _update_reservation_unless_claimed(
+    existing, values: dict, move: Optional[dict] = None
+) -> bool:
     """Write a date move only if no live submission_claim covers the stay.
 
     In one transaction: take the claim path's per-guest advisory locks (all
@@ -415,9 +417,19 @@ def _update_reservation_unless_claimed(existing, values: dict) -> bool:
     dates must be unchanged too, so a host edit in between is deferred, not
     overwritten. False means skipped: the caller keeps the stored dates and the
     next sync retries.
+
+    ``move`` (``apartment_id``, ``new_from``, ``new_to``) also fits the unsent
+    guest windows in this same transaction, under the same locks, and only
+    when the UPDATE applied; a skipped move changes nothing. The helper writes
+    ``move["moved"]`` (windows fitted) and ``move["reason"]`` (``"claimed"``
+    when a live claim exists, ``"changed"`` when the stored dates moved).
+    ``values`` must then hold ``updated_at``.
     """
     live_after = time.time() - reporting.SUBMISSION_CLAIM_TTL_SECONDS
     sets = ", ".join(f"{k} = ?" for k in values)
+    fitted: List[str] = []
+    owner_user_id = None
+    reason = ""
     with db.immediate() as cur:
         cur.execute(
             "SELECT id FROM guest WHERE reservation_id = ? ORDER BY id", (existing["id"],)
@@ -434,32 +446,59 @@ def _update_reservation_unless_claimed(existing, values: dict) -> bool:
             list(values.values())
             + [existing["id"], existing["date_from"], existing["date_to"], live_after],
         )
-        return cur.rowcount == 1
+        applied = cur.rowcount == 1
+        if move is not None and applied:
+            cur.execute(
+                "SELECT owner_user_id FROM apartment WHERE id = ?", (move["apartment_id"],)
+            )
+            row = cur.fetchone()
+            owner_user_id = row["owner_user_id"] if row else None
+            fitted = _fit_windows_in_tx(
+                cur,
+                existing["id"],
+                move["new_from"],
+                move["new_to"],
+                values["updated_at"],
+                live_after,
+            )
+        elif move is not None:
+            cur.execute(
+                "SELECT 1 AS n FROM submission_claim c JOIN guest g ON g.id = c.guest_id "
+                "WHERE g.reservation_id = ? AND g.archived_at IS NULL "
+                "AND c.claimed_at >= ? LIMIT 1",
+                (existing["id"], live_after),
+            )
+            reason = "claimed" if cur.fetchone() else "changed"
+    if move is not None:
+        move["reason"] = reason
+        move["moved"] = len(fitted)
+        # After the commit: a crash can lose an audit line, never split the move.
+        for detail in fitted:
+            db.audit("guest_stay_window_fitted", detail, owner_user_id=owner_user_id)
+    return applied
 
 
-def _fit_unsent_guest_windows(
-    reservation_id: int,
-    apartment_id: int,
-    new_from: str,
-    new_to: str,
-    now: str,
-) -> int:
-    """Trim unsent guest stay windows to fit a booking that moved in the calendar."""
+def _fit_windows_in_tx(
+    cur, reservation_id: int, new_from: str, new_to: str, now: str, live_after: float
+) -> List[str]:
+    """Trim unsent guest stay windows to a booking that moved, on ``cur``.
+
+    Runs inside ``_update_reservation_unless_claimed``'s transaction, with the
+    stay's guest locks held. Returns one audit detail per guest changed.
+    """
     from . import validation
 
     new_start = validation.parse_iso_date(new_from)
     new_end = validation.parse_iso_date(new_to)
     if not new_start or not new_end:
-        return 0
-    apartment = db.query_one("SELECT owner_user_id FROM apartment WHERE id = ?", (apartment_id,))
-    owner_user_id = apartment["owner_user_id"] if apartment else None
-    live_after = time.time() - reporting.SUBMISSION_CLAIM_TTL_SECONDS
-    moved = 0
-    for guest in db.query(
-        "SELECT * FROM guest WHERE reservation_id = ? AND archived_at IS NULL "
-        "AND submit_state != ?",
+        return []
+    cur.execute(
+        "SELECT id, stay_from, stay_to, submit_state FROM guest "
+        "WHERE reservation_id = ? AND archived_at IS NULL AND submit_state != ?",
         (reservation_id, reporting.SENT),
-    ):
+    )
+    details: List[str] = []
+    for guest in cur.fetchall():
         sf = validation.parse_iso_date(guest["stay_from"]) or new_start
         st = validation.parse_iso_date(guest["stay_to"]) or new_end
         fitted_from = max(sf, new_start)
@@ -469,33 +508,33 @@ def _fit_unsent_guest_windows(
         new_sf, new_st = fitted_from.isoformat(), fitted_to.isoformat()
         if guest["stay_from"] == new_sf and guest["stay_to"] == new_st:
             continue
-        old_window = f"{guest['stay_from']}..{guest['stay_to']}"
-        # Compare-and-set: a send that started after the SELECT, a guest the
-        # register already accepted, or a guest whose last send has no clear
-        # answer, must keep the window that went on the wire.
-        if not db.update_if(
-            "guest",
-            guest["id"],
-            {"stay_from": new_sf, "stay_to": new_st, "updated_at": now},
-            {"submit_state": guest["submit_state"]},
-            extra_where=(
-                "NOT EXISTS (SELECT 1 FROM submission_claim "
-                "WHERE guest_id = ? AND claimed_at >= ?) "
-                "AND (submission_id IS NULL OR NOT EXISTS ("
-                "SELECT 1 FROM submission WHERE id = guest.submission_id "
-                "AND state IN ('running', 'outcome_unknown')))"
+        # Compare-and-set: a guest the register already accepted, or whose last
+        # send has no clear answer, must keep the window that went on the wire.
+        cur.execute(
+            "UPDATE guest SET stay_from = ?, stay_to = ?, updated_at = ? "
+            f"WHERE id = ? AND {db.null_safe_eq('submit_state')} "
+            "AND NOT EXISTS (SELECT 1 FROM submission_claim "
+            "WHERE guest_id = ? AND claimed_at >= ?) "
+            "AND (submission_id IS NULL OR NOT EXISTS ("
+            "SELECT 1 FROM submission WHERE id = guest.submission_id "
+            "AND state IN ('running', 'outcome_unknown')))",
+            (
+                new_sf,
+                new_st,
+                now,
+                guest["id"],
+                guest["submit_state"],
+                guest["id"],
+                live_after,
             ),
-            extra_params=(guest["id"], live_after),
-        ):
-            continue
-        db.audit(
-            "guest_stay_window_fitted",
-            f"guest={guest['id']} reservation={reservation_id} was={old_window} "
-            f"now={new_sf}..{new_st}",
-            owner_user_id=owner_user_id,
         )
-        moved += 1
-    return moved
+        if cur.rowcount != 1:
+            continue
+        details.append(
+            f"guest={guest['id']} reservation={reservation_id} "
+            f"was={guest['stay_from']}..{guest['stay_to']} now={new_sf}..{new_st}"
+        )
+    return details
 
 
 def _warn_if_guests_registered(reservation, apartment_id: int, variant: str) -> None:
