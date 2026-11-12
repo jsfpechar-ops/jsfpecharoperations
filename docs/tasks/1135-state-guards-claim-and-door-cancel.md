@@ -1,6 +1,6 @@
 # 1135: guard the last two unguarded writes in `_handle_cancellations` (K-SM1 remainder)
 
-Status: todo
+Status: review
 Depends on: none | Base commit: main | Branch: task/1135-state-guards-claim-and-door-cancel
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
