@@ -206,6 +206,53 @@ INSTANTS = [
     "2026-09-20T11:05:00+00:00",
 ]
 
+# Brief 1159-fix-1: stays and instants that pin the Prague clock (CET and
+# CEST, both sides of each 2026 DST change, UTC and Prague dates differing)
+# and both sides of every comparison. Seeded after SEED, recorded in the
+# golden's "seed"; brief 1159b's run golden seeds SEED only. All deadlines are
+# 23:59:59 Prague; "30m late" means 00:29:59 the next Prague day.
+BOUNDARY_SEED = [
+    {
+        "table": "reservation",
+        "columns": ["id", "apartment_id", "uid", "date_from", "date_to", "status", "source",
+                    "archived_at", "at_risk_mailed_at", "created_at", "updated_at"],
+        "rows": [
+            [rid, 1, f"u{rid}", day, day, "active", "host", None, None, STAMP, STAMP]
+            for rid, day in (
+                (231, "2026-01-12"),  # deadline Wed 01-14 (CET)
+                (232, "2026-03-25"),  # deadline Fri 03-27 (CET, before the March change)
+                (233, "2026-03-27"),  # deadline Tue 03-31 (CEST, after it)
+                (234, "2026-10-21"),  # deadline Fri 10-23 (CEST, before the October change)
+                (235, "2026-10-23"),  # deadline Tue 10-27 (CET, after it)
+                (236, "2026-10-15"),  # no guests, deadline Mon 10-19 (CEST)
+                (237, "2026-03-19"),  # no guests, deadline Mon 03-23 (CET)
+            )
+        ],
+    },
+    {
+        "table": "guest",
+        "columns": _GUEST_COLUMNS,
+        "rows": [_guest(32 + i, rid) for i, rid in enumerate((231, 232, 233, 234, 235))],
+    },
+]
+
+# A Go bug that read the clock in UTC (or with a fixed offset) moves "now" by
+# one or two hours; every instant below has a stay within 30 minutes of a
+# boundary, so it would flip. The comment names the case and the bug it pins.
+BOUNDARY_INSTANTS = [
+    "2026-01-13T22:59:59+00:00",  # 231 exactly 24 h left: in (> 24 h skips; >= would drop it)
+    "2026-01-13T23:29:59+00:00",  # 231 23.5 h left: in (UTC clock: 24.5 h, out); dates differ
+    "2026-01-14T22:59:59+00:00",  # 231 due == now: not overdue (<= would flip it)
+    "2026-01-14T23:29:59+00:00",  # 231 30m late: overdue (UTC clock: not yet); dates differ
+    "2026-03-27T23:29:59+00:00",  # 232 30m late, CET side: overdue (UTC clock: not yet)
+    "2026-03-30T22:29:59+00:00",  # 237 7 d 30m late: dropped (UTC clock or real elapsed time: kept)
+    "2026-03-31T22:29:59+00:00",  # 233 30m late, CEST side: overdue (UTC clock: not yet)
+    "2026-10-23T22:29:59+00:00",  # 234 30m late, CEST side: overdue (UTC clock: not yet)
+    "2026-10-26T22:59:59+00:00",  # 236 exactly 7 d late across the change: kept (>= or real time: dropped)
+    "2026-10-26T23:29:59+00:00",  # 236 7 d 30m late: dropped (UTC clock: 6 d 23.5 h, kept)
+    "2026-10-27T23:29:59+00:00",  # 235 30m late, CET side: overdue (UTC clock: not yet)
+]
+
 HEARTBEATS = [
     "https://hc.example.test/ping/abc",
     "https://hc.example.test/ping/abc/",
@@ -215,8 +262,8 @@ HEARTBEATS = [
 ]
 
 
-def _seed(db) -> None:
-    for table in SEED:
+def _seed(db, tables=None) -> None:
+    for table in SEED if tables is None else tables:
         cols = ", ".join(table["columns"])
         marks = ", ".join("?" for _ in table["columns"])
         for row in table["rows"]:
@@ -250,8 +297,9 @@ def render() -> str:
 
     db.init_db()
     _seed(db)
+    _seed(db, BOUNDARY_SEED)
     instants = []
-    for at in INSTANTS:
+    for at in INSTANTS + BOUNDARY_INSTANTS:
         now = datetime.fromisoformat(at)
         every = filing_watchdog.at_risk_stays(now, include_awaiting_retry=True)
         instants.append({
@@ -276,7 +324,7 @@ def render() -> str:
     golden = {
         "env": GOLDEN_ENV,
         "retry_grace_minutes": int(filing_watchdog.RETRY_GRACE.total_seconds() // 60),
-        "seed": SEED,
+        "seed": SEED + BOUNDARY_SEED,
         "instants": instants,
         "heartbeats": heartbeats,
     }

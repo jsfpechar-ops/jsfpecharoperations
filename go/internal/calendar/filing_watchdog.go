@@ -10,6 +10,7 @@ package calendar
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -85,15 +86,24 @@ type WatchdogStay struct {
 	Overdue             bool
 }
 
+// watchdogIntUnderscores is an integer literal with digit-group underscores,
+// which Python's int() reads ("1_0" is 10) and strconv.Atoi does not.
+var watchdogIntUnderscores = regexp.MustCompile(`^[+-]?[0-9]+(?:_[0-9]+)+$`)
+
 // watchdogRetryGrace is RETRY_GRACE: two sweep intervals of
 // UBYHOST_SUBMIT_SWEEP_MINUTES, at least one minute each. Like Python's
 // int(os.environ.get(name, "10")): unset means 10; a set value is stripped and
-// must be an integer (an optional sign is allowed), else it is an error, as
-// Python refuses to start. A set but empty value is an error too (int("")).
+// must be an integer (an optional sign, and single underscores between digits
+// as in "1_0", are allowed), else it is an error, as Python refuses to start.
+// A set but empty value is an error too (int("")).
 func watchdogRetryGrace(lookupEnv func(string) (string, bool)) (time.Duration, error) {
 	minutes := watchdogSweepMinutesDefault
 	if raw, ok := lookupEnv("UBYHOST_SUBMIT_SWEEP_MINUTES"); ok {
-		n, err := strconv.Atoi(strings.TrimSpace(raw))
+		s := strings.TrimSpace(raw)
+		if watchdogIntUnderscores.MatchString(s) {
+			s = strings.ReplaceAll(s, "_", "")
+		}
+		n, err := strconv.Atoi(s)
 		if err != nil {
 			return 0, fmt.Errorf("UBYHOST_SUBMIT_SWEEP_MINUTES is not an integer: %w", err)
 		}

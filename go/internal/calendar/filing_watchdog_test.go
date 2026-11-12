@@ -63,7 +63,7 @@ func loadWatchdogGolden(t *testing.T) watchdogGolden {
 	if err := dec.Decode(&g); err != nil {
 		t.Fatal(err)
 	}
-	if len(g.Instants) < 4 || len(g.Seed) == 0 || len(g.Heartbeats) == 0 {
+	if len(g.Instants) < 15 || len(g.Seed) == 0 || len(g.Heartbeats) == 0 {
 		t.Fatal("golden file has too few instants, no seed or no heartbeats")
 	}
 	return g
@@ -194,6 +194,7 @@ func TestFilingHeartbeatURLMatchesPython(t *testing.T) {
 func TestWatchdogRetryGrace(t *testing.T) {
 	ok := map[string]time.Duration{
 		"10": 20 * time.Minute, " 7 ": 14 * time.Minute, "+3": 6 * time.Minute,
+		"1_0": 20 * time.Minute, "+1_5": 30 * time.Minute, "-1_0": 2 * time.Minute,
 		"0": 2 * time.Minute, "-5": 2 * time.Minute,
 	}
 	for raw, want := range ok {
@@ -205,7 +206,7 @@ func TestWatchdogRetryGrace(t *testing.T) {
 	if got, err := watchdogRetryGrace(watchdogLookup(map[string]string{})); err != nil || got != 20*time.Minute {
 		t.Errorf("unset: grace %v (%v), want 20m", got, err)
 	}
-	for _, raw := range []string{"abc", "", "  ", "1.5", "10m"} {
+	for _, raw := range []string{"abc", "", "  ", "1.5", "10m", "1__0", "_10", "10_", "+_1"} {
 		env := map[string]string{"UBYHOST_SUBMIT_SWEEP_MINUTES": raw}
 		if _, err := watchdogRetryGrace(watchdogLookup(env)); err == nil {
 			t.Errorf("sweep %q: want an error, as Python int() raises", raw)
