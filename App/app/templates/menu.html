@@ -16,6 +16,7 @@
   <a class="row" href="/cleaning">{{ icon('brush-cleaning', 26) }}<span class="t">{{ t('nav.cleaning') }}</span>{% if cleaning_today %}<span class="badge">{{ cleaning_today }}</span>{% endif %}{{ icon('chevron-right', 20, 'chev') }}</a>
   <a class="row" href="/stay-fees">{{ icon('coins', 26) }}<span class="t">{{ t('nav.stay_fees') }}</span>{{ icon('chevron-right', 20, 'chev') }}</a>
   <a class="row" href="/payments">{{ icon('wallet', 26) }}<span class="t">{{ t('nav.payments') }}</span>{{ icon('chevron-right', 20, 'chev') }}</a>
+  <a class="row" href="/booking-sites">{{ icon('external-link', 26) }}<span class="t">{{ t('nav.booking_sites') }}</span>{{ icon('chevron-right', 20, 'chev') }}</a>
   <a class="row" href="/settings">{{ icon('settings', 26) }}<span class="t">{{ t('nav.settings') }}</span>{{ icon('chevron-right', 20, 'chev') }}</a>
   <a class="row" href="/guide">{{ icon('circle-help', 26) }}<span class="t">{{ t('menu.help') }}</span>{{ icon('chevron-right', 20, 'chev') }}</a>
   {% if current_user.role == 'admin' %}<a class="row" href="/admin">{{ icon('shield', 26) }}<span class="t">{{ t('nav.admin') }}</span>{{ icon('chevron-right', 20, 'chev') }}</a>{% endif %}

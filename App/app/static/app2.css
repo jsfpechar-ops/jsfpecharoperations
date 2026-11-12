@@ -3549,7 +3549,12 @@ body.v2 .side-sep{border:0;border-top:1px solid var(--line);margin:12px 0}
 body.v2 .side .me-menu>summary.me{display:flex;align-items:center;gap:12px;min-height:48px}
 body.v2 .side .me i{width:32px;height:32px;border-radius:50%;background:var(--coral-red-soft);color:var(--coral-red-deep);display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-weight:600;flex:none}
 body.v2 .side .me-name{flex:1;font-weight:600;font-size:16px}
+body.v2 .side .rail-only{display:none}
+@media (min-width:1024px){body.v2 .side .env-badge{width:fit-content;align-self:flex-start;margin-left:14px}}
 @media (min-width:768px) and (max-width:1023px){
+  body.v2 .side .rail-only{display:flex}
+  body.v2 .side .nav.rail-hide,body.v2 .side .search.rail-hide,body.v2 .side .nav-group.rail-hide,body.v2 .side-sep.rail-hide{display:none}
+  body.v2 .side .me-menu>summary.me{border:0;box-shadow:none;padding:4px;justify-content:center;background:none}
   body.v2 .side{width:88px;align-items:stretch;padding:16px 8px}
   body.v2 .side .ui-brand span,body.v2 .side .search span,body.v2 .side .me-name,body.v2 .side .me .ui-icon:last-child{display:none}
   body.v2 .side .nav,body.v2 .side .search{flex-direction:column;justify-content:center;gap:4px;min-height:64px;padding:8px 4px;font-size:12px;font-weight:500;text-align:center;white-space:normal}

@@ -84,3 +84,30 @@ Re-runs (from App/):
 - layout_lint_browser: `4 passed in 231.04s (0:03:51)`
 
 Skipped count: 0 in every re-run.
+
+## Fix-up 4
+
+Items:
+1. Tablet rail (768 to 1023 px): More link added after Cleaning (`rail-only`, `ellipsis` icon, label `nav.more`). Second nav group, Ask Havel, Settings, the side separator and the search button are hidden there (`rail-hide`). Help and the avatar stay.
+2. CSS: `.rail-only` hidden globally, shown in the tablet query; `.rail-hide` hidden in the tablet query. The avatar summary has no border or background in the rail (`padding:4px`, centred).
+3. `menu.html`: Booking site row added after the Payments row (`href="/booking-sites"`). The 0895 tablet test asserts the link on `/menu`.
+4. Laptop (>=1024 px): env badge uses `width:fit-content`, `align-self:flex-start`, `margin-left:14px` (aligned with the nav label x).
+5. Tests: 0895 tablet test extended (820: More visible, Stay fees and search hidden, More opens /menu; 1280: More hidden, Stay fees visible).
+6. `app2.css` key bumped to `20261112-1132f`; `static_versions.json` rewritten.
+
+Re-runs (App/, `-q --tb=short -rs`):
+- Shell group (0895, 0705, design shell, static versions, host account navigation, host redesign, icons nav 1060): `61 passed in 35.47s` (0 skipped). Re-run after the last CSS edit with 0895, 0705, static versions: `15 passed in 9.21s` (0 skipped).
+- `test_0710_v2_mockup_match_browser.py`: `172 passed in 189.59s` (0 skipped).
+- `test_layout_lint_browser.py`: `4 passed in 233.65s` (0 skipped).
+
+Rail comparison vs Figma "Tablet 820 / Dashboard (B)" (820 px screenshot against the Figma PNG):
+- Dashboard, Stays, Properties, Cleaning, More: same order, same labels, same active coral box on Dashboard. Cleaning icon differs (ours is a brush, Figma a sparkle broom).
+- Help: matches. Avatar: circle present, but ours still has a thin outlined box around it (Figma has none). The CSS override did not remove it; source of the box not yet found. Still open.
+- Logo: ours is the mark image plus the MOCK env badge above Dashboard; Figma shows a coral "U" tile and no badge. The badge is kept on purpose (safety cue).
+- No search button, no Stay fees / Payments / Booking site, no Settings, no Ask Havel in the rail: matches.
+
+Screenshots (not committed, under App/data):
+- /home/user/jsfpecharoperations/App/data/shots/1132/fix4/dashboard-820.png
+- /home/user/jsfpecharoperations/App/data/shots/1132/fix4/dashboard-1280.png
+
+Still open: avatar outlined box in the tablet rail (see above). Nothing red, nothing skipped in the re-runs.
