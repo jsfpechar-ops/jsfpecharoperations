@@ -186,7 +186,7 @@ def test_0545_guest_card_shows_pin_and_copy_button(host):
     db.update("apartment", apartment_id, {"permalink_pin": "482915"})
     html = _page(client, apartment_id)
     assert 'data-copy="overview-guest-url"' in _guest_strip(html)
-    assert "482915" not in _guest_strip(html)
+    assert 'data-guest-pin>PIN 482915<' in _guest_strip(html)
     assert 'value="482915"' in html
 
 
@@ -200,3 +200,13 @@ def test_0545_guest_card_has_no_pin_when_property_has_none(host, monkeypatch):
     html = _page(client, apartment_id)
     assert 'data-copy="overview-guest-url"' in _guest_strip(html)
     assert "property-guest-pin" not in html
+
+def test_guest_link_tile_shows_pin_and_both_copy_buttons(host):
+    client, apartment_id = host
+    db.update("apartment", apartment_id, {"permalink_pin": "123456"})
+    html = _page(client, apartment_id)
+    tile = html[html.index('class="sc sc-link"'):]
+    tile = tile[: tile.index("</nav>")]
+    assert 'data-guest-pin>PIN 123456<' in tile
+    assert "data-guest-copy-both" in tile and "data-guest-copy-link" in tile
+    assert 'id="overview-guest-both"' in tile and "\nPIN: 123456</textarea>" in tile
