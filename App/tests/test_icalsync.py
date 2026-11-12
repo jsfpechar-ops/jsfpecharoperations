@@ -1375,3 +1375,28 @@ def test_reservation_date_write_is_skipped_while_a_claim_is_live(monkeypatch, tm
         "SELECT date_from, date_to FROM reservation WHERE id = ?", (reservation_id,)
     )
     assert (row["date_from"], row["date_to"]) == ("2099-03-10", "2099-03-12")
+
+
+def test_sync_feed_defers_a_date_move_when_a_claim_lands_after_the_precheck(
+    monkeypatch, tmp_path
+):
+    """sync_feed must go through the guarded write, not a plain update."""
+    feed_id, reservation_id, guest_id = _moved_stay(tmp_path, monkeypatch)
+    db.update("reservation", reservation_id, {"summary": "Old"})
+    monkeypatch.setattr(icalsync, "_send_in_flight", lambda _reservation_id: False)
+    db.execute(
+        "INSERT INTO submission_claim (guest_id, claim_token, claimed_at) "
+        "VALUES (?, 'race', ?)",
+        (guest_id, time.time()),
+    )
+
+    stats = _sync(feed_id)
+
+    row = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+    assert (row["date_from"], row["date_to"]) == ("2099-01-10", "2099-01-12")
+    assert row["summary"] == "Reserved"
+    assert stats["updated"] == 1
+    feed = db.query_one("SELECT body_sha256, etag FROM ical_feed WHERE id = ?", (feed_id,))
+    assert feed["body_sha256"] is None
+    guest = db.query_one("SELECT stay_from, stay_to FROM guest WHERE id = ?", (guest_id,))
+    assert (guest["stay_from"], guest["stay_to"]) == ("2099-01-10", "2099-01-12")

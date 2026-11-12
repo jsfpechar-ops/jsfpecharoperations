@@ -88,29 +88,68 @@ func updateRow(ctx context.Context, pool *pgxpool.Pool, table string, id int64, 
 	return err
 }
 
+// sendInFlightFn is sendInFlight; tests replace it to simulate a claim that
+// lands after the pre-check.
+var sendInFlightFn = sendInFlight
+
 // updateReservationUnlessClaimed writes a date move only while no live
-// submission_claim covers the stay (one UPDATE, so no check-then-write race).
+// submission_claim covers the stay and the stored dates are still
+// storedFrom..storedTo. One transaction: the claim path's per-guest advisory
+// locks (ascending id, same key as ubyport.ClaimSendable), then one UPDATE.
 // False means skipped; the caller keeps the stored dates and the next sync retries.
-func updateReservationUnlessClaimed(ctx context.Context, pool *pgxpool.Pool, id int64, cols map[string]any) (bool, error) {
+func updateReservationUnlessClaimed(ctx context.Context, pool *pgxpool.Pool, id int64, storedFrom, storedTo string, cols map[string]any) (bool, error) {
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	rows, err := tx.Query(ctx, `SELECT id FROM guest WHERE reservation_id = $1 ORDER BY id`, id)
+	if err != nil {
+		return false, err
+	}
+	var guestIDs []int64
+	for rows.Next() {
+		var gid int64
+		if err := rows.Scan(&gid); err != nil {
+			rows.Close()
+			return false, err
+		}
+		guestIDs = append(guestIDs, gid)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return false, err
+	}
+	for _, gid := range guestIDs {
+		// Python's db.lock_key takes the id as a 32-bit integer.
+		if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtext($1), $2)`, "guest", int32(gid)); err != nil {
+			return false, err
+		}
+	}
 	keys := make([]string, 0, len(cols))
 	for k := range cols {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
 	sets := make([]string, len(keys))
-	args := make([]any, 0, len(keys)+2)
+	args := make([]any, 0, len(keys)+4)
 	for i, k := range keys {
 		sets[i] = fmt.Sprintf("%s = $%d", k, i+1)
 		args = append(args, cols[k])
 	}
-	args = append(args, id, liveClaimAfter())
-	tag, err := pool.Exec(ctx,
+	args = append(args, id, storedFrom, storedTo, liveClaimAfter())
+	n := len(keys)
+	tag, err := tx.Exec(ctx,
 		fmt.Sprintf(`UPDATE reservation SET %s WHERE id = $%d
+		  AND date_from = $%d AND date_to = $%d
 		  AND NOT EXISTS (SELECT 1 FROM submission_claim c JOIN guest g ON g.id = c.guest_id
 		    WHERE g.reservation_id = reservation.id AND g.archived_at IS NULL AND c.claimed_at >= $%d)`,
-			strings.Join(sets, ", "), len(keys)+1, len(keys)+2),
+			strings.Join(sets, ", "), n+1, n+2, n+3, n+4),
 		args...)
 	if err != nil {
+		return false, err
+	}
+	if err := tx.Commit(ctx); err != nil {
 		return false, err
 	}
 	return tag.RowsAffected() == 1, nil
@@ -317,7 +356,7 @@ func SyncFeed(ctx context.Context, pool *pgxpool.Pool, getenv func(string) strin
 		}
 		datesChanged := s.DateFrom != ev.DateFrom || s.DateTo != ev.DateTo
 		if datesChanged {
-			inFlight, err := sendInFlight(ctx, pool, s.ID)
+			inFlight, err := sendInFlightFn(ctx, pool, s.ID)
 			if err != nil {
 				return stats, err
 			}
@@ -352,7 +391,7 @@ func SyncFeed(ctx context.Context, pool *pgxpool.Pool, getenv func(string) strin
 			changed["updated_at"] = now
 			applied := false
 			if datesChanged {
-				ok, err := updateReservationUnlessClaimed(ctx, pool, s.ID, changed)
+				ok, err := updateReservationUnlessClaimed(ctx, pool, s.ID, s.DateFrom, s.DateTo, changed)
 				if err != nil {
 					return stats, err
 				}

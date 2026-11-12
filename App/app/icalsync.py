@@ -408,24 +408,33 @@ def _send_in_flight(reservation_id: int) -> bool:
 def _update_reservation_unless_claimed(existing, values: dict) -> bool:
     """Write a date move only if no live submission_claim covers the stay.
 
-    One conditional UPDATE, so a claim taken after ``_send_in_flight`` cannot
-    be raced. False means skipped: the caller keeps the stored dates and the
+    In one transaction: take the claim path's per-guest advisory locks (all
+    the stay's guests, ascending id, ``db.lock_key(cur, "guest", id)``), then
+    run one conditional UPDATE. A claim that committed first is then visible to
+    the NOT EXISTS; a claim that comes later waits for this commit. The stored
+    dates must be unchanged too, so a host edit in between is deferred, not
+    overwritten. False means skipped: the caller keeps the stored dates and the
     next sync retries.
     """
     live_after = time.time() - reporting.SUBMISSION_CLAIM_TTL_SECONDS
-    return db.update_if(
-        "reservation",
-        existing["id"],
-        values,
-        {"date_from": existing["date_from"], "date_to": existing["date_to"]},
-        extra_where=(
-            "NOT EXISTS (SELECT 1 FROM submission_claim c "
+    sets = ", ".join(f"{k} = ?" for k in values)
+    with db.immediate() as cur:
+        cur.execute(
+            "SELECT id FROM guest WHERE reservation_id = ? ORDER BY id", (existing["id"],)
+        )
+        for locked in cur.fetchall():
+            db.lock_key(cur, "guest", locked["id"])
+        cur.execute(
+            f"UPDATE reservation SET {sets} WHERE id = ? "
+            f"AND {db.null_safe_eq('date_from')} AND {db.null_safe_eq('date_to')} "
+            "AND NOT EXISTS (SELECT 1 FROM submission_claim c "
             "JOIN guest g ON g.id = c.guest_id "
             "WHERE g.reservation_id = reservation.id "
-            "AND g.archived_at IS NULL AND c.claimed_at >= ?)"
-        ),
-        extra_params=(live_after,),
-    )
+            "AND g.archived_at IS NULL AND c.claimed_at >= ?)",
+            list(values.values())
+            + [existing["id"], existing["date_from"], existing["date_to"], live_after],
+        )
+        return cur.rowcount == 1
 
 
 def _fit_unsent_guest_windows(

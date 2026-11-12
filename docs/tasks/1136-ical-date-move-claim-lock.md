@@ -1,6 +1,6 @@
 # 1136: iCal date move: take the claim path's per-guest locks, add call-site tests, align Go with Python
 
-Status: todo
+Status: review
 Depends on: 1133 | Base commit: HEAD of branch claude/clever-fermi-tudhnt (PR #933) | Branch: task/1136-ical-claim-lock
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

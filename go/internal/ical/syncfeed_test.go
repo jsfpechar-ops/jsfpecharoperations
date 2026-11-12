@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -298,7 +299,7 @@ func TestUpdateReservationUnlessClaimed(t *testing.T) {
 		g, epochSeconds())
 	must(t, err)
 	cols := map[string]any{"date_from": "2027-04-02", "date_to": "2027-04-06", "updated_at": ubyport.UTCNow()}
-	ok, err := updateReservationUnlessClaimed(ctx, pool, stay, cols)
+	ok, err := updateReservationUnlessClaimed(ctx, pool, stay, "2027-04-01", "2027-04-05", cols)
 	must(t, err)
 	if ok {
 		t.Fatal("date move applied while a live claim was held")
@@ -308,12 +309,92 @@ func TestUpdateReservationUnlessClaimed(t *testing.T) {
 	}
 	_, err = pool.Exec(ctx, `DELETE FROM submission_claim WHERE guest_id = $1`, g)
 	must(t, err)
-	ok, err = updateReservationUnlessClaimed(ctx, pool, stay, cols)
+	ok, err = updateReservationUnlessClaimed(ctx, pool, stay, "2027-04-01", "2027-04-05", cols)
 	must(t, err)
 	if !ok {
 		t.Fatal("date move skipped after the claim was released")
 	}
 	if got := scalarText(t, pool, `SELECT date_from FROM reservation WHERE id = $1`, stay); got != "2027-04-02" {
 		t.Fatalf("date_from = %q, want 2027-04-02", got)
+	}
+}
+
+func TestSyncFeedDefersDateMoveWhenClaimLandsAfterPrecheck(t *testing.T) {
+	pool := testPool(t)
+	ctx := context.Background()
+	aid := seedApartment(t, pool)
+	feed := newIcalFeed(t, pool, aid, "https://feed.test/late-claim.ics")
+	stay := seedStay(t, pool, aid, feed.ID, "u-late", "2027-05-01", "2027-05-05")
+	g := seedGuest(t, pool, stay, "pending", "2027-05-01", "2027-05-05")
+	_, err := pool.Exec(ctx, `UPDATE reservation SET summary = 'Old' WHERE id = $1`, stay)
+	must(t, err)
+	_, err = pool.Exec(ctx, `INSERT INTO submission_claim (guest_id, claim_token, claimed_at) VALUES ($1, 'race', $2)`,
+		g, epochSeconds())
+	must(t, err)
+	orig := sendInFlightFn
+	sendInFlightFn = func(context.Context, *pgxpool.Pool, int64) (bool, error) { return false, nil }
+	t.Cleanup(func() { sendInFlightFn = orig })
+
+	st := runSync(t, pool, feed, icsDoc(icsEvent("u-late", "20270502", "20270506", "Guest B")))
+
+	if got := scalarText(t, pool, `SELECT date_from FROM reservation WHERE id = $1`, stay); got != "2027-05-01" {
+		t.Errorf("date_from = %q, want unchanged", got)
+	}
+	if got := scalarText(t, pool, `SELECT summary FROM reservation WHERE id = $1`, stay); got != "Guest B" {
+		t.Errorf("summary = %q, want the non-date change written", got)
+	}
+	if st.Updated != 1 {
+		t.Errorf("Updated = %d, want 1", st.Updated)
+	}
+	if got := scalarText(t, pool, `SELECT COALESCE(body_sha256, '') FROM ical_feed WHERE id = $1`, feed.ID); got != "" {
+		t.Errorf("digest stored after a deferred move: %q", got)
+	}
+	if got := scalarText(t, pool, `SELECT stay_from FROM guest WHERE id = $1`, g); got != "2027-05-01" {
+		t.Errorf("guest stay_from = %q, want not refitted", got)
+	}
+}
+
+func TestUpdateReservationUnlessClaimedWaitsForClaimLock(t *testing.T) {
+	pool := testPool(t)
+	ctx := context.Background()
+	aid := seedApartment(t, pool)
+	feed := newIcalFeed(t, pool, aid, "https://feed.test/lock.ics")
+	stay := seedStay(t, pool, aid, feed.ID, "u-lock", "2027-06-01", "2027-06-05")
+	g := seedGuest(t, pool, stay, "pending", "2027-06-01", "2027-06-05")
+	tx, err := pool.Begin(ctx)
+	must(t, err)
+	defer func() { _ = tx.Rollback(ctx) }()
+	_, err = tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtext($1), $2)`, "guest", int32(g))
+	must(t, err)
+	_, err = tx.Exec(ctx, `INSERT INTO submission_claim (guest_id, claim_token, claimed_at) VALUES ($1, 'late', $2)`,
+		g, epochSeconds())
+	must(t, err)
+	type result struct {
+		ok  bool
+		err error
+	}
+	done := make(chan result, 1)
+	go func() {
+		cols := map[string]any{"date_from": "2027-06-02", "date_to": "2027-06-06", "updated_at": ubyport.UTCNow()}
+		ok, err := updateReservationUnlessClaimed(ctx, pool, stay, "2027-06-01", "2027-06-05", cols)
+		done <- result{ok, err}
+	}()
+	select {
+	case r := <-done:
+		t.Fatalf("returned before the claim committed: %+v", r)
+	case <-time.After(300 * time.Millisecond):
+	}
+	must(t, tx.Commit(ctx))
+	select {
+	case r := <-done:
+		must(t, r.err)
+		if r.ok {
+			t.Fatal("date move applied although a claim committed first")
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("helper still blocked after the claim committed")
+	}
+	if got := scalarText(t, pool, `SELECT date_from FROM reservation WHERE id = $1`, stay); got != "2027-06-01" {
+		t.Fatalf("date_from = %q, want unchanged", got)
 	}
 }
