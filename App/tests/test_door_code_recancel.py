@@ -28,18 +28,16 @@ def world(monkeypatch):
             raise ttlock.TTLockError("no such passcode", code=UNMAPPED, kind="transient")
         lock.pins.pop(str(code_id))
 
-    def find(*args, **kwargs):
+    def listed(account_id, lock_id, name, code_id):
         lock.lookups += 1
         if lock.lookup_error:
             raise lock.lookup_error
-        for code_id, pin in lock.pins.items():
-            return pin, code_id
-        return None
+        return str(code_id) in lock.pins
 
     monkeypatch.setattr(config, "DOOR_CODES_ENABLED", True)
     monkeypatch.setattr(ttlock, "account_for", lambda owner: {"id": 1, "status": "ok"})
     monkeypatch.setattr(ttlock, "delete_code", delete)
-    monkeypatch.setattr(ttlock, "find_code_by_name", find)
+    monkeypatch.setattr(ttlock, "code_is_listed", listed)
     monkeypatch.setattr(door_codes.mail_notify, "door_code_notice", lambda row_id, kind: notices.append(kind))
     apartment, stay = _cancelled_stay()
     row = _code(apartment, stay, door_codes.REVOKE_PENDING, valid_to="2099-01-01T00:00:00+00:00")

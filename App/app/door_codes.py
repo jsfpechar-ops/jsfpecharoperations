@@ -84,7 +84,8 @@ PIN_PRESENT, PIN_GONE, PIN_UNKNOWN = "present", "gone", "unknown"
 LOOKUP_FAILED = "lookup_failed"
 LOOKUP_MAX_TRIES = 3
 # last_error values that leave a delete's result unknown: none (a crash after the claim),
-# a timeout or non-JSON answer (network), a server fault (transient), or a lookup that failed.
+# a timeout or non-JSON answer (network), a server fault (transient), or a lookup that failed
+# (stored as lookup_failed:<n>; _delete_result_unknown reads it).
 AMBIGUOUS_DELETE_ERRORS = ("", "network", "transient", LOOKUP_FAILED)
 # A guest who has finished registering must not wait longer than this in silence.
 DELAY_MINUTES = 5
@@ -791,45 +792,57 @@ def _keep_issued(row_id: int, now_iso: str, held_claim: str | None = None) -> bo
 
 
 def _lock_code_state(row, owner_user_id: int) -> str:
-    """Ask the lock, with one list call, whether the row's PIN still exists.
+    """Ask the lock whether the row's PIN still exists (1 to LIST_MAX_PAGES list calls).
 
-    PIN_UNKNOWN when the answer cannot be had (no account, no window, TTLock error):
-    nothing is assumed either way. A code with the same name and window but another
-    id is not this row's PIN, so it counts as gone.
+    PIN_GONE only when the lock's whole answer was read and the row's code id is not in it.
+    PIN_UNKNOWN when the answer cannot be had or is incomplete (no account, no code id,
+    TTLock error, more pages than the page limit): nothing is assumed either way. The code
+    id decides, not the name or the window: UH-7 also matches UH-70 on the lock.
     """
     account = ttlock.account_for(owner_user_id)
-    if (
-        not account
-        or account["status"] != "ok"
-        or not row["valid_from"]
-        or not row["valid_to"]
-        or not row["provider_code_id"]
-    ):
+    if not account or account["status"] != "ok" or not row["provider_code_id"]:
         return PIN_UNKNOWN
     try:
-        found = ttlock.find_code_by_name(
+        listed = ttlock.code_is_listed(
             int(account["id"]),
             row["lock_id"],
             f"UH-{row['id']}",
-            _iso_to_ms(row["valid_from"]),
-            _iso_to_ms(row["valid_to"]),
+            row["provider_code_id"],
         )
     except ttlock.TTLockError:
         return PIN_UNKNOWN
-    if found and str(found[1]) == str(row["provider_code_id"]):
-        return PIN_PRESENT
-    return PIN_GONE
+    if listed is None:
+        return PIN_UNKNOWN
+    return PIN_PRESENT if listed else PIN_GONE
 
 
-def _note_failed_lookup(row_id: int, claim: str) -> int:
-    """Count a failed lookup in attempts (restarted at 1 by the first one); return the count."""
+def _delete_result_unknown(last_error) -> bool:
+    """True when last_error leaves a delete's result open (see AMBIGUOUS_DELETE_ERRORS)."""
+    text = last_error or ""
+    return text in AMBIGUOUS_DELETE_ERRORS or text.startswith(LOOKUP_FAILED)
+
+
+def _note_failed_lookup(row_id: int, claim: str, claimed: bool) -> int:
+    """Count a failed lookup in last_error ("lookup_failed:<n>"); return n.
+
+    attempts is the delete counter and is not a lookup counter: it is not raised here, and
+    the add of 1 that _revoke_one made when it claimed the row (claimed=True) is taken back,
+    so lookups never move the delete retry delays or the attempts == 3 mail.
+    """
+    row = db.query_one("SELECT last_error FROM door_code WHERE id = ?", (row_id,))
+    previous = (row["last_error"] or "") if row else ""
+    count = 1
+    if previous.startswith(LOOKUP_FAILED + ":"):
+        try:
+            count = int(previous.split(":", 1)[1]) + 1
+        except ValueError:
+            count = 1
     db.execute(
-        "UPDATE door_code SET attempts = CASE WHEN last_error = ? THEN attempts + 1 ELSE 1 END, "
-        "last_error = ?, updated_at = ? WHERE id = ? AND claimed_at = ?",
-        (LOOKUP_FAILED, LOOKUP_FAILED, claim, row_id, claim),
+        "UPDATE door_code SET attempts = attempts - ?, last_error = ?, updated_at = ? "
+        "WHERE id = ? AND claimed_at = ?",
+        (1 if claimed else 0, f"{LOOKUP_FAILED}:{count}", claim, row_id, claim),
     )
-    row = db.query_one("SELECT attempts FROM door_code WHERE id = ?", (row_id,))
-    return int(row["attempts"]) if row else LOOKUP_MAX_TRIES
+    return count
 
 
 def _revive_one(item, now_iso: str, held_claim: str | None = None) -> bool:
@@ -847,7 +860,7 @@ def _revive_one(item, now_iso: str, held_claim: str | None = None) -> bool:
     row_id = int(item["id"])
     attempted = (
         int(item["attempts"] or 0) > (1 if held_claim else 0)
-        and (item["last_error"] or "") in AMBIGUOUS_DELETE_ERRORS
+        and _delete_result_unknown(item["last_error"])
     )
     if not attempted:
         return _keep_issued(row_id, now_iso, held_claim=held_claim)
@@ -866,7 +879,7 @@ def _revive_one(item, now_iso: str, held_claim: str | None = None) -> bool:
     verdict = _lock_code_state(item, owner_id)
     unverified = False
     if verdict == PIN_UNKNOWN:
-        if _note_failed_lookup(row_id, claim) < LOOKUP_MAX_TRIES:
+        if _note_failed_lookup(row_id, claim, held_claim is not None) < LOOKUP_MAX_TRIES:
             return False
         unverified = True
     if not _keep_issued(row_id, now_iso, held_claim=claim):
@@ -892,32 +905,36 @@ def _already_gone(exc: "ttlock.TTLockError", row, owner_user_id: int) -> bool:
 
 
 def _tell_host_reissued(row_id: int, owner_user_id: int) -> None:
-    """Tell the host once that a lost door code was made again: one info card, one mail.
+    """Tell the host once that a lost door code was replaced: one info card, one mail.
 
-    The card key is per stay, so a second re-issue refreshes the open card; the mail key
-    is per row and variant, so it goes out once. Neither carries the PIN. A failure here
-    is logged and never stops the re-issue.
+    Called only after issue() made the new code. The wording says how the guest gets it:
+    by e-mail when the stay has a guest address, else on the stay page (kind and variant
+    end in _no_email). The card key is per stay and wording, so a second re-issue refreshes
+    the open card; the mail key is per row and variant, so it goes out once. Neither
+    carries the PIN. A failure here is logged and never stops the re-issue.
     """
     try:
         info = db.query_one(
-            "SELECT a.id AS apartment_id, a.internal_name, r.id AS reservation_id, r.date_from "
-            "FROM door_code dc JOIN apartment a ON a.id = dc.apartment_id "
-            "JOIN reservation r ON r.id = dc.reservation_id WHERE dc.id = ?",
+            "SELECT a.id AS apartment_id, a.internal_name, r.id AS reservation_id, r.date_from, "
+            "c.email AS guest_email FROM door_code dc JOIN apartment a ON a.id = dc.apartment_id "
+            "JOIN reservation r ON r.id = dc.reservation_id "
+            "LEFT JOIN reservation_claim c ON c.reservation_id = r.id WHERE dc.id = ?",
             (row_id,),
         )
         if not info:
             return
+        suffix = "" if (info["guest_email"] or "").strip() else "_no_email"
         alerts.raise_alert(
             "info",
-            "door_code_reissued",
-            "Door code was made again",
-            dedupe_key=f"door_code_reissued:{info['reservation_id']}",
+            f"door_code_reissued{suffix}",
+            "Door code was replaced",
+            dedupe_key=f"door_code_reissued{suffix}:{info['reservation_id']}",
             apartment_id=info["apartment_id"],
             reservation_id=info["reservation_id"],
             owner_user_id=owner_user_id,
             params={"property": info["internal_name"], "date": info["date_from"]},
         )
-        mail_notify.door_code_notice(row_id, "reissued")
+        mail_notify.door_code_notice(row_id, f"reissued{suffix}")
     except Exception:
         log.exception("door code %s: host notice after a re-issue failed", row_id)
 
@@ -929,8 +946,9 @@ def _reissue_lost_pin(row_id: int, deleted_code_id: str, owner_user_id: int) -> 
     with the code id that was just deleted (a date move already made a new code: the id
     differs) and the stay is live (a cancelled stay is left to the next revoke). The
     row goes issued -> pending and issue() runs at once, so a success leaves no pending
-    row for _alert_delayed. A failure is handled by issue() and the retry loop: their
-    host alerts and mails are reused, no new alert.
+    row for _alert_delayed; only then is the host told (_tell_host_reissued). A failure is
+    handled by issue() and the retry loop: their host alerts and mails are reused, and a
+    code that a later retry makes sends no re-issue notice.
     """
     now_iso = _iso(_now())
     if db.execute(
@@ -949,11 +967,13 @@ def _reissue_lost_pin(row_id: int, deleted_code_id: str, owner_user_id: int) -> 
         actor="system",
         owner_user_id=owner_user_id,
     )
-    _tell_host_reissued(row_id, owner_user_id)
     try:
-        issue(row_id, allow_gateway=True)
+        issued = issue(row_id, allow_gateway=True)
     except Exception:
         log.exception("door code %s: re-issue after a lost revoke failed", row_id)
+        return
+    if issued:
+        _tell_host_reissued(row_id, owner_user_id)
 
 
 def _revoke_one(row_id: int) -> None:
@@ -1086,7 +1106,7 @@ def _handle_cancellations(now_iso: str) -> None:
             if end_ms > int(_now().timestamp() * 1000):
                 db.execute(
                     "UPDATE door_code SET state = ?, attempts = 0, next_attempt_at = ?, "
-                    "claimed_at = NULL, updated_at = ? WHERE id = ? AND state = ?",
+                    "claimed_at = NULL, last_error = NULL, updated_at = ? WHERE id = ? AND state = ?",
                     (REVOKE_PENDING, now_iso, now_iso, row["id"], ISSUED),
                 )
 
