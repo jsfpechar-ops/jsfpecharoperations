@@ -15,22 +15,23 @@ Add `calendar.RunFilingWatchdog` (with `NotifyHosts` and `SendOperatorDigest`) a
 
 Rules that apply (AGENTS.md): 1 filing correctness (the watchdog is what tells a host a police deadline is about to be missed: §8 stops on any mismatch); 2 no new personal-data field and no outbound request (rows are only queued in `email_outbox` / `push_outbox`, which the existing senders deliver; the digest names no guest; the fixture uses `example.test`); 3 no guest data in the repo; 4 no new dependency; 5 plain PostgreSQL through `pgxpool`.
 
-**Reused, unchanged:** from 1159 `AtRiskStays`, `UnknownRiskStays`, `FilingHeartbeatURL`, `WatchdogStay`, `watchdogGetenv`, `watchdogJSON` (go/internal/calendar); `ubyport.EnqueueMail` (`mail.enqueue`: existing key returns its id, payload `{"text", "html", "lang": "en"}` with ensure_ascii), `ubyport.QueuePush` (`push.notify`: one row per device, key `<kind>:<key>:<device>`, off when `UBYHOST_WEB_PUSH` is 0/false/no or there is no owner), `ubyport.NormaliseEmail`, `ubyport.AlertParams` (go/internal/ubyport/notify.go, effects.go); `shell`, `blockHeading`, `blockParagraph`, `blockButton`, `blockSection`, `blockNote`, `esc`, `normaliseLanguage` and the colour constants (go/internal/mail/submission_problem.go); in the test `dbPool`, `watchSeed`. **Newly ported:** `mail_notify.build_deadline_at_risk`, `build_deadline_digest`, `_digest_section`, `_block_fact`, `_block_link`, `_block_table`, `_deadline_text`, `_entity_contact_email`, `push.deadline_at_risk`, `filing_watchdog.notify_hosts`, `send_operator_digest`, `run`. The English strings are copied from `host_i18n.STRINGS["en"]` (`mail.deadline_at_risk.*`, `mail.deadline_digest.*`) and the guest catalogue's `mail_link_fallback`; like the other Go mails, only `en` is ported (`HOST_MAIL_LANGUAGE` is `en`).
+**Reused, unchanged:** from 1159 `AtRiskStays`, `UnknownRiskStays`, `FilingHeartbeatURL`, `WatchdogStay`, `watchdogGetenv`, `watchdogJSON` (go/internal/calendar); `ubyport.EnqueueMail` (`mail.enqueue`: existing key returns its id, payload `{"text", "html", "lang": "en"}` with ensure_ascii), `ubyport.QueuePush` (`push.notify`: one row per device, key `<kind>:<key>:<device>`, off when `UBYHOST_WEB_PUSH` is 0/false/no or there is no owner), `ubyport.AlertParams` (go/internal/ubyport/notify.go, effects.go); `shell`, `blockHeading`, `blockParagraph`, `blockButton`, `blockSection`, `blockNote`, `esc`, `normaliseLanguage` and the colour constants (go/internal/mail/submission_problem.go); in the test `dbPool`, `watchSeed`. **Newly ported:** `mail_notify.build_deadline_at_risk`, `build_deadline_digest`, `_digest_section`, `_block_fact`, `_block_link`, `_block_table`, `_deadline_text`, `_entity_contact_email`, `push.deadline_at_risk`, `filing_watchdog.notify_hosts`, `send_operator_digest`, `run`. The English strings are copied from `host_i18n.STRINGS["en"]` (`mail.deadline_at_risk.*`, `mail.deadline_digest.*`) and the guest catalogue's `mail_link_fallback`; like the other Go mails, only `en` is ported (`HOST_MAIL_LANGUAGE` is `en`).
 
 **What Python does (App/app/filing_watchdog.py 224-355), and how the Go copies it:**
 
-- `notify_hosts(stays + unknown, now)`: per stay not mailed yet (`mailed_at` truthy: skip; NULL and "" are both "not mailed"), first `push.deadline_at_risk` (params property, date DD.MM.YYYY, deadline "DD.MM.YYYY HH:MM", each cut to 120 characters; key = reservation id; URL `/reservations/<id>`; never raises), then in a try block: the entity contact address (`legal_entity.contact_email`, normalised; none: next stay, no stamp), the mail content, `mail.enqueue(kind deadline_at_risk, key deadline_at_risk:<id>, reservation, apartment, owner)`; no outbox id (mail backend not console/ses): next stay, no stamp; else `UPDATE reservation SET at_risk_mailed_at = <now UTC, seconds, +00:00> WHERE id = ? AND at_risk_mailed_at IS NULL` and count it. Any exception is logged and the loop goes on. Go: `NotifyHosts`, `watchdogPush`, `watchdogMailStay`; errors are logged with the reservation id only (no address, no text) and the loop goes on. A stay whose stamp is "" is counted again on every run (the UPDATE never matches) but the idempotency key stops a second mail: the golden has that case (stay 229) and Go keeps the quirk.
-- `send_operator_digest(stays, now, unknown)`: nothing when both lists are empty; `to = normalise(OPERATOR_EMAIL)` (env `UBYHOST_OPERATOR_EMAIL`, stripped, default `support@ubyhost.com`), none: False; reads setting `filing_watchdog_digest_sent_at`; a readable aware stamp with `0 <= now - stamp < 72 h` blocks it (a future stamp does not, an unreadable one counts as none, a stamp without an offset raises in Python: Go returns an error, which `run` logs); builds the digest; enqueues kind `deadline_digest`, key `deadline_digest:<stamp>`, no reservation/apartment/owner; no outbox id: False; else stores the stamp and returns True.
-- `run(now)`: `at_risk_stays(include_awaiting_retry=True)` (its failure is the only error returned), split into stays and awaiting; `unknown_risk_stays` failure logged and treated as empty (it must not silence the real check or its heartbeat); `notify_hosts`; digest failure logged, digest 0. Returns at_risk, unknown_risk, awaiting_retry, host_mails, digest. Only at_risk decides the heartbeat (the scheduler's `at_risk > 0 or not watch_ok` is brief E's job).
+- `notify_hosts(stays + unknown, now)`: per stay not mailed yet (`mailed_at` truthy: skip; NULL and "" are both "not mailed"), first `push.deadline_at_risk` (params property, date DD.MM.YYYY, deadline "DD.MM.YYYY HH:MM", each cut to 120 characters; key = reservation id; URL `/reservations/<id>`; never raises), then in a try block: the entity contact address (`legal_entity.contact_email` through `mail.normalise_email`; none: next stay, no stamp), the mail content, `mail.enqueue(kind deadline_at_risk, key deadline_at_risk:<id>, reservation, apartment, owner)`; no outbox id (mail backend not console/ses): next stay, no stamp; else `UPDATE reservation SET at_risk_mailed_at = <now UTC, seconds, +00:00> WHERE id = ? AND at_risk_mailed_at IS NULL` and count it. Any exception is logged and the loop goes on. Go: `NotifyHosts`, `watchdogPush`, `watchdogMailStay`; errors are logged with the reservation id only (no address, no text) and the loop goes on. Addresses: `normalise_email` is `email.utils.parseaddr` plus a regex. parseaddr is a full RFC 2822 parser (comments, quoted names, groups: `mailto:a@b.test` reads as `a@b.test`) whose strict mode changed between Python releases (CI and the image run 3.12, dev 3.13), so a 1:1 port is not feasible. Go's `watchdogAddress` reads exactly two forms, a plain address and `Name <address>` with a name free of `"()<>[]:;@\,.`, and for those gives Python's result (no difference in 200,000 generated strings on Python 3.11, 3.12 and 3.13). Any other value that is not blank returns "" flagged unreadable: `slog.Error` with the reservation id (for the operator address, the variable name), the stay stays unmailed (no stamp) and is retried every run. Go never mails an address Python would not. The existing `ubyport.NormaliseEmail` is not used: the golden showed it mails `mailto:a@b.test` as written and accepts `a@b.test>`, which Python refuses.
+- A stay whose stamp is "" is counted again on every run (the UPDATE never matches) but the idempotency key stops a second mail: the golden has that case (stay 229) and Go keeps the quirk.
+- `send_operator_digest(stays, now, unknown)`: nothing when both lists are empty; `to = normalise(OPERATOR_EMAIL)` (env `UBYHOST_OPERATOR_EMAIL`, stripped, default `support@ubyhost.com`; Go: `watchdogAddress`), none: False; reads setting `filing_watchdog_digest_sent_at`; a readable aware stamp with `0 <= now - stamp < 72 h` blocks it (a future stamp does not, an unreadable one counts as none, a stamp without an offset raises in Python: Go returns an error, which `run` logs); builds the digest; enqueues kind `deadline_digest`, key `deadline_digest:<stamp>`, no reservation/apartment/owner; no outbox id: False; else stores the stamp and returns True.
+- `run(now)`: `at_risk_stays(include_awaiting_retry=True)` (its failure, or an unreadable `UBYHOST_SUBMIT_SWEEP_MINUTES`, is the only error returned; Go's `RunFilingWatchdog` takes `lookupEnv`, `os.LookupEnv` in production), split into stays and awaiting; `unknown_risk_stays` failure logged and treated as empty (it must not silence the real check or its heartbeat); `notify_hosts`; digest failure logged, digest 0. Returns at_risk, unknown_risk, awaiting_retry, host_mails, digest. Only at_risk decides the heartbeat (the scheduler's `at_risk > 0 or not watch_ok` is brief E's job).
 - Base URLs: links use `UBYHOST_APP_BASE_URL`, else `UBYHOST_PUBLIC_BASE_URL`; the logo uses `UBYHOST_PUBLIC_BASE_URL`, both without a trailing slash (as cancelled_notify.go reads them).
 
-**Parity mechanism:** `App/scripts/filing_watchdog_run_golden.py` imports `SEED` and `_seed` from 1159's script, then calls the real `filing_watchdog.run` ten times in order (each run sees what the previous wrote), changing before some runs the digest setting, the mail backend and the operator address as config would read them from the environment. After each run it records the result, `heartbeat_url(at_risk > 0)`, the `email_outbox` rows the run added (every column but timestamps; the payload as its sha256 plus the readable text), the `push_outbox` rows added (params compared as values), every stay's `at_risk_mailed_at` and the digest setting; plus two digest renders no run reaches. `filing_watchdog_run_test.go` replays the same on PostgreSQL and compares; `App/tests/test_filing_watchdog_run_golden.py` fails when the committed file is stale. Cases covered: mail switched off (pushes queued, no mail, no stamp, no digest, no setting); mail on (host mails, stamps, first digest); stays awaiting the resend get no mail until the grace is over; already mailed (no mail, no push); no legal entity and an entity without address (push only, no stamp, retried next run); no owner (mail, no push); a property name needing HTML escaping and non-ASCII (`Byt <Žižkov> & "Co"`); the no-guests variant of the host mail; digest within 72 h (none), after 73 h, exactly at 72 h (sent), future stamp (sent), naive stamp (digest failed, 0, setting kept), unreadable stamp (sent), unusable operator address (none), empty operator variable (sent to support@ubyhost.com); heartbeat `/fail` while known reportable stays are at risk; the digest with 51 and 52 rows ("And 1 more stays." / "And 2 more stays.") and with unknown stays only.
+**Parity mechanism:** `App/scripts/filing_watchdog_run_golden.py` imports `SEED` and `_seed` from 1159's script, then calls the real `filing_watchdog.run` ten times in order (each run sees what the previous wrote), changing before some runs the digest setting, the mail backend and the operator address as config would read them from the environment. After each run it records the result, `heartbeat_url(at_risk > 0)`, the `email_outbox` rows the run added (every column but timestamps; the payload as its sha256 plus the readable text), the `push_outbox` rows added (params compared as values), every stay's `at_risk_mailed_at` and the digest setting; plus two digest renders no run reaches, and `normalise_email` for 29 contact forms (`CONTACTS`; each result the same on Python 3.11, 3.12 and 3.13). `filing_watchdog_run_test.go` replays the same on PostgreSQL and compares; `App/tests/test_filing_watchdog_run_golden.py` fails when the committed file is stale. Cases covered: mail switched off (pushes queued, no mail, no stamp, no digest, no setting); mail on (host mails, stamps, first digest); stays awaiting the resend get no mail until the grace is over; already mailed (no mail, no push); no legal entity and an entity without address (push only, no stamp, retried next run); no owner (mail, no push); a property name needing HTML escaping and non-ASCII (`Byt <Žižkov> & "Co"`); the no-guests variant of the host mail; digest within 72 h (none), after 73 h, exactly at 72 h (sent), future stamp (sent), naive stamp (digest failed, 0, setting kept), unreadable stamp (sent), unusable operator address (none), empty operator variable (sent to support@ubyhost.com); heartbeat `/fail` while known reportable stays are at risk; the digest with 51 and 52 rows ("And 1 more stays." / "And 2 more stays.") and with unknown stays only; contact forms: plain, spaced upper case, `Name <a>`, `<a>`, a non-ASCII name, `+` and `'` in the local part, 254 and 255 characters (7 read like Python), and 20 forms Go flags (quoted or commented names, `mailto:`, a dot in the name, an unclosed `<`, a non-ASCII local part, two addresses, no dot in the domain, a domain literal, trailing text); blank values (neither); a bad `UBYHOST_SUBMIT_SWEEP_MINUTES` failing the run.
 
-**Verified by the brief writer** on a scratch copy of 4e56401 with 1159's files applied: the files below with the sha256 values in §4, generation deterministic (same hash with `TZ=America/New_York`), `gofmt -l` empty, `go vet ./...` clean, `go test ./internal/calendar/ ./internal/mail/` ok **with a local PostgreSQL 16** (`--- PASS: TestRunFilingWatchdogMatchesPython`, `--- PASS: TestBuildDeadlineDigestMatchesPython`), the Python test green on SQLite and on PostgreSQL, and these mutations each made a Go test fail: digest window without the `age >= 0` bound, `<=` instead of `<` 72 h, naive stamp read as none, the mail-off check removed, "" stamp counted as mailed, a wrong push date, one style in `blockFact`, 51 digest rows, the fallback label, unknown stays not notified.
+**Verified by the brief writer** on a scratch copy of 4e56401 with 1159's files applied: the files below with the sha256 values in §4, generation deterministic (same hash with `TZ=America/New_York`), `gofmt -l` empty, `go vet ./...` clean, `go test ./internal/calendar/ ./internal/mail/` ok **with a local PostgreSQL 16** (`--- PASS: TestRunFilingWatchdogMatchesPython`, `--- PASS: TestBuildDeadlineDigestMatchesPython`), the Python test green on SQLite and on PostgreSQL, and these mutations each made a Go test fail: digest window without the `age >= 0` bound, `<=` instead of `<` 72 h, naive stamp read as none, the mail-off check removed, "" stamp counted as mailed, a wrong push date, one style in `blockFact`, 51 digest rows, the fallback label, unknown stays not notified, `watchdogAddress` replaced by `ubyport.NormaliseEmail`.
 
 Anchors that must exist verbatim (step 0):
-- the 1159 files with these sha256: `App/scripts/filing_watchdog_golden.py` `4b162294c0ee7823f519d28fe713cef2197add024e15a104ccc04a24fc099172`, `go/internal/calendar/filing_watchdog.go` `e89245fea0bc5f4c164ae4d6e856100270db42b463204608ef9430462c1f5069`, `go/internal/calendar/filing_watchdog_test.go` `1a9c7a9e598f7c69372cd16bf89d89061c9409fc6fbf7bff125ecee4b8c8afbf`
-- `func EnqueueMail(ctx context.Context, pool *pgxpool.Pool, m OutboxMail) (int64, error) {`, `func QueuePush(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string,` and `func NormaliseEmail(raw string) string { return normaliseEmail(raw) }` in go/internal/ubyport/notify.go
+- the 1159 files with these sha256: `App/scripts/filing_watchdog_golden.py` `4b162294c0ee7823f519d28fe713cef2197add024e15a104ccc04a24fc099172`, `go/internal/calendar/filing_watchdog.go` `21884e766b0b5d700f40c8581960b4ee590e36328d273821ce56f2dfd9ef4978`, `go/internal/calendar/filing_watchdog_test.go` `21f36464acd80ad07ed1027c69e0ed01fa8f20c8de1755c5a8298c04b90ff011`
+- `func EnqueueMail(ctx context.Context, pool *pgxpool.Pool, m OutboxMail) (int64, error) {`, `func QueuePush(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string,` in go/internal/ubyport/notify.go
 - `func shell(publicBaseURL, pageTitle, preheader string, blocks, footerLines []string) string {`, `func blockNote(label, body string) string {` and `func blockSection(label, body string) string {` in go/internal/mail/submission_problem.go
 - `def notify_hosts(stays: List[Dict[str, Any]], now: Optional[datetime] = None) -> int:`, `def send_operator_digest(` and `def run(now: Optional[datetime] = None) -> Dict[str, int]:` in App/app/filing_watchdog.py; `def build_deadline_at_risk(` and `def build_deadline_digest(` in App/app/mail_notify.py
 
@@ -51,7 +52,7 @@ No other file may change. No test-map or status edit: both are at their token ca
 
 ## 4. Steps
 
-0. Checks (one call, from the repo root): `git branch --show-current` prints `claude/go-filing-watchdog-run` (if not: `git checkout -b claude/go-filing-watchdog-run origin/main`); `git log --oneline -1 -- go/internal/calendar/filing_watchdog.go | tail -3` shows a commit (1159 is merged); `ls` of the six §3 code paths says "No such file" six times; `sha256sum` of the three 1159 files prints the values in §2; `grep -cF` of each other anchor prints 1. Venv missing: as in 1159 step 0. Any check failing: STOP (§8). Last, write the block-copy helper (outside the repo):
+0. Checks (one call, from the repo root): `git branch --show-current` prints `claude/go-filing-watchdog-run` (if not: `git checkout -b claude/go-filing-watchdog-run origin/main`); `git log --oneline -1 -- go/internal/calendar/filing_watchdog.go | tail -3` shows a commit (1159 is merged); `ls` of the six §3 code paths says "No such file" six times; `sha256sum` of the three 1159 files prints the values in §2; `grep -cF` of each other anchor prints 1. Venv missing: as in 1159 step 0. Any check failing: STOP (§8). Last, write the helper that copies code block k of a brief byte for byte (pasting by hand is allowed too; the hash decides):
 
 ```bash
 cat > /tmp/extract_block.py <<'EOF'
@@ -63,10 +64,9 @@ open(dest, 'w', encoding='utf-8').write(blocks[k - 1])
 EOF
 ```
 
-1. Create `App/scripts/filing_watchdog_run_golden.py` (sha256 `532d210da14004a03aaae3f7ee0b41c48240a823a73aece2a9348ae73230002c`) with exactly this content (block 1 below, one trailing newline).
+1. Create `App/scripts/filing_watchdog_run_golden.py` (sha256 `b44e624cba20b45e95ffb18db2fa8a6d1fbd937e1d5bee31ca2b1a4d8cb910d8`) = block 1 below.
 
-   Create it from the repo root with `python3 /tmp/extract_block.py docs/tasks/1159b-go-filing-watchdog-run.md 1 App/scripts/filing_watchdog_run_golden.py && sha256sum App/scripts/filing_watchdog_run_golden.py | tail -3` (step 0's helper copies block 1 byte for byte; pasting it by hand is allowed too, the hash decides).
-
+   Run `python3 /tmp/extract_block.py docs/tasks/1159b-go-filing-watchdog-run.md 1 App/scripts/filing_watchdog_run_golden.py && sha256sum App/scripts/filing_watchdog_run_golden.py | tail -3`.
 ```python
 """Write go/internal/calendar/testdata/filing_watchdog_run_golden.json from the real Python.
 
@@ -81,7 +81,8 @@ each run sees what the one before wrote. Before a run it may change the digest
 setting, the mail backend and the operator address. After each run it records
 the result, the heartbeat URL, the email_outbox and push_outbox rows the run
 added, every stay's at_risk_mailed_at and the digest setting. BUILDERS renders
-the two mails for inputs no run reaches (more than 50 rows, unknown only).
+the digest for inputs no run reaches (more than 50 rows, unknown only), and
+CONTACTS records normalise_email for each address form.
 go/internal/calendar/filing_watchdog_run_test.go replays the same and compares.
 App/tests/test_filing_watchdog_run_golden.py fails when this file is stale.
 Timestamps the outbox writes (created_at, next_attempt_at) are not recorded;
@@ -163,6 +164,23 @@ BUILDERS = [
 ]
 
 
+# Contact addresses as legal_entity.contact_email may hold them, each with what
+# mail.normalise_email (the parseaddr rule) makes of it; every result here is
+# the same on Python 3.11, 3.12 and 3.13. Go must give the same address, or
+# none and flag the value (logged at error level, the stay left unmailed).
+CONTACTS = [
+    "host@example.test", "  Host@Example.TEST  ", "Host One <host@example.test>",
+    "<host@example.test>", "Jiří Novák <host@example.test>", "o'neil+tag@mail.example-host.test",
+    "'host@example.test'", "x" * 241 + "@example.test", "x" * 242 + "@example.test",
+    '"Host, One" <host@example.test>', "host@example.test (Host One)", "J. Doe <host@example.test>",
+    "mailto:host@example.test", "host@ex ample.test", "<host@example.test",
+    "Host <host@example.test", "hé@example.test", "Host One host@example.test",
+    "a@b.test, c@d.test", "host@example", "no-at-sign", "Name <host@example.test> trailing",
+    "host@example.test>", "Host <a@b.test> <c@d.test>", "host@[127.0.0.1]",
+    "Host (x <host@example.test>", '"Host <host@example.test>', "", "   ",
+]
+
+
 def _apply(config, db, before) -> None:
     if "setting" in before:
         if before["setting"] == UNSET:
@@ -215,7 +233,7 @@ def _pushes(db, seen) -> list:
 
 def render() -> str:
     """Seed a fresh database, run the watchdog per RUNS, return the golden JSON text."""
-    from app import config, db, filing_watchdog, mail_notify
+    from app import config, db, filing_watchdog, mail, mail_notify
 
     saved = {name: getattr(config, name) for name in (
         "APP_BASE_URL", "PUBLIC_BASE_URL", "MAIL_BACKEND", "OPERATOR_EMAIL", "WEB_PUSH",
@@ -261,7 +279,9 @@ def render() -> str:
     finally:
         for name, value in saved.items():
             setattr(config, name, value)
-    golden = {"env": ENV, "unset": UNSET, "seed": SEED, "runs": runs, "builders": builders}
+    contacts = [{"raw": raw, "python": mail.normalise_email(raw)} for raw in CONTACTS]
+    golden = {"env": ENV, "unset": UNSET, "seed": SEED, "runs": runs, "builders": builders,
+              "contacts": contacts}
     return json.dumps(golden, ensure_ascii=False, indent=1, sort_keys=True) + "\n"
 
 
@@ -286,12 +306,11 @@ if __name__ == "__main__":
     main()
 ```
 
-   From `App/`: `.venv/bin/python scripts/filing_watchdog_run_golden.py 2>&1 | tail -3` ends with `wrote .../go/internal/calendar/testdata/filing_watchdog_run_golden.json` (a `TypeError: can't subtract offset-naive and offset-aware datetimes` traceback above it is expected: that is run 6, logged by `run()`). Then from the repo root `sha256sum App/scripts/filing_watchdog_run_golden.py go/internal/calendar/testdata/filing_watchdog_run_golden.json | tail -30` must print `532d210da14004a03aaae3f7ee0b41c48240a823a73aece2a9348ae73230002c` and `7f45dbccca72eb17564bfa505b426c523be3a5b2925b60c052b61d03b0da916b`. A different script hash: fix your paste from the block above (never edit the JSON by hand). Commit "1159b step 1" (both files).
+   From `App/`: `.venv/bin/python scripts/filing_watchdog_run_golden.py 2>&1 | tail -3` ends with `wrote .../go/internal/calendar/testdata/filing_watchdog_run_golden.json` (a `TypeError: can't subtract offset-naive and offset-aware datetimes` traceback above it is expected: that is run 6, logged by `run()`). Then from the repo root `sha256sum App/scripts/filing_watchdog_run_golden.py go/internal/calendar/testdata/filing_watchdog_run_golden.json | tail -30` must print `b44e624cba20b45e95ffb18db2fa8a6d1fbd937e1d5bee31ca2b1a4d8cb910d8` and `7a5da39c99440d6815f20aaf05cc4b5b1469f18aae8868b9563bdb8c3f5180fe`. A different script hash: fix your paste from the block above (never edit the JSON by hand). Commit "1159b step 1" (both files).
 
-2. Create `go/internal/mail/deadline_at_risk.go` (sha256 `472daf4cc68b7d8632e6f672d254adcb087402ba1ba7ef8d8397b5d2205f70b5`) with exactly the content of block 2 below.
+2. Create `go/internal/mail/deadline_at_risk.go` (sha256 `472daf4cc68b7d8632e6f672d254adcb087402ba1ba7ef8d8397b5d2205f70b5`) = block 2 below.
 
-   Create it from the repo root with `python3 /tmp/extract_block.py docs/tasks/1159b-go-filing-watchdog-run.md 2 go/internal/mail/deadline_at_risk.go && sha256sum go/internal/mail/deadline_at_risk.go | tail -3` (step 0's helper copies block 2 byte for byte; pasting it by hand is allowed too, the hash decides).
-
+   Run `python3 /tmp/extract_block.py docs/tasks/1159b-go-filing-watchdog-run.md 2 go/internal/mail/deadline_at_risk.go && sha256sum go/internal/mail/deadline_at_risk.go | tail -3`.
 ```go
 package mail
 
@@ -550,10 +569,9 @@ func BuildDeadlineDigest(publicBaseURL, lang string, stays, unknown []DigestRow)
 
    From `go/`: `test -z "$(gofmt -l .)" && go vet ./... 2>&1 | tail -30` is clean. Commit "1159b step 2".
 
-3. Create `go/internal/calendar/filing_watchdog_run.go` (sha256 `8b34a7a925c6aa5118037e040bc2d2f749fc66da0ce3d7e60c9401aec54f6687`) with exactly the content of block 3 below.
+3. Create `go/internal/calendar/filing_watchdog_run.go` (sha256 `7b6eca2f5f39b280cdcf056f58ecd81e7ab8bbf70231f974399dad232ce01c8d`) = block 3 below.
 
-   Create it from the repo root with `python3 /tmp/extract_block.py docs/tasks/1159b-go-filing-watchdog-run.md 3 go/internal/calendar/filing_watchdog_run.go && sha256sum go/internal/calendar/filing_watchdog_run.go | tail -3` (step 0's helper copies block 3 byte for byte; pasting it by hand is allowed too, the hash decides).
-
+   Run `python3 /tmp/extract_block.py docs/tasks/1159b-go-filing-watchdog-run.md 3 go/internal/calendar/filing_watchdog_run.go && sha256sum go/internal/calendar/filing_watchdog_run.go | tail -3`.
 ```go
 // filing_watchdog_run.go is the acting half of App/app/filing_watchdog.py
 // (WP23): notify_hosts (push.deadline_at_risk and the deadline_at_risk host
@@ -567,7 +585,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
+	"regexp"
 	"strings"
 	"time"
 
@@ -628,24 +647,57 @@ func watchdogDeadlineText(deadline time.Time) string {
 	return deadline.Format("02.01.2006 15:04")
 }
 
+// watchdogAddrSpec is a plain addr-spec: a dot-atom local part and a dotted
+// domain of letters, digits and hyphens.
+const watchdogAddrSpec = `[A-Za-z0-9!#$%&'*+/=?^_{|}~-]+(?:\.[A-Za-z0-9!#$%&'*+/=?^_{|}~-]+)*@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+`
+
+var (
+	watchdogAddrPlain = regexp.MustCompile(`^(` + watchdogAddrSpec + `)$`)
+	watchdogAddrAngle = regexp.MustCompile(`^[^"()<>\[\]:;@\\,.\t\r\n]*<(` + watchdogAddrSpec + `)>$`)
+)
+
+// watchdogAddress is mail.normalise_email for the forms it can read: a plain
+// address, or "<address>" after a display name with no special characters.
+// For those it gives exactly what Python gives (lower case, at most 254
+// characters). Python's parseaddr is a full RFC 2822 parser whose results for
+// other forms (comments, quotes, groups, "mailto:") differ between Python
+// releases, so it is not ported; any other value that is not blank returns ""
+// with unreadable true: the caller logs it at error level and the stay stays
+// unmailed (no stamp), so it is never skipped silently and is retried each run.
+func watchdogAddress(raw string) (addr string, unreadable bool) {
+	s := strings.TrimSpace(raw)
+	if s == "" {
+		return "", false
+	}
+	m := watchdogAddrPlain.FindStringSubmatch(s)
+	if m == nil {
+		m = watchdogAddrAngle.FindStringSubmatch(s)
+	}
+	if m == nil || len(m[1]) > 254 {
+		return "", true
+	}
+	return strings.ToLower(m[1]), false
+}
+
 // watchdogContactEmail is mail_notify._entity_contact_email: the legal
-// entity's contact address, normalised, or "".
-func watchdogContactEmail(ctx context.Context, pool *pgxpool.Pool, entity *int64) (string, error) {
+// entity's contact address, normalised, or "" (see watchdogAddress).
+func watchdogContactEmail(ctx context.Context, pool *pgxpool.Pool, entity *int64) (string, bool, error) {
 	if entity == nil || *entity == 0 {
-		return "", nil
+		return "", false, nil
 	}
 	var contact *string
 	err := pool.QueryRow(ctx, `SELECT contact_email FROM legal_entity WHERE id = $1`, *entity).Scan(&contact)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return "", nil
+		return "", false, nil
 	}
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 	if contact == nil {
-		return "", nil
+		return "", false, nil
 	}
-	return ubyport.NormaliseEmail(*contact), nil
+	addr, unreadable := watchdogAddress(*contact)
+	return addr, unreadable, nil
 }
 
 // watchdogPush is push.deadline_at_risk: one push per device of the owner,
@@ -678,9 +730,12 @@ func watchdogCut(s string) string {
 // watchdogMailStay queues the host mail for one stay and stamps
 // at_risk_mailed_at. It reports whether a mail was queued.
 func watchdogMailStay(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string, stay *WatchdogStay, at time.Time) (bool, error) {
-	to, err := watchdogContactEmail(ctx, pool, stay.LegalEntityID)
+	to, unreadable, err := watchdogContactEmail(ctx, pool, stay.LegalEntityID)
 	if err != nil {
 		return false, err
+	}
+	if unreadable {
+		slog.Error("deadline_at_risk host not mailed: contact address unreadable", "reservation_id", stay.ReservationID)
 	}
 	if to == "" {
 		return false, nil
@@ -737,11 +792,11 @@ func NotifyHosts(ctx context.Context, pool *pgxpool.Pool, getenv func(string) st
 			continue
 		}
 		if err := watchdogPush(ctx, pool, getenv, *stay); err != nil {
-			log.Printf("push_deadline_failed reservation_id=%d", stay.ReservationID)
+			slog.Error("push_deadline_failed", "reservation_id", stay.ReservationID)
 		}
 		ok, err := watchdogMailStay(ctx, pool, getenv, stay, at)
 		if err != nil {
-			log.Printf("deadline_at_risk mail failed reservation_id=%d", stay.ReservationID)
+			slog.Error("deadline_at_risk mail failed", "reservation_id", stay.ReservationID)
 			continue
 		}
 		if ok {
@@ -794,7 +849,10 @@ func SendOperatorDigest(ctx context.Context, pool *pgxpool.Pool, getenv func(str
 	if operator == "" {
 		operator = watchdogOperatorDefault
 	}
-	to := ubyport.NormaliseEmail(operator)
+	to, unreadable := watchdogAddress(operator)
+	if unreadable {
+		slog.Error("deadline digest not sent: UBYHOST_OPERATOR_EMAIL unreadable")
+	}
 	if to == "" {
 		return false, nil
 	}
@@ -853,8 +911,14 @@ func SendOperatorDigest(ctx context.Context, pool *pgxpool.Pool, getenv func(str
 // guests and alone decides the heartbeat (FilingHeartbeatURL); UnknownRisk and
 // AwaitingRetry do not. The unknown-risk query and the digest are isolated: a
 // failure is logged and the pass goes on, so neither silences the real check.
-func RunFilingWatchdog(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string, at time.Time) (WatchdogResult, error) {
-	every, err := AtRiskStays(ctx, pool, getenv, at, true)
+// lookupEnv is os.LookupEnv in production; an unreadable
+// UBYHOST_SUBMIT_SWEEP_MINUTES fails the pass, as Python refuses to start.
+func RunFilingWatchdog(ctx context.Context, pool *pgxpool.Pool, lookupEnv func(string) (string, bool), at time.Time) (WatchdogResult, error) {
+	getenv := func(name string) string {
+		v, _ := lookupEnv(name)
+		return v
+	}
+	every, err := AtRiskStays(ctx, pool, lookupEnv, at, true)
 	if err != nil {
 		return WatchdogResult{}, err
 	}
@@ -867,7 +931,7 @@ func RunFilingWatchdog(ctx context.Context, pool *pgxpool.Pool, getenv func(stri
 	unknown, err := UnknownRiskStays(ctx, pool, at)
 	if err != nil {
 		// The weaker check must not silence the real one or its heartbeat.
-		log.Printf("unknown-risk query failed")
+		slog.Error("unknown-risk query failed")
 		unknown = nil
 	}
 	both := make([]WatchdogStay, 0, len(stays)+len(unknown))
@@ -876,7 +940,7 @@ func RunFilingWatchdog(ctx context.Context, pool *pgxpool.Pool, getenv func(stri
 	hostMails := NotifyHosts(ctx, pool, getenv, both, at)
 	digest, err := SendOperatorDigest(ctx, pool, getenv, stays, unknown, at)
 	if err != nil {
-		log.Printf("deadline digest failed")
+		slog.Error("deadline digest failed")
 		digest = false
 	}
 	result := WatchdogResult{
@@ -894,10 +958,9 @@ func RunFilingWatchdog(ctx context.Context, pool *pgxpool.Pool, getenv func(stri
 
    From `go/`: `test -z "$(gofmt -l .)" && go vet ./... 2>&1 | tail -30` is clean. Commit "1159b step 3".
 
-4. Create `go/internal/calendar/filing_watchdog_run_test.go` (sha256 `c568347b5e50f427410c7811c6db63e07999dbfe714b4152eeadfd6b36ad3407`) with exactly the content of block 4 below.
+4. Create `go/internal/calendar/filing_watchdog_run_test.go` (sha256 `125918c335daf7d7437f8cc703677444e22f4ebc1ceb658beafe2e785c812720`) = block 4 below.
 
-   Create it from the repo root with `python3 /tmp/extract_block.py docs/tasks/1159b-go-filing-watchdog-run.md 4 go/internal/calendar/filing_watchdog_run_test.go && sha256sum go/internal/calendar/filing_watchdog_run_test.go | tail -3` (step 0's helper copies block 4 byte for byte; pasting it by hand is allowed too, the hash decides).
-
+   Run `python3 /tmp/extract_block.py docs/tasks/1159b-go-filing-watchdog-run.md 4 go/internal/calendar/filing_watchdog_run_test.go && sha256sum go/internal/calendar/filing_watchdog_run_test.go | tail -3`.
 ```go
 package calendar
 
@@ -988,6 +1051,10 @@ type watchdogRunGolden struct {
 	Seed     []watchSeedTable  `json:"seed"`
 	Runs     []watchdogRunStep `json:"runs"`
 	Builders []watchdogBuilder `json:"builders"`
+	Contacts []struct {
+		Raw    string `json:"raw"`
+		Python string `json:"python"`
+	} `json:"contacts"`
 }
 
 func loadWatchdogRunGolden(t *testing.T) watchdogRunGolden {
@@ -1157,6 +1224,7 @@ func TestRunFilingWatchdogMatchesPython(t *testing.T) {
 		env[k] = v
 	}
 	getenv := watchdogGetenv(env)
+	lookup := watchdogLookup(env)
 	pool := dbPool(t)
 	watchSeed(t, pool, watchGolden{Seed: g.Seed})
 	seenMail, seenPush := map[string]bool{}, map[string]bool{}
@@ -1167,7 +1235,7 @@ func TestRunFilingWatchdogMatchesPython(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		res, err := RunFilingWatchdog(context.Background(), pool, getenv, at)
+		res, err := RunFilingWatchdog(context.Background(), pool, lookup, at)
 		if err != nil {
 			t.Fatalf("run %d (%s): %v", i+1, label, err)
 		}
@@ -1229,14 +1297,52 @@ func TestBuildDeadlineDigestMatchesPython(t *testing.T) {
 		t.Errorf("builder cases %v", names)
 	}
 }
+
+// TestWatchdogAddressNeverDivergesSilently needs no database: for every
+// contact form in the golden, Go gives Python's address, or none with the value
+// flagged unreadable (logged at error level, the stay left unmailed). Go never
+// mails an address Python would not, and a blank value is not flagged.
+func TestWatchdogAddressNeverDivergesSilently(t *testing.T) {
+	g := loadWatchdogRunGolden(t)
+	if len(g.Contacts) < 25 {
+		t.Fatal("golden file has too few contact forms")
+	}
+	same, flagged := 0, 0
+	for _, c := range g.Contacts {
+		got, unreadable := watchdogAddress(c.Raw)
+		blank := strings.TrimSpace(c.Raw) == ""
+		switch {
+		case got != "" && got == c.Python && !unreadable:
+			same++
+		case got == "" && unreadable && !blank:
+			flagged++
+		case got == "" && c.Python == "" && blank && !unreadable:
+		default:
+			t.Errorf("contact %q: Go %q (unreadable %v), Python %q", c.Raw, got, unreadable, c.Python)
+		}
+	}
+	if same != 7 || flagged != 20 {
+		t.Errorf("%d forms read like Python and %d flagged, want 7 and 20", same, flagged)
+	}
+	t.Logf("%d forms read like Python, %d flagged and logged", same, flagged)
+}
+
+// TestRunFilingWatchdogRefusesBadSweepMinutes needs no database: Python's
+// int() refuses the value at start-up, so the Go pass fails before any query.
+func TestRunFilingWatchdogRefusesBadSweepMinutes(t *testing.T) {
+	env := map[string]string{"UBYHOST_SUBMIT_SWEEP_MINUTES": "abc"}
+	_, err := RunFilingWatchdog(context.Background(), nil, watchdogLookup(env), time.Now())
+	if err == nil || !strings.Contains(err.Error(), "UBYHOST_SUBMIT_SWEEP_MINUTES") {
+		t.Fatalf("got %v, want an error naming UBYHOST_SUBMIT_SWEEP_MINUTES", err)
+	}
+}
 ```
 
    From `go/`: `test -z "$(gofmt -l .)" && go vet ./... && go test ./internal/calendar/ ./internal/mail/ -count=1 2>&1 | tail -30` is ok (the DB test skips here; step 6 runs it; `TestBuildDeadlineDigestMatchesPython` runs here and must pass). Commit "1159b step 4".
 
-5. Create `App/tests/test_filing_watchdog_run_golden.py` (sha256 `38a35a45e34d2a9e0f9b3077a6c6c3c4f53ad368150164b5b26d0ac090436589`) with exactly the content of block 5 below.
+5. Create `App/tests/test_filing_watchdog_run_golden.py` (sha256 `38a35a45e34d2a9e0f9b3077a6c6c3c4f53ad368150164b5b26d0ac090436589`) = block 5 below.
 
-   Create it from the repo root with `python3 /tmp/extract_block.py docs/tasks/1159b-go-filing-watchdog-run.md 5 App/tests/test_filing_watchdog_run_golden.py && sha256sum App/tests/test_filing_watchdog_run_golden.py | tail -3` (step 0's helper copies block 5 byte for byte; pasting it by hand is allowed too, the hash decides).
-
+   Run `python3 /tmp/extract_block.py docs/tasks/1159b-go-filing-watchdog-run.md 5 App/tests/test_filing_watchdog_run_golden.py && sha256sum App/tests/test_filing_watchdog_run_golden.py | tail -3`.
 ```python
 """go/internal/calendar/filing_watchdog_run_test.go reads go/internal/calendar/testdata/filing_watchdog_run_golden.json."""
 
@@ -1277,7 +1383,7 @@ P=/var/tmp/pg1159b && mkdir -p $P && chown postgres $P && su postgres -c "/usr/l
 cd go && UBYHOST_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:55440/postgres go test ./internal/calendar/ -run 'Watchdog|FilingHeartbeat|DeadlineDigest' -count=1 -v 2>&1 | grep -E '^(--- |ok|FAIL)' | tail -30
 ```
 
-   Expected: six `--- PASS` lines (incl. `TestRunFilingWatchdogMatchesPython` and `TestWatchdogStaysMatchPython`) and `ok`; one `deadline digest failed` log line is expected (run 6). A `--- SKIP` means the variable was not seen. A FAIL: STOP (§8), paste the first 30 lines of the diff into the report. Then write the report (§9), set this brief's `Status: review`, commit "1159b step 6".
+   Expected: eight `--- PASS` lines (incl. `TestRunFilingWatchdogMatchesPython`, `TestWatchdogAddressNeverDivergesSilently` and `TestWatchdogStaysMatchPython`) and `ok`; `level=ERROR` log lines are expected (runs 6 and 8, the unreadable stamp and operator address). A `--- SKIP` means the variable was not seen. A FAIL: STOP (§8), paste the first 30 lines of the diff into the report. Then write the report (§9), set this brief's `Status: review`, commit "1159b step 6".
 
 ## 5. Do not touch
 
@@ -1294,7 +1400,7 @@ From the repo root: `python3 scripts/context_lint.py 2>&1 | tail -30`.
 
 - [ ] The six sha256 values in steps 1-5 match, and the three 1159 hashes in §2 still match.
 - [ ] From `go/`: gofmt empty, `go vet ./...` clean, `go test ./internal/calendar/ ./internal/mail/ -count=1` ok.
-- [ ] Step 6: the six tests PASS on local PostgreSQL, or "CI only" with the reason.
+- [ ] Step 6: the eight tests PASS on local PostgreSQL, or "CI only" with the reason.
 - [ ] From `App/`: the three pytest files pass and the freshness command leaves `git status --short ../go` empty.
 - [ ] `python3 scripts/context_lint.py` passes.
 - [ ] `git diff --stat origin/main..HEAD | tail -30` lists only the §3 paths.
@@ -1318,11 +1424,11 @@ Write `docs/tasks/1159b-report.md` (600 tokens at most) and set this brief's `St
 
 ## Risk list (for the reviewer)
 
-Read `go/internal/calendar/filing_watchdog_run.go` against App/app/filing_watchdog.py 224-355 line by line: skip on truthy `mailed_at` only; push before the address check and outside the error path; no address or mail off: no stamp; stamp format and the `IS NULL` guard; per-stay errors logged and the loop going on; the digest's empty-lists exit, operator default and normalise, the 72 h window `0 <= age < 72 h`, the naive-stamp error, the key `deadline_digest:<stamp>`, setting written only after a queued mail; in `RunFilingWatchdog` the isolation of the unknown-risk query and the digest (neither can fail the pass) and that only the at-risk query fails it. Then `go/internal/mail/deadline_at_risk.go` against App/app/mail_notify.py 2386-2589 and the English catalogue (host_i18n.py 1075-1110), the golden script (each §2 case is in RUNS or BUILDERS), and that the test does not skip in CI (`--- PASS: TestRunFilingWatchdogMatchesPython` in the Go job log).
+Read `go/internal/calendar/filing_watchdog_run.go` against App/app/filing_watchdog.py 224-355 line by line: skip on truthy `mailed_at` only; push before the address check and outside the error path; no address or mail off: no stamp; stamp format and the `IS NULL` guard; per-stay errors logged and the loop going on; the digest's empty-lists exit, operator default and `watchdogAddress`, the 72 h window `0 <= age < 72 h`, the naive-stamp error, the key `deadline_digest:<stamp>`, setting written only after a queued mail; in `RunFilingWatchdog` the isolation of the unknown-risk query and the digest (neither can fail the pass) and that only the at-risk query fails it. Then `go/internal/mail/deadline_at_risk.go` against App/app/mail_notify.py 2386-2589 and the English catalogue (host_i18n.py 1075-1110), the golden script (each §2 case is in RUNS or BUILDERS), and that the test does not skip in CI (`--- PASS: TestRunFilingWatchdogMatchesPython` in the Go job log).
 
 Known and accepted (not ported 1:1):
 - The error-isolation paths (unknown-risk query failure, a failing per-stay mail, a digest failure other than the naive stamp) are mirrored in code but the golden cannot inject those faults; the reviewer checks them by reading.
-- `ubyport.NormaliseEmail` accepts only "addr" and "Name <addr>"; Python's `parseaddr` is more lenient. A contact address in another form gets no mail from Go (and no stamp, so Python would still mail it after a switch back). Brief E should check production `legal_entity.contact_email` values before switching.
+- Addresses (§2): a form outside the two Go reads is not mailed by Go but by Python; it is never silent (error log, no stamp). Brief E should list production `legal_entity.contact_email` values Go flags before switching.
 - Push params are written with sorted keys (`QueuePush`, existing behaviour), Python in insertion order; the values are identical and delivery reads them by key.
 - `UBYHOST_PUBLIC_BASE_URL` unset: Python defaults to `http://127.0.0.1:8080`, Go to "" (as the other Go mails); production sets it. The digest-stamp parser reads the forms `isoformat()` writes; a rarer form Python accepts counts as unreadable (digest sent).
 - `EnqueueMail` never returns id 0 without an error, so the "no outbox id" branch is kept for parity but is not reachable in Go.

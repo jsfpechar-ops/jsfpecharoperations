@@ -6,27 +6,27 @@ Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
 
-Add `calendar.AtRiskStays`, `calendar.UnknownRiskStays` and `calendar.FilingHeartbeatURL`, a Go port of the read-only half of App/app/filing_watchdog.py (which stays may miss their police deadline, which empty stays are an unknown risk, and the dead-man switch URL), plus a golden file written by the real Python over fixed stays so the two cannot drift. GO-DL step D, part 1 of 2 (tier A, filing path); the mails, push, digest and `run()` are brief 1159b (split: both halves do not fit one Haiku session).
+Add `calendar.AtRiskStays`, `UnknownRiskStays` and `FilingHeartbeatURL`, a Go port of the read-only half of App/app/filing_watchdog.py, plus a golden file written by the real Python so the two cannot drift. GO-DL step D, part 1 of 2 (tier A, filing path); the mails, push, digest and `run()` are brief 1159b (split: both halves do not fit one Haiku session).
 
-**Behind a switch, by construction:** nothing calls the new code. No scheduler, no `go/cmd/`, no job kind, no env var, no route. Brief 1132 §10 E adds the `deadlines` job kind and the Python/Go switch. Production is unchanged. Files are only added, so there is no failing-first step.
+**Behind a switch:** nothing calls the new code (no scheduler, `go/cmd/`, job kind, env var or route); brief 1132 §10 E adds the job kind and the switch. Production is unchanged. Files are only added: no failing-first step.
 
 ## 2. Context
 
-Rules (AGENTS.md): 1 filing correctness (Go must select exactly the stays Python selects; §8 stops on any mismatch); 2 no new personal-data field, no outbound request (the heartbeat URL is only built); 3 no guest data (fixture: `example.test`); 4 no new dependency; 5 plain PostgreSQL through `pgxpool`, as 1153/1157.
+Rules (AGENTS.md): 1 filing correctness (§8 stops on any mismatch); 2 no new personal-data field, no outbound request (the heartbeat URL is only built); 3 no guest data (fixture: `example.test`); 4 no new dependency; 5 plain PostgreSQL through `pgxpool`, as 1153/1157.
 
-**Package: `go/internal/calendar`**, next to `watch.go` (1153) and `dsr_due.go` (1157), same GO-DL job. It reuses, unchanged: `watchAnchor` (watch.go: `reservation_deadline_anchor`, the earliest live guest `stay_from`, else `date_from`), `deadlines.LocalNow` and `deadlines.ReportingDeadline` (go/internal/deadlines), `validation.GuestIsReportable` (go/internal/validation, `guest_is_reportable`: every nationality but Czech, case-insensitive), `ubyport.ParseStoredUTC` (a naive stored time reads as UTC), and in the test `dbPool` (handler_test.go) and `watchSeed`, `watchSeedTable`, `watchGolden` (watch_test.go).
+**Package `go/internal/calendar`** (next to `watch.go`, `dsr_due.go`). Reused unchanged: `watchAnchor` (`reservation_deadline_anchor`), `deadlines.LocalNow`, `deadlines.ReportingDeadline`, `validation.GuestIsReportable`, `ubyport.ParseStoredUTC` (naive reads as UTC); in the test `dbPool`, `watchSeed`.
 
 **What Python does (App/app/filing_watchdog.py 69-222 and 358-367), and how the Go copies it:**
 
-- `at_risk_stays(now, include_awaiting_retry)`: one query over unfiled guests (`g.submit_state != 'sent'`, nationality not NULL and not empty, guest not archived) of watched stays (`r.status = 'active'`, not archived, `a.active = 1`, `COALESCE(r.source,'') != 'demo'`), `ORDER BY r.id`, joined to `submission` (state, retried_at, finished_at) and `user_account` (username = workspace). Non-reportable guests are dropped in code; the rest are grouped per stay in first-seen order, counting `unfiled` and `awaiting_retry_guests`. Per stay: anchor (no anchor: skipped), `due = reporting_deadline(anchor)`, skipped when `due - local > 24 h`; `overdue = due < local`; `awaiting_retry = not overdue and awaiting_retry_guests == unfiled`, left out unless `include_awaiting_retry`. Sorted by (deadline, reservation_id). Go: same SQL (`$1 = 'sent'`), same grouping, `sort.SliceStable`.
-- `_awaiting_retry`: state `outcome_unknown`, `retried_at` empty, and `0 <= now_utc - finished_at <= RETRY_GRACE`; an unreadable `finished_at` (NULL reads as the string "None") is not awaiting. `RETRY_GRACE = 2 x max(1, SUBMIT_SWEEP_MINUTES)` minutes, env `UBYHOST_SUBMIT_SWEEP_MINUTES`, default 10. Go: `watchdogAwaitingRetry`, `watchdogRetryGrace(getenv)`. An `auto_resend` batch (WP31) is not special-cased in either: awaiting inside the grace, at risk after.
+- `at_risk_stays(now, include_awaiting_retry)`: one query over unfiled guests (not `sent`, nationality set, not archived) of watched stays (active, not archived, property on, not demo), `ORDER BY r.id`, with `submission` and `user_account` (workspace). Non-reportable guests dropped in code; the rest grouped per stay in first-seen order (`unfiled`, `awaiting_retry_guests`). Per stay: anchor (no anchor: skipped), `due = reporting_deadline(anchor)`, skipped when `due - local > 24 h`; `overdue = due < local`; `awaiting_retry = not overdue and awaiting_retry_guests == unfiled`, left out unless `include_awaiting_retry`. Sorted by (deadline, reservation_id). Go: same SQL (`$1 = 'sent'`), same grouping, `sort.SliceStable`.
+- `_awaiting_retry`: state `outcome_unknown`, `retried_at` empty, and `0 <= now_utc - finished_at <= RETRY_GRACE`; an unreadable `finished_at` (NULL reads as the string "None") is not awaiting. `RETRY_GRACE = 2 x max(1, int(os.environ.get("UBYHOST_SUBMIT_SWEEP_MINUTES", "10")))` minutes, read at import: unset is 10, a set value `int()` refuses ("abc", and "" too) stops Python from starting. Go: `watchdogRetryGrace(lookupEnv)` (`os.LookupEnv` in production, so unset and empty differ) trims, `strconv.Atoi` (sign allowed), else an error naming the variable, which `AtRiskStays` returns before any query: the run fails loudly. `watchdogAwaitingRetry` is the window. An `auto_resend` batch (WP31) is not special-cased in either: awaiting inside the grace, at risk after.
 - `unknown_risk_stays(now)`: watched stays with no live guest, `date_from` between `today - 28 days` and `today` (ISO text comparison; `today` is the Prague date), arrival `date.fromisoformat(date_from[:10])`, kept when the deadline is less than 24 h away and passed at most 7 days ago; `no_guests = True`, `unfiled = 0`. Go: `UnknownRiskStays`, `NoGuests: true`.
-- `heartbeat_url(at_risk)`: `UBYHOST_HEARTBEAT_FILING_URL` stripped of spaces and trailing `/`; "" when empty, else `<url>/fail` or `<url>`. Go: `FilingHeartbeatURL`.
+- `heartbeat_url(at_risk)`: the URL stripped of spaces and trailing `/`; "", `<url>/fail` or `<url>`.
 - `at_risk_mailed_at` is a `*string`: NULL and "" stay distinct (1159b treats both as not mailed, as Python does).
 
-**Parity mechanism** (pattern of 1153/1157): `App/scripts/filing_watchdog_golden.py` seeds a throwaway SQLite database (30 stays, 31 guests, 9 submissions; entities and push devices are for 1159b), asks `at_risk_stays(include_awaiting_retry=True)`, `at_risk_stays()` and `unknown_risk_stays()` at four instants (2026-09-17 10:00, 10:05, 11:00 UTC and 2026-09-20 11:05 UTC), and records `heartbeat_url` for five URL values, into `go/internal/calendar/testdata/filing_watchdog_golden.json`. `filing_watchdog_test.go` seeds a fresh PostgreSQL from that file (`dbPool`, skips without `UBYHOST_TEST_DATABASE_URL`; CI's Go job sets it) and compares every stay field; `App/tests/test_filing_watchdog_golden.py` fails when the committed file is stale. Cases: at risk (12 h left), overdue, 36 h left (not yet; overdue on 09-20); awaiting the resend inside, exactly at (20 min) and after the grace; overdue while awaiting (at risk); one guest awaiting and one not (at risk); a batch already resent once (at risk); an `auto_resend` batch past the grace (at risk) and inside it; `finished_at` in the future, naive, and NULL; error / blocked / pending counted, sent not; Czech guests (upper and lower case) not counted, a Czech-only stay in neither list (so it can never set the heartbeat); nationality empty and NULL ignored; anchor taken from a Czech guest's `stay_from`; no anchor (`date_from = 'bad'`) skipped; cancelled, archived, demo, switched-off not watched; unknown risk: no guest, only an archived guest, 6.5 days overdue (kept, dropped at 09-20), over 7 days overdue (dropped), arrives today, not arrived; stamp set, "" and NULL; no owner; a name needing HTML escaping; heartbeat with no, one and two trailing slashes, spaces, empty.
+**Parity mechanism** (pattern of 1153/1157): `App/scripts/filing_watchdog_golden.py` seeds a throwaway SQLite database (30 stays, 31 guests, 9 submissions; entities and push devices are for 1159b), asks `at_risk_stays(include_awaiting_retry=True)`, `at_risk_stays()` and `unknown_risk_stays()` at four instants (2026-09-17 10:00, 10:05, 11:00 UTC and 2026-09-20 11:05 UTC), and records `heartbeat_url` for five URL values, into `go/internal/calendar/testdata/filing_watchdog_golden.json`. `filing_watchdog_test.go` seeds a fresh PostgreSQL from that file (skips without `UBYHOST_TEST_DATABASE_URL`; CI sets it) and compares every stay field; `App/tests/test_filing_watchdog_golden.py` fails when the committed file is stale. Cases: 12 h left, overdue, 36 h left (overdue on 09-20); awaiting inside, exactly at (20 min) and after the grace; overdue while awaiting; one guest awaiting, one not; batch resent once; `auto_resend` inside and past the grace; `finished_at` future, naive, NULL; error/blocked/pending counted, sent not; Czech (any case) not counted, a Czech-only stay in neither list (never sets the heartbeat); nationality empty/NULL; anchor from a Czech guest's `stay_from`; no anchor; cancelled, archived, demo, switched-off not watched; unknown risk: no guest, only an archived guest, 6.5 days overdue (kept, dropped at 09-20), over 7 days overdue (dropped), arrives today, not arrived; stamp set, "" and NULL; no owner; a name needing HTML escaping; heartbeat with no, one and two trailing slashes, spaces, empty.
 
-**Verified by the brief writer** on a scratch copy of 4e56401: the §4 hashes, deterministic generation (same with `TZ=America/New_York`), gofmt and vet clean, `go test ./internal/calendar/` ok **on a local PostgreSQL 16** (not skipped), the Python test green on SQLite and on PostgreSQL; four mutations of `filing_watchdog.go` (grace lower bound, 8-day window, `!Overdue` guard, archived guests) each failed a Go test.
+**Verified by the brief writer** on a scratch copy of 4e56401: §4 hashes, deterministic (also with `TZ=America/New_York`), gofmt/vet clean, Go tests ok **on local PostgreSQL 16**, Python test green on SQLite and PostgreSQL; four mutations (grace lower bound, 8-day window, `!Overdue`, archived guests) each failed a test.
 
 Anchors that must exist verbatim (step 0):
 - `func watchAnchor(ctx context.Context, pool *pgxpool.Pool, stay stayRow) (time.Time, bool, error) {` in go/internal/calendar/watch.go
@@ -53,7 +53,7 @@ No other file may change. No test-map or status edit: both are at their token ca
 
 ## 4. Steps
 
-0. Checks (one call, from the repo root): `git branch --show-current` prints `claude/go-filing-watchdog` (if not: `git checkout claude/go-filing-watchdog`); `ls App/scripts/filing_watchdog_golden.py go/internal/calendar/filing_watchdog.go go/internal/calendar/filing_watchdog_test.go App/tests/test_filing_watchdog_golden.py go/internal/calendar/testdata/filing_watchdog_golden.json 2>&1 | tail -30` says "No such file" five times; `grep -cF` of each anchor in §2 in its file prints 1. If `App/.venv/bin/python` is missing: `cd App && python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt -r requirements-dev.txt 2>&1 | tail -5`. Any anchor missing or file present: STOP (§8). Last, write the block-copy helper (outside the repo):
+0. Checks (one call, from the repo root): `git branch --show-current` prints `claude/go-filing-watchdog` (if not: `git checkout claude/go-filing-watchdog`); `ls App/scripts/filing_watchdog_golden.py go/internal/calendar/filing_watchdog.go go/internal/calendar/filing_watchdog_test.go App/tests/test_filing_watchdog_golden.py go/internal/calendar/testdata/filing_watchdog_golden.json 2>&1 | tail -30` says "No such file" five times; `grep -cF` of each anchor in §2 in its file prints 1. If `App/.venv/bin/python` is missing: `cd App && python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt -r requirements-dev.txt 2>&1 | tail -5`. Any anchor missing or file present: STOP (§8). Last, write the helper that copies code block k of a brief byte for byte (pasting by hand is allowed too; the hash decides):
 
 ```bash
 cat > /tmp/extract_block.py <<'EOF'
@@ -65,10 +65,9 @@ open(dest, 'w', encoding='utf-8').write(blocks[k - 1])
 EOF
 ```
 
-1. Create `App/scripts/filing_watchdog_golden.py` (sha256 `4b162294c0ee7823f519d28fe713cef2197add024e15a104ccc04a24fc099172`) with exactly this content (block 1 below, one trailing newline).
+1. Create `App/scripts/filing_watchdog_golden.py` (sha256 `4b162294c0ee7823f519d28fe713cef2197add024e15a104ccc04a24fc099172`) = block 1 below.
 
-   Create it from the repo root with `python3 /tmp/extract_block.py docs/tasks/1159-go-filing-watchdog.md 1 App/scripts/filing_watchdog_golden.py && sha256sum App/scripts/filing_watchdog_golden.py | tail -3` (step 0's helper copies block 1 byte for byte; pasting it by hand is allowed too, the hash decides).
-
+   Run `python3 /tmp/extract_block.py docs/tasks/1159-go-filing-watchdog.md 1 App/scripts/filing_watchdog_golden.py && sha256sum App/scripts/filing_watchdog_golden.py | tail -3`.
 ```python
 """Write go/internal/calendar/testdata/filing_watchdog_golden.json from the real Python.
 
@@ -379,10 +378,9 @@ if __name__ == "__main__":
 
    From `App/`: `.venv/bin/python scripts/filing_watchdog_golden.py 2>&1 | tail -3` ends with `wrote .../go/internal/calendar/testdata/filing_watchdog_golden.json`. Then from the repo root `sha256sum App/scripts/filing_watchdog_golden.py go/internal/calendar/testdata/filing_watchdog_golden.json | tail -30` must print `4b162294c0ee7823f519d28fe713cef2197add024e15a104ccc04a24fc099172` and `f181775bbc3d18927806c6870f7c19ad41e497335c985e6d0adaf0409882067a`. A different script hash: your paste differs; fix it from the block above (never edit the JSON by hand). Commit "1159 step 1" (both files).
 
-2. Create `go/internal/calendar/filing_watchdog.go` (sha256 `e89245fea0bc5f4c164ae4d6e856100270db42b463204608ef9430462c1f5069`) with exactly the content of block 2 below.
+2. Create `go/internal/calendar/filing_watchdog.go` (sha256 `21884e766b0b5d700f40c8581960b4ee590e36328d273821ce56f2dfd9ef4978`) = block 2 below.
 
-   Create it from the repo root with `python3 /tmp/extract_block.py docs/tasks/1159-go-filing-watchdog.md 2 go/internal/calendar/filing_watchdog.go && sha256sum go/internal/calendar/filing_watchdog.go | tail -3` (step 0's helper copies block 2 byte for byte; pasting it by hand is allowed too, the hash decides).
-
+   Run `python3 /tmp/extract_block.py docs/tasks/1159-go-filing-watchdog.md 2 go/internal/calendar/filing_watchdog.go && sha256sum go/internal/calendar/filing_watchdog.go | tail -3`.
 ```go
 // filing_watchdog.go is the selection half of App/app/filing_watchdog.py (WP23):
 // which stays may miss their police deadline (at_risk_stays, with
@@ -395,6 +393,7 @@ package calendar
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -471,19 +470,23 @@ type WatchdogStay struct {
 }
 
 // watchdogRetryGrace is RETRY_GRACE: two sweep intervals of
-// UBYHOST_SUBMIT_SWEEP_MINUTES (default 10), at least one minute each. Python
-// refuses to start on a value int() cannot read; here it falls back to 10.
-func watchdogRetryGrace(getenv func(string) string) time.Duration {
+// UBYHOST_SUBMIT_SWEEP_MINUTES, at least one minute each. Like Python's
+// int(os.environ.get(name, "10")): unset means 10; a set value is stripped and
+// must be an integer (an optional sign is allowed), else it is an error, as
+// Python refuses to start. A set but empty value is an error too (int("")).
+func watchdogRetryGrace(lookupEnv func(string) (string, bool)) (time.Duration, error) {
 	minutes := watchdogSweepMinutesDefault
-	if raw := strings.TrimSpace(getenv("UBYHOST_SUBMIT_SWEEP_MINUTES")); raw != "" {
-		if n, err := strconv.Atoi(raw); err == nil {
-			minutes = n
+	if raw, ok := lookupEnv("UBYHOST_SUBMIT_SWEEP_MINUTES"); ok {
+		n, err := strconv.Atoi(strings.TrimSpace(raw))
+		if err != nil {
+			return 0, fmt.Errorf("UBYHOST_SUBMIT_SWEEP_MINUTES is not an integer: %w", err)
 		}
+		minutes = n
 	}
 	if minutes < 1 {
 		minutes = 1
 	}
-	return time.Duration(2*minutes) * time.Minute
+	return time.Duration(2*minutes) * time.Minute, nil
 }
 
 // watchdogAwaitingRetry is _awaiting_retry: the guest is on an outcome_unknown
@@ -515,11 +518,15 @@ func sortWatchdogStays(stays []WatchdogStay) {
 // not accepted whose deadline is less than 24 hours away or passed, soonest
 // deadline first. A stay whose every unfiled guest awaits the automatic resend
 // and whose deadline has not passed carries AwaitingRetry and is left out
-// unless includeAwaitingRetry. at is the instant of the run.
-func AtRiskStays(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string, at time.Time, includeAwaitingRetry bool) ([]WatchdogStay, error) {
+// unless includeAwaitingRetry. at is the instant of the run. lookupEnv is
+// os.LookupEnv in production; an unreadable sweep interval fails the call.
+func AtRiskStays(ctx context.Context, pool *pgxpool.Pool, lookupEnv func(string) (string, bool), at time.Time, includeAwaitingRetry bool) ([]WatchdogStay, error) {
+	grace, err := watchdogRetryGrace(lookupEnv)
+	if err != nil {
+		return nil, fmt.Errorf("filing watchdog: %w", err)
+	}
 	local := deadlines.LocalNow(at)
 	current := at.UTC()
-	grace := watchdogRetryGrace(getenv)
 	rows, err := pool.Query(ctx, watchdogAtRiskSQL, "sent")
 	if err != nil {
 		return nil, err
@@ -645,10 +652,9 @@ func FilingHeartbeatURL(getenv func(string) string, atRisk bool) string {
 
    From `go/`: `test -z "$(gofmt -l .)" && go vet ./... 2>&1 | tail -30` is clean. Commit "1159 step 2".
 
-3. Create `go/internal/calendar/filing_watchdog_test.go` (sha256 `1a9c7a9e598f7c69372cd16bf89d89061c9409fc6fbf7bff125ecee4b8c8afbf`) with exactly the content of block 3 below.
+3. Create `go/internal/calendar/filing_watchdog_test.go` (sha256 `21f36464acd80ad07ed1027c69e0ed01fa8f20c8de1755c5a8298c04b90ff011`) = block 3 below.
 
-   Create it from the repo root with `python3 /tmp/extract_block.py docs/tasks/1159-go-filing-watchdog.md 3 go/internal/calendar/filing_watchdog_test.go && sha256sum go/internal/calendar/filing_watchdog_test.go | tail -3` (step 0's helper copies block 3 byte for byte; pasting it by hand is allowed too, the hash decides).
-
+   Run `python3 /tmp/extract_block.py docs/tasks/1159-go-filing-watchdog.md 3 go/internal/calendar/filing_watchdog_test.go && sha256sum go/internal/calendar/filing_watchdog_test.go | tail -3`.
 ```go
 package calendar
 
@@ -657,6 +663,7 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -725,6 +732,14 @@ func watchdogGetenv(env map[string]string) func(string) string {
 	return func(k string) string { return env[k] }
 }
 
+// watchdogLookup is os.LookupEnv over the same map: a missing key is unset.
+func watchdogLookup(env map[string]string) func(string) (string, bool) {
+	return func(k string) (string, bool) {
+		v, ok := env[k]
+		return v, ok
+	}
+}
+
 // watchdogRecord is stay_record for a Go stay.
 func watchdogRecord(s WatchdogStay) watchdogStayRecord {
 	return watchdogStayRecord{
@@ -760,9 +775,10 @@ func watchdogJSON(t *testing.T, v any) string {
 // what filing_watchdog.py returned for the same rows at every golden instant.
 func TestWatchdogStaysMatchPython(t *testing.T) {
 	g := loadWatchdogGolden(t)
-	getenv := watchdogGetenv(g.Env)
-	if got := int(watchdogRetryGrace(getenv) / time.Minute); got != g.RetryGraceMinutes {
-		t.Fatalf("retry grace %d min, Python %d min", got, g.RetryGraceMinutes)
+	lookup := watchdogLookup(g.Env)
+	grace, err := watchdogRetryGrace(lookup)
+	if err != nil || int(grace/time.Minute) != g.RetryGraceMinutes {
+		t.Fatalf("retry grace %v (%v), Python %d min", grace, err, g.RetryGraceMinutes)
 	}
 	pool := dbPool(t)
 	watchSeed(t, pool, watchGolden{Seed: g.Seed})
@@ -772,7 +788,7 @@ func TestWatchdogStaysMatchPython(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		every, err := AtRiskStays(ctx, pool, getenv, at, true)
+		every, err := AtRiskStays(ctx, pool, lookup, at, true)
 		if err != nil {
 			t.Fatalf("%s at risk: %v", in.At, err)
 		}
@@ -787,7 +803,7 @@ func TestWatchdogStaysMatchPython(t *testing.T) {
 		if a, b := watchdogJSON(t, got), watchdogJSON(t, want); a != b {
 			t.Errorf("%s at-risk stays differ from Python\n got:\n%s\nwant:\n%s", in.At, a, b)
 		}
-		plain, err := AtRiskStays(ctx, pool, getenv, at, false)
+		plain, err := AtRiskStays(ctx, pool, lookup, at, false)
 		if err != nil {
 			t.Fatalf("%s at risk (default): %v", in.At, err)
 		}
@@ -831,16 +847,31 @@ func TestFilingHeartbeatURLMatchesPython(t *testing.T) {
 	}
 }
 
-// TestWatchdogRetryGrace is RETRY_GRACE = 2 x max(1, SUBMIT_SWEEP_MINUTES) minutes.
+// TestWatchdogRetryGrace is RETRY_GRACE = 2 x max(1, int(SUBMIT_SWEEP_MINUTES))
+// minutes: unset is 10; a set value Python's int() refuses is an error.
 func TestWatchdogRetryGrace(t *testing.T) {
-	cases := map[string]time.Duration{
-		"": 20 * time.Minute, "10": 20 * time.Minute, " 3 ": 6 * time.Minute,
-		"0": 2 * time.Minute, "-5": 2 * time.Minute, "abc": 20 * time.Minute,
+	ok := map[string]time.Duration{
+		"10": 20 * time.Minute, " 7 ": 14 * time.Minute, "+3": 6 * time.Minute,
+		"0": 2 * time.Minute, "-5": 2 * time.Minute,
 	}
-	for raw, want := range cases {
+	for raw, want := range ok {
+		got, err := watchdogRetryGrace(watchdogLookup(map[string]string{"UBYHOST_SUBMIT_SWEEP_MINUTES": raw}))
+		if err != nil || got != want {
+			t.Errorf("sweep %q: grace %v (%v), want %v", raw, got, err, want)
+		}
+	}
+	if got, err := watchdogRetryGrace(watchdogLookup(map[string]string{})); err != nil || got != 20*time.Minute {
+		t.Errorf("unset: grace %v (%v), want 20m", got, err)
+	}
+	for _, raw := range []string{"abc", "", "  ", "1.5", "10m"} {
 		env := map[string]string{"UBYHOST_SUBMIT_SWEEP_MINUTES": raw}
-		if got := watchdogRetryGrace(watchdogGetenv(env)); got != want {
-			t.Errorf("sweep %q: grace %v, want %v", raw, got, want)
+		if _, err := watchdogRetryGrace(watchdogLookup(env)); err == nil {
+			t.Errorf("sweep %q: want an error, as Python int() raises", raw)
+		}
+		// AtRiskStays refuses before it touches the database.
+		_, err := AtRiskStays(context.Background(), nil, watchdogLookup(env), time.Now(), true)
+		if err == nil || !strings.Contains(err.Error(), "UBYHOST_SUBMIT_SWEEP_MINUTES") {
+			t.Errorf("sweep %q: AtRiskStays error %v, want one naming the variable", raw, err)
 		}
 	}
 }
@@ -874,10 +905,9 @@ func TestWatchdogAwaitingRetry(t *testing.T) {
 
    From `go/`: `test -z "$(gofmt -l .)" && go vet ./... && go test ./internal/calendar/ -count=1 2>&1 | tail -30` is ok (the DB test skips here; step 5 runs it). Commit "1159 step 3".
 
-4. Create `App/tests/test_filing_watchdog_golden.py` (sha256 `5eff8eba372153fa6a11815a34c274d0afbb70def093c2063e4612e4b0fd3dab`) with exactly the content of block 4 below.
+4. Create `App/tests/test_filing_watchdog_golden.py` (sha256 `5eff8eba372153fa6a11815a34c274d0afbb70def093c2063e4612e4b0fd3dab`) = block 4 below.
 
-   Create it from the repo root with `python3 /tmp/extract_block.py docs/tasks/1159-go-filing-watchdog.md 4 App/tests/test_filing_watchdog_golden.py && sha256sum App/tests/test_filing_watchdog_golden.py | tail -3` (step 0's helper copies block 4 byte for byte; pasting it by hand is allowed too, the hash decides).
-
+   Run `python3 /tmp/extract_block.py docs/tasks/1159-go-filing-watchdog.md 4 App/tests/test_filing_watchdog_golden.py && sha256sum App/tests/test_filing_watchdog_golden.py | tail -3`.
 ```python
 """go/internal/calendar/filing_watchdog_test.go reads go/internal/calendar/testdata/filing_watchdog_golden.json."""
 
@@ -918,7 +948,7 @@ P=/var/tmp/pg1159 && mkdir -p $P && chown postgres $P && su postgres -c "/usr/li
 cd go && UBYHOST_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:55439/postgres go test ./internal/calendar/ -run 'Watchdog|FilingHeartbeat' -count=1 -v 2>&1 | grep -E '^(--- |ok|FAIL)' | tail -30
 ```
 
-   Expected: four `--- PASS` lines (`TestWatchdogStaysMatchPython`, `TestFilingHeartbeatURLMatchesPython`, `TestWatchdogRetryGrace`, `TestWatchdogAwaitingRetry`) and `ok`. A `--- SKIP` means the variable was not seen. A FAIL: STOP (§8), paste the first 30 lines of the diff into the report. Then write the report (§9), set this brief's `Status: review`, commit "1159 step 5".
+   Expected: four `--- PASS` lines (stays, heartbeat, retry grace, awaiting) and `ok`. A `--- SKIP` means the variable was not seen. A FAIL: STOP (§8), paste the first 30 lines of the diff into the report. Then write the report (§9), set this brief's `Status: review`, commit "1159 step 5".
 
 ## 5. Do not touch
 
@@ -938,7 +968,7 @@ From the repo root: `python3 scripts/context_lint.py 2>&1 | tail -30`.
 - [ ] Step 5: the four tests PASS on local PostgreSQL, or "CI only" with the reason.
 - [ ] From `App/`: the two pytest files pass and the freshness command leaves `git status --short ../go` empty.
 - [ ] `python3 scripts/context_lint.py` passes.
-- [ ] `git diff --stat 4e56401..HEAD | tail -30` lists only the §3 paths (plus brief 1159b, committed with this brief).
+- [ ] `git diff --stat 4e56401..HEAD | tail -30`: only §3 paths and brief 1159b.
 - [ ] Five commits "1159 step 1" to "1159 step 5" on `claude/go-filing-watchdog`; nothing pushed.
 
 ## 8. Stop and ask
@@ -959,11 +989,11 @@ Write `docs/tasks/1159-report.md` (600 tokens at most) and set this brief's `Sta
 
 ## Risk list (for the reviewer)
 
-Read `go/internal/calendar/filing_watchdog.go` against App/app/filing_watchdog.py 57-222 and 358-367 line by line: both WHERE clauses (status, archived, `active = 1`, demo, guest archived, `!= 'sent'`, nationality not NULL/empty, NOT EXISTS live guest, the date bounds `<= today` and `>= today - 28 days`), the reportable filter, grouping order, `unfiled` and awaiting counts, the 24 h window (`>` skips), the 7-day drop for unknown risk only, `overdue` as strict `<`, `awaiting_retry` only when not overdue and every unfiled guest awaits, the grace bounds `0 <= age <= grace`, the sort, the heartbeat strip. Then the golden script (seed covers each §2 case) and that the test does not skip in CI (`--- PASS: TestWatchdogStaysMatchPython` in the Go job log).
+Read `go/internal/calendar/filing_watchdog.go` against App/app/filing_watchdog.py 57-222 and 358-367 line by line: both WHERE clauses and date bounds, the reportable filter, grouping, counts, the 24 h window (`>` skips), the 7-day drop (unknown risk only), strict `<` for overdue, `awaiting_retry` only when not overdue and all unfiled await, `0 <= age <= grace`, the sweep-minutes error, the sort, the heartbeat strip. Then the golden script (seed covers each §2 case) and that the test does not skip in CI (`--- PASS: TestWatchdogStaysMatchPython` in the Go job log).
 
 Known and accepted (not 1:1; unreachable with what the app writes):
-- Python refuses to start when `UBYHOST_SUBMIT_SWEEP_MINUTES` is not an integer; Go falls back to 10 (20-minute grace).
-- `finished_at` parsing: Python's `fromisoformat` accepts a few more forms (no seconds, for example) than `ParseStoredUTC`; the app writes `db.utcnow()`, which both read. Unreadable means at risk at once in Go: never later than Python.
+- `int()` also takes `1_0` and non-ASCII digits; Go refuses them (loudly).
+- `finished_at`: `fromisoformat` reads a few more forms than `ParseStoredUTC`; `db.utcnow()` output both read. Unreadable = at risk at once in Go (never later).
 - Python accepts a naive `now` as Prague time; the Go functions take an instant. Brief E passes `time.Now()`.
 
 ## Owner steps
