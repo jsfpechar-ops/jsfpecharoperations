@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Weekly: snapshot DB on the server, copy the newest encrypted archive to
-# Google Drive (rclone), and prune Drive copies older than the retention window.
+# Daily (04:00 UTC, after backup.sh at 03:00): copy the newest encrypted snapshot,
+# already made by backup.sh, to Google Drive (rclone), and prune Drive copies
+# older than the retention window. It takes no snapshot of its own.
 #
 # G-D2 keeps Drive alongside S3. Google processor terms (a DPA) exist only for
 # Workspace/Cloud accounts; a consumer account has none. Confirm the account
@@ -31,11 +32,16 @@ if ! rclone listremotes | grep -q "^${REMOTE}:$"; then
   exit 1
 fi
 
-./scripts/backup.sh
-
 LATEST="$(docker compose exec -T ubyhost sh -c 'ls -1 /data/backups 2>/dev/null | sort -r | head -1')"
 if [ -z "${LATEST}" ]; then
   echo "No backup folder in container /data/backups" >&2
+  exit 1
+fi
+
+# backup.sh runs at 03:00 UTC. A newest folder from another day means that run
+# failed or has not run; do not quietly upload an old snapshot as if it were new.
+if [ "${LATEST%%T*}" != "$(date -u +%Y%m%d)" ]; then
+  echo "Newest snapshot ${LATEST} is not from today (UTC). Run ./scripts/backup.sh first." >&2
   exit 1
 fi
 

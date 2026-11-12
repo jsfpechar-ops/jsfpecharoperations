@@ -1,45 +1,47 @@
-# 1150 report: iCal date move over a crash-stuck `running` filing (K-F22)
+# 1150 report
 
 Status: review
 
 ## Files changed
 
-- `App/app/icalsync.py`: `_send_in_flight` docstring corrected; last line now also returns `_running_submission_covers_stay(reservation_id)` (no age cutoff).
-- `App/tests/test_icalsync.py`: `_unclear_batch` gains `point` and `hours_old` (default keeps old callers identical); `test_a_crash_stuck_running_batch_defers_fitting_the_guest_window` made unpointed and checks `ical_feed.body_sha256` is empty; new `_stay_dates` helper and 4 new tests.
-- `docs/tasks/1150-ical-move-unclaimed-running.md`: Status set to `review`.
-- `docs/tasks/1150-report.md`: this report.
+- `docs/DISASTER_RECOVERY.md` (new, 5742 bytes, commit 2a5d551d)
+- `docs/tasks/1150-report.md` (new, this file)
 
-## Commands (last lines)
+## Commands
 
-- Step 1, `pytest tests/test_icalsync.py -k "running or crash_stuck"` (before fix): `3 failed, 5 passed, 60 deselected in 1.84s`
-- Step 2, `pytest tests/test_icalsync.py`: `68 passed in 7.58s`
-- Step 4, `ruff check app tests --select E9,F63,F7,F82,F401,F841`: `All checks passed!`
-- Step 4, area run (`test_icalsync`, `test_ical_skip_unchanged`, `test_stale_submission`, `test_no_em_dashes`) with `-rs`: `97 passed in 10.16s`, no skip lines.
-- Step 4, `python3 scripts/context_lint.py`: `context lint: OK` (WARN about status.md is for the orchestrator, as the brief says).
+- `wc -c docs/DISASTER_RECOVERY.md` gave 5742 (limit 10000).
+- `python3 scripts/context_lint.py 2>&1 | tail -15`, last lines: `2 commit(s) touched App/ after the last status.md update...`, `next free: task 1134 | migration 0046`, `context lint: OK`. No ERROR lines.
+- `test -f docs/DISASTER_RECOVERY.md && echo ok | tail -30` printed `ok`.
+- `git status --short | tail -30` printed nothing (clean).
 
-## Revert bites
+## Section 7 acceptance
 
-- (a) Tail of `_send_in_flight` reverted to `_pointed_at_open_submission` only. FAIL: `3 failed, 5 passed`. Restored with `git checkout`: PASS `8 passed`.
-- (b) Reservation-scoped check replaced by global `SELECT 1 ... state = 'running'`. FAIL: `2 failed, 6 passed`
-  (`test_a_running_batch_of_another_guest_does_not_hold_the_date_move`, `test_a_running_batch_listing_only_a_sent_guest_does_not_hold_the_date_move`). Restored: PASS `8 passed`.
-
-## Acceptance (section 7)
-
-- [x] `_send_in_flight` returns True for a `running` row listing an unsent guest of the stay, any age, unpointed, no claim.
-- [x] 4 new tests and the changed crash-stuck test pass; bite (a) fails 3, bite (b) fails 2, each passes after `git checkout`.
-- [x] Docstring no longer claims the `running` case is covered by the pointer.
-- [x] ruff clean; area run green, 0 skipped; lint OK; only section 3 files changed.
+- [x] Runbook has all 8 sections; every command is in its own block. (Short inline commands in numbered steps are code spans, not fenced blocks; see Deviations.)
+- [x] No AWS login is needed in any rebuild step.
+- [x] The two-servers guard appears before the rebuild steps.
+- [x] Lint shows no ERROR for the two files.
+- [x] Two commits on the branch, nothing pushed. (Runbook commit 2a5d551d; report commit follows.)
 
 ## Deviations
 
-- The step scripts (edit helpers) were written to `/home/user/scratchpad_1150_step1.py` and `/home/user/scratchpad_1150_step2.py`, outside the repo and outside the scratchpad directory. Not committed.
-- No screenshots: no UI change.
+- Section 2 facts were confirmed by grep. The repo-root `scripts/` folder does not hold `deploy.sh`, `pg-restore.sh` or `status.sh`. They live in `deploy/lightsail/scripts/`, so the runbook runs commands from `/opt/ubyhost/deploy/lightsail`, as `docs/LIGHTSAIL.md` does.
+- Commit message for step 2 used the brief's own text, not the `NNNN step k` pattern.
+- Added step 13 (delete the age identity file from the server after restore). This follows the "never on the server" key-custody rule in `docs/OPERATIONS.md`.
+- Some short commands in numbered steps (`docker compose stop`, `./scripts/deploy.sh`, `crontab -e`) are inline code, not fenced blocks.
+- Commit step 5 for the report uses `docs: 1150 report`.
 
 ## Questions
 
-- None.
+- The brief does not name the exact stay or Doručenka URL paths, so the runbook asks for a browser check rather than a fixed curl path.
+- `curl --resolve` may fail TLS against Cloudflare origin certificates. The runbook falls back to a browser hosts-file check and does not use `-k`. Please confirm this is the intended check.
 
 ## Owner steps left
 
-1. Push `task/1150-ical-move-running`.
-2. Open the PR as a draft and keep it draft until 1150b is also ready, then merge both with `scripts/merge-pr-on-green.sh`.
+- Owner or lawyer: add the new provider to the `/subprocessors` register and `docs/privacy/ROPA.md` (runbook section "After the move").
+
+## Files that should link to the runbook (orchestrator adds the links)
+
+- `docs/LIGHTSAIL.md` (rebuild section)
+- `docs/OPERATIONS.md` (backup section)
+- `docs/context/status.md`
+- `AGENTS.md` routing "Deploy, server, backups" row

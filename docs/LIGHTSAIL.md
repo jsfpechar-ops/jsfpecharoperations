@@ -220,7 +220,7 @@ All from `deploy/lightsail/`:
 | `./scripts/pg-cutover.sh rehearse` | Copy the SQLite data into a throwaway PostgreSQL database, verify it, drop it |
 | `./scripts/pg-cutover.sh cutover` | Stop the app, copy and verify into PostgreSQL, switch `.env`, start; any failure returns to SQLite |
 | `./scripts/pg-cutover.sh rollback` | Switch `.env` back to SQLite (type ROLLBACK to confirm) |
-| `./scripts/backup-gdrive.sh` | Snapshot + rclone copy newest folder to Google Drive |
+| `./scripts/backup-gdrive.sh` | rclone copy of today's snapshot folder (made by `backup.sh`) to Google Drive |
 | `docker compose run --rm --no-deps ubyhost python scripts/pg_schema.py apply --expect-database ubyhost` | Apply pending PostgreSQL goose migrations (`App/migrations_pg/`) after a deploy whose notes mention a goose file; the app will not start while one is pending |
 
 Public `GET /healthz` in **production** returns `status`, `version`, `data_dir_writable` only (no env labels). Confirm `ubyport_env` with `./scripts/status.sh` or Settings.
@@ -233,10 +233,10 @@ Daily on-volume snapshot (03:00 UTC):
 (crontab -l 2>/dev/null; echo "0 3 * * * cd /opt/ubyhost/deploy/lightsail && ./scripts/backup.sh >> /var/log/ubyhost-backup.log 2>&1") | crontab -
 ```
 
-Weekly off-site (Sunday 04:00 UTC) after `rclone config` remote **`gdrive`**:
+Daily off-site to Google Drive (04:00 UTC, after the 03:00 local backup) after `rclone config` remote **`gdrive`**. `backup-gdrive.sh` takes no snapshot of its own: it uploads today's folder from `backup.sh` and fails if there is none:
 
 ```bash
-(crontab -l 2>/dev/null; echo "0 4 * * 0 cd /opt/ubyhost/deploy/lightsail && ./scripts/backup-gdrive.sh >> /var/log/ubyhost-gdrive.log 2>&1") | crontab -
+(crontab -l 2>/dev/null; echo "0 4 * * * cd /opt/ubyhost/deploy/lightsail && ./scripts/backup-gdrive.sh >> /var/log/ubyhost-gdrive.log 2>&1") | crontab -
 ```
 
 Daily off-site to S3 (03:30 UTC, after the 03:00 local backup) after `rclone config` remote **`s3`**. `backup-s3.sh` first runs `backup.sh` itself (a fresh snapshot), so a failed backup also stops the upload:
@@ -264,7 +264,7 @@ Passport photos are **not** in the DB backup. After restore, unverified uploads 
 | `backup.sh` pg_dump on the S3 copy | daily (brief 1020) | see `backup-s3.sh` | off-site copy; Litestream was retired on 2026-11-07 |
 | `backup.sh` on the volume | daily 03:00 UTC | `UBYHOST_BACKUP_RETENTION_DAYS` (set `7` in production `.env`) | quick restore on the same server |
 | `backup-s3.sh` | daily 03:30 UTC | 30 days (bucket lifecycle rule) | main off-site copy, including a new instance |
-| `backup-gdrive.sh` | weekly | 30 days | second copy outside AWS |
+| `backup-gdrive.sh` | daily 04:00 UTC | 30 days | second copy outside AWS |
 | Lightsail automatic snapshots | daily | 7 | keep on: the only copy of the whole server (`.env`, origin certs, cron, photos) and the fastest full restore; billed per GB, so a 7-day local retention keeps them small |
 
 WAL-G point-in-time recovery (production only, after the rollout in [OPERATIONS](OPERATIONS.md#wal-g-continuous-archiving-and-point-in-time-recovery)): daily base backup 04:30 UTC and a check every 10 minutes. Create the log files first, or cron silently skips both commands: `sudo touch /var/log/ubyhost-walg-backup.log /var/log/ubyhost-walg-check.log && sudo chown ubuntu:ubuntu /var/log/ubyhost-walg-backup.log /var/log/ubyhost-walg-check.log`.
