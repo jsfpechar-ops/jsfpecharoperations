@@ -24,6 +24,7 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/calendar"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ical"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/jobs"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/metacapi"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/palette"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/payments"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/posthog"
@@ -251,7 +252,7 @@ func run() int {
 }
 
 // goIntervals are the schedule intervals (minutes) that cap a retry backoff.
-var goIntervals = map[string]int{"billing_snapshot": 24 * 60, "stripe_sweep": 24 * 60, "submit": 10, "ical": 60, "push": 1, "posthog": 15}
+var goIntervals = map[string]int{"billing_snapshot": 24 * 60, "stripe_sweep": 24 * 60, "submit": 10, "ical": 60, "push": 1, "posthog": 15, "meta_capi": 10}
 
 // goHandlers maps each Go-owned job kind to its handler.
 func goHandlers(pool *pgxpool.Pool) map[string]jobs.Handler {
@@ -287,6 +288,13 @@ func goHandlers(pool *pgxpool.Pool) map[string]jobs.Handler {
 				slog.Info("posthog sync", "sent", counts.Sent, "skipped", counts.Skipped, "failed", counts.Failed)
 			}
 			return counts.Sent, err
+		},
+		"meta_capi": func(ctx context.Context) (int, error) {
+			sum, err := metacapi.Send(ctx, pool, metacapi.ConfigFromEnv(os.LookupEnv), nil, time.Now())
+			if sum != (metacapi.Summary{}) {
+				slog.Info("meta conversions", "sent", sum.Sent, "retry", sum.Retry, "failed", sum.Failed, "expired", sum.Expired)
+			}
+			return sum.Sent, err
 		},
 		"submit": func(ctx context.Context) (int, error) {
 			keys, err := secure.LoadDataKeys(os.Getenv)
