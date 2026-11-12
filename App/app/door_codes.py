@@ -867,6 +867,7 @@ def _revoke_one(row_id: int) -> None:
                 actor="system",
                 owner_user_id=apartment["owner_user_id"],
             )
+            _reissue_lost_pin(row_id, str(row["provider_code_id"] or ""), apartment["owner_user_id"])
             return
         db.audit(
             "door_code_revoked",
