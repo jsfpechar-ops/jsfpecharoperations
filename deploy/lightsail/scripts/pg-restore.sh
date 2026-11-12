@@ -61,11 +61,11 @@ command -v age >/dev/null 2>&1 || die "the 'age' binary is missing on the host"
 
 if [ "${MODE}" = "file" ]; then
   # Brief 1169: a restore from a file means a rebuilt box, and the old server may
-  # still be filing. The marker stays until the owner removes it
-  # (docs/DISASTER_RECOVERY.md, "Two servers never file at once").
-  printf 'restored %s from %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(basename "${DUMP_FILE}")" > .restored-box
-  bash "${ROOT}/scripts/filing-guard.sh" \
-    || die "turn automatic filing off in .env first (UBYHOST_ENABLE_SCHEDULER=0, submit in neither job list)" 3
+  # still be filing. Check as if restored; the marker is written only after the
+  # confirm, just before any container stops (docs/DISASTER_RECOVERY.md,
+  # "Two servers never file at once").
+  bash "${ROOT}/scripts/filing-guard.sh" --assume-restored \
+    || die "turn automatic filing off in .env first (UBYHOST_ENABLE_SCHEDULER=0, submit in neither job list), run ./scripts/deploy.sh, then run this again" 3
 fi
 
 if [ "${MODE}" = "stamp" ]; then
@@ -83,14 +83,30 @@ fi
 CONTAINER="$(docker compose ps -aq ubyhost)"
 [ -n "${CONTAINER}" ] || die "could not find the ubyhost container; run ./scripts/deploy.sh first"
 
+STOP_SERVICES="worker ubyhost"
+UP_SERVICES="ubyhost worker"
+if [ "${MODE}" = "file" ]; then
+  printf 'restored %s from %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(basename "${DUMP_FILE}")" > .restored-box
+  # Brief 1169-cont-1: the Go service could claim a submit job from the restored
+  # database with its old env. Stop it too (only when the go profile defines or
+  # runs it), and start every service again so each one reads the current .env.
+  KNOWN_SERVICES="$( { docker compose config --services; docker compose ps --services; } 2>/dev/null || true)"
+  if printf '%s\n' "${KNOWN_SERVICES}" | grep -qx 'ubyhost-go'; then
+    STOP_SERVICES="worker ubyhost-go ubyhost"
+  fi
+  UP_SERVICES=""
+fi
+
 TMP="$(mktemp -d)"
 chmod 700 "${TMP}"
 trap 'rm -rf "${TMP}"' EXIT
 
-echo "==> Stopping worker and ubyhost"
-docker compose stop worker ubyhost
+echo "==> Stopping ${STOP_SERVICES}"
+# shellcheck disable=SC2086
+docker compose stop ${STOP_SERVICES}
 # From here on, any failure brings the app back up (a no-op after the explicit start below).
-trap 'rm -rf "${TMP}"; docker compose up -d ubyhost worker >/dev/null 2>&1 || true' EXIT
+# shellcheck disable=SC2086
+trap 'rm -rf "${TMP}"; docker compose up -d ${UP_SERVICES} >/dev/null 2>&1 || true' EXIT
 
 if [ "${MODE}" = "stamp" ]; then
   echo "==> Pulling ${STAMP} and restoring it into PostgreSQL"
@@ -104,8 +120,9 @@ else
     | docker compose exec -T postgres pg_restore -U ubyhost -d ubyhost --clean --if-exists --single-transaction
 fi
 
-echo "==> Starting ubyhost and the worker"
-docker compose up -d ubyhost worker
+echo "==> Starting ${UP_SERVICES:-every service}"
+# shellcheck disable=SC2086
+docker compose up -d ${UP_SERVICES}
 
 echo "==> Waiting for health"
 for _ in $(seq 1 30); do
