@@ -6,6 +6,8 @@ A refused passcode is replaced once by a new random PIN, never retried forever.
 """
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
+
 import pytest
 
 from app import cleaning_codes, db, door_codes, ttlock
@@ -23,8 +25,8 @@ NEW_CODES = [
     (-1007, "code_missing"),
     (-3002, "offline"), (-3003, "offline"), (-3035, "offline"),
     (-3036, "offline"), (-3037, "offline"), (-2025, "offline"),
-    (-1003, "config"), (-4037, "config"), (-4043, "config"), (-3034, "config"),
-    (-4067, "config"), (-4063, "config"), (30008, "config"),
+    (-1003, "lock_setup"), (-4037, "lock_setup"), (-4043, "lock_setup"), (-3034, "lock_setup"),
+    (-4067, "lock_setup"), (-4063, "config"), (30008, "config"),
     (80002, "bug"), (-2009, "bug"), (-2032, "bug"), (-3006, "bug"), (-3045, "bug"),
 ]
 
@@ -76,16 +78,18 @@ def test_minus_1007_on_delete_and_a_failed_lookup_is_retried(world, monkeypatch)
     assert _state(row) == door_codes.REVOKE_PENDING and notices == []
 
 
-def test_minus_1007_on_the_list_too_means_the_lock_has_no_codes(world, monkeypatch):
+def test_minus_1007_on_the_list_after_a_delete_that_said_it_too_is_unknown_not_gone(world, monkeypatch):
     lock, stay, row, notices = world
     monkeypatch.setattr(ttlock, "delete_code", _refuse(-1007))
     monkeypatch.setattr(ttlock, "code_is_listed", REAL_CODE_IS_LISTED)
     monkeypatch.setattr(ttlock, "_call", lambda *a, **k: _refuse(-1007)())
     door_codes._revoke_one(row)
-    assert _state(row) == door_codes.REVOKED and notices == ["cancelled_deleted"]
+    after = _row(row)
+    assert after["state"] == door_codes.REVOKE_PENDING and after["last_error"] == "code_missing"
+    assert after["pin_enc"] is not None and notices == []
 
 
-def test_a_list_that_answers_minus_1007_after_a_full_page_is_not_an_empty_list(monkeypatch):
+def test_a_list_answering_minus_1007_on_any_page_is_unknown_never_empty(monkeypatch):
     pages = []
 
     def call(account_id, path, data, priority):
@@ -95,14 +99,26 @@ def test_a_list_that_answers_minus_1007_after_a_full_page_is_not_an_empty_list(m
         return _refuse(-1007)()
 
     monkeypatch.setattr(ttlock, "_call", call)
-    with pytest.raises(ttlock.TTLockError) as exc:
-        ttlock.code_is_listed(1, "9", "UH-1", "99")
-    assert exc.value.code == -1007 and pages == [1, 2]
-
-
-def test_codes_named_reads_minus_1007_on_page_one_as_no_codes(monkeypatch):
+    assert ttlock.code_is_listed(1, "9", "UH-1", "99") is None and pages == [1, 2]
     monkeypatch.setattr(ttlock, "_call", lambda *a, **k: _refuse(-1007)())
-    assert ttlock.codes_named(1, "9", "UH Cleaning abc") == []
+    assert ttlock.code_is_listed(1, "9", "UH-1", "99") is None
+    assert ttlock.codes_named(1, "9", "UH Cleaning abc") is None
+
+
+def test_a_cleaning_issue_retry_whose_list_answers_minus_1007_adds_no_second_code(workspace, lock, monkeypatch):
+    job, row = _queued(workspace, monkeypatch, "retrying", 1)
+    _own(lock, row)
+    real = lock.call
+
+    def call(account_id, path, data, priority):
+        if path == "/v3/lock/listKeyboardPwd":
+            return _refuse(-1007)()
+        return real(account_id, path, data, priority)
+
+    monkeypatch.setattr(ttlock, "_call", call)
+    cleaning_codes.process_queue()
+    after = _clean_row(job)
+    assert after["state"] == "retrying" and lock.added == 0 and after["last_error"] == "transient"
 
 
 @pytest.mark.parametrize("code", [-3002, -3003, -3035, -3036, -3037, -2025])
@@ -198,3 +214,56 @@ def test_a_cleaning_delete_answering_minus_1007_with_an_incomplete_list_is_retri
     monkeypatch.setattr(ttlock, "_call", call)
     cleaning_codes.process_queue()
     assert _clean_row(job)["state"] == "revoke_pending"
+
+
+def test_a_cleaning_delete_answering_minus_1007_with_an_unknown_lookup_is_not_counted_deleted(workspace, lock, monkeypatch):
+    job, row = _queued(workspace, monkeypatch, "revoke_pending", 1)
+    _own(lock, row)
+    monkeypatch.setattr(ttlock, "code_is_listed", lambda *a, **k: None)  # the list could not be read in full
+    monkeypatch.setattr(ttlock, "delete_code", _refuse(-1007))
+    cleaning_codes.process_queue()
+    after = _clean_row(job)
+    assert after["state"] == "revoke_pending" and after["pin_enc"] is not None
+    assert after["last_error"] == "code_missing"
+
+
+@pytest.mark.parametrize("code", [-3034, -4037, -4043, -1003, -4067])
+def test_a_lock_setup_answer_on_delete_is_retried_to_the_end_with_no_lookup_and_a_host_mail_at_try_three(world, monkeypatch, code):
+    lock, stay, row, notices = world
+    lock.pins.clear()  # a lookup would say "gone": it must not even be asked
+    monkeypatch.setattr(ttlock, "delete_code", _refuse(code))
+    for attempt in (1, 2, 3):
+        db.execute("UPDATE door_code SET next_attempt_at = NULL WHERE id = ?", (row,))
+        door_codes._revoke_one(row)
+        after = _row(row)
+        assert after["state"] == door_codes.REVOKE_PENDING and after["last_error"] == "lock_setup"
+        assert notices == (["cancelled_not_deleted"] if attempt == 3 else [])
+    wait = datetime.fromisoformat(after["next_attempt_at"]) - datetime.now(timezone.utc)
+    assert timedelta(minutes=55) < wait <= timedelta(minutes=60) and lock.lookups == 0
+    db.execute("UPDATE door_code SET valid_to = ?, next_attempt_at = NULL WHERE id = ?", ("2000-01-01T00:00:00+00:00", row))
+    door_codes._revoke_one(row)
+    assert _state(row) == door_codes.REVOKE_FAILED
+
+
+def test_a_config_answer_on_delete_still_ends_revoke_failed_at_once(world, monkeypatch):
+    lock, stay, row, notices = world
+    monkeypatch.setattr(ttlock, "delete_code", _refuse(-4063))
+    door_codes._revoke_one(row)
+    assert _row(row)["state"] == door_codes.REVOKE_FAILED and notices == ["cancelled_not_deleted"]
+
+
+@pytest.mark.parametrize("revoking", [False, True])
+def test_a_lock_setup_answer_on_a_cleaning_code_is_retried_not_failed(workspace, lock, monkeypatch, revoking):
+    job, row = _queued(workspace, monkeypatch, "revoke_pending" if revoking else "pending", 0)
+    _own(lock, row)
+
+    def call(account_id, path, data, priority):
+        if path in ("/v3/keyboardPwd/add", "/v3/keyboardPwd/delete"):
+            return _refuse(-3034)()
+        return lock.call(account_id, path, data, priority)
+
+    monkeypatch.setattr(ttlock, "_call", call)
+    cleaning_codes.process_queue()
+    after = _clean_row(job)
+    assert after["state"] == ("revoke_pending" if revoking else "retrying")
+    assert after["last_error"] == "lock_setup" and after["pin_enc"] is not None

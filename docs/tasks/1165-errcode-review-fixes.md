@@ -1,6 +1,6 @@
 # 1165: fix the review findings of 1163 (B1 code_missing, M1 lock_setup kind, M2 -1007 on a list) (K-DC-ERRCODE)
 
-Status: todo
+Status: review
 Depends on: 1163 (its code is in HEAD; this brief edits it) | Base commit: 14b69654 (HEAD of claude/zealous-maxwell-a7ub54, PR #947) | Branch: task/1165-errcode-review-fixes
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Next: 1165b (host mail copy and docs) runs after this one.

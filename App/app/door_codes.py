@@ -77,7 +77,9 @@ PERIOD_TAKEN = "period_taken"
 PERIOD_SHARED = "period_shared"
 PERIOD_TAKEN_RETRY_MINUTES = (1, 5)
 PERIOD_TAKEN_MAX_ATTEMPTS = 4
-GATEWAY_RETRY_KINDS = ("offline", "transient", "network", "rate", "budget", ttlock.CODE_MISSING)
+GATEWAY_RETRY_KINDS = (
+    "offline", "transient", "network", "rate", "budget", ttlock.CODE_MISSING, ttlock.LOCK_SETUP,
+)
 LEASE_MINUTES = 2
 # 1155: a revived row whose delete may have run is checked on the lock before it is shown.
 PIN_PRESENT, PIN_GONE, PIN_UNKNOWN = "present", "gone", "unknown"
@@ -85,8 +87,10 @@ LOOKUP_FAILED = "lookup_failed"
 LOOKUP_MAX_TRIES = 3
 # last_error values that leave a delete's result unknown: none (a crash after the claim),
 # a timeout or non-JSON answer (network), a server fault (transient), or a lookup that failed
-# (stored as lookup_failed:<n>; _delete_result_unknown reads it).
-AMBIGUOUS_DELETE_ERRORS = ("", "network", "transient", LOOKUP_FAILED)
+# (stored as lookup_failed:<n>; _delete_result_unknown reads it), or code_missing (-1007: the
+# code is not on the lock, which an earlier delete that timed out may have caused, and the
+# confirming lookup could not say).
+AMBIGUOUS_DELETE_ERRORS = ("", "network", "transient", LOOKUP_FAILED, ttlock.CODE_MISSING)
 # A guest who has finished registering must not wait longer than this in silence.
 DELAY_MINUTES = 5
 BATCH = 20
@@ -1182,6 +1186,13 @@ def _handle_moves(now_iso: str) -> None:
             continue
         if row["valid_from"] and row["valid_to"]:
             if _iso_to_ms(row["valid_from"]) == start_ms and _iso_to_ms(row["valid_to"]) == end_ms:
+                if (row["last_error"] or "").startswith(("lock_setup", "config")):
+                    # The stay is back on the code's own window: an old move failure is stale.
+                    db.execute(
+                        "UPDATE door_code SET last_error = NULL, next_attempt_at = NULL, "
+                        "updated_at = ? WHERE id = ? AND state = ?",
+                        (now_iso, row["id"], ISSUED),
+                    )
                 continue
         if (row["valid_from"] and _iso_to_ms(row["valid_from"]) <= now_ms) or start_ms <= now_ms:
             mail_notify.door_code_notice(int(row["id"]), "moved_during_stay")
@@ -1283,7 +1294,7 @@ def _handle_moves(now_iso: str) -> None:
                 mail.drain(limit=4)
             else:
                 # No attempt cap on move replace: the guest still has the old PIN.
-                delay = 60 if kind == "budget" else 15
+                delay = 60 if kind in ("budget", ttlock.LOCK_SETUP) else 15
                 db.execute(
                     "UPDATE door_code SET next_attempt_at = ?, last_error = ?, updated_at = ? WHERE id = ?",
                     (_iso(_now() + timedelta(minutes=delay)), last_error, now_iso, row["id"]),

@@ -222,7 +222,7 @@ def _already_gone(error: ttlock.TTLockError, row: dict, code_id: str) -> bool:
 
 
 def _failure(row: dict, error: ttlock.TTLockError, revoking: bool) -> None:
-    transient = error.kind in {"offline", "transient", "network", "rate", "budget", ttlock.CODE_MISSING}
+    transient = error.kind in {"offline", "transient", "network", "rate", "budget", ttlock.CODE_MISSING, ttlock.LOCK_SETUP}
     retry = transient and row["attempts"] < 5
     state = ("revoke_pending" if retry else "revoke_failed") if revoking else ("retrying" if retry else "failed")
     delay = (1, 5, 15, 60, 240)[min(row["attempts"] - 1, 4)]
