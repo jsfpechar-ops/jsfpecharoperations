@@ -1,6 +1,6 @@
 # 1150b: iCal date move over a crash-stuck `running` filing (K-F22), Go twin of 1150
 
-Status: todo
+Status: review
 Depends on: 1150 | Base commit: a176c3ee (HEAD of branch claude/zealous-maxwell-a7ub54) | Branch: task/1150b-ical-move-running-go
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
