@@ -526,16 +526,46 @@ def _warn_if_guests_registered(reservation, apartment_id: int, variant: str) -> 
     push.cancelled_with_guests(apartment_id, reservation["id"])
 
 
-def _cancel_existing_stay(apartment_id: int, uid: str, date_from: str, now: str, stats: Dict[str, Any]) -> None:
-    """Mark an active future stay as cancelled when the feed signals cancellation."""
+def _cancel_reservation_unless_claimed(reservation_id: int, now: str) -> bool:
+    """Cancel a stay only if no live submission_claim covers it.
+
+    One transaction, as for a date move: the claim path's per-guest advisory
+    locks (all the stay's guests, ascending id), then one conditional UPDATE,
+    so a claim that committed first is seen and a claim that comes later waits.
+    False means skipped: the stay stays active and the next sync retries.
+    """
+    live_after = time.time() - reporting.SUBMISSION_CLAIM_TTL_SECONDS
+    with db.immediate() as cur:
+        cur.execute(
+            "SELECT id FROM guest WHERE reservation_id = ? ORDER BY id", (reservation_id,)
+        )
+        for locked in cur.fetchall():
+            db.lock_key(cur, "guest", locked["id"])
+        cur.execute(
+            "UPDATE reservation SET status = 'cancelled', updated_at = ? "
+            "WHERE id = ? AND status = 'active' "
+            "AND NOT EXISTS (SELECT 1 FROM submission_claim c "
+            "JOIN guest g ON g.id = c.guest_id "
+            "WHERE g.reservation_id = reservation.id "
+            "AND g.archived_at IS NULL AND c.claimed_at >= ?)",
+            (now, reservation_id, live_after),
+        )
+        return cur.rowcount == 1
+
+
+def _cancel_existing_stay(apartment_id: int, uid: str, date_from: str, now: str, stats: Dict[str, Any]) -> bool:
+    """Mark an active future stay as cancelled when the feed signals cancellation.
+
+    Returns True when the cancel was deferred because a send is in flight.
+    """
     existing = db.query_one(
         "SELECT * FROM reservation WHERE apartment_id = ? AND uid = ?",
         (apartment_id, uid),
     )
     if not existing or existing["status"] != "active":
-        return
+        return False
     if existing["date_from"] < deadlines.local_now().date().isoformat():
-        return
+        return False
     reported = db.query_one(
         "SELECT COUNT(*) AS n FROM guest WHERE reservation_id = ? AND submit_state = ?",
         (existing["id"], reporting.SENT),
@@ -552,13 +582,20 @@ def _cancel_existing_stay(apartment_id: int, uid: str, date_from: str, now: str,
             reservation_id=existing["id"],
             params={"date": existing["date_from"], "variant": "cancelled"},
         )
-        return
-    db.update("reservation", existing["id"], {"status": "cancelled", "updated_at": now})
+        return False
+    if not _cancel_reservation_unless_claimed(existing["id"], now):
+        log.warning(
+            "ical_cancel_deferred_in_flight apartment_id=%s reservation_id=%s",
+            apartment_id,
+            existing["id"],
+        )
+        return True
     from . import claim as stay_claim
 
     stay_claim.expire_on_cancel(existing)
     _warn_if_guests_registered(existing, apartment_id, "cancelled")
     stats["cancelled"] += 1
+    return False
 
 
 def _existing_reservation(apartment_id: int, event: Dict[str, Any], now: str):
