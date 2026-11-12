@@ -405,6 +405,29 @@ def _send_in_flight(reservation_id: int) -> bool:
     )
 
 
+def _update_reservation_unless_claimed(existing, values: dict) -> bool:
+    """Write a date move only if no live submission_claim covers the stay.
+
+    One conditional UPDATE, so a claim taken after ``_send_in_flight`` cannot
+    be raced. False means skipped: the caller keeps the stored dates and the
+    next sync retries.
+    """
+    live_after = time.time() - reporting.SUBMISSION_CLAIM_TTL_SECONDS
+    return db.update_if(
+        "reservation",
+        existing["id"],
+        values,
+        {"date_from": existing["date_from"], "date_to": existing["date_to"]},
+        extra_where=(
+            "NOT EXISTS (SELECT 1 FROM submission_claim c "
+            "JOIN guest g ON g.id = c.guest_id "
+            "WHERE g.reservation_id = reservation.id "
+            "AND g.archived_at IS NULL AND c.claimed_at >= ?)"
+        ),
+        extra_params=(live_after,),
+    )
+
+
 def _fit_unsent_guest_windows(
     reservation_id: int,
     apartment_id: int,
@@ -787,8 +810,31 @@ def sync_feed(
                 changed["status"] = "active"
             if changed:
                 changed["updated_at"] = now
-                db.update("reservation", existing["id"], changed)
-                stats["updated"] += 1
+                applied = False
+                if dates_changed:
+                    applied = _update_reservation_unless_claimed(existing, changed)
+                    if not applied:
+                        # A claim landed after the pre-check: keep the stored
+                        # dates and let the next poll retry the move.
+                        for key in ("date_from", "date_to"):
+                            changed.pop(key, None)
+                        dates_changed = False
+                        deferred_in_flight = True
+                        log.warning(
+                            "ical_dates_deferred_in_flight apartment_id=%s reservation_id=%s "
+                            "stored=%s..%s calendar=%s..%s",
+                            feed["apartment_id"],
+                            existing["id"],
+                            existing["date_from"],
+                            existing["date_to"],
+                            event["date_from"],
+                            event["date_to"],
+                        )
+                if not applied and set(changed) - {"updated_at"}:
+                    db.update("reservation", existing["id"], changed)
+                    applied = True
+                if applied:
+                    stats["updated"] += 1
             if existing["status"] == "cancelled":
                 # The stay is back, so the cancellation was wrong (or the room
                 # was rebooked). Cancelling closed guest access; reopen it so

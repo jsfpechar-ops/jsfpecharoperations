@@ -286,3 +286,34 @@ func TestSyncFeedNotModified(t *testing.T) {
 		t.Errorf("reservations = %d, want 1", n)
 	}
 }
+
+func TestUpdateReservationUnlessClaimed(t *testing.T) {
+	pool := testPool(t)
+	ctx := context.Background()
+	aid := seedApartment(t, pool)
+	feed := newIcalFeed(t, pool, aid, "https://feed.test/race.ics")
+	stay := seedStay(t, pool, aid, feed.ID, "u-race", "2027-04-01", "2027-04-05")
+	g := seedGuest(t, pool, stay, "pending", "2027-04-01", "2027-04-05")
+	_, err := pool.Exec(ctx, `INSERT INTO submission_claim (guest_id, claim_token, claimed_at) VALUES ($1, 'race', $2)`,
+		g, epochSeconds())
+	must(t, err)
+	cols := map[string]any{"date_from": "2027-04-02", "date_to": "2027-04-06", "updated_at": ubyport.UTCNow()}
+	ok, err := updateReservationUnlessClaimed(ctx, pool, stay, cols)
+	must(t, err)
+	if ok {
+		t.Fatal("date move applied while a live claim was held")
+	}
+	if got := scalarText(t, pool, `SELECT date_from FROM reservation WHERE id = $1`, stay); got != "2027-04-01" {
+		t.Fatalf("date_from = %q, want unchanged", got)
+	}
+	_, err = pool.Exec(ctx, `DELETE FROM submission_claim WHERE guest_id = $1`, g)
+	must(t, err)
+	ok, err = updateReservationUnlessClaimed(ctx, pool, stay, cols)
+	must(t, err)
+	if !ok {
+		t.Fatal("date move skipped after the claim was released")
+	}
+	if got := scalarText(t, pool, `SELECT date_from FROM reservation WHERE id = $1`, stay); got != "2027-04-02" {
+		t.Fatalf("date_from = %q, want 2027-04-02", got)
+	}
+}
