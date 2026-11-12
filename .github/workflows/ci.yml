@@ -194,7 +194,8 @@ jobs:
 
   test-postgres-full:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    # Suite is ~28–35m; artifact upload retries have pushed past 40m on green runs.
+    timeout-minutes: 50
     defaults:
       run:
         working-directory: App
