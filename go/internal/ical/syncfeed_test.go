@@ -533,3 +533,154 @@ func TestDeferredDateMoveChangesNeitherStayNorWindows(t *testing.T) {
 	}
 	check("2027-09-01 2027-09-05", "2027-09-01 2027-09-05")
 }
+
+func seedSubmission(t *testing.T, pool *pgxpool.Pool, aid, guestID int64, state string, age time.Duration, point bool) int64 {
+	t.Helper()
+	created := time.Now().UTC().Add(-age).Format("2006-01-02T15:04:05") + "+00:00"
+	var id int64
+	must(t, pool.QueryRow(context.Background(),
+		`INSERT INTO submission (apartment_id, created_at, mode, state, guest_ids)
+		 VALUES ($1, $2, 'auto', $3, $4) RETURNING id`,
+		aid, created, state, fmt.Sprintf("[%d]", guestID)).Scan(&id))
+	if point {
+		_, err := pool.Exec(context.Background(), `UPDATE guest SET submission_id = $1 WHERE id = $2`, id, guestID)
+		must(t, err)
+	}
+	return id
+}
+
+func TestSyncFeedCancelEventWithUnconfirmedFilingCancelsAndAlerts(t *testing.T) {
+	pool := testPool(t)
+	aid := seedApartment(t, pool)
+	feed := newIcalFeed(t, pool, aid, "https://feed.test/cancel-unknown.ics")
+	stay := seedStay(t, pool, aid, feed.ID, "u-cu", "2999-03-01", "2999-03-05")
+	g := seedGuest(t, pool, stay, "pending", "2999-03-01", "2999-03-05")
+	seedSubmission(t, pool, aid, g, "outcome_unknown", 0, true)
+	doc := icsDoc(icsEvent("u-cu", "29990301", "29990305", "Guest A", "STATUS:CANCELLED"))
+
+	st := runSync(t, pool, feed, doc)
+
+	if got := scalarText(t, pool, `SELECT status FROM reservation WHERE id = $1`, stay); got != "cancelled" || st.Cancelled != 1 {
+		t.Errorf("status = %q, Cancelled = %d, want cancelled and 1", got, st.Cancelled)
+	}
+	if n := openAlerts(t, pool, fmt.Sprintf("cancelled_filing_unconfirmed:%d", stay)); n != 1 {
+		t.Errorf("cancelled_filing_unconfirmed alerts = %d, want 1", n)
+	}
+}
+
+func TestSyncFeedCancelEventWithSettledFilingRaisesNoUnconfirmedAlert(t *testing.T) {
+	pool := testPool(t)
+	aid := seedApartment(t, pool)
+	feed := newIcalFeed(t, pool, aid, "https://feed.test/cancel-ok.ics")
+	stay := seedStay(t, pool, aid, feed.ID, "u-co", "2999-03-01", "2999-03-05")
+	g := seedGuest(t, pool, stay, "pending", "2999-03-01", "2999-03-05")
+	seedSubmission(t, pool, aid, g, "ok", 0, true)
+	doc := icsDoc(icsEvent("u-co", "29990301", "29990305", "Guest A", "STATUS:CANCELLED"))
+
+	runSync(t, pool, feed, doc)
+
+	if got := scalarText(t, pool, `SELECT status FROM reservation WHERE id = $1`, stay); got != "cancelled" {
+		t.Errorf("status = %q, want cancelled", got)
+	}
+	if n := openAlerts(t, pool, fmt.Sprintf("cancelled_filing_unconfirmed:%d", stay)); n != 0 {
+		t.Errorf("alerts = %d, want 0", n)
+	}
+}
+
+func TestSyncFeedFreshRunningFilingDefersTheCancel(t *testing.T) {
+	pool := testPool(t)
+	aid := seedApartment(t, pool)
+	feed := newIcalFeed(t, pool, aid, "https://feed.test/cancel-running.ics")
+	stay := seedStay(t, pool, aid, feed.ID, "u-cr", "2999-03-01", "2999-03-05")
+	g := seedGuest(t, pool, stay, "pending", "2999-03-01", "2999-03-05")
+	sub := seedSubmission(t, pool, aid, g, "running", 0, false)
+	_, err := pool.Exec(context.Background(),
+		`INSERT INTO submission_claim (guest_id, claim_token, claimed_at) VALUES ($1, 'old', $2)`, g, epochSeconds()-3600)
+	must(t, err)
+	doc := icsDoc(icsEvent("u-cr", "29990301", "29990305", "Guest A", "STATUS:CANCELLED"))
+
+	st := runSync(t, pool, feed, doc)
+
+	if got := scalarText(t, pool, `SELECT status FROM reservation WHERE id = $1`, stay); got != "active" || st.Cancelled != 0 {
+		t.Errorf("status = %q, Cancelled = %d, want active and 0", got, st.Cancelled)
+	}
+	if got := scalarText(t, pool, `SELECT COALESCE(body_sha256, '') FROM ical_feed WHERE id = $1`, feed.ID); got != "" {
+		t.Errorf("digest stored after a deferred cancel: %q", got)
+	}
+	if n := openAlerts(t, pool, fmt.Sprintf("cancelled_filing_unconfirmed:%d", stay)); n != 0 {
+		t.Errorf("alerts = %d, want 0 while deferred", n)
+	}
+
+	_, err = pool.Exec(context.Background(), `UPDATE submission SET state = 'outcome_unknown' WHERE id = $1`, sub)
+	must(t, err)
+	_, err = pool.Exec(context.Background(), `UPDATE guest SET submission_id = $1 WHERE id = $2`, sub, g)
+	must(t, err)
+
+	st = runSync(t, pool, feed, doc)
+
+	if got := scalarText(t, pool, `SELECT status FROM reservation WHERE id = $1`, stay); got != "cancelled" || st.Cancelled != 1 {
+		t.Errorf("after recovery: status = %q, Cancelled = %d, want cancelled and 1", got, st.Cancelled)
+	}
+	if n := openAlerts(t, pool, fmt.Sprintf("cancelled_filing_unconfirmed:%d", stay)); n != 1 {
+		t.Errorf("alerts = %d, want 1", n)
+	}
+}
+
+func TestSyncFeedOldRunningFilingDoesNotHoldTheCancel(t *testing.T) {
+	pool := testPool(t)
+	aid := seedApartment(t, pool)
+	feed := newIcalFeed(t, pool, aid, "https://feed.test/cancel-old-running.ics")
+	stay := seedStay(t, pool, aid, feed.ID, "u-cold", "2999-03-01", "2999-03-05")
+	g := seedGuest(t, pool, stay, "pending", "2999-03-01", "2999-03-05")
+	seedSubmission(t, pool, aid, g, "running", 2*time.Hour, false)
+	doc := icsDoc(icsEvent("u-cold", "29990301", "29990305", "Guest A", "STATUS:CANCELLED"))
+
+	st := runSync(t, pool, feed, doc)
+
+	if got := scalarText(t, pool, `SELECT status FROM reservation WHERE id = $1`, stay); got != "cancelled" || st.Cancelled != 1 {
+		t.Errorf("status = %q, Cancelled = %d, want cancelled and 1", got, st.Cancelled)
+	}
+	if n := openAlerts(t, pool, fmt.Sprintf("cancelled_filing_unconfirmed:%d", stay)); n != 1 {
+		t.Errorf("alerts = %d, want 1", n)
+	}
+}
+
+func TestSyncFeedVanishedStayWithUnconfirmedFilingCancelsAndAlerts(t *testing.T) {
+	pool := testPool(t)
+	aid := seedApartment(t, pool)
+	feed := newIcalFeed(t, pool, aid, "https://feed.test/vanish-unknown.ics")
+	seedStay(t, pool, aid, feed.ID, "u1", "2999-03-01", "2999-03-05")
+	gone := seedStay(t, pool, aid, feed.ID, "u2", "2999-04-01", "2999-04-05")
+	g := seedGuest(t, pool, gone, "pending", "2999-04-01", "2999-04-05")
+	seedSubmission(t, pool, aid, g, "outcome_unknown", 0, true)
+	doc := icsDoc(icsEvent("u1", "29990301", "29990305", "Guest A"))
+
+	st := runSync(t, pool, feed, doc)
+
+	if got := scalarText(t, pool, `SELECT status FROM reservation WHERE id = $1`, gone); got != "cancelled" || st.Cancelled != 1 {
+		t.Errorf("status = %q, Cancelled = %d, want cancelled and 1", got, st.Cancelled)
+	}
+	if n := openAlerts(t, pool, fmt.Sprintf("cancelled_filing_unconfirmed:%d", gone)); n != 1 {
+		t.Errorf("alerts = %d, want 1", n)
+	}
+}
+
+func TestSyncFeedVanishedStayWithFreshRunningFilingIsDeferred(t *testing.T) {
+	pool := testPool(t)
+	aid := seedApartment(t, pool)
+	feed := newIcalFeed(t, pool, aid, "https://feed.test/vanish-running.ics")
+	seedStay(t, pool, aid, feed.ID, "u1", "2999-03-01", "2999-03-05")
+	gone := seedStay(t, pool, aid, feed.ID, "u2", "2999-04-01", "2999-04-05")
+	g := seedGuest(t, pool, gone, "pending", "2999-04-01", "2999-04-05")
+	seedSubmission(t, pool, aid, g, "running", 0, false)
+	doc := icsDoc(icsEvent("u1", "29990301", "29990305", "Guest A"))
+
+	st := runSync(t, pool, feed, doc)
+
+	if got := scalarText(t, pool, `SELECT status FROM reservation WHERE id = $1`, gone); got != "active" || st.Cancelled != 0 {
+		t.Errorf("status = %q, Cancelled = %d, want active and 0", got, st.Cancelled)
+	}
+	if got := scalarText(t, pool, `SELECT COALESCE(body_sha256, '') FROM ical_feed WHERE id = $1`, feed.ID); got != "" {
+		t.Errorf("digest stored after a deferred cancel: %q", got)
+	}
+}

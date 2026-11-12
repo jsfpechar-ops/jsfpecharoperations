@@ -572,9 +572,15 @@ func SyncFeed(ctx context.Context, pool *pgxpool.Pool, getenv func(string) strin
 			}
 			continue
 		}
-		cancelled, err := cancelReservationUnlessClaimed(ctx, pool, r.ID, now)
+		deferRunning, err := runningDefersCancel(ctx, pool, r.ID)
 		if err != nil {
 			return stats, err
+		}
+		cancelled := false
+		if !deferRunning {
+			if cancelled, err = cancelReservationUnlessClaimed(ctx, pool, r.ID, now); err != nil {
+				return stats, err
+			}
 		}
 		if !cancelled {
 			deferredInFlight = true
@@ -582,6 +588,10 @@ func SyncFeed(ctx context.Context, pool *pgxpool.Pool, getenv func(string) strin
 			continue
 		}
 		if err := expireOnCancel(ctx, pool, r.ID); err != nil {
+			return stats, err
+		}
+		if err := alertIfFilingInDoubt(ctx, pool,
+			reservationRow{ID: r.ID, DateFrom: r.DateFrom}, feed.ApartmentID); err != nil {
 			return stats, err
 		}
 		if err := warnIfGuestsRegistered(ctx, pool, getenv,

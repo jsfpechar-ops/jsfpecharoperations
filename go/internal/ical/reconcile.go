@@ -2,6 +2,7 @@ package ical
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -143,11 +144,110 @@ func sendInFlight(ctx context.Context, pool *pgxpool.Pool, reservationID int64) 
 	if err != nil || live {
 		return live, err
 	}
+	return pointedAtOpenSubmission(ctx, pool, reservationID)
+}
+
+// runningCancelDefer is Python RUNNING_CANCEL_DEFER_SECONDS: a cancel waits for
+// a running batch whose claim is gone only this long.
+const runningCancelDefer = 30 * time.Minute
+
+// pointedAtOpenSubmission is Python _pointed_at_open_submission: an unsent
+// guest of the stay points at a running or outcome_unknown batch.
+func pointedAtOpenSubmission(ctx context.Context, pool *pgxpool.Pool, reservationID int64) (bool, error) {
 	return exists(ctx, pool,
 		`SELECT 1 FROM guest g JOIN submission s ON s.id = g.submission_id
 		  WHERE g.reservation_id = $1 AND g.archived_at IS NULL
 		    AND g.submit_state <> $2 AND s.state IN ('running', 'outcome_unknown') LIMIT 1`,
 		reservationID, guestSent)
+}
+
+// runningSubmissionCoversStay is Python _running_submission_covers_stay: a
+// running batch of this apartment lists an unsent guest of the stay. A guest is
+// not pointed at a running batch, so submission.guest_ids (JSON) is the link.
+// newerThan, when not empty, limits the rows by created_at (same text format).
+func runningSubmissionCoversStay(ctx context.Context, pool *pgxpool.Pool, reservationID int64, newerThan string) (bool, error) {
+	rows, err := pool.Query(ctx,
+		`SELECT id FROM guest WHERE reservation_id = $1 AND archived_at IS NULL AND submit_state <> $2`,
+		reservationID, guestSent)
+	if err != nil {
+		return false, err
+	}
+	guests := map[int64]bool{}
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			rows.Close()
+			return false, err
+		}
+		guests[id] = true
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return false, err
+	}
+	if len(guests) == 0 {
+		return false, nil
+	}
+	sql := `SELECT s.guest_ids FROM submission s JOIN reservation r ON r.apartment_id = s.apartment_id
+	         WHERE r.id = $1 AND s.state = 'running'`
+	args := []any{reservationID}
+	if newerThan != "" {
+		sql += ` AND s.created_at >= $2`
+		args = append(args, newerThan)
+	}
+	subs, err := pool.Query(ctx, sql, args...)
+	if err != nil {
+		return false, err
+	}
+	defer subs.Close()
+	for subs.Next() {
+		var raw *string
+		if err := subs.Scan(&raw); err != nil {
+			return false, err
+		}
+		if raw == nil || *raw == "" {
+			continue
+		}
+		var listed []int64
+		if json.Unmarshal([]byte(*raw), &listed) != nil {
+			continue
+		}
+		for _, id := range listed {
+			if guests[id] {
+				return true, nil
+			}
+		}
+	}
+	return false, subs.Err()
+}
+
+// runningDefersCancel is Python _running_defers_cancel.
+func runningDefersCancel(ctx context.Context, pool *pgxpool.Pool, reservationID int64) (bool, error) {
+	cutoff := time.Now().UTC().Add(-runningCancelDefer).Format("2006-01-02T15:04:05") + "+00:00"
+	return runningSubmissionCoversStay(ctx, pool, reservationID, cutoff)
+}
+
+// alertIfFilingInDoubt is Python _alert_if_filing_in_doubt: after a cancel, tell
+// the host the register may hold this stay's guests.
+func alertIfFilingInDoubt(ctx context.Context, pool *pgxpool.Pool, res reservationRow, apartmentID int64) error {
+	doubt, err := pointedAtOpenSubmission(ctx, pool, res.ID)
+	if err != nil {
+		return err
+	}
+	if !doubt {
+		if doubt, err = runningSubmissionCoversStay(ctx, pool, res.ID, ""); err != nil {
+			return err
+		}
+	}
+	if !doubt {
+		return nil
+	}
+	aid, rid := apartmentID, res.ID
+	return ubyport.RaiseAlert(ctx, pool, "warning", "cancelled_filing_unconfirmed",
+		fmt.Sprintf("A stay from %s was cancelled in the calendar while the report of its guests to the police was unconfirmed.", res.DateFrom),
+		"Check in UbyPort whether the guests are listed.",
+		fmt.Sprintf("cancelled_filing_unconfirmed:%d", res.ID), &aid, &rid, nil,
+		ubyport.AlertParams{"date": res.DateFrom})
 }
 
 // pyStr renders a nullable text column the way Python's str() would.
@@ -405,15 +505,24 @@ func cancelExistingStay(ctx context.Context, pool *pgxpool.Pool, getenv func(str
 			fmt.Sprintf("cancelled_after_report:%d", res.ID), &aid, &rid, nil,
 			ubyport.AlertParams{"date": res.DateFrom, "variant": "cancelled"})
 	}
-	cancelled, err := cancelReservationUnlessClaimed(ctx, pool, res.ID, ubyport.UTCNow())
+	deferRunning, err := runningDefersCancel(ctx, pool, res.ID)
 	if err != nil {
 		return false, err
+	}
+	cancelled := false
+	if !deferRunning {
+		if cancelled, err = cancelReservationUnlessClaimed(ctx, pool, res.ID, ubyport.UTCNow()); err != nil {
+			return false, err
+		}
 	}
 	if !cancelled {
 		log.Printf("ical_cancel_deferred_in_flight apartment_id=%d reservation_id=%d", apartmentID, res.ID)
 		return true, nil
 	}
 	if err := expireOnCancel(ctx, pool, res.ID); err != nil {
+		return false, err
+	}
+	if err := alertIfFilingInDoubt(ctx, pool, res, apartmentID); err != nil {
 		return false, err
 	}
 	if err := warnIfGuestsRegistered(ctx, pool, getenv, res, apartmentID, "cancelled"); err != nil {

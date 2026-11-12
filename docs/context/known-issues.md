@@ -95,7 +95,7 @@
 - K-TAP43: local only (CI green): `test_design_guardrails_browser.py` guest-new 390 "Cancel" tap target 43 < 44.
 - K-H0: from tasks/1094-report.md: `checkin_hour` NULL can raise TypeError in door_codes.py (~179, 436); `/save` with a non-owned guest_id becomes a new person; `guest_form_saved` audit has no field names.
 - K-F19 closed 11-12 (1145): no payload field skips `updated_at`.
-- K-F20 (1139): `outcome_unknown` without a live claim does not defer an iCal cancel. Owner.
+- K-F20 closed (1148, 1148b): a fresh running filing defers an iCal cancel; a cancel over a running or outcome_unknown filing raises cancelled_filing_unconfirmed.
 - K-F21 (1142): Go claim.go:48 stamps claimed_at before lock waits; first refresh may fail (safe, delays filing).
 - K-SM2 (brief 1105): OPERATIONS.md submit_state section disagrees with the code in 9 places.
 - K-SM3 (brief 1111): rules.md lines 37, 44 still say production is SQLite, migrations frozen at 0033.
