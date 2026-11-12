@@ -7,7 +7,7 @@ Run only the row for the area you changed, from `App/`, always ending `-q --tb=s
 | Guest pages, guest templates | `test_guest_*.py` and `test_guest_browser_e2e.py` (0 skipped) |
 | Host pages, host templates, host CSS | `test_host_*.py` and `test_host_geometry.py` (0 skipped) |
 | Login, 2FA, passkeys | `test_login_*.py test_auth_*.py test_two_factor_*.py test_passkeys.py test_remember_me_reissue.py test_security*.py` |
-| Filing, UbyPort, claim | `test_ubyport_*.py test_soap.py test_worker.py test_submission_*.py test_stale_submission.py test_filed_by_hand.py test_filing_watchdog.py test_police_*.py test_deadline*.py test_check_deadlines_golden.py test_claim_*.py test_endtoend.py` |
+| Filing, UbyPort, claim | `test_ubyport_*.py test_soap.py test_worker.py test_submission_*.py test_stale_submission.py test_filed_by_hand.py test_filing_watchdog.py test_police_*.py test_*deadline*.py test_claim_*.py test_endtoend.py` |
 | Platform billing, subscription, trial | `test_billing_*.py` |
 | Invoices, stay fee | `test_invoice_*.py test_stay_fee*.py` |
 | Door-code access disclosure | `test_door_code_window*.py`; CI `door-code-access-review`: Chromium/WebKit, 0 skips, 390 px shots |

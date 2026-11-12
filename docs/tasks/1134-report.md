@@ -1,6 +1,6 @@
 # 1134 report
 
-Status: blocked (at step 4, context lint). Not pushed, no PR.
+Status: done. Blocked at step 4 (test-map.md over its 1200-token cap); orchestrator fixed it by folding the line into the glob `test_*deadline*.py` (same files, lint OK) and ran step 5: `TestCheckDeadlinesMatchesPython` and `TestWatchTitle` PASS on local PostgreSQL 16, golden fresh, 24 pytest passed.
 
 ## 1. Diff stat (ab35038..HEAD, tail)
 
