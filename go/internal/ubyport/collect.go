@@ -333,13 +333,24 @@ func reservationDeadlineAnchor(ctx context.Context, pool *pgxpool.Pool, resID in
 
 // DueForAutomaticSend is reporting.due_for_automatic_send. completedAt is the
 // stay's registration_completed_at; anchor is the deadline anchor (nil when none).
+//
+// Brief 1070: with no completion stamp (short stay, or no declared count) the
+// stay is still due once the deadline cap (deadline minus 6h) has passed, so
+// already-registered guests are filed in time. A stay with no deadline anchor
+// still waits for completion.
 func DueForAutomaticSend(mode string, submitAfterHours int, completedAt string, anchor *time.Time, now time.Time) bool {
-	if mode == "manual" || completedAt == "" {
+	if mode == "manual" {
 		return false
 	}
+	var latest time.Time
+	hasLatest := false
+	if anchor != nil {
+		latest = ReportingDeadline(*anchor).Add(-collectMarginHours * time.Hour)
+		hasLatest = true
+	}
 	completed, ok := parseStoredUTC(completedAt)
-	if !ok {
-		return false
+	if completedAt == "" || !ok {
+		return hasLatest && !now.Before(latest)
 	}
 	hours := submitAfterHours
 	if hours == 0 {
@@ -349,11 +360,8 @@ func DueForAutomaticSend(mode string, submitAfterHours int, completedAt string, 
 		hours = 0
 	}
 	sendAt := completed.Add(time.Duration(hours) * time.Hour)
-	if anchor != nil {
-		latest := ReportingDeadline(*anchor).Add(-collectMarginHours * time.Hour)
-		if latest.Before(sendAt) {
-			sendAt = latest
-		}
+	if hasLatest && latest.Before(sendAt) {
+		sendAt = latest
 	}
 	return !now.Before(sendAt)
 }

@@ -182,6 +182,12 @@ func TestCollectSendableBranches(t *testing.T) {
 			res: map[string]any{"registration_completed_at": "2026-11-01T09:59:00+00:00"}, want: true},
 		{name: "deadline margin pulls send earlier", now: time.Date(2026, 10, 30, 17, 0, 0, 0, time.UTC),
 			res: map[string]any{"date_from": "2026-10-28", "date_to": "2026-10-30"}, want: true},
+		{name: "incomplete stay not due before deadline cap",
+			res: map[string]any{"date_from": "2026-11-09", "date_to": "2026-11-11", "registration_completed_at": nil},
+			now: time.Date(2026, 11, 11, 16, 59, 0, 0, time.UTC)},
+		{name: "incomplete stay due at deadline cap",
+			res: map[string]any{"date_from": "2026-11-09", "date_to": "2026-11-11", "registration_completed_at": nil},
+			now: time.Date(2026, 11, 11, 17, 0, 0, 0, time.UTC), want: true},
 	}
 	for _, c := range cases {
 		c := c
@@ -281,5 +287,44 @@ func TestReportingDeadline(t *testing.T) {
 		if got := ReportingDeadline(in).UTC().Format(time.RFC3339); got != c.want {
 			t.Errorf("check-in %s: deadline %s, want %s", c.checkIn, got, c.want)
 		}
+	}
+}
+
+func TestDueForAutomaticSendDeadlineCap(t *testing.T) {
+	// Monday 9 Nov 2026 → deadline Wed 11 Nov 23:59:59 Prague = 22:59:59 UTC (brief 1070).
+	checkIn, err := time.Parse("2006-01-02", "2026-11-09")
+	if err != nil {
+		t.Fatal(err)
+	}
+	beforeCap := time.Date(2026, 11, 11, 16, 59, 0, 0, time.UTC)
+	afterCap := time.Date(2026, 11, 11, 17, 0, 0, 0, time.UTC)
+
+	if DueForAutomaticSend("scheduled", 24, "", &checkIn, beforeCap) {
+		t.Fatal("incomplete stay is not due before the cap")
+	}
+	if !DueForAutomaticSend("scheduled", 24, "", &checkIn, afterCap) {
+		t.Fatal("incomplete stay is due at the cap")
+	}
+	if !DueForAutomaticSend("immediate", 24, "", &checkIn, afterCap) {
+		t.Fatal("incomplete stay with no expected count is due at the cap")
+	}
+	if DueForAutomaticSend("manual", 24, "", &checkIn, afterCap) {
+		t.Fatal("manual mode is never due")
+	}
+	if DueForAutomaticSend("immediate", 24, "", nil, afterCap) {
+		t.Fatal("a stay without a deadline anchor still waits for completion")
+	}
+
+	completed := "2026-11-10T08:00:00+00:00"
+	beforeDelay := time.Date(2026, 11, 11, 7, 59, 0, 0, time.UTC)
+	atDelay := time.Date(2026, 11, 11, 8, 0, 0, 0, time.UTC)
+	if DueForAutomaticSend("scheduled", 24, completed, &checkIn, beforeDelay) {
+		t.Fatal("completed stay waits for its delay when that is before the cap")
+	}
+	if !DueForAutomaticSend("scheduled", 24, completed, &checkIn, atDelay) {
+		t.Fatal("completed stay is due when its delay elapses")
+	}
+	if !DueForAutomaticSend("scheduled", 48, completed, &checkIn, afterCap) {
+		t.Fatal("completed stay is pulled forward to the cap when delay is later")
 	}
 }
