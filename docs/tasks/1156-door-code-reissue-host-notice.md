@@ -1,6 +1,6 @@
 # 1156: tell the host once when a lost door code is made again
 
-Status: todo
+Status: review
 Depends on: 1155 | Base commit: HEAD of branch claude/zealous-maxwell-a7ub54 after 1155 is merged | Branch: task/1156-door-reissue-notice
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
