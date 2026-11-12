@@ -1,6 +1,6 @@
 # 1133: iCal date move: close the claim race on the reservation row
 
-Status: blocked
+Status: review
 Depends on: none | Base commit: 7b8ff2ae | Branch: task/1133-ical-claim-race
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
