@@ -1,6 +1,6 @@
 # 1157b: tell the host after the new door code exists, and say the true thing
 
-Status: todo
+Status: review
 Depends on: 1157 | Base commit: HEAD of branch claude/zealous-maxwell-a7ub54 after 1157 is merged | Branch: task/1157b-door-reissue-notice-fix
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

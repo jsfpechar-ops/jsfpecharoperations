@@ -905,32 +905,36 @@ def _already_gone(exc: "ttlock.TTLockError", row, owner_user_id: int) -> bool:
 
 
 def _tell_host_reissued(row_id: int, owner_user_id: int) -> None:
-    """Tell the host once that a lost door code was made again: one info card, one mail.
+    """Tell the host once that a lost door code was replaced: one info card, one mail.
 
-    The card key is per stay, so a second re-issue refreshes the open card; the mail key
-    is per row and variant, so it goes out once. Neither carries the PIN. A failure here
-    is logged and never stops the re-issue.
+    Called only after issue() made the new code. The wording says how the guest gets it:
+    by e-mail when the stay has a guest address, else on the stay page (kind and variant
+    end in _no_email). The card key is per stay and wording, so a second re-issue refreshes
+    the open card; the mail key is per row and variant, so it goes out once. Neither
+    carries the PIN. A failure here is logged and never stops the re-issue.
     """
     try:
         info = db.query_one(
-            "SELECT a.id AS apartment_id, a.internal_name, r.id AS reservation_id, r.date_from "
-            "FROM door_code dc JOIN apartment a ON a.id = dc.apartment_id "
-            "JOIN reservation r ON r.id = dc.reservation_id WHERE dc.id = ?",
+            "SELECT a.id AS apartment_id, a.internal_name, r.id AS reservation_id, r.date_from, "
+            "c.email AS guest_email FROM door_code dc JOIN apartment a ON a.id = dc.apartment_id "
+            "JOIN reservation r ON r.id = dc.reservation_id "
+            "LEFT JOIN reservation_claim c ON c.reservation_id = r.id WHERE dc.id = ?",
             (row_id,),
         )
         if not info:
             return
+        suffix = "" if (info["guest_email"] or "").strip() else "_no_email"
         alerts.raise_alert(
             "info",
-            "door_code_reissued",
-            "Door code was made again",
-            dedupe_key=f"door_code_reissued:{info['reservation_id']}",
+            f"door_code_reissued{suffix}",
+            "Door code was replaced",
+            dedupe_key=f"door_code_reissued{suffix}:{info['reservation_id']}",
             apartment_id=info["apartment_id"],
             reservation_id=info["reservation_id"],
             owner_user_id=owner_user_id,
             params={"property": info["internal_name"], "date": info["date_from"]},
         )
-        mail_notify.door_code_notice(row_id, "reissued")
+        mail_notify.door_code_notice(row_id, f"reissued{suffix}")
     except Exception:
         log.exception("door code %s: host notice after a re-issue failed", row_id)
 
@@ -942,8 +946,9 @@ def _reissue_lost_pin(row_id: int, deleted_code_id: str, owner_user_id: int) -> 
     with the code id that was just deleted (a date move already made a new code: the id
     differs) and the stay is live (a cancelled stay is left to the next revoke). The
     row goes issued -> pending and issue() runs at once, so a success leaves no pending
-    row for _alert_delayed. A failure is handled by issue() and the retry loop: their
-    host alerts and mails are reused, no new alert.
+    row for _alert_delayed; only then is the host told (_tell_host_reissued). A failure is
+    handled by issue() and the retry loop: their host alerts and mails are reused, and a
+    code that a later retry makes sends no re-issue notice.
     """
     now_iso = _iso(_now())
     if db.execute(
@@ -962,11 +967,13 @@ def _reissue_lost_pin(row_id: int, deleted_code_id: str, owner_user_id: int) -> 
         actor="system",
         owner_user_id=owner_user_id,
     )
-    _tell_host_reissued(row_id, owner_user_id)
     try:
-        issue(row_id, allow_gateway=True)
+        issued = issue(row_id, allow_gateway=True)
     except Exception:
         log.exception("door code %s: re-issue after a lost revoke failed", row_id)
+        return
+    if issued:
+        _tell_host_reissued(row_id, owner_user_id)
 
 
 def _revoke_one(row_id: int) -> None:
