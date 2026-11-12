@@ -891,6 +891,37 @@ def _already_gone(exc: "ttlock.TTLockError", row, owner_user_id: int) -> bool:
     return _lock_code_state(row, owner_user_id) == PIN_GONE
 
 
+def _tell_host_reissued(row_id: int, owner_user_id: int) -> None:
+    """Tell the host once that a lost door code was made again: one info card, one mail.
+
+    The card key is per stay, so a second re-issue refreshes the open card; the mail key
+    is per row and variant, so it goes out once. Neither carries the PIN. A failure here
+    is logged and never stops the re-issue.
+    """
+    try:
+        info = db.query_one(
+            "SELECT a.id AS apartment_id, a.internal_name, r.id AS reservation_id, r.date_from "
+            "FROM door_code dc JOIN apartment a ON a.id = dc.apartment_id "
+            "JOIN reservation r ON r.id = dc.reservation_id WHERE dc.id = ?",
+            (row_id,),
+        )
+        if not info:
+            return
+        alerts.raise_alert(
+            "info",
+            "door_code_reissued",
+            "Door code was made again",
+            dedupe_key=f"door_code_reissued:{info['reservation_id']}",
+            apartment_id=info["apartment_id"],
+            reservation_id=info["reservation_id"],
+            owner_user_id=owner_user_id,
+            params={"property": info["internal_name"], "date": info["date_from"]},
+        )
+        mail_notify.door_code_notice(row_id, "reissued")
+    except Exception:
+        log.exception("door code %s: host notice after a re-issue failed", row_id)
+
+
 def _reissue_lost_pin(row_id: int, deleted_code_id: str, owner_user_id: int) -> None:
     """A revoke deleted the lock code but lost the row to a revival: make a new code.
 
@@ -918,6 +949,7 @@ def _reissue_lost_pin(row_id: int, deleted_code_id: str, owner_user_id: int) -> 
         actor="system",
         owner_user_id=owner_user_id,
     )
+    _tell_host_reissued(row_id, owner_user_id)
     try:
         issue(row_id, allow_gateway=True)
     except Exception:
