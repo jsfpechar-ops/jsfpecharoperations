@@ -1,6 +1,6 @@
 # 1141: door revoke result rowcount, and operator_pause tests
 
-Status: todo
+Status: review
 Depends on: 1137 | Base commit: HEAD of PR #933 | Branch: task/1141-door-revoke-rowcount-and-operator-pause-tests
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
