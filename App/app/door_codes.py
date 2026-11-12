@@ -790,6 +790,94 @@ def _keep_issued(row_id: int, now_iso: str, held_claim: str | None = None) -> bo
     ) == 1
 
 
+def _lock_code_state(row, owner_user_id: int) -> str:
+    """Ask the lock, with one list call, whether the row's PIN still exists.
+
+    PIN_UNKNOWN when the answer cannot be had (no account, no window, TTLock error):
+    nothing is assumed either way. A code with the same name and window but another
+    id is not this row's PIN, so it counts as gone.
+    """
+    account = ttlock.account_for(owner_user_id)
+    if (
+        not account
+        or account["status"] != "ok"
+        or not row["valid_from"]
+        or not row["valid_to"]
+        or not row["provider_code_id"]
+    ):
+        return PIN_UNKNOWN
+    try:
+        found = ttlock.find_code_by_name(
+            int(account["id"]),
+            row["lock_id"],
+            f"UH-{row['id']}",
+            _iso_to_ms(row["valid_from"]),
+            _iso_to_ms(row["valid_to"]),
+        )
+    except ttlock.TTLockError:
+        return PIN_UNKNOWN
+    if found and str(found[1]) == str(row["provider_code_id"]):
+        return PIN_PRESENT
+    return PIN_GONE
+
+
+def _note_failed_lookup(row_id: int, claim: str) -> int:
+    """Count a failed lookup in attempts (restarted at 1 by the first one); return the count."""
+    db.execute(
+        "UPDATE door_code SET attempts = CASE WHEN last_error = ? THEN attempts + 1 ELSE 1 END, "
+        "last_error = ?, updated_at = ? WHERE id = ? AND claimed_at = ?",
+        (LOOKUP_FAILED, LOOKUP_FAILED, claim, row_id, claim),
+    )
+    row = db.query_one("SELECT attempts FROM door_code WHERE id = ?", (row_id,))
+    return int(row["attempts"]) if row else LOOKUP_MAX_TRIES
+
+
+def _revive_one(item, now_iso: str, held_claim: str | None = None) -> bool:
+    """The stay is back: show the PIN again, but first confirm it still exists.
+
+    Only a row whose delete may have run (attempts above the claim made by _revoke_one,
+    and last_error in AMBIGUOUS_DELETE_ERRORS: a refusal by the lock or API is definite)
+    costs one lock call.
+    Gone: the row is kept, then _reissue_lost_pin makes a new code. Unknown: the row stays
+    revoke_pending (the guest page shows no PIN) and its lease claimed_at delays the next
+    try by LEASE_MINUTES; after LOOKUP_MAX_TRIES failures it is kept as before 1155 and
+    audited door_code_pin_unverified, so a lasting TTLock error cannot hide the PIN.
+    True if the row is issued again.
+    """
+    row_id = int(item["id"])
+    attempted = (
+        int(item["attempts"] or 0) > (1 if held_claim else 0)
+        and (item["last_error"] or "") in AMBIGUOUS_DELETE_ERRORS
+    )
+    if not attempted:
+        return _keep_issued(row_id, now_iso, held_claim=held_claim)
+    claim = held_claim
+    if claim is None:
+        claim = _iso(_now())
+        cutoff = _iso(_now() - timedelta(minutes=LEASE_MINUTES))
+        if db.execute(
+            "UPDATE door_code SET claimed_at = ?, updated_at = ? WHERE id = ? AND state IN (?, ?) "
+            "AND (claimed_at IS NULL OR claimed_at < ?)",
+            (claim, now_iso, row_id, REVOKE_PENDING, REVOKE_FAILED, cutoff),
+        ) != 1:
+            return False
+    apartment = db.query_one("SELECT owner_user_id FROM apartment WHERE id = ?", (item["apartment_id"],))
+    owner_id = int(apartment["owner_user_id"]) if apartment else 0
+    verdict = _lock_code_state(item, owner_id)
+    unverified = False
+    if verdict == PIN_UNKNOWN:
+        if _note_failed_lookup(row_id, claim) < LOOKUP_MAX_TRIES:
+            return False
+        unverified = True
+    if not _keep_issued(row_id, now_iso, held_claim=claim):
+        return False
+    if unverified:
+        db.audit("door_code_pin_unverified", f"door_code={row_id}", actor="system", owner_user_id=owner_id)
+    elif verdict == PIN_GONE:
+        _reissue_lost_pin(row_id, str(item["provider_code_id"] or ""), owner_id)
+    return True
+
+
 def _reissue_lost_pin(row_id: int, deleted_code_id: str, owner_user_id: int) -> None:
     """A revoke deleted the lock code but lost the row to a revival: make a new code.
 
