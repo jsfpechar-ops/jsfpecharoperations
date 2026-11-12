@@ -327,7 +327,8 @@ func SubmitForApartment(ctx context.Context, d SweepDeps, aptID int64, o Collect
 		if p.Outcome.SubmitState != nil {
 			state = *p.Outcome.SubmitState
 		}
-		claimIn = append(claimIn, ClaimPair{GuestID: p.Outcome.ID, SubmitState: state, Payload: p})
+		built := p.Built
+		claimIn = append(claimIn, ClaimPair{GuestID: p.Outcome.ID, SubmitState: state, Payload: p, Built: &built})
 	}
 	token, kept, err := ClaimSendable(ctx, pool, claimIn)
 	if err != nil {

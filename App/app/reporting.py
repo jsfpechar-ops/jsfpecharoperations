@@ -1667,9 +1667,11 @@ def claim_sendable(
             (time.time() - SUBMISSION_CLAIM_TTL_SECONDS,),
         )
         for guest_id in sorted({g["id"] for g, _r in pairs}): db.lock_key(cur, "guest", guest_id)
-        for guest, _reservation in pairs:
+        for guest, reservation in pairs:
             cur.execute(
-                "SELECT submit_state, archived_at, manual_filed_at FROM guest WHERE id = ?",
+                "SELECT g.submit_state, g.archived_at, g.manual_filed_at, g.stay_from, g.stay_to, "
+                "g.updated_at AS g_updated_at, r.date_from, r.date_to, r.updated_at AS r_updated_at "
+                "FROM guest g JOIN reservation r ON r.id = g.reservation_id WHERE g.id = ?",
                 (guest["id"],),
             )
             row = cur.fetchone()
@@ -1683,6 +1685,15 @@ def claim_sendable(
                 or row["archived_at"]
                 or row["manual_filed_at"]
                 or row["submit_state"] != guest["submit_state"]
+                # The payload was built from these. A moved stay window or an
+                # edit since then must not be filed under the old values: drop
+                # the pair, the next sweep rebuilds it.
+                or (row["stay_from"] or "") != (guest["stay_from"] or "")
+                or (row["stay_to"] or "") != (guest["stay_to"] or "")
+                or (row["g_updated_at"] or "") != (guest["updated_at"] or "")
+                or (row["date_from"] or "") != (reservation["date_from"] or "")
+                or (row["date_to"] or "") != (reservation["date_to"] or "")
+                or (row["r_updated_at"] or "") != (reservation["updated_at"] or "")
             ):
                 continue
             cur.execute(

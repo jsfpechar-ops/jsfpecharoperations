@@ -1,6 +1,6 @@
 # 1138: the send claim re-checks the stay window and updated_at the payload was built from
 
-Status: todo
+Status: review
 Depends on: none | Base commit: 116def7d | Branch: task/1138-claim-rechecks-stay-window
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

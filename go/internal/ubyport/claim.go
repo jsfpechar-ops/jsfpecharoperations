@@ -21,6 +21,8 @@ type ClaimPair struct {
 	GuestID     int64
 	SubmitState string
 	Payload     any
+	// Built is what the payload was built from. nil is never claimed (fail closed).
+	Built *ClaimBuilt
 }
 
 // ClaimSendable leases the guests so concurrent workers cannot file the same
@@ -28,7 +30,8 @@ type ClaimPair struct {
 // claims removed, guests locked in ascending id order with the same advisory
 // key as db.lock_key, and each row re-read before it is claimed. A pair is
 // dropped when its row is gone, archived, filed by hand or has a different
-// submit_state. The result keeps input order.
+// submit_state, or whose stay window or updated_at differs from Built. The
+// result keeps input order.
 func ClaimSendable(ctx context.Context, pool *pgxpool.Pool, pairs []ClaimPair) (string, []ClaimPair, error) {
 	raw := make([]byte, 18)
 	if _, err := rand.Read(raw); err != nil {
@@ -66,11 +69,14 @@ func ClaimSendable(ctx context.Context, pool *pgxpool.Pool, pairs []ClaimPair) (
 
 	claimed := map[int64]bool{}
 	for _, p := range pairs {
-		var state string
+		var state, stayFrom, stayTo, gUpd, dFrom, dTo, rUpd string
 		var archived, manual *string
 		err := tx.QueryRow(ctx,
-			`SELECT submit_state, archived_at, manual_filed_at FROM guest WHERE id = $1`, p.GuestID,
-		).Scan(&state, &archived, &manual)
+			`SELECT g.submit_state, g.archived_at, g.manual_filed_at,
+			        COALESCE(g.stay_from,''), COALESCE(g.stay_to,''), COALESCE(g.updated_at,''),
+			        COALESCE(r.date_from,''), COALESCE(r.date_to,''), COALESCE(r.updated_at,'')
+			   FROM guest g JOIN reservation r ON r.id = g.reservation_id WHERE g.id = $1`, p.GuestID,
+		).Scan(&state, &archived, &manual, &stayFrom, &stayTo, &gUpd, &dFrom, &dTo, &rUpd)
 		if errors.Is(err, pgx.ErrNoRows) {
 			continue
 		}
@@ -79,6 +85,13 @@ func ClaimSendable(ctx context.Context, pool *pgxpool.Pool, pairs []ClaimPair) (
 		}
 		// Python tests these for truth, so an empty string counts as not set.
 		if truthy(archived) || truthy(manual) || state != p.SubmitState {
+			continue
+		}
+		// No built-from values means the caller cannot prove what it built:
+		// fail closed, never claim.
+		b := p.Built
+		if b == nil || stayFrom != b.StayFrom || stayTo != b.StayTo ||
+			gUpd != b.GuestUpdated || dFrom != b.DateFrom || dTo != b.DateTo || rUpd != b.ResUpdated {
 			continue
 		}
 		tag, err := tx.Exec(ctx,
