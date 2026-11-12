@@ -805,7 +805,11 @@ def sync_feed(
                 )
             continue
         if event.get("is_cancelled"):
-            _cancel_existing_stay(feed["apartment_id"], event["uid"], event["date_from"], now, stats)
+            if _cancel_existing_stay(feed["apartment_id"], event["uid"], event["date_from"], now, stats):
+                # Still alive until the send is resolved: the sweep below must
+                # not cancel it, and the digest must not be stored.
+                seen_uids.append(event["uid"])
+                deferred_in_flight = True
             continue
         seen_uids.append(event["uid"])
         if event.get("recurring"):
@@ -1026,7 +1030,14 @@ def sync_feed(
                 params={"date": row["date_from"], "variant": "disappeared"},
             )
             continue
-        db.update("reservation", row["id"], {"status": "cancelled", "updated_at": now})
+        if not _cancel_reservation_unless_claimed(row["id"], now):
+            deferred_in_flight = True
+            log.warning(
+                "ical_cancel_deferred_in_flight apartment_id=%s reservation_id=%s",
+                feed["apartment_id"],
+                row["id"],
+            )
+            continue
         from . import claim as stay_claim
 
         stay_claim.expire_on_cancel(row)
