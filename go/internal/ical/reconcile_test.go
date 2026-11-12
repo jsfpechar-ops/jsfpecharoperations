@@ -216,10 +216,13 @@ func TestFitUnsentGuestWindows(t *testing.T) {
 		claimed, epochSeconds())
 	must(t, err)
 
-	moved, err := fitUnsentGuestWindows(ctx, pool, res, apt, "2026-01-03", "2026-01-07")
+	tx, err := pool.Begin(ctx)
 	must(t, err)
-	if moved != 1 {
-		t.Fatalf("moved = %d, want 1", moved)
+	details, _, err := fitUnsentGuestWindows(ctx, tx, res, apt, "2026-01-03", "2026-01-07", "2026-01-05T00:00:00+00:00")
+	must(t, err)
+	must(t, tx.Commit(ctx))
+	if len(details) != 1 {
+		t.Fatalf("details = %v, want 1", details)
 	}
 	if got := scalarText(t, pool, `SELECT stay_from || ' ' || stay_to FROM guest WHERE id = $1`, moving); got != "2026-01-03 2026-01-07" {
 		t.Fatalf("moved guest window = %q", got)
@@ -230,11 +233,11 @@ func TestFitUnsentGuestWindows(t *testing.T) {
 	if got := scalarText(t, pool, `SELECT stay_from || ' ' || stay_to FROM guest WHERE id = $1`, claimed); got != "2026-01-01 2026-01-10" {
 		t.Fatalf("guest with live claim changed: %q", got)
 	}
-	if n := scalarInt(t, pool, `SELECT COUNT(*) FROM audit WHERE action = 'guest_stay_window_fitted'`); n != 1 {
-		t.Fatalf("audit rows = %d, want 1", n)
-	}
-	if n, err := fitUnsentGuestWindows(ctx, pool, res, apt, "not-a-date", "2026-01-07"); err != nil || n != 0 {
-		t.Fatalf("bad date: %d, %v", n, err)
+	tx2, err := pool.Begin(ctx)
+	must(t, err)
+	defer func() { _ = tx2.Rollback(ctx) }()
+	if d, _, err := fitUnsentGuestWindows(ctx, tx2, res, apt, "not-a-date", "2026-01-07", "2026-01-05T00:00:00+00:00"); err != nil || len(d) != 0 {
+		t.Fatalf("bad date: %v, %v", d, err)
 	}
 }
 
@@ -252,7 +255,8 @@ func TestCancelExistingStay(t *testing.T) {
 		 VALUES ('k-cancel', 'mail', $1, $1, $2, 'queued')`, ubyport.UTCNow(), cancelled)
 	must(t, err)
 	stats := &SyncStats{}
-	must(t, cancelExistingStay(ctx, pool, noEnv, apt, "u-cancel", stats))
+	_, err = cancelExistingStay(ctx, pool, noEnv, apt, "u-cancel", stats)
+	must(t, err)
 	if stats.Cancelled != 1 {
 		t.Fatalf("Cancelled = %d, want 1", stats.Cancelled)
 	}
@@ -272,7 +276,8 @@ func TestCancelExistingStay(t *testing.T) {
 	reported := seedReservation(t, pool, apt, "u-sent", future, "2999-06-03")
 	seedGuest(t, pool, reported, "sent", future, "2999-06-03")
 	stats2 := &SyncStats{}
-	must(t, cancelExistingStay(ctx, pool, noEnv, apt, "u-sent", stats2))
+	_, err = cancelExistingStay(ctx, pool, noEnv, apt, "u-sent", stats2)
+	must(t, err)
 	if stats2.Cancelled != 0 {
 		t.Fatal("sent guest: stay must not be cancelled")
 	}
@@ -286,7 +291,8 @@ func TestCancelExistingStay(t *testing.T) {
 	past := seedReservation(t, pool, apt, "u-past", "2000-01-01", "2000-01-03")
 	seedGuest(t, pool, past, "pending", "2000-01-01", "2000-01-03")
 	stats3 := &SyncStats{}
-	must(t, cancelExistingStay(ctx, pool, noEnv, apt, "u-past", stats3))
+	_, err = cancelExistingStay(ctx, pool, noEnv, apt, "u-past", stats3)
+	must(t, err)
 	if stats3.Cancelled != 0 {
 		t.Fatal("past stay must not be cancelled")
 	}

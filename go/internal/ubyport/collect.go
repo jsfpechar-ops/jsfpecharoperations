@@ -125,6 +125,7 @@ type collectGuest struct {
 	manualFiled  string
 	stayFrom     string
 	stayTo       string
+	updated      string
 	restrictedAt string
 	submissionID *int64
 	receiptID    *int64
@@ -135,7 +136,7 @@ type collectGuest struct {
 }
 
 type collectStay struct {
-	dateFrom, dateTo, completed, source string
+	dateFrom, dateTo, completed, source, updated string
 }
 
 // CollectSendable returns the guests of one apartment that Python's
@@ -158,7 +159,7 @@ func CollectSendable(ctx context.Context, pool *pgxpool.Pool, aptID int64, o Col
 
 	stays := map[int64]collectStay{}
 	rrows, err := pool.Query(ctx,
-		`SELECT id, COALESCE(date_from,''), COALESCE(date_to,''), COALESCE(registration_completed_at,''), COALESCE(source,'')
+		`SELECT id, COALESCE(date_from,''), COALESCE(date_to,''), COALESCE(registration_completed_at,''), COALESCE(source,''), COALESCE(updated_at,'')
 		   FROM reservation WHERE apartment_id = $1 AND status = 'active' AND archived_at IS NULL
 		   AND COALESCE(source, '') != 'demo'`, aptID)
 	if err != nil {
@@ -167,7 +168,7 @@ func CollectSendable(ctx context.Context, pool *pgxpool.Pool, aptID int64, o Col
 	for rrows.Next() {
 		var id int64
 		var s collectStay
-		if err := rrows.Scan(&id, &s.dateFrom, &s.dateTo, &s.completed, &s.source); err != nil {
+		if err := rrows.Scan(&id, &s.dateFrom, &s.dateTo, &s.completed, &s.source, &s.updated); err != nil {
 			rrows.Close()
 			return nil, err
 		}
@@ -256,6 +257,8 @@ func CollectSendable(ctx context.Context, pool *pgxpool.Pool, aptID int64, o Col
 				SubmissionID: c.submissionID, ReceiptSubmissionID: c.receiptID, SubmitAttempts: &attempts,
 			},
 			Source: st.source,
+			Built: ClaimBuilt{StayFrom: c.stayFrom, StayTo: c.stayTo, DateFrom: st.dateFrom,
+				DateTo: st.dateTo, GuestUpdated: c.updated, ResUpdated: st.updated},
 		})
 	}
 	return out, nil
@@ -425,7 +428,7 @@ func LoadGuests(ctx context.Context, pool *pgxpool.Pool, scope GuestScope, decry
 		COALESCE(g.res_street,''), COALESCE(g.res_street_enc,''),
 		COALESCE(g.res_city,''), COALESCE(g.res_city_enc,''),
 		COALESCE(g.signature_png,''), COALESCE(g.signature_png_enc,''),
-		g.submitted_at, g.receipt_submission_id
+		g.submitted_at, g.receipt_submission_id, COALESCE(g.updated_at,'')
 		FROM guest g JOIN reservation r ON r.id = g.reservation_id`
 	var args []any
 	if scope.ReservationID != 0 {
@@ -454,7 +457,7 @@ func LoadGuests(ctx context.Context, pool *pgxpool.Pool, scope GuestScope, decry
 			&c.lastErrors, &c.attempts, &c.manualFiled, &c.restrictedAt, &c.stayFrom, &c.stayTo,
 			&surname, &first, &resCountry, &purpose, &note,
 			&docP, &docE, &visaP, &visaE, &birthP, &birthE, &streetP, &streetE, &cityP, &cityE,
-			&sigP, &sigE, &c.submittedAt, &c.receiptID); err != nil {
+			&sigP, &sigE, &c.submittedAt, &c.receiptID, &c.updated); err != nil {
 			grows.Close()
 			return nil, err
 		}

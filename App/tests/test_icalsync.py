@@ -1,6 +1,8 @@
 import json
 import time
 
+import pytest
+
 from app import config, db, icalsync
 
 AIRBNB = """BEGIN:VCALENDAR
@@ -1350,3 +1352,247 @@ def test_a_stay_that_vanishes_loses_its_guest_link(monkeypatch, tmp_path):
         "SELECT token_hash FROM reservation_claim WHERE reservation_id = ?",
         (vanished["id"],),
     )["token_hash"] is None
+
+
+def test_reservation_date_write_is_skipped_while_a_claim_is_live(monkeypatch, tmp_path):
+    """The date write is one conditional UPDATE: a claim taken after the pre-check wins."""
+    feed_id, reservation_id, guest_id = _moved_stay(tmp_path, monkeypatch)
+    existing = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+    moved = {"date_from": "2099-03-10", "date_to": "2099-03-12", "updated_at": "x"}
+    db.execute(
+        "INSERT INTO submission_claim (guest_id, claim_token, claimed_at) "
+        "VALUES (?, 'race', ?)",
+        (guest_id, time.time()),
+    )
+    try:
+        assert icalsync._update_reservation_unless_claimed(existing, moved) is False
+        row = db.query_one(
+            "SELECT date_from, date_to FROM reservation WHERE id = ?", (reservation_id,)
+        )
+        assert (row["date_from"], row["date_to"]) == (existing["date_from"], existing["date_to"])
+    finally:
+        db.execute("DELETE FROM submission_claim WHERE guest_id = ?", (guest_id,))
+    assert icalsync._update_reservation_unless_claimed(existing, moved) is True
+    row = db.query_one(
+        "SELECT date_from, date_to FROM reservation WHERE id = ?", (reservation_id,)
+    )
+    assert (row["date_from"], row["date_to"]) == ("2099-03-10", "2099-03-12")
+
+
+def test_sync_feed_defers_a_date_move_when_a_claim_lands_after_the_precheck(
+    monkeypatch, tmp_path
+):
+    """sync_feed must go through the guarded write, not a plain update."""
+    feed_id, reservation_id, guest_id = _moved_stay(tmp_path, monkeypatch)
+    db.update("reservation", reservation_id, {"summary": "Old"})
+    monkeypatch.setattr(icalsync, "_send_in_flight", lambda _reservation_id: False)
+    db.execute(
+        "INSERT INTO submission_claim (guest_id, claim_token, claimed_at) "
+        "VALUES (?, 'race', ?)",
+        (guest_id, time.time()),
+    )
+
+    stats = _sync(feed_id)
+
+    row = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+    assert (row["date_from"], row["date_to"]) == ("2099-01-10", "2099-01-12")
+    assert row["summary"] == "Reserved"
+    assert stats["updated"] == 1
+    feed = db.query_one("SELECT body_sha256, etag FROM ical_feed WHERE id = ?", (feed_id,))
+    assert feed["body_sha256"] is None
+    guest = db.query_one("SELECT stay_from, stay_to FROM guest WHERE id = ?", (guest_id,))
+    assert (guest["stay_from"], guest["stay_to"]) == ("2099-01-10", "2099-01-12")
+
+
+def test_a_cancel_event_is_deferred_while_a_claim_is_live(monkeypatch, tmp_path):
+    """A send in flight blocks the cancel; it lands once the claim is gone."""
+    feed_id, reservation_id, guest_id = _moved_stay(tmp_path, monkeypatch)
+    monkeypatch.setattr(
+        icalsync,
+        "fetch_feed",
+        lambda _url: MOVED_STAY_FEED.replace(
+            "SUMMARY:Reserved", "SUMMARY:Reserved\nSTATUS:CANCELLED"
+        ),
+    )
+    db.execute(
+        "INSERT INTO submission_claim (guest_id, claim_token, claimed_at) "
+        "VALUES (?, 'race', ?)",
+        (guest_id, time.time()),
+    )
+
+    stats = _sync(feed_id)
+
+    row = db.query_one("SELECT status FROM reservation WHERE id = ?", (reservation_id,))
+    assert row["status"] == "active"
+    assert stats["cancelled"] == 0
+    feed = db.query_one("SELECT body_sha256, etag FROM ical_feed WHERE id = ?", (feed_id,))
+    assert feed["body_sha256"] is None
+
+    db.execute("DELETE FROM submission_claim WHERE guest_id = ?", (guest_id,))
+    stats = _sync(feed_id)
+
+    row = db.query_one("SELECT status FROM reservation WHERE id = ?", (reservation_id,))
+    assert row["status"] == "cancelled"
+    assert stats["cancelled"] == 1
+
+
+def test_a_vanished_stay_is_not_cancelled_while_a_claim_is_live(monkeypatch, tmp_path):
+    feed_id, apartment_id, uids = _stored_stays(
+        tmp_path, monkeypatch, "sweep-claim.sqlite3", stored=10, returned=9
+    )
+    gone = db.query_one(
+        "SELECT id FROM reservation WHERE apartment_id = ? AND uid = ?",
+        (apartment_id, uids[9]),
+    )["id"]
+    now = db.utcnow()
+    guest_id = db.insert(
+        "guest",
+        {
+            "reservation_id": gone,
+            "stay_from": "2099-03-01",
+            "stay_to": "2099-03-05",
+            "entered_by": "guest",
+            "submit_state": "pending",
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+    db.execute(
+        "INSERT INTO submission_claim (guest_id, claim_token, claimed_at) "
+        "VALUES (?, 'race', ?)",
+        (guest_id, time.time()),
+    )
+
+    stats = _sync(feed_id)
+
+    assert stats["cancelled"] == 0
+    assert _active_count(apartment_id) == 10
+    feed = db.query_one("SELECT body_sha256, etag FROM ical_feed WHERE id = ?", (feed_id,))
+    assert feed["body_sha256"] is None
+
+    db.execute("DELETE FROM submission_claim WHERE guest_id = ?", (guest_id,))
+    stats = _sync(feed_id)
+
+    assert stats["cancelled"] == 1
+    assert _active_count(apartment_id) == 9
+
+
+_FIT_MOVED = {
+    "date_from": "2099-02-10",
+    "date_to": "2099-02-12",
+    "updated_at": "2099-01-01T00:00:00+00:00",
+}
+
+
+def _fit_move(reservation_id):
+    row = db.query_one("SELECT apartment_id FROM reservation WHERE id = ?", (reservation_id,))
+    return {"apartment_id": row["apartment_id"], "new_from": "2099-02-10", "new_to": "2099-02-12"}
+
+
+def _dates_and_window(reservation_id, guest_id):
+    stay = db.query_one(
+        "SELECT date_from, date_to FROM reservation WHERE id = ?", (reservation_id,)
+    )
+    guest = db.query_one("SELECT stay_from, stay_to FROM guest WHERE id = ?", (guest_id,))
+    return (
+        (stay["date_from"], stay["date_to"]),
+        (guest["stay_from"], guest["stay_to"]),
+    )
+
+
+def test_date_move_fits_the_guest_windows_in_the_same_transaction(monkeypatch, tmp_path):
+    _feed_id, reservation_id, guest_id = _moved_stay(tmp_path, monkeypatch)
+    existing = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+    move = _fit_move(reservation_id)
+
+    assert icalsync._update_reservation_unless_claimed(existing, dict(_FIT_MOVED), move) is True
+
+    assert _dates_and_window(reservation_id, guest_id) == (
+        ("2099-02-10", "2099-02-12"),
+        ("2099-02-10", "2099-02-12"),
+    )
+    assert move["moved"] == 1
+    audit = db.query_one(
+        "SELECT COUNT(*) AS n FROM audit WHERE action = 'guest_stay_window_fitted'"
+    )
+    assert audit["n"] == 1
+
+    # Atomic: when the fit fails, the reservation move rolls back with it.
+    db.update("reservation", reservation_id, {"date_from": "2099-01-10", "date_to": "2099-01-12"})
+    db.update("guest", guest_id, {"stay_from": "2099-01-10", "stay_to": "2099-01-12"})
+    existing = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+
+    def boom(*_args, **_kwargs):
+        raise RuntimeError("fit failed")
+
+    monkeypatch.setattr(icalsync, "_fit_windows_in_tx", boom)
+    with pytest.raises(RuntimeError):
+        icalsync._update_reservation_unless_claimed(
+            existing, dict(_FIT_MOVED), _fit_move(reservation_id)
+        )
+    assert _dates_and_window(reservation_id, guest_id) == (
+        ("2099-01-10", "2099-01-12"),
+        ("2099-01-10", "2099-01-12"),
+    )
+
+
+def test_a_deferred_date_move_changes_neither_stay_nor_windows(monkeypatch, tmp_path):
+    _feed_id, reservation_id, guest_id = _moved_stay(tmp_path, monkeypatch)
+    existing = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+    unchanged = (("2099-01-10", "2099-01-12"), ("2099-01-10", "2099-01-12"))
+    db.execute(
+        "INSERT INTO submission_claim (guest_id, claim_token, claimed_at) "
+        "VALUES (?, 'race', ?)",
+        (guest_id, time.time()),
+    )
+    move = _fit_move(reservation_id)
+    try:
+        assert icalsync._update_reservation_unless_claimed(existing, dict(_FIT_MOVED), move) is False
+        assert move["reason"] == "claimed"
+        assert move["moved"] == 0
+        assert _dates_and_window(reservation_id, guest_id) == unchanged
+    finally:
+        db.execute("DELETE FROM submission_claim WHERE guest_id = ?", (guest_id,))
+
+    # A host edit after the read: the stored dates no longer match.
+    db.update("reservation", reservation_id, {"date_from": "2099-01-11"})
+    move = _fit_move(reservation_id)
+    assert icalsync._update_reservation_unless_claimed(existing, dict(_FIT_MOVED), move) is False
+    assert move["reason"] == "changed"
+    assert move["moved"] == 0
+    assert _dates_and_window(reservation_id, guest_id) == (
+        ("2099-01-11", "2099-01-12"),
+        ("2099-01-10", "2099-01-12"),
+    )
+
+
+def test_a_host_edit_during_the_sync_logs_deferred_changed(monkeypatch, tmp_path, caplog):
+    feed_id, reservation_id, guest_id = _moved_stay(tmp_path, monkeypatch)
+
+    def host_edits_the_dates(_reservation_id):
+        db.update("reservation", reservation_id, {"date_from": "2099-01-11"})
+        return False
+
+    monkeypatch.setattr(icalsync, "_send_in_flight", host_edits_the_dates)
+    with caplog.at_level("WARNING"):
+        _sync(feed_id)
+    assert "ical_dates_deferred_changed" in caplog.text
+    assert "ical_dates_deferred_in_flight" not in caplog.text
+    window = db.query_one("SELECT stay_from, stay_to FROM guest WHERE id = ?", (guest_id,))
+    assert (window["stay_from"], window["stay_to"]) == ("2099-01-10", "2099-01-12")
+
+
+def test_a_claim_landing_after_the_precheck_logs_deferred_in_flight(
+    monkeypatch, tmp_path, caplog
+):
+    feed_id, _reservation_id, guest_id = _moved_stay(tmp_path, monkeypatch)
+    monkeypatch.setattr(icalsync, "_send_in_flight", lambda _reservation_id: False)
+    db.execute(
+        "INSERT INTO submission_claim (guest_id, claim_token, claimed_at) "
+        "VALUES (?, 'race', ?)",
+        (guest_id, time.time()),
+    )
+    with caplog.at_level("WARNING"):
+        _sync(feed_id)
+    assert "ical_dates_deferred_in_flight" in caplog.text
+    assert "ical_dates_deferred_changed" not in caplog.text
