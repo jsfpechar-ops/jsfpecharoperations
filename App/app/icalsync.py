@@ -810,8 +810,31 @@ def sync_feed(
                 changed["status"] = "active"
             if changed:
                 changed["updated_at"] = now
-                db.update("reservation", existing["id"], changed)
-                stats["updated"] += 1
+                applied = False
+                if dates_changed:
+                    applied = _update_reservation_unless_claimed(existing, changed)
+                    if not applied:
+                        # A claim landed after the pre-check: keep the stored
+                        # dates and let the next poll retry the move.
+                        for key in ("date_from", "date_to"):
+                            changed.pop(key, None)
+                        dates_changed = False
+                        deferred_in_flight = True
+                        log.warning(
+                            "ical_dates_deferred_in_flight apartment_id=%s reservation_id=%s "
+                            "stored=%s..%s calendar=%s..%s",
+                            feed["apartment_id"],
+                            existing["id"],
+                            existing["date_from"],
+                            existing["date_to"],
+                            event["date_from"],
+                            event["date_to"],
+                        )
+                if not applied and set(changed) - {"updated_at"}:
+                    db.update("reservation", existing["id"], changed)
+                    applied = True
+                if applied:
+                    stats["updated"] += 1
             if existing["status"] == "cancelled":
                 # The stay is back, so the cancellation was wrong (or the room
                 # was rebooked). Cancelling closed guest access; reopen it so
