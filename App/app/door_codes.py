@@ -878,6 +878,19 @@ def _revive_one(item, now_iso: str, held_claim: str | None = None) -> bool:
     return True
 
 
+def _already_gone(exc: "ttlock.TTLockError", row, owner_user_id: int) -> bool:
+    """A refused delete that may only mean "that code no longer exists".
+
+    TTLock answers a delete of a missing code with an errcode this repo does not map
+    (the not-found number is not recorded, so none is guessed). Only such an unmapped
+    errcode, never a network error or a mapped one, costs one list call; the code counts
+    as deleted only when the lock confirms it is gone.
+    """
+    if exc.code is None or exc.code in ttlock.ERROR_KINDS:
+        return False
+    return _lock_code_state(row, owner_user_id) == PIN_GONE
+
+
 def _reissue_lost_pin(row_id: int, deleted_code_id: str, owner_user_id: int) -> None:
     """A revoke deleted the lock code but lost the row to a revival: make a new code.
 
