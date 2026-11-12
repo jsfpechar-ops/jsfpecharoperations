@@ -87,10 +87,11 @@ def _builder_stay(i, *, unknown=False):
 
 
 # Digest inputs no run reaches: 51 at-risk and 52 unknown rows (both "and N
-# more" lines), and an unknown-only digest.
+# more" lines), an unknown-only and an at-risk-only digest.
 BUILDERS = [
     {"name": "digest_overflow", "stays": 51, "unknown": 52},
     {"name": "digest_unknown_only", "stays": 0, "unknown": 2},
+    {"name": "digest_at_risk_only", "stays": 2, "unknown": 0},
 ]
 
 
@@ -108,6 +109,10 @@ CONTACTS = [
     "a@b.test, c@d.test", "host@example", "no-at-sign", "Name <host@example.test> trailing",
     "host@example.test>", "Host <a@b.test> <c@d.test>", "host@[127.0.0.1]",
     "Host (x <host@example.test>", '"Host <host@example.test>', "", "   ",
+    "Apartmány s.r.o. <jan@example.test>", '"Apartmány, s.r.o." <jan@example.test>',
+    "Apartmány, s.r.o. <jan@example.test>", "jan@bücher.test", "Jiří@Bücher.TEST",
+    "ŘÍHA@example.test", "jan@ex_ample.test", "jan.@example.test", "ja..n@example.test",
+    "á" * 241 + "@example.test", "á" * 242 + "@example.test", "İ@example.test",
 ]
 
 

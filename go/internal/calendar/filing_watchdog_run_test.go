@@ -329,7 +329,7 @@ func TestBuildDeadlineDigestMatchesPython(t *testing.T) {
 		}
 	}
 	sort.Strings(names)
-	if strings.Join(names, ",") != "digest_overflow,digest_unknown_only" {
+	if strings.Join(names, ",") != "digest_at_risk_only,digest_overflow,digest_unknown_only" {
 		t.Errorf("builder cases %v", names)
 	}
 }
@@ -357,8 +357,8 @@ func TestWatchdogAddressNeverDivergesSilently(t *testing.T) {
 			t.Errorf("contact %q: Go %q (unreadable %v), Python %q", c.Raw, got, unreadable, c.Python)
 		}
 	}
-	if same != 7 || flagged != 20 {
-		t.Errorf("%d forms read like Python and %d flagged, want 7 and 20", same, flagged)
+	if same != 19 || flagged != 20 {
+		t.Errorf("%d forms read like Python and %d flagged, want 19 and 20", same, flagged)
 	}
 	t.Logf("%d forms read like Python, %d flagged and logged", same, flagged)
 }

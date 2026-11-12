@@ -14,6 +14,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -72,20 +73,34 @@ func watchdogDeadlineText(deadline time.Time) string {
 	return deadline.Format("02.01.2006 15:04")
 }
 
-// watchdogAddrSpec is a plain addr-spec: a dot-atom local part and a dotted
-// domain of letters, digits and hyphens.
-const watchdogAddrSpec = `[A-Za-z0-9!#$%&'*+/=?^_{|}~-]+(?:\.[A-Za-z0-9!#$%&'*+/=?^_{|}~-]+)*@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+`
+// watchdogAddrChar is one atom character of an address: ASCII atext without
+// the backtick, or a Latin-1 or Latin Extended-A letter. U+0130 is left out
+// because Python lower-cases it to two characters.
+const watchdogAddrChar = `[A-Za-z0-9!#$%&'*+/=?^_{|}~\x{00C0}-\x{00D6}\x{00D8}-\x{00F6}\x{00F8}-\x{012F}\x{0131}-\x{017F}-]`
+
+// watchdogAddrSpec is an addr-spec: a local part of those characters with any
+// dots (Python keeps "jan.", ".jan" and "ja..n" as written) and a domain of at
+// least two labels of letters, digits, "-" and "_", with an optional final dot.
+const watchdogAddrSpec = `\.*` + watchdogAddrChar + `+(?:\.+` + watchdogAddrChar + `+)*\.*` +
+	`@[A-Za-z0-9_\x{00C0}-\x{00D6}\x{00D8}-\x{00F6}\x{00F8}-\x{012F}\x{0131}-\x{017F}-]+` +
+	`(?:\.[A-Za-z0-9_\x{00C0}-\x{00D6}\x{00D8}-\x{00F6}\x{00F8}-\x{012F}\x{0131}-\x{017F}-]+)+\.?`
+
+// watchdogDisplayName is the display name before "<address>": any run of
+// words, dots, spaces, tabs and quoted strings with no other special
+// character, no backslash and no control character.
+const watchdogDisplayName = `(?:[^"()<>\[\]:;@\\,\x00-\x08\x0a-\x1f\x7f]|"[^"\\\x00-\x1f\x7f]*")*`
 
 var (
 	watchdogAddrPlain = regexp.MustCompile(`^(` + watchdogAddrSpec + `)$`)
-	watchdogAddrAngle = regexp.MustCompile(`^[^"()<>\[\]:;@\\,.\t\r\n]*<(` + watchdogAddrSpec + `)>$`)
+	watchdogAddrAngle = regexp.MustCompile(`^` + watchdogDisplayName + `<(` + watchdogAddrSpec + `)>$`)
 )
 
 // watchdogAddress is mail.normalise_email for the forms it can read: a plain
-// address, or "<address>" after a display name with no special characters.
-// For those it gives exactly what Python gives (lower case, at most 254
-// characters). Python's parseaddr is a full RFC 2822 parser whose results for
-// other forms (comments, quotes, groups, "mailto:") differ between Python
+// address, or "<address>" after a display name. For those it gives exactly
+// what Python gives (lower case, at most 254 characters); a differential fuzz
+// against Python 3.11, 3.12 and 3.13 found no value it reads differently.
+// Python's parseaddr is a full RFC 2822 parser whose results for other forms
+// (comments, an unquoted comma, groups, "mailto:") differ between Python
 // releases, so it is not ported; any other value that is not blank returns ""
 // with unreadable true: the caller logs it at error level and the stay stays
 // unmailed (no stamp), so it is never skipped silently and is retried each run.
@@ -98,10 +113,14 @@ func watchdogAddress(raw string) (addr string, unreadable bool) {
 	if m == nil {
 		m = watchdogAddrAngle.FindStringSubmatch(s)
 	}
-	if m == nil || len(m[1]) > 254 {
+	if m == nil {
 		return "", true
 	}
-	return strings.ToLower(m[1]), false
+	addr = strings.ToLower(m[1])
+	if utf8.RuneCountInString(addr) > 254 {
+		return "", true
+	}
+	return addr, false
 }
 
 // watchdogContactEmail is mail_notify._entity_contact_email: the legal
@@ -217,11 +236,11 @@ func NotifyHosts(ctx context.Context, pool *pgxpool.Pool, getenv func(string) st
 			continue
 		}
 		if err := watchdogPush(ctx, pool, getenv, *stay); err != nil {
-			slog.Error("push_deadline_failed", "reservation_id", stay.ReservationID)
+			slog.Error("push_deadline_failed", "reservation_id", stay.ReservationID, "err", err)
 		}
 		ok, err := watchdogMailStay(ctx, pool, getenv, stay, at)
 		if err != nil {
-			slog.Error("deadline_at_risk mail failed", "reservation_id", stay.ReservationID)
+			slog.Error("deadline_at_risk mail failed", "reservation_id", stay.ReservationID, "err", err)
 			continue
 		}
 		if ok {
@@ -356,7 +375,7 @@ func RunFilingWatchdog(ctx context.Context, pool *pgxpool.Pool, lookupEnv func(s
 	unknown, err := UnknownRiskStays(ctx, pool, at)
 	if err != nil {
 		// The weaker check must not silence the real one or its heartbeat.
-		slog.Error("unknown-risk query failed")
+		slog.Error("unknown-risk query failed", "err", err)
 		unknown = nil
 	}
 	both := make([]WatchdogStay, 0, len(stays)+len(unknown))
@@ -365,7 +384,7 @@ func RunFilingWatchdog(ctx context.Context, pool *pgxpool.Pool, lookupEnv func(s
 	hostMails := NotifyHosts(ctx, pool, getenv, both, at)
 	digest, err := SendOperatorDigest(ctx, pool, getenv, stays, unknown, at)
 	if err != nil {
-		slog.Error("deadline digest failed")
+		slog.Error("deadline digest failed", "err", err)
 		digest = false
 	}
 	result := WatchdogResult{
