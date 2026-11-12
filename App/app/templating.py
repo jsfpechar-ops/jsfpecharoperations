@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any, Dict, Optional
 from zoneinfo import ZoneInfo
