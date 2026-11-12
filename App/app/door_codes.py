@@ -931,7 +931,7 @@ def _revoke_one(row_id: int) -> None:
     if not apartment or not reservation:
         return
     if _stay_is_live(reservation):
-        _keep_issued(row_id, now_iso, held_claim=now_iso)
+        _revive_one(row, now_iso, held_claim=now_iso)
         return
     account = ttlock.account_for(apartment["owner_user_id"])
     if not account or account["status"] != "ok":
