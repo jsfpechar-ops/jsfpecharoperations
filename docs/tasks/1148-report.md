@@ -28,7 +28,7 @@ Status: review
 
 - [x] Event and sweep cancel both go through `_running_defers_cancel` and `_alert_if_filing_in_doubt`.
 - [x] 6 new tests pass; both revert bites fail then pass.
-- [x] No sentinel `%(` in the new cards is not checked by a test here; en, cs, vi keys exist and translate.
+- [x] No sentinel `%(` left in the cards: the step 4 translate check returns substituted text (`Stay from D ...`) for en, cs and vi; keys exist.
 - [x] Step 8 green, lint OK, only section 3 files changed.
 
 ## Revert bites
