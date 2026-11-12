@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/deadlines"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
 )
 
@@ -112,7 +113,7 @@ func TestDeadlineCell(t *testing.T) {
 
 func TestUrgencyBuckets(t *testing.T) {
 	checkIn := time.Date(2026, 11, 2, 0, 0, 0, 0, time.UTC)
-	deadline := reportingDeadlineNaive(checkIn)
+	deadline := deadlines.ReportingDeadline(checkIn)
 	cases := []struct {
 		name string
 		now  time.Time
@@ -125,9 +126,23 @@ func TestUrgencyBuckets(t *testing.T) {
 		{"overdue", deadline.Add(time.Hour), "overdue"},
 	}
 	for _, c := range cases {
-		if got := urgency(checkIn, c.now); got != c.want {
+		if got := deadlines.Urgency(checkIn, c.now); got != c.want {
 			t.Errorf("%s: got %q want %q", c.name, got, c.want)
 		}
+	}
+}
+
+// localNow keeps the calendar's old whole-second wall clock (brief 1133): a
+// filing stored at 22:59:59.5 UTC on a winter deadline day is 23:59:59 Prague,
+// on time, not half a second late.
+func TestLocalNowDropsSubSeconds(t *testing.T) {
+	got := localNow(time.Date(2026, 11, 4, 22, 59, 59, 500000000, time.UTC))
+	if want := time.Date(2026, 11, 4, 23, 59, 59, 0, time.UTC); !got.Equal(want) || got.Location() != time.UTC {
+		t.Errorf("got %v, want %v", got, want)
+	}
+	due := deadlines.ReportingDeadline(time.Date(2026, 11, 2, 0, 0, 0, 0, time.UTC))
+	if got.After(due) {
+		t.Errorf("filed %v is after the deadline %v", got, due)
 	}
 }
 

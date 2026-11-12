@@ -3,53 +3,17 @@ package calendar
 import (
 	"time"
 
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/deadlines"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/headcount"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
 )
 
-// prague is the Europe/Prague zone the deadlines use for civil time.
-var prague = mustLoadPrague()
-
-func mustLoadPrague() *time.Location {
-	loc, err := time.LoadLocation("Europe/Prague")
-	if err != nil {
-		panic("calendar: embedded Prague zone missing: " + err.Error())
-	}
-	return loc
-}
-
-// naive keeps the wall clock of t and drops its zone (a Python naive datetime).
-func naive(t time.Time) time.Time {
-	return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), 0, time.UTC)
-}
-
-// localNow is deadlines.local_now for an instant: the naive Prague wall clock.
+// localNow is deadlines.LocalNow cut to whole seconds: the naive Prague wall
+// clock. The calendar has always dropped sub-second digits (a stored filing
+// time may carry microseconds); keep that so a filing at 23:59:59.5 is not late.
 func localNow(now time.Time) time.Time {
-	return naive(now.In(prague))
-}
-
-// reportingDeadlineNaive is deadlines.reporting_deadline as a naive datetime.
-func reportingDeadlineNaive(checkIn time.Time) time.Time {
-	return naive(ubyport.ReportingDeadline(checkIn))
-}
-
-// urgency mirrors deadlines.urgency. checkIn is a date (UTC midnight); now is naive Prague time.
-func urgency(checkIn, now time.Time) string {
-	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
-	if checkIn.After(today) {
-		return "future"
-	}
-	left := reportingDeadlineNaive(checkIn).Sub(now).Hours()
-	switch {
-	case left < 0:
-		return "overdue"
-	case left <= 24:
-		return "urgent"
-	case left <= 48:
-		return "soon"
-	}
-	return "ok"
+	return deadlines.LocalNow(now).Truncate(time.Second)
 }
 
 // guestRow is one live guest of a stay, with the fields the completeness checks read.
@@ -208,8 +172,8 @@ func stayCell(stay stayRow, p progressResult, guests []guestRow, now time.Time) 
 	level := "future"
 	var due *time.Time
 	if hasCheckIn {
-		level = urgency(checkIn, now)
-		d := reportingDeadlineNaive(checkIn)
+		level = deadlines.Urgency(checkIn, now)
+		d := deadlines.ReportingDeadline(checkIn)
 		due = &d
 	}
 	var filedAt *time.Time

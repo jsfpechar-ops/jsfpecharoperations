@@ -39,7 +39,7 @@ AWS dependencies and what happens in an outage:
 
 | # | Step | Size | Who | Depends on |
 |---|---|---|---|---|
-| 1 | Runbook `docs/DISASTER_RECOVERY.md` (brief 1133) | M | Haiku brief | none |
+| 1 | Runbook `docs/DISASTER_RECOVERY.md` (brief 1135) | M | Haiku brief | none |
 | 2 | Check Drive cron runs; list what is in Drive; confirm age key opens a Drive file | S | owner | none |
 | 3 | `pg-restore.sh` option to restore from a local `.age` file (no volume stamp, no AWS) | M | Haiku brief | 1 |
 | 4 | Drive copy daily instead of weekly (cron line change, doc) (brief 1134) | S | Haiku brief + owner | 2 |

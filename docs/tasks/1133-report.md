@@ -1,47 +1,51 @@
 # 1133 report
 
-Status: review
+Status: done
 
-## Files changed
+Deviations: None. Steps 1 to 3 were committed by the previous executor (6f37282, 6605f5a, 45cc010). This run did the §7 checks not yet run, then step 4. No Go file changed in this run. Nothing pushed.
 
-- `docs/DISASTER_RECOVERY.md` (new, 5742 bytes, commit 2a5d551d)
-- `docs/tasks/1133-report.md` (new, this file)
+## 1. Diff stat (since brief commit)
 
-## Commands
+```
+ go/internal/calendar/calendar_test.go | 19 +++++++++++--
+ go/internal/calendar/progress.go      | 50 +++++------------------------------
+ go/internal/ubyport/collect.go        | 34 +++++-------------------
+ go/internal/ubyport/collect_test.go   |  3 +++
+ 4 files changed, 34 insertions(+), 72 deletions(-)
+```
 
-- `wc -c docs/DISASTER_RECOVERY.md` gave 5742 (limit 10000).
-- `python3 scripts/context_lint.py 2>&1 | tail -15`, last lines: `2 commit(s) touched App/ after the last status.md update...`, `next free: task 1134 | migration 0046`, `context lint: OK`. No ERROR lines.
-- `test -f docs/DISASTER_RECOVERY.md && echo ok | tail -30` printed `ok`.
-- `git status --short | tail -30` printed nothing (clean).
+Only §3 paths changed.
 
-## Section 7 acceptance
+## 2. §6 commands (last lines)
 
-- [x] Runbook has all 8 sections; every command is in its own block. (Short inline commands in numbered steps are code spans, not fenced blocks; see Deviations.)
-- [x] No AWS login is needed in any rebuild step.
-- [x] The two-servers guard appears before the rebuild steps.
-- [x] Lint shows no ERROR for the two files.
-- [x] Two commits on the branch, nothing pushed. (Runbook commit 2a5d551d; report commit follows.)
+- `test -z "$(gofmt -l .)" && go vet ./... && go test ./internal/deadlines/ ./internal/ubyport/ ./internal/calendar/ -count=1`:
+  ```
+  ok  	.../go/internal/deadlines	0.024s
+  ok  	.../go/internal/ubyport	0.327s
+  ok  	.../go/internal/calendar	0.006s
+  ```
+  Exit 0.
+- `go build ./cmd/ubyhost-web && rm -f ubyhost-web`: no output.
+- `python3 scripts/context_lint.py`: `next free: task 1134 | migration 0046`, `context lint: OK`. WARN lines are pre-existing, not from this change.
 
-## Deviations
+## 3. §7 checks
 
-- Section 2 facts were confirmed by grep. The repo-root `scripts/` folder does not hold `deploy.sh`, `pg-restore.sh` or `status.sh`. They live in `deploy/lightsail/scripts/`, so the runbook runs commands from `/opt/ubyhost/deploy/lightsail`, as `docs/LIGHTSAIL.md` does.
-- Commit message for step 2 used the brief's own text, not the `NNNN step k` pattern.
-- Added step 13 (delete the age identity file from the server after restore). This follows the "never on the server" key-custody rule in `docs/OPERATIONS.md`.
-- Some short commands in numbered steps (`docker compose stop`, `./scripts/deploy.sh`, `crontab -e`) are inline code, not fenced blocks.
-- Commit step 5 for the report uses `docs: 1133 report`.
+- [x] First §6 command: three `ok` lines; build succeeds.
+- [x] Removed-symbol grep (`addWorkingDays|isWorkingDay|naive|urgency|reportingDeadlineNaive|mustLoadPrague|reportingWorkingDays`) in `go/internal/ubyport` and `go/internal/calendar`: empty.
+- [x] `go/internal/deadlines` imports nothing from ubyport or calendar (still a leaf): empty.
+- [x] Named `-v` run (`TestReportingDeadline`, `TestDueForAutomaticSend`, `TestUrgencyBuckets`, `TestLocalNowDropsSubSeconds`): all PASS, `ok` for ubyport and calendar.
+- [x] `python3 scripts/context_lint.py`: OK.
+- [x] Diff stat lists only §3 paths.
+- [x] Four commits "1133 step 1" to "1133 step 4"; nothing pushed (step 4 commit made in this run).
 
-## Questions
+## 4. Deviations
 
-- The brief does not name the exact stay or Doručenka URL paths, so the runbook asks for a browser check rather than a fixed curl path.
-- `curl --resolve` may fail TLS against Cloudflare origin certificates. The runbook falls back to a browser hosts-file check and does not use `-k`. Please confirm this is the intended check.
+None.
 
-## Owner steps left
+## 5. Questions
 
-- Owner or lawyer: add the new provider to the `/subprocessors` register and `docs/privacy/ROPA.md` (runbook section "After the move").
+None.
 
-## Files that should link to the runbook (orchestrator adds the links)
+## 6. Owner steps left
 
-- `docs/LIGHTSAIL.md` (rebuild section)
-- `docs/OPERATIONS.md` (backup section)
-- `docs/context/status.md`
-- `AGENTS.md` routing "Deploy, server, backups" row
+None beyond the PR review.
