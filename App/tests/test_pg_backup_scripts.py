@@ -41,7 +41,7 @@ def make_tree(tmp_path, env_text):
     """Copy the scripts into a throwaway tree with its own .env and stub binaries."""
     root = tmp_path / "deploy" / "lightsail"
     (root / "scripts").mkdir(parents=True)
-    for name in ("backup.sh", "pg-restore.sh"):
+    for name in ("backup.sh", "pg-restore.sh", "filing-guard.sh"):
         shutil.copy(SCRIPTS / name, root / "scripts" / name)
     (root / ".env").write_text(env_text)
     bindir = tmp_path / "bin"
@@ -66,7 +66,7 @@ def calls(log):
     return log.read_text() if log.exists() else ""
 
 
-@pytest.mark.parametrize("name", ["backup.sh", "pg-restore.sh", "pg-cutover.sh"])
+@pytest.mark.parametrize("name", ["backup.sh", "pg-restore.sh", "pg-cutover.sh", "filing-guard.sh", "preflight.sh"])
 def test_scripts_pass_bash_syntax(name):
     result = subprocess.run(["bash", "-n", str(SCRIPTS / name)], capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
@@ -93,6 +93,7 @@ def test_pg_restore_streams_dump_into_pg_restore(tmp_path):
     assert "stop worker ubyhost" in recorded
     assert "pg_restore -U ubyhost -d ubyhost --clean --if-exists --single-transaction" in recorded
     assert "up -d ubyhost worker" in recorded
+    assert not (root / ".restored-box").exists()
 
 
 def test_pg_restore_rejects_bad_stamp(tmp_path):
@@ -103,6 +104,9 @@ def test_pg_restore_rejects_bad_stamp(tmp_path):
     assert "stop" not in calls(log)
 
 
+FILING_OFF = "UBYHOST_ENABLE_SCHEDULER=0\nUBYHOST_GO_JOB_KINDS=ical,push\nUBYHOST_JOB_QUEUE_KINDS=ical,push\n"
+
+
 def make_dump_file(tmp_path, name="ubyhost-pg.dump.age", text="ciphertext"):
     dump = tmp_path / name
     dump.write_text(text)
@@ -110,7 +114,7 @@ def make_dump_file(tmp_path, name="ubyhost-pg.dump.age", text="ciphertext"):
 
 
 def test_pg_restore_file_form_streams_host_file_without_docker_cp(tmp_path):
-    root, bindir, log = make_tree(tmp_path, PG_ENV)
+    root, bindir, log = make_tree(tmp_path, PG_ENV + FILING_OFF)
     identity = tmp_path / "agekey"
     identity.write_text("stub")
     dump = make_dump_file(tmp_path)
@@ -122,6 +126,20 @@ def test_pg_restore_file_form_streams_host_file_without_docker_cp(tmp_path):
     assert "stop worker ubyhost" in recorded
     assert "pg_restore -U ubyhost -d ubyhost --clean --if-exists --single-transaction" in recorded
     assert "up -d ubyhost worker" in recorded
+    assert "from ubyhost-pg.dump.age" in (root / ".restored-box").read_text()
+
+
+def test_pg_restore_file_form_refuses_while_filing_is_on(tmp_path):
+    root, bindir, log = make_tree(tmp_path, PG_ENV + "UBYHOST_GO_JOB_KINDS=ical,submit\n")
+    identity = tmp_path / "agekey"
+    identity.write_text("stub")
+    dump = make_dump_file(tmp_path)
+    result = run_script("pg-restore.sh", root, bindir, log, args=["--file", str(dump)],
+                        extra_env={"AGE_IDENTITY_FILE": str(identity), "RESTORE_CONFIRM": "yes"})
+    assert result.returncode == 3, result.stderr
+    assert "RESTORED BOX" in result.stderr
+    assert (root / ".restored-box").exists()
+    assert "stop" not in calls(log)
 
 
 def test_pg_restore_file_form_missing_file_exits_1_before_stopping(tmp_path):
@@ -156,6 +174,116 @@ def test_pg_restore_needs_exactly_one_source(tmp_path, args):
     assert result.returncode == 1
     assert "usage:" in result.stderr
     assert "stop" not in calls(log)
+
+
+# Brief 1169: the filing guard on a restored box (marker .restored-box).
+PREFLIGHT_ENV = (
+    "UBYHOST_DOMAIN=ubyhost.example\n"
+    "ACME_EMAIL=ops@ubyhost.example\n"
+    "UBYHOST_PUBLIC_BASE_URL=https://ubyhost.example\n"
+    "UBYHOST_DEPLOYMENT=production\n"
+    "UBYHOST_UBYPORT_ENV=prod\n"
+    "UBYHOST_BACKUP_AGE_RECIPIENT=age1test\n"
+    "UBYHOST_BACKUP_PING_URL=https://ping.example/backup\n"
+)
+SUBMIT_ON = "UBYHOST_GO_JOB_KINDS=ical,submit\nUBYHOST_JOB_QUEUE_KINDS=ical,submit\n"
+
+
+def make_guard_tree(tmp_path, env_text, marker):
+    """A throwaway deploy/lightsail tree with preflight, the guard and site_urls.py."""
+    root = tmp_path / "deploy" / "lightsail"
+    (root / "scripts").mkdir(parents=True)
+    for name in ("preflight.sh", "filing-guard.sh"):
+        shutil.copy(SCRIPTS / name, root / "scripts" / name)
+    (tmp_path / "App" / "app").mkdir(parents=True)
+    shutil.copy(ROOT / "App/app/site_urls.py", tmp_path / "App" / "app" / "site_urls.py")
+    (root / ".env").write_text(env_text)
+    if marker:
+        (root / ".restored-box").write_text("restored 2026-11-12T00:00:00Z from ubyhost-pg.dump.age\n")
+    return root
+
+
+def run_guard(root, script="filing-guard.sh", extra_env=None):
+    env = {"PATH": os.environ["PATH"], "UBYHOST_ALLOW_SMALL_HOST": "1"}
+    env.update(extra_env or {})
+    return subprocess.run(
+        ["bash", str(root / "scripts" / script)],
+        cwd=root, env=env, capture_output=True, text=True, timeout=60, stdin=subprocess.DEVNULL,
+    )
+
+
+def test_filing_guard_without_marker_is_silent_even_with_submit(tmp_path):
+    root = make_guard_tree(tmp_path, SUBMIT_ON, marker=False)
+    result = run_guard(root)
+    assert result.returncode == 0, result.stderr
+    assert result.stderr == ""
+
+
+@pytest.mark.parametrize("env_text", [
+    "",
+    "UBYHOST_ENABLE_SCHEDULER=1\n",
+    "UBYHOST_ENABLE_SCHEDULER=0\nUBYHOST_GO_JOB_KINDS=\"ical, submit\"\n",
+    "UBYHOST_ENABLE_SCHEDULER=0\nUBYHOST_JOB_QUEUE_KINDS=submit\n",
+])
+def test_filing_guard_blocks_restored_box_while_filing_can_run(tmp_path, env_text):
+    root = make_guard_tree(tmp_path, env_text, marker=True)
+    result = run_guard(root)
+    assert result.returncode == 3, result.stderr
+    assert "RESTORED BOX" in result.stderr
+    assert "ERROR: automatic filing stays blocked" in result.stderr
+
+
+def test_filing_guard_allows_restored_box_with_filing_off(tmp_path):
+    root = make_guard_tree(tmp_path, FILING_OFF, marker=True)
+    result = run_guard(root)
+    assert result.returncode == 0, result.stderr
+    assert "NOTE: restored box" in result.stderr
+    assert "RESTORED BOX" not in result.stderr
+
+
+def test_filing_guard_reads_env_file_not_the_caller(tmp_path):
+    root = make_guard_tree(tmp_path, SUBMIT_ON, marker=True)
+    result = run_guard(root, extra_env={"UBYHOST_ENABLE_SCHEDULER": "0", "UBYHOST_GO_JOB_KINDS": "ical"})
+    assert result.returncode == 3, result.stderr
+
+
+def test_filing_guard_override_for_one_run_warns_and_passes(tmp_path):
+    root = make_guard_tree(tmp_path, SUBMIT_ON, marker=True)
+    result = run_guard(root, extra_env={"UBYHOST_FILING_GUARD_OVERRIDE": "1"})
+    assert result.returncode == 0, result.stderr
+    assert "RESTORED BOX" in result.stderr
+    assert "WARNING: UBYHOST_FILING_GUARD_OVERRIDE=1" in result.stderr
+
+
+def test_filing_guard_refuses_override_kept_in_env_file(tmp_path):
+    root = make_guard_tree(tmp_path, SUBMIT_ON + "UBYHOST_FILING_GUARD_OVERRIDE=1\n", marker=True)
+    result = run_guard(root, extra_env={"UBYHOST_FILING_GUARD_OVERRIDE": "1"})
+    assert result.returncode == 3, result.stderr
+    assert "must not be in .env" in result.stderr
+
+
+def test_preflight_passes_on_a_normal_box_with_submit(tmp_path):
+    root = make_guard_tree(tmp_path, PREFLIGHT_ENV + SUBMIT_ON, marker=False)
+    result = run_guard(root, script="preflight.sh")
+    assert result.returncode == 0, result.stderr
+    assert "Preflight OK" in result.stdout
+    assert "RESTORED BOX" not in result.stderr
+
+
+def test_preflight_fails_on_a_restored_box_with_submit(tmp_path):
+    root = make_guard_tree(tmp_path, PREFLIGHT_ENV + SUBMIT_ON, marker=True)
+    result = run_guard(root, script="preflight.sh")
+    assert result.returncode == 1
+    assert "ERROR: filing guard: restored box with automatic filing on" in result.stderr
+    assert "Preflight failed." in result.stderr
+
+
+def test_preflight_passes_on_a_restored_box_with_filing_off(tmp_path):
+    root = make_guard_tree(tmp_path, PREFLIGHT_ENV + FILING_OFF, marker=True)
+    result = run_guard(root, script="preflight.sh")
+    assert result.returncode == 0, result.stderr
+    assert "Preflight OK" in result.stdout
+    assert "NOTE: restored box" in result.stderr
 
 
 @pytest.mark.parametrize("running", [1, 0])
