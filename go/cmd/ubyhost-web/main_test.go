@@ -18,6 +18,16 @@ func TestParseGoKindsPush(t *testing.T) {
 	}
 }
 
+func TestParseGoKindsDeadlines(t *testing.T) {
+	kinds, err := parseGoKinds("submit, deadlines")
+	if err != nil || len(kinds) != 2 || kinds[1] != "deadlines" {
+		t.Fatalf("parseGoKinds(submit, deadlines) = %v, %v", kinds, err)
+	}
+	if goIntervals["deadlines"] != 30 {
+		t.Fatalf("deadlines interval %d, want 30 minutes", goIntervals["deadlines"])
+	}
+}
+
 func TestWrapSetsHardenHeaders(t *testing.T) {
 	m := &metrics{counts: map[key]int64{}}
 	h := m.wrap("/test", func(w http.ResponseWriter, _ *http.Request) {
