@@ -53,7 +53,7 @@ AGE_IDENTITY_FILE=/root/ubyhost-backup.agekey ./scripts/restore.sh <stamp>
 
 Legacy plaintext snapshots still restore without the identity.
 
-## Weekly backup to Google Drive (bare minimum)
+## Daily backup to Google Drive (bare minimum)
 
 **One-time (on the server, SSH):**
 
@@ -72,23 +72,24 @@ Choose: **n** (new remote) → name **`gdrive`** → storage **Google Drive** �
 chmod +x /opt/ubyhost/deploy/lightsail/scripts/backup-gdrive.sh
 ```
 
-3. Test once:
+3. Test once (the Drive job takes no snapshot of its own; run `backup.sh` first):
 
 ```bash
 cd /opt/ubyhost/deploy/lightsail
+./scripts/backup.sh
 ./scripts/backup-gdrive.sh
 ```
 
 Check Google Drive for folder **`UbyHost-backups`** with a dated subfolder
 (`ubyhost-backup.tar.age` — an encrypted archive; the key is not in it).
 
-4. Weekly cron (Sundays 04:00 UTC):
+4. Daily cron (04:00 UTC, after the 03:00 `backup.sh`; the Drive job takes no snapshot of its own):
 
 ```bash
-(crontab -l 2>/dev/null; echo "0 4 * * 0 cd /opt/ubyhost/deploy/lightsail && ./scripts/backup-gdrive.sh >> /var/log/ubyhost-gdrive.log 2>&1") | crontab -
+(crontab -l 2>/dev/null; echo "0 4 * * * cd /opt/ubyhost/deploy/lightsail && ./scripts/backup-gdrive.sh >> /var/log/ubyhost-gdrive.log 2>&1") | crontab -
 ```
 
-Local `./scripts/backup.sh` still runs daily at 03:00 if you added that cron earlier; this uploads the **newest** snapshot to Drive once a week.
+Local `./scripts/backup.sh` still runs daily at 03:00 if you added that cron earlier; this uploads the **newest** snapshot to Drive once a day.
 
 ## S3 backup (encrypted archive, EU region)
 
@@ -158,7 +159,7 @@ You can use **both** Drive and S3 (two cron lines). Pick one off-site copy if yo
 
 ## Backups and recovery (Litestream retired 2026-11-07)
 
-Litestream is gone. The app runs on PostgreSQL, so recovery is the age-encrypted `backup.sh` pg_dump (daily and before each deploy), the weekly Google Drive copy and the daily S3 copy. Restore with `./scripts/pg-restore.sh <stamp>`; `./scripts/restore.sh` remains only for old SQLite snapshots. The pre-cutover S3 replica stays untouched as an archive.
+Litestream is gone. The app runs on PostgreSQL, so recovery is the age-encrypted `backup.sh` pg_dump (daily and before each deploy), the daily Google Drive copy and the daily S3 copy. Restore with `./scripts/pg-restore.sh <stamp>`; `./scripts/restore.sh` remains only for old SQLite snapshots. The pre-cutover S3 replica stays untouched as an archive.
 
 ## Staging server (Step 0)
 
