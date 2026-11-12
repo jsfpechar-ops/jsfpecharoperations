@@ -1,6 +1,6 @@
 # 1132: host dashboard redesign, part A of 3: colour tokens, cream background, new sidebar and tablet icon rail
 
-Status: ready
+Status: todo
 Depends on: none | Base commit: origin/main | Branch: task/1132-dashboard-redesign-a
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (4 steps of at most 6 calls)
 Brief by Sonnet 5.5, 2026-11-12. Owner Josef approved the Figma redesign (file `4POeO1dtcL5i2U5e0gdEoU`: frames "Laptop 1280 / Dashboard (chosen: B)", "Laptop 1280 / Dashboard – full sidebar", "Tablet 820 / Dashboard (B)"). Order: **1132 (this) then 1133 then 1134**. 1133 and 1134 stop if this one is not merged or stacked on its branch.
@@ -88,7 +88,15 @@ All in `app2.css`, scoped `body.v2`; append one block `/* 1132 sidebar */` at th
 Run from `App/`:
 `.venv/bin/python -m pytest tests/test_0705_v2_shell_browser.py tests/test_0895_sidebar_inert_heal_browser.py tests/test_host_account_navigation.py tests/test_icons_nav_1060.py -q --tb=short -x -rs 2>&1 | tail -30`. Fix test assertions only where they name removed items (section 3 last row). Commit `1132 step 4`.
 
-## 5. Commands (from `App/`, each ends `| tail -30`)
+## 5. Do not touch
+
+- The phone layout: `dash-phone` markup, `ph-*` rules and the phone tab bar structure (only icons and the 768 px breakpoint change, as listed in section 4).
+- Guest pages, admin pages, login and auth forms.
+- Routes and templates for Smart locks and Invoices (they only move into the account menu).
+- Migrations, `db.py`, any SQL, any new dependency, any new outbound request.
+- Anything not listed in section 3 Files.
+
+## 6. Commands (from `App/`, each ends `| tail -30`)
 
 ```
 .venv/bin/python -m pytest tests/test_host_*.py tests/test_host_geometry.py -q --tb=short -x -rs 2>&1 | tail -30
@@ -98,7 +106,7 @@ UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/shots .venv/bin/python -m pytes
 ```
 Rows used (test-map): host pages and host CSS, any host template/CSS/JS, v2 pages, static files and cache keys, design system, copy and translations. Browser files 0 skipped (`-rs`); a skip is a fail. No full suite.
 
-## 6. Acceptance
+## 7. Acceptance
 
 - Host pages have the cream background; cards stay white; `grep -n "#faf6f0\|#d0452d" App/app/templates/*.html | wc -l` is 0 (tokens only).
 - Laptop 1280 sidebar: no name box, search without `Ctrl K`, groups [Dashboard, Stays, Properties, Cleaning] [Stay fees, Payments, Booking site], bottom Ask Havel (only with `havel_on`), Help, Settings, hairline, avatar row with first name; no Smart locks or Invoices link in the sidebar, both in the account menu and routes `/smart-locks`, `/invoices` still 200.
@@ -108,11 +116,11 @@ Rows used (test-map): host pages and host CSS, any host template/CSS/JS, v2 page
 - UX gate (AGENTS rule 10, you do it, never ask the owner): screenshots at 390, 768, 1280 of `/` (dashboard) and one other host page (`/reservations`); write per page in the PR "390: ...; 768: ...; 1280: ..."; tick the [design-system checklist](../design/design-system.md) in the PR body; never silence a lint finding.
 - Section 5 green, 0 skipped.
 
-## 7. Stop and ask
+## 8. Stop and ask
 
 Stop and report if: an anchor is missing; the tab bar and rail cannot coexist without touching phone markup; a contrast ratio is below 4.5; `data-command-shortcut` is needed by JS; `test_layout_lint_browser.py` flags something you cannot fix in 2 tries; more than 25 tool calls.
 
-## 8. Branch, PR, report
+## 9. Report (branch, PR and what to report)
 
 Branch `task/1132-dashboard-redesign-a`, open one **draft** PR, never push to `main`. Merge only with `scripts/merge-pr-on-green.sh` (owner step; green merges auto-deploy, keep the draft until the owner says it may ship; 1133 and 1134 stack on this branch). Do not edit status, decisions or known-issues. Write `docs/tasks/1132-report.md` (600 tokens at most): files changed, each command with its last 5 lines, section 6 ticked, per-page screenshot notes, Deviations (`Done: steps 1 to k. Left: steps k+1 to 4.` if you hit the cap), Questions, owner steps.
 
