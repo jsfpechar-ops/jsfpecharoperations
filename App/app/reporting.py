@@ -1710,6 +1710,48 @@ def release_sendable_claim(token: str) -> None:
     db.execute("DELETE FROM submission_claim WHERE claim_token = ?", (token,))
 
 
+def refresh_sendable_claim(token: str) -> bool:
+    """Renew the lease of a claim this worker still holds; False when it is gone.
+
+    One UPDATE keyed by the claim token: a released or taken-over claim matches
+    no row, so it is never resurrected. Called before each batch of a long send
+    so the date-move and cancel guards and ``claim_sendable`` keep seeing it as
+    live (the TTL is 5 minutes, one batch can take 60 s).
+    """
+    return (
+        db.execute(
+            "UPDATE submission_claim SET claimed_at = ? WHERE claim_token = ?",
+            (time.time(), token),
+        )
+        > 0
+    )
+
+
+def _send_claimed_batches(
+    apartment, pairs: List[Tuple[Any, Any]], claim_token: str, *, mode: str, env: Optional[str]
+) -> List[Dict[str, Any]]:
+    """Send ``pairs`` in batches under one claim, renewing it before each batch.
+
+    A lost claim (released, or taken over after a stale TTL) stops the send:
+    the remaining guests are left for the next sweep.
+    """
+    limit = config.UBYPORT_MAX_BATCH
+    results: List[Dict[str, Any]] = []
+    for start in range(0, len(pairs), limit):
+        if not refresh_sendable_claim(claim_token):
+            log.warning(
+                "submission_claim_lost apartment_id=%s sent_batches=%s remaining=%s",
+                apartment["id"],
+                len(results),
+                len(pairs) - start,
+            )
+            break
+        results.append(
+            submit_batch(apartment, pairs[start:start + limit], mode=mode, env=env)
+        )
+    return results
+
+
 def apartment_in_doubt(apartment_id: int) -> bool:
     """Whether any live guest still points at a batch whose outcome is unknown.
 
@@ -2340,18 +2382,9 @@ def submit_for_apartment(
     if not pairs:
         return []
     try:
-        limit = config.UBYPORT_MAX_BATCH
-        results = []
-        for start in range(0, len(pairs), limit):
-            results.append(
-                submit_batch(
-                    apartment,
-                    pairs[start:start + limit],
-                    mode=mode,
-                    env=env,
-                )
-            )
-        return results
+        return _send_claimed_batches(
+            apartment, pairs, claim_token, mode=mode, env=env
+        )
     finally:
         release_sendable_claim(claim_token)
 
