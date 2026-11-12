@@ -1,4 +1,4 @@
-# 1166: Go job kind `deadlines` (deadline watch, DSR due alerts, filing watchdog, filing heartbeat)
+# 1167: Go job kind `deadlines` (deadline watch, DSR due alerts, filing watchdog, filing heartbeat)
 
 Status: todo
 Depends on: 1153, 1157, 1159b (merged) | Base commit: 8000926 | Branch: the orchestrator's branch (work on the current branch)
@@ -35,7 +35,7 @@ Because Go raises `job_failed` only when a row dies, the new code calls `jobs.Ra
 | `go/cmd/ubyhost-web/main.go` | edit | `deadlines` in `goIntervals` (30) and `goHandlers` |
 | `go/cmd/ubyhost-web/main_test.go` | edit | `TestParseGoKindsDeadlines` |
 | `docs/ENVIRONMENT.md` | edit | line 53: kinds list plus the switch-back note |
-| `docs/tasks/1166-report.md` | create | the report |
+| `docs/tasks/1167-report.md` | create | the report |
 
 No other file may change.
 
@@ -169,7 +169,7 @@ func deadlinesRaiseFailed(s deadlinesSteps) {
 sha256sum go/internal/calendar/deadlines_job.go 2>&1 | tail -1
 ```
 
-Expected: `f917eb69ddc57622877b2a488314c9893f4ef224517f76a136ce12b4d81fc857`. Commit `1166 step 1`.
+Expected: `f917eb69ddc57622877b2a488314c9893f4ef224517f76a136ce12b4d81fc857`. Commit `1167 step 1`.
 
 ### Step 2: create `go/internal/calendar/deadlines_job_test.go`
 
@@ -317,7 +317,7 @@ func TestRunDeadlinesJobOnDatabase(t *testing.T) {
 sha256sum go/internal/calendar/deadlines_job_test.go 2>&1 | tail -1
 ```
 
-Expected: `c0a9b317310114f1994cf12b9f1a350f39cd84935d5dabb25e4463f99bfa6ef1`. Commit `1166 step 2`.
+Expected: `c0a9b317310114f1994cf12b9f1a350f39cd84935d5dabb25e4463f99bfa6ef1`. Commit `1167 step 2`.
 
 ### Step 3: `go/internal/jobs/queue.go`
 
@@ -343,7 +343,7 @@ var jobLevels = map[string]string{"submit": "critical", "deadlines": "critical"}
 sha256sum go/internal/jobs/queue.go 2>&1 | tail -1
 ```
 
-Expected: `c6ca1a2c8cba41813f34a601c003edbf848fc2e3596aca02d97eaf9f145ff635`. Commit `1166 step 3`.
+Expected: `c6ca1a2c8cba41813f34a601c003edbf848fc2e3596aca02d97eaf9f145ff635`. Commit `1167 step 3`.
 
 ### Step 4: `go/cmd/ubyhost-web/main.go`
 
@@ -375,7 +375,7 @@ No import changes (`calendar`, `jobs`, `os`, `time` are already imported).
 sha256sum go/cmd/ubyhost-web/main.go 2>&1 | tail -1
 ```
 
-Expected: `4abfffc3049fb63272f51c3e56b794be0d7c7477226b39d331bce9ad7f31106a`. Commit `1166 step 4`.
+Expected: `4abfffc3049fb63272f51c3e56b794be0d7c7477226b39d331bce9ad7f31106a`. Commit `1167 step 4`.
 
 ### Step 5: `go/cmd/ubyhost-web/main_test.go`
 
@@ -399,7 +399,7 @@ func TestWrapSetsHardenHeaders(t *testing.T) {
 sha256sum go/cmd/ubyhost-web/main_test.go 2>&1 | tail -1
 ```
 
-Expected: `bb459cf079be2f60fb2499cacdfabd2c53ab751149dc539c13838d83fdf66b61`. Commit `1166 step 5`.
+Expected: `bb459cf079be2f60fb2499cacdfabd2c53ab751149dc539c13838d83fdf66b61`. Commit `1167 step 5`.
 
 ### Step 6: `docs/ENVIRONMENT.md` (line 53, the `UBYHOST_GO_JOB_KINDS` row)
 
@@ -419,7 +419,7 @@ Today `billing_snapshot`, `stripe_sweep`, `ical`, `push`, `submit`, `posthog`, `
 sha256sum docs/ENVIRONMENT.md 2>&1 | tail -1
 ```
 
-Expected: `157d891d23864cded5b83f46b87e4c8a3968708590174f8bc7a56f2a6c117098`. Commit `1166 step 6`.
+Expected: `157d891d23864cded5b83f46b87e4c8a3968708590174f8bc7a56f2a6c117098`. Commit `1167 step 6`.
 
 A sha256 mismatch in any step: compare your edit with the block once, fix it once; still different: STOP (§8).
 
@@ -455,12 +455,12 @@ Expected: `context lint: OK`. No Python test runs: no `App/` file changes.
 
 - [ ] The first §6 command prints three `ok` lines.
 - [ ] Each step's `sha256sum` matched.
-- [ ] `git diff --stat "$(git log -1 --format=%H --grep=^Brief.1166)"..HEAD | tail -30` lists only the §3 paths.
-- [ ] `git diff "$(git log -1 --format=%H --grep=^Brief.1166)"..HEAD --stat -- App go/go.mod go/go.sum | tail -5` prints nothing.
+- [ ] `git diff --stat "$(git log -1 --format=%H --grep=^Brief.1167)"..HEAD | tail -30` lists only the §3 paths.
+- [ ] `git diff "$(git log -1 --format=%H --grep=^Brief.1167)"..HEAD --stat -- App go/go.mod go/go.sum | tail -5` prints nothing.
 - [ ] `grep -c '"deadlines"' go/cmd/ubyhost-web/main.go` prints `2`; `grep -c '"deadlines"' go/internal/jobs/queue.go` prints `2`.
 - [ ] `grep -n 'slog\.' go/internal/calendar/deadlines_job.go | grep -i 'url\|err)' | tail -5` prints nothing (no URL or error text in a log line).
 - [ ] `python3 scripts/context_lint.py` passes.
-- [ ] Six commits `1166 step 1` to `1166 step 6`; nothing pushed.
+- [ ] Six commits `1167 step 1` to `1167 step 6`; nothing pushed.
 
 ## 8. Stop and ask
 
@@ -478,7 +478,7 @@ Stop, and write the report, if:
 
 ## 9. Report
 
-Write `docs/tasks/1166-report.md` (600 tokens at most) with: 1. `git diff --stat "$(git log -1 --format=%H --grep=^Brief.1166)"..HEAD` (last 10 lines); 2. each §6 command with the last 5 lines of its output; 3. §7 ticked; 4. deviations; 5. questions; 6. owner steps left. Set `Status: review`. Commit `1166 report`.
+Write `docs/tasks/1167-report.md` (600 tokens at most) with: 1. `git diff --stat "$(git log -1 --format=%H --grep=^Brief.1167)"..HEAD` (last 10 lines); 2. each §6 command with the last 5 lines of its output; 3. §7 ticked; 4. deviations; 5. questions; 6. owner steps left. Set `Status: review`. Commit `1167 report`.
 
 ## Risk list (for the reviewer)
 

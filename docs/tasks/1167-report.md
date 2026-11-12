@@ -1,4 +1,4 @@
-# 1166 report
+# 1167 report
 
 Status: review
 
@@ -41,11 +41,11 @@ Status: review
 - [x] No slog line with url or err text (output: [71:		slog.Error("deadline watch failed", "error", fmt.Sprintf("%T", watchErr))
 81:		slog.Error("filing watchdog failed", "error", fmt.Sprintf("%T", err))]).
 - [x] context lint passes.
-- [x] Six step commits (1166 step 1 to step 6); nothing pushed.
+- [x] Six step commits (1167 step 1 to step 6); nothing pushed.
 
 ## 5. Deviations
 
-- §7 base: `git log --grep=^Brief.1166` finds nothing (the brief commit subject is "docs(tasks): 1166 brief"), so the diff base used was 20746d7, the brief commit.
+- §7 base: `git log --grep=^Brief.1167` finds nothing (the brief commit subject is "docs(tasks): 1167 brief"), so the diff base used was 20746d7, the brief commit.
 - Command 1 was run with UBYHOST_TEST_DATABASE_URL set so the DB test ran locally instead of skipping.
 - The DB test drops table data_subject_request in the throwaway local test DB, as the brief specifies.
 
