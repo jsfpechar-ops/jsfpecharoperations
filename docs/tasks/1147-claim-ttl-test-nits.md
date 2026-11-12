@@ -1,6 +1,6 @@
 # 1147: claim-refresh TTL boundary test and a real missing-row test
 
-Status: todo
+Status: review
 Depends on: 1144 | Base commit: HEAD of the branch after 1144 is merged (1144 makes Go `nowSeconds` a var; do not start before that) | Branch: task/1147-claim-ttl-nits
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
