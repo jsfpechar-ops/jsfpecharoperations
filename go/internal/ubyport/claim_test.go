@@ -295,7 +295,7 @@ func TestRefreshRenewsOwnClaimAndNeverResurrects(t *testing.T) {
 	if err != nil || len(got) != 1 {
 		t.Fatalf("claim: %v, %d pairs", err, len(got))
 	}
-	if _, err := pool.Exec(ctx, `UPDATE submission_claim SET claimed_at = claimed_at - 600 WHERE guest_id = $1`, id); err != nil {
+	if _, err := pool.Exec(ctx, `UPDATE submission_claim SET claimed_at = claimed_at - 240 WHERE guest_id = $1`, id); err != nil {
 		t.Fatal(err)
 	}
 	if n, err := RefreshSendableClaim(ctx, pool, tok); err != nil || n != 1 {
@@ -330,13 +330,13 @@ func TestSendClaimedBatchesRefreshesBeforeEachBatchAndStopsWhenLost(t *testing.T
 	var ages []float64
 	send := func([]BatchPair) (BatchResult, error) {
 		ages = append(ages, nowSeconds()-claimedAt(t, pool, id))
-		// Pretend this batch took ten minutes.
-		if _, err := pool.Exec(ctx, `UPDATE submission_claim SET claimed_at = claimed_at - 600 WHERE guest_id = $1`, id); err != nil {
+		// Pretend this batch took four minutes (still inside the 5 minute TTL).
+		if _, err := pool.Exec(ctx, `UPDATE submission_claim SET claimed_at = claimed_at - 240 WHERE guest_id = $1`, id); err != nil {
 			t.Fatal(err)
 		}
 		return BatchResult{Submitted: 1}, nil
 	}
-	results, err := sendClaimedBatches(ctx, pool, tok, make([]BatchPair, 3), 1, send)
+	results, err := sendClaimedBatches(ctx, pool, tok, 1, make([]BatchPair, 3), 1, send)
 	if err != nil || len(results) != 3 {
 		t.Fatalf("results %d, err %v", len(results), err)
 	}
@@ -350,12 +350,66 @@ func TestSendClaimedBatchesRefreshesBeforeEachBatchAndStopsWhenLost(t *testing.T
 		t.Fatal(err)
 	}
 	called := 0
-	results, err = sendClaimedBatches(ctx, pool, tok, make([]BatchPair, 2), 1,
+	results, err = sendClaimedBatches(ctx, pool, tok, 1, make([]BatchPair, 2), 1,
 		func([]BatchPair) (BatchResult, error) { called++; return BatchResult{}, nil })
 	if err != nil || len(results) != 0 || called != 0 {
 		t.Fatalf("lost claim: results %d, called %d, err %v", len(results), called, err)
 	}
 	if c := claimCount(t, pool, id); c != 0 {
 		t.Fatalf("lost claim was resurrected: %d rows", c)
+	}
+}
+
+func TestExpiredClaimIsNotRefreshedAndNoBatchIsSent(t *testing.T) {
+	pool := claimTestPool(t)
+	ctx := context.Background()
+	id := seedGuest(t, pool)
+	pairs := []ClaimPair{{GuestID: id, SubmitState: "pending", Built: builtOf(t, pool, id)}}
+	tok, _, err := ClaimSendable(ctx, pool, pairs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	stale := nowSeconds() - SubmissionClaimTTL.Seconds() - 5
+	if _, err := pool.Exec(ctx, `UPDATE submission_claim SET claimed_at = $1 WHERE guest_id = $2`, stale, id); err != nil {
+		t.Fatal(err)
+	}
+	if n, err := RefreshSendableClaim(ctx, pool, tok); err != nil || n != 0 {
+		t.Fatalf("refresh of an expired claim: %d, %v", n, err)
+	}
+	called := 0
+	results, err := sendClaimedBatches(ctx, pool, tok, 1, make([]BatchPair, 2), 1,
+		func([]BatchPair) (BatchResult, error) { called++; return BatchResult{}, nil })
+	if err != nil || len(results) != 0 || called != 0 {
+		t.Fatalf("expired claim: results %d, called %d, err %v", len(results), called, err)
+	}
+	if got := claimedAt(t, pool, id); got != stale {
+		t.Fatalf("expired claim was revived: claimed_at %.0f, want %.0f", got, stale)
+	}
+}
+
+func TestClaimMissingOneGuestRowIsTreatedAsLost(t *testing.T) {
+	pool := claimTestPool(t)
+	ctx := context.Background()
+	a := seedGuest(t, pool)
+	b := seedGuest(t, pool)
+	pairs := []ClaimPair{
+		{GuestID: a, SubmitState: "pending", Built: builtOf(t, pool, a)},
+		{GuestID: b, SubmitState: "pending", Built: builtOf(t, pool, b)},
+	}
+	tok, got, err := ClaimSendable(ctx, pool, pairs)
+	if err != nil || len(got) != 2 {
+		t.Fatalf("claim: %v, %d pairs", err, len(got))
+	}
+	if _, err := pool.Exec(ctx, `DELETE FROM submission_claim WHERE guest_id = $1`, b); err != nil {
+		t.Fatal(err)
+	}
+	called := 0
+	results, err := sendClaimedBatches(ctx, pool, tok, 2, make([]BatchPair, 2), 1,
+		func([]BatchPair) (BatchResult, error) { called++; return BatchResult{}, nil })
+	if err != nil || len(results) != 0 || called != 0 {
+		t.Fatalf("partly missing claim: results %d, called %d, err %v", len(results), called, err)
+	}
+	if err := ReleaseSendableClaim(ctx, pool, tok); err != nil {
+		t.Fatal(err)
 	}
 }
