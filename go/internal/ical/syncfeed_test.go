@@ -299,7 +299,7 @@ func TestUpdateReservationUnlessClaimed(t *testing.T) {
 		g, epochSeconds())
 	must(t, err)
 	cols := map[string]any{"date_from": "2027-04-02", "date_to": "2027-04-06", "updated_at": ubyport.UTCNow()}
-	ok, err := updateReservationUnlessClaimed(ctx, pool, stay, "2027-04-01", "2027-04-05", cols)
+	ok, err := updateReservationUnlessClaimed(ctx, pool, stay, "2027-04-01", "2027-04-05", cols, nil)
 	must(t, err)
 	if ok {
 		t.Fatal("date move applied while a live claim was held")
@@ -309,7 +309,7 @@ func TestUpdateReservationUnlessClaimed(t *testing.T) {
 	}
 	_, err = pool.Exec(ctx, `DELETE FROM submission_claim WHERE guest_id = $1`, g)
 	must(t, err)
-	ok, err = updateReservationUnlessClaimed(ctx, pool, stay, "2027-04-01", "2027-04-05", cols)
+	ok, err = updateReservationUnlessClaimed(ctx, pool, stay, "2027-04-01", "2027-04-05", cols, nil)
 	must(t, err)
 	if !ok {
 		t.Fatal("date move skipped after the claim was released")
@@ -376,7 +376,7 @@ func TestUpdateReservationUnlessClaimedWaitsForClaimLock(t *testing.T) {
 	done := make(chan result, 1)
 	go func() {
 		cols := map[string]any{"date_from": "2027-06-02", "date_to": "2027-06-06", "updated_at": ubyport.UTCNow()}
-		ok, err := updateReservationUnlessClaimed(ctx, pool, stay, "2027-06-01", "2027-06-05", cols)
+		ok, err := updateReservationUnlessClaimed(ctx, pool, stay, "2027-06-01", "2027-06-05", cols, nil)
 		done <- result{ok, err}
 	}()
 	select {

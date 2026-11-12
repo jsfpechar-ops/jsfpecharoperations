@@ -216,10 +216,13 @@ func TestFitUnsentGuestWindows(t *testing.T) {
 		claimed, epochSeconds())
 	must(t, err)
 
-	moved, err := fitUnsentGuestWindows(ctx, pool, res, apt, "2026-01-03", "2026-01-07")
+	tx, err := pool.Begin(ctx)
 	must(t, err)
-	if moved != 1 {
-		t.Fatalf("moved = %d, want 1", moved)
+	details, _, err := fitUnsentGuestWindows(ctx, tx, res, apt, "2026-01-03", "2026-01-07", "2026-01-05T00:00:00+00:00")
+	must(t, err)
+	must(t, tx.Commit(ctx))
+	if len(details) != 1 {
+		t.Fatalf("details = %v, want 1", details)
 	}
 	if got := scalarText(t, pool, `SELECT stay_from || ' ' || stay_to FROM guest WHERE id = $1`, moving); got != "2026-01-03 2026-01-07" {
 		t.Fatalf("moved guest window = %q", got)
@@ -230,11 +233,11 @@ func TestFitUnsentGuestWindows(t *testing.T) {
 	if got := scalarText(t, pool, `SELECT stay_from || ' ' || stay_to FROM guest WHERE id = $1`, claimed); got != "2026-01-01 2026-01-10" {
 		t.Fatalf("guest with live claim changed: %q", got)
 	}
-	if n := scalarInt(t, pool, `SELECT COUNT(*) FROM audit WHERE action = 'guest_stay_window_fitted'`); n != 1 {
-		t.Fatalf("audit rows = %d, want 1", n)
-	}
-	if n, err := fitUnsentGuestWindows(ctx, pool, res, apt, "not-a-date", "2026-01-07"); err != nil || n != 0 {
-		t.Fatalf("bad date: %d, %v", n, err)
+	tx2, err := pool.Begin(ctx)
+	must(t, err)
+	defer func() { _ = tx2.Rollback(ctx) }()
+	if d, _, err := fitUnsentGuestWindows(ctx, tx2, res, apt, "not-a-date", "2026-01-07", "2026-01-05T00:00:00+00:00"); err != nil || len(d) != 0 {
+		t.Fatalf("bad date: %v, %v", d, err)
 	}
 }
 
