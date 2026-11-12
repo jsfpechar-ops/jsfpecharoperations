@@ -146,6 +146,8 @@ func truthy(s *string) bool {
 }
 
 // nowSeconds is Python's time.time(): a float of Unix seconds.
-func nowSeconds() float64 {
+//
+// It is a variable so a test can advance the clock between two reads.
+var nowSeconds = func() float64 {
 	return float64(time.Now().UnixNano()) / 1e9
 }
