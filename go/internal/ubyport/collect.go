@@ -18,6 +18,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/deadlines"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
 )
 
@@ -336,13 +337,24 @@ func reservationDeadlineAnchor(ctx context.Context, pool *pgxpool.Pool, resID in
 
 // DueForAutomaticSend is reporting.due_for_automatic_send. completedAt is the
 // stay's registration_completed_at; anchor is the deadline anchor (nil when none).
+//
+// Brief 1070: with no completion stamp (short stay, or no declared count) the
+// stay is still due once the deadline cap (deadline minus 6h) has passed, so
+// already-registered guests are filed in time. A stay with no deadline anchor
+// still waits for completion.
 func DueForAutomaticSend(mode string, submitAfterHours int, completedAt string, anchor *time.Time, now time.Time) bool {
-	if mode == "manual" || completedAt == "" {
+	if mode == "manual" {
 		return false
 	}
+	var latest time.Time
+	hasLatest := false
+	if anchor != nil {
+		latest = ReportingDeadline(*anchor).Add(-collectMarginHours * time.Hour)
+		hasLatest = true
+	}
 	completed, ok := parseStoredUTC(completedAt)
-	if !ok {
-		return false
+	if completedAt == "" || !ok {
+		return hasLatest && !now.Before(latest)
 	}
 	hours := submitAfterHours
 	if hours == 0 {
@@ -352,47 +364,23 @@ func DueForAutomaticSend(mode string, submitAfterHours int, completedAt string, 
 		hours = 0
 	}
 	sendAt := completed.Add(time.Duration(hours) * time.Hour)
-	if anchor != nil {
-		latest := ReportingDeadline(*anchor).Add(-collectMarginHours * time.Hour)
-		if latest.Before(sendAt) {
-			sendAt = latest
-		}
+	if hasLatest && latest.Before(sendAt) {
+		sendAt = latest
 	}
 	return !now.Before(sendAt)
 }
 
-// ReportingDeadline is deadlines.reporting_deadline: 23:59:59 Prague wall time on
-// the third working day of the window that opens on checkIn (its Y/M/D are used).
+// ReportingDeadline is deadlines.reporting_deadline as a real instant: the
+// naive wall clock of deadlines.ReportingDeadline (23:59:59 on the third
+// working day of the window that opens on checkIn, its Y/M/D are used) read
+// in Europe/Prague. The returned time is in the Prague zone.
 func ReportingDeadline(checkIn time.Time) time.Time {
 	loc, err := time.LoadLocation(pragueZone)
 	if err != nil {
 		panic("collect: embedded Prague zone missing: " + err.Error())
 	}
-	start := time.Date(checkIn.Year(), checkIn.Month(), checkIn.Day(), 0, 0, 0, 0, time.UTC)
-	day := addWorkingDays(start, reportingWorkingDays)
-	return time.Date(day.Year(), day.Month(), day.Day(), 23, 59, 59, 0, loc)
-}
-
-const reportingWorkingDays = 3 // deadlines.REPORTING_WORKING_DAYS
-
-// addWorkingDays is deadlines.add_working_days: Monday to Friday; holidays count.
-func addWorkingDays(start time.Time, count int) time.Time {
-	current := start
-	remaining := count
-	if isWorkingDay(current) {
-		remaining = count - 1
-	}
-	for remaining > 0 {
-		current = current.AddDate(0, 0, 1)
-		if isWorkingDay(current) {
-			remaining--
-		}
-	}
-	return current
-}
-
-func isWorkingDay(d time.Time) bool {
-	return d.Weekday() != time.Saturday && d.Weekday() != time.Sunday
+	d := deadlines.ReportingDeadline(checkIn)
+	return time.Date(d.Year(), d.Month(), d.Day(), d.Hour(), d.Minute(), d.Second(), 0, loc)
 }
 
 // ParseStoredUTC is parseStoredUTC for the calendar (reporting._as_utc).
