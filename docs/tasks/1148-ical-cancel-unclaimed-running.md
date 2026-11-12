@@ -1,6 +1,6 @@
 # 1148: iCal cancel with a `running` or `outcome_unknown` filing: defer a fresh `running`, alert otherwise (K-F20), Python
 
-Status: todo
+Status: review
 Depends on: 1144 (order only) | Base commit: 21c87fc6 (HEAD of branch claude/zealous-maxwell-a7ub54) | Branch: task/1148-ical-cancel-running
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

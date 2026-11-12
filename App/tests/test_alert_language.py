@@ -21,6 +21,7 @@ APP = Path(__file__).resolve().parents[1] / "app"
 # A stored kind and a representative set of the values its copy interpolates.
 STORED_KINDS = {
     "cancelled_after_report": {"date": "2026-09-11", "variant": "cancelled"},
+    "cancelled_filing_unconfirmed": {"date": "2026-09-11"},
     "feed_error": {"feed": "Karlín Loft", "error": "boom"},
     "submission_immediate": {"property": "Loft", "error": "boom"},
     "submission_transport": {"property": "Loft", "error": "boom"},
