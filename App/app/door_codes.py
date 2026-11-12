@@ -808,8 +808,8 @@ def _revoke_one(row_id: int) -> None:
     if not account or account["status"] != "ok":
         db.execute(
             "UPDATE door_code SET state = ?, claimed_at = NULL, last_error = ?, updated_at = ? "
-            "WHERE id = ?",
-            (REVOKE_FAILED, "no_account", now_iso, row_id),
+            "WHERE id = ? AND state = ?",
+            (REVOKE_FAILED, "no_account", now_iso, row_id, REVOKE_PENDING),
         )
         mail_notify.door_code_notice(row_id, "cancelled_not_deleted")
         return
@@ -822,8 +822,8 @@ def _revoke_one(row_id: int) -> None:
         )
         db.execute(
             "UPDATE door_code SET state = ?, revoked_at = ?, pin_enc = NULL, claimed_at = NULL, "
-            "updated_at = ? WHERE id = ?",
-            (REVOKED, now_iso, now_iso, row_id),
+            "updated_at = ? WHERE id = ? AND state = ?",
+            (REVOKED, now_iso, now_iso, row_id, REVOKE_PENDING),
         )
         db.audit(
             "door_code_revoked",
@@ -844,8 +844,8 @@ def _revoke_one(row_id: int) -> None:
             if past_end:
                 db.execute(
                     "UPDATE door_code SET state = ?, claimed_at = NULL, last_error = ?, updated_at = ? "
-                    "WHERE id = ?",
-                    (REVOKE_FAILED, kind[:40], now_iso, row_id),
+                    "WHERE id = ? AND state = ?",
+                    (REVOKE_FAILED, kind[:40], now_iso, row_id, REVOKE_PENDING),
                 )
                 db.audit(
                     "door_code_revoke_failed",
@@ -858,16 +858,16 @@ def _revoke_one(row_id: int) -> None:
                 next_at = _iso(now + timedelta(minutes=delays[min(attempts - 1, 2)]))
                 db.execute(
                     "UPDATE door_code SET claimed_at = NULL, next_attempt_at = ?, last_error = ?, "
-                    "updated_at = ? WHERE id = ?",
-                    (next_at, kind[:40], now_iso, row_id),
+                    "updated_at = ? WHERE id = ? AND state = ?",
+                    (next_at, kind[:40], now_iso, row_id, REVOKE_PENDING),
                 )
                 if attempts == 3:
                     mail_notify.door_code_notice(row_id, "cancelled_not_deleted")
         else:
             db.execute(
                 "UPDATE door_code SET state = ?, claimed_at = NULL, last_error = ?, updated_at = ? "
-                "WHERE id = ?",
-                (REVOKE_FAILED, kind[:40], now_iso, row_id),
+                "WHERE id = ? AND state = ?",
+                (REVOKE_FAILED, kind[:40], now_iso, row_id, REVOKE_PENDING),
             )
             db.audit(
                 "door_code_revoke_failed",
