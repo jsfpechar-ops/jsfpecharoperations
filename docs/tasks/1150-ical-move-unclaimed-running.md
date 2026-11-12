@@ -1,6 +1,6 @@
 # 1150: iCal date move over a crash-stuck `running` filing (K-F22), Python
 
-Status: todo
+Status: review
 Depends on: 1148 (merged; the helper `_running_submission_covers_stay` is reused) | Base commit: a176c3ee (HEAD of branch claude/zealous-maxwell-a7ub54) | Branch: task/1150-ical-move-running
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
