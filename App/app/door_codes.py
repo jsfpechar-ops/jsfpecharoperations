@@ -806,12 +806,12 @@ def _revoke_one(row_id: int) -> None:
         return
     account = ttlock.account_for(apartment["owner_user_id"])
     if not account or account["status"] != "ok":
-        db.execute(
+        if db.execute(
             "UPDATE door_code SET state = ?, claimed_at = NULL, last_error = ?, updated_at = ? "
             "WHERE id = ? AND state = ?",
             (REVOKE_FAILED, "no_account", now_iso, row_id, REVOKE_PENDING),
-        )
-        mail_notify.door_code_notice(row_id, "cancelled_not_deleted")
+        ) == 1:
+            mail_notify.door_code_notice(row_id, "cancelled_not_deleted")
         return
     attempts = int(row["attempts"])
     try:
