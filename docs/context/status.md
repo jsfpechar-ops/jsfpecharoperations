@@ -10,7 +10,7 @@ Updated: 2026-11-12.
 - AI: `havel,leon,guide_import` (`guide_translate` off). Stripe test. Guest QR 404 on both when the owner has no IBAN.
 
 ## Now
-- 11-12: 1166 double-booking alarm (iCal overlaps) | [1166](../tasks/1166-double-booking-alarm.md)
+- 11-12: 1166 double-booking alarm, Go-only | [1166](../tasks/1166-double-booking-alarm.md)
 - 11-12: #933/#937/#941/#942 merged. #943 merged. Next PR: 1162-1164 (K-F23, cleaning paging, errcodes).
 - 11-10 live: 1085/1086 police letter paste (#882, #892); 1089/1090 under-15 signature (#885, #888); 1091/1093 short guest titles (#883, #887); 1092 head-count single writer (#884); 1094 H0 check (#893); 1096 Save row, leave warning (#894).
 - 1120-1123b ready
