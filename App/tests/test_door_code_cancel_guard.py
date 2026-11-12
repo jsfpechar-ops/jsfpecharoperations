@@ -300,3 +300,39 @@ def test_leased_revoke_is_not_overwritten_by_the_revived_loop(monkeypatch):
     db.execute("UPDATE door_code SET claimed_at = ? WHERE id = ?", (old, row))
     door_codes._handle_cancellations(db.utcnow())
     assert _state(row) == door_codes.ISSUED
+
+
+def _audits(action: str) -> int:
+    return db.query_one("SELECT COUNT(*) AS n FROM audit WHERE action = ?", (action,))["n"]
+
+
+def _revoke_with_delete(monkeypatch, during_delete):
+    apartment, stay = _cancelled_stay()
+    row = _code(apartment, stay, door_codes.REVOKE_PENDING, valid_to="2099-01-01T00:00:00+00:00")
+    mails: list = []
+    monkeypatch.setattr(door_codes.ttlock, "account_for", lambda owner: {"id": 1, "status": "ok"})
+    monkeypatch.setattr(door_codes.ttlock, "delete_code", lambda *a, **k: during_delete(row))
+    monkeypatch.setattr(door_codes.mail_notify, "door_code_notice", lambda *a, **k: mails.append(a))
+    door_codes._revoke_one(row)
+    return row, mails
+
+
+def test_revoke_that_lost_the_row_during_delete_writes_no_revoked_audit_and_no_mail(monkeypatch):
+    revoked, lost = _audits("door_code_revoked"), _audits("door_code_revoke_lost_race")
+    row, mails = _revoke_with_delete(
+        monkeypatch,
+        lambda r: db.execute("UPDATE door_code SET state = ?, claimed_at = NULL WHERE id = ?", (door_codes.ISSUED, r)),
+    )
+    assert _state(row) == door_codes.ISSUED
+    assert mails == []
+    assert _audits("door_code_revoked") == revoked
+    assert _audits("door_code_revoke_lost_race") == lost + 1
+
+
+def test_revoke_that_keeps_the_row_still_audits_and_mails(monkeypatch):
+    revoked, lost = _audits("door_code_revoked"), _audits("door_code_revoke_lost_race")
+    row, mails = _revoke_with_delete(monkeypatch, lambda r: None)
+    assert _state(row) == door_codes.REVOKED
+    assert [m[1] for m in mails] == ["cancelled_deleted"]
+    assert _audits("door_code_revoked") == revoked + 1
+    assert _audits("door_code_revoke_lost_race") == lost
