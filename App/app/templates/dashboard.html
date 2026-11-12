@@ -29,6 +29,22 @@
 </li>
 {% endmacro %}
 
+{#- 1133: one "What needs you" card (wide layout). First card gets the coral button. -#}
+{% macro dash_card(line, first=False) %}
+{% set ic = 'triangle-alert' if line.tone == 'red' else ('users' if line.action == t('needs_you.action.send_link') else 'send') %}
+<li class="dash-card" data-tone="{{ line.tone }}" data-dash-need="{{ line.kind }}"{% if line.stay_id %} data-dash-need-stay="{{ line.stay_id }}"{% endif %}{% if line.dismiss_id %} data-notification{% endif %}>
+  <span class="dash-ic {{ 'is-red' if line.tone == 'red' else 'is-amber' }}">{{ icon(ic, 26) }}</span>
+  <div class="dash-card-copy">
+    <strong>{{ line.text or line.subject }}</strong>
+    <span>{% if line.apartment_id %}{{ property_identity(line.apartment_id, line.subject, true) }} {% endif %}{% if line.text %}{{ line.subject }}{% endif %}</span>
+  </div>
+  <div class="dash-card-act">
+    {% if line.href %}<a class="dash-btn{{ ' is-primary' if first }}" href="{{ line.href }}" data-needs-you-go>{{ line.action }}</a>{% endif %}
+    {% if line.dismiss_id %}<form method="post" action="/alerts/{{ line.dismiss_id }}/dismiss" class="needs-you-dismiss" data-notification-dismiss><button type="submit" class="link-btn" aria-label="{{ t('a11y.dismiss_notification') }}">×</button></form>{% endif %}
+  </div>
+</li>
+{% endmacro %}
+
 {% block body %}
 {% if not apartments %}
   {% with alerts_expanded = true %}{% include "_host_alerts.html" %}{% endwith %}
@@ -39,6 +55,52 @@
   {% set banner_showing = onboarding and onboarding.current and not onboarding.finished and not onboarding.dismissed %}
   {% set needs_you = needs_you_build(rows, needs_you_queue, open_alerts, missing_report_rows, lang, today) %}
   {% set ny_lines = (needs_you.lines | rejectattr('kind', 'equalto', 'setup') | list) if banner_showing else needs_you.lines %}
+  {#- 1133: wide layout (768 px and wider): greeting, month tiles, "What needs you". -#}
+  {% set shown_name = (workspace_user.display_name or workspace_user.username).split(' ')[0] %}
+  {% set late_n = ny_lines | selectattr('tone','equalto','red') | selectattr('kind','equalto','stay') | list | length %}
+  <div class="dash-wide" data-dash-wide>
+    <header class="dash-head"><div>
+      <h1 class="dash-title">{{ t('dashboard.greet.' ~ greeting_part, name=shown_name) }}</h1>
+      <p class="dash-date">{{ today.isoformat() | date_long(lang) }}</p>
+    </div><a class="dash-add" href="/reservations?new=1" data-calendar-add data-cal-create-type="stay">{{ icon('plus', 22) }}{{ t('stays.add_stay') }}</a></header>
+    {% if month_summary %}
+    <ul class="dash-tiles" data-dash-tiles>
+      <li class="dash-tile is-blue">
+        <span class="dash-tile-ic">{{ icon('calendar-days', 24) }}</span>
+        <span class="dash-tile-num">{{ month_summary.stays }}</span>
+        <span class="dash-tile-label">{{ t('dashboard.tile.stays') }}</span>
+        <span class="dash-tile-sub">{{ tp('dashboard.tile.properties', apartments | length) }}</span>
+      </li>
+      <li class="dash-tile is-teal">
+        <span class="dash-tile-ic">{{ icon('users', 24) }}</span>
+        <span class="dash-tile-num">{{ month_summary.guests }}</span>
+        <span class="dash-tile-label">{{ t('dashboard.tile.guests') }}</span>
+        <span class="dash-tile-sub">{% if stays_missing == 0 %}{{ t('dashboard.tile.guests_ok') }}{% else %}{{ t('dashboard.tile.guests_missing', count=stays_missing) }}{% endif %}</span>
+      </li>
+      <li class="dash-tile {{ 'is-done' if month_summary.reported == month_summary.guests and late_n == 0 else 'is-warn' }}">
+        <span class="dash-tile-ic">{{ icon('shield-check', 24) }}</span>
+        <span class="dash-tile-num">{{ month_summary.reported }}</span>
+        <span class="dash-tile-label">{{ t('dashboard.tile.reported', total=month_summary.guests) }}</span>
+        <span class="dash-tile-sub">{% if late_n %}{{ t('dashboard.tile.reported_late', count=late_n) }}{% else %}{{ t('dashboard.tile.reported_ok') }}{% endif %}</span>
+      </li>
+    </ul>
+    {% endif %}
+    <section class="dash-needs" aria-labelledby="dash-needs-title">
+      <h2 id="dash-needs-title">{{ t('needs_you.title') }}{% if ny_lines %}<span class="dash-count">{{ ny_lines | length }}</span>{% endif %}</h2>
+      {% if ny_lines %}
+      <ul class="dash-cards">{% for line in ny_lines[:4] %}{{ dash_card(line, loop.first) }}{% endfor %}</ul>
+      {% if ny_lines | length > 4 %}
+      <details class="dash-more"><summary>{{ tp('needs_you.more', ny_lines | length - 4) }}</summary>
+        <ul class="dash-cards">{% for line in ny_lines[4:] %}{{ dash_card(line, false) }}{% endfor %}</ul>
+      </details>
+      {% endif %}
+      {% else %}
+      <div class="dash-calm">{{ icon('check', 26) }}<strong>{{ t('dashboard.empty.calm') }}</strong>{% if next_arrival %}<span>{{ t('dashboard.empty.next_arrival', date=next_arrival.reservation.date_from | date_long(lang)) }}</span>{% endif %}<a class="dash-btn" href="/reservations">{{ t('dashboard.empty.see_stays') }}</a></div>
+      {% endif %}
+    </section>
+    {#- 1134: Today and This week go here -#}
+  </div>
+  <div class="dash-phone">
 
   {#- 0729: phone v2 top (Airbnb style): Today/Upcoming switch and one headline. -#}
   <div class="ph-top ph-only{{ ' ph-hide cal-hide' if cal_view }}">
@@ -150,5 +212,6 @@
     <tr><td colspan="5">{{ t('dashboard.today.empty') }}</td></tr>
   {% endfor %}
   </tbody></table></div>
+</div>
 {% endif %}
 {% endblock %}

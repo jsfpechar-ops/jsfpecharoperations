@@ -3565,3 +3565,55 @@ body.v2 .side .rail-only{display:none}
   body.v2 .side .env-short{display:inline;white-space:nowrap}
   body.v2 .side .env-badge{white-space:nowrap}
 }
+
+/* 1133 dashboard */
+body.v2 .dash-phone{display:block}
+body.v2 .dash-wide{display:none}
+@media (min-width:768px){
+  body.v2 .dash-phone{display:none}
+  body.v2 .dash-wide{display:block;padding:0 28px}
+  body.v2 .dash-wide>*+*{margin-top:32px}
+  body.v2 .dash-head{display:flex;align-items:flex-start;justify-content:space-between;gap:24px}
+  body.v2 .dash-title{font-size:28px;font-weight:700;margin:0}
+  body.v2 .dash-date{color:var(--ink2);font-size:16px;margin:4px 0 0}
+  body.v2 .dash-add{display:inline-flex;align-items:center;gap:8px;height:48px;padding:0 24px;border-radius:999px;background:var(--coral-red);color:var(--on-brand);font-size:16px;font-weight:600;text-decoration:none;white-space:nowrap}
+  body.v2 .dash-tiles{list-style:none;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:0;margin:0}
+  body.v2 .dash-tile{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:4px}
+  body.v2 .dash-tile-ic{width:48px;height:48px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:8px}
+  body.v2 .dash-tile.is-blue .dash-tile-ic{background:var(--tile-blue-bg);color:var(--tile-blue-ink)}
+  body.v2 .dash-tile.is-teal .dash-tile-ic{background:var(--tile-teal-bg);color:var(--tile-teal-ink)}
+  body.v2 .dash-tile.is-done .dash-tile-ic{background:var(--tile-done-bg);color:var(--tile-done-ink)}
+  body.v2 .dash-tile.is-warn .dash-tile-ic{background:var(--warns);color:var(--warn)}
+  body.v2 .dash-tile-num{font-size:30px;font-weight:700;line-height:1.1}
+  body.v2 .dash-tile-label{font-size:16px;font-weight:500}
+  body.v2 .dash-tile-sub{font-size:14px;color:var(--ink2)}
+  body.v2 .dash-needs h2{font-size:22px;font-weight:700;display:flex;align-items:center;gap:12px;margin:0 0 16px}
+  body.v2 .dash-count{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;padding:0 8px;border-radius:999px;background:var(--coral-red-soft);color:var(--coral-red-deep);font-size:14px;font-weight:700}
+  body.v2 .dash-cards{list-style:none;padding:0;margin:0;display:grid;gap:12px}
+  body.v2 .dash-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  body.v2 .dash-ic{width:52px;height:52px;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;flex:none}
+  body.v2 .dash-ic.is-red{background:var(--danger-bg);color:var(--danger)}
+  body.v2 .dash-ic.is-amber{background:var(--warns);color:var(--warn)}
+  body.v2 .dash-card-copy{flex:1 1 320px;min-width:0;display:grid;gap:4px}
+  body.v2 .dash-card-copy strong{font-size:18px;font-weight:600}
+  body.v2 .dash-card-copy span{font-size:14px;color:var(--ink2)}
+  body.v2 .dash-card-act{display:flex;align-items:center;gap:8px}
+  body.v2 .dash-btn{display:inline-flex;align-items:center;justify-content:center;height:48px;padding:0 24px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:16px;font-weight:600;white-space:nowrap;text-decoration:none}
+  body.v2 .dash-btn.is-primary{background:var(--coral-red);border-color:var(--coral-red);color:var(--on-brand)}
+  body.v2 .dash-calm{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px}
+  body.v2 .dash-calm strong{font-size:18px;font-weight:600}
+  body.v2 .dash-calm span{color:var(--ink2);font-size:14px}
+  body.v2 .dash-wide :focus-visible{outline:2px solid var(--coral-red);outline-offset:2px}
+}
+@media (min-width:1024px){
+  body.v2 .dash-wide{padding:0 40px}
+  body.v2 .dash-title{font-size:30px}
+  body.v2 .dash-tile{display:grid;grid-template-columns:48px 1fr;column-gap:16px;align-items:center}
+  body.v2 .dash-tile-ic{grid-row:1 / span 3;margin:0}
+  body.v2 .dash-card-copy{flex:1 1 0}
+}
+@media (max-width:1023px) and (min-width:768px){
+  body.v2 .dash-card{flex-wrap:wrap}
+  body.v2 .dash-card-act{flex-basis:100%}
+  body.v2 .dash-card-act .dash-btn{width:100%}
+}
