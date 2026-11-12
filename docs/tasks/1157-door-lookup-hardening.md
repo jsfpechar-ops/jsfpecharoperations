@@ -35,7 +35,7 @@ Anchors (all in the script of step 2): `door_codes.py` the two functions `_lock_
 | App/tests/test_door_code_ambiguous_delete.py | edit | fixture patches `code_is_listed`; 2 assertions |
 | App/tests/test_door_code_recancel.py | edit | fixture patches `code_is_listed` |
 | App/tests/test_door_code_lookup_pages.py | create | 9 tests |
-| docs/tasks/1157-report.md | create | report (§9) |
+| docs/tasks/1157-door-lookup-hardening-report.md | create | report (§9) |
 
 No other file may change.
 
@@ -510,7 +510,7 @@ If a run does not fail as stated, STOP (§8). Finally `git status --short | tail
 
 **Step 7. Postgres.** From `App/`: `UBYHOST_DATABASE_URL=postgresql://uby:uby@localhost:5432/ubytest .venv/bin/python -m pytest tests/test_door_code_lookup_pages.py tests/test_door_code_ambiguous_delete.py tests/test_door_code_recancel.py -q --tb=short 2>&1 | tail -30` -> all pass (or report `not run: no Postgres`).
 
-**Step 8. Report.** Write `docs/tasks/1157-report.md` (§9), set this file's line 3 to `Status: review`, then `python3 scripts/context_lint.py | tail -3` from the repo root.
+**Step 8. Report.** Write `docs/tasks/1157-door-lookup-hardening-report.md` (§9), set this file's line 3 to `Status: review`, then `python3 scripts/context_lint.py | tail -3` from the repo root.
 
 ## 5. Do not touch
 
@@ -543,7 +543,7 @@ Stop, and write the report, if:
 
 ## 9. Report
 
-Write `docs/tasks/1157-report.md` (600 tokens at most) and set `Status: review`. The report has:
+Write `docs/tasks/1157-door-lookup-hardening-report.md` (600 tokens at most) and set `Status: review`. The report has:
 
 1. The files changed (`git diff --stat`).
 2. Each command, with the last 5 lines of its output.

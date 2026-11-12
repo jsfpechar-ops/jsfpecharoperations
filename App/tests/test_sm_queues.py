@@ -49,6 +49,7 @@ NOTIFY = "go/internal/ubyport/notify.go"
 PUSH = "App/app/push.py"
 PUSHSEND = "go/internal/pushsend/pushsend.go"
 CAPI = "App/app/meta_capi.py"
+GOCAPI = "go/internal/metacapi/send.go"
 SIGNUP = "App/app/signup.py"
 IMPORT = "App/app/guest_guide_import.py"
 MERGE = "App/app/guest_guide_merge.py"
@@ -211,6 +212,8 @@ SEND_SITES = {
     (CAPI, "enqueue"): 1,
     (CAPI, "expire_unsendable"): 1,
     (CAPI, "send_pending"): 5,
+    (GOCAPI, "expireUnsendable"): 1,
+    (GOCAPI, "Send"): 5,
     (SIGNUP, "withdraw_consent"): 1,
 }
 _WITHDRAW = '"send_state": "withdrawn" if row["send_state"] in ("pending", "sending")'
@@ -224,6 +227,13 @@ SEND_MOVES = [
     (CAPI, "send_pending", '{"send_state": FAILED, "attempts": attempts, "last_error": str(exc)[:400]}', ("sending",), "failed"),
     (CAPI, "send_pending", '"send_state": SENT,', ("sending",), "sent"),
     (SIGNUP, "withdraw_consent", _WITHDRAW, ("pending", "sending"), "withdrawn"),
+    (GOCAPI, "expireUnsendable", 'stateExpired, "older than Meta\'s 7-day event window", statePending,', ("pending",), "expired"),
+    (GOCAPI, "Send", "statePending, stateSending, iso(now.Add(-staleSending))", ("sending",), "pending"),
+    (GOCAPI, "Send", "stateSending, iso(now), id, statePending)", ("pending",), "sending"),
+    (GOCAPI, "Send", "stateSent, attempts, ubyport.UTCNow(), id, stateSending)", ("sending",), "sent"),
+    (GOCAPI, "Send", "state, attempts, truncate(out.detail, 400), iso(now.Add(retryDelay(attempts))), id, stateSending)", ("sending",), "pending"),
+    (GOCAPI, "Send", "state, attempts, truncate(out.detail, 400), iso(now.Add(retryDelay(attempts))), id, stateSending)", ("sending",), "failed"),
+    (GOCAPI, "Send", "stateFailed, attempts, truncate(out.detail, 400), id, stateSending)", ("sending",), "failed"),
 ]
 
 
