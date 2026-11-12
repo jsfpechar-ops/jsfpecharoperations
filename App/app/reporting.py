@@ -2392,9 +2392,33 @@ def submit_for_apartment(
         release_sendable_claim(claim_token)
 
 
+def _recover_stuck_running_batches(owner_user_id: Optional[int] = None) -> None:
+    """Rewrite crash-stuck ``running`` batches of EVERY apartment (K-F23).
+
+    ``sweep()`` skips ``manual`` and inactive apartments and those with an open
+    ``ubyport_auth_failed`` alert, so a batch a crash left ``running`` there
+    stayed invisible and silently held an iCal date move. Recovery only rewrites
+    the row (``outcome_unknown``, guests pointed, critical alert); it never sends,
+    so it is safe in every mode. The retry and the send stay in ``sweep()``.
+    """
+    for row in db.query(
+        "SELECT DISTINCT s.apartment_id FROM submission s "
+        "JOIN apartment a ON a.id = s.apartment_id "
+        "WHERE s.state = 'running' AND (? IS NULL OR a.owner_user_id = ?)",
+        (owner_user_id, owner_user_id),
+    ):
+        try:
+            recover_stale_submissions(row["apartment_id"])
+        except Exception:
+            log.exception(
+                "stuck_running_recovery_failed apartment_id=%s", row["apartment_id"]
+            )
+
+
 def sweep(owner_user_id: Optional[int] = None) -> Dict[str, Any]:
     """Scheduled pass over active apartments, optionally for one workspace."""
     summary = {"apartments": 0, "submitted": 0, "failed": 0}
+    _recover_stuck_running_batches(owner_user_id)
     for apartment in db.query(
         "SELECT * FROM apartment WHERE active = 1 AND automation_mode != 'manual' "
         "AND (? IS NULL OR owner_user_id = ?)",
