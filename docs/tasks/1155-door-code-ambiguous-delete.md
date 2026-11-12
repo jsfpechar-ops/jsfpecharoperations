@@ -1,6 +1,6 @@
 # 1155: a revived door code whose delete may have run is checked on the lock (K-DC-AMBIG)
 
-Status: todo
+Status: review
 Depends on: none (1149 is merged) | Base commit: HEAD of branch claude/zealous-maxwell-a7ub54 | Branch: task/1155-door-ambig-delete
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

@@ -45,6 +45,8 @@ def world(monkeypatch):
     monkeypatch.setattr(ttlock, "create_period_code", lambda *a, **k: lock.create())
     monkeypatch.setattr(ttlock, "add_custom_code", lambda *a, **k: lock.create())
     monkeypatch.setattr(ttlock, "find_code_by_name", lambda *a, **k: None)
+    # 1155 checks a revived row on the lock; these tests pin the 1149 zero-row path alone.
+    monkeypatch.setattr(door_codes, "_lock_code_state", lambda *a, **k: door_codes.PIN_PRESENT)
     monkeypatch.setattr(door_codes.mail_notify, "door_code_notice", lambda *a, **k: None)
     monkeypatch.setattr(door_codes.mail_notify, "door_code_delayed_notice", lambda *a, **k: None)
     monkeypatch.setattr(door_codes.push, "door_code_missing", lambda *a, **k: None)
