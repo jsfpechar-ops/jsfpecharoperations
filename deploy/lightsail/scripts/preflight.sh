@@ -153,6 +153,12 @@ if [ "${CLOUDFLARE_PROXY:-0}" = "1" ]; then
   done
 fi
 
+# Brief 1169: a box rebuilt with pg-restore.sh --file must not file while the
+# old server may still file. No .restored-box marker (every normal box): no-op.
+if ! bash "${ROOT}/scripts/filing-guard.sh"; then
+  die "filing guard: restored box with automatic filing on (see the lines above)"
+fi
+
 if [ "${fail}" -ne 0 ]; then
   echo "Preflight failed. Fix .env (and origin certs) before deploy." >&2
   exit 1
