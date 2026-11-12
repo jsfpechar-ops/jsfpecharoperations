@@ -3695,7 +3695,9 @@ def reservations_list(request: Request):
     date_from = _query_date(request, "from")
     date_to = _query_date(request, "to")
 
-    today = date.today().isoformat()
+    # Prague civil date — matches deadlines.urgency and the host's calendar day.
+    # UTC date.today() on the server lags Czech local time near midnight.
+    today = deadlines.local_now().date().isoformat()
     date_range = request.query_params.get("range", "")
     archive_scope = request.query_params.get("archive_scope") == "1"
     show_archive = date_range == "archive" or archive_scope
@@ -3706,7 +3708,7 @@ def reservations_list(request: Request):
         date_from, date_to = today, ""
     elif date_range == "past":
         # Departed stays only — a guest checking in today still belongs under Upcoming.
-        date_from, date_to = "", (date.today() - timedelta(days=1)).isoformat()
+        date_from, date_to = "", (deadlines.local_now().date() - timedelta(days=1)).isoformat()
     elif date_range == "current":
         # In the flat today: arrived on or before today and leaving on or after it.
         date_from = date_to = today

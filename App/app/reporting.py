@@ -924,7 +924,8 @@ def dashboard_rows(
     already loaded them; a stay whose apartment is not among them is looked up
     as before.
     """
-    today = deadlines.local_now().date() if overview else date.today()
+    # Prague civil date for every dashboard view — same clock as urgency().
+    today = deadlines.local_now().date()
     start = (today - timedelta(days=days_back)).isoformat()
     end = (today + timedelta(days=days_ahead)).isoformat()
     query = (

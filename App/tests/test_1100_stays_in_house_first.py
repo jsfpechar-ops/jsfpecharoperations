@@ -6,12 +6,12 @@ set in SQL, so paging cuts the same sequence on every page.
 """
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import timedelta
 
 import pytest
 from fastapi.testclient import TestClient
 
-from app import auth, db, host_i18n, reporting
+from app import auth, db, deadlines, host_i18n, reporting
 from app.main import app
 from app.routes import admin
 from tests.conftest import login_as
@@ -54,7 +54,10 @@ def _seed() -> TestClient:
     db.init_db()
     _cleanup()
     now = db.utcnow()
-    today = date.today()
+    # Prague civil date — same clock urgency() and the stays list use. UTC
+    # date.today() on CI runners lags Prague near midnight and can make the
+    # in-house stays look overdue, crowding the overdue past stay off page 1.
+    today = deadlines.local_now().date()
     existing = db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,))
     user_id = (
         existing["id"]
@@ -169,15 +172,16 @@ def test_paging_cuts_the_same_sequence(stays_client, monkeypatch):
 
 
 def test_overdue_unfiled_stay_comes_first_and_stays_on_page_one(stays_client, monkeypatch):
-    # 1100 step 3: overdue unfiled stays sort ahead of the other groups. STAYB (in house, unfiled,
-    # arrived 2 days ago) is overdue too, so inside the overdue bucket the group order applies:
-    # STAYB (in house) before STAYOVERDUE (past). STAYA, D and C are not overdue and wait for page 2.
-    from app import deadlines
-
+    # 1100 step 3: an overdue unfiled past stay stays on page 1 of the default
+    # view. The phone list regroups in-house ("today") ahead of past overdue
+    # ("earlier"), so STAYB appears before STAYOVERDUE even when only the past
+    # stay is past its police deadline. Seed dates use Prague civil time so a
+    # UTC CI runner near midnight does not also mark STAYA overdue and push
+    # STAYOVERDUE onto page 2.
     monkeypatch.setattr(admin, "RESERVATION_PAGE_SIZE", 2)
     apartment = db.query_one("SELECT * FROM apartment WHERE permalink_token = ?", (TOKEN,))
     now = db.utcnow()
-    today = date.today()
+    today = deadlines.local_now().date()
     arrival = today - timedelta(days=12)
     departure = today - timedelta(days=10)
     assert deadlines.reporting_deadline(arrival) < deadlines.local_now()
