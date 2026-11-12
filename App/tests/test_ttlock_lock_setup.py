@@ -158,3 +158,20 @@ def test_a_busy_lock_on_the_clock_call_is_retried_in_a_day_without_an_alert(monk
     stamp = datetime.fromisoformat(db.get_setting(key))
     assert datetime.now(stamp.tzinfo) - stamp > timedelta(days=5)
 
+
+
+def test_host_mails_say_what_to_do_for_the_new_kinds():
+    from app import mail_notify
+
+    def reason(lang, text):
+        return mail_notify._door_code_reason(lang, text)
+
+    assert "gateway" in reason("en", "lock_setup:-3034") and "TTLock app" in reason("en", "lock_setup:-3034")
+    assert reason("en", "lock_setup:-3034").endswith("[lock_setup:-3034]")
+    assert reason("en", "config:-4063").startswith("the TTLock connection needs to be set up again")
+    assert reason("en", "bug:-3006").startswith("TTLock's cloud refused")
+    assert reason("en", "code_missing").startswith("TTLock's cloud refused")
+    assert reason("en", "period_taken:lock_setup:-4037").startswith("the lock's own TTLock setup")
+    for lang in ("cs", "vi"):
+        assert reason(lang, "lock_setup:-3034") != reason("en", "lock_setup:-3034")
+        assert reason(lang, "config:-4063").split(" [")[0] == reason(lang, "reauth").split(" [")[0]
