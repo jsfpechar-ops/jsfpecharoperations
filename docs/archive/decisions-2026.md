@@ -67,3 +67,5 @@ Moved from docs/context/decisions.md during compaction.
 - 2026-10-08 | Staging: `UBYHOST_STAGING_NO_LOGIN=1` skips login; door-code alert after 10 min | test-only | [ENVIRONMENT](../ENVIRONMENT.md)
 - 2026-10-09 | #331: no ID-check step (host checks ID); guest link default 1 day ahead | K-F12
 - 2026-10-10 | PostHog replaces Umami; privacy settings in the snippet | owner | [plan](../plans/posthog-analytics.md), [0039](../tasks/0039-posthog-hardening.md)
+- 2026-10-06 | UbyPort: 0-2 accepted, 4-6 not; 112 = late = accepted | OPERATIONS
+- 2026-10-06 | Sweep: one send per refused record, then host fix | OPERATIONS

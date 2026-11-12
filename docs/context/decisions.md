@@ -1,8 +1,6 @@
 # Decisions
 
 Append-only.
-- 2026-10-06 | UbyPort: 0-2 accepted, 4-6 not; 112 = late = accepted | OPERATIONS
-- 2026-10-06 | Sweep: one send per refused record, then host fix | OPERATIONS
 - 2026-10-08/12 | Door codes (TTLock pilot): timed codes, test mode until live; one 1-min job, no polling; details 0037, 0067-69 | owner | [plan](../plans/ttlock-door-codes.md), [legal](../privacy/DOOR_CODES_LEGAL.md)
 - 2026-10-09 | [workflow] One brief per copy text; executors skip non-todo; lint warns on overlap; status `replaced` = newer brief took over | [workflow](workflow.md)
 - 2026-10-11 | ARES lookup on host click; sends only the IČO; 24 h cache; 20/h per user | owner | 0055
@@ -63,5 +61,5 @@ Append-only.
 - 2026-11-11 [police] 1100: no tick, values in boxes; parser reads password+facility, never stored (owner; reverses 1097, 1085).
 - 2026-11-10 [demo] Demo seed covers current features; mock-only, cleared by Clear demo (owner, 1092)
 - 2026-11-11 [ux] 1101: wizard reuse
-- 2026-11-12 [billing] 1137: `trial_pending -> paused` only via `billing.operator_pause()` (operator plan assignment), not in `TRANSITIONS` (owner).
-- 2026-11-12 [filing] 1138: claim fails closed when the built-from values are missing or changed; no retry, next sweep sends fresh data (orchestrator, owner said do as recommended).
+- 2026-11-12 [billing] 1137: trial_pending->paused only via `operator_pause()`, not TRANSITIONS.
+- 2026-11-12 [filing] 1138: claim fails closed on changed or missing built-from values; no retry.
