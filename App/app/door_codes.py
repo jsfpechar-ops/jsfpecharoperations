@@ -53,6 +53,7 @@ TRANSITIONS = {
     ISSUED: {
         REVOKE_PENDING,  # _handle_cancellations: stay cancelled before valid_to
         EXPIRED,  # reconcile: valid_to has passed
+        PENDING,  # _reissue_lost_pin: a revoke deleted the lock code, the stay is live
     },
     REVOKE_PENDING: {
         ISSUED,  # _keep_issued: the stay is live again
