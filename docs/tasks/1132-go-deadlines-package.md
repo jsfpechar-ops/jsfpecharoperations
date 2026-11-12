@@ -1,6 +1,6 @@
 # 1132: Go package `deadlines`, a parity-checked port of App/app/deadlines.py
 
-Status: todo
+Status: review
 Depends on: none | Base commit: main 90231ec4 | Branch: claude/fervent-cray-1qsrfa
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
