@@ -1,0 +1,3074 @@
+{
+ "builders": [
+  {
+   "html_sha256": "5f3843b27262fdb6d8eedda70dc55f426395539477166fe6f84158b1aa3959c5",
+   "name": "digest_overflow",
+   "stays": [
+    {
+     "arrival": "01.09.2026",
+     "deadline": "03.09.2026 23:59",
+     "property": "Byt 0 <&>",
+     "unfiled": 1,
+     "workspace": "ws0@example.test"
+    },
+    {
+     "arrival": "02.09.2026",
+     "deadline": "04.09.2026 23:59",
+     "property": "Byt 1 <&>",
+     "unfiled": 2,
+     "workspace": "ws1@example.test"
+    },
+    {
+     "arrival": "03.09.2026",
+     "deadline": "05.09.2026 23:59",
+     "property": "Byt 2 <&>",
+     "unfiled": 3,
+     "workspace": "ws2@example.test"
+    },
+    {
+     "arrival": "04.09.2026",
+     "deadline": "06.09.2026 23:59",
+     "property": "Byt 3 <&>",
+     "unfiled": 4,
+     "workspace": "ws3@example.test"
+    },
+    {
+     "arrival": "05.09.2026",
+     "deadline": "07.09.2026 23:59",
+     "property": "Byt 4 <&>",
+     "unfiled": 1,
+     "workspace": "ws4@example.test"
+    },
+    {
+     "arrival": "06.09.2026",
+     "deadline": "08.09.2026 23:59",
+     "property": "Byt 5 <&>",
+     "unfiled": 2,
+     "workspace": "ws5@example.test"
+    },
+    {
+     "arrival": "07.09.2026",
+     "deadline": "09.09.2026 23:59",
+     "property": "Byt 6 <&>",
+     "unfiled": 3,
+     "workspace": "ws6@example.test"
+    },
+    {
+     "arrival": "08.09.2026",
+     "deadline": "10.09.2026 23:59",
+     "property": "Byt 7 <&>",
+     "unfiled": 4,
+     "workspace": "ws7@example.test"
+    },
+    {
+     "arrival": "09.09.2026",
+     "deadline": "11.09.2026 23:59",
+     "property": "Byt 8 <&>",
+     "unfiled": 1,
+     "workspace": "ws8@example.test"
+    },
+    {
+     "arrival": "10.09.2026",
+     "deadline": "12.09.2026 23:59",
+     "property": "Byt 9 <&>",
+     "unfiled": 2,
+     "workspace": "ws9@example.test"
+    },
+    {
+     "arrival": "11.09.2026",
+     "deadline": "13.09.2026 23:59",
+     "property": "Byt 10 <&>",
+     "unfiled": 3,
+     "workspace": "ws10@example.test"
+    },
+    {
+     "arrival": "12.09.2026",
+     "deadline": "14.09.2026 23:59",
+     "property": "Byt 11 <&>",
+     "unfiled": 4,
+     "workspace": "ws11@example.test"
+    },
+    {
+     "arrival": "13.09.2026",
+     "deadline": "15.09.2026 23:59",
+     "property": "Byt 12 <&>",
+     "unfiled": 1,
+     "workspace": "ws12@example.test"
+    },
+    {
+     "arrival": "14.09.2026",
+     "deadline": "16.09.2026 23:59",
+     "property": "Byt 13 <&>",
+     "unfiled": 2,
+     "workspace": "ws13@example.test"
+    },
+    {
+     "arrival": "15.09.2026",
+     "deadline": "17.09.2026 23:59",
+     "property": "Byt 14 <&>",
+     "unfiled": 3,
+     "workspace": "ws14@example.test"
+    },
+    {
+     "arrival": "16.09.2026",
+     "deadline": "18.09.2026 23:59",
+     "property": "Byt 15 <&>",
+     "unfiled": 4,
+     "workspace": "ws15@example.test"
+    },
+    {
+     "arrival": "17.09.2026",
+     "deadline": "19.09.2026 23:59",
+     "property": "Byt 16 <&>",
+     "unfiled": 1,
+     "workspace": "ws16@example.test"
+    },
+    {
+     "arrival": "18.09.2026",
+     "deadline": "20.09.2026 23:59",
+     "property": "Byt 17 <&>",
+     "unfiled": 2,
+     "workspace": "ws17@example.test"
+    },
+    {
+     "arrival": "19.09.2026",
+     "deadline": "21.09.2026 23:59",
+     "property": "Byt 18 <&>",
+     "unfiled": 3,
+     "workspace": "ws18@example.test"
+    },
+    {
+     "arrival": "20.09.2026",
+     "deadline": "22.09.2026 23:59",
+     "property": "Byt 19 <&>",
+     "unfiled": 4,
+     "workspace": "ws19@example.test"
+    },
+    {
+     "arrival": "01.09.2026",
+     "deadline": "03.09.2026 23:59",
+     "property": "Byt 20 <&>",
+     "unfiled": 1,
+     "workspace": "ws20@example.test"
+    },
+    {
+     "arrival": "02.09.2026",
+     "deadline": "04.09.2026 23:59",
+     "property": "Byt 21 <&>",
+     "unfiled": 2,
+     "workspace": "ws21@example.test"
+    },
+    {
+     "arrival": "03.09.2026",
+     "deadline": "05.09.2026 23:59",
+     "property": "Byt 22 <&>",
+     "unfiled": 3,
+     "workspace": "ws22@example.test"
+    },
+    {
+     "arrival": "04.09.2026",
+     "deadline": "06.09.2026 23:59",
+     "property": "Byt 23 <&>",
+     "unfiled": 4,
+     "workspace": "ws23@example.test"
+    },
+    {
+     "arrival": "05.09.2026",
+     "deadline": "07.09.2026 23:59",
+     "property": "Byt 24 <&>",
+     "unfiled": 1,
+     "workspace": "ws24@example.test"
+    },
+    {
+     "arrival": "06.09.2026",
+     "deadline": "08.09.2026 23:59",
+     "property": "Byt 25 <&>",
+     "unfiled": 2,
+     "workspace": "ws25@example.test"
+    },
+    {
+     "arrival": "07.09.2026",
+     "deadline": "09.09.2026 23:59",
+     "property": "Byt 26 <&>",
+     "unfiled": 3,
+     "workspace": "ws26@example.test"
+    },
+    {
+     "arrival": "08.09.2026",
+     "deadline": "10.09.2026 23:59",
+     "property": "Byt 27 <&>",
+     "unfiled": 4,
+     "workspace": "ws27@example.test"
+    },
+    {
+     "arrival": "09.09.2026",
+     "deadline": "11.09.2026 23:59",
+     "property": "Byt 28 <&>",
+     "unfiled": 1,
+     "workspace": "ws28@example.test"
+    },
+    {
+     "arrival": "10.09.2026",
+     "deadline": "12.09.2026 23:59",
+     "property": "Byt 29 <&>",
+     "unfiled": 2,
+     "workspace": "ws29@example.test"
+    },
+    {
+     "arrival": "11.09.2026",
+     "deadline": "13.09.2026 23:59",
+     "property": "Byt 30 <&>",
+     "unfiled": 3,
+     "workspace": "ws30@example.test"
+    },
+    {
+     "arrival": "12.09.2026",
+     "deadline": "14.09.2026 23:59",
+     "property": "Byt 31 <&>",
+     "unfiled": 4,
+     "workspace": "ws31@example.test"
+    },
+    {
+     "arrival": "13.09.2026",
+     "deadline": "15.09.2026 23:59",
+     "property": "Byt 32 <&>",
+     "unfiled": 1,
+     "workspace": "ws32@example.test"
+    },
+    {
+     "arrival": "14.09.2026",
+     "deadline": "16.09.2026 23:59",
+     "property": "Byt 33 <&>",
+     "unfiled": 2,
+     "workspace": "ws33@example.test"
+    },
+    {
+     "arrival": "15.09.2026",
+     "deadline": "17.09.2026 23:59",
+     "property": "Byt 34 <&>",
+     "unfiled": 3,
+     "workspace": "ws34@example.test"
+    },
+    {
+     "arrival": "16.09.2026",
+     "deadline": "18.09.2026 23:59",
+     "property": "Byt 35 <&>",
+     "unfiled": 4,
+     "workspace": "ws35@example.test"
+    },
+    {
+     "arrival": "17.09.2026",
+     "deadline": "19.09.2026 23:59",
+     "property": "Byt 36 <&>",
+     "unfiled": 1,
+     "workspace": "ws36@example.test"
+    },
+    {
+     "arrival": "18.09.2026",
+     "deadline": "20.09.2026 23:59",
+     "property": "Byt 37 <&>",
+     "unfiled": 2,
+     "workspace": "ws37@example.test"
+    },
+    {
+     "arrival": "19.09.2026",
+     "deadline": "21.09.2026 23:59",
+     "property": "Byt 38 <&>",
+     "unfiled": 3,
+     "workspace": "ws38@example.test"
+    },
+    {
+     "arrival": "20.09.2026",
+     "deadline": "22.09.2026 23:59",
+     "property": "Byt 39 <&>",
+     "unfiled": 4,
+     "workspace": "ws39@example.test"
+    },
+    {
+     "arrival": "01.09.2026",
+     "deadline": "03.09.2026 23:59",
+     "property": "Byt 40 <&>",
+     "unfiled": 1,
+     "workspace": "ws40@example.test"
+    },
+    {
+     "arrival": "02.09.2026",
+     "deadline": "04.09.2026 23:59",
+     "property": "Byt 41 <&>",
+     "unfiled": 2,
+     "workspace": "ws41@example.test"
+    },
+    {
+     "arrival": "03.09.2026",
+     "deadline": "05.09.2026 23:59",
+     "property": "Byt 42 <&>",
+     "unfiled": 3,
+     "workspace": "ws42@example.test"
+    },
+    {
+     "arrival": "04.09.2026",
+     "deadline": "06.09.2026 23:59",
+     "property": "Byt 43 <&>",
+     "unfiled": 4,
+     "workspace": "ws43@example.test"
+    },
+    {
+     "arrival": "05.09.2026",
+     "deadline": "07.09.2026 23:59",
+     "property": "Byt 44 <&>",
+     "unfiled": 1,
+     "workspace": "ws44@example.test"
+    },
+    {
+     "arrival": "06.09.2026",
+     "deadline": "08.09.2026 23:59",
+     "property": "Byt 45 <&>",
+     "unfiled": 2,
+     "workspace": "ws45@example.test"
+    },
+    {
+     "arrival": "07.09.2026",
+     "deadline": "09.09.2026 23:59",
+     "property": "Byt 46 <&>",
+     "unfiled": 3,
+     "workspace": "ws46@example.test"
+    },
+    {
+     "arrival": "08.09.2026",
+     "deadline": "10.09.2026 23:59",
+     "property": "Byt 47 <&>",
+     "unfiled": 4,
+     "workspace": "ws47@example.test"
+    },
+    {
+     "arrival": "09.09.2026",
+     "deadline": "11.09.2026 23:59",
+     "property": "Byt 48 <&>",
+     "unfiled": 1,
+     "workspace": "ws48@example.test"
+    },
+    {
+     "arrival": "10.09.2026",
+     "deadline": "12.09.2026 23:59",
+     "property": "Byt 49 <&>",
+     "unfiled": 2,
+     "workspace": "ws49@example.test"
+    },
+    {
+     "arrival": "11.09.2026",
+     "deadline": "13.09.2026 23:59",
+     "property": "Byt 50 <&>",
+     "unfiled": 3,
+     "workspace": "ws50@example.test"
+    }
+   ],
+   "subject": "Filing watchdog: stays at risk (51), without guest details (52)",
+   "text": "Each stay below has foreign guests that UbyPort has not accepted yet, and its deadline is less than 24 hours away or has passed. This digest is sent at most every 3 days while any stay is at risk.\n\nWorkspace | Property | Arrival | Deadline | Not filed\nws0@example.test | Byt 0 <&> | 01.09.2026 | 03.09.2026 23:59 | 1\nws1@example.test | Byt 1 <&> | 02.09.2026 | 04.09.2026 23:59 | 2\nws2@example.test | Byt 2 <&> | 03.09.2026 | 05.09.2026 23:59 | 3\nws3@example.test | Byt 3 <&> | 04.09.2026 | 06.09.2026 23:59 | 4\nws4@example.test | Byt 4 <&> | 05.09.2026 | 07.09.2026 23:59 | 1\nws5@example.test | Byt 5 <&> | 06.09.2026 | 08.09.2026 23:59 | 2\nws6@example.test | Byt 6 <&> | 07.09.2026 | 09.09.2026 23:59 | 3\nws7@example.test | Byt 7 <&> | 08.09.2026 | 10.09.2026 23:59 | 4\nws8@example.test | Byt 8 <&> | 09.09.2026 | 11.09.2026 23:59 | 1\nws9@example.test | Byt 9 <&> | 10.09.2026 | 12.09.2026 23:59 | 2\nws10@example.test | Byt 10 <&> | 11.09.2026 | 13.09.2026 23:59 | 3\nws11@example.test | Byt 11 <&> | 12.09.2026 | 14.09.2026 23:59 | 4\nws12@example.test | Byt 12 <&> | 13.09.2026 | 15.09.2026 23:59 | 1\nws13@example.test | Byt 13 <&> | 14.09.2026 | 16.09.2026 23:59 | 2\nws14@example.test | Byt 14 <&> | 15.09.2026 | 17.09.2026 23:59 | 3\nws15@example.test | Byt 15 <&> | 16.09.2026 | 18.09.2026 23:59 | 4\nws16@example.test | Byt 16 <&> | 17.09.2026 | 19.09.2026 23:59 | 1\nws17@example.test | Byt 17 <&> | 18.09.2026 | 20.09.2026 23:59 | 2\nws18@example.test | Byt 18 <&> | 19.09.2026 | 21.09.2026 23:59 | 3\nws19@example.test | Byt 19 <&> | 20.09.2026 | 22.09.2026 23:59 | 4\nws20@example.test | Byt 20 <&> | 01.09.2026 | 03.09.2026 23:59 | 1\nws21@example.test | Byt 21 <&> | 02.09.2026 | 04.09.2026 23:59 | 2\nws22@example.test | Byt 22 <&> | 03.09.2026 | 05.09.2026 23:59 | 3\nws23@example.test | Byt 23 <&> | 04.09.2026 | 06.09.2026 23:59 | 4\nws24@example.test | Byt 24 <&> | 05.09.2026 | 07.09.2026 23:59 | 1\nws25@example.test | Byt 25 <&> | 06.09.2026 | 08.09.2026 23:59 | 2\nws26@example.test | Byt 26 <&> | 07.09.2026 | 09.09.2026 23:59 | 3\nws27@example.test | Byt 27 <&> | 08.09.2026 | 10.09.2026 23:59 | 4\nws28@example.test | Byt 28 <&> | 09.09.2026 | 11.09.2026 23:59 | 1\nws29@example.test | Byt 29 <&> | 10.09.2026 | 12.09.2026 23:59 | 2\nws30@example.test | Byt 30 <&> | 11.09.2026 | 13.09.2026 23:59 | 3\nws31@example.test | Byt 31 <&> | 12.09.2026 | 14.09.2026 23:59 | 4\nws32@example.test | Byt 32 <&> | 13.09.2026 | 15.09.2026 23:59 | 1\nws33@example.test | Byt 33 <&> | 14.09.2026 | 16.09.2026 23:59 | 2\nws34@example.test | Byt 34 <&> | 15.09.2026 | 17.09.2026 23:59 | 3\nws35@example.test | Byt 35 <&> | 16.09.2026 | 18.09.2026 23:59 | 4\nws36@example.test | Byt 36 <&> | 17.09.2026 | 19.09.2026 23:59 | 1\nws37@example.test | Byt 37 <&> | 18.09.2026 | 20.09.2026 23:59 | 2\nws38@example.test | Byt 38 <&> | 19.09.2026 | 21.09.2026 23:59 | 3\nws39@example.test | Byt 39 <&> | 20.09.2026 | 22.09.2026 23:59 | 4\nws40@example.test | Byt 40 <&> | 01.09.2026 | 03.09.2026 23:59 | 1\nws41@example.test | Byt 41 <&> | 02.09.2026 | 04.09.2026 23:59 | 2\nws42@example.test | Byt 42 <&> | 03.09.2026 | 05.09.2026 23:59 | 3\nws43@example.test | Byt 43 <&> | 04.09.2026 | 06.09.2026 23:59 | 4\nws44@example.test | Byt 44 <&> | 05.09.2026 | 07.09.2026 23:59 | 1\nws45@example.test | Byt 45 <&> | 06.09.2026 | 08.09.2026 23:59 | 2\nws46@example.test | Byt 46 <&> | 07.09.2026 | 09.09.2026 23:59 | 3\nws47@example.test | Byt 47 <&> | 08.09.2026 | 10.09.2026 23:59 | 4\nws48@example.test | Byt 48 <&> | 09.09.2026 | 11.09.2026 23:59 | 1\nws49@example.test | Byt 49 <&> | 10.09.2026 | 12.09.2026 23:59 | 2\n\nAnd 1 more stays.\n\nStays without guest details (status unknown)\nNo guest is entered for these stays. The arrival has passed and the deadline is less than 24 hours away or has passed. If the guests are Czech citizens nothing has to be reported, so these stays do not set the filing heartbeat to failed.\n\nWorkspace | Property | Arrival | Deadline\nws0@example.test | Byt 0 <&> | 01.09.2026 | 03.09.2026 23:59\nws1@example.test | Byt 1 <&> | 02.09.2026 | 04.09.2026 23:59\nws2@example.test | Byt 2 <&> | 03.09.2026 | 05.09.2026 23:59\nws3@example.test | Byt 3 <&> | 04.09.2026 | 06.09.2026 23:59\nws4@example.test | Byt 4 <&> | 05.09.2026 | 07.09.2026 23:59\nws5@example.test | Byt 5 <&> | 06.09.2026 | 08.09.2026 23:59\nws6@example.test | Byt 6 <&> | 07.09.2026 | 09.09.2026 23:59\nws7@example.test | Byt 7 <&> | 08.09.2026 | 10.09.2026 23:59\nws8@example.test | Byt 8 <&> | 09.09.2026 | 11.09.2026 23:59\nws9@example.test | Byt 9 <&> | 10.09.2026 | 12.09.2026 23:59\nws10@example.test | Byt 10 <&> | 11.09.2026 | 13.09.2026 23:59\nws11@example.test | Byt 11 <&> | 12.09.2026 | 14.09.2026 23:59\nws12@example.test | Byt 12 <&> | 13.09.2026 | 15.09.2026 23:59\nws13@example.test | Byt 13 <&> | 14.09.2026 | 16.09.2026 23:59\nws14@example.test | Byt 14 <&> | 15.09.2026 | 17.09.2026 23:59\nws15@example.test | Byt 15 <&> | 16.09.2026 | 18.09.2026 23:59\nws16@example.test | Byt 16 <&> | 17.09.2026 | 19.09.2026 23:59\nws17@example.test | Byt 17 <&> | 18.09.2026 | 20.09.2026 23:59\nws18@example.test | Byt 18 <&> | 19.09.2026 | 21.09.2026 23:59\nws19@example.test | Byt 19 <&> | 20.09.2026 | 22.09.2026 23:59\nws20@example.test | Byt 20 <&> | 01.09.2026 | 03.09.2026 23:59\nws21@example.test | Byt 21 <&> | 02.09.2026 | 04.09.2026 23:59\nws22@example.test | Byt 22 <&> | 03.09.2026 | 05.09.2026 23:59\nws23@example.test | Byt 23 <&> | 04.09.2026 | 06.09.2026 23:59\nws24@example.test | Byt 24 <&> | 05.09.2026 | 07.09.2026 23:59\nws25@example.test | Byt 25 <&> | 06.09.2026 | 08.09.2026 23:59\nws26@example.test | Byt 26 <&> | 07.09.2026 | 09.09.2026 23:59\nws27@example.test | Byt 27 <&> | 08.09.2026 | 10.09.2026 23:59\nws28@example.test | Byt 28 <&> | 09.09.2026 | 11.09.2026 23:59\nws29@example.test | Byt 29 <&> | 10.09.2026 | 12.09.2026 23:59\nws30@example.test | Byt 30 <&> | 11.09.2026 | 13.09.2026 23:59\nws31@example.test | Byt 31 <&> | 12.09.2026 | 14.09.2026 23:59\nws32@example.test | Byt 32 <&> | 13.09.2026 | 15.09.2026 23:59\nws33@example.test | Byt 33 <&> | 14.09.2026 | 16.09.2026 23:59\nws34@example.test | Byt 34 <&> | 15.09.2026 | 17.09.2026 23:59\nws35@example.test | Byt 35 <&> | 16.09.2026 | 18.09.2026 23:59\nws36@example.test | Byt 36 <&> | 17.09.2026 | 19.09.2026 23:59\nws37@example.test | Byt 37 <&> | 18.09.2026 | 20.09.2026 23:59\nws38@example.test | Byt 38 <&> | 19.09.2026 | 21.09.2026 23:59\nws39@example.test | Byt 39 <&> | 20.09.2026 | 22.09.2026 23:59\nws40@example.test | Byt 40 <&> | 01.09.2026 | 03.09.2026 23:59\nws41@example.test | Byt 41 <&> | 02.09.2026 | 04.09.2026 23:59\nws42@example.test | Byt 42 <&> | 03.09.2026 | 05.09.2026 23:59\nws43@example.test | Byt 43 <&> | 04.09.2026 | 06.09.2026 23:59\nws44@example.test | Byt 44 <&> | 05.09.2026 | 07.09.2026 23:59\nws45@example.test | Byt 45 <&> | 06.09.2026 | 08.09.2026 23:59\nws46@example.test | Byt 46 <&> | 07.09.2026 | 09.09.2026 23:59\nws47@example.test | Byt 47 <&> | 08.09.2026 | 10.09.2026 23:59\nws48@example.test | Byt 48 <&> | 09.09.2026 | 11.09.2026 23:59\nws49@example.test | Byt 49 <&> | 10.09.2026 | 12.09.2026 23:59\n\nAnd 2 more stays.\n\n--\nUbyHost\nSent to UBYHOST_OPERATOR_EMAIL by the deadline job. It contains no guest names.",
+   "unknown": [
+    {
+     "arrival": "01.09.2026",
+     "deadline": "03.09.2026 23:59",
+     "property": "Byt 0 <&>",
+     "unfiled": 0,
+     "workspace": "ws0@example.test"
+    },
+    {
+     "arrival": "02.09.2026",
+     "deadline": "04.09.2026 23:59",
+     "property": "Byt 1 <&>",
+     "unfiled": 0,
+     "workspace": "ws1@example.test"
+    },
+    {
+     "arrival": "03.09.2026",
+     "deadline": "05.09.2026 23:59",
+     "property": "Byt 2 <&>",
+     "unfiled": 0,
+     "workspace": "ws2@example.test"
+    },
+    {
+     "arrival": "04.09.2026",
+     "deadline": "06.09.2026 23:59",
+     "property": "Byt 3 <&>",
+     "unfiled": 0,
+     "workspace": "ws3@example.test"
+    },
+    {
+     "arrival": "05.09.2026",
+     "deadline": "07.09.2026 23:59",
+     "property": "Byt 4 <&>",
+     "unfiled": 0,
+     "workspace": "ws4@example.test"
+    },
+    {
+     "arrival": "06.09.2026",
+     "deadline": "08.09.2026 23:59",
+     "property": "Byt 5 <&>",
+     "unfiled": 0,
+     "workspace": "ws5@example.test"
+    },
+    {
+     "arrival": "07.09.2026",
+     "deadline": "09.09.2026 23:59",
+     "property": "Byt 6 <&>",
+     "unfiled": 0,
+     "workspace": "ws6@example.test"
+    },
+    {
+     "arrival": "08.09.2026",
+     "deadline": "10.09.2026 23:59",
+     "property": "Byt 7 <&>",
+     "unfiled": 0,
+     "workspace": "ws7@example.test"
+    },
+    {
+     "arrival": "09.09.2026",
+     "deadline": "11.09.2026 23:59",
+     "property": "Byt 8 <&>",
+     "unfiled": 0,
+     "workspace": "ws8@example.test"
+    },
+    {
+     "arrival": "10.09.2026",
+     "deadline": "12.09.2026 23:59",
+     "property": "Byt 9 <&>",
+     "unfiled": 0,
+     "workspace": "ws9@example.test"
+    },
+    {
+     "arrival": "11.09.2026",
+     "deadline": "13.09.2026 23:59",
+     "property": "Byt 10 <&>",
+     "unfiled": 0,
+     "workspace": "ws10@example.test"
+    },
+    {
+     "arrival": "12.09.2026",
+     "deadline": "14.09.2026 23:59",
+     "property": "Byt 11 <&>",
+     "unfiled": 0,
+     "workspace": "ws11@example.test"
+    },
+    {
+     "arrival": "13.09.2026",
+     "deadline": "15.09.2026 23:59",
+     "property": "Byt 12 <&>",
+     "unfiled": 0,
+     "workspace": "ws12@example.test"
+    },
+    {
+     "arrival": "14.09.2026",
+     "deadline": "16.09.2026 23:59",
+     "property": "Byt 13 <&>",
+     "unfiled": 0,
+     "workspace": "ws13@example.test"
+    },
+    {
+     "arrival": "15.09.2026",
+     "deadline": "17.09.2026 23:59",
+     "property": "Byt 14 <&>",
+     "unfiled": 0,
+     "workspace": "ws14@example.test"
+    },
+    {
+     "arrival": "16.09.2026",
+     "deadline": "18.09.2026 23:59",
+     "property": "Byt 15 <&>",
+     "unfiled": 0,
+     "workspace": "ws15@example.test"
+    },
+    {
+     "arrival": "17.09.2026",
+     "deadline": "19.09.2026 23:59",
+     "property": "Byt 16 <&>",
+     "unfiled": 0,
+     "workspace": "ws16@example.test"
+    },
+    {
+     "arrival": "18.09.2026",
+     "deadline": "20.09.2026 23:59",
+     "property": "Byt 17 <&>",
+     "unfiled": 0,
+     "workspace": "ws17@example.test"
+    },
+    {
+     "arrival": "19.09.2026",
+     "deadline": "21.09.2026 23:59",
+     "property": "Byt 18 <&>",
+     "unfiled": 0,
+     "workspace": "ws18@example.test"
+    },
+    {
+     "arrival": "20.09.2026",
+     "deadline": "22.09.2026 23:59",
+     "property": "Byt 19 <&>",
+     "unfiled": 0,
+     "workspace": "ws19@example.test"
+    },
+    {
+     "arrival": "01.09.2026",
+     "deadline": "03.09.2026 23:59",
+     "property": "Byt 20 <&>",
+     "unfiled": 0,
+     "workspace": "ws20@example.test"
+    },
+    {
+     "arrival": "02.09.2026",
+     "deadline": "04.09.2026 23:59",
+     "property": "Byt 21 <&>",
+     "unfiled": 0,
+     "workspace": "ws21@example.test"
+    },
+    {
+     "arrival": "03.09.2026",
+     "deadline": "05.09.2026 23:59",
+     "property": "Byt 22 <&>",
+     "unfiled": 0,
+     "workspace": "ws22@example.test"
+    },
+    {
+     "arrival": "04.09.2026",
+     "deadline": "06.09.2026 23:59",
+     "property": "Byt 23 <&>",
+     "unfiled": 0,
+     "workspace": "ws23@example.test"
+    },
+    {
+     "arrival": "05.09.2026",
+     "deadline": "07.09.2026 23:59",
+     "property": "Byt 24 <&>",
+     "unfiled": 0,
+     "workspace": "ws24@example.test"
+    },
+    {
+     "arrival": "06.09.2026",
+     "deadline": "08.09.2026 23:59",
+     "property": "Byt 25 <&>",
+     "unfiled": 0,
+     "workspace": "ws25@example.test"
+    },
+    {
+     "arrival": "07.09.2026",
+     "deadline": "09.09.2026 23:59",
+     "property": "Byt 26 <&>",
+     "unfiled": 0,
+     "workspace": "ws26@example.test"
+    },
+    {
+     "arrival": "08.09.2026",
+     "deadline": "10.09.2026 23:59",
+     "property": "Byt 27 <&>",
+     "unfiled": 0,
+     "workspace": "ws27@example.test"
+    },
+    {
+     "arrival": "09.09.2026",
+     "deadline": "11.09.2026 23:59",
+     "property": "Byt 28 <&>",
+     "unfiled": 0,
+     "workspace": "ws28@example.test"
+    },
+    {
+     "arrival": "10.09.2026",
+     "deadline": "12.09.2026 23:59",
+     "property": "Byt 29 <&>",
+     "unfiled": 0,
+     "workspace": "ws29@example.test"
+    },
+    {
+     "arrival": "11.09.2026",
+     "deadline": "13.09.2026 23:59",
+     "property": "Byt 30 <&>",
+     "unfiled": 0,
+     "workspace": "ws30@example.test"
+    },
+    {
+     "arrival": "12.09.2026",
+     "deadline": "14.09.2026 23:59",
+     "property": "Byt 31 <&>",
+     "unfiled": 0,
+     "workspace": "ws31@example.test"
+    },
+    {
+     "arrival": "13.09.2026",
+     "deadline": "15.09.2026 23:59",
+     "property": "Byt 32 <&>",
+     "unfiled": 0,
+     "workspace": "ws32@example.test"
+    },
+    {
+     "arrival": "14.09.2026",
+     "deadline": "16.09.2026 23:59",
+     "property": "Byt 33 <&>",
+     "unfiled": 0,
+     "workspace": "ws33@example.test"
+    },
+    {
+     "arrival": "15.09.2026",
+     "deadline": "17.09.2026 23:59",
+     "property": "Byt 34 <&>",
+     "unfiled": 0,
+     "workspace": "ws34@example.test"
+    },
+    {
+     "arrival": "16.09.2026",
+     "deadline": "18.09.2026 23:59",
+     "property": "Byt 35 <&>",
+     "unfiled": 0,
+     "workspace": "ws35@example.test"
+    },
+    {
+     "arrival": "17.09.2026",
+     "deadline": "19.09.2026 23:59",
+     "property": "Byt 36 <&>",
+     "unfiled": 0,
+     "workspace": "ws36@example.test"
+    },
+    {
+     "arrival": "18.09.2026",
+     "deadline": "20.09.2026 23:59",
+     "property": "Byt 37 <&>",
+     "unfiled": 0,
+     "workspace": "ws37@example.test"
+    },
+    {
+     "arrival": "19.09.2026",
+     "deadline": "21.09.2026 23:59",
+     "property": "Byt 38 <&>",
+     "unfiled": 0,
+     "workspace": "ws38@example.test"
+    },
+    {
+     "arrival": "20.09.2026",
+     "deadline": "22.09.2026 23:59",
+     "property": "Byt 39 <&>",
+     "unfiled": 0,
+     "workspace": "ws39@example.test"
+    },
+    {
+     "arrival": "01.09.2026",
+     "deadline": "03.09.2026 23:59",
+     "property": "Byt 40 <&>",
+     "unfiled": 0,
+     "workspace": "ws40@example.test"
+    },
+    {
+     "arrival": "02.09.2026",
+     "deadline": "04.09.2026 23:59",
+     "property": "Byt 41 <&>",
+     "unfiled": 0,
+     "workspace": "ws41@example.test"
+    },
+    {
+     "arrival": "03.09.2026",
+     "deadline": "05.09.2026 23:59",
+     "property": "Byt 42 <&>",
+     "unfiled": 0,
+     "workspace": "ws42@example.test"
+    },
+    {
+     "arrival": "04.09.2026",
+     "deadline": "06.09.2026 23:59",
+     "property": "Byt 43 <&>",
+     "unfiled": 0,
+     "workspace": "ws43@example.test"
+    },
+    {
+     "arrival": "05.09.2026",
+     "deadline": "07.09.2026 23:59",
+     "property": "Byt 44 <&>",
+     "unfiled": 0,
+     "workspace": "ws44@example.test"
+    },
+    {
+     "arrival": "06.09.2026",
+     "deadline": "08.09.2026 23:59",
+     "property": "Byt 45 <&>",
+     "unfiled": 0,
+     "workspace": "ws45@example.test"
+    },
+    {
+     "arrival": "07.09.2026",
+     "deadline": "09.09.2026 23:59",
+     "property": "Byt 46 <&>",
+     "unfiled": 0,
+     "workspace": "ws46@example.test"
+    },
+    {
+     "arrival": "08.09.2026",
+     "deadline": "10.09.2026 23:59",
+     "property": "Byt 47 <&>",
+     "unfiled": 0,
+     "workspace": "ws47@example.test"
+    },
+    {
+     "arrival": "09.09.2026",
+     "deadline": "11.09.2026 23:59",
+     "property": "Byt 48 <&>",
+     "unfiled": 0,
+     "workspace": "ws48@example.test"
+    },
+    {
+     "arrival": "10.09.2026",
+     "deadline": "12.09.2026 23:59",
+     "property": "Byt 49 <&>",
+     "unfiled": 0,
+     "workspace": "ws49@example.test"
+    },
+    {
+     "arrival": "11.09.2026",
+     "deadline": "13.09.2026 23:59",
+     "property": "Byt 50 <&>",
+     "unfiled": 0,
+     "workspace": "ws50@example.test"
+    },
+    {
+     "arrival": "12.09.2026",
+     "deadline": "14.09.2026 23:59",
+     "property": "Byt 51 <&>",
+     "unfiled": 0,
+     "workspace": "ws51@example.test"
+    }
+   ]
+  },
+  {
+   "html_sha256": "35dd24d6c701f14633997993e2a8ffdb6c6c3321e070057ce259744e72edca12",
+   "name": "digest_unknown_only",
+   "stays": [],
+   "subject": "Filing watchdog: stays at risk (0), without guest details (2)",
+   "text": "Stays without guest details (status unknown)\nNo guest is entered for these stays. The arrival has passed and the deadline is less than 24 hours away or has passed. If the guests are Czech citizens nothing has to be reported, so these stays do not set the filing heartbeat to failed.\n\nWorkspace | Property | Arrival | Deadline\nws0@example.test | Byt 0 <&> | 01.09.2026 | 03.09.2026 23:59\nws1@example.test | Byt 1 <&> | 02.09.2026 | 04.09.2026 23:59\n\n--\nUbyHost\nSent to UBYHOST_OPERATOR_EMAIL by the deadline job. It contains no guest names.",
+   "unknown": [
+    {
+     "arrival": "01.09.2026",
+     "deadline": "03.09.2026 23:59",
+     "property": "Byt 0 <&>",
+     "unfiled": 0,
+     "workspace": "ws0@example.test"
+    },
+    {
+     "arrival": "02.09.2026",
+     "deadline": "04.09.2026 23:59",
+     "property": "Byt 1 <&>",
+     "unfiled": 0,
+     "workspace": "ws1@example.test"
+    }
+   ]
+  }
+ ],
+ "contacts": [
+  {
+   "python": "host@example.test",
+   "raw": "host@example.test"
+  },
+  {
+   "python": "host@example.test",
+   "raw": "  Host@Example.TEST  "
+  },
+  {
+   "python": "host@example.test",
+   "raw": "Host One <host@example.test>"
+  },
+  {
+   "python": "host@example.test",
+   "raw": "<host@example.test>"
+  },
+  {
+   "python": "host@example.test",
+   "raw": "Jiří Novák <host@example.test>"
+  },
+  {
+   "python": "o'neil+tag@mail.example-host.test",
+   "raw": "o'neil+tag@mail.example-host.test"
+  },
+  {
+   "python": "'host@example.test'",
+   "raw": "'host@example.test'"
+  },
+  {
+   "python": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@example.test",
+   "raw": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@example.test"
+  },
+  {
+   "python": "",
+   "raw": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@example.test"
+  },
+  {
+   "python": "host@example.test",
+   "raw": "\"Host, One\" <host@example.test>"
+  },
+  {
+   "python": "host@example.test",
+   "raw": "host@example.test (Host One)"
+  },
+  {
+   "python": "host@example.test",
+   "raw": "J. Doe <host@example.test>"
+  },
+  {
+   "python": "host@example.test",
+   "raw": "mailto:host@example.test"
+  },
+  {
+   "python": "host@example.test",
+   "raw": "host@ex ample.test"
+  },
+  {
+   "python": "host@example.test",
+   "raw": "<host@example.test"
+  },
+  {
+   "python": "host@example.test",
+   "raw": "Host <host@example.test"
+  },
+  {
+   "python": "hé@example.test",
+   "raw": "hé@example.test"
+  },
+  {
+   "python": "",
+   "raw": "Host One host@example.test"
+  },
+  {
+   "python": "",
+   "raw": "a@b.test, c@d.test"
+  },
+  {
+   "python": "",
+   "raw": "host@example"
+  },
+  {
+   "python": "",
+   "raw": "no-at-sign"
+  },
+  {
+   "python": "",
+   "raw": "Name <host@example.test> trailing"
+  },
+  {
+   "python": "",
+   "raw": "host@example.test>"
+  },
+  {
+   "python": "",
+   "raw": "Host <a@b.test> <c@d.test>"
+  },
+  {
+   "python": "",
+   "raw": "host@[127.0.0.1]"
+  },
+  {
+   "python": "",
+   "raw": "Host (x <host@example.test>"
+  },
+  {
+   "python": "",
+   "raw": "\"Host <host@example.test>"
+  },
+  {
+   "python": "",
+   "raw": ""
+  },
+  {
+   "python": "",
+   "raw": "   "
+  }
+ ],
+ "env": {
+  "UBYHOST_APP_BASE_URL": "https://app.example.test",
+  "UBYHOST_HEARTBEAT_FILING_URL": "https://hc.example.test/ping/abc/",
+  "UBYHOST_MAIL_BACKEND": "console",
+  "UBYHOST_OPERATOR_EMAIL": "ops@example.test",
+  "UBYHOST_PUBLIC_BASE_URL": "https://www.example.test",
+  "UBYHOST_SUBMIT_SWEEP_MINUTES": "10",
+  "UBYHOST_WEB_PUSH": "1"
+ },
+ "runs": [
+  {
+   "at": "2026-09-17T10:00:00+00:00",
+   "before": {
+    "mail_backend": "disabled"
+   },
+   "emails": [],
+   "heartbeat": "https://hc.example.test/ping/abc/fail",
+   "mailed": {
+    "201": null,
+    "202": null,
+    "203": null,
+    "204": null,
+    "205": null,
+    "206": null,
+    "207": null,
+    "208": null,
+    "209": "2026-09-16T08:00:00+00:00",
+    "210": null,
+    "211": null,
+    "212": null,
+    "213": null,
+    "214": null,
+    "215": null,
+    "216": null,
+    "217": null,
+    "218": null,
+    "219": null,
+    "220": null,
+    "221": null,
+    "222": null,
+    "223": null,
+    "224": null,
+    "225": null,
+    "226": null,
+    "227": null,
+    "228": null,
+    "229": "",
+    "230": null
+   },
+   "pushes": [
+    {
+     "attempts": 0,
+     "idempotency_key": "deadline_at_risk:201:501",
+     "kind": "deadline_at_risk",
+     "params": {
+      "date": "15.09.2026",
+      "deadline": "17.09.2026 23:59",
+      "property": "Byt Dole"
+     },
+     "state": "queued",
+     "subscription_id": 501,
+     "url": "/reservations/201",
+     "user_account_id": 1
+    },
+    {
+     "attempts": 0,
+     "idempotency_key": "deadline_at_risk:202:501",
+     "kind": "deadline_at_risk",
+     "params": {
+      "date": "10.09.2026",
+      "deadline": "14.09.2026 23:59",
+      "property": "Byt Dole"
+     },
+     "state": "queued",
+     "subscription_id": 501,
+     "url": "/reservations/202",
+     "user_account_id": 1
+    },
+    {
+     "attempts": 0,
+     "idempotency_key": "deadline_at_risk:205:501",
+     "kind": "deadline_at_risk",
+     "params": {
+      "date": "14.09.2026",
+      "deadline": "16.09.2026 23:59",
+      "property": "Byt Dole"
+     },
+     "state": "queued",
+     "subscription_id": 501,
+     "url": "/reservations/205",
+     "user_account_id": 1
+    },
+    {
+     "attempts": 0,
+     "idempotency_key": "deadline_at_risk:206:501",
+     "kind": "deadline_at_risk",
+     "params": {
+      "date": "15.09.2026",
+      "deadline": "17.09.2026 23:59",
+      "property": "Byt Dole"
+     },
+     "state": "queued",
+     "subscription_id": 501,
+     "url": "/reservations/206",
+     "user_account_id": 1
+    },
+    {
+     "attempts": 0,
+     "idempotency_key": "deadline_at_risk:207:501",
+     "kind": "deadline_at_risk",
+     "params": {
+      "date": "15.09.2026",
+      "deadline": "17.09.2026 23:59",
+      "property": "Byt Dole"
+     },
+     "state": "queued",
+     "subscription_id": 501,
+     "url": "/reservations/207",
+     "user_account_id": 1
+    },
+    {
+     "attempts": 0,
+     "idempotency_key": "deadline_at_risk:208:501",
+     "kind": "deadline_at_risk",
+     "params": {
+      "date": "15.09.2026",
+      "deadline": "17.09.2026 23:59",
+      "property": "Byt Dole"
+     },
+     "state": "queued",
+     "subscription_id": 501,
+     "url": "/reservations/208",
+     "user_account_id": 1
+    },
+    {
+     "attempts": 0,
+     "idempotency_key": "deadline_at_risk:210:502",
+     "kind": "deadline_at_risk",
+     "params": {
+      "date": "15.09.2026",
+      "deadline": "17.09.2026 23:59",
+      "property": "Cizi byt"
+     },
+     "state": "queued",
+     "subscription_id": 502,
+     "url": "/reservations/210",
+     "user_account_id": 2
+    },
+    {
+     "attempts": 0,
+     "idempotency_key": "deadline_at_risk:210:503",
+     "kind": "deadline_at_risk",
+     "params": {
+      "date": "15.09.2026",
+      "deadline": "17.09.2026 23:59",
+      "property": "Cizi byt"
+     },
+     "state": "queued",
+     "subscription_id": 503,
+     "url": "/reservations/210",
+     "user_account_id": 2
+    },
+    {
+     "attempts": 0,
+     "idempotency_key": "deadline_at_risk:215:501",
+     "kind": "deadline_at_risk",
+     "params": {
+      "date": "15.09.2026",
+      "deadline": "17.09.2026 23:59",
+      "property": "Byt Dole"
+     },
+     "state": "queued",
+     "subscription_id": 501,
+     "url": "/reservations/215",
+     "user_account_id": 1
+    },
+    {
+     "attempts": 0,
+     "idempotency_key": "deadline_at_risk:217:501",
+     "kind": "deadline_at_risk",
+     "params": {
+      "date": "08.09.2026",
+      "deadline": "10.09.2026 23:59",
+      "property": "Byt Dole"
+     },
+     "state": "queued",
+     "subscription_id": 501,
+     "url": "/reservations/217",
+     "user_account_id": 1
+    },
+    {
+     "attempts": 0,
+     "idempotency_key": "deadline_at_risk:222:501",
+     "kind": "deadline_at_risk",
+     "params": {
+      "date": "14.09.2026",
+      "deadline": "16.09.2026 23:59",
+      "property": "Byt Dole"
+     },
+     "state": "queued",
+     "subscription_id": 501,
+     "url": "/reservations/222",
+     "user_account_id": 1
+    },
+    {
+     "attempts": 0,
+     "idempotency_key": "deadline_at_risk:224:501",
+     "kind": "deadline_at_risk",
+     "params": {
+      "date": "15.09.2026",
+      "deadline": "17.09.2026 23:59",
+      "property": "Byt <Žižkov> & \"Co\""
+     },
+     "state": "queued",
+     "subscription_id": 501,
+     "url": "/reservations/224",
+     "user_account_id": 1
+    },
+    {
+     "attempts": 0,
+     "idempotency_key": "deadline_at_risk:226:501",
+     "kind": "deadline_at_risk",
+     "params": {
+      "date": "15.09.2026",
+      "deadline": "17.09.2026 23:59",
+      "property": "Byt Dole"
+     },
+     "state": "queued",
+     "subscription_id": 501,
+     "url": "/reservations/226",
+     "user_account_id": 1
+    },
+    {
+     "attempts": 0,
+     "idempotency_key": "deadline_at_risk:228:501",
+     "kind": "deadline_at_risk",
+     "params": {
+      "date": "15.09.2026",
+      "deadline": "17.09.2026 23:59",
+      "property": "Byt Dole"
+     },
+     "state": "queued",
+     "subscription_id": 501,
+     "url": "/reservations/228",
+     "user_account_id": 1
+    },
+    {
+     "attempts": 0,
+     "idempotency_key": "deadline_at_risk:229:501",
+     "kind": "deadline_at_risk",
+     "params": {
+      "date": "15.09.2026",
+      "deadline": "17.09.2026 23:59",
+      "property": "Byt Dole"
+     },
+     "state": "queued",
+     "subscription_id": 501,
+     "url": "/reservations/229",
+     "user_account_id": 1
+    },
+    {
+     "attempts": 0,
+     "idempotency_key": "deadline_at_risk:230:502",
+     "kind": "deadline_at_risk",
+     "params": {
+      "date": "12.09.2026",
+      "deadline": "16.09.2026 23:59",
+      "property": "Cizi byt"
+     },
+     "state": "queued",
+     "subscription_id": 502,
+     "url": "/reservations/230",
+     "user_account_id": 2
+    },
+    {
+     "attempts": 0,
+     "idempotency_key": "deadline_at_risk:230:503",
+     "kind": "deadline_at_risk",
+     "params": {
+      "date": "12.09.2026",
+      "deadline": "16.09.2026 23:59",
+      "property": "Cizi byt"
+     },
+     "state": "queued",
+     "subscription_id": 503,
+     "url": "/reservations/230",
+     "user_account_id": 2
+    }
+   ],
+   "result": {
+    "at_risk": 14,
+    "awaiting_retry": 2,
+    "digest": 0,
+    "host_mails": 0,
+    "unknown_risk": 3
+   },
+   "setting": null
+  },
+  {
+   "at": "2026-09-17T10:05:00+00:00",
+   "before": {
+    "mail_backend": "console"
+   },
+   "emails": [
+    {
+     "apartment_id": 1,
+     "attempts": 0,
+     "cc_email": null,
+     "idempotency_key": "deadline_at_risk:201",
+     "kind": "deadline_at_risk",
+     "owner_user_id": 1,
+     "payload": "6f471ef2cda6d759382233889b5ad411d740f2ebfb6f456d8afbe4def37610b1",
+     "reservation_id": 201,
+     "state": "queued",
+     "subject": "Not reported to the police yet: Byt Dole, deadline 17.09.2026 23:59",
+     "text": "Byt Dole, arrival 15.09.2026: foreign guests of this stay are not reported to the police yet. The deadline is 17.09.2026 23:59.\n\nProperty: Byt Dole\nArrival: 15.09.2026\nGuests not filed yet: 1\nDeadline: 17.09.2026 23:59\n\nWhat to do next: Open the stay, complete what is missing and send it.\n\nIf UbyHost cannot file in time: Sign in to the UbyPort web application with your own access, enter the guests by hand and keep the receipt. Then open the stay in UbyHost and choose \"I filed this stay by hand in UbyPort\", so UbyHost never sends it again. The duty to report stays with you as the host.\n\nOpen the stay: https://app.example.test/reservations/201\n\n--\nUbyHost\nYou get this e-mail once per stay, when its police deadline is less than 24 hours away or has passed and the stay is still not reported.",
+     "to_email": "contact.one@example.test"
+    },
+    {
+     "apartment_id": 1,
+     "attempts": 0,
+     "cc_email": null,
+     "idempotency_key": "deadline_at_risk:202",
+     "kind": "deadline_at_risk",
+     "owner_user_id": 1,
+     "payload": "ac5544bbd93a29efa5f1e29b701b4253620e2f7cd066f9fb324ccf748bbd261c",
+     "reservation_id": 202,
+     "state": "queued",
+     "subject": "Not reported to the police yet: Byt Dole, deadline 14.09.2026 23:59",
+     "text": "Byt Dole, arrival 10.09.2026: foreign guests of this stay are not reported to the police yet. The deadline is 14.09.2026 23:59.\n\nProperty: Byt Dole\nArrival: 10.09.2026\nGuests not filed yet: 1\nDeadline: 14.09.2026 23:59\n\nWhat to do next: Open the stay, complete what is missing and send it.\n\nIf UbyHost cannot file in time: Sign in to the UbyPort web application with your own access, enter the guests by hand and keep the receipt. Then open the stay in UbyHost and choose \"I filed this stay by hand in UbyPort\", so UbyHost never sends it again. The duty to report stays with you as the host.\n\nOpen the stay: https://app.example.test/reservations/202\n\n--\nUbyHost\nYou get this e-mail once per stay, when its police deadline is less than 24 hours away or has passed and the stay is still not reported.",
+     "to_email": "contact.one@example.test"
+    },
+    {
+     "apartment_id": 1,
+     "attempts": 0,
+     "cc_email": null,
+     "idempotency_key": "deadline_at_risk:205",
+     "kind": "deadline_at_risk",
+     "owner_user_id": 1,
+     "payload": "9e080b90688c74fb3370a59bcdb7f3d1944ba3975047833fb7a258d41adcb19b",
+     "reservation_id": 205,
+     "state": "queued",
+     "subject": "Not reported to the police yet: Byt Dole, deadline 16.09.2026 23:59",
+     "text": "Byt Dole, arrival 14.09.2026: foreign guests of this stay are not reported to the police yet. The deadline is 16.09.2026 23:59.\n\nProperty: Byt Dole\nArrival: 14.09.2026\nGuests not filed yet: 1\nDeadline: 16.09.2026 23:59\n\nWhat to do next: Open the stay, complete what is missing and send it.\n\nIf UbyHost cannot file in time: Sign in to the UbyPort web application with your own access, enter the guests by hand and keep the receipt. Then open the stay in UbyHost and choose \"I filed this stay by hand in UbyPort\", so UbyHost never sends it again. The duty to report stays with you as the host.\n\nOpen the stay: https://app.example.test/reservations/205\n\n--\nUbyHost\nYou get this e-mail once per stay, when its police deadline is less than 24 hours away or has passed and the stay is still not reported.",
+     "to_email": "contact.one@example.test"
+    },
+    {
+     "apartment_id": 1,
+     "attempts": 0,
+     "cc_email": null,
+     "idempotency_key": "deadline_at_risk:206",
+     "kind": "deadline_at_risk",
+     "owner_user_id": 1,
+     "payload": "e0c3349d372567cace8e4f0da2b6fdd7961d93561dbc0a215a845a3b5f0f6f83",
+     "reservation_id": 206,
+     "state": "queued",
+     "subject": "Not reported to the police yet: Byt Dole, deadline 17.09.2026 23:59",
+     "text": "Byt Dole, arrival 15.09.2026: foreign guests of this stay are not reported to the police yet. The deadline is 17.09.2026 23:59.\n\nProperty: Byt Dole\nArrival: 15.09.2026\nGuests not filed yet: 2\nDeadline: 17.09.2026 23:59\n\nWhat to do next: Open the stay, complete what is missing and send it.\n\nIf UbyHost cannot file in time: Sign in to the UbyPort web application with your own access, enter the guests by hand and keep the receipt. Then open the stay in UbyHost and choose \"I filed this stay by hand in UbyPort\", so UbyHost never sends it again. The duty to report stays with you as the host.\n\nOpen the stay: https://app.example.test/reservations/206\n\n--\nUbyHost\nYou get this e-mail once per stay, when its police deadline is less than 24 hours away or has passed and the stay is still not reported.",
+     "to_email": "contact.one@example.test"
+    },
+    {
+     "apartment_id": 1,
+     "attempts": 0,
+     "cc_email": null,
+     "idempotency_key": "deadline_at_risk:207",
+     "kind": "deadline_at_risk",
+     "owner_user_id": 1,
+     "payload": "8761fdfa75c657c29aed0a724ada89d04c6543c23db8b8462c07bdf0a933efe0",
+     "reservation_id": 207,
+     "state": "queued",
+     "subject": "Not reported to the police yet: Byt Dole, deadline 17.09.2026 23:59",
+     "text": "Byt Dole, arrival 15.09.2026: foreign guests of this stay are not reported to the police yet. The deadline is 17.09.2026 23:59.\n\nProperty: Byt Dole\nArrival: 15.09.2026\nGuests not filed yet: 1\nDeadline: 17.09.2026 23:59\n\nWhat to do next: Open the stay, complete what is missing and send it.\n\nIf UbyHost cannot file in time: Sign in to the UbyPort web application with your own access, enter the guests by hand and keep the receipt. Then open the stay in UbyHost and choose \"I filed this stay by hand in UbyPort\", so UbyHost never sends it again. The duty to report stays with you as the host.\n\nOpen the stay: https://app.example.test/reservations/207\n\n--\nUbyHost\nYou get this e-mail once per stay, when its police deadline is less than 24 hours away or has passed and the stay is still not reported.",
+     "to_email": "contact.one@example.test"
+    },
+    {
+     "apartment_id": 1,
+     "attempts": 0,
+     "cc_email": null,
+     "idempotency_key": "deadline_at_risk:208",
+     "kind": "deadline_at_risk",
+     "owner_user_id": 1,
+     "payload": "8fa6dac3318eb12088adc527e2e9261df75619b9e2bebafa369aee42047ebd3c",
+     "reservation_id": 208,
+     "state": "queued",
+     "subject": "Not reported to the police yet: Byt Dole, deadline 17.09.2026 23:59",
+     "text": "Byt Dole, arrival 15.09.2026: foreign guests of this stay are not reported to the police yet. The deadline is 17.09.2026 23:59.\n\nProperty: Byt Dole\nArrival: 15.09.2026\nGuests not filed yet: 1\nDeadline: 17.09.2026 23:59\n\nWhat to do next: Open the stay, complete what is missing and send it.\n\nIf UbyHost cannot file in time: Sign in to the UbyPort web application with your own access, enter the guests by hand and keep the receipt. Then open the stay in UbyHost and choose \"I filed this stay by hand in UbyPort\", so UbyHost never sends it again. The duty to report stays with you as the host.\n\nOpen the stay: https://app.example.test/reservations/208\n\n--\nUbyHost\nYou get this e-mail once per stay, when its police deadline is less than 24 hours away or has passed and the stay is still not reported.",
+     "to_email": "contact.one@example.test"
+    },
+    {
+     "apartment_id": 1,
+     "attempts": 0,
+     "cc_email": null,
+     "idempotency_key": "deadline_at_risk:215",
+     "kind": "deadline_at_risk",
+     "owner_user_id": 1,
+     "payload": "f28aa99cf770e4076318dd61ce08bbc15082af73c23eee9112293f52b5426bfd",
+     "reservation_id": 215,
+     "state": "queued",
+     "subject": "No guest details yet: Byt Dole, police deadline 17.09.2026 23:59",
+     "text": "Byt Dole, arrival 15.09.2026: no guest details are entered yet, so UbyHost cannot tell whether the stay must be reported to the police. If any guest is not a Czech citizen, the deadline is 17.09.2026 23:59.\n\nProperty: Byt Dole\nArrival: 15.09.2026\nDeadline: 17.09.2026 23:59\n\nWhat to do next: Open the stay and enter the guests, or send the guest link again. If all guests are Czech citizens, enter them for the house book; nothing has to be reported.\n\nIf UbyHost cannot file in time: Sign in to the UbyPort web application with your own access, enter the guests by hand and keep the receipt. Then open the stay in UbyHost and choose \"I filed this stay by hand in UbyPort\", so UbyHost never sends it again. The duty to report stays with you as the host.\n\nOpen the stay: https://app.example.test/reservations/215\n\n--\nUbyHost\nYou get this e-mail once per stay, when the guests have arrived, the police deadline is less than 24 hours away or has passed, and no guest details are entered yet.",
+     "to_email": "contact.one@example.test"
+    },
+    {
+     "apartment_id": 1,
+     "attempts": 0,
+     "cc_email": null,
+     "idempotency_key": "deadline_at_risk:217",
+     "kind": "deadline_at_risk",
+     "owner_user_id": 1,
+     "payload": "cd603e46371b484b84bac0ff21b4e146b3cfbcc641b600fc763866b252282b51",
+     "reservation_id": 217,
+     "state": "queued",
+     "subject": "No guest details yet: Byt Dole, police deadline 10.09.2026 23:59",
+     "text": "Byt Dole, arrival 08.09.2026: no guest details are entered yet, so UbyHost cannot tell whether the stay must be reported to the police. If any guest is not a Czech citizen, the deadline is 10.09.2026 23:59.\n\nProperty: Byt Dole\nArrival: 08.09.2026\nDeadline: 10.09.2026 23:59\n\nWhat to do next: Open the stay and enter the guests, or send the guest link again. If all guests are Czech citizens, enter them for the house book; nothing has to be reported.\n\nIf UbyHost cannot file in time: Sign in to the UbyPort web application with your own access, enter the guests by hand and keep the receipt. Then open the stay in UbyHost and choose \"I filed this stay by hand in UbyPort\", so UbyHost never sends it again. The duty to report stays with you as the host.\n\nOpen the stay: https://app.example.test/reservations/217\n\n--\nUbyHost\nYou get this e-mail once per stay, when the guests have arrived, the police deadline is less than 24 hours away or has passed, and no guest details are entered yet.",
+     "to_email": "contact.one@example.test"
+    },
+    {
+     "apartment_id": 1,
+     "attempts": 0,
+     "cc_email": null,
+     "idempotency_key": "deadline_at_risk:222",
+     "kind": "deadline_at_risk",
+     "owner_user_id": 1,
+     "payload": "4a434064f5b7a198b5a21f7deb02b2fa420586e9ca899f95a639f1910e9b1ec6",
+     "reservation_id": 222,
+     "state": "queued",
+     "subject": "Not reported to the police yet: Byt Dole, deadline 16.09.2026 23:59",
+     "text": "Byt Dole, arrival 14.09.2026: foreign guests of this stay are not reported to the police yet. The deadline is 16.09.2026 23:59.\n\nProperty: Byt Dole\nArrival: 14.09.2026\nGuests not filed yet: 1\nDeadline: 16.09.2026 23:59\n\nWhat to do next: Open the stay, complete what is missing and send it.\n\nIf UbyHost cannot file in time: Sign in to the UbyPort web application with your own access, enter the guests by hand and keep the receipt. Then open the stay in UbyHost and choose \"I filed this stay by hand in UbyPort\", so UbyHost never sends it again. The duty to report stays with you as the host.\n\nOpen the stay: https://app.example.test/reservations/222\n\n--\nUbyHost\nYou get this e-mail once per stay, when its police deadline is less than 24 hours away or has passed and the stay is still not reported.",
+     "to_email": "contact.one@example.test"
+    },
+    {
+     "apartment_id": 4,
+     "attempts": 0,
+     "cc_email": null,
+     "idempotency_key": "deadline_at_risk:224",
+     "kind": "deadline_at_risk",
+     "owner_user_id": 1,
+     "payload": "0031e2ea75ebd2990e4265a343ab28e9bd7f1c73c739840fec16a7803986cff1",
+     "reservation_id": 224,
+     "state": "queued",
+     "subject": "Not reported to the police yet: Byt <Žižkov> & \"Co\", deadline 17.09.2026 23:59",
+     "text": "Byt <Žižkov> & \"Co\", arrival 15.09.2026: foreign guests of this stay are not reported to the police yet. The deadline is 17.09.2026 23:59.\n\nProperty: Byt <Žižkov> & \"Co\"\nArrival: 15.09.2026\nGuests not filed yet: 1\nDeadline: 17.09.2026 23:59\n\nWhat to do next: Open the stay, complete what is missing and send it.\n\nIf UbyHost cannot file in time: Sign in to the UbyPort web application with your own access, enter the guests by hand and keep the receipt. Then open the stay in UbyHost and choose \"I filed this stay by hand in UbyPort\", so UbyHost never sends it again. The duty to report stays with you as the host.\n\nOpen the stay: https://app.example.test/reservations/224\n\n--\nUbyHost\nYou get this e-mail once per stay, when its police deadline is less than 24 hours away or has passed and the stay is still not reported.",
+     "to_email": "contact.one@example.test"
+    },
+    {
+     "apartment_id": 1,
+     "attempts": 0,
+     "cc_email": null,
+     "idempotency_key": "deadline_at_risk:226",
+     "kind": "deadline_at_risk",
+     "owner_user_id": 1,
+     "payload": "97e28fc9e105115f9dff2698d554e0a5cb47fd865c6dc39489a095ee317cef26",
+     "reservation_id": 226,
+     "state": "queued",
+     "subject": "Not reported to the police yet: Byt Dole, deadline 17.09.2026 23:59",
+     "text": "Byt Dole, arrival 15.09.2026: foreign guests of this stay are not reported to the police yet. The deadline is 17.09.2026 23:59.\n\nProperty: Byt Dole\nArrival: 15.09.2026\nGuests not filed yet: 1\nDeadline: 17.09.2026 23:59\n\nWhat to do next: Open the stay, complete what is missing and send it.\n\nIf UbyHost cannot file in time: Sign in to the UbyPort web application with your own access, enter the guests by hand and keep the receipt. Then open the stay in UbyHost and choose \"I filed this stay by hand in UbyPort\", so UbyHost never sends it again. The duty to report stays with you as the host.\n\nOpen the stay: https://app.example.test/reservations/226\n\n--\nUbyHost\nYou get this e-mail once per stay, when its police deadline is less than 24 hours away or has passed and the stay is still not reported.",
+     "to_email": "contact.one@example.test"
+    },
+    {
+     "apartment_id": 1,
+     "attempts": 0,
+     "cc_email": null,
+     "idempotency_key": "deadline_at_risk:228",
+     "kind": "deadline_at_risk",
+     "owner_user_id": 1,
+     "payload": "f6e4fbd87084eafdc844a074224545847165951d4f99ca634fee9e766cb91d13",
+     "reservation_id": 228,
+     "state": "queued",
+     "subject": "Not reported to the police yet: Byt Dole, deadline 17.09.2026 23:59",
+     "text": "Byt Dole, arrival 15.09.2026: foreign guests of this stay are not reported to the police yet. The deadline is 17.09.2026 23:59.\n\nProperty: Byt Dole\nArrival: 15.09.2026\nGuests not filed yet: 1\nDeadline: 17.09.2026 23:59\n\nWhat to do next: Open the stay, complete what is missing and send it.\n\nIf UbyHost cannot file in time: Sign in to the UbyPort web application with your own access, enter the guests by hand and keep the receipt. Then open the stay in UbyHost and choose \"I filed this stay by hand in UbyPort\", so UbyHost never sends it again. The duty to report stays with you as the host.\n\nOpen the stay: https://app.example.test/reservations/228\n\n--\nUbyHost\nYou get this e-mail once per stay, when its police deadline is less than 24 hours away or has passed and the stay is still not reported.",
+     "to_email": "contact.one@example.test"
+    },
+    {
+     "apartment_id": 1,
+     "attempts": 0,
+     "cc_email": null,
+     "idempotency_key": "deadline_at_risk:229",
+     "kind": "deadline_at_risk",
+     "owner_user_id": 1,
+     "payload": "d20c43c2ae36900728bab58e9bb176bb944ebcba1b246810e4a96399c288f684",
+     "reservation_id": 229,
+     "state": "queued",
+     "subject": "Not reported to the police yet: Byt Dole, deadline 17.09.2026 23:59",
+     "text": "Byt Dole, arrival 15.09.2026: foreign guests of this stay are not reported to the police yet. The deadline is 17.09.2026 23:59.\n\nProperty: Byt Dole\nArrival: 15.09.2026\nGuests not filed yet: 1\nDeadline: 17.09.2026 23:59\n\nWhat to do next: Open the stay, complete what is missing and send it.\n\nIf UbyHost cannot file in time: Sign in to the UbyPort web application with your own access, enter the guests by hand and keep the receipt. Then open the stay in UbyHost and choose \"I filed this stay by hand in UbyPort\", so UbyHost never sends it again. The duty to report stays with you as the host.\n\nOpen the stay: https://app.example.test/reservations/229\n\n--\nUbyHost\nYou get this e-mail once per stay, when its police deadline is less than 24 hours away or has passed and the stay is still not reported.",
+     "to_email": "contact.one@example.test"
+    },
+    {
+     "apartment_id": null,
+     "attempts": 0,
+     "cc_email": null,
+     "idempotency_key": "deadline_digest:2026-09-17T10:05:00+00:00",
+     "kind": "deadline_digest",
+     "owner_user_id": null,
+     "payload": "45b73a4588788006d2b9c9d392951e28eccedf5c13522f272940e16c71903fcd",
+     "reservation_id": null,
+     "state": "queued",
+     "subject": "Filing watchdog: stays at risk (14), without guest details (3)",
+     "text": "Each stay below has foreign guests that UbyPort has not accepted yet, and its deadline is less than 24 hours away or has passed. This digest is sent at most every 3 days while any stay is at risk.\n\nWorkspace | Property | Arrival | Deadline | Not filed\nhost-one@example.test | Byt Dole | 10.09.2026 | 14.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 14.09.2026 | 16.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 14.09.2026 | 16.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 2\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-two@example.test | Cizi byt | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt <Žižkov> & \"Co\" | 15.09.2026 | 17.09.2026 23:59 | 1\n |  | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\n\nStays without guest details (status unknown)\nNo guest is entered for these stays. The arrival has passed and the deadline is less than 24 hours away or has passed. If the guests are Czech citizens nothing has to be reported, so these stays do not set the filing heartbeat to failed.\n\nWorkspace | Property | Arrival | Deadline\nhost-one@example.test | Byt Dole | 08.09.2026 | 10.09.2026 23:59\nhost-two@example.test | Cizi byt | 12.09.2026 | 16.09.2026 23:59\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59\n\n--\nUbyHost\nSent to UBYHOST_OPERATOR_EMAIL by the deadline job. It contains no guest names.",
+     "to_email": "ops@example.test"
+    }
+   ],
+   "heartbeat": "https://hc.example.test/ping/abc/fail",
+   "mailed": {
+    "201": "2026-09-17T10:05:00+00:00",
+    "202": "2026-09-17T10:05:00+00:00",
+    "203": null,
+    "204": null,
+    "205": "2026-09-17T10:05:00+00:00",
+    "206": "2026-09-17T10:05:00+00:00",
+    "207": "2026-09-17T10:05:00+00:00",
+    "208": "2026-09-17T10:05:00+00:00",
+    "209": "2026-09-16T08:00:00+00:00",
+    "210": null,
+    "211": null,
+    "212": null,
+    "213": null,
+    "214": null,
+    "215": "2026-09-17T10:05:00+00:00",
+    "216": null,
+    "217": "2026-09-17T10:05:00+00:00",
+    "218": null,
+    "219": null,
+    "220": null,
+    "221": null,
+    "222": "2026-09-17T10:05:00+00:00",
+    "223": null,
+    "224": "2026-09-17T10:05:00+00:00",
+    "225": null,
+    "226": "2026-09-17T10:05:00+00:00",
+    "227": null,
+    "228": "2026-09-17T10:05:00+00:00",
+    "229": "",
+    "230": null
+   },
+   "pushes": [],
+   "result": {
+    "at_risk": 14,
+    "awaiting_retry": 2,
+    "digest": 1,
+    "host_mails": 13,
+    "unknown_risk": 3
+   },
+   "setting": "2026-09-17T10:05:00+00:00"
+  },
+  {
+   "at": "2026-09-17T11:00:00+00:00",
+   "before": {},
+   "emails": [
+    {
+     "apartment_id": 1,
+     "attempts": 0,
+     "cc_email": null,
+     "idempotency_key": "deadline_at_risk:204",
+     "kind": "deadline_at_risk",
+     "owner_user_id": 1,
+     "payload": "c639a33ea86d05d82b06393738b56f6c7f5871e53a792e60e89e60b2daf53236",
+     "reservation_id": 204,
+     "state": "queued",
+     "subject": "Not reported to the police yet: Byt Dole, deadline 17.09.2026 23:59",
+     "text": "Byt Dole, arrival 15.09.2026: foreign guests of this stay are not reported to the police yet. The deadline is 17.09.2026 23:59.\n\nProperty: Byt Dole\nArrival: 15.09.2026\nGuests not filed yet: 1\nDeadline: 17.09.2026 23:59\n\nWhat to do next: Open the stay, complete what is missing and send it.\n\nIf UbyHost cannot file in time: Sign in to the UbyPort web application with your own access, enter the guests by hand and keep the receipt. Then open the stay in UbyHost and choose \"I filed this stay by hand in UbyPort\", so UbyHost never sends it again. The duty to report stays with you as the host.\n\nOpen the stay: https://app.example.test/reservations/204\n\n--\nUbyHost\nYou get this e-mail once per stay, when its police deadline is less than 24 hours away or has passed and the stay is still not reported.",
+     "to_email": "contact.one@example.test"
+    },
+    {
+     "apartment_id": 1,
+     "attempts": 0,
+     "cc_email": null,
+     "idempotency_key": "deadline_at_risk:227",
+     "kind": "deadline_at_risk",
+     "owner_user_id": 1,
+     "payload": "b8005dcb38e3bc7ce4eb797696f4e7191cb60bc9cff8003aa657ad1688368280",
+     "reservation_id": 227,
+     "state": "queued",
+     "subject": "Not reported to the police yet: Byt Dole, deadline 17.09.2026 23:59",
+     "text": "Byt Dole, arrival 15.09.2026: foreign guests of this stay are not reported to the police yet. The deadline is 17.09.2026 23:59.\n\nProperty: Byt Dole\nArrival: 15.09.2026\nGuests not filed yet: 1\nDeadline: 17.09.2026 23:59\n\nWhat to do next: Open the stay, complete what is missing and send it.\n\nIf UbyHost cannot file in time: Sign in to the UbyPort web application with your own access, enter the guests by hand and keep the receipt. Then open the stay in UbyHost and choose \"I filed this stay by hand in UbyPort\", so UbyHost never sends it again. The duty to report stays with you as the host.\n\nOpen the stay: https://app.example.test/reservations/227\n\n--\nUbyHost\nYou get this e-mail once per stay, when its police deadline is less than 24 hours away or has passed and the stay is still not reported.",
+     "to_email": "contact.one@example.test"
+    }
+   ],
+   "heartbeat": "https://hc.example.test/ping/abc/fail",
+   "mailed": {
+    "201": "2026-09-17T10:05:00+00:00",
+    "202": "2026-09-17T10:05:00+00:00",
+    "203": null,
+    "204": "2026-09-17T11:00:00+00:00",
+    "205": "2026-09-17T10:05:00+00:00",
+    "206": "2026-09-17T10:05:00+00:00",
+    "207": "2026-09-17T10:05:00+00:00",
+    "208": "2026-09-17T10:05:00+00:00",
+    "209": "2026-09-16T08:00:00+00:00",
+    "210": null,
+    "211": null,
+    "212": null,
+    "213": null,
+    "214": null,
+    "215": "2026-09-17T10:05:00+00:00",
+    "216": null,
+    "217": "2026-09-17T10:05:00+00:00",
+    "218": null,
+    "219": null,
+    "220": null,
+    "221": null,
+    "222": "2026-09-17T10:05:00+00:00",
+    "223": null,
+    "224": "2026-09-17T10:05:00+00:00",
+    "225": null,
+    "226": "2026-09-17T10:05:00+00:00",
+    "227": "2026-09-17T11:00:00+00:00",
+    "228": "2026-09-17T10:05:00+00:00",
+    "229": "",
+    "230": null
+   },
+   "pushes": [
+    {
+     "attempts": 0,
+     "idempotency_key": "deadline_at_risk:204:501",
+     "kind": "deadline_at_risk",
+     "params": {
+      "date": "15.09.2026",
+      "deadline": "17.09.2026 23:59",
+      "property": "Byt Dole"
+     },
+     "state": "queued",
+     "subscription_id": 501,
+     "url": "/reservations/204",
+     "user_account_id": 1
+    },
+    {
+     "attempts": 0,
+     "idempotency_key": "deadline_at_risk:227:501",
+     "kind": "deadline_at_risk",
+     "params": {
+      "date": "15.09.2026",
+      "deadline": "17.09.2026 23:59",
+      "property": "Byt Dole"
+     },
+     "state": "queued",
+     "subscription_id": 501,
+     "url": "/reservations/227",
+     "user_account_id": 1
+    }
+   ],
+   "result": {
+    "at_risk": 16,
+    "awaiting_retry": 0,
+    "digest": 0,
+    "host_mails": 3,
+    "unknown_risk": 3
+   },
+   "setting": "2026-09-17T10:05:00+00:00"
+  },
+  {
+   "at": "2026-09-20T11:05:00+00:00",
+   "before": {},
+   "emails": [
+    {
+     "apartment_id": 1,
+     "attempts": 0,
+     "cc_email": null,
+     "idempotency_key": "deadline_at_risk:203",
+     "kind": "deadline_at_risk",
+     "owner_user_id": 1,
+     "payload": "ad9415da99a2265fc8fd5c5fb3573f5efe40fb1f96b855833dc66b8bc733adf9",
+     "reservation_id": 203,
+     "state": "queued",
+     "subject": "Not reported to the police yet: Byt Dole, deadline 18.09.2026 23:59",
+     "text": "Byt Dole, arrival 16.09.2026: foreign guests of this stay are not reported to the police yet. The deadline is 18.09.2026 23:59.\n\nProperty: Byt Dole\nArrival: 16.09.2026\nGuests not filed yet: 1\nDeadline: 18.09.2026 23:59\n\nWhat to do next: Open the stay, complete what is missing and send it.\n\nIf UbyHost cannot file in time: Sign in to the UbyPort web application with your own access, enter the guests by hand and keep the receipt. Then open the stay in UbyHost and choose \"I filed this stay by hand in UbyPort\", so UbyHost never sends it again. The duty to report stays with you as the host.\n\nOpen the stay: https://app.example.test/reservations/203\n\n--\nUbyHost\nYou get this e-mail once per stay, when its police deadline is less than 24 hours away or has passed and the stay is still not reported.",
+     "to_email": "contact.one@example.test"
+    },
+    {
+     "apartment_id": null,
+     "attempts": 0,
+     "cc_email": null,
+     "idempotency_key": "deadline_digest:2026-09-20T11:05:00+00:00",
+     "kind": "deadline_digest",
+     "owner_user_id": null,
+     "payload": "1b9f2ccaa4fadbab6d2e9b707fca172c07d644eee35d4d23d92db5998a15de04",
+     "reservation_id": null,
+     "state": "queued",
+     "subject": "Filing watchdog: stays at risk (17), without guest details (2)",
+     "text": "Each stay below has foreign guests that UbyPort has not accepted yet, and its deadline is less than 24 hours away or has passed. This digest is sent at most every 3 days while any stay is at risk.\n\nWorkspace | Property | Arrival | Deadline | Not filed\nhost-one@example.test | Byt Dole | 10.09.2026 | 14.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 14.09.2026 | 16.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 14.09.2026 | 16.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 2\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-two@example.test | Cizi byt | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt <Žižkov> & \"Co\" | 15.09.2026 | 17.09.2026 23:59 | 1\n |  | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 16.09.2026 | 18.09.2026 23:59 | 1\n\nStays without guest details (status unknown)\nNo guest is entered for these stays. The arrival has passed and the deadline is less than 24 hours away or has passed. If the guests are Czech citizens nothing has to be reported, so these stays do not set the filing heartbeat to failed.\n\nWorkspace | Property | Arrival | Deadline\nhost-two@example.test | Cizi byt | 12.09.2026 | 16.09.2026 23:59\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59\n\n--\nUbyHost\nSent to UBYHOST_OPERATOR_EMAIL by the deadline job. It contains no guest names.",
+     "to_email": "ops@example.test"
+    }
+   ],
+   "heartbeat": "https://hc.example.test/ping/abc/fail",
+   "mailed": {
+    "201": "2026-09-17T10:05:00+00:00",
+    "202": "2026-09-17T10:05:00+00:00",
+    "203": "2026-09-20T11:05:00+00:00",
+    "204": "2026-09-17T11:00:00+00:00",
+    "205": "2026-09-17T10:05:00+00:00",
+    "206": "2026-09-17T10:05:00+00:00",
+    "207": "2026-09-17T10:05:00+00:00",
+    "208": "2026-09-17T10:05:00+00:00",
+    "209": "2026-09-16T08:00:00+00:00",
+    "210": null,
+    "211": null,
+    "212": null,
+    "213": null,
+    "214": null,
+    "215": "2026-09-17T10:05:00+00:00",
+    "216": null,
+    "217": "2026-09-17T10:05:00+00:00",
+    "218": null,
+    "219": null,
+    "220": null,
+    "221": null,
+    "222": "2026-09-17T10:05:00+00:00",
+    "223": null,
+    "224": "2026-09-17T10:05:00+00:00",
+    "225": null,
+    "226": "2026-09-17T10:05:00+00:00",
+    "227": "2026-09-17T11:00:00+00:00",
+    "228": "2026-09-17T10:05:00+00:00",
+    "229": "",
+    "230": null
+   },
+   "pushes": [
+    {
+     "attempts": 0,
+     "idempotency_key": "deadline_at_risk:203:501",
+     "kind": "deadline_at_risk",
+     "params": {
+      "date": "16.09.2026",
+      "deadline": "18.09.2026 23:59",
+      "property": "Byt Dole"
+     },
+     "state": "queued",
+     "subscription_id": 501,
+     "url": "/reservations/203",
+     "user_account_id": 1
+    }
+   ],
+   "result": {
+    "at_risk": 17,
+    "awaiting_retry": 0,
+    "digest": 1,
+    "host_mails": 2,
+    "unknown_risk": 2
+   },
+   "setting": "2026-09-20T11:05:00+00:00"
+  },
+  {
+   "at": "2026-09-20T11:10:00+00:00",
+   "before": {
+    "setting": "2026-12-01T00:00:00+00:00"
+   },
+   "emails": [
+    {
+     "apartment_id": null,
+     "attempts": 0,
+     "cc_email": null,
+     "idempotency_key": "deadline_digest:2026-09-20T11:10:00+00:00",
+     "kind": "deadline_digest",
+     "owner_user_id": null,
+     "payload": "1b9f2ccaa4fadbab6d2e9b707fca172c07d644eee35d4d23d92db5998a15de04",
+     "reservation_id": null,
+     "state": "queued",
+     "subject": "Filing watchdog: stays at risk (17), without guest details (2)",
+     "text": "Each stay below has foreign guests that UbyPort has not accepted yet, and its deadline is less than 24 hours away or has passed. This digest is sent at most every 3 days while any stay is at risk.\n\nWorkspace | Property | Arrival | Deadline | Not filed\nhost-one@example.test | Byt Dole | 10.09.2026 | 14.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 14.09.2026 | 16.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 14.09.2026 | 16.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 2\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-two@example.test | Cizi byt | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt <Žižkov> & \"Co\" | 15.09.2026 | 17.09.2026 23:59 | 1\n |  | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 16.09.2026 | 18.09.2026 23:59 | 1\n\nStays without guest details (status unknown)\nNo guest is entered for these stays. The arrival has passed and the deadline is less than 24 hours away or has passed. If the guests are Czech citizens nothing has to be reported, so these stays do not set the filing heartbeat to failed.\n\nWorkspace | Property | Arrival | Deadline\nhost-two@example.test | Cizi byt | 12.09.2026 | 16.09.2026 23:59\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59\n\n--\nUbyHost\nSent to UBYHOST_OPERATOR_EMAIL by the deadline job. It contains no guest names.",
+     "to_email": "ops@example.test"
+    }
+   ],
+   "heartbeat": "https://hc.example.test/ping/abc/fail",
+   "mailed": {
+    "201": "2026-09-17T10:05:00+00:00",
+    "202": "2026-09-17T10:05:00+00:00",
+    "203": "2026-09-20T11:05:00+00:00",
+    "204": "2026-09-17T11:00:00+00:00",
+    "205": "2026-09-17T10:05:00+00:00",
+    "206": "2026-09-17T10:05:00+00:00",
+    "207": "2026-09-17T10:05:00+00:00",
+    "208": "2026-09-17T10:05:00+00:00",
+    "209": "2026-09-16T08:00:00+00:00",
+    "210": null,
+    "211": null,
+    "212": null,
+    "213": null,
+    "214": null,
+    "215": "2026-09-17T10:05:00+00:00",
+    "216": null,
+    "217": "2026-09-17T10:05:00+00:00",
+    "218": null,
+    "219": null,
+    "220": null,
+    "221": null,
+    "222": "2026-09-17T10:05:00+00:00",
+    "223": null,
+    "224": "2026-09-17T10:05:00+00:00",
+    "225": null,
+    "226": "2026-09-17T10:05:00+00:00",
+    "227": "2026-09-17T11:00:00+00:00",
+    "228": "2026-09-17T10:05:00+00:00",
+    "229": "",
+    "230": null
+   },
+   "pushes": [],
+   "result": {
+    "at_risk": 17,
+    "awaiting_retry": 0,
+    "digest": 1,
+    "host_mails": 1,
+    "unknown_risk": 2
+   },
+   "setting": "2026-09-20T11:10:00+00:00"
+  },
+  {
+   "at": "2026-09-20T11:15:00+00:00",
+   "before": {
+    "setting": "2026-09-20T11:10:00"
+   },
+   "emails": [],
+   "heartbeat": "https://hc.example.test/ping/abc/fail",
+   "mailed": {
+    "201": "2026-09-17T10:05:00+00:00",
+    "202": "2026-09-17T10:05:00+00:00",
+    "203": "2026-09-20T11:05:00+00:00",
+    "204": "2026-09-17T11:00:00+00:00",
+    "205": "2026-09-17T10:05:00+00:00",
+    "206": "2026-09-17T10:05:00+00:00",
+    "207": "2026-09-17T10:05:00+00:00",
+    "208": "2026-09-17T10:05:00+00:00",
+    "209": "2026-09-16T08:00:00+00:00",
+    "210": null,
+    "211": null,
+    "212": null,
+    "213": null,
+    "214": null,
+    "215": "2026-09-17T10:05:00+00:00",
+    "216": null,
+    "217": "2026-09-17T10:05:00+00:00",
+    "218": null,
+    "219": null,
+    "220": null,
+    "221": null,
+    "222": "2026-09-17T10:05:00+00:00",
+    "223": null,
+    "224": "2026-09-17T10:05:00+00:00",
+    "225": null,
+    "226": "2026-09-17T10:05:00+00:00",
+    "227": "2026-09-17T11:00:00+00:00",
+    "228": "2026-09-17T10:05:00+00:00",
+    "229": "",
+    "230": null
+   },
+   "pushes": [],
+   "result": {
+    "at_risk": 17,
+    "awaiting_retry": 0,
+    "digest": 0,
+    "host_mails": 1,
+    "unknown_risk": 2
+   },
+   "setting": "2026-09-20T11:10:00"
+  },
+  {
+   "at": "2026-09-20T11:20:00+00:00",
+   "before": {
+    "setting": "garbage"
+   },
+   "emails": [
+    {
+     "apartment_id": null,
+     "attempts": 0,
+     "cc_email": null,
+     "idempotency_key": "deadline_digest:2026-09-20T11:20:00+00:00",
+     "kind": "deadline_digest",
+     "owner_user_id": null,
+     "payload": "1b9f2ccaa4fadbab6d2e9b707fca172c07d644eee35d4d23d92db5998a15de04",
+     "reservation_id": null,
+     "state": "queued",
+     "subject": "Filing watchdog: stays at risk (17), without guest details (2)",
+     "text": "Each stay below has foreign guests that UbyPort has not accepted yet, and its deadline is less than 24 hours away or has passed. This digest is sent at most every 3 days while any stay is at risk.\n\nWorkspace | Property | Arrival | Deadline | Not filed\nhost-one@example.test | Byt Dole | 10.09.2026 | 14.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 14.09.2026 | 16.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 14.09.2026 | 16.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 2\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-two@example.test | Cizi byt | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt <Žižkov> & \"Co\" | 15.09.2026 | 17.09.2026 23:59 | 1\n |  | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 16.09.2026 | 18.09.2026 23:59 | 1\n\nStays without guest details (status unknown)\nNo guest is entered for these stays. The arrival has passed and the deadline is less than 24 hours away or has passed. If the guests are Czech citizens nothing has to be reported, so these stays do not set the filing heartbeat to failed.\n\nWorkspace | Property | Arrival | Deadline\nhost-two@example.test | Cizi byt | 12.09.2026 | 16.09.2026 23:59\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59\n\n--\nUbyHost\nSent to UBYHOST_OPERATOR_EMAIL by the deadline job. It contains no guest names.",
+     "to_email": "ops@example.test"
+    }
+   ],
+   "heartbeat": "https://hc.example.test/ping/abc/fail",
+   "mailed": {
+    "201": "2026-09-17T10:05:00+00:00",
+    "202": "2026-09-17T10:05:00+00:00",
+    "203": "2026-09-20T11:05:00+00:00",
+    "204": "2026-09-17T11:00:00+00:00",
+    "205": "2026-09-17T10:05:00+00:00",
+    "206": "2026-09-17T10:05:00+00:00",
+    "207": "2026-09-17T10:05:00+00:00",
+    "208": "2026-09-17T10:05:00+00:00",
+    "209": "2026-09-16T08:00:00+00:00",
+    "210": null,
+    "211": null,
+    "212": null,
+    "213": null,
+    "214": null,
+    "215": "2026-09-17T10:05:00+00:00",
+    "216": null,
+    "217": "2026-09-17T10:05:00+00:00",
+    "218": null,
+    "219": null,
+    "220": null,
+    "221": null,
+    "222": "2026-09-17T10:05:00+00:00",
+    "223": null,
+    "224": "2026-09-17T10:05:00+00:00",
+    "225": null,
+    "226": "2026-09-17T10:05:00+00:00",
+    "227": "2026-09-17T11:00:00+00:00",
+    "228": "2026-09-17T10:05:00+00:00",
+    "229": "",
+    "230": null
+   },
+   "pushes": [],
+   "result": {
+    "at_risk": 17,
+    "awaiting_retry": 0,
+    "digest": 1,
+    "host_mails": 1,
+    "unknown_risk": 2
+   },
+   "setting": "2026-09-20T11:20:00+00:00"
+  },
+  {
+   "at": "2026-09-20T11:25:00+00:00",
+   "before": {
+    "operator_email": "no-at-sign",
+    "setting": "-"
+   },
+   "emails": [],
+   "heartbeat": "https://hc.example.test/ping/abc/fail",
+   "mailed": {
+    "201": "2026-09-17T10:05:00+00:00",
+    "202": "2026-09-17T10:05:00+00:00",
+    "203": "2026-09-20T11:05:00+00:00",
+    "204": "2026-09-17T11:00:00+00:00",
+    "205": "2026-09-17T10:05:00+00:00",
+    "206": "2026-09-17T10:05:00+00:00",
+    "207": "2026-09-17T10:05:00+00:00",
+    "208": "2026-09-17T10:05:00+00:00",
+    "209": "2026-09-16T08:00:00+00:00",
+    "210": null,
+    "211": null,
+    "212": null,
+    "213": null,
+    "214": null,
+    "215": "2026-09-17T10:05:00+00:00",
+    "216": null,
+    "217": "2026-09-17T10:05:00+00:00",
+    "218": null,
+    "219": null,
+    "220": null,
+    "221": null,
+    "222": "2026-09-17T10:05:00+00:00",
+    "223": null,
+    "224": "2026-09-17T10:05:00+00:00",
+    "225": null,
+    "226": "2026-09-17T10:05:00+00:00",
+    "227": "2026-09-17T11:00:00+00:00",
+    "228": "2026-09-17T10:05:00+00:00",
+    "229": "",
+    "230": null
+   },
+   "pushes": [],
+   "result": {
+    "at_risk": 17,
+    "awaiting_retry": 0,
+    "digest": 0,
+    "host_mails": 1,
+    "unknown_risk": 2
+   },
+   "setting": null
+  },
+  {
+   "at": "2026-09-20T11:30:00+00:00",
+   "before": {
+    "operator_email": "ops@example.test",
+    "setting": "2026-09-17T11:30:00+00:00"
+   },
+   "emails": [
+    {
+     "apartment_id": null,
+     "attempts": 0,
+     "cc_email": null,
+     "idempotency_key": "deadline_digest:2026-09-20T11:30:00+00:00",
+     "kind": "deadline_digest",
+     "owner_user_id": null,
+     "payload": "1b9f2ccaa4fadbab6d2e9b707fca172c07d644eee35d4d23d92db5998a15de04",
+     "reservation_id": null,
+     "state": "queued",
+     "subject": "Filing watchdog: stays at risk (17), without guest details (2)",
+     "text": "Each stay below has foreign guests that UbyPort has not accepted yet, and its deadline is less than 24 hours away or has passed. This digest is sent at most every 3 days while any stay is at risk.\n\nWorkspace | Property | Arrival | Deadline | Not filed\nhost-one@example.test | Byt Dole | 10.09.2026 | 14.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 14.09.2026 | 16.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 14.09.2026 | 16.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 2\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-two@example.test | Cizi byt | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt <Žižkov> & \"Co\" | 15.09.2026 | 17.09.2026 23:59 | 1\n |  | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 16.09.2026 | 18.09.2026 23:59 | 1\n\nStays without guest details (status unknown)\nNo guest is entered for these stays. The arrival has passed and the deadline is less than 24 hours away or has passed. If the guests are Czech citizens nothing has to be reported, so these stays do not set the filing heartbeat to failed.\n\nWorkspace | Property | Arrival | Deadline\nhost-two@example.test | Cizi byt | 12.09.2026 | 16.09.2026 23:59\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59\n\n--\nUbyHost\nSent to UBYHOST_OPERATOR_EMAIL by the deadline job. It contains no guest names.",
+     "to_email": "ops@example.test"
+    }
+   ],
+   "heartbeat": "https://hc.example.test/ping/abc/fail",
+   "mailed": {
+    "201": "2026-09-17T10:05:00+00:00",
+    "202": "2026-09-17T10:05:00+00:00",
+    "203": "2026-09-20T11:05:00+00:00",
+    "204": "2026-09-17T11:00:00+00:00",
+    "205": "2026-09-17T10:05:00+00:00",
+    "206": "2026-09-17T10:05:00+00:00",
+    "207": "2026-09-17T10:05:00+00:00",
+    "208": "2026-09-17T10:05:00+00:00",
+    "209": "2026-09-16T08:00:00+00:00",
+    "210": null,
+    "211": null,
+    "212": null,
+    "213": null,
+    "214": null,
+    "215": "2026-09-17T10:05:00+00:00",
+    "216": null,
+    "217": "2026-09-17T10:05:00+00:00",
+    "218": null,
+    "219": null,
+    "220": null,
+    "221": null,
+    "222": "2026-09-17T10:05:00+00:00",
+    "223": null,
+    "224": "2026-09-17T10:05:00+00:00",
+    "225": null,
+    "226": "2026-09-17T10:05:00+00:00",
+    "227": "2026-09-17T11:00:00+00:00",
+    "228": "2026-09-17T10:05:00+00:00",
+    "229": "",
+    "230": null
+   },
+   "pushes": [],
+   "result": {
+    "at_risk": 17,
+    "awaiting_retry": 0,
+    "digest": 1,
+    "host_mails": 1,
+    "unknown_risk": 2
+   },
+   "setting": "2026-09-20T11:30:00+00:00"
+  },
+  {
+   "at": "2026-09-20T11:35:00+00:00",
+   "before": {
+    "operator_email": "",
+    "setting": "-"
+   },
+   "emails": [
+    {
+     "apartment_id": null,
+     "attempts": 0,
+     "cc_email": null,
+     "idempotency_key": "deadline_digest:2026-09-20T11:35:00+00:00",
+     "kind": "deadline_digest",
+     "owner_user_id": null,
+     "payload": "1b9f2ccaa4fadbab6d2e9b707fca172c07d644eee35d4d23d92db5998a15de04",
+     "reservation_id": null,
+     "state": "queued",
+     "subject": "Filing watchdog: stays at risk (17), without guest details (2)",
+     "text": "Each stay below has foreign guests that UbyPort has not accepted yet, and its deadline is less than 24 hours away or has passed. This digest is sent at most every 3 days while any stay is at risk.\n\nWorkspace | Property | Arrival | Deadline | Not filed\nhost-one@example.test | Byt Dole | 10.09.2026 | 14.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 14.09.2026 | 16.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 14.09.2026 | 16.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 2\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-two@example.test | Cizi byt | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt <Žižkov> & \"Co\" | 15.09.2026 | 17.09.2026 23:59 | 1\n |  | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 16.09.2026 | 18.09.2026 23:59 | 1\n\nStays without guest details (status unknown)\nNo guest is entered for these stays. The arrival has passed and the deadline is less than 24 hours away or has passed. If the guests are Czech citizens nothing has to be reported, so these stays do not set the filing heartbeat to failed.\n\nWorkspace | Property | Arrival | Deadline\nhost-two@example.test | Cizi byt | 12.09.2026 | 16.09.2026 23:59\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59\n\n--\nUbyHost\nSent to UBYHOST_OPERATOR_EMAIL by the deadline job. It contains no guest names.",
+     "to_email": "support@ubyhost.com"
+    }
+   ],
+   "heartbeat": "https://hc.example.test/ping/abc/fail",
+   "mailed": {
+    "201": "2026-09-17T10:05:00+00:00",
+    "202": "2026-09-17T10:05:00+00:00",
+    "203": "2026-09-20T11:05:00+00:00",
+    "204": "2026-09-17T11:00:00+00:00",
+    "205": "2026-09-17T10:05:00+00:00",
+    "206": "2026-09-17T10:05:00+00:00",
+    "207": "2026-09-17T10:05:00+00:00",
+    "208": "2026-09-17T10:05:00+00:00",
+    "209": "2026-09-16T08:00:00+00:00",
+    "210": null,
+    "211": null,
+    "212": null,
+    "213": null,
+    "214": null,
+    "215": "2026-09-17T10:05:00+00:00",
+    "216": null,
+    "217": "2026-09-17T10:05:00+00:00",
+    "218": null,
+    "219": null,
+    "220": null,
+    "221": null,
+    "222": "2026-09-17T10:05:00+00:00",
+    "223": null,
+    "224": "2026-09-17T10:05:00+00:00",
+    "225": null,
+    "226": "2026-09-17T10:05:00+00:00",
+    "227": "2026-09-17T11:00:00+00:00",
+    "228": "2026-09-17T10:05:00+00:00",
+    "229": "",
+    "230": null
+   },
+   "pushes": [],
+   "result": {
+    "at_risk": 17,
+    "awaiting_retry": 0,
+    "digest": 1,
+    "host_mails": 1,
+    "unknown_risk": 2
+   },
+   "setting": "2026-09-20T11:35:00+00:00"
+  }
+ ],
+ "seed": [
+  {
+   "columns": [
+    "id",
+    "username",
+    "password_hash",
+    "role",
+    "created_at"
+   ],
+   "rows": [
+    [
+     1,
+     "host-one@example.test",
+     "x",
+     "host",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     2,
+     "host-two@example.test",
+     "x",
+     "host",
+     "2026-09-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "user_account"
+  },
+  {
+   "columns": [
+    "id",
+    "name",
+    "contact_email",
+    "created_at"
+   ],
+   "rows": [
+    [
+     1,
+     "Entity One",
+     " Contact.One@Example.TEST ",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     2,
+     "Entity Blank",
+     null,
+     "2026-09-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "legal_entity"
+  },
+  {
+   "columns": [
+    "id",
+    "owner_user_id",
+    "legal_entity_id",
+    "internal_name",
+    "city_en",
+    "uby_name",
+    "permalink_token",
+    "active",
+    "created_at"
+   ],
+   "rows": [
+    [
+     1,
+     1,
+     1,
+     "Byt Dole",
+     "Brno",
+     "UBY",
+     "tok1",
+     1,
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     2,
+     1,
+     1,
+     "Byt Vypnuty",
+     "Brno",
+     "UBY",
+     "tok2",
+     0,
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     3,
+     2,
+     null,
+     "Cizi byt",
+     "Brno",
+     "UBY",
+     "tok3",
+     1,
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     4,
+     1,
+     1,
+     "Byt <Žižkov> & \"Co\"",
+     "Praha",
+     "UBY",
+     "tok4",
+     1,
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     5,
+     null,
+     2,
+     "",
+     "Brno",
+     "UBY",
+     "tok5",
+     1,
+     "2026-09-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "apartment"
+  },
+  {
+   "columns": [
+    "id",
+    "apartment_id",
+    "created_at",
+    "mode",
+    "state",
+    "finished_at",
+    "retried_at"
+   ],
+   "rows": [
+    [
+     301,
+     1,
+     "2026-09-01T00:00:00+00:00",
+     "auto",
+     "outcome_unknown",
+     "2026-09-17T09:45:00+00:00",
+     null
+    ],
+    [
+     302,
+     1,
+     "2026-09-01T00:00:00+00:00",
+     "auto",
+     "outcome_unknown",
+     "2026-09-17T09:55:00+00:00",
+     null
+    ],
+    [
+     303,
+     1,
+     "2026-09-01T00:00:00+00:00",
+     "auto_resend",
+     "outcome_unknown",
+     "2026-09-17T09:50:00+00:00",
+     null
+    ],
+    [
+     304,
+     1,
+     "2026-09-01T00:00:00+00:00",
+     "auto",
+     "outcome_unknown",
+     "2026-09-17T09:50:00+00:00",
+     "2026-09-17T09:58:00+00:00"
+    ],
+    [
+     305,
+     1,
+     "2026-09-01T00:00:00+00:00",
+     "auto_resend",
+     "outcome_unknown",
+     "2026-09-17T09:30:00+00:00",
+     null
+    ],
+    [
+     306,
+     1,
+     "2026-09-01T00:00:00+00:00",
+     "auto",
+     "outcome_unknown",
+     "2026-09-17T10:30:00+00:00",
+     null
+    ],
+    [
+     307,
+     1,
+     "2026-09-01T00:00:00+00:00",
+     "auto",
+     "outcome_unknown",
+     "2026-09-17T09:55:00",
+     null
+    ],
+    [
+     308,
+     1,
+     "2026-09-01T00:00:00+00:00",
+     "auto",
+     "outcome_unknown",
+     null,
+     null
+    ],
+    [
+     309,
+     1,
+     "2026-09-01T00:00:00+00:00",
+     "auto",
+     "error",
+     "2026-09-17T09:55:00+00:00",
+     null
+    ]
+   ],
+   "table": "submission"
+  },
+  {
+   "columns": [
+    "id",
+    "apartment_id",
+    "uid",
+    "date_from",
+    "date_to",
+    "status",
+    "source",
+    "archived_at",
+    "at_risk_mailed_at",
+    "created_at",
+    "updated_at"
+   ],
+   "rows": [
+    [
+     201,
+     1,
+     "u201",
+     "2026-09-15",
+     "2026-09-30",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     202,
+     1,
+     "u202",
+     "2026-09-10",
+     "2026-09-30",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     203,
+     1,
+     "u203",
+     "2026-09-16",
+     "2026-09-30",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     204,
+     1,
+     "u204",
+     "2026-09-15",
+     "2026-09-30",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     205,
+     1,
+     "u205",
+     "2026-09-14",
+     "2026-09-30",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     206,
+     1,
+     "u206",
+     "2026-09-15",
+     "2026-09-30",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     207,
+     1,
+     "u207",
+     "2026-09-15",
+     "2026-09-30",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     208,
+     1,
+     "u208",
+     "2026-09-15",
+     "2026-09-30",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     209,
+     1,
+     "u209",
+     "2026-09-15",
+     "2026-09-30",
+     "active",
+     "host",
+     null,
+     "2026-09-16T08:00:00+00:00",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     210,
+     3,
+     "u210",
+     "2026-09-15",
+     "2026-09-30",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     211,
+     1,
+     "u211",
+     "2026-09-15",
+     "2026-09-30",
+     "cancelled",
+     "host",
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     212,
+     1,
+     "u212",
+     "2026-09-15",
+     "2026-09-30",
+     "active",
+     "host",
+     "2026-09-16",
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     213,
+     1,
+     "u213",
+     "2026-09-15",
+     "2026-09-30",
+     "active",
+     "demo",
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     214,
+     2,
+     "u214",
+     "2026-09-15",
+     "2026-09-30",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     215,
+     1,
+     "u215",
+     "2026-09-15",
+     "2026-09-30",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     216,
+     1,
+     "u216",
+     "2026-09-15",
+     "2026-09-30",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     217,
+     1,
+     "u217",
+     "2026-09-08",
+     "2026-09-30",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     218,
+     1,
+     "u218",
+     "2026-09-07",
+     "2026-09-30",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     219,
+     1,
+     "u219",
+     "2026-09-17",
+     "2026-09-30",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     220,
+     1,
+     "u220",
+     "2026-09-18",
+     "2026-09-30",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     221,
+     1,
+     "u221",
+     "2026-09-15",
+     "2026-09-30",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     222,
+     1,
+     "u222",
+     "2026-09-16",
+     "2026-09-30",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     223,
+     1,
+     "u223",
+     "bad",
+     "2026-09-30",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     224,
+     4,
+     "u224",
+     "2026-09-15",
+     "2026-09-30",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     225,
+     5,
+     "u225",
+     "2026-09-15",
+     "2026-09-30",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     226,
+     1,
+     "u226",
+     "2026-09-15",
+     "2026-09-30",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     227,
+     1,
+     "u227",
+     "2026-09-15",
+     "2026-09-30",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     228,
+     1,
+     "u228",
+     "2026-09-15",
+     "2026-09-30",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     229,
+     1,
+     "u229",
+     "2026-09-15",
+     "2026-09-30",
+     "active",
+     "host",
+     null,
+     "",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     230,
+     3,
+     "u230",
+     "2026-09-12",
+     "2026-09-30",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "reservation"
+  },
+  {
+   "columns": [
+    "id",
+    "reservation_id",
+    "surname",
+    "nationality",
+    "submit_state",
+    "submission_id",
+    "stay_from",
+    "is_lead",
+    "archived_at",
+    "created_at",
+    "updated_at"
+   ],
+   "rows": [
+    [
+     1,
+     201,
+     "Test",
+     "deu",
+     "pending",
+     null,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     2,
+     201,
+     "Test",
+     "cze",
+     "pending",
+     null,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     3,
+     202,
+     "Test",
+     "USA",
+     "error",
+     null,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     4,
+     202,
+     "Test",
+     "CZE",
+     "pending",
+     null,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     5,
+     202,
+     "Test",
+     "DEU",
+     "sent",
+     null,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     6,
+     203,
+     "Test",
+     "DEU",
+     "pending",
+     null,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     7,
+     204,
+     "Test",
+     "DEU",
+     "pending",
+     301,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     8,
+     205,
+     "Test",
+     "DEU",
+     "pending",
+     302,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     9,
+     206,
+     "Test",
+     "DEU",
+     "pending",
+     303,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     10,
+     206,
+     "Test",
+     "FRA",
+     "blocked",
+     null,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     11,
+     207,
+     "Test",
+     "DEU",
+     "pending",
+     304,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     12,
+     208,
+     "Test",
+     "DEU",
+     "pending",
+     305,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     13,
+     209,
+     "Test",
+     "DEU",
+     "pending",
+     null,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     14,
+     210,
+     "Test",
+     "UKR",
+     "pending",
+     null,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     15,
+     211,
+     "Test",
+     "DEU",
+     "pending",
+     null,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     16,
+     212,
+     "Test",
+     "DEU",
+     "pending",
+     null,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     17,
+     213,
+     "Test",
+     "DEU",
+     "pending",
+     null,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     18,
+     214,
+     "Test",
+     "DEU",
+     "pending",
+     null,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     19,
+     215,
+     "Test",
+     "DEU",
+     "pending",
+     null,
+     null,
+     0,
+     "2026-09-16",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     20,
+     216,
+     "Test",
+     "CZE",
+     "pending",
+     null,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     21,
+     221,
+     "Test",
+     "",
+     "pending",
+     null,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     22,
+     221,
+     "Test",
+     null,
+     "pending",
+     null,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     23,
+     222,
+     "Test",
+     "DEU",
+     "pending",
+     null,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     24,
+     222,
+     "Test",
+     "CZE",
+     "sent",
+     null,
+     "2026-09-14",
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     25,
+     223,
+     "Test",
+     "DEU",
+     "pending",
+     null,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     26,
+     224,
+     "Test",
+     "ITA",
+     "pending",
+     null,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     27,
+     225,
+     "Test",
+     "ESP",
+     "pending",
+     null,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     28,
+     226,
+     "Test",
+     "DEU",
+     "pending",
+     306,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     29,
+     227,
+     "Test",
+     "DEU",
+     "pending",
+     307,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     30,
+     228,
+     "Test",
+     "DEU",
+     "pending",
+     308,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     31,
+     229,
+     "Test",
+     "DEU",
+     "error",
+     309,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "guest"
+  },
+  {
+   "columns": [
+    "id",
+    "user_account_id",
+    "endpoint_hash",
+    "endpoint_enc",
+    "p256dh_enc",
+    "auth_enc",
+    "lang",
+    "device",
+    "created_at",
+    "last_seen_at"
+   ],
+   "rows": [
+    [
+     501,
+     1,
+     "h501",
+     "x",
+     "x",
+     "x",
+     "en",
+     "phone",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     502,
+     2,
+     "h502",
+     "x",
+     "x",
+     "x",
+     "en",
+     "phone",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     503,
+     2,
+     "h503",
+     "x",
+     "x",
+     "x",
+     "en",
+     "laptop",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "push_subscription"
+  }
+ ],
+ "unset": "-"
+}
