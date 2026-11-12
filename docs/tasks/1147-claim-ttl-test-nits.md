@@ -1,14 +1,14 @@
 # 1147: claim-refresh TTL boundary test and a real missing-row test
 
 Status: todo
-Depends on: 1142 | Base commit: 28106c93 | Branch: task/1147-claim-ttl-nits
+Depends on: 1144 | Base commit: HEAD of the branch after 1144 is merged (1144 makes Go `nowSeconds` a var; do not start before that) | Branch: task/1147-claim-ttl-nits
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
-Test-only. No app code changes (the revert-bite edits are temporary and restored). HIGH RISK area (filing path), but the diff is two tests in one file.
+Test-only. No app code changes (the revert-bite edits are temporary and restored). HIGH RISK area (filing path), but the diff is three tests in two files.
 
 ## 1. Objective
 
-Two review nits on 1142, both in `App/tests/test_claim_recheck_stay.py`: (1) pin the exact TTL boundary of `refresh_sendable_claim` with a frozen clock; (2) make the "missing guest row" test delete a real claim row of a real second guest instead of faking a guest id (`gid + 1000`).
+Two review nits on 1142: (1) pin the exact TTL boundary of `refresh_sendable_claim` (Python, `App/tests/test_claim_recheck_stay.py`) and of `RefreshSendableClaim` (Go, `go/internal/ubyport/claim_test.go`) with a frozen clock; (2) in the Python file, make the "missing guest row" test delete a real claim row of a real second guest instead of faking a guest id (`gid + 1000`).
 
 ## 2. Context
 
@@ -21,7 +21,13 @@ Expected: a claim with `claimed_at == now - TTL` exactly is still live (refresh 
 
 Clock: the 1142 tests do not freeze time; they shift `claimed_at` with SQL. A boundary needs an exact `now`, so this brief patches `time.time` with `monkeypatch.setattr(reporting.time, "time", lambda: NOW)` AFTER the claim is taken (the claim itself uses the real clock). `NOW = 1_900_000_000.0` and the TTL (300) are exactly representable doubles, so `NOW - 300` is exact in Python and SQLite REAL.
 
-Go is out of scope: `RefreshSendableClaim` (`go/internal/ubyport/claim.go:133-137`) reads `nowSeconds()`, which calls `time.Now()` directly (claim.go:149-151) with no injectable clock, so an exact boundary cannot be tested without an app-code change. Same `>=` rule there (`claimed_at >= $3`, claim.go:136). Do not touch Go. The orchestrator logs "Go claim TTL boundary untestable: nowSeconds has no clock seam" in known-issues.
+Go: after 1144, `go/internal/ubyport/claim.go` reads
+```go
+var nowSeconds = func() float64 {
+	return float64(time.Now().UnixNano()) / 1e9
+}
+```
+and `RefreshSendableClaim` (about claim.go:133-137) has `now := nowSeconds()` and `` `UPDATE submission_claim SET claimed_at = $1 WHERE claim_token = $2 AND claimed_at >= $3`, now, token, now-SubmissionClaimTTL.Seconds()) ``. The test swaps `nowSeconds` the way 1144's test does (`real := nowSeconds` ... `t.Cleanup(func() { nowSeconds = real })`). If `var nowSeconds` is not there, STOP (1144 has not landed). Helpers in claim_test.go: `claimTestPool(t)`, `seedGuest(t, pool)`, `builtOf(t, pool, id)`, `claimedAt(t, pool, id)`. Go tests need `UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest`; a skipped test does NOT count as passing.
 
 Current test to change (`App/tests/test_claim_recheck_stay.py`, end of file):
 ```python
@@ -51,6 +57,7 @@ What the case means: a claim covers N guests (one `submission_claim` row each); 
 | Path | Action | What |
 |---|---|---|
 | App/tests/test_claim_recheck_stay.py | edit | replace one test, append one test |
+| go/internal/ubyport/claim_test.go | edit | append one boundary test |
 | docs/tasks/1147-claim-ttl-test-nits.md | status | set `review` at the end |
 | docs/tasks/1147-report.md | create | report |
 
@@ -117,27 +124,77 @@ Command: `cd /home/user/jsfpecharoperations/App && .venv/bin/python -m pytest te
 
 **Step 5. Revert-bite (missing row).** Temporarily edit `App/app/reporting.py`: old_string `    return renewed == expected` new_string `    return renewed > 0`. Run the same pytest command; expect `test_a_claim_missing_one_guest_row_is_treated_as_lost` FAILED, the rest passed. Restore, then `git diff --stat -- App/app 2>&1 | tail -30` prints nothing.
 
-**Step 6. Final run and lint.**
+**Step 6. Go boundary test.** Anchors, each must print `1` (`cd /home/user/jsfpecharoperations/go`): `grep -c "^var nowSeconds = func() float64 {" internal/ubyport/claim.go` and `` grep -c 'WHERE claim_token = \$2 AND claimed_at >= \$3' internal/ubyport/claim.go ``. Append to `go/internal/ubyport/claim_test.go`:
+```go
+
+func TestRefreshBoundaryIsInclusiveAtExactlyTheTTL(t *testing.T) {
+	pool := claimTestPool(t)
+	ctx := context.Background()
+	id := seedGuest(t, pool)
+	pairs := []ClaimPair{{GuestID: id, SubmitState: "pending", Built: builtOf(t, pool, id)}}
+	tok, _, err := ClaimSendable(ctx, pool, pairs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const now = 1_900_000_000.0
+	real := nowSeconds
+	nowSeconds = func() float64 { return now }
+	t.Cleanup(func() { nowSeconds = real })
+	cutoff := now - SubmissionClaimTTL.Seconds()
+
+	if _, err := pool.Exec(ctx, `UPDATE submission_claim SET claimed_at = $1 WHERE guest_id = $2`, cutoff, id); err != nil {
+		t.Fatal(err)
+	}
+	if n, err := RefreshSendableClaim(ctx, pool, tok); err != nil || n != 1 {
+		t.Fatalf("refresh at exactly the cutoff: %d, %v (want 1)", n, err)
+	}
+	if got := claimedAt(t, pool, id); got != now {
+		t.Fatalf("claimed_at %.3f, want %.3f", got, now)
+	}
+
+	stale := cutoff - 0.001
+	if _, err := pool.Exec(ctx, `UPDATE submission_claim SET claimed_at = $1 WHERE guest_id = $2`, stale, id); err != nil {
+		t.Fatal(err)
+	}
+	if n, err := RefreshSendableClaim(ctx, pool, tok); err != nil || n != 0 {
+		t.Fatalf("refresh 1 ms past the cutoff: %d, %v (want 0)", n, err)
+	}
+	if got := claimedAt(t, pool, id); got != stale {
+		t.Fatalf("stale claim was revived: %.3f, want %.3f", got, stale)
+	}
+	nowSeconds = real
+	if err := ReleaseSendableClaim(ctx, pool, tok); err != nil {
+		t.Fatal(err)
+	}
+}
+```
+Command: `cd /home/user/jsfpecharoperations/go && gofmt -l internal 2>&1 | tail -30` expect no output; then `cd /home/user/jsfpecharoperations/go && UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest go test ./internal/ubyport/ -run 'TestRefreshBoundary' -count=1 -v 2>&1 | tail -30` expect `--- PASS` and `ok`, no SKIP. (If the column is `REAL` rather than double and the 0.001 step misbehaves, STOP.)
+
+**Step 7. Revert-bite (Go boundary).** Temporarily edit `go/internal/ubyport/claim.go`: old_string `WHERE claim_token = $2 AND claimed_at >= $3` new_string `WHERE claim_token = $2 AND claimed_at > $3`. Run the same `go test -run 'TestRefreshBoundary'` command: expect FAIL with `refresh at exactly the cutoff: 0, <nil> (want 1)`. Restore, then `cd /home/user/jsfpecharoperations && git diff --stat -- go/internal/ubyport/claim.go 2>&1 | tail -30` must print nothing (1144 is already committed), and re-run: PASS.
+
+**Step 8. Final run and lint.**
 1. `cd /home/user/jsfpecharoperations/App && .venv/bin/python -m pytest tests/test_claim_recheck_stay.py -q --tb=short -x 2>&1 | tail -30` expect `10 passed`.
 2. Postgres: `cd /home/user/jsfpecharoperations/App && UBYHOST_DATABASE_URL=postgresql://uby:uby@localhost:5432/ubytest .venv/bin/python -m pytest tests/test_claim_recheck_stay.py -q --tb=short -x 2>&1 | tail -30` expect `10 passed` (if Postgres is not running, say so in the report; do not start services).
-3. `cd /home/user/jsfpecharoperations && python3 scripts/context_lint.py 2>&1 | tail -3` expect `context lint: OK` (a status WARN is fine).
-4. Write `docs/tasks/1147-report.md`; set `Status: review` in this brief.
+3. `cd /home/user/jsfpecharoperations/go && UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest go test ./internal/ubyport/ -count=1 2>&1 | tail -30` expect `ok`; `go vet ./internal/ubyport/ 2>&1 | tail -10` no output.
+4. `cd /home/user/jsfpecharoperations && python3 scripts/context_lint.py 2>&1 | tail -3` expect `context lint: OK` (a status WARN is fine).
+5. Write `docs/tasks/1147-report.md`; set `Status: review` in this brief.
 
 ## 5. Do not touch
 
-Everything outside section 3, in particular `App/app/` (except the two temporary, restored edits of steps 4 and 5), `go/`, `status.md`, `known-issues.md`. Hard rules: no new dependency, no schema change, never push to `main`, no push/merge/deploy.
+Everything outside section 3, in particular `App/app/` and `go/internal/ubyport/claim.go` (except the temporary, restored edits of steps 4, 5 and 7), `status.md`, `known-issues.md`. Hard rules: no new dependency, no schema change, never push to `main`, no push/merge/deploy.
 
 ## 6. Commands
 
-Exactly those in steps 1-6, from `App/` with `.venv/bin/python -m pytest ... -q --tb=short -x 2>&1 | tail -30`. Test-map row: claim tests in `test_claim_recheck_stay.py` only. Never the full suite.
+Exactly those in steps 1-8; Python from `App/` with `.venv/bin/python -m pytest ... -q --tb=short -x 2>&1 | tail -30`, Go from `go/`. Test-map: claim tests only. Never the full suite.
 
 ## 7. Acceptance
 
 - [ ] `grep -c "gid + 1000" App/tests/test_claim_recheck_stay.py` prints `0`
 - [ ] `grep -c "^def test_refresh_boundary_is_inclusive_at_exactly_the_ttl" App/tests/test_claim_recheck_stay.py` prints `1`
 - [ ] File: `10 passed`, 0 skipped, on SQLite
-- [ ] Both revert-bite checks failed the named test and were restored; `git diff --stat -- App/app` is empty
-- [ ] `git diff --stat` lists only the test file (plus this brief and the report)
+- [ ] Go `TestRefreshBoundaryIsInclusiveAtExactlyTheTTL` passes, 0 SKIP
+- [ ] All three revert-bite checks failed the named test and were restored; `git diff --stat -- App/app go/internal/ubyport/claim.go` is empty
+- [ ] `git diff --stat` lists only the two test files (plus this brief and the report)
 
 ## 8. Stop and ask
 
@@ -151,12 +208,13 @@ Stop, and write the report, if:
 
 ## 9. Report
 
-Write `docs/tasks/1147-report.md` (600 tokens at most) and set `Status: review`. It has: files changed (`git diff --stat`); each command with its last 5 output lines; section 7 ticked; the two revert-bite outcomes; deviations; questions; owner steps left.
+Write `docs/tasks/1147-report.md` (600 tokens at most) and set `Status: review`. It has: files changed (`git diff --stat`); each command with its last 5 output lines; section 7 ticked; the three revert-bite outcomes; deviations; questions; owner steps left.
 
 ## Risk list (for the reviewer)
 
 - `App/tests/test_claim_recheck_stay.py`: the global `time.time` patch is undone by `monkeypatch`; the second guest is a real row; the boundary is `>=` (inclusive).
-- Confirm `App/app/` has no diff.
+- `go/internal/ubyport/claim_test.go`: the fake clock is restored by `t.Cleanup`.
+- Confirm `App/app/` and `claim.go` have no diff.
 
 ## Owner steps
 
