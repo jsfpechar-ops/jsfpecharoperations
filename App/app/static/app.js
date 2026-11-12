@@ -28,7 +28,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
   }
 
   var SIDEBAR_KEY = "ubyhost-sidebar-collapsed";
-  var NAV_BREAKPOINT = 960;
+  var NAV_BREAKPOINT = 767;
   var manualCopyFormId = 0;
   /* 0099: every clickable list row, table or dashboard card. */
   var ROW_SELECTOR = "tr[data-href], .clickable-row[data-href]";

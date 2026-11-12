@@ -43,7 +43,7 @@ def test_compact_window_keeps_drawer_inert_until_opened(calendar_workspace, cale
     seed(calendar_workspace)
     with sync_api.sync_playwright() as playwright:
         browser = launch(playwright)
-        context = browser.new_context(viewport={"width": 800, "height": 900})
+        context = browser.new_context(viewport={"width": 390, "height": 900})
         context.add_cookies([{"name": auth.SESSION_COOKIE, "value": calendar_workspace["client"].cookies.get(auth.SESSION_COOKIE), "url": calendar_origin + "/"}])
         page = context.new_page()
         page.goto(calendar_origin + "/?lang=cs")
@@ -53,5 +53,36 @@ def test_compact_window_keeps_drawer_inert_until_opened(calendar_workspace, cale
             "() => document.getElementById('main-content').dispatchEvent("
             "new PointerEvent('pointerdown', {bubbles: true, cancelable: true}))"
         )
+        assert sidebar_inert(page) is True
+        browser.close()
+
+
+def test_tablet_rail_is_usable_between_768_and_1024_and_drawer_stays_inert_at_390(calendar_workspace, calendar_origin):
+    seed(calendar_workspace)
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context = new_context(browser, calendar_workspace, calendar_origin)
+        for width, height in ((820, 1000), (1023, 900)):
+            page = context.new_page()
+            page.goto(calendar_origin + "/?lang=cs")
+            page.wait_for_load_state()
+            page.set_viewport_size({"width": width, "height": height})
+            assert sidebar_inert(page) is False
+            page.locator('#app-sidebar a[href="/reservations"]').first.click()
+            page.wait_for_url("**/reservations**", timeout=15000)
+            page.close()
+        page = context.new_page()
+        page.goto(calendar_origin + "/?lang=cs")
+        page.wait_for_load_state()
+        page.set_viewport_size({"width": 1280, "height": 900})
+        page.set_viewport_size({"width": 820, "height": 1000})
+        assert sidebar_inert(page) is False
+        page.locator('#app-sidebar a[href="/reservations"]').first.click()
+        page.wait_for_url("**/reservations**", timeout=15000)
+        page.close()
+        page = context.new_page()
+        page.set_viewport_size({"width": 390, "height": 900})
+        page.goto(calendar_origin + "/?lang=cs")
+        page.wait_for_load_state()
         assert sidebar_inert(page) is True
         browser.close()

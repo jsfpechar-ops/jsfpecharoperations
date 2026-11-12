@@ -44,9 +44,9 @@ __all__ = ["base", "dashboard_host", "dashboard_rich_host"]
 CASES = [(spec, width) for spec in PAGES for width in WIDTHS if width >= DESKTOP or "phone_view" in spec]
 IDS = [f"{spec['name']}-{width}" for spec, width in CASES]
 # desktop style checks need a desktop mockup screen; phone checks run at PHONE_WIDTHS for pages with a phone_view
-# below 1024 px the phone design is the design: at 768 the style test compares phone_selectors against the phone mockup (styles only, no box metrics)
+# 768 is the tablet rail (Figma, brief 1132): neither the desktop nor the phone mockup applies, so 768 is left out of the style comparison; it stays in CASES, so the geometry test still covers it
 STYLE_PHONE_WIDTHS = PHONE_WIDTHS
-STYLE_CASES = [(spec, width) for spec, width in CASES if spec["view"] is not None or (width in STYLE_PHONE_WIDTHS and "phone_view" in spec)]
+STYLE_CASES = [(spec, width) for spec, width in CASES if width != 768 and (spec["view"] is not None or (width in STYLE_PHONE_WIDTHS and "phone_view" in spec))]
 STYLE_IDS = [f"{spec['name']}-{width}" for spec, width in STYLE_CASES]
 SHOTS_DIR = Path(__file__).resolve().parents[2] / "docs/tasks/screenshots-0710"
 

@@ -66,3 +66,21 @@ Pre-existing on main, not fixed (as instructed):
 - guardrails guest-new 390 Cancel 43 px and test_host_flash_outcomes sticky amber: not re-run in this session.
 
 Not updated: the comment above `STYLE_PHONE_WIDTHS` in `test_0710_v2_mockup_match_browser.py` still says 768 is compared against the phone mockup, so it is stale.
+
+## Fix-up 3
+
+Items, each with the final line of its re-run:
+
+1. Tablet rail: `App/app/static/app.js` `NAV_BREAKPOINT` 960 → 767. Also changed the drawer media query `max-width: 960px` → `767px` in `App/app/static/app.css` (the `.sidebar` translateX block), otherwise CSS still hid the rail at 768-960. Remaining 960 couplings, left unchanged: `app.css` `@media (min-width: 960px)` (`.split.wide` grid) and `host.css` `@media (max-width: 960px)` (`.host-workspace .sidebar` width and margin). Not confirmed whether the host rule is drawer-related, so reported only.
+2. Regression test added: `test_tablet_rail_is_usable_between_768_and_1024_and_drawer_stays_inert_at_390` in `App/tests/test_0895_sidebar_inert_heal_browser.py`. The existing compact test used 800 px, which is now in the tablet band, so its viewport moved to 390 px (assertion unchanged).
+3. Stays row: `td small .source-badge{white-space:nowrap}` added in `App/app/static/app2.css`.
+4. `STYLE_CASES` in `App/tests/test_0710_v2_mockup_match_browser.py` excludes width 768 from the style comparison. The 768 geometry coverage stays in `CASES`.
+5. Static keys bumped to `20261112-1132d` in `App/app/templates/base.html` for app2.css, app.js and app.css (app.css also changed, so bumped too). `test_static_versions.py --write` regenerated `App/tests/static_versions.json`.
+
+Re-runs (from App/):
+- 0895, 0705, design_shell, static_versions, design_tokens: `33 passed in 28.75s` (first run had 1 failure, the 800 px viewport, fixed as in item 2)
+- 0710 mockup match + 0506 last-inits: `174 passed in 193.04s (0:03:13)`
+- host_unsaved_changes + host_ux_acceptance: `1 failed, 36 passed in 129.62s (0:02:09)`. The failure is the allowed pre-existing `test_every_page_family_fits_every_width_language_and_rail_state` (guide cs 390, help-tip past right edge).
+- layout_lint_browser: `4 passed in 231.04s (0:03:51)`
+
+Skipped count: 0 in every re-run.

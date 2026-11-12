@@ -1791,7 +1791,7 @@ details.raw pre {
 
 /* --- responsive -------------------------------------------------------- */
 
-@media (max-width: 960px) {
+@media (max-width: 767px) {
   .appbar { display: flex; }
   .sidebar {
     width: min(86vw, 320px);
