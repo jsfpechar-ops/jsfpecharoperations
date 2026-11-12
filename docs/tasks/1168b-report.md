@@ -1,4 +1,4 @@
-# 1166b report: door-code notice accuracy
+# 1168b report: door-code notice accuracy
 
 Status: review
 
@@ -9,7 +9,7 @@ Status: review
 - App/app/host_i18n.py: en and cs `pin_unverified` and `moved_failed` bodies (cs word order fixed).
 - App/app/host_vi_i18n.py: vi `pin_unverified` and `moved_failed` bodies.
 - App/tests/test_door_code_host_notices.py: `_mails` matches the suffixed key; new test `test_a_failed_move_mails_again_only_for_a_different_target_window`.
-- docs/tasks/1166b-report.md: this report.
+- docs/tasks/1168b-report.md: this report.
 
 ## Commands (last 5 lines)
 
@@ -66,7 +66,7 @@ PASS (change restored):
 ## Deviations
 
 - The revert-bite used `git checkout 291b6f60^ -- <2 files>` instead of `git stash push`, because the source edits were already committed by steps 1 and 2. The working tree was restored with `git checkout HEAD -- <2 files>` before the PASS run.
-- Step commits are `1166b step 1` to `1166b step 5`.
+- Step commits are `1168b step 1` to `1168b step 5`.
 
 ## Questions
 
@@ -74,4 +74,4 @@ None.
 
 ## Owner steps left
 
-- Review and open the PR from `task/1166b-notice-accuracy` (not done here, per instructions). No merge or deploy was run.
+- Review and open the PR from `task/1168b-notice-accuracy` (not done here, per instructions). No merge or deploy was run.

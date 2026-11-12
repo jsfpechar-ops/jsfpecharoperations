@@ -1,7 +1,7 @@
-# 1166: tell the host about three door-code problems that were silent (K-DC-ERRCODE)
+# 1168: tell the host about three door-code problems that were silent (K-DC-ERRCODE)
 
 Status: todo
-Depends on: 1165b (kind `lock_setup`, `mail_notify._DOOR_CODE_REASON_KINDS` and the `lock_setup` reason come from 1165 and 1165b) | Base commit: HEAD of branch claude/zealous-maxwell-a7ub54 | Branch: task/1166-door-code-host-notices
+Depends on: 1165b (kind `lock_setup`, `mail_notify._DOOR_CODE_REASON_KINDS` and the `lock_setup` reason come from 1165 and 1165b) | Base commit: HEAD of branch claude/zealous-maxwell-a7ub54 | Branch: task/1168-door-code-host-notices
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
@@ -52,13 +52,13 @@ Anchors (in the scripts; each must be found exactly once, else STOP): in `mail_n
 | App/tests/test_alert_language.py | edit | one `STORED_KINDS` entry |
 | docs/TTLOCK.md | edit | the `lock_setup` and `config` rows |
 | docs/plans/ttlock-door-codes.md | edit | the move wording and the `config` sentence |
-| docs/tasks/1166-report.md | create | report (§9) |
+| docs/tasks/1168-report.md | create | report (§9) |
 
 No other file may change.
 
 ## 4. Steps
 
-**Step 1. Branch.** Run `git branch --show-current | tail -30` and `grep -c "mail.door_code_reason.lock_setup" App/app/host_i18n.py | tail -30`; the second must print `2` (1165b is in), else STOP. Then `git switch -c task/1166-door-code-host-notices | tail -30`; expected `Switched to a new branch`.
+**Step 1. Branch.** Run `git branch --show-current | tail -30` and `grep -c "mail.door_code_reason.lock_setup" App/app/host_i18n.py | tail -30`; the second must print `2` (1165b is in), else STOP. Then `git switch -c task/1168-door-code-host-notices | tail -30`; expected `Switched to a new branch`.
 
 **Step 2. Code.** Write the script to `/tmp/1166_code.py` (ends at `PYEOF`), run it from the repo root with `python3 /tmp/1166_code.py | tail -30` (no output means success), then `git diff --stat | tail -30`; expected `door_codes.py` and `mail_notify.py` changed.
 ```bash
@@ -224,7 +224,7 @@ swap(VI, '''    "mail.door_code_notice.reissued_no_email.body": "Lượt lưu tr
 PYEOF
 ```
 
-**Step 4. Tests.** Write the script to `/tmp/1166_tests.py`, run `python3 /tmp/1166_tests.py | tail -30` (no output means success). Then from `App/`: `.venv/bin/python -m pytest tests/test_door_code_host_notices.py tests/test_ttlock_lock_setup.py tests/test_0280_short_notifications.py tests/test_alert_language.py tests/test_host_i18n.py tests/test_go_host_i18n.py tests/test_no_em_dashes.py -q --tb=short 2>&1 | tail -30`; expected `87 passed`. Then from the repo root `git add -A && git commit -m "1166: host notices for door codes (code, copy, tests)" | tail -30`.
+**Step 4. Tests.** Write the script to `/tmp/1166_tests.py`, run `python3 /tmp/1166_tests.py | tail -30` (no output means success). Then from `App/`: `.venv/bin/python -m pytest tests/test_door_code_host_notices.py tests/test_ttlock_lock_setup.py tests/test_0280_short_notifications.py tests/test_alert_language.py tests/test_host_i18n.py tests/test_go_host_i18n.py tests/test_no_em_dashes.py -q --tb=short 2>&1 | tail -30`; expected `87 passed`. Then from the repo root `git add -A && git commit -m "1168: host notices for door codes (code, copy, tests)" | tail -30`.
 ```bash
 cat > /tmp/1166_tests.py <<'PYEOF'
 import re
@@ -254,7 +254,7 @@ swap("App/tests/test_alert_language.py",
     "door_code_pin_unverified": {"property": "Loft", "date": "2026-09-11"},
 }''')
 
-open("App/tests/test_door_code_host_notices.py", "w", encoding="utf-8").write('''"""1166: three door-code problems that left the host in the dark now tell the host, once, without the PIN.
+open("App/tests/test_door_code_host_notices.py", "w", encoding="utf-8").write('''"""1168: three door-code problems that left the host in the dark now tell the host, once, without the PIN.
 
 An unconfirmed revived code (warning card, one mail), a date move that cannot reach the lock
 (one mail, the hourly retry goes on) and the config kind (the reason sends the host to support).
@@ -456,7 +456,7 @@ bite("lock_setup copy", "App/app/host_i18n.py",
 PYEOF
 ```
 
-**Step 6. Docs.** Write the script to `/tmp/1166_docs.py`, run `python3 /tmp/1166_docs.py | tail -30` (no output means success), then `git diff --stat | tail -30`; expected `docs/TTLOCK.md` and `docs/plans/ttlock-door-codes.md`. Commit: `git add -A && git commit -m "1166: docs" | tail -30`.
+**Step 6. Docs.** Write the script to `/tmp/1166_docs.py`, run `python3 /tmp/1166_docs.py | tail -30` (no output means success), then `git diff --stat | tail -30`; expected `docs/TTLOCK.md` and `docs/plans/ttlock-door-codes.md`. Commit: `git add -A && git commit -m "1168: docs" | tail -30`.
 ```bash
 cat > /tmp/1166_docs.py <<'PYEOF'
 def swap(path, old, new):
@@ -519,7 +519,7 @@ Stop, and write the report, if:
 
 ## 9. Report
 
-Write `docs/tasks/1166-report.md` (600 tokens at most) and set `Status: review`. The report has:
+Write `docs/tasks/1168-report.md` (600 tokens at most) and set `Status: review`. The report has:
 
 1. The files changed (`git diff --stat`).
 2. Each command, with the last 5 lines of its output.

@@ -1,12 +1,12 @@
-# 1166b: door-code notices: mail again for a new target window, and true copy
+# 1168b: door-code notices: mail again for a new target window, and true copy
 
 Status: todo
-Depends on: 1166 | Base commit: HEAD of branch claude/zealous-maxwell-a7ub54 | Branch: task/1166b-notice-accuracy
+Depends on: 1168 | Base commit: HEAD of branch claude/zealous-maxwell-a7ub54 | Branch: task/1168b-notice-accuracy
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
 
-Review of 1166 found four small faults. (1) The `moved_failed` mail is sent once per row forever, so a later failed move to other dates is silent. (2) Its copy says UbyHost retries "until the stay starts", but retries stop when the old code's period starts and pause while the TTLock account is not ok. (3) The `pin_unverified` body blames TTLock for not answering, which we do not know. (4) Czech word order in that body.
+Review of 1168 found four small faults. (1) The `moved_failed` mail is sent once per row forever, so a later failed move to other dates is silent. (2) Its copy says UbyHost retries "until the stay starts", but retries stop when the old code's period starts and pause while the TTLock account is not ok. (3) The `pin_unverified` body blames TTLock for not answering, which we do not know. (4) Czech word order in that body.
 
 ## 2. Context
 
@@ -142,4 +142,4 @@ Stop, and write the report, if an excerpt is not found, a test fails twice, you 
 
 ## 9. Report
 
-Write `docs/tasks/1166b-report.md` (600 tokens at most) and set `Status: review`: files changed (`git diff --stat`), each command with the last 5 lines, §7 ticked, deviations.
+Write `docs/tasks/1168b-report.md` (600 tokens at most) and set `Status: review`: files changed (`git diff --stat`), each command with the last 5 lines, §7 ticked, deviations.
