@@ -466,3 +466,70 @@ func TestSyncFeedVanishedStayDeferredWhileClaimLive(t *testing.T) {
 		t.Errorf("after the claim ended: status = %q, Cancelled = %d, want cancelled and 1", got, st.Cancelled)
 	}
 }
+
+func TestDateMoveFitsGuestWindowsInTheSameTransaction(t *testing.T) {
+	pool := testPool(t)
+	ctx := context.Background()
+	aid := seedApartment(t, pool)
+	feed := newIcalFeed(t, pool, aid, "https://feed.test/fit-tx.ics")
+	stay := seedStay(t, pool, aid, feed.ID, "u-fit-tx", "2027-08-01", "2027-08-05")
+	g := seedGuest(t, pool, stay, "pending", "2027-08-01", "2027-08-05")
+	cols := map[string]any{"date_from": "2027-08-10", "date_to": "2027-08-14", "updated_at": ubyport.UTCNow()}
+	move := &dateMove{ApartmentID: aid, NewFrom: "2027-08-10", NewTo: "2027-08-14"}
+	ok, err := updateReservationUnlessClaimed(ctx, pool, stay, "2027-08-01", "2027-08-05", cols, move)
+	must(t, err)
+	if !ok {
+		t.Fatal("date move skipped without a claim")
+	}
+	if got := scalarText(t, pool, `SELECT date_from || ' ' || date_to FROM reservation WHERE id = $1`, stay); got != "2027-08-10 2027-08-14" {
+		t.Fatalf("stay = %q", got)
+	}
+	if got := scalarText(t, pool, `SELECT stay_from || ' ' || stay_to FROM guest WHERE id = $1`, g); got != "2027-08-10 2027-08-14" {
+		t.Fatalf("guest window = %q, want fitted with the move", got)
+	}
+	if move.Fitted != 1 {
+		t.Fatalf("Fitted = %d, want 1", move.Fitted)
+	}
+	if n := scalarInt(t, pool, `SELECT COUNT(*) FROM audit WHERE action = 'guest_stay_window_fitted'`); n != 1 {
+		t.Fatalf("audit rows = %d, want 1", n)
+	}
+}
+
+func TestDeferredDateMoveChangesNeitherStayNorWindows(t *testing.T) {
+	pool := testPool(t)
+	ctx := context.Background()
+	aid := seedApartment(t, pool)
+	feed := newIcalFeed(t, pool, aid, "https://feed.test/defer-tx.ics")
+	stay := seedStay(t, pool, aid, feed.ID, "u-defer-tx", "2027-09-01", "2027-09-05")
+	g := seedGuest(t, pool, stay, "pending", "2027-09-01", "2027-09-05")
+	_, err := pool.Exec(ctx, `INSERT INTO submission_claim (guest_id, claim_token, claimed_at) VALUES ($1, 'race', $2)`,
+		g, epochSeconds())
+	must(t, err)
+	cols := map[string]any{"date_from": "2027-09-10", "date_to": "2027-09-14", "updated_at": ubyport.UTCNow()}
+	check := func(wantStay, wantWindow string) {
+		t.Helper()
+		if got := scalarText(t, pool, `SELECT date_from || ' ' || date_to FROM reservation WHERE id = $1`, stay); got != wantStay {
+			t.Fatalf("stay = %q, want %q", got, wantStay)
+		}
+		if got := scalarText(t, pool, `SELECT stay_from || ' ' || stay_to FROM guest WHERE id = $1`, g); got != wantWindow {
+			t.Fatalf("guest window = %q, want %q", got, wantWindow)
+		}
+	}
+	move := &dateMove{ApartmentID: aid, NewFrom: "2027-09-10", NewTo: "2027-09-14"}
+	ok, err := updateReservationUnlessClaimed(ctx, pool, stay, "2027-09-01", "2027-09-05", cols, move)
+	must(t, err)
+	if ok || move.Reason != "claimed" || move.Fitted != 0 {
+		t.Fatalf("live claim: ok=%v reason=%q fitted=%d", ok, move.Reason, move.Fitted)
+	}
+	check("2027-09-01 2027-09-05", "2027-09-01 2027-09-05")
+
+	_, err = pool.Exec(ctx, `DELETE FROM submission_claim WHERE guest_id = $1`, g)
+	must(t, err)
+	move = &dateMove{ApartmentID: aid, NewFrom: "2027-09-10", NewTo: "2027-09-14"}
+	ok, err = updateReservationUnlessClaimed(ctx, pool, stay, "2027-09-02", "2027-09-05", cols, move)
+	must(t, err)
+	if ok || move.Reason != "changed" || move.Fitted != 0 {
+		t.Fatalf("stored dates moved: ok=%v reason=%q fitted=%d", ok, move.Reason, move.Fitted)
+	}
+	check("2027-09-01 2027-09-05", "2027-09-01 2027-09-05")
+}
