@@ -34,6 +34,7 @@ STORED_KINDS = {
     "guest_pin_abuse": {},
     "stay_fee_no_pay_way": {"property": "Loft"},
     "door_code_reissued": {"property": "Loft", "date": "2026-09-11"},
+    "door_code_reissued_no_email": {"property": "Loft", "date": "2026-09-11"},
 }
 
 ENGLISH_MARKER = "english log copy"

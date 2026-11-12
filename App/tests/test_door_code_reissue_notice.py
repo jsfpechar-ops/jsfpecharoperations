@@ -1,4 +1,4 @@
-"""1156: the host is told once, without the PIN, when a lost door code is made again."""
+"""1156, 1157b: the host is told once, without the PIN, after a lost door code is replaced."""
 from __future__ import annotations
 
 import json
@@ -15,8 +15,18 @@ REAL_NOTICE = mail_notify.door_code_notice  # the world fixture replaces it with
 
 def _open_cards(stay):
     return db.query(
-        "SELECT * FROM alert WHERE kind = ? AND reservation_id = ? AND resolved_at IS NULL",
-        (KIND, stay),
+        "SELECT * FROM alert WHERE kind LIKE ? AND reservation_id = ? AND resolved_at IS NULL",
+        (KIND + "%", stay),
+    )
+
+
+def _guest_email(stay, email="guest@example.test"):
+    """The guest has registered with an e-mail address (the re-issued code goes there)."""
+    now = db.utcnow()
+    db.insert(
+        "reservation_claim",
+        {"reservation_id": stay, "state": "claimed", "email": email, "token_version": 0,
+         "claimed_at": now, "created_at": now, "updated_at": now},
     )
 
 
@@ -39,12 +49,13 @@ def notices(monkeypatch):
 
 def test_a_lost_race_re_issue_tells_the_host_once(world, monkeypatch, notices):  # noqa: F811
     lock, stay, row, sent = world
+    _guest_email(stay)
     monkeypatch.setattr(door_codes, "_lock_code_state", lambda *a, **k: door_codes.PIN_PRESENT)
     _revive_after_lease(monkeypatch, lock, stay, row)
     door_codes._revoke_one(row)
     assert _row(row)["state"] == door_codes.ISSUED
     cards = _open_cards(stay)
-    assert len(cards) == 1 and cards[0]["level"] == "info"
+    assert len(cards) == 1 and cards[0]["level"] == "info" and cards[0]["kind"] == KIND
     assert cards[0]["dedupe_key"] == f"{KIND}:{stay}"
     assert notices == [(row, "reissued")]
     assert sent == [row]
@@ -52,6 +63,7 @@ def test_a_lost_race_re_issue_tells_the_host_once(world, monkeypatch, notices): 
 
 def test_an_ambiguous_delete_re_issue_tells_the_host_once(world, monkeypatch, notices):  # noqa: F811
     lock, stay, row, sent = world
+    _guest_email(stay)
     _delete_then(monkeypatch, lock, ttlock.TTLockError("timeout", kind="network"))
     door_codes._revoke_one(row)
     _revive(stay)
@@ -96,6 +108,7 @@ def test_a_failing_notice_does_not_stop_the_re_issue(world, monkeypatch, notices
 
 def test_the_card_and_the_mail_never_hold_the_pin(world, monkeypatch):  # noqa: F811
     lock, stay, row, sent = world
+    _guest_email(stay)
     monkeypatch.setattr(door_codes.mail_notify, "door_code_notice", REAL_NOTICE)
     db.execute("DELETE FROM email_outbox WHERE reservation_id = ?", (stay,))
     _revive(stay)
@@ -112,14 +125,39 @@ def test_the_card_and_the_mail_never_hold_the_pin(world, monkeypatch):  # noqa: 
     db.execute("DELETE FROM email_outbox WHERE reservation_id = ?", (stay,))
 
 
-@pytest.mark.parametrize("lang", ["en", "cs", "vi"])
-def test_the_copy_exists_in_every_host_language(lang):
-    for key in (
-        "notification.door_code_reissued.title",
-        "notification.door_code_reissued.detail",
-        "mail.door_code_notice.reissued.subject",
-        "mail.door_code_notice.reissued.body",
-    ):
-        text = host_i18n.translate(lang, key, property="Loft", date="11.09.2026")
-        assert text != key and "%(" not in text and "—" not in text
-    assert "Loft" in host_i18n.translate(lang, "notification.door_code_reissued.title", property="Loft", date="d")
+def test_a_failed_new_code_sends_no_notice(world, notices):  # noqa: F811
+    lock, stay, row, sent = world
+    _guest_email(stay)
+    _revive(stay)
+    db.execute("UPDATE door_code SET state = ? WHERE id = ?", (door_codes.ISSUED, row))
+    lock.fail_create = ttlock.TTLockError("cloud down", kind="transient")
+    door_codes._reissue_lost_pin(row, "pid-1", _owner(row))
+    assert _row(row)["state"] != door_codes.ISSUED and lock.made == 0
+    assert _open_cards(stay) == [] and notices == []
+
+
+def test_a_stay_without_a_guest_email_says_the_guest_sees_the_code_on_the_stay_page(world, notices):  # noqa: F811
+    lock, stay, row, sent = world
+    _revive(stay)
+    db.execute("UPDATE door_code SET state = ? WHERE id = ?", (door_codes.ISSUED, row))
+    door_codes._reissue_lost_pin(row, "pid-1", _owner(row))
+    cards = _open_cards(stay)
+    assert len(cards) == 1 and cards[0]["kind"] == KIND + "_no_email"
+    assert notices == [(row, "reissued_no_email")]
+
+
+@pytest.mark.parametrize("lang,mailed", [("en", "e-mail"), ("cs", "e-mailem"), ("vi", "e-mail")])
+def test_the_copy_exists_in_every_host_language(lang, mailed):
+    for suffix in ("", "_no_email"):
+        for key in (
+            f"notification.door_code_reissued{suffix}.title",
+            f"notification.door_code_reissued{suffix}.detail",
+            f"mail.door_code_notice.reissued{suffix}.subject",
+            f"mail.door_code_notice.reissued{suffix}.body",
+        ):
+            text = host_i18n.translate(lang, key, property="Loft", date="11.09.2026")
+            assert text != key and "%(" not in text and "—" not in text
+            if key.endswith((".detail", ".body")):
+                assert (mailed in text) == (suffix == ""), key
+    title = host_i18n.translate(lang, "notification.door_code_reissued.title", property="Loft", date="d")
+    assert "Loft" in title
