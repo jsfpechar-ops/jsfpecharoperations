@@ -1,39 +1,49 @@
-# 1134 report
+# 1134 report: billing_account.status has one writer
 
-Status: done. Blocked at step 4 (test-map.md over its 1200-token cap); orchestrator fixed it by folding the line into the glob `test_*deadline*.py` (same files, lint OK) and ran step 5: `TestCheckDeadlinesMatchesPython` and `TestWatchTitle` PASS on local PostgreSQL 16, golden fresh, 24 pytest passed.
+Status: review
+Branch: worktree-agent-a876c5278735e58a7 (not pushed, no PR, per run override)
 
-## 1. Diff stat (ab35038..HEAD, tail)
+## 1. Files changed (vs base 7b8ff2ae)
 
 ```
-8 files changed, 3962 insertions(+), 2 deletions(-)
+App/app/billing.py                              |  4 +-   (trial_pending: + "paused", with comment)
+App/app/billing_order.py                        |  7 +-   (raw UPDATE replaced by billing.set_status)
+App/tests/test_sm_billing_status.py             | 96 +++++  (new pin test, text from brief §4 step 3)
+docs/tasks/1134-billing-status-single-writer.md | 256 +++  (brief copied into worktree; Status: review)
+docs/tasks/1134-report.md                       (this file)
 ```
 
-Includes the brief itself (docs/tasks/1134-go-check-deadlines.md) from the brief commit.
+Commits: 1665c21f (step 1), 48519fc4 (step 2), 3c1a8879 (step 3), then this report commit (step 4).
 
-## 2. Commands
+## 2. Commands (last lines of output)
 
-Step 1, sha256: script `9f13c676f55c8ec2da42f50f0a682652de2529a200e3a4d331d5b58367fea64c` and golden `b48506b79d2d241835368495b1818cde4133e14c65be1718ea7cf6de52c4f422`, both match.
+- Step 1: `python -c "from app import billing; print(sorted(billing.TRANSITIONS['trial_pending']))"`
+  `['paused', 'trialing']`
+- Step 2: `grep -n "SET status" App/app/billing_order.py` produced no output (pass).
+- Step 3: `.venv/bin/python -m pytest tests/test_sm_billing_status.py -q --tb=short -x`
+  `11 passed in 0.28s`
+- Brief §6.2: `.venv/bin/python -m pytest tests/test_billing_*.py -q --tb=short -x`
+  `163 passed in 13.67s`
+- Brief §6.3: `python3 scripts/context_lint.py`
+  `context lint: OK` (only pre-existing WARN lines; none new from this change)
 
-Step 2, sha256: watch.go `e5e49fb8...ef87a` and watch_test.go `7c66c44e...7241d04`, both match. `gofmt -l` empty, `go vet ./...` clean, `go test ./internal/calendar/ -count=1` `ok` (DB test skipped locally, no UBYHOST_TEST_DATABASE_URL).
+## 3. Acceptance (§7)
 
-Step 3, sha256 of the Python test `e339110e...f8f9c` matches. `pytest tests/test_check_deadlines_golden.py tests/test_deadlines.py tests/test_deadlines_golden.py -q` `24 passed`.
-
-Step 4: the executor's one-line edit pushed test-map.md over its 1200-token cap (lint FAIL). Orchestrator fix: the Filing row now uses the glob `test_*deadline*.py` (matches the four old files and the new one). `context_lint.py` OK.
-
-Step 5 (orchestrator, local PostgreSQL 16): `TestCheckDeadlinesMatchesPython` and `TestWatchTitle` `--- PASS`, `ok`. Golden regenerates byte-identical.
-
-## 3. §7 acceptance
-
-All ticked.
+- [x] `TRANSITIONS["trial_pending"] == {"trialing", "paused"}`
+- [x] `grep "SET status" App/app/billing_order.py` prints nothing
+- [x] New test passes (11); billing tests pass (163)
+- [x] Only the §3 files changed (plus the brief copy and this report, see Deviations)
 
 ## 4. Deviations
 
-test-map.md edit uses a glob instead of adding the file name (cap).
+- `App/.venv` did not exist, and neither did `/home/user/jsfpecharoperations/App/.venv`. I created `App/.venv` in the worktree (gitignored) and installed `requirements.txt` and `requirements-dev.txt`. No repo file changed.
+- The brief was not in this worktree's HEAD. It exists only in commit b6b2e4d2 on branch `claude/clever-fermi-tudhnt`. I copied it into `docs/tasks/` so the status could be set and the report written. The copy is part of the branch diff, so the merge brings it in too.
+- Done: steps 1 to 3, checks, and report. Left: none.
 
-## 5. Review (Fable, full diff vs brief)
+## 5. Questions
 
-OK to mark ready; minor only. Follow-ups for a later brief: CI runs `go test ./...` without `-v`, so a skipped DB test would be silent (assert `--- PASS` in CI); seed one property name with diacritics, `&` and quotes for the `params` JSON; validation's `today` is the UTC date where Python uses `date.today()`, identical while the server clock is UTC.
+None new. The two open questions in the brief were answered by the owner (extra audit row accepted; trial_pending -> paused accepted for all `set_status` callers).
 
 ## 6. Owner steps left
 
-Merge when CI is green. Nothing calls CheckDeadlines yet (brief 1132 §10 E).
+1. Orchestrator: review the diff of `App/app/billing_order.py` and the `TRANSITIONS` change in `App/app/billing.py`, then open the PR and merge via `scripts/merge-pr-on-green.sh`.

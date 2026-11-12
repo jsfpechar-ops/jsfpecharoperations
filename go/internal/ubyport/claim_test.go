@@ -123,7 +123,7 @@ func TestClaimOnlyOnce(t *testing.T) {
 	pool := claimTestPool(t)
 	ctx := context.Background()
 	id := seedGuest(t, pool)
-	pairs := []ClaimPair{{GuestID: id, SubmitState: "pending"}}
+	pairs := []ClaimPair{{GuestID: id, SubmitState: "pending", Built: builtOf(t, pool, id)}}
 
 	tok, got, err := ClaimSendable(ctx, pool, pairs)
 	if err != nil {
@@ -153,7 +153,7 @@ func TestClaimReplacesStaleLease(t *testing.T) {
 		id, nowSeconds()-400); err != nil {
 		t.Fatal(err)
 	}
-	_, got, err := ClaimSendable(ctx, pool, []ClaimPair{{GuestID: id, SubmitState: "pending"}})
+	_, got, err := ClaimSendable(ctx, pool, []ClaimPair{{GuestID: id, SubmitState: "pending", Built: builtOf(t, pool, id)}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -177,9 +177,9 @@ func TestClaimSkipsRowsThatMovedOn(t *testing.T) {
 		t.Fatal(err)
 	}
 	pairs := []ClaimPair{
-		{GuestID: changed, SubmitState: "sent"}, // row is pending, the list said sent
-		{GuestID: archived, SubmitState: "pending"},
-		{GuestID: filed, SubmitState: "pending"},
+		{GuestID: changed, SubmitState: "sent", Built: builtOf(t, pool, changed)}, // row is pending, the list said sent
+		{GuestID: archived, SubmitState: "pending", Built: builtOf(t, pool, archived)},
+		{GuestID: filed, SubmitState: "pending", Built: builtOf(t, pool, filed)},
 		{GuestID: 9999999, SubmitState: "pending"}, // row is gone
 	}
 	_, got, err := ClaimSendable(ctx, pool, pairs)
@@ -196,11 +196,70 @@ func TestClaimSkipsRowsThatMovedOn(t *testing.T) {
 	}
 }
 
+func builtOf(t *testing.T, pool *pgxpool.Pool, id int64) *ClaimBuilt {
+	t.Helper()
+	var b ClaimBuilt
+	if err := pool.QueryRow(context.Background(),
+		`SELECT COALESCE(g.stay_from,''), COALESCE(g.stay_to,''), COALESCE(g.updated_at,''),
+		        COALESCE(r.date_from,''), COALESCE(r.date_to,''), COALESCE(r.updated_at,'')
+		   FROM guest g JOIN reservation r ON r.id = g.reservation_id WHERE g.id = $1`, id,
+	).Scan(&b.StayFrom, &b.StayTo, &b.GuestUpdated, &b.DateFrom, &b.DateTo, &b.ResUpdated); err != nil {
+		t.Fatal(err)
+	}
+	return &b
+}
+
+func TestClaimDropsGuestWhoseWindowMovedAfterBuild(t *testing.T) {
+	pool := claimTestPool(t)
+	ctx := context.Background()
+	id := seedGuest(t, pool)
+	pairs := []ClaimPair{{GuestID: id, SubmitState: "pending", Built: builtOf(t, pool, id)}}
+	if _, err := pool.Exec(ctx,
+		`UPDATE reservation SET date_to = '2026-12-09' WHERE id = (SELECT reservation_id FROM guest WHERE id = $1)`, id); err != nil {
+		t.Fatal(err)
+	}
+	_, got, err := ClaimSendable(ctx, pool, pairs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 0 || claimCount(t, pool, id) != 0 {
+		t.Fatalf("moved window: claimed %d pairs, %d claim rows", len(got), claimCount(t, pool, id))
+	}
+}
+
+func TestClaimDropsPairWithoutBuiltValues(t *testing.T) {
+	pool := claimTestPool(t)
+	ctx := context.Background()
+	id := seedGuest(t, pool)
+	_, got, err := ClaimSendable(ctx, pool, []ClaimPair{{GuestID: id, SubmitState: "pending"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 0 || claimCount(t, pool, id) != 0 {
+		t.Fatalf("nil Built: claimed %d pairs, %d claim rows", len(got), claimCount(t, pool, id))
+	}
+}
+
+func TestClaimKeepsGuestWhoseBuiltValuesStillMatch(t *testing.T) {
+	pool := claimTestPool(t)
+	ctx := context.Background()
+	id := seedGuest(t, pool)
+	tok, got, err := ClaimSendable(ctx, pool,
+		[]ClaimPair{{GuestID: id, SubmitState: "pending", Built: builtOf(t, pool, id)}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 {
+		t.Fatalf("unchanged guest: claimed %d pairs", len(got))
+	}
+	_ = ReleaseSendableClaim(ctx, pool, tok)
+}
+
 func TestReleaseFreesGuest(t *testing.T) {
 	pool := claimTestPool(t)
 	ctx := context.Background()
 	id := seedGuest(t, pool)
-	pairs := []ClaimPair{{GuestID: id, SubmitState: "pending"}}
+	pairs := []ClaimPair{{GuestID: id, SubmitState: "pending", Built: builtOf(t, pool, id)}}
 	tok, _, err := ClaimSendable(ctx, pool, pairs)
 	if err != nil {
 		t.Fatal(err)
@@ -214,5 +273,143 @@ func TestReleaseFreesGuest(t *testing.T) {
 	}
 	if len(got) != 1 {
 		t.Fatalf("guest was not freed by release: got %d pairs", len(got))
+	}
+}
+
+func claimedAt(t *testing.T, pool *pgxpool.Pool, id int64) float64 {
+	t.Helper()
+	var v float64
+	if err := pool.QueryRow(context.Background(),
+		`SELECT claimed_at FROM submission_claim WHERE guest_id = $1`, id).Scan(&v); err != nil {
+		t.Fatal(err)
+	}
+	return v
+}
+
+func TestRefreshRenewsOwnClaimAndNeverResurrects(t *testing.T) {
+	pool := claimTestPool(t)
+	ctx := context.Background()
+	id := seedGuest(t, pool)
+	pairs := []ClaimPair{{GuestID: id, SubmitState: "pending", Built: builtOf(t, pool, id)}}
+	tok, got, err := ClaimSendable(ctx, pool, pairs)
+	if err != nil || len(got) != 1 {
+		t.Fatalf("claim: %v, %d pairs", err, len(got))
+	}
+	if _, err := pool.Exec(ctx, `UPDATE submission_claim SET claimed_at = claimed_at - 240 WHERE guest_id = $1`, id); err != nil {
+		t.Fatal(err)
+	}
+	if n, err := RefreshSendableClaim(ctx, pool, tok); err != nil || n != 1 {
+		t.Fatalf("refresh own claim: %d, %v", n, err)
+	}
+	if age := nowSeconds() - claimedAt(t, pool, id); age > 60 {
+		t.Fatalf("claim not renewed, age %.0f s", age)
+	}
+	if n, err := RefreshSendableClaim(ctx, pool, "someone-else"); err != nil || n != 0 {
+		t.Fatalf("refresh foreign token: %d, %v", n, err)
+	}
+	if err := ReleaseSendableClaim(ctx, pool, tok); err != nil {
+		t.Fatal(err)
+	}
+	if n, err := RefreshSendableClaim(ctx, pool, tok); err != nil || n != 0 {
+		t.Fatalf("refresh released claim: %d, %v", n, err)
+	}
+	if c := claimCount(t, pool, id); c != 0 {
+		t.Fatalf("released claim came back: %d rows", c)
+	}
+}
+
+func TestSendClaimedBatchesRefreshesBeforeEachBatchAndStopsWhenLost(t *testing.T) {
+	pool := claimTestPool(t)
+	ctx := context.Background()
+	id := seedGuest(t, pool)
+	pairs := []ClaimPair{{GuestID: id, SubmitState: "pending", Built: builtOf(t, pool, id)}}
+	tok, _, err := ClaimSendable(ctx, pool, pairs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var ages []float64
+	send := func([]BatchPair) (BatchResult, error) {
+		ages = append(ages, nowSeconds()-claimedAt(t, pool, id))
+		// Pretend this batch took four minutes (still inside the 5 minute TTL).
+		if _, err := pool.Exec(ctx, `UPDATE submission_claim SET claimed_at = claimed_at - 240 WHERE guest_id = $1`, id); err != nil {
+			t.Fatal(err)
+		}
+		return BatchResult{Submitted: 1}, nil
+	}
+	results, err := sendClaimedBatches(ctx, pool, tok, 1, make([]BatchPair, 3), 1, send)
+	if err != nil || len(results) != 3 {
+		t.Fatalf("results %d, err %v", len(results), err)
+	}
+	for i, age := range ages {
+		if age > 60 {
+			t.Fatalf("batch %d ran under a stale claim, age %.0f s", i, age)
+		}
+	}
+
+	if err := ReleaseSendableClaim(ctx, pool, tok); err != nil {
+		t.Fatal(err)
+	}
+	called := 0
+	results, err = sendClaimedBatches(ctx, pool, tok, 1, make([]BatchPair, 2), 1,
+		func([]BatchPair) (BatchResult, error) { called++; return BatchResult{}, nil })
+	if err != nil || len(results) != 0 || called != 0 {
+		t.Fatalf("lost claim: results %d, called %d, err %v", len(results), called, err)
+	}
+	if c := claimCount(t, pool, id); c != 0 {
+		t.Fatalf("lost claim was resurrected: %d rows", c)
+	}
+}
+
+func TestExpiredClaimIsNotRefreshedAndNoBatchIsSent(t *testing.T) {
+	pool := claimTestPool(t)
+	ctx := context.Background()
+	id := seedGuest(t, pool)
+	pairs := []ClaimPair{{GuestID: id, SubmitState: "pending", Built: builtOf(t, pool, id)}}
+	tok, _, err := ClaimSendable(ctx, pool, pairs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	stale := nowSeconds() - SubmissionClaimTTL.Seconds() - 5
+	if _, err := pool.Exec(ctx, `UPDATE submission_claim SET claimed_at = $1 WHERE guest_id = $2`, stale, id); err != nil {
+		t.Fatal(err)
+	}
+	if n, err := RefreshSendableClaim(ctx, pool, tok); err != nil || n != 0 {
+		t.Fatalf("refresh of an expired claim: %d, %v", n, err)
+	}
+	called := 0
+	results, err := sendClaimedBatches(ctx, pool, tok, 1, make([]BatchPair, 2), 1,
+		func([]BatchPair) (BatchResult, error) { called++; return BatchResult{}, nil })
+	if err != nil || len(results) != 0 || called != 0 {
+		t.Fatalf("expired claim: results %d, called %d, err %v", len(results), called, err)
+	}
+	if got := claimedAt(t, pool, id); got != stale {
+		t.Fatalf("expired claim was revived: claimed_at %.0f, want %.0f", got, stale)
+	}
+}
+
+func TestClaimMissingOneGuestRowIsTreatedAsLost(t *testing.T) {
+	pool := claimTestPool(t)
+	ctx := context.Background()
+	a := seedGuest(t, pool)
+	b := seedGuest(t, pool)
+	pairs := []ClaimPair{
+		{GuestID: a, SubmitState: "pending", Built: builtOf(t, pool, a)},
+		{GuestID: b, SubmitState: "pending", Built: builtOf(t, pool, b)},
+	}
+	tok, got, err := ClaimSendable(ctx, pool, pairs)
+	if err != nil || len(got) != 2 {
+		t.Fatalf("claim: %v, %d pairs", err, len(got))
+	}
+	if _, err := pool.Exec(ctx, `DELETE FROM submission_claim WHERE guest_id = $1`, b); err != nil {
+		t.Fatal(err)
+	}
+	called := 0
+	results, err := sendClaimedBatches(ctx, pool, tok, 2, make([]BatchPair, 2), 1,
+		func([]BatchPair) (BatchResult, error) { called++; return BatchResult{}, nil })
+	if err != nil || len(results) != 0 || called != 0 {
+		t.Fatalf("partly missing claim: results %d, called %d, err %v", len(results), called, err)
+	}
+	if err := ReleaseSendableClaim(ctx, pool, tok); err != nil {
+		t.Fatal(err)
 	}
 }

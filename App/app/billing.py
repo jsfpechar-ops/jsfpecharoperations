@@ -178,6 +178,34 @@ def set_status(owner_user_id: int, new: str, *, actor: str = "system") -> bool:
     return True
 
 
+def operator_pause(owner_user_id: int, *, actor: str) -> bool:
+    """trial_pending/trialing -> paused, for place_for_operator ONLY.
+
+    trial_pending -> paused is the one status move outside TRANSITIONS (trialing -> paused
+    is in it; owner decision 2026-11-12): an operator
+    assigning a plan to a legacy host has no trial left to run, but the operator status
+    form and every set_status caller must still refuse trial_pending -> paused, and the
+    Go table has no such move. One guarded UPDATE, audited only when a row changed.
+    False means already paused or another state (place() then decides).
+    """
+    with db.immediate() as cur:
+        db.lock_key(cur, "billing_account", owner_user_id)
+        cur.execute("SELECT status FROM billing_account WHERE owner_user_id = ?", (owner_user_id,))
+        row = cur.fetchone()
+        if row is None:
+            return False
+        old = row["status"]
+        cur.execute(
+            "UPDATE billing_account SET status = 'paused', updated_at = ? "
+            "WHERE owner_user_id = ? AND status IN ('trial_pending', 'trialing')",
+            (db.utcnow(), owner_user_id),
+        )
+        changed = cur.rowcount == 1
+    if changed:
+        db.audit("billing_status", f"{old}->paused", actor=actor, owner_user_id=owner_user_id)
+    return changed
+
+
 def apartment_count(owner_user_id: int) -> int:
     """Apartments that count for billing: the host's active ones."""
     row = db.query_one(
