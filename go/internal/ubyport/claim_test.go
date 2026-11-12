@@ -413,3 +413,34 @@ func TestClaimMissingOneGuestRowIsTreatedAsLost(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestClaimedAtIsStampedAtInsertNotBeforeLockWaits(t *testing.T) {
+	pool := claimTestPool(t)
+	ctx := context.Background()
+	id := seedGuest(t, pool)
+	pairs := []ClaimPair{{GuestID: id, SubmitState: "pending", Built: builtOf(t, pool, id)}}
+
+	// Fake clock: every read is 100 s later than the one before, as if the
+	// lock waits between the first read and the INSERT took 100 s each.
+	real := nowSeconds
+	start := real()
+	reads := 0
+	nowSeconds = func() float64 {
+		reads++
+		return start + float64(reads-1)*100
+	}
+	t.Cleanup(func() { nowSeconds = real })
+
+	_, got, err := ClaimSendable(ctx, pool, pairs)
+	nowSeconds = real
+	if err != nil || len(got) != 1 {
+		t.Fatalf("claim: %v, %d pairs", err, len(got))
+	}
+	if reads < 2 {
+		t.Fatalf("clock read %d time(s); the INSERT must read it again", reads)
+	}
+	// Read 1 is the stale-claim DELETE (start), read 2 is the INSERT (start+100).
+	if at := claimedAt(t, pool, id); at < start+99 {
+		t.Fatalf("claimed_at %.0f is %.0f s after the first read, want about 100: stamped before the lock waits", at, at-start)
+	}
+}
