@@ -1667,9 +1667,11 @@ def claim_sendable(
             (time.time() - SUBMISSION_CLAIM_TTL_SECONDS,),
         )
         for guest_id in sorted({g["id"] for g, _r in pairs}): db.lock_key(cur, "guest", guest_id)
-        for guest, _reservation in pairs:
+        for guest, reservation in pairs:
             cur.execute(
-                "SELECT submit_state, archived_at, manual_filed_at FROM guest WHERE id = ?",
+                "SELECT g.submit_state, g.archived_at, g.manual_filed_at, g.stay_from, g.stay_to, "
+                "g.updated_at AS g_updated_at, r.date_from, r.date_to, r.updated_at AS r_updated_at "
+                "FROM guest g JOIN reservation r ON r.id = g.reservation_id WHERE g.id = ?",
                 (guest["id"],),
             )
             row = cur.fetchone()
@@ -1683,6 +1685,15 @@ def claim_sendable(
                 or row["archived_at"]
                 or row["manual_filed_at"]
                 or row["submit_state"] != guest["submit_state"]
+                # The payload was built from these. A moved stay window or an
+                # edit since then must not be filed under the old values: drop
+                # the pair, the next sweep rebuilds it.
+                or (row["stay_from"] or "") != (guest["stay_from"] or "")
+                or (row["stay_to"] or "") != (guest["stay_to"] or "")
+                or (row["g_updated_at"] or "") != (guest["updated_at"] or "")
+                or (row["date_from"] or "") != (reservation["date_from"] or "")
+                or (row["date_to"] or "") != (reservation["date_to"] or "")
+                or (row["r_updated_at"] or "") != (reservation["updated_at"] or "")
             ):
                 continue
             cur.execute(
@@ -1697,6 +1708,51 @@ def claim_sendable(
 
 def release_sendable_claim(token: str) -> None:
     db.execute("DELETE FROM submission_claim WHERE claim_token = ?", (token,))
+
+
+def refresh_sendable_claim(token: str, expected: int) -> bool:
+    """Renew a claim this worker still holds; False when it is lost.
+
+    One UPDATE keyed by the claim token AND the live cutoff the guards and
+    ``claim_sendable`` use (``claimed_at >= now - TTL``): a stale claim is not
+    revived, because by then the iCal guard may have moved the reservation and
+    the in-memory pairs are out of date. It is renewed only when every one of
+    its ``expected`` guest rows was renewed; a released, taken-over, stale or
+    partly deleted claim is lost. Called before each batch of a long send.
+    """
+    now = time.time()
+    renewed = db.execute(
+        "UPDATE submission_claim SET claimed_at = ? "
+        "WHERE claim_token = ? AND claimed_at >= ?",
+        (now, token, now - SUBMISSION_CLAIM_TTL_SECONDS),
+    )
+    return renewed == expected
+
+
+def _send_claimed_batches(
+    apartment, pairs: List[Tuple[Any, Any]], claim_token: str, *, mode: str, env: Optional[str]
+) -> List[Dict[str, Any]]:
+    """Send ``pairs`` in batches under one claim, renewing it before each batch.
+
+    A lost claim (released, or taken over after a stale TTL) stops the send:
+    the remaining guests are left for the next sweep.
+    """
+    limit = config.UBYPORT_MAX_BATCH
+    results: List[Dict[str, Any]] = []
+    guest_count = len({pair[0]["id"] for pair in pairs})
+    for start in range(0, len(pairs), limit):
+        if not refresh_sendable_claim(claim_token, guest_count):
+            log.warning(
+                "submission_claim_lost apartment_id=%s sent_batches=%s remaining=%s",
+                apartment["id"],
+                len(results),
+                len(pairs) - start,
+            )
+            break
+        results.append(
+            submit_batch(apartment, pairs[start:start + limit], mode=mode, env=env)
+        )
+    return results
 
 
 def apartment_in_doubt(apartment_id: int) -> bool:
@@ -2329,18 +2385,9 @@ def submit_for_apartment(
     if not pairs:
         return []
     try:
-        limit = config.UBYPORT_MAX_BATCH
-        results = []
-        for start in range(0, len(pairs), limit):
-            results.append(
-                submit_batch(
-                    apartment,
-                    pairs[start:start + limit],
-                    mode=mode,
-                    env=env,
-                )
-            )
-        return results
+        return _send_claimed_batches(
+            apartment, pairs, claim_token, mode=mode, env=env
+        )
     finally:
         release_sendable_claim(claim_token)
 

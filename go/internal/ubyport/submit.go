@@ -28,6 +28,13 @@ type BatchPair struct {
 	Reservation Reservation
 	Outcome     OutcomeGuest
 	Source      string
+	Built       ClaimBuilt
+}
+
+// ClaimBuilt is what a payload was built from. ClaimSendable compares it with
+// the rows it re-reads under the lock (NULL counts as empty).
+type ClaimBuilt struct {
+	StayFrom, StayTo, DateFrom, DateTo, GuestUpdated, ResUpdated string
 }
 
 // BatchDeps holds the environment SubmitBatch needs. Endpoint is config.endpoint_for(env)

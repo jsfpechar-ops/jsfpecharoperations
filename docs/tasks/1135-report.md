@@ -1,47 +1,63 @@
-# 1135 report: Go posthog job
+# 1135 report (executor run, Status: blocked)
 
-Status: review
+Status: blocked. Steps 3 and 4 are applied and their tests pass. Blocked only on `context_lint.py` (see Deviations).
 
-## 1. Diff stat (since brief commit)
+Continuation run (1135-cont-1): step 3 is commit `ecf5093c`, step 4 is commit `387ee783`.
 
+- `App/app/door_codes.py` (step 3): reactivated DELETE is now `WHERE id = ? AND state = ?` with a `removed` rowcount check before the audit.
+- `App/tests/test_sm_door_code_state.py` (step 4): line 39 pin changed from `ANY` to `("revoke_failed", "revoke_pending")`.
+- `pytest tests/test_door_code_cancel_guard.py`: `7 passed`.
+- `pytest tests/test_sm_door_code_state.py`: `11 passed`.
+- `pytest tests/test_door_code*.py tests/test_ttlock*.py tests/test_smart_locks_page.py -x -rs`: `243 passed, 2 skipped` (both skips are browser files, playwright not installed).
+- `pytest tests/test_sm_reservation_claim_state.py tests/test_claim_*.py -rs`: `118 passed`.
+- `python3 scripts/context_lint.py`: FAIL, `ERROR docs/tasks/1135-cont-1.md: missing section '## 2. Context'` (also `## 5`, `## 6`, `## 7`, `## 9`). Brief 1135-cont-1 is not in the brief template. Not fixed here: that file is outside §3.
+
+Branch: `worktree-agent-a2b966eda3e24be90`. Last commit: `d38b1999` (`1135 step 2`). Step 1 is `0ab5daf6`.
+
+## Files changed
+
+- `App/tests/test_door_code_cancel_guard.py`: step 1, three tests appended.
+- `App/app/door_codes.py`: step 2, `_keep_issued` UPDATE guarded with `AND state IN (?, ?)` and the comment added.
+- The brief was not in this worktree. It exists only in commit `3020e7ea` on `claude/clever-fermi-tudhnt`, so its `Status:` line was not changed here.
+
+## Commands (last 5 lines)
+
+Step 1 (before the fix), `pytest tests/test_door_code_cancel_guard.py -q --tb=short`:
 ```
- docs/ENVIRONMENT.md              |   2 +-
- go/cmd/ubyhost-web/main.go       |  10 +-
- go/internal/posthog/sync.go      | 415 +++++++++++++++++++++++++++++++++++++++
- go/internal/posthog/sync_test.go | 324 ++++++++++++++++++++++++++++++
- 4 files changed, 749 insertions(+), 2 deletions(-)
+    assert _state(row) == "revoked"
+E   AssertionError: assert 'issued' == 'revoked'
+...
+FAILED tests/test_door_code_cancel_guard.py::test_reactivated_delete_leaves_a_row_that_moved_on
+2 failed, 5 passed in 0.50s
+```
+Matches the brief: the two named tests fail.
+
+Step 2, `pytest tests/test_door_code_cancel_guard.py -q --tb=short -k keep_issued`:
+```
+..                                                                       [100%]
+2 passed, 5 deselected in 0.55s
 ```
 
-## 2. Command results
+## §7 acceptance
 
-- gofmt, go vet ./..., go test ./internal/posthog/ ./cmd/ubyhost-web/ -count=1: `ok` for both packages.
-- Eight targeted tests: all `--- PASS` (EventUUID, ApiHost, ConfigFromEnv, StagesToSend, PersonSet, MonthStarts, CapturePayload, SyncOff).
-- `go build` of ubyhost-web: exit 0.
-- `python3 scripts/context_lint.py`: `context lint: OK`.
-- `TestSyncEndToEnd`: skipped locally (no `UBYHOST_TEST_DATABASE_URL`); runs in CI.
+- [x] Step 1 shows the two named tests failing before the fix.
+- [x] Steps 3 and 4 pass.
+- [x] Door-code and claim test-map rows pass (0 failed).
+- [ ] `context lint: OK` not reached (brief 1135-cont-1 format, see Deviations).
+- [x] `git diff b8d4a0f6 HEAD --stat` shows only the two §3 App files for steps 3-4.
+- [x] `TRANSITIONS` not touched.
 
-## 3. Acceptance (section 7)
+## Deviations
 
-- [x] First §6 command prints two `ok` lines.
-- [x] `go.mod`, `go.sum`, `App/` unchanged (diff prints nothing).
-- [x] `grep -c '"posthog"' go/cmd/ubyhost-web/main.go` = 2.
-- [x] No e-mail in slog lines in sync.go.
-- [x] context_lint passes.
-- [x] Only §3 paths changed (diff above).
-- [x] Commits "1135 step 1" to "1135 step 5"; nothing pushed.
+- `App/.venv` did not exist in the worktree or in the main checkout. I created it with `python3 -m venv` and installed `App/requirements.txt` and `App/requirements-dev.txt`. It is git-ignored.
+- Tool-call budget was spent on environment setup (venv, dependencies, brief lookup) and on commands the shell refused (compound `cd` chains), so step 3 and step 4 were not reached.
 
-## 4. Deviations
+## Questions
 
-None to code. Done: steps 0 to 5 (step 0 anchors all matched).
+- Where should the brief live for execution? It is only on `claude/clever-fermi-tudhnt`, not on `main`.
 
-## 5. Questions
+## Owner or orchestrator steps left
 
-None.
-
-## 6. Follow-up
-
-Add a test-map row "Go module (`go/`)" in a later brief.
-
-## 7. Owner steps left
-
-Per brief "Owner steps": review and merge the PR via `scripts/merge-pr-on-green.sh`; switch only after a healthy deploy (add `posthog` to `UBYHOST_JOB_QUEUE_KINDS` and `UBYHOST_GO_JOB_KINDS` in `/opt/ubyhost/deploy/lightsail/.env`); then `docker compose up -d` from `/opt/ubyhost/deploy/lightsail`.
+1. Apply step 3 (`DELETE ... AND state = ?` with `removed` rowcount check in `_handle_cancellations`) and step 4 (test pin at `App/tests/test_sm_door_code_state.py` line 39) from the brief.
+2. Run the test-map door-code rows and `python3 scripts/context_lint.py`.
+3. Then set the brief `Status: review` and open the PR (the orchestrator does this per the run overrides).

@@ -8,7 +8,7 @@
 |---|---|---|---|---|
 | K-DOM01 | Pending | App URLs | CI + phone check | owner |
 | K-F01 | High open | reporting.py:1356-1413, ubyport/client.py:166 | Non-401 4xx retried each sweep, uncapped | P A28-29 |
-| K-F02 | High open HR | icalsync.py date-move ~498 | Date move ignores submission_claim; may move guest mid-send | P A24 |
+| K-F02 | High review HR | icalsync.py, go/internal/ical | Date move/cancel ignored submission_claim. Fixed in PR #933 (1133, 1136 locks, 1138 claim re-check, 1139 cancel); close on merge | P A24 |
 | K-F03 | Med open HR | icalsync.py ~805-830 | Lone vanished future booking stays "suspect" forever | P A19 |
 | K-F04 | Med open | icalsync.py | Duplicate feeds: two stays, one overdue forever | P A22 |
 | K-F05 | Med open | icalsync.py, routes/admin.py | Manual and scheduled sync clash on UNIQUE; loser marked error | P A23 |
@@ -89,10 +89,14 @@
 
 - K-HOUSEBOOK: house book Details popover unreachable at 390/768 (zero-size trigger).
 - K-FLAKY-DC: flaky `test_door_codes_safeguards::test_an_undeleted_old_code_after_a_move_tells_the_host` (test-postgres-full); passed on rerun.
+- K-E2E-ORDER: test_endtoend.py fails 13 after the 1142 §6 file mix; passes alone, in CI, same on main.
 - K-GUEST-DATES: es/fr guest dates row wraps at 375, 360 px.
 - K-1091D: `test_1091_d` name no longer matches its test.
 - K-TAP43: local only (CI green): `test_design_guardrails_browser.py` guest-new 390 "Cancel" tap target 43 < 44.
 - K-H0: from tasks/1094-report.md: `checkin_hour` NULL can raise TypeError in door_codes.py (~179, 436); `/save` with a non-owned guest_id becomes a new person; `guest_form_saved` audit has no field names.
-- K-SM1 (briefs 1105-1110 "Open questions", not reproduced): unguarded read-then-write races on `submission.state` (recovery), `reservation_claim.state` (`start_claim`), `door_code.state` (`_handle_cancellations`); most door/cleaning code writes have no state guard; a `guide_import` row stays `running` if its worker dies.
+- K-F19 (1138): `passport_photos.py:299`, `stay_fees.py:1164` skip `updated_at`, which the claim re-check uses.
+- K-F20 (1139): `outcome_unknown` without a live claim does not defer an iCal cancel. Owner.
+- K-F21 (1142): Go claim.go:48 stamps claimed_at before lock waits; first refresh may fail (safe, delays filing).
 - K-SM2 (brief 1105): OPERATIONS.md submit_state section disagrees with the code in 9 places.
 - K-SM3 (brief 1111): rules.md lines 37, 44 still say production is SQLite, migrations frozen at 0033.
+- K-DC-LOST (1141): revoke lost race only audits; row may show issued with the PIN deleted.

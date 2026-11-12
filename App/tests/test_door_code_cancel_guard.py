@@ -215,3 +215,124 @@ def test_an_issued_row_of_a_cancelled_stay_goes_to_revoke_pending(monkeypatch):
     door_codes._handle_cancellations(db.utcnow())
 
     assert _state(row_id) == door_codes.REVOKE_PENDING
+
+
+def test_keep_issued_does_not_overwrite_a_revoked_row():
+    apartment, stay = _cancelled_stay()
+    row = _code(apartment, stay, "revoked", valid_to="2099-01-01T00:00:00+00:00")
+    door_codes._keep_issued(row, db.utcnow())
+    assert _state(row) == "revoked"
+
+
+def test_keep_issued_still_restores_a_revoke_pending_row():
+    apartment, stay = _cancelled_stay()
+    row = _code(apartment, stay, "revoke_pending", valid_to="2099-01-01T00:00:00+00:00")
+    door_codes._keep_issued(row, db.utcnow())
+    assert _state(row) == "issued"
+
+
+def test_reactivated_delete_leaves_a_row_that_moved_on(monkeypatch):
+    apartment, stay = _cancelled_stay()
+    db.execute("UPDATE reservation SET status = 'active' WHERE id = ?", (stay,))
+    row = _code(apartment, stay, "revoked")
+    real_query = db.query
+    seen: dict = {}
+
+    def query(sql, params=()):
+        rows = real_query(sql, params)
+        if not seen and "r.status = 'active' AND r.archived_at IS NULL" in sql and params == ("revoked",):
+            seen["moved"] = db.execute(
+                "UPDATE door_code SET state = 'pending' WHERE id = ?", (row,)
+            )
+        return rows
+
+    monkeypatch.setattr(db, "query", query)
+    door_codes._handle_cancellations(db.utcnow())
+    assert seen.get("moved") == 1
+    assert _state(row) == "pending"
+
+
+def _aborted_audits() -> int:
+    return db.query_one(
+        "SELECT COUNT(*) AS n FROM audit WHERE action = ?", ("door_code_revoke_aborted",)
+    )["n"]
+
+
+def _revive(stay: int) -> None:
+    db.execute("UPDATE reservation SET status = 'active' WHERE id = ?", (stay,))
+
+
+def test_zero_row_keep_writes_no_aborted_audit(monkeypatch):
+    monkeypatch.setattr(door_codes, "_revoke_one", lambda row_id: None)
+    apartment, stay = _cancelled_stay()
+    _revive(stay)
+    row = _code(apartment, stay, door_codes.REVOKE_PENDING, valid_to="2099-01-01T00:00:00+00:00")
+    before = _aborted_audits()
+    monkeypatch.setattr(door_codes, "_keep_issued", lambda *a, **k: False)
+    door_codes._handle_cancellations(db.utcnow())
+    assert _aborted_audits() == before
+    assert _state(row) == door_codes.REVOKE_PENDING
+
+
+def test_a_row_that_is_kept_writes_the_aborted_audit(monkeypatch):
+    monkeypatch.setattr(door_codes, "_revoke_one", lambda row_id: None)
+    apartment, stay = _cancelled_stay()
+    _revive(stay)
+    row = _code(apartment, stay, door_codes.REVOKE_PENDING, valid_to="2099-01-01T00:00:00+00:00")
+    before = _aborted_audits()
+    door_codes._handle_cancellations(db.utcnow())
+    assert _state(row) == door_codes.ISSUED
+    assert _aborted_audits() == before + 1
+
+
+def test_leased_revoke_is_not_overwritten_by_the_revived_loop(monkeypatch):
+    monkeypatch.setattr(door_codes, "_revoke_one", lambda row_id: None)
+    apartment, stay = _cancelled_stay()
+    _revive(stay)
+    row = _code(apartment, stay, door_codes.REVOKE_PENDING, valid_to="2099-01-01T00:00:00+00:00")
+    db.execute("UPDATE door_code SET claimed_at = ? WHERE id = ?", (door_codes._iso(door_codes._now()), row))
+    before = _aborted_audits()
+    door_codes._handle_cancellations(db.utcnow())
+    assert _state(row) == door_codes.REVOKE_PENDING
+    assert _aborted_audits() == before
+    # An expired lease no longer protects the row.
+    old = door_codes._iso(door_codes._now() - timedelta(minutes=door_codes.LEASE_MINUTES + 1))
+    db.execute("UPDATE door_code SET claimed_at = ? WHERE id = ?", (old, row))
+    door_codes._handle_cancellations(db.utcnow())
+    assert _state(row) == door_codes.ISSUED
+
+
+def _audits(action: str) -> int:
+    return db.query_one("SELECT COUNT(*) AS n FROM audit WHERE action = ?", (action,))["n"]
+
+
+def _revoke_with_delete(monkeypatch, during_delete):
+    apartment, stay = _cancelled_stay()
+    row = _code(apartment, stay, door_codes.REVOKE_PENDING, valid_to="2099-01-01T00:00:00+00:00")
+    mails: list = []
+    monkeypatch.setattr(door_codes.ttlock, "account_for", lambda owner: {"id": 1, "status": "ok"})
+    monkeypatch.setattr(door_codes.ttlock, "delete_code", lambda *a, **k: during_delete(row))
+    monkeypatch.setattr(door_codes.mail_notify, "door_code_notice", lambda *a, **k: mails.append(a))
+    door_codes._revoke_one(row)
+    return row, mails
+
+
+def test_revoke_that_lost_the_row_during_delete_writes_no_revoked_audit_and_no_mail(monkeypatch):
+    revoked, lost = _audits("door_code_revoked"), _audits("door_code_revoke_lost_race")
+    row, mails = _revoke_with_delete(
+        monkeypatch,
+        lambda r: db.execute("UPDATE door_code SET state = ?, claimed_at = NULL WHERE id = ?", (door_codes.ISSUED, r)),
+    )
+    assert _state(row) == door_codes.ISSUED
+    assert mails == []
+    assert _audits("door_code_revoked") == revoked
+    assert _audits("door_code_revoke_lost_race") == lost + 1
+
+
+def test_revoke_that_keeps_the_row_still_audits_and_mails(monkeypatch):
+    revoked, lost = _audits("door_code_revoked"), _audits("door_code_revoke_lost_race")
+    row, mails = _revoke_with_delete(monkeypatch, lambda r: None)
+    assert _state(row) == door_codes.REVOKED
+    assert [m[1] for m in mails] == ["cancelled_deleted"]
+    assert _audits("door_code_revoked") == revoked + 1
+    assert _audits("door_code_revoke_lost_race") == lost
