@@ -97,3 +97,4 @@
 - K-F20 (1139): `outcome_unknown` without a live claim does not defer an iCal cancel. Owner.
 - K-SM2 (brief 1105): OPERATIONS.md submit_state section disagrees with the code in 9 places.
 - K-SM3 (brief 1111): rules.md lines 37, 44 still say production is SQLite, migrations frozen at 0033.
+- K-DC-LOST (1141): revoke lost race writes only `door_code_revoke_lost_race` audit; row may show `issued` while the PIN is deleted. Nothing reads it. Owner: re-issue or notify.
