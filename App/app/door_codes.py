@@ -77,7 +77,7 @@ PERIOD_TAKEN = "period_taken"
 PERIOD_SHARED = "period_shared"
 PERIOD_TAKEN_RETRY_MINUTES = (1, 5)
 PERIOD_TAKEN_MAX_ATTEMPTS = 4
-GATEWAY_RETRY_KINDS = ("offline", "transient", "network", "rate", "budget")
+GATEWAY_RETRY_KINDS = ("offline", "transient", "network", "rate", "budget", ttlock.CODE_MISSING)
 LEASE_MINUTES = 2
 # 1155: a revived row whose delete may have run is checked on the lock before it is shown.
 PIN_PRESENT, PIN_GONE, PIN_UNKNOWN = "present", "gone", "unknown"
@@ -894,12 +894,13 @@ def _revive_one(item, now_iso: str, held_claim: str | None = None) -> bool:
 def _already_gone(exc: "ttlock.TTLockError", row, owner_user_id: int) -> bool:
     """A refused delete that may only mean "that code no longer exists".
 
-    TTLock answers a delete of a missing code with an errcode this repo does not map
-    (the not-found number is not recorded, so none is guessed). Only such an unmapped
-    errcode, never a network error or a mapped one, costs one list call; the code counts
+    TTLock answers a delete of a missing code with -1007 (kind code_missing) or with an
+    errcode this repo does not map. Only those two, never a network error or any other
+    mapped errcode (offline, permission, config, ...), cost one list call; the code counts
     as deleted only when the lock confirms it is gone.
     """
-    if exc.code is None or exc.code in ttlock.ERROR_KINDS:
+    mapped = ttlock.ERROR_KINDS.get(exc.code)
+    if exc.code is None or mapped not in (None, ttlock.CODE_MISSING):
         return False
     return _lock_code_state(row, owner_user_id) == PIN_GONE
 
@@ -1008,6 +1009,7 @@ def _revoke_one(row_id: int) -> None:
             mail_notify.door_code_notice(row_id, "cancelled_not_deleted")
         return
     attempts = int(row["attempts"])
+    via = ""
     try:
         try:
             ttlock.delete_code(
@@ -1018,6 +1020,8 @@ def _revoke_one(row_id: int) -> None:
         except ttlock.TTLockError as exc:
             if not _already_gone(exc, row, apartment["owner_user_id"]):
                 raise
+            via = f" via=gone:{exc.code}"
+            log.warning("DOOR_CODE_PROBLEM stage=delete_gone door_code=%s errcode=%s", row_id, exc.code)
         if db.execute(
             "UPDATE door_code SET state = ?, revoked_at = ?, pin_enc = NULL, claimed_at = NULL, "
             "updated_at = ? WHERE id = ? AND state = ?",
@@ -1035,7 +1039,7 @@ def _revoke_one(row_id: int) -> None:
             return
         db.audit(
             "door_code_revoked",
-            f"door_code={row_id}",
+            f"door_code={row_id}{via}",
             actor="system",
             owner_user_id=apartment["owner_user_id"],
         )
