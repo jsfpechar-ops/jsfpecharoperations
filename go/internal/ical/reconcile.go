@@ -134,8 +134,10 @@ func selectReservation(ctx context.Context, pool *pgxpool.Pool, apartmentID int6
 	return r, true, nil
 }
 
-// sendInFlight is _send_in_flight (icalsync.py 372-405): true while a live
-// claim, or a running or outcome_unknown submission, still covers the stay.
+// sendInFlight is _send_in_flight (icalsync.py 373-405): true while a live
+// claim, an outcome_unknown submission the guest points at, or a running
+// submission that lists an unsent guest of the stay (a crash leaves the guest
+// unpointed, so guest_ids is the only link; no age limit) still covers the stay.
 func sendInFlight(ctx context.Context, pool *pgxpool.Pool, reservationID int64) (bool, error) {
 	live, err := exists(ctx, pool,
 		`SELECT 1 FROM submission_claim c JOIN guest g ON g.id = c.guest_id
@@ -144,7 +146,11 @@ func sendInFlight(ctx context.Context, pool *pgxpool.Pool, reservationID int64) 
 	if err != nil || live {
 		return live, err
 	}
-	return pointedAtOpenSubmission(ctx, pool, reservationID)
+	pointed, err := pointedAtOpenSubmission(ctx, pool, reservationID)
+	if err != nil || pointed {
+		return pointed, err
+	}
+	return runningSubmissionCoversStay(ctx, pool, reservationID, "")
 }
 
 // runningCancelDefer is Python RUNNING_CANCEL_DEFER_SECONDS: a cancel waits for
