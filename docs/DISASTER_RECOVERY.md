@@ -34,6 +34,18 @@ grep -n 'UBYHOST_GO_JOB_KINDS\|UBYHOST_JOB_QUEUE_KINDS' .env
 3. Leave it that way until the owner is sure the old server is off.
 4. When sure, add `submit` to both variables on the new box, then run `./scripts/deploy.sh`.
 
+## Show the "we're down" page
+
+Use this while the server is gone and the rebuild runs, so hosts and guests see a clear message instead of a Cloudflare error. The page is the Worker in `deploy/cloudflare/down-page-worker.js`. It never contacts any server. Steps 1 and 2 can be done ahead of time and kept.
+
+1. In Cloudflare, open Workers & Pages, Create, Worker. Name it `ubyhost-down` and click Deploy.
+2. Click Edit code, delete the sample code, paste the whole content of `deploy/cloudflare/down-page-worker.js`, and click Deploy. The Free plan is enough.
+3. Open the Worker, Settings, Domains & Routes, Add, Route. Zone `ubyhost.com`, route `ubyhost.com/*`. Repeat with `www.ubyhost.com/*` if that host exists.
+4. Open the site in a private window and check that the "we're down" page shows.
+5. Keep working on the rebuild. The `curl --resolve` checks below bypass Cloudflare, so they still reach the new box.
+
+The page is turned off in "Point Cloudflare at the new box", step 4.
+
 ## Rebuild on a new box
 
 1. Create an EU Ubuntu server with ports 22, 80 and 443 open. In the Hetzner Cloud console: Servers, Add server, Location in Germany or Finland, Ubuntu LTS, then add the firewall rules. Note the new public IP as `<NEW_IP>`.
@@ -115,6 +127,7 @@ If curl reports a certificate error, use the browser check. Never add `-k`.
 1. In Cloudflare, DNS: change the A record for the domain to `<NEW_IP>`. Keep it proxied (orange cloud).
 2. SSL/TLS: keep Full (strict).
 3. Check that `.env` has `CLOUDFLARE_PROXY=1`.
+4. Turn off the "we're down" page: in Cloudflare, Workers & Pages, `ubyhost-down`, Settings, Domains & Routes, delete the route(s). Then open the site in a private window and check the normal start page loads.
 
 ## What AWS gave us and what happens without it
 
