@@ -957,11 +957,15 @@ def _revoke_one(row_id: int) -> None:
         return
     attempts = int(row["attempts"])
     try:
-        ttlock.delete_code(
-            int(account["id"]),
-            row["lock_id"],
-            row["provider_code_id"] or "",
-        )
+        try:
+            ttlock.delete_code(
+                int(account["id"]),
+                row["lock_id"],
+                row["provider_code_id"] or "",
+            )
+        except ttlock.TTLockError as exc:
+            if not _already_gone(exc, row, apartment["owner_user_id"]):
+                raise
         if db.execute(
             "UPDATE door_code SET state = ?, revoked_at = ?, pin_enc = NULL, claimed_at = NULL, "
             "updated_at = ? WHERE id = ? AND state = ?",
