@@ -2,34 +2,31 @@
 
 Status: blocked
 Branch: claude/confident-cerf-0zow3i (no push, no PR)
-Commits: 9af5dfda (step 1), step 2, step 3, 580b532a (step 4). Report commit follows.
+Commits: 9af5dfda (step 1), 43d590f0 (step 2), 5fa3bbc1 (step 3), 580b532a (step 4), 6ffee98b (report), then this commit.
 
 ## Done
-- Step 1: tokens added in `tokens.css`; `app2.css` `:root` maps to `--page-cream`, `--coral-red*`. Contrast: #b83d28 on #fdece8 4.91; on #faf6f0 5.22; white on #d0452d 4.59; #6b6b65 on #faf6f0 4.98 (all >= 4.5).
-- Step 2: `brush-cleaning`, `wallet`, `chevrons-up-down` added; paths checked against lucide-static 0.552.0 (identical). Icons swapped in `_shell_tabbar.html`, `menu.html`. `test_icons_nav_1060.py`: "1 passed in 0.10s".
-- Step 3: `_shell_v2.html` aside rewritten (org box and Ctrl K removed, two nav groups, bottom block with Ask Havel, Help, Settings, avatar row with first name; Smart locks and Invoices moved to account menu). No JS used `data-command-shortcut`.
-- Step 4: sidebar CSS block, tablet rail (768-1023), tab bar media query moved to max-width 767, MASTER.md section 2 line, base.html cache bumps to `20261112-1132a`.
+- Steps 1 to 4 as before. Decision A: env badge in the tablet rail shows the short "MOCK" (`.env-short`); full text from 1024 px. Decision B: test_0895 clicks `#app-sidebar .side-bottom a[href="/guide"]`. Decision C: app2.css bumped to `20261112-1132b` (tokens.css left at 1132a).
 
-## Test commands (last lines)
-- Step 4, run 1: `test_0705_v2_shell_browser.py` failed on `assert "--acc:#d0452d" in css`. Changed to `--acc:var(--coral-red)`.
-- Step 4, run 2: `1 failed, 9 passed in 36.24s`. `test_0895_sidebar_inert_heal_browser.py` clicks `#app-sidebar .me-menu-list a[href="/guide"]`, now moved. Changed selector to `.side-bottom`; the open account menu's `.support-link` then intercepts clicks. Second failure: test edit reverted, test left red.
-- Layout lint: `56 layout-lint findings {'word-per-line': 56}`. Cause: `span.env-badge` "MOCK · Nothing sent" wraps to 4 lines (55 px wide) in the 88 px tablet rail, 768 px. Not fixed.
-- Not run: `test_design_guardrails_browser.py`, `test_0710_v2_mockup_match_browser.py`, `test_static_versions.py`, the `test_host_*` set, `test_design_*`.
+## Test commands (last line, App/)
+- test_0895_sidebar_inert_heal_browser.py: `2 passed in 2.68s`. Skips 0.
+- test_0705_v2_shell_browser.py: `9 passed in 4.67s`. Skips 0.
+- test_layout_lint_browser.py: `4 passed in 235.91s (0:03:55)`. Skips 0.
+- test_design_guardrails_browser.py + test_0710 (run separately, no -x for 0710): guardrails stopped at `1 failed in 30.63s`: `tap-target-small` guest-new 390 "Cancel" 43 px (needs 44). Not in the 1132 diff; not fixed (guest page is out of brief scope). 0710: `98 failed, 85 passed in 202.43s`; mostly `.side is 240 px wide, expected 220` (1024 to 1920 px).
+- test_static_versions, test_wp07, test_design_*, test_host_i18n: `6 failed, 169 passed in 71.76s`. Seen: test_design_shell (`.tabs a.tab[href="/menu"]` at 820 px, tab bar now hidden 768 to 1023 as the brief asks, so the test is out of date); test_design_tokens (`--danger` defined twice in ROOT_BLOCK, tokens.css lines 42 and 155). Other failures not inspected.
+- test_host_*.py + test_host_geometry.py: background run, last line: 
+
+## UX gate (390 / 768 / 1280; full-page captures in App/data/shots/1132/gate/, not committed)
+- `/`: 390 one column, bottom tab bar, no overflow. 768 88 px rail, "MOCK" short badge on one line, labels fit. 1280 240 px sidebar, full "MOCK · Nothing sent" badge, no wrap.
+- `/reservations`: 390 chips wrap in two rows, cards readable. 768 rail as above, list cards fit. 1280 table fits, no horizontal scroll.
+- Capture artifacts: fixed tab bar and rail background appear mid-page or stop at 900 px in full-page shots; not a layout defect.
 
 ## Deviations
-- Done: steps 1 to 4 (CSS/docs), partly. Left: fix the 0895 test flow, fix env-badge in rail, rerun section 6, screenshots at 390/768/1280 for `/` and `/reservations`, PR body.
-- Token grep expected 9 or more lines; actual 5 lines (4 in tokens.css, 1 in app2.css). All tokens are present.
-- Booking site icon: `external-link` (`globe` is not in `_icons.html`).
-- Dashboard badge removed from sidebar (brief: no badge).
-- Logo mark is a PNG and cannot be recoloured by CSS; only the wordmark colour was set.
-- Help, Settings and Ask Havel in the sidebar bottom render only for logged-in users.
+- Done: steps 1 to 5 (decisions A to C), gate screenshots. Left: guest-new tap target (390), 0710 sidebar width (220 vs 240), test_design_shell tab-bar expectation, test_design_tokens --danger duplicate, host rows if still red.
+- Gate screenshot script is in the scratchpad, not in the repo.
 
 ## Questions
-1. Env badge in the 88 px rail: hide it below 1024 px, or allow it to span the rail width?
-2. `test_0895`: the flow opens the account menu and clicks Guide. Guide now sits in the sidebar bottom. Which selector or order should the test use?
+1. Sidebar width: 240 px (current) or 220 px (0710 test)?
+2. test_design_shell: update the expectation to "no tab bar 768 to 1023"?
 
 ## Owner steps left
-None until the two questions and the layout lint are resolved.
-
-## Screenshots
-Not captured yet. The layout lint run wrote its output to `App/data/shots/1132/layout-lint/`.
+None until the questions above are answered.

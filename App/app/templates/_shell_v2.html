@@ -4,7 +4,7 @@
 {% set properties_nav = nav in ('apartments', 'guest_links', 'automation', 'entities', 'smart_locks') %}
 <aside class="side" id="app-sidebar">
   <div class="ui-brand"><a class="logo" href="/" aria-label="UbyHost"><img class="mark" src="/static/ubyhost-mark.png?v=20261004a" alt="" width="22" height="22"><span>UbyHost</span></a></div>
-  {% if ubyport_env != 'prod' %}<span class="env-badge ui-env {{ ubyport_env }}" title="{{ t('env.where_reports_go') }}">{{ t('env.' ~ ubyport_env) }}</span>{% endif %}
+  {% if ubyport_env != 'prod' %}<span class="env-badge ui-env {{ ubyport_env }}" title="{{ t('env.where_reports_go') }}"><span class="env-full">{{ t('env.' ~ ubyport_env) }}</span><span class="env-short" aria-hidden="true">{{ ubyport_env|upper }}</span></span>{% endif %}
   <button class="search" type="button" data-command-open>{{ icon('search', 22) }}<span>{{ t('host.search') }}</span></button>
   <nav class="side-nav" aria-label="{{ t('a11y.main_navigation') }}">
     <div class="nav-group">

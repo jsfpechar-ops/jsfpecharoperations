@@ -32,8 +32,7 @@ def test_wide_window_heals_stuck_inert_sidebar(calendar_workspace, calendar_orig
         assert sidebar_inert(page) is True
         page.mouse.click(640, 400)
         assert sidebar_inert(page) is False
-        page.locator("#app-sidebar .me-menu > summary").click()  # 0896: Help lives in the profile menu
-        page.locator('#app-sidebar .me-menu-list a[href="/guide"]').click()
+        page.locator('#app-sidebar .side-bottom a[href="/guide"]').click()
         page.wait_for_url("**/guide**", timeout=15000)
         page.locator('#app-sidebar a[href="/"]').first.click()
         page.wait_for_url(lambda url: url.split("?")[0].rstrip("/") == calendar_origin.rstrip("/"), timeout=15000)

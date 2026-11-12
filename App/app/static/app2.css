@@ -229,6 +229,7 @@ body.v2 .ui-btn-quiet{background:none;border:0;box-shadow:none;padding:0 2px;col
 .side .support-link small{display:block;font-size:12px;color:var(--ink3)}
 /* 0826 shell top gaps: at least 12 px between neighbouring sidebar blocks (brand, badge, account, search, nav, help, account, log out); geometry test in tests/test_0705_v2_shell_browser.py */
 .side .env-badge{margin:12px 8px}
+.side .env-short{display:none}
 .side .org{margin-bottom:12px}
 .side .side-nav{margin-bottom:12px}
 .side .me{margin-bottom:12px}
@@ -3553,4 +3554,7 @@ body.v2 .side .me-name{flex:1;font-weight:600;font-size:16px}
   body.v2 .side .nav svg,body.v2 .side .nav .ui-icon{width:24px;height:24px}
   body.v2 .side .me-menu{position:relative}
   body.v2 .side .me-menu-list{left:calc(100% + 8px);bottom:0;top:auto;right:auto}
+  body.v2 .side .env-full{display:none}
+  body.v2 .side .env-short{display:inline;white-space:nowrap}
+  body.v2 .side .env-badge{white-space:nowrap}
 }
