@@ -1,13 +1,8 @@
 # Decisions
 
 Append-only.
-- 2026-10-06 | UbyPort: 0-2 accepted, 4-6 not; 112 = late = accepted | OPERATIONS
-- 2026-10-06 | Sweep: one send per refused record, then host fix | OPERATIONS
 - 2026-10-08/12 | Door codes (TTLock pilot): timed codes, test mode until live; one 1-min job, no polling; details 0037, 0067-69 | owner | [plan](../plans/ttlock-door-codes.md), [legal](../privacy/DOOR_CODES_LEGAL.md)
 - 2026-10-09 | [workflow] One brief per copy text; executors skip non-todo; lint warns on overlap; status `replaced` = newer brief took over | [workflow](workflow.md)
-- 2026-10-11 | ARES lookup on host click; sends only the IČO; 24 h cache; 20/h per user | owner | 0055
-- 2026-10-15 | Watchdog digest every 72 h (server 10-15, repo 10-20) | owner | [OPERATIONS](../OPERATIONS.md)
-- 2026-10-16 | #397: white workspace; Property hours; fractional stays; Dashboard stays only; Cleaning markers; in-page creation | PR #397
 - 2026-10-17 | [workflow] Haiku 5.5 only executor; 100k cap per chat; scoped tests, no audits unless asked | owner | [workflow](workflow.md#when-haiku-reaches-the-cap)
 - 2026-10-19 | Design v2: MASTER.md is the only host design source; Lucide inline SVG; CI blocks raw colours, inline styles, page CSS | owner | [plan](../plans/design-v2.md)
 - 2026-10-19 [workflow] `test_static_versions.py --write` refuses a changed file under an old `?v=` key (0172).
@@ -63,3 +58,4 @@ Append-only.
 - 2026-11-11 [police] 1100: no tick, values in boxes; parser reads password+facility, never stored (owner; reverses 1097, 1085).
 - 2026-11-10 [demo] Demo seed covers current features; mock-only, cleared by Clear demo (owner, 1092)
 - 2026-11-11 [ux] 1101: wizard reuse
+- 2026-11-12 [workflow] Orchestrator model chosen by brief risk tier (A: Opus 5.5 thread, Opus brief, Haiku executes, fresh Fable reviews diff; B: Opus 5.5, Sonnet brief, Haiku; C: Sonnet 5.5, Sonnet brief, Haiku); threads run in parallel, max 3, one per lane, no shared files; unsure = higher tier | owner | [workflow](workflow.md#roles-and-models)

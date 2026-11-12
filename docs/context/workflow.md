@@ -6,20 +6,28 @@ This file is the single source of truth for how work is done. When the process c
 
 | Role | Who | Does | Never |
 |---|---|---|---|
-| Orchestrator | Any chat AI; **briefs are written by Sonnet 5.5** | Plans in `docs/plans/`, briefs in `docs/tasks/`, reviews reports, context updates | Edits `App/`, runs tests, implements, audits nobody asked for, carries one chat across tasks |
+| Orchestrator | Any chat AI; **model and brief writer by risk tier (below)** | Plans in `docs/plans/`, briefs in `docs/tasks/`, reviews reports, context updates | Edits `App/`, runs tests, implements, audits nobody asked for, carries one chat across tasks |
 | Executor | **Haiku 5.5 only** ([rules](executor.md)) | Applies one brief and writes its report | Designs, guesses, touches files outside the brief, merges, spawns subagents |
-| Search helper | Haiku subagent of a Claude orchestrator | Grep and summarise in 200 words; no file dumps | Writes files |
+| Search helper | Haiku subagent of a Claude orchestrator | Grep and summarise in 200 words | Writes files |
 | Owner | Josef | Decides, merges, deploys, secrets, servers | |
 
-- **Sonnet 5.5 writes the briefs, Haiku 5.5 executes them** (owner, 2026-11-04). A **Claude** orchestrator spawns a Sonnet 5.5 subagent (Agent tool, `model: sonnet`) to write each brief from the plan, reviews it, then implements only by spawning a Haiku 5.5 subagent (Agent tool, `model: haiku`) with one brief. It reads the report, not the transcript. Briefs run one after another; in parallel only when their §3 file lists do not overlap.
+- **Tier decides the models** (owner, 2026-11-12). Haiku 5.5 executes every brief. If unsure of a tier, take the higher one.
+
+| Tier | What | Orchestrator thread | Brief writer | Review before PR ready |
+|---|---|---|---|---|
+| A | filing/UbyPort, deadlines, migrations, auth, guest data, deletion, legal copy | claude-opus-5-5 | Opus subagent, exact diffs only | fresh claude-fable-5-2 subagent reads the full diff vs the brief |
+| B | jobs, mail, payments, privacy-relevant outbound, scripts | claude-opus-5-5 | Sonnet 5.5 subagent | orchestrator reads diff of risk-listed files |
+| C | docs, CSS, copy, small static pages | claude-sonnet-5-5 | Sonnet 5.5 subagent | orchestrator checks file list and tests |
+
+- A Claude orchestrator spawns the brief writer (Agent tool, `model`), reviews the brief, then spawns one Haiku 5.5 subagent (`model: haiku`) with it. It reads the report only.
+- **Parallel threads:** at most 3 at once, one per lane. Two threads never touch the same file: list each brief's §3 files before execute and hold the later thread on overlap. A lane's next brief starts after the owner merges the previous PR and main is green. One branch and draft PR per thread.
 - Any **other** AI (ChatGPT, Gemini, Copilot) ends with the filled [executor prompt](prompts.md#executor) for the owner to paste into Haiku 5.5.
-- Only the owner's exact words "implement it yourself" let an orchestrator implement.
-- HIGH RISK areas (filing, migrations, auth, legal copy, deletion) are still Haiku's work; the brief is an exact diff only and the review reads those files' full diff.
-- **Override, speed-and-ease and group plans only** (owner, 11-09): executor by tier. **A** (filing, concurrency, guest-data access): Fable 5.2 executor, Opus brief, a fresh Fable reviews the diff vs the brief before the PR. **B** (multi-file, mail, payments, privacy, new component): Opus executor, Sonnet brief. **C** (attributes, copy, prefill, CSS): Sonnet executor, effort medium, Sonnet brief. Every brief written after 2026-11-09 21:35 gets a fresh Fable review before an executor runs it. The 100k cap is Haiku only; output and reads stay <=150 lines.
+- Only the owner's words "implement it yourself" let an orchestrator implement.
+- HIGH RISK areas (tier A) are still Haiku's work; the brief is an exact diff only and the review reads those files' full diff.
 
 ## Retired executor exceptions
 
-Luna 6.0 / Cursor (closed 2026-10-17) and task-specific Luna (closed 2026-10-30) are retired; Luna work stays for review.
+Luna and Cursor are retired.
 
 ## Token budget (every AI, every session)
 
@@ -33,7 +41,7 @@ Luna 6.0 / Cursor (closed 2026-10-17) and task-specific Luna (closed 2026-10-30)
 - No council or review swarm unless the owner names it in the current message and the change is HIGH RISK. Then 3 Haiku advisors, no peer-review round.
 - Role files stay separate: orchestrators never open [executor](executor.md); Haiku never opens this file. Keep AGENTS.md free of dates and status so its start never changes.
 - One chat per task. Reviews stay under 15k tokens. Uploaded PDFs: convert to text and grep. Never print passwords, IDUBs, addresses or guest data; this repo is public.
-- Reply: at most 150 words plus the prompt. Screenshots: one per changed page at 390 px.
+- Reply: at most 150 words plus the prompt. One 390 px screenshot per changed page.
 
 ## When Haiku reaches the cap
 
@@ -41,7 +49,7 @@ Luna 6.0 / Cursor (closed 2026-10-17) and task-specific Luna (closed 2026-10-30)
 2. At its checkpoint it writes the report with `Status: blocked`, `Done: steps 1 to k. Left: steps k+1 to n.`, and stops.
 3. Cut off at 100k without a report: the orchestrator reads `git log --oneline -10` and `git diff --stat` on the branch and finds the last `step k` commit.
 4. The orchestrator writes a continuation brief `NNNN-cont-1.md` (same branch, `Depends on` the first; only steps k+1 to n, anchors re-copied from the branch as it now stands) and starts a **fresh** Haiku. A Claude orchestrator spawns it; another AI hands the owner the prompt. A fresh Haiku inherits nothing, so the brief carries everything.
-5. A task gets at most 3 Haiku sessions in all (first, then continuations or one rewrite after a repeated test failure). After the third the orchestrator stops and asks the owner; the brief is probably too big and should be split.
+5. A task gets at most 3 Haiku sessions in all (first, continuations, or one rewrite). After the third the orchestrator stops and asks the owner; the brief is probably too big and should be split.
 
 ## Flow
 

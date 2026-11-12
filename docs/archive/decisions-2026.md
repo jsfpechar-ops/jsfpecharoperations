@@ -67,3 +67,8 @@ Moved from docs/context/decisions.md during compaction.
 - 2026-10-08 | Staging: `UBYHOST_STAGING_NO_LOGIN=1` skips login; door-code alert after 10 min | test-only | [ENVIRONMENT](../ENVIRONMENT.md)
 - 2026-10-09 | #331: no ID-check step (host checks ID); guest link default 1 day ahead | K-F12
 - 2026-10-10 | PostHog replaces Umami; privacy settings in the snippet | owner | [plan](../plans/posthog-analytics.md), [0039](../tasks/0039-posthog-hardening.md)
+- 2026-10-06 | UbyPort: 0-2 accepted, 4-6 not; 112 = late = accepted | OPERATIONS
+- 2026-10-06 | Sweep: one send per refused record, then host fix | OPERATIONS
+- 2026-10-11 | ARES lookup on host click; sends only the IČO; 24 h cache; 20/h per user | owner | 0055
+- 2026-10-15 | Watchdog digest every 72 h (server 10-15, repo 10-20) | owner | [OPERATIONS](../OPERATIONS.md)
+- 2026-10-16 | #397: white workspace; Property hours; fractional stays; Dashboard stays only; Cleaning markers; in-page creation | PR #397
