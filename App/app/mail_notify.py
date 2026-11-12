@@ -1551,9 +1551,9 @@ def build_door_code(
     return content
 
 
-def door_code_notice(door_code_id: int, variant: str) -> Optional[int]:
+def door_code_notice(door_code_id: int, variant: str, key_suffix: str = "") -> Optional[int]:
     try:
-        return _door_code_notice(door_code_id, variant)
+        return _door_code_notice(door_code_id, variant, key_suffix)
     except Exception:
         log.exception("door_code_notice_failed door_code=%s variant=%s", door_code_id, variant)
         return None
@@ -1575,7 +1575,7 @@ def _door_code_payload(lang: str, subject: str, body: str, reservation_id: int) 
     }
 
 
-def _door_code_notice(door_code_id: int, variant: str) -> Optional[int]:
+def _door_code_notice(door_code_id: int, variant: str, key_suffix: str = "") -> Optional[int]:
     row = db.query_one("SELECT * FROM door_code WHERE id = ?", (door_code_id,))
     if not row:
         return None
@@ -1603,7 +1603,7 @@ def _door_code_notice(door_code_id: int, variant: str) -> Optional[int]:
     payload = _door_code_payload(lang, subject, body, reservation["id"])
     return mail.enqueue(
         kind="door_code_notice",
-        idempotency_key=f"door_code_notice:{door_code_id}:{variant}",
+        idempotency_key=f"door_code_notice:{door_code_id}:{variant}" + (f":{key_suffix}" if key_suffix else ""),
         to_email=to_email,
         subject=subject,
         payload=payload,
