@@ -179,9 +179,16 @@ def test_an_expired_claim_is_not_refreshed_and_no_batch_is_sent(fresh_db, monkey
 
 def test_a_claim_missing_one_guest_row_is_treated_as_lost(fresh_db, monkeypatch):
     rid, gid = _stay()
-    token, claimed = reporting.claim_sendable(_pairs(gid, rid))
-    # Two guests in this claim, but only one row exists (the other was deleted).
-    two_guests = claimed + [({"id": gid + 1000}, claimed[0][1])]
+    now = db.utcnow()
+    gid2 = db.insert("guest", {
+        "reservation_id": rid, "stay_from": "2026-12-01", "stay_to": "2026-12-03",
+        "created_at": now, "updated_at": now,
+    })
+    two_guests = _pairs(gid, rid) + _pairs(gid2, rid)
+    token, claimed = reporting.claim_sendable(two_guests)
+    assert len(claimed) == 2
+    # Lose one real claim row (as if another worker released or took it over).
+    db.execute("DELETE FROM submission_claim WHERE guest_id = ?", (gid2,))
     calls = []
     monkeypatch.setattr(
         reporting, "submit_batch", lambda *args, **kwargs: calls.append(1) or {}
@@ -190,7 +197,7 @@ def test_a_claim_missing_one_guest_row_is_treated_as_lost(fresh_db, monkeypatch)
 
     assert reporting.refresh_sendable_claim(token, 2) is False
     assert reporting._send_claimed_batches(
-        {"id": 1}, two_guests, token, mode="auto", env=None
+        {"id": 1}, claimed, token, mode="auto", env=None
     ) == []
 
     assert calls == []
