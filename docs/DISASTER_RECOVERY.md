@@ -22,16 +22,17 @@ If the pack is missing, stop here and use the fallback in "When to use this".
 
 ## Two servers never file at once
 
-Before any rebuild step, make sure the old server cannot file. Removing `submit` from the job lists is not enough: with `submit` in neither list, the Python worker files guests itself. Only a stopped server, or `UBYHOST_ENABLE_SCHEDULER=0`, stops automatic filing.
+Before any rebuild step, make sure the old server cannot file. Removing `submit` from the job lists is not enough: with `submit` in neither list, the Python worker files guests itself. Only a stopped server, or `UBYHOST_ENABLE_SCHEDULER=0`, stops scheduled filing; only a stopped server stops all filing.
 
 1. On the **old** server, stop it: `docker compose stop`. Or, if it must keep running, set `UBYHOST_ENABLE_SCHEDULER=0` in its `.env`, remove `submit` from `UBYHOST_GO_JOB_KINDS` and `UBYHOST_JOB_QUEUE_KINDS`, and run `./scripts/deploy.sh`.
-2. On the **new** box, before the first deploy (rebuild step 4), turn automatic filing off in `.env`: set `UBYHOST_ENABLE_SCHEDULER=0` and remove `submit` from both variables. Check:
+2. On the **new** box, before the first deploy (rebuild step 4), turn scheduled filing off in `.env`: set `UBYHOST_ENABLE_SCHEDULER=0` and give both variables a value without `submit` (for example `UBYHOST_GO_JOB_KINDS=ical,push`). Keep both lines in `.env`, never delete them: without the line, a value from the shell reaches the containers. Check `.env`, and check that the shell exports neither variable (the second command prints nothing):
 
 ```bash
 grep -n 'UBYHOST_ENABLE_SCHEDULER\|UBYHOST_GO_JOB_KINDS\|UBYHOST_JOB_QUEUE_KINDS' .env
+env | grep 'UBYHOST_GO_JOB_KINDS\|UBYHOST_JOB_QUEUE_KINDS'
 ```
 
-3. The restore (rebuild step 12) writes the marker file `.restored-box` next to `.env`. While it exists, `pg-restore.sh --file` and `./scripts/deploy.sh` stop with `RESTORED BOX` if automatic filing is on. Leave filing off until the owner is sure the old server is off.
+3. The restore (rebuild step 12) checks that scheduled filing is off, then writes the marker file `.restored-box` next to `.env`. While it exists, `pg-restore.sh --file` and `./scripts/deploy.sh` stop with `RESTORED BOX` if scheduled filing is on. Leave filing off until the owner is sure the old server is off. The guard only proves that scheduled filing is off; apartments in immediate mode still file when a guest or host saves. So keep Cloudflare pointed away from the new box (the "we're down" page stays on) until the marker is removed.
 4. When sure (the old server is stopped, or deleted in its provider console), acknowledge it on the new box:
 
 ```bash
@@ -44,7 +45,7 @@ rm .restored-box
 ./scripts/deploy.sh
 ```
 
-Override for one run, only when the owner knows the old server cannot file and the marker must stay: `UBYHOST_FILING_GUARD_OVERRIDE=1 ./scripts/deploy.sh`. Never put it in `.env`; the guard refuses that.
+Override for one run, only when the owner knows the old server cannot file and the marker must stay: prefix it on that one command, `UBYHOST_FILING_GUARD_OVERRIDE=1 ./scripts/deploy.sh`. Never `export` it and never put it in `.env` (the guard refuses `.env`).
 
 ## Show the "we're down" page
 
@@ -108,11 +109,13 @@ rclone copy gdrive:UbyHost-backups/<stamp> ./restore-in
 
 11. The dump from step 8 is already on the server in `restore-in`. Keep it outside the volume: the restore reads it straight from the host and writes no plaintext file. If you downloaded it elsewhere, copy it to the server first (any path ending in `.age` works).
 
-12. Restore the database from that file. The script refuses while `.env` contains `UBYHOST_DB=`, and while automatic filing is on. It writes the marker `.restored-box` (see "Two servers never file at once"):
+12. Restore the database from that file. The script refuses while `.env` contains `UBYHOST_DB=`, and while scheduled filing is on (then it changes nothing). Otherwise it writes the marker `.restored-box` (see "Two servers never file at once"), stops the app, the worker and the Go service, restores, and starts every service again with the current `.env`:
 
 ```bash
 RESTORE_CONFIRM=yes AGE_IDENTITY_FILE=/root/ubyhost-backup.agekey ./scripts/pg-restore.sh --file ./restore-in/ubyhost-pg.dump.age
 ```
+
+If it stops with `RESTORED BOX`: fix `.env` ("Two servers never file at once", step 2), run `./scripts/deploy.sh` so the running containers get the new `.env`, then run the restore command again.
 
 13. Delete the identity file from the server:
 
@@ -135,6 +138,8 @@ curl -sS -o /dev/null -w '%{http_code}\n' --resolve <DOMAIN>:443:<NEW_IP> https:
 If curl reports a certificate error, use the browser check. Never add `-k`.
 
 ## Point Cloudflare at the new box
+
+Only after `.restored-box` is removed ("Two servers never file at once", step 4): until then no guest or host may reach the new box.
 
 1. In Cloudflare, DNS: change the A record for the domain to `<NEW_IP>`. Keep it proxied (orange cloud).
 2. SSL/TLS: keep Full (strict).

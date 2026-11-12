@@ -333,7 +333,7 @@ them; Render does.
 | `UBYHOST_WALG_BACKUP_PING_URL` | unset | `deploy/lightsail/scripts/walg-backup.sh` — pinged after each successful daily WAL-G base backup; a third dead-man check (daily period). |
 | `AGE_IDENTITY_FILE` | unset | `restore.sh` — host path to the age private identity used to decrypt an encrypted snapshot; never inside the volume |
 | `RESTORE_CONFIRM` | unset | `restore.sh` — `yes` skips the interactive confirmation prompt |
-| `UBYHOST_FILING_GUARD_OVERRIDE` | unset | `filing-guard.sh` (run by `preflight.sh` and `pg-restore.sh --file`). `1` on the command line lets one run continue on a restored box (`.restored-box` present) with automatic filing on. Refused when it is in `.env`. Owner only: DISASTER_RECOVERY.md, "Two servers never file at once" |
+| `UBYHOST_FILING_GUARD_OVERRIDE` | unset | `filing-guard.sh` (run by `preflight.sh` and `pg-restore.sh --file`). `1` prefixed on one command (never `export`ed) lets that run continue on a restored box (`.restored-box` present) with scheduled filing on. Refused when it is in `.env`. Owner only: DISASTER_RECOVERY.md, "Two servers never file at once" |
 | `UBYHOST_S3_BUCKET` | unset | `backup-s3.sh` |
 | `UBYHOST_S3_PREFIX` | `UbyHost-backups` | `backup-s3.sh` |
 | `RENDER_STAGING_DEPLOY_HOOK` | unset (GitHub secret) | `deploy-production.yml` — triggers the Render staging deploy |
