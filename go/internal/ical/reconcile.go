@@ -172,19 +172,20 @@ func minDate(a, b time.Time) time.Time {
 	return b
 }
 
-// fitUnsentGuestWindows is _fit_unsent_guest_windows (icalsync.py 408-466).
-// Each guest update is a compare-and-set; an audit row is written only when
-// the update changed one row.
-func fitUnsentGuestWindows(ctx context.Context, pool *pgxpool.Pool, reservationID, apartmentID int64, newFrom, newTo string) (int, error) {
+// fitUnsentGuestWindows is _fit_windows_in_tx (icalsync.py). It runs on the
+// caller's transaction, under the stay's guest locks, and writes guest rows
+// only. It returns one audit detail per guest changed and the apartment
+// owner; the caller writes the audit rows after the commit.
+func fitUnsentGuestWindows(ctx context.Context, tx pgx.Tx, reservationID, apartmentID int64, newFrom, newTo, now string) ([]string, *int64, error) {
 	newStart, okStart := validation.ParseISODate(newFrom)
 	newEnd, okEnd := validation.ParseISODate(newTo)
 	if !okStart || !okEnd {
-		return 0, nil
+		return nil, nil, nil
 	}
 	var owner *int64
-	err := pool.QueryRow(ctx, `SELECT owner_user_id FROM apartment WHERE id = $1`, apartmentID).Scan(&owner)
+	err := tx.QueryRow(ctx, `SELECT owner_user_id FROM apartment WHERE id = $1`, apartmentID).Scan(&owner)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return 0, err
+		return nil, nil, err
 	}
 	type guestWindow struct {
 		id          int64
@@ -192,25 +193,25 @@ func fitUnsentGuestWindows(ctx context.Context, pool *pgxpool.Pool, reservationI
 		stayTo      *string
 		submitState string
 	}
-	rows, err := pool.Query(ctx,
+	rows, err := tx.Query(ctx,
 		`SELECT id, stay_from, stay_to, submit_state FROM guest
 		  WHERE reservation_id = $1 AND archived_at IS NULL AND submit_state <> $2`,
 		reservationID, guestSent)
 	if err != nil {
-		return 0, err
+		return nil, nil, err
 	}
 	var guests []guestWindow
 	for rows.Next() {
 		var g guestWindow
 		if err := rows.Scan(&g.id, &g.stayFrom, &g.stayTo, &g.submitState); err != nil {
 			rows.Close()
-			return 0, err
+			return nil, nil, err
 		}
 		guests = append(guests, g)
 	}
 	rows.Close()
 	if err := rows.Err(); err != nil {
-		return 0, err
+		return nil, nil, err
 	}
 	parseOr := func(s *string, fallback time.Time) time.Time {
 		if s != nil {
@@ -221,7 +222,7 @@ func fitUnsentGuestWindows(ctx context.Context, pool *pgxpool.Pool, reservationI
 		return fallback
 	}
 	liveAfter := liveClaimAfter()
-	moved := 0
+	var details []string
 	for _, g := range guests {
 		sf := parseOr(g.stayFrom, newStart)
 		st := parseOr(g.stayTo, newEnd)
@@ -235,28 +236,38 @@ func fitUnsentGuestWindows(ctx context.Context, pool *pgxpool.Pool, reservationI
 			continue
 		}
 		oldWindow := pyStr(g.stayFrom) + ".." + pyStr(g.stayTo)
-		tag, err := pool.Exec(ctx,
+		tag, err := tx.Exec(ctx,
 			`UPDATE guest SET stay_from = $1, stay_to = $2, updated_at = $3
 			  WHERE id = $4 AND submit_state = $5
 			    AND NOT EXISTS (SELECT 1 FROM submission_claim WHERE guest_id = $4 AND claimed_at >= $6)
 			    AND (submission_id IS NULL OR NOT EXISTS (
 			      SELECT 1 FROM submission WHERE id = guest.submission_id
 			        AND state IN ('running', 'outcome_unknown')))`,
-			newSF, newST, ubyport.UTCNow(), g.id, g.submitState, liveAfter)
+			newSF, newST, now, g.id, g.submitState, liveAfter)
 		if err != nil {
-			return moved, err
+			return nil, nil, err
 		}
 		if tag.RowsAffected() != 1 {
 			continue
 		}
-		detail := fmt.Sprintf("guest=%d reservation=%d was=%s now=%s..%s",
-			g.id, reservationID, oldWindow, newSF, newST)
-		if err := ubyport.Audit(ctx, pool, "guest_stay_window_fitted", detail, owner); err != nil {
-			return moved, err
-		}
-		moved++
+		details = append(details, fmt.Sprintf("guest=%d reservation=%d was=%s now=%s..%s",
+			g.id, reservationID, oldWindow, newSF, newST))
 	}
-	return moved, nil
+	return details, owner, nil
+}
+
+// liveClaimInTx reports whether a live submission_claim covers the stay, read
+// on the move's own transaction (decides the deferred reason).
+func liveClaimInTx(ctx context.Context, tx pgx.Tx, reservationID int64) (bool, error) {
+	var one int
+	err := tx.QueryRow(ctx,
+		`SELECT 1 FROM submission_claim c JOIN guest g ON g.id = c.guest_id
+		  WHERE g.reservation_id = $1 AND g.archived_at IS NULL AND c.claimed_at >= $2 LIMIT 1`,
+		reservationID, liveClaimAfter()).Scan(&one)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	return err == nil, err
 }
 
 // warnIfGuestsRegistered is _warn_if_guests_registered (icalsync.py 469-493).
