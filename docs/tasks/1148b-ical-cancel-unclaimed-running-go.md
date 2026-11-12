@@ -1,6 +1,6 @@
 # 1148b: iCal cancel with a `running` or `outcome_unknown` filing (K-F20), Go twin of 1148
 
-Status: todo
+Status: review
 Depends on: 1148 | Base commit: 21c87fc6 (HEAD of branch claude/zealous-maxwell-a7ub54) | Branch: task/1148b-ical-cancel-running-go
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
