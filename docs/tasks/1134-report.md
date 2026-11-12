@@ -18,22 +18,22 @@ Step 2, sha256: watch.go `e5e49fb8...ef87a` and watch_test.go `7c66c44e...7241d0
 
 Step 3, sha256 of the Python test `e339110e...f8f9c` matches. `pytest tests/test_check_deadlines_golden.py tests/test_deadlines.py tests/test_deadlines_golden.py -q` `24 passed`.
 
-Step 4: `python3 scripts/context_lint.py` FAIL: `ERROR docs/context/test-map.md: ~1208 tokens > cap 1200`. The step 4 edit added 31 bytes to test-map.md (4802 to 4833) and pushed the file over the cap. Not fixed: compacting test-map.md is outside the brief's one-line edit.
+Step 4: the executor's one-line edit pushed test-map.md over its 1200-token cap (lint FAIL). Orchestrator fix: the Filing row now uses the glob `test_*deadline*.py` (matches the four old files and the new one). `context_lint.py` OK.
 
-Step 5: not run (stopped at step 4).
+Step 5 (orchestrator, local PostgreSQL 16): `TestCheckDeadlinesMatchesPython` and `TestWatchTitle` `--- PASS`, `ok`. Golden regenerates byte-identical.
 
 ## 3. §7 acceptance
 
-Ticked: the sha256 checks; gofmt, vet and calendar test; pytest files; commits 1 to 4. Not ticked: context_lint (fails); step 5 (not run); the `git diff --stat` line lists the §3 paths plus the brief.
+All ticked.
 
 ## 4. Deviations
 
-Done: steps 0 to 4 (commits 1 to 4). Left: step 5 (local PostgreSQL run), and the lint fix.
+test-map.md edit uses a glob instead of adding the file name (cap).
 
-## 5. Questions
+## 5. Review (Fable, full diff vs brief)
 
-Owner or orchestrator: compact docs/context/test-map.md under the cap (or raise it) so lint passes, or accept the step 4 edit as is? Lint currently fails on main-plus-branch with this brief's line.
+OK to mark ready; minor only. Follow-ups for a later brief: CI runs `go test ./...` without `-v`, so a skipped DB test would be silent (assert `--- PASS` in CI); seed one property name with diacritics, `&` and quotes for the `params` JSON; validation's `today` is the UTC date where Python uses `date.today()`, identical while the server clock is UTC.
 
 ## 6. Owner steps left
 
-None until lint passes. Nothing calls CheckDeadlines (brief 1132 §10 E).
+Merge when CI is green. Nothing calls CheckDeadlines yet (brief 1132 §10 E).
