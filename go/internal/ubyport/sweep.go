@@ -769,6 +769,45 @@ func sweepApartment(ctx context.Context, d SweepDeps, aptID int64) ([]BatchResul
 	return SubmitForApartment(ctx, d, aptID, CollectOptions{}, sweepMode)
 }
 
+// recoverStuckRunningBatches is reporting._recover_stuck_running_batches (K-F23).
+// Sweep skips manual and inactive apartments and those with an open
+// ubyport_auth_failed alert, so a batch a crash left running there stayed
+// invisible and silently held an iCal date move. This rewrites such a batch of
+// EVERY apartment (or one workspace's) through RecoverStaleSubmissions: the row
+// becomes outcome_unknown, its guests are pointed at it and the critical alert is
+// raised. It never sends, so it is safe in every mode. A failure is logged and
+// contained to its apartment.
+func recoverStuckRunningBatches(ctx context.Context, pool *pgxpool.Pool, ownerUserID *int64, now func() time.Time) {
+	rows, err := pool.Query(ctx,
+		`SELECT DISTINCT s.apartment_id FROM submission s JOIN apartment a ON a.id = s.apartment_id `+
+			`WHERE s.state = 'running' AND ($1::bigint IS NULL OR a.owner_user_id = $1) ORDER BY s.apartment_id`,
+		ownerUserID)
+	if err != nil {
+		log.Printf("stuck running scan failed: %v", err)
+		return
+	}
+	var ids []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			rows.Close()
+			log.Printf("stuck running scan failed: %v", err)
+			return
+		}
+		ids = append(ids, id)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		log.Printf("stuck running scan failed: %v", err)
+		return
+	}
+	for _, id := range ids {
+		if _, err := RecoverStaleSubmissions(ctx, pool, id, now); err != nil {
+			log.Printf("stuck running recovery failed apartment_id=%d: %v", id, err)
+		}
+	}
+}
+
 // Sweep is reporting.sweep: every active, non-manual apartment (or one
 // workspace's) is retried, completed and sent. An apartment with an open
 // ubyport_auth_failed alert is skipped and not counted. A failure is contained to
@@ -776,6 +815,7 @@ func sweepApartment(ctx context.Context, d SweepDeps, aptID int64) ([]BatchResul
 func Sweep(ctx context.Context, d SweepDeps, ownerUserID *int64) (SweepSummary, error) {
 	pool := d.Batch.Pool
 	var summary SweepSummary
+	recoverStuckRunningBatches(ctx, pool, ownerUserID, sweepNow(d))
 	type sweepApt struct {
 		id   int64
 		name string

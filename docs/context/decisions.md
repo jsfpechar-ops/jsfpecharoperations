@@ -61,7 +61,5 @@ Append-only.
 - 2026-11-12 [filing] 1138: claim fails closed; no retry.
 - 2026-11-12 [workflow] Orchestrator model chosen by brief risk tier (A: Opus 5.5 thread, Opus brief, Haiku executes, fresh Fable reviews diff; B: Opus 5.5, Sonnet brief, Haiku; C: Sonnet 5.5, Sonnet brief, Haiku); threads run in parallel, max 3, one per lane, no shared files; unsure = higher tier | owner | [workflow](workflow.md#roles-and-models)
 - 2026-11-12 [filing] 1148: cancel waits on `running` <30 min, else cancels + `cancelled_filing_unconfirmed` (owner).
-- 2026-11-12 [door] 1149: lost revoke race re-issues code if stay live (owner).
 - 2026-11-12 [filing] 1154: date move waits on any `running` batch, no age cap (owner: recommended).
-- 2026-11-12 [door] 1155: revived code after a maybe-run delete is checked on the lock; 3 failed lookups, then shown (owner).
-- 2026-11-12 [door] 1156: re-issued code: info card + one host mail (owner).
+- 2026-11-12 [door] 1149 lost revoke race re-issues if stay live; 1155 maybe-deleted revived code checked on lock (3 lookups, then shown); 1156 re-issue: info card + one host mail; cs/vi copy approved (owner).

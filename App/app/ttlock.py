@@ -6,7 +6,7 @@ import json
 import logging
 import secrets
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 from zoneinfo import ZoneInfo
 
 import requests
@@ -69,7 +69,40 @@ ERROR_KINDS: Dict[int, str] = {
     -3008: "unused_code",
     -1026: "period_taken",
     -3007: "duplicate",
+    # 1163: the rest of TTLock's official error table that our calls can get
+    # (full table and meanings: docs/plans/ttlock-door-codes.md section 3).
+    # The passcode is not on the lock; a delete confirms it with a list call.
+    -1007: "code_missing",
+    # The lock or its gateway cannot be reached now: retry later, never a lookup.
+    -3002: "offline",
+    -3003: "offline",
+    -3035: "offline",
+    -3036: "offline",
+    -3037: "offline",
+    -2025: "offline",
+    # The lock's own setup is missing (no gateway, network, NB registration, lock not found,
+    # function not supported). The host can fix it later, so it is retried slowly like a
+    # transient answer, and a failure is handed to the host at the usual threshold.
+    -1003: "lock_setup",
+    -4037: "lock_setup",
+    -4043: "lock_setup",
+    -3034: "lock_setup",
+    -4067: "lock_setup",
+    # The account or the server's region setting is wrong: no retry, the host or operator fixes it.
+    -4063: "config",
+    30008: "config",
+    # Our request was malformed or the code is unusable: a UbyHost bug, no endless retry.
+    80002: "bug",
+    -2009: "bug",
+    -2032: "bug",
+    -3006: "bug",
+    -3045: "bug",
 }
+CODE_MISSING = "code_missing"
+LOCK_SETUP = "lock_setup"
+NO_PASSCODE_DATA = -1007
+# A PIN the lock refuses is replaced once by a new random PIN (the second refusal is raised).
+NEW_PIN_ERRCODES = (-3007, -2032)
 
 _MS_HOUR = 3_600_000
 _ADMIN_STATUS = "110401"
@@ -527,7 +560,7 @@ def add_custom_code(
     try:
         answer = _call(account_id, "/v3/keyboardPwd/add", payload, priority)
     except TTLockError as exc:
-        if exc.code != -3007:
+        if exc.code not in NEW_PIN_ERRCODES:
             raise
         pin = _random_custom_pin()
         payload["keyboardPwd"] = pin
@@ -569,37 +602,71 @@ LIST_PAGE_SIZE = 20
 LIST_MAX_PAGES = 5
 
 
-def code_is_listed(account_id: int, lock_id: str, name: str, code_id: str) -> Optional[bool]:
-    """Is the lock code with this id on the lock? True, False, or None when it cannot be told.
+def _read_listing(
+    account_id: int, lock_id: str, name: str, keep: Callable[[dict], bool], stop_at_first: bool = False
+) -> Optional[List[dict]]:
+    """The one paging loop over /v3/lock/listKeyboardPwd; returns only the entries ``keep`` accepts.
 
     ``searchStr`` is a fuzzy match (UH-7 also lists UH-70 and UH-700), so the answer is read
     page by page, at most LIST_MAX_PAGES calls. A full page (LIST_PAGE_SIZE codes) is always
-    read on past, whatever ``pages`` says. False only when a short or empty page ended the
-    list and the id was on no page. None when an answer has no ``list`` array, or when the
-    page limit ran out first. The id decides, not the name or the window. TTLock errors are
-    raised as they are.
+    read on past, whatever ``pages`` says. The kept entries (possibly none) are returned only
+    when a short or empty page ended the list, or, with ``stop_at_first``, at the first kept
+    entry. None when an answer has no ``list`` array, or when the page limit ran out first:
+    the list is then incomplete and nothing may be concluded from it. TTLock errors are
+    raised as they are, except -1007 ("No password data of this lock") on any page: that is
+    not evidence about one code (a delete just answered it too), so the list is unknown (None),
+    never empty.
     """
+    kept: List[dict] = []
     for page in range(1, LIST_MAX_PAGES + 1):
-        answer = _call(
-            account_id,
-            "/v3/lock/listKeyboardPwd",
-            {
-                "lockId": int(lock_id),
-                "searchStr": name,
-                "orderBy": 1,
-                "pageNo": page,
-                "pageSize": LIST_PAGE_SIZE,
-            },
-            NORMAL,
-        )
+        try:
+            answer = _call(
+                account_id,
+                "/v3/lock/listKeyboardPwd",
+                {
+                    "lockId": int(lock_id),
+                    "searchStr": name,
+                    "orderBy": 1,
+                    "pageNo": page,
+                    "pageSize": LIST_PAGE_SIZE,
+                },
+                NORMAL,
+            )
+        except TTLockError as exc:
+            if exc.code == NO_PASSCODE_DATA:
+                return None
+            raise
         items = answer.get("list")
         if not isinstance(items, list):
             return None
-        if any(str(raw.get("keyboardPwdId")) == str(code_id) for raw in items):
-            return True
+        kept.extend(raw for raw in items if keep(raw))
+        if kept and stop_at_first:
+            return kept
         if len(items) < LIST_PAGE_SIZE:
-            return False
+            return kept
     return None
+
+
+def code_is_listed(account_id: int, lock_id: str, name: str, code_id: str) -> Optional[bool]:
+    """Is the lock code with this id on the lock? True, False, or None when it cannot be told.
+
+    False only when the whole list was read and the id was on no page. The id decides, not
+    the name or the window.
+    """
+    found = _read_listing(
+        account_id, lock_id, name,
+        lambda raw: str(raw.get("keyboardPwdId")) == str(code_id), stop_at_first=True,
+    )
+    return None if found is None else bool(found)
+
+
+def codes_named(account_id: int, lock_id: str, name: str) -> Optional[List[dict]]:
+    """Every lock code whose name is exactly ``name`` (raw entries), or None when the list is incomplete.
+
+    An empty list means the whole list was read and no code has that name. Reads to the end
+    of the list (no early stop), so a second code with the same name is seen.
+    """
+    return _read_listing(account_id, lock_id, name, lambda raw: raw.get("keyboardPwdName") == name)
 
 
 def change_code_period(
