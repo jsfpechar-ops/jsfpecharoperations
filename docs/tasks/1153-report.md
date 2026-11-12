@@ -1,6 +1,6 @@
-# 1144 report
+# 1153 report
 
-Status: done (renumbered from 1134, which main took for the billing brief). Blocked at step 4 (test-map.md over its 1200-token cap); orchestrator fixed it by folding the line into the glob `test_*deadline*.py` (same files, lint OK) and ran step 5: `TestCheckDeadlinesMatchesPython` and `TestWatchTitle` PASS on local PostgreSQL 16, golden fresh, 24 pytest passed.
+Status: done (renumbered from 1134 and 1144, both taken by other PRs). Blocked at step 4 (test-map.md over its 1200-token cap); orchestrator fixed it by folding the line into the glob `test_*deadline*.py` (same files, lint OK) and ran step 5: `TestCheckDeadlinesMatchesPython` and `TestWatchTitle` PASS on local PostgreSQL 16, golden fresh, 24 pytest passed.
 
 ## 1. Diff stat (ab35038..HEAD, tail)
 
@@ -8,7 +8,7 @@ Status: done (renumbered from 1134, which main took for the billing brief). Bloc
 8 files changed, 3962 insertions(+), 2 deletions(-)
 ```
 
-Includes the brief itself (docs/tasks/1144-go-check-deadlines.md) from the brief commit.
+Includes the brief itself (docs/tasks/1153-go-check-deadlines.md) from the brief commit.
 
 ## 2. Commands
 

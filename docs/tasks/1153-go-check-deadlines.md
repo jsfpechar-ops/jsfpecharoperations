@@ -1,4 +1,4 @@
-# 1144: Go port of `reporting.check_deadlines` (the deadline watch), parity-checked against Python
+# 1153: Go port of `reporting.check_deadlines` (the deadline watch), parity-checked against Python
 
 Status: todo
 Depends on: 1132, 1133 (merged, PR #934) | Base commit: ab35038 | Branch: claude/go-check-deadlines-1134
@@ -40,8 +40,8 @@ Anchors that must exist verbatim (step 0): `func anchorDate(stay stayRow, guests
 | `go/internal/calendar/watch_test.go` | create | Go vs golden on PostgreSQL; title unit test |
 | `App/tests/test_check_deadlines_golden.py` | create | fails when the golden file is stale |
 | `docs/context/test-map.md` | edit (1 line) | Filing row names the new Python test |
-| `docs/context/status.md` | edit (1 line) | GO-DL A merged, 1144 next |
-| `docs/tasks/1144-report.md` | create | the report (§9) |
+| `docs/context/status.md` | edit (1 line) | GO-DL A merged, 1153 next |
+| `docs/tasks/1153-report.md` | create | the report (§9) |
 
 No other file may change.
 
@@ -312,7 +312,7 @@ if __name__ == "__main__":
     main()
 ```
 
-   From `App/`: `.venv/bin/python scripts/check_deadlines_golden.py 2>&1 | tail -3` ends with `wrote .../go/internal/calendar/testdata/check_deadlines_golden.json` (two `DecryptionError` tracebacks before it are expected: they are the unreadable-guest cases being logged). Then from the repo root `sha256sum App/scripts/check_deadlines_golden.py go/internal/calendar/testdata/check_deadlines_golden.json | tail -30` must print `9f13c676f55c8ec2da42f50f0a682652de2529a200e3a4d331d5b58367fea64c` and `b48506b79d2d241835368495b1818cde4133e14c65be1718ea7cf6de52c4f422`. A different script hash: your paste differs; fix it from the block above (never edit the JSON by hand). Commit "1144 step 1" (both files).
+   From `App/`: `.venv/bin/python scripts/check_deadlines_golden.py 2>&1 | tail -3` ends with `wrote .../go/internal/calendar/testdata/check_deadlines_golden.json` (two `DecryptionError` tracebacks before it are expected: they are the unreadable-guest cases being logged). Then from the repo root `sha256sum App/scripts/check_deadlines_golden.py go/internal/calendar/testdata/check_deadlines_golden.json | tail -30` must print `9f13c676f55c8ec2da42f50f0a682652de2529a200e3a4d331d5b58367fea64c` and `b48506b79d2d241835368495b1818cde4133e14c65be1718ea7cf6de52c4f422`. A different script hash: your paste differs; fix it from the block above (never edit the JSON by hand). Commit "1153 step 1" (both files).
 
 2. Create `go/internal/calendar/watch.go` (sha256 `e5e49fb8c6df420dbb4018787f1d1540b4b9a93aa2f90e95f260b983547ef87a`) with exactly:
 
@@ -769,7 +769,7 @@ func TestWatchTitle(t *testing.T) {
 }
 ```
 
-   From `go/`: `sha256sum internal/calendar/watch.go internal/calendar/watch_test.go | tail -30` matches; `test -z "$(gofmt -l .)" && go vet ./... && go test ./internal/calendar/ -count=1 2>&1 | tail -30` prints `ok`. Commit "1144 step 2".
+   From `go/`: `sha256sum internal/calendar/watch.go internal/calendar/watch_test.go | tail -30` matches; `test -z "$(gofmt -l .)" && go vet ./... && go test ./internal/calendar/ -count=1 2>&1 | tail -30` prints `ok`. Commit "1153 step 2".
 
 3. Create `App/tests/test_check_deadlines_golden.py` (sha256 `e339110eca41b422f84dded4d8a13664ca54d762185a881993611a5379bf8f9c`) with exactly:
 
@@ -801,25 +801,25 @@ def test_check_deadlines_golden_matches_python_check_deadlines(monkeypatch, tmp_
     assert committed.count(b'"dedupe_key"') >= 80
 ```
 
-   From `App/`: `.venv/bin/python -m pytest tests/test_check_deadlines_golden.py tests/test_deadlines.py tests/test_deadlines_golden.py -q --tb=short -x 2>&1 | tail -30` passes. Commit "1144 step 3".
+   From `App/`: `.venv/bin/python -m pytest tests/test_check_deadlines_golden.py tests/test_deadlines.py tests/test_deadlines_golden.py -q --tb=short -x 2>&1 | tail -30` passes. Commit "1153 step 3".
 
 4. Two one-line docs edits (Edit tool, exact strings):
    - `docs/context/test-map.md`: old `test_deadline*.py test_claim_*.py` new `test_deadline*.py test_check_deadlines_golden.py test_claim_*.py`.
-   - `docs/context/status.md`: old ``Next: `deadlines` job, brief 1132.`` new ``Next: `deadlines` job: 1132, 1133 (GO-DL A, #934) merged; 1144 (GO-DL B) next.``
+   - `docs/context/status.md`: old ``Next: `deadlines` job, brief 1132.`` new ``Next: `deadlines` job: 1132, 1133 (GO-DL A, #934) merged; 1153 (GO-DL B) next.``
 
-   From the repo root: `python3 scripts/context_lint.py 2>&1 | tail -30` passes. Commit "1144 step 4".
+   From the repo root: `python3 scripts/context_lint.py 2>&1 | tail -30` passes. Commit "1153 step 4".
 
 5. Go DB test locally (optional, 3 calls at most; skip and say "CI only" in the report if any command fails). As root with PostgreSQL 16 installed:
 
 ```bash
-P=/var/tmp/pg1144 && mkdir -p $P && chown postgres $P && su postgres -c "/usr/lib/postgresql/16/bin/initdb -D $P/data -A trust -U postgres" >/dev/null && su postgres -c "/usr/lib/postgresql/16/bin/pg_ctl -D $P/data -o '-p 55432 -k $P' -l $P/log -w start" 2>&1 | tail -3
+P=/var/tmp/pg1153 && mkdir -p $P && chown postgres $P && su postgres -c "/usr/lib/postgresql/16/bin/initdb -D $P/data -A trust -U postgres" >/dev/null && su postgres -c "/usr/lib/postgresql/16/bin/pg_ctl -D $P/data -o '-p 55432 -k $P' -l $P/log -w start" 2>&1 | tail -3
 ```
 
 ```bash
 cd go && UBYHOST_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:55432/postgres go test ./internal/calendar/ -run 'TestCheckDeadlinesMatchesPython|TestWatchTitle' -count=1 -v 2>&1 | grep -E '^(--- |ok|FAIL)' | tail -30
 ```
 
-   Expected: two `--- PASS` lines and `ok`. A `--- SKIP` means the variable was not seen. A FAIL: STOP (§8), paste the first 30 lines of the diff into the report. Then write the report (§9), commit "1144 step 5".
+   Expected: two `--- PASS` lines and `ok`. A `--- SKIP` means the variable was not seen. A FAIL: STOP (§8), paste the first 30 lines of the diff into the report. Then write the report (§9), commit "1153 step 5".
 
 ## 5. Do not touch
 
@@ -840,7 +840,7 @@ From the repo root: `python3 scripts/context_lint.py 2>&1 | tail -30`.
 - [ ] From `App/`: the three pytest files pass and the freshness command leaves `git status --short ../go` empty.
 - [ ] `python3 scripts/context_lint.py` passes.
 - [ ] `git diff --stat ab35038..HEAD | tail -30` lists only the §3 paths plus this brief.
-- [ ] Five commits "1144 step 1" to "1144 step 5" on `claude/go-check-deadlines-1134`; nothing pushed.
+- [ ] Five commits "1153 step 1" to "1153 step 5" on `claude/go-check-deadlines-1134`; nothing pushed.
 
 ## 8. Stop and ask
 
@@ -856,7 +856,7 @@ Stop, and write the report as `blocked`, if:
 
 ## 9. Report
 
-Write `docs/tasks/1144-report.md` (600 tokens at most) and set this brief's `Status: review`. It has: 1. `git diff --stat ab35038..HEAD | tail -10`; 2. each §6 command and step 5 with the last 5 lines of output; 3. §7 ticked; 4. deviations; 5. questions; 6. owner steps left (none expected: nothing is wired).
+Write `docs/tasks/1153-report.md` (600 tokens at most) and set this brief's `Status: review`. It has: 1. `git diff --stat ab35038..HEAD | tail -10`; 2. each §6 command and step 5 with the last 5 lines of output; 3. §7 ticked; 4. deviations; 5. questions; 6. owner steps left (none expected: nothing is wired).
 
 ## Risk list (for the reviewer)
 
