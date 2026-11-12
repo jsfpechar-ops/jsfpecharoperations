@@ -415,7 +415,9 @@ def test_an_expired_send_claim_does_not_block_fitting_the_guest_window(
         db.execute("DELETE FROM submission_claim WHERE guest_id = ?", (guest_id,))
 
 
-def _unclear_batch(reservation_id, guest_id, *, state="outcome_unknown"):
+def _unclear_batch(
+    reservation_id, guest_id, *, state="outcome_unknown", point=True, hours_old=0
+):
     apartment_id = db.query_one(
         "SELECT apartment_id FROM reservation WHERE id = ?", (reservation_id,)
     )["apartment_id"]
@@ -423,7 +425,9 @@ def _unclear_batch(reservation_id, guest_id, *, state="outcome_unknown"):
         "submission",
         {
             "apartment_id": apartment_id,
-            "created_at": db.utcnow(),
+            "created_at": (datetime.now(timezone.utc) - timedelta(hours=hours_old))
+            .replace(microsecond=0)
+            .isoformat(),
             "finished_at": db.utcnow(),
             "mode": "auto",
             "state": state,
@@ -431,7 +435,8 @@ def _unclear_batch(reservation_id, guest_id, *, state="outcome_unknown"):
             "error_text": "read timed out",
         },
     )
-    db.update("guest", guest_id, {"submission_id": submission_id})
+    if point:
+        db.update("guest", guest_id, {"submission_id": submission_id})
     return submission_id
 
 
@@ -473,9 +478,13 @@ def test_an_unclear_ubyport_outcome_defers_fitting_the_guest_window(
 def test_a_crash_stuck_running_batch_defers_fitting_the_guest_window(
     monkeypatch, tmp_path
 ):
-    """A ``running`` row with no live claim is the same fact as outcome_unknown."""
+    """A ``running`` row with no live claim is the same fact as outcome_unknown.
+
+    A crash leaves the guest unpointed (only ``outcome_unknown`` is pointed at),
+    so the batch is found through ``submission.guest_ids`` (K-F22).
+    """
     feed_id, reservation_id, guest_id = _moved_stay(tmp_path, monkeypatch)
-    _unclear_batch(reservation_id, guest_id, state="running")
+    _unclear_batch(reservation_id, guest_id, state="running", point=False)
 
     _sync(feed_id)
     guest = db.query_one("SELECT stay_from, stay_to FROM guest WHERE id = ?", (guest_id,))
@@ -484,6 +493,62 @@ def test_a_crash_stuck_running_batch_defers_fitting_the_guest_window(
     )
     assert (guest["stay_from"], guest["stay_to"]) == ("2099-01-10", "2099-01-12")
     assert (stay["date_from"], stay["date_to"]) == ("2099-01-10", "2099-01-12")
+    feed = db.query_one("SELECT body_sha256 FROM ical_feed WHERE id = ?", (feed_id,))
+    assert not feed["body_sha256"]
+
+
+def _stay_dates(reservation_id):
+    row = db.query_one(
+        "SELECT date_from, date_to FROM reservation WHERE id = ?", (reservation_id,)
+    )
+    return (row["date_from"], row["date_to"])
+
+
+def test_a_date_move_waits_for_a_crash_stuck_running_batch_then_lands(monkeypatch, tmp_path):
+    feed_id, reservation_id, guest_id = _moved_stay(tmp_path, monkeypatch)
+    submission_id = _unclear_batch(reservation_id, guest_id, state="running", point=False)
+
+    _sync(feed_id)
+    assert _stay_dates(reservation_id) == ("2099-01-10", "2099-01-12")
+
+    # The batch is resolved (recovered and settled): the next poll applies the move.
+    db.update("submission", submission_id, {"state": "ok"})
+    _sync(feed_id)
+    assert _stay_dates(reservation_id) == ("2099-02-10", "2099-02-12")
+
+
+def test_an_old_running_batch_still_defers_the_date_move(monkeypatch, tmp_path):
+    """No age limit for a move: an old row becomes outcome_unknown, which defers anyway."""
+    feed_id, reservation_id, guest_id = _moved_stay(tmp_path, monkeypatch)
+    _unclear_batch(reservation_id, guest_id, state="running", point=False, hours_old=3)
+
+    _sync(feed_id)
+
+    assert _stay_dates(reservation_id) == ("2099-01-10", "2099-01-12")
+    assert alerts.open_alert(f"moved_after_report:{reservation_id}") is None
+
+
+def test_a_running_batch_of_another_guest_does_not_hold_the_date_move(monkeypatch, tmp_path):
+    feed_id, reservation_id, guest_id = _moved_stay(tmp_path, monkeypatch)
+    submission_id = _unclear_batch(reservation_id, guest_id, state="running", point=False)
+    db.update("submission", submission_id, {"guest_ids": json.dumps([guest_id + 1000])})
+
+    _sync(feed_id)
+
+    assert _stay_dates(reservation_id) == ("2099-02-10", "2099-02-12")
+
+
+def test_a_running_batch_listing_only_a_sent_guest_does_not_hold_the_date_move(
+    monkeypatch, tmp_path
+):
+    feed_id, reservation_id, guest_id = _moved_stay(
+        tmp_path, monkeypatch, submit_state="sent"
+    )
+    _unclear_batch(reservation_id, guest_id, state="running", point=False)
+
+    _sync(feed_id)
+
+    assert _stay_dates(reservation_id) == ("2099-02-10", "2099-02-12")
 
 
 def test_a_hand_filed_guest_does_not_freeze_the_booking_dates(monkeypatch, tmp_path):

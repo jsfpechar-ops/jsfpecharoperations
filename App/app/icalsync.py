@@ -380,7 +380,11 @@ def _send_in_flight(reservation_id: int) -> bool:
     ``submission_claim``, and also after the claim is released: a timeout or
     5xx becomes ``outcome_unknown`` and the sweep will not retry (OD-1), but
     the register may already hold the old window. A crash-stuck ``running``
-    batch is the same fact until ``recover_stale_submissions`` rewrites it.
+    batch is the same fact until ``recover_stale_submissions`` rewrites it
+    (that pass has no age test, only a stale claim). No guest points at a
+    ``running`` batch, only at ``outcome_unknown``, so ``submission.guest_ids``
+    is the only link to it and is read here, with no age limit: a move is
+    deferred until the batch is resolved, never applied over it.
     Guests already ``sent`` (including filed by hand) do not freeze the
     booking: their own windows stay put, and the reservation can follow the
     calendar so the host sees the move.
@@ -394,7 +398,9 @@ def _send_in_flight(reservation_id: int) -> bool:
         (reservation_id, live_after),
     ):
         return True
-    return _pointed_at_open_submission(reservation_id)
+    return _pointed_at_open_submission(reservation_id) or _running_submission_covers_stay(
+        reservation_id
+    )
 
 
 # A cancel waits for a send whose claim is gone only this long: the sweep
