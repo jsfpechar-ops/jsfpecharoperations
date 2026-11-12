@@ -6,7 +6,7 @@ import json
 import logging
 import secrets
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 from zoneinfo import ZoneInfo
 
 import requests
@@ -569,16 +569,20 @@ LIST_PAGE_SIZE = 20
 LIST_MAX_PAGES = 5
 
 
-def code_is_listed(account_id: int, lock_id: str, name: str, code_id: str) -> Optional[bool]:
-    """Is the lock code with this id on the lock? True, False, or None when it cannot be told.
+def _read_listing(
+    account_id: int, lock_id: str, name: str, keep: Callable[[dict], bool], stop_at_first: bool = False
+) -> Optional[List[dict]]:
+    """The one paging loop over /v3/lock/listKeyboardPwd; returns only the entries ``keep`` accepts.
 
     ``searchStr`` is a fuzzy match (UH-7 also lists UH-70 and UH-700), so the answer is read
     page by page, at most LIST_MAX_PAGES calls. A full page (LIST_PAGE_SIZE codes) is always
-    read on past, whatever ``pages`` says. False only when a short or empty page ended the
-    list and the id was on no page. None when an answer has no ``list`` array, or when the
-    page limit ran out first. The id decides, not the name or the window. TTLock errors are
+    read on past, whatever ``pages`` says. The kept entries (possibly none) are returned only
+    when a short or empty page ended the list, or, with ``stop_at_first``, at the first kept
+    entry. None when an answer has no ``list`` array, or when the page limit ran out first:
+    the list is then incomplete and nothing may be concluded from it. TTLock errors are
     raised as they are.
     """
+    kept: List[dict] = []
     for page in range(1, LIST_MAX_PAGES + 1):
         answer = _call(
             account_id,
@@ -595,11 +599,34 @@ def code_is_listed(account_id: int, lock_id: str, name: str, code_id: str) -> Op
         items = answer.get("list")
         if not isinstance(items, list):
             return None
-        if any(str(raw.get("keyboardPwdId")) == str(code_id) for raw in items):
-            return True
+        kept.extend(raw for raw in items if keep(raw))
+        if kept and stop_at_first:
+            return kept
         if len(items) < LIST_PAGE_SIZE:
-            return False
+            return kept
     return None
+
+
+def code_is_listed(account_id: int, lock_id: str, name: str, code_id: str) -> Optional[bool]:
+    """Is the lock code with this id on the lock? True, False, or None when it cannot be told.
+
+    False only when the whole list was read and the id was on no page. The id decides, not
+    the name or the window.
+    """
+    found = _read_listing(
+        account_id, lock_id, name,
+        lambda raw: str(raw.get("keyboardPwdId")) == str(code_id), stop_at_first=True,
+    )
+    return None if found is None else bool(found)
+
+
+def codes_named(account_id: int, lock_id: str, name: str) -> Optional[List[dict]]:
+    """Every lock code whose name is exactly ``name`` (raw entries), or None when the list is incomplete.
+
+    An empty list means the whole list was read and no code has that name. Reads to the end
+    of the list (no early stop), so a second code with the same name is seen.
+    """
+    return _read_listing(account_id, lock_id, name, lambda raw: raw.get("keyboardPwdName") == name)
 
 
 def change_code_period(

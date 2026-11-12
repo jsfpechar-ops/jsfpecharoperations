@@ -185,13 +185,13 @@ def queue_permanent(home: dict, owner_id: int | None) -> int:
 
 def _find(row: dict) -> str | None:
     # The narrow exact-name match is an idempotency lookup, never a code-list
-    # poll. Do not retain unrelated PINs returned by TTLock.
-    answer = ttlock._call(row["lock_account_id"], "/v3/lock/listKeyboardPwd", {
-        "lockId": int(row["lock_id"]), "searchStr": row["operation_ref"],
-        "pageNo": 1, "pageSize": 20, "orderBy": 1,
-    }, ttlock.NORMAL)
-    matches = [entry for entry in answer.get("list", []) if
-               entry.get("keyboardPwdName") == row["operation_ref"]]
+    # poll. Do not retain unrelated PINs returned by TTLock. None means the whole
+    # list was read and the operation is not on the lock; an incomplete list
+    # (non-list answer, more pages than ttlock.LIST_MAX_PAGES) raises a transient
+    # error, so the caller neither adds a second code nor calls a code revoked.
+    matches = ttlock.codes_named(row["lock_account_id"], row["lock_id"], row["operation_ref"])
+    if matches is None:
+        raise ttlock.TTLockError("incomplete code list", kind="transient")
     if len(matches) > 1:
         raise ttlock.TTLockError("ambiguous operation", kind="permission")
     if not matches:
