@@ -890,6 +890,7 @@ def _revive_one(item, now_iso: str, held_claim: str | None = None) -> bool:
         return False
     if unverified:
         db.audit("door_code_pin_unverified", f"door_code={row_id}", actor="system", owner_user_id=owner_id)
+        _tell_host_unverified(row_id, owner_id)
     elif verdict == PIN_GONE:
         _reissue_lost_pin(row_id, str(item["provider_code_id"] or ""), owner_id)
     return True
@@ -942,6 +943,38 @@ def _tell_host_reissued(row_id: int, owner_user_id: int) -> None:
         mail_notify.door_code_notice(row_id, f"reissued{suffix}")
     except Exception:
         log.exception("door code %s: host notice after a re-issue failed", row_id)
+
+
+def _tell_host_unverified(row_id: int, owner_user_id: int) -> None:
+    """Tell the host once that a revived code could not be confirmed on the lock.
+
+    Called when the lookup stayed unknown for LOOKUP_MAX_TRIES and the row is kept issued: the
+    guest may be shown a PIN the lock no longer has. One warning card per stay (dedupe key) and
+    one mail per row (idempotency key in the mail queue); neither carries the PIN. A failure
+    here is logged and never stops the revival.
+    """
+    try:
+        info = db.query_one(
+            "SELECT a.id AS apartment_id, a.internal_name, r.id AS reservation_id, r.date_from "
+            "FROM door_code dc JOIN apartment a ON a.id = dc.apartment_id "
+            "JOIN reservation r ON r.id = dc.reservation_id WHERE dc.id = ?",
+            (row_id,),
+        )
+        if not info:
+            return
+        alerts.raise_alert(
+            "warning",
+            "door_code_pin_unverified",
+            "Door code could not be confirmed on the lock",
+            dedupe_key=f"door_code_pin_unverified:{info['reservation_id']}",
+            apartment_id=info["apartment_id"],
+            reservation_id=info["reservation_id"],
+            owner_user_id=owner_user_id,
+            params={"property": info["internal_name"], "date": info["date_from"]},
+        )
+        mail_notify.door_code_notice(row_id, "pin_unverified")
+    except Exception:
+        log.exception("door code %s: host notice about an unverified code failed", row_id)
 
 
 def _reissue_lost_pin(row_id: int, deleted_code_id: str, owner_user_id: int) -> None:
@@ -1299,6 +1332,11 @@ def _handle_moves(now_iso: str) -> None:
                     "UPDATE door_code SET next_attempt_at = ?, last_error = ?, updated_at = ? WHERE id = ?",
                     (_iso(_now() + timedelta(minutes=delay)), last_error, now_iso, row["id"]),
                 )
+                if kind == ttlock.LOCK_SETUP:
+                    # The guest keeps the old code while the hourly retry runs: tell the host
+                    # once (the mail queue's idempotency key per row and variant).
+                    mail_notify.door_code_notice(int(row["id"]), "moved_failed")
+                    mail.drain(limit=4)
 
 
 def check_lock_clocks() -> Dict[str, int]:
