@@ -851,40 +851,39 @@ def _revoke_one(row_id: int) -> None:
                 and _iso_to_ms(row["valid_to"]) <= int(now.timestamp() * 1000)
             )
             if past_end:
-                db.execute(
+                if db.execute(
                     "UPDATE door_code SET state = ?, claimed_at = NULL, last_error = ?, updated_at = ? "
                     "WHERE id = ? AND state = ?",
                     (REVOKE_FAILED, kind[:40], now_iso, row_id, REVOKE_PENDING),
-                )
+                ) == 1:
+                    db.audit(
+                        "door_code_revoke_failed",
+                        f"door_code={row_id}",
+                        actor="system",
+                        owner_user_id=apartment["owner_user_id"],
+                    )
+            else:
+                delays = (1, 15, 60)
+                next_at = _iso(now + timedelta(minutes=delays[min(attempts - 1, 2)]))
+                if db.execute(
+                    "UPDATE door_code SET claimed_at = NULL, next_attempt_at = ?, last_error = ?, "
+                    "updated_at = ? WHERE id = ? AND state = ?",
+                    (next_at, kind[:40], now_iso, row_id, REVOKE_PENDING),
+                ) == 1 and attempts == 3:
+                    mail_notify.door_code_notice(row_id, "cancelled_not_deleted")
+        else:
+            if db.execute(
+                "UPDATE door_code SET state = ?, claimed_at = NULL, last_error = ?, updated_at = ? "
+                "WHERE id = ? AND state = ?",
+                (REVOKE_FAILED, kind[:40], now_iso, row_id, REVOKE_PENDING),
+            ) == 1:
                 db.audit(
                     "door_code_revoke_failed",
                     f"door_code={row_id}",
                     actor="system",
                     owner_user_id=apartment["owner_user_id"],
                 )
-            else:
-                delays = (1, 15, 60)
-                next_at = _iso(now + timedelta(minutes=delays[min(attempts - 1, 2)]))
-                db.execute(
-                    "UPDATE door_code SET claimed_at = NULL, next_attempt_at = ?, last_error = ?, "
-                    "updated_at = ? WHERE id = ? AND state = ?",
-                    (next_at, kind[:40], now_iso, row_id, REVOKE_PENDING),
-                )
-                if attempts == 3:
-                    mail_notify.door_code_notice(row_id, "cancelled_not_deleted")
-        else:
-            db.execute(
-                "UPDATE door_code SET state = ?, claimed_at = NULL, last_error = ?, updated_at = ? "
-                "WHERE id = ? AND state = ?",
-                (REVOKE_FAILED, kind[:40], now_iso, row_id, REVOKE_PENDING),
-            )
-            db.audit(
-                "door_code_revoke_failed",
-                f"door_code={row_id}",
-                actor="system",
-                owner_user_id=apartment["owner_user_id"],
-            )
-            mail_notify.door_code_notice(row_id, "cancelled_not_deleted")
+                mail_notify.door_code_notice(row_id, "cancelled_not_deleted")
 
 
 def _handle_cancellations(now_iso: str) -> None:
