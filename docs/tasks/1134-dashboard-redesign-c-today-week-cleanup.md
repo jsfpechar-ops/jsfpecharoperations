@@ -1,6 +1,6 @@
 # 1134: host dashboard redesign, part C of 3: Today list, This week strip, cleanup and docs (laptop and tablet)
 
-Status: ready
+Status: todo
 Depends on: 1133 (merged, or stacked on `task/1133-dashboard-redesign-b`) | Base commit: origin/main | Branch: task/1134-dashboard-redesign-c
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (4 steps of at most 6 calls)
 Brief by Sonnet 5.5, 2026-11-12. Owner Josef approved Figma frames "Laptop 1280 / Dashboard (chosen: B)" and "Tablet 820 / Dashboard (B)" (file `4POeO1dtcL5i2U5e0gdEoU`). Order: 1132, 1133, **1134 (this)**.
@@ -57,7 +57,14 @@ Block `/* 1134 dashboard */`, all `body.v2 .dash-wide`: `.dash-today h2,.dash-we
 2. Docs: `docs/design/MASTER.md` section 2: make sure the semantic token list shows `--page-cream #faf6f0`, `--coral-red*`, `--tile-*`, `--danger*` and the rule "coral is a signal only"; `docs/design/pages/dashboard.md`: replace the desktop part with the new order (header, tiles, What needs you, Today, This week), the pixel values from 1133/1134 (30/28 px title, 48 px pill, 52 px icon tiles, 18/600 titles, gutters 40/28, section gap 32), the rule that tiles are display-only, and one line that phone keeps the Today/Upcoming layout. Do not touch status, decisions, known-issues.
 3. Run section 5. Commit `1134 step 4`.
 
-## 5. Commands (from `App/`, each ends `| tail -30`)
+## 5. Do not touch
+
+- The phone layout (`dash-phone` markup and `ph-*` rules), the sidebar (1132) and the header, tiles and needs-you cards (1133).
+- Calendar page logic and `dashboard-calendar.js` behaviour beyond the refresh guard named in section 4.
+- Migrations, SQL, any new dependency or outbound request, guest pages, admin.
+- Anything not listed in section 3 Files.
+
+## 6. Commands (from `App/`, each ends `| tail -30`)
 
 ```
 .venv/bin/python -m pytest tests/test_host_new_dashboard_1133.py tests/test_dashboard_*.py tests/test_0520_overview_today.py tests/test_host_quiet_dashboard*.py tests/test_dashboard_calendar_browser.py -q --tb=short -x -rs 2>&1 | tail -30
@@ -68,18 +75,18 @@ python3 scripts/context_lint.py 2>&1 | tail -30
 ```
 (last line from the repo root). Rows used (test-map): host pages/CSS/templates, calendar, copy and translations, static files, design system, v2 pages. 0 skipped on browser files. No full suite.
 
-## 6. Acceptance
+## 7. Acceptance
 
 - At 1280 and 820: Today rows (icon tile blue = leaving, green = arriving; property; "Leaving · 2 guests" / "Arriving · 3 guests · 1 night"; one status badge; chevron; whole row is the link); This week strip (7 columns, today coral-soft, one row per property, tinted "Booked" pills, "Full calendar" link works); Clear demo data only in the overflow; no month calendar block, no `?`, no month line in the new layout; calm state from 1133 still shown.
 - Phone unchanged; calendar page (`/?cal_view=calendar`) unchanged.
 - UX gate (AGENTS rule 10, you do it, never ask the owner): `test_layout_lint_browser.py` green, open the 390/768/1280 shots of `/` (with demo data), write per page what you saw in the PR, tick the [design-system checklist](../design/design-system.md), never silence a finding.
 - Section 5 green, 0 skipped; context lint green.
 
-## 7. Stop and ask
+## 8. Stop and ask
 
 Stop and report if: 1133 is not in the base; `cal_rows` bars carry raw hex colours or no column data; the week grid cannot fit at 768 without cutting a label after 2 tries; JS in `dashboard-calendar.js` rewires `.dashboard-row` or `data-stay-id` in a way that touches the new block; more than 25 tool calls.
 
-## 8. Branch, PR, report
+## 9. Report (branch, PR and what to report)
 
 Branch `task/1134-dashboard-redesign-c`, one **draft** PR (stacked on 1133), never push to `main`; merge only with `scripts/merge-pr-on-green.sh` (owner step: merge 1132, 1133, 1134 in order; green merges auto-deploy; the redesign ships complete only after 1134). Report `docs/tasks/1134-report.md` (600 tokens at most): files changed, commands with last 5 lines, section 6 ticked, per-page screenshot notes, Deviations (`Done: steps 1 to k. Left: steps k+1 to 4.`), Questions, owner steps.
 

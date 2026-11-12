@@ -1,6 +1,6 @@
 # 1133: host dashboard redesign, part B of 3: greeting header, month tiles, "What needs you" cards (laptop and tablet)
 
-Status: ready
+Status: todo
 Depends on: 1132 (merged, or this branch stacked on `task/1132-dashboard-redesign-a`) | Base commit: origin/main | Branch: task/1133-dashboard-redesign-b
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (4 steps of at most 6 calls)
 Brief by Sonnet 5.5, 2026-11-12. Owner Josef approved the Figma frames "Laptop 1280 / Dashboard (chosen: B)" and "Tablet 820 / Dashboard (B)" (file `4POeO1dtcL5i2U5e0gdEoU`). Order: 1132, **1133 (this)**, 1134. Both 1133 and 1134 touch `dashboard.html` and `app2.css`: 1134's anchors are written for the file as this brief leaves it.
@@ -70,7 +70,15 @@ No new copy beyond this (rule 9: no helper sentences). Run `.venv/bin/python -m 
 ### Step 4: tests (at most 5 calls)
 New `App/tests/test_host_new_dashboard_1133.py`, following the fixtures in `test_dashboard_queue.py` (grep its first 40 lines for the client/login/seed helpers): (a) `dash-wide` contains the greeting with the user's first name and `class="dash-add"` once; (b) three `dash-tile` items, none inside an `<a>` or `<button>`; (c) tile numbers equal `reporting.month_summary` values (`stays` key present); (d) with 6 needs-you lines: 4 `dash-card`, `Show 2 more`, the first card's button has `is-primary`, others do not; (e) no lines: `dash-calm` with `See all stays`; (f) browser (copy the style of `test_dashboard_rows_browser.py`, 0 skipped): at 1280 and 820 the tiles are in one row, no horizontal scroll, `.dash-add` height 48, the phone block is hidden; at 390 `.dash-wide` is `display:none`. No real guest data. Commit `1133 step 4`.
 
-## 5. Commands (from `App/`, each ends `| tail -30`)
+## 5. Do not touch
+
+- The phone layout (`dash-phone` markup and `ph-*` rules) and the sidebar from brief 1132.
+- Needs-you data logic and action handlers (reuse them, do not change them).
+- Migrations, `db.py` helpers other than reading one existing count, any new dependency or outbound request.
+- The Today list and the This week strip (brief 1134).
+- Anything not listed in section 3 Files.
+
+## 6. Commands (from `App/`, each ends `| tail -30`)
 
 ```
 .venv/bin/python -m pytest tests/test_host_new_dashboard_1133.py tests/test_dashboard_*.py tests/test_0520_overview_today.py tests/test_needs_you*.py tests/test_0375_needs_you_and_open.py tests/test_host_quiet_dashboard*.py -q --tb=short -x -rs 2>&1 | tail -30
@@ -80,7 +88,7 @@ UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/shots .venv/bin/python -m pytes
 ```
 Rows used (test-map): host pages/CSS/templates, alerts and needs-you, calendar (dashboard calendar), copy and translations, static cache keys. 0 skipped on every browser file. No full suite.
 
-## 6. Acceptance
+## 7. Acceptance
 
 - At 1280 and 820: greeting with first name by time of day (30 px / 28 px, bold), date line, ONE coral "Add stay" pill 48 px high on the right; three display-only tiles in one row at 1280, stacked icon-over-text at 820; "What needs you" with count chip, cards with 52 px icon tile, 18/600 title, meta line with property dot, one 48 px secondary pill (first card coral), "Show N more" after 4; calm state shows the next arrival and "See all stays".
 - No help `?` next to the title on this layout; no sentence the button already says; no raw hex or inline style added to templates (`git diff -U0 App/app/templates | grep -nE "#[0-9a-fA-F]{3,6}|style=" | tail -30` shows none that you added).
@@ -88,11 +96,11 @@ Rows used (test-map): host pages/CSS/templates, alerts and needs-you, calendar (
 - UX gate (AGENTS rule 10, you do it, never ask the owner): screenshots 390/768/1280 of `/` with demo data and with an empty needs-you state; per page "390: ...; 768: ...; 1280: ..." in the PR; tick the [design-system checklist](../design/design-system.md); never silence a lint finding.
 - Section 5 green, 0 skipped.
 
-## 7. Stop and ask
+## 8. Stop and ask
 
 Stop and report if: 1132 is not in the base; an anchor is missing; no local-time helper exists; `dashboard-calendar.js` refresh would duplicate or break the new block; more than one existing test asserts markup you cannot keep without weakening it; the layout lint flags something not fixable in 2 tries; more than 25 tool calls.
 
-## 8. Branch, PR, report
+## 9. Report (branch, PR and what to report)
 
 Branch `task/1133-dashboard-redesign-b`, one **draft** PR, never push to `main`, merge only with `scripts/merge-pr-on-green.sh` (owner), keep the draft until the owner says it may ship (a half-built dashboard must not deploy before 1134). Do not edit status, decisions or known-issues. Report `docs/tasks/1133-report.md` (600 tokens at most): files changed, commands with last 5 lines, section 6 ticked, per-page notes, Deviations (`Done: steps 1 to k. Left: steps k+1 to 4.`), Questions, owner steps.
 
