@@ -53,6 +53,7 @@ TRANSITIONS = {
     ISSUED: {
         REVOKE_PENDING,  # _handle_cancellations: stay cancelled before valid_to
         EXPIRED,  # reconcile: valid_to has passed
+        PENDING,  # _reissue_lost_pin: a revoke deleted the lock code, the stay is live
     },
     REVOKE_PENDING: {
         ISSUED,  # _keep_issued: the stay is live again
@@ -782,6 +783,39 @@ def _keep_issued(row_id: int, now_iso: str, held_claim: str | None = None) -> bo
     ) == 1
 
 
+def _reissue_lost_pin(row_id: int, deleted_code_id: str, owner_user_id: int) -> None:
+    """A revoke deleted the lock code but lost the row to a revival: make a new code.
+
+    One guarded UPDATE decides, so nothing is re-issued unless the row is still issued
+    with the code id that was just deleted (a date move already made a new code: the id
+    differs) and the stay is live (a cancelled stay is left to the next revoke). The
+    row goes issued -> pending and issue() runs at once, so a success leaves no pending
+    row for _alert_delayed. A failure is handled by issue() and the retry loop: their
+    host alerts and mails are reused, no new alert.
+    """
+    now_iso = _iso(_now())
+    if db.execute(
+        "UPDATE door_code SET state = ?, pin_enc = NULL, provider_code_id = NULL, "
+        "issued_at = NULL, notified_at = NULL, claimed_at = NULL, attempts = 0, "
+        "next_attempt_at = NULL, last_error = ?, updated_at = ? "
+        "WHERE id = ? AND state = ? AND provider_code_id = ? "
+        "AND EXISTS (SELECT 1 FROM reservation r WHERE r.id = door_code.reservation_id "
+        "AND r.status = 'active' AND r.archived_at IS NULL)",
+        (PENDING, "pin_lost", now_iso, row_id, ISSUED, deleted_code_id),
+    ) != 1:
+        return
+    db.audit(
+        "door_code_pin_reissued",
+        f"door_code={row_id}",
+        actor="system",
+        owner_user_id=owner_user_id,
+    )
+    try:
+        issue(row_id, allow_gateway=True)
+    except Exception:
+        log.exception("door code %s: re-issue after a lost revoke failed", row_id)
+
+
 def _revoke_one(row_id: int) -> None:
     now = _now()
     now_iso = _iso(now)
@@ -833,6 +867,7 @@ def _revoke_one(row_id: int) -> None:
                 actor="system",
                 owner_user_id=apartment["owner_user_id"],
             )
+            _reissue_lost_pin(row_id, str(row["provider_code_id"] or ""), apartment["owner_user_id"])
             return
         db.audit(
             "door_code_revoked",

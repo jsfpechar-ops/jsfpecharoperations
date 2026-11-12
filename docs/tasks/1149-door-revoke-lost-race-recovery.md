@@ -1,6 +1,6 @@
 # 1149: a revoke that loses its race re-issues the guest's door code
 
-Status: todo
+Status: review
 Depends on: none | Base commit: HEAD of branch claude/zealous-maxwell-a7ub54 | Branch: task/1149-door-revoke-lost-race
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
