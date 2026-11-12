@@ -931,8 +931,12 @@ def _handle_cancellations(now_iso: str) -> None:
         (REVOKED,),
     )
     for item in reactivated:
-        db.execute("DELETE FROM door_code WHERE id = ?", (item["id"],))
-        db.audit("door_code_reset", f"door_code={item['id']}", actor="system")
+        # Guarded: only a row that is still revoked is reset; one that moved on is left.
+        removed = db.execute(
+            "DELETE FROM door_code WHERE id = ? AND state = ?", (item["id"], REVOKED)
+        )
+        if removed:
+            db.audit("door_code_reset", f"door_code={item['id']}", actor="system")
 
 
 def _handle_moves(now_iso: str) -> None:
