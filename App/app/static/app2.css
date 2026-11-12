@@ -1,5 +1,5 @@
 /* v2 shell (brief 0705). Copied from ubyhost-redesign-v2.html; loaded only by pages that set v2. */
-:root{--bg:#f6f6f4;--s:#fff;--ink:#1c1c1a;--ink2:#55554f;--ink3:#6b6b65;--line:#ebebe7;--side:#fff;--side2:#f1f1ee;--acc:#d0452d;--acc-text:#b83d28;--accs:#fdece8;--ok:#167044;--oks:#e6f5ec;--warn:#8a5200;--warns:#fff4d6;--bad:#b42318;--bads:#fdecea;--info:#eaf3fb;
+:root{--bg:var(--page-cream);--s:#fff;--ink:#1c1c1a;--ink2:#55554f;--ink3:#6b6b65;--line:#ebebe7;--side:#fff;--side2:#f1f1ee;--acc:var(--coral-red);--acc-text:var(--coral-red-deep);--accs:var(--coral-red-soft);--ok:#167044;--oks:#e6f5ec;--warn:#8a5200;--warns:#fff4d6;--bad:#b42318;--bads:#fdecea;--info:#eaf3fb;
 font-family:var(--font-sans);color:var(--ink);font-size:14px}
 *{box-sizing:border-box}body{margin:0;background:var(--bg)}
 body.v2 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}

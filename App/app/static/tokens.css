@@ -32,6 +32,14 @@
   --brand-ink: #963e38;
   --focus-ring: rgba(200, 90, 82, 0.28);
   --on-brand: #ffffff;
+  --page-cream: #faf6f0;
+  --coral-red: #d0452d;
+  --coral-red-deep: #b83d28;
+  --coral-red-soft: #fdece8;
+  --tile-blue-bg: #e8f0fb;  --tile-blue-ink: #245cb5;
+  --tile-teal-bg: #e1f2ef;  --tile-teal-ink: #08736b;
+  --tile-done-bg: #e6f5ec;  --tile-done-ink: #167044;
+  --danger: #d0452d;        --danger-bg: #fcebea;
 
   /* Semantic and identity palette: readable ink + quiet tint */
   --red: #b42318;    --red-bg: #fcebea;
