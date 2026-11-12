@@ -1020,7 +1020,7 @@ def month_summary(owner_user_id: Optional[int], today: date) -> Dict[str, int]:
     Stays that overlap the month; reported = their guests with submit_state SENT.
     Non-demo stays of the owner's non-archived properties. Dates are compared as
     ISO strings; nights are clipped to the month and added up in Python. One query
-    (dashboard query budget).
+    (dashboard query budget). stays = number of those rows (1133).
     """
     start = today.replace(day=1)
     end = (start + timedelta(days=32)).replace(day=1)
@@ -1046,7 +1046,7 @@ def month_summary(owner_user_id: Optional[int], today: date) -> Dict[str, int]:
         if not isinstance(leave, date):
             leave = date.fromisoformat(str(leave)[:10])
         nights += max(0, (min(leave, end) - max(arrive, start)).days)
-    return {"guests": guests, "nights": nights, "reported": reported}
+    return {"guests": guests, "nights": nights, "reported": reported, "stays": len(rows)}
 
 
 def _as_utc(value) -> Optional[datetime]:

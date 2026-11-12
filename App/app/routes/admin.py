@@ -550,6 +550,9 @@ def dashboard(request: Request):
             "minutes_saved": minutes_saved,
             "welcome_back": welcome,
             "month_summary": reporting.month_summary(owner_user_id, today),
+            # 1133: greeting by local hour (Europe/Prague) and the police-report counts.
+            "greeting_part": _greeting_part(deadlines.local_now().hour),
+            "stays_missing": len(missing_report_rows),
             # 0706: 14-day grid for the overview calendar, built server-side.
             "cal_days": [today + timedelta(days=i) for i in range(14)],
             "cal_rows": _overview_calendar_rows(owner_user_id, apartments, today, host_i18n.lang_from_request(request)),
@@ -570,6 +573,13 @@ def dashboard(request: Request):
             ),
         },
     ))
+
+
+def _greeting_part(hour: int) -> str:
+    """1133: morning before 12, afternoon before 18, evening after."""
+    if hour < 12:
+        return "morning"
+    return "afternoon" if hour < 18 else "evening"
 
 
 _OVERVIEW_SOURCE_NAMES = {"airbnb": "Airbnb", "booking": "Booking"}

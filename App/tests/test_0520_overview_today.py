@@ -196,12 +196,12 @@ def test_month_summary_ignores_demo_stays_and_other_owners(host):
     other = _stay(theirs, "other-1", start, 5)
     _guest(other, "Other Guest", reporting.SENT, db.utcnow())
 
-    assert reporting.month_summary(owner_id, today) == {"guests": 0, "nights": 0, "reported": 0}
+    assert reporting.month_summary(owner_id, today) == {"guests": 0, "nights": 0, "reported": 0, "stays": 0}
 
     own = _stay(mine, "own-1", start, 2)
     _guest(own, "Own Guest")
-    assert reporting.month_summary(owner_id, today) == {"guests": 1, "nights": 2, "reported": 0}
-    assert reporting.month_summary(other_id, today) == {"guests": 1, "nights": 5, "reported": 1}
+    assert reporting.month_summary(owner_id, today) == {"guests": 1, "nights": 2, "reported": 0, "stays": 1}
+    assert reporting.month_summary(other_id, today) == {"guests": 1, "nights": 5, "reported": 1, "stays": 1}
 
 
 def test_month_summary_counts_reports_on_the_same_stays(host):
@@ -218,4 +218,4 @@ def test_month_summary_counts_reports_on_the_same_stays(host):
     gone = _stay(mine, "gone-1", start - timedelta(days=6), 3)
     _guest(gone, "Gone Guest", reporting.SENT, db.utcnow())
 
-    assert reporting.month_summary(owner_id, today) == {"guests": 2, "nights": 2, "reported": 2}
+    assert reporting.month_summary(owner_id, today) == {"guests": 2, "nights": 2, "reported": 2, "stays": 1}
