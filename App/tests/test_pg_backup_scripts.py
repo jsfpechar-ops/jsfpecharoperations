@@ -103,6 +103,61 @@ def test_pg_restore_rejects_bad_stamp(tmp_path):
     assert "stop" not in calls(log)
 
 
+def make_dump_file(tmp_path, name="ubyhost-pg.dump.age", text="ciphertext"):
+    dump = tmp_path / name
+    dump.write_text(text)
+    return dump
+
+
+def test_pg_restore_file_form_streams_host_file_without_docker_cp(tmp_path):
+    root, bindir, log = make_tree(tmp_path, PG_ENV)
+    identity = tmp_path / "agekey"
+    identity.write_text("stub")
+    dump = make_dump_file(tmp_path)
+    result = run_script("pg-restore.sh", root, bindir, log, args=["--file", str(dump)],
+                        extra_env={"AGE_IDENTITY_FILE": str(identity), "RESTORE_CONFIRM": "yes"})
+    assert result.returncode == 0, result.stderr
+    recorded = calls(log)
+    assert "cp " not in recorded
+    assert "stop worker ubyhost" in recorded
+    assert "pg_restore -U ubyhost -d ubyhost --clean --if-exists --single-transaction" in recorded
+    assert "up -d ubyhost worker" in recorded
+
+
+def test_pg_restore_file_form_missing_file_exits_1_before_stopping(tmp_path):
+    root, bindir, log = make_tree(tmp_path, PG_ENV)
+    identity = tmp_path / "agekey"
+    identity.write_text("stub")
+    result = run_script("pg-restore.sh", root, bindir, log,
+                        args=["--file", str(tmp_path / "missing.age")],
+                        extra_env={"AGE_IDENTITY_FILE": str(identity), "RESTORE_CONFIRM": "yes"})
+    assert result.returncode == 1
+    assert "stop" not in calls(log)
+
+
+def test_pg_restore_file_form_refuses_a_name_that_is_not_age(tmp_path):
+    root, bindir, log = make_tree(tmp_path, PG_ENV)
+    identity = tmp_path / "agekey"
+    identity.write_text("stub")
+    dump = make_dump_file(tmp_path, name="ubyhost-pg.dump")
+    result = run_script("pg-restore.sh", root, bindir, log, args=["--file", str(dump)],
+                        extra_env={"AGE_IDENTITY_FILE": str(identity), "RESTORE_CONFIRM": "yes"})
+    assert result.returncode == 1
+    assert "stop" not in calls(log)
+
+
+@pytest.mark.parametrize("args", [[], ["20260101T000000Z", "--file", "x.age"], ["--file"]])
+def test_pg_restore_needs_exactly_one_source(tmp_path, args):
+    root, bindir, log = make_tree(tmp_path, PG_ENV)
+    identity = tmp_path / "agekey"
+    identity.write_text("stub")
+    result = run_script("pg-restore.sh", root, bindir, log, args=args,
+                        extra_env={"AGE_IDENTITY_FILE": str(identity), "RESTORE_CONFIRM": "yes"})
+    assert result.returncode == 1
+    assert "usage:" in result.stderr
+    assert "stop" not in calls(log)
+
+
 @pytest.mark.parametrize("running", [1, 0])
 def test_backup_dumps_postgres_only_when_running(tmp_path, running):
     root, bindir, log = make_tree(
