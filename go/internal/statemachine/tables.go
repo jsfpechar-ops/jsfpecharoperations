@@ -58,7 +58,7 @@ var Tables = map[string]map[string][]string{
 	"door_code.state": {
 		"expired":        {},
 		"failed":         {},
-		"issued":         {"expired", "revoke_pending"},
+		"issued":         {"expired", "pending", "revoke_pending"},
 		"issuing":        {"expired", "failed", "issued", "pending", "retrying"},
 		"pending":        {"issuing", "revoked"},
 		"retrying":       {"issuing", "revoked"},
