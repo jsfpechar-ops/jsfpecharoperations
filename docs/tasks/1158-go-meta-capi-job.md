@@ -1,6 +1,6 @@
 # 1158: Go port of the `meta_capi` job (CompleteRegistration events to the Meta Conversions API)
 
-Status: todo
+Status: review
 Depends on: 1152 (merged) | Base commit: main (current) | Branch: the orchestrator's branch (work on the current branch)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
