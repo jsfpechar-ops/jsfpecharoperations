@@ -17,7 +17,7 @@ Run only the row for the area you changed, from `App/`, always ending `-q --tb=s
 | Havel (AI), Help & guide | `test_ai*.py test_havel*.py test_guide*.py` (browser files 0 skipped); UI parts also the host pages row |
 | Calendar, iCal feeds | `test_icalsync.py test_ical_skip_unchanged.py test_feed_*.py test_dashboard_calendar*.py test_calendar_*.py test_sample_calendar.py` |
 | Mail, SES | `test_ses_mail.py test_mail_*.py test_*_mail.py test_lifecycle_mail.py test_notification_copy.py` |
-| Retention, privacy | `test_retention*.py test_privacy_*.py test_no_tracking.py test_cookie_inventory.py test_pii_encryption.py test_dsr_audit.py test_data_keys.py` |
+| Retention, privacy | `test_retention*.py test_privacy_*.py test_no_tracking.py test_cookie_inventory.py test_pii_encryption.py test_dsr_audit.py test_dsr_due_golden.py test_data_keys.py` |
 | Guest bot (Leon) | `test_leon.py test_guest_leon_chat.py test_guest_leon_browser.py test_guest_handoff.py test_privacy_first.py test_cookie_inventory.py test_guest_languages.py test_ai.py` |
 | Guide translation (0353) | `test_guide_translate.py test_guide_translate_browser.py test_guest_guide_view.py test_ai.py` |
 | Database, migrations | `test_migrations.py test_db_*.py` |
