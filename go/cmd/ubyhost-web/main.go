@@ -26,6 +26,7 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/jobs"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/palette"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/payments"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/posthog"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/pushsend"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/pushweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/schema"
@@ -250,7 +251,7 @@ func run() int {
 }
 
 // goIntervals are the schedule intervals (minutes) that cap a retry backoff.
-var goIntervals = map[string]int{"billing_snapshot": 24 * 60, "stripe_sweep": 24 * 60, "submit": 10, "ical": 60, "push": 1}
+var goIntervals = map[string]int{"billing_snapshot": 24 * 60, "stripe_sweep": 24 * 60, "submit": 10, "ical": 60, "push": 1, "posthog": 15}
 
 // goHandlers maps each Go-owned job kind to its handler.
 func goHandlers(pool *pgxpool.Pool) map[string]jobs.Handler {
@@ -279,6 +280,13 @@ func goHandlers(pool *pgxpool.Pool) map[string]jobs.Handler {
 				total += n
 			}
 			return total, err
+		},
+		"posthog": func(ctx context.Context) (int, error) {
+			counts, err := posthog.Sync(ctx, pool, posthog.ConfigFromEnv(os.LookupEnv), nil, time.Now())
+			if counts.Sent > 0 || counts.Failed > 0 {
+				slog.Info("posthog sync", "sent", counts.Sent, "skipped", counts.Skipped, "failed", counts.Failed)
+			}
+			return counts.Sent, err
 		},
 		"submit": func(ctx context.Context) (int, error) {
 			keys, err := secure.LoadDataKeys(os.Getenv)
