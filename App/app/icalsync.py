@@ -38,10 +38,11 @@ one document is imported once.
 from __future__ import annotations
 
 import hashlib
+import json
 import logging
 import re
 import time
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 from zoneinfo import ZoneInfo
 
@@ -393,6 +394,17 @@ def _send_in_flight(reservation_id: int) -> bool:
         (reservation_id, live_after),
     ):
         return True
+    return _pointed_at_open_submission(reservation_id)
+
+
+# A cancel waits for a send whose claim is gone only this long: the sweep
+# (every SUBMIT_SWEEP_MINUTES) recovers and resends it well inside the window,
+# and a row older than this is reported to the host instead of held for ever.
+RUNNING_CANCEL_DEFER_SECONDS = 30 * 60
+
+
+def _pointed_at_open_submission(reservation_id: int) -> bool:
+    """An unsent guest of the stay points at a running or outcome_unknown batch."""
     return bool(
         db.query_one(
             "SELECT 1 AS n FROM guest g "
@@ -402,6 +414,67 @@ def _send_in_flight(reservation_id: int) -> bool:
             "LIMIT 1",
             (reservation_id, reporting.SENT),
         )
+    )
+
+
+def _running_submission_covers_stay(reservation_id: int, newer_than: Optional[str] = None) -> bool:
+    """A `running` batch of this apartment lists an unsent guest of the stay.
+
+    A guest is not pointed at a running batch, only ``submission.guest_ids``
+    names it. ``newer_than`` (an ISO UTC stamp) limits the rows by ``created_at``.
+    """
+    guests = {
+        row["id"]
+        for row in db.query(
+            "SELECT id FROM guest WHERE reservation_id = ? AND archived_at IS NULL "
+            "AND submit_state != ?",
+            (reservation_id, reporting.SENT),
+        )
+    }
+    if not guests:
+        return False
+    sql = (
+        "SELECT s.guest_ids FROM submission s JOIN reservation r "
+        "ON r.apartment_id = s.apartment_id WHERE r.id = ? AND s.state = 'running'"
+    )
+    params: List[Any] = [reservation_id]
+    if newer_than:
+        sql += " AND s.created_at >= ?"
+        params.append(newer_than)
+    for row in db.query(sql, params):
+        try:
+            listed = json.loads(row["guest_ids"] or "[]")
+        except ValueError:
+            continue
+        if guests & set(listed):
+            return True
+    return False
+
+
+def _running_defers_cancel(reservation_id: int) -> bool:
+    cutoff = (
+        datetime.now(timezone.utc) - timedelta(seconds=RUNNING_CANCEL_DEFER_SECONDS)
+    ).replace(microsecond=0).isoformat()
+    return _running_submission_covers_stay(reservation_id, cutoff)
+
+
+def _alert_if_filing_in_doubt(reservation: Any, apartment_id: int) -> None:
+    """After a cancel: tell the host the register may hold this stay's guests."""
+    if not (
+        _pointed_at_open_submission(reservation["id"])
+        or _running_submission_covers_stay(reservation["id"])
+    ):
+        return
+    alerts.raise_alert(
+        "warning",
+        "cancelled_filing_unconfirmed",
+        f"A stay from {reservation['date_from']} was cancelled in the calendar while the "
+        "report of its guests to the police was unconfirmed.",
+        "Check in UbyPort whether the guests are listed.",
+        dedupe_key=f"cancelled_filing_unconfirmed:{reservation['id']}",
+        apartment_id=apartment_id,
+        reservation_id=reservation["id"],
+        params={"date": reservation["date_from"]},
     )
 
 
