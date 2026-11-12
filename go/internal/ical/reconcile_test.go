@@ -398,3 +398,42 @@ func TestReportImportLimits(t *testing.T) {
 		t.Fatalf("recurring alert not resolved: %d", n)
 	}
 }
+
+func TestSendInFlightFindsACrashStuckRunningBatchByGuestIDs(t *testing.T) {
+	pool := testPool(t)
+	ctx := context.Background()
+	apt := seedApartment(t, pool)
+
+	stuck := seedReservation(t, pool, apt, "u-stuck", "2026-08-01", "2026-08-03")
+	g := seedGuest(t, pool, stuck, "pending", "2026-08-01", "2026-08-03")
+	sub := seedSubmission(t, pool, apt, g, "running", 0, false)
+	if got, err := sendInFlight(ctx, pool, stuck); err != nil || !got {
+		t.Fatalf("unpointed running batch: got %v, %v", got, err)
+	}
+
+	old := seedReservation(t, pool, apt, "u-old", "2026-09-01", "2026-09-03")
+	gOld := seedGuest(t, pool, old, "pending", "2026-09-01", "2026-09-03")
+	seedSubmission(t, pool, apt, gOld, "running", 3*time.Hour, false)
+	if got, err := sendInFlight(ctx, pool, old); err != nil || !got {
+		t.Fatalf("old running batch: got %v, %v", got, err)
+	}
+
+	other := seedReservation(t, pool, apt, "u-other", "2026-10-01", "2026-10-03")
+	seedGuest(t, pool, other, "pending", "2026-10-01", "2026-10-03")
+	if got, err := sendInFlight(ctx, pool, other); err != nil || got {
+		t.Fatalf("running batch of another stay: got %v, %v", got, err)
+	}
+
+	sentRes := seedReservation(t, pool, apt, "u-sent", "2026-11-01", "2026-11-03")
+	gSent := seedGuest(t, pool, sentRes, "sent", "2026-11-01", "2026-11-03")
+	seedSubmission(t, pool, apt, gSent, "running", 0, false)
+	if got, err := sendInFlight(ctx, pool, sentRes); err != nil || got {
+		t.Fatalf("running batch listing only a sent guest: got %v, %v", got, err)
+	}
+
+	_, err := pool.Exec(ctx, `UPDATE submission SET state = 'ok' WHERE id = $1`, sub)
+	must(t, err)
+	if got, err := sendInFlight(ctx, pool, stuck); err != nil || got {
+		t.Fatalf("settled batch: got %v, %v", got, err)
+	}
+}

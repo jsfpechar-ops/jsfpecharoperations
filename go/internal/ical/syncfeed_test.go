@@ -684,3 +684,53 @@ func TestSyncFeedVanishedStayWithFreshRunningFilingIsDeferred(t *testing.T) {
 		t.Errorf("digest stored after a deferred cancel: %q", got)
 	}
 }
+
+func TestSyncFeedDateMoveWaitsForCrashStuckRunningBatchThenLands(t *testing.T) {
+	pool := testPool(t)
+	ctx := context.Background()
+	aid := seedApartment(t, pool)
+	feed := newIcalFeed(t, pool, aid, "https://feed.test/move-running.ics")
+	stay := seedStay(t, pool, aid, feed.ID, "u-mr", "2999-03-01", "2999-03-05")
+	g := seedGuest(t, pool, stay, "pending", "2999-03-01", "2999-03-05")
+	sub := seedSubmission(t, pool, aid, g, "running", 0, false)
+	doc := icsDoc(icsEvent("u-mr", "29990302", "29990306", "Guest A"))
+
+	runSync(t, pool, feed, doc)
+
+	if got := scalarText(t, pool, `SELECT date_from FROM reservation WHERE id = $1`, stay); got != "2999-03-01" {
+		t.Errorf("stay moved over a crash-stuck running batch: %q", got)
+	}
+	if got := scalarText(t, pool, `SELECT stay_from FROM guest WHERE id = $1`, g); got != "2999-03-01" {
+		t.Errorf("guest window moved over a crash-stuck running batch: %q", got)
+	}
+	if got := scalarText(t, pool, `SELECT COALESCE(body_sha256, '') FROM ical_feed WHERE id = $1`, feed.ID); got != "" {
+		t.Errorf("digest stored while deferred: %q", got)
+	}
+
+	_, err := pool.Exec(ctx, `UPDATE submission SET state = 'ok' WHERE id = $1`, sub)
+	must(t, err)
+
+	runSync(t, pool, feed, doc)
+
+	if got := scalarText(t, pool, `SELECT date_from FROM reservation WHERE id = $1`, stay); got != "2999-03-02" {
+		t.Errorf("after the batch settled: date_from = %q, want 2999-03-02", got)
+	}
+}
+
+func TestSyncFeedOldRunningBatchStillDefersTheDateMove(t *testing.T) {
+	pool := testPool(t)
+	aid := seedApartment(t, pool)
+	feed := newIcalFeed(t, pool, aid, "https://feed.test/move-old-running.ics")
+	stay := seedStay(t, pool, aid, feed.ID, "u-mo", "2999-03-01", "2999-03-05")
+	g := seedGuest(t, pool, stay, "pending", "2999-03-01", "2999-03-05")
+	seedSubmission(t, pool, aid, g, "running", 3*time.Hour, false)
+
+	runSync(t, pool, feed, icsDoc(icsEvent("u-mo", "29990302", "29990306", "Guest A")))
+
+	if got := scalarText(t, pool, `SELECT date_from FROM reservation WHERE id = $1`, stay); got != "2999-03-01" {
+		t.Errorf("stay moved over an old running batch: %q", got)
+	}
+	if n := openAlerts(t, pool, fmt.Sprintf("moved_after_report:%d", stay)); n != 0 {
+		t.Errorf("moved_after_report alerts = %d, want 0", n)
+	}
+}
