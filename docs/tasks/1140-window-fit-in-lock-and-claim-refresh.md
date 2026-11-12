@@ -1,6 +1,6 @@
 # 1140: iCal date move: fit the guest windows inside the locked transaction, tidy the Go twin
 
-Status: todo
+Status: review
 Depends on: 1139 | Base commit: 8e512d47 (HEAD of branch claude/clever-fermi-tudhnt, PR #933) | Branch: task/1140-window-fit-in-lock
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
