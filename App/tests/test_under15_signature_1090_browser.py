@@ -260,6 +260,9 @@ def test_15_to_17_and_adults_see_todays_step(live_server, browser, monkeypatch):
 
 def test_typing_and_changing_the_birth_date(live_server, browser, monkeypatch):
     token, stay = _stay(monkeypatch, "typing")
+    # The page's rule is the stay's own arrival day. Read it from the seeded booking: a
+    # clock taken at import can be a day behind when the shard crosses Prague midnight.
+    arrival = date.fromisoformat(db.query_one("SELECT date_from FROM reservation WHERE id = ?", (stay,))["date_from"][:10])
     page, guest = _open(browser, live_server, token, stay)
 
     def hidden():
@@ -283,12 +286,12 @@ def test_typing_and_changing_the_birth_date(live_server, browser, monkeypatch):
         retype("01011990", (True, False))
         assert hidden() == (False, True), "a 30-year-old does not get the pad back"
         # An unknown day and month: under 15 only when the whole year is.
-        retype(f"0000{ARRIVAL.year - 14}", (False, True))
+        retype(f"0000{arrival.year - 14}", (False, True))
         assert hidden() == (True, False)
-        retype(f"0000{ARRIVAL.year - 15}", (True, False))
+        retype(f"0000{arrival.year - 15}", (True, False))
         assert hidden() == (False, True)
         # The day before the 15th birthday, and the birthday itself.
-        fifteen = _years_before(ARRIVAL, 15)
+        fifteen = _years_before(arrival, 15)
         if fifteen.day < 28:
             retype(_digits(fifteen.replace(day=fifteen.day + 1)), (False, True))
             assert hidden() == (True, False), "14 on arrival keeps the pad"
