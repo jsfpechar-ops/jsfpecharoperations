@@ -10,7 +10,7 @@ from datetime import timedelta
 
 import pytest
 
-from app import alerts, config, db, door_codes, ttlock
+from app import config, db, door_codes, ttlock
 from tests.test_door_code_cancel_guard import _audits, _cancelled_stay, _code, _purge, _state
 
 
