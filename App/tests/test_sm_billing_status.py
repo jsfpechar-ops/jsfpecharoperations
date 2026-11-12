@@ -22,8 +22,15 @@ MOVES = [
     ("App/app/billing_trial.py",
      "UPDATE billing_account SET status = 'trialing', trial_started_at = ?, ",
      ("trial_pending",), "trialing"),
+]
+
+# The one move outside TRANSITIONS: operator plan assignment (owner decision 2026-11-12).
+OPERATOR_MOVES = [
+    ("App/app/billing.py",
+     "UPDATE billing_account SET status = 'paused', updated_at = ? ",
+     ("trial_pending", "trialing"), "paused"),
     ("App/app/billing_order.py",
-     'billing.set_status(owner_user_id, "paused", actor=actor)',
+     "billing.operator_pause(owner_user_id, actor=actor)",
      ("trial_pending", "trialing"), "paused"),
 ]
 
@@ -35,7 +42,7 @@ INITIAL = [
 
 # Every file that writes the status column, and how many times.
 PINNED_WRITERS = {
-    "App/app/billing.py": {"status_updates": 1, "inserts": 1},
+    "App/app/billing.py": {"status_updates": 2, "inserts": 1},
     "App/app/billing_trial.py": {"status_updates": 1},
     "App/app/signup.py": {"inserts": 1},
 }
@@ -94,3 +101,14 @@ def test_status_writing_statements_match_the_pins():
         if counts:
             found[_rel(path)] = counts
     assert found == PINNED_WRITERS
+
+
+@pytest.mark.parametrize("rel,anchor", [(f, a) for f, a, _, _ in OPERATOR_MOVES])
+def test_operator_move_anchor_is_in_file(rel, anchor):
+    assert anchor in _read(rel), f"{rel} no longer contains: {anchor}"
+
+
+def test_operator_move_is_not_in_transitions():
+    # set_status and the operator status form must keep refusing it; the Go table has no such move.
+    assert "paused" not in TABLE["trial_pending"]
+    assert {s for _, _, froms, _ in OPERATOR_MOVES for s in froms} == {"trial_pending", "trialing"}
