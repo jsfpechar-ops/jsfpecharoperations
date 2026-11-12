@@ -26,8 +26,9 @@ SELECTOR_OVERRIDES = {
     "summary small": {"font-size": "12px"},
     # 0541: the demo property has no address, so the basics dot is red (r) in the app; the mockup shows green
     ".dot": {"background-color": "rgb(208, 69, 45)"},
-    ".side .nav": {"color": "rgb(184, 61, 40)", "border-bottom-color": "rgb(184, 61, 40)"},
-    ".side .nav.on": {"color": "rgb(184, 61, 40)", "border-bottom-color": "rgb(184, 61, 40)"},
+    # owner decision 2026-11-12, brief 1132 (Figma redesign): sidebar nav is 16 px, 12 px top-left radius, 14 px side padding
+    ".side .nav": {"color": "rgb(184, 61, 40)", "border-bottom-color": "rgb(184, 61, 40)", "font-size": "16px", "border-top-left-radius": "12px", "padding-top": "0px", "padding-right": "14px", "padding-bottom": "0px", "padding-left": "14px"},
+    ".side .nav.on": {"color": "rgb(184, 61, 40)", "border-bottom-color": "rgb(184, 61, 40)", "font-size": "16px", "border-top-left-radius": "12px", "padding-top": "0px", "padding-right": "14px", "padding-bottom": "0px", "padding-left": "14px"},
     ".cal .cd": {"font-size": "12px", "color": "rgb(184, 61, 40)", "border-bottom-color": "rgb(184, 61, 40)"},
     # demo Dnes table has one row, which is also the last row: the app draws no bottom border (tr:last-child rule), 2026-11-01
     "main tbody tr:first-child td": {"border-bottom-color": "rgb(28, 28, 26)"},
@@ -524,15 +525,24 @@ _GEOMETRY_JS = r"""
   const h1s = [...document.querySelectorAll('h1')].filter(vis).length;
   if (h1s !== 1) out.push(`expected one h1, found ${h1s}`);
 
-  // 7. sidebar: 220 px column at computer width; below 1024 px the bottom tab bar replaces it (0718)
+  // 7. sidebar: 240 px column at computer width; below 1024 px the bottom tab bar replaces it (0718); 768-1023 px keeps an 88 px rail (1132)
   const side = document.querySelector('.side');
   if (width >= 1024) {
     if (!side || !vis(side)) {
       out.push('.side is not visible');
     } else {
       const r = side.getBoundingClientRect();
-      if (Math.abs(r.width - 220) > 1) out.push(`.side is ${r.width.toFixed(0)} px wide, expected 220`);
+      if (Math.abs(r.width - 240) > 1) out.push(`.side is ${r.width.toFixed(0)} px wide, expected 240`);
     }
+  } else if (width >= 768) {
+    if (!side || !vis(side)) {
+      out.push('.side is not visible at 768-1023 px');
+    } else {
+      const r = side.getBoundingClientRect();
+      if (Math.abs(r.width - 88) > 1) out.push(`.side is ${r.width.toFixed(0)} px wide, expected 88 at 768-1023 px`);
+    }
+    const tabsRail = document.querySelector('.tabs');
+    if (tabsRail && vis(tabsRail)) out.push('.tabs is visible at 768-1023 px, expected the side rail');
   } else {
     if (side && vis(side)) out.push('.side is visible below 1024 px, expected the tab bar');
     const tabs = document.querySelector('.tabs');

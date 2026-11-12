@@ -49,6 +49,7 @@ th{text-align:left;font-weight:500;color:var(--ink3);font-size:12px;padding:10px
 td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
 tr:last-child td{border-bottom:0}tbody tr:hover{background:#fafaf8;cursor:pointer}
 td small{display:block;color:var(--ink3);font-size:12px;margin-top:2px}
+td small .guest-count{white-space:nowrap}
 .pill{font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap;display:inline-block}
 .p-ok{background:var(--oks);color:var(--ok)}.p-warn{background:var(--warns);color:var(--warn)}.p-bad{background:var(--bads);color:var(--bad)}.p-n{background:#efefeb;color:var(--ink2)}
 /* 0527: [hidden] and the old .hidden class win over display rules such as .chip{display:…} */

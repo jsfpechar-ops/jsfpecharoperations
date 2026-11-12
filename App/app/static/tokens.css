@@ -39,7 +39,6 @@
   --tile-blue-bg: #e8f0fb;  --tile-blue-ink: #245cb5;
   --tile-teal-bg: #e1f2ef;  --tile-teal-ink: #08736b;
   --tile-done-bg: #e6f5ec;  --tile-done-ink: #167044;
-  --danger: #d0452d;        --danger-bg: #fcebea;
 
   /* Semantic and identity palette: readable ink + quiet tint */
   --red: #b42318;    --red-bg: #fcebea;
@@ -152,7 +151,7 @@
   --st-attention-bg: var(--amber-100); --st-attention-ink: var(--amber-700); --st-attention-dot: var(--amber-dot);
   --st-done-bg: var(--green-100); --st-done-ink: var(--green-700); --st-done-dot: var(--green-dot);
   --st-neutral-bg: var(--sand-150); --st-neutral-ink: var(--ink-700); --st-neutral-dot: var(--ink-400);
-  --danger: var(--red-700); --danger-bg: var(--red-100);
+  --danger: #d0452d; --danger-bg: var(--red-100);
   --property-1: var(--teal-700); --property-2: var(--blue-700); --property-3: var(--purple-700); --property-4: var(--amber-700);
   /* 2.3 component */
   --control-h: 40px; --control-h-phone: 44px; --control-h-compact: 32px; --control-px: 14px; --control-radius: var(--radius-2); --control-font: var(--size-14); --control-weight: 600;

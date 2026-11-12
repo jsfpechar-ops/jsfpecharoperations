@@ -74,7 +74,8 @@ def test_fee_navigation_uses_active_owned_properties(fee_host):
     assert 'href="/stay-fees"' in client.get('/invoices').text
     # 0192: Stay fees replaced Invoices & fees as a sidebar item, so it is now in the rail too.
     assert 'href="/stay-fees"' in rail(client.get('/').text)
-    assert 'href="/invoices"' not in rail(client.get('/').text)
+    main_nav = re.search(r'<nav class="side-nav"[^>]*>.*?</nav>', client.get('/').text, re.S).group(0)
+    assert 'href="/invoices"' not in main_nav
 
 
 def test_context_navigation_and_command_palette_preserve_destinations(fee_host):

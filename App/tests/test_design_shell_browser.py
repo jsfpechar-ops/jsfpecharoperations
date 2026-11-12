@@ -182,9 +182,15 @@ def test_more_preserves_each_page_kind_and_sheet_links_work(base, engine, width,
         with sync_api.sync_playwright() as playwright:
             browser, page = _open(playwright, base, width, path, engine)
             try:
-                menu_tab = page.locator('.tabs a.tab[href="/menu"]')
-                assert menu_tab.is_visible(), ("v2 Menu tab missing", path)
-                menu_tab.click()
+                if width == 820:
+                    # 1132: at 820 px the tab bar is gone and the sidebar carries navigation.
+                    assert page.locator(".tabs").is_hidden(), ("tab bar shown at 820", path)
+                    assert page.locator("#app-sidebar").is_visible(), ("sidebar hidden at 820", path)
+                    page.goto(base.rstrip("/") + "/menu?lang=en")
+                else:
+                    menu_tab = page.locator('.tabs a.tab[href="/menu"]')
+                    assert menu_tab.is_visible(), ("v2 Menu tab missing", path)
+                    menu_tab.click()
                 page.wait_for_url("**/menu**")
                 for href in ("/cleaning", "/payments", "/settings"):
                     assert page.locator(f'a[href^="{href}"]').count() >= 1, href

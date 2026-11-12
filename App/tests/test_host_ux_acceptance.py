@@ -660,7 +660,8 @@ def test_page_families_through_rail_cards_search_and_back(acc, base):
             _settle(page)
             page.locator('a[href^="/stay-fees/"]').first.wait_for(state="visible", timeout=15000)
             # Rail -> Invoices -> issued invoice -> its stay -> Back.
-            page.locator('a[href="/invoices"]').first.click()
+            page.locator("#app-sidebar .me-menu > summary").click()  # 1132: Invoices lives in the account menu
+            page.locator('#app-sidebar .me-menu-list a[href="/invoices"]').click()
             page.wait_for_url(re.compile(r"/invoices(\?.*)?$"))
             page.goto(f"{base}/invoices/{acc['invoice']}?lang={lang}")
             page.locator(f'a[href^="/reservations/{acc["stay"]}"]').first.click()

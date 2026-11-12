@@ -111,7 +111,12 @@ def test_account_menu_in_the_sidebar_corner_lists_settings_and_admin_links(role,
     menu = re.search(r'<details class="me-menu host-account" data-host-account>.*?</details>', html, re.S)
     assert menu is not None
     menu = menu.group(0)
-    assert 'href="/settings"' in menu and 'href="/guide"' in menu
+    # 1132: Settings and Guide moved from the account menu to the sidebar's bottom block
+    assert 'href="/settings"' not in menu and 'href="/guide"' not in menu
+    bottom = re.search(r'<div class="side-bottom">.*?</details>', html, re.S)
+    assert bottom is not None
+    bottom = bottom.group(0)
+    assert 'href="/settings"' in bottom and 'href="/guide"' in bottom
     assert ('href="/admin"' in menu) == (role == "admin")
     assert ('href="/admin/fakturace#funnel"' in menu) == (role == "admin")
     main_nav = re.search(r'<nav class="side-nav" aria-label="[^"]+">.*?</nav>', html, re.S).group(0)
