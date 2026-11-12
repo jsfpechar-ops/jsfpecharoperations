@@ -405,6 +405,29 @@ def _send_in_flight(reservation_id: int) -> bool:
     )
 
 
+def _update_reservation_unless_claimed(existing, values: dict) -> bool:
+    """Write a date move only if no live submission_claim covers the stay.
+
+    One conditional UPDATE, so a claim taken after ``_send_in_flight`` cannot
+    be raced. False means skipped: the caller keeps the stored dates and the
+    next sync retries.
+    """
+    live_after = time.time() - reporting.SUBMISSION_CLAIM_TTL_SECONDS
+    return db.update_if(
+        "reservation",
+        existing["id"],
+        values,
+        {"date_from": existing["date_from"], "date_to": existing["date_to"]},
+        extra_where=(
+            "NOT EXISTS (SELECT 1 FROM submission_claim c "
+            "JOIN guest g ON g.id = c.guest_id "
+            "WHERE g.reservation_id = reservation.id "
+            "AND g.archived_at IS NULL AND c.claimed_at >= ?)"
+        ),
+        extra_params=(live_after,),
+    )
+
+
 def _fit_unsent_guest_windows(
     reservation_id: int,
     apartment_id: int,
