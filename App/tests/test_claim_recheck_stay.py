@@ -179,9 +179,16 @@ def test_an_expired_claim_is_not_refreshed_and_no_batch_is_sent(fresh_db, monkey
 
 def test_a_claim_missing_one_guest_row_is_treated_as_lost(fresh_db, monkeypatch):
     rid, gid = _stay()
-    token, claimed = reporting.claim_sendable(_pairs(gid, rid))
-    # Two guests in this claim, but only one row exists (the other was deleted).
-    two_guests = claimed + [({"id": gid + 1000}, claimed[0][1])]
+    now = db.utcnow()
+    gid2 = db.insert("guest", {
+        "reservation_id": rid, "stay_from": "2026-12-01", "stay_to": "2026-12-03",
+        "created_at": now, "updated_at": now,
+    })
+    two_guests = _pairs(gid, rid) + _pairs(gid2, rid)
+    token, claimed = reporting.claim_sendable(two_guests)
+    assert len(claimed) == 2
+    # Lose one real claim row (as if another worker released or took it over).
+    db.execute("DELETE FROM submission_claim WHERE guest_id = ?", (gid2,))
     calls = []
     monkeypatch.setattr(
         reporting, "submit_batch", lambda *args, **kwargs: calls.append(1) or {}
@@ -190,8 +197,29 @@ def test_a_claim_missing_one_guest_row_is_treated_as_lost(fresh_db, monkeypatch)
 
     assert reporting.refresh_sendable_claim(token, 2) is False
     assert reporting._send_claimed_batches(
-        {"id": 1}, two_guests, token, mode="auto", env=None
+        {"id": 1}, claimed, token, mode="auto", env=None
     ) == []
 
     assert calls == []
+    reporting.release_sendable_claim(token)
+
+
+def test_refresh_boundary_is_inclusive_at_exactly_the_ttl(fresh_db, monkeypatch):
+    """claimed_at == now - TTL is still live; one millisecond older is stale."""
+    rid, gid = _stay()
+    token, _claimed = reporting.claim_sendable(_pairs(gid, rid))
+    now = 1_900_000_000.0
+    monkeypatch.setattr(reporting.time, "time", lambda: now)
+    cutoff = now - reporting.SUBMISSION_CLAIM_TTL_SECONDS
+
+    db.execute("UPDATE submission_claim SET claimed_at = ? WHERE claim_token = ?", (cutoff, token))
+    assert reporting.refresh_sendable_claim(token, 1) is True
+    row = db.query_one("SELECT claimed_at FROM submission_claim WHERE claim_token = ?", (token,))
+    assert row["claimed_at"] == now
+
+    stale = cutoff - 0.001
+    db.execute("UPDATE submission_claim SET claimed_at = ? WHERE claim_token = ?", (stale, token))
+    assert reporting.refresh_sendable_claim(token, 1) is False
+    row = db.query_one("SELECT claimed_at FROM submission_claim WHERE claim_token = ?", (token,))
+    assert row["claimed_at"] == stale
     reporting.release_sendable_claim(token)
