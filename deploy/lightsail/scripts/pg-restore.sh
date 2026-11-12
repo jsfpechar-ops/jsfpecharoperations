@@ -99,14 +99,14 @@ fi
 
 TMP="$(mktemp -d)"
 chmod 700 "${TMP}"
-trap 'rm -rf "${TMP}"' EXIT
+# From here on, any failure brings the app back up, a partly failed stop included
+# (brief 1169-cont-2; a no-op after the explicit start below).
+# shellcheck disable=SC2086
+trap 'rm -rf "${TMP}"; docker compose up -d ${UP_SERVICES} >/dev/null 2>&1 || true' EXIT
 
 echo "==> Stopping ${STOP_SERVICES}"
 # shellcheck disable=SC2086
 docker compose stop ${STOP_SERVICES}
-# From here on, any failure brings the app back up (a no-op after the explicit start below).
-# shellcheck disable=SC2086
-trap 'rm -rf "${TMP}"; docker compose up -d ${UP_SERVICES} >/dev/null 2>&1 || true' EXIT
 
 if [ "${MODE}" = "stamp" ]; then
   echo "==> Pulling ${STAMP} and restoring it into PostgreSQL"
