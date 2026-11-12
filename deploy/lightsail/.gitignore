@@ -6,3 +6,4 @@ caddy/Caddyfile.active
 .env.sqlite-*
 caddy/Caddyfile.previous
 .deployed-sha
+.restored-box
