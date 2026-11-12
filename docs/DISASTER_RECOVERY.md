@@ -22,17 +22,29 @@ If the pack is missing, stop here and use the fallback in "When to use this".
 
 ## Two servers never file at once
 
-Before any rebuild step, make sure the old server cannot file.
+Before any rebuild step, make sure the old server cannot file. Removing `submit` from the job lists is not enough: with `submit` in neither list, the Python worker files guests itself. Only a stopped server, or `UBYHOST_ENABLE_SCHEDULER=0`, stops automatic filing.
 
-1. On the **old** server, stop it: `docker compose stop`. Or, if it must keep running, remove `submit` from `UBYHOST_GO_JOB_KINDS` in its `.env` and run `./scripts/deploy.sh`.
-2. On the **new** box, check that `submit` is in neither variable:
+1. On the **old** server, stop it: `docker compose stop`. Or, if it must keep running, set `UBYHOST_ENABLE_SCHEDULER=0` in its `.env`, remove `submit` from `UBYHOST_GO_JOB_KINDS` and `UBYHOST_JOB_QUEUE_KINDS`, and run `./scripts/deploy.sh`.
+2. On the **new** box, before the first deploy (rebuild step 4), turn automatic filing off in `.env`: set `UBYHOST_ENABLE_SCHEDULER=0` and remove `submit` from both variables. Check:
 
 ```bash
-grep -n 'UBYHOST_GO_JOB_KINDS\|UBYHOST_JOB_QUEUE_KINDS' .env
+grep -n 'UBYHOST_ENABLE_SCHEDULER\|UBYHOST_GO_JOB_KINDS\|UBYHOST_JOB_QUEUE_KINDS' .env
 ```
 
-3. Leave it that way until the owner is sure the old server is off.
-4. When sure, add `submit` to both variables on the new box, then run `./scripts/deploy.sh`.
+3. The restore (rebuild step 12) writes the marker file `.restored-box` next to `.env`. While it exists, `pg-restore.sh --file` and `./scripts/deploy.sh` stop with `RESTORED BOX` if automatic filing is on. Leave filing off until the owner is sure the old server is off.
+4. When sure (the old server is stopped, or deleted in its provider console), acknowledge it on the new box:
+
+```bash
+rm .restored-box
+```
+
+5. Turn filing back on: in `.env` set `UBYHOST_ENABLE_SCHEDULER=1` and add `submit` back to both variables (as on the old server). Then deploy:
+
+```bash
+./scripts/deploy.sh
+```
+
+Override for one run, only when the owner knows the old server cannot file and the marker must stay: `UBYHOST_FILING_GUARD_OVERRIDE=1 ./scripts/deploy.sh`. Never put it in `.env`; the guard refuses that.
 
 ## Show the "we're down" page
 
@@ -62,7 +74,7 @@ cd /opt/ubyhost/deploy/lightsail
 ./scripts/setup-server.sh
 ```
 
-4. Copy `.env` into `/opt/ubyhost/deploy/lightsail/.env` and the origin certificates into `caddy/certs/`. Set `UBYHOST_SECRET_KEY` in `.env` **before the first deploy**. Without it the restored data cannot be decrypted.
+4. Copy `.env` into `/opt/ubyhost/deploy/lightsail/.env` and the origin certificates into `caddy/certs/`. Set `UBYHOST_SECRET_KEY` in `.env` **before the first deploy**. Without it the restored data cannot be decrypted. Turn automatic filing off in the same `.env` (see "Two servers never file at once", step 2).
 5. Install the tools:
 
 ```bash
@@ -96,7 +108,7 @@ rclone copy gdrive:UbyHost-backups/<stamp> ./restore-in
 
 11. The dump from step 8 is already on the server in `restore-in`. Keep it outside the volume: the restore reads it straight from the host and writes no plaintext file. If you downloaded it elsewhere, copy it to the server first (any path ending in `.age` works).
 
-12. Restore the database from that file. The script refuses while `.env` contains `UBYHOST_DB=`:
+12. Restore the database from that file. The script refuses while `.env` contains `UBYHOST_DB=`, and while automatic filing is on. It writes the marker `.restored-box` (see "Two servers never file at once"):
 
 ```bash
 RESTORE_CONFIRM=yes AGE_IDENTITY_FILE=/root/ubyhost-backup.agekey ./scripts/pg-restore.sh --file ./restore-in/ubyhost-pg.dump.age
