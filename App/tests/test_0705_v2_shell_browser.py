@@ -111,4 +111,4 @@ def test_app2_css_has_the_phone_top_bar_rule_and_no_font_picker():
     css = (ROOT / "app/static/app2.css").read_text(encoding="utf-8")
     assert "@media (max-width: 767px)" in css
     assert "fontpick" not in css and "body.f-" not in css
-    assert "--acc:#d0452d" in css  # v2 accent token as copied into app2.css (no --coral-600 there)
+    assert "--acc:var(--coral-red)" in css  # v2 accent token as copied into app2.css (no --coral-600 there)

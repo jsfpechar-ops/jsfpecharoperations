@@ -72,6 +72,8 @@ Legacy aliases (`--bg`, `--muted`, `--line-2`, `--brand*`, `--status-critical-*`
 --skeleton-delay:300ms; --skeleton-min:400ms;
 ```
 
+- 1132 (host pages, light mode): new `--coral-red`, `--coral-red-deep`, `--coral-red-soft`, `--tile-*` and `--danger` tokens in `tokens.css`; page background cream `--page-cream`.
+
 ## 3. Type and spacing defaults
 
 1. Body text `--size-16` at every width; line height 1.5. Facts in rows are body size, never smaller.
