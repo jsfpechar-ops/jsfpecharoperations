@@ -1,6 +1,6 @@
 # 1137: operator pause outside TRANSITIONS, and two door-code guard fixes
 
-Status: todo
+Status: review
 Depends on: 1134, 1135 | Base commit: 116def7d | Branch: task/1137-billing-operator-move-and-door-guards
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
