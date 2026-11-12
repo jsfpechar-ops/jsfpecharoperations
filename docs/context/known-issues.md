@@ -99,3 +99,4 @@
 - K-CLEAN-PAGE (1160): `cleaning_codes._find` reads only page 1 of a fuzzy list, like door codes before 1160.
 - K-DC-RENAME (943 review): door-code lookup searches by name `UH-<id>`; a code renamed in the TTLock app reads as gone.
 - K-FLAKY-VT: test_host_filter_panels_browser.py:695 ViewTransition abort once (#943), passed on re-run.
+- K-F24 (947 review): recovered batch in manual mode keeps retried_at NULL; going automatic resends it once.
