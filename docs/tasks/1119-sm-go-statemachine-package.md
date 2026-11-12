@@ -1,6 +1,6 @@
 # 1119: Go home for every round 1 transition table, with a parity test
 
-Status: todo
+Status: review
 Depends on: PR #920 merged to main | Base commit: main after PR #920 | Branch: task/1119-sm-go-statemachine
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

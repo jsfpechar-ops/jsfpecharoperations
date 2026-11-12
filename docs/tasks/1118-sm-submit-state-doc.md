@@ -1,6 +1,6 @@
 # 1118: OPERATIONS.md submit_state section describes the code
 
-Status: todo
+Status: review
 Depends on: PR #920 merged to main (the `TRANSITIONS` table and the pin test must exist) | Base commit: PR #920 merged to main | Branch: task/1118-sm-submit-state-doc
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

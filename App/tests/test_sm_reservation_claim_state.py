@@ -23,23 +23,25 @@ SQL_ROOTS = (APP_DIR / "app" / "migrations", APP_DIR / "migrations_pg")
 
 ANY = ("claimed", "provisional", "unclaimed")
 INSERT = ("(insert)",)
+AS_READ = ("(as read)",)
 STATE_NAMES = {"UNCLAIMED": "unclaimed", "PROVISIONAL": "provisional", "CLAIMED": "claimed"}
 
 # One entry per statement that writes reservation_claim.state:
 # (file, enclosing function, states its WHERE clause allows, states it writes).
 # INSERT: the statement creates the row. ANY: the WHERE clause has no state
-# condition (brief 1109, "Open questions").
+# condition (brief 1109, "Open questions"). AS_READ: the WHERE clause requires
+# the state the function read before the write (brief 1115).
 PINNED_WRITES = [
     ("App/app/claim.py", "ensure_row", INSERT, ("unclaimed",)),
     ("App/app/claim.py", "expire_holds", ("provisional",), ("unclaimed",)),
-    ("App/app/claim.py", "start_claim", ANY, ("claimed", "provisional")),
+    ("App/app/claim.py", "start_claim", AS_READ, ("claimed", "provisional")),
     ("App/app/claim.py", "confirm", ("claimed", "provisional"), ("claimed",)),
     ("App/app/claim.py", "release", ANY, ("unclaimed",)),
 ]
 
 # The moves those writes make: (file, function, from-states, to-state).
-# None as a from-state means "no row yet". start_claim has no state condition
-# in its WHERE clause: its from-states are the ones its Python checks let
+# None as a from-state means "no row yet". start_claim's WHERE clause requires
+# the state it read: its from-states are the ones its Python checks let
 # through before the write.
 PINNED_MOVES = [
     ("App/app/claim.py", "ensure_row", (None,), "unclaimed"),
@@ -114,7 +116,7 @@ def _sql_write(call: ast.Call):
         return ("?",), to
     allowed = set()
     for elt in elts[first:first + count]:
-        allowed.update(_states(elt))
+        allowed.update(_states(elt) or AS_READ)
     return tuple(sorted(allowed)), to
 
 
@@ -245,7 +247,7 @@ def test_moves_match_writes():
     assert set(moves) == set(writes)
     for key, (guard, to) in writes.items():
         assert {t for _, t in moves[key]} == to, key
-        allowed = {None} if guard == INSERT else set(guard)
+        allowed = {None} if guard == INSERT else set(ANY) if guard == AS_READ else set(guard)
         for frm, _ in moves[key]:
             assert set(frm) <= allowed, key
 

@@ -1,6 +1,6 @@
 # 1115: `claim.start_claim` writes only over the claim row it read
 
-Status: todo
+Status: review
 Depends on: PR #920 merged | Base commit: PR #920 merged to main | Branch: task/1115-sm-claim-start-guard
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Plan: [explicit state machines, rounds 2 to 4](../plans/explicit-state-machines-rounds-2-4.md), round 2. Round 1 brief: `docs/tasks/1109-sm-reservation-claim-state.md` ("Open questions"). Brief by Opus 5.5, 2026-11-11.

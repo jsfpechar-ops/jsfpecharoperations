@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any, Dict, Optional
 from zoneinfo import ZoneInfo
@@ -652,8 +652,8 @@ templates.env.globals.update(
     report_mode_label=_report_mode_label,
     tp=_template_plural,
     parse_iso_date=validation.parse_iso_date,
-    today=lambda: date.today(),
-    now=lambda: datetime.now(),
+    today=lambda: deadlines.local_now().date(),
+    now=lambda: deadlines.local_now(),
 )
 
 

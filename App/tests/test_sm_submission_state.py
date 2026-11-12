@@ -29,12 +29,12 @@ PINNED_WRITES = [
     ("App/app/reporting.py", "submit_batch", ANY, "outcome_unknown", "running"),
     ("App/app/reporting.py", "submit_batch", ANY, "transport_error", "running"),
     ("App/app/reporting.py", "submit_batch", ANY, "<state>", "running"),
-    ("App/app/reporting.py", "recover_stale_submissions", ANY, "outcome_unknown", "running"),
+    ("App/app/reporting.py", "recover_stale_submissions", ("running",), "outcome_unknown", "running"),
     ("go/internal/ubyport/store.go", "InsertSubmission", INSERT, "running", None),
     ("go/internal/ubyport/store.go", "RecordOutcomeUnknown", ANY, "outcome_unknown", "running"),
     ("go/internal/ubyport/store.go", "RecordTransportError", ANY, "transport_error", "running"),
     ("go/internal/ubyport/store.go", "RecordOutcome", ANY, "<param>", "running"),
-    ("go/internal/ubyport/recover.go", "RecoverStaleSubmissions", ANY, "outcome_unknown", "running"),
+    ("go/internal/ubyport/recover.go", "RecoverStaleSubmissions", ("running",), "outcome_unknown", "running"),
 ]
 
 # States that may have no move out without being in TERMINAL_SUBMISSION_STATES.

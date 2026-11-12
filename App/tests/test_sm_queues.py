@@ -23,12 +23,13 @@ brief 1110, the pins do not depend on them):
   finish() write sent / failed with WHERE id = ? only.
 - App/app/signup.py:686 (write at 693), withdraw_consent() sets withdrawn from a
   value it read earlier; its only guard is withdrawn_at, not send_state.
-- App/app/guest_guide_import.py:356 and :375, _run_one() writes done / failed
-  with WHERE id = ? only; :393, process_queue() writes failed the same way.
+- App/app/guest_guide_import.py: process_queue() budget write still matches by
+  id alone; _run_one() done / failed writes require status = 'running' (review of 1117).
 - Nothing sets email_outbox.state to bounced or complained, yet admin_ops.py
   reads both and purge_old() deletes them.
-- Nothing moves a guide_import row out of running except _run_one() itself, so
-  a worker that dies mid-run leaves the row running for good.
+- guide_import: a worker that dies mid-run leaves the row running; since brief
+  1117 process_queue() fails such a row (guarded, started_at older than
+  STALE_RUNNING). _run_one() done / failed writes also require status = 'running'.
 """
 import re
 from collections import Counter
@@ -236,7 +237,7 @@ IMPORT_SITES = {
     (IMPORT, "request_imports"): 1,
     (IMPORT, "mark_used"): 1,
     (IMPORT, "_run_one"): 3,
-    (IMPORT, "process_queue"): 1,
+    (IMPORT, "process_queue"): 2,
     (IMPORT, "purge"): 1,
     (MERGE, "_note_failure"): 1,
 }
@@ -244,9 +245,10 @@ IMPORT_MOVES = [
     (IMPORT, "request_imports", '"status": "queued", "created_at": now,', NEW, "queued"),
     (IMPORT, "mark_used", "SET status = 'used'", ("done",), "used"),
     (IMPORT, "_run_one", "SET status = 'running'", ("queued",), "running"),
-    (IMPORT, "_run_one", "SET status = 'done', raw_json = ?", ANY, "done"),
-    (IMPORT, "_run_one", "SET status = 'failed', error = ?, finished_at = ?", ANY, "failed"),
+    (IMPORT, "_run_one", "SET status = 'done', raw_json = ?", ("running",), "done"),
+    (IMPORT, "_run_one", "SET status = 'failed', error = ?, finished_at = ?", ("running",), "failed"),
     (IMPORT, "process_queue", "SET status = 'failed', error = 'budget'", ANY, "failed"),
+    (IMPORT, "process_queue", "SET status = 'failed', error = 'stale'", ("running",), "failed"),
     (IMPORT, "purge", "WHEN status = 'done' THEN 'expired'", ("done",), "expired"),
     (MERGE, "_note_failure", "SET status = 'failed', error = ?, raw_json = NULL", ("done",), "failed"),
 ]

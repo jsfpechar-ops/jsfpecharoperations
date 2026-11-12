@@ -28,7 +28,7 @@ log = logging.getLogger("ubyhost.guide_import")
 IMPORT_TRANSITIONS = {
     # _run_one() claims a row; process_queue() fails it when the monthly budget is gone
     "queued": {"running", "failed"},
-    "running": {"done", "failed"},  # _run_one()
+    "running": {"done", "failed"},  # _run_one(); process_queue() fails a stale one (1117)
     # mark_used(); guest_guide_merge._note_failure(); purge() after RAW_DAYS
     "done": {"used", "failed", "expired"},
     "failed": set(),
@@ -54,6 +54,9 @@ ROW_DAYS = 60
 # Connect and read timeouts; the read side outlasts the actor timeout we ask
 # Apify for, so Apify's own 408 arrives before ours.
 HTTP_TIMEOUT = (10, 150)
+# 1117: a row `running` for longer than this has lost its worker (a deploy restart).
+# One run is bounded by HTTP_TIMEOUT; the factor 5 is the margin (800 s).
+STALE_RUNNING = timedelta(seconds=5 * sum(HTTP_TIMEOUT))
 
 _BOOKING_HOSTS = frozenset({"booking.com", "www.booking.com", "m.booking.com"})
 _BOOKING_PATH = re.compile(r"^/hotel/([a-z]{2})/([a-z0-9][a-z0-9._-]{0,200})\.html$", re.IGNORECASE)
@@ -367,10 +370,18 @@ def _run_one(row) -> None:
         data = trim(row["source"], item)
         if len(data) <= 1:
             raise GuideImportError("empty")
-        db.execute(
-            "UPDATE guide_import SET status = 'done', raw_json = ?, finished_at = ? WHERE id = ?",
+        if not db.execute(
+            "UPDATE guide_import SET status = 'done', raw_json = ?, finished_at = ? "
+            "WHERE id = ? AND status = 'running'",
             (json.dumps(data, ensure_ascii=False), db.utcnow(), import_id),
-        )
+        ):
+            # Stale cleanup already marked the row failed: do not log done or
+            # fill the host's page from a result the app shows as failed.
+            log.warning(
+                "guide import id=%s finished after the stale cutoff; result dropped",
+                import_id,
+            )
+            return
         log.info("guide import id=%s source=%s done", import_id, row["source"])
         # 0432: one fetch feeds both consumers — the page photos ride this
         # same run; a failure here never fails the import (the text stands).
@@ -387,7 +398,8 @@ def _run_one(row) -> None:
             log.info("guide import id=%s: page prefill skipped", import_id, exc_info=True)
     except GuideImportError as exc:
         db.execute(
-            "UPDATE guide_import SET status = 'failed', error = ?, finished_at = ? WHERE id = ?",
+            "UPDATE guide_import SET status = 'failed', error = ?, finished_at = ? "
+            "WHERE id = ? AND status = 'running'",
             (exc.key[:40], db.utcnow(), import_id),
         )
         log.warning("guide import id=%s source=%s failed kind=%s", import_id, row["source"], exc.key)
@@ -395,6 +407,16 @@ def _run_one(row) -> None:
 
 def process_queue(limit: int = 3) -> int:
     """Run queued imports, oldest first. Called by the worker every minute."""
+    # 1117: fail a row a dead worker left `running`. Failed, not queued again: a run
+    # calls a paid actor, so it is never repeated on its own. Zero rows is the normal case.
+    cutoff = (datetime.now(timezone.utc) - STALE_RUNNING).replace(microsecond=0).isoformat()
+    reset = db.execute(
+        "UPDATE guide_import SET status = 'failed', error = 'stale', finished_at = ? "
+        "WHERE status = 'running' AND started_at < ?",
+        (db.utcnow(), cutoff),
+    )
+    if reset:
+        log.warning("guide import: %s stale running row(s) failed", reset)
     if not enabled():
         return 0
     rows = db.query(

@@ -1,6 +1,6 @@
 # 1117: A guide import row left `running` by a dead worker: fail it after a cutoff
 
-Status: todo
+Status: review
 Depends on: PR #920 merged to main (tables and pin tests present) | Base commit: main after PR #920 | Branch: task/1117-sm-guide-import-stale-reset
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

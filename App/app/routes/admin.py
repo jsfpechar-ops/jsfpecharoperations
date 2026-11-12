@@ -3695,7 +3695,9 @@ def reservations_list(request: Request):
     date_from = _query_date(request, "from")
     date_to = _query_date(request, "to")
 
-    today = date.today().isoformat()
+    # Prague civil date — matches deadlines.urgency and the host's calendar day.
+    # UTC date.today() on the server lags Czech local time near midnight.
+    today = deadlines.local_now().date().isoformat()
     date_range = request.query_params.get("range", "")
     archive_scope = request.query_params.get("archive_scope") == "1"
     show_archive = date_range == "archive" or archive_scope
@@ -3706,7 +3708,7 @@ def reservations_list(request: Request):
         date_from, date_to = today, ""
     elif date_range == "past":
         # Departed stays only — a guest checking in today still belongs under Upcoming.
-        date_from, date_to = "", (date.today() - timedelta(days=1)).isoformat()
+        date_from, date_to = "", (deadlines.local_now().date() - timedelta(days=1)).isoformat()
     elif date_range == "current":
         # In the flat today: arrived on or before today and leaving on or after it.
         date_from = date_to = today
@@ -4744,6 +4746,11 @@ async def guest_update(guest_id: int, request: Request):
         pass
     elif not validation.guest_is_reportable(payload["nationality"]):
         payload["submit_state"] = reporting.NOT_REQUIRED
+    elif reporting.edit_keeps_duplicate_block(guest, {**dict(guest), **payload}, reservation):
+        # Brief 1121: the register refused this record as one it already holds,
+        # and this edit changes nothing it reports. The state, the error text
+        # and the retry count are kept; the other columns are saved.
+        pass
     elif guest["submit_state"] in (reporting.ERROR, reporting.BLOCKED, reporting.NOT_REQUIRED):
         # Rule 10.4(5): correcting a rejected record must make it sendable again.
         payload["submit_state"] = reporting.PENDING

@@ -253,6 +253,7 @@ def start_claim(
     party_size: int,
     lang: str,
     resend: bool = False,
+    _retry: bool = True,
 ) -> Tuple[bool, str, Optional[str]]:
     """Return (ok, error_code, secret_if_any). Secret is only for tests/console."""
     expire_holds()
@@ -298,10 +299,13 @@ def start_claim(
         datetime.now(timezone.utc) + timedelta(minutes=HOLD_MINUTES)
     ).replace(microsecond=0).isoformat()
     version = int(claim["token_version"] or 0) + 1
-    db.execute(
+    # 1115: write only over the row read above. A confirm, release or other
+    # start_claim that committed since then changed the state or the
+    # token_version, and this write then matches no row.
+    written = db.execute(
         "UPDATE reservation_claim SET state = ?, email = ?, email_masked = ?, lang = ?, "
         "token_hash = ?, token_version = ?, provisional_until = ?, declared_guests = ?, "
-        "updated_at = ? WHERE reservation_id = ?",
+        "updated_at = ? WHERE reservation_id = ? AND state = ? AND token_version = ?",
         (
             PROVISIONAL if claim["state"] != CLAIMED else CLAIMED,
             addr,
@@ -316,8 +320,25 @@ def start_claim(
             party_size if claim["state"] != CLAIMED else None,
             now,
             reservation["id"],
+            claim["state"],
+            int(claim["token_version"] or 0),
         ),
     )
+    if written != 1:
+        # The row moved under this call: decide again from a fresh read, once,
+        # exactly as a new request would (a confirmed stay answers
+        # "already_claimed"). Losing twice in a row answers "held".
+        if _retry:
+            return start_claim(
+                reservation,
+                apartment,
+                email=email,
+                party_size=party_size,
+                lang=lang,
+                resend=resend,
+                _retry=False,
+            )
+        return False, "held", None
     link = (
         f"{config_public(apartment)}/l/{apartment['permalink_token']}/"
         f"{reservation['id']}/claim#c={mail.CLAIM_SECRET_MARKER}"

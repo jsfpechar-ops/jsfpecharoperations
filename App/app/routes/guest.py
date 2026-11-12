@@ -2600,7 +2600,15 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
                 "signed_for_wording": None,
             }
         )
-    if reporting.guest_correction_resets_attempts(existing):
+    if existing and reporting.edit_keeps_duplicate_block(
+        existing, {**dict(existing), **payload}, reservation
+    ):
+        # Brief 1121: the register refused this record as one it already holds,
+        # and this save changes nothing it reports. The state, the error text
+        # and the retry count are not written; the other columns are saved.
+        del payload["submit_state"]
+        del payload["last_errors"]
+    elif reporting.guest_correction_resets_attempts(existing):
         # Rule 10.4(5): a correction makes the record sendable again, and a
         # guest fixing their own form is a correction like any other. Without
         # this the sweep kept skipping the row at SUBMISSION_MAX_AUTO_ATTEMPTS

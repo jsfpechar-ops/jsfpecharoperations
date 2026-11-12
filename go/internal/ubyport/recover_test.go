@@ -134,6 +134,44 @@ func TestRecoverStaleBatches(t *testing.T) {
 	}
 }
 
+// TestRecoverKeepsAnOutcomeRecordedAfterTheScan is brief 1114: the send records
+// ok after recovery's scan has picked the batch as stale. Recovery must keep ok,
+// leave the guest alone and raise no alert.
+func TestRecoverKeepsAnOutcomeRecordedAfterTheScan(t *testing.T) {
+	pool := claimTestPool(t)
+	ctx := context.Background()
+	g1 := seedGuest(t, pool)
+	apt := storeApartmentOf(t, pool, g1)
+	// No claim on g1, so the scan counts the batch as stale.
+	sub, err := InsertSubmission(ctx, pool, apt, "auto", []int64{g1}, "ep", recoverStamp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	afterRecoverScan = func() {
+		if _, err := pool.Exec(ctx,
+			`UPDATE submission SET state = 'ok', finished_at = $1 WHERE id = $2`,
+			recoverStamp, sub); err != nil {
+			t.Fatal(err)
+		}
+	}
+	t.Cleanup(func() { afterRecoverScan = func() {} })
+
+	n, err := RecoverStaleSubmissions(ctx, pool, apt, recoverNow)
+	if err != nil || n != 0 {
+		t.Fatalf("outcome after scan: n=%d err=%v", n, err)
+	}
+	if st := storeRead(t, pool, "submission", sub, "state")["state"]; st != "ok" {
+		t.Fatalf("recovery overwrote ok with %q", st)
+	}
+	if got := storeRead(t, pool, "guest", g1, "submission_id")["submission_id"]; got != "<nil>" {
+		t.Fatalf("recovery pointed g1 at %q", got)
+	}
+	if c := effectsCount(t, pool, `SELECT count(*) FROM alert WHERE dedupe_key = $1`,
+		fmt.Sprintf("submission_outcome_unknown:%d", apt)); c != 0 {
+		t.Fatalf("recovery raised %d alerts", c)
+	}
+}
+
 // TestReportingTodayIsUTCDate pins the day the completeness checks use: 23:30 UTC
 // is already the next day in Prague, but the UTC date is the one that counts.
 func TestReportingTodayIsUTCDate(t *testing.T) {

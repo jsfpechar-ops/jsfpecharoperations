@@ -924,7 +924,8 @@ def dashboard_rows(
     already loaded them; a stay whose apartment is not among them is looked up
     as before.
     """
-    today = deadlines.local_now().date() if overview else date.today()
+    # Prague civil date for every dashboard view — same clock as urgency().
+    today = deadlines.local_now().date()
     start = (today - timedelta(days=days_back)).isoformat()
     end = (today + timedelta(days=days_ahead)).isoformat()
     query = (
@@ -1307,6 +1308,24 @@ def blocked_as_duplicate(guest) -> bool:
     except (IndexError, KeyError):
         return False
     return any(uby_errors.is_duplicate(part) for part in stored.split(" | "))
+
+
+def edit_keeps_duplicate_block(stored, proposed, reservation) -> bool:
+    """Brief 1121: does this edit leave a duplicate block in place?
+
+    True when ``stored`` is blocked because the register already holds the
+    record (the test collect_sendable uses to refuse a resend) and saving
+    ``proposed`` changes no field reported to the police (filed_record_changed).
+    Such an edit is not a corrected record, so it must not reopen the record
+    for sending: a second duplicate cannot be accepted and counts against the
+    host. An edit that changes a reported field is a new record and resets as
+    before.
+    """
+    return (
+        _field(stored, "submit_state") == BLOCKED
+        and blocked_as_duplicate(stored)
+        and not filed_record_changed(stored, proposed, reservation)
+    )
 
 
 def receipt_submission_id(previous_submission_id: Optional[int]) -> Optional[int]:
@@ -2040,10 +2059,15 @@ def recover_stale_submissions(apartment_id: int) -> int:
     for submission_id, guest_ids in candidates:
         with db.immediate() as cur:
             db.lock_key(cur, "submit_apartment", apartment_id)
-            db.update_in(
-                cur, "submission", submission_id,
-                {"state": "outcome_unknown", "finished_at": db.utcnow(), "error_text": reason},
+            cur.execute(
+                "UPDATE submission SET state = 'outcome_unknown', finished_at = ?, error_text = ? "
+                "WHERE id = ? AND state = 'running'",
+                (db.utcnow(), reason, submission_id),
             )
+            if cur.rowcount != 1:
+                # The send recorded its own outcome after the scan above (brief
+                # 1114): that outcome stands, and its guests are left alone.
+                continue
             for guest_id in guest_ids:
                 cur.execute(
                     "UPDATE guest SET submission_id = ? WHERE id = ? AND submit_state != ? "
@@ -2743,9 +2767,11 @@ TERMINAL_SUBMISSION_STATES = ("ok", "ok_duplicate", "partial", "error", "transpo
 
 # Every move of submission.state the code makes today (brief 1106). Declared
 # only: nothing reads this at runtime, and tests/test_sm_submission_state.py
-# fails when a writer changes. None is the INSERT that creates the row. Every
-# later write matches the row by id alone, with no state check in SQL; the
-# source state is the one the writer's code path holds.
+# fails when a writer changes. None is the INSERT that creates the row. The
+# stale-batch recovery (Python and Go) writes only while the row is still
+# 'running' (brief 1114). Every other later write matches the row by id alone,
+# with no state check in SQL; the source state is the one the writer's code
+# path holds.
 SUBMISSION_TRANSITIONS = {
     # submit_batch; go store.go InsertSubmission
     None: ("running",),
