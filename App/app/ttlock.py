@@ -69,7 +69,36 @@ ERROR_KINDS: Dict[int, str] = {
     -3008: "unused_code",
     -1026: "period_taken",
     -3007: "duplicate",
+    # 1163: the rest of TTLock's official error table that our calls can get
+    # (full table and meanings: docs/plans/ttlock-door-codes.md section 3).
+    # The passcode is not on the lock; a delete confirms it with a list call.
+    -1007: "code_missing",
+    # The lock or its gateway cannot be reached now: retry later, never a lookup.
+    -3002: "offline",
+    -3003: "offline",
+    -3035: "offline",
+    -3036: "offline",
+    -3037: "offline",
+    -2025: "offline",
+    # The host (or the server's region setting) must fix the setup: no retry.
+    -1003: "config",
+    -4037: "config",
+    -4043: "config",
+    -3034: "config",
+    -4067: "config",
+    -4063: "config",
+    30008: "config",
+    # Our request was malformed or the code is unusable: a UbyHost bug, no endless retry.
+    80002: "bug",
+    -2009: "bug",
+    -2032: "bug",
+    -3006: "bug",
+    -3045: "bug",
 }
+CODE_MISSING = "code_missing"
+NO_PASSCODE_DATA = -1007
+# A PIN the lock refuses is replaced once by a new random PIN (the second refusal is raised).
+NEW_PIN_ERRCODES = (-3007, -2032)
 
 _MS_HOUR = 3_600_000
 _ADMIN_STATUS = "110401"
@@ -527,7 +556,7 @@ def add_custom_code(
     try:
         answer = _call(account_id, "/v3/keyboardPwd/add", payload, priority)
     except TTLockError as exc:
-        if exc.code != -3007:
+        if exc.code not in NEW_PIN_ERRCODES:
             raise
         pin = _random_custom_pin()
         payload["keyboardPwd"] = pin
@@ -580,22 +609,28 @@ def _read_listing(
     when a short or empty page ended the list, or, with ``stop_at_first``, at the first kept
     entry. None when an answer has no ``list`` array, or when the page limit ran out first:
     the list is then incomplete and nothing may be concluded from it. TTLock errors are
-    raised as they are.
+    raised as they are, except -1007 ("No password data of this lock") on page 1: the lock
+    has no codes at all, an empty list (the kept entries are then none).
     """
     kept: List[dict] = []
     for page in range(1, LIST_MAX_PAGES + 1):
-        answer = _call(
-            account_id,
-            "/v3/lock/listKeyboardPwd",
-            {
-                "lockId": int(lock_id),
-                "searchStr": name,
-                "orderBy": 1,
-                "pageNo": page,
-                "pageSize": LIST_PAGE_SIZE,
-            },
-            NORMAL,
-        )
+        try:
+            answer = _call(
+                account_id,
+                "/v3/lock/listKeyboardPwd",
+                {
+                    "lockId": int(lock_id),
+                    "searchStr": name,
+                    "orderBy": 1,
+                    "pageNo": page,
+                    "pageSize": LIST_PAGE_SIZE,
+                },
+                NORMAL,
+            )
+        except TTLockError as exc:
+            if exc.code == NO_PASSCODE_DATA and page == 1:
+                return kept
+            raise
         items = answer.get("list")
         if not isinstance(items, list):
             return None

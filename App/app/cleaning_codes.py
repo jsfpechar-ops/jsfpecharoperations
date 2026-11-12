@@ -204,8 +204,25 @@ def _find(row: dict) -> str | None:
     return str(entry["keyboardPwdId"])
 
 
+def _already_gone(error: ttlock.TTLockError, row: dict, code_id: str) -> bool:
+    """A refused delete that may only mean "that code is no longer on the lock" (-1007).
+
+    Same rule as door_codes._already_gone: -1007 is never trusted alone; the exhaustive
+    list (ttlock.code_is_listed, 1 to LIST_MAX_PAGES calls) must be read in full without
+    the id. A lookup that fails or is incomplete means not gone: the delete is retried.
+    """
+    if error.kind != ttlock.CODE_MISSING:
+        return False
+    try:
+        return ttlock.code_is_listed(
+            row["lock_account_id"], row["lock_id"], row["operation_ref"], code_id,
+        ) is False
+    except ttlock.TTLockError:
+        return False
+
+
 def _failure(row: dict, error: ttlock.TTLockError, revoking: bool) -> None:
-    transient = error.kind in {"offline", "transient", "network", "rate", "budget"}
+    transient = error.kind in {"offline", "transient", "network", "rate", "budget", ttlock.CODE_MISSING}
     retry = transient and row["attempts"] < 5
     state = ("revoke_pending" if retry else "revoke_failed") if revoking else ("retrying" if retry else "failed")
     delay = (1, 5, 15, 60, 240)[min(row["attempts"] - 1, 4)]
@@ -279,7 +296,11 @@ def process_queue() -> int:
             if revoking:
                 code_id = _find(row) if attempts > 1 else (row["provider_code_id"] or _find(row))
                 if code_id:
-                    ttlock.delete_code(row["lock_account_id"], row["lock_id"], code_id)
+                    try:
+                        ttlock.delete_code(row["lock_account_id"], row["lock_id"], code_id)
+                    except ttlock.TTLockError as error:
+                        if not _already_gone(error, row, code_id):
+                            raise
                 db.update("cleaning_code", row["id"], {
                     "state": "revoked", "pin_enc": None, "claimed_at": None, "updated_at": db.utcnow(),
                 })
