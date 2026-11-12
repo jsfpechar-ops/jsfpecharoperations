@@ -753,6 +753,29 @@
      "workspace": "ws1@example.test"
     }
    ]
+  },
+  {
+   "html_sha256": "f11ab00e417ab4f55ee10edebf9145fd7b4668856f1a49ce89b10b71f38a6b0b",
+   "name": "digest_at_risk_only",
+   "stays": [
+    {
+     "arrival": "01.09.2026",
+     "deadline": "03.09.2026 23:59",
+     "property": "Byt 0 <&>",
+     "unfiled": 1,
+     "workspace": "ws0@example.test"
+    },
+    {
+     "arrival": "02.09.2026",
+     "deadline": "04.09.2026 23:59",
+     "property": "Byt 1 <&>",
+     "unfiled": 2,
+     "workspace": "ws1@example.test"
+    }
+   ],
+   "subject": "Filing watchdog: stays at risk (2)",
+   "text": "Each stay below has foreign guests that UbyPort has not accepted yet, and its deadline is less than 24 hours away or has passed. This digest is sent at most every 3 days while any stay is at risk.\n\nWorkspace | Property | Arrival | Deadline | Not filed\nws0@example.test | Byt 0 <&> | 01.09.2026 | 03.09.2026 23:59 | 1\nws1@example.test | Byt 1 <&> | 02.09.2026 | 04.09.2026 23:59 | 2\n\n--\nUbyHost\nSent to UBYHOST_OPERATOR_EMAIL by the deadline job. It contains no guest names.",
+   "unknown": []
   }
  ],
  "contacts": [
@@ -871,6 +894,54 @@
   {
    "python": "",
    "raw": "   "
+  },
+  {
+   "python": "jan@example.test",
+   "raw": "Apartmány s.r.o. <jan@example.test>"
+  },
+  {
+   "python": "jan@example.test",
+   "raw": "\"Apartmány, s.r.o.\" <jan@example.test>"
+  },
+  {
+   "python": "",
+   "raw": "Apartmány, s.r.o. <jan@example.test>"
+  },
+  {
+   "python": "jan@bücher.test",
+   "raw": "jan@bücher.test"
+  },
+  {
+   "python": "jiří@bücher.test",
+   "raw": "Jiří@Bücher.TEST"
+  },
+  {
+   "python": "říha@example.test",
+   "raw": "ŘÍHA@example.test"
+  },
+  {
+   "python": "jan@ex_ample.test",
+   "raw": "jan@ex_ample.test"
+  },
+  {
+   "python": "jan.@example.test",
+   "raw": "jan.@example.test"
+  },
+  {
+   "python": "ja..n@example.test",
+   "raw": "ja..n@example.test"
+  },
+  {
+   "python": "ááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááá@example.test",
+   "raw": "ááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááá@example.test"
+  },
+  {
+   "python": "",
+   "raw": "áááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááááá@example.test"
+  },
+  {
+   "python": "i̇@example.test",
+   "raw": "İ@example.test"
   }
  ],
  "env": {
