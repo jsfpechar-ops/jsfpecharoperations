@@ -96,6 +96,7 @@
 - K-H0: from tasks/1094-report.md: `checkin_hour` NULL can raise TypeError in door_codes.py (~179, 436); `/save` with a non-owned guest_id becomes a new person; `guest_form_saved` audit has no field names.
 - K-F19 (1138): `passport_photos.py:299`, `stay_fees.py:1164` skip `updated_at`, which the claim re-check uses.
 - K-F20 (1139): `outcome_unknown` without a live claim does not defer an iCal cancel. Owner.
+- K-F21 (1142 review): Go `ClaimSendable` stamps `claimed_at` before the advisory-lock waits (claim.go:48); a long wait makes the claim born aged so the first refresh fails. Safe (nothing sent), delays filing. Fix: `nowSeconds()` at the INSERT.
 - K-SM2 (brief 1105): OPERATIONS.md submit_state section disagrees with the code in 9 places.
 - K-SM3 (brief 1111): rules.md lines 37, 44 still say production is SQLite, migrations frozen at 0033.
 - K-DC-LOST (1141): revoke lost race writes only `door_code_revoke_lost_race` audit; row may show `issued` while the PIN is deleted. Nothing reads it. Owner: re-issue or notify.
