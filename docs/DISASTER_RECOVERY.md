@@ -125,16 +125,16 @@ If curl reports a certificate error, use the browser check. Never add `-k`.
 | AWS service | Without it | Action |
 |---|---|---|
 | SES mail | Outbox queues mail and waits until SES is reachable | Wait. An SMTP switch is a later brief. |
-| S3 copies and WAL-G | Gone. Drive is the only source. Point-in-time recovery is not available after a rebuild until it is set up again. | Re-set WAL-G later, or accept daily and weekly copies. |
+| S3 copies and WAL-G | Gone. Drive is the only source. Point-in-time recovery is not available after a rebuild until it is set up again. | Re-set WAL-G later, or accept the daily Drive copy. |
 | Lightsail snapshots | Not needed; the Drive backup replaces them | None |
 | Static IP | New IP | Update Cloudflare (above) |
 | UbyPort | Not on AWS; unaffected | None |
 
-The data may be up to 7 days old, because the Drive copy is weekly. Guests filed since the last backup may need checking against police receipts.
+The data may be up to 1 day old, because the Drive copy is daily (04:00 UTC). Guests filed since the last backup may need checking against police receipts.
 
 ## After the move
 
-1. Re-enable the cron lines: `crontab -e`, then add the daily backup at 03:00 (`backup.sh`) and the Drive copy on Sunday at 04:00 (`backup-gdrive.sh`).
+1. Re-enable the cron lines: `crontab -e`, then add the daily backup at 03:00 (`backup.sh`) and the daily Drive copy at 04:00 (`backup-gdrive.sh`).
 2. Run the backup once: `./scripts/backup.sh`.
 3. Owner or lawyer: add the new provider to the `/subprocessors` register and to `docs/privacy/ROPA.md`. The provider must be in the EU. Do this before real guest data moves if time allows, otherwise the same day.
 
