@@ -1,4 +1,4 @@
-# 1163: Cloudflare "we're down" page
+# 1166: Cloudflare "we're down" page
 
 Status: todo
 Depends on: none | Base commit: 8000926 | Branch: claude/dr-down-page
@@ -23,12 +23,12 @@ Design (decided, do not change):
 
 | Path | Action | What |
 |---|---|---|
-| docs/tasks/1163-cloudflare-down-page.md | done | this brief (committed by the orchestrator) |
+| docs/tasks/1166-cloudflare-down-page.md | done | this brief (committed by the orchestrator) |
 | deploy/cloudflare/down-page-worker.js | create | the Worker and the page |
 | docs/DISASTER_RECOVERY.md | edit | new section, plus step 4 in "Point Cloudflare at the new box" |
 | docs/CLOUDFLARE.md | edit | one pointer line after the troubleshooting table |
 | docs/plans/portable-disaster-recovery.md | edit | step 5 row and gap 6 line |
-| docs/tasks/1163-report.md | create | the report (§9) |
+| docs/tasks/1166-report.md | create | the report (§9) |
 
 No other file may change. Nothing in App/, go/ or docs/context/.
 
@@ -39,7 +39,7 @@ No other file may change. Nothing in App/, go/ or docs/context/.
 First check the folder does not exist yet: `ls deploy/cloudflare 2>&1 | tail -5` says "No such file". Then `mkdir -p deploy/cloudflare` and write exactly this content:
 
 ```js
-// "We're down" page for UbyHost (brief 1163, disaster-recovery plan step 5).
+// "We're down" page for UbyHost (brief 1166, disaster-recovery plan step 5).
 // The owner routes this Worker for the domain during an outage; see
 // docs/DISASTER_RECOVERY.md. It makes no outbound request and reads no data.
 
@@ -97,7 +97,7 @@ export default {
 };
 ```
 
-Check: `node --check` and the smoke test in §6 (commands 1 and 2). Commit: `1163 step 1`.
+Check: `node --check` and the smoke test in §6 (commands 1 and 2). Commit: `1166 step 1`.
 
 ### Step 2: docs/DISASTER_RECOVERY.md
 
@@ -125,7 +125,7 @@ Edit B. Anchor: `grep -nF '3. Check that `.env` has `CLOUDFLARE_PROXY=1`.' docs/
 4. Turn off the "we're down" page: in Cloudflare, Workers & Pages, `ubyhost-down`, Settings, Domains & Routes, delete the route(s). Then open the site in a private window and check the normal start page loads.
 ```
 
-Do not edit "## Drill". Check: `grep -n 'down' docs/DISASTER_RECOVERY.md | tail -10` shows the new section heading and step 4. Commit: `1163 step 2`.
+Do not edit "## Drill". Check: `grep -n 'down' docs/DISASTER_RECOVERY.md | tail -10` shows the new section heading and step 4. Commit: `1166 step 2`.
 
 ### Step 3: docs/CLOUDFLARE.md
 
@@ -135,7 +135,7 @@ Anchor: `grep -nF '| **Deploy says missing origin.pem** |' docs/CLOUDFLARE.md` m
 Outage page while the server is being rebuilt: [DISASTER_RECOVERY](DISASTER_RECOVERY.md#show-the-were-down-page).
 ```
 
-Check: `sed -n 496,503p docs/CLOUDFLARE.md` shows the table, a blank line, the new line, a blank line, then the `###` heading. Commit: `1163 step 3`.
+Check: `sed -n 496,503p docs/CLOUDFLARE.md` shows the table, a blank line, the new line, a blank line, then the `###` heading. Commit: `1166 step 3`.
 
 ### Step 4: docs/plans/portable-disaster-recovery.md
 
@@ -148,16 +148,16 @@ Edit A. Find with `grep -nF '| 5 | Cloudflare' docs/plans/portable-disaster-reco
 New line:
 
 ```
-| 5 | Cloudflare "we're down" page: Worker the owner routes during an outage (brief 1163) | S | Haiku brief + owner | 1 |
+| 5 | Cloudflare "we're down" page: Worker the owner routes during an outage (brief 1166) | S | Haiku brief + owner | 1 |
 ```
 
-Edit B. Find with `grep -nF 'No "we'"'"'re down" page' docs/plans/portable-disaster-recovery.md` (line 25). Old text: `No "we're down" page (CLOUDFLARE.md has none).` New text: `No "we're down" page (CLOUDFLARE.md has none). The page: brief 1163.` The rest of the line stays as it is.
+Edit B. Find with `grep -nF 'No "we'"'"'re down" page' docs/plans/portable-disaster-recovery.md` (line 25). Old text: `No "we're down" page (CLOUDFLARE.md has none).` New text: `No "we're down" page (CLOUDFLARE.md has none). The page: brief 1166.` The rest of the line stays as it is.
 
-Commit: `1163 step 4`.
+Commit: `1166 step 4`.
 
 ### Step 5: report
 
-Run §6, then write `docs/tasks/1163-report.md` (§9), set `Status: review`, commit `1163 step 5`.
+Run §6, then write `docs/tasks/1166-report.md` (§9), set `Status: review`, commit `1166 step 5`.
 
 ## 5. Do not touch
 
@@ -206,7 +206,7 @@ Stop, and write the report, if:
 
 ## 9. Report
 
-Write `docs/tasks/1163-report.md` (600 tokens at most) and set `Status: review`. The report has:
+Write `docs/tasks/1166-report.md` (600 tokens at most) and set `Status: review`. The report has:
 
 1. The files changed (`git diff --stat`).
 2. Each command, with the last 5 lines of its output.

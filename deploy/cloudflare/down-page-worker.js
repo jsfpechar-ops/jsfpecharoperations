@@ -1,4 +1,4 @@
-// "We're down" page for UbyHost (brief 1163, disaster-recovery plan step 5).
+// "We're down" page for UbyHost (brief 1166, disaster-recovery plan step 5).
 // The owner routes this Worker for the domain during an outage; see
 // docs/DISASTER_RECOVERY.md. It makes no outbound request and reads no data.
 

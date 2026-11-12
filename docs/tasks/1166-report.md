@@ -1,4 +1,4 @@
-# 1163 report: Cloudflare "we're down" page
+# 1166 report: Cloudflare "we're down" page
 
 Status: review
 
@@ -9,7 +9,7 @@ Status: review
  docs/CLOUDFLARE.md                       |   2 +
  docs/DISASTER_RECOVERY.md                |  13 ++
  docs/plans/portable-disaster-recovery.md |   4 +-
- docs/tasks/1163-cloudflare-down-page.md  | 227 +++++++++++++++++++++++++++++++
+ docs/tasks/1166-cloudflare-down-page.md  | 227 +++++++++++++++++++++++++++++++
  5 files changed, 300 insertions(+), 2 deletions(-)
 ```
 
