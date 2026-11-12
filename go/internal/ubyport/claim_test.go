@@ -413,3 +413,75 @@ func TestClaimMissingOneGuestRowIsTreatedAsLost(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestClaimedAtIsStampedAtInsertNotBeforeLockWaits(t *testing.T) {
+	pool := claimTestPool(t)
+	ctx := context.Background()
+	id := seedGuest(t, pool)
+	pairs := []ClaimPair{{GuestID: id, SubmitState: "pending", Built: builtOf(t, pool, id)}}
+
+	// Fake clock: every read is 100 s later than the one before, as if the
+	// lock waits between the first read and the INSERT took 100 s each.
+	real := nowSeconds
+	start := real()
+	reads := 0
+	nowSeconds = func() float64 {
+		reads++
+		return start + float64(reads-1)*100
+	}
+	t.Cleanup(func() { nowSeconds = real })
+
+	_, got, err := ClaimSendable(ctx, pool, pairs)
+	nowSeconds = real
+	if err != nil || len(got) != 1 {
+		t.Fatalf("claim: %v, %d pairs", err, len(got))
+	}
+	if reads < 2 {
+		t.Fatalf("clock read %d time(s); the INSERT must read it again", reads)
+	}
+	// Read 1 is the stale-claim DELETE (start), read 2 is the INSERT (start+100).
+	if at := claimedAt(t, pool, id); at < start+99 {
+		t.Fatalf("claimed_at %.0f is %.0f s after the first read, want about 100: stamped before the lock waits", at, at-start)
+	}
+}
+
+func TestRefreshBoundaryIsInclusiveAtExactlyTheTTL(t *testing.T) {
+	pool := claimTestPool(t)
+	ctx := context.Background()
+	id := seedGuest(t, pool)
+	pairs := []ClaimPair{{GuestID: id, SubmitState: "pending", Built: builtOf(t, pool, id)}}
+	tok, _, err := ClaimSendable(ctx, pool, pairs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const now = 1_900_000_000.0
+	real := nowSeconds
+	nowSeconds = func() float64 { return now }
+	t.Cleanup(func() { nowSeconds = real })
+	cutoff := now - SubmissionClaimTTL.Seconds()
+
+	if _, err := pool.Exec(ctx, `UPDATE submission_claim SET claimed_at = $1 WHERE guest_id = $2`, cutoff, id); err != nil {
+		t.Fatal(err)
+	}
+	if n, err := RefreshSendableClaim(ctx, pool, tok); err != nil || n != 1 {
+		t.Fatalf("refresh at exactly the cutoff: %d, %v (want 1)", n, err)
+	}
+	if got := claimedAt(t, pool, id); got != now {
+		t.Fatalf("claimed_at %.3f, want %.3f", got, now)
+	}
+
+	stale := cutoff - 0.001
+	if _, err := pool.Exec(ctx, `UPDATE submission_claim SET claimed_at = $1 WHERE guest_id = $2`, stale, id); err != nil {
+		t.Fatal(err)
+	}
+	if n, err := RefreshSendableClaim(ctx, pool, tok); err != nil || n != 0 {
+		t.Fatalf("refresh 1 ms past the cutoff: %d, %v (want 0)", n, err)
+	}
+	if got := claimedAt(t, pool, id); got != stale {
+		t.Fatalf("stale claim was revived: %.3f, want %.3f", got, stale)
+	}
+	nowSeconds = real
+	if err := ReleaseSendableClaim(ctx, pool, tok); err != nil {
+		t.Fatal(err)
+	}
+}

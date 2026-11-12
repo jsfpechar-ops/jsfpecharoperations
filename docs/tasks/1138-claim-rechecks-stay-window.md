@@ -17,7 +17,7 @@ Decided by the orchestrator (no action for the executor):
 
 Follow-up for a later brief (do not change here):
 
-3. **`updated_at` is not bumped by every writer.** `db.update("guest", ...)` in `App/app/passport_photos.py:299` and `App/app/routes/stay_fees.py:1164` skip it. So `updated_at` is the cheap guard, not a complete one; the stay window is compared directly because it is the field iCal moves. A per-field compare of name, document number, nationality and birth date (decrypting `*_enc` inside the claim) is a separate brief.
+3. **`updated_at` is not bumped by every writer.** `db.update("guest", ...)` in `App/app/passport_photos.py:299` skips it (it writes only `passport_photo_at`, not a payload field; `routes/stay_fees.py:1164` does bump it, see 1145). So `updated_at` is the cheap guard, not a complete one; the stay window is compared directly because it is the field iCal moves. A per-field compare of name, document number, nationality and birth date (decrypting `*_enc` inside the claim) is a separate brief.
 
 ## 1. Objective
 

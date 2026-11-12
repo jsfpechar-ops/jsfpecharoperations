@@ -1,4 +1,4 @@
-# 1133 report
+# 1143 report
 
 Status: review
 Branch: worktree-agent-afb4402b9074677fd | Base: 7b8ff2ae | Last code commit: 6a499d36
@@ -9,7 +9,7 @@ Branch: worktree-agent-afb4402b9074677fd | Base: 7b8ff2ae | Last code commit: 6a
 - App/tests/test_icalsync.py: +25 (regression test appended) (step 3)
 - go/internal/ical/syncfeed.go: helper `updateReservationUnlessClaimed` (commit d87cea09, step 4), call site (c99d4129, step 5)
 - go/internal/ical/syncfeed_test.go: +31, `TestUpdateReservationUnlessClaimed` (6a499d36, step 6)
-- docs/tasks/1133-report.md, docs/tasks/1133-ical-date-move-respects-submission-claim.md (Status line only)
+- docs/tasks/1143-report.md, docs/tasks/1143-ical-date-move-respects-submission-claim.md (Status line only)
 
 ## Commands and last lines
 
@@ -29,7 +29,7 @@ Branch: worktree-agent-afb4402b9074677fd | Base: 7b8ff2ae | Last code commit: 6a
 
 ## Deviations
 
-- Done: steps 1 to 6 of 1133 (cont-1 steps 1 to 6). Left: nothing in the brief. `context_lint.py` (1133 §6 command 3) not run, not in the cont-1 brief.
+- Done: steps 1 to 6 of 1143 (cont-1 steps 1 to 6). Left: nothing in the brief. `context_lint.py` (1143 §6 command 3) not run, not in the cont-1 brief.
 
 ## Questions
 

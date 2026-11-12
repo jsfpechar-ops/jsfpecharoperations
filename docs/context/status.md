@@ -3,18 +3,17 @@
 Updated: 2026-11-12.
 
 ## Production
-- Magic-link 1–2 done; access log off. `/healthz` 1.1.0. Host 2026-11-12: `90231ec4` (#928), same as `origin/main`.
+- Magic-link 1–2 done; access log off. `/healthz` 1.1.0. `origin/main` 11-12: `c38b38b8` (#933, auto-deploy; host not rechecked).
 - Postgres cutover done. Billing ON. SQLite rollback only via existing pg-cutover scripts. `COMPOSE_PROFILES=walg,monitoring,go`.
 - Go jobs = queue: billing_snapshot, stripe_sweep, ical, push, submit. Python: mail, door_codes, posthog, meta_capi, deadlines.
 - Go live, all routes on main (11-12): palette, calendar, payments QR/connect/requests, stripe webhook, push, pay PNGs — paths in [ENVIRONMENT](../ENVIRONMENT.md). Rollback: trim `UBYHOST_GO_PATHS`, `caddy-validate.sh`, `docker compose up -d caddy`. Next: `deadlines` job: 1132, 1133 (GO-DL A, #934) merged; 1153 (GO-DL B) next.
 - AI: `havel,leon,guide_import` (`guide_translate` off). Stripe test. Guest QR 404 on both when the owner has no IBAN.
 
 ## Now
-- 11-12: PR #933 draft, 1133-1139 state-machine hardening (K-F02). Review next.
+- 11-12: #933 merged (1134-1143 state-machine hardening, K-F02 closed). Follow-ups 1144-1156 (K-F19-F22, K-DC-*, K-E2E-ORDER): PR #937 draft, review then merge.
 - 11-10 live: 1085/1086 police letter paste (#882, #892); 1089/1090 under-15 signature (#885, #888); 1091/1093 short guest titles (#883, #887); 1092 head-count single writer (#884); 1094 H0 check (#893); 1096 Save row, leave warning (#894).
 - 1120-1123b ready
 - Building: 1095 head-count H1 (flag `UBYHOST_HEADCOUNT_LEAD_LIVE` off). Next: H2a, H2b, H3, H4, guest form C.
-- 11-10: 1092 demo full coverage, PR #886.
 - 11-10: [Speed](../plans/speed-and-ease.md)/[group](../plans/guest-group-registration.md) overnight build: merged and auto-deployed #854-#867, #871; late-filing count was 0. Held drafts for copy review: #868 (F1 bill mail), #869 (F3 fee update mail).
 - 11-09: 1051 stay-fee month filter (cache `20261109-1051a`), 1053 stay-fee rows + centred editor (`20261109-1053a`): draft PRs.
 - 11-07: 0990-0992 (throttle, PG indexes 00008, edge cache) in review. **Owner:** deploy, `pg_schema.py apply`, CF rule, Grafana.
@@ -28,7 +27,7 @@ Updated: 2026-11-12.
 - File-retention: decided, no build; lawyer Terms/DPA line.
 
 ## Blocked: needs owner, lawyer or council
-- Lawyer: legal texts (0005, K-L). Stale signed dates (K-F18). Filing HIGH RISK: K-F02, K-F03, K-F07; secrets K-S10.
+- Lawyer: legal texts (0005, K-L). Stale signed dates (K-F18). Filing HIGH RISK: K-F03, K-F07; secrets K-S10.
 - Owner: `uk` in `UBYHOST_GUEST_LANGS`; phone/passkey deploy; AI crawler Terms §11 confirm.
 
 ## Owner done

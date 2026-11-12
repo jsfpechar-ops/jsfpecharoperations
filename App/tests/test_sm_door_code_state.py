@@ -41,6 +41,7 @@ PINNED = [
     ("_revoke_one", ("revoke_pending",), ("revoke_pending",), ("revoked",)),
     ("_revoke_one", ("revoke_pending",), ("revoke_pending",), ("revoke_failed",)),
     ("_revoke_one", ("revoke_pending",), ("revoke_pending",), ("revoke_failed",)),
+    ("_reissue_lost_pin", ("issued",), ("issued",), ("pending",)),
     ("_handle_cancellations", ("pending", "retrying"), ("pending", "retrying"), ("revoked",)),
     ("_handle_cancellations", ("issued",), ("issued",), ("revoke_pending",)),
     ("reconcile", ("issuing",), ("issuing",), ("retrying",)),

@@ -403,6 +403,7 @@ condition, not by time.
 | `feed_recurring_event` | warning | A feed repeats a booking (`RRULE`/`RDATE`/`EXDATE`), so only the first occurrence was imported. | A later sync of that feed returns no repeating event. |
 | `moved_after_report` | warning | A feed moved a stay's dates **after** the stay had already been filed, so the register holds the old dates. | Not auto-cleared; the host checks the new dates and resends. |
 | `cancelled_after_report` | warning | A stay vanished from the feed, or was cancelled in it, **after** it had already been reported. | Not auto-cleared; the host decides whether it was cancelled or moved. |
+| `cancelled_filing_unconfirmed` | warning | A stay was cancelled in the calendar (or vanished) while a guest of it was in a `running` or `outcome_unknown` filing, so the register may hold guests of a cancelled stay. A `running` filing younger than 30 minutes defers the cancel instead. | Not auto-cleared; the host checks UbyPort. |
 | `guest_incomplete_checkin` | warning | Check-in day arrived with the guest's form still incomplete. | — |
 | `guest_pin_abuse` | warning | Repeated wrong PIN attempts on an apartment's guest link. | — |
 | `mail_failed` | warning | A queued guest e-mail exhausted its attempts. | — |
