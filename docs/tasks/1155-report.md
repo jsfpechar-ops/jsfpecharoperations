@@ -20,7 +20,7 @@ Commits: f0050e53 (step 2), 3a03b899 (step 3), 0a223321 (step 4), bb48a687 (step
 - Step 10 door-codes row: `287 passed, 2 skipped in 9.42s`; the 2 skips are the `playwright` browser tests (allowed).
 - Step 11 ruff (`app tests`, F401/F841 set): `All checks passed!`
 - Step 12 Postgres (UBYHOST_DATABASE_URL set, 4 files): `66 passed in 14.23s`
-- Pre-report ruff (`app tests tools`): see the final call output in the handback.
+- Pre-report ruff (`app tests tools`, same select): `All checks passed!`
 - Context lint: see section 5.
 
 ## 3. Brief section 7 (acceptance)
@@ -28,7 +28,7 @@ Commits: f0050e53 (step 2), 3a03b899 (step 3), 0a223321 (step 4), bb48a687 (step
 - [x] test_door_code_ambiguous_delete.py: 7 passed; 1149 and cancel-guard tests pass (37 with state test).
 - [x] Six revert-bite runs fail as stated; `git status --short` empty afterwards.
 - [x] Door-codes row passes with only the two playwright skips; ruff passes; Postgres run passes.
-- [x] `grep -c "_lock_code_state\|find_code_by_name" App/app/door_codes.py` prints `4` (the lookup helper, the call in `_lock_code_state`, and the `issue()` retry call, plus the one in `_revive_one` path via `_lock_code_state`). The lookup is called from `_lock_code_state` only.
+- [x] `grep -c "_lock_code_state\|find_code_by_name" App/app/door_codes.py` prints `4`: the `_lock_code_state` def, its `find_code_by_name` call, the `_revive_one` call to `_lock_code_state`, and the existing `issue()` retry call to `find_code_by_name`.
 - [x] The outbound-request reason from brief section 2 is in this report (section 6 below).
 
 ## 4. Revert-bite (FAIL lines, all as expected)
@@ -44,7 +44,7 @@ Each run showed `1 file changed, 1 insertion(+), 1 deletion(-)` before the test.
 
 ## 5. Context lint
 
-Run after this file was written: see the final output (must be `context lint: OK`).
+Run after the commit: `context lint: OK`. A WARN says 10 commits touched App/ after the last status.md update; the orchestrator updates status.md at review.
 
 ## 6. Outbound-request reason (for the PR)
 
