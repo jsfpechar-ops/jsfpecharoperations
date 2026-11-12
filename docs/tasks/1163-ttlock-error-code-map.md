@@ -1,6 +1,6 @@
 # 1163: map every TTLock errcode our calls can get to the kind that decides what we do (K-DC-ERRCODE)
 
-Status: todo
+Status: review
 Depends on: 1162 (merged) | Base commit: 9e95c0e9 (HEAD of claude/zealous-maxwell-a7ub54 after 1162, 1161 and 1161b) | Branch: task/1163-ttlock-error-codes
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
