@@ -212,14 +212,40 @@ Command: `cd go && go build ./internal/ubyport/ 2>&1 | tail -30`. Expected: no o
 and after the existing `if truthy(archived) ... { continue }` block add:
 
 ```go
-		if b := p.Built; b != nil && (stayFrom != b.StayFrom || stayTo != b.StayTo ||
-			gUpd != b.GuestUpdated || dFrom != b.DateFrom || dTo != b.DateTo || rUpd != b.ResUpdated) {
+		// No built-from values means the caller cannot prove what it built:
+		// fail closed, never claim.
+		b := p.Built
+		if b == nil || stayFrom != b.StayFrom || stayTo != b.StayTo ||
+			gUpd != b.GuestUpdated || dFrom != b.DateFrom || dTo != b.DateTo || rUpd != b.ResUpdated {
 			continue
 		}
 ```
 Update the doc comment of `ClaimSendable` to add "or whose stay window or updated_at differs from Built". In `sweep.go` change the append to `ClaimPair{GuestID: p.Outcome.ID, SubmitState: state, Payload: p, Built: &built}` with `built := p.Built` declared on the line before it. Command: `cd go && go vet ./internal/ubyport/ 2>&1 | tail -30`. Expected: no output.
 
-**Step 5. Go tests.** Append to `claim_test.go`:
+**Step 5. Go callers and tests.** The only non-test caller of `ClaimSendable` is `sweep.go` (Step 4); `grep -rn 'ClaimSendable(\|ClaimPair{' go --include=*.go` shows no other. The tests in `claim_test.go` build `ClaimPair` without `Built` and would now claim nothing, so change them (the `builtOf` helper is added below, in the same file):
+
+```diff
+ // TestClaimOnlyOnce
+-	pairs := []ClaimPair{{GuestID: id, SubmitState: "pending"}}
++	pairs := []ClaimPair{{GuestID: id, SubmitState: "pending", Built: builtOf(t, pool, id)}}
+
+ // TestClaimReplacesStaleLease
+-	_, got, err := ClaimSendable(ctx, pool, []ClaimPair{{GuestID: id, SubmitState: "pending"}})
++	_, got, err := ClaimSendable(ctx, pool, []ClaimPair{{GuestID: id, SubmitState: "pending", Built: builtOf(t, pool, id)}})
+
+ // TestClaimSkipsRowsThatMovedOn
+-		{GuestID: changed, SubmitState: "sent"}, // row is pending, the list said sent
+-		{GuestID: archived, SubmitState: "pending"},
+-		{GuestID: filed, SubmitState: "pending"},
++		{GuestID: changed, SubmitState: "sent", Built: builtOf(t, pool, changed)}, // row is pending, the list said sent
++		{GuestID: archived, SubmitState: "pending", Built: builtOf(t, pool, archived)},
++		{GuestID: filed, SubmitState: "pending", Built: builtOf(t, pool, filed)},
+
+ // TestReleaseFreesGuest
+-	pairs := []ClaimPair{{GuestID: id, SubmitState: "pending"}}
++	pairs := []ClaimPair{{GuestID: id, SubmitState: "pending", Built: builtOf(t, pool, id)}}
+```
+Leave the `{GuestID: 9999999, ...}` pair (row gone) as it is. Each `-` line is unique in the file except the `pairs := ...` line, which occurs in `TestClaimOnlyOnce` and `TestReleaseFreesGuest`: edit each by its test. Then append to `claim_test.go`:
 
 ```go
 func builtOf(t *testing.T, pool *pgxpool.Pool, id int64) *ClaimBuilt {
@@ -253,6 +279,19 @@ func TestClaimDropsGuestWhoseWindowMovedAfterBuild(t *testing.T) {
 	}
 }
 
+func TestClaimDropsPairWithoutBuiltValues(t *testing.T) {
+	pool := claimTestPool(t)
+	ctx := context.Background()
+	id := seedGuest(t, pool)
+	_, got, err := ClaimSendable(ctx, pool, []ClaimPair{{GuestID: id, SubmitState: "pending"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 0 || claimCount(t, pool, id) != 0 {
+		t.Fatalf("nil Built: claimed %d pairs, %d claim rows", len(got), claimCount(t, pool, id))
+	}
+}
+
 func TestClaimKeepsGuestWhoseBuiltValuesStillMatch(t *testing.T) {
 	pool := claimTestPool(t)
 	ctx := context.Background()
@@ -268,7 +307,7 @@ func TestClaimKeepsGuestWhoseBuiltValuesStillMatch(t *testing.T) {
 	_ = ReleaseSendableClaim(ctx, pool, tok)
 }
 ```
-Command: `cd go && UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest go test ./internal/ubyport/ -count=1 -run 'Claim' -v 2>&1 | tail -30`. Expected: the two new tests print `--- PASS`, none `SKIP`. Then the whole package: `cd go && UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest go test ./internal/ubyport/ -count=1 2>&1 | tail -30` expects `ok`. If a parity or JSON test fails on the new `Built` field, STOP (§8).
+Command: `cd go && UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest go test ./internal/ubyport/ -count=1 -run 'Claim' -v 2>&1 | tail -30`. Expected: the three new tests and the four edited ones print `--- PASS`, none `SKIP`. Then the whole package: `cd go && UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest go test ./internal/ubyport/ -count=1 2>&1 | tail -30` expects `ok`. If a parity or JSON test fails on the new `Built` field, STOP (§8).
 
 **Step 6. Gates.** Run, from `App/`: `.venv/bin/python -m pytest tests/test_ubyport_*.py tests/test_submission_*.py tests/test_stale_submission.py tests/test_filed_by_hand.py tests/test_claim_*.py tests/test_connection_reuse.py tests/test_zz_review.py tests/test_sm_go_parity.py tests/test_sm_guest_submit_state.py tests/test_sm_submission_state.py -q --tb=short -x 2>&1 | tail -30` (expected: all pass, 0 skipped except existing markers), then from the repo root `python3 scripts/context_lint.py 2>&1 | tail -3` (expected: OK). If the glob list is too slow, run the files in groups; at most two failures to fix, then §8.
 
@@ -284,7 +323,8 @@ As in each step. Python tests from `App/`, Go tests from `go/` with the Postgres
 
 - [ ] `grep -n "stay_from" App/app/reporting.py` shows the new compare inside `claim_sendable`.
 - [ ] `test_claim_recheck_stay.py`: 4 passed.
-- [ ] Go: both new tests PASS (not SKIP), package `ok`.
+- [ ] Go: the three new tests PASS (not SKIP; nil `Built` is not claimed), package `ok`.
+- [ ] `grep -rn 'ClaimPair{' go --include=*.go` shows `Built:` on every pair except the gone-row and nil-Built test pairs.
 - [ ] Step 6 test-map row, the three `test_sm_*` files green.
 - [ ] `python3 scripts/context_lint.py 2>&1 | tail -3` = OK.
 - [ ] `git diff --stat` lists only §3 files (plus this brief's report).
