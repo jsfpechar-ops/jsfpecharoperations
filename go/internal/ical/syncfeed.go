@@ -307,8 +307,15 @@ func SyncFeed(ctx context.Context, pool *pgxpool.Pool, getenv func(string) strin
 			continue
 		}
 		if ev.IsCancelled {
-			if err := cancelExistingStay(ctx, pool, getenv, feed.ApartmentID, ev.UID, &stats); err != nil {
+			deferred, err := cancelExistingStay(ctx, pool, getenv, feed.ApartmentID, ev.UID, &stats)
+			if err != nil {
 				return stats, err
+			}
+			if deferred {
+				// Still alive until the send is resolved: the sweep below must
+				// not cancel it, and the digest must not be stored.
+				seen[ev.UID] = true
+				deferredInFlight = true
 			}
 			continue
 		}
@@ -537,8 +544,14 @@ func SyncFeed(ctx context.Context, pool *pgxpool.Pool, getenv func(string) strin
 			}
 			continue
 		}
-		if err := updateRow(ctx, pool, "reservation", r.ID, map[string]any{"status": "cancelled", "updated_at": now}); err != nil {
+		cancelled, err := cancelReservationUnlessClaimed(ctx, pool, r.ID, now)
+		if err != nil {
 			return stats, err
+		}
+		if !cancelled {
+			deferredInFlight = true
+			log.Printf("ical_cancel_deferred_in_flight apartment_id=%d reservation_id=%d", feed.ApartmentID, r.ID)
+			continue
 		}
 		if err := expireOnCancel(ctx, pool, r.ID); err != nil {
 			return stats, err

@@ -252,7 +252,8 @@ func TestCancelExistingStay(t *testing.T) {
 		 VALUES ('k-cancel', 'mail', $1, $1, $2, 'queued')`, ubyport.UTCNow(), cancelled)
 	must(t, err)
 	stats := &SyncStats{}
-	must(t, cancelExistingStay(ctx, pool, noEnv, apt, "u-cancel", stats))
+	_, err = cancelExistingStay(ctx, pool, noEnv, apt, "u-cancel", stats)
+	must(t, err)
 	if stats.Cancelled != 1 {
 		t.Fatalf("Cancelled = %d, want 1", stats.Cancelled)
 	}
@@ -272,7 +273,8 @@ func TestCancelExistingStay(t *testing.T) {
 	reported := seedReservation(t, pool, apt, "u-sent", future, "2999-06-03")
 	seedGuest(t, pool, reported, "sent", future, "2999-06-03")
 	stats2 := &SyncStats{}
-	must(t, cancelExistingStay(ctx, pool, noEnv, apt, "u-sent", stats2))
+	_, err = cancelExistingStay(ctx, pool, noEnv, apt, "u-sent", stats2)
+	must(t, err)
 	if stats2.Cancelled != 0 {
 		t.Fatal("sent guest: stay must not be cancelled")
 	}
@@ -286,7 +288,8 @@ func TestCancelExistingStay(t *testing.T) {
 	past := seedReservation(t, pool, apt, "u-past", "2000-01-01", "2000-01-03")
 	seedGuest(t, pool, past, "pending", "2000-01-01", "2000-01-03")
 	stats3 := &SyncStats{}
-	must(t, cancelExistingStay(ctx, pool, noEnv, apt, "u-past", stats3))
+	_, err = cancelExistingStay(ctx, pool, noEnv, apt, "u-past", stats3)
+	must(t, err)
 	if stats3.Cancelled != 0 {
 		t.Fatal("past stay must not be cancelled")
 	}
