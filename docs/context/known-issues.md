@@ -96,3 +96,6 @@
 - K-SM2 (brief 1105): OPERATIONS.md submit_state section disagrees with the code in 9 places.
 - K-SM3 (brief 1111): rules.md lines 37, 44 still say production is SQLite, migrations frozen at 0033.
 - K-DC-ERRCODE (1155b): TTLock "passcode not found" errcode unknown; an unmapped delete error costs one lookup. Map it in ttlock.ERROR_KINDS when seen in logs.
+- K-F23 (937 review): manual-mode or auth-failed apartment: a date move waits on a stuck `running` batch with no alert. Owner.
+- K-CLEAN-PAGE (1160): `cleaning_codes._find` reads only page 1 of a fuzzy list, like door codes before 1160.
+- K-DC-RENAME (943 review): door-code lookup searches by name `UH-<id>`; a code renamed in the TTLock app reads as gone.
