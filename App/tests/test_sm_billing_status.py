@@ -24,7 +24,8 @@ MOVES = [
      ("trial_pending",), "trialing"),
 ]
 
-# The one move outside TRANSITIONS: operator plan assignment (owner decision 2026-11-12).
+# Operator plan assignment (owner decision 2026-11-12). Only trial_pending -> paused is
+# outside TRANSITIONS; trialing -> paused is in the table.
 OPERATOR_MOVES = [
     ("App/app/billing.py",
      "UPDATE billing_account SET status = 'paused', updated_at = ? ",
