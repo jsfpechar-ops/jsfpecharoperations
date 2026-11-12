@@ -215,3 +215,38 @@ def test_an_issued_row_of_a_cancelled_stay_goes_to_revoke_pending(monkeypatch):
     door_codes._handle_cancellations(db.utcnow())
 
     assert _state(row_id) == door_codes.REVOKE_PENDING
+
+
+def test_keep_issued_does_not_overwrite_a_revoked_row():
+    apartment, stay = _cancelled_stay()
+    row = _code(apartment, stay, "revoked", valid_to="2099-01-01T00:00:00+00:00")
+    door_codes._keep_issued(row, db.utcnow())
+    assert _state(row) == "revoked"
+
+
+def test_keep_issued_still_restores_a_revoke_pending_row():
+    apartment, stay = _cancelled_stay()
+    row = _code(apartment, stay, "revoke_pending", valid_to="2099-01-01T00:00:00+00:00")
+    door_codes._keep_issued(row, db.utcnow())
+    assert _state(row) == "issued"
+
+
+def test_reactivated_delete_leaves_a_row_that_moved_on(monkeypatch):
+    apartment, stay = _cancelled_stay()
+    db.execute("UPDATE reservation SET status = 'active' WHERE id = ?", (stay,))
+    row = _code(apartment, stay, "revoked")
+    real_query = db.query
+    seen: dict = {}
+
+    def query(sql, params=()):
+        rows = real_query(sql, params)
+        if not seen and "r.status = 'active' AND r.archived_at IS NULL" in sql and params == ("revoked",):
+            seen["moved"] = db.execute(
+                "UPDATE door_code SET state = 'pending' WHERE id = ?", (row,)
+            )
+        return rows
+
+    monkeypatch.setattr(db, "query", query)
+    door_codes._handle_cancellations(db.utcnow())
+    assert seen.get("moved") == 1
+    assert _state(row) == "pending"

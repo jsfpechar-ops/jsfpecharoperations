@@ -768,10 +768,12 @@ def _stay_is_live(reservation) -> bool:
 
 def _keep_issued(row_id: int, now_iso: str) -> None:
     """The stay is back; leave the PIN on the lock and show it again."""
+    # Guarded: _revoke_one may have deleted the lock code and set revoked since the caller read the row. Zero rows updated leaves the row as it is.
     db.execute(
         "UPDATE door_code SET state = ?, claimed_at = NULL, attempts = 0, "
-        "next_attempt_at = NULL, last_error = NULL, updated_at = ? WHERE id = ?",
-        (ISSUED, now_iso, row_id),
+        "next_attempt_at = NULL, last_error = NULL, updated_at = ? "
+        "WHERE id = ? AND state IN (?, ?)",
+        (ISSUED, now_iso, row_id, REVOKE_FAILED, REVOKE_PENDING),
     )
 
 
@@ -929,8 +931,12 @@ def _handle_cancellations(now_iso: str) -> None:
         (REVOKED,),
     )
     for item in reactivated:
-        db.execute("DELETE FROM door_code WHERE id = ?", (item["id"],))
-        db.audit("door_code_reset", f"door_code={item['id']}", actor="system")
+        # Guarded: only a row that is still revoked is reset; one that moved on is left.
+        removed = db.execute(
+            "DELETE FROM door_code WHERE id = ? AND state = ?", (item["id"], REVOKED)
+        )
+        if removed:
+            db.audit("door_code_reset", f"door_code={item['id']}", actor="system")
 
 
 def _handle_moves(now_iso: str) -> None:

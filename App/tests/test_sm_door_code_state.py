@@ -36,7 +36,7 @@ PINNED = [
     ("issue", ANY, ("issuing",), ("failed", "retrying")),
     ("issue", ANY, ("issuing",), ("failed", "retrying")),
     ("issue", ANY, ("issuing",), ("failed", "retrying")),
-    ("_keep_issued", ANY, ("revoke_failed", "revoke_pending"), ("issued",)),
+    ("_keep_issued", ("revoke_failed", "revoke_pending"), ("revoke_failed", "revoke_pending"), ("issued",)),
     ("_revoke_one", ANY, ("revoke_pending",), ("revoke_failed",)),
     ("_revoke_one", ANY, ("revoke_pending",), ("revoked",)),
     ("_revoke_one", ANY, ("revoke_pending",), ("revoke_failed",)),
