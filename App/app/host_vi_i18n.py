@@ -2318,6 +2318,7 @@ STRINGS: Dict[str, str] = {
     "mail.door_code_reason.no_account": "cần thiết lập lại kết nối TTLock",
     "mail.door_code_reason.not_eligible": "lượt lưu trú này không đủ điều kiện nhận mã",
     "mail.door_code_reason.bad_window": "giờ nhận phòng và trả phòng không tạo thành khoảng thời gian hợp lệ",
+    "mail.door_code_reason.lock_setup": "khóa chưa được thiết lập xong trong TTLock: thiếu gateway hoặc mạng, hoặc khóa không hỗ trợ chức năng này. Trong ứng dụng TTLock, hãy kiểm tra khóa đã được thêm, kết nối với gateway và đang trực tuyến",
     "mail.door_code_reason.other": "đám mây TTLock từ chối yêu cầu hoặc không phản hồi",
     "mail.door_code_notice.cancelled_deleted.subject": "%(property)s: đã xóa mã cửa sau khi hủy đặt phòng",
     "mail.door_code_notice.cancelled_deleted.body": "Lượt lưu trú từ %(date)s đã bị hủy sau khi mã cửa được gửi. UbyHost đã xóa mã khỏi khóa, nên mã không còn mở được cửa.",

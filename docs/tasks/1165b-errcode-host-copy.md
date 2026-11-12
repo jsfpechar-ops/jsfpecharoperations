@@ -1,6 +1,6 @@
 # 1165b: host mail copy for the new TTLock kinds and the docs (K-DC-ERRCODE)
 
-Status: todo
+Status: review
 Depends on: 1165 (kind `lock_setup` and `test_ttlock_lock_setup.py` come from it) | Base commit: HEAD of branch task/1165-errcode-review-fixes after 1165 | Branch: task/1165b-errcode-host-copy
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
