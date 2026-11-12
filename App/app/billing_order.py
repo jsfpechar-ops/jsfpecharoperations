@@ -188,9 +188,9 @@ def place_for_operator(owner_user_id: int, values: Dict[str, Any], *, actor: str
         raise ValueError("already_ordered")
     if values.get("addon_whitelabel") and not acc["addon_whitelabel"]:
         raise ValueError("whitelabel_unavailable")
-    # trial_pending/trialing -> paused. False means already paused (fine) or a state
-    # place() refuses with already_ordered; either way the result is not needed.
-    billing.set_status(owner_user_id, "paused", actor=actor)
+    # trial_pending/trialing -> paused through the operator-only move (not set_status).
+    # False means already paused (fine) or a state place() refuses with already_ordered.
+    billing.operator_pause(owner_user_id, actor=actor)
     result = place(owner_user_id, values, today=day)
     db.audit("billing_order", f"{values['plan']} {values['billing_interval']} (operator assign)",
              actor=actor, owner_user_id=owner_user_id)
