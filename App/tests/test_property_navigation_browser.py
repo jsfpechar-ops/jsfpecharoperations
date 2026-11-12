@@ -708,15 +708,25 @@ def test_b04_copy_link_feedback_stays_inside_the_guest_pill(host, base):
             for width in (390, 1280):
                 page.set_viewport_size({"width": width, "height": 900})
                 page.goto(f"{base}/apartments/{host['apartment']}?lang=en")
-                button = page.locator("nav.prop-strip .sc-link button[data-copy]")
+                button = page.locator("nav.prop-strip .sc-link button[data-guest-copy-link]")
                 assert button.inner_text().strip() == "Copy link"
                 button.click()
                 page.wait_for_function(
-                    "() => { const b = document.querySelector('nav.prop-strip .sc-link button[data-copy]'); const s = b && b.querySelector('.copy-label-confirmed'); return !!s && b.classList.contains('is-copy-confirmed') && s.textContent.trim() === 'Copied'; }",
+                    "() => { const b = document.querySelector('nav.prop-strip .sc-link button[data-guest-copy-link]'); const s = b && b.querySelector('.copy-label-confirmed'); return !!s && b.classList.contains('is-copy-confirmed') && s.textContent.trim() === 'Copied'; }",
                     timeout=3000,
                 )
                 facts = page.evaluate(_B04_STRIP_JS)
                 assert not facts["bad"], (width, facts)
+                both = page.locator("nav.prop-strip .sc-link button[data-guest-copy-both]")
+                both.click()
+                page.wait_for_function(
+                    "() => { const b = document.querySelector('nav.prop-strip .sc-link button[data-guest-copy-both]'); return !!b && b.classList.contains('is-copy-confirmed') && b.textContent.includes('Copied'); }",
+                    timeout=3000,
+                )
+                inside = page.evaluate(
+                    "() => { const t = document.querySelector('nav.prop-strip .sc-link').getBoundingClientRect(); return [...document.querySelectorAll('nav.prop-strip .sc-link button[data-copy]')].map((b) => { const r = b.getBoundingClientRect(); return r.left >= t.left - 0.5 && r.right <= t.right + 0.5 && r.bottom <= t.bottom + 0.5; }); }"
+                )
+                assert len(inside) == 2 and all(inside), (width, inside)
                 page.screenshot(path=str(_B04_SHOTS / f"b04-copied-{width}.png"), full_page=False)
         finally:
             browser.close()
@@ -760,7 +770,7 @@ def test_b04_keyboard_enter_on_each_pill_opens_its_section(host, base):
                 page.evaluate(
                     "() => { document.querySelectorAll('details.prop-sec').forEach((d) => { d.open = false; }); history.replaceState(null, '', location.pathname + location.search); }"
                 )
-                page.locator("nav.prop-strip .sc-actions button[data-copy]").wait_for(state="visible", timeout=8000)
+                page.locator("nav.prop-strip .sc-actions button[data-copy]").first.wait_for(state="visible", timeout=8000)
                 cal_link = page.locator('nav.prop-strip a[data-strip="calendars"]')
                 cal_link.wait_for(state="visible", timeout=8000)
                 cal_link.evaluate("el => el.focus()")
@@ -769,8 +779,8 @@ def test_b04_keyboard_enter_on_each_pill_opens_its_section(host, base):
                 for _ in range(7):
                     page.keyboard.press("Tab")
                     seen.append(page.evaluate("() => document.activeElement.dataset.strip || document.activeElement.closest('[data-strip]')?.dataset.strip || document.activeElement.tagName"))
-                assert seen[0] == "guest" and seen[1] == "guest", seen
-                assert seen[2] in ("police", "BODY"), seen
+                assert seen[0] == "guest" and seen[1] == "guest" and seen[2] == "guest", seen
+                assert seen[3] in ("police", "BODY"), seen
         finally:
             browser.close()
 

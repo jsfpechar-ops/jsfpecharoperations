@@ -54,7 +54,7 @@ def _seed() -> TestClient:
     db.init_db()
     _cleanup()
     now = db.utcnow()
-    # Prague civil date — same clock urgency() and the stays list use. UTC
+# Prague civil date — same clock urgency() and the stays list use. UTC
     # date.today() on CI runners lags Prague near midnight and can make the
     # in-house stays look overdue, crowding the overdue past stay off page 1.
     today = deadlines.local_now().date()

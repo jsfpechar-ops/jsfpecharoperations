@@ -860,3 +860,127 @@ def test_0984_calendar_rows_keep_state_and_actions_with_a_long_url(host, base):
             browser.close()
     finally:
         db.execute("DELETE FROM ical_feed WHERE id IN (?, ?)", (healthy, failed))
+
+
+SHOTS_1103 = os.environ.get("UBYHOST_SHOTS_1103")
+
+
+@pytest.mark.parametrize("width", [390, 768, 1280])
+def test_1103_guest_link_tile_fits_and_stays_neutral(host, base, width):
+    apartment = host["apartment"]
+    db.update("apartment", apartment, {"permalink_pin": "123456"})
+    with sync_api.sync_playwright() as playwright:
+        browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        try:
+            context = browser.new_context(viewport={"width": width, "height": 900})
+            context.add_cookies([{"name": auth.SESSION_COOKIE, "value": _session_cookie(host), "url": base + "/"}])
+            page = context.new_page()
+            page.goto(f"{base}/apartments/{apartment}")
+            page.wait_for_load_state("networkidle")
+            if SHOTS_1103:
+                Path(SHOTS_1103).mkdir(parents=True, exist_ok=True)
+                page.screenshot(path=str(Path(SHOTS_1103) / f"{width}.png"))
+            # (a) no horizontal page overflow
+            assert page.evaluate("() => document.documentElement.scrollWidth <= window.innerWidth")
+            # (b) tile children stay inside the tile
+            overflow = page.evaluate(
+                """() => {
+                    const t = document.querySelector('.sc-link').getBoundingClientRect().right;
+                    return [...document.querySelectorAll('.sc-link *:not(.sr-only)')]
+                        .map(e => e.getBoundingClientRect().right - t).filter(d => d > 1);
+                }"""
+            )
+            assert overflow == []
+            # (c) no red ring after a mouse click
+            page.locator(".sc-link .sc-main").click()
+            outline = page.locator(".sc-link .sc-main").evaluate("e => getComputedStyle(e).outlineStyle")
+            assert outline == "none"
+            # (d) the scroll-spy class must not paint the tile with the accent colour
+            page.goto(f"{base}/apartments/{apartment}")
+            page.wait_for_load_state("networkidle")
+            accent = page.evaluate(
+                """() => {
+                    const d = document.createElement('i');
+                    d.style.color = 'var(--acc)';
+                    document.body.appendChild(d);
+                    const c = getComputedStyle(d).color;
+                    d.remove();
+                    return c;
+                }"""
+            )
+            link = page.locator(".sc-link")
+            link.evaluate("e => e.classList.add('is-current')")
+            styles = link.evaluate(
+                "e => ({bg: getComputedStyle(e).backgroundColor, border: getComputedStyle(e).borderTopColor})"
+            )
+            assert styles["border"] != accent
+            assert styles["bg"] != accent
+            if SHOTS_1103:
+                page.screenshot(path=str(Path(SHOTS_1103) / f"{width}-is-current.png"))
+        finally:
+            browser.close()
+
+
+def test_1104_feed_url_and_copy_button_share_one_row(host, base):
+    apartment = host["apartment"]
+    now = db.utcnow()
+    feeds = [
+        db.insert("ical_feed", {
+            "apartment_id": apartment, "url": _LONG_URL_0984, "label": "booking", "own_name": "",
+            "active": 1, "last_status": "ok", "last_sync_at": now, "created_at": now,
+        }),
+        db.insert("ical_feed", {
+            "apartment_id": apartment, "url": "https://example.invalid/short-1104.ics", "label": "airbnb", "own_name": "",
+            "active": 1, "last_status": "ok", "last_sync_at": now, "created_at": now,
+        }),
+    ]
+    row_check = """(id) => {
+      const url = document.getElementById(id);
+      const btn = document.querySelector("[data-copy='" + id + "']");
+      const row = url.closest('.feed-url-row');
+      const td = url.closest('td');
+      const u = url.getBoundingClientRect(), b = btn.getBoundingClientRect(), r = row.getBoundingClientRect(), t = td.getBoundingClientRect();
+      return {
+        sameRow: Math.abs((u.top + u.height / 2) - (b.top + b.height / 2)) <= 4,
+        btnRight: b.left >= u.right - 1,
+        urlWidth: u.width, btnHeight: b.height,
+        rowInTd: r.right <= t.right + 1,
+        rowCount: row.querySelectorAll('.copy-btn').length,
+      };
+    }"""
+    try:
+        with sync_api.sync_playwright() as playwright:
+            browser = playwright.chromium.launch(**chromium_launch_kwargs())
+            context = browser.new_context(viewport={"width": 1280, "height": 900})
+            context.grant_permissions(["clipboard-read", "clipboard-write"], origin=base)
+            context.add_cookies([{"name": auth.SESSION_COOKIE, "value": _session_cookie(host), "url": base + "/"}])
+            page = context.new_page()
+            for width in (390, 768, 1280):
+                page.set_viewport_size({"width": width, "height": 900})
+                page.goto(f"{base}/apartments/{apartment}?view=bookings&lang=en")
+                assert page.locator("#sec-calendars[open]").count() == 1
+                for feed in feeds:
+                    fid = f"feed-url-{feed}"
+                    info = page.evaluate(row_check, fid)
+                    assert info["sameRow"] and info["btnRight"] and info["rowCount"] == 1, (width, info)
+                    assert info["rowInTd"] or width == 1280, (width, info)
+                    if width == 390:
+                        assert info["urlWidth"] >= 100, (width, info)
+                        assert info["rowInTd"], (width, info)
+                        assert info["btnHeight"] >= 44, (width, info)
+                        fit = page.evaluate(_IN_VIEW_0984, f"#{fid}, .copy-btn[data-copy='{fid}']")
+                        assert fit["count"] == 2 and not fit["bad"], (width, fit)
+                    elif width == 768:
+                        assert info["urlWidth"] >= 120 and info["btnHeight"] >= 44, (width, info)
+                    else:
+                        assert info["urlWidth"] >= 160 and info["btnHeight"] >= 36, (width, info)
+                    page.locator(f".copy-btn[data-copy='{fid}']").click()
+                    page.wait_for_function(
+                        "(id) => document.querySelector(\"[data-copy='\" + id + \"']\").classList.contains('copied')",
+                        arg=fid, timeout=5000,
+                    )
+                    assert page.locator(f".copy-btn[data-copy='{fid}'] [data-copy-label-slot]").is_visible()
+                assert page.evaluate(_NO_SIDEWAYS_0984) <= 1, width
+            browser.close()
+    finally:
+        db.execute("DELETE FROM ical_feed WHERE id IN (?, ?)", (feeds[0], feeds[1]))
