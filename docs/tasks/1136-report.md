@@ -1,6 +1,6 @@
-# 1136 report (Status: blocked)
+# 1136 report (Status: review)
 
-Done: steps 1 to 4. Left: step 4 Go Postgres run, the Go revert-bite proof, and step 5 Go run and vet against Postgres. Step 6 (this report) done.
+Done: steps 1 to 6. The first run had no Postgres (connection refused). After the coordinator restarted it, all Go steps were re-run and pass (see Update below).
 
 1. Files changed (`git diff --stat d2dbf393 HEAD -- App go`):
    - App/app/icalsync.py (+ per-guest locks, UPDATE on the cursor, stored-date guard)
@@ -15,27 +15,29 @@ Done: steps 1 to 4. Left: step 4 Go Postgres run, the Go revert-bite proof, and 
    - Step 2 `pytest tests/test_icalsync.py tests/test_ical_skip_unchanged.py`: `61 passed`.
    - Step 2 revert bite (call site set to `db.update("reservation", ...) or True`), `-k precheck`: FAILED as expected (`('2099-02-10', '2099-02-12') == ('2099-01-10', '2099-01-12')`). Line restored exactly; rerun `61 passed`.
    - Step 3 `go build ./internal/ical/`: exit 0.
-   - Step 4 `go test ... -run 'UpdateReservationUnlessClaimed|DefersDateMove' -v` WITH `UBYHOST_TEST_DATABASE_URL`: all three FAIL with `failed to connect ... 127.0.0.1:5432: connection refused`. `pg_isready -h localhost -p 5432`: no response. Postgres is not running in this session, so the brief's "local Postgres is running" premise is false here.
+   - Step 4 first attempt, with the URL: all three FAIL with `connection refused` (Postgres was down).
    - Same tests WITHOUT the URL: all three SKIP, `ok`. Not a pass.
    - `go vet ./internal/ical/`: silent. `gofmt -l internal/ical/`: silent.
-   - Go revert-bite proof: NOT RUN (needs Postgres).
+
+Update (Postgres back at localhost:5432):
+   - `go test ./internal/ical/ -count=1 -run 'UpdateReservationUnlessClaimed|DefersDateMove' -v` with the URL: `--- PASS` for TestUpdateReservationUnlessClaimed, TestSyncFeedDefersDateMoveWhenClaimLandsAfterPrecheck, TestUpdateReservationUnlessClaimedWaitsForClaimLock. `ok`.
+   - Full `go test ./internal/ical/ -count=1 -v` with the URL: `ok`; `--- SKIP` count 0.
+   - `go vet ./internal/ical/`: silent.
+   - Go revert-bite: call site set to `ok, err := true, updateRow(ctx, pool, "reservation", s.ID, changed)`; `-run DefersDateMove` FAILED (`date_from = "2027-05-02", want unchanged`; digest stored after a deferred move). Line restored exactly; rerun PASS; 0 SKIP.
    - `python3 scripts/context_lint.py`: `context lint: OK`.
 
 3. Section 7 ticks:
    - [x] `lock_key` in icalsync.py (one hit, inside the helper)
    - [x] Go helper takes storedFrom/storedTo, locks in id order, SQL has `date_from = $` and `date_to = $`
    - [x] Python call-site test fails on revert, passes restored
-   - [ ] Go call-site test fails on revert (not run, no Postgres)
-   - [ ] `TestUpdateReservationUnlessClaimedWaitsForClaimLock` PASS against Postgres (not run)
-   - [ ] Go tests and vet green against Postgres (vet green; Go tests not run against Postgres)
+   - [x] Go call-site test fails on revert, passes restored
+   - [x] `TestUpdateReservationUnlessClaimedWaitsForClaimLock` PASS against Postgres
+   - [x] Go tests and vet green against Postgres
    - [x] Python tests green; context lint OK
    - [x] Only §3 files changed
 
-4. Deviations: none in code. Step 4 test code was committed unverified against Postgres.
+4. Deviations: none in code. Step 4 Go tests were first committed before Postgres was up; they now pass.
 
 5. Questions: none.
 
-6. Owner steps left:
-   - Start the local Postgres at localhost:5432 (database `ubytest`, user `uby`), then from `go/` run:
-     `UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest go test ./internal/ical/ -count=1 -v 2>&1 | grep -E 'SKIP|FAIL|ok' | tail -30`
-   - Then run the Go revert-bite proof from brief Step 4 and set the brief to `review`.
+6. Owner steps left: none for this brief. Merge of PR #933 and any follow-up brief per the brief's Owner steps.
