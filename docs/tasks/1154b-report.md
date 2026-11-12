@@ -1,7 +1,7 @@
-# 1150b report: iCal date move over a crash-stuck running filing (K-F22), Go
+# 1154b report: iCal date move over a crash-stuck running filing (K-F22), Go
 
 Status: review
-Branch: task/1150b-ical-move-running-go (base a176c3ee, 1150 merged)
+Branch: task/1154b-ical-move-running-go (base a176c3ee, 1154 merged)
 
 ## Files changed
 
@@ -9,8 +9,8 @@ Branch: task/1150b-ical-move-running-go (base a176c3ee, 1150 merged)
 - go/internal/ical/reconcile_test.go: 1 test appended (`TestSendInFlightFindsACrashStuckRunningBatchByGuestIDs`).
 - go/internal/ical/syncfeed_test.go: 2 tests appended (`TestSyncFeedDateMoveWaitsForCrashStuckRunningBatchThenLands`, `TestSyncFeedOldRunningBatchStillDefersTheDateMove`).
 - docs/context/known-issues.md: K-F22 line replaced with the closed line.
-- docs/tasks/1150b-ical-move-unclaimed-running-go.md: Status set to `review`.
-- docs/tasks/1150b-report.md: this file.
+- docs/tasks/1154b-ical-move-unclaimed-running-go.md: Status set to `review`.
+- docs/tasks/1154b-report.md: this file.
 
 ## Commands (last 5 lines)
 
@@ -41,6 +41,6 @@ None.
 
 ## Owner steps left
 
-1. Push the branch `task/1150b-ical-move-running-go`.
-2. Open a draft PR for 1150b.
-3. Merge 1150 and 1150b with `scripts/merge-pr-on-green.sh`, in that order.
+1. Push the branch `task/1154b-ical-move-running-go`.
+2. Open a draft PR for 1154b.
+3. Merge 1154 and 1154b with `scripts/merge-pr-on-green.sh`, in that order.

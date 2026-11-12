@@ -96,5 +96,5 @@
 - K-SM2 (brief 1105): OPERATIONS.md submit_state section disagrees with the code in 9 places.
 - K-SM3 (brief 1111): rules.md lines 37, 44 still say production is SQLite, migrations frozen at 0033.
 - K-DC-AMBIG (1149 S8/S9): delete timeout or crash, then revival: issued, PIN gone, no audit. Owner.
-- K-F22 closed (1150, 1150b): an iCal date move now waits for a crash-stuck running filing (found through submission.guest_ids, any age), same as for outcome_unknown.
+- K-F22 closed (1154, 1154b): an iCal date move now waits for a crash-stuck running filing (found through submission.guest_ids, any age), same as for outcome_unknown.
 - K-DC-RECANCEL (937 review): re-cancel after a lost race re-deletes a gone code; check TTLock not-found = success.

@@ -1,10 +1,10 @@
-# 1150: iCal date move over a crash-stuck `running` filing (K-F22), Python
+# 1154: iCal date move over a crash-stuck `running` filing (K-F22), Python
 
 Status: review
-Depends on: 1148 (merged; the helper `_running_submission_covers_stay` is reused) | Base commit: a176c3ee (HEAD of branch claude/zealous-maxwell-a7ub54) | Branch: task/1150-ical-move-running
+Depends on: 1148 (merged; the helper `_running_submission_covers_stay` is reused) | Base commit: a176c3ee (HEAD of branch claude/zealous-maxwell-a7ub54) | Branch: task/1154-ical-move-running
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
-HIGH RISK filing path: the reviewer reads every diff line in the Risk list. Go twin: brief 1150b (runs after this one). Do both before merging either.
+HIGH RISK filing path: the reviewer reads every diff line in the Risk list. Go twin: brief 1154b (runs after this one). Do both before merging either.
 
 ## 1. Objective
 
@@ -47,14 +47,14 @@ Test helpers in `App/tests/test_icalsync.py` (imports `json, time, datetime, tim
 |---|---|---|
 | App/app/icalsync.py | edit | `_send_in_flight` docstring and last line |
 | App/tests/test_icalsync.py | edit | `_unclear_batch` flags, one test made realistic, 4 new tests |
-| docs/tasks/1150-ical-move-unclaimed-running.md | status | `review` at the end |
-| docs/tasks/1150-report.md | create | report |
+| docs/tasks/1154-ical-move-unclaimed-running.md | status | `review` at the end |
+| docs/tasks/1154-report.md | create | report |
 
 No other file may change. No copy, no migration, no alert kind.
 
 ## 4. Steps
 
-Commit after each step: `git add -A && git commit -qm "1150 step N"`. Work from `App/` for every command.
+Commit after each step: `git add -A && git commit -qm "1154 step N"`. Work from `App/` for every command.
 
 **Step 1. Test helper and tests first (they must fail before the fix).** All edits in `App/tests/test_icalsync.py`.
 
@@ -259,7 +259,7 @@ Stop, and write the report, if:
 
 ## 9. Report
 
-Write `docs/tasks/1150-report.md` (600 tokens at most) and set `Status: review`: files changed, each command with the last 5 lines, §7 ticked, both bite results, deviations, questions, owner steps left (push the branch; open the PR as a draft and keep it until 1150b is ready).
+Write `docs/tasks/1154-report.md` (600 tokens at most) and set `Status: review`: files changed, each command with the last 5 lines, §7 ticked, both bite results, deviations, questions, owner steps left (push the branch; open the PR as a draft and keep it until 1154b is ready).
 
 ## Risk list (for the reviewer)
 
@@ -267,4 +267,4 @@ The `_send_in_flight` tail (no cutoff on purpose: see §2 decision; the owner ma
 
 ## Owner steps
 
-1. Nothing before review. After 1150b is also green, merge both PRs with `scripts/merge-pr-on-green.sh`.
+1. Nothing before review. After 1154b is also green, merge both PRs with `scripts/merge-pr-on-green.sh`.

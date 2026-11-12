@@ -1,18 +1,18 @@
-# 1150b: iCal date move over a crash-stuck `running` filing (K-F22), Go twin of 1150
+# 1154b: iCal date move over a crash-stuck `running` filing (K-F22), Go twin of 1154
 
 Status: review
-Depends on: 1150 | Base commit: a176c3ee (HEAD of branch claude/zealous-maxwell-a7ub54) | Branch: task/1150b-ical-move-running-go
+Depends on: 1154 | Base commit: a176c3ee (HEAD of branch claude/zealous-maxwell-a7ub54) | Branch: task/1154b-ical-move-running-go
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 HIGH RISK filing path: the reviewer reads every diff line in the Risk list.
 
 ## 1. Objective
 
-Make the Go iCal sync (`go/internal/ical`) behave exactly as Python does after brief 1150: a date move is deferred (stored dates and guest windows kept, digest not stored) while a `running` submission of any age lists an unsent guest of the stay, even though no guest points at it. Today `sendInFlight` only sees a live claim or a guest pointed at the row, so a crash-stuck `running` batch lets the move land.
+Make the Go iCal sync (`go/internal/ical`) behave exactly as Python does after brief 1154: a date move is deferred (stored dates and guest windows kept, digest not stored) while a `running` submission of any age lists an unsent guest of the stay, even though no guest points at it. Today `sendInFlight` only sees a live claim or a guest pointed at the row, so a crash-stuck `running` batch lets the move land.
 
 ## 2. Context
 
-Read `docs/tasks/1150-ical-move-unclaimed-running.md` §2 for the reasoning and the decision (no age limit for a move; no new alert, no copy, no cancel change). Go has no copy to add.
+Read `docs/tasks/1154-ical-move-unclaimed-running.md` §2 for the reasoning and the decision (no age limit for a move; no new alert, no copy, no cancel change). Go has no copy to add.
 
 Where the guard is used: `go/internal/ical/syncfeed.go` ~393 calls `sendInFlightFn(ctx, pool, s.ID)` (a test seam for `sendInFlight`) for every changed-dates stay. `sendInFlight` lives in `go/internal/ical/reconcile.go` and ends in `pointedAtOpenSubmission`. `runningSubmissionCoversStay(ctx, pool, reservationID, newerThan string) (bool, error)` already exists there (from 1148b); an empty `newerThan` means no age limit. It is not changed.
 
@@ -42,14 +42,14 @@ Existing tests that mask the bug (they point the guest at the `running` row, whi
 | go/internal/ical/reconcile_test.go | edit | 1 test appended |
 | go/internal/ical/syncfeed_test.go | edit | 2 tests appended |
 | docs/context/known-issues.md | edit | close K-F22 |
-| docs/tasks/1150b-ical-move-unclaimed-running-go.md | status | `review` at the end |
-| docs/tasks/1150b-report.md | create | report |
+| docs/tasks/1154b-ical-move-unclaimed-running-go.md | status | `review` at the end |
+| docs/tasks/1154b-report.md | create | report |
 
 No other file may change.
 
 ## 4. Steps
 
-Commit after each step: `git add -A && git commit -qm "1150b step N"`. Run Go commands from `go/` with `UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest`.
+Commit after each step: `git add -A && git commit -qm "1154b step N"`. Run Go commands from `go/` with `UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest`.
 
 **Step 1. Tests first (they must fail before the fix).**
 (a) Append to `go/internal/ical/reconcile_test.go`:
@@ -189,7 +189,7 @@ Command: `cd go && gofmt -l internal/ical/ && go vet ./internal/ical/ && UBYHOST
 
 **Step 4. Area run, docs.**
 `cd go && gofmt -l internal/ical/ && go vet ./internal/ical/ && UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest go test ./internal/ical/ -count=1 -v 2>&1 | grep -c SKIP`: expected silent, silent, `0`. Then the same without `-v`/grep, `| tail -30`: `ok`.
-In `docs/context/known-issues.md` replace the line starting `- K-F22 (937 review):` (the whole line) with `- K-F22 closed (1150, 1150b): an iCal date move now waits for a crash-stuck running filing (found through submission.guest_ids, any age), same as for outcome_unknown.` Command: `grep -c 'K-F22 closed' docs/context/known-issues.md`. Expected `1`. Then from the repo root `python3 scripts/context_lint.py | tail -3`: OK.
+In `docs/context/known-issues.md` replace the line starting `- K-F22 (937 review):` (the whole line) with `- K-F22 closed (1154, 1154b): an iCal date move now waits for a crash-stuck running filing (found through submission.guest_ids, any age), same as for outcome_unknown.` Command: `grep -c 'K-F22 closed' docs/context/known-issues.md`. Expected `1`. Then from the repo root `python3 scripts/context_lint.py | tail -3`: OK.
 
 ## 5. Do not touch
 
@@ -211,7 +211,7 @@ Stop, and write the report, if: an excerpt is not found; a test fails twice; you
 
 ## 9. Report
 
-Write `docs/tasks/1150b-report.md` (600 tokens at most), set `Status: review`: files changed, each command with the last 5 lines, §7 ticked, bite results, deviations, questions, owner steps left (push, draft PR, merge 1150 and 1150b with `scripts/merge-pr-on-green.sh`).
+Write `docs/tasks/1154b-report.md` (600 tokens at most), set `Status: review`: files changed, each command with the last 5 lines, §7 ticked, bite results, deviations, questions, owner steps left (push, draft PR, merge 1154 and 1154b with `scripts/merge-pr-on-green.sh`).
 
 ## Risk list (for the reviewer)
 

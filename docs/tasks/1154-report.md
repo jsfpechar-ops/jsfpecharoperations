@@ -2,14 +2,14 @@
 
 Status: review
 
-Renumbered from brief 1150 on merge with `main` (1150 is disaster recovery runbook, PR #930).
+Renumbered from brief 1154 on merge with `main` (1154 is disaster recovery runbook, PR #930).
 
 ## Files changed
 
 - `App/app/icalsync.py`: `_send_in_flight` docstring corrected; last line now also returns `_running_submission_covers_stay(reservation_id)` (no age cutoff).
 - `App/tests/test_icalsync.py`: `_unclear_batch` gains `point` and `hours_old` (default keeps old callers identical); `test_a_crash_stuck_running_batch_defers_fitting_the_guest_window` made unpointed and checks `ical_feed.body_sha256` is empty; new `_stay_dates` helper and 4 new tests.
-- `docs/tasks/1150-ical-move-unclaimed-running.md`: Status set to `review`.
-- `docs/tasks/1154-report.md`: this report (brief still named 1150 until orchestrator renumbers).
+- `docs/tasks/1154-ical-move-unclaimed-running.md`: Status set to `review`.
+- `docs/tasks/1154-report.md`: this report (brief still named 1154 until orchestrator renumbers).
 
 ## Commands (last lines)
 
@@ -34,7 +34,7 @@ Renumbered from brief 1150 on merge with `main` (1150 is disaster recovery runbo
 
 ## Deviations
 
-- Report file is `1154-report.md` because `main` took task 1150 for portable disaster recovery.
+- Report file is `1154-report.md` because `main` took task 1154 for portable disaster recovery.
 - The step scripts (edit helpers) were written to `/home/user/scratchpad_1150_step1.py` and `/home/user/scratchpad_1150_step2.py`, outside the repo and outside the scratchpad directory. Not committed.
 - No screenshots: no UI change.
 
@@ -44,5 +44,5 @@ Renumbered from brief 1150 on merge with `main` (1150 is disaster recovery runbo
 
 ## Owner steps left
 
-1. Push `task/1150-ical-move-running` (or renumbered branch).
-2. Open the PR as a draft and keep it draft until 1150b is also ready, then merge both with `scripts/merge-pr-on-green.sh`.
+1. Push `task/1154-ical-move-running` (or renumbered branch).
+2. Open the PR as a draft and keep it draft until 1154b is also ready, then merge both with `scripts/merge-pr-on-green.sh`.

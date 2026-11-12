@@ -62,4 +62,4 @@ Append-only.
 - 2026-11-12 [workflow] Orchestrator model chosen by brief risk tier (A: Opus 5.5 thread, Opus brief, Haiku executes, fresh Fable reviews diff; B: Opus 5.5, Sonnet brief, Haiku; C: Sonnet 5.5, Sonnet brief, Haiku); threads run in parallel, max 3, one per lane, no shared files; unsure = higher tier | owner | [workflow](workflow.md#roles-and-models)
 - 2026-11-12 [filing] 1148: cancel waits on `running` <30 min, else cancels + `cancelled_filing_unconfirmed` (owner).
 - 2026-11-12 [door] 1149: lost revoke race re-issues code if stay live (owner).
-- 2026-11-12 [filing] 1150: date move waits on any `running` batch, no age cap (owner: recommended).
+- 2026-11-12 [filing] 1154: date move waits on any `running` batch, no age cap (owner: recommended).
