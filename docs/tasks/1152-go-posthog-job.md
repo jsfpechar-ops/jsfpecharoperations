@@ -1,4 +1,4 @@
-# 1144: Go port of the `posthog` job (funnel stages to PostHog Cloud EU)
+# 1152: Go port of the `posthog` job (funnel stages to PostHog Cloud EU)
 
 Status: review
 Depends on: 1133 (merged) | Base commit: main (current) | Branch: the orchestrator's branch (work on the current branch)
@@ -37,17 +37,17 @@ Known small differences (accepted): Go logs the summary only when something was 
 | `go/internal/posthog/sync_test.go` | create | unit tests and one DB test (step 2) |
 | `go/cmd/ubyhost-web/main.go` | edit | import, `goIntervals`, `posthog` handler (step 3) |
 | `docs/ENVIRONMENT.md` | edit | the `UBYHOST_GO_JOB_KINDS` row only (step 4) |
-| `docs/tasks/1144-go-posthog-job.md` | edit | `Status:` line only (step 5) |
-| `docs/tasks/1144-report.md` | create | the report (§9) |
+| `docs/tasks/1152-go-posthog-job.md` | edit | `Status:` line only (step 5) |
+| `docs/tasks/1152-report.md` | create | the report (§9) |
 
 No other file may change. In particular `go.mod`, `go.sum`, `go/cmd/ubyhost-web/main_test.go` and everything under `App/`.
 
 ## 4. Steps
 
-Work on the branch you are on. Do not create a branch, do not push, do not open a PR. After each step run its command, then `git add <that step's files> && git commit -m "1144 step k"`, nothing else staged. Go indentation is **tabs**; paste byte for byte. The code in steps 1 and 2 was compiled with `go vet` and is gofmt-clean at the time of writing; if `gofmt -l` still lists a file, run `gofmt -w` on that file only and mention it in the report.
+Work on the branch you are on. Do not create a branch, do not push, do not open a PR. After each step run its command, then `git add <that step's files> && git commit -m "1152 step k"`, nothing else staged. Go indentation is **tabs**; paste byte for byte. The code in steps 1 and 2 was compiled with `go vet` and is gofmt-clean at the time of writing; if `gofmt -l` still lists a file, run `gofmt -w` on that file only and mention it in the report.
 
 0. Anchor check, from the repo root:
-   `grep -cF '"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/payments"' go/cmd/ubyhost-web/main.go; grep -cF '"submit": func(ctx context.Context) (int, error) {' go/cmd/ubyhost-web/main.go; grep -cF 'var goIntervals = map[string]int{"billing_snapshot": 24 * 60, "stripe_sweep": 24 * 60, "submit": 10, "ical": 60, "push": 1}' go/cmd/ubyhost-web/main.go; grep -cF 'Today `billing_snapshot`, `stripe_sweep`, `ical`, `push` and `submit`.' docs/ENVIRONMENT.md; ls go/internal/posthog docs/tasks/1144-report.md 2>&1 | tail -30`
+   `grep -cF '"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/payments"' go/cmd/ubyhost-web/main.go; grep -cF '"submit": func(ctx context.Context) (int, error) {' go/cmd/ubyhost-web/main.go; grep -cF 'var goIntervals = map[string]int{"billing_snapshot": 24 * 60, "stripe_sweep": 24 * 60, "submit": 10, "ical": 60, "push": 1}' go/cmd/ubyhost-web/main.go; grep -cF 'Today `billing_snapshot`, `stripe_sweep`, `ical`, `push` and `submit`.' docs/ENVIRONMENT.md; ls go/internal/posthog docs/tasks/1152-report.md 2>&1 | tail -30`
    Expected: `1`, `1`, `1`, `1`, then two "No such file or directory". Anything else: STOP.
 
 1. Create `go/internal/posthog/sync.go` with exactly this content. Then from `go/`: `gofmt -l internal/posthog; go vet ./internal/posthog/ 2>&1 | tail -30` (expected: no output; `go vet` also compiles the test file once step 2 exists, so run it again after step 2).
@@ -856,7 +856,7 @@ var goIntervals = map[string]int{"billing_snapshot": 24 * 60, "stripe_sweep": 24
 
    Then from the repo root: `python3 scripts/context_lint.py 2>&1 | tail -5` (expected: passes).
 
-5. Set the `Status:` line of this brief to `review` and write the report (§9). Commit `1144 step 5`.
+5. Set the `Status:` line of this brief to `review` and write the report (§9). Commit `1152 step 5`.
 
 ## 5. Do not touch
 
@@ -893,8 +893,8 @@ Expected: passes. Test-map has no Go row yet; the first command above is the che
 - [ ] `grep -c '"posthog"' go/cmd/ubyhost-web/main.go` prints `2` (interval and handler).
 - [ ] `grep -rn 'email\|Email' go/internal/posthog/sync.go | grep -i 'slog' | tail -5` prints nothing (no e-mail in a log line).
 - [ ] `python3 scripts/context_lint.py` passes.
-- [ ] `git diff --stat "$(git log -1 --format=%H --grep=^Brief.1144)"..HEAD | tail -30` lists only the §3 paths.
-- [ ] Five commits "1144 step 1" to "1144 step 5"; nothing pushed.
+- [ ] `git diff --stat "$(git log -1 --format=%H --grep=^Brief.1152)"..HEAD | tail -30` lists only the §3 paths.
+- [ ] Five commits "1152 step 1" to "1152 step 5"; nothing pushed.
 
 ## 8. Stop and ask
 
@@ -912,7 +912,7 @@ Stop, and write the report, if:
 
 ## 9. Report
 
-Write `docs/tasks/1144-report.md` (600 tokens at most) with: 1. `git diff --stat "$(git log -1 --format=%H --grep=^Brief.1144)"..HEAD` (last 10 lines); 2. each §6 command with the last 5 lines of its output; 3. §7 ticked; 4. deviations; 5. questions; 6. follow-up: add a test-map row "Go module (`go/`)" with the first §6 command, in a later brief (not this one); 7. owner steps left (expected: the owner steps below, after merge and deploy).
+Write `docs/tasks/1152-report.md` (600 tokens at most) with: 1. `git diff --stat "$(git log -1 --format=%H --grep=^Brief.1152)"..HEAD` (last 10 lines); 2. each §6 command with the last 5 lines of its output; 3. §7 ticked; 4. deviations; 5. questions; 6. follow-up: add a test-map row "Go module (`go/`)" with the first §6 command, in a later brief (not this one); 7. owner steps left (expected: the owner steps below, after merge and deploy).
 
 ## Risk list (for the reviewer)
 

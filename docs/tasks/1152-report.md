@@ -1,6 +1,6 @@
-# 1144 report: Go posthog job
+# 1152 report: Go posthog job
 
-Renumbered from 1135 (main took 1135 first); commits "1135 step k" and "Brief 1135" are this brief.
+Renumbered from 1135, then 1144 (both taken by other PRs); commits "1135 step k" and "Brief 1135" are this brief.
 
 Status: review
 
@@ -30,7 +30,7 @@ Status: review
 - [x] No e-mail in slog lines in sync.go.
 - [x] context_lint passes.
 - [x] Only §3 paths changed (diff above).
-- [x] Commits "1144 step 1" to "1144 step 5"; nothing pushed.
+- [x] Commits "1152 step 1" to "1152 step 5"; nothing pushed.
 
 ## 4. Deviations
 
