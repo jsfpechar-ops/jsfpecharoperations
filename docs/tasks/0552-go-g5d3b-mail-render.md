@@ -1,5 +1,5 @@
 # 0552: Go G5d-3b: render the submission_problem mail in Go, byte-equal to Python
-Status: review
+Status: done (code on main and live in production, server on #928, 2026-11-12; closed in bulk by the orchestrator)
 Depends on: 0551 (#646) | Base commit: main | Branch: claude/project-thread-bhyvh5
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 90k tokens
 ## 1. Objective

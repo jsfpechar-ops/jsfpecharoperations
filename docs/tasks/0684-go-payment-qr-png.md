@@ -1,5 +1,5 @@
 # 0684: Go payment QR PNG
-Status: review
+Status: done (code on main and live in production, server on #928, 2026-11-12; closed in bulk by the orchestrator)
 Depends on: owner decision 2026-11-02 (go-qrcode) | Base commit: origin/main | Branch: task/0684-go-payment-qr
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 70k tokens
 ## 1. Objective

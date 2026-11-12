@@ -1,6 +1,6 @@
 # 0812: Go web responses carry the same security headers as Python
 
-Status: todo
+Status: done (code on main and live in production, server on #928, 2026-11-12; closed in bulk by the orchestrator)
 Depends on: none | Base commit: origin/main | Branch: task/0812-go-headers
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

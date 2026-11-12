@@ -1,5 +1,5 @@
 # 0478: Go G3b: the stripe_sweep job in Go
-Status: todo
+Status: done (code on main and live in production, server on #928, 2026-11-12; closed in bulk by the orchestrator)
 Depends on: 0476 (#631) | Base commit: main | Branch: task/0478-go-g3b-stripe-sweep
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 90k tokens
 ## 1. Objective

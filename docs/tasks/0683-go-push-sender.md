@@ -1,5 +1,5 @@
 # 0683: Go Web Push sender, push test button, push job
-Status: review
+Status: done (code on main and live in production, server on #928, 2026-11-12; closed in bulk by the orchestrator)
 Depends on: 0678 (pushweb, on main) | Base commit: origin/main | Branch: task/0683-go-push-sender
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 90k tokens
 ## 1. Objective

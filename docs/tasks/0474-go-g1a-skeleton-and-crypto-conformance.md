@@ -1,5 +1,5 @@
 # 0474: Go G1a: service skeleton (healthz, metrics, goose check) and crypto conformance with the Python app
-Status: review
+Status: done (code on main and live in production, server on #928, 2026-11-12; closed in bulk by the orchestrator)
 Depends on: 0465 (goose, merged) | Base commit: main | Branch: task/0474-go-g1a
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 80k tokens
 ## 1. Objective

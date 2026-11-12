@@ -87,7 +87,6 @@
 - 0897 guest pay gaps: Slovak QR, PG migration 00007 unrun, no mark-as-paid, no e-mail link, copy, legal sign-off.
 - K-PICK: guest-enhancements.js:207 blur timer not cleared on refocus (1079).
 
-- K-BIRTH-DIGITS: Python `validate_birth_date` accepts non-ASCII digits, Go rejects them; stay marked complete, never filed. Filing-critical; needs a brief.
 - K-HOUSEBOOK: house book Details popover unreachable at 390/768 (zero-size trigger).
 - K-FLAKY-DC: flaky `test_door_codes_safeguards::test_an_undeleted_old_code_after_a_move_tells_the_host` (test-postgres-full); passed on rerun.
 - K-GUEST-DATES: es/fr guest dates row wraps at 375, 360 px.

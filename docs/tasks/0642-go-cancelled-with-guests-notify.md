@@ -1,5 +1,5 @@
 # 0642: Go: queue the "cancelled stay with guest forms" mail and push like Python
-Status: review
+Status: done (code on main and live in production, server on #928, 2026-11-12; closed in bulk by the orchestrator)
 Depends on: none | Base commit: origin/main | Branch: task/0642-go-cancelled-notify
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 90k tokens
 ## 1. Objective

@@ -1,6 +1,6 @@
 # 0813: Go payment Send makes one Stripe link even on a double click
 
-Status: todo
+Status: done (merged in 1d4844d9, live; closed by the orchestrator 2026-11-12)
 Depends on: none | Base commit: origin/main | Branch: task/0813-go-paylink-lock
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

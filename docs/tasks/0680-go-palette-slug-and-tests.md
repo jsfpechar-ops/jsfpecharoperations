@@ -1,5 +1,5 @@
 # 0680: Go command palette, guest link slug and missing tests
-Status: review
+Status: done (code on main and live in production, server on #928, 2026-11-12; closed in bulk by the orchestrator)
 Depends on: 0679 (commit 53440ff) | Base commit: task/0679-go-command-palette | Branch: task/0679-go-command-palette
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 70k tokens
 ## 1. Objective

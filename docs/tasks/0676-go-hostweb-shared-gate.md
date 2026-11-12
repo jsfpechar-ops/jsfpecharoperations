@@ -1,5 +1,5 @@
 # 0676: Go shared host web gate and host strings (go/internal/hostweb)
-Status: review
+Status: done (code on main and live in production, server on #928, 2026-11-12; closed in bulk by the orchestrator)
 Depends on: 0675 (#680) | Base commit: claude/project-thread-iwyawc | Branch: task/0676-go-hostweb
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 70k tokens
 ## 1. Objective

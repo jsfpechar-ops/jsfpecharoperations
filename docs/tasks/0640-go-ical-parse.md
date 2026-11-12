@@ -1,5 +1,5 @@
 # 0640: Go iCal: parse feed documents exactly like Python `parse_events`
-Status: review
+Status: done (code on main and live in production, server on #928, 2026-11-12; closed in bulk by the orchestrator)
 Depends on: none | Base commit: origin/main | Branch: task/0640-go-ical-parse
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 90k tokens
 ## 1. Objective

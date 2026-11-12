@@ -1,5 +1,5 @@
 # 0670: Go API A1: Stripe webhook in Go, plus the Caddy route switch (off by default)
-Status: review
+Status: done (code on main and live in production, server on #928, 2026-11-12; closed in bulk by the orchestrator)
 Depends on: 0551 (#646) | Base commit: main | Branch: claude/project-thread-g70pki
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 90k tokens
 ## 1. Objective

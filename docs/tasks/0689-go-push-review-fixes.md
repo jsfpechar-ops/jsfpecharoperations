@@ -1,5 +1,5 @@
 # 0689: Go push review fixes
-Status: review
+Status: done (code on main and live in production, server on #928, 2026-11-12; closed in bulk by the orchestrator)
 Depends on: 0688 | Base commit: claude/project-thread-pw8sp2 | Branch: task/0689-go-push-review-fixes
 Executor: Haiku 5.5 | Fits one session: 20 tool calls, 50k tokens
 ## 1. Objective

@@ -1,5 +1,5 @@
 # 0643: Go: the iCal sync helpers (cancel, re-key, window fit, feed alerts)
-Status: review
+Status: done (code on main and live in production, server on #928, 2026-11-12; closed in bulk by the orchestrator)
 Depends on: 0642 (merged) | Base commit: origin/main | Branch: task/0643-go-ical-sync-helpers
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 90k tokens
 ## 1. Objective

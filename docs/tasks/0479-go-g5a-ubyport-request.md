@@ -1,5 +1,5 @@
 # 0479: Go G5a: the UbyPort ZapisUbytovane request built in Go, byte for byte
-Status: todo
+Status: done (code on main and live in production, server on #928, 2026-11-12; closed in bulk by the orchestrator)
 Depends on: 0477 (#632) | Base commit: main | Branch: task/0479-go-g5a-ubyport-request
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 90k tokens
 ## 1. Objective

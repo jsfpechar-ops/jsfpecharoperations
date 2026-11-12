@@ -1,6 +1,6 @@
 # 0760 brief: make the Go service ready to switch on in production
 
-Status: review
+Status: done (code on main and live in production, server on #928, 2026-11-12; closed in bulk by the orchestrator)
 Executor: Haiku 5.5, alone, on branch `claude/project-thread-9so0lg` in `/home/claude/jsfpecharoperations` (checked out; do not switch branches, do not push). Commit at the end with message `0760: Go cutover prerequisites`.
 
 ## 1. Objective
