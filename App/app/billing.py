@@ -16,9 +16,7 @@ from . import config, db
 
 STATUSES = ("trial_pending", "trialing", "active", "overdue", "canceling", "paused")
 TRANSITIONS = {
-    # paused: place_for_operator (operator assigns a plan to a legacy host, no trial;
-    # owner decision 2026-10-29)
-    "trial_pending": {"trialing", "paused"},
+    "trial_pending": {"trialing"},
     "trialing": {"active", "paused"},
     "active": {"overdue", "canceling"},
     "overdue": {"active", "paused"},
@@ -178,6 +176,33 @@ def set_status(owner_user_id: int, new: str, *, actor: str = "system") -> bool:
         )
     db.audit("billing_status", f"{old}->{new}", actor=actor, owner_user_id=owner_user_id)
     return True
+
+
+def operator_pause(owner_user_id: int, *, actor: str) -> bool:
+    """trial_pending/trialing -> paused, for place_for_operator ONLY.
+
+    The one status move outside TRANSITIONS (owner decision 2026-11-12): an operator
+    assigning a plan to a legacy host has no trial left to run, but the operator status
+    form and every set_status caller must still refuse trial_pending -> paused, and the
+    Go table has no such move. One guarded UPDATE, audited only when a row changed.
+    False means already paused or another state (place() then decides).
+    """
+    with db.immediate() as cur:
+        db.lock_key(cur, "billing_account", owner_user_id)
+        cur.execute("SELECT status FROM billing_account WHERE owner_user_id = ?", (owner_user_id,))
+        row = cur.fetchone()
+        if row is None:
+            return False
+        old = row["status"]
+        cur.execute(
+            "UPDATE billing_account SET status = 'paused', updated_at = ? "
+            "WHERE owner_user_id = ? AND status IN ('trial_pending', 'trialing')",
+            (db.utcnow(), owner_user_id),
+        )
+        changed = cur.rowcount == 1
+    if changed:
+        db.audit("billing_status", f"{old}->paused", actor=actor, owner_user_id=owner_user_id)
+    return changed
 
 
 def apartment_count(owner_user_id: int) -> int:

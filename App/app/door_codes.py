@@ -766,15 +766,20 @@ def _stay_is_live(reservation) -> bool:
     )
 
 
-def _keep_issued(row_id: int, now_iso: str) -> None:
-    """The stay is back; leave the PIN on the lock and show it again."""
-    # Guarded: _revoke_one may have deleted the lock code and set revoked since the caller read the row. Zero rows updated leaves the row as it is.
-    db.execute(
+def _keep_issued(row_id: int, now_iso: str, held_claim: str | None = None) -> bool:
+    """The stay is back; leave the PIN on the lock and show it again. True if a row changed."""
+    # Guarded: _revoke_one may have deleted the lock code and set revoked since the caller read
+    # the row, and it may hold the revoke lease right now (claimed_at inside LEASE_MINUTES).
+    # _revoke_one passes its own claim stamp as held_claim; the revived loop passes none and
+    # so skips a leased row. Zero rows updated leaves the row as it is.
+    cutoff = _iso(_now() - timedelta(minutes=LEASE_MINUTES))
+    return db.execute(
         "UPDATE door_code SET state = ?, claimed_at = NULL, attempts = 0, "
         "next_attempt_at = NULL, last_error = NULL, updated_at = ? "
-        "WHERE id = ? AND state IN (?, ?)",
-        (ISSUED, now_iso, row_id, REVOKE_FAILED, REVOKE_PENDING),
-    )
+        "WHERE id = ? AND state IN (?, ?) "
+        "AND (claimed_at IS NULL OR claimed_at < ? OR claimed_at = ?)",
+        (ISSUED, now_iso, row_id, REVOKE_FAILED, REVOKE_PENDING, cutoff, held_claim),
+    ) == 1
 
 
 def _revoke_one(row_id: int) -> None:
@@ -797,14 +802,14 @@ def _revoke_one(row_id: int) -> None:
     if not apartment or not reservation:
         return
     if _stay_is_live(reservation):
-        _keep_issued(row_id, now_iso)
+        _keep_issued(row_id, now_iso, held_claim=now_iso)
         return
     account = ttlock.account_for(apartment["owner_user_id"])
     if not account or account["status"] != "ok":
         db.execute(
             "UPDATE door_code SET state = ?, claimed_at = NULL, last_error = ?, updated_at = ? "
-            "WHERE id = ?",
-            (REVOKE_FAILED, "no_account", now_iso, row_id),
+            "WHERE id = ? AND state = ?",
+            (REVOKE_FAILED, "no_account", now_iso, row_id, REVOKE_PENDING),
         )
         mail_notify.door_code_notice(row_id, "cancelled_not_deleted")
         return
@@ -817,8 +822,8 @@ def _revoke_one(row_id: int) -> None:
         )
         db.execute(
             "UPDATE door_code SET state = ?, revoked_at = ?, pin_enc = NULL, claimed_at = NULL, "
-            "updated_at = ? WHERE id = ?",
-            (REVOKED, now_iso, now_iso, row_id),
+            "updated_at = ? WHERE id = ? AND state = ?",
+            (REVOKED, now_iso, now_iso, row_id, REVOKE_PENDING),
         )
         db.audit(
             "door_code_revoked",
@@ -839,8 +844,8 @@ def _revoke_one(row_id: int) -> None:
             if past_end:
                 db.execute(
                     "UPDATE door_code SET state = ?, claimed_at = NULL, last_error = ?, updated_at = ? "
-                    "WHERE id = ?",
-                    (REVOKE_FAILED, kind[:40], now_iso, row_id),
+                    "WHERE id = ? AND state = ?",
+                    (REVOKE_FAILED, kind[:40], now_iso, row_id, REVOKE_PENDING),
                 )
                 db.audit(
                     "door_code_revoke_failed",
@@ -853,16 +858,16 @@ def _revoke_one(row_id: int) -> None:
                 next_at = _iso(now + timedelta(minutes=delays[min(attempts - 1, 2)]))
                 db.execute(
                     "UPDATE door_code SET claimed_at = NULL, next_attempt_at = ?, last_error = ?, "
-                    "updated_at = ? WHERE id = ?",
-                    (next_at, kind[:40], now_iso, row_id),
+                    "updated_at = ? WHERE id = ? AND state = ?",
+                    (next_at, kind[:40], now_iso, row_id, REVOKE_PENDING),
                 )
                 if attempts == 3:
                     mail_notify.door_code_notice(row_id, "cancelled_not_deleted")
         else:
             db.execute(
                 "UPDATE door_code SET state = ?, claimed_at = NULL, last_error = ?, updated_at = ? "
-                "WHERE id = ?",
-                (REVOKE_FAILED, kind[:40], now_iso, row_id),
+                "WHERE id = ? AND state = ?",
+                (REVOKE_FAILED, kind[:40], now_iso, row_id, REVOKE_PENDING),
             )
             db.audit(
                 "door_code_revoke_failed",
@@ -910,8 +915,8 @@ def _handle_cancellations(now_iso: str) -> None:
         (REVOKE_PENDING, REVOKE_FAILED),
     )
     for item in revived:
-        _keep_issued(int(item["id"]), now_iso)
-        db.audit("door_code_revoke_aborted", f"door_code={item['id']}", actor="system")
+        if _keep_issued(int(item["id"]), now_iso):
+            db.audit("door_code_revoke_aborted", f"door_code={item['id']}", actor="system")
 
     due = db.query(
         "SELECT dc.id FROM door_code dc "
