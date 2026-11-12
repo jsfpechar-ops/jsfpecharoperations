@@ -1,6 +1,16 @@
 # 1135 report (executor run, Status: blocked)
 
-Status: blocked. The run hit the 30-tool-call cap after step 2. Steps 3 and 4 are not applied.
+Status: blocked. Steps 3 and 4 are applied and their tests pass. Blocked only on `context_lint.py` (see Deviations).
+
+Continuation run (1135-cont-1): step 3 is commit `ecf5093c`, step 4 is commit `387ee783`.
+
+- `App/app/door_codes.py` (step 3): reactivated DELETE is now `WHERE id = ? AND state = ?` with a `removed` rowcount check before the audit.
+- `App/tests/test_sm_door_code_state.py` (step 4): line 39 pin changed from `ANY` to `("revoke_failed", "revoke_pending")`.
+- `pytest tests/test_door_code_cancel_guard.py`: `7 passed`.
+- `pytest tests/test_sm_door_code_state.py`: `11 passed`.
+- `pytest tests/test_door_code*.py tests/test_ttlock*.py tests/test_smart_locks_page.py -x -rs`: `243 passed, 2 skipped` (both skips are browser files, playwright not installed).
+- `pytest tests/test_sm_reservation_claim_state.py tests/test_claim_*.py -rs`: `118 passed`.
+- `python3 scripts/context_lint.py`: FAIL, `ERROR docs/tasks/1135-cont-1.md: missing section '## 2. Context'` (also `## 5`, `## 6`, `## 7`, `## 9`). Brief 1135-cont-1 is not in the brief template. Not fixed here: that file is outside §3.
 
 Branch: `worktree-agent-a2b966eda3e24be90`. Last commit: `d38b1999` (`1135 step 2`). Step 1 is `0ab5daf6`.
 
@@ -31,9 +41,10 @@ Step 2, `pytest tests/test_door_code_cancel_guard.py -q --tb=short -k keep_issue
 ## §7 acceptance
 
 - [x] Step 1 shows the two named tests failing before the fix.
-- [ ] Steps 3 and 4 not run.
-- [ ] Test-map rows not run.
-- [ ] `git diff --stat` not checked against §3.
+- [x] Steps 3 and 4 pass.
+- [x] Door-code and claim test-map rows pass (0 failed).
+- [ ] `context lint: OK` not reached (brief 1135-cont-1 format, see Deviations).
+- [x] `git diff b8d4a0f6 HEAD --stat` shows only the two §3 App files for steps 3-4.
 - [x] `TRANSITIONS` not touched.
 
 ## Deviations
