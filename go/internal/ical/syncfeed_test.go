@@ -398,3 +398,71 @@ func TestUpdateReservationUnlessClaimedWaitsForClaimLock(t *testing.T) {
 		t.Fatalf("date_from = %q, want unchanged", got)
 	}
 }
+
+func TestSyncFeedCancelEventDeferredWhileClaimLive(t *testing.T) {
+	pool := testPool(t)
+	ctx := context.Background()
+	aid := seedApartment(t, pool)
+	feed := newIcalFeed(t, pool, aid, "https://feed.test/cancel-claim.ics")
+	stay := seedStay(t, pool, aid, feed.ID, "u-cc", "2999-03-01", "2999-03-05")
+	g := seedGuest(t, pool, stay, "pending", "2999-03-01", "2999-03-05")
+	_, err := pool.Exec(ctx, `INSERT INTO submission_claim (guest_id, claim_token, claimed_at) VALUES ($1, 'race', $2)`,
+		g, epochSeconds())
+	must(t, err)
+	doc := icsDoc(icsEvent("u-cc", "29990301", "29990305", "Guest A", "STATUS:CANCELLED"))
+
+	st := runSync(t, pool, feed, doc)
+
+	if got := scalarText(t, pool, `SELECT status FROM reservation WHERE id = $1`, stay); got != "active" {
+		t.Errorf("status = %q, want active while a claim is live", got)
+	}
+	if st.Cancelled != 0 {
+		t.Errorf("Cancelled = %d, want 0", st.Cancelled)
+	}
+	if got := scalarText(t, pool, `SELECT COALESCE(body_sha256, '') FROM ical_feed WHERE id = $1`, feed.ID); got != "" {
+		t.Errorf("digest stored after a deferred cancel: %q", got)
+	}
+
+	_, err = pool.Exec(ctx, `DELETE FROM submission_claim WHERE guest_id = $1`, g)
+	must(t, err)
+
+	st = runSync(t, pool, feed, doc)
+
+	if got := scalarText(t, pool, `SELECT status FROM reservation WHERE id = $1`, stay); got != "cancelled" || st.Cancelled != 1 {
+		t.Errorf("after the claim ended: status = %q, Cancelled = %d, want cancelled and 1", got, st.Cancelled)
+	}
+}
+
+func TestSyncFeedVanishedStayDeferredWhileClaimLive(t *testing.T) {
+	pool := testPool(t)
+	ctx := context.Background()
+	aid := seedApartment(t, pool)
+	feed := newIcalFeed(t, pool, aid, "https://feed.test/vanish-claim.ics")
+	seedStay(t, pool, aid, feed.ID, "u1", "2999-03-01", "2999-03-05")
+	gone := seedStay(t, pool, aid, feed.ID, "u2", "2999-04-01", "2999-04-05")
+	g := seedGuest(t, pool, gone, "pending", "2999-04-01", "2999-04-05")
+	_, err := pool.Exec(ctx, `INSERT INTO submission_claim (guest_id, claim_token, claimed_at) VALUES ($1, 'race', $2)`,
+		g, epochSeconds())
+	must(t, err)
+	doc := icsDoc(icsEvent("u1", "29990301", "29990305", "Guest A"))
+
+	st := runSync(t, pool, feed, doc)
+
+	if got := scalarText(t, pool, `SELECT status FROM reservation WHERE id = $1`, gone); got != "active" {
+		t.Errorf("status = %q, want active while a claim is live", got)
+	}
+	if st.Cancelled != 0 {
+		t.Errorf("Cancelled = %d, want 0", st.Cancelled)
+	}
+	if got := scalarText(t, pool, `SELECT COALESCE(body_sha256, '') FROM ical_feed WHERE id = $1`, feed.ID); got != "" {
+		t.Errorf("digest stored after a deferred cancel: %q", got)
+	}
+
+	_, err = pool.Exec(ctx, `DELETE FROM submission_claim WHERE guest_id = $1`, g)
+	must(t, err)
+	st = runSync(t, pool, feed, doc)
+
+	if got := scalarText(t, pool, `SELECT status FROM reservation WHERE id = $1`, gone); got != "cancelled" || st.Cancelled != 1 {
+		t.Errorf("after the claim ended: status = %q, Cancelled = %d, want cancelled and 1", got, st.Cancelled)
+	}
+}
