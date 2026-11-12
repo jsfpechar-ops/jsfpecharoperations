@@ -124,6 +124,19 @@ func ReleaseSendableClaim(ctx context.Context, pool *pgxpool.Pool, token string)
 	return err
 }
 
+// RefreshSendableClaim renews the lease of the claim that carries token and
+// returns how many rows it renewed. One UPDATE keyed by the token, so a
+// released or taken-over claim matches nothing and is never resurrected.
+// Python: refresh_sendable_claim.
+func RefreshSendableClaim(ctx context.Context, pool *pgxpool.Pool, token string) (int64, error) {
+	tag, err := pool.Exec(ctx,
+		`UPDATE submission_claim SET claimed_at = $1 WHERE claim_token = $2`, nowSeconds(), token)
+	if err != nil {
+		return 0, err
+	}
+	return tag.RowsAffected(), nil
+}
+
 func truthy(s *string) bool {
 	return s != nil && *s != ""
 }
