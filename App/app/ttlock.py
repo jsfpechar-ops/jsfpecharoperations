@@ -565,6 +565,45 @@ def find_code_by_name(
     return None
 
 
+LIST_PAGE_SIZE = 20
+LIST_MAX_PAGES = 5
+
+
+def code_is_listed(account_id: int, lock_id: str, name: str, code_id: str) -> Optional[bool]:
+    """Is the lock code with this id on the lock? True, False, or None when it cannot be told.
+
+    ``searchStr`` is a fuzzy match (UH-7 also lists UH-70 and UH-700), so the answer is read
+    page by page, at most LIST_MAX_PAGES calls. False only when the last page was read and
+    the id was not on any page. None when the page limit ran out first. The id decides,
+    not the name or the window. TTLock errors are raised as they are.
+    """
+    for page in range(1, LIST_MAX_PAGES + 1):
+        answer = _call(
+            account_id,
+            "/v3/lock/listKeyboardPwd",
+            {
+                "lockId": int(lock_id),
+                "searchStr": name,
+                "orderBy": 1,
+                "pageNo": page,
+                "pageSize": LIST_PAGE_SIZE,
+            },
+            NORMAL,
+        )
+        items = answer.get("list") or []
+        if any(str(raw.get("keyboardPwdId")) == str(code_id) for raw in items):
+            return True
+        try:
+            last_page = int(answer["pages"])
+        except (KeyError, TypeError, ValueError):
+            last_page = None
+        if last_page is not None and page >= last_page:
+            return False
+        if last_page is None and len(items) < LIST_PAGE_SIZE:
+            return False
+    return None
+
+
 def change_code_period(
     account_id: int,
     lock_id: str,

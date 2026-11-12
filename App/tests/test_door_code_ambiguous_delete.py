@@ -24,13 +24,11 @@ def world(monkeypatch):
     lock.lookups = 0
     lock.lookup_error = None
 
-    def find(*args, **kwargs):
+    def listed(account_id, lock_id, name, code_id):
         lock.lookups += 1
         if lock.lookup_error:
             raise lock.lookup_error
-        for code_id, pin in lock.pins.items():
-            return pin, code_id
-        return None
+        return str(code_id) in lock.pins
 
     monkeypatch.setattr(config, "DOOR_CODES_ENABLED", True)
     monkeypatch.setattr(ttlock, "account_for", lambda owner: {"id": 1, "status": "ok"})
@@ -38,7 +36,7 @@ def world(monkeypatch):
     monkeypatch.setattr(ttlock, "delete_code", lambda *a, **k: lock.delete(*a, **k))
     monkeypatch.setattr(ttlock, "create_period_code", lambda *a, **k: lock.create())
     monkeypatch.setattr(ttlock, "add_custom_code", lambda *a, **k: lock.create())
-    monkeypatch.setattr(ttlock, "find_code_by_name", find)
+    monkeypatch.setattr(ttlock, "code_is_listed", listed)
     monkeypatch.setattr(door_codes.mail_notify, "door_code_notice", lambda *a, **k: None)
     monkeypatch.setattr(door_codes.mail_notify, "door_code_delayed_notice", lambda *a, **k: None)
     monkeypatch.setattr(door_codes.push, "door_code_missing", lambda *a, **k: None)
@@ -148,13 +146,13 @@ def test_a_failed_lookup_keeps_the_row_then_gives_up_after_three_tries(world, mo
     lock.lookup_error = ttlock.TTLockError("busy", kind="transient")
     _tick()
     held = _row(row)
-    assert held["state"] == door_codes.REVOKE_PENDING and held["last_error"] == door_codes.LOOKUP_FAILED
+    assert held["state"] == door_codes.REVOKE_PENDING and held["last_error"] == "lookup_failed:1"
     assert held["attempts"] == 1 and lock.lookups == 1
     _tick()
     assert lock.lookups == 1  # the lease holds the next try back
     _expire_lease(row)
     _tick()
-    assert _row(row)["attempts"] == 2 and lock.lookups == 2
+    assert _row(row)["last_error"] == "lookup_failed:2" and _row(row)["attempts"] == 1 and lock.lookups == 2
     unverified = _audits("door_code_pin_unverified")
     _expire_lease(row)
     _tick()

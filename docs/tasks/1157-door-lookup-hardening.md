@@ -1,6 +1,6 @@
 # 1157: a door code is called gone only when the lock's whole answer says so
 
-Status: todo
+Status: review
 Depends on: 1155, 1155b (merged) | Base commit: HEAD of branch claude/zealous-maxwell-a7ub54 (bccafce4 or later) | Branch: task/1157-door-lookup-hardening
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
