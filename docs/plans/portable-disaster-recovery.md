@@ -49,13 +49,13 @@ AWS dependencies and what happens in an outage:
 | 8 | Timed drill on a throwaway non-AWS box; record minutes in status | M | owner, repeat every 3 months with the restore drill | 3, 7 |
 | 9 | Link runbook from LIGHTSAIL.md, OPERATIONS.md, status, AGENTS routing | S | orchestrator | 1 |
 
-## Owner decisions needed
+## Owner decisions (taken 2026-11-12: all as recommended)
 
-1. Move the Drive copy to daily? Recommend yes (loss from 7 days to 1).
-2. Which EU provider to name in the register? Recommend Hetzner (Germany/Finland), pick before any drill.
-3. Offline pack (age identity, `.env`, secret key, origin certs, rclone config) location and who else can open it? Recommend password manager plus one printed or USB copy.
-4. Stop the old server first, always? Recommend yes: stop it, or remove `submit` from `UBYHOST_GO_JOB_KINDS`, before the new box files. Filing deadline is 3 working days, so a day of downtime is fine.
-5. Last fallback: file by hand in the police portal. Recommend the runbook says so.
+1. Drive copy daily, as long as it stays cheap (Drive retention prune keeps the size bounded). Owner has the Drive ready.
+2. EU provider: Hetzner. Add it to the `/subprocessors` register and the ROPA before any real data goes there, the drill included.
+3. Offline pack: password manager plus one printed or USB copy.
+4. The old server is always stopped (or `submit` removed from `UBYHOST_GO_JOB_KINDS`) before a new one files.
+5. Last fallback: file by hand in the police portal; the runbook says so.
 
 ## Not doing
 
