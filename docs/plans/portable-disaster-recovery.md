@@ -10,14 +10,14 @@ If AWS is gone, a fresh EU Ubuntu box (Hetzner as example, not a decision) runs 
 
 - Daily `pg_dump`, age-encrypted, in `/data/backups/<stamp>/` inside the app volume (`deploy/lightsail/scripts/backup.sh:28-60`). Cron 03:00 (`setup-server.sh:73`).
 - Encryption: age public recipient in `.env`; private identity in the password manager plus one offline copy, never on the server (`docs/OPERATIONS.md:596-615`).
-- Drive copy: daily, 04:00 UTC (changed from weekly by brief 1134, 2026-11-12), optional cron, `*.age` only, 30-day retention, no snapshot of its own (`backup-gdrive.sh`, `setup-server.sh:75`). S3 copy: daily, `backup-s3.sh`.
+- Drive copy: daily, 04:00 UTC (changed from weekly by brief 1151, 2026-11-12), optional cron, `*.age` only, 30-day retention, no snapshot of its own (`backup-gdrive.sh`, `setup-server.sh:75`). S3 copy: daily, `backup-s3.sh`.
 - WAL-G: S3 only, 7 days, key `WALG_LIBSODIUM_KEY` (separate from age) (`OPERATIONS.md:652-655`).
 - Restore: `pg-restore.sh <stamp>` reads the dump from the app volume, not from a file (`pg-restore.sh:44-55`). Rebuild steps and a quarterly drill: `docs/LIGHTSAIL.md:286-310`.
 - Cloudflare proxies the site (`CLOUDFLARE_PROXY=1`, `docs/CLOUDFLARE.md`).
 
 ## Gaps (most important first)
 
-1. Off-AWS data is up to 1 day old once brief 1134 is live (Drive is daily). Whether the 04:00 cron is installed in production is unverified until the owner checks `crontab -l`.
+1. Off-AWS data is up to 1 day old once brief 1151 is live (Drive is daily). Whether the 04:00 cron is installed in production is unverified until the owner checks `crontab -l`.
 2. `pg-restore.sh` needs the dump inside the volume. From a Drive file there is no script path: a restore-from-file option is needed.
 3. Drive upload token lives in rclone config on the server; not in the offline copy. Needs a note or a re-auth step.
 4. The `.env`, `UBYHOST_SECRET_KEY` and Cloudflare origin certs must exist offline. Not checked anywhere.
@@ -39,10 +39,10 @@ AWS dependencies and what happens in an outage:
 
 | # | Step | Size | Who | Depends on |
 |---|---|---|---|---|
-| 1 | Runbook `docs/DISASTER_RECOVERY.md` (brief 1135) | M | Haiku brief | none |
+| 1 | Runbook `docs/DISASTER_RECOVERY.md` (brief 1150) | M | Haiku brief | none |
 | 2 | Check Drive cron runs; list what is in Drive; confirm age key opens a Drive file | S | owner | none |
 | 3 | `pg-restore.sh` option to restore from a local `.age` file (no volume stamp, no AWS) | M | Haiku brief | 1 |
-| 4 | Drive copy daily instead of weekly (cron line change, doc) (brief 1134) | S | Haiku brief + owner | 2 |
+| 4 | Drive copy daily instead of weekly (cron line change, doc) (brief 1151) | S | Haiku brief + owner | 2 |
 | 5 | Cloudflare "we're down" page (static, Worker or custom error page) | S | Haiku brief + owner | 1 |
 | 6 | Filing guard: runbook step plus a check in `deploy.sh`/preflight that warns when `submit` is in `UBYHOST_GO_JOB_KINDS` on a restored box | M | Haiku brief | 3 |
 | 7 | Choose EU provider; add to `/subprocessors` register and ROPA | S | owner + lawyer | none |

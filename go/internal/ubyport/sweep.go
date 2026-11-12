@@ -327,7 +327,8 @@ func SubmitForApartment(ctx context.Context, d SweepDeps, aptID int64, o Collect
 		if p.Outcome.SubmitState != nil {
 			state = *p.Outcome.SubmitState
 		}
-		claimIn = append(claimIn, ClaimPair{GuestID: p.Outcome.ID, SubmitState: state, Payload: p})
+		built := p.Built
+		claimIn = append(claimIn, ClaimPair{GuestID: p.Outcome.ID, SubmitState: state, Payload: p, Built: &built})
 	}
 	token, kept, err := ClaimSendable(ctx, pool, claimIn)
 	if err != nil {
@@ -346,15 +347,37 @@ func SubmitForApartment(ctx context.Context, d SweepDeps, aptID int64, o Collect
 	for _, k := range kept {
 		batch = append(batch, k.Payload.(BatchPair))
 	}
+	guests := make(map[int64]struct{}, len(kept))
+	for _, k := range kept {
+		guests[k.GuestID] = struct{}{}
+	}
 	maxBatch := d.MaxBatch
 	if maxBatch <= 0 {
 		maxBatch = 32
 	}
 	sender := d.NewSender(apt)
+	return sendClaimedBatches(ctx, pool, token, int64(len(guests)), batch, maxBatch, func(chunk []BatchPair) (BatchResult, error) {
+		return SubmitBatch(ctx, d.Batch, sender, apt.Apartment, apt.Ref, chunk, mode)
+	})
+}
+
+// sendClaimedBatches sends batch in chunks of maxBatch under one claim,
+// renewing the claim before each chunk. A lost claim (released, stale, partly deleted, or taken over
+// after a stale TTL) stops the send and returns the results so far; the
+// remaining guests are left for the next sweep. Python: _send_claimed_batches.
+func sendClaimedBatches(ctx context.Context, pool *pgxpool.Pool, token string, want int64, batch []BatchPair, maxBatch int, send func([]BatchPair) (BatchResult, error)) ([]BatchResult, error) {
 	var results []BatchResult
 	for start := 0; start < len(batch); start += maxBatch {
+		n, err := RefreshSendableClaim(ctx, pool, token)
+		if err != nil {
+			return results, err
+		}
+		if n != want {
+			log.Printf("submission_claim_lost sent_batches=%d remaining=%d", len(results), len(batch)-start)
+			break
+		}
 		end := min(start+maxBatch, len(batch))
-		res, err := SubmitBatch(ctx, d.Batch, sender, apt.Apartment, apt.Ref, batch[start:end], mode)
+		res, err := send(batch[start:end])
 		if err != nil {
 			return results, err
 		}

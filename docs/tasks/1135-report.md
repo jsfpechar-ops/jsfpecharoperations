@@ -1,47 +1,63 @@
-# 1135 report
+# 1135 report (executor run, Status: blocked)
 
-Status: review
+Status: blocked. Steps 3 and 4 are applied and their tests pass. Blocked only on `context_lint.py` (see Deviations).
+
+Continuation run (1135-cont-1): step 3 is commit `ecf5093c`, step 4 is commit `387ee783`.
+
+- `App/app/door_codes.py` (step 3): reactivated DELETE is now `WHERE id = ? AND state = ?` with a `removed` rowcount check before the audit.
+- `App/tests/test_sm_door_code_state.py` (step 4): line 39 pin changed from `ANY` to `("revoke_failed", "revoke_pending")`.
+- `pytest tests/test_door_code_cancel_guard.py`: `7 passed`.
+- `pytest tests/test_sm_door_code_state.py`: `11 passed`.
+- `pytest tests/test_door_code*.py tests/test_ttlock*.py tests/test_smart_locks_page.py -x -rs`: `243 passed, 2 skipped` (both skips are browser files, playwright not installed).
+- `pytest tests/test_sm_reservation_claim_state.py tests/test_claim_*.py -rs`: `118 passed`.
+- `python3 scripts/context_lint.py`: FAIL, `ERROR docs/tasks/1135-cont-1.md: missing section '## 2. Context'` (also `## 5`, `## 6`, `## 7`, `## 9`). Brief 1135-cont-1 is not in the brief template. Not fixed here: that file is outside §3.
+
+Branch: `worktree-agent-a2b966eda3e24be90`. Last commit: `d38b1999` (`1135 step 2`). Step 1 is `0ab5daf6`.
 
 ## Files changed
 
-- `docs/DISASTER_RECOVERY.md` (new, 5742 bytes, commit 2a5d551d)
-- `docs/tasks/1135-report.md` (new, this file)
+- `App/tests/test_door_code_cancel_guard.py`: step 1, three tests appended.
+- `App/app/door_codes.py`: step 2, `_keep_issued` UPDATE guarded with `AND state IN (?, ?)` and the comment added.
+- The brief was not in this worktree. It exists only in commit `3020e7ea` on `claude/clever-fermi-tudhnt`, so its `Status:` line was not changed here.
 
-## Commands
+## Commands (last 5 lines)
 
-- `wc -c docs/DISASTER_RECOVERY.md` gave 5742 (limit 10000).
-- `python3 scripts/context_lint.py 2>&1 | tail -15`, last lines: `2 commit(s) touched App/ after the last status.md update...`, `next free: task 1134 | migration 0046`, `context lint: OK`. No ERROR lines.
-- `test -f docs/DISASTER_RECOVERY.md && echo ok | tail -30` printed `ok`.
-- `git status --short | tail -30` printed nothing (clean).
+Step 1 (before the fix), `pytest tests/test_door_code_cancel_guard.py -q --tb=short`:
+```
+    assert _state(row) == "revoked"
+E   AssertionError: assert 'issued' == 'revoked'
+...
+FAILED tests/test_door_code_cancel_guard.py::test_reactivated_delete_leaves_a_row_that_moved_on
+2 failed, 5 passed in 0.50s
+```
+Matches the brief: the two named tests fail.
 
-## Section 7 acceptance
+Step 2, `pytest tests/test_door_code_cancel_guard.py -q --tb=short -k keep_issued`:
+```
+..                                                                       [100%]
+2 passed, 5 deselected in 0.55s
+```
 
-- [x] Runbook has all 8 sections; every command is in its own block. (Short inline commands in numbered steps are code spans, not fenced blocks; see Deviations.)
-- [x] No AWS login is needed in any rebuild step.
-- [x] The two-servers guard appears before the rebuild steps.
-- [x] Lint shows no ERROR for the two files.
-- [x] Two commits on the branch, nothing pushed. (Runbook commit 2a5d551d; report commit follows.)
+## §7 acceptance
+
+- [x] Step 1 shows the two named tests failing before the fix.
+- [x] Steps 3 and 4 pass.
+- [x] Door-code and claim test-map rows pass (0 failed).
+- [ ] `context lint: OK` not reached (brief 1135-cont-1 format, see Deviations).
+- [x] `git diff b8d4a0f6 HEAD --stat` shows only the two §3 App files for steps 3-4.
+- [x] `TRANSITIONS` not touched.
 
 ## Deviations
 
-- Section 2 facts were confirmed by grep. The repo-root `scripts/` folder does not hold `deploy.sh`, `pg-restore.sh` or `status.sh`. They live in `deploy/lightsail/scripts/`, so the runbook runs commands from `/opt/ubyhost/deploy/lightsail`, as `docs/LIGHTSAIL.md` does.
-- Commit message for step 2 used the brief's own text, not the `NNNN step k` pattern.
-- Added step 13 (delete the age identity file from the server after restore). This follows the "never on the server" key-custody rule in `docs/OPERATIONS.md`.
-- Some short commands in numbered steps (`docker compose stop`, `./scripts/deploy.sh`, `crontab -e`) are inline code, not fenced blocks.
-- Commit step 5 for the report uses `docs: 1135 report`.
+- `App/.venv` did not exist in the worktree or in the main checkout. I created it with `python3 -m venv` and installed `App/requirements.txt` and `App/requirements-dev.txt`. It is git-ignored.
+- Tool-call budget was spent on environment setup (venv, dependencies, brief lookup) and on commands the shell refused (compound `cd` chains), so step 3 and step 4 were not reached.
 
 ## Questions
 
-- The brief does not name the exact stay or Doručenka URL paths, so the runbook asks for a browser check rather than a fixed curl path.
-- `curl --resolve` may fail TLS against Cloudflare origin certificates. The runbook falls back to a browser hosts-file check and does not use `-k`. Please confirm this is the intended check.
+- Where should the brief live for execution? It is only on `claude/clever-fermi-tudhnt`, not on `main`.
 
-## Owner steps left
+## Owner or orchestrator steps left
 
-- Owner or lawyer: add the new provider to the `/subprocessors` register and `docs/privacy/ROPA.md` (runbook section "After the move").
-
-## Files that should link to the runbook (orchestrator adds the links)
-
-- `docs/LIGHTSAIL.md` (rebuild section)
-- `docs/OPERATIONS.md` (backup section)
-- `docs/context/status.md`
-- `AGENTS.md` routing "Deploy, server, backups" row
+1. Apply step 3 (`DELETE ... AND state = ?` with `removed` rowcount check in `_handle_cancellations`) and step 4 (test pin at `App/tests/test_sm_door_code_state.py` line 39) from the brief.
+2. Run the test-map door-code rows and `python3 scripts/context_lint.py`.
+3. Then set the brief `Status: review` and open the PR (the orchestrator does this per the run overrides).

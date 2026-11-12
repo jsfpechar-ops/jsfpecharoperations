@@ -1,6 +1,6 @@
-# 1135: Disaster recovery runbook
+# 1150: Disaster recovery runbook
 
-> Renumbered from 1133 on 2026-11-12: 1133 was also used by the Go deadlines repoint brief (#934). Commits made before the rename say "1133".
+> Renumbered on 2026-11-12, first 1133 -> 1135, then 1135 -> 1150: main took 1133 (#934) and 1135 (#933). Older commits say "1133".
 
 Status: todo
 Depends on: none | Base commit: HEAD of claude/fervent-cray-1qsrfa | Branch: claude/fervent-cray-1qsrfa
@@ -32,7 +32,7 @@ and run `pg-restore.sh <stamp>`. Mark this block "(workaround until brief for a 
 | Path | Action | What |
 |---|---|---|
 | docs/DISASTER_RECOVERY.md | create | the runbook, at most 2,500 tokens |
-| docs/tasks/1135-report.md | create | report (section 9) |
+| docs/tasks/1150-report.md | create | report (section 9) |
 
 No other file may change.
 
@@ -49,8 +49,8 @@ No other file may change.
    - **After the move**: re-enable cron lines (backup 03:00, Drive Sunday 04:00), run `backup.sh` once, name the new provider in the `/subprocessors` register and `docs/privacy/ROPA.md` (owner/lawyer step; the provider must be EU; do this before real guest data moves if time allows, otherwise the same day).
    - **Drill** (every 3 months with the restore drill; time it; write minutes in status; delete the box after; skip the Cloudflare step).
 3. Run `wc -c docs/DISASTER_RECOVERY.md` (expect under 10000) and `python3 scripts/context_lint.py 2>&1 | tail -15`. Fix any ERROR for your files.
-4. `git add docs/DISASTER_RECOVERY.md && git commit -m "docs: disaster recovery runbook (1135)"`. Never push.
-5. Write `docs/tasks/1135-report.md`, set `Status: review`, commit it with `git commit -m "docs: 1135 report"`.
+4. `git add docs/DISASTER_RECOVERY.md && git commit -m "docs: disaster recovery runbook (1150)"`. Never push.
+5. Write `docs/tasks/1150-report.md`, set `Status: review`, commit it with `git commit -m "docs: 1150 report"`.
 
 ## 5. Do not touch
 
@@ -76,4 +76,4 @@ Stop and write the report as `blocked` if a fact in section 2 cannot be confirme
 
 ## 9. Report
 
-`docs/tasks/1135-report.md` (600 tokens at most): files changed, each command with last 5 lines, section 7 ticked, deviations. End with "Files that should link to the runbook (orchestrator adds the links)": `docs/LIGHTSAIL.md` (rebuild section), `docs/OPERATIONS.md` (backup section), `docs/context/status.md`, `AGENTS.md` routing "Deploy, server, backups" row.
+`docs/tasks/1150-report.md` (600 tokens at most): files changed, each command with last 5 lines, section 7 ticked, deviations. End with "Files that should link to the runbook (orchestrator adds the links)": `docs/LIGHTSAIL.md` (rebuild section), `docs/OPERATIONS.md` (backup section), `docs/context/status.md`, `AGENTS.md` routing "Deploy, server, backups" row.

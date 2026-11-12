@@ -172,19 +172,20 @@ func minDate(a, b time.Time) time.Time {
 	return b
 }
 
-// fitUnsentGuestWindows is _fit_unsent_guest_windows (icalsync.py 408-466).
-// Each guest update is a compare-and-set; an audit row is written only when
-// the update changed one row.
-func fitUnsentGuestWindows(ctx context.Context, pool *pgxpool.Pool, reservationID, apartmentID int64, newFrom, newTo string) (int, error) {
+// fitUnsentGuestWindows is _fit_windows_in_tx (icalsync.py). It runs on the
+// caller's transaction, under the stay's guest locks, and writes guest rows
+// only. It returns one audit detail per guest changed and the apartment
+// owner; the caller writes the audit rows after the commit.
+func fitUnsentGuestWindows(ctx context.Context, tx pgx.Tx, reservationID, apartmentID int64, newFrom, newTo, now string) ([]string, *int64, error) {
 	newStart, okStart := validation.ParseISODate(newFrom)
 	newEnd, okEnd := validation.ParseISODate(newTo)
 	if !okStart || !okEnd {
-		return 0, nil
+		return nil, nil, nil
 	}
 	var owner *int64
-	err := pool.QueryRow(ctx, `SELECT owner_user_id FROM apartment WHERE id = $1`, apartmentID).Scan(&owner)
+	err := tx.QueryRow(ctx, `SELECT owner_user_id FROM apartment WHERE id = $1`, apartmentID).Scan(&owner)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return 0, err
+		return nil, nil, err
 	}
 	type guestWindow struct {
 		id          int64
@@ -192,25 +193,25 @@ func fitUnsentGuestWindows(ctx context.Context, pool *pgxpool.Pool, reservationI
 		stayTo      *string
 		submitState string
 	}
-	rows, err := pool.Query(ctx,
+	rows, err := tx.Query(ctx,
 		`SELECT id, stay_from, stay_to, submit_state FROM guest
 		  WHERE reservation_id = $1 AND archived_at IS NULL AND submit_state <> $2`,
 		reservationID, guestSent)
 	if err != nil {
-		return 0, err
+		return nil, nil, err
 	}
 	var guests []guestWindow
 	for rows.Next() {
 		var g guestWindow
 		if err := rows.Scan(&g.id, &g.stayFrom, &g.stayTo, &g.submitState); err != nil {
 			rows.Close()
-			return 0, err
+			return nil, nil, err
 		}
 		guests = append(guests, g)
 	}
 	rows.Close()
 	if err := rows.Err(); err != nil {
-		return 0, err
+		return nil, nil, err
 	}
 	parseOr := func(s *string, fallback time.Time) time.Time {
 		if s != nil {
@@ -221,7 +222,7 @@ func fitUnsentGuestWindows(ctx context.Context, pool *pgxpool.Pool, reservationI
 		return fallback
 	}
 	liveAfter := liveClaimAfter()
-	moved := 0
+	var details []string
 	for _, g := range guests {
 		sf := parseOr(g.stayFrom, newStart)
 		st := parseOr(g.stayTo, newEnd)
@@ -235,28 +236,38 @@ func fitUnsentGuestWindows(ctx context.Context, pool *pgxpool.Pool, reservationI
 			continue
 		}
 		oldWindow := pyStr(g.stayFrom) + ".." + pyStr(g.stayTo)
-		tag, err := pool.Exec(ctx,
+		tag, err := tx.Exec(ctx,
 			`UPDATE guest SET stay_from = $1, stay_to = $2, updated_at = $3
 			  WHERE id = $4 AND submit_state = $5
 			    AND NOT EXISTS (SELECT 1 FROM submission_claim WHERE guest_id = $4 AND claimed_at >= $6)
 			    AND (submission_id IS NULL OR NOT EXISTS (
 			      SELECT 1 FROM submission WHERE id = guest.submission_id
 			        AND state IN ('running', 'outcome_unknown')))`,
-			newSF, newST, ubyport.UTCNow(), g.id, g.submitState, liveAfter)
+			newSF, newST, now, g.id, g.submitState, liveAfter)
 		if err != nil {
-			return moved, err
+			return nil, nil, err
 		}
 		if tag.RowsAffected() != 1 {
 			continue
 		}
-		detail := fmt.Sprintf("guest=%d reservation=%d was=%s now=%s..%s",
-			g.id, reservationID, oldWindow, newSF, newST)
-		if err := ubyport.Audit(ctx, pool, "guest_stay_window_fitted", detail, owner); err != nil {
-			return moved, err
-		}
-		moved++
+		details = append(details, fmt.Sprintf("guest=%d reservation=%d was=%s now=%s..%s",
+			g.id, reservationID, oldWindow, newSF, newST))
 	}
-	return moved, nil
+	return details, owner, nil
+}
+
+// liveClaimInTx reports whether a live submission_claim covers the stay, read
+// on the move's own transaction (decides the deferred reason).
+func liveClaimInTx(ctx context.Context, tx pgx.Tx, reservationID int64) (bool, error) {
+	var one int
+	err := tx.QueryRow(ctx,
+		`SELECT 1 FROM submission_claim c JOIN guest g ON g.id = c.guest_id
+		  WHERE g.reservation_id = $1 AND g.archived_at IS NULL AND c.claimed_at >= $2 LIMIT 1`,
+		reservationID, liveClaimAfter()).Scan(&one)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	return err == nil, err
 }
 
 // warnIfGuestsRegistered is _warn_if_guests_registered (icalsync.py 469-493).
@@ -310,45 +321,106 @@ func expireOnCancel(ctx context.Context, pool *pgxpool.Pool, reservationID int64
 	return err
 }
 
-// cancelExistingStay is _cancel_existing_stay (icalsync.py 497-529). A stay
-// that already has a sent guest is not cancelled; an alert is raised instead.
+// lockStayGuests takes the claim path's per-guest advisory locks (all the
+// stay's guests, ascending id) in tx. Python's db.lock_key takes the id as a
+// 32-bit integer; the key matches ubyport.ClaimSendable.
+func lockStayGuests(ctx context.Context, tx pgx.Tx, reservationID int64) error {
+	rows, err := tx.Query(ctx, `SELECT id FROM guest WHERE reservation_id = $1 ORDER BY id`, reservationID)
+	if err != nil {
+		return err
+	}
+	var guestIDs []int64
+	for rows.Next() {
+		var gid int64
+		if err := rows.Scan(&gid); err != nil {
+			rows.Close()
+			return err
+		}
+		guestIDs = append(guestIDs, gid)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	for _, gid := range guestIDs {
+		if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtext($1), $2)`, "guest", int32(gid)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// cancelReservationUnlessClaimed sets status 'cancelled' only while the stay
+// is active and no live submission_claim covers it. One transaction: the
+// per-guest locks, then one UPDATE. False means skipped (the stay stays
+// active and the next sync retries). Python: _cancel_reservation_unless_claimed.
+func cancelReservationUnlessClaimed(ctx context.Context, pool *pgxpool.Pool, id int64, now string) (bool, error) {
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	if err := lockStayGuests(ctx, tx, id); err != nil {
+		return false, err
+	}
+	tag, err := tx.Exec(ctx,
+		`UPDATE reservation SET status = 'cancelled', updated_at = $1
+		  WHERE id = $2 AND status = 'active'
+		  AND NOT EXISTS (SELECT 1 FROM submission_claim c JOIN guest g ON g.id = c.guest_id
+		    WHERE g.reservation_id = reservation.id AND g.archived_at IS NULL AND c.claimed_at >= $3)`,
+		now, id, liveClaimAfter())
+	if err != nil {
+		return false, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return false, err
+	}
+	return tag.RowsAffected() == 1, nil
+}
+
+// cancelExistingStay is _cancel_existing_stay (icalsync.py). A stay already
+// has a sent guest is not cancelled; an alert is raised instead. The bool is
+// true when the cancel was deferred because a send is in flight.
 func cancelExistingStay(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string,
-	apartmentID int64, uid string, stats *SyncStats) error {
+	apartmentID int64, uid string, stats *SyncStats) (bool, error) {
 	res, found, err := selectReservation(ctx, pool, apartmentID, uid)
 	if err != nil || !found || res.Status != "active" {
-		return err
+		return false, err
 	}
 	today := time.Now().In(prague).Format(dateLayout)
 	if res.DateFrom < today {
-		return nil
+		return false, nil
 	}
 	reported, err := exists(ctx, pool,
 		`SELECT 1 FROM guest WHERE reservation_id = $1 AND submit_state = $2 LIMIT 1`,
 		res.ID, guestSent)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if reported {
 		aid, rid := apartmentID, res.ID
-		return ubyport.RaiseAlert(ctx, pool, "warning", "cancelled_after_report",
+		return false, ubyport.RaiseAlert(ctx, pool, "warning", "cancelled_after_report",
 			fmt.Sprintf("A stay from %s was cancelled in the calendar after it had already been reported to the police.", res.DateFrom),
 			"Check whether the booking was cancelled or merely moved.",
 			fmt.Sprintf("cancelled_after_report:%d", res.ID), &aid, &rid, nil,
 			ubyport.AlertParams{"date": res.DateFrom, "variant": "cancelled"})
 	}
-	if _, err := pool.Exec(ctx,
-		`UPDATE reservation SET status = 'cancelled', updated_at = $1 WHERE id = $2`,
-		ubyport.UTCNow(), res.ID); err != nil {
-		return err
+	cancelled, err := cancelReservationUnlessClaimed(ctx, pool, res.ID, ubyport.UTCNow())
+	if err != nil {
+		return false, err
+	}
+	if !cancelled {
+		log.Printf("ical_cancel_deferred_in_flight apartment_id=%d reservation_id=%d", apartmentID, res.ID)
+		return true, nil
 	}
 	if err := expireOnCancel(ctx, pool, res.ID); err != nil {
-		return err
+		return false, err
 	}
 	if err := warnIfGuestsRegistered(ctx, pool, getenv, res, apartmentID, "cancelled"); err != nil {
-		return err
+		return false, err
 	}
 	stats.Cancelled++
-	return nil
+	return false, nil
 }
 
 // existingReservation is _existing_reservation (icalsync.py 532-569). A

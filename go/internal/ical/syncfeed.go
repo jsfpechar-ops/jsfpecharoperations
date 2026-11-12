@@ -88,6 +88,99 @@ func updateRow(ctx context.Context, pool *pgxpool.Pool, table string, id int64, 
 	return err
 }
 
+// sendInFlightFn is sendInFlight; tests replace it to simulate a claim that
+// lands after the pre-check.
+var sendInFlightFn = sendInFlight
+
+// dateMove is the optional input and output of updateReservationUnlessClaimed.
+// In: the apartment and the new dates to fit the unsent guest windows to.
+// Out: Fitted (windows fitted) and Reason when the move was skipped:
+// "claimed" (a live claim covers the stay) or "changed" (the stored dates moved).
+type dateMove struct {
+	ApartmentID    int64
+	NewFrom, NewTo string
+	Fitted         int
+	Reason         string
+}
+
+// updateReservationUnlessClaimed writes a date move only while no live
+// submission_claim covers the stay and the stored dates are still
+// storedFrom..storedTo. One transaction: the claim path's per-guest advisory
+// locks (lockStayGuests, ascending id, same key as ubyport.ClaimSendable),
+// then one UPDATE. When move is set and the UPDATE applied, the unsent guest
+// windows are fitted in the same transaction under the same locks; a skipped
+// move changes nothing. False means skipped; the caller keeps the stored dates
+// and the next sync retries. Python: _update_reservation_unless_claimed.
+func updateReservationUnlessClaimed(ctx context.Context, pool *pgxpool.Pool, id int64, storedFrom, storedTo string, cols map[string]any, move *dateMove) (bool, error) {
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	if err := lockStayGuests(ctx, tx, id); err != nil {
+		return false, err
+	}
+	keys := make([]string, 0, len(cols))
+	for k := range cols {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	sets := make([]string, len(keys))
+	args := make([]any, 0, len(keys)+4)
+	for i, k := range keys {
+		sets[i] = fmt.Sprintf("%s = $%d", k, i+1)
+		args = append(args, cols[k])
+	}
+	args = append(args, id, storedFrom, storedTo, liveClaimAfter())
+	n := len(keys)
+	tag, err := tx.Exec(ctx,
+		fmt.Sprintf(`UPDATE reservation SET %s WHERE id = $%d
+		  AND date_from IS NOT DISTINCT FROM $%d AND date_to IS NOT DISTINCT FROM $%d
+		  AND NOT EXISTS (SELECT 1 FROM submission_claim c JOIN guest g ON g.id = c.guest_id
+		    WHERE g.reservation_id = reservation.id AND g.archived_at IS NULL AND c.claimed_at >= $%d)`,
+			strings.Join(sets, ", "), n+1, n+2, n+3, n+4),
+		args...)
+	if err != nil {
+		return false, err
+	}
+	applied := tag.RowsAffected() == 1
+	var details []string
+	var owner *int64
+	if move != nil {
+		if applied {
+			now, ok := cols["updated_at"].(string)
+			if !ok || now == "" {
+				return false, fmt.Errorf("updateReservationUnlessClaimed: cols[updated_at] must be a non-empty string, got %T", cols["updated_at"])
+			}
+			if details, owner, err = fitUnsentGuestWindows(ctx, tx, id, move.ApartmentID, move.NewFrom, move.NewTo, now); err != nil {
+				return false, err
+			}
+		} else {
+			live, err := liveClaimInTx(ctx, tx, id)
+			if err != nil {
+				return false, err
+			}
+			move.Reason = "changed"
+			if live {
+				move.Reason = "claimed"
+			}
+		}
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return false, err
+	}
+	if move != nil {
+		move.Fitted = len(details)
+		// After the commit: a crash can lose an audit line, never split the move.
+		for _, d := range details {
+			if err := ubyport.Audit(ctx, pool, "guest_stay_window_fitted", d, owner); err != nil {
+				return applied, err
+			}
+		}
+	}
+	return applied, nil
+}
+
 func anyStr(p *string) any {
 	if p == nil {
 		return nil
@@ -240,8 +333,15 @@ func SyncFeed(ctx context.Context, pool *pgxpool.Pool, getenv func(string) strin
 			continue
 		}
 		if ev.IsCancelled {
-			if err := cancelExistingStay(ctx, pool, getenv, feed.ApartmentID, ev.UID, &stats); err != nil {
+			deferred, err := cancelExistingStay(ctx, pool, getenv, feed.ApartmentID, ev.UID, &stats)
+			if err != nil {
 				return stats, err
+			}
+			if deferred {
+				// Still alive until the send is resolved: the sweep below must
+				// not cancel it, and the digest must not be stored.
+				seen[ev.UID] = true
+				deferredInFlight = true
 			}
 			continue
 		}
@@ -287,9 +387,10 @@ func SyncFeed(ctx context.Context, pool *pgxpool.Pool, getenv func(string) strin
 		if s.Status == "ignored" {
 			continue
 		}
+		var move *dateMove
 		datesChanged := s.DateFrom != ev.DateFrom || s.DateTo != ev.DateTo
 		if datesChanged {
-			inFlight, err := sendInFlight(ctx, pool, s.ID)
+			inFlight, err := sendInFlightFn(ctx, pool, s.ID)
 			if err != nil {
 				return stats, err
 			}
@@ -322,10 +423,37 @@ func SyncFeed(ctx context.Context, pool *pgxpool.Pool, getenv func(string) strin
 		}
 		if len(changed) > 0 {
 			changed["updated_at"] = now
-			if err := updateRow(ctx, pool, "reservation", s.ID, changed); err != nil {
-				return stats, err
+			applied := false
+			if datesChanged {
+				move = &dateMove{ApartmentID: feed.ApartmentID, NewFrom: ev.DateFrom, NewTo: ev.DateTo}
+				ok, err := updateReservationUnlessClaimed(ctx, pool, s.ID, s.DateFrom, s.DateTo, changed, move)
+				if err != nil {
+					return stats, err
+				}
+				applied = ok
+				if !applied {
+					// A claim landed after the pre-check: keep the stored dates; the next sync retries.
+					delete(changed, "date_from")
+					delete(changed, "date_to")
+					datesChanged = false
+					deferredInFlight = true
+					event := "ical_dates_deferred_in_flight"
+					if move.Reason == "changed" {
+						event = "ical_dates_deferred_changed"
+					}
+					log.Printf("%s apartment_id=%d reservation_id=%d stored=%s..%s calendar=%s..%s",
+						event, feed.ApartmentID, s.ID, s.DateFrom, s.DateTo, ev.DateFrom, ev.DateTo)
+				}
 			}
-			stats.Updated++
+			if !applied && len(changed) > 1 {
+				if err := updateRow(ctx, pool, "reservation", s.ID, changed); err != nil {
+					return stats, err
+				}
+				applied = true
+			}
+			if applied {
+				stats.Updated++
+			}
 		}
 		if s.Status == "cancelled" {
 			// The stay is back: reopen guest access that the cancellation closed.
@@ -339,13 +467,9 @@ func SyncFeed(ctx context.Context, pool *pgxpool.Pool, getenv func(string) strin
 			}
 		}
 		if datesChanged {
-			moved, err := fitUnsentGuestWindows(ctx, pool, s.ID, feed.ApartmentID, ev.DateFrom, ev.DateTo)
-			if err != nil {
-				return stats, err
-			}
-			if moved > 0 {
+			if move != nil && move.Fitted > 0 {
 				log.Printf("ical_dates_moved_guests apartment_id=%d reservation_id=%d guests=%d",
-					feed.ApartmentID, s.ID, moved)
+					feed.ApartmentID, s.ID, move.Fitted)
 			}
 			reported, err := countGuests(ctx, pool, s.ID, guestSent)
 			if err != nil {
@@ -448,8 +572,14 @@ func SyncFeed(ctx context.Context, pool *pgxpool.Pool, getenv func(string) strin
 			}
 			continue
 		}
-		if err := updateRow(ctx, pool, "reservation", r.ID, map[string]any{"status": "cancelled", "updated_at": now}); err != nil {
+		cancelled, err := cancelReservationUnlessClaimed(ctx, pool, r.ID, now)
+		if err != nil {
 			return stats, err
+		}
+		if !cancelled {
+			deferredInFlight = true
+			log.Printf("ical_cancel_deferred_in_flight apartment_id=%d reservation_id=%d", feed.ApartmentID, r.ID)
+			continue
 		}
 		if err := expireOnCancel(ctx, pool, r.ID); err != nil {
 			return stats, err

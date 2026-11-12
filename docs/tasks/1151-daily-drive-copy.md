@@ -1,4 +1,6 @@
-# 1134: Google Drive copy daily instead of weekly
+# 1151: Google Drive copy daily instead of weekly
+
+> Renumbered from 1134 on 2026-11-12: main took 1134 (#933). Commits made before the rename say "1134".
 
 Status: review
 Depends on: none | Base commit: current HEAD of the branch | Branch: claude/fervent-cray-1qsrfa
@@ -34,7 +36,7 @@ No other file may change. Do not edit `App/` or `go/`. Note: `docs/plans/portabl
 
 ## 4. Steps
 
-Commit each step as `1134 step k` (`git add <that file>`, `git commit -m "1134 step k"`). No push, no PR. Use the Edit tool for each replacement; "old" must match exactly.
+Commit each step as `1151 step k` (`git add <that file>`, `git commit -m "1151 step k"`). No push, no PR. Use the Edit tool for each replacement; "old" must match exactly.
 
 ### Step 1: backup-gdrive.sh
 
@@ -136,13 +138,13 @@ Verify: `grep -nE 'Weekly|weekly|Sunday|\* \* 0' deploy/lightsail/README.md | ta
 ### Step 7: docs/plans/portable-disaster-recovery.md
 
 Old: `- Drive copy: weekly, Sunday 04:00 UTC, optional cron, `*.age` only, 30-day retention (`backup-gdrive.sh:53-58`, `setup-server.sh:75`).`
-New: `- Drive copy: daily, 04:00 UTC (changed from weekly by brief 1134, 2026-11-12), optional cron, `*.age` only, 30-day retention, no snapshot of its own (`backup-gdrive.sh`, `setup-server.sh:75`).`
+New: `- Drive copy: daily, 04:00 UTC (changed from weekly by brief 1151, 2026-11-12), optional cron, `*.age` only, 30-day retention, no snapshot of its own (`backup-gdrive.sh`, `setup-server.sh:75`).`
 
 Old: `1. Off-AWS data can be 7 days old (Drive is weekly). Whether the Sunday cron is installed in production is unverified.`
-New: `1. Off-AWS data is up to 1 day old once brief 1134 is live (Drive is daily). Whether the 04:00 cron is installed in production is unverified until the owner checks `crontab -l`.`
+New: `1. Off-AWS data is up to 1 day old once brief 1151 is live (Drive is daily). Whether the 04:00 cron is installed in production is unverified until the owner checks `crontab -l`.`
 
 Old: `| 4 | Drive copy daily instead of weekly (cron line change, doc) | S | Haiku brief + owner | 2 |`
-New: `| 4 | Drive copy daily instead of weekly (cron line change, doc) (brief 1134) | S | Haiku brief + owner | 2 |`
+New: `| 4 | Drive copy daily instead of weekly (cron line change, doc) (brief 1151) | S | Haiku brief + owner | 2 |`
 
 Verify: `git diff --stat | tail -30`.
 
@@ -165,8 +167,8 @@ Expected: no output from the first two; lint shows no ERROR for this file; the l
 - [ ] `backup-gdrive.sh` no longer calls `./scripts/backup.sh` and has the today-check; shellcheck clean.
 - [ ] Both cron lines (setup-server.sh, LIGHTSAIL.md, README.md) read `0 4 * * *`.
 - [ ] No doc says the Drive copy is weekly, Sunday or 7 days old.
-- [ ] Lint has no ERROR for 1134.
-- [ ] Seven commits `1134 step 1` to `1134 step 7`.
+- [ ] Lint has no ERROR for 1151.
+- [ ] Seven commits `1151 step 1` to `1151 step 7`.
 
 ## 8. Stop and ask
 
@@ -174,7 +176,7 @@ Stop, and write the report, if an old text is not found, shellcheck fails twice,
 
 ## 9. Report
 
-Write `docs/tasks/1134-report.md` (600 tokens at most), set `Status: review` in this file, and include the owner steps below verbatim.
+Write `docs/tasks/1151-report.md` (600 tokens at most), set `Status: review` in this file, and include the owner steps below verbatim.
 
 ### Owner steps (after the PR is merged and deployed; plain words)
 
