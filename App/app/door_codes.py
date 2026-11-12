@@ -820,11 +820,20 @@ def _revoke_one(row_id: int) -> None:
             row["lock_id"],
             row["provider_code_id"] or "",
         )
-        db.execute(
+        if db.execute(
             "UPDATE door_code SET state = ?, revoked_at = ?, pin_enc = NULL, claimed_at = NULL, "
             "updated_at = ? WHERE id = ? AND state = ?",
             (REVOKED, now_iso, now_iso, row_id, REVOKE_PENDING),
-        )
+        ) != 1:
+            # The lock code is gone but the row moved on (the stay came back during the
+            # delete). No audit "revoked", no mail; leave the state and flag it.
+            db.audit(
+                "door_code_revoke_lost_race",
+                f"door_code={row_id}",
+                actor="system",
+                owner_user_id=apartment["owner_user_id"],
+            )
+            return
         db.audit(
             "door_code_revoked",
             f"door_code={row_id}",
