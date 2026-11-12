@@ -1,6 +1,6 @@
 # 1162: a cleaning code is called absent only when the lock's whole answer says so
 
-Status: todo
+Status: review
 Depends on: 1160, 1160b, 1160c (merged) | Base commit: HEAD of branch claude/zealous-maxwell-a7ub54 | Branch: task/1162-cleaning-code-paging
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
