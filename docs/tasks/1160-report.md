@@ -1,4 +1,4 @@
-# 1157 report: door lookup hardening
+# 1160 report: door lookup hardening
 
 Status: review
 
@@ -9,8 +9,8 @@ Status: review
 - App/tests/test_door_code_ambiguous_delete.py: fixture patches `code_is_listed`; 2 assertions changed to `lookup_failed:<n>`
 - App/tests/test_door_code_recancel.py: fixture patches `code_is_listed`
 - App/tests/test_door_code_lookup_pages.py: new, 9 tests
-- docs/tasks/1157-door-lookup-hardening.md: line 3 set to `Status: review`
-- docs/tasks/1157-door-lookup-hardening-report.md: this file
+- docs/tasks/1160-door-lookup-hardening.md: line 3 set to `Status: review`
+- docs/tasks/1160-door-lookup-hardening-report.md: this file
 
 ## Commands (last lines of output)
 
@@ -51,9 +51,9 @@ Not changed here: `cleaning_codes._find` has the same page-1 limit with an exact
 
 ## Deviations
 
-- Step 1: the worktree was already on `task/1157-door-lookup-hardening`, so `git switch -c` was not run. The brief's expected branch `claude/zealous-maxwell-a7ub54` was not checked out; the 1156 check (`_tell_host_reissued`) returned 1.
-- Commits: executor.md asks for a commit after each step, so the work is in `1157 step 2` (665ffe01) and `1157 step 3` (729dc460), not one commit at step 4. Step 4's commit has the same five files.
-- Step 6 was run with the test-map glob (`tests/test_door_code*.py tests/test_ttlock*.py ...`), not only the 1157 files.
+- Step 1: the worktree was already on `task/1160-door-lookup-hardening`, so `git switch -c` was not run. The brief's expected branch `claude/zealous-maxwell-a7ub54` was not checked out; the 1156 check (`_tell_host_reissued`) returned 1.
+- Commits: executor.md asks for a commit after each step, so the work is in `1160 step 2` (665ffe01) and `1160 step 3` (729dc460), not one commit at step 4. Step 4's commit has the same five files.
+- Step 6 was run with the test-map glob (`tests/test_door_code*.py tests/test_ttlock*.py ...`), not only the 1160 files.
 
 ## Questions
 
@@ -61,5 +61,5 @@ Not changed here: `cleaning_codes._find` has the same page-1 limit with an exact
 
 ## Owner steps left
 
-1. Open the PR for `task/1157-door-lookup-hardening` as a draft; paste the outbound-request reason above into its description.
-2. When CI is green and the review is done, run `scripts/merge-pr-on-green.sh <PR number>`. Merge 1157 before 1157b.
+1. Open the PR for `task/1160-door-lookup-hardening` as a draft; paste the outbound-request reason above into its description.
+2. When CI is green and the review is done, run `scripts/merge-pr-on-green.sh <PR number>`. Merge 1160 before 1160b.

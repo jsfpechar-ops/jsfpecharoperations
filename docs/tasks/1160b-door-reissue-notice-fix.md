@@ -1,7 +1,7 @@
-# 1157b: tell the host after the new door code exists, and say the true thing
+# 1160b: tell the host after the new door code exists, and say the true thing
 
 Status: review
-Depends on: 1157 | Base commit: HEAD of branch claude/zealous-maxwell-a7ub54 after 1157 is merged | Branch: task/1157b-door-reissue-notice-fix
+Depends on: 1160 | Base commit: HEAD of branch claude/zealous-maxwell-a7ub54 after 1160 is merged | Branch: task/1160b-door-reissue-notice-fix
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
@@ -10,7 +10,7 @@ The 1156 notice is sent before `issue()` runs, so the host reads "the guest gets
 
 ## 2. Context
 
-Rules: rule 9 (one explanation in one place); host copy in en, cs and vi (`App/app/host_i18n.py`, `App/app/host_vi_i18n.py`); `tests/test_0280_short_notifications.py`: every `notification.*.title` is at most 60 characters after removing `%(x)s` placeholders; no em dashes (`test_no_em_dashes.py`); no PIN in a notice. No migration, no dependency, no new state. Every script below asserts its anchors exist exactly once and stops with an `AssertionError` if not (then STOP, §8). This brief replaces the copy and the call position of 1156; it overlaps 1157 in `door_codes.py` (different functions): 1157 goes first.
+Rules: rule 9 (one explanation in one place); host copy in en, cs and vi (`App/app/host_i18n.py`, `App/app/host_vi_i18n.py`); `tests/test_0280_short_notifications.py`: every `notification.*.title` is at most 60 characters after removing `%(x)s` placeholders; no em dashes (`test_no_em_dashes.py`); no PIN in a notice. No migration, no dependency, no new state. Every script below asserts its anchors exist exactly once and stops with an `AssertionError` if not (then STOP, §8). This brief replaces the copy and the call position of 1156; it overlaps 1160 in `door_codes.py` (different functions): 1160 goes first.
 
 **Item 2 (order).** `_reissue_lost_pin` today calls `_tell_host_reissued(row_id, owner_user_id)` and then `issue(row_id, allow_gateway=True)`. `issue()` returns `True` when it issued, `False` when it deferred or failed (state `retrying`, `failed`, or lease lost). New order: `issued = issue(...)`, then `_tell_host_reissued` only `if issued`. A failed `issue()` already raises the existing `door_code_failed` or `door_code_delayed` alert and mail, which tell the host to act. Accepted gap: if the first `issue()` fails and a later retry succeeds, no re-issue notice is sent (the failure alerts resolve themselves); `last_error` cannot mark it because `issue()` overwrites it with the failure reason.
 
@@ -29,13 +29,13 @@ Anchors: `door_codes.py` the docstring and query of `_tell_host_reissued`, the `
 | App/app/host_vi_i18n.py | edit | vi: the same |
 | App/tests/test_alert_language.py | edit | one `STORED_KINDS` entry |
 | App/tests/test_door_code_reissue_notice.py | edit | guest e-mail in 3 tests, 2 new tests, copy test for both wordings |
-| docs/tasks/1157b-report.md | create | report (§9) |
+| docs/tasks/1160b-report.md | create | report (§9) |
 
 No other file may change.
 
 ## 4. Steps
 
-**Step 1. Branch.** Run `git branch --show-current | tail -30`; expected `claude/zealous-maxwell-a7ub54`. Confirm 1157 is in: `grep -c "def code_is_listed" App/app/ttlock.py | tail -30` -> `1` (else STOP). Then `git switch -c task/1157b-door-reissue-notice-fix | tail -30`; expected `Switched to a new branch`.
+**Step 1. Branch.** Run `git branch --show-current | tail -30`; expected `claude/zealous-maxwell-a7ub54`. Confirm 1160 is in: `grep -c "def code_is_listed" App/app/ttlock.py | tail -30` -> `1` (else STOP). Then `git switch -c task/1160b-door-reissue-notice-fix | tail -30`; expected `Switched to a new branch`.
 
 **Step 2. Code.** From `App/` run:
 ```bash
@@ -163,7 +163,7 @@ def swap(old, new, count=1):
     s = s.replace(old, new)
 
 swap('"""1156: the host is told once, without the PIN, when a lost door code is made again."""',
-     '"""1156, 1157b: the host is told once, without the PIN, after a lost door code is replaced."""')
+     '"""1156, 1160b: the host is told once, without the PIN, after a lost door code is replaced."""')
 swap('''def _open_cards(stay):
     return db.query(
         "SELECT * FROM alert WHERE kind = ? AND reservation_id = ? AND resolved_at IS NULL",
@@ -280,7 +280,7 @@ EOF
 ```
 Command: `.venv/bin/python -m pytest tests/test_door_code_reissue_notice.py tests/test_alert_language.py tests/test_0280_short_notifications.py tests/test_host_i18n.py tests/test_go_host_i18n.py tests/test_no_em_dashes.py -q --tb=short 2>&1 | tail -30` -> `66 passed` (the notice file alone is 11: 8 tests, one of them for en, cs and vi).
 
-**Step 5. Commit.** `git add App/app/door_codes.py App/app/host_i18n.py App/app/host_vi_i18n.py App/tests/test_alert_language.py App/tests/test_door_code_reissue_notice.py && git commit -m "1157b: tell the host after the new door code exists, and say the true thing" | tail -30`.
+**Step 5. Commit.** `git add App/app/door_codes.py App/app/host_i18n.py App/app/host_vi_i18n.py App/tests/test_alert_language.py App/tests/test_door_code_reissue_notice.py && git commit -m "1160b: tell the host after the new door code exists, and say the true thing" | tail -30`.
 Commit message ends with the attribution lines the session reminder gives.
 
 **Step 6. Revert-bite, four runs.** Each run, from the repo root: apply the `sed`, run `T`, expect the named result, then `git checkout App/app | tail -30`. `T` is `cd App && .venv/bin/python -m pytest tests/test_door_code_reissue_notice.py -q --tb=no -rf 2>&1 | tail -30`. After each `sed`, `git diff --stat | tail -30` must show `1 file changed, 1 insertion(+), 1 deletion(-)`.
@@ -294,11 +294,11 @@ If a run does not fail as stated, STOP (§8). Finally `git status --short | tail
 
 **Step 8. Postgres.** From `App/`: `UBYHOST_DATABASE_URL=postgresql://uby:uby@localhost:5432/ubytest .venv/bin/python -m pytest tests/test_door_code_reissue_notice.py tests/test_door_code_lookup_pages.py -q --tb=short 2>&1 | tail -30` -> all pass (or report `not run: no Postgres`).
 
-**Step 9. Report.** Write `docs/tasks/1157b-report.md` (§9), set this file's line 3 to `Status: review`, then `python3 scripts/context_lint.py | tail -3` from the repo root.
+**Step 9. Report.** Write `docs/tasks/1160b-report.md` (§9), set this file's line 3 to `Status: review`, then `python3 scripts/context_lint.py | tail -3` from the repo root.
 
 ## 5. Do not touch
 
-`go/` (the new keys are in no `i18n_keys.txt`, so `test_go_host_i18n.py` needs no regeneration), `docs/context/*`, migrations, `App/app/alerts.py`, `App/app/mail_notify.py`, `ttlock.py`, the 1157 functions. Hard rules: 2 (no new personal data: the notice holds property name and date only; the guest e-mail is read to choose the wording and never printed), 3, 4, 9.
+`go/` (the new keys are in no `i18n_keys.txt`, so `test_go_host_i18n.py` needs no regeneration), `docs/context/*`, migrations, `App/app/alerts.py`, `App/app/mail_notify.py`, `ttlock.py`, the 1160 functions. Hard rules: 2 (no new personal data: the notice holds property name and date only; the guest e-mail is read to choose the wording and never printed), 3, 4, 9.
 
 ## 6. Commands
 
@@ -316,7 +316,7 @@ All Python from `App/`, each ending `2>&1 | tail -30`: Steps 2 to 8 give the exa
 
 Stop, and write the report, if:
 
-- an anchor is not found (an `AssertionError` from a script), or 1157 is not in the tree;
+- an anchor is not found (an `AssertionError` from a script), or 1160 is not in the tree;
 - a test fails twice;
 - a revert-bite run does not fail as stated;
 - you reach 25 tool calls or about 50k tokens (write the report as `blocked`, see executor.md);
@@ -328,7 +328,7 @@ Stop, and write the report, if:
 
 ## 9. Report
 
-Write `docs/tasks/1157b-report.md` (600 tokens at most) and set `Status: review`. The report has:
+Write `docs/tasks/1160b-report.md` (600 tokens at most) and set `Status: review`. The report has:
 
 1. The files changed (`git diff --stat`).
 2. Each command, with the last 5 lines of its output.
@@ -343,6 +343,6 @@ Write `docs/tasks/1157b-report.md` (600 tokens at most) and set `Status: review`
 
 ## Owner steps
 
-1. Open the pull request for `task/1157b-door-reissue-notice-fix` as a draft after 1157 is merged.
+1. Open the pull request for `task/1160b-door-reissue-notice-fix` as a draft after 1160 is merged.
 2. When CI is green and the review is done, run `scripts/merge-pr-on-green.sh <PR number>` (rule 8).
 3. A reader of Czech and Vietnamese should check the new sentences in the diff of `host_i18n.py` and `host_vi_i18n.py`.

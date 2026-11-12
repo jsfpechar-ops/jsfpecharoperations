@@ -1,8 +1,8 @@
-# 1157b report: door-code re-issue notice
+# 1160b report: door-code re-issue notice
 
 Status: review
 
-## Files changed (vs 1157 merge 627515a8)
+## Files changed (vs 1160 merge 627515a8)
 
 - App/app/door_codes.py: notice only after issue() returns True; `_no_email` kind, dedupe key and mail variant when the stay has no guest e-mail; the SQL reads `reservation_claim.email` through a LEFT JOIN.
 - App/app/host_i18n.py: en and cs, 4 keys changed and 4 added each (the old "stopped working" sentences are gone).
@@ -39,8 +39,8 @@ Status: review
 
 ## Deviations
 
-- Step 1: the worktree was already on task/1157b-door-reissue-notice-fix, not claude/zealous-maxwell-a7ub54. No branch was created or switched.
-- Commits were made per step (`1157b step 2`, `step 3`, `step 4`), as executor.md asks. Step 5 has no separate commit.
+- Step 1: the worktree was already on task/1160b-door-reissue-notice-fix, not claude/zealous-maxwell-a7ub54. No branch was created or switched.
+- Commits were made per step (`1160b step 2`, `step 3`, `step 4`), as executor.md asks. Step 5 has no separate commit.
 - Step 3 expected 3 changed files; the diff shows 2 because door_codes.py was already committed in step 2.
 - Test names in the bite lines are the full pytest ids.
 
@@ -50,6 +50,6 @@ Status: review
 
 ## Owner steps left
 
-1. Open the PR for task/1157b-door-reissue-notice-fix as a draft after 1157 is merged.
+1. Open the PR for task/1160b-door-reissue-notice-fix as a draft after 1160 is merged.
 2. Ask a Czech and a Vietnamese reader to check the new sentences in the diff of host_i18n.py and host_vi_i18n.py.
 3. When CI is green, run `scripts/merge-pr-on-green.sh <PR number>`.

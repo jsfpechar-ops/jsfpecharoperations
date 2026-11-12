@@ -1,12 +1,12 @@
-# 1157c: a lock answer without a list is unknown, and a full page always reads on
+# 1160c: a lock answer without a list is unknown, and a full page always reads on
 
 Status: review
-Depends on: 1157b (merged) | Base commit: HEAD of branch claude/zealous-maxwell-a7ub54 | Branch: task/1157c-door-lookup-answer-guard
+Depends on: 1160b (merged) | Base commit: HEAD of branch claude/zealous-maxwell-a7ub54 | Branch: task/1160c-door-lookup-answer-guard
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
 
-`ttlock.code_is_listed` (1157) calls a door code gone after one call when the lock answers 200 without a `list` array, and trusts `pages` even when the page is full. Both can mark a live PIN `revoked` (1155b) or orphan it (1155). Fix: no `list` array means unknown (`None`); a full page of 20 always reads on; only a short or empty page ends the list.
+`ttlock.code_is_listed` (1160) calls a door code gone after one call when the lock answers 200 without a `list` array, and trusts `pages` even when the page is full. Both can mark a live PIN `revoked` (1155b) or orphan it (1155). Fix: no `list` array means unknown (`None`); a full page of 20 always reads on; only a short or empty page ends the list.
 
 ## 2. Context
 
@@ -31,7 +31,7 @@ Faults: (1) `{}`, `{"pages": 1}` and `{"list": None, "pages": 0}` give `[]` and 
 
 New rule: `list` not an array -> `None`. Id found -> `True`. Page shorter than `LIST_PAGE_SIZE` (an empty array included) -> `False`. Otherwise read the next page; after `LIST_MAX_PAGES` -> `None`. `pages` is no longer read. A valid empty array with a junk `pages` (`{"list": [], "pages": "x"}`) is a real end of list, so it stays `False` (the test pins that).
 
-The match key stays the id (1157 decision): the new test adds a code with the row's name but another `keyboardPwdId` and expects gone, so a match on name would fail it.
+The match key stays the id (1160 decision): the new test adds a code with the row's name but another `keyboardPwdId` and expects gone, so a match on name would fail it.
 
 ## 3. Files
 
@@ -39,17 +39,17 @@ The match key stays the id (1157 decision): the new test adds a code with the ro
 |---|---|---|
 | App/app/ttlock.py | edit | `code_is_listed`: list guard, full page reads on, docstring |
 | App/tests/test_door_code_lookup_pages.py | edit | append 4 tests (8 cases with the parametrized one) |
-| docs/tasks/1157c-report.md | create | report (§9) |
+| docs/tasks/1160c-report.md | create | report (§9) |
 
 No other file may change.
 
 ## 4. Steps
 
-**Step 1. Branch.** Run `git branch --show-current | tail -30`; expected `claude/zealous-maxwell-a7ub54`. Confirm 1157b is in: `grep -c "def code_is_listed" App/app/ttlock.py | tail -30` -> `1` and `grep -c "last_page" App/app/ttlock.py | tail -30` -> `4` (else STOP). Then `git switch -c task/1157c-door-lookup-answer-guard | tail -30`; expected `Switched to a new branch`.
+**Step 1. Branch.** Run `git branch --show-current | tail -30`; expected `claude/zealous-maxwell-a7ub54`. Confirm 1160b is in: `grep -c "def code_is_listed" App/app/ttlock.py | tail -30` -> `1` and `grep -c "last_page" App/app/ttlock.py | tail -30` -> `4` (else STOP). Then `git switch -c task/1160c-door-lookup-answer-guard | tail -30`; expected `Switched to a new branch`.
 
 **Step 2. Apply the diff.** From the repo root write the diff below to a file and apply it (it fails, changing nothing, if an anchor is missing; then STOP, §8):
 ```bash
-cat > /tmp/1157c.diff <<'EOF'
+cat > /tmp/1160c.diff <<'EOF'
 diff --git a/App/app/ttlock.py b/App/app/ttlock.py
 index 03d115f4..71a69e14 100644
 --- a/App/app/ttlock.py
@@ -151,13 +151,13 @@ index ce92a76c..bcca5e3d 100644
 +    assert _fresh_row(row) == door_codes.PIN_PRESENT
 +    assert lock.list_calls == 2
 EOF
-git apply --check /tmp/1157c.diff && git apply /tmp/1157c.diff && git diff --stat | tail -30
+git apply --check /tmp/1160c.diff && git apply /tmp/1160c.diff && git diff --stat | tail -30
 ```
 Expected: `2 files changed, 61 insertions(+), 11 deletions(-)`.
 
 **Step 3. Tests.** From `App/`: `.venv/bin/python -m pytest tests/test_door_code_lookup_pages.py tests/test_door_code_ambiguous_delete.py tests/test_door_code_recancel.py tests/test_door_code_lost_pin.py tests/test_door_code_cancel_guard.py -q --tb=short 2>&1 | tail -30` -> `49 passed`.
 
-**Step 4. Commit.** `git add App/app/ttlock.py App/tests/test_door_code_lookup_pages.py && git commit -m "1157c: a lock answer without a list is unknown; a full page always reads on" | tail -30`.
+**Step 4. Commit.** `git add App/app/ttlock.py App/tests/test_door_code_lookup_pages.py && git commit -m "1160c: a lock answer without a list is unknown; a full page always reads on" | tail -30`.
 
 **Step 5. Revert-bite, four runs.** Each run, from the repo root: apply the `sed`, run `T`, expect the named result, then `git checkout App/app | tail -30`. `T` is `cd App && .venv/bin/python -m pytest tests/test_door_code_lookup_pages.py tests/test_door_code_ambiguous_delete.py -q --tb=no -rf 2>&1 | tail -30`. After each `sed`, `git diff --stat | tail -30` must show `1 file changed` (the bite is 1 to 10 lines of ttlock.py, never more).
 - (a) Guard off, a missing list is read as a list: `sed -i 's/not isinstance(items, list)/False/' App/app/ttlock.py` then `T`: `5 failed, 19 passed` (the five `answer_without_a_list_is_unknown_and_never_revokes` cases).
@@ -170,7 +170,7 @@ If a run does not fail as stated, STOP (§8). Finally `git status --short | tail
 
 **Step 7. Postgres.** From `App/`: `UBYHOST_DATABASE_URL=postgresql://uby:uby@localhost:5432/ubytest .venv/bin/python -m pytest tests/test_door_code_lookup_pages.py tests/test_door_code_ambiguous_delete.py tests/test_door_code_recancel.py -q --tb=short 2>&1 | tail -30` -> all pass (or report `not run: no Postgres`).
 
-**Step 8. Report.** Write `docs/tasks/1157c-report.md` (§9), set this file's line 3 to `Status: review`, then `python3 scripts/context_lint.py | tail -3` from the repo root.
+**Step 8. Report.** Write `docs/tasks/1160c-report.md` (§9), set this file's line 3 to `Status: review`, then `python3 scripts/context_lint.py | tail -3` from the repo root.
 
 ## 5. Do not touch
 
@@ -182,7 +182,7 @@ All Python from `App/`, each ending `2>&1 | tail -30`: Steps 3 to 7 give the exa
 
 ## 7. Acceptance
 
-- [ ] Step 3 shows `49 passed` (the 1157 file now has 17 tests).
+- [ ] Step 3 shows `49 passed` (the 1160 file now has 17 tests).
 - [ ] The four revert-bite runs fail as stated and `git status --short` is empty afterwards.
 - [ ] The door-codes row passes with only the `playwright` skips; ruff passes; Postgres run passes or is reported as not run.
 - [ ] The report says the outbound-request reason is unchanged except that an exact-multiple-of-20 list costs one extra call.
@@ -203,7 +203,7 @@ Stop, and write the report, if:
 
 ## 9. Report
 
-Write `docs/tasks/1157c-report.md` (600 tokens at most) and set `Status: review`. The report has:
+Write `docs/tasks/1160c-report.md` (600 tokens at most) and set `Status: review`. The report has:
 
 1. The files changed (`git diff --stat`).
 2. Each command, with the last 5 lines of its output.
@@ -218,5 +218,5 @@ Write `docs/tasks/1157c-report.md` (600 tokens at most) and set `Status: review`
 
 ## Owner steps
 
-1. Open the pull request for `task/1157c-door-lookup-answer-guard` as a draft.
+1. Open the pull request for `task/1160c-door-lookup-answer-guard` as a draft.
 2. When CI is green and the review is done, run `scripts/merge-pr-on-green.sh <PR number>` (rule 8).

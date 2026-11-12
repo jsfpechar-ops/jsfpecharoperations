@@ -1,4 +1,4 @@
-# 1157c report: lookup answer guard
+# 1160c report: lookup answer guard
 
 Status: review
 
@@ -7,9 +7,9 @@ Status: review
 ```
 App/app/ttlock.py                        | 20 ++++++------
 App/tests/test_door_code_lookup_pages.py | 52 ++++++++++++++++++++++++++++++++
-docs/tasks/1157c-door-lookup-answer-guard.md (status line 3 only)
+docs/tasks/1160c-door-lookup-answer-guard.md (status line 3 only)
 ```
-Commit: `f83d6a83 1157c: a lock answer without a list is unknown; a full page always reads on`
+Commit: `f83d6a83 1160c: a lock answer without a list is unknown; a full page always reads on`
 
 ## 2. Commands (last 5 lines)
 
@@ -38,7 +38,7 @@ Commit: `f83d6a83 1157c: a lock answer without a list is unknown; a full page al
 
 ## 5. Deviations
 
-- Step 1: did not run `git switch -c`. The worktree was already on `task/1157c-door-lookup-answer-guard`. The brief's expected branch name `claude/zealous-maxwell-a7ub54` did not match the checked-out branch; the 1157b merge (b5a7b358) is in history.
+- Step 1: did not run `git switch -c`. The worktree was already on `task/1160c-door-lookup-answer-guard`. The brief's expected branch name `claude/zealous-maxwell-a7ub54` did not match the checked-out branch; the 1160b merge (b5a7b358) is in history.
 - Step 2: patch saved to the scratchpad, not `/tmp`. `git apply --check` passed without edits.
 - Step 8: no PR opened, no push (per the brief's owner steps and the instruction for this run).
 - Step 7: did not check the backend was actually Postgres; the tests passed with the URL set.
@@ -49,5 +49,5 @@ None.
 
 ## 7. Owner steps left
 
-1. Open a draft PR for `task/1157c-door-lookup-answer-guard`.
+1. Open a draft PR for `task/1160c-door-lookup-answer-guard`.
 2. When CI is green and reviewed: `scripts/merge-pr-on-green.sh <PR number>`.

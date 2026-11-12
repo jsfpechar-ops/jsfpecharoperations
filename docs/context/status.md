@@ -10,7 +10,7 @@ Updated: 2026-11-12.
 - AI: `havel,leon,guide_import` (`guide_translate` off). Stripe test. Guest QR 404 on both when the owner has no IBAN.
 
 ## Now
-- 11-12: #933/#937/#941/#942 merged. Door lookup hotfix (1157/1157b/1157c): PR #943, review next.
+- 11-12: #933/#937/#941/#942 merged. Door lookup hotfix (1160/1160b/1160c): PR #943, review next.
 - 11-10 live: 1085/1086 police letter paste (#882, #892); 1089/1090 under-15 signature (#885, #888); 1091/1093 short guest titles (#883, #887); 1092 head-count single writer (#884); 1094 H0 check (#893); 1096 Save row, leave warning (#894).
 - 1120-1123b ready
 - Building: 1095 head-count H1 (flag `UBYHOST_HEADCOUNT_LEAD_LIVE` off). Next: H2a, H2b, H3, H4, guest form C.

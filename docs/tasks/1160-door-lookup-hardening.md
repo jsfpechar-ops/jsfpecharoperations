@@ -1,7 +1,7 @@
-# 1157: a door code is called gone only when the lock's whole answer says so
+# 1160: a door code is called gone only when the lock's whole answer says so
 
 Status: review
-Depends on: 1155, 1155b (merged) | Base commit: HEAD of branch claude/zealous-maxwell-a7ub54 (bccafce4 or later) | Branch: task/1157-door-lookup-hardening
+Depends on: 1155, 1155b (merged) | Base commit: HEAD of branch claude/zealous-maxwell-a7ub54 (bccafce4 or later) | Branch: task/1160-door-lookup-hardening
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
@@ -35,13 +35,13 @@ Anchors (all in the script of step 2): `door_codes.py` the two functions `_lock_
 | App/tests/test_door_code_ambiguous_delete.py | edit | fixture patches `code_is_listed`; 2 assertions |
 | App/tests/test_door_code_recancel.py | edit | fixture patches `code_is_listed` |
 | App/tests/test_door_code_lookup_pages.py | create | 9 tests |
-| docs/tasks/1157-door-lookup-hardening-report.md | create | report (§9) |
+| docs/tasks/1160-door-lookup-hardening-report.md | create | report (§9) |
 
 No other file may change.
 
 ## 4. Steps
 
-**Step 1. Branch.** Run `git branch --show-current | tail -30`; expected `claude/zealous-maxwell-a7ub54`. Confirm 1156 is in: `grep -c "def _tell_host_reissued" App/app/door_codes.py | tail -30` -> `1` (else STOP). Then `git switch -c task/1157-door-lookup-hardening | tail -30`; expected `Switched to a new branch`.
+**Step 1. Branch.** Run `git branch --show-current | tail -30`; expected `claude/zealous-maxwell-a7ub54`. Confirm 1156 is in: `grep -c "def _tell_host_reissued" App/app/door_codes.py | tail -30` -> `1` (else STOP). Then `git switch -c task/1160-door-lookup-hardening | tail -30`; expected `Switched to a new branch`.
 
 **Step 2. Apply the code and fixture changes.** From the repo root run this script (every `swap` asserts its old text exists exactly once):
 ```bash
@@ -257,7 +257,7 @@ Command: `cd App && .venv/bin/python -c "import app.door_codes" 2>&1 | tail -30`
 
 **Step 3. Create `App/tests/test_door_code_lookup_pages.py`** with exactly:
 ```python
-"""1157: a door code is called gone only when the lock's whole answer says so.
+"""1160: a door code is called gone only when the lock's whole answer says so.
 
 A fake lock answers /v3/lock/listKeyboardPwd like TTLock: a fuzzy searchStr, 20 codes a
 page, with pages and total. UH-<id> also matches UH-<id>0 and UH-<id>1, so on a busy lock
@@ -495,7 +495,7 @@ def test_a_stale_error_on_an_issued_row_does_not_hide_a_lost_pin(world):
 ```
 Command (from `App/`): `.venv/bin/python -m pytest tests/test_door_code_lookup_pages.py tests/test_door_code_ambiguous_delete.py tests/test_door_code_recancel.py tests/test_door_code_lost_pin.py tests/test_door_code_cancel_guard.py -q --tb=short 2>&1 | tail -30` -> `41 passed`.
 
-**Step 4. Commit.** `git add App/app/ttlock.py App/app/door_codes.py App/tests/test_door_code_ambiguous_delete.py App/tests/test_door_code_recancel.py App/tests/test_door_code_lookup_pages.py && git commit -m "1157: a door code is called gone only when the lock's whole answer says so" | tail -30`.
+**Step 4. Commit.** `git add App/app/ttlock.py App/app/door_codes.py App/tests/test_door_code_ambiguous_delete.py App/tests/test_door_code_recancel.py App/tests/test_door_code_lookup_pages.py && git commit -m "1160: a door code is called gone only when the lock's whole answer says so" | tail -30`.
 Commit message ends with the attribution lines the session reminder gives.
 
 **Step 5. Revert-bite, five runs.** Each run, from the repo root: apply the `sed`, run `T`, expect the named result, then `git checkout App/app | tail -30`. `T` is `cd App && .venv/bin/python -m pytest tests/test_door_code_lookup_pages.py tests/test_door_code_ambiguous_delete.py -q --tb=no -rf 2>&1 | tail -30`. After each `sed`, `git diff --stat | tail -30` must show `1 file changed, 1 insertion(+), 1 deletion(-)`.
@@ -510,7 +510,7 @@ If a run does not fail as stated, STOP (§8). Finally `git status --short | tail
 
 **Step 7. Postgres.** From `App/`: `UBYHOST_DATABASE_URL=postgresql://uby:uby@localhost:5432/ubytest .venv/bin/python -m pytest tests/test_door_code_lookup_pages.py tests/test_door_code_ambiguous_delete.py tests/test_door_code_recancel.py -q --tb=short 2>&1 | tail -30` -> all pass (or report `not run: no Postgres`).
 
-**Step 8. Report.** Write `docs/tasks/1157-door-lookup-hardening-report.md` (§9), set this file's line 3 to `Status: review`, then `python3 scripts/context_lint.py | tail -3` from the repo root.
+**Step 8. Report.** Write `docs/tasks/1160-door-lookup-hardening-report.md` (§9), set this file's line 3 to `Status: review`, then `python3 scripts/context_lint.py | tail -3` from the repo root.
 
 ## 5. Do not touch
 
@@ -543,7 +543,7 @@ Stop, and write the report, if:
 
 ## 9. Report
 
-Write `docs/tasks/1157-door-lookup-hardening-report.md` (600 tokens at most) and set `Status: review`. The report has:
+Write `docs/tasks/1160-door-lookup-hardening-report.md` (600 tokens at most) and set `Status: review`. The report has:
 
 1. The files changed (`git diff --stat`).
 2. Each command, with the last 5 lines of its output.
@@ -558,6 +558,6 @@ Write `docs/tasks/1157-door-lookup-hardening-report.md` (600 tokens at most) and
 
 ## Owner steps
 
-1. Open the pull request for `task/1157-door-lookup-hardening` as a draft; paste the outbound-request reason from §2 into its description.
-2. When CI is green and the review is done, run `scripts/merge-pr-on-green.sh <PR number>` (rule 8). Merge 1157 before 1157b.
+1. Open the pull request for `task/1160-door-lookup-hardening` as a draft; paste the outbound-request reason from §2 into its description.
+2. When CI is green and the review is done, run `scripts/merge-pr-on-green.sh <PR number>` (rule 8). Merge 1160 before 1160b.
 3. The orchestrator then adds one line to `docs/context/decisions.md` (lookup reads the whole list, id match, unknown is safe) and a known-issues line for `cleaning_codes._find`.
