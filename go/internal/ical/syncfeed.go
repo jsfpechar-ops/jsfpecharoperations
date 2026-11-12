@@ -548,6 +548,9 @@ func SyncFeed(ctx context.Context, pool *pgxpool.Pool, getenv func(string) strin
 		}
 		log.Printf("ical_incomplete_feed_retained apartment_id=%d feed_id=%d retained_stays=%d returned_events=%d matched_stays=%d",
 			feed.ApartmentID, feed.ID, len(candidates), len(seen), len(matched))
+		if err := checkDoubleBookings(ctx, pool, getenv, feed.ApartmentID); err != nil {
+			log.Printf("ical_double_booking_check_failed apartment_id=%d: %v", feed.ApartmentID, err)
+		}
 		return stats, nil
 	}
 	if err := ubyport.ResolveAlert(ctx, pool, fmt.Sprintf("feed_incomplete:%d", feed.ID)); err != nil {
@@ -614,6 +617,9 @@ func SyncFeed(ctx context.Context, pool *pgxpool.Pool, getenv func(string) strin
 	}
 	if err := updateRow(ctx, pool, "ical_feed", feed.ID, feedUpdate); err != nil {
 		return stats, err
+	}
+	if err := checkDoubleBookings(ctx, pool, getenv, feed.ApartmentID); err != nil {
+		log.Printf("ical_double_booking_check_failed apartment_id=%d: %v", feed.ApartmentID, err)
 	}
 	return stats, nil
 }
