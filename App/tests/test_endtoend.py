@@ -85,7 +85,18 @@ def feed_url(tmp_path_factory):
 
 
 @pytest.fixture(scope="module")
-def client(mock_ubyport):
+def e2e_database(tmp_path_factory):
+    """A database of its own: this file assumes an empty install (K-E2E-ORDER)."""
+    from _pytest.monkeypatch import MonkeyPatch
+
+    patcher = MonkeyPatch()
+    patcher.setattr(config, "DB_PATH", tmp_path_factory.mktemp("e2e") / "e2e.sqlite3")
+    yield
+    patcher.undo()
+
+
+@pytest.fixture(scope="module")
+def client(mock_ubyport, e2e_database):
     db.init_db()
     account = db.query_one("SELECT * FROM user_account WHERE username = 'e2e-admin'")
     if not account:
