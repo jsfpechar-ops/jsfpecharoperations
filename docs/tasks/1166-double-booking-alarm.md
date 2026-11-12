@@ -1,7 +1,7 @@
 # 1166: double-booking alarm from the iCal calendars — Go implementation
 
 Status: todo
-Depends on: PR #952 merged (this brief lands on main through it) | Base commit: 07d7328c | Branch: task/1166-double-booking-alarm
+Depends on: none | Base commit: 07d7328c (main) | Branch: task/1166-double-booking-alarm, created from vibe/double-booking-brief-2f907d — this brief is delivered on that UNMERGED branch (PR #952 is kept open for the executor, not for merging)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 Owner decisions (2026-11-12, orchestrator chat):
@@ -145,7 +145,7 @@ No other file may change. No migration, no new dependency, no new env var.
 
 ## 4. Steps
 
-Branch first: `git checkout -b task/1166-double-booking-alarm` from current main.
+Branch first: `git fetch origin vibe/double-booking-brief-2f907d && git checkout -b task/1166-double-booking-alarm vibe/double-booking-brief-2f907d` (the brief file itself is on that branch; do not wait for a merge).
 
 ### Step 1 — `go/internal/ical/doublebooking.go` (create with exactly this content)
 
