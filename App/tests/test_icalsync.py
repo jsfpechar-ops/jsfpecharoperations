@@ -1400,3 +1400,76 @@ def test_sync_feed_defers_a_date_move_when_a_claim_lands_after_the_precheck(
     assert feed["body_sha256"] is None
     guest = db.query_one("SELECT stay_from, stay_to FROM guest WHERE id = ?", (guest_id,))
     assert (guest["stay_from"], guest["stay_to"]) == ("2099-01-10", "2099-01-12")
+
+
+def test_a_cancel_event_is_deferred_while_a_claim_is_live(monkeypatch, tmp_path):
+    """A send in flight blocks the cancel; it lands once the claim is gone."""
+    feed_id, reservation_id, guest_id = _moved_stay(tmp_path, monkeypatch)
+    monkeypatch.setattr(
+        icalsync,
+        "fetch_feed",
+        lambda _url: MOVED_STAY_FEED.replace(
+            "SUMMARY:Reserved", "SUMMARY:Reserved\nSTATUS:CANCELLED"
+        ),
+    )
+    db.execute(
+        "INSERT INTO submission_claim (guest_id, claim_token, claimed_at) "
+        "VALUES (?, 'race', ?)",
+        (guest_id, time.time()),
+    )
+
+    stats = _sync(feed_id)
+
+    row = db.query_one("SELECT status FROM reservation WHERE id = ?", (reservation_id,))
+    assert row["status"] == "active"
+    assert stats["cancelled"] == 0
+    feed = db.query_one("SELECT body_sha256, etag FROM ical_feed WHERE id = ?", (feed_id,))
+    assert feed["body_sha256"] is None
+
+    db.execute("DELETE FROM submission_claim WHERE guest_id = ?", (guest_id,))
+    stats = _sync(feed_id)
+
+    row = db.query_one("SELECT status FROM reservation WHERE id = ?", (reservation_id,))
+    assert row["status"] == "cancelled"
+    assert stats["cancelled"] == 1
+
+
+def test_a_vanished_stay_is_not_cancelled_while_a_claim_is_live(monkeypatch, tmp_path):
+    feed_id, apartment_id, uids = _stored_stays(
+        tmp_path, monkeypatch, "sweep-claim.sqlite3", stored=10, returned=9
+    )
+    gone = db.query_one(
+        "SELECT id FROM reservation WHERE apartment_id = ? AND uid = ?",
+        (apartment_id, uids[9]),
+    )["id"]
+    now = db.utcnow()
+    guest_id = db.insert(
+        "guest",
+        {
+            "reservation_id": gone,
+            "stay_from": "2099-03-01",
+            "stay_to": "2099-03-05",
+            "entered_by": "guest",
+            "submit_state": "pending",
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+    db.execute(
+        "INSERT INTO submission_claim (guest_id, claim_token, claimed_at) "
+        "VALUES (?, 'race', ?)",
+        (guest_id, time.time()),
+    )
+
+    stats = _sync(feed_id)
+
+    assert stats["cancelled"] == 0
+    assert _active_count(apartment_id) == 10
+    feed = db.query_one("SELECT body_sha256, etag FROM ical_feed WHERE id = ?", (feed_id,))
+    assert feed["body_sha256"] is None
+
+    db.execute("DELETE FROM submission_claim WHERE guest_id = ?", (guest_id,))
+    stats = _sync(feed_id)
+
+    assert stats["cancelled"] == 1
+    assert _active_count(apartment_id) == 9
