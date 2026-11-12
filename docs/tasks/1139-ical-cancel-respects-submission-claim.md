@@ -1,6 +1,6 @@
 # 1139: iCal cancel and vanished-stay sweep: respect a live submission_claim
 
-Status: todo
+Status: review
 Depends on: 1136 | Base commit: 4fff483d (HEAD of branch claude/clever-fermi-tudhnt, PR #933) | Branch: task/1139-ical-cancel-claim
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
