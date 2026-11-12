@@ -36,7 +36,7 @@ All API facts, error codes and their UbyHost reactions live in [TTLOCK](../TTLOC
 
 ### 3.1 Error table (TTLock official list K-DC-ERRCODE, owner 2026-10-26) and our kind
 
-Kind = `ttlock.ERROR_KINDS`; an unlisted errcode is `transient`. What a kind does: `offline`, `transient`, `network`, `rate`, `budget` retry (a delete until `valid_to`); `code_missing` retries like them after one list call; `config`, `permission`, `reauth`, `disabled` stop at once with a host mail; `bug` is retried at most `ISSUE_MAX_ATTEMPTS` times, then handed over.
+Kind = `ttlock.ERROR_KINDS`; an unlisted errcode is `transient`. What a kind does: `offline`, `transient`, `network`, `rate`, `budget` retry (a delete until `valid_to`); `code_missing` retries like them after one list call; `lock_setup` (the lock's own setup: gateway, network, support) retries like them but slowly (issue: twice, then the host mail; delete: 1, 15, 60 minutes until `valid_to`, host mail at try 3; move: hourly until the stay starts, no mail; clock check: alert, next try in 7 days); `config`, `permission`, `reauth`, `disabled` stop at once with a host mail; `bug` is retried at most `ISSUE_MAX_ATTEMPTS` times, then handed over.
 
 | Code | Meaning | Kind |
 |---|---|---|
@@ -51,19 +51,19 @@ Kind = `ttlock.ERROR_KINDS`; an unlisted errcode is `transient`. What a kind doe
 | 80002 | invalid JSON format | bug |
 | 90000, 1 | TTLock internal error, generic failure | transient |
 | -3 | invalid parameter | bug |
-| -1003 | lock does not exist | config |
+| -1003 | lock does not exist | lock_setup |
 | -2025 | lock frozen, cannot operate now | offline |
 | -3011 | transfer lock to self (never called) | unmapped |
-| -4043 | function not supported by this lock | config |
+| -4043 | function not supported by this lock | lock_setup |
 | -4063 | delete or transfer locks first (account delete) | config |
-| -4067 | NB device not registered | config |
+| -4067 | NB device not registered | lock_setup |
 | -4082 | auto-lock period invalid (never called) | unmapped |
 | -2012 | lock not connected to a gateway | offline |
 | -3002 / -3003 | gateway offline / busy | offline |
 | -3036 / -3037 | lock offline / busy | offline |
 | -3035 | Wi-Fi lock in power-saving mode | offline |
-| -3034 | network not configured | config |
-| -4037 | no such gateway | config |
+| -3034 | network not configured | lock_setup |
+| -4037 | no such gateway | lock_setup |
 | -3016 | no meaning given | unmapped |
 | -1007 | no password data of this lock: the passcode is not on the lock | code_missing |
 | -2009, -2032, -3006, -3045 | invalid / too simple / not 6-9 digits / digits not supported | bug (-2032 first gets one new random PIN) |
@@ -73,7 +73,7 @@ Kind = `ttlock.ERROR_KINDS`; an unlisted errcode is `transient`. What a kind doe
 | -1008, -1016, -1018, -1027, -2019, -2020, -2023, -3039, -3046, -4064 | eKey calls (only `/v3/key/list` is called) | unmapped |
 | -1021, -1023 | IC card / fingerprint (never called) | unmapped |
 
-`-1007` on a delete: the lock confirms with one list call (`code_is_listed`); only a fully read list without the id counts as revoked (audit detail `via=gone:-1007`). A list that itself answers `-1007` on page 1 is an empty list. Otherwise the delete is retried.
+`-1007` on a delete: the lock confirms with one list call (`code_is_listed`); only a fully read list without the id counts as revoked (audit detail `via=gone:-1007`). A list that itself answers `-1007` (any page) is unknown, never empty: it is not independent evidence after a delete said `-1007`, and a cleaning issue retry would add a second code. The delete is then retried until `valid_to`, then `revoke_failed` with the host mail (a lock with no codes at all answering `-1007` ends there too: the safe side). A `last_error` of `code_missing` leaves a delete's result open, so a revived row is checked on the lock before it is shown (`AMBIGUOUS_DELETE_ERRORS`).
 
 ## 4. How heavy is it
 
