@@ -18,6 +18,7 @@ SCRIPTS = ROOT / "deploy/lightsail/scripts"
 DOCKER_STUB = r"""#!/usr/bin/env bash
 echo "$*" >> "$STUB_LOG"
 case "$*" in
+  *"compose stop"*) [ "${STOP_FAILS:-0}" = 1 ] && exit 1 ;;
   *"ps -q --status running postgres"*) [ "${PG_RUNNING:-0}" = 1 ] && echo pgid ;;
   *"ps -aq ubyhost"*) echo ubyhostid ;;
   *"config --services"*) echo ubyhost; echo worker; [ "${GO_PROFILE:-0}" = 1 ] && echo ubyhost-go ;;
@@ -54,12 +55,13 @@ def make_tree(tmp_path, env_text):
     return root, bindir, tmp_path / "stub.log"
 
 
-def run_script(script, root, bindir, log, args=(), extra_env=None):
+def run_script(script, root, bindir, log, args=(), extra_env=None, input_text=None):
     env = {"PATH": f"{bindir}{os.pathsep}{os.environ['PATH']}", "STUB_LOG": str(log)}
     env.update(extra_env or {})
+    stdin = {"stdin": subprocess.DEVNULL} if input_text is None else {"input": input_text}
     return subprocess.run(
         ["bash", str(root / "scripts" / script), *args],
-        cwd=root, env=env, capture_output=True, text=True, timeout=60, stdin=subprocess.DEVNULL,
+        cwd=root, env=env, capture_output=True, text=True, timeout=60, **stdin,
     )
 
 
@@ -183,6 +185,47 @@ def test_pg_restore_file_form_refuses_submit_in_the_shell_environment(tmp_path):
     assert "in the shell environment" in result.stderr
     assert not (root / ".restored-box").exists()
     assert "stop" not in calls(log)
+
+
+def test_pg_restore_file_form_declined_confirm_leaves_no_marker(tmp_path):
+    root, bindir, log = make_tree(tmp_path, PG_ENV + FILING_OFF)
+    identity = tmp_path / "agekey"
+    identity.write_text("stub")
+    dump = make_dump_file(tmp_path)
+    result = run_script("pg-restore.sh", root, bindir, log, args=["--file", str(dump)],
+                        extra_env={"AGE_IDENTITY_FILE": str(identity)}, input_text="no\n")
+    assert result.returncode == 1, result.stderr
+    assert "aborted" in result.stderr
+    assert not (root / ".restored-box").exists()
+    assert "stop" not in calls(log)
+
+
+def test_pg_restore_file_form_with_override_writes_the_marker(tmp_path):
+    root, bindir, log = make_tree(tmp_path, PG_ENV + "UBYHOST_GO_JOB_KINDS=ical,submit\n")
+    identity = tmp_path / "agekey"
+    identity.write_text("stub")
+    dump = make_dump_file(tmp_path)
+    result = run_script("pg-restore.sh", root, bindir, log, args=["--file", str(dump)],
+                        extra_env={"AGE_IDENTITY_FILE": str(identity), "RESTORE_CONFIRM": "yes",
+                                   "UBYHOST_FILING_GUARD_OVERRIDE": "1"})
+    assert result.returncode == 0, result.stderr
+    assert "WARNING: UBYHOST_FILING_GUARD_OVERRIDE=1" in result.stderr
+    assert "from ubyhost-pg.dump.age" in (root / ".restored-box").read_text()
+    assert "pg_restore" in calls(log)
+
+
+def test_pg_restore_restarts_the_app_when_stop_fails(tmp_path):
+    root, bindir, log = make_tree(tmp_path, PG_ENV)
+    identity = tmp_path / "agekey"
+    identity.write_text("stub")
+    result = run_script("pg-restore.sh", root, bindir, log, args=["20260101T000000Z"],
+                        extra_env={"AGE_IDENTITY_FILE": str(identity), "RESTORE_CONFIRM": "yes",
+                                   "STOP_FAILS": "1"})
+    assert result.returncode != 0
+    recorded = calls(log)
+    assert "pg_restore" not in recorded
+    assert "compose up -d ubyhost worker" in recorded
+    assert recorded.index("compose stop worker ubyhost") < recorded.index("compose up -d ubyhost worker")
 
 
 def test_pg_restore_file_form_missing_file_exits_1_before_stopping(tmp_path):
@@ -312,12 +355,27 @@ def test_filing_guard_env_file_that_fails_to_source_is_not_ok(tmp_path):
     assert "NOTE: restored box" not in result.stderr
 
 
-def test_filing_guard_env_file_cannot_overwrite_marker_or_override(tmp_path):
-    root = make_guard_tree(tmp_path, SUBMIT_ON + "MARKER=nothing-here\nOVERRIDE=1\n", marker=True)
+@pytest.mark.parametrize("line", [
+    "MARKER=nothing-here", "OVERRIDE=1", "ASSUME_RESTORED=0", "CALLER_GO_JOB_KINDS=ical",
+])
+def test_filing_guard_env_file_cannot_overwrite_marker_or_override(tmp_path, line):
+    # Filing is off: only the refused first line can make the guard exit 3.
+    root = make_guard_tree(tmp_path, line + "\n" + FILING_OFF, marker=True)
     result = run_guard(root)
     assert result.returncode == 3, result.stderr
-    assert "readonly variable" in result.stderr
+    assert "a line in" in result.stderr
+    assert "NOTE: restored box" not in result.stderr
     assert "WARNING" not in result.stderr
+
+
+def test_filing_guard_env_file_with_a_failing_middle_line_exits_3(tmp_path):
+    env_text = "UBYHOST_ENABLE_SCHEDULER=0\nUBYHOST_GO_JOB_KINDS = ical,submit\nUBYHOST_JOB_QUEUE_KINDS=ical,push\n"
+    root = make_guard_tree(tmp_path, env_text, marker=True)
+    result = run_guard(root)
+    assert result.returncode == 3, result.stderr
+    assert "a line in" in result.stderr
+    assert "NOTE: restored box" not in result.stderr
+    assert "ical,submit" not in result.stderr
 
 
 def test_filing_guard_assume_restored_checks_without_marker(tmp_path):
