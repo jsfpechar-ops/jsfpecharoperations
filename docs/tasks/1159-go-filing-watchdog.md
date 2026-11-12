@@ -1,6 +1,6 @@
 # 1159: Go port of the filing watchdog selection (`at_risk_stays`, `unknown_risk_stays`, `heartbeat_url`), parity-checked against Python
 
-Status: todo
+Status: review
 Depends on: 1132, 1153 (merged) | Base commit: 4e56401 | Branch: claude/go-filing-watchdog
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
