@@ -1,6 +1,6 @@
 # 1134: billing_account.status has one writer, place_for_operator goes through set_status
 
-Status: todo
+Status: review
 Depends on: none | Base commit: 7b8ff2ae | Branch: task/1134-billing-status-single-writer
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
