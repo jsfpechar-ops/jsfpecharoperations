@@ -1,6 +1,6 @@
 # 1173c: fixes from the fresh review of 1173 and 1173b (tests that guard nothing, lost codes of extended stays, queue order, a stale card)
 
-Status: todo
+Status: review
 Depends on: 1173b (both are in the base) | Base commit: claude/zealous-maxwell-a7ub54 HEAD (21d70cf3, PR #950) | Branch: task/1173c-queue-review-fixes
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (about 18 calls planned; if you reach 25, stop and write the report as `blocked`)
 
