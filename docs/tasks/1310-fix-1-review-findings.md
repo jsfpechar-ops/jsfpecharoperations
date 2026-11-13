@@ -1,6 +1,6 @@
 # 1310-fix-1: review findings on the Go cleaning port
 
-Status: todo
+Status: review
 Depends on: 1310 | Base commit: 7a754a0 | Branch: task/1310-go-cleaning-schedule
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
