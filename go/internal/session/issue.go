@@ -102,7 +102,7 @@ func SessionMaxAgeFor(payload map[string]any) int {
 
 // ReadPayload is auth._session_payload: 30 days at most, a remember-me
 // session ends 90 days after iat, any other one 12 hours after signing.
-// Verify keeps its older limits for the existing callers.
+// Verify, and so Load, use the same rule.
 func ReadPayload(secret, token string, now time.Time) (map[string]any, bool) {
 	if token == "" {
 		return nil, false

@@ -24,17 +24,13 @@ const (
 	CookieName = "ubyhost_session"
 	// salt is the itsdangerous salt of _serializer (auth.py lines 55-56).
 	salt = "ubyhost-session"
-	// rememberMaxAge is SESSION_REMEMBER_MAX_AGE (auth.py line 33).
-	rememberMaxAge = 400 * 24 * time.Hour
-	// shortMaxAge is SESSION_MAX_AGE (auth.py line 32), enforced unless "rm" is set.
-	shortMaxAge = 12 * time.Hour
 	// defaultVersion is the default of UBYHOST_*_VERSION (brief 0672, section 2).
 	defaultVersion = "1.7"
 )
 
 // pythonKeyOrder is the insertion order of issue_session (auth.py lines 225-260).
 // Python keeps dict order in its JSON, so Sign writes these keys first.
-var pythonKeyOrder = []string{"uid", "sv", "iat", "rm", "as", "ast", "rv"}
+var pythonKeyOrder = []string{"uid", "sv", "iat", "rf", "rm", "as", "ast", "rv"}
 
 // Account is the user_account row a host session needs.
 type Account struct {
@@ -109,24 +105,11 @@ func Sign(secret string, payload map[string]any, now time.Time) string {
 	return token
 }
 
-// Verify checks token at now as auth._session_payload does (auth.py lines 335-354):
-// 400 days at most, and 12 hours unless the payload has a truthy "rm".
+// Verify checks token at now exactly as auth._session_payload does: it is
+// ReadPayload (30 days sliding; with "rm" 90 days from iat, else 12 hours),
+// so Go routes accept the same cookies as Python (brief 1281).
 func Verify(secret, token string, now time.Time) (map[string]any, bool) {
-	s := secure.NewTimedSerializer(secret, salt)
-	var raw json.RawMessage
-	if err := s.Loads(token, rememberMaxAge, now, &raw); err != nil {
-		return nil, false
-	}
-	payload, ok := decodePayload(raw)
-	if !ok {
-		return nil, false
-	}
-	if !truthy(payload["rm"]) {
-		if err := s.Loads(token, shortMaxAge, now, &raw); err != nil {
-			return nil, false
-		}
-	}
-	return payload, true
+	return ReadPayload(secret, token, now)
 }
 
 // decodePayload decodes a JSON object, with whole numbers as int64 (Python int).

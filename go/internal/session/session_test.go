@@ -122,12 +122,24 @@ func TestSessionAge(t *testing.T) {
 	if _, ok := Verify(g.Secret, plain, base.Add(12*time.Hour+time.Minute)); ok {
 		t.Error("plain token accepted at 12h01m")
 	}
-	remember := Sign(g.Secret, map[string]any{"uid": int64(7), "sv": int64(3), "rm": int64(1)}, base)
-	if _, ok := Verify(g.Secret, remember, base.Add(399*24*time.Hour)); !ok {
-		t.Error("remember token rejected at 399 days")
+	// Brief 1281: 30 days sliding, 90 days from iat, as auth._session_payload.
+	remember := Sign(g.Secret, map[string]any{"uid": int64(7), "sv": int64(3), "iat": g.Timestamp, "rm": int64(1)}, base)
+	if _, ok := Verify(g.Secret, remember, base.Add(29*24*time.Hour)); !ok {
+		t.Error("remember token rejected at 29 days")
 	}
-	if _, ok := Verify(g.Secret, remember, base.Add(401*24*time.Hour)); ok {
-		t.Error("remember token accepted at 401 days")
+	if _, ok := Verify(g.Secret, remember, base.Add(31*24*time.Hour)); ok {
+		t.Error("remember token accepted at 31 days")
+	}
+	noIat := Sign(g.Secret, map[string]any{"uid": int64(7), "sv": int64(3), "rm": int64(1)}, base)
+	if _, ok := Verify(g.Secret, noIat, base); ok {
+		t.Error("remember token without iat accepted")
+	}
+	refreshed := Sign(g.Secret, map[string]any{"uid": int64(7), "sv": int64(3), "iat": g.Timestamp, "rm": int64(1)}, base.Add(89*24*time.Hour))
+	if _, ok := Verify(g.Secret, refreshed, base.Add(90*24*time.Hour)); !ok {
+		t.Error("refreshed remember token rejected at 90 days from iat")
+	}
+	if _, ok := Verify(g.Secret, refreshed, base.Add(90*24*time.Hour+time.Second)); ok {
+		t.Error("remember token accepted past 90 days from iat")
 	}
 }
 
