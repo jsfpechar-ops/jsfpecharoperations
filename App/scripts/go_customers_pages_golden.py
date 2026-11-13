@@ -44,6 +44,23 @@ CASES = [
     ("list max active in Vietnamese", "vi", True, "/admin/customers?plan=max&state=active&q=Bulk"),
     ("list empty, non-ASCII search", "en", True, "/admin/customers?q=%C5%BDlu%C5%A5+%26+co"),
     ("list bad cursor, repeated q", "en", True, "/admin/customers?after=abc&q=x&q=+Nov+"),
+    # Detail (brief 1364): 2 full history and google consent; 3 legacy without e-mail;
+    # 4 unverified; 6 trialing max with meta consent; 8 overdue yearly with add-ons;
+    # 11 trial pending without plan; 13 blank e-mail; 1 the admin and 99999: 404.
+    ("detail full history", "en", True, "/admin/customers/2"),
+    ("detail full history in Czech", "cs", True, "/admin/customers/2"),
+    ("detail legacy, no e-mail", "en", True, "/admin/customers/3"),
+    ("detail unverified", "en", True, "/admin/customers/4"),
+    ("detail trialing max in Vietnamese", "vi", True, "/admin/customers/6"),
+    ("detail trialing", "en", True, "/admin/customers/7"),
+    ("detail overdue yearly", "en", True, "/admin/customers/8"),
+    ("detail overdue yearly, billing off", "cs", False, "/admin/customers/8"),
+    ("detail canceling", "en", True, "/admin/customers/9"),
+    ("detail trial pending, no plan", "en", True, "/admin/customers/11"),
+    ("detail non-ASCII name", "en", True, "/admin/customers/12"),
+    ("detail blank e-mail, billing off", "en", False, "/admin/customers/13"),
+    ("detail of the admin is 404", "en", True, "/admin/customers/1"),
+    ("detail unknown id is 404", "en", True, "/admin/customers/99999"),
 ]
 
 # visible_lines: keep in step with visibleLines in go/internal/web/customers/pages_test.go.

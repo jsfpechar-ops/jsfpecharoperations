@@ -159,6 +159,7 @@ func pagesMux(t *testing.T, g goldenFile, billing bool) *http.ServeMux {
 	now := func() time.Time { return testNow }
 	mux := http.NewServeMux()
 	mux.Handle("GET /admin/customers", ListHandler(pool, getenv, now))
+	mux.Handle("GET /admin/customers/{user_id}", DetailHandler(pool, getenv, now))
 	return mux
 }
 
