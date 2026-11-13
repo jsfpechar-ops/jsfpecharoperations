@@ -1,49 +1,47 @@
 # 1180 report
 
 Status: review
-Done: steps 1 to 7. Left: step 8 (context lint), owner decision on token caps.
 
 ## 1. Files changed
-- App/tests/test_sm_registry.py (new, 3 tests)
-- docs/context/rules.md (+ `## State machines` section, 10 `##` headings)
-- AGENTS.md (+1 routing row)
-- docs/context/test-map.md (+1 row)
-- docs/context/decisions.md (+1 line, 2026-11-13 [workflow] 1180)
-- docs/tasks/1180-sm-standing-rule-and-catchall.md (Status: blocked)
-- docs/tasks/1180-report.md (new)
 
-## 2. Commands
-- `cd App && .venv/bin/python -m pytest tests/test_sm_go_parity.py -q` (step 1): `14 passed`. venv created.
-- `pytest tests/test_sm_registry.py -q` (step 2): `3 passed`.
-- Sabotage (step 3): removed reservation.status line; failure message named `docs/context/rules.md#state-machines`. Line restored; `grep -c reservation.status` = 1; rerun `3 passed`.
-- `pytest tests/test_sm_registry.py tests/test_sm_go_parity.py -q -rs` (step 8): `17 passed`, 0 skipped.
-- `python3 scripts/context_lint.py` (step 8): FAIL, 3 errors (only ones caused by this change):
-  - AGENTS.md: ~1525 tokens > cap 1500
-  - docs/context/decisions.md: ~2221 tokens > cap 2200
-  - docs/context/test-map.md: ~1229 tokens > cap 1200
+`git diff --stat d8754892 HEAD`: `App/tests/test_under15_signature_1090_browser.py` only, 6 insertions, 3 deletions.
 
-## 3. Acceptance (section 7)
-- [x] registry tests pass (17 with parity)
-- [x] sabotage message checked, line restored
-- [x] anchors grep shows AGENTS.md row and rules anchor
-- [x] git status lists only section 3 files
-- [ ] context lint clean (3 token-cap errors)
+Commits: `1180 step 1` (reads `arrival` from the seeded reservation), `1180 step 2` (three `ARRIVAL` uses replaced by `arrival`). Step 3 is a check, no change.
+
+## 2. Commands (last 5 lines)
+
+- `cd App && .venv/bin/ruff check --select E9,F63,F7,F82,F401,F841 tests/test_under15_signature_1090_browser.py`: `All checks passed!`
+- `cd App && .venv/bin/python -m py_compile tests/test_under15_signature_1090_browser.py`: no output, exit 0.
+- `grep -n "ARRIVAL" App/tests/test_under15_signature_1090_browser.py`: lines 103, 104, 105 only.
+- `cd App && .venv/bin/python -m pytest tests/test_under15_signature_1090_browser.py -q --tb=short -x -rs`:
+  ```
+  SKIPPED [1] tests/test_guest_browser_e2e.py:40: could not import 'playwright.sync_api': No module named 'playwright'
+  1 skipped in 1.97s
+  ```
+  Exit 5. Playwright is not installed; not installed per the brief. Run by CI.
+- `python3 scripts/context_lint.py | tail -3`:
+  ```
+  WARN  2 commit(s) touched App/ after the last status.md update. Orchestrator: update docs/context/status.md at review.
+  next free: task 1170 | migration 0046
+  context lint: OK
+  ```
+
+## 3. Section 7 acceptance
+
+- [x] `git diff --stat` shows only the test file, 3 replaced lines plus a 3-line added block.
+- [x] ruff and py_compile clean.
+- [x] `grep -n "ARRIVAL"` shows only lines 103-105.
+- [x] context_lint OK.
+- [x] Browser test runs in CI (shard 2), not locally.
 
 ## 4. Deviations
-- Lint errors are token caps that the new lines pushed over. Fixing them needs compaction of existing text, which the brief does not name, so stopped.
-- Status set to blocked, not review (executor rule for lint failure).
-- Commit trailer uses Claude Opus 5.5 as given in the owner's instruction.
+
+None to the edit. Local pytest skipped (no playwright), so the test is unverified locally. Bite is not reproduced locally; the CI failure on 864dfb0c is the evidence.
 
 ## 5. Questions
-- Compact AGENTS.md, decisions.md and test-map.md (see docs/context/workflow.md#compaction), or raise the caps?
+
+None.
 
 ## 6. Owner steps left
-- Decide the compaction, then run `python3 scripts/context_lint.py` to confirm clean.
 
-## Orchestrator follow-up (lint unblock)
-
-- Compacted to pass the token caps: test-map wording; AGENTS.md routing merged into the Database row, executor line and close-chat line shortened, retired-executor list left to workflow.md; the expired 2026-11-09 "Owner asleep" decision moved to docs/archive/decisions-2026.md.
-- `context_lint.py`: OK. `test_sm_registry.py` + `test_sm_go_parity.py`: 17 passed.
-- Reviewer: the EXEMPT reasons for billing_month_snapshot, ical_feed, invoice, legal_entity, lock_account, push_outbox.last_status, guest.manual_prev_state, guide_item were partly inferred; check them.
-
-- Renumbered 1171 -> 1172 -> 1180: both lower numbers were taken by parallel PRs (#958, #954). No status.md line, to avoid further conflicts.
+None. The orchestrator opens the PR. No push or PR was made by the executor.

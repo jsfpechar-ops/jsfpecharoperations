@@ -46,6 +46,7 @@ PINNED = [
     ("_handle_cancellations", ("issued",), ("issued",), ("revoke_pending",)),
     ("reconcile", ("issuing",), ("issuing",), ("retrying",)),
     ("reconcile", ("issued",), ("issued",), ("expired",)),
+    ("_expire_ended_stays", ("pending", "retrying"), ("pending", "retrying"), ("expired",)),
 ]
 
 WRITE_RE = re.compile(r"\b(UPDATE\s+door_code\s+SET|INSERT\s+INTO\s+door_code\b)", re.I)

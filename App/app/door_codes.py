@@ -38,10 +38,12 @@ TRANSITIONS = {
     PENDING: {
         ISSUING,  # issue: claim
         REVOKED,  # _handle_cancellations: stay cancelled before a code exists
+        EXPIRED,  # _expire_ended_stays: the stay ended before a code was made
     },
     RETRYING: {
         ISSUING,  # issue: claim
         REVOKED,  # _handle_cancellations: stay cancelled before a code exists
+        EXPIRED,  # _expire_ended_stays: the stay ended before a code was made
     },
     ISSUING: {
         PENDING,  # _release_issue_claim: not eligible, no account, bad window
@@ -94,6 +96,17 @@ AMBIGUOUS_DELETE_ERRORS = ("", "network", "transient", LOOKUP_FAILED, ttlock.COD
 # A guest who has finished registering must not wait longer than this in silence.
 DELAY_MINUTES = 5
 BATCH = 20
+# 1173: issue() puts a row back to pending for these reasons without a try on the lock. The row waits this
+# long before _issue_due takes it again, so a stuck row cannot fill the batch every tick.
+# not_eligible: the stay or property no longer qualifies (no start time to wait for: eligibility has none).
+#   Short, because an operator pause or a host fix ends it at an unknown moment while a guest waits.
+# no_account: the host must reconnect TTLock; nothing resets the row then, so keep it short too.
+# bad_window: the saved hours are invalid and need a host edit; the UI does not allow it, so long.
+RELEASE_RETRY_MINUTES = {"not_eligible": 15, "no_account": 15, "bad_window": 60}
+# 1173c: _issue_due takes rows in this order: new rows (rank 0), real retries (1), released rows (2).
+# A released row has attempts 0 again, so without the rank it sorts with the new rows and, being older,
+# ahead of them and of every real retry, every time its backoff ends.
+RELEASE_REASONS = tuple(RELEASE_RETRY_MINUTES)
 
 KEYPAD_CONFIRM_SUFFIX = "#"
 
@@ -116,18 +129,27 @@ def _mail_idempotency_key(reservation_id: int, row: dict) -> str:
 def _release_issue_claim(
     door_code_id: int, *, decrement_attempt: bool = False, reason: Optional[str] = None
 ) -> None:
-    """Put a row back to pending. ``reason`` is kept so a stuck code says why."""
+    """Put a row back to pending. ``reason`` is kept so a stuck code says why.
+
+    A reason in RELEASE_RETRY_MINUTES also moves next_attempt_at forward (1173): without it the row
+    stays due and _issue_due takes it again on every tick, so 20 such rows block every newer row.
+    """
+    now = db.utcnow()
+    minutes = RELEASE_RETRY_MINUTES.get(reason or "")
+    next_at = _iso(_now() + timedelta(minutes=minutes)) if minutes else None
     if decrement_attempt:
         db.execute(
             "UPDATE door_code SET state = ?, claimed_at = NULL, attempts = attempts - 1, "
-            "last_error = COALESCE(?, last_error), updated_at = ? WHERE id = ? AND attempts > 0",
-            (PENDING, reason, db.utcnow(), door_code_id),
+            "last_error = COALESCE(?, last_error), next_attempt_at = COALESCE(?, next_attempt_at), "
+            "updated_at = ? WHERE id = ? AND attempts > 0",
+            (PENDING, reason, next_at, now, door_code_id),
         )
     else:
         db.execute(
             "UPDATE door_code SET state = ?, claimed_at = NULL, "
-            "last_error = COALESCE(?, last_error), updated_at = ? WHERE id = ?",
-            (PENDING, reason, db.utcnow(), door_code_id),
+            "last_error = COALESCE(?, last_error), next_attempt_at = COALESCE(?, next_attempt_at), "
+            "updated_at = ? WHERE id = ?",
+            (PENDING, reason, next_at, now, door_code_id),
         )
 
 
@@ -240,6 +262,14 @@ def view(reservation: dict, apartment: dict) -> Optional[dict]:
     }
 
 
+def _owner_can_hold_code(owner_user_id) -> bool:
+    """The plan allows TTLock and the lock account works: the test ensure_row makes before it inserts a row."""
+    if not ttlock.allowed_for(owner_user_id):
+        return False
+    account = ttlock.account_for(owner_user_id)
+    return bool(account and account["status"] == "ok")
+
+
 def ensure_row(reservation_id: int) -> Optional[int]:
     clause, today = _eligible_sql()
     row = db.query_one(
@@ -250,10 +280,7 @@ def ensure_row(reservation_id: int) -> Optional[int]:
     )
     if not row:
         return None
-    if not ttlock.allowed_for(row["owner_user_id"]):
-        return None
-    account = ttlock.account_for(row["owner_user_id"])
-    if not account or account["status"] != "ok":
+    if not _owner_can_hold_code(row["owner_user_id"]):
         return None
     now = db.utcnow()
     db.execute(
@@ -634,6 +661,7 @@ def issue(door_code_id: int, *, allow_gateway: bool = False) -> bool:
             )
         alerts.resolve(f"door_code_failed:{reservation['id']}")
         alerts.resolve(f"door_code_delayed:{reservation['id']}")
+        alerts.resolve(f"door_code_pin_unverified:{reservation['id']}")
         db.audit(
             "door_code_issued",
             f"door_code={door_code_id} reservation={reservation['id']}",
@@ -890,6 +918,7 @@ def _revive_one(item, now_iso: str, held_claim: str | None = None) -> bool:
         return False
     if unverified:
         db.audit("door_code_pin_unverified", f"door_code={row_id}", actor="system", owner_user_id=owner_id)
+        _tell_host_unverified(row_id, owner_id)
     elif verdict == PIN_GONE:
         _reissue_lost_pin(row_id, str(item["provider_code_id"] or ""), owner_id)
     return True
@@ -942,6 +971,38 @@ def _tell_host_reissued(row_id: int, owner_user_id: int) -> None:
         mail_notify.door_code_notice(row_id, f"reissued{suffix}")
     except Exception:
         log.exception("door code %s: host notice after a re-issue failed", row_id)
+
+
+def _tell_host_unverified(row_id: int, owner_user_id: int) -> None:
+    """Tell the host once that a revived code could not be confirmed on the lock.
+
+    Called when the lookup stayed unknown for LOOKUP_MAX_TRIES and the row is kept issued: the
+    guest may be shown a PIN the lock no longer has. One warning card per stay (dedupe key) and
+    one mail per row (idempotency key in the mail queue); neither carries the PIN. A failure
+    here is logged and never stops the revival.
+    """
+    try:
+        info = db.query_one(
+            "SELECT a.id AS apartment_id, a.internal_name, r.id AS reservation_id, r.date_from "
+            "FROM door_code dc JOIN apartment a ON a.id = dc.apartment_id "
+            "JOIN reservation r ON r.id = dc.reservation_id WHERE dc.id = ?",
+            (row_id,),
+        )
+        if not info:
+            return
+        alerts.raise_alert(
+            "warning",
+            "door_code_pin_unverified",
+            "Door code could not be confirmed on the lock",
+            dedupe_key=f"door_code_pin_unverified:{info['reservation_id']}",
+            apartment_id=info["apartment_id"],
+            reservation_id=info["reservation_id"],
+            owner_user_id=owner_user_id,
+            params={"property": info["internal_name"], "date": info["date_from"]},
+        )
+        mail_notify.door_code_notice(row_id, "pin_unverified")
+    except Exception:
+        log.exception("door code %s: host notice about an unverified code failed", row_id)
 
 
 def _reissue_lost_pin(row_id: int, deleted_code_id: str, owner_user_id: int) -> None:
@@ -1138,7 +1199,7 @@ def _handle_cancellations(now_iso: str) -> None:
         "JOIN reservation r ON r.id = dc.reservation_id "
         "WHERE dc.state = ? AND (r.status != 'active' OR r.archived_at IS NOT NULL) "
         "AND (dc.next_attempt_at IS NULL OR dc.next_attempt_at <= ?) "
-        "ORDER BY dc.next_attempt_at LIMIT ?",
+        "ORDER BY (dc.next_attempt_at IS NOT NULL), dc.next_attempt_at LIMIT ?",
         (REVOKE_PENDING, now_iso, BATCH),
     )
     for item in due:
@@ -1261,6 +1322,7 @@ def _handle_moves(now_iso: str) -> None:
                 actor="system",
                 owner_user_id=row["owner_user_id"],
             )
+            alerts.resolve(f"door_code_pin_unverified:{row['reservation_id']}")
             send_code_mail(int(row["id"]))
             if old_code_id and old_code_id != code_id:
                 try:
@@ -1299,6 +1361,14 @@ def _handle_moves(now_iso: str) -> None:
                     "UPDATE door_code SET next_attempt_at = ?, last_error = ?, updated_at = ? WHERE id = ?",
                     (_iso(_now() + timedelta(minutes=delay)), last_error, now_iso, row["id"]),
                 )
+                if kind == ttlock.LOCK_SETUP:
+                    # The guest keeps the old code while the retry runs: tell the host once per
+                    # target window (the mail queue's idempotency key), so a later move to other
+                    # dates that fails again mails again.
+                    mail_notify.door_code_notice(
+                        int(row["id"]), "moved_failed", key_suffix=f"{start_ms}-{end_ms}"
+                    )
+                    mail.drain(limit=4)
 
 
 def check_lock_clocks() -> Dict[str, int]:
@@ -1462,8 +1532,10 @@ def _issue_due(now_iso: str) -> Dict[str, int]:
     due = db.query(
         "SELECT id FROM door_code WHERE state IN (?, ?) "
         "AND (next_attempt_at IS NULL OR next_attempt_at <= ?) "
-        "ORDER BY next_attempt_at LIMIT ?",
-        (PENDING, RETRYING, now_iso, BATCH),
+        f"ORDER BY CASE WHEN last_error IN ({', '.join('?' * len(RELEASE_REASONS))}) THEN 2 "
+        "WHEN attempts > 0 THEN 1 ELSE 0 END, "
+        "(next_attempt_at IS NOT NULL), next_attempt_at, id LIMIT ?",
+        (PENDING, RETRYING, now_iso, *RELEASE_REASONS, BATCH),
     )
     for row in due:
         row_id = int(row["id"])
@@ -1472,11 +1544,100 @@ def _issue_due(now_iso: str) -> Dict[str, int]:
     return out
 
 
+def _revive_unissued_expired() -> int:
+    """Delete an expired row that never got a code when its stay is live again (1173c).
+
+    expired is terminal and ensure_row never overwrites a row, so a stay that ended before a code was made
+    and was then extended would stay without one. Like a revoked row of a revived stay (_handle_cancellations)
+    the row is deleted; the same tick's _issue_due makes a new one. Only rows with no lock code
+    (provider_code_id IS NULL), only stays eligible again, and only when the window end is still ahead:
+    without that check issue() would expire the new row on every tick of the check-out day.
+    """
+    clause, today = _eligible_sql()
+    rows = db.query(
+        f"SELECT dc.id, r.date_from, r.date_to, a.checkin_hour, a.checkout_hour, a.owner_user_id "
+        f"FROM door_code dc JOIN reservation r ON r.id = dc.reservation_id "
+        f"JOIN apartment a ON a.id = r.apartment_id "
+        f"WHERE dc.state = ? AND dc.provider_code_id IS NULL AND {clause}",
+        (EXPIRED, today),
+    )
+    now_ms = int(_now().timestamp() * 1000)
+    revived = 0
+    for row in rows:
+        try:
+            _, end_ms = ttlock.stay_window(
+                row["date_from"], row["date_to"], row["checkin_hour"], row["checkout_hour"],
+                config.DOOR_CODE_BUFFER_HOURS,
+            )
+        except ValueError:
+            continue
+        if end_ms < now_ms:
+            continue
+        if not ttlock.allowed_for(row["owner_user_id"]):
+            # Plan without TTLock: ensure_row would never make a new row, keep the expired one (1173d).
+            # A lock account that is not ok does not count: _alert_delayed then tells the host (1173e).
+            continue
+        # Guarded: only a row that is still expired is deleted.
+        removed = db.execute("DELETE FROM door_code WHERE id = ? AND state = ?", (row["id"], EXPIRED))
+        if removed:
+            revived += 1
+            db.audit("door_code_reset", f"door_code={row['id']}", actor="system")
+    return revived
+
+
+def _expire_ended_stays(now_iso: str) -> int:
+    """pending/retrying rows of a stay that has ended become expired (1173).
+
+    issue() expires such a row only when it gets as far as the window check, but a stay whose last day
+    is past is not eligible any more, so issue() put it back to pending on every tick. The test is the
+    one _eligible_sql uses (date_to before the local date). valid_to is not used: a re-issue row
+    (pin_lost) keeps the old window's valid_to while the stay may have been extended since.
+    Cancelled or archived stays are left to _handle_cancellations (revoked).
+    """
+    today = deadlines.local_now().date().isoformat()
+    return int(
+        db.execute(
+            "UPDATE door_code SET state = ?, claimed_at = NULL, updated_at = ? "
+            "WHERE state IN (?, ?) AND claimed_at IS NULL AND reservation_id IN "
+            "(SELECT id FROM reservation WHERE status = 'active' AND archived_at IS NULL AND date_to < ?)",
+            (EXPIRED, now_iso, PENDING, RETRYING, today),
+        )
+        or 0
+    )
+
+
+def _resolve_unverified_cards() -> None:
+    """Close the cards of a stay whose code row has ended (1173b, 1173c).
+
+    "Code not confirmed" (door_code_pin_unverified): the stay has no issued row any more (revoke, expiry,
+    deleted row). "Code is taking too long" (door_code_delayed): the stay's row is expired or revoked, so
+    no code is coming. A deleted row of a live stay is not swept: _alert_delayed raises that card again.
+    A new code (issue, move) resolves both where it is made.
+    """
+    now = db.utcnow()
+    db.execute(
+        "UPDATE alert SET resolved_at = ? WHERE kind = ? AND resolved_at IS NULL "
+        "AND NOT EXISTS (SELECT 1 FROM door_code dc "
+        "WHERE dc.reservation_id = alert.reservation_id AND dc.state = ?)",
+        (now, "door_code_pin_unverified", ISSUED),
+    )
+    db.execute(
+        "UPDATE alert SET resolved_at = ? WHERE kind = ? AND resolved_at IS NULL "
+        "AND EXISTS (SELECT 1 FROM door_code dc "
+        "WHERE dc.reservation_id = alert.reservation_id AND dc.state IN (?, ?))",
+        (now, "door_code_delayed", EXPIRED, REVOKED),
+    )
+
+
 def reconcile() -> Dict[str, int]:
     counts = {"created": 0, "issued": 0, "failed": 0, "expired": 0, "delayed": 0}
     if not config.DOOR_CODES_ENABLED:
         return counts
     now_iso = db.utcnow()
+
+    ended = _phase("expire_ended", _expire_ended_stays, now_iso)
+    counts["expired"] += int(ended or 0)
+    _phase("revive_expired", _revive_unissued_expired)
 
     # Issuing comes first: a guest is waiting on it, and cancellations or moves
     # (which call the gateway, up to 35 s each) must never hold it up.
@@ -1507,7 +1668,8 @@ def reconcile() -> Dict[str, int]:
         "WHERE state = ? AND valid_to IS NOT NULL AND valid_to < ?",
         (EXPIRED, now_iso, ISSUED, now_iso),
     )
-    counts["expired"] = int(expired or 0)
+    counts["expired"] += int(expired or 0)
+    _phase("unverified_cards", _resolve_unverified_cards)
 
     failed = db.query_one(
         "SELECT COUNT(*) AS n FROM door_code WHERE state = ?",
