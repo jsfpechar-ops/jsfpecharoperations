@@ -252,7 +252,7 @@ func run() int {
 }
 
 // goIntervals are the schedule intervals (minutes) that cap a retry backoff.
-var goIntervals = map[string]int{"billing_snapshot": 24 * 60, "stripe_sweep": 24 * 60, "submit": 10, "ical": 60, "push": 1, "posthog": 15, "meta_capi": 10}
+var goIntervals = map[string]int{"billing_snapshot": 24 * 60, "stripe_sweep": 24 * 60, "submit": 10, "ical": 60, "push": 1, "posthog": 15, "meta_capi": 10, "deadlines": 30}
 
 // goHandlers maps each Go-owned job kind to its handler.
 func goHandlers(pool *pgxpool.Pool) map[string]jobs.Handler {
@@ -295,6 +295,12 @@ func goHandlers(pool *pgxpool.Pool) map[string]jobs.Handler {
 				slog.Info("meta conversions", "sent", sum.Sent, "retry", sum.Retry, "failed", sum.Failed, "expired", sum.Expired)
 			}
 			return sum.Sent, err
+		},
+		"deadlines": func(ctx context.Context) (int, error) {
+			sum, err := calendar.RunDeadlinesJob(ctx, pool, os.LookupEnv, time.Now(), func(url string) {
+				jobs.Ping(ctx, url, "filing")
+			})
+			return sum.Alerts + sum.RequestsDue, err
 		},
 		"submit": func(ctx context.Context) (int, error) {
 			keys, err := secure.LoadDataKeys(os.Getenv)

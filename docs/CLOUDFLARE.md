@@ -497,6 +497,8 @@ Skip works for Super Bot Fight Mode; it does **not** work for free Bot Fight Mod
 | **Guest links wrong host** | `UBYHOST_PUBLIC_BASE_URL` must match the public HTTPS URL exactly |
 | **Deploy says missing origin.pem** | Complete [step 4](#4-origin-certificate-on-your-server) |
 
+Outage page while the server is being rebuilt: [DISASTER_RECOVERY](DISASTER_RECOVERY.md#show-the-were-down-page).
+
 ### DNS-only mode (grey cloud)
 
 If you prefer **not** to proxy through Cloudflare:

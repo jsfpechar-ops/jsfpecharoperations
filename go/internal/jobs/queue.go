@@ -113,10 +113,10 @@ func Fail(ctx context.Context, pool *pgxpool.Pool, j *Job, cause error, interval
 }
 
 var jobNames = map[string]string{"billing_snapshot": "billing snapshot", "stripe_sweep": "payment check", "ical": "calendar sync",
-	"submit": "automatic filing", "push": "urgent alerts"}
+	"submit": "automatic filing", "push": "urgent alerts", "deadlines": "deadline watch"}
 
 // jobLevels is the alert level per job; every job not listed is "warning".
-var jobLevels = map[string]string{"submit": "critical"}
+var jobLevels = map[string]string{"submit": "critical", "deadlines": "critical"}
 
 // RaiseFailed opens the job_failed alert with the English copy of host_i18n,
 // refreshing it when it is already open. Owner and apartment stay empty: it

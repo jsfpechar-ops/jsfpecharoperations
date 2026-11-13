@@ -50,7 +50,7 @@ Optional host subdomain: [deployment, exact values and rollback](APP_SUBDOMAIN.m
 | Variable | Default | Notes |
 | --- | --- | --- |
 | `UBYHOST_JOB_QUEUE_KINDS` | empty | PostgreSQL only. Comma list of scheduler job ids that go through the job table instead of running directly; unknown ids stop the worker. |
-| `UBYHOST_GO_JOB_KINDS` | empty | PostgreSQL only. Kinds the Go service runs instead of Python; each must also be in `UBYHOST_JOB_QUEUE_KINDS`. Today `billing_snapshot`, `stripe_sweep`, `ical`, `push`, `submit`, `posthog` and `meta_capi` (the Go service reads the same `POSTHOG_*` and `UBYHOST_META_*` variables from `.env`). |
+| `UBYHOST_GO_JOB_KINDS` | empty | PostgreSQL only. Kinds the Go service runs instead of Python; each must also be in `UBYHOST_JOB_QUEUE_KINDS`. Today `billing_snapshot`, `stripe_sweep`, `ical`, `push`, `submit`, `posthog`, `meta_capi` and `deadlines` (the Go service reads the same `POSTHOG_*`, `UBYHOST_META_*` and `UBYHOST_HEARTBEAT_*` variables from `.env`). `deadlines` is the deadline watch plus the filing watchdog and its heartbeat; to hand it back to Python, remove it from this list (keep it in `UBYHOST_JOB_QUEUE_KINDS`) and run `./scripts/deploy.sh`. |
 | `UBYHOST_ENABLE_SCHEDULER` | `1` | `0` stops **all** background work: calendar polling, automatic submission, the deadline watch, the guest e-mail outbox, claim-hold expiry and the passport-photo sweep. |
 | `UBYHOST_ROLE` | `web` | What the process runs (WP06). `web`: HTTP only, never starts the scheduler (the Docker image, two uvicorn workers). `worker`: only the background jobs, started with `python -m app.worker` (the Lightsail `worker` container). `all`: both in one process (`run.sh` and `render_start.sh` default to it). Only one scheduler can run per data directory: it holds `DATA_DIR/scheduler.lock`. |
 | `UBYHOST_WEB_WORKERS` | `2` | uvicorn workers in the Docker image's web process (WP32). `4` on the 8 GB / 2 vCPU production server. `docker-entrypoint.sh` and `preflight.sh` refuse anything but 1 to 16. |
@@ -333,6 +333,7 @@ them; Render does.
 | `UBYHOST_WALG_BACKUP_PING_URL` | unset | `deploy/lightsail/scripts/walg-backup.sh` — pinged after each successful daily WAL-G base backup; a third dead-man check (daily period). |
 | `AGE_IDENTITY_FILE` | unset | `restore.sh` — host path to the age private identity used to decrypt an encrypted snapshot; never inside the volume |
 | `RESTORE_CONFIRM` | unset | `restore.sh` — `yes` skips the interactive confirmation prompt |
+| `UBYHOST_FILING_GUARD_OVERRIDE` | unset | `filing-guard.sh` (run by `preflight.sh` and `pg-restore.sh --file`). `1` prefixed on one command (never `export`ed) lets that run continue on a restored box (`.restored-box` present) with scheduled filing on. Refused when it is in `.env`. Owner only: DISASTER_RECOVERY.md, "Two servers never file at once" |
 | `UBYHOST_S3_BUCKET` | unset | `backup-s3.sh` |
 | `UBYHOST_S3_PREFIX` | `UbyHost-backups` | `backup-s3.sh` |
 | `RENDER_STAGING_DEPLOY_HOOK` | unset (GitHub secret) | `deploy-production.yml` — triggers the Render staging deploy |
