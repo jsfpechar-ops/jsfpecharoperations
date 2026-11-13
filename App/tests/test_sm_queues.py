@@ -53,6 +53,7 @@ GOCAPI = "go/internal/metacapi/send.go"
 SIGNUP = "App/app/signup.py"
 IMPORT = "App/app/guest_guide_import.py"
 MERGE = "App/app/guest_guide_merge.py"
+GOIMPORT = "go/internal/guideimport/job.go"
 
 # ---- scanner ---------------------------------------------------------------
 
@@ -250,6 +251,10 @@ IMPORT_SITES = {
     (IMPORT, "process_queue"): 2,
     (IMPORT, "purge"): 1,
     (MERGE, "_note_failure"): 1,
+    (GOIMPORT, "ProcessQueue"): 2,
+    (GOIMPORT, "runOne"): 4,
+    (GOIMPORT, "merge"): 1,
+    (GOIMPORT, "noteFailure"): 1,
 }
 IMPORT_MOVES = [
     (IMPORT, "request_imports", '"status": "queued", "created_at": now,', NEW, "queued"),
@@ -261,6 +266,14 @@ IMPORT_MOVES = [
     (IMPORT, "process_queue", "SET status = 'failed', error = 'stale'", ("running",), "failed"),
     (IMPORT, "purge", "WHEN status = 'done' THEN 'expired'", ("done",), "expired"),
     (MERGE, "_note_failure", "SET status = 'failed', error = ?, raw_json = NULL", ("done",), "failed"),
+    (GOIMPORT, "ProcessQueue", "SET status = 'failed', error = 'budget'", ANY, "failed"),
+    (GOIMPORT, "ProcessQueue", "SET status = 'failed', error = 'stale'", ("running",), "failed"),
+    (GOIMPORT, "runOne", "SET status = 'running', started_at = $1 WHERE id = $2 AND status = 'queued'", ("queued",), "running"),
+    (GOIMPORT, "runOne", "SET status = 'failed', error = 'network'", ("running",), "failed"),
+    (GOIMPORT, "runOne", "SET status = 'failed', error = $1, finished_at = $2 WHERE id = $3 AND status = 'running'", ("running",), "failed"),
+    (GOIMPORT, "runOne", "SET status = 'done', raw_json = $1", ("running",), "done"),
+    (GOIMPORT, "merge", "SET status = 'used', raw_json = NULL", ("done",), "used"),
+    (GOIMPORT, "noteFailure", "SET status = 'failed', error = $1, raw_json = NULL", ("done",), "failed"),
 ]
 
 
