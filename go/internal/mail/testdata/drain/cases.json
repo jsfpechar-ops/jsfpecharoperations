@@ -1,0 +1,813 @@
+{
+ "backoff": [
+  {
+   "attempts": 1,
+   "delay": 120,
+   "terminal": false
+  },
+  {
+   "attempts": 2,
+   "delay": 240,
+   "terminal": false
+  },
+  {
+   "attempts": 3,
+   "delay": 480,
+   "terminal": false
+  },
+  {
+   "attempts": 4,
+   "delay": 960,
+   "terminal": false
+  },
+  {
+   "attempts": 5,
+   "delay": 1920,
+   "terminal": false
+  },
+  {
+   "attempts": 6,
+   "delay": 3840,
+   "terminal": false
+  },
+  {
+   "attempts": 7,
+   "delay": 7680,
+   "terminal": false
+  },
+  {
+   "attempts": 8,
+   "delay": 15360,
+   "terminal": true
+  },
+  {
+   "attempts": 9,
+   "delay": 15360,
+   "terminal": true
+  },
+  {
+   "attempts": 10,
+   "delay": 15360,
+   "terminal": true
+  },
+  {
+   "attempts": 11,
+   "delay": 15360,
+   "terminal": true
+  }
+ ],
+ "cases": [
+  {
+   "attachments": [],
+   "body": "Open: https://app.example.test/c/s3cr3t-token_AB\n",
+   "cc": null,
+   "cc_normalised": "",
+   "error": "",
+   "headers": [],
+   "html": "<p>https://app.example.test/c/s3cr3t-token_AB</p>",
+   "kind": "claim",
+   "name": "plain_claim_secret",
+   "payload": {
+    "claim_secret_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0ODwzBzTNykuhTpx-tAejA1sxO0Bux0KeSYTtzYEgjR93PG2bfu-S3uWdDaRtELC_hkA==",
+    "html": "<p>https://app.example.test/c/{{claim_secret}}</p>",
+    "text": "Open: https://app.example.test/c/{{claim_secret}}\n"
+   },
+   "reply_to": "",
+   "sent_as": "simple",
+   "subject": "Your check-in link",
+   "to": "guest@example.test"
+  },
+  {
+   "attachments": [],
+   "body": "Dobrý den,\nděkujeme.\n",
+   "cc": null,
+   "cc_normalised": "",
+   "error": "",
+   "headers": [],
+   "html": "",
+   "kind": "completion",
+   "name": "plain_text_only_czech_subject",
+   "payload": {
+    "text": "Dobrý den,\nděkujeme.\n"
+   },
+   "reply_to": "",
+   "sent_as": "simple",
+   "subject": "Potvrzení pobytu č. 1",
+   "to": "Guest@Example.test"
+  },
+  {
+   "attachments": [],
+   "body": "PIN 123456#",
+   "cc": null,
+   "cc_normalised": "",
+   "error": "",
+   "headers": [],
+   "html": "<b>123456#</b>",
+   "kind": "door_code",
+   "name": "door_code",
+   "payload": {
+    "door_code_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD1Fs5MTM82peTJZOiLR2SviQF1spYvTP8psU0zRHRWpV0iKivImOf3Y01xSmx0pfRw==",
+    "html": "<b>{{door_code}}</b>",
+    "text": "PIN {{door_code}}"
+   },
+   "reply_to": "",
+   "sent_as": "simple",
+   "subject": "Door code",
+   "to": "guest@example.test"
+  },
+  {
+   "attachments": [],
+   "body": "PIN 4321#",
+   "cc": null,
+   "cc_normalised": "",
+   "error": "",
+   "headers": [],
+   "html": "",
+   "kind": "door_code",
+   "name": "door_code_with_confirm",
+   "payload": {
+    "door_code_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD_5AP5Xs40YzNSi-bNwAxWB-zMEwxkq-Rfhkgp4ICKkjxT9_ach26SOnJBEX162Uxg==",
+    "text": "PIN {{door_code}}"
+   },
+   "reply_to": "",
+   "sent_as": "simple",
+   "subject": "Door code",
+   "to": "guest@example.test"
+  },
+  {
+   "attachments": [],
+   "body": "ok",
+   "cc": "Host <HOST@Example.test>",
+   "cc_normalised": "host@example.test",
+   "error": "",
+   "headers": [],
+   "html": "<p>ok</p>",
+   "kind": "completion",
+   "name": "cc_and_reply_to",
+   "payload": {
+    "html": "<p>ok</p>",
+    "reply_to": "Reply Me <Reply@Example.test>",
+    "text": "ok"
+   },
+   "reply_to": "reply@example.test",
+   "sent_as": "simple",
+   "subject": "Receipt",
+   "to": "guest@example.test"
+  },
+  {
+   "attachments": [],
+   "body": "ok",
+   "cc": "not-an-address",
+   "cc_normalised": "",
+   "error": "",
+   "headers": [],
+   "html": "",
+   "kind": "completion",
+   "name": "bad_cc_and_reply_to_dropped",
+   "payload": {
+    "reply_to": "nonsense",
+    "text": "ok"
+   },
+   "reply_to": "",
+   "sent_as": "simple",
+   "subject": "Receipt",
+   "to": "guest@example.test"
+  },
+  {
+   "attachments": [],
+   "body": "tip",
+   "cc": null,
+   "cc_normalised": "",
+   "error": "",
+   "headers": [
+    {
+     "Name": "List-Unsubscribe",
+     "Value": "<https://app.example.test/u/abc123>"
+    },
+    {
+     "Name": "List-Unsubscribe-Post",
+     "Value": "List-Unsubscribe=One-Click"
+    }
+   ],
+   "html": "<p>tip</p>",
+   "kind": "lifecycle_no_property",
+   "name": "lifecycle_unsubscribe",
+   "payload": {
+    "html": "<p>tip</p>",
+    "list_unsubscribe": "https://app.example.test/u/abc123",
+    "reply_to": "support@example.test",
+    "text": "tip"
+   },
+   "reply_to": "support@example.test",
+   "sent_as": "simple",
+   "subject": "Tip 1",
+   "to": "host@example.test",
+   "v2_simple": {
+    "Content": {
+     "Simple": {
+      "Body": {
+       "Html": {
+        "Charset": "UTF-8",
+        "Data": "<p>tip</p>"
+       },
+       "Text": {
+        "Charset": "UTF-8",
+        "Data": "tip"
+       }
+      },
+      "Headers": [
+       {
+        "Name": "List-Unsubscribe",
+        "Value": "<https://app.example.test/u/abc123>"
+       },
+       {
+        "Name": "List-Unsubscribe-Post",
+        "Value": "List-Unsubscribe=One-Click"
+       }
+      ],
+      "Subject": {
+       "Charset": "UTF-8",
+       "Data": "Tip 1"
+      }
+     }
+    },
+    "Destination": {
+     "ToAddresses": [
+      "host@example.test"
+     ]
+    },
+    "FromEmailAddress": "UbyHost <noreply@mail.example.test>",
+    "ReplyToAddresses": [
+     "support@example.test"
+    ]
+   }
+  },
+  {
+   "attachments": [],
+   "body": "tip",
+   "cc": null,
+   "cc_normalised": "",
+   "error": "",
+   "headers": [],
+   "html": "",
+   "kind": "lifecycle_no_property",
+   "name": "lifecycle_http_dropped",
+   "payload": {
+    "list_unsubscribe": "http://app.example.test/u/abc",
+    "text": "tip"
+   },
+   "reply_to": "",
+   "sent_as": "simple",
+   "subject": "Tip 2",
+   "to": "host@example.test"
+  },
+  {
+   "attachments": [],
+   "body": "tip",
+   "cc": null,
+   "cc_normalised": "",
+   "error": "",
+   "headers": [],
+   "html": "",
+   "kind": "lifecycle_no_property",
+   "name": "lifecycle_non_ascii_dropped",
+   "payload": {
+    "list_unsubscribe": "https://app.example.test/u/é",
+    "text": "tip"
+   },
+   "reply_to": "",
+   "sent_as": "simple",
+   "subject": "Tip 3",
+   "to": "host@example.test"
+  },
+  {
+   "attachments": [],
+   "body": "tip",
+   "cc": null,
+   "cc_normalised": "",
+   "error": "",
+   "headers": [],
+   "html": "",
+   "kind": "completion",
+   "name": "service_kind_ignores_unsubscribe",
+   "payload": {
+    "list_unsubscribe": "https://app.example.test/u/abc",
+    "text": "tip"
+   },
+   "reply_to": "",
+   "sent_as": "simple",
+   "subject": "S",
+   "to": "host@example.test"
+  },
+  {
+   "attachments": [
+    {
+     "cid": null,
+     "filename": "poplatek-z-pobytu-2026-10.pdf",
+     "maintype": "application",
+     "sha256": "ae5a56544a16ac3f767b64df234bd80f6b7de618d515e9e7daf45c823ec8dadc",
+     "subtype": "pdf"
+    }
+   ],
+   "body": "See attachment",
+   "cc": null,
+   "cc_normalised": "",
+   "error": "",
+   "headers": [],
+   "html": "",
+   "kind": "stay_fee_filing",
+   "name": "attach_filing_default_name",
+   "payload": {
+    "stay_fee_filing_id": 7,
+    "text": "See attachment"
+   },
+   "raw": {
+    "headers": {
+     "From": "UbyHost <noreply@mail.example.test>",
+     "Subject": "Poplatek",
+     "To": "host@example.test"
+    },
+    "tree": {
+     "parts": [
+      {
+       "sha256": "dd931fd68298774fc1c65094ace69e86ec8f6f81907226326336a30a679c28c3",
+       "type": "text/plain"
+      },
+      {
+       "disposition": "attachment",
+       "filename": "poplatek-z-pobytu-2026-10.pdf",
+       "sha256": "ae5a56544a16ac3f767b64df234bd80f6b7de618d515e9e7daf45c823ec8dadc",
+       "type": "application/pdf"
+      }
+     ],
+     "type": "multipart/mixed"
+    }
+   },
+   "reply_to": "",
+   "sent_as": "raw",
+   "subject": "Poplatek",
+   "to": "host@example.test"
+  },
+  {
+   "attachments": [
+    {
+     "cid": null,
+     "filename": "my-filing.pdf",
+     "maintype": "application",
+     "sha256": "ae5a56544a16ac3f767b64df234bd80f6b7de618d515e9e7daf45c823ec8dadc",
+     "subtype": "pdf"
+    }
+   ],
+   "body": "See attachment",
+   "cc": "cc@example.test",
+   "cc_normalised": "cc@example.test",
+   "error": "",
+   "headers": [],
+   "html": "<p>See attachment</p>",
+   "kind": "stay_fee_filing",
+   "name": "attach_filing_custom_name_html",
+   "payload": {
+    "attachment_name": "my-filing.pdf",
+    "html": "<p>See attachment</p>",
+    "reply_to": "r@example.test",
+    "stay_fee_filing_id": 7,
+    "text": "See attachment"
+   },
+   "raw": {
+    "headers": {
+     "Cc": "cc@example.test",
+     "From": "UbyHost <noreply@mail.example.test>",
+     "Reply-To": "r@example.test",
+     "Subject": "Poplatek 2",
+     "To": "host@example.test"
+    },
+    "tree": {
+     "parts": [
+      {
+       "parts": [
+        {
+         "sha256": "dd931fd68298774fc1c65094ace69e86ec8f6f81907226326336a30a679c28c3",
+         "type": "text/plain"
+        },
+        {
+         "sha256": "ea204b35d063c892b6c3f18b63c8bc6d6e78f960bca98117718505cc2a5e8dff",
+         "type": "text/html"
+        }
+       ],
+       "type": "multipart/alternative"
+      },
+      {
+       "disposition": "attachment",
+       "filename": "my-filing.pdf",
+       "sha256": "ae5a56544a16ac3f767b64df234bd80f6b7de618d515e9e7daf45c823ec8dadc",
+       "type": "application/pdf"
+      }
+     ],
+     "type": "multipart/mixed"
+    }
+   },
+   "reply_to": "r@example.test",
+   "sent_as": "raw",
+   "subject": "Poplatek 2",
+   "to": "host@example.test"
+  },
+  {
+   "attachments": [
+    {
+     "cid": null,
+     "filename": "faktura-9.pdf",
+     "maintype": "application",
+     "sha256": "25ab9d28da2dd02468523e1c67fd7daf0d3a9e60bbad5c817e7594592f61e1fd",
+     "subtype": "pdf"
+    },
+    {
+     "cid": "stayfeeqr",
+     "filename": "qr-platba.png",
+     "maintype": "image",
+     "png_size": "246x246",
+     "subtype": "png"
+    }
+   ],
+   "body": "Invoice",
+   "cc": null,
+   "cc_normalised": "",
+   "error": "",
+   "headers": [],
+   "html": "<p>Invoice</p><img src=\"cid:stayfeeqr\">",
+   "kind": "billing_invoice",
+   "name": "attach_invoice_and_qr_html",
+   "payload": {
+    "html": "<p>Invoice</p><img src=\"cid:stayfeeqr\">",
+    "platform_invoice_id": 9,
+    "qr_spayd": "SPD*1.0*ACC:CZ6508000000192000145399*AM:150.00*CC:CZK*X-VS:1234567890*MSG:POPLATEK",
+    "text": "Invoice"
+   },
+   "raw": {
+    "headers": {
+     "From": "UbyHost <noreply@mail.example.test>",
+     "Subject": "Faktura",
+     "To": "host@example.test"
+    },
+    "tree": {
+     "parts": [
+      {
+       "parts": [
+        {
+         "sha256": "a6e89f6792e837b38e290e294a08fff33138bc8f70a2e4f73f6120a99ac7d0b4",
+         "type": "text/plain"
+        },
+        {
+         "parts": [
+          {
+           "sha256": "7c0a60eb9de45db4549dcc8eea82dee4ed2a38cdc767551ad4769aa4a3a9b4f5",
+           "type": "text/html"
+          },
+          {
+           "cid": "<stayfeeqr>",
+           "disposition": "attachment",
+           "filename": "qr-platba.png",
+           "png_size": "246x246",
+           "type": "image/png"
+          }
+         ],
+         "type": "multipart/related"
+        }
+       ],
+       "type": "multipart/alternative"
+      },
+      {
+       "disposition": "attachment",
+       "filename": "faktura-9.pdf",
+       "sha256": "25ab9d28da2dd02468523e1c67fd7daf0d3a9e60bbad5c817e7594592f61e1fd",
+       "type": "application/pdf"
+      }
+     ],
+     "type": "multipart/mixed"
+    }
+   },
+   "reply_to": "",
+   "sent_as": "raw",
+   "subject": "Faktura",
+   "to": "host@example.test"
+  },
+  {
+   "attachments": [
+    {
+     "cid": "stayfeeqr",
+     "filename": "qr-platba.png",
+     "maintype": "image",
+     "png_size": "246x246",
+     "subtype": "png"
+    }
+   ],
+   "body": "Scan",
+   "cc": null,
+   "cc_normalised": "",
+   "error": "",
+   "headers": [],
+   "html": "",
+   "kind": "payment_request",
+   "name": "attach_qr_text_only",
+   "payload": {
+    "qr_spayd": "SPD*1.0*ACC:CZ6508000000192000145399*AM:150.00*CC:CZK*X-VS:1234567890*MSG:POPLATEK",
+    "text": "Scan"
+   },
+   "raw": {
+    "headers": {
+     "From": "UbyHost <noreply@mail.example.test>",
+     "Subject": "Pay",
+     "To": "guest@example.test"
+    },
+    "tree": {
+     "sha256": "f159aa5d1a8e926f92925831296a8ea297d6953a026b5c07fb9ee1d9c1f8259b",
+     "type": "text/plain"
+    }
+   },
+   "reply_to": "",
+   "sent_as": "raw",
+   "subject": "Pay",
+   "to": "guest@example.test"
+  },
+  {
+   "attachments": [
+    {
+     "cid": null,
+     "filename": "poplatek-z-pobytu-2026-10.pdf",
+     "maintype": "application",
+     "sha256": "ae5a56544a16ac3f767b64df234bd80f6b7de618d515e9e7daf45c823ec8dadc",
+     "subtype": "pdf"
+    }
+   ],
+   "body": "tip",
+   "cc": null,
+   "cc_normalised": "",
+   "error": "",
+   "headers": [
+    {
+     "Name": "List-Unsubscribe",
+     "Value": "<https://app.example.test/u/abc123>"
+    },
+    {
+     "Name": "List-Unsubscribe-Post",
+     "Value": "List-Unsubscribe=One-Click"
+    }
+   ],
+   "html": "<p>tip</p>",
+   "kind": "lifecycle_no_property",
+   "name": "lifecycle_unsubscribe_with_attachment",
+   "payload": {
+    "html": "<p>tip</p>",
+    "list_unsubscribe": "https://app.example.test/u/abc123",
+    "stay_fee_filing_id": 7,
+    "text": "tip"
+   },
+   "raw": {
+    "headers": {
+     "From": "UbyHost <noreply@mail.example.test>",
+     "List-Unsubscribe": "<https://app.example.test/u/abc123>",
+     "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+     "Subject": "Tip 4",
+     "To": "host@example.test"
+    },
+    "tree": {
+     "parts": [
+      {
+       "parts": [
+        {
+         "sha256": "d59f767a54e9c72e2328574fe3e6d506d56e35778604fa21ef4792110fb2e9c9",
+         "type": "text/plain"
+        },
+        {
+         "sha256": "9273b42c1564ccc31cbf2fa8b6a9c68755843405e4380c9f741ad28ded86030b",
+         "type": "text/html"
+        }
+       ],
+       "type": "multipart/alternative"
+      },
+      {
+       "disposition": "attachment",
+       "filename": "poplatek-z-pobytu-2026-10.pdf",
+       "sha256": "ae5a56544a16ac3f767b64df234bd80f6b7de618d515e9e7daf45c823ec8dadc",
+       "type": "application/pdf"
+      }
+     ],
+     "type": "multipart/mixed"
+    }
+   },
+   "reply_to": "",
+   "sent_as": "raw",
+   "subject": "Tip 4",
+   "to": "host@example.test"
+  },
+  {
+   "cc": null,
+   "cc_normalised": "",
+   "error": "ValueError",
+   "kind": "billing_invoice",
+   "name": "attach_invoice_sha_mismatch",
+   "payload": {
+    "platform_invoice_id": 10,
+    "text": "Invoice"
+   },
+   "reply_to": "",
+   "subject": "Faktura",
+   "to": "host@example.test"
+  },
+  {
+   "cc": null,
+   "cc_normalised": "",
+   "error": "MailConfigError",
+   "kind": "stay_fee_filing",
+   "name": "attach_filing_missing",
+   "payload": {
+    "stay_fee_filing_id": 99,
+    "text": "x"
+   },
+   "reply_to": "",
+   "subject": "Poplatek",
+   "to": "host@example.test"
+  },
+  {
+   "cc": null,
+   "error": "DecryptionError",
+   "kind": "claim",
+   "name": "claim_marker_without_secret",
+   "payload": {
+    "text": "{{claim_secret}}"
+   },
+   "subject": "Link",
+   "to": "guest@example.test"
+  },
+  {
+   "cc": null,
+   "error": "DecryptionError",
+   "kind": "door_code",
+   "name": "door_marker_without_secret",
+   "payload": {
+    "text": "{{door_code}}"
+   },
+   "subject": "Code",
+   "to": "guest@example.test"
+  },
+  {
+   "cc": null,
+   "error": "DecryptionError",
+   "kind": "claim",
+   "name": "claim_marker_bad_token",
+   "payload": {
+    "claim_secret_enc": "not-a-token",
+    "text": "{{claim_secret}}"
+   },
+   "subject": "Link",
+   "to": "guest@example.test"
+  }
+ ],
+ "display_from": [
+  {
+   "in": "noreply@mail.example.test",
+   "out": "UbyHost <noreply@mail.example.test>"
+  },
+  {
+   "in": " noreply@mail.example.test ",
+   "out": "UbyHost <noreply@mail.example.test>"
+  },
+  {
+   "in": "Custom Name <n@x.test>",
+   "out": "Custom Name <n@x.test>"
+  },
+  {
+   "in": "",
+   "out": ""
+  },
+  {
+   "in": "no-at-sign",
+   "out": "no-at-sign"
+  },
+  {
+   "in": "a@b <c>",
+   "out": "a@b <c>"
+  }
+ ],
+ "fernet_key": "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
+ "filing_pdf_b64": "JVBERi0xLjQgaW52ZW50ZWQgc3RheSBmZWUgZmlsaW5nCiUlRU9GCg==",
+ "filing_pdf_enc": "gAAAAABlU_EAAAECAwQFBgcICQoLDA0OD3i4iJMmP3BS2ALtRKn7JNIbRbbCpL1Go7Wfp9wpiXkZaMPriztZ4oz5sxE-Mdk1v6VzyaopitEtfWmUmf5iNYMxR8YnISi3jz3qSUtVk9es",
+ "filing_period": "2026-10",
+ "invoice_pdf_b64": "JVBERi0xLjQgaW52ZW50ZWQgcGxhdGZvcm0gaW52b2ljZQolJUVPRgo=",
+ "mask": [
+  {
+   "in": "jan@example.cz",
+   "out": "j***@e******.cz"
+  },
+  {
+   "in": "a@b.cz",
+   "out": "a***@b***.cz"
+  },
+  {
+   "in": "ab@cd.example.org",
+   "out": "a***@c***.example.org"
+  },
+  {
+   "in": "verylonglocalpart@longdomainname.co.uk",
+   "out": "v********@l*************.co.uk"
+  },
+  {
+   "in": "nope",
+   "out": ""
+  },
+  {
+   "in": "@x.cz",
+   "out": ""
+  },
+  {
+   "in": "x@",
+   "out": ""
+  }
+ ],
+ "normalise": [
+  {
+   "in": "a@b.cz",
+   "out": "a@b.cz"
+  },
+  {
+   "in": " A@B.CZ ",
+   "out": "a@b.cz"
+  },
+  {
+   "in": "Name <Addr@Host.example>",
+   "out": "addr@host.example"
+  },
+  {
+   "in": "Name<a@b.cz>",
+   "out": "a@b.cz"
+  },
+  {
+   "in": "nope",
+   "out": ""
+  },
+  {
+   "in": "",
+   "out": ""
+  },
+  {
+   "in": "a@b",
+   "out": ""
+  },
+  {
+   "in": "a b@c.de",
+   "out": ""
+  },
+  {
+   "in": "<a@b.cz>",
+   "out": "a@b.cz"
+  },
+  {
+   "in": "a@b.cz, c@d.cz",
+   "out": ""
+  },
+  {
+   "in": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@b.cz",
+   "out": ""
+  },
+  {
+   "in": "a@b.cz.",
+   "out": "a@b.cz."
+  },
+  {
+   "in": "Jan Novák <jan@example.cz>",
+   "out": "jan@example.cz"
+  }
+ ],
+ "sigv4": {
+  "access_key": "AKIDEXAMPLE",
+  "authorization": "AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20261113/eu-central-1/ses/aws4_request, SignedHeaders=content-type;host;x-amz-date, Signature=f6509c8b4906d1aae0b96192c415c4aae714e3423d48030cc9f52a845577dfec",
+  "body": "{\"FromEmailAddress\":\"a@b.test\",\"Content\":{\"Raw\":{\"Data\":\"eA==\"}}}",
+  "date": "20261113T100000Z",
+  "region": "eu-central-1",
+  "secret_key": "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY",
+  "url": "https://email.eu-central-1.amazonaws.com/v2/email/outbound-emails"
+ },
+ "spayd": "SPD*1.0*ACC:CZ6508000000192000145399*AM:150.00*CC:CZK*X-VS:1234567890*MSG:POPLATEK",
+ "staging_links": [
+  {
+   "kind": "login_link",
+   "logged": true,
+   "text": "Sign in: https://app.example.test/login?t=AbC-123_x.y now",
+   "to": "guest@example.test",
+   "want": "https://app.example.test/login?t=AbC-123_x.y"
+  },
+  {
+   "kind": "login_link",
+   "logged": false,
+   "text": "no link here",
+   "to": "guest@example.test",
+   "want": ""
+  },
+  {
+   "kind": "claim",
+   "logged": false,
+   "text": "https://app.example.test/x?t=abc",
+   "to": "guest@example.test",
+   "want": ""
+  }
+ ]
+}
