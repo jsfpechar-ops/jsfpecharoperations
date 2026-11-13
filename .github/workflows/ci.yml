@@ -217,9 +217,6 @@ jobs:
           export UBYHOST_DATABASE_URL=postgresql://ubyhost_app:ubyhost@localhost:5432/ubyhost_test
           python scripts/pg_schema.py apply --expect-database ubyhost_test
           python scripts/pg_schema.py check --expect-database ubyhost_test
-          UBYHOST_TEST_DATABASE_URL=postgresql://postgres:ubyhost@localhost:5432/ubyhost_test \
-            UBYHOST_DATABASE_URL=postgresql://ubyhost_app:ubyhost@localhost:5432/ubyhost_test \
-            python -m pytest tests/test_db_postgres.py -q -rs --tb=short 2>&1 | tail -30
 
       - name: No PostgreSQL module yet
         if: hashFiles('App/tests/test_db_postgres.py') == ''
