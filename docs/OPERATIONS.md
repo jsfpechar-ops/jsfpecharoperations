@@ -648,6 +648,53 @@ tell you:
 
 - **PostgreSQL dump (0464).** `backup.sh` writes `ubyhost-pg.dump.age` (`pg_dump -Fc`, age-encrypted, never plaintext) into the newest snapshot folder when the `postgres` service runs. Restore with `pg-restore.sh <stamp>`; the rehearsal (`pg-cutover.sh rehearse`) dumps, restores into `ubyhost_restoretest` and verifies it against SQLite.
 
+### Proofs before the SQLite rollback path ends (plan S10)
+
+[Plan sqlite-retirement](plans/sqlite-retirement.md) steps S11 and S12 (remove the SQLite rollback path, then the SQLite file) wait until every row below says Done, and none is older than 30 days. All are owner steps. When one is done, write in the orchestrator chat the proof letter, the date and the last lines the commands printed; the orchestrator writes `Done` and the date in the last column and one `[ops]` line in `docs/context/decisions.md`.
+
+| Proof | Steps | Recorded |
+|---|---|---|
+| (a) one `.age` backup decrypts with the owner's key (never done before) | A | not yet |
+| (b) a fresh dump restores into a scratch database on staging, row counts equal production's | B | not yet |
+| (c) the Drive copy runs daily (daily since 2026-11-13) and the S3 copy is current | C | not yet |
+| (d) one age-encrypted copy of the last SQLite file is kept offline until plan decision 5 says delete | A, step 8 | not yet |
+
+**A. Decrypt test, on your own computer (never on a server).**
+1. In the browser, open Google Drive, folder `UbyHost-backups`, then the newest folder (its name is a date and time such as `20261114T030000Z`).
+2. Download `ubyhost-pg.dump.age` and `ubyhost-backup.tar.age` into a new empty folder `Downloads/ubyhost-proof`.
+3. In your password manager, copy the backup key (the line that starts `AGE-SECRET-KEY-1`). Save it as a plain text file `ubyhost-backup.agekey` in the same folder.
+4. Open Terminal and type `cd ~/Downloads/ubyhost-proof`, then Enter.
+5. Type `age --decrypt --identity ubyhost-backup.agekey ubyhost-pg.dump.age | wc -c`, then Enter. Expected: one number above 10000 and no line that starts with `age:`. Nothing is saved.
+6. Type `age --decrypt --identity ubyhost-backup.agekey ubyhost-backup.tar.age | tar -t`, then Enter. Expected: file names only, among them `ubyhost.db` and `secret_key`.
+7. If you do part B today, keep `ubyhost-backup.agekey` until B11. Otherwise delete it now and empty the bin.
+8. Copy `ubyhost-backup.tar.age` (the last SQLite file and the secret key, encrypted) to a USB stick or disk that is not synced to any cloud. Write the date on it. That is proof (d).
+
+**B. Restore drill on staging.** Needs `pg-schema-dump.sh` on both servers (after the PR of brief 1473 is deployed). Guest data stays only in the scratch database, which the app never uses, and step 11 deletes it.
+1. In the Lightsail console, open the production instance, click **Connect using SSH**.
+2. Run `cd /opt/ubyhost/deploy/lightsail && ./scripts/backup.sh 2>&1 | tail -3`. Expected: a line `PostgreSQL dump bytes: ...`.
+3. Right after it, run `./scripts/pg-schema-dump.sh --counts > ~/counts-production.txt && wc -l ~/counts-production.txt`. Expected: about 70 lines.
+4. Run `docker compose exec -T ubyhost sh -c 'cat "/data/backups/$(ls -1 /data/backups | sort | tail -1)/ubyhost-pg.dump.age"' > ~/ubyhost-pg.dump.age && ls -l ~/ubyhost-pg.dump.age`. The file is encrypted.
+5. In the SSH window, click the gear (top right), **Download file**, and download `ubyhost-pg.dump.age` and then `counts-production.txt` (both in your home folder). Then run `rm ~/ubyhost-pg.dump.age ~/counts-production.txt`.
+6. In the Lightsail console, open the staging instance, click **Connect using SSH**. With the gear, **Upload file**: `ubyhost-pg.dump.age`, `counts-production.txt` and `ubyhost-backup.agekey` (from A3).
+7. Run `chmod 600 ~/ubyhost-backup.agekey && cd /opt/ubyhost/deploy/lightsail && docker compose exec -T postgres createdb -U ubyhost ubyhost_restoretest && echo CREATED`. Expected: `CREATED`. If it says the database already exists, run the first command of step 11 (`dropdb`), then this step again.
+8. Run `age --decrypt --identity ~/ubyhost-backup.agekey ~/ubyhost-pg.dump.age | docker compose exec -T postgres pg_restore -U ubyhost -d ubyhost_restoretest --no-owner --no-privileges --single-transaction --exit-on-error; echo "exit: ${PIPESTATUS[*]}"`. Expected: `exit: 0 0`.
+9. Run `./scripts/pg-schema-dump.sh --counts ubyhost_restoretest > ~/counts-restored.txt && diff ~/counts-production.txt ~/counts-restored.txt && echo COUNTS MATCH`. Expected: `COUNTS MATCH`.
+10. If lines were printed instead, copy them into the orchestrator chat (they are table names and numbers only). Do not run the drill again until the orchestrator answers.
+11. Clean up: `docker compose exec -T postgres dropdb -U ubyhost ubyhost_restoretest && shred -u ~/ubyhost-backup.agekey ~/ubyhost-pg.dump.age && rm ~/counts-production.txt ~/counts-restored.txt && echo CLEAN`. Expected: `CLEAN`. Then do A7 on your computer.
+
+**C. Off-site copies, on production** (Connect using SSH, as in B1).
+1. Run `crontab -l | grep -E 'backup-(s3|gdrive)\.sh'`. Expected: one line with `backup-s3.sh` and one with `backup-gdrive.sh`.
+2. Run `tail -n 1 /var/log/ubyhost-gdrive.log /var/log/ubyhost-s3.log`. Expected: each ends with `Uploaded to ...` and a folder name with today's date (yesterday's before 04:00 UTC).
+3. Run `rclone lsf gdrive:UbyHost-backups | tail -n 7`. Expected: one folder per day, the newest from today or yesterday.
+4. Run `B=$(crontab -l | grep -o 'UBYHOST_S3_BUCKET=[^ ]*' | cut -d= -f2) && rclone lsf "s3:$B/UbyHost-backups" | tail -n 3`. Expected: the newest folder is from today or yesterday.
+
+### Production schema dump (plan S4)
+
+`./scripts/pg-schema-dump.sh` writes the production schema to a new file for the goose check (brief 1472). It only reads: its session is read-only and it runs `pg_dump --schema-only --no-owner --no-privileges`. The file holds table, column, index, constraint, trigger and function definitions, column defaults (short codes such as `'CZK'` or `'pending'`) and the CHECK rules; no rows, no row counts, no sequence values, no owners, no grants, no passwords. It also holds one random `\restrict` line (a pg_dump safety token, not a secret). The script deletes the file if it finds a data line in it.
+1. On production (Connect using SSH, as in B1), run `cd /opt/ubyhost/deploy/lightsail && ./scripts/pg-schema-dump.sh ~/ubyhost-schema-$(date -u +%Y%m%d).sql`. Expected: `Wrote ...: N tables, N lines`, a `sha256` line and `COMMENT ON lines: 0 (0 expected)`. If that number is not 0, do not hand the file over; tell the orchestrator.
+2. With the gear, **Download file** `ubyhost-schema-<date>.sql` from your home folder, then run `rm ~/ubyhost-schema-*.sql`.
+3. Attach the file in the orchestrator chat with the `sha256` line. It may be shared; it holds no guest data.
+
 ### App database role (K-S11)
 
 Owner runbook, once. Until step 3 the app keeps connecting as `ubyhost`; the full checks and rollback are in PR 1206.
