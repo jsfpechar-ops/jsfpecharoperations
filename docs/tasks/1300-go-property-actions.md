@@ -1,6 +1,6 @@
 # 1300: Go port of property settings POST actions
 
-Status: todo
+Status: review
 Depends on: none | Base commit: a83df54 | Branch: task/1300-go-property-actions
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B
 
