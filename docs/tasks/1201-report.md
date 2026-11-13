@@ -1,24 +1,45 @@
 # 1201 report
 
-Status: blocked
+Status: review
 
-## Files changed
-- App/scripts/photo_sweep_golden.py (created, sha256 cb3320ae4b477ea6cf0490a8c3da5404627993224bc67d12cd9a0e49b0f2b656, matches brief)
+## Files changed (git diff --stat 74535ae..HEAD)
+- App/scripts/photo_sweep_golden.py (created, cont-1 and steps 1-4)
+- App/tests/test_go_photo_sweep_golden.py (created, steps 1-4)
+- go/internal/photosweep/testdata/photo_sweep_golden.json (created, step 3)
+- go/internal/photosweep/audit.go (created, step 4)
+- go/internal/photosweep/files.go (created, step 5, commit 5325a77)
+- go/internal/photosweep/files_test.go (created, step 6, commit 5325a77)
+- docs/tasks/1201-report.md (this report)
+Total: 6 files, 1834 insertions (before this report).
 
-## Commands
-- Step 0 checks: branch task/1201-go-photo-sweep, photosweep dir absent, queue.go count 1, scheduler.py count 1. All as expected.
-- Step 1: sha256sum matched. Committed as "1201 step 1" (ce756c0).
+## sha256 (prefixes; all match 1201 §4)
+- photo_sweep_golden.py cb3320ae
+- test_go_photo_sweep_golden.py 50dc8bb4
+- photo_sweep_golden.json e206f31b
+- audit.go 95a8ea1a
+- files.go 088e9617
+- files_test.go 8a9e1244
+
+## Commands (last lines)
+- Step 7 gofmt -l / go vet: no output.
+- Step 7 go test ./internal/photosweep -count=1: `ok  github.com/jsfpechar-ops/jsfpecharoperations/go/internal/photosweep 0.005s`
+- §6 pytest tests/test_go_photo_sweep_golden.py tests/test_dsr_due_golden.py: `2 passed in 0.56s`
+- §6 go vet + go test: `ok ... photosweep 0.004s`
+- `git status --short`: empty.
 
 ## Section 7 acceptance
-Not ticked. Steps 2 to 7 not done.
+- [x] Six files exist with the §4 sha256 values.
+- [x] test_go_photo_sweep_golden.py passes; go test ./internal/photosweep passes.
+- [x] git diff --stat 74535ae..HEAD lists only §3 files.
 
 ## Deviations
-Done: steps 0 to 1. Left: steps 2 to 7.
-Stopped at the executor checkpoint (tool-call and token budget) after step 1, per executor rules. Steps 2 to 7 need a fresh session.
-cont-1: steps 2-4 done. Left: steps 5 to 7.
+Done: steps 1 to 7 (cont-1: 1-4; cont-2: 5-7). Report written here.
+- Step 5 and 6 bodies were copied from the brief with sed line ranges (no retyping), then checked against the sha256 values. Both matched on the first try.
+- Step 7 commit message is "1201 steps 5-7" per cont-2 (the 1201 text says "1201 steps 1-6"). Commit carries the two trailers.
+- No push and no PR: the executor rules say do not push. The orchestrator must push and open the draft PR.
 
 ## Questions
 None.
 
 ## Owner steps left
-None yet.
+None for this brief. Orchestrator: push task/1201-go-photo-sweep and open the draft PR.
