@@ -6,7 +6,7 @@ Updated: 2026-11-12.
 - Magic-link 1–2 done; access log off. `/healthz` 1.1.0. Main 11-12: `c38b38b8` (#933, auto-deploy; host not rechecked).
 - Postgres cutover done. Billing ON. SQLite rollback only via pg-cutover scripts. `COMPOSE_PROFILES=walg,monitoring,go`.
 - Go jobs = queue: billing_snapshot, stripe_sweep, ical, push, submit. Python: mail, door_codes, posthog, meta_capi, deadlines.
-- Go live, all routes on main (11-12): palette, calendar, payments QR/connect/requests, stripe webhook, push, pay PNGs — paths in [ENVIRONMENT](../ENVIRONMENT.md). Rollback: trim `UBYHOST_GO_PATHS`, `caddy-validate.sh`, `docker compose up -d caddy`.
+- Go live, all routes on main (11-12): palette, calendar, payments QR/connect/requests, stripe webhook, push, pay PNGs — paths in [ENVIRONMENT](../ENVIRONMENT.md). Rollback: trim `UBYHOST_GO_PATHS`, `caddy-validate.sh`, `docker compose up -d caddy`. Next: deadlines GO-DL A–C merged (#934/#935/#941); meta_capi Go #942.
 - AI: `havel,leon,guide_import` (`guide_translate` off). Stripe test. Guest QR 404 on both when the owner has no IBAN.
 
 ## Now
