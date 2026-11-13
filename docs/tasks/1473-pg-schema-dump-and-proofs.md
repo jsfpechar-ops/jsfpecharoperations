@@ -1,6 +1,6 @@
 # 1473: read-only production schema dump script, and the rollback-window proofs (plan sqlite-retirement S4, S10)
 
-Status: todo
+Status: review
 Depends on: none (S4 needs 1472 only to use the file, not to write the script) | Base commit: origin/main once it holds `docs/plans/sqlite-retirement.md` (patch made on 4de1f158c) | Branch: task/1473-pg-schema-dump
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Tier A (deploy, data loss).
