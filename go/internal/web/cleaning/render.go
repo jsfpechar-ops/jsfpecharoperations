@@ -169,10 +169,13 @@ func first(s string) string {
 	return ""
 }
 
+// color picks the calendar colour; ((id%3)+3)%3 keeps a negative id in range.
+func color(id int64) string { return []string{"teal", "blue", "purple"}[((id%3)+3)%3] }
+
 var funcs = template.FuncMap{
 	"ct": ct, "t": t, "cdate": cdate, "cday": cday, "cshort": cshort, "icon": icon,
 	"window": window, "first": first,
-	"color":  func(id int64) string { return []string{"teal", "blue", "purple"}[id%3] },
+	"color":  color,
 	"scales": func() []string { return []string{"month", "week", "year"} },
 	"shows":  func() []string { return []string{"property", "label", "guests"} },
 	"rowdata": func(lang string, it item) map[string]any {
