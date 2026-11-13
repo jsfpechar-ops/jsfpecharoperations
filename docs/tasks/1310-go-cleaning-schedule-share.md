@@ -1,6 +1,6 @@
 # 1310: Go port of the cleaning schedule JSON, shared cleaner page, delete and revoke
 
-Status: todo
+Status: review
 Depends on: none | Base commit: a83df541 | Branch: task/1310-go-cleaning-schedule
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
