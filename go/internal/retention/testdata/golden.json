@@ -8,6 +8,7 @@
   "2000.pdf.enc",
   "notes.txt"
  ],
+ "patched": "workspaces: outside a dry run fails closed when a workspace is due or a reminder is due",
  "queries": {
   "guest": "SELECT id::text || '|' || COALESCE(filled_ip, '~') FROM guest ORDER BY id",
   "submission": "SELECT id::text FROM submission ORDER BY id",
@@ -637,6 +638,527 @@
     ],
     "settings": [
      "retention_last_run={\"dry_run\": true, \"owner_user_id\": 1, \"counts\": {\"guests\": 3, \"invoices\": 3, \"platform_invoices\": 0, \"claim_emails\": 1, \"reservation_contacts\": 3, \"submitter_ips\": 2, \"empty_reservations\": 1, \"stay_fee_records\": 2, \"audit_rows\": 2, \"alerts\": 1, \"rate_limit_events\": 0, \"havel_gap\": 0, \"login_tokens\": 0, \"webauthn_challenges\": 0, \"door_code_pins\": 0, \"cleaning\": 2, \"push\": 2, \"guide_imports\": 0, \"guest_chats\": 2, \"legal_acceptance\": 0, \"workspaces\": 0}, \"at\": \"2026-01-20T03:00:00+00:00\"}"
+    ],
+    "email_outbox": [
+     "0"
+    ]
+   }
+  },
+  {
+   "name": "owner1_apply",
+   "owner_user_id": 1,
+   "dry_run": false,
+   "error": null,
+   "counts": [
+    [
+     "guests",
+     3
+    ],
+    [
+     "invoices",
+     3
+    ],
+    [
+     "platform_invoices",
+     0
+    ],
+    [
+     "claim_emails",
+     1
+    ],
+    [
+     "reservation_contacts",
+     3
+    ],
+    [
+     "submitter_ips",
+     1
+    ],
+    [
+     "empty_reservations",
+     3
+    ],
+    [
+     "stay_fee_records",
+     2
+    ],
+    [
+     "audit_rows",
+     2
+    ],
+    [
+     "alerts",
+     1
+    ],
+    [
+     "rate_limit_events",
+     0
+    ],
+    [
+     "havel_gap",
+     0
+    ],
+    [
+     "login_tokens",
+     0
+    ],
+    [
+     "webauthn_challenges",
+     0
+    ],
+    [
+     "door_code_pins",
+     0
+    ],
+    [
+     "cleaning",
+     2
+    ],
+    [
+     "push",
+     2
+    ],
+    [
+     "guide_imports",
+     0
+    ],
+    [
+     "guest_chats",
+     2
+    ],
+    [
+     "legal_acceptance",
+     0
+    ],
+    [
+     "workspaces",
+     0
+    ]
+   ],
+   "photos": [
+    "1002.jpg",
+    "2000.pdf.enc",
+    "notes.txt"
+   ],
+   "state": {
+    "guest": [
+     "1002|~",
+     "1003|192.0.2.3",
+     "1004|~",
+     "1005|192.0.2.5",
+     "2000|192.0.2.20",
+     "2001|~",
+     "2002|~"
+    ],
+    "submission": [
+     "502",
+     "503"
+    ],
+    "reservation": [
+     "101|~|~|2019-01-01T00:00:00+00:00",
+     "102|~|~|2026-01-20T03:00:00+00:00",
+     "103|g103@example.test|1003|2025-11-01T00:00:00+00:00",
+     "105|~|~|2026-01-20T03:00:00+00:00",
+     "106|~|~|2025-07-01T00:00:00+00:00",
+     "200|~|2001|2018-01-01T00:00:00+00:00",
+     "201|~|~|2019-01-01T00:00:00+00:00",
+     "202|~|~|2016-01-01T00:00:00+00:00"
+    ],
+    "reservation_claim": [
+     "102|~|2026-01-20T03:00:00+00:00",
+     "103|c103@example.test|2025-11-01T00:00:00+00:00",
+     "200|c200@example.test|2018-01-01T00:00:00+00:00"
+    ],
+    "stay_fee_filing": [
+     "301",
+     "302"
+    ],
+    "stay_fee_adjustment": [
+     "311"
+    ],
+    "invoice": [
+     "601",
+     "602",
+     "605",
+     "606"
+    ],
+    "invoice_item": [
+     "652"
+    ],
+    "platform_invoice": [
+     "700",
+     "701",
+     "702",
+     "703"
+    ],
+    "bank_payment": [
+     "tx-700",
+     "tx-703",
+     "tx-new-unmatched",
+     "tx-old-unmatched"
+    ],
+    "audit": [
+     "2|2022-01-01T00:00:00+00:00|host-one|legal_accepted||1|~|~",
+     "3|2025-01-01T00:00:00+00:00|host-one|login||1|~|~",
+     "4|2021-01-01T00:00:00+00:00|host-two|login||2|~|~",
+     "5|2021-01-01T00:00:00+00:00|system|backup||~|~|~",
+     "6|2021-01-01T00:00:00+00:00|host-two|door_code_terms_accepted||2|~|~",
+     "8|2023-01-21T03:00:00+00:00|host-one|login||1|~|~",
+     "101|2026-01-20T03:00:00+00:00|host|retention_purge|deleted 3 guest record(s) whose stay ended before 2019-01-01|~|~|~",
+     "102|2026-01-20T03:00:00+00:00|host|submission_orphan_purge|deleted 2 submission record(s) with no surviving guest|~|~|~",
+     "103|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"guests\", \"count\": 3, \"cutoff\": \"stay ended before 2019-01-01\", \"dry_run\": false, \"owner_user_id\": 1}|~|~|~",
+     "104|2026-01-20T03:00:00+00:00|host|invoice_retention_purge|deleted=3|~|~|~",
+     "105|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"invoices\", \"count\": 3, \"cutoff\": \"issued before 2016-01-01\", \"dry_run\": false, \"owner_user_id\": 1}|~|~|~",
+     "106|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"platform_invoices\", \"count\": 0, \"cutoff\": \"issued before 2016-01-01\", \"dry_run\": false, \"owner_user_id\": 1}|~|~|~",
+     "107|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"claim_emails\", \"count\": 1, \"cutoff\": \"stay ended before 2025-12-21\", \"dry_run\": false, \"owner_user_id\": 1}|~|~|~",
+     "108|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"reservation_contacts\", \"count\": 3, \"cutoff\": \"stay ended before 2025-12-21\", \"dry_run\": false, \"owner_user_id\": 1}|~|~|~",
+     "109|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"submitter_ips\", \"count\": 1, \"cutoff\": \"stay ended before 2025-10-22\", \"dry_run\": false, \"owner_user_id\": 1}|~|~|~",
+     "110|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"empty_reservations\", \"count\": 3, \"cutoff\": \"stay ended before 2019-01-01\", \"dry_run\": false, \"owner_user_id\": 1}|~|~|~",
+     "111|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"stay_fee_records\", \"count\": 2, \"cutoff\": \"period before 2019-01-01\", \"dry_run\": false, \"owner_user_id\": 1}|~|~|~",
+     "112|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"audit_rows\", \"count\": 2, \"cutoff\": \"logged before 2023-01-21T03:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": 1}|~|~|~",
+     "113|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"alerts\", \"count\": 1, \"cutoff\": \"resolved before 2025-01-20T03:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": 1}|~|~|~",
+     "114|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"rate_limit_events\", \"count\": 0, \"cutoff\": \"older than 24 hours, Havel limits 32 days\", \"dry_run\": false, \"owner_user_id\": 1}|~|~|~",
+     "115|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"havel_gap\", \"count\": 0, \"cutoff\": \"created before 2025-10-22\", \"dry_run\": false, \"owner_user_id\": 1}|~|~|~",
+     "116|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"login_tokens\", \"count\": 0, \"cutoff\": \"expired more than 1 day ago\", \"dry_run\": false, \"owner_user_id\": 1}|~|~|~",
+     "117|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"webauthn_challenges\", \"count\": 0, \"cutoff\": \"expired more than 1 day ago\", \"dry_run\": false, \"owner_user_id\": 1}|~|~|~",
+     "118|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"door_code_pins\", \"count\": 0, \"cutoff\": \"valid_to more than 1 day ago\", \"dry_run\": false, \"owner_user_id\": 1}|~|~|~",
+     "119|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"cleaning\", \"count\": 2, \"cutoff\": \"event or link expiry before 2025-12-21\", \"dry_run\": false, \"owner_user_id\": 1}|~|~|~",
+     "120|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"push\", \"count\": 2, \"cutoff\": \"alert queued over 30 days ago, or device unseen for 180 days\", \"dry_run\": false, \"owner_user_id\": 1}|~|~|~",
+     "121|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"guide_imports\", \"count\": 0, \"cutoff\": \"listing text fetched before 2026-01-13, failed request rows before 2025-11-21\", \"dry_run\": false, \"owner_user_id\": 1}|~|~|~",
+     "122|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"guest_chats\", \"count\": 2, \"cutoff\": \"stay ended, or QR chat last used, before 2025-12-21\", \"dry_run\": false, \"owner_user_id\": 1}|~|~|~",
+     "123|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"legal_acceptance\", \"count\": 0, \"cutoff\": \"inactive account, last login before 2023-01-21T03:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": 1}|~|~|~",
+     "124|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"workspaces\", \"count\": 0, \"cutoff\": \"deletion due on or before 2026-01-20T03:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": 1}|~|~|~",
+     "125|2026-01-20T03:00:00+00:00|system|retention_run|{\"dry_run\": false, \"owner_user_id\": 1, \"counts\": {\"guests\": 3, \"invoices\": 3, \"platform_invoices\": 0, \"claim_emails\": 1, \"reservation_contacts\": 3, \"submitter_ips\": 1, \"empty_reservations\": 3, \"stay_fee_records\": 2, \"audit_rows\": 2, \"alerts\": 1, \"rate_limit_events\": 0, \"havel_gap\": 0, \"login_tokens\": 0, \"webauthn_challenges\": 0, \"door_code_pins\": 0, \"cleaning\": 2, \"push\": 2, \"guide_imports\": 0, \"guest_chats\": 2, \"legal_acceptance\": 0, \"workspaces\": 0}}|~|~|~"
+    ],
+    "alert": [
+     "2|warning|x|1|~|~|x:2|m|~|~|2025-05-01T00:00:00+00:00|2025-06-01T00:00:00+00:00",
+     "3|warning|x|1|~|~|x:3|m|~|~|2020-05-01T00:00:00+00:00|~",
+     "4|warning|x|~|~|~|x:4|m|~|~|2023-05-01T00:00:00+00:00|2024-01-01T00:00:00+00:00",
+     "5|warning|retention_due|2|~|~|retention_due:2:2026-01|old copy|~|{\"count\": 9, \"days\": 30}|2026-01-01T00:00:00+00:00|~"
+    ],
+    "rate_limit_event": [
+     "1",
+     "2",
+     "3",
+     "4",
+     "5"
+    ],
+    "havel_gap": [
+     "1",
+     "2"
+    ],
+    "login_token": [
+     "1",
+     "2"
+    ],
+    "webauthn_challenge": [
+     "1",
+     "2"
+    ],
+    "door_code": [
+     "1|pin-a|2025-11-01T00:00:00+00:00",
+     "2|pin-b|2025-11-01T00:00:00+00:00",
+     "3|~|2024-12-01T00:00:00+00:00"
+    ],
+    "cleaning_event": [
+     "1|~",
+     "2|n2",
+     "3|n3",
+     "4|~"
+    ],
+    "cleaning_share": [
+     "2",
+     "3"
+    ],
+    "push_outbox": [
+     "2",
+     "4"
+    ],
+    "push_subscription": [
+     "2",
+     "3"
+    ],
+    "guide_import": [
+     "1|done|{}",
+     "2|failed|~",
+     "3|failed|~",
+     "4|queued|{}",
+     "5|failed|{}"
+    ],
+    "guest_chat": [
+     "2",
+     "4",
+     "5"
+    ],
+    "guest_chat_message": [
+     "2"
+    ],
+    "guest_question": [
+     "2"
+    ],
+    "legal_acceptance": [
+     "1",
+     "2",
+     "3"
+    ],
+    "user_account": [
+     "1",
+     "2",
+     "3",
+     "4",
+     "5",
+     "6",
+     "7"
+    ],
+    "settings": [
+     "invoice_purge_unlock=",
+     "retention_last_run={\"dry_run\": false, \"owner_user_id\": 1, \"counts\": {\"guests\": 3, \"invoices\": 3, \"platform_invoices\": 0, \"claim_emails\": 1, \"reservation_contacts\": 3, \"submitter_ips\": 1, \"empty_reservations\": 3, \"stay_fee_records\": 2, \"audit_rows\": 2, \"alerts\": 1, \"rate_limit_events\": 0, \"havel_gap\": 0, \"login_tokens\": 0, \"webauthn_challenges\": 0, \"door_code_pins\": 0, \"cleaning\": 2, \"push\": 2, \"guide_imports\": 0, \"guest_chats\": 2, \"legal_acceptance\": 0, \"workspaces\": 0}, \"at\": \"2026-01-20T03:00:00+00:00\"}"
+    ],
+    "email_outbox": [
+     "0"
+    ]
+   }
+  },
+  {
+   "name": "global_apply",
+   "owner_user_id": null,
+   "dry_run": false,
+   "error": "workspaces",
+   "counts": [
+    [
+     "guests",
+     4
+    ],
+    [
+     "invoices",
+     4
+    ],
+    [
+     "platform_invoices",
+     2
+    ],
+    [
+     "claim_emails",
+     2
+    ],
+    [
+     "reservation_contacts",
+     4
+    ],
+    [
+     "submitter_ips",
+     1
+    ],
+    [
+     "empty_reservations",
+     5
+    ],
+    [
+     "stay_fee_records",
+     3
+    ],
+    [
+     "audit_rows",
+     4
+    ],
+    [
+     "alerts",
+     2
+    ],
+    [
+     "rate_limit_events",
+     2
+    ],
+    [
+     "havel_gap",
+     1
+    ],
+    [
+     "login_tokens",
+     1
+    ],
+    [
+     "webauthn_challenges",
+     1
+    ],
+    [
+     "door_code_pins",
+     1
+    ],
+    [
+     "cleaning",
+     4
+    ],
+    [
+     "push",
+     4
+    ],
+    [
+     "guide_imports",
+     4
+    ],
+    [
+     "guest_chats",
+     3
+    ],
+    [
+     "legal_acceptance",
+     1
+    ]
+   ],
+   "photos": [
+    "1002.jpg",
+    "notes.txt"
+   ],
+   "state": {
+    "guest": [
+     "1002|~",
+     "1003|192.0.2.3",
+     "1004|~",
+     "1005|192.0.2.5",
+     "2001|~",
+     "2002|~"
+    ],
+    "submission": [
+     "502"
+    ],
+    "reservation": [
+     "101|~|~|2019-01-01T00:00:00+00:00",
+     "102|~|~|2026-01-20T03:00:00+00:00",
+     "103|g103@example.test|1003|2025-11-01T00:00:00+00:00",
+     "105|~|~|2026-01-20T03:00:00+00:00",
+     "106|~|~|2025-07-01T00:00:00+00:00",
+     "201|~|~|2019-01-01T00:00:00+00:00"
+    ],
+    "reservation_claim": [
+     "102|~|2026-01-20T03:00:00+00:00",
+     "103|c103@example.test|2025-11-01T00:00:00+00:00"
+    ],
+    "stay_fee_filing": [
+     "301"
+    ],
+    "stay_fee_adjustment": [
+     "311"
+    ],
+    "invoice": [
+     "601",
+     "602",
+     "606"
+    ],
+    "invoice_item": [
+     "652"
+    ],
+    "platform_invoice": [
+     "701",
+     "702",
+     "703"
+    ],
+    "bank_payment": [
+     "tx-703",
+     "tx-new-unmatched"
+    ],
+    "audit": [
+     "2|2022-01-01T00:00:00+00:00|host-one|legal_accepted||1|~|~",
+     "3|2025-01-01T00:00:00+00:00|host-one|login||1|~|~",
+     "6|2021-01-01T00:00:00+00:00|host-two|door_code_terms_accepted||2|~|~",
+     "8|2023-01-21T03:00:00+00:00|host-one|login||1|~|~",
+     "101|2026-01-20T03:00:00+00:00|host|retention_purge|deleted 4 guest record(s) whose stay ended before 2019-01-01|~|~|~",
+     "102|2026-01-20T03:00:00+00:00|host|submission_orphan_purge|deleted 3 submission record(s) with no surviving guest|~|~|~",
+     "103|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"guests\", \"count\": 4, \"cutoff\": \"stay ended before 2019-01-01\", \"dry_run\": false, \"owner_user_id\": null}|~|~|~",
+     "104|2026-01-20T03:00:00+00:00|host|invoice_retention_purge|deleted=4|~|~|~",
+     "105|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"invoices\", \"count\": 4, \"cutoff\": \"issued before 2016-01-01\", \"dry_run\": false, \"owner_user_id\": null}|~|~|~",
+     "106|2026-01-20T03:00:00+00:00|system|platform_invoice_purge|invoices=1 payments=1|~|~|~",
+     "107|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"platform_invoices\", \"count\": 2, \"cutoff\": \"issued before 2016-01-01\", \"dry_run\": false, \"owner_user_id\": null}|~|~|~",
+     "108|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"claim_emails\", \"count\": 2, \"cutoff\": \"stay ended before 2025-12-21\", \"dry_run\": false, \"owner_user_id\": null}|~|~|~",
+     "109|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"reservation_contacts\", \"count\": 4, \"cutoff\": \"stay ended before 2025-12-21\", \"dry_run\": false, \"owner_user_id\": null}|~|~|~",
+     "110|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"submitter_ips\", \"count\": 1, \"cutoff\": \"stay ended before 2025-10-22\", \"dry_run\": false, \"owner_user_id\": null}|~|~|~",
+     "111|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"empty_reservations\", \"count\": 5, \"cutoff\": \"stay ended before 2019-01-01\", \"dry_run\": false, \"owner_user_id\": null}|~|~|~",
+     "112|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"stay_fee_records\", \"count\": 3, \"cutoff\": \"period before 2019-01-01\", \"dry_run\": false, \"owner_user_id\": null}|~|~|~",
+     "113|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"audit_rows\", \"count\": 4, \"cutoff\": \"logged before 2023-01-21T03:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": null}|~|~|~",
+     "114|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"alerts\", \"count\": 2, \"cutoff\": \"resolved before 2025-01-20T03:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": null}|~|~|~",
+     "115|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"rate_limit_events\", \"count\": 2, \"cutoff\": \"older than 24 hours, Havel limits 32 days\", \"dry_run\": false, \"owner_user_id\": null}|~|~|~",
+     "116|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"havel_gap\", \"count\": 1, \"cutoff\": \"created before 2025-10-22\", \"dry_run\": false, \"owner_user_id\": null}|~|~|~",
+     "117|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"login_tokens\", \"count\": 1, \"cutoff\": \"expired more than 1 day ago\", \"dry_run\": false, \"owner_user_id\": null}|~|~|~",
+     "118|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"webauthn_challenges\", \"count\": 1, \"cutoff\": \"expired more than 1 day ago\", \"dry_run\": false, \"owner_user_id\": null}|~|~|~",
+     "119|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"door_code_pins\", \"count\": 1, \"cutoff\": \"valid_to more than 1 day ago\", \"dry_run\": false, \"owner_user_id\": null}|~|~|~",
+     "120|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"cleaning\", \"count\": 4, \"cutoff\": \"event or link expiry before 2025-12-21\", \"dry_run\": false, \"owner_user_id\": null}|~|~|~",
+     "121|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"push\", \"count\": 4, \"cutoff\": \"alert queued over 30 days ago, or device unseen for 180 days\", \"dry_run\": false, \"owner_user_id\": null}|~|~|~",
+     "122|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"guide_imports\", \"count\": 4, \"cutoff\": \"listing text fetched before 2026-01-13, failed request rows before 2025-11-21\", \"dry_run\": false, \"owner_user_id\": null}|~|~|~",
+     "123|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"guest_chats\", \"count\": 3, \"cutoff\": \"stay ended, or QR chat last used, before 2025-12-21\", \"dry_run\": false, \"owner_user_id\": null}|~|~|~",
+     "124|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"legal_acceptance\", \"count\": 1, \"cutoff\": \"inactive account, last login before 2023-01-21T03:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": null}|~|~|~",
+     "125|2026-01-20T03:00:00+00:00|system|retention_run|{\"dry_run\": false, \"owner_user_id\": null, \"counts\": {\"guests\": 4, \"invoices\": 4, \"platform_invoices\": 2, \"claim_emails\": 2, \"reservation_contacts\": 4, \"submitter_ips\": 1, \"empty_reservations\": 5, \"stay_fee_records\": 3, \"audit_rows\": 4, \"alerts\": 2, \"rate_limit_events\": 2, \"havel_gap\": 1, \"login_tokens\": 1, \"webauthn_challenges\": 1, \"door_code_pins\": 1, \"cleaning\": 4, \"push\": 4, \"guide_imports\": 4, \"guest_chats\": 3, \"legal_acceptance\": 1}}|~|~|~"
+    ],
+    "alert": [
+     "2|warning|x|1|~|~|x:2|m|~|~|2025-05-01T00:00:00+00:00|2025-06-01T00:00:00+00:00",
+     "3|warning|x|1|~|~|x:3|m|~|~|2020-05-01T00:00:00+00:00|~",
+     "5|warning|retention_due|2|~|~|retention_due:2:2026-01|1 guest record(s) reach the end of their retention period within 30 days.|Review the house book and export anything you still need: /housebook|{\"count\": 1, \"days\": 30}|2026-01-20T03:00:00+00:00|~",
+     "101|warning|retention_due|1|~|~|retention_due:1:2026-01|1 guest record(s) reach the end of their retention period within 30 days.|Review the house book and export anything you still need: /housebook|{\"count\": 1, \"days\": 30}|2026-01-20T03:00:00+00:00|~"
+    ],
+    "rate_limit_event": [
+     "2",
+     "3",
+     "5"
+    ],
+    "havel_gap": [
+     "2"
+    ],
+    "login_token": [
+     "2"
+    ],
+    "webauthn_challenge": [
+     "2"
+    ],
+    "door_code": [
+     "1|~|2026-01-20T03:00:00+00:00",
+     "2|pin-b|2025-11-01T00:00:00+00:00",
+     "3|~|2024-12-01T00:00:00+00:00"
+    ],
+    "cleaning_event": [
+     "1|~",
+     "2|n2",
+     "3|~",
+     "4|~"
+    ],
+    "cleaning_share": [
+     "2"
+    ],
+    "push_outbox": [
+     "2"
+    ],
+    "push_subscription": [
+     "2"
+    ],
+    "guide_import": [
+     "1|expired|~",
+     "3|failed|~",
+     "4|queued|{}"
+    ],
+    "guest_chat": [
+     "2",
+     "4"
+    ],
+    "guest_chat_message": [
+     "2"
+    ],
+    "guest_question": [
+     "2"
+    ],
+    "legal_acceptance": [
+     "2",
+     "3"
+    ],
+    "user_account": [
+     "1",
+     "2",
+     "3",
+     "4",
+     "5",
+     "6",
+     "7"
+    ],
+    "settings": [
+     "invoice_purge_unlock=",
+     "retention_last_run={\"dry_run\": false, \"owner_user_id\": null, \"counts\": {\"guests\": 4, \"invoices\": 4, \"platform_invoices\": 2, \"claim_emails\": 2, \"reservation_contacts\": 4, \"submitter_ips\": 1, \"empty_reservations\": 5, \"stay_fee_records\": 3, \"audit_rows\": 4, \"alerts\": 2, \"rate_limit_events\": 2, \"havel_gap\": 1, \"login_tokens\": 1, \"webauthn_challenges\": 1, \"door_code_pins\": 1, \"cleaning\": 4, \"push\": 4, \"guide_imports\": 4, \"guest_chats\": 3, \"legal_acceptance\": 1}, \"at\": \"2026-01-20T03:00:00+00:00\"}"
     ],
     "email_outbox": [
      "0"
