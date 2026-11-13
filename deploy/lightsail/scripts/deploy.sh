@@ -22,6 +22,28 @@ if [ -n "${UBYHOST_DATABASE_URL:-}" ]; then
   PG_MODE=1
 fi
 
+# 1261: which code applies the PostgreSQL goose files. python (the default,
+# also when unset or empty) runs App/scripts/pg_schema.py in the new ubyhost
+# image; go runs `ubyhost-web migrate apply` in the new ubyhost-go image. Both
+# write the same goose_db_version rows. Go applies goose files only: when the
+# functions or triggers Python re-creates on every apply differ from the app's,
+# Go fails closed and the deploy stops; deploy once with python, then go again.
+# Checked here, before anything touches the stack.
+SCHEMA_APPLY="${UBYHOST_SCHEMA_APPLY:-python}"
+case "${SCHEMA_APPLY}" in
+  python) ;;
+  go)
+    if [ "${PG_MODE}" != "1" ]; then
+      echo "UBYHOST_SCHEMA_APPLY=go needs PostgreSQL (UBYHOST_DATABASE_URL); refusing deployment." >&2
+      exit 1
+    fi
+    ;;
+  *)
+    echo "UBYHOST_SCHEMA_APPLY must be python or go (got '${SCHEMA_APPLY}'); refusing deployment." >&2
+    exit 1
+    ;;
+esac
+
 # 0710: rollback target. .deployed-sha is written only when a deploy finished;
 # before the first one, ORIG_HEAD is the commit the workflow reset away from.
 PREV_SHA="$(cat .deployed-sha 2>/dev/null || git rev-parse -q --verify ORIG_HEAD 2>/dev/null || true)"
@@ -237,11 +259,27 @@ fi
 if [ "${PG_MODE}" = "1" ]; then
   # PostgreSQL: apply pending goose files with the new image, before the stack
   # starts. A failure exits here, before `up` touches the running stack.
-  echo "==> Applying PostgreSQL goose migrations (new image)"
-  if ! docker compose run --rm --no-deps -T --entrypoint python ubyhost \
-    scripts/pg_schema.py apply --expect-database ubyhost; then
-    echo "Goose apply failed." >&2
-    exit 1
+  if [ "${SCHEMA_APPLY}" = "go" ]; then
+    # 1261: build the new Go image first, so the apply runs the merged code.
+    # --profile go: the service is profile-gated and may not be enabled.
+    echo "==> Building the Go image for the schema apply"
+    if ! docker compose --profile go build ubyhost-go; then
+      echo "Go image build failed." >&2
+      exit 1
+    fi
+    echo "==> Applying PostgreSQL goose migrations (new Go image)"
+    if ! docker compose --profile go run --rm --no-deps -T ubyhost-go \
+      migrate apply --expect-database ubyhost; then
+      echo "Goose apply failed." >&2
+      exit 1
+    fi
+  else
+    echo "==> Applying PostgreSQL goose migrations (new image)"
+    if ! docker compose run --rm --no-deps -T --entrypoint python ubyhost \
+      scripts/pg_schema.py apply --expect-database ubyhost; then
+      echo "Goose apply failed." >&2
+      exit 1
+    fi
   fi
   echo "Goose migrations applied."
 elif [ -n "${BACKUP_STAMP}" ]; then
@@ -258,11 +296,12 @@ elif [ -n "${BACKUP_STAMP}" ]; then
   echo "Migration dry-run passed."
 fi
 
-if [ "${GO_IMAGE_PULLED}" != "1" ] && docker compose config --services | grep -qx 'ubyhost-go'; then
+if [ "${GO_IMAGE_PULLED}" != "1" ] && [ "${SCHEMA_APPLY}" != "go" ] && docker compose config --services | grep -qx 'ubyhost-go'; then
   # 1171: build on the server only when no Go image was pulled above (manual
   # deploy, or an old workflow run without UBYHOST_GO_IMAGE). A pulled Go image is never rebuilt.
   # Rebuild the local Go image so a merged change reaches production.
   # Runs before "up", so a failed build leaves the running stack untouched.
+  # With UBYHOST_SCHEMA_APPLY=go it was built before the schema apply.
   if ! docker compose build ubyhost-go; then
     echo "Go image build failed." >&2
     exit 1
