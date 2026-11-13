@@ -1,6 +1,6 @@
 # 1231b: Go mail delivery, part 2: Drain, SendNow, Purge and the Python golden
 
-Status: todo
+Status: review
 Depends on: 1231 (this branch) | Base commit: 902bc51 | Branch: task/1230-track-a
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (code is copied by a script; do not read the code blocks)
 
