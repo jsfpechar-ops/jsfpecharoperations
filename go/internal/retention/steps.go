@@ -9,6 +9,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -71,6 +72,9 @@ func stepGuests(ctx context.Context, r *runner) (int, error) {
 			// deleted before its photo leaves an orphaned passport scan.
 			return 0, errors.New("retention: UBYHOST_DATA_DIR is not set; no guest deleted")
 		}
+		if err := checkPhotoDir(r.cfg.DataDir); err != nil {
+			return 0, err
+		}
 		// Drop the image before the row, as housebook.purge_expired does: a
 		// failed file delete stops the step before any row goes.
 		for _, id := range ids {
@@ -108,6 +112,20 @@ func (r *runner) purgeOrphanSubmissions(ctx context.Context, cutoff string) erro
 		fmt.Sprintf("deleted %d submission record(s) with no surviving guest", len(ids)), "host")
 }
 
+// checkPhotoDir fails closed when <data dir>/passport_photos is not a
+// directory: a wrong UBYHOST_DATA_DIR would otherwise delete guest rows and
+// leave their passport scans behind. Stricter than Python, which finds no file.
+func checkPhotoDir(dataDir string) error {
+	info, err := os.Stat(filepath.Join(dataDir, "passport_photos"))
+	if err != nil {
+		return fmt.Errorf("retention: passport photo directory not usable; no guest deleted: %w", err)
+	}
+	if !info.IsDir() {
+		return errors.New("retention: passport_photos is not a directory; no guest deleted")
+	}
+	return nil
+}
+
 // photoExtensions is passport_photos.ALL_EXTENSIONS (sorted).
 var photoExtensions = []string{".jpg", ".pdf", ".png", ".webp"}
 
@@ -120,7 +138,14 @@ func deletePhoto(dataDir string, guestID int64) error {
 		for _, name := range []string{base + ".enc", base} {
 			path := filepath.Join(dir, name)
 			info, err := os.Stat(path)
-			if err != nil || !info.Mode().IsRegular() {
+			if errors.Is(err, fs.ErrNotExist) {
+				continue
+			}
+			if err != nil {
+				// Python's Path.is_file() raises here too: stop before any row goes.
+				return fmt.Errorf("retention: photo of guest %d not checked: %w", guestID, err)
+			}
+			if !info.Mode().IsRegular() {
 				continue
 			}
 			if err := os.Remove(path); err != nil {

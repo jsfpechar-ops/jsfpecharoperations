@@ -1,6 +1,10 @@
 package retention
 
 import (
+	"errors"
+	"io/fs"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 )
@@ -81,5 +85,42 @@ func TestFormats(t *testing.T) {
 	}
 	if got := summaryJSON(Summary{Counts: []Count{}}, "T"); got != `{"dry_run": false, "owner_user_id": null, "counts": {}, "at": "T"}` {
 		t.Errorf("summaryJSON at %s", got)
+	}
+}
+
+func TestPhotoChecksFailClosed(t *testing.T) {
+	dir := t.TempDir()
+	if err := checkPhotoDir(dir); err == nil {
+		t.Fatal("missing passport_photos must fail")
+	}
+	photos := filepath.Join(dir, "passport_photos")
+	if err := os.WriteFile(photos, []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := checkPhotoDir(dir); err == nil {
+		t.Fatal("passport_photos as a file must fail")
+	}
+	if err := os.Remove(photos); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Mkdir(photos, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := checkPhotoDir(dir); err != nil {
+		t.Fatalf("directory present: %v", err)
+	}
+	// A name component that is a regular file makes Stat fail with ENOTDIR,
+	// not ErrNotExist: deletePhoto must stop instead of treating it as absent.
+	if err := os.WriteFile(filepath.Join(photos, "7.jpg.enc"), []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := deletePhoto(filepath.Join(photos, "7.jpg.enc"), 7); err == nil {
+		t.Fatal("stat error other than not-exist must fail")
+	}
+	if err := deletePhoto(dir, 7); err != nil {
+		t.Fatalf("delete: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(photos, "7.jpg.enc")); !errors.Is(err, fs.ErrNotExist) {
+		t.Fatal("photo not removed")
 	}
 }
