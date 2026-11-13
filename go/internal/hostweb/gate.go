@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"mime"
 	"net/http"
 	"net/url"
 	"strings"
@@ -21,7 +22,7 @@ import (
 const csrfSalt = "ubyhost-csrf"
 
 // security.CSRF_MAX_AGE.
-const csrfMaxAge = 400 * 24 * time.Hour
+const csrfMaxAge = 30 * 24 * time.Hour
 
 // security.CSRF_COOKIE.
 const csrfCookie = "ubyhost_csrf"
@@ -34,6 +35,13 @@ const csrfField = "_csrf"
 
 // csrfMaxBody limits the POST body read for the CSRF form field.
 const csrfMaxBody = 64 << 10
+
+// csrfMaxMultipart limits a multipart POST body: a 10 MiB guide photo
+// (guide_photos.MAX_UPLOAD_BYTES) plus the form fields.
+const csrfMaxMultipart = 11 << 20
+
+// csrfMultipartMemory is how much of a multipart body is kept in memory.
+const csrfMultipartMemory = 1 << 20
 
 const pausedSQL = `SELECT status FROM billing_account WHERE owner_user_id = $1`
 
@@ -110,6 +118,7 @@ func endExpired(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool, gete
 		"uid": admin.ID,
 		"sv":  admin.SessionVersion,
 		"iat": claimInt(h.Payload["iat"]),
+		"rf":  at.Unix(),
 	}, at)
 	http.SetCookie(w, &http.Cookie{
 		Name:     session.CookieName,
@@ -118,7 +127,7 @@ func endExpired(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool, gete
 		MaxAge:   sessionMaxAge,
 		HttpOnly: true,
 		Secure:   SecureCookies(getenv),
-		SameSite: http.SameSiteStrictMode,
+		SameSite: http.SameSiteLaxMode,
 	})
 	http.Redirect(w, r, "/admin/customers?msg="+url.PathEscape(ExpiredTexts[Lang(r)]), http.StatusSeeOther)
 	return nil
@@ -134,10 +143,7 @@ func CSRF(w http.ResponseWriter, r *http.Request, getenv func(string) string, at
 	}
 	token := r.Header.Get(csrfHeader)
 	if token == "" {
-		r.Body = http.MaxBytesReader(w, r.Body, csrfMaxBody)
-		if err := r.ParseForm(); err == nil {
-			token = r.PostForm.Get(csrfField)
-		}
+		token = formToken(w, r)
 	}
 	if csrfValid(secret, token, Cookie(r, csrfCookie), at) {
 		return true
@@ -150,6 +156,28 @@ func CSRF(w http.ResponseWriter, r *http.Request, getenv func(string) string, at
 	}
 	http.Redirect(w, r, recovery(r, getenv), http.StatusSeeOther)
 	return false
+}
+
+// formToken reads the _csrf field from the body, as Starlette's request.form()
+// does for both url-encoded and multipart bodies. A multipart body (the
+// property editor, which can carry a guide photo) may be up to
+// csrfMaxMultipart; parts over csrfMultipartMemory spill to temp files. The
+// parsed form stays on r for the handler; net/http removes its temp files
+// after the response, as long as no middleware swaps r for a copy.
+func formToken(w http.ResponseWriter, r *http.Request) string {
+	mediaType, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type"))
+	if mediaType == "multipart/form-data" {
+		r.Body = http.MaxBytesReader(w, r.Body, csrfMaxMultipart)
+		if err := r.ParseMultipartForm(csrfMultipartMemory); err != nil {
+			return ""
+		}
+		return r.PostForm.Get(csrfField)
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, csrfMaxBody)
+	if err := r.ParseForm(); err != nil {
+		return ""
+	}
+	return r.PostForm.Get(csrfField)
 }
 
 // csrfValid checks the signed token against the CSRF cookie. An empty cookie
