@@ -102,3 +102,45 @@ Order changed by the owner's rule "filing last": lane F runs after J7, and W3 (g
 Shared files nobody but the coordinator edits: `docs/context/status.md`, `docs/context/test-map.md`, `docs/context/decisions.md`. A lane that needs a line there sends it to the coordinator. `deploy/lightsail/docker-compose.yml` belongs to J until J7 merges.
 
 Start order (max 3): P0 alone, then J, D, W together; F when D finishes and J7 has merged; X last.
+
+## 7. Fine split: one thread per job and per web area (owner lifted the 3-thread cap, 2026-11-13)
+
+**P0 must add one thing before it merges (#965):** per-thread registration files. `register_jobs.go` and `register_web.go` are single lists, so two job threads or two web threads would edit the same file. Add `registerJob(kind string, minutes int, h func(*pgxpool.Pool) jobs.Handler)` and `registerRoutes(func(*http.ServeMux, *metrics, *pgxpool.Pool))`, both called from `init()` in a file of the thread's own (`register_job_<kind>.go`, `register_web_<area>.go`), plus a test that no kind or route pattern is registered twice. Existing entries stay where they are.
+
+Rules for every thread below: `go/internal/hostweb/` (layout, `i18n.json`), `go/internal/session/` read side, `go/internal/jobs/`, `go/cmd/ubyhost-web/main.go` and `App/tests/conftest.py` are read-only. Each web area keeps its templates and its i18n file in its own package. Each thread adds new test files only (`App/tests/test_go_<area>*.py`, Go tests in its package) and new golden scripts only (`App/scripts/<name>_golden.py`). `docs/ENVIRONMENT.md`, `status.md`, `test-map.md`, `decisions.md` and `known-issues.md` are coordinator-only: threads send their lines. A shared package is edited only by the thread named as its owner; other threads add new files in it at most.
+
+### Start when P0 merges (all at once)
+| Thread | Steps | Tier | Files (own; plus its `register_*` file) |
+|---|---|---|---|
+| Port photo sweep job | J1 | A | `go/internal/photosweep/` |
+| Port retention job | J2 (dry-run 3 nights, then delete) | A | `go/internal/retention/` |
+| Port billing job and PDFs | J3; owns the PDF library (decision line) | B | `go/internal/billingjob/`, `go/internal/pdf/` |
+| Plan and port mail job | J4 plan, then `mail` | B | `go/internal/mail/` (owner), `go/internal/lifecyclemail/` |
+| Port stay fee mail job | `stay_fee_mail` | B | `go/internal/stayfeemail/`; new files only in `mail/` |
+| Port guide import job | J5; owns the Anthropic client (decision line) | B | `go/internal/guideimport/`, `go/internal/anthropic/` |
+| Move database changes to Go | D1 | A | `go/internal/schema/`, `deploy/lightsail/scripts/deploy.sh`, `pg-cutover.sh`, `docs/LIGHTSAIL.md` |
+| Port public legal pages | `legal`, `mail_unsubscribe`, `guest_guide_view` | C | `go/internal/web/public/` |
+| Port login and accounts | `admin_accounts` (`/login`, `/logout`, `/account`, `/admin`), `signup`, `passkeys`; WebAuthn library (decision line) | A | `go/internal/web/auth/`, `go/internal/session/` (owner) |
+| Port onboarding pages | `onboarding`, `onboarding_wizard` (checks UbyPort login) | A | `go/internal/web/onboarding/` |
+| Port property settings pages | `admin.py`: `/apartments/*` (not `/page`, `/booking-site`), `/entities`, `/feeds`, `/sync`, `/settings`, `/menu`, `/housebook`, `/guide`, `/guest-links`, `/alerts`, `/smart-locks` | B | `go/internal/web/properties/` |
+| Port cleaning pages | `cleaning` | B | `go/internal/web/cleaning/` |
+| Port data exports | `exports` (guest data) | A | `go/internal/web/exports/` |
+| Port stay fee pages | `stay_fees` | B | `go/internal/web/stayfees/` |
+| Port subscription billing pages | `billing`, `admin_billing` | B | `go/internal/web/billing/` |
+| Port payments and booking site | rest of `payments`, `stripe_connect`, `property_page` (booking site `/p/*`), booking webhook (Go stops forwarding) | B | `go/internal/payments/` (owner), `go/internal/web/booking/` |
+| Port customer admin pages | `admin_customers`, admin funnel | B | `go/internal/web/customers/` |
+| Port privacy request pages | `privacy_requests` | A | `go/internal/web/privacy/` |
+
+### Start when a dependency merges
+| Thread | Waits for | Tier | Files |
+|---|---|---|---|
+| Port invoice pages | billing job (uses `pdf/`) | B | `go/internal/web/invoices/` |
+| Port AI assistant pages | guide import (uses `anthropic/`) | B | `go/internal/web/ai/` (`havel`, `leon_setup`, `guest_guide` editor) |
+| Move scheduler to Go | every job thread above | A | `go/internal/scheduler/`, `App/app/scheduler.py`, `App/app/worker.py`, `deploy/lightsail/docker-compose.yml` |
+| Move police filing to Go (F1, F2) | scheduler and database threads | A, owner sign-off per switch | `go/internal/ubyport/`, `go/internal/statemachine/`, `App/app/reporting.py`, send handlers in `App/app/routes/admin.py` |
+| Port stays and submissions pages | filing | A | `go/internal/web/stays/` (`/reservations/*`, `/submissions/*`) |
+| Port host guest editing | filing | A | `go/internal/web/guestadmin/` (`/guests/*`) |
+| Port guest registration pages | filing | A | `go/internal/web/guest/` (`guest`, `guest_questions`, `guest_leon`) |
+| Retire Python (X1-X3) | everything | A | runs alone |
+
+`dev_ui` is not ported; it is deleted with Python. Python files are edited only in each thread's later removal PR, after a clean production week.
