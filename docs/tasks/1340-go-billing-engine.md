@@ -1,6 +1,6 @@
 # 1340: Go billing engine, a parity-checked port of billing.py and billing_order.py
 
-Status: todo
+Status: review
 Depends on: none | Base commit: a83df54 | Branch: task/1340-go-billing-pages
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
