@@ -112,8 +112,25 @@ func Fail(ctx context.Context, pool *pgxpool.Pool, j *Job, cause error, interval
 	return false, err
 }
 
-var jobNames = map[string]string{"billing_snapshot": "billing snapshot", "stripe_sweep": "payment check", "ical": "calendar sync",
-	"submit": "automatic filing", "push": "urgent alerts", "deadlines": "deadline watch"}
+// jobNames are the English notification.job_name.* values of
+// App/app/host_i18n.py, one per job kind.
+var jobNames = map[string]string{
+	"billing_snapshot": "billing snapshot",
+	"stripe_sweep":     "payment check",
+	"ical":             "calendar sync",
+	"submit":           "automatic filing",
+	"push":             "urgent alerts",
+	"deadlines":        "deadline watch",
+	"posthog":          "product analytics",
+	"meta_capi":        "Meta conversion sending",
+	"mail":             "e-mail queue",
+	"photo_sweep":      "passport photo cleanup",
+	"retention":        "data retention",
+	"stay_fee_mail":    "monthly stay fee email",
+	"billing":          "billing",
+	"door_codes":       "door codes",
+	"guide_import":     "guest guide imports",
+}
 
 // jobLevels is the alert level per job; every job not listed is "warning".
 var jobLevels = map[string]string{"submit": "critical", "deadlines": "critical"}

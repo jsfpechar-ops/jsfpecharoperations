@@ -210,3 +210,16 @@ func TestRaiseFailedSubmitIsCritical(t *testing.T) {
 		t.Fatalf("message = %q, want the English submit name", message)
 	}
 }
+
+func TestJobNamesCoverAllKinds(t *testing.T) {
+	kinds := []string{"billing_snapshot", "stripe_sweep", "ical", "submit", "push", "deadlines", "posthog", "meta_capi",
+		"mail", "photo_sweep", "retention", "stay_fee_mail", "billing", "door_codes", "guide_import"}
+	for _, k := range kinds {
+		if jobNames[k] == "" {
+			t.Errorf("jobNames has no entry for %q", k)
+		}
+	}
+	if len(jobNames) != len(kinds) {
+		t.Errorf("jobNames has %d entries, want %d", len(jobNames), len(kinds))
+	}
+}

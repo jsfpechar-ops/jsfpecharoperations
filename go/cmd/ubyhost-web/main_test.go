@@ -68,3 +68,26 @@ func TestCSPMatchesPython(t *testing.T) {
 		t.Fatalf("App/app/main.py no longer contains the CSP prefix %q; update hardenHeaders too", want)
 	}
 }
+
+func TestLaneKindsDisjoint(t *testing.T) {
+	filing := filingHandlers(nil)
+	for k := range jobHandlers(nil) {
+		if _, ok := filing[k]; ok {
+			t.Errorf("kind %q is in both register_jobs.go and register_filing.go", k)
+		}
+	}
+}
+
+func TestEveryHandlerHasInterval(t *testing.T) {
+	handlers := goHandlers(nil)
+	for k := range handlers {
+		if goIntervals[k] <= 0 {
+			t.Errorf("handler %q has no interval > 0", k)
+		}
+	}
+	for k := range goIntervals {
+		if _, ok := handlers[k]; !ok {
+			t.Errorf("interval %q has no handler", k)
+		}
+	}
+}

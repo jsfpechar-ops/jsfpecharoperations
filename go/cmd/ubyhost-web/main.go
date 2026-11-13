@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -17,22 +16,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/billing"
-	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/calendar"
-	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ical"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/jobs"
-	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/metacapi"
-	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/palette"
-	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/payments"
-	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/posthog"
-	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/pushsend"
-	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/pushweb"
-	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/schema"
-	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
-	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
 )
 
 const version = "go-dev"
@@ -167,22 +153,7 @@ func run() int {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	startCtx, cancelStart := context.WithTimeout(ctx, 10*time.Second)
-	conn, err := pgx.Connect(startCtx, dbURL)
-	if err != nil {
-		cancelStart()
-		slog.Error("database connect failed", "error", redact(err))
-		return 1
-	}
-	pending, err := schema.Pending(startCtx, conn, migrations)
-	_ = conn.Close(startCtx)
-	cancelStart()
-	if err != nil {
-		slog.Error("goose check failed", "error", redact(err))
-		return 1
-	}
-	if len(pending) > 0 {
-		slog.Error(fmt.Sprintf("goose files pending: %v", pending))
+	if err := checkSchema(ctx, dbURL, migrations, redact); err != nil {
 		return 1
 	}
 
@@ -207,23 +178,8 @@ func run() int {
 	mux := http.NewServeMux()
 	mux.Handle("GET /healthz", m.wrap("/healthz", healthz(pool)))
 	mux.Handle("GET /metrics", m.wrap("/metrics", m.serve))
-	mux.Handle("POST /webhooks/stripe", m.wrap("/webhooks/stripe", payments.WebhookHandler(pool, os.Getenv, time.Now)))
-	onboarder := payments.NewStripeOnboarder(pool, os.Getenv, time.Now)
-	mux.Handle("GET /payments/connect/start", m.wrap("/payments/connect/start", payments.ConnectStartHandler(pool, os.Getenv, time.Now, onboarder)))
-	mux.Handle("POST /payments/connect/start", m.wrap("/payments/connect/start", payments.ConnectStartHandler(pool, os.Getenv, time.Now, onboarder)))
-	mux.Handle("GET /payments/connect/return", m.wrap("/payments/connect/return", payments.ConnectReturnHandler(pool, os.Getenv, time.Now, onboarder)))
-	mux.Handle("POST /account/push/subscribe", m.wrap("/account/push/subscribe", pushweb.SubscribeHandler(pool, os.Getenv, time.Now)))
-	mux.Handle("POST /account/push/refresh", m.wrap("/account/push/refresh", pushweb.RefreshHandler(pool, os.Getenv, time.Now)))
-	mux.Handle("POST /account/push/unsubscribe", m.wrap("/account/push/unsubscribe", pushweb.UnsubscribeHandler(pool, os.Getenv, time.Now)))
-	mux.Handle("POST /account/push/devices/{id}/delete", m.wrap("/account/push/devices/{id}/delete", pushweb.DeviceDeleteHandler(pool, os.Getenv, time.Now)))
-	mux.Handle("POST /account/push/test", m.wrap("/account/push/test", pushweb.TestHandler(&pushsend.Sender{Pool: pool, Getenv: os.Getenv, Now: time.Now}, os.Getenv, time.Now)))
-	mux.Handle("GET /api/command-palette", m.wrap("/api/command-palette", palette.Handler(pool, os.Getenv, time.Now)))
-	mux.Handle("GET /dashboard/calendar", m.wrap("/dashboard/calendar", calendar.Handler(pool, os.Getenv, time.Now)))
-	mux.Handle("POST /payments/requests/new", m.wrap("/payments/requests/new", payments.RequestNewHandler(pool, os.Getenv, time.Now)))
-	mux.Handle("POST /payments/requests/{id}/send", m.wrap("/payments/requests/{id}/send", payments.RequestSendHandler(pool, os.Getenv, time.Now, onboarder)))
-	mux.Handle("GET /payments/qr/{file}", m.wrap("/payments/qr/{file}", payments.QRPNGHandler(pool, os.Getenv, time.Now)))
-	mux.Handle("POST /payments/requests/{id}/link", m.wrap("/payments/requests/{id}/link", payments.RequestLinkHandler(pool, os.Getenv, time.Now, onboarder)))
-	mux.Handle("GET /pay/{id}/{file}", m.wrap("/pay/{id}/{file}", payments.GuestQRPNGHandler(pool, os.Getenv)))
+	registerWeb(mux, m, pool)
+	registerFiling(mux, m, pool)
 	mux.Handle("/", m.wrap("/", notFound))
 
 	srv := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}
@@ -252,75 +208,37 @@ func run() int {
 }
 
 // goIntervals are the schedule intervals (minutes) that cap a retry backoff.
-var goIntervals = map[string]int{"billing_snapshot": 24 * 60, "stripe_sweep": 24 * 60, "submit": 10, "ical": 60, "push": 1, "posthog": 15, "meta_capi": 10, "deadlines": 30}
+// Each lane owns its own map: register_jobs.go, register_filing.go.
+var goIntervals = mergeIntervals(jobIntervals, filingIntervals)
 
-// goHandlers maps each Go-owned job kind to its handler.
+// goHandlers maps each Go-owned job kind to its handler, merged from the
+// lane files.
 func goHandlers(pool *pgxpool.Pool) map[string]jobs.Handler {
-	return map[string]jobs.Handler{
-		"billing_snapshot": func(ctx context.Context) (int, error) {
-			return billing.WriteMonthSnapshot(ctx, pool, time.Now().UTC().Format("2006-01"), jobs.Now(0))
-		},
-		"stripe_sweep": func(ctx context.Context) (int, error) {
-			expired, deleted, err := payments.Sweep(ctx, pool, time.Now().UTC(), jobs.Now(0))
-			return expired + deleted, err
-		},
-		"ical": func(ctx context.Context) (int, error) {
-			totals, err := ical.SyncAll(ctx, pool, os.Getenv, ical.FetchOptions{
-				Resolver:     net.DefaultResolver,
-				AllowPrivate: ical.AllowPrivate(os.Getenv),
-			})
-			if err == nil {
-				jobs.Ping(ctx, os.Getenv("UBYHOST_HEARTBEAT_ICAL_URL"), "ical")
+	out := map[string]jobs.Handler{}
+	for _, part := range []map[string]jobs.Handler{jobHandlers(pool), filingHandlers(pool)} {
+		for k, h := range part {
+			if _, dup := out[k]; dup {
+				panic("duplicate job kind in lane files: " + k)
 			}
-			return totals.Feeds, err
-		},
-		"push": func(ctx context.Context) (int, error) {
-			counts, err := (&pushsend.Sender{Pool: pool, Getenv: os.Getenv, Now: time.Now}).Drain(ctx, 50)
-			total := 0
-			for _, n := range counts {
-				total += n
-			}
-			return total, err
-		},
-		"posthog": func(ctx context.Context) (int, error) {
-			counts, err := posthog.Sync(ctx, pool, posthog.ConfigFromEnv(os.LookupEnv), nil, time.Now())
-			if counts.Sent > 0 || counts.Failed > 0 {
-				slog.Info("posthog sync", "sent", counts.Sent, "skipped", counts.Skipped, "failed", counts.Failed)
-			}
-			return counts.Sent, err
-		},
-		"meta_capi": func(ctx context.Context) (int, error) {
-			sum, err := metacapi.Send(ctx, pool, metacapi.ConfigFromEnv(os.LookupEnv), nil, time.Now())
-			if sum != (metacapi.Summary{}) {
-				slog.Info("meta conversions", "sent", sum.Sent, "retry", sum.Retry, "failed", sum.Failed, "expired", sum.Expired)
-			}
-			return sum.Sent, err
-		},
-		"deadlines": func(ctx context.Context) (int, error) {
-			sum, err := calendar.RunDeadlinesJob(ctx, pool, os.LookupEnv, time.Now(), func(url string) {
-				jobs.Ping(ctx, url, "filing")
-			})
-			return sum.Alerts + sum.RequestsDue, err
-		},
-		"submit": func(ctx context.Context) (int, error) {
-			keys, err := secure.LoadDataKeys(os.Getenv)
-			if err != nil {
-				return 0, err
-			}
-			d, err := ubyport.NewSweepDeps(ctx, pool, keys, os.Getenv)
-			if err != nil {
-				return 0, err
-			}
-			summary, err := ubyport.Sweep(ctx, d, nil)
-			if summary.Submitted > 0 || summary.Failed > 0 {
-				slog.Info("ubyport sweep", "apartments", summary.Apartments, "submitted", summary.Submitted, "failed", summary.Failed)
-			}
-			if err == nil {
-				jobs.Ping(ctx, os.Getenv("UBYHOST_HEARTBEAT_URL"), "submit")
-			}
-			return summary.Submitted, err
-		},
+			out[k] = h
+		}
 	}
+	return out
+}
+
+// mergeIntervals joins the lane interval maps; a duplicate kind is a
+// programmer error.
+func mergeIntervals(parts ...map[string]int) map[string]int {
+	out := map[string]int{}
+	for _, part := range parts {
+		for k, v := range part {
+			if _, dup := out[k]; dup {
+				panic("duplicate job interval in lane files: " + k)
+			}
+			out[k] = v
+		}
+	}
+	return out
 }
 
 // parseGoKinds reads UBYHOST_GO_JOB_KINDS. Only the kinds in goHandlers are supported.
