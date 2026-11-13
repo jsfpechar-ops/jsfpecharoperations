@@ -15,8 +15,10 @@ counts, the first failure and the state of every table the job touches.
 --check compares with the committed file instead of writing it (exit 1 on a
 difference). The Go test in go/internal/retention/ replays the same scenarios.
 
-Brief 1210 ports the counting half only, so only the dry-run scenarios are
-recorded; brief 1211 adds the apply scenarios.
+One deliberate difference: the Go port does not send the workspace-deletion
+reminder mail or delete workspaces, so outside a dry run its workspaces step
+fails closed when there is anything to do. This script patches the Python
+step the same way (go_workspaces_step below); everything else is unpatched.
 """
 
 from __future__ import annotations
@@ -26,7 +28,7 @@ import os
 import sys
 import tempfile
 import time
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
 from urllib.parse import urlsplit, urlunsplit
@@ -43,6 +45,8 @@ PHOTOS = ["1000.jpg.enc", "1001.png", "1002.jpg", "2000.pdf.enc", "notes.txt"]
 SCENARIOS = [
     ("global_dry", None, True),
     ("owner1_dry", 1, True),
+    ("owner1_apply", 1, False),
+    ("global_apply", None, False),
 ]
 # One text column per row, so Go and Python compare plain strings.
 QUERIES = {
@@ -106,6 +110,10 @@ RETENTION_ENV = (
 )
 
 
+class WorkspacesNotPorted(RuntimeError):
+    """The Go port's fail-closed workspaces step, mirrored here."""
+
+
 def _url_for(base: str, name: str) -> str:
     parts = urlsplit(base)
     return urlunsplit((parts.scheme, parts.netloc, "/" + name, parts.query, parts.fragment))
@@ -141,6 +149,34 @@ def _freeze() -> None:
         module._now = lambda: NOW
 
 
+def _patch_workspaces() -> None:
+    from app import db, retention
+
+    original = dict(retention.STEPS)["workspaces"]
+
+    def go_workspaces_step(today, dry_run, owner_user_id):
+        if owner_user_id is not None or dry_run:
+            return original(today, dry_run, owner_user_id)
+        now = db.utcnow()
+        soon = (NOW + timedelta(days=retention.WORKSPACE_REMINDER_DAYS)).replace(microsecond=0).isoformat()
+        due = db.query_one(
+            "SELECT COUNT(*) AS n FROM user_account WHERE deletion_due_at IS NOT NULL AND deletion_due_at <= ?",
+            (now,),
+        )["n"]
+        reminders = db.query_one(
+            "SELECT COUNT(*) AS n FROM user_account WHERE deletion_due_at IS NOT NULL "
+            "AND deletion_due_at > ? AND deletion_due_at <= ?",
+            (now, soon),
+        )["n"]
+        if due or reminders:
+            raise WorkspacesNotPorted(f"due {due}, reminders {reminders}")
+        return 0
+
+    retention.STEPS[:] = [
+        (name, go_workspaces_step if name == "workspaces" else fn) for name, fn in retention.STEPS
+    ]
+
+
 def _scenario(psycopg, url: str, photos_dir: Path, name: str, owner, dry_run: bool) -> dict:
     from app import db, retention
 
@@ -159,6 +195,8 @@ def _scenario(psycopg, url: str, photos_dir: Path, name: str, owner, dry_run: bo
     error = None
     try:
         retention.run(TODAY, dry_run=dry_run, owner_user_id=owner)
+    except WorkspacesNotPorted:
+        error = "workspaces"
     except Exception as exc:  # noqa: BLE001 - recorded; the Go test must fail the same way
         error = type(exc).__name__
     db.close_connections()
@@ -200,6 +238,7 @@ def render() -> str:
     sys.path.insert(0, str(APP))
     try:
         _freeze()
+        _patch_workspaces()
         scenarios = [
             _scenario(psycopg, url, data_dir / "passport_photos", n, owner, dry)
             for n, owner, dry in SCENARIOS
@@ -214,6 +253,7 @@ def render() -> str:
         "today": TODAY.isoformat(),
         "now": NOW.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
         "photos": PHOTOS,
+        "patched": "workspaces: outside a dry run fails closed when a workspace is due or a reminder is due",
         "queries": QUERIES,
         "scenarios": scenarios,
     }

@@ -23,11 +23,11 @@ SCRIPT = APP_DIR / "scripts" / "retention_golden.py"
 PG_URL = os.environ.get("UBYHOST_TEST_DATABASE_URL") or os.environ.get("UBYHOST_DATABASE_URL")
 
 
-def test_golden_lists_the_dry_run_scenarios():
+def test_golden_lists_four_scenarios_and_the_script_queries():
     doc = json.loads(GOLDEN.read_text(encoding="utf-8"))
-    assert [s["name"] for s in doc["scenarios"]] == ["global_dry", "owner1_dry"]
+    assert [s["name"] for s in doc["scenarios"]] == ["global_dry", "owner1_dry", "owner1_apply", "global_apply"]
     assert '"queries": ' in GOLDEN.read_text(encoding="utf-8")
-    assert all(s["error"] is None and s["dry_run"] for s in doc["scenarios"])
+    assert all(s["error"] in (None, "workspaces") for s in doc["scenarios"])
 
 
 @pytest.mark.skipif(not PG_URL, reason="needs PostgreSQL (UBYHOST_TEST_DATABASE_URL or UBYHOST_DATABASE_URL)")
