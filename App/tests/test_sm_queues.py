@@ -51,6 +51,8 @@ PUSHSEND = "go/internal/pushsend/pushsend.go"
 CAPI = "App/app/meta_capi.py"
 GOCAPI = "go/internal/metacapi/send.go"
 SIGNUP = "App/app/signup.py"
+SIGNUPGO = "go/internal/signup/store.go"
+GOSIGNUP = "go/internal/signup/register.go"
 IMPORT = "App/app/guest_guide_import.py"
 MERGE = "App/app/guest_guide_merge.py"
 
@@ -158,6 +160,7 @@ OUTBOX_SITES = {
     (CLAIM, "expire_on_cancel"): 1,
     (RECONCILE, "expireOnCancel"): 1,
     (NOTIFY, "EnqueueMail"): 1,
+    (SIGNUPGO, "enqueue"): 1,
 }
 _CLAIM_FRAGMENT = '{"state": SENDING, "updated_at": db.utcnow()}, {"state": QUEUED}'
 OUTBOX_MOVES = [
@@ -171,6 +174,7 @@ OUTBOX_MOVES = [
     (CLAIM, "expire_on_cancel", "(mail.FAILED, now, reservation[\"id\"], mail.QUEUED)", ("queued",), "failed"),
     (RECONCILE, "expireOnCancel", "SET state = 'failed'", ("queued",), "failed"),
     (NOTIFY, "EnqueueMail", "$9, 'queued', 0", NEW, "queued"),
+    (SIGNUPGO, "enqueue", "'queued', 0, $7, $7, $7)", NEW, "queued"),
 ]
 
 
@@ -215,6 +219,7 @@ SEND_SITES = {
     (GOCAPI, "expireUnsendable"): 1,
     (GOCAPI, "Send"): 5,
     (SIGNUP, "withdraw_consent"): 1,
+    (GOSIGNUP, "enqueueMeta"): 1,
 }
 _WITHDRAW = '"send_state": "withdrawn" if row["send_state"] in ("pending", "sending")'
 SEND_MOVES = [
@@ -234,6 +239,7 @@ SEND_MOVES = [
     (GOCAPI, "Send", "state, attempts, truncate(out.detail, 400), iso(now.Add(retryDelay(attempts))), id, stateSending)", ("sending",), "pending"),
     (GOCAPI, "Send", "state, attempts, truncate(out.detail, 400), iso(now.Add(retryDelay(attempts))), id, stateSending)", ("sending",), "failed"),
     (GOCAPI, "Send", "stateFailed, attempts, truncate(out.detail, 400), id, stateSending)", ("sending",), "failed"),
+    (GOSIGNUP, "enqueueMeta", "send_state = 'pending', event_id = $1, next_attempt_at = $2", (None,), "pending"),
 ]
 
 
