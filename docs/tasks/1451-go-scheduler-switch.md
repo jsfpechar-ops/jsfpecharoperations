@@ -312,7 +312,7 @@ From the repo root:
 
 ## 7. Acceptance
 
-- [ ] `git log --oneline --grep='^1451 '` lists `1451 step 1`, `1451 step 2` and `1451 report`, and `git show --stat --format=%s $(git log --format=%h --grep='^1451 step') | tail -8` names only the four files of section 3 that are not the report.
+- [ ] `git log --oneline --grep='^1451 '` lists `1451 step 1`, `1451 step 2` and `1451 report`, and `git show --stat --format=%s $(git log --format=%h --grep='^1451 step') | tail -14` names only the four files of section 3 that are not the report.
 - [ ] `git show $(git log --format=%h --grep='^1451 step 1') -- App/app/scheduler.py deploy/lightsail/docker-compose.yml docs/ENVIRONMENT.md | grep '^[+-][^+-]' | sha256sum` equals `grep '^[+-][^+-]' docs/tasks/1451-files/1451.patch | sha256sum`.
 - [ ] `cmp docs/tasks/1451-files/App/tests/test_scheduler_go_switch.py App/tests/test_scheduler_go_switch.py` prints nothing.
 - [ ] Section 6 output as stated.

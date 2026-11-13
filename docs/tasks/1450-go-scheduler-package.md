@@ -144,7 +144,7 @@ Test-map: no row covers Go packages; the commands above are this brief's tests. 
 
 ## 7. Acceptance
 
-- [ ] `git log --oneline --grep='^1450 '` lists `1450 step 1`, `1450 step 2` and `1450 report`, and `git show --stat --format=%s $(git log --format=%h --grep='^1450 step') | tail -12` names exactly the eight files of section 3 that are not the report.
+- [ ] `git log --oneline --grep='^1450 '` lists `1450 step 1`, `1450 step 2` and `1450 report`, and `git show --stat --format=%s $(git log --format=%h --grep='^1450 step') | tail -20` names exactly the eight files of section 3 that are not the report.
 - [ ] The copied files equal the sidecar files: `for f in $(cd docs/tasks/1450-files && find . -type f); do cmp docs/tasks/1450-files/$f $f; done` prints nothing.
 - [ ] Section 6 output exactly as stated.
 - [ ] `git show --stat --format= $(git log --format=%h --grep='^1450 ') -- go/cmd/ubyhost-web/main.go go/cmd/ubyhost-web/registry.go go/internal/jobs go/go.mod App/app deploy | tail -3` prints nothing.
