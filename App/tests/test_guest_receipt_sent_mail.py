@@ -12,7 +12,7 @@ import json
 
 from app import claim, db, door_codes, guest_mail_pref, i18n, mail, mail_notify
 # _env is the autouse fixture of that file; importing it here applies it here too.
-from tests.test_host_guest_details_mail import LEAD, MASK, _env, _rows, _seed  # noqa: F401
+from tests.test_host_guest_details_mail import HOST, LEAD, MASK, _env, _rows, _seed  # noqa: F401
 
 
 NEW_KEYS = (
@@ -71,11 +71,11 @@ def test_a_guest_typed_in_before_the_claim_is_named_only(monkeypatch):
         assert "4321" not in part
 
 
-def test_the_receipt_row_holds_the_stay_id_and_goes_to_the_claim_address_only(monkeypatch):
+def test_the_receipt_row_holds_the_stay_id_and_ccs_the_host_contact(monkeypatch):
     seed = _seed()
     row, payload, _text, _page = _complete(monkeypatch, seed)
     assert row["to_email"] == LEAD
-    assert row["cc_email"] is None
+    assert row["cc_email"] == HOST
     assert payload[mail.RECEIPT_DETAILS_KEY] == seed["stay"]
     assert mail.RECEIPT_DETAILS_MARKER in payload["text"]
     stored = " ".join([row["subject"] or "", row["payload"] or ""])
