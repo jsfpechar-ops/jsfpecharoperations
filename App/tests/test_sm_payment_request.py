@@ -215,9 +215,13 @@ def test_go_callers_match_the_pins():
         assert dict(found) == expected, name
     found = {}
     for path in _payments_go_files():
+        rel = _rel(path)
+        # booking_webhook.setStatus writes site_booking, not payment_request (brief 1350).
+        if rel == "go/internal/payments/booking_webhook.go":
+            continue
         n = len(re.findall(r"\bsetStatus\(ctx, ", path.read_text(encoding="utf-8")))
         if n:
-            found[_rel(path)] = n
+            found[rel] = n
     assert found == PINNED_GO_SETSTATUS
 
 

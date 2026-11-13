@@ -376,7 +376,7 @@
    "user": null
   },
   {
-   "body": "{\"detail\":\"Unprocessable Content\"}",
+   "body": "{\"detail\":\"Unprocessable Entity\"}",
    "content_type": "application/json",
    "csrf": false,
    "form": null,
