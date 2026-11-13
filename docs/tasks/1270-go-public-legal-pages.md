@@ -1,6 +1,6 @@
 # 1270: Go public legal pages, part 1 (catalog, golden pages, config and language)
 
-Status: todo
+Status: review
 Depends on: none | Base commit: 488a783 | Branch: task/1270-go-public-legal-pages
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (about 14 calls)
 Next: [1271](1271-go-public-legal-pages-render.md) runs on the same branch after this one; one draft PR for both.
