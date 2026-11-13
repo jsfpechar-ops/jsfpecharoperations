@@ -34,7 +34,7 @@ const (
 	havelLogoWidth       = 180
 )
 
-var havelPreheaderSpacer = strings.Repeat(" ﻿͏", 40)
+var havelPreheaderSpacer = strings.Repeat("\u2007\ufeff\u034f", 40)
 
 var havelEscaper = strings.NewReplacer("&", "&amp;", "<", "&lt;", ">", "&gt;", `"`, "&quot;", "'", "&#x27;")
 

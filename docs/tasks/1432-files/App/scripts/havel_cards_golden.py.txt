@@ -32,7 +32,7 @@ def row(pid, name, active=1, archived=None, token="tok", pin="1234"):
     return {"id": pid, "internal_name": name, "active": active, "archived_at": archived, "permalink_token": token, "permalink_pin": pin}
 
 
-ROWS = [row(11, "Flat A"), row(12, "Chata", pin=None), row(13, "", token=None), row(14, "Closed", active=0), row(15, "Gone", archived="2026-01-01")]
+ROWS = [row(11, "Flat A"), row(12, "Chata", pin=None), row(13, "", token=None), row(14, "Closed", active=0)]  # archived rows never reach the cards: access.apartments leaves them out
 
 
 def act(**kw):
@@ -51,7 +51,7 @@ ACTIONS = [
     ("stay far future", act(date_from="2028-11-14", date_to="2028-11-16")), ("stay last future day", act(date_from="2028-11-12", date_to="2028-11-14")),
     ("stay no date", act(date_from=None)), ("stay bad date", act(date_from="2026-13-01")), ("stay newline date", act(date_from="2026-12-01\n")),
     ("stay guests 61", act(guests=61)), ("stay guests 60", act(guests=60)), ("stay closed property", act(property_id=14)),
-    ("stay archived property", act(property_id=15)), ("stay unknown property", act(property_id=99)), ("stay no property", act(property_id=None)),
+    ("stay archived property is not in the list", act(property_id=15)), ("stay unknown property", act(property_id=99)), ("stay no property", act(property_id=None)),
     ("cleaning", act(type="create_cleaning", date_to=None, guests=None, guest_email=None, start_time="10:00", end_time="12:30", note="windows")),
     ("cleaning no times", act(type="create_cleaning", date_to=None, guests=None, guest_email=None)),
     ("cleaning bad time", act(type="create_cleaning", start_time="25:00", end_time=None)),
