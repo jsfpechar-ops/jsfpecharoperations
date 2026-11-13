@@ -1,0 +1,751 @@
+[
+ {
+  "rows": [
+   {
+    "active": 1,
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 1,
+    "onboarding_emails_opt_out": 0,
+    "password_hash": "x",
+    "role": "host",
+    "username": "user1"
+   },
+   {
+    "active": 1,
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 2,
+    "onboarding_emails_opt_out": 0,
+    "password_hash": "x",
+    "role": "host",
+    "username": "user2"
+   },
+   {
+    "active": 1,
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 3,
+    "onboarding_emails_opt_out": 1,
+    "password_hash": "x",
+    "role": "host",
+    "username": "user3"
+   },
+   {
+    "active": 1,
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 4,
+    "onboarding_emails_opt_out": 0,
+    "password_hash": "x",
+    "role": "host",
+    "username": "user4"
+   },
+   {
+    "active": 1,
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 5,
+    "onboarding_emails_opt_out": 0,
+    "password_hash": "x",
+    "role": "host",
+    "username": "user5"
+   },
+   {
+    "active": 1,
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 6,
+    "onboarding_emails_opt_out": 0,
+    "password_hash": "x",
+    "role": "host",
+    "username": "user6"
+   },
+   {
+    "active": 1,
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 7,
+    "onboarding_emails_opt_out": 0,
+    "password_hash": "x",
+    "role": "host",
+    "username": "user7"
+   },
+   {
+    "active": 1,
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 8,
+    "onboarding_emails_opt_out": 0,
+    "password_hash": "x",
+    "role": "host",
+    "username": "user8"
+   },
+   {
+    "active": 1,
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 9,
+    "last_login_at": "2026-03-06T08:30:00+00:00",
+    "onboarding_emails_opt_out": 0,
+    "password_hash": "x",
+    "role": "host",
+    "username": "user9"
+   },
+   {
+    "active": 0,
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 10,
+    "onboarding_emails_opt_out": 0,
+    "password_hash": "x",
+    "role": "host",
+    "username": "user10"
+   },
+   {
+    "active": 1,
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "deletion_due_at": "2026-03-15T08:30:00+00:00",
+    "id": 11,
+    "onboarding_emails_opt_out": 0,
+    "password_hash": "x",
+    "role": "host",
+    "username": "user11"
+   },
+   {
+    "active": 1,
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 12,
+    "onboarding_emails_opt_out": 0,
+    "password_hash": "x",
+    "role": "admin",
+    "username": "user12"
+   },
+   {
+    "active": 1,
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 13,
+    "onboarding_emails_opt_out": 0,
+    "password_hash": "x",
+    "role": "host",
+    "username": "user13"
+   },
+   {
+    "active": 1,
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 14,
+    "onboarding_emails_opt_out": 0,
+    "password_hash": "x",
+    "role": "host",
+    "username": "user14"
+   },
+   {
+    "active": 1,
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 15,
+    "onboarding_emails_opt_out": 0,
+    "password_hash": "x",
+    "role": "host",
+    "username": "user15"
+   },
+   {
+    "active": 1,
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 16,
+    "onboarding_emails_opt_out": 0,
+    "password_hash": "x",
+    "role": "host",
+    "username": "user16"
+   },
+   {
+    "active": 1,
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 17,
+    "onboarding_emails_opt_out": 0,
+    "password_hash": "x",
+    "role": "host",
+    "username": "user17"
+   },
+   {
+    "active": 1,
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 18,
+    "onboarding_emails_opt_out": 0,
+    "password_hash": "x",
+    "role": "host",
+    "username": "user18"
+   },
+   {
+    "active": 1,
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 19,
+    "onboarding_emails_opt_out": 0,
+    "password_hash": "x",
+    "role": "host",
+    "username": "user19"
+   },
+   {
+    "active": 1,
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 20,
+    "onboarding_emails_opt_out": 0,
+    "password_hash": "x",
+    "role": "host",
+    "username": "user20"
+   },
+   {
+    "active": 1,
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 21,
+    "onboarding_emails_opt_out": 0,
+    "password_hash": "x",
+    "role": "host",
+    "username": "user21"
+   },
+   {
+    "active": 1,
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 22,
+    "onboarding_emails_opt_out": 0,
+    "password_hash": "x",
+    "role": "host",
+    "username": "user22"
+   },
+   {
+    "active": 1,
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 23,
+    "onboarding_emails_opt_out": 0,
+    "password_hash": "x",
+    "role": "host",
+    "username": "user23"
+   },
+   {
+    "active": 1,
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 24,
+    "onboarding_emails_opt_out": 0,
+    "password_hash": "x",
+    "role": "host",
+    "username": "user24"
+   }
+  ],
+  "table": "user_account"
+ },
+ {
+  "rows": [
+   {
+    "contact_email": "Alpha@Example.Test",
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 1,
+    "name": "Entity 1",
+    "owner_user_id": 1
+   },
+   {
+    "contact_email": " alpha@example.test ",
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 2,
+    "name": "Entity 2",
+    "owner_user_id": 1
+   },
+   {
+    "contact_email": "Second <second@example.test>",
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 3,
+    "name": "Entity 3",
+    "owner_user_id": 1
+   },
+   {
+    "contact_email": "two@example.test",
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 4,
+    "name": "Entity 4",
+    "owner_user_id": 2
+   },
+   {
+    "contact_email": "three@example.test",
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 5,
+    "name": "Entity 5",
+    "owner_user_id": 3
+   },
+   {
+    "contact_email": "four@example.test",
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 6,
+    "name": "Entity 6",
+    "owner_user_id": 4
+   },
+   {
+    "contact_email": "five-a@example.test",
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 7,
+    "name": "Entity 7",
+    "owner_user_id": 5
+   },
+   {
+    "contact_email": "five-b@example.test",
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 8,
+    "name": "Entity 8",
+    "owner_user_id": 5
+   },
+   {
+    "contact_email": "seven@example.test",
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 9,
+    "name": "Entity 9",
+    "owner_user_id": 7
+   },
+   {
+    "contact_email": "eight@example.test",
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 10,
+    "name": "Entity 10",
+    "owner_user_id": 8
+   },
+   {
+    "contact_email": "nine@example.test",
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 11,
+    "name": "Entity 11",
+    "owner_user_id": 9
+   },
+   {
+    "contact_email": "ten@example.test",
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 12,
+    "name": "Entity 12",
+    "owner_user_id": 10
+   },
+   {
+    "contact_email": "eleven@example.test",
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 13,
+    "name": "Entity 13",
+    "owner_user_id": 11
+   },
+   {
+    "contact_email": "twelve@example.test",
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 14,
+    "name": "Entity 14",
+    "owner_user_id": 12
+   },
+   {
+    "contact_email": "thirteen@example.test",
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 15,
+    "name": "Entity 15",
+    "owner_user_id": 13
+   },
+   {
+    "contact_email": "fourteen@example.test",
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 16,
+    "name": "Entity 16",
+    "owner_user_id": 14
+   },
+   {
+    "contact_email": "fifteen@example.test",
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 17,
+    "name": "Entity 17",
+    "owner_user_id": 15
+   },
+   {
+    "contact_email": "sixteen@example.test",
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 18,
+    "name": "Entity 18",
+    "owner_user_id": 16
+   },
+   {
+    "contact_email": "seventeen@example.test",
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 19,
+    "name": "Entity 19",
+    "owner_user_id": 17
+   },
+   {
+    "contact_email": "eighteen@example.test",
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 20,
+    "name": "Entity 20",
+    "owner_user_id": 18
+   },
+   {
+    "contact_email": "nineteen@example.test",
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 21,
+    "name": "Entity 21",
+    "owner_user_id": 19
+   },
+   {
+    "contact_email": "twenty@example.test",
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 22,
+    "name": "Entity 22",
+    "owner_user_id": 20
+   },
+   {
+    "contact_email": "twentyone@example.test",
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 23,
+    "name": "Entity 23",
+    "owner_user_id": 21
+   },
+   {
+    "contact_email": "not-an-email",
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 24,
+    "name": "Entity 24",
+    "owner_user_id": 22
+   },
+   {
+    "contact_email": "",
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 25,
+    "name": "Entity 25",
+    "owner_user_id": 22
+   },
+   {
+    "contact_email": null,
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 26,
+    "name": "Entity 26",
+    "owner_user_id": 22
+   },
+   {
+    "contact_email": "Žluťoučký@example.test",
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 27,
+    "name": "Entity 27",
+    "owner_user_id": 23
+   },
+   {
+    "contact_email": "dup@example.test",
+    "created_at": "2025-11-30T08:30:00+00:00",
+    "id": 28,
+    "name": "Entity 28",
+    "owner_user_id": 24
+   }
+  ],
+  "table": "legal_entity"
+ },
+ {
+  "rows": [
+   {
+    "action": "login",
+    "at": "2026-03-06T08:30:00+00:00",
+    "id": 1,
+    "owner_user_id": 1
+   },
+   {
+    "action": "login",
+    "at": "2026-03-08T08:30:00+00:00",
+    "id": 2,
+    "owner_user_id": 2
+   },
+   {
+    "action": "login",
+    "at": "2026-03-05T08:30:00+00:00",
+    "id": 3,
+    "owner_user_id": 3
+   },
+   {
+    "action": "login",
+    "at": "2026-03-05T08:30:00+00:00",
+    "id": 4,
+    "owner_user_id": 4
+   },
+   {
+    "action": "login",
+    "at": "2026-03-05T08:30:00+00:00",
+    "id": 5,
+    "owner_user_id": 5
+   },
+   {
+    "action": "login",
+    "at": "2026-03-05T08:30:00+00:00",
+    "id": 6,
+    "owner_user_id": 6
+   },
+   {
+    "action": "login",
+    "at": "2026-01-29T08:30:00+00:00",
+    "id": 7,
+    "owner_user_id": 7
+   },
+   {
+    "action": "login",
+    "at": "2026-02-18T08:30:00+00:00",
+    "id": 8,
+    "owner_user_id": 8
+   },
+   {
+    "action": "login",
+    "at": "2026-03-05T08:30:00+00:00",
+    "id": 9,
+    "owner_user_id": 10
+   },
+   {
+    "action": "login",
+    "at": "2026-03-05T08:30:00+00:00",
+    "id": 10,
+    "owner_user_id": 11
+   },
+   {
+    "action": "login",
+    "at": "2026-03-05T08:30:00+00:00",
+    "id": 11,
+    "owner_user_id": 12
+   },
+   {
+    "action": "login",
+    "at": "2026-02-28T08:30:00+00:00",
+    "id": 12,
+    "owner_user_id": 13
+   },
+   {
+    "action": "login",
+    "at": "2026-02-28T08:30:00+00:00",
+    "id": 13,
+    "owner_user_id": 14
+   },
+   {
+    "action": "login",
+    "at": "2026-01-29T08:30:00+00:00",
+    "id": 14,
+    "owner_user_id": 15
+   },
+   {
+    "action": "login",
+    "at": "2026-01-29T08:30:00+00:00",
+    "id": 15,
+    "owner_user_id": 16
+   },
+   {
+    "action": "login",
+    "at": "2026-01-29T08:30:00+00:00",
+    "id": 16,
+    "owner_user_id": 17
+   },
+   {
+    "action": "login",
+    "at": "2026-01-29T08:30:00+00:00",
+    "id": 17,
+    "owner_user_id": 18
+   },
+   {
+    "action": "login",
+    "at": "2026-02-28T08:30:00+00:00",
+    "id": 18,
+    "owner_user_id": 19
+   },
+   {
+    "action": "login",
+    "at": "2026-03-06T08:30:00+00:00",
+    "id": 19,
+    "owner_user_id": 20
+   },
+   {
+    "action": "login",
+    "at": "2026-03-07T14:30:00+00:00",
+    "id": 20,
+    "owner_user_id": 21
+   },
+   {
+    "action": "login",
+    "at": "2026-03-05T08:30:00+00:00",
+    "id": 21,
+    "owner_user_id": 22
+   },
+   {
+    "action": "login",
+    "at": "2026-03-06T08:30:00+00:00",
+    "id": 22,
+    "owner_user_id": 23
+   },
+   {
+    "action": "login",
+    "at": "2026-03-06T08:30:00+00:00",
+    "id": 23,
+    "owner_user_id": 24
+   },
+   {
+    "action": "two_factor_login",
+    "at": "2026-03-05T08:30:00+00:00",
+    "id": 24,
+    "owner_user_id": 8
+   }
+  ],
+  "table": "audit"
+ },
+ {
+  "rows": [
+   {
+    "created_at": "2026-03-06T08:30:00+00:00",
+    "id": 1,
+    "internal_name": "Flat 1",
+    "owner_user_id": 13
+   },
+   {
+    "created_at": "2026-03-06T08:30:00+00:00",
+    "id": 2,
+    "internal_name": "Flat 2",
+    "owner_user_id": 14
+   },
+   {
+    "created_at": "2026-01-29T08:30:00+00:00",
+    "id": 3,
+    "internal_name": "Flat 3",
+    "owner_user_id": 15
+   },
+   {
+    "created_at": "2026-01-29T08:30:00+00:00",
+    "id": 4,
+    "internal_name": "Flat 4",
+    "owner_user_id": 16
+   },
+   {
+    "created_at": "2026-01-29T08:30:00+00:00",
+    "id": 5,
+    "internal_name": "Flat 5",
+    "owner_user_id": 17
+   },
+   {
+    "created_at": "2026-01-29T08:30:00+00:00",
+    "id": 6,
+    "internal_name": "Flat 6",
+    "owner_user_id": 18
+   },
+   {
+    "created_at": "2026-03-06T08:30:00+00:00",
+    "id": 7,
+    "internal_name": "Flat 7",
+    "owner_user_id": 19
+   },
+   {
+    "created_at": "2026-03-09T08:30:00+00:00",
+    "id": 8,
+    "internal_name": "Flat 8",
+    "owner_user_id": 19
+   }
+  ],
+  "table": "apartment"
+ },
+ {
+  "rows": [
+   {
+    "active": 0,
+    "apartment_id": 2,
+    "created_at": "2026-03-06T08:30:00+00:00",
+    "id": 1,
+    "last_status": "error",
+    "url": "https://cal.example.test/1.ics"
+   },
+   {
+    "active": 1,
+    "apartment_id": 3,
+    "created_at": "2026-02-23T08:30:00+00:00",
+    "id": 2,
+    "last_status": "ok",
+    "url": "https://cal.example.test/2.ics"
+   },
+   {
+    "active": 1,
+    "apartment_id": 4,
+    "created_at": "2026-02-23T08:30:00+00:00",
+    "id": 3,
+    "last_status": "ok",
+    "url": "https://cal.example.test/3.ics"
+   },
+   {
+    "active": 1,
+    "apartment_id": 5,
+    "created_at": "2026-02-23T08:30:00+00:00",
+    "id": 4,
+    "last_status": "ok",
+    "url": "https://cal.example.test/4.ics"
+   },
+   {
+    "active": 1,
+    "apartment_id": 6,
+    "created_at": "2026-02-28T08:30:00+00:00",
+    "id": 5,
+    "last_status": "ok",
+    "url": "https://cal.example.test/5.ics"
+   }
+  ],
+  "table": "ical_feed"
+ },
+ {
+  "rows": [
+   {
+    "apartment_id": 4,
+    "created_at": "2026-03-01T08:30:00+00:00",
+    "date_from": "2026-03-01",
+    "date_to": "2026-03-03",
+    "id": 1,
+    "registration_completed_at": "2026-03-05T08:30:00+00:00",
+    "source": "ical",
+    "uid": "uid-1",
+    "updated_at": "2026-03-01T08:30:00+00:00"
+   },
+   {
+    "apartment_id": 5,
+    "created_at": "2026-03-01T08:30:00+00:00",
+    "date_from": "2026-03-01",
+    "date_to": "2026-03-03",
+    "id": 2,
+    "registration_completed_at": "2026-03-05T08:30:00+00:00",
+    "source": "demo",
+    "uid": "uid-2",
+    "updated_at": "2026-03-01T08:30:00+00:00"
+   }
+  ],
+  "table": "reservation"
+ },
+ {
+  "rows": [
+   {
+    "kind": "lifecycle_no_property",
+    "sent_at": "2026-03-09T08:30:00+00:00",
+    "user_account_id": 20
+   }
+  ],
+  "table": "lifecycle_mail_sent"
+ },
+ {
+  "rows": [
+   {
+    "created_at": "2026-03-08T08:30:00+00:00",
+    "email_hash": "7e7d113d45352a8a1b5506d62ac37b1f832b7e56e4b7ddfb7e59082da89919be",
+    "scope": "onboarding"
+   },
+   {
+    "created_at": "2026-03-08T08:30:00+00:00",
+    "email_hash": "1ecf0aebc258c9774354234db2240c3d466daf980f37388c329cde56342d2c5b",
+    "scope": "onboarding"
+   }
+  ],
+  "table": "mail_suppression"
+ },
+ {
+  "rows": [
+   {
+    "attempts": 0,
+    "created_at": "2026-03-09T08:30:00+00:00",
+    "idempotency_key": "lifecycle:lifecycle_no_property:24:dup@example.test",
+    "kind": "lifecycle_no_property",
+    "owner_user_id": 24,
+    "payload": "{}",
+    "state": "queued",
+    "subject": "old",
+    "to_email": "dup@example.test",
+    "updated_at": "2026-03-09T08:30:00+00:00"
+   }
+  ],
+  "table": "email_outbox"
+ },
+ {
+  "rows": [
+   {
+    "key": "other_setting",
+    "value": "keep"
+   }
+  ],
+  "table": "settings"
+ }
+]
