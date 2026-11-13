@@ -577,7 +577,9 @@ def start() -> bool:
         )
     if config.JOB_QUEUE_KINDS and config.DB_BACKEND != "postgresql":
         raise RuntimeError("UBYHOST_JOB_QUEUE_KINDS needs PostgreSQL")
-    if config.DB_BACKEND == "postgresql" and "deadlines" not in config.GO_JOB_KINDS:
+    if config.DB_BACKEND != "postgresql":
+        log.warning("no deadline watch runs here: the deadlines job runs only in the Go service (PostgreSQL, 1200)")
+    elif "deadlines" not in config.GO_JOB_KINDS:
         log.warning("deadlines is not in UBYHOST_GO_JOB_KINDS: no deadline watch runs (1200)")
     if config.DB_BACKEND == "postgresql" and set(JOB_KINDS) <= config.JOB_QUEUE_KINDS:
         log.info("every job is on the queue; scheduler.lock not taken")
@@ -594,10 +596,13 @@ def start() -> bool:
         _target("submit"), "interval", minutes=minutes["submit"],
         id="submit", max_instances=1, coalesce=True,
     )
-    _scheduler.add_job(
-        _target("deadlines"), "interval", minutes=minutes["deadlines"], id="deadlines",
-        max_instances=1, coalesce=True,
-    )
+    if config.DB_BACKEND == "postgresql":
+        # Without PostgreSQL there is no Go service, so the stub would only
+        # raise a critical alert that never clears (Render staging, 1200).
+        _scheduler.add_job(
+            _target("deadlines"), "interval", minutes=minutes["deadlines"], id="deadlines",
+            max_instances=1, coalesce=True,
+        )
     _scheduler.add_job(
         _target("mail"), "interval", minutes=minutes["mail"], id="mail", max_instances=1, coalesce=True,
     )
