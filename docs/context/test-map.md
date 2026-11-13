@@ -39,7 +39,7 @@ Run only your area's row, from `App/`, always ending `-q --tb=short -x 2>&1 | ta
 | Page booking widget | `test_booking_widget.py test_property_page.py test_stripe_connect.py test_payment_request_model.py` |
 | Booking site (rules, checkout, webhook, iCal) | `test_booking_site.py test_property_page.py test_stripe_connect.py` |
 | Booking site direct pay | `test_booking_direct_*.py test_booking_site.py test_host_i18n.py` |
-| Deploy scripts, Caddyfile, compose | `shellcheck -S error deploy/lightsail/scripts/*.sh`; CI job `caddy` validates both Caddyfiles with the compose caddy service |
+| Deploy scripts, Caddyfile, compose | `shellcheck -S error deploy/lightsail/scripts/*.sh`; CI job `caddy` validates both Caddyfiles; `test_pg_*script*.py` |
 | A module with no row | `tests/test_<module name>*.py`; none exists: `-k <module name>` |
 | Read guard hook (`scripts/hooks/`, `.claude/settings.json`) | `tests/test_read_guard_hook.py` |
 

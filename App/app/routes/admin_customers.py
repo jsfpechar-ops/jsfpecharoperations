@@ -5,15 +5,15 @@ from datetime import date, datetime
 from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 
-from .. import admin_customers, admin_ops, billing, billing_analytics, billing_order, config, db, incidents, validation
+from .. import admin_customers, admin_ops, billing, billing_analytics, billing_order, config, db, incidents, security, validation
 from ..templating import render
 from .admin_accounts import _require_admin
 from .admin_helpers import back as _back
 from .admin_helpers import flash as _flash
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(security.protect_host_post)])
 PAGE = "/admin/customers"
 STATUSES = ("trial_pending", "trialing", "active", "overdue", "canceling", "paused")
 

@@ -230,6 +230,7 @@ All from `deploy/lightsail/`:
 | `./scripts/pg-cutover.sh rollback` | Switch `.env` back to SQLite (type ROLLBACK to confirm) |
 | `./scripts/backup-gdrive.sh` | rclone copy of today's snapshot folder (made by `backup.sh`) to Google Drive |
 | `docker compose run --rm --no-deps ubyhost python scripts/pg_schema.py apply --expect-database ubyhost` | Apply pending PostgreSQL goose migrations (`App/migrations_pg/`) after a deploy whose notes mention a goose file; the app will not start while one is pending |
+| `./scripts/pg-app-role.sh apply` or `check` | Create or refresh the restricted app role `ubyhost_app` and its object ownership (owner step, once; again after a restore or cutover) |
 
 Public `GET /healthz` in **production** returns `status`, `version`, `data_dir_writable` only (no env labels). Confirm `ubyport_env` with `./scripts/status.sh` or Settings.
 

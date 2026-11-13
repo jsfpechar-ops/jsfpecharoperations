@@ -24,8 +24,10 @@ const (
 	CookieName = "ubyhost_session"
 	// salt is the itsdangerous salt of _serializer (auth.py lines 55-56).
 	salt = "ubyhost-session"
-	// rememberMaxAge is SESSION_REMEMBER_MAX_AGE (auth.py line 33).
-	rememberMaxAge = 400 * 24 * time.Hour
+	// rememberMaxAge is SESSION_REMEMBER_MAX_AGE (auth.py line 34): 30 days since the cookie was last signed.
+	rememberMaxAge = 30 * 24 * time.Hour
+	// absoluteMaxAge is SESSION_ABSOLUTE_MAX_AGE (auth.py line 35): 90 days since login ("iat") for remember-me.
+	absoluteMaxAge = 90 * 24 * time.Hour
 	// shortMaxAge is SESSION_MAX_AGE (auth.py line 32), enforced unless "rm" is set.
 	shortMaxAge = 12 * time.Hour
 	// defaultVersion is the default of UBYHOST_*_VERSION (brief 0672, section 2).
@@ -110,7 +112,7 @@ func Sign(secret string, payload map[string]any, now time.Time) string {
 }
 
 // Verify checks token at now as auth._session_payload does (auth.py lines 335-354):
-// 400 days at most, and 12 hours unless the payload has a truthy "rm".
+// 30 days at most since signing, 90 days since "iat" when "rm" is truthy, and 12 hours unless the payload has a truthy "rm".
 func Verify(secret, token string, now time.Time) (map[string]any, bool) {
 	s := secure.NewTimedSerializer(secret, salt)
 	var raw json.RawMessage
@@ -121,12 +123,29 @@ func Verify(secret, token string, now time.Time) (map[string]any, bool) {
 	if !ok {
 		return nil, false
 	}
-	if !truthy(payload["rm"]) {
+	if truthy(payload["rm"]) {
+		// auth._session_payload: a missing "iat" counts as 0, so it is rejected.
+		if now.Sub(time.Unix(iatSeconds(payload["iat"]), 0)) > absoluteMaxAge {
+			return nil, false
+		}
+	} else {
 		if err := s.Loads(token, shortMaxAge, now, &raw); err != nil {
 			return nil, false
 		}
 	}
 	return payload, true
+}
+
+// iatSeconds is int(payload.get("iat", 0)) in Python for the JSON values an iat can hold.
+func iatSeconds(v any) int64 {
+	switch x := v.(type) {
+	case int64:
+		return x
+	case json.Number:
+		f, _ := x.Float64()
+		return int64(f)
+	}
+	return 0
 }
 
 // decodePayload decodes a JSON object, with whole numbers as int64 (Python int).

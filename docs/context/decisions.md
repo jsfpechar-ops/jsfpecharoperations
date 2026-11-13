@@ -58,11 +58,13 @@ Append-only.
 - 2026-11-12 [billing] 1137: trial_pending->paused only via operator_pause().
 - 2026-11-12 [filing] 1138: claim fails closed; no retry.
 - 2026-11-12 [workflow] Orchestrator model by brief risk tier (A Opus thread+brief, Fable reviews; B Opus thread, Sonnet brief; C Sonnet); Haiku executes; threads parallel, no shared files; unsure = higher | owner | [workflow](workflow.md#roles-and-models)
-- 11-13 [workflow] 1199: every stored state/status column needs a TRANSITIONS table + pin test or an EXEMPT reason; test_sm_registry.py (owner)
+- 11-13 [workflow] 1199: state columns need TRANSITIONS+pin test or EXEMPT; test_sm_registry.py (owner)
 - 2026-11-12 [filing] 1148: cancel waits on `running` <30 min, else cancels + alert.
 - 2026-11-12 [filing] 1154: move waits on any `running` batch.
-- 2026-11-12 [door] 1149 lost race re-issues; 1155 revived code checked on lock (3 tries); 1156 info card + host mail; cs/vi ok.
+- 2026-11-12 [door] 1149 re-issue; 1155 lock check (3); 1156 info card+mail (owner)
 - 11-13 [calendar] 1172: Go-only; 1 mail/pair; manual dup skipped (owner)
-- 2026-11-13 [door] 1173/c: release backoff 15/15/60; new, retries, released; revive unissued expired.
+- 2026-11-13 [door] 1173/c: backoff 15/15/60; revive expired (owner)
 - 2026-11-13 [dep] 1390: gopdf v0.38.4 PDF in go/internal/pdf; thin anthropic HTTP; go-webauthn login/passkey (owner)
-- 2026-11-13 [infra] CI builds+pushes GHCR images; server pulls only (1 vCPU cache) | owner | [1210](../tasks/1210-ci-built-go-image.md)
+- 2026-11-13 [infra] CI→GHCR; server pulls | owner | [1210](../tasks/1210-ci-built-go-image.md)
+- 2026-11-13 [security] #966: 1200-1205; Go env in compose; K-S12 ok; 1206-1207 after merge (owner)
+

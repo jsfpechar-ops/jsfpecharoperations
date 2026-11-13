@@ -13,6 +13,7 @@ from datetime import date
 from typing import Any, Dict, List, Optional
 
 from . import billing, billing_admin, db
+from .csv_safety import csv_safe
 
 # An account in these states counts as a paying customer for MRR.
 MRR_STATES = ("active", "overdue", "canceling")
@@ -193,7 +194,7 @@ def export_all_zip() -> bytes:
     out = io.BytesIO()
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as zf:
         customers_rows = [(
-            c["display_name"], c["email"], c["status"], c["plan"], c["billing_interval"],
+            csv_safe(c["display_name"]), csv_safe(c["email"]), c["status"], c["plan"], c["billing_interval"],
             c["apartments_billed"], c["quote"]["base"], c["quote"]["max"], c["quote"]["ttlock"],
             c["quote"]["whitelabel"], c["carry_czk"], c["net_czk"], c["monthly_czk"],
             (c["period_start"] or "")[:10], (c["period_end"] or "")[:10],
@@ -216,7 +217,7 @@ def export_all_zip() -> bytes:
 
         payment_rows = [(
             r["bank_tx_id"], r["received_on"][:10], _cz(r["amount_haler"]), r["vs"] or "",
-            r["counter_account"] or "", r["message"] or "", r["status"],
+            csv_safe(r["counter_account"] or ""), csv_safe(r["message"] or ""), r["status"],
         ) for r in db.query(
             "SELECT bank_tx_id, received_on, amount_haler, vs, counter_account, message, status "
             "FROM bank_payment ORDER BY received_on, bank_tx_id"

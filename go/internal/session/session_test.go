@@ -122,12 +122,50 @@ func TestSessionAge(t *testing.T) {
 	if _, ok := Verify(g.Secret, plain, base.Add(12*time.Hour+time.Minute)); ok {
 		t.Error("plain token accepted at 12h01m")
 	}
-	remember := Sign(g.Secret, map[string]any{"uid": int64(7), "sv": int64(3), "rm": int64(1)}, base)
-	if _, ok := Verify(g.Secret, remember, base.Add(399*24*time.Hour)); !ok {
-		t.Error("remember token rejected at 399 days")
+}
+
+func rememberToken(g golden, iatAgo time.Duration, signedAt time.Time) string {
+	return Sign(g.Secret, map[string]any{
+		"uid": int64(7), "sv": int64(3), "rm": int64(1),
+		"iat": signedAt.Add(-iatAgo).Unix(),
+	}, signedAt)
+}
+
+func TestRememberMeSinceReSign(t *testing.T) {
+	g := loadGolden(t)
+	base := time.Unix(g.Timestamp, 0)
+	tok := rememberToken(g, 0, base)
+	if _, ok := Verify(g.Secret, tok, base.Add(29*24*time.Hour)); !ok {
+		t.Error("remember token rejected at 29 days since re-sign")
 	}
-	if _, ok := Verify(g.Secret, remember, base.Add(401*24*time.Hour)); ok {
-		t.Error("remember token accepted at 401 days")
+	if _, ok := Verify(g.Secret, tok, base.Add(31*24*time.Hour)); ok {
+		t.Error("remember token accepted at 31 days since re-sign")
+	}
+}
+
+func TestRememberMeSinceLogin(t *testing.T) {
+	g := loadGolden(t)
+	base := time.Unix(g.Timestamp, 0)
+	// Re-signed today, but the login was 91 days ago: rejected. 89 days ago: accepted.
+	if _, ok := Verify(g.Secret, rememberToken(g, 91*24*time.Hour, base), base); ok {
+		t.Error("remember token accepted 91 days after login")
+	}
+	if _, ok := Verify(g.Secret, rememberToken(g, 89*24*time.Hour, base), base); !ok {
+		t.Error("remember token rejected 89 days after login")
+	}
+	// Missing iat counts as 0 and is rejected, as in Python.
+	noIat := Sign(g.Secret, map[string]any{"uid": int64(7), "sv": int64(3), "rm": int64(1)}, base)
+	if _, ok := Verify(g.Secret, noIat, base); ok {
+		t.Error("remember token without iat accepted")
+	}
+}
+
+func TestRememberMeInsideBothLimits(t *testing.T) {
+	g := loadGolden(t)
+	base := time.Unix(g.Timestamp, 0)
+	tok := rememberToken(g, 60*24*time.Hour, base)
+	if _, ok := Verify(g.Secret, tok, base.Add(29*24*time.Hour)); ok == false {
+		t.Error("remember token rejected inside both limits (iat 60 days before signing, 29 days later = 89 days)")
 	}
 }
 

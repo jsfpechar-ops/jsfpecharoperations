@@ -212,3 +212,26 @@ def test_a_refused_guest_save_logs_the_field_names_and_nothing_else(caplog):
     lines = [r.getMessage() for r in caplog.records if r.getMessage().startswith("guest_form_refused")]
     assert lines == ["guest_form_refused fields=doc_number"]
     assert TOKEN not in lines[0]
+
+
+def test_a_missing_document_logs_doc_number_not_the_typed_value(caplog):
+    with caplog.at_level("INFO", logger="ubyhost.guest"):
+        _page(
+            "en",
+            nationality="POL",
+            res_country="POL",
+            birth_date="22.10.2019",
+            doc_number="",
+        )
+    lines = [r.getMessage() for r in caplog.records if r.getMessage().startswith("guest_form_refused")]
+    assert lines == ["guest_form_refused fields=doc_number"]
+    assert "Smith" not in "\n".join(lines)
+    assert "Pol" not in "\n".join(lines).lower()
+
+
+def test_several_refused_fields_log_sorted_names_only(caplog):
+    with caplog.at_level("INFO", logger="ubyhost.guest"):
+        _page("en", surname="", doc_number="")
+    lines = [r.getMessage() for r in caplog.records if r.getMessage().startswith("guest_form_refused")]
+    assert len(lines) == 1
+    assert lines[0] == "guest_form_refused fields=doc_number,surname"
