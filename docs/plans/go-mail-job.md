@@ -53,6 +53,7 @@ Golden scripts write fixtures from Python with invented data; Go tests read them
 2. Production: same, then watch `email_outbox` for a day (`sent_at` filled, no `mail_failed` alerts, SES message ids present).
 3. Rollback: remove `mail` from both lists and `docker compose up -d`. Rows in flight go back to `queued` after 10 minutes and Python sends them.
 4. Python `_job_mail` is removed in a later PR after a clean production week. `mail.send_now` and `mail.enqueue` stay in Python until the web pages that call them move.
+5. Guest `completion` (host `cc_email` on the receipt, [1291](../tasks/1291-completion-host-cc.md)): queued only from Python `claim.maybe_notify_completion` until guest registration is on Go (W3); J4 delivers the stored `to_email` / `cc_email` as-is.
 
 ## 6. Risks
 
