@@ -135,6 +135,10 @@ def _reset_public_schema() -> None:
         conn.execute("SET client_min_messages = warning")
         conn.execute("DROP SCHEMA IF EXISTS public CASCADE")
         conn.execute("CREATE SCHEMA public")
+        app_url = os.environ.get("UBYHOST_DATABASE_URL") or ""
+        if "ubyhost_app@" in app_url:
+            conn.execute("ALTER SCHEMA public OWNER TO ubyhost_app")
+            conn.execute("GRANT ALL ON SCHEMA public TO ubyhost_app")
 
 
 def _public_relation_count() -> int:
