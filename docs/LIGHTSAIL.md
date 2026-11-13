@@ -210,6 +210,20 @@ The quicker undo of the last deploy is the automatic one: `deploy.sh` restores `
 
 Rollback **UbyPort target** (test ↔ prod): edit `.env` `UBYHOST_UBYPORT_ENV`, then `./scripts/deploy.sh`.
 
+### Schema apply: Python or Go (`UBYHOST_SCHEMA_APPLY`)
+
+On PostgreSQL, `deploy.sh` applies pending goose files (`App/migrations_pg/`) with the new image before `up`; a failure stops the deploy and the running stack stays as it was. `.env` `UBYHOST_SCHEMA_APPLY` picks the code that does it:
+
+| Value | What runs |
+|---|---|
+| unset, empty or `python` (default) | `scripts/pg_schema.py apply --expect-database ubyhost` in the new `ubyhost` image |
+| `go` | The Go image is built first, then `docker compose --profile go run --rm --no-deps -T ubyhost-go migrate apply --expect-database ubyhost` (works whether or not `COMPOSE_PROFILES` has `go`) |
+| anything else | `deploy.sh` stops before touching the stack; `go` on SQLite stops too |
+
+The Go command (`ubyhost-web migrate plan|check|apply --expect-database <db>`) makes the same checks as Python: the public schema, the database name, and the authority marker in `/data/database-authority.json` (database, schema and URL fingerprint). It takes the same advisory locks, runs every pending goose file in one transaction and commits only when the schema then matches what the app expects. It applies goose files only: a fresh, empty database still needs `pg_schema.py apply` (or `pg-cutover.sh`) once, and Go refuses with "legacy schema not set up". `pg-cutover.sh` stays Python-only: it copies SQLite data, and Go has no SQLite.
+
+Rollback: remove `UBYHOST_SCHEMA_APPLY` from `.env` (or set it to `python`), then `./scripts/deploy.sh`. Both write the same `goose_db_version` rows, so either one can take over from the other at any time.
+
 ## Day-to-day commands
 
 All from `deploy/lightsail/`:
@@ -231,6 +245,7 @@ All from `deploy/lightsail/`:
 | `./scripts/backup-gdrive.sh` | rclone copy of today's snapshot folder (made by `backup.sh`) to Google Drive |
 | `docker compose run --rm --no-deps ubyhost python scripts/pg_schema.py apply --expect-database ubyhost` | Apply pending PostgreSQL goose migrations (`App/migrations_pg/`) after a deploy whose notes mention a goose file; the app will not start while one is pending |
 | `./scripts/pg-app-role.sh apply` or `check` | Create or refresh the restricted app role `ubyhost_app` and its object ownership (owner step, once; again after a restore or cutover) |
+| `docker compose --profile go run --rm --no-deps ubyhost-go migrate check --expect-database ubyhost` | Go check of the PostgreSQL schema (`plan` lists pending goose files, `apply` applies them); see [Schema apply](#schema-apply-python-or-go-ubyhost_schema_apply) |
 
 Public `GET /healthz` in **production** returns `status`, `version`, `data_dir_writable` only (no env labels). Confirm `ubyport_env` with `./scripts/status.sh` or Settings.
 
