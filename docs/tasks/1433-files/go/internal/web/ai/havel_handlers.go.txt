@@ -214,7 +214,10 @@ func (c *havelCall) loadAccount(ctx context.Context) error {
 }
 
 func (c *havelCall) accountEmail(ctx context.Context) (string, error) {
-	return c.account.email, c.loadAccount(ctx)
+	if err := c.loadAccount(ctx); err != nil {
+		return "", err
+	}
+	return c.account.email, nil
 }
 
 // on is _on: Havel is on for the signed-in host.

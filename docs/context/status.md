@@ -19,15 +19,16 @@ Updated: 2026-11-13.
 - 11-13: security audit draft #966 (1200-1204). **Owner:** K-S11–K-S15.
 
 ## Next
-- Go move: 97/341 routes built ([remaining](../plans/go-full-move-remaining.md)); 11-13 server chat: page batches W1-W3 live on Go, retention Go dry-run (autopurge 0), Drive backup daily. Briefs 1420-1459 in #1010. #982 (D1): merge with switch off; 1263 before `UBYHOST_SCHEMA_APPLY=go`.
+- CI 1413-1415, README 1416.
+- Go move: 97/341 routes built ([remaining](../plans/go-full-move-remaining.md)); one big PR #1010 (includes #982 D1, switch off). 11-13 server chat: page batches W1-W3 live on Go, retention Go dry-run (autopurge 0), Drive backup daily. SQLite: [plan](../plans/sqlite-retirement.md).
 - 1291: host CC on guest completion (#988).
 - Door codes 0037–0038 on main → owner staging steps.
 - TTLock 0008–0016: [plan](../plans/ttlock-door-codes.md) §11; live after §12 + lawyer (K-L).
-- File-retention: decided, no build; lawyer Terms/DPA line.
+- File-retention: decided; lawyer Terms/DPA line.
 
 ## Blocked: needs owner, lawyer or council
 - Lawyer: legal texts (0005, K-L). Stale signed dates (K-F18). Filing HIGH RISK: K-F03, K-F07; secrets K-S10.
-- Owner: `uk` in `UBYHOST_GUEST_LANGS`; phone/passkey deploy; AI crawler Terms §11 confirm.
+- Owner: `uk` in `UBYHOST_GUEST_LANGS`; phone/passkey deploy; crawler Terms §11.
 
 ## Owner done
 - SES, Turnstile, monitoring, staging, backup drill, 0001 done.

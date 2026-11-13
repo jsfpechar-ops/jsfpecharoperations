@@ -62,5 +62,5 @@ Append-only.
 - 2026-11-13 [infra] CI→GHCR; server pulls | owner | [1210](../tasks/1210-ci-built-go-image.md)
 - 2026-11-13 [security] #966: 1200-1205; Go env in compose; K-S12 ok; 1206-1207 after merge (owner)
 - 2026-11-13 [mail] Completion CC to host again; PII stays in guest_details_host | owner | 1291
-- 2026-11-13 [workflow] Go first: features and bug fixes in Go; Python only for port plumbing, bumps, filing/security/data-loss fixes on paths it still serves | owner | [go-first](go-first.md)
-- 2026-11-13 [db] SQLite retirement: decisions 1-6 approved (freeze at 0045, goose-only apply, end rollback after proofs, SQLite test-only until X3, 30-day offline copy, Go `--init`) | owner | [plan](../plans/sqlite-retirement.md#7-owner-decisions)
+- 2026-11-13 [workflow] No GitHub branch protection or required checks (owner): merges gated by scripts/merge-pr-on-green.sh, production by the green-CI deploy gate; CI speed-ups in [1413](../tasks/1413-ci-skip-heavy-jobs-for-brief-only-changes.md), [1414](../tasks/1414-ci-postgres-full-four-shards.md), [1415](../tasks/1415-ci-balance-shards-by-duration.md), 1416 (README)
+- 2026-11-13 [workflow/db] [Go first](go-first.md); [SQLite plan](../plans/sqlite-retirement.md) 1-6 approved | owner
