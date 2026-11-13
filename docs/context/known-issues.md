@@ -46,7 +46,7 @@
 | K-S11 | Med owner step | server .env | Run pg-app-role.sh, then set ubyhost_app in the DSN; remove row when done | 1206 |
 | K-S12 | Low accepted | routes/admin.py update_entity | Bank edit allowed on a stale session | owner 11-13 |
 | K-S13 | Low accepted | payments.py, paylink_routes.go | Pay link live after expiry/paid | owner 11-13 |
-| K-S14 | Med owner | Caddyfile.cloudflare | Any Cloudflare account reaches origin; enable Authenticated Origin Pulls | #966 |
+| K-S14 | Med owner | Caddyfile.cloudflare | Any Cloudflare account reaches origin | 1208 zone AOP; owner sets enforce |
 | K-S15 | Med owner | GitHub environments | Confirm `production` deploys only from `main` | #966 |
 | K-I08 | Low open | stay_fee.py _day_liability | "Charge" files a minor with a blank reason | P A08 |
 | K-I09 | Med unverified | invoices.py:validate_for_issue | Buyer address unchecked; verify VAT invoice requirements | UI §3 |

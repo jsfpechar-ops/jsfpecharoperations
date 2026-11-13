@@ -58,6 +58,10 @@ The dashboard's "last updated" timestamp is a single global setting, not
 per-host, and there is no staleness threshold or alert behind it. It is the only
 in-app signal that polling has stopped.
 
+The Cloudflare origin client certificate (docs/CLOUDFLARE.md, Authenticated Origin Pulls) is not renewed automatically. The owner renews it before it expires: Cloudflare e-mails at 30 and 14 days; an expired certificate makes Caddy in enforce mode drop every request.
+
+Expiry date: set by the owner after runbook step 5.
+
 ## Stay fee
 
 The host-only stay-fee remittance tool is optional per property; a zero rate
