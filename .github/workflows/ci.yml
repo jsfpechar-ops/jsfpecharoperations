@@ -203,7 +203,7 @@ jobs:
       - name: Fail if PostgreSQL tests were skipped
         if: hashFiles('App/tests/test_db_postgres.py') != ''
         run: |
-          if grep -q skipped "$RUNNER_TEMP/pg-tests.log"; then echo "PostgreSQL tests skipped; they must run with 0 skipped"; exit 1; fi
+          if grep -qE '(^|[^a-z])[1-9][0-9]* skipped' "$RUNNER_TEMP/pg-tests.log"; then echo "PostgreSQL tests skipped; they must run with 0 skipped"; exit 1; fi
 
       - name: App works as the non-superuser role
         if: hashFiles('App/tests/test_db_postgres.py') != ''
@@ -217,7 +217,7 @@ jobs:
           export UBYHOST_DATABASE_URL=postgresql://ubyhost_app:ubyhost@localhost:5432/ubyhost_test
           python scripts/pg_schema.py apply --expect-database ubyhost_test
           python scripts/pg_schema.py check --expect-database ubyhost_test
-          UBYHOST_TEST_DATABASE_URL=postgresql://postgres:ubyhost@localhost:5432/ubyhost_test \
+          UBYHOST_TEST_DATABASE_URL=postgresql://ubyhost_app:ubyhost@localhost:5432/ubyhost_test \
             python -m pytest tests/test_db_postgres.py -q -rs --tb=short 2>&1 | tail -30
 
       - name: No PostgreSQL module yet
