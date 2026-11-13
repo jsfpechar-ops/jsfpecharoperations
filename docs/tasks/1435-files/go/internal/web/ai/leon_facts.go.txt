@@ -109,10 +109,10 @@ func (s LeonStore) Offered(ctx context.Context, a LeonApartment) (bool, error) {
 
 // LeonItem is one row of guest_guide.items().
 type LeonItem struct {
-	ID                                                          int64
-	Kind, Topic, Title, Location, Steps, WatchOut, VideoURL     string
-	Visibility, State, Source                                   string
-	SortOrder, Photos                                           int64
+	ID                                                      int64
+	Kind, Topic, Title, Location, Steps, WatchOut, VideoURL string
+	Visibility, State, Source                               string
+	SortOrder, Photos                                       int64
 }
 
 // Items is guest_guide.items: every card of the property in guest order. A
@@ -180,7 +180,7 @@ func LeonOrder(items []LeonItem) []LeonItem {
 // LeonProgress is guest_guide.progress.
 type LeonProgress struct {
 	Done, Total, Answered, Cards, Check, MustHaveDone, MustHaveTotal int
-	Live                                                            bool
+	Live                                                             bool
 }
 
 // LeonProgressOf is guest_guide.progress for a card list in guest order.
@@ -248,7 +248,9 @@ type LeonImport struct {
 func (i LeonImport) CreatedDay() string { return havelClip(i.Created, 10) }
 
 // MergeFailed is row.status == 'failed' and row.error startswith 'merge'.
-func (i LeonImport) MergeFailed() bool { return i.Status == "failed" && strings.HasPrefix(i.Error, "merge") }
+func (i LeonImport) MergeFailed() bool {
+	return i.Status == "failed" && strings.HasPrefix(i.Error, "merge")
+}
 
 // Imports is guest_guide_import.imports: the newest ten, without the raw data.
 func (s LeonStore) Imports(ctx context.Context, apartmentID int64) ([]LeonImport, error) {
@@ -302,7 +304,9 @@ func (s LeonStore) DraftedCount(ctx context.Context, apartmentID int64) (int64, 
 }
 
 // LeonImportOn is guest_guide_import.enabled: an Apify token is set.
-func LeonImportOn(env HavelEnv) bool { return strings.TrimSpace(env.Get("UBYHOST_APIFY_TOKEN", "")) != "" }
+func LeonImportOn(env HavelEnv) bool {
+	return strings.TrimSpace(env.Get("UBYHOST_APIFY_TOKEN", "")) != ""
+}
 
 // LeonFacts is routes/leon_setup._facts.
 type LeonFacts struct {

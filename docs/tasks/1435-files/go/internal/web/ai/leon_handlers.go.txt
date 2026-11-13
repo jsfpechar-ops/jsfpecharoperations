@@ -72,9 +72,9 @@ func leonPathID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 // leonCall is one signed-in wizard request for one property.
 type leonCall struct {
 	*havelCall
-	ls    LeonStore
-	id    int64
-	apt   *LeonApartment
+	ls  LeonStore
+	id  int64
+	apt *LeonApartment
 }
 
 // leonEnter is the dependencies in Python's order (CSRF, the path id, login)
@@ -161,23 +161,23 @@ type leonStepItem struct {
 
 // LeonView is the context of the wizard templates.
 type LeonView struct {
-	ApartmentID    int64
-	ApartmentName  string
-	Step           string
-	Steps          []leonStepItem
-	Number         int // 0 on the finish page
-	Total          int
-	PrevStep       string
-	State          string
-	NextID         int64
-	Icon, Tone     string
-	TryBlocked     bool
-	Asked          string
-	Answer         *LeonAnswer
-	CountLabel     string
-	ImportColumns  [][]string
-	CardColumns    [][]string
-	CardTitles     map[int64]string
+	ApartmentID   int64
+	ApartmentName string
+	Step          string
+	Steps         []leonStepItem
+	Number        int // 0 on the finish page
+	Total         int
+	PrevStep      string
+	State         string
+	NextID        int64
+	Icon, Tone    string
+	TryBlocked    bool
+	Asked         string
+	Answer        *LeonAnswer
+	CountLabel    string
+	ImportColumns [][]string
+	CardColumns   [][]string
+	CardTitles    map[int64]string
 	LeonFacts
 }
 

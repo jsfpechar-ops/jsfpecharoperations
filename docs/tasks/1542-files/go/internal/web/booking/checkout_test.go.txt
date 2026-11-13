@@ -129,7 +129,7 @@ func TestCheckoutValidation(t *testing.T) {
 		{"no terms", func(f url.Values) { f.Del("terms") }, 200, "Tick the box to agree to the terms."},
 		{"old terms", func(f url.Values) { f.Set("terms_version", "2026-01-01") }, 303, "/p/old-town?book=terms&lang=en&date_from=2026-12-01&date_to=2026-12-04&guests=2#book"},
 		{"unknown mode", func(f url.Values) { f.Set("pay_mode", "bitcoin") }, 303, "/p/old-town?book=unavailable&lang=en&date_from=2026-12-01&date_to=2026-12-04&guests=2#book"},
-		{"bad dates", func(f url.Values) { f.Set("date_from", "nope") }, 303, "/p/old-town?book=bad_dates&lang=en&date_to=2026-12-04&guests=2#book"},
+		{"bad dates", func(f url.Values) { f.Set("date_from", "nope") }, 303, "/p/old-town?book=bad_dates&lang=en&date_from=nope&date_to=2026-12-04&guests=2#book"},
 		{"no guests", func(f url.Values) { f.Del("guests") }, 303, "book="},
 		{"min nights", func(f url.Values) { f.Set("date_to", "2026-12-02") }, 303, "/p/old-town?book=min_nights&lang=en&date_from=2026-12-01&date_to=2026-12-02&guests=2#book"},
 	}
@@ -257,7 +257,7 @@ func TestHoldDatesSerialises(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if _, ok, err := HoldDates(context.Background(), pool, 1, "2026-12-15", "2026-12-18", 15, now); err != nil {
+			if _, ok, err := HoldDates(context.Background(), pool, 1, "2026-12-24", "2026-12-27", 15, now); err != nil {
 				t.Error(err)
 			} else if ok {
 				atomic.AddInt32(&won, 1)
@@ -269,15 +269,15 @@ func TestHoldDatesSerialises(t *testing.T) {
 		t.Errorf("%d holds won, want exactly 1", won)
 	}
 	// Overlap by one night is taken; a stay starting on the check-out day is free.
-	if _, ok, _ := HoldDates(context.Background(), pool, 1, "2026-12-17", "2026-12-20", 15, now); ok {
+	if _, ok, _ := HoldDates(context.Background(), pool, 1, "2026-12-26", "2026-12-29", 15, now); ok {
 		t.Error("overlapping dates must be refused")
 	}
-	if _, ok, _ := HoldDates(context.Background(), pool, 1, "2026-12-18", "2026-12-20", 15, now); !ok {
+	if _, ok, _ := HoldDates(context.Background(), pool, 1, "2026-12-27", "2026-12-29", 15, now); !ok {
 		t.Error("back-to-back dates must be allowed")
 	}
 	// An expired hold frees its nights.
 	later := now.Add(16 * time.Minute)
-	if _, ok, _ := HoldDates(context.Background(), pool, 1, "2026-12-15", "2026-12-18", 15, later); !ok {
+	if _, ok, _ := HoldDates(context.Background(), pool, 1, "2026-12-24", "2026-12-27", 15, later); !ok {
 		t.Error("an expired hold must not block")
 	}
 }
