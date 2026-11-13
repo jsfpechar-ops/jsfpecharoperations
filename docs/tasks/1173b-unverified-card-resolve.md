@@ -1,6 +1,6 @@
 # 1173b: the "door code not confirmed" card closes when it no longer applies
 
-Status: todo
+Status: review
 Depends on: 1173 | Base commit: tip of task/1173-issue-queue-starvation (or main after 1173 is merged) | Branch: task/1173b-unverified-card-resolve
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (about 20 calls used)
 
