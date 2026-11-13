@@ -1,6 +1,6 @@
-# 1364 report (steps 1-3)
+# 1364 report
 
-Status: partial. Steps 1-3 done, steps 4-6 left.
+Status: review. Steps 1-6 done.
 
 Start commit (HEAD before step 1): `cd3a498 1361 step 7`
 
@@ -8,6 +8,9 @@ Start commit (HEAD before step 1): `cd3a498 1361 step 7`
 
 - `79f840f 1364 step 2`: detail keys appended to `i18n_keys.txt`, `i18n.json` regenerated.
 - `01e1176 1364 step 3`: routes, test mux and golden cases patched.
+- `022ad2c 1364 step 4`: `admin_customer.tmpl` and `detail.go` created.
+- `4cb33b8 1364 step 5`: detail golden regenerated (23 list cases).
+- Step 6: this report and the brief `Status:` line.
 
 ## Files changed (`git diff --stat cd3a498`)
 
@@ -16,6 +19,10 @@ Start commit (HEAD before step 1): `cd3a498 1361 step 7`
 - `App/scripts/go_customers_pages_golden.py` (14 detail cases)
 - `go/cmd/ubyhost-web/register_web_customers.go` (registers `GET /admin/customers/{user_id}`)
 - `go/internal/web/customers/pages_test.go` (detail route in `pagesMux`)
+- `go/internal/web/customers/templates/admin_customer.tmpl` (create)
+- `go/internal/web/customers/detail.go` (create)
+- `go/internal/web/customers/testdata/customers_pages_golden.json` (generated)
+- `docs/tasks/1364-go-customer-admin-detail.md` (Status line)
 - `docs/tasks/1364-report.md` (this file)
 
 ## Commands (last lines of output)
@@ -52,16 +59,33 @@ ec0647b918ca7ff2a517e120789b7c2d4d5f56f816ded0277741fec62573ae00  App/scripts/go
 
 All sha256 values match section 4 of the brief.
 
+## Steps 4-6
+
+Step 4 sha256: `admin_customer.tmpl` e2003e0fab0c9c071f3350a61c1697bed6a77594dc7d49c4f097e4f1f3ba2d33; `detail.go` e6a4c9a4b27ce78b4c99a40cdab6d6db587935799659c91c8020e2fada06f07c (both match). `go vet ./internal/web/... ./cmd/...`: no output, exit 0.
+
+Step 5 golden sha256 d88d9f1338fcd9ad1d0e2ff4ea78a995c4bff102d934417b0efb28fe30ffa6f0 (match). Generator run twice; the golden JSON is identical to the §4 hash after the run.
+
+Section 6 results:
+
+- gofmt, `go vet ./...`, `go test ./internal/web/customers/ ./cmd/ubyhost-web/`: `ok` for both packages.
+- SKIP count (`grep -E -c 'SKIP'`): 0.
+- `go test -run TestPagesMatchPython -v`: PASS, golden has 23 cases (9 list, 14 detail).
+- pytest (3 files): `4 passed in 4.92s`.
+- `python3 scripts/context_lint.py`: `context lint: OK`.
+- `grep -c 'mux.Handle' go/cmd/ubyhost-web/register_web_customers.go`: 4.
+
 ## Acceptance (§7)
 
-- [x] Files of steps 2-3 have the sha256 given in §4 (step 4 files not yet created).
-- [ ] Not yet: steps 4-6 (Go build and tests, DetailHandler, template, SKIP count).
+- [x] Every file in §3 has the sha256 given in §4.
+- [x] `TestPagesMatchPython` passes; customers and cmd/ubyhost-web tests pass; SKIP count 0.
+- [x] `mux.Handle` count is 4.
+- [x] §6 commands 3 and 4 as expected.
 
 ## Deviations
 
-Done: steps 1 to 3. Left: steps 4 to 6.
+Done: steps 1 to 6. Nothing was pushed.
 
-The build fails until step 4 adds `DetailHandler` (expected per brief §4 step 3). Nothing was pushed.
+Step 1 (Postgres) was skipped because it was already up.
 
 ## Questions
 
@@ -69,4 +93,4 @@ None.
 
 ## Owner steps left
 
-None yet. Steps 4-6 remain for the next session.
+None. Push and the draft PR are left to the coordinator.

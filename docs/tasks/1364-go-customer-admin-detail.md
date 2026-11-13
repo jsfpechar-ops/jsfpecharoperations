@@ -1,6 +1,6 @@
 # 1364: Go customer admin pages part 2 of 2: customer detail page
 
-Status: todo
+Status: review
 Depends on: 1361 | Base commit: the commit of `1361 step 7` | Branch: go-customer-admin-pages (already checked out; do not create another)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B (admin pages; no filing, no guest data)
 
