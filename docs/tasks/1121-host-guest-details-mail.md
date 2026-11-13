@@ -73,7 +73,7 @@ No other file may change.
 **Step 1.** Branch and check that 1120 has landed.
 
 ```bash
-cd /home/user/jsfpecharoperations && git fetch origin main 2>&1 | tail -3 && git switch -c task/1121-host-guest-details-mail origin/main 2>&1 | tail -3 && grep -n 'def full_details' App/app/guest_mail_pref.py | head -3
+git fetch origin main 2>&1 | tail -3 && git switch -c task/1121-host-guest-details-mail origin/main 2>&1 | tail -3 && grep -n 'def full_details' App/app/guest_mail_pref.py | head -3
 ```
 Expected: one line `def full_details(owner_user_id: int) -> bool:`. If the file is missing, STOP (1120 not merged).
 
@@ -738,14 +738,14 @@ def test_the_receipt_is_not_copied_to_the_host_and_the_host_gets_their_own(monke
 ```
 Command:
 ```bash
-cd /home/user/jsfpecharoperations/App && .venv/bin/python -m pytest tests/test_host_guest_details_mail.py -q --tb=short -x 2>&1 | tail -30
+cd App && .venv/bin/python -m pytest tests/test_host_guest_details_mail.py -q --tb=short -x 2>&1 | tail -30
 ```
 Expected: `6 passed`.
 
 **Step 15.** Run the test-map rows for mail and claim, plus the host catalogue test:
 ```bash
-cd /home/user/jsfpecharoperations/App && .venv/bin/python -m pytest tests/test_ses_mail.py tests/test_mail_*.py tests/test_*_mail.py tests/test_lifecycle_mail.py tests/test_notification_copy.py tests/test_claim_*.py tests/test_host_i18n.py tests/test_completion_fee_mail_1077.py -q --tb=short -x 2>&1 | tail -30
-cd /home/user/jsfpecharoperations && python3 scripts/context_lint.py 2>&1 | tail -30
+cd App && .venv/bin/python -m pytest tests/test_ses_mail.py tests/test_mail_*.py tests/test_*_mail.py tests/test_lifecycle_mail.py tests/test_notification_copy.py tests/test_claim_*.py tests/test_host_i18n.py tests/test_completion_fee_mail_1077.py -q --tb=short -x 2>&1 | tail -30
+python3 scripts/context_lint.py 2>&1 | tail -30
 ```
 Expected: all passed, 0 failed; lint clean.
 

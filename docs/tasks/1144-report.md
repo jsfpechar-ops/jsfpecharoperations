@@ -43,7 +43,7 @@ ok  	github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport	0.504s
 
 ## Deviations
 
-- Paths: brief's `/home/user/jsfpecharoperations/go` replaced by `/home/user/wt-1144/go` as instructed.
+- Paths: brief's `$(git rev-parse --show-toplevel)/go` replaced by `/tmp/wt-1144/go` as instructed.
 - Step 3 was committed before the DB was reachable (credentials were fixed by the orchestrator later); its run and the rest are above.
 - The first attempt at the test failed on DB auth; this is resolved and not a code issue.
 

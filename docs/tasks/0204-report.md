@@ -36,7 +36,7 @@ Step 19 committed as 68d5181 (readiness tuple: city_en removed, the blocker abov
 
 Cmd 1, part A (all files except test_host_i18n.py), `-x`:
 ```
-  /home/user/jsfpecharoperations/App/.venv/lib/python3.13/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+  $(git rev-parse --show-toplevel)/App/.venv/lib/python3.13/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
     from starlette.testclient import TestClient as TestClient  # noqa
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
@@ -55,7 +55,7 @@ These are the 3 known failures that also fail on main. Accepted, not fixed.
 
 Cmd 2 (browser, `UBYHOST_REQUIRE_BROWSER=1`, `-rs`): 0 skipped. Last 5 lines
 ```
-  /home/user/jsfpecharoperations/App/.venv/lib/python3.13/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+  $(git rev-parse --show-toplevel)/App/.venv/lib/python3.13/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
     from starlette.testclient import TestClient as TestClient  # noqa
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
@@ -64,7 +64,7 @@ Cmd 2 (browser, `UBYHOST_REQUIRE_BROWSER=1`, `-rs`): 0 skipped. Last 5 lines
 
 Cmd 3 (`tests -k "entit or business" -rs`): 0 skipped. Last 5 lines
 ```
-  /home/user/jsfpecharoperations/App/.venv/lib/python3.13/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+  $(git rev-parse --show-toplevel)/App/.venv/lib/python3.13/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
     from starlette.testclient import TestClient as TestClient  # noqa
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html

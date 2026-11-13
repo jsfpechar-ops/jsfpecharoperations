@@ -927,7 +927,7 @@ From `App/`:
 .venv/bin/python scripts/lifecycle_mail_golden.py
 ```
 
-If `.venv` does not exist in this worktree use `/home/user/jsfpecharoperations/App/.venv/bin/python`. Then run the same command again and check `git status --short` shows no change between the two runs. Check the outputs:
+If `.venv` does not exist in this worktree use `$(git rev-parse --show-toplevel)/App/.venv/bin/python`. Then run the same command again and check `git status --short` shows no change between the two runs. Check the outputs:
 
 ```bash
 sha256sum go/internal/lifecyclemail/testdata/lifecycle_mail/fixture.json go/internal/lifecyclemail/testdata/lifecycle_mail/expected.json

@@ -10,7 +10,7 @@ Step 3 last lines:
 
 ```
 tests/test_host_i18n.py::test_a_signed_out_page_ignores_the_vietnamese_cookie
-  /home/user/jsfpecharoperations/App/.venv/lib/python3.13/site-packages/starlette/testclient.py:463: DeprecationWarning: Setting per-request cookies=<...> is being deprecated, because the expected behaviour on cookie persistence is ambiguous. Set cookies directly on the client instance instead.
+  $(git rev-parse --show-toplevel)/App/.venv/lib/python3.13/site-packages/starlette/testclient.py:463: DeprecationWarning: Setting per-request cookies=<...> is being deprecated, because the expected behaviour on cookie persistence is ambiguous. Set cookies directly on the client instance instead.
     return super().request(
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html

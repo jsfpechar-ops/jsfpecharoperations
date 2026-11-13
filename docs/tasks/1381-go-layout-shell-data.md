@@ -11,7 +11,7 @@ Finish `go/internal/hostweb/layout` so Go host pages can go live: port the host 
 
 ## 2. Context
 
-All code is pre-written and dry-run green: gofmt, go vet, `go test -race` for hostweb/... and calendar, the DB test against Postgres 16, both generator `--check`s, the two pytest files and the context lint. It is in `/home/user/1381-prewritten/` with the repo's relative paths and a `MANIFEST.sha256` (27 files). You copy it in and verify. Do not edit any file.
+All code is pre-written and dry-run green: gofmt, go vet, `go test -race` for hostweb/... and calendar, the DB test against Postgres 16, both generator `--check`s, the two pytest files and the context lint. It is in `/tmp/1381-prewritten/` with the repo's relative paths and a `MANIFEST.sha256` (27 files). You copy it in and verify. Do not edit any file.
 
 The 1380 API is unchanged. Additions (never rename):
 
@@ -69,8 +69,8 @@ No other file may change.
 
 ## 4. Steps
 
-1. Verify the bundle: `cd /home/user/1381-prewritten && sha256sum -c MANIFEST.sha256 2>&1 | tail -30`. All 27 lines `OK`. A missing bundle or a FAILED line: STOP (§8).
-2. Copy it in, from the repo root: `cp -r /home/user/1381-prewritten/go /home/user/1381-prewritten/App . && git status --short | tail -30`. It shows only the §3 paths (` M` for edits, `??` for new files). Then `sha256sum -c /home/user/1381-prewritten/MANIFEST.sha256 2>&1 | tail -30`: all 27 `OK`. Commit `1381 step 2`.
+1. Verify the bundle: `cd /tmp/1381-prewritten && sha256sum -c MANIFEST.sha256 2>&1 | tail -30`. All 27 lines `OK`. A missing bundle or a FAILED line: STOP (§8).
+2. Copy it in, from the repo root: `cp -r /tmp/1381-prewritten/go /tmp/1381-prewritten/App . && git status --short | tail -30`. It shows only the §3 paths (` M` for edits, `??` for new files). Then `sha256sum -c /tmp/1381-prewritten/MANIFEST.sha256 2>&1 | tail -30`: all 27 `OK`. Commit `1381 step 2`.
 3. Generated files are current. From `App/` (venv if missing: `python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt -r requirements-dev.txt`): `.venv/bin/python scripts/go_host_i18n.py --check 2>&1 | tail -30; echo rc=$?` and `.venv/bin/python scripts/go_layout_golden.py --check 2>&1 | tail -30; echo rc=$?`. Both `rc=0`, no other output. No commit.
 4. §6 command 1, then from `go/`: `go build ./cmd/ubyhost-web 2>&1 | tail -5; rm -f ubyhost-web` (no output).
 5. §6 commands 3 and 4. Write the report (§9), commit `1381 step 5`.

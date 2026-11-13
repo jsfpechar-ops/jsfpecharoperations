@@ -75,7 +75,7 @@ No other file may change. Do NOT touch door_codes.py, billing*, icalsync.py, syn
 ## 4. Steps
 
 **Step 1. Python.** Anchors, each must print `1`:
-`cd /home/user/jsfpecharoperations/App && grep -c "^def release_sendable_claim(token: str) -> None:" app/reporting.py && grep -c "        limit = config.UBYPORT_MAX_BATCH" app/reporting.py && grep -c "^    claim_token, pairs = claim_sendable(pairs)" app/reporting.py`
+`cd App && grep -c "^def release_sendable_claim(token: str) -> None:" app/reporting.py && grep -c "        limit = config.UBYPORT_MAX_BATCH" app/reporting.py && grep -c "^    claim_token, pairs = claim_sendable(pairs)" app/reporting.py`
 1a. Edit `App/app/reporting.py`: old_string
 ```
 def release_sendable_claim(token: str) -> None:
@@ -155,7 +155,7 @@ new_string:
     finally:
         release_sendable_claim(claim_token)
 ```
-`List`, `Tuple`, `Dict`, `Any`, `Optional` are already imported in `reporting.py` (it already uses them in `claim_sendable`'s signature); confirm with `cd /home/user/jsfpecharoperations/App && grep -n "^from typing import" app/reporting.py | head -2`. Command: `cd /home/user/jsfpecharoperations/App && .venv/bin/python -c "import app.reporting" 2>&1 | tail -3`. Expected: no output.
+`List`, `Tuple`, `Dict`, `Any`, `Optional` are already imported in `reporting.py` (it already uses them in `claim_sendable`'s signature); confirm with `cd App && grep -n "^from typing import" app/reporting.py | head -2`. Command: `cd App && .venv/bin/python -c "import app.reporting" 2>&1 | tail -3`. Expected: no output.
 
 **Step 2. Python tests.** Append to `App/tests/test_claim_recheck_stay.py` (add `import time` on its own line under `import pytest` if the file has no `import time`):
 ```python
@@ -237,13 +237,13 @@ def test_refresh_does_not_touch_another_workers_claim_and_stale_ones_are_stolen(
     assert reporting.refresh_sendable_claim(other_token) is True
     reporting.release_sendable_claim(other_token)
 ```
-Command: `cd /home/user/jsfpecharoperations/App && .venv/bin/python -m pytest tests/test_claim_recheck_stay.py -q --tb=short -x 2>&1 | tail -30`. Expected: all pass.
+Command: `cd App && .venv/bin/python -m pytest tests/test_claim_recheck_stay.py -q --tb=short -x 2>&1 | tail -30`. Expected: all pass.
 Revert-bite checks (restore exactly, rerun green):
 - (a) in `_send_claimed_batches` replace `if not refresh_sendable_claim(claim_token):` with `if False and not refresh_sendable_claim(claim_token):`; run `-k "multi_batch"`; expect FAIL (the second and third batch see an aged claim).
 - (b) replace `if not refresh_sendable_claim(claim_token):` with `if not (refresh_sendable_claim(claim_token) or True):`; run `-k "lost_claim"`; expect FAIL (batches are still sent).
 If (a) or (b) does not fail, STOP.
 
-**Step 3. Go: `RefreshSendableClaim`.** Anchor: `cd /home/user/jsfpecharoperations/go/internal/ubyport && grep -c "^func ReleaseSendableClaim(ctx context.Context, pool \*pgxpool.Pool, token string) error {" claim.go` must print `1`. Edit `claim.go`: old_string
+**Step 3. Go: `RefreshSendableClaim`.** Anchor: `cd $(git rev-parse --show-toplevel)/go/internal/ubyport && grep -c "^func ReleaseSendableClaim(ctx context.Context, pool \*pgxpool.Pool, token string) error {" claim.go` must print `1`. Edit `claim.go`: old_string
 ```
 func truthy(s *string) bool {
 ```
@@ -265,7 +265,7 @@ func RefreshSendableClaim(ctx context.Context, pool *pgxpool.Pool, token string)
 func truthy(s *string) bool {
 ```
 
-**Step 4. Go: `sendClaimedBatches`.** Anchor: `cd /home/user/jsfpecharoperations/go/internal/ubyport && grep -c "	sender := d.NewSender(apt)" sweep.go` must print `1`. Edit `sweep.go`: old_string
+**Step 4. Go: `sendClaimedBatches`.** Anchor: `cd $(git rev-parse --show-toplevel)/go/internal/ubyport && grep -c "	sender := d.NewSender(apt)" sweep.go` must print `1`. Edit `sweep.go`: old_string
 ```
 	sender := d.NewSender(apt)
 	var results []BatchResult
@@ -313,7 +313,7 @@ func sendClaimedBatches(ctx context.Context, pool *pgxpool.Pool, token string, b
 	return results, nil
 }
 ```
-Command: `cd /home/user/jsfpecharoperations/go && gofmt -l internal/ubyport 2>&1 | tail -5; go vet ./internal/ubyport/ 2>&1 | tail -10`. Expected: no output.
+Command: `cd go && gofmt -l internal/ubyport 2>&1 | tail -5; go vet ./internal/ubyport/ 2>&1 | tail -10`. Expected: no output.
 
 **Step 5. Go tests.** Append to `go/internal/ubyport/claim_test.go`:
 ```go
@@ -401,7 +401,7 @@ func TestSendClaimedBatchesRefreshesBeforeEachBatchAndStopsWhenLost(t *testing.T
 	}
 }
 ```
-Command: `cd /home/user/jsfpecharoperations/go && UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest go test ./internal/ubyport/ -count=1 -run 'Refresh|SendClaimedBatches|Claim' -v 2>&1 | tail -30`. Expected: all `--- PASS`, none `--- SKIP`.
+Command: `cd go && UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest go test ./internal/ubyport/ -count=1 -run 'Refresh|SendClaimedBatches|Claim' -v 2>&1 | tail -30`. Expected: all `--- PASS`, none `--- SKIP`.
 Revert-bite checks (restore exactly, rerun green):
 - (a) in `sendClaimedBatches` change `n, err := RefreshSendableClaim(ctx, pool, token)` to `n, err := int64(1), error(nil)`; run `-run SendClaimedBatches`; expect FAIL (stale age or the lost-claim part).
 - (b) in `RefreshSendableClaim` change `WHERE claim_token = $2` to `WHERE claim_token = $2 OR true`; run `-run Refresh`; expect FAIL (foreign token renews a row).

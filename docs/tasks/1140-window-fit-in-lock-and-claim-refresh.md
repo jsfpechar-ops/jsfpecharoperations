@@ -43,11 +43,11 @@ No other file may change. Do NOT touch door_codes.py, billing*, reporting.py, cl
 ## 4. Steps
 
 **Step 1. Python: replace the helper and the post-hoc fit.** Run these first; each must print `1`, else STOP (anchor missing):
-`cd /home/user/jsfpecharoperations && grep -c "^def _update_reservation_unless_claimed(existing, values: dict) -> bool:" App/app/icalsync.py && grep -c "^def _fit_unsent_guest_windows(" App/app/icalsync.py && grep -c "^def _warn_if_guests_registered(reservation, apartment_id: int, variant: str) -> None:" App/app/icalsync.py`
+`grep -c "^def _update_reservation_unless_claimed(existing, values: dict) -> bool:" App/app/icalsync.py && grep -c "^def _fit_unsent_guest_windows(" App/app/icalsync.py && grep -c "^def _warn_if_guests_registered(reservation, apartment_id: int, variant: str) -> None:" App/app/icalsync.py`
 
 Delete both old functions (everything from the helper's `def` up to, not including, `_warn_if_guests_registered`):
 ```
-cd /home/user/jsfpecharoperations && python3 -I - <<'PY'
+python3 -I - <<'PY'
 p = "App/app/icalsync.py"
 s = open(p, encoding="utf-8").read()
 start = "def _update_reservation_unless_claimed(existing, values: dict) -> bool:"
@@ -194,7 +194,7 @@ def _fit_windows_in_tx(
 
 def _warn_if_guests_registered(reservation, apartment_id: int, variant: str) -> None:
 ```
-Check no column of `guest` that the fit writes is encrypted: `cd /home/user/jsfpecharoperations/App && .venv/bin/python -c "from app import db; c=db.ENCRYPTED_COLUMNS.get('guest',{}); print([k for k in ('stay_from','stay_to','updated_at','submit_state') if k in c])" 2>&1 | tail -3` expected `[]` (else STOP). Syntax check: `cd /home/user/jsfpecharoperations/App && .venv/bin/python -c "import app.icalsync" 2>&1 | tail -3` expected: no output.
+Check no column of `guest` that the fit writes is encrypted: `cd App && .venv/bin/python -c "from app import db; c=db.ENCRYPTED_COLUMNS.get('guest',{}); print([k for k in ('stay_from','stay_to','updated_at','submit_state') if k in c])" 2>&1 | tail -3` expected `[]` (else STOP). Syntax check: `cd App && .venv/bin/python -c "import app.icalsync" 2>&1 | tail -3` expected: no output.
 
 **Step 2. Python: call sites in `sync_feed`.** Do the four edits with the Edit tool, each old_string verbatim.
 
@@ -259,7 +259,7 @@ new_string:
                 moved = move["moved"] if move else 0
                 if moved:
 ```
-Command: `cd /home/user/jsfpecharoperations/App && grep -n "_fit_unsent_guest_windows" app/icalsync.py | tail -3; .venv/bin/python -m pytest tests/test_icalsync.py tests/test_ical_skip_unchanged.py -q --tb=short -x 2>&1 | tail -30`. Expected: grep prints nothing; existing tests pass (the window-fit tests at ~285-520 now go through the helper).
+Command: `cd App && grep -n "_fit_unsent_guest_windows" app/icalsync.py | tail -3; .venv/bin/python -m pytest tests/test_icalsync.py tests/test_ical_skip_unchanged.py -q --tb=short -x 2>&1 | tail -30`. Expected: grep prints nothing; existing tests pass (the window-fit tests at ~285-520 now go through the helper).
 
 **Step 3. Python tests.** Append to `App/tests/test_icalsync.py`:
 ```python
@@ -383,7 +383,7 @@ def test_a_claim_landing_after_the_precheck_logs_deferred_in_flight(
     assert "ical_dates_deferred_in_flight" in caplog.text
     assert "ical_dates_deferred_changed" not in caplog.text
 ```
-Check `pytest` is imported at the top of the file: `cd /home/user/jsfpecharoperations/App && grep -n "^import pytest" tests/test_icalsync.py | head -2`; if absent, add `import pytest` as its own line after the other top-level imports. Command: `cd /home/user/jsfpecharoperations/App && .venv/bin/python -m pytest tests/test_icalsync.py tests/test_ical_skip_unchanged.py -q --tb=short -x 2>&1 | tail -30`. Expected: all pass.
+Check `pytest` is imported at the top of the file: `cd App && grep -n "^import pytest" tests/test_icalsync.py | head -2`; if absent, add `import pytest` as its own line after the other top-level imports. Command: `cd App && .venv/bin/python -m pytest tests/test_icalsync.py tests/test_ical_skip_unchanged.py -q --tb=short -x 2>&1 | tail -30`. Expected: all pass.
 
 Revert-bite checks (restore each edit exactly afterwards, rerun green):
 - (a) in `_update_reservation_unless_claimed` change `if move is not None and applied:` to `if False and move is not None and applied:`; run `-k "fits_the_guest_windows or window"`; expect FAIL (`test_date_move_fits_the_guest_windows_in_the_same_transaction` and the sync fit tests).
@@ -392,10 +392,10 @@ Revert-bite checks (restore each edit exactly afterwards, rerun green):
 If any of (a)-(c) does not fail, STOP.
 
 **Step 4. Go: fit runs on a transaction.** Anchors, each must print `1`:
-`cd /home/user/jsfpecharoperations/go/internal/ical && grep -c "^// fitUnsentGuestWindows is _fit_unsent_guest_windows" reconcile.go && grep -c "^// warnIfGuestsRegistered is _warn_if_guests_registered (icalsync.py 469-493)." reconcile.go`
+`cd $(git rev-parse --show-toplevel)/go/internal/ical && grep -c "^// fitUnsentGuestWindows is _fit_unsent_guest_windows" reconcile.go && grep -c "^// warnIfGuestsRegistered is _warn_if_guests_registered (icalsync.py 469-493)." reconcile.go`
 Delete the old function (from its comment to, not including, the `warnIfGuestsRegistered` comment):
 ```
-cd /home/user/jsfpecharoperations/go/internal/ical && python3 -I - <<'PY'
+cd $(git rev-parse --show-toplevel)/go/internal/ical && python3 -I - <<'PY'
 p = "reconcile.go"
 s = open(p, encoding="utf-8").read()
 start = "// fitUnsentGuestWindows is _fit_unsent_guest_windows"
@@ -507,13 +507,13 @@ func liveClaimInTx(ctx context.Context, tx pgx.Tx, reservationID int64) (bool, e
 }
 
 ```
-Command: `cd /home/user/jsfpecharoperations/go && gofmt -l internal/ical/reconcile.go 2>&1 | tail -5`. Expected: no output. (Build fails until Step 5; that is expected here.)
+Command: `cd go && gofmt -l internal/ical/reconcile.go 2>&1 | tail -5`. Expected: no output. (Build fails until Step 5; that is expected here.)
 
 **Step 5. Go: `syncfeed.go` helper and call sites.** Anchors, each must print `1`:
-`cd /home/user/jsfpecharoperations/go/internal/ical && grep -c "^// sendInFlightFn is sendInFlight; tests replace it to simulate a claim that" syncfeed.go && grep -c "^func anyStr(p \*string) any {" syncfeed.go && grep -c "datesChanged := s.DateFrom != ev.DateFrom" syncfeed.go`
+`cd $(git rev-parse --show-toplevel)/go/internal/ical && grep -c "^// sendInFlightFn is sendInFlight; tests replace it to simulate a claim that" syncfeed.go && grep -c "^func anyStr(p \*string) any {" syncfeed.go && grep -c "datesChanged := s.DateFrom != ev.DateFrom" syncfeed.go`
 Delete the old helper block (it keeps `sendInFlightFn`, re-added below):
 ```
-cd /home/user/jsfpecharoperations/go/internal/ical && python3 -I - <<'PY'
+cd $(git rev-parse --show-toplevel)/go/internal/ical && python3 -I - <<'PY'
 p = "syncfeed.go"
 s = open(p, encoding="utf-8").read()
 start = "// sendInFlightFn is sendInFlight; tests replace it to simulate a claim that"
@@ -664,7 +664,7 @@ new_string:
 					feed.ApartmentID, s.ID, move.Fitted)
 			}
 ```
-Fix the three 1136 tests' call sites: `cd /home/user/jsfpecharoperations/go/internal/ical && sed -i 's/\(updateReservationUnlessClaimed(ctx, pool, stay, "[0-9-]*", "[0-9-]*", cols\))/\1, nil)/' syncfeed_test.go && grep -c "cols, nil)" syncfeed_test.go` expected `3`.
+Fix the three 1136 tests' call sites: `cd $(git rev-parse --show-toplevel)/go/internal/ical && sed -i 's/\(updateReservationUnlessClaimed(ctx, pool, stay, "[0-9-]*", "[0-9-]*", cols\))/\1, nil)/' syncfeed_test.go && grep -c "cols, nil)" syncfeed_test.go` expected `3`.
 Update `TestFitUnsentGuestWindows` in `reconcile_test.go`: replace the block from `	moved, err := fitUnsentGuestWindows(ctx, pool, res, apt, "2026-01-03", "2026-01-07")` through `		t.Fatalf("moved = %d, want 1", moved)\n	}` (the call and its `must` / length check) with:
 ```
 	tx, err := pool.Begin(ctx)
@@ -685,7 +685,7 @@ and replace the audit assertion (`if n := scalarInt(t, pool, \`SELECT COUNT(*) F
 		t.Fatalf("bad date: %v, %v", d, err)
 	}
 ```
-Command: `cd /home/user/jsfpecharoperations/go && gofmt -l internal/ical 2>&1 | tail -5; go vet ./internal/ical/ 2>&1 | tail -10`. Expected: no output from either.
+Command: `cd go && gofmt -l internal/ical 2>&1 | tail -5; go vet ./internal/ical/ 2>&1 | tail -10`. Expected: no output from either.
 
 **Step 6. Go tests.** Append to `go/internal/ical/syncfeed_test.go`:
 ```go
@@ -756,7 +756,7 @@ func TestDeferredDateMoveChangesNeitherStayNorWindows(t *testing.T) {
 	check("2027-09-01 2027-09-05", "2027-09-01 2027-09-05")
 }
 ```
-Command: `cd /home/user/jsfpecharoperations/go && UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest go test ./internal/ical/ -count=1 -run 'DateMove|UpdateReservationUnlessClaimed|FitUnsent|SyncFeed' -v 2>&1 | tail -30`. Expected: every listed test `--- PASS`, none `--- SKIP`.
+Command: `cd go && UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest go test ./internal/ical/ -count=1 -run 'DateMove|UpdateReservationUnlessClaimed|FitUnsent|SyncFeed' -v 2>&1 | tail -30`. Expected: every listed test `--- PASS`, none `--- SKIP`.
 
 Revert-bite checks (restore exactly, rerun green):
 - (a) in `updateReservationUnlessClaimed` change `if applied {` (inside `if move != nil {`) to `if false && applied {`; run `-run 'FitsGuestWindows'`; expect FAIL.
@@ -764,7 +764,7 @@ Revert-bite checks (restore exactly, rerun green):
 - (c) replace `date_from IS NOT DISTINCT FROM $%d AND date_to IS NOT DISTINCT FROM $%d` back with `date_from = $%d AND date_to = $%d` only to confirm the tests still pass (the NULL-safe form is not observable because both columns are NOT NULL); then restore. This is a read-through item, not a bite.
 If (a) or (b) does not fail, STOP.
 
-**Step 7. NULL-safe and duplicate-removal check.** Command: `cd /home/user/jsfpecharoperations/go/internal/ical && grep -c "IS NOT DISTINCT FROM" syncfeed.go; grep -c "pg_advisory_xact_lock" syncfeed.go reconcile.go`. Expected: `2`; then `syncfeed.go:0` and `reconcile.go:1`.
+**Step 7. NULL-safe and duplicate-removal check.** Command: `cd $(git rev-parse --show-toplevel)/go/internal/ical && grep -c "IS NOT DISTINCT FROM" syncfeed.go; grep -c "pg_advisory_xact_lock" syncfeed.go reconcile.go`. Expected: `2`; then `syncfeed.go:0` and `reconcile.go:1`.
 
 **Step 8. Final run and report.** Run, from `App/`: `.venv/bin/python -m pytest tests/test_icalsync.py tests/test_ical_skip_unchanged.py tests/test_claim_recheck_stay.py tests/test_claim_*.py tests/test_stale_submission.py tests/test_submission_*.py tests/test_sm_*.py -q --tb=short 2>&1 | tail -30` (expected all pass; a failing `test_sm_*` pin means STOP and name the pin in the report). From `go/`: `UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest go test ./internal/ical/ ./internal/ubyport/ -count=1 2>&1 | tail -30` (must print `ok` for both, not `SKIP`; add `-v | grep -c SKIP` expected 0), `go vet ./internal/ical/ ./internal/ubyport/ 2>&1 | tail -10` (no output), `gofmt -l internal 2>&1 | tail -5` (no output). From the repo root: `python3 scripts/context_lint.py 2>&1 | tail -3` expected OK. Write the report (§9) and set `Status: review`.
 

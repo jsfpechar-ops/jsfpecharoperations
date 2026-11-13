@@ -139,8 +139,8 @@ Then run `.venv/bin/python -m pytest tests/test_reporting_help_0097.py tests/tes
 
 ```
 git worktree add /tmp/ubyhost-main 2f043c8 2>&1 | tail -2
-cd /tmp/ubyhost-main/App && UBYHOST_REQUIRE_BROWSER=1 /home/user/jsfpecharoperations/App/.venv/bin/python -m pytest tests/test_property_navigation_browser.py -k fit_every_width -q --tb=line -rs 2>&1 | tail -8
-cd /home/user/jsfpecharoperations && git worktree remove --force /tmp/ubyhost-main
+cd /tmp/ubyhost-main/App && UBYHOST_REQUIRE_BROWSER=1 $(git rev-parse --show-toplevel)/App/.venv/bin/python -m pytest tests/test_property_navigation_browser.py -k fit_every_width -q --tb=line -rs 2>&1 | tail -8
+git worktree remove --force /tmp/ubyhost-main
 ```
 
 Then run the same test on the branch. Report both results. Do not try to fix it here: if it passes on main and fails on the branch, report the assertion message (the `fit` dict) and stop.

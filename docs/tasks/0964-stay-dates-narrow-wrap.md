@@ -163,7 +163,7 @@ cd App && PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers .venv/bin/python -m pytest t
 cd App && PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers .venv/bin/python -m pytest tests/test_layout_lint_browser.py -q --tb=short -rs 2>&1 | tail -30
 cd App && PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers .venv/bin/python -m pytest tests/test_host_stay_detail_layout_browser.py tests/test_host_stay_actions_browser.py tests/test_0766_phone_stays_browser.py -q --tb=short -rs 2>&1 | tail -30
 cd App && .venv/bin/python -m pytest tests/test_static_versions.py tests/test_overhaul.py -q --tb=short 2>&1 | tail -30
-cd /home/user/jsfpecharoperations && python3 scripts/context_lint.py 2>&1 | tail -30
+python3 scripts/context_lint.py 2>&1 | tail -30
 ```
 Before the fix the first command fails with `.stay-dates b height at 320 px: app=56px mockup=28px` (on days where a date is wide); after step 5 it must pass. If `-k "stay"` matches fewer than the `stay-320`, `stay-390` and `stay-768` style cases and the geometry cases, report the count. A failure in test_layout_lint_browser.py: read the last 30 lines, fix once if it is in the lines you changed, otherwise STOP (never silence a finding).
 

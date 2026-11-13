@@ -34,7 +34,7 @@ No other file may change.
 
 ## 4. Steps
 
-Work in `/home/user/jsfpecharoperations`, branch `task/1310-go-cleaning-schedule`. Apply each diff literally (Edit tool, exact strings, tabs as in the file).
+Work in `$(git rev-parse --show-toplevel)`, branch `task/1310-go-cleaning-schedule`. Apply each diff literally (Edit tool, exact strings, tabs as in the file).
 
 **Step 1. render.go.** Replace
 
@@ -186,25 +186,25 @@ su postgres -c '/usr/lib/postgresql/16/bin/pg_ctl -D /var/tmp/pg1310 -o "-p 5543
 Expect `server started`. If /var/tmp/pg1310 is missing: `mkdir -p /var/tmp/pg1310 && chown postgres /var/tmp/pg1310 && su postgres -c '/usr/lib/postgresql/16/bin/initdb -D /var/tmp/pg1310 -A trust' | tail -3`, then the start command.
 
 ```bash
-cd /home/user/jsfpecharoperations/go && gofmt -l ./internal/web/cleaning/ | tail -5
+cd go && gofmt -l ./internal/web/cleaning/ | tail -5
 ```
 
 Expect no output.
 
 ```bash
-cd /home/user/jsfpecharoperations/go && go vet ./internal/web/cleaning/... 2>&1 | tail -5
+cd go && go vet ./internal/web/cleaning/... 2>&1 | tail -5
 ```
 
 Expect no output.
 
 ```bash
-cd /home/user/jsfpecharoperations/go && UBYHOST_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:55431/postgres go test ./internal/web/cleaning/... ./cmd/ubyhost-web/... -count=1 -v 2>&1 | grep -E '^(--- |ok|FAIL)|SKIP' | tail -10
+cd go && UBYHOST_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:55431/postgres go test ./internal/web/cleaning/... ./cmd/ubyhost-web/... -count=1 -v 2>&1 | grep -E '^(--- |ok|FAIL)|SKIP' | tail -10
 ```
 
 Expect `--- PASS` for TestTodayPragueMidnight, TestColorNegativeID, TestParseLimitedForm, TestCleaningMatchesPython (not SKIP), and `ok` for both packages.
 
 ```bash
-cd /home/user/jsfpecharoperations && sha256sum go/internal/web/cleaning/render.go go/internal/web/cleaning/handler.go go/internal/web/cleaning/fix_test.go
+sha256sum go/internal/web/cleaning/render.go go/internal/web/cleaning/handler.go go/internal/web/cleaning/fix_test.go
 ```
 
 Expect:
@@ -216,7 +216,7 @@ Expect:
 ```
 
 ```bash
-cd /home/user/jsfpecharoperations && python3 scripts/context_lint.py | tail -3
+python3 scripts/context_lint.py | tail -3
 ```
 
 Expect `context lint: OK` (a status.md WARN line is fine).

@@ -39,7 +39,7 @@ Step 2:
 sha256sum go/internal/web/customers/templates/i18n_keys.txt
 0db15e06bf076493216036b0ba7a03a6db3971a49cbcc2d6b6f70ea7a58f76a2  go/internal/web/customers/templates/i18n_keys.txt
 (cd App && .venv/bin/python scripts/go_host_i18n.py)
-wrote /home/user/jsfpecharoperations/go/internal/web/customers/templates/i18n.json
+wrote $(git rev-parse --show-toplevel)/go/internal/web/customers/templates/i18n.json
 sha256sum go/internal/web/customers/templates/i18n.json
 e4b9ef43aadd546823909e7ec8035905b1f63def898ba882e6342d7849a5b137  go/internal/web/customers/templates/i18n.json
 ```

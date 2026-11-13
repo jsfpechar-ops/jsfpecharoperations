@@ -28,13 +28,13 @@ No file in the repo other than the report and this brief's Status line may chang
 
 ### Step 1. Old app for the stale-cache check
 
-`cd /home/user/jsfpecharoperations && git worktree add /tmp/claude-0/oldapp origin/main 2>&1 | tail -3`
+`git worktree add /tmp/claude-0/oldapp origin/main 2>&1 | tail -3`
 (if `origin/main` is missing: `git fetch origin main 2>&1 | tail -3` first). Expected: a worktree at `/tmp/claude-0/oldapp`.
 
 ### Step 2. Browser and geometry tests (0 skipped)
 
 ```
-cd /home/user/jsfpecharoperations/App && PLAYWRIGHT_BROWSERS_PATH=/tmp/claude-0/pw .venv/bin/python -m pytest tests/test_host_geometry.py tests/test_design_setup_wizard_browser.py tests/test_onboarding_wizard_browser.py tests/test_host_stay_detail_layout_browser.py tests/test_host_list_cards_browser.py tests/test_host_list_layouts_browser.py tests/test_host_quiet_dashboard_browser.py tests/test_dashboard_rows_browser.py tests/test_dashboard_phone_browser.py tests/test_design_guardrails_browser.py tests/test_a11y_guard_browser.py tests/test_host_help_browser.py tests/test_guest_browser_e2e.py -q --tb=line -rs 2>&1 | tail -30
+cd App && PLAYWRIGHT_BROWSERS_PATH=/tmp/claude-0/pw .venv/bin/python -m pytest tests/test_host_geometry.py tests/test_design_setup_wizard_browser.py tests/test_onboarding_wizard_browser.py tests/test_host_stay_detail_layout_browser.py tests/test_host_list_cards_browser.py tests/test_host_list_layouts_browser.py tests/test_host_quiet_dashboard_browser.py tests/test_dashboard_rows_browser.py tests/test_dashboard_phone_browser.py tests/test_design_guardrails_browser.py tests/test_a11y_guard_browser.py tests/test_host_help_browser.py tests/test_guest_browser_e2e.py -q --tb=line -rs 2>&1 | tail -30
 ```
 
 Expected: all passed, 0 skipped. Copy the last 10 lines into the report. A failure: rerun only that file once with `--tb=short 2>&1 | tail -30` and copy the last 30 lines into the report.
@@ -42,7 +42,7 @@ Expected: all passed, 0 skipped. Copy the last 10 lines into the report. A failu
 ### Step 3. Non-browser tests for round 1
 
 ```
-cd /home/user/jsfpecharoperations/App && .venv/bin/python -m pytest tests/test_workflow_0230.py tests/test_guest_link_window_0231.py tests/test_workflow_strip_0232.py tests/test_paste_check_0233.py tests/test_lock_question_0234.py tests/test_host_i18n.py tests/test_no_em_dashes.py tests/test_onboarding_wizard_survival.py tests/test_smart_locks_page.py tests/test_privacy_first.py -q --tb=line 2>&1 | tail -15
+cd App && .venv/bin/python -m pytest tests/test_workflow_0230.py tests/test_guest_link_window_0231.py tests/test_workflow_strip_0232.py tests/test_paste_check_0233.py tests/test_lock_question_0234.py tests/test_host_i18n.py tests/test_no_em_dashes.py tests/test_onboarding_wizard_survival.py tests/test_smart_locks_page.py tests/test_privacy_first.py -q --tb=line 2>&1 | tail -15
 ```
 
 ### Step 4. Screenshots, three languages
@@ -52,7 +52,7 @@ Pages (one comma list): `/,/reservations,/reservations/1,/guide,/apartments/1?vi
 For each LANG in `en`, `cs`, `vi` run (one command per language):
 
 ```
-cd /home/user/jsfpecharoperations/App && PLAYWRIGHT_BROWSERS_PATH=/tmp/claude-0/pw .venv/bin/python /mnt/project-files/design-reset/tools/shots.py --new-app /home/user/jsfpecharoperations/App --old-app /tmp/claude-0/oldapp/App --out /mnt/project-files/foolproof-round1/LANG/ --pages "<the list above>" --widths 390,1280,2000 --lang LANG 2>&1 | tail -15
+cd App && PLAYWRIGHT_BROWSERS_PATH=/tmp/claude-0/pw .venv/bin/python /mnt/project-files/design-reset/tools/shots.py --new-app $(git rev-parse --show-toplevel)/App --old-app /tmp/claude-0/oldapp/App --out /mnt/project-files/foolproof-round1/LANG/ --pages "<the list above>" --widths 390,1280,2000 --lang LANG 2>&1 | tail -15
 ```
 
 If `--lang vi` is refused by the tool, say so in the report and keep EN and CS.
@@ -67,7 +67,7 @@ Open (Read tool) only these EN images and write one line each on what you see (c
 
 ### Step 7. Clean up
 
-`cd /home/user/jsfpecharoperations && git worktree remove --force /tmp/claude-0/oldapp 2>&1 | tail -3`
+`git worktree remove --force /tmp/claude-0/oldapp 2>&1 | tail -3`
 
 ## 5. Do not touch
 

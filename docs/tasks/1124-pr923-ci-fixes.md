@@ -50,7 +50,7 @@ No other file may change. Nothing in App/app/. Any other test file with a pinned
 
 ## 4. Steps
 
-1. Step A, verify: `cd /home/user/jsfpecharoperations && git checkout task/1120-1123-guest-details-mail && grep -n "== 44\|version 44\|\"schema_version\": 44\|rows\"\] == 44" App/tests/test_db_postgres.py | head -20`. Expected: no output. If a line prints, change that 44 to 45, one line at a time.
+1. Step A, verify: `git checkout task/1120-1123-guest-details-mail && grep -n "== 44\|version 44\|\"schema_version\": 44\|rows\"\] == 44" App/tests/test_db_postgres.py | head -20`. Expected: no output. If a line prints, change that 44 to 45, one line at a time.
 2. Step A, other tests: `grep -rn "== 44\|version 44\|\"schema_version\": 44" App/tests | head -20`. Expected: only unrelated hits (`test_0199_phone_geometry_browser.py:126`, `test_feed_dns_pinning.py:348`, `test_funnel_ads_geometry_browser.py:156` are not schema pins; leave them). A hit about schema or migration count: change to 45 and list it.
 3. Step A, run: `cd App && .venv/bin/python -m pytest tests/test_db_postgres.py -q --tb=short -x 2>&1 | tail -30`. Expected: passed or skipped (no local Postgres). CI test-postgres is the truth.
 4. Step B, verify: `grep -n "Shown masked elsewhere\|Your host receives" App/tests/test_claim_mail.py | head`. Expected: the claim page line asserts `and a receipt. Shown masked elsewhere.` in `claim_page.text` and line 227 asserts "Your host receives..." in `privacy.text`. If line 219 still asserts "Your host receives..." in `claim_page.text`, replace it with `        assert "and a receipt. Shown masked elsewhere." in claim_page.text`.

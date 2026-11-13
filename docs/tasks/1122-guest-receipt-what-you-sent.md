@@ -71,7 +71,7 @@ No other file may change.
 
 **Step 1.** Branch and check that 1121 has landed.
 ```bash
-cd /home/user/jsfpecharoperations && git fetch origin main 2>&1 | tail -3 && git switch -c task/1122-guest-receipt-what-you-sent origin/main 2>&1 | tail -3 && grep -n 'GUEST_DETAILS_KEY = \|def mask_document_number' App/app/mail.py App/app/mail_notify.py | head -5
+git fetch origin main 2>&1 | tail -3 && git switch -c task/1122-guest-receipt-what-you-sent origin/main 2>&1 | tail -3 && grep -n 'GUEST_DETAILS_KEY = \|def mask_document_number' App/app/mail.py App/app/mail_notify.py | head -5
 ```
 Expected: 2 lines. If either is missing, STOP (1121 not merged).
 
@@ -412,14 +412,14 @@ def test_every_guest_language_has_the_new_keys():
 ```
 Command:
 ```bash
-cd /home/user/jsfpecharoperations/App && .venv/bin/python -m pytest tests/test_guest_receipt_sent_mail.py -q --tb=short -x 2>&1 | tail -30
+cd App && .venv/bin/python -m pytest tests/test_guest_receipt_sent_mail.py -q --tb=short -x 2>&1 | tail -30
 ```
 Expected: `6 passed`.
 
 **Step 18.** Run the test-map rows for mail and claim, plus the guest catalogue tests:
 ```bash
-cd /home/user/jsfpecharoperations/App && .venv/bin/python -m pytest tests/test_ses_mail.py tests/test_mail_*.py tests/test_*_mail.py tests/test_lifecycle_mail.py tests/test_notification_copy.py tests/test_claim_*.py tests/test_guest_languages.py tests/test_completion_fee_mail_1077.py tests/test_confirmation_with_door_code.py -q --tb=short -x 2>&1 | tail -30
-cd /home/user/jsfpecharoperations && python3 scripts/context_lint.py 2>&1 | tail -30
+cd App && .venv/bin/python -m pytest tests/test_ses_mail.py tests/test_mail_*.py tests/test_*_mail.py tests/test_lifecycle_mail.py tests/test_notification_copy.py tests/test_claim_*.py tests/test_guest_languages.py tests/test_completion_fee_mail_1077.py tests/test_confirmation_with_door_code.py -q --tb=short -x 2>&1 | tail -30
+python3 scripts/context_lint.py 2>&1 | tail -30
 ```
 Expected: all passed, 0 failed; lint clean.
 

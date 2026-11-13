@@ -74,7 +74,7 @@ var nowSeconds = func() float64 {
 ```
 The comment line above it (`// nowSeconds is Python's time.time(): ...`) stays; the added `//` line continues that comment block.
 
-Command: `cd /home/user/jsfpecharoperations/go && go build ./... 2>&1 | tail -30`
+Command: `cd go && go build ./... 2>&1 | tail -30`
 Expected: no output.
 
 ### Step 2: stamp claimed_at at the INSERT (claim.go)
@@ -98,7 +98,7 @@ Replace with:
 ```
 Leave `now := nowSeconds()` and the DELETE untouched (it is still used by the DELETE).
 
-Command: `cd /home/user/jsfpecharoperations/go && go vet ./internal/ubyport/ 2>&1 | tail -30`
+Command: `cd go && go vet ./internal/ubyport/ 2>&1 | tail -30`
 Expected: no output.
 
 ### Step 3: add the test (claim_test.go)
@@ -136,13 +136,13 @@ func TestClaimedAtIsStampedAtInsertNotBeforeLockWaits(t *testing.T) {
 	}
 }
 ```
-Command: `cd /home/user/jsfpecharoperations/go && UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest go test ./internal/ubyport/ -run 'TestClaimedAtIsStampedAtInsert' -count=1 -v 2>&1 | tail -30`
+Command: `cd go && UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest go test ./internal/ubyport/ -run 'TestClaimedAtIsStampedAtInsert' -count=1 -v 2>&1 | tail -30`
 Expected: `--- PASS: TestClaimedAtIsStampedAtInsertNotBeforeLockWaits` and `ok`; no `SKIP`.
 
 ### Step 4: revert-bite (the test must fail without the fix)
 
 1. In claim.go change ONLY the last argument back: `p.GuestID, token, claimedNow)` to `p.GuestID, token, now)`. Leave the `claimedNow := nowSeconds()` line (Go would then report it unused; so also change that line to `_ = nowSeconds()`).
-2. Command: `cd /home/user/jsfpecharoperations/go && UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest go test ./internal/ubyport/ -run 'TestClaimedAtIsStampedAtInsert' -count=1 -v 2>&1 | tail -30`
+2. Command: `cd go && UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest go test ./internal/ubyport/ -run 'TestClaimedAtIsStampedAtInsert' -count=1 -v 2>&1 | tail -30`
    Expected: `--- FAIL` with "stamped before the lock waits" (claimed_at about 0 s after start).
 3. Restore both lines exactly as in Step 2 (`claimedNow := nowSeconds()` and the argument `claimedNow`). Confirm with `git diff go/internal/ubyport/claim.go | tail -30` that the diff is only Step 1 and Step 2.
 4. Re-run the command from Step 3. Expected: PASS.
@@ -157,10 +157,10 @@ If the test passes in item 2, STOP (§8): the test does not bite.
 
 ## 6. Commands
 
-1. `cd /home/user/jsfpecharoperations/go && UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest go test ./internal/ubyport/ -run 'Refresh|SendClaimedBatches|Claim' -count=1 -v 2>&1 | tail -30` expect every test `--- PASS`, then `ok`.
-2. `cd /home/user/jsfpecharoperations/go && UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest go test ./internal/ical/ ./internal/ubyport/ -count=1 2>&1 | tail -30` expect two `ok` lines.
-3. `cd /home/user/jsfpecharoperations/go && UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest go test ./internal/ubyport/ -count=1 -v 2>&1 | grep -c SKIP` expect `0`.
-4. `cd /home/user/jsfpecharoperations && python3 scripts/context_lint.py 2>&1 | tail -30` expect no new error.
+1. `cd go && UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest go test ./internal/ubyport/ -run 'Refresh|SendClaimedBatches|Claim' -count=1 -v 2>&1 | tail -30` expect every test `--- PASS`, then `ok`.
+2. `cd go && UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest go test ./internal/ical/ ./internal/ubyport/ -count=1 2>&1 | tail -30` expect two `ok` lines.
+3. `cd go && UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest go test ./internal/ubyport/ -count=1 -v 2>&1 | grep -c SKIP` expect `0`.
+4. `python3 scripts/context_lint.py 2>&1 | tail -30` expect no new error.
 
 The Python test-map row (Filing, UbyPort, claim) is not run: no Python file changed.
 

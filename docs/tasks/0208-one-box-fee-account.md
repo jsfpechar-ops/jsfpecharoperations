@@ -217,8 +217,8 @@ Rerun `UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_fee_setup
 b) `test_property_navigation_browser.py` failed at line 196 (`<details` in content) and at line 527 (timeout on `.setup-wizard-skip .link-button`). Check them on main, do not fix:
 ```
 git worktree add /tmp/ubyhost-main origin/main 2>&1 | tail -2
-cd /tmp/ubyhost-main/App && UBYHOST_REQUIRE_BROWSER=1 /home/user/jsfpecharoperations/App/.venv/bin/python -m pytest tests/test_property_navigation_browser.py -q --tb=line -rs 2>&1 | tail -10
-cd /home/user/jsfpecharoperations && git worktree remove --force /tmp/ubyhost-main
+cd /tmp/ubyhost-main/App && UBYHOST_REQUIRE_BROWSER=1 $(git rev-parse --show-toplevel)/App/.venv/bin/python -m pytest tests/test_property_navigation_browser.py -q --tb=line -rs 2>&1 | tail -10
+git worktree remove --force /tmp/ubyhost-main
 ```
 (`git fetch origin main` first if `origin/main` is missing.) Then on the branch run `UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_property_navigation_browser.py -q --tb=short -k "not fit_every_width" 2>&1 | tail -40` and paste, for each failure, the assertion text plus what the page has instead (for 196: which `<details ...>` tag is in `content`, e.g. `grep -o '<details[^>]*>'` on the rendered HTML; for 527: what classes the skip button on that wizard step has now). Report both runs.
 

@@ -1,7 +1,7 @@
 # 0289: Business table name width must not make the table scroll sideways
 
 Status: todo
-Depends on: 0288 | Branch: worktree /home/user/wt, local branch wip-0284 (already checked out; commit here)
+Depends on: 0288 | Branch: worktree /tmp/wt, local branch wip-0284 (already checked out; commit here)
 Executor: Haiku 5.5 | Fits one session: 12 tool calls, 40k tokens
 
 ## 1. Objective

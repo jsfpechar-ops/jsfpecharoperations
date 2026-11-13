@@ -42,7 +42,7 @@ No other file may change. Screenshots go to `/mnt/project-files/ux-shots/public-
 
 ## 4. Steps
 
-Work from the repo root `/home/user/jsfpecharoperations`.
+Work from the repo root `$(git rev-parse --show-toplevel)`.
 
 ### Phase 0: check (1 call)
 

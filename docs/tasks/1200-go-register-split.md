@@ -35,7 +35,7 @@ No other file may change.
 
 ## 4. Steps
 
-Work from `/home/user/jsfpecharoperations`. Use bash heredocs (`cat > file <<'EOF'`) for new files.
+Work from `$(git rev-parse --show-toplevel)`. Use bash heredocs (`cat > file <<'EOF'`) for new files.
 
 ### Step 0. Save the base route list
 
