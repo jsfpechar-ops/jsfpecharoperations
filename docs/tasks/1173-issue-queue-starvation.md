@@ -1,6 +1,6 @@
 # 1173: the door-code issue queue cannot be starved by rows that never get issued
 
-Status: todo
+Status: review
 Depends on: 1172 (merged in the base) | Base commit: claude/zealous-maxwell-a7ub54 HEAD (8f1b54cd) | Branch: task/1173-issue-queue-starvation
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (about 25 calls used; 1173b is the follow-up and must not be started in this chat)
 

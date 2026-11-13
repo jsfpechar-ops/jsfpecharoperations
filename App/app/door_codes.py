@@ -38,10 +38,12 @@ TRANSITIONS = {
     PENDING: {
         ISSUING,  # issue: claim
         REVOKED,  # _handle_cancellations: stay cancelled before a code exists
+        EXPIRED,  # _expire_ended_stays: the stay ended before a code was made
     },
     RETRYING: {
         ISSUING,  # issue: claim
         REVOKED,  # _handle_cancellations: stay cancelled before a code exists
+        EXPIRED,  # _expire_ended_stays: the stay ended before a code was made
     },
     ISSUING: {
         PENDING,  # _release_issue_claim: not eligible, no account, bad window
@@ -94,6 +96,13 @@ AMBIGUOUS_DELETE_ERRORS = ("", "network", "transient", LOOKUP_FAILED, ttlock.COD
 # A guest who has finished registering must not wait longer than this in silence.
 DELAY_MINUTES = 5
 BATCH = 20
+# 1173: issue() puts a row back to pending for these reasons without a try on the lock. The row waits this
+# long before _issue_due takes it again, so a stuck row cannot fill the batch every tick.
+# not_eligible: the stay or property no longer qualifies (no start time to wait for: eligibility has none).
+#   Short, because an operator pause or a host fix ends it at an unknown moment while a guest waits.
+# no_account: the host must reconnect TTLock; nothing resets the row then, so keep it short too.
+# bad_window: the saved hours are invalid and need a host edit; the UI does not allow it, so long.
+RELEASE_RETRY_MINUTES = {"not_eligible": 15, "no_account": 15, "bad_window": 60}
 
 KEYPAD_CONFIRM_SUFFIX = "#"
 
@@ -116,18 +125,27 @@ def _mail_idempotency_key(reservation_id: int, row: dict) -> str:
 def _release_issue_claim(
     door_code_id: int, *, decrement_attempt: bool = False, reason: Optional[str] = None
 ) -> None:
-    """Put a row back to pending. ``reason`` is kept so a stuck code says why."""
+    """Put a row back to pending. ``reason`` is kept so a stuck code says why.
+
+    A reason in RELEASE_RETRY_MINUTES also moves next_attempt_at forward (1173): without it the row
+    stays due and _issue_due takes it again on every tick, so 20 such rows block every newer row.
+    """
+    now = db.utcnow()
+    minutes = RELEASE_RETRY_MINUTES.get(reason or "")
+    next_at = _iso(_now() + timedelta(minutes=minutes)) if minutes else None
     if decrement_attempt:
         db.execute(
             "UPDATE door_code SET state = ?, claimed_at = NULL, attempts = attempts - 1, "
-            "last_error = COALESCE(?, last_error), updated_at = ? WHERE id = ? AND attempts > 0",
-            (PENDING, reason, db.utcnow(), door_code_id),
+            "last_error = COALESCE(?, last_error), next_attempt_at = COALESCE(?, next_attempt_at), "
+            "updated_at = ? WHERE id = ? AND attempts > 0",
+            (PENDING, reason, next_at, now, door_code_id),
         )
     else:
         db.execute(
             "UPDATE door_code SET state = ?, claimed_at = NULL, "
-            "last_error = COALESCE(?, last_error), updated_at = ? WHERE id = ?",
-            (PENDING, reason, db.utcnow(), door_code_id),
+            "last_error = COALESCE(?, last_error), next_attempt_at = COALESCE(?, next_attempt_at), "
+            "updated_at = ? WHERE id = ?",
+            (PENDING, reason, next_at, now, door_code_id),
         )
 
 
@@ -1503,7 +1521,7 @@ def _issue_due(now_iso: str) -> Dict[str, int]:
     due = db.query(
         "SELECT id FROM door_code WHERE state IN (?, ?) "
         "AND (next_attempt_at IS NULL OR next_attempt_at <= ?) "
-        "ORDER BY (next_attempt_at IS NOT NULL), next_attempt_at LIMIT ?",
+        "ORDER BY (attempts > 0), (next_attempt_at IS NOT NULL), next_attempt_at, id LIMIT ?",
         (PENDING, RETRYING, now_iso, BATCH),
     )
     for row in due:
@@ -1513,11 +1531,35 @@ def _issue_due(now_iso: str) -> Dict[str, int]:
     return out
 
 
+def _expire_ended_stays(now_iso: str) -> int:
+    """pending/retrying rows of a stay that has ended become expired (1173).
+
+    issue() expires such a row only when it gets as far as the window check, but a stay whose last day
+    is past is not eligible any more, so issue() put it back to pending on every tick. The test is the
+    one _eligible_sql uses (date_to before the local date). valid_to is not used: a re-issue row
+    (pin_lost) keeps the old window's valid_to while the stay may have been extended since.
+    Cancelled or archived stays are left to _handle_cancellations (revoked).
+    """
+    today = deadlines.local_now().date().isoformat()
+    return int(
+        db.execute(
+            "UPDATE door_code SET state = ?, claimed_at = NULL, updated_at = ? "
+            "WHERE state IN (?, ?) AND claimed_at IS NULL AND reservation_id IN "
+            "(SELECT id FROM reservation WHERE status = 'active' AND archived_at IS NULL AND date_to < ?)",
+            (EXPIRED, now_iso, PENDING, RETRYING, today),
+        )
+        or 0
+    )
+
+
 def reconcile() -> Dict[str, int]:
     counts = {"created": 0, "issued": 0, "failed": 0, "expired": 0, "delayed": 0}
     if not config.DOOR_CODES_ENABLED:
         return counts
     now_iso = db.utcnow()
+
+    ended = _phase("expire_ended", _expire_ended_stays, now_iso)
+    counts["expired"] += int(ended or 0)
 
     # Issuing comes first: a guest is waiting on it, and cancellations or moves
     # (which call the gateway, up to 35 s each) must never hold it up.
@@ -1548,7 +1590,7 @@ def reconcile() -> Dict[str, int]:
         "WHERE state = ? AND valid_to IS NOT NULL AND valid_to < ?",
         (EXPIRED, now_iso, ISSUED, now_iso),
     )
-    counts["expired"] = int(expired or 0)
+    counts["expired"] += int(expired or 0)
 
     failed = db.query_one(
         "SELECT COUNT(*) AS n FROM door_code WHERE state = ?",
