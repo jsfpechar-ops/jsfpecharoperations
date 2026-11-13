@@ -49,8 +49,7 @@ def test_A_job_failed_alert_is_visible_to_owner(monkeypatch, tmp_path):
     from app.main import app
     _db(monkeypatch, tmp_path, "a.db")
     uid = auth.create_account("hostadmin@example.test", "H", role="admin", username="hostadmin")
-    monkeypatch.setattr(reporting, "check_deadlines", lambda *a, **k: 1 / 0)
-    scheduler._job_deadlines()
+    scheduler._job_deadlines_go_only()  # 1200: the Python deadlines job only alerts
     assert len(alerts.open_alerts()) == 1                 # exists
     assert len(alerts.open_alerts(uid)) == 1              # and the host sees it
     c = TestClient(app)
