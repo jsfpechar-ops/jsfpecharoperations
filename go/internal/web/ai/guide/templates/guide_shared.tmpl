@@ -1,0 +1,2 @@
+{{/* Brief 1440: the guide templates of the later briefs each live in their own file in this folder. This file holds what they share. */}}
+{{define "guide.card_title"}}{{if eq .Kind "custom"}}{{.Title}}{{else}}{{t (printf "guest_guide.kind.%s.title" .Kind)}}{{end}}{{end}}
