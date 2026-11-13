@@ -95,8 +95,9 @@
 - K-H0: from tasks/1094-report.md: `checkin_hour` NULL can raise TypeError in door_codes.py (~179, 436); `/save` with a non-owned guest_id becomes a new person; `guest_form_saved` audit has no field names.
 - K-SM2 (brief 1105): OPERATIONS.md submit_state section disagrees with the code in 9 places.
 - K-SM3 (brief 1111): rules.md lines 37, 44 still say production is SQLite, migrations frozen at 0033.
-- K-DC-RENAME (943 review): door-code lookup searches by name `UH-<id>`; a code renamed in the TTLock app reads as gone.
+- K-DC-RENAME (943): lookup by name `UH-<id>`; a code renamed in TTLock reads as gone.
 - K-FLAKY-VT: test_host_filter_panels_browser.py:695 ViewTransition abort once (#943), passed on re-run.
 - K-F24 (947 review): recovered batch in manual mode keeps retried_at NULL; going automatic resends it once.
 - K-DC-REMOVE (950): A-B-A-B move: no 2nd moved_failed mail.
 - K-DC-REVIVE-CARD (1173c): card closed in revoke_pending, delete refused, stay revived: stays closed.
+- K-DC-EXTEND (1173c review): stay extended after its issued code expired gets no new code.
