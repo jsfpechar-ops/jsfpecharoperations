@@ -1,0 +1,20 @@
+{{/* payments_share.html: GET /payments/requests/{id}/share. The h1 is the
+     page title. The mailto and WhatsApp links are plain <a href> on purpose:
+     html/template checks their scheme; layout macros do not (until 1381). */}}
+{{define "payments_share"}}
+<div class="ui-section" data-payment-share>
+  <p>{{t (printf "payments.reason.%s" .Reason)}} · <strong>{{.Amount}} {{t "payments.czk"}}</strong></p>
+  <p>{{t "payments.share.lead"}}</p>
+  <label class="ui-field" for="pay-share-link">
+    <span>{{t "payments.share.link_label"}}</span>
+    <input class="ui-input" id="pay-share-link" type="text" readonly value="{{.Link}}">
+  </label>
+  <div class="ui-form-actions">
+    {{copy_button "pay-share-link"}}
+    <a class="ui-btn ui-btn-secondary" href="{{.MailtoURL}}" data-no-prefetch><span>{{t "payments.share.email"}}</span></a>
+    <a class="ui-btn ui-btn-primary" href="{{.WhatsAppURL}}" target="_blank" rel="noopener"><span>{{t "payments.share.whatsapp"}}</span></a>
+  </div>
+  <p class="ui-sub">{{t "payments.share.paid_note"}}</p>
+  <p><a href="/payments">{{t "payments.share.back"}}</a></p>
+</div>
+{{end}}

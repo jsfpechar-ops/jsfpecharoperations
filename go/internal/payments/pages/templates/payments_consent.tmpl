@@ -1,0 +1,22 @@
+{{/* payments_consent.html: GET /payments/consent. The back header carries the h1. */}}
+{{define "payments_consent.title"}}{{end}}
+{{define "payments_consent"}}
+<div class="airbnb-header">
+  <a class="airbnb-back" href="/payments" aria-label="{{t "common.back"}}">{{icon "arrow-left" 20}}</a>
+  <h1 class="airbnb-title">{{t "payments.consent.title"}}</h1>
+</div>
+<div class="payments-page">
+<div class="card payments-box">
+  <p>{{t "payments.consent.lead"}}</p>
+  <ol>
+    <li>{{t "payments.consent.p1"}}</li><li>{{t "payments.consent.p2"}}</li><li>{{t "payments.consent.p3"}}</li><li>{{t "payments.consent.p4"}}</li><li>{{t "payments.consent.p5"}}</li><li>{{t "payments.consent.p6"}}</li><li>{{t "payments.consent.p7"}}</li>
+  </ol>
+  <p>{{t "payments.consent.need"}}</p>
+  <form method="post" action="/payments/consent" class="ui-form">
+    {{ui_check "pay-consent-agree" (t "payments.consent.agree") (kv "name" "agree")}}
+    <p><a href="https://stripe.com/cz/legal/connect-account" target="_blank" rel="noopener">{{t "payments.consent.stripe_link"}}</a></p>
+    <div class="ui-form-actions">{{ui_button (t "payments.consent.continue") "primary" (kv "type" "submit")}}</div>
+  </form>
+</div>
+</div>
+{{end}}
