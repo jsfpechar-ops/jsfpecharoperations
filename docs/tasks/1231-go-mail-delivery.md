@@ -1,6 +1,6 @@
 # 1231: Go mail delivery, part 1: config, markers, attachments, MIME, SES v2 client
 
-Status: todo
+Status: review
 Depends on: 1230 (plan, this branch) | Base commit: 902bc51 | Branch: task/1230-track-a
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (code is copied by a script; do not read the code blocks)
 
