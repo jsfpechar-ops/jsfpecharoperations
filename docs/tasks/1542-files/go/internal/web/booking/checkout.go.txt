@@ -165,11 +165,14 @@ type Pending struct {
 	ApartmentID, OwnerID, HoldID int64
 	Q                            Quote
 	Name, Email, Lang            string
+	// Direct requests (brief 1543) set these; a card booking leaves them empty
+	// and gets status "pending", pay method "stripe", no request deadline.
+	Status, PayMethod, RequestExpiresAt string
 }
 
-// CreatePending is booking_site.create_pending for a card booking: a
-// "pending" site_booking row with the terms version and a one-time cancel
-// token whose hash is stored. It returns the new booking id.
+// CreatePending is booking_site.create_pending: a site_booking row ("pending"
+// for a card booking, "requested" for a direct one) with the terms version and
+// a one-time cancel token whose hash is stored. It returns the new booking id.
 func CreatePending(ctx context.Context, db DB, p Pending, now time.Time) (int64, error) {
 	buf := make([]byte, 24)
 	if _, err := rand.Read(buf); err != nil {
@@ -183,14 +186,22 @@ func CreatePending(ctx context.Context, db DB, p Pending, now time.Time) (int64,
 	if lang != "cs" && lang != "en" {
 		lang = "cs"
 	}
+	status, method := "pending", "stripe"
+	if p.Status == "requested" {
+		status = "requested"
+	}
+	if p.PayMethod == "direct" {
+		method = "direct"
+	}
 	var id int64
 	err := db.QueryRow(ctx, `INSERT INTO site_booking (apartment_id, owner_user_id, hold_id, pay_method, request_expires_at,
 		status, date_from, date_to, guests, guest_name, guest_email, lang, nights, nightly_czk, cleaning_fee_czk, total_czk,
 		cancellation_policy, terms_version, terms_accepted_at, cancel_token_hash, created_at, updated_at)
-		VALUES ($1, $2, $3, 'stripe', NULL, 'pending', $4, $5, $6, NULLIF($7, ''), NULLIF($8, ''), $9, $10, $11, $12, $13,
+		VALUES ($1, $2, $3, $18, NULLIF($19, ''), $20, $4, $5, $6, NULLIF($7, ''), NULLIF($8, ''), $9, $10, $11, $12, $13,
 		$14, $15, $16, $17, $16, $16) RETURNING id`,
 		p.ApartmentID, p.OwnerID, p.HoldID, p.Q.DateFrom, p.Q.DateTo, p.Q.Guests, name, email, lang, p.Q.Nights,
-		p.Q.NightlyCZK, p.Q.CleaningFeeCZK, p.Q.TotalCZK, p.Q.CancellationPolicy, TermsVersion, stamp, TokenHash(token)).Scan(&id)
+		p.Q.NightlyCZK, p.Q.CleaningFeeCZK, p.Q.TotalCZK, p.Q.CancellationPolicy, TermsVersion, stamp, TokenHash(token),
+		method, p.RequestExpiresAt, status).Scan(&id)
 	return id, err
 }
 

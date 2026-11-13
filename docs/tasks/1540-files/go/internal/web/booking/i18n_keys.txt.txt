@@ -25,3 +25,10 @@ pp.*
 stay_fees.nights
 stay_fees.nights.one
 stay_fees.nights.few
+site_booking.mail.request_subject
+site_booking.mail.request_text
+site_booking.mail.request_guest_subject
+site_booking.mail.request_guest_text
+site_booking.mail.request_guest_iban
+site_booking.mail.request_guest_revolut
+site_booking.mail.request_guest_link
