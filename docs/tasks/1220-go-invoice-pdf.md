@@ -1,7 +1,7 @@
 # 1220: Go invoice PDF package `go/internal/pdf` (generic PDF layer plus the invoice layout)
 
 Status: todo
-Depends on: none (stands alone; brief 1221 builds on it) | Base commit: a83df54 | Branch: task/1220-go-invoice-pdf (branch from the current branch)
+Depends on: none (stands alone; brief 1221 builds on it) | Base commit: a83df54 | Branch: task/1220-go-invoice-pdf
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B (new dependency, owner decision line needed before merge)
 
 ## 1. Objective
