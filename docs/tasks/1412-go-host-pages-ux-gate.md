@@ -1,6 +1,6 @@
 # 1412: UX gate for the Go host pages added in PR #1003
 
-Status: blocked — owner option B (2026-11-13): waiting for the owner's staging screenshots; the orchestrator reviews them, no executor run
+Status: blocked — paused by owner (2026-11-13): there is no Lightsail staging server, so option B cannot run. Go host paths stay out of `UBYHOST_GO_PATHS` (option C) until the owner restarts this. Do not run.
 Depends on: owner staging screenshots | Base commit: 3d75651dd | Branch: none (the report is written by the orchestrator in the PR that records it)
 Executor: none (the orchestrator reviews; no Haiku run) | Fits one session: 30 tool calls, 60k tokens
 
