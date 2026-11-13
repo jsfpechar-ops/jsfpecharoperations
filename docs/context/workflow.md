@@ -65,7 +65,7 @@ Luna and Cursor are retired.
    4. Read the diff only for the files on the brief's risk list.
    5. Verdict: approve (the owner merges with `scripts/merge-pr-on-green.sh`), or write `NNNN-fix-1.md`.
    6. Update status, decisions and known-issues, then set `Status: done`.
-5. **Deploy:** the owner deploys; the orchestrator updates the Production lines in [status](status.md).
+5. **Deploy:** the owner deploys; the orchestrator updates the Production lines in [status](status.md). No branch protection or required checks (owner, 11-13): the merge script and the deploy gate are the guard.
 
 Statuses: `todo → in-progress → review → done`, plus `blocked` (with the reason on the Status line) and `replaced` (a newer brief takes its place; name it on the Status line).
 

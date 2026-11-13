@@ -20,6 +20,7 @@ Updated: 2026-11-13.
 - 11-13: security audit draft #966 (1200-1204). **Owner:** K-S11–K-S15.
 
 ## Next
+- CI speed-up: 1413 skip heavy jobs for brief-only PRs, 1414 Postgres 4 shards + deploy gate, 1415 balanced shards, 1416 README refresh (in this order for ci.yml).
 - 1291: host CC on guest completion (#988).
 - Door codes 0037–0038 on main → owner staging steps.
 - TTLock 0008–0016: [plan](../plans/ttlock-door-codes.md) §11; live after §12 + lawyer (K-L).
