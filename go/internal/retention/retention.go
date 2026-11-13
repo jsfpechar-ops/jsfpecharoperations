@@ -35,9 +35,6 @@ const (
 	leonRetentionDays      = 30  // leon.RETENTION_DAYS
 )
 
-// errApplyNotPorted fails a run with both apply switches on: this build only counts.
-var errApplyNotPorted = errors.New("retention: deleting is not ported to Go yet (brief 1211); nothing deleted")
-
 // Config holds the switches and windows the Python job reads from config.py.
 type Config struct {
 	DryRun         bool
@@ -163,10 +160,6 @@ func Run(ctx context.Context, pool *pgxpool.Pool, cfg Config, today, now time.Ti
 		dry:   cfg.DryRun,
 	}
 	sum := Summary{DryRun: r.dry, OwnerUserID: owner, Counts: []Count{}}
-	if !r.dry {
-		// Brief 1211 adds the deleting half; until then Go only counts.
-		return sum, errApplyNotPorted
-	}
 	var first error
 	cut := r.cutoffs()
 	for _, s := range steps {
