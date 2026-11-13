@@ -82,6 +82,8 @@ The production database holds real data (2026-11-13 check: about 117 guests, 28 
 
 ## 7. Owner decisions
 
+**All six approved as recommended by the owner, 2026-11-13.** Still open: the cutover date (decision 3).
+
 1. Freeze `App/app/migrations/` at 0045 now, new schema changes goose-only? Recommend yes.
 2. Python's PostgreSQL apply switches to goose files only (S6)? Recommend yes.
 3. End the SQLite rollback path once the section 6 proofs exist? Recommend yes; please confirm the cutover date (not found in the docs).

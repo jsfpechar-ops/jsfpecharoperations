@@ -63,3 +63,4 @@ Append-only.
 - 2026-11-13 [security] #966: 1200-1205; Go env in compose; K-S12 ok; 1206-1207 after merge (owner)
 - 2026-11-13 [mail] Completion CC to host again; PII stays in guest_details_host | owner | 1291
 - 2026-11-13 [workflow] Go first: features and bug fixes in Go; Python only for port plumbing, bumps, filing/security/data-loss fixes on paths it still serves | owner | [go-first](go-first.md)
+- 2026-11-13 [db] SQLite retirement: decisions 1-6 approved (freeze at 0045, goose-only apply, end rollback after proofs, SQLite test-only until X3, 30-day offline copy, Go `--init`) | owner | [plan](../plans/sqlite-retirement.md#7-owner-decisions)
