@@ -1,0 +1,155 @@
+package invoices
+
+// The public download link of routes/invoices.py invoice_download
+// (1030-1049) and invoice_links.py: the token in the e-mail is the only
+// credential the recipient has.
+
+import (
+	"context"
+	"errors"
+	"net"
+	"net/http"
+	"strings"
+	"time"
+
+	"github.com/jackc/pgx/v5"
+
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
+)
+
+func init() { addRoutes(publicRoutes) }
+
+func publicRoutes(d deps) []Route {
+	return []Route{{"GET /invoice/d/{token}", "/invoice/d/{token}", d.publicDownload}}
+}
+
+const (
+	downloadScope    = "invoice_download"
+	downloadMax      = 30
+	downloadWindow   = 3600.0 // seconds
+	downloadTokenAge = 30 * 24 * time.Hour
+)
+
+// peer is rate_limit.client_key's host: CF-Connecting-IP (Caddy overwrites
+// it), else the peer host, else "unknown".
+func peer(r *http.Request) string {
+	if v := strings.TrimSpace(r.Header.Get("CF-Connecting-IP")); v != "" {
+		return v
+	}
+	if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil && host != "" {
+		return host
+	}
+	if r.RemoteAddr != "" {
+		return r.RemoteAddr
+	}
+	return "unknown"
+}
+
+// throttled is rate_limit.blocked then record for scope/key: prune the
+// window, refuse at the limit, else record one event.
+func throttled(ctx context.Context, d deps, scope, key string, max int64, window float64, now time.Time) (bool, error) {
+	at := float64(now.UnixNano()) / 1e9
+	if _, err := d.pool.Exec(ctx, `DELETE FROM rate_limit_event WHERE scope = $1 AND key = $2 AND at < $3`, scope, key, at-window); err != nil {
+		return false, err
+	}
+	var n int64
+	if err := d.pool.QueryRow(ctx, `SELECT COUNT(*) FROM rate_limit_event WHERE scope = $1 AND key = $2`, scope, key).Scan(&n); err != nil {
+		return false, err
+	}
+	if n >= max {
+		return true, nil
+	}
+	_, err := d.pool.Exec(ctx, `INSERT INTO rate_limit_event (scope, key, at) VALUES ($1, $2, $3)`, scope, key, at)
+	return false, err
+}
+
+type downloadToken struct {
+	I int64  `json:"i"`
+	H string `json:"h"`
+}
+
+// downloadTokenFor is invoice_links.download_token: the invoice id and a
+// prefix of its stored PDF hash, signed and timestamped.
+func downloadTokenFor(secret string, id int64, pdfSHA string, now time.Time) (string, error) {
+	prefix := pdfSHA
+	if len(prefix) > 16 {
+		prefix = prefix[:16]
+	}
+	return secure.NewTimedSerializer(secret, "ubyhost-invoice-download").Dumps(downloadToken{I: id, H: prefix}, now)
+}
+
+// readDownloadToken is invoice_links.read_download_token: the invoice id, or
+// 0 for a bad, expired or stale (the PDF changed) token.
+func readDownloadToken(ctx context.Context, d deps, token string, now time.Time) (int64, error) {
+	secret, err := secure.LoadSecret(d.getenv)
+	if err != nil {
+		return 0, err
+	}
+	var data downloadToken
+	if err := secure.NewTimedSerializer(secret, "ubyhost-invoice-download").Loads(token, downloadTokenAge, now, &data); err != nil {
+		return 0, nil
+	}
+	var sha *string
+	err = d.pool.QueryRow(ctx, `SELECT pdf_sha256 FROM invoice WHERE id = $1`, data.I).Scan(&sha)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, err
+	}
+	if sha == nil || *sha == "" {
+		return 0, nil
+	}
+	prefix := *sha
+	if len(prefix) > 16 {
+		prefix = prefix[:16]
+	}
+	if prefix != data.H {
+		return 0, nil
+	}
+	return data.I, nil
+}
+
+// publicDownload is invoice_download: GET /invoice/d/{token}. The token in the
+// e-mail is the only credential the recipient has; 30 requests an hour per
+// visitor.
+func (d deps) publicDownload(w http.ResponseWriter, r *http.Request) {
+	at := d.now()
+	ctx := r.Context()
+	blocked, err := throttled(ctx, d, downloadScope, peer(r)+":"+downloadScope, downloadMax, downloadWindow, at)
+	if err != nil {
+		fail(w, err)
+		return
+	}
+	if blocked {
+		plain(w, http.StatusTooManyRequests, "Too many requests")
+		return
+	}
+	id, err := readDownloadToken(ctx, d, r.PathValue("token"), at)
+	if err != nil {
+		fail(w, err)
+		return
+	}
+	if id == 0 {
+		plain(w, http.StatusNotFound, "Not found")
+		return
+	}
+	blob, err := downloadPDF(ctx, d.pool, id)
+	if err != nil {
+		fail(w, err)
+		return
+	}
+	writePDF(w, blob, map[string]string{
+		"Content-Disposition": "attachment",
+		"Cache-Control":       "no-store",
+		"X-Robots-Tag":        "noindex",
+	})
+}
+
+// plain is Starlette's Response("text", status_code=n): the body, no
+// content type of its own.
+func plain(w http.ResponseWriter, status int, body string) {
+	w.Header()["Content-Type"] = nil
+	w.WriteHeader(status)
+	_, _ = w.Write([]byte(body))
+}
