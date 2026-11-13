@@ -53,6 +53,7 @@ GOCAPI = "go/internal/metacapi/send.go"
 PHOTOSWEEP = "go/internal/photosweep/db.go"
 SIGNUP = "App/app/signup.py"
 SIGNUPGO = "go/internal/signup/store.go"
+MAILDRAIN = "go/internal/mail/outbox_drain.go"
 GOSIGNUP = "go/internal/signup/register.go"
 IMPORT = "App/app/guest_guide_import.py"
 MERGE = "App/app/guest_guide_merge.py"
@@ -164,6 +165,9 @@ OUTBOX_SITES = {
     (RECONCILE, "expireOnCancel"): 1,
     (NOTIFY, "EnqueueMail"): 1,
     (SIGNUPGO, "enqueue"): 1,
+    (MAILDRAIN, "Drain"): 1,
+    (MAILDRAIN, "claim"): 1,
+    (MAILDRAIN, "deliver"): 3,
 }
 _CLAIM_FRAGMENT = '{"state": SENDING, "updated_at": db.utcnow()}, {"state": QUEUED}'
 OUTBOX_MOVES = [
@@ -178,6 +182,11 @@ OUTBOX_MOVES = [
     (RECONCILE, "expireOnCancel", "SET state = 'failed'", ("queued",), "failed"),
     (NOTIFY, "EnqueueMail", "$9, 'queued', 0", NEW, "queued"),
     (SIGNUPGO, "enqueue", "'queued', 0, $7, $7, $7)", NEW, "queued"),
+    (MAILDRAIN, "Drain", "SET state = 'queued' WHERE state = 'sending'", ("sending",), "queued"),
+    (MAILDRAIN, "claim", "SET state = 'sending'", ("queued",), "sending"),
+    (MAILDRAIN, "deliver", "SET state = 'sent'", ANY, "sent"),
+    (MAILDRAIN, "deliver", "SET state = 'queued', updated_at = $1 WHERE id = $2 AND state = 'sending'", ANY, "queued"),
+    (MAILDRAIN, "deliver", "SET state = $1, attempts = $2", ANY, "failed"),
 ]
 
 
