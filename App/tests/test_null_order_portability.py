@@ -65,5 +65,5 @@ def test_due_queries_put_null_next_attempt_first(monkeypatch):
     assert len(ordered) >= 2, sql_seen
     for sql in ordered:
         assert re.search(
-            r"ORDER BY (\(attempts > 0\), )?\((\w+\.)?next_attempt_at IS NOT NULL\), (\w+\.)?next_attempt_at", sql
+            r"ORDER BY (CASE WHEN .+? END, )?\((\w+\.)?next_attempt_at IS NOT NULL\), (\w+\.)?next_attempt_at", sql
         ), sql

@@ -38,10 +38,11 @@ def _open(stay: int):
     return alerts.open_alert(f"{CARD}:{stay}")
 
 
-def _issued_stay(monkeypatch):
-    """A stay with an issued code on its own window (no move pending)."""
+def _issued_stay(monkeypatch, lock_id: str = "35662508"):
+    """A stay with an issued code on its own window (no move pending). Another lock_id: a second property."""
     monkeypatch.setattr(ttlock, "create_period_code", lambda *a, **k: ("1111111", "c1"))
-    _, _, stay = _stay(registered_minutes_ago=1)
+    _, apartment, stay = _stay(registered_minutes_ago=1)
+    db.execute("UPDATE apartment SET lock_id = ? WHERE id = ?", (lock_id, apartment))
     door_codes.reconcile()
     row = db.query_one("SELECT * FROM door_code WHERE reservation_id = ?", (stay,))
     assert row["state"] == door_codes.ISSUED
@@ -90,3 +91,56 @@ def test_the_unconfirmed_card_closes_when_the_code_expires(monkeypatch):
     door_codes.reconcile()
     assert _row(row_id)["state"] == door_codes.EXPIRED
     assert _open(stay) is None
+
+
+# --- 1173c ---------------------------------------------------------------------------------------------
+
+
+def test_a_revoked_stay_closes_only_its_own_card(monkeypatch):
+    """The sweep matches the card to its stay: stay B keeps its code and its card (1173c)."""
+    stay_a, _ = _issued_stay(monkeypatch)
+    stay_b, _ = _issued_stay(monkeypatch, lock_id="35662509")
+    _card(stay_a)
+    _card(stay_b)
+    db.execute("UPDATE reservation SET status = 'cancelled' WHERE id = ?", (stay_a,))
+    door_codes.reconcile()
+    assert _open(stay_a) is None
+    assert _open(stay_b) is not None
+
+
+def _delayed_card(stay: int) -> None:
+    apartment = db.query_one("SELECT apartment_id FROM reservation WHERE id = ?", (stay,))["apartment_id"]
+    alerts.raise_alert(
+        "warning", "door_code_delayed", "Door code is taking too long",
+        dedupe_key=f"door_code_delayed:{stay}", apartment_id=apartment, reservation_id=stay,
+    )
+
+
+def test_the_delayed_card_closes_when_the_stay_ends_without_a_code(lock):
+    today = deadlines.local_now().date()
+    _, _, stay = _stay(registered_minutes_ago=30)
+    row_id = door_codes.ensure_row(stay)
+    _, _, other = _stay(registered_minutes_ago=30)
+    other_id = door_codes.ensure_row(other)
+    db.execute("UPDATE door_code SET next_attempt_at = ? WHERE id IN (?, ?)", ("2999-01-01T00:00:00+00:00", row_id, other_id))
+    _delayed_card(stay)
+    _delayed_card(other)
+    db.execute(
+        "UPDATE reservation SET date_from = ?, date_to = ? WHERE id = ?",
+        ((today - timedelta(days=3)).isoformat(), (today - timedelta(days=1)).isoformat(), stay),
+    )
+    door_codes.reconcile()
+    assert _row(row_id)["state"] == door_codes.EXPIRED
+    assert alerts.open_alert(f"door_code_delayed:{stay}") is None
+    assert alerts.open_alert(f"door_code_delayed:{other}") is not None  # still waiting: the card stays
+
+
+def test_the_delayed_card_closes_when_a_waiting_stay_is_cancelled(lock):
+    _, _, stay = _stay(registered_minutes_ago=30)
+    row_id = door_codes.ensure_row(stay)
+    db.execute("UPDATE door_code SET next_attempt_at = ? WHERE id = ?", ("2999-01-01T00:00:00+00:00", row_id))
+    _delayed_card(stay)
+    db.execute("UPDATE reservation SET status = 'cancelled' WHERE id = ?", (stay,))
+    door_codes.reconcile()
+    assert _row(row_id)["state"] == door_codes.REVOKED
+    assert alerts.open_alert(f"door_code_delayed:{stay}") is None
