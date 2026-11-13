@@ -65,3 +65,4 @@ Append-only.
 - 2026-11-12 [door] 1149 lost race re-issues; 1155 revived code checked on lock (3 tries); 1156 info card + host mail; cs/vi ok.
 - 11-13 [calendar] 1172: Go-only; 1 mail/pair; manual dup skipped (owner)
 - 2026-11-13 [door] 1173/c: release backoff 15/15/60; new, retries, released; revive unissued expired.
+- 2026-11-13 | [deps] `github.com/signintech/gopdf` v0.38.4 (MIT; pulls gofpdi, pkg/errors) for Go invoice PDF layout in `go/internal/pdf` | owner | 1220
