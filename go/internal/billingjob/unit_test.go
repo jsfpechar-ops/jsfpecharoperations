@@ -44,3 +44,10 @@ func TestHelpers(t *testing.T) {
 		t.Errorf("fmtDate passes through, got %q", got)
 	}
 }
+func TestDay10(t *testing.T) {
+	for in, want := range map[string]string{"": "", "2026-1-1": "2026-1-1", "2026-11-13T06:00:00": "2026-11-13"} {
+		if got := day10(in); got != want {
+			t.Errorf("day10(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
