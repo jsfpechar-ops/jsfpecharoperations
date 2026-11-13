@@ -1,7 +1,7 @@
 # 1222: Go billing run (`billing` job: trials, roll, invoices, apartments, dunning)
 
 Status: todo
-Depends on: 1221 (the `billingjob.Invoicer` code must be on the branch; it needs 1220 `go/internal/pdf` too) | Base commit: cdcaefc | Branch: task/1222-go-billing-run
+Depends on: 1221 (the `billingjob.Invoicer` code must be on the branch; it needs 1220 `go/internal/pdf` too) | Base commit: 9175e1cb | Branch: task/1221-go-billing-job
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective

@@ -1,7 +1,7 @@
 # 1221: Go billing invoicer `go/internal/billingjob` (issue, supplementary, storno, send)
 
 Status: todo
-Depends on: 1220 (the `go/internal/pdf` package must exist on the branch; brief 1222 builds on this one) | Base commit: 85c355d | Branch: task/1221-go-billing-job
+Depends on: 1220 (the `go/internal/pdf` package must exist on the branch; brief 1222 builds on this one) | Base commit: e667bbf | Branch: task/1221-go-billing-job
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
