@@ -80,13 +80,21 @@ UNKNOWN_RISK_MAX_OVERDUE = timedelta(days=7)
 RETRY_GRACE = timedelta(minutes=2 * max(1, config.SUBMIT_SWEEP_MINUTES))
 # 1171b: an open alert that means UbyHost could not send for this stay
 # (``r`` reservation): the police login refused, a batch that never reached
-# UbyPort, or a guest record that cannot be decrypted. The dedupe keys are
+# UbyPort, a guest record that cannot be decrypted, the property's sweep
+# crashed (the job heartbeat stays green, so the dead-man switch misses it),
+# the saved login fails validation (a rotated SECRET_KEY decrypts it to ""),
+# or a crash-interrupted batch whose outcome is unknown. The dedupe keys are
 # the ones reporting.py raises; the Go copy is watchdogSendFailedAlertSQL.
+# Hosts can dismiss these alerts, which pauses paging until the next sweep
+# raises them again.
 SEND_FAILED_ALERT_SQL = (
     "EXISTS (SELECT 1 FROM alert al WHERE al.resolved_at IS NULL AND al.dedupe_key IN ("
     "'ubyport_auth_failed:' || CAST(r.apartment_id AS TEXT), "
     "'submission_transport:' || CAST(r.apartment_id AS TEXT), "
     "'guest_record_unreadable:' || CAST(r.apartment_id AS TEXT), "
+    "'sweep_failed:' || CAST(r.apartment_id AS TEXT), "
+    "'apartment_setup:' || CAST(r.apartment_id AS TEXT), "
+    "'submission_outcome_unknown:' || CAST(r.apartment_id AS TEXT), "
     "'guest_record_unreadable:reservation:' || CAST(r.id AS TEXT)))"
 )
 

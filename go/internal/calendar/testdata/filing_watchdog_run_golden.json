@@ -3621,10 +3621,10 @@
     [
      9106,
      "warning",
-     "sweep_failed",
+     "door_code_failed",
      1,
-     null,
-     "sweep_failed:1",
+     201,
+     "door_code_failed:201",
      "x",
      "2026-09-01T00:00:00+00:00",
      null

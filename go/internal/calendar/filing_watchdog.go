@@ -33,12 +33,18 @@ const (
 )
 
 // watchdogSendFailedAlertSQL is SEND_FAILED_ALERT_SQL (1171b): an open alert
-// that means UbyHost could not send for the stay r. The dedupe keys are the
-// ones App/app/reporting.py and go/internal/ubyport raise.
+// that means UbyHost could not send for the stay r, including a crashed
+// property sweep, a login that fails validation and a crash-interrupted batch
+// with an unknown outcome. The dedupe keys are the ones App/app/reporting.py
+// and go/internal/ubyport raise. A host can dismiss these alerts, which pauses
+// paging until the next sweep raises them again.
 const watchdogSendFailedAlertSQL = `EXISTS (SELECT 1 FROM alert al WHERE al.resolved_at IS NULL AND al.dedupe_key IN (
 	'ubyport_auth_failed:' || CAST(r.apartment_id AS TEXT),
 	'submission_transport:' || CAST(r.apartment_id AS TEXT),
 	'guest_record_unreadable:' || CAST(r.apartment_id AS TEXT),
+	'sweep_failed:' || CAST(r.apartment_id AS TEXT),
+	'apartment_setup:' || CAST(r.apartment_id AS TEXT),
+	'submission_outcome_unknown:' || CAST(r.apartment_id AS TEXT),
 	'guest_record_unreadable:reservation:' || CAST(r.id AS TEXT)))`
 
 // watchdogAtRiskSQL is the unfiled guests with a nationality on watched stays.

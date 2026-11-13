@@ -378,7 +378,9 @@ func TestRunFilingWatchdogRefusesBadSweepMinutes(t *testing.T) {
 // with all other stays archived: a stay UbyHost never sent (201) gets the host
 // mail but no digest and the heartbeat stays green; a refused batch (229) or
 // an open ubyport_auth_failed alert on a fully configured property (244)
-// fails the heartbeat and goes in the digest.
+// fails the heartbeat and goes in the digest, and so does stay 201 once its
+// property has an open sweep_failed, apartment_setup or
+// submission_outcome_unknown alert (1171b fix 1).
 func TestRunFilingWatchdogPagesOnlyForFailedSends(t *testing.T) {
 	g := loadWatchdogRunGolden(t)
 	at, err := time.Parse(time.RFC3339, "2026-09-17T11:00:00+00:00")
@@ -388,13 +390,17 @@ func TestRunFilingWatchdogPagesOnlyForFailedSends(t *testing.T) {
 	cases := []struct {
 		name            string
 		stay            int64
+		alert           string
 		atRisk, notSent int
 		digest          int
 		ping            string
 	}{
-		{"never sent", 201, 0, 1, 0, "https://hc.example.test/ping/abc"},
-		{"refused batch", 229, 1, 0, 1, "https://hc.example.test/ping/abc/fail"},
-		{"login refused", 244, 1, 0, 1, "https://hc.example.test/ping/abc/fail"},
+		{"never sent", 201, "", 0, 1, 0, "https://hc.example.test/ping/abc"},
+		{"refused batch", 229, "", 1, 0, 1, "https://hc.example.test/ping/abc/fail"},
+		{"login refused", 244, "", 1, 0, 1, "https://hc.example.test/ping/abc/fail"},
+		{"sweep crashed", 201, "sweep_failed:1", 1, 0, 1, "https://hc.example.test/ping/abc/fail"},
+		{"login invalid", 201, "apartment_setup:1", 1, 0, 1, "https://hc.example.test/ping/abc/fail"},
+		{"outcome unknown", 201, "submission_outcome_unknown:1", 1, 0, 1, "https://hc.example.test/ping/abc/fail"},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -407,6 +413,14 @@ func TestRunFilingWatchdogPagesOnlyForFailedSends(t *testing.T) {
 			if _, err := pool.Exec(context.Background(),
 				`UPDATE reservation SET archived_at = '2026-09-16' WHERE id != $1`, c.stay); err != nil {
 				t.Fatal(err)
+			}
+			if c.alert != "" {
+				if _, err := pool.Exec(context.Background(),
+					`INSERT INTO alert (id, level, kind, apartment_id, dedupe_key, message, created_at)
+					VALUES (9201, 'critical', split_part($1, ':', 1), 1, $1, 'x', '2026-09-16T00:00:00+00:00')`,
+					c.alert); err != nil {
+					t.Fatal(err)
+				}
 			}
 			res, err := RunFilingWatchdog(context.Background(), pool, watchdogLookup(env), at)
 			if err != nil {

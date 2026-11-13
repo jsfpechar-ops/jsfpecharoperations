@@ -789,7 +789,7 @@ def test_a_stay_never_sent_mails_the_host_but_pages_nobody(world, pings, monkeyp
     rid = world["add_stay"]([("DEU", "pending")], arrival=date.today() - timedelta(days=10))
     # A resolved login alert and an unrelated open one do not count.
     _open_alert(world, f"ubyport_auth_failed:{world['apartment_id']}", resolved=True)
-    _open_alert(world, f"sweep_failed:{world['apartment_id']}")
+    _open_alert(world, f"door_code_failed:{rid}", reservation_id=rid)
     _only(monkeypatch, {rid})
     stay = _mine(filing_watchdog.at_risk_stays(), {rid})[rid]
     assert stay["send_failed"] is False
@@ -804,7 +804,11 @@ def test_a_stay_never_sent_mails_the_host_but_pages_nobody(world, pings, monkeyp
 
 
 @pytest.mark.parametrize(
-    "failure", ["refused", "auth", "transport", "unreadable_property", "unreadable_stay"]
+    "failure",
+    [
+        "refused", "auth", "transport", "unreadable_property", "unreadable_stay",
+        "sweep_failed", "apartment_setup", "outcome_unknown",
+    ],
 )
 def test_a_failed_send_on_a_configured_property_pages_and_is_in_the_digest(
     world, pings, monkeypatch, failure
@@ -820,6 +824,9 @@ def test_a_failed_send_on_a_configured_property_pages_and_is_in_the_digest(
             "transport": f"submission_transport:{apartment_id}",
             "unreadable_property": f"guest_record_unreadable:{apartment_id}",
             "unreadable_stay": f"guest_record_unreadable:reservation:{rid}",
+            "sweep_failed": f"sweep_failed:{apartment_id}",
+            "apartment_setup": f"apartment_setup:{apartment_id}",
+            "outcome_unknown": f"submission_outcome_unknown:{apartment_id}",
         }[failure]
         _open_alert(world, key, reservation_id=rid if failure == "unreadable_stay" else None)
     _only(monkeypatch, {rid})

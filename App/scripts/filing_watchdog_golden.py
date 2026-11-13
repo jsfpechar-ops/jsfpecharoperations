@@ -229,7 +229,8 @@ SEED = [
              "guest_record_unreadable:reservation:247", "x", STAMP, None],
             [9105, "critical", "ubyport_auth_failed", 1, None, "ubyport_auth_failed:1",
              "x", STAMP, "2026-09-16T00:00:00+00:00"],
-            [9106, "warning", "sweep_failed", 1, None, "sweep_failed:1", "x", STAMP, None],
+            [9106, "warning", "door_code_failed", 1, 201, "door_code_failed:201", "x", STAMP,
+             None],
         ],
     },
     {
