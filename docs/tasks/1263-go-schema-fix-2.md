@@ -1,6 +1,6 @@
 # 1263: Go schema fix 2 (goose twin parity test, no rebuild of a pulled Go image)
 
-Status: todo
+Status: review
 Depends on: PR #982 merged to main | Base commit: main after the PR #982 merge (patch made on 1fd70c01, the PR head) | Branch: task/1263-go-schema-fix-2
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Tier A (migrations, deploy).

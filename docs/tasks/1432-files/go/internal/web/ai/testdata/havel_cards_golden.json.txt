@@ -1,0 +1,1870 @@
+{
+ "cards": [
+  {
+   "name": "stay",
+   "action": {
+    "type": "create_stay",
+    "property_id": 11,
+    "date_from": "2026-12-01",
+    "date_to": "2026-12-04",
+    "guests": 2,
+    "guest_email": "guest@example.test",
+    "start_time": null,
+    "end_time": null,
+    "note": "late arrival"
+   },
+   "no_feeds": false,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "card": {
+    "type": "create_stay",
+    "title": "havel.card.title_stay",
+    "confirm": "havel.card.confirm_stay",
+    "action": "/reservations",
+    "hidden": {
+     "host_note": "late arrival"
+    },
+    "property": {
+     "id": 11,
+     "name": "Flat A",
+     "index": 1,
+     "row": {
+      "id": 11,
+      "internal_name": "Flat A",
+      "active": 1,
+      "archived_at": null,
+      "permalink_token": "tok",
+      "permalink_pin": "1234"
+     }
+    },
+    "date_from": "2026-12-01",
+    "date_to": "2026-12-04",
+    "nights": 3,
+    "guests": 2,
+    "guest_email": "guest@example.test",
+    "note": "late arrival",
+    "overlap": false,
+    "fields": [
+     {
+      "name": "apartment_id",
+      "label": [
+       "host",
+       "stays.add_panel.apartment"
+      ],
+      "type": "select",
+      "value": 11,
+      "options": [
+       [
+        11,
+        "Flat A"
+       ],
+       [
+        12,
+        "Chata"
+       ],
+       [
+        13,
+        "#13"
+       ]
+      ]
+     },
+     {
+      "name": "date_from",
+      "label": [
+       "host",
+       "stays.add_panel.arrival"
+      ],
+      "type": "date",
+      "value": "2026-12-01"
+     },
+     {
+      "name": "date_to",
+      "label": [
+       "host",
+       "stays.add_panel.departure"
+      ],
+      "type": "date",
+      "value": "2026-12-04"
+     },
+     {
+      "name": "expected_guests",
+      "label": [
+       "host",
+       "stays.add_panel.guests"
+      ],
+      "type": "number",
+      "value": 2,
+      "min": 1,
+      "max": 60
+     },
+     {
+      "name": "guest_email",
+      "label": [
+       "host",
+       "stays.add_panel.email"
+      ],
+      "type": "email",
+      "value": "guest@example.test"
+     }
+    ],
+    "facts": []
+   }
+  },
+  {
+   "name": "stay no extras",
+   "action": {
+    "type": "create_stay",
+    "property_id": 11,
+    "date_from": "2026-12-01",
+    "date_to": "2026-12-04",
+    "guests": null,
+    "guest_email": null,
+    "start_time": null,
+    "end_time": null,
+    "note": null
+   },
+   "no_feeds": false,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "card": {
+    "type": "create_stay",
+    "title": "havel.card.title_stay",
+    "confirm": "havel.card.confirm_stay",
+    "action": "/reservations",
+    "hidden": {
+     "host_note": ""
+    },
+    "property": {
+     "id": 11,
+     "name": "Flat A",
+     "index": 1,
+     "row": {
+      "id": 11,
+      "internal_name": "Flat A",
+      "active": 1,
+      "archived_at": null,
+      "permalink_token": "tok",
+      "permalink_pin": "1234"
+     }
+    },
+    "date_from": "2026-12-01",
+    "date_to": "2026-12-04",
+    "nights": 3,
+    "guests": null,
+    "guest_email": "",
+    "note": "",
+    "overlap": false,
+    "fields": [
+     {
+      "name": "apartment_id",
+      "label": [
+       "host",
+       "stays.add_panel.apartment"
+      ],
+      "type": "select",
+      "value": 11,
+      "options": [
+       [
+        11,
+        "Flat A"
+       ],
+       [
+        12,
+        "Chata"
+       ],
+       [
+        13,
+        "#13"
+       ]
+      ]
+     },
+     {
+      "name": "date_from",
+      "label": [
+       "host",
+       "stays.add_panel.arrival"
+      ],
+      "type": "date",
+      "value": "2026-12-01"
+     },
+     {
+      "name": "date_to",
+      "label": [
+       "host",
+       "stays.add_panel.departure"
+      ],
+      "type": "date",
+      "value": "2026-12-04"
+     },
+     {
+      "name": "expected_guests",
+      "label": [
+       "host",
+       "stays.add_panel.guests"
+      ],
+      "type": "number",
+      "value": "",
+      "min": 1,
+      "max": 60
+     },
+     {
+      "name": "guest_email",
+      "label": [
+       "host",
+       "stays.add_panel.email"
+      ],
+      "type": "email",
+      "value": ""
+     }
+    ],
+    "facts": []
+   }
+  },
+  {
+   "name": "stay bad email",
+   "action": {
+    "type": "create_stay",
+    "property_id": 11,
+    "date_from": "2026-12-01",
+    "date_to": "2026-12-04",
+    "guests": 2,
+    "guest_email": "nope",
+    "start_time": null,
+    "end_time": null,
+    "note": "late arrival"
+   },
+   "no_feeds": false,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "card": {
+    "type": "create_stay",
+    "title": "havel.card.title_stay",
+    "confirm": "havel.card.confirm_stay",
+    "action": "/reservations",
+    "hidden": {
+     "host_note": "late arrival"
+    },
+    "property": {
+     "id": 11,
+     "name": "Flat A",
+     "index": 1,
+     "row": {
+      "id": 11,
+      "internal_name": "Flat A",
+      "active": 1,
+      "archived_at": null,
+      "permalink_token": "tok",
+      "permalink_pin": "1234"
+     }
+    },
+    "date_from": "2026-12-01",
+    "date_to": "2026-12-04",
+    "nights": 3,
+    "guests": 2,
+    "guest_email": "",
+    "note": "late arrival",
+    "overlap": false,
+    "fields": [
+     {
+      "name": "apartment_id",
+      "label": [
+       "host",
+       "stays.add_panel.apartment"
+      ],
+      "type": "select",
+      "value": 11,
+      "options": [
+       [
+        11,
+        "Flat A"
+       ],
+       [
+        12,
+        "Chata"
+       ],
+       [
+        13,
+        "#13"
+       ]
+      ]
+     },
+     {
+      "name": "date_from",
+      "label": [
+       "host",
+       "stays.add_panel.arrival"
+      ],
+      "type": "date",
+      "value": "2026-12-01"
+     },
+     {
+      "name": "date_to",
+      "label": [
+       "host",
+       "stays.add_panel.departure"
+      ],
+      "type": "date",
+      "value": "2026-12-04"
+     },
+     {
+      "name": "expected_guests",
+      "label": [
+       "host",
+       "stays.add_panel.guests"
+      ],
+      "type": "number",
+      "value": 2,
+      "min": 1,
+      "max": 60
+     },
+     {
+      "name": "guest_email",
+      "label": [
+       "host",
+       "stays.add_panel.email"
+      ],
+      "type": "email",
+      "value": ""
+     }
+    ],
+    "facts": []
+   }
+  },
+  {
+   "name": "stay email spaces",
+   "action": {
+    "type": "create_stay",
+    "property_id": 11,
+    "date_from": "2026-12-01",
+    "date_to": "2026-12-04",
+    "guests": 2,
+    "guest_email": "  a@b.cz  ",
+    "start_time": null,
+    "end_time": null,
+    "note": "late arrival"
+   },
+   "no_feeds": false,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "card": {
+    "type": "create_stay",
+    "title": "havel.card.title_stay",
+    "confirm": "havel.card.confirm_stay",
+    "action": "/reservations",
+    "hidden": {
+     "host_note": "late arrival"
+    },
+    "property": {
+     "id": 11,
+     "name": "Flat A",
+     "index": 1,
+     "row": {
+      "id": 11,
+      "internal_name": "Flat A",
+      "active": 1,
+      "archived_at": null,
+      "permalink_token": "tok",
+      "permalink_pin": "1234"
+     }
+    },
+    "date_from": "2026-12-01",
+    "date_to": "2026-12-04",
+    "nights": 3,
+    "guests": 2,
+    "guest_email": "a@b.cz",
+    "note": "late arrival",
+    "overlap": false,
+    "fields": [
+     {
+      "name": "apartment_id",
+      "label": [
+       "host",
+       "stays.add_panel.apartment"
+      ],
+      "type": "select",
+      "value": 11,
+      "options": [
+       [
+        11,
+        "Flat A"
+       ],
+       [
+        12,
+        "Chata"
+       ],
+       [
+        13,
+        "#13"
+       ]
+      ]
+     },
+     {
+      "name": "date_from",
+      "label": [
+       "host",
+       "stays.add_panel.arrival"
+      ],
+      "type": "date",
+      "value": "2026-12-01"
+     },
+     {
+      "name": "date_to",
+      "label": [
+       "host",
+       "stays.add_panel.departure"
+      ],
+      "type": "date",
+      "value": "2026-12-04"
+     },
+     {
+      "name": "expected_guests",
+      "label": [
+       "host",
+       "stays.add_panel.guests"
+      ],
+      "type": "number",
+      "value": 2,
+      "min": 1,
+      "max": 60
+     },
+     {
+      "name": "guest_email",
+      "label": [
+       "host",
+       "stays.add_panel.email"
+      ],
+      "type": "email",
+      "value": "a@b.cz"
+     }
+    ],
+    "facts": []
+   }
+  },
+  {
+   "name": "stay overlap",
+   "action": {
+    "type": "create_stay",
+    "property_id": 12,
+    "date_from": "2026-12-01",
+    "date_to": "2026-12-04",
+    "guests": 2,
+    "guest_email": "guest@example.test",
+    "start_time": null,
+    "end_time": null,
+    "note": "late arrival"
+   },
+   "no_feeds": false,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "card": {
+    "type": "create_stay",
+    "title": "havel.card.title_stay",
+    "confirm": "havel.card.confirm_stay",
+    "action": "/reservations",
+    "hidden": {
+     "host_note": "late arrival"
+    },
+    "property": {
+     "id": 12,
+     "name": "Chata",
+     "index": 2,
+     "row": {
+      "id": 12,
+      "internal_name": "Chata",
+      "active": 1,
+      "archived_at": null,
+      "permalink_token": "tok",
+      "permalink_pin": null
+     }
+    },
+    "date_from": "2026-12-01",
+    "date_to": "2026-12-04",
+    "nights": 3,
+    "guests": 2,
+    "guest_email": "guest@example.test",
+    "note": "late arrival",
+    "overlap": true,
+    "fields": [
+     {
+      "name": "apartment_id",
+      "label": [
+       "host",
+       "stays.add_panel.apartment"
+      ],
+      "type": "select",
+      "value": 12,
+      "options": [
+       [
+        11,
+        "Flat A"
+       ],
+       [
+        12,
+        "Chata"
+       ],
+       [
+        13,
+        "#13"
+       ]
+      ]
+     },
+     {
+      "name": "date_from",
+      "label": [
+       "host",
+       "stays.add_panel.arrival"
+      ],
+      "type": "date",
+      "value": "2026-12-01"
+     },
+     {
+      "name": "date_to",
+      "label": [
+       "host",
+       "stays.add_panel.departure"
+      ],
+      "type": "date",
+      "value": "2026-12-04"
+     },
+     {
+      "name": "expected_guests",
+      "label": [
+       "host",
+       "stays.add_panel.guests"
+      ],
+      "type": "number",
+      "value": 2,
+      "min": 1,
+      "max": 60
+     },
+     {
+      "name": "guest_email",
+      "label": [
+       "host",
+       "stays.add_panel.email"
+      ],
+      "type": "email",
+      "value": "guest@example.test"
+     }
+    ],
+    "facts": []
+   }
+  },
+  {
+   "name": "stay long note",
+   "action": {
+    "type": "create_stay",
+    "property_id": 11,
+    "date_from": "2026-12-01",
+    "date_to": "2026-12-04",
+    "guests": 2,
+    "guest_email": "guest@example.test",
+    "start_time": null,
+    "end_time": null,
+    "note": "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
+   },
+   "no_feeds": false,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "card": {
+    "type": "create_stay",
+    "title": "havel.card.title_stay",
+    "confirm": "havel.card.confirm_stay",
+    "action": "/reservations",
+    "hidden": {
+     "host_note": "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
+    },
+    "property": {
+     "id": 11,
+     "name": "Flat A",
+     "index": 1,
+     "row": {
+      "id": 11,
+      "internal_name": "Flat A",
+      "active": 1,
+      "archived_at": null,
+      "permalink_token": "tok",
+      "permalink_pin": "1234"
+     }
+    },
+    "date_from": "2026-12-01",
+    "date_to": "2026-12-04",
+    "nights": 3,
+    "guests": 2,
+    "guest_email": "guest@example.test",
+    "note": "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
+    "overlap": false,
+    "fields": [
+     {
+      "name": "apartment_id",
+      "label": [
+       "host",
+       "stays.add_panel.apartment"
+      ],
+      "type": "select",
+      "value": 11,
+      "options": [
+       [
+        11,
+        "Flat A"
+       ],
+       [
+        12,
+        "Chata"
+       ],
+       [
+        13,
+        "#13"
+       ]
+      ]
+     },
+     {
+      "name": "date_from",
+      "label": [
+       "host",
+       "stays.add_panel.arrival"
+      ],
+      "type": "date",
+      "value": "2026-12-01"
+     },
+     {
+      "name": "date_to",
+      "label": [
+       "host",
+       "stays.add_panel.departure"
+      ],
+      "type": "date",
+      "value": "2026-12-04"
+     },
+     {
+      "name": "expected_guests",
+      "label": [
+       "host",
+       "stays.add_panel.guests"
+      ],
+      "type": "number",
+      "value": 2,
+      "min": 1,
+      "max": 60
+     },
+     {
+      "name": "guest_email",
+      "label": [
+       "host",
+       "stays.add_panel.email"
+      ],
+      "type": "email",
+      "value": "guest@example.test"
+     }
+    ],
+    "facts": []
+   }
+  },
+  {
+   "name": "stay 366 nights",
+   "action": {
+    "type": "create_stay",
+    "property_id": 11,
+    "date_from": "2026-12-01",
+    "date_to": "2027-12-02",
+    "guests": 2,
+    "guest_email": "guest@example.test",
+    "start_time": null,
+    "end_time": null,
+    "note": "late arrival"
+   },
+   "no_feeds": false,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "not_prepared": "dates"
+  },
+  {
+   "name": "stay 365 nights",
+   "action": {
+    "type": "create_stay",
+    "property_id": 11,
+    "date_from": "2026-12-01",
+    "date_to": "2027-12-01",
+    "guests": 2,
+    "guest_email": "guest@example.test",
+    "start_time": null,
+    "end_time": null,
+    "note": "late arrival"
+   },
+   "no_feeds": false,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "card": {
+    "type": "create_stay",
+    "title": "havel.card.title_stay",
+    "confirm": "havel.card.confirm_stay",
+    "action": "/reservations",
+    "hidden": {
+     "host_note": "late arrival"
+    },
+    "property": {
+     "id": 11,
+     "name": "Flat A",
+     "index": 1,
+     "row": {
+      "id": 11,
+      "internal_name": "Flat A",
+      "active": 1,
+      "archived_at": null,
+      "permalink_token": "tok",
+      "permalink_pin": "1234"
+     }
+    },
+    "date_from": "2026-12-01",
+    "date_to": "2027-12-01",
+    "nights": 365,
+    "guests": 2,
+    "guest_email": "guest@example.test",
+    "note": "late arrival",
+    "overlap": false,
+    "fields": [
+     {
+      "name": "apartment_id",
+      "label": [
+       "host",
+       "stays.add_panel.apartment"
+      ],
+      "type": "select",
+      "value": 11,
+      "options": [
+       [
+        11,
+        "Flat A"
+       ],
+       [
+        12,
+        "Chata"
+       ],
+       [
+        13,
+        "#13"
+       ]
+      ]
+     },
+     {
+      "name": "date_from",
+      "label": [
+       "host",
+       "stays.add_panel.arrival"
+      ],
+      "type": "date",
+      "value": "2026-12-01"
+     },
+     {
+      "name": "date_to",
+      "label": [
+       "host",
+       "stays.add_panel.departure"
+      ],
+      "type": "date",
+      "value": "2027-12-01"
+     },
+     {
+      "name": "expected_guests",
+      "label": [
+       "host",
+       "stays.add_panel.guests"
+      ],
+      "type": "number",
+      "value": 2,
+      "min": 1,
+      "max": 60
+     },
+     {
+      "name": "guest_email",
+      "label": [
+       "host",
+       "stays.add_panel.email"
+      ],
+      "type": "email",
+      "value": "guest@example.test"
+     }
+    ],
+    "facts": []
+   }
+  },
+  {
+   "name": "stay end before start",
+   "action": {
+    "type": "create_stay",
+    "property_id": 11,
+    "date_from": "2026-12-01",
+    "date_to": "2026-12-01",
+    "guests": 2,
+    "guest_email": "guest@example.test",
+    "start_time": null,
+    "end_time": null,
+    "note": "late arrival"
+   },
+   "no_feeds": false,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "not_prepared": "dates"
+  },
+  {
+   "name": "stay past window",
+   "action": {
+    "type": "create_stay",
+    "property_id": 11,
+    "date_from": "2025-11-12",
+    "date_to": "2025-11-14",
+    "guests": 2,
+    "guest_email": "guest@example.test",
+    "start_time": null,
+    "end_time": null,
+    "note": "late arrival"
+   },
+   "no_feeds": false,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "not_prepared": "dates"
+  },
+  {
+   "name": "stay last past day",
+   "action": {
+    "type": "create_stay",
+    "property_id": 11,
+    "date_from": "2025-11-13",
+    "date_to": "2025-11-14",
+    "guests": 2,
+    "guest_email": "guest@example.test",
+    "start_time": null,
+    "end_time": null,
+    "note": "late arrival"
+   },
+   "no_feeds": false,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "card": {
+    "type": "create_stay",
+    "title": "havel.card.title_stay",
+    "confirm": "havel.card.confirm_stay",
+    "action": "/reservations",
+    "hidden": {
+     "host_note": "late arrival"
+    },
+    "property": {
+     "id": 11,
+     "name": "Flat A",
+     "index": 1,
+     "row": {
+      "id": 11,
+      "internal_name": "Flat A",
+      "active": 1,
+      "archived_at": null,
+      "permalink_token": "tok",
+      "permalink_pin": "1234"
+     }
+    },
+    "date_from": "2025-11-13",
+    "date_to": "2025-11-14",
+    "nights": 1,
+    "guests": 2,
+    "guest_email": "guest@example.test",
+    "note": "late arrival",
+    "overlap": false,
+    "fields": [
+     {
+      "name": "apartment_id",
+      "label": [
+       "host",
+       "stays.add_panel.apartment"
+      ],
+      "type": "select",
+      "value": 11,
+      "options": [
+       [
+        11,
+        "Flat A"
+       ],
+       [
+        12,
+        "Chata"
+       ],
+       [
+        13,
+        "#13"
+       ]
+      ]
+     },
+     {
+      "name": "date_from",
+      "label": [
+       "host",
+       "stays.add_panel.arrival"
+      ],
+      "type": "date",
+      "value": "2025-11-13"
+     },
+     {
+      "name": "date_to",
+      "label": [
+       "host",
+       "stays.add_panel.departure"
+      ],
+      "type": "date",
+      "value": "2025-11-14"
+     },
+     {
+      "name": "expected_guests",
+      "label": [
+       "host",
+       "stays.add_panel.guests"
+      ],
+      "type": "number",
+      "value": 2,
+      "min": 1,
+      "max": 60
+     },
+     {
+      "name": "guest_email",
+      "label": [
+       "host",
+       "stays.add_panel.email"
+      ],
+      "type": "email",
+      "value": "guest@example.test"
+     }
+    ],
+    "facts": []
+   }
+  },
+  {
+   "name": "stay far future",
+   "action": {
+    "type": "create_stay",
+    "property_id": 11,
+    "date_from": "2028-11-14",
+    "date_to": "2028-11-16",
+    "guests": 2,
+    "guest_email": "guest@example.test",
+    "start_time": null,
+    "end_time": null,
+    "note": "late arrival"
+   },
+   "no_feeds": false,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "not_prepared": "dates"
+  },
+  {
+   "name": "stay last future day",
+   "action": {
+    "type": "create_stay",
+    "property_id": 11,
+    "date_from": "2028-11-12",
+    "date_to": "2028-11-14",
+    "guests": 2,
+    "guest_email": "guest@example.test",
+    "start_time": null,
+    "end_time": null,
+    "note": "late arrival"
+   },
+   "no_feeds": false,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "card": {
+    "type": "create_stay",
+    "title": "havel.card.title_stay",
+    "confirm": "havel.card.confirm_stay",
+    "action": "/reservations",
+    "hidden": {
+     "host_note": "late arrival"
+    },
+    "property": {
+     "id": 11,
+     "name": "Flat A",
+     "index": 1,
+     "row": {
+      "id": 11,
+      "internal_name": "Flat A",
+      "active": 1,
+      "archived_at": null,
+      "permalink_token": "tok",
+      "permalink_pin": "1234"
+     }
+    },
+    "date_from": "2028-11-12",
+    "date_to": "2028-11-14",
+    "nights": 2,
+    "guests": 2,
+    "guest_email": "guest@example.test",
+    "note": "late arrival",
+    "overlap": false,
+    "fields": [
+     {
+      "name": "apartment_id",
+      "label": [
+       "host",
+       "stays.add_panel.apartment"
+      ],
+      "type": "select",
+      "value": 11,
+      "options": [
+       [
+        11,
+        "Flat A"
+       ],
+       [
+        12,
+        "Chata"
+       ],
+       [
+        13,
+        "#13"
+       ]
+      ]
+     },
+     {
+      "name": "date_from",
+      "label": [
+       "host",
+       "stays.add_panel.arrival"
+      ],
+      "type": "date",
+      "value": "2028-11-12"
+     },
+     {
+      "name": "date_to",
+      "label": [
+       "host",
+       "stays.add_panel.departure"
+      ],
+      "type": "date",
+      "value": "2028-11-14"
+     },
+     {
+      "name": "expected_guests",
+      "label": [
+       "host",
+       "stays.add_panel.guests"
+      ],
+      "type": "number",
+      "value": 2,
+      "min": 1,
+      "max": 60
+     },
+     {
+      "name": "guest_email",
+      "label": [
+       "host",
+       "stays.add_panel.email"
+      ],
+      "type": "email",
+      "value": "guest@example.test"
+     }
+    ],
+    "facts": []
+   }
+  },
+  {
+   "name": "stay no date",
+   "action": {
+    "type": "create_stay",
+    "property_id": 11,
+    "date_from": null,
+    "date_to": "2026-12-04",
+    "guests": 2,
+    "guest_email": "guest@example.test",
+    "start_time": null,
+    "end_time": null,
+    "note": "late arrival"
+   },
+   "no_feeds": false,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "not_prepared": "dates"
+  },
+  {
+   "name": "stay bad date",
+   "action": {
+    "type": "create_stay",
+    "property_id": 11,
+    "date_from": "2026-13-01",
+    "date_to": "2026-12-04",
+    "guests": 2,
+    "guest_email": "guest@example.test",
+    "start_time": null,
+    "end_time": null,
+    "note": "late arrival"
+   },
+   "no_feeds": false,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "not_prepared": "dates"
+  },
+  {
+   "name": "stay newline date",
+   "action": {
+    "type": "create_stay",
+    "property_id": 11,
+    "date_from": "2026-12-01\n",
+    "date_to": "2026-12-04",
+    "guests": 2,
+    "guest_email": "guest@example.test",
+    "start_time": null,
+    "end_time": null,
+    "note": "late arrival"
+   },
+   "no_feeds": false,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "not_prepared": "dates"
+  },
+  {
+   "name": "stay guests 61",
+   "action": {
+    "type": "create_stay",
+    "property_id": 11,
+    "date_from": "2026-12-01",
+    "date_to": "2026-12-04",
+    "guests": 61,
+    "guest_email": "guest@example.test",
+    "start_time": null,
+    "end_time": null,
+    "note": "late arrival"
+   },
+   "no_feeds": false,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "not_prepared": "dates"
+  },
+  {
+   "name": "stay guests 60",
+   "action": {
+    "type": "create_stay",
+    "property_id": 11,
+    "date_from": "2026-12-01",
+    "date_to": "2026-12-04",
+    "guests": 60,
+    "guest_email": "guest@example.test",
+    "start_time": null,
+    "end_time": null,
+    "note": "late arrival"
+   },
+   "no_feeds": false,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "card": {
+    "type": "create_stay",
+    "title": "havel.card.title_stay",
+    "confirm": "havel.card.confirm_stay",
+    "action": "/reservations",
+    "hidden": {
+     "host_note": "late arrival"
+    },
+    "property": {
+     "id": 11,
+     "name": "Flat A",
+     "index": 1,
+     "row": {
+      "id": 11,
+      "internal_name": "Flat A",
+      "active": 1,
+      "archived_at": null,
+      "permalink_token": "tok",
+      "permalink_pin": "1234"
+     }
+    },
+    "date_from": "2026-12-01",
+    "date_to": "2026-12-04",
+    "nights": 3,
+    "guests": 60,
+    "guest_email": "guest@example.test",
+    "note": "late arrival",
+    "overlap": false,
+    "fields": [
+     {
+      "name": "apartment_id",
+      "label": [
+       "host",
+       "stays.add_panel.apartment"
+      ],
+      "type": "select",
+      "value": 11,
+      "options": [
+       [
+        11,
+        "Flat A"
+       ],
+       [
+        12,
+        "Chata"
+       ],
+       [
+        13,
+        "#13"
+       ]
+      ]
+     },
+     {
+      "name": "date_from",
+      "label": [
+       "host",
+       "stays.add_panel.arrival"
+      ],
+      "type": "date",
+      "value": "2026-12-01"
+     },
+     {
+      "name": "date_to",
+      "label": [
+       "host",
+       "stays.add_panel.departure"
+      ],
+      "type": "date",
+      "value": "2026-12-04"
+     },
+     {
+      "name": "expected_guests",
+      "label": [
+       "host",
+       "stays.add_panel.guests"
+      ],
+      "type": "number",
+      "value": 60,
+      "min": 1,
+      "max": 60
+     },
+     {
+      "name": "guest_email",
+      "label": [
+       "host",
+       "stays.add_panel.email"
+      ],
+      "type": "email",
+      "value": "guest@example.test"
+     }
+    ],
+    "facts": []
+   }
+  },
+  {
+   "name": "stay closed property",
+   "action": {
+    "type": "create_stay",
+    "property_id": 14,
+    "date_from": "2026-12-01",
+    "date_to": "2026-12-04",
+    "guests": 2,
+    "guest_email": "guest@example.test",
+    "start_time": null,
+    "end_time": null,
+    "note": "late arrival"
+   },
+   "no_feeds": false,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "not_prepared": "archived"
+  },
+  {
+   "name": "stay archived property is not in the list",
+   "action": {
+    "type": "create_stay",
+    "property_id": 15,
+    "date_from": "2026-12-01",
+    "date_to": "2026-12-04",
+    "guests": 2,
+    "guest_email": "guest@example.test",
+    "start_time": null,
+    "end_time": null,
+    "note": "late arrival"
+   },
+   "no_feeds": false,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "not_prepared": "property"
+  },
+  {
+   "name": "stay unknown property",
+   "action": {
+    "type": "create_stay",
+    "property_id": 99,
+    "date_from": "2026-12-01",
+    "date_to": "2026-12-04",
+    "guests": 2,
+    "guest_email": "guest@example.test",
+    "start_time": null,
+    "end_time": null,
+    "note": "late arrival"
+   },
+   "no_feeds": false,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "not_prepared": "property"
+  },
+  {
+   "name": "stay no property",
+   "action": {
+    "type": "create_stay",
+    "property_id": null,
+    "date_from": "2026-12-01",
+    "date_to": "2026-12-04",
+    "guests": 2,
+    "guest_email": "guest@example.test",
+    "start_time": null,
+    "end_time": null,
+    "note": "late arrival"
+   },
+   "no_feeds": false,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "not_prepared": "property"
+  },
+  {
+   "name": "cleaning",
+   "action": {
+    "type": "create_cleaning",
+    "property_id": 11,
+    "date_from": "2026-12-01",
+    "date_to": null,
+    "guests": null,
+    "guest_email": null,
+    "start_time": "10:00",
+    "end_time": "12:30",
+    "note": "windows"
+   },
+   "no_feeds": false,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "card": {
+    "type": "create_cleaning",
+    "title": "havel.card.title_cleaning",
+    "confirm": "havel.card.confirm_cleaning",
+    "action": "/cleaning/events",
+    "hidden": {
+     "apartment_id": 11
+    },
+    "property": {
+     "id": 11,
+     "name": "Flat A",
+     "index": 1,
+     "row": {
+      "id": 11,
+      "internal_name": "Flat A",
+      "active": 1,
+      "archived_at": null,
+      "permalink_token": "tok",
+      "permalink_pin": "1234"
+     }
+    },
+    "date_from": "2026-12-01",
+    "start_time": "10:00",
+    "end_time": "12:30",
+    "note": "windows",
+    "fields": [
+     {
+      "name": "scheduled_date",
+      "label": [
+       "cleaning",
+       "date"
+      ],
+      "type": "date",
+      "value": "2026-12-01"
+     },
+     {
+      "name": "start_time",
+      "label": [
+       "cleaning",
+       "start"
+      ],
+      "type": "time",
+      "value": "10:00"
+     },
+     {
+      "name": "end_time",
+      "label": [
+       "cleaning",
+       "end"
+      ],
+      "type": "time",
+      "value": "12:30"
+     },
+     {
+      "name": "notes",
+      "label": [
+       "cleaning",
+       "notes"
+      ],
+      "type": "text",
+      "value": "windows"
+     }
+    ],
+    "facts": []
+   }
+  },
+  {
+   "name": "cleaning no times",
+   "action": {
+    "type": "create_cleaning",
+    "property_id": 11,
+    "date_from": "2026-12-01",
+    "date_to": null,
+    "guests": null,
+    "guest_email": null,
+    "start_time": null,
+    "end_time": null,
+    "note": "late arrival"
+   },
+   "no_feeds": false,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "card": {
+    "type": "create_cleaning",
+    "title": "havel.card.title_cleaning",
+    "confirm": "havel.card.confirm_cleaning",
+    "action": "/cleaning/events",
+    "hidden": {
+     "apartment_id": 11
+    },
+    "property": {
+     "id": 11,
+     "name": "Flat A",
+     "index": 1,
+     "row": {
+      "id": 11,
+      "internal_name": "Flat A",
+      "active": 1,
+      "archived_at": null,
+      "permalink_token": "tok",
+      "permalink_pin": "1234"
+     }
+    },
+    "date_from": "2026-12-01",
+    "start_time": "",
+    "end_time": "",
+    "note": "late arrival",
+    "fields": [
+     {
+      "name": "scheduled_date",
+      "label": [
+       "cleaning",
+       "date"
+      ],
+      "type": "date",
+      "value": "2026-12-01"
+     },
+     {
+      "name": "start_time",
+      "label": [
+       "cleaning",
+       "start"
+      ],
+      "type": "time",
+      "value": ""
+     },
+     {
+      "name": "end_time",
+      "label": [
+       "cleaning",
+       "end"
+      ],
+      "type": "time",
+      "value": ""
+     },
+     {
+      "name": "notes",
+      "label": [
+       "cleaning",
+       "notes"
+      ],
+      "type": "text",
+      "value": "late arrival"
+     }
+    ],
+    "facts": []
+   }
+  },
+  {
+   "name": "cleaning bad time",
+   "action": {
+    "type": "create_cleaning",
+    "property_id": 11,
+    "date_from": "2026-12-01",
+    "date_to": "2026-12-04",
+    "guests": 2,
+    "guest_email": "guest@example.test",
+    "start_time": "25:00",
+    "end_time": null,
+    "note": "late arrival"
+   },
+   "no_feeds": false,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "not_prepared": "dates"
+  },
+  {
+   "name": "cleaning end before start",
+   "action": {
+    "type": "create_cleaning",
+    "property_id": 11,
+    "date_from": "2026-12-01",
+    "date_to": "2026-12-04",
+    "guests": 2,
+    "guest_email": "guest@example.test",
+    "start_time": "12:00",
+    "end_time": "11:00",
+    "note": "late arrival"
+   },
+   "no_feeds": false,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "not_prepared": "dates"
+  },
+  {
+   "name": "cleaning newline time",
+   "action": {
+    "type": "create_cleaning",
+    "property_id": 11,
+    "date_from": "2026-12-01",
+    "date_to": "2026-12-04",
+    "guests": 2,
+    "guest_email": "guest@example.test",
+    "start_time": "10:00\n",
+    "end_time": "11:00",
+    "note": "late arrival"
+   },
+   "no_feeds": false,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "card": {
+    "type": "create_cleaning",
+    "title": "havel.card.title_cleaning",
+    "confirm": "havel.card.confirm_cleaning",
+    "action": "/cleaning/events",
+    "hidden": {
+     "apartment_id": 11
+    },
+    "property": {
+     "id": 11,
+     "name": "Flat A",
+     "index": 1,
+     "row": {
+      "id": 11,
+      "internal_name": "Flat A",
+      "active": 1,
+      "archived_at": null,
+      "permalink_token": "tok",
+      "permalink_pin": "1234"
+     }
+    },
+    "date_from": "2026-12-01",
+    "start_time": "10:00\n",
+    "end_time": "11:00",
+    "note": "late arrival",
+    "fields": [
+     {
+      "name": "scheduled_date",
+      "label": [
+       "cleaning",
+       "date"
+      ],
+      "type": "date",
+      "value": "2026-12-01"
+     },
+     {
+      "name": "start_time",
+      "label": [
+       "cleaning",
+       "start"
+      ],
+      "type": "time",
+      "value": "10:00\n"
+     },
+     {
+      "name": "end_time",
+      "label": [
+       "cleaning",
+       "end"
+      ],
+      "type": "time",
+      "value": "11:00"
+     },
+     {
+      "name": "notes",
+      "label": [
+       "cleaning",
+       "notes"
+      ],
+      "type": "text",
+      "value": "late arrival"
+     }
+    ],
+    "facts": []
+   }
+  },
+  {
+   "name": "cleaning equal times",
+   "action": {
+    "type": "create_cleaning",
+    "property_id": 11,
+    "date_from": "2026-12-01",
+    "date_to": "2026-12-04",
+    "guests": 2,
+    "guest_email": "guest@example.test",
+    "start_time": "10:00",
+    "end_time": "10:00",
+    "note": "late arrival"
+   },
+   "no_feeds": false,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "not_prepared": "dates"
+  },
+  {
+   "name": "link",
+   "action": {
+    "type": "show_guest_link",
+    "property_id": 11,
+    "date_from": "2026-12-01",
+    "date_to": "2026-12-04",
+    "guests": 2,
+    "guest_email": "guest@example.test",
+    "start_time": null,
+    "end_time": null,
+    "note": "late arrival"
+   },
+   "no_feeds": false,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "card": {
+    "type": "show_guest_link",
+    "title": "havel.card.title_link",
+    "property": {
+     "id": 11,
+     "name": "Flat A",
+     "index": 1,
+     "row": {
+      "id": 11,
+      "internal_name": "Flat A",
+      "active": 1,
+      "archived_at": null,
+      "permalink_token": "tok",
+      "permalink_pin": "1234"
+     }
+    },
+    "link": "https://app.example.test/l/slug-11",
+    "pin": "1234",
+    "guests_url": "/apartments/11?view=settings&section=guests#communication"
+   }
+  },
+  {
+   "name": "link no pin",
+   "action": {
+    "type": "show_guest_link",
+    "property_id": 12,
+    "date_from": "2026-12-01",
+    "date_to": "2026-12-04",
+    "guests": 2,
+    "guest_email": "guest@example.test",
+    "start_time": null,
+    "end_time": null,
+    "note": "late arrival"
+   },
+   "no_feeds": false,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "card": {
+    "type": "show_guest_link",
+    "title": "havel.card.title_link",
+    "property": {
+     "id": 12,
+     "name": "Chata",
+     "index": 2,
+     "row": {
+      "id": 12,
+      "internal_name": "Chata",
+      "active": 1,
+      "archived_at": null,
+      "permalink_token": "tok",
+      "permalink_pin": null
+     }
+    },
+    "link": "https://app.example.test/l/slug-12",
+    "pin": "",
+    "guests_url": "/apartments/12?view=settings&section=guests#communication"
+   }
+  },
+  {
+   "name": "link no token",
+   "action": {
+    "type": "show_guest_link",
+    "property_id": 13,
+    "date_from": "2026-12-01",
+    "date_to": "2026-12-04",
+    "guests": 2,
+    "guest_email": "guest@example.test",
+    "start_time": null,
+    "end_time": null,
+    "note": "late arrival"
+   },
+   "no_feeds": false,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "not_prepared": "no_link"
+  },
+  {
+   "name": "pin",
+   "action": {
+    "type": "new_pin",
+    "property_id": 11,
+    "date_from": "2026-12-01",
+    "date_to": "2026-12-04",
+    "guests": 2,
+    "guest_email": "guest@example.test",
+    "start_time": null,
+    "end_time": null,
+    "note": "late arrival"
+   },
+   "no_feeds": false,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "card": {
+    "type": "new_pin",
+    "title": "havel.card.title_pin",
+    "confirm": "havel.card.confirm_pin",
+    "danger": true,
+    "action": "/apartments/11/regenerate-pin",
+    "hidden": {},
+    "fields": [],
+    "facts": [],
+    "warning": "havel.card.pin_warning",
+    "property": {
+     "id": 11,
+     "name": "Flat A",
+     "index": 1,
+     "row": {
+      "id": 11,
+      "internal_name": "Flat A",
+      "active": 1,
+      "archived_at": null,
+      "permalink_token": "tok",
+      "permalink_pin": "1234"
+     }
+    }
+   }
+  },
+  {
+   "name": "pin closed",
+   "action": {
+    "type": "new_pin",
+    "property_id": 14,
+    "date_from": "2026-12-01",
+    "date_to": "2026-12-04",
+    "guests": 2,
+    "guest_email": "guest@example.test",
+    "start_time": null,
+    "end_time": null,
+    "note": "late arrival"
+   },
+   "no_feeds": false,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "not_prepared": "archived"
+  },
+  {
+   "name": "sync",
+   "action": {
+    "type": "sync_calendars",
+    "property_id": 11,
+    "date_from": "2026-12-01",
+    "date_to": "2026-12-04",
+    "guests": 2,
+    "guest_email": "guest@example.test",
+    "start_time": null,
+    "end_time": null,
+    "note": "late arrival"
+   },
+   "no_feeds": false,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "card": {
+    "type": "sync_calendars",
+    "title": "havel.card.title_sync",
+    "confirm": "havel.card.confirm_sync",
+    "action": "/sync",
+    "hidden": {
+     "return_to": "/havel?x=1"
+    },
+    "fields": [],
+    "facts": [],
+    "property": null
+   }
+  },
+  {
+   "name": "sync no feeds",
+   "action": {
+    "type": "sync_calendars",
+    "property_id": 11,
+    "date_from": "2026-12-01",
+    "date_to": "2026-12-04",
+    "guests": 2,
+    "guest_email": "guest@example.test",
+    "start_time": null,
+    "end_time": null,
+    "note": "late arrival"
+   },
+   "no_feeds": true,
+   "today": "2026-11-13",
+   "return_to": "/havel?x=1",
+   "not_prepared": "no_calendar"
+  }
+ ],
+ "mails": [
+  {
+   "in": {
+    "account_email": "host@example.test",
+    "workspace": "Anna's flats",
+    "lang": "cs",
+    "page": "stays",
+    "summary": "Cannot find <the> button",
+    "note": "please & thanks",
+    "turns": [
+     "first q",
+     "second q"
+    ]
+   },
+   "subject": "Havel (AI) support request: Anna's flats",
+   "text": "Havel (AI) could not help this host. Reply to the account e-mail below.\n\nAccount e-mail: host@example.test\nWorkspace: Anna's flats\nLanguage: cs\nPage: stays\nSummary: Cannot find <the> button\nHost's note: please & thanks\nHost message 1: first q\nHost message 2: second q\n\n--\nUbyHost\nQuestions: support@example.test",
+   "html": "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<meta name=\"color-scheme\" content=\"light only\">\n<title>A host asked for help</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f7f7f5;\">\n<div style=\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\">Havel (AI) could not help this host. Reply to the account e-mail below. ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f7f7f5;border-collapse:collapse;\">\n<tr><td align=\"center\" style=\"padding:28px 12px;\">\n<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\">\n<tr><td style=\"padding:28px 24px 0 24px;\">\n<img src=\"https://app.example.test/static/ubyhost-logo.jpg\" width=\"180\" alt=\"UbyHost\" style=\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\">\n</td></tr>\n<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">A host asked for help</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Havel (AI) could not help this host. Reply to the account e-mail below.</p></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">Account e-mail</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">host@example.test</div></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">Workspace</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">Anna&#x27;s flats</div></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">Language</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">cs</div></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">Page</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">stays</div></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">Summary</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">Cannot find &lt;the&gt; button</div></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">Host&#x27;s note</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">please &amp; thanks</div></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">Host message 1</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">first q</div></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">Host message 2</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">second q</div></td></tr>\n<tr><td style=\"padding:28px 24px 28px 24px;\">\n<div style=\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">\n<div>UbyHost</div><div style=\"padding:4px 0 0 0;\">Questions: support@example.test</div>\n</div>\n</td></tr>\n</table>\n</td></tr>\n</table>\n</body>\n</html>\n"
+  },
+  {
+   "in": {
+    "account_email": "host@example.test",
+    "workspace": "",
+    "lang": "en",
+    "page": "",
+    "summary": "",
+    "note": "",
+    "turns": []
+   },
+   "subject": "Havel (AI) support request: host@example.test",
+   "text": "Havel (AI) could not help this host. Reply to the account e-mail below.\n\nAccount e-mail: host@example.test\nWorkspace: -\nLanguage: en\nPage: -\nSummary: -\nHost's note: -\n\n--\nUbyHost\nQuestions: support@example.test",
+   "html": "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<meta name=\"color-scheme\" content=\"light only\">\n<title>A host asked for help</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f7f7f5;\">\n<div style=\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\">Havel (AI) could not help this host. Reply to the account e-mail below. ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f7f7f5;border-collapse:collapse;\">\n<tr><td align=\"center\" style=\"padding:28px 12px;\">\n<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\">\n<tr><td style=\"padding:28px 24px 0 24px;\">\n<img src=\"https://app.example.test/static/ubyhost-logo.jpg\" width=\"180\" alt=\"UbyHost\" style=\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\">\n</td></tr>\n<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">A host asked for help</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Havel (AI) could not help this host. Reply to the account e-mail below.</p></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">Account e-mail</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">host@example.test</div></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">Workspace</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">-</div></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">Language</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">en</div></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">Page</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">-</div></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">Summary</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">-</div></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">Host&#x27;s note</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">-</div></td></tr>\n<tr><td style=\"padding:28px 24px 28px 24px;\">\n<div style=\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">\n<div>UbyHost</div><div style=\"padding:4px 0 0 0;\">Questions: support@example.test</div>\n</div>\n</td></tr>\n</table>\n</td></tr>\n</table>\n</body>\n</html>\n"
+  },
+  {
+   "in": {
+    "account_email": "h@example.test",
+    "workspace": "  Long   name  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "lang": "vi",
+    "page": "guide",
+    "summary": "s",
+    "note": "n",
+    "turns": [
+     "a",
+     "b",
+     "c",
+     "d"
+    ]
+   },
+   "subject": "Havel (AI) support request: Long name xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "text": "Havel (AI) could not help this host. Reply to the account e-mail below.\n\nAccount e-mail: h@example.test\nWorkspace:   Long   name  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\nLanguage: vi\nPage: guide\nSummary: s\nHost's note: n\nHost message 1: a\nHost message 2: b\nHost message 3: c\nHost message 4: d\n\n--\nUbyHost\nQuestions: support@example.test",
+   "html": "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<meta name=\"color-scheme\" content=\"light only\">\n<title>A host asked for help</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f7f7f5;\">\n<div style=\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\">Havel (AI) could not help this host. Reply to the account e-mail below. ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f7f7f5;border-collapse:collapse;\">\n<tr><td align=\"center\" style=\"padding:28px 12px;\">\n<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\">\n<tr><td style=\"padding:28px 24px 0 24px;\">\n<img src=\"https://app.example.test/static/ubyhost-logo.jpg\" width=\"180\" alt=\"UbyHost\" style=\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\">\n</td></tr>\n<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">A host asked for help</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Havel (AI) could not help this host. Reply to the account e-mail below.</p></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">Account e-mail</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">h@example.test</div></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">Workspace</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">  Long   name  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</div></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">Language</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">vi</div></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">Page</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">guide</div></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">Summary</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">s</div></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">Host&#x27;s note</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">n</div></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">Host message 1</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">a</div></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">Host message 2</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">b</div></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">Host message 3</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">c</div></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">Host message 4</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">d</div></td></tr>\n<tr><td style=\"padding:28px 24px 28px 24px;\">\n<div style=\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">\n<div>UbyHost</div><div style=\"padding:4px 0 0 0;\">Questions: support@example.test</div>\n</div>\n</td></tr>\n</table>\n</td></tr>\n</table>\n</body>\n</html>\n"
+  }
+ ]
+}

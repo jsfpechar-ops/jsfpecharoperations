@@ -1,0 +1,14 @@
+# Host strings the Havel pages read (App/scripts/havel_golden.py writes havel_i18n.json from this file).
+# "prefix.*" lists every key with that prefix; "@pages" lists the label keys of havel.PAGES.
+havel.*
+@pages
+stays.add_panel.apartment
+stays.add_panel.arrival
+stays.add_panel.departure
+stays.add_panel.guests
+stays.add_panel.email
+nav.ask_havel
+common.copy
+common.copied
+mail.havel_support.*
+mail.workspace_deletion.footer
