@@ -116,7 +116,7 @@ git add go/internal/web/properties go/cmd/ubyhost-web/register_web_properties.go
 
 ## 6. Commands
 
-From the repo root, with the test database the owner's environment gives (`export UBYHOST_TEST_DATABASE_URL=postgresql://...`; if it is unset the Go replay test skips, which is a stop (§8), not a pass):
+From the repo root, with the test database the owner's environment gives (`export UBYHOST_TEST_DATABASE_URL=postgresql://USER@HOST/DATABASE`; if it is unset the Go replay test skips, which is a stop (§8), not a pass):
 
 ```bash
 cd go && test -z "$(gofmt -l .)" && go vet ./... 2>&1 | tail -5 && go test -count=1 -v ./internal/web/properties/ ./cmd/ubyhost-web/ 2>&1 | grep -E '^(--- |ok|FAIL|PASS)' | tail -30 && go build -o /dev/null ./cmd/ubyhost-web && echo BUILD OK
