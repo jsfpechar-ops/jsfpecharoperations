@@ -1,7 +1,7 @@
 # 1206: App connects to Postgres as a restricted role (K-S11)
 
 Status: todo
-Depends on: PR 966 merged (it edits deploy/lightsail/docker-compose.yml; base this branch on main AFTER it merges) | Base commit: <sha of main after 966> | Branch: task/1206-postgres-app-role
+Depends on: PR 966 merged (it edits deploy/lightsail/docker-compose.yml; base this branch on main AFTER it merges) | Base commit: 8eb6721eb | Branch: task/1206-postgres-app-role
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective

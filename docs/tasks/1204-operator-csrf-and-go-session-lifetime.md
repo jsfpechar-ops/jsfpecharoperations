@@ -12,44 +12,81 @@ Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 Rules: AGENTS rule 4 (no dependency), 5 (no schema change), 8 (draft, never push to main). No template or CSS changes, so rules 7 and 10 do not apply.
 
-**Finding 1, verified.** `App/app/routes/admin_customers.py` line 6 and 16:
-
-```python
-from fastapi import APIRouter, HTTPException, Request
-...
-router = APIRouter()
-```
-
-POST routes at lines 111, 135, 165, 184, 205, 228, 241 (`/sleva`, `/plan`, `/priradit`, `/prodlouzit`, `/aktivovat`, `/overit-znovu`, `/stav`). Mounted at `App/app/main.py:480` (`app.include_router(admin_customer_routes.router)`). Sibling pattern, `App/app/routes/admin_billing.py` lines 11, 15, 21:
+**Finding 1, verified.** Sibling pattern with CSRF (`App/app/routes/admin_billing.py` lines 11 and 15-21):
 
 ```python
 from fastapi import APIRouter, Depends, Request
-from .. import analytics, ..., config, security, signup, validation
+```
+
+```python
+from .. import analytics, bank_import, billing_admin, billing_analytics, billing_invoices, config, security, signup, validation
+```
+
+```python
 router = APIRouter(dependencies=[Depends(security.protect_host_post)])
 ```
+
+This brief makes `App/app/routes/admin_customers.py` lines 8-16 match:
+
+```python
+from fastapi import APIRouter, Depends, HTTPException, Request
+```
+
+```python
+from .. import admin_customers, admin_ops, billing, billing_analytics, billing_order, config, db, incidents, security, validation
+```
+
+```python
+router = APIRouter(dependencies=[Depends(security.protect_host_post)])
+```
+
+POST routes at lines 111, 135, 165, 184, 205, 228, 241 (`/sleva`, `/plan`, `/priradit`, `/prodlouzit`, `/aktivovat`, `/overit-znovu`, `/stav`). Mounted at `App/app/main.py:480` (`app.include_router(admin_customer_routes.router)`).
 
 All seven forms in `App/app/templates/admin_customer.html` (lines 92, 143, 154, 162, 176, 192, 198) already carry `<input type="hidden" name="_csrf" value="{{ csrf_token }}">`. No JS or fetch posts to `/admin/customers`. `admin_customers.html` only has a GET search form. **No template change is needed.**
 
 Existing tests: `App/tests/conftest.py` fixture `csrf_proof_on_form_posts` (line 279) adds a valid `_csrf` automatically to every `TestClient` form POST that does not set its own. `test_admin_customers.py` has no `client.post(` at all. So **0 existing tests need the token added.** A test that wants a stale token passes `data={security.CSRF_FIELD: "not-a-token"}` (see `App/tests/test_admin_route_split.py` lines 144-157, the pattern to copy: expects 303 and `location` starting `/login?notice=form_expired`).
 
-Other routers without the dependency (`admin_accounts`, `exports`, `onboarding`, `signup`, `passkeys`, `push` ...) are included inside `admin.router` (which has it) or are public/guest/webhook routes, so they are correct. Do not touch them.
+Routers included inside `admin.router` (`App/app/routes/admin.py` line 89 has `router = APIRouter(dependencies=[Depends(security.protect_host_post)])`) cover `admin_accounts`, `dashboard_calendar`, `passkey_routes`, `push_routes`, `api`, `onboarding`, `signup_routes`, `exports`, and `privacy_requests` (lines 90-96 and 3961-3962). Public, guest, and webhook routes stay outside that tree. Do not touch them.
 
-**Finding 2, verified.** `go/internal/session/session.go`: line 26-27 `rememberMaxAge = 400 * 24 * time.Hour`; lines 114-130 `Verify` (shown below). Python `App/app/auth.py` lines 30-35 and 270-290:
+**Finding 2, verified.** Python limits (`App/app/auth.py` lines 30-37):
 
 ```python
 SESSION_MAX_AGE = 60 * 60 * 12
+# Long-lived host sessions (logout or session_version bump still ends them).
+# Sliding: unused for 30 days ends the session; each use re-signs the cookie
+# (refresh_session_cookie). An absolute cap of 90 days counts from the login.
 SESSION_REMEMBER_MAX_AGE = 60 * 60 * 24 * 30
 SESSION_ABSOLUTE_MAX_AGE = 60 * 60 * 24 * 90
-...
-payload = _serializer().loads(token, max_age=SESSION_REMEMBER_MAX_AGE)
-if payload.get("rm") and time.time() - int(payload.get("iat", 0)) > SESSION_ABSOLUTE_MAX_AGE:
-    return None
-if not payload.get("rm"):  # then loads(token, max_age=SESSION_MAX_AGE) must pass
 ```
 
-Python semantics: the itsdangerous timestamp is the last signing time (30 days max for every token). Remember-me tokens also need `now - iat <= 90 days`; a missing `iat` counts as 0, so it is rejected. Non-remember tokens: 12 hours since signing. Go non-remember is already 12 hours, **identical**. Only the remember-me case differs (400 days vs 30 days, and no 90-day cap).
+Python check (`auth.py` lines 271-290 inside `_session_payload`):
 
-Current Go `Verify` (`session.go` lines 114-130):
+```python
+        payload = _serializer().loads(token, max_age=SESSION_REMEMBER_MAX_AGE)
+        if not isinstance(payload, dict):
+            return None
+        if payload.get("rm") and time.time() - int(payload.get("iat", 0)) > SESSION_ABSOLUTE_MAX_AGE:
+            return None
+        # Non-remember sessions expire with the shorter cookie lifetime even
+        # though the signed payload could otherwise be replayed for 30 days.
+        if not payload.get("rm"):
+            try:
+                _serializer().loads(token, max_age=SESSION_MAX_AGE)
+            except BadSignature:
+                return None
+        return payload
+```
+
+Python semantics: the itsdangerous timestamp is the last signing time (30 days max for every token). Remember-me tokens also need `now - iat <= 90 days`; a missing `iat` counts as 0, so it is rejected. Non-remember tokens: 12 hours since signing. Go non-remember is already 12 hours, **identical**. This brief replaces Go remember-me, which used to accept up to 400 days since signing with no 90-day login cap.
+
+Target Go constants (`go/internal/session/session.go` lines 26-31 after step 4):
+
+```go
+	rememberMaxAge = 30 * 24 * time.Hour
+	absoluteMaxAge = 90 * 24 * time.Hour
+```
+
+Target Go `Verify` (`session.go` lines 116-135 after step 4):
 
 ```go
 func Verify(secret, token string, now time.Time) (map[string]any, bool) {
@@ -62,7 +99,11 @@ func Verify(secret, token string, now time.Time) (map[string]any, bool) {
 	if !ok {
 		return nil, false
 	}
-	if !truthy(payload["rm"]) {
+	if truthy(payload["rm"]) {
+		if now.Sub(time.Unix(iatSeconds(payload["iat"]), 0)) > absoluteMaxAge {
+			return nil, false
+		}
+	} else {
 		if err := s.Loads(token, shortMaxAge, now, &raw); err != nil {
 			return nil, false
 		}
@@ -75,7 +116,7 @@ Go re-issue: Go calls `session.Sign` only once, in `go/internal/hostweb/gate.go:
 
 Existing Go test `TestSessionAge` (`session_test.go` lines 114-131) signs a remember token **without `iat`** and expects it valid at 399 days. It must be rewritten (Step 4). Golden tokens in `testdata/tokens.json` have `iat` within seconds of the golden timestamp, so they stay valid. No other Go code uses `"rm"` tokens (`payments/connect_test.go:309` only calls `Verify` with its own token; run its package in §6).
 
-`go/internal/session/session.go` Verify comment (line 112-113) and `docs/SECURITY.md` line 54 say 400 days; both are corrected.
+`go/internal/session/session.go` Verify comment and `docs/SECURITY.md` line 55 lifetime row are updated to 30/90 days (step 4 and step 6).
 
 ## 3. Files
 
@@ -86,7 +127,7 @@ Existing Go test `TestSessionAge` (`session_test.go` lines 114-131) signs a reme
 | `App/tests/test_admin_route_split.py` | edit | add 1 coverage test over every `/admin` POST |
 | `go/internal/session/session.go` | edit | constants and `Verify` |
 | `go/internal/session/session_test.go` | edit | rewrite `TestSessionAge`, add 3 tests |
-| `docs/SECURITY.md` | edit | line 54 lifetime wording |
+| `docs/SECURITY.md` | edit | line 55 lifetime wording |
 
 No other file may change.
 
@@ -253,7 +294,7 @@ func TestRememberMeInsideBothLimits(t *testing.T) {
 
 If the golden struct type is not named `golden`, use whatever `loadGolden` returns (`grep -n 'func loadGolden' go/internal/session/session_test.go`). Run `gofmt -l`.
 
-6. `docs/SECURITY.md` line 54: in the "Stateless logout" row replace `signed-in host sessions last up to 400 days until logout` with `remember-me host sessions last up to 30 days since the cookie was last re-signed and 90 days since login (Python and Go enforce the same limits); other host sessions last 12 hours, until logout`. Leave the "Host CSRF" row (line 29) unchanged, its wording is still true.
+6. `docs/SECURITY.md` line 55 (the "Stateless logout" row): anchor `grep -nF "remember-me host sessions last up to 30 days" docs/SECURITY.md`. If missing, in that row replace `signed-in host sessions last up to 400 days until logout` with `remember-me host sessions last up to 30 days since the cookie was last re-signed and 90 days since login (Python and Go enforce the same limits); other host sessions last 12 hours, until logout`. Leave the "Host CSRF" row unchanged.
 
 ## 5. Do not touch
 

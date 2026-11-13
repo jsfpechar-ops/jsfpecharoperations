@@ -1,7 +1,7 @@
 # 1207: refresh requirements.lock to match requirements.txt, add a drift test
 
 Status: todo
-Depends on: PR 966 merged to main (it sets pillow 13.0.0, pyasn1 0.6.5, certifi 2026.10.18 in the lock; keep them) | Base commit: main after PR 966 (record the sha) | Branch: task/1207-requirements-lock-refresh
+Depends on: PR 966 merged to main (it sets pillow 13.0.0, pyasn1 0.6.5, certifi 2026.10.18 in the lock; keep them) | Base commit: 8eb6721eb | Branch: task/1207-requirements-lock-refresh
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective

@@ -1,7 +1,7 @@
 # 1208: Cloudflare Authenticated Origin Pulls (zone-level), close K-S14
 
 Status: todo
-Depends on: PR 966 merged to main (same compose file and `caddy` CI job) | Base commit: main after PR 966 (record the sha) | Branch: task/1208-cloudflare-aop
+Depends on: PR 966 merged to main (same compose file and `caddy` CI job) | Base commit: 8eb6721eb | Branch: task/1208-cloudflare-aop
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
@@ -57,7 +57,7 @@ No other file may change.
 
 ## 4. Steps
 
-1. Grep the three excerpts (§2). Any missing: STOP. Run the one grep for server-side calls to the public URL or to Caddy (§2); report hits, STOP if one would reach Caddy without Cloudflare.
+1. Grep the three excerpts (§2). If the one-line `tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem` is gone but `grep -nF 'import aop_{$UBYHOST_AOP_MODE:off}' deploy/lightsail/caddy/Caddyfile.cloudflare` matches, the Caddyfile edits are already applied; continue with the compose and CI excerpts only. If `grep -nF 'UBYHOST_AOP_MODE: ${UBYHOST_AOP_MODE:-off}' deploy/lightsail/docker-compose.yml` matches, the compose edit is already applied. Any other required excerpt still missing: STOP. Run the one grep for server-side calls to the public URL or to Caddy (§2); report hits, STOP if one would reach Caddy without Cloudflare.
 2. `Caddyfile.cloudflare`: after the global options block and before the site block add:
 ```
 # 1208: Cloudflare Authenticated Origin Pulls (zone-level), K-S14. Mode comes
@@ -78,13 +78,13 @@ No other file may change.
 	}
 }
 ```
-Replace the one-line `tls ...` with:
+Replace the one-line `tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem` with:
 ```
 	tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem {
 		import aop_{$UBYHOST_AOP_MODE:off}
 	}
 ```
-Add, directly above the `@go path ...` line, a probe (a `handle` runs after `abort`, so only Cloudflare addresses reach it):
+Add, directly above `@go path {$UBYHOST_GO_PATHS:/__go_off__}`, a probe (a `handle` runs after `abort`, so only Cloudflare addresses reach it):
 ```
 	# 1208: shows which certificate Cloudflare presents (owner check, runbook 7). No log, no personal data.
 	@aop_probe path /__aop_probe
