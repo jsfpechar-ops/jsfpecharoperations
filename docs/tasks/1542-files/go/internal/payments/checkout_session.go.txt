@@ -118,4 +118,3 @@ func (s *StripeOnboarder) CreateCheckoutSession(ctx context.Context, p CheckoutP
 	}
 	return out.ID, out.URL, nil
 }
-

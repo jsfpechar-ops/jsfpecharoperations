@@ -29,11 +29,11 @@ func TestCheckoutFormFixedNumbers(t *testing.T) {
 	f := CheckoutForm(sampleCheckout(), 1788000000+SessionMinutes*60)
 	want := map[string]string{
 		"mode": "payment", "line_items[0][quantity]": "1", "line_items[0][price_data][currency]": "czk",
-		"line_items[0][price_data][unit_amount]":            "650000",
-		"line_items[0][price_data][product_data][name]":     "Stay at Garden, 2026-12-01 – 2026-12-04",
+		"line_items[0][price_data][unit_amount]":        "650000",
+		"line_items[0][price_data][product_data][name]": "Stay at Garden, 2026-12-01 – 2026-12-04",
 		"customer_email": "guest@example.test", "locale": "en", "expires_at": "1788001860",
-		"success_url": "https://book.example.test/p/garden/thanks?lang=en",
-		"cancel_url":  "https://book.example.test/p/garden?book=cancelled&lang=en",
+		"success_url":               "https://book.example.test/p/garden/thanks?lang=en",
+		"cancel_url":                "https://book.example.test/p/garden?book=cancelled&lang=en",
 		"metadata[site_booking_id]": "42", "payment_intent_data[metadata][site_booking_id]": "42",
 	}
 	for k, v := range want {

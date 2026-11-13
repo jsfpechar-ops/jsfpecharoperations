@@ -152,7 +152,7 @@ func HoldDates(ctx context.Context, pool *pgxpool.Pool, apartmentID int64, dateF
 	if !errors.Is(err, pgx.ErrNoRows) {
 		return 0, false, err
 	}
-	expires := now.UTC().Add(time.Duration(minutes) * time.Minute).Format("2006-01-02T15:04:05") + "Z"
+	expires := now.UTC().Add(time.Duration(minutes)*time.Minute).Format("2006-01-02T15:04:05") + "Z"
 	if err = tx.QueryRow(ctx, `INSERT INTO booking_hold (apartment_id, date_from, date_to, expires_at, created_at)
 		VALUES ($1, $2, $3, $4, $5) RETURNING id`, apartmentID, dateFrom, dateTo, expires, stamp).Scan(&id); err != nil {
 		return 0, false, err
@@ -458,4 +458,3 @@ func (c Checkout) direct(w http.ResponseWriter, r *http.Request, slug string, ap
 	w.Header().Set("Location", u.Path)
 	w.WriteHeader(http.StatusSeeOther)
 }
-
