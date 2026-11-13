@@ -25,7 +25,9 @@ fi
 # 1261: which code applies the PostgreSQL goose files. python (the default,
 # also when unset or empty) runs App/scripts/pg_schema.py in the new ubyhost
 # image; go runs `ubyhost-web migrate apply` in the new ubyhost-go image. Both
-# write the same goose_db_version rows, so either can follow the other.
+# write the same goose_db_version rows. Go applies goose files only: when the
+# functions or triggers Python re-creates on every apply differ from the app's,
+# Go fails closed and the deploy stops; deploy once with python, then go again.
 # Checked here, before anything touches the stack.
 SCHEMA_APPLY="${UBYHOST_SCHEMA_APPLY:-python}"
 case "${SCHEMA_APPLY}" in

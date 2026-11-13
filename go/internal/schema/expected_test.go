@@ -12,7 +12,8 @@ func TestLoadExpected(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if e.ExpectedVersion < 45 || len(e.Tables["schema_migrations"]) != 3 || len(e.Triggers) != 6 || len(e.Indexes) == 0 {
+	if e.ExpectedVersion < 45 || len(e.Tables["schema_migrations"]) != 3 || len(e.Triggers) != 6 || len(e.Indexes) == 0 ||
+		len(e.Functions) != 7 || len(e.TriggerDefs) != 6 {
 		t.Fatalf("unexpected snapshot: version %d, %d tables, %d indexes, %d triggers",
 			e.ExpectedVersion, len(e.Tables), len(e.Indexes), len(e.Triggers))
 	}
@@ -25,8 +26,10 @@ func fakeExpected() Expected {
 			"a": {{Name: "id", Type: "bigint", NotNull: true}, {Name: "note", Type: "text"}},
 			"b": {{Name: "id", Type: "bigint", NotNull: true}},
 		},
-		Indexes:  []string{"a_note"},
-		Triggers: []string{"t1"},
+		Indexes:     []string{"a_note"},
+		Triggers:    []string{"t1"},
+		Functions:   map[string]string{"f": "BEGIN RETURN NEW; END"},
+		TriggerDefs: map[string]string{"t1": "CREATE TRIGGER t1 BEFORE DELETE ON public.a FOR EACH ROW EXECUTE FUNCTION f()"},
 	}
 }
 
@@ -38,13 +41,18 @@ func fakeActual() Actual {
 			"b":     {{Name: "id", Type: "bigint", NotNull: true}},
 			"extra": {{Name: "x", Type: "text"}},
 		},
-		Indexes:  map[string]bool{"a_note": true, "a_pkey": true},
-		Triggers: map[string]bool{"t1": true},
+		Indexes:     map[string]bool{"a_note": true, "a_pkey": true},
+		Triggers:    map[string]bool{"t1": true},
+		Functions:   map[string][]string{"f": {"BEGIN RETURN NEW; END"}, "other": {"x"}},
+		TriggerDefs: map[string]string{"t1": "CREATE TRIGGER t1 BEFORE DELETE ON public.a FOR EACH ROW EXECUTE FUNCTION f()"},
 	}
 }
 
 func TestCompareCurrent(t *testing.T) {
 	s := Compare(fakeExpected(), fakeActual())
+	if s.PythonDDLStale() {
+		t.Fatalf("want no Python DDL drift, got %+v", s)
+	}
 	if !s.Current || s.ExtraTables != 1 || s.ActualTables != 3 || s.ExpectedTables != 2 {
 		t.Fatalf("want current with one extra table, got %+v", s)
 	}
@@ -63,6 +71,22 @@ func TestCompareFailures(t *testing.T) {
 		"missing index":   func(e *Expected, a *Actual) { delete(a.Indexes, "a_note") },
 		"missing trigger": func(e *Expected, a *Actual) { delete(a.Triggers, "t1") },
 		"extra trigger":   func(e *Expected, a *Actual) { a.Triggers["t2"] = true },
+	}
+	stale := map[string]func(*Expected, *Actual){
+		"missing function":    func(e *Expected, a *Actual) { delete(a.Functions, "f") },
+		"function body":       func(e *Expected, a *Actual) { a.Functions["f"] = []string{"BEGIN RETURN OLD; END"} },
+		"function overload":   func(e *Expected, a *Actual) { a.Functions["f"] = append(a.Functions["f"], "BEGIN RETURN NEW; END") },
+		"trigger def":         func(e *Expected, a *Actual) { a.TriggerDefs["t1"] = "CREATE TRIGGER t1 BEFORE INSERT ON public.a" },
+		"missing trigger def": func(e *Expected, a *Actual) { delete(a.TriggerDefs, "t1") },
+	}
+	for name, mutate := range stale {
+		e, a := fakeExpected(), fakeActual()
+		a.Functions = map[string][]string{"f": {"BEGIN RETURN NEW; END"}}
+		a.TriggerDefs = map[string]string{"t1": e.TriggerDefs["t1"]}
+		mutate(&e, &a)
+		if s := Compare(e, a); s.Current || !s.PythonDDLStale() {
+			t.Errorf("%s: want not current and Python DDL stale, got %+v", name, s)
+		}
 	}
 	for name, mutate := range cases {
 		e, a := fakeExpected(), fakeActual()

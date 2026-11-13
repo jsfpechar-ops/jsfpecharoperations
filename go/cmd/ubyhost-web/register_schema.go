@@ -6,7 +6,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"io"
 	"log/slog"
@@ -62,24 +61,13 @@ func migrateArgs(argv []string) ([]string, bool) {
 	return nil, false
 }
 
-// runMigrate parses `<action> --expect-database <db>` and runs it. It
-// returns the exit code: 0 OK, 1 failure, 2 bad usage.
+// runMigrate parses the action and --expect-database in any order, like
+// pg_schema.py's argparse, and runs it. It returns the exit code: 0 OK,
+// 1 failure, 2 bad usage.
 func runMigrate(args []string, getenv func(string) string, stdout, stderr io.Writer) int {
-	usage := "usage: ubyhost-web migrate plan|check|apply --expect-database <db>"
-	if len(args) == 0 {
-		fmt.Fprintln(stderr, usage)
-		return 2
-	}
-	action := args[0]
-	if action != "plan" && action != "check" && action != "apply" {
-		fmt.Fprintln(stderr, usage)
-		return 2
-	}
-	fs := flag.NewFlagSet("migrate "+action, flag.ContinueOnError)
-	fs.SetOutput(stderr)
-	expect := fs.String("expect-database", "", "database name the URL must connect to")
-	if err := fs.Parse(args[1:]); err != nil || fs.NArg() != 0 || *expect == "" {
-		fmt.Fprintln(stderr, usage)
+	action, expect, ok := parseMigrateArgs(args)
+	if !ok {
+		fmt.Fprintln(stderr, "usage: ubyhost-web migrate plan|check|apply --expect-database <db>")
 		return 2
 	}
 	dbURL := getenv("UBYHOST_DATABASE_URL")
@@ -91,7 +79,7 @@ func runMigrate(args []string, getenv func(string) string, stdout, stderr io.Wri
 	defer stop()
 	err := schema.Run(ctx, schema.Config{
 		Action:         action,
-		ExpectDatabase: *expect,
+		ExpectDatabase: expect,
 		DatabaseURL:    dbURL,
 		DataDir:        getenv("UBYHOST_DATA_DIR"),
 		MigrationsDir:  migrations,
@@ -105,4 +93,37 @@ func runMigrate(args []string, getenv func(string) string, stdout, stderr io.Wri
 		return 1
 	}
 	return 0
+}
+
+// parseMigrateArgs accepts one action (plan, check or apply) and
+// --expect-database <db> or --expect-database=<db>, in either order. Any
+// other argument, a second action or an empty database name is refused.
+func parseMigrateArgs(args []string) (action, expect string, ok bool) {
+	seenExpect := false
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		switch {
+		case a == "--expect-database":
+			if i+1 >= len(args) || strings.HasPrefix(args[i+1], "-") {
+				return "", "", false
+			}
+			i++
+			expect, seenExpect = args[i], true
+		case strings.HasPrefix(a, "--expect-database="):
+			expect, seenExpect = strings.TrimPrefix(a, "--expect-database="), true
+		case strings.HasPrefix(a, "-"):
+			return "", "", false
+		case action != "":
+			return "", "", false
+		default:
+			action = a
+		}
+	}
+	if action != "plan" && action != "check" && action != "apply" {
+		return "", "", false
+	}
+	if !seenExpect || expect == "" {
+		return "", "", false
+	}
+	return action, expect, true
 }

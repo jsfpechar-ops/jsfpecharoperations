@@ -37,6 +37,10 @@ func TestRunMigrateUsage(t *testing.T) {
 		{"apply", "--expect-database", ""},
 		{"apply", "--expect-database", "ubyhost", "extra"},
 		{"apply", "--bogus"},
+		{"apply", "-expect-database", "ubyhost"},
+		{"apply", "check", "--expect-database", "ubyhost"},
+		{"--expect-database", "--expect-database", "ubyhost"},
+		{"--expect-database", "ubyhost"},
 	} {
 		var out, errOut bytes.Buffer
 		if code := runMigrate(args, env, &out, &errOut); code != 2 {
@@ -64,5 +68,20 @@ func TestRunMigrateRedactsURL(t *testing.T) {
 	code := runMigrate([]string{"plan", "--expect-database=x"}, func(k string) string { return env[k] }, &out, &errOut)
 	if code != 1 || strings.Contains(errOut.String(), "secret") || !strings.Contains(errOut.String(), "sslmode") {
 		t.Fatalf("code %d, stderr %q", code, errOut.String())
+	}
+}
+
+func TestParseMigrateArgsAnyOrder(t *testing.T) {
+	for _, args := range [][]string{
+		{"apply", "--expect-database", "ubyhost"},
+		{"--expect-database", "ubyhost", "apply"},
+		{"--expect-database=ubyhost", "apply"},
+		{"apply", "--expect-database=ubyhost"},
+		{"apply", "--expect-database", "other", "--expect-database", "ubyhost"},
+	} {
+		action, expect, ok := parseMigrateArgs(args)
+		if !ok || action != "apply" || expect != "ubyhost" {
+			t.Errorf("parseMigrateArgs(%q) = %q, %q, %v", args, action, expect, ok)
+		}
 	}
 }

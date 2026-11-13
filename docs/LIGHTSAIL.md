@@ -222,7 +222,7 @@ On PostgreSQL, `deploy.sh` applies pending goose files (`App/migrations_pg/`) wi
 
 The Go command (`ubyhost-web migrate plan|check|apply --expect-database <db>`) makes the same checks as Python: the public schema, the database name, and the authority marker in `/data/database-authority.json` (database, schema and URL fingerprint). It takes the same advisory locks, runs every pending goose file in one transaction and commits only when the schema then matches what the app expects. It applies goose files only: a fresh, empty database still needs `pg_schema.py apply` (or `pg-cutover.sh`) once, and Go refuses with "legacy schema not set up". `pg-cutover.sh` stays Python-only: it copies SQLite data, and Go has no SQLite.
 
-Rollback: remove `UBYHOST_SCHEMA_APPLY` from `.env` (or set it to `python`), then `./scripts/deploy.sh`. Both write the same `goose_db_version` rows, so either one can take over from the other at any time.
+Rollback: remove `UBYHOST_SCHEMA_APPLY` from `.env` (or set it to `python`), then `./scripts/deploy.sh`. Both write the same `goose_db_version` rows, so Python can always take over from Go. Go can take over from Python as long as the functions and triggers Python re-creates on every apply (`ubyhost_sqlite_date` and the six invoice guards in `App/app/db_postgres.py`) match what the app expects; when a PR changes one of them, Go `check` and `apply` fail closed with "Python-owned DDL" and the deploy stops before `up`. Then deploy once with `UBYHOST_SCHEMA_APPLY=python`, and switch back to `go` after it.
 
 ## Day-to-day commands
 

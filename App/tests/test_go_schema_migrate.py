@@ -1,7 +1,9 @@
 """Go `ubyhost-web migrate` against Python pg_schema.py on a real PostgreSQL (brief 1260).
 
 Runs when UBYHOST_TEST_DATABASE_URL or a PostgreSQL UBYHOST_DATABASE_URL is
-set (CI job test-postgres-full) and a `go` binary is on PATH; skips otherwise.
+set (CI job test-postgres-full) and a `go` binary is on PATH; skips otherwise,
+except that under CI (env CI set) a missing `go` fails, so the job cannot go
+green without running it.
 Every check uses its own throwaway databases, never the session database.
 """
 from __future__ import annotations
@@ -23,8 +25,8 @@ _BASE_URL = os.environ.get("UBYHOST_TEST_DATABASE_URL") or os.environ.get("UBYHO
 _GO = shutil.which("go")
 
 pytestmark = pytest.mark.skipif(
-    not _BASE_URL.startswith(("postgres://", "postgresql://")) or not _GO,
-    reason="needs UBYHOST_TEST_DATABASE_URL or a PostgreSQL UBYHOST_DATABASE_URL, and go on PATH",
+    not _BASE_URL.startswith(("postgres://", "postgresql://")),
+    reason="needs UBYHOST_TEST_DATABASE_URL or a PostgreSQL UBYHOST_DATABASE_URL",
 )
 
 APPLIED_SQL = (
@@ -46,12 +48,19 @@ def _admin():
 
 @pytest.fixture(scope="module")
 def go_binary(tmp_path_factory):
+    if not _GO:
+        if os.environ.get("CI"):
+            pytest.fail("go is not on PATH in CI; the Go schema parity test must run here")
+        pytest.skip("go is not on PATH")
     out = tmp_path_factory.mktemp("gobin") / "ubyhost-web"
+    env = dict(os.environ)
+    # go.mod asks for go 1.25 (toolchain line); an older runner Go downloads it.
+    env.setdefault("GOTOOLCHAIN", "auto")
     result = subprocess.run(
         [_GO, "build", "-o", str(out), "./cmd/ubyhost-web"],
-        cwd=GO_DIR, capture_output=True, text=True, timeout=900, check=False,
+        cwd=GO_DIR, env=env, capture_output=True, text=True, timeout=900, check=False,
     )
-    assert result.returncode == 0, result.stderr[-2000:]
+    assert result.returncode == 0, (result.stdout + result.stderr)[-3000:]
     return out
 
 
@@ -90,9 +99,10 @@ def _python(action: str, database: str, env: dict) -> subprocess.CompletedProces
     )
 
 
-def _go(binary: Path, action: str, database: str, env: dict) -> subprocess.CompletedProcess:
+def _go(binary: Path, action: str, database: str, env: dict, *, option_first: bool = False) -> subprocess.CompletedProcess:
+    args = ["--expect-database", database, action] if option_first else [action, "--expect-database", database]
     return subprocess.run(
-        [str(binary), "migrate", action, "--expect-database", database],
+        [str(binary), "migrate", *args],
         cwd=APP_DIR, env=env, capture_output=True, text=True, timeout=300, check=False,
     )
 
@@ -151,7 +161,7 @@ def test_go_apply_matches_python(go_binary, throwaway, tmp_path):
 
     python_check = _python("check", database, env)
     assert python_check.returncode == 0, python_check.stderr
-    go_check = _go(go_binary, "check", database, env)
+    go_check = _go(go_binary, "check", database, env, option_first=True)
     assert go_check.returncode == 0, go_check.stderr
     # Same OK line apart from the action word.
     assert go_check.stdout == python_check.stdout
@@ -196,3 +206,82 @@ def test_go_apply_refuses_without_legacy_schema(go_binary, throwaway, tmp_path):
             "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public'"
         ).fetchone()[0]
     assert tables == 0
+
+
+def _fresh(go_binary, throwaway, tmp_path, suffix):
+    database = throwaway(suffix)
+    url = _url_for(database)
+    data_dir = tmp_path / f"data-{suffix}"
+    data_dir.mkdir()
+    env = _env(url, data_dir)
+    result = _python("apply", database, env)
+    assert result.returncode == 0, result.stderr[-2000:]
+    return database, url, env
+
+
+def test_go_check_fails_closed_on_python_owned_ddl(go_binary, throwaway, tmp_path):
+    """Go applies goose files only; a changed function body needs one Python apply."""
+    import psycopg
+
+    database, url, env = _fresh(go_binary, throwaway, tmp_path, "ddl")
+    assert _go(go_binary, "check", database, env).returncode == 0
+    with psycopg.connect(url, autocommit=True) as conn:
+        conn.execute(
+            "CREATE OR REPLACE FUNCTION ubyhost_invoice_note_guard() RETURNS trigger "
+            "LANGUAGE plpgsql AS $$ BEGIN RETURN NEW; END $$"
+        )
+    # Python's check compares trigger names only, so it does not see this.
+    assert _python("check", database, env).returncode == 0
+    for action in ("check", "apply"):
+        stale = _go(go_binary, action, database, env)
+        assert stale.returncode == 1, stale.stdout
+        assert "Python-owned DDL" in stale.stderr and "pg_schema.py apply" in stale.stderr
+    with psycopg.connect(url, autocommit=True) as conn:
+        conn.execute("DROP TRIGGER invoice_item_insert_guard ON invoice_item")
+        conn.execute(
+            "CREATE TRIGGER invoice_item_insert_guard BEFORE UPDATE ON invoice_item "
+            "FOR EACH ROW EXECUTE FUNCTION ubyhost_invoice_item_insert_guard()"
+        )
+    assert _go(go_binary, "check", database, env).returncode == 1
+    restored = _python("apply", database, env)
+    assert restored.returncode == 0, restored.stderr[-2000:]
+    check = _go(go_binary, "check", database, env)
+    assert check.returncode == 0, check.stderr
+
+
+def test_go_apply_rolls_back_a_failing_goose_file(go_binary, throwaway, tmp_path):
+    import psycopg
+
+    database, url, env = _fresh(go_binary, throwaway, tmp_path, "rollback")
+    migrations = tmp_path / "migrations_pg"
+    shutil.copytree(GOOSE_DIR, migrations)
+    last = max(int(p.name[:5]) for p in migrations.glob("*.sql"))
+    (migrations / f"{last + 1:05d}_rollback_probe_ok.sql").write_text(
+        "-- +goose Up\nCREATE TABLE go_rollback_probe (id BIGINT);\n"
+        "INSERT INTO go_rollback_probe (id) VALUES (1);\n-- +goose Down\nDROP TABLE go_rollback_probe;\n",
+        encoding="utf-8",
+    )
+    (migrations / f"{last + 2:05d}_rollback_probe_bad.sql").write_text(
+        "-- +goose Up\nALTER TABLE user_account ADD COLUMN go_rollback_probe BIGINT;\n"
+        "SELECT this_is_not_sql FROM;\n",
+        encoding="utf-8",
+    )
+    with psycopg.connect(url, autocommit=True) as conn:
+        before_rows = conn.execute("SELECT id, version_id, is_applied FROM goose_db_version ORDER BY id").fetchall()
+    probe_env = dict(env, UBYHOST_MIGRATIONS_DIR=str(migrations))
+    plan = _go(go_binary, "plan", database, probe_env)
+    assert f"goose pending=[{last + 1}, {last + 2}]" in plan.stdout, plan.stdout + plan.stderr
+    result = _go(go_binary, "apply", database, probe_env)
+    assert result.returncode == 1, result.stdout
+    assert f"goose {last + 2:05d}" in result.stderr
+    with psycopg.connect(url, autocommit=True) as conn:
+        after_rows = conn.execute("SELECT id, version_id, is_applied FROM goose_db_version ORDER BY id").fetchall()
+        probe_table = conn.execute("SELECT to_regclass('public.go_rollback_probe')").fetchone()[0]
+        probe_column = conn.execute(
+            "SELECT count(*) FROM information_schema.columns "
+            "WHERE table_name = 'user_account' AND column_name = 'go_rollback_probe'"
+        ).fetchone()[0]
+    assert after_rows == before_rows
+    assert probe_table is None and probe_column == 0
+    check = _go(go_binary, "check", database, env)
+    assert check.returncode == 0, check.stderr

@@ -104,3 +104,17 @@ def test_embedded_snapshot_matches_files_on_disk():
     on_disk = json.loads((APP_DIR.parent / "go" / "internal" / "schema" / "expected_schema.json").read_text())
     assert on_disk["expected_version"] == db.expected_schema_version()
     assert "schema_migrations" in on_disk["tables"]
+
+
+def test_snapshot_has_the_python_owned_functions_and_triggers():
+    from app import db_postgres
+
+    snapshot = _golden().expected_schema()
+    sources = "".join([db_postgres.PG_SQLITE_DATE_FUNCTION, *db_postgres.PG_TRIGGERS])
+    assert len(snapshot["functions"]) == 1 + len(db_postgres.PG_TRIGGERS)
+    assert set(snapshot["trigger_defs"]) == set(db_postgres.PG_TRIGGER_NAMES) == set(snapshot["triggers"])
+    for name, _table, _event, function in db_postgres.PG_TRIGGER_DDL:
+        assert function in snapshot["functions"], name
+        assert snapshot["trigger_defs"][name].endswith(f"EXECUTE FUNCTION {function}()")
+    for name, body in snapshot["functions"].items():
+        assert "$$" + body + "$$" in sources, name

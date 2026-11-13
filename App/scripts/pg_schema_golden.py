@@ -22,7 +22,7 @@ from pathlib import Path
 APP_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(APP_DIR))
 
-from app import config, db  # noqa: E402
+from app import config, db, db_postgres  # noqa: E402
 
 SCHEMA_DIR = APP_DIR.parent / "go" / "internal" / "schema"
 EXPECTED = SCHEMA_DIR / "expected_schema.json"
@@ -167,6 +167,32 @@ def expected_schema() -> dict:
         "tables": tables,
         "indexes": sorted(indexes),
         "triggers": sorted(TRIGGERS),
+        "functions": python_functions(),
+        "trigger_defs": python_trigger_defs(),
+    }
+
+
+_FUNCTION_NAME = re.compile(r"CREATE OR REPLACE FUNCTION (\w+)\(")
+
+
+def python_functions() -> dict:
+    """pg_proc.prosrc of the functions db_postgres.install_pg_support re-creates on
+    every Python apply: the text between the $$ quotes, verbatim."""
+    functions = {}
+    for definition in [db_postgres.PG_SQLITE_DATE_FUNCTION, *db_postgres.PG_TRIGGERS]:
+        name = _FUNCTION_NAME.search(definition).group(1)
+        head, body, tail = definition.split("$$")
+        assert head.strip() and not tail.strip(), name
+        functions[name] = body
+    return functions
+
+
+def python_trigger_defs() -> dict:
+    """pg_get_triggerdef() of the invoice guards install_pg_triggers creates
+    (search_path public: the table is qualified, the function is not)."""
+    return {
+        name: f"CREATE TRIGGER {name} {event} ON public.{table} FOR EACH ROW EXECUTE FUNCTION {function}()"
+        for name, table, event, function in db_postgres.PG_TRIGGER_DDL
     }
 
 

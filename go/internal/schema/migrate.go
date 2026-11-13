@@ -34,6 +34,11 @@ type Config struct {
 // errLegacy is returned when goose has nothing to build on.
 var errLegacy = errors.New("legacy schema not set up; run App/scripts/pg_schema.py apply once")
 
+// errPythonDDL is returned when the functions or triggers Python's apply
+// re-creates differ from the app's; Go applies goose files only.
+var errPythonDDL = errors.New("PostgreSQL functions or triggers differ from the app's (Python-owned DDL); " +
+	"run App/scripts/pg_schema.py apply once (deploy with UBYHOST_SCHEMA_APPLY=python), then switch back")
+
 // Run executes one action and prints the same OK line as pg_schema.py.
 func Run(ctx context.Context, cfg Config, stdout io.Writer) error {
 	switch cfg.Action {
@@ -106,6 +111,9 @@ func Run(ctx context.Context, cfg Config, stdout io.Writer) error {
 		status, pending, err := statusOf(ctx, conn, expected, cfg.MigrationsDir)
 		if err != nil {
 			return err
+		}
+		if status.PythonDDLStale() {
+			return errPythonDDL
 		}
 		if !status.Current || len(pending) > 0 {
 			return errors.New("PostgreSQL schema is not current; run the explicit apply command.")
@@ -188,6 +196,9 @@ func apply(ctx context.Context, conn *pgx.Conn, expected Expected, dir string) (
 	status, left, err := statusOf(ctx, tx, expected, dir)
 	if err != nil {
 		return Status{}, err
+	}
+	if status.PythonDDLStale() {
+		return Status{}, fmt.Errorf("%w; nothing was committed", errPythonDDL)
 	}
 	if !status.Current {
 		return Status{}, errors.New("PostgreSQL schema is absent, outdated, or incompatible after apply; nothing was committed.")

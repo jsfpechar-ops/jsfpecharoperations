@@ -32,6 +32,11 @@ type Expected struct {
 	Tables          map[string][]Column `json:"tables"`
 	Indexes         []string            `json:"indexes"`
 	Triggers        []string            `json:"triggers"`
+	// Functions and TriggerDefs are the objects Python's apply re-creates every
+	// time (db_postgres.install_pg_support); Go cannot, so check refuses when
+	// they differ: pg_proc.prosrc by function name, pg_get_triggerdef by trigger.
+	Functions   map[string]string `json:"functions"`
+	TriggerDefs map[string]string `json:"trigger_defs"`
 }
 
 // Actual is what a database has.
@@ -40,6 +45,10 @@ type Actual struct {
 	Tables   map[string][]Column
 	Indexes  map[string]bool
 	Triggers map[string]bool
+	// Functions holds every prosrc per public function name (more than one
+	// means an overload, which never matches).
+	Functions   map[string][]string
+	TriggerDefs map[string]string
 }
 
 // Status mirrors the dict postgres_schema_status returns (goose pending apart).
@@ -54,7 +63,11 @@ type Status struct {
 	MissingIndexes   int
 	MissingTriggers  int
 	ExtraTriggers    int
-	Current          bool
+	// FunctionMismatches and TriggerDefMismatches count Python-owned DDL that
+	// is missing or differs; only a Python apply fixes it.
+	FunctionMismatches   int
+	TriggerDefMismatches int
+	Current              bool
 }
 
 // LoadExpected decodes the embedded snapshot.
@@ -63,7 +76,7 @@ func LoadExpected() (Expected, error) {
 	if err := json.Unmarshal(expectedSchemaJSON, &e); err != nil {
 		return e, fmt.Errorf("expected_schema.json: %w", err)
 	}
-	if len(e.Tables) == 0 || e.ExpectedVersion <= 0 {
+	if len(e.Tables) == 0 || e.ExpectedVersion <= 0 || len(e.Functions) == 0 || len(e.TriggerDefs) == 0 {
 		return e, fmt.Errorf("expected_schema.json is empty")
 	}
 	return e, nil
@@ -119,8 +132,19 @@ func Compare(e Expected, a Actual) Status {
 			s.ExtraTriggers++
 		}
 	}
+	for name, body := range e.Functions {
+		if got := a.Functions[name]; len(got) != 1 || got[0] != body {
+			s.FunctionMismatches++
+		}
+	}
+	for name, def := range e.TriggerDefs {
+		if a.TriggerDefs[name] != def {
+			s.TriggerDefMismatches++
+		}
+	}
 	s.Current = s.ExpectedVersion == s.ActualVersion && s.MissingTables == 0 &&
-		s.ColumnMismatches == 0 && s.MissingIndexes == 0 && s.MissingTriggers == 0 && s.ExtraTriggers == 0
+		s.ColumnMismatches == 0 && s.MissingIndexes == 0 && s.MissingTriggers == 0 && s.ExtraTriggers == 0 &&
+		s.FunctionMismatches == 0 && s.TriggerDefMismatches == 0
 	return s
 }
 
@@ -133,7 +157,8 @@ type Querier interface {
 
 // ReadActual reads the same catalog views postgres_schema_status reads.
 func ReadActual(ctx context.Context, q Querier) (Actual, error) {
-	a := Actual{Tables: map[string][]Column{}, Indexes: map[string]bool{}, Triggers: map[string]bool{}}
+	a := Actual{Tables: map[string][]Column{}, Indexes: map[string]bool{}, Triggers: map[string]bool{},
+		Functions: map[string][]string{}, TriggerDefs: map[string]string{}}
 	rows, err := q.Query(ctx,
 		"SELECT table_name, column_name, data_type, is_nullable "+
 			"FROM information_schema.columns WHERE table_schema = current_schema() "+
@@ -182,6 +207,30 @@ func ReadActual(ctx context.Context, q Querier) (Actual, error) {
 		"WHERE n.nspname = current_schema() AND NOT t.tgisinternal", a.Triggers); err != nil {
 		return a, err
 	}
+	pairs := func(sql string, add func(k, v string)) error {
+		rows, err := q.Query(ctx, sql)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var k, v string
+			if err := rows.Scan(&k, &v); err != nil {
+				return err
+			}
+			add(k, v)
+		}
+		return rows.Err()
+	}
+	if err := pairs("SELECT p.proname, p.prosrc FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace "+
+		"WHERE n.nspname = current_schema()", func(k, v string) { a.Functions[k] = append(a.Functions[k], v) }); err != nil {
+		return a, err
+	}
+	if err := pairs("SELECT t.tgname, pg_get_triggerdef(t.oid) FROM pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid "+
+		"JOIN pg_namespace n ON n.oid = c.relnamespace "+
+		"WHERE n.nspname = current_schema() AND NOT t.tgisinternal", func(k, v string) { a.TriggerDefs[k] = v }); err != nil {
+		return a, err
+	}
 	var exists bool
 	if err := q.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM information_schema.tables "+
 		"WHERE table_schema = current_schema() AND table_name = 'schema_migrations')").Scan(&exists); err != nil {
@@ -207,4 +256,10 @@ func toLowerASCII(s string) string {
 		}
 	}
 	return string(b)
+}
+
+// PythonDDLStale reports a schema that is otherwise current but whose
+// Python-owned functions or triggers differ from what the app expects.
+func (s Status) PythonDDLStale() bool {
+	return s.FunctionMismatches > 0 || s.TriggerDefMismatches > 0
 }
