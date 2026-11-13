@@ -2,7 +2,8 @@
 
 Each go/internal/<pkg>/i18n_keys.txt (or a nested package such as
 hostweb/layout/i18n_keys.txt) lists the keys that package reads, one per
-line; a line starting with "#" is a comment. The sibling i18n.json holds
+line; a line starting with "#" is a comment, and a line "prefix.*" lists
+every key that starts with "prefix." (1381). The sibling i18n.json holds
 {lang: {key: text}} for every host language, keeping only the listed keys that
 the language has.
 
@@ -31,7 +32,20 @@ def read_keys(path: Path) -> list[str]:
     return keys
 
 
+def expand(keys: list[str]) -> list[str]:
+    """The listed keys, each "prefix.*" line replaced by every key with that prefix."""
+    out = []
+    for key in keys:
+        if key.endswith(".*"):
+            prefix = key[:-1]
+            out.extend(sorted({k for table in host_i18n.STRINGS.values() for k in table if k.startswith(prefix)}))
+        else:
+            out.append(key)
+    return out
+
+
 def render(keys: list[str]) -> str:
+    keys = expand(keys)
     catalog = {}
     for lang, strings in host_i18n.STRINGS.items():
         catalog[lang] = {key: strings[key] for key in keys if key in strings}

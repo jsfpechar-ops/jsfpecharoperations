@@ -12,10 +12,18 @@
 // "<name>.tabs", "<name>.toolbar", "<name>.head" (head_extra) and
 // "<name>.back_label". Every slot runs with the same data.
 //
-// Not here yet (brief 1381): _host_alerts.html, _billing_banner.html,
-// _havel_panel.html with havel_on, the security prompt, onboarding and the
-// celebration toast. Go pages must not go live before 1381: host alerts carry
-// the filing warnings.
+// Brief 1381 added the rest of the shell: the host alert stack with the
+// filing warnings (alerts.go), the billing line, the Havel panel and launchers,
+// the security prompt and the celebration toast (shelldata.go). onboarding is
+// not a shell value (only pages read it), so a page passes its own.
+//
+// CSRF: a page form takes its token from the csrf func ({{csrf}}). A page
+// handler never mints a token of its own; Render binds the one token to the
+// ubyhost_csrf nonce cookie.
+//
+// The safe func marks trusted HTML only (markup the handler built or a
+// catalog string with markup); never pass it a value from the request, the
+// database or a guest.
 package layout
 
 import (
@@ -28,6 +36,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	stdhtml "html"
 	"html/template"
 	"io/fs"
 	"math"
@@ -41,6 +50,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/calendar"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/session"
@@ -89,6 +99,13 @@ type Page struct {
 	MetaDescription string // meta_description
 	NavBadge        string // nav_badge (v2 shell)
 	NavActionCount  int    // nav_action_count (legacy shell and tab bar)
+
+	// Added in 1381.
+	HideAlertStack       bool   // hide_alert_stack: no _host_alerts.html
+	AlertsExpanded       bool   // alerts_expanded: every alert as a full line
+	PhHidePin            bool   // ph_hide_pin: hide the guest_pin_rotated line (ph-hide)
+	CelebrationMilestone string // celebration_milestone; "" shows no toast
+	SentGuestCount       int    // sent_guest_count for celebration.body
 }
 
 // Templates is a page package's parsed templates and catalog. The master set
@@ -100,17 +117,7 @@ type Templates struct {
 
 // Parse parses the layout shell and the page files matched by patterns in fsys.
 func Parse(cat hostweb.Catalog, fsys fs.FS, patterns ...string) (*Templates, error) {
-	base := &reqCtx{lang: hostweb.DefaultLanguage, page: cat, layout: Strings}
-	master, err := template.New("layout").Funcs(base.funcs()).ParseFS(shellFS, "shell.html")
-	if err != nil {
-		return nil, err
-	}
-	if len(patterns) > 0 {
-		if master, err = master.ParseFS(fsys, patterns...); err != nil {
-			return nil, err
-		}
-	}
-	return &Templates{cat: cat, master: master}, nil
+	return ParseFuncs(cat, nil, fsys, patterns...)
 }
 
 // MustParse is Parse that panics, for package-level vars.
@@ -133,32 +140,79 @@ type shell struct {
 	DeletionDueAt     string
 	PropertyCount     int
 	MinutesLeft       *int // impersonation_minutes_left(); nil outside one
-	// 1381: open alerts, billing line, havel_on, security prompt, onboarding
-	// and celebration go here. They stay empty in 1380.
+
+	// 1381.
+	AccountID          int64  // current_user id (data-havel-owner)
+	AccountIsWorkspace bool   // not an admin in a host's workspace
+	TwoFactorDone      bool   // two_factor_prompted_at or totp_enabled (or no account row)
+	SignupAt           string // user_account.signup_at of the account
+	HavelOn            bool
+	HavelState         string     // _havel_panel_state state: "off", a limit, or "" (may send)
+	Billing            billingRow // the workspace's billing_account row
+	Alerts             []alertRow // alerts.open_alerts(workspace), ordered by level
+	Progress           map[int64]calendar.AlertProgress
 }
 
-// shellSQL is auth.workspace_user's display_name and deletion_due_at plus the
-// count of access.apartments(request, ...) (owner-scoped, archived_at IS NULL)
-// in one read.
+// shellSQL is auth.workspace_user's display_name and deletion_due_at, the
+// count of access.apartments(request, ...) (owner-scoped, archived_at IS NULL),
+// the signed-in account's e-mail and security-prompt columns, and the
+// billing_account rows of the workspace (banner) and of the account (Havel's
+// plan multiplier), in one read. $1 is the workspace, $2 the account.
 const shellSQL = `SELECT COALESCE(u.display_name, ''), COALESCE(u.deletion_due_at, ''),
-       (SELECT COUNT(*) FROM apartment a WHERE a.owner_user_id = u.id AND a.archived_at IS NULL)
-  FROM user_account u WHERE u.id = $1`
+       (SELECT COUNT(*) FROM apartment a WHERE a.owner_user_id = u.id AND a.archived_at IS NULL),
+       COALESCE(acc.email, ''),
+       (acc.id IS NULL OR COALESCE(acc.two_factor_prompted_at::text, '') != '' OR COALESCE(acc.totp_enabled, 0) != 0),
+       COALESCE(acc.signup_at::text, ''),
+       COALESCE(wb.status, ''), COALESCE(wb.plan, ''), COALESCE(wb.trial_ends_at::text, ''), COALESCE(wb.period_end::text, ''),
+       COALESCE(ab.status, ''), COALESCE(ab.plan, '')
+  FROM user_account u
+  LEFT JOIN user_account acc ON acc.id = $2
+  LEFT JOIN billing_account wb ON wb.owner_user_id = u.id
+  LEFT JOIN billing_account ab ON ab.owner_user_id = $2
+ WHERE u.id = $1`
 
-func loadShell(ctx context.Context, env Env, host *session.Host) (shell, error) {
+// loadShell reads the shell data: shellSQL, the open alerts with their stays
+// (openAlertsSQL), the guests of those stays (one read, none without a stay
+// card) and, only while Havel is on, the rate-limit counts. All reads only.
+func loadShell(ctx context.Context, r *http.Request, env Env, host *session.Host) (shell, error) {
 	if host == nil {
 		return shell{}, nil
 	}
 	s := shell{
-		SignedIn:          true,
-		IsAdmin:           host.Account.Role == "admin",
-		Impersonating:     host.Impersonating,
-		WorkspaceUsername: host.Workspace.Username,
-		MinutesLeft:       minutesLeft(host, env.Getenv, env.Now),
+		SignedIn:           true,
+		IsAdmin:            host.Account.Role == "admin",
+		Impersonating:      host.Impersonating,
+		WorkspaceUsername:  host.Workspace.Username,
+		MinutesLeft:        minutesLeft(host, env.Getenv, env.Now),
+		AccountID:          host.Account.ID,
+		AccountIsWorkspace: host.Workspace.ID == host.Account.ID,
+		TwoFactorDone:      true,
+		HavelState:         "off",
 	}
-	var name string
+	var name, email string
 	var count int64
-	err := env.Pool.QueryRow(ctx, shellSQL, host.Workspace.ID).Scan(&name, &s.DeletionDueAt, &count)
+	var acct billingRow
+	err := env.Pool.QueryRow(ctx, shellSQL, host.Workspace.ID, host.Account.ID).Scan(&name, &s.DeletionDueAt, &count,
+		&email, &s.TwoFactorDone, &s.SignupAt,
+		&s.Billing.Status, &s.Billing.Plan, &s.Billing.TrialEndsAt, &s.Billing.PeriodEnd, &acct.Status, &acct.Plan)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return shell{}, err
+	}
+	if s.HavelOn = havelOn(env.Getenv, email); s.HavelOn {
+		counts, err := loadHavelCounts(ctx, env.Pool, host.Account.ID, env.Now)
+		if err != nil {
+			return shell{}, err
+		}
+		s.HavelState = havelLimitState(env.Getenv, counts, aiMultiplier(billingOn(env.Getenv), acct))
+	}
+	if s.Alerts, err = loadAlerts(ctx, env.Pool, host.Workspace.ID); err != nil {
+		return shell{}, err
+	}
+	shown := s.Alerts
+	if r.URL.Path != "/" {
+		shown, _ = shellSlice(shown)
+	}
+	if s.Progress, err = calendar.AlertProgresses(ctx, env.Pool, env.Getenv, progressStays(shown), env.Now); err != nil {
 		return shell{}, err
 	}
 	s.PropertyCount = int(count)
@@ -217,7 +271,7 @@ func Render(w http.ResponseWriter, r *http.Request, env Env, host *session.Host,
 	if tpl.master.Lookup(name) == nil {
 		return fmt.Errorf("layout: no template %q", name)
 	}
-	sh, err := loadShell(r.Context(), env, host)
+	sh, err := loadShell(r.Context(), r, env, host)
 	if err != nil {
 		return err
 	}
@@ -239,7 +293,7 @@ func Render(w http.ResponseWriter, r *http.Request, env Env, host *session.Host,
 // golden test runs it without a database.
 func render(w http.ResponseWriter, r *http.Request, env Env, sh shell, token string, p Page, tpl *Templates, name string, data any) error {
 	lang := resolveLang(r, sh.SignedIn, p)
-	c := &reqCtx{lang: lang, page: tpl.cat, layout: Strings, csrf: token, v2: p.V2, now: env.Now}
+	c := &reqCtx{lang: lang, page: tpl.cat, layout: Strings, csrf: token, v2: p.V2, now: env.Now, getenv: env.Getenv}
 	clone, err := tpl.master.Clone()
 	if err != nil {
 		return err
@@ -261,15 +315,20 @@ func render(w http.ResponseWriter, r *http.Request, env Env, sh shell, token str
 	if v.Body, _, err = slot(""); err != nil {
 		return err
 	}
-	for suffix, dst := range map[string]*template.HTML{
-		".meta": &v.Meta, ".primary": &v.Primary, ".secondary": &v.Secondary, ".tabs": &v.Tabs,
-		".toolbar": &v.Toolbar, ".head": &v.Head, ".back_label": &v.BackLabel,
+	// A fixed order, so a slot with side effects or an error behaves the same
+	// on every request.
+	for _, sl := range []struct {
+		suffix string
+		dst    *template.HTML
+	}{
+		{".meta", &v.Meta}, {".primary", &v.Primary}, {".secondary", &v.Secondary}, {".tabs", &v.Tabs},
+		{".toolbar", &v.Toolbar}, {".head", &v.Head}, {".back_label", &v.BackLabel},
 	} {
-		h, _, err := slot(suffix)
+		h, _, err := slot(sl.suffix)
 		if err != nil {
 			return err
 		}
-		*dst = trimHTML(h)
+		*sl.dst = trimHTML(h)
 	}
 	var h1 template.HTML
 	if h1, defined, err = slot(".title"); err != nil {
@@ -277,6 +336,12 @@ func render(w http.ResponseWriter, r *http.Request, env Env, sh shell, token str
 	}
 	if defined {
 		v.H1 = trimHTML(h1)
+		if p.Title == "" {
+			// No Page.Title: <title> is the slot's text.
+			if txt := strings.TrimSpace(stdhtml.UnescapeString(striptags(string(v.H1)))); txt != "" {
+				v.Title = txt
+			}
+		}
 	} else {
 		v.H1 = template.HTML(escText(strings.TrimSpace(v.Title)))
 	}
@@ -382,7 +447,7 @@ func lastQueryOK(r *http.Request, key string) (string, bool) {
 // security.CSRF_COOKIE, CSRF_MAX_AGE and the serializer salt.
 const (
 	csrfCookie = "ubyhost_csrf"
-	csrfMaxAge = 400 * 24 * 60 * 60
+	csrfMaxAge = 30 * 24 * 60 * 60 // auth.SESSION_REMEMBER_MAX_AGE
 	csrfSalt   = "ubyhost-csrf"
 )
 
@@ -452,7 +517,20 @@ type view struct {
 	MockProduction               bool
 	OperatorEmail                string
 	Passkeys                     bool
-	HavelOn                      bool // 1381: havel_on; false until then
+	HavelOn                      bool // havel_on (launcher links)
+	HavelPanel                   bool // _havel_panel.html is included
+	HavelFab                     bool // nav != "havel": the FAB and the dialog
+	HavelState                   string
+	HavelSrc                     template.URL
+	HavelPage, ReturnPath        string
+	HavelTopics                  []havelTopic
+	AccountID                    int64
+	Alerts                       alertStack
+	Billing                      *billingLine
+	SecurityPrompt               bool // the dialog is shown
+	SecurityPasskeys             bool // and offers a passkey
+	Celebration                  string
+	SentGuestCount               int
 	Flash, FlashError, FlashKind string
 	ShowFlash, ShowError, Sticky bool
 	FixHref, FixKey              string
@@ -542,6 +620,36 @@ func buildView(r *http.Request, env Env, sh shell, c *reqCtx, p Page) view {
 			v.MinutesText = c.tp("impersonation.minutes_left", *m)
 		}
 	}
+	// 1381: alerts, billing line, Havel, security prompt, celebration.
+	v.ReturnPath = r.URL.Path
+	if v.ShowNav && !(p.HideAlertStack || p.V2) {
+		rows, more := sh.Alerts, 0
+		if r.URL.Path != "/" {
+			rows, more = shellSlice(rows)
+		}
+		cards := presentMany(rows, sh.Progress, alertText{lang: c.lang, now: env.Now})
+		v.Alerts = buildAlertStack(cards, more, r.URL.Path, lastQuery(r, "apartment"), p.AlertsExpanded, p.PhHidePin, c.t)
+	}
+	if sh.SignedIn {
+		pn := env.Now.In(prague)
+		v.Billing = billingBanner(billingOn(getenv), sh.Billing, time.Date(pn.Year(), pn.Month(), pn.Day(), 0, 0, 0, 0, time.UTC))
+	}
+	v.HavelOn = sh.SignedIn && sh.HavelOn
+	v.HavelPanel = v.ShowNav && sh.SignedIn
+	if v.HavelPanel {
+		v.HavelFab = p.Nav != "havel"
+		v.HavelState = sh.HavelState
+		v.HavelPage = p.Nav
+		v.HavelSrc = template.URL("/havel?page=" + pyQuote(p.Nav) + "&return_to=" + pyQuote(r.URL.Path))
+		v.HavelTopics = orderedHavelTopics(p.Nav)
+		v.AccountID = sh.AccountID
+	}
+	if v.ShowNav {
+		if sp := securityPrompt(sh, r.URL.Path, env.Now, v.Passkeys); sp != nil {
+			v.SecurityPrompt, v.SecurityPasskeys = true, *sp
+		}
+	}
+	v.Celebration, v.SentGuestCount = p.CelebrationMilestone, p.SentGuestCount
 	// Navigation state (_shell_*.html).
 	switch p.Nav {
 	case "reservations", "submissions", "housebook":

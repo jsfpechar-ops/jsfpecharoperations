@@ -79,7 +79,8 @@
       </form>
     </aside>
     {{end}}
-    {{- /* 1381: _billing_banner.html and _host_alerts.html go here. */ -}}
+    {{template "layout.billing_banner" .}}
+    {{template "layout.host_alerts" .}}
     <div class="host-feedback-region" data-host-feedback
          data-dismiss-label="{{t "a11y.dismiss_notification"}}"
          data-copy-success="{{t "common.copied"}}"
@@ -111,7 +112,16 @@
             <button type="button" data-toast-close aria-label="{{t "a11y.dismiss_notification"}}">{{icon "x" 16}}</button>
           </div>
         {{end}}
-        {{- /* 1381: the celebration toast goes here. */ -}}
+        {{if .Celebration}}
+          <div class="toast" data-toast data-toast-kind="success" data-toast-sticky id="celebration-toast">
+            <span class="grow">{{t "celebration.body" "count" .SentGuestCount}}</span>
+            <form method="post" action="/celebrations/dismiss">
+              <input type="hidden" name="milestone" value="{{.Celebration}}">
+              <input type="hidden" name="return_to" value="{{.ReturnPath}}">
+              <button class="toast-pill" type="submit">{{t "celebration.dismiss"}}</button>
+            </form>
+          </div>
+        {{end}}
       </div>
       <div class="copy-manual-recovery" data-copy-recovery role="group" aria-label="{{t "copy.failure"}}" hidden>
         <strong>{{t "copy.failure"}}</strong>
@@ -192,7 +202,7 @@
   </form>
 </dialog>
 
-{{- /* 1381: _havel_panel.html goes here (show_nav and current_user). */}}
+{{if .HavelPanel}}{{template "layout.havel_panel" .}}{{end}}
 <dialog id="command-dialog" class="command-dialog" aria-labelledby="command-title">
   <div class="command-shell">
     <h2 id="command-title" class="sr-only">{{t "command.open"}}</h2>
@@ -224,7 +234,7 @@
   </div>
 </dialog>
 
-{{- /* 1381: the security prompt dialog goes here. */}}
+{{if .SecurityPrompt}}{{template "layout.security_prompt" .}}{{end}}
 {{if .ShowNav}}{{template "layout.shell_tabbar" .}}{{end}}
 </body>
 </html>
@@ -412,6 +422,132 @@
       <form method="post" action="/logout"><button class="ui-menu-item" type="submit">{{icon "log-out" 16}}{{t "nav.logout"}}</button></form>
     </nav>
     <button class="ui-btn ui-btn-secondary" type="button" data-sheet-close>{{t "common.close"}}</button>
+  </div>
+</dialog>
+{{end}}
+
+{{- /* _billing_banner.html (0414). */ -}}
+{{define "layout.billing_banner"}}{{with .Billing}}
+<aside class="banner {{if .Warning}}warning{{end}} billing-banner" role="status" data-billing-banner="{{.Kind}}">
+  <div class="grow"><strong>{{t (printf "billing.banner.%s" .Kind) "date" .Date}}</strong></div>
+  <a class="btn small" href="/predplatne">{{t (printf "billing.banner.action_%s" .Kind)}}</a>
+</aside>
+{{end}}{{end}}
+
+{{- /* _host_alerts.html (0280, 0969, 1072): the logic is buildAlertStack in alerts.go. */ -}}
+{{define "layout.host_alerts"}}{{with .Alerts}}{{if .Show}}
+<aside class="notification-stack{{if .AsideHide}} ph-hide{{end}}" data-host-alerts aria-label="{{t "a11y.notifications"}}" aria-live="polite">
+  {{range .Lines}}
+    <article class="notification-bubble {{.Level}}{{if .PhHide}} ph-hide{{end}}" data-alert-id="{{.ID}}"{{if .Outside}} data-alert-scope="workspace"{{end}}{{if .Compact}} data-alert-compact{{end}} data-notification>
+      {{if .ActionHref}}<a class="notification-link" href="{{.ActionHref}}">{{else}}<div class="notification-link">{{end}}
+        <span class="notification-icon" aria-hidden="true">!</span>
+        <span class="grow">
+          <strong>{{.Title}}</strong>
+          {{if .Reason}}<small>{{.Reason}}</small>{{end}}
+          {{if .Outside}}<small class="notification-scope" data-workspace-label>{{t "notification.workspace.label"}}</small>{{end}}
+          {{if .ShowAction}}<small class="notification-action">{{t .ActionKey}}</small>{{end}}
+        </span>
+      {{if .ActionHref}}</a>{{else}}</div>{{end}}
+      {{if .Dismiss}}
+      <form method="post" action="/alerts/{{.ID}}/dismiss" data-notification-dismiss>
+        <button type="submit" aria-label="{{t "a11y.dismiss_notification"}}">&times;</button>
+      </form>
+      {{end}}
+    </article>
+  {{end}}
+  {{if .Summary}}
+    <article class="notification-bubble {{.SummaryLevel}}" data-notification-summary>
+      <a class="notification-link" href="/#needs-action">
+        <span class="notification-icon" aria-hidden="true">!</span>
+        <span class="grow">
+          <strong>{{.SummaryT}}</strong>
+          <small class="notification-action">{{t "notification.summary.open"}}</small>
+        </span>
+      </a>
+    </article>
+  {{end}}
+</aside>
+{{end}}{{end}}{{end}}
+
+{{- /* _havel_panel.html (0324) with _havel_topics.html and _havel_form.html as the
+    panel renders them: no answer, no topic, a fresh composer. */ -}}
+{{define "layout.havel_panel"}}{{if .HavelFab}}<a class="havel-fab" href="/havel" data-sheet-open="havel-sheet" data-havel-launcher data-havel-fab aria-label="{{t "havel.launcher"}}" title="{{t "havel.launcher"}}">{{icon "message-circle-question" 24}}</a>
+<dialog id="havel-sheet" class="ui-dialog havel-dialog" aria-labelledby="havel-title" data-havel-modeless data-havel-panel data-havel-owner="{{.AccountID}}"
+        data-src="{{.HavelSrc}}"
+        data-writing="{{t "havel.writing"}}" data-error="{{t "havel.error"}}" data-retry="{{t "havel.retry"}}" data-name="{{t "havel.name"}}">
+  <div class="ui-sheet">
+    <span class="ui-sheet-handle" aria-hidden="true"></span>
+    <div class="havel-head">
+      <span class="havel-avatar" aria-hidden="true">{{icon "message-circle-question" 20}}</span>
+      <div class="havel-head-text"><h2 id="havel-title" tabindex="-1">{{t "havel.name"}}</h2><p>{{t "havel.subtitle"}}</p></div>
+      <button class="ui-btn ui-btn-quiet ui-btn-icon havel-close" type="button" data-sheet-close aria-label="{{t "havel.close"}}">{{icon "x" 20}}</button>
+    </div>
+    <div class="havel-thread" role="log" aria-live="polite" data-havel-thread>
+<div class="havel-msg havel-msg-havel havel-greeting" data-havel-greeting>
+  <div class="havel-bubble"><p>{{t "havel.intro"}}</p></div>
+</div>
+<div class="havel-topics" data-havel-topics>
+  <div class="ui-chips havel-chips" role="group" aria-label="{{t "havel.topics_title"}}">
+    {{range .HavelTopics}}<a class="ui-chip havel-chip" href="/havel?topic={{.ID}}" data-havel-topic-link><span class="havel-chip-ico" aria-hidden="true">{{icon .Icon 16}}</span><span class="havel-chip-text">{{t .Label}}</span></a>{{end}}
+  </div>
+</div>
+    </div>
+    <div data-havel-form-wrap><form method="post" action="/havel" class="havel-composer" data-havel-form>
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <input type="hidden" name="history" value="" data-havel-history>
+  <input type="hidden" name="history_sig" value="" data-havel-sig>
+  <input type="hidden" name="page" value="{{.HavelPage}}">
+  <input type="hidden" name="device" value="computer" data-havel-device>
+  <input type="hidden" name="topic" value="" data-havel-topic>
+  <input type="hidden" name="q" value="" data-havel-q>
+  <input type="hidden" name="return_to" value="{{.ReturnPath}}">
+  {{if .HavelState}}
+  <p class="havel-meta havel-status">{{t (printf "havel.%s" .HavelState)}}</p>
+  <a class="ui-btn ui-btn-secondary havel-support-open" href="/havel?topic=wrong&q=error" data-havel-topic-link>{{icon "mail" 16}}{{t "havel.write_support"}}</a>
+  {{else}}
+  <label for="havel-message" class="sr-only">{{t "havel.placeholder"}}</label>
+  <div class="havel-input">
+    <textarea id="havel-message" name="message" rows="1" maxlength="600" placeholder="{{t "havel.placeholder"}}" required></textarea>
+    <button class="ui-btn ui-btn-secondary ui-btn-icon havel-send" type="submit" data-havel-send aria-label="{{t "havel.send"}}">{{icon "arrow-up" 20}}</button>
+  </div>
+  <p class="havel-meta havel-note">{{t "havel.ai_note"}}</p>
+  {{end}}
+</form></div>
+    <a class="havel-guide-link" href="/guide">{{t "havel.guide_link"}}</a>
+  </div>
+</dialog>{{end}}{{end}}
+
+{{- /* The security prompt of base.html (task 0004). */ -}}
+{{define "layout.security_prompt"}}
+<dialog id="security-prompt" class="admin-dialog security-prompt" aria-labelledby="security-prompt-title">
+  <div class="security-prompt-body">
+    <h2 id="security-prompt-title" class="security-prompt-title">{{t "security_prompt.title"}}</h2>
+    <p class="security-prompt-lede">{{t "security_prompt.lede"}}</p>
+    <div class="security-prompt-options">
+      {{if .SecurityPasskeys}}
+        <div class="security-prompt-option-wrap" data-passkey-supported hidden>
+          <button class="security-prompt-option" type="button" data-passkey-add data-passkey-return="{{.ReturnPath}}">
+            <span class="security-prompt-option-text">
+              <span class="security-prompt-option-title">{{t "security_prompt.passkey"}}</span>
+              <span class="security-prompt-option-help">{{t "security_prompt.passkey_help"}}</span>
+            </span>
+            <span class="security-prompt-chevron" aria-hidden="true">&rsaquo;</span>
+          </button>
+          <p class="small err-text" data-passkey-error data-generic="{{t "passkeys.error.failed"}}" role="alert" hidden></p>
+        </div>
+      {{end}}
+      <a class="security-prompt-option" href="/account/2fa/setup">
+        <span class="security-prompt-option-text">
+          <span class="security-prompt-option-title">{{t "security_prompt.totp"}}</span>
+          <span class="security-prompt-option-help">{{t "security_prompt.totp_help"}}</span>
+        </span>
+        <span class="security-prompt-chevron" aria-hidden="true">&rsaquo;</span>
+      </a>
+    </div>
+    <form method="dialog" class="security-prompt-later">
+      <button class="security-prompt-later-btn" type="submit" value="later" data-security-prompt-later>{{t "security_prompt.later"}}</button>
+    </form>
+    <p class="security-prompt-footnote">{{t "security_prompt.footnote"}}</p>
   </div>
 </dialog>
 {{end}}

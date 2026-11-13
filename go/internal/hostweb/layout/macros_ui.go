@@ -78,7 +78,7 @@ func (c *reqCtx) uiButton(in ...any) (template.HTML, error) {
 		id = ` id="` + a.e("id", "") + `"`
 	}
 	if a.b("href", false) {
-		b.WriteString(`<a class="` + classes + `" href="` + a.e("href", "") + `"` + id)
+		b.WriteString(`<a class="` + classes + `" href="` + a.href("href") + `"` + id)
 		if a.b("disabled", false) {
 			b.WriteString(` aria-disabled="true" tabindex="-1"`)
 		}
@@ -117,7 +117,7 @@ func (c *reqCtx) uiIconButton(in ...any) (template.HTML, error) {
 	}
 	label := a.e("label", "")
 	if a.b("href", false) {
-		return html(`<a class="` + classes + `" href="` + a.e("href", "") + `" aria-label="` + label + `" title="` + label + `"` + attrsPart(a) + ">" + string(ic) + "</a>"), nil
+		return html(`<a class="` + classes + `" href="` + a.href("href") + `" aria-label="` + label + `" title="` + label + `"` + attrsPart(a) + ">" + string(ic) + "</a>"), nil
 	}
 	return html(`<button class="` + classes + `" type="` + a.e("type", "button") + `" aria-label="` + label + `" title="` + label + `"` + attrsPart(a) + ">" + string(ic) + "</button>"), nil
 }
@@ -144,7 +144,7 @@ func (c *reqCtx) uiChip(in ...any) (template.HTML, error) {
 		if a.b("selected", false) {
 			sel = ` aria-current="true"`
 		}
-		return html(`<a class="ui-chip" href="` + a.e("href", "") + `"` + sel + attrsPart(a) + `>` + a.e("label", "") + `</a>`), nil
+		return html(`<a class="ui-chip" href="` + a.href("href") + `"` + sel + attrsPart(a) + `>` + a.e("label", "") + `</a>`), nil
 	}
 	pressed := "false"
 	if a.b("selected", false) {
@@ -295,7 +295,7 @@ func (c *reqCtx) uiMenuItem(in ...any) (template.HTML, error) {
 		ic = string(h)
 	}
 	if a.b("href", false) {
-		return html(`<a class="` + cls + `" role="menuitem" href="` + a.e("href", "") + `"` + attrsPart(a) + `>` + ic + a.e("label", "") + `</a>`), nil
+		return html(`<a class="` + cls + `" role="menuitem" href="` + a.href("href") + `"` + attrsPart(a) + `>` + ic + a.e("label", "") + `</a>`), nil
 	}
 	return html(`<button class="` + cls + `" role="menuitem" type="submit"` + attrsPart(a) + `>` + ic + a.e("label", "") + `</button>`), nil
 }
@@ -344,7 +344,7 @@ func (c *reqCtx) uiTip(in ...any) (template.HTML, error) {
 	more := ""
 	if a.b("href", false) {
 		moreLabel := escText(c.t("help.tip.more"))
-		more = ` <a href="` + a.e("href", "") + `" aria-label="` + moreLabel + `: ` + escText(truncate(striptags(a.s("text", "")), 50)) + `">` + moreLabel + `</a>`
+		more = ` <a href="` + a.href("href") + `" aria-label="` + moreLabel + `: ` + escText(truncate(striptags(a.s("text", "")), 50)) + `">` + moreLabel + `</a>`
 	}
 	return html(`<span class="ui-tip help-tip" data-help-tip><button type="button" class="ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact help-tip-btn" aria-label="` + escText(c.t("help.tip.label")) + `" aria-expanded="false" aria-controls="` + id + `">` + mustIcon("circle-help", 16) + `</button><span class="help-tip-body" id="` + id + `" role="tooltip">` + a.e("text", "") + more + `</span></span>`), nil
 }
@@ -411,7 +411,7 @@ func (c *reqCtx) uiTabs(in ...any) (template.HTML, error) {
 		if truthy(cell(row, 2)) {
 			cur = ` aria-current="page"`
 		}
-		b.WriteString(`<a class="ui-tab" href="` + esc(cell(row, 0)) + `"` + cur + `>` + esc(cell(row, 1)) + `</a>`)
+		b.WriteString(`<a class="ui-tab" href="` + safeHref(cell(row, 0)) + `"` + cur + `>` + esc(cell(row, 1)) + `</a>`)
 	}
 	b.WriteString(`</nav>`)
 	return html(b.String()), nil
@@ -503,7 +503,7 @@ func uiStats(list any, label ...any) template.HTML {
 	}
 	b.WriteString(`<nav class="ui-stats" aria-label="` + l + `">`)
 	for _, row := range items(list) {
-		b.WriteString(`<a class="ui-stat" href="` + esc(cell(row, 0)) + `"><strong class="ui-num">` + esc(cell(row, 1)) + `</strong><span>` + esc(cell(row, 2)) + `</span></a>`)
+		b.WriteString(`<a class="ui-stat" href="` + safeHref(cell(row, 0)) + `"><strong class="ui-num">` + esc(cell(row, 1)) + `</strong><span>` + esc(cell(row, 2)) + `</span></a>`)
 	}
 	b.WriteString(`</nav>`)
 	return html(b.String())
@@ -555,7 +555,7 @@ func uiCard(in ...any) (template.HTML, error) {
 		return "", err
 	}
 	var b strings.Builder
-	b.WriteString(`<a class="ui-card" href="` + a.e("href", "") + `"`)
+	b.WriteString(`<a class="ui-card" href="` + a.href("href") + `"`)
 	if a.b("label", false) {
 		b.WriteString(` aria-label="` + a.e("label", "") + `"`)
 	}

@@ -8,6 +8,27 @@
 {{copy_button "link-1"}}
 {{ui_field "name" "Name" (kv "value" "O'Brien" "help" "Your name")}}
 {{help_tip "h1" "Some <b>help</b> text that is rather long so the truncate filter has to cut it off" "/guide#x"}}
+{{ui_icon_button "Close" "x" (kv "href" "/a?x=1")}}
+{{ui_chip "All" (kv "href" "/r?f=all" "selected" true)}}
+{{ui_select "s1" "Pick" .M.options (kv "selected" "b" "help" "Choose one")}}
+{{ui_textarea "t1" "Note" (kv "value" "Hi <there>" "rows" 4 "optional" true)}}
+{{ui_check "c1" "Agree" (kv "name" "agree" "checked" true)}}
+{{ui_toggle "g1" "On" (kv "name" "on")}}
+{{ui_menu_begin "More"}}{{ui_menu_item "Delete" (kv "href" "/d" "danger" true "icon_name" "x")}}{{ui_menu_end}}
+{{ui_dialog_begin "d1" "Dialog"}}<p>x</p>{{ui_dialog_end}}
+{{ui_empty "Empty" "Nothing here" "Add" "/add" (kv "tip" "A tip")}}
+{{ui_tip "tp1" "Tip <b>text</b>" "mailto:help@example.com"}}
+{{ui_pagination 2 5 "/p?page=1" "/p?page=3" "Pages" "More" "Prev" "Next" "Page 2 of 5"}}
+{{ui_pdot 2 "Second"}}
+{{ui_tabs .M.tabs "Sections"}}
+{{ui_toolbar .M.search .M.chips "flt" 2 (ui_button "Go" "secondary" (kv "href" "/go"))}}
+{{ui_section "Sec title" (kv "id" "sec1" "tip" "Section tip" "caller" (safe "<p>body</p>"))}}
+{{ui_facts .M.facts}}
+{{ui_stats .M.stats "Stats"}}
+{{ui_banner "warning" "Careful" "Fix" "/fix"}}
+{{ui_table_begin .M.columns "Table"}}<tr><td>1</td></tr>{{ui_table_end}}
+{{ui_card "/c/1" "L1" "L2" "L3" "Badge" "Card"}}
+{{ui_skeleton "list"}}
 <p>{{.Value}}</p>
 {{end}}
 {{define "golden.meta"}}{{tp "nav.property_count" 3}}{{end}}

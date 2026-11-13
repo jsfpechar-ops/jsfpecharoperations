@@ -140,6 +140,69 @@
     <span class="help-tip-body" id="h1" role="tooltip">Some &lt;b&gt;help&lt;/b&gt; text that is rather long so the truncate filter has to cut it off <a href="/guide#x" aria-label="Xem thêm: Some help text that is rather long so the...">Xem thêm</a></span>
   </span>
 
+<a class="ui-btn ui-btn-quiet ui-btn-icon" href="/a?x=1" aria-label="Close" title="Close"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></a>
+<a class="ui-chip" href="/r?f=all" aria-current="true">All</a>
+<div class="ui-field">
+  <label class="ui-label" for="s1">Pick</label>
+  <select class="ui-select" id="s1" name="s1" aria-describedby="s1-help" >
+    <option value="a">Apple</option><option value="b" selected>Banana &amp; &lt;Co&gt;</option>
+  </select>
+  <span class="ui-help" id="s1-help">Choose one</span>
+</div>
+<div class="ui-field">
+  <label class="ui-label" for="t1">Note <span class="ui-opt">(không bắt buộc)</span></label>
+  <textarea class="ui-textarea" id="t1" name="t1" rows="4" >Hi &lt;there&gt;</textarea>
+  
+</div>
+<label class="ui-check" for="c1"><input class="ui-input" type="checkbox" id="c1" name="agree" value="1" checked ><span>Agree</span></label>
+<label class="ui-toggle" for="g1"><span>On</span><input class="ui-input ui-switch" type="checkbox" role="switch" id="g1" name="on" value="1" ></label>
+<span class="ui-menu row-menu" data-row-menu>
+  <button class="ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact row-menu-trigger" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="More" title="More"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="ellipsis-vertical"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+  <span class="ui-menu-panel row-menu-panel" role="menu" hidden><a class="ui-menu-item ui-menu-danger" role="menuitem" href="/d"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>Delete</a></span>
+</span>
+<dialog id="d1" class="ui-dialog" aria-labelledby="d1-title">
+  <div class="ui-sheet">
+    <span class="ui-sheet-handle" aria-hidden="true"></span>
+    <h2 id="d1-title">Dialog</h2><p>x</p></div>
+</dialog>
+<div class="ui-empty" data-empty-state>
+  <h2>EmptyA tip</h2>
+  <p>Nothing here</p>
+  <a class="ui-btn ui-btn-primary" href="/add"><span>Add</span></a>
+  
+</div>
+<span class="ui-tip help-tip" data-help-tip><button type="button" class="ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact help-tip-btn" aria-label="Trợ giúp" aria-expanded="false" aria-controls="tp1"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="circle-help"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></button><span class="help-tip-body" id="tp1" role="tooltip">Tip &lt;b&gt;text&lt;/b&gt; <a href="mailto:help@example.com" aria-label="Xem thêm: Tip text">Xem thêm</a></span></span>
+<nav class="ui-pagination" aria-label="Pages">
+  <a class="ui-btn ui-btn-secondary" href="/p?page=3" data-pagination-more><span>More</span></a>
+  <span class="ui-num">Page 2 of 5</span>
+  <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/p?page=1"><span>Prev</span></a>
+  <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/p?page=3"><span>Next</span></a>
+</nav>
+<span class="ui-pdot" data-property="3">Second</span>
+<nav class="ui-tabs" data-sub-tabs aria-label="Sections"><a class="ui-tab" href="/t/1" aria-current="page">One</a><a class="ui-tab" href="/t/2">Two</a></nav>
+<div class="ui-toolbar" data-filter-toolbar data-list-toolbar>
+  <label class="ui-toolbar-search"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="search"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input class="ui-input" type="search" name="q" placeholder="Search stays" value="x&#34;y" aria-label="Search stays"></label>
+  <div class="ui-chips"><a class="ui-chip" href="/c?f=1" aria-current="true">First</a><a class="ui-chip" href="/c?f=2">Second</a></div>
+  <button class="ui-btn ui-btn-secondary" type="button" data-filter-toggle aria-expanded="true" aria-controls="flt" hidden><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="sliders-horizontal"><path d="M21 4h-7"/><path d="M10 4H3"/><path d="M21 12h-9"/><path d="M8 12H3"/><path d="M21 20h-5"/><path d="M12 20H3"/><path d="M14 2v4"/><path d="M8 10v4"/><path d="M16 18v4"/></svg><span>Bộ lọc</span><span class="ui-badge ui-badge-neutral">2</span></button>
+  <div class="ui-toolbar-right"><a class="ui-btn ui-btn-secondary" href="/go"><span>Go</span></a></div>
+</div>
+<section class="ui-section" id="sec1">
+  <div class="ui-section-h"><h2>Sec <span class="tip-nowrap">title</span>Section tip</h2></div>
+  <p>body</p>
+</section>
+<dl class="ui-facts"><div><dt>Key</dt><dd>Value one</dd></div><div><dt>Other</dt><dd>plain</dd></div></dl>
+<nav class="ui-stats" aria-label="Stats"><a class="ui-stat" href="/s/1"><strong class="ui-num">3</strong><span>Ready</span></a><a class="ui-stat" href="/s/2"><strong class="ui-num">12</strong><span>Waiting</span></a></nav>
+<div class="ui-banner ui-banner-warning" role="status"><svg class="ui-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="info"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><div class="grow">Careful</div><a class="ui-btn ui-btn-secondary ui-btn-compact" href="/fix"><span>Fix</span></a></div>
+<table class="ui-table" aria-label="Table"><thead><tr><th scope="col">Name</th><th scope="col" class="ui-cell-r">Count</th></tr></thead><tbody><tr><td>1</td></tr></tbody></table>
+<a class="ui-card" href="/c/1" aria-label="Card"><span class="ui-card-l1"><span>L1</span>Badge</span><span class="ui-card-l2">L2</span><span class="ui-card-l3">L3</span></a>
+<div class="ui-skel" aria-hidden="true" data-skeleton-kind="list">
+  <div class="ui-skel-h"><div><span class="ui-bone ui-bone-title"></span><span class="ui-bone ui-bone-meta"></span></div><span class="ui-bone ui-bone-btn"></span></div>
+  
+  <span class="ui-bone ui-bone-toolbar"></span>
+  <div class="ui-skel-rows"><div class="ui-skel-row"><span class="ui-bone ui-w30"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w14"></span><span class="ui-bone ui-bone-badge"></span></div><div class="ui-skel-row"><span class="ui-bone ui-w30"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w14"></span><span class="ui-bone ui-bone-badge"></span></div><div class="ui-skel-row"><span class="ui-bone ui-w30"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w14"></span><span class="ui-bone ui-bone-badge"></span></div><div class="ui-skel-row"><span class="ui-bone ui-w30"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w14"></span><span class="ui-bone ui-bone-badge"></span></div><div class="ui-skel-row"><span class="ui-bone ui-w30"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w14"></span><span class="ui-bone ui-bone-badge"></span></div><div class="ui-skel-row"><span class="ui-bone ui-w30"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w14"></span><span class="ui-bone ui-bone-badge"></span></div></div>
+  <div class="ui-skel-cards"><div class="ui-skel-card"><span class="ui-bone ui-w40"></span><span class="ui-bone ui-w60"></span><span class="ui-bone ui-w30"></span></div><div class="ui-skel-card"><span class="ui-bone ui-w40"></span><span class="ui-bone ui-w60"></span><span class="ui-bone ui-w30"></span></div><div class="ui-skel-card"><span class="ui-bone ui-w40"></span><span class="ui-bone ui-w60"></span><span class="ui-bone ui-w30"></span></div><div class="ui-skel-card"><span class="ui-bone ui-w40"></span><span class="ui-bone ui-w60"></span><span class="ui-bone ui-w30"></span></div><div class="ui-skel-card"><span class="ui-bone ui-w40"></span><span class="ui-bone ui-w60"></span><span class="ui-bone ui-w30"></span></div><div class="ui-skel-card"><span class="ui-bone ui-w40"></span><span class="ui-bone ui-w60"></span><span class="ui-bone ui-w30"></span></div></div>
+  
+</div>
 <p>&lt;script&gt;x&lt;/script&gt; &amp; &#39;q&#39;</p>
 </div>
 </div>
