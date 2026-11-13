@@ -69,7 +69,7 @@ func Pending(ctx context.Context, conn *pgx.Conn, dir string) ([]int, error) {
 	return pending, nil
 }
 
-func appliedVersions(ctx context.Context, conn *pgx.Conn) (map[int]bool, error) {
+func appliedVersions(ctx context.Context, conn Querier) (map[int]bool, error) {
 	applied := map[int]bool{}
 	var name *string
 	if err := conn.QueryRow(ctx, "SELECT to_regclass('goose_db_version')::text").Scan(&name); err != nil {
