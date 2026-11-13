@@ -55,6 +55,7 @@ SIGNUP = "App/app/signup.py"
 IMPORT = "App/app/guest_guide_import.py"
 MERGE = "App/app/guest_guide_merge.py"
 GOIMPORT = "go/internal/guideimport/job.go"
+RETENTION = "go/internal/retention/steps.go"
 
 # ---- scanner ---------------------------------------------------------------
 
@@ -258,6 +259,7 @@ IMPORT_SITES = {
     (GOIMPORT, "runOne"): 4,
     (GOIMPORT, "merge"): 1,
     (GOIMPORT, "noteFailure"): 1,
+    (RETENTION, "stepGuideImports"): 1,
 }
 IMPORT_MOVES = [
     (IMPORT, "request_imports", '"status": "queued", "created_at": now,', NEW, "queued"),
@@ -277,6 +279,7 @@ IMPORT_MOVES = [
     (GOIMPORT, "runOne", "SET status = 'done', raw_json = $1", ("running",), "done"),
     (GOIMPORT, "merge", "SET status = 'used', raw_json = NULL", ("done",), "used"),
     (GOIMPORT, "noteFailure", "SET status = 'failed', error = $1, raw_json = NULL", ("done",), "failed"),
+    (RETENTION, "stepGuideImports", "WHEN status = 'done' THEN 'expired'", ("done",), "expired"),
 ]
 
 
