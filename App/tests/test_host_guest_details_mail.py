@@ -174,7 +174,7 @@ def test_a_second_queue_for_the_same_count_is_the_same_mail():
     assert len(_rows(seed["stay"], "guest_details_host")) == 1
 
 
-def test_the_receipt_is_not_copied_to_the_host_and_the_host_gets_their_own(monkeypatch):
+def test_the_receipt_is_copied_to_the_host_and_the_host_still_gets_details(monkeypatch):
     monkeypatch.setattr(guest_mail_pref, "full_details", lambda owner_user_id: False)
     monkeypatch.setattr(
         claim.reporting, "reservation_progress",
@@ -188,9 +188,10 @@ def test_the_receipt_is_not_copied_to_the_host_and_the_host_gets_their_own(monke
         claim.maybe_notify_completion(reservation, apartment)
     (receipt,) = _rows(seed["stay"], "completion")
     assert receipt["to_email"] == LEAD
-    assert receipt["cc_email"] is None
+    assert receipt["cc_email"] == HOST
     payload = json.loads(receipt["payload"])
     assert payload["reply_to"] == HOST
-    assert "(host only)" not in payload["text"]
+    assert "(host only)" in payload["text"]
+    assert f"/reservations/{seed['stay']}" in payload["text"]
     (host_mail,) = _rows(seed["stay"], "guest_details_host")
     assert host_mail["to_email"] == HOST
