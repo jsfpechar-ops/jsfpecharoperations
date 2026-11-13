@@ -1,6 +1,6 @@
 # 1171: Standing rule and catch-all test for state machines
 
-Status: blocked
+Status: review
 Depends on: none | Base commit: 748098d9 | Branch: claude/hopeful-ride-ovwq66
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

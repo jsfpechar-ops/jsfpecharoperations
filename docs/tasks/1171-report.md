@@ -1,6 +1,6 @@
 # 1171 report
 
-Status: blocked
+Status: review
 Done: steps 1 to 7. Left: step 8 (context lint), owner decision on token caps.
 
 ## 1. Files changed
@@ -39,3 +39,9 @@ Done: steps 1 to 7. Left: step 8 (context lint), owner decision on token caps.
 
 ## 6. Owner steps left
 - Decide the compaction, then run `python3 scripts/context_lint.py` to confirm clean.
+
+## Orchestrator follow-up (lint unblock)
+
+- Compacted to pass the token caps: test-map wording; AGENTS.md routing merged into the Database row, executor line and close-chat line shortened, retired-executor list left to workflow.md; the expired 2026-11-09 "Owner asleep" decision moved to docs/archive/decisions-2026.md.
+- `context_lint.py`: OK. `test_sm_registry.py` + `test_sm_go_parity.py`: 17 passed.
+- Reviewer: the EXEMPT reasons for billing_month_snapshot, ical_feed, invoice, legal_entity, lock_account, push_outbox.last_status, guest.manual_prev_state, guide_item were partly inferred; check them.

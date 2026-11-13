@@ -1,6 +1,6 @@
 # Test map
 
-Run only the row for the area you changed, from `App/`, always ending `-q --tb=short -x 2>&1 | tail -30`. Full suite: CI, or locally only if the owner asks. Globs are under `tests/`. Add the test file you wrote or changed.
+Run only your area's row, from `App/`, always ending `-q --tb=short -x 2>&1 | tail -30`. Full suite: CI, or locally only if the owner asks. Globs are under `tests/`. Add the test file you wrote or changed.
 
 | Changed | Run |
 |---|---|
@@ -21,7 +21,7 @@ Run only the row for the area you changed, from `App/`, always ending `-q --tb=s
 | Guest bot (Leon) | `test_leon.py test_guest_leon_chat.py test_guest_leon_browser.py test_guest_handoff.py test_privacy_first.py test_cookie_inventory.py test_guest_languages.py test_ai.py` |
 | Guide translation (0353) | `test_guide_translate.py test_guide_translate_browser.py test_guest_guide_view.py test_ai.py` |
 | Database, migrations | `test_migrations.py test_db_*.py` |
-| State or status columns, transitions | `test_sm_*.py` (includes `test_sm_registry.py` and `test_sm_go_parity.py`) |
+| State/status columns, transitions | `test_sm_*.py` |
 | Public pages, legal, landing | `test_public_*.py test_legal_*.py test_landing_*.py test_terms_copy.py test_wp24_terms_dpa.py` |
 | Copy, translations | `test_*_i18n.py test_no_em_dashes.py test_copy_cleanup.py test_flash_literals.py` |
 | Guest guide | `test_guest_guide*.py` |
@@ -29,10 +29,10 @@ Run only the row for the area you changed, from `App/`, always ending `-q --tb=s
 | Demo seed | `test_demo_*.py test_sample_calendar.py` |
 | Analytics, funnel, `/metrics` | `test_posthog_*.py test_umami_guard.py test_meta_capi.py test_admin_funnel.py test_metrics_0427.py` |
 | Design system, catalog page, design lint | `test_design_*.py test_dev_ui*.py` |
-| Static files under App/app/static (any), cache keys | `test_static_versions.py test_wp07_cache_heartbeats.py` plus the row of the page the file styles |
-| Any host template, host CSS or host JS | test_design_guardrails_browser.py (0 skipped; the rules are in MASTER 11.0) |
+| Static files in App/app/static, cache keys | `test_static_versions.py test_wp07_cache_heartbeats.py` plus the row of the page the file styles |
+| Any host template, host CSS or host JS | test_design_guardrails_browser.py (0 skipped; rules: MASTER 11.0) |
 | Public/app domain configuration | `test_app_domain.py test_env_guard.py test_passkeys.py test_pwa.py`, login/auth/security row, relevant mail tests; Caddy validation in both TLS modes |
-| Operator customer dashboard | `test_admin_customers.py test_host_*.py test_design_guardrails_browser.py` (browser checks 0 skipped) |
+| Operator customer dashboard | `test_admin_customers.py test_host_*.py test_design_guardrails_browser.py` (0 skipped) |
 | Direct payments, Stripe Connect, payments dashboard + rails | `test_payments_dashboard.py test_payment_request_model.py test_stripe_connect.py test_payment_links.py test_payment_qr.py test_payment_services.py` |
 | Public property pages | `test_property_slug.py test_property_page.py test_property_page_photos.py test_property_page_meta.py test_property_page_rules.py` |
 | v2 pages (`{% set v2 = true %}`) | `tests/test_0710_v2_mockup_match_browser.py` (browser, 0 skipped; geometry 320-1440 px) |
