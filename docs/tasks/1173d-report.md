@@ -29,7 +29,7 @@ Branch: task/1173d-queue-final-nits (worktree /home/user/wt-1173d). Not pushed, 
 - [x] SQLite 28 passed, 542 passed 2 skipped, ruff clean.
 - [x] PostgreSQL 28 passed, 541 passed 3 skipped.
 - [x] ALL BITES CAUGHT on both databases; tree clean afterwards.
-- [ ] context lint: see step 8 output below.
+- [x] context lint: OK (WARN about status.md is orchestrator work, not this brief).
 
 ## 4. Deviations
 
