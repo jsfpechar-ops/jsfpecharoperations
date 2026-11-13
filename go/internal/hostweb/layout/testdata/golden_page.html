@@ -1,0 +1,14 @@
+{{- /* The Go twin of GOLDEN_PAGE in App/scripts/go_layout_golden.py. Keep the two in step. */ -}}
+{{define "golden"}}
+{{ui_badge "done" (t "status.reported")}}
+{{progress_pill "ready" "immediate"}}
+{{property_identity 5 "Flat <A> & \"B\""}}
+{{empty_state (t "nav.stays") "No stays yet." "/reservations/new" (t "common.open")}}
+{{row_menu_begin}}{{ui_menu_item (t "common.open") (kv "href" "/x?a=1&b=2")}}{{row_menu_end}}
+{{copy_button "link-1"}}
+{{ui_field "name" "Name" (kv "value" "O'Brien" "help" "Your name")}}
+{{help_tip "h1" "Some <b>help</b> text that is rather long so the truncate filter has to cut it off" "/guide#x"}}
+<p>{{.Value}}</p>
+{{end}}
+{{define "golden.meta"}}{{tp "nav.property_count" 3}}{{end}}
+{{define "golden.primary"}}{{ui_button (t "nav.stays") "primary" (kv "href" "/reservations/new" "icon_name" "plus")}}{{end}}

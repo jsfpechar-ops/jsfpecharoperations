@@ -1,6 +1,7 @@
 """Write the Go host string catalogs from App/app/host_i18n.py.
 
-Each go/internal/<pkg>/i18n_keys.txt lists the keys that package reads, one per
+Each go/internal/<pkg>/i18n_keys.txt (or a nested package such as
+hostweb/layout/i18n_keys.txt) lists the keys that package reads, one per
 line; a line starting with "#" is a comment. The sibling i18n.json holds
 {lang: {key: text}} for every host language, keeping only the listed keys that
 the language has.
@@ -40,7 +41,7 @@ def render(keys: list[str]) -> str:
 def main(argv: list[str]) -> int:
     check = "--check" in argv
     stale = []
-    for keys_file in sorted(GO_INTERNAL.glob("*/i18n_keys.txt")):
+    for keys_file in sorted(GO_INTERNAL.glob("**/i18n_keys.txt")):
         out = keys_file.with_name("i18n.json")
         text = render(read_keys(keys_file))
         current = out.read_text(encoding="utf-8") if out.exists() else None
