@@ -1,0 +1,322 @@
+package ai
+
+// havel_cards.go: the confirm cards under Havel's bubble, the port of
+// App/app/havel_actions.py (prepare) plus the three lookups the route hands it
+// (routes/havel.py _feed_count, dashboard_calendar.overlapping_count and
+// guest_slug.link_key's read side). Nothing here writes. A card never grants
+// anything: its form posts to the existing route, which checks everything again.
+
+import (
+	"context"
+	"errors"
+	"regexp"
+	"strconv"
+	"time"
+
+	"github.com/jackc/pgx/v5"
+)
+
+// HavelApartment is one row of access.apartments(request, "*") as the cards and
+// the page read it.
+type HavelApartment struct {
+	ID             int64
+	Name           string // internal_name, "" when unset
+	City           string // addr_obec
+	Active         bool
+	PermalinkToken string
+	PermalinkPIN   string
+}
+
+// DisplayName is internal_name or "#<id>".
+func (a HavelApartment) DisplayName() string {
+	if a.Name != "" {
+		return a.Name
+	}
+	return "#" + strconv.FormatInt(a.ID, 10)
+}
+
+// Apartments is access.apartments(request, "*"): the owner's properties that
+// are not archived, in name order. owner is the workspace id.
+func (s HavelStore) Apartments(ctx context.Context, owner int64) ([]HavelApartment, error) {
+	rows, err := s.Pool.Query(ctx, `SELECT id, COALESCE(internal_name, ''), COALESCE(addr_obec, ''), active,
+       COALESCE(permalink_token, ''), COALESCE(permalink_pin, '')
+  FROM apartment WHERE owner_user_id IS NOT DISTINCT FROM $1 AND archived_at IS NULL ORDER BY internal_name`, owner)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []HavelApartment
+	for rows.Next() {
+		var a HavelApartment
+		var active int64
+		if err := rows.Scan(&a.ID, &a.Name, &a.City, &active, &a.PermalinkToken, &a.PermalinkPIN); err != nil {
+			return nil, err
+		}
+		a.Active = active != 0
+		out = append(out, a)
+	}
+	return out, rows.Err()
+}
+
+// FeedCount is routes/havel.py _feed_count: the active calendar feeds of a property.
+func (s HavelStore) FeedCount(ctx context.Context, apartmentID int64) (int64, error) {
+	var n int64
+	err := s.Pool.QueryRow(ctx, `SELECT COUNT(*) FROM ical_feed WHERE apartment_id = $1 AND active = 1`, apartmentID).Scan(&n)
+	return n, err
+}
+
+// OverlappingCount is dashboard_calendar.overlapping_count.
+func (s HavelStore) OverlappingCount(ctx context.Context, apartmentID int64, start, end string) (int64, error) {
+	var n int64
+	err := s.Pool.QueryRow(ctx, `SELECT COUNT(*) FROM reservation WHERE apartment_id = $1
+ AND status = 'active' AND archived_at IS NULL AND date_from < $2 AND date_to > $3`, apartmentID, end, start).Scan(&n)
+	return n, err
+}
+
+// LinkKey is guest_slug.link_key. Python creates the property's readable slug
+// when it has none (guest_slug.ensure); Go only reads, so a property without a
+// current slug shows its permanent token link, which works for ever. A
+// property without a permanent token has no link.
+func (s HavelStore) LinkKey(ctx context.Context, a HavelApartment) (string, error) {
+	if a.PermalinkToken == "" {
+		return "", nil
+	}
+	var slug string
+	err := s.Pool.QueryRow(ctx, `SELECT slug FROM apartment_slug WHERE apartment_id = $1 AND is_current = 1`, a.ID).Scan(&slug)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return a.PermalinkToken, nil
+	}
+	if err != nil {
+		return "", err
+	}
+	return slug, nil
+}
+
+// HavelNotPrepared is havel_actions.NotPrepared; Reason is the tail of a havel.reason.* key.
+type HavelNotPrepared struct{ Reason string }
+
+func (e *HavelNotPrepared) Error() string { return e.Reason }
+
+// HavelCardProperty is the property a card is about; Index is the 1-based
+// position in the host's list (the identity dot).
+type HavelCardProperty struct {
+	ID    int64
+	Name  string
+	Index int
+}
+
+// HavelCardOption is one <option> of a select.
+type HavelCardOption struct {
+	Value int64
+	Name  string
+}
+
+// HavelCardField is one input behind "Change". Label is already in the host's
+// language.
+type HavelCardField struct {
+	Name, Label, Type, Value string
+	Options                  []HavelCardOption
+	Min, Max                 string // "" when not set
+	LabelOwner               string // "host" or "cleaning": which catalog the label key is from
+	LabelKey                 string
+}
+
+// HavelCard is what a card shows and posts (havel_actions.prepare's dict).
+type HavelCard struct {
+	Type, Title, Confirm, Action, Warning string
+	Danger                                bool
+	Hidden                                [][2]string // name, value in order
+	Property                              *HavelCardProperty
+	Link, Pin, GuestsURL                  string
+	DateFrom, DateTo, StartTime, EndTime  string
+	Note, GuestEmail                      string
+	Nights                                int
+	Guests                                int64 // 0 when not given
+	Overlap                               bool
+	Fields                                []HavelCardField
+}
+
+// HavelCardLookups are the three reads prepare needs.
+type HavelCardLookups struct {
+	FeedCount func(ctx context.Context, apartmentID int64) (int64, error)
+	Overlaps  func(ctx context.Context, apartmentID int64, start, end string) (int64, error)
+	LinkKey   func(ctx context.Context, a HavelApartment) (string, error)
+}
+
+const (
+	havelDaysBack  = 365
+	havelDaysAhead = 730
+)
+
+var (
+	havelCardEmailRE = regexp.MustCompile(`^[^@\s]+@[^@\s]+\.[^@\s]+$`)
+	havelCardHHMMRE  = regexp.MustCompile(`^(?:[01]\d|2[0-3]):[0-5]\d\n?$`)
+)
+
+// havelISO is _iso: date.fromisoformat, which accepts only YYYY-MM-DD here
+// (a trailing newline is an error).
+func havelISO(v any) (time.Time, bool) {
+	s, ok := v.(string)
+	if !ok {
+		return time.Time{}, false
+	}
+	d, err := time.Parse("2006-01-02", s)
+	return d, err == nil
+}
+
+func havelInWindow(day, today time.Time) bool {
+	return !day.Before(today.AddDate(0, 0, -havelDaysBack)) && !day.After(today.AddDate(0, 0, havelDaysAhead))
+}
+
+func havelStrField(v any) string {
+	s, _ := v.(string)
+	return s
+}
+
+// HavelPrepareCard is havel_actions.prepare: the card data for a validated
+// action, or a *HavelNotPrepared. properties are the host's apartments in the
+// order the host sees them; publicBase is config.PUBLIC_BASE_URL; lang picks
+// the label language of the cleaning fields.
+func HavelPrepareCard(ctx context.Context, action map[string]any, properties []HavelApartment, today time.Time, returnTo, publicBase, lang string, lk HavelCardLookups) (*HavelCard, error) {
+	kind, _ := action["type"].(string)
+	if kind == "sync_calendars" {
+		hasFeed := false
+		for _, p := range properties {
+			if !p.Active {
+				continue
+			}
+			n, err := lk.FeedCount(ctx, p.ID)
+			if err != nil {
+				return nil, err
+			}
+			if n > 0 {
+				hasFeed = true
+				break
+			}
+		}
+		if !hasFeed {
+			return nil, &HavelNotPrepared{"no_calendar"}
+		}
+		return &HavelCard{Type: kind, Title: "havel.card.title_sync", Confirm: "havel.card.confirm_sync", Action: "/sync",
+			Hidden: [][2]string{{"return_to", returnTo}}}, nil
+	}
+
+	var prop *HavelCardProperty
+	var row HavelApartment
+	pid, hasPID := havelPyInt(action["property_id"])
+	for i, p := range properties {
+		if hasPID && p.ID == pid {
+			if !p.Active {
+				return nil, &HavelNotPrepared{"archived"}
+			}
+			prop = &HavelCardProperty{ID: p.ID, Name: p.DisplayName(), Index: i + 1}
+			row = p
+			break
+		}
+	}
+	if prop == nil {
+		return nil, &HavelNotPrepared{"property"}
+	}
+	idText := strconv.FormatInt(prop.ID, 10)
+
+	if kind == "show_guest_link" {
+		key, err := lk.LinkKey(ctx, row)
+		if err != nil {
+			return nil, err
+		}
+		if key == "" {
+			return nil, &HavelNotPrepared{"no_link"}
+		}
+		return &HavelCard{Type: kind, Title: "havel.card.title_link", Property: prop,
+			Link: publicBase + "/l/" + key, Pin: row.PermalinkPIN,
+			GuestsURL: "/apartments/" + idText + "?view=settings&section=guests#communication"}, nil
+	}
+	if kind == "new_pin" {
+		return &HavelCard{Type: kind, Title: "havel.card.title_pin", Confirm: "havel.card.confirm_pin", Danger: true,
+			Action: "/apartments/" + idText + "/regenerate-pin", Warning: "havel.card.pin_warning", Property: prop}, nil
+	}
+
+	start, ok := havelISO(action["date_from"])
+	if !ok || !havelInWindow(start, today) {
+		return nil, &HavelNotPrepared{"dates"}
+	}
+	note := havelClip(havelStrField(action["note"]), 500)
+
+	if kind == "create_cleaning" {
+		startTime, endTime := havelStrField(action["start_time"]), havelStrField(action["end_time"])
+		for _, v := range []string{startTime, endTime} {
+			if v != "" && !havelCardHHMMRE.MatchString(havelFoldStr(v)) {
+				return nil, &HavelNotPrepared{"dates"}
+			}
+		}
+		if startTime != "" && endTime != "" && endTime <= startTime {
+			return nil, &HavelNotPrepared{"dates"}
+		}
+		date := start.Format("2006-01-02")
+		return &HavelCard{Type: kind, Title: "havel.card.title_cleaning", Confirm: "havel.card.confirm_cleaning",
+			Action: "/cleaning/events", Hidden: [][2]string{{"apartment_id", idText}}, Property: prop,
+			DateFrom: date, StartTime: startTime, EndTime: endTime, Note: note,
+			Fields: []HavelCardField{
+				{Name: "scheduled_date", LabelOwner: "cleaning", LabelKey: "date", Type: "date", Value: date},
+				{Name: "start_time", LabelOwner: "cleaning", LabelKey: "start", Type: "time", Value: startTime},
+				{Name: "end_time", LabelOwner: "cleaning", LabelKey: "end", Type: "time", Value: endTime},
+				{Name: "notes", LabelOwner: "cleaning", LabelKey: "notes", Type: "text", Value: note},
+			}}, nil
+	}
+
+	// create_stay
+	end, ok := havelISO(action["date_to"])
+	if !ok || !end.After(start) || int(end.Sub(start).Hours()/24) > 365 {
+		return nil, &HavelNotPrepared{"dates"}
+	}
+	var guests int64
+	if g := action["guests"]; g != nil {
+		n, isInt := havelPyInt(g)
+		if !isInt {
+			// int(guests) of a float or text: Python converts it; only integers reach here (validated).
+			return nil, &HavelNotPrepared{"dates"}
+		}
+		if n < 1 || n > 60 {
+			return nil, &HavelNotPrepared{"dates"}
+		}
+		guests = n
+	}
+	email := havelStrip(havelStrField(action["guest_email"]))
+	if email != "" && !havelCardEmailRE.MatchString(havelFoldStr(email)) {
+		email = ""
+	}
+	startISO, endISO := start.Format("2006-01-02"), end.Format("2006-01-02")
+	overlaps, err := lk.Overlaps(ctx, prop.ID, startISO, endISO)
+	if err != nil {
+		return nil, err
+	}
+	var options []HavelCardOption
+	for _, p := range properties {
+		if p.Active {
+			options = append(options, HavelCardOption{p.ID, p.DisplayName()})
+		}
+	}
+	guestsValue := ""
+	if guests != 0 {
+		guestsValue = strconv.FormatInt(guests, 10)
+	}
+	return &HavelCard{Type: kind, Title: "havel.card.title_stay", Confirm: "havel.card.confirm_stay", Action: "/reservations",
+		Hidden: [][2]string{{"host_note", note}}, Property: prop, DateFrom: startISO, DateTo: endISO,
+		Nights: int(end.Sub(start).Hours() / 24), Guests: guests, GuestEmail: email, Note: note, Overlap: overlaps > 0,
+		Fields: []HavelCardField{
+			{Name: "apartment_id", LabelOwner: "host", LabelKey: "stays.add_panel.apartment", Type: "select", Value: idText, Options: options},
+			{Name: "date_from", LabelOwner: "host", LabelKey: "stays.add_panel.arrival", Type: "date", Value: startISO},
+			{Name: "date_to", LabelOwner: "host", LabelKey: "stays.add_panel.departure", Type: "date", Value: endISO},
+			{Name: "expected_guests", LabelOwner: "host", LabelKey: "stays.add_panel.guests", Type: "number", Value: guestsValue, Min: "1", Max: "60"},
+			{Name: "guest_email", LabelOwner: "host", LabelKey: "stays.add_panel.email", Type: "email", Value: email},
+		}}, nil
+}
+
+// HavelFieldLabel is the label of a card field in the host's language: the
+// host catalog, or cleaning_i18n for the cleaning card.
+func HavelFieldLabel(lang string, f HavelCardField) string {
+	if f.LabelOwner == "cleaning" {
+		return havelCatalog.T(lang, "cleaning_word."+f.LabelKey, nil)
+	}
+	return havelCatalog.T(lang, f.LabelKey, nil)
+}

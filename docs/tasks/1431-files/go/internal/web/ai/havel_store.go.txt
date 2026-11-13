@@ -1,0 +1,252 @@
+package ai
+
+// havel_store.go: what Havel reads and writes in the database and the switches
+// in front of it: the port of the limit and stat functions of App/app/havel.py
+// (lines 296-381, 536-555), of rate_limit.py (_prune, _count, record, blocked),
+// of billing.entitlements(...).ai_multiplier and of ai.enabled_for.
+
+import (
+	"context"
+	"errors"
+	"strconv"
+	"strings"
+	"time"
+	_ "time/tzdata" // Europe/Prague must load on a slim image
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/anthropic"
+)
+
+var havelPrague = func() *time.Location {
+	loc, err := time.LoadLocation("Europe/Prague")
+	if err != nil {
+		panic("havel: Prague zone missing: " + err.Error())
+	}
+	return loc
+}()
+
+// HavelEnv reads one environment variable the way os.LookupEnv does.
+type HavelEnv func(string) (string, bool)
+
+// Get is os.environ.get(name, default).
+func (e HavelEnv) Get(name, def string) string {
+	if v, ok := e(name); ok {
+		return v
+	}
+	return def
+}
+
+// Getenv is the plain reader the host packages take.
+func (e HavelEnv) Getenv(name string) string { v, _ := e(name); return v }
+
+func (e HavelEnv) int(name string, def int) int {
+	n, err := strconv.Atoi(strings.TrimSpace(e.Get(name, strconv.Itoa(def))))
+	if err != nil {
+		return def
+	}
+	return n
+}
+
+// HavelAIOn is ai.enabled_for(feature, email): the feature is listed in
+// UBYHOST_AI_FEATURES, the provider's key is set, and, while
+// UBYHOST_AI_TEST_EMAILS is set, the e-mail is on it.
+func HavelAIOn(env HavelEnv, feature, email string) bool {
+	return anthropic.ConfigFromEnv(env).Enabled(feature) && HavelOnTestList(env, email)
+}
+
+// HavelOnTestList is ai.on_test_list.
+func HavelOnTestList(env HavelEnv, email string) bool {
+	listed := map[string]bool{}
+	for _, part := range strings.Split(env.Get("UBYHOST_AI_TEST_EMAILS", ""), ",") {
+		if p := strings.ToLower(strings.TrimSpace(part)); p != "" {
+			listed[p] = true
+		}
+	}
+	return len(listed) == 0 || listed[strings.ToLower(havelStrip(email))]
+}
+
+// HavelBillingOn is billing.enabled() (config.BILLING_ENABLED).
+func HavelBillingOn(env HavelEnv) bool {
+	switch strings.ToLower(env.Get("UBYHOST_BILLING_ENABLED", "")) {
+	case "1", "true", "yes":
+		return true
+	}
+	return false
+}
+
+// HavelStore is the database side of Havel. Nothing here opens a connection
+// until a method is called.
+type HavelStore struct {
+	Pool *pgxpool.Pool
+	Env  HavelEnv
+}
+
+// Multiplier is plan_multiplier: billing.entitlements(user_id).ai_multiplier,
+// 0 paused, 1 base limits, 5 Max.
+func (s HavelStore) Multiplier(ctx context.Context, userID int64) (int, error) {
+	if !HavelBillingOn(s.Env) {
+		return 1, nil
+	}
+	var status, plan string
+	err := s.Pool.QueryRow(ctx, `SELECT status, COALESCE(plan, '') FROM billing_account WHERE owner_user_id = $1`, userID).Scan(&status, &plan)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return 1, nil
+	}
+	if err != nil {
+		return 0, err
+	}
+	switch status {
+	case "paused":
+		return 0, nil
+	case "trial_pending", "trialing":
+		return 1, nil
+	}
+	if plan == "max" {
+		return 5, nil
+	}
+	return 1, nil
+}
+
+func havelEpoch(at time.Time) float64 { return float64(at.UnixNano()) / 1e9 }
+
+// wall is the clock reading of t as a UTC time: Python subtracts aware
+// datetimes of one zone by their wall clock, with no daylight-saving shift.
+func havelWall(t time.Time) time.Time {
+	y, mo, d := t.Date()
+	h, mi, s := t.Clock()
+	return time.Date(y, mo, d, h, mi, s, t.Nanosecond(), time.UTC)
+}
+
+// HavelSinceWeekStart is havel._since_week_start: seconds since Monday 00:00
+// in Prague, plus one.
+func HavelSinceWeekStart(now time.Time) int64 {
+	w := havelWall(now.In(havelPrague))
+	back := (int(w.Weekday()) + 6) % 7
+	start := time.Date(w.Year(), w.Month(), w.Day()-back, 0, 0, 0, 0, time.UTC)
+	return max(1, int64(w.Sub(start).Seconds())+1)
+}
+
+// HavelSinceMonthStart is havel._since_month_start.
+func HavelSinceMonthStart(now time.Time) int64 {
+	w := havelWall(now.In(havelPrague))
+	start := time.Date(w.Year(), w.Month(), 1, 0, 0, 0, 0, time.UTC)
+	return max(1, int64(w.Sub(start).Seconds())+1)
+}
+
+// count is rate_limit._count: older events are deleted first, then the rest
+// counted.
+func (s HavelStore) count(ctx context.Context, scope, key string, window int64, at time.Time) (int64, error) {
+	if _, err := s.Pool.Exec(ctx, `DELETE FROM rate_limit_event WHERE scope = $1 AND key = $2 AND at < $3`,
+		scope, key, havelEpoch(at)-float64(window)); err != nil {
+		return 0, err
+	}
+	var n int64
+	err := s.Pool.QueryRow(ctx, `SELECT COUNT(*) FROM rate_limit_event WHERE scope = $1 AND key = $2`, scope, key).Scan(&n)
+	return n, err
+}
+
+// Blocked is rate_limit.blocked: true when the key has used its budget in the
+// scope (and, failing closed, when the key is empty).
+func (s HavelStore) Blocked(ctx context.Context, scope, key string, max int64, window int64, at time.Time) (bool, error) {
+	if key == "" {
+		return true, nil
+	}
+	n, err := s.count(ctx, scope, key, window, at)
+	return n >= max, err
+}
+
+// Record is rate_limit.record.
+func (s HavelStore) Record(ctx context.Context, scope, key string, at time.Time) error {
+	_, err := s.Pool.Exec(ctx, `INSERT INTO rate_limit_event (scope, key, at) VALUES ($1, $2, $3)`, scope, key, havelEpoch(at))
+	return err
+}
+
+// LimitState is havel.limit_state: "" when the host may send, else the copy
+// key suffix: paused, limit_burst, limit_week, limit_month. The four checks run
+// in this order and stop at the first hit, as in Python.
+func (s HavelStore) LimitState(ctx context.Context, userID int64, now time.Time) (string, error) {
+	key := strconv.FormatInt(userID, 10)
+	scale, err := s.Multiplier(ctx, userID)
+	if err != nil {
+		return "", err
+	}
+	week, month := HavelSinceWeekStart(now), HavelSinceMonthStart(now)
+	checks := []struct {
+		scope  string
+		max    int64
+		window int64
+		state  string
+	}{
+		{"havel_refuse", havelRefusalsMax, week, "paused"},
+		{"havel_burst", havelBurstMax, havelBurstWindow, "limit_burst"},
+		{"havel_week", int64(s.Env.int("UBYHOST_HAVEL_WEEKLY", 8) * scale), week, "limit_week"},
+		{"havel_month", int64(s.Env.int("UBYHOST_HAVEL_MONTHLY", 15) * scale), month, "limit_month"},
+	}
+	for _, c := range checks {
+		hit, err := s.Blocked(ctx, c.scope, key, c.max, c.window, now)
+		if err != nil {
+			return "", err
+		}
+		if hit {
+			return c.state, nil
+		}
+	}
+	return "", nil
+}
+
+// RecordMessage is havel.record_message: once per message that reached the model.
+func (s HavelStore) RecordMessage(ctx context.Context, userID int64, at time.Time) error {
+	for _, scope := range []string{"havel_burst", "havel_week", "havel_month"} {
+		if err := s.Record(ctx, scope, strconv.FormatInt(userID, 10), at); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// RecordRefusal is havel.record_refusal.
+func (s HavelStore) RecordRefusal(ctx context.Context, userID int64, at time.Time) error {
+	return s.Record(ctx, "havel_refuse", strconv.FormatInt(userID, 10), at)
+}
+
+// SupportBlocked is havel.support_blocked: three support mails a week.
+func (s HavelStore) SupportBlocked(ctx context.Context, userID int64, now time.Time) (bool, error) {
+	return s.Blocked(ctx, "havel_support", strconv.FormatInt(userID, 10), havelSupportMax, HavelSinceWeekStart(now), now)
+}
+
+// RecordSupport is rate_limit.record("havel_support", uid).
+func (s HavelStore) RecordSupport(ctx context.Context, userID int64, at time.Time) error {
+	return s.Record(ctx, "havel_support", strconv.FormatInt(userID, 10), at)
+}
+
+// RecordStat is havel.record_stat: one more of this kind on this day.
+func (s HavelStore) RecordStat(ctx context.Context, kind string, day time.Time) error {
+	_, err := s.Pool.Exec(ctx, `INSERT INTO havel_stats (day, kind, count) VALUES ($1, $2, 1)
+ON CONFLICT (day, kind) DO UPDATE SET count = havel_stats.count + 1`, day.Format("2006-01-02"), kind)
+	return err
+}
+
+// StatSink is RecordStat as the sink HavelAsk takes.
+func (s HavelStore) StatSink() HavelStatSink { return s.RecordStat }
+
+// RecordGap is havel.record_gap: the redacted question, with no user and no
+// property (plan section 12). The day only, so a time to the second cannot be
+// joined to the user-keyed rate-limit rows written in the same request.
+func (s HavelStore) RecordGap(ctx context.Context, lang, page, kind, question string, at time.Time) error {
+	text := havelClip(havelStrip(HavelRedact(question, NewHavelMapping())), HavelMaxMessageChars)
+	if text == "" || (kind != "escalate" && kind != "fail" && kind != "not_helped") {
+		return nil
+	}
+	if lang == "" {
+		lang = "en"
+	}
+	var pageValue any
+	if _, ok := havelPageByID[page]; ok {
+		pageValue = page
+	}
+	_, err := s.Pool.Exec(ctx, `INSERT INTO havel_gap (created_at, lang, page, kind, question) VALUES ($1, $2, $3, $4, $5)`,
+		at.UTC().Format("2006-01-02")+"T00:00:00+00:00", havelClip(lang, 5), pageValue, kind, text)
+	return err
+}
