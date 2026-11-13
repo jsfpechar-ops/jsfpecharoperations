@@ -15,7 +15,7 @@ from datetime import date, datetime, timedelta, timezone
 import pytest
 from markupsafe import escape
 
-from app import auth, config, db, filing_watchdog, host_i18n, mail, mail_notify, scheduler
+from app import auth, config, db, filing_watchdog, host_i18n, mail, mail_notify
 from tests.test_submission_retry_cap import host as host  # noqa: F401
 
 USERNAME = "filing-watchdog-host"
@@ -295,78 +295,35 @@ def test_the_digest_stamp_is_utc(world, monkeypatch):
 # --- heartbeat ------------------------------------------------------------------
 
 
-@pytest.fixture
-def pings(monkeypatch):
-    calls = []
-    monkeypatch.setattr(scheduler.requests, "get", lambda url, timeout: calls.append(url))
-    monkeypatch.setattr(scheduler.reporting, "check_deadlines", lambda: 0)
-    monkeypatch.setattr(scheduler.dsr, "raise_due_alerts", lambda: 0)
-    return calls
+# The job that pings the URL is go/internal/calendar/deadlines_job.go (1200);
+# these tests pin the URL the watchdog's answer maps to.
+
+URL = "https://hc-ping.example.invalid/abc"
 
 
-def _watchdog_returns(monkeypatch, at_risk):
-    monkeypatch.setattr(
-        filing_watchdog, "run",
-        lambda now=None: {"at_risk": at_risk, "host_mails": 0, "digest": 0},
-    )
+def test_the_heartbeat_reports_success_when_nothing_is_at_risk(monkeypatch):
+    monkeypatch.setattr(config, "HEARTBEAT_FILING_URL", URL + "/")
+    assert filing_watchdog.heartbeat_url(False) == URL
 
 
-def test_the_heartbeat_reports_success_when_nothing_is_at_risk(pings, monkeypatch):
-    monkeypatch.setattr(config, "HEARTBEAT_FILING_URL", "https://hc-ping.example.invalid/abc/")
-    _watchdog_returns(monkeypatch, 0)
-    scheduler._job_deadlines()
-    assert pings == ["https://hc-ping.example.invalid/abc"]
+def test_the_heartbeat_reports_fail_when_a_stay_is_at_risk(monkeypatch):
+    monkeypatch.setattr(config, "HEARTBEAT_FILING_URL", URL)
+    assert filing_watchdog.heartbeat_url(True) == URL + "/fail"
 
 
-def test_the_heartbeat_reports_fail_when_a_stay_is_at_risk(pings, monkeypatch):
-    monkeypatch.setattr(config, "HEARTBEAT_FILING_URL", "https://hc-ping.example.invalid/abc")
-    _watchdog_returns(monkeypatch, 2)
-    scheduler._job_deadlines()
-    assert pings == ["https://hc-ping.example.invalid/abc/fail"]
-
-
-def test_the_heartbeat_reports_fail_when_the_deadline_watch_breaks(pings, monkeypatch):
-    monkeypatch.setattr(config, "HEARTBEAT_FILING_URL", "https://hc-ping.example.invalid/abc")
-    _watchdog_returns(monkeypatch, 0)
-
-    def boom():
-        raise RuntimeError("deadline watch broke")
-
-    monkeypatch.setattr(scheduler.reporting, "check_deadlines", boom)
-    monkeypatch.setattr(scheduler, "_job_failed", lambda job_id: None)
-    scheduler._job_deadlines()
-    assert pings == ["https://hc-ping.example.invalid/abc/fail"]
-
-
-def test_no_ping_when_the_watchdog_itself_fails(pings, monkeypatch):
-    monkeypatch.setattr(config, "HEARTBEAT_FILING_URL", "https://hc-ping.example.invalid/abc")
-
-    def boom(now=None):
-        raise RuntimeError("watchdog broke")
-
-    monkeypatch.setattr(filing_watchdog, "run", boom)
-    failed = []
-    monkeypatch.setattr(scheduler, "_job_failed", failed.append)
-    scheduler._job_deadlines()
-    assert pings == []
-    assert failed == ["deadlines"]
-
-
-def test_nothing_is_sent_when_the_url_is_empty(pings, monkeypatch):
+def test_nothing_is_sent_when_the_url_is_empty(monkeypatch):
     monkeypatch.setattr(config, "HEARTBEAT_FILING_URL", "")
-    for at_risk in (0, 3):
-        _watchdog_returns(monkeypatch, at_risk)
-        scheduler._job_deadlines()
-    assert pings == []
+    assert filing_watchdog.heartbeat_url(False) == ""
+    assert filing_watchdog.heartbeat_url(True) == ""
 
 
-def test_the_real_watchdog_runs_inside_the_deadline_job(world, pings, monkeypatch):
-    """No stub for run(): the job computes the answer and pings with it."""
-    monkeypatch.setattr(config, "HEARTBEAT_FILING_URL", "https://hc-ping.example.invalid/abc")
+def test_the_real_watchdog_answer_fails_the_heartbeat(world, monkeypatch):
+    """No stub for run(): its answer maps to the /fail URL."""
+    monkeypatch.setattr(config, "HEARTBEAT_FILING_URL", URL)
     rid = world["add_stay"]([("DEU", "pending")], arrival=date.today() - timedelta(days=10))
     _refused_batch(world, rid)
-    scheduler._job_deadlines()
-    assert pings == ["https://hc-ping.example.invalid/abc/fail"]
+    result = filing_watchdog.run()
+    assert filing_watchdog.heartbeat_url(result["at_risk"] > 0) == URL + "/fail"
     assert rid in _mine(filing_watchdog.at_risk_stays(), {rid})
 
 
@@ -509,7 +466,7 @@ def test_a_digest_goes_out_for_stays_without_guests_alone(world, monkeypatch):
     ) not in text
 
 
-def test_stays_without_guests_never_fail_the_heartbeat(world, pings, monkeypatch):
+def test_stays_without_guests_never_fail_the_heartbeat(world, monkeypatch):
     """Czech guests owe no report, so an empty stay is no reason to page anyone."""
     monkeypatch.setattr(config, "HEARTBEAT_FILING_URL", "https://hc-ping.example.invalid/abc")
     # Only this test's stays: the shared database may hold other tests' stays.
@@ -526,8 +483,7 @@ def test_stays_without_guests_never_fail_the_heartbeat(world, pings, monkeypatch
     result = filing_watchdog.run()
     assert result["at_risk"] == 0 and result["unknown_risk"] >= 1
     assert rid in _mine(filing_watchdog.unknown_risk_stays(), {rid})
-    scheduler._job_deadlines()
-    assert pings == ["https://hc-ping.example.invalid/abc"]
+    assert filing_watchdog.heartbeat_url(result["at_risk"] > 0) == URL
 
 
 def test_a_broken_unknown_risk_query_does_not_silence_the_watchdog(world, monkeypatch):
@@ -784,7 +740,7 @@ def _mail_on(monkeypatch):
     monkeypatch.setattr(config, "HEARTBEAT_FILING_URL", "https://hc-ping.example.invalid/abc")
 
 
-def test_a_stay_never_sent_mails_the_host_but_pages_nobody(world, pings, monkeypatch):
+def test_a_stay_never_sent_mails_the_host_but_pages_nobody(world, monkeypatch):
     _mail_on(monkeypatch)
     rid = world["add_stay"]([("DEU", "pending")], arrival=date.today() - timedelta(days=10))
     # A resolved login alert and an unrelated open one do not count.
@@ -799,8 +755,7 @@ def test_a_stay_never_sent_mails_the_host_but_pages_nobody(world, pings, monkeyp
     )
     assert len(_outbox("deadline_at_risk", rid)) == 1
     assert _outbox("deadline_digest") == []
-    scheduler._job_deadlines()
-    assert pings == ["https://hc-ping.example.invalid/abc"]
+    assert filing_watchdog.heartbeat_url(result["at_risk"] > 0) == URL
 
 
 @pytest.mark.parametrize(
@@ -811,7 +766,7 @@ def test_a_stay_never_sent_mails_the_host_but_pages_nobody(world, pings, monkeyp
     ],
 )
 def test_a_failed_send_on_a_configured_property_pages_and_is_in_the_digest(
-    world, pings, monkeypatch, failure
+    world, monkeypatch, failure
 ):
     _mail_on(monkeypatch)
     rid = world["add_stay"]([("DEU", "pending")], arrival=date.today() - timedelta(days=10))
@@ -837,8 +792,7 @@ def test_a_failed_send_on_a_configured_property_pages_and_is_in_the_digest(
     )
     text = json.loads(_outbox("deadline_digest")[0]["payload"])["text"]
     assert "Watchdog Loft" in text and GUEST_SURNAME not in text
-    scheduler._job_deadlines()
-    assert pings == ["https://hc-ping.example.invalid/abc/fail"]
+    assert filing_watchdog.heartbeat_url(result["at_risk"] > 0) == URL + "/fail"
 
 
 def test_a_stay_without_guests_is_not_in_the_digest(world, monkeypatch):
