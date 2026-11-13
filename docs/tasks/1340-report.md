@@ -48,3 +48,12 @@ None.
 
 1. Orchestrator pushes `task/1340-go-billing-pages` and opens a DRAFT PR.
 2. Merge when CI is green (`scripts/merge-pr-on-green.sh`).
+
+## Review (Opus) follow-ups
+
+For the page brief:
+
+- Go adds `ORDER BY id` to the open-invoice reissue query; Python has none. Harmless.
+- Place check-then-update is not atomic: a double submit can issue two invoices, same as Python.
+- A zero `today` means local now.
+- CI has no guard that fails when the Go DB tests skip.
