@@ -1,6 +1,10 @@
 # 1362: Go customer admin part 2 of 3: the read-only queries
 
+<<<<<<< HEAD
 Status: todo
+=======
+Status: review
+>>>>>>> go-customer-admin-pages
 Depends on: 1360 | Base commit: a83df5412638cc7ae1c64810e5b0b59fc68997cc | Branch: go-customer-admin (already checked out; do not create another)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B
 

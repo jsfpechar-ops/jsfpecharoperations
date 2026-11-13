@@ -1,0 +1,64 @@
+{{- /* Go twin of App/app/templates/admin_customers.html (brief 1361). pages.go builds
+     the lists (tabs, options, stats, columns, rows) that Jinja builds inline. */ -}}
+{{define "admin_customers.head"}}<link rel="stylesheet" href="/static/admin2.css?v=20261106-0893q"><link rel="stylesheet" href="/static/admin2-operator-0974.css?v=20261105-0974a">{{end}}
+{{define "admin_customers.title"}}{{tip_label (t "customers.title") "admin-customers-help" (t "customers.meta") (kv "tag" "span")}}{{end}}
+{{define "admin_customers.tabs"}}{{ui_tabs .Tabs}}{{end}}
+{{define "admin_customers.secondary"}}{{ui_button (t "customers.payments") "secondary" (kv "href" "/admin/fakturace")}}{{end}}
+{{define "admin_customers.toolbar"}}
+<form method="get" action="/admin/customers" class="ui-section">
+  <div class="ui-pair">
+    {{ui_field "customer-search" (t "customers.search") (kv "name" "q" "value" .Q "type" "search" "attrs" (safe `maxlength="120" enterkeyhint="search"`))}}
+    {{ui_select "customer-state" (t "customers.state") .StateOptions (kv "selected" .State "name" "state")}}
+  </div>
+  <div class="ui-pair">
+    {{ui_select "customer-plan" (t "customers.plan") .PlanOptions (kv "selected" .Plan "name" "plan")}}
+    <div class="ui-form-actions">{{ui_button (t "customers.apply") "primary" (kv "type" "submit")}}</div>
+  </div>
+</form>
+{{end}}
+{{define "admin_customers"}}
+{{if .MissingEmail}}
+<div class="ui-section" role="status" id="users-missing-email">
+  <p class="ui-sub"><strong>{{t "users.email.missing_banner" "count" .MissingEmail}}</strong></p>
+</div>
+{{end}}
+{{if not .BillingOn}}{{ui_banner "neutral" (t "customers.billing_off")}}{{end}}
+<div class="customers-metrics">{{ui_stats .Stats (t "customers.overview")}}</div>
+<p class="ui-sub">{{t "customers.as_of" "date" .Today}}</p>
+{{if .Rows}}
+{{ui_table_begin .Columns (t "customers.title")}}
+{{range .Rows}}
+<tr class="ui-row" data-customer-id="{{.ID}}">
+  <td class="ui-cell-first" data-card="primary"><a data-turbo="false" href="/admin/customers/{{.ID}}">{{.Name}}</a></td>
+  <td class="ui-cell-r" data-card="meta">{{.Props}}</td>
+  <td data-card="secondary">{{.Plan}}{{if .Email}}<span class="ui-sub">{{.Email}}</span>{{end}}</td>
+  <td data-card="badge">{{ui_badge .BadgeKind .StateLabel}}</td>
+  <td data-card="meta">{{.Period}}</td>
+  <td class="ui-cell-acts" data-card="actions">{{ui_button (t "common.open") "secondary" (kv "href" (printf "/admin/customers/%d" .ID) "size" "compact")}}</td>
+</tr>
+{{end}}
+{{ui_table_end}}
+{{else}}{{ui_empty (t "customers.empty") ""}}{{end}}
+<nav class="ui-form-actions" aria-label="{{t "customers.title"}}">
+{{if .NewerURL}}{{ui_button (t "customers.newer") "secondary" (kv "href" .NewerURL)}}{{end}}
+{{if .OlderURL}}{{ui_button (t "customers.older") "secondary" (kv "href" .OlderURL)}}{{end}}
+{{if or .NewerURL .OlderURL}}{{ui_button (t "customers.reset") "quiet" (kv "href" .ResetURL)}}{{end}}
+</nav>
+
+<section class="ui-section" id="create-host">
+  <h2>{{tip_label (t "users.create.title") "create-host-help" (t "users.create.lede") (kv "tag" "span")}}</h2>
+  <form method="post" action="/admin/users">
+    <div class="ui-field">
+      <label for="display_name">{{t "users.create.name"}}</label>
+      <input type="text" id="display_name" name="display_name" autocomplete="off">
+    </div>
+    <div class="ui-field">
+      <label for="email">{{t "users.email.label"}}</label>
+      <input type="email" id="email" name="email" required maxlength="254" autocomplete="off"
+             autocapitalize="none" spellcheck="false">
+      <div class="ui-help">{{t "users.email.create_hint"}}</div>
+    </div>
+    <div class="ui-form-actions"><button class="ui-btn ui-btn-primary" type="submit">{{t "users.create.submit"}}</button></div>
+  </form>
+</section>
+{{end}}
