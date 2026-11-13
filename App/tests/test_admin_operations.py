@@ -222,3 +222,28 @@ def test_a_quiet_feed_checked_recently_is_not_stale():
     )
     listed = {row["feed_id"] for row in admin_ops.feeds_needing_attention(limit=500)["rows"]}
     assert feed_id not in listed
+
+
+def test_a_never_checked_feed_is_listed_before_stale_ones():
+    """Task 1170: NULL sorts first on SQLite and last on PostgreSQL; the list must put it first on both."""
+    host_id = _account("feedsnull", "host")
+    assert demo.seed(host_id)
+    apartment = db.query_one(
+        "SELECT id FROM apartment WHERE owner_user_id = ? ORDER BY id", (host_id,)
+    )["id"]
+    now = datetime.now(timezone.utc)
+    old = (now - timedelta(hours=admin_ops.FEED_STALE_HOURS + 2)).replace(microsecond=0).isoformat()
+    db.execute("UPDATE ical_feed SET active = 0 WHERE apartment_id IN "
+               "(SELECT id FROM apartment WHERE owner_user_id = ?)", (host_id,))
+    ids = []
+    for index in range(3):
+        ids.append(db.insert("ical_feed", {
+            "apartment_id": apartment, "url": f"https://example.test/stale{index}.ics", "active": 1,
+            "created_at": old, "last_status": "ok", "last_sync_at": old, "last_checked_at": old,
+        }))
+    never = db.insert("ical_feed", {
+        "apartment_id": apartment, "url": "https://example.test/never.ics", "active": 1,
+        "created_at": old,
+    })
+    rows = admin_ops.feeds_needing_attention(limit=1)["rows"]
+    assert [row["feed_id"] for row in rows] == [never]  # fails on PostgreSQL with the old ORDER BY
