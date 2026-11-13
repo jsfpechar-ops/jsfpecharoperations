@@ -217,10 +217,12 @@ On PostgreSQL, `deploy.sh` applies pending goose files (`App/migrations_pg/`) wi
 | Value | What runs |
 |---|---|
 | unset, empty or `python` (default) | `scripts/pg_schema.py apply --expect-database ubyhost` in the new `ubyhost` image |
-| `go` | The Go image is built first, then `docker compose --profile go run --rm --no-deps -T ubyhost-go migrate apply --expect-database ubyhost` (works whether or not `COMPOSE_PROFILES` has `go`) |
+| `go` | The Go image is built first (a GitHub deploy that pulled the CI-built Go image uses that one and builds nothing), then `docker compose --profile go run --rm --no-deps -T ubyhost-go migrate apply --expect-database ubyhost` (works whether or not `COMPOSE_PROFILES` has `go`) |
 | anything else | `deploy.sh` stops before touching the stack; `go` on SQLite stops too |
 
 The Go command (`ubyhost-web migrate plan|check|apply --expect-database <db>`) makes the same checks as Python: the public schema, the database name, and the authority marker in `/data/database-authority.json` (database, schema and URL fingerprint). It takes the same advisory locks, runs every pending goose file in one transaction and commits only when the schema then matches what the app expects. It applies goose files only: a fresh, empty database still needs `pg_schema.py apply` (or `pg-cutover.sh`) once, and Go refuses with "legacy schema not set up". `pg-cutover.sh` stays Python-only: it copies SQLite data, and Go has no SQLite.
+
+Writing a goose twin: production so far ran each twin after its SQLite migration (where it is a no-op); Go runs the twin alone. Both `check` commands compare column names, types and NOT NULL, index names, triggers and functions only. `App/tests/test_go_schema_migrate.py` (CI job `test-postgres-full`) also compares defaults, constraints and index definitions of a Go-applied database with a Python-built one, so write `DEFAULT`, `CHECK`, `UNIQUE` and `REFERENCES ... DEFERRABLE INITIALLY IMMEDIATE` exactly as the translated SQLite file has them. No test sees a data backfill (the test databases are empty): copy every `INSERT`/`UPDATE` of the SQLite file into the twin and check it by reading.
 
 Rollback: remove `UBYHOST_SCHEMA_APPLY` from `.env` (or set it to `python`), then `./scripts/deploy.sh`. Both write the same `goose_db_version` rows, so Python can always take over from Go. Go can take over from Python as long as the functions and triggers Python re-creates on every apply (`ubyhost_sqlite_date` and the six invoice guards in `App/app/db_postgres.py`) match what the app expects; when a PR changes one of them, Go `check` and `apply` fail closed with "Python-owned DDL" and the deploy stops before `up`. Then deploy once with `UBYHOST_SCHEMA_APPLY=python`, and switch back to `go` after it.
 
