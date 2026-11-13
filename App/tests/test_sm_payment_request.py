@@ -142,6 +142,12 @@ def _go_files():
     return sorted(p for p in (REPO_DIR / "go").rglob("*.go") if not p.name.endswith("_test.go"))
 
 
+def _payments_go_files():
+    return sorted(
+        p for p in (REPO_DIR / "go/internal/payments").rglob("*.go") if not p.name.endswith("_test.go")
+    )
+
+
 def _rel(path: Path) -> str:
     return path.relative_to(REPO_DIR).as_posix()
 
@@ -208,10 +214,14 @@ def test_go_callers_match_the_pins():
                 found[_rel(path)] = n
         assert dict(found) == expected, name
     found = {}
-    for path in _go_files():
+    for path in _payments_go_files():
+        rel = _rel(path)
+        # booking_webhook.setStatus writes site_booking, not payment_request (brief 1350).
+        if rel == "go/internal/payments/booking_webhook.go":
+            continue
         n = len(re.findall(r"\bsetStatus\(ctx, ", path.read_text(encoding="utf-8")))
         if n:
-            found[_rel(path)] = n
+            found[rel] = n
     assert found == PINNED_GO_SETSTATUS
 
 

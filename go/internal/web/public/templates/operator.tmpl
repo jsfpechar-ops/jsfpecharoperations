@@ -1,0 +1,23 @@
+{{define "operator"}}
+<div class="panel legal-operator">
+  <h2 style="margin-top:0">{{.T (printf "%s.operator_title" .Prefix)}}</h2>
+  <dl class="kv">
+    <dt>{{.T "legal.operator_name"}}</dt>
+    <dd>{{.E .Op.Name}}</dd>
+    <dt>IČO</dt>
+    <dd class="mono">{{.E .Op.ICO}}</dd>
+    {{if .Op.DIC}}
+      <dt>DIČ</dt>
+      <dd class="mono">{{.E .Op.DIC}}</dd>
+    {{end}}
+    <dt>{{.T "legal.operator_address"}}</dt>
+    <dd>{{.E .Op.Address}}</dd>
+    {{if and .Op.Email (ne .Prefix "terms")}}
+      <dt>{{.T "legal.operator_contact"}}</dt>
+      <dd><a href="mailto:{{.E .Op.Email}}" data-analytics-event="contact_click">{{.E .Op.Email}}</a></dd>
+    {{end}}
+    <dt>{{.T "legal.operator_registry"}}</dt>
+    <dd><a href="{{.E .Op.Registry}}" rel="noopener noreferrer">{{.T "legal.registry_link"}}</a></dd>
+  </dl>
+</div>
+{{end}}

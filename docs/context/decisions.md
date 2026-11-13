@@ -2,9 +2,7 @@
 Append-only.
 - 2026-10-08/12 | Door codes (TTLock pilot): timed codes, test mode until live; one 1-min job, no polling; details 0037, 0067-69 | owner | [plan](../plans/ttlock-door-codes.md), [legal](../privacy/DOOR_CODES_LEGAL.md)
 - 2026-10-09 | [workflow] One brief per copy text; executors skip non-todo; lint warns on overlap; status `replaced` = newer brief took over | [workflow](workflow.md)
-- 2026-10-17 | [workflow] Haiku 5.5 only executor; 100k cap per chat; scoped tests, no audits unless asked | owner | [workflow](workflow.md#when-haiku-reaches-the-cap)
 - 2026-10-19 | Design v2: MASTER.md is the only host design source; Lucide inline SVG; CI blocks raw colours, inline styles, page CSS | owner | [plan](../plans/design-v2.md)
-- 2026-10-19 [workflow] `test_static_versions.py --write` refuses a changed file under an old `?v=` key (0172).
 - 2026-10-19 Accessibility: WCAG 2.2 AA, `a11y_guard.js`; no statement page (owner).
 - 2026-10-24 | [deps] `anthropic` 2.3.0 pinned+hashed; model `claude-haiku-5-5`; calls via `App/app/ai.py` | 0310
 - 2026-10-25 | Invoice "Fill from register" also asks MFČR VAT register; DIČ digits only; 24 h cache | owner | 0394
@@ -32,7 +30,6 @@ Append-only.
 - [filing] 2026-11-04: unanswered filings retry 30m/2h/6h/12h, any answer stops; replaces OD-1, WP31 (0909).
 - [auth] 2026-11-04: 30-day sliding session, trusted-device cookie skips login Turnstile
 - [auth] 2026-11-04: log out is per device; "all devices" is separate (0947).
-- 11-04: stay fee pay v4; [workflow] Sonnet briefs, Haiku executes (owner)
 - 2026-11-04 [dashboard] no per-property "No guest has used the link" card; "You are ready" only with one property (0949); six-card status strip replaces aside cards, guest copy button in the strip (0948) | owner
 - 2026-11-04/05 [ui] Smart lock: one accordion #sec-lock (0952); door_code.state drives the status block (0954). Save row sticks; Preview sticks >=1024 (0957). #786: no stay times, 4 wizard steps (0950-fix-1)
 - [wizard] 2026-11-04: wizard shows the old look on the current 4-step flow; red star marks mandatory fields; operator e-mail has no purpose text. Source: brief 0953.
@@ -44,17 +41,14 @@ Append-only.
 - 2026-11-09 [stay-fee] 1031b: a bare Prague/Brno district ("Řepy") stays liable; guest writes the town (owner). Any Unicode dash folds like "-".
 - 2026-11-09 [guest] Guest edits/removes own added people until filed (SENT, incl. by hand); then locked, "Message host" (owner)
 - 2026-11-09 | [ux] Stay fees: current month default, pick navigates | owner | 1051
-- 2026-11-09 [ux] [Speed plan](../plans/speed-and-ease.md): answers §10.
 - 2026-11-09 [filing] Registered guests are filed by the deadline cap (deadline - 6 h) even when the stay is short or has no expected count; no 12 quiet hours past the cap; valid co-guests filed while another form is invalid; reverses the reporting.py:1093 rule; stays past their cap are filed by the first sweep (owner, K-F20) | 1070
 - 2026-11-10 [guest] Guest form: B now, then C (owner).
 - 2026-11-10 [guest] Under-15s skip the signature; any adult on the booking signs and ticks a role ("parent or guardian" / "adult responsible for the child on this stay"). A child with no adult link is filed "no signature required" (owner).
 - 2026-11-10 [guest] Titles: cs "Registrace hosta", es "Ficha de huésped", fr "Fiche voyageur" (owner).
-- 2026-11-10 [head-count] Lower count with a stay fee: show new fee and "new bill will be e-mailed", confirm. Every lead change: "Check your changes" confirm. Host digest mail: changed field names, link to the stay page; changes only. Small Go change allowed. Early door-code risk accepted (owner).
+- 2026-11-10 [head-count] Lower count with a stay fee: show new fee and "new bill will be e-mailed", confirm. Every lead change: "Check your changes" confirm. Host digest mail lists changed field names (not values), links to the stay page; changes only, not first registrations. Small Go change allowed. Early door-code risk accepted (mail guard covers it) (owner).
 - 2026-11-10 [workflow] Plan: project file plans/head-count-change.md (not in repo); each complete plan gets a Fable review before building (owner).
-- 2026-11-10 [guest] 1086: unsaved prefilled values warn on leave (beforeunload) even before input.
 - 2026-11-11 [police] 1100: no tick, values in boxes; parser reads password+facility, never stored (owner; reverses 1097, 1085).
 - 2026-11-10 [demo] Demo seed covers current features; mock-only, cleared by Clear demo (owner, 1092)
-- 2026-11-11 [ux] 1101: wizard reuse
 - 2026-11-12 [billing] 1137: trial_pending->paused only via operator_pause().
 - 2026-11-12 [filing] 1138: claim fails closed; no retry.
 - 2026-11-12 [workflow] Orchestrator model by brief risk tier (A Opus thread+brief, Fable reviews; B Opus thread, Sonnet brief; C Sonnet); Haiku executes; threads parallel, no shared files; unsure = higher | owner | [workflow](workflow.md#roles-and-models)
@@ -63,8 +57,8 @@ Append-only.
 - 2026-11-12 [filing] 1154: move waits on any `running` batch.
 - 2026-11-12 [door] 1149 re-issue; 1155 lock check (3); 1156 info card+mail (owner)
 - 11-13 [calendar] 1172: Go-only; 1 mail/pair; manual dup skipped (owner)
-- 2026-11-13 [door] 1173/c: backoff 15/15/60; revive expired (owner)
+- 2026-11-13 [door] 1173/c: release backoff 15/15/60; new, retries, released; revive unissued expired.
 - 2026-11-13 [dep] 1390: gopdf v0.38.4 PDF in go/internal/pdf; thin anthropic HTTP; go-webauthn login/passkey (owner)
 - 2026-11-13 [infra] CI→GHCR; server pulls | owner | [1210](../tasks/1210-ci-built-go-image.md)
 - 2026-11-13 [security] #966: 1200-1205; Go env in compose; K-S12 ok; 1206-1207 after merge (owner)
-
+- 2026-11-13 [mail] Completion CC to host again; PII stays in guest_details_host | owner | 1291

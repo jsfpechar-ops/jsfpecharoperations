@@ -1,0 +1,1128 @@
+[
+ {
+  "name": "legal-cs",
+  "path": "/legal",
+  "query": "",
+  "cookies": {},
+  "env": {
+   "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+   "UBYHOST_DEPLOYMENT": "local",
+   "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+   "UBYHOST_OPERATOR_ICO": "12345678",
+   "UBYHOST_OPERATOR_DIC": "CZ12345678",
+   "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+   "UBYHOST_OPERATOR_EMAIL": "",
+   "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+   "UBYHOST_SIGNUP_ENABLED": "0",
+   "UBYHOST_META_DATASET_ID": "",
+   "UBYHOST_META_ACCESS_TOKEN": "",
+   "UBYHOST_WEB_PUSH": "1",
+   "POSTHOG_PROJECT_API_KEY": "",
+   "POSTHOG_HOST": "https://eu.i.posthog.com",
+   "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+   "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+   "UBYHOST_TERMS_VERSION": "1.7",
+   "UBYHOST_PRIVACY_VERSION": "1.8",
+   "UBYHOST_DPA_VERSION": "1.8"
+  },
+  "expected": {
+   "status": 200,
+   "content_type": "text/html; charset=utf-8",
+   "cache_control": "public, max-age=0, s-maxage=300",
+   "csp": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com",
+   "set_cookies": []
+  }
+ },
+ {
+  "name": "legal-en",
+  "path": "/legal",
+  "query": "lang=en",
+  "cookies": {},
+  "env": {
+   "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+   "UBYHOST_DEPLOYMENT": "local",
+   "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+   "UBYHOST_OPERATOR_ICO": "12345678",
+   "UBYHOST_OPERATOR_DIC": "CZ12345678",
+   "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+   "UBYHOST_OPERATOR_EMAIL": "",
+   "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+   "UBYHOST_SIGNUP_ENABLED": "0",
+   "UBYHOST_META_DATASET_ID": "",
+   "UBYHOST_META_ACCESS_TOKEN": "",
+   "UBYHOST_WEB_PUSH": "1",
+   "POSTHOG_PROJECT_API_KEY": "",
+   "POSTHOG_HOST": "https://eu.i.posthog.com",
+   "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+   "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+   "UBYHOST_TERMS_VERSION": "1.7",
+   "UBYHOST_PRIVACY_VERSION": "1.8",
+   "UBYHOST_DPA_VERSION": "1.8"
+  },
+  "expected": {
+   "status": 200,
+   "content_type": "text/html; charset=utf-8",
+   "cache_control": "no-store, private",
+   "csp": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com",
+   "set_cookies": [
+    {
+     "name": "ubyhost_lang",
+     "value": "en",
+     "path": "/",
+     "max_age": "15552000",
+     "samesite": "lax",
+     "secure": true,
+     "httponly": false
+    }
+   ]
+  }
+ },
+ {
+  "name": "legal-posthog",
+  "path": "/legal",
+  "query": "",
+  "cookies": {},
+  "env": {
+   "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+   "UBYHOST_DEPLOYMENT": "local",
+   "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+   "UBYHOST_OPERATOR_ICO": "12345678",
+   "UBYHOST_OPERATOR_DIC": "CZ12345678",
+   "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+   "UBYHOST_OPERATOR_EMAIL": "",
+   "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+   "UBYHOST_SIGNUP_ENABLED": "0",
+   "UBYHOST_META_DATASET_ID": "",
+   "UBYHOST_META_ACCESS_TOKEN": "",
+   "UBYHOST_WEB_PUSH": "1",
+   "POSTHOG_PROJECT_API_KEY": "phc_golden_key",
+   "POSTHOG_HOST": "https://eu.i.posthog.com",
+   "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+   "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+   "UBYHOST_TERMS_VERSION": "1.7",
+   "UBYHOST_PRIVACY_VERSION": "1.8",
+   "UBYHOST_DPA_VERSION": "1.8"
+  },
+  "expected": {
+   "status": 200,
+   "content_type": "text/html; charset=utf-8",
+   "cache_control": "public, max-age=0, s-maxage=300",
+   "csp": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://eu-assets.i.posthog.com; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com https://eu.i.posthog.com https://eu-assets.i.posthog.com",
+   "set_cookies": []
+  }
+ },
+ {
+  "name": "terms-cs",
+  "path": "/terms",
+  "query": "",
+  "cookies": {},
+  "env": {
+   "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+   "UBYHOST_DEPLOYMENT": "local",
+   "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+   "UBYHOST_OPERATOR_ICO": "12345678",
+   "UBYHOST_OPERATOR_DIC": "CZ12345678",
+   "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+   "UBYHOST_OPERATOR_EMAIL": "",
+   "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+   "UBYHOST_SIGNUP_ENABLED": "0",
+   "UBYHOST_META_DATASET_ID": "",
+   "UBYHOST_META_ACCESS_TOKEN": "",
+   "UBYHOST_WEB_PUSH": "1",
+   "POSTHOG_PROJECT_API_KEY": "",
+   "POSTHOG_HOST": "https://eu.i.posthog.com",
+   "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+   "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+   "UBYHOST_TERMS_VERSION": "1.7",
+   "UBYHOST_PRIVACY_VERSION": "1.8",
+   "UBYHOST_DPA_VERSION": "1.8"
+  },
+  "expected": {
+   "status": 200,
+   "content_type": "text/html; charset=utf-8",
+   "cache_control": "public, max-age=0, s-maxage=300",
+   "csp": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com",
+   "set_cookies": []
+  }
+ },
+ {
+  "name": "terms-en",
+  "path": "/terms",
+  "query": "lang=en",
+  "cookies": {},
+  "env": {
+   "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+   "UBYHOST_DEPLOYMENT": "local",
+   "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+   "UBYHOST_OPERATOR_ICO": "12345678",
+   "UBYHOST_OPERATOR_DIC": "CZ12345678",
+   "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+   "UBYHOST_OPERATOR_EMAIL": "",
+   "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+   "UBYHOST_SIGNUP_ENABLED": "0",
+   "UBYHOST_META_DATASET_ID": "",
+   "UBYHOST_META_ACCESS_TOKEN": "",
+   "UBYHOST_WEB_PUSH": "1",
+   "POSTHOG_PROJECT_API_KEY": "",
+   "POSTHOG_HOST": "https://eu.i.posthog.com",
+   "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+   "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+   "UBYHOST_TERMS_VERSION": "1.7",
+   "UBYHOST_PRIVACY_VERSION": "1.8",
+   "UBYHOST_DPA_VERSION": "1.8"
+  },
+  "expected": {
+   "status": 200,
+   "content_type": "text/html; charset=utf-8",
+   "cache_control": "no-store, private",
+   "csp": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com",
+   "set_cookies": [
+    {
+     "name": "ubyhost_lang",
+     "value": "en",
+     "path": "/",
+     "max_age": "15552000",
+     "samesite": "lax",
+     "secure": true,
+     "httponly": false
+    }
+   ]
+  }
+ },
+ {
+  "name": "terms-posthog",
+  "path": "/terms",
+  "query": "",
+  "cookies": {},
+  "env": {
+   "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+   "UBYHOST_DEPLOYMENT": "local",
+   "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+   "UBYHOST_OPERATOR_ICO": "12345678",
+   "UBYHOST_OPERATOR_DIC": "CZ12345678",
+   "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+   "UBYHOST_OPERATOR_EMAIL": "",
+   "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+   "UBYHOST_SIGNUP_ENABLED": "0",
+   "UBYHOST_META_DATASET_ID": "",
+   "UBYHOST_META_ACCESS_TOKEN": "",
+   "UBYHOST_WEB_PUSH": "1",
+   "POSTHOG_PROJECT_API_KEY": "phc_golden_key",
+   "POSTHOG_HOST": "https://eu.i.posthog.com",
+   "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+   "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+   "UBYHOST_TERMS_VERSION": "1.7",
+   "UBYHOST_PRIVACY_VERSION": "1.8",
+   "UBYHOST_DPA_VERSION": "1.8"
+  },
+  "expected": {
+   "status": 200,
+   "content_type": "text/html; charset=utf-8",
+   "cache_control": "public, max-age=0, s-maxage=300",
+   "csp": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://eu-assets.i.posthog.com; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com https://eu.i.posthog.com https://eu-assets.i.posthog.com",
+   "set_cookies": []
+  }
+ },
+ {
+  "name": "privacy-cs",
+  "path": "/privacy",
+  "query": "",
+  "cookies": {},
+  "env": {
+   "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+   "UBYHOST_DEPLOYMENT": "local",
+   "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+   "UBYHOST_OPERATOR_ICO": "12345678",
+   "UBYHOST_OPERATOR_DIC": "CZ12345678",
+   "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+   "UBYHOST_OPERATOR_EMAIL": "",
+   "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+   "UBYHOST_SIGNUP_ENABLED": "0",
+   "UBYHOST_META_DATASET_ID": "",
+   "UBYHOST_META_ACCESS_TOKEN": "",
+   "UBYHOST_WEB_PUSH": "1",
+   "POSTHOG_PROJECT_API_KEY": "",
+   "POSTHOG_HOST": "https://eu.i.posthog.com",
+   "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+   "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+   "UBYHOST_TERMS_VERSION": "1.7",
+   "UBYHOST_PRIVACY_VERSION": "1.8",
+   "UBYHOST_DPA_VERSION": "1.8"
+  },
+  "expected": {
+   "status": 200,
+   "content_type": "text/html; charset=utf-8",
+   "cache_control": "public, max-age=0, s-maxage=300",
+   "csp": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com",
+   "set_cookies": []
+  }
+ },
+ {
+  "name": "privacy-en",
+  "path": "/privacy",
+  "query": "lang=en",
+  "cookies": {},
+  "env": {
+   "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+   "UBYHOST_DEPLOYMENT": "local",
+   "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+   "UBYHOST_OPERATOR_ICO": "12345678",
+   "UBYHOST_OPERATOR_DIC": "CZ12345678",
+   "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+   "UBYHOST_OPERATOR_EMAIL": "",
+   "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+   "UBYHOST_SIGNUP_ENABLED": "0",
+   "UBYHOST_META_DATASET_ID": "",
+   "UBYHOST_META_ACCESS_TOKEN": "",
+   "UBYHOST_WEB_PUSH": "1",
+   "POSTHOG_PROJECT_API_KEY": "",
+   "POSTHOG_HOST": "https://eu.i.posthog.com",
+   "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+   "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+   "UBYHOST_TERMS_VERSION": "1.7",
+   "UBYHOST_PRIVACY_VERSION": "1.8",
+   "UBYHOST_DPA_VERSION": "1.8"
+  },
+  "expected": {
+   "status": 200,
+   "content_type": "text/html; charset=utf-8",
+   "cache_control": "no-store, private",
+   "csp": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com",
+   "set_cookies": [
+    {
+     "name": "ubyhost_lang",
+     "value": "en",
+     "path": "/",
+     "max_age": "15552000",
+     "samesite": "lax",
+     "secure": true,
+     "httponly": false
+    }
+   ]
+  }
+ },
+ {
+  "name": "privacy-posthog",
+  "path": "/privacy",
+  "query": "",
+  "cookies": {},
+  "env": {
+   "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+   "UBYHOST_DEPLOYMENT": "local",
+   "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+   "UBYHOST_OPERATOR_ICO": "12345678",
+   "UBYHOST_OPERATOR_DIC": "CZ12345678",
+   "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+   "UBYHOST_OPERATOR_EMAIL": "",
+   "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+   "UBYHOST_SIGNUP_ENABLED": "0",
+   "UBYHOST_META_DATASET_ID": "",
+   "UBYHOST_META_ACCESS_TOKEN": "",
+   "UBYHOST_WEB_PUSH": "1",
+   "POSTHOG_PROJECT_API_KEY": "phc_golden_key",
+   "POSTHOG_HOST": "https://eu.i.posthog.com",
+   "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+   "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+   "UBYHOST_TERMS_VERSION": "1.7",
+   "UBYHOST_PRIVACY_VERSION": "1.8",
+   "UBYHOST_DPA_VERSION": "1.8"
+  },
+  "expected": {
+   "status": 200,
+   "content_type": "text/html; charset=utf-8",
+   "cache_control": "public, max-age=0, s-maxage=300",
+   "csp": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://eu-assets.i.posthog.com; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com https://eu.i.posthog.com https://eu-assets.i.posthog.com",
+   "set_cookies": []
+  }
+ },
+ {
+  "name": "dpa-cs",
+  "path": "/dpa",
+  "query": "",
+  "cookies": {},
+  "env": {
+   "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+   "UBYHOST_DEPLOYMENT": "local",
+   "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+   "UBYHOST_OPERATOR_ICO": "12345678",
+   "UBYHOST_OPERATOR_DIC": "CZ12345678",
+   "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+   "UBYHOST_OPERATOR_EMAIL": "",
+   "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+   "UBYHOST_SIGNUP_ENABLED": "0",
+   "UBYHOST_META_DATASET_ID": "",
+   "UBYHOST_META_ACCESS_TOKEN": "",
+   "UBYHOST_WEB_PUSH": "1",
+   "POSTHOG_PROJECT_API_KEY": "",
+   "POSTHOG_HOST": "https://eu.i.posthog.com",
+   "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+   "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+   "UBYHOST_TERMS_VERSION": "1.7",
+   "UBYHOST_PRIVACY_VERSION": "1.8",
+   "UBYHOST_DPA_VERSION": "1.8"
+  },
+  "expected": {
+   "status": 200,
+   "content_type": "text/html; charset=utf-8",
+   "cache_control": "public, max-age=0, s-maxage=300",
+   "csp": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com",
+   "set_cookies": []
+  }
+ },
+ {
+  "name": "dpa-en",
+  "path": "/dpa",
+  "query": "lang=en",
+  "cookies": {},
+  "env": {
+   "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+   "UBYHOST_DEPLOYMENT": "local",
+   "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+   "UBYHOST_OPERATOR_ICO": "12345678",
+   "UBYHOST_OPERATOR_DIC": "CZ12345678",
+   "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+   "UBYHOST_OPERATOR_EMAIL": "",
+   "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+   "UBYHOST_SIGNUP_ENABLED": "0",
+   "UBYHOST_META_DATASET_ID": "",
+   "UBYHOST_META_ACCESS_TOKEN": "",
+   "UBYHOST_WEB_PUSH": "1",
+   "POSTHOG_PROJECT_API_KEY": "",
+   "POSTHOG_HOST": "https://eu.i.posthog.com",
+   "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+   "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+   "UBYHOST_TERMS_VERSION": "1.7",
+   "UBYHOST_PRIVACY_VERSION": "1.8",
+   "UBYHOST_DPA_VERSION": "1.8"
+  },
+  "expected": {
+   "status": 200,
+   "content_type": "text/html; charset=utf-8",
+   "cache_control": "no-store, private",
+   "csp": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com",
+   "set_cookies": [
+    {
+     "name": "ubyhost_lang",
+     "value": "en",
+     "path": "/",
+     "max_age": "15552000",
+     "samesite": "lax",
+     "secure": true,
+     "httponly": false
+    }
+   ]
+  }
+ },
+ {
+  "name": "dpa-posthog",
+  "path": "/dpa",
+  "query": "",
+  "cookies": {},
+  "env": {
+   "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+   "UBYHOST_DEPLOYMENT": "local",
+   "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+   "UBYHOST_OPERATOR_ICO": "12345678",
+   "UBYHOST_OPERATOR_DIC": "CZ12345678",
+   "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+   "UBYHOST_OPERATOR_EMAIL": "",
+   "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+   "UBYHOST_SIGNUP_ENABLED": "0",
+   "UBYHOST_META_DATASET_ID": "",
+   "UBYHOST_META_ACCESS_TOKEN": "",
+   "UBYHOST_WEB_PUSH": "1",
+   "POSTHOG_PROJECT_API_KEY": "phc_golden_key",
+   "POSTHOG_HOST": "https://eu.i.posthog.com",
+   "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+   "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+   "UBYHOST_TERMS_VERSION": "1.7",
+   "UBYHOST_PRIVACY_VERSION": "1.8",
+   "UBYHOST_DPA_VERSION": "1.8"
+  },
+  "expected": {
+   "status": 200,
+   "content_type": "text/html; charset=utf-8",
+   "cache_control": "public, max-age=0, s-maxage=300",
+   "csp": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://eu-assets.i.posthog.com; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com https://eu.i.posthog.com https://eu-assets.i.posthog.com",
+   "set_cookies": []
+  }
+ },
+ {
+  "name": "subprocessors-cs",
+  "path": "/subprocessors",
+  "query": "",
+  "cookies": {},
+  "env": {
+   "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+   "UBYHOST_DEPLOYMENT": "local",
+   "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+   "UBYHOST_OPERATOR_ICO": "12345678",
+   "UBYHOST_OPERATOR_DIC": "CZ12345678",
+   "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+   "UBYHOST_OPERATOR_EMAIL": "",
+   "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+   "UBYHOST_SIGNUP_ENABLED": "0",
+   "UBYHOST_META_DATASET_ID": "",
+   "UBYHOST_META_ACCESS_TOKEN": "",
+   "UBYHOST_WEB_PUSH": "1",
+   "POSTHOG_PROJECT_API_KEY": "",
+   "POSTHOG_HOST": "https://eu.i.posthog.com",
+   "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+   "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+   "UBYHOST_TERMS_VERSION": "1.7",
+   "UBYHOST_PRIVACY_VERSION": "1.8",
+   "UBYHOST_DPA_VERSION": "1.8"
+  },
+  "expected": {
+   "status": 200,
+   "content_type": "text/html; charset=utf-8",
+   "cache_control": "public, max-age=0, s-maxage=300",
+   "csp": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com",
+   "set_cookies": []
+  }
+ },
+ {
+  "name": "subprocessors-en",
+  "path": "/subprocessors",
+  "query": "lang=en",
+  "cookies": {},
+  "env": {
+   "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+   "UBYHOST_DEPLOYMENT": "local",
+   "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+   "UBYHOST_OPERATOR_ICO": "12345678",
+   "UBYHOST_OPERATOR_DIC": "CZ12345678",
+   "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+   "UBYHOST_OPERATOR_EMAIL": "",
+   "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+   "UBYHOST_SIGNUP_ENABLED": "0",
+   "UBYHOST_META_DATASET_ID": "",
+   "UBYHOST_META_ACCESS_TOKEN": "",
+   "UBYHOST_WEB_PUSH": "1",
+   "POSTHOG_PROJECT_API_KEY": "",
+   "POSTHOG_HOST": "https://eu.i.posthog.com",
+   "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+   "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+   "UBYHOST_TERMS_VERSION": "1.7",
+   "UBYHOST_PRIVACY_VERSION": "1.8",
+   "UBYHOST_DPA_VERSION": "1.8"
+  },
+  "expected": {
+   "status": 200,
+   "content_type": "text/html; charset=utf-8",
+   "cache_control": "no-store, private",
+   "csp": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com",
+   "set_cookies": [
+    {
+     "name": "ubyhost_lang",
+     "value": "en",
+     "path": "/",
+     "max_age": "15552000",
+     "samesite": "lax",
+     "secure": true,
+     "httponly": false
+    }
+   ]
+  }
+ },
+ {
+  "name": "subprocessors-posthog",
+  "path": "/subprocessors",
+  "query": "",
+  "cookies": {},
+  "env": {
+   "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+   "UBYHOST_DEPLOYMENT": "local",
+   "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+   "UBYHOST_OPERATOR_ICO": "12345678",
+   "UBYHOST_OPERATOR_DIC": "CZ12345678",
+   "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+   "UBYHOST_OPERATOR_EMAIL": "",
+   "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+   "UBYHOST_SIGNUP_ENABLED": "0",
+   "UBYHOST_META_DATASET_ID": "",
+   "UBYHOST_META_ACCESS_TOKEN": "",
+   "UBYHOST_WEB_PUSH": "1",
+   "POSTHOG_PROJECT_API_KEY": "phc_golden_key",
+   "POSTHOG_HOST": "https://eu.i.posthog.com",
+   "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+   "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+   "UBYHOST_TERMS_VERSION": "1.7",
+   "UBYHOST_PRIVACY_VERSION": "1.8",
+   "UBYHOST_DPA_VERSION": "1.8"
+  },
+  "expected": {
+   "status": 200,
+   "content_type": "text/html; charset=utf-8",
+   "cache_control": "public, max-age=0, s-maxage=300",
+   "csp": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://eu-assets.i.posthog.com; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com https://eu.i.posthog.com https://eu-assets.i.posthog.com",
+   "set_cookies": []
+  }
+ },
+ {
+  "name": "terms-cookie-en",
+  "path": "/terms",
+  "query": "",
+  "cookies": {
+   "ubyhost_lang": "en"
+  },
+  "env": {
+   "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+   "UBYHOST_DEPLOYMENT": "local",
+   "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+   "UBYHOST_OPERATOR_ICO": "12345678",
+   "UBYHOST_OPERATOR_DIC": "CZ12345678",
+   "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+   "UBYHOST_OPERATOR_EMAIL": "",
+   "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+   "UBYHOST_SIGNUP_ENABLED": "0",
+   "UBYHOST_META_DATASET_ID": "",
+   "UBYHOST_META_ACCESS_TOKEN": "",
+   "UBYHOST_WEB_PUSH": "1",
+   "POSTHOG_PROJECT_API_KEY": "",
+   "POSTHOG_HOST": "https://eu.i.posthog.com",
+   "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+   "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+   "UBYHOST_TERMS_VERSION": "1.7",
+   "UBYHOST_PRIVACY_VERSION": "1.8",
+   "UBYHOST_DPA_VERSION": "1.8"
+  },
+  "expected": {
+   "status": 200,
+   "content_type": "text/html; charset=utf-8",
+   "cache_control": "no-store, private",
+   "csp": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com",
+   "set_cookies": []
+  }
+ },
+ {
+  "name": "terms-cookie-vi",
+  "path": "/terms",
+  "query": "",
+  "cookies": {
+   "ubyhost_lang": "vi"
+  },
+  "env": {
+   "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+   "UBYHOST_DEPLOYMENT": "local",
+   "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+   "UBYHOST_OPERATOR_ICO": "12345678",
+   "UBYHOST_OPERATOR_DIC": "CZ12345678",
+   "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+   "UBYHOST_OPERATOR_EMAIL": "",
+   "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+   "UBYHOST_SIGNUP_ENABLED": "0",
+   "UBYHOST_META_DATASET_ID": "",
+   "UBYHOST_META_ACCESS_TOKEN": "",
+   "UBYHOST_WEB_PUSH": "1",
+   "POSTHOG_PROJECT_API_KEY": "",
+   "POSTHOG_HOST": "https://eu.i.posthog.com",
+   "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+   "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+   "UBYHOST_TERMS_VERSION": "1.7",
+   "UBYHOST_PRIVACY_VERSION": "1.8",
+   "UBYHOST_DPA_VERSION": "1.8"
+  },
+  "expected": {
+   "status": 200,
+   "content_type": "text/html; charset=utf-8",
+   "cache_control": "no-store, private",
+   "csp": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com",
+   "set_cookies": []
+  }
+ },
+ {
+  "name": "terms-query-cs-cookie-en",
+  "path": "/terms",
+  "query": "lang=cs",
+  "cookies": {
+   "ubyhost_lang": "en"
+  },
+  "env": {
+   "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+   "UBYHOST_DEPLOYMENT": "local",
+   "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+   "UBYHOST_OPERATOR_ICO": "12345678",
+   "UBYHOST_OPERATOR_DIC": "CZ12345678",
+   "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+   "UBYHOST_OPERATOR_EMAIL": "",
+   "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+   "UBYHOST_SIGNUP_ENABLED": "0",
+   "UBYHOST_META_DATASET_ID": "",
+   "UBYHOST_META_ACCESS_TOKEN": "",
+   "UBYHOST_WEB_PUSH": "1",
+   "POSTHOG_PROJECT_API_KEY": "",
+   "POSTHOG_HOST": "https://eu.i.posthog.com",
+   "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+   "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+   "UBYHOST_TERMS_VERSION": "1.7",
+   "UBYHOST_PRIVACY_VERSION": "1.8",
+   "UBYHOST_DPA_VERSION": "1.8"
+  },
+  "expected": {
+   "status": 200,
+   "content_type": "text/html; charset=utf-8",
+   "cache_control": "no-store, private",
+   "csp": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com",
+   "set_cookies": [
+    {
+     "name": "ubyhost_lang",
+     "value": "cs",
+     "path": "/",
+     "max_age": "15552000",
+     "samesite": "lax",
+     "secure": true,
+     "httponly": false
+    }
+   ]
+  }
+ },
+ {
+  "name": "legal-no-dic-email",
+  "path": "/legal",
+  "query": "",
+  "cookies": {},
+  "env": {
+   "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+   "UBYHOST_DEPLOYMENT": "local",
+   "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+   "UBYHOST_OPERATOR_ICO": "12345678",
+   "UBYHOST_OPERATOR_DIC": "",
+   "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+   "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+   "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+   "UBYHOST_SIGNUP_ENABLED": "0",
+   "UBYHOST_META_DATASET_ID": "",
+   "UBYHOST_META_ACCESS_TOKEN": "",
+   "UBYHOST_WEB_PUSH": "1",
+   "POSTHOG_PROJECT_API_KEY": "",
+   "POSTHOG_HOST": "https://eu.i.posthog.com",
+   "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+   "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+   "UBYHOST_TERMS_VERSION": "1.7",
+   "UBYHOST_PRIVACY_VERSION": "1.8",
+   "UBYHOST_DPA_VERSION": "1.8"
+  },
+  "expected": {
+   "status": 200,
+   "content_type": "text/html; charset=utf-8",
+   "cache_control": "public, max-age=0, s-maxage=300",
+   "csp": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com",
+   "set_cookies": []
+  }
+ },
+ {
+  "name": "privacy-placeholders",
+  "path": "/privacy",
+  "query": "",
+  "cookies": {},
+  "env": {
+   "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+   "UBYHOST_DEPLOYMENT": "local",
+   "UBYHOST_OPERATOR_NAME": "",
+   "UBYHOST_OPERATOR_ICO": "",
+   "UBYHOST_OPERATOR_DIC": "",
+   "UBYHOST_OPERATOR_ADDRESS": "",
+   "UBYHOST_OPERATOR_EMAIL": "",
+   "UBYHOST_OPERATOR_REGISTRY_URL": "",
+   "UBYHOST_SIGNUP_ENABLED": "0",
+   "UBYHOST_META_DATASET_ID": "",
+   "UBYHOST_META_ACCESS_TOKEN": "",
+   "UBYHOST_WEB_PUSH": "1",
+   "POSTHOG_PROJECT_API_KEY": "",
+   "POSTHOG_HOST": "https://eu.i.posthog.com",
+   "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+   "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+   "UBYHOST_TERMS_VERSION": "1.7",
+   "UBYHOST_PRIVACY_VERSION": "1.8",
+   "UBYHOST_DPA_VERSION": "1.8"
+  },
+  "expected": {
+   "status": 200,
+   "content_type": "text/html; charset=utf-8",
+   "cache_control": "public, max-age=0, s-maxage=300",
+   "csp": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com",
+   "set_cookies": []
+  }
+ },
+ {
+  "name": "privacy-production-empty",
+  "path": "/privacy",
+  "query": "",
+  "cookies": {},
+  "env": {
+   "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+   "UBYHOST_DEPLOYMENT": "production",
+   "UBYHOST_OPERATOR_NAME": "",
+   "UBYHOST_OPERATOR_ICO": "",
+   "UBYHOST_OPERATOR_DIC": "",
+   "UBYHOST_OPERATOR_ADDRESS": "",
+   "UBYHOST_OPERATOR_EMAIL": "",
+   "UBYHOST_OPERATOR_REGISTRY_URL": "",
+   "UBYHOST_SIGNUP_ENABLED": "0",
+   "UBYHOST_META_DATASET_ID": "",
+   "UBYHOST_META_ACCESS_TOKEN": "",
+   "UBYHOST_WEB_PUSH": "1",
+   "POSTHOG_PROJECT_API_KEY": "",
+   "POSTHOG_HOST": "https://eu.i.posthog.com",
+   "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+   "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+   "UBYHOST_TERMS_VERSION": "1.7",
+   "UBYHOST_PRIVACY_VERSION": "1.8",
+   "UBYHOST_DPA_VERSION": "1.8"
+  },
+  "expected": {
+   "status": 200,
+   "content_type": "text/html; charset=utf-8",
+   "cache_control": "public, max-age=0, s-maxage=300",
+   "csp": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com",
+   "set_cookies": []
+  }
+ },
+ {
+  "name": "privacy-signup",
+  "path": "/privacy",
+  "query": "",
+  "cookies": {},
+  "env": {
+   "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+   "UBYHOST_DEPLOYMENT": "local",
+   "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+   "UBYHOST_OPERATOR_ICO": "12345678",
+   "UBYHOST_OPERATOR_DIC": "CZ12345678",
+   "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+   "UBYHOST_OPERATOR_EMAIL": "",
+   "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+   "UBYHOST_SIGNUP_ENABLED": "1",
+   "UBYHOST_META_DATASET_ID": "",
+   "UBYHOST_META_ACCESS_TOKEN": "",
+   "UBYHOST_WEB_PUSH": "1",
+   "POSTHOG_PROJECT_API_KEY": "",
+   "POSTHOG_HOST": "https://eu.i.posthog.com",
+   "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+   "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+   "UBYHOST_TERMS_VERSION": "1.7",
+   "UBYHOST_PRIVACY_VERSION": "1.8",
+   "UBYHOST_DPA_VERSION": "1.8"
+  },
+  "expected": {
+   "status": 200,
+   "content_type": "text/html; charset=utf-8",
+   "cache_control": "public, max-age=0, s-maxage=300",
+   "csp": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com",
+   "set_cookies": []
+  }
+ },
+ {
+  "name": "privacy-signup-meta-en",
+  "path": "/privacy",
+  "query": "lang=en",
+  "cookies": {},
+  "env": {
+   "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+   "UBYHOST_DEPLOYMENT": "local",
+   "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+   "UBYHOST_OPERATOR_ICO": "12345678",
+   "UBYHOST_OPERATOR_DIC": "CZ12345678",
+   "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+   "UBYHOST_OPERATOR_EMAIL": "",
+   "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+   "UBYHOST_SIGNUP_ENABLED": "1",
+   "UBYHOST_META_DATASET_ID": "123456",
+   "UBYHOST_META_ACCESS_TOKEN": "golden-token",
+   "UBYHOST_WEB_PUSH": "1",
+   "POSTHOG_PROJECT_API_KEY": "",
+   "POSTHOG_HOST": "https://eu.i.posthog.com",
+   "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+   "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+   "UBYHOST_TERMS_VERSION": "1.7",
+   "UBYHOST_PRIVACY_VERSION": "1.8",
+   "UBYHOST_DPA_VERSION": "1.8"
+  },
+  "expected": {
+   "status": 200,
+   "content_type": "text/html; charset=utf-8",
+   "cache_control": "no-store, private",
+   "csp": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com",
+   "set_cookies": [
+    {
+     "name": "ubyhost_lang",
+     "value": "en",
+     "path": "/",
+     "max_age": "15552000",
+     "samesite": "lax",
+     "secure": true,
+     "httponly": false
+    }
+   ]
+  }
+ },
+ {
+  "name": "privacy-meta-without-signup",
+  "path": "/privacy",
+  "query": "",
+  "cookies": {},
+  "env": {
+   "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+   "UBYHOST_DEPLOYMENT": "local",
+   "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+   "UBYHOST_OPERATOR_ICO": "12345678",
+   "UBYHOST_OPERATOR_DIC": "CZ12345678",
+   "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+   "UBYHOST_OPERATOR_EMAIL": "",
+   "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+   "UBYHOST_SIGNUP_ENABLED": "0",
+   "UBYHOST_META_DATASET_ID": "123456",
+   "UBYHOST_META_ACCESS_TOKEN": "golden-token",
+   "UBYHOST_WEB_PUSH": "1",
+   "POSTHOG_PROJECT_API_KEY": "",
+   "POSTHOG_HOST": "https://eu.i.posthog.com",
+   "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+   "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+   "UBYHOST_TERMS_VERSION": "1.7",
+   "UBYHOST_PRIVACY_VERSION": "1.8",
+   "UBYHOST_DPA_VERSION": "1.8"
+  },
+  "expected": {
+   "status": 200,
+   "content_type": "text/html; charset=utf-8",
+   "cache_control": "public, max-age=0, s-maxage=300",
+   "csp": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com",
+   "set_cookies": []
+  }
+ },
+ {
+  "name": "privacy-posthog-en",
+  "path": "/privacy",
+  "query": "lang=en",
+  "cookies": {},
+  "env": {
+   "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+   "UBYHOST_DEPLOYMENT": "local",
+   "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+   "UBYHOST_OPERATOR_ICO": "12345678",
+   "UBYHOST_OPERATOR_DIC": "CZ12345678",
+   "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+   "UBYHOST_OPERATOR_EMAIL": "",
+   "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+   "UBYHOST_SIGNUP_ENABLED": "0",
+   "UBYHOST_META_DATASET_ID": "",
+   "UBYHOST_META_ACCESS_TOKEN": "",
+   "UBYHOST_WEB_PUSH": "1",
+   "POSTHOG_PROJECT_API_KEY": "phc_golden_key",
+   "POSTHOG_HOST": "https://eu.i.posthog.com",
+   "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+   "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+   "UBYHOST_TERMS_VERSION": "1.7",
+   "UBYHOST_PRIVACY_VERSION": "1.8",
+   "UBYHOST_DPA_VERSION": "1.8"
+  },
+  "expected": {
+   "status": 200,
+   "content_type": "text/html; charset=utf-8",
+   "cache_control": "no-store, private",
+   "csp": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://eu-assets.i.posthog.com; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com https://eu.i.posthog.com https://eu-assets.i.posthog.com",
+   "set_cookies": [
+    {
+     "name": "ubyhost_lang",
+     "value": "en",
+     "path": "/",
+     "max_age": "15552000",
+     "samesite": "lax",
+     "secure": true,
+     "httponly": false
+    }
+   ]
+  }
+ },
+ {
+  "name": "subprocessors-signup",
+  "path": "/subprocessors",
+  "query": "",
+  "cookies": {},
+  "env": {
+   "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+   "UBYHOST_DEPLOYMENT": "local",
+   "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+   "UBYHOST_OPERATOR_ICO": "12345678",
+   "UBYHOST_OPERATOR_DIC": "CZ12345678",
+   "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+   "UBYHOST_OPERATOR_EMAIL": "",
+   "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+   "UBYHOST_SIGNUP_ENABLED": "1",
+   "UBYHOST_META_DATASET_ID": "",
+   "UBYHOST_META_ACCESS_TOKEN": "",
+   "UBYHOST_WEB_PUSH": "1",
+   "POSTHOG_PROJECT_API_KEY": "",
+   "POSTHOG_HOST": "https://eu.i.posthog.com",
+   "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+   "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+   "UBYHOST_TERMS_VERSION": "1.7",
+   "UBYHOST_PRIVACY_VERSION": "1.8",
+   "UBYHOST_DPA_VERSION": "1.8"
+  },
+  "expected": {
+   "status": 200,
+   "content_type": "text/html; charset=utf-8",
+   "cache_control": "public, max-age=0, s-maxage=300",
+   "csp": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com",
+   "set_cookies": []
+  }
+ },
+ {
+  "name": "subprocessors-signup-meta",
+  "path": "/subprocessors",
+  "query": "",
+  "cookies": {},
+  "env": {
+   "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+   "UBYHOST_DEPLOYMENT": "local",
+   "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+   "UBYHOST_OPERATOR_ICO": "12345678",
+   "UBYHOST_OPERATOR_DIC": "CZ12345678",
+   "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+   "UBYHOST_OPERATOR_EMAIL": "",
+   "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+   "UBYHOST_SIGNUP_ENABLED": "1",
+   "UBYHOST_META_DATASET_ID": "123456",
+   "UBYHOST_META_ACCESS_TOKEN": "golden-token",
+   "UBYHOST_WEB_PUSH": "1",
+   "POSTHOG_PROJECT_API_KEY": "",
+   "POSTHOG_HOST": "https://eu.i.posthog.com",
+   "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+   "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+   "UBYHOST_TERMS_VERSION": "1.7",
+   "UBYHOST_PRIVACY_VERSION": "1.8",
+   "UBYHOST_DPA_VERSION": "1.8"
+  },
+  "expected": {
+   "status": 200,
+   "content_type": "text/html; charset=utf-8",
+   "cache_control": "public, max-age=0, s-maxage=300",
+   "csp": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com",
+   "set_cookies": []
+  }
+ },
+ {
+  "name": "subprocessors-push-off",
+  "path": "/subprocessors",
+  "query": "",
+  "cookies": {},
+  "env": {
+   "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+   "UBYHOST_DEPLOYMENT": "local",
+   "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+   "UBYHOST_OPERATOR_ICO": "12345678",
+   "UBYHOST_OPERATOR_DIC": "CZ12345678",
+   "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+   "UBYHOST_OPERATOR_EMAIL": "",
+   "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+   "UBYHOST_SIGNUP_ENABLED": "0",
+   "UBYHOST_META_DATASET_ID": "",
+   "UBYHOST_META_ACCESS_TOKEN": "",
+   "UBYHOST_WEB_PUSH": "0",
+   "POSTHOG_PROJECT_API_KEY": "",
+   "POSTHOG_HOST": "https://eu.i.posthog.com",
+   "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+   "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+   "UBYHOST_TERMS_VERSION": "1.7",
+   "UBYHOST_PRIVACY_VERSION": "1.8",
+   "UBYHOST_DPA_VERSION": "1.8"
+  },
+  "expected": {
+   "status": 200,
+   "content_type": "text/html; charset=utf-8",
+   "cache_control": "public, max-age=0, s-maxage=300",
+   "csp": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com",
+   "set_cookies": []
+  }
+ },
+ {
+  "name": "terms-effective-env",
+  "path": "/terms",
+  "query": "lang=en",
+  "cookies": {},
+  "env": {
+   "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+   "UBYHOST_DEPLOYMENT": "local",
+   "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+   "UBYHOST_OPERATOR_ICO": "12345678",
+   "UBYHOST_OPERATOR_DIC": "CZ12345678",
+   "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+   "UBYHOST_OPERATOR_EMAIL": "",
+   "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+   "UBYHOST_SIGNUP_ENABLED": "0",
+   "UBYHOST_META_DATASET_ID": "",
+   "UBYHOST_META_ACCESS_TOKEN": "",
+   "UBYHOST_WEB_PUSH": "1",
+   "POSTHOG_PROJECT_API_KEY": "",
+   "POSTHOG_HOST": "https://eu.i.posthog.com",
+   "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+   "UBYHOST_LEGAL_EFFECTIVE_DATE": "2027-01-31",
+   "UBYHOST_TERMS_VERSION": "2.0",
+   "UBYHOST_PRIVACY_VERSION": "1.8",
+   "UBYHOST_DPA_VERSION": "1.8"
+  },
+  "expected": {
+   "status": 200,
+   "content_type": "text/html; charset=utf-8",
+   "cache_control": "no-store, private",
+   "csp": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com",
+   "set_cookies": [
+    {
+     "name": "ubyhost_lang",
+     "value": "en",
+     "path": "/",
+     "max_age": "15552000",
+     "samesite": "lax",
+     "secure": true,
+     "httponly": false
+    }
+   ]
+  }
+ },
+ {
+  "name": "dpa-http-base",
+  "path": "/dpa",
+  "query": "lang=en",
+  "cookies": {},
+  "env": {
+   "UBYHOST_PUBLIC_BASE_URL": "http://127.0.0.1:8080/",
+   "UBYHOST_DEPLOYMENT": "local",
+   "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+   "UBYHOST_OPERATOR_ICO": "12345678",
+   "UBYHOST_OPERATOR_DIC": "CZ12345678",
+   "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+   "UBYHOST_OPERATOR_EMAIL": "",
+   "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+   "UBYHOST_SIGNUP_ENABLED": "0",
+   "UBYHOST_META_DATASET_ID": "",
+   "UBYHOST_META_ACCESS_TOKEN": "",
+   "UBYHOST_WEB_PUSH": "1",
+   "POSTHOG_PROJECT_API_KEY": "",
+   "POSTHOG_HOST": "https://eu.i.posthog.com",
+   "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+   "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+   "UBYHOST_TERMS_VERSION": "1.7",
+   "UBYHOST_PRIVACY_VERSION": "1.8",
+   "UBYHOST_DPA_VERSION": "1.8"
+  },
+  "expected": {
+   "status": 200,
+   "content_type": "text/html; charset=utf-8",
+   "cache_control": "no-store, private",
+   "csp": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com",
+   "set_cookies": [
+    {
+     "name": "ubyhost_lang",
+     "value": "en",
+     "path": "/",
+     "max_age": "15552000",
+     "samesite": "lax",
+     "secure": false,
+     "httponly": false
+    }
+   ]
+  }
+ }
+]

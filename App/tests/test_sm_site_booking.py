@@ -58,6 +58,15 @@ PINNED_DEMO_HELPER_WRITES = [
 ]
 PINNED_DEMO_NAME_MENTIONS = 1  # the "Clear demo" table list, a DELETE by apartment_id
 
+# Go booking-site webhook (brief 1350); same moves as booking_webhook.py.
+PINNED_GO_STATUS_FILES = frozenset({"go/internal/payments/booking_webhook.go"})
+PINNED_GO_STATUS_ANCHORS = [
+    "UPDATE site_booking SET status = 'paid'",
+    "UPDATE site_booking SET status = $1",
+    'b.setStatus(ctx, bk.id, "expired"',
+    'b.setStatus(ctx, bk.id, "clash_refunded"',
+]
+
 
 def _py_files():
     return sorted(p for p in APP_PKG.rglob("*.py"))
@@ -194,9 +203,18 @@ def test_demo_seeder_site_booking_writes_are_pinned():
     assert not re.search(r"UPDATE\s+site_booking|INSERT\s+INTO\s+site_booking", text, re.I)
 
 
+def test_go_booking_webhook_status_pins_are_present():
+    text = (REPO / "go/internal/payments/booking_webhook.go").read_text(encoding="utf-8")
+    for anchor in PINNED_GO_STATUS_ANCHORS:
+        assert anchor in text, anchor
+
+
 def test_go_and_migrations_do_not_write_site_booking_status():
     go_dir = REPO / "go"
     for path in sorted(go_dir.rglob("*.go")):
+        rel = path.relative_to(REPO).as_posix()
+        if rel in PINNED_GO_STATUS_FILES:
+            continue
         text = path.read_text(encoding="utf-8")
         assert not re.search(r"UPDATE\s+site_booking", text, re.I), path
         assert not re.search(r"INSERT\s+INTO\s+site_booking", text, re.I), path

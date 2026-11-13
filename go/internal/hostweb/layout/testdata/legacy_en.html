@@ -1,0 +1,514 @@
+
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f7f7f5">
+  <meta name="csrf-token" content="GOLDEN-CSRF">
+  <script>try{var p=(navigator.userAgentData&&navigator.userAgentData.platform)||navigator.platform||"";if(/mac|iphone|ipad|ipod/i.test(p))document.documentElement.setAttribute("data-mac","")}catch(e){}</script>
+  <title>Stays · UbyHost</title>
+  
+  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="UbyHost">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="preload" href="/static/fonts/Manrope-latin.woff2?v=20261101-0495" as="font" type="font/woff2" crossorigin>
+  
+  <link rel="stylesheet" data-turbo-track="reload" href="/static/tokens.css?v=20261103-0920">
+  <link rel="stylesheet" data-turbo-track="reload" href="/static/app.css?v=20261109-1200">
+  <link rel="stylesheet" data-turbo-track="reload" href="/static/components.css?v=20261103-0930">
+  <link rel="stylesheet" data-turbo-track="reload" href="/static/command.css?v=20261103-0935">
+  <link rel="stylesheet" data-turbo-track="reload" href="/static/list-filter-compact.css?v=20261109-1052a">
+  
+  <link rel="stylesheet" data-turbo-track="reload" href="/static/host.css?v=20261108-1010a">
+  <link rel="stylesheet" data-turbo-track="reload" href="/static/host-controls.css?v=20261014-0102d">
+  <link rel="stylesheet" data-turbo-track="reload" href="/static/host-design0123.css?v=20261025-0380">
+  
+  <link rel="stylesheet" data-turbo-track="reload" href="/static/host2.css?v=20261109-bsite-wrap-h2">
+  <link rel="stylesheet" data-turbo-track="reload" href="/static/workflow.css?v=20261104-0949w">
+  <link rel="stylesheet" data-turbo-track="reload" href="/static/wizard.css?v=20261022-0274">
+  
+  <link rel="stylesheet" data-turbo-track="reload" href="/static/skeleton.css?v=20261014-0102c">
+  
+  
+  <script src="/static/vendor/turbo-8.0.13.js?v=8.0.13" defer data-turbo-track="reload"></script><meta name="turbo-cache-control" content="no-cache"><meta name="view-transition" content="same-origin"><meta name="turbo-prefetch" content="true">
+  <script src="/static/csrf.js?v=20260915a" defer data-turbo-track="reload"></script>
+  <script src="/static/skeleton.js?v=20261102-0509" defer data-turbo-track="reload"></script>
+  <script src="/static/app.js?v=20261111-1100b" defer data-turbo-track="reload"></script>
+  <script src="/static/host.js?v=20261109-1032c" defer data-turbo-track="reload"></script>
+  <noscript><link rel="stylesheet" href="/static/app-nojs.css?v=20261104-1210"></noscript>
+  <script src="/static/guide.js?v=20261104-0916" defer data-turbo-track="reload"></script>
+  <script src="/static/pwa.js?v=20261102-0511" defer data-turbo-track="reload"></script>
+  
+  <script src="/static/shell.js?v=20261025-0373" defer data-turbo-track="reload"></script>
+  <script src="/static/havel.js?v=20261111-1200a" defer data-turbo-track="reload"></script>
+</head>
+<body class="layout-host host-workspace ">
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+
+
+
+
+
+<aside class="ui-sidebar" id="app-sidebar">
+  <div class="ui-brand">
+    <a class="brand plain" href="/" aria-label="UbyHost"><img class="brand-logo" src="/static/ubyhost-mark.png?v=20261004a" alt=""><span class="brand-word">UbyHost</span></a>
+    <button class="ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact sidebar-collapse" type="button" data-sidebar-collapse data-label-hide="Hide menu" data-label-show="Show menu" aria-expanded="true" aria-label="Hide menu"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="panel-left"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg></button>
+  </div>
+  <span class="env-badge ui-env mock" title="Where reports are sent">MOCK · Nothing sent</span>
+  <button class="ui-search-row" type="button" data-command-open><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="search"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><span>Search</span><kbd data-command-shortcut><span class="kbd-pc">Ctrl K</span><span class="kbd-mac">⌘ K</span></kbd></button>
+  <nav class="ui-nav sidebar-nav" aria-label="Main navigation">
+    
+    <a href="/" title="Dashboard" ><svg class="ui-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="layout-dashboard"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg><span>Dashboard</span></a>
+    
+    <a href="/reservations" title="Stays" aria-current="page"><svg class="ui-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="calendar-days"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg><span>Stays</span></a>
+    
+    <a href="/apartments" title="Properties" ><svg class="ui-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="house"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span>Properties</span></a>
+    
+    <a href="/stay-fees" title="Stay fees" ><svg class="ui-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="receipt-text"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8H8"/><path d="M16 12H8"/><path d="M13 16H8"/></svg><span>Stay fees</span></a>
+    
+    <a href="/cleaning" title="Cleaning" ><svg class="ui-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="sparkles"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></svg><span>Cleaning</span></a>
+    
+    <a href="/payments" title="Payments" ><svg class="ui-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="credit-card"><g transform="scale(1.2)"><rect x="2" y="5" width="16" height="11" rx="2"/><path d="M2 9h16M5 12.5h4"/></g></svg><span>Payments</span></a>
+    
+    <a href="/booking-sites" title="Booking site" ><svg class="ui-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="external-link"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg><span>Booking site</span></a>
+    
+  </nav>
+  
+  <div class="host-rail-bottom">
+    <nav class="ui-nav ui-nav-bottom" aria-label="Help">
+      
+      <a class="host-help host-help-guide" href="/guide" title="Help"><svg class="ui-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="book-open"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg><span>Help</span></a>
+    </nav>
+    <details class="host-account" data-host-account>
+      <summary aria-label="Account: Jana Nováková">
+        <span class="sidebar-user-avatar" aria-hidden="true">J</span>
+        <span class="host-account-name">Jana Nováková<small>Account</small></span>
+      </summary>
+      <div class="host-account-menu">
+        <a href="/settings">Settings</a>
+        
+        
+        <a class="host-menu-support" href="mailto:support@ubyhost.com">Contact support<small>support@ubyhost.com</small></a>
+        
+        <div class="host-menu-rule"></div>
+        <a href="/settings/archived">Archive</a>
+        <a href="/privacy-requests">Data requests</a>
+        <div class="host-menu-rule"></div>
+        <form method="post" action="/language" class="lang-switch compact">
+          <input type="hidden" name="next" value="/reservations">
+          <button type="submit" name="lang" value="en" class="is-active">EN</button>
+          <button type="submit" name="lang" value="cs" class="">CS</button>
+          <button type="submit" name="lang" value="vi" class="">VI</button>
+        </form>
+        <button class="nav-button" type="button" data-shortcuts-open>Keyboard shortcuts</button>
+        <form method="post" action="/logout"><button class="nav-button" type="submit">Log out</button></form>
+      </div>
+    </details>
+  </div>
+  
+</aside>
+
+
+<main id="main-content" class="wrap  with-sidebar">
+
+  
+    
+
+  
+  <aside class="env-banner mock" role="alert">
+    <strong>Nothing is being reported to the police</strong>
+    <span class="env-body">This workspace is pointed at the practice server, so records marked &#34;Reported&#34; were never filed. Set UBYHOST_UBYPORT_ENV to test or prod before you rely on it.</span>
+    <details class="env-more"><summary>How does this work?</summary><span>This workspace is pointed at the practice server, so records marked &#34;Reported&#34; were never filed. Set UBYHOST_UBYPORT_ENV to test or prod before you rely on it.</span></details>
+  </aside>
+
+    
+    <aside class="banner warning workspace-deletion-banner" role="status">
+      <div class="grow">
+        <strong>This account will be deleted on 2026-12-01 11:00</strong>
+        <p class="small muted" style="margin:6px 0 0">Download everything you need before then. Invoices and filings you must keep by law are your responsibility after deletion.</p>
+      </div>
+      <form method="post" action="/settings/workspace-export" data-no-skeleton>
+        <button class="btn small" type="submit">Download everything (ZIP)</button>
+      </form>
+    </aside>
+    
+    
+
+    
+    
+    
+    <div class="host-feedback-region" data-host-feedback
+         data-dismiss-label="Dismiss notification"
+         data-copy-success="Copied"
+         data-copy-failure="Copy failed"
+         data-copy-manual="Select the text and copy it manually."
+         data-command-copied="Guest link copied">
+      <div class="toast-stack" data-feedback-rail aria-live="off">
+        
+          <div class="toast" data-toast data-toast-kind="success">
+            <span class="grow">Saved it</span>
+            <a class="ui-btn ui-btn-quiet ui-btn-compact" href="/entities">Add bank account (1 min)</a>
+            <button type="button" data-toast-close aria-label="Dismiss notification"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+          </div>
+        
+        
+          <div class="toast err" data-toast data-toast-kind="error" data-toast-sticky>
+            <span class="grow">Bank missing</span>
+            <a class="ui-btn ui-btn-quiet ui-btn-compact" href="/entities">Add bank account (1 min)</a>
+            <button type="button" data-toast-close aria-label="Dismiss notification"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+          </div>
+        
+        
+        
+      </div>
+      <div class="copy-manual-recovery" data-copy-recovery role="group" aria-label="Copy failed" hidden>
+        <strong>Copy failed</strong>
+        <p>Select the text and copy it manually.</p>
+        <div data-copy-recovery-source></div>
+        <button type="button" data-copy-recovery-close aria-label="Dismiss notification"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+      </div>
+      <div class="sr-only" data-feedback-live aria-live="polite" aria-atomic="true"></div>
+      <div class="sr-only" data-feedback-alert role="alert" aria-live="assertive" aria-atomic="true"></div>
+    </div>
+  
+  
+
+
+
+
+
+<div class="ui-page" data-body-kind="list">
+  
+  <header class="ui-ph" data-list-title-row>
+    <div class="ui-ph-main">
+      
+      <div class="ui-ph-title-row">
+        <h1>Stays · UbyHost</h1>
+        
+
+<span class="page-help-wrap"><details class="page-help" data-how="stays" data-lint-ignore><summary class="page-help-btn" aria-label="How does this work?"><span class="page-help-dot" aria-hidden="true">?</span></summary><div class="page-help-body"><ol class="page-help-steps"><li>Every booking in your calendar becomes a stay here.</li><li>Your Airbnb or Booking.com message carries the guest link, so guests fill in the form before arrival.</li><li>When a guest is done, the police report goes out the way you chose for the property.</li></ol><a class="page-help-more" href="/guide#stays">More in the guide</a></div></details></span>
+
+      </div>
+      <p class="ui-ph-meta" data-list-meta>3 properties</p>
+    </div>
+    
+    <div class="ui-ph-acts" data-list-actions><a class="ui-btn ui-btn-primary" href="/reservations/new"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="plus"><path d="M5 12h14"/><path d="M12 5v14"/></svg><span>Stays</span></a></div>
+    
+  </header>
+  
+  
+  
+  <div class="ui-body ui-body-list">
+<span class="ui-badge ui-badge-done">Reported</span>
+
+  
+  
+  
+  
+  
+    
+    
+    
+  
+  <span class="ui-badge ui-badge-action" data-tone="blue" title="All declared forms are complete, so UbyHost sends automatically without waiting for verification.">Complete (sending now)</span>
+
+
+  <span class="property-identity"><span class="ui-pdot" data-property="2" aria-hidden="true"></span>
+    <span class="">Flat &lt;A&gt; &amp; &#34;B&#34;</span>
+  </span>
+
+
+  <div class="ui-empty" data-empty-state>
+    <h2>Stays</h2>
+    <p>No stays yet.</p>
+    <div class="ui-btn-group"><a class="ui-btn ui-btn-primary" href="/reservations/new">Open</a></div>
+    
+  </div>
+
+
+<div class="row-menu ui-menu">
+  <button class="ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact row-menu-trigger" type="button" aria-label="More actions" aria-expanded="false" aria-haspopup="true"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="ellipsis-vertical"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+  <div class="row-menu-panel ui-menu-panel" role="menu" hidden>
+<a class="ui-menu-item" role="menuitem" href="/x?a=1&amp;b=2">Open</a>
+  </div>
+</div>
+
+
+  
+  <button class="ui-btn ui-btn-secondary ui-btn-icon ui-btn-compact copy-btn" type="button" data-copy="link-1"
+          data-copy-label="Copy" data-copied-label="Copied"
+          aria-label="Copy"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg><span class="btn-icon-label" data-copy-label-slot hidden></span><span class="sr-only">Copy</span></button>
+  
+
+<div class="ui-field">
+  <label class="ui-label" for="name">Name</label>
+  <input class="ui-input" id="name" name="name" type="text" value="O&#39;Brien" aria-describedby="name-help" >
+  <span class="ui-help" id="name-help">Your name</span>
+</div>
+<span class="help-tip" data-help-tip>
+    <button type="button" class="help-tip-btn" aria-label="Help" aria-expanded="false" aria-controls="h1">?</button>
+    <span class="help-tip-body" id="h1" role="tooltip">Some &lt;b&gt;help&lt;/b&gt; text that is rather long so the truncate filter has to cut it off <a href="/guide#x" aria-label="Read more: Some help text that is rather long so the...">Read more</a></span>
+  </span>
+
+<a class="ui-btn ui-btn-quiet ui-btn-icon" href="/a?x=1" aria-label="Close" title="Close"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></a>
+<a class="ui-chip" href="/r?f=all" aria-current="true">All</a>
+<div class="ui-field">
+  <label class="ui-label" for="s1">Pick</label>
+  <select class="ui-select" id="s1" name="s1" aria-describedby="s1-help" >
+    <option value="a">Apple</option><option value="b" selected>Banana &amp; &lt;Co&gt;</option>
+  </select>
+  <span class="ui-help" id="s1-help">Choose one</span>
+</div>
+<div class="ui-field">
+  <label class="ui-label" for="t1">Note <span class="ui-opt">(optional)</span></label>
+  <textarea class="ui-textarea" id="t1" name="t1" rows="4" >Hi &lt;there&gt;</textarea>
+  
+</div>
+<label class="ui-check" for="c1"><input class="ui-input" type="checkbox" id="c1" name="agree" value="1" checked ><span>Agree</span></label>
+<label class="ui-toggle" for="g1"><span>On</span><input class="ui-input ui-switch" type="checkbox" role="switch" id="g1" name="on" value="1" ></label>
+<span class="ui-menu row-menu" data-row-menu>
+  <button class="ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact row-menu-trigger" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="More" title="More"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="ellipsis-vertical"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+  <span class="ui-menu-panel row-menu-panel" role="menu" hidden><a class="ui-menu-item ui-menu-danger" role="menuitem" href="/d"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>Delete</a></span>
+</span>
+<dialog id="d1" class="ui-dialog" aria-labelledby="d1-title">
+  <div class="ui-sheet">
+    <span class="ui-sheet-handle" aria-hidden="true"></span>
+    <h2 id="d1-title">Dialog</h2><p>x</p></div>
+</dialog>
+<div class="ui-empty" data-empty-state>
+  <h2>EmptyA tip</h2>
+  <p>Nothing here</p>
+  <a class="ui-btn ui-btn-primary" href="/add"><span>Add</span></a>
+  
+</div>
+<span class="ui-tip help-tip" data-help-tip><button type="button" class="ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact help-tip-btn" aria-label="Help" aria-expanded="false" aria-controls="tp1"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="circle-help"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></button><span class="help-tip-body" id="tp1" role="tooltip">Tip &lt;b&gt;text&lt;/b&gt; <a href="mailto:help@example.com" aria-label="Read more: Tip text">Read more</a></span></span>
+<nav class="ui-pagination" aria-label="Pages">
+  <a class="ui-btn ui-btn-secondary" href="/p?page=3" data-pagination-more><span>More</span></a>
+  <span class="ui-num">Page 2 of 5</span>
+  <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/p?page=1"><span>Prev</span></a>
+  <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/p?page=3"><span>Next</span></a>
+</nav>
+<span class="ui-pdot" data-property="3">Second</span>
+<nav class="ui-tabs" data-sub-tabs aria-label="Sections"><a class="ui-tab" href="/t/1" aria-current="page">One</a><a class="ui-tab" href="/t/2">Two</a></nav>
+<div class="ui-toolbar" data-filter-toolbar data-list-toolbar>
+  <label class="ui-toolbar-search"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="search"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input class="ui-input" type="search" name="q" placeholder="Search stays" value="x&#34;y" aria-label="Search stays"></label>
+  <div class="ui-chips"><a class="ui-chip" href="/c?f=1" aria-current="true">First</a><a class="ui-chip" href="/c?f=2">Second</a></div>
+  <button class="ui-btn ui-btn-secondary" type="button" data-filter-toggle aria-expanded="true" aria-controls="flt" hidden><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="sliders-horizontal"><path d="M21 4h-7"/><path d="M10 4H3"/><path d="M21 12h-9"/><path d="M8 12H3"/><path d="M21 20h-5"/><path d="M12 20H3"/><path d="M14 2v4"/><path d="M8 10v4"/><path d="M16 18v4"/></svg><span>Filters</span><span class="ui-badge ui-badge-neutral">2</span></button>
+  <div class="ui-toolbar-right"><a class="ui-btn ui-btn-secondary" href="/go"><span>Go</span></a></div>
+</div>
+<section class="ui-section" id="sec1">
+  <div class="ui-section-h"><h2>Sec <span class="tip-nowrap">title</span>Section tip</h2></div>
+  <p>body</p>
+</section>
+<dl class="ui-facts"><div><dt>Key</dt><dd>Value one</dd></div><div><dt>Other</dt><dd>plain</dd></div></dl>
+<nav class="ui-stats" aria-label="Stats"><a class="ui-stat" href="/s/1"><strong class="ui-num">3</strong><span>Ready</span></a><a class="ui-stat" href="/s/2"><strong class="ui-num">12</strong><span>Waiting</span></a></nav>
+<div class="ui-banner ui-banner-warning" role="status"><svg class="ui-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="info"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><div class="grow">Careful</div><a class="ui-btn ui-btn-secondary ui-btn-compact" href="/fix"><span>Fix</span></a></div>
+<table class="ui-table" aria-label="Table"><thead><tr><th scope="col">Name</th><th scope="col" class="ui-cell-r">Count</th></tr></thead><tbody><tr><td>1</td></tr></tbody></table>
+<a class="ui-card" href="/c/1" aria-label="Card"><span class="ui-card-l1"><span>L1</span>Badge</span><span class="ui-card-l2">L2</span><span class="ui-card-l3">L3</span></a>
+<div class="ui-skel" aria-hidden="true" data-skeleton-kind="list">
+  <div class="ui-skel-h"><div><span class="ui-bone ui-bone-title"></span><span class="ui-bone ui-bone-meta"></span></div><span class="ui-bone ui-bone-btn"></span></div>
+  
+  <span class="ui-bone ui-bone-toolbar"></span>
+  <div class="ui-skel-rows"><div class="ui-skel-row"><span class="ui-bone ui-w30"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w14"></span><span class="ui-bone ui-bone-badge"></span></div><div class="ui-skel-row"><span class="ui-bone ui-w30"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w14"></span><span class="ui-bone ui-bone-badge"></span></div><div class="ui-skel-row"><span class="ui-bone ui-w30"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w14"></span><span class="ui-bone ui-bone-badge"></span></div><div class="ui-skel-row"><span class="ui-bone ui-w30"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w14"></span><span class="ui-bone ui-bone-badge"></span></div><div class="ui-skel-row"><span class="ui-bone ui-w30"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w14"></span><span class="ui-bone ui-bone-badge"></span></div><div class="ui-skel-row"><span class="ui-bone ui-w30"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w14"></span><span class="ui-bone ui-bone-badge"></span></div></div>
+  <div class="ui-skel-cards"><div class="ui-skel-card"><span class="ui-bone ui-w40"></span><span class="ui-bone ui-w60"></span><span class="ui-bone ui-w30"></span></div><div class="ui-skel-card"><span class="ui-bone ui-w40"></span><span class="ui-bone ui-w60"></span><span class="ui-bone ui-w30"></span></div><div class="ui-skel-card"><span class="ui-bone ui-w40"></span><span class="ui-bone ui-w60"></span><span class="ui-bone ui-w30"></span></div><div class="ui-skel-card"><span class="ui-bone ui-w40"></span><span class="ui-bone ui-w60"></span><span class="ui-bone ui-w30"></span></div><div class="ui-skel-card"><span class="ui-bone ui-w40"></span><span class="ui-bone ui-w60"></span><span class="ui-bone ui-w30"></span></div><div class="ui-skel-card"><span class="ui-bone ui-w40"></span><span class="ui-bone ui-w60"></span><span class="ui-bone ui-w30"></span></div></div>
+  
+</div>
+<p>&lt;script&gt;x&lt;/script&gt; &amp; &#39;q&#39;</p>
+</div>
+</div>
+
+
+  
+  <div class="page-skeleton" data-page-skeleton role="status" hidden>
+    <span class="sr-only">Loading…</span>
+    <div class="ui-skel" aria-hidden="true" data-skeleton-kind="list">
+  <div class="ui-skel-h"><div><span class="ui-bone ui-bone-title"></span><span class="ui-bone ui-bone-meta"></span></div><span class="ui-bone ui-bone-btn"></span></div>
+  
+  <span class="ui-bone ui-bone-toolbar"></span>
+  <div class="ui-skel-rows"><div class="ui-skel-row"><span class="ui-bone ui-w30"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w14"></span><span class="ui-bone ui-bone-badge"></span></div><div class="ui-skel-row"><span class="ui-bone ui-w30"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w14"></span><span class="ui-bone ui-bone-badge"></span></div><div class="ui-skel-row"><span class="ui-bone ui-w30"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w14"></span><span class="ui-bone ui-bone-badge"></span></div><div class="ui-skel-row"><span class="ui-bone ui-w30"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w14"></span><span class="ui-bone ui-bone-badge"></span></div><div class="ui-skel-row"><span class="ui-bone ui-w30"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w14"></span><span class="ui-bone ui-bone-badge"></span></div><div class="ui-skel-row"><span class="ui-bone ui-w30"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w14"></span><span class="ui-bone ui-bone-badge"></span></div></div>
+  <div class="ui-skel-cards"><div class="ui-skel-card"><span class="ui-bone ui-w40"></span><span class="ui-bone ui-w60"></span><span class="ui-bone ui-w30"></span></div><div class="ui-skel-card"><span class="ui-bone ui-w40"></span><span class="ui-bone ui-w60"></span><span class="ui-bone ui-w30"></span></div><div class="ui-skel-card"><span class="ui-bone ui-w40"></span><span class="ui-bone ui-w60"></span><span class="ui-bone ui-w30"></span></div><div class="ui-skel-card"><span class="ui-bone ui-w40"></span><span class="ui-bone ui-w60"></span><span class="ui-bone ui-w30"></span></div><div class="ui-skel-card"><span class="ui-bone ui-w40"></span><span class="ui-bone ui-w60"></span><span class="ui-bone ui-w30"></span></div><div class="ui-skel-card"><span class="ui-bone ui-w40"></span><span class="ui-bone ui-w60"></span><span class="ui-bone ui-w30"></span></div></div>
+  
+</div>
+  </div>
+
+</main>
+
+
+<dialog id="confirm-dialog" class="admin-dialog">
+  <form method="post" id="confirm-form" class="admin-dialog-form">
+    <h2 id="confirm-title" style="margin-top:0"></h2>
+    <p id="confirm-body" class="small muted"></p>
+    <div class="actions">
+      <button class="btn" type="button" data-confirm-cancel>Cancel</button>
+      <button class="btn primary" type="submit" data-confirm-proceed
+              data-confirm-default-label="Confirm"
+              data-confirm-archive-label="Delete">Confirm</button>
+    </div>
+  </form>
+</dialog>
+
+
+<dialog id="unsaved-dialog" class="admin-dialog unsaved-dialog" aria-labelledby="unsaved-dialog-title">
+  <div class="admin-dialog-form">
+    <h2 id="unsaved-dialog-title" class="unsaved-dialog-title">You have unsaved changes</h2>
+    <div class="actions unsaved-dialog-actions">
+      <button class="btn" type="button" data-unsaved-stay>Stay</button>
+      <button class="btn" type="button" data-unsaved-discard>Discard</button>
+      <button class="btn primary" type="button" data-unsaved-save>Save</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="csv-export-dialog" class="csv-export-dialog">
+  <form id="csv-export-form">
+    <h2 style="margin-top:0">Export CSV</h2>
+    <p class="small muted">Choose the date range to include in the export.</p>
+    <p class="small csv-export-scope">Property: <strong data-csv-scope-label>All properties</strong></p>
+    <div class="grid two">
+      <div class="field">
+        <label for="csv_export_from">From</label>
+        <input type="date" id="csv_export_from" name="from" required>
+      </div>
+      <div class="field">
+        <label for="csv_export_to">Until</label>
+        <input type="date" id="csv_export_to" name="to" required>
+      </div>
+    </div>
+    <div class="actions" style="margin-top:14px">
+      <button class="btn" type="button" data-csv-cancel>Cancel</button>
+      <button class="btn primary" type="submit">Download</button>
+    </div>
+  </form>
+</dialog>
+
+
+
+
+
+
+
+
+
+
+<a class="havel-fab" href="/havel" data-sheet-open="havel-sheet" data-havel-launcher data-havel-fab aria-label="Ask Havel (AI)" title="Ask Havel (AI)"><svg class="ui-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="message-circle-question"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></a>
+<dialog id="havel-sheet" class="ui-dialog havel-dialog" aria-labelledby="havel-title" data-havel-modeless data-havel-panel data-havel-owner="2"
+        data-src="/havel?page=reservations&amp;return_to=/reservations"
+        data-writing="Havel is writing…" data-error="Something went wrong on our side. Please try again in a moment." data-retry="Try again" data-name="Havel (AI)">
+  <div class="ui-sheet">
+    <span class="ui-sheet-handle" aria-hidden="true"></span>
+    <div class="havel-head">
+      <span class="havel-avatar" aria-hidden="true"><svg class="ui-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="message-circle-question"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></span>
+      <div class="havel-head-text"><h2 id="havel-title" tabindex="-1">Havel (AI)</h2><p>Ask how things work</p></div>
+      <button class="ui-btn ui-btn-quiet ui-btn-icon havel-close" type="button" data-sheet-close aria-label="Close"><svg class="ui-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    </div>
+    <div class="havel-thread" role="log" aria-live="polite" data-havel-thread>
+      
+
+<div class="havel-msg havel-msg-havel havel-greeting" data-havel-greeting>
+  <div class="havel-bubble"><p>Hi, I&#39;m Havel. Pick a topic or ask me anything. I never change anything without your OK.</p></div>
+</div>
+
+<div class="havel-topics" data-havel-topics>
+  
+  <div class="ui-chips havel-chips" role="group" aria-label="What do you need help with?">
+    <a class="ui-chip havel-chip" href="/havel?topic=stays" data-havel-topic-link><span class="havel-chip-ico" aria-hidden="true"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="calendar-days"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg></span><span class="havel-chip-text">Add or change a stay</span></a><a class="ui-chip havel-chip" href="/havel?topic=guest_link" data-havel-topic-link><span class="havel-chip-ico" aria-hidden="true"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="external-link"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></span><span class="havel-chip-text">Guest link and PIN</span></a><a class="ui-chip havel-chip" href="/havel?topic=reporting" data-havel-topic-link><span class="havel-chip-ico" aria-hidden="true"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="send"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg></span><span class="havel-chip-text">Police reporting</span></a><a class="ui-chip havel-chip" href="/havel?topic=calendars" data-havel-topic-link><span class="havel-chip-ico" aria-hidden="true"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="refresh-cw"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg></span><span class="havel-chip-text">Calendars</span></a><a class="ui-chip havel-chip" href="/havel?topic=wrong" data-havel-topic-link><span class="havel-chip-ico" aria-hidden="true"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="triangle-alert"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><span class="havel-chip-text">Something is wrong</span></a>
+  </div>
+  
+</div>
+    </div><div data-havel-form-wrap>
+<form method="post" action="/havel" class="havel-composer" data-havel-form>
+  <input type="hidden" name="_csrf" value="GOLDEN-CSRF">
+  <input type="hidden" name="history" value="" data-havel-history>
+  <input type="hidden" name="history_sig" value="" data-havel-sig>
+  <input type="hidden" name="page" value="reservations">
+  <input type="hidden" name="device" value="computer" data-havel-device>
+  <input type="hidden" name="topic" value="" data-havel-topic>
+  <input type="hidden" name="q" value="" data-havel-q>
+  <input type="hidden" name="return_to" value="/reservations">
+  
+  <p class="havel-meta havel-status">Chat is paused right now. Quick answers above still work.</p>
+  <a class="ui-btn ui-btn-secondary havel-support-open" href="/havel?topic=wrong&q=error" data-havel-topic-link><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="mail"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg>Write to support</a>
+  
+</form></div>
+    <a class="havel-guide-link" href="/guide">Browse the full guide</a>
+  </div>
+</dialog>
+<dialog id="command-dialog" class="command-dialog" aria-labelledby="command-title">
+  <div class="command-shell">
+    <h2 id="command-title" class="sr-only">Search or jump to…</h2>
+    <div class="command-search">
+      <span aria-hidden="true"><svg class="ui-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="search"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
+      <input type="search" data-command-input aria-label="Search or jump to…" placeholder="Search stays, properties, reports, and actions…" autocomplete="off">
+      <button class="command-close" type="button" data-command-close aria-label="Close"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    </div>
+    <div class="command-results" data-command-results role="listbox" aria-live="polite"
+         data-empty="No results" data-copied="Guest link copied"></div>
+  </div>
+</dialog>
+
+<dialog id="shortcuts-dialog" class="shortcuts-dialog" aria-labelledby="shortcuts-title">
+  <div class="shortcuts-shell">
+    <div class="section-heading">
+      <h2 id="shortcuts-title">Keyboard shortcuts</h2>
+      <button class="btn-icon" type="button" data-shortcuts-close aria-label="Close"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    </div>
+    <dl class="shortcut-list">
+      <div><dt><kbd>g</kbd> <kbd>d</kbd></dt><dd>Go to Overview</dd></div>
+      <div><dt><kbd>g</kbd> <kbd>s</kbd></dt><dd>Go to Stays</dd></div>
+      <div><dt><kbd>g</kbd> <kbd>r</kbd></dt><dd>Go to Reports</dd></div>
+      <div><dt><kbd>g</kbd> <kbd>h</kbd></dt><dd>Go to House book</dd></div>
+      <div><dt><kbd>⌘/Ctrl</kbd> <kbd>K</kbd></dt><dd>Open search</dd></div>
+      <div><dt><kbd>j</kbd> / <kbd>k</kbd></dt><dd>Select next row / Select previous row</dd></div>
+      <div><dt><kbd>Enter</kbd></dt><dd>Open selected row</dd></div>
+    </dl>
+  </div>
+</dialog>
+
+
+
+
+
+
+
+
+<nav class="ui-tabbar" aria-label="Main navigation">
+  <a href="/" ><span class="ui-tabbar-ic"><svg class="ui-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="layout-dashboard"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></span><span>Dashboard</span></a>
+  <a href="/reservations" aria-current="page"><span class="ui-tabbar-ic"><svg class="ui-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="calendar-days"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg></span><span>Stays</span></a>
+  <a href="/apartments" ><span class="ui-tabbar-ic"><svg class="ui-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="house"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><span>Properties</span></a>
+  <a href="/cleaning" ><span class="ui-tabbar-ic"><svg class="ui-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="sparkles"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></svg></span><span>Cleaning</span></a>
+  <a href="/settings" data-sheet-open="more-sheet" data-no-skeleton aria-label="More menu" ><span class="ui-tabbar-ic"><svg class="ui-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="ellipsis"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></span><span>More</span></a>
+</nav>
+<dialog id="more-sheet" class="ui-dialog" aria-label="More">
+  <div class="ui-sheet">
+    <span class="ui-sheet-handle" aria-hidden="true"></span>
+    <nav class="ui-menu-panel ui-sheet-list" aria-label="More">
+      <button class="ui-menu-item" type="button" data-command-open><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="search"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search</button>
+      <a class="ui-menu-item" href="/stay-fees"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="receipt-text"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8H8"/><path d="M16 12H8"/><path d="M13 16H8"/></svg>Stay fees</a>
+      <a class="ui-menu-item" href="/payments"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="credit-card"><g transform="scale(1.2)"><rect x="2" y="5" width="16" height="11" rx="2"/><path d="M2 9h16M5 12.5h4"/></g></svg>Payments</a>
+      <a class="ui-menu-item" href="/booking-sites"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="external-link"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>Booking site</a>
+      <a class="ui-menu-item" href="/settings"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="settings"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>Settings</a>
+      
+      <a class="ui-menu-item" href="/guide"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="book-open"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>Help</a>
+      
+      <a class="ui-menu-item" href="/settings/archived"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="archive"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>Archive</a>
+      <a class="ui-menu-item" href="/privacy-requests"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="file-lock"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><rect width="8" height="6" x="8" y="12" rx="1"/><path d="M15 12v-2a3 3 0 1 0-6 0v2"/></svg>Data requests</a>
+      <form method="post" action="/language" class="lang-switch compact ui-sheet-lang">
+        <input type="hidden" name="next" value="/reservations">
+        <button type="submit" name="lang" value="en" class="is-active">EN</button>
+        <button type="submit" name="lang" value="cs" class="">CS</button>
+        <button type="submit" name="lang" value="vi" class="">VI</button>
+      </form>
+      <form method="post" action="/logout"><button class="ui-menu-item" type="submit"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="log-out"><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></svg>Log out</button></form>
+    </nav>
+    <button class="ui-btn ui-btn-secondary" type="button" data-sheet-close>Close</button>
+  </div>
+</dialog>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<div class="cleaning-desk">
+{{ range $s := .Sections }}
+<section class="cleaning-section" aria-labelledby="cleaning-section-{{ $s.Key }}">
+  <h2 id="cleaning-section-{{ $s.Key }}">{{ ct $.Lang (print "section_" $s.Key) }}</h2>
+  {{ if not $s.Items }}
+  <div class="card"><table><tbody><tr><td>{{ ct $.Lang "today_empty" }}</td></tr></tbody></table></div>
+  {{ else }}
+  <div class="card"><table>
+    <thead><tr><th>{{ ct $.Lang "col_property" }}</th><th>{{ if eq $s.Key "today" }}{{ ct $.Lang "col_time" }}{{ else }}{{ ct $.Lang "col_day" }}{{ end }}</th><th>{{ ct $.Lang "arrival" }}</th><th>{{ ct $.Lang "col_status" }}</th><th></th></tr></thead>
+    <tbody>
+  {{ range $it := $s.Items }}
+    <tr class="clickable-row" id="cleaning-{{ $it.EventID }}" data-href="/cleaning/events/{{ $it.EventID }}/edit" tabindex="0" role="link">
+      <td><a href="/cleaning/events/{{ $it.EventID }}/edit">{{ $it.Property }}</a></td>
+      <td>{{ if eq $s.Key "today" }}{{ window $.Lang $it }}{{ else }}{{ cday $.Lang $it.Date }}{{ end }}</td>
+      <td>{{ if $it.NextArrival }}{{ cshort $.Lang $it.NextArrival }} · {{ or $it.CheckinTime (ct $.Lang "time_missing") }}{{ else }}{{ ct $.Lang "no_arrival" }}{{ end }}</td>
+      <td>{{ if $it.Conflict }}<span class="pill p-warn">{{ ct $.Lang "status_conflict" }}</span>{{ else if $it.TimingUnavailable }}<span class="pill p-warn">{{ ct $.Lang "status_hours" }}</span>{{ else }}<span class="pill p-ok">{{ ct $.Lang "status_scheduled" }}</span>{{ end }}</td>
+      <td class="dots"><a class="row-open" href="/cleaning/events/{{ $it.EventID }}/edit" tabindex="-1" aria-hidden="true"><span class="row-open-text">{{ t $.Lang "common.open" }}</span></a></td>
+    </tr>
+  {{ end }}
+    </tbody>
+  </table></div>
+  {{ end }}
+</section>
+{{ end }}
+</div>
+<div class="cleaning-phone">
+<div class="ph-top"><h1 class="hl">{{ .Phone.Headline }}</h1><p class="hl-sub">{{ ct $.Lang "subtitle_short" }}</p></div>
+{{ if .Phone.Today }}
+<div class="hs">
+{{ range $it := .Phone.Today }}
+  <a class="card" href="/cleaning/events/{{ $it.EventID }}/edit"><span class="kind out">{{ window $.Lang $it }}</span>
+    <div class="who"><div class="av">{{ first $it.Property }}</div><div><div class="nm">{{ $it.Property }}</div><div class="meta">{{ if $it.NextArrival }}{{ ct $.Lang "next_arrival_short" }} {{ cshort $.Lang $it.NextArrival }}{{ if $it.CheckinTime }} {{ $it.CheckinTime }}{{ end }}{{ else }}{{ ct $.Lang "no_arrival" }}{{ end }}</div></div></div>
+    {{ if $it.Conflict }}<span class="pill p-warn">{{ ct $.Lang "status_conflict" }}</span>{{ else if $it.TimingUnavailable }}<span class="pill p-warn">{{ ct $.Lang "status_hours" }}</span>{{ else }}<span class="pill p-ok">{{ ct $.Lang "status_scheduled" }}</span>{{ end }}</a>
+{{ end }}
+</div>
+{{ end }}
+{{ if .Phone.Week }}
+<h2 class="sec">{{ ct $.Lang "section_week" }}</h2>
+<div class="list plain">
+{{ range $it := .Phone.WeekHead }}{{ template "phonerow" (rowdata $.Lang $it) }}
+{{ end }}
+</div>
+{{ end }}
+{{ if .Phone.Hidden }}<details class="cleaning-more"><summary class="btn line">{{ .Phone.ShowMore }}</summary>
+{{ if .Phone.WeekRest }}<div class="list plain">
+{{ range $it := .Phone.WeekRest }}{{ template "phonerow" (rowdata $.Lang $it) }}
+{{ end }}
+</div>{{ end }}
+{{ if .Phone.Later }}<h2 class="sec">{{ ct $.Lang "section_later" }}</h2>
+<div class="list plain">
+{{ range $it := .Phone.Later }}{{ template "phonerow" (rowdata $.Lang $it) }}
+{{ end }}
+</div>{{ end }}
+</details>{{ end }}
+<h2 class="sec">{{ ct $.Lang "section_cleaner" }}</h2>
+<a class="promo" href="/cleaning/shares"><span class="pi">{{ icon "sparkles" 22 "" }}</span><span><b>{{ ct $.Lang "share_cleaner" }}</b><small>{{ ct $.Lang "share_hint" }}</small></span></a>
+</div>
+{{ define "phonerow" }}<a class="row" href="/cleaning/events/{{ .Item.EventID }}/edit"><span class="t"><b>{{ .Item.Property }}</b><small>{{ cday .Lang .Item.Date }} · {{ if .Item.NextArrival }}{{ ct .Lang "next_arrival_short" }} {{ cshort .Lang .Item.NextArrival }}{{ if .Item.CheckinTime }} {{ .Item.CheckinTime }}{{ end }}{{ else }}{{ ct .Lang "no_arrival" }}{{ end }}</small></span>{{ if .Item.Conflict }}<span class="pill p-warn">{{ ct .Lang "status_conflict" }}</span>{{ else if .Item.TimingUnavailable }}<span class="pill p-warn">{{ ct .Lang "status_hours" }}</span>{{ end }}{{ icon "chevron-right" 20 "chev" }}</a>{{ end }}

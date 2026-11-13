@@ -1,0 +1,1442 @@
+diff --git a/App/scripts/booking_webhook_golden.py b/App/scripts/booking_webhook_golden.py
+new file mode 100644
+index 0000000..c9e8ac9
+--- /dev/null
++++ b/App/scripts/booking_webhook_golden.py
+@@ -0,0 +1,338 @@
++"""Write go/internal/payments/testdata/booking_webhook/golden.json from the real Python.
++
++Run from App/ (create the venv first if missing:
++python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt):
++
++    .venv/bin/python scripts/booking_webhook_golden.py
++
++It seeds a throwaway SQLite database with the fixed rows in SEED, sends every
++event in EVENTS through stripe_connect.process_event (the dedupe, then
++booking_webhook.handle) and records whether each call returned or raised, the
++Stripe refund requests, and the rows afterwards. Stripe is faked at
++stripe_connect._client, so the call guard and the monthly call count still run.
++booking_invoice.ensure is replaced by a no-op: the Go port does not issue the
++invoice (brief 1350, known gap). go/internal/payments/booking_webhook_test.go
++seeds PostgreSQL from the same file, runs the Go handler and compares.
++App/tests/test_go_booking_webhook_golden.py fails when this file or
++go/internal/payments/booking_i18n.json is stale.
++
++Timestamps the run writes are not comparable: a timestamp column records
++"seed" when it still holds the seeded value, "run" when the run wrote it, and
++null when it is empty.
++"""
++
++from __future__ import annotations
++
++import json
++import os
++import sys
++import tempfile
++from pathlib import Path
++
++APP = Path(__file__).resolve().parents[1]
++GO_PAYMENTS = APP.parent / "go" / "internal" / "payments"
++OUT = GO_PAYMENTS / "testdata" / "booking_webhook" / "golden.json"
++I18N_OUT = GO_PAYMENTS / "booking_i18n.json"
++
++STAMP = "2026-09-01T00:00:00+00:00"
++SECRET = "golden-secret-key-not-for-real-use"
++BASE_URL = "https://golden.example.test"
++
++# The host_i18n keys the Go handler reads, in cs and en only.
++I18N_KEYS = [
++    "pp.book.policy.flexible",
++    "pp.book.policy.moderate",
++    "pp.book.policy.non_refundable",
++    "site_booking.mail.clash_subject",
++    "site_booking.mail.clash_text",
++    "site_booking.mail.guest_manage",
++    "site_booking.mail.guest_manage_direct",
++    "site_booking.mail.guest_register",
++    "site_booking.mail.guest_subject",
++    "site_booking.mail.guest_text",
++    "site_booking.mail.guest_text_direct",
++    "site_booking.mail.host_clash_subject",
++    "site_booking.mail.host_clash_text",
++    "site_booking.mail.host_subject",
++    "site_booking.mail.host_text",
++    "site_booking.mail.host_text_direct",
++]
++I18N_LANGS = ["cs", "en"]
++
++
++def _booking(bid, apt, owner, status, dfrom, dto, *, lang="cs", email="guest@example.test",
++             name="Test Guest", hold=None, pay="stripe", policy="flexible", total=4000):
++    return [bid, apt, owner, hold, status, dfrom, dto, 2, name, email, lang, 2, 1800, total,
++            policy, "v1", f"cs_{bid}", pay, STAMP, STAMP]
++
++
++# Apartment 10 (owner 1): slug, booking page, host mail, Stripe account.
++# Apartment 11 (owner 1): no permalink token (no registration link), no page
++# slug (manage link uses "x"), an active stay 2027-03-10..15 for clashes.
++# Apartment 12 (owner 2): host entity without mail, no Stripe account, an
++# active stay 2027-03-10..15.
++SEED = [
++    {"table": "user_account",
++     "columns": ["id", "username", "password_hash", "role", "created_at"],
++     "rows": [[1, "host1@example.test", "x", "host", STAMP],
++              [2, "host2@example.test", "x", "host", STAMP]]},
++    {"table": "legal_entity",
++     "columns": ["id", "owner_user_id", "name", "contact_email", "created_at"],
++     "rows": [[100, 1, "Host One", "Host.One@Example.test", STAMP],
++              [101, 2, "Host Two", None, STAMP]]},
++    {"table": "apartment",
++     "columns": ["id", "owner_user_id", "legal_entity_id", "internal_name", "permalink_token", "created_at"],
++     "rows": [[10, 1, 100, "Chata u lesa", "tok-ten-aaaaaaaaaaaa", STAMP],
++              [11, 1, 100, "Byt Praha", None, STAMP],
++              [12, 2, 101, "Apartmán Brno", "tok-twelve-bbbbbbbbbb", STAMP]]},
++    {"table": "apartment_slug",
++     "columns": ["slug", "apartment_id", "is_current", "created_at"],
++     "rows": [["chata-u-lesa-k7m2", 10, 1, STAMP],
++              ["apartman-brno-q9z4", 12, 1, STAMP]]},
++    {"table": "property_slug",
++     "columns": ["id", "apartment_id", "slug", "published", "created_at", "updated_at"],
++     "rows": [[1, 10, "chata-u-lesa", 1, STAMP, STAMP],
++              [2, 12, "apartman-brno", 1, STAMP, STAMP]]},
++    {"table": "stripe_account",
++     "columns": ["id", "owner_user_id", "stripe_account_id", "mode", "onboarding_state",
++                 "charges_enabled", "payouts_enabled", "created_at", "updated_at"],
++     "rows": [[1, 1, "acct_golden1", "test", "complete", 1, 1, STAMP, STAMP]]},
++    {"table": "reservation",
++     "columns": ["id", "apartment_id", "source", "uid", "date_from", "date_to", "status",
++                 "created_at", "updated_at"],
++     "rows": [[50, 11, "ical", "airbnb-1", "2027-03-10", "2027-03-15", "active", STAMP, STAMP],
++              [51, 12, "ical", "airbnb-2", "2027-03-10", "2027-03-15", "active", STAMP, STAMP]]},
++    {"table": "booking_hold",
++     "columns": ["id", "apartment_id", "date_from", "date_to", "expires_at", "created_at"],
++     "rows": [[201, 10, "2027-01-01", "2027-01-05", STAMP, STAMP],
++              [204, 11, "2027-03-12", "2027-03-14", STAMP, STAMP],
++              [205, 12, "2027-03-12", "2027-03-14", STAMP, STAMP],
++              [208, 10, "2027-07-01", "2027-07-03", STAMP, STAMP],
++              [210, 10, "2027-09-01", "2027-09-03", STAMP, STAMP]]},
++    {"table": "site_booking",
++     "columns": ["id", "apartment_id", "owner_user_id", "hold_id", "status", "date_from", "date_to",
++                 "guests", "guest_name", "guest_email", "lang", "nights", "nightly_czk", "total_czk",
++                 "cancellation_policy", "terms_version", "stripe_session_id", "pay_method",
++                 "created_at", "updated_at"],
++     "rows": [
++         # 1 cs card, paid; then replayed, then a second paid event, then expired: no-ops.
++         _booking(1, 10, 1, "pending", "2027-01-01", "2027-01-05", hold=201),
++         # 2 en, unpaid completed (pending bank method), then async succeeded.
++         _booking(2, 10, 1, "pending", "2027-02-01", "2027-02-03", lang="en", policy="moderate"),
++         # 3 direct pay method, no guest mail address: host mail only.
++         _booking(3, 10, 1, "pending", "2027-04-01", "2027-04-04", email=None, pay="direct"),
++         # 4 en clash: refunded on acct_golden1, mails.
++         _booking(4, 11, 1, "pending", "2027-03-12", "2027-03-14", lang="en", hold=204),
++         # 5 clash, owner 2 has no Stripe account: raises, stays pending.
++         _booking(5, 12, 2, "pending", "2027-03-12", "2027-03-14", hold=205),
++         # 6 clash, Stripe answers an error: raises, stays pending.
++         _booking(6, 11, 1, "pending", "2027-03-11", "2027-03-13"),
++         # 7 clash, the session has no payment intent: raises.
++         _booking(7, 11, 1, "pending", "2027-03-13", "2027-03-16"),
++         # 8 expired session; 9 async payment failed.
++         _booking(8, 10, 1, "pending", "2027-07-01", "2027-07-03", hold=208),
++         _booking(9, 10, 1, "pending", "2027-08-01", "2027-08-03"),
++         # 10 already expired, then paid late: confirmed. Unknown language -> cs.
++         _booking(10, 10, 1, "expired", "2027-09-01", "2027-09-03", hold=210, lang="de",
++                  policy="non_refundable"),
++         # 11 owner 2: host has no mail address, guest mail with empty reply_to.
++         _booking(11, 12, 2, "pending", "2027-06-01", "2027-06-02", lang="en"),
++         # 12 already cancelled: an expired event changes nothing.
++         _booking(12, 10, 1, "cancelled", "2027-10-01", "2027-10-03"),
++     ]},
++]
++
++
++def _event(eid, etype, booking_id, *, payment_status="paid", intent="auto", session=None):
++    obj = {
++        "id": session or f"cs_{booking_id}",
++        "object": "checkout.session",
++        "payment_status": payment_status,
++        "metadata": {"site_booking_id": str(booking_id)},
++    }
++    if intent == "auto":
++        obj["payment_intent"] = f"pi_{booking_id}"
++    elif intent is not None:
++        obj["payment_intent"] = intent
++    return {"id": eid, "object": "event", "type": etype, "data": {"object": obj}}
++
++
++DONE = "checkout.session.completed"
++ASYNC_OK = "checkout.session.async_payment_succeeded"
++EXPIRED = "checkout.session.expired"
++ASYNC_FAIL = "checkout.session.async_payment_failed"
++
++EVENTS = [
++    _event("evt_g01", DONE, 1),
++    _event("evt_g01", DONE, 1),
++    _event("evt_g02", ASYNC_OK, 1),
++    _event("evt_g03", DONE, 2, payment_status="unpaid", intent=None),
++    _event("evt_g04", ASYNC_OK, 2),
++    _event("evt_g05", DONE, 3),
++    _event("evt_g06", DONE, 4),
++    _event("evt_g07", DONE, 5),
++    _event("evt_g08", DONE, 6, intent="pi_fail"),
++    _event("evt_g09", DONE, 7, intent=None),
++    _event("evt_g10", EXPIRED, 8, payment_status="unpaid", intent=None),
++    _event("evt_g11", ASYNC_FAIL, 9, payment_status="unpaid", intent=None),
++    _event("evt_g12", DONE, 10),
++    _event("evt_g13", DONE, 11),
++    _event("evt_g14", EXPIRED, 12, payment_status="unpaid", intent=None),
++    _event("evt_g15", EXPIRED, 1, payment_status="unpaid", intent=None),
++    _event("evt_g16", DONE, 999, session="cs_unknown"),
++    _event("evt_g17", DONE, 4),
++]
++
++
++class _FakeRefunds:
++    def __init__(self, calls):
++        self.calls = calls
++
++    def create(self, params=None, options=None):
++        params = params or {}
++        options = options or {}
++        self.calls.append({
++            "payment_intent": params.get("payment_intent"),
++            "metadata_site_booking_id": (params.get("metadata") or {}).get("site_booking_id"),
++            "stripe_account": options.get("stripe_account"),
++            "idempotency_key": options.get("idempotency_key"),
++        })
++        if params.get("payment_intent") == "pi_fail":
++            raise RuntimeError("fake Stripe error")
++        return {"id": f"re_{len(self.calls)}", "status": "succeeded"}
++
++
++class _FakeClient:
++    def __init__(self, calls):
++        self.v1 = type("V1", (), {})()
++        self.v1.refunds = _FakeRefunds(calls)
++
++
++def _seed(db) -> None:
++    for table in SEED:
++        cols = ", ".join(table["columns"])
++        marks = ", ".join("?" for _ in table["columns"])
++        for row in table["rows"]:
++            db.execute(f"INSERT INTO {table['table']} ({cols}) VALUES ({marks})", row)
++
++
++def _ts(value):
++    if value is None:
++        return None
++    return "seed" if value == STAMP else "run"
++
++
++def _rows(db, sql, ts_cols=()):
++    out = []
++    for row in db.query(sql):
++        item = dict(row)
++        for col in ts_cols:
++            item[col] = _ts(item[col])
++        out.append(item)
++    return out
++
++
++def _snapshot(db) -> dict:
++    return {
++        "site_booking": _rows(
++            db,
++            "SELECT id, status, reservation_id, hold_id, stripe_payment_intent_id, refunded_czk,"
++            " paid_at, updated_at FROM site_booking ORDER BY id",
++            ("paid_at", "updated_at")),
++        "reservation": _rows(
++            db,
++            "SELECT id, apartment_id, source, uid, date_from, date_to, summary,"
++            " expected_guests_override, guest_email, status, created_at, updated_at"
++            " FROM reservation ORDER BY id",
++            ("created_at", "updated_at")),
++        "booking_hold": _rows(db, "SELECT id FROM booking_hold ORDER BY id"),
++        "email_outbox": _rows(
++            db,
++            "SELECT idempotency_key, kind, reservation_id, apartment_id, owner_user_id, to_email,"
++            " cc_email, subject, payload, state, attempts, next_attempt_at, created_at, updated_at"
++            " FROM email_outbox ORDER BY id",
++            ("next_attempt_at", "created_at", "updated_at")),
++        "audit": _rows(
++            db,
++            "SELECT at, actor, action, detail, owner_user_id, actor_user_id, impersonator_user_id"
++            " FROM audit ORDER BY id",
++            ("at",)),
++        "stripe_webhook_event": _rows(
++            db,
++            "SELECT event_id, event_type, mode, created_at FROM stripe_webhook_event ORDER BY id",
++            ("created_at",)),
++        "stripe_calls": sum(int(r["calls"]) for r in db.query(
++            "SELECT calls FROM lock_api_usage WHERE provider = 'stripe'")),
++    }
++
++
++def render_i18n() -> str:
++    from app import host_i18n
++
++    catalog = {lang: {k: host_i18n.STRINGS[lang][k] for k in I18N_KEYS if k in host_i18n.STRINGS[lang]}
++               for lang in I18N_LANGS}
++    return json.dumps(catalog, sort_keys=True, ensure_ascii=False, indent=1) + "\n"
++
++
++def render() -> str:
++    """Seed a fresh database, send the events, and return the golden JSON text."""
++    from app import booking_invoice, config, db, stripe_connect
++
++    saved = {name: getattr(config, name) for name in (
++        "STRIPE_MODE", "STRIPE_SECRET_KEY", "STRIPE_MONTHLY_API_CALLS", "MAIL_BACKEND",
++        "PUBLIC_BASE_URL", "_SECRET_KEY")}
++    saved_client = stripe_connect._client
++    saved_ensure = booking_invoice.ensure
++    calls: list = []
++    try:
++        config.STRIPE_MODE = "test"
++        config.STRIPE_SECRET_KEY = "sk_test_golden"
++        config.STRIPE_MONTHLY_API_CALLS = 50000
++        config.MAIL_BACKEND = "console"
++        config.PUBLIC_BASE_URL = BASE_URL
++        config._SECRET_KEY = SECRET
++        stripe_connect._client = lambda: _FakeClient(calls)
++        booking_invoice.ensure = lambda booking_id: None
++
++        db.init_db()
++        _seed(db)
++        results = []
++        for event in EVENTS:
++            try:
++                stripe_connect.process_event(json.loads(json.dumps(event)))
++                results.append("ok")
++            except Exception:  # noqa: BLE001 - the route answers 500, Stripe retries
++                results.append("error")
++        golden = {
++            "stamp": STAMP,
++            "secret": SECRET,
++            "base_url": BASE_URL,
++            "seed": SEED,
++            "events": EVENTS,
++            "results": results,
++            "refunds": calls,
++            "after": _snapshot(db),
++        }
++    finally:
++        for name, value in saved.items():
++            setattr(config, name, value)
++        stripe_connect._client = saved_client
++        booking_invoice.ensure = saved_ensure
++    return json.dumps(golden, ensure_ascii=False, indent=1, sort_keys=True) + "\n"
++
++
++def main() -> None:
++    OUT.parent.mkdir(parents=True, exist_ok=True)
++    OUT.write_text(render(), encoding="utf-8")
++    I18N_OUT.write_text(render_i18n(), encoding="utf-8")
++    print(f"wrote {OUT} and {I18N_OUT}")
++
++
++if __name__ == "__main__":
++    tmp = Path(tempfile.mkdtemp(prefix="ubyhost-golden-"))
++    os.environ.setdefault("UBYHOST_DATA_DIR", str(tmp))
++    os.environ.setdefault("UBYHOST_DB", str(tmp / "booking_webhook_golden.sqlite3"))
++    os.environ.setdefault("UBYHOST_SECRET_KEY", SECRET)
++    os.environ.setdefault("UBYHOST_ENABLE_SCHEDULER", "0")
++    sys.path.insert(0, str(APP))
++    main()
+diff --git a/App/tests/test_go_booking_webhook_golden.py b/App/tests/test_go_booking_webhook_golden.py
+new file mode 100644
+index 0000000..40e7b50
+--- /dev/null
++++ b/App/tests/test_go_booking_webhook_golden.py
+@@ -0,0 +1,30 @@
++"""go/internal/payments/booking_webhook_test.go reads the files App/scripts/booking_webhook_golden.py writes."""
++
++import importlib.util
++from pathlib import Path
++
++APP_DIR = Path(__file__).resolve().parents[1]
++
++
++def _load_generator():
++    spec = importlib.util.spec_from_file_location(
++        "booking_webhook_golden", APP_DIR / "scripts" / "booking_webhook_golden.py"
++    )
++    module = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(module)
++    return module
++
++
++def test_booking_webhook_golden_matches_python_handler(monkeypatch, tmp_path):
++    from app import config
++
++    monkeypatch.setattr(config, "DB_PATH", tmp_path / "booking-webhook-golden.sqlite3")
++    generator = _load_generator()
++    committed = generator.OUT.read_bytes()
++    assert generator.render().encode("utf-8") == committed
++    assert committed.count(b'"idempotency_key"') >= 10
++
++
++def test_booking_i18n_matches_host_catalog():
++    generator = _load_generator()
++    assert generator.render_i18n().encode("utf-8") == generator.I18N_OUT.read_bytes()
+diff --git a/go/internal/payments/booking_webhook.go b/go/internal/payments/booking_webhook.go
+new file mode 100644
+index 0000000..7242653
+--- /dev/null
++++ b/go/internal/payments/booking_webhook.go
+@@ -0,0 +1,650 @@
++package payments
++
++// Go port of the booking-site Stripe webhook: App/app/booking_webhook.py
++// (handle, _expire, _confirm, _refund_clash, _mail_confirmed, _mail_clash and
++// their helpers), with the parts it calls: booking_site.py by_session, get,
++// set_status, manage_url and manage_token; stripe_connect.py process_event (the
++// dedupe around booking events), account_for_owner and _api; mail.enqueue;
++// mail_notify._entity_contact_email; guest_slug.link_key. It writes the same
++// rows, audit lines and outbox mails as Python (golden test:
++// booking_webhook_test.go, fixture from App/scripts/booking_webhook_golden.py).
++//
++// It runs only when UBYHOST_GO_BOOKING_WEBHOOK=1. Otherwise webhook.go
++// forwards booking events to Python exactly as before.
++//
++// Known gaps, deliberately not ported:
++//   - booking_invoice.ensure (best effort in Python after the mails; needs the
++//     invoice PDF code Go does not have). The invoice is then issued when the
++//     guest first opens /p/{slug}/b/{id}/{token}/invoice.pdf (Python route),
++//     with that day as its issue date.
++//   - guest_slug.ensure minting a slug: when the apartment has a permalink
++//     token but no current slug, Go links /l/<token>/<reservation> (the token
++//     keeps working); Python would create the slug first.
++//   - No Stripe network retries (see onboarder.go); Stripe redelivers the event.
++//   - The secret key is loaded before any write, so a missing key answers 500
++//     before the booking is confirmed (Python would fail after, in the mail).
++
++import (
++	"context"
++	"crypto/hmac"
++	"crypto/sha256"
++	_ "embed"
++	"encoding/hex"
++	"encoding/json"
++	"errors"
++	"fmt"
++	"io"
++	"log"
++	"net/http"
++	"net/url"
++	"strconv"
++	"strings"
++	"time"
++
++	"github.com/jackc/pgx/v5"
++	"github.com/jackc/pgx/v5/pgconn"
++	"github.com/jackc/pgx/v5/pgxpool"
++
++	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
++	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
++	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
++)
++
++//go:embed booking_i18n.json
++var bookingJSON []byte
++
++// bookingStrings holds the site_booking.mail.* and pp.book.policy.* keys (cs,
++// en) of App/app/host_i18n.py, written by App/scripts/booking_webhook_golden.py.
++var bookingStrings = hostweb.Load(bookingJSON)
++
++const (
++	// BookingSwitchEnv turns the Go handler on with the value "1".
++	BookingSwitchEnv = "UBYHOST_GO_BOOKING_WEBHOOK"
++	bookingLockName  = "booking_site_dates" // db.lock_key name, shared with Python
++	bookingBaseURL   = "http://127.0.0.1:8080"
++)
++
++const (
++	eventSeenSQL   = `SELECT 1 FROM stripe_webhook_event WHERE event_id = $1`
++	bookingColumns = `id, apartment_id, owner_user_id, hold_id, status, date_from, date_to, guests,
++		guest_name, guest_email, total_czk, lang, cancellation_policy, pay_method`
++	bookingBySessionSQL = `SELECT ` + bookingColumns + ` FROM site_booking WHERE stripe_session_id = $1`
++	bookingByIDSQL      = `SELECT ` + bookingColumns + ` FROM site_booking WHERE id = $1`
++	bookingStatusSQL    = `SELECT status FROM site_booking WHERE id = $1`
++	bookingLockSQL      = `SELECT pg_advisory_xact_lock(hashtext($1), $2)`
++	bookingClashSQL     = `SELECT id FROM reservation WHERE apartment_id = $1 AND status = 'active'
++		AND date_from < $2 AND date_to > $3 LIMIT 1`
++	bookingReservationSQL = `INSERT INTO reservation (apartment_id, source, uid, date_from, date_to,
++		summary, expected_guests_override, guest_email, status, created_at, updated_at)
++		VALUES ($1, 'site', $2, $3, $4, $5, $6, $7, 'active', $8, $8) RETURNING id`
++	bookingPaidSQL = `UPDATE site_booking SET status = 'paid', reservation_id = $1,
++		stripe_payment_intent_id = $2, paid_at = $3, updated_at = $3
++		WHERE id = $4 AND status IN ('pending', 'expired')`
++	bookingHoldDeleteSQL = `DELETE FROM booking_hold WHERE id = $1`
++	bookingApartmentSQL  = `SELECT internal_name, legal_entity_id, permalink_token FROM apartment WHERE id = $1`
++	bookingEntityMailSQL = `SELECT contact_email FROM legal_entity WHERE id = $1`
++	bookingSlugSQL       = `SELECT slug FROM apartment_slug WHERE apartment_id = $1 AND is_current = 1`
++	bookingPageSlugSQL   = `SELECT slug FROM property_slug WHERE apartment_id = $1`
++)
++
++// bookingTransitions is booking_site._TRANSITIONS.
++var bookingTransitions = map[string]map[string]bool{
++	"pending":        {"paid": true, "expired": true, "clash_refunded": true},
++	"requested":      {"paid": true, "expired": true, "cancelled": true},
++	"paid":           {"cancelled": true, "refunded": true, "clash_refunded": true},
++	"cancelled":      {"refunded": true},
++	"expired":        {"paid": true, "clash_refunded": true, "cancelled": true},
++	"refunded":       {},
++	"clash_refunded": {},
++}
++
++// siteBooking is the part of a site_booking row the handler reads.
++type siteBooking struct {
++	id, apartmentID, ownerUserID int64
++	holdID                       *int64
++	status, dateFrom, dateTo     string
++	guests, totalCZK             int64
++	guestName, guestEmail        *string
++	lang, policy, payMethod      string
++}
++
++type bookingApartment struct {
++	found          bool
++	internalName   string
++	legalEntityID  *int64
++	permalinkToken *string
++}
++
++// bookingField is one extra column set_status writes, in Python's order.
++type bookingField struct {
++	name  string
++	value any
++}
++
++// BookingWebhook handles booking events. Stripe is used for the clash refund
++// only; tests point Stripe.APIBase at httptest. Building it touches nothing.
++type BookingWebhook struct {
++	Pool   *pgxpool.Pool
++	Getenv func(string) string
++	Now    func() time.Time
++	Stripe *StripeOnboarder
++}
++
++// bookingSwitchOn is UBYHOST_GO_BOOKING_WEBHOOK == "1" (trimmed).
++func bookingSwitchOn(getenv func(string) string) bool {
++	return strings.TrimSpace(getenv(BookingSwitchEnv)) == "1"
++}
++
++// NewBookingWebhook returns the production handler. It does not use the pool.
++func NewBookingWebhook(pool *pgxpool.Pool, getenv func(string) string, now func() time.Time) *BookingWebhook {
++	return &BookingWebhook{Pool: pool, Getenv: getenv, Now: now, Stripe: NewStripeOnboarder(pool, getenv, now)}
++}
++
++// Process is stripe_connect.process_event for a booking event: a seen event id
++// is a no-op; the id is recorded only after the handler returned, so an error
++// leaves it unrecorded and Stripe's retry runs it again.
++func (b *BookingWebhook) Process(ctx context.Context, ev stripeEvent, mode string) error {
++	if ev.ID == "" {
++		return errors.New("event without id")
++	}
++	var one int
++	err := b.Pool.QueryRow(ctx, eventSeenSQL, ev.ID).Scan(&one)
++	if err == nil {
++		return nil
++	}
++	if !errors.Is(err, pgx.ErrNoRows) {
++		return err
++	}
++	if err := b.handle(ctx, ev); err != nil {
++		return err
++	}
++	_, err = b.Pool.Exec(ctx, insertEventSQL, ev.ID, ev.Type, mode, stampAt(b.Now()))
++	var pgErr *pgconn.PgError
++	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
++		return nil
++	}
++	return err
++}
++
++// handle is booking_webhook.handle.
++func (b *BookingWebhook) handle(ctx context.Context, ev stripeEvent) error {
++	obj := ev.Data.Object
++	session, _ := obj["id"].(string)
++	bk, err := b.booking(ctx, bookingBySessionSQL, session)
++	if err != nil {
++		return err
++	}
++	if bk == nil {
++		log.Printf("booking webhook: no booking for session %s", session)
++		return nil
++	}
++	if ev.Type == "checkout.session.expired" || ev.Type == "checkout.session.async_payment_failed" {
++		return b.expire(ctx, bk)
++	}
++	if ps, _ := obj["payment_status"].(string); ps != "paid" {
++		return nil // async method still pending; async_payment_succeeded follows
++	}
++	if bk.status != "pending" && bk.status != "expired" {
++		return nil // already handled
++	}
++	intent, _ := obj["payment_intent"].(string)
++	return b.confirm(ctx, bk, intent)
++}
++
++// booking reads one row; nil when there is none.
++func (b *BookingWebhook) booking(ctx context.Context, sql string, arg any) (*siteBooking, error) {
++	var bk siteBooking
++	err := b.Pool.QueryRow(ctx, sql, arg).Scan(&bk.id, &bk.apartmentID, &bk.ownerUserID, &bk.holdID,
++		&bk.status, &bk.dateFrom, &bk.dateTo, &bk.guests, &bk.guestName, &bk.guestEmail, &bk.totalCZK,
++		&bk.lang, &bk.policy, &bk.payMethod)
++	if errors.Is(err, pgx.ErrNoRows) {
++		return nil, nil
++	}
++	if err != nil {
++		return nil, err
++	}
++	return &bk, nil
++}
++
++// expire is _expire.
++func (b *BookingWebhook) expire(ctx context.Context, bk *siteBooking) error {
++	if bk.status != "pending" {
++		return nil
++	}
++	if _, err := b.setStatus(ctx, bk.id, "expired", nil); err != nil {
++		return err
++	}
++	if bk.holdID != nil && *bk.holdID != 0 {
++		if _, err := b.Pool.Exec(ctx, bookingHoldDeleteSQL, *bk.holdID); err != nil {
++			return err
++		}
++	}
++	return nil
++}
++
++// setStatus is booking_site.set_status: false when the row is already there,
++// an error for a missing row or an illegal move.
++func (b *BookingWebhook) setStatus(ctx context.Context, id int64, to string, fields []bookingField) (bool, error) {
++	var cur string
++	err := b.Pool.QueryRow(ctx, bookingStatusSQL, id).Scan(&cur)
++	if errors.Is(err, pgx.ErrNoRows) {
++		return false, errors.New("no such booking")
++	}
++	if err != nil {
++		return false, err
++	}
++	if cur == to {
++		return false, nil
++	}
++	if !bookingTransitions[cur][to] {
++		return false, fmt.Errorf("site_booking %d: %s -> %s", id, cur, to)
++	}
++	args := []any{to, stampAt(b.Now())}
++	sql := "UPDATE site_booking SET status = $1, updated_at = $2"
++	for _, f := range fields {
++		args = append(args, f.value)
++		sql += fmt.Sprintf(", %s = $%d", f.name, len(args))
++	}
++	args = append(args, id, cur)
++	sql += fmt.Sprintf(" WHERE id = $%d AND status = $%d", len(args)-1, len(args))
++	tag, err := b.Pool.Exec(ctx, sql, args...)
++	if err != nil {
++		return false, err
++	}
++	return tag.RowsAffected() == 1, nil
++}
++
++// confirm is _confirm: under the per-apartment lock, re-read the status, check
++// for a clash, write the stay and mark the booking paid, release the hold.
++func (b *BookingWebhook) confirm(ctx context.Context, bk *siteBooking, intent string) error {
++	secret, err := secure.LoadSecret(b.Getenv)
++	if err != nil {
++		return err
++	}
++	stamp := stampAt(b.Now())
++	tx, err := b.Pool.Begin(ctx)
++	if err != nil {
++		return err
++	}
++	defer tx.Rollback(ctx)
++	if _, err := tx.Exec(ctx, bookingLockSQL, bookingLockName, int32(bk.apartmentID)); err != nil {
++		return err
++	}
++	// Stripe often delivers completed and async_payment_succeeded together;
++	// without this re-read the stay just written looks like a double booking.
++	var live string
++	err = tx.QueryRow(ctx, bookingStatusSQL, bk.id).Scan(&live)
++	if errors.Is(err, pgx.ErrNoRows) {
++		return nil
++	}
++	if err != nil {
++		return err
++	}
++	if live != "pending" && live != "expired" {
++		return nil
++	}
++	var other int64
++	err = tx.QueryRow(ctx, bookingClashSQL, bk.apartmentID, bk.dateTo, bk.dateFrom).Scan(&other)
++	clash := err == nil
++	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
++		return err
++	}
++	var reservationID int64
++	if !clash {
++		err = tx.QueryRow(ctx, bookingReservationSQL, bk.apartmentID, fmt.Sprintf("site-%d", bk.id),
++			bk.dateFrom, bk.dateTo, bk.guestName, bk.guests, bk.guestEmail, stamp).Scan(&reservationID)
++		if err != nil {
++			return err
++		}
++		var pi *string
++		if intent != "" {
++			pi = &intent
++		}
++		if _, err := tx.Exec(ctx, bookingPaidSQL, reservationID, pi, stamp, bk.id); err != nil {
++			return err
++		}
++	}
++	if bk.holdID != nil && *bk.holdID != 0 {
++		if _, err := tx.Exec(ctx, bookingHoldDeleteSQL, *bk.holdID); err != nil {
++			return err
++		}
++	}
++	if err := tx.Commit(ctx); err != nil {
++		return err
++	}
++	if clash {
++		return b.refundClash(ctx, bk, intent)
++	}
++	if err := audit(ctx, b.Pool, stampAt(b.Now()), "site_booking_paid",
++		fmt.Sprintf("id=%d reservation=%d", bk.id, reservationID), bk.ownerUserID); err != nil {
++		return err
++	}
++	fresh, err := b.booking(ctx, bookingByIDSQL, bk.id)
++	if err != nil {
++		return err
++	}
++	if fresh == nil {
++		fresh = bk
++	}
++	// booking_invoice.ensure is not ported (known gap, see the file comment).
++	return b.mailConfirmed(ctx, fresh, reservationID, secret)
++}
++
++// refundClash is _refund_clash: a full refund on the host's connected account.
++// Any failure is returned, so the webhook answers 500 and Stripe retries.
++func (b *BookingWebhook) refundClash(ctx context.Context, bk *siteBooking, intent string) error {
++	account, err := b.Stripe.existingAccount(ctx, bk.ownerUserID)
++	if err != nil {
++		return err
++	}
++	if account == "" || intent == "" {
++		return fmt.Errorf("site booking %d: cannot refund (no account or intent)", bk.id)
++	}
++	key, _, err := b.Stripe.guard(ctx)
++	if err != nil {
++		return err
++	}
++	form := url.Values{}
++	form.Set("payment_intent", intent)
++	form.Set("metadata[site_booking_id]", strconv.FormatInt(bk.id, 10))
++	if err := b.refund(ctx, key, account, fmt.Sprintf("site_booking_clash_refund_%d", bk.id), form); err != nil {
++		return err
++	}
++	if _, err := b.setStatus(ctx, bk.id, "clash_refunded", []bookingField{
++		{"refunded_czk", bk.totalCZK}, {"stripe_payment_intent_id", intent},
++	}); err != nil {
++		return err
++	}
++	if err := audit(ctx, b.Pool, stampAt(b.Now()), "site_booking_clash_refunded",
++		fmt.Sprintf("id=%d amount=%d", bk.id, bk.totalCZK), bk.ownerUserID); err != nil {
++		return err
++	}
++	return b.mailClash(ctx, bk)
++}
++
++// refund posts /v1/refunds on the connected account with an idempotency key.
++// A non-2xx reply is an error naming the status and Stripe's message and code.
++func (b *BookingWebhook) refund(ctx context.Context, key, account, idem string, form url.Values) error {
++	req, err := http.NewRequestWithContext(ctx, http.MethodPost, b.Stripe.base()+"/v1/refunds",
++		strings.NewReader(form.Encode()))
++	if err != nil {
++		return err
++	}
++	req.Header.Set("Authorization", "Bearer "+key)
++	req.Header.Set("Stripe-Version", stripeVersion)
++	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
++	req.Header.Set("Stripe-Account", account)
++	req.Header.Set("Idempotency-Key", idem)
++	resp, err := b.Stripe.client().Do(req)
++	if err != nil {
++		return fmt.Errorf("stripe: POST /v1/refunds: %w", err)
++	}
++	defer resp.Body.Close()
++	raw, err := io.ReadAll(io.LimitReader(resp.Body, stripeMaxResponse))
++	if err != nil {
++		return err
++	}
++	if resp.StatusCode < 200 || resp.StatusCode > 299 {
++		var se struct {
++			Error struct {
++				Message string `json:"message"`
++				Code    string `json:"code"`
++			} `json:"error"`
++		}
++		_ = json.Unmarshal(raw, &se)
++		return fmt.Errorf("stripe: POST /v1/refunds: HTTP %d: %s (%s)", resp.StatusCode,
++			se.Error.Message, se.Error.Code)
++	}
++	return nil
++}
++
++// --- mails -------------------------------------------------------------------
++
++func (b *BookingWebhook) apartment(ctx context.Context, id int64) (bookingApartment, error) {
++	var a bookingApartment
++	err := b.Pool.QueryRow(ctx, bookingApartmentSQL, id).Scan(&a.internalName, &a.legalEntityID, &a.permalinkToken)
++	if errors.Is(err, pgx.ErrNoRows) {
++		return bookingApartment{}, nil
++	}
++	if err != nil {
++		return bookingApartment{}, err
++	}
++	a.found = true
++	return a, nil
++}
++
++// hostEmail is _host_email via mail_notify._entity_contact_email.
++func (b *BookingWebhook) hostEmail(ctx context.Context, a bookingApartment) (string, error) {
++	if !a.found || a.legalEntityID == nil || *a.legalEntityID == 0 {
++		return "", nil
++	}
++	var contact *string
++	err := b.Pool.QueryRow(ctx, bookingEntityMailSQL, *a.legalEntityID).Scan(&contact)
++	if errors.Is(err, pgx.ErrNoRows) {
++		return "", nil
++	}
++	if err != nil {
++		return "", err
++	}
++	if contact == nil {
++		return "", nil
++	}
++	return ubyport.NormaliseEmail(*contact), nil
++}
++
++// linkKey is guest_slug.link_key without the minting (known gap).
++func (b *BookingWebhook) linkKey(ctx context.Context, apartmentID int64, a bookingApartment) (string, error) {
++	if !a.found || a.permalinkToken == nil || *a.permalinkToken == "" {
++		return "", nil
++	}
++	var slug string
++	err := b.Pool.QueryRow(ctx, bookingSlugSQL, apartmentID).Scan(&slug)
++	if errors.Is(err, pgx.ErrNoRows) {
++		return *a.permalinkToken, nil
++	}
++	if err != nil {
++		return "", err
++	}
++	if slug == "" {
++		return *a.permalinkToken, nil
++	}
++	return slug, nil
++}
++
++// baseURL is config.PUBLIC_BASE_URL with trailing slashes removed.
++func (b *BookingWebhook) baseURL() string {
++	v := b.Getenv("UBYHOST_PUBLIC_BASE_URL")
++	if v == "" {
++		v = bookingBaseURL
++	}
++	return strings.TrimRight(v, "/")
++}
++
++// manageURL is booking_site.manage_url with manage_token.
++func (b *BookingWebhook) manageURL(ctx context.Context, bk *siteBooking, secret string) (string, error) {
++	slug := "x"
++	var s string
++	err := b.Pool.QueryRow(ctx, bookingPageSlugSQL, bk.apartmentID).Scan(&s)
++	if err == nil {
++		slug = s
++	} else if !errors.Is(err, pgx.ErrNoRows) {
++		return "", err
++	}
++	mac := hmac.New(sha256.New, []byte(secret))
++	mac.Write([]byte(fmt.Sprintf("site_booking:%d", bk.id)))
++	token := hex.EncodeToString(mac.Sum(nil))[:40]
++	return fmt.Sprintf("%s/p/%s/b/%d/%s", b.baseURL(), slug, bk.id, token), nil
++}
++
++// bookingDates is _dates: "1. 2. 2027 – 3. 2. 2027" in cs, ISO otherwise.
++func bookingDates(bk *siteBooking, lang string) (string, error) {
++	one := func(iso string) (string, error) {
++		d, err := time.Parse("2006-01-02", iso)
++		if err != nil {
++			return "", err
++		}
++		if lang == "cs" {
++			return fmt.Sprintf("%d. %d. %d", d.Day(), int(d.Month()), d.Year()), nil
++		}
++		return iso, nil
++	}
++	from, err := one(bk.dateFrom)
++	if err != nil {
++		return "", err
++	}
++	to, err := one(bk.dateTo)
++	if err != nil {
++		return "", err
++	}
++	return from + " – " + to, nil
++}
++
++// facts is _facts.
++func bookingFacts(bk *siteBooking, a bookingApartment, lang string) (map[string]any, error) {
++	dates, err := bookingDates(bk, lang)
++	if err != nil {
++		return nil, err
++	}
++	return map[string]any{
++		"property": a.internalName,
++		"dates":    dates,
++		"guests":   bk.guests,
++		"total":    bk.totalCZK,
++		"name":     deref0(bk.guestName),
++		"email":    deref0(bk.guestEmail),
++		"policy":   bookingStrings.T(lang, "pp.book.policy."+bk.policy, nil),
++	}, nil
++}
++
++func deref0(s *string) string {
++	if s == nil {
++		return ""
++	}
++	return *s
++}
++
++func bookingLang(bk *siteBooking) string {
++	if bk.lang == "cs" || bk.lang == "en" {
++		return bk.lang
++	}
++	return "cs"
++}
++
++// mailConfirmed is _mail_confirmed.
++func (b *BookingWebhook) mailConfirmed(ctx context.Context, bk *siteBooking, reservationID int64, secret string) error {
++	a, err := b.apartment(ctx, bk.apartmentID)
++	if err != nil {
++		return err
++	}
++	host, err := b.hostEmail(ctx, a)
++	if err != nil {
++		return err
++	}
++	lang := bookingLang(bk)
++	facts, err := bookingFacts(bk, a, lang)
++	if err != nil {
++		return err
++	}
++	key, err := b.linkKey(ctx, bk.apartmentID, a)
++	if err != nil {
++		return err
++	}
++	direct := bk.payMethod == "direct"
++	textKey, manageKey, hostKey := "site_booking.mail.guest_text", "site_booking.mail.guest_manage", "site_booking.mail.host_text"
++	if direct {
++		textKey, manageKey, hostKey = textKey+"_direct", manageKey+"_direct", hostKey+"_direct"
++	}
++	body := bookingStrings.T(lang, textKey, facts)
++	if key != "" {
++		link := fmt.Sprintf("%s/l/%s/%d", b.baseURL(), key, reservationID)
++		body += "\n\n" + bookingStrings.T(lang, "site_booking.mail.guest_register", map[string]any{"link": link})
++	}
++	manage, err := b.manageURL(ctx, bk, secret)
++	if err != nil {
++		return err
++	}
++	body += "\n\n" + bookingStrings.T(lang, manageKey, map[string]any{"link": manage})
++	if deref0(bk.guestEmail) != "" {
++		b.enqueue(ctx, "site_booking_confirmed", fmt.Sprintf("site_booking:%d:confirmed", bk.id), *bk.guestEmail,
++			bookingStrings.T(lang, "site_booking.mail.guest_subject", facts),
++			`{"text": `+ubyport.PyString(body)+`, "lang": `+ubyport.PyString(lang)+`, "reply_to": `+ubyport.PyString(host)+`}`,
++			host, true, &reservationID, bk)
++	}
++	if host != "" {
++		hostFacts, err := bookingFacts(bk, a, "cs")
++		if err != nil {
++			return err
++		}
++		b.enqueue(ctx, "site_booking_host", fmt.Sprintf("site_booking:%d:host_new", bk.id), host,
++			bookingStrings.T("cs", "site_booking.mail.host_subject", hostFacts),
++			`{"text": `+ubyport.PyString(bookingStrings.T("cs", hostKey, hostFacts))+`, "lang": "cs"}`,
++			"", false, &reservationID, bk)
++	}
++	return nil
++}
++
++// mailClash is _mail_clash.
++func (b *BookingWebhook) mailClash(ctx context.Context, bk *siteBooking) error {
++	a, err := b.apartment(ctx, bk.apartmentID)
++	if err != nil {
++		return err
++	}
++	host, err := b.hostEmail(ctx, a)
++	if err != nil {
++		return err
++	}
++	lang := bookingLang(bk)
++	facts, err := bookingFacts(bk, a, lang)
++	if err != nil {
++		return err
++	}
++	if deref0(bk.guestEmail) != "" {
++		b.enqueue(ctx, "site_booking_refunded", fmt.Sprintf("site_booking:%d:clash_refund", bk.id), *bk.guestEmail,
++			bookingStrings.T(lang, "site_booking.mail.clash_subject", facts),
++			`{"text": `+ubyport.PyString(bookingStrings.T(lang, "site_booking.mail.clash_text", facts))+
++				`, "lang": `+ubyport.PyString(lang)+`, "reply_to": `+ubyport.PyString(host)+`}`,
++			host, true, nil, bk)
++	}
++	if host != "" {
++		hostFacts, err := bookingFacts(bk, a, "cs")
++		if err != nil {
++			return err
++		}
++		b.enqueue(ctx, "site_booking_host", fmt.Sprintf("site_booking:%d:host_clash", bk.id), host,
++			bookingStrings.T("cs", "site_booking.mail.host_clash_subject", hostFacts),
++			`{"text": `+ubyport.PyString(bookingStrings.T("cs", "site_booking.mail.host_clash_text", hostFacts))+`, "lang": "cs"}`,
++			"", false, nil, bk)
++	}
++	return nil
++}
++
++// enqueue is mail.enqueue for these kinds. Mail off or an address that does not
++// normalise queue nothing. The demo-stay guard is not needed: the stay is
++// source 'site'. A failure is logged, not returned, as Python's enqueue does.
++func (b *BookingWebhook) enqueue(ctx context.Context, kind, key, to, subject, payload, replyTo string,
++	guestKind bool, reservationID *int64, bk *siteBooking) {
++	if !mailOn(b.Getenv) {
++		log.Printf("mail disabled; skip enqueue kind=%s key=%s", kind, key)
++		return
++	}
++	to = ubyport.NormaliseEmail(to)
++	if to == "" {
++		return
++	}
++	if guestKind && ubyport.NormaliseEmail(replyTo) == "" {
++		log.Printf("guest mail has no reply_to kind=%s key=%s", kind, key)
++	}
++	apartment, owner := bk.apartmentID, bk.ownerUserID
++	if _, err := ubyport.EnqueueMail(ctx, b.Pool, ubyport.OutboxMail{
++		Kind:          kind,
++		Key:           key,
++		ReservationID: reservationID,
++		ApartmentID:   &apartment,
++		OwnerUserID:   &owner,
++		To:            to,
++		Subject:       subject,
++		Payload:       payload,
++	}); err != nil {
++		log.Printf("mail enqueue failed kind=%s key=%s", kind, key)
++	}
++}
+diff --git a/go/internal/payments/booking_webhook_test.go b/go/internal/payments/booking_webhook_test.go
+new file mode 100644
+index 0000000..7dd0e99
+--- /dev/null
++++ b/go/internal/payments/booking_webhook_test.go
+@@ -0,0 +1,356 @@
++package payments
++
++import (
++	"bytes"
++	"context"
++	"encoding/json"
++	"fmt"
++	"io"
++	"net/http"
++	"net/http/httptest"
++	"net/url"
++	"os"
++	"reflect"
++	"strings"
++	"sync"
++	"testing"
++	"time"
++
++	"github.com/jackc/pgx/v5/pgxpool"
++)
++
++// bookingGolden is testdata/booking_webhook/golden.json, written by
++// App/scripts/booking_webhook_golden.py from the real Python handler.
++type bookingGolden struct {
++	Stamp   string `json:"stamp"`
++	Secret  string `json:"secret"`
++	BaseURL string `json:"base_url"`
++	Seed    []struct {
++		Table   string   `json:"table"`
++		Columns []string `json:"columns"`
++		Rows    [][]any  `json:"rows"`
++	} `json:"seed"`
++	Events  []json.RawMessage `json:"events"`
++	Results []string          `json:"results"`
++	Refunds []map[string]any  `json:"refunds"`
++	After   map[string]any    `json:"after"`
++}
++
++func loadBookingGolden(t *testing.T) bookingGolden {
++	t.Helper()
++	raw, err := os.ReadFile("testdata/booking_webhook/golden.json")
++	if err != nil {
++		t.Fatal(err)
++	}
++	dec := json.NewDecoder(bytes.NewReader(raw))
++	dec.UseNumber()
++	var g bookingGolden
++	if err := dec.Decode(&g); err != nil {
++		t.Fatal(err)
++	}
++	if len(g.Events) == 0 || len(g.Events) != len(g.Results) {
++		t.Fatal("golden file has no events or a result count mismatch")
++	}
++	return g
++}
++
++// seedBookingGolden inserts the golden seed, then moves each identity sequence
++// past the seeded ids, as SQLite AUTOINCREMENT does.
++func seedBookingGolden(t *testing.T, pool *pgxpool.Pool, g bookingGolden) {
++	t.Helper()
++	ctx := context.Background()
++	for _, table := range g.Seed {
++		marks := make([]string, len(table.Columns))
++		for i := range marks {
++			marks[i] = fmt.Sprintf("$%d", i+1)
++		}
++		sql := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", table.Table,
++			strings.Join(table.Columns, ", "), strings.Join(marks, ", "))
++		for _, row := range table.Rows {
++			args := make([]any, len(row))
++			for i, v := range row {
++				if n, ok := v.(json.Number); ok {
++					x, err := n.Int64()
++					if err != nil {
++						t.Fatal(err)
++					}
++					args[i] = x
++				} else {
++					args[i] = v
++				}
++			}
++			if _, err := pool.Exec(ctx, sql, args...); err != nil {
++				t.Fatalf("seed %s: %v", table.Table, err)
++			}
++		}
++		if table.Columns[0] == "id" {
++			if _, err := pool.Exec(ctx, fmt.Sprintf(
++				"SELECT setval(pg_get_serial_sequence('%s', 'id'), (SELECT MAX(id) FROM %s))",
++				table.Table, table.Table)); err != nil {
++				t.Fatalf("setval %s: %v", table.Table, err)
++			}
++		}
++	}
++}
++
++func bookingEnv(g bookingGolden, extra map[string]string) func(string) string {
++	env := map[string]string{
++		"UBYHOST_STRIPE_MODE":           "test",
++		"UBYHOST_STRIPE_SECRET_KEY":     "sk_test_golden",
++		"UBYHOST_STRIPE_WEBHOOK_SECRET": "whsec_test",
++		"UBYHOST_MAIL_BACKEND":          "console",
++		"UBYHOST_PUBLIC_BASE_URL":       g.BaseURL,
++		"UBYHOST_SECRET_KEY":            g.Secret,
++	}
++	for k, v := range extra {
++		env[k] = v
++	}
++	return func(k string) string { return env[k] }
++}
++
++// fakeStripe records each refund request; payment intent pi_fail gets a 402.
++type fakeStripe struct {
++	mu    sync.Mutex
++	calls []map[string]any
++}
++
++func newFakeStripe(t *testing.T) (*fakeStripe, *httptest.Server) {
++	t.Helper()
++	f := &fakeStripe{}
++	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++		raw, _ := io.ReadAll(r.Body)
++		form, _ := url.ParseQuery(string(raw))
++		f.mu.Lock()
++		if r.Method != http.MethodPost || r.URL.Path != "/v1/refunds" ||
++			r.Header.Get("Authorization") != "Bearer sk_test_golden" {
++			f.calls = append(f.calls, map[string]any{"unexpected": r.Method + " " + r.URL.Path})
++		} else {
++			f.calls = append(f.calls, map[string]any{
++				"payment_intent":           form.Get("payment_intent"),
++				"metadata_site_booking_id": form.Get("metadata[site_booking_id]"),
++				"stripe_account":           r.Header.Get("Stripe-Account"),
++				"idempotency_key":          r.Header.Get("Idempotency-Key"),
++			})
++		}
++		f.mu.Unlock()
++		if form.Get("payment_intent") == "pi_fail" {
++			w.WriteHeader(http.StatusPaymentRequired)
++			_, _ = io.WriteString(w, `{"error":{"message":"fake Stripe error","code":"card_declined"}}`)
++			return
++		}
++		_, _ = io.WriteString(w, `{"id":"re_1","status":"succeeded"}`)
++	}))
++	t.Cleanup(srv.Close)
++	return f, srv
++}
++
++func bookingTS(v any, stamp string) any {
++	if v == nil {
++		return nil
++	}
++	if v == stamp {
++		return "seed"
++	}
++	return "run"
++}
++
++// bookingRows reads rows as maps; ts columns become "seed", "run" or null.
++func bookingRows(t *testing.T, pool *pgxpool.Pool, stamp, sql string, ts ...string) []any {
++	t.Helper()
++	rows, err := pool.Query(context.Background(), sql)
++	if err != nil {
++		t.Fatal(err)
++	}
++	defer rows.Close()
++	out := []any{}
++	for rows.Next() {
++		vals, err := rows.Values()
++		if err != nil {
++			t.Fatal(err)
++		}
++		item := map[string]any{}
++		for i, fd := range rows.FieldDescriptions() {
++			item[fd.Name] = vals[i]
++		}
++		for _, c := range ts {
++			item[c] = bookingTS(item[c], stamp)
++		}
++		out = append(out, item)
++	}
++	if err := rows.Err(); err != nil {
++		t.Fatal(err)
++	}
++	return out
++}
++
++// bookingSnapshot is _snapshot of the golden script, same queries.
++func bookingSnapshot(t *testing.T, pool *pgxpool.Pool, stamp string) map[string]any {
++	t.Helper()
++	var calls int64
++	if err := pool.QueryRow(context.Background(),
++		`SELECT COALESCE(SUM(calls), 0)::bigint FROM lock_api_usage WHERE provider = 'stripe'`).Scan(&calls); err != nil {
++		t.Fatal(err)
++	}
++	return map[string]any{
++		"site_booking": bookingRows(t, pool, stamp,
++			`SELECT id, status, reservation_id, hold_id, stripe_payment_intent_id, refunded_czk,
++			 paid_at, updated_at FROM site_booking ORDER BY id`, "paid_at", "updated_at"),
++		"reservation": bookingRows(t, pool, stamp,
++			`SELECT id, apartment_id, source, uid, date_from, date_to, summary,
++			 expected_guests_override, guest_email, status, created_at, updated_at
++			 FROM reservation ORDER BY id`, "created_at", "updated_at"),
++		"booking_hold": bookingRows(t, pool, stamp, `SELECT id FROM booking_hold ORDER BY id`),
++		"email_outbox": bookingRows(t, pool, stamp,
++			`SELECT idempotency_key, kind, reservation_id, apartment_id, owner_user_id, to_email,
++			 cc_email, subject, payload, state, attempts, next_attempt_at, created_at, updated_at
++			 FROM email_outbox ORDER BY id`, "next_attempt_at", "created_at", "updated_at"),
++		"audit": bookingRows(t, pool, stamp,
++			`SELECT at, actor, action, detail, owner_user_id, actor_user_id, impersonator_user_id
++			 FROM audit ORDER BY id`, "at"),
++		"stripe_webhook_event": bookingRows(t, pool, stamp,
++			`SELECT event_id, event_type, mode, created_at FROM stripe_webhook_event ORDER BY id`, "created_at"),
++		"stripe_calls": calls,
++	}
++}
++
++// canon round-trips a value through JSON so Go and golden values compare.
++func canon(t *testing.T, v any) any {
++	t.Helper()
++	raw, err := json.Marshal(v)
++	if err != nil {
++		t.Fatal(err)
++	}
++	var out any
++	if err := json.Unmarshal(raw, &out); err != nil {
++		t.Fatal(err)
++	}
++	return out
++}
++
++func compareCanon(t *testing.T, what string, got, want any) {
++	t.Helper()
++	g, w := canon(t, got), canon(t, want)
++	if reflect.DeepEqual(g, w) {
++		return
++	}
++	gl, _ := json.MarshalIndent(g, "", " ")
++	wl, _ := json.MarshalIndent(w, "", " ")
++	t.Errorf("%s differs from Python\n got: %s\nwant: %s", what, gl, wl)
++}
++
++// TestBookingWebhookMatchesPython runs every golden event through Process and
++// compares each outcome, the refund requests and the rows with Python's.
++func TestBookingWebhookMatchesPython(t *testing.T) {
++	g := loadBookingGolden(t)
++	pool := testPool(t)
++	seedBookingGolden(t, pool, g)
++	stripe, srv := newFakeStripe(t)
++	now := func() time.Time { return testNow }
++	bw := NewBookingWebhook(pool, bookingEnv(g, nil), now)
++	bw.Stripe.APIBase = srv.URL
++	for i, raw := range g.Events {
++		var ev stripeEvent
++		if err := json.Unmarshal(raw, &ev); err != nil {
++			t.Fatal(err)
++		}
++		if !isBookingEvent(ev) {
++			t.Fatalf("event %d is not a booking event", i)
++		}
++		got := "ok"
++		if err := bw.Process(context.Background(), ev, "test"); err != nil {
++			got = "error"
++		}
++		if got != g.Results[i] {
++			t.Errorf("event %d (%s %s): Go %s, Python %s", i, ev.ID, ev.Type, got, g.Results[i])
++		}
++	}
++	stripe.mu.Lock()
++	refunds := stripe.calls
++	stripe.mu.Unlock()
++	compareCanon(t, "refund requests", refunds, g.Refunds)
++	snap := bookingSnapshot(t, pool, g.Stamp)
++	for key, want := range g.After {
++		compareCanon(t, key, snap[key], want)
++	}
++}
++
++// bookingPost signs and posts body to a handler built with extra env values.
++func bookingPost(t *testing.T, pool *pgxpool.Pool, g bookingGolden, extra map[string]string, body []byte) (int, string) {
++	t.Helper()
++	h := WebhookHandler(pool, bookingEnv(g, extra), func() time.Time { return testNow })
++	return fwdPost(h, body, fwdSigned(body), "")
++}
++
++func TestBookingSwitchOffForwards(t *testing.T) {
++	g := loadBookingGolden(t)
++	pool := testPool(t)
++	seedBookingGolden(t, pool, g)
++	body := []byte(`{"id":"evt_sw_off","type":"checkout.session.completed","data":{"object":{"id":"cs_1","payment_status":"paid","payment_intent":"pi_1","metadata":{"site_booking_id":"1"}}}}`)
++	for _, v := range []string{"", "0", "true", "yes", "on"} {
++		py, srv := newFakePy(t, http.StatusOK, "ok")
++		code, out := bookingPost(t, pool, g, map[string]string{BookingSwitchEnv: v, "UBYHOST_PY_WEBHOOK_URL": srv.URL}, body)
++		if code != 200 || out != "ok" || py.callCount() != 1 {
++			t.Errorf("switch %q: got %d %q with %d python calls, want forwarded", v, code, out, py.callCount())
++		}
++	}
++	if n := count(t, pool, `SELECT COUNT(*) FROM site_booking WHERE id = 1 AND status = 'pending'`); n != 1 {
++		t.Errorf("switch off changed the booking")
++	}
++	if n := count(t, pool, `SELECT COUNT(*) FROM stripe_webhook_event`); n != 0 {
++		t.Errorf("switch off recorded %d events", n)
++	}
++}
++
++func TestBookingSwitchOnHandlesInGo(t *testing.T) {
++	g := loadBookingGolden(t)
++	pool := testPool(t)
++	seedBookingGolden(t, pool, g)
++	py, srv := newFakePy(t, http.StatusOK, "ok")
++	on := map[string]string{BookingSwitchEnv: " 1 ", "UBYHOST_PY_WEBHOOK_URL": srv.URL}
++
++	paid := []byte(`{"id":"evt_sw_on","type":"checkout.session.completed","data":{"object":{"id":"cs_1","payment_status":"paid","payment_intent":"pi_1","metadata":{"site_booking_id":"1"}}}}`)
++	if code, out := bookingPost(t, pool, g, on, paid); code != 200 || out != "ok" {
++		t.Fatalf("paid: got %d %q, want 200 ok", code, out)
++	}
++	if n := count(t, pool, `SELECT COUNT(*) FROM site_booking WHERE id = 1 AND status = 'paid' AND reservation_id IS NOT NULL`); n != 1 {
++		t.Errorf("booking 1 not paid")
++	}
++	if n := count(t, pool, `SELECT COUNT(*) FROM stripe_webhook_event WHERE event_id = 'evt_sw_on'`); n != 1 {
++		t.Errorf("event recorded %d times, want 1", n)
++	}
++	// The replay is a no-op that answers ok.
++	if code, out := bookingPost(t, pool, g, on, paid); code != 200 || out != "ok" {
++		t.Errorf("replay: got %d %q", code, out)
++	}
++	if n := count(t, pool, `SELECT COUNT(*) FROM reservation WHERE uid = 'site-1'`); n != 1 {
++		t.Errorf("replay made %d stays, want 1", n)
++	}
++
++	// Booking 5 clashes and its host has no Stripe account: 500, not recorded.
++	clash := []byte(`{"id":"evt_sw_err","type":"checkout.session.completed","data":{"object":{"id":"cs_5","payment_status":"paid","payment_intent":"pi_5","metadata":{"site_booking_id":"5"}}}}`)
++	if code, _ := bookingPost(t, pool, g, on, clash); code != http.StatusInternalServerError {
++		t.Errorf("refund impossible: got %d, want 500", code)
++	}
++	if n := count(t, pool, `SELECT COUNT(*) FROM stripe_webhook_event WHERE event_id = 'evt_sw_err'`); n != 0 {
++		t.Errorf("failed event was recorded")
++	}
++	if py.callCount() != 0 {
++		t.Errorf("switch on forwarded %d events to Python", py.callCount())
++	}
++}
++
++func TestBookingDatesAndToken(t *testing.T) {
++	bk := &siteBooking{id: 7, dateFrom: "2027-01-02", dateTo: "2027-12-31"}
++	if got, _ := bookingDates(bk, "cs"); got != "2. 1. 2027 – 31. 12. 2027" {
++		t.Errorf("cs dates: %q", got)
++	}
++	if got, _ := bookingDates(bk, "en"); got != "2027-01-02 – 2027-12-31" {
++		t.Errorf("en dates: %q", got)
++	}
++	if _, err := bookingDates(&siteBooking{dateFrom: "bad", dateTo: "2027-01-01"}, "cs"); err == nil {
++		t.Error("bad date accepted")
++	}
++	if NewBookingWebhook(nil, func(string) string { return "" }, time.Now) == nil {
++		t.Error("constructor returned nil")
++	}
++}
+diff --git a/go/internal/payments/webhook.go b/go/internal/payments/webhook.go
+index 148075d..65eefde 100644
+--- a/go/internal/payments/webhook.go
++++ b/go/internal/payments/webhook.go
+@@ -94,6 +94,11 @@ func WebhookHandler(pool *pgxpool.Pool, getenv func(string) string, now func() t
+ 		Timeout:       20 * time.Second,
+ 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
+ 	}
++	// UBYHOST_GO_BOOKING_WEBHOOK=1: Go handles booking events (booking_webhook.go).
++	var booking *BookingWebhook
++	if bookingSwitchOn(getenv) {
++		booking = NewBookingWebhook(pool, getenv, now)
++	}
+ 
+ 	return func(w http.ResponseWriter, r *http.Request) {
+ 		ctx := r.Context()
+@@ -141,7 +146,16 @@ func WebhookHandler(pool *pgxpool.Pool, getenv func(string) string, now func() t
+ 			return
+ 		}
+ 		if isBookingEvent(event) {
+-			forwardToPython(w, r, client, pyURL, raw)
++			if booking == nil {
++				forwardToPython(w, r, client, pyURL, raw)
++				return
++			}
++			if err := booking.Process(ctx, event, mode); err != nil {
++				log.Printf("stripe booking webhook failed: %v", err)
++				text(w, http.StatusInternalServerError, "Internal Server Error")
++				return
++			}
++			text(w, http.StatusOK, "ok")
+ 			return
+ 		}
+ 		if err := processEvent(ctx, pool, event, mode, stampAt(at)); err != nil {
+@@ -440,7 +454,8 @@ func boolInt(b bool) int {
+ }
+ 
+ // isBookingEvent is booking_webhook.is_booking_event: one of the four checkout
+-// types AND a truthy metadata.site_booking_id. Such events go to Python only.
++// types AND a truthy metadata.site_booking_id. Such events go to Python unless
++// UBYHOST_GO_BOOKING_WEBHOOK=1.
+ func isBookingEvent(ev stripeEvent) bool {
+ 	switch ev.Type {
+ 	case "checkout.session.completed", "checkout.session.async_payment_succeeded",

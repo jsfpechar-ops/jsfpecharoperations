@@ -24,19 +24,11 @@ const (
 	CookieName = "ubyhost_session"
 	// salt is the itsdangerous salt of _serializer (auth.py lines 55-56).
 	salt = "ubyhost-session"
-	// rememberMaxAge is SESSION_REMEMBER_MAX_AGE (auth.py line 34): 30 days since the cookie was last signed.
-	rememberMaxAge = 30 * 24 * time.Hour
-	// absoluteMaxAge is SESSION_ABSOLUTE_MAX_AGE (auth.py line 35): 90 days since login ("iat") for remember-me.
-	absoluteMaxAge = 90 * 24 * time.Hour
-	// shortMaxAge is SESSION_MAX_AGE (auth.py line 32), enforced unless "rm" is set.
-	shortMaxAge = 12 * time.Hour
-	// defaultVersion is the default of UBYHOST_*_VERSION (brief 0672, section 2).
-	defaultVersion = "1.7"
 )
 
 // pythonKeyOrder is the insertion order of issue_session (auth.py lines 225-260).
 // Python keeps dict order in its JSON, so Sign writes these keys first.
-var pythonKeyOrder = []string{"uid", "sv", "iat", "rm", "as", "ast", "rv"}
+var pythonKeyOrder = []string{"uid", "sv", "iat", "rf", "rm", "as", "ast", "rv"}
 
 // Account is the user_account row a host session needs.
 type Account struct {
@@ -111,41 +103,11 @@ func Sign(secret string, payload map[string]any, now time.Time) string {
 	return token
 }
 
-// Verify checks token at now as auth._session_payload does (auth.py lines 335-354):
-// 30 days at most since signing, 90 days since "iat" when "rm" is truthy, and 12 hours unless the payload has a truthy "rm".
+// Verify checks token at now exactly as auth._session_payload does: it is
+// ReadPayload (30 days sliding; with "rm" 90 days from iat, else 12 hours),
+// so Go routes accept the same cookies as Python (brief 1281).
 func Verify(secret, token string, now time.Time) (map[string]any, bool) {
-	s := secure.NewTimedSerializer(secret, salt)
-	var raw json.RawMessage
-	if err := s.Loads(token, rememberMaxAge, now, &raw); err != nil {
-		return nil, false
-	}
-	payload, ok := decodePayload(raw)
-	if !ok {
-		return nil, false
-	}
-	if truthy(payload["rm"]) {
-		// auth._session_payload: a missing "iat" counts as 0, so it is rejected.
-		if now.Sub(time.Unix(iatSeconds(payload["iat"]), 0)) > absoluteMaxAge {
-			return nil, false
-		}
-	} else {
-		if err := s.Loads(token, shortMaxAge, now, &raw); err != nil {
-			return nil, false
-		}
-	}
-	return payload, true
-}
-
-// iatSeconds is int(payload.get("iat", 0)) in Python for the JSON values an iat can hold.
-func iatSeconds(v any) int64 {
-	switch x := v.(type) {
-	case int64:
-		return x
-	case json.Number:
-		f, _ := x.Float64()
-		return int64(f)
-	}
-	return 0
+	return ReadPayload(secret, token, now)
 }
 
 // decodePayload decodes a JSON object, with whole numbers as int64 (Python int).
@@ -301,11 +263,7 @@ func impersonationMaxAge(getenv func(string) string) int64 {
 // legal_acceptance row at its current version for userID (acceptance.pending,
 // App/app/acceptance.py lines 46-56).
 func AcceptancePending(ctx context.Context, db *pgxpool.Pool, userID int64, getenv func(string) string) (bool, error) {
-	versions := map[string]string{
-		"terms":   versionOr(getenv, "UBYHOST_TERMS_VERSION"),
-		"privacy": versionOr(getenv, "UBYHOST_PRIVACY_VERSION"),
-		"dpa":     versionOr(getenv, "UBYHOST_DPA_VERSION"),
-	}
+	versions := CurrentVersions(getenv)
 	rows, err := db.Query(ctx,
 		`SELECT document, version FROM legal_acceptance WHERE user_account_id = $1`, userID)
 	if err != nil {
@@ -331,11 +289,28 @@ func AcceptancePending(ctx context.Context, db *pgxpool.Pool, userID int64, gete
 	return false, nil
 }
 
-func versionOr(getenv func(string) string, key string) string {
-	if v := strings.TrimSpace(getenv(key)); v != "" {
-		return v
+// documentVersions are the env var and default of each document's current
+// version: config.TERMS_VERSION, PRIVACY_VERSION and DPA_VERSION
+// (App/app/config.py).
+var documentVersions = map[string][2]string{
+	"terms":   {"UBYHOST_TERMS_VERSION", "1.7"},
+	"privacy": {"UBYHOST_PRIVACY_VERSION", "1.8"},
+	"dpa":     {"UBYHOST_DPA_VERSION", "1.8"},
+}
+
+// CurrentVersions is acceptance.current_versions: os.environ.get(name,
+// default), used as read (Python does not strip it). An empty value counts as
+// unset, as getenv cannot tell the two apart.
+func CurrentVersions(getenv func(string) string) map[string]string {
+	out := make(map[string]string, len(documentVersions))
+	for doc, nd := range documentVersions {
+		v := getenv(nd[0])
+		if v == "" {
+			v = nd[1]
+		}
+		out[doc] = v
 	}
-	return defaultVersion
+	return out
 }
 
 // queryAccount loads one user_account row; found is false when there is none.

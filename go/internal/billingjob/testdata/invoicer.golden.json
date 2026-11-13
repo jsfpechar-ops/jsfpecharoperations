@@ -1,0 +1,1191 @@
+{
+ "audit": [
+  {
+   "action": "platform_invoice_issued",
+   "actor": "system",
+   "detail": "UBY-2026-0042 invoice",
+   "owner_user_id": 1
+  },
+  {
+   "action": "platform_invoice_issued",
+   "actor": "system",
+   "detail": "UBY-2026-0043 invoice",
+   "owner_user_id": 2
+  },
+  {
+   "action": "platform_invoice_issued",
+   "actor": "system",
+   "detail": "UBY-2026-0044 invoice",
+   "owner_user_id": 6
+  },
+  {
+   "action": "platform_invoice_issued",
+   "actor": "system",
+   "detail": "UBY-2026-0045 supplementary",
+   "owner_user_id": 1
+  },
+  {
+   "action": "platform_invoice_issued",
+   "actor": "system",
+   "detail": "UBY-2026-0046 supplementary",
+   "owner_user_id": 2
+  },
+  {
+   "action": "platform_invoice_issued",
+   "actor": "system",
+   "detail": "UBY-2026-0047 storno",
+   "owner_user_id": 1
+  },
+  {
+   "action": "platform_invoice_issued",
+   "actor": "system",
+   "detail": "UBY-2026-0048 storno",
+   "owner_user_id": 1
+  },
+  {
+   "action": "platform_invoice_issued",
+   "actor": "system",
+   "detail": "UBY-2026-0049 storno",
+   "owner_user_id": 1
+  },
+  {
+   "action": "platform_invoice_issued",
+   "actor": "system",
+   "detail": "UBY-2026-0050 invoice",
+   "owner_user_id": 1
+  },
+  {
+   "action": "platform_invoice_issued",
+   "actor": "system",
+   "detail": "UBY-2026-0051 invoice",
+   "owner_user_id": 6
+  },
+  {
+   "action": "platform_invoice_issued",
+   "actor": "system",
+   "detail": "UBY-2027-0001 invoice",
+   "owner_user_id": 6
+  }
+ ],
+ "carry": [
+  {
+   "carry_czk": 0,
+   "owner_user_id": 1
+  },
+  {
+   "carry_czk": 0,
+   "owner_user_id": 2
+  },
+  {
+   "carry_czk": 0,
+   "owner_user_id": 3
+  },
+  {
+   "carry_czk": 0,
+   "owner_user_id": 4
+  },
+  {
+   "carry_czk": 0,
+   "owner_user_id": 6
+  }
+ ],
+ "emails": [
+  {
+   "apartment_id": null,
+   "attempts": 0,
+   "cc_email": null,
+   "idempotency_key": "billing-invoice-10",
+   "kind": "billing_invoice",
+   "owner_user_id": 1,
+   "payload": "{\"text\": \"Pos\\u00edl\\u00e1me fakturu UBY-2026-0047 na -655 K\\u010d za obdob\\u00ed 01.11.2026 \\u2013 30.11.2026 se splatnost\\u00ed 16.11.2026, variabiln\\u00ed symbol 20260047. Faktura je v p\\u0159\\u00edloze, QR Platba je p\\u0159\\u00edmo v n\\u00ed.\\n\\nOtev\\u0159\\u00edt p\\u0159edplatn\\u00e9: https://app.example.test/predplatne\\n\\n--\\nUbyHost\\nDotazy: ops@example.test\", \"html\": \"<!doctype html>\\n<html lang=\\\"cs\\\">\\n<head>\\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width,initial-scale=1\\\">\\n<meta name=\\\"color-scheme\\\" content=\\\"light only\\\">\\n<title>Faktura UBY-2026-0047 od UbyHost</title>\\n</head>\\n<body style=\\\"margin:0;padding:0;background:#f7f7f5;\\\">\\n<div style=\\\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\\\">Pos\\u00edl\\u00e1me fakturu UBY-2026-0047 na -655 K\\u010d za obdob\\u00ed 01.11.2026 \\u2013 30.11.2026 se splatnost\\u00ed 16.11.2026, variabiln\\u00ed symbol 20260047. Faktura je v p\\u0159\\u00edloze, QR Platba je p\\u0159\\u00edmo v n\\u00ed.\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f</div>\\n<table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"background:#f7f7f5;border-collapse:collapse;\\\">\\n<tr><td align=\\\"center\\\" style=\\\"padding:28px 12px;\\\">\\n<table role=\\\"presentation\\\" width=\\\"600\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\\\">\\n<tr><td style=\\\"padding:28px 24px 0 24px;\\\">\\n<img src=\\\"https://www.example.test/static/ubyhost-logo.jpg\\\" width=\\\"180\\\" alt=\\\"UbyHost\\\" style=\\\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\\\">\\n</td></tr>\\n<tr><td style=\\\"padding:20px 24px 0 24px;\\\"><h1 style=\\\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\\\">Faktura UBY-2026-0047 od UbyHost</h1></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">Pos\\u00edl\\u00e1me fakturu UBY-2026-0047 na -655 K\\u010d za obdob\\u00ed 01.11.2026 \\u2013 30.11.2026 se splatnost\\u00ed 16.11.2026, variabiln\\u00ed symbol 20260047. Faktura je v p\\u0159\\u00edloze, QR Platba je p\\u0159\\u00edmo v n\\u00ed.</p></td></tr><tr><td style=\\\"padding:8px 24px 0 24px;\\\"><table role=\\\"presentation\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"border-collapse:separate;margin:0 0 8px 0;\\\"><tr><td style=\\\"background:#ad4942;border-radius:8px;padding:14px 24px;\\\"><a href=\\\"https://app.example.test/predplatne\\\" style=\\\"display:block;padding:0;font:600 16px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#ffffff;text-decoration:none;\\\">Otev\\u0159\\u00edt p\\u0159edplatn\\u00e9</a></td></tr></table></td></tr>\\n<tr><td style=\\\"padding:28px 24px 28px 24px;\\\">\\n<div style=\\\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\\\">\\n<div>UbyHost</div><div style=\\\"padding:4px 0 0 0;\\\">Dotazy: ops@example.test</div>\\n</div>\\n</td></tr>\\n</table>\\n</td></tr>\\n</table>\\n</body>\\n</html>\\n\", \"lang\": \"cs\", \"reply_to\": \"ops@example.test\", \"platform_invoice_id\": 10, \"attachment_name\": \"UBY-2026-0047.pdf\"}",
+   "reservation_id": null,
+   "state": "queued",
+   "subject": "Faktura UBY-2026-0047 od UbyHost",
+   "to_email": "billing@example.test"
+  },
+  {
+   "apartment_id": null,
+   "attempts": 0,
+   "cc_email": null,
+   "idempotency_key": "billing-invoice-5",
+   "kind": "billing_invoice",
+   "owner_user_id": 1,
+   "payload": "{\"text\": \"Pos\\u00edl\\u00e1me fakturu UBY-2026-0042 na 655 K\\u010d za obdob\\u00ed 01.11.2026 \\u2013 30.11.2026 se splatnost\\u00ed 15.11.2026, variabiln\\u00ed symbol 20260042. Faktura je v p\\u0159\\u00edloze, QR Platba je p\\u0159\\u00edmo v n\\u00ed.\\n\\nOtev\\u0159\\u00edt p\\u0159edplatn\\u00e9: https://app.example.test/predplatne\\n\\n--\\nUbyHost\\nDotazy: ops@example.test\", \"html\": \"<!doctype html>\\n<html lang=\\\"cs\\\">\\n<head>\\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width,initial-scale=1\\\">\\n<meta name=\\\"color-scheme\\\" content=\\\"light only\\\">\\n<title>Faktura UBY-2026-0042 od UbyHost</title>\\n</head>\\n<body style=\\\"margin:0;padding:0;background:#f7f7f5;\\\">\\n<div style=\\\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\\\">Pos\\u00edl\\u00e1me fakturu UBY-2026-0042 na 655 K\\u010d za obdob\\u00ed 01.11.2026 \\u2013 30.11.2026 se splatnost\\u00ed 15.11.2026, variabiln\\u00ed symbol 20260042. Faktura je v p\\u0159\\u00edloze, QR Platba je p\\u0159\\u00edmo v n\\u00ed.\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f</div>\\n<table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"background:#f7f7f5;border-collapse:collapse;\\\">\\n<tr><td align=\\\"center\\\" style=\\\"padding:28px 12px;\\\">\\n<table role=\\\"presentation\\\" width=\\\"600\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\\\">\\n<tr><td style=\\\"padding:28px 24px 0 24px;\\\">\\n<img src=\\\"https://www.example.test/static/ubyhost-logo.jpg\\\" width=\\\"180\\\" alt=\\\"UbyHost\\\" style=\\\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\\\">\\n</td></tr>\\n<tr><td style=\\\"padding:20px 24px 0 24px;\\\"><h1 style=\\\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\\\">Faktura UBY-2026-0042 od UbyHost</h1></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">Pos\\u00edl\\u00e1me fakturu UBY-2026-0042 na 655 K\\u010d za obdob\\u00ed 01.11.2026 \\u2013 30.11.2026 se splatnost\\u00ed 15.11.2026, variabiln\\u00ed symbol 20260042. Faktura je v p\\u0159\\u00edloze, QR Platba je p\\u0159\\u00edmo v n\\u00ed.</p></td></tr><tr><td style=\\\"padding:8px 24px 0 24px;\\\"><table role=\\\"presentation\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"border-collapse:separate;margin:0 0 8px 0;\\\"><tr><td style=\\\"background:#ad4942;border-radius:8px;padding:14px 24px;\\\"><a href=\\\"https://app.example.test/predplatne\\\" style=\\\"display:block;padding:0;font:600 16px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#ffffff;text-decoration:none;\\\">Otev\\u0159\\u00edt p\\u0159edplatn\\u00e9</a></td></tr></table></td></tr>\\n<tr><td style=\\\"padding:28px 24px 28px 24px;\\\">\\n<div style=\\\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\\\">\\n<div>UbyHost</div><div style=\\\"padding:4px 0 0 0;\\\">Dotazy: ops@example.test</div>\\n</div>\\n</td></tr>\\n</table>\\n</td></tr>\\n</table>\\n</body>\\n</html>\\n\", \"lang\": \"cs\", \"reply_to\": \"ops@example.test\", \"platform_invoice_id\": 5, \"attachment_name\": \"UBY-2026-0042.pdf\"}",
+   "reservation_id": null,
+   "state": "queued",
+   "subject": "Faktura UBY-2026-0042 od UbyHost",
+   "to_email": "billing@example.test"
+  },
+  {
+   "apartment_id": null,
+   "attempts": 0,
+   "cc_email": null,
+   "idempotency_key": "billing-invoice-6",
+   "kind": "billing_invoice",
+   "owner_user_id": 2,
+   "payload": "{\"text\": \"Pos\\u00edl\\u00e1me fakturu UBY-2026-0043 na 16 840 K\\u010d za obdob\\u00ed 01.11.2026 \\u2013 31.10.2027 se splatnost\\u00ed 16.11.2026, variabiln\\u00ed symbol 20260043. Faktura je v p\\u0159\\u00edloze, QR Platba je p\\u0159\\u00edmo v n\\u00ed.\\n\\nOtev\\u0159\\u00edt p\\u0159edplatn\\u00e9: https://app.example.test/predplatne\\n\\n--\\nUbyHost\\nDotazy: ops@example.test\", \"html\": \"<!doctype html>\\n<html lang=\\\"cs\\\">\\n<head>\\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width,initial-scale=1\\\">\\n<meta name=\\\"color-scheme\\\" content=\\\"light only\\\">\\n<title>Faktura UBY-2026-0043 od UbyHost</title>\\n</head>\\n<body style=\\\"margin:0;padding:0;background:#f7f7f5;\\\">\\n<div style=\\\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\\\">Pos\\u00edl\\u00e1me fakturu UBY-2026-0043 na 16 840 K\\u010d za obdob\\u00ed 01.11.2026 \\u2013 31.10.2027 se splatnost\\u00ed 16.11.2026, variabiln\\u00ed symbol 20260043. Faktura je v p\\u0159\\u00edloze, QR Platba je p\\u0159\\u00edmo v n\\u00ed.\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f</div>\\n<table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"background:#f7f7f5;border-collapse:collapse;\\\">\\n<tr><td align=\\\"center\\\" style=\\\"padding:28px 12px;\\\">\\n<table role=\\\"presentation\\\" width=\\\"600\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\\\">\\n<tr><td style=\\\"padding:28px 24px 0 24px;\\\">\\n<img src=\\\"https://www.example.test/static/ubyhost-logo.jpg\\\" width=\\\"180\\\" alt=\\\"UbyHost\\\" style=\\\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\\\">\\n</td></tr>\\n<tr><td style=\\\"padding:20px 24px 0 24px;\\\"><h1 style=\\\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\\\">Faktura UBY-2026-0043 od UbyHost</h1></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">Pos\\u00edl\\u00e1me fakturu UBY-2026-0043 na 16 840 K\\u010d za obdob\\u00ed 01.11.2026 \\u2013 31.10.2027 se splatnost\\u00ed 16.11.2026, variabiln\\u00ed symbol 20260043. Faktura je v p\\u0159\\u00edloze, QR Platba je p\\u0159\\u00edmo v n\\u00ed.</p></td></tr><tr><td style=\\\"padding:8px 24px 0 24px;\\\"><table role=\\\"presentation\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"border-collapse:separate;margin:0 0 8px 0;\\\"><tr><td style=\\\"background:#ad4942;border-radius:8px;padding:14px 24px;\\\"><a href=\\\"https://app.example.test/predplatne\\\" style=\\\"display:block;padding:0;font:600 16px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#ffffff;text-decoration:none;\\\">Otev\\u0159\\u00edt p\\u0159edplatn\\u00e9</a></td></tr></table></td></tr>\\n<tr><td style=\\\"padding:28px 24px 28px 24px;\\\">\\n<div style=\\\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\\\">\\n<div>UbyHost</div><div style=\\\"padding:4px 0 0 0;\\\">Dotazy: ops@example.test</div>\\n</div>\\n</td></tr>\\n</table>\\n</td></tr>\\n</table>\\n</body>\\n</html>\\n\", \"lang\": \"cs\", \"reply_to\": \"ops@example.test\", \"platform_invoice_id\": 6, \"attachment_name\": \"UBY-2026-0043.pdf\"}",
+   "reservation_id": null,
+   "state": "queued",
+   "subject": "Faktura UBY-2026-0043 od UbyHost",
+   "to_email": "owner2@example.test"
+  },
+  {
+   "apartment_id": null,
+   "attempts": 0,
+   "cc_email": null,
+   "idempotency_key": "billing-invoice-8",
+   "kind": "billing_invoice",
+   "owner_user_id": 1,
+   "payload": "{\"text\": \"Pos\\u00edl\\u00e1me fakturu UBY-2026-0045 na 500 K\\u010d za obdob\\u00ed 01.11.2026 \\u2013 30.11.2026 se splatnost\\u00ed 29.11.2026, variabiln\\u00ed symbol 20260045. Faktura je v p\\u0159\\u00edloze, QR Platba je p\\u0159\\u00edmo v n\\u00ed.\\n\\nOtev\\u0159\\u00edt p\\u0159edplatn\\u00e9: https://app.example.test/predplatne\\n\\n--\\nUbyHost\\nDotazy: ops@example.test\", \"html\": \"<!doctype html>\\n<html lang=\\\"cs\\\">\\n<head>\\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width,initial-scale=1\\\">\\n<meta name=\\\"color-scheme\\\" content=\\\"light only\\\">\\n<title>Faktura UBY-2026-0045 od UbyHost</title>\\n</head>\\n<body style=\\\"margin:0;padding:0;background:#f7f7f5;\\\">\\n<div style=\\\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\\\">Pos\\u00edl\\u00e1me fakturu UBY-2026-0045 na 500 K\\u010d za obdob\\u00ed 01.11.2026 \\u2013 30.11.2026 se splatnost\\u00ed 29.11.2026, variabiln\\u00ed symbol 20260045. Faktura je v p\\u0159\\u00edloze, QR Platba je p\\u0159\\u00edmo v n\\u00ed.\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f</div>\\n<table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"background:#f7f7f5;border-collapse:collapse;\\\">\\n<tr><td align=\\\"center\\\" style=\\\"padding:28px 12px;\\\">\\n<table role=\\\"presentation\\\" width=\\\"600\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\\\">\\n<tr><td style=\\\"padding:28px 24px 0 24px;\\\">\\n<img src=\\\"https://www.example.test/static/ubyhost-logo.jpg\\\" width=\\\"180\\\" alt=\\\"UbyHost\\\" style=\\\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\\\">\\n</td></tr>\\n<tr><td style=\\\"padding:20px 24px 0 24px;\\\"><h1 style=\\\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\\\">Faktura UBY-2026-0045 od UbyHost</h1></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">Pos\\u00edl\\u00e1me fakturu UBY-2026-0045 na 500 K\\u010d za obdob\\u00ed 01.11.2026 \\u2013 30.11.2026 se splatnost\\u00ed 29.11.2026, variabiln\\u00ed symbol 20260045. Faktura je v p\\u0159\\u00edloze, QR Platba je p\\u0159\\u00edmo v n\\u00ed.</p></td></tr><tr><td style=\\\"padding:8px 24px 0 24px;\\\"><table role=\\\"presentation\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"border-collapse:separate;margin:0 0 8px 0;\\\"><tr><td style=\\\"background:#ad4942;border-radius:8px;padding:14px 24px;\\\"><a href=\\\"https://app.example.test/predplatne\\\" style=\\\"display:block;padding:0;font:600 16px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#ffffff;text-decoration:none;\\\">Otev\\u0159\\u00edt p\\u0159edplatn\\u00e9</a></td></tr></table></td></tr>\\n<tr><td style=\\\"padding:28px 24px 28px 24px;\\\">\\n<div style=\\\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\\\">\\n<div>UbyHost</div><div style=\\\"padding:4px 0 0 0;\\\">Dotazy: ops@example.test</div>\\n</div>\\n</td></tr>\\n</table>\\n</td></tr>\\n</table>\\n</body>\\n</html>\\n\", \"lang\": \"cs\", \"reply_to\": \"ops@example.test\", \"platform_invoice_id\": 8, \"attachment_name\": \"UBY-2026-0045.pdf\"}",
+   "reservation_id": null,
+   "state": "queued",
+   "subject": "Faktura UBY-2026-0045 od UbyHost",
+   "to_email": "billing@example.test"
+  },
+  {
+   "apartment_id": null,
+   "attempts": 0,
+   "cc_email": null,
+   "idempotency_key": "billing-invoice-9",
+   "kind": "billing_invoice",
+   "owner_user_id": 2,
+   "payload": "{\"text\": \"Pos\\u00edl\\u00e1me fakturu UBY-2026-0046 na 50 K\\u010d za obdob\\u00ed 01.11.2026 \\u2013 31.10.2027 se splatnost\\u00ed 08.01.2027, variabiln\\u00ed symbol 20260046. Faktura je v p\\u0159\\u00edloze, QR Platba je p\\u0159\\u00edmo v n\\u00ed.\\n\\nOtev\\u0159\\u00edt p\\u0159edplatn\\u00e9: https://app.example.test/predplatne\\n\\n--\\nUbyHost\\nDotazy: ops@example.test\", \"html\": \"<!doctype html>\\n<html lang=\\\"cs\\\">\\n<head>\\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width,initial-scale=1\\\">\\n<meta name=\\\"color-scheme\\\" content=\\\"light only\\\">\\n<title>Faktura UBY-2026-0046 od UbyHost</title>\\n</head>\\n<body style=\\\"margin:0;padding:0;background:#f7f7f5;\\\">\\n<div style=\\\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\\\">Pos\\u00edl\\u00e1me fakturu UBY-2026-0046 na 50 K\\u010d za obdob\\u00ed 01.11.2026 \\u2013 31.10.2027 se splatnost\\u00ed 08.01.2027, variabiln\\u00ed symbol 20260046. Faktura je v p\\u0159\\u00edloze, QR Platba je p\\u0159\\u00edmo v n\\u00ed.\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f</div>\\n<table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"background:#f7f7f5;border-collapse:collapse;\\\">\\n<tr><td align=\\\"center\\\" style=\\\"padding:28px 12px;\\\">\\n<table role=\\\"presentation\\\" width=\\\"600\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\\\">\\n<tr><td style=\\\"padding:28px 24px 0 24px;\\\">\\n<img src=\\\"https://www.example.test/static/ubyhost-logo.jpg\\\" width=\\\"180\\\" alt=\\\"UbyHost\\\" style=\\\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\\\">\\n</td></tr>\\n<tr><td style=\\\"padding:20px 24px 0 24px;\\\"><h1 style=\\\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\\\">Faktura UBY-2026-0046 od UbyHost</h1></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">Pos\\u00edl\\u00e1me fakturu UBY-2026-0046 na 50 K\\u010d za obdob\\u00ed 01.11.2026 \\u2013 31.10.2027 se splatnost\\u00ed 08.01.2027, variabiln\\u00ed symbol 20260046. Faktura je v p\\u0159\\u00edloze, QR Platba je p\\u0159\\u00edmo v n\\u00ed.</p></td></tr><tr><td style=\\\"padding:8px 24px 0 24px;\\\"><table role=\\\"presentation\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"border-collapse:separate;margin:0 0 8px 0;\\\"><tr><td style=\\\"background:#ad4942;border-radius:8px;padding:14px 24px;\\\"><a href=\\\"https://app.example.test/predplatne\\\" style=\\\"display:block;padding:0;font:600 16px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#ffffff;text-decoration:none;\\\">Otev\\u0159\\u00edt p\\u0159edplatn\\u00e9</a></td></tr></table></td></tr>\\n<tr><td style=\\\"padding:28px 24px 28px 24px;\\\">\\n<div style=\\\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\\\">\\n<div>UbyHost</div><div style=\\\"padding:4px 0 0 0;\\\">Dotazy: ops@example.test</div>\\n</div>\\n</td></tr>\\n</table>\\n</td></tr>\\n</table>\\n</body>\\n</html>\\n\", \"lang\": \"cs\", \"reply_to\": \"ops@example.test\", \"platform_invoice_id\": 9, \"attachment_name\": \"UBY-2026-0046.pdf\"}",
+   "reservation_id": null,
+   "state": "queued",
+   "subject": "Faktura UBY-2026-0046 od UbyHost",
+   "to_email": "owner2@example.test"
+  }
+ ],
+ "env": {
+  "UBYHOST_APP_BASE_URL": "https://app.example.test",
+  "UBYHOST_BILLING_BANK_ACCOUNT": "19-2000145399/0800",
+  "UBYHOST_BILLING_IBAN": "CZ6508000000192000145399",
+  "UBYHOST_BILLING_VAT_STATUS": "non_payer",
+  "UBYHOST_MAIL_BACKEND": "console",
+  "UBYHOST_OPERATOR_ADDRESS": "Dlouhá 1, 602 00 Brno",
+  "UBYHOST_OPERATOR_DIC": "CZ12345678",
+  "UBYHOST_OPERATOR_EMAIL": "ops@example.test",
+  "UBYHOST_OPERATOR_ICO": "12345678",
+  "UBYHOST_OPERATOR_NAME": "UbyHost s.r.o. <Test> & Co",
+  "UBYHOST_PUBLIC_BASE_URL": "https://www.example.test"
+ },
+ "invoices": [
+  {
+   "corrects_id": null,
+   "due_date": "2026-09-15",
+   "has_pdf": false,
+   "id": 1,
+   "issue_date": "2026-09-01",
+   "kind": "invoice",
+   "number": "UBY-2026-0038",
+   "owner_user_id": 1,
+   "paid_on": "2026-09-05",
+   "paid_via": "bank_manual",
+   "period_from": "2026-08-01",
+   "period_to": "2026-08-31",
+   "seq_no": 38,
+   "seq_year": 2026,
+   "snapshot_json": "{\"invoice\": {\"number\": \"UBY-2026-0038\"}, \"items\": [{\"description\": \"Předplatné UbyHost Standard, 1 apartmán\", \"gross_haler\": 14900, \"quantity\": 1}]}",
+   "total_haler": 14900,
+   "voided": 0,
+   "vs": "20260038"
+  },
+  {
+   "corrects_id": null,
+   "due_date": "2026-09-15",
+   "has_pdf": false,
+   "id": 2,
+   "issue_date": "2026-09-01",
+   "kind": "invoice",
+   "number": "UBY-2026-0039",
+   "owner_user_id": null,
+   "paid_on": null,
+   "paid_via": null,
+   "period_from": "2026-08-01",
+   "period_to": "2026-08-31",
+   "seq_no": 39,
+   "seq_year": 2026,
+   "snapshot_json": "{\"invoice\": {\"number\": \"UBY-2026-0039\"}, \"items\": [{\"description\": \"Předplatné UbyHost Standard, 1 apartmán\", \"gross_haler\": 14900, \"quantity\": 1}]}",
+   "total_haler": 14900,
+   "voided": 0,
+   "vs": "20260039"
+  },
+  {
+   "corrects_id": null,
+   "due_date": "2026-09-15",
+   "has_pdf": false,
+   "id": 3,
+   "issue_date": "2026-09-01",
+   "kind": "invoice",
+   "number": "UBY-2026-0040",
+   "owner_user_id": 5,
+   "paid_on": null,
+   "paid_via": null,
+   "period_from": "2026-09-01",
+   "period_to": "2026-09-30",
+   "seq_no": 40,
+   "seq_year": 2026,
+   "snapshot_json": "{\"invoice\": {\"number\": \"UBY-2026-0040\"}, \"items\": [{\"description\": \"Předplatné UbyHost Standard, 1 apartmán\", \"gross_haler\": 14900, \"quantity\": 1}]}",
+   "total_haler": 14900,
+   "voided": 0,
+   "vs": "20260040"
+  },
+  {
+   "corrects_id": null,
+   "due_date": "2026-09-15",
+   "has_pdf": false,
+   "id": 4,
+   "issue_date": "2026-09-01",
+   "kind": "invoice",
+   "number": "UBY-2026-0041",
+   "owner_user_id": 1,
+   "paid_on": null,
+   "paid_via": null,
+   "period_from": "2026-09-01",
+   "period_to": "2026-09-30",
+   "seq_no": 41,
+   "seq_year": 2026,
+   "snapshot_json": "{\"invoice\": {\"number\": \"UBY-2026-0041\"}, \"items\": [{\"description\": \"Předplatné UbyHost Standard, 3 apartmány\", \"gross_haler\": 14900, \"quantity\": 1}, {\"description\": \"Sleva 10 %\", \"gross_haler\": -1499, \"quantity\": 1}]}",
+   "total_haler": 13401,
+   "voided": 1,
+   "vs": "20260041"
+  },
+  {
+   "corrects_id": null,
+   "due_date": "2026-11-15",
+   "has_pdf": true,
+   "id": 5,
+   "issue_date": "2026-11-01",
+   "kind": "invoice",
+   "number": "UBY-2026-0042",
+   "owner_user_id": 1,
+   "paid_on": null,
+   "paid_via": null,
+   "period_from": "2026-11-01",
+   "period_to": "2026-11-30",
+   "seq_no": 42,
+   "seq_year": 2026,
+   "snapshot_json": "{\"invoice\": {\"buyer_city\": \"Praha\", \"buyer_dic\": \"CZ12345678\", \"buyer_ico\": \"12345678\", \"buyer_name\": \"Novák & syn, s.r.o. \\\"Test\\\"\", \"buyer_street\": \"Hlavní 12\", \"buyer_zip\": \"11000\", \"correction_reason\": \"\", \"corrects_number\": \"\", \"due_date\": \"2026-11-15\", \"issue_date\": \"2026-11-01\", \"kind\": \"invoice\", \"note\": \"Období: 01.11.2026 – 30.11.2026\", \"number\": \"UBY-2026-0042\", \"seller_bank_account\": \"19-2000145399/0800\", \"seller_dic\": \"CZ12345678\", \"seller_email\": \"ops@example.test\", \"seller_iban\": \"CZ6508000000192000145399\", \"seller_ico\": \"12345678\", \"seller_name\": \"UbyHost s.r.o. <Test> & Co\", \"seller_seat\": \"Dlouhá 1, 602 00 Brno\", \"total_haler\": 65500, \"vat_status\": \"non_payer\", \"vs\": \"20260042\"}, \"items\": [{\"description\": \"Předplatné UbyHost Standard, 3 apartmány\", \"gross_haler\": 44700, \"quantity\": 1}, {\"description\": \"Doplněk TTLock, 3 apartmány\", \"gross_haler\": 14700, \"quantity\": 1}, {\"description\": \"Sleva 10 % (Věrnostní sleva)\", \"gross_haler\": -5900, \"quantity\": 1}, {\"description\": \"Doplatek za změny v minulém období\", \"gross_haler\": 12000, \"quantity\": 1}]}",
+   "total_haler": 65500,
+   "voided": 1,
+   "vs": "20260042"
+  },
+  {
+   "corrects_id": null,
+   "due_date": "2026-11-16",
+   "has_pdf": true,
+   "id": 6,
+   "issue_date": "2026-11-02",
+   "kind": "invoice",
+   "number": "UBY-2026-0043",
+   "owner_user_id": 2,
+   "paid_on": null,
+   "paid_via": null,
+   "period_from": "2026-11-01",
+   "period_to": "2027-10-31",
+   "seq_no": 43,
+   "seq_year": 2026,
+   "snapshot_json": "{\"invoice\": {\"buyer_city\": \"Říčany\", \"buyer_dic\": \"\", \"buyer_ico\": \"\", \"buyer_name\": \"Hotel Říčany a.s.\", \"buyer_street\": \"Nádražní 5\", \"buyer_zip\": \"25101\", \"correction_reason\": \"\", \"corrects_number\": \"\", \"due_date\": \"2026-11-16\", \"issue_date\": \"2026-11-02\", \"kind\": \"invoice\", \"note\": \"Období: 01.11.2026 – 31.10.2027\", \"number\": \"UBY-2026-0043\", \"seller_bank_account\": \"19-2000145399/0800\", \"seller_dic\": \"CZ12345678\", \"seller_email\": \"ops@example.test\", \"seller_iban\": \"CZ6508000000192000145399\", \"seller_ico\": \"12345678\", \"seller_name\": \"UbyHost s.r.o. <Test> & Co\", \"seller_seat\": \"Dlouhá 1, 602 00 Brno\", \"total_haler\": 1684000, \"vat_status\": \"non_payer\", \"vs\": \"20260043\"}, \"items\": [{\"description\": \"Předplatné UbyHost Max, 7 apartmánů\", \"gross_haler\": 1118000, \"quantity\": 1}, {\"description\": \"Doplněk vlastní značka\", \"gross_haler\": 566000, \"quantity\": 1}]}",
+   "total_haler": 1684000,
+   "voided": 0,
+   "vs": "20260043"
+  },
+  {
+   "corrects_id": null,
+   "due_date": "2026-11-24",
+   "has_pdf": true,
+   "id": 7,
+   "issue_date": "2026-11-10",
+   "kind": "invoice",
+   "number": "UBY-2026-0044",
+   "owner_user_id": 6,
+   "paid_on": null,
+   "paid_via": null,
+   "period_from": "2026-11-10",
+   "period_to": "2026-12-09",
+   "seq_no": 44,
+   "seq_year": 2026,
+   "snapshot_json": "{\"invoice\": {\"buyer_city\": \"Ostrava\", \"buyer_dic\": \"\", \"buyer_ico\": \"\", \"buyer_name\": \"Eva Malá\", \"buyer_street\": \"Polní 3\", \"buyer_zip\": \"70200\", \"correction_reason\": \"\", \"corrects_number\": \"\", \"due_date\": \"2026-11-24\", \"issue_date\": \"2026-11-10\", \"kind\": \"invoice\", \"note\": \"Období: 10.11.2026 – 09.12.2026\", \"number\": \"UBY-2026-0044\", \"seller_bank_account\": \"19-2000145399/0800\", \"seller_dic\": \"CZ12345678\", \"seller_email\": \"ops@example.test\", \"seller_iban\": \"CZ6508000000192000145399\", \"seller_ico\": \"12345678\", \"seller_name\": \"UbyHost s.r.o. <Test> & Co\", \"seller_seat\": \"Dlouhá 1, 602 00 Brno\", \"total_haler\": 14900, \"vat_status\": \"non_payer\", \"vs\": \"20260044\"}, \"items\": [{\"description\": \"Předplatné UbyHost Standard, 1 apartmán\", \"gross_haler\": 14900, \"quantity\": 1}]}",
+   "total_haler": 14900,
+   "voided": 0,
+   "vs": "20260044"
+  },
+  {
+   "corrects_id": null,
+   "due_date": "2026-11-29",
+   "has_pdf": true,
+   "id": 8,
+   "issue_date": "2026-11-15",
+   "kind": "supplementary",
+   "number": "UBY-2026-0045",
+   "owner_user_id": 1,
+   "paid_on": null,
+   "paid_via": null,
+   "period_from": "2026-11-01",
+   "period_to": "2026-11-30",
+   "seq_no": 45,
+   "seq_year": 2026,
+   "snapshot_json": "{\"invoice\": {\"buyer_city\": \"Praha\", \"buyer_dic\": \"CZ12345678\", \"buyer_ico\": \"12345678\", \"buyer_name\": \"Novák & syn, s.r.o. \\\"Test\\\"\", \"buyer_street\": \"Hlavní 12\", \"buyer_zip\": \"11000\", \"correction_reason\": \"\", \"corrects_number\": \"\", \"due_date\": \"2026-11-29\", \"issue_date\": \"2026-11-15\", \"kind\": \"invoice\", \"note\": \"Období: 01.11.2026 – 30.11.2026\", \"number\": \"UBY-2026-0045\", \"seller_bank_account\": \"19-2000145399/0800\", \"seller_dic\": \"CZ12345678\", \"seller_email\": \"ops@example.test\", \"seller_iban\": \"CZ6508000000192000145399\", \"seller_ico\": \"12345678\", \"seller_name\": \"UbyHost s.r.o. <Test> & Co\", \"seller_seat\": \"Dlouhá 1, 602 00 Brno\", \"total_haler\": 50000, \"vat_status\": \"non_payer\", \"vs\": \"20260045\"}, \"items\": [{\"description\": \"Doplatek: změna na 4 apartmány, \\\"<&>\\\" a \\\\ lomítko\", \"gross_haler\": 50000, \"quantity\": 1}]}",
+   "total_haler": 50000,
+   "voided": 1,
+   "vs": "20260045"
+  },
+  {
+   "corrects_id": null,
+   "due_date": "2027-01-08",
+   "has_pdf": true,
+   "id": 9,
+   "issue_date": "2026-12-25",
+   "kind": "supplementary",
+   "number": "UBY-2026-0046",
+   "owner_user_id": 2,
+   "paid_on": null,
+   "paid_via": null,
+   "period_from": "2026-11-01",
+   "period_to": "2027-10-31",
+   "seq_no": 46,
+   "seq_year": 2026,
+   "snapshot_json": "{\"invoice\": {\"buyer_city\": \"Říčany\", \"buyer_dic\": \"\", \"buyer_ico\": \"\", \"buyer_name\": \"Hotel Říčany a.s.\", \"buyer_street\": \"Nádražní 5\", \"buyer_zip\": \"25101\", \"correction_reason\": \"\", \"corrects_number\": \"\", \"due_date\": \"2027-01-08\", \"issue_date\": \"2026-12-25\", \"kind\": \"invoice\", \"note\": \"Období: 01.11.2026 – 31.10.2027\", \"number\": \"UBY-2026-0046\", \"seller_bank_account\": \"19-2000145399/0800\", \"seller_dic\": \"CZ12345678\", \"seller_email\": \"ops@example.test\", \"seller_iban\": \"CZ6508000000192000145399\", \"seller_ico\": \"12345678\", \"seller_name\": \"UbyHost s.r.o. <Test> & Co\", \"seller_seat\": \"Dlouhá 1, 602 00 Brno\", \"total_haler\": 5000, \"vat_status\": \"non_payer\", \"vs\": \"20260046\"}, \"items\": [{\"description\": \"Doplatek za 1 apartmán\", \"gross_haler\": 5000, \"quantity\": 1}]}",
+   "total_haler": 5000,
+   "voided": 0,
+   "vs": "20260046"
+  },
+  {
+   "corrects_id": 5,
+   "due_date": "2026-11-16",
+   "has_pdf": true,
+   "id": 10,
+   "issue_date": "2026-11-16",
+   "kind": "storno",
+   "number": "UBY-2026-0047",
+   "owner_user_id": 1,
+   "paid_on": null,
+   "paid_via": null,
+   "period_from": "2026-11-01",
+   "period_to": "2026-11-30",
+   "seq_no": 47,
+   "seq_year": 2026,
+   "snapshot_json": "{\"invoice\": {\"buyer_city\": \"Praha\", \"buyer_dic\": \"CZ12345678\", \"buyer_ico\": \"12345678\", \"buyer_name\": \"Novák & syn, s.r.o. \\\"Test\\\"\", \"buyer_street\": \"Hlavní 12\", \"buyer_zip\": \"11000\", \"correction_reason\": \"Chybná adresa\", \"corrects_number\": \"UBY-2026-0042\", \"due_date\": \"2026-11-16\", \"issue_date\": \"2026-11-16\", \"kind\": \"storno\", \"note\": \"Období: 01.11.2026 – 30.11.2026\", \"number\": \"UBY-2026-0047\", \"seller_bank_account\": \"19-2000145399/0800\", \"seller_dic\": \"CZ12345678\", \"seller_email\": \"ops@example.test\", \"seller_iban\": \"CZ6508000000192000145399\", \"seller_ico\": \"12345678\", \"seller_name\": \"UbyHost s.r.o. <Test> & Co\", \"seller_seat\": \"Dlouhá 1, 602 00 Brno\", \"total_haler\": -65500, \"vat_status\": \"non_payer\", \"vs\": \"20260047\"}, \"items\": [{\"description\": \"Předplatné UbyHost Standard, 3 apartmány\", \"gross_haler\": -44700, \"quantity\": 1}, {\"description\": \"Doplněk TTLock, 3 apartmány\", \"gross_haler\": -14700, \"quantity\": 1}, {\"description\": \"Sleva 10 % (Věrnostní sleva)\", \"gross_haler\": 5900, \"quantity\": 1}, {\"description\": \"Doplatek za změny v minulém období\", \"gross_haler\": -12000, \"quantity\": 1}]}",
+   "total_haler": -65500,
+   "voided": 0,
+   "vs": "20260047"
+  },
+  {
+   "corrects_id": 4,
+   "due_date": "2026-11-17",
+   "has_pdf": true,
+   "id": 11,
+   "issue_date": "2026-11-17",
+   "kind": "storno",
+   "number": "UBY-2026-0048",
+   "owner_user_id": 1,
+   "paid_on": null,
+   "paid_via": null,
+   "period_from": "2026-09-01",
+   "period_to": "2026-09-30",
+   "seq_no": 48,
+   "seq_year": 2026,
+   "snapshot_json": "{\"invoice\": {\"buyer_city\": \"Praha\", \"buyer_dic\": \"CZ12345678\", \"buyer_ico\": \"12345678\", \"buyer_name\": \"Novák & syn, s.r.o. \\\"Test\\\"\", \"buyer_street\": \"Hlavní 12\", \"buyer_zip\": \"11000\", \"correction_reason\": \"Haléře\", \"corrects_number\": \"UBY-2026-0041\", \"due_date\": \"2026-11-17\", \"issue_date\": \"2026-11-17\", \"kind\": \"storno\", \"note\": \"Období: 01.09.2026 – 30.09.2026\", \"number\": \"UBY-2026-0048\", \"seller_bank_account\": \"19-2000145399/0800\", \"seller_dic\": \"CZ12345678\", \"seller_email\": \"ops@example.test\", \"seller_iban\": \"CZ6508000000192000145399\", \"seller_ico\": \"12345678\", \"seller_name\": \"UbyHost s.r.o. <Test> & Co\", \"seller_seat\": \"Dlouhá 1, 602 00 Brno\", \"total_haler\": -13400, \"vat_status\": \"non_payer\", \"vs\": \"20260048\"}, \"items\": [{\"description\": \"Předplatné UbyHost Standard, 3 apartmány\", \"gross_haler\": -14900, \"quantity\": 1}, {\"description\": \"Sleva 10 %\", \"gross_haler\": 1500, \"quantity\": 1}]}",
+   "total_haler": -13400,
+   "voided": 0,
+   "vs": "20260048"
+  },
+  {
+   "corrects_id": 8,
+   "due_date": "2026-12-31",
+   "has_pdf": true,
+   "id": 12,
+   "issue_date": "2026-12-31",
+   "kind": "storno",
+   "number": "UBY-2026-0049",
+   "owner_user_id": 1,
+   "paid_on": null,
+   "paid_via": null,
+   "period_from": "2026-11-01",
+   "period_to": "2026-11-30",
+   "seq_no": 49,
+   "seq_year": 2026,
+   "snapshot_json": "{\"invoice\": {\"buyer_city\": \"Praha\", \"buyer_dic\": \"CZ12345678\", \"buyer_ico\": \"12345678\", \"buyer_name\": \"Novák & syn, s.r.o. \\\"Test\\\"\", \"buyer_street\": \"Hlavní 12\", \"buyer_zip\": \"11000\", \"correction_reason\": \"\", \"corrects_number\": \"UBY-2026-0045\", \"due_date\": \"2026-12-31\", \"issue_date\": \"2026-12-31\", \"kind\": \"storno\", \"note\": \"Období: 01.11.2026 – 30.11.2026\", \"number\": \"UBY-2026-0049\", \"seller_bank_account\": \"19-2000145399/0800\", \"seller_dic\": \"CZ12345678\", \"seller_email\": \"ops@example.test\", \"seller_iban\": \"CZ6508000000192000145399\", \"seller_ico\": \"12345678\", \"seller_name\": \"UbyHost s.r.o. <Test> & Co\", \"seller_seat\": \"Dlouhá 1, 602 00 Brno\", \"total_haler\": -50000, \"vat_status\": \"non_payer\", \"vs\": \"20260049\"}, \"items\": [{\"description\": \"Doplatek: změna na 4 apartmány, \\\"<&>\\\" a \\\\ lomítko\", \"gross_haler\": -50000, \"quantity\": 1}]}",
+   "total_haler": -50000,
+   "voided": 0,
+   "vs": "20260049"
+  },
+  {
+   "corrects_id": null,
+   "due_date": "2026-12-04",
+   "has_pdf": true,
+   "id": 13,
+   "issue_date": "2026-11-20",
+   "kind": "invoice",
+   "number": "UBY-2026-0050",
+   "owner_user_id": 1,
+   "paid_on": null,
+   "paid_via": null,
+   "period_from": "2026-11-01",
+   "period_to": "2026-11-30",
+   "seq_no": 50,
+   "seq_year": 2026,
+   "snapshot_json": "{\"invoice\": {\"buyer_city\": \"Praha\", \"buyer_dic\": \"CZ12345678\", \"buyer_ico\": \"12345678\", \"buyer_name\": \"Novák & syn, s.r.o. \\\"Test\\\"\", \"buyer_street\": \"Hlavní 12\", \"buyer_zip\": \"11000\", \"correction_reason\": \"\", \"corrects_number\": \"\", \"due_date\": \"2026-12-04\", \"issue_date\": \"2026-11-20\", \"kind\": \"invoice\", \"note\": \"Období: 01.11.2026 – 30.11.2026\", \"number\": \"UBY-2026-0050\", \"seller_bank_account\": \"19-2000145399/0800\", \"seller_dic\": \"CZ12345678\", \"seller_email\": \"ops@example.test\", \"seller_iban\": \"CZ6508000000192000145399\", \"seller_ico\": \"12345678\", \"seller_name\": \"UbyHost s.r.o. <Test> & Co\", \"seller_seat\": \"Dlouhá 1, 602 00 Brno\", \"total_haler\": 53500, \"vat_status\": \"non_payer\", \"vs\": \"20260050\"}, \"items\": [{\"description\": \"Předplatné UbyHost Standard, 3 apartmány\", \"gross_haler\": 44700, \"quantity\": 1}, {\"description\": \"Doplněk TTLock, 3 apartmány\", \"gross_haler\": 14700, \"quantity\": 1}, {\"description\": \"Sleva 10 % (Věrnostní sleva)\", \"gross_haler\": -5900, \"quantity\": 1}]}",
+   "total_haler": 53500,
+   "voided": 0,
+   "vs": "20260050"
+  },
+  {
+   "corrects_id": null,
+   "due_date": "2027-01-08",
+   "has_pdf": true,
+   "id": 14,
+   "issue_date": "2026-12-25",
+   "kind": "invoice",
+   "number": "UBY-2026-0051",
+   "owner_user_id": 6,
+   "paid_on": null,
+   "paid_via": null,
+   "period_from": "2026-12-25",
+   "period_to": "2027-01-24",
+   "seq_no": 51,
+   "seq_year": 2026,
+   "snapshot_json": "{\"invoice\": {\"buyer_city\": \"Ostrava\", \"buyer_dic\": \"\", \"buyer_ico\": \"\", \"buyer_name\": \"Eva Malá\", \"buyer_street\": \"Polní 3\", \"buyer_zip\": \"70200\", \"correction_reason\": \"\", \"corrects_number\": \"\", \"due_date\": \"2027-01-08\", \"issue_date\": \"2026-12-25\", \"kind\": \"invoice\", \"note\": \"Období: 25.12.2026 – 24.01.2027\", \"number\": \"UBY-2026-0051\", \"seller_bank_account\": \"19-2000145399/0800\", \"seller_dic\": \"CZ12345678\", \"seller_email\": \"ops@example.test\", \"seller_iban\": \"CZ6508000000192000145399\", \"seller_ico\": \"12345678\", \"seller_name\": \"UbyHost s.r.o. <Test> & Co\", \"seller_seat\": \"Dlouhá 1, 602 00 Brno\", \"total_haler\": 14900, \"vat_status\": \"non_payer\", \"vs\": \"20260051\"}, \"items\": [{\"description\": \"Předplatné UbyHost Standard, 1 apartmán\", \"gross_haler\": 14900, \"quantity\": 1}]}",
+   "total_haler": 14900,
+   "voided": 0,
+   "vs": "20260051"
+  },
+  {
+   "corrects_id": null,
+   "due_date": "2027-01-16",
+   "has_pdf": true,
+   "id": 15,
+   "issue_date": "2027-01-02",
+   "kind": "invoice",
+   "number": "UBY-2027-0001",
+   "owner_user_id": 6,
+   "paid_on": null,
+   "paid_via": null,
+   "period_from": "2027-01-25",
+   "period_to": "2027-02-24",
+   "seq_no": 1,
+   "seq_year": 2027,
+   "snapshot_json": "{\"invoice\": {\"buyer_city\": \"Ostrava\", \"buyer_dic\": \"\", \"buyer_ico\": \"\", \"buyer_name\": \"Eva Malá\", \"buyer_street\": \"Polní 3\", \"buyer_zip\": \"70200\", \"correction_reason\": \"\", \"corrects_number\": \"\", \"due_date\": \"2027-01-16\", \"issue_date\": \"2027-01-02\", \"kind\": \"invoice\", \"note\": \"Období: 25.01.2027 – 24.02.2027\", \"number\": \"UBY-2027-0001\", \"seller_bank_account\": \"19-2000145399/0800\", \"seller_dic\": \"CZ12345678\", \"seller_email\": \"ops@example.test\", \"seller_iban\": \"CZ6508000000192000145399\", \"seller_ico\": \"12345678\", \"seller_name\": \"UbyHost s.r.o. <Test> & Co\", \"seller_seat\": \"Dlouhá 1, 602 00 Brno\", \"total_haler\": 14900, \"vat_status\": \"non_payer\", \"vs\": \"20270001\"}, \"items\": [{\"description\": \"Předplatné UbyHost Standard, 1 apartmán\", \"gross_haler\": 14900, \"quantity\": 1}]}",
+   "total_haler": 14900,
+   "voided": 0,
+   "vs": "20270001"
+  }
+ ],
+ "results": [
+  {
+   "id": 5,
+   "name": "a1"
+  },
+  {
+   "id": 5,
+   "name": "a2"
+  },
+  {
+   "id": 6,
+   "name": "b1"
+  },
+  {
+   "error": "buyer_missing",
+   "name": "c1"
+  },
+  {
+   "error": "no_plan",
+   "name": "d1"
+  },
+  {
+   "error": "no_plan",
+   "name": "e1"
+  },
+  {
+   "id": 7,
+   "name": "f1"
+  },
+  {
+   "error": "below_minimum",
+   "name": "s1"
+  },
+  {
+   "id": 8,
+   "name": "s2"
+  },
+  {
+   "error": "buyer_missing",
+   "name": "s3"
+  },
+  {
+   "error": "buyer_missing",
+   "name": "s4"
+  },
+  {
+   "id": 9,
+   "name": "s5"
+  },
+  {
+   "mail_id": true,
+   "name": "send_a1"
+  },
+  {
+   "mail_id": true,
+   "name": "send_a1_again"
+  },
+  {
+   "mail_id": true,
+   "name": "send_b1"
+  },
+  {
+   "mail_id": false,
+   "name": "send_f1"
+  },
+  {
+   "mail_id": true,
+   "name": "send_s2"
+  },
+  {
+   "mail_id": false,
+   "name": "send_missing"
+  },
+  {
+   "mail_id": false,
+   "name": "send_no_owner"
+  },
+  {
+   "mail_id": false,
+   "name": "send_mail_off"
+  },
+  {
+   "mail_id": true,
+   "name": "send_s5"
+  },
+  {
+   "id": 10,
+   "name": "t1"
+  },
+  {
+   "error": "already_voided",
+   "name": "t2"
+  },
+  {
+   "error": "not_an_invoice",
+   "name": "t3"
+  },
+  {
+   "error": "not_an_invoice",
+   "name": "t4"
+  },
+  {
+   "error": "paid",
+   "name": "t5"
+  },
+  {
+   "error": "workspace_deleted",
+   "name": "t6"
+  },
+  {
+   "error": "buyer_missing",
+   "name": "t7"
+  },
+  {
+   "id": 11,
+   "name": "t8"
+  },
+  {
+   "id": 12,
+   "name": "t9"
+  },
+  {
+   "mail_id": true,
+   "name": "send_t1"
+  },
+  {
+   "id": 13,
+   "name": "a3"
+  },
+  {
+   "id": 14,
+   "name": "f2"
+  },
+  {
+   "id": 15,
+   "name": "f3"
+  },
+  {
+   "mail_id": false,
+   "name": "send_f3"
+  }
+ ],
+ "seed": [
+  {
+   "columns": [
+    "id",
+    "username",
+    "password_hash",
+    "role",
+    "created_at",
+    "email"
+   ],
+   "rows": [
+    [
+     1,
+     "u1",
+     "x",
+     "host",
+     "2026-01-01T00:00:00+00:00",
+     "owner1@example.test"
+    ],
+    [
+     2,
+     "u2",
+     "x",
+     "host",
+     "2026-01-01T00:00:00+00:00",
+     "  owner2@example.test  "
+    ],
+    [
+     3,
+     "u3",
+     "x",
+     "host",
+     "2026-01-01T00:00:00+00:00",
+     "owner3@example.test"
+    ],
+    [
+     4,
+     "u4",
+     "x",
+     "host",
+     "2026-01-01T00:00:00+00:00",
+     "owner4@example.test"
+    ],
+    [
+     5,
+     "u5",
+     "x",
+     "host",
+     "2026-01-01T00:00:00+00:00",
+     "owner5@example.test"
+    ],
+    [
+     6,
+     "u6",
+     "x",
+     "host",
+     "2026-01-01T00:00:00+00:00",
+     null
+    ]
+   ],
+   "table": "user_account"
+  },
+  {
+   "columns": [
+    "owner_user_id",
+    "status",
+    "plan",
+    "billing_interval",
+    "addon_ttlock",
+    "addon_whitelabel",
+    "apartments_billed",
+    "carry_czk",
+    "buyer_name",
+    "buyer_street",
+    "buyer_city",
+    "buyer_zip",
+    "buyer_ico",
+    "buyer_dic",
+    "buyer_email",
+    "updated_at",
+    "discount_percent",
+    "discount_reason"
+   ],
+   "rows": [
+    [
+     1,
+     "active",
+     "standard",
+     "month",
+     1,
+     0,
+     3,
+     120,
+     "Novák & syn, s.r.o. \"Test\"",
+     "Hlavní 12",
+     "Praha",
+     "11000",
+     "12345678",
+     "CZ12345678",
+     "  billing@example.test  ",
+     "2026-01-01T00:00:00+00:00",
+     10,
+     "Věrnostní sleva"
+    ],
+    [
+     2,
+     "active",
+     "max",
+     "year",
+     0,
+     1,
+     7,
+     0,
+     "Hotel Říčany a.s.",
+     "Nádražní 5",
+     "Říčany",
+     "25101",
+     "",
+     "",
+     null,
+     "2026-01-01T00:00:00+00:00",
+     0,
+     null
+    ],
+    [
+     3,
+     "active",
+     "standard",
+     "month",
+     0,
+     0,
+     2,
+     0,
+     "   ",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00",
+     0,
+     null
+    ],
+    [
+     4,
+     "trialing",
+     null,
+     null,
+     0,
+     0,
+     1,
+     0,
+     "Pavel Černý",
+     "Ulice 1",
+     "Brno",
+     "60200",
+     "",
+     "",
+     null,
+     "2026-01-01T00:00:00+00:00",
+     0,
+     null
+    ],
+    [
+     6,
+     "active",
+     "standard",
+     "month",
+     0,
+     0,
+     1,
+     0,
+     "Eva Malá",
+     "Polní 3",
+     "Ostrava",
+     "70200",
+     "",
+     "",
+     null,
+     "2026-01-01T00:00:00+00:00",
+     0,
+     null
+    ]
+   ],
+   "table": "billing_account"
+  },
+  {
+   "columns": [
+    "id",
+    "owner_user_id",
+    "kind",
+    "corrects_id",
+    "seq_year",
+    "seq_no",
+    "number",
+    "vs",
+    "issue_date",
+    "due_date",
+    "period_from",
+    "period_to",
+    "total_haler",
+    "voided",
+    "paid_on",
+    "paid_via",
+    "snapshot_json",
+    "created_at"
+   ],
+   "rows": [
+    [
+     1,
+     1,
+     "invoice",
+     null,
+     2026,
+     38,
+     "UBY-2026-0038",
+     "20260038",
+     "2026-09-01",
+     "2026-09-15",
+     "2026-08-01",
+     "2026-08-31",
+     14900,
+     0,
+     "2026-09-05",
+     "bank_manual",
+     "{\"invoice\": {\"number\": \"UBY-2026-0038\"}, \"items\": [{\"description\": \"Předplatné UbyHost Standard, 1 apartmán\", \"gross_haler\": 14900, \"quantity\": 1}]}",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     2,
+     null,
+     "invoice",
+     null,
+     2026,
+     39,
+     "UBY-2026-0039",
+     "20260039",
+     "2026-09-01",
+     "2026-09-15",
+     "2026-08-01",
+     "2026-08-31",
+     14900,
+     0,
+     null,
+     null,
+     "{\"invoice\": {\"number\": \"UBY-2026-0039\"}, \"items\": [{\"description\": \"Předplatné UbyHost Standard, 1 apartmán\", \"gross_haler\": 14900, \"quantity\": 1}]}",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     3,
+     5,
+     "invoice",
+     null,
+     2026,
+     40,
+     "UBY-2026-0040",
+     "20260040",
+     "2026-09-01",
+     "2026-09-15",
+     "2026-09-01",
+     "2026-09-30",
+     14900,
+     0,
+     null,
+     null,
+     "{\"invoice\": {\"number\": \"UBY-2026-0040\"}, \"items\": [{\"description\": \"Předplatné UbyHost Standard, 1 apartmán\", \"gross_haler\": 14900, \"quantity\": 1}]}",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     4,
+     1,
+     "invoice",
+     null,
+     2026,
+     41,
+     "UBY-2026-0041",
+     "20260041",
+     "2026-09-01",
+     "2026-09-15",
+     "2026-09-01",
+     "2026-09-30",
+     13401,
+     0,
+     null,
+     null,
+     "{\"invoice\": {\"number\": \"UBY-2026-0041\"}, \"items\": [{\"description\": \"Předplatné UbyHost Standard, 3 apartmány\", \"gross_haler\": 14900, \"quantity\": 1}, {\"description\": \"Sleva 10 %\", \"gross_haler\": -1499, \"quantity\": 1}]}",
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "platform_invoice"
+  },
+  {
+   "columns": [
+    "year",
+    "last_no"
+   ],
+   "rows": [
+    [
+     2026,
+     41
+    ]
+   ],
+   "table": "platform_invoice_sequence"
+  }
+ ],
+ "sequence": [
+  {
+   "last_no": 51,
+   "year": 2026
+  },
+  {
+   "last_no": 1,
+   "year": 2027
+  }
+ ],
+ "steps": [
+  {
+   "from": "2026-11-01",
+   "name": "a1",
+   "op": "issue_for_period",
+   "owner": 1,
+   "to": "2026-11-30",
+   "today": "2026-11-01"
+  },
+  {
+   "from": "2026-11-01",
+   "name": "a2",
+   "op": "issue_for_period",
+   "owner": 1,
+   "to": "2026-11-30",
+   "today": "2026-11-03"
+  },
+  {
+   "from": "2026-11-01",
+   "name": "b1",
+   "op": "issue_for_period",
+   "owner": 2,
+   "to": "2027-10-31",
+   "today": "2026-11-02"
+  },
+  {
+   "from": "2026-11-01",
+   "name": "c1",
+   "op": "issue_for_period",
+   "owner": 3,
+   "to": "2026-11-30",
+   "today": "2026-11-02"
+  },
+  {
+   "from": "2026-11-01",
+   "name": "d1",
+   "op": "issue_for_period",
+   "owner": 4,
+   "to": "2026-11-30",
+   "today": "2026-11-02"
+  },
+  {
+   "from": "2026-11-01",
+   "name": "e1",
+   "op": "issue_for_period",
+   "owner": 5,
+   "to": "2026-11-30",
+   "today": "2026-11-02"
+  },
+  {
+   "from": "2026-11-10",
+   "name": "f1",
+   "op": "issue_for_period",
+   "owner": 6,
+   "to": "2026-12-09",
+   "today": "2026-11-10"
+  },
+  {
+   "amount": 49,
+   "description": "Doplatek: změna na 4 apartmány",
+   "from": "2026-11-01",
+   "name": "s1",
+   "op": "issue_supplementary",
+   "owner": 1,
+   "to": "2026-11-30",
+   "today": "2026-11-15"
+  },
+  {
+   "amount": 500,
+   "description": "Doplatek: změna na 4 apartmány, \"<&>\" a \\ lomítko",
+   "from": "2026-11-01",
+   "name": "s2",
+   "op": "issue_supplementary",
+   "owner": 1,
+   "to": "2026-11-30",
+   "today": "2026-11-15"
+  },
+  {
+   "amount": 100,
+   "description": "Doplatek",
+   "from": "2026-11-01",
+   "name": "s3",
+   "op": "issue_supplementary",
+   "owner": 5,
+   "to": "2026-11-30",
+   "today": "2026-11-15"
+  },
+  {
+   "amount": 50,
+   "description": "Doplatek",
+   "from": "2026-11-01",
+   "name": "s4",
+   "op": "issue_supplementary",
+   "owner": 3,
+   "to": "2026-11-30",
+   "today": "2026-11-15"
+  },
+  {
+   "amount": 50,
+   "description": "Doplatek za 1 apartmán",
+   "from": "2026-11-01",
+   "name": "s5",
+   "op": "issue_supplementary",
+   "owner": 2,
+   "to": "2027-10-31",
+   "today": "2026-12-25"
+  },
+  {
+   "name": "send_a1",
+   "op": "send",
+   "target": "a1"
+  },
+  {
+   "name": "send_a1_again",
+   "op": "send",
+   "target": "a1"
+  },
+  {
+   "name": "send_b1",
+   "op": "send",
+   "target": "b1"
+  },
+  {
+   "name": "send_f1",
+   "op": "send",
+   "target": "f1"
+  },
+  {
+   "name": "send_s2",
+   "op": "send",
+   "target": "s2"
+  },
+  {
+   "name": "send_missing",
+   "op": "send",
+   "target": 999
+  },
+  {
+   "name": "send_no_owner",
+   "op": "send",
+   "target": 2
+  },
+  {
+   "env": {
+    "UBYHOST_MAIL_BACKEND": "disabled"
+   },
+   "name": "send_mail_off",
+   "op": "send",
+   "target": "s5"
+  },
+  {
+   "env": {
+    "UBYHOST_MAIL_BACKEND": "ses"
+   },
+   "name": "send_s5",
+   "op": "send",
+   "target": "s5"
+  },
+  {
+   "env": {
+    "UBYHOST_MAIL_BACKEND": "console"
+   },
+   "name": "t1",
+   "op": "storno",
+   "reason": "Chybná adresa",
+   "target": "a1",
+   "today": "2026-11-16"
+  },
+  {
+   "name": "t2",
+   "op": "storno",
+   "reason": "Znovu",
+   "target": "a1",
+   "today": "2026-11-16"
+  },
+  {
+   "name": "t3",
+   "op": "storno",
+   "reason": "Storno stornu",
+   "target": "t1",
+   "today": "2026-11-16"
+  },
+  {
+   "name": "t4",
+   "op": "storno",
+   "reason": "Neexistuje",
+   "target": 999,
+   "today": "2026-11-16"
+  },
+  {
+   "name": "t5",
+   "op": "storno",
+   "reason": "Zaplaceno",
+   "target": 1,
+   "today": "2026-11-16"
+  },
+  {
+   "name": "t6",
+   "op": "storno",
+   "reason": "Bez vlastníka",
+   "target": 2,
+   "today": "2026-11-16"
+  },
+  {
+   "name": "t7",
+   "op": "storno",
+   "reason": "Bez účtu",
+   "target": 3,
+   "today": "2026-11-16"
+  },
+  {
+   "name": "t8",
+   "op": "storno",
+   "reason": "Haléře",
+   "target": 4,
+   "today": "2026-11-17"
+  },
+  {
+   "name": "t9",
+   "op": "storno",
+   "reason": "",
+   "target": "s2",
+   "today": "2026-12-31"
+  },
+  {
+   "name": "send_t1",
+   "op": "send",
+   "target": "t1"
+  },
+  {
+   "from": "2026-11-01",
+   "name": "a3",
+   "op": "issue_for_period",
+   "owner": 1,
+   "to": "2026-11-30",
+   "today": "2026-11-20"
+  },
+  {
+   "from": "2026-12-25",
+   "name": "f2",
+   "op": "issue_for_period",
+   "owner": 6,
+   "to": "2027-01-24",
+   "today": "2026-12-25"
+  },
+  {
+   "from": "2027-01-25",
+   "name": "f3",
+   "op": "issue_for_period",
+   "owner": 6,
+   "to": "2027-02-24",
+   "today": "2027-01-02"
+  },
+  {
+   "name": "send_f3",
+   "op": "send",
+   "target": "f3"
+  }
+ ]
+}

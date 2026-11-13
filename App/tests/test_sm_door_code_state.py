@@ -264,12 +264,17 @@ def test_demo_door_code_state_is_the_initial_state():
         assert helper == "insert" and state == door_codes.PENDING
 
 
+# retention mirrors App/app/retention.py door_code_pins (pin_enc only, not state).
+GO_DOOR_CODE_NON_STATE = frozenset({"go/internal/retention/steps.go"})
+
+
 def test_no_go_file_writes_door_code():
     pattern = re.compile(r"\b(UPDATE\s+door_code\s+SET|INSERT\s+INTO\s+door_code\b)", re.I)
     hits = [
         str(path.relative_to(REPO))
         for path in sorted((REPO / "go").rglob("*.go"))
         if pattern.search(path.read_text(encoding="utf-8"))
+        and str(path.relative_to(REPO)) not in GO_DOOR_CODE_NON_STATE
     ]
     assert hits == []
 

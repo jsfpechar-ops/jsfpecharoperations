@@ -1,0 +1,1232 @@
+{
+ "after": {
+  "ad_click": [
+   [
+    601,
+    null,
+    null,
+    null,
+    null,
+    null,
+    "2026-11-13T10:00:00+00:00",
+    null,
+    null
+   ],
+   [
+    602,
+    "g2",
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ],
+   [
+    603,
+    null,
+    null,
+    null,
+    null,
+    null,
+    "2026-11-13T10:00:00+00:00",
+    null,
+    null
+   ],
+   [
+    604,
+    null,
+    null,
+    null,
+    null,
+    null,
+    "2026-11-13T10:00:00+00:00",
+    "expired",
+    "older than Meta's 7-day event window"
+   ],
+   [
+    605,
+    null,
+    null,
+    null,
+    "fb.1.b",
+    "UA/2",
+    null,
+    "pending",
+    null
+   ],
+   [
+    606,
+    null,
+    null,
+    null,
+    null,
+    null,
+    "2026-11-02T00:00:00+00:00",
+    "withdrawn",
+    null
+   ],
+   [
+    607,
+    null,
+    null,
+    null,
+    null,
+    null,
+    "2026-11-13T10:00:00+00:00",
+    null,
+    null
+   ],
+   [
+    608,
+    null,
+    null,
+    null,
+    null,
+    null,
+    "2026-11-13T10:00:00+00:00",
+    "sent",
+    null
+   ]
+  ],
+  "audit": [
+   [
+    "2026-09-01T00:00:00+00:00",
+    "owner@example.test",
+    "login",
+    "",
+    1,
+    null,
+    null
+   ],
+   [
+    "2026-11-13T10:00:00+00:00",
+    "host",
+    "submission_payload_purge",
+    "blanked the request and response envelope on 2 submission(s) older than 90 days",
+    null,
+    null,
+    null
+   ],
+   [
+    "2026-11-13T10:00:00+00:00",
+    "system",
+    "retention_delete",
+    "{\"class\": \"passport_photos\", \"count\": 10, \"cutoff\": \"check-in on or before 2026-11-06; upload on or before 2026-10-14; or verified\", \"dry_run\": false, \"owner_user_id\": null}",
+    null,
+    null,
+    null
+   ],
+   [
+    "2026-11-13T10:00:00+00:00",
+    "system",
+    "retention_delete",
+    "{\"class\": \"ubyport_xml\", \"count\": 2, \"cutoff\": \"2026-08-15T10:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": null}",
+    null,
+    null,
+    null
+   ]
+  ],
+  "email_outbox": [
+   [
+    851
+   ]
+  ],
+  "guest": [
+   [
+    1001,
+    null
+   ],
+   [
+    1002,
+    "2026-11-12T09:00:00+00:00"
+   ],
+   [
+    1003,
+    ""
+   ],
+   [
+    1004,
+    null
+   ],
+   [
+    1005,
+    null
+   ],
+   [
+    1006,
+    null
+   ],
+   [
+    1007,
+    null
+   ],
+   [
+    1008,
+    "2026-10-15T09:00:00+00:00"
+   ]
+  ],
+  "guest_form_draft": [
+   [
+    700
+   ],
+   [
+    704
+   ],
+   [
+    705
+   ]
+  ],
+  "guide_photo": [
+   [
+    60,
+    "known.jpg"
+   ]
+  ],
+  "legal_acceptance": [
+   [
+    801
+   ]
+  ],
+  "submission": [
+   [
+    500,
+    "ok",
+    null,
+    null,
+    null
+   ],
+   [
+    501,
+    "running",
+    "<req/>",
+    null,
+    null
+   ],
+   [
+    502,
+    "error",
+    "<req/>",
+    null,
+    "<resp/>"
+   ],
+   [
+    503,
+    "outcome_unknown",
+    null,
+    null,
+    null
+   ],
+   [
+    504,
+    "ok",
+    null,
+    null,
+    null
+   ]
+  ],
+  "user_account": [
+   [
+    1
+   ],
+   [
+    3
+   ],
+   [
+    4
+   ],
+   [
+    5
+   ],
+   [
+    6
+   ],
+   [
+    7
+   ],
+   [
+    8
+   ],
+   [
+    9
+   ]
+  ]
+ },
+ "audit_columns": [
+  "at",
+  "actor",
+  "action",
+  "detail",
+  "owner_user_id",
+  "actor_user_id",
+  "impersonator_user_id"
+ ],
+ "counts": {
+  "drafts": 3,
+  "guide_orphans": 1,
+  "payloads": 2,
+  "photos": 10,
+  "signup": {
+   "click_ids_cleared": 5,
+   "meta_events_expired": 1,
+   "unverified_deleted": 1
+  }
+ },
+ "files": [
+  {
+   "dir": "passport_photos",
+   "mtime_ago": 86400,
+   "name": "1001.jpg.enc"
+  },
+  {
+   "dir": "passport_photos",
+   "mtime_ago": 86400,
+   "name": "1002.png.enc"
+  },
+  {
+   "dir": "passport_photos",
+   "mtime_ago": 86400,
+   "name": "1003.pdf"
+  },
+  {
+   "dir": "passport_photos",
+   "mtime_ago": 86400,
+   "name": "1004.webp.enc"
+  },
+  {
+   "dir": "passport_photos",
+   "mtime_ago": 86400,
+   "name": "1004.jpg"
+  },
+  {
+   "dir": "passport_photos",
+   "mtime_ago": 86400,
+   "name": "1005.jpg.enc"
+  },
+  {
+   "dir": "passport_photos",
+   "mtime_ago": 86400,
+   "name": "1007.jpg.enc"
+  },
+  {
+   "dir": "passport_photos",
+   "mtime_ago": 86400,
+   "name": "1008.jpg.enc"
+  },
+  {
+   "dir": "passport_photos",
+   "mtime_ago": 86400,
+   "name": "1_002.jpg"
+  },
+  {
+   "dir": "passport_photos",
+   "mtime_ago": 86400,
+   "name": "2000.jpg.enc"
+  },
+  {
+   "dir": "passport_photos",
+   "mtime_ago": 86400,
+   "name": "2000.png"
+  },
+  {
+   "dir": "passport_photos",
+   "mtime_ago": 86400,
+   "name": "2001.JPG"
+  },
+  {
+   "dir": "passport_photos",
+   "mtime_ago": 86400,
+   "name": "02002.pdf"
+  },
+  {
+   "dir": "passport_photos",
+   "mtime_ago": 86400,
+   "name": "+2003.webp.enc"
+  },
+  {
+   "dir": "passport_photos",
+   "mtime_ago": 86400,
+   "name": "-5.jpg"
+  },
+  {
+   "dir": "passport_photos",
+   "mtime_ago": 86400,
+   "name": "notes.txt"
+  },
+  {
+   "dir": "passport_photos",
+   "mtime_ago": 86400,
+   "name": "abc.jpg"
+  },
+  {
+   "dir": "passport_photos",
+   "mtime_ago": 86400,
+   "name": "2004.txt.enc"
+  },
+  {
+   "dir": "passport_photos",
+   "mtime_ago": 86400,
+   "name": "2006_.jpg"
+  },
+  {
+   "dir": "passport_photos",
+   "mtime_ago": 86400,
+   "name": ".jpg"
+  },
+  {
+   "dir": "passport_photos",
+   "kind": "dir",
+   "name": "2005.jpg"
+  },
+  {
+   "dir": "guide_photos",
+   "mtime_ago": 86400,
+   "name": "known.jpg"
+  },
+  {
+   "dir": "guide_photos",
+   "mtime_ago": 7200,
+   "name": "orphan-old.jpg"
+  },
+  {
+   "dir": "guide_photos",
+   "mtime_ago": 600,
+   "name": "orphan-new.jpg"
+  },
+  {
+   "dir": "guide_photos",
+   "mtime_ago": 3600,
+   "name": "orphan-edge.jpg"
+  },
+  {
+   "dir": "guide_photos",
+   "kind": "dir",
+   "name": "sub"
+  }
+ ],
+ "files_left": [
+  "guide_photos/known.jpg",
+  "guide_photos/orphan-edge.jpg",
+  "guide_photos/orphan-new.jpg",
+  "guide_photos/sub",
+  "passport_photos/+2003.webp.enc",
+  "passport_photos/.jpg",
+  "passport_photos/02002.pdf",
+  "passport_photos/1002.png.enc",
+  "passport_photos/1008.jpg.enc",
+  "passport_photos/1_002.jpg",
+  "passport_photos/2001.JPG",
+  "passport_photos/2004.txt.enc",
+  "passport_photos/2005.jpg",
+  "passport_photos/2006_.jpg",
+  "passport_photos/abc.jpg",
+  "passport_photos/notes.txt"
+ ],
+ "now": "2026-11-13T10:00:00+00:00",
+ "seed": [
+  {
+   "columns": [
+    "id",
+    "username",
+    "password_hash",
+    "role",
+    "created_at",
+    "active",
+    "email_verified_at",
+    "signup_at"
+   ],
+   "rows": [
+    [
+     1,
+     "owner@example.test",
+     "x",
+     "host",
+     "2026-09-01T00:00:00+00:00",
+     1,
+     "2026-09-01T00:00:00+00:00",
+     null
+    ],
+    [
+     2,
+     "stale@example.test",
+     "x",
+     "host",
+     "2026-09-01T00:00:00+00:00",
+     0,
+     null,
+     "2026-11-01T00:00:00+00:00"
+    ],
+    [
+     3,
+     "recent@example.test",
+     "x",
+     "host",
+     "2026-09-01T00:00:00+00:00",
+     0,
+     null,
+     "2026-11-10T00:00:00+00:00"
+    ],
+    [
+     4,
+     "meta-old@example.test",
+     "x",
+     "host",
+     "2026-09-01T00:00:00+00:00",
+     1,
+     "2026-11-01T00:00:00+00:00",
+     "2026-11-01T00:00:00+00:00"
+    ],
+    [
+     5,
+     "meta-new@example.test",
+     "x",
+     "host",
+     "2026-09-01T00:00:00+00:00",
+     1,
+     "2026-11-12T00:00:00+00:00",
+     "2026-11-12T00:00:00+00:00"
+    ],
+    [
+     6,
+     "verified@example.test",
+     "x",
+     "host",
+     "2026-09-01T00:00:00+00:00",
+     0,
+     "2026-10-02T00:00:00+00:00",
+     "2026-10-01T00:00:00+00:00"
+    ],
+    [
+     7,
+     "seven@example.test",
+     "x",
+     "host",
+     "2026-09-01T00:00:00+00:00",
+     1,
+     "2026-09-01T00:00:00+00:00",
+     null
+    ],
+    [
+     8,
+     "eight@example.test",
+     "x",
+     "host",
+     "2026-09-01T00:00:00+00:00",
+     1,
+     "2026-09-01T00:00:00+00:00",
+     null
+    ],
+    [
+     9,
+     "nine@example.test",
+     "x",
+     "host",
+     "2026-09-01T00:00:00+00:00",
+     1,
+     "2026-09-01T00:00:00+00:00",
+     null
+    ]
+   ],
+   "table": "user_account"
+  },
+  {
+   "columns": [
+    "id",
+    "internal_name",
+    "owner_user_id",
+    "created_at"
+   ],
+   "rows": [
+    [
+     10,
+     "Golden flat",
+     1,
+     "2026-09-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "apartment"
+  },
+  {
+   "columns": [
+    "id",
+    "apartment_id",
+    "uid",
+    "date_from",
+    "date_to",
+    "status",
+    "created_at",
+    "updated_at"
+   ],
+   "rows": [
+    [
+     100,
+     10,
+     "golden-100",
+     "2026-11-01",
+     "2026-11-04",
+     "active",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     101,
+     10,
+     "golden-101",
+     "2026-11-10",
+     "2026-11-15",
+     "active",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     102,
+     10,
+     "golden-102",
+     "2026-11-12",
+     "2026-11-20",
+     "cancelled",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     103,
+     10,
+     "golden-103",
+     "2026-11-07T00:30:00+02:00",
+     "2026-11-20",
+     "active",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "reservation"
+  },
+  {
+   "columns": [
+    "id",
+    "reservation_id",
+    "stay_from",
+    "passport_photo_at",
+    "identity_verified_at",
+    "created_at",
+    "updated_at"
+   ],
+   "rows": [
+    [
+     1001,
+     100,
+     null,
+     "2026-11-01T09:00:00+00:00",
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     1002,
+     101,
+     null,
+     "2026-11-12T09:00:00+00:00",
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     1003,
+     101,
+     null,
+     "",
+     "2026-11-11T09:00:00+00:00",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     1004,
+     101,
+     "2026-11-05",
+     "2026-11-10T09:00:00+00:00",
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     1005,
+     101,
+     "garbage",
+     "2026-10-14T23:00:00+00:00",
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     1006,
+     101,
+     null,
+     "2026-10-15T00:30:00+02:00",
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     1007,
+     103,
+     null,
+     "2026-11-12T09:00:00+00:00",
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     1008,
+     102,
+     null,
+     "2026-10-15T09:00:00+00:00",
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "guest"
+  },
+  {
+   "columns": [
+    "id",
+    "apartment_id",
+    "created_at",
+    "state",
+    "request_xml",
+    "request_xml_enc",
+    "response_xml"
+   ],
+   "rows": [
+    [
+     500,
+     10,
+     "2026-08-01T00:00:00+00:00",
+     "ok",
+     "<req/>",
+     "enc-req",
+     "<resp/>"
+    ],
+    [
+     501,
+     10,
+     "2026-08-01T00:00:00+00:00",
+     "running",
+     "<req/>",
+     null,
+     null
+    ],
+    [
+     502,
+     10,
+     "2026-08-15T10:00:00+00:00",
+     "error",
+     "<req/>",
+     null,
+     "<resp/>"
+    ],
+    [
+     503,
+     10,
+     "2026-08-15T09:59:59+00:00",
+     "outcome_unknown",
+     null,
+     null,
+     "<resp/>"
+    ],
+    [
+     504,
+     10,
+     "2026-07-01T00:00:00+00:00",
+     "ok",
+     null,
+     null,
+     null
+    ]
+   ],
+   "table": "submission"
+  },
+  {
+   "columns": [
+    "id",
+    "apartment_id",
+    "topic",
+    "created_at",
+    "updated_at"
+   ],
+   "rows": [
+    [
+     50,
+     10,
+     "wifi",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "guide_item"
+  },
+  {
+   "columns": [
+    "id",
+    "item_id",
+    "file_name",
+    "created_at"
+   ],
+   "rows": [
+    [
+     60,
+     50,
+     "known.jpg",
+     "2026-09-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "guide_photo"
+  },
+  {
+   "columns": [
+    "id",
+    "reservation_id",
+    "device_key_hash",
+    "claim_generation",
+    "owned_count",
+    "fields_enc",
+    "created_at",
+    "updated_at"
+   ],
+   "rows": [
+    [
+     700,
+     101,
+     "dev-a",
+     0,
+     0,
+     "x",
+     "2026-09-01T00:00:00+00:00",
+     "2026-11-12T00:00:00+00:00"
+    ],
+    [
+     701,
+     101,
+     "dev-b",
+     0,
+     0,
+     "x",
+     "2026-09-01T00:00:00+00:00",
+     "2026-11-05T00:00:00+00:00"
+    ],
+    [
+     702,
+     100,
+     "dev-a",
+     0,
+     0,
+     "x",
+     "2026-09-01T00:00:00+00:00",
+     "2026-11-12T00:00:00+00:00"
+    ],
+    [
+     703,
+     102,
+     "dev-a",
+     0,
+     0,
+     "x",
+     "2026-09-01T00:00:00+00:00",
+     "2026-11-12T00:00:00+00:00"
+    ],
+    [
+     704,
+     101,
+     "dev-c",
+     0,
+     0,
+     "x",
+     "2026-09-01T00:00:00+00:00",
+     "2026-11-06T10:00:00+00:00"
+    ],
+    [
+     705,
+     103,
+     "dev-a",
+     0,
+     0,
+     "x",
+     "2026-09-01T00:00:00+00:00",
+     "2026-11-12T00:00:00+00:00"
+    ]
+   ],
+   "table": "guest_form_draft"
+  },
+  {
+   "columns": [
+    "id",
+    "user_account_id",
+    "document",
+    "version",
+    "accepted_at",
+    "method"
+   ],
+   "rows": [
+    [
+     800,
+     2,
+     "terms",
+     "v1",
+     "2026-09-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     801,
+     1,
+     "terms",
+     "v1",
+     "2026-09-01T00:00:00+00:00",
+     "clickwrap"
+    ]
+   ],
+   "table": "legal_acceptance"
+  },
+  {
+   "columns": [
+    "id",
+    "version",
+    "purpose",
+    "lang",
+    "text",
+    "text_sha256",
+    "created_at"
+   ],
+   "rows": [
+    [
+     900,
+     "ads-google-v1",
+     "ads",
+     "en",
+     "golden",
+     "0000000000000000000000000000000000000000000000000000000000000000",
+     "2026-09-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "consent_texts"
+  },
+  {
+   "columns": [
+    "id",
+    "user_account_id",
+    "platform",
+    "clicked_at",
+    "consent_text_id",
+    "consented_at",
+    "created_at",
+    "gclid",
+    "gbraid",
+    "wbraid",
+    "fbc",
+    "client_user_agent",
+    "uploaded_at",
+    "withdrawn_at",
+    "ids_deleted_at",
+    "send_state",
+    "event_id"
+   ],
+   "rows": [
+    [
+     600,
+     2,
+     "google",
+     "2026-11-01T00:00:00+00:00",
+     900,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00",
+     "g0",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     601,
+     1,
+     "google",
+     "2026-08-01T00:00:00+00:00",
+     900,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00",
+     "g1",
+     "b1",
+     "w1",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     602,
+     9,
+     "google",
+     "2026-11-01T00:00:00+00:00",
+     900,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00",
+     "g2",
+     null,
+     null,
+     null,
+     null,
+     "2026-10-20T00:00:00+00:00",
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     603,
+     7,
+     "google",
+     "2026-11-01T00:00:00+00:00",
+     900,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00",
+     "g3",
+     null,
+     null,
+     null,
+     null,
+     "2026-10-01T00:00:00+00:00",
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     604,
+     4,
+     "meta",
+     "2026-11-01T00:00:00+00:00",
+     900,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00",
+     null,
+     null,
+     null,
+     "fb.1.a",
+     "UA/1",
+     null,
+     null,
+     null,
+     "pending",
+     "ev-604"
+    ],
+    [
+     605,
+     5,
+     "meta",
+     "2026-11-12T00:00:00+00:00",
+     900,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00",
+     null,
+     null,
+     null,
+     "fb.1.b",
+     "UA/2",
+     null,
+     null,
+     null,
+     "pending",
+     "ev-605"
+    ],
+    [
+     606,
+     1,
+     "meta",
+     "2026-11-01T00:00:00+00:00",
+     900,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     "2026-11-02T00:00:00+00:00",
+     "2026-11-02T00:00:00+00:00",
+     "withdrawn",
+     "ev-606"
+    ],
+    [
+     607,
+     8,
+     "google",
+     "2026-11-01T00:00:00+00:00",
+     900,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00",
+     "g7",
+     null,
+     null,
+     null,
+     null,
+     null,
+     "2026-11-10T00:00:00+00:00",
+     null,
+     null,
+     null
+    ],
+    [
+     608,
+     6,
+     "meta",
+     "2026-11-04T00:00:00+00:00",
+     900,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00",
+     null,
+     null,
+     null,
+     "fb.1.c",
+     "UA/3",
+     "2026-11-05T00:00:00+00:00",
+     null,
+     null,
+     "sent",
+     "ev-608"
+    ]
+   ],
+   "table": "ad_click"
+  },
+  {
+   "columns": [
+    "id",
+    "idempotency_key",
+    "kind",
+    "owner_user_id",
+    "created_at",
+    "updated_at"
+   ],
+   "rows": [
+    [
+     850,
+     "golden-850",
+     "signup_verify",
+     2,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     851,
+     "golden-851",
+     "signup_verify",
+     1,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "email_outbox"
+  },
+  {
+   "columns": [
+    "id",
+    "at",
+    "actor",
+    "action",
+    "detail",
+    "owner_user_id"
+   ],
+   "rows": [
+    [
+     950,
+     "2026-09-01T00:00:00+00:00",
+     "anonymous",
+     "signup_started",
+     "",
+     2
+    ],
+    [
+     951,
+     "2026-09-01T00:00:00+00:00",
+     "owner@example.test",
+     "login",
+     "",
+     1
+    ]
+   ],
+   "table": "audit"
+  }
+ ],
+ "snapshot": [
+  {
+   "columns": [
+    "id",
+    "passport_photo_at"
+   ],
+   "table": "guest"
+  },
+  {
+   "columns": [
+    "id",
+    "state",
+    "request_xml",
+    "request_xml_enc",
+    "response_xml"
+   ],
+   "table": "submission"
+  },
+  {
+   "columns": [
+    "id",
+    "file_name"
+   ],
+   "table": "guide_photo"
+  },
+  {
+   "columns": [
+    "id"
+   ],
+   "table": "guest_form_draft"
+  },
+  {
+   "columns": [
+    "id"
+   ],
+   "table": "user_account"
+  },
+  {
+   "columns": [
+    "id"
+   ],
+   "table": "legal_acceptance"
+  },
+  {
+   "columns": [
+    "id"
+   ],
+   "table": "email_outbox"
+  },
+  {
+   "columns": [
+    "id",
+    "gclid",
+    "gbraid",
+    "wbraid",
+    "fbc",
+    "client_user_agent",
+    "ids_deleted_at",
+    "send_state",
+    "last_error"
+   ],
+   "table": "ad_click"
+  }
+ ],
+ "today": "2026-11-13"
+}

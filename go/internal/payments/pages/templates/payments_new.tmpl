@@ -1,0 +1,40 @@
+{{/* payments_new.html: GET /payments/new. The back header carries the h1. */}}
+{{define "payments_new.title"}}{{end}}
+{{define "payments_new"}}
+<div class="payments-page payments-new">
+<div class="airbnb-header">
+  <a class="airbnb-back" href="/payments" aria-label="{{t "common.back"}}">{{icon "arrow-left" 20}}</a>
+  <h1 class="airbnb-title">{{t "payments.new.title"}}</h1>
+</div>
+<div class="payments-form" id="new-request">
+  <form method="post" action="/payments/requests/new" class="ui-form">
+    <div class="ui-field payments-amount"><label for="pay-new-amount_czk">{{t "payments.field.amount"}}</label>
+      <input id="pay-new-amount_czk" type="number" inputmode="numeric" name="amount_czk" min="1" step="1" required{{if .Prefill}} value="{{.Prefill.Amount}}"{{end}}></div>
+    <fieldset class="ui-field">
+      <legend>{{t "payments.new.reason"}}</legend>
+      <div class="ui-chips">
+        {{range $i, $r := .Reasons}}<label class="ui-chip"><input type="radio" name="reason" value="{{$r}}" {{if eq $i 0}}required{{end}}{{if and $.Prefill (eq $r "custom")}} checked{{end}}> {{t (printf "payments.reason.%s" $r)}}</label>{{end}}
+      </div>
+    </fieldset>
+    <div class="ui-field"><label for="pay-new-guest_note">{{t "payments.new.note"}}</label>
+      <input id="pay-new-guest_note" type="text" name="guest_note" maxlength="60"{{if .Prefill}} value="{{.Prefill.Name}}"{{end}}></div>
+    <div class="ui-field"><label for="pay-new-reservation_id">{{t "payments.field.stay"}}</label>
+      <select id="pay-new-reservation_id" name="reservation_id">
+        <option value="">{{t "payments.field.no_stay"}}</option>
+        {{range .Stays}}<option value="{{.ID}}"{{if eq $.Selected .ID}} selected{{end}}>{{.Label}}</option>{{end}}
+      </select></div>
+    <div class="ui-field"><label for="pay-new-guest_email">{{t "payments.field.guest_email"}}</label>
+      <input id="pay-new-guest_email" type="email" name="guest_email" autocomplete="off" autocapitalize="none" spellcheck="false"{{if .GuestEmail}} value="{{.GuestEmail}}"{{end}}></div>
+    <fieldset class="ui-field">
+      <legend>{{t "payments.field.rail"}}</legend>
+      <div class="ui-chips payments-seg">
+        <label class="ui-chip"><input type="radio" name="rail" value="card" checked> {{t "payments.new.rail_card"}}</label>
+        <label class="ui-chip"><input type="radio" name="rail" value="qr"{{if .NoBank}} disabled{{end}}> {{t "payments.new.rail_qr"}}</label>
+      </div>
+      {{if .NoBank}}<p class="ui-sub ui-note-line">{{t "payments.err.no_iban"}}</p><div class="ui-chips ui-note-line">{{ui_button (t "payments.fix.bank") "quiet" (kv "href" "/entities" "size" "compact")}}</div>{{end}}
+    </fieldset>
+    <div class="ui-form-actions">{{ui_button (t "payments.new.submit") "primary" (kv "type" "submit")}}</div>
+  </form>
+</div>
+</div>
+{{end}}

@@ -50,9 +50,15 @@ PUSH = "App/app/push.py"
 PUSHSEND = "go/internal/pushsend/pushsend.go"
 CAPI = "App/app/meta_capi.py"
 GOCAPI = "go/internal/metacapi/send.go"
+PHOTOSWEEP = "go/internal/photosweep/db.go"
 SIGNUP = "App/app/signup.py"
+SIGNUPGO = "go/internal/signup/store.go"
+MAILDRAIN = "go/internal/mail/outbox_drain.go"
+GOSIGNUP = "go/internal/signup/register.go"
 IMPORT = "App/app/guest_guide_import.py"
 MERGE = "App/app/guest_guide_merge.py"
+GOIMPORT = "go/internal/guideimport/job.go"
+RETENTION = "go/internal/retention/steps.go"
 
 # ---- scanner ---------------------------------------------------------------
 
@@ -158,6 +164,10 @@ OUTBOX_SITES = {
     (CLAIM, "expire_on_cancel"): 1,
     (RECONCILE, "expireOnCancel"): 1,
     (NOTIFY, "EnqueueMail"): 1,
+    (SIGNUPGO, "enqueue"): 1,
+    (MAILDRAIN, "Drain"): 1,
+    (MAILDRAIN, "claim"): 1,
+    (MAILDRAIN, "deliver"): 3,
 }
 _CLAIM_FRAGMENT = '{"state": SENDING, "updated_at": db.utcnow()}, {"state": QUEUED}'
 OUTBOX_MOVES = [
@@ -171,6 +181,12 @@ OUTBOX_MOVES = [
     (CLAIM, "expire_on_cancel", "(mail.FAILED, now, reservation[\"id\"], mail.QUEUED)", ("queued",), "failed"),
     (RECONCILE, "expireOnCancel", "SET state = 'failed'", ("queued",), "failed"),
     (NOTIFY, "EnqueueMail", "$9, 'queued', 0", NEW, "queued"),
+    (SIGNUPGO, "enqueue", "'queued', 0, $7, $7, $7)", NEW, "queued"),
+    (MAILDRAIN, "Drain", "SET state = 'queued' WHERE state = 'sending'", ("sending",), "queued"),
+    (MAILDRAIN, "claim", "SET state = 'sending'", ("queued",), "sending"),
+    (MAILDRAIN, "deliver", "SET state = 'sent'", ANY, "sent"),
+    (MAILDRAIN, "deliver", "SET state = 'queued', updated_at = $1 WHERE id = $2 AND state = 'sending'", ANY, "queued"),
+    (MAILDRAIN, "deliver", "SET state = $1, attempts = $2", ANY, "failed"),
 ]
 
 
@@ -214,7 +230,10 @@ SEND_SITES = {
     (CAPI, "send_pending"): 5,
     (GOCAPI, "expireUnsendable"): 1,
     (GOCAPI, "Send"): 5,
+    (PHOTOSWEEP, "expireUnsendableMeta"): 1,
     (SIGNUP, "withdraw_consent"): 1,
+    (GOSIGNUP, "enqueueMeta"): 1,
+    (GOSIGNUP, "WithdrawConsent"): 2,
 }
 _WITHDRAW = '"send_state": "withdrawn" if row["send_state"] in ("pending", "sending")'
 SEND_MOVES = [
@@ -228,12 +247,15 @@ SEND_MOVES = [
     (CAPI, "send_pending", '"send_state": SENT,', ("sending",), "sent"),
     (SIGNUP, "withdraw_consent", _WITHDRAW, ("pending", "sending"), "withdrawn"),
     (GOCAPI, "expireUnsendable", 'stateExpired, "older than Meta\'s 7-day event window", statePending,', ("pending",), "expired"),
+    (PHOTOSWEEP, "expireUnsendableMeta", '"expired", "older than Meta\'s 7-day event window", "pending",', ("pending",), "expired"),
     (GOCAPI, "Send", "statePending, stateSending, iso(now.Add(-staleSending))", ("sending",), "pending"),
     (GOCAPI, "Send", "stateSending, iso(now), id, statePending)", ("pending",), "sending"),
     (GOCAPI, "Send", "stateSent, attempts, ubyport.UTCNow(), id, stateSending)", ("sending",), "sent"),
     (GOCAPI, "Send", "state, attempts, truncate(out.detail, 400), iso(now.Add(retryDelay(attempts))), id, stateSending)", ("sending",), "pending"),
     (GOCAPI, "Send", "state, attempts, truncate(out.detail, 400), iso(now.Add(retryDelay(attempts))), id, stateSending)", ("sending",), "failed"),
     (GOCAPI, "Send", "stateFailed, attempts, truncate(out.detail, 400), id, stateSending)", ("sending",), "failed"),
+    (GOSIGNUP, "enqueueMeta", "send_state = 'pending', event_id = $1, next_attempt_at = $2", (None,), "pending"),
+    (GOSIGNUP, "WithdrawConsent", 'w := "withdrawn"', ("pending", "sending"), "withdrawn"),
 ]
 
 
@@ -250,6 +272,11 @@ IMPORT_SITES = {
     (IMPORT, "process_queue"): 2,
     (IMPORT, "purge"): 1,
     (MERGE, "_note_failure"): 1,
+    (GOIMPORT, "ProcessQueue"): 2,
+    (GOIMPORT, "runOne"): 4,
+    (GOIMPORT, "merge"): 1,
+    (GOIMPORT, "noteFailure"): 1,
+    (RETENTION, "stepGuideImports"): 1,
 }
 IMPORT_MOVES = [
     (IMPORT, "request_imports", '"status": "queued", "created_at": now,', NEW, "queued"),
@@ -261,6 +288,15 @@ IMPORT_MOVES = [
     (IMPORT, "process_queue", "SET status = 'failed', error = 'stale'", ("running",), "failed"),
     (IMPORT, "purge", "WHEN status = 'done' THEN 'expired'", ("done",), "expired"),
     (MERGE, "_note_failure", "SET status = 'failed', error = ?, raw_json = NULL", ("done",), "failed"),
+    (GOIMPORT, "ProcessQueue", "SET status = 'failed', error = 'budget'", ANY, "failed"),
+    (GOIMPORT, "ProcessQueue", "SET status = 'failed', error = 'stale'", ("running",), "failed"),
+    (GOIMPORT, "runOne", "SET status = 'running', started_at = $1 WHERE id = $2 AND status = 'queued'", ("queued",), "running"),
+    (GOIMPORT, "runOne", "SET status = 'failed', error = 'network'", ("running",), "failed"),
+    (GOIMPORT, "runOne", "SET status = 'failed', error = $1, finished_at = $2 WHERE id = $3 AND status = 'running'", ("running",), "failed"),
+    (GOIMPORT, "runOne", "SET status = 'done', raw_json = $1", ("running",), "done"),
+    (GOIMPORT, "merge", "SET status = 'used', raw_json = NULL", ("done",), "used"),
+    (GOIMPORT, "noteFailure", "SET status = 'failed', error = $1, raw_json = NULL", ("done",), "failed"),
+    (RETENTION, "stepGuideImports", "WHEN status = 'done' THEN 'expired'", ("done",), "expired"),
 ]
 
 

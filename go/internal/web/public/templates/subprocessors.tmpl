@@ -1,0 +1,65 @@
+{{define "title"}}{{.T "subprocessors.page_title"}}{{end}}
+{{define "content"}}
+<header class="page-header">
+  <div class="page-header-main">
+    <h1>{{.T "subprocessors.page_title"}}</h1>
+    <p class="lede">{{.T "subprocessors.page_lede"}}</p>
+  </div>
+</header>
+<p class="small muted">{{.T "subprocessors.effective"}}</p>
+<div class="panel">
+  <h2 style="margin-top:0">{{.T "subprocessors.controller_note_title"}}</h2>
+  <p class="small muted">{{.T "subprocessors.controller_note"}}</p>
+</div>
+<div class="panel">
+  <h2 style="margin-top:0">{{.T "subprocessors.scope_title"}}</h2>
+  <p class="small muted">{{.T "subprocessors.scope_body"}}</p>
+  <div class="scroll-x">
+    <table class="table-cards">
+      <thead>
+        <tr>
+          <th>{{.T "subprocessors.table_provider"}}</th>
+          <th>{{.T "subprocessors.table_purpose"}}</th>
+          <th>{{.T "subprocessors.table_data"}}</th>
+          <th>{{.T "subprocessors.table_location"}}</th>
+          <th>{{.T "subprocessors.table_safeguard"}}</th>
+        </tr>
+      </thead>
+      <tbody>
+      {{range .SubprocessorIDs}}
+        <tr>
+          <td data-label="{{$.T "subprocessors.table_provider"}}"><strong>{{$.T (printf "subprocessors.%s_provider" .)}}</strong></td>
+          <td data-label="{{$.T "subprocessors.table_purpose"}}">{{$.T (printf "subprocessors.%s_purpose" .)}}</td>
+          <td data-label="{{$.T "subprocessors.table_data"}}">{{$.T (printf "subprocessors.%s_data" .)}}</td>
+          <td data-label="{{$.T "subprocessors.table_location"}}">{{$.T (printf "subprocessors.%s_location" .)}}</td>
+          <td data-label="{{$.T "subprocessors.table_safeguard"}}">{{$.T (printf "subprocessors.%s_safeguard" .)}}</td>
+        </tr>
+      {{end}}
+      </tbody>
+    </table>
+  </div>
+</div>
+<div class="panel" id="recipients">
+  <h2 style="margin-top:0">{{.T "subprocessors.recipients_title"}}</h2>
+  <ul class="small muted">
+  {{range .RecipientIDs}}
+    <li>{{$.T (printf "subprocessors.recipient_%s" .)}}</li>
+  {{end}}
+  </ul>
+</div>
+<div class="panel">
+  <h2 style="margin-top:0">{{.T "subprocessors.change_title"}}</h2>
+  <p class="small muted">{{.T "subprocessors.change_body"}}</p>
+</div>
+<div class="panel quiet">
+  <h2 style="margin-top:0">{{.T "subprocessors.accuracy_title"}}</h2>
+  <p class="small muted" style="margin-bottom:0">{{.T "subprocessors.accuracy_body"}}</p>
+</div>
+<p class="small muted">
+  <a href="/legal">{{.T "legal.footer_short"}}</a>
+  &middot; <a href="/terms">{{.T "terms.footer_short"}}</a>
+  &middot; <a href="/privacy">{{.T "privacy.footer_short"}}</a>
+  &middot; <a href="/dpa">{{.T "dpa.footer_short"}}</a>
+  &middot; <a href="/?lang={{.Lang}}">{{.T "legal.back_home"}}</a>
+</p>
+{{end}}

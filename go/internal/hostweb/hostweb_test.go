@@ -29,6 +29,13 @@ func TestBack(t *testing.T) {
 		{"non ascii like quote", "/a", Flash{Text: "Uloženo"}, Flash{}, "/a?msg=Ulo%C5%BEeno"},
 		{"slash kept", "/a", Flash{Text: "x/y//z"}, Flash{}, "/a?msg=x/y//z"},
 		{"no message", "/a", Flash{}, Flash{}, "/a"},
+		// Starlette's RedirectResponse quotes the whole URL, safe=":/%#?=@[]!$&'()*+,;".
+		{"space in path, no message", "/a b", Flash{}, Flash{}, "/a%20b"},
+		{"non ascii path, no message", "/ž", Flash{}, Flash{}, "/%C5%BE"},
+		{"space in path and fragment", "/a b#x y", Flash{Text: "Ok"}, Flash{}, "/a%20b?msg=Ok#x%20y"},
+		{"quoted value not quoted twice", "/ž?x=1", Flash{Text: "ž"}, Flash{}, "/%C5%BE?x=1&msg=%C5%BE"},
+		{"unsafe ascii", "/a?q=[1]|{}^`\"<>\\", Flash{}, Flash{}, "/a?q=[1]%7C%7B%7D%5E%60%22%3C%3E%5C"},
+		{"safe set kept", "/a?b=@!$'()*+,;:", Flash{}, Flash{}, "/a?b=@!$'()*+,;:"},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

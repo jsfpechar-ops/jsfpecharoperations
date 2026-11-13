@@ -1,0 +1,553 @@
+{{- /* Port of App/app/templates/base.html + host_page.html (brief 1380). Keep the
+    markup and every ?v= value in step with those files; the golden test in
+    layout_test.go compares the two. 1381 marks what is not ported yet. */ -}}
+{{define "layout.base" -}}
+<!doctype html>
+<html lang="{{.Lang}}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f7f7f5">
+  <meta name="csrf-token" content="{{.CSRF}}">
+  {{if .ShowNav}}<script>try{var p=(navigator.userAgentData&&navigator.userAgentData.platform)||navigator.platform||"";if(/mac|iphone|ipad|ipod/i.test(p))document.documentElement.setAttribute("data-mac","")}catch(e){}</script>{{end}}
+  <title>{{.Title}}</title>
+  {{template "layout.seo" .}}
+  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="UbyHost">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="preload" href="/static/fonts/Manrope-latin.woff2?v=20261101-0495" as="font" type="font/woff2" crossorigin>
+  {{if .V2}}
+  <link rel="stylesheet" data-turbo-track="reload" href="/static/tokens.css?v=20261103-0920">
+  <link rel="stylesheet" data-turbo-track="reload" href="/static/app2.css?v=20261111-1124c">
+  {{if .ShowNav}}<link rel="stylesheet" data-turbo-track="reload" href="/static/command.css?v=20261103-0935">{{end}}
+  <link rel="stylesheet" data-turbo-track="reload" href="/static/list-filter-compact.css?v=20261109-1052a">
+  {{else}}
+  <link rel="stylesheet" data-turbo-track="reload" href="/static/tokens.css?v=20261103-0920">
+  <link rel="stylesheet" data-turbo-track="reload" href="/static/app.css?v=20261109-1200">
+  <link rel="stylesheet" data-turbo-track="reload" href="/static/components.css?v=20261103-0930">
+  {{if .ShowNav}}<link rel="stylesheet" data-turbo-track="reload" href="/static/command.css?v=20261103-0935">{{end}}
+  <link rel="stylesheet" data-turbo-track="reload" href="/static/list-filter-compact.css?v=20261109-1052a">
+  {{if .ShowNav}}
+  <link rel="stylesheet" data-turbo-track="reload" href="/static/host.css?v=20261108-1010a">
+  <link rel="stylesheet" data-turbo-track="reload" href="/static/host-controls.css?v=20261014-0102d">
+  <link rel="stylesheet" data-turbo-track="reload" href="/static/host-design0123.css?v=20261025-0380">
+  {{if eq .Nav "cleaning"}}<link rel="stylesheet" data-turbo-track="reload" href="/static/cleaning.css?v=20261104-0916">{{end}}
+  <link rel="stylesheet" data-turbo-track="reload" href="/static/host2.css?v=20261109-bsite-wrap-h2">
+  <link rel="stylesheet" data-turbo-track="reload" href="/static/workflow.css?v=20261104-0949w">
+  <link rel="stylesheet" data-turbo-track="reload" href="/static/wizard.css?v=20261022-0274">
+  {{end}}
+  <link rel="stylesheet" data-turbo-track="reload" href="/static/skeleton.css?v=20261014-0102c">
+  {{end}}
+  {{.Head}}
+  {{if .ShowNav}}<script src="/static/vendor/turbo-8.0.13.js?v=8.0.13" defer data-turbo-track="reload"></script><meta name="turbo-cache-control" content="no-cache"><meta name="view-transition" content="same-origin"><meta name="turbo-prefetch" content="true">{{end}}
+  <script src="/static/csrf.js?v=20260915a" defer data-turbo-track="reload"></script>
+  <script src="/static/skeleton.js?v=20261102-0509" defer data-turbo-track="reload"></script>
+  <script src="/static/app.js?v=20261111-1100b" defer data-turbo-track="reload"></script>
+  {{if .ShowNav}}<script src="/static/host.js?v=20261109-1032c" defer data-turbo-track="reload"></script>{{end}}
+  <noscript><link rel="stylesheet" href="/static/app-nojs.css?v=20261104-1210"></noscript>
+  {{if .ShowNav}}<script src="/static/guide.js?v=20261104-0916" defer data-turbo-track="reload"></script>{{end}}
+  {{if .ShowNav}}<script src="/static/pwa.js?v=20261102-0511" defer data-turbo-track="reload"></script>{{end}}
+  {{if and .ShowNav .Passkeys}}<script src="/static/passkeys.js?v=20261109-qa1" defer data-turbo-track="reload"></script>{{end}}
+  {{if .ShowNav}}<script src="/static/shell.js?v=20261025-0373" defer data-turbo-track="reload"></script>{{end}}
+  {{if and .ShowNav .SignedIn}}<script src="/static/havel.js?v=20261111-1200a" defer data-turbo-track="reload"></script>{{end}}
+</head>
+<body class="layout-host {{if .ShowNav}}host-workspace{{end}} {{if not .ShowNav}}no-nav{{end}}{{if .V2}} v2{{end}}{{if .AdminWorkspace}} admin-workspace{{end}}">
+<a class="skip-link" href="#main-content">{{t "a11y.skip_to_content"}}</a>
+{{if .V2}}
+<div class="app">
+{{if .ShowNav}}{{template "layout.shell_v2" .}}{{end}}
+<main id="main-content" class="main">
+{{else}}
+{{if .ShowNav}}{{template "layout.shell_sidebar" .}}{{end}}
+
+<main id="main-content" class="wrap {{.WrapClass}} {{if .ShowNav}}with-sidebar{{end}}">
+{{end}}
+  {{if .ShowNav}}
+    {{template "layout.env_banner" .}}
+    {{if and .SignedIn .DeletionDue}}
+    <aside class="banner warning workspace-deletion-banner" role="status">
+      <div class="grow">
+        <strong>{{t "workspace.deletion.banner_title" "date" .DeletionDue}}</strong>
+        <p class="small muted" style="margin:6px 0 0">{{t "workspace.deletion.banner_detail" "date" .DeletionDue}}</p>
+      </div>
+      <form method="post" action="/settings/workspace-export" data-no-skeleton>
+        <button class="btn small" type="submit">{{t "workspace.deletion.download_zip"}}</button>
+      </form>
+    </aside>
+    {{end}}
+    {{template "layout.billing_banner" .}}
+    {{template "layout.host_alerts" .}}
+    <div class="host-feedback-region" data-host-feedback
+         data-dismiss-label="{{t "a11y.dismiss_notification"}}"
+         data-copy-success="{{t "common.copied"}}"
+         data-copy-failure="{{t "copy.failure"}}"
+         data-copy-manual="{{t "copy.manual"}}"
+         data-command-copied="{{t "command.copied"}}">
+      <div class="toast-stack" data-feedback-rail aria-live="off">
+        {{if .ShowFlash}}
+          <div class="toast" data-toast data-toast-kind="{{.FlashKind}}"{{if .Sticky}} data-toast-sticky{{end}}>
+            <span class="grow">{{.Flash}}</span>
+            {{if .FixHref}}<a class="ui-btn ui-btn-quiet ui-btn-compact" href="{{.FixHref}}">{{t .FixKey}}</a>{{end}}
+            <button type="button" data-toast-close aria-label="{{t "a11y.dismiss_notification"}}">{{icon "x" 16}}</button>
+          </div>
+        {{end}}
+        {{if .ShowError}}
+          <div class="toast err" data-toast data-toast-kind="error" data-toast-sticky>
+            <span class="grow">{{.FlashError}}</span>
+            {{if .FixHref}}<a class="ui-btn ui-btn-quiet ui-btn-compact" href="{{.FixHref}}">{{t .FixKey}}</a>{{end}}
+            <button type="button" data-toast-close aria-label="{{t "a11y.dismiss_notification"}}">{{icon "x" 16}}</button>
+          </div>
+        {{end}}
+        {{if .UndoStay}}
+          <div class="toast" data-toast data-toast-kind="info" data-toast-sticky>
+            <span class="grow">{{t "archive.stay_moved"}}</span>
+            <form method="post" action="/reservations/{{.UndoStay}}/unarchive">
+              <input type="hidden" name="return_to" value="{{.UndoReturn}}">
+              <button class="toast-undo" type="submit">{{t "common.undo"}}</button>
+            </form>
+            <button type="button" data-toast-close aria-label="{{t "a11y.dismiss_notification"}}">{{icon "x" 16}}</button>
+          </div>
+        {{end}}
+        {{if .Celebration}}
+          <div class="toast" data-toast data-toast-kind="success" data-toast-sticky id="celebration-toast">
+            <span class="grow">{{t "celebration.body" "count" .SentGuestCount}}</span>
+            <form method="post" action="/celebrations/dismiss">
+              <input type="hidden" name="milestone" value="{{.Celebration}}">
+              <input type="hidden" name="return_to" value="{{.ReturnPath}}">
+              <button class="toast-pill" type="submit">{{t "celebration.dismiss"}}</button>
+            </form>
+          </div>
+        {{end}}
+      </div>
+      <div class="copy-manual-recovery" data-copy-recovery role="group" aria-label="{{t "copy.failure"}}" hidden>
+        <strong>{{t "copy.failure"}}</strong>
+        <p>{{t "copy.manual"}}</p>
+        <div data-copy-recovery-source></div>
+        <button type="button" data-copy-recovery-close aria-label="{{t "a11y.dismiss_notification"}}">{{icon "x" 16}}</button>
+      </div>
+      <div class="sr-only" data-feedback-live aria-live="polite" aria-atomic="true"></div>
+      <div class="sr-only" data-feedback-alert role="alert" aria-live="assertive" aria-atomic="true"></div>
+    </div>
+  {{end}}
+  {{if .Impersonating}}
+    <aside class="impersonation-bar" role="status" aria-live="polite">
+      <div class="impersonation-copy">
+        <span class="impersonation-eyebrow">{{t "impersonation.previewing"}}</span>
+        <strong>{{.WorkspaceName}}</strong>
+        <span class="impersonation-handle">@{{.WorkspaceUser}}</span>
+        {{if .MinutesLeft}}
+          <span class="impersonation-handle" data-impersonation-minutes="{{.MinutesLeft}}">{{.MinutesText}}</span>
+        {{end}}
+      </div>
+      <form method="post" action="/admin/stop-impersonating">
+        <button class="btn small" type="submit">{{t "impersonation.exit"}}</button>
+      </form>
+    </aside>
+  {{end}}
+  {{template "layout.host_page" .}}
+  <div class="page-skeleton" data-page-skeleton role="status" hidden>
+    <span class="sr-only">{{t "a11y.loading"}}</span>
+    {{ui_skeleton .BodyKind}}
+  </div>
+</main>
+{{if .V2}}</div>{{end}}
+
+<dialog id="confirm-dialog" class="admin-dialog">
+  <form method="post" id="confirm-form" class="admin-dialog-form">
+    <h2 id="confirm-title" style="margin-top:0"></h2>
+    <p id="confirm-body" class="small muted"></p>
+    <div class="actions">
+      <button class="btn" type="button" data-confirm-cancel>{{t "confirm.cancel"}}</button>
+      <button class="btn primary" type="submit" data-confirm-proceed
+              data-confirm-default-label="{{t "confirm.proceed"}}"
+              data-confirm-archive-label="{{t "host.delete"}}">{{t "confirm.proceed"}}</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="unsaved-dialog" class="admin-dialog unsaved-dialog" aria-labelledby="unsaved-dialog-title">
+  <div class="admin-dialog-form">
+    <h2 id="unsaved-dialog-title" class="unsaved-dialog-title">{{t "unsaved.title"}}</h2>
+    <div class="actions unsaved-dialog-actions">
+      <button class="btn" type="button" data-unsaved-stay>{{t "unsaved.stay"}}</button>
+      <button class="btn" type="button" data-unsaved-discard>{{t "unsaved.discard"}}</button>
+      <button class="btn primary" type="button" data-unsaved-save>{{t "unsaved.save"}}</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="csv-export-dialog" class="csv-export-dialog">
+  <form id="csv-export-form">
+    <h2 style="margin-top:0">{{t "data.export_csv_title"}}</h2>
+    <p class="small muted">{{t "data.export_csv_help"}}</p>
+    <p class="small csv-export-scope">{{t "housebook.apartment"}}: <strong data-csv-scope-label>{{t "host.filter.all_properties"}}</strong></p>
+    <div class="grid two">
+      <div class="field">
+        <label for="csv_export_from">{{t "common.from"}}</label>
+        <input type="date" id="csv_export_from" name="from" required>
+      </div>
+      <div class="field">
+        <label for="csv_export_to">{{t "common.until"}}</label>
+        <input type="date" id="csv_export_to" name="to" required>
+      </div>
+    </div>
+    <div class="actions" style="margin-top:14px">
+      <button class="btn" type="button" data-csv-cancel>{{t "data.export_csv_cancel"}}</button>
+      <button class="btn primary" type="submit">{{t "data.export_csv_download"}}</button>
+    </div>
+  </form>
+</dialog>
+
+{{if .HavelPanel}}{{template "layout.havel_panel" .}}{{end}}
+<dialog id="command-dialog" class="command-dialog" aria-labelledby="command-title">
+  <div class="command-shell">
+    <h2 id="command-title" class="sr-only">{{t "command.open"}}</h2>
+    <div class="command-search">
+      <span aria-hidden="true">{{icon "search" 18}}</span>
+      <input type="search" data-command-input aria-label="{{t "command.open"}}" placeholder="{{t "command.placeholder"}}" autocomplete="off">
+      <button class="command-close" type="button" data-command-close aria-label="{{t "shortcuts.close"}}">{{icon "x" 16}}</button>
+    </div>
+    <div class="command-results" data-command-results role="listbox" aria-live="polite"
+         data-empty="{{t "command.empty"}}" data-copied="{{t "command.copied"}}"></div>
+  </div>
+</dialog>
+
+<dialog id="shortcuts-dialog" class="shortcuts-dialog" aria-labelledby="shortcuts-title">
+  <div class="shortcuts-shell">
+    <div class="section-heading">
+      <h2 id="shortcuts-title">{{t "shortcuts.title"}}</h2>
+      <button class="btn-icon" type="button" data-shortcuts-close aria-label="{{t "shortcuts.close"}}">{{icon "x" 16}}</button>
+    </div>
+    <dl class="shortcut-list">
+      <div><dt><kbd>g</kbd> <kbd>d</kbd></dt><dd>{{t "shortcuts.dashboard"}}</dd></div>
+      <div><dt><kbd>g</kbd> <kbd>s</kbd></dt><dd>{{t "shortcuts.stays"}}</dd></div>
+      <div><dt><kbd>g</kbd> <kbd>r</kbd></dt><dd>{{t "shortcuts.reports"}}</dd></div>
+      <div><dt><kbd>g</kbd> <kbd>h</kbd></dt><dd>{{t "shortcuts.housebook"}}</dd></div>
+      <div><dt><kbd>⌘/Ctrl</kbd> <kbd>K</kbd></dt><dd>{{t "shortcuts.search"}}</dd></div>
+      <div><dt><kbd>j</kbd> / <kbd>k</kbd></dt><dd>{{t "shortcuts.next"}} / {{t "shortcuts.previous"}}</dd></div>
+      <div><dt><kbd>Enter</kbd></dt><dd>{{t "shortcuts.open_row"}}</dd></div>
+    </dl>
+  </div>
+</dialog>
+
+{{if .SecurityPrompt}}{{template "layout.security_prompt" .}}{{end}}
+{{if .ShowNav}}{{template "layout.shell_tabbar" .}}{{end}}
+</body>
+</html>
+{{end}}
+
+{{define "layout.seo" -}}
+{{if .MetaDescription}}<meta name="description" content="{{.MetaDescription}}">
+{{end}}{{if .Canonical}}  <link rel="canonical" href="{{.Canonical}}">
+{{end}}{{range .Alternates}}  <link rel="alternate" hreflang="{{.Code}}" href="{{.Href}}">
+{{end}}
+{{- end}}
+
+{{define "layout.env_banner"}}
+{{if eq .UbyportEnv "mock"}}
+  <aside class="env-banner mock" role="alert">
+    <strong>{{if .MockProduction}}{{t "env.mock_production_title"}}{{else}}{{t "env.mock_title"}}{{end}}</strong>
+    <span class="env-body">{{if .MockProduction}}{{t "env.mock_production_body"}}{{else}}{{t "env.mock_body"}}{{end}}</span>
+    <details class="env-more"><summary>{{t "how.toggle"}}</summary><span>{{if .MockProduction}}{{t "env.mock_production_body"}}{{else}}{{t "env.mock_body"}}{{end}}</span></details>
+  </aside>
+{{end}}
+{{end}}
+
+{{define "layout.host_page"}}
+<div class="ui-page" data-body-kind="{{.BodyKind}}">
+  {{if .H1}}
+  <header class="ui-ph" data-list-title-row>
+    <div class="ui-ph-main">
+      {{if .BackURL}}<a class="ui-ph-back airbnb-back" href="{{.BackURL}}">{{icon "arrow-left" 16}}<span>{{.BackLabel}}</span></a>{{end}}
+      <div class="ui-ph-title-row">
+        <h1>{{.H1}}</h1>
+        {{if .HowKey}}{{page_help .HowKey}}{{end}}
+      </div>
+      {{if .Meta}}<p class="ui-ph-meta" data-list-meta>{{.Meta}}</p>{{end}}
+    </div>
+    {{if or .Primary .Secondary}}
+    <div class="ui-ph-acts" data-list-actions>{{.Secondary}}{{.Primary}}</div>
+    {{end}}
+  </header>
+  {{end}}
+  {{.Tabs}}
+  {{.Toolbar}}
+  <div class="ui-body ui-body-{{.BodyKind}}">{{.Body}}</div>
+</div>
+{{end}}
+
+{{define "layout.shell_v2"}}
+<aside class="side" id="app-sidebar">
+  <div class="ui-brand"><a class="logo" href="/" aria-label="UbyHost"><img class="mark" src="/static/ubyhost-mark.png?v=20261004a" alt="" width="22" height="22"><span>UbyHost</span></a></div>
+  {{if ne .UbyportEnv "prod"}}<span class="env-badge ui-env {{.UbyportEnv}}" title="{{t "env.where_reports_go"}}">{{t (printf "env.%s" .UbyportEnv)}}</span>{{end}}
+  {{if .SignedIn}}
+  <div class="org">
+    <i>{{.Initial}}</i>
+    <div>{{.WorkspaceName}}
+      <small>{{tp "nav.property_count" .PropertyCount}}</small>
+    </div>
+  </div>
+  {{end}}
+  <button class="search" type="button" data-command-open style="width:auto;margin-bottom:14px;justify-content:space-between">
+    <span style="display:flex;align-items:center;gap:8px">{{icon "search" 16}}{{t "host.search"}}</span>
+    <kbd data-command-shortcut style="font-size:11px;background:#fff;border-radius:5px;padding:1px 6px;color:var(--ink3)"><span class="kbd-pc">Ctrl K</span><span class="kbd-mac">⌘ K</span></kbd>
+  </button>
+  <nav class="side-nav" aria-label="{{t "a11y.main_navigation"}}">
+    <a class="nav{{if eq .Nav "dashboard"}} on{{end}}" href="/" {{if eq .Nav "dashboard"}}aria-current="page"{{end}}><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V21H3z"/></svg>{{t "nav.overview"}}{{if .NavBadge}}<span class="badge">{{.NavBadge}}</span>{{end}}</a>
+    <a class="nav{{if .StaysNav}} on{{end}}" href="/reservations" {{if .StaysNav}}aria-current="page"{{end}}>{{icon "users" 18}}{{t "nav.stays"}}</a>
+    <a class="nav{{if .PropertiesNav}} on{{end}}" href="/apartments" {{if .PropertiesNav}}aria-current="page"{{end}}><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 7h6M9 11h6M9 15h3"/></svg>{{t "nav.properties"}}</a>
+    <a class="nav{{if eq .Nav "cleaning"}} on{{end}}" href="/cleaning" {{if eq .Nav "cleaning"}}aria-current="page"{{end}}>{{icon "sparkles" 18}}{{t "nav.cleaning"}}</a>
+    <a class="nav{{if eq .Nav "payments"}} on{{end}}" href="/payments" {{if eq .Nav "payments"}}aria-current="page"{{end}}>{{icon "credit-card" 18}}{{t "nav.payments"}}</a>
+    <a class="nav{{if eq .Nav "stay_fees"}} on{{end}}" href="/stay-fees" {{if eq .Nav "stay_fees"}}aria-current="page"{{end}}>{{icon "receipt-text" 18}}{{t "nav.stay_fees"}}</a>
+  </nav>
+  {{if .SignedIn}}
+  <details class="me-menu host-account" data-host-account>
+    <summary class="me" aria-label="{{t "nav.account"}}: {{.WorkspaceName}}">
+      <i>{{.Initial}}</i>
+      <div>{{.WorkspaceName}}<small>{{t "nav.account"}}</small></div>
+    </summary>
+    <div class="me-menu-list" role="menu">
+      <a role="menuitem" class="{{if eq .Nav "settings"}}on{{end}}" href="/settings" {{if eq .Nav "settings"}}aria-current="page"{{end}}>{{icon "settings" 18}}{{t "nav.settings"}}</a>
+      {{if .IsAdmin}}
+      <a role="menuitem" href="/admin/fakturace#funnel">{{icon "coins" 18}}{{t "billing.admin.funnel.title"}}</a>
+      <a role="menuitem" class="{{if eq .Nav "admin"}}on{{end}}" href="/admin" {{if eq .Nav "admin"}}aria-current="page"{{end}}>{{icon "shield" 18}}{{t "nav.admin"}}</a>
+      {{end}}
+      <a role="menuitem" href="/guide">{{icon "circle-help" 18}}{{t "nav.guide"}}</a>
+      {{if .HavelOn}}<a role="menuitem" href="/havel" data-sheet-open="havel-sheet" data-havel-launcher>{{icon "message-circle-question" 18}}{{t "nav.ask_havel"}}</a>{{end}}
+      {{if .OperatorEmail}}<a role="menuitem" class="support-link" href="mailto:{{.OperatorEmail}}">{{icon "mail" 18}}{{t "nav.support"}}</a>{{end}}
+      <form method="post" action="/logout" class="side-logout"><button class="nav" role="menuitem" type="submit">{{icon "log-out" 18}}{{t "nav.logout"}}</button></form>
+    </div>
+  </details>
+  {{end}}
+</aside>
+{{if .SignedIn}}
+<nav class="tabs" aria-label="{{t "a11y.main_navigation"}}">
+  <a class="tab{{if eq .Nav "dashboard"}} on{{end}}" href="/" {{if eq .Nav "dashboard"}}aria-current="page"{{end}}><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V21H3z"/></svg>{{t "nav.today"}}{{if .NavBadge}}<span class="n">{{.NavBadge}}</span>{{end}}</a>
+  <a class="tab{{if eq .Nav "calendar"}} on{{end}}" href="/?cal_view=calendar" {{if eq .Nav "calendar"}}aria-current="page"{{end}}><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>{{t "nav.calendar"}}</a>
+  <a class="tab{{if .StaysNav}} on{{end}}" href="/reservations" {{if .StaysNav}}aria-current="page"{{end}}>{{icon "users" 22}}{{t "nav.stays"}}</a>
+  <a class="tab{{if .PropertiesNav}} on{{end}}" href="/apartments" {{if .PropertiesNav}}aria-current="page"{{end}}><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 7h6M9 11h6M9 15h3"/></svg>{{t "nav.properties"}}</a>
+  <a class="tab{{if .MenuNav}} on{{end}}" href="/menu" {{if .MenuNav}}aria-current="page"{{end}}><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>{{t "nav.menu"}}</a>
+</nav>
+{{end}}
+{{end}}
+
+{{define "layout.shell_sidebar"}}
+<aside class="ui-sidebar" id="app-sidebar">
+  <div class="ui-brand">
+    <a class="brand plain" href="/" aria-label="UbyHost"><img class="brand-logo" src="/static/ubyhost-mark.png?v=20261004a" alt=""><span class="brand-word">UbyHost</span></a>
+    <button class="ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact sidebar-collapse" type="button" data-sidebar-collapse data-label-hide="{{t "a11y.hide_menu"}}" data-label-show="{{t "a11y.show_menu"}}" aria-expanded="true" aria-label="{{t "a11y.hide_menu"}}">{{icon "panel-left" 16}}</button>
+  </div>
+  {{if ne .UbyportEnv "prod"}}<span class="env-badge ui-env {{.UbyportEnv}}" title="{{t "env.where_reports_go"}}">{{t (printf "env.%s" .UbyportEnv)}}</span>{{end}}
+  <button class="ui-search-row" type="button" data-command-open>{{icon "search" 16}}<span>{{t "host.search"}}</span><kbd data-command-shortcut><span class="kbd-pc">Ctrl K</span><span class="kbd-mac">⌘ K</span></kbd></button>
+  <nav class="ui-nav sidebar-nav" aria-label="{{t "a11y.main_navigation"}}">
+    {{range .SideNav}}
+    <a href="{{.Href}}" title="{{.Label}}" {{if .Active}}aria-current="page"{{end}}>{{.Icon}}<span>{{.Label}}</span>{{if .Count}}<span class="ui-nav-count">{{.Count}}</span>{{end}}</a>
+    {{end}}
+  </nav>
+  {{if .SignedIn}}
+  <div class="host-rail-bottom">
+    <nav class="ui-nav ui-nav-bottom" aria-label="{{t "nav.guide"}}{{if .IsAdmin}} / {{t "nav.admin"}}{{end}}">
+      {{if .HavelOn}}<a class="host-help" href="/havel" data-sheet-open="havel-sheet" data-havel-launcher>{{icon "message-circle-question" 20}}<span>{{t "nav.ask_havel"}}</span></a>{{end}}
+      <a class="host-help host-help-guide" href="/guide" title="{{t "nav.guide"}}"{{if eq .Nav "guide"}} aria-current="page"{{end}}>{{icon "book-open" 20}}<span>{{t "nav.guide"}}</span></a>
+    </nav>
+    <details class="host-account" data-host-account>
+      <summary aria-label="{{t "nav.account"}}: {{.WorkspaceName}}">
+        <span class="sidebar-user-avatar" aria-hidden="true">{{.Initial}}</span>
+        <span class="host-account-name">{{.WorkspaceName}}<small>{{t "nav.account"}}</small></span>
+      </summary>
+      <div class="host-account-menu">
+        <a href="/settings"{{if eq .Nav "settings"}} aria-current="page"{{end}}>{{t "nav.settings"}}</a>
+        {{if .IsAdmin}}
+        <a href="/admin/fakturace#funnel">{{t "billing.admin.funnel.title"}}</a>
+        <a href="/admin"{{if eq .Nav "admin"}} aria-current="page"{{end}}>{{t "nav.admin"}}</a>
+        {{end}}
+        {{if .OperatorEmail}}
+        <a class="host-menu-support" href="mailto:{{.OperatorEmail}}">{{t "nav.support"}}<small>{{.OperatorEmail}}</small></a>
+        {{end}}
+        <div class="host-menu-rule"></div>
+        <a href="/settings/archived">{{t "settings.nav.archive"}}</a>
+        <a href="/privacy-requests">{{t "nav.privacy_requests"}}</a>
+        <div class="host-menu-rule"></div>
+        {{template "layout.lang_switch" .}}
+        <button class="nav-button" type="button" data-shortcuts-open>{{t "shortcuts.open"}}</button>
+        <form method="post" action="/logout"><button class="nav-button" type="submit">{{t "nav.logout"}}</button></form>
+      </div>
+    </details>
+  </div>
+  {{end}}
+</aside>
+{{end}}
+
+{{define "layout.lang_switch"}}
+<form method="post" action="/language" class="lang-switch compact">
+          <input type="hidden" name="next" value="{{.Path}}">
+          <button type="submit" name="lang" value="en" class="{{if eq .Lang "en"}}is-active{{end}}">{{t "lang.en"}}</button>
+          <button type="submit" name="lang" value="cs" class="{{if eq .Lang "cs"}}is-active{{end}}">{{t "lang.cs"}}</button>
+          <button type="submit" name="lang" value="vi" class="{{if eq .Lang "vi"}}is-active{{end}}">{{t "lang.vi"}}</button>
+        </form>
+{{end}}
+
+{{define "layout.shell_tabbar"}}
+<nav class="ui-tabbar" aria-label="{{t "a11y.main_navigation"}}">
+  <a href="/" {{if eq .Nav "dashboard"}}aria-current="page"{{end}}><span class="ui-tabbar-ic">{{icon "layout-dashboard" 24}}</span><span>{{t "nav.overview"}}</span>{{if .NavCount}}<span class="ui-nav-count">{{.NavCount}}</span>{{end}}</a>
+  <a href="/reservations" {{if .StaysNav}}aria-current="page"{{end}}><span class="ui-tabbar-ic">{{icon "calendar-days" 24}}</span><span>{{t "nav.stays"}}</span></a>
+  <a href="/apartments" {{if .PropertiesNav}}aria-current="page"{{end}}><span class="ui-tabbar-ic">{{icon "house" 24}}</span><span>{{t "nav.properties"}}</span></a>
+  <a href="/cleaning" {{if eq .Nav "cleaning"}}aria-current="page"{{end}}><span class="ui-tabbar-ic">{{icon "sparkles" 24}}</span><span>{{t "nav.cleaning"}}</span></a>
+  <a href="/settings" data-sheet-open="more-sheet" data-no-skeleton aria-label="{{t "nav.more_menu"}}" {{if .MoreNav}}aria-current="page"{{end}}><span class="ui-tabbar-ic">{{icon "ellipsis" 24}}</span><span>{{t "nav.more"}}</span></a>
+</nav>
+<dialog id="more-sheet" class="ui-dialog" aria-label="{{t "nav.more"}}">
+  <div class="ui-sheet">
+    <span class="ui-sheet-handle" aria-hidden="true"></span>
+    <nav class="ui-menu-panel ui-sheet-list" aria-label="{{t "nav.more"}}">
+      <button class="ui-menu-item" type="button" data-command-open>{{icon "search" 16}}{{t "host.search"}}</button>
+      <a class="ui-menu-item" href="/stay-fees">{{icon "receipt-text" 16}}{{t "nav.stay_fees"}}</a>
+      <a class="ui-menu-item" href="/payments">{{icon "credit-card" 16}}{{t "nav.payments"}}</a>
+      <a class="ui-menu-item" href="/booking-sites">{{icon "external-link" 16}}{{t "nav.booking_sites"}}</a>
+      <a class="ui-menu-item" href="/settings">{{icon "settings" 16}}{{t "nav.settings"}}</a>
+      {{if .HavelOn}}<a class="ui-menu-item" href="/havel" data-havel-more>{{icon "message-circle-question" 16}}{{t "nav.ask_havel"}}</a>{{end}}
+      <a class="ui-menu-item" href="/guide">{{icon "book-open" 16}}{{t "nav.guide"}}</a>
+      {{if and .SignedIn .IsAdmin}}<a class="ui-menu-item" href="/admin">{{icon "shield" 16}}{{t "nav.admin"}}</a>{{end}}
+      <a class="ui-menu-item" href="/settings/archived">{{icon "archive" 16}}{{t "settings.nav.archive"}}</a>
+      <a class="ui-menu-item" href="/privacy-requests">{{icon "file-lock" 16}}{{t "nav.privacy_requests"}}</a>
+      <form method="post" action="/language" class="lang-switch compact ui-sheet-lang">
+        <input type="hidden" name="next" value="{{.Path}}">
+        <button type="submit" name="lang" value="en" class="{{if eq .Lang "en"}}is-active{{end}}">{{t "lang.en"}}</button>
+        <button type="submit" name="lang" value="cs" class="{{if eq .Lang "cs"}}is-active{{end}}">{{t "lang.cs"}}</button>
+        <button type="submit" name="lang" value="vi" class="{{if eq .Lang "vi"}}is-active{{end}}">{{t "lang.vi"}}</button>
+      </form>
+      <form method="post" action="/logout"><button class="ui-menu-item" type="submit">{{icon "log-out" 16}}{{t "nav.logout"}}</button></form>
+    </nav>
+    <button class="ui-btn ui-btn-secondary" type="button" data-sheet-close>{{t "common.close"}}</button>
+  </div>
+</dialog>
+{{end}}
+
+{{- /* _billing_banner.html (0414). */ -}}
+{{define "layout.billing_banner"}}{{with .Billing}}
+<aside class="banner {{if .Warning}}warning{{end}} billing-banner" role="status" data-billing-banner="{{.Kind}}">
+  <div class="grow"><strong>{{t (printf "billing.banner.%s" .Kind) "date" .Date}}</strong></div>
+  <a class="btn small" href="/predplatne">{{t (printf "billing.banner.action_%s" .Kind)}}</a>
+</aside>
+{{end}}{{end}}
+
+{{- /* _host_alerts.html (0280, 0969, 1072): the logic is buildAlertStack in alerts.go. */ -}}
+{{define "layout.host_alerts"}}{{with .Alerts}}{{if .Show}}
+<aside class="notification-stack{{if .AsideHide}} ph-hide{{end}}" data-host-alerts aria-label="{{t "a11y.notifications"}}" aria-live="polite">
+  {{range .Lines}}
+    <article class="notification-bubble {{.Level}}{{if .PhHide}} ph-hide{{end}}" data-alert-id="{{.ID}}"{{if .Outside}} data-alert-scope="workspace"{{end}}{{if .Compact}} data-alert-compact{{end}} data-notification>
+      {{if .ActionHref}}<a class="notification-link" href="{{.ActionHref}}">{{else}}<div class="notification-link">{{end}}
+        <span class="notification-icon" aria-hidden="true">!</span>
+        <span class="grow">
+          <strong>{{.Title}}</strong>
+          {{if .Reason}}<small>{{.Reason}}</small>{{end}}
+          {{if .Outside}}<small class="notification-scope" data-workspace-label>{{t "notification.workspace.label"}}</small>{{end}}
+          {{if .ShowAction}}<small class="notification-action">{{t .ActionKey}}</small>{{end}}
+        </span>
+      {{if .ActionHref}}</a>{{else}}</div>{{end}}
+      {{if .Dismiss}}
+      <form method="post" action="/alerts/{{.ID}}/dismiss" data-notification-dismiss>
+        <button type="submit" aria-label="{{t "a11y.dismiss_notification"}}">&times;</button>
+      </form>
+      {{end}}
+    </article>
+  {{end}}
+  {{if .Summary}}
+    <article class="notification-bubble {{.SummaryLevel}}" data-notification-summary>
+      <a class="notification-link" href="/#needs-action">
+        <span class="notification-icon" aria-hidden="true">!</span>
+        <span class="grow">
+          <strong>{{.SummaryT}}</strong>
+          <small class="notification-action">{{t "notification.summary.open"}}</small>
+        </span>
+      </a>
+    </article>
+  {{end}}
+</aside>
+{{end}}{{end}}{{end}}
+
+{{- /* _havel_panel.html (0324) with _havel_topics.html and _havel_form.html as the
+    panel renders them: no answer, no topic, a fresh composer. */ -}}
+{{define "layout.havel_panel"}}{{if .HavelFab}}<a class="havel-fab" href="/havel" data-sheet-open="havel-sheet" data-havel-launcher data-havel-fab aria-label="{{t "havel.launcher"}}" title="{{t "havel.launcher"}}">{{icon "message-circle-question" 24}}</a>
+<dialog id="havel-sheet" class="ui-dialog havel-dialog" aria-labelledby="havel-title" data-havel-modeless data-havel-panel data-havel-owner="{{.AccountID}}"
+        data-src="{{.HavelSrc}}"
+        data-writing="{{t "havel.writing"}}" data-error="{{t "havel.error"}}" data-retry="{{t "havel.retry"}}" data-name="{{t "havel.name"}}">
+  <div class="ui-sheet">
+    <span class="ui-sheet-handle" aria-hidden="true"></span>
+    <div class="havel-head">
+      <span class="havel-avatar" aria-hidden="true">{{icon "message-circle-question" 20}}</span>
+      <div class="havel-head-text"><h2 id="havel-title" tabindex="-1">{{t "havel.name"}}</h2><p>{{t "havel.subtitle"}}</p></div>
+      <button class="ui-btn ui-btn-quiet ui-btn-icon havel-close" type="button" data-sheet-close aria-label="{{t "havel.close"}}">{{icon "x" 20}}</button>
+    </div>
+    <div class="havel-thread" role="log" aria-live="polite" data-havel-thread>
+<div class="havel-msg havel-msg-havel havel-greeting" data-havel-greeting>
+  <div class="havel-bubble"><p>{{t "havel.intro"}}</p></div>
+</div>
+<div class="havel-topics" data-havel-topics>
+  <div class="ui-chips havel-chips" role="group" aria-label="{{t "havel.topics_title"}}">
+    {{range .HavelTopics}}<a class="ui-chip havel-chip" href="/havel?topic={{.ID}}" data-havel-topic-link><span class="havel-chip-ico" aria-hidden="true">{{icon .Icon 16}}</span><span class="havel-chip-text">{{t .Label}}</span></a>{{end}}
+  </div>
+</div>
+    </div>
+    <div data-havel-form-wrap><form method="post" action="/havel" class="havel-composer" data-havel-form>
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <input type="hidden" name="history" value="" data-havel-history>
+  <input type="hidden" name="history_sig" value="" data-havel-sig>
+  <input type="hidden" name="page" value="{{.HavelPage}}">
+  <input type="hidden" name="device" value="computer" data-havel-device>
+  <input type="hidden" name="topic" value="" data-havel-topic>
+  <input type="hidden" name="q" value="" data-havel-q>
+  <input type="hidden" name="return_to" value="{{.ReturnPath}}">
+  {{if .HavelState}}
+  <p class="havel-meta havel-status">{{t (printf "havel.%s" .HavelState)}}</p>
+  <a class="ui-btn ui-btn-secondary havel-support-open" href="/havel?topic=wrong&q=error" data-havel-topic-link>{{icon "mail" 16}}{{t "havel.write_support"}}</a>
+  {{else}}
+  <label for="havel-message" class="sr-only">{{t "havel.placeholder"}}</label>
+  <div class="havel-input">
+    <textarea id="havel-message" name="message" rows="1" maxlength="600" placeholder="{{t "havel.placeholder"}}" required></textarea>
+    <button class="ui-btn ui-btn-secondary ui-btn-icon havel-send" type="submit" data-havel-send aria-label="{{t "havel.send"}}">{{icon "arrow-up" 20}}</button>
+  </div>
+  <p class="havel-meta havel-note">{{t "havel.ai_note"}}</p>
+  {{end}}
+</form></div>
+    <a class="havel-guide-link" href="/guide">{{t "havel.guide_link"}}</a>
+  </div>
+</dialog>{{end}}{{end}}
+
+{{- /* The security prompt of base.html (task 0004). */ -}}
+{{define "layout.security_prompt"}}
+<dialog id="security-prompt" class="admin-dialog security-prompt" aria-labelledby="security-prompt-title">
+  <div class="security-prompt-body">
+    <h2 id="security-prompt-title" class="security-prompt-title">{{t "security_prompt.title"}}</h2>
+    <p class="security-prompt-lede">{{t "security_prompt.lede"}}</p>
+    <div class="security-prompt-options">
+      {{if .SecurityPasskeys}}
+        <div class="security-prompt-option-wrap" data-passkey-supported hidden>
+          <button class="security-prompt-option" type="button" data-passkey-add data-passkey-return="{{.ReturnPath}}">
+            <span class="security-prompt-option-text">
+              <span class="security-prompt-option-title">{{t "security_prompt.passkey"}}</span>
+              <span class="security-prompt-option-help">{{t "security_prompt.passkey_help"}}</span>
+            </span>
+            <span class="security-prompt-chevron" aria-hidden="true">&rsaquo;</span>
+          </button>
+          <p class="small err-text" data-passkey-error data-generic="{{t "passkeys.error.failed"}}" role="alert" hidden></p>
+        </div>
+      {{end}}
+      <a class="security-prompt-option" href="/account/2fa/setup">
+        <span class="security-prompt-option-text">
+          <span class="security-prompt-option-title">{{t "security_prompt.totp"}}</span>
+          <span class="security-prompt-option-help">{{t "security_prompt.totp_help"}}</span>
+        </span>
+        <span class="security-prompt-chevron" aria-hidden="true">&rsaquo;</span>
+      </a>
+    </div>
+    <form method="dialog" class="security-prompt-later">
+      <button class="security-prompt-later-btn" type="submit" value="later" data-security-prompt-later>{{t "security_prompt.later"}}</button>
+    </form>
+    <p class="security-prompt-footnote">{{t "security_prompt.footnote"}}</p>
+  </div>
+</dialog>
+{{end}}

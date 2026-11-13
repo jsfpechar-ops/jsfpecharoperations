@@ -167,10 +167,10 @@ func seedAccounts(t *testing.T, pool *pgxpool.Pool) {
 			a.id, a.name, a.role); err != nil {
 			t.Fatal(err)
 		}
-		for _, doc := range []string{"terms", "privacy", "dpa"} {
+		for doc, ver := range map[string]string{"terms": "1.7", "privacy": "1.8", "dpa": "1.8"} {
 			if _, err := pool.Exec(ctx,
-				`INSERT INTO legal_acceptance (user_account_id, document, version, accepted_at, method) VALUES ($1, $2, '1.7', '2026-01-01T00:00:00+00:00', 'clickwrap')`,
-				a.id, doc); err != nil {
+				`INSERT INTO legal_acceptance (user_account_id, document, version, accepted_at, method) VALUES ($1, $2, $3, '2026-01-01T00:00:00+00:00', 'clickwrap')`,
+				a.id, doc, ver); err != nil {
 				t.Fatal(err)
 			}
 		}

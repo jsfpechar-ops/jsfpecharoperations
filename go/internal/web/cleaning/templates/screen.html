@@ -1,0 +1,9 @@
+<a class="cleaning-skip" href="#cleaning-list">{{ ct $.Lang "skip" }}</a>
+{{ template "calendar.html" . }}
+<section id="cleaning-list" class="cleaning-list" aria-labelledby="cleaning-list-title" tabindex="-1">
+  <h2 id="cleaning-list-title">{{ ct $.Lang "list" }}</h2>
+  <p class="cleaning-list-error" data-cleaning-error role="alert" hidden></p>
+  <div data-cleaning-list>{{ template "list.html" . }}</div>
+</section>
+{{ .LabelsScript }}
+<script src="/static/cleaning.js?v=20261106-0963" defer></script>

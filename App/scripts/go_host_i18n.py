@@ -1,7 +1,9 @@
 """Write the Go host string catalogs from App/app/host_i18n.py.
 
-Each go/internal/<pkg>/i18n_keys.txt lists the keys that package reads, one per
-line; a line starting with "#" is a comment. The sibling i18n.json holds
+Each go/internal/<pkg>/i18n_keys.txt (or a nested package such as
+hostweb/layout/i18n_keys.txt) lists the keys that package reads, one per
+line; a line starting with "#" is a comment, and a line "prefix.*" lists
+every key that starts with "prefix." (1381). The sibling i18n.json holds
 {lang: {key: text}} for every host language, keeping only the listed keys that
 the language has.
 
@@ -30,7 +32,20 @@ def read_keys(path: Path) -> list[str]:
     return keys
 
 
+def expand(keys: list[str]) -> list[str]:
+    """The listed keys, each "prefix.*" line replaced by every key with that prefix."""
+    out = []
+    for key in keys:
+        if key.endswith(".*"):
+            prefix = key[:-1]
+            out.extend(sorted({k for table in host_i18n.STRINGS.values() for k in table if k.startswith(prefix)}))
+        else:
+            out.append(key)
+    return out
+
+
 def render(keys: list[str]) -> str:
+    keys = expand(keys)
     catalog = {}
     for lang, strings in host_i18n.STRINGS.items():
         catalog[lang] = {key: strings[key] for key in keys if key in strings}
@@ -40,7 +55,7 @@ def render(keys: list[str]) -> str:
 def main(argv: list[str]) -> int:
     check = "--check" in argv
     stale = []
-    for keys_file in sorted(GO_INTERNAL.glob("*/i18n_keys.txt")):
+    for keys_file in sorted(GO_INTERNAL.glob("**/i18n_keys.txt")):
         out = keys_file.with_name("i18n.json")
         text = render(read_keys(keys_file))
         current = out.read_text(encoding="utf-8") if out.exists() else None
