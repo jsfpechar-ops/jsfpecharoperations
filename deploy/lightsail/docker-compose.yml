@@ -129,6 +129,8 @@ services:
     # the page cache that serves SQLite reads. Each limit is a cap, not a
     # reservation; a smaller server (staging) sets lower values in .env.
     mem_limit: ${UBYHOST_WEB_MEM:-2g}
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
     # OPS-3: bound container logs so they cannot grow without limit. Rotated
     # lines are gone for good; capture anything needed during an incident.
     logging:
@@ -172,6 +174,8 @@ services:
       retries: 3
       start_period: 30s
     mem_limit: ${UBYHOST_WORKER_MEM:-1g}
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
     logging:
       driver: json-file
       options:
@@ -196,13 +200,60 @@ services:
     restart: unless-stopped
     stop_grace_period: 15s
     profiles: ["go"]
-    env_file: .env
+    # Only the variables the Go code reads are passed in, not the whole .env
+    # (no SES/AWS, Turnstile, Grafana or backup secrets). A bare key is passed
+    # through from .env (auto-loaded beside this file) only when it is set there;
+    # do not write NAME: ${NAME:-}, an empty string is not the same as unset.
+    # A new variable read in go/ must be added here.
     environment:
       UBYHOST_DATABASE_URL: ${UBYHOST_DATABASE_URL:-}
       UBYHOST_GO_JOB_KINDS: ${UBYHOST_GO_JOB_KINDS:-}
       UBYHOST_STRIPE_MODE: ${UBYHOST_STRIPE_MODE:-off}
       UBYHOST_STRIPE_WEBHOOK_SECRET: ${UBYHOST_STRIPE_WEBHOOK_SECRET:-}
       UBYHOST_DATA_DIR: /data
+      UBYHOST_AI_FEATURES:
+      UBYHOST_AI_PROVIDER:
+      UBYHOST_AI_TEST_EMAILS:
+      UBYHOST_ANTHROPIC_API_KEY:
+      UBYHOST_APP_BASE_URL:
+      UBYHOST_BILLING_ENABLED:
+      UBYHOST_DATA_KEYS:
+      UBYHOST_DATA_KEY_LEGACY:
+      UBYHOST_DEPLOYMENT:
+      UBYHOST_DOOR_CODES:
+      UBYHOST_DPA_VERSION:
+      UBYHOST_HEARTBEAT_FILING_URL:
+      UBYHOST_HEARTBEAT_ICAL_URL:
+      UBYHOST_HEARTBEAT_URL:
+      UBYHOST_ICAL_ALLOW_PRIVATE:
+      UBYHOST_IMPERSONATION_MAX_HOURS:
+      UBYHOST_MAIL_BACKEND:
+      UBYHOST_MAX_BATCH:
+      UBYHOST_META_ACCESS_TOKEN:
+      UBYHOST_META_DATASET_ID:
+      UBYHOST_META_GRAPH_VERSION:
+      UBYHOST_META_TEST_EVENT_CODE:
+      UBYHOST_MISTRAL_API_KEY:
+      UBYHOST_MOCK_URL:
+      UBYHOST_OPERATOR_EMAIL:
+      UBYHOST_PRIVACY_VERSION:
+      UBYHOST_PUBLIC_BASE_URL:
+      UBYHOST_PY_WEBHOOK_URL:
+      UBYHOST_SECRET_KEY:
+      UBYHOST_SOAP_WSA_HEADER:
+      UBYHOST_STRIPE_MONTHLY_API_CALLS:
+      UBYHOST_STRIPE_SECRET_KEY:
+      UBYHOST_SUBMIT_SWEEP_MINUTES:
+      UBYHOST_TERMS_VERSION:
+      UBYHOST_TTLOCK_CLIENT_ID:
+      UBYHOST_TTLOCK_CLIENT_SECRET:
+      UBYHOST_UBYPORT_DOMAIN:
+      UBYHOST_UBYPORT_ENV:
+      UBYHOST_UBYPORT_TIMEOUT:
+      UBYHOST_WEB_PUSH:
+      POSTHOG_ASSETS_HOST:
+      POSTHOG_HOST:
+      POSTHOG_PROJECT_API_KEY:
     volumes:
       - ubyhost-pgsock:/var/run/postgresql
       - ubyhost-data:/data:ro
@@ -215,6 +266,8 @@ services:
       retries: 3
       start_period: 15s
     mem_limit: ${UBYHOST_GO_MEM:-128m}
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
     logging:
       driver: json-file
       options:
@@ -267,12 +320,19 @@ services:
       UBYHOST_APP_DOMAIN: ${UBYHOST_APP_DOMAIN:-}
       ACME_EMAIL: ${ACME_EMAIL}
       UBYHOST_GO_PATHS: ${UBYHOST_GO_PATHS:-/__go_off__}
+      UBYHOST_AOP_MODE: ${UBYHOST_AOP_MODE:-off}
     volumes:
       - ./caddy/Caddyfile.active:/etc/caddy/Caddyfile:ro
       - ./caddy/certs:/etc/caddy/certs:ro
       - caddy-data:/data
       - caddy-config:/config
     mem_limit: ${UBYHOST_CADDY_MEM:-256m}
+    # Root image: it only needs to bind 80/443. Everything else is dropped.
+    # DAC_READ_SEARCH: root without DAC caps cannot read the 0600 origin key
+    # when another uid owns it (CI writes it as the runner user). Read-only bypass.
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE, DAC_READ_SEARCH]
+    security_opt: ["no-new-privileges:true"]
     # OPS-3: bound Caddy's container logs too. Caddy access logging itself stays
     # off (see caddy/Caddyfile.cloudflare), so this only bounds lifecycle noise.
     logging:
@@ -315,6 +375,7 @@ services:
         max-file: "5"
     networks:
       - web
+      - monitoring
 
   node-exporter:
     profiles: ["monitoring"]
@@ -338,7 +399,7 @@ services:
         max-size: "10m"
         max-file: "5"
     networks:
-      - web
+      - monitoring
 
   cadvisor:
     profiles: ["monitoring"]
@@ -365,7 +426,7 @@ services:
         max-size: "10m"
         max-file: "5"
     networks:
-      - web
+      - monitoring
 
 volumes:
   ubyhost-data:
@@ -384,3 +445,10 @@ volumes:
 networks:
   web:
     name: ubyhost-web
+  # 1201: scrape side of the monitoring stack. internal = no route to the
+  # internet and no published ports; the app containers are not on it.
+  # Only alloy joins it besides web (alloy still needs web to reach ubyhost
+  # and Grafana Cloud).
+  monitoring:
+    name: ubyhost-monitoring
+    internal: true

@@ -209,6 +209,7 @@ import requests as _requests
 
 from . import config as _config
 from . import guide_photos as _guide_photos
+from . import feed_url as _feed_url
 
 MAX_PAGE_PHOTOS = 10
 _PHOTO_TIMEOUT = (5, 30)
@@ -239,6 +240,31 @@ def store_photo(content: bytes) -> str:
     return f"/photos/property/{name}"
 
 
+def _fetch_photo_bytes(url: str):
+    """The photo's bytes, or None to skip it: a private or reserved address,
+    a redirect, a non-200 answer or a body over the upload cap. The body is
+    streamed and the connection closed as soon as the cap is passed."""
+    try:
+        _feed_url.validate_calendar_url(url)
+    except _feed_url.FeedUrlError:
+        return None
+    response = _requests.get(
+        url, timeout=_PHOTO_TIMEOUT, allow_redirects=False, stream=True
+    )
+    try:
+        if response.status_code != 200:
+            return None
+        limit = _guide_photos.MAX_UPLOAD_BYTES
+        body = bytearray()
+        for chunk in response.iter_content(chunk_size=64 * 1024):
+            body.extend(chunk)
+            if len(body) > limit:
+                return None
+        return bytes(body)
+    finally:
+        response.close()
+
+
 def download_listing_photos(apartment_id: int, urls: list) -> int:
     """Download the OTA listing's photos once (the host's own import run),
     re-host up to MAX_PAGE_PHOTOS of them. Returns the stored count."""
@@ -249,10 +275,10 @@ def download_listing_photos(apartment_id: int, urls: list) -> int:
         if len(already) + len(stored) >= MAX_PAGE_PHOTOS:
             break
         try:
-            response = _requests.get(url, timeout=_PHOTO_TIMEOUT)
-            if response.status_code != 200:
+            content = _fetch_photo_bytes(url)
+            if content is None:
                 continue
-            path = store_photo(response.content)
+            path = store_photo(content)
         except (ValueError, _requests.RequestException):
             continue
         stored.append(path)

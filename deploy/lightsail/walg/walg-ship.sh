@@ -13,6 +13,10 @@ ship_once() {
     echo "walg-ship: WALG_S3_PREFIX is not set (is .env.walg missing?); shipping nothing" >&2
     return 1
   fi
+  if [ -z "${WALG_LIBSODIUM_KEY:-}" ]; then
+    echo "walg-ship: WALG_LIBSODIUM_KEY is not set (is .env.walg missing the key?); refusing to ship unencrypted WAL" >&2
+    return 1
+  fi
   # Only finished WAL names (segments, timeline history, backup labels): skips
   # *.tmp copies in progress and anything else that may appear in the spool.
   for f in $(ls -1 "$SPOOL" 2>/dev/null \

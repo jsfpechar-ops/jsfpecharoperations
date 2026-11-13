@@ -16,3 +16,10 @@ Moved from [known-issues](../context/known-issues.md) on 2026-11-11 (compaction)
 | K-S08 | Low unverified | rate_limit.py:79 | No per-account login lockout across addresses | P A44 |
 | K-S09 | Low open | deploy-production.yml | GITHUB_TOKEN stays in server's git remote | P A58 |
 | K-I02 | Low open | invoices.py:51-63 _parse_decimal | "1.000" parses as 1 | X |
+| K-I05 | Low open | invoices.py:299 | Invoice year from server date, not Prague | P A12 |
+| K-I06 | Low unverified | invoice_pdf.py | PDF floors the unit price; the web page rounds | P A13 |
+| K-I07 | Low unverified | routes/stay_fees.py | Cadence switch may orphan adjustments | P A15 |
+| K-ML01 | Low open | App/app/static/app.js | Unused reset-password JS (0003) | magic-link HANDOFF |
+| K-I03 | Low open | invoices.py cancel | Concurrent cancel returns 500 | P A10 |
+| K-I04 | Low open | invoices.py | Unvalidated duzp/due/correction dates give 500 | P A11 |
+| K-U06 | Low open | apartment_form.html | Pills aligned; CI/staging pending | UI §3 |

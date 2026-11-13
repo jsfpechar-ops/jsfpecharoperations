@@ -124,12 +124,21 @@ def _psycopg_connect(url: str):
     return psycopg.connect(url, autocommit=True)
 
 
+def _schema_admin_url() -> str:
+    """Superuser URL for DROP/CREATE SCHEMA; may differ from the app DSN (1206 CI)."""
+    return os.environ.get("UBYHOST_TEST_DATABASE_URL") or _PG_URL
+
+
 def _reset_public_schema() -> None:
     """Empty target, exactly the isolated destination the transfer requires."""
-    with _psycopg_connect(_PG_URL) as conn:
+    with _psycopg_connect(_schema_admin_url()) as conn:
         conn.execute("SET client_min_messages = warning")
         conn.execute("DROP SCHEMA IF EXISTS public CASCADE")
-        conn.execute("CREATE SCHEMA public")
+        app_url = os.environ.get("UBYHOST_DATABASE_URL") or ""
+        if "ubyhost_app@" in app_url:
+            conn.execute("CREATE SCHEMA public AUTHORIZATION ubyhost_app")
+        else:
+            conn.execute("CREATE SCHEMA public")
 
 
 def _public_relation_count() -> int:

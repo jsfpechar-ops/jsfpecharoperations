@@ -7,7 +7,7 @@ from datetime import date, timedelta
 import pytest
 from fastapi.testclient import TestClient
 
-from app import admin_customers, auth, billing, config, db
+from app import admin_customers, auth, billing, config, db, security
 from app.main import app
 from tests.conftest import login_as
 
@@ -163,3 +163,32 @@ def test_old_users_url_redirects_to_customers_and_customer_page_has_no_manage_li
     page = client.get(f"/admin/customers/{owner}?lang=en")
     assert page.status_code == 200
     assert "/admin/users?manage=" not in page.text
+
+
+def _admin_and_customer(accounts):
+    create, _prefix = accounts
+    _admin_id, admin_name = create(role="admin")
+    customer_id, _customer_name = create()
+    client = TestClient(app)
+    login_as(client, admin_name, url="/login?lang=en")
+    return client, customer_id
+
+
+def test_operator_customer_post_without_valid_csrf_is_rejected(accounts):
+    client, customer_id = _admin_and_customer(accounts)
+    response = client.post(
+        f"/admin/customers/{customer_id}/stav",
+        data={security.CSRF_FIELD: "not-a-token", "status": "paused"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    assert response.headers["location"].startswith("/login?notice=form_expired")
+
+
+def test_operator_customer_post_with_csrf_reaches_the_handler(accounts):
+    client, customer_id = _admin_and_customer(accounts)
+    response = client.post(
+        f"/admin/customers/{customer_id}/overit-znovu", data={}, follow_redirects=False,
+    )  # conftest adds a valid _csrf token
+    assert response.status_code == 303
+    assert not response.headers["location"].startswith("/login?notice=form_expired")

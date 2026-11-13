@@ -85,13 +85,32 @@ class _FakeResponse:
     def __init__(self, content: bytes, status_code: int = 200):
         self.content = content
         self.status_code = status_code
+        self.headers = {}
+        self.closed = False
+        self.chunks_read = 0
+
+    def iter_content(self, chunk_size=1):
+        for i in range(0, len(self.content), chunk_size):
+            self.chunks_read += 1
+            yield self.content[i:i + chunk_size]
+
+    def close(self):
+        self.closed = True
 
 
 def _fake_get(urls_to_content, calls):
-    def get(url, timeout=None):
-        calls.append(url)
+    def get(url, timeout=None, **kwargs):
+        calls.append((url, kwargs))
         return _FakeResponse(urls_to_content.get(url, b""))
     return get
+
+
+@pytest.fixture(autouse=True)
+def _public_dns(monkeypatch):
+    """No real DNS: every photo host resolves to a public address."""
+    import ipaddress
+    monkeypatch.setattr("app.feed_url._resolve_host_ips",
+                        lambda host: [ipaddress.ip_address("93.184.216.34")])
 
 
 def test_store_photo_strips_and_rehosts(owner, monkeypatch):
@@ -250,3 +269,33 @@ def test_photo_move_markup_and_nojs_post(owner):
         "/photos/property/c.jpg",
         "/photos/property/b.jpg",
     ]
+
+
+def test_download_skips_private_addresses_without_fetching(owner, monkeypatch):
+    import ipaddress
+    from app import config
+    monkeypatch.setattr(config, "ICAL_ALLOW_PRIVATE", False)
+    monkeypatch.setattr("app.feed_url._resolve_host_ips",
+                        lambda host: [ipaddress.ip_address("169.254.169.254")])
+    calls = []
+    monkeypatch.setattr("app.property_page._requests.get", _fake_get({}, calls))
+    assert property_page.download_listing_photos(owner, ["https://cdn.example.test/a.jpg"]) == 0
+    assert calls == []
+
+
+def test_download_refuses_redirects(owner, monkeypatch):
+    calls = []
+    def get(url, timeout=None, **kwargs):
+        calls.append(kwargs)
+        return _FakeResponse(b"", 302)
+    monkeypatch.setattr("app.property_page._requests.get", get)
+    assert property_page.download_listing_photos(owner, ["https://cdn.example.test/a.jpg"]) == 0
+    assert calls and calls[0]["allow_redirects"] is False and calls[0]["stream"] is True
+
+
+def test_download_stops_reading_an_oversized_body(owner, monkeypatch):
+    big = _FakeResponse(b"x" * (property_page._guide_photos.MAX_UPLOAD_BYTES + 5 * 64 * 1024))
+    monkeypatch.setattr("app.property_page._requests.get", lambda url, timeout=None, **kw: big)
+    assert property_page.download_listing_photos(owner, ["https://cdn.example.test/a.jpg"]) == 0
+    assert big.closed is True
+    assert big.chunks_read < (len(big.content) // (64 * 1024))  # stopped early

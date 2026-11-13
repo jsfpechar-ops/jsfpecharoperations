@@ -1,5 +1,4 @@
 # Decisions
-
 Append-only.
 - 2026-10-08/12 | Door codes (TTLock pilot): timed codes, test mode until live; one 1-min job, no polling; details 0037, 0067-69 | owner | [plan](../plans/ttlock-door-codes.md), [legal](../privacy/DOOR_CODES_LEGAL.md)
 - 2026-10-09 | [workflow] One brief per copy text; executors skip non-todo; lint warns on overlap; status `replaced` = newer brief took over | [workflow](workflow.md)
@@ -58,10 +57,12 @@ Append-only.
 - 2026-11-11 [ux] 1101: wizard reuse
 - 2026-11-12 [billing] 1137: trial_pending->paused only via operator_pause().
 - 2026-11-12 [filing] 1138: claim fails closed; no retry.
-- 2026-11-12 [workflow] Orchestrator model chosen by brief risk tier (A: Opus 5.5 thread, Opus brief, Haiku executes, fresh Fable reviews diff; B: Opus 5.5, Sonnet brief, Haiku; C: Sonnet 5.5, Sonnet brief, Haiku); threads run in parallel, max 3, one per lane, no shared files; unsure = higher tier | owner | [workflow](workflow.md#roles-and-models)
+- 2026-11-12 [workflow] Orchestrator model by brief risk tier (A Opus thread+brief, Fable reviews; B Opus thread, Sonnet brief; C Sonnet); Haiku executes; threads parallel, no shared files; unsure = higher | owner | [workflow](workflow.md#roles-and-models)
 - 11-13 [workflow] 1199: every stored state/status column needs a TRANSITIONS table + pin test or an EXEMPT reason; test_sm_registry.py (owner)
 - 2026-11-12 [filing] 1148: cancel waits on `running` <30 min, else cancels + alert.
 - 2026-11-12 [filing] 1154: move waits on any `running` batch.
 - 2026-11-12 [door] 1149 lost race re-issues; 1155 revived code checked on lock (3 tries); 1156 info card + host mail; cs/vi ok.
 - 11-13 [calendar] 1172: Go-only; 1 mail/pair; manual dup skipped (owner)
 - 2026-11-13 [door] 1173/c: release backoff 15/15/60; new, retries, released; revive unissued expired.
+- 2026-11-13 [security] audit #966: 1200-1205; new Go env var goes in the compose list. Owner: K-S12 accepted; 1206 PG app role and 1207 lock refresh after #966.
+- 2026-11-13 [dep] 1390: Go PDF = gopdf v0.38.4 (MIT) + gofpdi + pkg/errors, `go/internal/pdf` only; Anthropic = thin HTTP in `go/internal/anthropic`, no dep; WebAuthn = go-webauthn/webauthn, login/passkey routes (owner)

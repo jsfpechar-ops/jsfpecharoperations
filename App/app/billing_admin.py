@@ -15,6 +15,7 @@ from datetime import date
 from typing import Any, Dict, List, Optional
 
 from . import billing_invoices, db
+from .csv_safety import csv_safe
 
 MONTH = re.compile(r"\d{4}-(0[1-9]|1[0-2])")
 CSV_HEADER = (
@@ -92,8 +93,8 @@ def export_csv(month: str) -> bytes:
     for row in invoices(month):
         writer.writerow((
             row["number"], KIND_CS[row["kind"]], row["corrects_number"] or "", row["issue_date"][:10],
-            row["due_date"][:10], row["period_from"][:10], row["period_to"][:10], row["buyer"]["name"],
-            row["buyer"]["ico"], row["buyer"]["dic"], _kc(int(row["total_haler"])), row["vs"],
+            row["due_date"][:10], row["period_from"][:10], row["period_to"][:10], csv_safe(row["buyer"]["name"]),
+            csv_safe(row["buyer"]["ico"]), csv_safe(row["buyer"]["dic"]), _kc(int(row["total_haler"])), row["vs"],
             (row["paid_on"] or "")[:10], VIA_CS.get(row["paid_via"] or "", ""), "ano" if row["voided"] else "",
         ))
     return ("﻿" + buf.getvalue()).encode("utf-8")

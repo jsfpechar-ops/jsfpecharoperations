@@ -1,6 +1,6 @@
 package main
 
-// Lane J1 (brief 1201/1202): the photo_sweep job, off until an operator adds
+// Lane J1 (brief 1209/1209b): the photo_sweep job, off until an operator adds
 // photo_sweep to UBYHOST_GO_JOB_KINDS. Interval as scheduler.job_intervals().
 
 import (

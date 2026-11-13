@@ -2,34 +2,44 @@
 
 Status: review
 
-## 1. Files changed (commit ecf4306)
+## 1. Files changed (`git diff --stat c729b7bf..HEAD`)
 
-- `go/internal/photosweep/db.go` (205 lines, create)
-- `go/internal/photosweep/sweep.go` (65 lines, create)
-- `go/internal/photosweep/sweep_test.go` (317 lines, create)
-- `go/cmd/ubyhost-web/register_job_photo_sweep.go` (33 lines, create)
+```
+ .github/dependabot.yml              |  3 +++
+ .github/workflows/ci.yml            |  2 +-
+ deploy/lightsail/docker-compose.yml | 49 ++++++++++++++++++++++++++++++++++++-
+ docs/ENVIRONMENT.md                 |  2 +-
+ 4 files changed, 53 insertions(+), 3 deletions(-)
+```
 
-No other file changed. This file is the report.
+Commits on exec-1202: `630b0a63` (step 1), `d61f541c` (step 2), `9d960c82` (step 3), `96318a84` (step 4).
 
-## 2. Commands
+## 2. Commands (last 5 lines)
 
-- Step 0: branch `task/1201-go-photo-sweep`. Latest 1201 commits are `1201 steps 5-7` and `1201 report: steps 1-7 review`. The brief expected a `1201 steps 1-6` commit; the 1201 work is there under those names. Helper greps: 1 and 1.
-- Sha256 of the four created files: all four match §4 (db.go, sweep.go, sweep_test.go, register_job_photo_sweep.go).
-- `gofmt -l`, `go build ./...`, `go vet`: no output (clean).
-- `go test ./internal/photosweep ./cmd/ubyhost-web -count=1 -v`: `ok` for both packages. `TestRunNeedsDataDir` PASS, `TestRunMatchesPython` SKIP and `TestRunFailsOnReadOnlyPhotos` SKIP (no `UBYHOST_TEST_DATABASE_URL`, as the brief allows). All `cmd/ubyhost-web` tests PASS.
+1. Compose check (scratch dir): exit 0. `UBYHOST_MAIL_BACKEND: ses` and `POSTHOG_HOST: ""` present; `UBYHOST_AWS` count 0; `ACME|TURNSTILE|GRAFANA` count 0; `env_file` count 0 in the `ubyhost-go` block; 48 environment keys. PASS
+2. YAML parse: `ok`. PASS
+3. Dependabot: `[('pip', '/App'), ('github-actions', '/'), ('docker', '/'), ('docker', '/go'), ('gomod', '/go')]`. PASS
+4. Actionlint: `actionlint not installed`. NOT RUN
+5. `pytest tests/test_wp32_container_sizing.py tests/test_pg_backup_scripts.py -q -rs -x`: `92 passed in 2.67s`, no skips. PASS
+6. `python3 scripts/context_lint.py`: `context lint: OK` (only pre-existing WARN lines). PASS
+7. `git diff --stat`: the four files in §3 only. PASS
 
-## 3. Acceptance (§7)
+## 3. §7 acceptance
 
-- [x] Four files exist with the §4 sha256 values.
-- [x] build, vet, and the two package tests pass (DB parity test skipped here; the orchestrator runs it per §6).
-- [x] `git diff --stat a83df541..HEAD` lists the 1201 and 1202 §3 files only.
+- [x] `ubyhost-go` has no `env_file`; `ubyhost` (line 102), `worker` (line 154) and the walg service (line 75) keep theirs.
+- [x] `ubyhost-go` `environment:` has 48 keys (5 original + 43).
+- [x] Command 1 shows pass-through works; AWS key absent.
+- [x] `gomod` for `/go` present; YAML parses.
+- [x] ci.yml audits `requirements.lock` with `--require-hashes`.
+- [x] Commands 2, 5, 6 pass; diff lists only the four files.
+- [x] One doc sentence added to the ENVIRONMENT.md row.
 
 ## 4. Deviations
 
-- Files were extracted from the brief with `sed -n` line ranges, not retyped. Checksums matched on the first try.
-- Commit message carries the Opus co-author and session trailers from the task instruction, not the brief's `-m` only form.
-- Not run: the §6 PostgreSQL parity test and golden re-run (orchestrator step).
-- Not pushed.
+- Base commit: treated as satisfied, per the session override.
+- Line numbers shifted by task 1201: `env_file: .env` of `ubyhost-go` was at line 203. Located by anchor, as instructed. The 1201 lines (`cap_drop`, `security_opt`) are untouched.
+- Step 1 also added the brief's comment block above `environment:`, as the brief's exact text includes it.
+- No push, no PR (session override).
 
 ## 5. Questions
 
@@ -37,4 +47,5 @@ None.
 
 ## 6. Owner steps left
 
-None for this brief. The orchestrator runs §6 with local PostgreSQL before the PR. Handover items in §Handover of the brief still apply after merge.
+- Push `exec-1202` and open a **draft** PR (the orchestrator integrates it). Rollback and post-deploy checks are in the brief.
+- Install actionlint or let CI check `ci.yml` (`--require-hashes` with `requirements.lock` must pass in CI; if not, drop only `--require-hashes`).

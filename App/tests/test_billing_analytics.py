@@ -445,3 +445,16 @@ def test_a_host_cannot_assign_plans(setup):
         "buyer_name": "X", "buyer_street": "Y", "buyer_city": "Z",
         "buyer_zip": "60200", "buyer_email": "x@example.test",
     }).status_code == 403
+
+
+@pytest.mark.parametrize("prefix", ["=", "+", "-", "@"])
+def test_the_bulk_zip_neutralises_formula_display_names(setup, prefix):
+    evil = prefix + "SUM(A1)"
+    db.execute("UPDATE user_account SET display_name = ? WHERE id = ?", (evil, setup["host_id"]))
+    client = TestClient(app)
+    login_as(client, setup["admin"], url="/login?lang=cs")
+    response = client.get("/admin/fakturace/export-vse")
+    zf = zipfile.ZipFile(io.BytesIO(response.content))
+    text = zf.read("zakaznici.csv").decode("utf-8-sig")
+    names = [r[0] for r in csv.reader(io.StringIO(text), delimiter=";")][1:]
+    assert "'" + evil in names and evil not in names

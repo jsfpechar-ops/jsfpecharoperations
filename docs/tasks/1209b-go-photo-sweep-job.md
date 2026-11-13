@@ -1,18 +1,18 @@
-# 1202: Go photo sweep, part 2: database steps, parity test, job kind `photo_sweep`
+# 1209b: Go photo sweep, part 2: database steps, parity test, job kind `photo_sweep`
 
 Status: todo
-Depends on: 1201 (same branch) | Base commit: a83df541 plus the 1201 commits | Branch: task/1201-go-photo-sweep
+Depends on: 1209 (same branch) | Base commit: a83df541 plus the 1209 commits | Branch: task/1201-go-photo-sweep
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier A (guest data, deletion)
 
 ## 1. Objective
 
-Finish the Go port of `photo_sweep`: the three database steps (`reporting.purge_submission_payloads`, `guest_draft.purge`, `signup.purge` with `meta_capi.expire_unsendable`), `photosweep.Run` (all five steps in Python's order, stop at the first error), the PostgreSQL parity test against the 1201 golden file, and the job registration. The kind stays off: Python keeps running it until an operator adds `photo_sweep` to `UBYHOST_GO_JOB_KINDS`.
+Finish the Go port of `photo_sweep`: the three database steps (`reporting.purge_submission_payloads`, `guest_draft.purge`, `signup.purge` with `meta_capi.expire_unsendable`), `photosweep.Run` (all five steps in Python's order, stop at the first error), the PostgreSQL parity test against the 1209 golden file, and the job registration. The kind stays off: Python keeps running it until an operator adds `photo_sweep` to `UBYHOST_GO_JOB_KINDS`.
 
 ## 2. Context
 
 Hard rules that apply: rule 2 (privacy: this job deletes guest data, it must delete exactly what Python deletes, no more, no less), rule 3 (the fixture holds only made-up values), rule 4 (no new dependency: only the Go standard library, pgx and `go/internal/deadlines`, all already in go.mod), rule 5 (the Python side is not touched at all; the SQL is the same SQL Python runs on PostgreSQL).
 
-Python (do not edit), the steps after the two file steps of 1201, same single try:
+Python (do not edit), the steps after the two file steps of 1209, same single try:
 
 3. `reporting.purge_submission_payloads()`: cutoff `iso(now-90d)`; submissions with `created_at < cutoff`, `state` in `ok ok_duplicate partial error transport_error outcome_unknown` and any of `request_xml`, `request_xml_enc`, `response_xml` not NULL get all three set to NULL; then `db.audit("submission_payload_purge", "blanked the request and response envelope on N submission(s) older than 90 days")` (actor `host`, no ids) and `db.audit_retention("ubyport_xml", N, cutoff)`. With no rows: only the zero-count retention line.
 4. `guest_draft.purge()`: `DELETE FROM guest_form_draft WHERE updated_at < iso(now-7d) OR reservation_id IN (SELECT r.id FROM reservation r WHERE r.status <> 'active' OR date(r.date_to) < prague_today)`.
@@ -32,7 +32,7 @@ Known difference: Python raises `job_failed` at once on a failed run; the Go que
 | `go/internal/photosweep/sweep.go` | create | `Summary`, `Run`, `run` |
 | `go/internal/photosweep/sweep_test.go` | create | PostgreSQL parity test, read-only test, no-data-dir test |
 | `go/cmd/ubyhost-web/register_job_photo_sweep.go` | create | `init()` registers `photo_sweep` |
-| `docs/tasks/1202-report.md` | create | the report |
+| `docs/tasks/1209b-report.md` | create | the report |
 
 No other file may change.
 
@@ -46,7 +46,7 @@ Work from the repo root. Create each file with the heredoc exactly as given.
 git branch --show-current; git log --oneline -3 | tail -3; ls go/internal/photosweep go/internal/photosweep/testdata 2>&1 | tail -8; grep -c 'func registerJob(kind string, minutes int, h func(\*pgxpool.Pool) jobs.Handler) {' go/cmd/ubyhost-web/registry.go; grep -c 'func LocalNow(now time.Time) time.Time {' go/internal/deadlines/deadlines.go
 ```
 
-Expected: `task/1201-go-photo-sweep`; a `1201 steps 1-6` commit; `audit.go files.go files_test.go testdata` and `photo_sweep_golden.json`; `1`; `1`. Otherwise STOP (§8).
+Expected: `task/1201-go-photo-sweep`; a `1209 steps 1-6` commit; `audit.go files.go files_test.go testdata` and `photo_sweep_golden.json`; `1`; `1`. Otherwise STOP (§8).
 
 ### Step 1: create `go/internal/photosweep/db.go`
 
@@ -671,7 +671,7 @@ Expected: `589c765becaa3df94fb0c3eb643f5f07778fae857595a0416f1e90f02eb7cf6e  go/
 mkdir -p go/cmd/ubyhost-web && cat > go/cmd/ubyhost-web/register_job_photo_sweep.go <<'EOF'
 package main
 
-// Lane J1 (brief 1201/1202): the photo_sweep job, off until an operator adds
+// Lane J1 (brief 1209/1209b): the photo_sweep job, off until an operator adds
 // photo_sweep to UBYHOST_GO_JOB_KINDS. Interval as scheduler.job_intervals().
 
 import (
@@ -711,14 +711,14 @@ Expected: `ec8dbb262707e03219a9103d0f7b05a7fff8565141b92cf543c5b3f21d11c356  go/
 ### Step 5: build, vet, test, commit
 
 ```bash
-cd go && gofmt -l internal/photosweep cmd/ubyhost-web; go build ./... 2>&1 | tail -5; go vet ./internal/photosweep ./cmd/ubyhost-web 2>&1 | tail -5; go test ./internal/photosweep ./cmd/ubyhost-web -count=1 -v 2>&1 | grep -E '^(--- |ok|FAIL)' | tail -15; cd .. && git add go/internal/photosweep go/cmd/ubyhost-web/register_job_photo_sweep.go && git commit -q -m "1202 steps 1-4" && git status --short | tail -5
+cd go && gofmt -l internal/photosweep cmd/ubyhost-web; go build ./... 2>&1 | tail -5; go vet ./internal/photosweep ./cmd/ubyhost-web 2>&1 | tail -5; go test ./internal/photosweep ./cmd/ubyhost-web -count=1 -v 2>&1 | grep -E '^(--- |ok|FAIL)' | tail -15; cd .. && git add go/internal/photosweep go/cmd/ubyhost-web/register_job_photo_sweep.go && git commit -q -m "1209b steps 1-4" && git status --short | tail -5
 ```
 
 Expected: no gofmt/build/vet output; both packages `ok`. Without `UBYHOST_TEST_DATABASE_URL` the two DB tests print `--- SKIP` (fine here, CI's `go` job runs them; say so in the report); as root the read-only tests skip too.
 
 ## 5. Do not touch
 
-`go/internal/metacapi/` (copy, never call or edit), `go/internal/jobs/`, `go/cmd/ubyhost-web/main.go`, `registry.go`, `register_jobs.go` and every other `register_*.go`, `go/internal/hostweb/`, `go/internal/session/`, everything in `App/`, the 1201 files, `deploy/`, `docs/ENVIRONMENT.md`, `docs/context/`. Rules 2, 3, 4, 5 (§2). Never push, never merge.
+`go/internal/metacapi/` (copy, never call or edit), `go/internal/jobs/`, `go/cmd/ubyhost-web/main.go`, `registry.go`, `register_jobs.go` and every other `register_*.go`, `go/internal/hostweb/`, `go/internal/session/`, everything in `App/`, the 1209 files, `deploy/`, `docs/ENVIRONMENT.md`, `docs/context/`. Rules 2, 3, 4, 5 (§2). Never push, never merge.
 
 ## 6. Commands
 
@@ -742,7 +742,7 @@ Expected: `TestRunMatchesPython` PASS (the parity check); the golden re-run leav
 
 - [ ] The four files exist with the sha256 values in §4.
 - [ ] `go build ./...`, `go vet`, `go test ./internal/photosweep ./cmd/ubyhost-web` pass.
-- [ ] `git diff --stat a83df541..HEAD` lists only the 1201 and 1202 §3 files.
+- [ ] `git diff --stat a83df541..HEAD` lists only the 1209 and 1209b §3 files.
 
 ## 8. Stop and ask
 
@@ -759,7 +759,7 @@ Stop, and write the report, if:
 
 ## 9. Report
 
-Write `docs/tasks/1202-report.md` (600 tokens at most) and set `Status: review`. The report has:
+Write `docs/tasks/1209b-report.md` (600 tokens at most) and set `Status: review`. The report has:
 
 1. The files changed (`git diff --stat`).
 2. Each command, with the last 5 lines of its output.

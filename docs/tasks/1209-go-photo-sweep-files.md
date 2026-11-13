@@ -1,12 +1,12 @@
-# 1201: Go photo sweep, part 1: golden fixture and the two file steps
+# 1209: Go photo sweep, part 1: golden fixture and the two file steps
 
 Status: review
-Depends on: none | Base commit: a83df541 | Branch: task/1201-go-photo-sweep (1202 continues on the same branch; one PR)
+Depends on: none | Base commit: a83df541 | Branch: task/1201-go-photo-sweep (1209b continues on the same branch; one PR)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier A (guest data, deletion)
 
 ## 1. Objective
 
-First half of porting the Python job `photo_sweep` (`App/app/scheduler.py` `_job_photo_sweep`) to Go (plan `docs/plans/go-full-move.md` J1): a Python golden script that runs the real job steps on a fixture with a frozen clock, and the Go code for the two file steps (passport photos, guide photos) plus the audit helpers. Brief 1202 adds the three database steps, the parity test and the job registration; the job stays off until an operator lists `photo_sweep` in `UBYHOST_GO_JOB_KINDS`.
+First half of porting the Python job `photo_sweep` (`App/app/scheduler.py` `_job_photo_sweep`) to Go (plan `docs/plans/go-full-move.md` J1): a Python golden script that runs the real job steps on a fixture with a frozen clock, and the Go code for the two file steps (passport photos, guide photos) plus the audit helpers. Brief 1209b adds the three database steps, the parity test and the job registration; the job stays off until an operator lists `photo_sweep` in `UBYHOST_GO_JOB_KINDS`.
 
 ## 2. Context
 
@@ -16,7 +16,7 @@ What the Python job does (do not edit any of it), in this order inside ONE try (
 
 1. `passport_photos.purge_stale()`: guests with `identity_verified_at` set, OR `COALESCE(date(stay_from), date(r.date_from)) <= today-7`, OR `date(passport_photo_at) <= today-30` (today = `date.today()`, the server-local date) lose every file `DATA_DIR/passport_photos/<id><ext>[.enc]` (ext in `.jpg .pdf .png .webp`, lower case only) and, when `passport_photo_at` is truthy (an empty string is not), that column is set to NULL. Then orphans: every regular file whose name (minus `.enc`) has a known suffix (case-insensitive) and whose stem `int()` parses, and whose id has no guest row, gets `delete_photo(id)` (canonical lower-case names only) and counts 1 per id. Then `db.audit_retention("passport_photos", removed, "check-in on or before <d7>; upload on or before <d30>; or verified")`.
 2. `guide_photos.purge_orphans()`: files in `DATA_DIR/guide_photos` not named in `guide_photo.file_name` and with mtime more than 1 hour ago are unlinked (`missing_ok=True`).
-3. to 5.: brief 1202.
+3. to 5.: brief 1209b.
 
 Findings the code below already handles (keep them, they are the parity traps):
 
@@ -39,7 +39,7 @@ The golden script follows `App/scripts/dsr_due_golden.py`: it runs on a throwawa
 | `go/internal/photosweep/files.go` | create | passport photo and guide photo steps |
 | `go/internal/photosweep/audit.go` | create | `iso`, `pyJSONString`, `auditRetention`, `auditHost` |
 | `go/internal/photosweep/files_test.go` | create | unit tests, no database |
-| `docs/tasks/1201-report.md` | create | the report |
+| `docs/tasks/1209-report.md` | create | the report |
 
 No other file may change.
 
@@ -1114,14 +1114,14 @@ Expected: `8a9e1244e16804e2437fb2298c45097e906268e961d196a55f9d20200198d552  go/
 ### Step 7: build, vet, test, commit
 
 ```bash
-cd go && gofmt -l internal/photosweep; go vet ./internal/photosweep 2>&1 | tail -5; go test ./internal/photosweep -count=1 2>&1 | tail -5; cd .. && git add App/scripts/photo_sweep_golden.py App/tests/test_go_photo_sweep_golden.py go/internal/photosweep && git commit -q -m "1201 steps 1-6" && git status --short | tail -5
+cd go && gofmt -l internal/photosweep; go vet ./internal/photosweep 2>&1 | tail -5; go test ./internal/photosweep -count=1 2>&1 | tail -5; cd .. && git add App/scripts/photo_sweep_golden.py App/tests/test_go_photo_sweep_golden.py go/internal/photosweep && git commit -q -m "1209 steps 1-6" && git status --short | tail -5
 ```
 
 Expected: no gofmt output, no vet output, `ok  .../internal/photosweep`, clean status.
 
 ## 5. Do not touch
 
-Everything in `App/app/`, `App/tests/conftest.py`, `go/internal/jobs/`, `go/internal/metacapi/`, `go/internal/deadlines/`, `go/cmd/ubyhost-web/` (brief 1202 adds its one file), `deploy/`, `docs/ENVIRONMENT.md`, `docs/context/`. Rules 2, 3, 4, 5 (§2). Never push, never merge.
+Everything in `App/app/`, `App/tests/conftest.py`, `go/internal/jobs/`, `go/internal/metacapi/`, `go/internal/deadlines/`, `go/cmd/ubyhost-web/` (brief 1209b adds its one file), `deploy/`, `docs/ENVIRONMENT.md`, `docs/context/`. Rules 2, 3, 4, 5 (§2). Never push, never merge.
 
 ## 6. Commands
 
@@ -1156,7 +1156,7 @@ Stop, and write the report, if:
 
 ## 9. Report
 
-Write `docs/tasks/1201-report.md` (600 tokens at most) and set `Status: review`. The report has:
+Write `docs/tasks/1209-report.md` (600 tokens at most) and set `Status: review`. The report has:
 
 1. The files changed (`git diff --stat`).
 2. Each command, with the last 5 lines of its output.
@@ -1165,7 +1165,7 @@ Write `docs/tasks/1201-report.md` (600 tokens at most) and set `Status: review`.
 5. Questions.
 6. Owner steps left.
 
-Then go straight on with `docs/tasks/1202-go-photo-sweep-job.md` only if the orchestrator told you to; otherwise stop.
+Then go straight on with `docs/tasks/1209b-go-photo-sweep-job.md` only if the orchestrator told you to; otherwise stop.
 
 ## Risk list (for the reviewer)
 
@@ -1173,4 +1173,4 @@ Then go straight on with `docs/tasks/1202-go-photo-sweep-job.md` only if the orc
 
 ## Owner steps
 
-None for this part. The switch steps are in brief 1202.
+None for this part. The switch steps are in brief 1209b.
