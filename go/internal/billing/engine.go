@@ -310,6 +310,7 @@ type periodState struct {
 func (s periodState) total() (int, error) {
 	p, err := Quote(s.apartments, s.plan, s.interval, s.ttlock != 0, s.whitelabel != 0, s.discount)
 	if err != nil {
+		// An out-of-range discount also lands here; the billing_account discount CHECK makes that unreachable.
 		return 0, fmt.Errorf("%w: %v", ErrUnknownPlan, err)
 	}
 	return p.Total, nil
