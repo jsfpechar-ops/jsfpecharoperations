@@ -1,6 +1,6 @@
 # 1250-fix-2: pin the Go guide_import.status writers
 
-Status: todo
+Status: review
 Depends on: 1250-fix-1 | Branch: task/1250-go-guide-import
 Executor: Haiku 5.5 | Fits one session: yes. Tier B.
 
