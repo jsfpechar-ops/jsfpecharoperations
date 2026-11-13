@@ -168,11 +168,6 @@ def guest_form_raw(form, apartment: Optional[Dict] = None) -> Dict[str, str]:
     made-up code on a legally-required filing is worse than a validation error.
     """
     raw = {field: form_str(form, field) for field in validation.GUEST_TEXT_FIELDS}
-    # The guest form says "this child travels on a parent's passport" with a
-    # checkbox; the host form has no such box and the host types the marker into
-    # the document field instead. Both end up as the same record.
-    if form.get("child_in_passport"):
-        raw["doc_number"] = validation.INPASS
     if not raw["purpose"] and apartment is not None:
         raw["purpose"] = _row_str(apartment, "default_purpose") or validation.DEFAULT_PURPOSE
     if raw["doc_number"] == validation.INPASS:

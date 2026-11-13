@@ -66,6 +66,13 @@ INPASS = "INPASS"
 # from the guest link.
 INPASS_NOTE_PREFIX = "Dítě zapsané v pasu rodiče, číslo dokladu rodiče: "
 
+# Owner 2026-11-13: a Czech national is never reported to UbyPort
+# (guest_is_reportable) and a Czech ID card is only compulsory from 15, so a
+# Czech child under 15 may leave the document number empty. INPASS stays as
+# appendix 5 describes it, for the host to enter; the guest form no longer
+# offers it (UbyPort refused a guest-entered INPASS child that day).
+CZECH_CHILD_NO_DOCUMENT_AGE = 15
+
 # Purpose-of-stay code list (kodovnik uctu pobytu). The web service is
 # authoritative via DejMiCiselnik(UcelyPobytu); this is the offline fallback.
 # The texts are display labels, not the police wording: sentence case, and the
@@ -662,8 +669,12 @@ def validate_guest(
 
     doc = guest.get("doc_number") or ""
     note = guest.get("note") or ""
+    czech_child = nationality == CZECH_CODE and certainly_under_age(
+        guest.get("birth_date") or "", stay_from, CZECH_CHILD_NO_DOCUMENT_AGE
+    )
     if not doc:
-        issues.append(Issue("doc_number", "Travel document number is required."))
+        if not czech_child:
+            issues.append(Issue("doc_number", "Travel document number is required."))
     elif doc == INPASS:
         if not note:
             issues.append(

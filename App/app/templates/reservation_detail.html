@@ -34,10 +34,15 @@
   <div><small>{{ t('stays.table.departure') }}</small><b><span class="wd">{{ reservation.date_to | weekday }}</span> {{ reservation.date_to | date_short }}</b></div>
   <div class="tot">{{ tp('stay.detail.facts.guests', progress.expected if progress.expected is not none else (progress.guests | length)) }} · {{ tp('stays.table.nights', nights(reservation.date_from, reservation.date_to)) }}</div>
 </div>
+{#- Owner 2026-11-13: "Fix rejection" opened #guests, which on a phone is the
+    list already on screen, so the tap did nothing. It opens the first refused
+    guest's card, whose banner shows the police reason. -#}
 {% macro stay_cta() %}
+  {% set refused_guest = (guest_rows | default([]) | map(attribute='guest') | selectattr('submit_state', 'in', ['error', 'blocked']) | first) %}
+  {% set fix_href = ('/guests/' ~ refused_guest.id ~ '?return_to=/reservations/' ~ reservation.id) if refused_guest else '#guests' %}
   {% if send_controls.send_enabled %}
     {% if progress.status == 'failed' %}
-      <a class="btn" href="#guests">{{ t('stay.detail.cta.fix') }}</a>
+      <a class="btn" href="{{ fix_href }}" data-fix-rejection>{{ t('stay.detail.cta.fix') }}</a>
     {% else %}
       <form method="post" action="/reservations/{{ reservation.id }}/submit" class="inline">
         <input type="hidden" name="_csrf" value="{{ csrf_token }}">
@@ -46,7 +51,7 @@
       </form>
     {% endif %}
   {% elif progress.status == 'failed' %}
-    <a class="btn" href="#guests">{{ t('stay.detail.cta.fix') }}</a>
+    <a class="btn" href="{{ fix_href }}" data-fix-rejection>{{ t('stay.detail.cta.fix') }}</a>
   {% elif progress.status == 'reported' and submissions %}
     {% set receipt_report = submissions | selectattr('has_receipt') | first %}
     {% if receipt_report %}

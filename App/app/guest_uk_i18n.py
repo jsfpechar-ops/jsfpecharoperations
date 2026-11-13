@@ -15,8 +15,8 @@ LOCALE = "uk-UA"
 PASS_MONTHS: Tuple[str, ...] = ("січ", "лют", "бер", "кві", "тра", "чер", "лип", "сер", "вер", "жов", "лис", "гру")
 PASS_WEEKDAYS: Tuple[str, ...] = ("пн", "вт", "ср", "чт", "пт", "сб", "нд")
 
-# The guest form's own wording of the parent's-document check (routes/guest.py).
-ISSUE_NOTE = "Введіть номер паспорта або посвідчення особи одного з батьків."
+# The guest form's wording when a guest types INPASS by hand (routes/guest.py).
+ISSUE_OWN_DOCUMENT = "Введіть номер власного паспорта або посвідчення особи цієї людини."
 
 PURPOSES: Dict[str, str] = {
     "00": "Лікування",
@@ -343,9 +343,6 @@ STRINGS: Dict[str, str] = {
     "res_country": "Країна",
     "purpose": "Мета перебування",
     "stay_dates": "Ваші дати",
-    "child_title": "Ця особа – дитина, вписана в паспорт одного з батьків",
-    "child_help": "Позначте, лише якщо дитина не має власного паспорта. Тоді нам знадобиться номер документа одного з батьків.",
-    "parent_doc": "Номер документа одного з батьків",
     "note": "Примітка",
     "signature": "Підпис",
     "signature_help": "Розпишіться пальцем або мишею. Цього вимагає чеський закон.",

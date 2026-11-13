@@ -77,7 +77,6 @@ KEPT_GUEST_KEYS = (
     "pin_recovery",
     "party_help",
     "doc_number_help",
-    "child_help",
     "visa_help",
     "signature_help",
     "review_help",

@@ -727,7 +727,10 @@ def test_the_refused_stay_page_leads_with_the_fix_and_keeps_send_secondary():
     body = client.get(f"/reservations/{reservation['id']}").text
 
     assert "The police did not accept a guest record." in body
-    assert 'class="btn" href="#guests"' in body  # v2 primary button
+    # Owner 2026-11-13: #guests did nothing on a phone; Fix opens the refused guest's card.
+    fix_href = f'/guests/{guest_id}?return_to=/reservations/{reservation["id"]}'
+    assert f'class="btn" href="{fix_href}" data-fix-rejection' in body  # v2 primary button
+    assert 'class="btn" href="#guests"' not in body
     assert "Fix rejection" in body
     assert "Send again" in body
     assert body.index("Fix rejection") < body.index("Send again")

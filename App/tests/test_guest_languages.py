@@ -311,7 +311,7 @@ def test_every_guest_validation_sentence_is_translated(lang):
     for english in guest.CS_PASSPORT_UPLOAD_MESSAGES:
         assert guest.PASSPORT_UPLOAD_MESSAGES[lang][english].strip()
     issue = guest._guest_issue(validation.Issue("note", "x"), lang)
-    assert issue.field == "parent_doc_number"
+    assert issue.field == "doc_number"
     assert issue.message == guest._GUEST_ISSUE_MESSAGES["note"][lang]
 
 

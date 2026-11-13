@@ -62,12 +62,12 @@ def _rerender(browser, stay, first_name, birth, **over) -> str:
 def test_the_script_only_shows_and_hides():
     source = (APP / "static" / "signature.js").read_text(encoding="utf-8")
     start = source.index("function initUnder15()")
-    body = source[start:source.index("function initChildToggle()")]
+    body = source[start:source.index("function initResidenceCountry()")]
     for banned in (".value =", ".checked =", ".required", "innerHTML"):
         assert banned not in body, banned
     assert "if (!hidden.value && !signatureWaived()) {" in source
     assert "if (canvas && signature && !signature.value && !signatureWaived()) {" in source
-    assert "    initChildToggle();\n    initUnder15();\n" in source
+    assert "    initBirthDate();\n    initUnder15();\n" in source
 
 
 def test_the_template_has_one_block_each_and_the_pad_stays_inside():
