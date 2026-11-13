@@ -320,6 +320,7 @@ services:
       UBYHOST_APP_DOMAIN: ${UBYHOST_APP_DOMAIN:-}
       ACME_EMAIL: ${ACME_EMAIL}
       UBYHOST_GO_PATHS: ${UBYHOST_GO_PATHS:-/__go_off__}
+      UBYHOST_AOP_MODE: ${UBYHOST_AOP_MODE:-off}
     volumes:
       - ./caddy/Caddyfile.active:/etc/caddy/Caddyfile:ro
       - ./caddy/certs:/etc/caddy/certs:ro
