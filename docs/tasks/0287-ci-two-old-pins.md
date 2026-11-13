@@ -1,7 +1,7 @@
 # 0287: CI fix for two tests that pin old behaviour
 
 Status: done
-Depends on: 0284-0286 | Branch: worktree /home/user/wt, local branch wip-0284 (already checked out; commit here)
+Depends on: 0284-0286 | Branch: worktree /tmp/wt, local branch wip-0284 (already checked out; commit here)
 Executor: Haiku 5.5 | Fits one session: 10 tool calls
 
 ## 1. Objective

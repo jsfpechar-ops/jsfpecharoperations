@@ -47,7 +47,7 @@ No other file may change.
 
 ## 4. Steps
 
-Work from the repo root `/home/user/jsfpecharoperations` unless a step says `App/`. Stay on branch `task/1270-go-public-legal-pages`.
+Work from the repo root `$(git rev-parse --show-toplevel)` unless a step says `App/`. Stay on branch `task/1270-go-public-legal-pages`.
 
 ### Phase 0: check (2 calls)
 

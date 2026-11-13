@@ -38,7 +38,7 @@ Plus this report and the brief status line. `App/app` and `go/internal/ubyport/c
 
 ## Deviations
 
-- None to the code. Worktree commands used `/home/user/wt-1147` instead of the brief's `/home/user/jsfpecharoperations` paths, as instructed.
+- None to the code. Worktree commands used `/tmp/wt-1147` instead of the brief's `$(git rev-parse --show-toplevel)` paths, as instructed.
 - Step 2 anchor and Edit used the file as on disk; the file-changed notice after step 3 was my own append, confirmed by `git diff` before commit.
 
 ## Questions

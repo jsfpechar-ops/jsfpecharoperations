@@ -58,7 +58,7 @@ No other file may change. Do NOT touch icalsync.py, reconcile.go, door_codes.py,
 ## 4. Steps
 
 **Step 1. Python fix (`App/app/reporting.py`).** Anchors, each must print `1`:
-`cd /home/user/jsfpecharoperations/App && grep -c "^def refresh_sendable_claim(token: str) -> bool:" app/reporting.py && grep -c "        if not refresh_sendable_claim(claim_token):" app/reporting.py && grep -c "    limit = config.UBYPORT_MAX_BATCH" app/reporting.py`
+`cd App && grep -c "^def refresh_sendable_claim(token: str) -> bool:" app/reporting.py && grep -c "        if not refresh_sendable_claim(claim_token):" app/reporting.py && grep -c "    limit = config.UBYPORT_MAX_BATCH" app/reporting.py`
 1a. Edit: old_string
 ```
 def refresh_sendable_claim(token: str) -> bool:
@@ -112,10 +112,10 @@ new_string:
     for start in range(0, len(pairs), limit):
         if not refresh_sendable_claim(claim_token, guest_count):
 ```
-Check: `cd /home/user/jsfpecharoperations/App && .venv/bin/python -c "import app.reporting" 2>&1 | tail -5` expect no output. (The tests of the next step will fail until step 2; that is expected.)
+Check: `cd App && .venv/bin/python -c "import app.reporting" 2>&1 | tail -5` expect no output. (The tests of the next step will fail until step 2; that is expected.)
 
 **Step 2. Python tests (`App/tests/test_claim_recheck_stay.py`).** Anchors, each must print `1`:
-`cd /home/user/jsfpecharoperations/App && grep -c "claimed_at = claimed_at - 600 " tests/test_claim_recheck_stay.py && grep -c "assert reporting.refresh_sendable_claim(token) is False" tests/test_claim_recheck_stay.py && grep -c "assert reporting.refresh_sendable_claim(other_token) is True" tests/test_claim_recheck_stay.py && grep -c "# Pretend this batch took ten minutes." tests/test_claim_recheck_stay.py`
+`cd App && grep -c "claimed_at = claimed_at - 600 " tests/test_claim_recheck_stay.py && grep -c "assert reporting.refresh_sendable_claim(token) is False" tests/test_claim_recheck_stay.py && grep -c "assert reporting.refresh_sendable_claim(other_token) is True" tests/test_claim_recheck_stay.py && grep -c "# Pretend this batch took ten minutes." tests/test_claim_recheck_stay.py`
 2a. Edit: old_string `        # Pretend this batch took ten minutes.` new_string `        # Pretend this batch took four minutes (still inside the 5 minute TTL).`
 2b. Edit: old_string `            "UPDATE submission_claim SET claimed_at = claimed_at - 600 "` new_string `            "UPDATE submission_claim SET claimed_at = claimed_at - 240 "`
 2c. Edit: old_string `    assert reporting.refresh_sendable_claim(token) is False` new_string `    assert reporting.refresh_sendable_claim(token, 1) is False`
@@ -171,11 +171,11 @@ def test_a_claim_missing_one_guest_row_is_treated_as_lost(fresh_db, monkeypatch)
     assert calls == []
     reporting.release_sendable_claim(token)
 ```
-Command: `cd /home/user/jsfpecharoperations/App && .venv/bin/python -m pytest tests/test_claim_recheck_stay.py -q --tb=short 2>&1 | tail -30` expect `9 passed`.
+Command: `cd App && .venv/bin/python -m pytest tests/test_claim_recheck_stay.py -q --tb=short 2>&1 | tail -30` expect `9 passed`.
 Revert-bite (restore each after): (a) in `refresh_sendable_claim` replace the line `"WHERE claim_token = ? AND claimed_at >= ?",` with `"WHERE claim_token = ? AND (claimed_at >= ? OR 1 = 1)",` -> `test_an_expired_claim_is_not_refreshed_and_no_batch_is_sent` must FAIL; (b) change `return renewed == expected` to `return renewed > 0` -> `test_a_claim_missing_one_guest_row_is_treated_as_lost` must FAIL. Restore, re-run: `9 passed`. Record both outcomes for the report.
 
 **Step 3. Go fix.** Anchors, each must print `1`:
-`cd /home/user/jsfpecharoperations/go && grep -c 'UPDATE submission_claim SET claimed_at = \$1 WHERE claim_token = \$2`, nowSeconds(), token)' internal/ubyport/claim.go && grep -c "		if n == 0 {" internal/ubyport/sweep.go && grep -c "^func sendClaimedBatches(ctx context.Context, pool \*pgxpool.Pool, token string, batch \[\]BatchPair, maxBatch int" internal/ubyport/sweep.go && grep -c "	maxBatch := d.MaxBatch" internal/ubyport/sweep.go`
+`cd go && grep -c 'UPDATE submission_claim SET claimed_at = \$1 WHERE claim_token = \$2`, nowSeconds(), token)' internal/ubyport/claim.go && grep -c "		if n == 0 {" internal/ubyport/sweep.go && grep -c "^func sendClaimedBatches(ctx context.Context, pool \*pgxpool.Pool, token string, batch \[\]BatchPair, maxBatch int" internal/ubyport/sweep.go && grep -c "	maxBatch := d.MaxBatch" internal/ubyport/sweep.go`
 3a. `claim.go`: old_string
 ```
 // RefreshSendableClaim renews the lease of the claim that carries token and
@@ -222,10 +222,10 @@ new_string
 	maxBatch := d.MaxBatch
 ```
 and old_string `	return sendClaimedBatches(ctx, pool, token, batch, maxBatch, func(chunk []BatchPair) (BatchResult, error) {` new_string `	return sendClaimedBatches(ctx, pool, token, int64(len(guests)), batch, maxBatch, func(chunk []BatchPair) (BatchResult, error) {`.
-Check: `cd /home/user/jsfpecharoperations/go && go build ./internal/ubyport/ 2>&1 | tail -10` expect no output (test file does not compile until step 4; do not run `go vet` yet).
+Check: `cd go && go build ./internal/ubyport/ 2>&1 | tail -10` expect no output (test file does not compile until step 4; do not run `go vet` yet).
 
 **Step 4. Go tests (`go/internal/ubyport/claim_test.go`).** Anchors:
-`cd /home/user/jsfpecharoperations/go && grep -c "claimed_at = claimed_at - 600 WHERE guest_id = \$1" internal/ubyport/claim_test.go && grep -c "sendClaimedBatches(ctx, pool, tok, " internal/ubyport/claim_test.go` expect `2` and `2`.
+`cd go && grep -c "claimed_at = claimed_at - 600 WHERE guest_id = \$1" internal/ubyport/claim_test.go && grep -c "sendClaimedBatches(ctx, pool, tok, " internal/ubyport/claim_test.go` expect `2` and `2`.
 4a. Replace ALL occurrences (two) of `claimed_at = claimed_at - 600 WHERE guest_id = $1` with `claimed_at = claimed_at - 240 WHERE guest_id = $1`, and the comment `// Pretend this batch took ten minutes.` with `// Pretend this batch took four minutes (still inside the 5 minute TTL).` (use `sed -i`, then `grep -c "claimed_at - 240" internal/ubyport/claim_test.go` must print `2`).
 4b. Edit: old_string `	results, err := sendClaimedBatches(ctx, pool, tok, make([]BatchPair, 3), 1, send)` new_string `	results, err := sendClaimedBatches(ctx, pool, tok, 1, make([]BatchPair, 3), 1, send)`.
 4c. Edit: old_string `	results, err = sendClaimedBatches(ctx, pool, tok, make([]BatchPair, 2), 1,` new_string `	results, err = sendClaimedBatches(ctx, pool, tok, 1, make([]BatchPair, 2), 1,`.
@@ -286,10 +286,10 @@ func TestClaimMissingOneGuestRowIsTreatedAsLost(t *testing.T) {
 	}
 }
 ```
-Command: `cd /home/user/jsfpecharoperations/go && UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest go test ./internal/ubyport/ -run 'Refresh|SendClaimedBatches|Claim' -count=1 -v 2>&1 | tail -30` expect all `--- PASS`, `ok`.
+Command: `cd go && UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest go test ./internal/ubyport/ -run 'Refresh|SendClaimedBatches|Claim' -count=1 -v 2>&1 | tail -30` expect all `--- PASS`, `ok`.
 Revert-bite (restore each after): (a) in `claim.go` replace ` AND claimed_at >= $3` with ` AND $3 >= 0` -> `TestExpiredClaimIsNotRefreshedAndNoBatchIsSent` must FAIL; (b) in `sweep.go` change `if n != want {` to `if n == 0 {` -> `TestClaimMissingOneGuestRowIsTreatedAsLost` must FAIL. Restore, re-run: PASS. Record both.
 
-**Step 5. Nit (`go/internal/ical/syncfeed.go`).** Anchor must print `1`: `cd /home/user/jsfpecharoperations/go && grep -c '			now, _ := cols\["updated_at"\].(string)' internal/ical/syncfeed.go`
+**Step 5. Nit (`go/internal/ical/syncfeed.go`).** Anchor must print `1`: `cd go && grep -c '			now, _ := cols\["updated_at"\].(string)' internal/ical/syncfeed.go`
 Edit (one line): old_string `			now, _ := cols["updated_at"].(string)`, new_string:
 ```
 			now, ok := cols["updated_at"].(string)
@@ -297,14 +297,14 @@ Edit (one line): old_string `			now, _ := cols["updated_at"].(string)`, new_stri
 				return false, fmt.Errorf("updateReservationUnlessClaimed: cols[updated_at] must be a non-empty string, got %T", cols["updated_at"])
 			}
 ```
-The error rolls the transaction back (deferred `tx.Rollback`). Check: `cd /home/user/jsfpecharoperations/go && go build ./internal/ical/ 2>&1 | tail -10` expect no output. If `ok` is already declared in that scope and the build says "no new variables", STOP (section 8). Existing callers with a `move` already pass `updated_at` (syncfeed_test.go 478, 518; the sync call site sets `changed["updated_at"] = now`), so no test change is needed.
+The error rolls the transaction back (deferred `tx.Rollback`). Check: `cd go && go build ./internal/ical/ 2>&1 | tail -10` expect no output. If `ok` is already declared in that scope and the build says "no new variables", STOP (section 8). Existing callers with a `move` already pass `updated_at` (syncfeed_test.go 478, 518; the sync call site sets `changed["updated_at"] = now`), so no test change is needed.
 
 **Step 6. Verify, report, lint.** Run each, all must pass:
-1. `cd /home/user/jsfpecharoperations/App && .venv/bin/python -m pytest tests/test_claim_recheck_stay.py tests/test_icalsync.py tests/test_sm_*.py tests/test_ubyport_*.py tests/test_soap.py tests/test_worker.py tests/test_submission_*.py tests/test_stale_submission.py tests/test_filed_by_hand.py tests/test_filing_watchdog.py tests/test_police_*.py tests/test_deadline*.py tests/test_claim_*.py tests/test_endtoend.py -q --tb=short 2>&1 | tail -30` expect all passed.
-2. `cd /home/user/jsfpecharoperations/go && UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest go test ./internal/ical/ ./internal/ubyport/ -count=1 2>&1 | tail -30` expect two `ok` lines; also run the same with `-v 2>&1 | grep -c SKIP` expect `0`.
-3. `cd /home/user/jsfpecharoperations/go && go vet ./internal/ical/ ./internal/ubyport/ 2>&1 | tail -10` expect no output; `gofmt -l internal 2>&1 | tail -10` expect no output.
+1. `cd App && .venv/bin/python -m pytest tests/test_claim_recheck_stay.py tests/test_icalsync.py tests/test_sm_*.py tests/test_ubyport_*.py tests/test_soap.py tests/test_worker.py tests/test_submission_*.py tests/test_stale_submission.py tests/test_filed_by_hand.py tests/test_filing_watchdog.py tests/test_police_*.py tests/test_deadline*.py tests/test_claim_*.py tests/test_endtoend.py -q --tb=short 2>&1 | tail -30` expect all passed.
+2. `cd go && UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest go test ./internal/ical/ ./internal/ubyport/ -count=1 2>&1 | tail -30` expect two `ok` lines; also run the same with `-v 2>&1 | grep -c SKIP` expect `0`.
+3. `cd go && go vet ./internal/ical/ ./internal/ubyport/ 2>&1 | tail -10` expect no output; `gofmt -l internal 2>&1 | tail -10` expect no output.
 4. Write `docs/tasks/1142-report.md` (section 9) and set `Status: review` in this brief.
-5. `cd /home/user/jsfpecharoperations && python3 scripts/context_lint.py 2>&1 | tail -3` expect `context lint: OK` (a WARN about status.md is fine; do not edit status.md).
+5. `python3 scripts/context_lint.py 2>&1 | tail -3` expect `context lint: OK` (a WARN about status.md is fine; do not edit status.md).
 
 ## 5. Do not touch
 

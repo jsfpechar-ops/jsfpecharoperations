@@ -54,7 +54,7 @@ No other file may change. This brief does not touch App/app/db.py, App/migration
 
 ## 4. Steps
 
-1. Confirm the branch. Run `cd /home/user/jsfpecharoperations && git branch --show-current | tail -30`. Expected: `claude/zealous-planck-raxu4v`. Set `Status: in-progress` on line 3 of this brief.
+1. Confirm the branch. Run `git branch --show-current | tail -30`. Expected: `claude/zealous-planck-raxu4v`. Set `Status: in-progress` on line 3 of this brief.
 
 2. In `App/app/scheduler.py`, add the import. Find:
 ```python
@@ -227,7 +227,7 @@ If the new tests fail because the default test database needs a private path, co
 
 8. Commit and push (no PR). Run:
 ```
-cd /home/user/jsfpecharoperations && git add App/app/scheduler.py App/app/admin_ops.py App/tests/test_admin_operations.py App/tests/test_job_ok_throttle.py docs/tasks/0990-settings-write-loop.md docs/tasks/0990-report.md && git commit -F - <<'MSG' 2>&1 | tail -30
+git add App/app/scheduler.py App/app/admin_ops.py App/tests/test_admin_operations.py App/tests/test_job_ok_throttle.py docs/tasks/0990-settings-write-loop.md docs/tasks/0990-report.md && git commit -F - <<'MSG' 2>&1 | tail -30
 Throttle the job_last_ok heartbeat writes to the settings table
 
 Fast jobs now record their last success at most every 15 minutes, and the

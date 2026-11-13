@@ -36,7 +36,7 @@ Commits: 1665c21f (step 1), 48519fc4 (step 2), 3c1a8879 (step 3), then this repo
 
 ## 4. Deviations
 
-- `App/.venv` did not exist, and neither did `/home/user/jsfpecharoperations/App/.venv`. I created `App/.venv` in the worktree (gitignored) and installed `requirements.txt` and `requirements-dev.txt`. No repo file changed.
+- `App/.venv` did not exist, and neither did `$(git rev-parse --show-toplevel)/App/.venv`. I created `App/.venv` in the worktree (gitignored) and installed `requirements.txt` and `requirements-dev.txt`. No repo file changed.
 - The brief was not in this worktree's HEAD. It exists only in commit b6b2e4d2 on branch `claude/clever-fermi-tudhnt`. I copied it into `docs/tasks/` so the status could be set and the report written. The copy is part of the branch diff, so the merge brings it in too.
 - Done: steps 1 to 3, checks, and report. Left: none.
 

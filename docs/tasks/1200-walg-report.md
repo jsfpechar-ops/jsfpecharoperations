@@ -30,7 +30,7 @@ Status: review
 
 ## 4. Deviations
 
-- Pytest ran with `/home/user/jsfpecharoperations/App/.venv/bin/python` from the worktree `App/` dir, since the worktree has no `.venv` (session override).
+- Pytest ran with `$(git rev-parse --show-toplevel)/App/.venv/bin/python` from the worktree `App/` dir, since the worktree has no `.venv` (session override).
 - Added `-rs` to the pytest command to confirm 0 skipped.
 - Done: steps 1 to 5. Left: none.
 

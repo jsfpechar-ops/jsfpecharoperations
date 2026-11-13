@@ -181,7 +181,7 @@ Expected: all passed, 0 skipped. Then from the repo root restore test evidence: 
 9. Screenshots (rule 7). From `App/`, for LANG in `en`, `cs` (one command each):
 
 ```
-PLAYWRIGHT_BROWSERS_PATH=/tmp/claude-0/pw .venv/bin/python /mnt/project-files/design-reset/tools/shots.py --new-app /home/user/jsfpecharoperations/App --out /mnt/project-files/stay-fee-four-boxes/LANG/ --pages "/apartments/1/setup/stay_fee,/apartments/1?view=settings&section=reporting" --widths 390,1280,2000 --lang LANG 2>&1 | tail -8
+PLAYWRIGHT_BROWSERS_PATH=/tmp/claude-0/pw .venv/bin/python /mnt/project-files/design-reset/tools/shots.py --new-app $(git rev-parse --show-toplevel)/App --out /mnt/project-files/stay-fee-four-boxes/LANG/ --pages "/apartments/1/setup/stay_fee,/apartments/1?view=settings&section=reporting" --widths 390,1280,2000 --lang LANG 2>&1 | tail -8
 ```
 
 Then look once (Read tool) at the EN 390 px wizard shot and write one line about it.

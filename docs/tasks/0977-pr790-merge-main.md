@@ -62,7 +62,7 @@ No other file may change. If another file has a conflict, stop (section 8).
 
 ## 4. Steps
 
-Work from `/home/user/jsfpecharoperations`, branch `codex/ux-remediation-handoff`. First: `git status --short | head -5 | tail -30` must be clean, and `git fetch origin main 2>&1 | tail -30`.
+Work from `$(git rev-parse --show-toplevel)`, branch `codex/ux-remediation-handoff`. First: `git status --short | head -5 | tail -30` must be clean, and `git fetch origin main 2>&1 | tail -30`.
 
 ### Step 1: renumber and commit (before the merge)
 
@@ -140,7 +140,7 @@ Playwright and Chromium: `cd App && .venv/bin/pip install -q playwright==1.63.0 
 
 Run 1 stopped here with 3 failures in `test_0710_v2_mockup_match_browser.py -k stay`: stays `.mh .big, .head h1` width at 320 and 390 (app 100.203px, mockup 77.0625px), and stay `.stay-dates .tot` width at 320 (app 238px, mockup 280px).
 
-1. Check if they already fail on main: `git worktree add -q ../m0977 origin/main 2>&1 | tail -3`, then from `../m0977/App` run the same pytest command with this repo's venv: `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers /home/user/jsfpecharoperations/App/.venv/bin/python -m pytest tests/test_0710_v2_mockup_match_browser.py -k stay -q --tb=line -rs 2>&1 | tail -15`. Then `git worktree remove --force ../m0977`.
+1. Check if they already fail on main: `git worktree add -q ../m0977 origin/main 2>&1 | tail -3`, then from `../m0977/App` run the same pytest command with this repo's venv: `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers $(git rev-parse --show-toplevel)/App/.venv/bin/python -m pytest tests/test_0710_v2_mockup_match_browser.py -k stay -q --tb=line -rs 2>&1 | tail -15`. Then `git worktree remove --force ../m0977`.
 2. Stays h1 (both widths): the branch moved `page_help('stays')` out of the h1 in `reservations.html` on purpose. Add pins in `App/tests/v2_mockup.py` next to the other text-dependent h1 pins (~line 70): `"stays:.mh .big, .head h1@320"` and `@390` with the measured app width, comment `# text-dependent: the help button sits beside the stays title, not inside it (0968)`. Use the exact key format the existing `stay_fees:` / `invoices:` pins use.
 3. `.stay-dates .tot` at 320: if it fails on main too (item 1), pin it the same way with comment `# 0964 (main): 320 px stay-dates layout`. If it passes on main, it is caused by the branch's `white-space:nowrap` rule meeting main's 320 px block: scope the branch rule to `@media (min-width:360px) and (max-width:1023px)` in `app2.css`, bump the app2.css cache key to `20261106-0977b` (template + `static_versions.json`, regenerate as in step 3), and rerun. If it still fails, pin it with comment `# 0977: nowrap stay dates` and say so in the report.
 4. Rerun the step 4 command: 0 failed, 0 skipped. Commit `0977 step 4b: stays mockup pins`.
@@ -209,7 +209,7 @@ cd App && UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/shots PLAYWRIGHT_BROW
 cd App && PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers .venv/bin/python -m pytest tests/test_0710_v2_mockup_match_browser.py tests/test_host_stay_detail_layout_browser.py tests/test_host_property_controls_browser.py -q --tb=short -rs 2>&1 | tail -30
 cd App && .venv/bin/python -m pytest tests/test_static_versions.py tests/test_wp07_cache_heartbeats.py tests/test_stay_fee_detail.py tests/test_validation.py tests/test_validation_i18n.py -q --tb=short 2>&1 | tail -30
 cd go && go test ./internal/validation/... 2>&1 | tail -30
-cd /home/user/jsfpecharoperations && python3 scripts/context_lint.py 2>&1 | tail -30
+python3 scripts/context_lint.py 2>&1 | tail -30
 ```
 `context_lint` failing on a renumbered brief (a Status line, a missing section, or two open briefs naming the same file): fix only what it names inside `docs/tasks/09{78..84}*`, once. Do not run the full suite.
 
@@ -225,7 +225,7 @@ Write `docs/tasks/0977-report.md` (600 tokens at most): `Status: review` (or `bl
 
 ### Step 11 (orchestrator amendment after run 4): triage the remaining failures
 
-Run 4 left 5 failures. For each, decide main vs branch, then act. Use one worktree: `git worktree add -q ../m0977 origin/main 2>&1 | tail -3`; run main's copy from `../m0977/App` with `/home/user/jsfpecharoperations/App/.venv/bin/python`; remove it at the end with `git worktree remove --force ../m0977`.
+Run 4 left 5 failures. For each, decide main vs branch, then act. Use one worktree: `git worktree add -q ../m0977 origin/main 2>&1 | tail -3`; run main's copy from `../m0977/App` with `$(git rev-parse --show-toplevel)/App/.venv/bin/python`; remove it at the end with `git worktree remove --force ../m0977`.
 
 1. List the failures exactly on the branch (one call): `cd App && PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers .venv/bin/python -m pytest tests/test_0710_v2_mockup_match_browser.py tests/test_host_stay_detail_layout_browser.py tests/test_host_property_controls_browser.py "tests/test_invoice_autofill.py::test_invoice_buyer_block_spacing_0896" -q --tb=line -rfs 2>&1 | grep -E "FAILED|SKIPPED|passed|failed" | tail -30`.
 2. Run the same command in the main worktree. A test that also fails on main: do not fix it; add one line to `docs/context/known-issues.md` (match the file's format) naming the test and the measured values, and list it in the report as "pre-existing on main".

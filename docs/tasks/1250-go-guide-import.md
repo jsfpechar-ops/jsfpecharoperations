@@ -56,7 +56,7 @@ Method for every code step: create each file with the Write tool, content exactl
 ### Step 1. Base check
 
 ```bash
-cd /home/user/jsfpecharoperations && git branch --show-current && git log -1 --format=%h && ls go/cmd/ubyhost-web/registry.go go/internal/jobs/queue.go App/app/guest_guide_import.py 2>&1 | tail -30
+git branch --show-current && git log -1 --format=%h && ls go/cmd/ubyhost-web/registry.go go/internal/jobs/queue.go App/app/guest_guide_import.py 2>&1 | tail -30
 ```
 Branch must be `task/1250-go-guide-import`. If `registry.go` is missing: STOP.
 
@@ -87,7 +87,7 @@ sha256 `460da4c5eafe289582dcc7b288753e36dbc16dfda68292ae68ec820163b2323d`, 472 l
 _Code block removed after execution: the file is in this PR and the sha256 above pins it._
 
 ```bash
-cd /home/user/jsfpecharoperations && sha256sum -c <<'EOF' 2>&1 | tail -30
+sha256sum -c <<'EOF' 2>&1 | tail -30
 23f01018e0c26960a8d6fe7a6a3f81687259ecf76c03e602f797d5f7c1e3934b  go/internal/anthropic/pyjson.go
 f578001e79a7d1797050b6000f5929ba85ded0eabbf8bf3af0345d814bf828b2  go/internal/anthropic/client.go
 e9a442da3d232047566b6b2d104190a3412aef6c401f2c11b8098219d207a61c  go/internal/anthropic/mistral.go
@@ -97,7 +97,7 @@ EOF
 Every line must say OK. A line that says FAILED: re-copy that file once; still FAILED: STOP (§8).
 
 ```bash
-cd /home/user/jsfpecharoperations/go && gofmt -l internal/anthropic; go build ./internal/anthropic/ && go vet ./internal/anthropic/ 2>&1 | tail -30
+cd go && gofmt -l internal/anthropic; go build ./internal/anthropic/ && go vet ./internal/anthropic/ 2>&1 | tail -30
 ```
 Expected: no output (first run may print `go: downloading ...`). Commit `1250 step 2`.
 
@@ -152,7 +152,7 @@ sha256 `e0e5215e67c2fa3eb06fb267f05a85cb4117049ba20ea5002ec57997d6a4ed77`, 95 li
 _Code block removed after execution: the file is in this PR and the sha256 above pins it._
 
 ```bash
-cd /home/user/jsfpecharoperations && sha256sum -c <<'EOF' 2>&1 | tail -30
+sha256sum -c <<'EOF' 2>&1 | tail -30
 212c9e1e2cc33902884f0b08eef12294854c7a14bb1e0158fdc082987dd7e8b6  go/internal/guideimport/kinds.go
 97bc9838cab04d0d69268464ea1814d756b7a60a9ad312b3107bd29372cd7a89  go/internal/guideimport/pytext.go
 2f21441525586c2f16605a3f1bb619f8e52b392ad39ebc6e3b0aeae8d13df960  go/internal/guideimport/trim.go
@@ -182,7 +182,7 @@ sha256 `0cf77733302e55edeba971eb33b85e0ab6e116f69722872960e1bdbe17399ad8`, 25 li
 _Code block removed after execution: the file is in this PR and the sha256 above pins it._
 
 ```bash
-cd /home/user/jsfpecharoperations && sha256sum -c <<'EOF' 2>&1 | tail -30
+sha256sum -c <<'EOF' 2>&1 | tail -30
 bbc225862fa57ec8c882d034a0bc113e1e844f4973effbf013ad217ffa46202a  go/internal/guideimport/job.go
 0cf77733302e55edeba971eb33b85e0ab6e116f69722872960e1bdbe17399ad8  go/cmd/ubyhost-web/register_job_guide_import.go
 EOF
@@ -190,7 +190,7 @@ EOF
 Every line must say OK. A line that says FAILED: re-copy that file once; still FAILED: STOP (§8).
 
 ```bash
-cd /home/user/jsfpecharoperations/go && gofmt -l internal cmd; go build ./... && go vet ./internal/guideimport/ ./internal/anthropic/ ./cmd/... 2>&1 | tail -30
+cd go && gofmt -l internal cmd; go build ./... && go vet ./internal/guideimport/ ./internal/anthropic/ ./cmd/... 2>&1 | tail -30
 ```
 Expected: no output. Commit `1250 step 4`.
 
@@ -203,7 +203,7 @@ sha256 `e8d03093e51ce4f4ecf98e04155258647856dd33f1ef1272b82d15b8372205d0`, 616 l
 _Code block removed after execution: the file is in this PR and the sha256 above pins it._
 
 ```bash
-cd /home/user/jsfpecharoperations && sha256sum -c <<'EOF' 2>&1 | tail -30
+sha256sum -c <<'EOF' 2>&1 | tail -30
 e8d03093e51ce4f4ecf98e04155258647856dd33f1ef1272b82d15b8372205d0  App/scripts/guide_import_golden.py
 EOF
 ```
@@ -211,11 +211,11 @@ Every line must say OK. A line that says FAILED: re-copy that file once; still F
 
 Create the venv if `App/.venv` is missing, then run the script from `App/`:
 ```bash
-cd /home/user/jsfpecharoperations/App && (test -d .venv || (python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt -r requirements-dev.txt)) 2>&1 | tail -5; .venv/bin/python scripts/guide_import_golden.py 2>&1 | tail -8
+cd App && (test -d .venv || (python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt -r requirements-dev.txt)) 2>&1 | tail -5; .venv/bin/python scripts/guide_import_golden.py 2>&1 | tail -8
 ```
 Expected last line: `wrote go/internal/guideimport/testdata/golden.json and go/internal/anthropic/testdata/golden.json` (the lines before it are log lines of the fakes; ignore them). Then:
 ```bash
-cd /home/user/jsfpecharoperations && sha256sum go/internal/guideimport/testdata/golden.json go/internal/anthropic/testdata/golden.json | tail -30
+sha256sum go/internal/guideimport/testdata/golden.json go/internal/anthropic/testdata/golden.json | tail -30
 ```
 Expected (written with Python 3.13 and the pinned requirements):
 ```
@@ -233,14 +233,14 @@ sha256 `2be7e812cac5c9591eb046a37898f9403642da04382bfae125e9c81fa2d7d0d1`, 404 l
 _Code block removed after execution: the file is in this PR and the sha256 above pins it._
 
 ```bash
-cd /home/user/jsfpecharoperations && sha256sum -c <<'EOF' 2>&1 | tail -30
+sha256sum -c <<'EOF' 2>&1 | tail -30
 2be7e812cac5c9591eb046a37898f9403642da04382bfae125e9c81fa2d7d0d1  go/internal/anthropic/ai_test.go
 EOF
 ```
 Every line must say OK. A line that says FAILED: re-copy that file once; still FAILED: STOP (§8).
 
 ```bash
-cd /home/user/jsfpecharoperations/go && go test -count=1 ./internal/anthropic/... 2>&1 | tail -30
+cd go && go test -count=1 ./internal/anthropic/... 2>&1 | tail -30
 ```
 Expected: `ok  .../internal/anthropic`. Commit `1250 step 6`.
 
@@ -259,7 +259,7 @@ sha256 `78bda1ac9e7d6c10a99227555cfa81a371f6d96980e80bdaf9968da59e88cfa8`, 109 l
 _Code block removed after execution: the file is in this PR and the sha256 above pins it._
 
 ```bash
-cd /home/user/jsfpecharoperations && sha256sum -c <<'EOF' 2>&1 | tail -30
+sha256sum -c <<'EOF' 2>&1 | tail -30
 703049c1b49b39e3b15037ba998d9f66b203e503aab4ebbcb3efb27aaef303e8  go/internal/guideimport/golden_test.go
 78bda1ac9e7d6c10a99227555cfa81a371f6d96980e80bdaf9968da59e88cfa8  go/internal/guideimport/apify_test.go
 EOF
@@ -267,7 +267,7 @@ EOF
 Every line must say OK. A line that says FAILED: re-copy that file once; still FAILED: STOP (§8).
 
 ```bash
-cd /home/user/jsfpecharoperations/go && go test -count=1 ./internal/guideimport/... 2>&1 | tail -30
+cd go && go test -count=1 ./internal/guideimport/... 2>&1 | tail -30
 ```
 Expected: `ok` (the Postgres tests are not there yet). Commit `1250 step 7`.
 
@@ -280,7 +280,7 @@ sha256 `dd3638cf9fc7ac027899eacc09eab9c938e175bd4b473adde222f6590918079b`, 280 l
 _Code block removed after execution: the file is in this PR and the sha256 above pins it._
 
 ```bash
-cd /home/user/jsfpecharoperations && sha256sum -c <<'EOF' 2>&1 | tail -30
+sha256sum -c <<'EOF' 2>&1 | tail -30
 dd3638cf9fc7ac027899eacc09eab9c938e175bd4b473adde222f6590918079b  go/internal/guideimport/job_db_test.go
 EOF
 ```
@@ -288,21 +288,21 @@ Every line must say OK. A line that says FAILED: re-copy that file once; still F
 
 The test skips without a database URL. The owner's CI has `UBYHOST_TEST_DATABASE_URL`; if you have no PostgreSQL, run only the skip check and say so in the report (Postgres tests: skipped, ran on the brief writer's machine). With a database:
 ```bash
-cd /home/user/jsfpecharoperations/go && UBYHOST_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:55432/postgres go test -count=1 ./internal/guideimport/... ./internal/anthropic/... ./cmd/ubyhost-web/... 2>&1 | grep -v ' INFO \| WARN ' | tail -30
+cd go && UBYHOST_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:55432/postgres go test -count=1 ./internal/guideimport/... ./internal/anthropic/... ./cmd/ubyhost-web/... 2>&1 | grep -v ' INFO \| WARN ' | tail -30
 ```
 Expected: three `ok` lines. Commit `1250 step 8`.
 
 ### Step 9. Final checks
 
 ```bash
-cd /home/user/jsfpecharoperations/go && gofmt -l internal cmd; go vet ./internal/guideimport/ ./internal/anthropic/ ./cmd/... && go test -count=1 ./internal/guideimport/... ./internal/anthropic/... ./cmd/ubyhost-web/... 2>&1 | tail -30
+cd go && gofmt -l internal cmd; go vet ./internal/guideimport/ ./internal/anthropic/ ./cmd/... && go test -count=1 ./internal/guideimport/... ./internal/anthropic/... ./cmd/ubyhost-web/... 2>&1 | tail -30
 ```
 ```bash
-cd /home/user/jsfpecharoperations && git diff --stat origin/main...HEAD | tail -30; python3 scripts/context_lint.py 2>&1 | tail -10
+git diff --stat origin/main...HEAD | tail -30; python3 scripts/context_lint.py 2>&1 | tail -10
 ```
 `git diff --stat` must list only the §3 files (plus this brief). Whole-file sha check of everything at once:
 ```bash
-cd /home/user/jsfpecharoperations && sha256sum -c <<'EOF' 2>&1 | tail -30
+sha256sum -c <<'EOF' 2>&1 | tail -30
 23f01018e0c26960a8d6fe7a6a3f81687259ecf76c03e602f797d5f7c1e3934b  go/internal/anthropic/pyjson.go
 f578001e79a7d1797050b6000f5929ba85ded0eabbf8bf3af0345d814bf828b2  go/internal/anthropic/client.go
 e9a442da3d232047566b6b2d104190a3412aef6c401f2c11b8098219d207a61c  go/internal/anthropic/mistral.go

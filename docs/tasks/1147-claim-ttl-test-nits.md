@@ -66,7 +66,7 @@ No other file may change.
 ## 4. Steps
 
 **Step 1. Anchors.** Each must print `1`:
-`cd /home/user/jsfpecharoperations/App && grep -c "^def test_a_claim_missing_one_guest_row_is_treated_as_lost(fresh_db, monkeypatch):" tests/test_claim_recheck_stay.py && grep -c "two_guests = claimed + \[({\"id\": gid + 1000}, claimed\[0\]\[1\])\]" tests/test_claim_recheck_stay.py && grep -c '"WHERE claim_token = ? AND claimed_at >= ?",' app/reporting.py 2>&1 | tail -30`
+`cd App && grep -c "^def test_a_claim_missing_one_guest_row_is_treated_as_lost(fresh_db, monkeypatch):" tests/test_claim_recheck_stay.py && grep -c "two_guests = claimed + \[({\"id\": gid + 1000}, claimed\[0\]\[1\])\]" tests/test_claim_recheck_stay.py && grep -c '"WHERE claim_token = ? AND claimed_at >= ?",' app/reporting.py 2>&1 | tail -30`
 If any is not `1`, STOP.
 
 **Step 2. Replace the missing-row test.** Edit `App/tests/test_claim_recheck_stay.py`: old_string
@@ -93,7 +93,7 @@ new_string
     calls = []
 ```
 Then edit: old_string `        {"id": 1}, two_guests, token, mode="auto", env=None` new_string `        {"id": 1}, claimed, token, mode="auto", env=None`.
-Command: `cd /home/user/jsfpecharoperations/App && .venv/bin/python -m pytest tests/test_claim_recheck_stay.py -q --tb=short -x 2>&1 | tail -30` expect `9 passed`.
+Command: `cd App && .venv/bin/python -m pytest tests/test_claim_recheck_stay.py -q --tb=short -x 2>&1 | tail -30` expect `9 passed`.
 
 **Step 3. Append the boundary test** at the end of `App/tests/test_claim_recheck_stay.py` (two blank lines before it):
 ```python
@@ -117,14 +117,14 @@ def test_refresh_boundary_is_inclusive_at_exactly_the_ttl(fresh_db, monkeypatch)
     assert row["claimed_at"] == stale
     reporting.release_sendable_claim(token)
 ```
-Command: `cd /home/user/jsfpecharoperations/App && .venv/bin/python -m pytest tests/test_claim_recheck_stay.py -q --tb=short -x 2>&1 | tail -30` expect `10 passed`. If the boundary test fails on a patched-clock side effect, STOP (do not change app code).
+Command: `cd App && .venv/bin/python -m pytest tests/test_claim_recheck_stay.py -q --tb=short -x 2>&1 | tail -30` expect `10 passed`. If the boundary test fails on a patched-clock side effect, STOP (do not change app code).
 
 **Step 4. Revert-bite (boundary).** Temporarily edit `App/app/reporting.py`: old_string `"WHERE claim_token = ? AND claimed_at >= ?",` new_string `"WHERE claim_token = ? AND claimed_at > ?",`. Run:
-`cd /home/user/jsfpecharoperations/App && .venv/bin/python -m pytest tests/test_claim_recheck_stay.py -q --tb=short 2>&1 | tail -30` expect exactly `test_refresh_boundary_is_inclusive_at_exactly_the_ttl` FAILED (`assert False is True`), the rest passed. Restore the line to `>=` (undo with the reverse edit), then `cd /home/user/jsfpecharoperations && git diff --stat -- App/app 2>&1 | tail -30` must print nothing.
+`cd App && .venv/bin/python -m pytest tests/test_claim_recheck_stay.py -q --tb=short 2>&1 | tail -30` expect exactly `test_refresh_boundary_is_inclusive_at_exactly_the_ttl` FAILED (`assert False is True`), the rest passed. Restore the line to `>=` (undo with the reverse edit), then `git diff --stat -- App/app 2>&1 | tail -30` must print nothing.
 
 **Step 5. Revert-bite (missing row).** Temporarily edit `App/app/reporting.py`: old_string `    return renewed == expected` new_string `    return renewed > 0`. Run the same pytest command; expect `test_a_claim_missing_one_guest_row_is_treated_as_lost` FAILED, the rest passed. Restore, then `git diff --stat -- App/app 2>&1 | tail -30` prints nothing.
 
-**Step 6. Go boundary test.** Anchors, each must print `1` (`cd /home/user/jsfpecharoperations/go`): `grep -c "^var nowSeconds = func() float64 {" internal/ubyport/claim.go` and `` grep -c 'WHERE claim_token = \$2 AND claimed_at >= \$3' internal/ubyport/claim.go ``. Append to `go/internal/ubyport/claim_test.go`:
+**Step 6. Go boundary test.** Anchors, each must print `1` (`cd $(git rev-parse --show-toplevel)/go`): `grep -c "^var nowSeconds = func() float64 {" internal/ubyport/claim.go` and `` grep -c 'WHERE claim_token = \$2 AND claimed_at >= \$3' internal/ubyport/claim.go ``. Append to `go/internal/ubyport/claim_test.go`:
 ```go
 
 func TestRefreshBoundaryIsInclusiveAtExactlyTheTTL(t *testing.T) {
@@ -168,15 +168,15 @@ func TestRefreshBoundaryIsInclusiveAtExactlyTheTTL(t *testing.T) {
 	}
 }
 ```
-Command: `cd /home/user/jsfpecharoperations/go && gofmt -l internal 2>&1 | tail -30` expect no output; then `cd /home/user/jsfpecharoperations/go && UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest go test ./internal/ubyport/ -run 'TestRefreshBoundary' -count=1 -v 2>&1 | tail -30` expect `--- PASS` and `ok`, no SKIP. (If the column is `REAL` rather than double and the 0.001 step misbehaves, STOP.)
+Command: `cd go && gofmt -l internal 2>&1 | tail -30` expect no output; then `cd go && UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest go test ./internal/ubyport/ -run 'TestRefreshBoundary' -count=1 -v 2>&1 | tail -30` expect `--- PASS` and `ok`, no SKIP. (If the column is `REAL` rather than double and the 0.001 step misbehaves, STOP.)
 
-**Step 7. Revert-bite (Go boundary).** Temporarily edit `go/internal/ubyport/claim.go`: old_string `WHERE claim_token = $2 AND claimed_at >= $3` new_string `WHERE claim_token = $2 AND claimed_at > $3`. Run the same `go test -run 'TestRefreshBoundary'` command: expect FAIL with `refresh at exactly the cutoff: 0, <nil> (want 1)`. Restore, then `cd /home/user/jsfpecharoperations && git diff --stat -- go/internal/ubyport/claim.go 2>&1 | tail -30` must print nothing (1144 is already committed), and re-run: PASS.
+**Step 7. Revert-bite (Go boundary).** Temporarily edit `go/internal/ubyport/claim.go`: old_string `WHERE claim_token = $2 AND claimed_at >= $3` new_string `WHERE claim_token = $2 AND claimed_at > $3`. Run the same `go test -run 'TestRefreshBoundary'` command: expect FAIL with `refresh at exactly the cutoff: 0, <nil> (want 1)`. Restore, then `git diff --stat -- go/internal/ubyport/claim.go 2>&1 | tail -30` must print nothing (1144 is already committed), and re-run: PASS.
 
 **Step 8. Final run and lint.**
-1. `cd /home/user/jsfpecharoperations/App && .venv/bin/python -m pytest tests/test_claim_recheck_stay.py -q --tb=short -x 2>&1 | tail -30` expect `10 passed`.
-2. Postgres: `cd /home/user/jsfpecharoperations/App && UBYHOST_DATABASE_URL=postgresql://uby:uby@localhost:5432/ubytest .venv/bin/python -m pytest tests/test_claim_recheck_stay.py -q --tb=short -x 2>&1 | tail -30` expect `10 passed` (if Postgres is not running, say so in the report; do not start services).
-3. `cd /home/user/jsfpecharoperations/go && UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest go test ./internal/ubyport/ -count=1 2>&1 | tail -30` expect `ok`; `go vet ./internal/ubyport/ 2>&1 | tail -10` no output.
-4. `cd /home/user/jsfpecharoperations && python3 scripts/context_lint.py 2>&1 | tail -3` expect `context lint: OK` (a status WARN is fine).
+1. `cd App && .venv/bin/python -m pytest tests/test_claim_recheck_stay.py -q --tb=short -x 2>&1 | tail -30` expect `10 passed`.
+2. Postgres: `cd App && UBYHOST_DATABASE_URL=postgresql://uby:uby@localhost:5432/ubytest .venv/bin/python -m pytest tests/test_claim_recheck_stay.py -q --tb=short -x 2>&1 | tail -30` expect `10 passed` (if Postgres is not running, say so in the report; do not start services).
+3. `cd go && UBYHOST_TEST_DATABASE_URL=postgres://uby:uby@localhost:5432/ubytest go test ./internal/ubyport/ -count=1 2>&1 | tail -30` expect `ok`; `go vet ./internal/ubyport/ 2>&1 | tail -10` no output.
+4. `python3 scripts/context_lint.py 2>&1 | tail -3` expect `context lint: OK` (a status WARN is fine).
 5. Write `docs/tasks/1147-report.md`; set `Status: review` in this brief.
 
 ## 5. Do not touch

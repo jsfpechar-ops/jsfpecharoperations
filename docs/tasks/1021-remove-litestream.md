@@ -49,7 +49,7 @@ No other file may change. Historical files that keep their Litestream text on pu
 
 ## 4. Steps
 
-1. Baseline. Run `cd /home/user/jsfpecharoperations && grep -rnIil litestream --exclude-dir=.git --exclude-dir=archive --exclude-dir=tasks . | tail -40`. Expected: the files of section 3 plus the historical list above. Note any file not in either list and put it in the report (do not edit it).
+1. Baseline. Run `grep -rnIil litestream --exclude-dir=.git --exclude-dir=archive --exclude-dir=tasks . | tail -40`. Expected: the files of section 3 plus the historical list above. Note any file not in either list and put it in the report (do not edit it).
 
 2. `docker-compose.yml`, delete the service. Read `grep -n 'litestream' deploy/lightsail/docker-compose.yml`. Delete from the comment line `  # WP05: continuous replication of the SQLite database to S3. Runs as the` through the last line of the service, `    networks:` plus `      - web`, that sits just before the blank line and the comment `  # Step 0: the mock UbyPort for the staging server only.` The block contains `  litestream:`, `    profiles: ["litestream"]`, and ends with `      ubyhost:\n        condition: service_healthy\n    networks:\n      - web`. Keep exactly one blank line before `  # Step 0:`. Command: `grep -c litestream deploy/lightsail/docker-compose.yml | tail -30`. Expected: 3 (the comments of steps 3 to 5).
 
@@ -206,7 +206,7 @@ Litestream is gone. The app runs on PostgreSQL, so recovery is the age-encrypted
 
 Test-map row "Deploy scripts, Caddyfile, compose" plus the changed tests:
 
-1. `cd /home/user/jsfpecharoperations && shellcheck -S error deploy/lightsail/scripts/*.sh 2>&1 | tail -30` (expected: no output; if shellcheck is missing, run `for f in deploy/lightsail/scripts/*.sh; do bash -n "$f"; done 2>&1 | tail -30`, expected: no output).
+1. `shellcheck -S error deploy/lightsail/scripts/*.sh 2>&1 | tail -30` (expected: no output; if shellcheck is missing, run `for f in deploy/lightsail/scripts/*.sh; do bash -n "$f"; done 2>&1 | tail -30`, expected: no output).
 2. `cd App && .venv/bin/python -m pytest tests/test_wp32_container_sizing.py tests/test_pg_backup_scripts.py -q --tb=short -x 2>&1 | tail -30` (expected: all passed, 0 skipped).
 3. `python3 scripts/context_lint.py 2>&1 | tail -30` (expected: no errors).
 4. `git status --short | tail -30` (expected: only section 3 paths plus this brief and its report).

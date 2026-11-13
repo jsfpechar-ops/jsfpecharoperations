@@ -1,6 +1,6 @@
 # 1411: Repo-relative paths in briefs and the Go retention env var in ENVIRONMENT.md
 
-Status: todo
+Status: review
 Depends on: none | Base commit: 3d75651dd | Branch: cursor/1411-docs-paths-and-env-4de2
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

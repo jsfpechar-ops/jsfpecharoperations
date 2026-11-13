@@ -20,7 +20,7 @@ c6ffccf8c61ccf362031f56c3c082d6a42bff08a7eefc731cd6184d9b3019775  App/scripts/ma
 d42b39c5b9eacdf722e63149a2fd392d4d61f28aa00882ccddd222fa4ccc87be  go/internal/mail/outbox_drain.go
 ```
 
-Step 2: `gofmt -l` empty (`GOFMT_OK`); `go vet ./...` printed nothing. Golden run twice with `/home/user/jsfpecharoperations/App/.venv/bin/python scripts/mail_drain_golden.py` (last line each time `wrote /home/user/wt-a/go/internal/mail/testdata/drain/cases.json`). Fixture hash:
+Step 2: `gofmt -l` empty (`GOFMT_OK`); `go vet ./...` printed nothing. Golden run twice with `$(git rev-parse --show-toplevel)/App/.venv/bin/python scripts/mail_drain_golden.py` (last line each time `wrote /tmp/wt-a/go/internal/mail/testdata/drain/cases.json`). Fixture hash:
 ```
 84faacbe05b15a3bf285b75e752cd59650ee55ea4ed9af5e833d6654396999b0  go/internal/mail/testdata/drain/cases.json
 ```
@@ -37,7 +37,7 @@ Context lint: `context lint: OK`.
 ## 4. Deviations
 
 - Helper written to the scratchpad, not `/tmp` (environment rule). Same content, same hashes.
-- Golden script run with the venv at `/home/user/jsfpecharoperations/App/.venv/bin/python`: the worktree has no `.venv` (the brief's relative `App/.venv` path does not exist here). `UBYHOST_TEST_DATABASE_URL` set to the given Postgres URL for the run.
+- Golden script run with the venv at `$(git rev-parse --show-toplevel)/App/.venv/bin/python`: the worktree has no `.venv` (the brief's relative `App/.venv` path does not exist here). `UBYHOST_TEST_DATABASE_URL` set to the given Postgres URL for the run.
 
 ## 5. Questions
 

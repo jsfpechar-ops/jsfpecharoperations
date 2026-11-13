@@ -35,7 +35,7 @@ Renumbered from brief 1154 on merge with `main` (1154 is disaster recovery runbo
 ## Deviations
 
 - Report file is `1154-report.md` because `main` took task 1154 for portable disaster recovery.
-- The step scripts (edit helpers) were written to `/home/user/scratchpad_1150_step1.py` and `/home/user/scratchpad_1150_step2.py`, outside the repo and outside the scratchpad directory. Not committed.
+- The step scripts (edit helpers) were written to `/tmp/scratchpad_1150_step1.py` and `/tmp/scratchpad_1150_step2.py`, outside the repo and outside the scratchpad directory. Not committed.
 - No screenshots: no UI change.
 
 ## Questions

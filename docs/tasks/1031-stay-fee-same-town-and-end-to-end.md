@@ -2,7 +2,7 @@
 
 Status: todo. Executor: Haiku 5.5. Read AGENTS.md, docs/context/executor.md, this brief. Open only files named here.
 Report: `docs/tasks/1031-report.md` (600 tokens max). Set `Status: review` or `blocked`. **Do not open a PR** (the orchestrator does). Never push to main.
-Branch: `claude/obec-prague-districts` in worktree `/home/user/ubyhost-obec` (already exists, part 1 committed as `6875e53b`). Work only there.
+Branch: `claude/obec-prague-districts` in worktree `<ubyhost-obec checkout>` (already exists, part 1 committed as `6875e53b`). Work only there.
 
 Money. Correct beats fast. A step that does not go as written: stop and report (section 8); never guess.
 
@@ -54,17 +54,17 @@ May open (ranges only): `App/tests/test_guest_browser_e2e.py` lines 286-470 (hel
 ## 4. Steps (each step = one commit `1031 step k`)
 
 Shell variables used below (set them in each command, the shell does not keep them):
-`W=/home/user/ubyhost-obec` and `PY=/home/user/jsfpecharoperations/App/.venv/bin/python` (the worktree has no venv of its own; this one imports the worktree's `app`, checked). Tests run from `$W/App`. Node is `/opt/node22/bin/node`.
+`W=<ubyhost-obec checkout>` and `PY=$(git rev-parse --show-toplevel)/App/.venv/bin/python` (the worktree has no venv of its own; this one imports the worktree's `app`, checked). Tests run from `$W/App`. Node is `/opt/node22/bin/node`.
 
 ### Step 0. Preflight (2 calls)
 ```
-cd /home/user/ubyhost-obec && git branch --show-current && git status --short | head && git log --oneline -3
+cd <ubyhost-obec checkout> && git branch --show-current && git status --short | head && git log --oneline -3
 ```
 Done when: branch is `claude/obec-prague-districts`, status is empty, `6875e53b 1031 step 1` is in the log.
 - Status not empty (another agent still writing `stay_fee.py`): STOP, report `blocked: obec branch busy`.
 - Branch or commit missing: STOP and report; do not recreate it.
 Then copy this brief into the branch and commit:
-`cp /home/user/jsfpecharoperations/docs/tasks/1031-stay-fee-same-town-and-end-to-end.md docs/tasks/ && git add docs/tasks/1031-stay-fee-same-town-and-end-to-end.md && git commit -qm "1031 step 0: brief" && git log --oneline -1`
+`cp $(git rev-parse --show-toplevel)/docs/tasks/1031-stay-fee-same-town-and-end-to-end.md docs/tasks/ && git add docs/tasks/1031-stay-fee-same-town-and-end-to-end.md && git commit -qm "1031 step 0: brief" && git log --oneline -1`
 
 ### Step 1. Reproduce in a real browser, before any fix
 Append to the END of `App/tests/test_guest_browser_e2e.py` exactly this (it reuses `_fee_seed`, `Guest`, `live_server`, `browser`, `mail`, `db`, `i18n` already in that file). Test data is synthetic on purpose: the repo is public, never put a real name, birth date or street in it.
@@ -172,7 +172,7 @@ def test_1031_check_box_follows_every_change(live_server, browser, monkeypatch):
 
 Run (expect red now; that is the reproduction):
 ```
-cd /home/user/ubyhost-obec/App && PY=/home/user/jsfpecharoperations/App/.venv/bin/python && $PY -m pytest tests/test_guest_browser_e2e.py -k 1031 -rs -q --tb=short -x 2>&1 | tail -30
+cd <ubyhost-obec checkout>/App && PY=$(git rev-parse --show-toplevel)/App/.venv/bin/python && $PY -m pytest tests/test_guest_browser_e2e.py -k 1031 -rs -q --tb=short -x 2>&1 | tail -30
 ```
 Done when: it ran (pass or fail), 0 skipped. Copy the failing `seen` tuple (hidden, amount, `data-fee-live`, `data-obec-rule`) into the report under "Reproduction". A local pass means the owner's 150 is H1 outside the code; still do every step.
 - If the wizard does not advance (a Czech guest may get a different field), read `fill_form` (lines 369-470) once, fix the helper once, rerun. Fails again: STOP.
@@ -392,7 +392,7 @@ In `App/tests/test_stay_fee_obec_0898.py`, in the line `refusals = ["Brno", "Prh
 
 Run (the JS parity test is expected to fail until step 3; everything else must pass):
 ```
-cd /home/user/ubyhost-obec/App && PY=/home/user/jsfpecharoperations/App/.venv/bin/python && $PY -m pytest tests/test_stay_fee_obec_forms_1031.py tests/test_stay_fee_obec_0898.py tests/test_stay_fee_estimate_0910.py -q --tb=short --deselect tests/test_stay_fee_obec_forms_1031.py::test_form_script_key_is_the_python_key 2>&1 | tail -30
+cd <ubyhost-obec checkout>/App && PY=$(git rev-parse --show-toplevel)/App/.venv/bin/python && $PY -m pytest tests/test_stay_fee_obec_forms_1031.py tests/test_stay_fee_obec_0898.py tests/test_stay_fee_estimate_0910.py -q --tb=short --deselect tests/test_stay_fee_obec_forms_1031.py::test_form_script_key_is_the_python_key 2>&1 | tail -30
 ```
 Done when: all pass. A FOLDS/EXACT/OKRES case fails: fix the code only if the code differs from the block above (a typo); if the block itself gives another answer, STOP and report the case (do not change the expected value). Commit.
 
@@ -438,7 +438,7 @@ b) `App/app/static/signature.js`, inside `feeObecResident`: replace the whole `f
 Leave `fold` and the `var country = document.getElementById("res_country")` line exactly as they are (tests slice the file between them).
 Run:
 ```
-cd /home/user/ubyhost-obec/App && PY=/home/user/jsfpecharoperations/App/.venv/bin/python && $PY -m pytest tests/test_stay_fee_obec_forms_1031.py tests/test_stay_fee_estimate_0910.py tests/test_stay_fee_audit_1025.py -q --tb=short 2>&1 | tail -30
+cd <ubyhost-obec checkout>/App && PY=$(git rev-parse --show-toplevel)/App/.venv/bin/python && $PY -m pytest tests/test_stay_fee_obec_forms_1031.py tests/test_stay_fee_estimate_0910.py tests/test_stay_fee_audit_1025.py -q --tb=short 2>&1 | tail -30
 ```
 Done when: all pass, including `test_form_script_key_is_the_python_key` and the old `test_form_script_folds_like_the_backend`. Commit.
 
@@ -511,7 +511,7 @@ e) In the same closure, directly after `form.addEventListener("guest-wizard:show
 ```
 f) Cache keys (signature.js is served immutable for a year, `tests/test_static_versions.py`): in `App/app/templates/guest/base.html` change `signature.js?v=20261108-1025` to `signature.js?v=20261108-1031`; in `App/app/templates/_signature_script.html` change `signature.js?v=20261106-0977` to `signature.js?v=20261108-1031`. Then `grep -rn "20261108-1025\|20261106-0977" tests/ | head` and change any pinned old signature.js key in a test to the new one (a key pin, not a behaviour). Then:
 ```
-cd /home/user/ubyhost-obec/App && PY=/home/user/jsfpecharoperations/App/.venv/bin/python && $PY tests/test_static_versions.py --write 2>&1 | tail -5 && $PY -m pytest tests/test_static_versions.py tests/test_stay_fee_rate_dates_1028.py tests/test_stay_fee_audit_1025.py tests/test_stay_fee_obec_forms_1031.py tests/test_form_chrome.py -q --tb=short 2>&1 | tail -30
+cd <ubyhost-obec checkout>/App && PY=$(git rev-parse --show-toplevel)/App/.venv/bin/python && $PY tests/test_static_versions.py --write 2>&1 | tail -5 && $PY -m pytest tests/test_static_versions.py tests/test_stay_fee_rate_dates_1028.py tests/test_stay_fee_audit_1025.py tests/test_stay_fee_obec_forms_1031.py tests/test_form_chrome.py -q --tb=short 2>&1 | tail -30
 ```
 Done when: all pass. Commit `1031 step 4`.
 
@@ -532,7 +532,7 @@ c) New key `fee_obec_unknown`, one line directly after each `"fee_calc_you": ...
 The five i18n.py lines are in the order en, cs, de, es, fr of `grep -n '"fee_calc_you"' App/app/i18n.py`.
 Run:
 ```
-cd /home/user/ubyhost-obec/App && PY=/home/user/jsfpecharoperations/App/.venv/bin/python && $PY -m pytest tests/test_guest_languages.py tests/test_stay_fee_audit_1025.py tests/test_stay_fee_estimate_0910.py -q --tb=short 2>&1 | tail -30
+cd <ubyhost-obec checkout>/App && PY=$(git rev-parse --show-toplevel)/App/.venv/bin/python && $PY -m pytest tests/test_guest_languages.py tests/test_stay_fee_audit_1025.py tests/test_stay_fee_estimate_0910.py -q --tb=short 2>&1 | tail -30
 ```
 Done when: all pass. Commit.
 
@@ -683,16 +683,16 @@ def test_preview_pay_panel_charge_and_register_agree(flat, obec):  # noqa: F811
     assert sum(p["amount"] for p in previews if p) == charge["total_czk"]
 ```
 Also run this check (expect no output: the save route must not read any fee number from the browser):
-`grep -n 'form.get("fee\|fee_amount\|fee_total\|"amount"' /home/user/ubyhost-obec/App/app/routes/guest.py | head`
+`grep -n 'form.get("fee\|fee_amount\|fee_total\|"amount"' <ubyhost-obec checkout>/App/app/routes/guest.py | head`
 If it prints a line inside the save handler (`@router.post("/l/{token}/{reservation_id}/save")` and below), STOP and report the line.
 Run:
 ```
-cd /home/user/ubyhost-obec/App && PY=/home/user/jsfpecharoperations/App/.venv/bin/python && $PY -m pytest tests/test_stay_fee_sametown_1031.py -q --tb=short 2>&1 | tail -30
+cd <ubyhost-obec checkout>/App && PY=$(git rev-parse --show-toplevel)/App/.venv/bin/python && $PY -m pytest tests/test_stay_fee_sametown_1031.py -q --tb=short 2>&1 | tail -30
 ```
 Done when: all pass. If a birth format fails, that is a found cause (H3): STOP and report the format and the value `stay_fee.conservative_birth(<format>)` returns; do not change parsing yourself. If `complete_guest_claim` or the seed fails, read `App/tests/test_controller_gate.py` lines 44-112 once and fix the seed once; fails again: STOP. Commit.
 
 ### Step 7. Duplicate arithmetic: list only
-Run `grep -n "liable \* rate\|nights \* rate\|\* rate" App/app/stay_fee.py App/app/stay_fee_remittance_pdf.py App/app/routes/stay_fees.py | head` (from `/home/user/ubyhost-obec`). For each hit read ±8 lines and write one report line: number taken from `guest_period` output / `rate_on`, or computed alone? Change nothing (the step 6 agreement test is the guard). The JS `feeLiableDays`/`feeLiableAmount` copy is by design, guarded by node tests.
+Run `grep -n "liable \* rate\|nights \* rate\|\* rate" App/app/stay_fee.py App/app/stay_fee_remittance_pdf.py App/app/routes/stay_fees.py | head` (from `<ubyhost-obec checkout>`). For each hit read ±8 lines and write one report line: number taken from `guest_period` output / `rate_on`, or computed alone? Change nothing (the step 6 agreement test is the guard). The JS `feeLiableDays`/`feeLiableAmount` copy is by design, guarded by node tests.
 
 ### Step 8. Browser: green, the submit, screenshots
 a) In `test_1031_check_box_follows_every_change` (added in step 1), replace the `finally:` block's surroundings so that before `page.close()` the guest saves. Insert directly before `    finally:` of that test:
@@ -734,17 +734,17 @@ def test_1031_unknown_property_town_shows_the_amount_and_says_why(live_server, b
 ```
 Run:
 ```
-cd /home/user/ubyhost-obec/App && PY=/home/user/jsfpecharoperations/App/.venv/bin/python && $PY -m pytest tests/test_guest_browser_e2e.py -k 1031 -rs -q --tb=short 2>&1 | tail -30
+cd <ubyhost-obec checkout>/App && PY=$(git rev-parse --show-toplevel)/App/.venv/bin/python && $PY -m pytest tests/test_guest_browser_e2e.py -k 1031 -rs -q --tb=short 2>&1 | tail -30
 ```
 Done when: 3 passed, 0 skipped, and `ls /mnt/project-files/ux-shots/stayfee-sametown/` lists `check-sametown-390.png`, `check-othertown-390.png`, `check-unknown-town-390.png`. Open each PNG once and write one sentence per page in the report (box hidden or shown, amount, nothing overlapping). Commit.
 
 ### Step 9. Test-map rows, report
 Run, one at a time (rule 7 and test-map rows "Invoices, stay fee" and "Guest pages"):
 ```
-cd /home/user/ubyhost-obec/App && PY=/home/user/jsfpecharoperations/App/.venv/bin/python && $PY -m pytest tests/test_stay_fee*.py tests/test_invoice_*.py tests/test_static_versions.py -q --tb=short -x 2>&1 | tail -30
-cd /home/user/ubyhost-obec/App && PY=/home/user/jsfpecharoperations/App/.venv/bin/python && $PY -m pytest tests/test_guest_*.py -rs -q --tb=short -x 2>&1 | tail -30
+cd <ubyhost-obec checkout>/App && PY=$(git rev-parse --show-toplevel)/App/.venv/bin/python && $PY -m pytest tests/test_stay_fee*.py tests/test_invoice_*.py tests/test_static_versions.py -q --tb=short -x 2>&1 | tail -30
+cd <ubyhost-obec checkout>/App && PY=$(git rev-parse --show-toplevel)/App/.venv/bin/python && $PY -m pytest tests/test_guest_*.py -rs -q --tb=short -x 2>&1 | tail -30
 ```
-(includes the browser file; Bash timeout 600000; 0 skipped.) Then from the repo root `cd /home/user/ubyhost-obec && python3 scripts/context_lint.py 2>&1 | tail -10`.
+(includes the browser file; Bash timeout 600000; 0 skipped.) Then from the repo root `cd <ubyhost-obec checkout> && python3 scripts/context_lint.py 2>&1 | tail -10`.
 Write the report (section 9), commit `1031 step 9: report`. Do not push.
 
 ## 5. Do not touch (never do)

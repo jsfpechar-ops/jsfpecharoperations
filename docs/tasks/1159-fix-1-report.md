@@ -36,7 +36,7 @@ b61e9aefa8214498ff911309f13babe1321fb5908d34d15bd132c5596e7f2b74  go/internal/ca
 
 Step 2 (generator, then sha256sum of the JSON):
 ```
-wrote /home/user/jsfpecharoperations/go/internal/calendar/testdata/filing_watchdog_golden.json
+wrote $(git rev-parse --show-toplevel)/go/internal/calendar/testdata/filing_watchdog_golden.json
 bdc27cc4a4e856fbc59b61425787444a58c2996a6111c69ad2ec340604be6022  go/internal/calendar/testdata/filing_watchdog_golden.json
 ```
 

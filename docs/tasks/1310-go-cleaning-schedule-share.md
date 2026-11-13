@@ -43,7 +43,7 @@ No other file may change (this brief: Status line only).
 
 ## 4. Steps
 
-Work in `/home/user/jsfpecharoperations`, branch `task/1310-go-cleaning-schedule`.
+Work in `$(git rev-parse --show-toplevel)`, branch `task/1310-go-cleaning-schedule`.
 
 **Step 1. Unpack.** Run exactly:
 

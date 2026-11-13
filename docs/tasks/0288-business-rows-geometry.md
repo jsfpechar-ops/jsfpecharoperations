@@ -1,7 +1,7 @@
 # 0288: Business table rows: contact cell and Open arrow geometry
 
 Status: todo
-Depends on: 0285, 0287 | Branch: worktree /home/user/wt, local branch wip-0284 (already checked out; commit here)
+Depends on: 0285, 0287 | Branch: worktree /tmp/wt, local branch wip-0284 (already checked out; commit here)
 Executor: Haiku 5.5 | Fits one session: 15 tool calls, 40k tokens
 
 ## 1. Objective

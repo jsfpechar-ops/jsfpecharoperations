@@ -1,7 +1,7 @@
 # 1173d report
 
 Status: review
-Branch: task/1173d-queue-final-nits (worktree /home/user/wt-1173d). Not pushed, no PR (owner step).
+Branch: task/1173d-queue-final-nits (worktree /tmp/wt-1173d). Not pushed, no PR (owner step).
 
 ## 1. Files changed (git diff 8d7ba6cd --stat)
 

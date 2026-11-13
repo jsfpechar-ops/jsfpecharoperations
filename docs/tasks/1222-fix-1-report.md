@@ -16,9 +16,9 @@ Go (gofmt, vet, build exit 0):
     ok  	github.com/jsfpechar-ops/jsfpecharoperations/go/cmd/ubyhost-web	0.007s
 
 Golden scripts:
-    wrote /home/user/jsfpecharoperations/go/internal/billingjob/testdata/invoicer.golden.json
+    wrote $(git rev-parse --show-toplevel)/go/internal/billingjob/testdata/invoicer.golden.json
     ValueError: buyer_missing
-    wrote /home/user/jsfpecharoperations/go/internal/billingjob/testdata/run.golden.json
+    wrote $(git rev-parse --show-toplevel)/go/internal/billingjob/testdata/run.golden.json
 git status testdata: no output (unchanged).
 
 ## Section 7
