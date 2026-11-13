@@ -11,7 +11,10 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
             "The service providers that may process personal data for UbyHost, what they do, "
             "and when they are used. This register forms part of the Data Processing Agreement."
         ),
-        "subprocessors.effective": "Effective date: 15 December 2026. Version 1.3.",
+        "subprocessors.effective": (
+            "Effective date: 4 October 2026. Version 1.3. "
+            "The Hetzner Online GmbH row applies from 15 December 2026."
+        ),
         "subprocessors.controller_note_title": "Who appoints these providers",
         "subprocessors.controller_note": (
             "For Guest Data, the accommodation provider or alternate controller configured for the "
@@ -90,9 +93,11 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
         "subprocessors.google_safeguard": (
             "Provider DPA and lawful GDPR Chapter V safeguards where required."
         ),
-        # Brief 1170 (DR plan step 7): conditional disaster-recovery host. The
-        # effective date above is at least 30 days after the notice to hosts
-        # (change_body); the owner confirms it.
+        # Brief 1170 (DR plan step 7): conditional disaster-recovery host. Its
+        # row applies from 15 December 2026 (see subprocessors.effective), at
+        # least 30 days after the notice to hosts (change_body); the owner
+        # confirms the date. Brief 1170-cont-1: the safeguard says EU only,
+        # because the owner picks an EU location when creating the server.
         "subprocessors.hetzner_provider": "Hetzner Online GmbH",
         "subprocessors.hetzner_purpose": (
             "Disaster-recovery hosting: a replacement server used only if the main hosting is "
@@ -103,7 +108,8 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
             "EU, Germany or Finland. Conditional; used only during a recovery or a drill."
         ),
         "subprocessors.hetzner_safeguard": (
-            "Hetzner data processing agreement under Art. 28 GDPR. No transfer outside the EU."
+            "Hetzner data processing agreement under Art. 28 GDPR. Server located in the EU only "
+            "(Germany or Finland)."
         ),
         "subprocessors.recipients_title": "Recipients that are not subprocessors",
         "subprocessors.recipient_google_ads": (
@@ -153,7 +159,10 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
             "Poskytovatelé, kteří mohou pro UbyHost zpracovávat osobní údaje, účel jejich zapojení "
             "a podmínky použití. Tento seznam je součástí zpracovatelské smlouvy."
         ),
-        "subprocessors.effective": "Účinnost od: 15. prosince 2026. Verze 1.3.",
+        "subprocessors.effective": (
+            "Účinnost od: 4. října 2026. Verze 1.3. "
+            "Řádek Hetzner Online GmbH platí od 15. prosince 2026."
+        ),
         "subprocessors.controller_note_title": "Kdo tyto poskytovatele zapojuje",
         "subprocessors.controller_note": (
             "Správcem údajů hostů je ubytovatel nebo alternativní správce nastavený pro dané "
@@ -239,7 +248,8 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
             "EU, Německo nebo Finsko. Podmíněné použití; jen při obnově nebo zkoušce obnovy."
         ),
         "subprocessors.hetzner_safeguard": (
-            "Smlouva Hetzner o zpracování osobních údajů podle čl. 28 GDPR. Bez předání mimo EU."
+            "Smlouva o zpracování osobních údajů se společností Hetzner podle čl. 28 GDPR. "
+            "Server umístěn pouze v EU (Německo nebo Finsko)."
         ),
         "subprocessors.recipients_title": "Příjemci, kteří nejsou dalšími zpracovateli",
         "subprocessors.recipient_google_ads": (
