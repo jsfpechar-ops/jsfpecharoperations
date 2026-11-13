@@ -16,5 +16,6 @@ import (
 func init() {
 	registerRoutes(func(mux *http.ServeMux, m *metrics, pool *pgxpool.Pool) {
 		properties.Register(mux, m.wrap, pool, os.Getenv, time.Now)
+		properties.RegisterPages(mux, m.wrap, pool, os.Getenv, time.Now)
 	})
 }

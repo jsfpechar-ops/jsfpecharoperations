@@ -1,0 +1,180 @@
+{
+ "users": [
+  131001,
+  131002,
+  131003
+ ],
+ "seed": {
+  "user_account": [
+   {
+    "id": 131001,
+    "username": "pages-host-a",
+    "email": "host-a@example.test",
+    "password_hash": "x",
+    "role": "host",
+    "active": 1,
+    "must_change_password": 0,
+    "session_version": 1,
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": 131002,
+    "username": "pages-host-b",
+    "email": "host-b@example.test",
+    "password_hash": "x",
+    "role": "host",
+    "active": 1,
+    "must_change_password": 0,
+    "session_version": 1,
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": 131003,
+    "username": "pages-host-c",
+    "email": "host-c@example.test",
+    "password_hash": "x",
+    "role": "host",
+    "active": 1,
+    "must_change_password": 0,
+    "session_version": 1,
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": 131004,
+    "username": "pages-admin",
+    "email": "pages-admin@example.test",
+    "password_hash": "x",
+    "role": "admin",
+    "active": 1,
+    "must_change_password": 0,
+    "session_version": 1,
+    "created_at": "2026-01-01T00:00:00+00:00"
+   }
+  ],
+  "apartment": [
+   {
+    "id": 131201,
+    "owner_user_id": 131001,
+    "internal_name": "Byt A",
+    "created_at": "2026-01-01T00:00:00+00:00",
+    "active": 1,
+    "permalink_token": "seed-token-131201",
+    "permalink_pin": "s31201"
+   },
+   {
+    "id": 131202,
+    "owner_user_id": 131001,
+    "internal_name": "Byt A staré",
+    "created_at": "2026-01-01T00:00:00+00:00",
+    "active": 0,
+    "permalink_token": "seed-token-131202",
+    "permalink_pin": "s31202",
+    "archived_at": "2026-02-01T00:00:00+00:00"
+   },
+   {
+    "id": 131203,
+    "owner_user_id": 131002,
+    "internal_name": "Zahrada",
+    "created_at": "2026-01-01T00:00:00+00:00",
+    "active": 1,
+    "permalink_token": "seed-token-131203",
+    "permalink_pin": "s31203"
+   },
+   {
+    "id": 131204,
+    "owner_user_id": 131002,
+    "internal_name": "Atelier",
+    "created_at": "2026-01-01T00:00:00+00:00",
+    "active": 1,
+    "permalink_token": "seed-token-131204",
+    "permalink_pin": "s31204"
+   }
+  ]
+ },
+ "cases": [
+  {
+   "name": "guide_en_demo",
+   "path": "/guide",
+   "user": 131001,
+   "lang": "en",
+   "env": {}
+  },
+  {
+   "name": "guide_cs_havel_no_demo",
+   "path": "/guide",
+   "user": 131001,
+   "lang": "cs",
+   "env": {
+    "UBYHOST_AI_FEATURES": "havel",
+    "UBYHOST_ANTHROPIC_API_KEY": "test-key",
+    "UBYHOST_UBYPORT_ENV": "test"
+   }
+  },
+  {
+   "name": "guide_vi_not_on_test_list",
+   "path": "/guide",
+   "user": 131002,
+   "lang": "vi",
+   "env": {
+    "UBYHOST_AI_FEATURES": "havel",
+    "UBYHOST_ANTHROPIC_API_KEY": "test-key",
+    "UBYHOST_AI_TEST_EMAILS": "pages-admin@example.test"
+   }
+  },
+  {
+   "name": "guide_admin_inside_workspace",
+   "path": "/guide",
+   "user": 131004,
+   "as": 131001,
+   "lang": "en",
+   "env": {
+    "UBYHOST_AI_FEATURES": "havel",
+    "UBYHOST_ANTHROPIC_API_KEY": "test-key",
+    "UBYHOST_AI_TEST_EMAILS": "Pages-Admin@example.test, other@example.test"
+   }
+  },
+  {
+   "name": "guide_signed_out",
+   "path": "/guide",
+   "user": 0,
+   "lang": "en",
+   "env": {}
+  },
+  {
+   "name": "guest_links_one",
+   "path": "/guest-links",
+   "user": 131001,
+   "lang": "en",
+   "env": {}
+  },
+  {
+   "name": "guest_links_two",
+   "path": "/guest-links",
+   "user": 131002,
+   "lang": "cs",
+   "env": {}
+  },
+  {
+   "name": "guest_links_none",
+   "path": "/guest-links",
+   "user": 131003,
+   "lang": "en",
+   "env": {}
+  },
+  {
+   "name": "guest_links_admin_inside",
+   "path": "/guest-links",
+   "user": 131004,
+   "as": 131002,
+   "lang": "en",
+   "env": {}
+  },
+  {
+   "name": "guest_links_signed_out",
+   "path": "/guest-links",
+   "user": 0,
+   "lang": "en",
+   "env": {}
+  }
+ ]
+}
