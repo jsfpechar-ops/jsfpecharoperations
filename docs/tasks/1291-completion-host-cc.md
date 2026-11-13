@@ -1,6 +1,6 @@
 # 1291: Restore host CC on the guest completion receipt
 
-Status: todo
+Status: review
 Depends on: none | Base commit: 91d5d4024 | Branch: task/1291-completion-host-cc
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
