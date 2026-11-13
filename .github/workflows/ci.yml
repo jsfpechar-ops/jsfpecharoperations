@@ -577,6 +577,24 @@ jobs:
               UBYHOST_APP_DOMAIN="${app}" ./scripts/caddy-validate.sh
             done
           done
+          echo "==> Caddyfile.cloudflare, AOP modes"
+          openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj "/CN=ubyhost-aop-test-ca" \
+            -keyout "$RUNNER_TEMP/aop-ca-key.pem" -out caddy/certs/aop-ca.pem 2>/dev/null
+          cp caddy/Caddyfile.cloudflare caddy/Caddyfile.active
+          for mode in off check enforce; do
+            for app in "" app.ubyhost.example; do
+              echo "==> AOP mode ${mode} (UBYHOST_APP_DOMAIN='${app}')"
+              UBYHOST_AOP_MODE="${mode}" UBYHOST_APP_DOMAIN="${app}" ./scripts/caddy-validate.sh
+            done
+          done
+          rm -f caddy/certs/aop-ca.pem
+          echo "==> AOP enforce without the CA file must fail validation"
+          if UBYHOST_AOP_MODE=enforce ./scripts/caddy-validate.sh >/dev/null 2>&1; then
+            echo "enforce validated without aop-ca.pem" >&2; exit 1
+          fi
+          echo "==> AOP off and check without the CA file must pass"
+          UBYHOST_AOP_MODE=off ./scripts/caddy-validate.sh
+          UBYHOST_AOP_MODE=check ./scripts/caddy-validate.sh
 
   context:
     runs-on: ubuntu-latest
