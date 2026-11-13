@@ -1,22 +1,18 @@
 # Status
 
-Updated: 2026-11-12.
+Updated: 2026-11-13.
 
 ## Production
-- Magic-link 1–2 done; access log off. `/healthz` 1.1.0. Main 11-12: `c38b38b8` (#933, auto-deploy; host not rechecked).
+- Magic-link 1–2 done; access log off. `/healthz` 1.1.0. Main 11-13: `84e966f` (#962).
 - Postgres cutover done. Billing ON. SQLite rollback only via pg-cutover scripts. `COMPOSE_PROFILES=walg,monitoring,go`.
-- Go jobs = queue: billing_snapshot, stripe_sweep, ical, push, submit. Python: mail, door_codes, posthog, meta_capi, deadlines.
-- Go live, all routes on main (11-12): palette, calendar, payments QR/connect/requests, stripe webhook, push, pay PNGs — paths in [ENVIRONMENT](../ENVIRONMENT.md). Rollback: trim `UBYHOST_GO_PATHS`, `caddy-validate.sh`, `docker compose up -d caddy`.
+- Go jobs = queue: billing_snapshot, stripe_sweep, ical, push, submit, posthog, meta_capi, deadlines (live since 11-13, healthy). Python: mail, door_codes.
+- Go live, all routes on main (11-12): palette, calendar, payments QR/connect/requests, stripe webhook, push, pay PNGs — paths in [ENVIRONMENT](../ENVIRONMENT.md). Rollback: trim `UBYHOST_GO_PATHS`, `caddy-validate.sh`, `docker compose up -d caddy`. Go migration done (#934-936, #941/#942, #944/#945, #949).
 - AI: `havel,leon,guide_import` (`guide_translate` off). Stripe test. Guest QR 404 on both when the owner has no IBAN.
-
-## Now
 - 11-12: 1172 double-booking alarm, Go-only | [1172](../tasks/1172-double-booking-alarm.md)
-- 11-12: #933/#937/#941/#942 merged. #943 merged. Next PR: 1162-1164 (K-F23, cleaning paging, errcodes).
+- 11-13: merged #946/#948/#953/#957 (DR 3/5/6/7; Hetzner copy awaits owner and lawyer), #958, #959, #962 (stuck-queue alert). Later: remove Python deadlines code.
 - 11-10 live: 1085/1086 police letter paste (#882, #892); 1089/1090 under-15 signature (#885, #888); 1091/1093 short guest titles (#883, #887); 1092 head-count single writer (#884); 1094 H0 check (#893); 1096 Save row, leave warning (#894).
-- 1120-1123b ready
 - Building: 1095 head-count H1 (flag `UBYHOST_HEADCOUNT_LEAD_LIVE` off). Next: H2a, H2b, H3, H4, guest form C.
 - 11-10: [Speed](../plans/speed-and-ease.md)/[group](../plans/guest-group-registration.md) overnight build: merged and auto-deployed #854-#867, #871; late-filing count was 0. Held drafts for copy review: #868 (F1 bill mail), #869 (F3 fee update mail).
-- 11-09: 1051 stay-fee month filter (cache `20261109-1051a`), 1053 stay-fee rows + centred editor (`20261109-1053a`): draft PRs.
 - 11-07: 0990-0992 (throttle, PG indexes 00008, edge cache) in review. **Owner:** deploy, `pg_schema.py apply`, CF rule, Grafana.
 - UX gate live (layout lint + AGENTS rule 10). Stripe onboarding live; extras merged. **Owner:** deploy; booking site v1 next.
 - 11-09: backups live (daily pg_dump, WAL-G 7-day PITR); restore drills passed, repeat every 3 months.
