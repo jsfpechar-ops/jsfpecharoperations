@@ -64,5 +64,5 @@ Append-only.
 - 2026-11-12 [door] 1149 lost race re-issues; 1155 revived code checked on lock (3 tries); 1156 info card + host mail; cs/vi ok.
 - 11-13 [calendar] 1172: Go-only; 1 mail/pair; manual dup skipped (owner)
 - 2026-11-13 [door] 1173/c: release backoff 15/15/60; new, retries, released; revive unissued expired.
-- 2026-11-13 [dep] 1390: Go PDF = gopdf v0.4 (MIT) + gofpdi + pkg/errors, `go/internal/pdf` only; Anthropic = thin HTTP in `go/internal/anthropic`, no dep; WebAuthn = go-webauthn/webauthn, login/passkey routes (owner)
-- 2026-11-13 | [infra] CI builds images, pushes to GHCR (new external registry, no personal data); server only pulls. Why: 1 vCPU / 2 GB server, cache growth | owner | [1210](../tasks/1210-ci-built-go-image.md)
+- 2026-11-13 [dep] 1390: gopdf v0.38.4 PDF in go/internal/pdf; thin anthropic HTTP; go-webauthn login/passkey (owner)
+- 2026-11-13 [infra] CI builds+pushes GHCR images; server pulls only (1 vCPU cache) | owner | [1210](../tasks/1210-ci-built-go-image.md)
