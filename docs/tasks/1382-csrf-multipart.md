@@ -43,10 +43,10 @@ No other file may change.
 2. Create `go/internal/hostweb/csrf_test.go` with the content below.
 3. `cd go && gofmt -l internal/hostweb && go vet ./internal/hostweb/ && go test ./internal/hostweb/ 2>&1 | tail -30`, then `go build ./... && go test ./internal/... 2>&1 | grep -v '^ok' | tail -15` (every package that calls `hostweb.Back` must stay green).
 4. `sha256sum go/internal/hostweb/gate.go go/internal/hostweb/hostweb.go go/internal/hostweb/hostweb_test.go go/internal/hostweb/csrf_test.go` must print:
-   - `db992dbd568c62c964637831fcc438d6a2723f567deb633651e6fb11f1c8e669  go/internal/hostweb/gate.go`
+   - `3f49e55ccc92c039606a6375562f3d4175602af4763d286a60a1b64b4e85c1c8  go/internal/hostweb/gate.go`
    - `b04bc2bdfb9645905b29ab0b4fe60a1fdfb0c352fd6f264104bbfcc0b18b92dc  go/internal/hostweb/hostweb.go`
    - `55bf9df2348b734fbdb2e5e274765803dfc61d489ea05bfc310a4da32554a775  go/internal/hostweb/hostweb_test.go`
-   - `782cd47403ef2c703fde83a8bd8b36bd00e07b5e2c329c29c8ad6fefb3ddc590  go/internal/hostweb/csrf_test.go`
+   - `4a2d968316dbaa6a34281dfe6cd5517296b3f82271fce3f63b67b9e242d8f44c  go/internal/hostweb/csrf_test.go`
 5. Set `Status: review`, write the report, commit.
 
 ### Diff (gate.go, hostweb.go, hostweb_test.go)
@@ -348,4 +348,19 @@ Stop and write the report if the diff does not apply, a test fails twice, a file
 
 ## 9. Report
 
-Write `docs/tasks/1382-report.md` (600 tokens at most) and set `Status: review`: files changed, each command with its last 5 lines, §7 ticked, deviations.
+Write `docs/tasks/1382-report.md` (600 tokens at most) and set `Status: review`. The report has:
+
+1. The files changed (`git diff --stat`).
+2. Each command, with the last 5 lines of its output.
+3. §7 ticked.
+4. Deviations.
+5. Questions.
+6. Owner steps left.
+
+## Risk list (for the reviewer)
+
+`go/internal/hostweb/gate.go` (`CSRF`, `formToken`), `go/internal/hostweb/hostweb.go` (`Back`, quoting). Auth path: multipart bodies over 11 MiB now fail CSRF like other over-limit bodies.
+
+## Owner steps
+
+None beyond review and merge with `scripts/merge-pr-on-green.sh` once CI is green.
