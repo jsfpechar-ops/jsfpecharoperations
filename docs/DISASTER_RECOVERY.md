@@ -22,17 +22,30 @@ If the pack is missing, stop here and use the fallback in "When to use this".
 
 ## Two servers never file at once
 
-Before any rebuild step, make sure the old server cannot file.
+Before any rebuild step, make sure the old server cannot file. Removing `submit` from the job lists is not enough: with `submit` in neither list, the Python worker files guests itself. Only a stopped server, or `UBYHOST_ENABLE_SCHEDULER=0`, stops scheduled filing; only a stopped server stops all filing.
 
-1. On the **old** server, stop it: `docker compose stop`. Or, if it must keep running, remove `submit` from `UBYHOST_GO_JOB_KINDS` in its `.env` and run `./scripts/deploy.sh`.
-2. On the **new** box, check that `submit` is in neither variable:
+1. On the **old** server, stop it: `docker compose stop`. Or, if it must keep running, set `UBYHOST_ENABLE_SCHEDULER=0` in its `.env`, remove `submit` from `UBYHOST_GO_JOB_KINDS` and `UBYHOST_JOB_QUEUE_KINDS`, and run `./scripts/deploy.sh`.
+2. On the **new** box, before the first deploy (rebuild step 4), turn scheduled filing off in `.env`: set `UBYHOST_ENABLE_SCHEDULER=0` and give both variables a value without `submit` (for example `UBYHOST_GO_JOB_KINDS=ical,push`). Keep both lines in `.env`, never delete them: without the line, a value from the shell reaches the containers. Check `.env`, and check that the shell exports neither variable (the second command prints nothing):
 
 ```bash
-grep -n 'UBYHOST_GO_JOB_KINDS\|UBYHOST_JOB_QUEUE_KINDS' .env
+grep -n 'UBYHOST_ENABLE_SCHEDULER\|UBYHOST_GO_JOB_KINDS\|UBYHOST_JOB_QUEUE_KINDS' .env
+env | grep 'UBYHOST_GO_JOB_KINDS\|UBYHOST_JOB_QUEUE_KINDS'
 ```
 
-3. Leave it that way until the owner is sure the old server is off.
-4. When sure, add `submit` to both variables on the new box, then run `./scripts/deploy.sh`.
+3. The restore (rebuild step 12) checks that scheduled filing is off, then writes the marker file `.restored-box` next to `.env`. While it exists, `pg-restore.sh --file` and `./scripts/deploy.sh` stop with `RESTORED BOX` if scheduled filing is on. Leave filing off until the owner is sure the old server is off. The guard only proves that scheduled filing is off; apartments in immediate mode still file when a guest or host saves. So keep Cloudflare pointed away from the new box (the "we're down" page stays on) until the marker is removed.
+4. When sure (the old server is stopped, or deleted in its provider console), acknowledge it on the new box:
+
+```bash
+rm .restored-box
+```
+
+5. Point Cloudflare at the new box (that section, steps 1 to 4). Only then turn filing back on: in `.env` set `UBYHOST_ENABLE_SCHEDULER=1` and add `submit` back to both variables (as on the old server). Then deploy. This is the first deploy whose public check can pass (rebuild step 10):
+
+```bash
+./scripts/deploy.sh
+```
+
+Override for one run, only when the owner knows the old server cannot file and the marker must stay: prefix it on that one command, `UBYHOST_FILING_GUARD_OVERRIDE=1 ./scripts/deploy.sh`. Never `export` it and never put it in `.env` (the guard refuses `.env`).
 
 ## Show the "we're down" page
 
@@ -62,7 +75,7 @@ cd /opt/ubyhost/deploy/lightsail
 ./scripts/setup-server.sh
 ```
 
-4. Copy `.env` into `/opt/ubyhost/deploy/lightsail/.env` and the origin certificates into `caddy/certs/`. Set `UBYHOST_SECRET_KEY` in `.env` **before the first deploy**. Without it the restored data cannot be decrypted.
+4. Copy `.env` into `/opt/ubyhost/deploy/lightsail/.env` and the origin certificates into `caddy/certs/`. Set `UBYHOST_SECRET_KEY` in `.env` **before the first deploy**. Without it the restored data cannot be decrypted. Turn automatic filing off in the same `.env` (see "Two servers never file at once", step 2).
 5. Install the tools:
 
 ```bash
@@ -94,13 +107,22 @@ rclone copy gdrive:UbyHost-backups/<stamp> ./restore-in
 ./scripts/deploy.sh
 ```
 
+Until Cloudflare points at the new box, every `./scripts/deploy.sh` here ends with `The public site does not answer after the restart.` and `Rolling back`, and exits 1. That is expected: its public `/healthz` check goes through Cloudflare and gets the "we're down" page, not this box. The containers are already up with the current `.env` (the rollback starts them again). Check it: the first command shows `ubyhost`, `worker`, `postgres` and `caddy` as `Up`; the second prints `ok`. Any other error is real: stop and read it.
+
+```bash
+docker compose ps
+docker compose exec -T ubyhost python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=3); print('ok')"
+```
+
 11. The dump from step 8 is already on the server in `restore-in`. Keep it outside the volume: the restore reads it straight from the host and writes no plaintext file. If you downloaded it elsewhere, copy it to the server first (any path ending in `.age` works).
 
-12. Restore the database from that file. The script refuses while `.env` contains `UBYHOST_DB=`:
+12. Restore the database from that file. The script refuses while `.env` contains `UBYHOST_DB=`, and while scheduled filing is on (then it changes nothing). Otherwise it writes the marker `.restored-box` (see "Two servers never file at once"), stops the app, the worker and the Go service, restores, and starts every service again with the current `.env`:
 
 ```bash
 RESTORE_CONFIRM=yes AGE_IDENTITY_FILE=/root/ubyhost-backup.agekey ./scripts/pg-restore.sh --file ./restore-in/ubyhost-pg.dump.age
 ```
+
+If it stops with `RESTORED BOX`: fix `.env` ("Two servers never file at once", step 2), run `./scripts/deploy.sh` so the running containers get the new `.env` (it ends with `Rolling back`, as in step 10), then run the restore command again.
 
 13. Delete the identity file from the server:
 
@@ -114,7 +136,7 @@ sudo shred -u /root/ubyhost-backup.agekey
 ./scripts/status.sh
 ```
 
-15. Open one stay and one Doručenka in a browser, with a hosts-file entry that points the domain to `<NEW_IP>`. Command-line check:
+15. Open one stay and one Doručenka in a browser, with a hosts-file entry that points the domain to `<NEW_IP>`. Look only: never save anything while `.restored-box` exists. In immediate mode a save files the guest with the police, and the old server may file the same guest. Command-line check:
 
 ```bash
 curl -sS -o /dev/null -w '%{http_code}\n' --resolve <DOMAIN>:443:<NEW_IP> https://<DOMAIN>/
@@ -124,10 +146,13 @@ If curl reports a certificate error, use the browser check. Never add `-k`.
 
 ## Point Cloudflare at the new box
 
+Only after `.restored-box` is removed ("Two servers never file at once", step 4): until then no guest or host may reach the new box.
+
 1. In Cloudflare, DNS: change the A record for the domain to `<NEW_IP>`. Keep it proxied (orange cloud).
 2. SSL/TLS: keep Full (strict).
 3. Check that `.env` has `CLOUDFLARE_PROXY=1`.
 4. Turn off the "we're down" page: in Cloudflare, Workers & Pages, `ubyhost-down`, Settings, Domains & Routes, delete the route(s). Then open the site in a private window and check the normal start page loads.
+5. Turn filing back on and deploy ("Two servers never file at once", step 5). This deploy must end without `Rolling back`.
 
 ## What AWS gave us and what happens without it
 
@@ -152,6 +177,6 @@ The data may be up to 1 day old, because the Drive copy is daily (04:00 UTC). Gu
 Run this every 3 months with the restore drill.
 
 1. Start a timer. Run the rebuild steps on a throwaway server. Skip the Cloudflare step.
-2. Check the stay and the Doručenka with the browser check.
+2. Check the stay and the Doručenka with the browser check (rebuild step 15: look only, never save).
 3. Stop the timer. Write the minutes in [status](context/status.md).
 4. Delete the throwaway server.

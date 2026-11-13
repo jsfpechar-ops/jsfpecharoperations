@@ -1,42 +1,49 @@
-# 1169 report
+# 1169 report: DR filing guard on a restored box
 
-Status: review
+Status: review. Branch claude/dr-filing-guard, base cd8bf5f. Not pushed.
 
-## 1. Files changed
+## 1. Files changed (git diff --stat cd8bf5f)
 
-`git diff --stat d8754892 HEAD`: `App/tests/test_under15_signature_1090_browser.py` only, 6 insertions, 3 deletions.
+- deploy/lightsail/scripts/filing-guard.sh (new, 100755, 78 lines)
+- deploy/lightsail/scripts/preflight.sh (+6)
+- deploy/lightsail/scripts/pg-restore.sh (+9, --file branch only)
+- deploy/lightsail/.gitignore (+1: .restored-box)
+- App/tests/test_pg_backup_scripts.py (+131 / -3)
+- docs/DISASTER_RECOVERY.md (section rewritten; steps 4 and 12)
+- docs/plans/portable-disaster-recovery.md (gap 6, step 6 row)
+- docs/ENVIRONMENT.md (+1 row)
+- docs/tasks/1169-dr-filing-guard.md (Status only; the brief file itself was already on the branch)
 
-Commits: `1169 step 1` (reads `arrival` from the seeded reservation), `1169 step 2` (three `ARRIVAL` uses replaced by `arrival`). Step 3 is a check, no change.
+## 2. Commands and last 5 lines
 
-## 2. Commands (last 5 lines)
-
-- `cd App && .venv/bin/ruff check --select E9,F63,F7,F82,F401,F841 tests/test_under15_signature_1090_browser.py`: `All checks passed!`
-- `cd App && .venv/bin/python -m py_compile tests/test_under15_signature_1090_browser.py`: no output, exit 0.
-- `grep -n "ARRIVAL" App/tests/test_under15_signature_1090_browser.py`: lines 103, 104, 105 only.
-- `cd App && .venv/bin/python -m pytest tests/test_under15_signature_1090_browser.py -q --tb=short -x -rs`:
+- `.venv` not present in App/. Fallback used:
+  `python3 -m venv /tmp/v1169 && pip install -q pytest` then
+  `/tmp/v1169/bin/python -m pytest tests/test_pg_backup_scripts.py -q --tb=short -x --noconftest -rs`
   ```
-  SKIPPED [1] tests/test_guest_browser_e2e.py:40: could not import 'playwright.sync_api': No module named 'playwright'
-  1 skipped in 1.97s
+  ...................................ssss................                  [100%]
+  =========================== short test summary info ============================
+  SKIPPED [4] tests/test_pg_backup_scripts.py:370: could not import 'yaml': No module named 'yaml'
+  51 passed, 4 skipped in 0.92s
   ```
-  Exit 5. Playwright is not installed; not installed per the brief. Run by CI.
-- `python3 scripts/context_lint.py | tail -3`:
-  ```
-  WARN  2 commit(s) touched App/ after the last status.md update. Orchestrator: update docs/context/status.md at review.
-  next free: task 1170 | migration 0046
-  context lint: OK
-  ```
+  Matches the brief's expected pytest-only result (51 passed, 4 skipped; the skips need yaml).
+- `bash -n` on filing-guard.sh, preflight.sh, pg-restore.sh: no output, rc 0.
+- shellcheck: not installed in this environment; skipped (CI runs it).
+- `python3 scripts/context_lint.py | tail -1`: `context lint: OK` (only pre-existing WARN lines above it).
+- `git ls-files -s deploy/lightsail/scripts/filing-guard.sh`: starts with 100755.
 
 ## 3. Section 7 acceptance
 
-- [x] `git diff --stat` shows only the test file, 3 replaced lines plus a 3-line added block.
-- [x] ruff and py_compile clean.
-- [x] `grep -n "ARRIVAL"` shows only lines 103-105.
-- [x] context_lint OK.
-- [x] Browser test runs in CI (shard 2), not locally.
+- [x] filing-guard.sh mode 100755
+- [x] pytest: 0 failed (51 passed, 4 yaml skips in pytest-only venv)
+- [x] `grep -c restored-box pg-restore.sh` = 1
+- [x] `grep -n 'rm .restored-box' docs/DISASTER_RECOVERY.md` = 1 match (line 38)
+- [x] `grep -n 1169 docs/plans/portable-disaster-recovery.md` = 2 matches
+- [x] context_lint OK
+- [x] `git diff --stat cd8bf5f` lists only section 3 files
 
 ## 4. Deviations
 
-None to the edit. Local pytest skipped (no playwright), so the test is unverified locally. Bite is not reproduced locally; the CI failure on 864dfb0c is the evidence.
+None. Every step applied as written. Anchors matched exactly once. Step 5 and step 6a text was applied by a script that copied the brief text; the anchors were asserted to occur once each.
 
 ## 5. Questions
 
@@ -44,4 +51,4 @@ None.
 
 ## 6. Owner steps left
 
-None. The orchestrator opens the PR. No push or PR was made by the executor.
+None needed to merge. The current Lightsail box has no `.restored-box`, so nothing changes there.

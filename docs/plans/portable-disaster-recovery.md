@@ -22,7 +22,7 @@ If AWS is gone, a fresh EU Ubuntu box (Hetzner as example, not a decision) runs 
 3. Drive upload token lives in rclone config on the server; not in the offline copy. Needs a note or a re-auth step.
 4. The `.env`, `UBYHOST_SECRET_KEY` and Cloudflare origin certs must exist offline. Not checked anywhere.
 5. `docs/runbook.md:37` cites `restore-drill.yml`; that workflow is not in `.github/workflows/`. The only drill is the manual one in LIGHTSAIL.md; no drill has been timed or run on a non-AWS box.
-6. No guard against two servers filing. No "we're down" page (CLOUDFLARE.md has none). The page: brief 1166.
+6. Two-server filing guard: brief 1169. No "we're down" page (CLOUDFLARE.md has none). The page: brief 1166.
 7. No single provider-neutral runbook; steps are split across LIGHTSAIL.md, OPERATIONS.md, README.
 
 AWS dependencies and what happens in an outage:
@@ -44,7 +44,7 @@ AWS dependencies and what happens in an outage:
 | 3 | `pg-restore.sh` option to restore from a local `.age` file (no volume stamp, no AWS) (brief 1161, done) | M | Haiku brief | 1 |
 | 4 | Drive copy daily instead of weekly (cron line change, doc) (brief 1151) | S | Haiku brief + owner | 2 |
 | 5 | Cloudflare "we're down" page: Worker the owner routes during an outage (brief 1166) | S | Haiku brief + owner | 1 |
-| 6 | Filing guard: runbook step plus a check in `deploy.sh`/preflight that warns when `submit` is in `UBYHOST_GO_JOB_KINDS` on a restored box | M | Haiku brief | 3 |
+| 6 | Filing guard: runbook step plus a check in `deploy.sh`/preflight that blocks on a restored box (`.restored-box`) while filing is on (brief 1169) | M | Haiku brief | 3 |
 | 7 | Choose EU provider; add to `/subprocessors` register and ROPA | S | owner + lawyer | none |
 | 8 | Timed drill on a throwaway non-AWS box; record minutes in status | M | owner, repeat every 3 months with the restore drill | 3, 7 |
 | 9 | Link runbook from LIGHTSAIL.md, OPERATIONS.md, status, AGENTS routing | S | orchestrator | 1 |
