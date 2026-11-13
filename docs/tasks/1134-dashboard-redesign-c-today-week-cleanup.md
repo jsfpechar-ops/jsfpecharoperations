@@ -1,7 +1,7 @@
 # 1134: host dashboard redesign, part C of 3: Today list, This week strip, cleanup and docs (laptop and tablet)
 
 Status: todo
-Depends on: 1133 (merged, or stacked on `task/1133-dashboard-redesign-b`) | Base commit: origin/main | Branch: task/1134-dashboard-redesign-c
+Depends on: 1133 | Base commit: d9033975 | Branch: claude/great-fermi-lw5ogs (run after 1133 on the same PR stack)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (4 steps of at most 6 calls)
 Brief by Sonnet 5.5, 2026-11-12. Owner Josef approved Figma frames "Laptop 1280 / Dashboard (chosen: B)" and "Tablet 820 / Dashboard (B)" (file `4POeO1dtcL5i2U5e0gdEoU`). Order: 1132, 1133, **1134 (this)**.
 
@@ -11,7 +11,7 @@ Finish the 768+ dashboard inside `div.dash-wide` (added by 1133, ends with the c
 
 Out of scope: phone layout, other pages, door locks, invoices, admin, guest pages, the calendar page itself (`?cal_view=calendar`, `_dashboard_calendar.html` stay as they are and stay reachable).
 
-## 2. Context and rules
+## 2. Context
 
 AGENTS rules 6, 7, 9, 10; tokens only (`--tile-blue-*`, `--tile-done-*`, `--coral-red*`, `--warns/--warn`), no raw hex, no inline `style=`, 12 px between neighbours, no truncated labels, icons from `_icons.html` only, no new dependency/outbound request/personal-data field.
 
@@ -19,22 +19,22 @@ Verified facts:
 - Data already in the dashboard context (`routes/admin.py` ~470-560): `today_rows` (rows with `reservation`, `progress`, `deadline_cell`, `nights`), `key_rows`, `next_arrival`, `cal_days` (14 days from today), `cal_rows` (one per property: `row.name`, `row.bars` with `col_start`, `col_end`, `css`, `title`; columns are 1-based over `cal_days`; check `_overview_calendar_rows` first), `apartments`, `demo_loaded`.
 - Today rows in the old table (`dashboard.html`): stay label `reservation.summary if reservation.source == 'manual' and reservation.summary and reservation.summary.strip() else reservation.internal_name`; arriving test `(reservation.date_from | string)[:10] == today.isoformat()`; status badge `v2_status_pill(cell, progress, reservation)`; guests `progress.expected if progress.expected is not none else (progress.guests | length)`; i18n `dashboard.today.guests`, `dashboard.today.nights`, `dashboard.today.title`, `calendar.arrival`, `calendar.departure`, `dashboard.today.empty`, `dashboard.calendar.full` ("Full calendar →").
 - Property colour: `property_identity(id, name, compact)` / `.ui-pdot[data-property]` (`App/app/templates/_components.html` line 301); `bar.css` carries the property colour class used by the old month grid.
-- "Clear demo data": today `<form method="post" action="/demo/reset" ... data-confirm data-confirm-message="{{ t('confirm.clear_demo') }}">{{ ui_button(t('demo.clear'), 'quiet', type='submit') }}</form>` inside `.ov-links` of the phone header; "the existing overflow" = `row_menu_begin()` / `row_menu_end()` macros in `_components.html`.
+- "Clear demo data" on phone today (anchor, verbatim, `dashboard.html` line 54): `{% if demo_loaded %}<form method="post" action="/demo/reset" class="inline ov-inline ph-hide" data-confirm data-confirm-message="{{ t('confirm.clear_demo') }}">{{ ui_button(t('demo.clear'), 'quiet', type='submit') }}</form>{% endif %}`. On wide layout, move the same form into `row_menu_begin()` / `row_menu_end()` from `_components.html` (This week head overflow).
 
 ## 3. Files
 
-| Path | Action |
-|---|---|
-| `App/app/templates/dashboard.html` | fill the 1134 slot in `dash-wide` |
-| `App/app/templates/_icons.html` | add `log-in` if 1133 did not |
-| `App/app/static/app2.css` | block `/* 1134 dashboard */` appended; base.html `?v=` to `20261112-1134a` |
-| `App/app/templates/base.html` | cache bump |
-| `App/app/host_i18n.py`, `App/app/host_vi_i18n.py` | keys (step 1), en, cs, vi |
-| `App/tests/test_host_new_dashboard_1133.py` | extend with 1134 cases (or `test_host_new_dashboard_1134.py` if the file is over 200 lines) |
-| `docs/design/MASTER.md` section 2 | token values: page background cream, coral-red tokens (check what 1132 already added; do not duplicate) |
-| `docs/design/pages/dashboard.md` | rewrite to the new layout (step 4, at most 40 lines) |
+| Path | Action | What |
+|---|---|---|
+| `App/app/templates/dashboard.html` | edit | Today + This week inside `dash-wide` (step 2) |
+| `App/app/templates/_icons.html` | edit | `log-in` if 1133 did not add it |
+| `App/app/static/app2.css` | edit | `/* 1134 dashboard */` block (step 3) |
+| `App/app/templates/base.html` | edit | `app2.css?v=20261112-1134a` |
+| `App/app/host_i18n.py`, `App/app/host_vi_i18n.py` | edit | Today/week keys (step 1) |
+| `App/tests/test_host_new_dashboard_1133.py` | edit | 1134 cases (or new `test_host_new_dashboard_1134.py` if file exceeds 200 lines) |
+| `docs/design/MASTER.md` | edit | Section 2 tokens (no duplicate of 1132 lines) |
+| `docs/design/pages/dashboard.md` | edit | Desktop layout description (step 4, at most 40 lines) |
 
-No other file. Anchor not found: STOP.
+No other file may change. Anchor not found: STOP.
 
 ## 4. Steps
 
@@ -45,7 +45,7 @@ After the `dashboard.empty.see_stays` keys 1133 added: `dashboard.today.leaving`
 In `dashboard.html`, replace the 1134 comment slot with (inside `dash-wide`, after the needs-you section):
 1. **Today** `<section class="dash-today" data-dash-today aria-labelledby="dash-today-title"><h2 id="dash-today-title">{{ t('dashboard.today.title') }}</h2>`; `{% if today_rows %}<ul class="dash-rows">` and per row `<li><a class="dash-row" href="/reservations/{{ reservation.id }}?return_to=/" data-dash-stay="{{ reservation.id }}">` (the WHOLE row is the link; no nested links, buttons or menus inside) containing: `<span class="dash-ic {{ 'is-out' if not arriving else 'is-in' }}">{{ icon('log-out' if not arriving else 'log-in', 24) }}</span>` (leaving = blue tint, arriving = green tint), `<div class="dash-row-copy"><strong>{{ property_identity(reservation.apartment_id, stay_label, true) }}</strong><span>{{ t('dashboard.today.arriving') if arriving else t('dashboard.today.leaving') }} · {{ guests tp('dashboard.today.guests', n) }}{% if arriving %} · {{ tp('dashboard.today.nights', row.nights) }}{% endif %}</span></div>`, then `{{ v2_status_pill(cell, progress, reservation) }}` (exactly ONE status badge), then `{{ icon('chevron-right', 22) }}`. Empty: `<p class="dash-none">{{ t('dashboard.today.empty') }}</p>`. Do not reuse `data-stay-id` or `.dashboard-row` here (the old row JS keys on them).
 2. **This week** `<section class="dash-week" data-dash-week aria-labelledby="dash-week-title"><div class="dash-week-head"><h2 id="dash-week-title">{{ t('dashboard.week.title') }}</h2><a class="dash-link" href="/?cal_view=calendar">{{ t('dashboard.calendar.full') }}</a></div>`. Grid of 7 day columns from `cal_days[:7]` (header cells: weekday abbreviation using the same `wd` list the old grid uses, plus day number; the first (today) cell has class `is-today` = `--coral-red-soft` background). One row per entry in `cal_rows`: property name cell (with `ui-pdot`), then the bars clipped to columns 1-7: for each bar with `col_start <= 7`, `<span class="dash-pill {{ bar.css }}" data-c1="{{ bar.col_start }}" data-c2="{{ [bar.col_end, 8] | min }}">`. Use the same attribute-to-column technique the old `.cgrid .bar` uses (read `grep -n "data-c1" App/app/static/app2.css App/app/static/*.js | head -5` first; if CSS needs one rule per column index, write the seven rules `[data-c1="N"]{grid-column-start:N}` and `[data-c2="N"]{grid-column-end:N}` yourself with `grid-column` spans via the gap). The pill label is `t('dashboard.week.booked')` in the first cell of the stay only (a pill that starts before today still shows the label), soft tinted background in the property colour (reuse the colour tokens behind `bar.css`; if they are raw hex there, STOP and report which). No `title` text clipped: the pill is at least 28 px high; labels never ellipsised ("Booked" is short). Do not link pills (display only). No second calendar markup.
-3. **Clear demo data**: inside `dash-head` do not add anything. Put it in an overflow `row_menu_begin()` ... `row_menu_end()` at the right end of the This week head (after the "Full calendar" link), wrapping the same form, only `{% if demo_loaded %}`. Item markup is the existing `row-menu-form` pattern; keep `data-confirm` and the confirm message key.
+3. **Clear demo data**: inside `dash-head` do not add anything. Put it in an overflow menu using `row_menu_begin()` and `row_menu_end()` at the right end of the This week head (after the "Full calendar" link), wrapping the same form, only `{% if demo_loaded %}`. Item markup is the existing `row-menu-form` pattern; keep `data-confirm` and the confirm message key.
 4. Remove from the new layout only (the phone block is untouched): nothing else to delete, because the old month grid, `?`, month line and banner live in `dash-phone`; verify with `grep -c "ov-cal-block" App/app/templates/dashboard.html` (unchanged count) and that none of `ov-cal-block`, `ov-month`, `ui-how` appears inside `dash-wide`.
 Commit `1134 step 2`.
 
@@ -86,10 +86,26 @@ python3 scripts/context_lint.py 2>&1 | tail -30
 
 Stop and report if: 1133 is not in the base; `cal_rows` bars carry raw hex colours or no column data; the week grid cannot fit at 768 without cutting a label after 2 tries; JS in `dashboard-calendar.js` rewires `.dashboard-row` or `data-stay-id` in a way that touches the new block; more than 25 tool calls.
 
-## 9. Report (branch, PR and what to report)
+## 9. Report
 
-Branch `task/1134-dashboard-redesign-c`, one **draft** PR (stacked on 1133), never push to `main`; merge only with `scripts/merge-pr-on-green.sh` (owner step: merge 1132, 1133, 1134 in order; green merges auto-deploy; the redesign ships complete only after 1134). Report `docs/tasks/1134-report.md` (600 tokens at most): files changed, commands with last 5 lines, section 6 ticked, per-page screenshot notes, Deviations (`Done: steps 1 to k. Left: steps k+1 to 4.`), Questions, owner steps.
+Write `docs/tasks/1134-report.md` (600 tokens at most) and set `Status: review`. The report has:
 
-## Orchestrator end-of-session (not the executor)
+1. The files changed (`git diff --stat`).
+2. Each command, with the last 5 lines of its output.
+3. Section 7 ticked.
+4. Deviations.
+5. Questions.
+6. Owner steps left.
 
-After the review of all three reports, the orchestrator: appends to `docs/context/decisions.md`: `[design] 2026-11-12: host dashboard redesign (Figma 4POeO1dtcL5i2U5e0gdEoU, laptop B and tablet B): cream page background #faf6f0, coral-red tokens (#d0452d / #b83d28 / #fdece8, signal only), new sidebar (no account box, no Smart locks or Invoices in the sidebar, both in the account menu), tablet 768-1023 icon rail replaces the bottom tab bar, new icons brush-cleaning, coins, wallet, nav label "Dashboard" stays. Briefs 1132-1134.`; adds a status line (5 lines at most); records any known issue; runs `python3 scripts/context_lint.py`; and, per `workflow.md`, notes it as `[workflow]` only if the workflow changed (it did not).
+The executor does not edit `docs/context/decisions.md`. The orchestrator records the design decision after all three reports are reviewed.
+
+## Risk list (for the reviewer)
+
+Read the full diff for: `dashboard.html` (Today rows as single links, week grid), `app2.css` (`/* 1134 dashboard */`), `docs/design/pages/dashboard.md`, and week-grid browser tests.
+
+## Owner steps
+
+1. Confirm 1133 is on the branch before the executor starts 1134.
+2. After all three executor reports, the orchestrator adds one line to `docs/context/decisions.md` for the Figma B redesign (cream background, coral tokens, sidebar/rail, icons 1132-1134).
+3. Review UX gate screenshots for the full dashboard at 390/768/1280 before merge.
+4. Merge 1132, 1133, 1134 in order with `scripts/merge-pr-on-green.sh` when CI is green; keep the PR draft until 1134 is ready to ship.

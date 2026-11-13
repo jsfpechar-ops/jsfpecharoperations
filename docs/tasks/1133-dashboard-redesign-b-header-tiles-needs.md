@@ -1,7 +1,7 @@
 # 1133: host dashboard redesign, part B of 3: greeting header, month tiles, "What needs you" cards (laptop and tablet)
 
 Status: todo
-Depends on: 1132 (merged, or this branch stacked on `task/1132-dashboard-redesign-a`) | Base commit: origin/main | Branch: task/1133-dashboard-redesign-b
+Depends on: 1132 | Base commit: d9033975 | Branch: claude/great-fermi-lw5ogs (run after 1132 on the same PR stack)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (4 steps of at most 6 calls)
 Brief by Sonnet 5.5, 2026-11-12. Owner Josef approved the Figma frames "Laptop 1280 / Dashboard (chosen: B)" and "Tablet 820 / Dashboard (B)" (file `4POeO1dtcL5i2U5e0gdEoU`). Order: 1132, **1133 (this)**, 1134. Both 1133 and 1134 touch `dashboard.html` and `app2.css`: 1134's anchors are written for the file as this brief leaves it.
 
@@ -11,34 +11,36 @@ At 768 px and wider, `/` shows a new one-lane page: header (greeting, date, one 
 
 Out of scope: phone layout, other pages, door locks, invoices, admin, guest pages, the logic that builds the needs-you lines (`App/app/needs_you.py`, only read its output).
 
-## 2. Context and rules
+## 2. Context
 
 AGENTS rules 6, 7, 9 (one explanation in one place; write "no tracking cookies", never "no cookies"), 10; tokens only (1132 added `--coral-red*`, `--tile-*`, `--page-cream`, `--danger*`), no raw hex, no inline `style=`; 12 px minimum between neighbours; no truncated labels; SQL only through `App/app/db.py` helpers; no new dependency, outbound request or personal-data field; icons only from `_icons.html`.
+
+Tile counts: "N still missing" = `len(missing_report_rows)`; "N late" = red stay lines in `ny_lines` (computed in template). No new query beyond `stays` in `month_summary`.
 
 Verified facts:
 - Route: `dashboard()` in `App/app/routes/admin.py` line 470; context dict near lines 535-560 has `"month_summary": reporting.month_summary(owner_user_id, today)`, `rows`, `missing_report_rows`, `apartments`, `today`, `cal_view`, `demo_loaded`.
 - `reporting.month_summary` (`App/app/reporting.py` line 1016) runs ONE query over stays overlapping the month and returns `{"guests","nights","reported"}`. Callers: `dashboard.html` line 89 and `routes/admin.py` lines 552 and 5272 (the latter a different `"month"` key, keep it working).
 - `dashboard.html` (154 lines): the whole non-empty branch is `{% else %}` at line 36 to `{% endif %}` at line 153. Phone and desktop share markup via `ph-only` / `ph-hide` classes, and CSS applies phone rules up to 1023 px (`@media (max-width:1023px){body.v2 .ph-hide{display:none !important}}`, app2.css ~914). So the new layout cannot reuse that markup: add a separate block.
-- Needs-you data: `needs_you = needs_you_build(rows, needs_you_queue, open_alerts, missing_report_rows, lang, today)`; `ny_lines` items have `kind` ("stay", ...), `tone` ("red"/"amber"), `subject` (stay name and dates), `text`, `action` (label, e.g. "Open the stay", "Review and send", "Send the guest link"), `href`, `stay_id`, `apartment_id`, `dismiss_id`. Existing macro `ny_row` renders them (keep it for the phone).
+- Needs-you data: `needs_you = needs_you_build(rows, needs_you_queue, open_alerts, missing_report_rows, lang, today)`; `ny_lines` items have `kind` (e.g. `stay`), `tone` (`red` or `amber`), `subject`, `text`, `action`, `href`, `stay_id`, `apartment_id`, `dismiss_id`. Existing macro `ny_row` renders them (keep it for the phone).
 - Property colour dot: `property_identity(id, name, compact)` in `_components.html` line 301 (`.ui-pdot[data-property]`).
 - `dashboard-calendar.js` line 970 replaces `[data-dashboard-refresh="stats"|"work"]` nodes after refresh; the new block must not reuse those attribute values (use `data-dash-*`).
 - i18n: `App/app/host_i18n.py` (en and cs blocks) and `App/app/host_vi_i18n.py` (vi). Existing keys to reuse: `needs_you.title`, `needs_you.more` / `.one` ("Show %(count)s more"), `stays.add_stay`, `dashboard.month.guests*`, `needs_you.action.*`.
 
 ## 3. Files
 
-| Path | Action |
-|---|---|
-| `App/app/reporting.py` | `month_summary`: add `stays` (count of rows from the same query) |
-| `App/app/routes/admin.py` | context: `greeting_part`, `first_name` inputs, tile numbers (step 1) |
-| `App/app/templates/dashboard.html` | wrap phone markup in `div.dash-phone`, add `div.dash-wide` with header, tiles, needs-you |
-| `App/app/templates/_icons.html` | add icons the tiles/cards need if missing: `log-out`, `log-in`, `shield-check`, `calendar-days`, `triangle-alert`, `send`, `users` (copy exact paths from `npm pack lucide-static@0.552.0` in the scratchpad dir) |
-| `App/app/static/app2.css` | new `/* 1133 dashboard */` block at the end; show/hide split at 768 px |
-| `App/app/templates/base.html` | bump `app2.css?v=` to `20261112-1133a` |
-| `App/app/host_i18n.py`, `App/app/host_vi_i18n.py` | new keys (step 2), en, cs, vi |
-| `App/tests/test_host_new_dashboard_1133.py` | new test file (step 4) |
-| `App/tests/test_0520_overview_today.py`, `test_host_quiet_dashboard*.py`, `test_dashboard_queue*.py`, `test_needs_you_dashboard_0241.py` | adjust only assertions broken by the wrapper split; never weaken |
+| Path | Action | What |
+|---|---|---|
+| `App/app/reporting.py` | edit | `month_summary` returns `stays` count (step 1) |
+| `App/app/routes/admin.py` | edit | `greeting_part` in context (step 1) |
+| `App/app/templates/dashboard.html` | edit | `dash-phone` wrap + `dash-wide` block (step 3) |
+| `App/app/templates/_icons.html` | edit | Any missing lucide paths for tiles/cards (step 3) |
+| `App/app/static/app2.css` | edit | `/* 1133 dashboard */` and 768 px show/hide (step 3) |
+| `App/app/templates/base.html` | edit | `app2.css?v=20261112-1133a` |
+| `App/app/host_i18n.py`, `App/app/host_vi_i18n.py` | edit | Dashboard greet and tile keys (step 2) |
+| `App/tests/test_host_new_dashboard_1133.py` | add | New tests (step 4) |
+| `App/tests/test_0520_overview_today.py`, `test_host_quiet_dashboard*.py`, `test_dashboard_queue*.py`, `test_needs_you_dashboard_0241.py` | edit | Wrapper-split assertions only |
 
-No other file. An anchor not found: STOP.
+No other file may change. An anchor not found: STOP.
 
 ## 4. Steps
 
@@ -57,11 +59,11 @@ Add after the `dashboard.calendar.full` key in each language block (grep `"dashb
 No new copy beyond this (rule 9: no helper sentences). Run `.venv/bin/python -m pytest tests/test_host_i18n.py tests/test_no_em_dashes.py -q --tb=short -x 2>&1 | tail -30`. Commit `1133 step 2`.
 
 ### Step 3: template and CSS (at most 8 calls)
-1. In `dashboard.html`, inside the `{% else %}` branch (line 36), compute once at its top (after `ny_lines`): `{% set shown_name = (workspace_user.display_name or workspace_user.username).split(' ')[0] %}` and `{% set late_n = ny_lines | selectattr('tone','equalto','red') | selectattr('kind','equalto','stay') | list | length %}`. Wrap everything from `<div class="ph-top ...` to the end of that branch in `<div class="dash-phone">...</div>`, unchanged inside. Then add BEFORE it `<div class="dash-wide" data-dash-wide>` containing, in order:
+1. In `dashboard.html`, inside the `{% else %}` branch (line 36), compute once at its top (after `ny_lines`): `{% set shown_name = (workspace_user.display_name or workspace_user.username).split(' ')[0] %}` and `{% set late_n = ny_lines | selectattr('tone','equalto','red') | selectattr('kind','equalto','stay') | list | length %}`. Wrap everything from `<div class="ph-top ph-only` (line 44) through the end of that `{% else %}` branch in `<div class="dash-phone">` (unchanged markup inside), then close `</div>`. Add BEFORE `dash-phone` a sibling `<div class="dash-wide" data-dash-wide>` containing, in order:
  - Env line: `{% if ubyport_env != 'prod' %}<p class="dash-env" role="status">{{ t('env.where_reports_go') }}</p>{% endif %}` (one slim line above the greeting; if the existing `_env_banner.html` already renders MOCK on this page, leave that include as is and add nothing; check with `grep -n "env_banner" App/app/templates/host_page.html App/app/templates/base.html | head -3`).
  - Header `<header class="dash-head"><div><h1 class="dash-title">{{ t('dashboard.greet.' ~ greeting_part, name=shown_name) }}</h1><p class="dash-date">{{ today.isoformat() | date_long(lang) }}</p></div><a class="dash-add" href="/reservations?new=1" data-calendar-add data-cal-create-type="stay">{{ icon('plus', 22) }}{{ t('stays.add_stay') }}</a></header>`. This h1 is the page's only visible h1 at 768+. No help `?`.
  - Tiles `<ul class="dash-tiles" data-dash-tiles>` with 3 `<li class="dash-tile">`, display-only (no links, no buttons): blue (`calendar-days`, `month_summary.stays`, `dashboard.tile.stays`, sub `tp('dashboard.tile.properties', apartments|length)`), teal (`users`, `month_summary.guests`, sub `guests_ok` when `stays_missing == 0` else `guests_missing` with count), reported (`shield-check`, number `month_summary.reported`, text `dashboard.tile.reported` with total = `month_summary.guests`, class `is-done` when `reported == guests` and `late_n == 0` else `is-warn`; sub `reported_ok` or `reported_late` with `late_n`). Hide the whole tiles list when `month_summary` is falsy.
- - Needs-you `<section class="dash-needs" aria-labelledby="dash-needs-title"><h2 id="dash-needs-title">{{ t('needs_you.title') }}{% if ny_lines %}<span class="dash-count">{{ ny_lines|length }}</span>{% endif %}</h2>`; when `ny_lines`: `<ul class="dash-cards">`, for the first 4 lines a macro `dash_card(line, first)`: `<li class="dash-card" data-tone="{{ line.tone }}" data-dash-need="{{ line.kind }}"{% if line.stay_id %} data-dash-need-stay="{{ line.stay_id }}"{% endif %}><span class="dash-ic is-red|is-amber">` (red tone: `is-red`, otherwise `is-amber`) holding `{{ icon(NAME, 26) }}`; NAME rule: red tone `triangle-alert`; amber tone `send` when `line.action == t('needs_you.action.send')`, `users` when it is `t('needs_you.action.send_link')`, else `send`. Then `<div class="dash-card-copy"><strong>{{ line.text or line.subject }}</strong><span>{{ property dot via property_identity(line.apartment_id, line.subject, true) if line.apartment_id else line.subject }}</span></div>` and, if `line.href`, `<a class="dash-btn{{ ' is-primary' if first }}" href="{{ line.href }}" data-needs-you-go>{{ line.action }}</a>`. Dismiss form only if `line.dismiss_id` (copy the existing form from `ny_row`, small ghost `×`). Beyond 4: `<details class="dash-more"><summary>{{ tp('needs_you.more', ny_lines|length - 4) }}</summary><ul class="dash-cards">...rest...</ul></details>`.
+ - Needs-you `<section class="dash-needs" aria-labelledby="dash-needs-title"><h2 id="dash-needs-title">{{ t('needs_you.title') }}{% if ny_lines %}<span class="dash-count">{{ ny_lines|length }}</span>{% endif %}</h2>`; when `ny_lines`: `<ul class="dash-cards">`, for the first 4 lines a macro `dash_card(line, first)`: `<li class="dash-card" data-tone="{{ line.tone }}" data-dash-need="{{ line.kind }}"{% if line.stay_id %} data-dash-need-stay="{{ line.stay_id }}"{% endif %}><span class="dash-ic is-red|is-amber">` (red tone: `is-red`, otherwise `is-amber`) holding `{{ icon(NAME, 26) }}`; NAME rule: red tone `triangle-alert`; amber tone `send` when `line.action == t('needs_you.action.send')`, `users` when it is `t('needs_you.action.send_link')`, else `send`. Then `<div class="dash-card-copy"><strong>{{ line.text or line.subject }}</strong><span>{{ property dot via property_identity(line.apartment_id, line.subject, true) if line.apartment_id else line.subject }}</span></div>` and, if `line.href`, `<a class="dash-btn{{ ' is-primary' if first }}" href="{{ line.href }}" data-needs-you-go>{{ line.action }}</a>`. Dismiss form only if `line.dismiss_id` (copy the existing form from `ny_row`, small ghost `×`). Beyond 4: `<details class="dash-more"><summary>{{ tp('needs_you.more', ny_lines|length - 4) }}</summary><ul class="dash-cards">` then render lines 5 onward with the same `dash_card` macro, `</ul></details>`.
  - Empty (no `ny_lines`): `<div class="dash-calm">{{ icon('check', 26) }}<strong>{{ t('dashboard.empty.calm') }}</strong>{% if next_arrival %}<span>{{ t('dashboard.empty.next_arrival', date=next_arrival.reservation.date_from | date_long(lang)) }}</span>{% endif %}<a class="dash-btn" href="/reservations">{{ t('dashboard.empty.see_stays') }}</a></div>`.
  Leave a comment `{#- 1134: Today and This week go here -#}` right before `</div>` closing `dash-wide`.
 2. CSS block `/* 1133 dashboard */` (all `body.v2`): `.dash-phone{display:block}.dash-wide{display:none}` and `@media (min-width:768px){.dash-phone{display:none}.dash-wide{display:block}}`. Laptop (1024+): `.dash-wide{padding:0 40px}`; tablet 768-1023: padding `0 28px`. Section gap 32 px (`.dash-wide>*+*{margin-top:32px}`). `.dash-head{display:flex;align-items:flex-start;justify-content:space-between;gap:24px}`; `.dash-title{font-size:30px;font-weight:700;margin:0}` (28 px at tablet); `.dash-date{color:var(--ink2);font-size:16px;margin:4px 0 0}`; `.dash-add{display:inline-flex;align-items:center;gap:8px;height:48px;padding:0 24px;border-radius:999px;background:var(--coral-red);color:#fff;font-size:16px;font-weight:600}` (use `var(--on-brand)` for the text, not hex). `.dash-tiles{list-style:none;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:0}`; `.dash-tile`: white, 1px `--line`, radius 16, padding 20; icon tile 48 px circle-radius 12 tinted: blue `--tile-blue-bg/--tile-blue-ink`, teal `--tile-teal-*`, reported `is-done` `--tile-done-*` or `is-warn` `--warns/--warn`; number 30/700, label 16/500, sub 14 `--ink2`; at tablet the icon sits above the text (stacked). `.dash-needs h2{font-size:22px;font-weight:700;display:flex;align-items:center;gap:12px}`; `.dash-count`: pill `--coral-red-soft` bg, `--coral-red-deep` text, 14/700, min 28 px. `.dash-cards{list-style:none;padding:0;display:grid;gap:12px}`; `.dash-card`: white, 1px `--line`, radius 16, padding 16 20, `display:flex;align-items:center;gap:16px`; `.dash-ic` 52x52 radius 14: `.is-red` bg `--danger-bg` ink `--danger`; `.is-amber` bg `--warns` ink `--warn`. Title 18/600; meta 14 `--ink2` with the property dot. `.dash-btn`: height 48, radius 999, padding 0 24, border 1px `--line`, white, ink, 16/600, `white-space:nowrap`; `.dash-btn.is-primary` coral-red bg, `--on-brand` text. Below 1024 px the card wraps: button on its own full-width row under the copy (`flex-wrap:wrap`, button `width:100%`). Focus: `:focus-visible` 2px `--coral-red` outline. Bump `base.html` `?v=`.
@@ -93,17 +95,33 @@ Rows used (test-map): host pages/CSS/templates, alerts and needs-you, calendar (
 - At 1280 and 820: greeting with first name by time of day (30 px / 28 px, bold), date line, ONE coral "Add stay" pill 48 px high on the right; three display-only tiles in one row at 1280, stacked icon-over-text at 820; "What needs you" with count chip, cards with 52 px icon tile, 18/600 title, meta line with property dot, one 48 px secondary pill (first card coral), "Show N more" after 4; calm state shows the next arrival and "See all stays".
 - No help `?` next to the title on this layout; no sentence the button already says; no raw hex or inline style added to templates (`git diff -U0 App/app/templates | grep -nE "#[0-9a-fA-F]{3,6}|style=" | tail -30` shows none that you added).
 - Phone (390) is pixel-identical in structure: `dash-phone` unchanged inside; phone tests green.
-- UX gate (AGENTS rule 10, you do it, never ask the owner): screenshots 390/768/1280 of `/` with demo data and with an empty needs-you state; per page "390: ...; 768: ...; 1280: ..." in the PR; tick the [design-system checklist](../design/design-system.md); never silence a lint finding.
+- UX gate (AGENTS rule 10, you do it, never ask the owner): screenshots 390/768/1280 of `/` with demo data and with an empty needs-you state; describe what you see at each width in the PR; tick the [design-system checklist](../design/design-system.md); never silence a lint finding.
 - Section 5 green, 0 skipped.
 
 ## 8. Stop and ask
 
 Stop and report if: 1132 is not in the base; an anchor is missing; no local-time helper exists; `dashboard-calendar.js` refresh would duplicate or break the new block; more than one existing test asserts markup you cannot keep without weakening it; the layout lint flags something not fixable in 2 tries; more than 25 tool calls.
 
-## 9. Report (branch, PR and what to report)
+## 9. Report
 
-Branch `task/1133-dashboard-redesign-b`, one **draft** PR, never push to `main`, merge only with `scripts/merge-pr-on-green.sh` (owner), keep the draft until the owner says it may ship (a half-built dashboard must not deploy before 1134). Do not edit status, decisions or known-issues. Report `docs/tasks/1133-report.md` (600 tokens at most): files changed, commands with last 5 lines, section 6 ticked, per-page notes, Deviations (`Done: steps 1 to k. Left: steps k+1 to 4.`), Questions, owner steps.
+Write `docs/tasks/1133-report.md` (600 tokens at most) and set `Status: review`. The report has:
 
-## Assumptions the orchestrator should confirm
+1. The files changed (`git diff --stat`).
+2. Each command, with the last 5 lines of its output.
+3. Section 7 ticked.
+4. Deviations.
+5. Questions.
+6. Owner steps left.
 
-"N still missing" uses the count of stays with missing police details (`missing_report_rows`); "N late" uses red stay lines in the needs-you list. Both are existing data; no new query except `stays` from the existing one.
+Do not edit `docs/context/status.md`, `docs/context/decisions.md` or `docs/context/known-issues.md`.
+
+## Risk list (for the reviewer)
+
+Read the full diff for: `App/app/templates/dashboard.html` (`dash-wide` / `dash-phone` split), `App/app/static/app2.css` (`/* 1133 dashboard */`), `App/app/reporting.py` (`month_summary`), and `test_host_new_dashboard_1133.py`.
+
+## Owner steps
+
+1. Confirm 1132 is merged or stacked on the same PR before the executor starts 1133.
+2. Keep the PR draft until 1134 is done (half-built dashboard must not deploy alone).
+3. Review greeting copy in en/cs/vi and the UX gate notes after the executor report.
+4. Merge only with `scripts/merge-pr-on-green.sh` when CI is green.
