@@ -652,6 +652,7 @@ def issue(door_code_id: int, *, allow_gateway: bool = False) -> bool:
             )
         alerts.resolve(f"door_code_failed:{reservation['id']}")
         alerts.resolve(f"door_code_delayed:{reservation['id']}")
+        alerts.resolve(f"door_code_pin_unverified:{reservation['id']}")
         db.audit(
             "door_code_issued",
             f"door_code={door_code_id} reservation={reservation['id']}",
@@ -1312,6 +1313,7 @@ def _handle_moves(now_iso: str) -> None:
                 actor="system",
                 owner_user_id=row["owner_user_id"],
             )
+            alerts.resolve(f"door_code_pin_unverified:{row['reservation_id']}")
             send_code_mail(int(row["id"]))
             if old_code_id and old_code_id != code_id:
                 try:
@@ -1552,6 +1554,19 @@ def _expire_ended_stays(now_iso: str) -> int:
     )
 
 
+def _resolve_unverified_cards() -> None:
+    """Close the "code not confirmed" card of a stay whose code is no longer issued (1173b).
+
+    Covers revoke, expiry and a deleted row. A new code (issue, move) resolves the card where it is made.
+    """
+    db.execute(
+        "UPDATE alert SET resolved_at = ? WHERE kind = ? AND resolved_at IS NULL "
+        "AND NOT EXISTS (SELECT 1 FROM door_code dc "
+        "WHERE dc.reservation_id = alert.reservation_id AND dc.state = ?)",
+        (db.utcnow(), "door_code_pin_unverified", ISSUED),
+    )
+
+
 def reconcile() -> Dict[str, int]:
     counts = {"created": 0, "issued": 0, "failed": 0, "expired": 0, "delayed": 0}
     if not config.DOOR_CODES_ENABLED:
@@ -1591,6 +1606,7 @@ def reconcile() -> Dict[str, int]:
         (EXPIRED, now_iso, ISSUED, now_iso),
     )
     counts["expired"] += int(expired or 0)
+    _phase("unverified_cards", _resolve_unverified_cards)
 
     failed = db.query_one(
         "SELECT COUNT(*) AS n FROM door_code WHERE state = ?",

@@ -1,4 +1,4 @@
-"""1166: three door-code problems that left the host in the dark now tell the host, once, without the PIN.
+"""1168: three door-code problems that left the host in the dark now tell the host, once, without the PIN.
 
 An unconfirmed revived code (warning card, one mail), a date move that cannot reach the lock
 (one mail, the hourly retry goes on) and the config kind (the reason sends the host to support).
