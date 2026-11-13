@@ -14,9 +14,9 @@ Add `go/internal/web/exports`, a Go port of six GET routes of App/app/routes/exp
 
 Rules (AGENTS.md): 1 filing correctness (read-only copies of filed records, no filing code touched); 2 no new personal-data field and no outbound request; 3 no guest data in the repo (fixtures use `@example.test`, made-up names, test-only keys); 4 no new dependency (stdlib `archive/zip`, pgx and repo packages already in `go.mod`); 5 plain PostgreSQL through `pgxpool`.
 
-**All code is pre-written and was dry-run by the brief writer** on a83df54. The exact files are sidecars in `docs/tasks/1320-files/<repo path>.txt`; step 1 copies them into place byte for byte and checks the sha256 below. Never retype or edit them.
+**All code is pre-written and was dry-run by the brief writer** on a83df54. The exact files were sidecars (removed by brief 1410); they live at the repo paths in the table on main. Never retype or edit them.
 
-| sha256 | file (repo path; sidecar = `docs/tasks/1320-files/<path>.txt`) |
+| sha256 | file (repo path) |
 |---|---|
 | `964d5ed86596626e03ce14fa14506481c154b9c33fdc7e7367fd090254f4829a` | `App/scripts/exports_golden.py` |
 | `642b4d0834752830352fa55474d26d0ec100bd37ff66fc4ae1ca4fa3ed67bec2` | `App/tests/test_go_exports.py` |
@@ -64,16 +64,16 @@ Rules (AGENTS.md): 1 filing correctness (read-only copies of filed records, no f
 | `App/tests/test_go_exports.py` | create | catalog and golden freshness |
 | `docs/tasks/1320-report.md` | create | the report (§9) |
 
-No other file may change. The sidecars under `docs/tasks/1320-files/` are already committed with this brief; leave them.
+No other file may change.
 
 ## 4. Steps
 
 0. Checks (one call, repo root): `git branch --show-current` prints `task/1320-go-exports`; `ls go/internal/web go/cmd/ubyhost-web/register_web_exports.go App/scripts/exports_golden.py App/tests/test_go_exports.py 2>&1 | tail -30` says "No such file" four times; `grep -c 'func registerRoutes(' go/cmd/ubyhost-web/registry.go` prints 1; `grep -c 'ubyhost_sqlite_date' App/migrations_pg/00001_baseline.sql` prints at least 1. If `App/.venv/bin/python` is missing: `cd App && python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt -r requirements-dev.txt 2>&1 | tail -5`. Anything else: STOP (§8).
 
-1. Copy the sidecars into place and check them (one call, repo root):
+1. Check the files (the sidecar copy was done in the original run; the sidecars were removed by brief 1410) (one call, repo root):
 
    ```bash
-   cd docs/tasks/1320-files && for f in $(find . -name '*.txt' | sed 's|^\./||; s|\.txt$||'); do mkdir -p "../../../$(dirname "$f")" && cp "$f.txt" "../../../$f"; done; cd ../../.. && sha256sum App/scripts/exports_golden.py App/tests/test_go_exports.py go/cmd/ubyhost-web/register_web_exports.go go/internal/web/exports/*.go go/internal/web/exports/i18n* go/internal/web/exports/testdata/exports_golden.json | tail -30
+   sha256sum App/scripts/exports_golden.py App/tests/test_go_exports.py go/cmd/ubyhost-web/register_web_exports.go go/internal/web/exports/*.go go/internal/web/exports/i18n* go/internal/web/exports/testdata/exports_golden.json | tail -30
    ```
 
    Every hash must equal the table in §2 (11 files). A mismatch: STOP. Commit "1320 step 1" (the 11 files).
@@ -106,7 +106,7 @@ Steps 3-5 above (they are the test-map for this change: the new package, the reg
 - [ ] Step 3: `--check` clean, `git status --short ../go` empty.
 - [ ] Step 4: gofmt empty, vet clean, `TestGoldenParity` PASS on PostgreSQL (or "CI only" with the reason).
 - [ ] Step 5: pytest green.
-- [ ] `git diff --stat a83df54..HEAD | tail -30` lists only §3 paths, this brief and `docs/tasks/1320-files/`, `docs/tasks/1321*`.
+- [ ] `git diff --stat a83df54..HEAD | tail -30` lists only §3 paths, this brief and `docs/tasks/1321*`.
 - [ ] Commits "1320 step 1" and "1320 step 5"; nothing pushed.
 
 ## 8. Stop and ask

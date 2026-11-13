@@ -4,7 +4,7 @@ Status: review
 
 ## Files changed (`git diff --stat d25f8b6..HEAD`)
 
-Only §3 paths, this brief, and `docs/plans/1302-files/` (bundle, unchanged). 17 files, +3024 / -1.
+Only §3 paths, this brief, and the bundle (unchanged; removed later by brief 1410). 17 files, +3024 / -1.
 
 - Code: `go/internal/web/properties/lists.go`, `lists_test.go`, `templates/lists.tmpl`, `i18n_keys.txt`, `i18n.json`, `testdata/lists_cases.json`, `testdata/lists_golden.json`
 - Wiring: `go/cmd/ubyhost-web/register_web_properties.go` (one line)

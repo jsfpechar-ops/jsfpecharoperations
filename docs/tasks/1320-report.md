@@ -4,7 +4,7 @@ Status: review. Executor: Haiku 5.5, one session, no subagents, no push.
 
 ## 1. Diff vs brief commit (a83df54..HEAD, this branch)
 
-Brief commits (b24d00e, sidecars) plus step 1 (0057e56) and the step 5 commit. Paths in §3 of the brief only, plus `docs/tasks/1320-files/`, `docs/tasks/1320-report.md`, and the `Status:` line of the brief. 1321 sidecars and brief are present from the brief commit and were not touched.
+Brief commits (b24d00e, sidecars) plus step 1 (0057e56) and the step 5 commit. Paths in §3 of the brief only, plus the sidecar folder (removed later by brief 1410), `docs/tasks/1320-report.md`, and the `Status:` line of the brief. 1321 sidecars and brief are present from the brief commit and were not touched.
 
 ## 2. Steps
 
