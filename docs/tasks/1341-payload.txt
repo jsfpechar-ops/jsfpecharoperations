@@ -1,0 +1,2508 @@
+~~~~file go/internal/web/billing/pyutil.go 06d64c7650044bc8ce075718883269c6fd0d2164b8ba1d5d04ab8b2b1ad28b22
+package billingweb
+
+import (
+	"strconv"
+	"strings"
+	"time"
+	"unicode"
+)
+
+// isPySpace is Python's str.isspace for the characters statements and names can hold.
+func isPySpace(r rune) bool { return unicode.IsSpace(r) || (r >= 0x1c && r <= 0x1f) }
+
+// pyStrip is str.strip().
+func pyStrip(s string) string { return strings.TrimFunc(s, isPySpace) }
+
+// pyLStrip is str.lstrip().
+func pyLStrip(s string) string { return strings.TrimLeftFunc(s, isPySpace) }
+
+// pyLines is str.splitlines(): it splits after \n, \r, \r\n, \v, \f, \x1c-\x1e,
+// \x85, U+2028 and U+2029 and drops the break.
+func pyLines(s string) []string {
+	var out []string
+	var cur strings.Builder
+	rs := []rune(s)
+	for i := 0; i < len(rs); i++ {
+		switch r := rs[i]; r {
+		case '\n', '\v', '\f', 0x1c, 0x1d, 0x1e, 0x85, 0x2028, 0x2029:
+		case '\r':
+			if i+1 < len(rs) && rs[i+1] == '\n' {
+				i++
+			}
+		default:
+			cur.WriteRune(r)
+			continue
+		}
+		out = append(out, cur.String())
+		cur.Reset()
+	}
+	if cur.Len() > 0 {
+		out = append(out, cur.String())
+	}
+	return out
+}
+
+// cut is s[:n] where n counts characters, as a Python slice does.
+func cut(s string, n int) string {
+	i := 0
+	for idx := range s {
+		if i == n {
+			return s[:idx]
+		}
+		i++
+	}
+	return s
+}
+
+// floorDiv is Python's a // b for b > 0.
+func floorDiv(a, b int64) int64 {
+	q := a / b
+	if a%b != 0 && a < 0 {
+		q--
+	}
+	return q
+}
+
+func deref(p *string) string {
+	if p == nil {
+		return ""
+	}
+	return *p
+}
+
+func itoa(n int64) string { return strconv.FormatInt(n, 10) }
+
+// csvField quotes a field the way csv.writer does with QUOTE_MINIMAL.
+func csvField(f string) string {
+	if strings.ContainsAny(f, ";\"\r\n") {
+		return "\"" + strings.ReplaceAll(f, "\"", "\"\"") + "\""
+	}
+	return f
+}
+
+// csvBytes is the shared writer of the accountant's files: a BOM, semicolons
+// and \r\n, so Czech Excel opens it straight away (billing_admin.export_csv,
+// billing_analytics._csv_bytes).
+func csvBytes(header []string, rows [][]string) []byte {
+	var b strings.Builder
+	b.WriteString(bom)
+	for _, row := range append([][]string{header}, rows...) {
+		for i, f := range row {
+			if i > 0 {
+				b.WriteString(";")
+			}
+			b.WriteString(csvField(f))
+		}
+		b.WriteString("\r\n")
+	}
+	return []byte(b.String())
+}
+
+// dayOf keeps only the year, month and day of t (zero means now), in UTC.
+func dayOf(t time.Time) time.Time {
+	if t.IsZero() {
+		t = time.Now()
+	}
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
+}
+
+func isoDay(t time.Time) string { return t.Format("2006-01-02") }
+
+// parseDay is date.fromisoformat(s[:10]).
+func parseDay(s string) (time.Time, error) { return time.Parse("2006-01-02", cut(s, 10)) }
+
+// daysBetween is (a - b).days for two midnight UTC days.
+func daysBetween(a, b time.Time) int { return int(a.Sub(b) / (24 * time.Hour)) }
+
+// bom is the UTF-8 byte order mark, written as bytes so no source line holds it.
+const bom = "\xef\xbb\xbf"
+~~~~
+~~~~file go/internal/web/billing/admin.go 7e074a0f751c2216b49bd66f8bdb5e36bb1057a56e0002678eb80ce018dafb64
+// Package billingweb is the read side of the operator billing page
+// /admin/fakturace, ported from App/app/billing_admin.py, bank_import.py and
+// billing_analytics.py. It registers no route and renders nothing: AdminPageData
+// returns a typed struct, the others are the queries and pure helpers behind it.
+// Python is the oracle; testdata/billing_admin_golden.json is written by
+// App/scripts/billing_admin_golden.py and the tests compare against it.
+package billingweb
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/jackc/pgx/v5"
+)
+
+// DB is what the queries need; *pgxpool.Pool and pgx.Tx fit.
+type DB interface {
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+}
+
+// queryAll runs sql and scans every row. The result is never nil, so it
+// marshals as [] like the Python list.
+func queryAll[T any](ctx context.Context, q DB, scan func(pgx.Rows) (T, error), sql string, args ...any) ([]T, error) {
+	rows, err := q.Query(ctx, sql, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []T{}
+	for rows.Next() {
+		v, err := scan(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, v)
+	}
+	return out, rows.Err()
+}
+
+var monthRE = regexp.MustCompile(`^\d{4}-(0[1-9]|1[0-2])$`)
+
+// CSVHeader is billing_admin.CSV_HEADER (lines 21-24).
+var CSVHeader = []string{
+	"Číslo", "Druh", "Opravuje", "Vystaveno", "Splatnost", "Období od", "Období do",
+	"Odběratel", "IČO", "DIČ", "Částka Kč", "VS", "Zaplaceno", "Způsob úhrady", "Stornováno",
+}
+
+// KindCS is billing_admin.KIND_CS (line 25).
+var KindCS = map[string]string{"invoice": "faktura", "supplementary": "doplatek", "storno": "storno"}
+
+// ViaCS is billing_admin.VIA_CS (line 26).
+var ViaCS = map[string]string{"bank_auto": "výpis", "bank_manual": "ručně"}
+
+// MonthOrCurrent is billing_admin.month_or_current (lines 29-31): the trimmed
+// value when it is YYYY-MM, else the month of today (zero means now).
+func MonthOrCurrent(value string, today time.Time) string {
+	text := pyStrip(value)
+	if monthRE.MatchString(text) {
+		return text
+	}
+	return dayOf(today).Format("2006-01")
+}
+
+// Buyer is the buyer as printed on the invoice (billing_admin._buyer).
+type Buyer struct {
+	Name string `json:"name"`
+	ICO  string `json:"ico"`
+	DIC  string `json:"dic"`
+}
+
+// buyerOf is billing_admin._buyer (lines 34-36). An empty snapshot reads as {}.
+func buyerOf(snapshot string) (Buyer, error) {
+	if snapshot == "" {
+		snapshot = "{}"
+	}
+	var doc struct {
+		Invoice map[string]any `json:"invoice"`
+	}
+	if err := json.Unmarshal([]byte(snapshot), &doc); err != nil {
+		return Buyer{}, fmt.Errorf("invoice snapshot: %w", err)
+	}
+	get := func(key string) string {
+		s, _ := doc.Invoice[key].(string)
+		return s
+	}
+	return Buyer{Name: get("buyer_name"), ICO: get("buyer_ico"), DIC: get("buyer_dic")}, nil
+}
+
+// Invoice is one row of billing_admin.invoices; JSON keys are the Python dict keys.
+type Invoice struct {
+	ID             int64   `json:"id"`
+	OwnerUserID    *int64  `json:"owner_user_id"`
+	Kind           string  `json:"kind"`
+	CorrectsID     *int64  `json:"corrects_id"`
+	Number         string  `json:"number"`
+	VS             string  `json:"vs"`
+	IssueDate      string  `json:"issue_date"`
+	DueDate        string  `json:"due_date"`
+	PeriodFrom     string  `json:"period_from"`
+	PeriodTo       string  `json:"period_to"`
+	TotalHaler     int64   `json:"total_haler"`
+	Voided         int64   `json:"voided"`
+	PaidOn         *string `json:"paid_on"`
+	PaidVia        *string `json:"paid_via"`
+	CorrectsNumber *string `json:"corrects_number"`
+	Buyer          Buyer   `json:"buyer"`
+}
+
+const invoicesSQL = `SELECT i.id, i.owner_user_id, i.kind, i.corrects_id, i.number, i.vs, i.issue_date, i.due_date,
+	i.period_from, i.period_to, i.total_haler, i.voided, i.paid_on, i.paid_via, i.snapshot_json,
+	c.number AS corrects_number FROM platform_invoice i
+	LEFT JOIN platform_invoice c ON c.id = i.corrects_id
+	WHERE i.issue_date >= $1 AND i.issue_date < $2 ORDER BY i.issue_date, i.id`
+
+// nextMonth is billing_admin._next_month (lines 59-61): the first day after the month.
+func nextMonth(month string) (string, error) {
+	if len(month) < 7 {
+		return "", fmt.Errorf("bad month %q", month)
+	}
+	year, err1 := strconv.Atoi(month[:4])
+	mon, err2 := strconv.Atoi(month[5:7])
+	if err1 != nil || err2 != nil {
+		return "", fmt.Errorf("bad month %q", month)
+	}
+	if mon == 12 {
+		return fmt.Sprintf("%d-01-01", year+1), nil
+	}
+	return fmt.Sprintf("%d-%02d-01", year, mon+1), nil
+}
+
+// Invoices is billing_admin.invoices (lines 39-56): the month's documents by
+// issue date, oldest first, with the buyer as printed. month is YYYY-MM.
+func Invoices(ctx context.Context, q DB, month string) ([]Invoice, error) {
+	next, err := nextMonth(month)
+	if err != nil {
+		return nil, err
+	}
+	var snaps []string
+	rows, err := queryAll(ctx, q, func(r pgx.Rows) (Invoice, error) {
+		var i Invoice
+		var snap string
+		err := r.Scan(&i.ID, &i.OwnerUserID, &i.Kind, &i.CorrectsID, &i.Number, &i.VS, &i.IssueDate,
+			&i.DueDate, &i.PeriodFrom, &i.PeriodTo, &i.TotalHaler, &i.Voided, &i.PaidOn, &i.PaidVia,
+			&snap, &i.CorrectsNumber)
+		snaps = append(snaps, snap)
+		return i, err
+	}, invoicesSQL, month+"-01", next)
+	if err != nil {
+		return nil, err
+	}
+	for n := range rows {
+		if rows[n].Buyer, err = buyerOf(snaps[n]); err != nil {
+			return nil, err
+		}
+	}
+	return rows, nil
+}
+
+// UnpaidInvoice is one row of billing_admin.unpaid.
+type UnpaidInvoice struct {
+	ID          int64  `json:"id"`
+	OwnerUserID *int64 `json:"owner_user_id"`
+	Kind        string `json:"kind"`
+	Number      string `json:"number"`
+	VS          string `json:"vs"`
+	IssueDate   string `json:"issue_date"`
+	DueDate     string `json:"due_date"`
+	TotalHaler  int64  `json:"total_haler"`
+	Buyer       Buyer  `json:"buyer"`
+	Overdue     bool   `json:"overdue"`
+}
+
+// Unpaid is billing_admin.unpaid (lines 64-77): every unpaid invoice of any
+// month, due date order (the id breaks ties). Overdue means due before today.
+func Unpaid(ctx context.Context, q DB, today time.Time) ([]UnpaidInvoice, error) {
+	day := isoDay(dayOf(today))
+	var snaps []string
+	rows, err := queryAll(ctx, q, func(r pgx.Rows) (UnpaidInvoice, error) {
+		var u UnpaidInvoice
+		var snap string
+		err := r.Scan(&u.ID, &u.OwnerUserID, &u.Kind, &u.Number, &u.VS, &u.IssueDate, &u.DueDate,
+			&u.TotalHaler, &snap)
+		snaps = append(snaps, snap)
+		return u, err
+	}, `SELECT id, owner_user_id, kind, number, vs, issue_date, due_date, total_haler, snapshot_json
+		FROM platform_invoice WHERE kind IN ('invoice', 'supplementary') AND voided = 0 AND paid_on IS NULL
+		ORDER BY due_date, id`)
+	if err != nil {
+		return nil, err
+	}
+	for n := range rows {
+		if rows[n].Buyer, err = buyerOf(snaps[n]); err != nil {
+			return nil, err
+		}
+		rows[n].Overdue = cut(rows[n].DueDate, 10) < day
+	}
+	return rows, nil
+}
+
+// AccountsByStatus is billing_admin.accounts_by_status (lines 80-82).
+func AccountsByStatus(ctx context.Context, q DB) (map[string]int64, error) {
+	type pair struct {
+		status string
+		n      int64
+	}
+	pairs, err := queryAll(ctx, q, func(r pgx.Rows) (pair, error) {
+		var p pair
+		return p, r.Scan(&p.status, &p.n)
+	}, "SELECT status, COUNT(*) AS n FROM billing_account GROUP BY status")
+	if err != nil {
+		return nil, err
+	}
+	out := map[string]int64{}
+	for _, p := range pairs {
+		out[p.status] = p.n
+	}
+	return out, nil
+}
+
+// KcCSV is billing_admin._kc (lines 85-86) and billing_analytics._cz (lines
+// 189-190): haler as "1234,50" for the CSV files.
+func KcCSV(haler int64) string {
+	return strings.Replace(strconv.FormatFloat(float64(haler)/100, 'f', 2, 64), ".", ",", 1)
+}
+
+// Kc is the page's formatter, routes/admin_billing._kc (lines 25-26): whole
+// crowns (floored) with a space between thousands, 1234567 haler -> "12 345".
+func Kc(haler int64) string {
+	n := floorDiv(haler, 100)
+	neg := n < 0
+	var digits string
+	if neg {
+		digits = strconv.FormatUint(uint64(-n), 10)
+	} else {
+		digits = strconv.FormatUint(uint64(n), 10)
+	}
+	var b strings.Builder
+	if neg {
+		b.WriteString("-")
+	}
+	for i, c := range digits {
+		if i > 0 && (len(digits)-i)%3 == 0 {
+			b.WriteString(" ")
+		}
+		b.WriteRune(c)
+	}
+	return b.String()
+}
+
+// ExportCSV is billing_admin.export_csv (lines 89-102): the month's documents
+// with semicolons, \r\n and a BOM, so Czech Excel opens it straight away.
+func ExportCSV(ctx context.Context, q DB, month string) ([]byte, error) {
+	invs, err := Invoices(ctx, q, month)
+	if err != nil {
+		return nil, err
+	}
+	var rows [][]string
+	for _, r := range invs {
+		kind, ok := KindCS[r.Kind]
+		if !ok {
+			return nil, fmt.Errorf("unknown invoice kind %q", r.Kind)
+		}
+		voided := ""
+		if r.Voided != 0 {
+			voided = "ano"
+		}
+		rows = append(rows, []string{
+			r.Number, kind, deref(r.CorrectsNumber), cut(r.IssueDate, 10), cut(r.DueDate, 10),
+			cut(r.PeriodFrom, 10), cut(r.PeriodTo, 10), r.Buyer.Name, r.Buyer.ICO, r.Buyer.DIC,
+			KcCSV(r.TotalHaler), r.VS, cut(deref(r.PaidOn), 10), ViaCS[deref(r.PaidVia)], voided,
+		})
+	}
+	return csvBytes(CSVHeader, rows), nil
+}
+~~~~
+~~~~file go/internal/web/billing/bankimport.go 96054082d2e08b2e1e98d40b2ecffa8e1a698dd39aaa06c1b2182fbb1aa41586
+package billingweb
+
+import (
+	"context"
+	"crypto/sha256"
+	"encoding/csv"
+	"encoding/hex"
+	"errors"
+	"io"
+	"math"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
+	"unicode"
+	"unicode/utf8"
+
+	"github.com/jackc/pgx/v5"
+	"golang.org/x/text/encoding/charmap"
+	"golang.org/x/text/unicode/norm"
+)
+
+// Statuses is bank_import.STATUSES (line 27).
+var Statuses = []string{"matched", "unmatched", "partial", "overpaid"}
+
+// StatementError is bank_import.StatementError: the file is not a statement
+// this importer can read. Reason is "encoding", "no_header" or "no_columns".
+type StatementError struct{ Reason string }
+
+func (e *StatementError) Error() string { return "statement: " + e.Reason }
+
+// IsStatementError reports whether err is a StatementError.
+func IsStatementError(err error) bool {
+	var se *StatementError
+	return errors.As(err, &se)
+}
+
+// InvoiceVS is bank_import.INVOICE_VS fullmatch (lines 28-29, "20\d{6}"): our
+// variable symbol is the year and a 4-digit number (UBY-2026-0042 -> 20260042).
+func InvoiceVS(vs string) bool {
+	rs := []rune(vs)
+	if len(rs) != 8 || rs[0] != '2' || rs[1] != '0' {
+		return false
+	}
+	for _, r := range rs[2:] {
+		if !unicode.IsDigit(r) {
+			return false
+		}
+	}
+	return true
+}
+
+// Payment is one parsed credit (the dict parse_gpc and parse_csv return).
+type Payment struct {
+	BankTxID       string `json:"bank_tx_id"`
+	ReceivedOn     string `json:"received_on"`
+	AmountHaler    int64  `json:"amount_haler"`
+	VS             string `json:"vs"`
+	CounterAccount string `json:"counter_account"`
+	Message        string `json:"message"`
+}
+
+// decodeText is bank_import._text (lines 39-44): UTF-8 (a leading BOM is
+// dropped), else cp1250. The five bytes cp1250 leaves undefined are an error,
+// as in Python.
+func decodeText(data []byte) (string, error) {
+	if utf8.Valid(data) {
+		return strings.TrimPrefix(string(data), bom), nil
+	}
+	var b strings.Builder
+	for _, c := range data {
+		switch c {
+		case 0x81, 0x83, 0x88, 0x90, 0x98:
+			return "", &StatementError{"encoding"}
+		}
+		b.WriteRune(charmap.Windows1250.DecodeByte(c))
+	}
+	return b.String(), nil
+}
+
+// fold is bank_import._fold (lines 47-50): 'Variabilní symbol' -> 'variabilnisymbol'.
+func fold(value string) string {
+	var b strings.Builder
+	for _, r := range norm.NFKD.String(value) {
+		switch {
+		case r >= 'a' && r <= 'z', r >= '0' && r <= '9':
+			b.WriteRune(r)
+		case r >= 'A' && r <= 'Z':
+			b.WriteRune(r + 32)
+		}
+	}
+	return b.String()
+}
+
+// vsOf is bank_import._vs (lines 53-55): the digits without leading zeros.
+func vsOf(value string) string {
+	var b strings.Builder
+	for _, r := range value {
+		if unicode.IsDigit(r) {
+			b.WriteRune(r)
+		}
+	}
+	return strings.TrimLeft(b.String(), "0")
+}
+
+// rowID is bank_import._row_id (lines 58-59).
+func rowID(parts ...string) string {
+	sum := sha256.Sum256([]byte(strings.Join(parts, "|")))
+	return "h" + hex.EncodeToString(sum[:])[:32]
+}
+
+var sixDigits = regexp.MustCompile(`^[0-9]{6}$`)
+
+// validDate returns the ISO date, or "" when the day does not exist.
+func validDate(year, month, day int) string {
+	t := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
+	if t.Year() != year || int(t.Month()) != month || t.Day() != day || month < 1 {
+		return ""
+	}
+	return isoDay(t)
+}
+
+// gpcDate is bank_import._gpc_date (lines 62-69): DDMMYY, or "" for none.
+func gpcDate(value string) string {
+	if !sixDigits.MatchString(value) {
+		return ""
+	}
+	day, _ := strconv.Atoi(value[:2])
+	month, _ := strconv.Atoi(value[2:4])
+	year, _ := strconv.Atoi(value[4:6])
+	return validDate(2000+year, month, day)
+}
+
+var pyIntRE = regexp.MustCompile(`^[+-]?[0-9]+(?:_[0-9]+)*$`)
+
+// pyInt is int(s) for ASCII digits: it trims spaces and accepts a sign and
+// single underscores between digits. Anything else is Python's ValueError.
+func pyInt(s string) (int64, error) {
+	t := pyStrip(s)
+	if !pyIntRE.MatchString(t) {
+		return 0, errors.New("invalid literal for int()")
+	}
+	return strconv.ParseInt(strings.ReplaceAll(t, "_", ""), 10, 64)
+}
+
+// ParseGPC is bank_import.parse_gpc (lines 72-95): one 075 line per
+// transaction, fixed columns counted in characters, credits only. A line whose
+// amount field is not a number is Python's ValueError and returns an error.
+func ParseGPC(text string) ([]Payment, error) {
+	rows := []Payment{}
+	for _, raw := range pyLines(text) {
+		rs := []rune(raw)
+		if !strings.HasPrefix(raw, "075") || len(rs) < 97 {
+			continue
+		}
+		for len(rs) < 128 {
+			rs = append(rs, ' ')
+		}
+		if rs[60] != '2' { // 1 debit, 2 credit, 4/5 storno
+			continue
+		}
+		received := gpcDate(string(rs[122:128]))
+		if received == "" {
+			received = gpcDate(string(rs[91:97]))
+		}
+		if received == "" {
+			continue
+		}
+		tx := strings.TrimLeft(pyStrip(string(rs[35:48])), "0")
+		id := rowID(string(rs))
+		if tx != "" {
+			id = "gpc-" + tx
+		}
+		amount, err := pyInt(string(rs[48:60]))
+		if err != nil {
+			return nil, err
+		}
+		rows = append(rows, Payment{
+			BankTxID:       id,
+			ReceivedOn:     received,
+			AmountHaler:    amount,
+			VS:             vsOf(string(rs[61:71])),
+			CounterAccount: strings.TrimLeft(pyStrip(string(rs[19:35])), "0"),
+			Message:        pyStrip(string(rs[97:117])),
+		})
+	}
+	return rows, nil
+}
+
+// csvFields is bank_import._CSV_FIELDS (lines 98-106), in Python's order. The
+// first matching column wins.
+var csvFields = []struct {
+	field string
+	names []string
+}{
+	{"id", []string{"idpohybu", "idtransakce", "cislotransakce", "identifikacetransakce", "reference", "id"}},
+	{"date", []string{"datumzauctovani", "datumprovedeni", "datum", "date"}},
+	{"amount", []string{"castka", "objem", "amount"}},
+	{"vs", []string{"variabilnisymbol", "vs"}},
+	{"account", []string{"protiucet", "cisloprotiuctu", "protiucetabanka", "counteraccount"}},
+	{"bank", []string{"kodbankyprotiuctu", "kodbanky", "bankcode"}},
+	{"message", []string{"zpravaproprijemce", "poznamka", "popis", "zprava", "message"}},
+}
+
+const digitsU = `[0-9]+(?:_[0-9]+)*`
+
+var floatRE = regexp.MustCompile(`^[+-]?(?:` + digitsU + `(?:\.(?:` + digitsU + `)?)?|\.` + digitsU + `)(?:[eE][+-]?` + digitsU + `)?$`)
+
+// csvAmount is bank_import._csv_amount (lines 109-117): "1 234,50" or
+// "1.234,50" in crowns to haler, rounded half to even. ok is false for what
+// Python turns into None. Not ported: "inf" and "infinity" crash Python (an
+// OverflowError) and read as not a number here; the hex and unicode-digit
+// forms float() accepts read as not a number too.
+func csvAmount(value string) (int64, bool) {
+	text := strings.ReplaceAll(strings.ReplaceAll(value, " ", ""), "\u00a0", "")
+	if strings.Contains(text, ",") && strings.Contains(text, ".") {
+		text = strings.ReplaceAll(text, ".", "")
+	}
+	text = pyStrip(strings.ReplaceAll(text, ",", "."))
+	if !floatRE.MatchString(text) {
+		return 0, false
+	}
+	f, err := strconv.ParseFloat(strings.ReplaceAll(text, "_", ""), 64)
+	if err != nil {
+		return 0, false
+	}
+	f = math.RoundToEven(f * 100)
+	if math.IsInf(f, 0) || math.Abs(f) > 9e18 {
+		return 0, false
+	}
+	return int64(f), true
+}
+
+const spaceClass = `[\s\v\x{1c}-\x{1f}\x{85}\p{Z}]*`
+
+var (
+	dmyRE = regexp.MustCompile(`^([0-9]{1,2})\.` + spaceClass + `([0-9]{1,2})\.` + spaceClass + `([0-9]{4})`)
+	ymdRE = regexp.MustCompile(`^([0-9]{4})-([0-9]{2})-([0-9]{2})`)
+)
+
+// csvDate is bank_import._csv_date (lines 120-130): "5. 11. 2026" or
+// "2026-11-05" to ISO; "" when there is no date or the day does not exist.
+func csvDate(value string) string {
+	text := pyStrip(value)
+	for _, p := range []struct {
+		re  *regexp.Regexp
+		dmy bool
+	}{{dmyRE, true}, {ymdRE, false}} {
+		m := p.re.FindStringSubmatch(text)
+		if m == nil {
+			continue
+		}
+		a, _ := strconv.Atoi(m[1])
+		b, _ := strconv.Atoi(m[2])
+		c, _ := strconv.Atoi(m[3])
+		if p.dmy {
+			return validDate(c, b, a)
+		}
+		return validDate(a, b, c)
+	}
+	return ""
+}
+
+// ParseCSV is bank_import.parse_csv (lines 133-169): a CSV export with a
+// header row; columns are found by their Czech or English names.
+func ParseCSV(text string) ([]Payment, error) {
+	lines := pyLines(text)
+	start := -1
+	for i, line := range lines {
+		f := fold(line)
+		if strings.Contains(f, "castka") || strings.Contains(f, "amount") {
+			start = i
+			break
+		}
+	}
+	if start < 0 {
+		return nil, &StatementError{"no_header"}
+	}
+	body := strings.Join(lines[start:], "\n")
+	delimiter := ','
+	if strings.Count(body, ";") >= strings.Count(body, ",") {
+		delimiter = ';'
+	}
+	reader := csv.NewReader(strings.NewReader(body))
+	reader.Comma = delimiter
+	reader.LazyQuotes = true
+	reader.FieldsPerRecord = -1
+	head, err := reader.Read()
+	if err != nil {
+		return nil, err
+	}
+	header := make([]string, len(head))
+	for i, h := range head {
+		header[i] = fold(h)
+	}
+	cols := map[string]int{}
+	for _, f := range csvFields {
+		found := false
+		for _, name := range f.names {
+			for i, h := range header {
+				if h == name {
+					cols[f.field] = i
+					found = true
+					break
+				}
+			}
+			if found {
+				break
+			}
+		}
+	}
+	_, hasAmount := cols["amount"]
+	_, hasDate := cols["date"]
+	if !hasAmount || !hasDate {
+		return nil, &StatementError{"no_columns"}
+	}
+	rows := []Payment{}
+	for {
+		record, err := reader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		blank := true
+		for _, c := range record {
+			if pyStrip(c) != "" {
+				blank = false
+			}
+		}
+		if blank {
+			continue
+		}
+		cell := func(field string) string {
+			i, ok := cols[field]
+			if !ok || i >= len(record) {
+				return ""
+			}
+			return pyStrip(record[i])
+		}
+		amount, okAmount := csvAmount(cell("amount"))
+		received := csvDate(cell("date"))
+		if !okAmount || received == "" || amount <= 0 {
+			continue
+		}
+		tx := cell("id")
+		account := cell("account")
+		if account != "" && cell("bank") != "" && !strings.Contains(account, "/") {
+			account = account + "/" + cell("bank")
+		}
+		id := rowID(received, itoa(amount), cell("vs"), account, cell("message"))
+		if tx != "" {
+			id = "csv-" + tx
+		}
+		rows = append(rows, Payment{
+			BankTxID:       id,
+			ReceivedOn:     received,
+			AmountHaler:    amount,
+			VS:             vsOf(cell("vs")),
+			CounterAccount: account,
+			Message:        cut(cell("message"), 140),
+		})
+	}
+	return rows, nil
+}
+
+// Parse is bank_import.parse (lines 172-176): bytes in, rows out, no database
+// and no outbound request. A statement starting with 074 is GPC, else CSV.
+func Parse(data []byte) ([]Payment, error) {
+	text, err := decodeText(data)
+	if err != nil {
+		return nil, err
+	}
+	if strings.HasPrefix(pyLStrip(text), "074") {
+		return ParseGPC(text)
+	}
+	return ParseCSV(text)
+}
+
+// BankPayment is one bank_payment row (bank_import.unmatched returns SELECT *).
+type BankPayment struct {
+	BankTxID         string  `json:"bank_tx_id"`
+	ReceivedOn       string  `json:"received_on"`
+	AmountHaler      int64   `json:"amount_haler"`
+	VS               *string `json:"vs"`
+	CounterAccount   *string `json:"counter_account"`
+	Message          *string `json:"message"`
+	MatchedInvoiceID *int64  `json:"matched_invoice_id"`
+	Status           string  `json:"status"`
+}
+
+// Unmatched is bank_import.unmatched (lines 233-236): the 200 newest payments
+// that are not matched. The transaction id breaks ties between equal dates.
+func Unmatched(ctx context.Context, q DB) ([]BankPayment, error) {
+	return queryAll(ctx, q, func(r pgx.Rows) (BankPayment, error) {
+		var p BankPayment
+		return p, r.Scan(&p.BankTxID, &p.ReceivedOn, &p.AmountHaler, &p.VS, &p.CounterAccount,
+			&p.Message, &p.MatchedInvoiceID, &p.Status)
+	}, `SELECT bank_tx_id, received_on, amount_haler, vs, counter_account, message, matched_invoice_id, status
+		FROM bank_payment WHERE status != 'matched' ORDER BY received_on DESC, bank_tx_id LIMIT 200`)
+}
+~~~~
+~~~~file go/internal/web/billing/analytics.go e2be53cc0af7cc47a0558f8b0cee4a60a79b9a7350268e02111c8e3980938baa
+package billingweb
+
+import (
+	"archive/zip"
+	"bytes"
+	"context"
+	"fmt"
+	"math"
+	"sort"
+	"time"
+
+	"github.com/jackc/pgx/v5"
+
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/billing"
+)
+
+// mrrStates is billing_analytics.MRR_STATES (line 18): the states that count as
+// a paying customer for MRR.
+var mrrStates = map[string]bool{"active": true, "overdue": true, "canceling": true}
+
+var (
+	customersCSVHeader = []string{
+		"Uzivatel", "Email", "Stav", "Plan", "Interval", "Byty", "Zaklad Kc",
+		"Max Kc", "TTLock Kc", "Whitelabel Kc", "Zaloha Kc", "Cistea Kc",
+		"Mesicni Kc", "Zacatek obdobi", "Konec obdobi", "Zrusit ke konci",
+	}
+	invoicesCSVHeader = []string{
+		"Cislo", "Druh", "Opravuje", "Vystaveno", "Splatnost", "Obdobi od", "Obdobi do",
+		"Uzivatel", "Castka Kc", "VS", "Zaplaceno", "Zpusob uhrady", "Stornovana",
+	}
+	paymentsCSVHeader = []string{"Nadpis", "Prijato", "Castka Kc", "VS", "Protiucet", "Zprava", "Stav"}
+)
+
+// Customer is one portfolio entry: the account row plus its priced fields.
+type Customer struct {
+	OwnerUserID       int64         `json:"owner_user_id"`
+	Status            string        `json:"status"`
+	Plan              string        `json:"plan"`
+	BillingInterval   string        `json:"billing_interval"`
+	ApartmentsBilled  int64         `json:"apartments_billed"`
+	AddonTTLock       int64         `json:"addon_ttlock"`
+	AddonWhitelabel   int64         `json:"addon_whitelabel"`
+	CarryCZK          int64         `json:"carry_czk"`
+	CancelAtPeriodEnd int64         `json:"cancel_at_period_end"`
+	DiscountPercent   int64         `json:"discount_percent"`
+	DiscountReason    *string       `json:"discount_reason"`
+	TrialEndsAt       *string       `json:"trial_ends_at"`
+	PeriodStart       *string       `json:"period_start"`
+	PeriodEnd         *string       `json:"period_end"`
+	DisplayName       *string       `json:"display_name"`
+	Email             *string       `json:"email"`
+	Username          string        `json:"username"`
+	Quote             billing.Price `json:"quote"`
+	NetCZK            int64         `json:"net_czk"`
+	MonthlyCZK        int64         `json:"monthly_czk"`
+	TrialEnds         string        `json:"trial_ends"`
+	TrialDaysLeft     *int          `json:"trial_days_left"`
+}
+
+// Portfolio is billing_analytics.portfolio's dict.
+type Portfolio struct {
+	Customers []Customer       `json:"customers"`
+	MRRCZK    int64            `json:"mrr_czk"`
+	ARRCZK    int64            `json:"arr_czk"`
+	ByStatus  map[string]int64 `json:"by_status"`
+	Today     string           `json:"today"`
+}
+
+// GetPortfolio is billing_analytics.portfolio (lines 46-90): every billing
+// account that has a plan, priced by billing.Quote so the cockpit can never
+// disagree with an issued invoice.
+func GetPortfolio(ctx context.Context, q DB, today time.Time) (Portfolio, error) {
+	day := dayOf(today)
+	customers, err := queryAll(ctx, q, func(r pgx.Rows) (Customer, error) {
+		var c Customer
+		var interval *string
+		err := r.Scan(&c.OwnerUserID, &c.Status, &c.Plan, &interval, &c.ApartmentsBilled,
+			&c.AddonTTLock, &c.AddonWhitelabel, &c.CarryCZK, &c.CancelAtPeriodEnd,
+			&c.DiscountPercent, &c.DiscountReason, &c.TrialEndsAt, &c.PeriodStart, &c.PeriodEnd,
+			&c.DisplayName, &c.Email, &c.Username)
+		c.BillingInterval = deref(interval)
+		return c, err
+	}, `SELECT b.owner_user_id, b.status, b.plan, b.billing_interval, b.apartments_billed,
+		b.addon_ttlock, b.addon_whitelabel, b.carry_czk, b.cancel_at_period_end,
+		b.discount_percent, b.discount_reason,
+		b.trial_ends_at, b.period_start, b.period_end,
+		u.display_name, u.email, u.username
+		FROM billing_account b JOIN user_account u ON u.id = b.owner_user_id
+		WHERE b.plan IS NOT NULL ORDER BY b.owner_user_id`)
+	if err != nil {
+		return Portfolio{}, err
+	}
+	out := Portfolio{Customers: customers, ByStatus: map[string]int64{}, Today: isoDay(day)}
+	for n := range out.Customers {
+		c := &out.Customers[n]
+		c.Quote, err = billing.Quote(int(c.ApartmentsBilled), c.Plan, c.BillingInterval,
+			c.AddonTTLock != 0, c.AddonWhitelabel != 0, int(c.DiscountPercent))
+		if err != nil {
+			return Portfolio{}, err
+		}
+		c.NetCZK = int64(c.Quote.Total) + c.CarryCZK
+		c.MonthlyCZK = int64(billing.Monthly(int(c.NetCZK), c.BillingInterval))
+		if mrrStates[c.Status] {
+			out.MRRCZK += c.MonthlyCZK
+			if c.BillingInterval == "year" {
+				out.ARRCZK += c.NetCZK
+			} else {
+				out.ARRCZK += c.MonthlyCZK * 12
+			}
+		}
+		out.ByStatus[c.Status]++
+		c.TrialEnds = cut(deref(c.TrialEndsAt), 10)
+		if c.Status == "trialing" && c.TrialEnds != "" {
+			ends, err := parseDay(c.TrialEnds)
+			if err != nil {
+				return Portfolio{}, fmt.Errorf("trial_ends_at of owner %d: %w", c.OwnerUserID, err)
+			}
+			left := daysBetween(ends, day)
+			c.TrialDaysLeft = &left
+		}
+	}
+	return out, nil
+}
+
+// NextMonthStart is billing_analytics.next_month_start (lines 93-97).
+func NextMonthStart(day time.Time) string {
+	d := dayOf(day)
+	return isoDay(time.Date(d.Year(), d.Month()+1, 1, 0, 0, 0, 0, time.UTC))
+}
+
+// Revenue is billing_analytics.revenue_totals' dict.
+type Revenue struct {
+	BilledCZK    int64 `json:"billed_czk"`
+	CollectedCZK int64 `json:"collected_czk"`
+}
+
+// RevenueTotals is billing_analytics.revenue_totals (lines 100-116): billed
+// vs collected this month, separate figures, never summed. Whole crowns are
+// floored, as Python's // is.
+func RevenueTotals(ctx context.Context, q DB, today time.Time) (Revenue, error) {
+	day := dayOf(today)
+	start := day.Format("2006-01") + "-01"
+	end := NextMonthStart(day)
+	var billed, collected int64
+	if err := q.QueryRow(ctx, `SELECT COALESCE(SUM(total_haler), 0)::bigint FROM platform_invoice
+		WHERE voided = 0 AND issue_date >= $1 AND issue_date < $2`, start, end).Scan(&billed); err != nil {
+		return Revenue{}, err
+	}
+	if err := q.QueryRow(ctx, `SELECT COALESCE(SUM(total_haler), 0)::bigint FROM platform_invoice
+		WHERE voided = 0 AND paid_on >= $1 AND paid_on < $2`, start, end).Scan(&collected); err != nil {
+		return Revenue{}, err
+	}
+	return Revenue{BilledCZK: floorDiv(billed, 100), CollectedCZK: floorDiv(collected, 100)}, nil
+}
+
+// TrialEnding, OverdueInvoice and EndingAccount are the watchlist rows.
+type TrialEnding struct {
+	OwnerUserID int64   `json:"owner_user_id"`
+	TrialEndsAt *string `json:"trial_ends_at"`
+	DisplayName *string `json:"display_name"`
+	Email       *string `json:"email"`
+}
+
+type OverdueInvoice struct {
+	ID          int64   `json:"id"`
+	Number      string  `json:"number"`
+	TotalHaler  int64   `json:"total_haler"`
+	DueDate     string  `json:"due_date"`
+	OwnerUserID int64   `json:"owner_user_id"`
+	DisplayName *string `json:"display_name"`
+	DaysLate    int     `json:"days_late"`
+}
+
+type EndingAccount struct {
+	OwnerUserID int64   `json:"owner_user_id"`
+	PeriodEnd   *string `json:"period_end"`
+	DisplayName *string `json:"display_name"`
+	Email       *string `json:"email"`
+}
+
+// Watch is billing_analytics.watchlists' dict.
+type Watch struct {
+	TrialsEnding []TrialEnding    `json:"trials_ending"`
+	Overdue      []OverdueInvoice `json:"overdue"`
+	Ending       []EndingAccount  `json:"ending"`
+}
+
+// Watchlists is billing_analytics.watchlists (lines 119-146): the operator's
+// morning list. Trials end within seven days; the text comparison of
+// trial_ends_at with the day after the week is the Python one, so a trial
+// ending on day 7 with a time is not listed. Ties in the order break by id.
+func Watchlists(ctx context.Context, q DB, today time.Time) (Watch, error) {
+	day := dayOf(today)
+	week := isoDay(day.AddDate(0, 0, 7))
+	var w Watch
+	var err error
+	w.TrialsEnding, err = queryAll(ctx, q, func(r pgx.Rows) (TrialEnding, error) {
+		var t TrialEnding
+		return t, r.Scan(&t.OwnerUserID, &t.TrialEndsAt, &t.DisplayName, &t.Email)
+	}, `SELECT b.owner_user_id, b.trial_ends_at, u.display_name, u.email
+		FROM billing_account b JOIN user_account u ON u.id = b.owner_user_id
+		WHERE b.status = 'trialing' AND b.trial_ends_at >= $1 AND b.trial_ends_at <= $2
+		ORDER BY b.trial_ends_at, b.owner_user_id`, isoDay(day), week)
+	if err != nil {
+		return Watch{}, err
+	}
+	w.Overdue, err = queryAll(ctx, q, func(r pgx.Rows) (OverdueInvoice, error) {
+		var o OverdueInvoice
+		return o, r.Scan(&o.ID, &o.Number, &o.TotalHaler, &o.DueDate, &o.OwnerUserID, &o.DisplayName)
+	}, `SELECT i.id, i.number, i.total_haler, i.due_date, i.owner_user_id, u.display_name
+		FROM platform_invoice i JOIN user_account u ON u.id = i.owner_user_id
+		WHERE i.voided = 0 AND i.paid_on IS NULL AND i.due_date < $1
+		ORDER BY i.due_date, i.id`, isoDay(day))
+	if err != nil {
+		return Watch{}, err
+	}
+	w.Ending, err = queryAll(ctx, q, func(r pgx.Rows) (EndingAccount, error) {
+		var e EndingAccount
+		return e, r.Scan(&e.OwnerUserID, &e.PeriodEnd, &e.DisplayName, &e.Email)
+	}, `SELECT b.owner_user_id, b.period_end, u.display_name, u.email
+		FROM billing_account b JOIN user_account u ON u.id = b.owner_user_id
+		WHERE b.cancel_at_period_end = 1 ORDER BY b.period_end, b.owner_user_id`)
+	if err != nil {
+		return Watch{}, err
+	}
+	for n := range w.Overdue {
+		due, err := parseDay(w.Overdue[n].DueDate)
+		if err != nil {
+			return Watch{}, fmt.Errorf("due_date of invoice %d: %w", w.Overdue[n].ID, err)
+		}
+		w.Overdue[n].DaysLate = daysBetween(day, due)
+	}
+	return w, nil
+}
+
+// Unverified is one signup waiting for its email link.
+type Unverified struct {
+	ID          int64   `json:"id"`
+	DisplayName *string `json:"display_name"`
+	Email       *string `json:"email"`
+	CreatedAt   string  `json:"created_at"`
+}
+
+// Queue is billing_analytics.operator_queue's dict.
+type Queue struct {
+	Overdue      []OverdueInvoice `json:"overdue"`
+	TrialsEnding []TrialEnding    `json:"trials_ending"`
+	Ending       []EndingAccount  `json:"ending"`
+	Unverified   []Unverified     `json:"unverified"`
+}
+
+func first[T any](s []T, n int) []T {
+	if len(s) > n {
+		return s[:n]
+	}
+	return s
+}
+
+// OperatorQueue is billing_analytics.operator_queue (lines 149-170): what needs
+// attention today, 25 rows per card.
+func OperatorQueue(ctx context.Context, q DB, today time.Time) (Queue, error) {
+	lists, err := Watchlists(ctx, q, today)
+	if err != nil {
+		return Queue{}, err
+	}
+	unverified, err := queryAll(ctx, q, func(r pgx.Rows) (Unverified, error) {
+		var u Unverified
+		return u, r.Scan(&u.ID, &u.DisplayName, &u.Email, &u.CreatedAt)
+	}, `SELECT u.id, u.display_name, u.email, u.created_at FROM user_account u
+		WHERE u.role = 'host' AND u.signup_at IS NOT NULL AND u.email_verified_at IS NULL
+		AND u.active = 0 ORDER BY u.created_at DESC, u.id LIMIT 25`)
+	if err != nil {
+		return Queue{}, err
+	}
+	return Queue{
+		Overdue: first(lists.Overdue, 25), TrialsEnding: first(lists.TrialsEnding, 25),
+		Ending: first(lists.Ending, 25), Unverified: unverified,
+	}, nil
+}
+
+// Aging is billing_analytics.aging (lines 173-185): unpaid, unvoided invoices
+// by days past due, whole crowns floored per invoice.
+func Aging(ctx context.Context, q DB, today time.Time) (map[string]int64, error) {
+	day := dayOf(today)
+	type late struct {
+		due   string
+		haler int64
+	}
+	rows, err := queryAll(ctx, q, func(r pgx.Rows) (late, error) {
+		var l late
+		return l, r.Scan(&l.due, &l.haler)
+	}, `SELECT due_date, total_haler FROM platform_invoice
+		WHERE voided = 0 AND paid_on IS NULL AND due_date < $1`, isoDay(day))
+	if err != nil {
+		return nil, err
+	}
+	buckets := map[string]int64{"0-7": 0, "8-30": 0, "31-90": 0, "90+": 0}
+	for _, r := range rows {
+		due, err := parseDay(r.due)
+		if err != nil {
+			return nil, err
+		}
+		days := daysBetween(day, due)
+		key := "90+"
+		switch {
+		case days <= 7:
+			key = "0-7"
+		case days <= 30:
+			key = "8-30"
+		case days <= 90:
+			key = "31-90"
+		}
+		buckets[key] += floorDiv(r.haler, 100)
+	}
+	return buckets, nil
+}
+
+// Forecast is billing_analytics.forecast (lines 232-241).
+type Forecast struct {
+	Next30DaysCZK int64 `json:"next_30_days_czk"`
+}
+
+// GetForecast is billing_analytics.forecast: open invoices due in the next 30 days.
+func GetForecast(ctx context.Context, q DB, today time.Time) (Forecast, error) {
+	day := dayOf(today)
+	var h int64
+	err := q.QueryRow(ctx, `SELECT COALESCE(SUM(total_haler), 0)::bigint FROM platform_invoice
+		WHERE voided = 0 AND paid_on IS NULL AND due_date >= $1 AND due_date <= $2`,
+		isoDay(day), isoDay(day.AddDate(0, 0, 30))).Scan(&h)
+	return Forecast{Next30DaysCZK: floorDiv(h, 100)}, err
+}
+
+// MovementParts and Movement are billing_analytics.movement's dict.
+type MovementParts struct {
+	New          int64 `json:"new"`
+	Expansion    int64 `json:"expansion"`
+	Contraction  int64 `json:"contraction"`
+	Churn        int64 `json:"churn"`
+	Reactivation int64 `json:"reactivation"`
+}
+
+type Movement struct {
+	Month       string        `json:"month"`
+	Previous    string        `json:"previous"`
+	TotalChange int64         `json:"total_change"`
+	Parts       MovementParts `json:"parts"`
+	CurrentMRR  int64         `json:"current_mrr"`
+}
+
+// GetMovement is billing_analytics.movement (lines 285-322): the month over
+// month MRR change decomposed, from billing_month_snapshot. month is YYYY-MM.
+func GetMovement(ctx context.Context, q DB, month string) (Movement, error) {
+	if len(month) < 7 {
+		return Movement{}, fmt.Errorf("bad month %q", month)
+	}
+	var year, mon int
+	if _, err := fmt.Sscanf(month[:4], "%d", &year); err != nil {
+		return Movement{}, fmt.Errorf("bad month %q", month)
+	}
+	if _, err := fmt.Sscanf(month[5:7], "%d", &mon); err != nil {
+		return Movement{}, fmt.Errorf("bad month %q", month)
+	}
+	prev := fmt.Sprintf("%d-%02d", year, mon-1)
+	if mon == 1 {
+		prev = fmt.Sprintf("%d-12", year-1)
+	}
+	monthMRR := func(m string) (int64, error) {
+		var s int64
+		err := q.QueryRow(ctx, `SELECT COALESCE(SUM(monthly_czk), 0)::bigint FROM billing_month_snapshot
+			WHERE month = $1 AND status IN ('active', 'overdue', 'canceling')`, m).Scan(&s)
+		return s, err
+	}
+	cur, err := monthMRR(month)
+	if err != nil {
+		return Movement{}, err
+	}
+	before, err := monthMRR(prev)
+	if err != nil {
+		return Movement{}, err
+	}
+	type row struct {
+		status     string
+		monthly    int64
+		prevCZK    *int64
+		prevStatus *string
+	}
+	rows, err := queryAll(ctx, q, func(r pgx.Rows) (row, error) {
+		var x row
+		var owner int64
+		return x, r.Scan(&owner, &x.status, &x.monthly, &x.prevCZK, &x.prevStatus)
+	}, `SELECT s.owner_user_id, s.status, s.monthly_czk, p.monthly_czk AS prev_czk, p.status AS prev_status
+		FROM billing_month_snapshot s LEFT JOIN billing_month_snapshot p
+		ON p.owner_user_id = s.owner_user_id AND p.month = $1 WHERE s.month = $2`, prev, month)
+	if err != nil {
+		return Movement{}, err
+	}
+	var parts MovementParts
+	for _, r := range rows {
+		was := r.prevCZK != nil
+		var prevCZK int64
+		if was {
+			prevCZK = *r.prevCZK
+		}
+		paying := mrrStates[r.status]
+		wasPaying := was && r.prevStatus != nil && mrrStates[*r.prevStatus]
+		switch {
+		case paying && !wasPaying:
+			parts.New += r.monthly
+		case !paying && wasPaying:
+			parts.Churn -= prevCZK
+		case paying && wasPaying:
+			if r.monthly > prevCZK {
+				parts.Expansion += r.monthly - prevCZK
+			} else if r.monthly < prevCZK {
+				parts.Contraction -= prevCZK - r.monthly
+			}
+		}
+	}
+	return Movement{Month: month, Previous: prev, TotalChange: cur - before, Parts: parts, CurrentMRR: cur}, nil
+}
+
+// Funnel is billing_analytics.funnel's dict.
+type Funnel struct {
+	Hosts           int64 `json:"hosts"`
+	Verified        int64 `json:"verified"`
+	Trialed         int64 `json:"trialed"`
+	Converted       int64 `json:"converted"`
+	TrialConversion int64 `json:"trial_conversion"`
+}
+
+// GetFunnel is billing_analytics.funnel (lines 325-338): signup, verified,
+// trial started, converted. trial_conversion rounds half to even.
+func GetFunnel(ctx context.Context, q DB) (Funnel, error) {
+	var f Funnel
+	for _, one := range []struct {
+		dst *int64
+		sql string
+	}{
+		{&f.Hosts, "SELECT COUNT(*) FROM user_account WHERE role = 'host'"},
+		{&f.Verified, "SELECT COUNT(*) FROM user_account WHERE role = 'host' AND email_verified_at IS NOT NULL"},
+		{&f.Trialed, "SELECT COUNT(DISTINCT owner_user_id) FROM billing_account WHERE trial_started_at IS NOT NULL"},
+		{&f.Converted, `SELECT COUNT(DISTINCT owner_user_id) FROM billing_month_snapshot
+			WHERE status IN ('active', 'overdue', 'canceling')`},
+	} {
+		if err := q.QueryRow(ctx, one.sql).Scan(one.dst); err != nil {
+			return Funnel{}, err
+		}
+	}
+	if f.Trialed != 0 {
+		f.TrialConversion = int64(math.RoundToEven(float64(100*f.Converted) / float64(f.Trialed)))
+	}
+	return f, nil
+}
+
+// TrendRow is one month of billing_analytics.trend.
+type TrendRow struct {
+	Month        string `json:"month"`
+	BilledCZK    int64  `json:"billed_czk"`
+	CollectedCZK int64  `json:"collected_czk"`
+}
+
+// Trend is billing_analytics.trend (lines 341-353): billed and collected per
+// issue/paid month, the last `months` of them (the page passes 12).
+func Trend(ctx context.Context, q DB, months int) ([]TrendRow, error) {
+	type pair struct {
+		m string
+		h int64
+	}
+	scan := func(r pgx.Rows) (pair, error) {
+		var p pair
+		return p, r.Scan(&p.m, &p.h)
+	}
+	billed, err := queryAll(ctx, q, scan, `SELECT substr(issue_date, 1, 7) AS m, COALESCE(SUM(total_haler), 0)::bigint AS h
+		FROM platform_invoice WHERE voided = 0 GROUP BY substr(issue_date, 1, 7)`)
+	if err != nil {
+		return nil, err
+	}
+	paidRows, err := queryAll(ctx, q, scan, `SELECT substr(paid_on, 1, 7) AS m, COALESCE(SUM(total_haler), 0)::bigint AS h
+		FROM platform_invoice WHERE voided = 0 AND paid_on IS NOT NULL GROUP BY substr(paid_on, 1, 7)`)
+	if err != nil {
+		return nil, err
+	}
+	paid := map[string]int64{}
+	for _, p := range paidRows {
+		paid[p.m] = floorDiv(p.h, 100)
+	}
+	out := []TrendRow{}
+	for _, b := range billed {
+		out = append(out, TrendRow{Month: b.m, BilledCZK: floorDiv(b.h, 100), CollectedCZK: paid[b.m]})
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Month < out[j].Month })
+	if months >= 0 && len(out) > months {
+		out = out[len(out)-months:]
+	}
+	return out, nil
+}
+
+// Discounts is billing_analytics.discount_overview's dict.
+type Discounts struct {
+	ListMRRCZK     int64      `json:"list_mrr_czk"`
+	NetMRRCZK      int64      `json:"net_mrr_czk"`
+	GiveawayMRRCZK int64      `json:"giveaway_mrr_czk"`
+	ListTotalCZK   int64      `json:"list_total_czk"`
+	NetTotalCZK    int64      `json:"net_total_czk"`
+	Customers      []Customer `json:"customers"`
+}
+
+// DiscountOverview is billing_analytics.discount_overview (lines 356-370):
+// list vs net across the portfolio, and who has a discount.
+func DiscountOverview(ctx context.Context, q DB, today time.Time) (Discounts, error) {
+	data, err := GetPortfolio(ctx, q, today)
+	if err != nil {
+		return Discounts{}, err
+	}
+	d := Discounts{NetMRRCZK: data.MRRCZK, Customers: []Customer{}}
+	for _, c := range data.Customers {
+		d.ListTotalCZK += int64(c.Quote.List)
+		d.NetTotalCZK += c.NetCZK
+		if mrrStates[c.Status] {
+			d.ListMRRCZK += int64(billing.Monthly(c.Quote.List, c.BillingInterval))
+			d.GiveawayMRRCZK += int64(billing.Monthly(c.Quote.Discount, c.BillingInterval))
+		}
+		if c.DiscountPercent > 0 {
+			d.Customers = append(d.Customers, c)
+		}
+	}
+	return d, nil
+}
+
+// exportFile is one CSV of the bulk export.
+type exportFile struct {
+	Name string
+	Data []byte
+}
+
+// exportAllFiles builds the three CSV files of billing_analytics.export_all_zip
+// (lines 199-229): zakaznici.csv, faktury.csv and platby.csv.
+func exportAllFiles(ctx context.Context, q DB, today time.Time) ([]exportFile, error) {
+	data, err := GetPortfolio(ctx, q, today)
+	if err != nil {
+		return nil, err
+	}
+	var customers [][]string
+	for _, c := range data.Customers {
+		cancel := ""
+		if c.CancelAtPeriodEnd != 0 {
+			cancel = "ano"
+		}
+		customers = append(customers, []string{
+			deref(c.DisplayName), deref(c.Email), c.Status, c.Plan, c.BillingInterval,
+			itoa(c.ApartmentsBilled), itoa(int64(c.Quote.Base)), itoa(int64(c.Quote.Max)),
+			itoa(int64(c.Quote.TTLock)), itoa(int64(c.Quote.Whitelabel)), itoa(c.CarryCZK),
+			itoa(c.NetCZK), itoa(c.MonthlyCZK), cut(deref(c.PeriodStart), 10),
+			cut(deref(c.PeriodEnd), 10), cancel,
+		})
+	}
+	type inv struct {
+		number, kind, corrects, issue, due, from, to string
+		owner                                        *int64
+		total                                        int64
+		voided                                       int64
+		paidOn, paidVia                              *string
+		vs                                           string
+	}
+	invs, err := queryAll(ctx, q, func(r pgx.Rows) (inv, error) {
+		var i inv
+		return i, r.Scan(&i.number, &i.kind, &i.corrects, &i.issue, &i.due, &i.from, &i.to, &i.owner,
+			&i.total, &i.voided, &i.paidOn, &i.paidVia, &i.vs)
+	}, `SELECT i.number, i.kind, COALESCE(c.number, ''), i.issue_date, i.due_date,
+		i.period_from, i.period_to, i.owner_user_id, i.total_haler, i.voided, i.paid_on,
+		i.paid_via, i.vs FROM platform_invoice i
+		LEFT JOIN platform_invoice c ON c.id = i.corrects_id ORDER BY i.id`)
+	if err != nil {
+		return nil, err
+	}
+	var invoices [][]string
+	for _, r := range invs {
+		kind := r.kind
+		if cs, ok := KindCS[kind]; ok {
+			kind = cs
+		}
+		owner := ""
+		if r.owner != nil {
+			owner = itoa(*r.owner)
+		}
+		voided := ""
+		if r.voided != 0 {
+			voided = "ano"
+		}
+		invoices = append(invoices, []string{
+			r.number, kind, r.corrects, cut(r.issue, 10), cut(r.due, 10), cut(r.from, 10), cut(r.to, 10),
+			owner, KcCSV(r.total), r.vs, cut(deref(r.paidOn), 10), ViaCS[deref(r.paidVia)], voided,
+		})
+	}
+	type pay struct {
+		id, received string
+		amount       int64
+		vs, account  *string
+		message      *string
+		status       string
+	}
+	pays, err := queryAll(ctx, q, func(r pgx.Rows) (pay, error) {
+		var p pay
+		return p, r.Scan(&p.id, &p.received, &p.amount, &p.vs, &p.account, &p.message, &p.status)
+	}, `SELECT bank_tx_id, received_on, amount_haler, vs, counter_account, message, status
+		FROM bank_payment ORDER BY received_on, bank_tx_id`)
+	if err != nil {
+		return nil, err
+	}
+	var payments [][]string
+	for _, p := range pays {
+		payments = append(payments, []string{
+			p.id, cut(p.received, 10), KcCSV(p.amount), deref(p.vs), deref(p.account),
+			deref(p.message), p.status,
+		})
+	}
+	return []exportFile{
+		{"zakaznici.csv", csvBytes(customersCSVHeader, customers)},
+		{"faktury.csv", csvBytes(invoicesCSVHeader, invoices)},
+		{"platby.csv", csvBytes(paymentsCSVHeader, payments)},
+	}, nil
+}
+
+// ExportAllZip is billing_analytics.export_all_zip: the bulk export, full
+// history, three CSV files and no PDF, Excel-ready.
+func ExportAllZip(ctx context.Context, q DB, today time.Time) ([]byte, error) {
+	files, err := exportAllFiles(ctx, q, today)
+	if err != nil {
+		return nil, err
+	}
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	for _, f := range files {
+		w, err := zw.Create(f.Name)
+		if err != nil {
+			return nil, err
+		}
+		if _, err := w.Write(f.Data); err != nil {
+			return nil, err
+		}
+	}
+	if err := zw.Close(); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+~~~~
+~~~~file go/internal/web/billing/page.go 9fe6cd59fac66a2d06207df6df26673c58005fb6d00ec917ebb29da9d27bc0da
+package billingweb
+
+import (
+	"context"
+	"time"
+)
+
+// billingStates is the filter list of the page (routes/admin_billing.py line 51).
+var billingStates = map[string]bool{
+	"trial_pending": true, "trialing": true, "active": true, "overdue": true, "canceling": true, "paused": true,
+}
+
+// AdminPage is the context of billing_admin_page without rendering; the JSON
+// keys are the keys of the Python context. posthog_url, signup_enabled and
+// ads_export_days come from config and the page thread adds them; fmt_date
+// and kc are functions (Kc is here).
+type AdminPage struct {
+	Month        string           `json:"month"`
+	Invoices     []Invoice        `json:"invoices"`
+	Unpaid       []UnpaidInvoice  `json:"unpaid"`
+	UnpaidTotal  string           `json:"unpaid_total"`
+	Payments     []BankPayment    `json:"payments"`
+	Accounts     map[string]int64 `json:"accounts"`
+	Today        string           `json:"today"`
+	Q            string           `json:"q"`
+	State        string           `json:"state"`
+	Cockpit      Portfolio        `json:"cockpit"`
+	Revenue      Revenue          `json:"revenue"`
+	Watch        Watch            `json:"watch"`
+	Aging        map[string]int64 `json:"aging"`
+	Forecast     Forecast         `json:"forecast"`
+	TrendRows    []TrendRow       `json:"trend_rows"`
+	Movement     Movement         `json:"movement"`
+	FunnelCounts Funnel           `json:"funnel_counts"`
+	Discounts    Discounts        `json:"discounts"`
+}
+
+// AdminPageData is the context assembly of routes/admin_billing.billing_admin_page
+// (lines 33-69). month is the raw `mesic` query value, qstr the raw `q`, state
+// the raw `state`; the invalid ones fall back like the route does. q is the
+// database. Only the Y-M-D of today is used (zero means now).
+func AdminPageData(ctx context.Context, q DB, month, qstr, state string, today time.Time) (AdminPage, error) {
+	day := dayOf(today)
+	p := AdminPage{
+		Month: MonthOrCurrent(month, day),
+		Today: isoDay(day),
+		Q:     cut(pyStrip(qstr), 120),
+	}
+	if billingStates[state] {
+		p.State = state
+	}
+	var err error
+	if p.Invoices, err = Invoices(ctx, q, p.Month); err != nil {
+		return AdminPage{}, err
+	}
+	if p.Unpaid, err = Unpaid(ctx, q, day); err != nil {
+		return AdminPage{}, err
+	}
+	var total int64
+	for _, u := range p.Unpaid {
+		total += u.TotalHaler
+	}
+	p.UnpaidTotal = Kc(total)
+	if p.Payments, err = Unmatched(ctx, q); err != nil {
+		return AdminPage{}, err
+	}
+	if p.Accounts, err = AccountsByStatus(ctx, q); err != nil {
+		return AdminPage{}, err
+	}
+	if p.Cockpit, err = GetPortfolio(ctx, q, day); err != nil {
+		return AdminPage{}, err
+	}
+	if p.Revenue, err = RevenueTotals(ctx, q, day); err != nil {
+		return AdminPage{}, err
+	}
+	if p.Watch, err = Watchlists(ctx, q, day); err != nil {
+		return AdminPage{}, err
+	}
+	if p.Aging, err = Aging(ctx, q, day); err != nil {
+		return AdminPage{}, err
+	}
+	if p.Forecast, err = GetForecast(ctx, q, day); err != nil {
+		return AdminPage{}, err
+	}
+	if p.TrendRows, err = Trend(ctx, q, 12); err != nil {
+		return AdminPage{}, err
+	}
+	if p.Movement, err = GetMovement(ctx, q, p.Month); err != nil {
+		return AdminPage{}, err
+	}
+	if p.FunnelCounts, err = GetFunnel(ctx, q); err != nil {
+		return AdminPage{}, err
+	}
+	if p.Discounts, err = DiscountOverview(ctx, q, day); err != nil {
+		return AdminPage{}, err
+	}
+	return p, nil
+}
+~~~~
+~~~~file go/internal/web/billing/golden_test.go e5e45b0172939c529a6969c164bd5ec7b6d2860aa242cde23ecc4719149de5b1
+package billingweb
+
+import (
+	"bytes"
+	"encoding/base64"
+	"encoding/json"
+	"os"
+	"reflect"
+	"testing"
+	"time"
+)
+
+// golden is testdata/billing_admin_golden.json, written by
+// App/scripts/billing_admin_golden.py from the real Python.
+type golden struct {
+	Today string `json:"today"`
+	Seed  []struct {
+		Table   string   `json:"table"`
+		Columns []string `json:"columns"`
+		Rows    [][]any  `json:"rows"`
+	} `json:"seed"`
+	Pure struct {
+		MonthOrCurrent []struct{ In, Out string } `json:"month_or_current"`
+		KcCSV          []struct {
+			In  int64
+			Out string
+		} `json:"kc_csv"`
+		Cz []struct {
+			In  int64
+			Out string
+		} `json:"cz"`
+		KcPage []struct {
+			In  int64
+			Out string
+		} `json:"kc_page"`
+		NextMonthStart []struct{ In, Out string } `json:"next_month_start"`
+	} `json:"pure"`
+	Parser []struct {
+		Name     string    `json:"name"`
+		InputB64 string    `json:"input_b64"`
+		Rows     []Payment `json:"rows"`
+		Error    string    `json:"error"`
+		Reason   string    `json:"reason"`
+	} `json:"parser"`
+	Scenarios []struct {
+		Fn     string            `json:"fn"`
+		Args   map[string]string `json:"args"`
+		Today  string            `json:"today"`
+		Result json.RawMessage   `json:"result"`
+	} `json:"scenarios"`
+}
+
+func loadGolden(t *testing.T) golden {
+	t.Helper()
+	raw, err := os.ReadFile("testdata/billing_admin_golden.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	dec.UseNumber()
+	var g golden
+	if err := dec.Decode(&g); err != nil {
+		t.Fatal(err)
+	}
+	return g
+}
+
+func mustDay(t *testing.T, s string) time.Time {
+	t.Helper()
+	d, err := time.Parse("2006-01-02", s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return d
+}
+
+// sameJSON reports whether the JSON of got equals want, number for number.
+func sameJSON(t *testing.T, got any, want json.RawMessage) (bool, string, string) {
+	t.Helper()
+	gb, err := json.Marshal(got)
+	if err != nil {
+		t.Fatal(err)
+	}
+	decode := func(b []byte) any {
+		dec := json.NewDecoder(bytes.NewReader(b))
+		dec.UseNumber()
+		var v any
+		if err := dec.Decode(&v); err != nil {
+			t.Fatal(err)
+		}
+		return v
+	}
+	return reflect.DeepEqual(decode(gb), decode(want)), string(gb), string(want)
+}
+
+func clip(s string) string {
+	if len(s) > 1500 {
+		return s[:1500] + "..."
+	}
+	return s
+}
+
+func TestPureHelpersMatchPython(t *testing.T) {
+	g := loadGolden(t)
+	today := mustDay(t, g.Today)
+	if len(g.Pure.MonthOrCurrent) < 9 || len(g.Pure.KcCSV) < 10 || len(g.Pure.KcPage) < 11 || len(g.Pure.NextMonthStart) < 4 {
+		t.Fatal("golden file has too few pure cases")
+	}
+	for _, c := range g.Pure.MonthOrCurrent {
+		if got := MonthOrCurrent(c.In, today); got != c.Out {
+			t.Errorf("MonthOrCurrent(%q) = %q, Python %q", c.In, got, c.Out)
+		}
+	}
+	for _, c := range g.Pure.KcCSV {
+		if got := KcCSV(c.In); got != c.Out {
+			t.Errorf("KcCSV(%d) = %q, Python %q", c.In, got, c.Out)
+		}
+	}
+	for _, c := range g.Pure.Cz {
+		if got := KcCSV(c.In); got != c.Out {
+			t.Errorf("_cz(%d) = %q, Python %q", c.In, got, c.Out)
+		}
+	}
+	for _, c := range g.Pure.KcPage {
+		if got := Kc(c.In); got != c.Out {
+			t.Errorf("Kc(%d) = %q, Python %q", c.In, got, c.Out)
+		}
+	}
+	for _, c := range g.Pure.NextMonthStart {
+		if got := NextMonthStart(mustDay(t, c.In)); got != c.Out {
+			t.Errorf("NextMonthStart(%s) = %q, Python %q", c.In, got, c.Out)
+		}
+	}
+}
+
+func TestParseMatchesPython(t *testing.T) {
+	g := loadGolden(t)
+	if len(g.Parser) < 16 {
+		t.Fatalf("golden file has %d statements, want at least 16", len(g.Parser))
+	}
+	rowsSeen := 0
+	for _, c := range g.Parser {
+		data, err := base64.StdEncoding.DecodeString(c.InputB64)
+		if err != nil {
+			t.Fatal(err)
+		}
+		rows, err := Parse(data)
+		switch c.Error {
+		case "":
+			if err != nil {
+				t.Errorf("%s: %v, Python parsed %d rows", c.Name, err, len(c.Rows))
+				continue
+			}
+			want, _ := json.Marshal(c.Rows)
+			if ok, got, _ := sameJSON(t, rows, want); !ok {
+				t.Errorf("%s differs from Python\n got: %s\nwant: %s", c.Name, clip(got), clip(string(want)))
+			}
+			rowsSeen += len(rows)
+		case "StatementError":
+			var se *StatementError
+			if err == nil || !IsStatementError(err) {
+				t.Errorf("%s: err = %v, Python StatementError", c.Name, err)
+			} else if se = err.(*StatementError); se.Reason != c.Reason {
+				t.Errorf("%s: reason %q, Python %q", c.Name, se.Reason, c.Reason)
+			}
+		case "ValueError":
+			if err == nil || IsStatementError(err) {
+				t.Errorf("%s: err = %v, Python ValueError", c.Name, err)
+			}
+		default:
+			t.Fatalf("%s: unknown golden error %q", c.Name, c.Error)
+		}
+	}
+	if rowsSeen < 40 {
+		t.Fatalf("only %d parsed rows compared", rowsSeen)
+	}
+}
+
+func TestInvoiceVS(t *testing.T) {
+	for vs, want := range map[string]bool{
+		"20260042": true, "20991231": true, "2026004": false, "202600421": false,
+		"19260042": false, "2026004a": false, "": false,
+	} {
+		if InvoiceVS(vs) != want {
+			t.Errorf("InvoiceVS(%q) != %v", vs, want)
+		}
+	}
+}
+~~~~
+~~~~file go/internal/web/billing/admin_test.go 3586421cb97573a50e41c03a21c7d567bdf9585937e12556b2ad637eef14ac86
+package billingweb
+
+import (
+	"archive/zip"
+	"context"
+	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+// dispatch maps a golden scenario's fn to the Go call. Every entry must be used
+// by the golden file, and every golden scenario must have an entry.
+var dispatch = map[string]func(ctx context.Context, q DB, a map[string]string, day time.Time) (any, error){
+	"invoices": func(ctx context.Context, q DB, a map[string]string, _ time.Time) (any, error) {
+		return Invoices(ctx, q, a["month"])
+	},
+	"unpaid": func(ctx context.Context, q DB, _ map[string]string, d time.Time) (any, error) {
+		return Unpaid(ctx, q, d)
+	},
+	"accounts_by_status": func(ctx context.Context, q DB, _ map[string]string, _ time.Time) (any, error) {
+		return AccountsByStatus(ctx, q)
+	},
+	"export_csv": func(ctx context.Context, q DB, a map[string]string, _ time.Time) (any, error) {
+		b, err := ExportCSV(ctx, q, a["month"])
+		return string(b), err
+	},
+	"unmatched": func(ctx context.Context, q DB, _ map[string]string, _ time.Time) (any, error) {
+		return Unmatched(ctx, q)
+	},
+	"portfolio": func(ctx context.Context, q DB, _ map[string]string, d time.Time) (any, error) {
+		return GetPortfolio(ctx, q, d)
+	},
+	"revenue_totals": func(ctx context.Context, q DB, _ map[string]string, d time.Time) (any, error) {
+		return RevenueTotals(ctx, q, d)
+	},
+	"watchlists": func(ctx context.Context, q DB, _ map[string]string, d time.Time) (any, error) {
+		return Watchlists(ctx, q, d)
+	},
+	"operator_queue": func(ctx context.Context, q DB, _ map[string]string, d time.Time) (any, error) {
+		return OperatorQueue(ctx, q, d)
+	},
+	"aging": func(ctx context.Context, q DB, _ map[string]string, d time.Time) (any, error) {
+		return Aging(ctx, q, d)
+	},
+	"forecast": func(ctx context.Context, q DB, _ map[string]string, d time.Time) (any, error) {
+		return GetForecast(ctx, q, d)
+	},
+	"movement": func(ctx context.Context, q DB, a map[string]string, _ time.Time) (any, error) {
+		return GetMovement(ctx, q, a["month"])
+	},
+	"funnel": func(ctx context.Context, q DB, _ map[string]string, _ time.Time) (any, error) {
+		return GetFunnel(ctx, q)
+	},
+	"trend": func(ctx context.Context, q DB, _ map[string]string, _ time.Time) (any, error) {
+		return Trend(ctx, q, 12)
+	},
+	"discount_overview": func(ctx context.Context, q DB, _ map[string]string, d time.Time) (any, error) {
+		return DiscountOverview(ctx, q, d)
+	},
+	"export_all_files": func(ctx context.Context, q DB, _ map[string]string, d time.Time) (any, error) {
+		blob, err := ExportAllZip(ctx, q, d)
+		if err != nil {
+			return nil, err
+		}
+		zr, err := zip.NewReader(strings.NewReader(string(blob)), int64(len(blob)))
+		if err != nil {
+			return nil, err
+		}
+		files := map[string]string{}
+		for _, f := range zr.File {
+			if strings.HasSuffix(strings.ToLower(f.Name), ".pdf") {
+				return nil, fmt.Errorf("the bulk export holds a PDF: %s", f.Name)
+			}
+			rc, err := f.Open()
+			if err != nil {
+				return nil, err
+			}
+			b, err := io.ReadAll(rc)
+			rc.Close()
+			if err != nil {
+				return nil, err
+			}
+			files[f.Name] = string(b)
+		}
+		return files, nil
+	},
+	"admin_page": func(ctx context.Context, q DB, a map[string]string, d time.Time) (any, error) {
+		return AdminPageData(ctx, q, a["mesic"], a["q"], a["state"], d)
+	},
+}
+
+// minScenarios is how many scenarios the golden file must hold; a shorter file
+// (or a run that compares fewer) fails instead of passing quietly.
+const minScenarios = 30
+
+func TestAdminReadSideMatchesPython(t *testing.T) {
+	g := loadGolden(t)
+	if len(g.Scenarios) < minScenarios || len(g.Seed) < 5 {
+		t.Fatalf("golden file has %d scenarios and %d seed tables", len(g.Scenarios), len(g.Seed))
+	}
+	pool := testPool(t)
+	ctx := context.Background()
+	for _, table := range g.Seed {
+		marks := make([]string, len(table.Columns))
+		for i := range marks {
+			marks[i] = fmt.Sprintf("$%d", i+1)
+		}
+		sql := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", table.Table,
+			strings.Join(table.Columns, ", "), strings.Join(marks, ", "))
+		for _, row := range table.Rows {
+			args := make([]any, len(row))
+			for i, v := range row {
+				args[i] = v
+				if n, ok := v.(interface{ Int64() (int64, error) }); ok {
+					x, err := n.Int64()
+					if err != nil {
+						t.Fatalf("%s: %v", table.Table, err)
+					}
+					args[i] = x
+				}
+			}
+			if _, err := pool.Exec(ctx, sql, args...); err != nil {
+				t.Fatalf("seed %s %v: %v", table.Table, row, err)
+			}
+		}
+	}
+	used := map[string]bool{}
+	compared := 0
+	for i, s := range g.Scenarios {
+		call, ok := dispatch[s.Fn]
+		if !ok {
+			t.Fatalf("scenario %d: no Go call for %q", i, s.Fn)
+		}
+		used[s.Fn] = true
+		got, err := call(ctx, pool, s.Args, mustDay(t, s.Today))
+		if err != nil {
+			t.Errorf("%s %v %s: %v", s.Fn, s.Args, s.Today, err)
+			continue
+		}
+		compared++
+		if ok, gb, wb := sameJSON(t, got, s.Result); !ok {
+			t.Errorf("%s %v %s differs from Python\n got: %s\nwant: %s", s.Fn, s.Args, s.Today, clip(gb), clip(wb))
+		}
+	}
+	for fn := range dispatch {
+		if !used[fn] {
+			t.Errorf("no golden scenario for %s", fn)
+		}
+	}
+	if compared != len(g.Scenarios) {
+		t.Fatalf("compared %d of %d scenarios", compared, len(g.Scenarios))
+	}
+}
+
+// testPool makes a throwaway database from UBYHOST_TEST_DATABASE_URL, applies
+// the goose Up sections of App/migrations_pg and drops the database at the end.
+// It skips when the variable is unset.
+func testPool(t *testing.T) *pgxpool.Pool {
+	t.Helper()
+	base := os.Getenv("UBYHOST_TEST_DATABASE_URL")
+	if base == "" {
+		t.Skip("UBYHOST_TEST_DATABASE_URL is not set")
+	}
+	ctx := context.Background()
+	name := fmt.Sprintf("ubyhost_go_billingweb_%d", time.Now().UnixNano())
+	admin, err := pgx.Connect(ctx, base)
+	if err != nil {
+		t.Fatal("admin connect failed")
+	}
+	if _, err := admin.Exec(ctx, "CREATE DATABASE "+name); err != nil {
+		admin.Close(ctx)
+		t.Fatal(err)
+	}
+	admin.Close(ctx)
+	t.Cleanup(func() {
+		c, err := pgx.Connect(context.Background(), base)
+		if err != nil {
+			t.Errorf("admin connect for cleanup failed")
+			return
+		}
+		defer c.Close(context.Background())
+		if _, err := c.Exec(context.Background(), "DROP DATABASE IF EXISTS "+name+" WITH (FORCE)"); err != nil {
+			t.Errorf("drop test database: %v", err)
+		}
+	})
+	cfg, err := pgxpool.ParseConfig(base)
+	if err != nil {
+		t.Fatal("bad UBYHOST_TEST_DATABASE_URL")
+	}
+	cfg.ConnConfig.Database = name
+	pool, err := pgxpool.NewWithConfig(ctx, cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(pool.Close)
+	files, err := filepath.Glob("../../../../App/migrations_pg/*.sql")
+	if err != nil || len(files) == 0 {
+		t.Fatal("no migrations found")
+	}
+	sort.Strings(files)
+	for _, f := range files {
+		raw, err := os.ReadFile(f)
+		if err != nil {
+			t.Fatal(err)
+		}
+		up := string(raw)
+		if i := strings.Index(up, "-- +goose Up"); i >= 0 {
+			up = up[i+len("-- +goose Up"):]
+		}
+		if i := strings.Index(up, "-- +goose Down"); i >= 0 {
+			up = up[:i]
+		}
+		if _, err := pool.Exec(ctx, up); err != nil {
+			t.Fatalf("%s: %v", filepath.Base(f), err)
+		}
+	}
+	return pool
+}
+~~~~
+~~~~file App/scripts/billing_admin_golden.py 7c18ac91df983a51d1a8808419c637abdefc72e10f58c19e67991b732473d3e0
+"""Write go/internal/web/billing/testdata/billing_admin_golden.json from the real Python.
+
+Run from App/ (create the venv first if missing:
+python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt -r requirements-dev.txt):
+
+    .venv/bin/python scripts/billing_admin_golden.py
+
+It seeds a throwaway SQLite database with the fixed, synthetic rows in SEED
+(no real data), then records, with a fixed "today", what the read side of the
+operator billing page /admin/fakturace returns: billing_admin (invoices,
+unpaid, accounts_by_status, export_csv), bank_import.unmatched,
+billing_analytics (portfolio, revenue_totals, watchlists, operator_queue,
+aging, forecast, movement, funnel, trend, discount_overview, the CSV files of
+export_all_zip) and the context assembly of routes/admin_billing.py
+billing_admin_page. It also records pure helpers (month_or_current and the
+three money formatters) and bank_import.parse on synthetic GPC and CSV
+statements. The ZIP is compared by the CSV files inside it, not by its bytes.
+
+go/internal/web/billing/*_test.go seeds PostgreSQL from the same file and
+compares every scenario. App/tests/test_billing_admin_golden.py fails when
+this file is stale.
+
+date.today() inside billing_admin and billing_analytics is frozen to the
+scenario's day, so no value depends on the clock. Ordering ties are avoided in
+the seed (equal dates in an ORDER BY), because SQL leaves their order open.
+"""
+
+from __future__ import annotations
+
+import base64
+import io
+import json
+import os
+import sys
+import tempfile
+import zipfile
+from datetime import date, timedelta
+from pathlib import Path
+
+APP = Path(__file__).resolve().parents[1]
+OUT = APP.parent / "go" / "internal" / "web" / "billing" / "testdata" / "billing_admin_golden.json"
+
+STAMP = "2026-09-01T00:00:00+00:00"
+D1 = date(2026, 11, 13)
+D2 = date(2026, 12, 30)
+
+
+def _user(uid, name, email, *, role="host", active=1, verified=None, signup=None, created=STAMP):
+    return [uid, f"user{uid}", name, "x", role, active, created, email, verified, signup]
+
+
+def _account(owner, status, plan, interval, apts, *, ttlock=0, wl=0, carry=0, cancel=0, disc=0,
+             reason=None, started=None, ends=None, p_start=None, p_end=None):
+    return [owner, status, plan, interval, apts, ttlock, wl, carry, cancel, disc, reason,
+            started, ends, p_start, p_end, STAMP]
+
+
+USERS = [
+    _user(1, "Admin", "admin@example.test", role="admin"),
+    _user(2, "Alfa s.r.o.", "alfa@example.test", verified=STAMP),
+    _user(3, 'Firma "Beta"; spol. s r.o.', "beta@example.test", verified=STAMP),
+    _user(4, "Čeněk Žluťoučký", "cenek@example.test", verified=STAMP),
+    _user(5, None, "gamma@example.test", verified=STAMP),
+    _user(6, "Delta", "delta@example.test", verified=STAMP),
+    _user(7, "Epsilon", "epsilon@example.test", verified=STAMP),
+    _user(8, "Zeta", "zeta@example.test", verified=STAMP),
+    _user(9, "Eta", "eta@example.test", verified=STAMP),
+    _user(10, "Theta", "theta@example.test", verified=STAMP),
+    _user(11, "Iota", "iota@example.test", verified=STAMP),
+    _user(12, "Kappa", "kappa@example.test", verified=STAMP),
+    _user(13, "Lambda", "lambda@example.test"),
+    _user(14, "My", "my@example.test"),
+    _user(15, "Ny", "ny@example.test", verified=STAMP),
+]
+# 62 signups that never confirmed their email: they fill the queue past its LIMIT 25.
+for n in range(62):
+    USERS.append(_user(100 + n, f"Signup {n}", f"signup{n}@example.test", active=0,
+                       signup=STAMP, created=f"2026-11-01T00:{n // 60:02d}:{n % 60:02d}+00:00"))
+
+ACCOUNTS = [
+    # standard yearly, 3 flats: 3570 Kc, monthly 297.5 -> 298 (half to even, up)
+    _account(2, "active", "standard", "year", 3, started=STAMP, p_start="2026-10-01", p_end="2027-09-30"),
+    # max yearly, 12 flats, whitelabel, carry 100, 15 % off
+    _account(3, "active", "max", "year", 12, wl=1, carry=100, disc=15, reason="Launch", started=STAMP,
+             p_start="2026-10-01T00:00:00+00:00", p_end="2027-09-30T00:00:00+00:00"),
+    _account(4, "canceling", "standard", "month", 5, ttlock=1, cancel=1, started=STAMP,
+             p_start="2026-11-01", p_end="2026-11-30"),
+    # 149 Kc at 50 % = 74.5 -> 74 (half to even)
+    _account(5, "overdue", "standard", "month", 1, disc=50, reason="Partner", started=STAMP,
+             p_start="2026-10-12", p_end="2026-11-11"),
+    _account(6, "trialing", "standard", "month", 2, started="2026-11-01T00:00:00+00:00",
+             ends="2026-11-15T10:00:00+00:00"),
+    # a trial ending exactly on the 7th day: listed as a plain date, not with a time
+    _account(7, "trialing", "standard", "month", 1, started="2026-11-06T00:00:00+00:00", ends="2026-11-20"),
+    _account(8, "trialing", "max", "month", 4, started="2026-11-06T00:00:00+00:00",
+             ends="2026-11-20T09:00:00+00:00"),
+    _account(9, "trialing", "standard", "month", 1, started="2026-10-30T00:00:00+00:00",
+             ends="2026-11-13T08:00:00+00:00"),
+    _account(10, "trialing", "standard", "month", 3, started="2026-10-29T00:00:00+00:00",
+             ends="2026-11-12T08:00:00+00:00"),
+    _account(11, "paused", "standard", "month", 2),
+    # 3558 Kc a year: monthly 296.5 -> 296 (half to even, down); ends at period end
+    _account(12, "active", "standard", "year", 3, carry=-12, cancel=1, p_start="2026-01-01",
+             p_end="2026-12-31"),
+    _account(13, "trial_pending", "standard", "month", 1),
+    _account(14, "trial_pending", None, None, 0),
+    _account(15, "trialing", "standard", "month", 1, started="2026-12-28T00:00:00+00:00",
+             ends="2027-01-03T10:00:00+00:00"),
+]
+for n in range(62):
+    ACCOUNTS.append(_account(100 + n, "trial_pending", None, None, 0, started=STAMP))
+
+INVOICES: list = []
+_seq: dict = {}
+
+
+def _snap(name, ico, dic):
+    return json.dumps({"invoice": {"buyer_name": name, "buyer_ico": ico, "buyer_dic": dic}},
+                      ensure_ascii=False)
+
+
+BUYERS = {
+    2: _snap("Alfa s.r.o.", "12345678", "CZ12345678"),
+    3: _snap('Firma "Beta"; spol. s r.o.', "87654321", ""),
+    4: _snap("Čeněk Žluťoučký", "", ""),
+}
+
+
+def add(owner, kind, issue, due, p_from, p_to, total, *, voided=0, paid_on=None, via=None,
+        corrects=None, snap=None):
+    year = int(issue[:4])
+    _seq[year] = _seq.get(year, 0) + 1
+    n = _seq[year]
+    row = [len(INVOICES) + 1, owner, kind, corrects, year, n, f"UBY-{year}-{n:04d}", f"{year}{n:04d}",
+           issue, due, p_from, p_to, total, voided, paid_on, via,
+           snap if snap is not None else BUYERS.get(owner, _snap(f"Buyer {owner}", "", "")), STAMP]
+    INVOICES.append(row)
+    return row[0]
+
+
+def _plus(day, days):
+    return (date.fromisoformat(day) + timedelta(days=days)).isoformat()
+
+
+# Twelve paid months before the page's months: the trend strip keeps the last twelve of sixteen.
+for k in range(12):
+    y, m = divmod(2025 * 12 + 8 + k, 12)
+    issue = f"{y}-{m + 1:02d}-01"
+    paid = f"{y}-{m + 1:02d}-06" if k % 2 == 0 else _plus(issue, 35)
+    add(2, "invoice", issue, _plus(issue, 14), issue, _plus(issue, 29), 14900 + k * 7,
+        paid_on=paid, via="bank_auto")
+# October 2026
+add(2, "invoice", "2026-10-01", "2026-10-15", "2026-10-01", "2027-09-30", 357000,
+    paid_on="2026-10-10", via="bank_auto")
+add(3, "invoice", "2026-10-01", "2026-10-15", "2026-10-01", "2027-09-30", 262350,
+    paid_on="2026-10-20T08:00:00+00:00", via="bank_manual")
+voided_id = add(4, "invoice", "2026-10-05", "2026-10-19", "2026-10-05", "2026-11-04", 44700, voided=1)
+add(4, "storno", "2026-10-06", "2026-10-06", "2026-10-05", "2026-11-04", -44700, corrects=voided_id)
+add(2, "supplementary", "2026-10-31", "2026-11-14", "2026-10-01", "2026-10-31", 12345)
+add(None, "supplementary", "2026-10-15", "2026-10-29", "2026-10-01", "2026-10-31", 500)
+# Unpaid and overdue, one per aging edge at D1: 3, 7, 8, 30, 31, 90 and 91 days late.
+for i, (due, total, owner) in enumerate([
+    ("2026-11-10", 14999, 5), ("2026-11-06", 29901, 6), ("2026-11-05", 4950, 7),
+    ("2026-10-14", 100050, 8), ("2026-10-13", 1, 9), ("2026-08-15", 99, 10), ("2026-08-14", 300001, 11),
+]):
+    issue = _plus(due, -14)
+    add(owner, "invoice", issue, due, issue, _plus(issue, 29), total,
+        snap="" if i == 0 else '{"invoice": {}}' if i == 1 else None)
+# Due today, in 30 days (listed in the forecast) and in 31 days (not).
+add(11, "supplementary", "2026-11-01", "2026-11-13", "2026-11-01", "2026-11-30", 2599)
+add(12, "supplementary", "2026-11-01", "2026-12-13", "2026-11-01", "2026-11-30", 1999)
+add(13, "supplementary", "2026-11-01", "2026-12-14", "2026-11-01", "2026-11-30", 777)
+# 26 small overdue documents: the watchlist and the queue show 25.
+for d in range(1, 27):
+    add(2, "supplementary", "2026-08-01", f"2026-09-{d:02d}", "2026-08-01", "2026-08-31", 100 + d)
+# November 2026, December (a storno alone: the month's billed sum is negative), January 2027
+add(6, "invoice", "2026-11-02", "2026-11-16", "2026-11-02", "2026-12-01", 14900)
+add(7, "invoice", "2026-11-03", "2026-11-17", "2026-11-03", "2026-12-02", 9900,
+    paid_on="2026-11-08", via="bank_manual")
+add(2, "storno", "2026-12-02", "2026-12-02", "2026-10-01", "2027-09-30", -14901, corrects=13)
+add(2, "invoice", "2027-01-02", "2027-01-16", "2027-01-02", "2027-01-31", 14900)
+
+PAYMENTS = [
+    ["csv-1", "2026-11-11", 14900, "20260006", "123456789/0300", "Platba", None, "matched"],
+    ["csv-2", "2026-11-09", 5000, "20260007", "987654/0100", "Částečná platba", None, "partial"],
+    ["csv-3", "2026-11-05", 99900, None, None, None, None, "unmatched"],
+    ["gpc-77", "2026-10-30", 20000, "20260008", "555/0300", "Přeplatek", None, "overpaid"],
+    ["csv-4", "2026-10-25", 14900, "20260009", "123/0800", "OK", None, "matched"],
+]
+# 205 older unmatched payments: only the 200 newest of the 209 are listed.
+for n in range(205):
+    PAYMENTS.append([f"seed-{n:03d}", (date(2026, 1, 1) + timedelta(days=n)).isoformat(),
+                     100 + n, None, None, None, None, "unmatched"])
+
+
+def _snapshot(owner, month, status, monthly):
+    return [owner, month, status, "standard", "month", 1, 0, 0, 0, monthly, monthly, monthly, STAMP]
+
+
+SNAPSHOTS = [
+    _snapshot(2, "2026-10", "active", 298), _snapshot(2, "2026-11", "active", 298),
+    _snapshot(3, "2026-10", "active", 2000), _snapshot(3, "2026-11", "active", 2500),
+    _snapshot(4, "2026-10", "active", 500), _snapshot(4, "2026-11", "canceling", 400),
+    _snapshot(5, "2026-10", "active", 200), _snapshot(5, "2026-11", "paused", 0),
+    _snapshot(6, "2026-10", "trialing", 0), _snapshot(6, "2026-11", "active", 149),
+    _snapshot(7, "2026-11", "active", 99),
+    _snapshot(8, "2026-10", "overdue", 300), _snapshot(8, "2026-11", "overdue", 300),
+    _snapshot(9, "2026-10", "paused", 0), _snapshot(9, "2026-11", "active", 120),
+    _snapshot(10, "2026-10", "active", 50),
+    _snapshot(11, "2026-11", "trialing", 0),
+    _snapshot(2, "2025-12", "active", 100), _snapshot(2, "2026-01", "active", 150),
+    _snapshot(3, "2026-01", "active", 200),
+]
+
+SEED = [
+    {"table": "user_account",
+     "columns": ["id", "username", "display_name", "password_hash", "role", "active", "created_at",
+                 "email", "email_verified_at", "signup_at"],
+     "rows": USERS},
+    {"table": "billing_account",
+     "columns": ["owner_user_id", "status", "plan", "billing_interval", "apartments_billed",
+                 "addon_ttlock", "addon_whitelabel", "carry_czk", "cancel_at_period_end",
+                 "discount_percent", "discount_reason", "trial_started_at", "trial_ends_at",
+                 "period_start", "period_end", "updated_at"],
+     "rows": ACCOUNTS},
+    {"table": "platform_invoice",
+     "columns": ["id", "owner_user_id", "kind", "corrects_id", "seq_year", "seq_no", "number", "vs",
+                 "issue_date", "due_date", "period_from", "period_to", "total_haler", "voided",
+                 "paid_on", "paid_via", "snapshot_json", "created_at"],
+     "rows": INVOICES},
+    {"table": "bank_payment",
+     "columns": ["bank_tx_id", "received_on", "amount_haler", "vs", "counter_account", "message",
+                 "matched_invoice_id", "status"],
+     "rows": PAYMENTS},
+    {"table": "billing_month_snapshot",
+     "columns": ["owner_user_id", "month", "status", "plan", "billing_interval", "apartments",
+                 "addon_ttlock", "addon_whitelabel", "discount_percent", "list_czk", "net_czk",
+                 "monthly_czk", "created_at"],
+     "rows": SNAPSHOTS},
+]
+
+
+# --- synthetic bank statements ------------------------------------------------
+
+CP1250_ALL = bytes(b for b in range(0x80, 0x100) if b not in (0x81, 0x83, 0x88, 0x90, 0x98))
+
+
+def gpc(tx, amount, code, vs, account, d91, message, d122=""):
+    """One 128-character 075 line: columns as bank_import.parse_gpc reads them."""
+    line = "075" + "0000001234567890"
+    line += account.rjust(16, "0")[:16]
+    line += tx.rjust(13, "0")[:13]
+    line += (amount if isinstance(amount, str) else str(amount)).rjust(12, "0")[:12]
+    line += code + vs.rjust(10, "0")[:10] + "0" * 20 + d91 + message.ljust(20)[:20] + "00203" + d122.ljust(6)
+    assert len(line) == 128, len(line)
+    return line
+
+
+def _enc(text, encoding="cp1250", crlf=True):
+    return text.replace("\n", "\r\n" if crlf else "\n").encode(encoding)
+
+
+GPC_LINES = "\n".join([
+    "0740000001234567890Synthetic statement   ",
+    gpc("1", 14900, "2", "20260006", "123456789", "051126", "Platba za fakturu", "061126"),
+    gpc("", 5000, "2", "0020260007", "987654", "301026", "Bez ID"),
+    gpc("3", 2500, "1", "20260008", "111", "011126", "Debet"),
+    gpc("4", 2500, "4", "20260008", "111", "011126", "Storno"),
+    gpc("5", 1000, "2", "20260009", "222", "320126", "Spatne datum", "000000"),
+    "075" + "0" * 50,
+    gpc("6", 30000, "2", "ABC2026009", "333", "290224", "Priliš žluťoučký kůň"),
+    gpc("7", 100, "2", "20260010", "444", "290225", "Leap fallback", "290225"),
+    gpc("8", 777, "2", "20260011", "555", "151126", "Short")[:100],
+    gpc("9", 123456, "2", "0000000000", "", "151126", "Zero vs"),
+    "079 trailing line",
+])
+GPC_BAD_AMOUNT = "\n".join([
+    "0740000001234567890Synthetic statement   ",
+    gpc("1", "ABC000000123", "2", "20260006", "123456789", "051126", "Bad amount"),
+])
+
+CSV_HEAD = "Datum zaúčtování;Částka;Variabilní symbol;Protiúčet;Kód banky protiúčtu;Zpráva pro příjemce;ID pohybu"
+CSV_ROWS = [
+    "5. 11. 2026;1 234,50;0020260006;1234567890;0800;Platba;1001",
+    "06.11.2026;1.234,50;20260007;987654/0100;;Faktura;",
+    "2026-11-07;99,5;;;;Bez VS;1003",
+    "2026-11-08;-100,00;20260008;;;Odchozí;1004",
+    "2026-11-09;0;20260008;;;Nula;1005",
+    ";;;;;;",
+    "abc;10;;;;Bad date;1006",
+    "31.02.2026;10,00;;;;Impossible day;1007",
+    "2026-11-10;1e2;2026 0009;;;Exp;1008",
+    "2026-11-11;.5;;;;Half;1009",
+    "2026-11-12;2,675;;;;Round down;1010",
+    "2026-11-13;0,015;;;;Round;1011",
+    "2026-11-23;0,005;;;;Half to zero;1020",
+    "2026-11-24;0,025;;;;Half to even;1021",
+    "2026-11-14;12.;;;;Dot end;1012",
+    "2026-11-15;+5;;;;Plus;1013",
+    "2026-11-16;1,5",
+    "2026-11-17;abc;;;;Not a number;1014",
+    "2026-11-18;nan;;;;Nan;1015",
+    "2026-11-19;1\u00a0000\u00a0000,00;;;;Nbsp;1016",
+    "2026-11-20;1_0;;;;Underscore;1017",
+    "2026-11-21;5,00;;;;\"two\nlines\";1018",
+    "2026-11-22;7,00;;;;" + "Žluťoučký " * 20 + ";1019",
+]
+CSV_TEXT = "Výpis z účtu 123456789/0300\n" + CSV_HEAD + "\n" + "\n".join(CSV_ROWS) + "\n"
+
+PARSER_CASES = [
+    ("gpc_cp1250", _enc(GPC_LINES)),
+    ("gpc_utf8_bom", b"\xef\xbb\xbf" + _enc(GPC_LINES, "utf-8")),
+    ("gpc_leading_blank_lf", _enc("\n  \n" + GPC_LINES, crlf=False)),
+    ("gpc_bad_amount", _enc(GPC_BAD_AMOUNT)),
+    ("csv_cp1250_semicolon", _enc(CSV_TEXT)),
+    ("csv_utf8_bom", b"\xef\xbb\xbf" + _enc(CSV_TEXT, "utf-8")),
+    ("csv_comma_english", _enc(
+        'Date,Amount,VS,Message,Account\n2026-11-05,"1,234.50",20260006,"Hello, world",111/0100\n'
+        '2026-11-06,10.25,"0020260007",Plain,\n3.11.2026,7,,Short year,\n', "utf-8")),
+    ("csv_mixed_line_breaks", b"Date;Amount;Message\r2026-11-05;1,00;cr\n2026-11-06;2,00;lf\r\n"
+                              b"2026-11-07;3,00;crlf\x0c2026-11-08;4,00;ff\x0b2026-11-09;5,00;vt"),
+    ("csv_all_cp1250_bytes", b"Datum;Amount;Message\n2026-11-05;1,00;" + CP1250_ALL + b"\n"),
+    ("csv_undefined_cp1250_byte", b"Datum;Castka\n2026-11-05;1,00;\x81\n"),
+    ("csv_duplicate_date_columns", _enc("Datum;Datum zaúčtování;Částka;VS\n2026-01-01;2026-02-02;3,00;1\n")),
+    ("csv_account_with_slash_and_bank", _enc(
+        "Datum;Částka;Protiúčet;Kód banky\n2026-02-02;3,00;12-345/0100;0800\n2026-02-03;4,00;999;0300\n")),
+    ("csv_header_only", _enc("Datum;Částka\n")),
+    ("csv_no_header", _enc("foo;bar\n1;2\n")),
+    ("csv_no_columns", _enc("Částka;Popis\n1;2\n")),
+    ("csv_empty", b""),
+]
+
+
+def _parse_case(bank_import, name, data):
+    case = {"name": name, "input_b64": base64.b64encode(data).decode("ascii")}
+    try:
+        case["rows"] = bank_import.parse(data)
+    except bank_import.StatementError as exc:
+        case["error"] = "StatementError"
+        case["reason"] = str(exc)
+    except ValueError:
+        case["error"] = "ValueError"
+    return case
+
+
+# --- recording ----------------------------------------------------------------
+
+
+def _json_default(value):
+    if isinstance(value, date):
+        return value.isoformat()
+    raise TypeError(type(value))
+
+
+def _clean(value):
+    """Round-trip through JSON, so dates become strings and rows become dicts."""
+    return json.loads(json.dumps(value, default=_json_default))
+
+
+def _seed(db) -> None:
+    for table in SEED:
+        cols = ", ".join(table["columns"])
+        marks = ", ".join("?" for _ in table["columns"])
+        for row in table["rows"]:
+            db.execute(f"INSERT INTO {table['table']} ({cols}) VALUES ({marks})", row)
+
+
+def _zip_files(blob: bytes) -> dict:
+    with zipfile.ZipFile(io.BytesIO(blob)) as zf:
+        return {name: zf.read(name).decode("utf-8") for name in sorted(zf.namelist())}
+
+
+def render() -> str:
+    """Seed a fresh database, record every scenario, and return the golden JSON text."""
+    from app import bank_import, billing_admin, billing_analytics, db
+
+    class Frozen(date):
+        current = D1
+
+        @classmethod
+        def today(cls):
+            return cls.current
+
+    billing_admin.date = Frozen
+    billing_analytics.date = Frozen
+    db.init_db()
+    _seed(db)
+
+    def kc_route(haler):
+        return f"{int(haler) // 100:,}".replace(",", " ")
+
+    def admin_page(mesic, q, state, day):
+        # The context of routes/admin_billing.py billing_admin_page (lines 33-69).
+        month = billing_admin.month_or_current(mesic)
+        unpaid = billing_admin.unpaid(day)
+        return {
+            "month": month,
+            "invoices": billing_admin.invoices(month),
+            "unpaid": unpaid,
+            "unpaid_total": kc_route(sum(int(r["total_haler"]) for r in unpaid)),
+            "payments": bank_import.unmatched(),
+            "accounts": billing_admin.accounts_by_status(),
+            "today": day.isoformat(),
+            "q": q.strip()[:120],
+            "state": state if state in ("trial_pending", "trialing", "active", "overdue", "canceling",
+                                        "paused") else "",
+            "cockpit": billing_analytics.portfolio(day),
+            "revenue": billing_analytics.revenue_totals(day),
+            "watch": billing_analytics.watchlists(day),
+            "aging": billing_analytics.aging(day),
+            "forecast": billing_analytics.forecast(day),
+            "trend_rows": billing_analytics.trend(),
+            "movement": billing_analytics.movement(month),
+            "funnel_counts": billing_analytics.funnel(),
+            "discounts": billing_analytics.discount_overview(),
+        }
+
+    calls = {
+        "invoices": lambda a, d: billing_admin.invoices(a["month"]),
+        "unpaid": lambda a, d: billing_admin.unpaid(d),
+        "accounts_by_status": lambda a, d: billing_admin.accounts_by_status(),
+        "export_csv": lambda a, d: billing_admin.export_csv(a["month"]).decode("utf-8"),
+        "unmatched": lambda a, d: bank_import.unmatched(),
+        "portfolio": lambda a, d: billing_analytics.portfolio(d),
+        "revenue_totals": lambda a, d: billing_analytics.revenue_totals(d),
+        "watchlists": lambda a, d: billing_analytics.watchlists(d),
+        "operator_queue": lambda a, d: billing_analytics.operator_queue(d),
+        "aging": lambda a, d: billing_analytics.aging(d),
+        "forecast": lambda a, d: billing_analytics.forecast(d),
+        "movement": lambda a, d: billing_analytics.movement(a["month"]),
+        "funnel": lambda a, d: billing_analytics.funnel(),
+        "trend": lambda a, d: billing_analytics.trend(),
+        "discount_overview": lambda a, d: billing_analytics.discount_overview(),
+        "export_all_files": lambda a, d: _zip_files(billing_analytics.export_all_zip()),
+        "admin_page": lambda a, d: admin_page(a["mesic"], a["q"], a["state"], d),
+    }
+    plan = []
+    for month in ("2026-10", "2026-11", "2026-12", "2027-01", "2025-02"):
+        plan.append(("invoices", {"month": month}, D1))
+    for month in ("2026-10", "2026-11", "2026-12"):
+        plan.append(("export_csv", {"month": month}, D1))
+    for month in ("2026-11", "2026-01"):
+        plan.append(("movement", {"month": month}, D1))
+    for fn in ("unpaid", "portfolio", "revenue_totals", "watchlists", "aging", "forecast"):
+        plan.append((fn, {}, D1))
+        plan.append((fn, {}, D2))
+    plan.append(("revenue_totals", {}, date(2026, 10, 15)))
+    for fn in ("accounts_by_status", "unmatched", "operator_queue", "funnel", "trend",
+               "discount_overview", "export_all_files"):
+        plan.append((fn, {}, D1))
+    plan.append(("discount_overview", {}, D2))
+    plan.append(("admin_page", {"mesic": "2026-11", "q": "  Alfa  ", "state": "active"}, D1))
+    plan.append(("admin_page", {"mesic": "bad", "q": "x" * 130, "state": "nope"}, D2))
+
+    scenarios = []
+    for fn, args, day in plan:
+        Frozen.current = day
+        scenarios.append({"fn": fn, "args": args, "today": day.isoformat(),
+                          "result": _clean(calls[fn](args, day))})
+    Frozen.current = D1
+
+    pure = {
+        "month_or_current": [
+            {"in": value, "out": billing_admin.month_or_current(value, D1)}
+            for value in ("2026-10", " 2026-10 ", "2026-13", "2026-00", "", "abc", "2026-1", "2026-10-01",
+                          "2026-12\n")
+        ],
+        "kc_csv": [{"in": h, "out": billing_admin._kc(h)}
+                   for h in (0, 5, 99, 100, 12345, 123456789, -1, -250, -123456, 1000000)],
+        "cz": [{"in": h, "out": billing_analytics._cz(h)}
+               for h in (0, 5, 99, 100, 12345, 123456789, -1, -250, -123456, 1000000)],
+        "kc_page": [{"in": h, "out": kc_route(h)}
+                    for h in (0, 5, 99, 100, 12345, 123456789, -1, -250, -123456, 1000000, -100000000)],
+        "next_month_start": [
+            {"in": d.isoformat(), "out": billing_analytics.next_month_start(d)}
+            for d in (date(2026, 1, 31), date(2026, 11, 30), date(2026, 12, 1), date(2026, 12, 31))],
+    }
+    golden = {
+        "today": D1.isoformat(),
+        "seed": SEED,
+        "pure": pure,
+        "parser": [_parse_case(bank_import, name, data) for name, data in PARSER_CASES],
+        "scenarios": scenarios,
+    }
+    return json.dumps(golden, ensure_ascii=False, indent=1, sort_keys=True, default=_json_default) + "\n"
+
+
+def main() -> None:
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    OUT.write_text(render(), encoding="utf-8")
+    print(f"wrote {OUT}")
+
+
+if __name__ == "__main__":
+    if os.environ.get("UBYHOST_DATABASE_URL"):
+        sys.exit("refusing to run: UBYHOST_DATABASE_URL is set; this script wipes tables")
+    tmp = Path(tempfile.mkdtemp(prefix="ubyhost-golden-"))
+    os.environ["UBYHOST_DATA_DIR"] = str(tmp)
+    os.environ["UBYHOST_DB"] = str(tmp / "billing_admin_golden.sqlite3")
+    os.environ.setdefault("UBYHOST_SECRET_KEY", "golden-secret-key-not-for-real-use")
+    os.environ.setdefault("UBYHOST_ENABLE_SCHEDULER", "0")
+    sys.path.insert(0, str(APP))
+    main()
+~~~~
+~~~~file App/tests/test_billing_admin_golden.py 545300808d3588a93abf87f919d075a191cddb30683dd2f9a48c2468d3ec3dc1
+"""go/internal/web/billing/*_test.go read go/internal/web/billing/testdata/billing_admin_golden.json."""
+
+import importlib.util
+from pathlib import Path
+
+APP_DIR = Path(__file__).resolve().parents[1]
+
+
+def _load_generator():
+    spec = importlib.util.spec_from_file_location(
+        "billing_admin_golden", APP_DIR / "scripts" / "billing_admin_golden.py"
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_billing_admin_golden_matches_python_read_side(monkeypatch, tmp_path):
+    from app import billing_admin, billing_analytics, config
+
+    monkeypatch.setattr(config, "DB_PATH", tmp_path / "billing-admin-golden.sqlite3")
+    # render() freezes `date` in these two modules; monkeypatch puts the real one back.
+    monkeypatch.setattr(billing_admin, "date", billing_admin.date)
+    monkeypatch.setattr(billing_analytics, "date", billing_analytics.date)
+    generator = _load_generator()
+    committed = generator.OUT.read_bytes()
+    assert generator.render().encode("utf-8") == committed
+    assert committed.count(b'"fn"') >= 30
+    assert committed.count(b'"input_b64"') >= 16
+~~~~
