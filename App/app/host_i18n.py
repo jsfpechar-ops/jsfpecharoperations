@@ -700,6 +700,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail.cancelled_with_guests.action": "Open stay",
         "notification.double_booking.title": "%(property)s: two bookings overlap on %(dates)s.",
         "notification.double_booking.detail": "A second booking (%(other_dates)s, source %(other_source)s) covers the same nights. Only one of them can happen: cancel or move one booking on the portal.",
+        # 1170: "double_booking" outbox rows are written by the Go ical job
+        # (go/internal/ical/doublebooking.go); Python never composes this mail.
         "notification.mail_kind.double_booking": "double booking",
         "notification.submission_rejected.header": "Report header rejected: %(header)s",
         "notification.receipt_missing.title": "%(property)s: report accepted, but no confirmation came.",

@@ -49,3 +49,8 @@ NOT RUN: no interpreter with pytest in this sandbox
 - checkDoubleBookings now also runs on the `not_modified` (HTTP 304) and `unchanged` (same digest) early exits of SyncFeed, so a host-side cancel/ignore clears the alert on the next hourly sync even when no calendar changed.
 - Review item 4 (manual stay + same booking from iCal looks like a double booking): left unchanged in this PR, flagged for the owner - either skip identical-date pairs with a `manual` side or reword the alert/mail copy to cover duplicates.
 - Review item 5 confirmed intended: one e-mail per pair ever (idempotency key = alert dedupe key); a cleared-and-returning overlap reopens the in-app alert only.
+
+## CI round 1 (run 43377882606, head 01286ac0)
+- Green: go, test-postgres, test, browser shards, Security, smoke, context, lint jobs.
+- Failed: `test` and `test-postgres-full`, both only in tests/test_claim_mail.py registry tests: the hardcoded KINDS set (test_the_registered_mail_kinds_are_the_ones_the_app_can_send) and test_no_registered_mail_kind_is_dead did not know the Go-inserted kind.
+- Fix: "double_booking" added to the expected set in test_claim_mail.py, and a pointer comment naming "double_booking" added in App/app/host_i18n.py (the Go ical job writes the outbox row; Python never composes it). Verified locally via ast/scan simulation; no pytest interpreter in the executor sandbox, CI re-runs them.
