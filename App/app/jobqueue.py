@@ -4,7 +4,10 @@ A kind is on the queue when its id is in ``UBYHOST_JOB_QUEUE_KINDS``. The
 producer (``enqueue``) is idempotent: one open row per kind. The consumer
 (``drain``) claims one row per transaction with ``FOR UPDATE SKIP LOCKED``,
 then runs the job outside that transaction, so a slow job never holds a row
-lock.
+lock. ``drain`` also checks, at most every 5 minutes, for open rows nobody has
+claimed past twice their interval and raises the ``job_failed`` alert for
+them, so a missing consumer (for example a Go container with an old
+``UBYHOST_GO_JOB_KINDS``) is noticed.
 """
 from __future__ import annotations
 
@@ -12,6 +15,7 @@ import logging
 import os
 import socket
 import threading
+import time
 from datetime import datetime, timedelta, timezone
 from typing import Callable, Optional
 
@@ -24,6 +28,8 @@ MAX_ATTEMPTS = 5
 BACKOFF_MINUTES = (1, 5, 15, 60)
 KEEP_DONE_DAYS = 7
 WORKER_ID = f"{socket.gethostname()}:{os.getpid()}"
+STUCK_CHECK_SECONDS = 300
+_last_stuck_check = 0.0
 
 
 def _require_postgres() -> None:
@@ -132,8 +138,58 @@ def purge() -> int:
     )
 
 
+def stuck_kinds() -> list[str]:
+    """Queued kinds with an open, unleased row older than twice the job interval."""
+    _require_postgres()
+    from . import scheduler
+
+    intervals = scheduler.job_intervals()
+    rows = db.query(
+        "SELECT kind, MIN(run_at) AS run_at FROM job "
+        "WHERE done_at IS NULL AND dead_at IS NULL "
+        "AND (locked_at IS NULL OR locked_at < ?) GROUP BY kind",
+        (_stamp(-timedelta(minutes=LEASE_MINUTES)),),
+    )
+    stuck = []
+    for row in rows:
+        kind = row["kind"]
+        if kind not in config.JOB_QUEUE_KINDS or kind not in intervals:
+            continue
+        limit = _stamp(-timedelta(minutes=scheduler.late_after_minutes(intervals[kind])))
+        if row["run_at"] < limit:
+            stuck.append(kind)
+    return sorted(stuck)
+
+
+def watch_stuck() -> list[str]:
+    """Raise the ``job_failed`` alert for every stuck kind; never raises."""
+    try:
+        from . import scheduler
+
+        kinds = stuck_kinds()
+        for kind in kinds:
+            log.warning(
+                "queued job %s unclaimed past twice its interval; "
+                "is its consumer running? (UBYHOST_GO_JOB_KINDS here: %s)",
+                kind,
+                sorted(config.GO_JOB_KINDS),
+            )
+            try:
+                scheduler._job_failed(kind)
+            except Exception:
+                log.exception("stuck job alert for %s not raised", kind)
+        return kinds
+    except Exception:
+        log.exception("stuck job check failed")
+        return []
+
+
 def drain(run: Callable[[str], None], stop: threading.Event, limit: int = 50) -> int:
     """Claim and run up to ``limit`` due jobs; the number run."""
+    global _last_stuck_check
+    if time.monotonic() - _last_stuck_check >= STUCK_CHECK_SECONDS:
+        _last_stuck_check = time.monotonic()
+        watch_stuck()
     ran = 0
     for _ in range(limit):
         if stop.is_set():
