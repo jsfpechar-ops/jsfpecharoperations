@@ -32,13 +32,25 @@ const (
 	watchdogSweepMinutesDefault = 10
 )
 
+// watchdogSendFailedAlertSQL is SEND_FAILED_ALERT_SQL (1171b): an open alert
+// that means UbyHost could not send for the stay r. The dedupe keys are the
+// ones App/app/reporting.py and go/internal/ubyport raise.
+const watchdogSendFailedAlertSQL = `EXISTS (SELECT 1 FROM alert al WHERE al.resolved_at IS NULL AND al.dedupe_key IN (
+	'ubyport_auth_failed:' || CAST(r.apartment_id AS TEXT),
+	'submission_transport:' || CAST(r.apartment_id AS TEXT),
+	'guest_record_unreadable:' || CAST(r.apartment_id AS TEXT),
+	'guest_record_unreadable:reservation:' || CAST(r.id AS TEXT)))`
+
 // watchdogAtRiskSQL is the unfiled guests with a nationality on watched stays.
 // nationality and submit_state are plain columns: nothing is decrypted. $1 is
-// reporting.SENT. The submission columns feed _awaiting_retry.
+// reporting.SENT. The submission columns feed _awaiting_retry; the last two
+// feed SendFailed (1171b).
 const watchdogAtRiskSQL = `SELECT r.id, r.date_from, r.at_risk_mailed_at,
 	r.apartment_id, a.internal_name, a.legal_entity_id, a.owner_user_id,
 	COALESCE(u.username, ''), g.nationality,
-	COALESCE(s.state, ''), COALESCE(s.retried_at, ''), COALESCE(s.finished_at, '')
+	COALESCE(s.state, ''), COALESCE(s.retried_at, ''), COALESCE(s.finished_at, ''),
+	g.submission_id IS NOT NULL,
+	CASE WHEN ` + watchdogSendFailedAlertSQL + ` THEN 1 ELSE 0 END = 1
 	FROM reservation r
 	JOIN apartment a ON a.id = r.apartment_id
 	JOIN guest g ON g.reservation_id = r.id
@@ -82,10 +94,14 @@ type WatchdogStay struct {
 	Unfiled             int
 	AwaitingRetryGuests int
 	AwaitingRetry       bool
-	NoGuests            bool
-	Arrival             time.Time
-	Deadline            time.Time
-	Overdue             bool
+	// SendFailed is send_failed (1171b): UbyHost tried and it did not go
+	// through, or an open alert says it cannot send. Only such stays decide
+	// the heartbeat and go in the operator digest.
+	SendFailed bool
+	NoGuests   bool
+	Arrival    time.Time
+	Deadline   time.Time
+	Overdue    bool
 }
 
 // watchdogIntUnderscores is an integer literal with digit-group underscores,
@@ -164,9 +180,10 @@ func AtRiskStays(ctx context.Context, pool *pgxpool.Pool, lookupEnv func(string)
 	for rows.Next() {
 		var s WatchdogStay
 		var nationality, subState, subRetried, subFinished string
+		var hasSubmission, failedAlert bool
 		if err := rows.Scan(&s.ReservationID, &s.DateFrom, &s.MailedAt, &s.ApartmentID, &s.Property,
 			&s.LegalEntityID, &s.OwnerUserID, &s.Workspace, &nationality,
-			&subState, &subRetried, &subFinished); err != nil {
+			&subState, &subRetried, &subFinished, &hasSubmission, &failedAlert); err != nil {
 			rows.Close()
 			return nil, err
 		}
@@ -180,6 +197,9 @@ func AtRiskStays(ctx context.Context, pool *pgxpool.Pool, lookupEnv func(string)
 			order = append(order, s.ReservationID)
 		}
 		stay.Unfiled++
+		if hasSubmission || failedAlert {
+			stay.SendFailed = true
+		}
 		if watchdogAwaitingRetry(subState, subRetried, subFinished, current, grace) {
 			stay.AwaitingRetryGuests++
 		}

@@ -87,7 +87,7 @@ func runDeadlines(s deadlinesSteps) (DeadlinesSummary, error) {
 	}
 	sum.Watchdog = w
 	if w != (WatchdogResult{}) {
-		slog.Info("filing watchdog", "at_risk", w.AtRisk, "unknown_risk", w.UnknownRisk,
+		slog.Info("filing watchdog", "at_risk", w.AtRisk, "not_sent", w.NotSent, "unknown_risk", w.UnknownRisk,
 			"awaiting_retry", w.AwaitingRetry, "host_mails", w.HostMails, "digest", w.Digest)
 	}
 	// A failed deadline watch counts as a failure too: nobody is being told.

@@ -47,6 +47,7 @@ type watchdogRunPush struct {
 
 type watchdogRunResult struct {
 	AtRisk        int `json:"at_risk"`
+	NotSent       int `json:"not_sent"`
 	UnknownRisk   int `json:"unknown_risk"`
 	AwaitingRetry int `json:"awaiting_retry"`
 	HostMails     int `json:"host_mails"`
@@ -275,7 +276,7 @@ func TestRunFilingWatchdogMatchesPython(t *testing.T) {
 		if err != nil {
 			t.Fatalf("run %d (%s): %v", i+1, label, err)
 		}
-		got := watchdogRunResult{res.AtRisk, res.UnknownRisk, res.AwaitingRetry, res.HostMails, res.Digest}
+		got := watchdogRunResult{res.AtRisk, res.NotSent, res.UnknownRisk, res.AwaitingRetry, res.HostMails, res.Digest}
 		watchdogDiff(t, label+" result", got, run.Result)
 		if hb := FilingHeartbeatURL(getenv, res.AtRisk > 0); hb != run.Heartbeat {
 			t.Errorf("%s heartbeat %q, Python %q", label, hb, run.Heartbeat)
@@ -370,5 +371,54 @@ func TestRunFilingWatchdogRefusesBadSweepMinutes(t *testing.T) {
 	_, err := RunFilingWatchdog(context.Background(), nil, watchdogLookup(env), time.Now())
 	if err == nil || !strings.Contains(err.Error(), "UBYHOST_SUBMIT_SWEEP_MINUTES") {
 		t.Fatalf("got %v, want an error naming UBYHOST_SUBMIT_SWEEP_MINUTES", err)
+	}
+}
+
+// TestRunFilingWatchdogPagesOnlyForFailedSends pins 1171b on the golden seed
+// with all other stays archived: a stay UbyHost never sent (201) gets the host
+// mail but no digest and the heartbeat stays green; a refused batch (229) or
+// an open ubyport_auth_failed alert on a fully configured property (244)
+// fails the heartbeat and goes in the digest.
+func TestRunFilingWatchdogPagesOnlyForFailedSends(t *testing.T) {
+	g := loadWatchdogRunGolden(t)
+	at, err := time.Parse(time.RFC3339, "2026-09-17T11:00:00+00:00")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cases := []struct {
+		name            string
+		stay            int64
+		atRisk, notSent int
+		digest          int
+		ping            string
+	}{
+		{"never sent", 201, 0, 1, 0, "https://hc.example.test/ping/abc"},
+		{"refused batch", 229, 1, 0, 1, "https://hc.example.test/ping/abc/fail"},
+		{"login refused", 244, 1, 0, 1, "https://hc.example.test/ping/abc/fail"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			env := map[string]string{}
+			for k, v := range g.Env {
+				env[k] = v
+			}
+			pool := dbPool(t)
+			watchSeed(t, pool, watchGolden{Seed: g.Seed})
+			if _, err := pool.Exec(context.Background(),
+				`UPDATE reservation SET archived_at = '2026-09-16' WHERE id != $1`, c.stay); err != nil {
+				t.Fatal(err)
+			}
+			res, err := RunFilingWatchdog(context.Background(), pool, watchdogLookup(env), at)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if res.AtRisk != c.atRisk || res.NotSent != c.notSent || res.HostMails != 1 || res.Digest != c.digest {
+				t.Fatalf("result %+v, want at_risk %d not_sent %d host_mails 1 digest %d",
+					res, c.atRisk, c.notSent, c.digest)
+			}
+			if got := FilingHeartbeatURL(watchdogGetenv(env), res.AtRisk > 0); got != c.ping {
+				t.Fatalf("heartbeat %q, want %q", got, c.ping)
+			}
+		})
 	}
 }

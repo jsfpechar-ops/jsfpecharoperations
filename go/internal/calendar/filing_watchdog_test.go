@@ -24,6 +24,7 @@ type watchdogStayRecord struct {
 	Unfiled             int     `json:"unfiled"`
 	AwaitingRetryGuests int     `json:"awaiting_retry_guests"`
 	AwaitingRetry       bool    `json:"awaiting_retry"`
+	SendFailed          bool    `json:"send_failed"`
 	NoGuests            bool    `json:"no_guests"`
 	Arrival             string  `json:"arrival"`
 	Deadline            string  `json:"deadline"`
@@ -96,6 +97,7 @@ func watchdogRecord(s WatchdogStay) watchdogStayRecord {
 		Unfiled:             s.Unfiled,
 		AwaitingRetryGuests: s.AwaitingRetryGuests,
 		AwaitingRetry:       s.AwaitingRetry,
+		SendFailed:          s.SendFailed,
 		NoGuests:            s.NoGuests,
 		Arrival:             s.Arrival.Format("2006-01-02"),
 		Deadline:            s.Deadline.Format("2006-01-02T15:04:05"),
