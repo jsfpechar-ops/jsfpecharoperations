@@ -15,7 +15,7 @@ Status: review
 - go/internal/web/properties/testdata/pages_golden.json (generated, step 4)
 - docs/tasks/1301-go-property-pages.md (Status line only)
 - docs/tasks/1301-report.md (this file)
-- docs/plans/1301-files/ (bundle, already tracked)
+- the bundle (already tracked; removed later by brief 1410)
 
 ## Commands (last lines)
 

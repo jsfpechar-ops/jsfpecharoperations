@@ -187,7 +187,7 @@ Expected: `2 passed`, then `d9b572b82ca77159ce437899fa132264c695bfef42ec3c94603c
 
 ## 5. Do not touch
 
-Everything outside §3, in particular `go/internal/hostweb/`, 1300's files, `App/` (the Python test stays as it is), `docs/plans/1301-files/`, deploy and env docs. Nothing to `UBYHOST_GO_PATHS`. No new dependency. Hard rules 3, 4, 5, 8. Never push to `main`; never merge.
+Everything outside §3, in particular `go/internal/hostweb/`, 1300's files, `App/` (the Python test stays as it is), deploy and env docs. Nothing to `UBYHOST_GO_PATHS`. No new dependency. Hard rules 3, 4, 5, 8. Never push to `main`; never merge.
 
 ## 6. Commands
 

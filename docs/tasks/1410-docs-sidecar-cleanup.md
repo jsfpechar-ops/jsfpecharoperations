@@ -1,6 +1,6 @@
 # 1410: Delete the sidecar bundles of finished Go-port briefs
 
-Status: todo
+Status: review
 Depends on: none | Base commit: 3d75651dd | Branch: cursor/1410-docs-sidecar-cleanup-4de2
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

@@ -1,8 +1,0 @@
-# Host strings read by go/internal/web/exports, one key per line.
-# App/scripts/exports_golden.py writes i18n.json from these.
-auth.error.recent_login
-flash.error.export_range_required
-flash.error.identity_hidden_export
-flash.error.identity_hidden_guest
-flash.error.no_receipts
-flash.error.too_many_receipts

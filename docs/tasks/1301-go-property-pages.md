@@ -10,7 +10,7 @@ Port two read-only host GET routes of `App/app/routes/admin.py` to Go in `go/int
 
 ## 2. Context
 
-Every file was written and run green in a dry run by the brief writer; the finished files are in `docs/plans/1301-files/` (flat bundle). You do not write code: step 1 copies them, step 2 checks their sha256, steps 3-4 generate the two derived files, the rest are checks. **Do not open the bundle files**; the reviewer reads them.
+Every file was written and run green in a dry run by the brief writer; the finished files were a flat bundle, removed by brief 1410 (they live at the §3 paths on main). You do not write code: step 1 copies them, step 2 checks their sha256, steps 3-4 generate the two derived files, the rest are checks. **Do not open the bundle files**; the reviewer reads them.
 
 Python sources ported (read-only, for the reviewer):
 
@@ -51,12 +51,7 @@ No other file may change.
 
 ```bash
 git branch --show-current
-B=docs/plans/1301-files P=go/internal/web/properties
-mkdir -p $P/templates $P/testdata
-cp $B/pages.go $P/pages.go && cp $B/pages_test.go $P/pages_test.go && cp $B/guide.tmpl $P/templates/guide.tmpl
-cp $B/pages_cases.json $P/testdata/pages_cases.json && cp $B/i18n_keys.txt $P/i18n_keys.txt
-cp $B/register_web_properties.go go/cmd/ubyhost-web/register_web_properties.go
-cp $B/test_go_properties_pages.py App/tests/test_go_properties_pages.py
+# Done in the original run. The bundle was removed by brief 1410; the files are at the §3 paths on main.
 ```
 
 Expected first line: `task/1301-go-property-pages`. Anything else: stop (§8).
@@ -106,7 +101,7 @@ git add go/internal/web/properties go/cmd/ubyhost-web/register_web_properties.go
 - Read-only: `go/internal/hostweb/` (including `layout/`), `go/internal/session/`, `go/internal/jobs/`, `go/internal/palette/`, `go/cmd/ubyhost-web/main.go`, `registry.go`, `register_web.go`, 1300's files (`properties.go`, `localpath.go`, `slug.go`, `properties_test.go`, `testdata/actions_*`, `App/tests/test_go_properties_actions.py`), `App/tests/conftest.py`, every file under `App/app/` and `App/scripts/`.
 - `docs/ENVIRONMENT.md`, `docs/context/status.md`, `test-map.md`, `decisions.md`, `known-issues.md`.
 - Nothing is added to `UBYHOST_GO_PATHS` anywhere. No bare `GET /` route.
-- Do not edit the copied files, `docs/plans/1301-files/` or the golden by hand. No new dependency, no `go get`, no `go mod tidy`.
+- Do not edit the copied files or the golden by hand. No new dependency, no `go get`, no `go mod tidy`.
 - Hard rules 3, 4, 5, 8 of AGENTS.md. Never push to `main`; never merge.
 
 ## 6. Commands
@@ -134,7 +129,7 @@ Expected: `4 passed`; no `stale:` line; `context lint: OK`; after the commit, a 
 - [ ] `go vet ./...` clean, `gofmt -l .` empty, `go build ./cmd/ubyhost-web` OK.
 - [ ] `TestPagesMatchPython` ran (not skipped) and passed; 1300's tests still pass.
 - [ ] Python: 4 passed; `go_host_i18n.py --check` prints no `stale:`.
-- [ ] `git diff --stat c540113..HEAD` lists only §3 paths, this brief and `docs/plans/1301-files/`.
+- [ ] `git diff --stat c540113..HEAD` lists only §3 paths and this brief.
 - [ ] `grep -rn UBYHOST_GO_PATHS go/internal/web go/cmd/ubyhost-web/register_web_properties.go` prints nothing.
 
 ## 8. Stop and ask
