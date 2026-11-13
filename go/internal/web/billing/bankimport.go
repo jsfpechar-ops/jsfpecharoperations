@@ -3,10 +3,8 @@ package billingweb
 import (
 	"context"
 	"crypto/sha256"
-	"encoding/csv"
 	"encoding/hex"
 	"errors"
-	"io"
 	"math"
 	"regexp"
 	"strconv"
@@ -113,6 +111,9 @@ var sixDigits = regexp.MustCompile(`^[0-9]{6}$`)
 
 // validDate returns the ISO date, or "" when the day does not exist.
 func validDate(year, month, day int) string {
+	if year < 1 {
+		return ""
+	}
 	t := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
 	if t.Year() != year || int(t.Month()) != month || t.Day() != day || month < 1 {
 		return ""
@@ -261,8 +262,102 @@ func csvDate(value string) string {
 	return ""
 }
 
+// pyCSVRecords reads text the way Python's csv.reader does for
+// csv.reader(io.StringIO(text), delimiter=delim) (CPython Modules/_csv.c,
+// parse_process_char, default dialect otherwise: quotechar '"', doublequote,
+// no escapechar, skipinitialspace False, strict False, QUOTE_MINIMAL).
+// A quote is special only at the start of a field; inside quotes "" is one
+// quote; text after a closing quote is appended to the field as it is and the
+// field goes on unquoted (a later quote is then an ordinary character); a
+// quoted field may hold line breaks; \n, \r and \r\n end a record; a blank
+// line is an empty record; data ending inside quotes keeps what was read. The
+// caller joins the lines with \n, so a bare \r never reaches the reader
+// (Python would raise there).
+func pyCSVRecords(text string, delim rune) [][]string {
+	const (
+		startRecord = iota
+		startField
+		inField
+		inQuoted
+		quoteInQuoted
+	)
+	var records [][]string
+	var fields []string
+	var cur []rune
+	state := startRecord
+	save := func() {
+		fields = append(fields, string(cur))
+		cur = cur[:0]
+	}
+	end := func() {
+		save()
+		records = append(records, fields)
+		fields = nil
+		state = startRecord
+	}
+	rs := []rune(text)
+	for i := 0; i < len(rs); i++ {
+		c := rs[i]
+		eol := c == '\n' || c == '\r'
+		if eol && state != inQuoted {
+			if c == '\r' && i+1 < len(rs) && rs[i+1] == '\n' {
+				i++
+			}
+			if state == startRecord {
+				records = append(records, []string{})
+			} else {
+				end()
+			}
+			continue
+		}
+		switch state {
+		case startRecord, startField:
+			switch {
+			case c == '"':
+				state = inQuoted
+			case c == delim:
+				save()
+				state = startField
+			default:
+				cur = append(cur, c)
+				state = inField
+			}
+		case inField:
+			if c == delim {
+				save()
+				state = startField
+			} else {
+				cur = append(cur, c)
+			}
+		case inQuoted:
+			if c == '"' {
+				state = quoteInQuoted
+			} else {
+				cur = append(cur, c)
+			}
+		case quoteInQuoted:
+			switch {
+			case c == '"':
+				cur = append(cur, c)
+				state = inQuoted
+			case c == delim:
+				save()
+				state = startField
+			default:
+				cur = append(cur, c)
+				state = inField
+			}
+		}
+	}
+	if state != startRecord {
+		end()
+	}
+	return records
+}
+
 // ParseCSV is bank_import.parse_csv (lines 133-169): a CSV export with a
-// header row; columns are found by their Czech or English names.
+// header row; columns are found by their Czech or English names. The records
+// come from pyCSVRecords, not encoding/csv, so quoting reads as in Python.
 func ParseCSV(text string) ([]Payment, error) {
 	lines := pyLines(text)
 	start := -1
@@ -281,14 +376,11 @@ func ParseCSV(text string) ([]Payment, error) {
 	if strings.Count(body, ";") >= strings.Count(body, ",") {
 		delimiter = ';'
 	}
-	reader := csv.NewReader(strings.NewReader(body))
-	reader.Comma = delimiter
-	reader.LazyQuotes = true
-	reader.FieldsPerRecord = -1
-	head, err := reader.Read()
-	if err != nil {
-		return nil, err
+	records := pyCSVRecords(body, delimiter)
+	if len(records) == 0 {
+		return nil, &StatementError{"no_columns"}
 	}
+	head := records[0]
 	header := make([]string, len(head))
 	for i, h := range head {
 		header[i] = fold(h)
@@ -315,14 +407,7 @@ func ParseCSV(text string) ([]Payment, error) {
 		return nil, &StatementError{"no_columns"}
 	}
 	rows := []Payment{}
-	for {
-		record, err := reader.Read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return nil, err
-		}
+	for _, record := range records[1:] {
 		blank := true
 		for _, c := range record {
 			if pyStrip(c) != "" {

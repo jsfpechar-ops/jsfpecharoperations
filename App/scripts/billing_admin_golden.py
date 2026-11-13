@@ -328,6 +328,21 @@ PARSER_CASES = [
     ("csv_no_header", _enc("foo;bar\n1;2\n")),
     ("csv_no_columns", _enc("Částka;Popis\n1;2\n")),
     ("csv_empty", b""),
+    # Python's csv.reader state machine (quote special only at field start,
+    # text after a closing quote appended literally, "" inside quotes).
+    ("csv_text_after_quote", b'Date;Amount;Message\n2026-11-05;5,00;"ab"cd\n'),
+    ("csv_doubled_quote_then_text", b'Date;Amount;Message\n2026-11-05;5,00;"a""b" x\n'),
+    ("csv_quoted_delimiter_and_newline", _enc(
+        'Date;Amount;Message;VS\n2026-11-05;5,00;"x;y\nz";1\n2026-11-06;6,00;"p""q;r";2\n', "utf-8")),
+    ("csv_empty_quoted_field", b'Date;Amount;Message\n2026-11-05;5,00;""\n"2026-11-06";"6,00";m\n'),
+    ("csv_quote_inside_unquoted_field", b'Date;Amount;Message\n2026-11-05;5,00;ab"cd"ef\n2026-11-06;6,00;a"b\n'),
+    ("csv_space_before_quote", b'Date;Amount;Message\n2026-11-05;5,00; "ab"\n2026-11-06;6,00;"ab" \n'),
+    ("csv_trailing_delimiter", b'Date;Amount;Message;\n2026-11-05;5,00;m;\n2026-11-06;6,00;\n2026-11-07;7,00;n'),
+    ("csv_blank_lines", b'Date;Amount;Message\n\n2026-11-05;5,00;a\n  \n\n;;\n2026-11-06;6,00;b\n\n'),
+    ("csv_cr_line_endings", b'Date;Amount;Message\r2026-11-05;5,00;a\r2026-11-06;6,00;b\r'),
+    ("csv_unterminated_quote", b'Date;Amount;Message\n2026-11-05;5,00;"open\nmore'),
+    ("csv_comma_text_after_quote", b'Date,Amount,Message\n2026-11-05,5.00,"ab"cd,x\n2026-11-06,6.00,"a""b" y,z\n'),
+    ("csv_year_zero_skipped", b'Date;Amount;Message\n5.1.0000;5,00;a\n0000-01-05;5,00;b\n2026-11-05;5,00;c\n'),
 ]
 
 

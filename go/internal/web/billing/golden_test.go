@@ -135,8 +135,8 @@ func TestPureHelpersMatchPython(t *testing.T) {
 
 func TestParseMatchesPython(t *testing.T) {
 	g := loadGolden(t)
-	if len(g.Parser) < 16 {
-		t.Fatalf("golden file has %d statements, want at least 16", len(g.Parser))
+	if len(g.Parser) < 28 {
+		t.Fatalf("golden file has %d statements, want at least 28", len(g.Parser))
 	}
 	rowsSeen := 0
 	for _, c := range g.Parser {
@@ -171,7 +171,7 @@ func TestParseMatchesPython(t *testing.T) {
 			t.Fatalf("%s: unknown golden error %q", c.Name, c.Error)
 		}
 	}
-	if rowsSeen < 40 {
+	if rowsSeen < 70 {
 		t.Fatalf("only %d parsed rows compared", rowsSeen)
 	}
 }
