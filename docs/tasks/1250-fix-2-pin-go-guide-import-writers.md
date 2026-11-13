@@ -39,6 +39,9 @@ In `IMPORT_MOVES`, after the `(MERGE, "_note_failure", ...)` line add:
 ```
 Commit: `1250-fix-2 step 1: pin Go guide_import writers`.
 
+## 5. Do not touch
+Go code, every other test file, App/app/.
+
 ## 6. Commands
 From `App/`: `.venv/bin/python -m pytest tests/test_sm_queues.py -q --tb=short 2>&1 | tail -30`
 
