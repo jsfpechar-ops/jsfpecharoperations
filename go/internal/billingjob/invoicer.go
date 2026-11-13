@@ -7,11 +7,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/pdf"
@@ -56,6 +58,7 @@ type document struct {
 	CorrectsID  *int64
 	Reason      string
 	ClearCarry  bool
+	BilledCarry int64 // carry_czk the items billed; subtracted, not zeroed
 	OwnerUserID int64
 }
 
@@ -84,10 +87,21 @@ func (v *Invoicer) IssueForPeriod(ctx context.Context, owner int64, periodFrom, 
 	if err != nil {
 		return 0, err
 	}
-	return v.issue(ctx, document{
+	id, err := v.issue(ctx, document{
 		Kind: "invoice", PeriodFrom: periodFrom, PeriodTo: periodTo, Items: items,
-		IssueDate: today, ClearCarry: true, OwnerUserID: owner,
+		IssueDate: today, ClearCarry: true, BilledCarry: acc.CarryCZK, OwnerUserID: owner,
 	})
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+		// A concurrent run issued the same period first: return its id.
+		if qerr := v.Pool.QueryRow(ctx,
+			`SELECT id FROM platform_invoice WHERE owner_user_id = $1 AND period_from = $2
+			 AND period_to = $3 AND kind = 'invoice' AND voided = 0`,
+			owner, periodFrom, periodTo).Scan(&existing); qerr == nil {
+			return existing, nil
+		}
+	}
+	return id, err
 }
 
 // IssueSupplementary is issue_supplementary: the difference for a rise during an
@@ -234,14 +248,23 @@ func (v *Invoicer) issue(ctx context.Context, d document) (int64, error) {
 		return 0, err
 	}
 	if d.Kind == "storno" {
-		if _, err := tx.Exec(ctx, `UPDATE platform_invoice SET voided = 1 WHERE id = $1`, *d.CorrectsID); err != nil {
+		// Guard inside the transaction: a concurrent storno or payment wins and
+		// this one rolls back (its sequence number with it).
+		tag, err := tx.Exec(ctx,
+			`UPDATE platform_invoice SET voided = 1 WHERE id = $1 AND voided = 0 AND (paid_on IS NULL OR paid_on = '')`,
+			*d.CorrectsID)
+		if err != nil {
 			return 0, err
+		}
+		if tag.RowsAffected() == 0 {
+			return 0, ErrAlreadyVoided
 		}
 	}
 	if d.ClearCarry {
+		// Subtract what was billed, so carry added meanwhile is kept.
 		if _, err := tx.Exec(ctx,
-			`UPDATE billing_account SET carry_czk = 0, updated_at = $1 WHERE owner_user_id = $2`,
-			now, d.OwnerUserID); err != nil {
+			`UPDATE billing_account SET carry_czk = carry_czk - $1, updated_at = $2 WHERE owner_user_id = $3`,
+			d.BilledCarry, now, d.OwnerUserID); err != nil {
 			return 0, err
 		}
 	}
@@ -252,7 +275,8 @@ func (v *Invoicer) issue(ctx context.Context, d document) (int64, error) {
 		`INSERT INTO audit (at, actor, action, detail, owner_user_id, actor_user_id, impersonator_user_id)
 		 VALUES ($1, 'system', 'platform_invoice_issued', $2, $3, NULL, NULL)`,
 		ubyport.UTCNow(), number+" "+d.Kind, d.OwnerUserID); err != nil {
-		return newID, err
+		// The document is committed: report it as issued so no caller retries.
+		slog.Error("platform_invoice_issued audit failed", "number", number, "err", err)
 	}
 	return newID, nil
 }
