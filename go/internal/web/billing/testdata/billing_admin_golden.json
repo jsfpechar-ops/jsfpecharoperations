@@ -549,6 +549,246 @@
    "input_b64": "",
    "name": "csv_empty",
    "reason": "no_header"
+  },
+  {
+   "input_b64": "RGF0ZTtBbW91bnQ7TWVzc2FnZQoyMDI2LTExLTA1OzUsMDA7ImFiImNkCg==",
+   "name": "csv_text_after_quote",
+   "rows": [
+    {
+     "amount_haler": 500,
+     "bank_tx_id": "ha90fde1a6e3a2a2d1eeaced12c3e1a9d",
+     "counter_account": "",
+     "message": "abcd",
+     "received_on": "2026-11-05",
+     "vs": ""
+    }
+   ]
+  },
+  {
+   "input_b64": "RGF0ZTtBbW91bnQ7TWVzc2FnZQoyMDI2LTExLTA1OzUsMDA7ImEiImIiIHgK",
+   "name": "csv_doubled_quote_then_text",
+   "rows": [
+    {
+     "amount_haler": 500,
+     "bank_tx_id": "h287b26d668e1802f272614b1a8c2471b",
+     "counter_account": "",
+     "message": "a\"b x",
+     "received_on": "2026-11-05",
+     "vs": ""
+    }
+   ]
+  },
+  {
+   "input_b64": "RGF0ZTtBbW91bnQ7TWVzc2FnZTtWUw0KMjAyNi0xMS0wNTs1LDAwOyJ4O3kNCnoiOzENCjIwMjYtMTEtMDY7NiwwMDsicCIicTtyIjsyDQo=",
+   "name": "csv_quoted_delimiter_and_newline",
+   "rows": [
+    {
+     "amount_haler": 500,
+     "bank_tx_id": "h6e931836105d299fea2d42ff49db8692",
+     "counter_account": "",
+     "message": "x;y\nz",
+     "received_on": "2026-11-05",
+     "vs": "1"
+    },
+    {
+     "amount_haler": 600,
+     "bank_tx_id": "hac770b95cdc12536ecc581db493419e7",
+     "counter_account": "",
+     "message": "p\"q;r",
+     "received_on": "2026-11-06",
+     "vs": "2"
+    }
+   ]
+  },
+  {
+   "input_b64": "RGF0ZTtBbW91bnQ7TWVzc2FnZQoyMDI2LTExLTA1OzUsMDA7IiIKIjIwMjYtMTEtMDYiOyI2LDAwIjttCg==",
+   "name": "csv_empty_quoted_field",
+   "rows": [
+    {
+     "amount_haler": 500,
+     "bank_tx_id": "h3240180cb85a6b8fc6ff148c5055d6df",
+     "counter_account": "",
+     "message": "",
+     "received_on": "2026-11-05",
+     "vs": ""
+    },
+    {
+     "amount_haler": 600,
+     "bank_tx_id": "he569d8663449d1480a978280c23c9b64",
+     "counter_account": "",
+     "message": "m",
+     "received_on": "2026-11-06",
+     "vs": ""
+    }
+   ]
+  },
+  {
+   "input_b64": "RGF0ZTtBbW91bnQ7TWVzc2FnZQoyMDI2LTExLTA1OzUsMDA7YWIiY2QiZWYKMjAyNi0xMS0wNjs2LDAwO2EiYgo=",
+   "name": "csv_quote_inside_unquoted_field",
+   "rows": [
+    {
+     "amount_haler": 500,
+     "bank_tx_id": "h2fcc2bdd4438791399573b0ac895afba",
+     "counter_account": "",
+     "message": "ab\"cd\"ef",
+     "received_on": "2026-11-05",
+     "vs": ""
+    },
+    {
+     "amount_haler": 600,
+     "bank_tx_id": "h1b3beea3b51445f32c36096198220d66",
+     "counter_account": "",
+     "message": "a\"b",
+     "received_on": "2026-11-06",
+     "vs": ""
+    }
+   ]
+  },
+  {
+   "input_b64": "RGF0ZTtBbW91bnQ7TWVzc2FnZQoyMDI2LTExLTA1OzUsMDA7ICJhYiIKMjAyNi0xMS0wNjs2LDAwOyJhYiIgCg==",
+   "name": "csv_space_before_quote",
+   "rows": [
+    {
+     "amount_haler": 500,
+     "bank_tx_id": "hd6f080c1b1bbd82821b02ad481ac147e",
+     "counter_account": "",
+     "message": "\"ab\"",
+     "received_on": "2026-11-05",
+     "vs": ""
+    },
+    {
+     "amount_haler": 600,
+     "bank_tx_id": "h4e5fe5241e21b30c12aacfa4d5474a02",
+     "counter_account": "",
+     "message": "ab",
+     "received_on": "2026-11-06",
+     "vs": ""
+    }
+   ]
+  },
+  {
+   "input_b64": "RGF0ZTtBbW91bnQ7TWVzc2FnZTsKMjAyNi0xMS0wNTs1LDAwO207CjIwMjYtMTEtMDY7NiwwMDsKMjAyNi0xMS0wNzs3LDAwO24=",
+   "name": "csv_trailing_delimiter",
+   "rows": [
+    {
+     "amount_haler": 500,
+     "bank_tx_id": "hdab725b5a699dbf314a409246f5df78f",
+     "counter_account": "",
+     "message": "m",
+     "received_on": "2026-11-05",
+     "vs": ""
+    },
+    {
+     "amount_haler": 600,
+     "bank_tx_id": "h27c793d4e5b6b8648e76e47d56585c9a",
+     "counter_account": "",
+     "message": "",
+     "received_on": "2026-11-06",
+     "vs": ""
+    },
+    {
+     "amount_haler": 700,
+     "bank_tx_id": "hf46dbf436d78cc4be7eaf9aa3c1bff3b",
+     "counter_account": "",
+     "message": "n",
+     "received_on": "2026-11-07",
+     "vs": ""
+    }
+   ]
+  },
+  {
+   "input_b64": "RGF0ZTtBbW91bnQ7TWVzc2FnZQoKMjAyNi0xMS0wNTs1LDAwO2EKICAKCjs7CjIwMjYtMTEtMDY7NiwwMDtiCgo=",
+   "name": "csv_blank_lines",
+   "rows": [
+    {
+     "amount_haler": 500,
+     "bank_tx_id": "hb28b96d6c299866ec8a344288b5749ec",
+     "counter_account": "",
+     "message": "a",
+     "received_on": "2026-11-05",
+     "vs": ""
+    },
+    {
+     "amount_haler": 600,
+     "bank_tx_id": "hb640fe26e43d596352ad4753b62492cf",
+     "counter_account": "",
+     "message": "b",
+     "received_on": "2026-11-06",
+     "vs": ""
+    }
+   ]
+  },
+  {
+   "input_b64": "RGF0ZTtBbW91bnQ7TWVzc2FnZQ0yMDI2LTExLTA1OzUsMDA7YQ0yMDI2LTExLTA2OzYsMDA7Yg0=",
+   "name": "csv_cr_line_endings",
+   "rows": [
+    {
+     "amount_haler": 500,
+     "bank_tx_id": "hb28b96d6c299866ec8a344288b5749ec",
+     "counter_account": "",
+     "message": "a",
+     "received_on": "2026-11-05",
+     "vs": ""
+    },
+    {
+     "amount_haler": 600,
+     "bank_tx_id": "hb640fe26e43d596352ad4753b62492cf",
+     "counter_account": "",
+     "message": "b",
+     "received_on": "2026-11-06",
+     "vs": ""
+    }
+   ]
+  },
+  {
+   "input_b64": "RGF0ZTtBbW91bnQ7TWVzc2FnZQoyMDI2LTExLTA1OzUsMDA7Im9wZW4KbW9yZQ==",
+   "name": "csv_unterminated_quote",
+   "rows": [
+    {
+     "amount_haler": 500,
+     "bank_tx_id": "hca4c5c098489546a0b3cfb151c45ba6f",
+     "counter_account": "",
+     "message": "open\nmore",
+     "received_on": "2026-11-05",
+     "vs": ""
+    }
+   ]
+  },
+  {
+   "input_b64": "RGF0ZSxBbW91bnQsTWVzc2FnZQoyMDI2LTExLTA1LDUuMDAsImFiImNkLHgKMjAyNi0xMS0wNiw2LjAwLCJhIiJiIiB5LHoK",
+   "name": "csv_comma_text_after_quote",
+   "rows": [
+    {
+     "amount_haler": 500,
+     "bank_tx_id": "ha90fde1a6e3a2a2d1eeaced12c3e1a9d",
+     "counter_account": "",
+     "message": "abcd",
+     "received_on": "2026-11-05",
+     "vs": ""
+    },
+    {
+     "amount_haler": 600,
+     "bank_tx_id": "hc33b7c998dc5cd3d1c835dab934e94a2",
+     "counter_account": "",
+     "message": "a\"b y",
+     "received_on": "2026-11-06",
+     "vs": ""
+    }
+   ]
+  },
+  {
+   "input_b64": "RGF0ZTtBbW91bnQ7TWVzc2FnZQo1LjEuMDAwMDs1LDAwO2EKMDAwMC0wMS0wNTs1LDAwO2IKMjAyNi0xMS0wNTs1LDAwO2MK",
+   "name": "csv_year_zero_skipped",
+   "rows": [
+    {
+     "amount_haler": 500,
+     "bank_tx_id": "h11a5a03f5234d5c31d96b2cc9ebe01c3",
+     "counter_account": "",
+     "message": "c",
+     "received_on": "2026-11-05",
+     "vs": ""
+    }
+   ]
   }
  ],
  "pure": {
