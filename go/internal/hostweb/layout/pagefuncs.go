@@ -28,7 +28,7 @@ func ParseFuncs(cat hostweb.Catalog, funcs template.FuncMap, fsys fs.FS, pattern
 	base := &reqCtx{lang: hostweb.DefaultLanguage, page: cat, layout: Strings}
 	layoutFuncs := base.funcs()
 	for name := range funcs {
-		if _, taken := layoutFuncs[name]; taken {
+		if _, taken := layoutFuncs[name]; taken || goBuiltins[name] {
 			return nil, fmt.Errorf("layout: page func %q overrides a layout func", name)
 		}
 	}
@@ -44,6 +44,15 @@ func ParseFuncs(cat hostweb.Catalog, funcs template.FuncMap, fsys fs.FS, pattern
 	return &Templates{cat: cat, master: master}, nil
 }
 
+// goBuiltins are text/template's and html/template's own func names, which a
+// page func must not shadow either.
+var goBuiltins = map[string]bool{
+	"and": true, "call": true, "html": true, "index": true, "slice": true,
+	"js": true, "len": true, "not": true, "or": true, "print": true,
+	"printf": true, "println": true, "urlquery": true, "eq": true, "ge": true,
+	"gt": true, "le": true, "lt": true, "ne": true,
+}
+
 // MustParseFuncs is ParseFuncs that panics, for package-level vars.
 func MustParseFuncs(cat hostweb.Catalog, funcs template.FuncMap, fsys fs.FS, patterns ...string) *Templates {
 	t, err := ParseFuncs(cat, funcs, fsys, patterns...)
@@ -52,6 +61,9 @@ func MustParseFuncs(cat hostweb.Catalog, funcs template.FuncMap, fsys fs.FS, pat
 	}
 	return t
 }
+
+// seqMax caps a seq range, so a bad value cannot allocate without bound.
+const seqMax = 10000
 
 // seq is Python's range: seq n is 0..n-1, seq a b is a..b-1.
 func seq(bounds ...any) ([]int, error) {
@@ -63,6 +75,9 @@ func seq(bounds ...any) ([]int, error) {
 		lo, hi = toInt(bounds[0]), toInt(bounds[1])
 	default:
 		return nil, fmt.Errorf("seq: want 1 or 2 arguments, got %d", len(bounds))
+	}
+	if hi-lo > seqMax {
+		return nil, fmt.Errorf("seq: range %d..%d is longer than %d", lo, hi, seqMax)
 	}
 	out := []int{}
 	for i := lo; i < hi; i++ {

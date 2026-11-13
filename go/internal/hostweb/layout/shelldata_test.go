@@ -195,6 +195,12 @@ func TestPageFuncsAndHelpers(t *testing.T) {
 	if _, err := ParseFuncs(nil, template.FuncMap{"t": func() string { return "" }}, fsys, "p.html"); err == nil {
 		t.Fatal("a page func named t was accepted")
 	}
+	if _, err := ParseFuncs(nil, template.FuncMap{"len": func() int { return 0 }}, fsys, "p.html"); err == nil {
+		t.Fatal("a page func named like a Go builtin was accepted")
+	}
+	if _, err := seq(0, seqMax+1); err == nil {
+		t.Fatal("seq accepted a range over seqMax")
+	}
 	tpl, err := ParseFuncs(nil, template.FuncMap{"shout": strings.ToUpper}, fsys, "p.html")
 	if err != nil {
 		t.Fatal(err)
