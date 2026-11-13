@@ -34,10 +34,19 @@ const watchClearSQL = `UPDATE alert SET resolved_at = $1, user_dismissed = 0 WHE
 	AND (r.status != 'active' OR r.archived_at IS NOT NULL)
 	AND ($2::bigint IS NULL OR a.owner_user_id = $2::bigint))`
 
+// filesWithUbyhostSQL is reporting.FILES_WITH_UBYHOST_SQL (1171): the property
+// has the three UbyPort login fields, so UbyHost files its stays. Applied with
+// the apartment alias a. The one place for this rule in Go; keep it equal to
+// the Python fragment.
+const filesWithUbyhostSQL = `(COALESCE(TRIM(a.uby_idub), '') != '' ` +
+	`AND COALESCE(TRIM(a.uby_ws_user), '') != '' ` +
+	`AND COALESCE(TRIM(a.uby_ws_password_enc), '') != '')`
+
 // watchStaysSQL is the stays the watch reads: live, on an active apartment,
 // not the demo stay (0100). The order only makes runs repeatable.
 const watchStaysSQL = `SELECT r.id, r.apartment_id, a.internal_name, r.date_from, r.date_to,
-	r.declared_guests, r.expected_guests_override, r.lead_reduced_guests
+	r.declared_guests, r.expected_guests_override, r.lead_reduced_guests,
+	CASE WHEN ` + filesWithUbyhostSQL + ` THEN 1 ELSE 0 END = 1
 	FROM reservation r JOIN apartment a ON a.id = r.apartment_id
 	WHERE r.status = 'active' AND r.archived_at IS NULL AND a.active = 1
 	AND COALESCE(r.source, '') != 'demo'
@@ -109,7 +118,7 @@ func watchStays(ctx context.Context, pool *pgxpool.Pool, owner *int64) ([]stayRo
 	for rows.Next() {
 		var s stayRow
 		if err := rows.Scan(&s.id, &s.propertyID, &s.property, &s.dateFrom, &s.dateTo,
-			&s.declared, &s.override, &s.reduced); err != nil {
+			&s.declared, &s.override, &s.reduced, &s.filesWithUbyhost); err != nil {
 			return nil, err
 		}
 		out = append(out, s)
@@ -206,7 +215,9 @@ func watchStay(ctx context.Context, pool *pgxpool.Pool, stay stayRow, p progress
 	} else if err := ubyport.ResolveAlert(ctx, pool, mismatchKey); err != nil {
 		return 0, err
 	}
-	if settled {
+	// 1171: no UbyPort login on the property, so UbyHost files nothing here
+	// and no deadline alert is due; an open one is cleared.
+	if settled || !stay.filesWithUbyhost {
 		return 0, ubyport.ResolveAlert(ctx, pool, key)
 	}
 	level := deadlines.Urgency(start, now)

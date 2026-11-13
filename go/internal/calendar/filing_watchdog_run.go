@@ -40,6 +40,7 @@ var errWatchdogNaiveStamp = errors.New("filing watchdog: digest stamp has no UTC
 // WatchdogResult is the dict run() returns.
 type WatchdogResult struct {
 	AtRisk        int
+	NotSent       int
 	UnknownRisk   int
 	AwaitingRetry int
 	HostMails     int
@@ -352,8 +353,10 @@ func SendOperatorDigest(ctx context.Context, pool *pgxpool.Pool, getenv func(str
 
 // RunFilingWatchdog is filing_watchdog.run: one watchdog pass. It fails only
 // when the at-risk query fails. AtRisk counts only stays with known reportable
-// guests and alone decides the heartbeat (FilingHeartbeatURL); UnknownRisk and
-// AwaitingRetry do not. The unknown-risk query and the digest are isolated: a
+// guests whose send failed (SendFailed, 1171b); it alone decides the heartbeat
+// (FilingHeartbeatURL) and only those stays go in the operator digest. NotSent
+// (UbyHost never tried) and UnknownRisk get the host mail only; AwaitingRetry
+// gets nothing yet. The unknown-risk query and the digest are isolated: a
 // failure is logged and the pass goes on, so neither silences the real check.
 // lookupEnv is os.LookupEnv in production; an unreadable
 // UBYHOST_SUBMIT_SWEEP_MINUTES fails the pass, as Python refuses to start.
@@ -378,17 +381,24 @@ func RunFilingWatchdog(ctx context.Context, pool *pgxpool.Pool, lookupEnv func(s
 		slog.Error("unknown-risk query failed", "err", err)
 		unknown = nil
 	}
+	var failed []WatchdogStay
+	for _, s := range stays {
+		if s.SendFailed {
+			failed = append(failed, s)
+		}
+	}
 	both := make([]WatchdogStay, 0, len(stays)+len(unknown))
 	both = append(both, stays...)
 	both = append(both, unknown...)
 	hostMails := NotifyHosts(ctx, pool, getenv, both, at)
-	digest, err := SendOperatorDigest(ctx, pool, getenv, stays, unknown, at)
+	digest, err := SendOperatorDigest(ctx, pool, getenv, failed, nil, at)
 	if err != nil {
 		slog.Error("deadline digest failed", "err", err)
 		digest = false
 	}
 	result := WatchdogResult{
-		AtRisk:        len(stays),
+		AtRisk:        len(failed),
+		NotSent:       len(stays) - len(failed),
 		UnknownRisk:   len(unknown),
 		AwaitingRetry: len(every) - len(stays),
 		HostMails:     hostMails,

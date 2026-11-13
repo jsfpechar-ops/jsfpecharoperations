@@ -48,6 +48,7 @@ def _cleanup() -> None:
         )
         db.execute("DELETE FROM reservation WHERE apartment_id = ?", (apartment["id"],))
         db.execute("DELETE FROM submission WHERE apartment_id = ?", (apartment["id"],))
+        db.execute("DELETE FROM alert WHERE apartment_id = ?", (apartment["id"],))
         db.execute("DELETE FROM apartment WHERE id = ?", (apartment["id"],))
         if apartment["legal_entity_id"]:
             db.execute("DELETE FROM legal_entity WHERE id = ?", (apartment["legal_entity_id"],))
@@ -82,6 +83,9 @@ def world():
             "automation_mode": "manual",
             "active": 1,
             "created_at": now,
+            "uby_idub": "IDUB-TEST",
+            "uby_ws_user": "ws-test",
+            "uby_ws_password_enc": db.encrypt_secret("ws-secret"),
         },
     )
     counter = {"n": 0}
@@ -360,12 +364,29 @@ def test_the_real_watchdog_runs_inside_the_deadline_job(world, pings, monkeypatc
     """No stub for run(): the job computes the answer and pings with it."""
     monkeypatch.setattr(config, "HEARTBEAT_FILING_URL", "https://hc-ping.example.invalid/abc")
     rid = world["add_stay"]([("DEU", "pending")], arrival=date.today() - timedelta(days=10))
+    _refused_batch(world, rid)
     scheduler._job_deadlines()
     assert pings == ["https://hc-ping.example.invalid/abc/fail"]
     assert rid in _mine(filing_watchdog.at_risk_stays(), {rid})
 
 
 # --- stays with no guest on file ("unknown risk") --------------------------------
+
+
+@pytest.mark.parametrize("field", ["uby_idub", "uby_ws_user", "uby_ws_password_enc"])
+@pytest.mark.parametrize("blank", [None, "", "   "])
+def test_a_property_without_its_ubyport_login_is_not_watched(world, field, blank):
+    """1171: UbyHost files nothing there, so no stay of it is at risk or unknown risk."""
+    at_risk = world["add_stay"]([("SVK", "pending")])
+    unknown = world["add_stay"]([])
+    now = datetime(2026, 9, 30, 8, 0)
+    assert at_risk in _mine(filing_watchdog.at_risk_stays(now), {at_risk})
+    assert unknown in _mine(filing_watchdog.unknown_risk_stays(now), {unknown})
+
+    db.execute(f"UPDATE apartment SET {field} = ? WHERE id = ?", (blank, world["apartment_id"]))
+
+    assert not _mine(filing_watchdog.at_risk_stays(now), {at_risk})
+    assert not _mine(filing_watchdog.unknown_risk_stays(now), {unknown})
 
 
 def test_a_stay_without_guests_is_unknown_risk_once_the_guests_have_arrived(world):
@@ -515,6 +536,7 @@ def test_a_broken_unknown_risk_query_does_not_silence_the_watchdog(world, monkey
 
     monkeypatch.setattr(filing_watchdog, "unknown_risk_stays", boom)
     rid = world["add_stay"]([("DEU", "pending")], arrival=date.today() - timedelta(days=10))
+    _refused_batch(world, rid)
     result = filing_watchdog.run()
     assert result["at_risk"] >= 1 and result["unknown_risk"] == 0
     assert rid in _mine(filing_watchdog.at_risk_stays(), {rid})
@@ -695,3 +717,141 @@ def test_a_stay_held_on_an_unclear_automatic_resend_is_at_risk_after_the_grace(w
     # No later resend can move the finish time on, so it stays at risk.
     much_later = WEDNESDAY_MORNING + 5 * filing_watchdog.RETRY_GRACE
     assert rid in _mine(filing_watchdog.at_risk_stays(much_later), {rid})
+
+
+# 1171b: only a send that went wrong pages the operator. A stay UbyHost never
+# tried to send (the host files elsewhere, or the guest is not complete) gets
+# the host mail and nothing else.
+
+
+def _refused_batch(world, reservation_id):
+    """Put every guest of the stay on a batch UbyPort refused."""
+    guest_ids = [
+        row["id"]
+        for row in db.query("SELECT id FROM guest WHERE reservation_id = ?", (reservation_id,))
+    ]
+    stamp = db.utcnow()
+    submission_id = db.insert(
+        "submission",
+        {
+            "apartment_id": world["apartment_id"],
+            "created_at": stamp,
+            "finished_at": stamp,
+            "mode": "auto",
+            "state": "error",
+            "guest_ids": json.dumps(guest_ids),
+            "error_text": "refused",
+        },
+    )
+    for guest_id in guest_ids:
+        db.update("guest", guest_id, {"submission_id": submission_id, "submit_state": "error"})
+    return submission_id
+
+
+def _open_alert(world, dedupe_key, *, reservation_id=None, resolved=False):
+    stamp = db.utcnow()
+    db.insert(
+        "alert",
+        {
+            "level": "critical",
+            "kind": dedupe_key.split(":")[0],
+            "apartment_id": world["apartment_id"],
+            "reservation_id": reservation_id,
+            "dedupe_key": dedupe_key,
+            "message": "test",
+            "created_at": stamp,
+            "resolved_at": stamp if resolved else None,
+        },
+    )
+
+
+def _only(monkeypatch, ids):
+    """Keep run() to this test's stays: the shared database may hold others."""
+    at_risk, unknown = filing_watchdog.at_risk_stays, filing_watchdog.unknown_risk_stays
+    monkeypatch.setattr(
+        filing_watchdog, "at_risk_stays",
+        lambda now=None, **kw: [s for s in at_risk(now, **kw) if s["reservation_id"] in ids],
+    )
+    monkeypatch.setattr(
+        filing_watchdog, "unknown_risk_stays",
+        lambda now=None: [s for s in unknown(now) if s["reservation_id"] in ids],
+    )
+
+
+def _mail_on(monkeypatch):
+    monkeypatch.setattr(mail, "mail_enabled", lambda: True)
+    monkeypatch.setattr(config, "OPERATOR_EMAIL", "operator@example.invalid")
+    monkeypatch.setattr(config, "HEARTBEAT_FILING_URL", "https://hc-ping.example.invalid/abc")
+
+
+def test_a_stay_never_sent_mails_the_host_but_pages_nobody(world, pings, monkeypatch):
+    _mail_on(monkeypatch)
+    rid = world["add_stay"]([("DEU", "pending")], arrival=date.today() - timedelta(days=10))
+    # A resolved login alert and an unrelated open one do not count.
+    _open_alert(world, f"ubyport_auth_failed:{world['apartment_id']}", resolved=True)
+    _open_alert(world, f"door_code_failed:{rid}", reservation_id=rid)
+    _only(monkeypatch, {rid})
+    stay = _mine(filing_watchdog.at_risk_stays(), {rid})[rid]
+    assert stay["send_failed"] is False
+    result = filing_watchdog.run()
+    assert (result["at_risk"], result["not_sent"], result["host_mails"], result["digest"]) == (
+        0, 1, 1, 0
+    )
+    assert len(_outbox("deadline_at_risk", rid)) == 1
+    assert _outbox("deadline_digest") == []
+    scheduler._job_deadlines()
+    assert pings == ["https://hc-ping.example.invalid/abc"]
+
+
+@pytest.mark.parametrize(
+    "failure",
+    [
+        "refused", "auth", "transport", "unreadable_property", "unreadable_stay",
+        "sweep_failed", "apartment_setup", "outcome_unknown",
+    ],
+)
+def test_a_failed_send_on_a_configured_property_pages_and_is_in_the_digest(
+    world, pings, monkeypatch, failure
+):
+    _mail_on(monkeypatch)
+    rid = world["add_stay"]([("DEU", "pending")], arrival=date.today() - timedelta(days=10))
+    apartment_id = world["apartment_id"]
+    if failure == "refused":
+        _refused_batch(world, rid)
+    else:
+        key = {
+            "auth": f"ubyport_auth_failed:{apartment_id}",
+            "transport": f"submission_transport:{apartment_id}",
+            "unreadable_property": f"guest_record_unreadable:{apartment_id}",
+            "unreadable_stay": f"guest_record_unreadable:reservation:{rid}",
+            "sweep_failed": f"sweep_failed:{apartment_id}",
+            "apartment_setup": f"apartment_setup:{apartment_id}",
+            "outcome_unknown": f"submission_outcome_unknown:{apartment_id}",
+        }[failure]
+        _open_alert(world, key, reservation_id=rid if failure == "unreadable_stay" else None)
+    _only(monkeypatch, {rid})
+    assert _mine(filing_watchdog.at_risk_stays(), {rid})[rid]["send_failed"] is True
+    result = filing_watchdog.run()
+    assert (result["at_risk"], result["not_sent"], result["host_mails"], result["digest"]) == (
+        1, 0, 1, 1
+    )
+    text = json.loads(_outbox("deadline_digest")[0]["payload"])["text"]
+    assert "Watchdog Loft" in text and GUEST_SURNAME not in text
+    scheduler._job_deadlines()
+    assert pings == ["https://hc-ping.example.invalid/abc/fail"]
+
+
+def test_a_stay_without_guests_is_not_in_the_digest(world, monkeypatch):
+    _mail_on(monkeypatch)
+    local = filing_watchdog.deadlines.local_now()
+    arrival = next(
+        date.today() - timedelta(days=back)
+        for back in range(0, 14)
+        if filing_watchdog.deadlines.reporting_deadline(date.today() - timedelta(days=back))
+        - local <= filing_watchdog.AT_RISK_WINDOW
+    )
+    rid = world["add_stay"]([], arrival=arrival)
+    _only(monkeypatch, {rid})
+    result = filing_watchdog.run()
+    assert (result["unknown_risk"], result["host_mails"], result["digest"]) == (1, 1, 0)
+    assert _outbox("deadline_digest") == []

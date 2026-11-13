@@ -39,6 +39,20 @@ report is due, because Czech guests owe none. Such a stay gets the host mail
 once ("no guest details yet") and a section of the operator digest, but it
 never sets the heartbeat to ``/fail``: that is kept for guests known to be
 reportable, so a stay of Czech guests nobody typed in does not page anyone.
+
+1171: a stay on a property without its UbyPort login (IDUB, web-service user
+or password blank, ``reporting.FILES_WITH_UBYHOST_SQL``) is in neither list.
+UbyHost files nothing for that property, so it gets no host mail, no digest
+line and never sets the heartbeat to ``/fail``.
+
+1171b: the alarm is for sends that went wrong, not for hosts who file
+elsewhere. A stay at risk is ``send_failed`` when UbyHost tried and it did not
+go through: an unfiled reportable guest has a ``submission_id`` (UbyPort
+refused it, the transport failed or the answer was unclear), or an open alert
+says UbyHost cannot send (``SEND_FAILED_ALERT_SQL``). Only those stays decide
+the heartbeat and appear in the operator digest (``at_risk``). A stay with no
+attempt (``not_sent``) and an unknown-risk stay still get the host mail, but
+the operator is not paged or mailed about them.
 """
 from __future__ import annotations
 
@@ -64,6 +78,25 @@ UNKNOWN_RISK_MAX_OVERDUE = timedelta(days=7)
 # resent yet is treated as "awaiting the automatic resend" rather than at risk:
 # two sweep intervals, so one missed sweep run does not raise the alarm.
 RETRY_GRACE = timedelta(minutes=2 * max(1, config.SUBMIT_SWEEP_MINUTES))
+# 1171b: an open alert that means UbyHost could not send for this stay
+# (``r`` reservation): the police login refused, a batch that never reached
+# UbyPort, a guest record that cannot be decrypted, the property's sweep
+# crashed (the job heartbeat stays green, so the dead-man switch misses it),
+# the saved login fails validation (a rotated SECRET_KEY decrypts it to ""),
+# or a crash-interrupted batch whose outcome is unknown. The dedupe keys are
+# the ones reporting.py raises; the Go copy is watchdogSendFailedAlertSQL.
+# Hosts can dismiss these alerts, which pauses paging until the next sweep
+# raises them again.
+SEND_FAILED_ALERT_SQL = (
+    "EXISTS (SELECT 1 FROM alert al WHERE al.resolved_at IS NULL AND al.dedupe_key IN ("
+    "'ubyport_auth_failed:' || CAST(r.apartment_id AS TEXT), "
+    "'submission_transport:' || CAST(r.apartment_id AS TEXT), "
+    "'guest_record_unreadable:' || CAST(r.apartment_id AS TEXT), "
+    "'sweep_failed:' || CAST(r.apartment_id AS TEXT), "
+    "'apartment_setup:' || CAST(r.apartment_id AS TEXT), "
+    "'submission_outcome_unknown:' || CAST(r.apartment_id AS TEXT), "
+    "'guest_record_unreadable:reservation:' || CAST(r.id AS TEXT)))"
+)
 
 
 def _awaiting_retry(row, current_utc: datetime) -> bool:
@@ -95,7 +128,8 @@ def at_risk_stays(
 
     A stay whose every unfiled guest is awaiting the automatic resend and whose
     deadline has not passed is left out, unless ``include_awaiting_retry``;
-    it then carries ``awaiting_retry=True``.
+    it then carries ``awaiting_retry=True``. ``send_failed`` is the 1171b
+    split (see the module docstring).
     """
     local = deadlines.local_now(now)
     current_utc = _utc(now)
@@ -106,7 +140,8 @@ def at_risk_stays(
         "r.apartment_id, a.internal_name, a.legal_entity_id, a.owner_user_id, "
         "u.username AS workspace, g.nationality, "
         "s.state AS sub_state, s.retried_at AS sub_retried_at, "
-        "s.finished_at AS sub_finished_at "
+        "s.finished_at AS sub_finished_at, g.submission_id, "
+        "CASE WHEN " + SEND_FAILED_ALERT_SQL + " THEN 1 ELSE 0 END AS failed_alert "
         "FROM reservation r "
         "JOIN apartment a ON a.id = r.apartment_id "
         "JOIN guest g ON g.reservation_id = r.id "
@@ -114,6 +149,7 @@ def at_risk_stays(
         "LEFT JOIN user_account u ON u.id = a.owner_user_id "
         "WHERE r.status = 'active' AND r.archived_at IS NULL AND a.active = 1 "
         "AND COALESCE(r.source, '') != 'demo' "  # 0100: the setup guide's demo stay
+        "AND " + reporting.FILES_WITH_UBYHOST_SQL + " "
         "AND g.archived_at IS NULL AND g.submit_state != ? "
         "AND g.nationality IS NOT NULL AND g.nationality != '' "
         "ORDER BY r.id",
@@ -136,8 +172,11 @@ def at_risk_stays(
                 "mailed_at": row["at_risk_mailed_at"],
                 "unfiled": 0,
                 "awaiting_retry_guests": 0,
+                "send_failed": False,
             }
         stay["unfiled"] += 1
+        if row["submission_id"] or row["failed_alert"]:
+            stay["send_failed"] = True
         if _awaiting_retry(row, current_utc):
             stay["awaiting_retry_guests"] += 1
     found: List[Dict[str, Any]] = []
@@ -185,6 +224,7 @@ def unknown_risk_stays(now: Optional[datetime] = None) -> List[Dict[str, Any]]:
         "LEFT JOIN user_account u ON u.id = a.owner_user_id "
         "WHERE r.status = 'active' AND r.archived_at IS NULL AND a.active = 1 "
         "AND COALESCE(r.source, '') != 'demo' "  # 0100: the setup guide's demo stay
+        "AND " + reporting.FILES_WITH_UBYHOST_SQL + " "
         "AND r.date_from <= ? AND r.date_from >= ? "
         "AND NOT EXISTS (SELECT 1 FROM guest g "
         "WHERE g.reservation_id = r.id AND g.archived_at IS NULL) "
@@ -325,8 +365,11 @@ def send_operator_digest(
 def run(now: Optional[datetime] = None) -> Dict[str, int]:
     """One watchdog pass. Raises only if the at-risk query itself fails.
 
-    ``at_risk`` counts only stays with known reportable guests; it alone
-    decides the heartbeat. ``unknown_risk`` (no guest on file) does not.
+    ``at_risk`` counts only stays with known reportable guests whose send
+    failed (``send_failed``); it alone decides the heartbeat, and only those
+    stays go in the operator digest. ``not_sent`` counts the other stays with
+    reportable guests: UbyHost never tried, so they get the host mail only.
+    ``unknown_risk`` (no guest on file) gets the host mail only too.
     ``awaiting_retry`` counts the stays left out because their one automatic
     resend is still due (see the module docstring); they do not decide the
     heartbeat and get no mail yet.
@@ -340,14 +383,16 @@ def run(now: Optional[datetime] = None) -> Dict[str, int]:
         # The weaker check must not silence the real one or its heartbeat.
         log.exception("unknown-risk query failed")
         unknown = []
+    failed = [stay for stay in stays if stay["send_failed"]]
     host_mails = notify_hosts(stays + unknown, now)
     try:
-        digest = send_operator_digest(stays, now, unknown=unknown)
+        digest = send_operator_digest(failed, now)
     except Exception:
         log.exception("deadline digest failed")
         digest = False
     return {
-        "at_risk": len(stays),
+        "at_risk": len(failed),
+        "not_sent": len(stays) - len(failed),
         "unknown_risk": len(unknown),
         "awaiting_retry": awaiting,
         "host_mails": host_mails,

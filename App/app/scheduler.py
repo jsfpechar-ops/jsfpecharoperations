@@ -243,7 +243,7 @@ def _job_deadlines() -> None:
     try:
         watchdog = filing_watchdog.run()
         if (
-            watchdog["at_risk"] or watchdog.get("unknown_risk") or watchdog.get("awaiting_retry")
+            watchdog["at_risk"] or watchdog.get("not_sent") or watchdog.get("unknown_risk") or watchdog.get("awaiting_retry")
             or watchdog["host_mails"] or watchdog["digest"]
         ):
             log.info("filing watchdog: %s", watchdog)
@@ -261,6 +261,7 @@ def _job_deadlines() -> None:
             "alerts": raised or 0,
             "requests_due": due_requests or 0,
             "at_risk": watchdog["at_risk"],
+            "not_sent": watchdog.get("not_sent", 0),
             "unknown_risk": watchdog.get("unknown_risk", 0),
             "awaiting_retry": watchdog.get("awaiting_retry", 0),
             "host_mails": watchdog["host_mails"],

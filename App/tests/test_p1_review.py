@@ -11,8 +11,12 @@ def _db(monkeypatch, tmp_path, name):
 
 
 def _apt(now, mode="manual", owner=None):
+    # 1171: a property without its police login is not watched; these tests
+    # mean one that files through UbyHost.
     return db.insert("apartment", {"internal_name": "A", "automation_mode": mode, "active": 1,
-                                    "created_at": now, "owner_user_id": owner})
+                                    "created_at": now, "owner_user_id": owner,
+                                    "uby_idub": "IDUB-TEST", "uby_ws_user": "ws-test",
+                                    "uby_ws_password_enc": db.encrypt_secret("ws-secret")})
 
 
 def _feed(apt, now):

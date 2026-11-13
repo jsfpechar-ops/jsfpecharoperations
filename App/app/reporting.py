@@ -2682,6 +2682,19 @@ def reservation_deadline_anchor(
     return validation.parse_iso_date(reservation["date_from"])
 
 
+# 1171: a property files through UbyHost only when it has the three UbyPort
+# login fields (validation.validate_apartment). A property without them files
+# no police report from UbyHost, so its stays get no deadline alert and are not
+# watched by filing_watchdog. Applied with the apartment alias ``a``. The one
+# place for this rule in Python; go/internal/calendar/watch.go
+# filesWithUbyhostSQL is the Go copy and must match it.
+FILES_WITH_UBYHOST_SQL = (
+    "(COALESCE(TRIM(a.uby_idub), '') != '' "
+    "AND COALESCE(TRIM(a.uby_ws_user), '') != '' "
+    "AND COALESCE(TRIM(a.uby_ws_password_enc), '') != '')"
+)
+
+
 def check_deadlines(
     now: Optional[datetime] = None, owner_user_id: Optional[int] = None
 ) -> int:
@@ -2710,7 +2723,9 @@ def check_deadlines(
     )
     # 0100: a demo stay has no deadline to chase.
     rows = db.query(
-        "SELECT r.*, a.internal_name FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
+        "SELECT r.*, a.internal_name, "
+        f"CASE WHEN {FILES_WITH_UBYHOST_SQL} THEN 1 ELSE 0 END AS files_with_ubyhost "
+        "FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
         "WHERE r.status = 'active' AND r.archived_at IS NULL AND a.active = 1 "
         "AND COALESCE(r.source, '') != 'demo' "
         "AND (? IS NULL OR a.owner_user_id = ?)",
@@ -2774,7 +2789,9 @@ def check_deadlines(
             )
         else:
             alerts.resolve(mismatch_key)
-        if settled:
+        # 1171: no UbyPort login on the property, so UbyHost files nothing
+        # here and no deadline alert is due; an open one is cleared.
+        if settled or not reservation["files_with_ubyhost"]:
             alerts.resolve(key)
             continue
         level = deadlines.urgency(start, now)

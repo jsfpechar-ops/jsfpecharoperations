@@ -38,6 +38,8 @@ type stayRow struct {
 	declared         *int64
 	override         *int64
 	reduced          *int64
+	// filesWithUbyhost is set by watchStays only (1171).
+	filesWithUbyhost bool
 }
 
 // progressResult is the part of reporting.reservation_progress the calendar needs.

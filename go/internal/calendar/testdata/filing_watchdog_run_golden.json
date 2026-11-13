@@ -991,7 +991,14 @@
     "227": null,
     "228": null,
     "229": "",
-    "230": null
+    "230": null,
+    "241": null,
+    "242": null,
+    "243": null,
+    "244": null,
+    "245": null,
+    "246": null,
+    "247": null
    },
    "pushes": [
     {
@@ -1231,13 +1238,70 @@
      "subscription_id": 503,
      "url": "/reservations/230",
      "user_account_id": 2
+    },
+    {
+     "attempts": 0,
+     "idempotency_key": "deadline_at_risk:244:501",
+     "kind": "deadline_at_risk",
+     "params": {
+      "date": "15.09.2026",
+      "deadline": "17.09.2026 23:59",
+      "property": "Odmitnute heslo"
+     },
+     "state": "queued",
+     "subscription_id": 501,
+     "url": "/reservations/244",
+     "user_account_id": 1
+    },
+    {
+     "attempts": 0,
+     "idempotency_key": "deadline_at_risk:245:501",
+     "kind": "deadline_at_risk",
+     "params": {
+      "date": "15.09.2026",
+      "deadline": "17.09.2026 23:59",
+      "property": "Bez spojeni"
+     },
+     "state": "queued",
+     "subscription_id": 501,
+     "url": "/reservations/245",
+     "user_account_id": 1
+    },
+    {
+     "attempts": 0,
+     "idempotency_key": "deadline_at_risk:246:501",
+     "kind": "deadline_at_risk",
+     "params": {
+      "date": "15.09.2026",
+      "deadline": "17.09.2026 23:59",
+      "property": "Necitelny host"
+     },
+     "state": "queued",
+     "subscription_id": 501,
+     "url": "/reservations/246",
+     "user_account_id": 1
+    },
+    {
+     "attempts": 0,
+     "idempotency_key": "deadline_at_risk:247:501",
+     "kind": "deadline_at_risk",
+     "params": {
+      "date": "15.09.2026",
+      "deadline": "17.09.2026 23:59",
+      "property": "Byt Dole"
+     },
+     "state": "queued",
+     "subscription_id": 501,
+     "url": "/reservations/247",
+     "user_account_id": 1
     }
    ],
    "result": {
-    "at_risk": 14,
+    "at_risk": 11,
     "awaiting_retry": 2,
     "digest": 0,
     "host_mails": 0,
+    "not_sent": 7,
     "unknown_risk": 3
    },
    "setting": null
@@ -1431,17 +1495,73 @@
      "to_email": "contact.one@example.test"
     },
     {
+     "apartment_id": 9,
+     "attempts": 0,
+     "cc_email": null,
+     "idempotency_key": "deadline_at_risk:244",
+     "kind": "deadline_at_risk",
+     "owner_user_id": 1,
+     "payload": "d501ccdca4cf007dd929de42b9ae18eef49add99ab8a0c196f448faad69d8e5d",
+     "reservation_id": 244,
+     "state": "queued",
+     "subject": "Not reported to the police yet: Odmitnute heslo, deadline 17.09.2026 23:59",
+     "text": "Odmitnute heslo, arrival 15.09.2026: foreign guests of this stay are not reported to the police yet. The deadline is 17.09.2026 23:59.\n\nProperty: Odmitnute heslo\nArrival: 15.09.2026\nGuests not filed yet: 1\nDeadline: 17.09.2026 23:59\n\nWhat to do next: Open the stay, complete what is missing and send it.\n\nIf UbyHost cannot file in time: Sign in to the UbyPort web application with your own access, enter the guests by hand and keep the receipt. Then open the stay in UbyHost and choose \"I filed this stay by hand in UbyPort\", so UbyHost never sends it again. The duty to report stays with you as the host.\n\nOpen the stay: https://app.example.test/reservations/244\n\n--\nUbyHost\nYou get this e-mail once per stay, when its police deadline is less than 24 hours away or has passed and the stay is still not reported.",
+     "to_email": "contact.one@example.test"
+    },
+    {
+     "apartment_id": 10,
+     "attempts": 0,
+     "cc_email": null,
+     "idempotency_key": "deadline_at_risk:245",
+     "kind": "deadline_at_risk",
+     "owner_user_id": 1,
+     "payload": "611e45d6f5156e64dd677dd4ddad37f67b97740ee6cb1cc54b943fe49be3bd57",
+     "reservation_id": 245,
+     "state": "queued",
+     "subject": "Not reported to the police yet: Bez spojeni, deadline 17.09.2026 23:59",
+     "text": "Bez spojeni, arrival 15.09.2026: foreign guests of this stay are not reported to the police yet. The deadline is 17.09.2026 23:59.\n\nProperty: Bez spojeni\nArrival: 15.09.2026\nGuests not filed yet: 1\nDeadline: 17.09.2026 23:59\n\nWhat to do next: Open the stay, complete what is missing and send it.\n\nIf UbyHost cannot file in time: Sign in to the UbyPort web application with your own access, enter the guests by hand and keep the receipt. Then open the stay in UbyHost and choose \"I filed this stay by hand in UbyPort\", so UbyHost never sends it again. The duty to report stays with you as the host.\n\nOpen the stay: https://app.example.test/reservations/245\n\n--\nUbyHost\nYou get this e-mail once per stay, when its police deadline is less than 24 hours away or has passed and the stay is still not reported.",
+     "to_email": "contact.one@example.test"
+    },
+    {
+     "apartment_id": 11,
+     "attempts": 0,
+     "cc_email": null,
+     "idempotency_key": "deadline_at_risk:246",
+     "kind": "deadline_at_risk",
+     "owner_user_id": 1,
+     "payload": "54acd4f84fcb29a3effcc94c0b3d07007fd4ac4023488f5c4f094a56403ba021",
+     "reservation_id": 246,
+     "state": "queued",
+     "subject": "Not reported to the police yet: Necitelny host, deadline 17.09.2026 23:59",
+     "text": "Necitelny host, arrival 15.09.2026: foreign guests of this stay are not reported to the police yet. The deadline is 17.09.2026 23:59.\n\nProperty: Necitelny host\nArrival: 15.09.2026\nGuests not filed yet: 1\nDeadline: 17.09.2026 23:59\n\nWhat to do next: Open the stay, complete what is missing and send it.\n\nIf UbyHost cannot file in time: Sign in to the UbyPort web application with your own access, enter the guests by hand and keep the receipt. Then open the stay in UbyHost and choose \"I filed this stay by hand in UbyPort\", so UbyHost never sends it again. The duty to report stays with you as the host.\n\nOpen the stay: https://app.example.test/reservations/246\n\n--\nUbyHost\nYou get this e-mail once per stay, when its police deadline is less than 24 hours away or has passed and the stay is still not reported.",
+     "to_email": "contact.one@example.test"
+    },
+    {
+     "apartment_id": 1,
+     "attempts": 0,
+     "cc_email": null,
+     "idempotency_key": "deadline_at_risk:247",
+     "kind": "deadline_at_risk",
+     "owner_user_id": 1,
+     "payload": "e5119b5cbe68e5390e8744507eacf15fd273246378f110467944ec3558d2331c",
+     "reservation_id": 247,
+     "state": "queued",
+     "subject": "Not reported to the police yet: Byt Dole, deadline 17.09.2026 23:59",
+     "text": "Byt Dole, arrival 15.09.2026: foreign guests of this stay are not reported to the police yet. The deadline is 17.09.2026 23:59.\n\nProperty: Byt Dole\nArrival: 15.09.2026\nGuests not filed yet: 1\nDeadline: 17.09.2026 23:59\n\nWhat to do next: Open the stay, complete what is missing and send it.\n\nIf UbyHost cannot file in time: Sign in to the UbyPort web application with your own access, enter the guests by hand and keep the receipt. Then open the stay in UbyHost and choose \"I filed this stay by hand in UbyPort\", so UbyHost never sends it again. The duty to report stays with you as the host.\n\nOpen the stay: https://app.example.test/reservations/247\n\n--\nUbyHost\nYou get this e-mail once per stay, when its police deadline is less than 24 hours away or has passed and the stay is still not reported.",
+     "to_email": "contact.one@example.test"
+    },
+    {
      "apartment_id": null,
      "attempts": 0,
      "cc_email": null,
      "idempotency_key": "deadline_digest:2026-09-17T10:05:00+00:00",
      "kind": "deadline_digest",
      "owner_user_id": null,
-     "payload": "45b73a4588788006d2b9c9d392951e28eccedf5c13522f272940e16c71903fcd",
+     "payload": "11b4de5bc5cc5f1aaa205b07ebddbc8e47023cf2e18386bf68b808f5bffa76e5",
      "reservation_id": null,
      "state": "queued",
-     "subject": "Filing watchdog: stays at risk (14), without guest details (3)",
-     "text": "Each stay below has foreign guests that UbyPort has not accepted yet, and its deadline is less than 24 hours away or has passed. This digest is sent at most every 3 days while any stay is at risk.\n\nWorkspace | Property | Arrival | Deadline | Not filed\nhost-one@example.test | Byt Dole | 10.09.2026 | 14.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 14.09.2026 | 16.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 14.09.2026 | 16.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 2\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-two@example.test | Cizi byt | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt <Žižkov> & \"Co\" | 15.09.2026 | 17.09.2026 23:59 | 1\n |  | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\n\nStays without guest details (status unknown)\nNo guest is entered for these stays. The arrival has passed and the deadline is less than 24 hours away or has passed. If the guests are Czech citizens nothing has to be reported, so these stays do not set the filing heartbeat to failed.\n\nWorkspace | Property | Arrival | Deadline\nhost-one@example.test | Byt Dole | 08.09.2026 | 10.09.2026 23:59\nhost-two@example.test | Cizi byt | 12.09.2026 | 16.09.2026 23:59\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59\n\n--\nUbyHost\nSent to UBYHOST_OPERATOR_EMAIL by the deadline job. It contains no guest names.",
+     "subject": "Filing watchdog: stays at risk (11)",
+     "text": "Each stay below has foreign guests that UbyPort has not accepted yet, and its deadline is less than 24 hours away or has passed. This digest is sent at most every 3 days while any stay is at risk.\n\nWorkspace | Property | Arrival | Deadline | Not filed\nhost-one@example.test | Byt Dole | 14.09.2026 | 16.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 2\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Odmitnute heslo | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Bez spojeni | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Necitelny host | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\n\n--\nUbyHost\nSent to UBYHOST_OPERATOR_EMAIL by the deadline job. It contains no guest names.",
      "to_email": "ops@example.test"
     }
    ],
@@ -1476,14 +1596,22 @@
     "227": null,
     "228": "2026-09-17T10:05:00+00:00",
     "229": "",
-    "230": null
+    "230": null,
+    "241": null,
+    "242": null,
+    "243": null,
+    "244": "2026-09-17T10:05:00+00:00",
+    "245": "2026-09-17T10:05:00+00:00",
+    "246": "2026-09-17T10:05:00+00:00",
+    "247": "2026-09-17T10:05:00+00:00"
    },
    "pushes": [],
    "result": {
-    "at_risk": 14,
+    "at_risk": 11,
     "awaiting_retry": 2,
     "digest": 1,
-    "host_mails": 13,
+    "host_mails": 17,
+    "not_sent": 7,
     "unknown_risk": 3
    },
    "setting": "2026-09-17T10:05:00+00:00"
@@ -1552,7 +1680,14 @@
     "227": "2026-09-17T11:00:00+00:00",
     "228": "2026-09-17T10:05:00+00:00",
     "229": "",
-    "230": null
+    "230": null,
+    "241": null,
+    "242": null,
+    "243": null,
+    "244": "2026-09-17T10:05:00+00:00",
+    "245": "2026-09-17T10:05:00+00:00",
+    "246": "2026-09-17T10:05:00+00:00",
+    "247": "2026-09-17T10:05:00+00:00"
    },
    "pushes": [
     {
@@ -1585,10 +1720,11 @@
     }
    ],
    "result": {
-    "at_risk": 16,
+    "at_risk": 13,
     "awaiting_retry": 0,
     "digest": 0,
     "host_mails": 3,
+    "not_sent": 7,
     "unknown_risk": 3
    },
    "setting": "2026-09-17T10:05:00+00:00"
@@ -1618,11 +1754,11 @@
      "idempotency_key": "deadline_digest:2026-09-20T11:05:00+00:00",
      "kind": "deadline_digest",
      "owner_user_id": null,
-     "payload": "1b9f2ccaa4fadbab6d2e9b707fca172c07d644eee35d4d23d92db5998a15de04",
+     "payload": "619d0dc40c54992e65d4c7a215d507077561ee22a8c5f8d15cd386b0f2bd19e6",
      "reservation_id": null,
      "state": "queued",
-     "subject": "Filing watchdog: stays at risk (17), without guest details (2)",
-     "text": "Each stay below has foreign guests that UbyPort has not accepted yet, and its deadline is less than 24 hours away or has passed. This digest is sent at most every 3 days while any stay is at risk.\n\nWorkspace | Property | Arrival | Deadline | Not filed\nhost-one@example.test | Byt Dole | 10.09.2026 | 14.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 14.09.2026 | 16.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 14.09.2026 | 16.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 2\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-two@example.test | Cizi byt | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt <Žižkov> & \"Co\" | 15.09.2026 | 17.09.2026 23:59 | 1\n |  | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 16.09.2026 | 18.09.2026 23:59 | 1\n\nStays without guest details (status unknown)\nNo guest is entered for these stays. The arrival has passed and the deadline is less than 24 hours away or has passed. If the guests are Czech citizens nothing has to be reported, so these stays do not set the filing heartbeat to failed.\n\nWorkspace | Property | Arrival | Deadline\nhost-two@example.test | Cizi byt | 12.09.2026 | 16.09.2026 23:59\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59\n\n--\nUbyHost\nSent to UBYHOST_OPERATOR_EMAIL by the deadline job. It contains no guest names.",
+     "subject": "Filing watchdog: stays at risk (13)",
+     "text": "Each stay below has foreign guests that UbyPort has not accepted yet, and its deadline is less than 24 hours away or has passed. This digest is sent at most every 3 days while any stay is at risk.\n\nWorkspace | Property | Arrival | Deadline | Not filed\nhost-one@example.test | Byt Dole | 14.09.2026 | 16.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 2\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Odmitnute heslo | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Bez spojeni | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Necitelny host | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\n\n--\nUbyHost\nSent to UBYHOST_OPERATOR_EMAIL by the deadline job. It contains no guest names.",
      "to_email": "ops@example.test"
     }
    ],
@@ -1657,7 +1793,14 @@
     "227": "2026-09-17T11:00:00+00:00",
     "228": "2026-09-17T10:05:00+00:00",
     "229": "",
-    "230": null
+    "230": null,
+    "241": null,
+    "242": null,
+    "243": null,
+    "244": "2026-09-17T10:05:00+00:00",
+    "245": "2026-09-17T10:05:00+00:00",
+    "246": "2026-09-17T10:05:00+00:00",
+    "247": "2026-09-17T10:05:00+00:00"
    },
    "pushes": [
     {
@@ -1676,10 +1819,11 @@
     }
    ],
    "result": {
-    "at_risk": 17,
+    "at_risk": 13,
     "awaiting_retry": 0,
     "digest": 1,
     "host_mails": 2,
+    "not_sent": 8,
     "unknown_risk": 2
    },
    "setting": "2026-09-20T11:05:00+00:00"
@@ -1697,11 +1841,11 @@
      "idempotency_key": "deadline_digest:2026-09-20T11:10:00+00:00",
      "kind": "deadline_digest",
      "owner_user_id": null,
-     "payload": "1b9f2ccaa4fadbab6d2e9b707fca172c07d644eee35d4d23d92db5998a15de04",
+     "payload": "619d0dc40c54992e65d4c7a215d507077561ee22a8c5f8d15cd386b0f2bd19e6",
      "reservation_id": null,
      "state": "queued",
-     "subject": "Filing watchdog: stays at risk (17), without guest details (2)",
-     "text": "Each stay below has foreign guests that UbyPort has not accepted yet, and its deadline is less than 24 hours away or has passed. This digest is sent at most every 3 days while any stay is at risk.\n\nWorkspace | Property | Arrival | Deadline | Not filed\nhost-one@example.test | Byt Dole | 10.09.2026 | 14.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 14.09.2026 | 16.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 14.09.2026 | 16.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 2\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-two@example.test | Cizi byt | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt <Žižkov> & \"Co\" | 15.09.2026 | 17.09.2026 23:59 | 1\n |  | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 16.09.2026 | 18.09.2026 23:59 | 1\n\nStays without guest details (status unknown)\nNo guest is entered for these stays. The arrival has passed and the deadline is less than 24 hours away or has passed. If the guests are Czech citizens nothing has to be reported, so these stays do not set the filing heartbeat to failed.\n\nWorkspace | Property | Arrival | Deadline\nhost-two@example.test | Cizi byt | 12.09.2026 | 16.09.2026 23:59\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59\n\n--\nUbyHost\nSent to UBYHOST_OPERATOR_EMAIL by the deadline job. It contains no guest names.",
+     "subject": "Filing watchdog: stays at risk (13)",
+     "text": "Each stay below has foreign guests that UbyPort has not accepted yet, and its deadline is less than 24 hours away or has passed. This digest is sent at most every 3 days while any stay is at risk.\n\nWorkspace | Property | Arrival | Deadline | Not filed\nhost-one@example.test | Byt Dole | 14.09.2026 | 16.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 2\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Odmitnute heslo | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Bez spojeni | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Necitelny host | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\n\n--\nUbyHost\nSent to UBYHOST_OPERATOR_EMAIL by the deadline job. It contains no guest names.",
      "to_email": "ops@example.test"
     }
    ],
@@ -1736,14 +1880,22 @@
     "227": "2026-09-17T11:00:00+00:00",
     "228": "2026-09-17T10:05:00+00:00",
     "229": "",
-    "230": null
+    "230": null,
+    "241": null,
+    "242": null,
+    "243": null,
+    "244": "2026-09-17T10:05:00+00:00",
+    "245": "2026-09-17T10:05:00+00:00",
+    "246": "2026-09-17T10:05:00+00:00",
+    "247": "2026-09-17T10:05:00+00:00"
    },
    "pushes": [],
    "result": {
-    "at_risk": 17,
+    "at_risk": 13,
     "awaiting_retry": 0,
     "digest": 1,
     "host_mails": 1,
+    "not_sent": 8,
     "unknown_risk": 2
    },
    "setting": "2026-09-20T11:10:00+00:00"
@@ -1785,14 +1937,22 @@
     "227": "2026-09-17T11:00:00+00:00",
     "228": "2026-09-17T10:05:00+00:00",
     "229": "",
-    "230": null
+    "230": null,
+    "241": null,
+    "242": null,
+    "243": null,
+    "244": "2026-09-17T10:05:00+00:00",
+    "245": "2026-09-17T10:05:00+00:00",
+    "246": "2026-09-17T10:05:00+00:00",
+    "247": "2026-09-17T10:05:00+00:00"
    },
    "pushes": [],
    "result": {
-    "at_risk": 17,
+    "at_risk": 13,
     "awaiting_retry": 0,
     "digest": 0,
     "host_mails": 1,
+    "not_sent": 8,
     "unknown_risk": 2
    },
    "setting": "2026-09-20T11:10:00"
@@ -1810,11 +1970,11 @@
      "idempotency_key": "deadline_digest:2026-09-20T11:20:00+00:00",
      "kind": "deadline_digest",
      "owner_user_id": null,
-     "payload": "1b9f2ccaa4fadbab6d2e9b707fca172c07d644eee35d4d23d92db5998a15de04",
+     "payload": "619d0dc40c54992e65d4c7a215d507077561ee22a8c5f8d15cd386b0f2bd19e6",
      "reservation_id": null,
      "state": "queued",
-     "subject": "Filing watchdog: stays at risk (17), without guest details (2)",
-     "text": "Each stay below has foreign guests that UbyPort has not accepted yet, and its deadline is less than 24 hours away or has passed. This digest is sent at most every 3 days while any stay is at risk.\n\nWorkspace | Property | Arrival | Deadline | Not filed\nhost-one@example.test | Byt Dole | 10.09.2026 | 14.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 14.09.2026 | 16.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 14.09.2026 | 16.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 2\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-two@example.test | Cizi byt | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt <Žižkov> & \"Co\" | 15.09.2026 | 17.09.2026 23:59 | 1\n |  | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 16.09.2026 | 18.09.2026 23:59 | 1\n\nStays without guest details (status unknown)\nNo guest is entered for these stays. The arrival has passed and the deadline is less than 24 hours away or has passed. If the guests are Czech citizens nothing has to be reported, so these stays do not set the filing heartbeat to failed.\n\nWorkspace | Property | Arrival | Deadline\nhost-two@example.test | Cizi byt | 12.09.2026 | 16.09.2026 23:59\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59\n\n--\nUbyHost\nSent to UBYHOST_OPERATOR_EMAIL by the deadline job. It contains no guest names.",
+     "subject": "Filing watchdog: stays at risk (13)",
+     "text": "Each stay below has foreign guests that UbyPort has not accepted yet, and its deadline is less than 24 hours away or has passed. This digest is sent at most every 3 days while any stay is at risk.\n\nWorkspace | Property | Arrival | Deadline | Not filed\nhost-one@example.test | Byt Dole | 14.09.2026 | 16.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 2\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Odmitnute heslo | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Bez spojeni | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Necitelny host | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\n\n--\nUbyHost\nSent to UBYHOST_OPERATOR_EMAIL by the deadline job. It contains no guest names.",
      "to_email": "ops@example.test"
     }
    ],
@@ -1849,14 +2009,22 @@
     "227": "2026-09-17T11:00:00+00:00",
     "228": "2026-09-17T10:05:00+00:00",
     "229": "",
-    "230": null
+    "230": null,
+    "241": null,
+    "242": null,
+    "243": null,
+    "244": "2026-09-17T10:05:00+00:00",
+    "245": "2026-09-17T10:05:00+00:00",
+    "246": "2026-09-17T10:05:00+00:00",
+    "247": "2026-09-17T10:05:00+00:00"
    },
    "pushes": [],
    "result": {
-    "at_risk": 17,
+    "at_risk": 13,
     "awaiting_retry": 0,
     "digest": 1,
     "host_mails": 1,
+    "not_sent": 8,
     "unknown_risk": 2
    },
    "setting": "2026-09-20T11:20:00+00:00"
@@ -1899,14 +2067,22 @@
     "227": "2026-09-17T11:00:00+00:00",
     "228": "2026-09-17T10:05:00+00:00",
     "229": "",
-    "230": null
+    "230": null,
+    "241": null,
+    "242": null,
+    "243": null,
+    "244": "2026-09-17T10:05:00+00:00",
+    "245": "2026-09-17T10:05:00+00:00",
+    "246": "2026-09-17T10:05:00+00:00",
+    "247": "2026-09-17T10:05:00+00:00"
    },
    "pushes": [],
    "result": {
-    "at_risk": 17,
+    "at_risk": 13,
     "awaiting_retry": 0,
     "digest": 0,
     "host_mails": 1,
+    "not_sent": 8,
     "unknown_risk": 2
    },
    "setting": null
@@ -1925,11 +2101,11 @@
      "idempotency_key": "deadline_digest:2026-09-20T11:30:00+00:00",
      "kind": "deadline_digest",
      "owner_user_id": null,
-     "payload": "1b9f2ccaa4fadbab6d2e9b707fca172c07d644eee35d4d23d92db5998a15de04",
+     "payload": "619d0dc40c54992e65d4c7a215d507077561ee22a8c5f8d15cd386b0f2bd19e6",
      "reservation_id": null,
      "state": "queued",
-     "subject": "Filing watchdog: stays at risk (17), without guest details (2)",
-     "text": "Each stay below has foreign guests that UbyPort has not accepted yet, and its deadline is less than 24 hours away or has passed. This digest is sent at most every 3 days while any stay is at risk.\n\nWorkspace | Property | Arrival | Deadline | Not filed\nhost-one@example.test | Byt Dole | 10.09.2026 | 14.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 14.09.2026 | 16.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 14.09.2026 | 16.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 2\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-two@example.test | Cizi byt | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt <Žižkov> & \"Co\" | 15.09.2026 | 17.09.2026 23:59 | 1\n |  | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 16.09.2026 | 18.09.2026 23:59 | 1\n\nStays without guest details (status unknown)\nNo guest is entered for these stays. The arrival has passed and the deadline is less than 24 hours away or has passed. If the guests are Czech citizens nothing has to be reported, so these stays do not set the filing heartbeat to failed.\n\nWorkspace | Property | Arrival | Deadline\nhost-two@example.test | Cizi byt | 12.09.2026 | 16.09.2026 23:59\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59\n\n--\nUbyHost\nSent to UBYHOST_OPERATOR_EMAIL by the deadline job. It contains no guest names.",
+     "subject": "Filing watchdog: stays at risk (13)",
+     "text": "Each stay below has foreign guests that UbyPort has not accepted yet, and its deadline is less than 24 hours away or has passed. This digest is sent at most every 3 days while any stay is at risk.\n\nWorkspace | Property | Arrival | Deadline | Not filed\nhost-one@example.test | Byt Dole | 14.09.2026 | 16.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 2\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Odmitnute heslo | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Bez spojeni | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Necitelny host | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\n\n--\nUbyHost\nSent to UBYHOST_OPERATOR_EMAIL by the deadline job. It contains no guest names.",
      "to_email": "ops@example.test"
     }
    ],
@@ -1964,14 +2140,22 @@
     "227": "2026-09-17T11:00:00+00:00",
     "228": "2026-09-17T10:05:00+00:00",
     "229": "",
-    "230": null
+    "230": null,
+    "241": null,
+    "242": null,
+    "243": null,
+    "244": "2026-09-17T10:05:00+00:00",
+    "245": "2026-09-17T10:05:00+00:00",
+    "246": "2026-09-17T10:05:00+00:00",
+    "247": "2026-09-17T10:05:00+00:00"
    },
    "pushes": [],
    "result": {
-    "at_risk": 17,
+    "at_risk": 13,
     "awaiting_retry": 0,
     "digest": 1,
     "host_mails": 1,
+    "not_sent": 8,
     "unknown_risk": 2
    },
    "setting": "2026-09-20T11:30:00+00:00"
@@ -1990,11 +2174,11 @@
      "idempotency_key": "deadline_digest:2026-09-20T11:35:00+00:00",
      "kind": "deadline_digest",
      "owner_user_id": null,
-     "payload": "1b9f2ccaa4fadbab6d2e9b707fca172c07d644eee35d4d23d92db5998a15de04",
+     "payload": "619d0dc40c54992e65d4c7a215d507077561ee22a8c5f8d15cd386b0f2bd19e6",
      "reservation_id": null,
      "state": "queued",
-     "subject": "Filing watchdog: stays at risk (17), without guest details (2)",
-     "text": "Each stay below has foreign guests that UbyPort has not accepted yet, and its deadline is less than 24 hours away or has passed. This digest is sent at most every 3 days while any stay is at risk.\n\nWorkspace | Property | Arrival | Deadline | Not filed\nhost-one@example.test | Byt Dole | 10.09.2026 | 14.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 14.09.2026 | 16.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 14.09.2026 | 16.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 2\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-two@example.test | Cizi byt | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt <Žižkov> & \"Co\" | 15.09.2026 | 17.09.2026 23:59 | 1\n |  | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 16.09.2026 | 18.09.2026 23:59 | 1\n\nStays without guest details (status unknown)\nNo guest is entered for these stays. The arrival has passed and the deadline is less than 24 hours away or has passed. If the guests are Czech citizens nothing has to be reported, so these stays do not set the filing heartbeat to failed.\n\nWorkspace | Property | Arrival | Deadline\nhost-two@example.test | Cizi byt | 12.09.2026 | 16.09.2026 23:59\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59\n\n--\nUbyHost\nSent to UBYHOST_OPERATOR_EMAIL by the deadline job. It contains no guest names.",
+     "subject": "Filing watchdog: stays at risk (13)",
+     "text": "Each stay below has foreign guests that UbyPort has not accepted yet, and its deadline is less than 24 hours away or has passed. This digest is sent at most every 3 days while any stay is at risk.\n\nWorkspace | Property | Arrival | Deadline | Not filed\nhost-one@example.test | Byt Dole | 14.09.2026 | 16.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 2\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Odmitnute heslo | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Bez spojeni | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Necitelny host | 15.09.2026 | 17.09.2026 23:59 | 1\nhost-one@example.test | Byt Dole | 15.09.2026 | 17.09.2026 23:59 | 1\n\n--\nUbyHost\nSent to UBYHOST_OPERATOR_EMAIL by the deadline job. It contains no guest names.",
      "to_email": "support@ubyhost.com"
     }
    ],
@@ -2029,14 +2213,22 @@
     "227": "2026-09-17T11:00:00+00:00",
     "228": "2026-09-17T10:05:00+00:00",
     "229": "",
-    "230": null
+    "230": null,
+    "241": null,
+    "242": null,
+    "243": null,
+    "244": "2026-09-17T10:05:00+00:00",
+    "245": "2026-09-17T10:05:00+00:00",
+    "246": "2026-09-17T10:05:00+00:00",
+    "247": "2026-09-17T10:05:00+00:00"
    },
    "pushes": [],
    "result": {
-    "at_risk": 17,
+    "at_risk": 13,
     "awaiting_retry": 0,
     "digest": 1,
     "host_mails": 1,
+    "not_sent": 8,
     "unknown_risk": 2
    },
    "setting": "2026-09-20T11:35:00+00:00"
@@ -2102,7 +2294,10 @@
     "uby_name",
     "permalink_token",
     "active",
-    "created_at"
+    "created_at",
+    "uby_idub",
+    "uby_ws_user",
+    "uby_ws_password_enc"
    ],
    "rows": [
     [
@@ -2114,7 +2309,10 @@
      "UBY",
      "tok1",
      1,
-     "2026-09-01T00:00:00+00:00"
+     "2026-09-01T00:00:00+00:00",
+     "IDUB-TEST",
+     "ws-test",
+     "enc-test"
     ],
     [
      2,
@@ -2125,7 +2323,10 @@
      "UBY",
      "tok2",
      0,
-     "2026-09-01T00:00:00+00:00"
+     "2026-09-01T00:00:00+00:00",
+     "IDUB-TEST",
+     "ws-test",
+     "enc-test"
     ],
     [
      3,
@@ -2136,7 +2337,10 @@
      "UBY",
      "tok3",
      1,
-     "2026-09-01T00:00:00+00:00"
+     "2026-09-01T00:00:00+00:00",
+     "IDUB-TEST",
+     "ws-test",
+     "enc-test"
     ],
     [
      4,
@@ -2147,7 +2351,10 @@
      "UBY",
      "tok4",
      1,
-     "2026-09-01T00:00:00+00:00"
+     "2026-09-01T00:00:00+00:00",
+     "IDUB-TEST",
+     "ws-test",
+     "enc-test"
     ],
     [
      5,
@@ -2158,7 +2365,94 @@
      "UBY",
      "tok5",
      1,
-     "2026-09-01T00:00:00+00:00"
+     "2026-09-01T00:00:00+00:00",
+     "IDUB-TEST",
+     "ws-test",
+     "enc-test"
+    ],
+    [
+     6,
+     1,
+     1,
+     "Bez IDUB",
+     "Brno",
+     "UBY",
+     "tok6",
+     1,
+     "2026-09-01T00:00:00+00:00",
+     "  ",
+     "ws-test",
+     "enc-test"
+    ],
+    [
+     7,
+     1,
+     1,
+     "Bez uzivatele",
+     "Brno",
+     "UBY",
+     "tok7",
+     1,
+     "2026-09-01T00:00:00+00:00",
+     "IDUB-TEST",
+     null,
+     "enc-test"
+    ],
+    [
+     8,
+     1,
+     1,
+     "Bez hesla",
+     "Brno",
+     "UBY",
+     "tok8",
+     1,
+     "2026-09-01T00:00:00+00:00",
+     "IDUB-TEST",
+     "ws-test",
+     null
+    ],
+    [
+     9,
+     1,
+     1,
+     "Odmitnute heslo",
+     "Brno",
+     "UBY",
+     "tok9",
+     1,
+     "2026-09-01T00:00:00+00:00",
+     "IDUB-TEST",
+     "ws-test",
+     "enc-test"
+    ],
+    [
+     10,
+     1,
+     1,
+     "Bez spojeni",
+     "Brno",
+     "UBY",
+     "tok10",
+     1,
+     "2026-09-01T00:00:00+00:00",
+     "IDUB-TEST",
+     "ws-test",
+     "enc-test"
+    ],
+    [
+     11,
+     1,
+     1,
+     "Necitelny host",
+     "Brno",
+     "UBY",
+     "tok11",
+     1,
+     "2026-09-01T00:00:00+00:00",
+     "IDUB-TEST",
+     "ws-test",
+     "enc-test"
     ]
    ],
    "table": "apartment"
@@ -2662,6 +2956,97 @@
      null,
      "2026-09-01T00:00:00+00:00",
      "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     241,
+     6,
+     "u241",
+     "2026-09-15",
+     "2026-09-30",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     242,
+     7,
+     "u242",
+     "2026-09-10",
+     "2026-09-30",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     243,
+     8,
+     "u243",
+     "2026-09-12",
+     "2026-09-30",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     244,
+     9,
+     "u244",
+     "2026-09-15",
+     "2026-09-30",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     245,
+     10,
+     "u245",
+     "2026-09-15",
+     "2026-09-30",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     246,
+     11,
+     "u246",
+     "2026-09-15",
+     "2026-09-30",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     247,
+     1,
+     "u247",
+     "2026-09-15",
+     "2026-09-30",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
     ]
    ],
    "table": "reservation"
@@ -3083,9 +3468,169 @@
      null,
      "2026-09-01T00:00:00+00:00",
      "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     41,
+     241,
+     "Test",
+     "DEU",
+     "pending",
+     null,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     42,
+     242,
+     "Test",
+     "USA",
+     "error",
+     null,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     43,
+     244,
+     "Test",
+     "DEU",
+     "pending",
+     null,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     44,
+     245,
+     "Test",
+     "DEU",
+     "pending",
+     null,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     45,
+     246,
+     "Test",
+     "DEU",
+     "pending",
+     null,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     46,
+     247,
+     "Test",
+     "DEU",
+     "pending",
+     null,
+     null,
+     0,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
     ]
    ],
    "table": "guest"
+  },
+  {
+   "columns": [
+    "id",
+    "level",
+    "kind",
+    "apartment_id",
+    "reservation_id",
+    "dedupe_key",
+    "message",
+    "created_at",
+    "resolved_at"
+   ],
+   "rows": [
+    [
+     9101,
+     "critical",
+     "ubyport_auth_failed",
+     9,
+     null,
+     "ubyport_auth_failed:9",
+     "x",
+     "2026-09-01T00:00:00+00:00",
+     null
+    ],
+    [
+     9102,
+     "critical",
+     "submission_transport",
+     10,
+     null,
+     "submission_transport:10",
+     "x",
+     "2026-09-01T00:00:00+00:00",
+     null
+    ],
+    [
+     9103,
+     "critical",
+     "guest_record_unreadable",
+     11,
+     null,
+     "guest_record_unreadable:11",
+     "x",
+     "2026-09-01T00:00:00+00:00",
+     null
+    ],
+    [
+     9104,
+     "critical",
+     "guest_record_unreadable",
+     1,
+     247,
+     "guest_record_unreadable:reservation:247",
+     "x",
+     "2026-09-01T00:00:00+00:00",
+     null
+    ],
+    [
+     9105,
+     "critical",
+     "ubyport_auth_failed",
+     1,
+     null,
+     "ubyport_auth_failed:1",
+     "x",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-16T00:00:00+00:00"
+    ],
+    [
+     9106,
+     "warning",
+     "door_code_failed",
+     1,
+     201,
+     "door_code_failed:201",
+     "x",
+     "2026-09-01T00:00:00+00:00",
+     null
+    ]
+   ],
+   "table": "alert"
   },
   {
    "columns": [
