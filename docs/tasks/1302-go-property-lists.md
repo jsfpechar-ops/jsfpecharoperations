@@ -1,6 +1,6 @@
 # 1302: Go port of property and business details lists
 
-Status: todo
+Status: review
 Depends on: 1301 (incl. 1301-fix-1), 1380 (PR #985) | Base commit: d25f8b6 | Branch: task/1302-go-property-lists
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B
 
