@@ -11,6 +11,7 @@ share their prefix.
 from __future__ import annotations
 
 import pathlib
+import re
 
 import pytest
 from fastapi.routing import APIRoute
@@ -230,3 +231,29 @@ def test_nothing_in_the_application_still_imports_stays_import():
         if "stays_import" in path.read_text()
     ]
     assert offenders == []
+
+
+def test_every_admin_post_route_demands_csrf_proof():
+    """Item 1204: a host router added without protect_host_post fails here.
+
+    The OpenAPI schema lists every mounted route whatever router it came from.
+    With no session and a wrong token, a protected route redirects to the
+    form_expired notice before its own handler runs.
+    """
+    client = TestClient(app)
+    paths = [
+        path for path, item in app.openapi()["paths"].items()
+        if path.startswith("/admin") and "post" in item
+    ]
+    assert "/admin/customers/{user_id}/stav" in paths
+    unprotected = []
+    for path in sorted(paths):
+        url = re.sub(r"\{[^}]+\}", "1", path)
+        response = client.post(
+            url, data={security.CSRF_FIELD: "not-a-token"}, follow_redirects=False,
+        )
+        location = response.headers.get("location", "")
+        if not (response.status_code in (303, 403) and (
+                location.startswith("/login?notice=form_expired") or response.status_code == 403)):
+            unprotected.append(path)
+    assert unprotected == []

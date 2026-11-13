@@ -64,4 +64,5 @@ Append-only.
 - 2026-11-12 [door] 1149 lost race re-issues; 1155 revived code checked on lock (3 tries); 1156 info card + host mail; cs/vi ok.
 - 11-13 [calendar] 1172: Go-only; 1 mail/pair; manual dup skipped (owner)
 - 2026-11-13 [door] 1173/c: release backoff 15/15/60; new, retries, released; revive unissued expired.
+- 2026-11-13 [security] audit #966: 1200-1205; new Go env var goes in the compose list. Owner: K-S12 accepted; 1206 PG app role and 1207 lock refresh after #966.
 - 2026-11-13 [dep] 1390: Go PDF = gopdf v0.38.4 (MIT) + gofpdi + pkg/errors, `go/internal/pdf` only; Anthropic = thin HTTP in `go/internal/anthropic`, no dep; WebAuthn = go-webauthn/webauthn, login/passkey routes (owner)

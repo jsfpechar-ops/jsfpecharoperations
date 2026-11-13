@@ -88,7 +88,7 @@ jobs:
         run: pip install --require-hashes -r requirements.lock && pip install -r requirements-dev.txt
 
       - name: Dependency vulnerability audit
-        run: pip install pip-audit==2.9.0 && pip-audit -r requirements.txt --strict
+        run: pip install pip-audit==2.9.0 && pip-audit --require-hashes -r requirements.lock --strict
 
       - name: Lint for runtime errors
         run: ruff check app tests tools --select E9,F63,F7,F82,F401,F841
@@ -203,7 +203,20 @@ jobs:
       - name: Fail if PostgreSQL tests were skipped
         if: hashFiles('App/tests/test_db_postgres.py') != ''
         run: |
-          if grep -q skipped "$RUNNER_TEMP/pg-tests.log"; then echo "PostgreSQL tests skipped; they must run with 0 skipped"; exit 1; fi
+          if grep -qE '(^|[^a-z])[1-9][0-9]* skipped' "$RUNNER_TEMP/pg-tests.log"; then echo "PostgreSQL tests skipped; they must run with 0 skipped"; exit 1; fi
+
+      - name: App works as the non-superuser role
+        if: hashFiles('App/tests/test_db_postgres.py') != ''
+        env:
+          PGPASSWORD: ubyhost
+        run: |
+          set -euo pipefail
+          # 1206: the production role script, then migrate and read as ubyhost_app
+          psql -h localhost -U postgres -d ubyhost_test -v ON_ERROR_STOP=1 -q -f ../deploy/lightsail/scripts/pg-app-role.sql
+          psql -h localhost -U postgres -d ubyhost_test -v ON_ERROR_STOP=1 -q -c "ALTER ROLE ubyhost_app PASSWORD 'ubyhost'"
+          export UBYHOST_DATABASE_URL=postgresql://ubyhost_app:ubyhost@localhost:5432/ubyhost_test
+          python scripts/pg_schema.py apply --expect-database ubyhost_test
+          python scripts/pg_schema.py check --expect-database ubyhost_test
 
       - name: No PostgreSQL module yet
         if: hashFiles('App/tests/test_db_postgres.py') == ''
@@ -563,6 +576,24 @@ jobs:
               UBYHOST_APP_DOMAIN="${app}" ./scripts/caddy-validate.sh
             done
           done
+          echo "==> Caddyfile.cloudflare, AOP modes"
+          openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj "/CN=ubyhost-aop-test-ca" \
+            -keyout "$RUNNER_TEMP/aop-ca-key.pem" -out caddy/certs/aop-ca.pem 2>/dev/null
+          cp caddy/Caddyfile.cloudflare caddy/Caddyfile.active
+          for mode in off check enforce; do
+            for app in "" app.ubyhost.example; do
+              echo "==> AOP mode ${mode} (UBYHOST_APP_DOMAIN='${app}')"
+              UBYHOST_AOP_MODE="${mode}" UBYHOST_APP_DOMAIN="${app}" ./scripts/caddy-validate.sh
+            done
+          done
+          rm -f caddy/certs/aop-ca.pem
+          echo "==> AOP enforce without the CA file must fail validation"
+          if UBYHOST_AOP_MODE=enforce ./scripts/caddy-validate.sh >/dev/null 2>&1; then
+            echo "enforce validated without aop-ca.pem" >&2; exit 1
+          fi
+          echo "==> AOP off and check without the CA file must pass"
+          UBYHOST_AOP_MODE=off ./scripts/caddy-validate.sh
+          UBYHOST_AOP_MODE=check ./scripts/caddy-validate.sh
 
   context:
     runs-on: ubuntu-latest
