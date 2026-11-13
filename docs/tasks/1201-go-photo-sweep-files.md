@@ -1,6 +1,6 @@
 # 1201: Go photo sweep, part 1: golden fixture and the two file steps
 
-Status: todo
+Status: review
 Depends on: none | Base commit: a83df541 | Branch: task/1201-go-photo-sweep (1202 continues on the same branch; one PR)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier A (guest data, deletion)
 
@@ -45,7 +45,7 @@ No other file may change.
 
 ## 4. Steps
 
-Work from `/home/user/jsfpecharoperations` (the repo root). Create each file with the heredoc exactly as given (tabs in Go are real tabs; copy the block verbatim).
+Work from the repository root (the directory that contains `App/` and `go/`). Create each file with the heredoc exactly as given (tabs in Go are real tabs; copy the block verbatim).
 
 ### Step 0: check the start
 
