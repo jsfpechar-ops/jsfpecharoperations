@@ -1,6 +1,6 @@
 # 1360: Go customer admin: data layer, funnel redirect, account toggle (part 1 of 3: Python golden fixture)
 
-Status: todo
+Status: review
 Depends on: none | Base commit: a83df5412638cc7ae1c64810e5b0b59fc68997cc | Branch: go-customer-admin (already checked out; do not create another)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B
 
