@@ -1,6 +1,6 @@
 # 1200: Split Go job and route registration into one file per lane
 
-Status: todo
+Status: done
 Depends on: none | Base commit: 29f86658 | Branch: task/1200-go-register-split
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
