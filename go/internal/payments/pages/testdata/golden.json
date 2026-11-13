@@ -1,0 +1,2816 @@
+{
+ "cases": [
+  {
+   "form": null,
+   "lang": "en",
+   "location": "",
+   "method": "GET",
+   "mode": "off",
+   "name": "overview_off_en",
+   "page": {
+    "fields": [
+     "details"
+    ],
+    "links": [],
+    "text": "Payments Connect Stripe once, then every request you send goes to the guest with a working payment link. Pick a stay, an amount and a reason; UbyHost writes the request, you press Send. The dashboard shows what was paid; Stripe sends the money to your bank account. Card payments Card payments are off on this server."
+   },
+   "path": "/payments",
+   "status": 200,
+   "title": "Payments",
+   "uid": 2
+  },
+  {
+   "form": null,
+   "lang": "en",
+   "location": "",
+   "method": "GET",
+   "mode": "test",
+   "name": "overview_new_en",
+   "page": {
+    "fields": [
+     "details",
+     "button type=button",
+     "button type=button",
+     "button type=button",
+     "details open",
+     "form method=post action=/payments/services",
+     "label for=pay-svc-name",
+     "input name=name type=text id=pay-svc-name required",
+     "label for=pay-svc-amount",
+     "input name=amount_czk type=number id=pay-svc-amount required",
+     "button type=submit",
+     "button type=button"
+    ],
+    "links": [
+     "/payments/new",
+     "/payments/new",
+     "/payments/consent"
+    ],
+    "text": "Payments Connect Stripe once, then every request you send goes to the guest with a working payment link. Pick a stay, an amount and a reason; UbyHost writes the request, you press Send. The dashboard shows what was paid; Stripe sends the money to your bank account. Request payment Card payments Connect your Stripe account to take card payments. 1 Read how payments work To do 2 Check the details we send to Stripe Add your business details first. Stripe needs your name. 3 Verify yourself with Stripe ? About 5 minutes. Have your ID card or passport, your bank account number and your phone ready. To do 4 Take card payments ? Once Stripe approves you, the payment requests below can be paid by card. To do Continue Your services ? Save what you charge often, for example extra cleaning 800 CZK or late checkout 500 CZK. Then one tap fills in the request. Add a service Save what you charge often Service name Amount (CZK) Save service Requests ? Stripe pays the money to the host's bank account, usually a few days after the guest pays. No payment requests yet"
+   },
+   "path": "/payments",
+   "status": 200,
+   "title": "Payments",
+   "uid": 1
+  },
+  {
+   "form": null,
+   "lang": "cs",
+   "location": "",
+   "method": "GET",
+   "mode": "test",
+   "name": "overview_pending_cs",
+   "page": {
+    "fields": [
+     "details",
+     "button type=button",
+     "button type=button",
+     "button type=button",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-a",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-a/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-b",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-b/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "details",
+     "form method=post action=/payments/services",
+     "label for=pay-svc-name",
+     "input name=name type=text id=pay-svc-name required",
+     "label for=pay-svc-amount",
+     "input name=amount_czk type=number id=pay-svc-amount required",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/requests/71/link",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/requests/71/send",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=post action=/payments/requests/72/link",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit",
+     "form method=post action=/payments/requests/74/send",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/requests/75/send",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/requests/77/link",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit",
+     "form method=post action=/payments/requests/78/link",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit"
+    ],
+    "links": [
+     "/payments/new",
+     "/payments/new",
+     "/entities?edit=21",
+     "/payments/connect/start",
+     "/payments/qr/74",
+     "/payments/qr/75"
+    ],
+    "text": "Platby Připojte Stripe jednou a každá žádost odchází hostovi s fungujícím platebním odkazem. Vyberte pobyt, částku a důvod; UbyHost žádost vytvoří a vy stisknete Odeslat. Přehled ukazuje, co bylo zaplaceno; Stripe pošle peníze na váš bankovní účet. Vyžádat platbu Platby kartou Stripe připravuje váš účet. Přečtěte si, jak platby fungují Hotovo Zkontrolujte údaje, které pošleme do Stripe Penzion Růže s.r.o. · host2@example.test Upravit 3 Ověřte se u Stripe ? Zabere asi 5 minut. Připravte si občanku nebo pas, číslo účtu a telefon. Stripe kontroluje 4 Přijímejte platby kartou ? Jakmile vás Stripe schválí, půjdou žádosti o platbu níže zaplatit kartou. Zbývá Pokračovat ve Stripe Vaše služby ? Uložte si, co účtujete často, třeba úklid navíc 800 Kč nebo pozdní odjezd 500 Kč. Žádost pak vyplníte jedním klepnutím. Úklid navíc 500 Kč Vyžádat Odebrat Late <checkout> & \"more\" 300 Kč Vyžádat Odebrat Přidat službu Uložte si, co účtujete často Název služby Částka (Kč) Uložit službu Požadavky ? Stripe pošle peníze na bankovní účet hostitele, obvykle pár dní po zaplacení hostem. Příspěvek na opravu Bez pobytu · 05.11.2026 Koncept 250 Kč Získat odkaz Odeslat Úklid Bez pobytu · 04.11.2026 Odesláno 90 Kč Získat odkaz Pozdní odjezd Bez pobytu · 03.11.2026 Koncept 70 Kč Odeslat Zobrazit QR Škoda Bez pobytu · 03.11.2026 Zaplaceno 300 Kč Kolo <půjčení> 02.11.2026 Koncept 80 Kč Odeslat Zobrazit QR Vlastní Bez pobytu · 01.11.2026 Vypršelo 85 Kč Další host Bez pobytu · 30.10.2026 Čeká na platbu 60 Kč Získat odkaz Příspěvek na opravu Bez pobytu · 29.10.2026 Koncept 55 Kč Získat odkaz"
+   },
+   "path": "/payments",
+   "status": 200,
+   "title": "Platby",
+   "uid": 2
+  },
+  {
+   "form": null,
+   "lang": "en",
+   "location": "",
+   "method": "GET",
+   "mode": "test",
+   "name": "overview_pending_en",
+   "page": {
+    "fields": [
+     "details",
+     "button type=button",
+     "button type=button",
+     "button type=button",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-a",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-a/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-b",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-b/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "details",
+     "form method=post action=/payments/services",
+     "label for=pay-svc-name",
+     "input name=name type=text id=pay-svc-name required",
+     "label for=pay-svc-amount",
+     "input name=amount_czk type=number id=pay-svc-amount required",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/requests/71/link",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/requests/71/send",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=post action=/payments/requests/72/link",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit",
+     "form method=post action=/payments/requests/74/send",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/requests/75/send",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/requests/77/link",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit",
+     "form method=post action=/payments/requests/78/link",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit"
+    ],
+    "links": [
+     "/payments/new",
+     "/payments/new",
+     "/entities?edit=21",
+     "/payments/connect/start",
+     "/payments/qr/74",
+     "/payments/qr/75"
+    ],
+    "text": "Payments Connect Stripe once, then every request you send goes to the guest with a working payment link. Pick a stay, an amount and a reason; UbyHost writes the request, you press Send. The dashboard shows what was paid; Stripe sends the money to your bank account. Request payment Card payments Stripe is preparing your account. Read how payments work Done Check the details we send to Stripe Penzion Růže s.r.o. · host2@example.test Edit 3 Verify yourself with Stripe ? About 5 minutes. Have your ID card or passport, your bank account number and your phone ready. Stripe is checking 4 Take card payments ? Once Stripe approves you, the payment requests below can be paid by card. To do Continue in Stripe Your services ? Save what you charge often, for example extra cleaning 800 CZK or late checkout 500 CZK. Then one tap fills in the request. Úklid navíc 500 CZK Request Remove Late <checkout> & \"more\" 300 CZK Request Remove Add a service Save what you charge often Service name Amount (CZK) Save service Requests ? Stripe pays the money to the host's bank account, usually a few days after the guest pays. Repair contribution No stay · 05.11.2026 Draft 250 CZK Get link Send Cleaning No stay · 04.11.2026 Sent 90 CZK Get link Late checkout No stay · 03.11.2026 Draft 70 CZK Send Show QR Damage No stay · 03.11.2026 Paid 300 CZK Kolo <půjčení> 02.11.2026 Draft 80 CZK Send Show QR Custom No stay · 01.11.2026 Expired 85 CZK Extra guest No stay · 30.10.2026 Waiting for payment 60 CZK Get link Repair contribution No stay · 29.10.2026 Draft 55 CZK Get link"
+   },
+   "path": "/payments",
+   "status": 200,
+   "title": "Payments",
+   "uid": 2
+  },
+  {
+   "form": null,
+   "lang": "en",
+   "location": "",
+   "method": "GET",
+   "mode": "test",
+   "name": "overview_complete_en",
+   "page": {
+    "fields": [
+     "details",
+     "button type=button",
+     "button type=button",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-00",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-00/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-01",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-01/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-02",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-02/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-03",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-03/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-04",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-04/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-05",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-05/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-06",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-06/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-07",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-07/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-08",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-08/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-09",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-09/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-10",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-10/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-11",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-11/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-12",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-12/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-13",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-13/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-14",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-14/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-15",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-15/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-16",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-16/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-17",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-17/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-18",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-18/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-19",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-19/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "details",
+     "form method=post action=/payments/services",
+     "label for=pay-svc-name",
+     "input name=name type=text id=pay-svc-name required",
+     "label for=pay-svc-amount",
+     "input name=amount_czk type=number id=pay-svc-amount required",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/requests/81/link",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit"
+    ],
+    "links": [
+     "/payments/new",
+     "/payments/new"
+    ],
+    "text": "Payments Connect Stripe once, then every request you send goes to the guest with a working payment link. Pick a stay, an amount and a reason; UbyHost writes the request, you press Send. The dashboard shows what was paid; Stripe sends the money to your bank account. Request payment Card payments are on Money goes to your account ? Ready means Stripe verified the host. Guests pay the host's Stripe account directly; UbyHost never touches the money. Your services ? Save what you charge often, for example extra cleaning 800 CZK or late checkout 500 CZK. Then one tap fills in the request. Extra 0 100 CZK Request Remove Extra 1 101 CZK Request Remove Extra 2 102 CZK Request Remove Extra 3 103 CZK Request Remove Extra 4 104 CZK Request Remove Extra 5 105 CZK Request Remove Extra 6 106 CZK Request Remove Extra 7 107 CZK Request Remove Extra 8 108 CZK Request Remove Extra 9 109 CZK Request Remove Extra 10 110 CZK Request Remove Extra 11 111 CZK Request Remove Extra 12 112 CZK Request Remove Extra 13 113 CZK Request Remove Extra 14 114 CZK Request Remove Extra 15 115 CZK Request Remove Extra 16 116 CZK Request Remove Extra 17 117 CZK Request Remove Extra 18 118 CZK Request Remove Extra 19 119 CZK Request Remove Add a service Save what you charge often Service name Amount (CZK) Save service Requests ? Stripe pays the money to the host's bank account, usually a few days after the guest pays. Extra guest No stay · 06.11.2026 Waiting for payment 400 CZK Get link Cleaning No stay · 05.11.2026 Sent 99 CZK Repair contribution No stay · 05.11.2026 Paid 120 CZK"
+   },
+   "path": "/payments",
+   "status": 200,
+   "title": "Payments",
+   "uid": 3
+  },
+  {
+   "form": null,
+   "lang": "en",
+   "location": "",
+   "method": "GET",
+   "mode": "test",
+   "name": "overview_complete_cs",
+   "page": {
+    "fields": [
+     "details",
+     "button type=button",
+     "button type=button",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-00",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-00/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-01",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-01/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-02",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-02/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-03",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-03/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-04",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-04/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-05",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-05/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-06",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-06/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-07",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-07/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-08",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-08/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-09",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-09/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-10",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-10/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-11",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-11/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-12",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-12/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-13",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-13/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-14",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-14/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-15",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-15/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-16",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-16/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-17",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-17/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-18",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-18/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "form method=get action=/payments/new",
+     "input name=service type=hidden value=svc-19",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/services/svc-19/delete",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit role=menuitem",
+     "details",
+     "form method=post action=/payments/services",
+     "label for=pay-svc-name",
+     "input name=name type=text id=pay-svc-name required",
+     "label for=pay-svc-amount",
+     "input name=amount_czk type=number id=pay-svc-amount required",
+     "button type=submit",
+     "button type=button",
+     "form method=post action=/payments/requests/81/link",
+     "input name=_csrf type=hidden value=CSRF",
+     "button type=submit"
+    ],
+    "links": [
+     "/payments/new",
+     "/payments/new"
+    ],
+    "text": "Platby Připojte Stripe jednou a každá žádost odchází hostovi s fungujícím platebním odkazem. Vyberte pobyt, částku a důvod; UbyHost žádost vytvoří a vy stisknete Odeslat. Přehled ukazuje, co bylo zaplaceno; Stripe pošle peníze na váš bankovní účet. Vyžádat platbu Platby kartou jsou zapnuté Peníze chodí na váš účet ? Připraveno znamená, že Stripe ověřil hostitele. Hosté platí přímo na Stripe účet hostitele; UbyHost se penězímí nedotýká. Vaše služby ? Uložte si, co účtujete často, třeba úklid navíc 800 Kč nebo pozdní odjezd 500 Kč. Žádost pak vyplníte jedním klepnutím. Extra 0 100 Kč Vyžádat Odebrat Extra 1 101 Kč Vyžádat Odebrat Extra 2 102 Kč Vyžádat Odebrat Extra 3 103 Kč Vyžádat Odebrat Extra 4 104 Kč Vyžádat Odebrat Extra 5 105 Kč Vyžádat Odebrat Extra 6 106 Kč Vyžádat Odebrat Extra 7 107 Kč Vyžádat Odebrat Extra 8 108 Kč Vyžádat Odebrat Extra 9 109 Kč Vyžádat Odebrat Extra 10 110 Kč Vyžádat Odebrat Extra 11 111 Kč Vyžádat Odebrat Extra 12 112 Kč Vyžádat Odebrat Extra 13 113 Kč Vyžádat Odebrat Extra 14 114 Kč Vyžádat Odebrat Extra 15 115 Kč Vyžádat Odebrat Extra 16 116 Kč Vyžádat Odebrat Extra 17 117 Kč Vyžádat Odebrat Extra 18 118 Kč Vyžádat Odebrat Extra 19 119 Kč Vyžádat Odebrat Přidat službu Uložte si, co účtujete často Název služby Částka (Kč) Uložit službu Požadavky ? Stripe pošle peníze na bankovní účet hostitele, obvykle pár dní po zaplacení hostem. Další host Bez pobytu · 06.11.2026 Čeká na platbu 400 Kč Získat odkaz Úklid Bez pobytu · 05.11.2026 Odesláno 99 Kč Příspěvek na opravu Bez pobytu · 05.11.2026 Zaplaceno 120 Kč"
+   },
+   "path": "/payments?lang=cs",
+   "status": 200,
+   "title": "Platby",
+   "uid": 3
+  },
+  {
+   "form": null,
+   "lang": "cs",
+   "location": "",
+   "method": "GET",
+   "mode": "test",
+   "name": "overview_rejected_cs",
+   "page": {
+    "fields": [
+     "details"
+    ],
+    "links": [
+     "/payments/new",
+     "/payments/new"
+    ],
+    "text": "Platby Připojte Stripe jednou a každá žádost odchází hostovi s fungujícím platebním odkazem. Vyberte pobyt, částku a důvod; UbyHost žádost vytvoří a vy stisknete Odeslat. Přehled ukazuje, co bylo zaplaceno; Stripe pošle peníze na váš bankovní účet. Vyžádat platbu Platby kartou Stripe účet neschválil. Napište podpoře a podíváme se na to společně."
+   },
+   "path": "/payments",
+   "status": 200,
+   "title": "Platby",
+   "uid": 4
+  },
+  {
+   "form": null,
+   "lang": "en",
+   "location": "",
+   "method": "GET",
+   "mode": "test",
+   "name": "overview_details_en",
+   "page": {
+    "fields": [
+     "details",
+     "button type=button",
+     "button type=button",
+     "button type=button",
+     "details open",
+     "form method=post action=/payments/services",
+     "label for=pay-svc-name",
+     "input name=name type=text id=pay-svc-name required",
+     "label for=pay-svc-amount",
+     "input name=amount_czk type=number id=pay-svc-amount required",
+     "button type=submit",
+     "button type=button"
+    ],
+    "links": [
+     "/payments/new",
+     "/payments/new",
+     "/entities"
+    ],
+    "text": "Payments Connect Stripe once, then every request you send goes to the guest with a working payment link. Pick a stay, an amount and a reason; UbyHost writes the request, you press Send. The dashboard shows what was paid; Stripe sends the money to your bank account. Request payment Card payments Connect your Stripe account to take card payments. Read how payments work Done 2 Check the details we send to Stripe Add your business details first. Stripe needs your name. 3 Verify yourself with Stripe ? About 5 minutes. Have your ID card or passport, your bank account number and your phone ready. To do 4 Take card payments ? Once Stripe approves you, the payment requests below can be paid by card. To do Add your details Your services ? Save what you charge often, for example extra cleaning 800 CZK or late checkout 500 CZK. Then one tap fills in the request. Add a service Save what you charge often Service name Amount (CZK) Save service Requests ? Stripe pays the money to the host's bank account, usually a few days after the guest pays. No payment requests yet"
+   },
+   "path": "/payments",
+   "status": 200,
+   "title": "Payments",
+   "uid": 5
+  },
+  {
+   "form": null,
+   "lang": "cs",
+   "location": "/payments/new?service=svc-a&x=%C3%BA",
+   "method": "GET",
+   "mode": "test",
+   "name": "overview_redirect_service",
+   "path": "/payments?service=svc-a&x=%C3%BA",
+   "status": 303,
+   "uid": 2
+  },
+  {
+   "form": null,
+   "lang": "cs",
+   "location": "/payments/new?reservation_id=",
+   "method": "GET",
+   "mode": "test",
+   "name": "overview_redirect_stay",
+   "path": "/payments?reservation_id=",
+   "status": 303,
+   "uid": 2
+  },
+  {
+   "form": null,
+   "lang": "en",
+   "location": "/login?next=/payments",
+   "method": "GET",
+   "mode": "test",
+   "name": "signed_out",
+   "path": "/payments",
+   "status": 303,
+   "uid": 0
+  },
+  {
+   "form": null,
+   "lang": "cs",
+   "location": "",
+   "method": "GET",
+   "mode": "test",
+   "name": "new_plain_cs",
+   "page": {
+    "fields": [
+     "form method=post action=/payments/requests/new",
+     "label for=pay-new-amount_czk",
+     "input name=amount_czk type=number id=pay-new-amount_czk required",
+     "label",
+     "input name=reason type=radio value=repair required",
+     "label",
+     "input name=reason type=radio value=extra_guest",
+     "label",
+     "input name=reason type=radio value=late_checkout",
+     "label",
+     "input name=reason type=radio value=cleaning",
+     "label",
+     "input name=reason type=radio value=damage",
+     "label",
+     "input name=reason type=radio value=custom",
+     "label for=pay-new-guest_note",
+     "input name=guest_note type=text id=pay-new-guest_note",
+     "label for=pay-new-reservation_id",
+     "select name=reservation_id id=pay-new-reservation_id",
+     "option value=",
+     "option value=62",
+     "option value=61",
+     "label for=pay-new-guest_email",
+     "input name=guest_email type=email id=pay-new-guest_email",
+     "label",
+     "input name=rail type=radio value=card checked",
+     "label",
+     "input name=rail type=radio value=qr",
+     "button type=submit"
+    ],
+    "links": [
+     "/payments"
+    ],
+    "text": "Nová platební žádost Částka (Kč) Za co Příspěvek na opravu Další host Pozdní odjezd Úklid Škoda Vlastní Poznámka (nepovinné) Pobyt Bez pobytu Byt Růže (2026-12-10 → 2026-12-12) Novák (2026-12-01 → 2026-12-04) E-mail hosta (nepovinné) Jak host platí Kartou Bankovní QR Získat odkaz"
+   },
+   "path": "/payments/new",
+   "status": 200,
+   "title": "Nová platební žádost",
+   "uid": 2
+  },
+  {
+   "form": null,
+   "lang": "en",
+   "location": "",
+   "method": "GET",
+   "mode": "test",
+   "name": "new_prefill_en",
+   "page": {
+    "fields": [
+     "form method=post action=/payments/requests/new",
+     "label for=pay-new-amount_czk",
+     "input name=amount_czk type=number value=300 id=pay-new-amount_czk required",
+     "label",
+     "input name=reason type=radio value=repair required",
+     "label",
+     "input name=reason type=radio value=extra_guest",
+     "label",
+     "input name=reason type=radio value=late_checkout",
+     "label",
+     "input name=reason type=radio value=cleaning",
+     "label",
+     "input name=reason type=radio value=damage",
+     "label",
+     "input name=reason type=radio value=custom checked",
+     "label for=pay-new-guest_note",
+     "input name=guest_note type=text value=Late <checkout> & \"more\" id=pay-new-guest_note",
+     "label for=pay-new-reservation_id",
+     "select name=reservation_id id=pay-new-reservation_id",
+     "option value=",
+     "option value=62",
+     "option value=61 selected",
+     "label for=pay-new-guest_email",
+     "input name=guest_email type=email value=guest61@example.test id=pay-new-guest_email",
+     "label",
+     "input name=rail type=radio value=card checked",
+     "label",
+     "input name=rail type=radio value=qr",
+     "button type=submit"
+    ],
+    "links": [
+     "/payments"
+    ],
+    "text": "New payment request Amount (CZK) For what Repair contribution Extra guest Late checkout Cleaning Damage Custom Note (optional) Stay No stay Byt Růže (2026-12-10 → 2026-12-12) Novák (2026-12-01 → 2026-12-04) Guest e-mail (optional) How the guest pays Card Bank QR Get link"
+   },
+   "path": "/payments/new?reservation_id=61&service=svc-b",
+   "status": 200,
+   "title": "New payment request",
+   "uid": 2
+  },
+  {
+   "form": null,
+   "lang": "cs",
+   "location": "",
+   "method": "GET",
+   "mode": "test",
+   "name": "new_prefill_cs",
+   "page": {
+    "fields": [
+     "form method=post action=/payments/requests/new",
+     "label for=pay-new-amount_czk",
+     "input name=amount_czk type=number value=500 id=pay-new-amount_czk required",
+     "label",
+     "input name=reason type=radio value=repair required",
+     "label",
+     "input name=reason type=radio value=extra_guest",
+     "label",
+     "input name=reason type=radio value=late_checkout",
+     "label",
+     "input name=reason type=radio value=cleaning",
+     "label",
+     "input name=reason type=radio value=damage",
+     "label",
+     "input name=reason type=radio value=custom checked",
+     "label for=pay-new-guest_note",
+     "input name=guest_note type=text value=Úklid navíc id=pay-new-guest_note",
+     "label for=pay-new-reservation_id",
+     "select name=reservation_id id=pay-new-reservation_id",
+     "option value=",
+     "option value=62 selected",
+     "option value=61",
+     "label for=pay-new-guest_email",
+     "input name=guest_email type=email id=pay-new-guest_email",
+     "label",
+     "input name=rail type=radio value=card checked",
+     "label",
+     "input name=rail type=radio value=qr",
+     "button type=submit"
+    ],
+    "links": [
+     "/payments"
+    ],
+    "text": "Nová platební žádost Částka (Kč) Za co Příspěvek na opravu Další host Pozdní odjezd Úklid Škoda Vlastní Poznámka (nepovinné) Pobyt Bez pobytu Byt Růže (2026-12-10 → 2026-12-12) Novák (2026-12-01 → 2026-12-04) E-mail hosta (nepovinné) Jak host platí Kartou Bankovní QR Získat odkaz"
+   },
+   "path": "/payments/new?reservation_id=62&service=svc-a",
+   "status": 200,
+   "title": "Nová platební žádost",
+   "uid": 2
+  },
+  {
+   "form": null,
+   "lang": "en",
+   "location": "",
+   "method": "GET",
+   "mode": "test",
+   "name": "new_other_stay_en",
+   "page": {
+    "fields": [
+     "form method=post action=/payments/requests/new",
+     "label for=pay-new-amount_czk",
+     "input name=amount_czk type=number id=pay-new-amount_czk required",
+     "label",
+     "input name=reason type=radio value=repair required",
+     "label",
+     "input name=reason type=radio value=extra_guest",
+     "label",
+     "input name=reason type=radio value=late_checkout",
+     "label",
+     "input name=reason type=radio value=cleaning",
+     "label",
+     "input name=reason type=radio value=damage",
+     "label",
+     "input name=reason type=radio value=custom",
+     "label for=pay-new-guest_note",
+     "input name=guest_note type=text id=pay-new-guest_note",
+     "label for=pay-new-reservation_id",
+     "select name=reservation_id id=pay-new-reservation_id",
+     "option value=",
+     "option value=62",
+     "option value=61",
+     "label for=pay-new-guest_email",
+     "input name=guest_email type=email id=pay-new-guest_email",
+     "label",
+     "input name=rail type=radio value=card checked",
+     "label",
+     "input name=rail type=radio value=qr",
+     "button type=submit"
+    ],
+    "links": [
+     "/payments"
+    ],
+    "text": "New payment request Amount (CZK) For what Repair contribution Extra guest Late checkout Cleaning Damage Custom Note (optional) Stay No stay Byt Růže (2026-12-10 → 2026-12-12) Novák (2026-12-01 → 2026-12-04) Guest e-mail (optional) How the guest pays Card Bank QR Get link"
+   },
+   "path": "/payments/new?reservation_id=64&service=nope",
+   "status": 200,
+   "title": "New payment request",
+   "uid": 2
+  },
+  {
+   "form": null,
+   "lang": "en",
+   "location": "",
+   "method": "GET",
+   "mode": "test",
+   "name": "new_no_bank_en",
+   "page": {
+    "fields": [
+     "form method=post action=/payments/requests/new",
+     "label for=pay-new-amount_czk",
+     "input name=amount_czk type=number id=pay-new-amount_czk required",
+     "label",
+     "input name=reason type=radio value=repair required",
+     "label",
+     "input name=reason type=radio value=extra_guest",
+     "label",
+     "input name=reason type=radio value=late_checkout",
+     "label",
+     "input name=reason type=radio value=cleaning",
+     "label",
+     "input name=reason type=radio value=damage",
+     "label",
+     "input name=reason type=radio value=custom",
+     "label for=pay-new-guest_note",
+     "input name=guest_note type=text id=pay-new-guest_note",
+     "label for=pay-new-reservation_id",
+     "select name=reservation_id id=pay-new-reservation_id",
+     "option value=",
+     "option value=64",
+     "label for=pay-new-guest_email",
+     "input name=guest_email type=email id=pay-new-guest_email",
+     "label",
+     "input name=rail type=radio value=card checked",
+     "label",
+     "input name=rail type=radio value=qr disabled",
+     "button type=submit"
+    ],
+    "links": [
+     "/payments",
+     "/entities"
+    ],
+    "text": "New payment request Amount (CZK) For what Repair contribution Extra guest Late checkout Cleaning Damage Custom Note (optional) Stay No stay Not yours (2026-12-01 → 2026-12-02) Guest e-mail (optional) How the guest pays Card Bank QR Bank QR needs a bank account. Add bank account (1 min) Get link"
+   },
+   "path": "/payments/new",
+   "status": 200,
+   "title": "New payment request",
+   "uid": 1
+  },
+  {
+   "form": null,
+   "lang": "cs",
+   "location": "",
+   "method": "GET",
+   "mode": "off",
+   "name": "new_bank_account_cs",
+   "page": {
+    "fields": [
+     "form method=post action=/payments/requests/new",
+     "label for=pay-new-amount_czk",
+     "input name=amount_czk type=number id=pay-new-amount_czk required",
+     "label",
+     "input name=reason type=radio value=repair required",
+     "label",
+     "input name=reason type=radio value=extra_guest",
+     "label",
+     "input name=reason type=radio value=late_checkout",
+     "label",
+     "input name=reason type=radio value=cleaning",
+     "label",
+     "input name=reason type=radio value=damage",
+     "label",
+     "input name=reason type=radio value=custom",
+     "label for=pay-new-guest_note",
+     "input name=guest_note type=text id=pay-new-guest_note",
+     "label for=pay-new-reservation_id",
+     "select name=reservation_id id=pay-new-reservation_id",
+     "option value=",
+     "label for=pay-new-guest_email",
+     "input name=guest_email type=email id=pay-new-guest_email",
+     "label",
+     "input name=rail type=radio value=card checked",
+     "label",
+     "input name=rail type=radio value=qr",
+     "button type=submit"
+    ],
+    "links": [
+     "/payments"
+    ],
+    "text": "Nová platební žádost Částka (Kč) Za co Příspěvek na opravu Další host Pozdní odjezd Úklid Škoda Vlastní Poznámka (nepovinné) Pobyt Bez pobytu E-mail hosta (nepovinné) Jak host platí Kartou Bankovní QR Získat odkaz"
+   },
+   "path": "/payments/new?reservation_id=x1",
+   "status": 200,
+   "title": "Nová platební žádost",
+   "uid": 5
+  },
+  {
+   "form": null,
+   "lang": "cs",
+   "location": "",
+   "method": "GET",
+   "mode": "test",
+   "name": "share_ok_cs",
+   "page": {
+    "fields": [
+     "details",
+     "label for=pay-share-link",
+     "input type=text value=https://buy.stripe.com/test_72?x=1&y=2 id=pay-share-link readonly",
+     "button type=button"
+    ],
+    "links": [
+     "/guide#overview",
+     "mailto:?subject=%C5%BD%C3%A1dost%20o%20platbu&body=%C3%9Aklid%3A%2090%20K%C4%8D.%20Zaplatit%20kartou%20m%C5%AF%C5%BEete%20zde%3A%20https%3A//buy.stripe.com/test_72%3Fx%3D1%26y%3D2",
+     "https://wa.me/?text=%C3%9Aklid%3A%2090%20K%C4%8D.%20Zaplatit%20kartou%20m%C5%AF%C5%BEete%20zde%3A%20https%3A//buy.stripe.com/test_72%3Fx%3D1%26y%3D2",
+     "/payments"
+    ],
+    "text": "Sdílejte odkaz k platbě ? Připojte Stripe jednou a každá žádost odchází hostovi s fungujícím platebním odkazem. Vyberte pobyt, částku a důvod; UbyHost žádost vytvoří a vy stisknete Odeslat. Přehled ukazuje, co bylo zaplaceno; Stripe pošle peníze na váš bankovní účet. Více v návodu Úklid · 90 Kč Pošlete odkaz hostovi do jakéhokoli chatu. Zaplatí kartou přes Stripe a tady uvidíte, že je zaplaceno. Odkaz k platbě Kopírovat Poslat e-mailem Poslat přes WhatsApp Odkaz platí pro jednu platbu. Až host zaplatí, žádost se změní na Zaplaceno. Zpět na platby"
+   },
+   "path": "/payments/requests/72/share",
+   "status": 200,
+   "title": "Sdílejte odkaz k platbě",
+   "uid": 2
+  },
+  {
+   "form": null,
+   "lang": "en",
+   "location": "",
+   "method": "GET",
+   "mode": "test",
+   "name": "share_ok_en",
+   "page": {
+    "fields": [
+     "details",
+     "label for=pay-share-link",
+     "input type=text value=https://buy.stripe.com/test_77 id=pay-share-link readonly",
+     "button type=button"
+    ],
+    "links": [
+     "/guide#overview",
+     "mailto:g2%40example.test?subject=Payment%20request&body=Extra%20guest%3A%2060%20CZK.%20You%20can%20pay%20by%20card%20here%3A%20https%3A//buy.stripe.com/test_77",
+     "https://wa.me/?text=Extra%20guest%3A%2060%20CZK.%20You%20can%20pay%20by%20card%20here%3A%20https%3A//buy.stripe.com/test_77",
+     "/payments"
+    ],
+    "text": "Share the payment link ? Connect Stripe once, then every request you send goes to the guest with a working payment link. Pick a stay, an amount and a reason; UbyHost writes the request, you press Send. The dashboard shows what was paid; Stripe sends the money to your bank account. More in the guide Extra guest · 60 CZK Send this link to the guest in any chat. They pay by card on Stripe, and you see it here as paid. Payment link Copy Send by e-mail Send on WhatsApp The link works for one payment. When the guest pays, the request turns to Paid. Back to payments"
+   },
+   "path": "/payments/requests/77/share",
+   "status": 200,
+   "title": "Share the payment link",
+   "uid": 2
+  },
+  {
+   "form": null,
+   "lang": "cs",
+   "location": "/payments?err=Tohle%20ulo%C5%BEit%20nejde.%20Zkontrolujte%20formul%C3%A1%C5%99.",
+   "method": "GET",
+   "mode": "test",
+   "name": "share_no_link_id",
+   "path": "/payments/requests/71/share",
+   "status": 303,
+   "uid": 2
+  },
+  {
+   "form": null,
+   "lang": "en",
+   "location": "/payments?err=That%20cannot%20be%20saved.%20Check%20the%20form.",
+   "method": "GET",
+   "mode": "test",
+   "name": "share_paid",
+   "path": "/payments/requests/82/share",
+   "status": 303,
+   "uid": 3
+  },
+  {
+   "form": null,
+   "lang": "en",
+   "location": "/payments?err=Card%20payments%20are%20off%20on%20this%20server.",
+   "method": "GET",
+   "mode": "test",
+   "name": "share_stripe_off",
+   "path": "/payments/requests/81/share",
+   "status": 303,
+   "uid": 3
+  },
+  {
+   "form": null,
+   "lang": "en",
+   "location": "/payments?err=That%20cannot%20be%20saved.%20Check%20the%20form.",
+   "method": "GET",
+   "mode": "test",
+   "name": "share_other_owner",
+   "path": "/payments/requests/72/share",
+   "status": 303,
+   "uid": 3
+  },
+  {
+   "form": null,
+   "lang": "cs",
+   "location": "/payments?err=Tohle%20ulo%C5%BEit%20nejde.%20Zkontrolujte%20formul%C3%A1%C5%99.",
+   "method": "GET",
+   "mode": "test",
+   "name": "share_qr",
+   "path": "/payments/requests/83/share",
+   "status": 303,
+   "uid": 3
+  },
+  {
+   "form": null,
+   "lang": "cs",
+   "location": "/payments?err=Tohle%20ulo%C5%BEit%20nejde.%20Zkontrolujte%20formul%C3%A1%C5%99.",
+   "method": "GET",
+   "mode": "test",
+   "name": "share_missing",
+   "path": "/payments/requests/9999/share",
+   "status": 303,
+   "uid": 3
+  },
+  {
+   "form": null,
+   "lang": "cs",
+   "location": "",
+   "method": "GET",
+   "mode": "test",
+   "name": "consent_cs",
+   "page": {
+    "fields": [
+     "form method=post action=/payments/consent",
+     "label for=pay-consent-agree",
+     "input name=agree type=checkbox value=1 id=pay-consent-agree",
+     "button type=submit"
+    ],
+    "links": [
+     "/payments",
+     "https://stripe.com/cz/legal/connect-account"
+    ],
+    "text": "Jak fungují platby Peníze od hostů jdou přímo k vám. UbyHost je nikdy nedrží. Platby jdou na váš vlastní účet Stripe. Vy jste prodejce. Stripe vám pošle peníze na bankovní účet, obvykle do 7 dnů. UbyHost si nebere žádnou provizi. Platíte jen poplatek Stripe, který Stripe strhává z každé platby a při refundaci ho nevrací. Za své ubytování odpovídáte vy. Smlouvu s hostem uzavíráte vy, určujete cenu i storno podmínky a řešíte reklamace. UbyHost dodává jen technologii. Sporné platby řešíte se Stripe. Když host platbu rozporuje u banky, Stripe ji může stáhnout z vašeho účtu. Potvrzení rezervace a evidence hostů vám pomohou prokázat, že pobyt proběhl. Při dvojí rezervaci vracíme hostovi vše automaticky. Když termín mezitím prodal jiný web, host dostane celou částku zpět a vy upozornění. Daně a poplatky jsou vaše. Příjmy přiznáváte vy a místní poplatek z pobytu vybíráte od hostů na místě. Stripe ověří vaši totožnost. Vyžádá si doklad a bankovní účet. Tyto údaje vidí jen Stripe, UbyHost je neukládá. Budete potřebovat občanský průkaz nebo pas, číslo bankovního účtu a telefon. Zabere to asi 5 minut. Souhlasím s podmínkami plateb UbyHost uvedenými výše. Smlouva o službách Stripe Souhlasím a pokračuji"
+   },
+   "path": "/payments/consent",
+   "status": 200,
+   "title": "Jak fungují platby",
+   "uid": 1
+  },
+  {
+   "form": null,
+   "lang": "en",
+   "location": "",
+   "method": "GET",
+   "mode": "live",
+   "name": "consent_en",
+   "page": {
+    "fields": [
+     "form method=post action=/payments/consent",
+     "label for=pay-consent-agree",
+     "input name=agree type=checkbox value=1 id=pay-consent-agree",
+     "button type=submit"
+    ],
+    "links": [
+     "/payments",
+     "https://stripe.com/cz/legal/connect-account"
+    ],
+    "text": "How payments work Guest money goes straight to you. UbyHost never holds it. Payments go to your own Stripe account. You are the seller. Stripe sends the money to your bank, usually within 7 days. UbyHost takes no commission. You pay only Stripe's fee, which Stripe takes from each payment and does not return on refunds. You are responsible for your accommodation. You make the contract with the guest, set the price and the cancellation terms, and handle complaints. UbyHost only provides the technology. Disputed payments are between you and Stripe. If a guest disputes a payment with their bank, Stripe may take it back from your account. Your booking confirmation and guest register help you prove the stay happened. Double bookings are refunded automatically. If another site sold the same dates, the guest gets the full amount back and you get a notice. Taxes and fees are yours. You declare the income, and you collect the local tourist fee from guests on site. Stripe checks your identity. It asks for an ID and your bank account. Only Stripe sees them; UbyHost does not store them. You will need an ID card or passport, your bank account number and your phone. It takes about 5 minutes. I agree to the UbyHost payment terms above. Stripe Connected Account Agreement Agree and continue"
+   },
+   "path": "/payments/consent",
+   "status": 200,
+   "title": "How payments work",
+   "uid": 1
+  },
+  {
+   "body": "",
+   "form": null,
+   "lang": "en",
+   "location": "",
+   "method": "GET",
+   "mode": "off",
+   "name": "consent_off",
+   "path": "/payments/consent",
+   "status": 404,
+   "uid": 1
+  }
+ ],
+ "env": {
+  "UBYHOST_BOOTSTRAP_ADMIN": "0",
+  "UBYHOST_DEPLOYMENT": "local",
+  "UBYHOST_DPA_VERSION": "d1",
+  "UBYHOST_ENABLE_SCHEDULER": "0",
+  "UBYHOST_ICAL_OPEN_SYNC_MINUTES": "0",
+  "UBYHOST_MAIL_BACKEND": "console",
+  "UBYHOST_PRIVACY_VERSION": "p1",
+  "UBYHOST_PUBLIC_BASE_URL": "http://testserver",
+  "UBYHOST_SECRET_KEY": "payments-pages-golden-secret-0123456789abcdef",
+  "UBYHOST_STRIPE_MODE": "test",
+  "UBYHOST_TERMS_VERSION": "t1",
+  "UBYHOST_UBYPORT_ENV": "mock"
+ },
+ "fixture": [
+  {
+   "row": {
+    "active": 1,
+    "created_at": "2026-11-01T08:00:00+00:00",
+    "id": 1,
+    "password_hash": "x",
+    "role": "host",
+    "session_version": 0,
+    "username": "pay-new"
+   },
+   "table": "user_account"
+  },
+  {
+   "row": {
+    "active": 1,
+    "created_at": "2026-11-01T08:00:00+00:00",
+    "id": 2,
+    "password_hash": "x",
+    "role": "host",
+    "session_version": 0,
+    "username": "pay-pending"
+   },
+   "table": "user_account"
+  },
+  {
+   "row": {
+    "active": 1,
+    "created_at": "2026-11-01T08:00:00+00:00",
+    "id": 3,
+    "password_hash": "x",
+    "role": "host",
+    "session_version": 0,
+    "username": "pay-complete"
+   },
+   "table": "user_account"
+  },
+  {
+   "row": {
+    "active": 1,
+    "created_at": "2026-11-01T08:00:00+00:00",
+    "id": 4,
+    "password_hash": "x",
+    "role": "host",
+    "session_version": 0,
+    "username": "pay-rejected"
+   },
+   "table": "user_account"
+  },
+  {
+   "row": {
+    "active": 1,
+    "created_at": "2026-11-01T08:00:00+00:00",
+    "id": 5,
+    "password_hash": "x",
+    "role": "host",
+    "session_version": 0,
+    "username": "pay-details"
+   },
+   "table": "user_account"
+  },
+  {
+   "row": {
+    "accepted_at": "2026-11-01T08:00:00+00:00",
+    "document": "terms",
+    "id": 103,
+    "method": "clickwrap",
+    "user_account_id": 1,
+    "version": "t1"
+   },
+   "table": "legal_acceptance"
+  },
+  {
+   "row": {
+    "accepted_at": "2026-11-01T08:00:00+00:00",
+    "document": "privacy",
+    "id": 104,
+    "method": "clickwrap",
+    "user_account_id": 1,
+    "version": "p1"
+   },
+   "table": "legal_acceptance"
+  },
+  {
+   "row": {
+    "accepted_at": "2026-11-01T08:00:00+00:00",
+    "document": "dpa",
+    "id": 105,
+    "method": "clickwrap",
+    "user_account_id": 1,
+    "version": "d1"
+   },
+   "table": "legal_acceptance"
+  },
+  {
+   "row": {
+    "accepted_at": "2026-11-01T08:00:00+00:00",
+    "document": "terms",
+    "id": 106,
+    "method": "clickwrap",
+    "user_account_id": 2,
+    "version": "t1"
+   },
+   "table": "legal_acceptance"
+  },
+  {
+   "row": {
+    "accepted_at": "2026-11-01T08:00:00+00:00",
+    "document": "privacy",
+    "id": 107,
+    "method": "clickwrap",
+    "user_account_id": 2,
+    "version": "p1"
+   },
+   "table": "legal_acceptance"
+  },
+  {
+   "row": {
+    "accepted_at": "2026-11-01T08:00:00+00:00",
+    "document": "dpa",
+    "id": 108,
+    "method": "clickwrap",
+    "user_account_id": 2,
+    "version": "d1"
+   },
+   "table": "legal_acceptance"
+  },
+  {
+   "row": {
+    "accepted_at": "2026-11-01T08:00:00+00:00",
+    "document": "terms",
+    "id": 109,
+    "method": "clickwrap",
+    "user_account_id": 3,
+    "version": "t1"
+   },
+   "table": "legal_acceptance"
+  },
+  {
+   "row": {
+    "accepted_at": "2026-11-01T08:00:00+00:00",
+    "document": "privacy",
+    "id": 110,
+    "method": "clickwrap",
+    "user_account_id": 3,
+    "version": "p1"
+   },
+   "table": "legal_acceptance"
+  },
+  {
+   "row": {
+    "accepted_at": "2026-11-01T08:00:00+00:00",
+    "document": "dpa",
+    "id": 111,
+    "method": "clickwrap",
+    "user_account_id": 3,
+    "version": "d1"
+   },
+   "table": "legal_acceptance"
+  },
+  {
+   "row": {
+    "accepted_at": "2026-11-01T08:00:00+00:00",
+    "document": "terms",
+    "id": 112,
+    "method": "clickwrap",
+    "user_account_id": 4,
+    "version": "t1"
+   },
+   "table": "legal_acceptance"
+  },
+  {
+   "row": {
+    "accepted_at": "2026-11-01T08:00:00+00:00",
+    "document": "privacy",
+    "id": 113,
+    "method": "clickwrap",
+    "user_account_id": 4,
+    "version": "p1"
+   },
+   "table": "legal_acceptance"
+  },
+  {
+   "row": {
+    "accepted_at": "2026-11-01T08:00:00+00:00",
+    "document": "dpa",
+    "id": 114,
+    "method": "clickwrap",
+    "user_account_id": 4,
+    "version": "d1"
+   },
+   "table": "legal_acceptance"
+  },
+  {
+   "row": {
+    "accepted_at": "2026-11-01T08:00:00+00:00",
+    "document": "terms",
+    "id": 115,
+    "method": "clickwrap",
+    "user_account_id": 5,
+    "version": "t1"
+   },
+   "table": "legal_acceptance"
+  },
+  {
+   "row": {
+    "accepted_at": "2026-11-01T08:00:00+00:00",
+    "document": "privacy",
+    "id": 116,
+    "method": "clickwrap",
+    "user_account_id": 5,
+    "version": "p1"
+   },
+   "table": "legal_acceptance"
+  },
+  {
+   "row": {
+    "accepted_at": "2026-11-01T08:00:00+00:00",
+    "document": "dpa",
+    "id": 117,
+    "method": "clickwrap",
+    "user_account_id": 5,
+    "version": "d1"
+   },
+   "table": "legal_acceptance"
+  },
+  {
+   "row": {
+    "action": "payments_terms_accepted",
+    "actor": "seed",
+    "at": "2026-11-01T08:00:00+00:00",
+    "detail": "version=2026-11-01",
+    "id": 902,
+    "owner_user_id": 2
+   },
+   "table": "audit"
+  },
+  {
+   "row": {
+    "action": "payments_terms_accepted",
+    "actor": "seed",
+    "at": "2026-11-01T08:00:00+00:00",
+    "detail": "version=2026-11-01",
+    "id": 903,
+    "owner_user_id": 3
+   },
+   "table": "audit"
+  },
+  {
+   "row": {
+    "action": "payments_terms_accepted",
+    "actor": "seed",
+    "at": "2026-11-01T08:00:00+00:00",
+    "detail": "version=2026-11-01",
+    "id": 905,
+    "owner_user_id": 5
+   },
+   "table": "audit"
+  },
+  {
+   "row": {
+    "bank_account": null,
+    "business_type": "company",
+    "contact_email": "host2@example.test",
+    "created_at": "2026-11-01T08:00:00+00:00",
+    "iban": "CZ6508000000192000145399",
+    "id": 21,
+    "invoice_due_days": 14,
+    "name": "Penzion Růže s.r.o.",
+    "owner_user_id": 2,
+    "vat_status": "none"
+   },
+   "table": "legal_entity"
+  },
+  {
+   "row": {
+    "bank_account": null,
+    "business_type": "company",
+    "contact_email": null,
+    "created_at": "2026-11-01T08:00:00+00:00",
+    "iban": null,
+    "id": 31,
+    "invoice_due_days": 14,
+    "name": "Jana <Nová> & spol.",
+    "owner_user_id": 3,
+    "vat_status": "none"
+   },
+   "table": "legal_entity"
+  },
+  {
+   "row": {
+    "bank_account": "19-2000145399/0800",
+    "business_type": "company",
+    "contact_email": "five@example.test",
+    "created_at": "2026-11-01T08:00:00+00:00",
+    "iban": null,
+    "id": 51,
+    "invoice_due_days": 14,
+    "name": "  ",
+    "owner_user_id": 5,
+    "vat_status": "none"
+   },
+   "table": "legal_entity"
+  },
+  {
+   "row": {
+    "action": "payments_terms_accepted",
+    "actor": "seed",
+    "at": "2026-11-01T08:00:00+00:00",
+    "detail": "version=2025-01-01",
+    "id": 910,
+    "owner_user_id": 1
+   },
+   "table": "audit"
+  },
+  {
+   "row": {
+    "charges_enabled": 0,
+    "created_at": "2026-11-01T08:00:00+00:00",
+    "mode": "test",
+    "onboarding_state": "pending",
+    "owner_user_id": 2,
+    "payouts_enabled": 0,
+    "stripe_account_id": "acct_pending",
+    "updated_at": "2026-11-01T08:00:00+00:00"
+   },
+   "table": "stripe_account"
+  },
+  {
+   "row": {
+    "charges_enabled": 1,
+    "created_at": "2026-11-01T08:00:00+00:00",
+    "mode": "test",
+    "onboarding_state": "complete",
+    "owner_user_id": 3,
+    "payouts_enabled": 1,
+    "stripe_account_id": "acct_complete",
+    "updated_at": "2026-11-01T08:00:00+00:00"
+   },
+   "table": "stripe_account"
+  },
+  {
+   "row": {
+    "charges_enabled": 0,
+    "created_at": "2026-11-01T08:00:00+00:00",
+    "mode": "test",
+    "onboarding_state": "rejected",
+    "owner_user_id": 4,
+    "payouts_enabled": 0,
+    "stripe_account_id": "acct_rejected",
+    "updated_at": "2026-11-01T08:00:00+00:00"
+   },
+   "table": "stripe_account"
+  },
+  {
+   "row": {
+    "charges_enabled": 1,
+    "created_at": "2026-11-01T08:00:00+00:00",
+    "mode": "live",
+    "onboarding_state": "complete",
+    "owner_user_id": 5,
+    "payouts_enabled": 1,
+    "stripe_account_id": "acct_live_only",
+    "updated_at": "2026-11-01T08:00:00+00:00"
+   },
+   "table": "stripe_account"
+  },
+  {
+   "row": {
+    "created_at": "2026-11-01T08:00:00+00:00",
+    "id": 41,
+    "internal_name": "Byt Růže",
+    "legal_entity_id": 21,
+    "owner_user_id": 2
+   },
+   "table": "apartment"
+  },
+  {
+   "row": {
+    "created_at": "2026-11-01T08:00:00+00:00",
+    "id": 42,
+    "internal_name": "Other flat",
+    "legal_entity_id": null,
+    "owner_user_id": 1
+   },
+   "table": "apartment"
+  },
+  {
+   "row": {
+    "apartment_id": 41,
+    "created_at": "2026-11-01T08:00:00+00:00",
+    "date_from": "2026-12-01",
+    "date_to": "2026-12-04",
+    "guest_email": " guest61@example.test ",
+    "id": 61,
+    "source": "ical",
+    "status": "active",
+    "summary": "Novák",
+    "uid": "r61",
+    "updated_at": "2026-11-01T08:00:00+00:00"
+   },
+   "table": "reservation"
+  },
+  {
+   "row": {
+    "apartment_id": 41,
+    "created_at": "2026-11-01T08:00:00+00:00",
+    "date_from": "2026-12-10",
+    "date_to": "2026-12-12",
+    "guest_email": null,
+    "id": 62,
+    "source": "ical",
+    "status": "active",
+    "summary": "  ",
+    "uid": "r62",
+    "updated_at": "2026-11-01T08:00:00+00:00"
+   },
+   "table": "reservation"
+  },
+  {
+   "row": {
+    "apartment_id": 41,
+    "created_at": "2026-11-01T08:00:00+00:00",
+    "date_from": "2026-12-20",
+    "date_to": "2026-12-22",
+    "guest_email": null,
+    "id": 63,
+    "source": "ical",
+    "status": "cancelled",
+    "summary": "Cancelled one",
+    "uid": "r63",
+    "updated_at": "2026-11-01T08:00:00+00:00"
+   },
+   "table": "reservation"
+  },
+  {
+   "row": {
+    "apartment_id": 42,
+    "created_at": "2026-11-01T08:00:00+00:00",
+    "date_from": "2026-12-01",
+    "date_to": "2026-12-02",
+    "guest_email": "x@example.test",
+    "id": 64,
+    "source": "ical",
+    "status": "active",
+    "summary": "Not yours",
+    "uid": "r64",
+    "updated_at": "2026-11-01T08:00:00+00:00"
+   },
+   "table": "reservation"
+  },
+  {
+   "row": {
+    "key": "payment_services:2",
+    "value": "[{\"id\": \"svc-a\", \"name\": \"Úklid navíc\", \"amount_czk\": 500}, {\"id\": \"svc-b\", \"name\": \"Late <checkout> & \\\"more\\\"\", \"amount_czk\": 300, \"note\": \"kept\"}, {\"id\": \"\", \"name\": \"no id, dropped\"}, \"not a dict\"]"
+   },
+   "table": "settings"
+  },
+  {
+   "row": {
+    "key": "payment_services:3",
+    "value": "[{\"id\": \"svc-00\", \"name\": \"Extra 0\", \"amount_czk\": 100}, {\"id\": \"svc-01\", \"name\": \"Extra 1\", \"amount_czk\": 101}, {\"id\": \"svc-02\", \"name\": \"Extra 2\", \"amount_czk\": 102}, {\"id\": \"svc-03\", \"name\": \"Extra 3\", \"amount_czk\": 103}, {\"id\": \"svc-04\", \"name\": \"Extra 4\", \"amount_czk\": 104}, {\"id\": \"svc-05\", \"name\": \"Extra 5\", \"amount_czk\": 105}, {\"id\": \"svc-06\", \"name\": \"Extra 6\", \"amount_czk\": 106}, {\"id\": \"svc-07\", \"name\": \"Extra 7\", \"amount_czk\": 107}, {\"id\": \"svc-08\", \"name\": \"Extra 8\", \"amount_czk\": 108}, {\"id\": \"svc-09\", \"name\": \"Extra 9\", \"amount_czk\": 109}, {\"id\": \"svc-10\", \"name\": \"Extra 10\", \"amount_czk\": 110}, {\"id\": \"svc-11\", \"name\": \"Extra 11\", \"amount_czk\": 111}, {\"id\": \"svc-12\", \"name\": \"Extra 12\", \"amount_czk\": 112}, {\"id\": \"svc-13\", \"name\": \"Extra 13\", \"amount_czk\": 113}, {\"id\": \"svc-14\", \"name\": \"Extra 14\", \"amount_czk\": 114}, {\"id\": \"svc-15\", \"name\": \"Extra 15\", \"amount_czk\": 115}, {\"id\": \"svc-16\", \"name\": \"Extra 16\", \"amount_czk\": 116}, {\"id\": \"svc-17\", \"name\": \"Extra 17\", \"amount_czk\": 117}, {\"id\": \"svc-18\", \"name\": \"Extra 18\", \"amount_czk\": 118}, {\"id\": \"svc-19\", \"name\": \"Extra 19\", \"amount_czk\": 119}]"
+   },
+   "table": "settings"
+  },
+  {
+   "row": {
+    "key": "payment_services:5",
+    "value": "{not json"
+   },
+   "table": "settings"
+  },
+  {
+   "row": {
+    "amount_czk": 250,
+    "created_at": "2026-11-05T10:00:00+00:00",
+    "currency": "CZK",
+    "expires_at": "2026-12-31",
+    "guest_email": "g@example.test",
+    "guest_note": null,
+    "id": 71,
+    "owner_user_id": 2,
+    "rail": "card",
+    "reason": "repair",
+    "reservation_id": null,
+    "status": "draft",
+    "stripe_payment_link_id": null,
+    "updated_at": "2026-11-05T10:00:00+00:00",
+    "variable_symbol": null
+   },
+   "table": "payment_request"
+  },
+  {
+   "row": {
+    "amount_czk": 90,
+    "created_at": "2026-11-04T10:00:00+00:00",
+    "currency": "CZK",
+    "expires_at": "2026-12-31",
+    "guest_email": null,
+    "guest_note": null,
+    "id": 72,
+    "owner_user_id": 2,
+    "rail": "card",
+    "reason": "cleaning",
+    "reservation_id": null,
+    "status": "sent",
+    "stripe_payment_link_id": "plink_72",
+    "updated_at": "2026-11-04T10:00:00+00:00",
+    "variable_symbol": null
+   },
+   "table": "payment_request"
+  },
+  {
+   "row": {
+    "amount_czk": 300,
+    "created_at": "2026-11-03T10:00:00+00:00",
+    "currency": "CZK",
+    "expires_at": "2026-12-31",
+    "guest_email": null,
+    "guest_note": null,
+    "id": 73,
+    "owner_user_id": 2,
+    "rail": "qr",
+    "reason": "damage",
+    "reservation_id": null,
+    "status": "paid",
+    "stripe_payment_link_id": null,
+    "updated_at": "2026-11-03T10:00:00+00:00",
+    "variable_symbol": "2600073"
+   },
+   "table": "payment_request"
+  },
+  {
+   "row": {
+    "amount_czk": 70,
+    "created_at": "2026-11-03T10:00:00+00:00",
+    "currency": "CZK",
+    "expires_at": "2026-12-31",
+    "guest_email": "  ",
+    "guest_note": null,
+    "id": 74,
+    "owner_user_id": 2,
+    "rail": "qr",
+    "reason": "late_checkout",
+    "reservation_id": null,
+    "status": "draft",
+    "stripe_payment_link_id": null,
+    "updated_at": "2026-11-03T10:00:00+00:00",
+    "variable_symbol": null
+   },
+   "table": "payment_request"
+  },
+  {
+   "row": {
+    "amount_czk": 80,
+    "created_at": "2026-11-02T10:00:00+00:00",
+    "currency": "CZK",
+    "expires_at": "2026-12-31",
+    "guest_email": "g@example.test",
+    "guest_note": "Kolo <půjčení>",
+    "id": 75,
+    "owner_user_id": 2,
+    "rail": "qr",
+    "reason": "custom",
+    "reservation_id": 61,
+    "status": "draft",
+    "stripe_payment_link_id": null,
+    "updated_at": "2026-11-02T10:00:00+00:00",
+    "variable_symbol": null
+   },
+   "table": "payment_request"
+  },
+  {
+   "row": {
+    "amount_czk": 85,
+    "created_at": "2026-11-01T10:00:00+00:00",
+    "currency": "CZK",
+    "expires_at": "2026-12-31",
+    "guest_email": null,
+    "guest_note": "",
+    "id": 76,
+    "owner_user_id": 2,
+    "rail": "card",
+    "reason": "custom",
+    "reservation_id": null,
+    "status": "expired",
+    "stripe_payment_link_id": null,
+    "updated_at": "2026-11-01T10:00:00+00:00",
+    "variable_symbol": null
+   },
+   "table": "payment_request"
+  },
+  {
+   "row": {
+    "amount_czk": 60,
+    "created_at": "2026-10-30T10:00:00+00:00",
+    "currency": "CZK",
+    "expires_at": "2026-12-31",
+    "guest_email": "  g2@example.test ",
+    "guest_note": null,
+    "id": 77,
+    "owner_user_id": 2,
+    "rail": "card",
+    "reason": "extra_guest",
+    "reservation_id": null,
+    "status": "awaiting_payment",
+    "stripe_payment_link_id": "plink_77",
+    "updated_at": "2026-10-30T10:00:00+00:00",
+    "variable_symbol": null
+   },
+   "table": "payment_request"
+  },
+  {
+   "row": {
+    "amount_czk": 55,
+    "created_at": "2026-10-29T10:00:00+00:00",
+    "currency": "CZK",
+    "expires_at": "2026-12-31",
+    "guest_email": null,
+    "guest_note": null,
+    "id": 78,
+    "owner_user_id": 2,
+    "rail": "card",
+    "reason": "repair",
+    "reservation_id": null,
+    "status": "draft",
+    "stripe_payment_link_id": null,
+    "updated_at": "2026-10-29T10:00:00+00:00",
+    "variable_symbol": null
+   },
+   "table": "payment_request"
+  },
+  {
+   "row": {
+    "amount_czk": 400,
+    "created_at": "2026-11-06T10:00:00+00:00",
+    "currency": "CZK",
+    "expires_at": "2026-12-31",
+    "guest_email": "guest&co@example.test",
+    "guest_note": null,
+    "id": 81,
+    "owner_user_id": 3,
+    "rail": "card",
+    "reason": "extra_guest",
+    "reservation_id": null,
+    "status": "awaiting_payment",
+    "stripe_payment_link_id": "plink_81",
+    "updated_at": "2026-11-06T10:00:00+00:00",
+    "variable_symbol": null
+   },
+   "table": "payment_request"
+  },
+  {
+   "row": {
+    "amount_czk": 120,
+    "created_at": "2026-11-05T10:00:00+00:00",
+    "currency": "CZK",
+    "expires_at": "2026-12-31",
+    "guest_email": null,
+    "guest_note": null,
+    "id": 82,
+    "owner_user_id": 3,
+    "rail": "card",
+    "reason": "repair",
+    "reservation_id": null,
+    "status": "paid",
+    "stripe_payment_link_id": "plink_82",
+    "updated_at": "2026-11-05T10:00:00+00:00",
+    "variable_symbol": null
+   },
+   "table": "payment_request"
+  },
+  {
+   "row": {
+    "amount_czk": 99,
+    "created_at": "2026-11-05T10:00:00+00:00",
+    "currency": "CZK",
+    "expires_at": "2026-12-31",
+    "guest_email": null,
+    "guest_note": null,
+    "id": 83,
+    "owner_user_id": 3,
+    "rail": "qr",
+    "reason": "cleaning",
+    "reservation_id": null,
+    "status": "sent",
+    "stripe_payment_link_id": null,
+    "updated_at": "2026-11-05T10:00:00+00:00",
+    "variable_symbol": null
+   },
+   "table": "payment_request"
+  }
+ ],
+ "link_results": {
+  "72": "https://buy.stripe.com/test_72?x=1&y=2",
+  "77": "https://buy.stripe.com/test_77",
+  "81": "STRIPE_OFF",
+  "82": "https://buy.stripe.com/test_82"
+ },
+ "secret": "payments-pages-golden-secret-0123456789abcdef",
+ "writes": [
+  {
+   "form": {
+    "amount_czk": "12a",
+    "name": "Bike"
+   },
+   "lang": "en",
+   "location": "/payments?err=Enter%20a%20whole%20number%20of%20CZK.",
+   "method": "POST",
+   "mode": "test",
+   "name": "svc_add_bad_amount",
+   "path": "/payments/services",
+   "rows": {
+    "audit": [
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2025-01-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 2
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 3
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 5
+     }
+    ],
+    "settings": {
+     "payment_services:2": "[{\"id\": \"svc-a\", \"name\": \"Úklid navíc\", \"amount_czk\": 500}, {\"id\": \"svc-b\", \"name\": \"Late <checkout> & \\\"more\\\"\", \"amount_czk\": 300, \"note\": \"kept\"}, {\"id\": \"\", \"name\": \"no id, dropped\"}, \"not a dict\"]",
+     "payment_services:3": "[{\"id\": \"svc-00\", \"name\": \"Extra 0\", \"amount_czk\": 100}, {\"id\": \"svc-01\", \"name\": \"Extra 1\", \"amount_czk\": 101}, {\"id\": \"svc-02\", \"name\": \"Extra 2\", \"amount_czk\": 102}, {\"id\": \"svc-03\", \"name\": \"Extra 3\", \"amount_czk\": 103}, {\"id\": \"svc-04\", \"name\": \"Extra 4\", \"amount_czk\": 104}, {\"id\": \"svc-05\", \"name\": \"Extra 5\", \"amount_czk\": 105}, {\"id\": \"svc-06\", \"name\": \"Extra 6\", \"amount_czk\": 106}, {\"id\": \"svc-07\", \"name\": \"Extra 7\", \"amount_czk\": 107}, {\"id\": \"svc-08\", \"name\": \"Extra 8\", \"amount_czk\": 108}, {\"id\": \"svc-09\", \"name\": \"Extra 9\", \"amount_czk\": 109}, {\"id\": \"svc-10\", \"name\": \"Extra 10\", \"amount_czk\": 110}, {\"id\": \"svc-11\", \"name\": \"Extra 11\", \"amount_czk\": 111}, {\"id\": \"svc-12\", \"name\": \"Extra 12\", \"amount_czk\": 112}, {\"id\": \"svc-13\", \"name\": \"Extra 13\", \"amount_czk\": 113}, {\"id\": \"svc-14\", \"name\": \"Extra 14\", \"amount_czk\": 114}, {\"id\": \"svc-15\", \"name\": \"Extra 15\", \"amount_czk\": 115}, {\"id\": \"svc-16\", \"name\": \"Extra 16\", \"amount_czk\": 116}, {\"id\": \"svc-17\", \"name\": \"Extra 17\", \"amount_czk\": 117}, {\"id\": \"svc-18\", \"name\": \"Extra 18\", \"amount_czk\": 118}, {\"id\": \"svc-19\", \"name\": \"Extra 19\", \"amount_czk\": 119}]",
+     "payment_services:5": "{not json"
+    }
+   },
+   "status": 303,
+   "uid": 4
+  },
+  {
+   "form": {
+    "amount_czk": "0",
+    "name": "Bike"
+   },
+   "lang": "cs",
+   "location": "/payments?err=Slu%C5%BEbu%20nejde%20ulo%C5%BEit.%20Zkontrolujte%20n%C3%A1zev%20a%20cenu%20%28nejv%C3%BD%C5%A1%2020%20slu%C5%BEeb%29.",
+   "method": "POST",
+   "mode": "test",
+   "name": "svc_add_zero",
+   "path": "/payments/services",
+   "rows": {
+    "audit": [
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2025-01-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 2
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 3
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 5
+     }
+    ],
+    "settings": {
+     "payment_services:2": "[{\"id\": \"svc-a\", \"name\": \"Úklid navíc\", \"amount_czk\": 500}, {\"id\": \"svc-b\", \"name\": \"Late <checkout> & \\\"more\\\"\", \"amount_czk\": 300, \"note\": \"kept\"}, {\"id\": \"\", \"name\": \"no id, dropped\"}, \"not a dict\"]",
+     "payment_services:3": "[{\"id\": \"svc-00\", \"name\": \"Extra 0\", \"amount_czk\": 100}, {\"id\": \"svc-01\", \"name\": \"Extra 1\", \"amount_czk\": 101}, {\"id\": \"svc-02\", \"name\": \"Extra 2\", \"amount_czk\": 102}, {\"id\": \"svc-03\", \"name\": \"Extra 3\", \"amount_czk\": 103}, {\"id\": \"svc-04\", \"name\": \"Extra 4\", \"amount_czk\": 104}, {\"id\": \"svc-05\", \"name\": \"Extra 5\", \"amount_czk\": 105}, {\"id\": \"svc-06\", \"name\": \"Extra 6\", \"amount_czk\": 106}, {\"id\": \"svc-07\", \"name\": \"Extra 7\", \"amount_czk\": 107}, {\"id\": \"svc-08\", \"name\": \"Extra 8\", \"amount_czk\": 108}, {\"id\": \"svc-09\", \"name\": \"Extra 9\", \"amount_czk\": 109}, {\"id\": \"svc-10\", \"name\": \"Extra 10\", \"amount_czk\": 110}, {\"id\": \"svc-11\", \"name\": \"Extra 11\", \"amount_czk\": 111}, {\"id\": \"svc-12\", \"name\": \"Extra 12\", \"amount_czk\": 112}, {\"id\": \"svc-13\", \"name\": \"Extra 13\", \"amount_czk\": 113}, {\"id\": \"svc-14\", \"name\": \"Extra 14\", \"amount_czk\": 114}, {\"id\": \"svc-15\", \"name\": \"Extra 15\", \"amount_czk\": 115}, {\"id\": \"svc-16\", \"name\": \"Extra 16\", \"amount_czk\": 116}, {\"id\": \"svc-17\", \"name\": \"Extra 17\", \"amount_czk\": 117}, {\"id\": \"svc-18\", \"name\": \"Extra 18\", \"amount_czk\": 118}, {\"id\": \"svc-19\", \"name\": \"Extra 19\", \"amount_czk\": 119}]",
+     "payment_services:5": "{not json"
+    }
+   },
+   "status": 303,
+   "uid": 4
+  },
+  {
+   "form": {
+    "amount_czk": "1000001",
+    "name": "Bike"
+   },
+   "lang": "en",
+   "location": "/payments?err=That%20service%20cannot%20be%20saved.%20Check%20the%20name%20and%20price%20%2820%20services%20at%20most%29.",
+   "method": "POST",
+   "mode": "test",
+   "name": "svc_add_too_much",
+   "path": "/payments/services",
+   "rows": {
+    "audit": [
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2025-01-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 2
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 3
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 5
+     }
+    ],
+    "settings": {
+     "payment_services:2": "[{\"id\": \"svc-a\", \"name\": \"Úklid navíc\", \"amount_czk\": 500}, {\"id\": \"svc-b\", \"name\": \"Late <checkout> & \\\"more\\\"\", \"amount_czk\": 300, \"note\": \"kept\"}, {\"id\": \"\", \"name\": \"no id, dropped\"}, \"not a dict\"]",
+     "payment_services:3": "[{\"id\": \"svc-00\", \"name\": \"Extra 0\", \"amount_czk\": 100}, {\"id\": \"svc-01\", \"name\": \"Extra 1\", \"amount_czk\": 101}, {\"id\": \"svc-02\", \"name\": \"Extra 2\", \"amount_czk\": 102}, {\"id\": \"svc-03\", \"name\": \"Extra 3\", \"amount_czk\": 103}, {\"id\": \"svc-04\", \"name\": \"Extra 4\", \"amount_czk\": 104}, {\"id\": \"svc-05\", \"name\": \"Extra 5\", \"amount_czk\": 105}, {\"id\": \"svc-06\", \"name\": \"Extra 6\", \"amount_czk\": 106}, {\"id\": \"svc-07\", \"name\": \"Extra 7\", \"amount_czk\": 107}, {\"id\": \"svc-08\", \"name\": \"Extra 8\", \"amount_czk\": 108}, {\"id\": \"svc-09\", \"name\": \"Extra 9\", \"amount_czk\": 109}, {\"id\": \"svc-10\", \"name\": \"Extra 10\", \"amount_czk\": 110}, {\"id\": \"svc-11\", \"name\": \"Extra 11\", \"amount_czk\": 111}, {\"id\": \"svc-12\", \"name\": \"Extra 12\", \"amount_czk\": 112}, {\"id\": \"svc-13\", \"name\": \"Extra 13\", \"amount_czk\": 113}, {\"id\": \"svc-14\", \"name\": \"Extra 14\", \"amount_czk\": 114}, {\"id\": \"svc-15\", \"name\": \"Extra 15\", \"amount_czk\": 115}, {\"id\": \"svc-16\", \"name\": \"Extra 16\", \"amount_czk\": 116}, {\"id\": \"svc-17\", \"name\": \"Extra 17\", \"amount_czk\": 117}, {\"id\": \"svc-18\", \"name\": \"Extra 18\", \"amount_czk\": 118}, {\"id\": \"svc-19\", \"name\": \"Extra 19\", \"amount_czk\": 119}]",
+     "payment_services:5": "{not json"
+    }
+   },
+   "status": 303,
+   "uid": 4
+  },
+  {
+   "form": {
+    "amount_czk": "5",
+    "name": "  \t "
+   },
+   "lang": "en",
+   "location": "/payments?err=That%20service%20cannot%20be%20saved.%20Check%20the%20name%20and%20price%20%2820%20services%20at%20most%29.",
+   "method": "POST",
+   "mode": "test",
+   "name": "svc_add_blank_name",
+   "path": "/payments/services",
+   "rows": {
+    "audit": [
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2025-01-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 2
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 3
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 5
+     }
+    ],
+    "settings": {
+     "payment_services:2": "[{\"id\": \"svc-a\", \"name\": \"Úklid navíc\", \"amount_czk\": 500}, {\"id\": \"svc-b\", \"name\": \"Late <checkout> & \\\"more\\\"\", \"amount_czk\": 300, \"note\": \"kept\"}, {\"id\": \"\", \"name\": \"no id, dropped\"}, \"not a dict\"]",
+     "payment_services:3": "[{\"id\": \"svc-00\", \"name\": \"Extra 0\", \"amount_czk\": 100}, {\"id\": \"svc-01\", \"name\": \"Extra 1\", \"amount_czk\": 101}, {\"id\": \"svc-02\", \"name\": \"Extra 2\", \"amount_czk\": 102}, {\"id\": \"svc-03\", \"name\": \"Extra 3\", \"amount_czk\": 103}, {\"id\": \"svc-04\", \"name\": \"Extra 4\", \"amount_czk\": 104}, {\"id\": \"svc-05\", \"name\": \"Extra 5\", \"amount_czk\": 105}, {\"id\": \"svc-06\", \"name\": \"Extra 6\", \"amount_czk\": 106}, {\"id\": \"svc-07\", \"name\": \"Extra 7\", \"amount_czk\": 107}, {\"id\": \"svc-08\", \"name\": \"Extra 8\", \"amount_czk\": 108}, {\"id\": \"svc-09\", \"name\": \"Extra 9\", \"amount_czk\": 109}, {\"id\": \"svc-10\", \"name\": \"Extra 10\", \"amount_czk\": 110}, {\"id\": \"svc-11\", \"name\": \"Extra 11\", \"amount_czk\": 111}, {\"id\": \"svc-12\", \"name\": \"Extra 12\", \"amount_czk\": 112}, {\"id\": \"svc-13\", \"name\": \"Extra 13\", \"amount_czk\": 113}, {\"id\": \"svc-14\", \"name\": \"Extra 14\", \"amount_czk\": 114}, {\"id\": \"svc-15\", \"name\": \"Extra 15\", \"amount_czk\": 115}, {\"id\": \"svc-16\", \"name\": \"Extra 16\", \"amount_czk\": 116}, {\"id\": \"svc-17\", \"name\": \"Extra 17\", \"amount_czk\": 117}, {\"id\": \"svc-18\", \"name\": \"Extra 18\", \"amount_czk\": 118}, {\"id\": \"svc-19\", \"name\": \"Extra 19\", \"amount_czk\": 119}]",
+     "payment_services:5": "{not json"
+    }
+   },
+   "status": 303,
+   "uid": 4
+  },
+  {
+   "form": {
+    "amount_czk": " 150 ",
+    "name": "  Kolo   <na> \t den & \"noc\" xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   },
+   "lang": "cs",
+   "location": "/payments?msg=Slu%C5%BEba%20ulo%C5%BEena.",
+   "method": "POST",
+   "mode": "test",
+   "name": "svc_add_ok",
+   "path": "/payments/services",
+   "rows": {
+    "audit": [
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2025-01-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 2
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 3
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 5
+     }
+    ],
+    "settings": {
+     "payment_services:2": "[{\"id\": \"svc-a\", \"name\": \"Úklid navíc\", \"amount_czk\": 500}, {\"id\": \"svc-b\", \"name\": \"Late <checkout> & \\\"more\\\"\", \"amount_czk\": 300, \"note\": \"kept\"}, {\"id\": \"\", \"name\": \"no id, dropped\"}, \"not a dict\"]",
+     "payment_services:3": "[{\"id\": \"svc-00\", \"name\": \"Extra 0\", \"amount_czk\": 100}, {\"id\": \"svc-01\", \"name\": \"Extra 1\", \"amount_czk\": 101}, {\"id\": \"svc-02\", \"name\": \"Extra 2\", \"amount_czk\": 102}, {\"id\": \"svc-03\", \"name\": \"Extra 3\", \"amount_czk\": 103}, {\"id\": \"svc-04\", \"name\": \"Extra 4\", \"amount_czk\": 104}, {\"id\": \"svc-05\", \"name\": \"Extra 5\", \"amount_czk\": 105}, {\"id\": \"svc-06\", \"name\": \"Extra 6\", \"amount_czk\": 106}, {\"id\": \"svc-07\", \"name\": \"Extra 7\", \"amount_czk\": 107}, {\"id\": \"svc-08\", \"name\": \"Extra 8\", \"amount_czk\": 108}, {\"id\": \"svc-09\", \"name\": \"Extra 9\", \"amount_czk\": 109}, {\"id\": \"svc-10\", \"name\": \"Extra 10\", \"amount_czk\": 110}, {\"id\": \"svc-11\", \"name\": \"Extra 11\", \"amount_czk\": 111}, {\"id\": \"svc-12\", \"name\": \"Extra 12\", \"amount_czk\": 112}, {\"id\": \"svc-13\", \"name\": \"Extra 13\", \"amount_czk\": 113}, {\"id\": \"svc-14\", \"name\": \"Extra 14\", \"amount_czk\": 114}, {\"id\": \"svc-15\", \"name\": \"Extra 15\", \"amount_czk\": 115}, {\"id\": \"svc-16\", \"name\": \"Extra 16\", \"amount_czk\": 116}, {\"id\": \"svc-17\", \"name\": \"Extra 17\", \"amount_czk\": 117}, {\"id\": \"svc-18\", \"name\": \"Extra 18\", \"amount_czk\": 118}, {\"id\": \"svc-19\", \"name\": \"Extra 19\", \"amount_czk\": 119}]",
+     "payment_services:4": "[{\"id\": \"<new>\", \"name\": \"Kolo <na> den & \\\"noc\\\" xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\", \"amount_czk\": 150}]",
+     "payment_services:5": "{not json"
+    }
+   },
+   "status": 303,
+   "uid": 4
+  },
+  {
+   "form": {
+    "amount_czk": "1000000",
+    "name": "Parkování"
+   },
+   "lang": "en",
+   "location": "/payments?msg=Service%20saved.",
+   "method": "POST",
+   "mode": "off",
+   "name": "svc_add_second",
+   "path": "/payments/services",
+   "rows": {
+    "audit": [
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2025-01-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 2
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 3
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 5
+     }
+    ],
+    "settings": {
+     "payment_services:2": "[{\"id\": \"svc-a\", \"name\": \"Úklid navíc\", \"amount_czk\": 500}, {\"id\": \"svc-b\", \"name\": \"Late <checkout> & \\\"more\\\"\", \"amount_czk\": 300, \"note\": \"kept\"}, {\"id\": \"\", \"name\": \"no id, dropped\"}, \"not a dict\"]",
+     "payment_services:3": "[{\"id\": \"svc-00\", \"name\": \"Extra 0\", \"amount_czk\": 100}, {\"id\": \"svc-01\", \"name\": \"Extra 1\", \"amount_czk\": 101}, {\"id\": \"svc-02\", \"name\": \"Extra 2\", \"amount_czk\": 102}, {\"id\": \"svc-03\", \"name\": \"Extra 3\", \"amount_czk\": 103}, {\"id\": \"svc-04\", \"name\": \"Extra 4\", \"amount_czk\": 104}, {\"id\": \"svc-05\", \"name\": \"Extra 5\", \"amount_czk\": 105}, {\"id\": \"svc-06\", \"name\": \"Extra 6\", \"amount_czk\": 106}, {\"id\": \"svc-07\", \"name\": \"Extra 7\", \"amount_czk\": 107}, {\"id\": \"svc-08\", \"name\": \"Extra 8\", \"amount_czk\": 108}, {\"id\": \"svc-09\", \"name\": \"Extra 9\", \"amount_czk\": 109}, {\"id\": \"svc-10\", \"name\": \"Extra 10\", \"amount_czk\": 110}, {\"id\": \"svc-11\", \"name\": \"Extra 11\", \"amount_czk\": 111}, {\"id\": \"svc-12\", \"name\": \"Extra 12\", \"amount_czk\": 112}, {\"id\": \"svc-13\", \"name\": \"Extra 13\", \"amount_czk\": 113}, {\"id\": \"svc-14\", \"name\": \"Extra 14\", \"amount_czk\": 114}, {\"id\": \"svc-15\", \"name\": \"Extra 15\", \"amount_czk\": 115}, {\"id\": \"svc-16\", \"name\": \"Extra 16\", \"amount_czk\": 116}, {\"id\": \"svc-17\", \"name\": \"Extra 17\", \"amount_czk\": 117}, {\"id\": \"svc-18\", \"name\": \"Extra 18\", \"amount_czk\": 118}, {\"id\": \"svc-19\", \"name\": \"Extra 19\", \"amount_czk\": 119}]",
+     "payment_services:4": "[{\"id\": \"<new>\", \"name\": \"Kolo <na> den & \\\"noc\\\" xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\", \"amount_czk\": 150}, {\"id\": \"<new>\", \"name\": \"Parkování\", \"amount_czk\": 1000000}]",
+     "payment_services:5": "{not json"
+    }
+   },
+   "status": 303,
+   "uid": 4
+  },
+  {
+   "form": {
+    "amount_czk": "10",
+    "name": "One more"
+   },
+   "lang": "en",
+   "location": "/payments?err=That%20service%20cannot%20be%20saved.%20Check%20the%20name%20and%20price%20%2820%20services%20at%20most%29.",
+   "method": "POST",
+   "mode": "test",
+   "name": "svc_add_full",
+   "path": "/payments/services",
+   "rows": {
+    "audit": [
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2025-01-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 2
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 3
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 5
+     }
+    ],
+    "settings": {
+     "payment_services:2": "[{\"id\": \"svc-a\", \"name\": \"Úklid navíc\", \"amount_czk\": 500}, {\"id\": \"svc-b\", \"name\": \"Late <checkout> & \\\"more\\\"\", \"amount_czk\": 300, \"note\": \"kept\"}, {\"id\": \"\", \"name\": \"no id, dropped\"}, \"not a dict\"]",
+     "payment_services:3": "[{\"id\": \"svc-00\", \"name\": \"Extra 0\", \"amount_czk\": 100}, {\"id\": \"svc-01\", \"name\": \"Extra 1\", \"amount_czk\": 101}, {\"id\": \"svc-02\", \"name\": \"Extra 2\", \"amount_czk\": 102}, {\"id\": \"svc-03\", \"name\": \"Extra 3\", \"amount_czk\": 103}, {\"id\": \"svc-04\", \"name\": \"Extra 4\", \"amount_czk\": 104}, {\"id\": \"svc-05\", \"name\": \"Extra 5\", \"amount_czk\": 105}, {\"id\": \"svc-06\", \"name\": \"Extra 6\", \"amount_czk\": 106}, {\"id\": \"svc-07\", \"name\": \"Extra 7\", \"amount_czk\": 107}, {\"id\": \"svc-08\", \"name\": \"Extra 8\", \"amount_czk\": 108}, {\"id\": \"svc-09\", \"name\": \"Extra 9\", \"amount_czk\": 109}, {\"id\": \"svc-10\", \"name\": \"Extra 10\", \"amount_czk\": 110}, {\"id\": \"svc-11\", \"name\": \"Extra 11\", \"amount_czk\": 111}, {\"id\": \"svc-12\", \"name\": \"Extra 12\", \"amount_czk\": 112}, {\"id\": \"svc-13\", \"name\": \"Extra 13\", \"amount_czk\": 113}, {\"id\": \"svc-14\", \"name\": \"Extra 14\", \"amount_czk\": 114}, {\"id\": \"svc-15\", \"name\": \"Extra 15\", \"amount_czk\": 115}, {\"id\": \"svc-16\", \"name\": \"Extra 16\", \"amount_czk\": 116}, {\"id\": \"svc-17\", \"name\": \"Extra 17\", \"amount_czk\": 117}, {\"id\": \"svc-18\", \"name\": \"Extra 18\", \"amount_czk\": 118}, {\"id\": \"svc-19\", \"name\": \"Extra 19\", \"amount_czk\": 119}]",
+     "payment_services:4": "[{\"id\": \"<new>\", \"name\": \"Kolo <na> den & \\\"noc\\\" xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\", \"amount_czk\": 150}, {\"id\": \"<new>\", \"name\": \"Parkování\", \"amount_czk\": 1000000}]",
+     "payment_services:5": "{not json"
+    }
+   },
+   "status": 303,
+   "uid": 3
+  },
+  {
+   "form": {
+    "amount_czk": "250",
+    "name": "Snídaně"
+   },
+   "lang": "en",
+   "location": "/payments?msg=Service%20saved.",
+   "method": "POST",
+   "mode": "test",
+   "name": "svc_add_keeps_extra_keys",
+   "path": "/payments/services",
+   "rows": {
+    "audit": [
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2025-01-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 2
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 3
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 5
+     }
+    ],
+    "settings": {
+     "payment_services:2": "[{\"id\": \"svc-a\", \"name\": \"Úklid navíc\", \"amount_czk\": 500}, {\"id\": \"svc-b\", \"name\": \"Late <checkout> & \\\"more\\\"\", \"amount_czk\": 300, \"note\": \"kept\"}, {\"id\": \"<new>\", \"name\": \"Snídaně\", \"amount_czk\": 250}]",
+     "payment_services:3": "[{\"id\": \"svc-00\", \"name\": \"Extra 0\", \"amount_czk\": 100}, {\"id\": \"svc-01\", \"name\": \"Extra 1\", \"amount_czk\": 101}, {\"id\": \"svc-02\", \"name\": \"Extra 2\", \"amount_czk\": 102}, {\"id\": \"svc-03\", \"name\": \"Extra 3\", \"amount_czk\": 103}, {\"id\": \"svc-04\", \"name\": \"Extra 4\", \"amount_czk\": 104}, {\"id\": \"svc-05\", \"name\": \"Extra 5\", \"amount_czk\": 105}, {\"id\": \"svc-06\", \"name\": \"Extra 6\", \"amount_czk\": 106}, {\"id\": \"svc-07\", \"name\": \"Extra 7\", \"amount_czk\": 107}, {\"id\": \"svc-08\", \"name\": \"Extra 8\", \"amount_czk\": 108}, {\"id\": \"svc-09\", \"name\": \"Extra 9\", \"amount_czk\": 109}, {\"id\": \"svc-10\", \"name\": \"Extra 10\", \"amount_czk\": 110}, {\"id\": \"svc-11\", \"name\": \"Extra 11\", \"amount_czk\": 111}, {\"id\": \"svc-12\", \"name\": \"Extra 12\", \"amount_czk\": 112}, {\"id\": \"svc-13\", \"name\": \"Extra 13\", \"amount_czk\": 113}, {\"id\": \"svc-14\", \"name\": \"Extra 14\", \"amount_czk\": 114}, {\"id\": \"svc-15\", \"name\": \"Extra 15\", \"amount_czk\": 115}, {\"id\": \"svc-16\", \"name\": \"Extra 16\", \"amount_czk\": 116}, {\"id\": \"svc-17\", \"name\": \"Extra 17\", \"amount_czk\": 117}, {\"id\": \"svc-18\", \"name\": \"Extra 18\", \"amount_czk\": 118}, {\"id\": \"svc-19\", \"name\": \"Extra 19\", \"amount_czk\": 119}]",
+     "payment_services:4": "[{\"id\": \"<new>\", \"name\": \"Kolo <na> den & \\\"noc\\\" xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\", \"amount_czk\": 150}, {\"id\": \"<new>\", \"name\": \"Parkování\", \"amount_czk\": 1000000}]",
+     "payment_services:5": "{not json"
+    }
+   },
+   "status": 303,
+   "uid": 2
+  },
+  {
+   "form": {
+    "amount_czk": "1",
+    "name": "Fresh"
+   },
+   "lang": "en",
+   "location": "/payments?msg=Service%20saved.",
+   "method": "POST",
+   "mode": "test",
+   "name": "svc_add_bad_json",
+   "path": "/payments/services",
+   "rows": {
+    "audit": [
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2025-01-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 2
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 3
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 5
+     }
+    ],
+    "settings": {
+     "payment_services:2": "[{\"id\": \"svc-a\", \"name\": \"Úklid navíc\", \"amount_czk\": 500}, {\"id\": \"svc-b\", \"name\": \"Late <checkout> & \\\"more\\\"\", \"amount_czk\": 300, \"note\": \"kept\"}, {\"id\": \"<new>\", \"name\": \"Snídaně\", \"amount_czk\": 250}]",
+     "payment_services:3": "[{\"id\": \"svc-00\", \"name\": \"Extra 0\", \"amount_czk\": 100}, {\"id\": \"svc-01\", \"name\": \"Extra 1\", \"amount_czk\": 101}, {\"id\": \"svc-02\", \"name\": \"Extra 2\", \"amount_czk\": 102}, {\"id\": \"svc-03\", \"name\": \"Extra 3\", \"amount_czk\": 103}, {\"id\": \"svc-04\", \"name\": \"Extra 4\", \"amount_czk\": 104}, {\"id\": \"svc-05\", \"name\": \"Extra 5\", \"amount_czk\": 105}, {\"id\": \"svc-06\", \"name\": \"Extra 6\", \"amount_czk\": 106}, {\"id\": \"svc-07\", \"name\": \"Extra 7\", \"amount_czk\": 107}, {\"id\": \"svc-08\", \"name\": \"Extra 8\", \"amount_czk\": 108}, {\"id\": \"svc-09\", \"name\": \"Extra 9\", \"amount_czk\": 109}, {\"id\": \"svc-10\", \"name\": \"Extra 10\", \"amount_czk\": 110}, {\"id\": \"svc-11\", \"name\": \"Extra 11\", \"amount_czk\": 111}, {\"id\": \"svc-12\", \"name\": \"Extra 12\", \"amount_czk\": 112}, {\"id\": \"svc-13\", \"name\": \"Extra 13\", \"amount_czk\": 113}, {\"id\": \"svc-14\", \"name\": \"Extra 14\", \"amount_czk\": 114}, {\"id\": \"svc-15\", \"name\": \"Extra 15\", \"amount_czk\": 115}, {\"id\": \"svc-16\", \"name\": \"Extra 16\", \"amount_czk\": 116}, {\"id\": \"svc-17\", \"name\": \"Extra 17\", \"amount_czk\": 117}, {\"id\": \"svc-18\", \"name\": \"Extra 18\", \"amount_czk\": 118}, {\"id\": \"svc-19\", \"name\": \"Extra 19\", \"amount_czk\": 119}]",
+     "payment_services:4": "[{\"id\": \"<new>\", \"name\": \"Kolo <na> den & \\\"noc\\\" xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\", \"amount_czk\": 150}, {\"id\": \"<new>\", \"name\": \"Parkování\", \"amount_czk\": 1000000}]",
+     "payment_services:5": "[{\"id\": \"<new>\", \"name\": \"Fresh\", \"amount_czk\": 1}]"
+    }
+   },
+   "status": 303,
+   "uid": 5
+  },
+  {
+   "form": {},
+   "lang": "cs",
+   "location": "/payments?msg=Slu%C5%BEba%20odebr%C3%A1na.",
+   "method": "POST",
+   "mode": "test",
+   "name": "svc_delete_unknown",
+   "path": "/payments/services/nope/delete",
+   "rows": {
+    "audit": [
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2025-01-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 2
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 3
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 5
+     }
+    ],
+    "settings": {
+     "payment_services:2": "[{\"id\": \"svc-a\", \"name\": \"Úklid navíc\", \"amount_czk\": 500}, {\"id\": \"svc-b\", \"name\": \"Late <checkout> & \\\"more\\\"\", \"amount_czk\": 300, \"note\": \"kept\"}, {\"id\": \"<new>\", \"name\": \"Snídaně\", \"amount_czk\": 250}]",
+     "payment_services:3": "[{\"id\": \"svc-00\", \"name\": \"Extra 0\", \"amount_czk\": 100}, {\"id\": \"svc-01\", \"name\": \"Extra 1\", \"amount_czk\": 101}, {\"id\": \"svc-02\", \"name\": \"Extra 2\", \"amount_czk\": 102}, {\"id\": \"svc-03\", \"name\": \"Extra 3\", \"amount_czk\": 103}, {\"id\": \"svc-04\", \"name\": \"Extra 4\", \"amount_czk\": 104}, {\"id\": \"svc-05\", \"name\": \"Extra 5\", \"amount_czk\": 105}, {\"id\": \"svc-06\", \"name\": \"Extra 6\", \"amount_czk\": 106}, {\"id\": \"svc-07\", \"name\": \"Extra 7\", \"amount_czk\": 107}, {\"id\": \"svc-08\", \"name\": \"Extra 8\", \"amount_czk\": 108}, {\"id\": \"svc-09\", \"name\": \"Extra 9\", \"amount_czk\": 109}, {\"id\": \"svc-10\", \"name\": \"Extra 10\", \"amount_czk\": 110}, {\"id\": \"svc-11\", \"name\": \"Extra 11\", \"amount_czk\": 111}, {\"id\": \"svc-12\", \"name\": \"Extra 12\", \"amount_czk\": 112}, {\"id\": \"svc-13\", \"name\": \"Extra 13\", \"amount_czk\": 113}, {\"id\": \"svc-14\", \"name\": \"Extra 14\", \"amount_czk\": 114}, {\"id\": \"svc-15\", \"name\": \"Extra 15\", \"amount_czk\": 115}, {\"id\": \"svc-16\", \"name\": \"Extra 16\", \"amount_czk\": 116}, {\"id\": \"svc-17\", \"name\": \"Extra 17\", \"amount_czk\": 117}, {\"id\": \"svc-18\", \"name\": \"Extra 18\", \"amount_czk\": 118}, {\"id\": \"svc-19\", \"name\": \"Extra 19\", \"amount_czk\": 119}]",
+     "payment_services:4": "[{\"id\": \"<new>\", \"name\": \"Kolo <na> den & \\\"noc\\\" xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\", \"amount_czk\": 150}, {\"id\": \"<new>\", \"name\": \"Parkování\", \"amount_czk\": 1000000}]",
+     "payment_services:5": "[{\"id\": \"<new>\", \"name\": \"Fresh\", \"amount_czk\": 1}]"
+    }
+   },
+   "status": 303,
+   "uid": 2
+  },
+  {
+   "form": {},
+   "lang": "en",
+   "location": "/payments?msg=Service%20removed.",
+   "method": "POST",
+   "mode": "test",
+   "name": "svc_delete_ok",
+   "path": "/payments/services/svc-b/delete",
+   "rows": {
+    "audit": [
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2025-01-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 2
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 3
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 5
+     }
+    ],
+    "settings": {
+     "payment_services:2": "[{\"id\": \"svc-a\", \"name\": \"Úklid navíc\", \"amount_czk\": 500}, {\"id\": \"<new>\", \"name\": \"Snídaně\", \"amount_czk\": 250}]",
+     "payment_services:3": "[{\"id\": \"svc-00\", \"name\": \"Extra 0\", \"amount_czk\": 100}, {\"id\": \"svc-01\", \"name\": \"Extra 1\", \"amount_czk\": 101}, {\"id\": \"svc-02\", \"name\": \"Extra 2\", \"amount_czk\": 102}, {\"id\": \"svc-03\", \"name\": \"Extra 3\", \"amount_czk\": 103}, {\"id\": \"svc-04\", \"name\": \"Extra 4\", \"amount_czk\": 104}, {\"id\": \"svc-05\", \"name\": \"Extra 5\", \"amount_czk\": 105}, {\"id\": \"svc-06\", \"name\": \"Extra 6\", \"amount_czk\": 106}, {\"id\": \"svc-07\", \"name\": \"Extra 7\", \"amount_czk\": 107}, {\"id\": \"svc-08\", \"name\": \"Extra 8\", \"amount_czk\": 108}, {\"id\": \"svc-09\", \"name\": \"Extra 9\", \"amount_czk\": 109}, {\"id\": \"svc-10\", \"name\": \"Extra 10\", \"amount_czk\": 110}, {\"id\": \"svc-11\", \"name\": \"Extra 11\", \"amount_czk\": 111}, {\"id\": \"svc-12\", \"name\": \"Extra 12\", \"amount_czk\": 112}, {\"id\": \"svc-13\", \"name\": \"Extra 13\", \"amount_czk\": 113}, {\"id\": \"svc-14\", \"name\": \"Extra 14\", \"amount_czk\": 114}, {\"id\": \"svc-15\", \"name\": \"Extra 15\", \"amount_czk\": 115}, {\"id\": \"svc-16\", \"name\": \"Extra 16\", \"amount_czk\": 116}, {\"id\": \"svc-17\", \"name\": \"Extra 17\", \"amount_czk\": 117}, {\"id\": \"svc-18\", \"name\": \"Extra 18\", \"amount_czk\": 118}, {\"id\": \"svc-19\", \"name\": \"Extra 19\", \"amount_czk\": 119}]",
+     "payment_services:4": "[{\"id\": \"<new>\", \"name\": \"Kolo <na> den & \\\"noc\\\" xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\", \"amount_czk\": 150}, {\"id\": \"<new>\", \"name\": \"Parkování\", \"amount_czk\": 1000000}]",
+     "payment_services:5": "[{\"id\": \"<new>\", \"name\": \"Fresh\", \"amount_czk\": 1}]"
+    }
+   },
+   "status": 303,
+   "uid": 2
+  },
+  {
+   "form": {},
+   "lang": "en",
+   "location": "/payments?msg=Service%20removed.",
+   "method": "POST",
+   "mode": "test",
+   "name": "svc_delete_other_owner",
+   "path": "/payments/services/svc-a/delete",
+   "rows": {
+    "audit": [
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2025-01-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 2
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 3
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 5
+     }
+    ],
+    "settings": {
+     "payment_services:2": "[{\"id\": \"svc-a\", \"name\": \"Úklid navíc\", \"amount_czk\": 500}, {\"id\": \"<new>\", \"name\": \"Snídaně\", \"amount_czk\": 250}]",
+     "payment_services:3": "[{\"id\": \"svc-00\", \"name\": \"Extra 0\", \"amount_czk\": 100}, {\"id\": \"svc-01\", \"name\": \"Extra 1\", \"amount_czk\": 101}, {\"id\": \"svc-02\", \"name\": \"Extra 2\", \"amount_czk\": 102}, {\"id\": \"svc-03\", \"name\": \"Extra 3\", \"amount_czk\": 103}, {\"id\": \"svc-04\", \"name\": \"Extra 4\", \"amount_czk\": 104}, {\"id\": \"svc-05\", \"name\": \"Extra 5\", \"amount_czk\": 105}, {\"id\": \"svc-06\", \"name\": \"Extra 6\", \"amount_czk\": 106}, {\"id\": \"svc-07\", \"name\": \"Extra 7\", \"amount_czk\": 107}, {\"id\": \"svc-08\", \"name\": \"Extra 8\", \"amount_czk\": 108}, {\"id\": \"svc-09\", \"name\": \"Extra 9\", \"amount_czk\": 109}, {\"id\": \"svc-10\", \"name\": \"Extra 10\", \"amount_czk\": 110}, {\"id\": \"svc-11\", \"name\": \"Extra 11\", \"amount_czk\": 111}, {\"id\": \"svc-12\", \"name\": \"Extra 12\", \"amount_czk\": 112}, {\"id\": \"svc-13\", \"name\": \"Extra 13\", \"amount_czk\": 113}, {\"id\": \"svc-14\", \"name\": \"Extra 14\", \"amount_czk\": 114}, {\"id\": \"svc-15\", \"name\": \"Extra 15\", \"amount_czk\": 115}, {\"id\": \"svc-16\", \"name\": \"Extra 16\", \"amount_czk\": 116}, {\"id\": \"svc-17\", \"name\": \"Extra 17\", \"amount_czk\": 117}, {\"id\": \"svc-18\", \"name\": \"Extra 18\", \"amount_czk\": 118}, {\"id\": \"svc-19\", \"name\": \"Extra 19\", \"amount_czk\": 119}]",
+     "payment_services:4": "[{\"id\": \"<new>\", \"name\": \"Kolo <na> den & \\\"noc\\\" xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\", \"amount_czk\": 150}, {\"id\": \"<new>\", \"name\": \"Parkování\", \"amount_czk\": 1000000}]",
+     "payment_services:5": "[{\"id\": \"<new>\", \"name\": \"Fresh\", \"amount_czk\": 1}]"
+    }
+   },
+   "status": 303,
+   "uid": 3
+  },
+  {
+   "body": "",
+   "form": {
+    "agree": "1"
+   },
+   "lang": "en",
+   "location": "",
+   "method": "POST",
+   "mode": "off",
+   "name": "consent_post_off",
+   "path": "/payments/consent",
+   "rows": {
+    "audit": [
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2025-01-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 2
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 3
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 5
+     }
+    ],
+    "settings": {
+     "payment_services:2": "[{\"id\": \"svc-a\", \"name\": \"Úklid navíc\", \"amount_czk\": 500}, {\"id\": \"<new>\", \"name\": \"Snídaně\", \"amount_czk\": 250}]",
+     "payment_services:3": "[{\"id\": \"svc-00\", \"name\": \"Extra 0\", \"amount_czk\": 100}, {\"id\": \"svc-01\", \"name\": \"Extra 1\", \"amount_czk\": 101}, {\"id\": \"svc-02\", \"name\": \"Extra 2\", \"amount_czk\": 102}, {\"id\": \"svc-03\", \"name\": \"Extra 3\", \"amount_czk\": 103}, {\"id\": \"svc-04\", \"name\": \"Extra 4\", \"amount_czk\": 104}, {\"id\": \"svc-05\", \"name\": \"Extra 5\", \"amount_czk\": 105}, {\"id\": \"svc-06\", \"name\": \"Extra 6\", \"amount_czk\": 106}, {\"id\": \"svc-07\", \"name\": \"Extra 7\", \"amount_czk\": 107}, {\"id\": \"svc-08\", \"name\": \"Extra 8\", \"amount_czk\": 108}, {\"id\": \"svc-09\", \"name\": \"Extra 9\", \"amount_czk\": 109}, {\"id\": \"svc-10\", \"name\": \"Extra 10\", \"amount_czk\": 110}, {\"id\": \"svc-11\", \"name\": \"Extra 11\", \"amount_czk\": 111}, {\"id\": \"svc-12\", \"name\": \"Extra 12\", \"amount_czk\": 112}, {\"id\": \"svc-13\", \"name\": \"Extra 13\", \"amount_czk\": 113}, {\"id\": \"svc-14\", \"name\": \"Extra 14\", \"amount_czk\": 114}, {\"id\": \"svc-15\", \"name\": \"Extra 15\", \"amount_czk\": 115}, {\"id\": \"svc-16\", \"name\": \"Extra 16\", \"amount_czk\": 116}, {\"id\": \"svc-17\", \"name\": \"Extra 17\", \"amount_czk\": 117}, {\"id\": \"svc-18\", \"name\": \"Extra 18\", \"amount_czk\": 118}, {\"id\": \"svc-19\", \"name\": \"Extra 19\", \"amount_czk\": 119}]",
+     "payment_services:4": "[{\"id\": \"<new>\", \"name\": \"Kolo <na> den & \\\"noc\\\" xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\", \"amount_czk\": 150}, {\"id\": \"<new>\", \"name\": \"Parkování\", \"amount_czk\": 1000000}]",
+     "payment_services:5": "[{\"id\": \"<new>\", \"name\": \"Fresh\", \"amount_czk\": 1}]"
+    }
+   },
+   "status": 404,
+   "uid": 1
+  },
+  {
+   "form": {
+    "agree": "yes"
+   },
+   "lang": "cs",
+   "location": "/payments/consent?err=Pro%20pokra%C4%8Dov%C3%A1n%C3%AD%20za%C5%A1krtn%C4%9Bte%20souhlas.",
+   "method": "POST",
+   "mode": "test",
+   "name": "consent_post_no_tick",
+   "path": "/payments/consent",
+   "rows": {
+    "audit": [
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2025-01-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 2
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 3
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 5
+     }
+    ],
+    "settings": {
+     "payment_services:2": "[{\"id\": \"svc-a\", \"name\": \"Úklid navíc\", \"amount_czk\": 500}, {\"id\": \"<new>\", \"name\": \"Snídaně\", \"amount_czk\": 250}]",
+     "payment_services:3": "[{\"id\": \"svc-00\", \"name\": \"Extra 0\", \"amount_czk\": 100}, {\"id\": \"svc-01\", \"name\": \"Extra 1\", \"amount_czk\": 101}, {\"id\": \"svc-02\", \"name\": \"Extra 2\", \"amount_czk\": 102}, {\"id\": \"svc-03\", \"name\": \"Extra 3\", \"amount_czk\": 103}, {\"id\": \"svc-04\", \"name\": \"Extra 4\", \"amount_czk\": 104}, {\"id\": \"svc-05\", \"name\": \"Extra 5\", \"amount_czk\": 105}, {\"id\": \"svc-06\", \"name\": \"Extra 6\", \"amount_czk\": 106}, {\"id\": \"svc-07\", \"name\": \"Extra 7\", \"amount_czk\": 107}, {\"id\": \"svc-08\", \"name\": \"Extra 8\", \"amount_czk\": 108}, {\"id\": \"svc-09\", \"name\": \"Extra 9\", \"amount_czk\": 109}, {\"id\": \"svc-10\", \"name\": \"Extra 10\", \"amount_czk\": 110}, {\"id\": \"svc-11\", \"name\": \"Extra 11\", \"amount_czk\": 111}, {\"id\": \"svc-12\", \"name\": \"Extra 12\", \"amount_czk\": 112}, {\"id\": \"svc-13\", \"name\": \"Extra 13\", \"amount_czk\": 113}, {\"id\": \"svc-14\", \"name\": \"Extra 14\", \"amount_czk\": 114}, {\"id\": \"svc-15\", \"name\": \"Extra 15\", \"amount_czk\": 115}, {\"id\": \"svc-16\", \"name\": \"Extra 16\", \"amount_czk\": 116}, {\"id\": \"svc-17\", \"name\": \"Extra 17\", \"amount_czk\": 117}, {\"id\": \"svc-18\", \"name\": \"Extra 18\", \"amount_czk\": 118}, {\"id\": \"svc-19\", \"name\": \"Extra 19\", \"amount_czk\": 119}]",
+     "payment_services:4": "[{\"id\": \"<new>\", \"name\": \"Kolo <na> den & \\\"noc\\\" xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\", \"amount_czk\": 150}, {\"id\": \"<new>\", \"name\": \"Parkování\", \"amount_czk\": 1000000}]",
+     "payment_services:5": "[{\"id\": \"<new>\", \"name\": \"Fresh\", \"amount_czk\": 1}]"
+    }
+   },
+   "status": 303,
+   "uid": 1
+  },
+  {
+   "form": {
+    "agree": "1"
+   },
+   "lang": "en",
+   "location": "/payments?msg=Saved.%20Now%20tap%20Open%20Stripe%20to%20set%20up%20your%20account.",
+   "method": "POST",
+   "mode": "test",
+   "name": "consent_post_ok",
+   "path": "/payments/consent",
+   "rows": {
+    "audit": [
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2025-01-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "pay-new",
+      "actor_user_id": 1,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 2
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 3
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 5
+     }
+    ],
+    "settings": {
+     "payment_services:2": "[{\"id\": \"svc-a\", \"name\": \"Úklid navíc\", \"amount_czk\": 500}, {\"id\": \"<new>\", \"name\": \"Snídaně\", \"amount_czk\": 250}]",
+     "payment_services:3": "[{\"id\": \"svc-00\", \"name\": \"Extra 0\", \"amount_czk\": 100}, {\"id\": \"svc-01\", \"name\": \"Extra 1\", \"amount_czk\": 101}, {\"id\": \"svc-02\", \"name\": \"Extra 2\", \"amount_czk\": 102}, {\"id\": \"svc-03\", \"name\": \"Extra 3\", \"amount_czk\": 103}, {\"id\": \"svc-04\", \"name\": \"Extra 4\", \"amount_czk\": 104}, {\"id\": \"svc-05\", \"name\": \"Extra 5\", \"amount_czk\": 105}, {\"id\": \"svc-06\", \"name\": \"Extra 6\", \"amount_czk\": 106}, {\"id\": \"svc-07\", \"name\": \"Extra 7\", \"amount_czk\": 107}, {\"id\": \"svc-08\", \"name\": \"Extra 8\", \"amount_czk\": 108}, {\"id\": \"svc-09\", \"name\": \"Extra 9\", \"amount_czk\": 109}, {\"id\": \"svc-10\", \"name\": \"Extra 10\", \"amount_czk\": 110}, {\"id\": \"svc-11\", \"name\": \"Extra 11\", \"amount_czk\": 111}, {\"id\": \"svc-12\", \"name\": \"Extra 12\", \"amount_czk\": 112}, {\"id\": \"svc-13\", \"name\": \"Extra 13\", \"amount_czk\": 113}, {\"id\": \"svc-14\", \"name\": \"Extra 14\", \"amount_czk\": 114}, {\"id\": \"svc-15\", \"name\": \"Extra 15\", \"amount_czk\": 115}, {\"id\": \"svc-16\", \"name\": \"Extra 16\", \"amount_czk\": 116}, {\"id\": \"svc-17\", \"name\": \"Extra 17\", \"amount_czk\": 117}, {\"id\": \"svc-18\", \"name\": \"Extra 18\", \"amount_czk\": 118}, {\"id\": \"svc-19\", \"name\": \"Extra 19\", \"amount_czk\": 119}]",
+     "payment_services:4": "[{\"id\": \"<new>\", \"name\": \"Kolo <na> den & \\\"noc\\\" xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\", \"amount_czk\": 150}, {\"id\": \"<new>\", \"name\": \"Parkování\", \"amount_czk\": 1000000}]",
+     "payment_services:5": "[{\"id\": \"<new>\", \"name\": \"Fresh\", \"amount_czk\": 1}]"
+    }
+   },
+   "status": 303,
+   "uid": 1
+  },
+  {
+   "form": {
+    "agree": "1"
+   },
+   "lang": "en",
+   "location": "/payments?msg=Saved.%20Now%20tap%20Open%20Stripe%20to%20set%20up%20your%20account.",
+   "method": "POST",
+   "mode": "test",
+   "name": "consent_post_again",
+   "path": "/payments/consent",
+   "rows": {
+    "audit": [
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2025-01-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "pay-new",
+      "actor_user_id": 1,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 2
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 3
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 5
+     }
+    ],
+    "settings": {
+     "payment_services:2": "[{\"id\": \"svc-a\", \"name\": \"Úklid navíc\", \"amount_czk\": 500}, {\"id\": \"<new>\", \"name\": \"Snídaně\", \"amount_czk\": 250}]",
+     "payment_services:3": "[{\"id\": \"svc-00\", \"name\": \"Extra 0\", \"amount_czk\": 100}, {\"id\": \"svc-01\", \"name\": \"Extra 1\", \"amount_czk\": 101}, {\"id\": \"svc-02\", \"name\": \"Extra 2\", \"amount_czk\": 102}, {\"id\": \"svc-03\", \"name\": \"Extra 3\", \"amount_czk\": 103}, {\"id\": \"svc-04\", \"name\": \"Extra 4\", \"amount_czk\": 104}, {\"id\": \"svc-05\", \"name\": \"Extra 5\", \"amount_czk\": 105}, {\"id\": \"svc-06\", \"name\": \"Extra 6\", \"amount_czk\": 106}, {\"id\": \"svc-07\", \"name\": \"Extra 7\", \"amount_czk\": 107}, {\"id\": \"svc-08\", \"name\": \"Extra 8\", \"amount_czk\": 108}, {\"id\": \"svc-09\", \"name\": \"Extra 9\", \"amount_czk\": 109}, {\"id\": \"svc-10\", \"name\": \"Extra 10\", \"amount_czk\": 110}, {\"id\": \"svc-11\", \"name\": \"Extra 11\", \"amount_czk\": 111}, {\"id\": \"svc-12\", \"name\": \"Extra 12\", \"amount_czk\": 112}, {\"id\": \"svc-13\", \"name\": \"Extra 13\", \"amount_czk\": 113}, {\"id\": \"svc-14\", \"name\": \"Extra 14\", \"amount_czk\": 114}, {\"id\": \"svc-15\", \"name\": \"Extra 15\", \"amount_czk\": 115}, {\"id\": \"svc-16\", \"name\": \"Extra 16\", \"amount_czk\": 116}, {\"id\": \"svc-17\", \"name\": \"Extra 17\", \"amount_czk\": 117}, {\"id\": \"svc-18\", \"name\": \"Extra 18\", \"amount_czk\": 118}, {\"id\": \"svc-19\", \"name\": \"Extra 19\", \"amount_czk\": 119}]",
+     "payment_services:4": "[{\"id\": \"<new>\", \"name\": \"Kolo <na> den & \\\"noc\\\" xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\", \"amount_czk\": 150}, {\"id\": \"<new>\", \"name\": \"Parkování\", \"amount_czk\": 1000000}]",
+     "payment_services:5": "[{\"id\": \"<new>\", \"name\": \"Fresh\", \"amount_czk\": 1}]"
+    }
+   },
+   "status": 303,
+   "uid": 1
+  },
+  {
+   "form": null,
+   "lang": "en",
+   "location": "",
+   "method": "GET",
+   "mode": "test",
+   "name": "consent_after_overview_en",
+   "page": {
+    "fields": [
+     "details",
+     "button type=button",
+     "button type=button",
+     "button type=button",
+     "details open",
+     "form method=post action=/payments/services",
+     "label for=pay-svc-name",
+     "input name=name type=text id=pay-svc-name required",
+     "label for=pay-svc-amount",
+     "input name=amount_czk type=number id=pay-svc-amount required",
+     "button type=submit",
+     "button type=button"
+    ],
+    "links": [
+     "/payments/new",
+     "/payments/new",
+     "/entities"
+    ],
+    "text": "Payments Connect Stripe once, then every request you send goes to the guest with a working payment link. Pick a stay, an amount and a reason; UbyHost writes the request, you press Send. The dashboard shows what was paid; Stripe sends the money to your bank account. Request payment Card payments Connect your Stripe account to take card payments. Read how payments work Done 2 Check the details we send to Stripe Add your business details first. Stripe needs your name. 3 Verify yourself with Stripe ? About 5 minutes. Have your ID card or passport, your bank account number and your phone ready. To do 4 Take card payments ? Once Stripe approves you, the payment requests below can be paid by card. To do Add your details Your services ? Save what you charge often, for example extra cleaning 800 CZK or late checkout 500 CZK. Then one tap fills in the request. Add a service Save what you charge often Service name Amount (CZK) Save service Requests ? Stripe pays the money to the host's bank account, usually a few days after the guest pays. No payment requests yet"
+   },
+   "path": "/payments",
+   "rows": {
+    "audit": [
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2025-01-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "pay-new",
+      "actor_user_id": 1,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 2
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 3
+     },
+     {
+      "action": "payments_terms_accepted",
+      "actor": "seed",
+      "actor_user_id": null,
+      "detail": "version=2026-11-01",
+      "impersonator_user_id": null,
+      "owner_user_id": 5
+     }
+    ],
+    "settings": {
+     "payment_services:2": "[{\"id\": \"svc-a\", \"name\": \"Úklid navíc\", \"amount_czk\": 500}, {\"id\": \"<new>\", \"name\": \"Snídaně\", \"amount_czk\": 250}]",
+     "payment_services:3": "[{\"id\": \"svc-00\", \"name\": \"Extra 0\", \"amount_czk\": 100}, {\"id\": \"svc-01\", \"name\": \"Extra 1\", \"amount_czk\": 101}, {\"id\": \"svc-02\", \"name\": \"Extra 2\", \"amount_czk\": 102}, {\"id\": \"svc-03\", \"name\": \"Extra 3\", \"amount_czk\": 103}, {\"id\": \"svc-04\", \"name\": \"Extra 4\", \"amount_czk\": 104}, {\"id\": \"svc-05\", \"name\": \"Extra 5\", \"amount_czk\": 105}, {\"id\": \"svc-06\", \"name\": \"Extra 6\", \"amount_czk\": 106}, {\"id\": \"svc-07\", \"name\": \"Extra 7\", \"amount_czk\": 107}, {\"id\": \"svc-08\", \"name\": \"Extra 8\", \"amount_czk\": 108}, {\"id\": \"svc-09\", \"name\": \"Extra 9\", \"amount_czk\": 109}, {\"id\": \"svc-10\", \"name\": \"Extra 10\", \"amount_czk\": 110}, {\"id\": \"svc-11\", \"name\": \"Extra 11\", \"amount_czk\": 111}, {\"id\": \"svc-12\", \"name\": \"Extra 12\", \"amount_czk\": 112}, {\"id\": \"svc-13\", \"name\": \"Extra 13\", \"amount_czk\": 113}, {\"id\": \"svc-14\", \"name\": \"Extra 14\", \"amount_czk\": 114}, {\"id\": \"svc-15\", \"name\": \"Extra 15\", \"amount_czk\": 115}, {\"id\": \"svc-16\", \"name\": \"Extra 16\", \"amount_czk\": 116}, {\"id\": \"svc-17\", \"name\": \"Extra 17\", \"amount_czk\": 117}, {\"id\": \"svc-18\", \"name\": \"Extra 18\", \"amount_czk\": 118}, {\"id\": \"svc-19\", \"name\": \"Extra 19\", \"amount_czk\": 119}]",
+     "payment_services:4": "[{\"id\": \"<new>\", \"name\": \"Kolo <na> den & \\\"noc\\\" xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\", \"amount_czk\": 150}, {\"id\": \"<new>\", \"name\": \"Parkování\", \"amount_czk\": 1000000}]",
+     "payment_services:5": "[{\"id\": \"<new>\", \"name\": \"Fresh\", \"amount_czk\": 1}]"
+    }
+   },
+   "status": 200,
+   "title": "Payments",
+   "uid": 1
+  }
+ ]
+}
