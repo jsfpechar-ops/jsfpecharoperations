@@ -261,8 +261,9 @@ def render() -> str:
 def prepare_env() -> None:
     """The process environment, before ``app`` is imported."""
     tmp = Path(tempfile.mkdtemp(prefix="ubyhost-golden-"))
-    os.environ.setdefault("UBYHOST_DATA_DIR", str(tmp))
-    os.environ.setdefault("UBYHOST_DB", str(tmp / "billing_invoice_golden.sqlite3"))
+    os.environ["UBYHOST_DATA_DIR"] = str(tmp)
+    os.environ["UBYHOST_DB"] = str(tmp / "billing_invoice_golden.sqlite3")
+    os.environ.pop("UBYHOST_DATABASE_URL", None)
     os.environ.setdefault("UBYHOST_SECRET_KEY", "golden-secret-key-not-for-real-use")
     os.environ.setdefault("UBYHOST_ENABLE_SCHEDULER", "0")
     os.environ.update(ENV)
