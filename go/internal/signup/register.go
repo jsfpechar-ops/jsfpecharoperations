@@ -560,8 +560,16 @@ func enqueueMeta(ctx context.Context, pool *pgxpool.Pool, userID int64, at strin
 // keep the record, never send a Meta event not sent yet. False when there was
 // no active consent.
 func WithdrawConsent(ctx context.Context, pool *pgxpool.Pool, userID int64, platform, actor string, now time.Time) (bool, error) {
-	cols, ok := IDColumns[platform]
-	if !ok {
+	// The update_if of withdraw_consent per platform: the platform's
+	// IDColumns blanked, written out so App/tests/test_sm_queues.py sees the
+	// send_state write (pending or sending to withdrawn, else unchanged).
+	var update string
+	switch platform {
+	case Google:
+		update = `UPDATE ad_click SET gclid = NULL, gbraid = NULL, wbraid = NULL, withdrawn_at = $1, ids_deleted_at = $2, send_state = $3 WHERE id = $4 AND withdrawn_at IS NULL`
+	case Meta:
+		update = `UPDATE ad_click SET fbc = NULL, client_user_agent = NULL, withdrawn_at = $1, ids_deleted_at = $2, send_state = $3 WHERE id = $4 AND withdrawn_at IS NULL`
+	default:
 		return false, nil
 	}
 	var id int64
@@ -582,13 +590,7 @@ func WithdrawConsent(ctx context.Context, pool *pgxpool.Pool, userID int64, plat
 		w := "withdrawn"
 		sendState = &w
 	}
-	sets := make([]string, 0, len(cols)+3)
-	for _, c := range cols {
-		sets = append(sets, c+" = NULL")
-	}
-	sets = append(sets, "withdrawn_at = $1", "ids_deleted_at = $2", "send_state = $3")
-	tag, err := pool.Exec(ctx, "UPDATE ad_click SET "+strings.Join(sets, ", ")+" WHERE id = $4 AND withdrawn_at IS NULL",
-		at, *deleted, sendState, id)
+	tag, err := pool.Exec(ctx, update, at, *deleted, sendState, id)
 	if err != nil {
 		return false, err
 	}

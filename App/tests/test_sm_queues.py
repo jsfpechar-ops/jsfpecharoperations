@@ -220,6 +220,7 @@ SEND_SITES = {
     (GOCAPI, "Send"): 5,
     (SIGNUP, "withdraw_consent"): 1,
     (GOSIGNUP, "enqueueMeta"): 1,
+    (GOSIGNUP, "WithdrawConsent"): 2,
 }
 _WITHDRAW = '"send_state": "withdrawn" if row["send_state"] in ("pending", "sending")'
 SEND_MOVES = [
@@ -240,6 +241,7 @@ SEND_MOVES = [
     (GOCAPI, "Send", "state, attempts, truncate(out.detail, 400), iso(now.Add(retryDelay(attempts))), id, stateSending)", ("sending",), "failed"),
     (GOCAPI, "Send", "stateFailed, attempts, truncate(out.detail, 400), id, stateSending)", ("sending",), "failed"),
     (GOSIGNUP, "enqueueMeta", "send_state = 'pending', event_id = $1, next_attempt_at = $2", (None,), "pending"),
+    (GOSIGNUP, "WithdrawConsent", 'w := "withdrawn"', ("pending", "sending"), "withdrawn"),
 ]
 
 

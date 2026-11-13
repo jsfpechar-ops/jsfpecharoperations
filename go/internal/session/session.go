@@ -24,8 +24,6 @@ const (
 	CookieName = "ubyhost_session"
 	// salt is the itsdangerous salt of _serializer (auth.py lines 55-56).
 	salt = "ubyhost-session"
-	// defaultVersion is the default of UBYHOST_*_VERSION (brief 0672, section 2).
-	defaultVersion = "1.7"
 )
 
 // pythonKeyOrder is the insertion order of issue_session (auth.py lines 225-260).
@@ -265,11 +263,7 @@ func impersonationMaxAge(getenv func(string) string) int64 {
 // legal_acceptance row at its current version for userID (acceptance.pending,
 // App/app/acceptance.py lines 46-56).
 func AcceptancePending(ctx context.Context, db *pgxpool.Pool, userID int64, getenv func(string) string) (bool, error) {
-	versions := map[string]string{
-		"terms":   versionOr(getenv, "UBYHOST_TERMS_VERSION"),
-		"privacy": versionOr(getenv, "UBYHOST_PRIVACY_VERSION"),
-		"dpa":     versionOr(getenv, "UBYHOST_DPA_VERSION"),
-	}
+	versions := CurrentVersions(getenv)
 	rows, err := db.Query(ctx,
 		`SELECT document, version FROM legal_acceptance WHERE user_account_id = $1`, userID)
 	if err != nil {
@@ -295,11 +289,28 @@ func AcceptancePending(ctx context.Context, db *pgxpool.Pool, userID int64, gete
 	return false, nil
 }
 
-func versionOr(getenv func(string) string, key string) string {
-	if v := strings.TrimSpace(getenv(key)); v != "" {
-		return v
+// documentVersions are the env var and default of each document's current
+// version: config.TERMS_VERSION, PRIVACY_VERSION and DPA_VERSION
+// (App/app/config.py).
+var documentVersions = map[string][2]string{
+	"terms":   {"UBYHOST_TERMS_VERSION", "1.7"},
+	"privacy": {"UBYHOST_PRIVACY_VERSION", "1.8"},
+	"dpa":     {"UBYHOST_DPA_VERSION", "1.8"},
+}
+
+// CurrentVersions is acceptance.current_versions: os.environ.get(name,
+// default), used as read (Python does not strip it). An empty value counts as
+// unset, as getenv cannot tell the two apart.
+func CurrentVersions(getenv func(string) string) map[string]string {
+	out := make(map[string]string, len(documentVersions))
+	for doc, nd := range documentVersions {
+		v := getenv(nd[0])
+		if v == "" {
+			v = nd[1]
+		}
+		out[doc] = v
 	}
-	return defaultVersion
+	return out
 }
 
 // queryAccount loads one user_account row; found is false when there is none.

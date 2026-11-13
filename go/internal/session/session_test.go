@@ -288,14 +288,44 @@ func TestLoadDatabase(t *testing.T) {
 	if err != nil || !pending {
 		t.Fatalf("before acceptance: pending=%v err=%v", pending, err)
 	}
+	// terms 1.7, privacy 1.8, dpa 1.8: the config.py defaults. privacy at
+	// 1.7 alone must still leave the acceptance pending.
+	if _, err := pool.Exec(ctx, `INSERT INTO legal_acceptance (id, user_account_id, document, version, accepted_at, method) VALUES ($1, $2, $3, $4, $5, $6)`,
+		int64(10), int64(2), "privacy", "1.7", "2026-01-01T00:00:00+00:00", "clickwrap"); err != nil {
+		t.Fatal(err)
+	}
 	for i, doc := range []string{"terms", "privacy", "dpa"} {
+		if pending, err := AcceptancePending(ctx, pool, 2, dbEnv); err != nil || !pending {
+			t.Fatalf("before %s: pending=%v err=%v", doc, pending, err)
+		}
+		version := map[string]string{"terms": "1.7", "privacy": "1.8", "dpa": "1.8"}[doc]
 		if _, err := pool.Exec(ctx, `INSERT INTO legal_acceptance (id, user_account_id, document, version, accepted_at, method) VALUES ($1, $2, $3, $4, $5, $6)`,
-			int64(i+1), int64(2), doc, "1.7", "2026-01-01T00:00:00+00:00", "clickwrap"); err != nil {
+			int64(i+1), int64(2), doc, version, "2026-01-01T00:00:00+00:00", "clickwrap"); err != nil {
 			t.Fatal(err)
 		}
 	}
 	pending, err = AcceptancePending(ctx, pool, 2, dbEnv)
 	if err != nil || pending {
 		t.Fatalf("after acceptance: pending=%v err=%v", pending, err)
+	}
+}
+
+// TestCurrentVersions pins the per-document defaults and env vars of
+// App/app/config.py (TERMS_VERSION 1.7, PRIVACY_VERSION 1.8, DPA_VERSION 1.8).
+func TestCurrentVersions(t *testing.T) {
+	got := CurrentVersions(func(string) string { return "" })
+	want := map[string]string{"terms": "1.7", "privacy": "1.8", "dpa": "1.8"}
+	for doc, v := range want {
+		if got[doc] != v {
+			t.Errorf("default %s = %q, want %q", doc, got[doc], v)
+		}
+	}
+	env := map[string]string{"UBYHOST_TERMS_VERSION": "2.0", "UBYHOST_PRIVACY_VERSION": " 2.1", "UBYHOST_DPA_VERSION": "2.2"}
+	got = CurrentVersions(func(k string) string { return env[k] })
+	want = map[string]string{"terms": "2.0", "privacy": " 2.1", "dpa": "2.2"}
+	for doc, v := range want {
+		if got[doc] != v {
+			t.Errorf("env %s = %q, want %q", doc, got[doc], v)
+		}
 	}
 }
