@@ -1,47 +1,39 @@
-# 1171 report
+# 1171 report: DR decision 4 wording
 
 Status: review
 
-## 1. Files changed
+## Files changed
 
-`git diff --stat d8754892 HEAD`: `App/tests/test_under15_signature_1090_browser.py` only, 6 insertions, 3 deletions.
+- docs/plans/portable-disaster-recovery.md: line 57 only (decision 4 replaced with the approved wording).
+- docs/tasks/1171-dr-decision-4-wording.md: Status line only (todo to review).
+- docs/tasks/1171-report.md: this file (new).
 
-Commits: `1171 step 1` (reads `arrival` from the seeded reservation), `1171 step 2` (three `ARRIVAL` uses replaced by `arrival`). Step 3 is a check, no change.
+## Commands
 
-## 2. Commands (last 5 lines)
+`git diff --stat | tail -30`: 2 files changed, 2 insertions(+), 2 deletions(-) (before this report was added).
 
-- `cd App && .venv/bin/ruff check --select E9,F63,F7,F82,F401,F841 tests/test_under15_signature_1090_browser.py`: `All checks passed!`
-- `cd App && .venv/bin/python -m py_compile tests/test_under15_signature_1090_browser.py`: no output, exit 0.
-- `grep -n "ARRIVAL" App/tests/test_under15_signature_1090_browser.py`: lines 103, 104, 105 only.
-- `cd App && .venv/bin/python -m pytest tests/test_under15_signature_1090_browser.py -q --tb=short -x -rs`:
-  ```
-  SKIPPED [1] tests/test_guest_browser_e2e.py:40: could not import 'playwright.sync_api': No module named 'playwright'
-  1 skipped in 1.97s
-  ```
-  Exit 5. Playwright is not installed; not installed per the brief. Run by CI.
-- `python3 scripts/context_lint.py | tail -3`:
-  ```
-  WARN  2 commit(s) touched App/ after the last status.md update. Orchestrator: update docs/context/status.md at review.
-  next free: task 1170 | migration 0046
-  context lint: OK
-  ```
+`python3 scripts/context_lint.py | tail -30`: first run, after the status change and before this report existed, ended with:
+ERROR docs/tasks/1171-dr-decision-4-wording.md: status review but docs/tasks/1171-report.md is missing
+context lint: FAIL
 
-## 3. Section 7 acceptance
+Second run (after this report was created): last lines were `next free: task 1172 | migration 0046` and `context lint: OK`.
 
-- [x] `git diff --stat` shows only the test file, 3 replaced lines plus a 3-line added block.
-- [x] ruff and py_compile clean.
-- [x] `grep -n "ARRIVAL"` shows only lines 103-105.
-- [x] context_lint OK.
-- [x] Browser test runs in CI (shard 2), not locally.
+## Acceptance (§7)
 
-## 4. Deviations
+- [x] Line 57 matches step 1 exactly.
+- [x] No other line of the plan changed.
+- [x] context_lint has no errors (second run: `context lint: OK`; the WARN lines are pre-existing).
 
-None to the edit. Local pytest skipped (no playwright), so the test is unverified locally. Bite is not reproduced locally; the CI failure on 864dfb0c is the evidence.
+## Deviations
 
-## 5. Questions
+- Status is `review` in the brief, so lint needed this report. Brief §3 lists it, so the order was wrong on my side, not the brief's.
+- Not committed or pushed: the orchestrator said no commit or push, which overrides executor.md step 5.
+- Lint WARN lines (open-brief name overlaps) are pre-existing and not from this change.
 
-None.
+## Questions
 
-## 6. Owner steps left
+- None.
 
-None. The orchestrator opens the PR. No push or PR was made by the executor.
+## Owner steps left
+
+- None for this brief. Orchestrator commits and opens the PR.
