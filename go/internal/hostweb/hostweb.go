@@ -108,7 +108,7 @@ func Back(w http.ResponseWriter, r *http.Request, path string, msg, err Flash) {
 		query = append(query, "fix="+pyQuote(err.Fix))
 	}
 	if len(query) == 0 {
-		http.Redirect(w, r, path, http.StatusSeeOther)
+		redirect(w, path)
 		return
 	}
 	base, fragment, hasFragment := strings.Cut(path, "#")
@@ -120,14 +120,32 @@ func Back(w http.ResponseWriter, r *http.Request, path string, msg, err Flash) {
 	if hasFragment {
 		location += "#" + fragment
 	}
-	// Location is set directly: http.Redirect would clean the query string.
-	w.Header().Set("Location", location)
+	redirect(w, location)
+}
+
+// redirect is Starlette's RedirectResponse(url, 303). Location is set directly
+// (http.Redirect would clean the query string), quoted like Starlette does.
+func redirect(w http.ResponseWriter, location string) {
+	w.Header().Set("Location", starletteQuote(location))
 	w.WriteHeader(http.StatusSeeOther)
+}
+
+// starletteQuote is RedirectResponse's quote(url, safe=":/%#?=@[]!$&'()*+,;"):
+// ASCII letters, digits, "_.-~" and the safe set stay, every other UTF-8 byte
+// becomes %XX. "%" is safe, so an already quoted value is not quoted twice.
+func starletteQuote(s string) string {
+	return quoteSafe(s, "_.-~:/%#?=@[]!$&'()*+,;")
 }
 
 // pyQuote is Python's quote(s) with the default safe="/": ASCII letters,
 // digits and "_.-~/" stay, every other UTF-8 byte becomes %XX.
 func pyQuote(s string) string {
+	return quoteSafe(s, "_.-~/")
+}
+
+// quoteSafe is Python's quote(s, safe): ASCII letters, digits and the bytes in
+// safe stay, every other UTF-8 byte becomes %XX.
+func quoteSafe(s, safe string) string {
 	const hexDigits = "0123456789ABCDEF"
 	var b strings.Builder
 	for i := 0; i < len(s); i++ {
@@ -135,7 +153,7 @@ func pyQuote(s string) string {
 		switch {
 		case c >= 'a' && c <= 'z', c >= 'A' && c <= 'Z', c >= '0' && c <= '9':
 			b.WriteByte(c)
-		case strings.IndexByte("_.-~/", c) >= 0:
+		case strings.IndexByte(safe, c) >= 0:
 			b.WriteByte(c)
 		default:
 			b.WriteByte('%')

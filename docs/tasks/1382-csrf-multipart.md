@@ -1,6 +1,6 @@
 # 1382: Go CSRF reads multipart bodies; Back quotes Location like Starlette
 
-Status: todo
+Status: review
 Depends on: none | Base commit: a83df54 | Branch: task/1382-csrf-multipart
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
