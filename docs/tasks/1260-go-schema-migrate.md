@@ -1,6 +1,6 @@
 # 1260: Go schema command `ubyhost-web migrate plan|check|apply`
 
-Status: todo
+Status: review
 Depends on: none | Base commit: a83df54 | Branch: task/1260-go-schema-migrate
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Tier A (migrations). Plan: docs/plans/go-full-move.md Lane D, step D1. Next: brief 1261 (deploy switch).
