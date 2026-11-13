@@ -25,7 +25,7 @@ Rules (AGENTS.md): 4 no new dependency (standard library and pgx only); `main.go
 diff --git a/go/cmd/ubyhost-web/main.go b/go/cmd/ubyhost-web/main.go
 --- a/go/cmd/ubyhost-web/main.go
 +++ b/go/cmd/ubyhost-web/main.go
-@@ -172,6 +172,8 @@ func run() int {
+@@ -173,6 +173,8 @@ func run() int {
  			jobs.Run(jobCtx, pool, goKinds, goHandlers(pool), goIntervals)
  		}()
  	}
@@ -36,7 +36,7 @@ diff --git a/go/cmd/ubyhost-web/main.go b/go/cmd/ubyhost-web/main.go
  	mux := newMux(m, pool)
 ````
 
-plus 54 added lines at the end of `registry.go` (two imports, the type, the slice, the two functions) and the imports `context`, `log/slog`, `sync`. Read them in the patch file.
+plus 54 added lines in `registry.go`: the imports `context`, `log/slog` and `sync`, then at the end the type, the slice and the two functions. Read them in the patch file.
 
 Anchors (step 0, `grep -cF` prints 1): `go/cmd/ubyhost-web/main.go` `jobs.Run(jobCtx, pool, goKinds, goHandlers(pool), goIntervals)` and `defer func() { cancelJobs(); jobsDone.Wait() }()`; `go/cmd/ubyhost-web/registry.go` `func registerRoutes(fn func(*http.ServeMux, *metrics, *pgxpool.Pool)) {`; and `grep -c 'registerBackground' go/cmd/ubyhost-web/*.go` prints 0 for every file.
 

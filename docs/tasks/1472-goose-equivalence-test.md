@@ -117,7 +117,7 @@ git checkout -- migrations_pg/00016_guest_details_mail.sql; git status --short m
 env -u UBYHOST_DATABASE_URL .venv/bin/python -m pytest tests/test_goose_equivalence.py -q --tb=short 2>&1 | tail -1
 ```
 
-Expected: `1`; then `-    guest_details_mail bigint DEFAULT 1 NOT NULL`, `+    guest_details_mail bigint DEFAULT 0 NOT NULL` and `1 failed`; then `0`; then `1 passed`. If the mutated run passes, the test is broken: STOP. Then stop and delete the server:
+Expected: `1`; then `-    guest_details_mail bigint DEFAULT 1 NOT NULL`, `+    guest_details_mail bigint DEFAULT 0 NOT NULL` (plus one `assert not [...]` line naming them) and `1 failed`; then `0`; then `1 passed`. If the mutated run passes, the test is broken: STOP. Then stop and delete the server:
 
 ```bash
 runuser -u postgres -- /usr/lib/postgresql/16/bin/pg_ctl -D /var/tmp/pg1472/data stop 2>&1 | tail -1; rm -rf /var/tmp/pg1472; unset UBYHOST_TEST_DATABASE_URL
