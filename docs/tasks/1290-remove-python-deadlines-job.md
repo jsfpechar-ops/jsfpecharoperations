@@ -1,7 +1,7 @@
-# 1200: Remove the Python deadlines job body
+# 1290: Remove the Python deadlines job body
 
 Status: todo
-Depends on: none | Base commit: b4ef75e | Branch: claude/1200-remove-python-deadlines-job
+Depends on: none | Base commit: b4ef75e | Branch: claude/1290-remove-python-deadlines-job
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
@@ -17,7 +17,7 @@ Tier A (filing path). Hard rule 1: filing correctness beats every other feature.
 - `jobqueue.claim` skips kinds in `UBYHOST_GO_JOB_KINDS`, so in production Python never runs the stub. It runs only if someone removes `deadlines` from `UBYHOST_GO_JOB_KINDS`, or on SQLite/non-queued setups with the scheduler on. Then it logs an error naming both env vars, calls `_job_failed("deadlines")` (critical alert) and `_log_run("deadlines", started, False)`, and sends no heartbeat (the external monitor alerts on the missing ping). It never raises.
 - Kept untouched: `reporting.check_deadlines`, `dsr.raise_due_alerts`, `filing_watchdog.run`/`heartbeat_url` (golden scripts `App/scripts/*_golden.py`, web pages and tests use them), `job_intervals()["deadlines"]`, `_JOB_LEVELS["deadlines"]`, the APScheduler entry.
 - The composite order (watch, then watchdog even if the watch failed, then ping) is covered by `go/internal/calendar/deadlines_job_test.go`.
-- The lint warns that brief 1167 also names the two Go files: 1167 is merged (its `Status: todo` line is stale); 1200 goes after it. Ignore that warning.
+- The lint warns that brief 1167 also names the two Go files: 1167 is merged (its `Status: todo` line is stale); 1290 goes after it. Ignore that warning.
 - CI runs `ruff check app tests tools --select E9,F63,F7,F82,F401,F841`, so the `dsr` and `filing_watchdog` imports in `App/app/scheduler.py` go (no other use there; no test uses `scheduler.dsr` or `scheduler.filing_watchdog` after step 2).
 
 ## 3. Files
@@ -31,7 +31,7 @@ Tier A (filing path). Hard rule 1: filing correctness beats every other feature.
 | `go/internal/calendar/deadlines_job.go` | edit | Comments only (lines 1 and 34). |
 | `go/internal/calendar/deadlines_job_test.go` | edit | Comment only (line 49). |
 | `docs/ENVIRONMENT.md` | edit | Line 53: new rollback sentence for `deadlines`. |
-| `docs/tasks/1200-report.md` | create | The report. |
+| `docs/tasks/1290-report.md` | create | The report. |
 
 No other file may change. Not `docs/context/status.md` (another PR edits it), not `docs/context/test-map.md`.
 
@@ -42,10 +42,10 @@ Each step applies one patch block from this brief with `git apply`. The patches 
 Extract-and-apply command for block K (replace K with the step number):
 
 ```bash
-awk -v k="K" '$0=="<!-- patch:" k " -->"{f=1;next} f&&/^```diff$/{g=1;next} g&&/^```$/{exit} g' docs/tasks/1200-remove-python-deadlines-job.md > /tmp/p1200.diff && git apply --check /tmp/p1200.diff && git apply /tmp/p1200.diff && git diff --stat 2>&1 | tail -5
+awk -v k="K" '$0=="<!-- patch:" k " -->"{f=1;next} f&&/^```diff$/{g=1;next} g&&/^```$/{exit} g' docs/tasks/1290-remove-python-deadlines-job.md > /tmp/p1290.diff && git apply --check /tmp/p1290.diff && git apply /tmp/p1290.diff && git diff --stat 2>&1 | tail -5
 ```
 
-After each step: `git commit -am "1200 step K"`.
+After each step: `git commit -am "1290 step K"`.
 
 ### Step 1: scheduler.py
 
@@ -71,7 +71,7 @@ index 8bf175d..3f3a45b 100644
  
 -def _job_deadlines() -> None:
 +def _job_deadlines_go_only() -> None:
-+    """The deadlines job runs in Go only (1200); reaching Python is a misconfiguration.
++    """The deadlines job runs in Go only (1290); reaching Python is a misconfiguration.
 +
 +    The deadline watch, the filing watchdog and the filing heartbeat are
 +    go/internal/calendar/deadlines_job.go. This stub raises the critical
@@ -154,7 +154,7 @@ index 8bf175d..3f3a45b 100644
      if config.JOB_QUEUE_KINDS and config.DB_BACKEND != "postgresql":
          raise RuntimeError("UBYHOST_JOB_QUEUE_KINDS needs PostgreSQL")
 +    if config.DB_BACKEND == "postgresql" and "deadlines" not in config.GO_JOB_KINDS:
-+        log.warning("deadlines is not in UBYHOST_GO_JOB_KINDS: no deadline watch runs (1200)")
++        log.warning("deadlines is not in UBYHOST_GO_JOB_KINDS: no deadline watch runs (1290)")
      if config.DB_BACKEND == "postgresql" and set(JOB_KINDS) <= config.JOB_QUEUE_KINDS:
          log.info("every job is on the queue; scheduler.lock not taken")
      elif not _acquire_single_instance_lock():
@@ -209,7 +209,7 @@ index 2c4ba80..ea8d358 100644
 -    _watchdog_returns(monkeypatch, 2)
 -    scheduler._job_deadlines()
 -    assert pings == ["https://hc-ping.example.invalid/abc/fail"]
-+# The job that pings the URL is go/internal/calendar/deadlines_job.go (1200);
++# The job that pings the URL is go/internal/calendar/deadlines_job.go (1290);
 +# these tests pin the URL the watchdog's answer maps to.
  
 +URL = "https://hc-ping.example.invalid/abc"
@@ -373,7 +373,7 @@ index c569d85..d253a59 100644
  
  
 +def test_the_python_deadlines_stub_only_raises_the_alert(monkeypatch, tmp_path):
-+    """1200: deadlines runs in Go; Python reaching it alerts and pings nothing."""
++    """1290: deadlines runs in Go; Python reaching it alerts and pings nothing."""
 +    _private_db(monkeypatch, tmp_path)
 +    monkeypatch.setattr(config, "HEARTBEAT_FILING_URL", "https://hc-ping.example.invalid/abc")
 +    calls = []
@@ -410,7 +410,7 @@ index 8576787..b24ac72 100644
      uid = auth.create_account("hostadmin@example.test", "H", role="admin", username="hostadmin")
 -    monkeypatch.setattr(reporting, "check_deadlines", lambda *a, **k: 1 / 0)
 -    scheduler._job_deadlines()
-+    scheduler._job_deadlines_go_only()  # 1200: the Python deadlines job only alerts
++    scheduler._job_deadlines_go_only()  # 1290: the Python deadlines job only alerts
      assert len(alerts.open_alerts()) == 1                 # exists
      assert len(alerts.open_alerts(uid)) == 1              # and the host sees it
      c = TestClient(app)
@@ -426,7 +426,7 @@ index 904feef..65d421a 100644
 +++ b/go/internal/calendar/deadlines_job.go
 @@ -1,4 +1,4 @@
 -// The deadlines job: App/app/scheduler.py _job_deadlines in Go. It runs the
-+// The deadlines job: the former Python _job_deadlines (removed in 1200). It runs the
++// The deadlines job: the former Python _job_deadlines (removed in 1290). It runs the
  // deadline watch (check_deadlines, then raise_due_alerts), then the filing
  // watchdog even when the watch failed, then pings the filing heartbeat.
  package calendar
@@ -435,7 +435,7 @@ index 904feef..65d421a 100644
  }
  
 -// RunDeadlinesJob is _job_deadlines for the Go job queue. at is the instant of
-+// RunDeadlinesJob is the deadlines job (the former Python _job_deadlines, removed in 1200). at is the instant of
++// RunDeadlinesJob is the deadlines job (the former Python _job_deadlines, removed in 1290). at is the instant of
  // the run; ping GETs the filing heartbeat URL (jobs.Ping in production). A
  // failed watch or watchdog raises the critical job_failed alert at once, as
  // Python's _job_failed does, and returns an error so the queue does not record
@@ -454,7 +454,7 @@ index c40adba..e150aa4 100644
  }
  
 -// TestRunDeadlinesOrderMatchesPython walks every branch of _job_deadlines.
-+// TestRunDeadlinesOrderMatchesPython walks every branch of the former Python _job_deadlines (removed in 1200).
++// TestRunDeadlinesOrderMatchesPython walks every branch of the former Python _job_deadlines (removed in 1290).
  func TestRunDeadlinesOrderMatchesPython(t *testing.T) {
  	boom := errors.New("boom")
  	cases := []struct {
@@ -473,7 +473,7 @@ index a911fe8..1622470 100644
  | --- | --- | --- |
  | `UBYHOST_JOB_QUEUE_KINDS` | empty | PostgreSQL only. Comma list of scheduler job ids that go through the job table instead of running directly; unknown ids stop the worker. An open row unclaimed past twice its interval (Python or Go consumer missing) raises the `job_failed` alert for that job. |
 -| `UBYHOST_GO_JOB_KINDS` | empty | PostgreSQL only. Kinds the Go service runs instead of Python; each must also be in `UBYHOST_JOB_QUEUE_KINDS`. Today `billing_snapshot`, `stripe_sweep`, `ical`, `push`, `submit`, `posthog`, `meta_capi` and `deadlines` (the Go service reads the same `POSTHOG_*`, `UBYHOST_META_*` and `UBYHOST_HEARTBEAT_*` variables from `.env`). `deadlines` is the deadline watch plus the filing watchdog and its heartbeat; to hand it back to Python, remove it from this list (keep it in `UBYHOST_JOB_QUEUE_KINDS`) and run `./scripts/deploy.sh`. |
-+| `UBYHOST_GO_JOB_KINDS` | empty | PostgreSQL only. Kinds the Go service runs instead of Python; each must also be in `UBYHOST_JOB_QUEUE_KINDS`. Today `billing_snapshot`, `stripe_sweep`, `ical`, `push`, `submit`, `posthog`, `meta_capi` and `deadlines` (the Go service reads the same `POSTHOG_*`, `UBYHOST_META_*` and `UBYHOST_HEARTBEAT_*` variables from `.env`). `deadlines` is the deadline watch plus the filing watchdog and its heartbeat; it must stay in both lists, because Python no longer has this job (1200): without Go it only raises the `job_failed` alert. Rollback: `git revert` the 1200 PR, merge and deploy, then remove `deadlines` from this list (keep it in `UBYHOST_JOB_QUEUE_KINDS`) and run `./scripts/deploy.sh`. |
++| `UBYHOST_GO_JOB_KINDS` | empty | PostgreSQL only. Kinds the Go service runs instead of Python; each must also be in `UBYHOST_JOB_QUEUE_KINDS`. Today `billing_snapshot`, `stripe_sweep`, `ical`, `push`, `submit`, `posthog`, `meta_capi` and `deadlines` (the Go service reads the same `POSTHOG_*`, `UBYHOST_META_*` and `UBYHOST_HEARTBEAT_*` variables from `.env`). `deadlines` is the deadline watch plus the filing watchdog and its heartbeat; it must stay in both lists, because Python no longer has this job (1290): without Go it only raises the `job_failed` alert. Rollback: `git revert` the 1290 PR, merge and deploy, then remove `deadlines` from this list (keep it in `UBYHOST_JOB_QUEUE_KINDS`) and run `./scripts/deploy.sh`. |
  | `UBYHOST_ENABLE_SCHEDULER` | `1` | `0` stops **all** background work: calendar polling, automatic submission, the deadline watch, the guest e-mail outbox, claim-hold expiry and the passport-photo sweep. |
  | `UBYHOST_ROLE` | `web` | What the process runs (WP06). `web`: HTTP only, never starts the scheduler (the Docker image, two uvicorn workers). `worker`: only the background jobs, started with `python -m app.worker` (the Lightsail `worker` container). `all`: both in one process (`run.sh` and `render_start.sh` default to it). Only one scheduler can run per data directory: it holds `DATA_DIR/scheduler.lock`. |
  | `UBYHOST_WEB_WORKERS` | `2` | uvicorn workers in the Docker image's web process (WP32). `4` on the 8 GB / 2 vCPU production server. `docker-entrypoint.sh` and `preflight.sh` refuse anything but 1 to 16. |
@@ -491,12 +491,12 @@ Expected:
 
 ```
 b1fac61ecb024ace8f397878d9d72ac7f418c266f207220766e81f4a005a76dc  App/app/scheduler.py
-90e96bb504225466879d1d962a89b0175725d0c0809ddc53710988b55d93df89  App/tests/test_filing_watchdog.py
-6ff9bb1d83a5f07ab588686669d6b86f399fda0af75791bd847d2e1d0c21bd58  App/tests/test_scheduler.py
-bad5e18ee05d35310097e02a09b9ba13115189e231dba5a41ef8c8a5ca012c94  App/tests/test_p1_review.py
-9dd22eaed7967b090197c5b71b570d7eb7b58e525527de2515941359e0a198dc  go/internal/calendar/deadlines_job.go
-cfb3458c344d0435f7d588549a69a07c94f2dada60cae449445dcd1a79e5b123  go/internal/calendar/deadlines_job_test.go
-cb3ec6398a565cb24b2d87429b46ace057f9d3924c4a68f30d236b0c397fd1e0  docs/ENVIRONMENT.md
+714d447fc2c19b03018e6c349864eaa00c1439f79c5d6f6bf8e14e912c61d1db  App/tests/test_filing_watchdog.py
+c11c2a8b80c3c7904148b103c116b6b6d43ad591f39b3cd4c0da49a04abe3570  App/tests/test_scheduler.py
+d8a6142f8d6e558306f68946b1330aae6c8d9cc29c46050b963fddde2ead739e  App/tests/test_p1_review.py
+209a5edfd1cf03a879cb4039525f2d09806d324750a3f04dd47a601a1f94ea1e  go/internal/calendar/deadlines_job.go
+f32605e3a17aa4ddd33bbcbe727b6843f395156c4f4adb5106f288b5f0def818  go/internal/calendar/deadlines_job_test.go
+89fb05d7bca9a1cb4127c4dca42b6ee03521362b3f008ec7510012e5b911b134  docs/ENVIRONMENT.md
 ```
 
 A mismatch: STOP and report.
@@ -546,7 +546,7 @@ Stop, and write the report, if:
 
 ## 9. Report
 
-Write `docs/tasks/1200-report.md` (600 tokens at most) and set `Status: review`. The report has:
+Write `docs/tasks/1290-report.md` (600 tokens at most) and set `Status: review`. The report has:
 
 1. The files changed (`git diff --stat`).
 2. Each command, with the last 5 lines of its output.

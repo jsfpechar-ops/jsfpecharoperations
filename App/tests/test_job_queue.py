@@ -84,7 +84,7 @@ def test_unset_setting_registers_the_wrappers_unchanged(monkeypatch, caplog):
     try:
         jobs = {j.id: j for j in scheduler._scheduler.get_jobs()}
         assert "job_queue" not in jobs
-        # 1200: no Go service on SQLite, so deadlines is not scheduled, and says so.
+        # 1290: no Go service on SQLite, so deadlines is not scheduled, and says so.
         assert set(jobs) == set(scheduler.JOB_KINDS) - {"deadlines"}
         assert "no deadline watch runs here" in caplog.text
         for kind, job in jobs.items():
@@ -238,7 +238,7 @@ def test_all_fifteen_kinds_queued_never_takes_the_scheduler_lock(job_db, monkeyp
     try:
         ids = {j.id for j in scheduler._scheduler.get_jobs()}
         assert "job_queue" in ids
-        assert "deadlines" in ids  # 1200: on PostgreSQL it is still enqueued
+        assert "deadlines" in ids  # 1290: on PostgreSQL it is still enqueued
     finally:
         scheduler.shutdown()
 

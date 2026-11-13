@@ -158,7 +158,7 @@ def test_a_second_failure_refreshes_one_card(monkeypatch, tmp_path):
 
 
 def test_the_python_deadlines_stub_only_raises_the_alert(monkeypatch, tmp_path):
-    """1200: deadlines runs in Go; Python reaching it alerts and pings nothing."""
+    """1290: deadlines runs in Go; Python reaching it alerts and pings nothing."""
     _private_db(monkeypatch, tmp_path)
     monkeypatch.setattr(config, "HEARTBEAT_FILING_URL", "https://hc-ping.example.invalid/abc")
     calls = []
