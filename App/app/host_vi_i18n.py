@@ -186,6 +186,7 @@ VALIDATION: Dict[str, str] = {
     "Home address is too long.": "Địa chỉ thường trú quá dài.",
     "Note must be at most 255 characters.": "Ghi chú tối đa 255 ký tự.",
     "For a child recorded in a parent's passport the note must contain the parent's document number.": "Với trẻ em có tên trong hộ chiếu của cha hoặc mẹ, ghi chú phải có số giấy tờ của cha hoặc mẹ.",
+    "Children who are citizens of an EU country, Norway, Iceland, Liechtenstein or Switzerland have their own passport or ID card. Enter the child's own document number.": "Trẻ em là công dân của một nước EU, Na Uy, Iceland, Liechtenstein hoặc Thụy Sĩ có hộ chiếu hoặc thẻ căn cước riêng. Nhập số giấy tờ của chính trẻ.",
     "IDUB is required before anything can be reported.": "Cần có IDUB trước khi khai báo bất cứ điều gì.",
     "IDUB must be 12-14 letters or digits.": "IDUB phải gồm 12-14 chữ cái hoặc chữ số.",
     "The facility abbreviation (zkratka) is required.": "Tên viết tắt của cơ sở (zkratka) là bắt buộc.",

@@ -1258,7 +1258,7 @@
     "birth_date": "01011990",
     "doc_number": "INPASS",
     "first_name": "JAN",
-    "nationality": "DEU",
+    "nationality": "UKR",
     "note": "Rodic C01X00T47",
     "purpose": "99",
     "res_city": "Berlin",
@@ -1272,6 +1272,96 @@
    },
    "issues": [],
    "name": "valid_inpass_with_note",
+   "raw": null
+  },
+  {
+   "complete": false,
+   "date_from": "2026-10-20",
+   "date_to": "2026-10-25",
+   "guest": {
+    "birth_date": "01011990",
+    "doc_number": "INPASS",
+    "first_name": "JAN",
+    "nationality": "POL",
+    "note": "Rodic C01X00T47",
+    "purpose": "99",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstrasse 5",
+    "signature_png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAAAAACMmsGiAAAAC0lEQVR42mNgwAQAABQAAe5aaQkAAAAASUVORK5CYII=",
+    "stay_from": "",
+    "stay_to": "",
+    "surname": "NOVAK",
+    "visa_number": ""
+   },
+   "issues": [
+    [
+     "doc_number",
+     "Children who are citizens of an EU country, Norway, Iceland, Liechtenstein or Switzerland have their own passport or ID card. Enter the child's own document number.",
+     "error"
+    ]
+   ],
+   "name": "inpass_eu_citizen",
+   "raw": null
+  },
+  {
+   "complete": false,
+   "date_from": "2026-10-20",
+   "date_to": "2026-10-25",
+   "guest": {
+    "birth_date": "01011990",
+    "doc_number": "INPASS",
+    "first_name": "JAN",
+    "nationality": "pol",
+    "note": "Rodic C01X00T47",
+    "purpose": "99",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstrasse 5",
+    "signature_png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAAAAACMmsGiAAAAC0lEQVR42mNgwAQAABQAAe5aaQkAAAAASUVORK5CYII=",
+    "stay_from": "",
+    "stay_to": "",
+    "surname": "NOVAK",
+    "visa_number": ""
+   },
+   "issues": [
+    [
+     "doc_number",
+     "Children who are citizens of an EU country, Norway, Iceland, Liechtenstein or Switzerland have their own passport or ID card. Enter the child's own document number.",
+     "error"
+    ]
+   ],
+   "name": "inpass_eu_citizen_lowercase",
+   "raw": null
+  },
+  {
+   "complete": false,
+   "date_from": "2026-10-20",
+   "date_to": "2026-10-25",
+   "guest": {
+    "birth_date": "01011990",
+    "doc_number": "INPASS",
+    "first_name": "JAN",
+    "nationality": "CHE",
+    "note": "",
+    "purpose": "99",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstrasse 5",
+    "signature_png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAAAAACMmsGiAAAAC0lEQVR42mNgwAQAABQAAe5aaQkAAAAASUVORK5CYII=",
+    "stay_from": "",
+    "stay_to": "",
+    "surname": "NOVAK",
+    "visa_number": ""
+   },
+   "issues": [
+    [
+     "doc_number",
+     "Children who are citizens of an EU country, Norway, Iceland, Liechtenstein or Switzerland have their own passport or ID card. Enter the child's own document number.",
+     "error"
+    ]
+   ],
+   "name": "inpass_swiss_citizen_no_note",
    "raw": null
   },
   {
@@ -2626,7 +2716,7 @@
     "birth_date": "01011990",
     "doc_number": "INPASS",
     "first_name": "JAN",
-    "nationality": "DEU",
+    "nationality": "UKR",
     "note": "",
     "purpose": "99",
     "res_city": "Berlin",

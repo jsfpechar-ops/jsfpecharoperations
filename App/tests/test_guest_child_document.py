@@ -225,3 +225,51 @@ def test_the_parent_box_is_required_as_soon_as_the_child_is_declared():
     toggle = script.split("function initChildToggle()", 1)[1].split("\n  }", 1)[0]
     assert 'getElementById("parent_doc_number")' in toggle
     assert "parentInput.required = toggle.checked" in toggle
+
+
+# --- EU/EEA/Swiss children have their own document (UbyPort refusal 2026-11-13) --
+
+
+def test_an_eu_child_on_a_parents_passport_is_refused_next_to_the_parent_box():
+    page = _page(
+        "en",
+        nationality="POL",
+        birth_date="22.10.2009",
+        child_in_passport="1",
+        doc_number="",
+        parent_doc_number="EN9025218",
+    )
+    assert 'id="parent_doc_number-error"' in page
+    assert "Untick the box above and enter the child&#39;s own document number." in page or (
+        "Untick the box above and enter the child's own document number." in page
+    )
+
+
+def test_the_eu_child_issue_is_worded_for_the_guest_in_czech():
+    issues = guest._localize_issues(
+        [validation.Issue("doc_number", validation.INPASS_OWN_DOCUMENT_MESSAGE)], "cs"
+    )
+    assert len(issues) == 1
+    assert issues[0].field == "parent_doc_number"
+    assert issues[0].message.startswith("Děti s občanstvím země EU")
+    assert issues[0].severity == "error"
+
+
+def test_the_host_form_reads_the_eu_child_issue_on_the_document_field():
+    issues = validation.validate_guest(
+        {
+            "surname": "KOZIOL",
+            "first_name": "KAJA",
+            "birth_date": "22102009",
+            "nationality": "POL",
+            "doc_number": validation.INPASS,
+            "res_street": "Grzebien 46",
+            "res_city": "Radomsko",
+            "res_country": "POL",
+            "purpose": "10",
+            "note": validation.note_for_parent_document("EN9025218"),
+        }
+    )
+    assert [(i.field, i.message) for i in issues] == [
+        ("doc_number", validation.INPASS_OWN_DOCUMENT_MESSAGE)
+    ]

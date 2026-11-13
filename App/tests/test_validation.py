@@ -169,6 +169,21 @@ def test_document_number_minimum_length():
     assert errors(v.validate_guest(good_guest(doc_number="AB12"))) == {"doc_number"}
 
 
+@pytest.mark.parametrize("nationality", ["POL", "DEU", "CZE", "NOR", "CHE", "pol"])
+def test_inpass_is_refused_for_eu_eea_and_swiss_citizens(nationality):
+    guest = good_guest(doc_number="INPASS", note="parent doc P1234567", nationality=nationality)
+    issues = v.validate_guest(guest)
+    assert [(i.field, i.message) for i in v.errors_only(issues)] == [
+        ("doc_number", v.INPASS_OWN_DOCUMENT_MESSAGE)
+    ]
+
+
+def test_inpass_stays_allowed_for_other_nationalities():
+    for nationality in ("GBR", "UKR", "USA"):
+        guest = good_guest(doc_number="INPASS", note="parent doc P1234567", nationality=nationality)
+        assert errors(v.validate_guest(guest)) == set()
+
+
 def test_inpass_requires_a_note():
     assert errors(v.validate_guest(good_guest(doc_number="INPASS"))) == {"note"}
     assert not errors(

@@ -17,6 +17,11 @@ PASS_WEEKDAYS: Tuple[str, ...] = ("пн", "вт", "ср", "чт", "пт", "сб"
 
 # The guest form's own wording of the parent's-document check (routes/guest.py).
 ISSUE_NOTE = "Введіть номер паспорта або посвідчення особи одного з батьків."
+ISSUE_INPASS_OWN_DOCUMENT = (
+    "Діти, які є громадянами країни ЄС, Норвегії, Ісландії, Ліхтенштейну або Швейцарії, "
+    "мають власний паспорт або посвідчення особи. Зніміть позначку вище та введіть номер "
+    "власного документа дитини."
+)
 
 PURPOSES: Dict[str, str] = {
     "00": "Лікування",
@@ -85,6 +90,7 @@ VALIDATION: Dict[str, str] = {
     "Home address is too long.": "Адреса постійного проживання задовга.",
     "Note must be at most 255 characters.": "Примітка може містити не більше 255 символів.",
     "For a child recorded in a parent's passport the note must contain the parent's document number.": "Для дитини, вписаної в паспорт одного з батьків, потрібно вказати номер документа цього з батьків.",
+    "Children who are citizens of an EU country, Norway, Iceland, Liechtenstein or Switzerland have their own passport or ID card. Enter the child's own document number.": "Діти, які є громадянами країни ЄС, Норвегії, Ісландії, Ліхтенштейну або Швейцарії, мають власний паспорт або посвідчення особи. Введіть номер власного документа дитини.",
 }
 
 # Cookie name -> (purpose, lifetime) for the guest privacy page's cookie table.

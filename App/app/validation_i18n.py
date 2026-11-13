@@ -88,6 +88,9 @@ CS_MESSAGES: Dict[str, str] = {
     "the parent's document number.": (
         "U dítěte zapsaného v pasu rodiče musí poznámka obsahovat číslo dokladu rodiče."
     ),
+    "Children who are citizens of an EU country, Norway, Iceland, Liechtenstein or Switzerland have their own passport or ID card. Enter the child's own document number.": (
+        "Děti s občanstvím země EU, Norska, Islandu, Lichtenštejnska nebo Švýcarska mají vlastní pas nebo občanský průkaz. Zadejte číslo vlastního dokladu dítěte."
+    ),
     # Property form: what the host still has to fill in before anything can be
     # reported. The host reads these in the banner above the form.
     "IDUB is required before anything can be reported.": "Bez IDUB nelze nic nahlásit.",
@@ -217,6 +220,7 @@ GUEST_MESSAGES: Dict[str, Dict[str, str]] = {
         "Home address is too long.": "Die Wohnanschrift ist zu lang.",
         "Note must be at most 255 characters.": "Die Anmerkung darf höchstens 255 Zeichen lang sein.",
         "For a child recorded in a parent's passport the note must contain the parent's document number.": "Bei einem Kind, das im Reisepass eines Elternteils eingetragen ist, muss die Anmerkung die Dokumentnummer des Elternteils enthalten.",
+        "Children who are citizens of an EU country, Norway, Iceland, Liechtenstein or Switzerland have their own passport or ID card. Enter the child's own document number.": "Kinder mit der Staatsangehörigkeit eines EU-Landes, Norwegens, Islands, Liechtensteins oder der Schweiz haben einen eigenen Reisepass oder Personalausweis. Geben Sie die Nummer des eigenen Dokuments des Kindes ein.",
     },
     "es": {
         "Date of birth is required.": "La fecha de nacimiento es obligatoria.",
@@ -255,6 +259,7 @@ GUEST_MESSAGES: Dict[str, Dict[str, str]] = {
         "Home address is too long.": "El domicilio es demasiado largo.",
         "Note must be at most 255 characters.": "La nota puede tener como máximo 255 caracteres.",
         "For a child recorded in a parent's passport the note must contain the parent's document number.": "Para un menor inscrito en el pasaporte de un progenitor, la nota debe contener el número de documento del progenitor.",
+        "Children who are citizens of an EU country, Norway, Iceland, Liechtenstein or Switzerland have their own passport or ID card. Enter the child's own document number.": "Los menores con nacionalidad de un país de la UE, Noruega, Islandia, Liechtenstein o Suiza tienen su propio pasaporte o documento de identidad. Introduzca el número del documento propio del menor.",
     },
     "fr": {
         "Date of birth is required.": "La date de naissance est obligatoire.",
@@ -293,6 +298,7 @@ GUEST_MESSAGES: Dict[str, Dict[str, str]] = {
         "Home address is too long.": "L'adresse de domicile est trop longue.",
         "Note must be at most 255 characters.": "La remarque ne doit pas dépasser 255 caractères.",
         "For a child recorded in a parent's passport the note must contain the parent's document number.": "Pour un enfant inscrit sur le passeport d'un parent, la remarque doit contenir le numéro de document du parent.",
+        "Children who are citizens of an EU country, Norway, Iceland, Liechtenstein or Switzerland have their own passport or ID card. Enter the child's own document number.": "Les enfants ressortissants d'un pays de l'UE, de la Norvège, de l'Islande, du Liechtenstein ou de la Suisse ont leur propre passeport ou carte d'identité. Saisissez le numéro du document de l'enfant.",
     },
 }
 

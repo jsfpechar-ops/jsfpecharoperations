@@ -601,11 +601,39 @@ def _keep_unreadable_text(values: dict, raw: dict) -> None:
             values[field] = typed[:100]
 
 
+# A child of an EU/EEA/Swiss citizen ticked "child in a parent's passport". The
+# validator files the refusal under doc_number, where the host types INPASS, but
+# the guest's document box is hidden while the parent's-passport box is ticked,
+# so the guest reads it next to the parent's number, the box they can see.
+_INPASS_OWN_DOCUMENT_MESSAGES = {
+    "en": "Children who are citizens of an EU country, Norway, Iceland, Liechtenstein or Switzerland have their own passport or ID card. Untick the box above and enter the child's own document number.",
+    "cs": "Děti s občanstvím země EU, Norska, Islandu, Lichtenštejnska nebo Švýcarska mají vlastní pas nebo občanský průkaz. Zrušte zaškrtnutí políčka výše a zadejte číslo vlastního dokladu dítěte.",
+    "de": "Kinder mit der Staatsangehörigkeit eines EU-Landes, Norwegens, Islands, Liechtensteins oder der Schweiz haben einen eigenen Reisepass oder Personalausweis. Entfernen Sie das Häkchen oben und geben Sie die Nummer des eigenen Dokuments des Kindes ein.",
+    "es": "Los menores con nacionalidad de un país de la UE, Noruega, Islandia, Liechtenstein o Suiza tienen su propio pasaporte o documento de identidad. Desmarque la casilla de arriba e introduzca el número del documento propio del menor.",
+    "fr": "Les enfants ressortissants d'un pays de l'UE, de la Norvège, de l'Islande, du Liechtenstein ou de la Suisse ont leur propre passeport ou carte d'identité. Décochez la case ci-dessus et saisissez le numéro du document de l'enfant.",
+    "uk": guest_uk_i18n.ISSUE_INPASS_OWN_DOCUMENT,
+}
+
+
+def _inpass_own_document_issue(issue, lang: str):
+    if issue.field == "doc_number" and issue.message == validation.INPASS_OWN_DOCUMENT_MESSAGE:
+        message = _INPASS_OWN_DOCUMENT_MESSAGES.get(lang) or _INPASS_OWN_DOCUMENT_MESSAGES["en"]
+        return validation.Issue("parent_doc_number", message, issue.severity)
+    return None
+
+
 def _localize_issues(issues, lang: str):
-    return [
-        _guest_issue(issue, lang)
-        for issue in validation_i18n.guest_localize_issues(issues, lang)
-    ]
+    localized = []
+    for issue in issues:
+        own_document = _inpass_own_document_issue(issue, lang)
+        if own_document is not None:
+            localized.append(own_document)
+        else:
+            localized.extend(
+                _guest_issue(item, lang)
+                for item in validation_i18n.guest_localize_issues([issue], lang)
+            )
+    return localized
 
 
 def _live_apartment(column: str, value):

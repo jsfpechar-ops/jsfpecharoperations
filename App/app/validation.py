@@ -66,6 +66,26 @@ INPASS = "INPASS"
 # from the guest link.
 INPASS_NOTE_PREFIX = "Dítě zapsané v pasu rodiče, číslo dokladu rodiče: "
 
+# Citizens of these states cannot travel on a parent's passport: Regulation (EC)
+# 444/2009 (one person, one passport, Schengen-relevant, so Norway, Iceland,
+# Liechtenstein and Switzerland apply it too) ended child entries on 26 June
+# 2012. UbyPort refused such a record on 2026-11-13 ("Nekorektní číslo
+# cestovního dokladu", POL, born 2009), so INPASS is refused here before it is
+# sent. Other nationalities keep INPASS as appendix 5 (cDocN) describes it.
+OWN_DOCUMENT_NATIONALITIES = frozenset(
+    {
+        "AUT", "BEL", "BGR", "HRV", "CYP", "CZE", "DNK", "EST", "FIN", "FRA",
+        "DEU", "GRC", "HUN", "IRL", "ITA", "LVA", "LTU", "LUX", "MLT", "NLD",
+        "POL", "PRT", "ROU", "SVK", "SVN", "ESP", "SWE",
+        "NOR", "ISL", "LIE", "CHE",
+    }
+)
+INPASS_OWN_DOCUMENT_MESSAGE = (
+    "Children who are citizens of an EU country, Norway, Iceland, Liechtenstein "
+    "or Switzerland have their own passport or ID card. Enter the child's own "
+    "document number."
+)
+
 # Purpose-of-stay code list (kodovnik uctu pobytu). The web service is
 # authoritative via DejMiCiselnik(UcelyPobytu); this is the offline fallback.
 # The texts are display labels, not the police wording: sentence case, and the
@@ -665,7 +685,9 @@ def validate_guest(
     if not doc:
         issues.append(Issue("doc_number", "Travel document number is required."))
     elif doc == INPASS:
-        if not note:
+        if nationality in OWN_DOCUMENT_NATIONALITIES:
+            issues.append(Issue("doc_number", INPASS_OWN_DOCUMENT_MESSAGE))
+        elif not note:
             issues.append(
                 Issue(
                     "note",
