@@ -1,0 +1,18 @@
+# Host strings read by the property settings routes, one key per line.
+flash.apartments.archived
+flash.apartments.guest_link
+flash.apartments.pin_rotated
+flash.apartments.restored
+flash.entities.archived
+flash.entities.deleted
+flash.entities.restored
+flash.error.already_archived
+flash.error.archive_entity_first
+flash.error.detach_properties_first
+flash.error.entity_has_invoices
+flash.error.entity_has_properties
+flash.error.no_such_apartment
+flash.error.no_such_calendar
+flash.error.no_such_entity
+flash.error.not_archived
+flash.feeds.removed
