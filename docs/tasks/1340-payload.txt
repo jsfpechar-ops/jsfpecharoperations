@@ -1,0 +1,2338 @@
+~~~~file go/internal/billing/errors.go 7c8d75687433a7bc4d1fb59ec06a778b21b65835e159b20550e9e631e1da1823
+package billing
+
+import "errors"
+
+// Error is a billing refusal with a stable code. The codes are the messages of
+// the Python ValueError the same rule raises (App/app/billing.py,
+// billing_order.py), so the golden file compares them as plain strings.
+// Callers test with errors.Is(err, billing.ErrAlreadyOrdered) or compare
+// billing.Code(err). A wrapped error keeps its code: the text after the code
+// is detail for a log, never for a page.
+type Error struct{ code string }
+
+// Error returns the code.
+func (e *Error) Error() string { return e.code }
+
+// Code returns the code of the first billing Error in err's chain, or "".
+func Code(err error) string {
+	var e *Error
+	if errors.As(err, &e) {
+		return e.code
+	}
+	return ""
+}
+
+// The sentinels. Python raise -> Go error:
+//
+//	unknown status: <x>                  ErrUnknownStatus
+//	one change at a time, from ...       ErrOneChange
+//	no ordered plan to change            ErrNoOrderedPlan
+//	whitelabel_unavailable               ErrWhitelabelUnavailable
+//	discount_out_of_range                ErrDiscountOutOfRange
+//	reason_missing                       ErrReasonMissing
+//	no_plan                              ErrNoPlan
+//	og                                   ErrNoAccount
+//	already_ordered                      ErrAlreadyOrdered
+//	bad_days                             ErrBadDays
+//	unknown plan or interval: <x> <y>    ErrUnknownPlan (from quote)
+//
+// ErrBadValue has no Python twin: Python takes any object as the value of a
+// change, Go takes int, int64, bool and string and refuses the rest.
+var (
+	ErrUnknownStatus         = &Error{"unknown status"}
+	ErrOneChange             = &Error{"one change at a time, from CHANGE_COLUMNS"}
+	ErrNoOrderedPlan         = &Error{"no ordered plan to change"}
+	ErrWhitelabelUnavailable = &Error{"whitelabel_unavailable"}
+	ErrDiscountOutOfRange    = &Error{"discount_out_of_range"}
+	ErrReasonMissing         = &Error{"reason_missing"}
+	ErrNoPlan                = &Error{"no_plan"}
+	ErrNoAccount             = &Error{"og"}
+	ErrAlreadyOrdered        = &Error{"already_ordered"}
+	ErrBadDays               = &Error{"bad_days"}
+	ErrUnknownPlan           = &Error{"unknown plan or interval"}
+	ErrBadValue              = &Error{"bad value"}
+)
+~~~~
+~~~~file go/internal/billing/invoicer.go a817bcd2bcd1c53c6f665e14d289dc262613e346f2235ff2db063b4166598aaf
+package billing
+
+import (
+	"context"
+	"time"
+)
+
+// Invoicer is what the engine needs from the invoice side (billing_invoices.py
+// in Python: issue, storno, PDF, mail). The billing job thread implements it;
+// the engine never issues a document itself. today is used for its Y-M-D only.
+// Periods are YYYY-MM-DD strings. Ids are platform_invoice ids.
+type Invoicer interface {
+	// IssueForPeriod is issue_for_period: the period's invoice, issued once.
+	IssueForPeriod(ctx context.Context, owner int64, periodFrom, periodTo string, today time.Time) (int64, error)
+	// IssueSupplementary is issue_supplementary (amountCZK in whole Kc).
+	IssueSupplementary(ctx context.Context, owner int64, amountCZK int64, description, periodFrom, periodTo string, today time.Time) (int64, error)
+	// Storno is storno: cancel an unpaid invoice, returning the storno id.
+	Storno(ctx context.Context, invoiceID int64, reason string, today time.Time) (int64, error)
+	// Send is send: mail the invoice with its PDF.
+	Send(ctx context.Context, invoiceID int64) error
+}
+~~~~
+~~~~file go/internal/billing/engine.go b28c8af665e5339fc51fce42a06003faa74189aed747977d17fe0560ec84813c
+package billing
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"math"
+	"sort"
+	"strconv"
+	"strings"
+	"time"
+	"unicode"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
+)
+
+// The subscription engine: a port of App/app/billing.py (account, status
+// machine, plan changes, discount) and of App/app/billing_order.py (see
+// order.go). Python is the oracle: testdata/engine_golden.json is written by
+// App/scripts/billing_engine_golden.py and engine_test.go must match it.
+// Nothing here is registered as a route or a job.
+
+// Statuses is billing.STATUSES.
+var Statuses = []string{"trial_pending", "trialing", "active", "overdue", "canceling", "paused"}
+
+// Transitions is billing.TRANSITIONS: the moves SetStatus allows.
+var Transitions = map[string][]string{
+	"trial_pending": {"trialing"},
+	"trialing":      {"active", "paused"},
+	"active":        {"overdue", "canceling"},
+	"overdue":       {"active", "paused"},
+	"canceling":     {"paused", "active"},
+	"paused":        {"active"},
+}
+
+// Plans is billing.PLANS, Intervals is billing.INTERVALS.
+var (
+	Plans     = []string{"standard", "max"}
+	Intervals = []string{"month", "year"}
+)
+
+// SupplementaryMinCZK is billing.SUPPLEMENTARY_MIN_CZK: a smaller amount is
+// carried to the next invoice instead.
+const SupplementaryMinCZK = 50
+
+// ChangeColumns is billing.CHANGE_COLUMNS: change field -> billing_account column.
+var ChangeColumns = map[string]string{
+	"apartments":       "apartments_billed",
+	"plan":             "plan",
+	"billing_interval": "billing_interval",
+	"addon_ttlock":     "addon_ttlock",
+	"addon_whitelabel": "addon_whitelabel",
+}
+
+// DB is what a read or a single statement needs; *pgxpool.Pool and pgx.Tx fit.
+type DB interface {
+	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+}
+
+// BillingAccount is one billing_account row. A NULL text column reads as "".
+type BillingAccount struct {
+	OwnerUserID       int64
+	Status            string
+	Plan              string // "" until a plan is ordered
+	BillingInterval   string
+	PaymentMethod     string
+	Founder           bool
+	AddonTTLock       bool
+	AddonWhitelabel   bool
+	ApartmentsBilled  int
+	TrialStartedAt    string
+	TrialEndsAt       string
+	PeriodStart       string
+	PeriodEnd         string
+	CancelAtPeriodEnd bool
+	PendingChangeJSON string
+	CarryCZK          int
+	BuyerName         string
+	BuyerStreet       string
+	BuyerCity         string
+	BuyerZip          string
+	BuyerICO          string
+	BuyerDIC          string
+	BuyerEmail        string
+	UpdatedAt         string
+	DiscountPercent   int
+	DiscountReason    string
+}
+
+const accountSQL = `SELECT owner_user_id, status, COALESCE(plan, ''), COALESCE(billing_interval, ''),
+	payment_method, founder, addon_ttlock, addon_whitelabel, apartments_billed,
+	COALESCE(trial_started_at, ''), COALESCE(trial_ends_at, ''), COALESCE(period_start, ''),
+	COALESCE(period_end, ''), cancel_at_period_end, COALESCE(pending_change_json, ''), carry_czk,
+	COALESCE(buyer_name, ''), COALESCE(buyer_street, ''), COALESCE(buyer_city, ''),
+	COALESCE(buyer_zip, ''), COALESCE(buyer_ico, ''), COALESCE(buyer_dic, ''),
+	COALESCE(buyer_email, ''), updated_at, discount_percent, COALESCE(discount_reason, '')
+	FROM billing_account WHERE owner_user_id = $1`
+
+// Account is billing.account: the host's row, or nil when there is none.
+func Account(ctx context.Context, q DB, owner int64) (*BillingAccount, error) {
+	var a BillingAccount
+	var founder, ttlock, white, cancel int
+	err := q.QueryRow(ctx, accountSQL, owner).Scan(
+		&a.OwnerUserID, &a.Status, &a.Plan, &a.BillingInterval, &a.PaymentMethod,
+		&founder, &ttlock, &white, &a.ApartmentsBilled, &a.TrialStartedAt, &a.TrialEndsAt,
+		&a.PeriodStart, &a.PeriodEnd, &cancel, &a.PendingChangeJSON, &a.CarryCZK,
+		&a.BuyerName, &a.BuyerStreet, &a.BuyerCity, &a.BuyerZip, &a.BuyerICO, &a.BuyerDIC,
+		&a.BuyerEmail, &a.UpdatedAt, &a.DiscountPercent, &a.DiscountReason)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	a.Founder, a.AddonTTLock, a.AddonWhitelabel = founder != 0, ttlock != 0, white != 0
+	a.CancelAtPeriodEnd = cancel != 0
+	return &a, nil
+}
+
+// EnsureAccount is billing.ensure_account: the row, created as trial_pending
+// the first time.
+func EnsureAccount(ctx context.Context, q DB, owner int64) (*BillingAccount, error) {
+	if _, err := q.Exec(ctx, `INSERT INTO billing_account (owner_user_id, status, updated_at)
+		VALUES ($1, 'trial_pending', $2) ON CONFLICT (owner_user_id) DO NOTHING`,
+		owner, ubyport.UTCNow()); err != nil {
+		return nil, err
+	}
+	return Account(ctx, q, owner)
+}
+
+// ApartmentCount is billing.apartment_count: the host's active apartments.
+func ApartmentCount(ctx context.Context, q DB, owner int64) (int, error) {
+	var n int
+	err := q.QueryRow(ctx, `SELECT COUNT(*) FROM apartment WHERE owner_user_id = $1 AND active = 1`, owner).Scan(&n)
+	return n, err
+}
+
+type auditActorKey struct{}
+
+type auditActor struct {
+	userID       int64
+	username     string
+	impersonator *int64
+}
+
+// WithAuditActor is db.set_current_actor for Go: it remembers who is acting so
+// the audit rows written with the returned context carry actor_user_id and
+// impersonator_user_id, and an actor "host" is replaced by username, exactly as
+// db.audit does. impersonatorUserID is the acting user's own id only while they
+// are inside another workspace (the page passes nil for an ordinary action).
+// Without it the columns stay NULL and the actor string is written as given.
+func WithAuditActor(ctx context.Context, userID int64, username string, impersonatorUserID *int64) context.Context {
+	return context.WithValue(ctx, auditActorKey{}, auditActor{userID, username, impersonatorUserID})
+}
+
+func auditActorFrom(ctx context.Context) (auditActor, bool) {
+	a, ok := ctx.Value(auditActorKey{}).(auditActor)
+	return a, ok
+}
+
+// audit is db.audit. The engine always receives the owner, so Python's
+// fallback to the request's current owner (db._current_owner_id) is never
+// needed here.
+func audit(ctx context.Context, q DB, actor, action, detail string, owner int64) error {
+	var actorID, impersonatorID *int64
+	if a, ok := auditActorFrom(ctx); ok {
+		id := a.userID
+		actorID, impersonatorID = &id, a.impersonator
+		if actor == "host" {
+			actor = a.username
+		}
+	}
+	_, err := q.Exec(ctx, `INSERT INTO audit (at, actor, action, detail, owner_user_id, actor_user_id, impersonator_user_id)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)`, ubyport.UTCNow(), actor, action, detail, owner, actorID, impersonatorID)
+	return err
+}
+
+// lockKey is db.lock_key on PostgreSQL: serialise writers of one row.
+func lockKey(ctx context.Context, tx pgx.Tx, name string, key int64) error {
+	_, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtext($1), $2::int4)`, name, key)
+	return err
+}
+
+func contains(list []string, s string) bool {
+	for _, x := range list {
+		if x == s {
+			return true
+		}
+	}
+	return false
+}
+
+// SetStatus is billing.set_status: move the account to new if Transitions
+// allows it, false otherwise. The audit row is written after the commit.
+func SetStatus(ctx context.Context, pool *pgxpool.Pool, owner int64, newStatus, actor string) (bool, error) {
+	if !contains(Statuses, newStatus) {
+		return false, fmt.Errorf("%w: %s", ErrUnknownStatus, newStatus)
+	}
+	old, moved, err := moveStatus(ctx, pool, owner, func(old string) bool {
+		return contains(Transitions[old], newStatus)
+	}, newStatus)
+	if err != nil || !moved {
+		return false, err
+	}
+	if err := audit(ctx, pool, actor, "billing_status", old+"->"+newStatus, owner); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+// moveStatus locks the account, reads its status and, when allowed(old), sets
+// newStatus in the same transaction.
+func moveStatus(ctx context.Context, pool *pgxpool.Pool, owner int64, allowed func(old string) bool, newStatus string) (string, bool, error) {
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		return "", false, err
+	}
+	defer tx.Rollback(ctx)
+	if err := lockKey(ctx, tx, "billing_account", owner); err != nil {
+		return "", false, err
+	}
+	var old string
+	err = tx.QueryRow(ctx, `SELECT status FROM billing_account WHERE owner_user_id = $1`, owner).Scan(&old)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", false, nil
+	}
+	if err != nil {
+		return "", false, err
+	}
+	if !allowed(old) {
+		return old, false, nil
+	}
+	if _, err := tx.Exec(ctx, `UPDATE billing_account SET status = $1, updated_at = $2 WHERE owner_user_id = $3`,
+		newStatus, ubyport.UTCNow(), owner); err != nil {
+		return "", false, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return "", false, err
+	}
+	return old, true, nil
+}
+
+// OperatorPause is billing.operator_pause: trial_pending or trialing -> paused,
+// for PlaceForOperator only. trial_pending -> paused is the one move outside
+// Transitions; SetStatus must keep refusing it. False means already paused or
+// another state (Place then decides).
+func OperatorPause(ctx context.Context, pool *pgxpool.Pool, owner int64, actor string) (bool, error) {
+	old, moved, err := moveStatus(ctx, pool, owner, func(old string) bool {
+		return old == "trial_pending" || old == "trialing"
+	}, "paused")
+	if err != nil || !moved {
+		return false, err
+	}
+	if err := audit(ctx, pool, actor, "billing_status", old+"->paused", owner); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+// dayOf returns the civil date of t (Y-M-D only); a zero t means now.
+func dayOf(t time.Time) time.Time {
+	if t.IsZero() {
+		t = time.Now()
+	}
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
+}
+
+func isoDay(t time.Time) string { return t.Format("2006-01-02") }
+
+// first10 is Python's s[:10] for an ASCII timestamp.
+func first10(s string) string {
+	if len(s) > 10 {
+		return s[:10]
+	}
+	return s
+}
+
+func parseDay(s string) (time.Time, error) {
+	return time.Parse("2006-01-02", first10(s))
+}
+
+func wholeMonths(start, end time.Time) int {
+	months := (end.Year()-start.Year())*12 + int(end.Month()) - int(start.Month())
+	if end.Day() < start.Day() {
+		months--
+	}
+	if months < 0 {
+		return 0
+	}
+	return months
+}
+
+// periodState is the dict billing._period_total takes.
+type periodState struct {
+	apartments int
+	plan       string
+	interval   string
+	ttlock     int
+	whitelabel int
+	discount   int
+}
+
+func (s periodState) total() (int, error) {
+	p, err := Quote(s.apartments, s.plan, s.interval, s.ttlock != 0, s.whitelabel != 0, s.discount)
+	if err != nil {
+		return 0, fmt.Errorf("%w: %v", ErrUnknownPlan, err)
+	}
+	return p.Total, nil
+}
+
+func stateOf(a *BillingAccount) periodState {
+	return periodState{
+		apartments: a.ApartmentsBilled, plan: a.Plan, interval: a.BillingInterval,
+		ttlock: flag(a.AddonTTLock), whitelabel: flag(a.AddonWhitelabel), discount: a.DiscountPercent,
+	}
+}
+
+// ChangeResult is the dict of billing.apply_change plus the invoice_id that
+// billing_order.change adds (0 = none).
+type ChangeResult struct {
+	When              string `json:"when"` // now, next_period or none
+	PeriodTotalBefore int    `json:"period_total_before"`
+	PeriodTotalAfter  int    `json:"period_total_after"`
+	Months            int    `json:"months"`
+	SupplementaryCZK  int    `json:"supplementary_czk"`
+	CarryCZK          int    `json:"carry_czk"`
+	InvoiceID         int64  `json:"invoice_id"`
+}
+
+// normaliseValue turns a change value into what the column stores.
+func normaliseValue(field string, value any) (any, error) {
+	asInt := func() (int, bool) {
+		switch v := value.(type) {
+		case int:
+			return v, true
+		case int64:
+			return int(v), true
+		case bool:
+			return flag(v), true
+		}
+		return 0, false
+	}
+	switch field {
+	case "plan", "billing_interval":
+		if s, ok := value.(string); ok {
+			return s, nil
+		}
+	default:
+		if n, ok := asInt(); ok {
+			return n, nil
+		}
+	}
+	return nil, fmt.Errorf("%w: %s %T", ErrBadValue, field, value)
+}
+
+// ApplyChange is billing.apply_change: preview (confirm false) or save one
+// change to an ordered plan. field must be a key of ChangeColumns (anything
+// else is ErrOneChange, as Python's "exactly one key" rule). value is an int
+// (apartments, add-ons 0 or 1), a bool (add-ons) or a string (plan, interval).
+// A rise starts now; on an annual plan it costs the difference for the
+// remaining whole months (supplementary, or carried when under 50 Kc). Anything
+// else waits for the next period. Issuing the invoice is not done here.
+func ApplyChange(ctx context.Context, pool *pgxpool.Pool, owner int64, field string, value any,
+	today time.Time, confirm bool, actor string) (ChangeResult, error) {
+	column, ok := ChangeColumns[field]
+	if !ok {
+		return ChangeResult{}, ErrOneChange
+	}
+	acc, err := Account(ctx, pool, owner)
+	if err != nil {
+		return ChangeResult{}, err
+	}
+	if acc == nil || acc.Plan == "" {
+		return ChangeResult{}, ErrNoOrderedPlan
+	}
+	val, err := normaliseValue(field, value)
+	if err != nil {
+		return ChangeResult{}, err
+	}
+	if field == "addon_whitelabel" && val.(int) != 0 && !acc.AddonWhitelabel {
+		return ChangeResult{}, ErrWhitelabelUnavailable
+	}
+	current := stateOf(acc)
+	target := current
+	switch field {
+	case "apartments":
+		target.apartments = val.(int)
+	case "plan":
+		target.plan = val.(string)
+	case "billing_interval":
+		target.interval = val.(string)
+	case "addon_ttlock":
+		target.ttlock = val.(int)
+	case "addon_whitelabel":
+		target.whitelabel = val.(int)
+	}
+	before, err := current.total()
+	if err != nil {
+		return ChangeResult{}, err
+	}
+	after, err := target.total()
+	if err != nil {
+		return ChangeResult{}, err
+	}
+	when := "next_period"
+	if field != "billing_interval" {
+		if after == before {
+			when = "none"
+		} else if after > before {
+			when = "now"
+		}
+	}
+	day := dayOf(today)
+	months, difference := 0, 0
+	if when == "now" && acc.BillingInterval == "year" && acc.PeriodEnd != "" {
+		end, err := parseDay(acc.PeriodEnd)
+		if err != nil {
+			return ChangeResult{}, err
+		}
+		months = wholeMonths(day, end)
+		difference = int(math.RoundToEven(float64((after-before)*months) / 12))
+	}
+	supplementary := 0
+	if difference >= SupplementaryMinCZK {
+		supplementary = difference
+	}
+	result := ChangeResult{
+		When: when, PeriodTotalBefore: before, PeriodTotalAfter: after, Months: months,
+		SupplementaryCZK: supplementary, CarryCZK: difference - supplementary,
+	}
+	if !confirm || when == "none" {
+		return result, nil
+	}
+	if when == "now" {
+		// column comes from ChangeColumns, never from the caller.
+		if _, err := pool.Exec(ctx, "UPDATE billing_account SET "+column+" = $1, carry_czk = carry_czk + $2, updated_at = $3 WHERE owner_user_id = $4",
+			val, result.CarryCZK, ubyport.UTCNow(), owner); err != nil {
+			return ChangeResult{}, err
+		}
+	} else {
+		pending, err := pendingWith(acc.PendingChangeJSON, field, val)
+		if err != nil {
+			return ChangeResult{}, err
+		}
+		if _, err := pool.Exec(ctx, `UPDATE billing_account SET pending_change_json = $1, updated_at = $2 WHERE owner_user_id = $3`,
+			pending, ubyport.UTCNow(), owner); err != nil {
+			return ChangeResult{}, err
+		}
+	}
+	if err := audit(ctx, pool, actor, "billing_change", field+" "+when, owner); err != nil {
+		return ChangeResult{}, err
+	}
+	return result, nil
+}
+
+// pendingWith is json.dumps({**json.loads(raw or "{}"), field: val}, sort_keys=True):
+// sorted keys, ", " and ": " separators, ASCII-only strings.
+func pendingWith(raw, field string, val any) (string, error) {
+	m := map[string]json.RawMessage{}
+	if raw != "" {
+		if err := json.Unmarshal([]byte(raw), &m); err != nil {
+			return "", err
+		}
+	}
+	switch v := val.(type) {
+	case int:
+		m[field] = json.RawMessage(strconv.Itoa(v))
+	case string:
+		m[field] = json.RawMessage(ubyport.PyString(v))
+	}
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	parts := make([]string, 0, len(keys))
+	for _, k := range keys {
+		parts = append(parts, ubyport.PyString(k)+": "+string(m[k]))
+	}
+	return "{" + strings.Join(parts, ", ") + "}", nil
+}
+
+// pyStrip is Python str.strip(): unicode.IsSpace plus the separators
+// \x1c-\x1f that Python counts as white space.
+func pyStrip(s string) string {
+	return strings.TrimFunc(s, func(r rune) bool {
+		return unicode.IsSpace(r) || (r >= 0x1c && r <= 0x1f)
+	})
+}
+
+// DiscountResult is the dict of billing.apply_discount.
+type DiscountResult struct {
+	Percent            int     `json:"percent"`
+	Reason             string  `json:"reason"`
+	PeriodTotalBefore  int     `json:"period_total_before"`
+	PeriodTotalAfter   int     `json:"period_total_after"`
+	ReissuedInvoiceIDs []int64 `json:"reissued_invoice_ids"`
+}
+
+// ApplyDiscount is billing.apply_discount: set or clear the operator's
+// discount (0443). An issued, unpaid, unvoided invoice-kind document is
+// storno'd and reissued for the same period; paid or voided ones are never
+// touched. The invoice calls go through inv, in Python's order.
+func ApplyDiscount(ctx context.Context, pool *pgxpool.Pool, inv Invoicer, owner int64, percent int,
+	reason, actor string, today time.Time) (DiscountResult, error) {
+	day := dayOf(today)
+	if percent < 0 || percent > 100 {
+		return DiscountResult{}, ErrDiscountOutOfRange
+	}
+	reason = pyStrip(reason)
+	if r := []rune(reason); len(r) > 200 {
+		reason = string(r[:200])
+	}
+	if percent > 0 && reason == "" {
+		return DiscountResult{}, ErrReasonMissing
+	}
+	acc, err := Account(ctx, pool, owner)
+	if err != nil {
+		return DiscountResult{}, err
+	}
+	if acc == nil || acc.Plan == "" {
+		return DiscountResult{}, ErrNoPlan
+	}
+	before, err := stateOf(acc).total()
+	if err != nil {
+		return DiscountResult{}, err
+	}
+	var storedReason any
+	if reason != "" {
+		storedReason = reason
+	}
+	if _, err := pool.Exec(ctx, `UPDATE billing_account SET discount_percent = $1, discount_reason = $2, updated_at = $3
+		WHERE owner_user_id = $4`, percent, storedReason, ubyport.UTCNow(), owner); err != nil {
+		return DiscountResult{}, err
+	}
+	if err := audit(ctx, pool, actor, "billing_discount", fmt.Sprintf("%d %% %s", percent, reason), owner); err != nil {
+		return DiscountResult{}, err
+	}
+	type period struct {
+		id       int64
+		from, to string
+	}
+	rows, err := pool.Query(ctx, `SELECT id, period_from, period_to FROM platform_invoice
+		WHERE owner_user_id = $1 AND kind = 'invoice' AND voided = 0 AND paid_on IS NULL ORDER BY id`, owner)
+	if err != nil {
+		return DiscountResult{}, err
+	}
+	var open []period
+	for rows.Next() {
+		var p period
+		if err := rows.Scan(&p.id, &p.from, &p.to); err != nil {
+			rows.Close()
+			return DiscountResult{}, err
+		}
+		open = append(open, p)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return DiscountResult{}, err
+	}
+	reissued := []int64{}
+	for _, p := range open {
+		if _, err := inv.Storno(ctx, p.id, fmt.Sprintf("sleva %d %% (%s)", percent, reason), day); err != nil {
+			return DiscountResult{}, err
+		}
+		id, err := inv.IssueForPeriod(ctx, owner, p.from, p.to, day)
+		if err != nil {
+			return DiscountResult{}, err
+		}
+		reissued = append(reissued, id)
+	}
+	refreshed, err := Account(ctx, pool, owner)
+	if err != nil {
+		return DiscountResult{}, err
+	}
+	if refreshed == nil {
+		return DiscountResult{}, fmt.Errorf("billing account %d vanished", owner)
+	}
+	st := stateOf(refreshed)
+	st.discount = percent
+	after, err := st.total()
+	if err != nil {
+		return DiscountResult{}, err
+	}
+	return DiscountResult{
+		Percent: percent, Reason: reason, PeriodTotalBefore: before, PeriodTotalAfter: after,
+		ReissuedInvoiceIDs: reissued,
+	}, nil
+}
+~~~~
+~~~~file go/internal/billing/order.go 5c03055adb2e0c8cf54823cc9c0fa5d8a87727d5b9caa7ae4e2d9f8fdd2f5beb
+package billing
+
+import (
+	"context"
+	"fmt"
+	"strings"
+	"time"
+	"unicode"
+	"unicode/utf8"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
+)
+
+// Ordering and changing a plan: a port of App/app/billing_order.py (without
+// form_values and quote) and of billing_trial.period_end.
+
+// BuyerFields is billing_order.BUYER_FIELDS, in order.
+var BuyerFields = []string{
+	"buyer_name", "buyer_street", "buyer_city", "buyer_zip", "buyer_ico", "buyer_dic", "buyer_email",
+}
+
+// Orderable is billing_order.ORDERABLE: the statuses in which the host orders a
+// plan; after that, changes go through ApplyChange.
+var Orderable = []string{"trial_pending", "trialing", "paused"}
+
+// HostActor is the actor Python writes for the host's own order rows.
+const HostActor = "host"
+
+// OrderValues is the dict billing_order.read_form returns (json keys as Python).
+type OrderValues struct {
+	Plan            string `json:"plan"`
+	BillingInterval string `json:"billing_interval"`
+	AddonTTLock     bool   `json:"addon_ttlock"`
+	AddonWhitelabel bool   `json:"addon_whitelabel"`
+	BuyerName       string `json:"buyer_name"`
+	BuyerStreet     string `json:"buyer_street"`
+	BuyerCity       string `json:"buyer_city"`
+	BuyerZip        string `json:"buyer_zip"`
+	BuyerICO        string `json:"buyer_ico"`
+	BuyerDIC        string `json:"buyer_dic"`
+	BuyerEmail      string `json:"buyer_email"`
+}
+
+// buyer returns the value of one BuyerFields entry.
+func (v OrderValues) buyer(field string) string {
+	switch field {
+	case "buyer_name":
+		return v.BuyerName
+	case "buyer_street":
+		return v.BuyerStreet
+	case "buyer_city":
+		return v.BuyerCity
+	case "buyer_zip":
+		return v.BuyerZip
+	case "buyer_ico":
+		return v.BuyerICO
+	case "buyer_dic":
+		return v.BuyerDIC
+	case "buyer_email":
+		return v.BuyerEmail
+	}
+	return ""
+}
+
+// ICOOK is validation.ico_ok: a Czech IC, 8 ASCII digits whose last is the
+// mod-11 check digit. (Python also accepts non-ASCII decimal digits; Go does
+// not, a known gap.)
+func ICOOK(ico string) bool {
+	text := pyStrip(ico)
+	if len(text) != 8 {
+		return false
+	}
+	weights := []int{8, 7, 6, 5, 4, 3, 2}
+	total := 0
+	for i, w := range weights {
+		d := text[i]
+		if d < '0' || d > '9' {
+			return false
+		}
+		total += int(d-'0') * w
+	}
+	last := text[7]
+	if last < '0' || last > '9' {
+		return false
+	}
+	rem := total % 11
+	check := 11 - rem
+	if rem == 0 {
+		check = 1
+	} else if rem == 1 {
+		check = 0
+	}
+	return int(last-'0') == check
+}
+
+// ReadForm is billing_order.read_form: the posted order and its errors as
+// {field: copy key}. The email check is ubyport.NormaliseEmail, which the
+// ubyport golden tests keep equal to mail.normalise_email.
+func ReadForm(form map[string]string) (OrderValues, map[string]string) {
+	v := OrderValues{
+		Plan:            form["plan"],
+		BillingInterval: form["billing_interval"],
+		AddonTTLock:     form["addon_ttlock"] == "1",
+		AddonWhitelabel: form["addon_whitelabel"] == "1",
+		BuyerName:       pyStrip(form["buyer_name"]),
+		BuyerStreet:     pyStrip(form["buyer_street"]),
+		BuyerCity:       pyStrip(form["buyer_city"]),
+		BuyerZip:        strings.ReplaceAll(pyStrip(form["buyer_zip"]), " ", ""),
+		BuyerICO:        pyStrip(form["buyer_ico"]),
+		BuyerDIC:        pyStrip(form["buyer_dic"]),
+		BuyerEmail:      pyStrip(form["buyer_email"]),
+	}
+	errs := map[string]string{}
+	if !contains(Plans, v.Plan) {
+		errs["plan"] = "billing.order.error.plan"
+	}
+	if !contains(Intervals, v.BillingInterval) {
+		errs["billing_interval"] = "billing.order.error.plan"
+	}
+	for _, f := range []string{"buyer_name", "buyer_street", "buyer_city"} {
+		if v.buyer(f) == "" {
+			errs[f] = "billing.order.error.required"
+		}
+	}
+	if !zipOK(v.BuyerZip) {
+		errs["buyer_zip"] = "billing.order.error.zip"
+	}
+	if v.BuyerICO != "" && !ICOOK(v.BuyerICO) {
+		errs["buyer_ico"] = "billing.order.error.ico"
+	}
+	email := ubyport.NormaliseEmail(v.BuyerEmail)
+	if email == "" {
+		errs["buyer_email"] = "billing.order.error.email"
+	} else {
+		v.BuyerEmail = email
+	}
+	return v, errs
+}
+
+// zipOK is len(zip) == 5 and zip.isdigit().
+func zipOK(zip string) bool {
+	if utf8.RuneCountInString(zip) != 5 {
+		return false
+	}
+	for _, r := range zip {
+		if !unicode.IsDigit(r) {
+			return false
+		}
+	}
+	return true
+}
+
+// Apartments is billing_order.apartments: the active ones, at least one.
+func Apartments(ctx context.Context, q DB, owner int64) (int, error) {
+	n, err := ApartmentCount(ctx, q, owner)
+	if err != nil {
+		return 0, err
+	}
+	if n < 1 {
+		n = 1
+	}
+	return n, nil
+}
+
+// PeriodEnd is billing_trial.period_end: the last day of a month or year that
+// starts on start.
+func PeriodEnd(start time.Time, interval string) time.Time {
+	start = dayOf(start)
+	var year int
+	var month time.Month
+	if interval == "year" {
+		year, month = start.Year()+1, start.Month()
+	} else {
+		year, month = start.Year()+int(start.Month())/12, time.Month(int(start.Month())%12+1)
+	}
+	last := time.Date(year, month+1, 0, 0, 0, 0, 0, time.UTC).Day()
+	if start.Day() > last {
+		// 31 January runs to the end of February.
+		return time.Date(year, month, last, 0, 0, 0, 0, time.UTC)
+	}
+	return time.Date(year, month, start.Day(), 0, 0, 0, 0, time.UTC).AddDate(0, 0, -1)
+}
+
+// PlaceResult is the dict of billing_order.place (InvoiceID 0 = none).
+type PlaceResult struct {
+	Starts    string `json:"starts"` // trial_end or now
+	Date      string `json:"date"`
+	InvoiceID int64  `json:"invoice_id"`
+}
+
+func nullable(s string) any {
+	if s == "" {
+		return nil
+	}
+	return s
+}
+
+// Place is billing_order.place: save the order. In a trial it starts when the
+// trial ends; when paused it starts today and the first invoice is issued and
+// mailed at once. actor is written on the order and status audit rows (Python
+// writes "host"; pass HostActor or the signed-in username).
+func Place(ctx context.Context, pool *pgxpool.Pool, inv Invoicer, owner int64, v OrderValues,
+	today time.Time, actor string) (PlaceResult, error) {
+	acc, err := Account(ctx, pool, owner)
+	if err != nil {
+		return PlaceResult{}, err
+	}
+	if acc == nil {
+		return PlaceResult{}, ErrNoAccount
+	}
+	if !contains(Orderable, acc.Status) {
+		return PlaceResult{}, ErrAlreadyOrdered
+	}
+	if v.AddonWhitelabel && !acc.AddonWhitelabel {
+		return PlaceResult{}, ErrWhitelabelUnavailable
+	}
+	day := dayOf(today)
+	apartments, err := Apartments(ctx, pool, owner)
+	if err != nil {
+		return PlaceResult{}, err
+	}
+	if _, err := pool.Exec(ctx, `UPDATE billing_account SET plan = $1, billing_interval = $2, addon_ttlock = $3,
+		addon_whitelabel = $4, apartments_billed = $5, pending_change_json = NULL,
+		buyer_name = $6, buyer_street = $7, buyer_city = $8, buyer_zip = $9, buyer_ico = $10,
+		buyer_dic = $11, buyer_email = $12, updated_at = $13 WHERE owner_user_id = $14`,
+		v.Plan, v.BillingInterval, flag(v.AddonTTLock), flag(acc.AddonWhitelabel), apartments,
+		nullable(v.BuyerName), nullable(v.BuyerStreet), nullable(v.BuyerCity), nullable(v.BuyerZip),
+		nullable(v.BuyerICO), nullable(v.BuyerDIC), nullable(v.BuyerEmail), ubyport.UTCNow(), owner); err != nil {
+		return PlaceResult{}, err
+	}
+	if err := audit(ctx, pool, actor, "billing_order", v.Plan+" "+v.BillingInterval, owner); err != nil {
+		return PlaceResult{}, err
+	}
+	if acc.Status != "paused" {
+		return PlaceResult{Starts: "trial_end", Date: first10(acc.TrialEndsAt)}, nil
+	}
+	end := PeriodEnd(day, v.BillingInterval)
+	if _, err := pool.Exec(ctx, `UPDATE billing_account SET period_start = $1, period_end = $2, updated_at = $3
+		WHERE owner_user_id = $4`, isoDay(day), isoDay(end), ubyport.UTCNow(), owner); err != nil {
+		return PlaceResult{}, err
+	}
+	if _, err := SetStatus(ctx, pool, owner, "active", actor); err != nil {
+		return PlaceResult{}, err
+	}
+	id, err := inv.IssueForPeriod(ctx, owner, isoDay(day), isoDay(end), day)
+	if err != nil {
+		return PlaceResult{}, err
+	}
+	if err := inv.Send(ctx, id); err != nil {
+		return PlaceResult{}, err
+	}
+	return PlaceResult{Starts: "now", Date: isoDay(day), InvoiceID: id}, nil
+}
+
+// Change is billing_order.change: preview or save one change; a rise on an
+// annual plan may issue and send a supplementary invoice (ChangeResult.InvoiceID).
+func Change(ctx context.Context, pool *pgxpool.Pool, inv Invoicer, owner int64, field string, value any,
+	confirm bool, today time.Time, actor string) (ChangeResult, error) {
+	day := dayOf(today)
+	result, err := ApplyChange(ctx, pool, owner, field, value, day, confirm, actor)
+	if err != nil {
+		return ChangeResult{}, err
+	}
+	if !confirm || result.SupplementaryCZK == 0 {
+		return result, nil
+	}
+	acc, err := Account(ctx, pool, owner)
+	if err != nil {
+		return ChangeResult{}, err
+	}
+	if acc == nil {
+		return ChangeResult{}, fmt.Errorf("billing account %d vanished", owner)
+	}
+	periodTo := first10(acc.PeriodEnd)
+	if periodTo == "" {
+		periodTo = isoDay(day)
+	}
+	id, err := inv.IssueSupplementary(ctx, owner, int64(result.SupplementaryCZK),
+		"Doplatek za změnu předplatného od "+day.Format("02.01.2006"), isoDay(day), periodTo, day)
+	if err != nil {
+		return ChangeResult{}, err
+	}
+	result.InvoiceID = id
+	if err := inv.Send(ctx, id); err != nil {
+		return ChangeResult{}, err
+	}
+	return result, nil
+}
+
+// Cancel is billing_order.cancel: end at the period's end, active -> canceling.
+func Cancel(ctx context.Context, pool *pgxpool.Pool, owner int64, actor string) (bool, error) {
+	return setCancelFlag(ctx, pool, owner, "canceling", 1, actor)
+}
+
+// Resume is billing_order.resume: take a cancellation back, canceling -> active.
+func Resume(ctx context.Context, pool *pgxpool.Pool, owner int64, actor string) (bool, error) {
+	return setCancelFlag(ctx, pool, owner, "active", 0, actor)
+}
+
+func setCancelFlag(ctx context.Context, pool *pgxpool.Pool, owner int64, status string, flagValue int, actor string) (bool, error) {
+	moved, err := SetStatus(ctx, pool, owner, status, actor)
+	if err != nil || !moved {
+		return false, err
+	}
+	if _, err := pool.Exec(ctx, `UPDATE billing_account SET cancel_at_period_end = $1, updated_at = $2 WHERE owner_user_id = $3`,
+		flagValue, ubyport.UTCNow(), owner); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+// PlaceForOperator is billing_order.place_for_operator: assign a plan to a host
+// who has none (0448). It creates the account if needed, pauses it through
+// OperatorPause, places the order starting today with the first invoice issued
+// at once, and writes the "(operator assign)" audit row with actor.
+//
+// Python's inner place() writes actor "host"; with WithAuditActor on ctx the
+// audit replaces it by the signed-in username, as db.audit does. Go writes
+// HostActor for those two rows (order, status active) and actor for the pause
+// and "(operator assign)" rows.
+func PlaceForOperator(ctx context.Context, pool *pgxpool.Pool, inv Invoicer, owner int64, v OrderValues,
+	today time.Time, actor string) (PlaceResult, error) {
+	day := dayOf(today)
+	acc, err := EnsureAccount(ctx, pool, owner)
+	if err != nil {
+		return PlaceResult{}, err
+	}
+	if acc.Plan != "" {
+		return PlaceResult{}, ErrAlreadyOrdered
+	}
+	if v.AddonWhitelabel && !acc.AddonWhitelabel {
+		return PlaceResult{}, ErrWhitelabelUnavailable
+	}
+	if _, err := OperatorPause(ctx, pool, owner, actor); err != nil {
+		return PlaceResult{}, err
+	}
+	result, err := Place(ctx, pool, inv, owner, v, day, HostActor)
+	if err != nil {
+		return PlaceResult{}, err
+	}
+	if err := audit(ctx, pool, actor, "billing_order", v.Plan+" "+v.BillingInterval+" (operator assign)", owner); err != nil {
+		return PlaceResult{}, err
+	}
+	return result, nil
+}
+
+// ExtendTrial is billing_order.extend_trial: move a running trial's end date
+// (0448). It returns the new YYYY-MM-DD, or "" when refused (no account, not
+// trialing, no end date). days outside 1..365 is ErrBadDays.
+func ExtendTrial(ctx context.Context, pool *pgxpool.Pool, owner int64, days int, actor string,
+	today time.Time) (string, error) {
+	day := dayOf(today)
+	if days <= 0 || days > 365 {
+		return "", ErrBadDays
+	}
+	acc, err := Account(ctx, pool, owner)
+	if err != nil {
+		return "", err
+	}
+	if acc == nil || acc.Status != "trialing" || acc.TrialEndsAt == "" {
+		return "", nil
+	}
+	current, err := parseDay(acc.TrialEndsAt)
+	if err != nil {
+		return "", err
+	}
+	if day.After(current) {
+		current = day
+	}
+	newEnd := isoDay(current.AddDate(0, 0, days))
+	if _, err := pool.Exec(ctx, `UPDATE billing_account SET trial_ends_at = $1, updated_at = $2 WHERE owner_user_id = $3`,
+		newEnd, ubyport.UTCNow(), owner); err != nil {
+		return "", err
+	}
+	if err := audit(ctx, pool, actor, "billing_trial_extended", fmt.Sprintf("+%dd -> %s", days, newEnd), owner); err != nil {
+		return "", err
+	}
+	return newEnd, nil
+}
+~~~~
+~~~~file go/internal/billing/engine_test.go 3beaa216fb5af17dc4cede77b4633b189517d7788af709626723699b834ec2da
+package billing
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"os"
+	"reflect"
+	"regexp"
+	"sort"
+	"testing"
+	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+// engine_golden.json is written by App/scripts/billing_engine_golden.py from
+// the real Python. Every scenario seeds one account, apartments and invoices,
+// runs one function and records its result or error code, the billing_account
+// row afterwards, the audit rows and the Invoicer calls.
+
+type goldenScenario struct {
+	Name       string           `json:"name"`
+	Owner      int64            `json:"owner"`
+	Today      string           `json:"today"`
+	Account    map[string]any   `json:"account"`
+	Apartments []int            `json:"apartments"`
+	Invoices   []map[string]any `json:"invoices"`
+	Call       goldenCall       `json:"call"`
+	Result     any              `json:"result"`
+	Error      string           `json:"error"`
+	AccountAft any              `json:"account_after"`
+	Audit      []map[string]any `json:"audit"`
+	Invoicer   [][]any          `json:"invoicer"`
+	ActorCtx   *struct {
+		UserID        int64  `json:"user_id"`
+		Username      string `json:"username"`
+		Impersonating bool   `json:"impersonating"`
+	} `json:"actor_ctx"`
+}
+
+type goldenCall struct {
+	Fn   string         `json:"fn"`
+	Args map[string]any `json:"args"`
+}
+
+type goldenFile struct {
+	Stamp     string           `json:"stamp"`
+	Users     []map[string]any `json:"users"`
+	Tables    map[string]any   `json:"tables"`
+	Scenarios []goldenScenario `json:"scenarios"`
+}
+
+func loadGolden(t *testing.T) goldenFile {
+	t.Helper()
+	raw, err := os.ReadFile("testdata/engine_golden.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var g goldenFile
+	if err := json.Unmarshal(raw, &g); err != nil {
+		t.Fatal(err)
+	}
+	if len(g.Scenarios) < 100 {
+		t.Fatalf("golden file has %d scenarios", len(g.Scenarios))
+	}
+	return g
+}
+
+// roundTrip turns any Go value into the generic form json.Unmarshal gives.
+func roundTrip(t *testing.T, v any) any {
+	t.Helper()
+	raw, err := json.Marshal(v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out any
+	if err := json.Unmarshal(raw, &out); err != nil {
+		t.Fatal(err)
+	}
+	return out
+}
+
+// fakeInvoicer records calls like the Python recorder and answers the same:
+// IssueForPeriod 1000+n, IssueSupplementary 2000+n, Storno 3000+id.
+type fakeInvoicer struct {
+	calls         [][]any
+	issued        int64
+	supplementary int64
+	failSend      bool
+}
+
+func (f *fakeInvoicer) IssueForPeriod(_ context.Context, owner int64, from, to string, today time.Time) (int64, error) {
+	f.issued++
+	f.calls = append(f.calls, []any{"issue_for_period", owner, from, to, today.Format("2006-01-02")})
+	return 1000 + f.issued, nil
+}
+
+func (f *fakeInvoicer) IssueSupplementary(_ context.Context, owner int64, amount int64, description, from, to string, today time.Time) (int64, error) {
+	f.supplementary++
+	f.calls = append(f.calls, []any{"issue_supplementary", owner, amount, description, from, to, today.Format("2006-01-02")})
+	return 2000 + f.supplementary, nil
+}
+
+func (f *fakeInvoicer) Storno(_ context.Context, id int64, reason string, today time.Time) (int64, error) {
+	f.calls = append(f.calls, []any{"storno", id, reason, today.Format("2006-01-02")})
+	return 3000 + id, nil
+}
+
+func (f *fakeInvoicer) Send(_ context.Context, id int64) error {
+	f.calls = append(f.calls, []any{"send", id})
+	if f.failSend {
+		return errors.New("mail down")
+	}
+	return nil
+}
+
+func num(v any) int64 { return int64(v.(float64)) }
+
+func parseDate(t *testing.T, s string) time.Time {
+	t.Helper()
+	d, err := time.Parse("2006-01-02", s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return d
+}
+
+func toStringMap(t *testing.T, v any) map[string]string {
+	t.Helper()
+	out := map[string]string{}
+	for k, x := range v.(map[string]any) {
+		out[k] = x.(string)
+	}
+	return out
+}
+
+// acctMap is the golden form of an Account: NULL text collapses to "", flags
+// are 0 or 1, updated_at is "seed" or "run".
+func acctMap(a *BillingAccount, stamp string) any {
+	if a == nil {
+		return nil
+	}
+	updated := "run"
+	if a.UpdatedAt == stamp {
+		updated = "seed"
+	}
+	return map[string]any{
+		"owner_user_id": a.OwnerUserID, "status": a.Status, "plan": a.Plan,
+		"billing_interval": a.BillingInterval, "payment_method": a.PaymentMethod,
+		"founder": flag(a.Founder), "addon_ttlock": flag(a.AddonTTLock),
+		"addon_whitelabel": flag(a.AddonWhitelabel), "apartments_billed": a.ApartmentsBilled,
+		"trial_started_at": a.TrialStartedAt, "trial_ends_at": a.TrialEndsAt,
+		"period_start": a.PeriodStart, "period_end": a.PeriodEnd,
+		"cancel_at_period_end": flag(a.CancelAtPeriodEnd), "pending_change_json": a.PendingChangeJSON,
+		"carry_czk": a.CarryCZK, "buyer_name": a.BuyerName, "buyer_street": a.BuyerStreet,
+		"buyer_city": a.BuyerCity, "buyer_zip": a.BuyerZip, "buyer_ico": a.BuyerICO,
+		"buyer_dic": a.BuyerDIC, "buyer_email": a.BuyerEmail, "discount_percent": a.DiscountPercent,
+		"discount_reason": a.DiscountReason, "updated_at": updated,
+	}
+}
+
+// pureResult runs the scenarios that need no database.
+func pureResult(t *testing.T, sc goldenScenario) (any, bool) {
+	t.Helper()
+	switch sc.Call.Fn {
+	case "read_form":
+		form := toStringMap(t, sc.Call.Args["form"])
+		values, errs := ReadForm(form)
+		return map[string]any{"values": roundTrip(t, values), "errors": roundTrip(t, errs)}, true
+	case "period_end":
+		start := parseDate(t, sc.Call.Args["start"].(string))
+		return isoDay(PeriodEnd(start, sc.Call.Args["interval"].(string))), true
+	}
+	return nil, false
+}
+
+func TestEnginePureMatchesPython(t *testing.T) {
+	g := loadGolden(t)
+	seen := 0
+	for _, sc := range g.Scenarios {
+		got, ok := pureResult(t, sc)
+		if !ok {
+			continue
+		}
+		seen++
+		if !reflect.DeepEqual(got, sc.Result) {
+			t.Errorf("%s: got %v, Python %v", sc.Name, got, sc.Result)
+		}
+	}
+	if seen < 20 {
+		t.Fatalf("only %d pure scenarios", seen)
+	}
+}
+
+func strList(v any) []string {
+	out := []string{}
+	for _, x := range v.([]any) {
+		out = append(out, x.(string))
+	}
+	return out
+}
+
+func TestEngineTablesMatchPython(t *testing.T) {
+	g := loadGolden(t)
+	tb := g.Tables
+	if !reflect.DeepEqual(strList(tb["statuses"]), Statuses) {
+		t.Errorf("statuses differ")
+	}
+	if !reflect.DeepEqual(strList(tb["plans"]), Plans) || !reflect.DeepEqual(strList(tb["intervals"]), Intervals) {
+		t.Errorf("plans or intervals differ")
+	}
+	if !reflect.DeepEqual(strList(tb["orderable"]), Orderable) || !reflect.DeepEqual(strList(tb["buyer_fields"]), BuyerFields) {
+		t.Errorf("orderable or buyer fields differ")
+	}
+	if int(tb["supplementary_min_czk"].(float64)) != SupplementaryMinCZK {
+		t.Errorf("supplementary minimum differs")
+	}
+	cols := map[string]string{}
+	for k, v := range tb["change_columns"].(map[string]any) {
+		cols[k] = v.(string)
+	}
+	if !reflect.DeepEqual(cols, ChangeColumns) {
+		t.Errorf("change columns differ")
+	}
+	for from, tos := range tb["transitions"].(map[string]any) {
+		got := append([]string{}, Transitions[from]...)
+		sort.Strings(got)
+		if !reflect.DeepEqual(got, strList(tos)) {
+			t.Errorf("transitions from %s differ: %v", from, got)
+		}
+	}
+	if len(Transitions) != len(tb["transitions"].(map[string]any)) {
+		t.Errorf("transition count differs")
+	}
+}
+
+func TestErrorCodes(t *testing.T) {
+	all := []*Error{ErrUnknownStatus, ErrOneChange, ErrNoOrderedPlan, ErrWhitelabelUnavailable,
+		ErrDiscountOutOfRange, ErrReasonMissing, ErrNoPlan, ErrNoAccount, ErrAlreadyOrdered,
+		ErrBadDays, ErrUnknownPlan, ErrBadValue}
+	seen := map[string]bool{}
+	for _, e := range all {
+		if seen[e.Error()] || e.Error() == "" {
+			t.Errorf("code %q is empty or repeated", e.Error())
+		}
+		seen[e.Error()] = true
+		wrapped := fmt.Errorf("%w: detail", e)
+		if !errors.Is(wrapped, e) || Code(wrapped) != e.Error() {
+			t.Errorf("%q does not survive wrapping", e.Error())
+		}
+	}
+	if Code(errors.New("plain")) != "" || Code(nil) != "" {
+		t.Error("a non-billing error has a code")
+	}
+	if errors.Is(ErrNoPlan, ErrNoAccount) {
+		t.Error("distinct sentinels are equal")
+	}
+}
+
+func TestICOOK(t *testing.T) {
+	for ico, want := range map[string]bool{
+		"27082440": true, "25596641": true, "12345678": false, "1234567": false,
+		"2708244x": false, " 27082440 ": true, "": false,
+	} {
+		if got := ICOOK(ico); got != want {
+			t.Errorf("ICOOK(%q) = %v, want %v", ico, got, want)
+		}
+	}
+}
+
+var stampRE = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+00:00$`)
+
+func dbValue(v any) any {
+	switch x := v.(type) {
+	case float64:
+		return int64(x)
+	}
+	return v
+}
+
+func insertRow(t *testing.T, pool *pgxpool.Pool, table string, row map[string]any) {
+	t.Helper()
+	cols := make([]string, 0, len(row))
+	for c := range row {
+		cols = append(cols, c)
+	}
+	sort.Strings(cols)
+	sql := "INSERT INTO " + table + " ("
+	marks := ""
+	args := make([]any, 0, len(cols))
+	for i, c := range cols {
+		if i > 0 {
+			sql += ", "
+			marks += ", "
+		}
+		sql += c
+		marks += fmt.Sprintf("$%d", i+1)
+		args = append(args, dbValue(row[c]))
+	}
+	if _, err := pool.Exec(context.Background(), sql+") VALUES ("+marks+")", args...); err != nil {
+		t.Fatalf("insert %s: %v", table, err)
+	}
+}
+
+func seedScenario(t *testing.T, pool *pgxpool.Pool, g goldenFile, sc goldenScenario) {
+	t.Helper()
+	ctx := context.Background()
+	if _, err := pool.Exec(ctx, `TRUNCATE audit, platform_invoice, billing_account, apartment RESTART IDENTITY CASCADE`); err != nil {
+		t.Fatal(err)
+	}
+	if sc.Account != nil {
+		row := map[string]any{"owner_user_id": sc.Owner, "updated_at": g.Stamp}
+		for k, v := range sc.Account {
+			row[k] = v
+		}
+		insertRow(t, pool, "billing_account", row)
+	}
+	id := 0
+	for i, flagValue := range []int{1, 0} {
+		for n := 0; n < sc.Apartments[i]; n++ {
+			id++
+			insertRow(t, pool, "apartment", map[string]any{
+				"id": float64(id), "owner_user_id": sc.Owner, "internal_name": fmt.Sprintf("flat %d", id),
+				"active": float64(flagValue), "created_at": g.Stamp,
+			})
+		}
+	}
+	if sc.Apartments[0] > 0 {
+		other := float64(1)
+		if sc.Owner == 1 {
+			other = 2
+		}
+		insertRow(t, pool, "apartment", map[string]any{
+			"id": float64(900), "owner_user_id": other, "internal_name": "foreign",
+			"active": float64(1), "created_at": g.Stamp,
+		})
+	}
+	for _, inv := range sc.Invoices {
+		insertRow(t, pool, "platform_invoice", inv)
+	}
+}
+
+// rawAccount reads the row with NULLs kept, in the golden "account_after" form.
+func rawAccount(t *testing.T, pool *pgxpool.Pool, owner int64, stamp string) any {
+	t.Helper()
+	cols := []string{"status", "plan", "billing_interval", "payment_method", "founder", "addon_ttlock",
+		"addon_whitelabel", "apartments_billed", "trial_started_at", "trial_ends_at", "period_start",
+		"period_end", "cancel_at_period_end", "pending_change_json", "carry_czk", "buyer_name",
+		"buyer_street", "buyer_city", "buyer_zip", "buyer_ico", "buyer_dic", "buyer_email",
+		"discount_percent", "discount_reason"}
+	ints := map[string]bool{"founder": true, "addon_ttlock": true, "addon_whitelabel": true,
+		"apartments_billed": true, "cancel_at_period_end": true, "carry_czk": true, "discount_percent": true}
+	list := ""
+	for _, c := range cols {
+		list += c + ", "
+	}
+	rows, err := pool.Query(context.Background(), "SELECT owner_user_id, "+list+"updated_at FROM billing_account WHERE owner_user_id = $1", owner)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	if !rows.Next() {
+		return nil
+	}
+	vals, err := rows.Values()
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := map[string]any{"owner_user_id": vals[0]}
+	for i, c := range cols {
+		out[c] = vals[i+1]
+		if ints[c] && vals[i+1] == nil {
+			out[c] = int64(0)
+		}
+	}
+	updated := vals[len(cols)+1].(string)
+	if updated == stamp {
+		out["updated_at"] = "seed"
+	} else {
+		if !stampRE.MatchString(updated) {
+			t.Errorf("updated_at %q is not db.utcnow form", updated)
+		}
+		out["updated_at"] = "run"
+	}
+	return roundTrip(t, out)
+}
+
+func auditRows(t *testing.T, pool *pgxpool.Pool) []map[string]any {
+	t.Helper()
+	rows, err := pool.Query(context.Background(),
+		"SELECT at, action, detail, actor, owner_user_id, actor_user_id, impersonator_user_id FROM audit ORDER BY id")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	out := []map[string]any{}
+	for rows.Next() {
+		var at, action, detail, actor string
+		var owner int64
+		var actorID, impID *int64
+		if err := rows.Scan(&at, &action, &detail, &actor, &owner, &actorID, &impID); err != nil {
+			t.Fatal(err)
+		}
+		if !stampRE.MatchString(at) {
+			t.Errorf("audit row %s: at %q is not db.utcnow form", action, at)
+		}
+		out = append(out, map[string]any{"action": action, "detail": detail, "actor": actor,
+			"owner_user_id": owner, "actor_user_id": actorID, "impersonator_user_id": impID})
+	}
+	return out
+}
+
+// runDB runs one database scenario through the Go engine. The returned value is
+// in the golden form; a billing error comes back as its code.
+func runDB(t *testing.T, pool *pgxpool.Pool, inv *fakeInvoicer, g goldenFile, sc goldenScenario) (any, string) {
+	t.Helper()
+	ctx := context.Background()
+	if c := sc.ActorCtx; c != nil {
+		var imp *int64
+		if c.Impersonating {
+			imp = &c.UserID
+		}
+		ctx = WithAuditActor(ctx, c.UserID, c.Username, imp)
+	}
+	a := sc.Call.Args
+	owner := sc.Owner
+	today := parseDate(t, sc.Today)
+	fail := func(err error) (any, string) {
+		if c := Code(err); c != "" {
+			return nil, c
+		}
+		t.Fatalf("%s: %v", sc.Name, err)
+		return nil, ""
+	}
+	switch sc.Call.Fn {
+	case "account":
+		acc, err := Account(ctx, pool, owner)
+		if err != nil {
+			return fail(err)
+		}
+		return roundTrip(t, acctMap(acc, g.Stamp)), ""
+	case "ensure_account":
+		acc, err := EnsureAccount(ctx, pool, owner)
+		if err != nil {
+			return fail(err)
+		}
+		return roundTrip(t, acctMap(acc, g.Stamp)), ""
+	case "apartment_count":
+		n, err := ApartmentCount(ctx, pool, owner)
+		if err != nil {
+			return fail(err)
+		}
+		return roundTrip(t, n), ""
+	case "set_status":
+		ok, err := SetStatus(ctx, pool, owner, a["new"].(string), a["actor"].(string))
+		if err != nil {
+			return fail(err)
+		}
+		return ok, ""
+	case "operator_pause":
+		ok, err := OperatorPause(ctx, pool, owner, a["actor"].(string))
+		if err != nil {
+			return fail(err)
+		}
+		return ok, ""
+	case "apply_change", "change":
+		var field string
+		var value any
+		confirm := a["confirm"].(bool)
+		if sc.Call.Fn == "apply_change" {
+			change := a["change"].(map[string]any)
+			// Python's "exactly one key" rule: any other size has no field.
+			for k, v := range change {
+				if len(change) == 1 {
+					field = k
+					switch x := v.(type) {
+					case string:
+						value = x
+					case float64:
+						value = int(x)
+					}
+				}
+			}
+		} else {
+			field, value = a["field"].(string), nil
+			switch v := a["value"].(type) {
+			case string:
+				value = v
+			case float64:
+				value = int(v)
+			}
+		}
+		var res ChangeResult
+		var err error
+		if sc.Call.Fn == "apply_change" {
+			res, err = ApplyChange(ctx, pool, owner, field, value, today, confirm, a["actor"].(string))
+		} else {
+			res, err = Change(ctx, pool, inv, owner, field, value, confirm, today, HostActor)
+		}
+		if err != nil {
+			return fail(err)
+		}
+		m := roundTrip(t, res).(map[string]any)
+		if sc.Call.Fn == "apply_change" {
+			delete(m, "invoice_id")
+		} else if res.InvoiceID == 0 {
+			m["invoice_id"] = nil
+		}
+		return m, ""
+	case "apply_discount":
+		res, err := ApplyDiscount(ctx, pool, inv, owner, int(a["percent"].(float64)), a["reason"].(string), a["actor"].(string), today)
+		if err != nil {
+			return fail(err)
+		}
+		return roundTrip(t, res), ""
+	case "place", "place_for_operator":
+		raw, _ := json.Marshal(a["values"])
+		var values OrderValues
+		if err := json.Unmarshal(raw, &values); err != nil {
+			t.Fatal(err)
+		}
+		var res PlaceResult
+		var err error
+		if sc.Call.Fn == "place" {
+			res, err = Place(ctx, pool, inv, owner, values, today, HostActor)
+		} else {
+			res, err = PlaceForOperator(ctx, pool, inv, owner, values, today, a["actor"].(string))
+		}
+		if err != nil {
+			return fail(err)
+		}
+		m := roundTrip(t, res).(map[string]any)
+		if res.InvoiceID == 0 {
+			m["invoice_id"] = nil
+		}
+		return m, ""
+	case "cancel":
+		ok, err := Cancel(ctx, pool, owner, HostActor)
+		if err != nil {
+			return fail(err)
+		}
+		return ok, ""
+	case "resume":
+		ok, err := Resume(ctx, pool, owner, HostActor)
+		if err != nil {
+			return fail(err)
+		}
+		return ok, ""
+	case "extend_trial":
+		s, err := ExtendTrial(ctx, pool, owner, int(a["days"].(float64)), a["actor"].(string), today)
+		if err != nil {
+			return fail(err)
+		}
+		return s, ""
+	}
+	t.Fatalf("%s: unknown fn %s", sc.Name, sc.Call.Fn)
+	return nil, ""
+}
+
+func TestEngineMatchesPython(t *testing.T) {
+	pool := testPool(t)
+	g := loadGolden(t)
+	for _, u := range g.Users {
+		if _, err := pool.Exec(context.Background(),
+			`INSERT INTO user_account (id, username, password_hash, created_at) VALUES ($1, $2, 'x', $3)`,
+			dbValue(u["id"]), u["username"], g.Stamp); err != nil {
+			t.Fatal(err)
+		}
+	}
+	ran := 0
+	for _, sc := range g.Scenarios {
+		if _, pure := pureResult(t, sc); pure {
+			continue
+		}
+		sc := sc
+		t.Run(sc.Name, func(t *testing.T) {
+			seedScenario(t, pool, g, sc)
+			inv := &fakeInvoicer{}
+			got, code := runDB(t, pool, inv, g, sc)
+			if code != sc.Error {
+				t.Fatalf("error code %q, Python %q", code, sc.Error)
+			}
+			if sc.Error == "" && !reflect.DeepEqual(got, sc.Result) {
+				t.Errorf("result\n got  %v\n want %v", got, sc.Result)
+			}
+			if after := rawAccount(t, pool, sc.Owner, g.Stamp); !reflect.DeepEqual(after, sc.AccountAft) {
+				t.Errorf("account after\n got  %v\n want %v", after, sc.AccountAft)
+			}
+			audit := auditRows(t, pool)
+			if want := roundTrip(t, sc.Audit); !reflect.DeepEqual(roundTrip(t, audit), want) {
+				t.Errorf("audit\n got  %v\n want %v", audit, want)
+			}
+			calls := roundTrip(t, inv.calls)
+			if inv.calls == nil {
+				calls = roundTrip(t, [][]any{})
+			}
+			if want := roundTrip(t, sc.Invoicer); !reflect.DeepEqual(calls, want) {
+				t.Errorf("invoicer calls\n got  %v\n want %v", calls, want)
+			}
+		})
+		ran++
+	}
+	if ran < 100 {
+		t.Fatalf("only %d database scenarios", ran)
+	}
+}
+
+// A failing Send leaves the placed order in the database and reports the error.
+func TestPlaceSendFailureKeepsOrder(t *testing.T) {
+	pool := testPool(t)
+	ctx := context.Background()
+	if _, err := pool.Exec(ctx, `INSERT INTO user_account (id, username, password_hash, created_at)
+		VALUES (1, 'a', 'x', '2026-01-01T00:00:00+00:00')`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO billing_account (owner_user_id, status, updated_at)
+		VALUES (1, 'paused', '2026-01-01T00:00:00+00:00')`); err != nil {
+		t.Fatal(err)
+	}
+	values, errs := ReadForm(map[string]string{
+		"plan": "standard", "billing_interval": "month", "buyer_name": "A", "buyer_street": "B",
+		"buyer_city": "C", "buyer_zip": "11000", "buyer_email": "a@example.test",
+	})
+	if len(errs) != 0 {
+		t.Fatal(errs)
+	}
+	inv := &fakeInvoicer{failSend: true}
+	_, err := Place(ctx, pool, inv, 1, values, time.Date(2026, 11, 13, 0, 0, 0, 0, time.UTC), HostActor)
+	if err == nil || err.Error() != "mail down" {
+		t.Fatalf("err = %v", err)
+	}
+	acc, err := Account(ctx, pool, 1)
+	if err != nil || acc.Status != "active" || acc.Plan != "standard" || acc.PeriodEnd != "2026-12-12" {
+		t.Fatalf("account %+v err %v", acc, err)
+	}
+}
+
+// ubyport.NormaliseEmail refuses a quoted display name ("Q" <q@x.cz>) where
+// Python's parseaddr accepts it. The order form then shows its email error:
+// stricter, never looser. This pins that known gap.
+func TestReadFormRefusesQuotedEmailName(t *testing.T) {
+	_, errs := ReadForm(map[string]string{
+		"plan": "standard", "billing_interval": "year", "buyer_name": "A", "buyer_street": "B",
+		"buyer_city": "C", "buyer_zip": "11000", "buyer_email": "\"Q\" <q@x.cz>",
+	})
+	if errs["buyer_email"] != "billing.order.error.email" {
+		t.Fatalf("errors %v", errs)
+	}
+}
+
+// Without WithAuditActor the audit row keeps the actor as given and NULL ids;
+// with it, "host" becomes the username and both ids are filled (db.audit).
+func TestAuditActorContext(t *testing.T) {
+	pool := testPool(t)
+	ctx := context.Background()
+	if _, err := pool.Exec(ctx, `INSERT INTO user_account (id, username, password_hash, created_at) VALUES
+		(1, 'owner', 'x', '2026-01-01T00:00:00+00:00'), (7, 'ann', 'x', '2026-01-01T00:00:00+00:00')`); err != nil {
+		t.Fatal(err)
+	}
+	imp := int64(7)
+	if err := audit(ctx, pool, "host", "plain", "", 1); err != nil {
+		t.Fatal(err)
+	}
+	if err := audit(WithAuditActor(ctx, 7, "ann", nil), pool, "host", "named", "", 1); err != nil {
+		t.Fatal(err)
+	}
+	if err := audit(WithAuditActor(ctx, 7, "ann", &imp), pool, "system", "inside", "", 1); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"host|<nil>|<nil>", "ann|7|<nil>", "system|7|7"}
+	rows := auditRows(t, pool)
+	if len(rows) != len(want) {
+		t.Fatalf("rows %v", rows)
+	}
+	for i, r := range rows {
+		deref := func(p *int64) any {
+			if p == nil {
+				return nil
+			}
+			return *p
+		}
+		got := fmt.Sprintf("%v|%v|%v", r["actor"], deref(r["actor_user_id"].(*int64)), deref(r["impersonator_user_id"].(*int64)))
+		if got != want[i] {
+			t.Errorf("row %d: %s, want %s", i, got, want[i])
+		}
+	}
+}
+~~~~
+~~~~file App/scripts/billing_engine_golden.py 566b1b55750e2f449fa8f3230ab196ba32a015a302461d256d2b9bba8c301ca1
+"""Write go/internal/billing/testdata/engine_golden.json from the real Python.
+
+Run from App/ (create the venv first if missing:
+python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt -r requirements-dev.txt):
+
+    .venv/bin/python scripts/billing_engine_golden.py
+
+It seeds a throwaway SQLite database per scenario (the fixed rows in USERS plus
+the scenario's own account, apartments and invoices), runs one function of
+app.billing, app.billing_order or app.billing_trial, and records the return
+value or the ValueError code, the billing_account row afterwards, the audit rows
+and the calls the engine made to the invoicer. billing_invoices.issue_for_period,
+issue_supplementary, storno and send are replaced by a recorder, so no PDF or
+mail is made. Recorder answers: issue_for_period 1000 + n, issue_supplementary
+2000 + n (n counts calls of that kind in the scenario, from 1), storno 3000 +
+invoice id, send nothing.
+
+go/internal/billing/engine_test.go seeds PostgreSQL from the same file, runs the
+Go engine with a recording Invoicer of the same answers and compares everything.
+App/tests/test_billing_engine_golden.py fails when this file is stale.
+
+updated_at is not comparable: a row records "seed" when it still has SEED_STAMP,
+else "run". The audit "at" column is not recorded. A scenario with actor_ctx runs after
+db.set_current_actor, as auth.py does for a signed-in request.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import sys
+import tempfile
+from datetime import date
+from pathlib import Path
+
+APP = Path(__file__).resolve().parents[1]
+OUT = APP.parent / "go" / "internal" / "billing" / "testdata" / "engine_golden.json"
+
+STAMP = "2026-09-01T00:00:00+00:00"
+TODAY = "2026-11-13"
+
+USERS = [
+    {"id": 1, "username": "owner1@example.test"},
+    {"id": 2, "username": "owner2@example.test"},
+    {"id": 7, "username": "ann"},
+]
+
+ACCOUNT_COLUMNS = [
+    "status", "plan", "billing_interval", "payment_method", "founder", "addon_ttlock",
+    "addon_whitelabel", "apartments_billed", "trial_started_at", "trial_ends_at",
+    "period_start", "period_end", "cancel_at_period_end", "pending_change_json",
+    "carry_czk", "buyer_name", "buyer_street", "buyer_city", "buyer_zip", "buyer_ico",
+    "buyer_dic", "buyer_email", "discount_percent", "discount_reason",
+]
+INT_COLUMNS = {
+    "founder", "addon_ttlock", "addon_whitelabel", "apartments_billed",
+    "cancel_at_period_end", "carry_czk", "discount_percent",
+}
+INVOICE_COLUMNS = [
+    "id", "owner_user_id", "kind", "seq_year", "seq_no", "number", "vs", "issue_date",
+    "due_date", "period_from", "period_to", "total_haler", "voided", "paid_on",
+    "snapshot_json", "created_at",
+]
+
+MONTH = {
+    "status": "active", "plan": "standard", "billing_interval": "month",
+    "apartments_billed": 3, "period_start": "2026-11-01", "period_end": "2026-11-30",
+}
+YEAR = {
+    "status": "active", "plan": "standard", "billing_interval": "year",
+    "apartments_billed": 3, "period_start": "2026-01-01", "period_end": "2026-12-31",
+}
+TRIAL = {"status": "trialing", "trial_started_at": "2026-10-21T10:00:00+00:00",
+         "trial_ends_at": "2026-11-20T10:00:00+00:00"}
+PAUSED = {"status": "paused"}
+
+GOOD_VALUES = {
+    "plan": "standard", "billing_interval": "year", "addon_ttlock": False,
+    "addon_whitelabel": False, "buyer_name": "Novak s.r.o.", "buyer_street": "Dlouha 1",
+    "buyer_city": "Praha", "buyer_zip": "11000", "buyer_ico": "", "buyer_dic": "",
+    "buyer_email": "novak@example.test",
+}
+FULL_VALUES = {
+    **GOOD_VALUES, "plan": "max", "billing_interval": "month", "addon_ttlock": True,
+    "buyer_ico": "27082440", "buyer_dic": "CZ27082440",
+}
+
+
+def _inv(iid, owner, kind, pfrom, pto, *, voided=0, paid=None):
+    return {
+        "id": iid, "owner_user_id": owner, "kind": kind, "seq_year": 2026, "seq_no": iid,
+        "number": f"2026{iid:04d}", "vs": f"2026{iid:04d}", "issue_date": "2026-09-01",
+        "due_date": "2026-09-15", "period_from": pfrom, "period_to": pto,
+        "total_haler": 44700, "voided": voided, "paid_on": paid, "snapshot_json": "{}",
+        "created_at": STAMP,
+    }
+
+
+def _s(name, call, *, account=None, apartments=(0, 0), invoices=(), today=TODAY, owner=1, actor_ctx=None):
+    """actor_ctx: {"user_id", "username", "impersonating"} as auth.py gives db.set_current_actor."""
+    return {
+        "name": name, "owner": owner, "today": today, "account": account,
+        "apartments": list(apartments), "invoices": list(invoices), "call": call,
+        "actor_ctx": actor_ctx,
+    }
+
+ANN = {"user_id": 7, "username": "ann", "impersonating": False}
+ANN_INSIDE = {"user_id": 7, "username": "ann", "impersonating": True}
+
+
+def _c(fn, **args):
+    return {"fn": fn, "args": args}
+
+
+def _chg(change, confirm=True, actor="host"):
+    return _c("apply_change", owner=1, change=change, confirm=confirm, actor=actor)
+
+
+def _disc(percent, reason="", actor="operator:ann"):
+    return _c("apply_discount", owner=1, percent=percent, reason=reason, actor=actor)
+
+
+def _form(**kw):
+    base = {
+        "plan": "standard", "billing_interval": "year", "buyer_name": "Novak",
+        "buyer_street": "Dlouha 1", "buyer_city": "Praha", "buyer_zip": "110 00",
+        "buyer_email": "a@example.test",
+    }
+    base.update(kw)
+    return {k: v for k, v in base.items() if v is not None}
+
+
+DISCOUNT_INVOICES = [
+    _inv(11, 1, "invoice", "2026-09-01", "2026-09-30"),
+    _inv(12, 1, "invoice", "2026-08-01", "2026-08-31", paid="2026-08-10"),
+    _inv(13, 1, "invoice", "2026-07-01", "2026-07-31", voided=1),
+    _inv(14, 1, "supplementary", "2026-09-05", "2026-09-30"),
+    _inv(15, 2, "invoice", "2026-09-01", "2026-09-30"),
+    _inv(16, 1, "invoice", "2026-10-01", "2026-10-31"),
+]
+
+LONG_REASON = "x" * 150 + "  " + "y" * 150
+
+SCENARIOS = [
+    # --- account, ensure_account, apartment_count, period_end
+    _s("account_none", _c("account", owner=1)),
+    _s("account_present", _c("account", owner=1), account={**YEAR, "buyer_name": "Novak"}),
+    _s("ensure_account_creates", _c("ensure_account", owner=1)),
+    _s("ensure_account_keeps_existing", _c("ensure_account", owner=1), account={**TRIAL}),
+    _s("apartment_count_active_only", _c("apartment_count", owner=1), apartments=(3, 2)),
+    *[
+        _s(f"period_end_{start}_{interval}", _c("period_end", start=start, interval=interval))
+        for start, interval in [
+            ("2026-01-31", "month"), ("2026-01-15", "month"), ("2026-12-31", "month"),
+            ("2026-12-01", "month"), ("2026-11-13", "year"), ("2024-02-29", "year"),
+            ("2026-03-31", "month"), ("2026-05-31", "month"),
+        ]
+    ],
+    # --- set_status
+    _s("set_status_unknown", _c("set_status", owner=1, new="gone", actor="system"), account={**TRIAL}),
+    _s("set_status_trialing_to_active", _c("set_status", owner=1, new="active", actor="system"), account={**TRIAL}),
+    _s("set_status_trial_pending_to_trialing", _c("set_status", owner=1, new="trialing", actor="system"),
+       account={"status": "trial_pending"}),
+    _s("set_status_trial_pending_to_paused_refused", _c("set_status", owner=1, new="paused", actor="system"),
+       account={"status": "trial_pending"}),
+    _s("set_status_no_account", _c("set_status", owner=1, new="active", actor="system")),
+    _s("set_status_active_to_overdue", _c("set_status", owner=1, new="overdue", actor="system"), account={**MONTH}),
+    _s("set_status_overdue_to_paused", _c("set_status", owner=1, new="paused", actor="operator:ann"),
+       account={**MONTH, "status": "overdue"}),
+    _s("set_status_paused_to_active", _c("set_status", owner=1, new="active", actor="operator:ann"),
+       account={**MONTH, "status": "paused"}),
+    _s("set_status_canceling_to_active", _c("set_status", owner=1, new="active", actor="host"),
+       account={**MONTH, "status": "canceling"}),
+    _s("set_status_active_to_trialing_refused", _c("set_status", owner=1, new="trialing", actor="system"),
+       account={**MONTH}),
+    _s("set_status_same_state_refused", _c("set_status", owner=1, new="active", actor="system"), account={**MONTH}),
+    # --- operator_pause
+    _s("operator_pause_trial_pending", _c("operator_pause", owner=1, actor="operator:ann"),
+       account={"status": "trial_pending"}),
+    _s("operator_pause_trialing", _c("operator_pause", owner=1, actor="operator:ann"), account={**TRIAL}),
+    _s("operator_pause_already_paused", _c("operator_pause", owner=1, actor="operator:ann"), account={**PAUSED}),
+    _s("operator_pause_active_refused", _c("operator_pause", owner=1, actor="operator:ann"), account={**MONTH}),
+    _s("operator_pause_no_account", _c("operator_pause", owner=1, actor="operator:ann")),
+    # --- apply_change
+    _s("change_two_keys", _chg({"apartments": 4, "plan": "max"}), account={**MONTH}),
+    _s("change_unknown_key", _chg({"colour": 4}), account={**MONTH}),
+    _s("change_empty", _chg({}), account={**MONTH}),
+    _s("change_no_account", _chg({"apartments": 4})),
+    _s("change_no_plan", _chg({"apartments": 4}), account={"status": "trialing"}),
+    _s("change_whitelabel_unavailable", _chg({"addon_whitelabel": 1}), account={**MONTH}),
+    _s("change_whitelabel_off_allowed", _chg({"addon_whitelabel": 0}), account={**MONTH}),
+    _s("change_whitelabel_kept_in_quote", _chg({"apartments": 5}), account={**MONTH, "addon_whitelabel": 1}),
+    _s("change_unknown_plan", _chg({"plan": "gold"}), account={**MONTH}),
+    _s("change_none_same_value", _chg({"apartments": 3}), account={**MONTH}),
+    _s("change_none_same_addon", _chg({"addon_ttlock": 0}), account={**MONTH}),
+    _s("change_month_rise_preview", _chg({"apartments": 5}, confirm=False), account={**MONTH}),
+    _s("change_month_rise_confirm", _chg({"apartments": 5}), account={**MONTH}),
+    _s("change_month_plan_to_max", _chg({"plan": "max"}), account={**MONTH}),
+    _s("change_month_ttlock_on", _chg({"addon_ttlock": 1}), account={**MONTH}),
+    _s("change_month_drop_pending", _chg({"apartments": 2}), account={**MONTH}),
+    _s("change_month_drop_preview", _chg({"apartments": 2}, confirm=False), account={**MONTH}),
+    _s("change_max_to_standard_pending", _chg({"plan": "standard"}), account={**MONTH, "plan": "max"}),
+    _s("change_ttlock_off_merges_pending", _chg({"addon_ttlock": 0}),
+       account={**MONTH, "addon_ttlock": 1, "pending_change_json": "{\"apartments\": 2}"}),
+    _s("change_interval_to_year", _chg({"billing_interval": "year"}), account={**MONTH}),
+    _s("change_interval_same_goes_next_period", _chg({"billing_interval": "month"}), account={**MONTH}),
+    _s("change_year_rise_supplementary_preview", _chg({"apartments": 6}, confirm=False), account={**YEAR}),
+    _s("change_year_rise_supplementary_confirm", _chg({"apartments": 6}), account={**YEAR}),
+    _s("change_year_rise_carry_confirm", _chg({"apartments": 4}),
+       account={**YEAR, "discount_percent": 90, "carry_czk": 5}),
+    _s("change_year_rise_no_months_left", _chg({"apartments": 6}),
+       account={**YEAR, "period_end": "2026-11-30"}),
+    _s("change_year_rise_no_period_end", _chg({"apartments": 6}), account={**YEAR, "period_end": None}),
+    _s("change_year_rise_half_even_tie", _chg({"apartments": 6}, confirm=False), account={**YEAR}),
+    _s("change_year_rise_four_months", _chg({"addon_ttlock": 1}, confirm=False),
+       account={**YEAR, "apartments_billed": 1, "discount_percent": 49, "period_end": "2027-03-31"},
+       today="2026-11-13"),
+    # delta * months / 12 is x.5 with x even: half-to-even rounds down, half-up would not.
+    _s("change_year_half_even_exactly_50", _chg({"apartments": 4}),
+       account={**YEAR, "discount_percent": 83, "period_end": "2027-02-28"}),
+    _s("change_year_half_even_carry_44", _chg({"apartments": 4}),
+       account={**YEAR, "discount_percent": 85, "period_end": "2027-02-28"}),
+    _s("change_year_half_even_294", _chg({"apartments": 4}, confirm=False),
+       account={**YEAR, "discount_percent": 1, "period_end": "2027-02-28"}),
+    _s("change_year_months_day_borrow", _chg({"apartments": 6}, confirm=False),
+       account={**YEAR, "period_end": "2027-02-10"}, today="2026-11-13"),
+    _s("change_year_drop_pending", _chg({"apartments": 2}), account={**YEAR}),
+    _s("change_with_discount_month", _chg({"apartments": 5}), account={**MONTH, "discount_percent": 15}),
+    # --- apply_discount
+    _s("discount_set_reissues_unpaid", _disc(20, "  Friend of the house  "), account={**MONTH},
+       invoices=DISCOUNT_INVOICES),
+    _s("discount_clear_to_zero", _disc(0, ""), account={**MONTH, "discount_percent": 20, "discount_reason": "old"},
+       invoices=[_inv(11, 1, "invoice", "2026-09-01", "2026-09-30")]),
+    _s("discount_zero_keeps_reason", _disc(0, "kept note"), account={**MONTH}),
+    _s("discount_long_reason_cut", _disc(10, LONG_REASON), account={**MONTH},
+       invoices=[_inv(11, 1, "invoice", "2026-09-01", "2026-09-30")]),
+    _s("discount_czech_reason", _disc(100, "Sleva pro věrného zákazníka"), account={**YEAR}),
+    _s("discount_out_of_range_high", _disc(101, "x"), account={**MONTH}),
+    _s("discount_out_of_range_low", _disc(-1, "x"), account={**MONTH}),
+    _s("discount_reason_missing", _disc(10, "   "), account={**MONTH}),
+    _s("discount_no_plan", _disc(10, "x"), account={"status": "trialing"}),
+    _s("discount_no_account", _disc(10, "x")),
+    _s("discount_range_checked_before_reason", _disc(150, ""), account={**MONTH}),
+    # --- place
+    _s("place_trialing", _c("place", owner=1, values=FULL_VALUES), account={**TRIAL}, apartments=(2, 1)),
+    _s("place_trial_pending_no_trial_end", _c("place", owner=1, values=GOOD_VALUES),
+       account={"status": "trial_pending", "pending_change_json": "{\"plan\": \"max\"}"}, apartments=(2, 0)),
+    _s("place_paused_year_issues_invoice", _c("place", owner=1, values=GOOD_VALUES), account={**PAUSED},
+       apartments=(2, 0)),
+    _s("place_paused_month_end_of_february", _c("place", owner=1, values={**GOOD_VALUES, "billing_interval": "month"}),
+       account={**PAUSED}, apartments=(0, 0), today="2026-01-31"),
+    _s("place_paused_ttlock_max", _c("place", owner=1, values=FULL_VALUES), account={**PAUSED}, apartments=(11, 0)),
+    _s("place_active_refused", _c("place", owner=1, values=GOOD_VALUES), account={**MONTH}),
+    _s("place_overdue_refused", _c("place", owner=1, values=GOOD_VALUES), account={**MONTH, "status": "overdue"}),
+    _s("place_no_account", _c("place", owner=1, values=GOOD_VALUES)),
+    _s("place_whitelabel_unavailable", _c("place", owner=1, values={**GOOD_VALUES, "addon_whitelabel": True}),
+       account={**PAUSED}),
+    _s("place_whitelabel_granted_kept", _c("place", owner=1, values={**GOOD_VALUES, "addon_whitelabel": True}),
+       account={**PAUSED, "addon_whitelabel": 1}, apartments=(1, 0)),
+    # --- place_for_operator
+    _s("operator_place_fresh_host", _c("place_for_operator", owner=1, values=GOOD_VALUES, actor="operator:ann"),
+       apartments=(2, 0)),
+    _s("operator_place_trialing_host", _c("place_for_operator", owner=1, values=FULL_VALUES, actor="operator:ann"),
+       account={**TRIAL}, apartments=(1, 0)),
+    _s("operator_place_paused_host", _c("place_for_operator", owner=1, values=GOOD_VALUES, actor="operator:ann"),
+       account={**PAUSED}, apartments=(1, 0)),
+    _s("operator_place_already_ordered", _c("place_for_operator", owner=1, values=GOOD_VALUES, actor="operator:ann"),
+       account={**MONTH}),
+    _s("operator_place_active_without_plan",
+       _c("place_for_operator", owner=1, values=GOOD_VALUES, actor="operator:ann"),
+       account={"status": "active"}),
+    _s("operator_place_whitelabel_unavailable",
+       _c("place_for_operator", owner=1, values={**GOOD_VALUES, "addon_whitelabel": True}, actor="operator:ann"),
+       account={**PAUSED}),
+    _s("operator_place_whitelabel_unavailable_fresh",
+       _c("place_for_operator", owner=1, values={**GOOD_VALUES, "addon_whitelabel": True}, actor="operator:ann")),
+    # --- change (order layer)
+    _s("order_change_year_rise_issues_supplementary", _c("change", owner=1, field="apartments", value=6, confirm=True),
+       account={**YEAR}),
+    _s("order_change_year_half_even_exactly_50",
+       _c("change", owner=1, field="apartments", value=4, confirm=True),
+       account={**YEAR, "discount_percent": 83, "period_end": "2027-02-28"}),
+    _s("order_change_year_rise_preview", _c("change", owner=1, field="apartments", value=6, confirm=False),
+       account={**YEAR}),
+    _s("order_change_year_rise_carry_no_invoice", _c("change", owner=1, field="apartments", value=4, confirm=True),
+       account={**YEAR, "discount_percent": 90}),
+    _s("order_change_month_rise_no_invoice", _c("change", owner=1, field="plan", value="max", confirm=True),
+       account={**MONTH}),
+    _s("order_change_drop_pending_no_invoice", _c("change", owner=1, field="apartments", value=2, confirm=True),
+       account={**YEAR}),
+    _s("order_change_no_plan", _c("change", owner=1, field="apartments", value=2, confirm=True), account={**TRIAL}),
+    _s("order_change_whitelabel_unavailable", _c("change", owner=1, field="addon_whitelabel", value=1, confirm=True),
+       account={**YEAR}),
+    # --- cancel, resume
+    _s("cancel_active", _c("cancel", owner=1), account={**MONTH}),
+    _s("cancel_trialing_refused", _c("cancel", owner=1), account={**TRIAL}),
+    _s("cancel_no_account", _c("cancel", owner=1)),
+    _s("resume_canceling", _c("resume", owner=1), account={**MONTH, "status": "canceling", "cancel_at_period_end": 1}),
+    _s("resume_active_refused", _c("resume", owner=1), account={**MONTH}),
+    _s("resume_paused_goes_active_too", _c("resume", owner=1), account={**MONTH, "status": "paused"}),
+    # --- extend_trial
+    _s("extend_trial_running", _c("extend_trial", owner=1, days=7, actor="operator:ann"), account={**TRIAL}),
+    _s("extend_trial_past_end_clamps_to_today", _c("extend_trial", owner=1, days=10, actor="operator:ann"),
+       account={**TRIAL, "trial_ends_at": "2026-11-01T10:00:00+00:00"}),
+    _s("extend_trial_end_is_today", _c("extend_trial", owner=1, days=1, actor="operator:ann"),
+       account={**TRIAL, "trial_ends_at": "2026-11-13"}),
+    _s("extend_trial_max_days", _c("extend_trial", owner=1, days=365, actor="operator:ann"), account={**TRIAL}),
+    _s("extend_trial_zero_days", _c("extend_trial", owner=1, days=0, actor="operator:ann"), account={**TRIAL}),
+    _s("extend_trial_negative_days", _c("extend_trial", owner=1, days=-3, actor="operator:ann"), account={**TRIAL}),
+    _s("extend_trial_too_many_days", _c("extend_trial", owner=1, days=366, actor="operator:ann"), account={**TRIAL}),
+    _s("extend_trial_bad_days_before_account", _c("extend_trial", owner=1, days=0, actor="operator:ann")),
+    _s("extend_trial_not_trialing", _c("extend_trial", owner=1, days=5, actor="operator:ann"), account={**MONTH}),
+    _s("extend_trial_no_account", _c("extend_trial", owner=1, days=5, actor="operator:ann")),
+    _s("extend_trial_no_end_date", _c("extend_trial", owner=1, days=5, actor="operator:ann"),
+       account={"status": "trialing"}),
+    # --- with a signed-in actor (db.set_current_actor): "host" becomes the username, ids are filled
+    _s("ctx_operator_place_fresh_host", _c("place_for_operator", owner=1, values=GOOD_VALUES, actor="operator:ann"),
+       apartments=(2, 0), actor_ctx=ANN),
+    _s("ctx_operator_place_impersonating", _c("place_for_operator", owner=1, values=FULL_VALUES, actor="operator:ann"),
+       account={**TRIAL}, apartments=(1, 0), actor_ctx=ANN_INSIDE),
+    _s("ctx_cancel_active", _c("cancel", owner=1), account={**MONTH}, actor_ctx=ANN),
+    _s("ctx_cancel_active_impersonating", _c("cancel", owner=1), account={**MONTH}, actor_ctx=ANN_INSIDE),
+    _s("ctx_resume_canceling", _c("resume", owner=1), account={**MONTH, "status": "canceling"}, actor_ctx=ANN),
+    _s("ctx_set_status_named_actor_kept", _c("set_status", owner=1, new="active", actor="system"),
+       account={**TRIAL}, actor_ctx=ANN),
+    _s("ctx_set_status_host_replaced", _c("set_status", owner=1, new="active", actor="host"),
+       account={**TRIAL}, actor_ctx=ANN),
+    _s("ctx_place_paused_year", _c("place", owner=1, values=GOOD_VALUES), account={**PAUSED},
+       apartments=(2, 0), actor_ctx=ANN),
+    _s("ctx_apply_change_host_replaced", _chg({"apartments": 5}), account={**MONTH}, actor_ctx=ANN),
+    _s("ctx_discount_named_actor", _disc(10, "loyal"), account={**MONTH}, actor_ctx=ANN_INSIDE),
+    _s("ctx_extend_trial", _c("extend_trial", owner=1, days=7, actor="operator:ann"), account={**TRIAL},
+       actor_ctx=ANN),
+    # --- read_form
+    _s("form_valid", _c("read_form", form=_form())),
+    _s("form_valid_full", _c("read_form", form=_form(
+        plan="max", billing_interval="month", addon_ttlock="1", addon_whitelabel="1",
+        buyer_ico="27082440", buyer_dic=" CZ27082440 ", buyer_zip=" 110 00 ",
+        buyer_email="Name <Host@Example.CZ>", buyer_name="  Novák & syn  "))),
+    _s("form_empty", _c("read_form", form={})),
+    _s("form_bad_plan_and_interval", _c("read_form", form=_form(plan="gold", billing_interval="week"))),
+    _s("form_blank_required", _c("read_form", form=_form(buyer_name="  ", buyer_street="", buyer_city=None))),
+    _s("form_zip_short", _c("read_form", form=_form(buyer_zip="1100"))),
+    _s("form_zip_letters", _c("read_form", form=_form(buyer_zip="11a00"))),
+    _s("form_zip_fullwidth_digits", _c("read_form", form=_form(buyer_zip="１１０００"))),
+    _s("form_zip_six", _c("read_form", form=_form(buyer_zip="110 000"))),
+    _s("form_ico_bad_checksum", _c("read_form", form=_form(buyer_ico="12345678"))),
+    _s("form_ico_short", _c("read_form", form=_form(buyer_ico="123"))),
+    _s("form_ico_letters", _c("read_form", form=_form(buyer_ico="2708244a"))),
+    _s("form_ico_remainder_zero_and_one", _c("read_form", form=_form(buyer_ico="25596641"))),
+    _s("form_email_missing", _c("read_form", form=_form(buyer_email=None))),
+    _s("form_email_no_tld", _c("read_form", form=_form(buyer_email="a@b"))),
+    _s("form_email_two_addresses", _c("read_form", form=_form(buyer_email="a@b.cz, c@d.cz"))),
+    _s("form_email_angle_with_name", _c("read_form", form=_form(buyer_email="Josef <JOSEF@X.CZ>"))),
+    _s("form_email_text_after_angle", _c("read_form", form=_form(buyer_email="<a@b.cz> junk"))),
+    _s("form_email_too_long", _c("read_form", form=_form(buyer_email="a" * 250 + "@x.cz"))),
+    _s("form_email_spaces_inside", _c("read_form", form=_form(buyer_email="a b@x.cz"))),
+    _s("form_addon_flags_only_one_counts", _c("read_form", form=_form(addon_ttlock="0", addon_whitelabel="true"))),
+]
+
+
+def _row(owner):
+    from app import db
+
+    row = db.query_one("SELECT * FROM billing_account WHERE owner_user_id = ?", (owner,))
+    return dict(row) if row else None
+
+
+def _acct(row, collapse):
+    """The comparable columns of a billing_account row."""
+    if row is None:
+        return None
+    out = {"owner_user_id": int(row["owner_user_id"])}
+    for col in ACCOUNT_COLUMNS:
+        value = row[col]
+        if value is None:
+            value = 0 if col in INT_COLUMNS else ("" if collapse else None)
+        out[col] = int(value) if col in INT_COLUMNS else value
+    out["updated_at"] = "seed" if row["updated_at"] == STAMP else "run"
+    return out
+
+
+def _reset(db) -> None:
+    for table in ("audit", "platform_invoice", "billing_account", "apartment"):
+        db.execute(f"DELETE FROM {table}")
+
+
+def _seed(db, sc) -> None:
+    owner = sc["owner"]
+    acc = sc["account"]
+    if acc is not None:
+        cols = ["owner_user_id", "updated_at"] + list(acc)
+        vals = [owner, STAMP] + list(acc.values())
+        marks = ", ".join("?" for _ in cols)
+        db.execute(f"INSERT INTO billing_account ({', '.join(cols)}) VALUES ({marks})", vals)
+    active, inactive = sc["apartments"]
+    aid = 0
+    for flag, count in ((1, active), (0, inactive)):
+        for _ in range(count):
+            aid += 1
+            db.execute(
+                "INSERT INTO apartment (id, owner_user_id, internal_name, active, created_at) VALUES (?, ?, ?, ?, ?)",
+                (aid, owner, f"flat {aid}", flag, STAMP),
+            )
+    if active:
+        # An apartment of another host never counts.
+        db.execute(
+            "INSERT INTO apartment (id, owner_user_id, internal_name, active, created_at) VALUES (?, ?, ?, 1, ?)",
+            (900, 2 if owner == 1 else 1, "foreign", STAMP),
+        )
+    for inv in sc["invoices"]:
+        marks = ", ".join("?" for _ in INVOICE_COLUMNS)
+        db.execute(
+            f"INSERT INTO platform_invoice ({', '.join(INVOICE_COLUMNS)}) VALUES ({marks})",
+            [inv[c] for c in INVOICE_COLUMNS],
+        )
+
+
+class _Recorder:
+    def __init__(self):
+        self.calls = []
+        self.issued = 0
+        self.supplementary = 0
+
+    def issue_for_period(self, owner, period_from, period_to, *, today):
+        self.issued += 1
+        self.calls.append(["issue_for_period", owner, period_from, period_to, today.isoformat()])
+        return 1000 + self.issued
+
+    def issue_supplementary(self, owner, *, amount_czk, description, period_from, period_to, today):
+        self.supplementary += 1
+        self.calls.append(["issue_supplementary", owner, amount_czk, description,
+                           period_from, period_to, today.isoformat()])
+        return 2000 + self.supplementary
+
+    def storno(self, invoice_id, *, reason, today):
+        self.calls.append(["storno", invoice_id, reason, today.isoformat()])
+        return 3000 + invoice_id
+
+    def send(self, invoice_id):
+        self.calls.append(["send", invoice_id])
+        return None
+
+
+def _run(sc, rec):
+    from app import billing, billing_order, billing_trial
+
+    fn = sc["call"]["fn"]
+    a = sc["call"]["args"]
+    day = date.fromisoformat(sc["today"])
+    if fn == "account":
+        return _acct(billing.account(a["owner"]), True)
+    if fn == "ensure_account":
+        return _acct(billing.ensure_account(a["owner"]), True)
+    if fn == "apartment_count":
+        return billing.apartment_count(a["owner"])
+    if fn == "period_end":
+        return billing_trial.period_end(date.fromisoformat(a["start"]), a["interval"]).isoformat()
+    if fn == "set_status":
+        return billing.set_status(a["owner"], a["new"], actor=a["actor"])
+    if fn == "operator_pause":
+        return billing.operator_pause(a["owner"], actor=a["actor"])
+    if fn == "apply_change":
+        return billing.apply_change(a["owner"], a["change"], today=day, confirm=a["confirm"], actor=a["actor"])
+    if fn == "apply_discount":
+        return billing.apply_discount(a["owner"], a["percent"], reason=a["reason"], actor=a["actor"], today=day)
+    if fn == "place":
+        return billing_order.place(a["owner"], a["values"], today=day)
+    if fn == "place_for_operator":
+        return billing_order.place_for_operator(a["owner"], a["values"], actor=a["actor"], today=day)
+    if fn == "change":
+        return billing_order.change(a["owner"], a["field"], a["value"], confirm=a["confirm"], today=day)
+    if fn == "cancel":
+        return billing_order.cancel(a["owner"])
+    if fn == "resume":
+        return billing_order.resume(a["owner"])
+    if fn == "extend_trial":
+        return billing_order.extend_trial(a["owner"], a["days"], actor=a["actor"], today=day)
+    if fn == "read_form":
+        values, errors = billing_order.read_form(a["form"])
+        return {"values": values, "errors": errors}
+    raise SystemExit(f"unknown fn {fn}")
+
+
+def render() -> str:
+    """Run every scenario on a fresh database and return the golden JSON text."""
+    from app import billing_invoices, db
+
+    db.init_db()
+    for user in USERS:
+        db.execute(
+            "INSERT INTO user_account (id, username, password_hash, role, created_at) VALUES (?, ?, 'x', 'host', ?)",
+            (user["id"], user["username"], STAMP),
+        )
+    names = [sc["name"] for sc in SCENARIOS]
+    assert len(names) == len(set(names)), "duplicate scenario name"
+    out = []
+    for sc in SCENARIOS:
+        _reset(db)
+        _seed(db, sc)
+        rec = _Recorder()
+        saved = {n: getattr(billing_invoices, n) for n in ("issue_for_period", "issue_supplementary", "storno", "send")}
+        for n in saved:
+            setattr(billing_invoices, n, getattr(rec, n))
+        entry = {k: sc[k] for k in ("name", "owner", "today", "account", "apartments", "invoices", "call",
+                                    "actor_ctx")}
+        ctx = sc["actor_ctx"]
+        if ctx:
+            db.set_current_actor(ctx["user_id"], ctx["username"], impersonating=ctx["impersonating"])
+        try:
+            entry["result"] = _run(sc, rec)
+        except ValueError as exc:
+            entry["error"] = str(exc).split(":")[0].strip()
+        finally:
+            db.set_current_actor(None)
+            for n, f in saved.items():
+                setattr(billing_invoices, n, f)
+        entry["account_after"] = _acct(_row(sc["owner"]), False)
+        entry["audit"] = [
+            {"action": r["action"], "detail": r["detail"], "actor": r["actor"],
+             "owner_user_id": r["owner_user_id"], "actor_user_id": r["actor_user_id"],
+             "impersonator_user_id": r["impersonator_user_id"]}
+            for r in db.query(
+                "SELECT action, detail, actor, owner_user_id, actor_user_id, impersonator_user_id "
+                "FROM audit ORDER BY id")
+        ]
+        entry["invoicer"] = rec.calls
+        out.append(entry)
+    from app import billing, billing_order
+
+    tables = {
+        "statuses": list(billing.STATUSES),
+        "transitions": {k: sorted(v) for k, v in billing.TRANSITIONS.items()},
+        "plans": list(billing.PLANS),
+        "intervals": list(billing.INTERVALS),
+        "orderable": list(billing_order.ORDERABLE),
+        "buyer_fields": list(billing_order.BUYER_FIELDS),
+        "change_columns": dict(billing.CHANGE_COLUMNS),
+        "supplementary_min_czk": billing.SUPPLEMENTARY_MIN_CZK,
+    }
+    golden = {"stamp": STAMP, "users": USERS, "tables": tables, "scenarios": out}
+    return json.dumps(golden, ensure_ascii=False, indent=1, sort_keys=True) + "\n"
+
+
+def main() -> None:
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    OUT.write_text(render(), encoding="utf-8")
+    print(f"wrote {OUT}")
+
+
+if __name__ == "__main__":
+    tmp = Path(tempfile.mkdtemp(prefix="ubyhost-golden-"))
+    os.environ.setdefault("UBYHOST_DATA_DIR", str(tmp))
+    os.environ.setdefault("UBYHOST_DB", str(tmp / "billing_engine_golden.sqlite3"))
+    os.environ.setdefault("UBYHOST_SECRET_KEY", "golden-secret-key-not-for-real-use")
+    os.environ.setdefault("UBYHOST_ENABLE_SCHEDULER", "0")
+    sys.path.insert(0, str(APP))
+    main()
+~~~~
+~~~~file App/tests/test_billing_engine_golden.py 0a1f93a196caf7d42155d3e091e220ee26e40c88102ca562c520d991f4c9b009
+"""go/internal/billing/engine_test.go reads go/internal/billing/testdata/engine_golden.json."""
+
+import importlib.util
+from pathlib import Path
+
+APP_DIR = Path(__file__).resolve().parents[1]
+
+
+def _load_generator():
+    spec = importlib.util.spec_from_file_location(
+        "billing_engine_golden", APP_DIR / "scripts" / "billing_engine_golden.py"
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_billing_engine_golden_matches_python_billing(monkeypatch, tmp_path):
+    from app import config
+
+    monkeypatch.setattr(config, "DB_PATH", tmp_path / "billing-engine-golden.sqlite3")
+    generator = _load_generator()
+    committed = generator.OUT.read_bytes()
+    assert generator.render().encode("utf-8") == committed
+    assert committed.count(b'"name"') >= 100
+~~~~
