@@ -1,6 +1,6 @@
 # 1470: freeze App/app/migrations/ at 0045 (plan sqlite-retirement S1)
 
-Status: blocked
+Status: review (work complete; the lint failure the executor reported came from an unrelated unfinished brief, 1447)
 Depends on: none (plan approved, decisions line 2026-11-13 "SQLite plan 1-6 approved") | Base commit: origin/main once it holds `docs/plans/sqlite-retirement.md` (patch made on 4de1f158c) | Branch: task/1470-sqlite-migrations-frozen
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Tier A (migrations).
