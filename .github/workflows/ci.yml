@@ -16,6 +16,40 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    # Cheap first job. code=false only when EVERY changed file is on the allowlist.
+    # Fails open: any doubt prints code=true.
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.diff.outputs.code }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Decide whether code changed
+        id: diff
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          code=true
+          if [ "${EVENT}" = "pull_request" ] || [ "${EVENT}" = "push" ]; then
+            if [ -n "${BASE_SHA}" ] && git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null \
+               && files="$(git diff --name-only "${BASE_SHA}" "${HEAD_SHA}")" && [ -n "${files}" ]; then
+              code=false
+              while IFS= read -r f; do
+                case "${f}" in
+                  docs/tasks/*|docs/plans/*|docs/archive/*|docs/reports/*) ;;
+                  *) code=true ;;
+                esac
+              done <<< "${files}"
+            fi
+          fi
+          echo "event=${EVENT} base=${BASE_SHA:-none} code=${code}"
+          echo "code=${code}" >> "$GITHUB_OUTPUT"
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 15
