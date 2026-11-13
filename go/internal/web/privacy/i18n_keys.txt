@@ -1,0 +1,5 @@
+# Host strings read by go/internal/web/privacy (privacy_requests.py POST routes)
+flash.dsr.created
+flash.dsr.updated
+flash.error.bad_dsr
+flash.error.no_such_dsr
