@@ -1,4 +1,4 @@
-# 1172: Standing rule and catch-all test for state machines
+# 1180: Standing rule and catch-all test for state machines
 
 Status: review
 Depends on: none | Base commit: 748098d9 | Branch: claude/hopeful-ride-ovwq66
@@ -36,8 +36,8 @@ PYTHON_TABLES = {
 | AGENTS.md | edit | one routing row |
 | docs/context/test-map.md | edit | one row |
 | docs/context/decisions.md | edit | one appended line |
-| docs/tasks/1172-report.md | create | report |
-| docs/tasks/1172-sm-standing-rule-and-catchall.md | edit | Status: review |
+| docs/tasks/1180-report.md | create | report |
+| docs/tasks/1180-sm-standing-rule-and-catchall.md | edit | Status: review |
 
 No other file may change. No App/app change, no migration, no dependency, no template.
 
@@ -58,7 +58,7 @@ Expected: all green (`14 passed` at base), 0 failed. If it fails, STOP (§8).
 Write exactly this content:
 
 ```python
-"""1172: every stored state/status column is pinned by a TRANSITIONS table or exempt with a reason.
+"""1180: every stored state/status column is pinned by a TRANSITIONS table or exempt with a reason.
 
 The columns come from the real schema: the SQLite schema the app builds
 (SCHEMA, ADDED_COLUMNS and the numbered migrations) plus a text scan of
@@ -217,10 +217,10 @@ Expected: `1 insertion(+)`.
 ### Step 7: Decision line
 
 Append as a new last line of `docs/context/decisions.md` (same format as its last line):
-`- 2026-11-13 [workflow] 1172: every stored state/status column gets a TRANSITIONS table and pin test, or an EXEMPT reason; enforced by test_sm_registry.py (owner).`
+`- 2026-11-13 [workflow] 1180: every stored state/status column gets a TRANSITIONS table and pin test, or an EXEMPT reason; enforced by test_sm_registry.py (owner).`
 
 Run: `tail -2 docs/context/decisions.md | cut -c1-120`
-Expected: the 1149 line, then the 1172 line.
+Expected: the 1149 line, then the 1180 line.
 
 ### Step 8: Lint and tests
 
@@ -270,9 +270,9 @@ Stop, and write the report, if:
 
 ## 9. Report
 
-Write `docs/tasks/1172-report.md` (600 tokens at most) and set `Status: review` there and in this brief. The report has: 1. files changed (`git diff --stat`, plus the new files); 2. each command with the last 5 lines of output; 3. §7 ticked; 4. deviations; 5. questions; 6. owner steps left.
+Write `docs/tasks/1180-report.md` (600 tokens at most) and set `Status: review` there and in this brief. The report has: 1. files changed (`git diff --stat`, plus the new files); 2. each command with the last 5 lines of output; 3. §7 ticked; 4. deviations; 5. questions; 6. owner steps left.
 
-Then commit on branch `claude/hopeful-ride-ovwq66` (`git add` the §3 files, message `1172: state machine standing rule and catch-all test`) and run `git push -u origin claude/hopeful-ride-ovwq66`. You have no gh or MCP: do not open a PR. The orchestrator opens the draft PR.
+Then commit on branch `claude/hopeful-ride-ovwq66` (`git add` the §3 files, message `1180: state machine standing rule and catch-all test`) and run `git push -u origin claude/hopeful-ride-ovwq66`. You have no gh or MCP: do not open a PR. The orchestrator opens the draft PR.
 
 ## Risk list (for the reviewer)
 

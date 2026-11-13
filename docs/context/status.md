@@ -1,17 +1,17 @@
 # Status
 
-Updated: 2026-11-13.
+Updated: 2026-11-12.
 
 ## Production
 - Magic-link 1–2 done; access log off. `/healthz` 1.1.0. Main 11-12: `c38b38b8` (#933, auto-deploy; host not rechecked).
 - Postgres cutover done. Billing ON. SQLite rollback only via pg-cutover scripts. `COMPOSE_PROFILES=walg,monitoring,go`.
 - Go jobs = queue: billing_snapshot, stripe_sweep, ical, push, submit. Python: mail, door_codes, posthog, meta_capi, deadlines.
-- Go live, all routes on main (11-12): palette, calendar, payments QR/connect/requests, stripe webhook, push, pay PNGs — paths in [ENVIRONMENT](../ENVIRONMENT.md). Rollback: trim `UBYHOST_GO_PATHS`, `caddy-validate.sh`, `docker compose up -d caddy`. Next: deadlines GO-DL A–C merged (#934/#935/#941); meta_capi Go #942.
+- Go live, all routes on main (11-12): palette, calendar, payments QR/connect/requests, stripe webhook, push, pay PNGs — paths in [ENVIRONMENT](../ENVIRONMENT.md). Rollback: trim `UBYHOST_GO_PATHS`, `caddy-validate.sh`, `docker compose up -d caddy`.
 - AI: `havel,leon,guide_import` (`guide_translate` off). Stripe test. Guest QR 404 on both when the owner has no IBAN.
 
 ## Now
-- 11-13: 1172 state rule + `test_sm_registry.py`: draft PR.
-- 11-12: #933/#937/#941-#943 merged. Next PR: 1162-1164 (K-F23, cleaning paging, errcodes).
+- 11-12: 1172 double-booking alarm, Go-only | [1172](../tasks/1172-double-booking-alarm.md)
+- 11-12: #933/#937/#941/#942 merged. #943 merged. Next PR: 1162-1164 (K-F23, cleaning paging, errcodes).
 - 11-10 live: 1085/1086 police letter paste (#882, #892); 1089/1090 under-15 signature (#885, #888); 1091/1093 short guest titles (#883, #887); 1092 head-count single writer (#884); 1094 H0 check (#893); 1096 Save row, leave warning (#894).
 - 1120-1123b ready
 - Building: 1095 head-count H1 (flag `UBYHOST_HEADCOUNT_LEAD_LIVE` off). Next: H2a, H2b, H3, H4, guest form C.
