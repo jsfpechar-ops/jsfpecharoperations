@@ -41,6 +41,7 @@ def _child(**overrides):
     data = {
         "first_name": "Amy",
         "birth_date": "1.1.2020",
+        "nationality": "CZE",  # only a Czech child may use the box (owner, 2026-11-13)
         "doc_number": "",
         "child_in_passport": "1",
         "parent_doc_number": "PARENT79",

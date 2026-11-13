@@ -71,10 +71,13 @@ INPASS_NOTE_PREFIX = "Dítě zapsané v pasu rodiče, číslo dokladu rodiče: "
 # Liechtenstein and Switzerland apply it too) ended child entries on 26 June
 # 2012. UbyPort refused such a record on 2026-11-13 ("Nekorektní číslo
 # cestovního dokladu", POL, born 2009), so INPASS is refused here before it is
-# sent. Other nationalities keep INPASS as appendix 5 (cDocN) describes it.
+# sent. Czech nationals are left out: they are never reported to UbyPort
+# (guest_is_reportable), a Czech ID card is only compulsory from 15, and the
+# stay-fee register prints INPASS as "zapsán v dokladu rodiče". Other
+# nationalities keep INPASS as appendix 5 (cDocN) describes it.
 OWN_DOCUMENT_NATIONALITIES = frozenset(
     {
-        "AUT", "BEL", "BGR", "HRV", "CYP", "CZE", "DNK", "EST", "FIN", "FRA",
+        "AUT", "BEL", "BGR", "HRV", "CYP", "DNK", "EST", "FIN", "FRA",
         "DEU", "GRC", "HUN", "IRL", "ITA", "LVA", "LTU", "LUX", "MLT", "NLD",
         "POL", "PRT", "ROU", "SVK", "SVN", "ESP", "SWE",
         "NOR", "ISL", "LIE", "CHE",

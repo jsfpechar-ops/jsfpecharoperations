@@ -1335,6 +1335,30 @@
    "raw": null
   },
   {
+   "complete": true,
+   "date_from": "2026-10-20",
+   "date_to": "2026-10-25",
+   "guest": {
+    "birth_date": "01011990",
+    "doc_number": "INPASS",
+    "first_name": "JAN",
+    "nationality": "CZE",
+    "note": "Rodic C01X00T47",
+    "purpose": "99",
+    "res_city": "Berlin",
+    "res_country": "CZE",
+    "res_street": "Hauptstrasse 5",
+    "signature_png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAAAAACMmsGiAAAAC0lEQVR42mNgwAQAABQAAe5aaQkAAAAASUVORK5CYII=",
+    "stay_from": "",
+    "stay_to": "",
+    "surname": "NOVAK",
+    "visa_number": ""
+   },
+   "issues": [],
+   "name": "inpass_czech_citizen",
+   "raw": null
+  },
+  {
    "complete": false,
    "date_from": "2026-10-20",
    "date_to": "2026-10-25",

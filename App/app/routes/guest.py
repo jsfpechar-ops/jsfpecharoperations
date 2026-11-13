@@ -601,23 +601,43 @@ def _keep_unreadable_text(values: dict, raw: dict) -> None:
             values[field] = typed[:100]
 
 
-# A child of an EU/EEA/Swiss citizen ticked "child in a parent's passport". The
-# validator files the refusal under doc_number, where the host types INPASS, but
-# the guest's document box is hidden while the parent's-passport box is ticked,
-# so the guest reads it next to the parent's number, the box they can see.
-_INPASS_OWN_DOCUMENT_MESSAGES = {
-    "en": "Children who are citizens of an EU country, Norway, Iceland, Liechtenstein or Switzerland have their own passport or ID card. Untick the box above and enter the child's own document number.",
-    "cs": "Děti s občanstvím země EU, Norska, Islandu, Lichtenštejnska nebo Švýcarska mají vlastní pas nebo občanský průkaz. Zrušte zaškrtnutí políčka výše a zadejte číslo vlastního dokladu dítěte.",
-    "de": "Kinder mit der Staatsangehörigkeit eines EU-Landes, Norwegens, Islands, Liechtensteins oder der Schweiz haben einen eigenen Reisepass oder Personalausweis. Entfernen Sie das Häkchen oben und geben Sie die Nummer des eigenen Dokuments des Kindes ein.",
-    "es": "Los menores con nacionalidad de un país de la UE, Noruega, Islandia, Liechtenstein o Suiza tienen su propio pasaporte o documento de identidad. Desmarque la casilla de arriba e introduzca el número del documento propio del menor.",
-    "fr": "Les enfants ressortissants d'un pays de l'UE, de la Norvège, de l'Islande, du Liechtenstein ou de la Suisse ont leur propre passeport ou carte d'identité. Décochez la case ci-dessus et saisissez le numéro du document de l'enfant.",
-    "uk": guest_uk_i18n.ISSUE_INPASS_OWN_DOCUMENT,
+# The "child on a parent's passport" box is for Czech children only (owner,
+# 2026-11-13, after UbyPort refused an INPASS child): Czech nationals are never
+# reported to the police and a Czech ID card is only compulsory from 15. Every
+# other guest, children included, enters their own document. The guest's
+# document box is hidden while the parent's-passport box is ticked, so the
+# guest reads the refusal next to the parent's number, the box they can see.
+# The host form keeps INPASS for non-EU guests and its own wording.
+GUEST_INPASS_CZECH_ONLY = "guest-inpass-czech-only"
+_INPASS_CZECH_ONLY_MESSAGES = {
+    "en": "This box is only for Czech children without a document. Untick it and enter the child's own passport or ID card number.",
+    "cs": "Toto políčko je jen pro české děti bez dokladu. Zrušte zaškrtnutí a zadejte číslo vlastního pasu nebo průkazu dítěte.",
+    "de": "Dieses Kästchen gilt nur für tschechische Kinder ohne Dokument. Entfernen Sie das Häkchen und geben Sie die Nummer des eigenen Reisepasses oder Ausweises des Kindes ein.",
+    "es": "Esta casilla es solo para menores checos sin documento. Desmárquela e introduzca el número del pasaporte o documento de identidad propio del menor.",
+    "fr": "Cette case est réservée aux enfants tchèques sans document. Décochez-la et saisissez le numéro du passeport ou de la carte d'identité de l'enfant.",
+    "uk": guest_uk_i18n.ISSUE_INPASS_CZECH_ONLY,
 }
 
 
+def _guest_inpass_issues(values, issues):
+    """The guest form's INPASS rule: only a Czech child may use it."""
+    if values.get("doc_number") != validation.INPASS:
+        return issues
+    if (values.get("nationality") or "").upper() == validation.CZECH_CODE:
+        return issues
+    kept = [
+        issue for issue in issues
+        if not (issue.field == "doc_number" and issue.message == validation.INPASS_OWN_DOCUMENT_MESSAGE)
+        and issue.field != "note"
+    ]
+    return kept + [validation.Issue("doc_number", GUEST_INPASS_CZECH_ONLY)]
+
+
 def _inpass_own_document_issue(issue, lang: str):
-    if issue.field == "doc_number" and issue.message == validation.INPASS_OWN_DOCUMENT_MESSAGE:
-        message = _INPASS_OWN_DOCUMENT_MESSAGES.get(lang) or _INPASS_OWN_DOCUMENT_MESSAGES["en"]
+    if issue.field == "doc_number" and issue.message in (
+        GUEST_INPASS_CZECH_ONLY, validation.INPASS_OWN_DOCUMENT_MESSAGE
+    ):
+        message = _INPASS_CZECH_ONLY_MESSAGES.get(lang) or _INPASS_CZECH_ONLY_MESSAGES["en"]
         return validation.Issue("parent_doc_number", message, issue.severity)
     return None
 
@@ -2468,6 +2488,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         validation.parse_iso_date(stay_to),
         raw=raw,
     )
+    issues = _guest_inpass_issues(values, issues)
     # A host may record a guest's real stay outside the booking (an early
     # arrival, a late departure), so the guest's own stored period is part of
     # what they are allowed to re-submit - otherwise the host's own edit would

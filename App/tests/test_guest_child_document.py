@@ -125,7 +125,10 @@ def _page(lang: str, **overrides) -> str:
 
 
 def _child_without_parent(lang: str) -> str:
-    return _page(lang, child_in_passport="1", doc_number="", parent_doc_number="")
+    # Only a Czech child may use the box (owner, 2026-11-13).
+    return _page(
+        lang, nationality="CZE", child_in_passport="1", doc_number="", parent_doc_number=""
+    )
 
 
 # --- the issue is renamed onto the field the guest can see ------------------
@@ -240,9 +243,7 @@ def test_an_eu_child_on_a_parents_passport_is_refused_next_to_the_parent_box():
         parent_doc_number="EN9025218",
     )
     assert 'id="parent_doc_number-error"' in page
-    assert "Untick the box above and enter the child&#39;s own document number." in page or (
-        "Untick the box above and enter the child's own document number." in page
-    )
+    assert "only for Czech children without a document" in page
 
 
 def test_the_eu_child_issue_is_worded_for_the_guest_in_czech():
@@ -251,7 +252,7 @@ def test_the_eu_child_issue_is_worded_for_the_guest_in_czech():
     )
     assert len(issues) == 1
     assert issues[0].field == "parent_doc_number"
-    assert issues[0].message.startswith("Děti s občanstvím země EU")
+    assert issues[0].message.startswith("Toto políčko je jen pro české děti")
     assert issues[0].severity == "error"
 
 
@@ -273,3 +274,30 @@ def test_the_host_form_reads_the_eu_child_issue_on_the_document_field():
     assert [(i.field, i.message) for i in issues] == [
         ("doc_number", validation.INPASS_OWN_DOCUMENT_MESSAGE)
     ]
+
+
+def test_a_non_eu_child_on_a_parents_passport_is_refused_on_the_guest_form():
+    page = _page(
+        "en",
+        nationality="UKR",
+        res_country="UKR",
+        birth_date="22.10.2019",
+        child_in_passport="1",
+        doc_number="",
+        parent_doc_number="FA123456",
+    )
+    assert 'id="parent_doc_number-error"' in page
+    assert "only for Czech children without a document" in page
+
+
+def test_the_guest_inpass_rule_keeps_a_czech_child():
+    values = {"doc_number": validation.INPASS, "nationality": "CZE"}
+    assert guest._guest_inpass_issues(values, []) == []
+    values["nationality"] = "UKR"
+    issues = guest._guest_inpass_issues(values, [validation.Issue("note", NOTE_MESSAGE)])
+    assert [(i.field, i.message) for i in issues] == [("doc_number", guest.GUEST_INPASS_CZECH_ONLY)]
+
+
+def test_the_child_box_shows_only_for_czech_nationality():
+    script = (Path(__file__).resolve().parents[1] / "app" / "static" / "signature.js").read_text()
+    assert "mayBeChild() && czech()" in script

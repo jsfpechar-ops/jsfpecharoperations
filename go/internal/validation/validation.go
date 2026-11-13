@@ -87,9 +87,11 @@ const (
 // ownDocumentNationalities mirrors validation.OWN_DOCUMENT_NATIONALITIES:
 // citizens of these states cannot travel on a parent's passport since
 // Regulation (EC) 444/2009 (26 June 2012), and UbyPort refused such an INPASS
-// record on 2026-11-13, so INPASS is refused for them before sending.
+// record on 2026-11-13, so INPASS is refused for them before sending. CZE is
+// left out: Czech nationals are never reported and young Czech children often
+// have no document.
 var ownDocumentNationalities = map[string]bool{
-	"AUT": true, "BEL": true, "BGR": true, "HRV": true, "CYP": true, "CZE": true,
+	"AUT": true, "BEL": true, "BGR": true, "HRV": true, "CYP": true,
 	"DNK": true, "EST": true, "FIN": true, "FRA": true, "DEU": true, "GRC": true,
 	"HUN": true, "IRL": true, "ITA": true, "LVA": true, "LTU": true, "LUX": true,
 	"MLT": true, "NLD": true, "POL": true, "PRT": true, "ROU": true, "SVK": true,

@@ -380,14 +380,18 @@ def test_1079_the_hidden_box_leaves_no_gap_and_the_shown_box_sits_in_order(live_
 
         _retype(page, _digits(CHILD))
         page.locator("#birth_date").blur()
+        # Owner 2026-11-13: a foreign child enters their own document, so the box stays hidden.
+        assert "child-wrap" not in page.evaluate(GAPS_JS)["order"]
+        guest.pick_country("nationality", "CZE")  # a Czech child may use it; no visa row then
         shown = page.evaluate(GAPS_JS)
         assert shown["scrollWidth"] <= shown["innerWidth"], shown
         at = shown["order"].index("doc-wrap")
-        assert shown["order"][at + 1 : at + 3] == ["child-wrap", "visa"], shown["order"]
+        assert shown["order"][at + 1] == "child-wrap", shown["order"]
+        assert "visa" not in shown["order"], shown["order"]
         assert shown["doc"]["bottom"] <= shown["box"]["top"], shown
-        assert shown["box"]["bottom"] <= shown["visa"]["top"], shown
         assert shown["box"]["bottom"] > shown["box"]["top"]
-        assert abs(shown["gaps"][at]["gap"] - shown["gaps"][at + 1]["gap"]) <= 1, shown["gaps"]
+        if len(shown["gaps"]) > at + 1:
+            assert abs(shown["gaps"][at]["gap"] - shown["gaps"][at + 1]["gap"]) <= 1, shown["gaps"]
         guest.check_layout(f"child at {width}px")
         guest.check_spacing(f"child at {width}px")
         _shot(page, f"child-{width}.png")
@@ -464,9 +468,8 @@ def test_1079_hiding_and_showing_the_box_posts_the_same_form(live_server, browse
         page.goto(url)
         page.fill("#first_name", "Synthetica")
         page.fill("#surname", "Testovic")
-        guest.pick_country("nationality", "USA")
+        guest.pick_country("nationality", "CZE")  # only a Czech child sees the box (owner, 2026-11-13)
         page.fill("#doc_number", "SYN1079X")
-        page.fill("#visa_number", "V1234567")
 
         def posted():
             return [pair for pair in page.evaluate(FORM_JS) if pair[0] != "birth_date"]
@@ -479,7 +482,7 @@ def test_1079_hiding_and_showing_the_box_posts_the_same_form(live_server, browse
         adult = posted()
         assert not _state(page)["box"] and birth() == [["birth_date", ADULT_TEXT]]
         assert "child_in_passport" not in [k for k, _ in adult]
-        assert ["doc_number", "SYN1079X"] in adult and ["visa_number", "V1234567"] in adult
+        assert ["doc_number", "SYN1079X"] in adult
 
         _retype(page, _digits(CHILD))
         _leave(page)

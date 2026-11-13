@@ -342,6 +342,16 @@ function initSignature() {
     var childWrap = document.getElementById("child-wrap");
     var birth = document.getElementById("birth_date");
     var stayFrom = document.querySelector('input[name="stay_from"]');
+    var nationality = document.getElementById("nationality");
+
+    // Owner 2026-11-13: only a Czech child may use the box. Czech nationals
+    // are never reported to the police; everyone else enters their own
+    // document (UbyPort refused an INPASS child). The server enforces it too.
+    // Until a nationality is picked nothing is decided, as with the birth date.
+    function czech() {
+      var code = nationality ? String(nationality.value || "").toUpperCase() : "";
+      return code === "" || code === "CZE";
+    }
 
     /* 1079 (S15): the box can only apply to a guest under 18, so an adult does
        not see it. Only childWrap.style.display is ever set here: a ticked box
@@ -397,7 +407,7 @@ function initSignature() {
       if (!childWrap) return;
       if (toggle.checked) { childWrap.style.display = ""; return; }
       if (typing()) return;
-      if (mayBeChild()) childWrap.style.display = "";
+      if (mayBeChild() && czech()) childWrap.style.display = "";
       else if (mayHide) childWrap.style.display = "none";
     }
 
@@ -423,6 +433,7 @@ function initSignature() {
       // initBirthDate's paste handler sets the value without an input event.
       birth.addEventListener("paste", function () { setTimeout(function () { showBox(true); }, 0); });
     }
+    if (nationality) nationality.addEventListener("change", function () { showBox(true); });
     // A restored page can bring back a ticked box or a birth date with no event.
     window.addEventListener("pageshow", function () { apply(); showBox(true); });
   }
