@@ -46,7 +46,7 @@ func (f *deadlinesFake) steps() deadlinesSteps {
 	}
 }
 
-// TestRunDeadlinesOrderMatchesPython walks every branch of _job_deadlines.
+// TestRunDeadlinesOrderMatchesPython walks every branch of the former Python _job_deadlines (removed in 1200).
 func TestRunDeadlinesOrderMatchesPython(t *testing.T) {
 	boom := errors.New("boom")
 	cases := []struct {
