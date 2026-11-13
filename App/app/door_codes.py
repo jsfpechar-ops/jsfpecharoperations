@@ -262,6 +262,14 @@ def view(reservation: dict, apartment: dict) -> Optional[dict]:
     }
 
 
+def _owner_can_hold_code(owner_user_id) -> bool:
+    """The plan allows TTLock and the lock account works: the test ensure_row makes before it inserts a row."""
+    if not ttlock.allowed_for(owner_user_id):
+        return False
+    account = ttlock.account_for(owner_user_id)
+    return bool(account and account["status"] == "ok")
+
+
 def ensure_row(reservation_id: int) -> Optional[int]:
     clause, today = _eligible_sql()
     row = db.query_one(
@@ -272,10 +280,7 @@ def ensure_row(reservation_id: int) -> Optional[int]:
     )
     if not row:
         return None
-    if not ttlock.allowed_for(row["owner_user_id"]):
-        return None
-    account = ttlock.account_for(row["owner_user_id"])
-    if not account or account["status"] != "ok":
+    if not _owner_can_hold_code(row["owner_user_id"]):
         return None
     now = db.utcnow()
     db.execute(
@@ -1527,7 +1532,8 @@ def _issue_due(now_iso: str) -> Dict[str, int]:
     due = db.query(
         "SELECT id FROM door_code WHERE state IN (?, ?) "
         "AND (next_attempt_at IS NULL OR next_attempt_at <= ?) "
-        "ORDER BY CASE WHEN last_error IN (?, ?, ?) THEN 2 WHEN attempts > 0 THEN 1 ELSE 0 END, "
+        f"ORDER BY CASE WHEN last_error IN ({', '.join('?' * len(RELEASE_REASONS))}) THEN 2 "
+        "WHEN attempts > 0 THEN 1 ELSE 0 END, "
         "(next_attempt_at IS NOT NULL), next_attempt_at, id LIMIT ?",
         (PENDING, RETRYING, now_iso, *RELEASE_REASONS, BATCH),
     )
@@ -1549,7 +1555,7 @@ def _revive_unissued_expired() -> int:
     """
     clause, today = _eligible_sql()
     rows = db.query(
-        f"SELECT dc.id, r.date_from, r.date_to, a.checkin_hour, a.checkout_hour "
+        f"SELECT dc.id, r.date_from, r.date_to, a.checkin_hour, a.checkout_hour, a.owner_user_id "
         f"FROM door_code dc JOIN reservation r ON r.id = dc.reservation_id "
         f"JOIN apartment a ON a.id = r.apartment_id "
         f"WHERE dc.state = ? AND dc.provider_code_id IS NULL AND {clause}",
@@ -1567,6 +1573,8 @@ def _revive_unissued_expired() -> int:
             continue
         if end_ms < now_ms:
             continue
+        if not _owner_can_hold_code(row["owner_user_id"]):
+            continue  # ensure_row would not make a new row: keep the expired one (1173d)
         # Guarded: only a row that is still expired is deleted.
         removed = db.execute("DELETE FROM door_code WHERE id = ? AND state = ?", (row["id"], EXPIRED))
         if removed:

@@ -1,6 +1,6 @@
 # 1173d: last nits of the review of 1173c (two tests that guard nothing, a hard-coded placeholder list, a delete before the row can be recreated)
 
-Status: todo
+Status: review
 Depends on: 1173c | Base commit: claude/zealous-maxwell-a7ub54 HEAD (8d7ba6cd, PR #950, contains 1173, 1173b, 1173c) | Branch: task/1173d-queue-final-nits
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (about 16 calls planned; if you reach 25, stop and write the report as `blocked`)
 
