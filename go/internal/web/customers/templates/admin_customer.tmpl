@@ -1,0 +1,213 @@
+{{- /* Go twin of App/app/templates/admin_customer.html (brief 1364). detail.go builds
+     the fact lists and rows; ui_section call blocks are written out as their markup. */ -}}
+{{define "admin_customer.head"}}<link rel="stylesheet" href="/static/admin2.css?v=20261106-0893q">{{end}}
+{{define "admin_customer.tabs"}}{{ui_tabs .Tabs}}{{end}}
+{{define "admin_customer.back_label"}}{{t "customers.title"}}{{end}}
+{{define "admin_customer.secondary"}}{{ui_button (t "customers.payments") "secondary" (kv "href" "/admin/fakturace")}}{{end}}
+{{define "admin_customer"}}
+{{if not .BillingOn}}{{ui_banner "neutral" (t "customers.billing_off")}}{{end}}
+{{if eq .State "legacy"}}<p class="ui-sub">{{t "customers.legacy_note"}}</p>{{end}}
+<section class="ui-section"><div class="ui-section-h"><h2>{{t "customers.account"}}</h2></div>
+<div class="settings-value-card">
+  <span class="settings-value-label">{{t "customers.state"}}</span>
+  <strong class="settings-value">{{.StateLabel}}</strong>
+</div>
+{{ui_facts .AccountFacts}}
+<form method="post" action="/admin/users/{{.ID}}/email">
+  {{ui_field (printf "user-email-%d" .ID) (t "users.email.label") (kv "name" "email" "value" .Email "type" "email" "attrs" (safe `required maxlength="254" autocomplete="off" autocapitalize="none" spellcheck="false"`))}}
+  {{if .Email}}
+  {{ui_field (printf "user-email-reason-%d" .ID) (t "users.email.reason") (kv "name" "reason" "attrs" (safe `required minlength="5" maxlength="300"`))}}
+  {{end}}
+  {{ui_button (t (or (and .Email "users.email.change") "users.email.set")) "secondary" (kv "type" "submit")}}
+</form>
+{{if .NotSelf}}
+{{if and .Active .Email}}
+<form method="post" action="/admin/users/{{.ID}}/invite">
+  {{ui_button (t "users.menu.send_invite") "secondary" (kv "type" "submit")}}
+</form>
+{{end}}
+<form method="post" action="/admin/users/{{.ID}}/impersonate">
+  {{ui_field (printf "support-reason-%d" .ID) (t "users.menu.open_workspace_reason") (kv "name" "reason" "placeholder" (t "users.menu.open_workspace_reason_optional") "attrs" (safe `maxlength="300"`))}}
+  {{ui_button (t "users.menu.open_workspace") "secondary" (kv "type" "submit")}}
+</form>
+{{if .Meta}}
+<form method="post" action="/admin/users/{{.ID}}/ads-consent/withdraw">
+  <input type="hidden" name="platform" value="meta">
+  {{ui_button (t "users.menu.withdraw_meta_consent") "secondary" (kv "type" "submit")}}
+</form>
+{{end}}
+{{if .Google}}
+<form method="post" action="/admin/users/{{.ID}}/ads-consent/withdraw">
+  <input type="hidden" name="platform" value="google">
+  {{ui_button (t "users.menu.withdraw_ads_consent") "secondary" (kv "type" "submit")}}
+</form>
+{{end}}
+<form method="post" action="/admin/users/{{.ID}}/export" data-no-skeleton>
+  {{ui_button (t "users.menu.export") "secondary" (kv "type" "submit")}}
+</form>
+<form method="post" action="/admin/users/{{.ID}}/schedule-deletion">
+  {{ui_field (printf "user-delete-confirm-%d" .ID) (t "users.menu.schedule_deletion_confirm" "username" .Username) (kv "name" "confirm" "attrs" (safe "required"))}}
+  {{ui_button (t "users.menu.schedule_deletion") "secondary" (kv "type" "submit")}}
+</form>
+{{end}}
+</section>
+<section class="ui-section"><div class="ui-section-h"><h2>{{t "customers.billing"}}</h2></div>
+{{ui_facts .BillingFacts}}
+{{if .HasQuote}}
+{{ui_facts .MoneyFacts}}
+{{if .DiscountReason}}<p class="ui-sub">{{t "customers.money.reason"}}: {{.DiscountReason}}</p>{{end}}
+{{end}}
+</section>
+{{if and .BillingOn (not .HasQuote)}}
+<section class="ui-section" id="assign-plan"><div class="ui-section-h"><h2>{{tip_label (t "customers.assign.title") "assign-help" (printf "%s %s" (t "customers.assign.help") (t "customers.assign.help2")) (kv "tag" "span")}}</h2></div>
+<form method="post" action="/admin/customers/{{.ID}}/priradit" data-customer-assign>
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <div class="ui-form-actions">
+    <label class="admin-label" for="assign-plan">{{t "customers.assign.plan"}}</label>
+    <select class="ui-input" id="assign-plan" name="plan">
+      <option value="standard">{{t "billing.plan.name.standard"}}</option>
+      <option value="max">{{t "billing.plan.name.max"}}</option>
+    </select>
+    <label class="admin-label" for="assign-interval">{{t "customers.actions.field_interval"}}</label>
+    <select class="ui-input" id="assign-interval" name="billing_interval">
+      <option value="month">{{t "billing.interval.month"}}</option>
+      <option value="year">{{t "billing.interval.year"}}</option>
+    </select>
+    <label class="admin-label" for="assign-ttlock">{{t "customers.actions.field_ttlock"}}</label>
+    <select class="ui-input" id="assign-ttlock" name="addon_ttlock">
+      <option value="0">{{t "customers.no"}}</option>
+      <option value="1">{{t "customers.yes"}}</option>
+    </select>
+  </div>
+  <div class="ui-form-actions">
+    <label class="admin-label" for="assign-name">{{t "customers.assign.buyer_name"}}</label>
+    <input class="ui-input" type="text" id="assign-name" name="buyer_name" value="{{.Buyer.Name}}" required>
+    <label class="admin-label" for="assign-street">{{t "customers.assign.buyer_street"}}</label>
+    <input class="ui-input" type="text" id="assign-street" name="buyer_street" required
+           value="{{.Buyer.Street}}">
+    <label class="admin-label" for="assign-city">{{t "customers.assign.buyer_city"}}</label>
+    <input class="ui-input" type="text" id="assign-city" name="buyer_city" required
+           value="{{.Buyer.City}}">
+  </div>
+  <div class="ui-form-actions">
+    <label class="admin-label" for="assign-zip">{{t "customers.assign.buyer_zip"}}</label>
+    <input class="ui-input" type="text" id="assign-zip" name="buyer_zip" required
+           value="{{.Buyer.Zip}}">
+    <label class="admin-label" for="assign-ico">{{t "customers.assign.buyer_ico"}}</label>
+    <input class="ui-input" type="text" id="assign-ico" name="buyer_ico"
+           value="{{.Buyer.ICO}}">
+    <label class="admin-label" for="assign-dic">{{t "customers.assign.buyer_dic"}}</label>
+    <input class="ui-input" type="text" id="assign-dic" name="buyer_dic"
+           value="{{.Buyer.DIC}}">
+    <label class="admin-label" for="assign-email">{{t "customers.assign.buyer_email"}}</label>
+    <input class="ui-input" type="email" id="assign-email" name="buyer_email" value="{{.Buyer.Email}}" required>
+  </div>
+  <div class="ui-form-actions">
+    {{ui_button (t "customers.assign.submit") "primary" (kv "type" "submit")}}
+  </div>
+</form>
+</section>
+{{end}}
+{{if and .BillingOn (eq .State "trialing")}}
+<section class="ui-section" id="extend-trial"><div class="ui-section-h"><h2>{{t "customers.extend.title"}}</h2></div>
+<form method="post" action="/admin/customers/{{.ID}}/prodlouzit" class="ui-form-actions" data-customer-extend>
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <label class="admin-label" for="extend-days">{{t "customers.extend.days"}}</label>
+  <input class="ui-input" type="number" id="extend-days" name="days" min="1" max="365" value="14" inputmode="numeric" required>
+  {{ui_button (t "customers.extend.submit") "secondary" (kv "type" "submit")}}
+</form>
+</section>
+{{end}}
+{{if and .BillingOn .HasQuote}}
+<section class="ui-section" id="operator-actions"><div class="ui-section-h"><h2>{{tip_label (t "customers.actions.title") "actions-help" (printf "%s %s" (t "customers.actions.discount_help") (t "customers.actions.change_help")) (kv "tag" "span")}}</h2></div>
+<form method="post" action="/admin/customers/{{.ID}}/sleva" class="ui-form-actions" data-customer-discount>
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <label class="admin-label" for="discount-percent">{{t "customers.actions.discount"}}</label>
+  <input class="ui-input" type="number" id="discount-percent" name="percent" min="0" max="100" value="{{.DiscountValue}}" required>
+  <label class="admin-label" for="discount-reason">{{t "customers.actions.reason"}}</label>
+  <input class="ui-input" type="text" id="discount-reason" name="reason" maxlength="200" value="{{.DiscountReason}}">
+  {{ui_button (t "customers.actions.discount_submit") "secondary" (kv "type" "submit")}}
+</form>
+<form method="post" action="/admin/customers/{{.ID}}/plan" class="ui-form-actions" data-customer-plan>
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <label class="admin-label" for="plan-field">{{t "customers.actions.change"}}</label>
+  <select class="ui-input" id="plan-field" name="field">
+    <option value="plan">{{t "customers.actions.field_plan"}}</option>
+    <option value="billing_interval">{{t "customers.actions.field_interval"}}</option>
+    <option value="apartments">{{t "customers.actions.field_apartments"}}</option>
+    <option value="addon_ttlock">{{t "customers.actions.field_ttlock"}}</option>
+    <option value="addon_whitelabel">{{t "customers.actions.field_whitelabel"}}</option>
+  </select>
+  <label class="admin-label" for="plan-value">{{t "customers.actions.value"}}</label>
+  <input class="ui-input" type="text" id="plan-value" name="value" required>
+  {{ui_button (t "customers.actions.change_submit") "secondary" (kv "type" "submit")}}
+</form>
+<form method="post" action="/admin/customers/{{.ID}}/stav" class="ui-form-actions" data-customer-status>
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <label class="admin-label" for="status-new">{{t "customers.actions.status"}}</label>
+  <select class="ui-input" id="status-new" name="status">
+    <option value="active">{{t "billing.plan.state.active"}}</option>
+    <option value="paused">{{t "billing.plan.state.paused"}}</option>
+    <option value="canceling">{{t "billing.plan.state.canceling"}}</option>
+    <option value="overdue">{{t "billing.plan.state.overdue"}}</option>
+    <option value="trialing">{{t "billing.plan.state.trialing"}}</option>
+  </select>
+  {{ui_button (t "customers.actions.status_submit") "secondary" (kv "type" "submit")}}
+</form>
+</section>
+{{end}}
+<section class="ui-section" id="operator-actions-card"><div class="ui-section-h"><h2>{{tip_label (t "customers.ops.title") "ops-help" (t "customers.ops.help") (kv "tag" "span")}}</h2></div>
+<div class="ui-form-actions">
+  <form method="post" action="/admin/customers/{{.ID}}/aktivovat" data-customer-toggle{{if .Active}} data-confirm data-confirm-message="{{t "confirm.disable_user" "name" .Name}}"{{end}}>
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    {{ui_button (t (or (and .Active "customers.ops.disable") "customers.ops.enable")) "secondary" (kv "type" "submit")}}
+  </form>
+  {{if eq .State "unverified"}}
+  <form method="post" action="/admin/customers/{{.ID}}/overit-znovu" data-customer-verify>
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    {{ui_button (t "customers.ops.verify") "secondary" (kv "type" "submit")}}
+  </form>
+  {{end}}
+</div>
+</section>
+<section class="ui-section" id="activity-card"><div class="ui-section-h"><h2>{{t "customers.activity.title"}}</h2></div>
+{{if .Activity}}
+{{ui_table_begin .ActivityColumns (t "customers.activity.title")}}
+{{range .Activity}}
+<tr class="ui-row">
+  <td class="ui-cell-first" data-card="meta">{{.When}}</td>
+  <td data-card="secondary">{{t (printf "customers.activity.%s" .Kind)}}</td>
+  <td data-card="primary">{{.Detail}}{{if .Extra}} <span class="ui-sub">{{.Extra}}</span>{{end}}</td>
+</tr>
+{{end}}
+{{ui_table_end}}
+{{else}}<p class="ui-sub">{{t "customers.activity.none"}}</p>{{end}}
+</section>
+<section class="ui-section" id="operator-log-card"><div class="ui-section-h"><h2>{{t "customers.oplog.title"}}</h2></div>
+{{if .OpLog}}
+{{ui_table_begin .OpLogColumns (t "customers.oplog.title")}}
+{{range .OpLog}}
+<tr class="ui-row">
+  <td class="ui-cell-first" data-card="meta">{{.When}}</td>
+  <td data-card="primary">{{.Action}}{{if .Detail}} <span class="ui-sub">{{.Detail}}</span>{{end}}</td>
+  <td data-card="secondary">{{.Actor}}</td>
+</tr>
+{{end}}
+{{ui_table_end}}
+{{else}}<p class="ui-sub">{{t "customers.activity.none"}}</p>{{end}}
+</section>
+<section class="ui-section"><div class="ui-section-h"><h2>{{t "customers.invoices"}}</h2></div>
+{{if .Invoices}}
+{{ui_table_begin .InvoiceColumns (t "customers.invoices")}}
+{{range .Invoices}}
+<tr class="ui-row">
+  <td class="ui-cell-first" data-card="primary"><a data-turbo="false" href="/admin/fakturace/{{.ID}}.pdf">{{.Number}}</a></td>
+  <td class="ui-cell-r" data-card="meta">{{.Amount}}</td>
+  <td data-card="secondary">{{.Due}}</td>
+  <td data-card="badge">{{t .StateKey}}</td>
+</tr>
+{{end}}
+{{ui_table_end}}
+{{else}}<p class="ui-sub">{{t "customers.invoice_none"}}</p>{{end}}
+</section>
+{{end}}
