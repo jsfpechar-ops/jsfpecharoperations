@@ -58,6 +58,10 @@ The dashboard's "last updated" timestamp is a single global setting, not
 per-host, and there is no staleness threshold or alert behind it. It is the only
 in-app signal that polling has stopped.
 
+The Cloudflare origin client certificate (docs/CLOUDFLARE.md, Authenticated Origin Pulls) is not renewed automatically. The owner renews it before it expires: Cloudflare e-mails at 30 and 14 days; an expired certificate makes Caddy in enforce mode drop every request.
+
+Expiry date: set by the owner after runbook step 5.
+
 ## Stay fee
 
 The host-only stay-fee remittance tool is optional per property; a zero rate
@@ -644,13 +648,23 @@ tell you:
 
 - **PostgreSQL dump (0464).** `backup.sh` writes `ubyhost-pg.dump.age` (`pg_dump -Fc`, age-encrypted, never plaintext) into the newest snapshot folder when the `postgres` service runs. Restore with `pg-restore.sh <stamp>`; the rehearsal (`pg-cutover.sh rehearse`) dumps, restores into `ubyhost_restoretest` and verifies it against SQLite.
 
+### App database role (K-S11)
+
+Owner runbook, once. Until step 3 the app keeps connecting as `ubyhost`; the full checks and rollback are in PR 1206.
+1. Run `./scripts/backup.sh` and confirm it finishes with no error line.
+2. Run `./scripts/pg-app-role.sh apply`. Expect `rolsuper f`, `rolcreatedb f`, `rolcreaterole f`, `rolcanlogin t`, `objects_not_owned_by_app` 0, and two `PASS` lines.
+3. Run `cp -p .env .env.before-1206`, then in `.env` change only `ubyhost@` to `ubyhost_app@` in `UBYHOST_DATABASE_URL`.
+4. Run `docker compose up -d`, check `/healthz`, and check the worker and `ubyhost-go` logs for `permission denied`.
+5. To roll back, run `cp -p .env.before-1206 .env` and then `docker compose up -d`.
+6. After any restore or cutover, run `pg-app-role.sh apply` again. On a new cluster, run it before `pg-restore.sh`. The `--no-owner` restore drill is unaffected.
+
 ### WAL-G continuous archiving and point-in-time recovery
 
 The daily age-encrypted `pg_dump` (above) stays the primary backup. WAL-G adds point-in-time recovery for the last 7 days; at most about 5 minutes of writes can be lost (`archive_timeout=300`). Downtime is acceptable here; losing data is not. Postgres keeps its pinned Alpine image and has no network: `archive_command` copies each finished WAL file durably into the `ubyhost-walspool` volume, and the `walg` container (profile `walg`, Debian Postgres 16 image with WAL-G) uploads it to S3 and deletes the local copy only after the upload succeeded (briefs 1022, 1023). The daily base backup runs in `walg` through the Postgres socket and a read-only data mount.
 
 - **Cost.** About USD 0.05 a month in PUT requests plus a few cents of storage. WAL-G does not read back in normal running and `walg-check.sh` never calls S3. Check Cost Explorer after 7 days; expect under USD 1 a month.
 - **Retention.** 7 days: `wal-g delete retain FULL 7 --confirm` after each daily base backup, plus an S3 lifecycle rule at 10 days (see the RETENTION table row).
-- **Encryption and key custody.** WAL-G encrypts on the server before upload with `WALG_LIBSODIUM_KEY` (32 random bytes as 64 hex characters, `openssl rand -hex 32`). It is a different key from the age identity. Keep it in the password manager plus one offline copy; it is also in `.env.walg` on the server (mode 600, owner ubuntu). Never in the repo or a chat. Whoever holds it and the S3 keys can read the archives; if it is lost, every archive is unreadable and only the pg_dump backups remain.
+- **Encryption and key custody.** WAL-G encrypts on the server before upload with `WALG_LIBSODIUM_KEY` (32 random bytes as 64 hex characters, `openssl rand -hex 32`). It is a different key from the age identity. Keep it in the password manager plus one offline copy; it is also in `.env.walg` on the server (mode 600, owner ubuntu). Never in the repo or a chat. Whoever holds it and the S3 keys can read the archives; if it is lost, every archive is unreadable and only the pg_dump backups remain. Without the key both WAL-G scripts refuse to push: `walg-ship.sh` ships nothing (finished WAL waits in the spool and `walg-check.sh` alerts) and `walg-backup.sh` exits 1 before the base backup.
 - **Alarms.** `walg-check.sh` (cron every 10 minutes) fails when `walg` is not running, the last archive is older than 30 minutes, `failed_count` rises, a file sits in the spool longer than 30 minutes, the spool is over 2 GB or `pg_wal` is over 5 GB. It pings `UBYHOST_WALG_PING_URL` only when healthy; `walg-backup.sh` pings `UBYHOST_WALG_BACKUP_PING_URL` only after a good base backup. A missing ping is the alarm. On an alarm: `./scripts/walg-check.sh`, then `docker compose logs --tail 50 walg` and `docker compose logs --tail 50 postgres`. With no database writes for 30 minutes no WAL is archived: a false alarm; raise `WALG_MAX_ARCHIVE_AGE_S` in `.env` if it repeats. **Never delete files from `pg_wal` by hand.**
 
 #### Owner rollout (once; in a quiet hour; about 60 minutes)

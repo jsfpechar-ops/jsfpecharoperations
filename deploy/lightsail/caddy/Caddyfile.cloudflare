@@ -15,9 +15,44 @@
 	}
 }
 
+# 1208: Cloudflare Authenticated Origin Pulls (zone-level), K-S14. Mode comes
+# from UBYHOST_AOP_MODE: off (default), check, enforce. Only the imported
+# snippet is read, so aop-ca.pem is only needed for enforce.
+(aop_off) {
+	protocols tls1.2 tls1.3
+}
+(aop_check) {
+	client_auth {
+		mode request
+	}
+}
+(aop_enforce) {
+	client_auth {
+		mode require_and_verify
+		trust_pool file /etc/caddy/certs/aop-ca.pem
+	}
+}
+# 1208: the probe exists only in check mode (owner runbook step 7). No log, no personal data.
+(aop_probe_check) {
+	@aop_probe path /__aop_probe
+	handle @aop_probe {
+		header Cache-Control "no-store"
+		respond "client_cert_issuer={http.request.tls.client.issuer}" 200
+	}
+}
+# 1208: empty in off and enforce, so /__aop_probe is not handled there.
+(aop_probe_off) {
+	# no probe in this mode
+}
+(aop_probe_enforce) {
+	# no probe in this mode
+}
+
 # The optional app hostname shares this backend, TLS policy and upload limit.
 {$UBYHOST_DOMAIN} {$UBYHOST_APP_DOMAIN} {
-	tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem
+	tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem {
+		import aop_{$UBYHOST_AOP_MODE:off}
+	}
 	# 0421: only Cloudflare may reach the app. A request straight to the
 	# server's IP would skip Cloudflare's WAF, bot checks and rate limits.
 	# remote_ip is the TCP peer, not the forwarded client IP. Same ranges as
@@ -37,6 +72,8 @@
 	}
 	encode zstd gzip
 	header Strict-Transport-Security "max-age=31536000"
+	# 1208: probe handler for check mode only (see aop_probe_* above).
+	import aop_probe_{$UBYHOST_AOP_MODE:off}
 	# UBYHOST_GO_PATHS: space-separated paths for the Go service (ubyhost-go); unset = all traffic to Python (compose defaults it to /__go_off__; an empty value breaks Caddy).
 	# Unset or empty keeps every request on Python, so this changes nothing until the owner sets it.
 	@go path {$UBYHOST_GO_PATHS:/__go_off__}

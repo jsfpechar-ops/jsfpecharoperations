@@ -17,6 +17,7 @@ Updated: 2026-11-13.
 - UX gate live (layout lint + AGENTS rule 10). Stripe onboarding live; extras merged. **Owner:** deploy; booking site v1 next.
 - 11-09: backups live (daily pg_dump, WAL-G 7-day PITR); restore drills passed, repeat every 3 months.
 - 11-08: 1032 stay-fee pay box (all ways visible) + receipt mail, draft PR; method never claimed. **Owner:** review, deploy.
+- 11-13: security audit, draft #966 (1200-1204). **Owner:** K-S11 to K-S15.
 
 ## Next
 - Door codes 0037–0038 on main → owner staging steps.

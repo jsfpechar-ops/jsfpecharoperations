@@ -39,6 +39,27 @@ if command -v ufw >/dev/null 2>&1; then
   ufw --force enable
 fi
 
+echo "==> Enabling automatic security updates"
+apt-get install -y unattended-upgrades
+systemctl enable --now unattended-upgrades
+
+echo "==> Hardening SSH (key login only, no root login)"
+SSHD_DROPIN=/etc/ssh/sshd_config.d/10-ubyhost-hardening.conf
+mkdir -p /etc/ssh/sshd_config.d
+printf 'PasswordAuthentication no\nPermitRootLogin no\n' > "${SSHD_DROPIN}.new"
+if cmp -s "${SSHD_DROPIN}.new" "${SSHD_DROPIN}" 2>/dev/null; then
+  rm -f "${SSHD_DROPIN}.new"
+else
+  mv "${SSHD_DROPIN}.new" "${SSHD_DROPIN}"
+  if sshd -t; then
+    systemctl reload ssh || systemctl reload sshd
+  else
+    rm -f "${SSHD_DROPIN}"
+    echo "sshd -t rejected the hardening drop-in; removed it, SSH left unchanged." >&2
+    exit 1
+  fi
+fi
+
 INSTALL_DIR="${UBYHOST_INSTALL_DIR:-/opt/ubyhost}"
 DEPLOY_USER="${UBYHOST_DEPLOY_USER:-ubuntu}"
 

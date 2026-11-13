@@ -590,7 +590,7 @@ def test_walg_ship_script_syntax():
     assert result.returncode == 0, result.stderr
 
 
-def run_ship(tmp_path, push_ok, prefix="s3://test-bucket/postgres-wal"):
+def run_ship(tmp_path, push_ok, prefix="s3://test-bucket/postgres-wal", key="test-key-not-real"):
     spool = tmp_path / "spool"
     spool.mkdir()
     (spool / "000000010000000000000002").write_text("w2")
@@ -605,7 +605,7 @@ def run_ship(tmp_path, push_ok, prefix="s3://test-bucket/postgres-wal"):
     log = tmp_path / "stub.log"
     env = {"PATH": f"{bindir}{os.pathsep}{os.environ['PATH']}", "STUB_LOG": str(log),
            "PUSH_OK": "1" if push_ok else "0", "WALG_SPOOL": str(spool), "WALG_SHIP_ONCE": "1",
-           "WALG_S3_PREFIX": prefix}
+           "WALG_S3_PREFIX": prefix, "WALG_LIBSODIUM_KEY": key}
     result = subprocess.run(["sh", str(WALG_DIR / "walg-ship.sh")], env=env,
                             capture_output=True, text=True, timeout=30)
     pushed = log.read_text().splitlines() if log.exists() else []
@@ -634,6 +634,15 @@ def test_walg_ship_refuses_without_a_destination(tmp_path):
     assert (spool / "000000010000000000000001").exists()
 
 
+def test_walg_ship_refuses_without_the_encryption_key(tmp_path):
+    result, spool, pushed = run_ship(tmp_path, True, key="")
+    assert result.returncode == 1
+    assert pushed == []  # nothing uploaded unencrypted
+    assert "WALG_LIBSODIUM_KEY" in result.stderr
+    assert "test-key-not-real" not in result.stderr
+    assert (spool / "000000010000000000000001").exists()
+
+
 CHECK_DOCKER_STUB = r"""#!/usr/bin/env bash
 echo "$*" >> "$STUB_LOG"
 case "$*" in
@@ -642,6 +651,7 @@ case "$*" in
   *"stat -c %Y"*) [ -n "${SPOOL_MTIME:-}" ] && echo "$SPOOL_MTIME" ;;
   *"du -sm /walspool"*) echo "${SPOOL_MB:-1}" ;;
   *"du -sm /var/lib/postgresql/data/pg_wal"*) echo "${PGWAL_MB:-100}" ;;
+  *LIBSODIUM_KEY*) [ "${KEY_MISSING:-0}" = 1 ] && exit 1 ;;
   *"backup-push"*) [ "${BACKUP_FAIL:-0}" = 1 ] && exit 1 ;;
 esac
 exit 0
@@ -716,5 +726,14 @@ def test_walg_backup_pushes_then_retains_seven_then_pings(tmp_path):
 def test_walg_backup_failure_deletes_nothing_and_does_not_ping(tmp_path):
     result, recorded = run_walg("walg-backup.sh", tmp_path, {"BACKUP_FAIL": "1"})
     assert result.returncode != 0
+    assert "delete retain" not in recorded
+    assert "ping.invalid" not in recorded
+
+
+def test_walg_backup_refuses_without_the_encryption_key(tmp_path):
+    result, recorded = run_walg("walg-backup.sh", tmp_path, {"KEY_MISSING": "1"})
+    assert result.returncode != 0
+    assert "WALG_LIBSODIUM_KEY" in result.stderr
+    assert "backup-push" not in recorded
     assert "delete retain" not in recorded
     assert "ping.invalid" not in recorded
