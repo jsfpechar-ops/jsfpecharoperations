@@ -376,12 +376,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "res_country": "Country",
         "purpose": "Purpose of stay",
         "stay_dates": "Your dates",
-        "child_title": "This person is a child travelling on a parent's passport",
-        "child_help": (
-            "Tick this only if the child has no passport of their own. We will then need the "
-            "parent's document number."
-        ),
-        "parent_doc": "Parent's document number",
         "note": "Note",
         "signature": "Signature",
         "signature_help": "Sign with your finger or mouse. This is required by Czech law.",
@@ -1148,12 +1142,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "res_country": "Stát",
         "purpose": "Účel pobytu",
         "stay_dates": "Vaše termíny",
-        "child_title": "Jde o dítě zapsané v pasu rodiče",
-        "child_help": (
-            "Zaškrtněte jen tehdy, pokud dítě nemá vlastní pas. Budeme potřebovat číslo "
-            "dokladu rodiče."
-        ),
-        "parent_doc": "Číslo dokladu rodiče",
         "note": "Poznámka",
         "signature": "Podpis",
         "signature_help": "Podepište se prstem nebo myší. Podpis vyžaduje český zákon.",
@@ -1880,9 +1868,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "res_country": "Land",
         "purpose": "Aufenthaltszweck",
         "stay_dates": "Ihre Reisedaten",
-        "child_title": "Diese Person ist ein Kind, das mit dem Reisepass eines Elternteils reist",
-        "child_help": "Kreuzen Sie dies nur an, wenn das Kind keinen eigenen Reisepass hat. Wir benötigen dann die Dokumentnummer des Elternteils.",
-        "parent_doc": "Dokumentnummer des Elternteils",
         "note": "Anmerkung",
         "signature": "Unterschrift",
         "signature_help": "Unterschreiben Sie mit dem Finger oder der Maus. Dies ist nach tschechischem Recht vorgeschrieben.",
@@ -2432,9 +2417,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "res_country": "País",
         "purpose": "Motivo de la estancia",
         "stay_dates": "Sus fechas",
-        "child_title": "Esta persona es un menor que viaja con el pasaporte de un progenitor",
-        "child_help": "Marque esta casilla solo si el menor no tiene pasaporte propio. En ese caso necesitaremos el número de documento del progenitor.",
-        "parent_doc": "N.º de documento del progenitor",
         "note": "Nota",
         "signature": "Firma",
         "signature_help": "Firme con el dedo o el ratón. Lo exige la ley checa.",
@@ -2984,9 +2966,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "res_country": "Pays",
         "purpose": "Motif du séjour",
         "stay_dates": "Vos dates",
-        "child_title": "Cette personne est un enfant inscrit sur le passeport d'un parent",
-        "child_help": "Cochez uniquement si l'enfant n'a pas son propre passeport. Nous aurons alors besoin du numéro de document du parent.",
-        "parent_doc": "N° de document du parent",
         "note": "Remarque",
         "signature": "Signature",
         "signature_help": "Signez avec le doigt ou la souris. La loi tchèque l'exige.",

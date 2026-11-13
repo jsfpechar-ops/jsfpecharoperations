@@ -66,19 +66,20 @@ type GuestRow struct {
 }
 
 const (
-	maxSurname         = 50
-	maxFirstName       = 24
-	maxDoc             = 30
-	minDoc             = 6
-	maxVisa            = 15
-	maxResidencePart   = 42
-	maxNote            = 255
-	inpassDoc          = "INPASS"
-	importedSignature  = "imported"
-	czechCode          = "CZE"
-	maxSignatureBytes  = 256 * 1024
-	maxSignatureSide   = 6000
-	maxSignaturePixels = 12000000
+	maxSurname              = 50
+	maxFirstName            = 24
+	maxDoc                  = 30
+	minDoc                  = 6
+	maxVisa                 = 15
+	maxResidencePart        = 42
+	maxNote                 = 255
+	inpassDoc               = "INPASS"
+	czechChildNoDocumentAge = 15
+	importedSignature       = "imported"
+	czechCode               = "CZE"
+	maxSignatureBytes       = 256 * 1024
+	maxSignatureSide        = 6000
+	maxSignaturePixels      = 12000000
 	// 4 base64 characters carry 3 bytes, so this is the longest payload that
 	// can still decode to an allowed number of bytes.
 	maxSignaturePayloadChars = 4*(maxSignatureBytes/3) + 4
@@ -365,8 +366,14 @@ func validateGuest(g GuestRow, stayFrom, stayTo *time.Time, today time.Time, raw
 
 	doc := g.DocNumber
 	note := g.Note
+	// Owner 2026-11-13: a Czech national is never reported, so a Czech child
+	// under 15 may leave the number empty (validation.py, same rule).
+	czechChild := nationality == czechCode && stayFrom != nil &&
+		certainlyUnderAge(g.BirthDate, *stayFrom, czechChildNoDocumentAge)
 	if doc == "" {
-		issues = append(issues, Issue{"doc_number", "Travel document number is required.", severityError})
+		if !czechChild {
+			issues = append(issues, Issue{"doc_number", "Travel document number is required.", severityError})
+		}
 	} else if doc == inpassDoc {
 		if note == "" {
 			issues = append(issues, Issue{"note", inpassNoteMessage, severityError})

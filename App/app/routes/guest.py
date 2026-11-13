@@ -524,21 +524,20 @@ def _safe_return_to(requested: Optional[str], token: str, lang: str) -> str:
     return urlunsplit(("", "", path, split.query, "")) + fragment
 
 
-# The child-on-a-parent's-passport check is keyed "note" in validation.py, where
-# the column really is called that. The guest form has no "note" box: it has the
-# parent's document number. So for the guest the issue is renamed onto the field
-# they can see, and the sentence names that box. The rename lives here rather
-# than in validation.py because the host form does have a "note" column and must
-# keep reading its own wording.
-_GUEST_ISSUE_FIELDS = {"note": "parent_doc_number"}
+# The guest form has no "child on a parent's passport" box any more (owner,
+# 2026-11-13, after UbyPort refused a guest-entered INPASS child): guests type
+# their own passport or ID card number, and INPASS is left to the host form.
+# A guest who types INPASS by hand gets the validator's issue keyed "note",
+# which is shown under the document box, the only one the guest has.
+_GUEST_ISSUE_FIELDS = {"note": "doc_number"}
 _GUEST_ISSUE_MESSAGES = {
     "note": {
-        "en": "Enter the parent's passport or ID number.",
-        "cs": "Zadejte číslo pasu nebo průkazu rodiče.",
-        "de": "Geben Sie die Pass- oder Ausweisnummer des Elternteils ein.",
-        "es": "Introduzca el número de pasaporte o documento de identidad del padre o la madre.",
-        "fr": "Saisissez le numéro de passeport ou de carte d'identité du parent.",
-        "uk": guest_uk_i18n.ISSUE_NOTE,
+        "en": "Enter this person's own passport or ID card number.",
+        "cs": "Zadejte číslo vlastního pasu nebo občanského průkazu této osoby.",
+        "de": "Geben Sie die Nummer des eigenen Reisepasses oder Personalausweises dieser Person ein.",
+        "es": "Introduzca el número del pasaporte o documento de identidad propio de esta persona.",
+        "fr": "Saisissez le numéro du passeport ou de la carte d'identité de cette personne.",
+        "uk": guest_uk_i18n.ISSUE_OWN_DOCUMENT,
     },
 }
 
@@ -2344,8 +2343,6 @@ async def guest_form_relang(token: str, reservation_id: int, request: Request):
         {
             "stay_from": stay_from,
             "stay_to": stay_to,
-            "child_in_passport": bool(form.get("child_in_passport")),
-            "parent_doc_number": form.get("parent_doc_number") or "",
             "party_size": (form.get("party_size") or "").strip(),
             "signature": "",
             "legal_ack": "",
@@ -2409,7 +2406,6 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         if existing and reporting.guest_form_locked(existing, reservation):
             return _unavailable(request, lang, "form_locked", 403, token, reservation_id=reservation_id)
 
-    child_in_passport = bool(form.get("child_in_passport"))
     # One extractor for the host entry form and this one: the fields are the
     # same, and a field read in only one of them silently drops data from
     # whichever path was forgotten.
@@ -2522,6 +2518,14 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
     issues = _localize_issues(_name_latin_issues(issues, lang), lang)
 
     if validation.errors_only(issues):
+        # Owner 2026-11-13: a guest wrote "the form did not accept the passport
+        # number" and nothing showed which field had refused. Field names only:
+        # never a value, a token or the reservation, so the line stays PII-free
+        # like the access log next to it.
+        _log.info(
+            "guest_form_refused fields=%s",
+            ",".join(sorted({issue.field for issue in validation.errors_only(issues)})),
+        )
         context = _form_context(
             request,
             apartment,
@@ -2538,8 +2542,6 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
             {
                 "stay_from": stay_from,
                 "stay_to": stay_to,
-                "child_in_passport": child_in_passport,
-                "parent_doc_number": form.get("parent_doc_number") or "",
                 # Echo back only a signature the validator accepts: a hand-built
                 # request must not get its blob mirrored into the next render.
                 "signature": signature if validation.is_valid_signature(signature) else "",

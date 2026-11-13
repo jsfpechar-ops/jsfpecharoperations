@@ -61,23 +61,14 @@ def test_the_extractor_reads_every_field_the_table_stores():
     assert raw["note"] == ""
 
 
-def test_the_guest_checkbox_becomes_the_inpass_marker_and_the_parent_note():
+def test_a_posted_child_box_no_longer_turns_into_inpass():
+    """Owner 2026-11-13: the box is gone; an old page posting it changes nothing."""
     guest = guest_form_raw(
-        dict(FORM, doc_number="", child_in_passport="1", parent_doc_number="XY987654"),
+        dict(FORM, doc_number="FC4296103", child_in_passport="1", parent_doc_number="XY987654"),
         APARTMENT,
     )
-    assert guest["doc_number"] == validation.INPASS
-    assert guest["note"] == validation.INPASS_NOTE_PREFIX + "XY987654"
-
-
-def test_the_parent_note_keeps_what_the_guest_already_typed():
-    guest = guest_form_raw(
-        dict(FORM, doc_number="", note="přijel autem", child_in_passport="1",
-             parent_doc_number="XY987654"),
-        APARTMENT,
-    )
-    assert guest["note"].endswith("přijel autem")
-    assert guest["note"].startswith(validation.INPASS_NOTE_PREFIX)
+    assert guest["doc_number"] == "FC4296103"
+    assert guest["note"] == ""
 
 
 def test_the_host_form_has_no_checkbox_so_it_is_unaffected():

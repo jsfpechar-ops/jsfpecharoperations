@@ -1,16 +1,14 @@
-"""UX-56 (A-20): the child's missing parent number is caught before the save.
+"""Children on the guest form enter their own document (owner, 2026-11-13).
 
-A child travelling on a parent's passport has no document number of its own, so
-the form asks for the parent's instead. The box was never required and the
-server's answer was keyed ``note`` — a field the guest form does not have, so
-the message named a "note" nobody could see and the box it belonged to was left
-unmarked. Now the box is required as soon as the child is declared, the message
-names the box, and the box is what gets marked.
+UbyPort refused a child filed as INPASS ("Nekorektní číslo cestovního
+dokladu") and the police helpdesk did not know INPASS, so the "child on a
+parent's passport" box is gone. Every guest types their own passport or ID
+card number; only a Czech child under 15, who is never reported and need not
+hold an ID card, may leave it empty.
 """
 from __future__ import annotations
 
 import base64
-import re
 from datetime import timedelta
 from pathlib import Path
 
@@ -124,104 +122,93 @@ def _page(lang: str, **overrides) -> str:
         _cleanup()
 
 
-def _child_without_parent(lang: str) -> str:
-    return _page(lang, child_in_passport="1", doc_number="", parent_doc_number="")
+# --- the box is gone ----------------------------------------------------------
 
 
-# --- the issue is renamed onto the field the guest can see ------------------
-
-
-def test_the_note_issue_becomes_the_parent_document_issue():
-    issues = guest._localize_issues(
-        [validation.Issue("note", NOTE_MESSAGE)], "en"
-    )
-    assert len(issues) == 1
-    assert issues[0].field == "parent_doc_number"
-    assert issues[0].message == "Enter the parent's passport or ID number."
-    assert issues[0].severity == "error"
-
-
-def test_the_czech_note_issue_says_the_same_thing():
-    """The old CS sentence talked about a "poznámka" the guest cannot see."""
-    issues = guest._localize_issues([validation.Issue("note", NOTE_MESSAGE)], "cs")
-    assert issues[0].field == "parent_doc_number"
-    assert issues[0].message == "Zadejte číslo pasu nebo průkazu rodiče."
-
-
-def test_an_untouched_issue_is_left_alone():
-    original = validation.Issue("surname", "Surname is required.", "warning")
-    issues = guest._localize_issues([original], "en")
-    assert issues[0].field == "surname"
-    assert issues[0].message == "Surname is required."
-    assert issues[0].severity == "warning"
-
-
-def test_the_host_form_keeps_its_own_note_field():
-    """``validation.py`` still keys it "note": the host column is called that."""
-    child = {
-        "surname": "Smith",
-        "first_name": "Jane",
-        "birth_date": "1.1.2015",
-        "nationality": "GBR",
-        "doc_number": validation.INPASS,
-        "note": "",
-        "res_street": "Baker Street 221B",
-        "res_city": "London",
-        "res_country": "GBR",
-    }
-    fields = {issue.field for issue in validation.validate_guest(child, None, None)}
-    assert "note" in fields
-    assert "parent_doc_number" not in fields
-
-
-# --- the re-rendered form marks the box ------------------------------------
-
-
-def test_the_rejected_form_marks_the_parent_box_invalid():
-    page = _child_without_parent("en")
-    tag = re.search(r"<input[^>]*id=\"parent_doc_number\"[^>]*>", page)
-    assert tag, "the parent document box is not on the page"
-    assert 'aria-invalid="true"' in tag.group(0), (
-        "the parent document box was rejected but is not marked invalid"
-    )
-    assert 'aria-describedby="parent_doc_number-error"' in tag.group(0)
-    assert re.search(r'class="[^"]*\bbad\b[^"]*"', tag.group(0)), (
-        "the parent document box has no error styling"
-    )
-
-
-def test_the_rejected_form_puts_the_error_under_the_parent_box():
-    page = _child_without_parent("en")
-    assert 'id="parent_doc_number-error"' in page
-    assert "Enter the parent&#39;s passport or ID number." in page or (
-        "Enter the parent's passport or ID number." in page
-    )
-    # The "note" the guest never sees is gone from the page entirely.
-    assert "must contain the parent" not in page
-    assert 'id="note-error"' not in page
-
-
-def test_the_czech_rejected_form_says_it_in_czech():
-    page = _child_without_parent("cs")
-    assert "Zadejte číslo pasu nebo průkazu rodiče." in page
-    assert "must contain the parent" not in page
-
-
-def test_the_summary_links_to_the_parent_box():
-    page = _child_without_parent("en")
-    match = re.search(r'<div class="g-err">.*?</div>', page, re.S)
-    assert match
-    assert 'href="#parent_doc_number"' in match.group(0)
-    assert "Enter the parent's passport or ID number." in match.group(0) or (
-        "Enter the parent&#39;s passport or ID number." in match.group(0)
-    )
-
-
-# --- and the box is required before the save -------------------------------
-
-
-def test_the_parent_box_is_required_as_soon_as_the_child_is_declared():
+def test_the_form_has_no_parent_passport_box():
+    reservation_id = _seed()
+    try:
+        browser = TestClient(app)
+        complete_guest_claim(browser, TOKEN, reservation_id, party_size=2, lang="en")
+        page = browser.get(f"/l/{TOKEN}/{reservation_id}?lang=en").text
+    finally:
+        _cleanup()
+    assert 'id="doc_number"' in page
+    assert "child_in_passport" not in page and "parent_doc_number" not in page
     script = (ASSETS / "signature.js").read_text(encoding="utf-8")
-    toggle = script.split("function initChildToggle()", 1)[1].split("\n  }", 1)[0]
-    assert 'getElementById("parent_doc_number")' in toggle
-    assert "parentInput.required = toggle.checked" in toggle
+    assert "child_in_passport" not in script and "parent_doc_number" not in script
+
+
+def test_a_typed_inpass_is_refused_under_the_document_box():
+    """INPASS is left to the host form; a guest has no note box for the parent's number."""
+    page = _page("en", nationality="POL", res_country="POL", birth_date="22.10.2009", doc_number="inpass")
+    assert 'id="doc_number-error"' in page
+    assert "Enter this person&#39;s own passport or ID card number." in page or (
+        "Enter this person's own passport or ID card number." in page
+    )
+
+
+def test_the_refusal_is_in_the_guests_language():
+    page = _page("cs", nationality="POL", res_country="POL", birth_date="22.10.2009", doc_number="INPASS")
+    assert "Zadejte číslo vlastního pasu nebo občanského průkazu této osoby." in page
+
+
+def test_the_note_issue_is_shown_under_the_document_box():
+    issues = guest._localize_issues([validation.Issue("note", NOTE_MESSAGE)], "en")
+    assert [(i.field, i.message) for i in issues] == [
+        ("doc_number", "Enter this person's own passport or ID card number.")
+    ]
+
+
+def test_a_foreign_child_without_a_document_is_refused():
+    page = _page("en", nationality="POL", res_country="POL", birth_date="22.10.2019", doc_number="")
+    assert 'id="doc_number-error"' in page
+
+
+def test_a_czech_child_under_15_without_a_document_is_saved():
+    reservation_id = _seed()
+    try:
+        browser = TestClient(app)
+        complete_guest_claim(browser, TOKEN, reservation_id, party_size=2, lang="en")
+        response = browser.post(
+            f"/l/{TOKEN}/{reservation_id}/save?lang=en",
+            data=_payload(
+                nationality="CZE", res_country="CZE", res_street="Dlouha 1", res_city="Praha",
+                birth_date="15.6.2019", doc_number="",
+            ),
+            follow_redirects=False,
+        )
+        assert response.status_code == 303, response.text[:300]
+        row = db.query_one("SELECT * FROM guest WHERE reservation_id = ?", (reservation_id,))
+        assert row["doc_number"] in ("", None)
+    finally:
+        _cleanup()
+
+
+def test_a_polish_passport_typed_with_spaces_and_lowercase_is_saved():
+    """FC 4296103 as the guest's father typed it on 2026-11-13."""
+    reservation_id = _seed()
+    try:
+        browser = TestClient(app)
+        complete_guest_claim(browser, TOKEN, reservation_id, party_size=2, lang="en")
+        response = browser.post(
+            f"/l/{TOKEN}/{reservation_id}/save?lang=en",
+            data=_payload(
+                nationality="POL", res_country="POL", birth_date="22.10.2009", doc_number="fc 4296-103",
+            ),
+            follow_redirects=False,
+        )
+        assert response.status_code == 303, response.text[:300]
+        row = db.query_one("SELECT * FROM guest WHERE reservation_id = ?", (reservation_id,))
+        assert row["doc_number"] == "FC4296103"
+    finally:
+        _cleanup()
+
+
+def test_a_refused_guest_save_logs_the_field_names_and_nothing_else(caplog):
+    """Owner 2026-11-13: a refusal must be traceable without logging guest data."""
+    with caplog.at_level("INFO", logger="ubyhost.guest"):
+        _page("en", nationality="POL", res_country="POL", doc_number="INPASS")
+    lines = [r.getMessage() for r in caplog.records if r.getMessage().startswith("guest_form_refused")]
+    assert lines == ["guest_form_refused fields=doc_number"]
+    assert TOKEN not in lines[0]

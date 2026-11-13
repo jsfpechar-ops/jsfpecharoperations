@@ -170,10 +170,24 @@ def test_document_number_minimum_length():
 
 
 def test_inpass_requires_a_note():
+    """INPASS stays as appendix 5 has it, for the host to enter (owner, 2026-11-13)."""
     assert errors(v.validate_guest(good_guest(doc_number="INPASS"))) == {"note"}
     assert not errors(
         v.validate_guest(good_guest(doc_number="INPASS", note="parent doc P1234567"))
     )
+
+
+def test_a_czech_child_under_15_may_leave_the_document_empty():
+    czech = dict(nationality="CZE", res_country="CZE", res_street="Dlouha 1", res_city="Praha", doc_number="")
+    arrival = date(2026, 11, 13)
+    assert not errors(v.validate_guest(good_guest(birth_date="15062019", **czech), arrival))
+    assert errors(v.validate_guest(good_guest(birth_date="13112011", **czech), arrival)) == {"doc_number"}
+    assert errors(v.validate_guest(good_guest(birth_date="15062019", **czech))) == {"doc_number"}
+
+
+def test_a_foreign_child_still_needs_a_document():
+    guest = good_guest(birth_date="22102019", nationality="POL", res_country="POL", doc_number="")
+    assert errors(v.validate_guest(guest, date(2026, 11, 13))) == {"doc_number"}
 
 
 def test_unknown_nationality_is_rejected():
