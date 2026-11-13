@@ -213,9 +213,9 @@ def check_staleness() -> None:
 
 def next_numbers() -> str:
     tasks = [int(p.name[:4]) for p in (ROOT / "docs/tasks").glob("[0-9][0-9][0-9][0-9]-*.md")]
-    migs = [int(p.name[:4]) for p in (ROOT / "App/app/migrations").glob("[0-9][0-9][0-9][0-9]_*.sql")]
+    goose = [int(p.name[:5]) for p in (ROOT / "App/migrations_pg").glob("[0-9][0-9][0-9][0-9][0-9]_*.sql")]
     return (f"next free: task {max(tasks, default=0) + 1:04d} | "
-            f"migration {max(migs, default=1) + 1:04d}")
+            f"goose migration {max(goose, default=0) + 1:05d} (App/app/migrations/ is frozen)")
 
 
 def check_pointers() -> None:

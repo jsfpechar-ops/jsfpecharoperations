@@ -251,6 +251,8 @@ All from `deploy/lightsail/`:
 
 Public `GET /healthz` in **production** returns `status`, `version`, `data_dir_writable` only (no env labels). Confirm `ubyport_env` with `./scripts/status.sh` or Settings.
 
+**Schema changes are goose files only (brief 1470).** `App/app/migrations/` (SQLite 0002-0045) is frozen: `App/tests/test_sqlite_migrations_frozen.py` fails any PR that adds, edits, renames or deletes a file there. A new schema change is one goose file in `App/migrations_pg/` (number = highest + 1), applied with the `pg_schema.py apply` row above. It has no SQLite twin, so the Python tests that run on SQLite do not see it; the existing twins stay as they are. Why, and the steps that follow: [plan](plans/sqlite-retirement.md).
+
 ### Automatic backups
 
 Daily on-volume snapshot (03:00 UTC):
