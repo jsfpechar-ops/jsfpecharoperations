@@ -1,6 +1,6 @@
 # 1341-fix-1: statement CSV reader reads quotes like Python's csv module
 
-Status: todo
+Status: review
 Depends on: 1341 | Base commit: c058518 | Branch: task/1341-go-billing-admin-data
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

@@ -34,3 +34,11 @@ None.
 ## Owner steps left
 1. Orchestrator: push `task/1341-go-billing-admin-data` and open a DRAFT PR (body: nothing routed or called yet; no new outbound request, no new personal-data field, no new dependency).
 2. Owner: after CI is green, merge with `scripts/merge-pr-on-green.sh <PR number>`.
+
+## Review follow-ups
+
+1341-fix-1 fixed the CSV reader (own state machine copied from CPython's csv module) and year 0 in `validDate`. Known differences left, none on a path used yet:
+
+3. `csvAmount` with `inf`: Go skips the row, Python fails the whole upload with an error.
+4. `Trend(months <= 0)` differs from Python's list slicing; the page always passes 12.
+5. Unicode digits in the `\d` regexes of Python are not matched by the Go `[0-9]` ones, and `"invoice": null` in a buyer snapshot reads differently (`_buyer`).
