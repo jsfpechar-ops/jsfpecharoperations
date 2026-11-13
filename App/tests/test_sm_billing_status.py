@@ -3,7 +3,8 @@
 
 The test reads the writer sources as text. It fails when a statement that writes
 billing_account.status is added, removed or moved to another file, and when a
-pinned move is not allowed by the table. Go has no writer of this column.
+pinned move is not allowed by the table. Go writers are pinned here too
+(1221/1222 billing job is off until wired in).
 """
 import re
 from pathlib import Path
@@ -46,6 +47,8 @@ PINNED_WRITERS = {
     "App/app/billing.py": {"status_updates": 2, "inserts": 1},
     "App/app/billing_trial.py": {"status_updates": 1},
     "App/app/signup.py": {"inserts": 1},
+    "go/internal/billingjob/account.go": {"status_updates": 1},
+    "go/internal/billingjob/trial.go": {"status_updates": 1},
 }
 
 UPDATE_RE = re.compile(r"UPDATE\s+billing_account\s+SET\b(.*?)\bWHERE\b", re.S | re.I)
