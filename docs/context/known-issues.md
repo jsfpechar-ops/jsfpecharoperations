@@ -43,11 +43,11 @@
 | K-S04 | Med unverified | routes/guest.py claim routes | Claim routes skip the reach-back bound (id oracle) | R #106 |
 | K-S05 | Med unverified | admin console | Admin console shows working guest claim links | F W2.4 |
 | K-S10 | High decision | server .env | Owner: confirm UBYHOST_SECRET_KEY rotated after history leak | AR-01 |
-| K-I03 | Low open | invoices.py cancel | Concurrent cancel returns 500 | P A10 |
-| K-I04 | Low open | invoices.py | Unvalidated duzp/due/correction dates give 500 | P A11 |
-| K-I05 | Low open | invoices.py:299 | Invoice year from server date, not Prague | P A12 |
-| K-I06 | Low unverified | invoice_pdf.py | PDF floors the unit price; the web page rounds | P A13 |
-| K-I07 | Low unverified | routes/stay_fees.py | Cadence switch may orphan adjustments | P A15 |
+| K-S11 | Med open | compose postgres | App is the PG superuser; needs a NOSUPERUSER role | #966 |
+| K-S12 | Low decision | routes/admin.py update_entity | Bank edit allowed on a stale session; SECURITY.md says fresh | #966 |
+| K-S13 | Low decision | payments.py, paylink_routes.go | Pay link live after expiry/paid | #966 |
+| K-S14 | Med owner | Caddyfile.cloudflare | Any Cloudflare account reaches origin; enable Authenticated Origin Pulls | #966 |
+| K-S15 | Med owner | GitHub environments | Confirm `production` deploys only from `main` | #966 |
 | K-I08 | Low open | stay_fee.py _day_liability | "Charge" files a minor with a blank reason | P A08 |
 | K-I09 | Med unverified | invoices.py:validate_for_issue | Buyer address unchecked; verify VAT invoice requirements | UI §3 |
 | K-U01 | High decision | product.html:49,113, landing.html:72,189 | CTAs dead-end at /login while sign-up is off | UX UX-9 |
@@ -55,7 +55,6 @@
 | K-U03 | Med open | signature.js:515, settings.html:250 | Back skips validation; recovery-code field numeric-only on iOS | UX M-5, M-1 |
 | K-U04 | Med unverified | mail_notify.py, signature.js, reservations | UX majors M-4 to M-9 | UX |
 | K-U05 | Med unverified | test_guest_browser_e2e.py | Local browser pass; CI pending | X |
-| K-U06 | Low open | apartment_form.html | Pills aligned; CI/staging pending | UI §3 |
 | K-U07 | Low decision | entities.html | Visible Delete/explanation; guard kept; CI | UI §4 |
 | K-U11 | Med open | host.css | Geometry checked locally; CI/staging pending | 0040 |
 | K-U12 | Med open | reservations.html, dashboard.html | 1280px overflow; mobile menu closes | 0041 |
@@ -66,7 +65,6 @@
 | K-O04 | Low open | requirements.txt, Caddyfile | Pillow undeclared; dev deps use >=; no HSTS includeSubDomains | P A59, A61 |
 | K-O05 | Med open | db.py periodic scans | Scans cover all stays ever; cost grows with retention | AR-43 |
 | K-W01 | Med decision | GitHub repo | ~30 stale PRs; owner task 0001 step 12 APPLY=1; keep #278 #279 | 0001 |
-| K-ML01 | Low open | App/app/static/app.js | Unused reset-password JS (0003) | magic-link HANDOFF |
 | K-ML02 | Low open | App/app/host_i18n.py | Unused `login.password*` i18n keys | magic-link HANDOFF |
 | K-ML03 | Low open | UbyHost_workplan/compliance/01, 03 | Compliance docs partly updated; lawyer review due | task 0005 |
 | K-ML04 | Low open | login limit | Address 3/15 min budget exhaustible; account-only limits leak accounts | 0006 |
