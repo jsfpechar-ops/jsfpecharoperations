@@ -84,8 +84,6 @@ type Deps struct {
 	Now    func() time.Time
 }
 
-func param(get func(string) string) func(string) string { return get }
-
 func queryParam(r *http.Request) func(string) string {
 	return func(k string) string {
 		v := r.URL.Query()[k]
@@ -253,7 +251,6 @@ func BookHandler(pool *pgxpool.Pool, getenv func(string) string, now func() time
 			Data: PageData{Page: pg, Slug: slug, Q: q}}, nil)
 	}
 }
-
 
 func init() {
 	guestFuncs["seq"] = func(from, to int) []int {

@@ -21,3 +21,7 @@ pp.lang.label
 pp.book.done
 pp.book.done_note
 pp.book.back
+pp.*
+stay_fees.nights
+stay_fees.nights.one
+stay_fees.nights.few
