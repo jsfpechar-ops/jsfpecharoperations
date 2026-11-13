@@ -28,9 +28,29 @@ Options for the owner (write the chosen one as a line in decisions, then ask for
 
 None until the owner decides.
 
+## 4. Steps
+
+None: the brief is blocked. When the owner has chosen option A or C, the orchestrator replaces this section with numbered steps and sidecars like briefs 1440 to 1446 (copy, `sha256sum -c`, build, vet, tests on PostgreSQL).
+
+## 5. Do not touch
+
+Everything. Do not edit `go.mod`, `go.sum`, `deploy/lightsail/docker-compose.yml` or any Python file for this brief.
+
+## 6. Commands
+
+None.
+
+## 7. Acceptance
+
+- [ ] The owner has written the decision (A, B or C) as a line in decisions.md.
+
 ## 8. Stop and ask
 
 Do not run this brief.
+
+## 9. Report
+
+None: no executor runs this brief.
 
 ## Owner steps
 

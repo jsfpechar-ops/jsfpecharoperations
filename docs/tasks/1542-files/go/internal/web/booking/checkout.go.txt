@@ -1,0 +1,461 @@
+package booking
+
+// POST /p/{slug}/checkout: property_page_checkout (property_page.py 331-391)
+// and booking_checkout.start, hold_dates and product_name (booking_checkout.py
+// 23-130), plus booking_site.create_pending (booking_site.py 282-322).
+//
+// Order of the work, as in Python: rate limit (20 per hour per client), the
+// bookable apartment, the quote, the guest's name, e-mail and terms, the pay
+// mode, then the hold under a lock, the pending booking, the Stripe Checkout
+// Session. A failed session frees the hold and expires the booking.
+// pay_mode=direct goes to the Direct starter (brief 1543); without one the
+// answer is the "unavailable" error, as for a host without a ready rail.
+
+import (
+	"context"
+	"crypto/rand"
+	"encoding/base64"
+	"errors"
+	"fmt"
+	"log"
+	"net/http"
+	"net/url"
+	"regexp"
+	"strings"
+	"time"
+	"unicode/utf8"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
+)
+
+// Limits of property_page.py (_CHECKOUT_MAX, _CHECKOUT_WINDOW) and
+// booking_checkout.py (HOLD_MINUTES).
+const (
+	checkoutMax   = 20
+	scopeCheckout = "property_page_checkout"
+	holdMinutes   = 15
+)
+
+// Demo property names (demo.py DEMO_*): never publicly bookable.
+var demoApartments = []string{"Vinohrady Studio (demo)", "Karlín Loft (demo)"}
+var demoEntities = []string{"Josef Novák (demo)", "Demo Controller s.r.o."}
+
+// emailPattern is property_page._EMAIL with Python's Unicode \s spelled out.
+var emailPattern = func() *regexp.Regexp {
+	const ws = `\s\x0b\x1c-\x1f\x{85}\x{a0}\x{1680}\x{2000}-\x{200a}\x{2028}\x{2029}\x{202f}\x{205f}\x{3000}`
+	return regexp.MustCompile(`^[^@` + ws + `]{1,64}@[^@` + ws + `]{1,200}\.[^@` + ws + `]{2,30}$`)
+}()
+
+// SessionInput is what the Stripe session call needs (payments.CheckoutParams
+// without the account, which the starter looks up).
+type SessionInput struct {
+	Account     string
+	ProductName string
+	AmountCZK   int
+	Email       string
+	Lang        string
+	SuccessURL  string
+	CancelURL   string
+	BookingID   int64
+}
+
+// SessionFunc opens a Stripe Checkout Session and returns its id and URL.
+type SessionFunc func(ctx context.Context, in SessionInput) (id, payURL string, err error)
+
+// DirectInput is the request of a guest who pays the host directly.
+type DirectInput struct {
+	ApartmentID int64
+	Q           Quote
+	Name, Email string
+	Lang        string
+}
+
+// DirectFunc stores a direct request (brief 1543). It returns the booking id,
+// or an error kind ("taken", "unavailable") for the page to show.
+type DirectFunc func(ctx context.Context, in DirectInput) (bookingID int64, kind string, err error)
+
+// Checkout is the checkout handler's wiring.
+type Checkout struct {
+	Pool    *pgxpool.Pool
+	Getenv  func(string) string
+	Now     func() time.Time
+	Session SessionFunc
+	Direct  DirectFunc // nil: pay_mode=direct answers "unavailable"
+}
+
+// throttleMax is rate_limit.blocked + record for a limit other than 120.
+func throttleMax(ctx context.Context, db DB, r *http.Request, scope string, max int, now time.Time) (bool, error) {
+	key := peer(r) + ":" + scope
+	at := float64(now.UnixNano()) / 1e9
+	if _, err := db.Exec(ctx, `DELETE FROM rate_limit_event WHERE scope = $1 AND key = $2 AND at < $3`, scope, key, at-rateWindow); err != nil {
+		return false, err
+	}
+	var n int64
+	if err := db.QueryRow(ctx, `SELECT COUNT(*) FROM rate_limit_event WHERE scope = $1 AND key = $2`, scope, key).Scan(&n); err != nil {
+		return false, err
+	}
+	if n >= int64(max) {
+		return true, nil
+	}
+	_, err := db.Exec(ctx, `INSERT INTO rate_limit_event (scope, key, at) VALUES ($1, $2, $3)`, scope, key, at)
+	return false, err
+}
+
+// ProductName is booking_checkout.product_name: what the guest sees on Stripe
+// Checkout and the receipt. dateFrom and dateTo are ISO dates.
+func ProductName(name, dateFrom, dateTo, lang string) string {
+	if lang == "cs" {
+		return "Ubytování " + name + ", " + czDate(dateFrom) + " – " + czDate(dateTo)
+	}
+	return "Stay at " + name + ", " + dateFrom + " – " + dateTo
+}
+
+func czDate(iso string) string {
+	d, ok := ParseDay(iso)
+	if !ok {
+		return iso
+	}
+	return fmt.Sprintf("%d. %d. %d", d.Day(), int(d.Month()), d.Year())
+}
+
+// HoldDates is booking_checkout.hold_dates: under one advisory lock per
+// apartment (the same key Python takes), re-check reservations and live holds
+// and insert a hold. ok is false when the nights were taken meanwhile.
+func HoldDates(ctx context.Context, pool *pgxpool.Pool, apartmentID int64, dateFrom, dateTo string, minutes int, now time.Time) (id int64, ok bool, err error) {
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		return 0, false, err
+	}
+	defer tx.Rollback(ctx)
+	if _, err = tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtext($1), $2::int)`, "booking_site_dates", apartmentID); err != nil {
+		return 0, false, err
+	}
+	stamp := StampAt(now)
+	var one int64
+	err = tx.QueryRow(ctx, `SELECT id FROM reservation WHERE apartment_id = $1 AND status = 'active'
+		AND date_from < $2 AND date_to > $3 LIMIT 1`, apartmentID, dateTo, dateFrom).Scan(&one)
+	if err == nil {
+		return 0, false, nil
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return 0, false, err
+	}
+	err = tx.QueryRow(ctx, `SELECT id FROM booking_hold WHERE apartment_id = $1 AND expires_at > $2
+		AND date_from < $3 AND date_to > $4 LIMIT 1`, apartmentID, stamp, dateTo, dateFrom).Scan(&one)
+	if err == nil {
+		return 0, false, nil
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return 0, false, err
+	}
+	expires := now.UTC().Add(time.Duration(minutes) * time.Minute).Format("2006-01-02T15:04:05") + "Z"
+	if err = tx.QueryRow(ctx, `INSERT INTO booking_hold (apartment_id, date_from, date_to, expires_at, created_at)
+		VALUES ($1, $2, $3, $4, $5) RETURNING id`, apartmentID, dateFrom, dateTo, expires, stamp).Scan(&id); err != nil {
+		return 0, false, err
+	}
+	return id, true, tx.Commit(ctx)
+}
+
+// Pending is the input of CreatePending.
+type Pending struct {
+	ApartmentID, OwnerID, HoldID int64
+	Q                            Quote
+	Name, Email, Lang            string
+}
+
+// CreatePending is booking_site.create_pending for a card booking: a
+// "pending" site_booking row with the terms version and a one-time cancel
+// token whose hash is stored. It returns the new booking id.
+func CreatePending(ctx context.Context, db DB, p Pending, now time.Time) (int64, error) {
+	buf := make([]byte, 24)
+	if _, err := rand.Read(buf); err != nil {
+		return 0, err
+	}
+	token := base64.RawURLEncoding.EncodeToString(buf)
+	stamp := StampAt(now)
+	name := cut(strings.Join(strings.Fields(p.Name), " "), 120)
+	email := cut(strings.TrimSpace(p.Email), 254)
+	lang := p.Lang
+	if lang != "cs" && lang != "en" {
+		lang = "cs"
+	}
+	var id int64
+	err := db.QueryRow(ctx, `INSERT INTO site_booking (apartment_id, owner_user_id, hold_id, pay_method, request_expires_at,
+		status, date_from, date_to, guests, guest_name, guest_email, lang, nights, nightly_czk, cleaning_fee_czk, total_czk,
+		cancellation_policy, terms_version, terms_accepted_at, cancel_token_hash, created_at, updated_at)
+		VALUES ($1, $2, $3, 'stripe', NULL, 'pending', $4, $5, $6, NULLIF($7, ''), NULLIF($8, ''), $9, $10, $11, $12, $13,
+		$14, $15, $16, $17, $16, $16) RETURNING id`,
+		p.ApartmentID, p.OwnerID, p.HoldID, p.Q.DateFrom, p.Q.DateTo, p.Q.Guests, name, email, lang, p.Q.Nights,
+		p.Q.NightlyCZK, p.Q.CleaningFeeCZK, p.Q.TotalCZK, p.Q.CancellationPolicy, TermsVersion, stamp, TokenHash(token)).Scan(&id)
+	return id, err
+}
+
+// cut is s[:n] on characters.
+func cut(s string, n int) string { return runeSlice(s, 0, n) }
+
+// isDemo is demo.is_demo_apartment: the demo names always; the demo legal
+// entities only while UBYHOST_UBYPORT_ENV is "mock" (its default).
+func isDemo(ctx context.Context, db DB, getenv func(string) string, name string, entityID *int64) (bool, error) {
+	for _, n := range demoApartments {
+		if name == n {
+			return true, nil
+		}
+	}
+	env := strings.ToLower(getenv("UBYHOST_UBYPORT_ENV"))
+	if env == "" {
+		env = "mock"
+	}
+	if env != "mock" || entityID == nil {
+		return false, nil
+	}
+	var entity string
+	err := db.QueryRow(ctx, `SELECT name FROM legal_entity WHERE id = $1`, *entityID).Scan(&entity)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	for _, n := range demoEntities {
+		if entity == n {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// StartResult is booking_checkout.start: the Stripe URL, or an error kind.
+type StartResult struct {
+	URL       string
+	BookingID int64
+	Err       string // "taken" or "unavailable"
+}
+
+// StartCard is booking_checkout.start. A Stripe failure frees the dates and
+// expires the booking, and the guest sees "unavailable". Card data never
+// reaches this code and nothing about the guest is logged.
+func (c Checkout) StartCard(ctx context.Context, apartmentID int64, slug string, q Quote, name, email, lang string) (StartResult, error) {
+	var owner int64
+	var aptName string
+	var entity *int64
+	err := c.Pool.QueryRow(ctx, `SELECT owner_user_id, internal_name, legal_entity_id FROM apartment WHERE id = $1`,
+		apartmentID).Scan(&owner, &aptName, &entity)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return StartResult{Err: "unavailable"}, nil
+	}
+	if err != nil {
+		return StartResult{}, err
+	}
+	demo, err := isDemo(ctx, c.Pool, c.Getenv, aptName, entity)
+	if err != nil || demo {
+		return StartResult{Err: "unavailable"}, err
+	}
+	var account, state string
+	err = c.Pool.QueryRow(ctx, `SELECT stripe_account_id, onboarding_state FROM stripe_account
+		WHERE owner_user_id = $1 AND mode = $2 LIMIT 1`, owner, StripeMode(c.Getenv)).Scan(&account, &state)
+	if errors.Is(err, pgx.ErrNoRows) || (err == nil && state != "complete") {
+		return StartResult{Err: "unavailable"}, nil
+	}
+	if err != nil {
+		return StartResult{}, err
+	}
+	now := c.Now()
+	holdID, ok, err := HoldDates(ctx, c.Pool, apartmentID, q.DateFrom, q.DateTo, holdMinutes, now)
+	if err != nil {
+		return StartResult{}, err
+	}
+	if !ok {
+		return StartResult{Err: "taken"}, nil
+	}
+	bookingID, err := CreatePending(ctx, c.Pool, Pending{ApartmentID: apartmentID, OwnerID: owner, HoldID: holdID,
+		Q: q, Name: name, Email: email, Lang: lang}, now)
+	if err != nil {
+		return StartResult{}, err
+	}
+	base := hostweb.PublicBase(c.Getenv)
+	sessionID, payURL, err := c.Session(ctx, SessionInput{
+		Account: account, ProductName: ProductName(aptName, q.DateFrom, q.DateTo, lang), AmountCZK: q.TotalCZK,
+		Email: cut(strings.TrimSpace(email), 254), Lang: lang,
+		SuccessURL: base + "/p/" + slug + "/thanks?lang=" + lang,
+		CancelURL:  base + "/p/" + slug + "?book=cancelled&lang=" + lang,
+		BookingID:  bookingID,
+	})
+	if err != nil {
+		log.Printf("site booking %d: checkout session failed: %v", bookingID, err)
+		stamp := StampAt(c.Now())
+		_, e1 := c.Pool.Exec(ctx, `DELETE FROM booking_hold WHERE id = $1`, holdID)
+		_, e2 := c.Pool.Exec(ctx, `UPDATE site_booking SET status = 'expired', updated_at = $1 WHERE id = $2 AND status = 'pending'`, stamp, bookingID)
+		if e1 != nil || e2 != nil {
+			log.Printf("site booking %d: freeing the dates failed", bookingID)
+		}
+		return StartResult{Err: "unavailable"}, nil
+	}
+	stamp := StampAt(c.Now())
+	if _, err := c.Pool.Exec(ctx, `UPDATE site_booking SET stripe_session_id = $1, updated_at = $2 WHERE id = $3`, sessionID, stamp, bookingID); err != nil {
+		return StartResult{}, err
+	}
+	if _, err := c.Pool.Exec(ctx, `INSERT INTO audit (at, actor, action, detail, owner_user_id) VALUES ($1, 'host', 'site_booking_checkout', $2, $3)`,
+		stamp, fmt.Sprintf("id=%d session=%s", bookingID, sessionID), owner); err != nil {
+		return StartResult{}, err
+	}
+	return StartResult{URL: payURL, BookingID: bookingID}, nil
+}
+
+// PayData is the Data of the page with the one link to Stripe.
+type PayData struct {
+	PayURL string
+	Total  int
+}
+
+// Handler is POST /p/{slug}/checkout.
+func (c Checkout) Handler() http.HandlerFunc {
+	prop := newSet("property.tmpl")
+	pay := newSet("pay.tmpl")
+	d := Deps{c.Pool, c.Getenv, c.Now}
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		slug := r.PathValue("slug")
+		blocked, err := throttleMax(ctx, c.Pool, r, scopeCheckout, checkoutMax, c.Now())
+		if err != nil {
+			serverError(w, "checkout rate limit", err)
+			return
+		}
+		if blocked {
+			text(w, http.StatusTooManyRequests, "slow down")
+			return
+		}
+		apartmentID, ok, err := BookableApartment(ctx, c.Pool, c.Getenv, slug)
+		if err != nil {
+			serverError(w, "checkout apartment", err)
+			return
+		}
+		if !ok {
+			http.NotFound(w, r)
+			return
+		}
+		form := readForm(w, r)
+		lang := "en"
+		if form.Get("lang") == "cs" {
+			lang = "cs"
+		}
+		q, err := GetQuote(ctx, c.Pool, apartmentID, strings.TrimSpace(form.Get("date_from")),
+			strings.TrimSpace(form.Get("date_to")), pyInt(form.Get("guests")), c.Now())
+		if err != nil {
+			serverError(w, "checkout quote", err)
+			return
+		}
+		if q.Error != "" {
+			BookErrorRedirect(w, slug, q.Error, lang, form)
+			return
+		}
+		name := strings.Join(strings.Fields(form.Get("guest_name")), " ")
+		email := strings.TrimSpace(form.Get("guest_email"))
+		values := FormValues{Name: cut(name, 120), Email: cut(email, 254)}
+		fieldError := func(kind string) {
+			params := map[string]string{"lang": lang}
+			for _, n := range []string{"date_from", "date_to", "guests"} {
+				params[n] = first10(form.Get(n))
+			}
+			d.RenderPage(w, r, prop, slug, apartmentID, func(k string) string { return params[k] }, kind, values,
+				http.StatusOK, map[string]string{"Cache-Control": "no-store", "X-Robots-Tag": "noindex"})
+		}
+		switch n := utf8.RuneCountInString(name); {
+		case n < 3:
+			fieldError("bad_name")
+			return
+		case n > 120:
+			fieldError("name_too_long")
+			return
+		}
+		if !emailPattern.MatchString(email) {
+			fieldError("bad_email")
+			return
+		}
+		if form.Get("terms") != "1" {
+			fieldError("terms")
+			return
+		}
+		// A page opened before the terms text changed must not be accepted.
+		if tv := form.Get("terms_version"); tv != "" && tv != TermsVersion {
+			BookErrorRedirect(w, slug, "terms", lang, form)
+			return
+		}
+		owner, _, err := OwnerOf(ctx, c.Pool, apartmentID)
+		var modes []string
+		if err == nil {
+			modes, err = PayModes(ctx, c.Pool, StripeMode(c.Getenv), apartmentID, owner)
+		}
+		if err != nil {
+			serverError(w, "checkout modes", err)
+			return
+		}
+		mode := form.Get("pay_mode")
+		if mode == "" {
+			mode = "stripe"
+			if len(modes) == 1 {
+				mode = modes[0]
+			}
+		}
+		if !contains(modes, mode) {
+			BookErrorRedirect(w, slug, "unavailable", lang, form)
+			return
+		}
+		if mode == "direct" {
+			c.direct(w, r, slug, apartmentID, q, name, email, lang, form)
+			return
+		}
+		res, err := c.StartCard(ctx, apartmentID, slug, q, name, email, lang)
+		if err != nil {
+			serverError(w, "checkout start", err)
+			return
+		}
+		if res.Err != "" {
+			BookErrorRedirect(w, slug, res.Err, lang, form)
+			return
+		}
+		g := Guest{Lang: lang, Data: PayData{PayURL: res.URL, Total: q.TotalCZK}}
+		g.Title = g.T("pp.book.pay_title")
+		writeGuest(w, r, pay, http.StatusOK, g, map[string]string{"Cache-Control": "no-store", "X-Robots-Tag": "noindex"})
+	}
+}
+
+// direct handles pay_mode=direct: store the request, then 303 to the guest's
+// private booking page.
+func (c Checkout) direct(w http.ResponseWriter, r *http.Request, slug string, apartmentID int64, q Quote, name, email, lang string, form url.Values) {
+	if c.Direct == nil {
+		BookErrorRedirect(w, slug, "unavailable", lang, form)
+		return
+	}
+	ctx := r.Context()
+	id, kind, err := c.Direct(ctx, DirectInput{ApartmentID: apartmentID, Q: q, Name: name, Email: email, Lang: lang})
+	if err != nil {
+		serverError(w, "checkout direct", err)
+		return
+	}
+	if kind != "" {
+		BookErrorRedirect(w, slug, kind, lang, form)
+		return
+	}
+	secret, err := secure.LoadSecret(c.Getenv)
+	if err != nil {
+		serverError(w, "checkout secret", err)
+		return
+	}
+	full, err := ManageURL(ctx, c.Pool, hostweb.PublicBase(c.Getenv), secret, apartmentID, id)
+	if err != nil {
+		serverError(w, "checkout manage url", err)
+		return
+	}
+	u, err := url.Parse(full)
+	if err != nil {
+		serverError(w, "checkout manage url", err)
+		return
+	}
+	w.Header().Set("Location", u.Path)
+	w.WriteHeader(http.StatusSeeOther)
+}
+
