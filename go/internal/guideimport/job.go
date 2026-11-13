@@ -216,6 +216,15 @@ func (j *Job) runOne(ctx context.Context, row queuedRow) error {
 	if ferr != nil {
 		var ie *Error
 		if !errors.As(ferr, &ie) {
+			if ctx.Err() != nil {
+				// Cancelled mid-fetch: fail the row now instead of leaving it
+				// running until the stale cutoff. A fresh context, as ctx is done.
+				fresh, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+				defer cancel()
+				if _, err := j.Pool.Exec(fresh, "UPDATE guide_import SET status = 'failed', error = 'network', finished_at = $1 WHERE id = $2 AND status = 'running'", stamp(j.now()), row.id); err != nil {
+					slog.Warn("guide import: cancelled row not marked failed", "id", row.id)
+				}
+			}
 			return ferr
 		}
 		key := runeSlice(ie.Key, 40)
@@ -369,7 +378,9 @@ func (j *Job) merge(ctx context.Context, r pendingRow, data map[string]any) erro
 	if _, err := j.Pool.Exec(ctx, "UPDATE guide_import SET status = 'used', raw_json = NULL, used_at = $1 WHERE id = $2 AND status = 'done'", stamp(j.now()), r.id); err != nil {
 		return err
 	}
-	slog.Info("guide merge", "import", r.id, "source", r.source, "written", written, "dropped", fmt.Sprint(dropped))
+	// Like Python json.dumps(dropped, sort_keys=True): encoding/json sorts map keys.
+	droppedJSON, _ := json.Marshal(dropped)
+	slog.Info("guide merge", "import", r.id, "source", r.source, "written", written, "dropped", string(droppedJSON))
 	return nil
 }
 
