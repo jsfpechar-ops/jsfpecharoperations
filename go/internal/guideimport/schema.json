@@ -1,0 +1,95 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "cards"
+  ],
+  "properties": {
+    "cards": {
+      "type": "array",
+      "maxItems": 12,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "topic",
+          "title",
+          "location",
+          "steps",
+          "watch_out",
+          "quotes"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "checkin",
+              "keys",
+              "getting_here",
+              "parking",
+              "garage",
+              "wifi",
+              "tv",
+              "heating",
+              "hot_water",
+              "air_conditioning",
+              "kitchen_appliances",
+              "dishwasher",
+              "coffee_machine",
+              "bedrooms",
+              "sofa_bed",
+              "balcony",
+              "bathroom",
+              "washing_machine",
+              "house_rules",
+              "trash",
+              "checkout",
+              "area_tips",
+              "emergency",
+              "something_wrong",
+              "custom"
+            ]
+          },
+          "topic": {
+            "type": "string",
+            "enum": [
+              "arrival",
+              "wifi",
+              "heating",
+              "kitchen",
+              "rooms",
+              "bathroom",
+              "rules",
+              "trash",
+              "checkout",
+              "area",
+              "emergency",
+              ""
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "steps": {
+            "type": "string"
+          },
+          "watch_out": {
+            "type": "string"
+          },
+          "quotes": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 4,
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}
