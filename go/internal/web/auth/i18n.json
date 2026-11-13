@@ -1,0 +1,51 @@
+{
+ "cs": {
+  "auth.error.code_invalid": "Kód nefunguje. Kódy se mění každých 30 vteřin. Zadejte ten, který vidíte teď.",
+  "auth.error.code_locked": "Příliš mnoho chybných kódů. Počkejte 15 minut a pak se přihlaste znovu od začátku.",
+  "flash.accounts.guest_details_mail_off": "Potvrzovací e-mail obsahuje jen jména.",
+  "flash.accounts.guest_details_mail_on": "Potvrzovací e-mail obsahuje údaje o hostech.",
+  "flash.accounts.onboarding_emails_off": "Tipy k nastavení e-mailem jsou vypnuté.",
+  "flash.accounts.onboarding_emails_on": "Tipy k nastavení e-mailem jsou zapnuté.",
+  "flash.accounts.stay_fee_emails_off": "E-maily s hlášením jsou vypnuté. Každé období potvrďte na stránce Poplatek z pobytu.",
+  "flash.accounts.stay_fee_emails_on": "Hlášení poplatku vám budeme posílat e-mailem.",
+  "flash.accounts.twofa_disabled": "Autentizační aplikace vypnuta.",
+  "flash.error.incident_summary": "Je vyžadováno shrnutí.",
+  "flash.error.no_such_incident": "Takový incident neexistuje.",
+  "flash.incidents.created": "Incident zaznamenán.",
+  "flash.incidents.saved": "Incident aktualizován.",
+  "flash.signup.consent_withdrawn.google": "Souhlas pro Google Ads byl odvolán a identifikátor kliknutí smazán.",
+  "flash.signup.consent_withdrawn.meta": "Souhlas pro Metu byl odvolán a identifikátor kliknutí smazán."
+ },
+ "en": {
+  "auth.error.code_invalid": "That code didn't work. Codes change every 30 seconds. Enter the one showing now.",
+  "auth.error.code_locked": "Too many wrong codes. Wait 15 minutes, then log in again from the start.",
+  "flash.accounts.guest_details_mail_off": "The confirmation e-mail shows names only.",
+  "flash.accounts.guest_details_mail_on": "Guest details are in the confirmation e-mail.",
+  "flash.accounts.onboarding_emails_off": "Setup tips by e-mail are off.",
+  "flash.accounts.onboarding_emails_on": "Setup tips by e-mail are on.",
+  "flash.accounts.stay_fee_emails_off": "Stay fee emails are off. Confirm each period on the Stay fee page.",
+  "flash.accounts.stay_fee_emails_on": "We will email you each stay fee report.",
+  "flash.accounts.twofa_disabled": "Authenticator app switched off.",
+  "flash.error.incident_summary": "A summary is required.",
+  "flash.error.no_such_incident": "No such incident.",
+  "flash.incidents.created": "Incident recorded.",
+  "flash.incidents.saved": "Incident updated.",
+  "flash.signup.consent_withdrawn.google": "Google Ads consent withdrawn and the click identifier deleted.",
+  "flash.signup.consent_withdrawn.meta": "Meta consent withdrawn and the click identifier deleted."
+ },
+ "vi": {
+  "auth.error.code_invalid": "Mã không đúng. Mã thay đổi mỗi 30 giây. Hãy nhập mã đang hiển thị.",
+  "auth.error.code_locked": "Nhập sai mã quá nhiều lần. Đợi 15 phút rồi đăng nhập lại từ đầu.",
+  "flash.accounts.onboarding_emails_off": "Đã tắt mẹo thiết lập qua e-mail.",
+  "flash.accounts.onboarding_emails_on": "Đã bật mẹo thiết lập qua e-mail.",
+  "flash.accounts.stay_fee_emails_off": "Đã tắt email phí lưu trú. Hãy tự xác nhận từng kỳ trên trang Phí lưu trú.",
+  "flash.accounts.stay_fee_emails_on": "Chúng tôi sẽ gửi email cho bạn mỗi báo cáo phí lưu trú.",
+  "flash.accounts.twofa_disabled": "Đã tắt ứng dụng xác thực.",
+  "flash.error.incident_summary": "Cần có tóm tắt.",
+  "flash.error.no_such_incident": "Không có sự cố này.",
+  "flash.incidents.created": "Đã ghi nhận sự cố.",
+  "flash.incidents.saved": "Đã cập nhật sự cố.",
+  "flash.signup.consent_withdrawn.google": "Đã rút lại đồng ý Google Ads và xóa mã nhấp chuột.",
+  "flash.signup.consent_withdrawn.meta": "Đã rút lại đồng ý Meta và xóa mã nhấp chuột."
+ }
+}

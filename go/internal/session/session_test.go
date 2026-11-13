@@ -122,50 +122,24 @@ func TestSessionAge(t *testing.T) {
 	if _, ok := Verify(g.Secret, plain, base.Add(12*time.Hour+time.Minute)); ok {
 		t.Error("plain token accepted at 12h01m")
 	}
-}
-
-func rememberToken(g golden, iatAgo time.Duration, signedAt time.Time) string {
-	return Sign(g.Secret, map[string]any{
-		"uid": int64(7), "sv": int64(3), "rm": int64(1),
-		"iat": signedAt.Add(-iatAgo).Unix(),
-	}, signedAt)
-}
-
-func TestRememberMeSinceReSign(t *testing.T) {
-	g := loadGolden(t)
-	base := time.Unix(g.Timestamp, 0)
-	tok := rememberToken(g, 0, base)
-	if _, ok := Verify(g.Secret, tok, base.Add(29*24*time.Hour)); !ok {
-		t.Error("remember token rejected at 29 days since re-sign")
+	// Brief 1281: 30 days sliding, 90 days from iat, as auth._session_payload.
+	remember := Sign(g.Secret, map[string]any{"uid": int64(7), "sv": int64(3), "iat": g.Timestamp, "rm": int64(1)}, base)
+	if _, ok := Verify(g.Secret, remember, base.Add(29*24*time.Hour)); !ok {
+		t.Error("remember token rejected at 29 days")
 	}
-	if _, ok := Verify(g.Secret, tok, base.Add(31*24*time.Hour)); ok {
-		t.Error("remember token accepted at 31 days since re-sign")
+	if _, ok := Verify(g.Secret, remember, base.Add(31*24*time.Hour)); ok {
+		t.Error("remember token accepted at 31 days")
 	}
-}
-
-func TestRememberMeSinceLogin(t *testing.T) {
-	g := loadGolden(t)
-	base := time.Unix(g.Timestamp, 0)
-	// Re-signed today, but the login was 91 days ago: rejected. 89 days ago: accepted.
-	if _, ok := Verify(g.Secret, rememberToken(g, 91*24*time.Hour, base), base); ok {
-		t.Error("remember token accepted 91 days after login")
-	}
-	if _, ok := Verify(g.Secret, rememberToken(g, 89*24*time.Hour, base), base); !ok {
-		t.Error("remember token rejected 89 days after login")
-	}
-	// Missing iat counts as 0 and is rejected, as in Python.
 	noIat := Sign(g.Secret, map[string]any{"uid": int64(7), "sv": int64(3), "rm": int64(1)}, base)
 	if _, ok := Verify(g.Secret, noIat, base); ok {
 		t.Error("remember token without iat accepted")
 	}
-}
-
-func TestRememberMeInsideBothLimits(t *testing.T) {
-	g := loadGolden(t)
-	base := time.Unix(g.Timestamp, 0)
-	tok := rememberToken(g, 60*24*time.Hour, base)
-	if _, ok := Verify(g.Secret, tok, base.Add(29*24*time.Hour)); ok == false {
-		t.Error("remember token rejected inside both limits (iat 60 days before signing, 29 days later = 89 days)")
+	refreshed := Sign(g.Secret, map[string]any{"uid": int64(7), "sv": int64(3), "iat": g.Timestamp, "rm": int64(1)}, base.Add(89*24*time.Hour))
+	if _, ok := Verify(g.Secret, refreshed, base.Add(90*24*time.Hour)); !ok {
+		t.Error("refreshed remember token rejected at 90 days from iat")
+	}
+	if _, ok := Verify(g.Secret, refreshed, base.Add(90*24*time.Hour+time.Second)); ok {
+		t.Error("remember token accepted past 90 days from iat")
 	}
 }
 
@@ -314,14 +288,44 @@ func TestLoadDatabase(t *testing.T) {
 	if err != nil || !pending {
 		t.Fatalf("before acceptance: pending=%v err=%v", pending, err)
 	}
+	// terms 1.7, privacy 1.8, dpa 1.8: the config.py defaults. privacy at
+	// 1.7 alone must still leave the acceptance pending.
+	if _, err := pool.Exec(ctx, `INSERT INTO legal_acceptance (id, user_account_id, document, version, accepted_at, method) VALUES ($1, $2, $3, $4, $5, $6)`,
+		int64(10), int64(2), "privacy", "1.7", "2026-01-01T00:00:00+00:00", "clickwrap"); err != nil {
+		t.Fatal(err)
+	}
 	for i, doc := range []string{"terms", "privacy", "dpa"} {
+		if pending, err := AcceptancePending(ctx, pool, 2, dbEnv); err != nil || !pending {
+			t.Fatalf("before %s: pending=%v err=%v", doc, pending, err)
+		}
+		version := map[string]string{"terms": "1.7", "privacy": "1.8", "dpa": "1.8"}[doc]
 		if _, err := pool.Exec(ctx, `INSERT INTO legal_acceptance (id, user_account_id, document, version, accepted_at, method) VALUES ($1, $2, $3, $4, $5, $6)`,
-			int64(i+1), int64(2), doc, "1.7", "2026-01-01T00:00:00+00:00", "clickwrap"); err != nil {
+			int64(i+1), int64(2), doc, version, "2026-01-01T00:00:00+00:00", "clickwrap"); err != nil {
 			t.Fatal(err)
 		}
 	}
 	pending, err = AcceptancePending(ctx, pool, 2, dbEnv)
 	if err != nil || pending {
 		t.Fatalf("after acceptance: pending=%v err=%v", pending, err)
+	}
+}
+
+// TestCurrentVersions pins the per-document defaults and env vars of
+// App/app/config.py (TERMS_VERSION 1.7, PRIVACY_VERSION 1.8, DPA_VERSION 1.8).
+func TestCurrentVersions(t *testing.T) {
+	got := CurrentVersions(func(string) string { return "" })
+	want := map[string]string{"terms": "1.7", "privacy": "1.8", "dpa": "1.8"}
+	for doc, v := range want {
+		if got[doc] != v {
+			t.Errorf("default %s = %q, want %q", doc, got[doc], v)
+		}
+	}
+	env := map[string]string{"UBYHOST_TERMS_VERSION": "2.0", "UBYHOST_PRIVACY_VERSION": " 2.1", "UBYHOST_DPA_VERSION": "2.2"}
+	got = CurrentVersions(func(k string) string { return env[k] })
+	want = map[string]string{"terms": "2.0", "privacy": " 2.1", "dpa": "2.2"}
+	for doc, v := range want {
+		if got[doc] != v {
+			t.Errorf("env %s = %q, want %q", doc, got[doc], v)
+		}
 	}
 }

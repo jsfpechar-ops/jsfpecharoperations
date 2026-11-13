@@ -1,0 +1,19 @@
+# Host strings read by go/internal/web/auth (brief 1282). The Go catalog
+# go_host_i18n.py writes covers go/internal/<pkg>/ only, so
+# App/scripts/auth_routes_golden.py writes the sibling i18n.json in the same
+# format, and App/tests/test_go_auth_routes.py checks it is fresh.
+auth.error.code_locked
+auth.error.code_invalid
+flash.accounts.twofa_disabled
+flash.accounts.onboarding_emails_on
+flash.accounts.onboarding_emails_off
+flash.accounts.stay_fee_emails_on
+flash.accounts.stay_fee_emails_off
+flash.accounts.guest_details_mail_on
+flash.accounts.guest_details_mail_off
+flash.error.incident_summary
+flash.error.no_such_incident
+flash.incidents.created
+flash.incidents.saved
+flash.signup.consent_withdrawn.google
+flash.signup.consent_withdrawn.meta

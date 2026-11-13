@@ -50,6 +50,7 @@ PINNED_WRITERS = {
     "go/internal/billing/engine.go": {"status_updates": 1, "inserts": 1},
     "go/internal/billingjob/account.go": {"status_updates": 1},
     "go/internal/billingjob/trial.go": {"status_updates": 1},
+    "go/internal/signup/register.go": {"inserts": 1},
 }
 
 UPDATE_RE = re.compile(r"UPDATE\s+billing_account\s+SET\b(.*?)\bWHERE\b", re.S | re.I)
