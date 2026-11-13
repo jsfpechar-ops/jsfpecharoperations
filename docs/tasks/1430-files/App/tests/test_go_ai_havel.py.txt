@@ -1,8 +1,7 @@
-"""go/internal/web/ai reads Havel's data files and golden cases written from this Python (briefs 1430 to 1434).
+"""go/internal/web/ai reads Havel's data files and golden cases written from this Python (brief 1430; brief 1432 adds the cards script).
 
-No database is needed: scripts/havel_golden.py and scripts/havel_cards_golden.py call pure functions.
-A stale file means havel.py, havel_topics.py, havel_actions.py, guide_i18n.py, host_i18n.py or
-mail_notify.build_havel_support changed: run both scripts and commit the result with the Go side.
+No database is needed: scripts/havel_golden.py calls pure functions.
+A stale file means havel.py, havel_topics.py, guide_i18n.py or host_i18n.py changed: run the script and commit the result with the Go side.
 """
 
 import os
@@ -16,7 +15,7 @@ APP_DIR = Path(__file__).resolve().parents[1]
 PKG = APP_DIR.parent / "go" / "internal" / "web" / "ai"
 
 
-@pytest.mark.parametrize("script", ["havel_golden.py", "havel_cards_golden.py"])
+@pytest.mark.parametrize("script", ["havel_golden.py"])
 def test_havel_go_files_are_current(script):
     env = {k: v for k, v in os.environ.items() if not k.startswith("UBYHOST_")}
     result = subprocess.run(
