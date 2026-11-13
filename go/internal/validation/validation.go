@@ -90,8 +90,6 @@ const (
 		"machine-readable lines at the bottom of your passport."
 	inpassNoteMessage = "For a child recorded in a parent's passport the note must contain " +
 		"the parent's document number."
-	inpassOwnDocumentMessage = "Enter this person's own passport or ID card number. The police do not " +
-		"accept a child recorded in a parent's passport."
 	forbiddenCharMessage       = "Remove the | character and any line breaks."
 	signatureInvalidMessage    = "That signature could not be saved. Sign again on the signature pad."
 	hostSignatureRequiredMsg   = "A guest signature is required. Use the guest link or sign on the host form."
@@ -368,8 +366,7 @@ func validateGuest(g GuestRow, stayFrom, stayTo *time.Time, today time.Time, raw
 
 	doc := g.DocNumber
 	note := g.Note
-	// Owner 2026-11-13: INPASS is never sent to UbyPort. A Czech national is
-	// never reported, so an old Czech INPASS row stays valid and a Czech child
+	// Owner 2026-11-13: a Czech national is never reported, so a Czech child
 	// under 15 may leave the number empty (validation.py, same rule).
 	czechChild := nationality == czechCode && stayFrom != nil &&
 		certainlyUnderAge(g.BirthDate, *stayFrom, czechChildNoDocumentAge)
@@ -378,9 +375,7 @@ func validateGuest(g GuestRow, stayFrom, stayTo *time.Time, today time.Time, raw
 			issues = append(issues, Issue{"doc_number", "Travel document number is required.", severityError})
 		}
 	} else if doc == inpassDoc {
-		if nationality != czechCode {
-			issues = append(issues, Issue{"doc_number", inpassOwnDocumentMessage, severityError})
-		} else if note == "" {
+		if note == "" {
 			issues = append(issues, Issue{"note", inpassNoteMessage, severityError})
 		}
 	} else if pyLen(doc) < minDoc {

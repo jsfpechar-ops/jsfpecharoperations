@@ -525,19 +525,19 @@ def _safe_return_to(requested: Optional[str], token: str, lang: str) -> str:
 
 
 # The guest form has no "child on a parent's passport" box any more (owner,
-# 2026-11-13: UbyPort refused INPASS and the police helpdesk did not know it).
-# A guest who types INPASS by hand gets the validator's INPASS issue; the one
-# keyed "note" (an old Czech INPASS row without the parent's number) is shown
-# under the document box, the only one the guest has, in the same words.
+# 2026-11-13, after UbyPort refused a guest-entered INPASS child): guests type
+# their own passport or ID card number, and INPASS is left to the host form.
+# A guest who types INPASS by hand gets the validator's issue keyed "note",
+# which is shown under the document box, the only one the guest has.
 _GUEST_ISSUE_FIELDS = {"note": "doc_number"}
 _GUEST_ISSUE_MESSAGES = {
     "note": {
-        lang: (
-            validation.INPASS_OWN_DOCUMENT_MESSAGE
-            if lang == "en"
-            else validation_i18n.guest_localize(validation.INPASS_OWN_DOCUMENT_MESSAGE, lang)
-        )
-        for lang in ("en", "cs", "de", "es", "fr", "uk")
+        "en": "Enter this person's own passport or ID card number.",
+        "cs": "Zadejte číslo vlastního pasu nebo občanského průkazu této osoby.",
+        "de": "Geben Sie die Nummer des eigenen Reisepasses oder Personalausweises dieser Person ein.",
+        "es": "Introduzca el número del pasaporte o documento de identidad propio de esta persona.",
+        "fr": "Saisissez le numéro du passeport ou de la carte d'identité de cette personne.",
+        "uk": guest_uk_i18n.ISSUE_OWN_DOCUMENT,
     },
 }
 

@@ -141,20 +141,23 @@ def test_the_form_has_no_parent_passport_box():
 
 
 def test_a_typed_inpass_is_refused_under_the_document_box():
+    """INPASS is left to the host form; a guest has no note box for the parent's number."""
     page = _page("en", nationality="POL", res_country="POL", birth_date="22.10.2009", doc_number="inpass")
     assert 'id="doc_number-error"' in page
-    assert "The police do not accept a child recorded in a parent" in page
+    assert "Enter this person&#39;s own passport or ID card number." in page or (
+        "Enter this person's own passport or ID card number." in page
+    )
 
 
 def test_the_refusal_is_in_the_guests_language():
     page = _page("cs", nationality="POL", res_country="POL", birth_date="22.10.2009", doc_number="INPASS")
-    assert "Policie nepřijímá dítě zapsané v pasu rodiče." in page
+    assert "Zadejte číslo vlastního pasu nebo občanského průkazu této osoby." in page
 
 
-def test_an_old_czech_inpass_without_a_note_is_shown_under_the_document_box():
+def test_the_note_issue_is_shown_under_the_document_box():
     issues = guest._localize_issues([validation.Issue("note", NOTE_MESSAGE)], "en")
     assert [(i.field, i.message) for i in issues] == [
-        ("doc_number", validation.INPASS_OWN_DOCUMENT_MESSAGE)
+        ("doc_number", "Enter this person's own passport or ID card number.")
     ]
 
 

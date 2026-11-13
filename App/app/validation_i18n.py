@@ -88,9 +88,6 @@ CS_MESSAGES: Dict[str, str] = {
     "the parent's document number.": (
         "U dítěte zapsaného v pasu rodiče musí poznámka obsahovat číslo dokladu rodiče."
     ),
-    "Enter this person's own passport or ID card number. The police do not accept a child recorded in a parent's passport.": (
-        "Zadejte číslo vlastního pasu nebo občanského průkazu této osoby. Policie nepřijímá dítě zapsané v pasu rodiče."
-    ),
     # Property form: what the host still has to fill in before anything can be
     # reported. The host reads these in the banner above the form.
     "IDUB is required before anything can be reported.": "Bez IDUB nelze nic nahlásit.",
@@ -220,7 +217,6 @@ GUEST_MESSAGES: Dict[str, Dict[str, str]] = {
         "Home address is too long.": "Die Wohnanschrift ist zu lang.",
         "Note must be at most 255 characters.": "Die Anmerkung darf höchstens 255 Zeichen lang sein.",
         "For a child recorded in a parent's passport the note must contain the parent's document number.": "Bei einem Kind, das im Reisepass eines Elternteils eingetragen ist, muss die Anmerkung die Dokumentnummer des Elternteils enthalten.",
-        "Enter this person's own passport or ID card number. The police do not accept a child recorded in a parent's passport.": "Geben Sie die Nummer des eigenen Reisepasses oder Personalausweises dieser Person ein. Die Polizei akzeptiert kein im Pass eines Elternteils eingetragenes Kind.",
     },
     "es": {
         "Date of birth is required.": "La fecha de nacimiento es obligatoria.",
@@ -259,7 +255,6 @@ GUEST_MESSAGES: Dict[str, Dict[str, str]] = {
         "Home address is too long.": "El domicilio es demasiado largo.",
         "Note must be at most 255 characters.": "La nota puede tener como máximo 255 caracteres.",
         "For a child recorded in a parent's passport the note must contain the parent's document number.": "Para un menor inscrito en el pasaporte de un progenitor, la nota debe contener el número de documento del progenitor.",
-        "Enter this person's own passport or ID card number. The police do not accept a child recorded in a parent's passport.": "Introduzca el número del pasaporte o documento de identidad propio de esta persona. La policía no acepta a un menor inscrito en el pasaporte de un progenitor.",
     },
     "fr": {
         "Date of birth is required.": "La date de naissance est obligatoire.",
@@ -298,7 +293,6 @@ GUEST_MESSAGES: Dict[str, Dict[str, str]] = {
         "Home address is too long.": "L'adresse de domicile est trop longue.",
         "Note must be at most 255 characters.": "La remarque ne doit pas dépasser 255 caractères.",
         "For a child recorded in a parent's passport the note must contain the parent's document number.": "Pour un enfant inscrit sur le passeport d'un parent, la remarque doit contenir le numéro de document du parent.",
-        "Enter this person's own passport or ID card number. The police do not accept a child recorded in a parent's passport.": "Saisissez le numéro du passeport ou de la carte d'identité de cette personne. La police n'accepte pas un enfant inscrit sur le passeport d'un parent.",
     },
 }
 

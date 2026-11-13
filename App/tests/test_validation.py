@@ -169,21 +169,11 @@ def test_document_number_minimum_length():
     assert errors(v.validate_guest(good_guest(doc_number="AB12"))) == {"doc_number"}
 
 
-@pytest.mark.parametrize("nationality", ["POL", "DEU", "UKR", "USA", "GBR", "pol"])
-def test_inpass_is_refused_for_everyone_who_is_reported(nationality):
-    """Owner 2026-11-13: UbyPort refused INPASS; it is never sent again."""
-    guest = good_guest(doc_number="INPASS", note="parent doc P1234567", nationality=nationality)
-    issues = v.validate_guest(guest)
-    assert [(i.field, i.message) for i in v.errors_only(issues)] == [
-        ("doc_number", v.INPASS_OWN_DOCUMENT_MESSAGE)
-    ]
-
-
-def test_an_old_czech_inpass_row_stays_valid_with_a_note():
-    czech = dict(nationality="CZE", res_country="CZE", res_street="Dlouha 1", res_city="Praha")
-    assert errors(v.validate_guest(good_guest(doc_number="INPASS", **czech))) == {"note"}
+def test_inpass_requires_a_note():
+    """INPASS stays as appendix 5 has it, for the host to enter (owner, 2026-11-13)."""
+    assert errors(v.validate_guest(good_guest(doc_number="INPASS"))) == {"note"}
     assert not errors(
-        v.validate_guest(good_guest(doc_number="INPASS", note="parent doc P1234567", **czech))
+        v.validate_guest(good_guest(doc_number="INPASS", note="parent doc P1234567"))
     )
 
 

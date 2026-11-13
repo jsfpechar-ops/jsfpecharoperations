@@ -1251,7 +1251,7 @@
    "raw": null
   },
   {
-   "complete": false,
+   "complete": true,
    "date_from": "2026-10-20",
    "date_to": "2026-10-25",
    "guest": {
@@ -1270,18 +1270,12 @@
     "surname": "NOVAK",
     "visa_number": ""
    },
-   "issues": [
-    [
-     "doc_number",
-     "Enter this person's own passport or ID card number. The police do not accept a child recorded in a parent's passport.",
-     "error"
-    ]
-   ],
-   "name": "inpass_non_eu_citizen",
+   "issues": [],
+   "name": "valid_inpass_non_eu_citizen",
    "raw": null
   },
   {
-   "complete": false,
+   "complete": true,
    "date_from": "2026-10-20",
    "date_to": "2026-10-25",
    "guest": {
@@ -1300,18 +1294,12 @@
     "surname": "NOVAK",
     "visa_number": ""
    },
-   "issues": [
-    [
-     "doc_number",
-     "Enter this person's own passport or ID card number. The police do not accept a child recorded in a parent's passport.",
-     "error"
-    ]
-   ],
-   "name": "inpass_eu_citizen",
+   "issues": [],
+   "name": "valid_inpass_eu_citizen",
    "raw": null
   },
   {
-   "complete": false,
+   "complete": true,
    "date_from": "2026-10-20",
    "date_to": "2026-10-25",
    "guest": {
@@ -1330,14 +1318,8 @@
     "surname": "NOVAK",
     "visa_number": ""
    },
-   "issues": [
-    [
-     "doc_number",
-     "Enter this person's own passport or ID card number. The police do not accept a child recorded in a parent's passport.",
-     "error"
-    ]
-   ],
-   "name": "inpass_eu_citizen_lowercase",
+   "issues": [],
+   "name": "valid_inpass_eu_citizen_lowercase",
    "raw": null
   },
   {
