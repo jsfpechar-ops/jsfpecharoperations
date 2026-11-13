@@ -74,3 +74,12 @@ Moved from docs/context/decisions.md during compaction.
 - 2026-10-16 | #397: white workspace; Property hours; fractional stays; Dashboard stays only; Cleaning markers; in-page creation | PR #397
 - 2026-11-09 | [workflow] Speed and group plans only (owner): executor by tier. A (filing, concurrency, guest-data access): Fable 5.2 executor, Opus brief, fresh Fable reviews diff before PR. B (multi-file, mail, payments, privacy, new component): Opus executor, Sonnet brief. C (attributes, copy, prefill, CSS): Sonnet executor, medium effort, Sonnet brief. 100k cap = Haiku only. From 11-09 21:35 a fresh Fable reviews every new brief | [workflow](workflow.md#roles-and-models) (superseded by 2026-11-12 [workflow] risk tier; archived 11-12)
 - 2026-11-09 [workflow] Owner asleep: orchestrator takes recommended answers and merges green, reviewed PRs itself (this build only). Assumed: F3, F4 yes; guest draft deleted 7 d after last change or day after check-out; G6, G13 parked; G4 not released (that build only; archived 11-13)
+
+## Compacted from decisions.md on 2026-11-13
+- 2026-10-17 | [workflow] Haiku 5.5 only executor; 100k cap per chat; scoped tests, no audits unless asked | owner | [workflow](workflow.md#when-haiku-reaches-the-cap)
+- 2026-10-19 [workflow] `test_static_versions.py --write` refuses a changed file under an old `?v=` key (0172).
+- 11-04: stay fee pay v4; [workflow] Sonnet briefs, Haiku executes (owner)
+- 2026-11-09 [ux] [Speed plan](../plans/speed-and-ease.md): answers §10.
+- 2026-11-10 [guest] Titles: cs "Registrace hosta", es "Ficha de huésped", fr "Fiche voyageur" (owner).
+- 2026-11-10 [guest] 1086: unsaved prefilled values warn on leave (beforeunload) even before input.
+- 2026-11-11 [ux] 1101: wizard reuse
