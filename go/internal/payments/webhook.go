@@ -94,6 +94,11 @@ func WebhookHandler(pool *pgxpool.Pool, getenv func(string) string, now func() t
 		Timeout:       20 * time.Second,
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
 	}
+	// UBYHOST_GO_BOOKING_WEBHOOK=1: Go handles booking events (booking_webhook.go).
+	var booking *BookingWebhook
+	if bookingSwitchOn(getenv) {
+		booking = NewBookingWebhook(pool, getenv, now)
+	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -141,7 +146,16 @@ func WebhookHandler(pool *pgxpool.Pool, getenv func(string) string, now func() t
 			return
 		}
 		if isBookingEvent(event) {
-			forwardToPython(w, r, client, pyURL, raw)
+			if booking == nil {
+				forwardToPython(w, r, client, pyURL, raw)
+				return
+			}
+			if err := booking.Process(ctx, event, mode); err != nil {
+				log.Printf("stripe booking webhook failed: %v", err)
+				text(w, http.StatusInternalServerError, "Internal Server Error")
+				return
+			}
+			text(w, http.StatusOK, "ok")
 			return
 		}
 		if err := processEvent(ctx, pool, event, mode, stampAt(at)); err != nil {
@@ -440,7 +454,8 @@ func boolInt(b bool) int {
 }
 
 // isBookingEvent is booking_webhook.is_booking_event: one of the four checkout
-// types AND a truthy metadata.site_booking_id. Such events go to Python only.
+// types AND a truthy metadata.site_booking_id. Such events go to Python unless
+// UBYHOST_GO_BOOKING_WEBHOOK=1.
 func isBookingEvent(ev stripeEvent) bool {
 	switch ev.Type {
 	case "checkout.session.completed", "checkout.session.async_payment_succeeded",

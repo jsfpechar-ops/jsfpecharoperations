@@ -1,0 +1,1475 @@
+{
+ "after": {
+  "audit": [
+   {
+    "action": "site_booking_paid",
+    "actor": "host",
+    "actor_user_id": null,
+    "at": "run",
+    "detail": "id=1 reservation=52",
+    "impersonator_user_id": null,
+    "owner_user_id": 1
+   },
+   {
+    "action": "site_booking_paid",
+    "actor": "host",
+    "actor_user_id": null,
+    "at": "run",
+    "detail": "id=2 reservation=53",
+    "impersonator_user_id": null,
+    "owner_user_id": 1
+   },
+   {
+    "action": "site_booking_paid",
+    "actor": "host",
+    "actor_user_id": null,
+    "at": "run",
+    "detail": "id=3 reservation=54",
+    "impersonator_user_id": null,
+    "owner_user_id": 1
+   },
+   {
+    "action": "site_booking_clash_refunded",
+    "actor": "host",
+    "actor_user_id": null,
+    "at": "run",
+    "detail": "id=4 amount=4000",
+    "impersonator_user_id": null,
+    "owner_user_id": 1
+   },
+   {
+    "action": "site_booking_paid",
+    "actor": "host",
+    "actor_user_id": null,
+    "at": "run",
+    "detail": "id=10 reservation=55",
+    "impersonator_user_id": null,
+    "owner_user_id": 1
+   },
+   {
+    "action": "site_booking_paid",
+    "actor": "host",
+    "actor_user_id": null,
+    "at": "run",
+    "detail": "id=11 reservation=56",
+    "impersonator_user_id": null,
+    "owner_user_id": 2
+   },
+   {
+    "action": "site_booking_clash_refunded",
+    "actor": "host",
+    "actor_user_id": null,
+    "at": "run",
+    "detail": "id=6 amount=4000",
+    "impersonator_user_id": null,
+    "owner_user_id": 1
+   }
+  ],
+  "booking_hold": [],
+  "email_outbox": [
+   {
+    "apartment_id": 10,
+    "attempts": 0,
+    "cc_email": null,
+    "created_at": "run",
+    "idempotency_key": "site_booking:1:confirmed",
+    "kind": "site_booking_confirmed",
+    "next_attempt_at": "run",
+    "owner_user_id": 1,
+    "payload": "{\"text\": \"Dobr\\u00fd den, Test Guest,\\n\\nva\\u0161e rezervace je potvrzen\\u00e1 a zaplacen\\u00e1.\\n\\nUbytov\\u00e1n\\u00ed: Chata u lesa\\nTerm\\u00edn: 1. 1. 2027 \\u2013 5. 1. 2027\\nPo\\u010det host\\u016f: 2\\nZaplaceno: 4000 K\\u010d\\nFlexibiln\\u00ed: pln\\u00e1 n\\u00e1hrada do 24 hodin p\\u0159ed p\\u0159\\u00edjezdem.\\nM\\u00edstn\\u00ed poplatek z pobytu se plat\\u00ed na m\\u00edst\\u011b.\\n\\nNa tento e-mail m\\u016f\\u017eete odpov\\u011bd\\u011bt, odpov\\u011b\\u010f dostane hostitel.\\n\\nP\\u0159ed p\\u0159\\u00edjezdem pros\\u00edm vypl\\u0148te \\u00fadaje, kter\\u00e9 vy\\u017eaduje z\\u00e1kon: https://golden.example.test/l/chata-u-lesa-k7m2/52\\n\\nStr\\u00e1nka va\\u0161\\u00ed rezervace s fakturou a mo\\u017enost\\u00ed zru\\u0161en\\u00ed: https://golden.example.test/p/chata-u-lesa/b/1/e3c902fd1f66cde017ef8c1918263307140aadc2\", \"lang\": \"cs\", \"reply_to\": \"host.one@example.test\"}",
+    "reservation_id": 52,
+    "state": "queued",
+    "subject": "Rezervace potvrzena: Chata u lesa, 1. 1. 2027 – 5. 1. 2027",
+    "to_email": "guest@example.test",
+    "updated_at": "run"
+   },
+   {
+    "apartment_id": 10,
+    "attempts": 0,
+    "cc_email": null,
+    "created_at": "run",
+    "idempotency_key": "site_booking:1:host_new",
+    "kind": "site_booking_host",
+    "next_attempt_at": "run",
+    "owner_user_id": 1,
+    "payload": "{\"text\": \"M\\u00e1te novou zaplacenou rezervaci z va\\u0161eho webu.\\n\\nUbytov\\u00e1n\\u00ed: Chata u lesa\\nTerm\\u00edn: 1. 1. 2027 \\u2013 5. 1. 2027\\nPo\\u010det host\\u016f: 2\\nZaplaceno: 4000 K\\u010d\\nHost: Test Guest, guest@example.test\\n\\nPobyt u\\u017e je v UbyHostu a host dostal odkaz do knihy host\\u016f.\", \"lang\": \"cs\"}",
+    "reservation_id": 52,
+    "state": "queued",
+    "subject": "Nová rezervace z vašeho webu: Chata u lesa, 1. 1. 2027 – 5. 1. 2027",
+    "to_email": "host.one@example.test",
+    "updated_at": "run"
+   },
+   {
+    "apartment_id": 10,
+    "attempts": 0,
+    "cc_email": null,
+    "created_at": "run",
+    "idempotency_key": "site_booking:2:confirmed",
+    "kind": "site_booking_confirmed",
+    "next_attempt_at": "run",
+    "owner_user_id": 1,
+    "payload": "{\"text\": \"Hello Test Guest,\\n\\nyour booking is confirmed and paid.\\n\\nPlace: Chata u lesa\\nDates: 2027-02-01 \\u2013 2027-02-03\\nGuests: 2\\nPaid: 4000 CZK\\nModerate: full refund until 5 days before check-in, then half of the nights.\\nThe local accommodation tax is paid on site.\\n\\nAnswer this e-mail to reach your host.\\n\\nBefore you arrive, fill in the guest details the law requires here: https://golden.example.test/l/chata-u-lesa-k7m2/53\\n\\nYour booking page with the invoice and the cancellation option: https://golden.example.test/p/chata-u-lesa/b/2/98f5fa9f99888f29ef61ed09d7df5b718b75716c\", \"lang\": \"en\", \"reply_to\": \"host.one@example.test\"}",
+    "reservation_id": 53,
+    "state": "queued",
+    "subject": "Booking confirmed: Chata u lesa, 2027-02-01 – 2027-02-03",
+    "to_email": "guest@example.test",
+    "updated_at": "run"
+   },
+   {
+    "apartment_id": 10,
+    "attempts": 0,
+    "cc_email": null,
+    "created_at": "run",
+    "idempotency_key": "site_booking:2:host_new",
+    "kind": "site_booking_host",
+    "next_attempt_at": "run",
+    "owner_user_id": 1,
+    "payload": "{\"text\": \"M\\u00e1te novou zaplacenou rezervaci z va\\u0161eho webu.\\n\\nUbytov\\u00e1n\\u00ed: Chata u lesa\\nTerm\\u00edn: 1. 2. 2027 \\u2013 3. 2. 2027\\nPo\\u010det host\\u016f: 2\\nZaplaceno: 4000 K\\u010d\\nHost: Test Guest, guest@example.test\\n\\nPobyt u\\u017e je v UbyHostu a host dostal odkaz do knihy host\\u016f.\", \"lang\": \"cs\"}",
+    "reservation_id": 53,
+    "state": "queued",
+    "subject": "Nová rezervace z vašeho webu: Chata u lesa, 1. 2. 2027 – 3. 2. 2027",
+    "to_email": "host.one@example.test",
+    "updated_at": "run"
+   },
+   {
+    "apartment_id": 10,
+    "attempts": 0,
+    "cc_email": null,
+    "created_at": "run",
+    "idempotency_key": "site_booking:3:host_new",
+    "kind": "site_booking_host",
+    "next_attempt_at": "run",
+    "owner_user_id": 1,
+    "payload": "{\"text\": \"Potvrdili jste rezervaci z va\\u0161eho webu.\\n\\nUbytov\\u00e1n\\u00ed: Chata u lesa\\nTerm\\u00edn: 1. 4. 2027 \\u2013 4. 4. 2027\\nPo\\u010det host\\u016f: 2\\nCelkem: 4000 K\\u010d\\nHost: Test Guest, \\n\\nPobyt u\\u017e je v UbyHostu a host dostal odkaz do knihy host\\u016f.\", \"lang\": \"cs\"}",
+    "reservation_id": 54,
+    "state": "queued",
+    "subject": "Nová rezervace z vašeho webu: Chata u lesa, 1. 4. 2027 – 4. 4. 2027",
+    "to_email": "host.one@example.test",
+    "updated_at": "run"
+   },
+   {
+    "apartment_id": 11,
+    "attempts": 0,
+    "cc_email": null,
+    "created_at": "run",
+    "idempotency_key": "site_booking:4:clash_refund",
+    "kind": "site_booking_refunded",
+    "next_attempt_at": "run",
+    "owner_user_id": 1,
+    "payload": "{\"text\": \"Hello Test Guest,\\n\\nwe are sorry: Byt Praha was booked for 2027-03-12 \\u2013 2027-03-14 by someone else a moment before your payment arrived. You get the full 4000 CZK back to your card automatically; banks usually show it within 5 to 10 days.\\n\\nAnswer this e-mail to reach the host.\", \"lang\": \"en\", \"reply_to\": \"host.one@example.test\"}",
+    "reservation_id": null,
+    "state": "queued",
+    "subject": "Your booking could not be confirmed: full refund",
+    "to_email": "guest@example.test",
+    "updated_at": "run"
+   },
+   {
+    "apartment_id": 11,
+    "attempts": 0,
+    "cc_email": null,
+    "created_at": "run",
+    "idempotency_key": "site_booking:4:host_clash",
+    "kind": "site_booking_host",
+    "next_attempt_at": "run",
+    "owner_user_id": 1,
+    "payload": "{\"text\": \"Host zaplatil Byt Praha na 12. 3. 2027 \\u2013 14. 3. 2027, ale tyto noci u\\u017e byly obsazen\\u00e9. Cel\\u00fdch 4000 K\\u010d jsme mu automaticky vr\\u00e1tili; poplatek za kartu si ponech\\u00e1v\\u00e1 Stripe. Host: Test Guest, guest@example.test.\\n\\nNemus\\u00edte nic d\\u011blat.\", \"lang\": \"cs\"}",
+    "reservation_id": null,
+    "state": "queued",
+    "subject": "Dvojí rezervaci jsme zastavili: Byt Praha, 12. 3. 2027 – 14. 3. 2027",
+    "to_email": "host.one@example.test",
+    "updated_at": "run"
+   },
+   {
+    "apartment_id": 10,
+    "attempts": 0,
+    "cc_email": null,
+    "created_at": "run",
+    "idempotency_key": "site_booking:10:confirmed",
+    "kind": "site_booking_confirmed",
+    "next_attempt_at": "run",
+    "owner_user_id": 1,
+    "payload": "{\"text\": \"Dobr\\u00fd den, Test Guest,\\n\\nva\\u0161e rezervace je potvrzen\\u00e1 a zaplacen\\u00e1.\\n\\nUbytov\\u00e1n\\u00ed: Chata u lesa\\nTerm\\u00edn: 1. 9. 2027 \\u2013 3. 9. 2027\\nPo\\u010det host\\u016f: 2\\nZaplaceno: 4000 K\\u010d\\nNevratn\\u00e1: p\\u0159i zru\\u0161en\\u00ed se platba nevrac\\u00ed.\\nM\\u00edstn\\u00ed poplatek z pobytu se plat\\u00ed na m\\u00edst\\u011b.\\n\\nNa tento e-mail m\\u016f\\u017eete odpov\\u011bd\\u011bt, odpov\\u011b\\u010f dostane hostitel.\\n\\nP\\u0159ed p\\u0159\\u00edjezdem pros\\u00edm vypl\\u0148te \\u00fadaje, kter\\u00e9 vy\\u017eaduje z\\u00e1kon: https://golden.example.test/l/chata-u-lesa-k7m2/55\\n\\nStr\\u00e1nka va\\u0161\\u00ed rezervace s fakturou a mo\\u017enost\\u00ed zru\\u0161en\\u00ed: https://golden.example.test/p/chata-u-lesa/b/10/3e83b0bea460e71f46da67ca02fd646a3bac3ea3\", \"lang\": \"cs\", \"reply_to\": \"host.one@example.test\"}",
+    "reservation_id": 55,
+    "state": "queued",
+    "subject": "Rezervace potvrzena: Chata u lesa, 1. 9. 2027 – 3. 9. 2027",
+    "to_email": "guest@example.test",
+    "updated_at": "run"
+   },
+   {
+    "apartment_id": 10,
+    "attempts": 0,
+    "cc_email": null,
+    "created_at": "run",
+    "idempotency_key": "site_booking:10:host_new",
+    "kind": "site_booking_host",
+    "next_attempt_at": "run",
+    "owner_user_id": 1,
+    "payload": "{\"text\": \"M\\u00e1te novou zaplacenou rezervaci z va\\u0161eho webu.\\n\\nUbytov\\u00e1n\\u00ed: Chata u lesa\\nTerm\\u00edn: 1. 9. 2027 \\u2013 3. 9. 2027\\nPo\\u010det host\\u016f: 2\\nZaplaceno: 4000 K\\u010d\\nHost: Test Guest, guest@example.test\\n\\nPobyt u\\u017e je v UbyHostu a host dostal odkaz do knihy host\\u016f.\", \"lang\": \"cs\"}",
+    "reservation_id": 55,
+    "state": "queued",
+    "subject": "Nová rezervace z vašeho webu: Chata u lesa, 1. 9. 2027 – 3. 9. 2027",
+    "to_email": "host.one@example.test",
+    "updated_at": "run"
+   },
+   {
+    "apartment_id": 12,
+    "attempts": 0,
+    "cc_email": null,
+    "created_at": "run",
+    "idempotency_key": "site_booking:11:confirmed",
+    "kind": "site_booking_confirmed",
+    "next_attempt_at": "run",
+    "owner_user_id": 2,
+    "payload": "{\"text\": \"Hello Test Guest,\\n\\nyour booking is confirmed and paid.\\n\\nPlace: Apartm\\u00e1n Brno\\nDates: 2027-06-01 \\u2013 2027-06-02\\nGuests: 2\\nPaid: 4000 CZK\\nFlexible: full refund until 24 hours before check-in.\\nThe local accommodation tax is paid on site.\\n\\nAnswer this e-mail to reach your host.\\n\\nBefore you arrive, fill in the guest details the law requires here: https://golden.example.test/l/apartman-brno-q9z4/56\\n\\nYour booking page with the invoice and the cancellation option: https://golden.example.test/p/apartman-brno/b/11/d07362351c545dc257bf24d2bb348cb36d9cfca4\", \"lang\": \"en\", \"reply_to\": \"\"}",
+    "reservation_id": 56,
+    "state": "queued",
+    "subject": "Booking confirmed: Apartmán Brno, 2027-06-01 – 2027-06-02",
+    "to_email": "guest@example.test",
+    "updated_at": "run"
+   },
+   {
+    "apartment_id": 11,
+    "attempts": 0,
+    "cc_email": null,
+    "created_at": "run",
+    "idempotency_key": "site_booking:6:clash_refund",
+    "kind": "site_booking_refunded",
+    "next_attempt_at": "run",
+    "owner_user_id": 1,
+    "payload": "{\"text\": \"Dobr\\u00fd den, Test Guest,\\n\\nomlouv\\u00e1me se: Byt Praha si na term\\u00edn 11. 3. 2027 \\u2013 13. 3. 2027 t\\u011bsn\\u011b p\\u0159ed va\\u0161\\u00ed platbou zarezervoval n\\u011bkdo jin\\u00fd. Cel\\u00fdch 4000 K\\u010d se v\\u00e1m automaticky vr\\u00e1t\\u00ed na kartu; banka je obvykle p\\u0159ip\\u00ed\\u0161e do 5 a\\u017e 10 dn\\u016f.\\n\\nNa tento e-mail m\\u016f\\u017eete odpov\\u011bd\\u011bt, odpov\\u011b\\u010f dostane hostitel.\", \"lang\": \"cs\", \"reply_to\": \"host.one@example.test\"}",
+    "reservation_id": null,
+    "state": "queued",
+    "subject": "Rezervaci nešlo potvrdit: vracíme celou částku",
+    "to_email": "guest@example.test",
+    "updated_at": "run"
+   },
+   {
+    "apartment_id": 11,
+    "attempts": 0,
+    "cc_email": null,
+    "created_at": "run",
+    "idempotency_key": "site_booking:6:host_clash",
+    "kind": "site_booking_host",
+    "next_attempt_at": "run",
+    "owner_user_id": 1,
+    "payload": "{\"text\": \"Host zaplatil Byt Praha na 11. 3. 2027 \\u2013 13. 3. 2027, ale tyto noci u\\u017e byly obsazen\\u00e9. Cel\\u00fdch 4000 K\\u010d jsme mu automaticky vr\\u00e1tili; poplatek za kartu si ponech\\u00e1v\\u00e1 Stripe. Host: Test Guest, guest@example.test.\\n\\nNemus\\u00edte nic d\\u011blat.\", \"lang\": \"cs\"}",
+    "reservation_id": null,
+    "state": "queued",
+    "subject": "Dvojí rezervaci jsme zastavili: Byt Praha, 11. 3. 2027 – 13. 3. 2027",
+    "to_email": "host.one@example.test",
+    "updated_at": "run"
+   }
+  ],
+  "reservation": [
+   {
+    "apartment_id": 11,
+    "created_at": "seed",
+    "date_from": "2027-03-10",
+    "date_to": "2027-03-15",
+    "expected_guests_override": null,
+    "guest_email": null,
+    "id": 50,
+    "source": "ical",
+    "status": "active",
+    "summary": null,
+    "uid": "airbnb-1",
+    "updated_at": "seed"
+   },
+   {
+    "apartment_id": 12,
+    "created_at": "seed",
+    "date_from": "2027-03-10",
+    "date_to": "2027-03-15",
+    "expected_guests_override": null,
+    "guest_email": null,
+    "id": 51,
+    "source": "ical",
+    "status": "active",
+    "summary": null,
+    "uid": "airbnb-2",
+    "updated_at": "seed"
+   },
+   {
+    "apartment_id": 10,
+    "created_at": "run",
+    "date_from": "2027-01-01",
+    "date_to": "2027-01-05",
+    "expected_guests_override": 2,
+    "guest_email": "guest@example.test",
+    "id": 52,
+    "source": "site",
+    "status": "active",
+    "summary": "Test Guest",
+    "uid": "site-1",
+    "updated_at": "run"
+   },
+   {
+    "apartment_id": 10,
+    "created_at": "run",
+    "date_from": "2027-02-01",
+    "date_to": "2027-02-03",
+    "expected_guests_override": 2,
+    "guest_email": "guest@example.test",
+    "id": 53,
+    "source": "site",
+    "status": "active",
+    "summary": "Test Guest",
+    "uid": "site-2",
+    "updated_at": "run"
+   },
+   {
+    "apartment_id": 10,
+    "created_at": "run",
+    "date_from": "2027-04-01",
+    "date_to": "2027-04-04",
+    "expected_guests_override": 2,
+    "guest_email": null,
+    "id": 54,
+    "source": "site",
+    "status": "active",
+    "summary": "Test Guest",
+    "uid": "site-3",
+    "updated_at": "run"
+   },
+   {
+    "apartment_id": 10,
+    "created_at": "run",
+    "date_from": "2027-09-01",
+    "date_to": "2027-09-03",
+    "expected_guests_override": 2,
+    "guest_email": "guest@example.test",
+    "id": 55,
+    "source": "site",
+    "status": "active",
+    "summary": "Test Guest",
+    "uid": "site-10",
+    "updated_at": "run"
+   },
+   {
+    "apartment_id": 12,
+    "created_at": "run",
+    "date_from": "2027-06-01",
+    "date_to": "2027-06-02",
+    "expected_guests_override": 2,
+    "guest_email": "guest@example.test",
+    "id": 56,
+    "source": "site",
+    "status": "active",
+    "summary": "Test Guest",
+    "uid": "site-11",
+    "updated_at": "run"
+   }
+  ],
+  "site_booking": [
+   {
+    "hold_id": 201,
+    "id": 1,
+    "paid_at": "run",
+    "refunded_czk": 0,
+    "reservation_id": 52,
+    "status": "paid",
+    "stripe_payment_intent_id": "pi_1",
+    "updated_at": "run"
+   },
+   {
+    "hold_id": null,
+    "id": 2,
+    "paid_at": "run",
+    "refunded_czk": 0,
+    "reservation_id": 53,
+    "status": "paid",
+    "stripe_payment_intent_id": "pi_2",
+    "updated_at": "run"
+   },
+   {
+    "hold_id": null,
+    "id": 3,
+    "paid_at": "run",
+    "refunded_czk": 0,
+    "reservation_id": 54,
+    "status": "paid",
+    "stripe_payment_intent_id": "pi_3",
+    "updated_at": "run"
+   },
+   {
+    "hold_id": 204,
+    "id": 4,
+    "paid_at": null,
+    "refunded_czk": 4000,
+    "reservation_id": null,
+    "status": "clash_refunded",
+    "stripe_payment_intent_id": "pi_4",
+    "updated_at": "run"
+   },
+   {
+    "hold_id": 205,
+    "id": 5,
+    "paid_at": null,
+    "refunded_czk": 0,
+    "reservation_id": null,
+    "status": "pending",
+    "stripe_payment_intent_id": null,
+    "updated_at": "seed"
+   },
+   {
+    "hold_id": null,
+    "id": 6,
+    "paid_at": null,
+    "refunded_czk": 4000,
+    "reservation_id": null,
+    "status": "clash_refunded",
+    "stripe_payment_intent_id": "pi_fail",
+    "updated_at": "run"
+   },
+   {
+    "hold_id": null,
+    "id": 7,
+    "paid_at": null,
+    "refunded_czk": 0,
+    "reservation_id": null,
+    "status": "pending",
+    "stripe_payment_intent_id": null,
+    "updated_at": "seed"
+   },
+   {
+    "hold_id": 208,
+    "id": 8,
+    "paid_at": null,
+    "refunded_czk": 0,
+    "reservation_id": null,
+    "status": "expired",
+    "stripe_payment_intent_id": null,
+    "updated_at": "run"
+   },
+   {
+    "hold_id": null,
+    "id": 9,
+    "paid_at": null,
+    "refunded_czk": 0,
+    "reservation_id": null,
+    "status": "expired",
+    "stripe_payment_intent_id": null,
+    "updated_at": "run"
+   },
+   {
+    "hold_id": 210,
+    "id": 10,
+    "paid_at": "run",
+    "refunded_czk": 0,
+    "reservation_id": 55,
+    "status": "paid",
+    "stripe_payment_intent_id": "pi_10",
+    "updated_at": "run"
+   },
+   {
+    "hold_id": null,
+    "id": 11,
+    "paid_at": "run",
+    "refunded_czk": 0,
+    "reservation_id": 56,
+    "status": "paid",
+    "stripe_payment_intent_id": "pi_11",
+    "updated_at": "run"
+   },
+   {
+    "hold_id": null,
+    "id": 12,
+    "paid_at": null,
+    "refunded_czk": 0,
+    "reservation_id": null,
+    "status": "cancelled",
+    "stripe_payment_intent_id": null,
+    "updated_at": "seed"
+   }
+  ],
+  "stripe_calls": 3,
+  "stripe_webhook_event": [
+   {
+    "created_at": "run",
+    "event_id": "evt_g01",
+    "event_type": "checkout.session.completed",
+    "mode": "test"
+   },
+   {
+    "created_at": "run",
+    "event_id": "evt_g02",
+    "event_type": "checkout.session.async_payment_succeeded",
+    "mode": "test"
+   },
+   {
+    "created_at": "run",
+    "event_id": "evt_g03",
+    "event_type": "checkout.session.completed",
+    "mode": "test"
+   },
+   {
+    "created_at": "run",
+    "event_id": "evt_g04",
+    "event_type": "checkout.session.async_payment_succeeded",
+    "mode": "test"
+   },
+   {
+    "created_at": "run",
+    "event_id": "evt_g05",
+    "event_type": "checkout.session.completed",
+    "mode": "test"
+   },
+   {
+    "created_at": "run",
+    "event_id": "evt_g06",
+    "event_type": "checkout.session.completed",
+    "mode": "test"
+   },
+   {
+    "created_at": "run",
+    "event_id": "evt_g10",
+    "event_type": "checkout.session.expired",
+    "mode": "test"
+   },
+   {
+    "created_at": "run",
+    "event_id": "evt_g11",
+    "event_type": "checkout.session.async_payment_failed",
+    "mode": "test"
+   },
+   {
+    "created_at": "run",
+    "event_id": "evt_g12",
+    "event_type": "checkout.session.completed",
+    "mode": "test"
+   },
+   {
+    "created_at": "run",
+    "event_id": "evt_g13",
+    "event_type": "checkout.session.completed",
+    "mode": "test"
+   },
+   {
+    "created_at": "run",
+    "event_id": "evt_g14",
+    "event_type": "checkout.session.expired",
+    "mode": "test"
+   },
+   {
+    "created_at": "run",
+    "event_id": "evt_g15",
+    "event_type": "checkout.session.expired",
+    "mode": "test"
+   },
+   {
+    "created_at": "run",
+    "event_id": "evt_g16",
+    "event_type": "checkout.session.completed",
+    "mode": "test"
+   },
+   {
+    "created_at": "run",
+    "event_id": "evt_g17",
+    "event_type": "checkout.session.completed",
+    "mode": "test"
+   },
+   {
+    "created_at": "run",
+    "event_id": "evt_g08",
+    "event_type": "checkout.session.completed",
+    "mode": "test"
+   }
+  ]
+ },
+ "base_url": "https://golden.example.test",
+ "events": [
+  {
+   "data": {
+    "object": {
+     "id": "cs_1",
+     "metadata": {
+      "site_booking_id": "1"
+     },
+     "object": "checkout.session",
+     "payment_intent": "pi_1",
+     "payment_status": "paid"
+    }
+   },
+   "id": "evt_g01",
+   "object": "event",
+   "type": "checkout.session.completed"
+  },
+  {
+   "data": {
+    "object": {
+     "id": "cs_1",
+     "metadata": {
+      "site_booking_id": "1"
+     },
+     "object": "checkout.session",
+     "payment_intent": "pi_1",
+     "payment_status": "paid"
+    }
+   },
+   "id": "evt_g01",
+   "object": "event",
+   "type": "checkout.session.completed"
+  },
+  {
+   "data": {
+    "object": {
+     "id": "cs_1",
+     "metadata": {
+      "site_booking_id": "1"
+     },
+     "object": "checkout.session",
+     "payment_intent": "pi_1",
+     "payment_status": "paid"
+    }
+   },
+   "id": "evt_g02",
+   "object": "event",
+   "type": "checkout.session.async_payment_succeeded"
+  },
+  {
+   "data": {
+    "object": {
+     "id": "cs_2",
+     "metadata": {
+      "site_booking_id": "2"
+     },
+     "object": "checkout.session",
+     "payment_status": "unpaid"
+    }
+   },
+   "id": "evt_g03",
+   "object": "event",
+   "type": "checkout.session.completed"
+  },
+  {
+   "data": {
+    "object": {
+     "id": "cs_2",
+     "metadata": {
+      "site_booking_id": "2"
+     },
+     "object": "checkout.session",
+     "payment_intent": "pi_2",
+     "payment_status": "paid"
+    }
+   },
+   "id": "evt_g04",
+   "object": "event",
+   "type": "checkout.session.async_payment_succeeded"
+  },
+  {
+   "data": {
+    "object": {
+     "id": "cs_3",
+     "metadata": {
+      "site_booking_id": "3"
+     },
+     "object": "checkout.session",
+     "payment_intent": "pi_3",
+     "payment_status": "paid"
+    }
+   },
+   "id": "evt_g05",
+   "object": "event",
+   "type": "checkout.session.completed"
+  },
+  {
+   "data": {
+    "object": {
+     "id": "cs_4",
+     "metadata": {
+      "site_booking_id": "4"
+     },
+     "object": "checkout.session",
+     "payment_intent": "pi_4",
+     "payment_status": "paid"
+    }
+   },
+   "id": "evt_g06",
+   "object": "event",
+   "type": "checkout.session.completed"
+  },
+  {
+   "data": {
+    "object": {
+     "id": "cs_5",
+     "metadata": {
+      "site_booking_id": "5"
+     },
+     "object": "checkout.session",
+     "payment_intent": "pi_5",
+     "payment_status": "paid"
+    }
+   },
+   "id": "evt_g07",
+   "object": "event",
+   "type": "checkout.session.completed"
+  },
+  {
+   "data": {
+    "object": {
+     "id": "cs_6",
+     "metadata": {
+      "site_booking_id": "6"
+     },
+     "object": "checkout.session",
+     "payment_intent": "pi_fail",
+     "payment_status": "paid"
+    }
+   },
+   "id": "evt_g08",
+   "object": "event",
+   "type": "checkout.session.completed"
+  },
+  {
+   "data": {
+    "object": {
+     "id": "cs_7",
+     "metadata": {
+      "site_booking_id": "7"
+     },
+     "object": "checkout.session",
+     "payment_status": "paid"
+    }
+   },
+   "id": "evt_g09",
+   "object": "event",
+   "type": "checkout.session.completed"
+  },
+  {
+   "data": {
+    "object": {
+     "id": "cs_8",
+     "metadata": {
+      "site_booking_id": "8"
+     },
+     "object": "checkout.session",
+     "payment_status": "unpaid"
+    }
+   },
+   "id": "evt_g10",
+   "object": "event",
+   "type": "checkout.session.expired"
+  },
+  {
+   "data": {
+    "object": {
+     "id": "cs_9",
+     "metadata": {
+      "site_booking_id": "9"
+     },
+     "object": "checkout.session",
+     "payment_status": "unpaid"
+    }
+   },
+   "id": "evt_g11",
+   "object": "event",
+   "type": "checkout.session.async_payment_failed"
+  },
+  {
+   "data": {
+    "object": {
+     "id": "cs_10",
+     "metadata": {
+      "site_booking_id": "10"
+     },
+     "object": "checkout.session",
+     "payment_intent": "pi_10",
+     "payment_status": "paid"
+    }
+   },
+   "id": "evt_g12",
+   "object": "event",
+   "type": "checkout.session.completed"
+  },
+  {
+   "data": {
+    "object": {
+     "id": "cs_11",
+     "metadata": {
+      "site_booking_id": "11"
+     },
+     "object": "checkout.session",
+     "payment_intent": "pi_11",
+     "payment_status": "paid"
+    }
+   },
+   "id": "evt_g13",
+   "object": "event",
+   "type": "checkout.session.completed"
+  },
+  {
+   "data": {
+    "object": {
+     "id": "cs_12",
+     "metadata": {
+      "site_booking_id": "12"
+     },
+     "object": "checkout.session",
+     "payment_status": "unpaid"
+    }
+   },
+   "id": "evt_g14",
+   "object": "event",
+   "type": "checkout.session.expired"
+  },
+  {
+   "data": {
+    "object": {
+     "id": "cs_1",
+     "metadata": {
+      "site_booking_id": "1"
+     },
+     "object": "checkout.session",
+     "payment_status": "unpaid"
+    }
+   },
+   "id": "evt_g15",
+   "object": "event",
+   "type": "checkout.session.expired"
+  },
+  {
+   "data": {
+    "object": {
+     "id": "cs_unknown",
+     "metadata": {
+      "site_booking_id": "999"
+     },
+     "object": "checkout.session",
+     "payment_intent": "pi_999",
+     "payment_status": "paid"
+    }
+   },
+   "id": "evt_g16",
+   "object": "event",
+   "type": "checkout.session.completed"
+  },
+  {
+   "data": {
+    "object": {
+     "id": "cs_4",
+     "metadata": {
+      "site_booking_id": "4"
+     },
+     "object": "checkout.session",
+     "payment_intent": "pi_4",
+     "payment_status": "paid"
+    }
+   },
+   "id": "evt_g17",
+   "object": "event",
+   "type": "checkout.session.completed"
+  },
+  {
+   "data": {
+    "object": {
+     "id": "cs_6",
+     "metadata": {
+      "site_booking_id": "6"
+     },
+     "object": "checkout.session",
+     "payment_intent": "pi_fail",
+     "payment_status": "paid"
+    }
+   },
+   "id": "evt_g08",
+   "object": "event",
+   "type": "checkout.session.completed"
+  }
+ ],
+ "refunds": [
+  {
+   "idempotency_key": "site_booking_clash_refund_4",
+   "metadata_site_booking_id": "4",
+   "payment_intent": "pi_4",
+   "stripe_account": "acct_golden1"
+  },
+  {
+   "idempotency_key": "site_booking_clash_refund_6",
+   "metadata_site_booking_id": "6",
+   "payment_intent": "pi_fail",
+   "stripe_account": "acct_golden1"
+  },
+  {
+   "idempotency_key": "site_booking_clash_refund_6",
+   "metadata_site_booking_id": "6",
+   "payment_intent": "pi_fail",
+   "stripe_account": "acct_golden1"
+  }
+ ],
+ "results": [
+  "ok",
+  "ok",
+  "ok",
+  "ok",
+  "ok",
+  "ok",
+  "ok",
+  "error",
+  "error",
+  "error",
+  "ok",
+  "ok",
+  "ok",
+  "ok",
+  "ok",
+  "ok",
+  "ok",
+  "ok",
+  "ok"
+ ],
+ "secret": "golden-secret-key-not-for-real-use",
+ "seed": [
+  {
+   "columns": [
+    "id",
+    "username",
+    "password_hash",
+    "role",
+    "created_at"
+   ],
+   "rows": [
+    [
+     1,
+     "host1@example.test",
+     "x",
+     "host",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     2,
+     "host2@example.test",
+     "x",
+     "host",
+     "2026-09-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "user_account"
+  },
+  {
+   "columns": [
+    "id",
+    "owner_user_id",
+    "name",
+    "contact_email",
+    "created_at"
+   ],
+   "rows": [
+    [
+     100,
+     1,
+     "Host One",
+     "Host.One@Example.test",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     101,
+     2,
+     "Host Two",
+     null,
+     "2026-09-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "legal_entity"
+  },
+  {
+   "columns": [
+    "id",
+    "owner_user_id",
+    "legal_entity_id",
+    "internal_name",
+    "permalink_token",
+    "created_at"
+   ],
+   "rows": [
+    [
+     10,
+     1,
+     100,
+     "Chata u lesa",
+     "tok-ten-aaaaaaaaaaaa",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     11,
+     1,
+     100,
+     "Byt Praha",
+     null,
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     12,
+     2,
+     101,
+     "Apartmán Brno",
+     "tok-twelve-bbbbbbbbbb",
+     "2026-09-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "apartment"
+  },
+  {
+   "columns": [
+    "slug",
+    "apartment_id",
+    "is_current",
+    "created_at"
+   ],
+   "rows": [
+    [
+     "chata-u-lesa-k7m2",
+     10,
+     1,
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     "apartman-brno-q9z4",
+     12,
+     1,
+     "2026-09-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "apartment_slug"
+  },
+  {
+   "columns": [
+    "id",
+    "apartment_id",
+    "slug",
+    "published",
+    "created_at",
+    "updated_at"
+   ],
+   "rows": [
+    [
+     1,
+     10,
+     "chata-u-lesa",
+     1,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     2,
+     12,
+     "apartman-brno",
+     1,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "property_slug"
+  },
+  {
+   "columns": [
+    "id",
+    "owner_user_id",
+    "stripe_account_id",
+    "mode",
+    "onboarding_state",
+    "charges_enabled",
+    "payouts_enabled",
+    "created_at",
+    "updated_at"
+   ],
+   "rows": [
+    [
+     1,
+     1,
+     "acct_golden1",
+     "test",
+     "complete",
+     1,
+     1,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "stripe_account"
+  },
+  {
+   "columns": [
+    "id",
+    "apartment_id",
+    "source",
+    "uid",
+    "date_from",
+    "date_to",
+    "status",
+    "created_at",
+    "updated_at"
+   ],
+   "rows": [
+    [
+     50,
+     11,
+     "ical",
+     "airbnb-1",
+     "2027-03-10",
+     "2027-03-15",
+     "active",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     51,
+     12,
+     "ical",
+     "airbnb-2",
+     "2027-03-10",
+     "2027-03-15",
+     "active",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "reservation"
+  },
+  {
+   "columns": [
+    "id",
+    "apartment_id",
+    "date_from",
+    "date_to",
+    "expires_at",
+    "created_at"
+   ],
+   "rows": [
+    [
+     201,
+     10,
+     "2027-01-01",
+     "2027-01-05",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     204,
+     11,
+     "2027-03-12",
+     "2027-03-14",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     205,
+     12,
+     "2027-03-12",
+     "2027-03-14",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     208,
+     10,
+     "2027-07-01",
+     "2027-07-03",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     210,
+     10,
+     "2027-09-01",
+     "2027-09-03",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "booking_hold"
+  },
+  {
+   "columns": [
+    "id",
+    "apartment_id",
+    "owner_user_id",
+    "hold_id",
+    "status",
+    "date_from",
+    "date_to",
+    "guests",
+    "guest_name",
+    "guest_email",
+    "lang",
+    "nights",
+    "nightly_czk",
+    "total_czk",
+    "cancellation_policy",
+    "terms_version",
+    "stripe_session_id",
+    "pay_method",
+    "created_at",
+    "updated_at"
+   ],
+   "rows": [
+    [
+     1,
+     10,
+     1,
+     201,
+     "pending",
+     "2027-01-01",
+     "2027-01-05",
+     2,
+     "Test Guest",
+     "guest@example.test",
+     "cs",
+     2,
+     1800,
+     4000,
+     "flexible",
+     "v1",
+     "cs_1",
+     "stripe",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     2,
+     10,
+     1,
+     null,
+     "pending",
+     "2027-02-01",
+     "2027-02-03",
+     2,
+     "Test Guest",
+     "guest@example.test",
+     "en",
+     2,
+     1800,
+     4000,
+     "moderate",
+     "v1",
+     "cs_2",
+     "stripe",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     3,
+     10,
+     1,
+     null,
+     "pending",
+     "2027-04-01",
+     "2027-04-04",
+     2,
+     "Test Guest",
+     null,
+     "cs",
+     2,
+     1800,
+     4000,
+     "flexible",
+     "v1",
+     "cs_3",
+     "direct",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     4,
+     11,
+     1,
+     204,
+     "pending",
+     "2027-03-12",
+     "2027-03-14",
+     2,
+     "Test Guest",
+     "guest@example.test",
+     "en",
+     2,
+     1800,
+     4000,
+     "flexible",
+     "v1",
+     "cs_4",
+     "stripe",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     5,
+     12,
+     2,
+     205,
+     "pending",
+     "2027-03-12",
+     "2027-03-14",
+     2,
+     "Test Guest",
+     "guest@example.test",
+     "cs",
+     2,
+     1800,
+     4000,
+     "flexible",
+     "v1",
+     "cs_5",
+     "stripe",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     6,
+     11,
+     1,
+     null,
+     "pending",
+     "2027-03-11",
+     "2027-03-13",
+     2,
+     "Test Guest",
+     "guest@example.test",
+     "cs",
+     2,
+     1800,
+     4000,
+     "flexible",
+     "v1",
+     "cs_6",
+     "stripe",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     7,
+     11,
+     1,
+     null,
+     "pending",
+     "2027-03-13",
+     "2027-03-16",
+     2,
+     "Test Guest",
+     "guest@example.test",
+     "cs",
+     2,
+     1800,
+     4000,
+     "flexible",
+     "v1",
+     "cs_7",
+     "stripe",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     8,
+     10,
+     1,
+     208,
+     "pending",
+     "2027-07-01",
+     "2027-07-03",
+     2,
+     "Test Guest",
+     "guest@example.test",
+     "cs",
+     2,
+     1800,
+     4000,
+     "flexible",
+     "v1",
+     "cs_8",
+     "stripe",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     9,
+     10,
+     1,
+     null,
+     "pending",
+     "2027-08-01",
+     "2027-08-03",
+     2,
+     "Test Guest",
+     "guest@example.test",
+     "cs",
+     2,
+     1800,
+     4000,
+     "flexible",
+     "v1",
+     "cs_9",
+     "stripe",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     10,
+     10,
+     1,
+     210,
+     "expired",
+     "2027-09-01",
+     "2027-09-03",
+     2,
+     "Test Guest",
+     "guest@example.test",
+     "de",
+     2,
+     1800,
+     4000,
+     "non_refundable",
+     "v1",
+     "cs_10",
+     "stripe",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     11,
+     12,
+     2,
+     null,
+     "pending",
+     "2027-06-01",
+     "2027-06-02",
+     2,
+     "Test Guest",
+     "guest@example.test",
+     "en",
+     2,
+     1800,
+     4000,
+     "flexible",
+     "v1",
+     "cs_11",
+     "stripe",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     12,
+     10,
+     1,
+     null,
+     "cancelled",
+     "2027-10-01",
+     "2027-10-03",
+     2,
+     "Test Guest",
+     "guest@example.test",
+     "cs",
+     2,
+     1800,
+     4000,
+     "flexible",
+     "v1",
+     "cs_12",
+     "stripe",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "site_booking"
+  }
+ ],
+ "stamp": "2026-09-01T00:00:00+00:00"
+}
