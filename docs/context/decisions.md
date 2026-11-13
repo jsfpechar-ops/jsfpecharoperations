@@ -63,8 +63,7 @@ Append-only.
 - 2026-11-12 [filing] 1154: move waits on any `running` batch.
 - 2026-11-12 [door] 1149 re-issue; 1155 lock check (3); 1156 info card+mail (owner)
 - 11-13 [calendar] 1172: Go-only; 1 mail/pair; manual dup skipped (owner)
-- 2026-11-13 [door] 1173/c: backoff 15/15/60; revive expired (owner)
+- 2026-11-13 [door] 1173/c: release backoff 15/15/60; new, retries, released; revive unissued expired.
 - 2026-11-13 [dep] 1390: gopdf v0.38.4 PDF in go/internal/pdf; thin anthropic HTTP; go-webauthn login/passkey (owner)
 - 2026-11-13 [infra] CI→GHCR; server pulls | owner | [1210](../tasks/1210-ci-built-go-image.md)
 - 2026-11-13 [security] #966: 1200-1205; Go env in compose; K-S12 ok; 1206-1207 after merge (owner)
-
