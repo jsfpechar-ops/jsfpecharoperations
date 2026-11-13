@@ -134,11 +134,11 @@ def _reset_public_schema() -> None:
     with _psycopg_connect(_schema_admin_url()) as conn:
         conn.execute("SET client_min_messages = warning")
         conn.execute("DROP SCHEMA IF EXISTS public CASCADE")
-        conn.execute("CREATE SCHEMA public")
         app_url = os.environ.get("UBYHOST_DATABASE_URL") or ""
         if "ubyhost_app@" in app_url:
-            conn.execute("ALTER SCHEMA public OWNER TO ubyhost_app")
-            conn.execute("GRANT ALL ON SCHEMA public TO ubyhost_app")
+            conn.execute("CREATE SCHEMA public AUTHORIZATION ubyhost_app")
+        else:
+            conn.execute("CREATE SCHEMA public")
 
 
 def _public_relation_count() -> int:
