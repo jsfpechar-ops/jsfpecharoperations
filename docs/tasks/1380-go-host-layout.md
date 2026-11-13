@@ -1,6 +1,6 @@
 # 1380: Go host page layout (go/internal/hostweb/layout)
 
-Status: todo
+Status: review
 Depends on: none | Base commit: a83df54 | Branch: task/1380-go-host-layout
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Tier: A (shell of every host page; host alerts with filing warnings follow in 1381)
@@ -11,7 +11,13 @@ Add the Go package `go/internal/hostweb/layout`: an `html/template` (stdlib only
 
 ## 2. Context
 
-All code is pre-written and dry-run green (go vet, go test incl. `-race`, the DB test against Postgres 16, the two pytest files, context lint). It is in `/home/user/1380-prewritten/` with the repo's relative paths and a `MANIFEST.sha256`. You copy it in and verify. Do not edit any file.
+All code is on this branch and dry-run green (go vet, go test incl. `-race`, the DB test against Postgres 16, the two pytest files, context lint). Checksums live in `docs/tasks/1380-files/MANIFEST.sha256` (19 paths). Step 1 verifies them; do not hand-edit any §3 file.
+
+Anchor, `App/scripts/go_host_i18n.py` (the only script change besides the new golden writer):
+
+```python
+    for keys_file in sorted(GO_INTERNAL.glob("**/i18n_keys.txt")):
+```
 
 Promised API (other threads build on it; never rename):
 
@@ -54,17 +60,18 @@ func Render(w http.ResponseWriter, r *http.Request, env Env, host *session.Host,
 | App/scripts/go_layout_golden.py | create (195) | golden writer, `--check` |
 | App/tests/test_go_layout_golden.py | create (16) | stale check |
 | App/scripts/go_host_i18n.py | edit (61) | glob `**/i18n_keys.txt`, docstring line |
+| docs/tasks/1380-files/MANIFEST.sha256 | create | sha256 of every §3 file on this branch |
 | docs/tasks/1380-report.md | create | your report |
+| docs/tasks/1380-go-host-layout.md | exists | this brief; Status line only |
 
 No other file may change.
 
 ## 4. Steps
 
-1. Verify the bundle. Command: `cd /home/user/1380-prewritten && sha256sum -c MANIFEST.sha256 2>&1 | tail -30`. Every line must say `OK` (19 files). A missing bundle or a FAILED line: STOP (§8).
-2. Copy it in. From the repo root: `cp -r /home/user/1380-prewritten/go/internal/hostweb/layout go/internal/hostweb/ && cp /home/user/1380-prewritten/App/scripts/go_layout_golden.py /home/user/1380-prewritten/App/scripts/go_host_i18n.py App/scripts/ && cp /home/user/1380-prewritten/App/tests/test_go_layout_golden.py App/tests/ && git status --short | tail -30`. It shows only `M App/scripts/go_host_i18n.py`, `?? App/scripts/go_layout_golden.py`, `?? App/tests/test_go_layout_golden.py`, `?? go/internal/hostweb/layout/`. Then, still from the repo root (the manifest paths are relative, so this checks the repo copies): `sha256sum -c /home/user/1380-prewritten/MANIFEST.sha256 2>&1 | tail -30`: all 19 `OK`. Commit `1380 step 2`.
-3. Generated files are current. From `App/` (venv: `python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt -r requirements-dev.txt` if missing): `.venv/bin/python scripts/go_host_i18n.py --check 2>&1 | tail -30; echo rc=$?` and `.venv/bin/python scripts/go_layout_golden.py --check 2>&1 | tail -30; echo rc=$?`. Both `rc=0`, no output. No commit.
-4. Go checks, from `go/`: `test -z "$(gofmt -l .)" && go vet ./internal/hostweb/... && go test -count=1 -race ./internal/hostweb/... 2>&1 | tail -30`. Expected: two `ok` lines. Then `go build ./cmd/ubyhost-web 2>&1 | tail -5` (no output).
-5. Python checks and lint: §6 commands 3 and 4. Write the report (§9), commit `1380 step 5`.
+1. Verify every §3 file. From the repo root: `sha256sum -c docs/tasks/1380-files/MANIFEST.sha256 2>&1 | tail -30`. Expected: 19 lines ending `OK`. Any `FAILED` or a missing path: STOP (§8).
+2. Generated files are current. From `App/` (venv: `python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt -r requirements-dev.txt` if missing): `.venv/bin/python scripts/go_host_i18n.py --check 2>&1 | tail -30; echo rc=$?` and `.venv/bin/python scripts/go_layout_golden.py --check 2>&1 | tail -30; echo rc=$?`. Both `rc=0`, no output.
+3. Go checks, from `go/`: `test -z "$(gofmt -l .)" && go vet ./internal/hostweb/... && go test -count=1 -race ./internal/hostweb/... 2>&1 | tail -30`. Expected: two `ok` lines. Then `go build ./cmd/ubyhost-web 2>&1 | tail -5` (no output).
+4. Python checks and lint: §6 commands 3 and 4. Write the report (§9) if not already present.
 
 ## 5. Do not touch
 
@@ -89,7 +96,7 @@ No browser or screenshot tests: no page is served by Go yet (no route).
 
 Stop, and write the report, if:
 
-- the bundle is missing or a checksum fails;
+- a §3 checksum fails;
 - a generator `--check` reports a stale file (main moved: the orchestrator regenerates and ports the change);
 - a test fails twice;
 - you reach 25 tool calls or about 50k tokens (write the report as `blocked`, see executor.md);
@@ -110,17 +117,9 @@ Write `docs/tasks/1380-report.md` (600 tokens at most) and set `Status: review`.
 5. Questions.
 6. Owner steps left.
 
-## Risks
+## Risk list (for the reviewer)
 
-- **Go pages must not go live before 1381**: `_host_alerts.html` (filing warnings), `_billing_banner.html`, `_havel_panel.html` + `havel_on` (Ask Havel links), the security prompt, onboarding and the celebration toast are not ported; shell.html marks each spot `1381`. `view.HavelOn` stays false.
-- Drift: every edit of base.html, host_page.html, a shell include or a ported macro (incl. `?v=` bumps) makes `test_go_layout_golden.py` fail until the golden is regenerated and the Go side ported. Intended, but it touches other threads' PRs.
-- Parity gaps, documented in code: `page_header` has no `page_tabs()` fallback; `ui_section_tabs`, `next_action`, `housebook_csv_menu`, `onboarding_*`, `v2_status_pill` not ported; `help_svg` context flag ignored; `source_mark` logos hard-coded (3 files); `ph_back` block not overridable; the v2 property count is the full owner list (Python uses a page's own `apartments` if it passes one); `hostweb.Lang` reads the first `?lang=` value where Starlette reads the last; an empty `UBYHOST_IMPERSONATION_MAX_HOURS` reads as 24 h (Python: no limit), same as `session`.
-- html/template differences the golden normalises: `+` is written `&#43;`; URL attributes are normalised (percent-encoding non-ASCII). Browsers read both the same.
-- Each request clones the parsed set and html/template re-escapes it (about a millisecond); fine for now, cache per language later if profiling says so.
-
-### Risk list (for the reviewer)
-
-All of `go/internal/hostweb/layout/*.go` and `shell.html` against base.html/host_page.html/_shell_*.html; `App/scripts/go_host_i18n.py` (glob change).
+All of `go/internal/hostweb/layout/*.go` and `shell.html` against base.html/host_page.html/_shell_*.html; `App/scripts/go_host_i18n.py` (glob change). Go pages must not go live before 1381 (`_host_alerts.html`, billing banner, Havel panel, security prompt, onboarding and celebration toast are marked `1381` in shell.html). Golden drift is intentional on any base.html or shell edit. Documented parity gaps: `page_header` without `page_tabs()` fallback; several macros not ported; `hostweb.Lang` first `?lang=` vs Starlette last; empty `UBYHOST_IMPERSONATION_MAX_HOURS` reads as 24 h.
 
 ## Owner steps
 
