@@ -24,7 +24,7 @@ def test_guest_names_and_address_get_capitals():
 
 def test_guest_document_and_nationality_are_not_autofilled():
     form = _read("guest/form.html")
-    for field in ("doc_number", "parent_doc_number", "visa_number"):
+    for field in ("doc_number", "visa_number"):
         assert 'autocomplete="off"' in _tag(form, field), field
     assert 'autocomplete="off"' in _tag(form, "nationality", "select")
     assert 'autocomplete="off"' in _tag(form, "purpose", "select")

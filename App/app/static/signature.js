@@ -250,7 +250,7 @@ function initSignature() {
     var surname = document.getElementById("surname");
     var stayFrom = document.querySelector('input[name="stay_from"]');
 
-    // A copy of initChildToggle's childBirth parse; d and m stay 0 when unknown.
+    // Parses DD.MM.YYYY (or DD.MM.YY); d and m stay 0 when unknown.
     function childBirth(text) {
       var value = String(text || "").trim();
       var m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(value);
@@ -334,110 +334,6 @@ function initSignature() {
     window.addEventListener("pageshow", apply);
   }
 
-  function initChildToggle() {
-    var toggle = document.getElementById("child_in_passport");
-    if (!toggle) return;
-    var docWrap = document.getElementById("doc-wrap");
-    var parentWrap = document.getElementById("parent-doc-wrap");
-    var childWrap = document.getElementById("child-wrap");
-    var birth = document.getElementById("birth_date");
-    var stayFrom = document.querySelector('input[name="stay_from"]');
-    var nationality = document.getElementById("nationality");
-
-    // Owner 2026-11-13: only a Czech child may use the box. Czech nationals
-    // are never reported to the police; everyone else enters their own
-    // document (UbyPort refused an INPASS child). The server enforces it too.
-    // Until a nationality is picked nothing is decided, as with the birth date.
-    function czech() {
-      var code = nationality ? String(nationality.value || "").toUpperCase() : "";
-      return code === "" || code === "CZE";
-    }
-
-    /* 1079 (S15): the box can only apply to a guest under 18, so an adult does
-       not see it. Only childWrap.style.display is ever set here: a ticked box
-       is always shown and nothing that is posted changes. */
-    // The same parse as feeBirth; exact is false when the day or month is 00.
-    function childBirth(text) {
-      var value = String(text || "").trim();
-      var m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(value);
-      var year;
-      if (m) {
-        year = parseInt(m[3], 10);
-      } else {
-        m = /^(\d{2})\.(\d{2})\.(\d{2})$/.exec(value);
-        if (!m) return null;
-        var n = parseInt(m[3], 10);
-        year = 2000 + n <= new Date().getFullYear() ? 2000 + n : 1900 + n;
-      }
-      if (year === 0) return null;
-      var exact = parseInt(m[2], 10) !== 0 && parseInt(m[1], 10) !== 0;
-      var month = parseInt(m[2], 10) || 1;
-      var day = parseInt(m[1], 10) || 1;
-      var date = new Date(Date.UTC(year, month - 1, day));
-      if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return null;
-      return { y: year, m: month, d: day, exact: exact };
-    }
-
-    // Under 18 on the earlier of the arrival day and today: the earlier day is
-    // the younger guest, so the box shows whenever it could apply.
-    function mayBeChild() {
-      var born = childBirth(birth ? birth.value : "");
-      if (!born) return false;
-      var now = new Date();
-      var ref = { y: now.getFullYear(), m: now.getMonth() + 1, d: now.getDate() };
-      var s = /^(\d{4})-(\d{2})-(\d{2})$/.exec(stayFrom ? String(stayFrom.value || "").trim() : "");
-      if (s) {
-        var from = { y: parseInt(s[1], 10), m: parseInt(s[2], 10), d: parseInt(s[3], 10) };
-        var real = new Date(Date.UTC(from.y, from.m - 1, from.d));
-        var valid = real.getUTCFullYear() === from.y && real.getUTCMonth() === from.m - 1 && real.getUTCDate() === from.d;
-        if (valid && (from.y < ref.y || (from.y === ref.y && (from.m < ref.m || (from.m === ref.m && from.d < ref.d))))) ref = from;
-      }
-      if (!born.exact) return ref.y - born.y <= 18;
-      var y18 = born.y + 18;
-      return y18 > ref.y || (y18 === ref.y && (born.m > ref.m || (born.m === ref.m && born.d > ref.d)));
-    }
-
-    // The mask passes through 01.01.19 on the way to 01.01.1980; a half-typed
-    // date decides nothing.
-    function typing() {
-      return birth && document.activeElement === birth && !/^\d{2}\.\d{2}\.\d{4}$/.test(birth.value);
-    }
-
-    function showBox(mayHide) {
-      if (!childWrap) return;
-      if (toggle.checked) { childWrap.style.display = ""; return; }
-      if (typing()) return;
-      if (mayBeChild() && czech()) childWrap.style.display = "";
-      else if (mayHide) childWrap.style.display = "none";
-    }
-
-    function apply() {
-      if (docWrap) docWrap.style.display = toggle.checked ? "none" : "";
-      if (parentWrap) parentWrap.style.display = toggle.checked ? "" : "none";
-      var docInput = document.querySelector('[name="doc_number"]');
-      if (docInput) docInput.required = !toggle.checked;
-      // The parent's number is what stands in for the child's own, so it is
-      // required exactly when the child has none. Without this the omission is
-      // only found on the server, by which time the form is locked.
-      var parentInput = document.getElementById("parent_doc_number");
-      if (parentInput) parentInput.required = toggle.checked;
-      showBox(false);
-    }
-    toggle.addEventListener("change", apply);
-    apply();
-    showBox(true);
-    if (birth) {
-      birth.addEventListener("input", function () { showBox(true); });
-      birth.addEventListener("change", function () { showBox(true); });
-      birth.addEventListener("blur", function () { showBox(true); });
-      // initBirthDate's paste handler sets the value without an input event.
-      birth.addEventListener("paste", function () { setTimeout(function () { showBox(true); }, 0); });
-    }
-    if (nationality) nationality.addEventListener("change", function () { showBox(true); });
-    // A restored page can bring back a ticked box or a birth date with no event.
-    window.addEventListener("pageshow", function () { apply(); showBox(true); });
-  }
-
   function initResidenceCountry() {
     var nationality = document.getElementById("nationality");
     var resCountry = document.getElementById("res_country");
@@ -490,7 +386,7 @@ function initSignature() {
       { ids: ["first_name", "surname"], join: " " },
       { ids: ["birth_date"] },
       { ids: ["nationality"] },
-      { ids: ["doc_number", "parent_doc_number"] },
+      { ids: ["doc_number"] },
       { ids: ["res_street", "res_city", "res_country"], join: ", " }
     ];
 
@@ -1167,7 +1063,6 @@ function initSignature() {
     initSignature();
     initCopy();
     initBirthDate();
-    initChildToggle();
     initUnder15();
     initResidenceCountry();
     initVisaVisibility();

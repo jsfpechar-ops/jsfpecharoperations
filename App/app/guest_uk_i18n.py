@@ -16,11 +16,6 @@ PASS_MONTHS: Tuple[str, ...] = ("січ", "лют", "бер", "кві", "тра"
 PASS_WEEKDAYS: Tuple[str, ...] = ("пн", "вт", "ср", "чт", "пт", "сб", "нд")
 
 # The guest form's own wording of the parent's-document check (routes/guest.py).
-ISSUE_NOTE = "Введіть номер паспорта або посвідчення особи одного з батьків."
-ISSUE_INPASS_CZECH_ONLY = (
-    "Це поле лише для чеських дітей без документа. Зніміть позначку та введіть "
-    "номер власного паспорта або посвідчення особи дитини."
-)
 
 PURPOSES: Dict[str, str] = {
     "00": "Лікування",
@@ -89,7 +84,7 @@ VALIDATION: Dict[str, str] = {
     "Home address is too long.": "Адреса постійного проживання задовга.",
     "Note must be at most 255 characters.": "Примітка може містити не більше 255 символів.",
     "For a child recorded in a parent's passport the note must contain the parent's document number.": "Для дитини, вписаної в паспорт одного з батьків, потрібно вказати номер документа цього з батьків.",
-    "Children who are citizens of an EU country, Norway, Iceland, Liechtenstein or Switzerland have their own passport or ID card. Enter the child's own document number.": "Діти, які є громадянами країни ЄС, Норвегії, Ісландії, Ліхтенштейну або Швейцарії, мають власний паспорт або посвідчення особи. Введіть номер власного документа дитини.",
+    "Enter this person's own passport or ID card number. The police do not accept a child recorded in a parent's passport.": "Введіть номер власного паспорта або посвідчення особи цієї людини. Поліція не приймає дитину, вписану в паспорт одного з батьків.",
 }
 
 # Cookie name -> (purpose, lifetime) for the guest privacy page's cookie table.
@@ -348,9 +343,6 @@ STRINGS: Dict[str, str] = {
     "res_country": "Країна",
     "purpose": "Мета перебування",
     "stay_dates": "Ваші дати",
-    "child_title": "Ця особа – дитина, вписана в паспорт одного з батьків",
-    "child_help": "Позначте, лише якщо дитина не має власного паспорта. Тоді нам знадобиться номер документа одного з батьків.",
-    "parent_doc": "Номер документа одного з батьків",
     "note": "Примітка",
     "signature": "Підпис",
     "signature_help": "Розпишіться пальцем або мишею. Цього вимагає чеський закон.",

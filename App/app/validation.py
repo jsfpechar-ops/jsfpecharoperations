@@ -66,28 +66,17 @@ INPASS = "INPASS"
 # from the guest link.
 INPASS_NOTE_PREFIX = "Dítě zapsané v pasu rodiče, číslo dokladu rodiče: "
 
-# Citizens of these states cannot travel on a parent's passport: Regulation (EC)
-# 444/2009 (one person, one passport, Schengen-relevant, so Norway, Iceland,
-# Liechtenstein and Switzerland apply it too) ended child entries on 26 June
-# 2012. UbyPort refused such a record on 2026-11-13 ("Nekorektní číslo
-# cestovního dokladu", POL, born 2009), so INPASS is refused here before it is
-# sent. Czech nationals are left out: they are never reported to UbyPort
-# (guest_is_reportable), a Czech ID card is only compulsory from 15, and the
-# stay-fee register prints INPASS as "zapsán v dokladu rodiče". Other
-# nationalities keep INPASS as appendix 5 (cDocN) describes it.
-OWN_DOCUMENT_NATIONALITIES = frozenset(
-    {
-        "AUT", "BEL", "BGR", "HRV", "CYP", "DNK", "EST", "FIN", "FRA",
-        "DEU", "GRC", "HUN", "IRL", "ITA", "LVA", "LTU", "LUX", "MLT", "NLD",
-        "POL", "PRT", "ROU", "SVK", "SVN", "ESP", "SWE",
-        "NOR", "ISL", "LIE", "CHE",
-    }
-)
+# Owner 2026-11-13: UbyPort refused an INPASS child ("Nekorektní číslo
+# cestovního dokladu") and the police helpdesk did not recognise INPASS at all,
+# so it is never sent: every guest who is reported enters their own passport
+# or ID card number. Czech nationals are never reported (guest_is_reportable):
+# an old Czech INPASS row stays valid for the house book, and a Czech child
+# under 15 (no ID card is compulsory before 15) may leave the number empty.
 INPASS_OWN_DOCUMENT_MESSAGE = (
-    "Children who are citizens of an EU country, Norway, Iceland, Liechtenstein "
-    "or Switzerland have their own passport or ID card. Enter the child's own "
-    "document number."
+    "Enter this person's own passport or ID card number. The police do not "
+    "accept a child recorded in a parent's passport."
 )
+CZECH_CHILD_NO_DOCUMENT_AGE = 15
 
 # Purpose-of-stay code list (kodovnik uctu pobytu). The web service is
 # authoritative via DejMiCiselnik(UcelyPobytu); this is the offline fallback.
@@ -685,10 +674,14 @@ def validate_guest(
 
     doc = guest.get("doc_number") or ""
     note = guest.get("note") or ""
+    czech_child = nationality == CZECH_CODE and certainly_under_age(
+        guest.get("birth_date") or "", stay_from, CZECH_CHILD_NO_DOCUMENT_AGE
+    )
     if not doc:
-        issues.append(Issue("doc_number", "Travel document number is required."))
+        if not czech_child:
+            issues.append(Issue("doc_number", "Travel document number is required."))
     elif doc == INPASS:
-        if nationality in OWN_DOCUMENT_NATIONALITIES:
+        if nationality != CZECH_CODE:
             issues.append(Issue("doc_number", INPASS_OWN_DOCUMENT_MESSAGE))
         elif not note:
             issues.append(

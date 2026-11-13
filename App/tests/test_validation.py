@@ -169,8 +169,9 @@ def test_document_number_minimum_length():
     assert errors(v.validate_guest(good_guest(doc_number="AB12"))) == {"doc_number"}
 
 
-@pytest.mark.parametrize("nationality", ["POL", "DEU", "SVK", "NOR", "CHE", "pol"])
-def test_inpass_is_refused_for_eu_eea_and_swiss_citizens(nationality):
+@pytest.mark.parametrize("nationality", ["POL", "DEU", "UKR", "USA", "GBR", "pol"])
+def test_inpass_is_refused_for_everyone_who_is_reported(nationality):
+    """Owner 2026-11-13: UbyPort refused INPASS; it is never sent again."""
     guest = good_guest(doc_number="INPASS", note="parent doc P1234567", nationality=nationality)
     issues = v.validate_guest(guest)
     assert [(i.field, i.message) for i in v.errors_only(issues)] == [
@@ -178,17 +179,25 @@ def test_inpass_is_refused_for_eu_eea_and_swiss_citizens(nationality):
     ]
 
 
-def test_inpass_stays_allowed_for_czech_and_non_eu_citizens():
-    for nationality in ("CZE", "GBR", "UKR", "USA"):
-        guest = good_guest(doc_number="INPASS", note="parent doc P1234567", nationality=nationality)
-        assert errors(v.validate_guest(guest)) == set()
-
-
-def test_inpass_requires_a_note():
-    assert errors(v.validate_guest(good_guest(doc_number="INPASS"))) == {"note"}
+def test_an_old_czech_inpass_row_stays_valid_with_a_note():
+    czech = dict(nationality="CZE", res_country="CZE", res_street="Dlouha 1", res_city="Praha")
+    assert errors(v.validate_guest(good_guest(doc_number="INPASS", **czech))) == {"note"}
     assert not errors(
-        v.validate_guest(good_guest(doc_number="INPASS", note="parent doc P1234567"))
+        v.validate_guest(good_guest(doc_number="INPASS", note="parent doc P1234567", **czech))
     )
+
+
+def test_a_czech_child_under_15_may_leave_the_document_empty():
+    czech = dict(nationality="CZE", res_country="CZE", res_street="Dlouha 1", res_city="Praha", doc_number="")
+    arrival = date(2026, 11, 13)
+    assert not errors(v.validate_guest(good_guest(birth_date="15062019", **czech), arrival))
+    assert errors(v.validate_guest(good_guest(birth_date="13112011", **czech), arrival)) == {"doc_number"}
+    assert errors(v.validate_guest(good_guest(birth_date="15062019", **czech))) == {"doc_number"}
+
+
+def test_a_foreign_child_still_needs_a_document():
+    guest = good_guest(birth_date="22102019", nationality="POL", res_country="POL", doc_number="")
+    assert errors(v.validate_guest(guest, date(2026, 11, 13))) == {"doc_number"}
 
 
 def test_unknown_nationality_is_rejected():

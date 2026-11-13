@@ -524,21 +524,20 @@ def _safe_return_to(requested: Optional[str], token: str, lang: str) -> str:
     return urlunsplit(("", "", path, split.query, "")) + fragment
 
 
-# The child-on-a-parent's-passport check is keyed "note" in validation.py, where
-# the column really is called that. The guest form has no "note" box: it has the
-# parent's document number. So for the guest the issue is renamed onto the field
-# they can see, and the sentence names that box. The rename lives here rather
-# than in validation.py because the host form does have a "note" column and must
-# keep reading its own wording.
-_GUEST_ISSUE_FIELDS = {"note": "parent_doc_number"}
+# The guest form has no "child on a parent's passport" box any more (owner,
+# 2026-11-13: UbyPort refused INPASS and the police helpdesk did not know it).
+# A guest who types INPASS by hand gets the validator's INPASS issue; the one
+# keyed "note" (an old Czech INPASS row without the parent's number) is shown
+# under the document box, the only one the guest has, in the same words.
+_GUEST_ISSUE_FIELDS = {"note": "doc_number"}
 _GUEST_ISSUE_MESSAGES = {
     "note": {
-        "en": "Enter the parent's passport or ID number.",
-        "cs": "Zadejte číslo pasu nebo průkazu rodiče.",
-        "de": "Geben Sie die Pass- oder Ausweisnummer des Elternteils ein.",
-        "es": "Introduzca el número de pasaporte o documento de identidad del padre o la madre.",
-        "fr": "Saisissez le numéro de passeport ou de carte d'identité du parent.",
-        "uk": guest_uk_i18n.ISSUE_NOTE,
+        lang: (
+            validation.INPASS_OWN_DOCUMENT_MESSAGE
+            if lang == "en"
+            else validation_i18n.guest_localize(validation.INPASS_OWN_DOCUMENT_MESSAGE, lang)
+        )
+        for lang in ("en", "cs", "de", "es", "fr", "uk")
     },
 }
 
@@ -601,59 +600,11 @@ def _keep_unreadable_text(values: dict, raw: dict) -> None:
             values[field] = typed[:100]
 
 
-# The "child on a parent's passport" box is for Czech children only (owner,
-# 2026-11-13, after UbyPort refused an INPASS child): Czech nationals are never
-# reported to the police and a Czech ID card is only compulsory from 15. Every
-# other guest, children included, enters their own document. The guest's
-# document box is hidden while the parent's-passport box is ticked, so the
-# guest reads the refusal next to the parent's number, the box they can see.
-# The host form keeps INPASS for non-EU guests and its own wording.
-GUEST_INPASS_CZECH_ONLY = "guest-inpass-czech-only"
-_INPASS_CZECH_ONLY_MESSAGES = {
-    "en": "This box is only for Czech children without a document. Untick it and enter the child's own passport or ID card number.",
-    "cs": "Toto políčko je jen pro české děti bez dokladu. Zrušte zaškrtnutí a zadejte číslo vlastního pasu nebo průkazu dítěte.",
-    "de": "Dieses Kästchen gilt nur für tschechische Kinder ohne Dokument. Entfernen Sie das Häkchen und geben Sie die Nummer des eigenen Reisepasses oder Ausweises des Kindes ein.",
-    "es": "Esta casilla es solo para menores checos sin documento. Desmárquela e introduzca el número del pasaporte o documento de identidad propio del menor.",
-    "fr": "Cette case est réservée aux enfants tchèques sans document. Décochez-la et saisissez le numéro du passeport ou de la carte d'identité de l'enfant.",
-    "uk": guest_uk_i18n.ISSUE_INPASS_CZECH_ONLY,
-}
-
-
-def _guest_inpass_issues(values, issues):
-    """The guest form's INPASS rule: only a Czech child may use it."""
-    if values.get("doc_number") != validation.INPASS:
-        return issues
-    if (values.get("nationality") or "").upper() == validation.CZECH_CODE:
-        return issues
-    kept = [
-        issue for issue in issues
-        if not (issue.field == "doc_number" and issue.message == validation.INPASS_OWN_DOCUMENT_MESSAGE)
-        and issue.field != "note"
-    ]
-    return kept + [validation.Issue("doc_number", GUEST_INPASS_CZECH_ONLY)]
-
-
-def _inpass_own_document_issue(issue, lang: str):
-    if issue.field == "doc_number" and issue.message in (
-        GUEST_INPASS_CZECH_ONLY, validation.INPASS_OWN_DOCUMENT_MESSAGE
-    ):
-        message = _INPASS_CZECH_ONLY_MESSAGES.get(lang) or _INPASS_CZECH_ONLY_MESSAGES["en"]
-        return validation.Issue("parent_doc_number", message, issue.severity)
-    return None
-
-
 def _localize_issues(issues, lang: str):
-    localized = []
-    for issue in issues:
-        own_document = _inpass_own_document_issue(issue, lang)
-        if own_document is not None:
-            localized.append(own_document)
-        else:
-            localized.extend(
-                _guest_issue(item, lang)
-                for item in validation_i18n.guest_localize_issues([issue], lang)
-            )
-    return localized
+    return [
+        _guest_issue(issue, lang)
+        for issue in validation_i18n.guest_localize_issues(issues, lang)
+    ]
 
 
 def _live_apartment(column: str, value):
@@ -2392,8 +2343,6 @@ async def guest_form_relang(token: str, reservation_id: int, request: Request):
         {
             "stay_from": stay_from,
             "stay_to": stay_to,
-            "child_in_passport": bool(form.get("child_in_passport")),
-            "parent_doc_number": form.get("parent_doc_number") or "",
             "party_size": (form.get("party_size") or "").strip(),
             "signature": "",
             "legal_ack": "",
@@ -2457,7 +2406,6 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         if existing and reporting.guest_form_locked(existing, reservation):
             return _unavailable(request, lang, "form_locked", 403, token, reservation_id=reservation_id)
 
-    child_in_passport = bool(form.get("child_in_passport"))
     # One extractor for the host entry form and this one: the fields are the
     # same, and a field read in only one of them silently drops data from
     # whichever path was forgotten.
@@ -2488,7 +2436,6 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         validation.parse_iso_date(stay_to),
         raw=raw,
     )
-    issues = _guest_inpass_issues(values, issues)
     # A host may record a guest's real stay outside the booking (an early
     # arrival, a late departure), so the guest's own stored period is part of
     # what they are allowed to re-submit - otherwise the host's own edit would
@@ -2571,6 +2518,14 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
     issues = _localize_issues(_name_latin_issues(issues, lang), lang)
 
     if validation.errors_only(issues):
+        # Owner 2026-11-13: a guest wrote "the form did not accept the passport
+        # number" and nothing showed which field had refused. Field names only:
+        # never a value, a token or the reservation, so the line stays PII-free
+        # like the access log next to it.
+        _log.info(
+            "guest_form_refused fields=%s",
+            ",".join(sorted({issue.field for issue in validation.errors_only(issues)})),
+        )
         context = _form_context(
             request,
             apartment,
@@ -2587,8 +2542,6 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
             {
                 "stay_from": stay_from,
                 "stay_to": stay_to,
-                "child_in_passport": child_in_passport,
-                "parent_doc_number": form.get("parent_doc_number") or "",
                 # Echo back only a signature the validator accepts: a hand-built
                 # request must not get its blob mirrored into the next render.
                 "signature": signature if validation.is_valid_signature(signature) else "",

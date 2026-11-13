@@ -1251,7 +1251,7 @@
    "raw": null
   },
   {
-   "complete": true,
+   "complete": false,
    "date_from": "2026-10-20",
    "date_to": "2026-10-25",
    "guest": {
@@ -1270,8 +1270,14 @@
     "surname": "NOVAK",
     "visa_number": ""
    },
-   "issues": [],
-   "name": "valid_inpass_with_note",
+   "issues": [
+    [
+     "doc_number",
+     "Enter this person's own passport or ID card number. The police do not accept a child recorded in a parent's passport.",
+     "error"
+    ]
+   ],
+   "name": "inpass_non_eu_citizen",
    "raw": null
   },
   {
@@ -1297,7 +1303,7 @@
    "issues": [
     [
      "doc_number",
-     "Children who are citizens of an EU country, Norway, Iceland, Liechtenstein or Switzerland have their own passport or ID card. Enter the child's own document number.",
+     "Enter this person's own passport or ID card number. The police do not accept a child recorded in a parent's passport.",
      "error"
     ]
    ],
@@ -1327,7 +1333,7 @@
    "issues": [
     [
      "doc_number",
-     "Children who are citizens of an EU country, Norway, Iceland, Liechtenstein or Switzerland have their own passport or ID card. Enter the child's own document number.",
+     "Enter this person's own passport or ID card number. The police do not accept a child recorded in a parent's passport.",
      "error"
     ]
    ],
@@ -1355,7 +1361,31 @@
     "visa_number": ""
    },
    "issues": [],
-   "name": "inpass_czech_citizen",
+   "name": "valid_inpass_czech_citizen",
+   "raw": null
+  },
+  {
+   "complete": true,
+   "date_from": "2026-10-20",
+   "date_to": "2026-10-25",
+   "guest": {
+    "birth_date": "15062019",
+    "doc_number": "",
+    "first_name": "JAN",
+    "nationality": "CZE",
+    "note": "",
+    "purpose": "99",
+    "res_city": "Berlin",
+    "res_country": "CZE",
+    "res_street": "Hauptstrasse 5",
+    "signature_png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAAAAACMmsGiAAAAC0lEQVR42mNgwAQAABQAAe5aaQkAAAAASUVORK5CYII=",
+    "stay_from": "",
+    "stay_to": "",
+    "surname": "NOVAK",
+    "visa_number": ""
+   },
+   "issues": [],
+   "name": "valid_czech_child_no_document",
    "raw": null
   },
   {
@@ -1363,10 +1393,94 @@
    "date_from": "2026-10-20",
    "date_to": "2026-10-25",
    "guest": {
-    "birth_date": "01011990",
-    "doc_number": "INPASS",
+    "birth_date": "20102011",
+    "doc_number": "",
     "first_name": "JAN",
-    "nationality": "CHE",
+    "nationality": "CZE",
+    "note": "",
+    "purpose": "99",
+    "res_city": "Berlin",
+    "res_country": "CZE",
+    "res_street": "Hauptstrasse 5",
+    "signature_png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAAAAACMmsGiAAAAC0lEQVR42mNgwAQAABQAAe5aaQkAAAAASUVORK5CYII=",
+    "stay_from": "",
+    "stay_to": "",
+    "surname": "NOVAK",
+    "visa_number": ""
+   },
+   "issues": [
+    [
+     "doc_number",
+     "Travel document number is required.",
+     "error"
+    ]
+   ],
+   "name": "czech_15_no_document",
+   "raw": null
+  },
+  {
+   "complete": false,
+   "date_from": "",
+   "date_to": "",
+   "guest": {
+    "birth_date": "15062019",
+    "doc_number": "",
+    "first_name": "JAN",
+    "nationality": "CZE",
+    "note": "",
+    "purpose": "99",
+    "res_city": "Berlin",
+    "res_country": "CZE",
+    "res_street": "Hauptstrasse 5",
+    "signature_png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAAAAACMmsGiAAAAC0lEQVR42mNgwAQAABQAAe5aaQkAAAAASUVORK5CYII=",
+    "stay_from": "",
+    "stay_to": "",
+    "surname": "NOVAK",
+    "visa_number": ""
+   },
+   "issues": [
+    [
+     "doc_number",
+     "Travel document number is required.",
+     "error"
+    ]
+   ],
+   "name": "czech_child_no_document_no_dates",
+   "raw": null
+  },
+  {
+   "complete": true,
+   "date_from": "2026-10-20",
+   "date_to": "2026-10-25",
+   "guest": {
+    "birth_date": "00002012",
+    "doc_number": "",
+    "first_name": "JAN",
+    "nationality": "CZE",
+    "note": "",
+    "purpose": "99",
+    "res_city": "Berlin",
+    "res_country": "CZE",
+    "res_street": "Hauptstrasse 5",
+    "signature_png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAAAAACMmsGiAAAAC0lEQVR42mNgwAQAABQAAe5aaQkAAAAASUVORK5CYII=",
+    "stay_from": "",
+    "stay_to": "",
+    "surname": "NOVAK",
+    "visa_number": ""
+   },
+   "issues": [],
+   "name": "czech_child_birth_year_only_no_document",
+   "raw": null
+  },
+  {
+   "complete": false,
+   "date_from": "2026-10-20",
+   "date_to": "2026-10-25",
+   "guest": {
+    "birth_date": "15062019",
+    "doc_number": "",
+    "first_name": "JAN",
+    "nationality": "POL",
     "note": "",
     "purpose": "99",
     "res_city": "Berlin",
@@ -1381,11 +1495,11 @@
    "issues": [
     [
      "doc_number",
-     "Children who are citizens of an EU country, Norway, Iceland, Liechtenstein or Switzerland have their own passport or ID card. Enter the child's own document number.",
+     "Travel document number is required.",
      "error"
     ]
    ],
-   "name": "inpass_swiss_citizen_no_note",
+   "name": "foreign_child_no_document",
    "raw": null
   },
   {
@@ -2740,11 +2854,11 @@
     "birth_date": "01011990",
     "doc_number": "INPASS",
     "first_name": "JAN",
-    "nationality": "UKR",
+    "nationality": "CZE",
     "note": "",
     "purpose": "99",
     "res_city": "Berlin",
-    "res_country": "DEU",
+    "res_country": "CZE",
     "res_street": "Hauptstrasse 5",
     "signature_png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAAAAACMmsGiAAAAC0lEQVR42mNgwAQAABQAAe5aaQkAAAAASUVORK5CYII=",
     "stay_from": "",

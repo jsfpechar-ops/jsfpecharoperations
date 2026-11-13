@@ -66,47 +66,32 @@ type GuestRow struct {
 }
 
 const (
-	maxSurname         = 50
-	maxFirstName       = 24
-	maxDoc             = 30
-	minDoc             = 6
-	maxVisa            = 15
-	maxResidencePart   = 42
-	maxNote            = 255
-	inpassDoc          = "INPASS"
-	importedSignature  = "imported"
-	czechCode          = "CZE"
-	maxSignatureBytes  = 256 * 1024
-	maxSignatureSide   = 6000
-	maxSignaturePixels = 12000000
+	maxSurname              = 50
+	maxFirstName            = 24
+	maxDoc                  = 30
+	minDoc                  = 6
+	maxVisa                 = 15
+	maxResidencePart        = 42
+	maxNote                 = 255
+	inpassDoc               = "INPASS"
+	czechChildNoDocumentAge = 15
+	importedSignature       = "imported"
+	czechCode               = "CZE"
+	maxSignatureBytes       = 256 * 1024
+	maxSignatureSide        = 6000
+	maxSignaturePixels      = 12000000
 	// 4 base64 characters carry 3 bytes, so this is the longest payload that
 	// can still decode to an allowed number of bytes.
 	maxSignaturePayloadChars = 4*(maxSignatureBytes/3) + 4
 )
-
-// ownDocumentNationalities mirrors validation.OWN_DOCUMENT_NATIONALITIES:
-// citizens of these states cannot travel on a parent's passport since
-// Regulation (EC) 444/2009 (26 June 2012), and UbyPort refused such an INPASS
-// record on 2026-11-13, so INPASS is refused for them before sending. CZE is
-// left out: Czech nationals are never reported and young Czech children often
-// have no document.
-var ownDocumentNationalities = map[string]bool{
-	"AUT": true, "BEL": true, "BGR": true, "HRV": true, "CYP": true,
-	"DNK": true, "EST": true, "FIN": true, "FRA": true, "DEU": true, "GRC": true,
-	"HUN": true, "IRL": true, "ITA": true, "LVA": true, "LTU": true, "LUX": true,
-	"MLT": true, "NLD": true, "POL": true, "PRT": true, "ROU": true, "SVK": true,
-	"SVN": true, "ESP": true, "SWE": true, "NOR": true, "ISL": true, "LIE": true,
-	"CHE": true,
-}
 
 const (
 	nonLatinMessage = "Type this using Latin letters (A-Z), exactly as printed in the two " +
 		"machine-readable lines at the bottom of your passport."
 	inpassNoteMessage = "For a child recorded in a parent's passport the note must contain " +
 		"the parent's document number."
-	inpassOwnDocumentMessage = "Children who are citizens of an EU country, Norway, Iceland, Liechtenstein " +
-		"or Switzerland have their own passport or ID card. Enter the child's own " +
-		"document number."
+	inpassOwnDocumentMessage = "Enter this person's own passport or ID card number. The police do not " +
+		"accept a child recorded in a parent's passport."
 	forbiddenCharMessage       = "Remove the | character and any line breaks."
 	signatureInvalidMessage    = "That signature could not be saved. Sign again on the signature pad."
 	hostSignatureRequiredMsg   = "A guest signature is required. Use the guest link or sign on the host form."
@@ -383,10 +368,17 @@ func validateGuest(g GuestRow, stayFrom, stayTo *time.Time, today time.Time, raw
 
 	doc := g.DocNumber
 	note := g.Note
+	// Owner 2026-11-13: INPASS is never sent to UbyPort. A Czech national is
+	// never reported, so an old Czech INPASS row stays valid and a Czech child
+	// under 15 may leave the number empty (validation.py, same rule).
+	czechChild := nationality == czechCode && stayFrom != nil &&
+		certainlyUnderAge(g.BirthDate, *stayFrom, czechChildNoDocumentAge)
 	if doc == "" {
-		issues = append(issues, Issue{"doc_number", "Travel document number is required.", severityError})
+		if !czechChild {
+			issues = append(issues, Issue{"doc_number", "Travel document number is required.", severityError})
+		}
 	} else if doc == inpassDoc {
-		if ownDocumentNationalities[nationality] {
+		if nationality != czechCode {
 			issues = append(issues, Issue{"doc_number", inpassOwnDocumentMessage, severityError})
 		} else if note == "" {
 			issues = append(issues, Issue{"note", inpassNoteMessage, severityError})
