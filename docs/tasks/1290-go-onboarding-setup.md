@@ -44,9 +44,10 @@ Accepted differences (only reachable with hand-made requests or rows, never from
 | App/scripts/onboarding_setup_golden.py | create (files.txt) | writes the golden file from the real Python |
 | App/tests/test_go_onboarding_setup.py | create (files.txt) | re-runs the script into a temp path and compares bytes |
 | docs/tasks/1290-files/files.txt | read only | the file contents step 1 writes (already committed) |
+| docs/tasks/1290-go-onboarding-setup.md | edit | `Status:` line only |
 | docs/tasks/1290-report.md | create | your report |
 
-No other file may change. In this brief change only the `Status:` line.
+No other file may change.
 
 ## 4. Steps
 
@@ -104,7 +105,7 @@ cd App && .venv/bin/python scripts/onboarding_setup_golden.py 2>&1 | tail -5
 echo "46f64482de471fec08455f01b0dc47f1708ea2186ffa2f50232bb7b56f4ba305  go/internal/web/onboarding/testdata/setup_golden.json" | sha256sum -c - 2>&1 | tail -3
 ```
 
-Expected: `wrote .../setup_golden.json`, then `OK`. `FAILED`: STOP (§8); never edit the JSON. Commit `1290 step 2`.
+Expected: the script prints `wrote` plus the absolute path to `go/internal/web/onboarding/testdata/setup_golden.json`, then `OK`. `FAILED`: STOP (§8); never edit the JSON. Commit `1290 step 2`.
 
 **Step 3. Run §6 commands 1 and 2** (Go). No commit unless a file changed (none should).
 
