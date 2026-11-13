@@ -161,7 +161,8 @@ func CSRF(w http.ResponseWriter, r *http.Request, getenv func(string) string, at
 // does for both url-encoded and multipart bodies. A multipart body (the
 // property editor, which can carry a guide photo) may be up to
 // csrfMaxMultipart; parts over csrfMultipartMemory spill to temp files. The
-// parsed form stays on r for the handler.
+// parsed form stays on r for the handler; net/http removes its temp files
+// after the response, as long as no middleware swaps r for a copy.
 func formToken(w http.ResponseWriter, r *http.Request) string {
 	mediaType, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	if mediaType == "multipart/form-data" {

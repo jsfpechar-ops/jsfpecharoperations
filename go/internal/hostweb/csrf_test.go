@@ -94,6 +94,11 @@ func TestCSRFFormBodies(t *testing.T) {
 			req.Header.Set("Content-Type", contentType)
 			req.Header.Set("Origin", "https://app.example.test")
 			req.AddCookie(ck)
+			t.Cleanup(func() {
+				if req.MultipartForm != nil {
+					_ = req.MultipartForm.RemoveAll()
+				}
+			})
 			rec := httptest.NewRecorder()
 			ok := CSRF(rec, req, csrfTestEnv, csrfTestNow)
 			if ok != c.wantOK {
@@ -112,6 +117,11 @@ func TestCSRFFormBodies(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "https://app.example.test/apartments/1", body)
 		req.Header.Set("Content-Type", contentType)
 		req.AddCookie(ck)
+		t.Cleanup(func() {
+			if req.MultipartForm != nil {
+				_ = req.MultipartForm.RemoveAll()
+			}
+		})
 		if !CSRF(httptest.NewRecorder(), req, csrfTestEnv, csrfTestNow) {
 			t.Fatal("CSRF refused a valid multipart post")
 		}
