@@ -644,6 +644,16 @@ tell you:
 
 - **PostgreSQL dump (0464).** `backup.sh` writes `ubyhost-pg.dump.age` (`pg_dump -Fc`, age-encrypted, never plaintext) into the newest snapshot folder when the `postgres` service runs. Restore with `pg-restore.sh <stamp>`; the rehearsal (`pg-cutover.sh rehearse`) dumps, restores into `ubyhost_restoretest` and verifies it against SQLite.
 
+### App database role (K-S11)
+
+Owner runbook, once. Until step 3 the app keeps connecting as `ubyhost`; the full checks and rollback are in PR 1206.
+1. Run `./scripts/backup.sh` and confirm it finishes with no error line.
+2. Run `./scripts/pg-app-role.sh apply`. Expect `rolsuper f`, `rolcreatedb f`, `rolcreaterole f`, `rolcanlogin t`, `objects_not_owned_by_app` 0, and two `PASS` lines.
+3. Run `cp -p .env .env.before-1206`, then in `.env` change only `ubyhost@` to `ubyhost_app@` in `UBYHOST_DATABASE_URL`.
+4. Run `docker compose up -d`, check `/healthz`, and check the worker and `ubyhost-go` logs for `permission denied`.
+5. To roll back, run `cp -p .env.before-1206 .env` and then `docker compose up -d`.
+6. After any restore or cutover, run `pg-app-role.sh apply` again. On a new cluster, run it before `pg-restore.sh`. The `--no-owner` restore drill is unaffected.
+
 ### WAL-G continuous archiving and point-in-time recovery
 
 The daily age-encrypted `pg_dump` (above) stays the primary backup. WAL-G adds point-in-time recovery for the last 7 days; at most about 5 minutes of writes can be lost (`archive_timeout=300`). Downtime is acceptable here; losing data is not. Postgres keeps its pinned Alpine image and has no network: `archive_command` copies each finished WAL file durably into the `ubyhost-walspool` volume, and the `walg` container (profile `walg`, Debian Postgres 16 image with WAL-G) uploads it to S3 and deletes the local copy only after the upload succeeded (briefs 1022, 1023). The daily base backup runs in `walg` through the Postgres socket and a read-only data mount.

@@ -299,6 +299,8 @@ Plans: [havel-support-assistant](plans/havel-support-assistant.md). Everything i
 `UBYHOST_DATABASE_URL` unset means SQLite (the default). Set it to use PostgreSQL; never set it together with `UBYHOST_DB`. A TCP URL must carry `sslmode=verify-full` (or `require`); a Unix-socket URL (`host=/absolute/dir`) needs no sslmode. The schema is applied only by `App/scripts/pg_schema.py apply`, never at startup.
 The `postgres` Compose service has no password and no network; it is reached over the `ubyhost-pgsock` socket volume only.
 
+Production sets the user in `UBYHOST_DATABASE_URL` to `ubyhost_app` (`postgresql://ubyhost_app@/ubyhost?host=/var/run/postgresql`) after the owner runs `scripts/pg-app-role.sh apply`; admin scripts keep the `ubyhost` superuser. No separate variable.
+
 ## Development and test only
 
 | Variable | Default | Notes |

@@ -54,6 +54,7 @@ Host sessions (0911): the cookie is signed, HttpOnly, Secure on HTTPS and SameSi
 | **Content Security Policy** | Existing inline scripts/styles require `'unsafe-inline'`; Jinja autoescape remains the primary XSS control. Remove inline code before tightening this directive. |
 | **Stateless logout** | Logout clears the browser cookie but does not revoke a copied token. Login-address changes, account disablement, and 2FA changes increment `session_version`; remember-me host sessions last up to 30 days since the cookie was last re-signed and 90 days since login (Python and Go enforce the same limits); other host sessions last 12 hours, until logout. |
 | **Backups** | Production snapshots are encrypted with `age` and the identity is held offline (OPS-1); the key never travels with the copy. Passport attachments are not in the database backup and are short-lived by design. |
+| **App database role** | Once the owner runs `pg-app-role.sh` and sets the user in `UBYHOST_DATABASE_URL`, the app, worker and Go service connect as `ubyhost_app` (no superuser, createdb, createrole; refused `COPY PROGRAM`), so an SQL injection cannot read files or run commands in the postgres container. Auth is still `trust` over the private socket, so code that edits the DSN could still pick `ubyhost`; backup, WAL-G and restore scripts keep the superuser. Runbook: OPERATIONS.md "App database role". |
 
 ## Source-control hygiene
 
