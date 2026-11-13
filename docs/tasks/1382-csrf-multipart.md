@@ -1,4 +1,4 @@
-# 1382: Go CSRF reads _csrf from multipart bodies
+# 1382: Go CSRF reads multipart bodies; Back quotes Location like Starlette
 
 Status: todo
 Depends on: none | Base commit: a83df54 | Branch: task/1382-csrf-multipart
@@ -6,7 +6,7 @@ Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
 
-`hostweb.CSRF` reads the `_csrf` field with `r.ParseForm()`, which ignores multipart bodies, so a no-JS submit of the multipart property editor form (`App/app/templates/_property_editor.html:160`) fails CSRF on Go while Python (Starlette `request.form()`) accepts it. Parse multipart bodies with `ParseMultipartForm` under a size cap and add a test.
+`hostweb.CSRF` reads the `_csrf` field with `r.ParseForm()`, which ignores multipart bodies, so a no-JS submit of the multipart property editor form (`App/app/templates/_property_editor.html:160`) fails CSRF on Go while Python (Starlette `request.form()`) accepts it. Parse multipart bodies with `ParseMultipartForm` under a size cap. Also `hostweb.Back` writes `Location` raw, while Starlette's `RedirectResponse` quotes it with `quote(url, safe=":/%#?=@[]!$&'()*+,;")`, so a `return_to` with a space or non-ASCII character redirects differently; match Starlette. Tests for both.
 
 ## 2. Context
 
@@ -29,6 +29,8 @@ Current Go, `go/internal/hostweb/gate.go` inside `func CSRF`:
 | Path | Action | What |
 |---|---|---|
 | go/internal/hostweb/gate.go | edit | `mime` import, two constants, `formToken` helper used by `CSRF` |
+| go/internal/hostweb/hostweb.go | edit | `quoteSafe` shared by `pyQuote` and new `starletteQuote`; `redirect` helper used by both `Back` exits |
+| go/internal/hostweb/hostweb_test.go | edit | six `TestBack` rows for Starlette quoting |
 | go/internal/hostweb/csrf_test.go | new | url-encoded, multipart, missing/wrong token, over-cap, file still readable |
 | docs/tasks/1382-csrf-multipart.md | edit | Status line only |
 | docs/tasks/1382-report.md | new | report |
@@ -37,15 +39,17 @@ No other file may change.
 
 ## 4. Steps
 
-1. Apply the exact diff below to `go/internal/hostweb/gate.go` (save it to a file and run `git apply`; if it does not apply, STOP).
+1. Save the diff below to a file outside the repo and run `git apply <file>` from the repo root. It edits gate.go, hostweb.go and hostweb_test.go. If it does not apply, STOP.
 2. Create `go/internal/hostweb/csrf_test.go` with the content below.
-3. `cd go && gofmt -l internal/hostweb && go vet ./internal/hostweb/ && go test ./internal/hostweb/ 2>&1 | tail -30`
-4. `sha256sum go/internal/hostweb/gate.go go/internal/hostweb/csrf_test.go` must print:
+3. `cd go && gofmt -l internal/hostweb && go vet ./internal/hostweb/ && go test ./internal/hostweb/ 2>&1 | tail -30`, then `go build ./... && go test ./internal/... 2>&1 | grep -v '^ok' | tail -15` (every package that calls `hostweb.Back` must stay green).
+4. `sha256sum go/internal/hostweb/gate.go go/internal/hostweb/hostweb.go go/internal/hostweb/hostweb_test.go go/internal/hostweb/csrf_test.go` must print:
    - `db992dbd568c62c964637831fcc438d6a2723f567deb633651e6fb11f1c8e669  go/internal/hostweb/gate.go`
+   - `b04bc2bdfb9645905b29ab0b4fe60a1fdfb0c352fd6f264104bbfcc0b18b92dc  go/internal/hostweb/hostweb.go`
+   - `55bf9df2348b734fbdb2e5e274765803dfc61d489ea05bfc310a4da32554a775  go/internal/hostweb/hostweb_test.go`
    - `782cd47403ef2c703fde83a8bd8b36bd00e07b5e2c329c29c8ad6fefb3ddc590  go/internal/hostweb/csrf_test.go`
 5. Set `Status: review`, write the report, commit.
 
-### gate.go diff
+### Diff (gate.go, hostweb.go, hostweb_test.go)
 
 ```diff
 diff --git a/go/internal/hostweb/gate.go b/go/internal/hostweb/gate.go
@@ -114,6 +118,81 @@ index 2a65ba3..84aaf24 100644
  // csrfValid checks the signed token against the CSRF cookie. An empty cookie
  // never matches.
  func csrfValid(secret, token, cookie string, at time.Time) bool {
+diff --git a/go/internal/hostweb/hostweb.go b/go/internal/hostweb/hostweb.go
+index ba26ab5..0e26dba 100644
+--- a/go/internal/hostweb/hostweb.go
++++ b/go/internal/hostweb/hostweb.go
+@@ -108,7 +108,7 @@ func Back(w http.ResponseWriter, r *http.Request, path string, msg, err Flash) {
+ 		query = append(query, "fix="+pyQuote(err.Fix))
+ 	}
+ 	if len(query) == 0 {
+-		http.Redirect(w, r, path, http.StatusSeeOther)
++		redirect(w, path)
+ 		return
+ 	}
+ 	base, fragment, hasFragment := strings.Cut(path, "#")
+@@ -120,14 +120,32 @@ func Back(w http.ResponseWriter, r *http.Request, path string, msg, err Flash) {
+ 	if hasFragment {
+ 		location += "#" + fragment
+ 	}
+-	// Location is set directly: http.Redirect would clean the query string.
+-	w.Header().Set("Location", location)
++	redirect(w, location)
++}
++
++// redirect is Starlette's RedirectResponse(url, 303). Location is set directly
++// (http.Redirect would clean the query string), quoted like Starlette does.
++func redirect(w http.ResponseWriter, location string) {
++	w.Header().Set("Location", starletteQuote(location))
+ 	w.WriteHeader(http.StatusSeeOther)
+ }
+ 
++// starletteQuote is RedirectResponse's quote(url, safe=":/%#?=@[]!$&'()*+,;"):
++// ASCII letters, digits, "_.-~" and the safe set stay, every other UTF-8 byte
++// becomes %XX. "%" is safe, so an already quoted value is not quoted twice.
++func starletteQuote(s string) string {
++	return quoteSafe(s, "_.-~:/%#?=@[]!$&'()*+,;")
++}
++
+ // pyQuote is Python's quote(s) with the default safe="/": ASCII letters,
+ // digits and "_.-~/" stay, every other UTF-8 byte becomes %XX.
+ func pyQuote(s string) string {
++	return quoteSafe(s, "_.-~/")
++}
++
++// quoteSafe is Python's quote(s, safe): ASCII letters, digits and the bytes in
++// safe stay, every other UTF-8 byte becomes %XX.
++func quoteSafe(s, safe string) string {
+ 	const hexDigits = "0123456789ABCDEF"
+ 	var b strings.Builder
+ 	for i := 0; i < len(s); i++ {
+@@ -135,7 +153,7 @@ func pyQuote(s string) string {
+ 		switch {
+ 		case c >= 'a' && c <= 'z', c >= 'A' && c <= 'Z', c >= '0' && c <= '9':
+ 			b.WriteByte(c)
+-		case strings.IndexByte("_.-~/", c) >= 0:
++		case strings.IndexByte(safe, c) >= 0:
+ 			b.WriteByte(c)
+ 		default:
+ 			b.WriteByte('%')
+diff --git a/go/internal/hostweb/hostweb_test.go b/go/internal/hostweb/hostweb_test.go
+index 9bc188c..3b4b2c3 100644
+--- a/go/internal/hostweb/hostweb_test.go
++++ b/go/internal/hostweb/hostweb_test.go
+@@ -29,6 +29,13 @@ func TestBack(t *testing.T) {
+ 		{"non ascii like quote", "/a", Flash{Text: "Uloženo"}, Flash{}, "/a?msg=Ulo%C5%BEeno"},
+ 		{"slash kept", "/a", Flash{Text: "x/y//z"}, Flash{}, "/a?msg=x/y//z"},
+ 		{"no message", "/a", Flash{}, Flash{}, "/a"},
++		// Starlette's RedirectResponse quotes the whole URL, safe=":/%#?=@[]!$&'()*+,;".
++		{"space in path, no message", "/a b", Flash{}, Flash{}, "/a%20b"},
++		{"non ascii path, no message", "/ž", Flash{}, Flash{}, "/%C5%BE"},
++		{"space in path and fragment", "/a b#x y", Flash{Text: "Ok"}, Flash{}, "/a%20b?msg=Ok#x%20y"},
++		{"quoted value not quoted twice", "/ž?x=1", Flash{Text: "ž"}, Flash{}, "/%C5%BE?x=1&msg=%C5%BE"},
++		{"unsafe ascii", "/a?q=[1]|{}^`\"<>\\", Flash{}, Flash{}, "/a?q=[1]%7C%7B%7D%5E%60%22%3C%3E%5C"},
++		{"safe set kept", "/a?b=@!$'()*+,;:", Flash{}, Flash{}, "/a?b=@!$'()*+,;:"},
+ 	}
+ 	for _, c := range cases {
+ 		t.Run(c.name, func(t *testing.T) {
 ```
 
 ### csrf_test.go
@@ -259,7 +338,8 @@ Every other file in go/internal/hostweb/ and go/. No new dependency (rule 4); `m
 ## 7. Acceptance
 
 - [ ] `go test ./internal/hostweb/` passes, including `TestCSRFFormBodies` (6 subtests).
-- [ ] Both sha256 values match step 4.
+- [ ] `TestBack` passes with the six new Starlette rows; `go test ./internal/...` all ok.
+- [ ] All four sha256 values match step 4.
 - [ ] `git diff --stat` shows only the §3 files.
 
 ## 8. Stop and ask
