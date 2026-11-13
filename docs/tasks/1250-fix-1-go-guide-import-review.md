@@ -1,6 +1,6 @@
 # 1250-fix-1: Review fixes for the Go guide import
 
-Status: todo
+Status: review
 Depends on: 1250 (PR #972, branch task/1250-go-guide-import) | Base commit: ff7d055 | Branch: task/1250-go-guide-import (same branch, new commits)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

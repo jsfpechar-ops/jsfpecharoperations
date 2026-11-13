@@ -18,3 +18,4 @@ Status: review
 
 ## Deviations
 - Code blocks were removed from the brief after execution to fit the context-lint cap; the sha256 list still pins every file.
+- fix-1 (brief 1250-fix-1): cancelled fetch fails the row, retry-after on the model retry, dropped log as JSON, 4 new Postgres tests; see the fix-1 report.
