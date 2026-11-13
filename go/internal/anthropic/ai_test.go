@@ -402,3 +402,32 @@ func TestMistralClientRetriesOn5xx(t *testing.T) {
 		t.Errorf("resp %+v err %v calls %d", resp, err, calls)
 	}
 }
+
+func TestClientHonoursRetryAfter(t *testing.T) {
+	for _, tc := range []struct {
+		header string
+		want   time.Duration
+	}{{"3", 3 * time.Second}, {"99", 10 * time.Second}, {"soon", 500 * time.Millisecond}, {"", 500 * time.Millisecond}} {
+		calls := 0
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			calls++
+			if calls == 1 {
+				if tc.header != "" {
+					w.Header().Set("retry-after", tc.header)
+				}
+				w.WriteHeader(429)
+				return
+			}
+			w.Write([]byte(`{"content":[{"type":"text","text":"{}"}],"stop_reason":"end_turn","usage":{"input_tokens":1,"output_tokens":2}}`))
+		}))
+		var slept []time.Duration
+		c := NewClient("k")
+		c.BaseURL = srv.URL
+		c.Sleep = func(d time.Duration) { slept = append(slept, d) }
+		_, err := c.Create(context.Background(), Request{Schema: json.RawMessage(`{}`)})
+		srv.Close()
+		if err != nil || calls != 2 || len(slept) != 1 || slept[0] != tc.want {
+			t.Errorf("retry-after %q: err %v calls %d slept %v, want one sleep of %v", tc.header, err, calls, slept, tc.want)
+		}
+	}
+}
