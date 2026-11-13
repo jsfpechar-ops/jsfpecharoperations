@@ -3,6 +3,8 @@
 import importlib.util
 from pathlib import Path
 
+import pytest
+
 APP_DIR = Path(__file__).resolve().parents[1]
 PRIVACY_DIR = APP_DIR.parent / "go" / "internal" / "web" / "privacy"
 
@@ -14,6 +16,7 @@ def _load(name):
     return module
 
 
+@pytest.mark.sqlite_only
 def test_privacy_requests_golden_matches_python_routes(tmp_path, monkeypatch):
     from app import config
 
