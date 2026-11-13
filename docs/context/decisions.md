@@ -12,7 +12,7 @@ Append-only.
 - 2026-10-26 | Unpaid = read-only, filing never blocked | owner | 0415
 - 2026-10-27 Grafana Cloud (EU free tier): subprocessor for ops logs/metrics (PII-free, OPS-3); compose profile "monitoring" (owner).
 - 2026-10-28 | [deps] `stripe` 16.0.1 pinned+hashed in requirements.lock (owner); calls via `App/app/stripe_connect.py`; shared monthly cap `UBYHOST_STRIPE_MONTHLY_API_CALLS` | 0428
-- 2026-10-28 | Property pages: Apify prefill, no AI, host reviews once (0431); no Airbnb assets; photos re-hosted, max 10, EXIF stripped, host confirms rights (0432); no-JS widget, Stripe checkout on host account (0434); English only | owner
+- 2026-10-28 | Property pages: Apify prefill; photos re-hosted (max 10, EXIF stripped); Stripe checkout on host account; English only | owner | 0431–0434
 - 2026-11-02 | OCR: Tesseract only, local, MRZ check digits, Max only; band crop; Paddle if ocr_readrate <90% | owner | test_doc_ocr
 - 2026-10-29 | Trials are extendable by the operator, 1-365 days | owner | 0448
 - 2026-10-29 | Stripe Accounts v2, responsibilities immutable, companies via business_type (0437); Connect: full Dashboard + collectors, Express rejected (0439) | owner
@@ -65,3 +65,4 @@ Append-only.
 - 11-13 [calendar] 1172: Go-only; 1 mail/pair; manual dup skipped (owner)
 - 2026-11-13 [door] 1173/c: release backoff 15/15/60; new, retries, released; revive unissued expired.
 - 2026-11-13 [dep] 1390: Go PDF = gopdf v0.38.4 (MIT) + gofpdi + pkg/errors, `go/internal/pdf` only; Anthropic = thin HTTP in `go/internal/anthropic`, no dep; WebAuthn = go-webauthn/webauthn, login/passkey routes (owner)
+- 2026-11-13 [mail] Completion CC to host again; PII stays in guest_details_host | owner | 1291
