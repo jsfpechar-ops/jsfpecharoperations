@@ -54,7 +54,7 @@ AWS dependencies and what happens in an outage:
 1. Drive copy daily, as long as it stays cheap (Drive retention prune keeps the size bounded). Owner has the Drive ready.
 2. EU provider: Hetzner. Add it to the `/subprocessors` register and the ROPA before any real data goes there, the drill included.
 3. Offline pack: password manager plus one printed or USB copy.
-4. The old server is always stopped (or `submit` removed from `UBYHOST_GO_JOB_KINDS`) before a new one files.
+4. The old server is always stopped before a new one files, or set `UBYHOST_ENABLE_SCHEDULER=0` on it and remove `submit` from both `UBYHOST_JOB_QUEUE_KINDS` and `UBYHOST_GO_JOB_KINDS`. Removing it from `UBYHOST_GO_JOB_KINDS` alone does not stop filing: Python then files guests itself.
 5. Last fallback: file by hand in the police portal; the runbook says so.
 
 ## Not doing
