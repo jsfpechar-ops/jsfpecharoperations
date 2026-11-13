@@ -1,6 +1,6 @@
 # 1353: Go host payments pages (switched off)
 
-Status: todo
+Status: review
 Depends on: 1380 (draft PR #985, branch task/1380-go-host-layout) | Base commit: fe42cc4 | Branch: task/1353-go-payments-host-pages
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Tier: B (host payments pages, privacy-relevant links) | Review: Opus reads the diff of the risk-listed files
