@@ -1573,8 +1573,10 @@ def _revive_unissued_expired() -> int:
             continue
         if end_ms < now_ms:
             continue
-        if not _owner_can_hold_code(row["owner_user_id"]):
-            continue  # ensure_row would not make a new row: keep the expired one (1173d)
+        if not ttlock.allowed_for(row["owner_user_id"]):
+            # Plan without TTLock: ensure_row would never make a new row, keep the expired one (1173d).
+            # A lock account that is not ok does not count: _alert_delayed then tells the host (1173e).
+            continue
         # Guarded: only a row that is still expired is deleted.
         removed = db.execute("DELETE FROM door_code WHERE id = ? AND state = ?", (row["id"], EXPIRED))
         if removed:
