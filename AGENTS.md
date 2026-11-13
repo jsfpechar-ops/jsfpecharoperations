@@ -29,6 +29,8 @@ Read this file, then [status](docs/context/status.md). Open nothing else unless 
 9. Copy: one explanation lives in one place; no sentence the button already says; write "no tracking cookies", never "no cookies".
 10. UX gate (owner does not review UX; you do): a PR touching a host page merges only after you ran `test_layout_lint_browser.py` green, opened the 390/768/1280 screenshots of each touched page, and wrote per page in the PR what you saw. Never ask the owner, never silence a finding. Tick the [design-system checklist](docs/design/design-system.md) in the PR. [Steps](docs/context/workflow.md#ux-gate).
 
+11. Go first: features and fixes in Go, not Python ([go-first](docs/context/go-first.md)).
+
 ## Test
 
 From `App/`: `.venv/bin/python -m pytest <files from the test-map> -q --tb=short -x 2>&1 | tail -30` (never set `PYTHONPATH=App`; the bare `pytest tests` is for CI or when the owner asks). From the repo root: `python3 scripts/context_lint.py`.
@@ -52,6 +54,6 @@ From `App/`: `.venv/bin/python -m pytest <files from the test-map> -q --tb=short
 
 ## Session protocol (details: [workflow](docs/context/workflow.md))
 
-- **Start:** read this file, then status, then your routed row. Grep before you read. Read ranges, never whole files over 300 lines. If something is unclear, ask the owner instead of exploring.
+- **Start:** grep before you read. If something is unclear, ask the owner instead of exploring.
 - **End (orchestrator):** update status (5 lines at most), append to decisions and known-issues, run the lint. A workflow change gets a `[workflow]` decision and a [workflow](docs/context/workflow.md) edit.
 - One chat per task; close it when the brief or review is done.
