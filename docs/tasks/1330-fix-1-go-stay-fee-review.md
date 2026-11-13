@@ -1,6 +1,6 @@
 # 1330-fix-1: stay fee review findings
 
-Status: todo
+Status: review
 Depends on: 1330 | Base commit: bafc793 | Branch: claude/1330-go-stay-fees
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B
 Report: docs/tasks/1330-fix-1-report.md
