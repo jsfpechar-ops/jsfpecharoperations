@@ -129,6 +129,8 @@ services:
     # the page cache that serves SQLite reads. Each limit is a cap, not a
     # reservation; a smaller server (staging) sets lower values in .env.
     mem_limit: ${UBYHOST_WEB_MEM:-2g}
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
     # OPS-3: bound container logs so they cannot grow without limit. Rotated
     # lines are gone for good; capture anything needed during an incident.
     logging:
@@ -172,6 +174,8 @@ services:
       retries: 3
       start_period: 30s
     mem_limit: ${UBYHOST_WORKER_MEM:-1g}
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
     logging:
       driver: json-file
       options:
@@ -215,6 +219,8 @@ services:
       retries: 3
       start_period: 15s
     mem_limit: ${UBYHOST_GO_MEM:-128m}
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
     logging:
       driver: json-file
       options:
@@ -273,6 +279,10 @@ services:
       - caddy-data:/data
       - caddy-config:/config
     mem_limit: ${UBYHOST_CADDY_MEM:-256m}
+    # Root image: it only needs to bind 80/443. Everything else is dropped.
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+    security_opt: ["no-new-privileges:true"]
     # OPS-3: bound Caddy's container logs too. Caddy access logging itself stays
     # off (see caddy/Caddyfile.cloudflare), so this only bounds lifecycle noise.
     logging:
@@ -315,6 +325,7 @@ services:
         max-file: "5"
     networks:
       - web
+      - monitoring
 
   node-exporter:
     profiles: ["monitoring"]
@@ -338,7 +349,7 @@ services:
         max-size: "10m"
         max-file: "5"
     networks:
-      - web
+      - monitoring
 
   cadvisor:
     profiles: ["monitoring"]
@@ -365,7 +376,7 @@ services:
         max-size: "10m"
         max-file: "5"
     networks:
-      - web
+      - monitoring
 
 volumes:
   ubyhost-data:
@@ -384,3 +395,10 @@ volumes:
 networks:
   web:
     name: ubyhost-web
+  # 1201: scrape side of the monitoring stack. internal = no route to the
+  # internet and no published ports; the app containers are not on it.
+  # Only alloy joins it besides web (alloy still needs web to reach ubyhost
+  # and Grafana Cloud).
+  monitoring:
+    name: ubyhost-monitoring
+    internal: true
