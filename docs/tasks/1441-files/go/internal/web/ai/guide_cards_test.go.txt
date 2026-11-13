@@ -2,12 +2,15 @@ package ai
 
 import (
 	"context"
+	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/session"
 )
 
 func TestGuideCardPageRenders(t *testing.T) {
@@ -112,16 +115,21 @@ func TestGuideCardSaveFlow(t *testing.T) {
 	if loc := location(rec); loc != "/apartments/"+itoa64(w.apt)+"/leon/setup/cards" {
 		t.Errorf("leon save without next Location = %q", loc)
 	}
-	// no CSRF token: the gate redirects before anything is read or written
-	req := httptest.NewRequest("POST", w.path("/", intString(w.wifi)), strings.NewReader("steps=hacked"))
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	rec2 := httptest.NewRecorder()
-	w.mux.ServeHTTP(rec2, req)
-	if rec2.Code == 200 {
-		t.Error("a POST without CSRF succeeded")
-	}
-	if it, _ := w.s.getItem(context.Background(), w.apt, w.wifi); it.Steps == "hacked" {
-		t.Error("a POST without CSRF changed data")
+	// a signed-in POST without a CSRF token is stopped by the gate before anything is read or written
+	for _, tok := range []string{"", "not-a-token"} {
+		form := url.Values{"steps": {"hacked"}, "_csrf": {tok}}
+		req := httptest.NewRequest("POST", w.path("/", intString(w.wifi)), strings.NewReader(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.AddCookie(&http.Cookie{Name: "ubyhost_csrf", Value: guideTestCSRFCookie})
+		req.AddCookie(&http.Cookie{Name: session.CookieName, Value: session.Sign(guideTestSecret, map[string]any{"uid": w.host, "sv": int64(1), "iat": guideTestNow.Unix()}, guideTestNow)})
+		rec2 := httptest.NewRecorder()
+		w.mux.ServeHTTP(rec2, req)
+		if rec2.Code != 303 || strings.HasPrefix(location(rec2), w.path()) {
+			t.Errorf("token %q: %d %q", tok, rec2.Code, location(rec2))
+		}
+		if it, _ := w.s.getItem(context.Background(), w.apt, w.wifi); it.Steps == "hacked" {
+			t.Errorf("token %q: a POST without CSRF changed data", tok)
+		}
 	}
 }
 

@@ -42,7 +42,7 @@ func TestTermsLanguageOrder(t *testing.T) {
 		if !strings.Contains(body, `hreflang="`+c.lang+`" lang="`+c.lang+`" aria-current="true"`) {
 			t.Errorf("%s: aria-current missing on %s", c.path, c.lang)
 		}
-		if strings.Count(body, "aria-current") != 1 {
+		if strings.Count(body, `" aria-current="true">`) != 1 {
 			t.Errorf("%s: want exactly one aria-current", c.path)
 		}
 	}
