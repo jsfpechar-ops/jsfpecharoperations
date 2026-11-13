@@ -179,7 +179,8 @@ def feeds_needing_attention(limit: int = ROW_LIMIT) -> Dict[str, Any]:
         "SELECT f.id, f.label, f.last_status, "
         "COALESCE(f.last_checked_at, f.last_sync_at) AS last_checked, a.internal_name, "
         "a.owner_user_id, (SELECT username FROM user_account u WHERE u.id = a.owner_user_id) "
-        f"AS workspace {where} ORDER BY last_checked LIMIT ?",
+        f"AS workspace {where} "
+        "ORDER BY (COALESCE(f.last_checked_at, f.last_sync_at) IS NOT NULL), last_checked LIMIT ?",
         (cutoff, limit),
     )
     now = _now()
