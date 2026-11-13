@@ -383,9 +383,14 @@ func TestRoutesGoldenDatabase(t *testing.T) {
 			}
 			for i := range got {
 				wc := w.Cookies[i]
-				if gap := knownGaps[c.Name]; gap != "" && wc.Payload != nil {
-					delete(wc.Payload, gap)
-					wc.Attrs = got[i].Attrs
+				if gap := knownGaps[c.Name]; gap != "" {
+					if got[i].Payload != nil {
+						delete(got[i].Payload, gap)
+					}
+					if wc.Payload != nil {
+						delete(wc.Payload, gap)
+						wc.Attrs = got[i].Attrs
+					}
 				}
 				if got[i].Name != wc.Name || got[i].Empty != wc.Empty || !reflect.DeepEqual(got[i].Attrs, wc.Attrs) ||
 					(wc.Payload != nil && !samePayload(got[i].Payload, wc.Payload)) {

@@ -256,7 +256,7 @@ func SharedPageHandler(pool *pgxpool.Pool, getenv func(string) string, now func(
 			writeDetail(w, http.StatusNotFound, "Not Found")
 			return
 		case errors.Is(err, errDates):
-			writeDetail(w, http.StatusUnprocessableEntity, "Unprocessable Content")
+			writeDetail(w, http.StatusUnprocessableEntity, "Unprocessable Entity")
 			return
 		case errors.Is(err, errNotFound):
 			writeDetail(w, http.StatusNotFound, "Not Found")
@@ -307,7 +307,7 @@ func DeleteHandler(pool *pgxpool.Pool, getenv func(string) string, now func() ti
 		}
 		id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 		if err != nil {
-			writeDetail(w, http.StatusUnprocessableEntity, "Unprocessable Content")
+			writeDetail(w, http.StatusUnprocessableEntity, "Unprocessable Entity")
 			return
 		}
 		h, err := hostweb.Login(w, r, pool, getenv, at)
@@ -363,7 +363,7 @@ func RevokeHandler(pool *pgxpool.Pool, getenv func(string) string, now func() ti
 		}
 		id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 		if err != nil {
-			writeDetail(w, http.StatusUnprocessableEntity, "Unprocessable Content")
+			writeDetail(w, http.StatusUnprocessableEntity, "Unprocessable Entity")
 			return
 		}
 		h, err := hostweb.Login(w, r, pool, getenv, at)
