@@ -54,3 +54,42 @@ NOT RUN: no interpreter with pytest in this sandbox
 - Green: go, test-postgres, test, browser shards, Security, smoke, context, lint jobs.
 - Failed: `test` and `test-postgres-full`, both only in tests/test_claim_mail.py registry tests: the hardcoded KINDS set (test_the_registered_mail_kinds_are_the_ones_the_app_can_send) and test_no_registered_mail_kind_is_dead did not know the Go-inserted kind.
 - Fix: "double_booking" added to the expected set in test_claim_mail.py, and a pointer comment naming "double_booking" added in App/app/host_i18n.py (the Go ical job writes the outbox row; Python never composes it). Verified locally via ast/scan simulation; no pytest interpreter in the executor sandbox, CI re-runs them.
+
+## Fix 1 (1172-fix-1)
+
+Status: review
+
+### Files changed
+- go/internal/ical/doublebooking.go (SQL NOT predicate; mail queued per current pair with 24 h retry; open map carries created_at)
+- go/internal/ical/doublebooking_test.go (new TestDoubleBookingManualDuplicateIsNotAnAlarm)
+- App/app/host_i18n.py, App/tests/test_claim_mail.py (comment 1170 to 1172)
+- docs/context/decisions.md (1172 line rewritten, shortened by orchestrator in 20cb9011)
+- docs/context/status.md (step 5 sentence restore reverted by orchestrator in 20cb9011; intended)
+- docs/tasks/1172-fix-1.md (Status line)
+
+### Commands, last 5 lines each
+- gofmt -l . (go/): no output
+- go vet ./internal/ical/ ./internal/ubyport/: no output
+- go test ./internal/ical/ ./internal/mail/ ./internal/ubyport/: ok (DB tests skip locally without UBYHOST_TEST_DATABASE_URL; CI runs them)
+- pytest test_claim_mail.py test_host_i18n.py: NOT RUN: App/.venv missing; CI runs it
+- python3 scripts/context_lint.py: context lint: OK
+
+### Acceptance
+- [x] NOT predicate present once
+- [x] no `if open[key]` continue; QueueDoubleBookingMail count 1
+- [x] new test added; gofmt and vet clean; go test ok (DB tests in CI)
+- [x] comments renumbered to 1172
+- [x] status.md sentence: reverted by orchestrator (intended, lint cap)
+- [x] decisions.md 2026-11-13 line present (shortened by orchestrator)
+- [x] context lint OK
+- [x] branch pushed (see executor report)
+
+### Deviations
+- Step 2a folded into step 2 commit (map type change does not compile alone).
+- Step 5 reverted by orchestrator in 20cb9011 (lint cap); decisions line shortened there.
+
+### Questions
+- none
+
+### Owner steps left
+- Open or update PR 954 and wait for green CI (DB tests run there).
