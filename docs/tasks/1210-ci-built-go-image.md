@@ -1,15 +1,14 @@
-# 1171: CI builds and pushes the Go image too; the server never builds on a CI deploy
+# 1210: CI builds and pushes the Go image too; the server never builds on a CI deploy
 
-Status: review
-Depends on: 0422 (merged: Python image already built in CI) | Base commit: current main | Branch: task/1171-ci-built-go-image
+Status: todo
+Depends on: 0422 (merged: Python image already built in CI) | Base commit: a83df541 | Branch: task/1210-ci-built-go-image
 Executor: Haiku 5.5 | Fits one session: 25 tool calls, 50k tokens
-Tier: C. Review: orchestrator reads the diff. Report: docs/tasks/1171-report.md
 
 ## 1. Objective
 
 Owner decision 2026-11-13: images are built in GitHub Actions and pushed to GHCR (ghcr.io); the server only pulls and restarts. Reason: the target server is 1 vCPU / 2 GB, and on-host builds grow the build cache (about 6 GB in 14 days) and spike the CPU on every deploy. Brief 0422 already does this for the Python image. This brief finishes it: the Go image (`go/Dockerfile`, a Go compile) is built in CI and pulled too, and a failed pull on a CI deploy stops the deploy with the old containers still running (today it silently builds on the server). Prune of old images and build cache and the `:previous` rollback tags already exist and stay as they are.
 
-## 2. Context (what exists today, verified)
+## 2. Context
 
 - `.github/workflows/deploy-lightsail.yml` (reusable; production auto-deploys after CI is green on main, rule 8 stays): the step "Deploy Lightsail" already refuses unless CI checks are green, then builds the Python image with `docker build --pull -t "${IMAGE}" "${SRC}"` from a clean `git fetch` checkout in `mktemp -d`, pushes it to `ghcr.io/<repo>:<full sha>`, and passes `UBYHOST_IMAGE` to `deploy.sh` over SSH. `permissions: packages: write` is already set there and in `deploy-production.yml`. No third-party action is used for this: plain `docker login ghcr.io` with `GITHUB_TOKEN`. Keep it that way.
 - `deploy/lightsail/scripts/deploy.sh` lines 202-216 pull `UBYHOST_IMAGE` and tag it `ubyhost:local`; if the pull fails it falls back to `docker compose build --pull` on the server. Lines 242-250 always run `docker compose build ubyhost-go` on the server. Lines 406-409 prune dangling images and build cache older than 72 h after success. Lines 40-60 `rollback()` restores `ubyhost:previous` and `ubyhost-go:previous`.
@@ -25,14 +24,14 @@ Owner decision 2026-11-13: images are built in GitHub Actions and pushed to GHCR
 | `.github/workflows/deploy-lightsail.yml` | edit | build and push the Go image, add moving tag, pass `UBYHOST_GO_IMAGE` |
 | `deploy/lightsail/scripts/deploy.sh` | edit | pull both images before anything changes; fail closed; skip the on-server Go build |
 | `docs/LIGHTSAIL.md` | edit | one paragraph in "Deploy from GitHub Actions", one rollback-by-SHA block |
-| `docs/tasks/1171-report.md` | create | the report |
-| `docs/tasks/1171-ci-built-go-image.md` | edit | `Status:` line only |
+| `docs/tasks/1210-report.md` | create | the report |
+| `docs/tasks/1210-ci-built-go-image.md` | edit | `Status:` line only |
 
 No other file may change. Do not touch `App/`, `go/`, `Dockerfile`, `.dockerignore`, `docker-compose.yml`, `ci.yml`.
 
 ## 4. Steps
 
-Every Before text must be found exactly once (`grep -nF`). Not found: STOP (section 8). Commit after each step with `1171 step k`.
+Every Before text must be found exactly once (`grep -nF`). Not found: STOP (§8). Commit after each step with `1210 step k`.
 
 ### Step 1: verify nothing secret enters the images (no edit)
 
@@ -44,7 +43,7 @@ grep -nE '^\*\*/\.env|^App/data|^docs/|^\.git$|^App/tests' .dockerignore 2>&1 | 
 git ls-files | grep -E '(^|/)\.env$|\.db$|\.sqlite3?$|\.pem$' | tail -30
 ```
 
-Expected: the COPY lines are exactly `App/requirements.lock`, `App/`, `docker-entrypoint.sh`, `go/go.mod go/go.sum`, `go/`, `--from=builder ...`, `App/migrations_pg/`; the `.dockerignore` greps print all five patterns; the third command prints nothing (or only `.env.example`-style names that are not `.env`). Anything else: STOP and report it, do not continue.
+Expected: the COPY lines are exactly `App/requirements.lock`, `App/`, `docker-entrypoint.sh`, `go/go.mod go/go.sum`, `go/`, `COPY --from=builder /out/ubyhost-web /usr/local/bin/ubyhost-web`, `App/migrations_pg/`; the `.dockerignore` greps print all five patterns; the third command prints nothing (or only `.env.example`-style names that are not `.env`). Anything else: STOP and report it, do not continue.
 
 ### Step 2: `.github/workflows/deploy-lightsail.yml`
 
@@ -159,7 +158,7 @@ fi
 After:
 
 ````text
-# 1171: with UBYHOST_IMAGE set (the GitHub deploy) the server never builds: both
+# 1210: with UBYHOST_IMAGE set (the GitHub deploy) the server never builds: both
 # images are pulled first, and a failed pull stops here, before anything is
 # changed, so the old containers keep running. Without it (a manual deploy on
 # the server) the images are built here as before.
@@ -198,7 +197,7 @@ After:
 
 ````text
 if [ -z "${UBYHOST_IMAGE:-}" ] && docker compose config --services | grep -qx 'ubyhost-go'; then
-  # Manual deploy only (1171): a GitHub deploy pulled the Go image above.
+  # Manual deploy only (1210): a GitHub deploy pulled the Go image above.
   # Rebuild the local Go image so a merged change reaches production.
 ````
 
@@ -224,7 +223,7 @@ Workflow **Deploy production** pins the run to the current `main` revision, veri
 After:
 
 ````text
-Workflow **Deploy production** pins the run to the current `main` revision, verifies CI is green for it, builds the app image and the Go image on the GitHub runner, pushes both to GHCR (`ghcr.io/<owner>/<repo>:<commit sha>` and `...-go:<commit sha>`, plus a moving `production` or `staging` tag), then SSHs and runs `git reset --hard` + `./scripts/deploy.sh`. The server only pulls the two images; it does not build on a GitHub deploy (a manual `./scripts/deploy.sh` on the server still builds). If a pull fails, `deploy.sh` stops before changing anything and the old containers keep running. The images are public because the repo is public; GHCR creates each new package as private, so after the first push of a new package the owner sets it to public (Packages, the package, Package settings, Change visibility).
+Workflow **Deploy production** pins the run to the current `main` revision, verifies CI is green for it, builds the app image and the Go image on the GitHub runner, pushes both to GHCR (`ghcr.io/<owner>/<repo>:<commit sha>` and `ghcr.io/<owner>/<repo>-go:<commit sha>`, plus a moving `production` or `staging` tag), then SSHs and runs `git reset --hard` + `./scripts/deploy.sh`. The server only pulls the two images; it does not build on a GitHub deploy (a manual `./scripts/deploy.sh` on the server still builds). If a pull fails, `deploy.sh` stops before changing anything and the old containers keep running. The images are public because the repo is public; GHCR creates each new package as private, so after the first push of a new package the owner sets it to public (Packages, the package, Package settings, Change visibility).
 ````
 
 Edit 2 (rollback block, add after the existing code block). Before:
@@ -257,11 +256,11 @@ Expected: `3` or more.
 
 ### Step 5: report and status line
 
-Create `docs/tasks/1171-report.md` (600 tokens at most, format in executor.md). Change only the `Status:` line of this brief to `review`.
+Create `docs/tasks/1210-report.md` (600 tokens at most, format in executor.md). Change only the `Status:` line of this brief to `review`.
 
 ## 5. Do not touch
 
-Everything not in section 3. Do not remove the pruning at the end of `deploy.sh`. Do not add `docker/*` actions or any other action. Do not add `docker image prune -a`. Do not change `docker-compose.yml`.
+Everything not in §3. Do not remove the pruning at the end of `deploy.sh`. Do not add `docker/*` actions or any other action. Do not add `docker image prune -a`. Do not change `docker-compose.yml`.
 
 ## 6. Commands
 
@@ -285,17 +284,22 @@ These are the test-map row "Deploy scripts, Caddyfile, compose". No pytest. CI r
 
 ## 8. Stop and ask
 
-An anchor is not found verbatim; Step 1 shows an unexpected file; shellcheck reports an error you cannot fix in one try; line numbers differ by more than 10 from section 2.
+An anchor is not found verbatim; Step 1 shows an unexpected file; shellcheck reports an error you cannot fix in one try; line numbers differ by more than 10 from §2.
 
 ## 9. Report
 
-`docs/tasks/1171-report.md`: files changed, each command with its last 5 lines, section 7 ticked, deviations, questions, owner steps left (below). Set `Status: review`, open one draft PR.
+`docs/tasks/1210-report.md`: files changed, each command with its last 5 lines, §7 ticked, deviations, questions, owner steps left (below). Set `Status: review`, open one draft PR.
 
-## Owner steps (after the draft PR is green; plain words)
+## Risk list (for the reviewer)
+
+`.github/workflows/deploy-lightsail.yml` (GHCR push and `UBYHOST_GO_IMAGE`), `deploy/lightsail/scripts/deploy.sh` (fail-closed pull path, guarded manual Go build), `docs/LIGHTSAIL.md` (rollback-by-SHA wording).
+
+## Owner steps
+
 
 Before merging, so the first real deploy does not fail on a private package:
 
-1. On GitHub open the repo, then Actions, then "Deploy staging" in the left list, then "Run workflow". Choose the PR branch `task/1171-ci-built-go-image` and start it. It builds and pushes both images (the staging server pull of the new Go package may fail the first time because the package is still private; that is expected and harmless, nothing on staging changes).
+1. On GitHub open the repo, then Actions, then "Deploy staging" in the left list, then "Run workflow". Choose the PR branch `task/1210-ci-built-go-image` and start it. It builds and pushes both images (the staging server pull of the new Go package may fail the first time because the package is still private; that is expected and harmless, nothing on staging changes).
 2. On GitHub open your profile or the organisation page, then "Packages". Open the package named like the repo with `-go` at the end. Click "Package settings" (right side), scroll to "Danger Zone", click "Change visibility", choose "Public", type the package name to confirm. Do the same for the package without `-go` if it is not already public.
 3. Run "Deploy staging" once more on the same branch; it should now pass.
 4. Click "Ready for review" on the PR and merge it (or use `scripts/merge-pr-on-green.sh`). Production deploys by itself.
