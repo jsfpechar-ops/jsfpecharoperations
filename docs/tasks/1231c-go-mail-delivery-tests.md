@@ -1,6 +1,6 @@
 # 1231c: Go mail delivery, part 3: parity and database tests
 
-Status: todo
+Status: review
 Depends on: 1231b (this branch) | Base commit: 902bc51 | Branch: task/1230-track-a
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (code is copied by a script; do not read the code blocks)
 
