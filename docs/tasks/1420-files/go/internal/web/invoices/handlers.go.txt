@@ -218,6 +218,14 @@ func methodNotAllowed(w http.ResponseWriter, allow string) {
 	_, _ = io.WriteString(w, `{"detail":"Method Not Allowed"}`)
 }
 
+// plain is Starlette's Response("text", status_code=n): the body, no
+// content type of its own.
+func plain(w http.ResponseWriter, status int, body string) {
+	w.Header()["Content-Type"] = nil
+	w.WriteHeader(status)
+	_, _ = w.Write([]byte(body))
+}
+
 func fail(w http.ResponseWriter, err error) {
 	log.Printf("invoices route failed: %v", err)
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
