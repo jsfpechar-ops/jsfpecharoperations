@@ -12,7 +12,7 @@ Add the confirm cards (stay, cleaning, guest link, new PIN, calendar sync) with 
 
 Rules (AGENTS.md): 2 privacy first (the support mail carries what the host typed into the support form and the host's last four messages, to UbyHost's own operator address only; no new field; **no outbound HTTP request: the mail goes into `email_outbox` and the existing mail job sends it**); 4 no new dependency; 5 plain PostgreSQL.
 
-**All code is pre-written, compiled and tested** over 1431. Sidecars: `docs/tasks/1432-files/<repo path>.txt`. `App/tests/test_go_ai_havel.py` is **replaced** (1430's version checked one script, this one checks both).
+**All code is pre-written, compiled and tested** over 1431. Sidecars: `docs/tasks/1432-files/<repo path>.txt`.
 
 **What this ports** (Python mirror): `App/app/havel_actions.py` (all: `prepare`, `NotPrepared`); `App/app/routes/havel.py` 41-60 (`_properties`, `_feed_count`, `_card`'s reads); `dashboard_calendar.overlapping_count` (routes/dashboard_calendar.py 54-61); `guest_slug.link_key` (guest_slug.py 143-148, read side); `App/app/mail_notify.py` 2972-3014 (`build_havel_support`, `havel_support`) with `_shell`, `_block_heading`, `_block_paragraph`, `_block_fact` copied from `go/internal/mail/submission_problem.go` because that package keeps them private (read-only here). The golden holds 36 card cases (every action type, the date window edges, 365 and 366 nights, 60 and 61 guests, a newline after a time which Python's `$` accepts) and 3 mails whose text **and html** are compared byte for byte.
 
@@ -28,7 +28,7 @@ Rules (AGENTS.md): 2 privacy first (the support mail carries what the host typed
 | Path | Action | What |
 |---|---|---|
 | `App/scripts/havel_cards_golden.py` | create | writes the cards and support-mail golden from the real Python |
-| `App/tests/test_go_ai_havel.py` | create | replaces 1430's file: both scripts are checked |
+| `App/tests/test_go_ai_havel_cards.py` | create | pytest: the cards golden is current with the Python |
 | `go/internal/web/ai/havel_cards.go` | create | confirm cards, property and link lookups |
 | `go/internal/web/ai/havel_cards_test.go` | create | parity tests and SQL tests |
 | `go/internal/web/ai/havel_mail.go` | create | the support mail to the operator and its outbox row |
@@ -40,25 +40,25 @@ No other file may change.
 
 ## 4. Steps
 
-0. Checks (repo root): `git branch --show-current` prints `task/1432-go-ai-havel-cards`; `git log --oneline -40 | grep -c '1431 step 1'` prints at least `1`; `ls go/internal/web/ai/havel_store.go go/internal/web/ai/havel_testdb_test.go` both exist; `ls go/internal/web/ai/havel_cards.go 2>&1 | tail -2` says "No such file"; `sha256sum App/tests/test_go_ai_havel.py | cut -c1-12` prints `99ef38d7d855` (1430's file); `grep -cF 'def prepare(action: Dict[str, Any], properties: List[Any], today: date, *, return_to: str,' App/app/havel_actions.py` prints `1`; `grep -cF 'def build_havel_support(' App/app/mail_notify.py` prints `1`; `find docs/tasks/1432-files -type f | wc -l` prints `6`. Anything else: STOP (§8).
+0. Checks (repo root): `git branch --show-current` prints `task/1432-go-ai-havel-cards`; `git log --oneline -40 | grep -c '1431 step 1'` prints at least `1`; `ls go/internal/web/ai/havel_store.go go/internal/web/ai/havel_testdb_test.go` both exist; `ls go/internal/web/ai/havel_cards.go 2>&1 | tail -2` says "No such file"; `ls App/tests/test_go_ai_havel.py` exists (1430's file) and `ls App/tests/test_go_ai_havel_cards.py 2>&1 | tail -2` says "No such file"; `grep -cF 'def prepare(action: Dict[str, Any], properties: List[Any], today: date, *, return_to: str,' App/app/havel_actions.py` prints `1`; `grep -cF 'def build_havel_support(' App/app/mail_notify.py` prints `1`; `find docs/tasks/1432-files -type f | wc -l` prints `6`. Anything else: STOP (§8).
 
 1. Copy the files (one call, repo root). Run exactly:
 
    ```bash
    mkdir -p App/scripts && cp docs/tasks/1432-files/App/scripts/havel_cards_golden.py.txt App/scripts/havel_cards_golden.py
-   mkdir -p App/tests && cp docs/tasks/1432-files/App/tests/test_go_ai_havel.py.txt App/tests/test_go_ai_havel.py
+   mkdir -p App/tests && cp docs/tasks/1432-files/App/tests/test_go_ai_havel_cards.py.txt App/tests/test_go_ai_havel_cards.py
    mkdir -p go/internal/web/ai && cp docs/tasks/1432-files/go/internal/web/ai/havel_cards.go.txt go/internal/web/ai/havel_cards.go
    mkdir -p go/internal/web/ai && cp docs/tasks/1432-files/go/internal/web/ai/havel_cards_test.go.txt go/internal/web/ai/havel_cards_test.go
    mkdir -p go/internal/web/ai && cp docs/tasks/1432-files/go/internal/web/ai/havel_mail.go.txt go/internal/web/ai/havel_mail.go
    mkdir -p go/internal/web/ai/testdata && cp docs/tasks/1432-files/go/internal/web/ai/testdata/havel_cards_golden.json.txt go/internal/web/ai/testdata/havel_cards_golden.json
    ```
 
-   Then check them: `sha256sum App/scripts/havel_cards_golden.py App/tests/test_go_ai_havel.py go/internal/web/ai/havel_cards.go go/internal/web/ai/havel_cards_test.go go/internal/web/ai/havel_mail.go go/internal/web/ai/testdata/havel_cards_golden.json | tail -30`. Every hash must equal this table:
+   Then check them: `sha256sum App/scripts/havel_cards_golden.py App/tests/test_go_ai_havel_cards.py go/internal/web/ai/havel_cards.go go/internal/web/ai/havel_cards_test.go go/internal/web/ai/havel_mail.go go/internal/web/ai/testdata/havel_cards_golden.json | tail -30`. Every hash must equal this table:
 
 | sha256 | file (sidecar = `docs/tasks/1432-files/<path>.txt`) |
 |---|---|
 | `8a60bfcc080f79153db98492909bd92a2273c10d7a6281b6c9f40aa795cd2138` | `App/scripts/havel_cards_golden.py` |
-| `c2756583651837673e270abfebe4e546ff90308623d1703fbf5d13b4ee1bbad3` | `App/tests/test_go_ai_havel.py` |
+| `b54a770026f05a241fcf1b54d551ac3e6d8523b7bd8b806c71312747b307806f` | `App/tests/test_go_ai_havel_cards.py` |
 | `4c6ad92df86a7838a812434b138ef668b21757d61e6f00cdff87f8425760e24f` | `go/internal/web/ai/havel_cards.go` |
 | `3bec72a3887a9d5fe732fa7c9bf8788a6271e3dea710822569e70be7145b779f` | `go/internal/web/ai/havel_cards_test.go` |
 | `69a7a118ba5cc31924cb73d639ab63403de9fc06e16549d28e4b21313ea190de` | `go/internal/web/ai/havel_mail.go` |
@@ -78,7 +78,7 @@ No other file may change.
 
 4. Go (from `go/`): `test -z "$(gofmt -l ./internal/web/ai)" && go build ./... 2>&1 | tail -30 && go vet ./internal/web/ai/ 2>&1 | tail -30 && UBYHOST_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:55432/postgres go test ./internal/web/ai/ -count=1 -v 2>&1 | grep -E '^(--- |ok|FAIL)' | tail -40`. Expected: no output from gofmt, build or vet, then `--- PASS:` for all earlier tests and TestHavelCardsMatchPython, TestHavelFieldLabels, TestHavelSupportMailMatchesPython, TestHavelSupportKey, TestHavelSupportOnPostgres, TestHavelLookupsOnPostgres and one `ok`. A FAIL: read the last 30 lines, STOP and paste them. Commit "1432 step 4".
 
-5. Python (from `App/`): `.venv/bin/python -m pytest tests/test_go_ai_havel.py -q --tb=short -rs 2>&1 | tail -30` prints `3 passed`, 0 skipped. Write the report (§9) and commit "1432 step 5".
+5. Python (from `App/`): `.venv/bin/python -m pytest tests/test_go_ai_havel.py tests/test_go_ai_havel_cards.py -q --tb=short -rs 2>&1 | tail -30` prints `3 passed`, 0 skipped. Write the report (§9) and commit "1432 step 5".
 
 ## 5. Do not touch
 
@@ -93,7 +93,7 @@ Steps 2 (golden), 4 (Go) and 5 (pytest) above. From the repo root: `python3 scri
 - [ ] The 6 sha256 values match §4 step 1.
 - [ ] Both golden `--check` runs print no `stale:` line; `git status --short` is empty after step 1's commit.
 - [ ] gofmt, build and vet print nothing; the six new tests PASS (none skipped, or the skip named with its reason) and the earlier tests still PASS.
-- [ ] `pytest tests/test_go_ai_havel.py` passes with 3 tests, 0 skipped.
+- [ ] `pytest tests/test_go_ai_havel.py tests/test_go_ai_havel_cards.py` passes with 3 tests, 0 skipped.
 - [ ] `git diff --stat main..HEAD | tail -20` lists only §3 paths (plus earlier briefs' if they are on this branch).
 - [ ] Commits "1432 step 1", "1432 step 4", "1432 step 5"; nothing pushed.
 

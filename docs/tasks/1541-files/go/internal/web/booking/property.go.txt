@@ -254,3 +254,13 @@ func BookHandler(pool *pgxpool.Pool, getenv func(string) string, now func() time
 	}
 }
 
+
+func init() {
+	guestFuncs["seq"] = func(from, to int) []int {
+		var out []int
+		for i := from; i <= to; i++ {
+			out = append(out, i)
+		}
+		return out
+	}
+}

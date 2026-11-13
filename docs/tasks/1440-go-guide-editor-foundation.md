@@ -112,21 +112,21 @@ No other file may change.
 3. PostgreSQL. If `UBYHOST_TEST_DATABASE_URL` is already set to a server you may create databases on, use it and skip this step. Else start a throwaway one (as root; `pg_ctl` refuses root, so it runs as `postgres`):
 
    ```bash
-   mkdir -p /var/tmp/pg1440 && chown postgres /var/tmp/pg1440 && su postgres -c '/usr/lib/postgresql/16/bin/initdb -D /var/tmp/pg1440/data -A trust >/dev/null && /usr/lib/postgresql/16/bin/pg_ctl -D /var/tmp/pg1440/data -o "-p 55432 -k /var/tmp/pg1440" -l /var/tmp/pg1440/log start' 2>&1 | tail -3
+   mkdir -p /var/tmp/pg1440 && chown postgres /var/tmp/pg1440 && su postgres -c '/usr/lib/postgresql/16/bin/initdb -D /var/tmp/pg1440/data -A trust >/dev/null && /usr/lib/postgresql/16/bin/pg_ctl -D /var/tmp/pg1440/data -o "-p 55440 -k /var/tmp/pg1440" -l /var/tmp/pg1440/log start' 2>&1 | tail -3
    ```
 
-   Expected: a line with `server started`. Then use `UBYHOST_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:55432/postgres` in the next steps. No PostgreSQL 16 binaries at that path: write "CI only" in the report, run only the commands that need no database, and STOP before step 4.
+   Expected: a line with `server started`. Then use `UBYHOST_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:55440/postgres` in the next steps. No PostgreSQL 16 binaries at that path: write "CI only" in the report, run only the commands that need no database, and STOP before step 4.
 
 4. Run the tests of this brief on PostgreSQL (one call, from `go/`):
 
    ```bash
-   cd go && UBYHOST_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:55432/postgres go test ./internal/web/ai/ ./cmd/ubyhost-web/ -count=1 2>&1 | tail -30
+   cd go && UBYHOST_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:55440/postgres go test ./internal/web/ai/ ./cmd/ubyhost-web/ -count=1 2>&1 | tail -30
    ```
 
    Expected: two lines, `ok  	github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/ai	<seconds>s` and `ok  	github.com/jsfpechar-ops/jsfpecharoperations/go/cmd/ubyhost-web	<seconds>s`. Then show that the named tests ran and none was skipped:
 
    ```bash
-   cd go && UBYHOST_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:55432/postgres go test ./internal/web/ai/ -count=1 -v -run '^TestGuideParseID$|^TestGuideStamp$|^TestGuideRoutesUniqueAndPoolFree$|^TestGuideTemplatesUseKnownKeys$|^TestGuideCatalogHasEveryKey$|^TestGuideCatalogMatchesGuideImport$|^TestGuideClean$|^TestGuideNextOpenAndProgress$|^TestGuidePyStripAndTruncate$|^TestGuideDataLayer$|^TestGuideHomeOwnership$' 2>&1 | grep -E '^(--- |ok|FAIL)' | tail -30
+   cd go && UBYHOST_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:55440/postgres go test ./internal/web/ai/ -count=1 -v -run '^TestGuideParseID$|^TestGuideStamp$|^TestGuideRoutesUniqueAndPoolFree$|^TestGuideTemplatesUseKnownKeys$|^TestGuideCatalogHasEveryKey$|^TestGuideCatalogMatchesGuideImport$|^TestGuideClean$|^TestGuideNextOpenAndProgress$|^TestGuidePyStripAndTruncate$|^TestGuideDataLayer$|^TestGuideHomeOwnership$' 2>&1 | grep -E '^(--- |ok|FAIL)' | tail -30
    ```
 
    Expected: one `--- PASS` line for each of 11 tests (times differ) and a final `ok` line; no `--- SKIP`, no `--- FAIL`:

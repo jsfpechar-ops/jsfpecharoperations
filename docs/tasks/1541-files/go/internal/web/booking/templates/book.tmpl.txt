@@ -44,4 +44,3 @@
   <p class="ui-sub">{{.T "pp.book.request_note"}}</p>
 </main>
 {{end}}
-{{define "guest.head"}}{{end}}

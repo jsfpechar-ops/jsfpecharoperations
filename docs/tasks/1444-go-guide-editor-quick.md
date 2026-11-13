@@ -99,18 +99,18 @@ No other file may change.
 
    Expected: no output at all (gofmt lists nothing, build and vet are silent). Anything printed: STOP (§8). Commit "1444 step 2".
 
-3. PostgreSQL: as brief 1440 step 3 (the server on port 55432 may still run: `su postgres -c '/usr/lib/postgresql/16/bin/pg_ctl -D /var/tmp/pg1440/data status' | tail -1` says `server is running`; if stopped, run only the `pg_ctl ... start` part of that step). Use `UBYHOST_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:55432/postgres` below. No server: write "CI only" in the report and STOP before step 4.
+3. PostgreSQL: as brief 1440 step 3 (the server on port 55440 may still run: `su postgres -c '/usr/lib/postgresql/16/bin/pg_ctl -D /var/tmp/pg1440/data status' | tail -1` says `server is running`; if stopped, run only the `pg_ctl ... start` part of that step). Use `UBYHOST_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:55440/postgres` below. No server: write "CI only" in the report and STOP before step 4.
 
 4. Run the tests of this brief on PostgreSQL (one call, from `go/`):
 
    ```bash
-   cd go && UBYHOST_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:55432/postgres go test ./internal/web/ai/ ./cmd/ubyhost-web/ -count=1 2>&1 | tail -30
+   cd go && UBYHOST_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:55440/postgres go test ./internal/web/ai/ ./cmd/ubyhost-web/ -count=1 2>&1 | tail -30
    ```
 
    Expected: two lines, `ok  	github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/ai	<seconds>s` and `ok  	github.com/jsfpechar-ops/jsfpecharoperations/go/cmd/ubyhost-web	<seconds>s`. Then show that the named tests ran and none was skipped:
 
    ```bash
-   cd go && UBYHOST_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:55432/postgres go test ./internal/web/ai/ -count=1 -v -run '^TestGuideFactTableMatchesCatalog$|^TestGuideCleanFact$|^TestGuideQuickRoutes$|^TestGuideFactLinesCzechAndVietnamese$' 2>&1 | grep -E '^(--- |ok|FAIL)' | tail -30
+   cd go && UBYHOST_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:55440/postgres go test ./internal/web/ai/ -count=1 -v -run '^TestGuideFactTableMatchesCatalog$|^TestGuideCleanFact$|^TestGuideQuickRoutes$|^TestGuideFactLinesCzechAndVietnamese$' 2>&1 | grep -E '^(--- |ok|FAIL)' | tail -30
    ```
 
    Expected: one `--- PASS` line for each of 4 tests (times differ) and a final `ok` line; no `--- SKIP`, no `--- FAIL`:
