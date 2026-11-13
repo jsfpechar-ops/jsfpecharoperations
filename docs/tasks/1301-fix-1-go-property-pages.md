@@ -1,6 +1,6 @@
 # 1301-fix-1: Go property pages, review fixes
 
-Status: todo
+Status: review
 Depends on: 1301 | Base commit: 620119d | Branch: task/1301-go-property-pages
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B
 
