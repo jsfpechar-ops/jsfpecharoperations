@@ -623,7 +623,7 @@ def test_stays_filter_is_one_row_with_reset_apart_from_cancel_and_scope_survives
     with sync_api.sync_playwright() as playwright:
         browser, _context, page = _browser_context(playwright, scope_host, base, width=1280)
         errors = []
-        page.on("pageerror", lambda error: errors.append(str(error)))
+        page.on("pageerror", lambda error: _keep_page_error(errors, error))
         page.goto(base + "/reservations?lang=en")
         page.locator("[data-filter-toggle]").click()
         panel = page.locator("#stays-filter-panel")
