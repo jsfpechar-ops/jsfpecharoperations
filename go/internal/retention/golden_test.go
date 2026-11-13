@@ -65,8 +65,8 @@ func TestRunMatchesPythonGolden(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(g.Scenarios) != 2 {
-		t.Fatalf("golden has %d scenarios, want 2", len(g.Scenarios))
+	if len(g.Scenarios) != 4 {
+		t.Fatalf("golden has %d scenarios, want 4", len(g.Scenarios))
 	}
 	for _, sc := range g.Scenarios {
 		t.Run(sc.Name, func(t *testing.T) {
@@ -87,8 +87,13 @@ func TestRunMatchesPythonGolden(t *testing.T) {
 			}
 			cfg := Config{DryRun: sc.DryRun, AuditDays: 1095, AlertDays: 365, RateLimitHours: 24, NoticeDays: 30, DataDir: dataDir}
 			sum, err := Run(ctx, pool, cfg, today, now, sc.Owner)
-			if sc.Error != nil || err != nil || !sc.DryRun {
-				t.Fatalf("Run: %v; golden error %v, dry run %v", err, sc.Error, sc.DryRun)
+			switch {
+			case sc.Error == nil && err != nil:
+				t.Fatalf("Run: %v, Python had no error", err)
+			case sc.Error != nil && *sc.Error == "workspaces" && !errors.Is(err, ErrWorkspacesNotPorted):
+				t.Fatalf("Run error %v, want ErrWorkspacesNotPorted", err)
+			case sc.Error != nil && *sc.Error != "workspaces":
+				t.Fatalf("golden records Python error %s", *sc.Error)
 			}
 			var want, got []string
 			for _, c := range sc.Counts {
@@ -141,9 +146,9 @@ func TestRunMatchesPythonGolden(t *testing.T) {
 	}
 }
 
-// TestApplyIsRefusedUntil1211: with both apply switches on this build fails
-// closed before any step runs and writes nothing.
-func TestApplyIsRefusedUntil1211(t *testing.T) {
+// TestApplyWithoutDataDirDeletesNoGuest: with UBYHOST_DATA_DIR unset the
+// guest step fails before any row or file goes; the other steps still run.
+func TestApplyWithoutDataDirDeletesNoGuest(t *testing.T) {
 	pool := testPool(t)
 	ctx := context.Background()
 	fixture, err := os.ReadFile("testdata/fixture.sql")
@@ -153,17 +158,19 @@ func TestApplyIsRefusedUntil1211(t *testing.T) {
 	if _, err := pool.Exec(ctx, string(fixture)); err != nil {
 		t.Fatal(err)
 	}
-	cfg := Config{AuditDays: 1095, AlertDays: 365, RateLimitHours: 24, NoticeDays: 30, DataDir: t.TempDir()}
+	owner := int64(1)
+	cfg := Config{AuditDays: 1095, AlertDays: 365, RateLimitHours: 24, NoticeDays: 30}
 	now := time.Date(2026, 1, 20, 3, 0, 0, 0, time.UTC)
-	if _, err := Run(ctx, pool, cfg, now, now, nil); !errors.Is(err, errApplyNotPorted) {
-		t.Fatalf("Run error %v, want errApplyNotPorted", err)
+	sum, err := Run(ctx, pool, cfg, now, now, &owner)
+	if err == nil || !strings.Contains(err.Error(), "UBYHOST_DATA_DIR") {
+		t.Fatalf("Run error %v, want the data dir error", err)
 	}
-	var audits, guests int
-	if err := pool.QueryRow(ctx, `SELECT (SELECT COUNT(*) FROM audit), (SELECT COUNT(*) FROM guest)`).Scan(&audits, &guests); err != nil {
-		t.Fatal(err)
+	var n int
+	if err := pool.QueryRow(ctx, `SELECT COUNT(*) FROM guest`).Scan(&n); err != nil || n != 10 {
+		t.Fatalf("guests left %d (%v), want 10", n, err)
 	}
-	if audits != 8 || guests != 10 {
-		t.Fatalf("audit rows %d, guests %d: want 8 and 10 (nothing written)", audits, guests)
+	if len(sum.Counts) == 0 || sum.Counts[0].Name != "invoices" {
+		t.Fatalf("counts %v: guests must be missing, invoices first", sum.Counts)
 	}
 }
 
