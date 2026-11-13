@@ -12,7 +12,7 @@ Append-only.
 - 2026-10-26 | Unpaid = read-only, filing never blocked | owner | 0415
 - 2026-10-27 Grafana Cloud (EU free tier): subprocessor for ops logs/metrics (PII-free, OPS-3); compose profile "monitoring" (owner).
 - 2026-10-28 | [deps] `stripe` 16.0.1 pinned+hashed in requirements.lock (owner); calls via `App/app/stripe_connect.py`; shared monthly cap `UBYHOST_STRIPE_MONTHLY_API_CALLS` | 0428
-- 2026-10-28 | Property pages: Apify prefill, no AI, host reviews once (0431); no Airbnb assets; photos re-hosted, max 10, EXIF stripped, host confirms rights (0432); no-JS widget, Stripe checkout on host account (0434); English only | owner
+- 2026-10-28 | Property pages: Apify prefill, no AI, host reviews once (0431); no Airbnb assets; photos re-hosted, max 10, EXIF stripped, host confirms rights (0432); no-JS widget, Stripe on host account (0434); English only | owner
 - 2026-11-02 | OCR: Tesseract only, local, MRZ check digits, Max only; band crop; Paddle if ocr_readrate <90% | owner | test_doc_ocr
 - 2026-10-29 | Trials are extendable by the operator, 1-365 days | owner | 0448
 - 2026-10-29 | Stripe Accounts v2, responsibilities immutable, companies via business_type (0437); Connect: full Dashboard + collectors, Express rejected (0439) | owner
@@ -49,7 +49,7 @@ Append-only.
 - 2026-11-10 [guest] Guest form: B now, then C (owner).
 - 2026-11-10 [guest] Under-15s skip the signature; any adult on the booking signs and ticks a role ("parent or guardian" / "adult responsible for the child on this stay"). A child with no adult link is filed "no signature required" (owner).
 - 2026-11-10 [guest] Titles: cs "Registrace hosta", es "Ficha de huésped", fr "Fiche voyageur" (owner).
-- 2026-11-10 [head-count] Lower count with a stay fee: show new fee and "new bill will be e-mailed", confirm. Every lead change: "Check your changes" confirm. Host digest mail lists changed field names (not values), links to the stay page; changes only, not first registrations. Small Go change allowed. Early door-code risk accepted (mail guard covers it) (owner).
+- 2026-11-10 [head-count] Lower count with a stay fee: show new fee and "new bill will be e-mailed", confirm. Every lead change: "Check your changes" confirm. Host digest mail: changed field names, link to the stay page; changes only. Small Go change allowed. Early door-code risk accepted (owner).
 - 2026-11-10 [workflow] Plan: project file plans/head-count-change.md (not in repo); each complete plan gets a Fable review before building (owner).
 - 2026-11-10 [guest] 1086: unsaved prefilled values warn on leave (beforeunload) even before input.
 - 2026-11-11 [police] 1100: no tick, values in boxes; parser reads password+facility, never stored (owner; reverses 1097, 1085).
@@ -58,11 +58,13 @@ Append-only.
 - 2026-11-12 [billing] 1137: trial_pending->paused only via operator_pause().
 - 2026-11-12 [filing] 1138: claim fails closed; no retry.
 - 2026-11-12 [workflow] Orchestrator model by brief risk tier (A Opus thread+brief, Fable reviews; B Opus thread, Sonnet brief; C Sonnet); Haiku executes; threads parallel, no shared files; unsure = higher | owner | [workflow](workflow.md#roles-and-models)
-- 11-13 [workflow] 1199: every stored state/status column needs a TRANSITIONS table + pin test or an EXEMPT reason; test_sm_registry.py (owner)
+- 11-13 [workflow] 1199: state columns need TRANSITIONS+pin test or EXEMPT; test_sm_registry.py (owner)
 - 2026-11-12 [filing] 1148: cancel waits on `running` <30 min, else cancels + alert.
 - 2026-11-12 [filing] 1154: move waits on any `running` batch.
-- 2026-11-12 [door] 1149 lost race re-issues; 1155 revived code checked on lock (3 tries); 1156 info card + host mail; cs/vi ok.
+- 2026-11-12 [door] 1149 re-issue; 1155 lock check (3); 1156 info card+mail (owner)
 - 11-13 [calendar] 1172: Go-only; 1 mail/pair; manual dup skipped (owner)
-- 2026-11-13 [door] 1173/c: release backoff 15/15/60; new, retries, released; revive unissued expired.
-- 2026-11-13 [security] audit #966: 1200-1205; new Go env var goes in the compose list. Owner: K-S12 accepted; 1206 PG app role and 1207 lock refresh after #966.
-- 2026-11-13 [dep] 1390: Go PDF = gopdf v0.38.4 (MIT) + gofpdi + pkg/errors, `go/internal/pdf` only; Anthropic = thin HTTP in `go/internal/anthropic`, no dep; WebAuthn = go-webauthn/webauthn, login/passkey routes (owner)
+- 2026-11-13 [door] 1173/c: backoff 15/15/60; revive expired (owner)
+- 2026-11-13 [dep] 1390: gopdf v0.38.4 PDF in go/internal/pdf; thin anthropic HTTP; go-webauthn login/passkey (owner)
+- 2026-11-13 [infra] CI→GHCR; server pulls | owner | [1210](../tasks/1210-ci-built-go-image.md)
+- 2026-11-13 [security] #966: 1200-1205; Go env in compose; K-S12 ok; 1206-1207 after merge (owner)
+
