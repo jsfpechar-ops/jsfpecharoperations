@@ -1,6 +1,6 @@
 # 1301: Go port of property settings read-only pages
 
-Status: todo
+Status: review
 Depends on: 1300 (PR #980), 1380 (PR #985) | Base commit: c540113 | Branch: task/1301-go-property-pages
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B
 
