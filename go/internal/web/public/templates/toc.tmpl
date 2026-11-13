@@ -1,0 +1,26 @@
+{{define "tocitems"}}<ol>
+  {{- range .Sections}}
+  <li><a href="#s{{$.E .}}">{{$.T (printf "%s.s%s_title" $.Prefix .)}}</a></li>
+  {{- end}}
+</ol>{{end}}
+{{define "toc"}}
+<div class="legal-toc" id="legal-contents">
+  <nav class="legal-toc-wide" aria-label="{{.T "legal.toc"}}">
+    <p class="legal-toc-title" aria-hidden="true">{{.T "legal.toc"}}</p>
+    {{template "tocitems" .}}
+  </nav>
+  <details class="legal-toc-narrow">
+    <summary>{{.T "legal.toc"}}</summary>
+    <nav aria-label="{{.T "legal.toc"}}">{{template "tocitems" .}}</nav>
+  </details>
+</div>
+{{end}}
+{{define "sections"}}
+{{range .Sections}}
+<section class="legal-section" id="s{{$.E .}}">
+  <h2>{{$.T (printf "%s.s%s_title" $.Prefix .)}}</h2>
+  <div class="terms-section">{{$.TL (printf "%s.s%s_body" $.Prefix .) "name" $.Op.Name "ico" $.Op.ICO}}</div>
+  <p class="legal-back"><a href="#legal-contents">{{$.T "legal.back_to_toc"}} <span aria-hidden="true">&uarr;</span></a></p>
+</section>
+{{end}}
+{{end}}

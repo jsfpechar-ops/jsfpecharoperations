@@ -1,6 +1,6 @@
 # 1271: Go public legal pages, part 2 (templates, handler, parity, route)
 
-Status: todo
+Status: review
 Depends on: 1270 (same branch, its commit first) | Base commit: the 1270 commit | Branch: task/1270-go-public-legal-pages
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (about 16 calls)
 

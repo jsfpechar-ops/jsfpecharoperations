@@ -1,0 +1,28 @@
+{{define "title"}}{{.T "terms.page_title"}}{{end}}
+{{define "content"}}
+<header class="page-header">
+  <div class="page-header-main">
+    <h1>{{.T "terms.page_title"}}</h1>
+    <p class="lede">{{.T "terms.page_lede"}}</p>
+  </div>
+</header>
+<p class="small muted">{{.Effective "terms"}}</p>
+{{template "toc" .}}
+{{template "operator" .}}
+{{template "sections" .}}
+<div class="panel quiet">
+  <h2 style="margin-top:0">{{.T "terms.review_title"}}</h2>
+  <p class="small muted" style="margin-bottom:0">{{.T "terms.review_body"}}</p>
+</div>
+<p class="small muted">
+  <a href="/legal">{{.T "terms.cross_legal"}}</a>
+  &middot;
+  <a href="/privacy">{{.T "terms.cross_privacy"}}</a>
+  &middot;
+  <a href="/dpa">{{.T "terms.cross_dpa"}}</a>
+  &middot;
+  <a href="/subprocessors">{{.T "subprocessors.footer_link"}}</a>
+  &middot;
+  <a href="/?lang={{.Lang}}">{{.T "legal.back_home"}}</a>
+</p>
+{{end}}
