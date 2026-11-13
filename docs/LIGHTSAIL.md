@@ -200,6 +200,14 @@ git reset --hard <known-good-sha>
 cd deploy/lightsail && ./scripts/deploy.sh
 ```
 
+Rollback **to an earlier deployed commit** by its image (no build; only commits that were deployed from GitHub have images). One command on the server, with `SHA` the full 40-character commit and `REPO` the lowercase `owner/repo`:
+
+```bash
+cd /opt/ubyhost && SHA=<full-sha> REPO=<owner/repo> && git fetch origin "$SHA" && git reset --hard "$SHA" && cd deploy/lightsail && UBYHOST_IMAGE="ghcr.io/$REPO:$SHA" UBYHOST_GO_IMAGE="ghcr.io/$REPO-go:$SHA" ./scripts/deploy.sh
+```
+
+The quicker undo of the last deploy is the automatic one: `deploy.sh` restores `ubyhost:previous` and `ubyhost-go:previous` by itself when a deploy fails its checks.
+
 Rollback **UbyPort target** (test ↔ prod): edit `.env` `UBYHOST_UBYPORT_ENV`, then `./scripts/deploy.sh`.
 
 ## Day-to-day commands
@@ -379,7 +387,7 @@ The database volume is **not** replaced on deploy — only application code upda
 
 Production deploys automatically when CI on `main` finishes green, so every merge deploys. To re-run by hand: Actions → Deploy production → Run workflow, type DEPLOY.
 
-Workflow **Deploy production** pins the run to the current `main` revision, verifies CI is green for it, then SSHs and runs `git reset --hard` + `./scripts/deploy.sh`.
+Workflow **Deploy production** pins the run to the current `main` revision, verifies CI is green for it, builds the app image and the Go image on the GitHub runner, pushes both to GHCR (`ghcr.io/<owner>/<repo>:<commit sha>` and `...-go:<commit sha>`, plus a moving `production` or `staging` tag), then SSHs and runs `git reset --hard` + `./scripts/deploy.sh`. The server only pulls the two images; it does not build on a GitHub deploy (a manual `./scripts/deploy.sh` on the server still builds). If a pull fails, `deploy.sh` stops before changing anything and the old containers keep running. The images are public because the repo is public; GHCR creates each new package as private, so after the first push of a new package the owner sets it to public (Packages, the package, Package settings, Change visibility).
 
 | Secret | Purpose |
 |--------|---------|
