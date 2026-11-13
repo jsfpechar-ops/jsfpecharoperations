@@ -22,7 +22,7 @@ Read this file, then [status](docs/context/status.md). Open nothing else unless 
 2. Privacy first: store only what the law or a feature needs. No tracking cookies (`App/tests/test_privacy_first.py`). No third-party scripts except Turnstile, and PostHog on the public pages named in `App/app/analytics.py`. New personal-data field: add a line in `App/app/retention.py`. New outbound request: give the reason in the PR.
 3. Public repo: never commit secrets, `.env`, databases, guest data or operator identity.
 4. No new dependency without an owner decision line in [decisions](docs/context/decisions.md).
-5. SQL only through `App/app/db.py` helpers, Postgres-portable. A schema change is a new `App/app/migrations/` file.
+5. SQL only through `App/app/db.py` helpers, Postgres-portable. A schema change is a new `App/migrations_pg/` file.
 6. Light mode only. Auth forms work without JavaScript.
 7. Template, CSS or guest-page change: the browser and geometry tests for the changed pages pass with 0 skipped, plus one 390 px screenshot per changed page in the report.
 8. Never push to `main`. Merge only with `scripts/merge-pr-on-green.sh`. Green merges auto-deploy; keep drafts until they may ship.
