@@ -1,6 +1,6 @@
 # 1361: Go customer admin pages part 1 of 2: customer list page, parity golden, query nits
 
-Status: todo
+Status: review
 Depends on: 1363, 1380 (both on this branch) | Base commit: 4e3dc5e | Branch: go-customer-admin-pages (already checked out; do not create another)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B (admin pages; no filing, no guest data)
 
