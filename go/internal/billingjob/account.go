@@ -100,6 +100,14 @@ func parseDate(value string) (time.Time, error) {
 	return t, nil
 }
 
+// day10 is Python's value[:10] without the panic on a short string.
+func day10(s string) string {
+	if len(s) > 10 {
+		return s[:10]
+	}
+	return s
+}
+
 func pyOptional(s *string) string {
 	if s == nil {
 		return "None"
