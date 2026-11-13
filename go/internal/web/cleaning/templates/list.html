@@ -1,0 +1,29 @@
+{{ range $g := .Groups }}
+<section class="cleaning-date-group" aria-labelledby="cleaning-date-{{ $g.Day }}">
+  <h3 id="cleaning-date-{{ $g.Day }}"><time datetime="{{ $g.Day }}">{{ cdate $.Lang $g.Day }}</time></h3>
+  {{ range $it := $g.Items }}
+  <article class="cleaning-card" data-cleaning-color="{{ color $it.PropertyID }}" id="cleaning-{{ $it.EventID }}" aria-labelledby="cleaning-name-{{ $it.EventID }}">
+    <div class="cleaning-card-heading">
+      <h4 id="cleaning-name-{{ $it.EventID }}">{{ $it.Property }}</h4>
+      <span class="cleaning-origin">{{ if eq $it.Origin "automatic" }}{{ ct $.Lang "automatic" }}{{ else }}{{ ct $.Lang "manual" }}{{ end }}{{ if and $it.Overridden (eq $it.Origin "automatic") }} · {{ ct $.Lang "moved" }}{{ end }}</span>
+    </div>
+    {{ if $it.TimingUnavailable }}<p class="cleaning-warning" role="note">{{ ct $.Lang "timing_unavailable" }}</p>{{ end }}
+    {{ if $it.Conflict }}<p class="cleaning-warning" role="note">{{ ct $.Lang "conflict" }}</p>{{ end }}
+    <dl class="cleaning-facts">
+      {{ if $it.Checkout }}<div><dt>{{ ct $.Lang "checkout" }}</dt><dd>{{ cdate $.Lang $it.Checkout }} · {{ or $it.CheckoutTime (ct $.Lang "time_missing") }}</dd></div>{{ end }}
+      <div><dt>{{ ct $.Lang "arrival" }}</dt><dd>{{ if $it.NextArrival }}{{ cdate $.Lang $it.NextArrival }} · {{ or $it.CheckinTime (ct $.Lang "time_missing") }}{{ else }}{{ ct $.Lang "no_arrival" }}{{ end }}</dd></div>
+    </dl>
+    {{ if $it.Code }}<div class="cleaning-access"><span>{{ ct $.Lang "code" }}</span>
+      <strong class="cleaning-pin" translate="no">{{ $it.Code }}{{ if eq $it.CodeSource "ttlock" }}#{{ end }}</strong>
+      <span class="cleaning-code-source">{{ if eq $it.CodeSource "ttlock" }}{{ ct $.Lang "permanent_code" }}{{ else }}{{ ct $.Lang "manual_code" }}{{ end }}</span>
+    </div>{{ end }}
+    {{ if or $it.Notes $it.Instructions }}<div class="cleaning-instructions"><h5>{{ ct $.Lang "steps" }}</h5>
+      {{ if $it.Notes }}<p class="cleaning-text">{{ $it.Notes }}</p>{{ end }}
+      {{ if $it.Instructions }}<p class="cleaning-text">{{ $it.Instructions }}</p>{{ end }}
+    </div>{{ end }}
+  </article>
+  {{ end }}
+</section>
+{{ else }}
+<p class="cleaning-empty">{{ ct $.Lang "empty" }}</p>
+{{ end }}
