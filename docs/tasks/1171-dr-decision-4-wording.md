@@ -1,6 +1,6 @@
 # 1171: Correct DR plan decision 4 wording
 
-Status: todo
+Status: review
 Depends on: none | Base commit: 748098d | Branch: task/1171-dr-decision-4
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
