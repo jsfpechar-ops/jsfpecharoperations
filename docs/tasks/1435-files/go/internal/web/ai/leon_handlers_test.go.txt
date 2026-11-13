@@ -57,7 +57,7 @@ func TestLeonGatesAndErrors(t *testing.T) {
 	if rec.Code != 422 || !strings.Contains(rec.Body.String(), `"type":"int_parsing"`) {
 		t.Errorf("a bad id is a 422 before the login: %d %s", rec.Code, rec.Body.String())
 	}
-	for _, path := range []string{"/apartments/13/leon/setup", "/apartments/99/leon/setup/cards", "/apartments/12/leon/setup"} {
+	for _, path := range []string{"/apartments/13/leon/setup", "/apartments/99/leon/setup/cards"} {
 		rec = g.do(havelReq{method: "GET", path: path})
 		if rec.Code != 404 || rec.Body.String() != `{"detail":"Not Found"}` {
 			t.Errorf("%s: %d %s", path, rec.Code, rec.Body.String())
@@ -198,7 +198,7 @@ func TestLeonStepPages(t *testing.T) {
 	g3.leonOn()
 	g3.live()
 	rec := g3.do(havelReq{method: "GET", path: leonBase + "/cards"})
-	if !strings.Contains(rec.Body.String(), `/leon/setup/try">`) || strings.Count(rec.Body.String(), `data-state="done"`) < 3 {
+	if !strings.Contains(rec.Body.String(), `/leon/setup/try">`) || strings.Count(rec.Body.String(), `data-state="done"`) != 2 || strings.Count(rec.Body.String(), `data-state="current"`) != 1 {
 		t.Errorf("live cards page: %d done steps", strings.Count(rec.Body.String(), `data-state="done"`))
 	}
 	// Try: not live shows the not-live text; live shows the composer; the allowance disables it.

@@ -39,8 +39,10 @@ func LeonRoutes(d HavelDeps) []HavelRoute {
 		{"GET /apartments/{id}/leon/setup", "/apartments/{id}/leon/setup", d.leonEntry},
 		{"POST /apartments/{id}/leon/setup", "/apartments/{id}/leon/setup", d.leonSave},
 		{"/apartments/{id}/leon/setup", "/apartments/{id}/leon/setup", any405("GET, POST")},
+		{"HEAD /apartments/{id}/leon/setup", "/apartments/{id}/leon/setup", any405("GET, POST")},
 		{"GET /apartments/{id}/leon/setup/{step}", "/apartments/{id}/leon/setup/{step}", d.leonStepPage},
 		{"/apartments/{id}/leon/setup/{step}", "/apartments/{id}/leon/setup/{step}", any405("GET")},
+		{"HEAD /apartments/{id}/leon/setup/{step}", "/apartments/{id}/leon/setup/{step}", any405("GET")},
 	}
 	return append(routes, d.leonExtraRoutes()...)
 }
