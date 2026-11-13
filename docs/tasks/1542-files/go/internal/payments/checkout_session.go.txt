@@ -1,0 +1,121 @@
+package payments
+
+// The Stripe Checkout Session of the public booking site: the call inside
+// booking_checkout.start (App/app/booking_checkout.py lines 91-115) and its
+// guard, stripe_connect._api (see StripeOnboarder.guard). A direct charge on
+// the host's connected account, no application fee.
+//
+// Outbound request (PR text): POST https://api.stripe.com/v1/checkout/sessions
+// with the connected account in the Stripe-Account header. Reason: a guest
+// pays for a stay on the host's own Stripe account; the Go page handler for
+// POST /p/{slug}/checkout makes the same call Python makes today. It sends the
+// guest's name never; it sends the guest's e-mail address (customer_email, so
+// Stripe can mail the receipt) and the booking id. No card data passes here.
+
+import (
+	"context"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
+
+	"crypto/rand"
+	"encoding/hex"
+	"encoding/json"
+)
+
+// SessionMinutes is booking_checkout.SESSION_MINUTES: Stripe's minimum session
+// lifetime is 30 minutes, one more absorbs clock skew.
+const SessionMinutes = 31
+
+// CheckoutParams are the inputs of one booking Checkout Session.
+type CheckoutParams struct {
+	Account     string // the host's connected account id (acct_...)
+	ProductName string
+	AmountCZK   int // whole koruna; Stripe gets AmountCZK * 100 haléř
+	Email       string
+	Lang        string // "cs" or anything else (English)
+	SuccessURL  string
+	CancelURL   string
+	BookingID   int64
+}
+
+// CheckoutForm is the form body Stripe receives (stripe-python's encoding of
+// the params dict). expiresAt is a Unix time.
+func CheckoutForm(p CheckoutParams, expiresAt int64) url.Values {
+	id := strconv.FormatInt(p.BookingID, 10)
+	locale := "en"
+	if p.Lang == "cs" {
+		locale = "cs"
+	}
+	f := url.Values{}
+	f.Set("mode", "payment")
+	f.Set("line_items[0][quantity]", "1")
+	f.Set("line_items[0][price_data][currency]", "czk")
+	f.Set("line_items[0][price_data][unit_amount]", strconv.Itoa(p.AmountCZK*100))
+	f.Set("line_items[0][price_data][product_data][name]", p.ProductName)
+	f.Set("customer_email", p.Email)
+	f.Set("locale", locale)
+	f.Set("expires_at", strconv.FormatInt(expiresAt, 10))
+	f.Set("success_url", p.SuccessURL)
+	f.Set("cancel_url", p.CancelURL)
+	f.Set("metadata[site_booking_id]", id)
+	f.Set("payment_intent_data[metadata][site_booking_id]", id)
+	return f
+}
+
+// CreateCheckoutSession opens the session and returns its id and URL. It runs
+// the Stripe guard first (mode, key, monthly budget), so ErrStripeOff means no
+// request was sent. Any other error means the call failed or the answer had no
+// id or url; the caller frees the dates.
+func (s *StripeOnboarder) CreateCheckoutSession(ctx context.Context, p CheckoutParams) (string, string, error) {
+	key, _, err := s.guard(ctx)
+	if err != nil {
+		return "", "", err
+	}
+	form := CheckoutForm(p, s.Now().Unix()+SessionMinutes*60)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.base()+"/v1/checkout/sessions", strings.NewReader(form.Encode()))
+	if err != nil {
+		return "", "", err
+	}
+	buf := make([]byte, 16)
+	if _, err := rand.Read(buf); err != nil {
+		return "", "", err
+	}
+	req.Header.Set("Authorization", "Bearer "+key)
+	req.Header.Set("Stripe-Version", stripeVersion)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Stripe-Account", p.Account)
+	// stripe-python adds a random idempotency key to every POST.
+	req.Header.Set("Idempotency-Key", hex.EncodeToString(buf))
+	resp, err := s.client().Do(req)
+	if err != nil {
+		return "", "", fmt.Errorf("stripe: POST /v1/checkout/sessions: %w", err)
+	}
+	defer resp.Body.Close()
+	raw, err := io.ReadAll(io.LimitReader(resp.Body, stripeMaxResponse))
+	if err != nil {
+		return "", "", err
+	}
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		var se struct {
+			Error struct {
+				Message string `json:"message"`
+				Code    string `json:"code"`
+			} `json:"error"`
+		}
+		_ = json.Unmarshal(raw, &se)
+		return "", "", fmt.Errorf("stripe: POST /v1/checkout/sessions: HTTP %d: %s (%s)", resp.StatusCode, se.Error.Message, se.Error.Code)
+	}
+	var out struct {
+		ID  string `json:"id"`
+		URL string `json:"url"`
+	}
+	if err := json.Unmarshal(raw, &out); err != nil || out.ID == "" || out.URL == "" {
+		return "", "", fmt.Errorf("stripe: checkout session answer without id or url")
+	}
+	return out.ID, out.URL, nil
+}
+
