@@ -51,7 +51,7 @@ Host sessions (0911): the cookie is signed, HttpOnly, Secure on HTTPS and SameSi
 | **Guest POST CSRF** | Guest forms do not carry host authority and require the scoped permalink/PIN cookie. Keep PIN protection enabled. |
 | **Overlapping stay selection** | One apartment permalink/PIN can select any active stay inside its configured visibility window. Keep the window short and avoid overlapping links where booking-date disclosure is unacceptable. |
 | **Content Security Policy** | Existing inline scripts/styles require `'unsafe-inline'`; Jinja autoescape remains the primary XSS control. Remove inline code before tightening this directive. |
-| **Stateless logout** | Logout clears the browser cookie but does not revoke a copied token. Login-address changes, account disablement, and 2FA changes increment `session_version`; signed-in host sessions last up to 400 days until logout. |
+| **Stateless logout** | Logout clears the browser cookie but does not revoke a copied token. Login-address changes, account disablement, and 2FA changes increment `session_version`; remember-me host sessions last up to 30 days since the cookie was last re-signed and 90 days since login (Python and Go enforce the same limits); other host sessions last 12 hours, until logout. |
 | **Backups** | Production snapshots are encrypted with `age` and the identity is held offline (OPS-1); the key never travels with the copy. Passport attachments are not in the database backup and are short-lived by design. |
 
 ## Source-control hygiene
