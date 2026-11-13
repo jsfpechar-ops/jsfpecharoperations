@@ -62,6 +62,9 @@ const (
 	BookingSwitchEnv = "UBYHOST_GO_BOOKING_WEBHOOK"
 	bookingLockName  = "booking_site_dates" // db.lock_key name, shared with Python
 	bookingBaseURL   = "http://127.0.0.1:8080"
+	// bookingProcessTimeout bounds one event; it is longer than the 30 s
+	// Stripe client timeout so the refund call can time out on its own.
+	bookingProcessTimeout = 2 * stripeTimeout
 )
 
 const (
@@ -143,10 +146,17 @@ func NewBookingWebhook(pool *pgxpool.Pool, getenv func(string) string, now func(
 // Process is stripe_connect.process_event for a booking event: a seen event id
 // is a no-op; the id is recorded only after the handler returned, so an error
 // leaves it unrecorded and Stripe's retry runs it again.
+//
+// It runs detached from the caller's cancellation (bounded by
+// bookingProcessTimeout): when Stripe hangs up mid-request after the paid
+// commit, the audit line, the mails and the event row are still written.
+// Otherwise the retry would find the booking paid and send no mail.
 func (b *BookingWebhook) Process(ctx context.Context, ev stripeEvent, mode string) error {
 	if ev.ID == "" {
 		return errors.New("event without id")
 	}
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), bookingProcessTimeout)
+	defer cancel()
 	var one int
 	err := b.Pool.QueryRow(ctx, eventSeenSQL, ev.ID).Scan(&one)
 	if err == nil {

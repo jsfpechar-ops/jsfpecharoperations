@@ -108,10 +108,12 @@ func bookingEnv(g bookingGolden, extra map[string]string) func(string) string {
 	return func(k string) string { return env[k] }
 }
 
-// fakeStripe records each refund request; payment intent pi_fail gets a 402.
+// fakeStripe records each refund request. Payment intent pi_fail gets a 402 on
+// its first call only (Stripe then recovers), as the golden script's fake.
 type fakeStripe struct {
-	mu    sync.Mutex
-	calls []map[string]any
+	mu     sync.Mutex
+	calls  []map[string]any
+	failed int // refund calls answered with an error
 }
 
 func newFakeStripe(t *testing.T) (*fakeStripe, *httptest.Server) {
@@ -132,8 +134,12 @@ func newFakeStripe(t *testing.T) (*fakeStripe, *httptest.Server) {
 				"idempotency_key":          r.Header.Get("Idempotency-Key"),
 			})
 		}
+		fail := form.Get("payment_intent") == "pi_fail" && f.failed == 0
+		if fail {
+			f.failed++
+		}
 		f.mu.Unlock()
-		if form.Get("payment_intent") == "pi_fail" {
+		if fail {
 			w.WriteHeader(http.StatusPaymentRequired)
 			_, _ = io.WriteString(w, `{"error":{"message":"fake Stripe error","code":"card_declined"}}`)
 			return

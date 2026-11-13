@@ -125,7 +125,8 @@ SEED = [
          _booking(4, 11, 1, "pending", "2027-03-12", "2027-03-14", lang="en", hold=204),
          # 5 clash, owner 2 has no Stripe account: raises, stays pending.
          _booking(5, 12, 2, "pending", "2027-03-12", "2027-03-14", hold=205),
-         # 6 clash, Stripe answers an error: raises, stays pending.
+         # 6 clash, Stripe answers an error: raises, stays pending; the redelivery
+         # after Stripe recovered refunds it.
          _booking(6, 11, 1, "pending", "2027-03-11", "2027-03-13"),
          # 7 clash, the session has no payment intent: raises.
          _booking(7, 11, 1, "pending", "2027-03-13", "2027-03-16"),
@@ -181,12 +182,17 @@ EVENTS = [
     _event("evt_g15", EXPIRED, 1, payment_status="unpaid", intent=None),
     _event("evt_g16", DONE, 999, session="cs_unknown"),
     _event("evt_g17", DONE, 4),
+    # evt_g08 redelivered after Stripe recovered: one refund, one set of clash mails.
+    _event("evt_g08", DONE, 6, intent="pi_fail"),
 ]
 
 
 class _FakeRefunds:
+    """pi_fail raises on its first call only: Stripe then recovers."""
+
     def __init__(self, calls):
         self.calls = calls
+        self.failed = 0
 
     def create(self, params=None, options=None):
         params = params or {}
@@ -197,7 +203,8 @@ class _FakeRefunds:
             "stripe_account": options.get("stripe_account"),
             "idempotency_key": options.get("idempotency_key"),
         })
-        if params.get("payment_intent") == "pi_fail":
+        if params.get("payment_intent") == "pi_fail" and self.failed == 0:
+            self.failed += 1
             raise RuntimeError("fake Stripe error")
         return {"id": f"re_{len(self.calls)}", "status": "succeeded"}
 
@@ -291,7 +298,8 @@ def render() -> str:
         config.MAIL_BACKEND = "console"
         config.PUBLIC_BASE_URL = BASE_URL
         config._SECRET_KEY = SECRET
-        stripe_connect._client = lambda: _FakeClient(calls)
+        fake = _FakeClient(calls)
+        stripe_connect._client = lambda: fake
         booking_invoice.ensure = lambda booking_id: None
 
         db.init_db()
