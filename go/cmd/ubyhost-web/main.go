@@ -175,12 +175,7 @@ func run() int {
 	}
 
 	m := &metrics{counts: map[key]int64{}}
-	mux := http.NewServeMux()
-	mux.Handle("GET /healthz", m.wrap("/healthz", healthz(pool)))
-	mux.Handle("GET /metrics", m.wrap("/metrics", m.serve))
-	registerWeb(mux, m, pool)
-	registerFiling(mux, m, pool)
-	mux.Handle("/", m.wrap("/", notFound))
+	mux := newMux(m, pool)
 
 	srv := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}
 	errCh := make(chan error, 1)
@@ -207,8 +202,23 @@ func run() int {
 	return 0
 }
 
+// newMux builds every route: health and metrics, the lane files, the
+// per-thread files (registerRoutes), then the "/" catch-all.
+func newMux(m *metrics, pool *pgxpool.Pool) *http.ServeMux {
+	mux := http.NewServeMux()
+	mux.Handle("GET /healthz", m.wrap("/healthz", healthz(pool)))
+	mux.Handle("GET /metrics", m.wrap("/metrics", m.serve))
+	registerWeb(mux, m, pool)
+	registerFiling(mux, m, pool)
+	for _, fn := range routeFuncs {
+		fn(mux, m, pool)
+	}
+	mux.Handle("/", m.wrap("/", notFound))
+	return mux
+}
+
 // goIntervals are the schedule intervals (minutes) that cap a retry backoff.
-// Each lane owns its own map: register_jobs.go, register_filing.go.
+// Each lane owns its own map (register_jobs.go, register_filing.go); registerJob adds the rest.
 var goIntervals = mergeIntervals(jobIntervals, filingIntervals)
 
 // goHandlers maps each Go-owned job kind to its handler, merged from the
@@ -222,6 +232,12 @@ func goHandlers(pool *pgxpool.Pool) map[string]jobs.Handler {
 			}
 			out[k] = h
 		}
+	}
+	for k, f := range jobFactories {
+		if _, dup := out[k]; dup {
+			panic("duplicate job kind in lane files: " + k)
+		}
+		out[k] = f(pool)
 	}
 	return out
 }

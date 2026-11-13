@@ -6,6 +6,10 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/jobs"
 )
 
 func TestParseGoKindsPush(t *testing.T) {
@@ -90,4 +94,33 @@ func TestEveryHandlerHasInterval(t *testing.T) {
 			t.Errorf("interval %q has no handler", k)
 		}
 	}
+}
+
+func TestRoutesRegisterOnce(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Fatalf("a route pattern is registered twice: %v", r)
+		}
+	}()
+	newMux(&metrics{counts: map[key]int64{}}, nil)
+}
+
+func TestDuplicateRouteFails(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Fatal("registering a pattern twice must panic")
+		}
+	}()
+	mux := http.NewServeMux()
+	mux.Handle("GET /twice", http.NotFoundHandler())
+	mux.Handle("GET /twice", http.NotFoundHandler())
+}
+
+func TestDuplicateJobKindFails(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Fatal("registerJob with an existing kind must panic")
+		}
+	}()
+	registerJob("push", 1, func(*pgxpool.Pool) jobs.Handler { return nil })
 }
