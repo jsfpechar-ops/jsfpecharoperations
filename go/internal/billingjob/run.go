@@ -242,7 +242,10 @@ func (r *Runner) invoicePeriod(ctx context.Context, acc jobAccount, today time.T
 	if acc.PeriodEnd == "" { // Python: None[:10] raises
 		return false, errors.New("billing account has a period start but no period end")
 	}
-	from, to := acc.PeriodStart[:10], acc.PeriodEnd[:10]
+	if _, err := parseDate(acc.PeriodEnd); err != nil {
+		return false, err
+	}
+	from, to := day10(acc.PeriodStart), day10(acc.PeriodEnd)
 	var existing int64
 	err = r.Pool.QueryRow(ctx,
 		`SELECT id FROM platform_invoice WHERE owner_user_id = $1 AND period_from = $2 AND period_to = $3
