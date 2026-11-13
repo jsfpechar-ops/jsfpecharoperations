@@ -11,7 +11,7 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
             "The service providers that may process personal data for UbyHost, what they do, "
             "and when they are used. This register forms part of the Data Processing Agreement."
         ),
-        "subprocessors.effective": "Effective date: 4 October 2026. Version 1.2.",
+        "subprocessors.effective": "Effective date: 15 December 2026. Version 1.3.",
         "subprocessors.controller_note_title": "Who appoints these providers",
         "subprocessors.controller_note": (
             "For Guest Data, the accommodation provider or alternate controller configured for the "
@@ -89,6 +89,21 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "subprocessors.google_safeguard": (
             "Provider DPA and lawful GDPR Chapter V safeguards where required."
+        ),
+        # Brief 1170 (DR plan step 7): conditional disaster-recovery host. The
+        # effective date above is at least 30 days after the notice to hosts
+        # (change_body); the owner confirms it.
+        "subprocessors.hetzner_provider": "Hetzner Online GmbH",
+        "subprocessors.hetzner_purpose": (
+            "Disaster-recovery hosting: a replacement server used only if the main hosting is "
+            "unavailable, and for restore drills."
+        ),
+        "subprocessors.hetzner_data": "All app data, including Guest Data, restored from backup.",
+        "subprocessors.hetzner_location": (
+            "EU, Germany or Finland. Conditional; used only during a recovery or a drill."
+        ),
+        "subprocessors.hetzner_safeguard": (
+            "Hetzner data processing agreement under Art. 28 GDPR. No transfer outside the EU."
         ),
         "subprocessors.recipients_title": "Recipients that are not subprocessors",
         "subprocessors.recipient_google_ads": (
