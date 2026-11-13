@@ -83,3 +83,22 @@ Each W step: Go renders the same templates' content (content tests, not byte par
 1. Approve this plan and the first three threads.
 2. Dependencies (one line each when its step starts): Go PDF library, WebAuthn library, Anthropic Go SDK or plain HTTP.
 3. Whether billing PDFs wait for W5 (recommended) or move with J3.
+
+## 6. Lane threads and Files lists (owner approved all steps, 2026-11-13)
+
+Order changed by the owner's rule "filing last": lane F runs after J7, and W3 (guest pages) plus the stay "send" parts of `admin.py` run after F2.
+
+`go/cmd/ubyhost-web/main.go` is the one file every lane needs, so **P0 goes first**, alone: it moves route and job registration out of `main.go` into one file per lane, each starting empty. After P0 no lane edits `main.go`.
+
+| Thread | Steps | Files it may touch (nothing else) |
+|---|---|---|
+| P0 "Split Go registration per lane" (Tier B, short) | P0 | `go/cmd/ubyhost-web/main.go`, `main_test.go`, new `register_jobs.go`, `register_schema.go`, `register_web.go`, `register_filing.go`; `go/internal/jobs/queue.go` (`jobNames` for all 15 kinds) |
+| J "Port remaining jobs and scheduler to Go" | J1-J5, J7 (J6 when TTLock unblocks) | new `go/internal/{photosweep,retention,billingjob,lifecyclemail,guideimport,scheduler}/`; `go/internal/mail/` (J owns it; other lanes add new files only); `register_jobs.go`; new `App/scripts/*_golden.py` for its jobs; J7 only: `App/app/scheduler.py`, `App/app/worker.py`, `deploy/lightsail/docker-compose.yml`; `docs/ENVIRONMENT.md` (J only) |
+| D "Move database changes to Go" | D1 | `go/internal/schema/`, `register_schema.go`, `deploy/lightsail/scripts/deploy.sh`, `deploy/lightsail/scripts/pg-cutover.sh`, `docs/LIGHTSAIL.md`; removal PR: `App/scripts/pg_schema.py` |
+| W "Port web pages to Go" | W1, W2, W4, W5, W6, W7, then W3 after F2 | new `go/internal/web/<area>/`, `go/internal/hostweb/`, `go/internal/session/`, `register_web.go`, new `go/internal/mail/<auth>_*.go` files; Python route files only in their removal PRs |
+| F "Move police filing to Go" (last, highest risk) | F1, F2 | `go/internal/ubyport/`, `go/internal/statemachine/`, `register_filing.go`, `App/app/reporting.py` (`submit_stay_if_complete` body only), the send/re-file handlers in `App/app/routes/admin.py` |
+| X "Retire Python" | X1-X3 | after all lanes; touches everything, so runs alone |
+
+Shared files nobody but the coordinator edits: `docs/context/status.md`, `docs/context/test-map.md`, `docs/context/decisions.md`. A lane that needs a line there sends it to the coordinator. `deploy/lightsail/docker-compose.yml` belongs to J until J7 merges.
+
+Start order (max 3): P0 alone, then J, D, W together; F when D finishes and J7 has merged; X last.
