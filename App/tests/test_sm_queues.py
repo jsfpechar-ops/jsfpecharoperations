@@ -50,6 +50,7 @@ PUSH = "App/app/push.py"
 PUSHSEND = "go/internal/pushsend/pushsend.go"
 CAPI = "App/app/meta_capi.py"
 GOCAPI = "go/internal/metacapi/send.go"
+PHOTOSWEEP = "go/internal/photosweep/db.go"
 SIGNUP = "App/app/signup.py"
 IMPORT = "App/app/guest_guide_import.py"
 MERGE = "App/app/guest_guide_merge.py"
@@ -214,6 +215,7 @@ SEND_SITES = {
     (CAPI, "send_pending"): 5,
     (GOCAPI, "expireUnsendable"): 1,
     (GOCAPI, "Send"): 5,
+    (PHOTOSWEEP, "expireUnsendableMeta"): 1,
     (SIGNUP, "withdraw_consent"): 1,
 }
 _WITHDRAW = '"send_state": "withdrawn" if row["send_state"] in ("pending", "sending")'
@@ -228,6 +230,7 @@ SEND_MOVES = [
     (CAPI, "send_pending", '"send_state": SENT,', ("sending",), "sent"),
     (SIGNUP, "withdraw_consent", _WITHDRAW, ("pending", "sending"), "withdrawn"),
     (GOCAPI, "expireUnsendable", 'stateExpired, "older than Meta\'s 7-day event window", statePending,', ("pending",), "expired"),
+    (PHOTOSWEEP, "expireUnsendableMeta", '"expired", "older than Meta\'s 7-day event window", "pending",', ("pending",), "expired"),
     (GOCAPI, "Send", "statePending, stateSending, iso(now.Add(-staleSending))", ("sending",), "pending"),
     (GOCAPI, "Send", "stateSending, iso(now), id, statePending)", ("pending",), "sending"),
     (GOCAPI, "Send", "stateSent, attempts, ubyport.UTCNow(), id, stateSending)", ("sending",), "sent"),
