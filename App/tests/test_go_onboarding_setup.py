@@ -7,6 +7,7 @@ scripts/onboarding_setup_golden.py and make the Go test pass again.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -18,9 +19,13 @@ COMMITTED = APP_DIR.parent / "go" / "internal" / "web" / "onboarding" / "testdat
 
 def test_onboarding_setup_golden_matches_python(tmp_path):
     out = tmp_path / "setup_golden.json"
+    env = os.environ.copy()
+    env.pop("UBYHOST_DATABASE_URL", None)
+    env.pop("UBYHOST_TEST_DATABASE_URL", None)
     result = subprocess.run(
         [sys.executable, str(SCRIPT), str(out)],
         cwd=APP_DIR,
+        env=env,
         capture_output=True,
         text=True,
         timeout=120,
