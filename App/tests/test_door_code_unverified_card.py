@@ -129,10 +129,15 @@ def test_the_delayed_card_closes_when_the_stay_ends_without_a_code(lock):
         "UPDATE reservation SET date_from = ?, date_to = ? WHERE id = ?",
         ((today - timedelta(days=3)).isoformat(), (today - timedelta(days=1)).isoformat(), stay),
     )
-    door_codes.reconcile()
+    # Not reconcile(): its _alert_delayed would raise the other stay's card again and hide a sweep that
+    # ignores which stay a card belongs to (1173d).
+    door_codes._expire_ended_stays(db.utcnow())
     assert _row(row_id)["state"] == door_codes.EXPIRED
+    other_card = alerts.open_alert(f"door_code_delayed:{other}")
+    door_codes._resolve_unverified_cards()
     assert alerts.open_alert(f"door_code_delayed:{stay}") is None
-    assert alerts.open_alert(f"door_code_delayed:{other}") is not None  # still waiting: the card stays
+    still = alerts.open_alert(f"door_code_delayed:{other}")  # still waiting: the same card stays open
+    assert still is not None and still["id"] == other_card["id"] and still["resolved_at"] is None
 
 
 def test_the_delayed_card_closes_when_a_waiting_stay_is_cancelled(lock):

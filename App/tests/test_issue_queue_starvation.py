@@ -216,3 +216,67 @@ def test_an_expired_row_that_had_a_code_stays_expired(lock):
     db.execute("UPDATE door_code SET provider_code_id = 'code-9' WHERE id = ?", (row_id,))  # issued, then expired
     assert door_codes._revive_unissued_expired() == 0
     assert _row(row_id)["state"] == door_codes.EXPIRED
+
+
+# --- 1173d ---------------------------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        "UPDATE reservation SET status = 'cancelled' WHERE id = ?",
+        "UPDATE reservation SET registration_completed_at = NULL WHERE id = ?",
+    ],
+)
+def test_an_expired_row_of_a_stay_that_is_not_eligible_is_not_revived(lock, change):
+    """The window is ahead, but the stay is cancelled or not registered: the eligibility clause keeps the row."""
+    stay, row_id = _expired_unissued(2)
+    db.execute(change, (stay,))
+    assert door_codes._revive_unissued_expired() == 0
+    assert _row(row_id)["state"] == door_codes.EXPIRED
+
+
+def _reset_audited(row_id: int):
+    return db.query_one(
+        "SELECT 1 AS n FROM audit WHERE action = 'door_code_reset' AND detail = ?", (f"door_code={row_id}",)
+    )
+
+
+@pytest.mark.parametrize("how", ["plan", "account"])
+def test_an_expired_row_is_kept_when_no_new_row_could_be_made(monkeypatch, lock, how):
+    """ensure_row would refuse this owner: deleting the row would leave the stay with none (1173d)."""
+    stay, row_id = _expired_unissued(2)
+    if how == "plan":
+        monkeypatch.setattr(ttlock, "allowed_for", lambda owner: False)
+    else:
+        db.execute(
+            "UPDATE lock_account SET status = 'error' WHERE owner_user_id = "
+            "(SELECT a.owner_user_id FROM apartment a JOIN reservation r ON r.apartment_id = a.id WHERE r.id = ?)",
+            (stay,),
+        )
+    assert door_codes._revive_unissued_expired() == 0
+    assert _row(row_id)["state"] == door_codes.EXPIRED
+    assert _reset_audited(row_id) is None
+
+
+def test_an_expired_row_is_revived_when_the_owner_can_hold_a_code(lock):
+    _, row_id = _expired_unissued(2)
+    assert door_codes._revive_unissued_expired() == 1
+    assert _row(row_id) is None
+    assert _reset_audited(row_id)
+
+
+def test_the_due_query_follows_the_number_of_release_reasons(monkeypatch):
+    """The IN list is built from RELEASE_REASONS: a fourth reason must not break the bindings (1173d)."""
+    monkeypatch.setattr(door_codes, "RELEASE_REASONS", (*door_codes.RELEASE_REASONS, "other_release"))
+    retry_id = _healthy()
+    db.execute(
+        "UPDATE door_code SET state = ?, attempts = 1, last_error = 'network', next_attempt_at = ? WHERE id = ?",
+        (door_codes.RETRYING, OLD, retry_id),
+    )
+    released_id = _stuck("not_eligible")
+    db.execute("UPDATE door_code SET last_error = 'other_release' WHERE id = ?", (released_id,))
+    seen = []
+    monkeypatch.setattr(door_codes, "issue", lambda rid, allow_gateway=False: seen.append(rid) or True)
+    door_codes._issue_due(db.utcnow())
+    assert seen.index(retry_id) < seen.index(released_id)  # the fourth reason ranks last too
