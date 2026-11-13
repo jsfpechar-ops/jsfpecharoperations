@@ -44,4 +44,13 @@ Commit: 23bfe30f (`1201: steps 1-8 compose container hardening`)
 
 ## Owner steps left
 
-Copied from brief §9 "Owner steps" (1 to 7): check cert and Caddyfile permissions on the server first; mark the PR ready and merge with `scripts/merge-pr-on-green.sh`; verify `docker compose --profile monitoring ps`, `/healthz`, caddy logs, and Grafana `up{job=...}` and Loki logs; revert if anything fails.
+Copied from brief §9 "Owner steps" (1 to 7): check cert and Caddyfile permissions on the server first (the key must be readable by root OR covered by `DAC_READ_SEARCH`, which follow-up 1201b now grants); mark the PR ready and merge with `scripts/merge-pr-on-green.sh`; verify `docker compose --profile monitoring ps`, `/healthz`, caddy logs, and Grafana `up{job=...}` and Loki logs; revert if anything fails.
+
+## Follow-up 1201b
+
+- CI `caddy` job failed after task 1201 added `cap_drop: [ALL]`. Reproduction not done: no Docker daemon in this environment (`docker version` could not reach /var/run/docker.sock); not started, per brief.
+- Likely cause (from code reading, not reproduced): caddy runs as root in `caddy:2-alpine`. With all caps dropped, root lacks CAP_DAC_OVERRIDE/CAP_DAC_READ_SEARCH and cannot read `caddy/certs/origin-key.pem` (mode 0600, owned by the runner uid). `Caddyfile.cloudflare` line 20 loads that key in `tls`, which `caddy validate` reads.
+- Fix: `deploy/lightsail/docker-compose.yml` caddy service `cap_add: [NET_BIND_SERVICE, DAC_READ_SEARCH]` with a comment. `cap_drop: [ALL]` and `no-new-privileges` unchanged. DAC_READ_SEARCH is read-only bypass.
+- Not added: DAC_OVERRIDE, CHOWN, SETUID, SETGID. No evidence they are needed: validation reads the key; the /data and /config ownership was not checked.
+- Verify: `COMPOSE_PROFILES=walg,monitoring,go docker compose -f deploy/lightsail/docker-compose.yml config -q` with `.env` touched and `UBYHOST_DOMAIN`/`ACME_EMAIL` set: exit 0. Caddy validate loop for both Caddyfiles and both app domains: not run (no Docker). `App/tests/test_wp32_container_sizing.py` (run with the shared venv from `App/`): 16 passed.
+- Owner: the CI caddy job still needs a green run to confirm the fix. Not verified.
