@@ -35,6 +35,7 @@ STORED_KINDS = {
     "stay_fee_no_pay_way": {"property": "Loft"},
     "door_code_reissued": {"property": "Loft", "date": "2026-09-11"},
     "door_code_reissued_no_email": {"property": "Loft", "date": "2026-09-11"},
+    "door_code_pin_unverified": {"property": "Loft", "date": "2026-09-11"},
 }
 
 ENGLISH_MARKER = "english log copy"
@@ -104,6 +105,21 @@ def test_a_calendar_failure_card_names_the_feed_and_the_error():
     )
     assert cs["display_title"] == "Kalendář 'Karlín Loft' se nepodařilo načíst."
     assert "HTTP 500" in cs["display_detail"]
+
+
+def test_a_double_booking_card_names_both_stays_in_the_hosts_language():
+    params = {
+        "property": "Test flat",
+        "dates": "05.05.2027 \u2013 08.05.2027",
+        "other_dates": "07.05.2027 \u2013 10.05.2027",
+        "other_source": "booking",
+    }
+    en = _card("double_booking", "stored", "stored", params, "en")
+    cs = _card("double_booking", "stored", "stored", params, "cs")
+    assert en["display_title"] == "Test flat: two bookings overlap on 05.05.2027 \u2013 08.05.2027."
+    assert cs["display_title"].startswith("Test flat: dv\u011b rezervace")
+    assert "07.05.2027 \u2013 10.05.2027" in en["display_detail"]
+    assert "booking" in cs["display_detail"]
 
 
 @pytest.mark.parametrize(

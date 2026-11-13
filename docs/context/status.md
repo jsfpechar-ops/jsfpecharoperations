@@ -3,14 +3,13 @@
 Updated: 2026-11-13.
 
 ## Production
-- Magic-link 1–2 done; access log off. `/healthz` 1.1.0. Main 11-13: `748098d9` (#957).
+- Magic-link 1–2 done; access log off. `/healthz` 1.1.0. Main 11-13: `84e966f` (#962).
 - Postgres cutover done. Billing ON. SQLite rollback only via pg-cutover scripts. `COMPOSE_PROFILES=walg,monitoring,go`.
 - Go jobs = queue: billing_snapshot, stripe_sweep, ical, push, submit, posthog, meta_capi, deadlines (live since 11-13, healthy). Python: mail, door_codes.
 - Go live, all routes on main (11-12): palette, calendar, payments QR/connect/requests, stripe webhook, push, pay PNGs — paths in [ENVIRONMENT](../ENVIRONMENT.md). Rollback: trim `UBYHOST_GO_PATHS`, `caddy-validate.sh`, `docker compose up -d caddy`. Go migration done (#934-936, #941/#942, #944/#945, #949).
 - AI: `havel,leon,guide_import` (`guide_translate` off). Stripe test. Guest QR 404 on both when the owner has no IBAN.
-
-## Now
-- 11-13: DR steps 3/5/6/7 merged (#946, #948, #953, #957; Hetzner copy awaits owner and lawyer). Open drafts: #958 (DR decision 4 wording), #959 (no-report stays leave filing watch), stuck-queued-job alert (building). Later: remove Python deadlines code.
+- 11-12: 1172 double-booking alarm, Go-only | [1172](../tasks/1172-double-booking-alarm.md)
+- 11-13: merged #946/#948/#953/#957 (DR 3/5/6/7; Hetzner copy awaits owner and lawyer), #958, #959, #962 (stuck-queue alert). Later: remove Python deadlines code.
 - 11-10 live: 1085/1086 police letter paste (#882, #892); 1089/1090 under-15 signature (#885, #888); 1091/1093 short guest titles (#883, #887); 1092 head-count single writer (#884); 1094 H0 check (#893); 1096 Save row, leave warning (#894).
 - Building: 1095 head-count H1 (flag `UBYHOST_HEADCOUNT_LEAD_LIVE` off). Next: H2a, H2b, H3, H4, guest form C.
 - 11-10: [Speed](../plans/speed-and-ease.md)/[group](../plans/guest-group-registration.md) overnight build: merged and auto-deployed #854-#867, #871; late-filing count was 0. Held drafts for copy review: #868 (F1 bill mail), #869 (F3 fee update mail).

@@ -1551,9 +1551,9 @@ def build_door_code(
     return content
 
 
-def door_code_notice(door_code_id: int, variant: str) -> Optional[int]:
+def door_code_notice(door_code_id: int, variant: str, key_suffix: str = "") -> Optional[int]:
     try:
-        return _door_code_notice(door_code_id, variant)
+        return _door_code_notice(door_code_id, variant, key_suffix)
     except Exception:
         log.exception("door_code_notice_failed door_code=%s variant=%s", door_code_id, variant)
         return None
@@ -1575,7 +1575,7 @@ def _door_code_payload(lang: str, subject: str, body: str, reservation_id: int) 
     }
 
 
-def _door_code_notice(door_code_id: int, variant: str) -> Optional[int]:
+def _door_code_notice(door_code_id: int, variant: str, key_suffix: str = "") -> Optional[int]:
     row = db.query_one("SELECT * FROM door_code WHERE id = ?", (door_code_id,))
     if not row:
         return None
@@ -1592,7 +1592,7 @@ def _door_code_notice(door_code_id: int, variant: str) -> Optional[int]:
     except ValueError:
         stay_day = reservation["date_from"]
     params: Dict[str, str] = {"property": apartment["internal_name"] or "", "date": stay_day}
-    if variant == "failed":
+    if variant in ("failed", "moved_failed"):
         params["reason"] = _door_code_reason(lang, (row["last_error"] or "").strip() or "other")
     if variant == "cancelled_not_deleted" and row["pin_enc"]:
         pin = db.decrypt_field(row["pin_enc"]) or ""
@@ -1603,7 +1603,7 @@ def _door_code_notice(door_code_id: int, variant: str) -> Optional[int]:
     payload = _door_code_payload(lang, subject, body, reservation["id"])
     return mail.enqueue(
         kind="door_code_notice",
-        idempotency_key=f"door_code_notice:{door_code_id}:{variant}",
+        idempotency_key=f"door_code_notice:{door_code_id}:{variant}" + (f":{key_suffix}" if key_suffix else ""),
         to_email=to_email,
         subject=subject,
         payload=payload,
@@ -1616,7 +1616,15 @@ def _door_code_notice(door_code_id: int, variant: str) -> Optional[int]:
 
 # Notices about a code that was not created. The host creates it by hand, and
 # support gets a copy so the problem is on record. Never sent to a guest.
-_SUPPORT_COPY_VARIANTS = ("failed", "delayed", "period_taken", "period_shared", "moved_not_deleted")
+_SUPPORT_COPY_VARIANTS = (
+    "failed",
+    "delayed",
+    "period_taken",
+    "period_shared",
+    "moved_not_deleted",
+    "moved_failed",
+    "pin_unverified",
+)
 
 
 _DOOR_CODE_REASONS = (
@@ -1631,6 +1639,7 @@ _DOOR_CODE_REASONS = (
     "storage",
     "budget",
     "lock_setup",
+    "support",
 )
 # TTLock error kinds (ttlock.ERROR_KINDS) as the reason a host reads.
 _DOOR_CODE_REASON_KINDS = {
@@ -1643,8 +1652,8 @@ _DOOR_CODE_REASON_KINDS = {
     "reauth": "no_account",
     "storage": "storage",
     "budget": "budget",
-    # The account or the server's TTLock setting is wrong: the connection is set up again.
-    "config": "no_account",
+    # An operator or server setting (API base, account delete): only UbyHost support can fix it.
+    "config": "support",
     # A refused request or a code the lock does not have: the generic text and the raw token.
     "bug": "other",
     "code_missing": "other",
@@ -1660,7 +1669,7 @@ def _door_code_reason(lang: str, reason: str) -> str:
     key = _DOOR_CODE_REASON_KINDS.get(kind, kind)
     if key not in _DOOR_CODE_REASONS:
         key = "other"
-    text = _text(lang, f"mail.door_code_reason.{key}")
+    text = _text(lang, f"mail.door_code_reason.{key}", support=config.SUPPORT_EMAIL)
     return f"{text} [{reason}]"
 
 

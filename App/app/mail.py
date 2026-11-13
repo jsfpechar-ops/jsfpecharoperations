@@ -64,6 +64,7 @@ KINDS = (
     "stay_fee_report",
     "stay_fee_blocked",
     "cancelled_with_guests",
+    "double_booking",
     "deadline_at_risk",
     "deadline_digest",
     # 0351: one host mail per batch of open guest questions (Leon handoff).
@@ -129,6 +130,7 @@ HOST_KINDS = (
     "submission_problem",
     "workspace_deletion",
     "cancelled_with_guests",
+    "double_booking",
     # WP23 filing watchdog: the host's one warning per stay, and the operator's
     # digest. Neither goes to a guest.
     "deadline_at_risk",

@@ -1823,6 +1823,8 @@ def test_the_registered_mail_kinds_are_the_ones_the_app_can_send():
         "invoice_issued",
         "workspace_deletion",
         "cancelled_with_guests",
+        # 1172: double-booking alarm; the outbox row is written by the Go ical job.
+        "double_booking",
         "deadline_at_risk",
         "deadline_digest",
         # WP12: the three lifecycle tips (lifecycle_mail.py, mail_notify.build_lifecycle).
