@@ -43,8 +43,8 @@
 | K-S04 | Med unverified | routes/guest.py claim routes | Claim routes skip the reach-back bound (id oracle) | R #106 |
 | K-S05 | Med unverified | admin console | Admin console shows working guest claim links | F W2.4 |
 | K-S10 | High decision | server .env | Owner: confirm UBYHOST_SECRET_KEY rotated after history leak | AR-01 |
-| K-S11 | Med open | compose postgres | App is the PG superuser; needs a NOSUPERUSER role | #966 |
-| K-S12 | Low decision | routes/admin.py update_entity | Bank edit allowed on a stale session; SECURITY.md says fresh | #966 |
+| K-S11 | Med open | compose postgres | App is the PG superuser; brief 1206 | #966 |
+| K-S12 | Low accepted | routes/admin.py update_entity | Bank edit allowed on a stale session | owner 11-13 |
 | K-S13 | Low decision | payments.py, paylink_routes.go | Pay link live after expiry/paid | #966 |
 | K-S14 | Med owner | Caddyfile.cloudflare | Any Cloudflare account reaches origin; enable Authenticated Origin Pulls | #966 |
 | K-S15 | Med owner | GitHub environments | Confirm `production` deploys only from `main` | #966 |
@@ -64,6 +64,7 @@
 | K-O03 | Med open | reporting.py:702 dashboard_rows | N+1 queries and double decrypts | P A50-51 |
 | K-O04 | Low open | requirements.txt, Caddyfile | dev deps use >=; no HSTS includeSubDomains | P A59, A61 |
 | K-O05 | Med open | db.py periodic scans | Scans cover all stays ever; cost grows with retention | AR-43 |
+| K-O06 | Med open | requirements.lock | Lock behind requirements.txt (~10 pkgs); brief 1207 | #966 |
 | K-W01 | Med decision | GitHub repo | ~30 stale PRs; owner task 0001 step 12 APPLY=1; keep #278 #279 | 0001 |
 | K-ML02 | Low open | App/app/host_i18n.py | Unused `login.password*` i18n keys | magic-link HANDOFF |
 | K-ML03 | Low open | UbyHost_workplan/compliance/01, 03 | Compliance docs partly updated; lawyer review due | task 0005 |
