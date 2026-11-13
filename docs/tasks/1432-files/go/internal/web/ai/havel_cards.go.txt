@@ -134,7 +134,28 @@ type HavelCard struct {
 	Guests                                int64 // 0 when not given
 	Overlap                               bool
 	Fields                                []HavelCardField
+	Lang                                  string // the host's language, for the field labels
 }
+
+// FieldLabel is the label of one field in the card's language.
+func (c *HavelCard) FieldLabel(f HavelCardField) string { return HavelFieldLabel(c.Lang, f) }
+
+// Selected reports whether an option of a select field is the field's value.
+func (f HavelCardField) Selected(o HavelCardOption) bool { return strconv.FormatInt(o.Value, 10) == f.Value }
+
+func havelDateLabel(iso string) string {
+	d, err := time.Parse("2006-01-02", iso)
+	if err != nil {
+		return iso
+	}
+	return d.Format("Mon") + " " + d.Format("02.01.2006") // the weekday and date_cz filters
+}
+
+// DateFromLabel is "date_from | weekday" and "date_from | date_cz".
+func (c *HavelCard) DateFromLabel() string { return havelDateLabel(c.DateFrom) }
+
+// DateToLabel is the same for date_to.
+func (c *HavelCard) DateToLabel() string { return havelDateLabel(c.DateTo) }
 
 // HavelCardLookups are the three reads prepare needs.
 type HavelCardLookups struct {
@@ -178,6 +199,14 @@ func havelStrField(v any) string {
 // order the host sees them; publicBase is config.PUBLIC_BASE_URL; lang picks
 // the label language of the cleaning fields.
 func HavelPrepareCard(ctx context.Context, action map[string]any, properties []HavelApartment, today time.Time, returnTo, publicBase, lang string, lk HavelCardLookups) (*HavelCard, error) {
+	card, err := havelPrepare(ctx, action, properties, today, returnTo, publicBase, lk)
+	if card != nil {
+		card.Lang = lang
+	}
+	return card, err
+}
+
+func havelPrepare(ctx context.Context, action map[string]any, properties []HavelApartment, today time.Time, returnTo, publicBase string, lk HavelCardLookups) (*HavelCard, error) {
 	kind, _ := action["type"].(string)
 	if kind == "sync_calendars" {
 		hasFeed := false
