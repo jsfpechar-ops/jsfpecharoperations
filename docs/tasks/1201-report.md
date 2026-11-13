@@ -15,6 +15,7 @@ Not ticked. Steps 2 to 7 not done.
 ## Deviations
 Done: steps 0 to 1. Left: steps 2 to 7.
 Stopped at the executor checkpoint (tool-call and token budget) after step 1, per executor rules. Steps 2 to 7 need a fresh session.
+cont-1: steps 2-4 done. Left: steps 5 to 7.
 
 ## Questions
 None.
