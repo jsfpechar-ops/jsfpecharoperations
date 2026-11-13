@@ -1,0 +1,776 @@
+{
+ "attribution": [
+  {
+   "mint": true,
+   "out": {
+    "click": "eyJpIjp7ImdjbGlkIjoiQ2owS0NRX2FiYy0xIn0sInQiOjE3OTg3NjE2MDAwMDB9.PmKoKx_XQehHteAc2SEBnxT9M2w",
+    "utm_source": "google"
+   },
+   "query": [
+    [
+     "utm_source",
+     " google "
+    ],
+    [
+     "utm_medium",
+     "<cpc>"
+    ],
+    [
+     "gclid",
+     "Cj0KCQ_abc-1"
+    ]
+   ]
+  },
+  {
+   "mint": true,
+   "out": {
+    "click": "eyJpIjp7ImdjbGlkIjoiQ2owS0NRX2FiYy0xIn0sInQiOjE3OTg3NjE1OTkwMDB9.642DZGnLE8kBb9bF8fNe_F59d_U",
+    "utm_campaign": "spring"
+   },
+   "query": [
+    [
+     "utm_campaign",
+     "spring"
+    ],
+    [
+     "gclid",
+     "Cj0KCQ_abc-1"
+    ],
+    [
+     "click",
+     "eyJpIjp7ImdjbGlkIjoiQ2owS0NRX2FiYy0xIn0sInQiOjE3OTg3NjE1OTkwMDB9.642DZGnLE8kBb9bF8fNe_F59d_U"
+    ]
+   ]
+  },
+  {
+   "mint": true,
+   "out": {
+    "click": "eyJpIjp7ImdjbGlkIjoiTkVXMSJ9LCJ0IjoxNzk4NzYxNjAwMDAwfQ.PtkVuA0S3RjjguF_7OrgXagqkE0"
+   },
+   "query": [
+    [
+     "gclid",
+     "NEW1"
+    ],
+    [
+     "click",
+     "eyJpIjp7ImdjbGlkIjoiQ2owS0NRX2FiYy0xIn0sInQiOjE3OTg3NjE1OTkwMDB9.642DZGnLE8kBb9bF8fNe_F59d_U"
+    ]
+   ]
+  },
+  {
+   "mint": false,
+   "out": {
+    "click": "eyJpIjp7ImdjbGlkIjoiQ2owS0NRX2FiYy0xIn0sInQiOjE3OTg3NjE1OTkwMDB9.642DZGnLE8kBb9bF8fNe_F59d_U"
+   },
+   "query": [
+    [
+     "gclid",
+     "NEW1"
+    ],
+    [
+     "click",
+     "eyJpIjp7ImdjbGlkIjoiQ2owS0NRX2FiYy0xIn0sInQiOjE3OTg3NjE1OTkwMDB9.642DZGnLE8kBb9bF8fNe_F59d_U"
+    ]
+   ]
+  },
+  {
+   "mint": true,
+   "out": {},
+   "query": [
+    [
+     "click",
+     "forged.token"
+    ],
+    [
+     "fbclid",
+     "bad id"
+    ]
+   ]
+  },
+  {
+   "mint": false,
+   "out": {
+    "utm_source": "b"
+   },
+   "query": [
+    [
+     "utm_source",
+     "a"
+    ],
+    [
+     "utm_source",
+     "b"
+    ]
+   ]
+  }
+ ],
+ "bad_clicks": [
+  "eyJpIjp7ImdjbGlkIjoib2siLCJ4IjoieSJ9LCJ0IjoxNzk4NzYxNjAwMDAwfQ.3Ft6a4DmVlnEL6hrS_VblrWnJKU",
+  "eyJpIjp7ImdjbGlkIjoiYmFkIGlkIn0sInQiOjE3OTg3NjE2MDAwMDB9.ZciHcXknPGOW7YQzXHOtjnpBKrc",
+  "eyJpIjp7fSwidCI6MTc5ODc2MTYwMDAwMH0.qr137231VfUaRD07ye_HGsW_QSI",
+  "eyJpIjp7ImdjbGlkIjoib2sifX0.RVfduM0b1zum318cl_AsWOTHtK8",
+  "WzEsMl0.b558gO1-lX9Co6YxDDnnUI4GNGE"
+ ],
+ "clean": [
+  {
+   "out": "Cj0KCQ_abc-1",
+   "param": "gclid",
+   "value": " Cj0KCQ_abc-1 "
+  },
+  {
+   "out": "",
+   "param": "gclid",
+   "value": "bad value"
+  },
+  {
+   "out": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "param": "gclid",
+   "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  {
+   "out": "",
+   "param": "gclid",
+   "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  {
+   "out": "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+   "param": "fbclid",
+   "value": "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+  },
+  {
+   "out": "",
+   "param": "fbclid",
+   "value": "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+  },
+  {
+   "out": "abc",
+   "param": "wbraid",
+   "value": "\u001cabc\u001f"
+  },
+  {
+   "out": "abc",
+   "param": "gbraid",
+   "value": " abc　"
+  },
+  {
+   "out": "",
+   "param": "utm",
+   "value": "abc"
+  },
+  {
+   "out": "",
+   "param": "gclid",
+   "value": ""
+  },
+  {
+   "out": "",
+   "param": "gclid",
+   "value": "ábc"
+  }
+ ],
+ "clicks": [
+  {
+   "ids": {
+    "gclid": "Cj0KCQ_abc-1"
+   },
+   "reads": {
+    "future_bad": {
+     "at": 1798761298999,
+     "ok": false
+    },
+    "future_ok": {
+     "at": 1798761299000,
+     "ok": true
+    },
+    "now": {
+     "at": 1798761600000,
+     "ok": true
+    },
+    "old_bad": {
+     "at": 1806537599001,
+     "ok": false
+    },
+    "old_ok": {
+     "at": 1806537599000,
+     "ok": true
+    }
+   },
+   "seen_ms": 1798761599000,
+   "token": "eyJpIjp7ImdjbGlkIjoiQ2owS0NRX2FiYy0xIn0sInQiOjE3OTg3NjE1OTkwMDB9.642DZGnLE8kBb9bF8fNe_F59d_U"
+  },
+  {
+   "ids": {
+    "fbclid": "IwAR0_x",
+    "gbraid": "B2",
+    "gclid": "G1",
+    "wbraid": "W3"
+   },
+   "reads": {
+    "future_bad": {
+     "at": 1798761299999,
+     "ok": false
+    },
+    "future_ok": {
+     "at": 1798761300000,
+     "ok": true
+    },
+    "now": {
+     "at": 1798761600000,
+     "ok": true
+    },
+    "old_bad": {
+     "at": 1806537600001,
+     "ok": false
+    },
+    "old_ok": {
+     "at": 1806537600000,
+     "ok": true
+    }
+   },
+   "seen_ms": 1798761600000,
+   "token": ".eJyrVspUsqpWSk_OyUxRslJyN1TSUUpPKkoE85yMgLxyGC_cGMhLS4Kq9Cx3DDKIr1Cq1VEqUbIyNLe0MDczNDMAgVoACNkXOA.M0DSpLMAPRlzLicKLGBoNuMStEw"
+  },
+  {
+   "ids": {
+    "fbclid": "IwARzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+   },
+   "reads": {
+    "future_bad": {
+     "at": 1798757699999,
+     "ok": false
+    },
+    "future_ok": {
+     "at": 1798757700000,
+     "ok": true
+    },
+    "now": {
+     "at": 1798761600000,
+     "ok": true
+    },
+    "old_bad": {
+     "at": 1806534000001,
+     "ok": false
+    },
+    "old_ok": {
+     "at": 1806534000000,
+     "ok": true
+    }
+   },
+   "seen_ms": 1798758000000,
+   "token": ".eJyrVspUsqpWSktKzslMUbJS8ix3DKoaBYMKKNXqKJUoWRmaW1qYm1oYgEEtAKYTyaw.GeI77SGyC_FkhrjZ8S_8EEc1hdU"
+  }
+ ],
+ "consent": [
+  {
+   "lang": "en",
+   "platform": "google",
+   "text": "Optional: I agree that UbyHost may record that I came from a Google ad and share that click identifier with Google (an independent controller) to measure our ad campaigns. No personalised ads. You can withdraw anytime in Settings. [How Google uses data](https://business.safety.google/privacy/)"
+  },
+  {
+   "lang": "cs",
+   "platform": "google",
+   "text": "Nepovinné: Souhlasím, aby UbyHost zaznamenal, že jsem přišel z reklamy Google, a předal tento identifikátor kliknutí společnosti Google (samostatnému správci) k měření úspěšnosti našich reklam. Bez personalizované reklamy. Souhlas můžete kdykoli odvolat v Nastavení. [Jak Google používá data](https://business.safety.google/privacy/)"
+  },
+  {
+   "lang": "vi",
+   "platform": "google",
+   "text": "Optional: I agree that UbyHost may record that I came from a Google ad and share that click identifier with Google (an independent controller) to measure our ad campaigns. No personalised ads. You can withdraw anytime in Settings. [Cách Google sử dụng dữ liệu](https://business.safety.google/privacy/)"
+  },
+  {
+   "lang": "de",
+   "platform": "google",
+   "text": "Optional: I agree that UbyHost may record that I came from a Google ad and share that click identifier with Google (an independent controller) to measure our ad campaigns. No personalised ads. You can withdraw anytime in Settings. [How Google uses data](https://business.safety.google/privacy/)"
+  },
+  {
+   "lang": "CS",
+   "platform": "google",
+   "text": "Nepovinné: Souhlasím, aby UbyHost zaznamenal, že jsem přišel z reklamy Google, a předal tento identifikátor kliknutí společnosti Google (samostatnému správci) k měření úspěšnosti našich reklam. Bez personalizované reklamy. Souhlas můžete kdykoli odvolat v Nastavení. [Jak Google používá data](https://business.safety.google/privacy/)"
+  },
+  {
+   "lang": "en",
+   "platform": "meta",
+   "text": "Optional: I agree that UbyHost may record that I came from Facebook or Instagram and send that click identifier and my browser type string, with the fact and time of my sign-up, to Meta Platforms Ireland Ltd. to measure our campaigns. Meta receives it as a joint controller and then uses it as its own controller. You can withdraw anytime in Settings. [How Meta uses data](https://www.facebook.com/privacy/policy/)"
+  },
+  {
+   "lang": "cs",
+   "platform": "meta",
+   "text": "Nepovinné: Souhlasím, aby UbyHost zaznamenal, že jsem přišel z Facebooku nebo Instagramu, a předal tento identifikátor kliknutí a údaj o typu mého prohlížeče spolu s informací o mé registraci a jejím čase společnosti Meta Platforms Ireland Ltd. k měření úspěšnosti našich kampaní. Meta je při předání společným správcem a dále údaje zpracovává jako samostatný správce. Souhlas můžete kdykoli odvolat v Nastavení. [Jak Meta používá data](https://www.facebook.com/privacy/policy/)"
+  },
+  {
+   "lang": "vi",
+   "platform": "meta",
+   "text": "Optional: I agree that UbyHost may record that I came from Facebook or Instagram and send that click identifier and my browser type string, with the fact and time of my sign-up, to Meta Platforms Ireland Ltd. to measure our campaigns. Meta receives it as a joint controller and then uses it as its own controller. You can withdraw anytime in Settings. [Cách Meta sử dụng dữ liệu](https://www.facebook.com/privacy/policy/)"
+  },
+  {
+   "lang": "de",
+   "platform": "meta",
+   "text": "Optional: I agree that UbyHost may record that I came from Facebook or Instagram and send that click identifier and my browser type string, with the fact and time of my sign-up, to Meta Platforms Ireland Ltd. to measure our campaigns. Meta receives it as a joint controller and then uses it as its own controller. You can withdraw anytime in Settings. [How Meta uses data](https://www.facebook.com/privacy/policy/)"
+  },
+  {
+   "lang": "CS",
+   "platform": "meta",
+   "text": "Nepovinné: Souhlasím, aby UbyHost zaznamenal, že jsem přišel z Facebooku nebo Instagramu, a předal tento identifikátor kliknutí a údaj o typu mého prohlížeče spolu s informací o mé registraci a jejím čase společnosti Meta Platforms Ireland Ltd. k měření úspěšnosti našich kampaní. Meta je při předání společným správcem a dále údaje zpracovává jako samostatný správce. Souhlas můžete kdykoli odvolat v Nastavení. [Jak Meta používá data](https://www.facebook.com/privacy/policy/)"
+  }
+ ],
+ "conversion_time": [
+  {
+   "out": "2027-01-01 01:00:00+0100",
+   "stored": "2027-01-01T00:00:00+00:00"
+  },
+  {
+   "out": "2026-07-01 14:30:00+0200",
+   "stored": "2026-07-01T12:30:00+00:00"
+  },
+  {
+   "out": "2026-03-29 01:59:59+0100",
+   "stored": "2026-03-29T00:59:59+00:00"
+  },
+  {
+   "out": "2026-03-29 03:00:00+0200",
+   "stored": "2026-03-29T01:00:00+00:00"
+  },
+  {
+   "out": "2026-10-25 02:30:00+0200",
+   "stored": "2026-10-25T00:30:00"
+  },
+  {
+   "out": "2026-10-25 02:30:00+0100",
+   "stored": "2026-10-25T01:30:00Z"
+  }
+ ],
+ "csv": {
+  "body": "Parameters:TimeZone=Europe/Prague\r\nGoogle Click ID,Conversion Name,Conversion Time,Ad User Data,Ad Personalization\r\nG1,\"Sign-up, \"\"paid\"\"\",2027-01-01 01:00:00+0100,Granted,Denied\r\nG2,\"Sign-up, \"\"paid\"\"\",2026-07-01 14:30:00+0200,Granted,Denied\r\n",
+  "rows": [
+   {
+    "email_verified_at": "2027-01-01T00:00:00+00:00",
+    "gclid": "G1",
+    "id": 1
+   },
+   {
+    "email_verified_at": "2026-07-01T12:30:00+00:00",
+    "gclid": "G2",
+    "id": 2
+   }
+  ]
+ },
+ "env": {
+  "UBYHOST_ADS_CONVERSION_NAME": " Sign-up, \"paid\" ",
+  "UBYHOST_APP_BASE_URL": "https://app.ubyhost.example",
+  "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+  "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example/",
+  "UBYHOST_SECRET_KEY": "signup-golden-secret-0123456789-abcdefghij"
+ },
+ "iso_from_ms": [
+  {
+   "ms": 1798761600000,
+   "out": "2027-01-01T00:00:00+00:00"
+  },
+  {
+   "ms": 1798761600999,
+   "out": "2027-01-01T00:00:00+00:00"
+  },
+  {
+   "ms": 1,
+   "out": "1970-01-01T00:00:00+00:00"
+  }
+ ],
+ "mails": [
+  {
+   "html": "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<meta name=\"color-scheme\" content=\"light only\">\n<title>Confirm your e-mail address</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f7f7f5;\">\n<div style=\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\">Thanks for signing up for UbyHost with the workspace “Chata &lt;Pod&gt; &amp; &quot;Les&quot; 100%”. Open the link below and press the button to activate the account. ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f7f7f5;border-collapse:collapse;\">\n<tr><td align=\"center\" style=\"padding:28px 12px;\">\n<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\">\n<tr><td style=\"padding:28px 24px 0 24px;\">\n<img src=\"https://ubyhost.example/static/ubyhost-logo.jpg\" width=\"180\" alt=\"UbyHost\" style=\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\">\n</td></tr>\n<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">Confirm your e-mail address</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Thanks for signing up for UbyHost with the workspace “Chata &lt;Pod&gt; &amp; &quot;Les&quot; 100%”. Open the link below and press the button to activate the account.</p></td></tr><tr><td style=\"padding:8px 24px 0 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:separate;margin:0 0 8px 0;\"><tr><td style=\"background:#ad4942;border-radius:8px;padding:14px 24px;\"><a href=\"https://ubyhost.example/signup/verify?t={{claim_secret}}\" style=\"display:block;padding:0;font:600 16px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#ffffff;text-decoration:none;\">Confirm e-mail</a></td></tr></table></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">The link works for 24 hours. If you did not sign up, ignore this e-mail: the unconfirmed account is deleted after 7 days.</p></td></tr><tr><td style=\"padding:14px 24px 0 24px;\"><div style=\"font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">If the button does not work, copy this address into your browser:</div><div style=\"font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;word-break:break-all;\"><a href=\"https://ubyhost.example/signup/verify?t={{claim_secret}}\" style=\"color:#ad4942;text-decoration:underline;\">https://ubyhost.example/signup/verify?t={{claim_secret}}</a></div></td></tr>\n<tr><td style=\"padding:28px 24px 28px 24px;\">\n<div style=\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">\n<div>UbyHost</div><div style=\"padding:4px 0 0 0;\">Questions: ops@ubyhost.example</div>\n</div>\n</td></tr>\n</table>\n</td></tr>\n</table>\n</body>\n</html>\n",
+   "kind": "verify",
+   "lang": "en",
+   "subject": "Confirm your UbyHost account",
+   "text": "Thanks for signing up for UbyHost with the workspace “Chata <Pod> & \"Les\" 100%”. Open the link below and press the button to activate the account.\n\nConfirm e-mail: https://ubyhost.example/signup/verify?t={{claim_secret}}\n\nThe link works for 24 hours. If you did not sign up, ignore this e-mail: the unconfirmed account is deleted after 7 days.\n\n--\nUbyHost\nQuestions: ops@ubyhost.example",
+   "workspace": "Chata <Pod> & \"Les\" 100%"
+  },
+  {
+   "html": "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<meta name=\"color-scheme\" content=\"light only\">\n<title>Confirm your e-mail address</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f7f7f5;\">\n<div style=\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\">Thanks for signing up for UbyHost with the workspace “Penzion Ú Lípy”. Open the link below and press the button to activate the account. ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f7f7f5;border-collapse:collapse;\">\n<tr><td align=\"center\" style=\"padding:28px 12px;\">\n<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\">\n<tr><td style=\"padding:28px 24px 0 24px;\">\n<img src=\"https://ubyhost.example/static/ubyhost-logo.jpg\" width=\"180\" alt=\"UbyHost\" style=\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\">\n</td></tr>\n<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">Confirm your e-mail address</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Thanks for signing up for UbyHost with the workspace “Penzion Ú Lípy”. Open the link below and press the button to activate the account.</p></td></tr><tr><td style=\"padding:8px 24px 0 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:separate;margin:0 0 8px 0;\"><tr><td style=\"background:#ad4942;border-radius:8px;padding:14px 24px;\"><a href=\"https://ubyhost.example/signup/verify?t={{claim_secret}}\" style=\"display:block;padding:0;font:600 16px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#ffffff;text-decoration:none;\">Confirm e-mail</a></td></tr></table></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">The link works for 24 hours. If you did not sign up, ignore this e-mail: the unconfirmed account is deleted after 7 days.</p></td></tr><tr><td style=\"padding:14px 24px 0 24px;\"><div style=\"font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">If the button does not work, copy this address into your browser:</div><div style=\"font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;word-break:break-all;\"><a href=\"https://ubyhost.example/signup/verify?t={{claim_secret}}\" style=\"color:#ad4942;text-decoration:underline;\">https://ubyhost.example/signup/verify?t={{claim_secret}}</a></div></td></tr>\n<tr><td style=\"padding:28px 24px 28px 24px;\">\n<div style=\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">\n<div>UbyHost</div><div style=\"padding:4px 0 0 0;\">Questions: ops@ubyhost.example</div>\n</div>\n</td></tr>\n</table>\n</td></tr>\n</table>\n</body>\n</html>\n",
+   "kind": "verify",
+   "lang": "en",
+   "subject": "Confirm your UbyHost account",
+   "text": "Thanks for signing up for UbyHost with the workspace “Penzion Ú Lípy”. Open the link below and press the button to activate the account.\n\nConfirm e-mail: https://ubyhost.example/signup/verify?t={{claim_secret}}\n\nThe link works for 24 hours. If you did not sign up, ignore this e-mail: the unconfirmed account is deleted after 7 days.\n\n--\nUbyHost\nQuestions: ops@ubyhost.example",
+   "workspace": "Penzion Ú Lípy"
+  },
+  {
+   "html": "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<meta name=\"color-scheme\" content=\"light only\">\n<title>Confirm your e-mail address</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f7f7f5;\">\n<div style=\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\">Thanks for signing up for UbyHost with the workspace “x”. Open the link below and press the button to activate the account. ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f7f7f5;border-collapse:collapse;\">\n<tr><td align=\"center\" style=\"padding:28px 12px;\">\n<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\">\n<tr><td style=\"padding:28px 24px 0 24px;\">\n<img src=\"https://ubyhost.example/static/ubyhost-logo.jpg\" width=\"180\" alt=\"UbyHost\" style=\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\">\n</td></tr>\n<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">Confirm your e-mail address</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Thanks for signing up for UbyHost with the workspace “x”. Open the link below and press the button to activate the account.</p></td></tr><tr><td style=\"padding:8px 24px 0 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:separate;margin:0 0 8px 0;\"><tr><td style=\"background:#ad4942;border-radius:8px;padding:14px 24px;\"><a href=\"https://ubyhost.example/signup/verify?t={{claim_secret}}\" style=\"display:block;padding:0;font:600 16px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#ffffff;text-decoration:none;\">Confirm e-mail</a></td></tr></table></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">The link works for 24 hours. If you did not sign up, ignore this e-mail: the unconfirmed account is deleted after 7 days.</p></td></tr><tr><td style=\"padding:14px 24px 0 24px;\"><div style=\"font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">If the button does not work, copy this address into your browser:</div><div style=\"font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;word-break:break-all;\"><a href=\"https://ubyhost.example/signup/verify?t={{claim_secret}}\" style=\"color:#ad4942;text-decoration:underline;\">https://ubyhost.example/signup/verify?t={{claim_secret}}</a></div></td></tr>\n<tr><td style=\"padding:28px 24px 28px 24px;\">\n<div style=\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">\n<div>UbyHost</div><div style=\"padding:4px 0 0 0;\">Questions: ops@ubyhost.example</div>\n</div>\n</td></tr>\n</table>\n</td></tr>\n</table>\n</body>\n</html>\n",
+   "kind": "verify",
+   "lang": "en",
+   "subject": "Confirm your UbyHost account",
+   "text": "Thanks for signing up for UbyHost with the workspace “x”. Open the link below and press the button to activate the account.\n\nConfirm e-mail: https://ubyhost.example/signup/verify?t={{claim_secret}}\n\nThe link works for 24 hours. If you did not sign up, ignore this e-mail: the unconfirmed account is deleted after 7 days.\n\n--\nUbyHost\nQuestions: ops@ubyhost.example",
+   "workspace": "x"
+  },
+  {
+   "html": "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<meta name=\"color-scheme\" content=\"light only\">\n<title>You already have an account</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f7f7f5;\">\n<div style=\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\">Someone, probably you, tried to create a new UbyHost account with this e-mail address. An account with this address already exists, so nothing was created. ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f7f7f5;border-collapse:collapse;\">\n<tr><td align=\"center\" style=\"padding:28px 12px;\">\n<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\">\n<tr><td style=\"padding:28px 24px 0 24px;\">\n<img src=\"https://ubyhost.example/static/ubyhost-logo.jpg\" width=\"180\" alt=\"UbyHost\" style=\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\">\n</td></tr>\n<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">You already have an account</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Someone, probably you, tried to create a new UbyHost account with this e-mail address. An account with this address already exists, so nothing was created.</p></td></tr><tr><td style=\"padding:8px 24px 0 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:separate;margin:0 0 8px 0;\"><tr><td style=\"background:#ad4942;border-radius:8px;padding:14px 24px;\"><a href=\"https://app.ubyhost.example/login?lang=en\" style=\"display:block;padding:0;font:600 16px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#ffffff;text-decoration:none;\">Log in</a></td></tr></table></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Log in from the login page with this address: we e-mail you a link. If this was not you, you can ignore this e-mail.</p></td></tr>\n<tr><td style=\"padding:28px 24px 28px 24px;\">\n<div style=\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">\n<div>UbyHost</div><div style=\"padding:4px 0 0 0;\">Questions: ops@ubyhost.example</div>\n</div>\n</td></tr>\n</table>\n</td></tr>\n</table>\n</body>\n</html>\n",
+   "kind": "exists",
+   "lang": "en",
+   "subject": "Someone tried to create a UbyHost account with your e-mail",
+   "text": "Someone, probably you, tried to create a new UbyHost account with this e-mail address. An account with this address already exists, so nothing was created.\n\nLog in: https://app.ubyhost.example/login?lang=en\n\nLog in from the login page with this address: we e-mail you a link. If this was not you, you can ignore this e-mail.\n\n--\nUbyHost\nQuestions: ops@ubyhost.example"
+  },
+  {
+   "html": "<!doctype html>\n<html lang=\"cs\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<meta name=\"color-scheme\" content=\"light only\">\n<title>Potvrďte svou e-mailovou adresu</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f7f7f5;\">\n<div style=\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\">Děkujeme za registraci do UbyHostu s pracovním prostorem „Chata &lt;Pod&gt; &amp; &quot;Les&quot; 100%“. Otevřete odkaz níže a stisknutím tlačítka účet aktivujte. ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f7f7f5;border-collapse:collapse;\">\n<tr><td align=\"center\" style=\"padding:28px 12px;\">\n<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\">\n<tr><td style=\"padding:28px 24px 0 24px;\">\n<img src=\"https://ubyhost.example/static/ubyhost-logo.jpg\" width=\"180\" alt=\"UbyHost\" style=\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\">\n</td></tr>\n<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">Potvrďte svou e-mailovou adresu</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Děkujeme za registraci do UbyHostu s pracovním prostorem „Chata &lt;Pod&gt; &amp; &quot;Les&quot; 100%“. Otevřete odkaz níže a stisknutím tlačítka účet aktivujte.</p></td></tr><tr><td style=\"padding:8px 24px 0 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:separate;margin:0 0 8px 0;\"><tr><td style=\"background:#ad4942;border-radius:8px;padding:14px 24px;\"><a href=\"https://ubyhost.example/signup/verify?t={{claim_secret}}\" style=\"display:block;padding:0;font:600 16px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#ffffff;text-decoration:none;\">Potvrdit e-mail</a></td></tr></table></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Odkaz platí 24 hodin. Pokud jste se neregistrovali, e-mail ignorujte: nepotvrzený účet se po 7 dnech smaže.</p></td></tr><tr><td style=\"padding:14px 24px 0 24px;\"><div style=\"font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">Pokud tlačítko nefunguje, zkopírujte tuto adresu do prohlížeče:</div><div style=\"font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;word-break:break-all;\"><a href=\"https://ubyhost.example/signup/verify?t={{claim_secret}}\" style=\"color:#ad4942;text-decoration:underline;\">https://ubyhost.example/signup/verify?t={{claim_secret}}</a></div></td></tr>\n<tr><td style=\"padding:28px 24px 28px 24px;\">\n<div style=\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">\n<div>UbyHost</div><div style=\"padding:4px 0 0 0;\">Dotazy: ops@ubyhost.example</div>\n</div>\n</td></tr>\n</table>\n</td></tr>\n</table>\n</body>\n</html>\n",
+   "kind": "verify",
+   "lang": "cs",
+   "subject": "Potvrďte svůj účet UbyHost",
+   "text": "Děkujeme za registraci do UbyHostu s pracovním prostorem „Chata <Pod> & \"Les\" 100%“. Otevřete odkaz níže a stisknutím tlačítka účet aktivujte.\n\nPotvrdit e-mail: https://ubyhost.example/signup/verify?t={{claim_secret}}\n\nOdkaz platí 24 hodin. Pokud jste se neregistrovali, e-mail ignorujte: nepotvrzený účet se po 7 dnech smaže.\n\n--\nUbyHost\nDotazy: ops@ubyhost.example",
+   "workspace": "Chata <Pod> & \"Les\" 100%"
+  },
+  {
+   "html": "<!doctype html>\n<html lang=\"cs\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<meta name=\"color-scheme\" content=\"light only\">\n<title>Potvrďte svou e-mailovou adresu</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f7f7f5;\">\n<div style=\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\">Děkujeme za registraci do UbyHostu s pracovním prostorem „Penzion Ú Lípy“. Otevřete odkaz níže a stisknutím tlačítka účet aktivujte. ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f7f7f5;border-collapse:collapse;\">\n<tr><td align=\"center\" style=\"padding:28px 12px;\">\n<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\">\n<tr><td style=\"padding:28px 24px 0 24px;\">\n<img src=\"https://ubyhost.example/static/ubyhost-logo.jpg\" width=\"180\" alt=\"UbyHost\" style=\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\">\n</td></tr>\n<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">Potvrďte svou e-mailovou adresu</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Děkujeme za registraci do UbyHostu s pracovním prostorem „Penzion Ú Lípy“. Otevřete odkaz níže a stisknutím tlačítka účet aktivujte.</p></td></tr><tr><td style=\"padding:8px 24px 0 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:separate;margin:0 0 8px 0;\"><tr><td style=\"background:#ad4942;border-radius:8px;padding:14px 24px;\"><a href=\"https://ubyhost.example/signup/verify?t={{claim_secret}}\" style=\"display:block;padding:0;font:600 16px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#ffffff;text-decoration:none;\">Potvrdit e-mail</a></td></tr></table></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Odkaz platí 24 hodin. Pokud jste se neregistrovali, e-mail ignorujte: nepotvrzený účet se po 7 dnech smaže.</p></td></tr><tr><td style=\"padding:14px 24px 0 24px;\"><div style=\"font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">Pokud tlačítko nefunguje, zkopírujte tuto adresu do prohlížeče:</div><div style=\"font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;word-break:break-all;\"><a href=\"https://ubyhost.example/signup/verify?t={{claim_secret}}\" style=\"color:#ad4942;text-decoration:underline;\">https://ubyhost.example/signup/verify?t={{claim_secret}}</a></div></td></tr>\n<tr><td style=\"padding:28px 24px 28px 24px;\">\n<div style=\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">\n<div>UbyHost</div><div style=\"padding:4px 0 0 0;\">Dotazy: ops@ubyhost.example</div>\n</div>\n</td></tr>\n</table>\n</td></tr>\n</table>\n</body>\n</html>\n",
+   "kind": "verify",
+   "lang": "cs",
+   "subject": "Potvrďte svůj účet UbyHost",
+   "text": "Děkujeme za registraci do UbyHostu s pracovním prostorem „Penzion Ú Lípy“. Otevřete odkaz níže a stisknutím tlačítka účet aktivujte.\n\nPotvrdit e-mail: https://ubyhost.example/signup/verify?t={{claim_secret}}\n\nOdkaz platí 24 hodin. Pokud jste se neregistrovali, e-mail ignorujte: nepotvrzený účet se po 7 dnech smaže.\n\n--\nUbyHost\nDotazy: ops@ubyhost.example",
+   "workspace": "Penzion Ú Lípy"
+  },
+  {
+   "html": "<!doctype html>\n<html lang=\"cs\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<meta name=\"color-scheme\" content=\"light only\">\n<title>Potvrďte svou e-mailovou adresu</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f7f7f5;\">\n<div style=\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\">Děkujeme za registraci do UbyHostu s pracovním prostorem „x“. Otevřete odkaz níže a stisknutím tlačítka účet aktivujte. ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f7f7f5;border-collapse:collapse;\">\n<tr><td align=\"center\" style=\"padding:28px 12px;\">\n<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\">\n<tr><td style=\"padding:28px 24px 0 24px;\">\n<img src=\"https://ubyhost.example/static/ubyhost-logo.jpg\" width=\"180\" alt=\"UbyHost\" style=\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\">\n</td></tr>\n<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">Potvrďte svou e-mailovou adresu</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Děkujeme za registraci do UbyHostu s pracovním prostorem „x“. Otevřete odkaz níže a stisknutím tlačítka účet aktivujte.</p></td></tr><tr><td style=\"padding:8px 24px 0 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:separate;margin:0 0 8px 0;\"><tr><td style=\"background:#ad4942;border-radius:8px;padding:14px 24px;\"><a href=\"https://ubyhost.example/signup/verify?t={{claim_secret}}\" style=\"display:block;padding:0;font:600 16px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#ffffff;text-decoration:none;\">Potvrdit e-mail</a></td></tr></table></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Odkaz platí 24 hodin. Pokud jste se neregistrovali, e-mail ignorujte: nepotvrzený účet se po 7 dnech smaže.</p></td></tr><tr><td style=\"padding:14px 24px 0 24px;\"><div style=\"font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">Pokud tlačítko nefunguje, zkopírujte tuto adresu do prohlížeče:</div><div style=\"font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;word-break:break-all;\"><a href=\"https://ubyhost.example/signup/verify?t={{claim_secret}}\" style=\"color:#ad4942;text-decoration:underline;\">https://ubyhost.example/signup/verify?t={{claim_secret}}</a></div></td></tr>\n<tr><td style=\"padding:28px 24px 28px 24px;\">\n<div style=\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">\n<div>UbyHost</div><div style=\"padding:4px 0 0 0;\">Dotazy: ops@ubyhost.example</div>\n</div>\n</td></tr>\n</table>\n</td></tr>\n</table>\n</body>\n</html>\n",
+   "kind": "verify",
+   "lang": "cs",
+   "subject": "Potvrďte svůj účet UbyHost",
+   "text": "Děkujeme za registraci do UbyHostu s pracovním prostorem „x“. Otevřete odkaz níže a stisknutím tlačítka účet aktivujte.\n\nPotvrdit e-mail: https://ubyhost.example/signup/verify?t={{claim_secret}}\n\nOdkaz platí 24 hodin. Pokud jste se neregistrovali, e-mail ignorujte: nepotvrzený účet se po 7 dnech smaže.\n\n--\nUbyHost\nDotazy: ops@ubyhost.example",
+   "workspace": "x"
+  },
+  {
+   "html": "<!doctype html>\n<html lang=\"cs\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<meta name=\"color-scheme\" content=\"light only\">\n<title>Účet už máte</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f7f7f5;\">\n<div style=\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\">Někdo, nejspíš vy, se pokusil založit nový účet UbyHost s touto e-mailovou adresou. Účet s touto adresou už existuje, takže se nic nového nezaložilo. ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f7f7f5;border-collapse:collapse;\">\n<tr><td align=\"center\" style=\"padding:28px 12px;\">\n<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\">\n<tr><td style=\"padding:28px 24px 0 24px;\">\n<img src=\"https://ubyhost.example/static/ubyhost-logo.jpg\" width=\"180\" alt=\"UbyHost\" style=\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\">\n</td></tr>\n<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">Účet už máte</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Někdo, nejspíš vy, se pokusil založit nový účet UbyHost s touto e-mailovou adresou. Účet s touto adresou už existuje, takže se nic nového nezaložilo.</p></td></tr><tr><td style=\"padding:8px 24px 0 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:separate;margin:0 0 8px 0;\"><tr><td style=\"background:#ad4942;border-radius:8px;padding:14px 24px;\"><a href=\"https://app.ubyhost.example/login?lang=cs\" style=\"display:block;padding:0;font:600 16px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#ffffff;text-decoration:none;\">Přihlásit se</a></td></tr></table></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Přihlaste se touto adresou na přihlašovací stránce: pošleme vám odkaz. Pokud jste to nebyli vy, e-mail můžete ignorovat.</p></td></tr>\n<tr><td style=\"padding:28px 24px 28px 24px;\">\n<div style=\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">\n<div>UbyHost</div><div style=\"padding:4px 0 0 0;\">Dotazy: ops@ubyhost.example</div>\n</div>\n</td></tr>\n</table>\n</td></tr>\n</table>\n</body>\n</html>\n",
+   "kind": "exists",
+   "lang": "cs",
+   "subject": "Někdo se pokusil založit účet UbyHost s vaším e-mailem",
+   "text": "Někdo, nejspíš vy, se pokusil založit nový účet UbyHost s touto e-mailovou adresou. Účet s touto adresou už existuje, takže se nic nového nezaložilo.\n\nPřihlásit se: https://app.ubyhost.example/login?lang=cs\n\nPřihlaste se touto adresou na přihlašovací stránce: pošleme vám odkaz. Pokud jste to nebyli vy, e-mail můžete ignorovat.\n\n--\nUbyHost\nDotazy: ops@ubyhost.example"
+  },
+  {
+   "html": "<!doctype html>\n<html lang=\"vi\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<meta name=\"color-scheme\" content=\"light only\">\n<title>Xác nhận địa chỉ e-mail</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f7f7f5;\">\n<div style=\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\">Cảm ơn bạn đã đăng ký UbyHost với không gian làm việc “Chata &lt;Pod&gt; &amp; &quot;Les&quot; 100%”. Mở liên kết bên dưới và nhấn nút để kích hoạt tài khoản. ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f7f7f5;border-collapse:collapse;\">\n<tr><td align=\"center\" style=\"padding:28px 12px;\">\n<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\">\n<tr><td style=\"padding:28px 24px 0 24px;\">\n<img src=\"https://ubyhost.example/static/ubyhost-logo.jpg\" width=\"180\" alt=\"UbyHost\" style=\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\">\n</td></tr>\n<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">Xác nhận địa chỉ e-mail</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Cảm ơn bạn đã đăng ký UbyHost với không gian làm việc “Chata &lt;Pod&gt; &amp; &quot;Les&quot; 100%”. Mở liên kết bên dưới và nhấn nút để kích hoạt tài khoản.</p></td></tr><tr><td style=\"padding:8px 24px 0 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:separate;margin:0 0 8px 0;\"><tr><td style=\"background:#ad4942;border-radius:8px;padding:14px 24px;\"><a href=\"https://ubyhost.example/signup/verify?t={{claim_secret}}\" style=\"display:block;padding:0;font:600 16px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#ffffff;text-decoration:none;\">Xác nhận e-mail</a></td></tr></table></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Liên kết có hiệu lực trong 24 giờ. Nếu bạn không đăng ký, hãy bỏ qua e-mail này: tài khoản chưa xác nhận sẽ bị xóa sau 7 ngày.</p></td></tr><tr><td style=\"padding:14px 24px 0 24px;\"><div style=\"font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">If the button does not work, copy this address into your browser:</div><div style=\"font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;word-break:break-all;\"><a href=\"https://ubyhost.example/signup/verify?t={{claim_secret}}\" style=\"color:#ad4942;text-decoration:underline;\">https://ubyhost.example/signup/verify?t={{claim_secret}}</a></div></td></tr>\n<tr><td style=\"padding:28px 24px 28px 24px;\">\n<div style=\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">\n<div>UbyHost</div><div style=\"padding:4px 0 0 0;\">Thắc mắc: ops@ubyhost.example</div>\n</div>\n</td></tr>\n</table>\n</td></tr>\n</table>\n</body>\n</html>\n",
+   "kind": "verify",
+   "lang": "vi",
+   "subject": "Xác nhận tài khoản UbyHost của bạn",
+   "text": "Cảm ơn bạn đã đăng ký UbyHost với không gian làm việc “Chata <Pod> & \"Les\" 100%”. Mở liên kết bên dưới và nhấn nút để kích hoạt tài khoản.\n\nXác nhận e-mail: https://ubyhost.example/signup/verify?t={{claim_secret}}\n\nLiên kết có hiệu lực trong 24 giờ. Nếu bạn không đăng ký, hãy bỏ qua e-mail này: tài khoản chưa xác nhận sẽ bị xóa sau 7 ngày.\n\n--\nUbyHost\nThắc mắc: ops@ubyhost.example",
+   "workspace": "Chata <Pod> & \"Les\" 100%"
+  },
+  {
+   "html": "<!doctype html>\n<html lang=\"vi\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<meta name=\"color-scheme\" content=\"light only\">\n<title>Xác nhận địa chỉ e-mail</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f7f7f5;\">\n<div style=\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\">Cảm ơn bạn đã đăng ký UbyHost với không gian làm việc “Penzion Ú Lípy”. Mở liên kết bên dưới và nhấn nút để kích hoạt tài khoản. ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f7f7f5;border-collapse:collapse;\">\n<tr><td align=\"center\" style=\"padding:28px 12px;\">\n<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\">\n<tr><td style=\"padding:28px 24px 0 24px;\">\n<img src=\"https://ubyhost.example/static/ubyhost-logo.jpg\" width=\"180\" alt=\"UbyHost\" style=\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\">\n</td></tr>\n<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">Xác nhận địa chỉ e-mail</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Cảm ơn bạn đã đăng ký UbyHost với không gian làm việc “Penzion Ú Lípy”. Mở liên kết bên dưới và nhấn nút để kích hoạt tài khoản.</p></td></tr><tr><td style=\"padding:8px 24px 0 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:separate;margin:0 0 8px 0;\"><tr><td style=\"background:#ad4942;border-radius:8px;padding:14px 24px;\"><a href=\"https://ubyhost.example/signup/verify?t={{claim_secret}}\" style=\"display:block;padding:0;font:600 16px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#ffffff;text-decoration:none;\">Xác nhận e-mail</a></td></tr></table></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Liên kết có hiệu lực trong 24 giờ. Nếu bạn không đăng ký, hãy bỏ qua e-mail này: tài khoản chưa xác nhận sẽ bị xóa sau 7 ngày.</p></td></tr><tr><td style=\"padding:14px 24px 0 24px;\"><div style=\"font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">If the button does not work, copy this address into your browser:</div><div style=\"font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;word-break:break-all;\"><a href=\"https://ubyhost.example/signup/verify?t={{claim_secret}}\" style=\"color:#ad4942;text-decoration:underline;\">https://ubyhost.example/signup/verify?t={{claim_secret}}</a></div></td></tr>\n<tr><td style=\"padding:28px 24px 28px 24px;\">\n<div style=\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">\n<div>UbyHost</div><div style=\"padding:4px 0 0 0;\">Thắc mắc: ops@ubyhost.example</div>\n</div>\n</td></tr>\n</table>\n</td></tr>\n</table>\n</body>\n</html>\n",
+   "kind": "verify",
+   "lang": "vi",
+   "subject": "Xác nhận tài khoản UbyHost của bạn",
+   "text": "Cảm ơn bạn đã đăng ký UbyHost với không gian làm việc “Penzion Ú Lípy”. Mở liên kết bên dưới và nhấn nút để kích hoạt tài khoản.\n\nXác nhận e-mail: https://ubyhost.example/signup/verify?t={{claim_secret}}\n\nLiên kết có hiệu lực trong 24 giờ. Nếu bạn không đăng ký, hãy bỏ qua e-mail này: tài khoản chưa xác nhận sẽ bị xóa sau 7 ngày.\n\n--\nUbyHost\nThắc mắc: ops@ubyhost.example",
+   "workspace": "Penzion Ú Lípy"
+  },
+  {
+   "html": "<!doctype html>\n<html lang=\"vi\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<meta name=\"color-scheme\" content=\"light only\">\n<title>Xác nhận địa chỉ e-mail</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f7f7f5;\">\n<div style=\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\">Cảm ơn bạn đã đăng ký UbyHost với không gian làm việc “x”. Mở liên kết bên dưới và nhấn nút để kích hoạt tài khoản. ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f7f7f5;border-collapse:collapse;\">\n<tr><td align=\"center\" style=\"padding:28px 12px;\">\n<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\">\n<tr><td style=\"padding:28px 24px 0 24px;\">\n<img src=\"https://ubyhost.example/static/ubyhost-logo.jpg\" width=\"180\" alt=\"UbyHost\" style=\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\">\n</td></tr>\n<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">Xác nhận địa chỉ e-mail</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Cảm ơn bạn đã đăng ký UbyHost với không gian làm việc “x”. Mở liên kết bên dưới và nhấn nút để kích hoạt tài khoản.</p></td></tr><tr><td style=\"padding:8px 24px 0 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:separate;margin:0 0 8px 0;\"><tr><td style=\"background:#ad4942;border-radius:8px;padding:14px 24px;\"><a href=\"https://ubyhost.example/signup/verify?t={{claim_secret}}\" style=\"display:block;padding:0;font:600 16px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#ffffff;text-decoration:none;\">Xác nhận e-mail</a></td></tr></table></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Liên kết có hiệu lực trong 24 giờ. Nếu bạn không đăng ký, hãy bỏ qua e-mail này: tài khoản chưa xác nhận sẽ bị xóa sau 7 ngày.</p></td></tr><tr><td style=\"padding:14px 24px 0 24px;\"><div style=\"font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">If the button does not work, copy this address into your browser:</div><div style=\"font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;word-break:break-all;\"><a href=\"https://ubyhost.example/signup/verify?t={{claim_secret}}\" style=\"color:#ad4942;text-decoration:underline;\">https://ubyhost.example/signup/verify?t={{claim_secret}}</a></div></td></tr>\n<tr><td style=\"padding:28px 24px 28px 24px;\">\n<div style=\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">\n<div>UbyHost</div><div style=\"padding:4px 0 0 0;\">Thắc mắc: ops@ubyhost.example</div>\n</div>\n</td></tr>\n</table>\n</td></tr>\n</table>\n</body>\n</html>\n",
+   "kind": "verify",
+   "lang": "vi",
+   "subject": "Xác nhận tài khoản UbyHost của bạn",
+   "text": "Cảm ơn bạn đã đăng ký UbyHost với không gian làm việc “x”. Mở liên kết bên dưới và nhấn nút để kích hoạt tài khoản.\n\nXác nhận e-mail: https://ubyhost.example/signup/verify?t={{claim_secret}}\n\nLiên kết có hiệu lực trong 24 giờ. Nếu bạn không đăng ký, hãy bỏ qua e-mail này: tài khoản chưa xác nhận sẽ bị xóa sau 7 ngày.\n\n--\nUbyHost\nThắc mắc: ops@ubyhost.example",
+   "workspace": "x"
+  },
+  {
+   "html": "<!doctype html>\n<html lang=\"vi\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<meta name=\"color-scheme\" content=\"light only\">\n<title>Bạn đã có tài khoản</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f7f7f5;\">\n<div style=\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\">Có người, có thể là bạn, đã thử tạo tài khoản UbyHost mới bằng địa chỉ e-mail này. Địa chỉ này đã có tài khoản nên không có gì được tạo. ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f7f7f5;border-collapse:collapse;\">\n<tr><td align=\"center\" style=\"padding:28px 12px;\">\n<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\">\n<tr><td style=\"padding:28px 24px 0 24px;\">\n<img src=\"https://ubyhost.example/static/ubyhost-logo.jpg\" width=\"180\" alt=\"UbyHost\" style=\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\">\n</td></tr>\n<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">Bạn đã có tài khoản</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Có người, có thể là bạn, đã thử tạo tài khoản UbyHost mới bằng địa chỉ e-mail này. Địa chỉ này đã có tài khoản nên không có gì được tạo.</p></td></tr><tr><td style=\"padding:8px 24px 0 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:separate;margin:0 0 8px 0;\"><tr><td style=\"background:#ad4942;border-radius:8px;padding:14px 24px;\"><a href=\"https://app.ubyhost.example/login?lang=vi\" style=\"display:block;padding:0;font:600 16px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#ffffff;text-decoration:none;\">Đăng nhập</a></td></tr></table></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Đăng nhập từ trang đăng nhập bằng địa chỉ này: chúng tôi sẽ gửi liên kết qua e-mail. Nếu không phải bạn, hãy bỏ qua e-mail này.</p></td></tr>\n<tr><td style=\"padding:28px 24px 28px 24px;\">\n<div style=\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">\n<div>UbyHost</div><div style=\"padding:4px 0 0 0;\">Thắc mắc: ops@ubyhost.example</div>\n</div>\n</td></tr>\n</table>\n</td></tr>\n</table>\n</body>\n</html>\n",
+   "kind": "exists",
+   "lang": "vi",
+   "subject": "Có người đã thử tạo tài khoản UbyHost bằng e-mail của bạn",
+   "text": "Có người, có thể là bạn, đã thử tạo tài khoản UbyHost mới bằng địa chỉ e-mail này. Địa chỉ này đã có tài khoản nên không có gì được tạo.\n\nĐăng nhập: https://app.ubyhost.example/login?lang=vi\n\nĐăng nhập từ trang đăng nhập bằng địa chỉ này: chúng tôi sẽ gửi liên kết qua e-mail. Nếu không phải bạn, hãy bỏ qua e-mail này.\n\n--\nUbyHost\nThắc mắc: ops@ubyhost.example"
+  },
+  {
+   "html": "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<meta name=\"color-scheme\" content=\"light only\">\n<title>Confirm your e-mail address</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f7f7f5;\">\n<div style=\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\">Thanks for signing up for UbyHost with the workspace “Chata &lt;Pod&gt; &amp; &quot;Les&quot; 100%”. Open the link below and press the button to activate the account. ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f7f7f5;border-collapse:collapse;\">\n<tr><td align=\"center\" style=\"padding:28px 12px;\">\n<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\">\n<tr><td style=\"padding:28px 24px 0 24px;\">\n<img src=\"https://ubyhost.example/static/ubyhost-logo.jpg\" width=\"180\" alt=\"UbyHost\" style=\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\">\n</td></tr>\n<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">Confirm your e-mail address</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Thanks for signing up for UbyHost with the workspace “Chata &lt;Pod&gt; &amp; &quot;Les&quot; 100%”. Open the link below and press the button to activate the account.</p></td></tr><tr><td style=\"padding:8px 24px 0 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:separate;margin:0 0 8px 0;\"><tr><td style=\"background:#ad4942;border-radius:8px;padding:14px 24px;\"><a href=\"https://ubyhost.example/signup/verify?t={{claim_secret}}\" style=\"display:block;padding:0;font:600 16px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#ffffff;text-decoration:none;\">Confirm e-mail</a></td></tr></table></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">The link works for 24 hours. If you did not sign up, ignore this e-mail: the unconfirmed account is deleted after 7 days.</p></td></tr><tr><td style=\"padding:14px 24px 0 24px;\"><div style=\"font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">If the button does not work, copy this address into your browser:</div><div style=\"font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;word-break:break-all;\"><a href=\"https://ubyhost.example/signup/verify?t={{claim_secret}}\" style=\"color:#ad4942;text-decoration:underline;\">https://ubyhost.example/signup/verify?t={{claim_secret}}</a></div></td></tr>\n<tr><td style=\"padding:28px 24px 28px 24px;\">\n<div style=\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">\n<div>UbyHost</div><div style=\"padding:4px 0 0 0;\">Questions: ops@ubyhost.example</div>\n</div>\n</td></tr>\n</table>\n</td></tr>\n</table>\n</body>\n</html>\n",
+   "kind": "verify",
+   "lang": "de",
+   "subject": "Confirm your UbyHost account",
+   "text": "Thanks for signing up for UbyHost with the workspace “Chata <Pod> & \"Les\" 100%”. Open the link below and press the button to activate the account.\n\nConfirm e-mail: https://ubyhost.example/signup/verify?t={{claim_secret}}\n\nThe link works for 24 hours. If you did not sign up, ignore this e-mail: the unconfirmed account is deleted after 7 days.\n\n--\nUbyHost\nQuestions: ops@ubyhost.example",
+   "workspace": "Chata <Pod> & \"Les\" 100%"
+  },
+  {
+   "html": "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<meta name=\"color-scheme\" content=\"light only\">\n<title>Confirm your e-mail address</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f7f7f5;\">\n<div style=\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\">Thanks for signing up for UbyHost with the workspace “Penzion Ú Lípy”. Open the link below and press the button to activate the account. ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f7f7f5;border-collapse:collapse;\">\n<tr><td align=\"center\" style=\"padding:28px 12px;\">\n<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\">\n<tr><td style=\"padding:28px 24px 0 24px;\">\n<img src=\"https://ubyhost.example/static/ubyhost-logo.jpg\" width=\"180\" alt=\"UbyHost\" style=\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\">\n</td></tr>\n<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">Confirm your e-mail address</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Thanks for signing up for UbyHost with the workspace “Penzion Ú Lípy”. Open the link below and press the button to activate the account.</p></td></tr><tr><td style=\"padding:8px 24px 0 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:separate;margin:0 0 8px 0;\"><tr><td style=\"background:#ad4942;border-radius:8px;padding:14px 24px;\"><a href=\"https://ubyhost.example/signup/verify?t={{claim_secret}}\" style=\"display:block;padding:0;font:600 16px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#ffffff;text-decoration:none;\">Confirm e-mail</a></td></tr></table></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">The link works for 24 hours. If you did not sign up, ignore this e-mail: the unconfirmed account is deleted after 7 days.</p></td></tr><tr><td style=\"padding:14px 24px 0 24px;\"><div style=\"font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">If the button does not work, copy this address into your browser:</div><div style=\"font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;word-break:break-all;\"><a href=\"https://ubyhost.example/signup/verify?t={{claim_secret}}\" style=\"color:#ad4942;text-decoration:underline;\">https://ubyhost.example/signup/verify?t={{claim_secret}}</a></div></td></tr>\n<tr><td style=\"padding:28px 24px 28px 24px;\">\n<div style=\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">\n<div>UbyHost</div><div style=\"padding:4px 0 0 0;\">Questions: ops@ubyhost.example</div>\n</div>\n</td></tr>\n</table>\n</td></tr>\n</table>\n</body>\n</html>\n",
+   "kind": "verify",
+   "lang": "de",
+   "subject": "Confirm your UbyHost account",
+   "text": "Thanks for signing up for UbyHost with the workspace “Penzion Ú Lípy”. Open the link below and press the button to activate the account.\n\nConfirm e-mail: https://ubyhost.example/signup/verify?t={{claim_secret}}\n\nThe link works for 24 hours. If you did not sign up, ignore this e-mail: the unconfirmed account is deleted after 7 days.\n\n--\nUbyHost\nQuestions: ops@ubyhost.example",
+   "workspace": "Penzion Ú Lípy"
+  },
+  {
+   "html": "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<meta name=\"color-scheme\" content=\"light only\">\n<title>Confirm your e-mail address</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f7f7f5;\">\n<div style=\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\">Thanks for signing up for UbyHost with the workspace “x”. Open the link below and press the button to activate the account. ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f7f7f5;border-collapse:collapse;\">\n<tr><td align=\"center\" style=\"padding:28px 12px;\">\n<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\">\n<tr><td style=\"padding:28px 24px 0 24px;\">\n<img src=\"https://ubyhost.example/static/ubyhost-logo.jpg\" width=\"180\" alt=\"UbyHost\" style=\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\">\n</td></tr>\n<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">Confirm your e-mail address</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Thanks for signing up for UbyHost with the workspace “x”. Open the link below and press the button to activate the account.</p></td></tr><tr><td style=\"padding:8px 24px 0 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:separate;margin:0 0 8px 0;\"><tr><td style=\"background:#ad4942;border-radius:8px;padding:14px 24px;\"><a href=\"https://ubyhost.example/signup/verify?t={{claim_secret}}\" style=\"display:block;padding:0;font:600 16px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#ffffff;text-decoration:none;\">Confirm e-mail</a></td></tr></table></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">The link works for 24 hours. If you did not sign up, ignore this e-mail: the unconfirmed account is deleted after 7 days.</p></td></tr><tr><td style=\"padding:14px 24px 0 24px;\"><div style=\"font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">If the button does not work, copy this address into your browser:</div><div style=\"font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;word-break:break-all;\"><a href=\"https://ubyhost.example/signup/verify?t={{claim_secret}}\" style=\"color:#ad4942;text-decoration:underline;\">https://ubyhost.example/signup/verify?t={{claim_secret}}</a></div></td></tr>\n<tr><td style=\"padding:28px 24px 28px 24px;\">\n<div style=\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">\n<div>UbyHost</div><div style=\"padding:4px 0 0 0;\">Questions: ops@ubyhost.example</div>\n</div>\n</td></tr>\n</table>\n</td></tr>\n</table>\n</body>\n</html>\n",
+   "kind": "verify",
+   "lang": "de",
+   "subject": "Confirm your UbyHost account",
+   "text": "Thanks for signing up for UbyHost with the workspace “x”. Open the link below and press the button to activate the account.\n\nConfirm e-mail: https://ubyhost.example/signup/verify?t={{claim_secret}}\n\nThe link works for 24 hours. If you did not sign up, ignore this e-mail: the unconfirmed account is deleted after 7 days.\n\n--\nUbyHost\nQuestions: ops@ubyhost.example",
+   "workspace": "x"
+  },
+  {
+   "html": "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<meta name=\"color-scheme\" content=\"light only\">\n<title>You already have an account</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f7f7f5;\">\n<div style=\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\">Someone, probably you, tried to create a new UbyHost account with this e-mail address. An account with this address already exists, so nothing was created. ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f7f7f5;border-collapse:collapse;\">\n<tr><td align=\"center\" style=\"padding:28px 12px;\">\n<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\">\n<tr><td style=\"padding:28px 24px 0 24px;\">\n<img src=\"https://ubyhost.example/static/ubyhost-logo.jpg\" width=\"180\" alt=\"UbyHost\" style=\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\">\n</td></tr>\n<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">You already have an account</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Someone, probably you, tried to create a new UbyHost account with this e-mail address. An account with this address already exists, so nothing was created.</p></td></tr><tr><td style=\"padding:8px 24px 0 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:separate;margin:0 0 8px 0;\"><tr><td style=\"background:#ad4942;border-radius:8px;padding:14px 24px;\"><a href=\"https://app.ubyhost.example/login?lang=en\" style=\"display:block;padding:0;font:600 16px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#ffffff;text-decoration:none;\">Log in</a></td></tr></table></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Log in from the login page with this address: we e-mail you a link. If this was not you, you can ignore this e-mail.</p></td></tr>\n<tr><td style=\"padding:28px 24px 28px 24px;\">\n<div style=\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">\n<div>UbyHost</div><div style=\"padding:4px 0 0 0;\">Questions: ops@ubyhost.example</div>\n</div>\n</td></tr>\n</table>\n</td></tr>\n</table>\n</body>\n</html>\n",
+   "kind": "exists",
+   "lang": "de",
+   "subject": "Someone tried to create a UbyHost account with your e-mail",
+   "text": "Someone, probably you, tried to create a new UbyHost account with this e-mail address. An account with this address already exists, so nothing was created.\n\nLog in: https://app.ubyhost.example/login?lang=en\n\nLog in from the login page with this address: we e-mail you a link. If this was not you, you can ignore this e-mail.\n\n--\nUbyHost\nQuestions: ops@ubyhost.example"
+  },
+  {
+   "html": "<!doctype html>\n<html lang=\"cs\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<meta name=\"color-scheme\" content=\"light only\">\n<title>Potvrďte svou e-mailovou adresu</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f7f7f5;\">\n<div style=\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\">Děkujeme za registraci do UbyHostu s pracovním prostorem „Chata &lt;Pod&gt; &amp; &quot;Les&quot; 100%“. Otevřete odkaz níže a stisknutím tlačítka účet aktivujte. ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f7f7f5;border-collapse:collapse;\">\n<tr><td align=\"center\" style=\"padding:28px 12px;\">\n<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\">\n<tr><td style=\"padding:28px 24px 0 24px;\">\n<img src=\"https://ubyhost.example/static/ubyhost-logo.jpg\" width=\"180\" alt=\"UbyHost\" style=\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\">\n</td></tr>\n<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">Potvrďte svou e-mailovou adresu</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Děkujeme za registraci do UbyHostu s pracovním prostorem „Chata &lt;Pod&gt; &amp; &quot;Les&quot; 100%“. Otevřete odkaz níže a stisknutím tlačítka účet aktivujte.</p></td></tr><tr><td style=\"padding:8px 24px 0 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:separate;margin:0 0 8px 0;\"><tr><td style=\"background:#ad4942;border-radius:8px;padding:14px 24px;\"><a href=\"https://ubyhost.example/signup/verify?t={{claim_secret}}\" style=\"display:block;padding:0;font:600 16px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#ffffff;text-decoration:none;\">Potvrdit e-mail</a></td></tr></table></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Odkaz platí 24 hodin. Pokud jste se neregistrovali, e-mail ignorujte: nepotvrzený účet se po 7 dnech smaže.</p></td></tr><tr><td style=\"padding:14px 24px 0 24px;\"><div style=\"font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">Pokud tlačítko nefunguje, zkopírujte tuto adresu do prohlížeče:</div><div style=\"font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;word-break:break-all;\"><a href=\"https://ubyhost.example/signup/verify?t={{claim_secret}}\" style=\"color:#ad4942;text-decoration:underline;\">https://ubyhost.example/signup/verify?t={{claim_secret}}</a></div></td></tr>\n<tr><td style=\"padding:28px 24px 28px 24px;\">\n<div style=\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">\n<div>UbyHost</div><div style=\"padding:4px 0 0 0;\">Dotazy: ops@ubyhost.example</div>\n</div>\n</td></tr>\n</table>\n</td></tr>\n</table>\n</body>\n</html>\n",
+   "kind": "verify",
+   "lang": "CS-cz",
+   "subject": "Potvrďte svůj účet UbyHost",
+   "text": "Děkujeme za registraci do UbyHostu s pracovním prostorem „Chata <Pod> & \"Les\" 100%“. Otevřete odkaz níže a stisknutím tlačítka účet aktivujte.\n\nPotvrdit e-mail: https://ubyhost.example/signup/verify?t={{claim_secret}}\n\nOdkaz platí 24 hodin. Pokud jste se neregistrovali, e-mail ignorujte: nepotvrzený účet se po 7 dnech smaže.\n\n--\nUbyHost\nDotazy: ops@ubyhost.example",
+   "workspace": "Chata <Pod> & \"Les\" 100%"
+  },
+  {
+   "html": "<!doctype html>\n<html lang=\"cs\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<meta name=\"color-scheme\" content=\"light only\">\n<title>Potvrďte svou e-mailovou adresu</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f7f7f5;\">\n<div style=\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\">Děkujeme za registraci do UbyHostu s pracovním prostorem „Penzion Ú Lípy“. Otevřete odkaz níže a stisknutím tlačítka účet aktivujte. ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f7f7f5;border-collapse:collapse;\">\n<tr><td align=\"center\" style=\"padding:28px 12px;\">\n<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\">\n<tr><td style=\"padding:28px 24px 0 24px;\">\n<img src=\"https://ubyhost.example/static/ubyhost-logo.jpg\" width=\"180\" alt=\"UbyHost\" style=\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\">\n</td></tr>\n<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">Potvrďte svou e-mailovou adresu</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Děkujeme za registraci do UbyHostu s pracovním prostorem „Penzion Ú Lípy“. Otevřete odkaz níže a stisknutím tlačítka účet aktivujte.</p></td></tr><tr><td style=\"padding:8px 24px 0 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:separate;margin:0 0 8px 0;\"><tr><td style=\"background:#ad4942;border-radius:8px;padding:14px 24px;\"><a href=\"https://ubyhost.example/signup/verify?t={{claim_secret}}\" style=\"display:block;padding:0;font:600 16px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#ffffff;text-decoration:none;\">Potvrdit e-mail</a></td></tr></table></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Odkaz platí 24 hodin. Pokud jste se neregistrovali, e-mail ignorujte: nepotvrzený účet se po 7 dnech smaže.</p></td></tr><tr><td style=\"padding:14px 24px 0 24px;\"><div style=\"font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">Pokud tlačítko nefunguje, zkopírujte tuto adresu do prohlížeče:</div><div style=\"font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;word-break:break-all;\"><a href=\"https://ubyhost.example/signup/verify?t={{claim_secret}}\" style=\"color:#ad4942;text-decoration:underline;\">https://ubyhost.example/signup/verify?t={{claim_secret}}</a></div></td></tr>\n<tr><td style=\"padding:28px 24px 28px 24px;\">\n<div style=\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">\n<div>UbyHost</div><div style=\"padding:4px 0 0 0;\">Dotazy: ops@ubyhost.example</div>\n</div>\n</td></tr>\n</table>\n</td></tr>\n</table>\n</body>\n</html>\n",
+   "kind": "verify",
+   "lang": "CS-cz",
+   "subject": "Potvrďte svůj účet UbyHost",
+   "text": "Děkujeme za registraci do UbyHostu s pracovním prostorem „Penzion Ú Lípy“. Otevřete odkaz níže a stisknutím tlačítka účet aktivujte.\n\nPotvrdit e-mail: https://ubyhost.example/signup/verify?t={{claim_secret}}\n\nOdkaz platí 24 hodin. Pokud jste se neregistrovali, e-mail ignorujte: nepotvrzený účet se po 7 dnech smaže.\n\n--\nUbyHost\nDotazy: ops@ubyhost.example",
+   "workspace": "Penzion Ú Lípy"
+  },
+  {
+   "html": "<!doctype html>\n<html lang=\"cs\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<meta name=\"color-scheme\" content=\"light only\">\n<title>Potvrďte svou e-mailovou adresu</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f7f7f5;\">\n<div style=\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\">Děkujeme za registraci do UbyHostu s pracovním prostorem „x“. Otevřete odkaz níže a stisknutím tlačítka účet aktivujte. ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f7f7f5;border-collapse:collapse;\">\n<tr><td align=\"center\" style=\"padding:28px 12px;\">\n<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\">\n<tr><td style=\"padding:28px 24px 0 24px;\">\n<img src=\"https://ubyhost.example/static/ubyhost-logo.jpg\" width=\"180\" alt=\"UbyHost\" style=\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\">\n</td></tr>\n<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">Potvrďte svou e-mailovou adresu</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Děkujeme za registraci do UbyHostu s pracovním prostorem „x“. Otevřete odkaz níže a stisknutím tlačítka účet aktivujte.</p></td></tr><tr><td style=\"padding:8px 24px 0 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:separate;margin:0 0 8px 0;\"><tr><td style=\"background:#ad4942;border-radius:8px;padding:14px 24px;\"><a href=\"https://ubyhost.example/signup/verify?t={{claim_secret}}\" style=\"display:block;padding:0;font:600 16px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#ffffff;text-decoration:none;\">Potvrdit e-mail</a></td></tr></table></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Odkaz platí 24 hodin. Pokud jste se neregistrovali, e-mail ignorujte: nepotvrzený účet se po 7 dnech smaže.</p></td></tr><tr><td style=\"padding:14px 24px 0 24px;\"><div style=\"font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">Pokud tlačítko nefunguje, zkopírujte tuto adresu do prohlížeče:</div><div style=\"font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;word-break:break-all;\"><a href=\"https://ubyhost.example/signup/verify?t={{claim_secret}}\" style=\"color:#ad4942;text-decoration:underline;\">https://ubyhost.example/signup/verify?t={{claim_secret}}</a></div></td></tr>\n<tr><td style=\"padding:28px 24px 28px 24px;\">\n<div style=\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">\n<div>UbyHost</div><div style=\"padding:4px 0 0 0;\">Dotazy: ops@ubyhost.example</div>\n</div>\n</td></tr>\n</table>\n</td></tr>\n</table>\n</body>\n</html>\n",
+   "kind": "verify",
+   "lang": "CS-cz",
+   "subject": "Potvrďte svůj účet UbyHost",
+   "text": "Děkujeme za registraci do UbyHostu s pracovním prostorem „x“. Otevřete odkaz níže a stisknutím tlačítka účet aktivujte.\n\nPotvrdit e-mail: https://ubyhost.example/signup/verify?t={{claim_secret}}\n\nOdkaz platí 24 hodin. Pokud jste se neregistrovali, e-mail ignorujte: nepotvrzený účet se po 7 dnech smaže.\n\n--\nUbyHost\nDotazy: ops@ubyhost.example",
+   "workspace": "x"
+  },
+  {
+   "html": "<!doctype html>\n<html lang=\"cs\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<meta name=\"color-scheme\" content=\"light only\">\n<title>Účet už máte</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f7f7f5;\">\n<div style=\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\">Někdo, nejspíš vy, se pokusil založit nový účet UbyHost s touto e-mailovou adresou. Účet s touto adresou už existuje, takže se nic nového nezaložilo. ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f7f7f5;border-collapse:collapse;\">\n<tr><td align=\"center\" style=\"padding:28px 12px;\">\n<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\">\n<tr><td style=\"padding:28px 24px 0 24px;\">\n<img src=\"https://ubyhost.example/static/ubyhost-logo.jpg\" width=\"180\" alt=\"UbyHost\" style=\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\">\n</td></tr>\n<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">Účet už máte</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Někdo, nejspíš vy, se pokusil založit nový účet UbyHost s touto e-mailovou adresou. Účet s touto adresou už existuje, takže se nic nového nezaložilo.</p></td></tr><tr><td style=\"padding:8px 24px 0 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:separate;margin:0 0 8px 0;\"><tr><td style=\"background:#ad4942;border-radius:8px;padding:14px 24px;\"><a href=\"https://app.ubyhost.example/login?lang=cs\" style=\"display:block;padding:0;font:600 16px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#ffffff;text-decoration:none;\">Přihlásit se</a></td></tr></table></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Přihlaste se touto adresou na přihlašovací stránce: pošleme vám odkaz. Pokud jste to nebyli vy, e-mail můžete ignorovat.</p></td></tr>\n<tr><td style=\"padding:28px 24px 28px 24px;\">\n<div style=\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">\n<div>UbyHost</div><div style=\"padding:4px 0 0 0;\">Dotazy: ops@ubyhost.example</div>\n</div>\n</td></tr>\n</table>\n</td></tr>\n</table>\n</body>\n</html>\n",
+   "kind": "exists",
+   "lang": "CS-cz",
+   "subject": "Někdo se pokusil založit účet UbyHost s vaším e-mailem",
+   "text": "Někdo, nejspíš vy, se pokusil založit nový účet UbyHost s touto e-mailovou adresou. Účet s touto adresou už existuje, takže se nic nového nezaložilo.\n\nPřihlásit se: https://app.ubyhost.example/login?lang=cs\n\nPřihlaste se touto adresou na přihlašovací stránce: pošleme vám odkaz. Pokud jste to nebyli vy, e-mail můžete ignorovat.\n\n--\nUbyHost\nDotazy: ops@ubyhost.example"
+  },
+  {
+   "ads": true,
+   "campaign": "google / cpc / spring",
+   "html": "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<meta name=\"color-scheme\" content=\"light only\">\n<title>New verified sign-up</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f7f7f5;\">\n<div style=\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\">A new account was created and its e-mail address confirmed. The account is active now. If it should not be, disable it under Users. ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f7f7f5;border-collapse:collapse;\">\n<tr><td align=\"center\" style=\"padding:28px 12px;\">\n<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\">\n<tr><td style=\"padding:28px 24px 0 24px;\">\n<img src=\"https://ubyhost.example/static/ubyhost-logo.jpg\" width=\"180\" alt=\"UbyHost\" style=\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\">\n</td></tr>\n<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">New verified sign-up</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">A new account was created and its e-mail address confirmed. The account is active now. If it should not be, disable it under Users.</p></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">Workspace</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">Chata &lt;Pod&gt; &amp; &quot;Les&quot; 100%</div></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">E-mail</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">a@b.cz</div></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">Username</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">host-ab12</div></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">Campaign</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">google / cpc / spring</div></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">Google Ads click</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">yes</div></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">Facebook/Instagram click (with consent)</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">no</div></td></tr><tr><td style=\"padding:8px 24px 0 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:separate;margin:0 0 8px 0;\"><tr><td style=\"background:#ad4942;border-radius:8px;padding:14px 24px;\"><a href=\"https://app.ubyhost.example/admin/users\" style=\"display:block;padding:0;font:600 16px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#ffffff;text-decoration:none;\">Open Users</a></td></tr></table></td></tr>\n<tr><td style=\"padding:28px 24px 28px 24px;\">\n<div style=\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">\n<div>UbyHost</div><div style=\"padding:4px 0 0 0;\">Questions: ops@ubyhost.example</div>\n</div>\n</td></tr>\n</table>\n</td></tr>\n</table>\n</body>\n</html>\n",
+   "kind": "admin",
+   "meta": false,
+   "subject": "New UbyHost sign-up: Chata <Pod> & \"Les\" 100%",
+   "text": "A new account was created and its e-mail address confirmed. The account is active now. If it should not be, disable it under Users.\n\nWorkspace: Chata <Pod> & \"Les\" 100%\nE-mail: a@b.cz\nUsername: host-ab12\nCampaign: google / cpc / spring\nGoogle Ads click: yes\nFacebook/Instagram click (with consent): no\n\nOpen Users: https://app.ubyhost.example/admin/users\n\n--\nUbyHost\nQuestions: ops@ubyhost.example",
+   "workspace": "Chata <Pod> & \"Les\" 100%"
+  },
+  {
+   "ads": false,
+   "campaign": "",
+   "html": "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<meta name=\"color-scheme\" content=\"light only\">\n<title>New verified sign-up</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f7f7f5;\">\n<div style=\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\">A new account was created and its e-mail address confirmed. The account is active now. If it should not be, disable it under Users. ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f7f7f5;border-collapse:collapse;\">\n<tr><td align=\"center\" style=\"padding:28px 12px;\">\n<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\">\n<tr><td style=\"padding:28px 24px 0 24px;\">\n<img src=\"https://ubyhost.example/static/ubyhost-logo.jpg\" width=\"180\" alt=\"UbyHost\" style=\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\">\n</td></tr>\n<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">New verified sign-up</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">A new account was created and its e-mail address confirmed. The account is active now. If it should not be, disable it under Users.</p></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">Workspace</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\"></div></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">E-mail</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">a@b.cz</div></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">Username</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">host-ab12</div></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">Campaign</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">-</div></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">Google Ads click</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">no</div></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><div style=\"font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 6px 0;\">Facebook/Instagram click (with consent)</div><div style=\"font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">yes</div></td></tr><tr><td style=\"padding:8px 24px 0 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:separate;margin:0 0 8px 0;\"><tr><td style=\"background:#ad4942;border-radius:8px;padding:14px 24px;\"><a href=\"https://app.ubyhost.example/admin/users\" style=\"display:block;padding:0;font:600 16px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#ffffff;text-decoration:none;\">Open Users</a></td></tr></table></td></tr>\n<tr><td style=\"padding:28px 24px 28px 24px;\">\n<div style=\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">\n<div>UbyHost</div><div style=\"padding:4px 0 0 0;\">Questions: ops@ubyhost.example</div>\n</div>\n</td></tr>\n</table>\n</td></tr>\n</table>\n</body>\n</html>\n",
+   "kind": "admin",
+   "meta": true,
+   "subject": "New UbyHost sign-up: ",
+   "text": "A new account was created and its e-mail address confirmed. The account is active now. If it should not be, disable it under Users.\n\nWorkspace: \nE-mail: a@b.cz\nUsername: host-ab12\nCampaign: -\nGoogle Ads click: no\nFacebook/Instagram click (with consent): yes\n\nOpen Users: https://app.ubyhost.example/admin/users\n\n--\nUbyHost\nQuestions: ops@ubyhost.example",
+   "workspace": ""
+  }
+ ],
+ "now": 1798761600,
+ "payload": {
+  "json": "{\"text\": \"Thanks for signing up for UbyHost with the workspace \\u201cPenzion \\u00da L\\u00edpy\\u201d. Open the link below and press the button to activate the account.\\n\\nConfirm e-mail: https://ubyhost.example/signup/verify?t={{claim_secret}}\\n\\nThe link works for 24 hours. If you did not sign up, ignore this e-mail: the unconfirmed account is deleted after 7 days.\\n\\n--\\nUbyHost\\nQuestions: ops@ubyhost.example\", \"html\": \"<!doctype html>\\n<html lang=\\\"en\\\">\\n<head>\\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width,initial-scale=1\\\">\\n<meta name=\\\"color-scheme\\\" content=\\\"light only\\\">\\n<title>Confirm your e-mail address</title>\\n</head>\\n<body style=\\\"margin:0;padding:0;background:#f7f7f5;\\\">\\n<div style=\\\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\\\">Thanks for signing up for UbyHost with the workspace \\u201cPenzion \\u00da L\\u00edpy\\u201d. Open the link below and press the button to activate the account.\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f</div>\\n<table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"background:#f7f7f5;border-collapse:collapse;\\\">\\n<tr><td align=\\\"center\\\" style=\\\"padding:28px 12px;\\\">\\n<table role=\\\"presentation\\\" width=\\\"600\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\\\">\\n<tr><td style=\\\"padding:28px 24px 0 24px;\\\">\\n<img src=\\\"https://ubyhost.example/static/ubyhost-logo.jpg\\\" width=\\\"180\\\" alt=\\\"UbyHost\\\" style=\\\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\\\">\\n</td></tr>\\n<tr><td style=\\\"padding:20px 24px 0 24px;\\\"><h1 style=\\\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\\\">Confirm your e-mail address</h1></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">Thanks for signing up for UbyHost with the workspace \\u201cPenzion \\u00da L\\u00edpy\\u201d. Open the link below and press the button to activate the account.</p></td></tr><tr><td style=\\\"padding:8px 24px 0 24px;\\\"><table role=\\\"presentation\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"border-collapse:separate;margin:0 0 8px 0;\\\"><tr><td style=\\\"background:#ad4942;border-radius:8px;padding:14px 24px;\\\"><a href=\\\"https://ubyhost.example/signup/verify?t={{claim_secret}}\\\" style=\\\"display:block;padding:0;font:600 16px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#ffffff;text-decoration:none;\\\">Confirm e-mail</a></td></tr></table></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">The link works for 24 hours. If you did not sign up, ignore this e-mail: the unconfirmed account is deleted after 7 days.</p></td></tr><tr><td style=\\\"padding:14px 24px 0 24px;\\\"><div style=\\\"font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\\\">If the button does not work, copy this address into your browser:</div><div style=\\\"font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;word-break:break-all;\\\"><a href=\\\"https://ubyhost.example/signup/verify?t={{claim_secret}}\\\" style=\\\"color:#ad4942;text-decoration:underline;\\\">https://ubyhost.example/signup/verify?t={{claim_secret}}</a></div></td></tr>\\n<tr><td style=\\\"padding:28px 24px 28px 24px;\\\">\\n<div style=\\\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\\\">\\n<div>UbyHost</div><div style=\\\"padding:4px 0 0 0;\\\">Questions: ops@ubyhost.example</div>\\n</div>\\n</td></tr>\\n</table>\\n</td></tr>\\n</table>\\n</body>\\n</html>\\n\", \"lang\": \"CS-cz\"}",
+  "lang": "CS-cz"
+ },
+ "secret": "signup-golden-secret-0123456789-abcdefghij",
+ "selection": [
+  {
+   "json": "{\"interval\": \"year\", \"plan\": \"max\", \"ttlock\": \"1\"}",
+   "query": [
+    [
+     "plan",
+     "max"
+    ],
+    [
+     "interval",
+     "year"
+    ],
+    [
+     "ttlock",
+     "1"
+    ],
+    [
+     "apartments",
+     "07"
+    ]
+   ]
+  },
+  {
+   "json": "{\"apartments\": \"3\"}",
+   "query": [
+    [
+     "plan",
+     "gold"
+    ],
+    [
+     "apts",
+     "3"
+    ]
+   ]
+  },
+  {
+   "json": "{}",
+   "query": [
+    [
+     "apartments",
+     ""
+    ],
+    [
+     "apts",
+     "4"
+    ]
+   ]
+  },
+  {
+   "json": "{}",
+   "query": [
+    [
+     "apartments",
+     "51"
+    ]
+   ]
+  },
+  {
+   "json": "{\"apartments\": \"50\", \"plan\": \"standard\"}",
+   "query": [
+    [
+     "apartments",
+     "50"
+    ],
+    [
+     "plan",
+     "max"
+    ],
+    [
+     "plan",
+     "standard"
+    ]
+   ]
+  },
+  {
+   "json": "{}",
+   "query": [
+    [
+     "interval",
+     "month"
+    ],
+    [
+     "interval",
+     "week"
+    ]
+   ]
+  }
+ ],
+ "source": [
+  {
+   "attr": {},
+   "out": "none",
+   "stored": []
+  },
+  {
+   "attr": {
+    "utm_source": "google"
+   },
+   "out": "meta",
+   "stored": [
+    "meta"
+   ]
+  },
+  {
+   "attr": {},
+   "out": "google",
+   "stored": [
+    "google",
+    "meta"
+   ]
+  },
+  {
+   "attr": {
+    "utm_source": " Instagram "
+   },
+   "out": "meta",
+   "stored": []
+  },
+  {
+   "attr": {
+    "utm_source": "GoogleAds"
+   },
+   "out": "google",
+   "stored": []
+  },
+  {
+   "attr": {
+    "utm_source": "bing"
+   },
+   "out": "none",
+   "stored": []
+  }
+ ],
+ "tokens": [
+  {
+   "nonce": "AbC_-123xyzAbC_-123xy",
+   "token": "eyJ1aWQiOjcsIm4iOiJBYkNfLTEyM3h5ekFiQ18tMTIzeHkifQ.azbsgA.30FZcju7BFOrN9OnRcZ0NFYhRdg",
+   "uid": 7
+  },
+  {
+   "nonce": "n",
+   "token": "eyJ1aWQiOjEyMzQ1Njc4OSwibiI6Im4ifQ.azbsgA.FEZv6JCTK3CH4_jJndpyXIrP2VQ",
+   "uid": 123456789
+  }
+ ],
+ "trial": [
+  {
+   "first": "2027-01-01",
+   "last": "2027-01-31",
+   "stamp": "2027-01-01T00:00:00+00:00"
+  },
+  {
+   "first": "2026-10-25",
+   "last": "2026-11-24",
+   "stamp": "2026-10-25T22:30:00+00:00"
+  },
+  {
+   "first": "2026-03-02",
+   "last": "2026-04-01",
+   "stamp": "2026-03-01T23:30:00+00:00"
+  }
+ ],
+ "user_agent": [
+  {
+   "out": "Mozilla/5.0 (X11)",
+   "value": "Mozilla/5.0 (X11)"
+  },
+  {
+   "out": "tabhere",
+   "value": "  tab\there é  "
+  },
+  {
+   "out": null,
+   "value": ""
+  },
+  {
+   "out": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+   "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+  },
+  {
+   "out": "x",
+   "value": "  x  "
+  }
+ ],
+ "utm": [
+  {
+   "out": "google",
+   "value": " google "
+  },
+  {
+   "out": "spring sale 2027",
+   "value": "spring sale 2027"
+  },
+  {
+   "out": "a+b.c_d-e",
+   "value": "a+b.c_d-e"
+  },
+  {
+   "out": "",
+   "value": "<x>"
+  },
+  {
+   "out": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  {
+   "out": "",
+   "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  {
+   "out": "fb",
+   "value": "\u001d fb "
+  }
+ ],
+ "verify_link": "https://ubyhost.example/signup/verify?t={{claim_secret}}"
+}
