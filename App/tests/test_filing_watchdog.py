@@ -82,6 +82,9 @@ def world():
             "automation_mode": "manual",
             "active": 1,
             "created_at": now,
+            "uby_idub": "IDUB-TEST",
+            "uby_ws_user": "ws-test",
+            "uby_ws_password_enc": db.encrypt_secret("ws-secret"),
         },
     )
     counter = {"n": 0}
@@ -366,6 +369,22 @@ def test_the_real_watchdog_runs_inside_the_deadline_job(world, pings, monkeypatc
 
 
 # --- stays with no guest on file ("unknown risk") --------------------------------
+
+
+@pytest.mark.parametrize("field", ["uby_idub", "uby_ws_user", "uby_ws_password_enc"])
+@pytest.mark.parametrize("blank", [None, "", "   "])
+def test_a_property_without_its_ubyport_login_is_not_watched(world, field, blank):
+    """1171: UbyHost files nothing there, so no stay of it is at risk or unknown risk."""
+    at_risk = world["add_stay"]([("SVK", "pending")])
+    unknown = world["add_stay"]([])
+    now = datetime(2026, 9, 30, 8, 0)
+    assert at_risk in _mine(filing_watchdog.at_risk_stays(now), {at_risk})
+    assert unknown in _mine(filing_watchdog.unknown_risk_stays(now), {unknown})
+
+    db.execute(f"UPDATE apartment SET {field} = ? WHERE id = ?", (blank, world["apartment_id"]))
+
+    assert not _mine(filing_watchdog.at_risk_stays(now), {at_risk})
+    assert not _mine(filing_watchdog.unknown_risk_stays(now), {unknown})
 
 
 def test_a_stay_without_guests_is_unknown_risk_once_the_guests_have_arrived(world):

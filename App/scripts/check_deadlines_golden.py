@@ -32,6 +32,8 @@ OUT = APP.parent / "go" / "internal" / "calendar" / "testdata" / "check_deadline
 SEED_CREATED = "2026-09-01T00:00:00+00:00"
 SEED_RESOLVED = "2026-09-02T00:00:00+00:00"
 STAMP = "2026-09-01T00:00:00+00:00"
+# Any non-blank value: the deadline watch only checks the three fields are set.
+UBY_LOGIN = ["IDUB-TEST", "ws-test", "enc-test"]
 BAD_TOKEN = "not-a-token"
 
 _GUEST_COLUMNS = [
@@ -83,11 +85,17 @@ SEED = [
     {
         "table": "apartment",
         "columns": ["id", "owner_user_id", "internal_name", "city_en", "uby_name",
-                    "permalink_token", "active", "created_at"],
+                    "permalink_token", "active", "created_at", "uby_idub", "uby_ws_user",
+                    "uby_ws_password_enc"],
         "rows": [
-            [1, 1, "Byt Dole", "Brno", "UBY", "tok1", 1, STAMP],
-            [2, 1, "Byt Vypnuty", "Brno", "UBY", "tok2", 0, STAMP],
-            [3, 2, "Cizi byt", "Brno", "UBY", "tok3", 1, STAMP],
+            [1, 1, "Byt Dole", "Brno", "UBY", "tok1", 1, STAMP, *UBY_LOGIN],
+            [2, 1, "Byt Vypnuty", "Brno", "UBY", "tok2", 0, STAMP, *UBY_LOGIN],
+            [3, 2, "Cizi byt", "Brno", "UBY", "tok3", 1, STAMP, *UBY_LOGIN],
+            # 1171: one UbyPort login field missing or blank: UbyHost files nothing.
+            [4, 1, "Bez IDUB", "Brno", "UBY", "tok4", 1, STAMP, None, "ws-test", "enc-test"],
+            [5, 1, "Bez uzivatele", "Brno", "UBY", "tok5", 1, STAMP, "IDUB-TEST", "   ",
+             "enc-test"],
+            [6, 1, "Bez hesla", "Brno", "UBY", "tok6", 1, STAMP, "IDUB-TEST", "ws-test", ""],
         ],
     },
     {
@@ -116,6 +124,9 @@ SEED = [
             _stay(118, 1, "bad", "2026-09-20", declared=1),  # no check-in date
             _stay(119, 1, "2026-09-15", "2026-09-17", declared=1),  # fee reason unreadable
             _stay(120, 1, "2026-09-10", "2026-09-12", declared=3, reduced=1),
+            _stay(121, 4, "2026-09-10", "2026-09-14", declared=2),  # 1171: shortfall only
+            _stay(122, 5, "2026-09-15", "2026-09-18"),  # 1171: would be urgent: nothing
+            _stay(123, 6, "2026-09-16", "2026-09-20", declared=1),  # 1171: headcount alert only
         ],
     },
     {
@@ -135,6 +146,9 @@ SEED = [
             _guest(9, 118, complete=False, surname="Bad", stay_from="2026-09-10"),
             _guest(10, 119, fee_enc=BAD_TOKEN),
             _guest(11, 120),
+            _guest(12, 121),
+            _guest(13, 123, complete=False, surname="Early", stay_from="2026-09-11",
+                   stay_to="2026-09-20"),
         ],
     },
     {
@@ -165,6 +179,7 @@ SEED = [
                    dismissed=1),
             _alert(9016, "warning", "headcount_mismatch", 1, 104, 1, "headcount_mismatch:104",
                    dismissed=1),
+            _alert(9017, "critical", "deadline", 4, 121, 1, "deadline:121"),  # 1171: resolved
         ],
     },
 ]

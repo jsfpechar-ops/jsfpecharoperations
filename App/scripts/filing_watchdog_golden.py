@@ -39,6 +39,8 @@ GOLDEN_ENV = {
 }
 
 STAMP = "2026-09-01T00:00:00+00:00"
+# Any non-blank value: the watchdog only checks the three fields are set.
+UBY_LOGIN = ["IDUB-TEST", "ws-test", "enc-test"]
 
 _GUEST_COLUMNS = ["id", "reservation_id", "surname", "nationality", "submit_state",
                   "submission_id", "stay_from", "is_lead", "archived_at",
@@ -85,13 +87,20 @@ SEED = [
     {
         "table": "apartment",
         "columns": ["id", "owner_user_id", "legal_entity_id", "internal_name", "city_en",
-                    "uby_name", "permalink_token", "active", "created_at"],
+                    "uby_name", "permalink_token", "active", "created_at", "uby_idub",
+                    "uby_ws_user", "uby_ws_password_enc"],
         "rows": [
-            [1, 1, 1, "Byt Dole", "Brno", "UBY", "tok1", 1, STAMP],
-            [2, 1, 1, "Byt Vypnuty", "Brno", "UBY", "tok2", 0, STAMP],
-            [3, 2, None, "Cizi byt", "Brno", "UBY", "tok3", 1, STAMP],
-            [4, 1, 1, 'Byt <Žižkov> & "Co"', "Praha", "UBY", "tok4", 1, STAMP],
-            [5, None, 2, "", "Brno", "UBY", "tok5", 1, STAMP],
+            [1, 1, 1, "Byt Dole", "Brno", "UBY", "tok1", 1, STAMP, *UBY_LOGIN],
+            [2, 1, 1, "Byt Vypnuty", "Brno", "UBY", "tok2", 0, STAMP, *UBY_LOGIN],
+            [3, 2, None, "Cizi byt", "Brno", "UBY", "tok3", 1, STAMP, *UBY_LOGIN],
+            [4, 1, 1, 'Byt <Žižkov> & "Co"', "Praha", "UBY", "tok4", 1, STAMP, *UBY_LOGIN],
+            [5, None, 2, "", "Brno", "UBY", "tok5", 1, STAMP, *UBY_LOGIN],
+            # 1171: one UbyPort login field missing or blank: UbyHost files nothing.
+            [6, 1, 1, "Bez IDUB", "Brno", "UBY", "tok6", 1, STAMP, "  ", "ws-test", "enc-test"],
+            [7, 1, 1, "Bez uzivatele", "Brno", "UBY", "tok7", 1, STAMP, "IDUB-TEST", None,
+             "enc-test"],
+            [8, 1, 1, "Bez hesla", "Brno", "UBY", "tok8", 1, STAMP, "IDUB-TEST", "ws-test",
+             None],
         ],
     },
     {
@@ -146,6 +155,9 @@ SEED = [
             _stay(228, 1, "2026-09-15"),  # finished_at NULL: not awaiting
             _stay(229, 1, "2026-09-15", mailed=""),  # empty stamp counts as not mailed
             _stay(230, 3, "2026-09-12"),  # no guests, owner 2, overdue: unknown risk
+            _stay(241, 6, "2026-09-15"),  # 1171: would be at risk: neither list
+            _stay(242, 7, "2026-09-10"),  # 1171: would be overdue: neither list
+            _stay(243, 8, "2026-09-12"),  # 1171: no guests, would be unknown risk: neither
         ],
     },
     {
@@ -183,6 +195,8 @@ SEED = [
             _guest(29, 227, submission=307),
             _guest(30, 228, submission=308),
             _guest(31, 229, submission=309, state="error"),
+            _guest(41, 241),
+            _guest(42, 242, "USA", state="error"),
         ],
     },
     {

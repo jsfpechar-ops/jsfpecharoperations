@@ -1,5 +1,7 @@
 from datetime import date, datetime, timedelta, timezone
 
+import pytest
+
 from app import deadlines as d
 
 
@@ -216,8 +218,12 @@ def test_deadline_watch_uses_czech_time_and_keeps_old_compliance_debt(monkeypatc
 
 # --- the anchor the deadline actually runs from --------------------------
 
-def _stay_with_guests(monkeypatch, tmp_path, name, *, date_from, date_to, guests):
-    """One reservation plus guest rows carrying their own stay dates."""
+def _stay_with_guests(monkeypatch, tmp_path, name, *, date_from, date_to, guests,
+                      login=None):
+    """One reservation plus guest rows carrying their own stay dates.
+
+    The property has its UbyPort login (1171) unless ``login`` overrides fields.
+    """
     from app import config, db
 
     monkeypatch.setattr(config, "DB_PATH", tmp_path / name)
@@ -230,6 +236,10 @@ def _stay_with_guests(monkeypatch, tmp_path, name, *, date_from, date_to, guests
             "automation_mode": "manual",
             "active": 1,
             "created_at": now,
+            "uby_idub": "IDUB-TEST",
+            "uby_ws_user": "ws-test",
+            "uby_ws_password_enc": db.encrypt_secret("ws-secret"),
+            **(login or {}),
         },
     )
     reservation_id = db.insert(
@@ -379,6 +389,65 @@ def test_the_deadline_alert_runs_from_the_guest_arrival(monkeypatch, tmp_path):
     assert len(alert) == 1
     assert alert[0]["level"] == "critical"
     assert "Po termínu o 2 dny" in alerts.present(alert[0], "cs")["display_detail"]
+
+
+# --- 1171: a property without its UbyPort login files nothing ---------------
+
+_OVERDUE_STAY = {"date_from": "2026-09-09", "date_to": "2026-09-14",
+                 "guests": [("2026-09-09", "2026-09-14", None)]}
+
+
+def _run_watch(monkeypatch):
+    from app import reporting
+
+    monkeypatch.setattr(
+        reporting.deadlines, "local_now", lambda _now=None: datetime(2026, 9, 14, 12, 0)
+    )
+    return reporting.check_deadlines(datetime(2026, 9, 14, 12, 0))
+
+
+@pytest.mark.parametrize("field", ["uby_idub", "uby_ws_user", "uby_ws_password_enc"])
+@pytest.mark.parametrize("blank", [None, "", "   "])
+def test_a_property_without_its_ubyport_login_gets_no_deadline_alert(
+    monkeypatch, tmp_path, field, blank
+):
+    from app import alerts, db
+
+    reservation = _stay_with_guests(
+        monkeypatch, tmp_path, "no-login.sqlite3", login={field: blank}, **_OVERDUE_STAY
+    )
+    # An open card from before the property lost its login is cleared.
+    key = f"deadline:{reservation['id']}"
+    alerts.raise_alert("critical", "deadline", "old", "old", dedupe_key=key,
+                       reservation_id=reservation["id"])
+
+    assert _run_watch(monkeypatch) == 0
+    row = db.query_one("SELECT resolved_at FROM alert WHERE dedupe_key = ?", (key,))
+    assert row["resolved_at"] is not None
+    assert not [a for a in alerts.open_alerts() if a["kind"] == "deadline"]
+
+
+def test_a_fully_configured_property_is_still_deadline_alerted(monkeypatch, tmp_path):
+    from app import alerts
+
+    _stay_with_guests(monkeypatch, tmp_path, "with-login.sqlite3", **_OVERDUE_STAY)
+
+    assert _run_watch(monkeypatch) == 1
+    assert [a["level"] for a in alerts.open_alerts() if a["kind"] == "deadline"] == ["critical"]
+
+
+def test_a_property_without_its_login_still_gets_the_headcount_alert(monkeypatch, tmp_path):
+    from app import alerts, db
+
+    reservation = _stay_with_guests(
+        monkeypatch, tmp_path, "no-login-headcount.sqlite3", login={"uby_idub": None},
+        **_OVERDUE_STAY,
+    )
+    db.execute("UPDATE reservation SET declared_guests = 2 WHERE id = ?", (reservation["id"],))
+
+    _run_watch(monkeypatch)
+
+    assert [a["kind"] for a in alerts.open_alerts()] == ["headcount_mismatch"]
 
 
 def test_scheduled_send_is_pulled_forward_to_the_deadline_margin():

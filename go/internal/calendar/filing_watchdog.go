@@ -46,6 +46,7 @@ const watchdogAtRiskSQL = `SELECT r.id, r.date_from, r.at_risk_mailed_at,
 	LEFT JOIN user_account u ON u.id = a.owner_user_id
 	WHERE r.status = 'active' AND r.archived_at IS NULL AND a.active = 1
 	AND COALESCE(r.source, '') != 'demo'
+	AND ` + filesWithUbyhostSQL + `
 	AND g.archived_at IS NULL AND g.submit_state != $1
 	AND g.nationality IS NOT NULL AND g.nationality != ''
 	ORDER BY r.id`
@@ -60,6 +61,7 @@ const watchdogUnknownSQL = `SELECT r.id, r.date_from, r.at_risk_mailed_at,
 	LEFT JOIN user_account u ON u.id = a.owner_user_id
 	WHERE r.status = 'active' AND r.archived_at IS NULL AND a.active = 1
 	AND COALESCE(r.source, '') != 'demo'
+	AND ` + filesWithUbyhostSQL + `
 	AND r.date_from <= $1 AND r.date_from >= $2
 	AND NOT EXISTS (SELECT 1 FROM guest g
 	WHERE g.reservation_id = r.id AND g.archived_at IS NULL)

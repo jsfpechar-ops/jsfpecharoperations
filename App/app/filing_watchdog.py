@@ -39,6 +39,11 @@ report is due, because Czech guests owe none. Such a stay gets the host mail
 once ("no guest details yet") and a section of the operator digest, but it
 never sets the heartbeat to ``/fail``: that is kept for guests known to be
 reportable, so a stay of Czech guests nobody typed in does not page anyone.
+
+1171: a stay on a property without its UbyPort login (IDUB, web-service user
+or password blank, ``reporting.FILES_WITH_UBYHOST_SQL``) is in neither list.
+UbyHost files nothing for that property, so it gets no host mail, no digest
+line and never sets the heartbeat to ``/fail``.
 """
 from __future__ import annotations
 
@@ -114,6 +119,7 @@ def at_risk_stays(
         "LEFT JOIN user_account u ON u.id = a.owner_user_id "
         "WHERE r.status = 'active' AND r.archived_at IS NULL AND a.active = 1 "
         "AND COALESCE(r.source, '') != 'demo' "  # 0100: the setup guide's demo stay
+        "AND " + reporting.FILES_WITH_UBYHOST_SQL + " "
         "AND g.archived_at IS NULL AND g.submit_state != ? "
         "AND g.nationality IS NOT NULL AND g.nationality != '' "
         "ORDER BY r.id",
@@ -185,6 +191,7 @@ def unknown_risk_stays(now: Optional[datetime] = None) -> List[Dict[str, Any]]:
         "LEFT JOIN user_account u ON u.id = a.owner_user_id "
         "WHERE r.status = 'active' AND r.archived_at IS NULL AND a.active = 1 "
         "AND COALESCE(r.source, '') != 'demo' "  # 0100: the setup guide's demo stay
+        "AND " + reporting.FILES_WITH_UBYHOST_SQL + " "
         "AND r.date_from <= ? AND r.date_from >= ? "
         "AND NOT EXISTS (SELECT 1 FROM guest g "
         "WHERE g.reservation_id = r.id AND g.archived_at IS NULL) "
