@@ -67,7 +67,4 @@ Append-only.
 - 2026-11-13 [dep] 1390: gopdf v0.38.4 PDF in go/internal/pdf; thin anthropic HTTP; go-webauthn login/passkey (owner)
 - 2026-11-13 [infra] CI→GHCR; server pulls | owner | [1210](../tasks/1210-ci-built-go-image.md)
 - 2026-11-13 [security] #966: 1200-1205; Go env in compose; K-S12 ok; 1206-1207 after merge (owner)
-<<<<<<< HEAD
-=======
 - 2026-11-13 [mail] Completion CC to host again; PII stays in guest_details_host | owner | 1291
->>>>>>> cursor/1291-completion-host-cc-4fbb
