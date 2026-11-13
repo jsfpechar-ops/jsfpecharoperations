@@ -225,7 +225,7 @@ def test_a_quiet_feed_checked_recently_is_not_stale():
 
 
 def test_a_never_checked_feed_is_listed_before_stale_ones():
-    """Task 1170: NULL sorts first on SQLite and last on PostgreSQL; the list must put it first on both."""
+    """Task 1172: NULL sorts first on SQLite and last on PostgreSQL; the list must put it first on both."""
     host_id = _account("feedsnull", "host")
     assert demo.seed(host_id)
     apartment = db.query_one(
