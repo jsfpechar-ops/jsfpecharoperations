@@ -46,6 +46,7 @@ From `App/`: `.venv/bin/python -m pytest <files from the test-map> -q --tb=short
 | Env vars | [ENVIRONMENT](docs/ENVIRONMENT.md) (one section) |
 | Deploy, server, backups | [LIGHTSAIL](docs/LIGHTSAIL.md), [backups](docs/OPERATIONS.md#backup-and-restore) |
 | Mail | [SES](docs/SES.md), [rules: mail](docs/context/rules.md#mail) |
+| State or status column, transitions | [rules: state machines](docs/context/rules.md#state-machines) |
 | A bug, or "is X known?" | `grep` [known-issues](docs/context/known-issues.md) for the file or area |
 | Where code lives, a term, why a choice | [architecture](docs/context/architecture.md), [glossary](docs/context/glossary.md), `grep` [decisions](docs/context/decisions.md) |
 | Old audit or patch detail | [archive index](docs/archive/README.md), then one section only |
