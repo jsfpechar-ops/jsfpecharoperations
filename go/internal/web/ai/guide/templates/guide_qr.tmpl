@@ -1,0 +1,23 @@
+{{- /* Go twin of App/app/templates/guest_guide_qr.html (brief 1443). */ -}}
+{{define "guide_qr.title"}}{{end}}
+{{define "guide_qr.back_label"}}{{t "guest_guide.title"}}{{end}}
+{{define "guide_qr"}}
+<div class="guide-page guide-form-page">
+<div class="head guide-hd"><div><a class="guide-back" href="{{.Base}}">{{t "guest_guide.title"}}</a><div class="heading-with-tip"><h1 class="big">{{t "guest_guide.qr.title"}}{{help_tip "guide-qr-meta-help" (t "guest_guide.qr.meta")}}</h1></div></div></div>
+{{if not .Progress.Live}}{{ui_banner "attention" (t "guest_guide.qr.not_live")}}{{end}}
+{{guide_section_open "qr-code" .Apartment.InternalName (help_tip "guide-qr-print-help" (t "guest_guide.qr.print_help"))}}
+<img class="guide-qr" src="{{.QR}}" width="240" height="240" alt="{{t "guest_guide.qr.alt"}}">
+<p class="ui-mono">{{.GuestURL}}</p>
+<div class="ui-form-actions">
+{{ui_button (t "guest_guide.qr.download") "primary" (kv "href" (printf "%s/qr.png" .Base) "icon_name" "download")}}
+{{ui_button (t "guest_guide.qr.open") "secondary" (kv "href" .GuestURL "icon_name" "external-link" "attrs" (safe `target="_blank" rel="noopener"`))}}
+</div>
+{{guide_section_close}}
+{{guide_section_open "qr-rotate" (t "guest_guide.qr.rotate_title") (help_tip "guide-qr-rotate-help" (t "guest_guide.qr.rotate_help"))}}
+<form method="post" action="{{.Base}}/qr/rotate" data-confirm data-confirm-message="{{t "guest_guide.qr.rotate_confirm"}}">
+<input type="hidden" name="_csrf" value="{{csrf}}">
+{{ui_button (t "guest_guide.qr.rotate") "danger" (kv "type" "submit" "icon_name" "refresh-cw")}}
+</form>
+{{guide_section_close}}
+</div>
+{{end}}
