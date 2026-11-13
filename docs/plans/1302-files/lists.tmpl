@@ -1,0 +1,136 @@
+{{/* Port of App/app/templates/entities.html (list, no open editor) and apartments.html (empty state), brief 1302. */}}
+{{define "lists.onboarding_banner"}}{{if .Show}}<aside class="onboarding-banner onboarding-banner-setup" aria-label="{{t "setup.banner.aria"}}">
+  <a class="onboarding-banner-setup-link" href="{{.URL}}">{{t "setup.banner.line"}}</a>
+  <form method="post" action="/onboarding/dismiss">
+    <input type="hidden" name="return_to" value="{{.ReturnPath}}">
+    <button class="onboarding-skip-link" type="submit">{{t "onboarding.skip"}}</button>
+  </form>
+</aside>{{end}}{{end}}
+
+{{define "entities.title"}}{{end}}
+{{define "entities"}}
+<div class="airbnb-header">
+  <a class="airbnb-back" href="/settings" aria-label="{{t "common.back"}}">{{icon "arrow-left" 20}}</a>
+  <h1 class="airbnb-title">{{if .TitleHead}}{{.TitleHead}} {{end}}<span class="tip-nowrap">{{.TitleLast}}{{help_tip "entities-lede-help" (t "entities.lede")}}</span></h1>
+</div>
+{{template "lists.onboarding_banner" .Banner}}
+{{if .Entities}}
+<div class="card entities-page">
+  <table class="ui-table ui-table-stack">
+    <thead><tr><th class="col-name">{{t "entities.name"}}</th><th>{{t "entities.seat"}}</th><th>{{t "entities.ico"}}</th><th>{{t "entities.contact"}}</th>
+      <th>{{t "entities.properties"}}</th><th></th></tr></thead>
+    <tbody>
+    {{range .Entities}}
+      <tr class="clickable-row" data-href="/entities?edit={{.ID}}" tabindex="0" role="link" aria-label="{{t "entities.open" "name" .Name}}">
+        <td class="col-name" data-label="{{t "entities.name"}}"><a class="row-primary-link" href="/entities?edit={{.ID}}">{{.Name}}</a></td>
+        <td data-label="{{t "entities.seat"}}">{{or .Seat "—"}}</td>
+        <td class="mono" data-label="{{t "entities.ico"}}">{{or .ICO "—"}}</td>
+        <td class="ui-sub" data-label="{{t "entities.contact"}}">{{if .Email}}{{.Email}}{{else}}<span class="ui-badge ui-badge-action" data-tone="amber">{{t "entities.missing"}}</span>{{end}}</td>
+        <td class="num" data-label="{{t "entities.properties"}}">{{.Apartments}}</td>
+        <td class="nowrap row-actions" data-label="">
+          <a class="ui-btn ui-btn-open ui-btn-compact" href="/entities?edit={{.ID}}">{{t "common.edit"}}</a>
+          <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/entities?edit={{.ID}}#entity-invoice">{{t "host.invoice_settings"}}</a>
+          {{row_menu_begin}}
+            {{if not .Apartments}}
+            <form method="post" action="/entities/{{.ID}}/archive" class="row-menu-form" data-confirm data-confirm-message="{{t "host.delete_to_archived.confirm"}}">
+              <button class="row-menu-item" type="submit" role="menuitem">{{t "host.delete"}}</button>
+            </form>
+            {{else}}
+              <button class="row-menu-item" type="button" role="menuitem" aria-disabled="true" tabindex="0" aria-describedby="linked-operator-{{.ID}}">{{t "host.delete"}}</button>
+              <div class="row-menu-explanation" id="linked-operator-{{.ID}}" role="note">{{t "entities.delete_linked_help"}}</div>
+            {{end}}
+          {{row_menu_end}}
+        </td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+</div>
+{{end}}
+{{if .Archived}}
+<h2>{{t "entities.archived"}}</h2>
+<p class="ui-sub">{{t "entities.archived_lede"}}</p>
+<div class="card">
+  <table class="ui-table ui-table-stack">
+    <thead><tr><th class="col-name">{{t "entities.name"}}</th><th>{{t "entities.archived"}}</th><th>{{t "entities.ico"}}</th><th></th></tr></thead>
+    <tbody>
+    {{range .Archived}}
+      <tr class="clickable-row" data-href="/entities?edit={{.ID}}" tabindex="0" role="link">
+        <td class="col-name" data-label="{{t "entities.name"}}"><a class="row-primary-link" href="/entities?edit={{.ID}}">{{.Name}}</a></td>
+        <td class="ui-sub" data-label="{{t "entities.archived"}}">{{.ArchivedCZ}}</td>
+        <td class="mono" data-label="{{t "entities.ico"}}">{{or .ICO "—"}}</td>
+        <td class="nowrap row-actions" data-label="">
+          <a class="row-open" href="/entities?edit={{.ID}}" tabindex="-1" aria-hidden="true"><span class="row-open-text">{{t "common.open"}}</span></a>
+          {{row_menu_begin}}
+            <form method="post" action="/entities/{{.ID}}/unarchive" class="row-menu-form">
+              <button class="row-menu-item" type="submit" role="menuitem">{{t "common.restore"}}</button>
+            </form>
+            {{if not .Apartments}}
+            <form method="post" action="/entities/{{.ID}}/delete" class="row-menu-form" data-confirm data-confirm-message="{{t "confirm.delete_entity"}}">
+              <button class="row-menu-item danger" type="submit" role="menuitem">{{t "entities.delete"}}</button>
+            </form>
+            {{end}}
+          {{row_menu_end}}
+        </td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+</div>
+{{end}}
+<div class="card entity-add" id="entity-add">
+  <h2>{{tip_label (t "entities.add") "entity-add-why-help" (t "why.business") "span"}}</h2>
+  <form method="post" action="/entities" enctype="multipart/form-data">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    {{if .NextPath}}<input type="hidden" name="next" value="{{.NextPath}}">{{end}}
+    <p class="required-legend">{{t "common.required_legend"}}</p>
+    <div class="grid">
+      <div class="field">
+        <label for="new_ico">{{t "entities.ico"}}<span class="req-star" aria-hidden="true">*</span></label>
+        <div class="action-group" style="align-items:flex-end">
+          <input type="text" id="new_ico" name="ico" inputmode="numeric" autocomplete="off" placeholder="12345678" required value="">
+          <button class="btn" type="submit" name="fill_from_register" value="1" formnovalidate>{{t "ares.fill"}}</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="new_dic">{{t "entities.dic"}}</label>
+        <input type="text" id="new_dic" name="dic" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="CZ12345678" value="">
+      </div>
+    </div>
+    <div class="field">
+      <label for="new_name">{{t "entities.name"}}<span class="req-star" aria-hidden="true">*</span></label>
+      <input type="text" id="new_name" name="name" autocomplete="organization" autocapitalize="words" required value="" placeholder="{{t "entities.name_placeholder"}}">
+    </div>
+    <p class="property-section-title">{{t "entities.seat_title"}}</p>
+    <p class="section-note">{{t "entities.seat_line"}}</p>
+    <div class="field">
+      <label for="new_seat">{{t "entities.seat"}}<span class="req-star" aria-hidden="true">*</span></label>
+      <input type="text" id="new_seat" name="seat" autocomplete="street-address" autocapitalize="words" required value="" placeholder="{{t "entities.seat_placeholder"}}">
+    </div>
+    <div class="grid">
+      <div class="field">
+        <label for="new_contact_email">{{t "entities.email"}}<span class="req-star" aria-hidden="true">*</span></label>
+        <input type="email" id="new_contact_email" name="contact_email" autocomplete="email" autocapitalize="none" spellcheck="false" required value="{{.AccountEmail}}">
+      </div>
+      <div class="field">
+        <div class="field-label-row"><label for="new_contact_phone">{{t "entities.phone"}}</label>{{help_tip "new_contact-phone-help" (t "entity.signature.moved")}}</div>
+        <div class="operator-phone">
+          <span class="operator-phone-prefix">
+            <span aria-hidden="true">+</span>
+            <input type="text" class="operator-phone-code" id="new_contact_phone_country_code" name="contact_phone_country_code" value="" inputmode="numeric" autocomplete="tel-country-code" maxlength="3" pattern="[1-9][0-9]{0,2}" aria-label="{{t "entities.phone_country_code"}}" data-phone-country-code>
+          </span>
+          <input type="tel" class="operator-phone-number" id="new_contact_phone" name="contact_phone" autocomplete="tel-national" inputmode="tel" value="">
+        </div>
+      </div>
+    </div>
+    <div class="actions"><button class="ui-btn ui-btn-primary" type="submit">{{t "entities.add_action"}}</button></div>
+  </form>
+</div>
+{{end}}
+
+{{define "apartments.title"}}{{end}}
+{{define "apartments"}}
+{{template "lists.onboarding_banner" .Banner}}
+<div class="head props-head"><div class="props-title-row"><h1>{{t "apartments.title"}}</h1>{{page_help "properties"}}</div></div>
+{{if .HasOperator}}{{empty_state "" (t "apartments.empty.lede_ready") "/apartments/new" (t "apartments.empty.add")}}{{else}}{{empty_state "" (t "apartments.empty.lede") "/entities" (t "apartments.empty.entity")}}{{end}}
+{{end}}
