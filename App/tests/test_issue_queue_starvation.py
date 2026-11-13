@@ -116,3 +116,103 @@ def test_pending_and_retrying_rows_of_an_ended_stay_expire_and_live_ones_do_not(
     assert _row(ids["retrying"])["state"] == door_codes.EXPIRED
     assert counts["expired"] == 2
     assert _row(live)["state"] == door_codes.ISSUED
+
+
+# --- 1173c ---------------------------------------------------------------------------------------------
+
+
+def _released() -> int:
+    """A row issue() put back for not_eligible: attempts 0 again, its backoff over (due long ago)."""
+    row_id = _stuck("not_eligible")
+    db.execute("UPDATE door_code SET last_error = 'not_eligible' WHERE id = ?", (row_id,))
+    return row_id
+
+
+def test_released_rows_sort_after_new_rows_and_real_retries(monkeypatch):
+    """25 released rows are older than a new row and a real retry; they still go last (1173c)."""
+    monkeypatch.setattr(door_codes, "BATCH", 3)
+    for _ in range(25):
+        _released()
+    _, _, stay = _stay(registered_minutes_ago=5)
+    retry_id = door_codes.ensure_row(stay)
+    db.execute(
+        "UPDATE door_code SET state = ?, attempts = 2, last_error = 'network', next_attempt_at = ? WHERE id = ?",
+        (door_codes.RETRYING, OLD, retry_id),
+    )
+    new_id = _healthy()
+    seen = []
+    monkeypatch.setattr(door_codes, "issue", lambda rid, allow_gateway=False: seen.append(rid) or True)
+    door_codes._issue_due(db.utcnow())
+    assert len(seen) == 3 and new_id in seen and retry_id in seen
+    assert seen[:2] == [new_id, retry_id]  # new rows, then real retries, then released rows
+
+
+def test_a_pending_row_of_a_stay_that_ends_today_is_not_expired(lock):
+    """The test is date_to < today (the one _eligible_sql uses), not <=: the check-out day is still live."""
+    today = deadlines.local_now().date()
+    _, _, stay = _stay(registered_minutes_ago=30)
+    row_id = door_codes.ensure_row(stay)
+    db.execute(
+        "UPDATE reservation SET date_from = ?, date_to = ? WHERE id = ?",
+        ((today - timedelta(days=2)).isoformat(), today.isoformat(), stay),
+    )
+    db.execute("UPDATE door_code SET next_attempt_at = ? WHERE id = ?", (OLD, row_id))
+    assert door_codes._expire_ended_stays(db.utcnow()) == 0
+    assert _row(row_id)["state"] == door_codes.PENDING
+
+
+@pytest.mark.parametrize(
+    "change",
+    ["status = 'cancelled'", "archived_at = '2026-01-01T00:00:00+00:00'"],
+    ids=["cancelled", "archived"],
+)
+def test_a_cancelled_or_archived_ended_stay_is_revoked_not_expired(lock, change):
+    """_expire_ended_stays leaves it to _handle_cancellations: the row ends revoked (1173c)."""
+    today = deadlines.local_now().date()
+    _, _, stay = _stay(registered_minutes_ago=30)
+    row_id = door_codes.ensure_row(stay)
+    db.execute(
+        f"UPDATE reservation SET {change}, date_from = ?, date_to = ? WHERE id = ?",
+        ((today - timedelta(days=3)).isoformat(), (today - timedelta(days=1)).isoformat(), stay),
+    )
+    db.execute("UPDATE door_code SET next_attempt_at = ? WHERE id = ?", (OLD, row_id))
+    door_codes.reconcile()
+    assert _row(row_id)["state"] == door_codes.REVOKED
+
+
+def _expired_unissued(stay_end_offset_days: int):
+    """A stay whose row expired before any code was made, then its dates changed to end today + offset."""
+    today = deadlines.local_now().date()
+    _, _, stay = _stay(registered_minutes_ago=30)
+    row_id = door_codes.ensure_row(stay)
+    db.execute("UPDATE door_code SET state = ?, attempts = 0, next_attempt_at = ? WHERE id = ?", (door_codes.EXPIRED, OLD, row_id))
+    db.execute(
+        "UPDATE reservation SET date_from = ?, date_to = ? WHERE id = ?",
+        ((today - timedelta(days=3)).isoformat(), (today + timedelta(days=stay_end_offset_days)).isoformat(), stay),
+    )
+    return stay, row_id
+
+
+def test_an_expired_row_without_a_code_comes_back_when_the_stay_is_extended(lock):
+    stay, old_id = _expired_unissued(2)
+    door_codes.reconcile()
+    row = db.query_one("SELECT * FROM door_code WHERE reservation_id = ?", (stay,))
+    assert row["state"] == door_codes.ISSUED and row["provider_code_id"] == "code-1"
+    assert db.query_one(
+        "SELECT 1 AS n FROM audit WHERE action = 'door_code_reset' AND detail = ?", (f"door_code={old_id}",)
+    )
+
+
+def test_an_expired_row_stays_expired_when_its_window_has_ended(monkeypatch, lock):
+    """date_to is today, so the stay is eligible, but the window ended: reviving it would loop every tick."""
+    _, row_id = _expired_unissued(0)
+    monkeypatch.setattr(ttlock, "stay_window", lambda *a, **k: (0, 1))
+    assert door_codes._revive_unissued_expired() == 0
+    assert _row(row_id)["state"] == door_codes.EXPIRED
+
+
+def test_an_expired_row_that_had_a_code_stays_expired(lock):
+    _, row_id = _expired_unissued(2)
+    db.execute("UPDATE door_code SET provider_code_id = 'code-9' WHERE id = ?", (row_id,))  # issued, then expired
+    assert door_codes._revive_unissued_expired() == 0
+    assert _row(row_id)["state"] == door_codes.EXPIRED
