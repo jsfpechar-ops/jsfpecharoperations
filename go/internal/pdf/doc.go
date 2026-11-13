@@ -30,7 +30,6 @@ import (
 	_ "embed"
 	"math"
 	"strings"
-	"time"
 
 	"github.com/signintech/gopdf"
 )
@@ -62,7 +61,6 @@ func RGB(r, g, b int) Color { return Color{float64(r) / 255, float64(g) / 255, f
 
 var (
 	regM, boldM *metrics
-	fixedDate   = time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 )
 
 func init() {
@@ -243,7 +241,7 @@ func (d *Doc) Bytes() ([]byte, error) {
 		return nil, err
 	}
 	p.AddPage()
-	info := gopdf.PdfInfo{Producer: "UbyHost", Creator: "UbyHost", CreationDate: fixedDate}
+	info := gopdf.PdfInfo{Producer: "UbyHost", Creator: "UbyHost"}
 	for _, o := range d.ops {
 		switch o.Kind {
 		case "meta":
@@ -278,7 +276,9 @@ func (d *Doc) Bytes() ([]byte, error) {
 					return nil, err
 				}
 			} else {
-				p.SetLineWidth(0)
+				if o.Stroke == nil {
+					p.SetLineWidth(0)
+				}
 				if err := p.Rectangle(o.X, top, o.X+o.W, top+o.H, style, 0, 0); err != nil {
 					return nil, err
 				}
@@ -320,7 +320,7 @@ func (d *Doc) Bytes() ([]byte, error) {
 }
 
 // baselineOffset is how far below the gopdf cursor y the text baseline falls.
-// Calibrated by TestBaseline against the content stream.
+// Zero: gopdf already places the text baseline on the requested y (checked against the content stream).
 func baselineOffset(size float64) float64 { return 0 }
 
 // wmOffset is the distance from the top of a gopdf cell to the text baseline
