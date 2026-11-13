@@ -28,5 +28,7 @@ func Routes(pool *pgxpool.Pool, getenv func(string) string, now func() time.Time
 		{"GET /submissions/{id}/errors.pdf", "/submissions/{id}/errors.pdf", SubmissionPDFHandler(pool, getenv, now, "errors")},
 		{"GET /submissions/{id}/{file}", "/submissions/{id}/{file}", SubmissionFileHandler(pool, getenv, now)},
 		{"GET /reservations/{id}/dorucenka.zip", "/reservations/{id}/dorucenka.zip", StayReceiptsHandler(pool, getenv, now)},
+		{"GET /housebook.csv", "/housebook.csv", HousebookCSVHandler(pool, getenv, now)},
+		{"GET /guests/{id}/export.json", "/guests/{id}/export.json", GuestExportHandler(pool, getenv, now)},
 	}
 }

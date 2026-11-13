@@ -54,6 +54,10 @@ PDF_B = base64.b64encode(b"%PDF-1.4 receipt B\n").decode()
 PDF_C = base64.b64encode(b"%PDF-1.4 receipt C\n").decode()
 PDF_ERR = base64.b64encode(b"%PDF-1.4 errors\n").decode()
 STAMP = "2026-01-01T00:00:00+00:00"
+# A 1x1 PNG: a signature validation.parse_signature_data_url accepts.
+SIGNATURE = ("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhf"
+             "DwAChwGA60e6kgAAAABJRU5ErkJggg==")
+
 
 def token(text: str) -> str:
     """A Fernet token with a fixed time and IV, so the golden is stable."""
@@ -149,11 +153,69 @@ def seed() -> list:
                 [5, 9, "Bad", "Bo", "AUT", "sent", 3, None, STAMP, STAMP],
             ],
         },
+        {
+            # Brief 1321: the house book and the guest bundle.
+            "table": "guest",
+            "columns": ["id", "reservation_id", "surname", "first_name", "birth_date", "birth_date_enc",
+                        "nationality", "doc_number_enc", "res_street_enc", "res_city_enc", "res_country",
+                        "purpose", "note", "stay_from", "stay_to", "signature_png", "signature_png_enc",
+                        "submit_state", "submitted_at", "submission_id", "manual_filed_at",
+                        "manual_reference", "signed_for_guest_id", "entered_by", "passport_photo_at",
+                        "archived_at", "restricted_at", "notice_version", "notice_lang", "notice_ack_at",
+                        "created_at", "updated_at"],
+            "rows": [
+                [11, 1, "M\u00fcller", "Hans", None, token("15061980"), "DEU", token("C01X00T47"),
+                 token("Hauptstr. 1"), token("Berlin"), "deu", "10", "=cmd", None, None,
+                 None, token(SIGNATURE), "sent", "2026-05-02T10:00:00+00:00", 1, None, None, None,
+                 "guest", STAMP, None, None, "2", "de", STAMP, STAMP, STAMP],
+                [12, 1, "M\u00fcller", "Kid", "01012020", None, "DEU", None, None, None, "DEU",
+                 "10", None, None, None, None, None, "pending", None, None, None, None, 11,
+                 "guest", None, None, None, None, None, None, STAMP, STAMP],
+                [13, 1, "M\u00fcller", "Baby", "00002019", None, "DEU", None, None, None, None,
+                 "03", "line\nbreak", None, None, None, None, "pending", None, None, None, None, None,
+                 "guest", None, None, None, None, None, None, STAMP, STAMP],
+                [14, 2, "Dvo\u0159\u00e1k", "Petr", "02031975", None, "CZE", None, None, None, "CZE",
+                 "77", None, "2026-05-11", None, "imported", None, "sent", None, 10,
+                 "2026-05-11T08:00:00+00:00", "MAN-1", None, "host", STAMP, None, None,
+                 None, None, None, STAMP, STAMP],
+                [15, 6, "Tab\tName", "Q\"uote", "1990", None, "AUT", None, None, None, "xxx",
+                 None, None, None, "2026-06-02", "data:image/png;base64,xx", None, "error", None,
+                 None, None, None, None, "guest", None, None, None, None, None, None, STAMP, STAMP],
+                [16, 1, "Archived", "A", None, None, "DEU", None, None, None, None, None, None,
+                 None, None, None, None, "pending", None, None, None, None, None, "guest", None,
+                 STAMP, None, None, None, None, STAMP, STAMP],
+                [17, 1, "Restricted", "R", None, None, "DEU", None, None, None, None, None, None,
+                 None, None, None, None, "pending", None, None, None, None, None, "guest", None,
+                 None, STAMP, None, None, None, STAMP, STAMP],
+                [18, 4, "Demo", "D", None, None, "DEU", None, None, None, None, None, None,
+                 None, None, None, None, "pending", None, None, None, None, None, "guest", None,
+                 None, None, None, None, None, STAMP, STAMP],
+                [20, 9, "Paper", "Adult", "01011980", None, "AUT", None, None, None, None, None, None,
+                 None, None, "imported", None, "pending", None, None, None, None, None, "guest", None,
+                 None, None, None, None, None, STAMP, STAMP],
+                [19, 9, "Paper", "Child", "01012021", None, "AUT", None, None, None, None, None, None,
+                 None, None, None, None, "not_required", None, None, None, None, 20, "guest", None,
+                 None, None, None, None, None, STAMP, STAMP],
+            ],
+        },
+        {
+            "table": "audit",
+            "columns": ["at", "actor", "action", "detail", "owner_user_id"],
+            "rows": [
+                [STAMP, "owner@example.test", "guest_saved", "id=11", 1],
+                [STAMP, "owner@example.test", "export_registration_pdf", "guest_id=11", 1],
+                [STAMP, "owner@example.test", "export_registration_pdf", "guest_id=111", 1],
+                [STAMP, "guest", "guest_form_saved", "guest=11 lang=de", 1],
+                [STAMP, "owner@example.test", "other_action", "id=11", 1],
+                [STAMP, "other@example.test", "export_registration_pdf", "guest_id=11", 2],
+                [STAMP, "owner@example.test", "note", "guest_id=11 extra", 1],
+            ],
+        },
     ]
 
 
 # Passport photo files in $UBYHOST_DATA_DIR/passport_photos (content is not read).
-PHOTOS: list = []
+PHOTOS: list = ["11.jpg.enc", "14.png"]
 
 OWNER = {"uid": 1}
 OTHER = {"uid": 2}
@@ -199,6 +261,21 @@ CASES = [
     ("stays_csv_apartment_last", "/reservations.csv?from=2026-01-01&to=2026-12-31&apartment=6&apartment=7", OWNER, None),
     ("stays_csv_narrow", "/reservations.csv?from=2026-05-04&to=2026-05-09", OWNER, None),
     ("stays_csv_other", "/reservations.csv?from=2026-01-01&to=2026-12-31", OTHER, None),
+    # Brief 1321
+    ("housebook_signed_out", "/housebook.csv", None, None),
+    ("housebook_all", "/housebook.csv", OWNER, None),
+    ("housebook_apartment", "/housebook.csv?apartment=6", OWNER, None),
+    ("housebook_range", "/housebook.csv?from=2026-05-02&to=2026-05-10", OWNER, None),
+    ("housebook_other", "/housebook.csv", OTHER, None),
+    ("housebook_supporting", "/housebook.csv", SUPPORT, None),
+    ("guest_json_fresh", "/guests/11/export.json", OWNER, None),
+    ("guest_json_plain", "/guests/14/export.json", OWNER, None),
+    ("guest_json_child", "/guests/15/export.json", OWNER, None),
+    ("guest_json_stale", "/guests/11/export.json", {"uid": 1, "stale": 1}, None),
+    ("guest_json_stale_cs", "/guests/11/export.json", {"uid": 1, "stale": 1}, "cs"),
+    ("guest_json_other_owner", "/guests/4/export.json", OWNER, None),
+    ("guest_json_missing", "/guests/999/export.json", OWNER, None),
+    ("guest_json_supporting", "/guests/11/export.json", SUPPORT, None),
 ]
 
 # The response headers a route itself sets (plus the middleware's Cache-Control).

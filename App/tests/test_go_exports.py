@@ -32,7 +32,7 @@ def test_exports_golden_names_the_covered_routes():
     paths = {case["path"].split("?")[0] for case in golden["cases"]}
     for path in ("/reservations.csv", "/submissions/receipts.zip", "/submissions/1/receipt.pdf",
                  "/submissions/2/errors.pdf", "/submissions/1/request.xml",
-                 "/reservations/1/dorucenka.zip"):
+                 "/reservations/1/dorucenka.zip", "/housebook.csv", "/guests/11/export.json"):
         assert path in paths
 
 
