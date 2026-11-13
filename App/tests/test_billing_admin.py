@@ -145,3 +145,20 @@ def test_the_accountant_zip_has_the_csv_and_every_pdf(setup):
 def test_a_bad_month_falls_back_to_the_current_one():
     assert billing_admin.month_or_current("2026-13", date(2026, 10, 26)) == "2026-10"
     assert billing_admin.month_or_current("2026-02", date(2026, 10, 26)) == "2026-02"
+
+
+@pytest.mark.parametrize("prefix", ["=", "+", "-", "@"])
+def test_export_csv_neutralises_formula_buyer_names_and_keeps_amounts(monkeypatch, prefix):
+    evil = prefix + "HYPERLINK(\"http://x.test\")"
+    row = {
+        "number": "2026001", "kind": "storno", "corrects_number": "", "issue_date": "2026-05-01",
+        "due_date": "2026-05-15", "period_from": "2026-05-01", "period_to": "2026-05-31",
+        "buyer": {"name": evil, "ico": "27074358", "dic": prefix + "CZ1"},
+        "total_haler": -5000, "vs": "2026001", "paid_on": None, "paid_via": None, "voided": 0,
+    }
+    monkeypatch.setattr(billing_admin, "invoices", lambda month: [row])
+    text = billing_admin.export_csv("2026-05").decode("utf-8-sig")
+    cells = list(csv.reader(io.StringIO(text), delimiter=";"))[1]
+    assert cells[7] == "'" + evil
+    assert cells[9] == "'" + prefix + "CZ1"
+    assert cells[10] == "-50,00"  # a storno total stays a plain number string
