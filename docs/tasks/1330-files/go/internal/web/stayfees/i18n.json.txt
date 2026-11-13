@@ -1,0 +1,50 @@
+{
+ "cs": {
+  "flash.error.identity_hidden_export": "Skryto během podpory: stahování s doklady, podpisy nebo fotografiemi hostů je v pracovním prostoru hostitele zablokované.",
+  "flash.error.no_such_apartment": "Toto ubytování už neexistuje.",
+  "flash.error.no_such_guest": "Tento host už neexistuje.",
+  "flash.stay_fees.adjust_sealed": "Tato úprava je v uloženém hlášení a tady ji nelze vrátit.",
+  "flash.stay_fees.copy_done": "Poplatek nastaven stejně jako u %(name)s.",
+  "flash.stay_fees.copy_failed": "Toto nastavení sem nejde převzít. Nastavte poplatek v nastavení nemovitosti.",
+  "flash.stay_fees.marked_paid": "Označeno jako zaplacené.",
+  "flash.stay_fees.marked_sent": "Označeno jako odeslané.",
+  "flash.stay_fees.not_saved": "Nejdřív uložte období, teprve pak stáhnete uzavřené soubory.",
+  "flash.stay_fees.paid": "Označeno jako zaplacené.",
+  "flash.stay_fees.reason_required": "Při osvobození hosta uveďte důvod.",
+  "flash.stay_fees.report_blocked": "Hlášení zatím nelze vytvořit. Doplňte údaje uvedené na stránce.",
+  "flash.stay_fees.saved": "Uloženo.",
+  "flash.stay_fees.scope_invalid": "Doplňte rozhodnutí úřadu a jeho odkaz."
+ },
+ "en": {
+  "flash.error.identity_hidden_export": "Hidden while supporting: downloads with guest documents, signatures or photos are blocked in a host's workspace.",
+  "flash.error.no_such_apartment": "This property no longer exists.",
+  "flash.error.no_such_guest": "This guest no longer exists.",
+  "flash.stay_fees.adjust_sealed": "This correction is part of a saved filing and cannot be undone here.",
+  "flash.stay_fees.copy_done": "Stay fee set up like %(name)s.",
+  "flash.stay_fees.copy_failed": "This setup cannot be copied here. Set the fee in the property settings.",
+  "flash.stay_fees.marked_paid": "Marked as paid.",
+  "flash.stay_fees.marked_sent": "Marked as sent.",
+  "flash.stay_fees.not_saved": "Save the period first to download the sealed files.",
+  "flash.stay_fees.paid": "Marked as paid.",
+  "flash.stay_fees.reason_required": "Give a reason when you exempt a guest.",
+  "flash.stay_fees.report_blocked": "The report can't be created yet. Fix the items shown on the page.",
+  "flash.stay_fees.saved": "Saved.",
+  "flash.stay_fees.scope_invalid": "Enter the council ruling and reference."
+ },
+ "vi": {
+  "flash.error.identity_hidden_export": "Ẩn trong khi hỗ trợ: không thể tải tệp có giấy tờ, chữ ký hoặc ảnh của khách trong không gian làm việc của chủ nhà.",
+  "flash.error.no_such_apartment": "Chỗ ở này không còn tồn tại.",
+  "flash.error.no_such_guest": "Khách này không còn tồn tại.",
+  "flash.stay_fees.adjust_sealed": "Điều chỉnh này thuộc một hồ sơ đã lưu và không thể hoàn tác ở đây.",
+  "flash.stay_fees.copy_done": "Đã thiết lập phí giống %(name)s.",
+  "flash.stay_fees.copy_failed": "Không thể sao chép thiết lập này. Hãy thiết lập phí trong cài đặt chỗ ở.",
+  "flash.stay_fees.marked_paid": "Đã đánh dấu là đã thanh toán.",
+  "flash.stay_fees.marked_sent": "Đã đánh dấu là đã gửi.",
+  "flash.stay_fees.not_saved": "Hãy lưu kỳ trước để tải các tệp đã niêm phong.",
+  "flash.stay_fees.paid": "Đã đánh dấu là đã thanh toán.",
+  "flash.stay_fees.reason_required": "Hãy nêu lý do khi miễn phí cho khách.",
+  "flash.stay_fees.report_blocked": "Chưa thể tạo báo cáo. Hãy xử lý các mục hiển thị trên trang.",
+  "flash.stay_fees.saved": "Đã lưu.",
+  "flash.stay_fees.scope_invalid": "Nhập quyết định của chính quyền và số văn bản."
+ }
+}

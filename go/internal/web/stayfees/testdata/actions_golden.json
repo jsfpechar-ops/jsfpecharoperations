@@ -1,0 +1,5599 @@
+{
+ "cases": [
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {
+    "audit_new": [
+     {
+      "action": "stay_fee_adjustment_undo",
+      "actor": "host1@example.test",
+      "actor_user_id": 1,
+      "at": "2026-11-13T10:00:00+00:00",
+      "detail": "id=1",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     }
+    ],
+    "stay_fee_adjustment": [
+     {
+      "apartment_id": 12,
+      "filing_id": null,
+      "id": 1,
+      "reversed_at": "2026-11-13T10:00:00+00:00",
+      "reversed_by": 1
+     },
+     {
+      "apartment_id": 12,
+      "filing_id": null,
+      "id": 2,
+      "reversed_at": "2026-10-05T00:00:00+00:00",
+      "reversed_by": 1
+     },
+     {
+      "apartment_id": 12,
+      "filing_id": 1,
+      "id": 3,
+      "reversed_at": null,
+      "reversed_by": null
+     },
+     {
+      "apartment_id": 20,
+      "filing_id": null,
+      "id": 4,
+      "reversed_at": null,
+      "reversed_by": null
+     },
+     {
+      "apartment_id": 12,
+      "filing_id": null,
+      "id": 5,
+      "reversed_at": null,
+      "reversed_by": null
+     },
+     {
+      "apartment_id": 12,
+      "filing_id": null,
+      "id": 6,
+      "reversed_at": null,
+      "reversed_by": null
+     }
+    ]
+   },
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-10"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-10&msg=Saved.",
+   "method": "POST",
+   "name": "undo ok",
+   "path": "/stay-fees/12/adjustment/1/undo",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-10"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-10",
+   "method": "POST",
+   "name": "undo twice is a plain redirect",
+   "path": "/stay-fees/12/adjustment/1/undo",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-10"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-10",
+   "method": "POST",
+   "name": "undo already reversed",
+   "path": "/stay-fees/12/adjustment/2/undo",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-10"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-10&err=This%20correction%20is%20part%20of%20a%20saved%20filing%20and%20cannot%20be%20undone%20here.",
+   "method": "POST",
+   "name": "undo sealed",
+   "path": "/stay-fees/12/adjustment/3/undo",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-10"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-10",
+   "method": "POST",
+   "name": "undo missing row",
+   "path": "/stay-fees/12/adjustment/999/undo",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-10"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-10",
+   "method": "POST",
+   "name": "undo row of another apartment",
+   "path": "/stay-fees/12/adjustment/4/undo",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-10"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees?err=This%20property%20no%20longer%20exists.",
+   "method": "POST",
+   "name": "undo foreign apartment",
+   "path": "/stay-fees/20/adjustment/4/undo",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {
+    "audit_new": [
+     {
+      "action": "stay_fee_adjustment_undo",
+      "actor": "admin@example.test",
+      "actor_user_id": 3,
+      "at": "2026-11-13T10:00:00+00:00",
+      "detail": "id=5",
+      "impersonator_user_id": 3,
+      "owner_user_id": 1
+     }
+    ],
+    "stay_fee_adjustment": [
+     {
+      "apartment_id": 12,
+      "filing_id": null,
+      "id": 1,
+      "reversed_at": "2026-11-13T10:00:00+00:00",
+      "reversed_by": 1
+     },
+     {
+      "apartment_id": 12,
+      "filing_id": null,
+      "id": 2,
+      "reversed_at": "2026-10-05T00:00:00+00:00",
+      "reversed_by": 1
+     },
+     {
+      "apartment_id": 12,
+      "filing_id": 1,
+      "id": 3,
+      "reversed_at": null,
+      "reversed_by": null
+     },
+     {
+      "apartment_id": 20,
+      "filing_id": null,
+      "id": 4,
+      "reversed_at": null,
+      "reversed_by": null
+     },
+     {
+      "apartment_id": 12,
+      "filing_id": null,
+      "id": 5,
+      "reversed_at": "2026-11-13T10:00:00+00:00",
+      "reversed_by": 1
+     },
+     {
+      "apartment_id": 12,
+      "filing_id": null,
+      "id": 6,
+      "reversed_at": null,
+      "reversed_by": null
+     }
+    ]
+   },
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-13"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-11&msg=Saved.",
+   "method": "POST",
+   "name": "undo as impersonating admin, bad month",
+   "path": "/stay-fees/12/adjustment/5/undo",
+   "status": 303,
+   "who": "admin_imp"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {
+    "audit_new": [
+     {
+      "action": "stay_fee_adjustment_undo",
+      "actor": "host1@example.test",
+      "actor_user_id": 1,
+      "at": "2026-11-13T10:00:00+00:00",
+      "detail": "id=6",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     }
+    ],
+    "stay_fee_adjustment": [
+     {
+      "apartment_id": 12,
+      "filing_id": null,
+      "id": 1,
+      "reversed_at": "2026-11-13T10:00:00+00:00",
+      "reversed_by": 1
+     },
+     {
+      "apartment_id": 12,
+      "filing_id": null,
+      "id": 2,
+      "reversed_at": "2026-10-05T00:00:00+00:00",
+      "reversed_by": 1
+     },
+     {
+      "apartment_id": 12,
+      "filing_id": 1,
+      "id": 3,
+      "reversed_at": null,
+      "reversed_by": null
+     },
+     {
+      "apartment_id": 20,
+      "filing_id": null,
+      "id": 4,
+      "reversed_at": null,
+      "reversed_by": null
+     },
+     {
+      "apartment_id": 12,
+      "filing_id": null,
+      "id": 5,
+      "reversed_at": "2026-11-13T10:00:00+00:00",
+      "reversed_by": 1
+     },
+     {
+      "apartment_id": 12,
+      "filing_id": null,
+      "id": 6,
+      "reversed_at": "2026-11-13T10:00:00+00:00",
+      "reversed_by": 1
+     }
+    ]
+   },
+   "content_disposition": null,
+   "content_type": null,
+   "form": {},
+   "identity_hidden": false,
+   "lang": "cs",
+   "location": "/stay-fees/12?month=2026-11&msg=Ulo%C5%BEeno.",
+   "method": "POST",
+   "name": "undo default month, Czech",
+   "path": "/stay-fees/12/adjustment/6/undo",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-10"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/login?next=/stay-fees/12/adjustment/6/undo",
+   "method": "POST",
+   "name": "undo not signed in",
+   "path": "/stay-fees/12/adjustment/6/undo",
+   "status": 303,
+   "who": null
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {
+    "audit_new": [
+     {
+      "action": "stay_fee_decision",
+      "actor": "host1@example.test",
+      "actor_user_id": 1,
+      "at": "2026-11-13T10:00:00+00:00",
+      "detail": "guest_id=1 decision=exempt",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     }
+    ],
+    "guest": [
+     {
+      "decision": "exempt",
+      "id": 1,
+      "reason": "disability",
+      "reason_enc_set": true,
+      "reason_plain_column": null,
+      "reference": "",
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": "charge",
+      "id": 2,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 3,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 4,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": "exempt",
+      "id": 5,
+      "reason": "disability",
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 6,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 7,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 8,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 9,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 10,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 11,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 12,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     }
+    ]
+   },
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "apartment_id": "12",
+    "decision": "exempt",
+    "guest_id": "1",
+    "month": "2026-10",
+    "reason": "disability"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-10&msg=Saved.#guests",
+   "method": "POST",
+   "name": "decision exempt disability",
+   "path": "/stay-fees/guest-decision",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {
+    "audit_new": [
+     {
+      "action": "stay_fee_decision",
+      "actor": "host1@example.test",
+      "actor_user_id": 1,
+      "at": "2026-11-13T10:00:00+00:00",
+      "detail": "guest_id=6 decision=exempt",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     }
+    ],
+    "guest": [
+     {
+      "decision": "exempt",
+      "id": 1,
+      "reason": "disability",
+      "reason_enc_set": true,
+      "reason_plain_column": null,
+      "reference": "",
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": "charge",
+      "id": 2,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 3,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 4,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": "exempt",
+      "id": 5,
+      "reason": "disability",
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": "exempt",
+      "id": 6,
+      "reason": "diplomat",
+      "reason_enc_set": true,
+      "reason_plain_column": null,
+      "reference": "",
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 7,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 8,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 9,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 10,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 11,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 12,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     }
+    ]
+   },
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "apartment_id": "12",
+    "decision": " exempt ",
+    "guest_id": "6",
+    "month": "2026-10",
+    "reason": "  diplomat  "
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-10&msg=Saved.#guests",
+   "method": "POST",
+   "name": "decision exempt padded fields",
+   "path": "/stay-fees/guest-decision",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "apartment_id": "12",
+    "decision": "exempt",
+    "guest_id": "7",
+    "month": "2026-10",
+    "reason": "local_rule",
+    "reason_reference": "ab"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-10&err=Give%20a%20reason%20when%20you%20exempt%20a%20guest.#guests",
+   "method": "POST",
+   "name": "decision local_rule short reference",
+   "path": "/stay-fees/guest-decision",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {
+    "audit_new": [
+     {
+      "action": "stay_fee_decision",
+      "actor": "host1@example.test",
+      "actor_user_id": 1,
+      "at": "2026-11-13T10:00:00+00:00",
+      "detail": "guest_id=7 decision=exempt",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     }
+    ],
+    "guest": [
+     {
+      "decision": "exempt",
+      "id": 1,
+      "reason": "disability",
+      "reason_enc_set": true,
+      "reason_plain_column": null,
+      "reference": "",
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": "charge",
+      "id": 2,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 3,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 4,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": "exempt",
+      "id": 5,
+      "reason": "disability",
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": "exempt",
+      "id": 6,
+      "reason": "diplomat",
+      "reason_enc_set": true,
+      "reason_plain_column": null,
+      "reference": "",
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": "exempt",
+      "id": 7,
+      "reason": "local_rule",
+      "reason_enc_set": true,
+      "reason_plain_column": null,
+      "reference": "§ 5 vyhlasky č. 1",
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 8,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 9,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 10,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 11,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 12,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     }
+    ]
+   },
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "apartment_id": "12",
+    "decision": "exempt",
+    "guest_id": "7",
+    "month": "2026-10",
+    "reason": "local_rule",
+    "reason_reference": "§ 5 vyhlasky č. 1"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-10&msg=Saved.#guests",
+   "method": "POST",
+   "name": "decision local_rule",
+   "path": "/stay-fees/guest-decision",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {
+    "audit_new": [
+     {
+      "action": "stay_fee_decision",
+      "actor": "host1@example.test",
+      "actor_user_id": 1,
+      "at": "2026-11-13T10:00:00+00:00",
+      "detail": "guest_id=8 decision=exempt",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     }
+    ],
+    "guest": [
+     {
+      "decision": "exempt",
+      "id": 1,
+      "reason": "disability",
+      "reason_enc_set": true,
+      "reason_plain_column": null,
+      "reference": "",
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": "charge",
+      "id": 2,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 3,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 4,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": "exempt",
+      "id": 5,
+      "reason": "disability",
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": "exempt",
+      "id": 6,
+      "reason": "diplomat",
+      "reason_enc_set": true,
+      "reason_plain_column": null,
+      "reference": "",
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": "exempt",
+      "id": 7,
+      "reason": "local_rule",
+      "reason_enc_set": true,
+      "reason_plain_column": null,
+      "reference": "§ 5 vyhlasky č. 1",
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": "exempt",
+      "id": 8,
+      "reason": "local_rule",
+      "reason_enc_set": true,
+      "reason_plain_column": null,
+      "reference": "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 9,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 10,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 11,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 12,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     }
+    ]
+   },
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "apartment_id": "12",
+    "decision": "exempt",
+    "guest_id": "8",
+    "month": "2026-10",
+    "reason": "local_rule",
+    "reason_reference": "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-10&msg=Saved.#guests",
+   "method": "POST",
+   "name": "decision local_rule long reference",
+   "path": "/stay-fees/guest-decision",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "apartment_id": "12",
+    "decision": "exempt",
+    "guest_id": "9",
+    "month": "2026-10",
+    "reason": "bogus"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-10&err=Give%20a%20reason%20when%20you%20exempt%20a%20guest.#guests",
+   "method": "POST",
+   "name": "decision exempt unknown reason",
+   "path": "/stay-fees/guest-decision",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "apartment_id": "12",
+    "decision": "exempt",
+    "guest_id": "9",
+    "month": "2026-10"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-10&err=Give%20a%20reason%20when%20you%20exempt%20a%20guest.#guests",
+   "method": "POST",
+   "name": "decision exempt no reason",
+   "path": "/stay-fees/guest-decision",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {
+    "audit_new": [
+     {
+      "action": "stay_fee_decision",
+      "actor": "host1@example.test",
+      "actor_user_id": 1,
+      "at": "2026-11-13T10:00:00+00:00",
+      "detail": "guest_id=5 decision=charge",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     }
+    ],
+    "guest": [
+     {
+      "decision": "exempt",
+      "id": 1,
+      "reason": "disability",
+      "reason_enc_set": true,
+      "reason_plain_column": null,
+      "reference": "",
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": "charge",
+      "id": 2,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 3,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 4,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": "charge",
+      "id": 5,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": "exempt",
+      "id": 6,
+      "reason": "diplomat",
+      "reason_enc_set": true,
+      "reason_plain_column": null,
+      "reference": "",
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": "exempt",
+      "id": 7,
+      "reason": "local_rule",
+      "reason_enc_set": true,
+      "reason_plain_column": null,
+      "reference": "§ 5 vyhlasky č. 1",
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": "exempt",
+      "id": 8,
+      "reason": "local_rule",
+      "reason_enc_set": true,
+      "reason_plain_column": null,
+      "reference": "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 9,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 10,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 11,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 12,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     }
+    ]
+   },
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "apartment_id": "12",
+    "decision": "charge",
+    "guest_id": "5",
+    "month": "2026-10",
+    "reason": "disability",
+    "reason_reference": "x"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-10&msg=Saved.#guests",
+   "method": "POST",
+   "name": "decision charge drops reason",
+   "path": "/stay-fees/guest-decision",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {
+    "audit_new": [
+     {
+      "action": "stay_fee_decision",
+      "actor": "host1@example.test",
+      "actor_user_id": 1,
+      "at": "2026-11-13T10:00:00+00:00",
+      "detail": "guest_id=2 decision=auto",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     }
+    ],
+    "guest": [
+     {
+      "decision": "exempt",
+      "id": 1,
+      "reason": "disability",
+      "reason_enc_set": true,
+      "reason_plain_column": null,
+      "reference": "",
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 2,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 3,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 4,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": "charge",
+      "id": 5,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": "exempt",
+      "id": 6,
+      "reason": "diplomat",
+      "reason_enc_set": true,
+      "reason_plain_column": null,
+      "reference": "",
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": "exempt",
+      "id": 7,
+      "reason": "local_rule",
+      "reason_enc_set": true,
+      "reason_plain_column": null,
+      "reference": "§ 5 vyhlasky č. 1",
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": "exempt",
+      "id": 8,
+      "reason": "local_rule",
+      "reason_enc_set": true,
+      "reason_plain_column": null,
+      "reference": "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 9,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 10,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 11,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 12,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     }
+    ]
+   },
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "apartment_id": "12",
+    "decision": "",
+    "guest_id": "2",
+    "month": "2026-10"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-10&msg=Saved.#guests",
+   "method": "POST",
+   "name": "decision auto clears",
+   "path": "/stay-fees/guest-decision",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {
+    "audit_new": [
+     {
+      "action": "stay_fee_decision",
+      "actor": "host1@example.test",
+      "actor_user_id": 1,
+      "at": "2026-11-13T10:00:00+00:00",
+      "detail": "guest_id=10 decision=auto",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     }
+    ],
+    "guest": [
+     {
+      "decision": "exempt",
+      "id": 1,
+      "reason": "disability",
+      "reason_enc_set": true,
+      "reason_plain_column": null,
+      "reference": "",
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 2,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 3,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 4,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": "charge",
+      "id": 5,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": "exempt",
+      "id": 6,
+      "reason": "diplomat",
+      "reason_enc_set": true,
+      "reason_plain_column": null,
+      "reference": "",
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": "exempt",
+      "id": 7,
+      "reason": "local_rule",
+      "reason_enc_set": true,
+      "reason_plain_column": null,
+      "reference": "§ 5 vyhlasky č. 1",
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": "exempt",
+      "id": 8,
+      "reason": "local_rule",
+      "reason_enc_set": true,
+      "reason_plain_column": null,
+      "reference": "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 9,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 10,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 11,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 12,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     }
+    ]
+   },
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "apartment_id": "12",
+    "decision": "weird",
+    "guest_id": "10",
+    "month": "2026-10"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-10&msg=Saved.#guests",
+   "method": "POST",
+   "name": "decision unknown value is auto",
+   "path": "/stay-fees/guest-decision",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "apartment_id": "12",
+    "decision": "charge",
+    "guest_id": "3",
+    "month": "2026-10"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-10&err=This%20guest%20no%20longer%20exists.#guests",
+   "method": "POST",
+   "name": "decision guest of another apartment",
+   "path": "/stay-fees/guest-decision",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "apartment_id": "12",
+    "decision": "charge",
+    "guest_id": "4",
+    "month": "2026-10"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-10&err=This%20guest%20no%20longer%20exists.#guests",
+   "method": "POST",
+   "name": "decision foreign guest",
+   "path": "/stay-fees/guest-decision",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "apartment_id": "abc",
+    "decision": "charge",
+    "guest_id": "11",
+    "month": "2026-10"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees?err=This%20guest%20no%20longer%20exists.",
+   "method": "POST",
+   "name": "decision apartment id not a number",
+   "path": "/stay-fees/guest-decision",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "apartment_id": "12",
+    "decision": "charge",
+    "guest_id": "x",
+    "month": "2026-10"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-10&err=This%20guest%20no%20longer%20exists.#guests",
+   "method": "POST",
+   "name": "decision guest id not a number",
+   "path": "/stay-fees/guest-decision",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "apartment_id": "20",
+    "decision": "charge",
+    "guest_id": "4",
+    "month": "2026-10"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees?err=This%20guest%20no%20longer%20exists.",
+   "method": "POST",
+   "name": "decision foreign apartment",
+   "path": "/stay-fees/guest-decision",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {
+    "audit_new": [
+     {
+      "action": "stay_fee_decision",
+      "actor": "host1@example.test",
+      "actor_user_id": 1,
+      "at": "2026-11-13T10:00:00+00:00",
+      "detail": "guest_id=11 decision=exempt",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     }
+    ],
+    "guest": [
+     {
+      "decision": "exempt",
+      "id": 1,
+      "reason": "disability",
+      "reason_enc_set": true,
+      "reason_plain_column": null,
+      "reference": "",
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 2,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 3,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 4,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": "charge",
+      "id": 5,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": "exempt",
+      "id": 6,
+      "reason": "diplomat",
+      "reason_enc_set": true,
+      "reason_plain_column": null,
+      "reference": "",
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": "exempt",
+      "id": 7,
+      "reason": "local_rule",
+      "reason_enc_set": true,
+      "reason_plain_column": null,
+      "reference": "§ 5 vyhlasky č. 1",
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": "exempt",
+      "id": 8,
+      "reason": "local_rule",
+      "reason_enc_set": true,
+      "reason_plain_column": null,
+      "reference": "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 9,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 10,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": "exempt",
+      "id": 11,
+      "reason": "other_statutory",
+      "reason_enc_set": true,
+      "reason_plain_column": null,
+      "reference": "",
+      "updated_at": "2026-11-13T10:00:00+00:00"
+     },
+     {
+      "decision": null,
+      "id": 12,
+      "reason": null,
+      "reason_enc_set": false,
+      "reason_plain_column": null,
+      "reference": null,
+      "updated_at": "2026-09-01T00:00:00+00:00"
+     }
+    ]
+   },
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "apartment_id": "12",
+    "decision": "exempt",
+    "guest_id": "11",
+    "month": "bad",
+    "reason": "other_statutory"
+   },
+   "identity_hidden": false,
+   "lang": "cs",
+   "location": "/stay-fees/12?month=2026-11&msg=Ulo%C5%BEeno.#guests",
+   "method": "POST",
+   "name": "decision bad month, Czech",
+   "path": "/stay-fees/guest-decision",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "apartment_id": "12",
+    "decision": "exempt",
+    "guest_id": "12",
+    "month": "2026-10",
+    "reason": "disability x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-10&err=Give%20a%20reason%20when%20you%20exempt%20a%20guest.#guests",
+   "method": "POST",
+   "name": "decision overlong reason is refused",
+   "path": "/stay-fees/guest-decision",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {
+    "apartment": [
+     {
+      "id": 11,
+      "stay_fee_authority_address": null,
+      "stay_fee_authority_contact": null,
+      "stay_fee_authority_databox": null,
+      "stay_fee_authority_name": null,
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": null,
+      "stay_fee_council_iban": null,
+      "stay_fee_instruction": null,
+      "stay_fee_payee": null,
+      "stay_fee_rate_czk": 0,
+      "stay_fee_scope_reference": null,
+      "stay_fee_scope_rule": null,
+      "stay_fee_vs": null
+     },
+     {
+      "id": 12,
+      "stay_fee_authority_address": "Street 12, Praha",
+      "stay_fee_authority_contact": "mail12@example.test",
+      "stay_fee_authority_databox": "box12",
+      "stay_fee_authority_name": "Authority 12",
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": "acct-12",
+      "stay_fee_council_iban": "CZ12IBAN",
+      "stay_fee_instruction": "Instruction 12",
+      "stay_fee_payee": "Payee 12",
+      "stay_fee_rate_czk": 50,
+      "stay_fee_scope_reference": "§ 4 vyhlasky",
+      "stay_fee_scope_rule": "nights",
+      "stay_fee_vs": "vs12"
+     },
+     {
+      "id": 13,
+      "stay_fee_authority_address": null,
+      "stay_fee_authority_contact": null,
+      "stay_fee_authority_databox": null,
+      "stay_fee_authority_name": null,
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": null,
+      "stay_fee_council_iban": null,
+      "stay_fee_instruction": null,
+      "stay_fee_payee": null,
+      "stay_fee_rate_czk": 0,
+      "stay_fee_scope_reference": null,
+      "stay_fee_scope_rule": null,
+      "stay_fee_vs": null
+     },
+     {
+      "id": 14,
+      "stay_fee_authority_address": null,
+      "stay_fee_authority_contact": null,
+      "stay_fee_authority_databox": null,
+      "stay_fee_authority_name": null,
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": null,
+      "stay_fee_council_iban": null,
+      "stay_fee_instruction": null,
+      "stay_fee_payee": null,
+      "stay_fee_rate_czk": 0,
+      "stay_fee_scope_reference": null,
+      "stay_fee_scope_rule": null,
+      "stay_fee_vs": null
+     },
+     {
+      "id": 16,
+      "stay_fee_authority_address": "Street 16, Praha",
+      "stay_fee_authority_contact": "mail16@example.test",
+      "stay_fee_authority_databox": "box16",
+      "stay_fee_authority_name": "Authority 16",
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": "acct-16",
+      "stay_fee_council_iban": "CZ16IBAN",
+      "stay_fee_instruction": "Instruction 16",
+      "stay_fee_payee": "Payee 16",
+      "stay_fee_rate_czk": 40,
+      "stay_fee_scope_reference": "Vyhlaska 16",
+      "stay_fee_scope_rule": "nights",
+      "stay_fee_vs": "vs16"
+     },
+     {
+      "id": 17,
+      "stay_fee_authority_address": "Street 17, Praha",
+      "stay_fee_authority_contact": "mail17@example.test",
+      "stay_fee_authority_databox": "box17",
+      "stay_fee_authority_name": "Authority 17",
+      "stay_fee_cadence": "quarterly",
+      "stay_fee_council_account": "acct-17",
+      "stay_fee_council_iban": "CZ17IBAN",
+      "stay_fee_instruction": "Instruction 17",
+      "stay_fee_payee": "Payee 17",
+      "stay_fee_rate_czk": 50,
+      "stay_fee_scope_reference": "Vyhlaska 17",
+      "stay_fee_scope_rule": "nights",
+      "stay_fee_vs": "vs17"
+     },
+     {
+      "id": 18,
+      "stay_fee_authority_address": null,
+      "stay_fee_authority_contact": null,
+      "stay_fee_authority_databox": null,
+      "stay_fee_authority_name": null,
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": null,
+      "stay_fee_council_iban": null,
+      "stay_fee_instruction": null,
+      "stay_fee_payee": null,
+      "stay_fee_rate_czk": 0,
+      "stay_fee_scope_reference": null,
+      "stay_fee_scope_rule": null,
+      "stay_fee_vs": null
+     },
+     {
+      "id": 19,
+      "stay_fee_authority_address": null,
+      "stay_fee_authority_contact": null,
+      "stay_fee_authority_databox": null,
+      "stay_fee_authority_name": null,
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": null,
+      "stay_fee_council_iban": null,
+      "stay_fee_instruction": null,
+      "stay_fee_payee": null,
+      "stay_fee_rate_czk": 0,
+      "stay_fee_scope_reference": null,
+      "stay_fee_scope_rule": null,
+      "stay_fee_vs": null
+     },
+     {
+      "id": 20,
+      "stay_fee_authority_address": "Street 20, Praha",
+      "stay_fee_authority_contact": "mail20@example.test",
+      "stay_fee_authority_databox": "box20",
+      "stay_fee_authority_name": "Authority 20",
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": "acct-20",
+      "stay_fee_council_iban": "CZ20IBAN",
+      "stay_fee_instruction": "Instruction 20",
+      "stay_fee_payee": "Payee 20",
+      "stay_fee_rate_czk": 50,
+      "stay_fee_scope_reference": "Vyhlaska 20",
+      "stay_fee_scope_rule": "nights",
+      "stay_fee_vs": "vs20"
+     },
+     {
+      "id": 21,
+      "stay_fee_authority_address": "Street 21, Praha",
+      "stay_fee_authority_contact": "mail21@example.test",
+      "stay_fee_authority_databox": "box21",
+      "stay_fee_authority_name": "Authority 21",
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": "acct-21",
+      "stay_fee_council_iban": "CZ21IBAN",
+      "stay_fee_instruction": "Instruction 21",
+      "stay_fee_payee": "Payee 21",
+      "stay_fee_rate_czk": 30,
+      "stay_fee_scope_reference": "Vyhlaska 21",
+      "stay_fee_scope_rule": "nights",
+      "stay_fee_vs": "vs21"
+     }
+    ],
+    "audit_new": [
+     {
+      "action": "stay_fee_scope",
+      "actor": "host1@example.test",
+      "actor_user_id": 1,
+      "at": "2026-11-13T10:00:00+00:00",
+      "detail": "apartment_id=12 rule=nights",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     }
+    ]
+   },
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-10",
+    "reference": "§ 4 vyhlasky",
+    "rule": "nights"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-10&msg=Saved.",
+   "method": "POST",
+   "name": "scope ok",
+   "path": "/stay-fees/12/scope-ruling",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {
+    "apartment": [
+     {
+      "id": 11,
+      "stay_fee_authority_address": null,
+      "stay_fee_authority_contact": null,
+      "stay_fee_authority_databox": null,
+      "stay_fee_authority_name": null,
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": null,
+      "stay_fee_council_iban": null,
+      "stay_fee_instruction": null,
+      "stay_fee_payee": null,
+      "stay_fee_rate_czk": 0,
+      "stay_fee_scope_reference": null,
+      "stay_fee_scope_rule": null,
+      "stay_fee_vs": null
+     },
+     {
+      "id": 12,
+      "stay_fee_authority_address": "Street 12, Praha",
+      "stay_fee_authority_contact": "mail12@example.test",
+      "stay_fee_authority_databox": "box12",
+      "stay_fee_authority_name": "Authority 12",
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": "acct-12",
+      "stay_fee_council_iban": "CZ12IBAN",
+      "stay_fee_instruction": "Instruction 12",
+      "stay_fee_payee": "Payee 12",
+      "stay_fee_rate_czk": 50,
+      "stay_fee_scope_reference": "qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+      "stay_fee_scope_rule": "calendar_days",
+      "stay_fee_vs": "vs12"
+     },
+     {
+      "id": 13,
+      "stay_fee_authority_address": null,
+      "stay_fee_authority_contact": null,
+      "stay_fee_authority_databox": null,
+      "stay_fee_authority_name": null,
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": null,
+      "stay_fee_council_iban": null,
+      "stay_fee_instruction": null,
+      "stay_fee_payee": null,
+      "stay_fee_rate_czk": 0,
+      "stay_fee_scope_reference": null,
+      "stay_fee_scope_rule": null,
+      "stay_fee_vs": null
+     },
+     {
+      "id": 14,
+      "stay_fee_authority_address": null,
+      "stay_fee_authority_contact": null,
+      "stay_fee_authority_databox": null,
+      "stay_fee_authority_name": null,
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": null,
+      "stay_fee_council_iban": null,
+      "stay_fee_instruction": null,
+      "stay_fee_payee": null,
+      "stay_fee_rate_czk": 0,
+      "stay_fee_scope_reference": null,
+      "stay_fee_scope_rule": null,
+      "stay_fee_vs": null
+     },
+     {
+      "id": 16,
+      "stay_fee_authority_address": "Street 16, Praha",
+      "stay_fee_authority_contact": "mail16@example.test",
+      "stay_fee_authority_databox": "box16",
+      "stay_fee_authority_name": "Authority 16",
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": "acct-16",
+      "stay_fee_council_iban": "CZ16IBAN",
+      "stay_fee_instruction": "Instruction 16",
+      "stay_fee_payee": "Payee 16",
+      "stay_fee_rate_czk": 40,
+      "stay_fee_scope_reference": "Vyhlaska 16",
+      "stay_fee_scope_rule": "nights",
+      "stay_fee_vs": "vs16"
+     },
+     {
+      "id": 17,
+      "stay_fee_authority_address": "Street 17, Praha",
+      "stay_fee_authority_contact": "mail17@example.test",
+      "stay_fee_authority_databox": "box17",
+      "stay_fee_authority_name": "Authority 17",
+      "stay_fee_cadence": "quarterly",
+      "stay_fee_council_account": "acct-17",
+      "stay_fee_council_iban": "CZ17IBAN",
+      "stay_fee_instruction": "Instruction 17",
+      "stay_fee_payee": "Payee 17",
+      "stay_fee_rate_czk": 50,
+      "stay_fee_scope_reference": "Vyhlaska 17",
+      "stay_fee_scope_rule": "nights",
+      "stay_fee_vs": "vs17"
+     },
+     {
+      "id": 18,
+      "stay_fee_authority_address": null,
+      "stay_fee_authority_contact": null,
+      "stay_fee_authority_databox": null,
+      "stay_fee_authority_name": null,
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": null,
+      "stay_fee_council_iban": null,
+      "stay_fee_instruction": null,
+      "stay_fee_payee": null,
+      "stay_fee_rate_czk": 0,
+      "stay_fee_scope_reference": null,
+      "stay_fee_scope_rule": null,
+      "stay_fee_vs": null
+     },
+     {
+      "id": 19,
+      "stay_fee_authority_address": null,
+      "stay_fee_authority_contact": null,
+      "stay_fee_authority_databox": null,
+      "stay_fee_authority_name": null,
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": null,
+      "stay_fee_council_iban": null,
+      "stay_fee_instruction": null,
+      "stay_fee_payee": null,
+      "stay_fee_rate_czk": 0,
+      "stay_fee_scope_reference": null,
+      "stay_fee_scope_rule": null,
+      "stay_fee_vs": null
+     },
+     {
+      "id": 20,
+      "stay_fee_authority_address": "Street 20, Praha",
+      "stay_fee_authority_contact": "mail20@example.test",
+      "stay_fee_authority_databox": "box20",
+      "stay_fee_authority_name": "Authority 20",
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": "acct-20",
+      "stay_fee_council_iban": "CZ20IBAN",
+      "stay_fee_instruction": "Instruction 20",
+      "stay_fee_payee": "Payee 20",
+      "stay_fee_rate_czk": 50,
+      "stay_fee_scope_reference": "Vyhlaska 20",
+      "stay_fee_scope_rule": "nights",
+      "stay_fee_vs": "vs20"
+     },
+     {
+      "id": 21,
+      "stay_fee_authority_address": "Street 21, Praha",
+      "stay_fee_authority_contact": "mail21@example.test",
+      "stay_fee_authority_databox": "box21",
+      "stay_fee_authority_name": "Authority 21",
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": "acct-21",
+      "stay_fee_council_iban": "CZ21IBAN",
+      "stay_fee_instruction": "Instruction 21",
+      "stay_fee_payee": "Payee 21",
+      "stay_fee_rate_czk": 30,
+      "stay_fee_scope_reference": "Vyhlaska 21",
+      "stay_fee_scope_rule": "nights",
+      "stay_fee_vs": "vs21"
+     }
+    ],
+    "audit_new": [
+     {
+      "action": "stay_fee_scope",
+      "actor": "host1@example.test",
+      "actor_user_id": 1,
+      "at": "2026-11-13T10:00:00+00:00",
+      "detail": "apartment_id=12 rule=calendar_days",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     }
+    ]
+   },
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-10",
+    "reference": "  qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+    "rule": " calendar_days "
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-10&msg=Saved.",
+   "method": "POST",
+   "name": "scope padded and long",
+   "path": "/stay-fees/12/scope-ruling",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-10",
+    "reference": "abc",
+    "rule": "weeks"
+   },
+   "identity_hidden": false,
+   "lang": "vi",
+   "location": "/stay-fees/12?month=2026-10&err=Nh%E1%BA%ADp%20quy%E1%BA%BFt%20%C4%91%E1%BB%8Bnh%20c%E1%BB%A7a%20ch%C3%ADnh%20quy%E1%BB%81n%20v%C3%A0%20s%E1%BB%91%20v%C4%83n%20b%E1%BA%A3n.",
+   "method": "POST",
+   "name": "scope bad rule, Vietnamese",
+   "path": "/stay-fees/12/scope-ruling",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-10",
+    "reference": "ab",
+    "rule": "nights"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-10&err=Enter%20the%20council%20ruling%20and%20reference.",
+   "method": "POST",
+   "name": "scope short reference",
+   "path": "/stay-fees/12/scope-ruling",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {
+    "apartment": [
+     {
+      "id": 11,
+      "stay_fee_authority_address": null,
+      "stay_fee_authority_contact": null,
+      "stay_fee_authority_databox": null,
+      "stay_fee_authority_name": null,
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": null,
+      "stay_fee_council_iban": null,
+      "stay_fee_instruction": null,
+      "stay_fee_payee": null,
+      "stay_fee_rate_czk": 0,
+      "stay_fee_scope_reference": null,
+      "stay_fee_scope_rule": null,
+      "stay_fee_vs": null
+     },
+     {
+      "id": 12,
+      "stay_fee_authority_address": "Street 12, Praha",
+      "stay_fee_authority_contact": "mail12@example.test",
+      "stay_fee_authority_databox": "box12",
+      "stay_fee_authority_name": "Authority 12",
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": "acct-12",
+      "stay_fee_council_iban": "CZ12IBAN",
+      "stay_fee_instruction": "Instruction 12",
+      "stay_fee_payee": "Payee 12",
+      "stay_fee_rate_czk": 50,
+      "stay_fee_scope_reference": "abc",
+      "stay_fee_scope_rule": "nights",
+      "stay_fee_vs": "vs12"
+     },
+     {
+      "id": 13,
+      "stay_fee_authority_address": null,
+      "stay_fee_authority_contact": null,
+      "stay_fee_authority_databox": null,
+      "stay_fee_authority_name": null,
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": null,
+      "stay_fee_council_iban": null,
+      "stay_fee_instruction": null,
+      "stay_fee_payee": null,
+      "stay_fee_rate_czk": 0,
+      "stay_fee_scope_reference": null,
+      "stay_fee_scope_rule": null,
+      "stay_fee_vs": null
+     },
+     {
+      "id": 14,
+      "stay_fee_authority_address": null,
+      "stay_fee_authority_contact": null,
+      "stay_fee_authority_databox": null,
+      "stay_fee_authority_name": null,
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": null,
+      "stay_fee_council_iban": null,
+      "stay_fee_instruction": null,
+      "stay_fee_payee": null,
+      "stay_fee_rate_czk": 0,
+      "stay_fee_scope_reference": null,
+      "stay_fee_scope_rule": null,
+      "stay_fee_vs": null
+     },
+     {
+      "id": 16,
+      "stay_fee_authority_address": "Street 16, Praha",
+      "stay_fee_authority_contact": "mail16@example.test",
+      "stay_fee_authority_databox": "box16",
+      "stay_fee_authority_name": "Authority 16",
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": "acct-16",
+      "stay_fee_council_iban": "CZ16IBAN",
+      "stay_fee_instruction": "Instruction 16",
+      "stay_fee_payee": "Payee 16",
+      "stay_fee_rate_czk": 40,
+      "stay_fee_scope_reference": "Vyhlaska 16",
+      "stay_fee_scope_rule": "nights",
+      "stay_fee_vs": "vs16"
+     },
+     {
+      "id": 17,
+      "stay_fee_authority_address": "Street 17, Praha",
+      "stay_fee_authority_contact": "mail17@example.test",
+      "stay_fee_authority_databox": "box17",
+      "stay_fee_authority_name": "Authority 17",
+      "stay_fee_cadence": "quarterly",
+      "stay_fee_council_account": "acct-17",
+      "stay_fee_council_iban": "CZ17IBAN",
+      "stay_fee_instruction": "Instruction 17",
+      "stay_fee_payee": "Payee 17",
+      "stay_fee_rate_czk": 50,
+      "stay_fee_scope_reference": "Vyhlaska 17",
+      "stay_fee_scope_rule": "nights",
+      "stay_fee_vs": "vs17"
+     },
+     {
+      "id": 18,
+      "stay_fee_authority_address": null,
+      "stay_fee_authority_contact": null,
+      "stay_fee_authority_databox": null,
+      "stay_fee_authority_name": null,
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": null,
+      "stay_fee_council_iban": null,
+      "stay_fee_instruction": null,
+      "stay_fee_payee": null,
+      "stay_fee_rate_czk": 0,
+      "stay_fee_scope_reference": null,
+      "stay_fee_scope_rule": null,
+      "stay_fee_vs": null
+     },
+     {
+      "id": 19,
+      "stay_fee_authority_address": null,
+      "stay_fee_authority_contact": null,
+      "stay_fee_authority_databox": null,
+      "stay_fee_authority_name": null,
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": null,
+      "stay_fee_council_iban": null,
+      "stay_fee_instruction": null,
+      "stay_fee_payee": null,
+      "stay_fee_rate_czk": 0,
+      "stay_fee_scope_reference": null,
+      "stay_fee_scope_rule": null,
+      "stay_fee_vs": null
+     },
+     {
+      "id": 20,
+      "stay_fee_authority_address": "Street 20, Praha",
+      "stay_fee_authority_contact": "mail20@example.test",
+      "stay_fee_authority_databox": "box20",
+      "stay_fee_authority_name": "Authority 20",
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": "acct-20",
+      "stay_fee_council_iban": "CZ20IBAN",
+      "stay_fee_instruction": "Instruction 20",
+      "stay_fee_payee": "Payee 20",
+      "stay_fee_rate_czk": 50,
+      "stay_fee_scope_reference": "Vyhlaska 20",
+      "stay_fee_scope_rule": "nights",
+      "stay_fee_vs": "vs20"
+     },
+     {
+      "id": 21,
+      "stay_fee_authority_address": "Street 21, Praha",
+      "stay_fee_authority_contact": "mail21@example.test",
+      "stay_fee_authority_databox": "box21",
+      "stay_fee_authority_name": "Authority 21",
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": "acct-21",
+      "stay_fee_council_iban": "CZ21IBAN",
+      "stay_fee_instruction": "Instruction 21",
+      "stay_fee_payee": "Payee 21",
+      "stay_fee_rate_czk": 30,
+      "stay_fee_scope_reference": "Vyhlaska 21",
+      "stay_fee_scope_rule": "nights",
+      "stay_fee_vs": "vs21"
+     }
+    ],
+    "audit_new": [
+     {
+      "action": "stay_fee_scope",
+      "actor": "host1@example.test",
+      "actor_user_id": 1,
+      "at": "2026-11-13T10:00:00+00:00",
+      "detail": "apartment_id=12 rule=nights",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     }
+    ]
+   },
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "reference": "abc",
+    "rule": "nights"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-11&msg=Saved.",
+   "method": "POST",
+   "name": "scope default month",
+   "path": "/stay-fees/12/scope-ruling",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-10",
+    "reference": "abc",
+    "rule": "nights"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees?err=This%20property%20no%20longer%20exists.",
+   "method": "POST",
+   "name": "scope foreign apartment",
+   "path": "/stay-fees/20/scope-ruling",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-10",
+    "reference": "abc",
+    "rule": "nights"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees?err=This%20property%20no%20longer%20exists.",
+   "method": "POST",
+   "name": "scope missing apartment",
+   "path": "/stay-fees/999/scope-ruling",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {
+    "apartment": [
+     {
+      "id": 11,
+      "stay_fee_authority_address": "Street 12, Praha",
+      "stay_fee_authority_contact": "mail12@example.test",
+      "stay_fee_authority_databox": "box12",
+      "stay_fee_authority_name": "Authority 12",
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": "acct-12",
+      "stay_fee_council_iban": "CZ12IBAN",
+      "stay_fee_instruction": "Instruction 12",
+      "stay_fee_payee": "Payee 12",
+      "stay_fee_rate_czk": 50,
+      "stay_fee_scope_reference": "abc",
+      "stay_fee_scope_rule": "nights",
+      "stay_fee_vs": "vs12"
+     },
+     {
+      "id": 12,
+      "stay_fee_authority_address": "Street 12, Praha",
+      "stay_fee_authority_contact": "mail12@example.test",
+      "stay_fee_authority_databox": "box12",
+      "stay_fee_authority_name": "Authority 12",
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": "acct-12",
+      "stay_fee_council_iban": "CZ12IBAN",
+      "stay_fee_instruction": "Instruction 12",
+      "stay_fee_payee": "Payee 12",
+      "stay_fee_rate_czk": 50,
+      "stay_fee_scope_reference": "abc",
+      "stay_fee_scope_rule": "nights",
+      "stay_fee_vs": "vs12"
+     },
+     {
+      "id": 13,
+      "stay_fee_authority_address": null,
+      "stay_fee_authority_contact": null,
+      "stay_fee_authority_databox": null,
+      "stay_fee_authority_name": null,
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": null,
+      "stay_fee_council_iban": null,
+      "stay_fee_instruction": null,
+      "stay_fee_payee": null,
+      "stay_fee_rate_czk": 0,
+      "stay_fee_scope_reference": null,
+      "stay_fee_scope_rule": null,
+      "stay_fee_vs": null
+     },
+     {
+      "id": 14,
+      "stay_fee_authority_address": null,
+      "stay_fee_authority_contact": null,
+      "stay_fee_authority_databox": null,
+      "stay_fee_authority_name": null,
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": null,
+      "stay_fee_council_iban": null,
+      "stay_fee_instruction": null,
+      "stay_fee_payee": null,
+      "stay_fee_rate_czk": 0,
+      "stay_fee_scope_reference": null,
+      "stay_fee_scope_rule": null,
+      "stay_fee_vs": null
+     },
+     {
+      "id": 16,
+      "stay_fee_authority_address": "Street 16, Praha",
+      "stay_fee_authority_contact": "mail16@example.test",
+      "stay_fee_authority_databox": "box16",
+      "stay_fee_authority_name": "Authority 16",
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": "acct-16",
+      "stay_fee_council_iban": "CZ16IBAN",
+      "stay_fee_instruction": "Instruction 16",
+      "stay_fee_payee": "Payee 16",
+      "stay_fee_rate_czk": 40,
+      "stay_fee_scope_reference": "Vyhlaska 16",
+      "stay_fee_scope_rule": "nights",
+      "stay_fee_vs": "vs16"
+     },
+     {
+      "id": 17,
+      "stay_fee_authority_address": "Street 17, Praha",
+      "stay_fee_authority_contact": "mail17@example.test",
+      "stay_fee_authority_databox": "box17",
+      "stay_fee_authority_name": "Authority 17",
+      "stay_fee_cadence": "quarterly",
+      "stay_fee_council_account": "acct-17",
+      "stay_fee_council_iban": "CZ17IBAN",
+      "stay_fee_instruction": "Instruction 17",
+      "stay_fee_payee": "Payee 17",
+      "stay_fee_rate_czk": 50,
+      "stay_fee_scope_reference": "Vyhlaska 17",
+      "stay_fee_scope_rule": "nights",
+      "stay_fee_vs": "vs17"
+     },
+     {
+      "id": 18,
+      "stay_fee_authority_address": null,
+      "stay_fee_authority_contact": null,
+      "stay_fee_authority_databox": null,
+      "stay_fee_authority_name": null,
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": null,
+      "stay_fee_council_iban": null,
+      "stay_fee_instruction": null,
+      "stay_fee_payee": null,
+      "stay_fee_rate_czk": 0,
+      "stay_fee_scope_reference": null,
+      "stay_fee_scope_rule": null,
+      "stay_fee_vs": null
+     },
+     {
+      "id": 19,
+      "stay_fee_authority_address": null,
+      "stay_fee_authority_contact": null,
+      "stay_fee_authority_databox": null,
+      "stay_fee_authority_name": null,
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": null,
+      "stay_fee_council_iban": null,
+      "stay_fee_instruction": null,
+      "stay_fee_payee": null,
+      "stay_fee_rate_czk": 0,
+      "stay_fee_scope_reference": null,
+      "stay_fee_scope_rule": null,
+      "stay_fee_vs": null
+     },
+     {
+      "id": 20,
+      "stay_fee_authority_address": "Street 20, Praha",
+      "stay_fee_authority_contact": "mail20@example.test",
+      "stay_fee_authority_databox": "box20",
+      "stay_fee_authority_name": "Authority 20",
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": "acct-20",
+      "stay_fee_council_iban": "CZ20IBAN",
+      "stay_fee_instruction": "Instruction 20",
+      "stay_fee_payee": "Payee 20",
+      "stay_fee_rate_czk": 50,
+      "stay_fee_scope_reference": "Vyhlaska 20",
+      "stay_fee_scope_rule": "nights",
+      "stay_fee_vs": "vs20"
+     },
+     {
+      "id": 21,
+      "stay_fee_authority_address": "Street 21, Praha",
+      "stay_fee_authority_contact": "mail21@example.test",
+      "stay_fee_authority_databox": "box21",
+      "stay_fee_authority_name": "Authority 21",
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": "acct-21",
+      "stay_fee_council_iban": "CZ21IBAN",
+      "stay_fee_instruction": "Instruction 21",
+      "stay_fee_payee": "Payee 21",
+      "stay_fee_rate_czk": 30,
+      "stay_fee_scope_reference": "Vyhlaska 21",
+      "stay_fee_scope_rule": "nights",
+      "stay_fee_vs": "vs21"
+     }
+    ],
+    "audit_new": [
+     {
+      "action": "stay_fee_copy_setup",
+      "actor": "host1@example.test",
+      "actor_user_id": 1,
+      "at": "2026-11-13T10:00:00+00:00",
+      "detail": "apartment_id=11 source_id=12",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     }
+    ]
+   },
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "source_id": "12"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees?msg=Stay%20fee%20set%20up%20like%20Byt%20B%20%C4%8D.",
+   "method": "POST",
+   "name": "copy ok",
+   "path": "/stay-fees/11/copy-setup",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "source_id": "12"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees?err=This%20setup%20cannot%20be%20copied%20here.%20Set%20the%20fee%20in%20the%20property%20settings.",
+   "method": "POST",
+   "name": "copy again is refused (target is active)",
+   "path": "/stay-fees/11/copy-setup",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {
+    "apartment": [
+     {
+      "id": 11,
+      "stay_fee_authority_address": "Street 12, Praha",
+      "stay_fee_authority_contact": "mail12@example.test",
+      "stay_fee_authority_databox": "box12",
+      "stay_fee_authority_name": "Authority 12",
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": "acct-12",
+      "stay_fee_council_iban": "CZ12IBAN",
+      "stay_fee_instruction": "Instruction 12",
+      "stay_fee_payee": "Payee 12",
+      "stay_fee_rate_czk": 50,
+      "stay_fee_scope_reference": "abc",
+      "stay_fee_scope_rule": "nights",
+      "stay_fee_vs": "vs12"
+     },
+     {
+      "id": 12,
+      "stay_fee_authority_address": "Street 12, Praha",
+      "stay_fee_authority_contact": "mail12@example.test",
+      "stay_fee_authority_databox": "box12",
+      "stay_fee_authority_name": "Authority 12",
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": "acct-12",
+      "stay_fee_council_iban": "CZ12IBAN",
+      "stay_fee_instruction": "Instruction 12",
+      "stay_fee_payee": "Payee 12",
+      "stay_fee_rate_czk": 50,
+      "stay_fee_scope_reference": "abc",
+      "stay_fee_scope_rule": "nights",
+      "stay_fee_vs": "vs12"
+     },
+     {
+      "id": 13,
+      "stay_fee_authority_address": null,
+      "stay_fee_authority_contact": null,
+      "stay_fee_authority_databox": null,
+      "stay_fee_authority_name": null,
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": null,
+      "stay_fee_council_iban": null,
+      "stay_fee_instruction": null,
+      "stay_fee_payee": null,
+      "stay_fee_rate_czk": 0,
+      "stay_fee_scope_reference": null,
+      "stay_fee_scope_rule": null,
+      "stay_fee_vs": null
+     },
+     {
+      "id": 14,
+      "stay_fee_authority_address": null,
+      "stay_fee_authority_contact": null,
+      "stay_fee_authority_databox": null,
+      "stay_fee_authority_name": null,
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": null,
+      "stay_fee_council_iban": null,
+      "stay_fee_instruction": null,
+      "stay_fee_payee": null,
+      "stay_fee_rate_czk": 0,
+      "stay_fee_scope_reference": null,
+      "stay_fee_scope_rule": null,
+      "stay_fee_vs": null
+     },
+     {
+      "id": 16,
+      "stay_fee_authority_address": "Street 16, Praha",
+      "stay_fee_authority_contact": "mail16@example.test",
+      "stay_fee_authority_databox": "box16",
+      "stay_fee_authority_name": "Authority 16",
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": "acct-16",
+      "stay_fee_council_iban": "CZ16IBAN",
+      "stay_fee_instruction": "Instruction 16",
+      "stay_fee_payee": "Payee 16",
+      "stay_fee_rate_czk": 40,
+      "stay_fee_scope_reference": "Vyhlaska 16",
+      "stay_fee_scope_rule": "nights",
+      "stay_fee_vs": "vs16"
+     },
+     {
+      "id": 17,
+      "stay_fee_authority_address": "Street 17, Praha",
+      "stay_fee_authority_contact": "mail17@example.test",
+      "stay_fee_authority_databox": "box17",
+      "stay_fee_authority_name": "Authority 17",
+      "stay_fee_cadence": "quarterly",
+      "stay_fee_council_account": "acct-17",
+      "stay_fee_council_iban": "CZ17IBAN",
+      "stay_fee_instruction": "Instruction 17",
+      "stay_fee_payee": "Payee 17",
+      "stay_fee_rate_czk": 50,
+      "stay_fee_scope_reference": "Vyhlaska 17",
+      "stay_fee_scope_rule": "nights",
+      "stay_fee_vs": "vs17"
+     },
+     {
+      "id": 18,
+      "stay_fee_authority_address": null,
+      "stay_fee_authority_contact": null,
+      "stay_fee_authority_databox": null,
+      "stay_fee_authority_name": null,
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": null,
+      "stay_fee_council_iban": null,
+      "stay_fee_instruction": null,
+      "stay_fee_payee": null,
+      "stay_fee_rate_czk": 0,
+      "stay_fee_scope_reference": null,
+      "stay_fee_scope_rule": null,
+      "stay_fee_vs": null
+     },
+     {
+      "id": 19,
+      "stay_fee_authority_address": "Street 21, Praha",
+      "stay_fee_authority_contact": "mail21@example.test",
+      "stay_fee_authority_databox": "box21",
+      "stay_fee_authority_name": "Authority 21",
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": "acct-21",
+      "stay_fee_council_iban": "CZ21IBAN",
+      "stay_fee_instruction": "Instruction 21",
+      "stay_fee_payee": "Payee 21",
+      "stay_fee_rate_czk": 30,
+      "stay_fee_scope_reference": "Vyhlaska 21",
+      "stay_fee_scope_rule": "nights",
+      "stay_fee_vs": "vs21"
+     },
+     {
+      "id": 20,
+      "stay_fee_authority_address": "Street 20, Praha",
+      "stay_fee_authority_contact": "mail20@example.test",
+      "stay_fee_authority_databox": "box20",
+      "stay_fee_authority_name": "Authority 20",
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": "acct-20",
+      "stay_fee_council_iban": "CZ20IBAN",
+      "stay_fee_instruction": "Instruction 20",
+      "stay_fee_payee": "Payee 20",
+      "stay_fee_rate_czk": 50,
+      "stay_fee_scope_reference": "Vyhlaska 20",
+      "stay_fee_scope_rule": "nights",
+      "stay_fee_vs": "vs20"
+     },
+     {
+      "id": 21,
+      "stay_fee_authority_address": "Street 21, Praha",
+      "stay_fee_authority_contact": "mail21@example.test",
+      "stay_fee_authority_databox": "box21",
+      "stay_fee_authority_name": "Authority 21",
+      "stay_fee_cadence": "monthly",
+      "stay_fee_council_account": "acct-21",
+      "stay_fee_council_iban": "CZ21IBAN",
+      "stay_fee_instruction": "Instruction 21",
+      "stay_fee_payee": "Payee 21",
+      "stay_fee_rate_czk": 30,
+      "stay_fee_scope_reference": "Vyhlaska 21",
+      "stay_fee_scope_rule": "nights",
+      "stay_fee_vs": "vs21"
+     }
+    ],
+    "audit_new": [
+     {
+      "action": "stay_fee_copy_setup",
+      "actor": "host1@example.test",
+      "actor_user_id": 1,
+      "at": "2026-11-13T10:00:00+00:00",
+      "detail": "apartment_id=19 source_id=21",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     }
+    ]
+   },
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "return_to": "/stay-fees?month=2026-10",
+    "source_id": "21"
+   },
+   "identity_hidden": false,
+   "lang": "cs",
+   "location": "/stay-fees?month=2026-10&msg=Poplatek%20nastaven%20stejn%C4%9B%20jako%20u%20Byt%20H.",
+   "method": "POST",
+   "name": "copy ok with return_to",
+   "path": "/stay-fees/19/copy-setup",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "source_id": "12"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees?err=This%20setup%20cannot%20be%20copied%20here.%20Set%20the%20fee%20in%20the%20property%20settings.",
+   "method": "POST",
+   "name": "copy target has a filing",
+   "path": "/stay-fees/13/copy-setup",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "source_id": "12"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees?err=This%20setup%20cannot%20be%20copied%20here.%20Set%20the%20fee%20in%20the%20property%20settings.",
+   "method": "POST",
+   "name": "copy other municipality",
+   "path": "/stay-fees/14/copy-setup",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "return_to": "/stay-fees/18",
+    "source_id": "16"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/18?err=This%20setup%20cannot%20be%20copied%20here.%20Set%20the%20fee%20in%20the%20property%20settings.",
+   "method": "POST",
+   "name": "copy archived source",
+   "path": "/stay-fees/18/copy-setup",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "source_id": "20"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees?err=This%20setup%20cannot%20be%20copied%20here.%20Set%20the%20fee%20in%20the%20property%20settings.",
+   "method": "POST",
+   "name": "copy foreign source",
+   "path": "/stay-fees/18/copy-setup",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "source_id": "abc"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees?err=This%20setup%20cannot%20be%20copied%20here.%20Set%20the%20fee%20in%20the%20property%20settings.",
+   "method": "POST",
+   "name": "copy source not a number",
+   "path": "/stay-fees/18/copy-setup",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "source_id": "14"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees?err=This%20setup%20cannot%20be%20copied%20here.%20Set%20the%20fee%20in%20the%20property%20settings.",
+   "method": "POST",
+   "name": "copy inactive source",
+   "path": "/stay-fees/18/copy-setup",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "source_id": "18"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees?err=This%20setup%20cannot%20be%20copied%20here.%20Set%20the%20fee%20in%20the%20property%20settings.",
+   "method": "POST",
+   "name": "copy source is the target",
+   "path": "/stay-fees/18/copy-setup",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "return_to": "/stay-fees/99",
+    "source_id": "20"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees?err=This%20setup%20cannot%20be%20copied%20here.%20Set%20the%20fee%20in%20the%20property%20settings.",
+   "method": "POST",
+   "name": "copy return_to other apartment",
+   "path": "/stay-fees/18/copy-setup",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "return_to": "https://evil.example/stay-fees",
+    "source_id": "20"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees?err=This%20setup%20cannot%20be%20copied%20here.%20Set%20the%20fee%20in%20the%20property%20settings.",
+   "method": "POST",
+   "name": "copy return_to off site",
+   "path": "/stay-fees/18/copy-setup",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "source_id": "12"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees?err=This%20property%20no%20longer%20exists.",
+   "method": "POST",
+   "name": "copy foreign target",
+   "path": "/stay-fees/20/copy-setup",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {
+    "audit_new": [
+     {
+      "action": "stay_fee_sent",
+      "actor": "host1@example.test",
+      "actor_user_id": 1,
+      "at": "2026-11-13T10:00:00+00:00",
+      "detail": "apartment_id=12 filing_id=1",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     }
+    ],
+    "stay_fee_filing": [
+     {
+      "apartment_id": 12,
+      "id": 1,
+      "paid_at": null,
+      "period_key": "2026-10",
+      "sent_at": "2026-11-13T10:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 2,
+      "paid_at": null,
+      "period_key": "2026-09",
+      "sent_at": "2026-10-02T08:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 3,
+      "paid_at": "2026-09-05T08:00:00+00:00",
+      "period_key": "2026-08",
+      "sent_at": "2026-09-02T08:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 4,
+      "paid_at": null,
+      "period_key": "2026-07",
+      "sent_at": null,
+      "superseded_at": "2026-08-01T00:00:00+00:00"
+     },
+     {
+      "apartment_id": 17,
+      "id": 5,
+      "paid_at": null,
+      "period_key": "2026-Q3",
+      "sent_at": null,
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 13,
+      "id": 6,
+      "paid_at": null,
+      "period_key": "2026-10",
+      "sent_at": null,
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 21,
+      "id": 7,
+      "paid_at": null,
+      "period_key": "2026-06",
+      "sent_at": null,
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 8,
+      "paid_at": null,
+      "period_key": "2026-Q2",
+      "sent_at": null,
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 17,
+      "id": 9,
+      "paid_at": null,
+      "period_key": "2026-Q4",
+      "sent_at": null,
+      "superseded_at": null
+     }
+    ]
+   },
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-10"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-10&msg=Marked%20as%20sent.",
+   "method": "POST",
+   "name": "sent ok",
+   "path": "/stay-fees/12/filings/1/sent",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-10"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-10&msg=Marked%20as%20sent.",
+   "method": "POST",
+   "name": "sent twice",
+   "path": "/stay-fees/12/filings/1/sent",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-09"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-09&msg=Marked%20as%20sent.",
+   "method": "POST",
+   "name": "sent already sent",
+   "path": "/stay-fees/12/filings/2/sent",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {},
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-11&err=The%20report%20can%27t%20be%20created%20yet.%20Fix%20the%20items%20shown%20on%20the%20page.",
+   "method": "POST",
+   "name": "sent wrong month",
+   "path": "/stay-fees/12/filings/2/sent",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-07"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-07&err=The%20report%20can%27t%20be%20created%20yet.%20Fix%20the%20items%20shown%20on%20the%20page.",
+   "method": "POST",
+   "name": "sent superseded",
+   "path": "/stay-fees/12/filings/4/sent",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-10"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/17?month=2026-10&err=The%20report%20can%27t%20be%20created%20yet.%20Fix%20the%20items%20shown%20on%20the%20page.",
+   "method": "POST",
+   "name": "sent filing of another apartment",
+   "path": "/stay-fees/17/filings/1/sent",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {
+    "audit_new": [
+     {
+      "action": "stay_fee_sent",
+      "actor": "host1@example.test",
+      "actor_user_id": 1,
+      "at": "2026-11-13T10:00:00+00:00",
+      "detail": "apartment_id=17 filing_id=5",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     }
+    ],
+    "stay_fee_filing": [
+     {
+      "apartment_id": 12,
+      "id": 1,
+      "paid_at": null,
+      "period_key": "2026-10",
+      "sent_at": "2026-11-13T10:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 2,
+      "paid_at": null,
+      "period_key": "2026-09",
+      "sent_at": "2026-10-02T08:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 3,
+      "paid_at": "2026-09-05T08:00:00+00:00",
+      "period_key": "2026-08",
+      "sent_at": "2026-09-02T08:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 4,
+      "paid_at": null,
+      "period_key": "2026-07",
+      "sent_at": null,
+      "superseded_at": "2026-08-01T00:00:00+00:00"
+     },
+     {
+      "apartment_id": 17,
+      "id": 5,
+      "paid_at": null,
+      "period_key": "2026-Q3",
+      "sent_at": "2026-11-13T10:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 13,
+      "id": 6,
+      "paid_at": null,
+      "period_key": "2026-10",
+      "sent_at": null,
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 21,
+      "id": 7,
+      "paid_at": null,
+      "period_key": "2026-06",
+      "sent_at": null,
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 8,
+      "paid_at": null,
+      "period_key": "2026-Q2",
+      "sent_at": null,
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 17,
+      "id": 9,
+      "paid_at": null,
+      "period_key": "2026-Q4",
+      "sent_at": null,
+      "superseded_at": null
+     }
+    ]
+   },
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-08"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/17?month=2026-08&msg=Marked%20as%20sent.",
+   "method": "POST",
+   "name": "sent quarterly filing, month in quarter",
+   "path": "/stay-fees/17/filings/5/sent",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-11"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/17?month=2026-11&err=The%20report%20can%27t%20be%20created%20yet.%20Fix%20the%20items%20shown%20on%20the%20page.",
+   "method": "POST",
+   "name": "sent quarterly filing, month outside",
+   "path": "/stay-fees/17/filings/5/sent",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {
+    "audit_new": [
+     {
+      "action": "stay_fee_sent",
+      "actor": "host1@example.test",
+      "actor_user_id": 1,
+      "at": "2026-11-13T10:00:00+00:00",
+      "detail": "apartment_id=12 filing_id=8",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     }
+    ],
+    "stay_fee_filing": [
+     {
+      "apartment_id": 12,
+      "id": 1,
+      "paid_at": null,
+      "period_key": "2026-10",
+      "sent_at": "2026-11-13T10:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 2,
+      "paid_at": null,
+      "period_key": "2026-09",
+      "sent_at": "2026-10-02T08:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 3,
+      "paid_at": "2026-09-05T08:00:00+00:00",
+      "period_key": "2026-08",
+      "sent_at": "2026-09-02T08:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 4,
+      "paid_at": null,
+      "period_key": "2026-07",
+      "sent_at": null,
+      "superseded_at": "2026-08-01T00:00:00+00:00"
+     },
+     {
+      "apartment_id": 17,
+      "id": 5,
+      "paid_at": null,
+      "period_key": "2026-Q3",
+      "sent_at": "2026-11-13T10:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 13,
+      "id": 6,
+      "paid_at": null,
+      "period_key": "2026-10",
+      "sent_at": null,
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 21,
+      "id": 7,
+      "paid_at": null,
+      "period_key": "2026-06",
+      "sent_at": null,
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 8,
+      "paid_at": null,
+      "period_key": "2026-Q2",
+      "sent_at": "2026-11-13T10:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 17,
+      "id": 9,
+      "paid_at": null,
+      "period_key": "2026-Q4",
+      "sent_at": null,
+      "superseded_at": null
+     }
+    ]
+   },
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-05"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-05&msg=Marked%20as%20sent.",
+   "method": "POST",
+   "name": "sent quarterly Q2 on a monthly apartment",
+   "path": "/stay-fees/12/filings/8/sent",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-07"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-07&err=The%20report%20can%27t%20be%20created%20yet.%20Fix%20the%20items%20shown%20on%20the%20page.",
+   "method": "POST",
+   "name": "sent quarterly Q2, month in Q3",
+   "path": "/stay-fees/12/filings/8/sent",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-10"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees?err=This%20property%20no%20longer%20exists.",
+   "method": "POST",
+   "name": "sent foreign apartment",
+   "path": "/stay-fees/20/filings/1/sent",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {
+    "audit_new": [
+     {
+      "action": "stay_fee_paid_detail",
+      "actor": "host1@example.test",
+      "actor_user_id": 1,
+      "at": "2026-11-13T10:00:00+00:00",
+      "detail": "apartment_id=12 filing_id=1",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     }
+    ],
+    "stay_fee_filing": [
+     {
+      "apartment_id": 12,
+      "id": 1,
+      "paid_at": "2026-11-13T10:00:00+00:00",
+      "period_key": "2026-10",
+      "sent_at": "2026-11-13T10:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 2,
+      "paid_at": null,
+      "period_key": "2026-09",
+      "sent_at": "2026-10-02T08:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 3,
+      "paid_at": "2026-09-05T08:00:00+00:00",
+      "period_key": "2026-08",
+      "sent_at": "2026-09-02T08:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 4,
+      "paid_at": null,
+      "period_key": "2026-07",
+      "sent_at": null,
+      "superseded_at": "2026-08-01T00:00:00+00:00"
+     },
+     {
+      "apartment_id": 17,
+      "id": 5,
+      "paid_at": null,
+      "period_key": "2026-Q3",
+      "sent_at": "2026-11-13T10:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 13,
+      "id": 6,
+      "paid_at": null,
+      "period_key": "2026-10",
+      "sent_at": null,
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 21,
+      "id": 7,
+      "paid_at": null,
+      "period_key": "2026-06",
+      "sent_at": null,
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 8,
+      "paid_at": null,
+      "period_key": "2026-Q2",
+      "sent_at": "2026-11-13T10:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 17,
+      "id": 9,
+      "paid_at": null,
+      "period_key": "2026-Q4",
+      "sent_at": null,
+      "superseded_at": null
+     }
+    ]
+   },
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-10"
+   },
+   "identity_hidden": false,
+   "lang": "cs",
+   "location": "/stay-fees/12?month=2026-10&msg=Ozna%C4%8Deno%20jako%20zaplacen%C3%A9.",
+   "method": "POST",
+   "name": "paid filing sets paid and keeps sent",
+   "path": "/stay-fees/12/filings/1/paid",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {
+    "audit_new": [
+     {
+      "action": "stay_fee_paid_detail",
+      "actor": "host1@example.test",
+      "actor_user_id": 1,
+      "at": "2026-11-13T10:00:00+00:00",
+      "detail": "apartment_id=12 filing_id=2",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     }
+    ],
+    "stay_fee_filing": [
+     {
+      "apartment_id": 12,
+      "id": 1,
+      "paid_at": "2026-11-13T10:00:00+00:00",
+      "period_key": "2026-10",
+      "sent_at": "2026-11-13T10:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 2,
+      "paid_at": "2026-11-13T10:00:00+00:00",
+      "period_key": "2026-09",
+      "sent_at": "2026-10-02T08:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 3,
+      "paid_at": "2026-09-05T08:00:00+00:00",
+      "period_key": "2026-08",
+      "sent_at": "2026-09-02T08:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 4,
+      "paid_at": null,
+      "period_key": "2026-07",
+      "sent_at": null,
+      "superseded_at": "2026-08-01T00:00:00+00:00"
+     },
+     {
+      "apartment_id": 17,
+      "id": 5,
+      "paid_at": null,
+      "period_key": "2026-Q3",
+      "sent_at": "2026-11-13T10:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 13,
+      "id": 6,
+      "paid_at": null,
+      "period_key": "2026-10",
+      "sent_at": null,
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 21,
+      "id": 7,
+      "paid_at": null,
+      "period_key": "2026-06",
+      "sent_at": null,
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 8,
+      "paid_at": null,
+      "period_key": "2026-Q2",
+      "sent_at": "2026-11-13T10:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 17,
+      "id": 9,
+      "paid_at": null,
+      "period_key": "2026-Q4",
+      "sent_at": null,
+      "superseded_at": null
+     }
+    ]
+   },
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-09"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-09&msg=Marked%20as%20paid.",
+   "method": "POST",
+   "name": "paid filing also sets sent",
+   "path": "/stay-fees/12/filings/2/paid",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-08"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-08&msg=Marked%20as%20paid.",
+   "method": "POST",
+   "name": "paid filing already paid",
+   "path": "/stay-fees/12/filings/3/paid",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-07"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-07&err=The%20report%20can%27t%20be%20created%20yet.%20Fix%20the%20items%20shown%20on%20the%20page.",
+   "method": "POST",
+   "name": "paid filing wrong month",
+   "path": "/stay-fees/12/filings/3/paid",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {
+    "audit_new": [
+     {
+      "action": "stay_fee_paid_detail",
+      "actor": "host1@example.test",
+      "actor_user_id": 1,
+      "at": "2026-11-13T10:00:00+00:00",
+      "detail": "apartment_id=17 filing_id=5",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     }
+    ],
+    "stay_fee_filing": [
+     {
+      "apartment_id": 12,
+      "id": 1,
+      "paid_at": "2026-11-13T10:00:00+00:00",
+      "period_key": "2026-10",
+      "sent_at": "2026-11-13T10:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 2,
+      "paid_at": "2026-11-13T10:00:00+00:00",
+      "period_key": "2026-09",
+      "sent_at": "2026-10-02T08:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 3,
+      "paid_at": "2026-09-05T08:00:00+00:00",
+      "period_key": "2026-08",
+      "sent_at": "2026-09-02T08:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 4,
+      "paid_at": null,
+      "period_key": "2026-07",
+      "sent_at": null,
+      "superseded_at": "2026-08-01T00:00:00+00:00"
+     },
+     {
+      "apartment_id": 17,
+      "id": 5,
+      "paid_at": "2026-11-13T10:00:00+00:00",
+      "period_key": "2026-Q3",
+      "sent_at": "2026-11-13T10:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 13,
+      "id": 6,
+      "paid_at": null,
+      "period_key": "2026-10",
+      "sent_at": null,
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 21,
+      "id": 7,
+      "paid_at": null,
+      "period_key": "2026-06",
+      "sent_at": null,
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 8,
+      "paid_at": null,
+      "period_key": "2026-Q2",
+      "sent_at": "2026-11-13T10:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 17,
+      "id": 9,
+      "paid_at": null,
+      "period_key": "2026-Q4",
+      "sent_at": null,
+      "superseded_at": null
+     }
+    ]
+   },
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-09"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/17?month=2026-09&msg=Marked%20as%20paid.",
+   "method": "POST",
+   "name": "paid filing quarterly",
+   "path": "/stay-fees/17/filings/5/paid",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-10"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees?err=This%20property%20no%20longer%20exists.",
+   "method": "POST",
+   "name": "paid filing foreign apartment",
+   "path": "/stay-fees/20/filings/1/paid",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {
+    "audit_new": [
+     {
+      "action": "stay_fee_paid_detail",
+      "actor": "admin@example.test",
+      "actor_user_id": 3,
+      "at": "2026-11-13T10:00:00+00:00",
+      "detail": "apartment_id=12 filing_id=8",
+      "impersonator_user_id": 3,
+      "owner_user_id": 1
+     }
+    ],
+    "stay_fee_filing": [
+     {
+      "apartment_id": 12,
+      "id": 1,
+      "paid_at": "2026-11-13T10:00:00+00:00",
+      "period_key": "2026-10",
+      "sent_at": "2026-11-13T10:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 2,
+      "paid_at": "2026-11-13T10:00:00+00:00",
+      "period_key": "2026-09",
+      "sent_at": "2026-10-02T08:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 3,
+      "paid_at": "2026-09-05T08:00:00+00:00",
+      "period_key": "2026-08",
+      "sent_at": "2026-09-02T08:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 4,
+      "paid_at": null,
+      "period_key": "2026-07",
+      "sent_at": null,
+      "superseded_at": "2026-08-01T00:00:00+00:00"
+     },
+     {
+      "apartment_id": 17,
+      "id": 5,
+      "paid_at": "2026-11-13T10:00:00+00:00",
+      "period_key": "2026-Q3",
+      "sent_at": "2026-11-13T10:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 13,
+      "id": 6,
+      "paid_at": null,
+      "period_key": "2026-10",
+      "sent_at": null,
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 21,
+      "id": 7,
+      "paid_at": null,
+      "period_key": "2026-06",
+      "sent_at": null,
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 8,
+      "paid_at": "2026-11-13T10:00:00+00:00",
+      "period_key": "2026-Q2",
+      "sent_at": "2026-11-13T10:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 17,
+      "id": 9,
+      "paid_at": null,
+      "period_key": "2026-Q4",
+      "sent_at": null,
+      "superseded_at": null
+     }
+    ]
+   },
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-06"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-06&msg=Marked%20as%20paid.",
+   "method": "POST",
+   "name": "paid filing as impersonating admin",
+   "path": "/stay-fees/12/filings/8/paid",
+   "status": 303,
+   "who": "admin_imp"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {
+    "audit_new": [
+     {
+      "action": "stay_fee_paid",
+      "actor": "host1@example.test",
+      "actor_user_id": 1,
+      "at": "2026-11-13T10:00:00+00:00",
+      "detail": "apartment_id=21 period=2026-06",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     }
+    ],
+    "stay_fee_filing": [
+     {
+      "apartment_id": 12,
+      "id": 1,
+      "paid_at": "2026-11-13T10:00:00+00:00",
+      "period_key": "2026-10",
+      "sent_at": "2026-11-13T10:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 2,
+      "paid_at": "2026-11-13T10:00:00+00:00",
+      "period_key": "2026-09",
+      "sent_at": "2026-10-02T08:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 3,
+      "paid_at": "2026-09-05T08:00:00+00:00",
+      "period_key": "2026-08",
+      "sent_at": "2026-09-02T08:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 4,
+      "paid_at": null,
+      "period_key": "2026-07",
+      "sent_at": null,
+      "superseded_at": "2026-08-01T00:00:00+00:00"
+     },
+     {
+      "apartment_id": 17,
+      "id": 5,
+      "paid_at": "2026-11-13T10:00:00+00:00",
+      "period_key": "2026-Q3",
+      "sent_at": "2026-11-13T10:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 13,
+      "id": 6,
+      "paid_at": null,
+      "period_key": "2026-10",
+      "sent_at": null,
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 21,
+      "id": 7,
+      "paid_at": "2026-11-13T10:00:00+00:00",
+      "period_key": "2026-06",
+      "sent_at": "2026-11-13T10:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 8,
+      "paid_at": "2026-11-13T10:00:00+00:00",
+      "period_key": "2026-Q2",
+      "sent_at": "2026-11-13T10:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 17,
+      "id": 9,
+      "paid_at": null,
+      "period_key": "2026-Q4",
+      "sent_at": null,
+      "superseded_at": null
+     }
+    ]
+   },
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-06"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees?month=2026-06&msg=Marked%20as%20paid.",
+   "method": "POST",
+   "name": "paid ok",
+   "path": "/stay-fees/21/paid",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-06"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees?month=2026-06&msg=Marked%20as%20paid.",
+   "method": "POST",
+   "name": "paid twice",
+   "path": "/stay-fees/21/paid",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-08",
+    "return_to": "/stay-fees/12?month=2026-08"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-08&msg=Marked%20as%20paid.",
+   "method": "POST",
+   "name": "paid already paid",
+   "path": "/stay-fees/12/paid",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-03"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees?month=2026-03&err=The%20report%20can%27t%20be%20created%20yet.%20Fix%20the%20items%20shown%20on%20the%20page.",
+   "method": "POST",
+   "name": "paid not sealed",
+   "path": "/stay-fees/12/paid",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {},
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees?month=2026-11&err=The%20report%20can%27t%20be%20created%20yet.%20Fix%20the%20items%20shown%20on%20the%20page.",
+   "method": "POST",
+   "name": "paid default month",
+   "path": "/stay-fees/12/paid",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-03",
+    "return_to": "/stay-fees?x=1"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees?x=1&err=The%20report%20can%27t%20be%20created%20yet.%20Fix%20the%20items%20shown%20on%20the%20page.",
+   "method": "POST",
+   "name": "paid return_to list",
+   "path": "/stay-fees/12/paid",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-03",
+    "return_to": "/stay-fees/./12/?a=b#f"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?a=b&err=The%20report%20can%27t%20be%20created%20yet.%20Fix%20the%20items%20shown%20on%20the%20page.",
+   "method": "POST",
+   "name": "paid return_to normalised",
+   "path": "/stay-fees/12/paid",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-03",
+    "return_to": "/stay-fees\\12"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees?month=2026-03&err=The%20report%20can%27t%20be%20created%20yet.%20Fix%20the%20items%20shown%20on%20the%20page.",
+   "method": "POST",
+   "name": "paid return_to backslash",
+   "path": "/stay-fees/12/paid",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {
+    "audit_new": [
+     {
+      "action": "stay_fee_paid",
+      "actor": "host1@example.test",
+      "actor_user_id": 1,
+      "at": "2026-11-13T10:00:00+00:00",
+      "detail": "apartment_id=17 period=2026-Q4",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     }
+    ],
+    "stay_fee_filing": [
+     {
+      "apartment_id": 12,
+      "id": 1,
+      "paid_at": "2026-11-13T10:00:00+00:00",
+      "period_key": "2026-10",
+      "sent_at": "2026-11-13T10:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 2,
+      "paid_at": "2026-11-13T10:00:00+00:00",
+      "period_key": "2026-09",
+      "sent_at": "2026-10-02T08:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 3,
+      "paid_at": "2026-09-05T08:00:00+00:00",
+      "period_key": "2026-08",
+      "sent_at": "2026-09-02T08:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 4,
+      "paid_at": null,
+      "period_key": "2026-07",
+      "sent_at": null,
+      "superseded_at": "2026-08-01T00:00:00+00:00"
+     },
+     {
+      "apartment_id": 17,
+      "id": 5,
+      "paid_at": "2026-11-13T10:00:00+00:00",
+      "period_key": "2026-Q3",
+      "sent_at": "2026-11-13T10:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 13,
+      "id": 6,
+      "paid_at": null,
+      "period_key": "2026-10",
+      "sent_at": null,
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 21,
+      "id": 7,
+      "paid_at": "2026-11-13T10:00:00+00:00",
+      "period_key": "2026-06",
+      "sent_at": "2026-11-13T10:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 12,
+      "id": 8,
+      "paid_at": "2026-11-13T10:00:00+00:00",
+      "period_key": "2026-Q2",
+      "sent_at": "2026-11-13T10:00:00+00:00",
+      "superseded_at": null
+     },
+     {
+      "apartment_id": 17,
+      "id": 9,
+      "paid_at": "2026-11-13T10:00:00+00:00",
+      "period_key": "2026-Q4",
+      "sent_at": "2026-11-13T10:00:00+00:00",
+      "superseded_at": null
+     }
+    ]
+   },
+   "content_disposition": null,
+   "content_type": null,
+   "form": {
+    "month": "2026-11"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees?month=2026-11&msg=Marked%20as%20paid.",
+   "method": "POST",
+   "name": "paid quarterly covers month",
+   "path": "/stay-fees/17/paid",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": "text/plain; charset=utf-8",
+   "form": {
+    "month": "2026-10"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": null,
+   "method": "POST",
+   "name": "paid foreign apartment (python 500)",
+   "path": "/stay-fees/20/paid",
+   "status": 500,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": "text/plain; charset=utf-8",
+   "form": {
+    "month": "2026-10"
+   },
+   "identity_hidden": false,
+   "lang": null,
+   "location": null,
+   "method": "POST",
+   "name": "paid missing apartment (python 500)",
+   "path": "/stay-fees/999/paid",
+   "status": 500,
+   "who": "host1"
+  },
+  {
+   "body": "Evidencni kniha;1\nJan Novak;AB123\n",
+   "cache_control": "no-store",
+   "changed": {
+    "audit_new": [
+     {
+      "action": "stay_fee_csv",
+      "actor": "host1@example.test",
+      "actor_user_id": 1,
+      "at": "2026-11-13T10:00:00+00:00",
+      "detail": "apartment_id=12 period=2026-10 sealed=1",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     }
+    ]
+   },
+   "content_disposition": "attachment; filename=\"evidencni-kniha-2026-10-12.csv\"",
+   "content_type": "text/csv; charset=utf-8",
+   "form": {},
+   "identity_hidden": false,
+   "lang": null,
+   "location": null,
+   "method": "GET",
+   "name": "csv ok",
+   "path": "/stay-fees/12/csv?month=2026-10",
+   "status": 200,
+   "who": "host1"
+  },
+  {
+   "body": "Evidencni kniha;1\nJan Novak;AB123\n",
+   "cache_control": "no-store",
+   "changed": {
+    "audit_new": [
+     {
+      "action": "stay_fee_csv",
+      "actor": "host1@example.test",
+      "actor_user_id": 1,
+      "at": "2026-11-13T10:00:00+00:00",
+      "detail": "apartment_id=17 period=2026-Q3 sealed=1",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     }
+    ]
+   },
+   "content_disposition": "attachment; filename=\"evidencni-kniha-2026-Q3-17.csv\"",
+   "content_type": "text/csv; charset=utf-8",
+   "form": {},
+   "identity_hidden": false,
+   "lang": null,
+   "location": null,
+   "method": "GET",
+   "name": "csv quarterly",
+   "path": "/stay-fees/17/csv?month=2026-08",
+   "status": 200,
+   "who": "host1"
+  },
+  {
+   "body": "",
+   "cache_control": "no-store",
+   "changed": {
+    "audit_new": [
+     {
+      "action": "stay_fee_csv",
+      "actor": "host1@example.test",
+      "actor_user_id": 1,
+      "at": "2026-11-13T10:00:00+00:00",
+      "detail": "apartment_id=13 period=2026-10 sealed=1",
+      "impersonator_user_id": null,
+      "owner_user_id": 1
+     }
+    ]
+   },
+   "content_disposition": "attachment; filename=\"evidencni-kniha-2026-10-13.csv\"",
+   "content_type": "text/csv; charset=utf-8",
+   "form": {},
+   "identity_hidden": false,
+   "lang": null,
+   "location": null,
+   "method": "GET",
+   "name": "csv sealed without a body",
+   "path": "/stay-fees/13/csv?month=2026-10",
+   "status": 200,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {},
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12/csv?month=2026-11",
+   "method": "GET",
+   "name": "csv future month",
+   "path": "/stay-fees/12/csv?month=2026-12",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {},
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/12?month=2026-11&err=Save%20the%20period%20first%20to%20download%20the%20sealed%20files.",
+   "method": "GET",
+   "name": "csv current month is not saved",
+   "path": "/stay-fees/12/csv",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {},
+   "identity_hidden": false,
+   "lang": "cs",
+   "location": "/stay-fees/12?month=2026-11&err=Nejd%C5%99%C3%ADv%20ulo%C5%BEte%20obdob%C3%AD%2C%20teprve%20pak%20st%C3%A1hnete%20uzav%C5%99en%C3%A9%20soubory.",
+   "method": "GET",
+   "name": "csv bad month is the current month",
+   "path": "/stay-fees/12/csv?month=junk",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {},
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees/11?month=2026-10&err=Save%20the%20period%20first%20to%20download%20the%20sealed%20files.",
+   "method": "GET",
+   "name": "csv inactive apartment without filing",
+   "path": "/stay-fees/11/csv?month=2026-10",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {},
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees?err=This%20property%20no%20longer%20exists.",
+   "method": "GET",
+   "name": "csv foreign apartment",
+   "path": "/stay-fees/20/csv?month=2026-10",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {},
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/stay-fees?err=This%20property%20no%20longer%20exists.",
+   "method": "GET",
+   "name": "csv missing apartment",
+   "path": "/stay-fees/999/csv?month=2026-10",
+   "status": 303,
+   "who": "host1"
+  },
+  {
+   "body": "Evidencni kniha;1\nJan Novak;AB123\n",
+   "cache_control": "no-store",
+   "changed": {
+    "audit_new": [
+     {
+      "action": "stay_fee_csv",
+      "actor": "admin@example.test",
+      "actor_user_id": 3,
+      "at": "2026-11-13T10:00:00+00:00",
+      "detail": "apartment_id=12 period=2026-10 sealed=1",
+      "impersonator_user_id": 3,
+      "owner_user_id": 1
+     }
+    ]
+   },
+   "content_disposition": "attachment; filename=\"evidencni-kniha-2026-10-12.csv\"",
+   "content_type": "text/csv; charset=utf-8",
+   "form": {},
+   "identity_hidden": false,
+   "lang": null,
+   "location": null,
+   "method": "GET",
+   "name": "csv as impersonating admin",
+   "path": "/stay-fees/12/csv?month=2026-10",
+   "status": 200,
+   "who": "admin_imp"
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {},
+   "identity_hidden": false,
+   "lang": null,
+   "location": "/login?next=/stay-fees/12/csv",
+   "method": "GET",
+   "name": "csv not signed in",
+   "path": "/stay-fees/12/csv?month=2026-10",
+   "status": 303,
+   "who": null
+  },
+  {
+   "body": null,
+   "cache_control": "no-store, private",
+   "changed": {},
+   "content_disposition": null,
+   "content_type": null,
+   "form": {},
+   "identity_hidden": true,
+   "lang": null,
+   "location": "/stay-fees/12?err=Hidden%20while%20supporting%3A%20downloads%20with%20guest%20documents%2C%20signatures%20or%20photos%20are%20blocked%20in%20a%20host%27s%20workspace.",
+   "method": "GET",
+   "name": "csv identity hidden",
+   "path": "/stay-fees/12/csv?month=2026-10",
+   "status": 303,
+   "who": "host1"
+  }
+ ],
+ "csv_text": "Evidencni kniha;1\nJan Novak;AB123\n",
+ "initial": {
+  "apartment": [
+   {
+    "id": 11,
+    "stay_fee_authority_address": null,
+    "stay_fee_authority_contact": null,
+    "stay_fee_authority_databox": null,
+    "stay_fee_authority_name": null,
+    "stay_fee_cadence": "monthly",
+    "stay_fee_council_account": null,
+    "stay_fee_council_iban": null,
+    "stay_fee_instruction": null,
+    "stay_fee_payee": null,
+    "stay_fee_rate_czk": 0,
+    "stay_fee_scope_reference": null,
+    "stay_fee_scope_rule": null,
+    "stay_fee_vs": null
+   },
+   {
+    "id": 12,
+    "stay_fee_authority_address": "Street 12, Praha",
+    "stay_fee_authority_contact": "mail12@example.test",
+    "stay_fee_authority_databox": "box12",
+    "stay_fee_authority_name": "Authority 12",
+    "stay_fee_cadence": "monthly",
+    "stay_fee_council_account": "acct-12",
+    "stay_fee_council_iban": "CZ12IBAN",
+    "stay_fee_instruction": "Instruction 12",
+    "stay_fee_payee": "Payee 12",
+    "stay_fee_rate_czk": 50,
+    "stay_fee_scope_reference": "Vyhlaska 12",
+    "stay_fee_scope_rule": "nights",
+    "stay_fee_vs": "vs12"
+   },
+   {
+    "id": 13,
+    "stay_fee_authority_address": null,
+    "stay_fee_authority_contact": null,
+    "stay_fee_authority_databox": null,
+    "stay_fee_authority_name": null,
+    "stay_fee_cadence": "monthly",
+    "stay_fee_council_account": null,
+    "stay_fee_council_iban": null,
+    "stay_fee_instruction": null,
+    "stay_fee_payee": null,
+    "stay_fee_rate_czk": 0,
+    "stay_fee_scope_reference": null,
+    "stay_fee_scope_rule": null,
+    "stay_fee_vs": null
+   },
+   {
+    "id": 14,
+    "stay_fee_authority_address": null,
+    "stay_fee_authority_contact": null,
+    "stay_fee_authority_databox": null,
+    "stay_fee_authority_name": null,
+    "stay_fee_cadence": "monthly",
+    "stay_fee_council_account": null,
+    "stay_fee_council_iban": null,
+    "stay_fee_instruction": null,
+    "stay_fee_payee": null,
+    "stay_fee_rate_czk": 0,
+    "stay_fee_scope_reference": null,
+    "stay_fee_scope_rule": null,
+    "stay_fee_vs": null
+   },
+   {
+    "id": 16,
+    "stay_fee_authority_address": "Street 16, Praha",
+    "stay_fee_authority_contact": "mail16@example.test",
+    "stay_fee_authority_databox": "box16",
+    "stay_fee_authority_name": "Authority 16",
+    "stay_fee_cadence": "monthly",
+    "stay_fee_council_account": "acct-16",
+    "stay_fee_council_iban": "CZ16IBAN",
+    "stay_fee_instruction": "Instruction 16",
+    "stay_fee_payee": "Payee 16",
+    "stay_fee_rate_czk": 40,
+    "stay_fee_scope_reference": "Vyhlaska 16",
+    "stay_fee_scope_rule": "nights",
+    "stay_fee_vs": "vs16"
+   },
+   {
+    "id": 17,
+    "stay_fee_authority_address": "Street 17, Praha",
+    "stay_fee_authority_contact": "mail17@example.test",
+    "stay_fee_authority_databox": "box17",
+    "stay_fee_authority_name": "Authority 17",
+    "stay_fee_cadence": "quarterly",
+    "stay_fee_council_account": "acct-17",
+    "stay_fee_council_iban": "CZ17IBAN",
+    "stay_fee_instruction": "Instruction 17",
+    "stay_fee_payee": "Payee 17",
+    "stay_fee_rate_czk": 50,
+    "stay_fee_scope_reference": "Vyhlaska 17",
+    "stay_fee_scope_rule": "nights",
+    "stay_fee_vs": "vs17"
+   },
+   {
+    "id": 18,
+    "stay_fee_authority_address": null,
+    "stay_fee_authority_contact": null,
+    "stay_fee_authority_databox": null,
+    "stay_fee_authority_name": null,
+    "stay_fee_cadence": "monthly",
+    "stay_fee_council_account": null,
+    "stay_fee_council_iban": null,
+    "stay_fee_instruction": null,
+    "stay_fee_payee": null,
+    "stay_fee_rate_czk": 0,
+    "stay_fee_scope_reference": null,
+    "stay_fee_scope_rule": null,
+    "stay_fee_vs": null
+   },
+   {
+    "id": 19,
+    "stay_fee_authority_address": null,
+    "stay_fee_authority_contact": null,
+    "stay_fee_authority_databox": null,
+    "stay_fee_authority_name": null,
+    "stay_fee_cadence": "monthly",
+    "stay_fee_council_account": null,
+    "stay_fee_council_iban": null,
+    "stay_fee_instruction": null,
+    "stay_fee_payee": null,
+    "stay_fee_rate_czk": 0,
+    "stay_fee_scope_reference": null,
+    "stay_fee_scope_rule": null,
+    "stay_fee_vs": null
+   },
+   {
+    "id": 20,
+    "stay_fee_authority_address": "Street 20, Praha",
+    "stay_fee_authority_contact": "mail20@example.test",
+    "stay_fee_authority_databox": "box20",
+    "stay_fee_authority_name": "Authority 20",
+    "stay_fee_cadence": "monthly",
+    "stay_fee_council_account": "acct-20",
+    "stay_fee_council_iban": "CZ20IBAN",
+    "stay_fee_instruction": "Instruction 20",
+    "stay_fee_payee": "Payee 20",
+    "stay_fee_rate_czk": 50,
+    "stay_fee_scope_reference": "Vyhlaska 20",
+    "stay_fee_scope_rule": "nights",
+    "stay_fee_vs": "vs20"
+   },
+   {
+    "id": 21,
+    "stay_fee_authority_address": "Street 21, Praha",
+    "stay_fee_authority_contact": "mail21@example.test",
+    "stay_fee_authority_databox": "box21",
+    "stay_fee_authority_name": "Authority 21",
+    "stay_fee_cadence": "monthly",
+    "stay_fee_council_account": "acct-21",
+    "stay_fee_council_iban": "CZ21IBAN",
+    "stay_fee_instruction": "Instruction 21",
+    "stay_fee_payee": "Payee 21",
+    "stay_fee_rate_czk": 30,
+    "stay_fee_scope_reference": "Vyhlaska 21",
+    "stay_fee_scope_rule": "nights",
+    "stay_fee_vs": "vs21"
+   }
+  ],
+  "audit": [],
+  "guest": [
+   {
+    "decision": null,
+    "id": 1,
+    "reason": null,
+    "reason_enc_set": false,
+    "reason_plain_column": null,
+    "reference": null,
+    "updated_at": "2026-09-01T00:00:00+00:00"
+   },
+   {
+    "decision": "charge",
+    "id": 2,
+    "reason": null,
+    "reason_enc_set": false,
+    "reason_plain_column": null,
+    "reference": null,
+    "updated_at": "2026-09-01T00:00:00+00:00"
+   },
+   {
+    "decision": null,
+    "id": 3,
+    "reason": null,
+    "reason_enc_set": false,
+    "reason_plain_column": null,
+    "reference": null,
+    "updated_at": "2026-09-01T00:00:00+00:00"
+   },
+   {
+    "decision": null,
+    "id": 4,
+    "reason": null,
+    "reason_enc_set": false,
+    "reason_plain_column": null,
+    "reference": null,
+    "updated_at": "2026-09-01T00:00:00+00:00"
+   },
+   {
+    "decision": "exempt",
+    "id": 5,
+    "reason": "disability",
+    "reason_enc_set": false,
+    "reason_plain_column": null,
+    "reference": null,
+    "updated_at": "2026-09-01T00:00:00+00:00"
+   },
+   {
+    "decision": null,
+    "id": 6,
+    "reason": null,
+    "reason_enc_set": false,
+    "reason_plain_column": null,
+    "reference": null,
+    "updated_at": "2026-09-01T00:00:00+00:00"
+   },
+   {
+    "decision": null,
+    "id": 7,
+    "reason": null,
+    "reason_enc_set": false,
+    "reason_plain_column": null,
+    "reference": null,
+    "updated_at": "2026-09-01T00:00:00+00:00"
+   },
+   {
+    "decision": null,
+    "id": 8,
+    "reason": null,
+    "reason_enc_set": false,
+    "reason_plain_column": null,
+    "reference": null,
+    "updated_at": "2026-09-01T00:00:00+00:00"
+   },
+   {
+    "decision": null,
+    "id": 9,
+    "reason": null,
+    "reason_enc_set": false,
+    "reason_plain_column": null,
+    "reference": null,
+    "updated_at": "2026-09-01T00:00:00+00:00"
+   },
+   {
+    "decision": null,
+    "id": 10,
+    "reason": null,
+    "reason_enc_set": false,
+    "reason_plain_column": null,
+    "reference": null,
+    "updated_at": "2026-09-01T00:00:00+00:00"
+   },
+   {
+    "decision": null,
+    "id": 11,
+    "reason": null,
+    "reason_enc_set": false,
+    "reason_plain_column": null,
+    "reference": null,
+    "updated_at": "2026-09-01T00:00:00+00:00"
+   },
+   {
+    "decision": null,
+    "id": 12,
+    "reason": null,
+    "reason_enc_set": false,
+    "reason_plain_column": null,
+    "reference": null,
+    "updated_at": "2026-09-01T00:00:00+00:00"
+   }
+  ],
+  "stay_fee_adjustment": [
+   {
+    "apartment_id": 12,
+    "filing_id": null,
+    "id": 1,
+    "reversed_at": null,
+    "reversed_by": null
+   },
+   {
+    "apartment_id": 12,
+    "filing_id": null,
+    "id": 2,
+    "reversed_at": "2026-10-05T00:00:00+00:00",
+    "reversed_by": 1
+   },
+   {
+    "apartment_id": 12,
+    "filing_id": 1,
+    "id": 3,
+    "reversed_at": null,
+    "reversed_by": null
+   },
+   {
+    "apartment_id": 20,
+    "filing_id": null,
+    "id": 4,
+    "reversed_at": null,
+    "reversed_by": null
+   },
+   {
+    "apartment_id": 12,
+    "filing_id": null,
+    "id": 5,
+    "reversed_at": null,
+    "reversed_by": null
+   },
+   {
+    "apartment_id": 12,
+    "filing_id": null,
+    "id": 6,
+    "reversed_at": null,
+    "reversed_by": null
+   }
+  ],
+  "stay_fee_filing": [
+   {
+    "apartment_id": 12,
+    "id": 1,
+    "paid_at": null,
+    "period_key": "2026-10",
+    "sent_at": null,
+    "superseded_at": null
+   },
+   {
+    "apartment_id": 12,
+    "id": 2,
+    "paid_at": null,
+    "period_key": "2026-09",
+    "sent_at": "2026-10-02T08:00:00+00:00",
+    "superseded_at": null
+   },
+   {
+    "apartment_id": 12,
+    "id": 3,
+    "paid_at": "2026-09-05T08:00:00+00:00",
+    "period_key": "2026-08",
+    "sent_at": "2026-09-02T08:00:00+00:00",
+    "superseded_at": null
+   },
+   {
+    "apartment_id": 12,
+    "id": 4,
+    "paid_at": null,
+    "period_key": "2026-07",
+    "sent_at": null,
+    "superseded_at": "2026-08-01T00:00:00+00:00"
+   },
+   {
+    "apartment_id": 17,
+    "id": 5,
+    "paid_at": null,
+    "period_key": "2026-Q3",
+    "sent_at": null,
+    "superseded_at": null
+   },
+   {
+    "apartment_id": 13,
+    "id": 6,
+    "paid_at": null,
+    "period_key": "2026-10",
+    "sent_at": null,
+    "superseded_at": null
+   },
+   {
+    "apartment_id": 21,
+    "id": 7,
+    "paid_at": null,
+    "period_key": "2026-06",
+    "sent_at": null,
+    "superseded_at": null
+   },
+   {
+    "apartment_id": 12,
+    "id": 8,
+    "paid_at": null,
+    "period_key": "2026-Q2",
+    "sent_at": null,
+    "superseded_at": null
+   },
+   {
+    "apartment_id": 17,
+    "id": 9,
+    "paid_at": null,
+    "period_key": "2026-Q4",
+    "sent_at": null,
+    "superseded_at": null
+   }
+  ]
+ },
+ "now": "2026-11-13T10:00:00+00:00",
+ "seed": [
+  {
+   "columns": [
+    "id",
+    "username",
+    "password_hash",
+    "role",
+    "created_at"
+   ],
+   "rows": [
+    [
+     1,
+     "host1@example.test",
+     "x",
+     "host",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     2,
+     "host2@example.test",
+     "x",
+     "host",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     3,
+     "admin@example.test",
+     "x",
+     "admin",
+     "2026-09-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "user_account"
+  },
+  {
+   "columns": [
+    "id",
+    "owner_user_id",
+    "internal_name",
+    "uby_name",
+    "permalink_token",
+    "created_at",
+    "addr_obec",
+    "archived_at",
+    "stay_fee_rate_czk",
+    "stay_fee_cadence",
+    "stay_fee_vs",
+    "stay_fee_council_account",
+    "stay_fee_council_iban",
+    "stay_fee_authority_name",
+    "stay_fee_authority_address",
+    "stay_fee_authority_contact",
+    "stay_fee_authority_databox",
+    "stay_fee_payee",
+    "stay_fee_instruction",
+    "stay_fee_scope_rule",
+    "stay_fee_scope_reference"
+   ],
+   "rows": [
+    [
+     11,
+     1,
+     "Byt A",
+     "UBY",
+     "tok11",
+     "2026-09-01T00:00:00+00:00",
+     "Praha 3",
+     null,
+     0,
+     "monthly",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     12,
+     1,
+     "Byt B č",
+     "UBY",
+     "tok12",
+     "2026-09-01T00:00:00+00:00",
+     "Praha 3",
+     null,
+     50,
+     "monthly",
+     "vs12",
+     "acct-12",
+     "CZ12IBAN",
+     "Authority 12",
+     "Street 12, Praha",
+     "mail12@example.test",
+     "box12",
+     "Payee 12",
+     "Instruction 12",
+     "nights",
+     "Vyhlaska 12"
+    ],
+    [
+     13,
+     1,
+     "Byt C",
+     "UBY",
+     "tok13",
+     "2026-09-01T00:00:00+00:00",
+     "PRAHA 3",
+     null,
+     0,
+     "monthly",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     14,
+     1,
+     "Byt D",
+     "UBY",
+     "tok14",
+     "2026-09-01T00:00:00+00:00",
+     "Brno",
+     null,
+     0,
+     "monthly",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     16,
+     1,
+     "Byt E",
+     "UBY",
+     "tok16",
+     "2026-09-01T00:00:00+00:00",
+     "Praha 3",
+     "2026-09-01T00:00:00+00:00",
+     40,
+     "monthly",
+     "vs16",
+     "acct-16",
+     "CZ16IBAN",
+     "Authority 16",
+     "Street 16, Praha",
+     "mail16@example.test",
+     "box16",
+     "Payee 16",
+     "Instruction 16",
+     "nights",
+     "Vyhlaska 16"
+    ],
+    [
+     17,
+     1,
+     "Byt Q",
+     "UBY",
+     "tok17",
+     "2026-09-01T00:00:00+00:00",
+     "Kladno",
+     null,
+     50,
+     "quarterly",
+     "vs17",
+     "acct-17",
+     "CZ17IBAN",
+     "Authority 17",
+     "Street 17, Praha",
+     "mail17@example.test",
+     "box17",
+     "Payee 17",
+     "Instruction 17",
+     "nights",
+     "Vyhlaska 17"
+    ],
+    [
+     18,
+     1,
+     "Byt F",
+     "UBY",
+     "tok18",
+     "2026-09-01T00:00:00+00:00",
+     "Praha 3",
+     null,
+     0,
+     "monthly",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     19,
+     1,
+     "Byt G",
+     "UBY",
+     "tok19",
+     "2026-09-01T00:00:00+00:00",
+     "ŘÍČANY",
+     null,
+     0,
+     "monthly",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     20,
+     2,
+     "Foreign",
+     "UBY",
+     "tok20",
+     "2026-09-01T00:00:00+00:00",
+     "Praha 3",
+     null,
+     50,
+     "monthly",
+     "vs20",
+     "acct-20",
+     "CZ20IBAN",
+     "Authority 20",
+     "Street 20, Praha",
+     "mail20@example.test",
+     "box20",
+     "Payee 20",
+     "Instruction 20",
+     "nights",
+     "Vyhlaska 20"
+    ],
+    [
+     21,
+     1,
+     "Byt H",
+     "UBY",
+     "tok21",
+     "2026-09-01T00:00:00+00:00",
+     "řičany",
+     null,
+     30,
+     "monthly",
+     "vs21",
+     "acct-21",
+     "CZ21IBAN",
+     "Authority 21",
+     "Street 21, Praha",
+     "mail21@example.test",
+     "box21",
+     "Payee 21",
+     "Instruction 21",
+     "nights",
+     "Vyhlaska 21"
+    ]
+   ],
+   "table": "apartment"
+  },
+  {
+   "columns": [
+    "id",
+    "apartment_id",
+    "period_key",
+    "version",
+    "cadence",
+    "rate_czk",
+    "liable_days",
+    "exempt_days",
+    "total_due_czk",
+    "total_collected_czk",
+    "csv_enc",
+    "created_at",
+    "superseded_at",
+    "sent_at",
+    "paid_at"
+   ],
+   "rows": [
+    [
+     1,
+     12,
+     "2026-10",
+     1,
+     "monthly",
+     50,
+     10,
+     0,
+     500,
+     500,
+     {
+      "b64": "Z0FBQUFBQnFzVHVBQUFFQ0F3UUZCZ2NJQ1FvTERBME9Eem1xdy16OHA3MXZoa0FZZ3kzOG5VclF5NExmclRZUTVsMzc0WjJBNTlXQmM2LUVsaEI0TTMxYlM0ME5IOU9yQ1o4d1B2ZDQyNGZOaUc0R2Zad012VUxzRXJ4elZucXNvR0pNM29HbTBoWTk="
+     },
+     "2026-09-01T00:00:00+00:00",
+     null,
+     null,
+     null
+    ],
+    [
+     2,
+     12,
+     "2026-09",
+     1,
+     "monthly",
+     50,
+     10,
+     0,
+     500,
+     500,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     null,
+     "2026-10-02T08:00:00+00:00",
+     null
+    ],
+    [
+     3,
+     12,
+     "2026-08",
+     1,
+     "monthly",
+     50,
+     10,
+     0,
+     500,
+     500,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     null,
+     "2026-09-02T08:00:00+00:00",
+     "2026-09-05T08:00:00+00:00"
+    ],
+    [
+     4,
+     12,
+     "2026-07",
+     1,
+     "monthly",
+     50,
+     10,
+     0,
+     500,
+     500,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-08-01T00:00:00+00:00",
+     null,
+     null
+    ],
+    [
+     5,
+     17,
+     "2026-Q3",
+     1,
+     "quarterly",
+     50,
+     10,
+     0,
+     500,
+     500,
+     {
+      "b64": "Z0FBQUFBQnFzVHVBQUFFQ0F3UUZCZ2NJQ1FvTERBME9Eem1xdy16OHA3MXZoa0FZZ3kzOG5VclF5NExmclRZUTVsMzc0WjJBNTlXQmM2LUVsaEI0TTMxYlM0ME5IOU9yQ1o4d1B2ZDQyNGZOaUc0R2Zad012VUxzRXJ4elZucXNvR0pNM29HbTBoWTk="
+     },
+     "2026-09-01T00:00:00+00:00",
+     null,
+     null,
+     null
+    ],
+    [
+     6,
+     13,
+     "2026-10",
+     1,
+     "monthly",
+     50,
+     10,
+     0,
+     500,
+     500,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     null,
+     null,
+     null
+    ],
+    [
+     7,
+     21,
+     "2026-06",
+     1,
+     "monthly",
+     50,
+     10,
+     0,
+     500,
+     500,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     null,
+     null,
+     null
+    ],
+    [
+     8,
+     12,
+     "2026-Q2",
+     1,
+     "quarterly",
+     50,
+     10,
+     0,
+     500,
+     500,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     null,
+     null,
+     null
+    ],
+    [
+     9,
+     17,
+     "2026-Q4",
+     1,
+     "quarterly",
+     50,
+     10,
+     0,
+     500,
+     500,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     null,
+     null,
+     null
+    ]
+   ],
+   "table": "stay_fee_filing"
+  },
+  {
+   "columns": [
+    "id",
+    "apartment_id",
+    "period_key",
+    "direction",
+    "mode",
+    "bed_days",
+    "reason_enc",
+    "created_by",
+    "created_at",
+    "reversed_at",
+    "reversed_by",
+    "filing_id"
+   ],
+   "rows": [
+    [
+     1,
+     12,
+     "2026-10",
+     "add",
+     "bed_days",
+     3,
+     "enc-placeholder",
+     1,
+     "2026-09-01T00:00:00+00:00",
+     null,
+     null,
+     null
+    ],
+    [
+     2,
+     12,
+     "2026-10",
+     "add",
+     "bed_days",
+     3,
+     "enc-placeholder",
+     1,
+     "2026-09-01T00:00:00+00:00",
+     "2026-10-05T00:00:00+00:00",
+     1,
+     null
+    ],
+    [
+     3,
+     12,
+     "2026-10",
+     "add",
+     "bed_days",
+     3,
+     "enc-placeholder",
+     1,
+     "2026-09-01T00:00:00+00:00",
+     null,
+     null,
+     1
+    ],
+    [
+     4,
+     20,
+     "2026-10",
+     "add",
+     "bed_days",
+     3,
+     "enc-placeholder",
+     1,
+     "2026-09-01T00:00:00+00:00",
+     null,
+     null,
+     null
+    ],
+    [
+     5,
+     12,
+     "2026-10",
+     "add",
+     "bed_days",
+     3,
+     "enc-placeholder",
+     1,
+     "2026-09-01T00:00:00+00:00",
+     null,
+     null,
+     null
+    ],
+    [
+     6,
+     12,
+     "2026-10",
+     "add",
+     "bed_days",
+     3,
+     "enc-placeholder",
+     1,
+     "2026-09-01T00:00:00+00:00",
+     null,
+     null,
+     null
+    ]
+   ],
+   "table": "stay_fee_adjustment"
+  },
+  {
+   "columns": [
+    "id",
+    "apartment_id",
+    "uid",
+    "date_from",
+    "date_to",
+    "created_at",
+    "updated_at"
+   ],
+   "rows": [
+    [
+     1,
+     12,
+     "u1",
+     "2026-10-01",
+     "2026-10-05",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     2,
+     11,
+     "u2",
+     "2026-10-01",
+     "2026-10-05",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     3,
+     20,
+     "u3",
+     "2026-10-01",
+     "2026-10-05",
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "reservation"
+  },
+  {
+   "columns": [
+    "id",
+    "reservation_id",
+    "created_at",
+    "updated_at",
+    "fee_host_decision",
+    "fee_host_reason"
+   ],
+   "rows": [
+    [
+     1,
+     1,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00",
+     null,
+     null
+    ],
+    [
+     2,
+     1,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00",
+     "charge",
+     null
+    ],
+    [
+     3,
+     2,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00",
+     null,
+     null
+    ],
+    [
+     4,
+     3,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00",
+     null,
+     null
+    ],
+    [
+     5,
+     1,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00",
+     "exempt",
+     "disability"
+    ],
+    [
+     6,
+     1,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00",
+     null,
+     null
+    ],
+    [
+     7,
+     1,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00",
+     null,
+     null
+    ],
+    [
+     8,
+     1,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00",
+     null,
+     null
+    ],
+    [
+     9,
+     1,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00",
+     null,
+     null
+    ],
+    [
+     10,
+     1,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00",
+     null,
+     null
+    ],
+    [
+     11,
+     1,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00",
+     null,
+     null
+    ],
+    [
+     12,
+     1,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00",
+     null,
+     null
+    ]
+   ],
+   "table": "guest"
+  }
+ ]
+}
