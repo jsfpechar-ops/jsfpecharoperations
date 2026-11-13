@@ -129,7 +129,7 @@ index ec7a61fb..b1c258d2 100644
  | `UBYHOST_WEB_WORKERS` | `2` | uvicorn workers in the Docker image's web process (WP32). `4` on the 8 GB / 2 vCPU production server. `docker-entrypoint.sh` and `preflight.sh` refuse anything but 1 to 16. |
 ````
 
-**Verified by the brief writer** in a throwaway worktree: `git apply --check` clean on 34738084; `pytest tests/test_scheduler_go_switch.py tests/test_scheduler.py -q` 20 passed; `tests/test_worker.py tests/test_job_queue.py` 17 passed, 17 skipped (the job-queue tests need PostgreSQL); `docker compose config` with a scratch `.env` (`UBYHOST_SCHEDULER=go`) renders `UBYHOST_SCHEDULER: go` in `ubyhost-go` and `worker` and `UBYHOST_JOB_QUEUE_KINDS` in `ubyhost-go`.
+**Verified by the brief writer** in a throwaway worktree: `git apply --check` clean on 34738084; `pytest tests/test_scheduler_go_switch.py tests/test_scheduler.py tests/test_worker.py -q` 29 passed; `tests/test_worker.py tests/test_job_queue.py` 17 passed, 17 skipped (the job-queue tests need PostgreSQL); `docker compose config` with a scratch `.env` (`UBYHOST_SCHEDULER=go`) renders `UBYHOST_SCHEDULER: go` in `ubyhost-go` and `worker` and `UBYHOST_JOB_QUEUE_KINDS` in `ubyhost-go`.
 
 Anchors (step 0): `go/internal/scheduler/scheduler.go` exists (1450 merged); `grep -cF 'func Enabled(getenv func(string) string) bool {' go/internal/scheduler/scheduler.go` prints 1; `grep -cF 'def go_scheduler' App/app/scheduler.py` prints 0.
 
@@ -172,7 +172,7 @@ EOF2
 
 From `App/`:
 
-- `.venv/bin/python -m pytest tests/test_scheduler_go_switch.py tests/test_scheduler.py tests/test_worker.py -q --tb=short -x 2>&1 | tail -30` ends with `passed` and no `failed` (the brief writer saw 20 passed for the first two files; `test_worker.py` is the Filing row of the test-map).
+- `.venv/bin/python -m pytest tests/test_scheduler_go_switch.py tests/test_scheduler.py tests/test_worker.py -q --tb=short -x 2>&1 | tail -30` prints `29 passed` and no `failed` or `error` (`test_worker.py` is from the Filing row of the test-map).
 
 From the repo root:
 

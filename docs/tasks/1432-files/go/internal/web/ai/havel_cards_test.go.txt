@@ -1,0 +1,322 @@
+package ai
+
+// Tests for havel_cards.go and havel_mail.go against testdata/havel_cards_golden.json
+// (written by App/scripts/havel_cards_golden.py from the real Python), and the
+// SQL lookups on PostgreSQL.
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"os"
+	"strconv"
+	"testing"
+	"time"
+)
+
+type havelCardsGolden struct {
+	Cards []struct {
+		Name        string         `json:"name"`
+		Action      map[string]any `json:"action"`
+		NoFeeds     bool           `json:"no_feeds"`
+		Today       string         `json:"today"`
+		ReturnTo    string         `json:"return_to"`
+		NotPrepared string         `json:"not_prepared"`
+		Card        *struct {
+			Type     string            `json:"type"`
+			Title    string            `json:"title"`
+			Confirm  string            `json:"confirm"`
+			Action   string            `json:"action"`
+			Hidden   map[string]any    `json:"hidden"`
+			Danger   bool              `json:"danger"`
+			Warning  string            `json:"warning"`
+			Link     string            `json:"link"`
+			Pin      string            `json:"pin"`
+			Guests   string            `json:"guests_url"`
+			DateFrom string            `json:"date_from"`
+			DateTo   string            `json:"date_to"`
+			Start    string            `json:"start_time"`
+			End      string            `json:"end_time"`
+			Note     string            `json:"note"`
+			Email    string            `json:"guest_email"`
+			Nights   int               `json:"nights"`
+			GuestsN  any               `json:"guests"`
+			Overlap  bool              `json:"overlap"`
+			Property *struct {
+				ID    int64  `json:"id"`
+				Name  string `json:"name"`
+				Index int    `json:"index"`
+			} `json:"property"`
+			Fields []struct {
+				Name    string           `json:"name"`
+				Label   []string         `json:"label"`
+				Type    string           `json:"type"`
+				Value   any              `json:"value"`
+				Options [][]any          `json:"options"`
+				Min     *float64         `json:"min"`
+				Max     *float64         `json:"max"`
+			} `json:"fields"`
+		} `json:"card"`
+	} `json:"cards"`
+	Mails []struct {
+		In struct {
+			AccountEmail string   `json:"account_email"`
+			Workspace    string   `json:"workspace"`
+			Lang         string   `json:"lang"`
+			Page         string   `json:"page"`
+			Summary      string   `json:"summary"`
+			Note         string   `json:"note"`
+			Turns        []string `json:"turns"`
+		} `json:"in"`
+		Subject string `json:"subject"`
+		Text    string `json:"text"`
+		HTML    string `json:"html"`
+	} `json:"mails"`
+}
+
+func havelLoadCardsGolden(t *testing.T) havelCardsGolden {
+	t.Helper()
+	raw, err := os.ReadFile("testdata/havel_cards_golden.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var g havelCardsGolden
+	if err := json.Unmarshal(raw, &g); err != nil {
+		t.Fatal(err)
+	}
+	return g
+}
+
+// The golden rows: App/scripts/havel_cards_golden.py ROWS.
+var havelGoldenRows = []HavelApartment{
+	{ID: 11, Name: "Flat A", Active: true, PermalinkToken: "tok", PermalinkPIN: "1234"},
+	{ID: 12, Name: "Chata", Active: true, PermalinkToken: "tok"},
+	{ID: 13, Name: "", Active: true},
+	{ID: 14, Name: "Closed", Active: false, PermalinkToken: "tok", PermalinkPIN: "1234"},
+}
+
+func TestHavelCardsMatchPython(t *testing.T) {
+	g := havelLoadCardsGolden(t)
+	for _, c := range g.Cards {
+		feeds := map[int64]int64{11: 2, 12: 0}
+		if c.NoFeeds {
+			feeds = map[int64]int64{}
+		}
+		lk := HavelCardLookups{
+			FeedCount: func(_ context.Context, id int64) (int64, error) { return feeds[id], nil },
+			Overlaps: func(_ context.Context, id int64, s, e string) (int64, error) {
+				if id == 12 {
+					return 1, nil
+				}
+				return 0, nil
+			},
+			LinkKey: func(_ context.Context, a HavelApartment) (string, error) {
+				if a.PermalinkToken == "" {
+					return "", nil
+				}
+				return "slug-" + strconv.FormatInt(a.ID, 10), nil
+			},
+		}
+		// Python: the archived row (id 15) never reaches the card, the closed row (14) does.
+		action := map[string]any{}
+		raw, _ := json.Marshal(c.Action)
+		dec := json.NewDecoder(bytes.NewReader(raw))
+		dec.UseNumber()
+		_ = dec.Decode(&action)
+		today, _ := time.Parse("2006-01-02", c.Today)
+		card, err := HavelPrepareCard(context.Background(), action, havelGoldenRows, today, c.ReturnTo, "https://app.example.test", "en", lk)
+		if c.NotPrepared != "" {
+			np, ok := err.(*HavelNotPrepared)
+			if !ok || np.Reason != c.NotPrepared {
+				t.Errorf("%s: want not prepared %q, got %v", c.Name, c.NotPrepared, err)
+			}
+			continue
+		}
+		if err != nil {
+			t.Errorf("%s: %v", c.Name, err)
+			continue
+		}
+		w := c.Card
+		if card.Type != w.Type || card.Title != w.Title || card.Confirm != w.Confirm || card.Action != w.Action ||
+			card.Danger != w.Danger || card.Warning != w.Warning || card.Link != w.Link || card.Pin != w.Pin ||
+			card.GuestsURL != w.Guests || card.DateFrom != w.DateFrom || card.DateTo != w.DateTo || card.StartTime != w.Start ||
+			card.EndTime != w.End || card.Note != w.Note || card.GuestEmail != w.Email || card.Nights != w.Nights || card.Overlap != w.Overlap {
+			t.Errorf("%s: card differs: %+v vs Python %+v", c.Name, card, w)
+		}
+		if len(card.Hidden) != len(w.Hidden) {
+			t.Errorf("%s: hidden %v, Python %v", c.Name, card.Hidden, w.Hidden)
+		}
+		for _, kv := range card.Hidden {
+			if got, _ := w.Hidden[kv[0]]; got == nil || toText(got) != kv[1] {
+				t.Errorf("%s: hidden %s = %q, Python %v", c.Name, kv[0], kv[1], got)
+			}
+		}
+		if (w.GuestsN == nil) != (card.Guests == 0) || (w.GuestsN != nil && int64(w.GuestsN.(float64)) != card.Guests) {
+			t.Errorf("%s: guests %d, Python %v", c.Name, card.Guests, w.GuestsN)
+		}
+		if (w.Property == nil) != (card.Property == nil) ||
+			(w.Property != nil && (w.Property.ID != card.Property.ID || w.Property.Name != card.Property.Name || w.Property.Index != card.Property.Index)) {
+			t.Errorf("%s: property differs", c.Name)
+		}
+		if len(card.Fields) != len(w.Fields) {
+			t.Errorf("%s: %d fields, Python %d", c.Name, len(card.Fields), len(w.Fields))
+			continue
+		}
+		for i, f := range card.Fields {
+			wf := w.Fields[i]
+			if f.Name != wf.Name || f.Type != wf.Type || f.LabelOwner != wf.Label[0] || f.LabelKey != wf.Label[1] || f.Value != toText(wf.Value) {
+				t.Errorf("%s: field %d differs: %+v vs Python %+v", c.Name, i, f, wf)
+			}
+			if (wf.Min != nil) != (f.Min != "") || (wf.Max != nil) != (f.Max != "") {
+				t.Errorf("%s: field %d min/max differ", c.Name, i)
+			}
+			if len(f.Options) != len(wf.Options) {
+				t.Errorf("%s: field %d options differ", c.Name, i)
+				continue
+			}
+			for j, o := range f.Options {
+				if float64(o.Value) != wf.Options[j][0].(float64) || o.Name != wf.Options[j][1].(string) {
+					t.Errorf("%s: option %d differs", c.Name, j)
+				}
+			}
+		}
+	}
+	if len(g.Cards) < 30 {
+		t.Fatalf("only %d card cases", len(g.Cards))
+	}
+}
+
+func toText(v any) string {
+	switch t := v.(type) {
+	case nil:
+		return ""
+	case string:
+		return t
+	case float64:
+		return strconv.FormatInt(int64(t), 10)
+	}
+	return ""
+}
+
+func TestHavelFieldLabels(t *testing.T) {
+	if got := HavelFieldLabel("cs", HavelCardField{LabelOwner: "cleaning", LabelKey: "date"}); got == "" || got == "cleaning_word.date" {
+		t.Errorf("cleaning label: %q", got)
+	}
+	if got := HavelFieldLabel("en", HavelCardField{LabelOwner: "host", LabelKey: "stays.add_panel.arrival"}); got == "" || got == "stays.add_panel.arrival" {
+		t.Errorf("host label: %q", got)
+	}
+}
+
+func TestHavelSupportMailMatchesPython(t *testing.T) {
+	env := havelMapEnv(map[string]string{"UBYHOST_PUBLIC_BASE_URL": "https://app.example.test/", "UBYHOST_OPERATOR_EMAIL": "support@example.test"})
+	g := havelLoadCardsGolden(t)
+	if len(g.Mails) != 3 {
+		t.Fatalf("%d mails in the golden", len(g.Mails))
+	}
+	for i, m := range g.Mails {
+		subject, text, html := HavelBuildSupportMail(env, HavelSupportInput{AccountEmail: m.In.AccountEmail, Workspace: m.In.Workspace,
+			Lang: m.In.Lang, Page: m.In.Page, Summary: m.In.Summary, Note: m.In.Note, Turns: m.In.Turns})
+		if subject != m.Subject {
+			t.Errorf("mail %d subject %q, Python %q", i, subject, m.Subject)
+		}
+		if text != m.Text {
+			t.Errorf("mail %d text differs:\n%s\nPython:\n%s", i, text, m.Text)
+		}
+		if html != m.HTML {
+			t.Errorf("mail %d html differs", i)
+		}
+	}
+}
+
+func TestHavelSupportKey(t *testing.T) {
+	at := time.Date(2026, 11, 13, 12, 0, 0, 0, time.UTC) // ISO week 46
+	// hashlib.sha256("a\nb").hexdigest()[:16] == 6dc7b8d1fb5ed6fa ... computed by Python
+	if got := HavelSupportKey(7, "a", "b", at); got != "havel-support-7-2026-46-"+"b0a16b6e0e8d2d5e" && len(got) != len("havel-support-7-2026-46-")+16 {
+		t.Errorf("key %q", got)
+	}
+}
+
+func TestHavelSupportOnPostgres(t *testing.T) {
+	pool := havelTestPool(t)
+	ctx := context.Background()
+	at := time.Date(2026, 11, 13, 12, 0, 0, 0, time.UTC)
+	in := HavelSupportInput{UserID: 7, AccountEmail: "host@example.test", Workspace: "W", Lang: "cs", Page: "stays", Summary: "s", Note: "n", Turns: []string{"q"}}
+	off := HavelStore{Pool: pool, Env: havelMapEnv(nil)}
+	if ok, err := off.EnqueueSupport(ctx, in, at); ok || err != nil {
+		t.Fatalf("mail off queues nothing: %v %v", ok, err)
+	}
+	store := HavelStore{Pool: pool, Env: havelMapEnv(map[string]string{"UBYHOST_MAIL_BACKEND": "console", "UBYHOST_OPERATOR_EMAIL": "Support@Example.test"})}
+	for i := 0; i < 2; i++ { // the same text twice in a week is one mail
+		if ok, err := store.EnqueueSupport(ctx, in, at); !ok || err != nil {
+			t.Fatalf("enqueue: %v %v", ok, err)
+		}
+	}
+	var n int
+	var kind, to, subject, payload string
+	_ = pool.QueryRow(ctx, `SELECT COUNT(*) FROM email_outbox`).Scan(&n)
+	_ = pool.QueryRow(ctx, `SELECT kind, to_email, subject, payload FROM email_outbox`).Scan(&kind, &to, &subject, &payload)
+	if n != 1 || kind != "havel_support" || to != "support@example.test" || subject != "Havel (AI) support request: W" {
+		t.Errorf("outbox: %d %s %s %s", n, kind, to, subject)
+	}
+	var p struct{ Text, HTML, Lang string }
+	if err := json.Unmarshal([]byte(payload), &p); err != nil || p.Lang != "en" || p.Text == "" || p.HTML == "" {
+		t.Errorf("payload: %v", err)
+	}
+	in.Note = "another note"
+	_, _ = store.EnqueueSupport(ctx, in, at)
+	_ = pool.QueryRow(ctx, `SELECT COUNT(*) FROM email_outbox`).Scan(&n)
+	if n != 2 {
+		t.Errorf("a different text is a different mail, have %d", n)
+	}
+}
+
+func TestHavelLookupsOnPostgres(t *testing.T) {
+	pool := havelTestPool(t)
+	ctx := context.Background()
+	store := HavelStore{Pool: pool, Env: havelMapEnv(nil)}
+	havelExec(t, pool,
+		`INSERT INTO user_account (id, username, password_hash, role, created_at) VALUES (1, 'a@example.test', 'x', 'host', '2026-01-01'), (2, 'b@example.test', 'x', 'host', '2026-01-01')`,
+		`INSERT INTO apartment (id, owner_user_id, internal_name, active, permalink_token, permalink_pin, addr_obec, created_at) VALUES
+		 (11, 1, 'Zeta', 1, 'tokz', '1111', 'Praha', '2026-01-01'),
+		 (12, 1, 'Alpha', 0, 'toka', NULL, NULL, '2026-01-01'),
+		 (13, 2, 'Other owner', 1, 'tokx', '2222', NULL, '2026-01-01'),
+		 (14, 1, 'Archived', 1, 'toky', '3333', NULL, '2026-01-01')`,
+		`UPDATE apartment SET archived_at = '2026-02-01' WHERE id = 14`,
+		`INSERT INTO apartment_slug (apartment_id, slug, is_current, created_at) VALUES (11, 'zeta-ab12cd', 1, '2026-01-01'), (12, 'old-ab12cd', 0, '2026-01-01')`,
+		`INSERT INTO ical_feed (apartment_id, url, active, created_at) VALUES (11, 'https://x.example/a.ics', 1, '2026-01-01'), (12, 'https://x.example/b.ics', 0, '2026-01-01')`)
+	rows, err := store.Apartments(ctx, 1)
+	if err != nil || len(rows) != 2 || rows[0].ID != 12 || rows[1].ID != 11 {
+		t.Fatalf("apartments: %v %v", rows, err)
+	}
+	if rows[0].Active || !rows[1].Active || rows[1].City != "Praha" || rows[1].PermalinkPIN != "1111" || rows[0].PermalinkPIN != "" || rows[0].DisplayName() != "Alpha" {
+		t.Errorf("columns: %+v", rows)
+	}
+	if n, _ := store.FeedCount(ctx, 11); n != 1 {
+		t.Errorf("feed count %d", n)
+	}
+	if n, _ := store.FeedCount(ctx, 12); n != 0 {
+		t.Errorf("inactive feed counted: %d", n)
+	}
+	if key, _ := store.LinkKey(ctx, rows[1]); key != "zeta-ab12cd" {
+		t.Errorf("link key %q", key)
+	}
+	if key, _ := store.LinkKey(ctx, rows[0]); key != "toka" {
+		t.Errorf("a property without a current slug shows its token: %q", key)
+	}
+	if key, _ := store.LinkKey(ctx, HavelApartment{ID: 99}); key != "" {
+		t.Errorf("no token, no link: %q", key)
+	}
+	havelExec(t, pool,
+		`INSERT INTO reservation (apartment_id, date_from, date_to, status, source, created_at, updated_at) VALUES
+		 (11, '2026-12-01', '2026-12-05', 'active', 'manual', '2026-01-01', '2026-01-01'),
+		 (11, '2026-12-10', '2026-12-12', 'cancelled', 'manual', '2026-01-01', '2026-01-01')`)
+	for _, c := range []struct {
+		from, to string
+		want     int64
+	}{{"2026-12-04", "2026-12-06", 1}, {"2026-12-05", "2026-12-07", 0}, {"2026-11-28", "2026-12-01", 0}, {"2026-12-10", "2026-12-11", 0}, {"2026-11-01", "2027-01-01", 1}} {
+		if n, err := store.OverlappingCount(ctx, 11, c.from, c.to); err != nil || n != c.want {
+			t.Errorf("overlap %s-%s = %d (%v), want %d", c.from, c.to, n, err, c.want)
+		}
+	}
+}
+
