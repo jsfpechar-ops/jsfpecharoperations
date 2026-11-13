@@ -113,7 +113,8 @@ func GuestRails(ctx context.Context, db DB, apartmentID, bookingID int64, totalC
 }
 
 // guestIBAN is the legal entity's iban, else the IBAN of its bank account
-// (payments.normalise_account(...)[1]).
+// (payments.normalise_account(...)[1]). An account number that does not
+// validate is an error, as Python's ValueError is.
 func guestIBAN(ctx context.Context, db DB, entity *int64) (string, error) {
 	if entity == nil {
 		return "", nil
@@ -129,21 +130,15 @@ func guestIBAN(ctx context.Context, db DB, entity *int64) (string, error) {
 	if iban != nil && *iban != "" {
 		return *iban, nil
 	}
+	raw := ""
 	if account != nil {
-		if _, ib, ok := normaliseAccount(*account); ok {
-			return ib, nil
-		}
+		raw = *account
 	}
-	return "", nil
-}
-
-// normaliseAccount adapts stayfee.NormaliseAccount (display account or "", ok).
-func normaliseAccount(raw string) (display, iban string, ok bool) {
-	out, good := stayfee.NormaliseAccount(raw)
-	if !good {
-		return "", "", false
+	out, ok := stayfee.NormaliseAccount(raw)
+	if !ok {
+		return "", errors.New("legal entity bank account does not validate")
 	}
-	return out, out, true
+	return out, nil
 }
 
 // Direct stores direct requests.
