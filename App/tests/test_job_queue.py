@@ -73,17 +73,20 @@ def test_queue_setting_on_sqlite_raises(monkeypatch):
         scheduler.start()
 
 
-def test_unset_setting_registers_the_wrappers_unchanged(monkeypatch):
+def test_unset_setting_registers_the_wrappers_unchanged(monkeypatch, caplog):
     if ON_POSTGRES:
         pytest.skip("SQLite registration rules")
     monkeypatch.setattr(config, "ENABLE_SCHEDULER", True)
     monkeypatch.setattr(config, "JOB_QUEUE_KINDS", frozenset())
     monkeypatch.setattr(scheduler, "_acquire_single_instance_lock", lambda: True)
-    assert scheduler.start() is True
+    with caplog.at_level("WARNING", logger=scheduler.log.name):
+        assert scheduler.start() is True
     try:
         jobs = {j.id: j for j in scheduler._scheduler.get_jobs()}
         assert "job_queue" not in jobs
-        assert set(jobs) == set(scheduler.JOB_KINDS)
+        # 1290: no Go service on SQLite, so deadlines is not scheduled, and says so.
+        assert set(jobs) == set(scheduler.JOB_KINDS) - {"deadlines"}
+        assert "no deadline watch runs here" in caplog.text
         for kind, job in jobs.items():
             assert job.func is scheduler.JOB_KINDS[kind]
     finally:
@@ -233,7 +236,9 @@ def test_all_fifteen_kinds_queued_never_takes_the_scheduler_lock(job_db, monkeyp
     assert len(scheduler.JOB_KINDS) == 15
     assert scheduler.start() is True
     try:
-        assert "job_queue" in {j.id for j in scheduler._scheduler.get_jobs()}
+        ids = {j.id for j in scheduler._scheduler.get_jobs()}
+        assert "job_queue" in ids
+        assert "deadlines" in ids  # 1290: on PostgreSQL it is still enqueued
     finally:
         scheduler.shutdown()
 
@@ -299,7 +304,9 @@ def test_drain_checks_for_stuck_rows_at_most_once_per_window(monkeypatch):
     calls = []
     monkeypatch.setattr(jobqueue, "watch_stuck", lambda: calls.append(1) or [])
     monkeypatch.setattr(jobqueue, "claim", lambda: None)
-    monkeypatch.setattr(jobqueue, "_last_stuck_check", 0.0)
+    monkeypatch.setattr(
+        jobqueue, "_last_stuck_check", jobqueue.time.monotonic() - jobqueue.STUCK_CHECK_SECONDS - 1
+    )
     assert jobqueue.drain(lambda kind: None, threading.Event()) == 0
     assert jobqueue.drain(lambda kind: None, threading.Event()) == 0
     assert calls == [1]
@@ -335,7 +342,9 @@ def test_drain_checks_again_once_the_window_has_passed(monkeypatch):
     calls = []
     monkeypatch.setattr(jobqueue, "watch_stuck", lambda: calls.append(1) or [])
     monkeypatch.setattr(jobqueue, "claim", lambda: None)
-    monkeypatch.setattr(jobqueue, "_last_stuck_check", 0.0)
+    monkeypatch.setattr(
+        jobqueue, "_last_stuck_check", jobqueue.time.monotonic() - jobqueue.STUCK_CHECK_SECONDS - 1
+    )
     jobqueue.drain(lambda kind: None, threading.Event())
     monkeypatch.setattr(
         jobqueue, "_last_stuck_check", jobqueue.time.monotonic() - jobqueue.STUCK_CHECK_SECONDS - 1

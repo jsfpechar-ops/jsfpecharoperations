@@ -6,6 +6,10 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/jobs"
 )
 
 func TestParseGoKindsPush(t *testing.T) {
@@ -67,4 +71,56 @@ func TestCSPMatchesPython(t *testing.T) {
 	if !strings.Contains(string(src), want) {
 		t.Fatalf("App/app/main.py no longer contains the CSP prefix %q; update hardenHeaders too", want)
 	}
+}
+
+func TestLaneKindsDisjoint(t *testing.T) {
+	filing := filingHandlers(nil)
+	for k := range jobHandlers(nil) {
+		if _, ok := filing[k]; ok {
+			t.Errorf("kind %q is in both register_jobs.go and register_filing.go", k)
+		}
+	}
+}
+
+func TestEveryHandlerHasInterval(t *testing.T) {
+	handlers := goHandlers(nil)
+	for k := range handlers {
+		if goIntervals[k] <= 0 {
+			t.Errorf("handler %q has no interval > 0", k)
+		}
+	}
+	for k := range goIntervals {
+		if _, ok := handlers[k]; !ok {
+			t.Errorf("interval %q has no handler", k)
+		}
+	}
+}
+
+func TestRoutesRegisterOnce(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Fatalf("a route pattern is registered twice: %v", r)
+		}
+	}()
+	newMux(&metrics{counts: map[key]int64{}}, nil)
+}
+
+func TestDuplicateRouteFails(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Fatal("registering a pattern twice must panic")
+		}
+	}()
+	mux := http.NewServeMux()
+	mux.Handle("GET /twice", http.NotFoundHandler())
+	mux.Handle("GET /twice", http.NotFoundHandler())
+}
+
+func TestDuplicateJobKindFails(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Fatal("registerJob with an existing kind must panic")
+		}
+	}()
+	registerJob("push", 1, func(*pgxpool.Pool) jobs.Handler { return nil })
 }

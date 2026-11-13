@@ -19,9 +19,7 @@ from . import (
     config,
     db,
     door_codes,
-    dsr,
     fee_update,
-    filing_watchdog,
     guest_draft,
     guest_guide_import,
     guest_guide_merge,
@@ -220,61 +218,21 @@ def _ping(url: str, job_id: str) -> None:
         log.warning("heartbeat ping for %s failed", job_id, exc_info=True)
 
 
-def _job_deadlines() -> None:
+def _job_deadlines_go_only() -> None:
+    """The deadlines job runs in Go only (1290); reaching Python is a misconfiguration.
+
+    The deadline watch, the filing watchdog and the filing heartbeat are
+    go/internal/calendar/deadlines_job.go. This stub raises the critical
+    job_failed alert and sends no heartbeat, so the external monitor alerts on
+    the missing ping as well.
+    """
     started = time.perf_counter()
-    watch_ok = True
-    raised = due_requests = 0
-    try:
-        raised = reporting.check_deadlines()
-        due_requests = dsr.raise_due_alerts()
-        if raised or due_requests:
-            log.info(
-                "deadline watch raised %s alert(s), %s data-subject request(s) due",
-                raised,
-                due_requests,
-            )
-    except Exception:
-        log.exception("deadline watch failed")
-        _job_failed("deadlines")
-        watch_ok = False
-    # WP23: the filing watchdog runs even when the alert pass above failed,
-    # because its mails and its heartbeat are what reach the owner when the
-    # app itself is not being looked at.
-    try:
-        watchdog = filing_watchdog.run()
-        if (
-            watchdog["at_risk"] or watchdog.get("not_sent") or watchdog.get("unknown_risk") or watchdog.get("awaiting_retry")
-            or watchdog["host_mails"] or watchdog["digest"]
-        ):
-            log.info("filing watchdog: %s", watchdog)
-    except Exception:
-        # No ping at all: the external monitor alerts on the missing ping.
-        log.exception("filing watchdog failed")
-        _job_failed("deadlines")
-        _log_run("deadlines", started, False)
-        return
-    if watch_ok:
-        _job_ok("deadlines")
-    _log_run(
-        "deadlines", started, watch_ok,
-        {
-            "alerts": raised or 0,
-            "requests_due": due_requests or 0,
-            "at_risk": watchdog["at_risk"],
-            "not_sent": watchdog.get("not_sent", 0),
-            "unknown_risk": watchdog.get("unknown_risk", 0),
-            "awaiting_retry": watchdog.get("awaiting_retry", 0),
-            "host_mails": watchdog["host_mails"],
-            "digest": watchdog["digest"],
-        },
+    log.error(
+        "the deadlines job runs in Go only: put deadlines in both "
+        "UBYHOST_JOB_QUEUE_KINDS and UBYHOST_GO_JOB_KINDS (PostgreSQL)"
     )
-    # A failed deadline watch counts as a failure too: nobody is being told.
-    _filing_heartbeat(watchdog["at_risk"] > 0 or not watch_ok)
-
-
-def _filing_heartbeat(at_risk: bool) -> None:
-    """Ping the filing dead-man switch: <url> when all is well, <url>/fail if not."""
-    _ping(filing_watchdog.heartbeat_url(at_risk), "filing")
+    _job_failed("deadlines")
+    _log_run("deadlines", started, False)
 
 
 def _job_mail() -> None:
@@ -553,7 +511,7 @@ def _acquire_single_instance_lock() -> bool:
 JOB_KINDS = {
     "ical": _job_sync_calendars,
     "submit": _job_submit,
-    "deadlines": _job_deadlines,
+    "deadlines": _job_deadlines_go_only,
     "mail": _job_mail,
     "photo_sweep": _job_photo_sweep,
     "meta_capi": _job_meta_capi,
@@ -619,6 +577,10 @@ def start() -> bool:
         )
     if config.JOB_QUEUE_KINDS and config.DB_BACKEND != "postgresql":
         raise RuntimeError("UBYHOST_JOB_QUEUE_KINDS needs PostgreSQL")
+    if config.DB_BACKEND != "postgresql":
+        log.warning("no deadline watch runs here: the deadlines job runs only in the Go service (PostgreSQL, 1290)")
+    elif "deadlines" not in config.GO_JOB_KINDS:
+        log.warning("deadlines is not in UBYHOST_GO_JOB_KINDS: no deadline watch runs (1290)")
     if config.DB_BACKEND == "postgresql" and set(JOB_KINDS) <= config.JOB_QUEUE_KINDS:
         log.info("every job is on the queue; scheduler.lock not taken")
     elif not _acquire_single_instance_lock():
@@ -634,10 +596,13 @@ def start() -> bool:
         _target("submit"), "interval", minutes=minutes["submit"],
         id="submit", max_instances=1, coalesce=True,
     )
-    _scheduler.add_job(
-        _target("deadlines"), "interval", minutes=minutes["deadlines"], id="deadlines",
-        max_instances=1, coalesce=True,
-    )
+    if config.DB_BACKEND == "postgresql":
+        # Without PostgreSQL there is no Go service, so the stub would only
+        # raise a critical alert that never clears (Render staging, 1290).
+        _scheduler.add_job(
+            _target("deadlines"), "interval", minutes=minutes["deadlines"], id="deadlines",
+            max_instances=1, coalesce=True,
+        )
     _scheduler.add_job(
         _target("mail"), "interval", minutes=minutes["mail"], id="mail", max_instances=1, coalesce=True,
     )
