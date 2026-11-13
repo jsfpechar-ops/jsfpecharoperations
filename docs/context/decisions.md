@@ -65,3 +65,4 @@ Append-only.
 - 2026-11-12 [door] 1149 lost race re-issues; 1155 revived code checked on lock (3 tries); 1156 info card + host mail; cs/vi ok.
 - 11-13 [calendar] 1172: Go-only; 1 mail/pair; manual dup skipped (owner)
 - 2026-11-13 [door] 1173/c: release backoff 15/15/60; new, retries, released; revive unissued expired.
+- 2026-11-13 [design] Host redesign (Figma 4POeO1dtcL5i2U5e0gdEoU): nav "Overview" -> "Dashboard"; tablet 768-1023 gets new layout; add --coral-red #d0452d, keep --brand; tile "still missing" = missing police details, "late" = past deadline (owner). Briefs 1291-1293.

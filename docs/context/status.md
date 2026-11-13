@@ -19,6 +19,7 @@ Updated: 2026-11-13.
 - 11-08: 1032 stay-fee pay box (all ways visible) + receipt mail, draft PR; method never claimed. **Owner:** review, deploy.
 
 ## Next
+- Host redesign briefs 1291 → 1292 → 1293 (Figma-verified, geometry tests) ready; Haiku runs one per chat. Supersedes #939.
 - Door codes 0037–0038 on main → owner staging steps.
 - TTLock 0008–0016: [plan](../plans/ttlock-door-codes.md) §11; live after §12 + lawyer (K-L).
 - File-retention: decided, no build; lawyer Terms/DPA line.
