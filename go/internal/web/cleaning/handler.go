@@ -282,6 +282,22 @@ func SharedPageHandler(pool *pgxpool.Pool, getenv func(string) string, now func(
 	}
 }
 
+// formMaxBody is hostweb's csrfMaxBody. hostweb.CSRF sets that limit only when
+// the token comes in the form, so a header token left the body unlimited.
+const formMaxBody = 64 << 10
+
+// parseLimitedForm parses the form with the hostweb.CSRF body limit. It returns
+// false after writing 413 when the body is too large.
+func parseLimitedForm(w http.ResponseWriter, r *http.Request) bool {
+	r.Body = http.MaxBytesReader(w, r.Body, formMaxBody)
+	var tooBig *http.MaxBytesError
+	if err := r.ParseForm(); errors.As(err, &tooBig) {
+		writeDetail(w, http.StatusRequestEntityTooLarge, "Request Entity Too Large")
+		return false
+	}
+	return true
+}
+
 // DeleteHandler serves POST /cleaning/events/{id}/delete: dismiss one cleaning.
 func DeleteHandler(pool *pgxpool.Pool, getenv func(string) string, now func() time.Time) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -312,7 +328,9 @@ func DeleteHandler(pool *pgxpool.Pool, getenv func(string) string, now func() ti
 			return
 		}
 		revision := int64(0)
-		_ = r.ParseForm()
+		if !parseLimitedForm(w, r) {
+			return
+		}
 		if _, present := r.PostForm["revision"]; present {
 			n, ok := pyInt(r.PostForm.Get("revision"))
 			if !ok {
