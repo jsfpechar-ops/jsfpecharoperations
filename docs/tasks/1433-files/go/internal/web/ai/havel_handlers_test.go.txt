@@ -9,6 +9,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"html"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -19,6 +20,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/anthropic"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/mail"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/session"
 )
@@ -148,6 +150,9 @@ func (g *havelRig) count(sql string, args ...any) int {
 	return n
 }
 
+// havelTxt is a catalog text as it appears in HTML.
+func havelTxt(key string) string { return html.EscapeString(havelCatalog.T("en", key, nil)) }
+
 func havelAnswerJSON(reply string) map[string]any {
 	return map[string]any{"kind": "answer", "reply": reply, "sources": []string{"guide.stays.body"}, "links": []any{},
 		"action": nil, "support_summary": nil, "next": []string{"Show the guest link"}}
@@ -212,7 +217,7 @@ func TestHavelPageGet(t *testing.T) {
 	// A topic answer, no model, no count.
 	rec = g.do(havelReq{method: "GET", path: "/havel?topic=stays&q=add"})
 	a := HavelTopicAnswer("en", "stays", "add")
-	if rec.Code != 200 || !strings.Contains(rec.Body.String(), "<p>"+a.Paragraphs[0]+"</p>") || !strings.Contains(rec.Body.String(), `href="/reservations?new=1"`) {
+	if rec.Code != 200 || !strings.Contains(rec.Body.String(), "<p>"+html.EscapeString(a.Paragraphs[0])+"</p>") || !strings.Contains(rec.Body.String(), `href="/reservations?new=1"`) {
 		t.Errorf("topic answer: %d", rec.Code)
 	}
 	if len(g.model.calls) != 0 || g.count(`SELECT COUNT(*) FROM rate_limit_event`) != 0 {
@@ -224,8 +229,8 @@ func TestHavelPageGet(t *testing.T) {
 	}
 	// The support topic carries the support form with the masked reply address.
 	body = g.do(havelReq{method: "GET", path: "/havel?topic=wrong&q=error"}).Body.String()
-	if !strings.Contains(body, `action="/havel/support"`) || !strings.Contains(body, "h***@example.test") && !strings.Contains(body, "@example.test") {
-		t.Error("support form")
+	if !strings.Contains(body, `action="/havel/support"`) || !strings.Contains(body, html.EscapeString(mail.MaskEmail("host@example.test"))) {
+		t.Errorf("support form with the masked reply address %q", mail.MaskEmail("host@example.test"))
 	}
 }
 
@@ -260,7 +265,7 @@ func TestHavelOffShowsSupportOnly(t *testing.T) {
 		t.Error("with AI off the composer is replaced by the support link")
 	}
 	rec := havelPost(g, url.Values{"message": {"How do I add a stay?"}}, false)
-	if rec.Code != 200 || !strings.Contains(rec.Body.String(), havelCatalog.T("en", "havel.off", nil)) || len(g.model.calls) != 0 {
+	if rec.Code != 200 || !strings.Contains(rec.Body.String(), havelTxt("havel.off")) || len(g.model.calls) != 0 {
 		t.Errorf("off: %d, %d calls", rec.Code, len(g.model.calls))
 	}
 	if g.count(`SELECT COUNT(*) FROM havel_stats`) != 0 || g.count(`SELECT COUNT(*) FROM rate_limit_event`) != 0 {
@@ -280,7 +285,7 @@ func TestHavelOffShowsSupportOnly(t *testing.T) {
 func TestHavelLocalReplyCostsNothing(t *testing.T) {
 	g := havelNewRig(t, nil)
 	rec := havelPost(g, url.Values{"message": {"Hello!"}}, false)
-	if !strings.Contains(rec.Body.String(), havelCatalog.T("en", "havel.greeting", nil)) || len(g.model.calls) != 0 ||
+	if !strings.Contains(rec.Body.String(), havelTxt("havel.greeting")) || len(g.model.calls) != 0 ||
 		g.count(`SELECT COUNT(*) FROM rate_limit_event`) != 0 || g.count(`SELECT COUNT(*) FROM havel_stats`) != 0 {
 		t.Error("a greeting is answered locally with no model call and no count")
 	}
@@ -314,7 +319,7 @@ func TestHavelAnswerSendsOnlyRedactedFacts(t *testing.T) {
 			t.Error("a system block holds an address")
 		}
 	}
-	for _, want := range []string{"[email 1]", "[phone 1]", "device: phone", "page: stays", "properties: id 11: Flat A (Praha); id 12: Chata", "today: 2026-11-13 (Friday)", "lang: en"} {
+	for _, want := range []string{"[email 1]", "[phone 1]", "device: phone", "page: stays", "properties: id 12: Chata; id 11: Flat A (Praha)", "today: 2026-11-13 (Friday)", "lang: en"} {
 		if !strings.Contains(sent, want) {
 			t.Errorf("the model should see %q, got:\n%s", want, sent)
 		}
@@ -371,7 +376,7 @@ func TestHavelGuardrailFailStoresOnlyTheRedactedQuestion(t *testing.T) {
 	g := havelNewRig(t, nil)
 	g.model.script = []any{havelAnswerJSON("Visit https://evil.example now.")}
 	rec := havelPost(g, url.Values{"message": {"why is it broken? write to anna@example.test"}, "page": {"stays"}}, false)
-	if !strings.Contains(rec.Body.String(), havelCatalog.T("en", "havel.dont_know", nil)) || !strings.Contains(rec.Body.String(), `action="/havel/support"`) {
+	if !strings.Contains(rec.Body.String(), havelTxt("havel.dont_know")) || !strings.Contains(rec.Body.String(), `action="/havel/support"`) {
 		t.Error("a failed answer shows I-don't-know and the support card")
 	}
 	var q, lang, page, kind, created string
@@ -397,7 +402,7 @@ func TestHavelRefusalsPauseTheHost(t *testing.T) {
 		t.Fatal("three refusals recorded")
 	}
 	body := havelPost(g, url.Values{"message": {"another question"}}, false).Body.String()
-	if !strings.Contains(body, havelCatalog.T("en", "havel.paused", nil)) || len(g.model.calls) != 3 {
+	if !strings.Contains(body, havelTxt("havel.paused")) || len(g.model.calls) != 3 {
 		t.Error("after three refusals a week the host is paused and the model is not called")
 	}
 	if g.count(`SELECT count FROM havel_stats WHERE kind = 'limit_hit'`) != 1 || g.count(`SELECT COUNT(*) FROM email_outbox`) != 0 {
@@ -413,7 +418,7 @@ func TestHavelLimitsForwardToSupport(t *testing.T) {
 	}
 	g.pool.Exec(context.Background(), `DELETE FROM rate_limit_event WHERE scope = 'havel_burst'`)
 	body := havelPost(g, url.Values{"message": {"my third question, mail me at b@example.test"}, "page": {"stays"}}, false).Body.String()
-	if !strings.Contains(body, havelCatalog.T("en", "havel.forwarded", nil)) || len(g.model.calls) != 2 {
+	if !strings.Contains(body, havelTxt("havel.forwarded")) || len(g.model.calls) != 2 {
 		t.Fatalf("a week limit forwards the message and skips the model (%d calls)", len(g.model.calls))
 	}
 	var to, subject, payload string
@@ -436,7 +441,7 @@ func TestHavelBurstDoesNotForward(t *testing.T) {
 		g.pool.Exec(context.Background(), `INSERT INTO rate_limit_event (scope, key, at) VALUES ('havel_burst', '1', $1)`, float64(havelTNow.Unix())-10)
 	}
 	body := havelPost(g, url.Values{"message": {"question"}}, false).Body.String()
-	if !strings.Contains(body, havelCatalog.T("en", "havel.limit_burst", nil)) || g.count(`SELECT COUNT(*) FROM email_outbox`) != 0 || len(g.model.calls) != 0 {
+	if !strings.Contains(body, havelTxt("havel.limit_burst")) || g.count(`SELECT COUNT(*) FROM email_outbox`) != 0 || len(g.model.calls) != 0 {
 		t.Error("the burst limit shows its text and forwards nothing")
 	}
 }
@@ -445,7 +450,7 @@ func TestHavelBudgetAndDisabledErrors(t *testing.T) {
 	g := havelNewRig(t, nil)
 	g.model.script = []any{&anthropic.Error{Reason: "month", Budget: true}, &anthropic.Error{Reason: "day", Budget: true}, &anthropic.Error{Reason: "disabled", Disabled: true}}
 	body := havelPost(g, url.Values{"message": {"q one"}}, false).Body.String()
-	if !strings.Contains(body, havelCatalog.T("en", "havel.forwarded", nil)) {
+	if !strings.Contains(body, havelTxt("havel.forwarded")) {
 		t.Error("a spent monthly budget forwards to support (budget_month)")
 	}
 	if g.count(`SELECT COUNT(*) FROM rate_limit_event WHERE scope = 'havel_week'`) != 0 {
@@ -462,7 +467,7 @@ func TestHavelBudgetAndDisabledErrors(t *testing.T) {
 	g.pool.Exec(context.Background(), `DELETE FROM email_outbox`)
 	g.pool.Exec(context.Background(), `DELETE FROM rate_limit_event`)
 	body = havelPost(g, url.Values{"message": {"q three"}}, false).Body.String()
-	if !strings.Contains(body, havelCatalog.T("en", "havel.off", nil)) || g.count(`SELECT COUNT(*) FROM email_outbox`) != 0 {
+	if !strings.Contains(body, havelTxt("havel.off")) || g.count(`SELECT COUNT(*) FROM email_outbox`) != 0 {
 		t.Error("a disabled feature shows the off text and forwards nothing")
 	}
 }
@@ -470,7 +475,7 @@ func TestHavelBudgetAndDisabledErrors(t *testing.T) {
 func TestHavelTooLongAndConversationCap(t *testing.T) {
 	g := havelNewRig(t, nil)
 	rec := havelPost(g, url.Values{"message": {strings.Repeat("a", 601)}}, false)
-	if !strings.Contains(rec.Body.String(), `id="havel-error"`) || !strings.Contains(rec.Body.String(), havelCatalog.T("en", "havel.too_long", nil)) || len(g.model.calls) != 0 {
+	if !strings.Contains(rec.Body.String(), `id="havel-error"`) || !strings.Contains(rec.Body.String(), havelTxt("havel.too_long")) || len(g.model.calls) != 0 {
 		t.Error("a message over 600 characters shows the error and costs nothing")
 	}
 	var six []HavelExchange
@@ -479,7 +484,7 @@ func TestHavelTooLongAndConversationCap(t *testing.T) {
 	}
 	payload, sig := HavelSignHistory(havelTSecret, 1, six)
 	body := havelPost(g, url.Values{"message": {"a seventh question"}, "history": {payload}, "history_sig": {sig}}, false).Body.String()
-	if !strings.Contains(body, havelCatalog.T("en", "havel.forwarded", nil)) || len(g.model.calls) != 0 {
+	if !strings.Contains(body, havelTxt("havel.forwarded")) || len(g.model.calls) != 0 {
 		t.Error("the seventh message of a conversation is forwarded to support, not answered")
 	}
 	if g.count(`SELECT COUNT(*) FROM email_outbox`) != 1 {
@@ -493,7 +498,7 @@ func TestHavelActionCard(t *testing.T) {
 		"guest_email": nil, "start_time": nil, "end_time": nil, "note": "late arrival"}
 	g.model.script = []any{map[string]any{"kind": "action", "reply": "I prepared the stay for you.", "sources": []string{}, "links": []any{}, "action": action, "support_summary": nil, "next": []string{}}}
 	body := havelPost(g, url.Values{"message": {"add a stay 1 to 4 December for 2 guests"}, "return_to": {"/stays"}}, false).Body.String()
-	for _, want := range []string{`data-havel-card="create_stay"`, `action="/reservations"`, `name="host_note" value="late arrival"`, `name="expected_guests"`, `name="apartment_id"`, "Fri 01.12.2026"} {
+	for _, want := range []string{`data-havel-card="create_stay"`, `action="/reservations"`, `name="host_note" value="late arrival"`, `name="expected_guests"`, `name="apartment_id"`, "Tue 01.12.2026"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("card should contain %q", want)
 		}
@@ -502,7 +507,7 @@ func TestHavelActionCard(t *testing.T) {
 	action["property_id"] = 99
 	g.model.script = []any{map[string]any{"kind": "action", "reply": "Prepared.", "sources": []string{}, "links": []any{}, "action": action, "support_summary": nil, "next": []string{}}}
 	body = havelPost(g, url.Values{"message": {"add a stay for the other flat"}}, false).Body.String()
-	if strings.Contains(body, `data-havel-card=`) || !strings.Contains(body, havelCatalog.T("en", "havel.dont_know", nil)) {
+	if strings.Contains(body, `data-havel-card=`) || !strings.Contains(body, havelTxt("havel.dont_know")) {
 		t.Error("an action on a foreign property fails validation")
 	}
 	// A card that cannot be built shows its reason and a link to the normal form.
@@ -519,12 +524,12 @@ func TestHavelSupportRoute(t *testing.T) {
 	post := func(f url.Values) string {
 		return g.do(havelReq{method: "POST", path: "/havel/support", form: f}).Body.String()
 	}
-	if body := post(url.Values{"summary": {"  "}, "note": {""}}); !strings.Contains(body, havelCatalog.T("en", "havel.support.empty", nil)) {
+	if body := post(url.Values{"summary": {"  "}, "note": {""}}); !strings.Contains(body, havelTxt("havel.support.empty")) {
 		t.Error("empty support form")
 	}
 	for i := 0; i < 3; i++ {
 		body := post(url.Values{"summary": {"I cannot find the button " + strings.Repeat("x", i)}, "note": {"n"}, "page": {"stays"}})
-		if !strings.Contains(body, havelCatalog.T("en", "havel.support.sent", nil)) {
+		if !strings.Contains(body, havelTxt("havel.support.sent")) {
 			t.Fatalf("support mail %d not sent", i)
 		}
 	}
@@ -554,7 +559,7 @@ func TestHavelNotHelpedRoute(t *testing.T) {
 	form := url.Values{"history": {payload}, "history_sig": {sig}, "page": {"stays"}}
 	for i := 0; i < 6; i++ {
 		rec := g.do(havelReq{method: "POST", path: "/havel/not-helped", form: form})
-		if rec.Code != 200 || !strings.Contains(rec.Body.String(), havelCatalog.T("en", "havel.not_helped_ack", nil)) {
+		if rec.Code != 200 || !strings.Contains(rec.Body.String(), havelTxt("havel.not_helped_ack")) {
 			t.Fatalf("not helped %d: %d", i, rec.Code)
 		}
 	}
@@ -570,7 +575,7 @@ func TestHavelNotHelpedRoute(t *testing.T) {
 func TestHavelLanguageComesFromTheCookie(t *testing.T) {
 	g := havelNewRig(t, nil)
 	body := g.do(havelReq{method: "GET", path: "/havel", lang: "cs"}).Body.String()
-	if !strings.Contains(body, havelCatalog.T("cs", "havel.intro", nil)) {
+	if !strings.Contains(body, html.EscapeString(havelCatalog.T("cs", "havel.intro", nil))) {
 		t.Error("the Czech greeting")
 	}
 }

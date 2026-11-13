@@ -26,6 +26,7 @@ sys.path.insert(0, str(APP))
 PKG = APP.parent / "go" / "internal" / "web" / "ai"
 
 from app import ai, cleaning_i18n, config, guide_i18n, havel, havel_topics, host_i18n  # noqa: E402
+from app import security  # noqa: E402
 from app.routes import havel as havel_routes  # noqa: E402
 
 TODAY = date(2026, 11, 13)
@@ -300,6 +301,9 @@ def cases() -> dict:
     # the route helpers
     out["blocks"] = [{"in": t, "out": havel_routes.blocks(t)} for t in ["", "one line", "a\n\nb", "1. first\n2. second\ntext\n3. third", "  7.  spaced  \n 12. x", "100. not a step", "1.no space"]]
     out["clean_id"] = [{"in": t, "out": havel_routes._clean_id(t)} for t in ["stays", "Guest_Link", "a-b c", "x" * 50, "éclair", ""]]
+    paths = ["", "/", "/havel", "/stays?x=1", "/a/../b", "/a//b", "//evil.example/x", "///x", "//", "https://evil.example/", "javascript:alert(1)", "/ok#frag", "/ok?a=b#frag",
+             "  /padded  ", "/with space", "/tab\there", "back\\slash", "/%2e%2e/x", "/%2f%2fevil", "/a/./b/", "/a/b/..", "/..", "/../..", "/\u00e9t\u00e9?q=\u00fc", "/a%00b", "x", "/havel?topic=wrong&q=error", "/x\\y", "/x?y=\\"]
+    out["safe_path"] = [{"in": p, "out": security.safe_local_path(p, "/havel")} for p in paths]
     out["i18n"] = {lang: {k: host_i18n.translate(lang, k) for k in ("havel.intro", "havel.off", "havel.limit_turns", "havel.card.not_prepared")}
                    for lang in ("en", "cs", "vi")}
     out["i18n_param"] = host_i18n.translate("en", "havel.card.not_prepared", reason="R")
