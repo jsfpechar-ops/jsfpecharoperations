@@ -28,8 +28,10 @@ var pages = layout.MustParse(catalog, pageFiles, "templates/*.tmpl")
 
 // RegisterPages adds the GET routes. It only builds handlers; the pool is
 // first used inside a request.
-func RegisterPages(mux *http.ServeMux, wrap Wrap, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time) {
-	s := &Pages{pool: pool, getenv: getenv, now: now}
+// lookupEnv is os.LookupEnv in production; it tells an unset key from an
+// empty one where Python's os.environ.get(key, default) does.
+func RegisterPages(mux *http.ServeMux, wrap Wrap, pool *pgxpool.Pool, getenv func(string) string, lookupEnv func(string) (string, bool), now func() time.Time) {
+	s := &Pages{pool: pool, getenv: getenv, lookupEnv: lookupEnv, now: now}
 	for _, route := range []struct {
 		path string
 		h    http.HandlerFunc
@@ -41,8 +43,13 @@ func RegisterPages(mux *http.ServeMux, wrap Wrap, pool *pgxpool.Pool, getenv fun
 	}
 }
 
-// Pages serves the GET routes; it shares the action server's fields.
-type Pages server
+// Pages serves the GET routes.
+type Pages struct {
+	pool      *pgxpool.Pool
+	getenv    func(string) string
+	lookupEnv func(string) (string, bool)
+	now       func() time.Time
+}
 
 // workflowStep is one row of workflow.steps(None) (App/app/workflow.py).
 type workflowStep struct {
@@ -136,12 +143,13 @@ func (s *Pages) guide(w http.ResponseWriter, r *http.Request) {
 		}
 		havel = aiOnTestList(s.getenv, email)
 	}
-	// config.UBYPORT_ENV == "mock" (default mock, lower-cased; an empty value
-	// counts as unset, as layout's env banner reads it).
-	env := strings.ToLower(s.getenv("UBYHOST_UBYPORT_ENV"))
-	if env == "" {
+	// config.UBYPORT_ENV == "mock": os.environ.get(key, "mock").lower(), so
+	// only a missing key is mock; a key set to "" is not.
+	env, set := s.lookupEnv("UBYHOST_UBYPORT_ENV")
+	if !set {
 		env = "mock"
 	}
+	env = strings.ToLower(env)
 	page := layout.Page{
 		Title:    catalog.T(hostweb.Lang(r), "guide.title", nil),
 		Nav:      "guide",

@@ -134,6 +134,15 @@
    }
   },
   {
+   "name": "guide_empty_ubyport_env",
+   "path": "/guide",
+   "user": 131001,
+   "lang": "en",
+   "env": {
+    "UBYHOST_UBYPORT_ENV": ""
+   }
+  },
+  {
    "name": "guide_signed_out",
    "path": "/guide",
    "user": 0,
@@ -165,7 +174,7 @@
    "name": "guest_links_admin_inside",
    "path": "/guest-links",
    "user": 131004,
-   "as": 131002,
+   "as": 131001,
    "lang": "en",
    "env": {}
   },

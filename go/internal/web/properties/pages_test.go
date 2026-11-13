@@ -143,8 +143,15 @@ func TestPagesMatchPython(t *testing.T) {
 			}
 			return testEnv(k)
 		}
+		lookup := func(k string) (string, bool) {
+			if v, ok := tc.Env[k]; ok {
+				return v, true
+			}
+			v := testEnv(k)
+			return v, v != ""
+		}
 		mux := http.NewServeMux()
-		RegisterPages(mux, func(_ string, h http.HandlerFunc) http.Handler { return h }, pool, env, testClock)
+		RegisterPages(mux, func(_ string, h http.HandlerFunc) http.Handler { return h }, pool, env, lookup, testClock)
 		req := httptest.NewRequest(http.MethodGet, tc.Path, nil)
 		req.AddCookie(&http.Cookie{Name: "ubyhost_lang", Value: tc.Lang})
 		if tc.User != 0 {
@@ -189,7 +196,7 @@ func TestPagesMatchPython(t *testing.T) {
 
 func TestPagesRegisterDoesNotTouchThePool(t *testing.T) {
 	mux := http.NewServeMux()
-	RegisterPages(mux, func(_ string, h http.HandlerFunc) http.Handler { return h }, nil, testEnv, testClock)
+	RegisterPages(mux, func(_ string, h http.HandlerFunc) http.Handler { return h }, nil, testEnv, func(string) (string, bool) { return "", false }, testClock)
 	req := httptest.NewRequest(http.MethodPost, "/guide", nil)
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
