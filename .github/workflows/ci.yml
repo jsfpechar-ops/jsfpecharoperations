@@ -205,6 +205,20 @@ jobs:
         run: |
           if grep -q skipped "$RUNNER_TEMP/pg-tests.log"; then echo "PostgreSQL tests skipped; they must run with 0 skipped"; exit 1; fi
 
+      - name: App works as the non-superuser role
+        if: hashFiles('App/tests/test_db_postgres.py') != ''
+        env:
+          PGPASSWORD: ubyhost
+        run: |
+          set -euo pipefail
+          # 1206: the production role script, then migrate and read as ubyhost_app
+          psql -h localhost -U postgres -d ubyhost_test -v ON_ERROR_STOP=1 -q -f ../deploy/lightsail/scripts/pg-app-role.sql
+          psql -h localhost -U postgres -d ubyhost_test -v ON_ERROR_STOP=1 -q -c "ALTER ROLE ubyhost_app PASSWORD 'ubyhost'"
+          export UBYHOST_DATABASE_URL=postgresql://ubyhost_app:ubyhost@localhost:5432/ubyhost_test
+          python scripts/pg_schema.py apply --expect-database ubyhost_test
+          python scripts/pg_schema.py check --expect-database ubyhost_test
+          UBYHOST_TEST_DATABASE_URL="$UBYHOST_DATABASE_URL" python -m pytest tests/test_db_postgres.py -q -rs --tb=short 2>&1 | tail -30
+
       - name: No PostgreSQL module yet
         if: hashFiles('App/tests/test_db_postgres.py') == ''
         run: echo "no PostgreSQL module yet"
