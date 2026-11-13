@@ -63,3 +63,4 @@ Append-only.
 - 2026-11-12 [filing] 1148: cancel waits on `running` <30 min, else cancels + `cancelled_filing_unconfirmed` (owner).
 - 2026-11-12 [filing] 1154: date move waits on any `running` batch, no age cap (owner: recommended).
 - 2026-11-12 [door] 1149 lost revoke race re-issues if stay live; 1155 maybe-deleted revived code checked on lock (3 lookups, then shown); 1156 re-issue: info card + one host mail; cs/vi copy approved (owner).
+- 11-13 [calendar] 1172: Go-only; 1 mail/pair; manual dup skipped (owner)
