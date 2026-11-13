@@ -1,7 +1,7 @@
-# 1169: under-15 birth-date test reads the seeded arrival date, not import-time today
+# 1171: under-15 birth-date test reads the seeded arrival date, not import-time today
 
 Status: todo
-Depends on: none | Base commit: claude/zealous-maxwell-a7ub54 HEAD | Branch: task/1169-under15-arrival
+Depends on: none | Base commit: claude/zealous-maxwell-a7ub54 HEAD | Branch: task/1171-under15-arrival
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
@@ -123,7 +123,7 @@ Stop, and write the report, if:
 
 ## 9. Report
 
-Write `docs/tasks/1169-report.md` (600 tokens at most) and set `Status: review`. The report has:
+Write `docs/tasks/1171-report.md` (600 tokens at most) and set `Status: review`. The report has:
 
 1. The files changed (`git diff --stat`).
 2. Each command, with the last 5 lines of its output.
