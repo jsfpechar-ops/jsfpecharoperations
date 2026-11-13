@@ -1,6 +1,6 @@
 # 1261: deploy switch `UBYHOST_SCHEMA_APPLY` (python | go)
 
-Status: todo
+Status: review
 Depends on: 1260 merged | Base commit: a83df54 (plus 1260) | Branch: task/1261-go-schema-deploy-switch
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Tier A (migrations, deploy path). Plan: docs/plans/go-full-move.md Lane D, step D1.
