@@ -67,7 +67,7 @@ func (c *reqCtx) helpTip(in ...any) (template.HTML, error) {
 	more := ""
 	if a.b("guide_href", false) {
 		ml := escText(c.t("help.tip.more"))
-		more = ` <a href="` + a.e("guide_href", "") + `" aria-label="` + ml + `: ` + escText(truncate(striptags(a.s("text", "")), 50)) + `">` + ml + `</a>`
+		more = ` <a href="` + a.href("guide_href") + `" aria-label="` + ml + `: ` + escText(truncate(striptags(a.s("text", "")), 50)) + `">` + ml + `</a>`
 	}
 	return html(`<span class="` + cls + `" data-help-tip><button type="button" class="help-tip-btn" aria-label="` + label + `" aria-expanded="false" aria-controls="` + id + `">` + glyph + `</button><span class="help-tip-body" id="` + id + `" role="tooltip">` + a.e("text", "") + more + `</span></span>`), nil
 }
@@ -171,7 +171,7 @@ func (c *reqCtx) subTabs(in ...any) (template.HTML, error) {
 		if truthy(cell(row, 2)) {
 			cur = ` aria-current="page"`
 		}
-		b.WriteString(`<a class="sub-tab" href="` + esc(cell(row, 0)) + `"` + cur + `>` + escText(c.t(pyStr(cell(row, 1)))) + `</a>`)
+		b.WriteString(`<a class="sub-tab" href="` + safeHref(cell(row, 0)) + `"` + cur + `>` + escText(c.t(pyStr(cell(row, 1)))) + `</a>`)
 	}
 	b.WriteString(`</nav>`)
 	return html(b.String()), nil
@@ -194,7 +194,7 @@ func (c *reqCtx) pageHeader(in ...any) (template.HTML, error) {
 		if !a.b("back_label", false) {
 			bl = escText(c.t("common.back"))
 		}
-		b.WriteString(`<a class="back-link" href="` + a.e("back_url", "") + `"> ` + bl + `</a>`)
+		b.WriteString(`<a class="back-link" href="` + a.href("back_url") + `"> ` + bl + `</a>`)
 	}
 	if a.b("eyebrow", false) {
 		b.WriteString(`<div class="eyebrow">` + a.e("eyebrow", "") + `</div>`)
@@ -465,7 +465,7 @@ func (c *reqCtx) emptyState(in ...any) (template.HTML, error) {
 		if a.b("primary", true) {
 			variant = "primary"
 		}
-		b.WriteString(`<div class="ui-btn-group"><a class="ui-btn ui-btn-` + variant + `" href="` + a.e("action_url", "") + `">` + a.e("action_label", "") + `</a></div>`)
+		b.WriteString(`<div class="ui-btn-group"><a class="ui-btn ui-btn-` + variant + `" href="` + a.href("action_url") + `">` + a.e("action_label", "") + `</a></div>`)
 	}
 	b.WriteString(a.raw("caller") + `</div>`)
 	return html(b.String()), nil
@@ -499,7 +499,7 @@ func (c *reqCtx) successNotice(in ...any) (template.HTML, error) {
 	}
 	next := ""
 	if a.b("next_href", false) && a.b("next_label", false) {
-		next = `<a class="success-notice-next" href="` + a.e("next_href", "") + `">` + a.e("next_label", "") + `</a>`
+		next = `<a class="success-notice-next" href="` + a.href("next_href") + `">` + a.e("next_label", "") + `</a>`
 	}
 	return html(`<div class="success-notice" role="status" data-success-notice><span class="success-notice-text">` + a.e("text", "") + `</span>` + next + `<button type="button" class="success-notice-close" data-success-dismiss aria-label="` + escText(c.t("a11y.dismiss_notification")) + `">` + mustIcon("x", 16) + `</button></div>`), nil
 }
@@ -562,7 +562,7 @@ func (c *reqCtx) rowMenuBegin(in ...any) (template.HTML, error) {
 func rowMenuEnd() template.HTML { return html(`</div></div>`) }
 
 func (c *reqCtx) rowOpen(href any) template.HTML {
-	return html(`<a class="row-open" href="` + esc(href) + `" tabindex="-1" aria-hidden="true"><span class="row-open-text">` + escText(c.t("common.open")) + `</span></a>`)
+	return html(`<a class="row-open" href="` + safeHref(href) + `" tabindex="-1" aria-hidden="true"><span class="row-open-text">` + escText(c.t("common.open")) + `</span></a>`)
 }
 
 // platformLogos is templating._PLATFORM_LOGO_KEYS for the files in

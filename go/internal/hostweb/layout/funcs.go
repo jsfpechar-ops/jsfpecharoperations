@@ -16,6 +16,7 @@ type reqCtx struct {
 	csrf   string
 	v2     bool
 	now    time.Time
+	getenv func(string) string // nil at parse time
 }
 
 // has reports whether the catalog has the key in lang or the default table.
@@ -151,5 +152,10 @@ func (c *reqCtx) funcs() template.FuncMap {
 		"source_badge":          sourceBadge,
 		"settings_group":        settingsGroup,
 		"settings_heading":      c.settingsHeading,
+		"billing_on":            func() bool { return c.getenv != nil && billingOn(c.getenv) },
+		"seq":                   seq,
+		"add":                   add,
+		"sub":                   sub,
+		"default":               dflt,
 	}
 }

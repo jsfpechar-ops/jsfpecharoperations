@@ -192,3 +192,33 @@ workflow.step_of
 workspace.deletion.banner_detail
 workspace.deletion.banner_title
 workspace.deletion.download_zip
+# 1381: host alerts (every notification.* key: titles, variants, reasons, job and mail names).
+a11y.notifications
+notification.*
+# 1381: billing line, celebration toast, security prompt.
+billing.banner.*
+celebration.body
+celebration.dismiss
+security_prompt.*
+passkeys.error.failed
+# 1381: the Havel panel.
+havel.launcher
+havel.writing
+havel.error
+havel.retry
+havel.name
+havel.subtitle
+havel.close
+havel.intro
+havel.topics_title
+havel.topic.*
+havel.guide_link
+havel.placeholder
+havel.send
+havel.ai_note
+havel.write_support
+havel.off
+havel.paused
+havel.limit_burst
+havel.limit_week
+havel.limit_month
