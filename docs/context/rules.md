@@ -78,6 +78,17 @@ Set 2026-10-30, owner direction. The staged plan is [docs/plans/ux-smoothness-pl
 - EN/CS keys stay in parity.
 - No em dashes in user-visible copy.
 
+## State machines
+
+- Every stored state/status column has one `TRANSITIONS` table in its owning module, next to the state constants.
+- Each table has a pin test `App/tests/test_sm_<machine>.py`.
+- If Go writes the column, the table has a twin in `go/internal/statemachine/tables.go`, covered by `test_sm_go_parity.py`.
+- Writes are one atomic `UPDATE ... SET state = ? WHERE id = ? AND state IN (...)`, never read-then-write.
+- A column written in both languages is changed in both in one PR.
+- Code is the truth and docs describe it; a disagreement goes to the owner.
+- Derived or computed labels have no stored state and need no table.
+- `App/tests/test_sm_registry.py` enforces this: a new column needs a table and pin test, or an `EXEMPT` line with a reason. History: docs/plans/explicit-state-machines.md and docs/plans/explicit-state-machines-rounds-2-4.md.
+
 ## Mail
 
 - Lifecycle tips cover the host's own setup only: no discounts, pricing or third-party offers. Marketing content needs the "Novinky:" subject prefix and newsletter rules.

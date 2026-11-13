@@ -6,7 +6,7 @@ Read this file, then [status](docs/context/status.md). Open nothing else unless 
 ## Roles
 
 - **Orchestrator** (any chat AI the owner talks to: Claude, ChatGPT, Gemini, Copilot chat, Cowork, Claude Code): plans, writes briefs in docs/tasks/, reviews reports. Never edits App/, never runs tests, never implements, even when the owner says "fix this": in this repo that means "write the brief". Only the exact words "implement it yourself" lift this. A Claude orchestrator has a **Sonnet 5.5** subagent write each brief and implements only by spawning a **Haiku 5.5** subagent with one brief; other AIs hand the owner a Haiku prompt. Follow the [token budget](docs/context/workflow.md#token-budget-every-ai-every-session).
-- **Executor** (Haiku 5.5 only; replaces Cursor, Kimi, GLM and Luna): follows one brief exactly, alone, no subagents. Reads only this file, [executor](docs/context/executor.md), the brief and the files the brief names. If you are Haiku running a brief from docs/tasks/, you are the executor.
+- **Executor** (Haiku 5.5 only): follows one brief exactly, alone, no subagents. Reads only this file, [executor](docs/context/executor.md), the brief and the files the brief names. Haiku running a brief from docs/tasks/ is the executor.
 - **Owner** (Josef): merges, deploys, secrets, servers. Give him numbered click-by-click steps in plain words.
 
 ## Limits (every chat, strict)
@@ -40,7 +40,7 @@ From `App/`: `.venv/bin/python -m pytest <files from the test-map> -q --tb=short
 | UbyPort, submission, claim, automation | [UBYPORT_CORE](docs/UBYPORT_CORE.md), [submit_state](docs/OPERATIONS.md#the-submit_state-state-machine) |
 | Guest pages | [Arrival lane](docs/DESIGN.md#guest-registration-arrival-lane-active), [rules: guest pages](docs/context/rules.md#guest-pages) |
 | Host UI | [design-system](docs/design/design-system.md) first, then [MASTER](docs/design/MASTER.md) (the component's section) and that page's add-on in `docs/design/pages/` |
-| Database, migrations | [rules: database](docs/context/rules.md#database) |
+| Database, migrations, states | [rules: database](docs/context/rules.md#database), [state machines](docs/context/rules.md#state-machines) |
 | Personal data, retention, legal copy | [RETENTION](docs/privacy/RETENTION.md), [ROPA](docs/privacy/ROPA.md), [legal positions](docs/UbyHost_workplan/04_legal_positions.md#summary-of-decisions) |
 | Auth, sessions, secrets | [SECURITY](docs/SECURITY.md), [rules: secrets](docs/context/rules.md#secrets) |
 | Env vars | [ENVIRONMENT](docs/ENVIRONMENT.md) (one section) |
@@ -54,4 +54,4 @@ From `App/`: `.venv/bin/python -m pytest <files from the test-map> -q --tb=short
 
 - **Start:** read this file, then status, then your routed row. Grep before you read. Read ranges, never whole files over 300 lines. If something is unclear, ask the owner instead of exploring.
 - **End (orchestrator):** update status (5 lines at most), append to decisions and known-issues, run the lint. A workflow change gets a `[workflow]` decision and a [workflow](docs/context/workflow.md) edit.
-- One chat per task. Close the chat when the brief or the review is done.
+- One chat per task; close it when the brief or review is done.

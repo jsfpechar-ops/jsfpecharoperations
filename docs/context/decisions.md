@@ -47,7 +47,6 @@ Append-only.
 - 2026-11-09 | [ux] Stay fees: current month default, pick navigates | owner | 1051
 - 2026-11-09 [ux] [Speed plan](../plans/speed-and-ease.md): answers §10.
 - 2026-11-09 [filing] Registered guests are filed by the deadline cap (deadline - 6 h) even when the stay is short or has no expected count; no 12 quiet hours past the cap; valid co-guests filed while another form is invalid; reverses the reporting.py:1093 rule; stays past their cap are filed by the first sweep (owner, K-F20) | 1070
-- 2026-11-09 [workflow] Owner asleep: orchestrator takes recommended answers and merges green, reviewed PRs itself (this build only). Assumed: F3, F4 yes; guest draft deleted 7 d after last change or day after check-out; G6, G13 parked; G4 not released
 - 2026-11-10 [guest] Guest form: B now, then C (owner).
 - 2026-11-10 [guest] Under-15s skip the signature; any adult on the booking signs and ticks a role ("parent or guardian" / "adult responsible for the child on this stay"). A child with no adult link is filed "no signature required" (owner).
 - 2026-11-10 [guest] Titles: cs "Registrace hosta", es "Ficha de huésped", fr "Fiche voyageur" (owner).
@@ -60,6 +59,7 @@ Append-only.
 - 2026-11-12 [billing] 1137: trial_pending->paused only via operator_pause().
 - 2026-11-12 [filing] 1138: claim fails closed; no retry.
 - 2026-11-12 [workflow] Orchestrator model chosen by brief risk tier (A: Opus 5.5 thread, Opus brief, Haiku executes, fresh Fable reviews diff; B: Opus 5.5, Sonnet brief, Haiku; C: Sonnet 5.5, Sonnet brief, Haiku); threads run in parallel, max 3, one per lane, no shared files; unsure = higher tier | owner | [workflow](workflow.md#roles-and-models)
+- 11-13 [workflow] 1199: every stored state/status column needs a TRANSITIONS table + pin test or an EXEMPT reason; test_sm_registry.py (owner)
 - 2026-11-12 [filing] 1148: cancel waits on `running` <30 min, else cancels + alert.
 - 2026-11-12 [filing] 1154: move waits on any `running` batch.
 - 2026-11-12 [door] 1149 lost race re-issues; 1155 revived code checked on lock (3 tries); 1156 info card + host mail; cs/vi ok.
