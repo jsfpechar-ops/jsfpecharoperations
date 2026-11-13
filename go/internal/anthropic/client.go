@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -142,6 +143,21 @@ func NewClient(apiKey string) *Client {
 	}
 }
 
+// maxRetryAfter caps how long the one retry waits for a retry-after header.
+const maxRetryAfter = 10 * time.Second
+
+// retryDelay is the wait before the one retry: the retry-after header in
+// whole seconds (capped at 10 s) when the API sends one, else 500 ms.
+func retryDelay(h http.Header) time.Duration {
+	if n, err := strconv.Atoi(strings.TrimSpace(h.Get("retry-after"))); err == nil && n >= 0 {
+		if d := time.Duration(n) * time.Second; d < maxRetryAfter {
+			return d
+		}
+		return maxRetryAfter
+	}
+	return 500 * time.Millisecond
+}
+
 func retryable(status int) bool {
 	return status == 408 || status == 409 || status == 429 || status >= 500
 }
@@ -194,7 +210,7 @@ func (c *Client) Create(ctx context.Context, req Request) (Response, error) {
 				lastErr = &StatusError{Status: res.StatusCode}
 			}
 			if attempt == 1 && (readErr != nil || retryable(res.StatusCode)) {
-				sleep(500 * time.Millisecond)
+				sleep(retryDelay(res.Header))
 				continue
 			}
 			return Response{}, lastErr
