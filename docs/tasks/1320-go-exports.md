@@ -1,8 +1,6 @@
 # 1320: Go port of the host downloads (receipts, envelopes, stays CSV), parity-checked against Python
 
-Status: review
-
-The sidecar files were removed after execution; the sha256 values in §2 match the committed code.
+Status: todo
 Depends on: none (1321 depends on this) | Base commit: a83df54 | Branch: task/1320-go-exports
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier A (filing records, guest data)
 
@@ -45,7 +43,9 @@ Rules (AGENTS.md): 1 filing correctness (read-only copies of filed records, no f
 
 **Parity mechanism.** `App/scripts/exports_golden.py` creates and drops database `ubyhost_exports_golden` on the server in `UBYHOST_TEST_DATABASE_URL`, applies the PostgreSQL schema, seeds 3 users, 3 apartments, 7 stays, 6 submissions (one encrypted envelope, one bad base64 receipt) and 5 guests, freezes `datetime.now` in exports.py and `db.utcnow`, sends 37 requests through the FastAPI TestClient (signed out, owner, other host, admin, admin impersonating the owner; en/cs/vi flashes) and records status, headers, body or zip entries and the audit rows each wrote. `exports_test.go` seeds the same rows into a fresh PostgreSQL, sends the same requests to `Routes()` and compares. PostgreSQL, not SQLite, because the Go routes run there (and 1321's `SELECT *` order and boolean results differ). `App/tests/test_go_exports.py` checks the catalog everywhere and runs the script with `--check` when a PostgreSQL URL is set (CI job test-postgres-full).
 
-**Verified by the brief writer:** gofmt empty, `go vet ./...` clean, `go test ./cmd/ubyhost-web/ ./internal/web/...` ok with local PostgreSQL 16 (`--- PASS: TestGoldenParity`, not skipped), golden `--check` clean on a second run, the pytest file 3 passed on PostgreSQL (2 passed 1 skipped on SQLite); mutations (impersonator dropped, a body byte, an audit detail) each failed the Go test.
+**Verified by the brief writer:** gofmt empty, `go vet ./internal/...` clean, `go test ./cmd/ubyhost-web/ ./internal/web/exports/...` ok with local PostgreSQL 16 (`--- PASS: TestGoldenParity`, not skipped), golden `--check` clean on a second run, the pytest file 3 passed on PostgreSQL (2 passed 1 skipped on SQLite); mutations (impersonator dropped, a body byte, an audit detail) each failed the Go test.
+
+Anchors that must exist verbatim (step 0, `grep -cF` prints 1 or more): App/app/routes/exports.py `def submission_receipt(submission_id: int, request: Request):` and `def reservations_export(request: Request):`; go/cmd/ubyhost-web/registry.go `func registerRoutes(fn func(*http.ServeMux, *metrics, *pgxpool.Pool)) {`; go/cmd/ubyhost-web/register_web_exports.go `func registerWebExports(mux *http.ServeMux, m *metrics, pool *pgxpool.Pool) {`; go/internal/web/exports/routes.go `func Routes(pool *pgxpool.Pool, getenv func(string) string, now func() time.Time) []Route {`.
 
 ## 3. Files
 
@@ -62,13 +62,14 @@ Rules (AGENTS.md): 1 filing correctness (read-only copies of filed records, no f
 | `go/cmd/ubyhost-web/register_web_exports.go` | create | `init()` → `registerRoutes` |
 | `App/scripts/exports_golden.py` | create | writes the two generated files |
 | `App/tests/test_go_exports.py` | create | catalog and golden freshness |
+| `docs/tasks/1320-files/**` | keep | sidecars (committed with this brief; do not edit) |
 | `docs/tasks/1320-report.md` | create | the report (§9) |
 
-No other file may change. The sidecars under `docs/tasks/1320-files/` are already committed with this brief; leave them.
+No other file may change.
 
 ## 4. Steps
 
-0. Checks (one call, repo root): `git branch --show-current` prints `task/1320-go-exports`; `ls go/internal/web go/cmd/ubyhost-web/register_web_exports.go App/scripts/exports_golden.py App/tests/test_go_exports.py 2>&1 | tail -30` says "No such file" four times; `grep -c 'func registerRoutes(' go/cmd/ubyhost-web/registry.go` prints 1; `grep -c 'ubyhost_sqlite_date' App/migrations_pg/00001_baseline.sql` prints at least 1. If `App/.venv/bin/python` is missing: `cd App && python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt -r requirements-dev.txt 2>&1 | tail -5`. Anything else: STOP (§8).
+0. Checks (one call, repo root): `git branch --show-current` prints `task/1320-go-exports`; `ls go/internal/web go/cmd/ubyhost-web/register_web_exports.go App/scripts/exports_golden.py App/tests/test_go_exports.py 2>&1 | tail -30` says "No such file" four times; `grep -cF` of each anchor in §2 prints 1 or more; `grep -c 'func registerRoutes(' go/cmd/ubyhost-web/registry.go` prints 1; `grep -c 'ubyhost_sqlite_date' App/migrations_pg/00001_baseline.sql` prints at least 1; `find docs/tasks/1320-files -name '*.txt' | wc -l` prints `11`. If `App/.venv/bin/python` is missing: `cd App && python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt -r requirements-dev.txt 2>&1 | tail -5`. Anything else: STOP (§8).
 
 1. Copy the sidecars into place and check them (one call, repo root):
 
@@ -88,7 +89,7 @@ No other file may change. The sidecars under `docs/tasks/1320-files/` are alread
 
 3. Golden freshness (from `App/`): `UBYHOST_TEST_DATABASE_URL=<url> .venv/bin/python scripts/exports_golden.py --check 2>&1 | grep -v INFO | tail -5` prints nothing (no `stale:` line), and `git status --short ../go | tail -5` is empty. A `stale:` line: STOP (Python moved; never edit the JSON, Python or Go to match).
 
-4. Go (from `go/`): `test -z "$(gofmt -l .)" && go vet ./... && UBYHOST_TEST_DATABASE_URL=<url> go test ./cmd/ubyhost-web/ ./internal/web/... -count=1 -v 2>&1 | grep -E '^(--- |ok|FAIL)' | tail -30`. Expected: `--- PASS: TestGoldenParity`, `--- PASS: TestRoutesNeedNoPool`, `--- PASS: TestHelpers` and two `ok`. A SKIP of TestGoldenParity means the URL was not seen. A FAIL: STOP, paste the first 30 lines.
+4. Go (from `go/`): `test -z "$(gofmt -l .)" && go vet ./cmd/ubyhost-web/ ./internal/web/exports/... && UBYHOST_TEST_DATABASE_URL=<url> go test ./cmd/ubyhost-web/ ./internal/web/exports/... -count=1 -v 2>&1 | grep -E '^(--- |ok|FAIL)' | tail -30`. Expected: `--- PASS: TestGoldenParity`, `--- PASS: TestRoutesNeedNoPool`, `--- PASS: TestHelpers` and two `ok`. A SKIP of TestGoldenParity means the URL was not seen. A FAIL: STOP, paste the first 30 lines.
 
 5. Python (from `App/`): `UBYHOST_TEST_DATABASE_URL=<url> .venv/bin/python -m pytest tests/test_go_exports.py tests/test_go_host_i18n.py -q --tb=short -rs 2>&1 | tail -30` passes with 0 skipped (without PostgreSQL: one skip of `test_exports_golden_is_current` is expected). Then write the report (§9) and commit "1320 step 5".
 
@@ -106,7 +107,7 @@ Steps 3-5 above (they are the test-map for this change: the new package, the reg
 - [ ] Step 3: `--check` clean, `git status --short ../go` empty.
 - [ ] Step 4: gofmt empty, vet clean, `TestGoldenParity` PASS on PostgreSQL (or "CI only" with the reason).
 - [ ] Step 5: pytest green.
-- [ ] `git diff --stat a83df54..HEAD | tail -30` lists only §3 paths, this brief and `docs/tasks/1320-files/`, `docs/tasks/1321*`.
+- [ ] `git diff --stat a83df54..HEAD | tail -30` lists only §3 paths, this brief and `docs/tasks/1320-files/`.
 - [ ] Commits "1320 step 1" and "1320 step 5"; nothing pushed.
 
 ## 8. Stop and ask

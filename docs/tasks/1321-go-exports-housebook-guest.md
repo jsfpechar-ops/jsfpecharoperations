@@ -1,8 +1,6 @@
 # 1321: Go port of the house-book CSV and the guest Art 15/20 bundle, parity-checked against Python
 
-Status: review
-
-The sidecar files were removed after execution; the sha256 values in §2 match the committed code.
+Status: todo
 Depends on: 1320 (merged or on this branch) | Base commit: the "1320 step 5" commit | Branch: task/1320-go-exports
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier A (guest data, decryption)
 
@@ -30,17 +28,30 @@ Rules (AGENTS.md): 1 filing correctness (read-only; the "reported" column reads 
 **How the Go copies Python:**
 
 - House book: the `_housebook_sql` query (`$1::bigint IS NULL OR a.owner_user_id = $1`, apartment, `COALESCE(g.stay_from, r.date_from)` range and order); every encrypted guest pair is decrypted as db._hydrate does (doc, visa, signature, fee reason, birth date, street, city; a bad token is a 500); the 17 columns of `_housebook_export_row`: reported mapping and "filed by hand", receipt stamp lookup, `format_birth_date`, `compose_residence` in Czech (`countries.Name(code, "cs")`, 255 characters), `purpose_label(code, "cs")` (the cs column of validation.PURPOSES), and `signature_record` kinds (imported, own drawing, under 15 with an adult signer whose signature parses and who is certainly 18, else exempt, else missing). `is_valid_signature` reuses `validation.GuestIssues` (its signature issue is `parse_signature_data_url`, except that it accepts "imported", which is refused first). The age helpers assume stored birth dates are already `DDMMYYYY`, as go/internal/validation does.
-- Guest bundle: `session_is_fresh` (`iat` within 600 s of `now`, else back to `/settings/security#settings-security` with `auth.error.recent_login`), ownership (404 "Not found."), identity gate for that guest id, then `SELECT * FROM guest` in PostgreSQL column order with decrypted plaintext fields and the `*_enc` tokens kept, `signature_png*` left out, `signature_present`, `passport_photo_present` (reportable, not host-entered, `passport_photo_at` set and a file `<id><ext>[.enc]` in `$UBYHOST_DATA_DIR/passport_photos`), notice, reservation, submissions (`has_receipt` boolean), `receipt_submission_id`, the token-exact audit trail; written as `json.dumps(..., ensure_ascii=False, indent=2)` by a small ordered encoder; audit `export_guest_dsr guest_id=N` after the bundle is built.
+- Guest bundle: `session_is_fresh` (`iat` within 600 s of `now`, else back to `/settings/security#settings-security` with `auth.error.recent_login`), ownership (404 "Not found."), identity gate for that guest id, then `SELECT * FROM guest` in PostgreSQL column order with decrypted plaintext fields and the `*_enc` tokens kept, `signature_png*` left out, `signature_present`, `passport_photo_present` (reportable, not host-entered, `passport_photo_at` set and a file `<id><ext>[.enc]` in `$UBYHOST_DATA_DIR/passport_photos`), notice, reservation, submissions (`has_receipt` boolean), `receipt_submission_id`, the token-exact audit trail; written as `json.dumps(bundle, ensure_ascii=False, indent=2)` by a small ordered encoder; audit `export_guest_dsr guest_id=N` after the bundle is built.
 
 **Verified by the brief writer:** with these files over 1320, gofmt empty, vet clean, `TestGoldenParity` PASS on local PostgreSQL 16, golden `--check` clean, pytest 3 passed on PostgreSQL; mutations (adult age 18 → 50, `signature_png_enc` kept, audit LIKE dropped, impersonator dropped) each failed the Go test.
 
+Anchors that must exist verbatim (step 0, `grep -cF` prints 1 or more): App/app/routes/exports.py `def housebook_download(request: Request):` and `def guest_export_json(guest_id: int, request: Request):`; go/internal/web/exports/routes.go from 1320 step 5 still has six routes only (1321 adds two in the replacement `routes.go` sidecar).
+
 ## 3. Files
 
-The six paths in §2, plus `docs/tasks/1321-report.md` (create). No other file may change.
+| Path | Action | What |
+|---|---|---|
+| `go/internal/web/exports/housebook.go` | create | house-book CSV |
+| `go/internal/web/exports/guest_json.go` | create | guest Art 15/20 JSON bundle |
+| `go/internal/web/exports/routes.go` | replace | add the two GET routes |
+| `App/scripts/exports_golden.py` | replace | extended golden cases |
+| `App/tests/test_go_exports.py` | replace | staleness paths for new files |
+| `go/internal/web/exports/testdata/exports_golden.json` | replace | generated, deterministic |
+| `docs/tasks/1321-files/**` | keep | sidecars (committed with this brief; do not edit) |
+| `docs/tasks/1321-report.md` | create | the report (§9) |
+
+No other file may change.
 
 ## 4. Steps
 
-0. Checks (repo root): `git branch --show-current` prints `task/1320-go-exports`; `git log --oneline -5 | grep -c '1320 step 5'` prints 1; `ls go/internal/web/exports/housebook.go go/internal/web/exports/guest_json.go 2>&1 | tail -5` says "No such file" twice; `sha256sum go/internal/web/exports/exports_test.go | cut -c1-12` prints `80fa3aff095f`. Anything else: STOP.
+0. Checks (repo root): `git branch --show-current` prints `task/1320-go-exports`; `git log --oneline -20 | grep -c '1320 step 5'` prints at least 1; `ls go/internal/web/exports/housebook.go go/internal/web/exports/guest_json.go 2>&1 | tail -5` says "No such file" twice; `sha256sum go/internal/web/exports/exports_test.go | cut -c1-12` prints `80fa3aff095f`; `grep -cF` of each anchor in §2 prints 1 or more; `find docs/tasks/1321-files -name '*.txt' | wc -l` prints `6`. Anything else: STOP (§8).
 
 1. Copy and check (one call, repo root):
 
