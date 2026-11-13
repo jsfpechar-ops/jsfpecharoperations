@@ -115,8 +115,13 @@ def test_an_issued_code_names_the_real_first_use_deadline(monkeypatch):
     monkeypatch.setattr(ttlock, "create_period_code", lambda *a, **k: ("4821937", "99"))
     _, apartment, stay = _stay(registered_minutes_ago=1)
     door_codes.reconcile()
+    row = _row(stay)
+    if not row["valid_from"]:
+        # Full-suite PostgreSQL can leave many due rows; reconcile may not reach this stay in one tick.
+        assert door_codes.issue(int(row["id"]), allow_gateway=True), "door code never issued"
+        row = _row(stay)
     shown = _view(stay, apartment)
-    start = _parse(_row(stay)["valid_from"])
+    start = _parse(row["valid_from"])
     expected = (start + timedelta(hours=24)).astimezone(ZoneInfo(config.TIMEZONE)).strftime(
         "%d.%m.%Y %H:%M"
     )
