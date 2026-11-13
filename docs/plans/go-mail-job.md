@@ -39,11 +39,13 @@ Golden scripts write fixtures from Python with invented data; Go tests read them
 |---|---|---|
 | 1230 | this plan | `docs/plans/go-mail-job.md` |
 | 1231 | delivery: drain, deliver, back-off, SES v2 client, console, markers, attachments, purge | new files in `go/internal/mail/`, `App/scripts/mail_drain_golden.py` |
-| 1232 | expire holds and booking requests | `go/internal/mailjob/` |
-| 1233 | check-in reminders | `go/internal/mailjob/`, `App/scripts/mail_reminders_golden.py` |
-| 1234 | fee update mails | `go/internal/mailjob/`, `App/scripts/mail_fee_update_golden.py` |
+| 1232 | check-in reminders | `go/internal/mailjob/`, `App/scripts/mail_reminders_golden.py` |
+| 1233 | fee update mails | `go/internal/mailjob/`, `App/scripts/mail_fee_update_golden.py` |
+| 1234 | expire holds and booking requests | `go/internal/mailjob/` |
 | 1235 | lifecycle tips | `go/internal/lifecyclemail/`, `App/scripts/lifecycle_mail_golden.py` |
 | 1236 | job wiring and parity test | `go/cmd/ubyhost-web/register_job_mail.go`, `App/tests/test_go_mail_parity.py` |
+
+1231, 1232-1234 (in that order) and 1235 run in parallel; 1236 comes last. Queueing reuses `ubyport.EnqueueMail` behind a guard that repeats `mail.enqueue`'s checks (backend on, demo stay, address normalised).
 
 ## 5. Switch and rollback (owner)
 
