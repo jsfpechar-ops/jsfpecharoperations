@@ -21,7 +21,9 @@ import (
 
 // overlapPairsSQL is the overlapping_count predicate of
 // App/app/routes/dashboard_calendar.py:54 as a self-join. date_to is exclusive:
-// r1.date_to == r2.date_from is not an overlap.
+// r1.date_to == r2.date_from is not an overlap. $2 is today (Europe/Prague):
+// only stays that have not ended yet count, so the first sync after deploy
+// does not alarm about overlaps from the past.
 const overlapPairsSQL = `SELECT r1.id, r1.date_from, r1.date_to, r1.source,
        r2.id, r2.date_from, r2.date_to, r2.source
   FROM reservation r1
@@ -30,6 +32,7 @@ const overlapPairsSQL = `SELECT r1.id, r1.date_from, r1.date_to, r1.source,
    AND r2.date_from < r1.date_to AND r2.date_to > r1.date_from
  WHERE r1.apartment_id = $1 AND r1.status = 'active' AND r1.archived_at IS NULL
    AND r2.status = 'active' AND r2.archived_at IS NULL
+   AND r1.date_to > $2 AND r2.date_to > $2
  ORDER BY r1.id, r2.id`
 
 type stayPair struct {
@@ -69,7 +72,8 @@ func checkDoubleBookings(ctx context.Context, pool *pgxpool.Pool, getenv func(st
 		property = *internalName
 	}
 
-	rows, err := pool.Query(ctx, overlapPairsSQL, apartmentID)
+	today := time.Now().In(prague).Format(dateLayout)
+	rows, err := pool.Query(ctx, overlapPairsSQL, apartmentID, today)
 	if err != nil {
 		return err
 	}

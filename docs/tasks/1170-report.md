@@ -42,3 +42,10 @@ NOT RUN: no interpreter with pytest in this sandbox
 ## Owner steps left
 1. Merge the green PR with scripts/merge-pr-on-green.sh <pr>; deploy via GitHub Actions, Deploy production.
 2. Staging: two overlapping feeds of one apartment produce one banner + one console e-mail; cancel one and the alert clears on the next ical run (within 60 min).
+
+## Review round 2 (PR #954 review)
+- Renumbered 1166 -> 1170: main already has the Cloudflare 1166 (docs/tasks/1166-report.md), so the brief/report moved to 1170-double-booking-alarm.md / 1170-report.md and all references were renumbered; the add/add merge conflict is gone (main merged in).
+- Overlap query now has `AND r1.date_to > $2 AND r2.date_to > $2` with $2 = today (Europe/Prague, same as syncfeed): the first sync after deploy no longer alarms/mails about historical overlaps. Covered by a past-overlap pair in TestDoubleBookingIgnoresAdjacentAndIgnored.
+- checkDoubleBookings now also runs on the `not_modified` (HTTP 304) and `unchanged` (same digest) early exits of SyncFeed, so a host-side cancel/ignore clears the alert on the next hourly sync even when no calendar changed.
+- Review item 4 (manual stay + same booking from iCal looks like a double booking): left unchanged in this PR, flagged for the owner - either skip identical-date pairs with a `manual` side or reword the alert/mail copy to cover duplicates.
+- Review item 5 confirmed intended: one e-mail per pair ever (idempotency key = alert dedupe key); a cleared-and-returning overlap reopens the in-app alert only.

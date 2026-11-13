@@ -278,6 +278,9 @@ func SyncFeed(ctx context.Context, pool *pgxpool.Pool, getenv func(string) strin
 				return stats, err
 			}
 			stats.Outcome = "not_modified"
+			if err := checkDoubleBookings(ctx, pool, getenv, feed.ApartmentID); err != nil {
+				log.Printf("ical_double_booking_check_failed apartment_id=%d: %v", feed.ApartmentID, err)
+			}
 			return stats, nil
 		}
 		text = f.Text
@@ -290,6 +293,9 @@ func SyncFeed(ctx context.Context, pool *pgxpool.Pool, getenv func(string) strin
 			return stats, err
 		}
 		stats.Outcome = "unchanged"
+		if err := checkDoubleBookings(ctx, pool, getenv, feed.ApartmentID); err != nil {
+			log.Printf("ical_double_booking_check_failed apartment_id=%d: %v", feed.ApartmentID, err)
+		}
 		return stats, nil
 	}
 	events, err := ParseEvents(text)

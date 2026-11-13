@@ -80,6 +80,9 @@ func TestDoubleBookingIgnoresAdjacentAndIgnored(t *testing.T) {
 	r4 := seedReservation(t, pool, aid, "i-2", "2027-06-11", "2027-06-13")
 	_, err := pool.Exec(ctx, `UPDATE reservation SET status = 'ignored' WHERE id = $1`, r4)
 	must(t, err)
+	// A past overlap (both stays ended before today) must not alert either.
+	seedReservation(t, pool, aid, "old-1", "2020-01-01", "2020-01-05")
+	seedReservation(t, pool, aid, "old-2", "2020-01-03", "2020-01-07")
 
 	must(t, checkDoubleBookings(ctx, pool, testGetenv, aid))
 	if got := scalarInt(t, pool, `SELECT COUNT(*) FROM alert WHERE kind = 'double_booking' AND apartment_id = $1`, aid); got != 0 {
