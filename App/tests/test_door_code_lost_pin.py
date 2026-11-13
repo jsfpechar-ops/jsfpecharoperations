@@ -174,6 +174,9 @@ def test_operator_pause_keeps_the_row_pending_until_the_plan_is_back(world, monk
     assert held["state"] == door_codes.PENDING and held["pin_enc"] is None
     assert lock.made == 0
     monkeypatch.setattr(ttlock, "allowed_for", lambda owner: True)
+    # 1173: the paused row waits its backoff (15 minutes) so it cannot starve other rows; time passes.
+    assert _row(row)["next_attempt_at"] is not None
+    db.execute("UPDATE door_code SET next_attempt_at = NULL WHERE id = ?", (row,))
     door_codes._issue_due(db.utcnow())
     back = _row(row)
     assert back["state"] == door_codes.ISSUED and back["provider_code_id"] in lock.pins
