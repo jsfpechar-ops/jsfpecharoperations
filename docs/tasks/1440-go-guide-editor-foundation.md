@@ -1,6 +1,6 @@
 # 1440: Go guest guide editor, part 1: shared gate, ownership check, data rules, catalog and test helpers
 
-Status: todo
+Status: review
 Depends on: none | Base commit: 68c0e0985 | Branch: task/1440-go-guide-editor-foundation
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
