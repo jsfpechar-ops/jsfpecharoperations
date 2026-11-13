@@ -1,0 +1,323 @@
+{
+ "cases": [
+  [
+   "postgresql:///ubyhost?host=/var/run/postgresql",
+   {
+    "ok": "b3d2bd225e775bf613a25e8f80a0d6f78fbfed1f6cf293e83267506e8137cd6f"
+   }
+  ],
+  [
+   "postgresql://ubyhost@/ubyhost?host=%2Fvar%2Frun%2Fpostgresql&port=5432",
+   {
+    "ok": "b3d2bd225e775bf613a25e8f80a0d6f78fbfed1f6cf293e83267506e8137cd6f"
+   }
+  ],
+  [
+   "postgresql://postgres:ubyhost@localhost:5432/ubyhost_test",
+   {
+    "ok": "7abf788dae248215305b3cdd4e98bfc5ab63a423af1072587ab1ba4a8ed39f70"
+   }
+  ],
+  [
+   "postgresql://postgres:ubyhost@127.0.0.1:5432/ubyhost_test",
+   {
+    "ok": "e59f01d24e8a2433aba5aa39090fd95fb6a142b81aaa4345c46e82e1257ef06c"
+   }
+  ],
+  [
+   "postgresql://postgres@127.0.0.1:55460/postgres",
+   {
+    "ok": "f8574d343a420a681bb9a1cb94cc012a9f4b4511727b384814904c2633db3fa4"
+   }
+  ],
+  [
+   "postgres://u:p@DB.Example.COM:6543/app?sslmode=require",
+   {
+    "ok": "da5925fc0501b6f014a9334dde976771b94a96b809467a60a48dbb3351e3b6bd"
+   }
+  ],
+  [
+   "postgres://u:p@db.example.com/app?sslmode=verify-full",
+   {
+    "ok": "c9efad2e6d6a87c4141ce0fbe86b61cd6492808ecfcc264265abfda6e621a890"
+   }
+  ],
+  [
+   "postgresql://u@db.example.com/app",
+   {
+    "error": "UBYHOST_DATABASE_URL over TCP needs sslmode=verify-full (or require)"
+   }
+  ],
+  [
+   "postgresql://u@db.example.com/app?sslmode=disable",
+   {
+    "error": "UBYHOST_DATABASE_URL over TCP needs sslmode=verify-full (or require)"
+   }
+  ],
+  [
+   "postgresql://u@[::1]:5433/x",
+   {
+    "ok": "7c32489b6c290df31abb6dd231aaabd0d4de91b52ca510ff836ccd7f92f12d93"
+   }
+  ],
+  [
+   "postgresql://u@[::1]/x",
+   {
+    "ok": "b97d42feffdcbe94bf8014044ed24f0dfc825eac87115271daf6015f36d3b97b"
+   }
+  ],
+  [
+   "postgresql://[::1/db",
+   {
+    "error": "UBYHOST_DATABASE_URL must be a valid PostgreSQL URL with a database name."
+   }
+  ],
+  [
+   "postgresql://[127.0.0.1]/db",
+   {
+    "error": "UBYHOST_DATABASE_URL must be a valid PostgreSQL URL with a database name."
+   }
+  ],
+  [
+   "postgresql:///db?host=//var/run//pg/",
+   {
+    "ok": "f2c65c33c12887e06a10ef5d15b49273cc23bfc5be4d792203f134519f65cf30"
+   }
+  ],
+  [
+   "postgresql:///db?host=///var/run/pg",
+   {
+    "ok": "b89a7e8836c44f4d1648eefae6426209004e25fcb9d41d0bbcd8593a3f669081"
+   }
+  ],
+  [
+   "postgresql:///db?host=/var/run/../run/./pg",
+   {
+    "ok": "b89a7e8836c44f4d1648eefae6426209004e25fcb9d41d0bbcd8593a3f669081"
+   }
+  ],
+  [
+   "postgresql:///db?host=/../x",
+   {
+    "ok": "b61452ca996e4ca8b5e434415e645876e475f567db0b5f4c0e6bf511ab476f74"
+   }
+  ],
+  [
+   "postgresql:///db?host=relative",
+   {
+    "error": "UBYHOST_DATABASE_URL host parameter must be an absolute socket directory."
+   }
+  ],
+  [
+   "postgresql:///db?host=/",
+   {
+    "error": "UBYHOST_DATABASE_URL host parameter must be an absolute socket directory."
+   }
+  ],
+  [
+   "postgresql:///db?host=",
+   {
+    "error": "UBYHOST_DATABASE_URL host parameter must be an absolute socket directory."
+   }
+  ],
+  [
+   "postgresql://h/db?host=/s",
+   {
+    "error": "UBYHOST_DATABASE_URL sets both a hostname and a host parameter."
+   }
+  ],
+  [
+   "postgresql:///db",
+   {
+    "error": "UBYHOST_DATABASE_URL needs a hostname or an absolute host parameter."
+   }
+  ],
+  [
+   "postgresql:///db?host=/s&port=abc",
+   {
+    "error": "UBYHOST_DATABASE_URL port parameter must be numeric."
+   }
+  ],
+  [
+   "postgresql:///db?host=/s&port=0",
+   {
+    "error": "UBYHOST_DATABASE_URL port parameter must be numeric."
+   }
+  ],
+  [
+   "postgresql:///db?host=/s&port=70000",
+   {
+    "error": "UBYHOST_DATABASE_URL port parameter must be numeric."
+   }
+  ],
+  [
+   "postgresql:///db?host=/s&port=6000",
+   {
+    "ok": "9804fc78f5a6e6fa9dcc6cae424cf286a9a2bdf48bbb3e043e6ccfab3c1e1db1"
+   }
+  ],
+  [
+   "postgresql://localhost:5432/db?port=5433",
+   {
+    "error": "UBYHOST_DATABASE_URL has contradictory port settings."
+   }
+  ],
+  [
+   "postgresql://localhost:5433/db?port=5433",
+   {
+    "ok": "dd4c9884570d8033174f1a32b3f8b74c1d40ef7f95514e8c7db17b14021a7ae0"
+   }
+  ],
+  [
+   "postgresql://localhost:0/db",
+   {
+    "ok": "9978c77ae5a3b7d8a3bfdb85aa8f820531cd854d4b1d34ed35b248ceb1041577"
+   }
+  ],
+  [
+   "postgresql://localhost:99999/db",
+   {
+    "error": "UBYHOST_DATABASE_URL must be a valid PostgreSQL URL with a database name."
+   }
+  ],
+  [
+   "postgresql://localhost:5x/db",
+   {
+    "error": "UBYHOST_DATABASE_URL must be a valid PostgreSQL URL with a database name."
+   }
+  ],
+  [
+   "postgresql://localhost:/db",
+   {
+    "ok": "9978c77ae5a3b7d8a3bfdb85aa8f820531cd854d4b1d34ed35b248ceb1041577"
+   }
+  ],
+  [
+   "mysql://localhost/db",
+   {
+    "error": "UBYHOST_DATABASE_URL must use the postgres or postgresql scheme."
+   }
+  ],
+  [
+   "postgresql://localhost/db#frag",
+   {
+    "error": "UBYHOST_DATABASE_URL must not contain a fragment."
+   }
+  ],
+  [
+   "postgresql://localhost/db#",
+   {
+    "ok": "9978c77ae5a3b7d8a3bfdb85aa8f820531cd854d4b1d34ed35b248ceb1041577"
+   }
+  ],
+  [
+   "postgresql://localhost/",
+   {
+    "error": "UBYHOST_DATABASE_URL must name exactly one database."
+   }
+  ],
+  [
+   "postgresql://localhost/a/b",
+   {
+    "error": "UBYHOST_DATABASE_URL must name exactly one database."
+   }
+  ],
+  [
+   "postgresql://localhost//db//",
+   {
+    "ok": "9978c77ae5a3b7d8a3bfdb85aa8f820531cd854d4b1d34ed35b248ceb1041577"
+   }
+  ],
+  [
+   "postgresql://localhost/db%20name",
+   {
+    "ok": "02b481b45bb429b644aaa4f3a4f833b4d5ab556b79e19dcc0b5c19c1bccc3fde"
+   }
+  ],
+  [
+   "postgresql://localhost/caf%C3%A9",
+   {
+    "ok": "343e892dfbf843267a9de8cd2d87439a79674c32af83c53741457000c117e3b1"
+   }
+  ],
+  [
+   "postgresql://localhost/a%2Fb",
+   {
+    "error": "UBYHOST_DATABASE_URL must name exactly one database."
+   }
+  ],
+  [
+   "postgresql://localhost/bad%zzpct",
+   {
+    "ok": "6fa57aa7f9426bad66a563edf9250633c8fb71ee0fa8b87268bab3962953645b"
+   }
+  ],
+  [
+   "postgresql:///db?host=/s&host=/t",
+   {
+    "error": "UBYHOST_DATABASE_URL has a duplicate query parameter."
+   }
+  ],
+  [
+   "postgresql:///db?host=/s&&port=5",
+   {
+    "ok": "22ed0f25e14beda0af7ab48ca877755c02103e4bf4d3204d035d2be2252f3cc4"
+   }
+  ],
+  [
+   "postgresql:///db?host=/s+x",
+   {
+    "ok": "872747191ab3d3d1996dbcbcf675a46528331c10c34cc6e4014f6d36eb555a42"
+   }
+  ],
+  [
+   "POSTGRESQL://LOCALHOST/Db",
+   {
+    "ok": "af0f9b0c45278874e55a3024fc73b06d1d6e45cf125349b21465f225c6d25f1a"
+   }
+  ],
+  [
+   "postgresql://localhost/db?sslmode",
+   {
+    "ok": "9978c77ae5a3b7d8a3bfdb85aa8f820531cd854d4b1d34ed35b248ceb1041577"
+   }
+  ],
+  [
+   " postgresql://localhost/db",
+   {
+    "ok": "9978c77ae5a3b7d8a3bfdb85aa8f820531cd854d4b1d34ed35b248ceb1041577"
+   }
+  ],
+  [
+   "postgresql://local\thost/db",
+   {
+    "ok": "9978c77ae5a3b7d8a3bfdb85aa8f820531cd854d4b1d34ed35b248ceb1041577"
+   }
+  ],
+  [
+   "postgresql://user:p%40ss@localhost/db",
+   {
+    "ok": "9978c77ae5a3b7d8a3bfdb85aa8f820531cd854d4b1d34ed35b248ceb1041577"
+   }
+  ],
+  [
+   "postgresql://a@b@localhost/db",
+   {
+    "ok": "9978c77ae5a3b7d8a3bfdb85aa8f820531cd854d4b1d34ed35b248ceb1041577"
+   }
+  ],
+  [
+   "localhost/db",
+   {
+    "error": "UBYHOST_DATABASE_URL must use the postgres or postgresql scheme."
+   }
+  ],
+  [
+   "",
+   {
+    "error": "UBYHOST_DATABASE_URL must use the postgres or postgresql scheme."
+   }
+  ]
+ ],
+ "comment": "Generated by App/scripts/pg_schema_golden.py; never edit."
+}
