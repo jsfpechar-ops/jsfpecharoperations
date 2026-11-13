@@ -38,7 +38,7 @@ jobs:
           code=true
           if [ "${EVENT}" = "pull_request" ] || [ "${EVENT}" = "push" ]; then
             if [ -n "${BASE_SHA}" ] && git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null \
-               && files="$(git diff --name-only "${BASE_SHA}" "${HEAD_SHA}")" && [ -n "${files}" ]; then
+               && files="$(git diff --no-renames --name-only "${BASE_SHA}" "${HEAD_SHA}")" && [ -n "${files}" ]; then
               code=false
               while IFS= read -r f; do
                 case "${f}" in

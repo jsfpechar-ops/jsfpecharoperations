@@ -36,6 +36,8 @@ Status: review
 
 ## Deviations
 
+- Review fix: `git diff --no-renames --name-only` in the `changes` job, so a rename out of `App/` counts as code.
+
 - Brief header names branch `task/1413-ci-skip-heavy-jobs`. Worked on `claude/optimistic-allen-ybxnjg` as instructed.
 - Commits: `040f415b` (step 2), `2e6c802f` (step 3), `df99890c` (step 4), `5587d362` (step 5), then this report (step 9).
 
