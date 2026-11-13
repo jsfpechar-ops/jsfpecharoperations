@@ -1,0 +1,4143 @@
+{
+ "secret": "exports-golden-secret-0123456789-abcdef",
+ "data_keys": "ZXhwb3J0cy1nb2xkZW4tZmVybmV0LWtleS0wMDAwMCE=",
+ "now": "2026-11-13T12:00:00+00:00",
+ "seed": [
+  {
+   "table": "user_account",
+   "columns": [
+    "id",
+    "username",
+    "password_hash",
+    "role",
+    "active",
+    "must_change_password",
+    "session_version",
+    "totp_enabled",
+    "created_at"
+   ],
+   "rows": [
+    [
+     1,
+     "owner@example.test",
+     "x",
+     "host",
+     1,
+     0,
+     0,
+     0,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     2,
+     "other@example.test",
+     "x",
+     "host",
+     1,
+     0,
+     0,
+     0,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     3,
+     "admin@example.test",
+     "x",
+     "admin",
+     1,
+     0,
+     0,
+     0,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     4,
+     "broken@example.test",
+     "x",
+     "host",
+     1,
+     0,
+     0,
+     0,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     5,
+     "many@example.test",
+     "x",
+     "host",
+     1,
+     0,
+     0,
+     0,
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ]
+  },
+  {
+   "table": "legal_acceptance",
+   "columns": [
+    "id",
+    "user_account_id",
+    "document",
+    "version",
+    "accepted_at",
+    "method"
+   ],
+   "rows": [
+    [
+     1,
+     1,
+     "terms",
+     "1.7",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     2,
+     1,
+     "terms",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     3,
+     1,
+     "privacy",
+     "1.7",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     4,
+     1,
+     "privacy",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     5,
+     1,
+     "dpa",
+     "1.7",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     6,
+     1,
+     "dpa",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     7,
+     2,
+     "terms",
+     "1.7",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     8,
+     2,
+     "terms",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     9,
+     2,
+     "privacy",
+     "1.7",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     10,
+     2,
+     "privacy",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     11,
+     2,
+     "dpa",
+     "1.7",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     12,
+     2,
+     "dpa",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     13,
+     3,
+     "terms",
+     "1.7",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     14,
+     3,
+     "terms",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     15,
+     3,
+     "privacy",
+     "1.7",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     16,
+     3,
+     "privacy",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     17,
+     3,
+     "dpa",
+     "1.7",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     18,
+     3,
+     "dpa",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     19,
+     4,
+     "terms",
+     "1.7",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     20,
+     4,
+     "terms",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     21,
+     4,
+     "privacy",
+     "1.7",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     22,
+     4,
+     "privacy",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     23,
+     4,
+     "dpa",
+     "1.7",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     24,
+     4,
+     "dpa",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     25,
+     5,
+     "terms",
+     "1.7",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     26,
+     5,
+     "terms",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     27,
+     5,
+     "privacy",
+     "1.7",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     28,
+     5,
+     "privacy",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     29,
+     5,
+     "dpa",
+     "1.7",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     30,
+     5,
+     "dpa",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ]
+   ]
+  },
+  {
+   "table": "apartment",
+   "columns": [
+    "id",
+    "owner_user_id",
+    "internal_name",
+    "uby_idub",
+    "created_at"
+   ],
+   "rows": [
+    [
+     7,
+     1,
+     "Byt Dole",
+     "IDUB7",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     6,
+     1,
+     "=Attic",
+     null,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     8,
+     2,
+     "Other Flat",
+     "IDUB8",
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ]
+  },
+  {
+   "table": "reservation",
+   "columns": [
+    "id",
+    "apartment_id",
+    "source",
+    "uid",
+    "date_from",
+    "date_to",
+    "summary",
+    "declared_guests",
+    "expected_guests_override",
+    "lead_reduced_guests",
+    "guest_email",
+    "status",
+    "archived_at",
+    "created_at",
+    "updated_at"
+   ],
+   "rows": [
+    [
+     1,
+     7,
+     "ical",
+     "u1",
+     "2026-05-01",
+     "2026-05-04",
+     "Anna; \"Ann\" B",
+     3,
+     null,
+     null,
+     "anna@example.test",
+     "confirmed",
+     null,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     2,
+     7,
+     "manual",
+     "u2",
+     "2026-05-10",
+     "2026-05-12",
+     "=SUM(A1)",
+     4,
+     2,
+     null,
+     null,
+     "confirmed",
+     null,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     3,
+     8,
+     "ical",
+     "u3",
+     "2026-05-02",
+     "2026-05-03",
+     "Other",
+     1,
+     null,
+     null,
+     null,
+     "confirmed",
+     null,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     4,
+     7,
+     "demo",
+     "u4",
+     "2026-05-02",
+     "2026-05-03",
+     "Demo",
+     2,
+     null,
+     null,
+     null,
+     "confirmed",
+     null,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     5,
+     7,
+     "ical",
+     "u5",
+     "2026-05-02",
+     "2026-05-03",
+     "Archived",
+     2,
+     null,
+     null,
+     null,
+     "confirmed",
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     6,
+     6,
+     "ical",
+     "u6",
+     "2026-06-01",
+     "2026-06-03",
+     " +420 777",
+     0,
+     null,
+     null,
+     " x@example.test",
+     "confirmed",
+     null,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     9,
+     7,
+     "ical",
+     "u9",
+     "2026-07-01",
+     "2026-07-05",
+     null,
+     5,
+     null,
+     3,
+     null,
+     "confirmed",
+     null,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ]
+  },
+  {
+   "table": "submission",
+   "columns": [
+    "id",
+    "apartment_id",
+    "created_at",
+    "state",
+    "pseudo_stamp",
+    "receipt_pdf",
+    "error_pdf",
+    "request_xml",
+    "request_xml_enc",
+    "response_xml"
+   ],
+   "rows": [
+    [
+     1,
+     7,
+     "2026-05-02T10:00:00+00:00",
+     "ok",
+     "ABC/123 čx",
+     "JVBERi0xLjQgcmVjZWlwdCBBCg==",
+     null,
+     null,
+     "gAAAAABrNuyAMDEyMzQ1Njc4OWFiY2RlZjpNH1IvE3tSgs2yt0PTzjd4ikEGMYBqwtyB0-0rp1ac_UuWtzmHxwmE5ikYDJ-HAGdxcfblNxmH_lmft4ExYRw=",
+     "<resp>1</resp>"
+    ],
+    [
+     2,
+     7,
+     "2026-05-03T10:00:00+00:00",
+     "ok",
+     null,
+     "JVBERi0xLjQgcmVjZWlwdCBCCg==",
+     "JVBERi0xLjQgZXJyb3JzCg==",
+     "<req>plain</req>",
+     null,
+     null
+    ],
+    [
+     3,
+     7,
+     "2026-05-04T10:00:00+00:00",
+     "ok",
+     "S3",
+     "abc",
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     4,
+     8,
+     "2026-05-02T11:00:00+00:00",
+     "ok",
+     "S4",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     "<req>other</req>",
+     null,
+     "<resp>4</resp>"
+    ],
+    [
+     5,
+     7,
+     "2026-05-11T10:00:00+00:00",
+     "error",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     10,
+     7,
+     "2026-05-11T09:00:00+00:00",
+     "ok",
+     "S10",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null,
+     null
+    ]
+   ]
+  },
+  {
+   "table": "guest",
+   "columns": [
+    "id",
+    "reservation_id",
+    "surname",
+    "first_name",
+    "nationality",
+    "submit_state",
+    "submission_id",
+    "receipt_submission_id",
+    "created_at",
+    "updated_at"
+   ],
+   "rows": [
+    [
+     1,
+     1,
+     "Novak",
+     "Jan",
+     "DEU",
+     "sent",
+     1,
+     null,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     2,
+     1,
+     "Novak",
+     "Eva",
+     "DEU",
+     "sent",
+     2,
+     1,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     3,
+     2,
+     "Smith",
+     "Al",
+     "GBR",
+     "sent",
+     10,
+     null,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     4,
+     3,
+     "Other",
+     "Op",
+     "AUT",
+     "sent",
+     4,
+     null,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     5,
+     9,
+     "Bad",
+     "Bo",
+     "AUT",
+     "sent",
+     3,
+     null,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ]
+  },
+  {
+   "table": "guest",
+   "columns": [
+    "id",
+    "reservation_id",
+    "surname",
+    "first_name",
+    "birth_date",
+    "birth_date_enc",
+    "nationality",
+    "doc_number_enc",
+    "res_street_enc",
+    "res_city_enc",
+    "res_country",
+    "purpose",
+    "note",
+    "stay_from",
+    "stay_to",
+    "signature_png",
+    "signature_png_enc",
+    "submit_state",
+    "submitted_at",
+    "submission_id",
+    "manual_filed_at",
+    "manual_reference",
+    "signed_for_guest_id",
+    "entered_by",
+    "passport_photo_at",
+    "archived_at",
+    "restricted_at",
+    "notice_version",
+    "notice_lang",
+    "notice_ack_at",
+    "created_at",
+    "updated_at"
+   ],
+   "rows": [
+    [
+     11,
+     1,
+     "Müller",
+     "Hans",
+     null,
+     "gAAAAABrNuyAMDEyMzQ1Njc4OWFiY2RlZpFMcX0S3yNsfxuPIiYjpicUItG7fDPfSlrfr-25r0pdKreWntrUHVU0JieiR__ZEg==",
+     "DEU",
+     "gAAAAABrNuyAMDEyMzQ1Njc4OWFiY2RlZr8oRiKiNTdBCtiLKWj8uVDkEpLNpN6ccmZr_wlCqh1yiLUFcZ-TXp7BPrhVU3s6cw==",
+     "gAAAAABrNuyAMDEyMzQ1Njc4OWFiY2RlZjlAPRJnok3Q80htEX3RR73aYuY7GIfYnbSRo8RYsN6BP-tRGWkgbVuGe1i4hB1Yyw==",
+     "gAAAAABrNuyAMDEyMzQ1Njc4OWFiY2RlZsJbVDTaAvmA-HDWMB8f1jz4tEbC6K8sy4pR3U-E3HP-ae5BjNXzQ8KGmm4MSOb1GQ==",
+     "deu",
+     "10",
+     "=cmd",
+     null,
+     null,
+     null,
+     "gAAAAABrNuyAMDEyMzQ1Njc4OWFiY2RlZrC1GPNxTmJbApipnTkxlQ5BWWbSpcBKRkXD5lI_tNsz_CzrgInGLUhtold-relwhW0WXg_4mO4lWEAnHFsNISWCrLnWw2jCjIYNuXDUaQG5PxMoIgseiqGZrvXLxMJ5l1DK560LiLLMpqTnDhO7mKP4botN0fmHhcCFv05sLuX2FES3S-8B5IgFOzgqN4CZ7J322ZMN6ey3XG9Cz_qrZQo=",
+     "sent",
+     "2026-05-02T10:00:00+00:00",
+     1,
+     null,
+     null,
+     null,
+     "guest",
+     "2026-01-01T00:00:00+00:00",
+     null,
+     null,
+     "2",
+     "de",
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     12,
+     1,
+     "Müller",
+     "Kid",
+     "01012020",
+     null,
+     "DEU",
+     null,
+     null,
+     null,
+     "DEU",
+     "10",
+     null,
+     null,
+     null,
+     null,
+     null,
+     "pending",
+     null,
+     null,
+     null,
+     null,
+     11,
+     "guest",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     13,
+     1,
+     "Müller",
+     "Baby",
+     "00002019",
+     null,
+     "DEU",
+     null,
+     null,
+     null,
+     null,
+     "03",
+     "line\nbreak",
+     null,
+     null,
+     null,
+     null,
+     "pending",
+     null,
+     null,
+     null,
+     null,
+     null,
+     "guest",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     14,
+     2,
+     "Dvořák",
+     "Petr",
+     "02031975",
+     null,
+     "CZE",
+     null,
+     null,
+     null,
+     "CZE",
+     "77",
+     null,
+     "2026-05-11",
+     null,
+     "imported",
+     null,
+     "sent",
+     null,
+     10,
+     "2026-05-11T08:00:00+00:00",
+     "MAN-1",
+     null,
+     "host",
+     "2026-01-01T00:00:00+00:00",
+     null,
+     null,
+     null,
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     15,
+     6,
+     "Tab\tName",
+     "Q\"uote",
+     "1990",
+     null,
+     "AUT",
+     null,
+     null,
+     null,
+     "xxx",
+     null,
+     null,
+     null,
+     "2026-06-02",
+     "data:image/png;base64,xx",
+     null,
+     "error",
+     null,
+     null,
+     null,
+     null,
+     null,
+     "guest",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     16,
+     1,
+     "Archived",
+     "A",
+     null,
+     null,
+     "DEU",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     "pending",
+     null,
+     null,
+     null,
+     null,
+     null,
+     "guest",
+     null,
+     "2026-01-01T00:00:00+00:00",
+     null,
+     null,
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     17,
+     1,
+     "Restricted",
+     "R",
+     null,
+     null,
+     "DEU",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     "pending",
+     null,
+     null,
+     null,
+     null,
+     null,
+     "guest",
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00",
+     null,
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     18,
+     4,
+     "Demo",
+     "D",
+     null,
+     null,
+     "DEU",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     "pending",
+     null,
+     null,
+     null,
+     null,
+     null,
+     "guest",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     20,
+     9,
+     "Paper",
+     "Adult",
+     "01011980",
+     null,
+     "AUT",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     "imported",
+     null,
+     "pending",
+     null,
+     null,
+     null,
+     null,
+     null,
+     "guest",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     19,
+     9,
+     "Paper",
+     "Child",
+     "01012021",
+     null,
+     "AUT",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     "not_required",
+     null,
+     null,
+     null,
+     null,
+     20,
+     "guest",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ]
+  },
+  {
+   "table": "audit",
+   "columns": [
+    "at",
+    "actor",
+    "action",
+    "detail",
+    "owner_user_id"
+   ],
+   "rows": [
+    [
+     "2026-01-01T00:00:00+00:00",
+     "owner@example.test",
+     "guest_saved",
+     "id=11",
+     1
+    ],
+    [
+     "2026-01-01T00:00:00+00:00",
+     "owner@example.test",
+     "export_registration_pdf",
+     "guest_id=11",
+     1
+    ],
+    [
+     "2026-01-01T00:00:00+00:00",
+     "owner@example.test",
+     "export_registration_pdf",
+     "guest_id=111",
+     1
+    ],
+    [
+     "2026-01-01T00:00:00+00:00",
+     "guest",
+     "guest_form_saved",
+     "guest=11 lang=de",
+     1
+    ],
+    [
+     "2026-01-01T00:00:00+00:00",
+     "owner@example.test",
+     "other_action",
+     "id=11",
+     1
+    ],
+    [
+     "2026-01-01T00:00:00+00:00",
+     "other@example.test",
+     "export_registration_pdf",
+     "guest_id=11",
+     2
+    ],
+    [
+     "2026-01-01T00:00:00+00:00",
+     "owner@example.test",
+     "note",
+     "guest_id=11 extra",
+     1
+    ]
+   ]
+  },
+  {
+   "table": "apartment",
+   "columns": [
+    "id",
+    "owner_user_id",
+    "internal_name",
+    "uby_idub",
+    "created_at"
+   ],
+   "rows": [
+    [
+     40,
+     4,
+     "Broken Flat",
+     null,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     50,
+     5,
+     "Many Flat",
+     null,
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ]
+  },
+  {
+   "table": "reservation",
+   "columns": [
+    "id",
+    "apartment_id",
+    "source",
+    "uid",
+    "date_from",
+    "date_to",
+    "status",
+    "created_at",
+    "updated_at"
+   ],
+   "rows": [
+    [
+     40,
+     40,
+     "ical",
+     "u40",
+     "2026-08-01",
+     "2026-08-03",
+     "confirmed",
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ]
+  },
+  {
+   "table": "submission",
+   "columns": [
+    "id",
+    "apartment_id",
+    "created_at",
+    "state",
+    "receipt_pdf",
+    "error_pdf",
+    "request_xml_enc",
+    "response_xml"
+   ],
+   "rows": [
+    [
+     200,
+     40,
+     "2026-08-02T10:00:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBBCg==",
+     "JVBERi0xLjQgZXJyb3JzCg==",
+     "gAAAAABrNuyAMDEyMzQ1Njc4OWFiY2RlZr8oRiKiNTdBCtiLKWj8uVDkEpLNpN6ccmZr_wlCqh1yiLUFcZ-TXp7BPrhVU3s6cX==",
+     "<resp>200</resp>"
+    ],
+    [
+     300,
+     50,
+     "2026-08-01T00:00:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     301,
+     50,
+     "2026-08-02T01:01:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     302,
+     50,
+     "2026-08-03T02:02:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     303,
+     50,
+     "2026-08-04T03:03:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     304,
+     50,
+     "2026-08-05T04:04:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     305,
+     50,
+     "2026-08-06T05:05:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     306,
+     50,
+     "2026-08-07T06:06:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     307,
+     50,
+     "2026-08-08T07:07:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     308,
+     50,
+     "2026-08-09T08:08:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     309,
+     50,
+     "2026-08-10T09:09:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     310,
+     50,
+     "2026-08-11T10:10:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     311,
+     50,
+     "2026-08-12T11:11:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     312,
+     50,
+     "2026-08-13T12:12:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     313,
+     50,
+     "2026-08-14T13:13:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     314,
+     50,
+     "2026-08-15T14:14:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     315,
+     50,
+     "2026-08-16T15:15:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     316,
+     50,
+     "2026-08-17T16:16:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     317,
+     50,
+     "2026-08-18T17:17:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     318,
+     50,
+     "2026-08-19T18:18:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     319,
+     50,
+     "2026-08-20T19:19:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     320,
+     50,
+     "2026-08-21T20:20:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     321,
+     50,
+     "2026-08-22T21:21:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     322,
+     50,
+     "2026-08-23T22:22:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     323,
+     50,
+     "2026-08-24T23:23:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     324,
+     50,
+     "2026-08-25T00:24:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     325,
+     50,
+     "2026-08-26T01:25:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     326,
+     50,
+     "2026-08-27T02:26:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     327,
+     50,
+     "2026-08-28T03:27:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     328,
+     50,
+     "2026-08-01T04:28:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     329,
+     50,
+     "2026-08-02T05:29:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     330,
+     50,
+     "2026-08-03T06:30:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     331,
+     50,
+     "2026-08-04T07:31:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     332,
+     50,
+     "2026-08-05T08:32:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     333,
+     50,
+     "2026-08-06T09:33:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     334,
+     50,
+     "2026-08-07T10:34:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     335,
+     50,
+     "2026-08-08T11:35:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     336,
+     50,
+     "2026-08-09T12:36:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     337,
+     50,
+     "2026-08-10T13:37:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     338,
+     50,
+     "2026-08-11T14:38:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     339,
+     50,
+     "2026-08-12T15:39:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     340,
+     50,
+     "2026-08-13T16:40:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     341,
+     50,
+     "2026-08-14T17:41:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     342,
+     50,
+     "2026-08-15T18:42:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     343,
+     50,
+     "2026-08-16T19:43:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     344,
+     50,
+     "2026-08-17T20:44:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     345,
+     50,
+     "2026-08-18T21:45:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     346,
+     50,
+     "2026-08-19T22:46:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     347,
+     50,
+     "2026-08-20T23:47:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     348,
+     50,
+     "2026-08-21T00:48:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     349,
+     50,
+     "2026-08-22T01:49:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     350,
+     50,
+     "2026-08-23T02:50:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     351,
+     50,
+     "2026-08-24T03:51:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     352,
+     50,
+     "2026-08-25T04:52:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     353,
+     50,
+     "2026-08-26T05:53:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     354,
+     50,
+     "2026-08-27T06:54:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     355,
+     50,
+     "2026-08-28T07:55:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     356,
+     50,
+     "2026-08-01T08:56:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     357,
+     50,
+     "2026-08-02T09:57:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     358,
+     50,
+     "2026-08-03T10:58:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     359,
+     50,
+     "2026-08-04T11:59:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     360,
+     50,
+     "2026-08-05T12:00:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     361,
+     50,
+     "2026-08-06T13:01:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     362,
+     50,
+     "2026-08-07T14:02:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     363,
+     50,
+     "2026-08-08T15:03:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     364,
+     50,
+     "2026-08-09T16:04:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     365,
+     50,
+     "2026-08-10T17:05:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     366,
+     50,
+     "2026-08-11T18:06:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     367,
+     50,
+     "2026-08-12T19:07:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     368,
+     50,
+     "2026-08-13T20:08:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     369,
+     50,
+     "2026-08-14T21:09:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     370,
+     50,
+     "2026-08-15T22:10:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     371,
+     50,
+     "2026-08-16T23:11:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     372,
+     50,
+     "2026-08-17T00:12:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     373,
+     50,
+     "2026-08-18T01:13:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     374,
+     50,
+     "2026-08-19T02:14:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     375,
+     50,
+     "2026-08-20T03:15:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     376,
+     50,
+     "2026-08-21T04:16:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     377,
+     50,
+     "2026-08-22T05:17:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     378,
+     50,
+     "2026-08-23T06:18:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     379,
+     50,
+     "2026-08-24T07:19:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     380,
+     50,
+     "2026-08-25T08:20:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     381,
+     50,
+     "2026-08-26T09:21:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     382,
+     50,
+     "2026-08-27T10:22:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     383,
+     50,
+     "2026-08-28T11:23:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     384,
+     50,
+     "2026-08-01T12:24:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     385,
+     50,
+     "2026-08-02T13:25:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     386,
+     50,
+     "2026-08-03T14:26:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     387,
+     50,
+     "2026-08-04T15:27:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     388,
+     50,
+     "2026-08-05T16:28:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     389,
+     50,
+     "2026-08-06T17:29:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     390,
+     50,
+     "2026-08-07T18:30:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     391,
+     50,
+     "2026-08-08T19:31:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     392,
+     50,
+     "2026-08-09T20:32:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     393,
+     50,
+     "2026-08-10T21:33:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     394,
+     50,
+     "2026-08-11T22:34:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     395,
+     50,
+     "2026-08-12T23:35:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     396,
+     50,
+     "2026-08-13T00:36:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     397,
+     50,
+     "2026-08-14T01:37:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     398,
+     50,
+     "2026-08-15T02:38:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     399,
+     50,
+     "2026-08-16T03:39:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ],
+    [
+     400,
+     50,
+     "2026-08-17T04:40:00+00:00",
+     "ok",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg==",
+     null,
+     null,
+     null
+    ]
+   ]
+  },
+  {
+   "table": "guest",
+   "columns": [
+    "id",
+    "reservation_id",
+    "surname",
+    "first_name",
+    "nationality",
+    "doc_number_enc",
+    "submit_state",
+    "created_at",
+    "updated_at"
+   ],
+   "rows": [
+    [
+     400,
+     40,
+     "Broken",
+     "Token",
+     "AUT",
+     "gAAAAABrNuyAMDEyMzQ1Njc4OWFiY2RlZr8oRiKiNTdBCtiLKWj8uVDkEpLNpN6ccmZr_wlCqh1yiLUFcZ-TXp7BPrhVU3s6cX==",
+     "pending",
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ]
+  }
+ ],
+ "photos": [
+  "11.jpg.enc",
+  "14.png"
+ ],
+ "cases": [
+  {
+   "name": "signed_out_receipt",
+   "path": "/submissions/1/receipt.pdf",
+   "session": null,
+   "lang": null,
+   "status": 303,
+   "headers": {
+    "location": "/login?next=/submissions/1/receipt.pdf",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body_b64": ""
+  },
+  {
+   "name": "receipt_owned",
+   "path": "/submissions/1/receipt.pdf",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 200,
+   "headers": {
+    "content-type": "application/pdf",
+    "content-disposition": "attachment; filename=\"dorucenka-1.pdf\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "owner@example.test",
+     "export_submission_pdf",
+     "submission_id=1 which=receipt",
+     1,
+     1,
+     null
+    ]
+   ],
+   "body_b64": "JVBERi0xLjQgcmVjZWlwdCBBCg=="
+  },
+  {
+   "name": "receipt_no_pdf",
+   "path": "/submissions/5/receipt.pdf",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 404,
+   "headers": {
+    "content-type": "text/plain; charset=utf-8",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "owner@example.test",
+     "export_submission_pdf",
+     "submission_id=5 which=receipt",
+     1,
+     1,
+     null
+    ]
+   ],
+   "body_b64": "Tm8gZG9jdW1lbnQgd2FzIHJldHVybmVkIGZvciB0aGlzIHN1Ym1pc3Npb24u"
+  },
+  {
+   "name": "receipt_bad_base64",
+   "path": "/submissions/3/receipt.pdf",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 500,
+   "headers": {
+    "content-type": "text/plain; charset=utf-8",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "owner@example.test",
+     "export_submission_pdf",
+     "submission_id=3 which=receipt",
+     1,
+     1,
+     null
+    ]
+   ],
+   "body_b64": "U3RvcmVkIGRvY3VtZW50IGlzIG5vdCB2YWxpZCBiYXNlNjQu"
+  },
+  {
+   "name": "receipt_other_owner",
+   "path": "/submissions/4/receipt.pdf",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 404,
+   "headers": {
+    "content-type": "text/plain; charset=utf-8",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body_b64": "Tm8gZG9jdW1lbnQgd2FzIHJldHVybmVkIGZvciB0aGlzIHN1Ym1pc3Npb24u"
+  },
+  {
+   "name": "receipt_missing",
+   "path": "/submissions/999/receipt.pdf",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 404,
+   "headers": {
+    "content-type": "text/plain; charset=utf-8",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body_b64": "Tm8gZG9jdW1lbnQgd2FzIHJldHVybmVkIGZvciB0aGlzIHN1Ym1pc3Npb24u"
+  },
+  {
+   "name": "receipt_supporting",
+   "path": "/submissions/1/receipt.pdf",
+   "session": {
+    "uid": 3,
+    "as": 1
+   },
+   "lang": null,
+   "status": 200,
+   "headers": {
+    "content-type": "application/pdf",
+    "content-disposition": "attachment; filename=\"dorucenka-1.pdf\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "admin@example.test",
+     "export_submission_pdf",
+     "submission_id=1 which=receipt while_supporting=1",
+     1,
+     3,
+     3
+    ]
+   ],
+   "body_b64": "JVBERi0xLjQgcmVjZWlwdCBBCg=="
+  },
+  {
+   "name": "errors_owned",
+   "path": "/submissions/2/errors.pdf",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 200,
+   "headers": {
+    "content-type": "application/pdf",
+    "content-disposition": "attachment; filename=\"dorucenka-chyby-2.pdf\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "owner@example.test",
+     "export_submission_pdf",
+     "submission_id=2 which=errors",
+     1,
+     1,
+     null
+    ]
+   ],
+   "body_b64": "JVBERi0xLjQgZXJyb3JzCg=="
+  },
+  {
+   "name": "errors_none",
+   "path": "/submissions/1/errors.pdf",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 404,
+   "headers": {
+    "content-type": "text/plain; charset=utf-8",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "owner@example.test",
+     "export_submission_pdf",
+     "submission_id=1 which=errors",
+     1,
+     1,
+     null
+    ]
+   ],
+   "body_b64": "Tm8gZG9jdW1lbnQgd2FzIHJldHVybmVkIGZvciB0aGlzIHN1Ym1pc3Npb24u"
+  },
+  {
+   "name": "xml_request_encrypted",
+   "path": "/submissions/1/request.xml",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 200,
+   "headers": {
+    "content-type": "application/xml",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "owner@example.test",
+     "export_submission_xml",
+     "submission_id=1 which=request",
+     1,
+     1,
+     null
+    ]
+   ],
+   "body_b64": "PHJlcT5ET0MxMjM8L3JlcT4="
+  },
+  {
+   "name": "xml_response",
+   "path": "/submissions/1/response.xml",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 200,
+   "headers": {
+    "content-type": "application/xml",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "owner@example.test",
+     "export_submission_xml",
+     "submission_id=1 which=response",
+     1,
+     1,
+     null
+    ]
+   ],
+   "body_b64": "PHJlc3A+MTwvcmVzcD4="
+  },
+  {
+   "name": "xml_request_plain",
+   "path": "/submissions/2/request.xml",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 200,
+   "headers": {
+    "content-type": "application/xml",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "owner@example.test",
+     "export_submission_xml",
+     "submission_id=2 which=request",
+     1,
+     1,
+     null
+    ]
+   ],
+   "body_b64": "PHJlcT5wbGFpbjwvcmVxPg=="
+  },
+  {
+   "name": "xml_response_empty",
+   "path": "/submissions/2/response.xml",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 200,
+   "headers": {
+    "content-type": "application/xml",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "owner@example.test",
+     "export_submission_xml",
+     "submission_id=2 which=response",
+     1,
+     1,
+     null
+    ]
+   ],
+   "body_b64": ""
+  },
+  {
+   "name": "xml_other_owner",
+   "path": "/submissions/4/request.xml",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 404,
+   "headers": {
+    "content-type": "text/plain; charset=utf-8",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body_b64": "Tm90IGZvdW5kLg=="
+  },
+  {
+   "name": "xml_unknown",
+   "path": "/submissions/1/foo.xml",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 404,
+   "headers": {
+    "content-type": "text/plain; charset=utf-8",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body_b64": "VW5rbm93biBkb2N1bWVudC4="
+  },
+  {
+   "name": "xml_supporting",
+   "path": "/submissions/1/request.xml",
+   "session": {
+    "uid": 3,
+    "as": 1
+   },
+   "lang": null,
+   "status": 200,
+   "headers": {
+    "content-type": "application/xml",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "admin@example.test",
+     "export_submission_xml",
+     "submission_id=1 which=request",
+     1,
+     3,
+     3
+    ]
+   ],
+   "body_b64": "PHJlcT5ET0MxMjM8L3JlcT4="
+  },
+  {
+   "name": "receipts_zip_all",
+   "path": "/submissions/receipts.zip",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 200,
+   "headers": {
+    "content-type": "application/zip",
+    "content-disposition": "attachment; filename=\"dorucenky-20261113.zip\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "owner@example.test",
+     "export_receipts_zip",
+     "rows=4",
+     1,
+     1,
+     null
+    ]
+   ],
+   "zip": [
+    [
+     "dorucenka-2026-05-11-10-S10.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-05-03-2-2.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBCCg=="
+    ],
+    [
+     "dorucenka-2026-05-02-1-ABC_123_čx.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBBCg=="
+    ]
+   ]
+  },
+  {
+   "name": "receipts_zip_range",
+   "path": "/submissions/receipts.zip?from=2026-05-03&to=2026-05-10",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 200,
+   "headers": {
+    "content-type": "application/zip",
+    "content-disposition": "attachment; filename=\"dorucenky-20261113.zip\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "owner@example.test",
+     "export_receipts_zip",
+     "rows=2",
+     1,
+     1,
+     null
+    ]
+   ],
+   "zip": [
+    [
+     "dorucenka-2026-05-03-2-2.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBCCg=="
+    ]
+   ]
+  },
+  {
+   "name": "receipts_zip_bad_dates",
+   "path": "/submissions/receipts.zip?from=nope&to=2026-13-01",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 200,
+   "headers": {
+    "content-type": "application/zip",
+    "content-disposition": "attachment; filename=\"dorucenky-20261113.zip\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "owner@example.test",
+     "export_receipts_zip",
+     "rows=4",
+     1,
+     1,
+     null
+    ]
+   ],
+   "zip": [
+    [
+     "dorucenka-2026-05-11-10-S10.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-05-03-2-2.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBCCg=="
+    ],
+    [
+     "dorucenka-2026-05-02-1-ABC_123_čx.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBBCg=="
+    ]
+   ]
+  },
+  {
+   "name": "receipts_zip_empty_range",
+   "path": "/submissions/receipts.zip?from=2027-01-01",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 303,
+   "headers": {
+    "location": "/submissions?err=There%20are%20no%20Doru%C4%8Denka%20receipts%20to%20download%20yet.",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body_b64": ""
+  },
+  {
+   "name": "receipts_zip_empty_cs",
+   "path": "/submissions/receipts.zip?from=2027-01-01",
+   "session": {
+    "uid": 1
+   },
+   "lang": "cs",
+   "status": 303,
+   "headers": {
+    "location": "/submissions?err=Zat%C3%ADm%20nejsou%20k%20dispozici%20%C5%BE%C3%A1dn%C3%A9%20Doru%C4%8Denky%20ke%20sta%C5%BEen%C3%AD.",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body_b64": ""
+  },
+  {
+   "name": "receipts_zip_only_bad",
+   "path": "/submissions/receipts.zip?from=2026-05-04&to=2026-05-04",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 303,
+   "headers": {
+    "location": "/submissions?err=There%20are%20no%20Doru%C4%8Denka%20receipts%20to%20download%20yet.",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body_b64": ""
+  },
+  {
+   "name": "receipts_zip_other",
+   "path": "/submissions/receipts.zip",
+   "session": {
+    "uid": 2
+   },
+   "lang": null,
+   "status": 200,
+   "headers": {
+    "content-type": "application/zip",
+    "content-disposition": "attachment; filename=\"dorucenky-20261113.zip\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "other@example.test",
+     "export_receipts_zip",
+     "rows=1",
+     2,
+     2,
+     null
+    ]
+   ],
+   "zip": [
+    [
+     "dorucenka-2026-05-02-4-S4.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ]
+   ]
+  },
+  {
+   "name": "receipts_zip_admin_none",
+   "path": "/submissions/receipts.zip",
+   "session": {
+    "uid": 3
+   },
+   "lang": null,
+   "status": 303,
+   "headers": {
+    "location": "/submissions?err=There%20are%20no%20Doru%C4%8Denka%20receipts%20to%20download%20yet.",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body_b64": ""
+  },
+  {
+   "name": "stay_zip_two",
+   "path": "/reservations/1/dorucenka.zip",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 200,
+   "headers": {
+    "content-type": "application/zip",
+    "content-disposition": "attachment; filename=\"dorucenky-1-20261113.zip\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "owner@example.test",
+     "export_submission_pdf",
+     "reservation_id=1 which=receipts count=2",
+     1,
+     1,
+     null
+    ]
+   ],
+   "zip": [
+    [
+     "dorucenka-2-2026-05-03.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBCCg=="
+    ],
+    [
+     "dorucenka-1-2026-05-02.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBBCg=="
+    ]
+   ]
+  },
+  {
+   "name": "stay_zip_one",
+   "path": "/reservations/2/dorucenka.zip",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 200,
+   "headers": {
+    "content-type": "application/pdf",
+    "content-disposition": "attachment; filename=\"dorucenka-10.pdf\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "owner@example.test",
+     "export_submission_pdf",
+     "reservation_id=2 which=receipts count=1",
+     1,
+     1,
+     null
+    ]
+   ],
+   "body_b64": "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+  },
+  {
+   "name": "stay_zip_bad_only",
+   "path": "/reservations/9/dorucenka.zip",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 500,
+   "headers": {
+    "content-type": "text/plain; charset=utf-8",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "owner@example.test",
+     "export_submission_pdf",
+     "reservation_id=9 which=receipts count=1",
+     1,
+     1,
+     null
+    ]
+   ],
+   "body_b64": "U3RvcmVkIGRvY3VtZW50IGlzIG5vdCB2YWxpZCBiYXNlNjQu"
+  },
+  {
+   "name": "stay_zip_other_owner",
+   "path": "/reservations/3/dorucenka.zip",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 404,
+   "headers": {
+    "content-type": "text/plain; charset=utf-8",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body_b64": "Tm8gZG9jdW1lbnQgd2FzIHJldHVybmVkIGZvciB0aGlzIHN1Ym1pc3Npb24u"
+  },
+  {
+   "name": "stay_zip_none",
+   "path": "/reservations/4/dorucenka.zip",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 404,
+   "headers": {
+    "content-type": "text/plain; charset=utf-8",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body_b64": "Tm8gZG9jdW1lbnQgd2FzIHJldHVybmVkIGZvciB0aGlzIHN1Ym1pc3Npb24u"
+  },
+  {
+   "name": "stay_zip_supporting",
+   "path": "/reservations/1/dorucenka.zip",
+   "session": {
+    "uid": 3,
+    "as": 1
+   },
+   "lang": null,
+   "status": 200,
+   "headers": {
+    "content-type": "application/zip",
+    "content-disposition": "attachment; filename=\"dorucenky-1-20261113.zip\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "admin@example.test",
+     "export_submission_pdf",
+     "reservation_id=1 which=receipts count=2 while_supporting=1",
+     1,
+     3,
+     3
+    ]
+   ],
+   "zip": [
+    [
+     "dorucenka-2-2026-05-03.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBCCg=="
+    ],
+    [
+     "dorucenka-1-2026-05-02.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBBCg=="
+    ]
+   ]
+  },
+  {
+   "name": "stays_csv_no_range",
+   "path": "/reservations.csv",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 303,
+   "headers": {
+    "location": "/reservations?err=Choose%20a%20date%20range%20first.",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body_b64": ""
+  },
+  {
+   "name": "stays_csv_no_range_vi",
+   "path": "/reservations.csv?from=2026-05-01",
+   "session": {
+    "uid": 1
+   },
+   "lang": "vi",
+   "status": 303,
+   "headers": {
+    "location": "/reservations?err=H%C3%A3y%20ch%E1%BB%8Dn%20kho%E1%BA%A3ng%20ng%C3%A0y%20tr%C6%B0%E1%BB%9Bc.",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body_b64": ""
+  },
+  {
+   "name": "stays_csv_range",
+   "path": "/reservations.csv?from=2026-01-01&to=2026-12-31",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 200,
+   "headers": {
+    "content-type": "text/csv; charset=utf-8",
+    "content-disposition": "attachment; filename=\"stays-20261113.csv\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "owner@example.test",
+     "export_reservations_csv",
+     "rows=4",
+     1,
+     1,
+     null
+    ]
+   ],
+   "body_b64": "77u/QXBhcnRtZW50O0Fycml2YWw7RGVwYXJ0dXJlO051bWJlciBvZiBndWVzdHM7TGFiZWw7R3Vlc3QgZS1tYWlsDQpCeXQgRG9sZTsyMDI2LTA1LTAxOzIwMjYtMDUtMDQ7MzsiQW5uYTsgIiJBbm4iIiBCIjthbm5hQGV4YW1wbGUudGVzdA0KQnl0IERvbGU7MjAyNi0wNS0xMDsyMDI2LTA1LTEyOzI7Jz1TVU0oQTEpOw0KJz1BdHRpYzsyMDI2LTA2LTAxOzIwMjYtMDYtMDM7OycgKzQyMCA3Nzc7J8KgeEBleGFtcGxlLnRlc3QNCkJ5dCBEb2xlOzIwMjYtMDctMDE7MjAyNi0wNy0wNTszOzsNCg=="
+  },
+  {
+   "name": "stays_csv_apartment",
+   "path": "/reservations.csv?from=2026-01-01&to=2026-12-31&apartment=6",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 200,
+   "headers": {
+    "content-type": "text/csv; charset=utf-8",
+    "content-disposition": "attachment; filename=\"stays-20261113.csv\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "owner@example.test",
+     "export_reservations_csv",
+     "rows=1",
+     1,
+     1,
+     null
+    ]
+   ],
+   "body_b64": "77u/QXBhcnRtZW50O0Fycml2YWw7RGVwYXJ0dXJlO051bWJlciBvZiBndWVzdHM7TGFiZWw7R3Vlc3QgZS1tYWlsDQonPUF0dGljOzIwMjYtMDYtMDE7MjAyNi0wNi0wMzs7JyArNDIwIDc3NzsnwqB4QGV4YW1wbGUudGVzdA0K"
+  },
+  {
+   "name": "stays_csv_apartment_last",
+   "path": "/reservations.csv?from=2026-01-01&to=2026-12-31&apartment=6&apartment=7",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 200,
+   "headers": {
+    "content-type": "text/csv; charset=utf-8",
+    "content-disposition": "attachment; filename=\"stays-20261113.csv\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "owner@example.test",
+     "export_reservations_csv",
+     "rows=3",
+     1,
+     1,
+     null
+    ]
+   ],
+   "body_b64": "77u/QXBhcnRtZW50O0Fycml2YWw7RGVwYXJ0dXJlO051bWJlciBvZiBndWVzdHM7TGFiZWw7R3Vlc3QgZS1tYWlsDQpCeXQgRG9sZTsyMDI2LTA1LTAxOzIwMjYtMDUtMDQ7MzsiQW5uYTsgIiJBbm4iIiBCIjthbm5hQGV4YW1wbGUudGVzdA0KQnl0IERvbGU7MjAyNi0wNS0xMDsyMDI2LTA1LTEyOzI7Jz1TVU0oQTEpOw0KQnl0IERvbGU7MjAyNi0wNy0wMTsyMDI2LTA3LTA1OzM7Ow0K"
+  },
+  {
+   "name": "stays_csv_narrow",
+   "path": "/reservations.csv?from=2026-05-04&to=2026-05-09",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 200,
+   "headers": {
+    "content-type": "text/csv; charset=utf-8",
+    "content-disposition": "attachment; filename=\"stays-20261113.csv\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "owner@example.test",
+     "export_reservations_csv",
+     "rows=1",
+     1,
+     1,
+     null
+    ]
+   ],
+   "body_b64": "77u/QXBhcnRtZW50O0Fycml2YWw7RGVwYXJ0dXJlO051bWJlciBvZiBndWVzdHM7TGFiZWw7R3Vlc3QgZS1tYWlsDQpCeXQgRG9sZTsyMDI2LTA1LTAxOzIwMjYtMDUtMDQ7MzsiQW5uYTsgIiJBbm4iIiBCIjthbm5hQGV4YW1wbGUudGVzdA0K"
+  },
+  {
+   "name": "stays_csv_other",
+   "path": "/reservations.csv?from=2026-01-01&to=2026-12-31",
+   "session": {
+    "uid": 2
+   },
+   "lang": null,
+   "status": 200,
+   "headers": {
+    "content-type": "text/csv; charset=utf-8",
+    "content-disposition": "attachment; filename=\"stays-20261113.csv\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "other@example.test",
+     "export_reservations_csv",
+     "rows=1",
+     2,
+     2,
+     null
+    ]
+   ],
+   "body_b64": "77u/QXBhcnRtZW50O0Fycml2YWw7RGVwYXJ0dXJlO051bWJlciBvZiBndWVzdHM7TGFiZWw7R3Vlc3QgZS1tYWlsDQpPdGhlciBGbGF0OzIwMjYtMDUtMDI7MjAyNi0wNS0wMzsxO090aGVyOw0K"
+  },
+  {
+   "name": "housebook_signed_out",
+   "path": "/housebook.csv",
+   "session": null,
+   "lang": null,
+   "status": 303,
+   "headers": {
+    "location": "/login?next=/housebook.csv",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body_b64": ""
+  },
+  {
+   "name": "housebook_all",
+   "path": "/housebook.csv",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 200,
+   "headers": {
+    "content-type": "text/csv; charset=utf-8",
+    "content-disposition": "attachment; filename=\"domovni-kniha-20261113.csv\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "owner@example.test",
+     "export_housebook_csv",
+     "rows=11",
+     1,
+     1,
+     null
+    ]
+   ],
+   "body_b64": "77u/QXBhcnRtZW50O0lEVUI7U3RheSBmcm9tO1N0YXkgdG87U3VybmFtZTtHaXZlbiBuYW1lKHMpO0RhdGUgb2YgYmlydGg7TmF0aW9uYWxpdHk7VHJhdmVsIGRvY3VtZW50IG5vLjtWaXNhIG5vLjtQZXJtYW5lbnQgcmVzaWRlbmNlIGFicm9hZDtQdXJwb3NlIG9mIHN0YXk7Tm90ZTtTaWduZWQ7UmVwb3J0ZWQgdG8gcG9saWNlO1JlcG9ydGVkIGF0O1JlY2VpcHQgc3RhbXANCkJ5dCBEb2xlO0lEVUI3OzIwMjYtMDUtMDE7MjAyNi0wNS0wNDtOb3ZhaztKYW47O0RFVTs7Ozs7O25vO3llczs7QUJDLzEyMyDEjXgNCkJ5dCBEb2xlO0lEVUI3OzIwMjYtMDUtMDE7MjAyNi0wNS0wNDtOb3ZhaztFdmE7O0RFVTs7Ozs7O25vO3llczs7DQpCeXQgRG9sZTtJRFVCNzsyMDI2LTA1LTAxOzIwMjYtMDUtMDQ7TcO8bGxlcjtIYW5zOzE1LjA2LjE5ODA7REVVO0MwMVgwMFQ0Nzs7SGF1cHRzdHIuIDEsIEJlcmxpbiwgREVVLU7Em21lY2tvO1R1cmlzdGlrYTsnPWNtZDt5ZXM7eWVzOzIwMjYtMDUtMDJUMTA6MDA6MDArMDA6MDA7QUJDLzEyMyDEjXgNCkJ5dCBEb2xlO0lEVUI3OzIwMjYtMDUtMDE7MjAyNi0wNS0wNDtNw7xsbGVyO0tpZDswMS4wMS4yMDIwO0RFVTs7O0RFVS1OxJttZWNrbztUdXJpc3Rpa2E7O2J5IGFkdWx0O25vdCB5ZXQ7Ow0KQnl0IERvbGU7SURVQjc7MjAyNi0wNS0wMTsyMDI2LTA1LTA0O03DvGxsZXI7QmFieTswMC4wMC4yMDE5O0RFVTs7OztOw6F2xaF0xJt2YSByb2RpbnkgbmVibyBwxZnDoXRlbDsibGluZQpicmVhayI7bm90IHJlcXVpcmVkO25vdCB5ZXQ7Ow0KQnl0IERvbGU7SURVQjc7MjAyNi0wNS0xMDsyMDI2LTA1LTEyO1NtaXRoO0FsOztHQlI7Ozs7Oztubzt5ZXM7O1MxMA0KQnl0IERvbGU7SURVQjc7MjAyNi0wNS0xMTsyMDI2LTA1LTEyO0R2b8WZw6FrO1BldHI7MDIuMDMuMTk3NTtDWkU7OztDWkUtxIxlc2tvOzc3Ozt5ZXM7eWVzIC0gZmlsZWQgYnkgaGFuZCBpbiBVYnlQb3J0OzIwMjYtMDUtMTFUMDg6MDA6MDArMDA6MDA7TUFOLTENCic9QXR0aWM7OzIwMjYtMDYtMDE7MjAyNi0wNi0wMjtUYWIJTmFtZTsiUSIidW90ZSI7MTk5MDtBVVQ7OztYWFgtTmV1csSNZW7DoSBzdMOhdG7DrSBwxZnDrXNsdcWhbm9zdDs7O3llcztOTyAtIHJlamVjdGVkOzsNCkJ5dCBEb2xlO0lEVUI3OzIwMjYtMDctMDE7MjAyNi0wNy0wNTtCYWQ7Qm87O0FVVDs7Ozs7O25vO3llczs7UzMNCkJ5dCBEb2xlO0lEVUI3OzIwMjYtMDctMDE7MjAyNi0wNy0wNTtQYXBlcjtDaGlsZDswMS4wMS4yMDIxO0FVVDs7Ozs7O25vdCByZXF1aXJlZDtub3QgcmVxdWlyZWQgKEN6ZWNoIG5hdGlvbmFsKTs7DQpCeXQgRG9sZTtJRFVCNzsyMDI2LTA3LTAxOzIwMjYtMDctMDU7UGFwZXI7QWR1bHQ7MDEuMDEuMTk4MDtBVVQ7Ozs7Ozt5ZXM7bm90IHlldDs7DQo="
+  },
+  {
+   "name": "housebook_apartment",
+   "path": "/housebook.csv?apartment=6",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 200,
+   "headers": {
+    "content-type": "text/csv; charset=utf-8",
+    "content-disposition": "attachment; filename=\"domovni-kniha-20261113.csv\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "owner@example.test",
+     "export_housebook_csv",
+     "rows=1",
+     1,
+     1,
+     null
+    ]
+   ],
+   "body_b64": "77u/QXBhcnRtZW50O0lEVUI7U3RheSBmcm9tO1N0YXkgdG87U3VybmFtZTtHaXZlbiBuYW1lKHMpO0RhdGUgb2YgYmlydGg7TmF0aW9uYWxpdHk7VHJhdmVsIGRvY3VtZW50IG5vLjtWaXNhIG5vLjtQZXJtYW5lbnQgcmVzaWRlbmNlIGFicm9hZDtQdXJwb3NlIG9mIHN0YXk7Tm90ZTtTaWduZWQ7UmVwb3J0ZWQgdG8gcG9saWNlO1JlcG9ydGVkIGF0O1JlY2VpcHQgc3RhbXANCic9QXR0aWM7OzIwMjYtMDYtMDE7MjAyNi0wNi0wMjtUYWIJTmFtZTsiUSIidW90ZSI7MTk5MDtBVVQ7OztYWFgtTmV1csSNZW7DoSBzdMOhdG7DrSBwxZnDrXNsdcWhbm9zdDs7O3llcztOTyAtIHJlamVjdGVkOzsNCg=="
+  },
+  {
+   "name": "housebook_range",
+   "path": "/housebook.csv?from=2026-05-02&to=2026-05-10",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 200,
+   "headers": {
+    "content-type": "text/csv; charset=utf-8",
+    "content-disposition": "attachment; filename=\"domovni-kniha-20261113.csv\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "owner@example.test",
+     "export_housebook_csv",
+     "rows=1",
+     1,
+     1,
+     null
+    ]
+   ],
+   "body_b64": "77u/QXBhcnRtZW50O0lEVUI7U3RheSBmcm9tO1N0YXkgdG87U3VybmFtZTtHaXZlbiBuYW1lKHMpO0RhdGUgb2YgYmlydGg7TmF0aW9uYWxpdHk7VHJhdmVsIGRvY3VtZW50IG5vLjtWaXNhIG5vLjtQZXJtYW5lbnQgcmVzaWRlbmNlIGFicm9hZDtQdXJwb3NlIG9mIHN0YXk7Tm90ZTtTaWduZWQ7UmVwb3J0ZWQgdG8gcG9saWNlO1JlcG9ydGVkIGF0O1JlY2VpcHQgc3RhbXANCkJ5dCBEb2xlO0lEVUI3OzIwMjYtMDUtMTA7MjAyNi0wNS0xMjtTbWl0aDtBbDs7R0JSOzs7Ozs7bm87eWVzOztTMTANCg=="
+  },
+  {
+   "name": "housebook_other",
+   "path": "/housebook.csv",
+   "session": {
+    "uid": 2
+   },
+   "lang": null,
+   "status": 200,
+   "headers": {
+    "content-type": "text/csv; charset=utf-8",
+    "content-disposition": "attachment; filename=\"domovni-kniha-20261113.csv\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "other@example.test",
+     "export_housebook_csv",
+     "rows=1",
+     2,
+     2,
+     null
+    ]
+   ],
+   "body_b64": "77u/QXBhcnRtZW50O0lEVUI7U3RheSBmcm9tO1N0YXkgdG87U3VybmFtZTtHaXZlbiBuYW1lKHMpO0RhdGUgb2YgYmlydGg7TmF0aW9uYWxpdHk7VHJhdmVsIGRvY3VtZW50IG5vLjtWaXNhIG5vLjtQZXJtYW5lbnQgcmVzaWRlbmNlIGFicm9hZDtQdXJwb3NlIG9mIHN0YXk7Tm90ZTtTaWduZWQ7UmVwb3J0ZWQgdG8gcG9saWNlO1JlcG9ydGVkIGF0O1JlY2VpcHQgc3RhbXANCk90aGVyIEZsYXQ7SURVQjg7MjAyNi0wNS0wMjsyMDI2LTA1LTAzO090aGVyO09wOztBVVQ7Ozs7Oztubzt5ZXM7O1M0DQo="
+  },
+  {
+   "name": "housebook_supporting",
+   "path": "/housebook.csv",
+   "session": {
+    "uid": 3,
+    "as": 1
+   },
+   "lang": null,
+   "status": 200,
+   "headers": {
+    "content-type": "text/csv; charset=utf-8",
+    "content-disposition": "attachment; filename=\"domovni-kniha-20261113.csv\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "admin@example.test",
+     "export_housebook_csv",
+     "rows=11",
+     1,
+     3,
+     3
+    ]
+   ],
+   "body_b64": "77u/QXBhcnRtZW50O0lEVUI7U3RheSBmcm9tO1N0YXkgdG87U3VybmFtZTtHaXZlbiBuYW1lKHMpO0RhdGUgb2YgYmlydGg7TmF0aW9uYWxpdHk7VHJhdmVsIGRvY3VtZW50IG5vLjtWaXNhIG5vLjtQZXJtYW5lbnQgcmVzaWRlbmNlIGFicm9hZDtQdXJwb3NlIG9mIHN0YXk7Tm90ZTtTaWduZWQ7UmVwb3J0ZWQgdG8gcG9saWNlO1JlcG9ydGVkIGF0O1JlY2VpcHQgc3RhbXANCkJ5dCBEb2xlO0lEVUI3OzIwMjYtMDUtMDE7MjAyNi0wNS0wNDtOb3ZhaztKYW47O0RFVTs7Ozs7O25vO3llczs7QUJDLzEyMyDEjXgNCkJ5dCBEb2xlO0lEVUI3OzIwMjYtMDUtMDE7MjAyNi0wNS0wNDtOb3ZhaztFdmE7O0RFVTs7Ozs7O25vO3llczs7DQpCeXQgRG9sZTtJRFVCNzsyMDI2LTA1LTAxOzIwMjYtMDUtMDQ7TcO8bGxlcjtIYW5zOzE1LjA2LjE5ODA7REVVO0MwMVgwMFQ0Nzs7SGF1cHRzdHIuIDEsIEJlcmxpbiwgREVVLU7Em21lY2tvO1R1cmlzdGlrYTsnPWNtZDt5ZXM7eWVzOzIwMjYtMDUtMDJUMTA6MDA6MDArMDA6MDA7QUJDLzEyMyDEjXgNCkJ5dCBEb2xlO0lEVUI3OzIwMjYtMDUtMDE7MjAyNi0wNS0wNDtNw7xsbGVyO0tpZDswMS4wMS4yMDIwO0RFVTs7O0RFVS1OxJttZWNrbztUdXJpc3Rpa2E7O2J5IGFkdWx0O25vdCB5ZXQ7Ow0KQnl0IERvbGU7SURVQjc7MjAyNi0wNS0wMTsyMDI2LTA1LTA0O03DvGxsZXI7QmFieTswMC4wMC4yMDE5O0RFVTs7OztOw6F2xaF0xJt2YSByb2RpbnkgbmVibyBwxZnDoXRlbDsibGluZQpicmVhayI7bm90IHJlcXVpcmVkO25vdCB5ZXQ7Ow0KQnl0IERvbGU7SURVQjc7MjAyNi0wNS0xMDsyMDI2LTA1LTEyO1NtaXRoO0FsOztHQlI7Ozs7Oztubzt5ZXM7O1MxMA0KQnl0IERvbGU7SURVQjc7MjAyNi0wNS0xMTsyMDI2LTA1LTEyO0R2b8WZw6FrO1BldHI7MDIuMDMuMTk3NTtDWkU7OztDWkUtxIxlc2tvOzc3Ozt5ZXM7eWVzIC0gZmlsZWQgYnkgaGFuZCBpbiBVYnlQb3J0OzIwMjYtMDUtMTFUMDg6MDA6MDArMDA6MDA7TUFOLTENCic9QXR0aWM7OzIwMjYtMDYtMDE7MjAyNi0wNi0wMjtUYWIJTmFtZTsiUSIidW90ZSI7MTk5MDtBVVQ7OztYWFgtTmV1csSNZW7DoSBzdMOhdG7DrSBwxZnDrXNsdcWhbm9zdDs7O3llcztOTyAtIHJlamVjdGVkOzsNCkJ5dCBEb2xlO0lEVUI3OzIwMjYtMDctMDE7MjAyNi0wNy0wNTtCYWQ7Qm87O0FVVDs7Ozs7O25vO3llczs7UzMNCkJ5dCBEb2xlO0lEVUI3OzIwMjYtMDctMDE7MjAyNi0wNy0wNTtQYXBlcjtDaGlsZDswMS4wMS4yMDIxO0FVVDs7Ozs7O25vdCByZXF1aXJlZDtub3QgcmVxdWlyZWQgKEN6ZWNoIG5hdGlvbmFsKTs7DQpCeXQgRG9sZTtJRFVCNzsyMDI2LTA3LTAxOzIwMjYtMDctMDU7UGFwZXI7QWR1bHQ7MDEuMDEuMTk4MDtBVVQ7Ozs7Ozt5ZXM7bm90IHlldDs7DQo="
+  },
+  {
+   "name": "guest_json_fresh",
+   "path": "/guests/11/export.json",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 200,
+   "headers": {
+    "content-type": "application/json",
+    "content-disposition": "attachment; filename=\"guest-11.json\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "owner@example.test",
+     "export_guest_dsr",
+     "guest_id=11",
+     1,
+     1,
+     null
+    ]
+   ],
+   "body_b64": "ewogICJnZW5lcmF0ZWRfYXQiOiAiMjAyNi0xMS0xM1QxMjowMDowMCswMDowMCIsCiAgImd1ZXN0IjogewogICAgImlkIjogMTEsCiAgICAicmVzZXJ2YXRpb25faWQiOiAxLAogICAgInN1cm5hbWUiOiAiTcO8bGxlciIsCiAgICAiZmlyc3RfbmFtZSI6ICJIYW5zIiwKICAgICJiaXJ0aF9kYXRlIjogIjE1MDYxOTgwIiwKICAgICJuYXRpb25hbGl0eSI6ICJERVUiLAogICAgImRvY19udW1iZXIiOiAiQzAxWDAwVDQ3IiwKICAgICJ2aXNhX251bWJlciI6IG51bGwsCiAgICAiZG9jX251bWJlcl9lbmMiOiAiZ0FBQUFBQnJOdXlBTURFeU16UTFOamM0T1dGaVkyUmxacjhvUmlLaU5UZEJDdGlMS1dqOHVWRGtFcExOcE42Y2NtWnJfd2xDcWgxeWlMVUZjWi1UWHA3QlByaFZVM3M2Y3c9PSIsCiAgICAidmlzYV9udW1iZXJfZW5jIjogbnVsbCwKICAgICJyZXNfc3RyZWV0IjogIkhhdXB0c3RyLiAxIiwKICAgICJyZXNfY2l0eSI6ICJCZXJsaW4iLAogICAgInJlc19jb3VudHJ5IjogImRldSIsCiAgICAicHVycG9zZSI6ICIxMCIsCiAgICAibm90ZSI6ICI9Y21kIiwKICAgICJzdGF5X2Zyb20iOiBudWxsLAogICAgInN0YXlfdG8iOiBudWxsLAogICAgImlzX2xlYWQiOiAwLAogICAgInJlc3RyaWN0ZWRfYXQiOiBudWxsLAogICAgInJlc3RyaWN0ZWRfcmVhc29uIjogbnVsbCwKICAgICJkb2NfdHlwZSI6IG51bGwsCiAgICAiZmVlX2hvc3RfZGVjaXNpb24iOiBudWxsLAogICAgImZlZV9ob3N0X3JlYXNvbiI6IG51bGwsCiAgICAic2lnbmVkX2F0IjogbnVsbCwKICAgICJub3RpY2VfdmVyc2lvbiI6ICIyIiwKICAgICJub3RpY2VfbGFuZyI6ICJkZSIsCiAgICAibm90aWNlX2Fja19hdCI6ICIyMDI2LTAxLTAxVDAwOjAwOjAwKzAwOjAwIiwKICAgICJmaWxsZWRfYXQiOiBudWxsLAogICAgImZpbGxlZF9pcCI6IG51bGwsCiAgICAiZW50ZXJlZF9ieSI6ICJndWVzdCIsCiAgICAic3VibWl0X3N0YXRlIjogInNlbnQiLAogICAgInN1Ym1pdHRlZF9hdCI6ICIyMDI2LTA1LTAyVDEwOjAwOjAwKzAwOjAwIiwKICAgICJzdWJtaXNzaW9uX2lkIjogMSwKICAgICJsYXN0X2Vycm9ycyI6IG51bGwsCiAgICAic3VibWl0X2F0dGVtcHRzIjogMCwKICAgICJjcmVhdGVkX2F0IjogIjIwMjYtMDEtMDFUMDA6MDA6MDArMDA6MDAiLAogICAgInVwZGF0ZWRfYXQiOiAiMjAyNi0wMS0wMVQwMDowMDowMCswMDowMCIsCiAgICAicmVjZWlwdF9zdWJtaXNzaW9uX2lkIjogbnVsbCwKICAgICJhcmNoaXZlZF9hdCI6IG51bGwsCiAgICAicGFzc3BvcnRfcGhvdG9fYXQiOiAiMjAyNi0wMS0wMVQwMDowMDowMCswMDowMCIsCiAgICAiaWRlbnRpdHlfdmVyaWZpZWRfYXQiOiBudWxsLAogICAgImlkZW50aXR5X3ZlcmlmaWVkX2J5IjogbnVsbCwKICAgICJmZWVfaG9zdF9yZWFzb25fZW5jIjogbnVsbCwKICAgICJmZWVfaG9zdF9yZWFzb25fcmVmZXJlbmNlIjogbnVsbCwKICAgICJtYW51YWxfZmlsZWRfYXQiOiBudWxsLAogICAgIm1hbnVhbF9yZWZlcmVuY2UiOiBudWxsLAogICAgIm1hbnVhbF9tYXJrZWRfYXQiOiBudWxsLAogICAgIm1hbnVhbF9wcmV2X3N0YXRlIjogbnVsbCwKICAgICJiaXJ0aF9kYXRlX2VuYyI6ICJnQUFBQUFCck51eUFNREV5TXpRMU5qYzRPV0ZpWTJSbFpwRk1jWDBTM3lOc2Z4dVBJaVlqcGljVUl0RzdmRFBmU2xyZnItMjVyMHBkS3JlV250clVIVlUwSmllaVJfX1pFZz09IiwKICAgICJyZXNfc3RyZWV0X2VuYyI6ICJnQUFBQUFCck51eUFNREV5TXpRMU5qYzRPV0ZpWTJSbFpqbEFQUkpub2szUTgwaHRFWDNSUjczYVl1WTdHSWZZbmJTUm84UllzTjZCUC10UkdXa2diVnVHZTFpNGhCMVl5dz09IiwKICAgICJyZXNfY2l0eV9lbmMiOiAiZ0FBQUFBQnJOdXlBTURFeU16UTFOamM0T1dGaVkyUmxac0piVkRUYUF2bUEtSERXTUI4ZjFqejR0RWJDNks4c3k0cFIzVS1FM0hQLWFlNUJqTlh6UThLR21tNE1TT2IxR1E9PSIsCiAgICAic2lnbmVkX2Zvcl9ndWVzdF9pZCI6IG51bGwsCiAgICAic2lnbmVkX2Zvcl9yb2xlIjogbnVsbCwKICAgICJzaWduZWRfZm9yX2F0IjogbnVsbCwKICAgICJzaWduZWRfZm9yX3dvcmRpbmciOiBudWxsLAogICAgInNpZ25hdHVyZV9wcmVzZW50IjogdHJ1ZSwKICAgICJwYXNzcG9ydF9waG90b19wcmVzZW50IjogdHJ1ZQogIH0sCiAgIm5vdGljZSI6IHsKICAgICJ2ZXJzaW9uIjogIjIiLAogICAgImxhbmciOiAiZGUiLAogICAgImFja25vd2xlZGdlZF9hdCI6ICIyMDI2LTAxLTAxVDAwOjAwOjAwKzAwOjAwIgogIH0sCiAgInJlc2VydmF0aW9uIjogewogICAgImlkIjogMSwKICAgICJkYXRlX2Zyb20iOiAiMjAyNi0wNS0wMSIsCiAgICAiZGF0ZV90byI6ICIyMDI2LTA1LTA0IiwKICAgICJzb3VyY2UiOiAiaWNhbCIsCiAgICAidWlkIjogInUxIgogIH0sCiAgInN1Ym1pc3Npb25zIjogWwogICAgewogICAgICAiaWQiOiAxLAogICAgICAic3RhdGUiOiAib2siLAogICAgICAiY3JlYXRlZF9hdCI6ICIyMDI2LTA1LTAyVDEwOjAwOjAwKzAwOjAwIiwKICAgICAgImZpbmlzaGVkX2F0IjogbnVsbCwKICAgICAgInBzZXVkb19zdGFtcCI6ICJBQkMvMTIzIMSNeCIsCiAgICAgICJoYXNfcmVjZWlwdCI6IHRydWUKICAgIH0KICBdLAogICJyZWNlaXB0X3N1Ym1pc3Npb25faWQiOiBudWxsLAogICJhdWRpdCI6IFsKICAgIHsKICAgICAgImF0IjogIjIwMjYtMDEtMDFUMDA6MDA6MDArMDA6MDAiLAogICAgICAiYWN0b3IiOiAib3duZXJAZXhhbXBsZS50ZXN0IiwKICAgICAgImFjdGlvbiI6ICJndWVzdF9zYXZlZCIsCiAgICAgICJkZXRhaWwiOiAiaWQ9MTEiCiAgICB9LAogICAgewogICAgICAiYXQiOiAiMjAyNi0wMS0wMVQwMDowMDowMCswMDowMCIsCiAgICAgICJhY3RvciI6ICJvd25lckBleGFtcGxlLnRlc3QiLAogICAgICAiYWN0aW9uIjogImV4cG9ydF9yZWdpc3RyYXRpb25fcGRmIiwKICAgICAgImRldGFpbCI6ICJndWVzdF9pZD0xMSIKICAgIH0sCiAgICB7CiAgICAgICJhdCI6ICIyMDI2LTAxLTAxVDAwOjAwOjAwKzAwOjAwIiwKICAgICAgImFjdG9yIjogImd1ZXN0IiwKICAgICAgImFjdGlvbiI6ICJndWVzdF9mb3JtX3NhdmVkIiwKICAgICAgImRldGFpbCI6ICJndWVzdD0xMSBsYW5nPWRlIgogICAgfSwKICAgIHsKICAgICAgImF0IjogIjIwMjYtMDEtMDFUMDA6MDA6MDArMDA6MDAiLAogICAgICAiYWN0b3IiOiAib3duZXJAZXhhbXBsZS50ZXN0IiwKICAgICAgImFjdGlvbiI6ICJub3RlIiwKICAgICAgImRldGFpbCI6ICJndWVzdF9pZD0xMSBleHRyYSIKICAgIH0KICBdCn0="
+  },
+  {
+   "name": "guest_json_plain",
+   "path": "/guests/14/export.json",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 200,
+   "headers": {
+    "content-type": "application/json",
+    "content-disposition": "attachment; filename=\"guest-14.json\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "owner@example.test",
+     "export_guest_dsr",
+     "guest_id=14",
+     1,
+     1,
+     null
+    ]
+   ],
+   "body_b64": "ewogICJnZW5lcmF0ZWRfYXQiOiAiMjAyNi0xMS0xM1QxMjowMDowMCswMDowMCIsCiAgImd1ZXN0IjogewogICAgImlkIjogMTQsCiAgICAicmVzZXJ2YXRpb25faWQiOiAyLAogICAgInN1cm5hbWUiOiAiRHZvxZnDoWsiLAogICAgImZpcnN0X25hbWUiOiAiUGV0ciIsCiAgICAiYmlydGhfZGF0ZSI6ICIwMjAzMTk3NSIsCiAgICAibmF0aW9uYWxpdHkiOiAiQ1pFIiwKICAgICJkb2NfbnVtYmVyIjogbnVsbCwKICAgICJ2aXNhX251bWJlciI6IG51bGwsCiAgICAiZG9jX251bWJlcl9lbmMiOiBudWxsLAogICAgInZpc2FfbnVtYmVyX2VuYyI6IG51bGwsCiAgICAicmVzX3N0cmVldCI6IG51bGwsCiAgICAicmVzX2NpdHkiOiBudWxsLAogICAgInJlc19jb3VudHJ5IjogIkNaRSIsCiAgICAicHVycG9zZSI6ICI3NyIsCiAgICAibm90ZSI6IG51bGwsCiAgICAic3RheV9mcm9tIjogIjIwMjYtMDUtMTEiLAogICAgInN0YXlfdG8iOiBudWxsLAogICAgImlzX2xlYWQiOiAwLAogICAgInJlc3RyaWN0ZWRfYXQiOiBudWxsLAogICAgInJlc3RyaWN0ZWRfcmVhc29uIjogbnVsbCwKICAgICJkb2NfdHlwZSI6IG51bGwsCiAgICAiZmVlX2hvc3RfZGVjaXNpb24iOiBudWxsLAogICAgImZlZV9ob3N0X3JlYXNvbiI6IG51bGwsCiAgICAic2lnbmVkX2F0IjogbnVsbCwKICAgICJub3RpY2VfdmVyc2lvbiI6IG51bGwsCiAgICAibm90aWNlX2xhbmciOiBudWxsLAogICAgIm5vdGljZV9hY2tfYXQiOiBudWxsLAogICAgImZpbGxlZF9hdCI6IG51bGwsCiAgICAiZmlsbGVkX2lwIjogbnVsbCwKICAgICJlbnRlcmVkX2J5IjogImhvc3QiLAogICAgInN1Ym1pdF9zdGF0ZSI6ICJzZW50IiwKICAgICJzdWJtaXR0ZWRfYXQiOiBudWxsLAogICAgInN1Ym1pc3Npb25faWQiOiAxMCwKICAgICJsYXN0X2Vycm9ycyI6IG51bGwsCiAgICAic3VibWl0X2F0dGVtcHRzIjogMCwKICAgICJjcmVhdGVkX2F0IjogIjIwMjYtMDEtMDFUMDA6MDA6MDArMDA6MDAiLAogICAgInVwZGF0ZWRfYXQiOiAiMjAyNi0wMS0wMVQwMDowMDowMCswMDowMCIsCiAgICAicmVjZWlwdF9zdWJtaXNzaW9uX2lkIjogbnVsbCwKICAgICJhcmNoaXZlZF9hdCI6IG51bGwsCiAgICAicGFzc3BvcnRfcGhvdG9fYXQiOiAiMjAyNi0wMS0wMVQwMDowMDowMCswMDowMCIsCiAgICAiaWRlbnRpdHlfdmVyaWZpZWRfYXQiOiBudWxsLAogICAgImlkZW50aXR5X3ZlcmlmaWVkX2J5IjogbnVsbCwKICAgICJmZWVfaG9zdF9yZWFzb25fZW5jIjogbnVsbCwKICAgICJmZWVfaG9zdF9yZWFzb25fcmVmZXJlbmNlIjogbnVsbCwKICAgICJtYW51YWxfZmlsZWRfYXQiOiAiMjAyNi0wNS0xMVQwODowMDowMCswMDowMCIsCiAgICAibWFudWFsX3JlZmVyZW5jZSI6ICJNQU4tMSIsCiAgICAibWFudWFsX21hcmtlZF9hdCI6IG51bGwsCiAgICAibWFudWFsX3ByZXZfc3RhdGUiOiBudWxsLAogICAgImJpcnRoX2RhdGVfZW5jIjogbnVsbCwKICAgICJyZXNfc3RyZWV0X2VuYyI6IG51bGwsCiAgICAicmVzX2NpdHlfZW5jIjogbnVsbCwKICAgICJzaWduZWRfZm9yX2d1ZXN0X2lkIjogbnVsbCwKICAgICJzaWduZWRfZm9yX3JvbGUiOiBudWxsLAogICAgInNpZ25lZF9mb3JfYXQiOiBudWxsLAogICAgInNpZ25lZF9mb3Jfd29yZGluZyI6IG51bGwsCiAgICAic2lnbmF0dXJlX3ByZXNlbnQiOiB0cnVlLAogICAgInBhc3Nwb3J0X3Bob3RvX3ByZXNlbnQiOiBmYWxzZQogIH0sCiAgIm5vdGljZSI6IHsKICAgICJ2ZXJzaW9uIjogbnVsbCwKICAgICJsYW5nIjogbnVsbCwKICAgICJhY2tub3dsZWRnZWRfYXQiOiBudWxsCiAgfSwKICAicmVzZXJ2YXRpb24iOiB7CiAgICAiaWQiOiAyLAogICAgImRhdGVfZnJvbSI6ICIyMDI2LTA1LTEwIiwKICAgICJkYXRlX3RvIjogIjIwMjYtMDUtMTIiLAogICAgInNvdXJjZSI6ICJtYW51YWwiLAogICAgInVpZCI6ICJ1MiIKICB9LAogICJzdWJtaXNzaW9ucyI6IFsKICAgIHsKICAgICAgImlkIjogMTAsCiAgICAgICJzdGF0ZSI6ICJvayIsCiAgICAgICJjcmVhdGVkX2F0IjogIjIwMjYtMDUtMTFUMDk6MDA6MDArMDA6MDAiLAogICAgICAiZmluaXNoZWRfYXQiOiBudWxsLAogICAgICAicHNldWRvX3N0YW1wIjogIlMxMCIsCiAgICAgICJoYXNfcmVjZWlwdCI6IHRydWUKICAgIH0KICBdLAogICJyZWNlaXB0X3N1Ym1pc3Npb25faWQiOiBudWxsLAogICJhdWRpdCI6IFtdCn0="
+  },
+  {
+   "name": "guest_json_child",
+   "path": "/guests/15/export.json",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 200,
+   "headers": {
+    "content-type": "application/json",
+    "content-disposition": "attachment; filename=\"guest-15.json\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "owner@example.test",
+     "export_guest_dsr",
+     "guest_id=15",
+     1,
+     1,
+     null
+    ]
+   ],
+   "body_b64": "ewogICJnZW5lcmF0ZWRfYXQiOiAiMjAyNi0xMS0xM1QxMjowMDowMCswMDowMCIsCiAgImd1ZXN0IjogewogICAgImlkIjogMTUsCiAgICAicmVzZXJ2YXRpb25faWQiOiA2LAogICAgInN1cm5hbWUiOiAiVGFiXHROYW1lIiwKICAgICJmaXJzdF9uYW1lIjogIlFcInVvdGUiLAogICAgImJpcnRoX2RhdGUiOiAiMTk5MCIsCiAgICAibmF0aW9uYWxpdHkiOiAiQVVUIiwKICAgICJkb2NfbnVtYmVyIjogbnVsbCwKICAgICJ2aXNhX251bWJlciI6IG51bGwsCiAgICAiZG9jX251bWJlcl9lbmMiOiBudWxsLAogICAgInZpc2FfbnVtYmVyX2VuYyI6IG51bGwsCiAgICAicmVzX3N0cmVldCI6IG51bGwsCiAgICAicmVzX2NpdHkiOiBudWxsLAogICAgInJlc19jb3VudHJ5IjogInh4eCIsCiAgICAicHVycG9zZSI6IG51bGwsCiAgICAibm90ZSI6IG51bGwsCiAgICAic3RheV9mcm9tIjogbnVsbCwKICAgICJzdGF5X3RvIjogIjIwMjYtMDYtMDIiLAogICAgImlzX2xlYWQiOiAwLAogICAgInJlc3RyaWN0ZWRfYXQiOiBudWxsLAogICAgInJlc3RyaWN0ZWRfcmVhc29uIjogbnVsbCwKICAgICJkb2NfdHlwZSI6IG51bGwsCiAgICAiZmVlX2hvc3RfZGVjaXNpb24iOiBudWxsLAogICAgImZlZV9ob3N0X3JlYXNvbiI6IG51bGwsCiAgICAic2lnbmVkX2F0IjogbnVsbCwKICAgICJub3RpY2VfdmVyc2lvbiI6IG51bGwsCiAgICAibm90aWNlX2xhbmciOiBudWxsLAogICAgIm5vdGljZV9hY2tfYXQiOiBudWxsLAogICAgImZpbGxlZF9hdCI6IG51bGwsCiAgICAiZmlsbGVkX2lwIjogbnVsbCwKICAgICJlbnRlcmVkX2J5IjogImd1ZXN0IiwKICAgICJzdWJtaXRfc3RhdGUiOiAiZXJyb3IiLAogICAgInN1Ym1pdHRlZF9hdCI6IG51bGwsCiAgICAic3VibWlzc2lvbl9pZCI6IG51bGwsCiAgICAibGFzdF9lcnJvcnMiOiBudWxsLAogICAgInN1Ym1pdF9hdHRlbXB0cyI6IDAsCiAgICAiY3JlYXRlZF9hdCI6ICIyMDI2LTAxLTAxVDAwOjAwOjAwKzAwOjAwIiwKICAgICJ1cGRhdGVkX2F0IjogIjIwMjYtMDEtMDFUMDA6MDA6MDArMDA6MDAiLAogICAgInJlY2VpcHRfc3VibWlzc2lvbl9pZCI6IG51bGwsCiAgICAiYXJjaGl2ZWRfYXQiOiBudWxsLAogICAgInBhc3Nwb3J0X3Bob3RvX2F0IjogbnVsbCwKICAgICJpZGVudGl0eV92ZXJpZmllZF9hdCI6IG51bGwsCiAgICAiaWRlbnRpdHlfdmVyaWZpZWRfYnkiOiBudWxsLAogICAgImZlZV9ob3N0X3JlYXNvbl9lbmMiOiBudWxsLAogICAgImZlZV9ob3N0X3JlYXNvbl9yZWZlcmVuY2UiOiBudWxsLAogICAgIm1hbnVhbF9maWxlZF9hdCI6IG51bGwsCiAgICAibWFudWFsX3JlZmVyZW5jZSI6IG51bGwsCiAgICAibWFudWFsX21hcmtlZF9hdCI6IG51bGwsCiAgICAibWFudWFsX3ByZXZfc3RhdGUiOiBudWxsLAogICAgImJpcnRoX2RhdGVfZW5jIjogbnVsbCwKICAgICJyZXNfc3RyZWV0X2VuYyI6IG51bGwsCiAgICAicmVzX2NpdHlfZW5jIjogbnVsbCwKICAgICJzaWduZWRfZm9yX2d1ZXN0X2lkIjogbnVsbCwKICAgICJzaWduZWRfZm9yX3JvbGUiOiBudWxsLAogICAgInNpZ25lZF9mb3JfYXQiOiBudWxsLAogICAgInNpZ25lZF9mb3Jfd29yZGluZyI6IG51bGwsCiAgICAic2lnbmF0dXJlX3ByZXNlbnQiOiB0cnVlLAogICAgInBhc3Nwb3J0X3Bob3RvX3ByZXNlbnQiOiBmYWxzZQogIH0sCiAgIm5vdGljZSI6IHsKICAgICJ2ZXJzaW9uIjogbnVsbCwKICAgICJsYW5nIjogbnVsbCwKICAgICJhY2tub3dsZWRnZWRfYXQiOiBudWxsCiAgfSwKICAicmVzZXJ2YXRpb24iOiB7CiAgICAiaWQiOiA2LAogICAgImRhdGVfZnJvbSI6ICIyMDI2LTA2LTAxIiwKICAgICJkYXRlX3RvIjogIjIwMjYtMDYtMDMiLAogICAgInNvdXJjZSI6ICJpY2FsIiwKICAgICJ1aWQiOiAidTYiCiAgfSwKICAic3VibWlzc2lvbnMiOiBbXSwKICAicmVjZWlwdF9zdWJtaXNzaW9uX2lkIjogbnVsbCwKICAiYXVkaXQiOiBbXQp9"
+  },
+  {
+   "name": "guest_json_stale",
+   "path": "/guests/11/export.json",
+   "session": {
+    "uid": 1,
+    "stale": 1
+   },
+   "lang": null,
+   "status": 303,
+   "headers": {
+    "location": "/settings/security?err=For%20your%20safety%2C%20log%20out%20and%20log%20in%20again%2C%20then%20repeat%20this%20within%2010%20minutes.#settings-security",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body_b64": ""
+  },
+  {
+   "name": "guest_json_stale_cs",
+   "path": "/guests/11/export.json",
+   "session": {
+    "uid": 1,
+    "stale": 1
+   },
+   "lang": "cs",
+   "status": 303,
+   "headers": {
+    "location": "/settings/security?err=Z%20bezpe%C4%8Dnostn%C3%ADch%20d%C5%AFvod%C5%AF%20se%20odhlaste%2C%20znovu%20p%C5%99ihlaste%20a%20do%2010%20minut%20to%20zopakujte.#settings-security",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body_b64": ""
+  },
+  {
+   "name": "guest_json_other_owner",
+   "path": "/guests/4/export.json",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 404,
+   "headers": {
+    "content-type": "text/plain; charset=utf-8",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body_b64": "Tm90IGZvdW5kLg=="
+  },
+  {
+   "name": "guest_json_missing",
+   "path": "/guests/999/export.json",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 404,
+   "headers": {
+    "content-type": "text/plain; charset=utf-8",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body_b64": "Tm90IGZvdW5kLg=="
+  },
+  {
+   "name": "guest_json_supporting",
+   "path": "/guests/11/export.json",
+   "session": {
+    "uid": 3,
+    "as": 1
+   },
+   "lang": null,
+   "status": 200,
+   "headers": {
+    "content-type": "application/json",
+    "content-disposition": "attachment; filename=\"guest-11.json\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "admin@example.test",
+     "export_guest_dsr",
+     "guest_id=11",
+     1,
+     3,
+     3
+    ]
+   ],
+   "body_b64": "ewogICJnZW5lcmF0ZWRfYXQiOiAiMjAyNi0xMS0xM1QxMjowMDowMCswMDowMCIsCiAgImd1ZXN0IjogewogICAgImlkIjogMTEsCiAgICAicmVzZXJ2YXRpb25faWQiOiAxLAogICAgInN1cm5hbWUiOiAiTcO8bGxlciIsCiAgICAiZmlyc3RfbmFtZSI6ICJIYW5zIiwKICAgICJiaXJ0aF9kYXRlIjogIjE1MDYxOTgwIiwKICAgICJuYXRpb25hbGl0eSI6ICJERVUiLAogICAgImRvY19udW1iZXIiOiAiQzAxWDAwVDQ3IiwKICAgICJ2aXNhX251bWJlciI6IG51bGwsCiAgICAiZG9jX251bWJlcl9lbmMiOiAiZ0FBQUFBQnJOdXlBTURFeU16UTFOamM0T1dGaVkyUmxacjhvUmlLaU5UZEJDdGlMS1dqOHVWRGtFcExOcE42Y2NtWnJfd2xDcWgxeWlMVUZjWi1UWHA3QlByaFZVM3M2Y3c9PSIsCiAgICAidmlzYV9udW1iZXJfZW5jIjogbnVsbCwKICAgICJyZXNfc3RyZWV0IjogIkhhdXB0c3RyLiAxIiwKICAgICJyZXNfY2l0eSI6ICJCZXJsaW4iLAogICAgInJlc19jb3VudHJ5IjogImRldSIsCiAgICAicHVycG9zZSI6ICIxMCIsCiAgICAibm90ZSI6ICI9Y21kIiwKICAgICJzdGF5X2Zyb20iOiBudWxsLAogICAgInN0YXlfdG8iOiBudWxsLAogICAgImlzX2xlYWQiOiAwLAogICAgInJlc3RyaWN0ZWRfYXQiOiBudWxsLAogICAgInJlc3RyaWN0ZWRfcmVhc29uIjogbnVsbCwKICAgICJkb2NfdHlwZSI6IG51bGwsCiAgICAiZmVlX2hvc3RfZGVjaXNpb24iOiBudWxsLAogICAgImZlZV9ob3N0X3JlYXNvbiI6IG51bGwsCiAgICAic2lnbmVkX2F0IjogbnVsbCwKICAgICJub3RpY2VfdmVyc2lvbiI6ICIyIiwKICAgICJub3RpY2VfbGFuZyI6ICJkZSIsCiAgICAibm90aWNlX2Fja19hdCI6ICIyMDI2LTAxLTAxVDAwOjAwOjAwKzAwOjAwIiwKICAgICJmaWxsZWRfYXQiOiBudWxsLAogICAgImZpbGxlZF9pcCI6IG51bGwsCiAgICAiZW50ZXJlZF9ieSI6ICJndWVzdCIsCiAgICAic3VibWl0X3N0YXRlIjogInNlbnQiLAogICAgInN1Ym1pdHRlZF9hdCI6ICIyMDI2LTA1LTAyVDEwOjAwOjAwKzAwOjAwIiwKICAgICJzdWJtaXNzaW9uX2lkIjogMSwKICAgICJsYXN0X2Vycm9ycyI6IG51bGwsCiAgICAic3VibWl0X2F0dGVtcHRzIjogMCwKICAgICJjcmVhdGVkX2F0IjogIjIwMjYtMDEtMDFUMDA6MDA6MDArMDA6MDAiLAogICAgInVwZGF0ZWRfYXQiOiAiMjAyNi0wMS0wMVQwMDowMDowMCswMDowMCIsCiAgICAicmVjZWlwdF9zdWJtaXNzaW9uX2lkIjogbnVsbCwKICAgICJhcmNoaXZlZF9hdCI6IG51bGwsCiAgICAicGFzc3BvcnRfcGhvdG9fYXQiOiAiMjAyNi0wMS0wMVQwMDowMDowMCswMDowMCIsCiAgICAiaWRlbnRpdHlfdmVyaWZpZWRfYXQiOiBudWxsLAogICAgImlkZW50aXR5X3ZlcmlmaWVkX2J5IjogbnVsbCwKICAgICJmZWVfaG9zdF9yZWFzb25fZW5jIjogbnVsbCwKICAgICJmZWVfaG9zdF9yZWFzb25fcmVmZXJlbmNlIjogbnVsbCwKICAgICJtYW51YWxfZmlsZWRfYXQiOiBudWxsLAogICAgIm1hbnVhbF9yZWZlcmVuY2UiOiBudWxsLAogICAgIm1hbnVhbF9tYXJrZWRfYXQiOiBudWxsLAogICAgIm1hbnVhbF9wcmV2X3N0YXRlIjogbnVsbCwKICAgICJiaXJ0aF9kYXRlX2VuYyI6ICJnQUFBQUFCck51eUFNREV5TXpRMU5qYzRPV0ZpWTJSbFpwRk1jWDBTM3lOc2Z4dVBJaVlqcGljVUl0RzdmRFBmU2xyZnItMjVyMHBkS3JlV250clVIVlUwSmllaVJfX1pFZz09IiwKICAgICJyZXNfc3RyZWV0X2VuYyI6ICJnQUFBQUFCck51eUFNREV5TXpRMU5qYzRPV0ZpWTJSbFpqbEFQUkpub2szUTgwaHRFWDNSUjczYVl1WTdHSWZZbmJTUm84UllzTjZCUC10UkdXa2diVnVHZTFpNGhCMVl5dz09IiwKICAgICJyZXNfY2l0eV9lbmMiOiAiZ0FBQUFBQnJOdXlBTURFeU16UTFOamM0T1dGaVkyUmxac0piVkRUYUF2bUEtSERXTUI4ZjFqejR0RWJDNks4c3k0cFIzVS1FM0hQLWFlNUJqTlh6UThLR21tNE1TT2IxR1E9PSIsCiAgICAic2lnbmVkX2Zvcl9ndWVzdF9pZCI6IG51bGwsCiAgICAic2lnbmVkX2Zvcl9yb2xlIjogbnVsbCwKICAgICJzaWduZWRfZm9yX2F0IjogbnVsbCwKICAgICJzaWduZWRfZm9yX3dvcmRpbmciOiBudWxsLAogICAgInNpZ25hdHVyZV9wcmVzZW50IjogdHJ1ZSwKICAgICJwYXNzcG9ydF9waG90b19wcmVzZW50IjogdHJ1ZQogIH0sCiAgIm5vdGljZSI6IHsKICAgICJ2ZXJzaW9uIjogIjIiLAogICAgImxhbmciOiAiZGUiLAogICAgImFja25vd2xlZGdlZF9hdCI6ICIyMDI2LTAxLTAxVDAwOjAwOjAwKzAwOjAwIgogIH0sCiAgInJlc2VydmF0aW9uIjogewogICAgImlkIjogMSwKICAgICJkYXRlX2Zyb20iOiAiMjAyNi0wNS0wMSIsCiAgICAiZGF0ZV90byI6ICIyMDI2LTA1LTA0IiwKICAgICJzb3VyY2UiOiAiaWNhbCIsCiAgICAidWlkIjogInUxIgogIH0sCiAgInN1Ym1pc3Npb25zIjogWwogICAgewogICAgICAiaWQiOiAxLAogICAgICAic3RhdGUiOiAib2siLAogICAgICAiY3JlYXRlZF9hdCI6ICIyMDI2LTA1LTAyVDEwOjAwOjAwKzAwOjAwIiwKICAgICAgImZpbmlzaGVkX2F0IjogbnVsbCwKICAgICAgInBzZXVkb19zdGFtcCI6ICJBQkMvMTIzIMSNeCIsCiAgICAgICJoYXNfcmVjZWlwdCI6IHRydWUKICAgIH0KICBdLAogICJyZWNlaXB0X3N1Ym1pc3Npb25faWQiOiBudWxsLAogICJhdWRpdCI6IFsKICAgIHsKICAgICAgImF0IjogIjIwMjYtMDEtMDFUMDA6MDA6MDArMDA6MDAiLAogICAgICAiYWN0b3IiOiAib3duZXJAZXhhbXBsZS50ZXN0IiwKICAgICAgImFjdGlvbiI6ICJndWVzdF9zYXZlZCIsCiAgICAgICJkZXRhaWwiOiAiaWQ9MTEiCiAgICB9LAogICAgewogICAgICAiYXQiOiAiMjAyNi0wMS0wMVQwMDowMDowMCswMDowMCIsCiAgICAgICJhY3RvciI6ICJvd25lckBleGFtcGxlLnRlc3QiLAogICAgICAiYWN0aW9uIjogImV4cG9ydF9yZWdpc3RyYXRpb25fcGRmIiwKICAgICAgImRldGFpbCI6ICJndWVzdF9pZD0xMSIKICAgIH0sCiAgICB7CiAgICAgICJhdCI6ICIyMDI2LTAxLTAxVDAwOjAwOjAwKzAwOjAwIiwKICAgICAgImFjdG9yIjogImd1ZXN0IiwKICAgICAgImFjdGlvbiI6ICJndWVzdF9mb3JtX3NhdmVkIiwKICAgICAgImRldGFpbCI6ICJndWVzdD0xMSBsYW5nPWRlIgogICAgfSwKICAgIHsKICAgICAgImF0IjogIjIwMjYtMDEtMDFUMDA6MDA6MDArMDA6MDAiLAogICAgICAiYWN0b3IiOiAib3duZXJAZXhhbXBsZS50ZXN0IiwKICAgICAgImFjdGlvbiI6ICJub3RlIiwKICAgICAgImRldGFpbCI6ICJndWVzdF9pZD0xMSBleHRyYSIKICAgIH0sCiAgICB7CiAgICAgICJhdCI6ICIyMDI2LTExLTEzVDEyOjAwOjAwKzAwOjAwIiwKICAgICAgImFjdG9yIjogIm93bmVyQGV4YW1wbGUudGVzdCIsCiAgICAgICJhY3Rpb24iOiAiZXhwb3J0X2d1ZXN0X2RzciIsCiAgICAgICJkZXRhaWwiOiAiZ3Vlc3RfaWQ9MTEiCiAgICB9CiAgXQp9"
+  },
+  {
+   "name": "receipt_corrupt_token",
+   "path": "/submissions/200/receipt.pdf",
+   "session": {
+    "uid": 4
+   },
+   "lang": null,
+   "status": 500,
+   "headers": {
+    "content-type": "text/plain; charset=utf-8",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body_b64": "SW50ZXJuYWwgU2VydmVyIEVycm9y"
+  },
+  {
+   "name": "errors_corrupt_token",
+   "path": "/submissions/200/errors.pdf",
+   "session": {
+    "uid": 4
+   },
+   "lang": null,
+   "status": 500,
+   "headers": {
+    "content-type": "text/plain; charset=utf-8",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body_b64": "SW50ZXJuYWwgU2VydmVyIEVycm9y"
+  },
+  {
+   "name": "xml_response_corrupt_token",
+   "path": "/submissions/200/response.xml",
+   "session": {
+    "uid": 4
+   },
+   "lang": null,
+   "status": 500,
+   "headers": {
+    "content-type": "text/plain; charset=utf-8",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body_b64": "SW50ZXJuYWwgU2VydmVyIEVycm9y"
+  },
+  {
+   "name": "xml_request_corrupt_token",
+   "path": "/submissions/200/request.xml",
+   "session": {
+    "uid": 4
+   },
+   "lang": null,
+   "status": 500,
+   "headers": {
+    "content-type": "text/plain; charset=utf-8",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body_b64": "SW50ZXJuYWwgU2VydmVyIEVycm9y"
+  },
+  {
+   "name": "housebook_corrupt_token",
+   "path": "/housebook.csv",
+   "session": {
+    "uid": 4
+   },
+   "lang": null,
+   "status": 500,
+   "headers": {
+    "content-type": "text/plain; charset=utf-8",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body_b64": "SW50ZXJuYWwgU2VydmVyIEVycm9y"
+  },
+  {
+   "name": "guest_json_corrupt_token",
+   "path": "/guests/400/export.json",
+   "session": {
+    "uid": 4
+   },
+   "lang": null,
+   "status": 500,
+   "headers": {
+    "content-type": "text/plain; charset=utf-8",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body_b64": "SW50ZXJuYWwgU2VydmVyIEVycm9y"
+  },
+  {
+   "name": "stays_csv_broken_workspace",
+   "path": "/reservations.csv?from=2026-01-01&to=2026-12-31",
+   "session": {
+    "uid": 4
+   },
+   "lang": null,
+   "status": 200,
+   "headers": {
+    "content-type": "text/csv; charset=utf-8",
+    "content-disposition": "attachment; filename=\"stays-20261113.csv\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "broken@example.test",
+     "export_reservations_csv",
+     "rows=1",
+     4,
+     4,
+     null
+    ]
+   ],
+   "body_b64": "77u/QXBhcnRtZW50O0Fycml2YWw7RGVwYXJ0dXJlO051bWJlciBvZiBndWVzdHM7TGFiZWw7R3Vlc3QgZS1tYWlsDQpCcm9rZW4gRmxhdDsyMDI2LTA4LTAxOzIwMjYtMDgtMDM7OzsNCg=="
+  },
+  {
+   "name": "receipts_zip_too_many",
+   "path": "/submissions/receipts.zip",
+   "session": {
+    "uid": 5
+   },
+   "lang": null,
+   "status": 303,
+   "headers": {
+    "location": "/submissions?err=Too%20many%20receipts%20%28101%29%20for%20one%20download.%20Narrow%20the%20date%20filter%20to%20100%20or%20fewer.",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body_b64": ""
+  },
+  {
+   "name": "receipts_zip_too_many_cs",
+   "path": "/submissions/receipts.zip",
+   "session": {
+    "uid": 5
+   },
+   "lang": "cs",
+   "status": 303,
+   "headers": {
+    "location": "/submissions?err=Pro%20jedno%20sta%C5%BEen%C3%AD%20je%20p%C5%99%C3%ADli%C5%A1%20mnoho%20Doru%C4%8Denek%20%28101%29.%20Z%C3%BA%C5%BEte%20filtr%20data%20na%20100%20nebo%20m%C3%A9n%C4%9B.",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body_b64": ""
+  },
+  {
+   "name": "receipts_zip_limit_ok",
+   "path": "/submissions/receipts.zip?to=2026-08-27",
+   "session": {
+    "uid": 5
+   },
+   "lang": null,
+   "status": 200,
+   "headers": {
+    "content-type": "application/zip",
+    "content-disposition": "attachment; filename=\"dorucenky-20261113.zip\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "2026-11-13T12:00:00+00:00",
+     "many@example.test",
+     "export_receipts_zip",
+     "rows=98",
+     5,
+     5,
+     null
+    ]
+   ],
+   "zip": [
+    [
+     "dorucenka-2026-08-27-382-382.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-27-354-354.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-27-326-326.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-26-381-381.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-26-353-353.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-26-325-325.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-25-380-380.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-25-352-352.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-25-324-324.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-24-323-323.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-24-379-379.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-24-351-351.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-23-322-322.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-23-378-378.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-23-350-350.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-22-321-321.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-22-377-377.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-22-349-349.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-21-320-320.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-21-376-376.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-21-348-348.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-20-347-347.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-20-319-319.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-20-375-375.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-19-346-346.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-19-318-318.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-19-374-374.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-18-345-345.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-18-317-317.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-18-373-373.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-17-344-344.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-17-316-316.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-17-400-400.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-17-372-372.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-16-371-371.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-16-343-343.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-16-315-315.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-16-399-399.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-15-370-370.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-15-342-342.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-15-314-314.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-15-398-398.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-14-369-369.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-14-341-341.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-14-313-313.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-14-397-397.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-13-368-368.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-13-340-340.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-13-312-312.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-13-396-396.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-12-395-395.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-12-367-367.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-12-339-339.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-12-311-311.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-11-394-394.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-11-366-366.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-11-338-338.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-11-310-310.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-10-393-393.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-10-365-365.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-10-337-337.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-10-309-309.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-09-392-392.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-09-364-364.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-09-336-336.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-09-308-308.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-08-391-391.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-08-363-363.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-08-335-335.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-08-307-307.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-07-390-390.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-07-362-362.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-07-334-334.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-07-306-306.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-06-389-389.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-06-361-361.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-06-333-333.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-06-305-305.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-05-388-388.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-05-360-360.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-05-332-332.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-05-304-304.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-04-387-387.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-04-359-359.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-04-331-331.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-04-303-303.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-03-386-386.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-03-358-358.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-03-330-330.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-03-302-302.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-02-385-385.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-02-357-357.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-02-329-329.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-02-301-301.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-01-384-384.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-01-356-356.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-01-328-328.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "dorucenka-2026-08-01-300-300.pdf",
+     8,
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ]
+   ]
+  },
+  {
+   "name": "receipt_non_integer_id",
+   "path": "/submissions/abc/receipt.pdf",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 422,
+   "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body_b64": "eyJkZXRhaWwiOlt7InR5cGUiOiJpbnRfcGFyc2luZyIsImxvYyI6WyJwYXRoIiwic3VibWlzc2lvbl9pZCJdLCJtc2ciOiJJbnB1dCBzaG91bGQgYmUgYSB2YWxpZCBpbnRlZ2VyLCB1bmFibGUgdG8gcGFyc2Ugc3RyaW5nIGFzIGFuIGludGVnZXIiLCJpbnB1dCI6ImFiYyJ9XX0="
+  },
+  {
+   "name": "xml_non_integer_id",
+   "path": "/submissions/abc/request.xml",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 422,
+   "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body_b64": "eyJkZXRhaWwiOlt7InR5cGUiOiJpbnRfcGFyc2luZyIsImxvYyI6WyJwYXRoIiwic3VibWlzc2lvbl9pZCJdLCJtc2ciOiJJbnB1dCBzaG91bGQgYmUgYSB2YWxpZCBpbnRlZ2VyLCB1bmFibGUgdG8gcGFyc2Ugc3RyaW5nIGFzIGFuIGludGVnZXIiLCJpbnB1dCI6ImFiYyJ9XX0="
+  },
+  {
+   "name": "stay_zip_non_integer_id",
+   "path": "/reservations/1x/dorucenka.zip",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 422,
+   "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body_b64": "eyJkZXRhaWwiOlt7InR5cGUiOiJpbnRfcGFyc2luZyIsImxvYyI6WyJwYXRoIiwicmVzZXJ2YXRpb25faWQiXSwibXNnIjoiSW5wdXQgc2hvdWxkIGJlIGEgdmFsaWQgaW50ZWdlciwgdW5hYmxlIHRvIHBhcnNlIHN0cmluZyBhcyBhbiBpbnRlZ2VyIiwiaW5wdXQiOiIxeCJ9XX0="
+  },
+  {
+   "name": "guest_json_non_integer_id",
+   "path": "/guests/abc/export.json",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "status": 422,
+   "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body_b64": "eyJkZXRhaWwiOlt7InR5cGUiOiJpbnRfcGFyc2luZyIsImxvYyI6WyJwYXRoIiwiZ3Vlc3RfaWQiXSwibXNnIjoiSW5wdXQgc2hvdWxkIGJlIGEgdmFsaWQgaW50ZWdlciwgdW5hYmxlIHRvIHBhcnNlIHN0cmluZyBhcyBhbiBpbnRlZ2VyIiwiaW5wdXQiOiJhYmMifV19"
+  }
+ ]
+}
