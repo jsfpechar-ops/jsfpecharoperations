@@ -9,6 +9,7 @@ package customers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -180,6 +181,15 @@ func rowMaps(rows pgx.Rows) ([]map[string]any, error) {
 	return out, rows.Err()
 }
 
+// asInt64 reads a bigint column value. Any other type is an error, not a panic.
+func asInt64(v any, column string) (int64, error) {
+	n, ok := v.(int64)
+	if !ok {
+		return 0, fmt.Errorf("customers: column %s is %T, want int64", column, v)
+	}
+	return n, nil
+}
+
 func queryMaps(ctx context.Context, pool *pgxpool.Pool, sql string, args ...any) ([]map[string]any, error) {
 	rows, err := pool.Query(ctx, sql, args...)
 	if err != nil {
@@ -221,7 +231,9 @@ func Customers(ctx context.Context, pool *pgxpool.Pool, v Filters, after, before
 	if len(rows) > 0 {
 		ids := make([]int64, len(rows))
 		for i, r := range rows {
-			ids[i] = r["id"].(int64)
+			if ids[i], err = asInt64(r["id"], "id"); err != nil {
+				return Page{}, err
+			}
 		}
 		counted, err := queryMaps(ctx, pool,
 			"SELECT owner_user_id, COUNT(*) AS n FROM apartment "+
@@ -231,10 +243,16 @@ func Customers(ctx context.Context, pool *pgxpool.Pool, v Filters, after, before
 		}
 		counts := map[int64]int64{}
 		for _, c := range counted {
-			counts[c["owner_user_id"].(int64)] = c["n"].(int64)
+			owner, err := asInt64(c["owner_user_id"], "owner_user_id")
+			if err != nil {
+				return Page{}, err
+			}
+			if counts[owner], err = asInt64(c["n"], "n"); err != nil {
+				return Page{}, err
+			}
 		}
-		for _, r := range rows {
-			r["active_properties"] = counts[r["id"].(int64)]
+		for i, r := range rows {
+			r["active_properties"] = counts[ids[i]]
 		}
 	}
 	has := len(rows) > 0
@@ -254,7 +272,13 @@ func Summary(ctx context.Context, pool *pgxpool.Pool, today time.Time) (map[stri
 	}
 	counts := map[string]int64{}
 	for _, r := range rows {
-		counts[r["customer_state"].(string)] = r["n"].(int64)
+		state, ok := r["customer_state"].(string)
+		if !ok {
+			return nil, fmt.Errorf("customers: column customer_state is %T, want string", r["customer_state"])
+		}
+		if counts[state], err = asInt64(r["n"], "n"); err != nil {
+			return nil, err
+		}
 	}
 	clause, args := where(NewFilters("", "ending", ""), today)
 	var n int64
