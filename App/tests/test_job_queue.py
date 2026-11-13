@@ -303,3 +303,51 @@ def test_drain_checks_for_stuck_rows_at_most_once_per_window(monkeypatch):
     assert jobqueue.drain(lambda kind: None, threading.Event()) == 0
     assert jobqueue.drain(lambda kind: None, threading.Event()) == 0
     assert calls == [1]
+
+
+@needs_postgres
+def test_daily_kind_is_stuck_after_the_two_hour_cap(job_db, monkeypatch):
+    monkeypatch.setattr(config, "JOB_QUEUE_KINDS", frozenset({"stripe_sweep"}))
+    _insert("stripe_sweep", run_at=jobqueue._stamp(-timedelta(hours=3)))
+    assert jobqueue.stuck_kinds() == ["stripe_sweep"]
+
+
+@needs_postgres
+def test_backoff_row_with_future_run_at_is_not_stuck(job_db, monkeypatch):
+    monkeypatch.setattr(config, "JOB_QUEUE_KINDS", frozenset({"deadlines"}))
+    _insert("deadlines", run_at=jobqueue._stamp(timedelta(minutes=15)), attempts=2)
+    assert jobqueue.stuck_kinds() == []
+
+
+@needs_postgres
+def test_old_row_with_an_expired_lease_is_stuck(job_db, monkeypatch):
+    monkeypatch.setattr(config, "JOB_QUEUE_KINDS", frozenset({"deadlines"}))
+    _insert(
+        "deadlines",
+        run_at=jobqueue._stamp(-timedelta(hours=3)),
+        locked_at=jobqueue._stamp(-timedelta(hours=2)),
+        locked_by="gone:1",
+    )
+    assert jobqueue.stuck_kinds() == ["deadlines"]
+
+
+def test_drain_checks_again_once_the_window_has_passed(monkeypatch):
+    calls = []
+    monkeypatch.setattr(jobqueue, "watch_stuck", lambda: calls.append(1) or [])
+    monkeypatch.setattr(jobqueue, "claim", lambda: None)
+    monkeypatch.setattr(jobqueue, "_last_stuck_check", 0.0)
+    jobqueue.drain(lambda kind: None, threading.Event())
+    monkeypatch.setattr(
+        jobqueue, "_last_stuck_check", jobqueue.time.monotonic() - jobqueue.STUCK_CHECK_SECONDS - 1
+    )
+    jobqueue.drain(lambda kind: None, threading.Event())
+    assert calls == [1, 1]
+
+
+def test_drain_waits_one_window_after_start(monkeypatch):
+    calls = []
+    monkeypatch.setattr(jobqueue, "watch_stuck", lambda: calls.append(1) or [])
+    monkeypatch.setattr(jobqueue, "claim", lambda: None)
+    monkeypatch.setattr(jobqueue, "_last_stuck_check", jobqueue.time.monotonic())
+    jobqueue.drain(lambda kind: None, threading.Event())
+    assert calls == []

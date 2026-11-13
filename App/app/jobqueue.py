@@ -29,7 +29,10 @@ BACKOFF_MINUTES = (1, 5, 15, 60)
 KEEP_DONE_DAYS = 7
 WORKER_ID = f"{socket.gethostname()}:{os.getpid()}"
 STUCK_CHECK_SECONDS = 300
-_last_stuck_check = 0.0
+STUCK_MAX_MINUTES = 120
+# The first check waits one window after start, so a deploy's backlog is
+# claimed before anything counts as stuck.
+_last_stuck_check = time.monotonic()
 
 
 def _require_postgres() -> None:
@@ -139,7 +142,7 @@ def purge() -> int:
 
 
 def stuck_kinds() -> list[str]:
-    """Queued kinds with an open, unleased row older than twice the job interval."""
+    """Queued kinds with an open, unleased row older than twice the job interval (at most 2 h)."""
     _require_postgres()
     from . import scheduler
 
@@ -155,7 +158,8 @@ def stuck_kinds() -> list[str]:
         kind = row["kind"]
         if kind not in config.JOB_QUEUE_KINDS or kind not in intervals:
             continue
-        limit = _stamp(-timedelta(minutes=scheduler.late_after_minutes(intervals[kind])))
+        minutes = min(scheduler.late_after_minutes(intervals[kind]), STUCK_MAX_MINUTES)
+        limit = _stamp(-timedelta(minutes=minutes))
         if row["run_at"] < limit:
             stuck.append(kind)
     return sorted(stuck)
@@ -186,10 +190,6 @@ def watch_stuck() -> list[str]:
 
 def drain(run: Callable[[str], None], stop: threading.Event, limit: int = 50) -> int:
     """Claim and run up to ``limit`` due jobs; the number run."""
-    global _last_stuck_check
-    if time.monotonic() - _last_stuck_check >= STUCK_CHECK_SECONDS:
-        _last_stuck_check = time.monotonic()
-        watch_stuck()
     ran = 0
     for _ in range(limit):
         if stop.is_set():
@@ -205,4 +205,8 @@ def drain(run: Callable[[str], None], stop: threading.Event, limit: int = 50) ->
             fail(job, exc, _interval(job["kind"]))
         else:
             finish(job["id"])
+    global _last_stuck_check
+    if time.monotonic() - _last_stuck_check >= STUCK_CHECK_SECONDS:
+        _last_stuck_check = time.monotonic()
+        watch_stuck()
     return ran
