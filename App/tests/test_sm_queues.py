@@ -53,6 +53,7 @@ GOCAPI = "go/internal/metacapi/send.go"
 SIGNUP = "App/app/signup.py"
 IMPORT = "App/app/guest_guide_import.py"
 MERGE = "App/app/guest_guide_merge.py"
+RETENTION = "go/internal/retention/steps.go"
 
 # ---- scanner ---------------------------------------------------------------
 
@@ -250,6 +251,7 @@ IMPORT_SITES = {
     (IMPORT, "process_queue"): 2,
     (IMPORT, "purge"): 1,
     (MERGE, "_note_failure"): 1,
+    (RETENTION, "stepGuideImports"): 1,
 }
 IMPORT_MOVES = [
     (IMPORT, "request_imports", '"status": "queued", "created_at": now,', NEW, "queued"),
@@ -261,6 +263,7 @@ IMPORT_MOVES = [
     (IMPORT, "process_queue", "SET status = 'failed', error = 'stale'", ("running",), "failed"),
     (IMPORT, "purge", "WHEN status = 'done' THEN 'expired'", ("done",), "expired"),
     (MERGE, "_note_failure", "SET status = 'failed', error = ?, raw_json = NULL", ("done",), "failed"),
+    (RETENTION, "stepGuideImports", "WHEN status = 'done' THEN 'expired'", ("done",), "expired"),
 ]
 
 
