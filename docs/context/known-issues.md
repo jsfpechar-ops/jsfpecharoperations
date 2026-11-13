@@ -45,7 +45,7 @@
 | K-S10 | High decision | server .env | Owner: confirm UBYHOST_SECRET_KEY rotated after history leak | AR-01 |
 | K-S11 | Med open | compose postgres | App is the PG superuser; brief 1206 | #966 |
 | K-S12 | Low accepted | routes/admin.py update_entity | Bank edit allowed on a stale session | owner 11-13 |
-| K-S13 | Low decision | payments.py, paylink_routes.go | Pay link live after expiry/paid | #966 |
+| K-S13 | Low accepted | payments.py, paylink_routes.go | Pay link live after expiry/paid | owner 11-13 |
 | K-S14 | Med owner | Caddyfile.cloudflare | Any Cloudflare account reaches origin; enable Authenticated Origin Pulls | #966 |
 | K-S15 | Med owner | GitHub environments | Confirm `production` deploys only from `main` | #966 |
 | K-I08 | Low open | stay_fee.py _day_liability | "Charge" files a minor with a blank reason | P A08 |
