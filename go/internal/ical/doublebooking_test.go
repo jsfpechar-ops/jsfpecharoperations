@@ -117,3 +117,34 @@ func TestDoubleBookingFiresFromSyncFeed(t *testing.T) {
 		t.Fatalf("open double_booking alerts = %d, want 1", got)
 	}
 }
+
+func TestDoubleBookingManualDuplicateIsNotAnAlarm(t *testing.T) {
+	pool := testPool(t)
+	ctx := context.Background()
+	aid := seedApartment(t, pool)
+	seedLegalEntity(t, pool, aid)
+	// Same dates, one side manual: a duplicate entry, no alert, no mail.
+	m1 := seedReservation(t, pool, aid, "manual-dup", "2027-07-05", "2027-07-08")
+	seedReservation(t, pool, aid, "ical-dup", "2027-07-05", "2027-07-08")
+	_, err := pool.Exec(ctx, `UPDATE reservation SET source = 'manual' WHERE id = $1`, m1)
+	must(t, err)
+	must(t, checkDoubleBookings(ctx, pool, testGetenv, aid))
+	if got := scalarInt(t, pool, `SELECT COUNT(*) FROM alert WHERE kind = 'double_booking' AND apartment_id = $1`, aid); got != 0 {
+		t.Fatalf("identical-date manual pair: alerts = %d, want 0", got)
+	}
+	if got := scalarInt(t, pool, `SELECT COUNT(*) FROM email_outbox WHERE kind = 'double_booking' AND apartment_id = $1`, aid); got != 0 {
+		t.Fatalf("identical-date manual pair: outbox rows = %d, want 0", got)
+	}
+
+	// Manual stay with different overlapping dates is a real double booking.
+	aid2 := seedApartment(t, pool)
+	seedLegalEntity(t, pool, aid2)
+	m2 := seedReservation(t, pool, aid2, "manual-over", "2027-07-05", "2027-07-08")
+	seedReservation(t, pool, aid2, "ical-over", "2027-07-06", "2027-07-09")
+	_, err = pool.Exec(ctx, `UPDATE reservation SET source = 'manual' WHERE id = $1`, m2)
+	must(t, err)
+	must(t, checkDoubleBookings(ctx, pool, testGetenv, aid2))
+	if got := scalarInt(t, pool, `SELECT COUNT(*) FROM alert WHERE kind = 'double_booking' AND apartment_id = $1 AND resolved_at IS NULL`, aid2); got != 1 {
+		t.Fatalf("different-date manual pair: open alerts = %d, want 1", got)
+	}
+}
