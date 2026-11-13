@@ -421,6 +421,51 @@
      "resolved": "open",
      "seed": 9015,
      "user_dismissed": 1
+    },
+    {
+     "apartment_id": 4,
+     "created": "run",
+     "dedupe_key": "headcount_mismatch:121",
+     "detail": "Waiting for guest forms · 1/2",
+     "kind": "headcount_mismatch",
+     "level": "warning",
+     "message": "Bez IDUB · 10.09.2026 – 14.09.2026",
+     "owner_user_id": 1,
+     "params": null,
+     "reservation_id": 121,
+     "resolved": "open",
+     "seed": null,
+     "user_dismissed": 0
+    },
+    {
+     "apartment_id": 4,
+     "created": "seed",
+     "dedupe_key": "deadline:121",
+     "detail": "seeded",
+     "kind": "deadline",
+     "level": "critical",
+     "message": "seeded",
+     "owner_user_id": 1,
+     "params": null,
+     "reservation_id": 121,
+     "resolved": "run",
+     "seed": 9017,
+     "user_dismissed": 0
+    },
+    {
+     "apartment_id": 6,
+     "created": "run",
+     "dedupe_key": "headcount_mismatch:123",
+     "detail": "Waiting for guest forms · 0/1",
+     "kind": "headcount_mismatch",
+     "level": "warning",
+     "message": "Bez hesla · 16.09.2026 – 20.09.2026",
+     "owner_user_id": 1,
+     "params": null,
+     "reservation_id": 123,
+     "resolved": "open",
+     "seed": null,
+     "user_dismissed": 0
     }
    ],
    "at": "2026-09-17T10:00:00+00:00",
@@ -877,6 +922,51 @@
      "reservation_id": 116,
      "resolved": "run",
      "seed": 9015,
+     "user_dismissed": 0
+    },
+    {
+     "apartment_id": 4,
+     "created": "run",
+     "dedupe_key": "headcount_mismatch:121",
+     "detail": "Waiting for guest forms · 1/2",
+     "kind": "headcount_mismatch",
+     "level": "warning",
+     "message": "Bez IDUB · 10.09.2026 – 14.09.2026",
+     "owner_user_id": 1,
+     "params": null,
+     "reservation_id": 121,
+     "resolved": "open",
+     "seed": null,
+     "user_dismissed": 0
+    },
+    {
+     "apartment_id": 4,
+     "created": "seed",
+     "dedupe_key": "deadline:121",
+     "detail": "seeded",
+     "kind": "deadline",
+     "level": "critical",
+     "message": "seeded",
+     "owner_user_id": 1,
+     "params": null,
+     "reservation_id": 121,
+     "resolved": "run",
+     "seed": 9017,
+     "user_dismissed": 0
+    },
+    {
+     "apartment_id": 6,
+     "created": "run",
+     "dedupe_key": "headcount_mismatch:123",
+     "detail": "Waiting for guest forms · 0/1",
+     "kind": "headcount_mismatch",
+     "level": "warning",
+     "message": "Bez hesla · 16.09.2026 – 20.09.2026",
+     "owner_user_id": 1,
+     "params": null,
+     "reservation_id": 123,
+     "resolved": "open",
+     "seed": null,
      "user_dismissed": 0
     }
    ],
@@ -1395,6 +1485,51 @@
      "resolved": "run",
      "seed": 9015,
      "user_dismissed": 0
+    },
+    {
+     "apartment_id": 4,
+     "created": "run",
+     "dedupe_key": "headcount_mismatch:121",
+     "detail": "Waiting for guest forms · 1/2",
+     "kind": "headcount_mismatch",
+     "level": "warning",
+     "message": "Bez IDUB · 10.09.2026 – 14.09.2026",
+     "owner_user_id": 1,
+     "params": null,
+     "reservation_id": 121,
+     "resolved": "open",
+     "seed": null,
+     "user_dismissed": 0
+    },
+    {
+     "apartment_id": 4,
+     "created": "seed",
+     "dedupe_key": "deadline:121",
+     "detail": "seeded",
+     "kind": "deadline",
+     "level": "critical",
+     "message": "seeded",
+     "owner_user_id": 1,
+     "params": null,
+     "reservation_id": 121,
+     "resolved": "run",
+     "seed": 9017,
+     "user_dismissed": 0
+    },
+    {
+     "apartment_id": 6,
+     "created": "run",
+     "dedupe_key": "headcount_mismatch:123",
+     "detail": "Waiting for guest forms · 0/1",
+     "kind": "headcount_mismatch",
+     "level": "warning",
+     "message": "Bez hesla · 16.09.2026 – 20.09.2026",
+     "owner_user_id": 1,
+     "params": null,
+     "reservation_id": 123,
+     "resolved": "open",
+     "seed": null,
+     "user_dismissed": 0
     }
    ],
    "at": "2026-09-21T12:00:00+00:00",
@@ -1438,7 +1573,10 @@
     "uby_name",
     "permalink_token",
     "active",
-    "created_at"
+    "created_at",
+    "uby_idub",
+    "uby_ws_user",
+    "uby_ws_password_enc"
    ],
    "rows": [
     [
@@ -1449,7 +1587,10 @@
      "UBY",
      "tok1",
      1,
-     "2026-09-01T00:00:00+00:00"
+     "2026-09-01T00:00:00+00:00",
+     "IDUB-TEST",
+     "ws-test",
+     "enc-test"
     ],
     [
      2,
@@ -1459,7 +1600,10 @@
      "UBY",
      "tok2",
      0,
-     "2026-09-01T00:00:00+00:00"
+     "2026-09-01T00:00:00+00:00",
+     "IDUB-TEST",
+     "ws-test",
+     "enc-test"
     ],
     [
      3,
@@ -1469,7 +1613,49 @@
      "UBY",
      "tok3",
      1,
-     "2026-09-01T00:00:00+00:00"
+     "2026-09-01T00:00:00+00:00",
+     "IDUB-TEST",
+     "ws-test",
+     "enc-test"
+    ],
+    [
+     4,
+     1,
+     "Bez IDUB",
+     "Brno",
+     "UBY",
+     "tok4",
+     1,
+     "2026-09-01T00:00:00+00:00",
+     null,
+     "ws-test",
+     "enc-test"
+    ],
+    [
+     5,
+     1,
+     "Bez uzivatele",
+     "Brno",
+     "UBY",
+     "tok5",
+     1,
+     "2026-09-01T00:00:00+00:00",
+     "IDUB-TEST",
+     "   ",
+     "enc-test"
+    ],
+    [
+     6,
+     1,
+     "Bez hesla",
+     "Brno",
+     "UBY",
+     "tok6",
+     1,
+     "2026-09-01T00:00:00+00:00",
+     "IDUB-TEST",
+     "ws-test",
+     ""
     ]
    ],
    "table": "apartment"
@@ -1790,6 +1976,51 @@
      null,
      "2026-09-01T00:00:00+00:00",
      "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     121,
+     4,
+     "u121",
+     "2026-09-10",
+     "2026-09-14",
+     "active",
+     "host",
+     2,
+     null,
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     122,
+     5,
+     "u122",
+     "2026-09-15",
+     "2026-09-18",
+     "active",
+     "host",
+     null,
+     null,
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     123,
+     6,
+     "u123",
+     "2026-09-16",
+     "2026-09-20",
+     "active",
+     "host",
+     1,
+     null,
+     null,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
     ]
    ],
    "table": "reservation"
@@ -2095,6 +2326,56 @@
      null,
      "2026-09-01T00:00:00+00:00",
      "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     12,
+     121,
+     "Mustermann",
+     "Erika",
+     "02011990",
+     "DEU",
+     "DEU",
+     "Hlavni 1",
+     "Brno",
+     "C01X00T47",
+     null,
+     null,
+     "10",
+     "imported",
+     "2026-09-01T08:00:00Z",
+     "pending",
+     null,
+     null,
+     null,
+     1,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
+    ],
+    [
+     13,
+     123,
+     "Early",
+     null,
+     null,
+     "DEU",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     "pending",
+     null,
+     "2026-09-11",
+     "2026-09-20",
+     1,
+     null,
+     "2026-09-01T00:00:00+00:00",
+     "2026-09-01T00:00:00+00:00"
     ]
    ],
    "table": "guest"
@@ -2355,6 +2636,21 @@
      "2026-09-01T00:00:00+00:00",
      null,
      1
+    ],
+    [
+     9017,
+     "critical",
+     "deadline",
+     4,
+     121,
+     1,
+     "deadline:121",
+     "seeded",
+     "seeded",
+     null,
+     "2026-09-01T00:00:00+00:00",
+     null,
+     0
     ]
    ],
    "table": "alert"
