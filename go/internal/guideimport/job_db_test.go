@@ -278,3 +278,142 @@ func TestRealServiceLedger(t *testing.T) {
 		t.Errorf("ledger %s", got)
 	}
 }
+
+// fetchFunc lets a test run code while the fetch is "in flight".
+type fetchFunc func(ctx context.Context, source, url string) (map[string]any, error)
+
+func (f fetchFunc) Fetch(ctx context.Context, source, url string) (map[string]any, error) {
+	return f(ctx, source, url)
+}
+
+const mergeRaw = `{"source": "booking", "description": "Check-in from 15:00 at the key box, code 4821."}`
+
+func mergeCard(kind, topic, title, steps string) map[string]any {
+	return map[string]any{"kind": kind, "topic": topic, "title": title, "location": "", "steps": steps, "watch_out": "",
+		"quotes": []any{"Check-in from 15:00 at the key box"}}
+}
+
+func putCard(t *testing.T, pool *pgxpool.Pool, kind, title, state, source, steps string) {
+	t.Helper()
+	topic, sort := "rooms", len(Kinds)+1
+	if i, ok := kindOrder(kind); ok {
+		topic, sort = Kinds[i].Topic, i
+	}
+	if _, err := pool.Exec(context.Background(),
+		`INSERT INTO guide_item (apartment_id, topic, kind, title, state, source, steps, sort_order, created_at, updated_at) VALUES (7, $1, $2, $3, $4, $5, $6, $7, 'n', 'n')`,
+		topic, kind, title, state, source, steps, sort); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// _write: only a missing card or an import draft is rewritten; a custom card
+// is matched by title, ignoring case.
+func TestMergeWriteRules(t *testing.T) {
+	pool := testPool(t)
+	seed(t, pool)
+	ctx := context.Background()
+	pool.Exec(ctx, `UPDATE guide_import SET status = 'done', raw_json = $1 WHERE id = 1`, mergeRaw)
+	putCard(t, pool, "checkin", "", "check", "airbnb", "old")
+	putCard(t, pool, "keys", "", "check", "legacy", "legacy text")
+	putCard(t, pool, "parking", "", "check", "host", "host text")
+	putCard(t, pool, "garage", "", "done", "booking", "done text")
+	putCard(t, pool, "wifi", "", "skipped", "host", "skip text")
+	putCard(t, pool, "custom", "Pool", "check", "booking", "old pool")
+	ai := &fakeAI{reply: map[string]any{"cards": []any{
+		mergeCard("checkin", "", "", "Check in from 15:00."),
+		mergeCard("keys", "", "", "Check in from 15:00."),
+		mergeCard("parking", "", "", "Check in from 15:00."),
+		mergeCard("garage", "", "", "Check in from 15:00."),
+		mergeCard("wifi", "", "", "Check in from 15:00."),
+		mergeCard("custom", "rooms", "POOL", "Open 15:00"),
+	}}}
+	j := &Job{Pool: pool, Apify: fakeFetch{}, AI: ai, Cfg: Config{Token: "t"}, Now: func() time.Time { return time.Date(2026, 11, 13, 10, 5, 0, 0, time.UTC) }}
+	if n, err := j.ProcessPending(ctx, 3); err != nil || n != 1 {
+		t.Fatalf("n=%d err=%v", n, err)
+	}
+	q := "SELECT state || '|' || source || '|' || steps FROM guide_item WHERE kind = $1"
+	for kind, want := range map[string]string{
+		"checkin": "check|booking|Check in from 15:00.",
+		"keys":    "check|legacy|legacy text",
+		"parking": "check|host|host text",
+		"garage":  "done|booking|done text",
+		"wifi":    "skipped|host|skip text",
+	} {
+		if got := str(t, pool, q, kind); got != want {
+			t.Errorf("%s card %q, want %q", kind, got, want)
+		}
+	}
+	if got := str(t, pool, "SELECT count(*)::text FROM guide_item WHERE kind = 'custom'"); got != "1" {
+		t.Errorf("custom cards %s, want 1 (title match ignores case)", got)
+	}
+	if got := str(t, pool, "SELECT title || '|' || state || '|' || source || '|' || steps FROM guide_item WHERE kind = 'custom'"); got != "Pool|check|booking|Open 15:00" {
+		t.Errorf("custom card %q", got)
+	}
+}
+
+// process_pending: input_too_large never fits, so the first failure is the last.
+func TestPendingInputTooLargeFailsAtOnce(t *testing.T) {
+	pool := testPool(t)
+	seed(t, pool)
+	ctx := context.Background()
+	pool.Exec(ctx, `UPDATE guide_import SET status = 'done', raw_json = $1 WHERE id = 1`, mergeRaw)
+	ai := &fakeAI{err: &anthropic.Error{Reason: "input_too_large"}}
+	j := &Job{Pool: pool, Apify: fakeFetch{}, AI: ai, Cfg: Config{Token: "t"}, Now: func() time.Time { return time.Now() }}
+	if n, err := j.ProcessPending(ctx, 3); err != nil || n != 0 {
+		t.Fatalf("n=%d err=%v", n, err)
+	}
+	if got := str(t, pool, "SELECT status || '|' || error || '|' || coalesce(raw_json, 'NULL') FROM guide_import WHERE id = 1"); got != "failed|merge:input_too_large|NULL" {
+		t.Errorf("row %q", got)
+	}
+	if ai.calls != 1 {
+		t.Errorf("model calls %d, want 1", ai.calls)
+	}
+}
+
+// _run_one: a fetch that ends after the stale cutoff already failed the row
+// drops its result and leaves the page alone.
+func TestFetchAfterStaleCutoffDropsResult(t *testing.T) {
+	pool := testPool(t)
+	seed(t, pool)
+	ctx := context.Background()
+	now := time.Date(2026, 11, 13, 10, 5, 0, 0, time.UTC)
+	item := map[string]any{"name": "Flat", "description": "Quiet flat. Check-in 15:00."}
+	fetch := fetchFunc(func(context.Context, string, string) (map[string]any, error) {
+		// what a later ProcessQueue does to a row running for over 800 s
+		_, err := pool.Exec(ctx, "UPDATE guide_import SET status = 'failed', error = 'stale', finished_at = '2026-11-13T10:20:00+00:00' WHERE id = 1 AND status = 'running'")
+		if err != nil {
+			t.Error(err)
+		}
+		return item, nil
+	})
+	j := &Job{Pool: pool, Apify: fetch, AI: &fakeAI{}, Cfg: Config{Token: "t", MonthlyRuns: 40}, Now: func() time.Time { return now }}
+	if n, err := j.ProcessQueue(ctx, 3); err != nil || n != 1 {
+		t.Fatalf("n=%d err=%v", n, err)
+	}
+	if got := str(t, pool, "SELECT status || '|' || error || '|' || coalesce(raw_json, 'NULL') FROM guide_import WHERE id = 1"); got != "failed|stale|NULL" {
+		t.Errorf("row %q", got)
+	}
+	if got := str(t, pool, "SELECT count(*)::text FROM property_page WHERE apartment_id = 7"); got != "0" {
+		t.Errorf("page prefilled: %s rows", got)
+	}
+}
+
+// A cancelled fetch fails the row at once (network) instead of leaving it running.
+func TestCancelledFetchFailsRow(t *testing.T) {
+	pool := testPool(t)
+	seed(t, pool)
+	now := time.Date(2026, 11, 13, 10, 5, 0, 0, time.UTC)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	fetch := fetchFunc(func(c context.Context, _, _ string) (map[string]any, error) {
+		cancel()
+		return nil, c.Err()
+	})
+	j := &Job{Pool: pool, Apify: fetch, AI: &fakeAI{}, Cfg: Config{Token: "t", MonthlyRuns: 40}, Now: func() time.Time { return now }}
+	if _, err := j.ProcessQueue(ctx, 3); err == nil {
+		t.Fatal("want the context error")
+	}
+	if got := str(t, pool, "SELECT status || '|' || error || '|' || (finished_at IS NOT NULL)::text FROM guide_import WHERE id = 1"); got != "failed|network|true" {
+		t.Errorf("row %q", got)
+	}
+}
