@@ -89,12 +89,6 @@ _JOBS = [
         "level": "critical",
     },
     {
-        "id": "deadlines",
-        "run": scheduler._job_deadlines,
-        "target": (reporting, "check_deadlines"),
-        "level": "critical",
-    },
-    {
         "id": "mail",
         "run": scheduler._job_mail,
         "target": (claim, "expire_holds"),
@@ -154,17 +148,32 @@ def test_a_failing_job_alerts_the_host_and_the_next_success_resolves_it(
 def test_a_second_failure_refreshes_one_card(monkeypatch, tmp_path):
     _private_db(monkeypatch, tmp_path)
 
-    def boom(*_args, **_kwargs):
-        raise RuntimeError("job blew up")
-
-    monkeypatch.setattr(reporting, "check_deadlines", boom)
-    scheduler._job_deadlines()
-    scheduler._job_deadlines()
+    scheduler._job_deadlines_go_only()
+    scheduler._job_deadlines_go_only()
 
     rows = db.query(
         "SELECT id FROM alert WHERE dedupe_key = ?", ("job_failed:deadlines",)
     )
     assert len(rows) == 1
+
+
+def test_the_python_deadlines_stub_only_raises_the_alert(monkeypatch, tmp_path):
+    """1200: deadlines runs in Go; Python reaching it alerts and pings nothing."""
+    _private_db(monkeypatch, tmp_path)
+    monkeypatch.setattr(config, "HEARTBEAT_FILING_URL", "https://hc-ping.example.invalid/abc")
+    calls = []
+    monkeypatch.setattr(scheduler.requests, "get", lambda *args, **kwargs: calls.append(args))
+    monkeypatch.setattr(reporting, "check_deadlines", lambda: calls.append("check_deadlines"))
+
+    scheduler.JOB_KINDS["deadlines"]()
+
+    alert = db.query_one(
+        "SELECT * FROM alert WHERE dedupe_key = ?", ("job_failed:deadlines",)
+    )
+    assert alert is not None
+    assert alert["level"] == "critical"
+    assert alert["resolved_at"] is None
+    assert calls == []
 
 
 def test_a_successful_submission_sweep_pings_the_heartbeat(monkeypatch, tmp_path):
