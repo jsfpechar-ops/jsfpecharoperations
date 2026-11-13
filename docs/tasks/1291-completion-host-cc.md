@@ -12,18 +12,20 @@ Put the host back on CC of the guest registration receipt (`completion`), and re
 
 Owner decision (2026-11-13): after stay 198, SES sent `completion` to the guest and the host never got a copy (1121 removed CC). Bring back the pre-1121 CC + host link on the receipt. Sensitive guest data stays only in `guest_details_host` (1121), not in the CC’d body beyond what the receipt already shows (counts, door code, fee, 1122 “what you sent” names / masked doc).
 
+**Recovered from git:** parent of `5e2d908ba` (PR #923, “Guest details in host mail…”) — `git show 5e2d908ba^:App/app/claim.py`. That commit’s own summary: “claim.py: drop cc_email from receipt; … drop host_url from build_completion call”. Restore those two lines only; keep today’s `sent_details=True` and the `host_guest_details` call that 1121 added.
+
 Hard rules: AGENTS privacy (no new personal-data fields), mail rules (`CLAIM_SECRET_MARKER` / door-code markers unchanged), no new dependency.
 
-Current enqueue in `App/app/claim.py` `maybe_notify_completion` (no `cc_email`):
+Pre-1121 enqueue (restore `cc_email` + its comment):
 
 ```python
     outbox_id = mail.enqueue(
         kind="completion",
         idempotency_key=f"completion:{reservation['id']}:{progress['filled']}",
         to_email=claim["email"],
-        # 1121: the host has their own mail (mail_notify.host_guest_details),
-        # so the receipt is not copied to them. payload["reply_to"] still sends
-        # the guest's answer to the host.
+        # The host is copied on the receipt as well as being the reply address,
+        # so the guest's own record of the stay reaches them either way.
+        cc_email=payload.get("reply_to", ""),
         subject=content["subject"],
         payload=payload,
         reservation_id=reservation["id"],
@@ -32,7 +34,7 @@ Current enqueue in `App/app/claim.py` `maybe_notify_completion` (no `cc_email`):
     )
 ```
 
-Current completion composer call in `_guest_mail_content` (no `host_url`):
+Pre-1121 composer call (restore `host_url`; keep `sent_details=True` from 1122):
 
 ```python
         if kind == "completion":
@@ -45,13 +47,14 @@ Current completion composer call in `_guest_mail_content` (no `host_url`):
                 door_code=door_code,
                 filled=filled,
                 expected=expected,
+                host_url=f"{config.app_base_url()}/reservations/{reservation['id']}",
                 fee=_completion_fee(apartment, reservation),
                 sent_details=True,
                 **_completion_facts(apartment, reservation, lang),
             )
 ```
 
-`build_completion` already renders `host_url` when passed (`mail_completion_host_action`). `payload["reply_to"]` from `guest_payload` is still the entity contact; use it for `cc_email` as before 1121. Keep the `host_guest_details(...)` call that follows enqueue.
+`build_completion` already renders `host_url` when passed (`mail_completion_host_action`). `payload["reply_to"]` from `guest_payload` is still the entity contact. Keep the `host_guest_details(...)` call that follows enqueue.
 
 Test that pins “no CC” today: `App/tests/test_host_guest_details_mail.py::test_the_receipt_is_not_copied_to_the_host_and_the_host_gets_their_own` (asserts `receipt["cc_email"] is None` and `"(host only)" not in payload["text"]`).
 
@@ -67,7 +70,7 @@ No other file may change.
 
 ## 4. Steps
 
-1. In `App/app/claim.py`, in `_guest_mail_content` for `kind == "completion"`, pass the host stay URL again:
+1. In `App/app/claim.py`, in `_guest_mail_content` for `kind == "completion"`, restore the pre-1121 `host_url=` line (exact text from `5e2d908ba^`), keeping `sent_details=True`:
 
 ```python
         if kind == "completion":
@@ -80,24 +83,24 @@ No other file may change.
                 door_code=door_code,
                 filled=filled,
                 expected=expected,
+                host_url=f"{config.app_base_url()}/reservations/{reservation['id']}",
                 fee=_completion_fee(apartment, reservation),
                 sent_details=True,
-                host_url=f"{config.app_base_url()}/reservations/{reservation['id']}",
                 **_completion_facts(apartment, reservation, lang),
             )
 ```
 
 Command: `grep -n 'host_url=' App/app/claim.py | head -5`. Expected: one line with `reservations/`.
 
-2. In `maybe_notify_completion`, restore CC on the receipt (Reply-To stays via payload). Replace the enqueue block with:
+2. In `maybe_notify_completion`, restore the pre-1121 `cc_email` block (exact comment + kwarg from `5e2d908ba^`). Replace only the enqueue kwargs that 1121 changed:
 
 ```python
     outbox_id = mail.enqueue(
         kind="completion",
         idempotency_key=f"completion:{reservation['id']}:{progress['filled']}",
         to_email=claim["email"],
-        # Host is CC'd on the receipt (pre-1121). guest_details_host still
-        # carries optional guest PII; this copy does not.
+        # The host is copied on the receipt as well as being the reply address,
+        # so the guest's own record of the stay reaches them either way.
         cc_email=payload.get("reply_to", ""),
         subject=content["subject"],
         payload=payload,
