@@ -11,6 +11,8 @@ import (
 	"errors"
 	"io"
 	"log"
+	"math/big"
+	"mime"
 	"net/http"
 	"strconv"
 	"strings"
@@ -66,6 +68,15 @@ type call struct {
 func (d deps) enter(w http.ResponseWriter, r *http.Request) *call {
 	at := d.now()
 	if r.Method == http.MethodPost {
+		// request.form() reads multipart bodies too. Parse one here, once,
+		// before CSRF: CSRF then finds r.PostForm filled and reads no body,
+		// and a later ParseMultipartForm (also inside CSRF) is a no-op.
+		if isMultipart(r) {
+			r.Body = http.MaxBytesReader(w, r.Body, multipartMaxBody)
+			if err := r.ParseMultipartForm(multipartMaxBody); err != nil {
+				log.Printf("stayfees: multipart form: %v", err)
+			}
+		}
 		if !hostweb.CSRF(w, r, d.getenv, at) {
 			return nil
 		}
@@ -83,6 +94,24 @@ func (d deps) enter(w http.ResponseWriter, r *http.Request) *call {
 		return nil
 	}
 	return &call{deps: d, w: w, r: r, h: h, at: at, lang: hostweb.Lang(r), owner: h.Workspace.ID}
+}
+
+// multipartMaxBody caps a multipart/form-data body (Starlette's default
+// max_part_size is 1 MiB). These forms carry a few short fields.
+const multipartMaxBody = 1 << 20
+
+// isMultipart reports a multipart/form-data body.
+func isMultipart(r *http.Request) bool {
+	mediaType, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
+	return err == nil && mediaType == "multipart/form-data"
+}
+
+// methodNotAllowed is Starlette's 405 for a method the route does not list.
+func methodNotAllowed(w http.ResponseWriter, allow string) {
+	w.Header().Set("Allow", allow)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusMethodNotAllowed)
+	_, _ = io.WriteString(w, `{"detail":"Method Not Allowed"}`)
 }
 
 // flash is admin_helpers.flash: the text in the host's language, with its key.
@@ -139,16 +168,30 @@ func fail(w http.ResponseWriter, err error) {
 	_, _ = io.WriteString(w, "Internal Server Error")
 }
 
-// pathID reads an int path parameter. FastAPI answers 422 for a bad one.
-func pathID(w http.ResponseWriter, r *http.Request, name string) (int64, bool) {
-	id, err := strconv.ParseInt(r.PathValue(name), 10, 64)
-	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		_, _ = io.WriteString(w, `{"detail":"Unprocessable Entity"}`)
-		return 0, false
+// pathInt is an int path parameter. text is str(int) of it, for redirects.
+// none is set for an integer outside int64: Python parses it and Postgres
+// finds no row for it, so the handler takes its not-found branch without a
+// query.
+type pathInt struct {
+	id   int64
+	text string
+	none bool
+}
+
+// pathID reads an int path parameter. FastAPI answers 422 when it is not an
+// integer (ASCII digits with an optional sign).
+func pathID(w http.ResponseWriter, r *http.Request, name string) (pathInt, bool) {
+	raw := r.PathValue(name)
+	if id, err := strconv.ParseInt(raw, 10, 64); err == nil {
+		return pathInt{id: id, text: strconv.FormatInt(id, 10)}, true
 	}
-	return id, true
+	if n, ok := new(big.Int).SetString(raw, 10); ok {
+		return pathInt{text: n.String(), none: true}, true
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusUnprocessableEntity)
+	_, _ = io.WriteString(w, `{"detail":"Unprocessable Entity"}`)
+	return pathInt{}, false
 }
 
 // isDigits is str.isdigit for ASCII: one or more digits.
@@ -178,6 +221,14 @@ func (c *call) apartmentOf(ctx context.Context, id int64) (*apartment, error) {
 		return nil, err
 	}
 	return &a, nil
+}
+
+// pathApartment is apartmentOf for a path id: none when the id is outside int64.
+func (c *call) pathApartment(ctx context.Context, p pathInt) (*apartment, error) {
+	if p.none {
+		return nil, nil
+	}
+	return c.apartmentOf(ctx, p.id)
 }
 
 // filing is the part of a stay_fee_filing row the routes read.
@@ -255,7 +306,7 @@ func UndoHandler(pool *pgxpool.Pool, getenv func(string) string, now func() time
 			return
 		}
 		ctx := r.Context()
-		apt, err := c.apartmentOf(ctx, apartmentID)
+		apt, err := c.pathApartment(ctx, apartmentID)
 		if err != nil {
 			c.fail(err)
 			return
@@ -267,15 +318,18 @@ func UndoHandler(pool *pgxpool.Pool, getenv func(string) string, now func() time
 		month := c.month()
 		var sealed int64
 		var reversed string
-		err = pool.QueryRow(ctx,
-			`SELECT COALESCE(filing_id, 0), COALESCE(reversed_at, '') FROM stay_fee_adjustment
-			WHERE id = $1 AND apartment_id = $2`, adjustmentID, apartmentID).Scan(&sealed, &reversed)
-		found := !errors.Is(err, pgx.ErrNoRows)
-		if err != nil && found {
-			c.fail(err)
-			return
+		found := false
+		if !adjustmentID.none {
+			err = pool.QueryRow(ctx,
+				`SELECT COALESCE(filing_id, 0), COALESCE(reversed_at, '') FROM stay_fee_adjustment
+				WHERE id = $1 AND apartment_id = $2`, adjustmentID.id, apt.ID).Scan(&sealed, &reversed)
+			found = !errors.Is(err, pgx.ErrNoRows)
+			if err != nil && found {
+				c.fail(err)
+				return
+			}
 		}
-		back := monthPath(apartmentID, month)
+		back := monthPath(apt.ID, month)
 		if found && sealed != 0 {
 			c.back(back, hostweb.Flash{}, c.flash("flash.stay_fees.adjust_sealed", nil))
 			return
@@ -283,11 +337,11 @@ func UndoHandler(pool *pgxpool.Pool, getenv func(string) string, now func() time
 		if found && reversed == "" {
 			if _, err := pool.Exec(ctx,
 				`UPDATE stay_fee_adjustment SET reversed_at = $1, reversed_by = $2 WHERE id = $3`,
-				stamp(c.at), c.owner, adjustmentID); err != nil {
+				stamp(c.at), c.owner, adjustmentID.id); err != nil {
 				c.fail(err)
 				return
 			}
-			if err := c.audit("stay_fee_adjustment_undo", "id="+strconv.FormatInt(adjustmentID, 10)); err != nil {
+			if err := c.audit("stay_fee_adjustment_undo", "id="+adjustmentID.text); err != nil {
 				c.fail(err)
 				return
 			}
@@ -426,7 +480,7 @@ func ScopeRulingHandler(pool *pgxpool.Pool, getenv func(string) string, now func
 			return
 		}
 		ctx := r.Context()
-		apt, err := c.apartmentOf(ctx, apartmentID)
+		apt, err := c.pathApartment(ctx, apartmentID)
 		if err != nil {
 			c.fail(err)
 			return
@@ -435,7 +489,7 @@ func ScopeRulingHandler(pool *pgxpool.Pool, getenv func(string) string, now func
 			c.noSuchApartment()
 			return
 		}
-		backPath := monthPath(apartmentID, c.month())
+		backPath := monthPath(apt.ID, c.month())
 		rule := c.formStr("rule")
 		reference := strings.TrimSpace(truncRunes(c.formStr("reference"), referenceMax))
 		if !contains(scopeRules, rule) || len([]rune(reference)) < 3 {
@@ -469,7 +523,7 @@ func CopySetupHandler(pool *pgxpool.Pool, getenv func(string) string, now func()
 			return
 		}
 		ctx := r.Context()
-		apt, err := c.apartmentOf(ctx, apartmentID)
+		apt, err := c.pathApartment(ctx, apartmentID)
 		if err != nil {
 			c.fail(err)
 			return
@@ -478,7 +532,7 @@ func CopySetupHandler(pool *pgxpool.Pool, getenv func(string) string, now func()
 			c.noSuchApartment()
 			return
 		}
-		backPath := feeReturnPath(c.formStr("return_to"), apartmentID)
+		backPath := feeReturnPath(c.formStr("return_to"), apt.ID)
 		if backPath == "" {
 			backPath = "/stay-fees"
 		}
@@ -535,7 +589,7 @@ func PaidHandler(pool *pgxpool.Pool, getenv func(string) string, now func() time
 			return
 		}
 		ctx := r.Context()
-		apt, err := c.apartmentOf(ctx, apartmentID)
+		apt, err := c.pathApartment(ctx, apartmentID)
 		if err != nil {
 			c.fail(err)
 			return
@@ -545,7 +599,7 @@ func PaidHandler(pool *pgxpool.Pool, getenv func(string) string, now func() time
 			return
 		}
 		month := c.month()
-		backPath := feeReturnPath(c.formStr("return_to"), apartmentID)
+		backPath := feeReturnPath(c.formStr("return_to"), apt.ID)
 		if backPath == "" {
 			backPath = "/stay-fees?month=" + monthKey(month)
 		}
@@ -598,7 +652,7 @@ func filingMark(pool *pgxpool.Pool, getenv func(string) string, now func() time.
 			return
 		}
 		ctx := r.Context()
-		apt, err := c.apartmentOf(ctx, apartmentID)
+		apt, err := c.pathApartment(ctx, apartmentID)
 		if err != nil {
 			c.fail(err)
 			return
@@ -608,11 +662,13 @@ func filingMark(pool *pgxpool.Pool, getenv func(string) string, now func() time.
 			return
 		}
 		month := c.month()
-		back := monthPath(apartmentID, month)
-		row, err := c.filingForMonth(ctx, apartmentID, month, filingID)
-		if err != nil {
-			c.fail(err)
-			return
+		back := monthPath(apt.ID, month)
+		var row *filing
+		if !filingID.none {
+			if row, err = c.filingForMonth(ctx, apt.ID, month, filingID.id); err != nil {
+				c.fail(err)
+				return
+			}
 		}
 		if row == nil {
 			c.back(back, hostweb.Flash{}, c.flash("flash.stay_fees.report_blocked", nil))
@@ -620,7 +676,7 @@ func filingMark(pool *pgxpool.Pool, getenv func(string) string, now func() time.
 		}
 		nowText := stamp(c.at)
 		idText := strconv.FormatInt(row.ID, 10)
-		aptText := strconv.FormatInt(apartmentID, 10)
+		aptText := strconv.FormatInt(apt.ID, 10)
 		if paid {
 			if row.PaidAt == "" {
 				sent := row.SentAt
@@ -679,6 +735,12 @@ var identityVisible = func(h *session.Host) bool {
 func CSVHandler(pool *pgxpool.Pool, getenv func(string) string, now func() time.Time) http.HandlerFunc {
 	d := deps{pool, getenv, now}
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Go's "GET" pattern also matches HEAD; the FastAPI route lists GET
+		// only, so HEAD is a 405 before any dependency runs.
+		if r.Method == http.MethodHead {
+			methodNotAllowed(w, http.MethodGet)
+			return
+		}
 		c := d.enter(w, r)
 		if c == nil {
 			return
@@ -687,7 +749,7 @@ func CSVHandler(pool *pgxpool.Pool, getenv func(string) string, now func() time.
 		if !ok {
 			return
 		}
-		aptText := strconv.FormatInt(apartmentID, 10)
+		aptText := apartmentID.text
 		// The register CSV lists every guest's document number.
 		if !identityVisible(c.h) {
 			c.back("/stay-fees/"+aptText, hostweb.Flash{}, c.flash("flash.error.identity_hidden_export", nil))
@@ -710,14 +772,15 @@ func CSVHandler(pool *pgxpool.Pool, getenv func(string) string, now func() time.
 			}
 		}
 		ctx := r.Context()
-		apt, err := c.apartmentOf(ctx, apartmentID)
+		apt, err := c.pathApartment(ctx, apartmentID)
 		if err != nil {
 			c.fail(err)
 			return
 		}
-		backPath := monthPath(apartmentID, selected)
+		var backPath string
 		var row *filing
 		if apt != nil {
+			backPath = monthPath(apt.ID, selected)
 			if row, err = c.covering(ctx, apt.ID, selected); err != nil {
 				c.fail(err)
 				return

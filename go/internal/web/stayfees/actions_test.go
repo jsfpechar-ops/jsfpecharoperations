@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -27,6 +28,23 @@ import (
 
 // goldenSecret is the UBYHOST_SECRET_KEY App/scripts/stay_fee_actions_golden.py runs with.
 const goldenSecret = "golden-secret-key-not-for-real-use"
+
+// acceptedVersion is the legal version the tests run with: goldenEnv sets
+// UBYHOST_TERMS_VERSION, UBYHOST_PRIVACY_VERSION and UBYHOST_DPA_VERSION, which
+// session.AcceptancePending reads, and seed stores it as accepted. The test so
+// does not depend on the session package's unexported default.
+const acceptedVersion = "test-accepted"
+
+// goldenEnv is the environment every test runs with.
+func goldenEnv() func(string) string {
+	env := map[string]string{
+		"UBYHOST_SECRET_KEY":      goldenSecret,
+		"UBYHOST_TERMS_VERSION":   acceptedVersion,
+		"UBYHOST_PRIVACY_VERSION": acceptedVersion,
+		"UBYHOST_DPA_VERSION":     acceptedVersion,
+	}
+	return func(k string) string { return env[k] }
+}
 
 type goldenTable struct {
 	Table   string   `json:"table"`
@@ -174,12 +192,12 @@ func seed(t *testing.T, pool *pgxpool.Pool, g golden) {
 		}
 	}
 	// acceptance.pending is switched off in the golden script; here every
-	// account has accepted the current versions.
+	// account has accepted the version goldenEnv names.
 	for _, uid := range []int{1, 2, 3} {
 		for _, doc := range []string{"terms", "privacy", "dpa"} {
 			if _, err := pool.Exec(ctx,
-				`INSERT INTO legal_acceptance (user_account_id, document, version, accepted_at, method) VALUES ($1, $2, '1.7', '2026-01-01', 'clickwrap')`,
-				uid, doc); err != nil {
+				`INSERT INTO legal_acceptance (user_account_id, document, version, accepted_at, method) VALUES ($1, $2, $3, '2026-01-01', 'clickwrap')`,
+				uid, doc, acceptedVersion); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -355,8 +373,7 @@ func TestActionsMatchPython(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	env := map[string]string{"UBYHOST_SECRET_KEY": goldenSecret}
-	getenv := func(k string) string { return env[k] }
+	getenv := goldenEnv()
 	keys, err := secure.LoadDataKeys(getenv)
 	if err != nil {
 		t.Fatal(err)
@@ -440,8 +457,7 @@ func TestCSRFRequired(t *testing.T) {
 	pool := testPool(t)
 	seed(t, pool, g)
 	at, _ := time.Parse(time.RFC3339, g.Now)
-	env := map[string]string{"UBYHOST_SECRET_KEY": goldenSecret}
-	getenv := func(k string) string { return env[k] }
+	getenv := goldenEnv()
 	mux := newMux(pool, getenv, func() time.Time { return at })
 	req := httptest.NewRequest(http.MethodPost, "/stay-fees/12/filings/1/sent", strings.NewReader("month=2026-10"))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -473,5 +489,165 @@ func TestRoutesNeedNoPool(t *testing.T) {
 			t.Fatalf("bad route %q", r.Pattern)
 		}
 		mux.Handle(r.Pattern, r.Handler)
+	}
+}
+
+// goldenCaseNamed returns the golden case with this name.
+func goldenCaseNamed(t *testing.T, g golden, name string) goldenCase {
+	t.Helper()
+	for _, c := range g.Cases {
+		if c.Name == name {
+			return c
+		}
+	}
+	t.Fatalf("golden file has no case %q", name)
+	return goldenCase{}
+}
+
+// TestCSVHeadNotAllowed: FastAPI lists GET only, so HEAD is a 405 with
+// Allow: GET before any dependency runs. The nil pool proves no DB access.
+func TestCSVHeadNotAllowed(t *testing.T) {
+	at := time.Date(2026, 11, 13, 9, 0, 0, 0, time.UTC)
+	mux := newMux(nil, goldenEnv(), func() time.Time { return at })
+	req := httptest.NewRequest(http.MethodHead, "/stay-fees/12/csv?month=2026-10", nil)
+	req.AddCookie(&http.Cookie{Name: session.CookieName, Value: sessionFor("host1", at)})
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	if rec.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("status %d, want 405", rec.Code)
+	}
+	if got := rec.Header().Get("Allow"); got != "GET" {
+		t.Errorf("Allow %q, want GET", got)
+	}
+	if got := rec.Header().Get("Content-Type"); got != "application/json" {
+		t.Errorf("Content-Type %q, want application/json", got)
+	}
+	if got := rec.Body.String(); got != `{"detail":"Method Not Allowed"}` {
+		t.Errorf("body %q", got)
+	}
+}
+
+// TestOverflowIDNotFound: an all-digit path id outside int64 parses in
+// FastAPI and Postgres finds no row for it, so each route takes its not-found
+// branch. Every case replays a golden not-found case with the id replaced and
+// expects the golden answer (redirect texts carry str(int) of the id). A
+// non-integer id stays a 422.
+func TestOverflowIDNotFound(t *testing.T) {
+	g := loadGolden(t)
+	pool := testPool(t)
+	seed(t, pool, g)
+	at, err := time.Parse(time.RFC3339, g.Now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	getenv := goldenEnv()
+	keys, err := secure.LoadDataKeys(getenv)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := newMux(pool, getenv, func() time.Time { return at })
+	noSuchApartment := str(goldenCaseNamed(t, g, "csv foreign apartment").Location)
+	const big = "99999999999999999999"
+	cases := []struct {
+		golden             string
+		pathOld, pathNew   string
+		whereOld, whereNew string
+	}{
+		{"undo foreign apartment", "/20/", "/" + big + "/", "", ""},
+		{"undo missing row", "/999/", "/" + big + "/", "", ""},
+		{"scope missing apartment", "/999/", "/" + big + "/", "", ""},
+		{"copy foreign target", "/20/", "/" + big + "/", "", ""},
+		{"paid missing apartment (python 500)", "/999/", "/" + big + "/", "", ""},
+		{"sent foreign apartment", "/20/", "/" + big + "/", "", ""},
+		{"sent filing of another apartment", "/filings/1/", "/filings/" + big + "/", "", ""},
+		{"paid filing foreign apartment", "/20/", "/-" + big + "/", "", ""},
+		{"paid filing wrong month", "/filings/3/", "/filings/" + big + "/", "", ""},
+		{"csv missing apartment", "/999/", "/" + big + "/", "", ""},
+		{"csv future month", "/12/", "/+000" + big + "/", "/12/", "/" + big + "/"},
+		{"csv identity hidden", "/12/", "/" + big + "/", "/12?", "/" + big + "?"},
+	}
+	saved := identityVisible
+	t.Cleanup(func() { identityVisible = saved })
+	before := normal(t, snapshot(t, pool, keys))
+	for _, tc := range cases {
+		c := goldenCaseNamed(t, g, tc.golden)
+		c.Path = strings.Replace(c.Path, tc.pathOld, tc.pathNew, 1)
+		wantStatus, wantLocation := c.Status, str(c.Location)
+		if strings.HasSuffix(c.Name, "(python 500)") {
+			wantStatus, wantLocation = http.StatusSeeOther, noSuchApartment
+		}
+		if tc.whereOld != "" {
+			wantLocation = strings.Replace(wantLocation, tc.whereOld, tc.whereNew, 1)
+		}
+		identityVisible = saved
+		if c.IdentityHidden {
+			identityVisible = func(*session.Host) bool { return false }
+		}
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, request(t, c, at))
+		if rec.Code != wantStatus || rec.Header().Get("Location") != wantLocation {
+			t.Errorf("%s: %d %q, want %d %q (%s)", c.Path, rec.Code, rec.Header().Get("Location"), wantStatus, wantLocation, rec.Body.String())
+		}
+	}
+	identityVisible = saved
+	for _, path := range []string{"/stay-fees/1x/csv", "/stay-fees/%D9%A3/csv", "/stay-fees/12/filings/1.5/sent"} {
+		c := goldenCase{Method: http.MethodGet, Path: path, Who: &[]string{"host1"}[0]}
+		if strings.HasSuffix(path, "/sent") {
+			c.Method = http.MethodPost
+		}
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, request(t, c, at))
+		if rec.Code != http.StatusUnprocessableEntity {
+			t.Errorf("%s: status %d, want 422", path, rec.Code)
+		}
+	}
+	if after := normal(t, snapshot(t, pool, keys)); !reflect.DeepEqual(after, before) {
+		t.Errorf("a not-found request changed rows:\n got %v\nwant %v", after, before)
+	}
+}
+
+// TestMultipartForm: request.form() reads multipart/form-data too. The golden
+// "scope ok" case, posted as multipart with the CSRF token in the _csrf field
+// (no header), gives the same redirect and saves the ruling.
+func TestMultipartForm(t *testing.T) {
+	g := loadGolden(t)
+	pool := testPool(t)
+	seed(t, pool, g)
+	at, err := time.Parse(time.RFC3339, g.Now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := newMux(pool, goldenEnv(), func() time.Time { return at })
+	c := goldenCaseNamed(t, g, "scope ok")
+	ck, token := csrfPair(t, at)
+	var body strings.Builder
+	mw := multipart.NewWriter(&body)
+	if err := mw.WriteField("_csrf", token); err != nil {
+		t.Fatal(err)
+	}
+	for _, k := range []string{"month", "reference", "rule"} {
+		if err := mw.WriteField(k, c.Form[k]); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := mw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	req := httptest.NewRequest(http.MethodPost, c.Path, strings.NewReader(body.String()))
+	req.Header.Set("Content-Type", mw.FormDataContentType())
+	req.AddCookie(ck)
+	req.AddCookie(&http.Cookie{Name: session.CookieName, Value: sessionFor(*c.Who, at)})
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	if rec.Code != c.Status || rec.Header().Get("Location") != str(c.Location) {
+		t.Fatalf("%d %q, want %d %q (%s)", rec.Code, rec.Header().Get("Location"), c.Status, str(c.Location), rec.Body.String())
+	}
+	var rule, reference string
+	if err := pool.QueryRow(context.Background(),
+		`SELECT stay_fee_scope_rule, stay_fee_scope_reference FROM apartment WHERE id = 12`).Scan(&rule, &reference); err != nil {
+		t.Fatal(err)
+	}
+	if rule != c.Form["rule"] || reference != c.Form["reference"] {
+		t.Errorf("saved %q %q, want %q %q", rule, reference, c.Form["rule"], c.Form["reference"])
 	}
 }
