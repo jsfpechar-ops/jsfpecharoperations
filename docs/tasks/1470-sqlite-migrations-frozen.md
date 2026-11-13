@@ -59,7 +59,7 @@ No other file may change. The orchestrator, not you, edits `AGENTS.md` hard rule
 **Step 1. Check anchors, apply** (repo root):
 
 ```bash
-grep -cF 'Confirm `ubyport_env` with `./scripts/status.sh` or Settings.' docs/LIGHTSAIL.md; grep -cF 'migs = [int(p.name[:4])' scripts/context_lint.py; ls App/app/migrations | wc -l; test ! -e App/tests/test_sqlite_migrations_frozen.py && echo absent
+grep -cF 'Confirm `ubyport_env` with `./scripts/status.sh` or Settings.' docs/LIGHTSAIL.md; grep -cF 'migs = [int(p.name[:4])' scripts/context_lint.py; ls -A App/app/migrations | wc -l; test ! -e App/tests/test_sqlite_migrations_frozen.py && echo absent
 git apply --check docs/tasks/1470-files/freeze.patch && git apply docs/tasks/1470-files/freeze.patch && git status --short 2>&1 | tail -5
 ```
 
