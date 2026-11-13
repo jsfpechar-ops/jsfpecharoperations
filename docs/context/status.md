@@ -20,14 +20,15 @@ Updated: 2026-11-13.
 - 11-13: security audit draft #966 (1200-1204). **Owner:** K-S11–K-S15.
 
 ## Next
+- CI 1413-1415, README 1416.
 - 1291: host CC on guest completion (#988).
 - Door codes 0037–0038 on main → owner staging steps.
 - TTLock 0008–0016: [plan](../plans/ttlock-door-codes.md) §11; live after §12 + lawyer (K-L).
-- File-retention: decided, no build; lawyer Terms/DPA line.
+- File-retention: decided; lawyer Terms/DPA line.
 
 ## Blocked: needs owner, lawyer or council
 - Lawyer: legal texts (0005, K-L). Stale signed dates (K-F18). Filing HIGH RISK: K-F03, K-F07; secrets K-S10.
-- Owner: `uk` in `UBYHOST_GUEST_LANGS`; phone/passkey deploy; AI crawler Terms §11 confirm.
+- Owner: `uk` in `UBYHOST_GUEST_LANGS`; phone/passkey deploy; crawler Terms §11.
 
 ## Owner done
 - SES, Turnstile, monitoring, staging, backup drill, 0001 done.
