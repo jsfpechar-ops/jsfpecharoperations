@@ -54,6 +54,15 @@
     "detail": "id=11 reservation=56",
     "impersonator_user_id": null,
     "owner_user_id": 2
+   },
+   {
+    "action": "site_booking_clash_refunded",
+    "actor": "host",
+    "actor_user_id": null,
+    "at": "run",
+    "detail": "id=6 amount=4000",
+    "impersonator_user_id": null,
+    "owner_user_id": 1
    }
   ],
   "booking_hold": [],
@@ -217,6 +226,38 @@
     "subject": "Booking confirmed: Apartmán Brno, 2027-06-01 – 2027-06-02",
     "to_email": "guest@example.test",
     "updated_at": "run"
+   },
+   {
+    "apartment_id": 11,
+    "attempts": 0,
+    "cc_email": null,
+    "created_at": "run",
+    "idempotency_key": "site_booking:6:clash_refund",
+    "kind": "site_booking_refunded",
+    "next_attempt_at": "run",
+    "owner_user_id": 1,
+    "payload": "{\"text\": \"Dobr\\u00fd den, Test Guest,\\n\\nomlouv\\u00e1me se: Byt Praha si na term\\u00edn 11. 3. 2027 \\u2013 13. 3. 2027 t\\u011bsn\\u011b p\\u0159ed va\\u0161\\u00ed platbou zarezervoval n\\u011bkdo jin\\u00fd. Cel\\u00fdch 4000 K\\u010d se v\\u00e1m automaticky vr\\u00e1t\\u00ed na kartu; banka je obvykle p\\u0159ip\\u00ed\\u0161e do 5 a\\u017e 10 dn\\u016f.\\n\\nNa tento e-mail m\\u016f\\u017eete odpov\\u011bd\\u011bt, odpov\\u011b\\u010f dostane hostitel.\", \"lang\": \"cs\", \"reply_to\": \"host.one@example.test\"}",
+    "reservation_id": null,
+    "state": "queued",
+    "subject": "Rezervaci nešlo potvrdit: vracíme celou částku",
+    "to_email": "guest@example.test",
+    "updated_at": "run"
+   },
+   {
+    "apartment_id": 11,
+    "attempts": 0,
+    "cc_email": null,
+    "created_at": "run",
+    "idempotency_key": "site_booking:6:host_clash",
+    "kind": "site_booking_host",
+    "next_attempt_at": "run",
+    "owner_user_id": 1,
+    "payload": "{\"text\": \"Host zaplatil Byt Praha na 11. 3. 2027 \\u2013 13. 3. 2027, ale tyto noci u\\u017e byly obsazen\\u00e9. Cel\\u00fdch 4000 K\\u010d jsme mu automaticky vr\\u00e1tili; poplatek za kartu si ponech\\u00e1v\\u00e1 Stripe. Host: Test Guest, guest@example.test.\\n\\nNemus\\u00edte nic d\\u011blat.\", \"lang\": \"cs\"}",
+    "reservation_id": null,
+    "state": "queued",
+    "subject": "Dvojí rezervaci jsme zastavili: Byt Praha, 11. 3. 2027 – 13. 3. 2027",
+    "to_email": "host.one@example.test",
+    "updated_at": "run"
    }
   ],
   "reservation": [
@@ -374,11 +415,11 @@
     "hold_id": null,
     "id": 6,
     "paid_at": null,
-    "refunded_czk": 0,
+    "refunded_czk": 4000,
     "reservation_id": null,
-    "status": "pending",
-    "stripe_payment_intent_id": null,
-    "updated_at": "seed"
+    "status": "clash_refunded",
+    "stripe_payment_intent_id": "pi_fail",
+    "updated_at": "run"
    },
    {
     "hold_id": null,
@@ -441,7 +482,7 @@
     "updated_at": "seed"
    }
   ],
-  "stripe_calls": 2,
+  "stripe_calls": 3,
   "stripe_webhook_event": [
    {
     "created_at": "run",
@@ -524,6 +565,12 @@
    {
     "created_at": "run",
     "event_id": "evt_g17",
+    "event_type": "checkout.session.completed",
+    "mode": "test"
+   },
+   {
+    "created_at": "run",
+    "event_id": "evt_g08",
     "event_type": "checkout.session.completed",
     "mode": "test"
    }
@@ -812,6 +859,22 @@
    "id": "evt_g17",
    "object": "event",
    "type": "checkout.session.completed"
+  },
+  {
+   "data": {
+    "object": {
+     "id": "cs_6",
+     "metadata": {
+      "site_booking_id": "6"
+     },
+     "object": "checkout.session",
+     "payment_intent": "pi_fail",
+     "payment_status": "paid"
+    }
+   },
+   "id": "evt_g08",
+   "object": "event",
+   "type": "checkout.session.completed"
   }
  ],
  "refunds": [
@@ -819,6 +882,12 @@
    "idempotency_key": "site_booking_clash_refund_4",
    "metadata_site_booking_id": "4",
    "payment_intent": "pi_4",
+   "stripe_account": "acct_golden1"
+  },
+  {
+   "idempotency_key": "site_booking_clash_refund_6",
+   "metadata_site_booking_id": "6",
+   "payment_intent": "pi_fail",
    "stripe_account": "acct_golden1"
   },
   {
@@ -839,6 +908,7 @@
   "error",
   "error",
   "error",
+  "ok",
   "ok",
   "ok",
   "ok",
