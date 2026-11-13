@@ -1,7 +1,7 @@
 # 1340-fix-1: golden script env guard and review follow-ups
 
 Status: review
-Depends on: 1340 | Base commit: HEAD of task/1340-go-billing-pages | Branch: task/1340-go-billing-pages (stay on it; no push)
+Depends on: 1340 | Base commit: 8be0d4333 | Branch: task/1340-go-billing-pages (stay on it; no push)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
@@ -12,7 +12,7 @@ The golden script must never touch a real database: it ignores an exported `UBYH
 
 Rule 5 and 3: no real data touched. Excerpts must match verbatim, else STOP (§8).
 
-`App/scripts/billing_engine_golden.py` (end of file):
+`App/scripts/billing_engine_golden.py` (end of file, at base commit `8be0d4333`):
 ```python
     tmp = Path(tempfile.mkdtemp(prefix="ubyhost-golden-"))
     os.environ.setdefault("UBYHOST_DATA_DIR", str(tmp))
