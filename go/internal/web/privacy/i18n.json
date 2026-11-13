@@ -1,0 +1,20 @@
+{
+ "cs": {
+  "flash.dsr.created": "Žádost zaznamenána.",
+  "flash.dsr.updated": "Žádost aktualizována.",
+  "flash.error.bad_dsr": "Zvolte platný kanál, typ žádosti a subjekt.",
+  "flash.error.no_such_dsr": "Tato žádost neexistuje."
+ },
+ "en": {
+  "flash.dsr.created": "Request recorded.",
+  "flash.dsr.updated": "Request updated.",
+  "flash.error.bad_dsr": "Choose a valid channel, request type and subject.",
+  "flash.error.no_such_dsr": "No such request."
+ },
+ "vi": {
+  "flash.dsr.created": "Đã ghi nhận yêu cầu.",
+  "flash.dsr.updated": "Đã cập nhật yêu cầu.",
+  "flash.error.bad_dsr": "Chọn kênh, loại yêu cầu và chủ thể hợp lệ.",
+  "flash.error.no_such_dsr": "Không có yêu cầu này."
+ }
+}
