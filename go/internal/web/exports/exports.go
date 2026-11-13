@@ -10,6 +10,7 @@ import (
 	"context"
 	_ "embed"
 	"encoding/base64"
+	"errors"
 	"io"
 	"log"
 	"net/http"
@@ -113,6 +114,18 @@ func ownerID(h *session.Host) any {
 		return nil
 	}
 	return h.Workspace.ID
+}
+
+// requireOwner is ownerID for a query that would read every workspace when
+// the owner is nil ("$1 IS NULL OR ..."). require_login always yields a
+// workspace, so a nil owner is a bug: answer 500 rather than all hosts' rows.
+func requireOwner(w http.ResponseWriter, h *session.Host) (any, bool) {
+	owner := ownerID(h)
+	if owner == nil {
+		serverError(w, errors.New("export without a workspace owner"))
+		return nil, false
+	}
+	return owner, true
 }
 
 // identityVisible is access.identity_visible: an admin always, a host in

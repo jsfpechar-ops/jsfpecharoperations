@@ -18,8 +18,9 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/session"
 )
 
-// ownedSubmissionSQL is access.submission with columns "1".
-const ownedSubmissionSQL = `SELECT 1 FROM submission s JOIN apartment a ON a.id = s.apartment_id
+// ownedSubmissionSQL is access.submission. Python selects s.*, so its query
+// helper decrypts request_xml_enc (db._hydrate); only that column is read here.
+const ownedSubmissionSQL = `SELECT s.request_xml, s.request_xml_enc FROM submission s JOIN apartment a ON a.id = s.apartment_id
 	WHERE s.id = $1 AND a.owner_user_id IS NOT DISTINCT FROM $2`
 
 // ownedReservationSQL is access.reservation(request, id, "r.id, r.apartment_id").
@@ -40,6 +41,24 @@ type receiptRow struct {
 	createdAt   string
 	pseudoStamp *string
 	receiptPDF  *string
+}
+
+// ownedSubmission is access.submission(request, id): whether the workspace
+// owns the submission. A request_xml_enc token that will not decrypt is an
+// error (a 500), as the Python read raises before the route goes on.
+func ownedSubmission(ctx context.Context, d deps, id int64, h *session.Host) (bool, error) {
+	var plainXML, token *string
+	err := d.pool.QueryRow(ctx, ownedSubmissionSQL, id, ownerID(h)).Scan(&plainXML, &token)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	if _, err := decryptField(d.getenv, token, plainXML); err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 func owned(ctx context.Context, pool *pgxpool.Pool, query string, id int64, h *session.Host) (bool, int64, error) {
@@ -83,7 +102,7 @@ func SubmissionPDFHandler(pool *pgxpool.Pool, getenv func(string) string, now fu
 			return
 		}
 		ctx := r.Context()
-		isOwned, _, err := owned(ctx, pool, ownedSubmissionSQL, id, h)
+		isOwned, err := ownedSubmission(ctx, d, id, h)
 		if err != nil {
 			serverError(w, err)
 			return
@@ -133,7 +152,7 @@ func SubmissionFileHandler(pool *pgxpool.Pool, getenv func(string) string, now f
 			return
 		}
 		ctx := r.Context()
-		isOwned, _, err := owned(ctx, pool, ownedSubmissionSQL, id, h)
+		isOwned, err := ownedSubmission(ctx, d, id, h)
 		if err != nil {
 			serverError(w, err)
 			return

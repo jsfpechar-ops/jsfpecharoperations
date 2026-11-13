@@ -350,7 +350,11 @@ func HousebookCSVHandler(pool *pgxpool.Pool, getenv func(string) string, now fun
 			AND g.restricted_at IS NULL
 			AND COALESCE(r.source, '') != 'demo'
 			AND ($1::bigint IS NULL OR a.owner_user_id = $1)`
-		args := []any{ownerID(h)}
+		owner, ok := requireOwner(w, h)
+		if !ok {
+			return
+		}
+		args := []any{owner}
 		if apartment := queryInt(r, "apartment"); apartment != 0 {
 			args = append(args, apartment)
 			query += fmt.Sprintf(" AND a.id = $%d", len(args))

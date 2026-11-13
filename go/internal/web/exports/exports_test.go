@@ -272,6 +272,13 @@ func TestGoldenParity(t *testing.T) {
 		}
 		rec := httptest.NewRecorder()
 		mux.ServeHTTP(rec, req)
+		if want, differs := goDiffers[c.Name]; differs {
+			// Documented difference: Python 422 (FastAPI int validation), Go 404.
+			if c.Status != http.StatusUnprocessableEntity || rec.Code != want || len(c.Audit) != 0 {
+				t.Errorf("%s: python %d, go %d, want python 422 and go %d", c.Name, c.Status, rec.Code, want)
+			}
+			continue
+		}
 		if rec.Code != c.Status {
 			t.Errorf("%s: status %d, want %d (%s)", c.Name, rec.Code, c.Status, rec.Body.String())
 			continue
@@ -301,6 +308,39 @@ func TestGoldenParity(t *testing.T) {
 		if len(got) != len(c.Audit) || (len(got) > 0 && !reflect.DeepEqual(got, c.Audit)) {
 			t.Errorf("%s: audit %v, want %v", c.Name, got, c.Audit)
 		}
+	}
+}
+
+// goDiffers lists golden cases where Go answers differently on purpose: a
+// non-integer id is a plain 404 in Go (no host layout for the HTML error
+// page), where FastAPI answers a script with 422 JSON.
+var goDiffers = map[string]int{
+	"receipt_non_integer_id":    http.StatusNotFound,
+	"xml_non_integer_id":        http.StatusNotFound,
+	"stay_zip_non_integer_id":   http.StatusNotFound,
+	"guest_json_non_integer_id": http.StatusNotFound,
+}
+
+func TestNoOwnerIsAServerError(t *testing.T) {
+	rec := httptest.NewRecorder()
+	if _, ok := requireOwner(rec, &session.Host{}); ok || rec.Code != http.StatusInternalServerError {
+		t.Fatalf("nil owner: ok %v, status %d", ok, rec.Code)
+	}
+	rec = httptest.NewRecorder()
+	h := &session.Host{Workspace: session.Account{ID: 7}}
+	if owner, ok := requireOwner(rec, h); !ok || owner != int64(7) {
+		t.Fatalf("owner %v ok %v", owner, ok)
+	}
+}
+
+func TestFreshnessUsesTheFractionalClock(t *testing.T) {
+	at := time.Unix(1_800_000_600, 0)
+	h := &session.Host{Payload: map[string]any{"iat": int64(1_800_000_000)}}
+	if !sessionIsFresh(h, at) {
+		t.Error("exactly 600 s must be fresh")
+	}
+	if sessionIsFresh(h, at.Add(time.Millisecond)) {
+		t.Error("600.001 s must be stale, as time.time() - iat > 600 in Python")
 	}
 }
 

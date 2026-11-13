@@ -92,7 +92,11 @@ func ReservationsCSVHandler(pool *pgxpool.Pool, getenv func(string) string, now 
 			FROM reservation r JOIN apartment a ON a.id = r.apartment_id
 			WHERE r.archived_at IS NULL AND ($1::bigint IS NULL OR a.owner_user_id = $1)
 			AND COALESCE(r.source, '') != 'demo'`
-		args := []any{ownerID(h)}
+		owner, ok := requireOwner(w, h)
+		if !ok {
+			return
+		}
+		args := []any{owner}
 		if apartment := queryInt(r, "apartment"); apartment != 0 {
 			args = append(args, apartment)
 			query += fmt.Sprintf(" AND r.apartment_id = $%d", len(args))

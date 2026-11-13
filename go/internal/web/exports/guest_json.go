@@ -20,8 +20,9 @@ import (
 // freshLoginSeconds is auth.FRESH_LOGIN_SECONDS.
 const freshLoginSeconds = 10 * 60
 
-// ownedGuestSQL is access.guest with columns "1".
-const ownedGuestSQL = `SELECT 1 FROM guest g
+// ownedGuestSQL is access.guest. Python selects g.*, so its query helper
+// decrypts every guest field (db._hydrate); a bad token is a 500 there.
+const ownedGuestSQL = `SELECT g.* FROM guest g
 	JOIN reservation r ON r.id = g.reservation_id
 	JOIN apartment a ON a.id = r.apartment_id
 	WHERE g.id = $1 AND a.owner_user_id IS NOT DISTINCT FROM $2`
@@ -50,7 +51,8 @@ func sessionIsFresh(h *session.Host, at time.Time) bool {
 	if !ok || iat <= 0 {
 		return false
 	}
-	return at.Unix()-iat <= freshLoginSeconds
+	// (time.time() - iat) <= limit: Python compares with the fractional clock.
+	return at.Sub(time.Unix(iat, 0)) <= freshLoginSeconds*time.Second
 }
 
 // hasPassportPhoto is reporting.guest_has_passport_photo.
@@ -276,12 +278,15 @@ func GuestExportHandler(pool *pgxpool.Pool, getenv func(string) string, now func
 			return
 		}
 		ctx := r.Context()
-		isOwned, _, err := owned(ctx, pool, ownedGuestSQL, id, h)
+		guests, _, err := queryRows(ctx, pool, ownedGuestSQL, id, ownerID(h))
+		if err == nil && len(guests) > 0 {
+			err = hydrate(getenv, guests[0])
+		}
 		if err != nil {
 			serverError(w, err)
 			return
 		}
-		if !isOwned {
+		if len(guests) == 0 {
 			plain(w, http.StatusNotFound, "Not found.")
 			return
 		}

@@ -54,6 +54,9 @@ PDF_B = base64.b64encode(b"%PDF-1.4 receipt B\n").decode()
 PDF_C = base64.b64encode(b"%PDF-1.4 receipt C\n").decode()
 PDF_ERR = base64.b64encode(b"%PDF-1.4 errors\n").decode()
 STAMP = "2026-01-01T00:00:00+00:00"
+# A well-formed Fernet token under another key: no configured key reads it.
+CORRUPT_TOKEN = "gAAAAABrNuyAMDEyMzQ1Njc4OWFiY2RlZr8oRiKiNTdBCtiLKWj8uVDkEpLNpN6ccmZr_wlCqh1yiLUFcZ-TXp7BPrhVU3s6cX=="
+MAX_RECEIPTS = 100  # reporting.MAX_RECEIPT_DOWNLOADS
 # A 1x1 PNG: a signature validation.parse_signature_data_url accepts.
 SIGNATURE = ("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhf"
              "DwAChwGA60e6kgAAAABJRU5ErkJggg==")
@@ -71,10 +74,13 @@ def seed() -> list:
         [1, "owner@example.test", "x", "host", 1, 0, 0, 0, STAMP],
         [2, "other@example.test", "x", "host", 1, 0, 0, 0, STAMP],
         [3, "admin@example.test", "x", "admin", 1, 0, 0, 0, STAMP],
+        # 1320-fix-1: a workspace with corrupt tokens, and one with too many receipts.
+        [4, "broken@example.test", "x", "host", 1, 0, 0, 0, STAMP],
+        [5, "many@example.test", "x", "host", 1, 0, 0, 0, STAMP],
     ]
     acceptance = []
     n = 0
-    for uid in (1, 2, 3):
+    for uid in (1, 2, 3, 4, 5):
         # Both 1.7 and 1.8: go/internal/session defaults every document to
         # 1.7, config.py has privacy and dpa at 1.8 (see brief 1320 risks).
         for doc in ("terms", "privacy", "dpa"):
@@ -211,6 +217,34 @@ def seed() -> list:
                 [STAMP, "owner@example.test", "note", "guest_id=11 extra", 1],
             ],
         },
+        # 1320-fix-1: corrupt Fernet tokens (db.decrypt_field raises: a 500) and
+        # MAX_RECEIPT_DOWNLOADS + 1 receipts.
+        {
+            "table": "apartment",
+            "columns": ["id", "owner_user_id", "internal_name", "uby_idub", "created_at"],
+            "rows": [[40, 4, "Broken Flat", None, STAMP], [50, 5, "Many Flat", None, STAMP]],
+        },
+        {
+            "table": "reservation",
+            "columns": ["id", "apartment_id", "source", "uid", "date_from", "date_to", "status",
+                        "created_at", "updated_at"],
+            "rows": [[40, 40, "ical", "u40", "2026-08-01", "2026-08-03", "confirmed", STAMP, STAMP]],
+        },
+        {
+            "table": "submission",
+            "columns": ["id", "apartment_id", "created_at", "state", "receipt_pdf", "error_pdf",
+                        "request_xml_enc", "response_xml"],
+            "rows": [[200, 40, "2026-08-02T10:00:00+00:00", "ok", PDF_A, PDF_ERR,
+                      CORRUPT_TOKEN, "<resp>200</resp>"]]
+            + [[300 + i, 50, f"2026-08-{1 + i % 28:02d}T{i % 24:02d}:{i % 60:02d}:00+00:00", "ok",
+                PDF_C, None, None, None] for i in range(MAX_RECEIPTS + 1)],
+        },
+        {
+            "table": "guest",
+            "columns": ["id", "reservation_id", "surname", "first_name", "nationality",
+                        "doc_number_enc", "submit_state", "created_at", "updated_at"],
+            "rows": [[400, 40, "Broken", "Token", "AUT", CORRUPT_TOKEN, "pending", STAMP, STAMP]],
+        },
     ]
 
 
@@ -221,6 +255,8 @@ OWNER = {"uid": 1}
 OTHER = {"uid": 2}
 ADMIN = {"uid": 3}
 SUPPORT = {"uid": 3, "as": 1}
+BROKEN = {"uid": 4}
+MANY = {"uid": 5}
 
 # name, path, session (None = signed out), language cookie
 CASES = [
@@ -276,6 +312,22 @@ CASES = [
     ("guest_json_other_owner", "/guests/4/export.json", OWNER, None),
     ("guest_json_missing", "/guests/999/export.json", OWNER, None),
     ("guest_json_supporting", "/guests/11/export.json", SUPPORT, None),
+    # 1320-fix-1
+    ("receipt_corrupt_token", "/submissions/200/receipt.pdf", BROKEN, None),
+    ("errors_corrupt_token", "/submissions/200/errors.pdf", BROKEN, None),
+    ("xml_response_corrupt_token", "/submissions/200/response.xml", BROKEN, None),
+    ("xml_request_corrupt_token", "/submissions/200/request.xml", BROKEN, None),
+    ("housebook_corrupt_token", "/housebook.csv", BROKEN, None),
+    ("guest_json_corrupt_token", "/guests/400/export.json", BROKEN, None),
+    ("stays_csv_broken_workspace", "/reservations.csv?from=2026-01-01&to=2026-12-31", BROKEN, None),
+    ("receipts_zip_too_many", "/submissions/receipts.zip", MANY, None),
+    ("receipts_zip_too_many_cs", "/submissions/receipts.zip", MANY, "cs"),
+    ("receipts_zip_limit_ok", "/submissions/receipts.zip?to=2026-08-27", MANY, None),
+    # Python answers 422 here; Go answers 404 (exports_test.go goDiffers).
+    ("receipt_non_integer_id", "/submissions/abc/receipt.pdf", OWNER, None),
+    ("xml_non_integer_id", "/submissions/abc/request.xml", OWNER, None),
+    ("stay_zip_non_integer_id", "/reservations/1x/dorucenka.zip", OWNER, None),
+    ("guest_json_non_integer_id", "/guests/abc/export.json", OWNER, None),
 ]
 
 # The response headers a route itself sets (plus the middleware's Cache-Control).
@@ -339,7 +391,8 @@ def build(base_url: str) -> dict:
     with mock.patch.object(exports, "datetime", FrozenDatetime), \
             mock.patch.object(db, "utcnow", lambda: NOW), \
             psycopg.connect(url, autocommit=True) as conn:
-        client = TestClient(app, follow_redirects=False)
+        # A decryption error is an exception: the app's 500 handler answers it.
+        client = TestClient(app, follow_redirects=False, raise_server_exceptions=False)
         last = conn.execute("SELECT COALESCE(MAX(id), 0) FROM audit").fetchone()[0]
         for name, path, sess, lang in CASES:
             client.cookies.clear()
