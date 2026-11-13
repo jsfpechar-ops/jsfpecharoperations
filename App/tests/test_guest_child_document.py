@@ -9,7 +9,6 @@ hold an ID card, may leave it empty.
 from __future__ import annotations
 
 import base64
-import re
 from datetime import timedelta
 from pathlib import Path
 
