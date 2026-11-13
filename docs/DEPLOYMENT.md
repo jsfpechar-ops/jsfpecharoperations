@@ -35,6 +35,8 @@ nothing leaves the server for the police. Do not set Render staging to `test` or
 their test environment behaves exactly like production and exists for debugging
 (letter of 24 September 2026, B4). See `deploy/lightsail/README.md`, "Filing
 against the police test environment".
+Render staging runs on SQLite, so since 1200 it has no deadline watch, no filing
+watchdog mails and no filing heartbeat: that job runs only in the Go service.
 Production starts on the **test** UbyPort endpoint so you can validate credentials
 and field mappings before flipping to **prod**.
 
