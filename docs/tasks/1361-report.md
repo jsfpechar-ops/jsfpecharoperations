@@ -12,10 +12,12 @@ Status: blocked
 ## Steps
 - Step 1 (Postgres): skipped, `pg_isready -h 127.0.0.1 -p 55436` already accepting connections.
 - Step 2: done, commit `1361 step 2`.
-- Steps 3 to n: not started.
+- Step 3: done, commit `1361 step 3`. Both sha256 match (template 7566ec3e..., pages.go 8ca114b0...). `go build ./internal/web/...` failed only with `undefined: asInt64` (defined in step 4); the build passes after step 4.
+- Step 4: done, commit `1361 step 4`. Patch applied with `git apply --check` then `git apply`. query.go ef2a2dd3..., register_web_customers.go f567c86b... match. `go vet ./internal/web/... ./cmd/...` and `go build ./internal/web/...` clean.
+- Steps 5 to 7: not started.
 
 ## Deviations
-Done: steps 1 to 2. Left: steps 3 to n. Checkpoint reached (executor token budget near 60k after reading the full brief).
+Done: steps 1 to 4. Left: steps 5 to 7. Step 3 was committed before step 4 because the brief orders it so; its build check only passes once step 4 is applied. Patch written to the session scratchpad instead of /tmp.
 
 ## Questions
 None.
