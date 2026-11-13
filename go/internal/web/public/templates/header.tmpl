@@ -1,0 +1,25 @@
+{{define "navlinks"}}
+      <a href="/jak-to-funguje?lang={{.Lang}}">{{.T "landing.nav.how"}}</a>
+      <a href="/cenik?lang={{.Lang}}">{{.T "landing.nav.pricing"}}</a>
+      <a href="/pruvodce/hlaseni-cizincu-ubyport?lang={{.Lang}}">{{.T "landing.nav.guides"}}</a>
+{{end}}
+{{define "header"}}
+  <a class="landing-skip" href="#content">{{.T "a11y.skip_to_content"}}</a>
+  <header class="landing-header">
+    <a class="landing-brand" href="/?lang={{.Lang}}" aria-label="UbyHost">
+      <img src="/static/ubyhost-logo.png?v=20261004a" alt="UbyHost">
+    </a>
+    <nav class="landing-nav" aria-label="{{.T "a11y.main_navigation"}}">{{template "navlinks" .}}</nav>
+    <div class="landing-actions">
+      <nav class="landing-languages" aria-label="{{.T "lang.switch"}}">
+        <a href="{{.Path}}?lang=cs" lang="cs" hreflang="cs" class="{{if eq .Lang "cs"}}active{{end}}"{{if eq .Lang "cs"}} aria-current="true"{{end}}>CZ</a>
+        <a href="{{.Path}}?lang=en" lang="en" hreflang="en" class="{{if eq .Lang "en"}}active{{end}}"{{if eq .Lang "en"}} aria-current="true"{{end}}>EN</a>
+      </nav>
+      <a class="landing-login" href="/login?lang={{.Lang}}" data-analytics-event="login_click">{{.T "landing.nav.login"}}</a>
+    </div>
+    <details class="landing-menu">
+      <summary>{{.T "landing.nav.menu"}}</summary>
+      <nav aria-label="{{.T "a11y.main_navigation"}}">{{template "navlinks" .}}</nav>
+    </details>
+  </header>
+{{end}}

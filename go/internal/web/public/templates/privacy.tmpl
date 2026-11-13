@@ -1,0 +1,77 @@
+{{define "title"}}{{.T "privacy.page_title"}}{{end}}
+{{define "content"}}
+<header class="page-header">
+  <div class="page-header-main">
+    <h1>{{.T "privacy.page_title"}}</h1>
+    <p class="lede">{{.T "privacy.page_lede" "name" .Op.Name}}</p>
+  </div>
+</header>
+<p class="lede">{{.T "privacy_first.line"}}</p>
+<p class="small muted">{{.Effective "privacy"}}</p>
+{{template "toc" .}}
+{{template "operator" .}}
+<p class="small muted">{{.T "privacy.guest_note"}}</p>
+{{range .Sections}}
+<section class="legal-section" id="s{{$.E .}}">
+  <h2>{{$.T (printf "privacy.s%s_title" .)}}</h2>
+  <div class="terms-section">{{$.TL (printf "privacy.s%s_body" .) "name" $.Op.Name "ico" $.Op.ICO}}</div>
+  {{if eq . "03"}}
+    <h3>{{$.T "privacy.roles_title"}}</h3>
+    <div class="terms-section">{{$.TL "privacy.roles_body" "name" $.Controller.Name "ico" $.Controller.ICO "address" $.Controller.Address}}</div>
+  {{end}}
+  {{if eq . "07"}}
+    {{template "cookietable" $}}
+    {{if $.PostHog}}
+      <h3 id="analytics">{{$.T "privacy.analytics_title"}}</h3>
+      <p>{{$.T "privacy.analytics_body"}}</p>
+      <h3>{{$.T "privacy.product_analytics_title"}}</h3>
+      <p>{{$.T "privacy.product_analytics_body"}}</p>
+      <div class="panel quiet" id="analytics-optout" aria-live="polite">
+        <p>{{$.T "privacy.optout_lede"}}</p>
+        <p data-optout-when="on" style="margin-bottom:0"><a href="#analytics-optout" role="button" data-optout-action="disable">{{$.T "privacy.optout_disable"}}</a></p>
+        <p data-optout-when="off" style="margin-bottom:0" hidden>{{$.T "privacy.optout_off_note"}} <a href="#analytics-optout" role="button" data-optout-action="enable">{{$.T "privacy.optout_enable"}}</a></p>
+      </div>
+      <script src="/static/analytics-optout.js?v=20261010a" defer></script>
+      <p>{{$.T "privacy.analytics_dnt"}}</p>
+      <ul class="small muted">
+      {{range $.Cookieless}}
+        <li><strong>{{$.E .Name}}</strong> ({{$.E .Party}}): {{$.L .Note}}</li>
+      {{end}}
+      </ul>
+    {{end}}
+    {{if $.SignupAdsNotice}}
+    <h3 id="signup">{{$.T "privacy.signup_title"}}</h3>
+    <div class="terms-section">{{$.T "privacy.signup_body"}}</div>
+    <h3 id="signup-ads">{{$.T "privacy.signup_ads_title"}}</h3>
+    <div class="terms-section">{{$.TL "privacy.signup_ads_body"}}</div>
+    {{if $.SignupMetaNotice}}
+    <h3 id="signup-meta">{{$.T "privacy.signup_meta_title"}}</h3>
+    <div class="terms-section">{{$.TL "privacy.signup_meta_body"}}</div>
+    {{end}}
+    <h3 id="signup-recipients">{{$.T "privacy.signup_recipients_title"}}</h3>
+    <div class="terms-section">{{$.TL "privacy.signup_recipients_body"}}{{if $.SignupMetaNotice}} {{$.T "privacy.signup_recipients_meta"}}{{end}}</div>
+    {{end}}
+  {{end}}
+  {{if eq . "11"}}
+    <h3>{{$.T "privacy.own_retention_title"}}</h3>
+    <p>{{$.T "privacy.own_retention_body"}}</p>
+  {{end}}
+  <p class="legal-back"><a href="#legal-contents">{{$.T "legal.back_to_toc"}} <span aria-hidden="true">&uarr;</span></a></p>
+</section>
+{{end}}
+<div class="panel quiet">
+  <h2 style="margin-top:0">{{.T "privacy.review_title"}}</h2>
+  <p class="small muted" style="margin-bottom:0">{{.T "privacy.review_body"}}</p>
+</div>
+<p class="small muted">
+  <a href="/legal">{{.T "privacy.cross_legal"}}</a>
+  &middot;
+  <a href="/terms">{{.T "privacy.cross_terms"}}</a>
+  &middot;
+  <a href="/dpa">{{.T "privacy.cross_dpa"}}</a>
+  &middot;
+  <a href="/subprocessors">{{.T "subprocessors.footer_link"}}</a>
+  &middot;
+  <a href="/?lang={{.Lang}}">{{.T "legal.back_home"}}</a>
+</p>
+{{end}}

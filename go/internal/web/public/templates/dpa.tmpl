@@ -1,0 +1,29 @@
+{{define "title"}}{{.T "dpa.page_title"}}{{end}}
+{{define "content"}}
+<header class="page-header">
+  <div class="page-header-main">
+    <h1>{{.T "dpa.page_title"}}</h1>
+    <p class="lede">{{.T "dpa.page_lede" "name" .Op.Name}}</p>
+  </div>
+</header>
+<p class="small muted">{{.Effective "dpa"}}</p>
+{{template "toc" .}}
+{{template "operator" .}}
+<p class="small muted">{{.TL "dpa.incorporation_note"}}</p>
+{{template "sections" .}}
+<div class="panel quiet">
+  <h2 style="margin-top:0">{{.T "dpa.review_title"}}</h2>
+  <p class="small muted" style="margin-bottom:0">{{.T "dpa.review_body"}}</p>
+</div>
+<p class="small muted">
+  <a href="/legal">{{.T "dpa.cross_legal"}}</a>
+  &middot;
+  <a href="/terms">{{.T "dpa.cross_terms"}}</a>
+  &middot;
+  <a href="/privacy">{{.T "dpa.cross_privacy"}}</a>
+  &middot;
+  <a href="/subprocessors">{{.T "subprocessors.footer_link"}}</a>
+  &middot;
+  <a href="/?lang={{.Lang}}">{{.T "legal.back_home"}}</a>
+</p>
+{{end}}
