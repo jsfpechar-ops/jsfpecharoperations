@@ -1,6 +1,6 @@
 # 1210: Go job kind `retention`, counting half (dry run, audit, setting, notices)
 
-Status: todo
+Status: review
 Depends on: none (1200 register split merged) | Base commit: a83df54 | Branch: claude/1210-go-retention (work on the current branch)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier A (deletion, guest data) | Next: [1211](1211-go-retention-apply.md) adds the deleting half
 

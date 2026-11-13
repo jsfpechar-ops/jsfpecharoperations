@@ -1,7 +1,7 @@
 # 1211: Go job kind `retention`, deleting half (apply paths, apply golden)
 
-Status: todo
-Depends on: [1210](1210-go-retention-job.md) merged (its files unchanged) | Base commit: the 1210 merge on main | Branch: a new branch from main, e.g. claude/1211-go-retention-apply
+Status: review
+Depends on: [1210](1210-go-retention-job.md) on this branch (step 6 committed; its files unchanged) | Base commit: the 1210 merge on main | Branch: claude/1210-go-retention (same PR as 1210)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier A (deletion, guest data, photos)
 
 ## 1. Objective
