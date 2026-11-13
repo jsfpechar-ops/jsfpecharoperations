@@ -1171,7 +1171,7 @@ def _handle_cancellations(now_iso: str) -> None:
         "JOIN reservation r ON r.id = dc.reservation_id "
         "WHERE dc.state = ? AND (r.status != 'active' OR r.archived_at IS NOT NULL) "
         "AND (dc.next_attempt_at IS NULL OR dc.next_attempt_at <= ?) "
-        "ORDER BY dc.next_attempt_at LIMIT ?",
+        "ORDER BY (dc.next_attempt_at IS NOT NULL), dc.next_attempt_at LIMIT ?",
         (REVOKE_PENDING, now_iso, BATCH),
     )
     for item in due:
@@ -1503,7 +1503,7 @@ def _issue_due(now_iso: str) -> Dict[str, int]:
     due = db.query(
         "SELECT id FROM door_code WHERE state IN (?, ?) "
         "AND (next_attempt_at IS NULL OR next_attempt_at <= ?) "
-        "ORDER BY next_attempt_at LIMIT ?",
+        "ORDER BY (next_attempt_at IS NOT NULL), next_attempt_at LIMIT ?",
         (PENDING, RETRYING, now_iso, BATCH),
     )
     for row in due:
