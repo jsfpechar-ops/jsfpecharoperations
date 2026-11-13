@@ -153,7 +153,7 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
             "Poskytovatelé, kteří mohou pro UbyHost zpracovávat osobní údaje, účel jejich zapojení "
             "a podmínky použití. Tento seznam je součástí zpracovatelské smlouvy."
         ),
-        "subprocessors.effective": "Účinnost od: 4. října 2026. Verze 1.2.",
+        "subprocessors.effective": "Účinnost od: 15. prosince 2026. Verze 1.3.",
         "subprocessors.controller_note_title": "Kdo tyto poskytovatele zapojuje",
         "subprocessors.controller_note": (
             "Správcem údajů hostů je ubytovatel nebo alternativní správce nastavený pro dané "
@@ -228,6 +228,18 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "subprocessors.google_safeguard": (
             "DPA poskytovatele a zákonné záruky kapitoly V GDPR, jsou-li nutné."
+        ),
+        "subprocessors.hetzner_provider": "Hetzner Online GmbH",
+        "subprocessors.hetzner_purpose": (
+            "Hosting pro obnovu po havárii: náhradní server, který se použije jen tehdy, když "
+            "hlavní hosting není dostupný, a pro zkoušky obnovy."
+        ),
+        "subprocessors.hetzner_data": "Všechna data aplikace včetně údajů hostů, obnovená ze zálohy.",
+        "subprocessors.hetzner_location": (
+            "EU, Německo nebo Finsko. Podmíněné použití; jen při obnově nebo zkoušce obnovy."
+        ),
+        "subprocessors.hetzner_safeguard": (
+            "Smlouva Hetzner o zpracování osobních údajů podle čl. 28 GDPR. Bez předání mimo EU."
         ),
         "subprocessors.recipients_title": "Příjemci, kteří nejsou dalšími zpracovateli",
         "subprocessors.recipient_google_ads": (
