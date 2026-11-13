@@ -123,3 +123,4 @@ None. Merge with `scripts/merge-pr-on-green.sh` once CI is green.
 
 - The freeze cannot catch: a PR that edits a migration and `FROZEN` together (the reviewer must reject any diff to `FROZEN`), deleting the test file, or a schema change made in `db.SCHEMA`/`ADDED_COLUMNS` (`db.py`; rules.md already forbids it).
 - Brief 1263's LIGHTSAIL paragraph "Writing a goose twin" says to copy SQLite data lines into the twin; once 1470 lands there are no new twins. Shorten it when 1263 runs, or in a later doc brief (S13).
+- Lint overlap: open brief 1210 also edits `docs/LIGHTSAIL.md`, but other sections ("Deploy from GitHub Actions", rollback by SHA); either may go first, the 1470 patch context does not touch them.

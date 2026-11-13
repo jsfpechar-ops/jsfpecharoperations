@@ -12,6 +12,10 @@ func env(m map[string]string) func(string) string {
 	return func(k string) string { return m[k] }
 }
 
+func lookup(m map[string]string) func(string) (string, bool) {
+	return func(k string) (string, bool) { v, ok := m[k]; return v, ok }
+}
+
 func byKind(t *testing.T, plan []Trigger, kind string) Trigger {
 	t.Helper()
 	for _, tr := range plan {
@@ -162,16 +166,24 @@ func TestCoalesceAfterAStall(t *testing.T) {
 	}
 }
 
+// The interval variables take what Python's int() takes; values Python
+// rejects, or at or below 0 (Python then refuses the switch), are refused.
 func TestPlanReadsTheTwoIntervals(t *testing.T) {
-	plan, err := Plan(env(map[string]string{"UBYHOST_ICAL_POLL_MINUTES": " 30 ", "UBYHOST_SUBMIT_SWEEP_MINUTES": "5"}))
+	plan, err := Plan(lookup(map[string]string{"UBYHOST_ICAL_POLL_MINUTES": " 30 ", "UBYHOST_SUBMIT_SWEEP_MINUTES": "5"}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if byKind(t, plan, "ical").Every != 30*time.Minute || byKind(t, plan, "submit").Every != 5*time.Minute {
 		t.Fatalf("intervals not read")
 	}
-	for _, bad := range []string{"0", "-5", "ten", "1.5"} {
-		if _, err := Plan(env(map[string]string{"UBYHOST_SUBMIT_SWEEP_MINUTES": bad})); err == nil {
+	for raw, want := range map[string]int{"+7": 7, "1_0": 10, "007": 7, "\t12\n": 12} {
+		plan, err := Plan(lookup(map[string]string{"UBYHOST_SUBMIT_SWEEP_MINUTES": raw}))
+		if err != nil || byKind(t, plan, "submit").Every != time.Duration(want)*time.Minute {
+			t.Fatalf("%q: %v %v", raw, plan, err)
+		}
+	}
+	for _, bad := range []string{"", " ", "0", "-0", "-5", "ten", "1.5", "_1", "1_", "1__0", "+", "1 0"} {
+		if _, err := Plan(lookup(map[string]string{"UBYHOST_SUBMIT_SWEEP_MINUTES": bad})); err == nil {
 			t.Fatalf("%q accepted", bad)
 		}
 	}
@@ -187,15 +199,15 @@ func TestEnabled(t *testing.T) {
 
 func TestSetupNeedsEveryKindQueued(t *testing.T) {
 	all := "ical,submit,deadlines,mail,photo_sweep,meta_capi,retention,stay_fee_mail,stripe_sweep,billing,billing_snapshot,door_codes,posthog,push,guide_import"
-	plan, loc, err := Setup(env(map[string]string{"UBYHOST_JOB_QUEUE_KINDS": all}))
+	plan, loc, err := Setup(lookup(map[string]string{"UBYHOST_JOB_QUEUE_KINDS": all}))
 	if err != nil || len(plan) != 15 || loc.String() != Timezone {
 		t.Fatalf("%d %v %v", len(plan), loc, err)
 	}
-	_, _, err = Setup(env(map[string]string{"UBYHOST_JOB_QUEUE_KINDS": strings.Replace(all, "door_codes,", "", 1)}))
+	_, _, err = Setup(lookup(map[string]string{"UBYHOST_JOB_QUEUE_KINDS": strings.Replace(all, "door_codes,", "", 1)}))
 	if err == nil || !strings.Contains(err.Error(), "missing: door_codes") {
 		t.Fatalf("got %v", err)
 	}
-	if _, _, err := Setup(env(nil)); err == nil {
+	if _, _, err := Setup(lookup(nil)); err == nil {
 		t.Fatal("empty queue kinds accepted")
 	}
 }
@@ -216,6 +228,7 @@ func TestRunEnqueuesAndStops(t *testing.T) {
 		}
 		return true, nil
 	}
+	added0, failed0 := Counts()
 	done := make(chan struct{})
 	go func() { Run(ctx, s, enqueue, time.Now); close(done) }()
 	for i := 0; i < 3; i++ {
@@ -233,5 +246,8 @@ func TestRunEnqueuesAndStops(t *testing.T) {
 	case <-done:
 	case <-time.After(2 * time.Second):
 		t.Fatal("Run did not stop")
+	}
+	if added, failed := Counts(); failed-failed0 != 1 || added-added0 < 2 {
+		t.Fatalf("counts added %d failed %d", added, failed)
 	}
 }

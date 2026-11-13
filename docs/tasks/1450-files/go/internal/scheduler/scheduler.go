@@ -27,6 +27,7 @@ import (
 	"log/slog"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 	_ "time/tzdata" // the Prague zone must exist even on a bare container
 
@@ -63,14 +64,36 @@ func Enabled(getenv func(string) string) bool {
 	return strings.ToLower(strings.TrimSpace(getenv("UBYHOST_SCHEDULER"))) == "go"
 }
 
-// minutesEnv is int(os.environ.get(name, def)) for a positive whole number.
-func minutesEnv(getenv func(string) string, name string, def int) (int, error) {
-	raw := strings.TrimSpace(getenv(name))
-	if raw == "" {
+// pyInt is Python's int(text) for ASCII digits: surrounding white space, an
+// optional sign, and single underscores between digits ("1_0" is 10).
+// Python also takes non-ASCII digits; Go refuses them, and the Python
+// worker's watch (App/app/scheduler.py watch_go_scheduler) covers that
+// one difference by enqueuing itself and raising the alert.
+func pyInt(text string) (int, bool) {
+	s := strings.TrimSpace(text)
+	sign := ""
+	if s != "" && (s[0] == '+' || s[0] == '-') {
+		sign, s = s[:1], s[1:]
+	}
+	if s == "" || s[0] == '_' || s[len(s)-1] == '_' || strings.Contains(s, "__") {
+		return 0, false
+	}
+	n, err := strconv.Atoi(sign + strings.ReplaceAll(s, "_", ""))
+	return n, err == nil
+}
+
+// minutesEnv reads one interval as config.py does: int(os.environ.get(name,
+// def)). Unset gives def. A value Python's int() refuses (an empty string
+// included) stops Python at import; one at or below 0 makes Python's
+// go_scheduler_problem() refuse the switch. Go refuses both, so both sides
+// agree that the switch is off and Python keeps enqueuing.
+func minutesEnv(lookup func(string) (string, bool), name string, def int) (int, error) {
+	raw, ok := lookup(name)
+	if !ok {
 		return def, nil
 	}
-	n, err := strconv.Atoi(raw)
-	if err != nil || n <= 0 {
+	n, valid := pyInt(raw)
+	if !valid || n <= 0 {
 		return 0, fmt.Errorf("%s must be a whole number of minutes above 0", name)
 	}
 	return n, nil
@@ -78,13 +101,14 @@ func minutesEnv(getenv func(string) string, name string, def int) (int, error) {
 
 // Plan lists the triggers in the order scheduler.start() adds them. Only
 // ical and submit read the environment (UBYHOST_ICAL_POLL_MINUTES default 60,
-// UBYHOST_SUBMIT_SWEEP_MINUTES default 10), as job_intervals() does.
-func Plan(getenv func(string) string) ([]Trigger, error) {
-	ical, err := minutesEnv(getenv, "UBYHOST_ICAL_POLL_MINUTES", 60)
+// UBYHOST_SUBMIT_SWEEP_MINUTES default 10), as job_intervals() does. lookup
+// is os.LookupEnv in production.
+func Plan(lookup func(string) (string, bool)) ([]Trigger, error) {
+	ical, err := minutesEnv(lookup, "UBYHOST_ICAL_POLL_MINUTES", 60)
 	if err != nil {
 		return nil, err
 	}
-	submit, err := minutesEnv(getenv, "UBYHOST_SUBMIT_SWEEP_MINUTES", 10)
+	submit, err := minutesEnv(lookup, "UBYHOST_SUBMIT_SWEEP_MINUTES", 10)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +134,8 @@ func Plan(getenv func(string) string) ([]Trigger, error) {
 
 // CheckQueued makes sure every planned kind is in UBYHOST_JOB_QUEUE_KINDS.
 // A kind outside it runs in-process in Python, so a Go row for it would run
-// it twice; Python refuses UBYHOST_SCHEDULER=go on the same condition.
+// it twice; Python's go_scheduler_problem() refuses the switch on the same
+// condition and keeps enqueuing.
 func CheckQueued(plan []Trigger, raw string) error {
 	queued := map[string]bool{}
 	for _, k := range strings.Split(raw, ",") {
@@ -131,12 +156,13 @@ func CheckQueued(plan []Trigger, raw string) error {
 }
 
 // Setup reads the environment: the plan, the queue check and the zone.
-func Setup(getenv func(string) string) ([]Trigger, *time.Location, error) {
-	plan, err := Plan(getenv)
+func Setup(lookup func(string) (string, bool)) ([]Trigger, *time.Location, error) {
+	plan, err := Plan(lookup)
 	if err != nil {
 		return nil, nil, err
 	}
-	if err := CheckQueued(plan, getenv("UBYHOST_JOB_QUEUE_KINDS")); err != nil {
+	queued, _ := lookup("UBYHOST_JOB_QUEUE_KINDS")
+	if err := CheckQueued(plan, queued); err != nil {
 		return nil, nil, err
 	}
 	loc, err := time.LoadLocation(Timezone)
@@ -245,6 +271,14 @@ func Enqueue(ctx context.Context, pool *pgxpool.Pool, kind string) (bool, error)
 	return tag.RowsAffected() == 1, nil
 }
 
+// Counts of this process since start: rows added, and enqueues that failed
+// (a failed enqueue is not retried, as in Python; the Python watch notices
+// the missing row). Every failure log line carries the running total.
+var enqueued, enqueueFailures atomic.Int64
+
+// Counts returns the rows added and the failed enqueues since start.
+func Counts() (added, failed int64) { return enqueued.Load(), enqueueFailures.Load() }
+
 // EnqueueFunc enqueues one kind; Enqueue with a pool in production.
 type EnqueueFunc func(ctx context.Context, kind string) (bool, error)
 
@@ -273,10 +307,12 @@ func Run(ctx context.Context, s *State, enqueue EnqueueFunc, now func() time.Tim
 			added, err := enqueue(ectx, kind)
 			cancel()
 			if err != nil {
-				slog.Error("scheduler enqueue failed", "job", kind, "error", fmt.Sprintf("%T", err))
+				n := enqueueFailures.Add(1)
+				slog.Error("scheduler enqueue failed", "job", kind, "error", fmt.Sprintf("%T", err), "failed_total", n)
 				continue
 			}
 			if added {
+				enqueued.Add(1)
 				slog.Info("scheduler enqueued", "job", kind)
 			}
 		}

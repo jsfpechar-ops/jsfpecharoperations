@@ -61,7 +61,7 @@ func prague(t *testing.T) *time.Location {
 
 func defaultPlan(t *testing.T) []Trigger {
 	t.Helper()
-	plan, err := Plan(func(string) string { return "" })
+	plan, err := Plan(func(string) (string, bool) { return "", false })
 	if err != nil {
 		t.Fatal(err)
 	}
