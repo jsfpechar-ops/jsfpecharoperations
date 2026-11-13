@@ -1,6 +1,6 @@
 # 1171: CI builds and pushes the Go image too; the server never builds on a CI deploy
 
-Status: todo
+Status: review
 Depends on: 0422 (merged: Python image already built in CI) | Base commit: current main | Branch: task/1171-ci-built-go-image
 Executor: Haiku 5.5 | Fits one session: 25 tool calls, 50k tokens
 Tier: C. Review: orchestrator reads the diff. Report: docs/tasks/1171-report.md
