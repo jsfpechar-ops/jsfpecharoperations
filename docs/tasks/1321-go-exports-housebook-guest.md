@@ -1,6 +1,8 @@
 # 1321: Go port of the house-book CSV and the guest Art 15/20 bundle, parity-checked against Python
 
-Status: todo
+Status: review
+
+The sidecar files were removed after execution; the sha256 values in §2 match the committed code.
 Depends on: 1320 (merged or on this branch) | Base commit: the "1320 step 5" commit | Branch: task/1320-go-exports
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier A (guest data, decryption)
 

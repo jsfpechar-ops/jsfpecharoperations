@@ -1,6 +1,8 @@
 # 1320: Go port of the host downloads (receipts, envelopes, stays CSV), parity-checked against Python
 
 Status: review
+
+The sidecar files were removed after execution; the sha256 values in §2 match the committed code.
 Depends on: none (1321 depends on this) | Base commit: a83df54 | Branch: task/1320-go-exports
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier A (filing records, guest data)
 
