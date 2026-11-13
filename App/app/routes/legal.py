@@ -16,8 +16,9 @@ TERMS_SECTION_IDS = (
 )
 PRIVACY_SECTION_IDS = tuple(f"{n:02d}" for n in range(1, 23))
 DPA_SECTION_IDS = tuple(f"{n:02d}" for n in range(1, 25))
-# WP09: the five rows of 04_legal_positions.md section 5 first, then the two
-# conditional providers the repo still documents (Render demo, Drive backups).
+# WP09: the five rows of 04_legal_positions.md section 5 first, then the
+# conditional providers the repo still documents (Render demo, Drive backups,
+# Hetzner disaster-recovery host, brief 1170).
 SUBPROCESSOR_IDS = (
     "aws_lightsail",
     "aws_ses",
@@ -26,6 +27,7 @@ SUBPROCESSOR_IDS = (
     "posthog",
     "render",
     "google",
+    "hetzner",
 )
 # Recipients that are not subprocessors (section 5). "google_ads" belongs to
 # self sign-up with Google Ads (WP20), so it is listed only while

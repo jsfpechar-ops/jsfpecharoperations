@@ -1,56 +1,39 @@
-# 1170 report: double-booking alarm from iCal calendars (Go)
+# 1170 report: Hetzner in the /subprocessors register and the ROPA
 
 Status: review
+Executor: Haiku 5.5. Legal status: DRAFT, owner + lawyer sign-off required; never mark ready.
 
-## Files changed (10, exactly the brief section 3 list)
-- go/internal/ical/doublebooking.go (new): checkDoubleBookings, overlap pair SQL, fmtDay/fmtRange
-- go/internal/ical/syncfeed.go: checkDoubleBookings in the suspect branch and at the end of SyncFeed
-- go/internal/mail/double_booking.go (new): BuildDoubleBooking
-- go/internal/ubyport/double_booking_notify.go (new): QueueDoubleBookingMail; the only email_outbox write, via pinned EnqueueMail
-- go/internal/mail/double_booking_test.go (new, no DB)
-- go/internal/ical/doublebooking_test.go (new, DB via testPool)
-- App/app/mail.py: "double_booking" in KINDS and HOST_KINDS
-- App/app/host_i18n.py: en + cs keys
-- App/app/host_vi_i18n.py: vi keys
-- App/tests/test_alert_language.py: one double_booking card render test
+## 1. Files changed
 
-## Commands, last lines
-- cd go && gofmt -l . && go build ./... && go vet ./internal/ical/ ./internal/mail/ ./internal/ubyport/ : gofmt printed nothing, BUILD_VET_OK
-- go test ./internal/ical/ ./internal/mail/ ./internal/ubyport/ : ok ical 0.128s, ok mail 0.027s, ok ubyport 0.350s (DB tests skip without UBYHOST_TEST_DATABASE_URL; CI provides it)
-- pytest row 1 (sm_queues sm_go_parity host_i18n alert_language notification_copy claim_mail), interpreter none found:
-NOT RUN: no interpreter with pytest in this sandbox
-- pytest row 2 (icalsync ical_skip_unchanged feed_* dashboard_calendar* calendar_*):
-NOT RUN: no interpreter with pytest in this sandbox
-- python3 scripts/context_lint.py : context lint: OK
+- App/app/routes/legal.py (step 1, `hetzner` last in SUBPROCESSOR_IDS)
+- App/app/subprocessors_i18n.py (steps 2 and 3, version 1.3, effective 15 December 2026, five hetzner_* keys en and cs)
+- App/tests/test_legal_contents.py (step 4, version 1.3 assertion, new Hetzner render test)
+- docs/privacy/ROPA.md (step 5, Transfers row, Backups row, open question for counsel)
+- docs/vendors/README.md (step 6, one Hetzner row)
+- docs/tasks/1170-report.md (this file)
 
-## Acceptance (brief section 7)
-- [x] gofmt -l go/ empty; go build clean; go vet clean
-- [x] one open double_booking alert + one queued email_outbox row per overlapping pair, unchanged on rerun (Go DB tests, run by CI)
-- [x] resolved_at set when the overlap ends; adjacent and non-active rows never alert (Go DB tests, CI)
-- [x] test_sm_queues.py / test_sm_go_parity.py pass with zero edits
-- [x] en/cs/vi key parity + card render test
-- [x] no file outside section 3 changed
+## 2. Commands
 
-## Deviations
-- App/.venv is missing in this sandbox; pytest rows ran with no interpreter - NOT RUN (results above).
-- Go DB tests skip locally (UBYHOST_TEST_DATABASE_URL unset); CI runs them.
-- Python fallback path (icalsync.py) intentionally has no double-booking alarm - owner decision, Go only.
+- Legal test set (App/, scratch venv with requirements.txt, no conftest issue): `68 passed in 4.48s`, 0 failed, 0 skipped.
+- `python3 scripts/context_lint.py`: `context lint: OK` (warnings only, none from this change).
+- `git diff --stat 142f89a HEAD`: 6 files, 340 insertions, 7 deletions (incl. the brief file from the base commit).
 
-## Questions
-- None.
+## 3. Section 7 acceptance
 
-## Owner steps left
-1. Merge the green PR with scripts/merge-pr-on-green.sh <pr>; deploy via GitHub Actions, Deploy production.
-2. Staging: two overlapping feeds of one apartment produce one banner + one console e-mail; cancel one and the alert clears on the next ical run (within 60 min).
+- [x] `hetzner_` count = 10
+- [x] `"hetzner",` in routes/legal.py = 1 line
+- [x] Version 1.3 / Verze 1.3 count = 2
+- [x] ROPA Hetzner count = 3; vendors = 1
+- [x] Tests pass; diff lists only section 3 files
 
-## Review round 2 (PR #954 review)
-- Renumbered 1166 -> 1170: main already has the Cloudflare 1166 (docs/tasks/1166-report.md), so the brief/report moved to 1170-double-booking-alarm.md / 1170-report.md and all references were renumbered; the add/add merge conflict is gone (main merged in).
-- Overlap query now has `AND r1.date_to > $2 AND r2.date_to > $2` with $2 = today (Europe/Prague, same as syncfeed): the first sync after deploy no longer alarms/mails about historical overlaps. Covered by a past-overlap pair in TestDoubleBookingIgnoresAdjacentAndIgnored.
-- checkDoubleBookings now also runs on the `not_modified` (HTTP 304) and `unchanged` (same digest) early exits of SyncFeed, so a host-side cancel/ignore clears the alert on the next hourly sync even when no calendar changed.
-- Review item 4 (manual stay + same booking from iCal looks like a double booking): left unchanged in this PR, flagged for the owner - either skip identical-date pairs with a `manual` side or reword the alert/mail copy to cover duplicates.
-- Review item 5 confirmed intended: one e-mail per pair ever (idempotency key = alert dedupe key); a cleared-and-returning overlap reopens the in-app alert only.
+## 4. Deviations
 
-## CI round 1 (run 43377882606, head 01286ac0)
-- Green: go, test-postgres, test, browser shards, Security, smoke, context, lint jobs.
-- Failed: `test` and `test-postgres-full`, both only in tests/test_claim_mail.py registry tests: the hardcoded KINDS set (test_the_registered_mail_kinds_are_the_ones_the_app_can_send) and test_no_registered_mail_kind_is_dead did not know the Go-inserted kind.
-- Fix: "double_booking" added to the expected set in test_claim_mail.py, and a pointer comment naming "double_booking" added in App/app/host_i18n.py (the Go ical job writes the outbox row; Python never composes it). Verified locally via ast/scan simulation; no pytest interpreter in the executor sandbox, CI re-runs them.
+- Test venv created under /tmp/claude-0 (outside the repo), not the scratchpad. Nothing added to the repo.
+
+## 5. Questions
+
+None.
+
+## 6. Owner steps left
+
+See brief "Owner steps" 1 to 6 (lawyer review, DPA signature, notice, effective date, no drill before effective date, then ready and merge).

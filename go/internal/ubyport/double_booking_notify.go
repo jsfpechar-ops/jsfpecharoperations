@@ -1,6 +1,6 @@
 package ubyport
 
-// Queues the host e-mail Python would raise for a double booking (brief 1170).
+// Queues the host e-mail Python would raise for a double booking (brief 1172).
 // Go-only feature: there is no Python builder, so there is no golden parity
 // test. Errors carry no address, text or key.
 

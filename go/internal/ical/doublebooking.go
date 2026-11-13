@@ -1,6 +1,6 @@
 package ical
 
-// Double-booking alarm (brief 1170). After a feed reconciles, every pair of
+// Double-booking alarm (brief 1172). After a feed reconciles, every pair of
 // active stays of the apartment whose date ranges overlap raises one warning
 // alert and queues one host e-mail while the pair stays open. The overlap is
 // derived from the reservation rows on every sync, never stored, so the alert

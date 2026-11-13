@@ -1,7 +1,7 @@
-# 1170: double-booking alarm from the iCal calendars — Go implementation
+# 1172: double-booking alarm from the iCal calendars — Go implementation
 
 Status: todo
-Depends on: none | Base commit: 07d7328c (main) | Branch: task/1170-double-booking-alarm, created from vibe/double-booking-brief-2f907d — this brief is delivered on that UNMERGED branch (PR #952 is kept open for the executor, not for merging)
+Depends on: none | Base commit: 07d7328c (main) | Branch: task/1172-double-booking-alarm, created from vibe/double-booking-brief-2f907d — this brief is delivered on that UNMERGED branch (PR #952 is kept open for the executor, not for merging)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 Owner decisions (2026-11-12, orchestrator chat):
@@ -145,14 +145,14 @@ No other file may change. No migration, no new dependency, no new env var.
 
 ## 4. Steps
 
-Branch first: `git fetch origin vibe/double-booking-brief-2f907d && git checkout -b task/1170-double-booking-alarm vibe/double-booking-brief-2f907d` (the brief file itself is on that branch; do not wait for a merge).
+Branch first: `git fetch origin vibe/double-booking-brief-2f907d && git checkout -b task/1172-double-booking-alarm vibe/double-booking-brief-2f907d` (the brief file itself is on that branch; do not wait for a merge).
 
 ### Step 1 — `go/internal/ical/doublebooking.go` (create with exactly this content)
 
 ```go
 package ical
 
-// Double-booking alarm (brief 1170). After a feed reconciles, every pair of
+// Double-booking alarm (brief 1172). After a feed reconciles, every pair of
 // active stays of the apartment whose date ranges overlap raises one warning
 // alert and queues one host e-mail while the pair stays open. The overlap is
 // derived from the reservation rows on every sync, never stored, so the alert
@@ -335,7 +335,7 @@ Do NOT add the call to the `not_modified` / `unchanged` / error early returns.
 ```go
 package mail
 
-// Host e-mail for a double booking (brief 1170). English only, like every host
+// Host e-mail for a double booking (brief 1172). English only, like every host
 // mail (mail_notify.HOST_MAIL_LANGUAGE). The shell and blocks are the ones in
 // submission_problem.go / cancelled_with_guests.go.
 
@@ -396,7 +396,7 @@ func BuildDoubleBooking(appBaseURL, publicBaseURL, propertyName string, first, s
 ```go
 package ubyport
 
-// Queues the host e-mail Python would raise for a double booking (brief 1170).
+// Queues the host e-mail Python would raise for a double booking (brief 1172).
 // Go-only feature: there is no Python builder, so there is no golden parity
 // test. Errors carry no address, text or key.
 
@@ -625,7 +625,7 @@ migration or dependency; or you reach 25 tool calls / ~50k tokens.
 
 ## 9. Report
 
-Write `docs/tasks/1170-report.md` (≤600 tokens), set `Status: review`: files changed
+Write `docs/tasks/1172-report.md` (≤600 tokens), set `Status: review`: files changed
 (`git diff --stat`), each command with its last 5 lines, §7 ticked, deviations,
 and explicitly: "Python fallback path (icalsync.py) intentionally has no
 double-booking alarm — owner decision, Go only."

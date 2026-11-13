@@ -1,6 +1,6 @@
 package mail
 
-// Host e-mail for a double booking (brief 1170). English only, like every host
+// Host e-mail for a double booking (brief 1172). English only, like every host
 // mail (mail_notify.HOST_MAIL_LANGUAGE). The shell and blocks are the ones in
 // submission_problem.go / cancelled_with_guests.go.
 
