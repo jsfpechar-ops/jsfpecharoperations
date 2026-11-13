@@ -549,9 +549,11 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    if os.environ.get("UBYHOST_DATABASE_URL"):
+        sys.exit("refusing to run: UBYHOST_DATABASE_URL is set; this script wipes tables")
     tmp = Path(tempfile.mkdtemp(prefix="ubyhost-golden-"))
-    os.environ.setdefault("UBYHOST_DATA_DIR", str(tmp))
-    os.environ.setdefault("UBYHOST_DB", str(tmp / "billing_engine_golden.sqlite3"))
+    os.environ["UBYHOST_DATA_DIR"] = str(tmp)
+    os.environ["UBYHOST_DB"] = str(tmp / "billing_engine_golden.sqlite3")
     os.environ.setdefault("UBYHOST_SECRET_KEY", "golden-secret-key-not-for-real-use")
     os.environ.setdefault("UBYHOST_ENABLE_SCHEDULER", "0")
     sys.path.insert(0, str(APP))
