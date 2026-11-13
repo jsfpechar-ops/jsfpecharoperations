@@ -15,6 +15,12 @@ if [ -f .env ]; then
   set +a
 fi
 
+# The key lives in .env.walg inside the walg container, not in this shell: test it there.
+if ! docker compose exec -T walg sh -c '[ -n "${WALG_LIBSODIUM_KEY:-}" ]'; then
+  echo "Refusing to push an unencrypted base backup: WALG_LIBSODIUM_KEY is empty in the walg container (check .env.walg)." >&2
+  exit 1
+fi
+
 docker compose exec -T walg wal-g backup-push /var/lib/postgresql/data
 docker compose exec -T walg wal-g delete retain FULL 7 --confirm
 
