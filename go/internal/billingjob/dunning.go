@@ -102,6 +102,6 @@ func (r *Runner) dunning(ctx context.Context, today time.Time) (dunningCounts, e
 // stage, key billing-overdue-<invoice>-<stage>.
 func (r *Runner) billingOverdueMail(ctx context.Context, inv overdueInvoice, stage string, today time.Time) (bool, error) {
 	content := mail.BuildBillingOverdue(AppBaseURL(), PublicBaseURL(), OperatorEmail(), stage, inv.number,
-		floorDiv(inv.totalHaler, 100), fmtDate(inv.due[:10]), fmtDate(today.Format(isoDate)))
+		floorDiv(inv.totalHaler, 100), fmtDate(day10(inv.due)), fmtDate(today.Format(isoDate)))
 	return r.queueServiceMail(ctx, "billing_overdue", fmt.Sprintf("billing-overdue-%d-%s", inv.id, stage), inv.owner, content)
 }

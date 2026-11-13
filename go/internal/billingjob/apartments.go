@@ -61,7 +61,7 @@ func (r *Runner) change(ctx context.Context, owner, count int64, today time.Time
 	}
 	to := today.Format(isoDate)
 	if acc.PeriodEnd != "" {
-		to = acc.PeriodEnd[:10]
+		to = day10(acc.PeriodEnd)
 	}
 	inv := r.invoicer()
 	id, err := inv.IssueSupplementary(ctx, owner, result.Supplementary,

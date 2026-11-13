@@ -80,7 +80,7 @@ func (r *Runner) runTrial(ctx context.Context, day time.Time) (trialCounts, erro
 				c.paused++
 			}
 		case (left == 7 || left == 3 || left == 0) && t.plan == "":
-			ok, err := r.billingTrialMail(ctx, t.owner, left, t.ends[:10])
+			ok, err := r.billingTrialMail(ctx, t.owner, left, day10(t.ends))
 			if err != nil {
 				return c, err
 			}
