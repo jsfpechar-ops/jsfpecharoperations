@@ -6,7 +6,6 @@ server is touched. CI runs the SQL itself (ci.yml, "App works as the
 non-superuser role").
 """
 
-import os
 import re
 import stat
 import subprocess
