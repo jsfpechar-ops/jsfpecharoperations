@@ -150,7 +150,9 @@ func (d HavelDeps) enter(w http.ResponseWriter, r *http.Request) *havelCall {
 		lang: hostweb.Lang(r), secret: secret}
 }
 
-func (c *havelCall) t(key string, params map[string]any) string { return havelCatalog.T(c.lang, key, params) }
+func (c *havelCall) t(key string, params map[string]any) string {
+	return havelCatalog.T(c.lang, key, params)
+}
 
 // form is the last posted value of a field, "" when missing (Starlette keeps the last).
 func (c *havelCall) form(key string) string {

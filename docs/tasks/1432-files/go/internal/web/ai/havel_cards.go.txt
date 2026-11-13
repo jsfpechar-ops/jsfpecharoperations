@@ -141,7 +141,9 @@ type HavelCard struct {
 func (c *HavelCard) FieldLabel(f HavelCardField) string { return HavelFieldLabel(c.Lang, f) }
 
 // Selected reports whether an option of a select field is the field's value.
-func (f HavelCardField) Selected(o HavelCardOption) bool { return strconv.FormatInt(o.Value, 10) == f.Value }
+func (f HavelCardField) Selected(o HavelCardOption) bool {
+	return strconv.FormatInt(o.Value, 10) == f.Value
+}
 
 func havelDateLabel(iso string) string {
 	d, err := time.Parse("2006-01-02", iso)
