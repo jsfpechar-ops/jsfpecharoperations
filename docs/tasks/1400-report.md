@@ -1,4 +1,4 @@
-# 1290 report
+# 1400 report
 
 Status: review
 
@@ -15,7 +15,7 @@ go/internal/calendar/deadlines_job_test.go |  2 +-
 7 files changed, 66 insertions(+), 144 deletions(-)
 ```
 
-Commits: `1290 step 1` to `1290 step 7` (7 commits, one per patch block, on top of b84a765).
+Commits: `1400 step 1` to `1400 step 7` (7 commits, one per patch block, on top of b84a765).
 
 ## 2. Commands
 
@@ -37,7 +37,7 @@ Commits: `1290 step 1` to `1290 step 7` (7 commits, one per patch block, on top 
 
 ## 4. Deviations
 
-- The awk extract wrote patch files to the session scratchpad instead of `/tmp/p1290.diff` (scratchpad rule). Content identical.
+- The awk extract wrote patch files to the session scratchpad instead of `/tmp/p1400.diff` (scratchpad rule). Content identical.
 - Not pushed and no PR opened (executor rule: the owner or orchestrator pushes).
 
 ## 5. Questions

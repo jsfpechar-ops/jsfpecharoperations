@@ -295,7 +295,7 @@ def test_the_digest_stamp_is_utc(world, monkeypatch):
 # --- heartbeat ------------------------------------------------------------------
 
 
-# The job that pings the URL is go/internal/calendar/deadlines_job.go (1290);
+# The job that pings the URL is go/internal/calendar/deadlines_job.go (1400);
 # these tests pin the URL the watchdog's answer maps to.
 
 URL = "https://hc-ping.example.invalid/abc"

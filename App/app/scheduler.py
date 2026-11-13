@@ -219,7 +219,7 @@ def _ping(url: str, job_id: str) -> None:
 
 
 def _job_deadlines_go_only() -> None:
-    """The deadlines job runs in Go only (1290); reaching Python is a misconfiguration.
+    """The deadlines job runs in Go only (1400); reaching Python is a misconfiguration.
 
     The deadline watch, the filing watchdog and the filing heartbeat are
     go/internal/calendar/deadlines_job.go. This stub raises the critical
@@ -578,9 +578,9 @@ def start() -> bool:
     if config.JOB_QUEUE_KINDS and config.DB_BACKEND != "postgresql":
         raise RuntimeError("UBYHOST_JOB_QUEUE_KINDS needs PostgreSQL")
     if config.DB_BACKEND != "postgresql":
-        log.warning("no deadline watch runs here: the deadlines job runs only in the Go service (PostgreSQL, 1290)")
+        log.warning("no deadline watch runs here: the deadlines job runs only in the Go service (PostgreSQL, 1400)")
     elif "deadlines" not in config.GO_JOB_KINDS:
-        log.warning("deadlines is not in UBYHOST_GO_JOB_KINDS: no deadline watch runs (1290)")
+        log.warning("deadlines is not in UBYHOST_GO_JOB_KINDS: no deadline watch runs (1400)")
     if config.DB_BACKEND == "postgresql" and set(JOB_KINDS) <= config.JOB_QUEUE_KINDS:
         log.info("every job is on the queue; scheduler.lock not taken")
     elif not _acquire_single_instance_lock():
@@ -598,7 +598,7 @@ def start() -> bool:
     )
     if config.DB_BACKEND == "postgresql":
         # Without PostgreSQL there is no Go service, so the stub would only
-        # raise a critical alert that never clears (Render staging, 1290).
+        # raise a critical alert that never clears (Render staging, 1400).
         _scheduler.add_job(
             _target("deadlines"), "interval", minutes=minutes["deadlines"], id="deadlines",
             max_instances=1, coalesce=True,
