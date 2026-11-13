@@ -202,15 +202,29 @@ fi
 # 0422: the GitHub deploy builds the image from the commit CI passed, pushes it
 # to GHCR and passes it here as UBYHOST_IMAGE, so the server only pulls. A
 # manual deploy without it, or a pull that fails, builds here as before.
-if [ -n "${UBYHOST_IMAGE:-}" ] && docker pull "${UBYHOST_IMAGE}"; then
+# 1171: with UBYHOST_IMAGE set (the GitHub deploy) the server never builds: both
+# images are pulled first, and a failed pull stops here, before anything is
+# changed, so the old containers keep running. Without it (a manual deploy on
+# the server) the images are built here as before.
+if [ -n "${UBYHOST_IMAGE:-}" ]; then
+  if ! docker pull "${UBYHOST_IMAGE}"; then
+    echo "ERROR: could not pull ${UBYHOST_IMAGE}. Nothing was changed; the old containers keep running. Check that the GHCR package is public (docs/LIGHTSAIL.md, Deploy from GitHub Actions)." >&2
+    exit 1
+  fi
   echo "==> Using CI-built image ${UBYHOST_IMAGE}"
   docker tag "${UBYHOST_IMAGE}" ubyhost:local
   # Drop the extra tag so old commit images do not pile up on the disk.
   docker image rm "${UBYHOST_IMAGE}" >/dev/null
-else
-  if [ -n "${UBYHOST_IMAGE:-}" ]; then
-    echo "WARNING: could not pull ${UBYHOST_IMAGE}; building on the server instead." >&2
+  if [ -n "${UBYHOST_GO_IMAGE:-}" ] && docker compose config --services | grep -qx 'ubyhost-go'; then
+    if ! docker pull "${UBYHOST_GO_IMAGE}"; then
+      echo "ERROR: could not pull ${UBYHOST_GO_IMAGE}. Nothing was changed; the old containers keep running. Check that the GHCR package is public (docs/LIGHTSAIL.md, Deploy from GitHub Actions)." >&2
+      exit 1
+    fi
+    echo "==> Using CI-built Go image ${UBYHOST_GO_IMAGE}"
+    docker tag "${UBYHOST_GO_IMAGE}" ubyhost-go:local
+    docker image rm "${UBYHOST_GO_IMAGE}" >/dev/null
   fi
+else
   echo "==> Building image"
   docker compose build --pull
 fi
@@ -239,7 +253,8 @@ elif [ -n "${BACKUP_STAMP}" ]; then
   echo "Migration dry-run passed."
 fi
 
-if docker compose config --services | grep -qx 'ubyhost-go'; then
+if [ -z "${UBYHOST_IMAGE:-}" ] && docker compose config --services | grep -qx 'ubyhost-go'; then
+  # Manual deploy only (1171): a GitHub deploy pulled the Go image above.
   # Rebuild the local Go image so a merged change reaches production.
   # Runs before "up", so a failed build leaves the running stack untouched.
   if ! docker compose build ubyhost-go; then
