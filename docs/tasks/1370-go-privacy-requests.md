@@ -88,7 +88,7 @@ No other file may change.
    ```bash
    .venv/bin/python scripts/privacy_requests_golden.py 2>&1 | tail -3; sha256sum ../go/internal/web/privacy/testdata/privacy_requests_golden.json | tail -3
    ```
-   Expected: `wrote .../go/internal/web/privacy/testdata/privacy_requests_golden.json` and `caa2d1d1775ada5dabd6ea7bcbd1095cc682c4553b4e3ed73bb7bda57bf6ab1c`. A different hash: STOP (§8); never edit the JSON. Commit "1370 step 2".
+   Expected: the script prints `wrote` plus the absolute path to `go/internal/web/privacy/testdata/privacy_requests_golden.json`, and `caa2d1d1775ada5dabd6ea7bcbd1095cc682c4553b4e3ed73bb7bda57bf6ab1c`. A different hash: STOP (§8); never edit the JSON. Commit "1370 step 2".
 
 3. Run the §6 commands (Go, then Python, then the lint). Optional, if a local PostgreSQL 16 is at `/usr/lib/postgresql/16`: start one as the postgres user with its data dir outside `/tmp/claude-0` (for example `/var/tmp/pg1370`) and rerun the Go command with `UBYHOST_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:<port>/postgres` and `-v`; `--- PASS: TestPrivacyRequestsGolden` must appear. Without it write "DB tests: CI only" in the report. No commit unless something changed (nothing should).
 
