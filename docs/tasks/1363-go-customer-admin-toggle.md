@@ -1,6 +1,6 @@
 # 1363: Go customer admin part 3 of 3: admin guard, funnel redirect, account toggle
 
-Status: todo
+Status: review
 Depends on: 1362 | Base commit: a83df5412638cc7ae1c64810e5b0b59fc68997cc | Branch: go-customer-admin (already checked out; do not create another)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B
 
