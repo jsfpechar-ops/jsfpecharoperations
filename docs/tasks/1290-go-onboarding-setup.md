@@ -1,6 +1,6 @@
 # 1290: Go onboarding part 1: property_setup port and the settings-only POST routes
 
-Status: todo
+Status: review
 Depends on: none | Base commit: a83df54 | Branch: claude/1290-go-onboarding-setup
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Tier: A (exact files; fresh Fable review of the full diff before ready)
