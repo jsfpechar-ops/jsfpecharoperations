@@ -232,5 +232,19 @@ def test_the_register_does_not_claim_unencrypted_backups_are_encrypted():
 
 def test_the_register_records_the_corrective_version():
     client = _client()
-    for lang, effective in (("en", "Version 1.2"), ("cs", "Verze 1.2")):
+    for lang, effective in (("en", "Version 1.3"), ("cs", "Verze 1.3")):
         assert effective in client.get(f"/subprocessors?lang={lang}").text, lang
+
+
+# Brief 1170 (DR plan step 7): Hetzner is listed before any real data goes
+# there, as a conditional EU disaster-recovery host.
+def test_the_register_lists_hetzner_as_conditional_recovery_host():
+    client = _client()
+    for lang in ("en", "cs"):
+        html = client.get(f"/subprocessors?lang={lang}").text
+        assert "Hetzner Online GmbH" in html, lang
+        for field in ("purpose", "data", "location", "safeguard"):
+            value = SUBPROCESSOR_STRINGS[lang][f"subprocessors.hetzner_{field}"]
+            assert value in html, (lang, field)
+            for claim in ENCRYPTION_CLAIMS:
+                assert claim not in value.lower(), (lang, field)
