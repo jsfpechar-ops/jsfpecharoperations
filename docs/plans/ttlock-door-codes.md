@@ -36,7 +36,7 @@ All API facts, error codes and their UbyHost reactions live in [TTLOCK](../TTLOC
 
 ### 3.1 Error table (TTLock official list K-DC-ERRCODE, owner 2026-10-26) and our kind
 
-Kind = `ttlock.ERROR_KINDS`; an unlisted errcode is `transient`. What a kind does: `offline`, `transient`, `network`, `rate`, `budget` retry (a delete until `valid_to`); `code_missing` retries like them after one list call; `lock_setup` (the lock's own setup: gateway, network, support) retries like them but slowly (issue: twice, then the host mail; delete: 1, 15, 60 minutes until `valid_to`, host mail at try 3; move: hourly until the stay starts, no mail; clock check: alert, next try in 7 days); `config`, `permission`, `reauth`, `disabled` stop at once with a host mail; `bug` is retried at most `ISSUE_MAX_ATTEMPTS` times, then handed over.
+Kind = `ttlock.ERROR_KINDS`; an unlisted errcode is `transient`. What a kind does: `offline`, `transient`, `network`, `rate`, `budget` retry (a delete until `valid_to`); `code_missing` retries like them after one list call; `lock_setup` (the lock's own setup: gateway, network, support) retries like them but slowly (issue: twice, then the host mail; delete: 1, 15, 60 minutes until `valid_to`, host mail at try 3; move: hourly until the stay starts, host mail `moved_failed` at the first failure; clock check: alert, next try in 7 days); `config` (reads as "a UbyHost setting, write to support" in the host mail), `permission`, `reauth`, `disabled` stop at once with a host mail; `bug` is retried at most `ISSUE_MAX_ATTEMPTS` times, then handed over.
 
 | Code | Meaning | Kind |
 |---|---|---|

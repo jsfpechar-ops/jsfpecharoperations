@@ -73,8 +73,8 @@ UbyHost uses the EU host `https://euapi.ttlock.com` for every call [G][CD].
 | `-3002`, `-3003` | Gateway offline / gateway busy | Retry with backoff (kind `offline`, no list lookup on a delete) |
 | `-3036`, `-3037`, `-3035`, `-2025` | Lock offline / busy, Wi-Fi lock power saving, lock frozen | Retry with backoff (kind `offline`) |
 | `-1007` | No password data of this lock: the passcode is not on the lock | Delete: one list call confirms it, then revoked (kind `code_missing`); a list answering `-1007` is unknown, never empty (the delete is retried) |
-| `-1003`, `-4043`, `-4037`, `-3034`, `-4067` | Lock missing, function not supported, gateway missing, network not configured, NB device not registered | Kind `lock_setup`: retried slowly like a transient answer (a delete until `valid_to`), host mail at the usual threshold; the host fixes the lock setup in the TTLock app |
-| `-4063`, `30008` | Delete locks first (account delete), wrong region host | Kind `config`: no retry, host mail (`30008` is the server's API base setting) |
+| `-1003`, `-4043`, `-4037`, `-3034`, `-4067` | Lock missing, function not supported, gateway missing, network not configured, NB device not registered | Kind `lock_setup`: retried slowly like a transient answer (a delete until `valid_to`), host mail at the usual threshold (a move: at the first failure); the host fixes the lock setup in the TTLock app |
+| `-4063`, `30008` | Delete locks first (account delete), wrong region host | Kind `config`: no retry, host mail that sends the host to support (`30008` is the server's API base setting) |
 | `-2009`, `-2032`, `-3006`, `-3045`, `80002` | Invalid passcode, too simple, length, unsupported digit, invalid JSON | Kind `bug`; `-2032` first gets one new random PIN. Full table: plan `ttlock-door-codes.md` 3.1 |
 | `-4056` | Lock storage full | Host mail |
 | `90000`, `1` | TTLock internal error, generic failure | Retry with backoff |
