@@ -1,0 +1,27 @@
+# Host strings read by the guest guide editor pages (go/internal/web/ai, briefs 1440 to 1446).
+# App/scripts/go_host_i18n.py writes i18n.json from these.
+guest_guide.*
+guest_questions.link
+flash.guest_guide.*
+flash.error.guide_import_airbnb_path
+flash.error.guide_import_booking_path
+flash.error.guide_import_budget
+flash.error.guide_import_busy
+flash.error.guide_import_empty
+flash.error.guide_import_limit
+flash.error.guide_import_link
+flash.error.guide_import_off
+flash.error.guide_import_same
+flash.error.guide_no_such_item
+flash.error.guide_photo_limit
+flash.error.guide_photo_size
+flash.error.guide_photo_type
+flash.error.guide_title_required
+flash.error.guide_too_long
+flash.error.guide_unknown_card
+flash.error.guide_video_url
+flash.error.guide_visibility
+flash.error.leon_terms
+leon_page.*
+common.optional
+common.back
