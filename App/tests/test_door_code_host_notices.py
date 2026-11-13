@@ -16,6 +16,8 @@ from tests.test_door_code_lost_pin import _expire_lease, _revive, _row
 from tests.test_door_codes_safeguards import _env  # noqa: F401
 from tests.test_ttlock_lock_setup import _code_row, _moved_stay, _refuse
 
+pytestmark = pytest.mark.usefixtures("_env")
+
 REAL_NOTICE = mail_notify.door_code_notice  # the world fixture replaces it with a no-op
 KIND = "door_code_pin_unverified"
 PIN = "4821937"

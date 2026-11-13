@@ -541,3 +541,49 @@ verify edge behaviour. Feed the exact cookie names into `cookie_inventory.py`
 | Leaked-credential mitigation | On | TODO | |
 | Client-side security / Page Shield | Record mode (report-only vs script) | TODO | |
 | Challenge cookies observed | `__cf_bm`, `cf_clearance` — record lifetimes from DevTools | TODO | |
+
+## Authenticated Origin Pulls (zone-level)
+
+This section closes K-S14: with it, only the owner's Cloudflare zone can reach Caddy. Phase A (the code) changes nothing by itself: `UBYHOST_AOP_MODE` unset means `off`. Do the steps below only after the change is deployed. Order matters: never set `enforce` before step 7 shows Cloudflare presenting your certificate. Use placeholders: `<ZONE_ID>` is in the Cloudflare dashboard, zone Overview, right column, "Zone ID". The private keys never leave your computer or the server, are never pasted into chat, and are never committed.
+
+1. Open https://developers.cloudflare.com/ssl/origin-configuration/authenticated-origin-pull/set-up/zone-level/ and skim it. If it differs from the steps below, the doc wins; tell the orchestrator.
+2. Create an API token: dashboard, profile icon, My Profile, API Tokens, Create Token, Create Custom Token. Permission: Zone, SSL and Certificates, Edit. Zone Resources: Include, Specific zone, your zone. Create, copy the token. In a terminal on your computer run `read -rs CF_API_TOKEN; export CF_API_TOKEN` and paste it (nothing shows), then `export ZONE_ID=<ZONE_ID>`. Delete the token when you are done (step 12).
+3. On your own computer (or the server), in an empty folder, create a private CA and a leaf certificate:
+```
+openssl genrsa -out aop-ca-key.pem 4096
+openssl req -x509 -new -key aop-ca-key.pem -sha256 -days 3650 -subj "/CN=Origin pull CA" -out aop-ca.pem
+openssl genrsa -out aop-leaf-key.pem 4096
+openssl req -new -key aop-leaf-key.pem -subj "/CN=Cloudflare origin pull" -out aop-leaf.csr
+printf 'basicConstraints=CA:FALSE\nextendedKeyUsage=clientAuth\n' > leaf.ext
+openssl x509 -req -in aop-leaf.csr -CA aop-ca.pem -CAkey aop-ca-key.pem -CAcreateserial -sha256 -days 1095 -extfile leaf.ext -out aop-leaf.pem
+openssl x509 -in aop-leaf.pem -noout -enddate
+```
+Write the printed `notAfter` date into your calendar: renew one month before it. Keep `aop-ca-key.pem` and `aop-leaf-key.pem` safe (password manager attachment or an encrypted disk); `aop-ca.pem` is public.
+4. Upload the leaf to Cloudflare (dashboard alternative: SSL/TLS, Origin Server, Authenticated Origin Pulls tab, Zone-level, Upload certificate, paste `aop-leaf.pem` and `aop-leaf-key.pem`, Continue, save the certificate ID, Done). API:
+```
+curl -sS -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/origin_tls_client_auth" \
+  -H "Authorization: Bearer $CF_API_TOKEN" -H 'Content-Type: application/json' \
+  --data "$(jq -n --rawfile c aop-leaf.pem --rawfile k aop-leaf-key.pem '{certificate:$c,private_key:$k}')" | jq '.success,.result.id,.result.status,.result.expires_on'
+```
+Expect `true`, an id, `active`. Error `missing leaf certificate` means you sent the CA file.
+5. Tell the orchestrator the expiry date (it goes into docs/OPERATIONS.md). Switch zone-level on (dashboard: the Zone-level toggle On):
+```
+curl -sS -X PUT "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/origin_tls_client_auth/settings" \
+  -H "Authorization: Bearer $CF_API_TOKEN" -H 'Content-Type: application/json' --data '{"enabled":true}' | jq '.success,.result.enabled'
+```
+Expect `true`, `true`. The global toggle you already switched on can stay on; the zone-level one takes precedence. The site keeps working: Caddy is still in `off` and ignores the certificate.
+6. On the server, in `deploy/lightsail/`: copy the public CA file to `caddy/certs/aop-ca.pem` (public file, for example `scp aop-ca.pem <SERVER>:<path>/deploy/lightsail/caddy/certs/aop-ca.pem`), then `chmod 644 caddy/certs/aop-ca.pem`. Do not copy any `-key.pem` file.
+7. Check that Cloudflare presents the certificate. Add `UBYHOST_AOP_MODE=check` to `.env`, then:
+```
+./scripts/caddy-validate.sh | tail -5
+docker compose up -d caddy
+curl -sS https://<YOUR_DOMAIN>/__aop_probe
+```
+Expected: `client_cert_issuer=CN=Origin pull CA`. If it prints `client_cert_issuer=` (empty) or an issuer that is not `Origin pull CA`, Cloudflare is not presenting your certificate yet: STOP, do not enforce; check steps 4-5 (certificate `active`, toggle on, SSL/TLS mode Full or Full (strict)), wait two minutes, repeat. The site works the whole time in `check`.
+8. Only when step 7 printed `Origin pull CA`: set `UBYHOST_AOP_MODE=enforce` in `.env`, then `./scripts/caddy-validate.sh | tail -5` (must print `Valid configuration`; if it complains about the CA file, fix step 6 first), `docker compose up -d caddy`.
+9. Verify: open `https://<YOUR_DOMAIN>/healthz` in a browser (expect 200 through Cloudflare). Then from any computer: `curl -sk --max-time 10 --resolve <YOUR_DOMAIN>:443:<SERVER_IP> https://<YOUR_DOMAIN>/healthz; echo "exit $?"` must fail (TLS alert, non-zero exit): that is a request that skips Cloudflare and now gets nothing. The "Uptime" GitHub workflow stays green (it goes through Cloudflare).
+10. ROLLBACK in one step if anything is wrong: on the server remove the `UBYHOST_AOP_MODE` line from `.env` (or set it to `off`), then `docker compose up -d caddy`. The site is back within seconds; Cloudflare can keep presenting the certificate, Caddy simply ignores it. Do not switch Cloudflare's toggle off while Caddy is in `enforce`.
+11. Renewal (before the calendar date): repeat steps 3 and 4 with new files and upload the new leaf (Cloudflare accepts the new one next to the old one; confirm it is `active`), delete the old certificate (API reference: https://developers.cloudflare.com/api/resources/origin_tls_client_auth/ ), and if you made a new CA, replace `aop-ca.pem` and run `docker compose up -d caddy`. Keep the same CA to skip that part.
+12. Delete the API token in the dashboard (My Profile, API Tokens, three dots, Delete). Tell the orchestrator "enforce is on" so it can close K-S14.
+
+Rollback: unset the variable and `docker compose up -d caddy`.
