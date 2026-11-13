@@ -99,4 +99,4 @@
 - K-DC-RENAME (943 review): door-code lookup searches by name `UH-<id>`; a code renamed in the TTLock app reads as gone.
 - K-FLAKY-VT: test_host_filter_panels_browser.py:695 ViewTransition abort once (#943), passed on re-run.
 - K-F24 (947 review): recovered batch in manual mode keeps retried_at NULL; going automatic resends it once.
-- K-DC-CARD (950): pin_unverified, reissued cards never auto-resolve.
+- K-DC-REMOVE (950): A-B-A-B move: no 2nd moved_failed mail.
