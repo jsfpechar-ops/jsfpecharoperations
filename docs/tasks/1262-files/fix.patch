@@ -1,0 +1,600 @@
+diff --git a/App/scripts/pg_schema_golden.py b/App/scripts/pg_schema_golden.py
+index fccedf2..c47833b 100644
+--- a/App/scripts/pg_schema_golden.py
++++ b/App/scripts/pg_schema_golden.py
+@@ -22,7 +22,7 @@ from pathlib import Path
+ APP_DIR = Path(__file__).resolve().parent.parent
+ sys.path.insert(0, str(APP_DIR))
+ 
+-from app import config, db  # noqa: E402
++from app import config, db, db_postgres  # noqa: E402
+ 
+ SCHEMA_DIR = APP_DIR.parent / "go" / "internal" / "schema"
+ EXPECTED = SCHEMA_DIR / "expected_schema.json"
+@@ -167,6 +167,32 @@ def expected_schema() -> dict:
+         "tables": tables,
+         "indexes": sorted(indexes),
+         "triggers": sorted(TRIGGERS),
++        "functions": python_functions(),
++        "trigger_defs": python_trigger_defs(),
++    }
++
++
++_FUNCTION_NAME = re.compile(r"CREATE OR REPLACE FUNCTION (\w+)\(")
++
++
++def python_functions() -> dict:
++    """pg_proc.prosrc of the functions db_postgres.install_pg_support re-creates on
++    every Python apply: the text between the $$ quotes, verbatim."""
++    functions = {}
++    for definition in [db_postgres.PG_SQLITE_DATE_FUNCTION, *db_postgres.PG_TRIGGERS]:
++        name = _FUNCTION_NAME.search(definition).group(1)
++        head, body, tail = definition.split("$$")
++        assert head.strip() and not tail.strip(), name
++        functions[name] = body
++    return functions
++
++
++def python_trigger_defs() -> dict:
++    """pg_get_triggerdef() of the invoice guards install_pg_triggers creates
++    (search_path public: the table is qualified, the function is not)."""
++    return {
++        name: f"CREATE TRIGGER {name} {event} ON public.{table} FOR EACH ROW EXECUTE FUNCTION {function}()"
++        for name, table, event, function in db_postgres.PG_TRIGGER_DDL
+     }
+ 
+ 
+diff --git a/App/tests/test_go_schema_golden.py b/App/tests/test_go_schema_golden.py
+index 83a7c3e..fd43bb8 100644
+--- a/App/tests/test_go_schema_golden.py
++++ b/App/tests/test_go_schema_golden.py
+@@ -104,3 +104,17 @@ def test_embedded_snapshot_matches_files_on_disk():
+     on_disk = json.loads((APP_DIR.parent / "go" / "internal" / "schema" / "expected_schema.json").read_text())
+     assert on_disk["expected_version"] == db.expected_schema_version()
+     assert "schema_migrations" in on_disk["tables"]
++
++
++def test_snapshot_has_the_python_owned_functions_and_triggers():
++    from app import db_postgres
++
++    snapshot = _golden().expected_schema()
++    sources = "".join([db_postgres.PG_SQLITE_DATE_FUNCTION, *db_postgres.PG_TRIGGERS])
++    assert len(snapshot["functions"]) == 1 + len(db_postgres.PG_TRIGGERS)
++    assert set(snapshot["trigger_defs"]) == set(db_postgres.PG_TRIGGER_NAMES) == set(snapshot["triggers"])
++    for name, _table, _event, function in db_postgres.PG_TRIGGER_DDL:
++        assert function in snapshot["functions"], name
++        assert snapshot["trigger_defs"][name].endswith(f"EXECUTE FUNCTION {function}()")
++    for name, body in snapshot["functions"].items():
++        assert "$$" + body + "$$" in sources, name
+diff --git a/App/tests/test_go_schema_migrate.py b/App/tests/test_go_schema_migrate.py
+index 6ee28e5..5c38922 100644
+--- a/App/tests/test_go_schema_migrate.py
++++ b/App/tests/test_go_schema_migrate.py
+@@ -1,7 +1,9 @@
+ """Go `ubyhost-web migrate` against Python pg_schema.py on a real PostgreSQL (brief 1260).
+ 
+ Runs when UBYHOST_TEST_DATABASE_URL or a PostgreSQL UBYHOST_DATABASE_URL is
+-set (CI job test-postgres-full) and a `go` binary is on PATH; skips otherwise.
++set (CI job test-postgres-full) and a `go` binary is on PATH; skips otherwise,
++except that under CI (env CI set) a missing `go` fails, so the job cannot go
++green without running it.
+ Every check uses its own throwaway databases, never the session database.
+ """
+ from __future__ import annotations
+@@ -23,8 +25,8 @@ _BASE_URL = os.environ.get("UBYHOST_TEST_DATABASE_URL") or os.environ.get("UBYHO
+ _GO = shutil.which("go")
+ 
+ pytestmark = pytest.mark.skipif(
+-    not _BASE_URL.startswith(("postgres://", "postgresql://")) or not _GO,
+-    reason="needs UBYHOST_TEST_DATABASE_URL or a PostgreSQL UBYHOST_DATABASE_URL, and go on PATH",
++    not _BASE_URL.startswith(("postgres://", "postgresql://")),
++    reason="needs UBYHOST_TEST_DATABASE_URL or a PostgreSQL UBYHOST_DATABASE_URL",
+ )
+ 
+ APPLIED_SQL = (
+@@ -46,12 +48,19 @@ def _admin():
+ 
+ @pytest.fixture(scope="module")
+ def go_binary(tmp_path_factory):
++    if not _GO:
++        if os.environ.get("CI"):
++            pytest.fail("go is not on PATH in CI; the Go schema parity test must run here")
++        pytest.skip("go is not on PATH")
+     out = tmp_path_factory.mktemp("gobin") / "ubyhost-web"
++    env = dict(os.environ)
++    # go.mod asks for go 1.25 (toolchain line); an older runner Go downloads it.
++    env.setdefault("GOTOOLCHAIN", "auto")
+     result = subprocess.run(
+         [_GO, "build", "-o", str(out), "./cmd/ubyhost-web"],
+-        cwd=GO_DIR, capture_output=True, text=True, timeout=900, check=False,
++        cwd=GO_DIR, env=env, capture_output=True, text=True, timeout=900, check=False,
+     )
+-    assert result.returncode == 0, result.stderr[-2000:]
++    assert result.returncode == 0, (result.stdout + result.stderr)[-3000:]
+     return out
+ 
+ 
+@@ -90,9 +99,10 @@ def _python(action: str, database: str, env: dict) -> subprocess.CompletedProces
+     )
+ 
+ 
+-def _go(binary: Path, action: str, database: str, env: dict) -> subprocess.CompletedProcess:
++def _go(binary: Path, action: str, database: str, env: dict, *, option_first: bool = False) -> subprocess.CompletedProcess:
++    args = ["--expect-database", database, action] if option_first else [action, "--expect-database", database]
+     return subprocess.run(
+-        [str(binary), "migrate", action, "--expect-database", database],
++        [str(binary), "migrate", *args],
+         cwd=APP_DIR, env=env, capture_output=True, text=True, timeout=300, check=False,
+     )
+ 
+@@ -151,7 +161,7 @@ def test_go_apply_matches_python(go_binary, throwaway, tmp_path):
+ 
+     python_check = _python("check", database, env)
+     assert python_check.returncode == 0, python_check.stderr
+-    go_check = _go(go_binary, "check", database, env)
++    go_check = _go(go_binary, "check", database, env, option_first=True)
+     assert go_check.returncode == 0, go_check.stderr
+     # Same OK line apart from the action word.
+     assert go_check.stdout == python_check.stdout
+@@ -196,3 +206,82 @@ def test_go_apply_refuses_without_legacy_schema(go_binary, throwaway, tmp_path):
+             "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public'"
+         ).fetchone()[0]
+     assert tables == 0
++
++
++def _fresh(go_binary, throwaway, tmp_path, suffix):
++    database = throwaway(suffix)
++    url = _url_for(database)
++    data_dir = tmp_path / f"data-{suffix}"
++    data_dir.mkdir()
++    env = _env(url, data_dir)
++    result = _python("apply", database, env)
++    assert result.returncode == 0, result.stderr[-2000:]
++    return database, url, env
++
++
++def test_go_check_fails_closed_on_python_owned_ddl(go_binary, throwaway, tmp_path):
++    """Go applies goose files only; a changed function body needs one Python apply."""
++    import psycopg
++
++    database, url, env = _fresh(go_binary, throwaway, tmp_path, "ddl")
++    assert _go(go_binary, "check", database, env).returncode == 0
++    with psycopg.connect(url, autocommit=True) as conn:
++        conn.execute(
++            "CREATE OR REPLACE FUNCTION ubyhost_invoice_note_guard() RETURNS trigger "
++            "LANGUAGE plpgsql AS $$ BEGIN RETURN NEW; END $$"
++        )
++    # Python's check compares trigger names only, so it does not see this.
++    assert _python("check", database, env).returncode == 0
++    for action in ("check", "apply"):
++        stale = _go(go_binary, action, database, env)
++        assert stale.returncode == 1, stale.stdout
++        assert "Python-owned DDL" in stale.stderr and "pg_schema.py apply" in stale.stderr
++    with psycopg.connect(url, autocommit=True) as conn:
++        conn.execute("DROP TRIGGER invoice_item_insert_guard ON invoice_item")
++        conn.execute(
++            "CREATE TRIGGER invoice_item_insert_guard BEFORE UPDATE ON invoice_item "
++            "FOR EACH ROW EXECUTE FUNCTION ubyhost_invoice_item_insert_guard()"
++        )
++    assert _go(go_binary, "check", database, env).returncode == 1
++    restored = _python("apply", database, env)
++    assert restored.returncode == 0, restored.stderr[-2000:]
++    check = _go(go_binary, "check", database, env)
++    assert check.returncode == 0, check.stderr
++
++
++def test_go_apply_rolls_back_a_failing_goose_file(go_binary, throwaway, tmp_path):
++    import psycopg
++
++    database, url, env = _fresh(go_binary, throwaway, tmp_path, "rollback")
++    migrations = tmp_path / "migrations_pg"
++    shutil.copytree(GOOSE_DIR, migrations)
++    last = max(int(p.name[:5]) for p in migrations.glob("*.sql"))
++    (migrations / f"{last + 1:05d}_rollback_probe_ok.sql").write_text(
++        "-- +goose Up\nCREATE TABLE go_rollback_probe (id BIGINT);\n"
++        "INSERT INTO go_rollback_probe (id) VALUES (1);\n-- +goose Down\nDROP TABLE go_rollback_probe;\n",
++        encoding="utf-8",
++    )
++    (migrations / f"{last + 2:05d}_rollback_probe_bad.sql").write_text(
++        "-- +goose Up\nALTER TABLE user_account ADD COLUMN go_rollback_probe BIGINT;\n"
++        "SELECT this_is_not_sql FROM;\n",
++        encoding="utf-8",
++    )
++    with psycopg.connect(url, autocommit=True) as conn:
++        before_rows = conn.execute("SELECT id, version_id, is_applied FROM goose_db_version ORDER BY id").fetchall()
++    probe_env = dict(env, UBYHOST_MIGRATIONS_DIR=str(migrations))
++    plan = _go(go_binary, "plan", database, probe_env)
++    assert f"goose pending=[{last + 1}, {last + 2}]" in plan.stdout, plan.stdout + plan.stderr
++    result = _go(go_binary, "apply", database, probe_env)
++    assert result.returncode == 1, result.stdout
++    assert f"goose {last + 2:05d}" in result.stderr
++    with psycopg.connect(url, autocommit=True) as conn:
++        after_rows = conn.execute("SELECT id, version_id, is_applied FROM goose_db_version ORDER BY id").fetchall()
++        probe_table = conn.execute("SELECT to_regclass('public.go_rollback_probe')").fetchone()[0]
++        probe_column = conn.execute(
++            "SELECT count(*) FROM information_schema.columns "
++            "WHERE table_name = 'user_account' AND column_name = 'go_rollback_probe'"
++        ).fetchone()[0]
++    assert after_rows == before_rows
++    assert probe_table is None and probe_column == 0
++    check = _go(go_binary, "check", database, env)
++    assert check.returncode == 0, check.stderr
+diff --git a/deploy/lightsail/scripts/deploy.sh b/deploy/lightsail/scripts/deploy.sh
+index e88dd8b..6c5a8e4 100755
+--- a/deploy/lightsail/scripts/deploy.sh
++++ b/deploy/lightsail/scripts/deploy.sh
+@@ -25,7 +25,9 @@ fi
+ # 1261: which code applies the PostgreSQL goose files. python (the default,
+ # also when unset or empty) runs App/scripts/pg_schema.py in the new ubyhost
+ # image; go runs `ubyhost-web migrate apply` in the new ubyhost-go image. Both
+-# write the same goose_db_version rows, so either can follow the other.
++# write the same goose_db_version rows. Go applies goose files only: when the
++# functions or triggers Python re-creates on every apply differ from the app's,
++# Go fails closed and the deploy stops; deploy once with python, then go again.
+ # Checked here, before anything touches the stack.
+ SCHEMA_APPLY="${UBYHOST_SCHEMA_APPLY:-python}"
+ case "${SCHEMA_APPLY}" in
+diff --git a/docs/LIGHTSAIL.md b/docs/LIGHTSAIL.md
+index c8646c1..4f66eec 100644
+--- a/docs/LIGHTSAIL.md
++++ b/docs/LIGHTSAIL.md
+@@ -214,7 +214,7 @@ On PostgreSQL, `deploy.sh` applies pending goose files (`App/migrations_pg/`) wi
+ 
+ The Go command (`ubyhost-web migrate plan|check|apply --expect-database <db>`) makes the same checks as Python: the public schema, the database name, and the authority marker in `/data/database-authority.json` (database, schema and URL fingerprint). It takes the same advisory locks, runs every pending goose file in one transaction and commits only when the schema then matches what the app expects. It applies goose files only: a fresh, empty database still needs `pg_schema.py apply` (or `pg-cutover.sh`) once, and Go refuses with "legacy schema not set up". `pg-cutover.sh` stays Python-only: it copies SQLite data, and Go has no SQLite.
+ 
+-Rollback: remove `UBYHOST_SCHEMA_APPLY` from `.env` (or set it to `python`), then `./scripts/deploy.sh`. Both write the same `goose_db_version` rows, so either one can take over from the other at any time.
++Rollback: remove `UBYHOST_SCHEMA_APPLY` from `.env` (or set it to `python`), then `./scripts/deploy.sh`. Both write the same `goose_db_version` rows, so Python can always take over from Go. Go can take over from Python as long as the functions and triggers Python re-creates on every apply (`ubyhost_sqlite_date` and the six invoice guards in `App/app/db_postgres.py`) match what the app expects; when a PR changes one of them, Go `check` and `apply` fail closed with "Python-owned DDL" and the deploy stops before `up`. Then deploy once with `UBYHOST_SCHEMA_APPLY=python`, and switch back to `go` after it.
+ 
+ ## Day-to-day commands
+ 
+diff --git a/go/cmd/ubyhost-web/register_schema.go b/go/cmd/ubyhost-web/register_schema.go
+index d7b115e..65ccc7f 100644
+--- a/go/cmd/ubyhost-web/register_schema.go
++++ b/go/cmd/ubyhost-web/register_schema.go
+@@ -6,7 +6,6 @@ package main
+ 
+ import (
+ 	"context"
+-	"flag"
+ 	"fmt"
+ 	"io"
+ 	"log/slog"
+@@ -62,24 +61,13 @@ func migrateArgs(argv []string) ([]string, bool) {
+ 	return nil, false
+ }
+ 
+-// runMigrate parses `<action> --expect-database <db>` and runs it. It
+-// returns the exit code: 0 OK, 1 failure, 2 bad usage.
++// runMigrate parses the action and --expect-database in any order, like
++// pg_schema.py's argparse, and runs it. It returns the exit code: 0 OK,
++// 1 failure, 2 bad usage.
+ func runMigrate(args []string, getenv func(string) string, stdout, stderr io.Writer) int {
+-	usage := "usage: ubyhost-web migrate plan|check|apply --expect-database <db>"
+-	if len(args) == 0 {
+-		fmt.Fprintln(stderr, usage)
+-		return 2
+-	}
+-	action := args[0]
+-	if action != "plan" && action != "check" && action != "apply" {
+-		fmt.Fprintln(stderr, usage)
+-		return 2
+-	}
+-	fs := flag.NewFlagSet("migrate "+action, flag.ContinueOnError)
+-	fs.SetOutput(stderr)
+-	expect := fs.String("expect-database", "", "database name the URL must connect to")
+-	if err := fs.Parse(args[1:]); err != nil || fs.NArg() != 0 || *expect == "" {
+-		fmt.Fprintln(stderr, usage)
++	action, expect, ok := parseMigrateArgs(args)
++	if !ok {
++		fmt.Fprintln(stderr, "usage: ubyhost-web migrate plan|check|apply --expect-database <db>")
+ 		return 2
+ 	}
+ 	dbURL := getenv("UBYHOST_DATABASE_URL")
+@@ -91,7 +79,7 @@ func runMigrate(args []string, getenv func(string) string, stdout, stderr io.Wri
+ 	defer stop()
+ 	err := schema.Run(ctx, schema.Config{
+ 		Action:         action,
+-		ExpectDatabase: *expect,
++		ExpectDatabase: expect,
+ 		DatabaseURL:    dbURL,
+ 		DataDir:        getenv("UBYHOST_DATA_DIR"),
+ 		MigrationsDir:  migrations,
+@@ -106,3 +94,36 @@ func runMigrate(args []string, getenv func(string) string, stdout, stderr io.Wri
+ 	}
+ 	return 0
+ }
++
++// parseMigrateArgs accepts one action (plan, check or apply) and
++// --expect-database <db> or --expect-database=<db>, in either order. Any
++// other argument, a second action or an empty database name is refused.
++func parseMigrateArgs(args []string) (action, expect string, ok bool) {
++	seenExpect := false
++	for i := 0; i < len(args); i++ {
++		a := args[i]
++		switch {
++		case a == "--expect-database":
++			if i+1 >= len(args) || strings.HasPrefix(args[i+1], "-") {
++				return "", "", false
++			}
++			i++
++			expect, seenExpect = args[i], true
++		case strings.HasPrefix(a, "--expect-database="):
++			expect, seenExpect = strings.TrimPrefix(a, "--expect-database="), true
++		case strings.HasPrefix(a, "-"):
++			return "", "", false
++		case action != "":
++			return "", "", false
++		default:
++			action = a
++		}
++	}
++	if action != "plan" && action != "check" && action != "apply" {
++		return "", "", false
++	}
++	if !seenExpect || expect == "" {
++		return "", "", false
++	}
++	return action, expect, true
++}
+diff --git a/go/cmd/ubyhost-web/register_schema_test.go b/go/cmd/ubyhost-web/register_schema_test.go
+index 8c72e99..f2b7a80 100644
+--- a/go/cmd/ubyhost-web/register_schema_test.go
++++ b/go/cmd/ubyhost-web/register_schema_test.go
+@@ -37,6 +37,10 @@ func TestRunMigrateUsage(t *testing.T) {
+ 		{"apply", "--expect-database", ""},
+ 		{"apply", "--expect-database", "ubyhost", "extra"},
+ 		{"apply", "--bogus"},
++		{"apply", "-expect-database", "ubyhost"},
++		{"apply", "check", "--expect-database", "ubyhost"},
++		{"--expect-database", "--expect-database", "ubyhost"},
++		{"--expect-database", "ubyhost"},
+ 	} {
+ 		var out, errOut bytes.Buffer
+ 		if code := runMigrate(args, env, &out, &errOut); code != 2 {
+@@ -66,3 +70,18 @@ func TestRunMigrateRedactsURL(t *testing.T) {
+ 		t.Fatalf("code %d, stderr %q", code, errOut.String())
+ 	}
+ }
++
++func TestParseMigrateArgsAnyOrder(t *testing.T) {
++	for _, args := range [][]string{
++		{"apply", "--expect-database", "ubyhost"},
++		{"--expect-database", "ubyhost", "apply"},
++		{"--expect-database=ubyhost", "apply"},
++		{"apply", "--expect-database=ubyhost"},
++		{"apply", "--expect-database", "other", "--expect-database", "ubyhost"},
++	} {
++		action, expect, ok := parseMigrateArgs(args)
++		if !ok || action != "apply" || expect != "ubyhost" {
++			t.Errorf("parseMigrateArgs(%q) = %q, %q, %v", args, action, expect, ok)
++		}
++	}
++}
+diff --git a/go/internal/schema/expected.go b/go/internal/schema/expected.go
+index 661ed42..fd17aad 100644
+--- a/go/internal/schema/expected.go
++++ b/go/internal/schema/expected.go
+@@ -32,6 +32,11 @@ type Expected struct {
+ 	Tables          map[string][]Column `json:"tables"`
+ 	Indexes         []string            `json:"indexes"`
+ 	Triggers        []string            `json:"triggers"`
++	// Functions and TriggerDefs are the objects Python's apply re-creates every
++	// time (db_postgres.install_pg_support); Go cannot, so check refuses when
++	// they differ: pg_proc.prosrc by function name, pg_get_triggerdef by trigger.
++	Functions   map[string]string `json:"functions"`
++	TriggerDefs map[string]string `json:"trigger_defs"`
+ }
+ 
+ // Actual is what a database has.
+@@ -40,6 +45,10 @@ type Actual struct {
+ 	Tables   map[string][]Column
+ 	Indexes  map[string]bool
+ 	Triggers map[string]bool
++	// Functions holds every prosrc per public function name (more than one
++	// means an overload, which never matches).
++	Functions   map[string][]string
++	TriggerDefs map[string]string
+ }
+ 
+ // Status mirrors the dict postgres_schema_status returns (goose pending apart).
+@@ -54,7 +63,11 @@ type Status struct {
+ 	MissingIndexes   int
+ 	MissingTriggers  int
+ 	ExtraTriggers    int
+-	Current          bool
++	// FunctionMismatches and TriggerDefMismatches count Python-owned DDL that
++	// is missing or differs; only a Python apply fixes it.
++	FunctionMismatches   int
++	TriggerDefMismatches int
++	Current              bool
+ }
+ 
+ // LoadExpected decodes the embedded snapshot.
+@@ -63,7 +76,7 @@ func LoadExpected() (Expected, error) {
+ 	if err := json.Unmarshal(expectedSchemaJSON, &e); err != nil {
+ 		return e, fmt.Errorf("expected_schema.json: %w", err)
+ 	}
+-	if len(e.Tables) == 0 || e.ExpectedVersion <= 0 {
++	if len(e.Tables) == 0 || e.ExpectedVersion <= 0 || len(e.Functions) == 0 || len(e.TriggerDefs) == 0 {
+ 		return e, fmt.Errorf("expected_schema.json is empty")
+ 	}
+ 	return e, nil
+@@ -119,8 +132,19 @@ func Compare(e Expected, a Actual) Status {
+ 			s.ExtraTriggers++
+ 		}
+ 	}
++	for name, body := range e.Functions {
++		if got := a.Functions[name]; len(got) != 1 || got[0] != body {
++			s.FunctionMismatches++
++		}
++	}
++	for name, def := range e.TriggerDefs {
++		if a.TriggerDefs[name] != def {
++			s.TriggerDefMismatches++
++		}
++	}
+ 	s.Current = s.ExpectedVersion == s.ActualVersion && s.MissingTables == 0 &&
+-		s.ColumnMismatches == 0 && s.MissingIndexes == 0 && s.MissingTriggers == 0 && s.ExtraTriggers == 0
++		s.ColumnMismatches == 0 && s.MissingIndexes == 0 && s.MissingTriggers == 0 && s.ExtraTriggers == 0 &&
++		s.FunctionMismatches == 0 && s.TriggerDefMismatches == 0
+ 	return s
+ }
+ 
+@@ -133,7 +157,8 @@ type Querier interface {
+ 
+ // ReadActual reads the same catalog views postgres_schema_status reads.
+ func ReadActual(ctx context.Context, q Querier) (Actual, error) {
+-	a := Actual{Tables: map[string][]Column{}, Indexes: map[string]bool{}, Triggers: map[string]bool{}}
++	a := Actual{Tables: map[string][]Column{}, Indexes: map[string]bool{}, Triggers: map[string]bool{},
++		Functions: map[string][]string{}, TriggerDefs: map[string]string{}}
+ 	rows, err := q.Query(ctx,
+ 		"SELECT table_name, column_name, data_type, is_nullable "+
+ 			"FROM information_schema.columns WHERE table_schema = current_schema() "+
+@@ -182,6 +207,30 @@ func ReadActual(ctx context.Context, q Querier) (Actual, error) {
+ 		"WHERE n.nspname = current_schema() AND NOT t.tgisinternal", a.Triggers); err != nil {
+ 		return a, err
+ 	}
++	pairs := func(sql string, add func(k, v string)) error {
++		rows, err := q.Query(ctx, sql)
++		if err != nil {
++			return err
++		}
++		defer rows.Close()
++		for rows.Next() {
++			var k, v string
++			if err := rows.Scan(&k, &v); err != nil {
++				return err
++			}
++			add(k, v)
++		}
++		return rows.Err()
++	}
++	if err := pairs("SELECT p.proname, p.prosrc FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace "+
++		"WHERE n.nspname = current_schema()", func(k, v string) { a.Functions[k] = append(a.Functions[k], v) }); err != nil {
++		return a, err
++	}
++	if err := pairs("SELECT t.tgname, pg_get_triggerdef(t.oid) FROM pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid "+
++		"JOIN pg_namespace n ON n.oid = c.relnamespace "+
++		"WHERE n.nspname = current_schema() AND NOT t.tgisinternal", func(k, v string) { a.TriggerDefs[k] = v }); err != nil {
++		return a, err
++	}
+ 	var exists bool
+ 	if err := q.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM information_schema.tables "+
+ 		"WHERE table_schema = current_schema() AND table_name = 'schema_migrations')").Scan(&exists); err != nil {
+@@ -208,3 +257,9 @@ func toLowerASCII(s string) string {
+ 	}
+ 	return string(b)
+ }
++
++// PythonDDLStale reports a schema that is otherwise current but whose
++// Python-owned functions or triggers differ from what the app expects.
++func (s Status) PythonDDLStale() bool {
++	return s.FunctionMismatches > 0 || s.TriggerDefMismatches > 0
++}
+diff --git a/go/internal/schema/expected_test.go b/go/internal/schema/expected_test.go
+index 16b8211..39786af 100644
+--- a/go/internal/schema/expected_test.go
++++ b/go/internal/schema/expected_test.go
+@@ -12,7 +12,8 @@ func TestLoadExpected(t *testing.T) {
+ 	if err != nil {
+ 		t.Fatal(err)
+ 	}
+-	if e.ExpectedVersion < 45 || len(e.Tables["schema_migrations"]) != 3 || len(e.Triggers) != 6 || len(e.Indexes) == 0 {
++	if e.ExpectedVersion < 45 || len(e.Tables["schema_migrations"]) != 3 || len(e.Triggers) != 6 || len(e.Indexes) == 0 ||
++		len(e.Functions) != 7 || len(e.TriggerDefs) != 6 {
+ 		t.Fatalf("unexpected snapshot: version %d, %d tables, %d indexes, %d triggers",
+ 			e.ExpectedVersion, len(e.Tables), len(e.Indexes), len(e.Triggers))
+ 	}
+@@ -25,8 +26,10 @@ func fakeExpected() Expected {
+ 			"a": {{Name: "id", Type: "bigint", NotNull: true}, {Name: "note", Type: "text"}},
+ 			"b": {{Name: "id", Type: "bigint", NotNull: true}},
+ 		},
+-		Indexes:  []string{"a_note"},
+-		Triggers: []string{"t1"},
++		Indexes:     []string{"a_note"},
++		Triggers:    []string{"t1"},
++		Functions:   map[string]string{"f": "BEGIN RETURN NEW; END"},
++		TriggerDefs: map[string]string{"t1": "CREATE TRIGGER t1 BEFORE DELETE ON public.a FOR EACH ROW EXECUTE FUNCTION f()"},
+ 	}
+ }
+ 
+@@ -38,13 +41,18 @@ func fakeActual() Actual {
+ 			"b":     {{Name: "id", Type: "bigint", NotNull: true}},
+ 			"extra": {{Name: "x", Type: "text"}},
+ 		},
+-		Indexes:  map[string]bool{"a_note": true, "a_pkey": true},
+-		Triggers: map[string]bool{"t1": true},
++		Indexes:     map[string]bool{"a_note": true, "a_pkey": true},
++		Triggers:    map[string]bool{"t1": true},
++		Functions:   map[string][]string{"f": {"BEGIN RETURN NEW; END"}, "other": {"x"}},
++		TriggerDefs: map[string]string{"t1": "CREATE TRIGGER t1 BEFORE DELETE ON public.a FOR EACH ROW EXECUTE FUNCTION f()"},
+ 	}
+ }
+ 
+ func TestCompareCurrent(t *testing.T) {
+ 	s := Compare(fakeExpected(), fakeActual())
++	if s.PythonDDLStale() {
++		t.Fatalf("want no Python DDL drift, got %+v", s)
++	}
+ 	if !s.Current || s.ExtraTables != 1 || s.ActualTables != 3 || s.ExpectedTables != 2 {
+ 		t.Fatalf("want current with one extra table, got %+v", s)
+ 	}
+@@ -64,6 +72,22 @@ func TestCompareFailures(t *testing.T) {
+ 		"missing trigger": func(e *Expected, a *Actual) { delete(a.Triggers, "t1") },
+ 		"extra trigger":   func(e *Expected, a *Actual) { a.Triggers["t2"] = true },
+ 	}
++	stale := map[string]func(*Expected, *Actual){
++		"missing function":    func(e *Expected, a *Actual) { delete(a.Functions, "f") },
++		"function body":       func(e *Expected, a *Actual) { a.Functions["f"] = []string{"BEGIN RETURN OLD; END"} },
++		"function overload":   func(e *Expected, a *Actual) { a.Functions["f"] = append(a.Functions["f"], "BEGIN RETURN NEW; END") },
++		"trigger def":         func(e *Expected, a *Actual) { a.TriggerDefs["t1"] = "CREATE TRIGGER t1 BEFORE INSERT ON public.a" },
++		"missing trigger def": func(e *Expected, a *Actual) { delete(a.TriggerDefs, "t1") },
++	}
++	for name, mutate := range stale {
++		e, a := fakeExpected(), fakeActual()
++		a.Functions = map[string][]string{"f": {"BEGIN RETURN NEW; END"}}
++		a.TriggerDefs = map[string]string{"t1": e.TriggerDefs["t1"]}
++		mutate(&e, &a)
++		if s := Compare(e, a); s.Current || !s.PythonDDLStale() {
++			t.Errorf("%s: want not current and Python DDL stale, got %+v", name, s)
++		}
++	}
+ 	for name, mutate := range cases {
+ 		e, a := fakeExpected(), fakeActual()
+ 		a.Tables["a"] = append([]Column(nil), a.Tables["a"]...)
+diff --git a/go/internal/schema/migrate.go b/go/internal/schema/migrate.go
+index 5584faa..1812ed0 100644
+--- a/go/internal/schema/migrate.go
++++ b/go/internal/schema/migrate.go
+@@ -34,6 +34,11 @@ type Config struct {
+ // errLegacy is returned when goose has nothing to build on.
+ var errLegacy = errors.New("legacy schema not set up; run App/scripts/pg_schema.py apply once")
+ 
++// errPythonDDL is returned when the functions or triggers Python's apply
++// re-creates differ from the app's; Go applies goose files only.
++var errPythonDDL = errors.New("PostgreSQL functions or triggers differ from the app's (Python-owned DDL); " +
++	"run App/scripts/pg_schema.py apply once (deploy with UBYHOST_SCHEMA_APPLY=python), then switch back")
++
+ // Run executes one action and prints the same OK line as pg_schema.py.
+ func Run(ctx context.Context, cfg Config, stdout io.Writer) error {
+ 	switch cfg.Action {
+@@ -107,6 +112,9 @@ func Run(ctx context.Context, cfg Config, stdout io.Writer) error {
+ 		if err != nil {
+ 			return err
+ 		}
++		if status.PythonDDLStale() {
++			return errPythonDDL
++		}
+ 		if !status.Current || len(pending) > 0 {
+ 			return errors.New("PostgreSQL schema is not current; run the explicit apply command.")
+ 		}
+@@ -189,6 +197,9 @@ func apply(ctx context.Context, conn *pgx.Conn, expected Expected, dir string) (
+ 	if err != nil {
+ 		return Status{}, err
+ 	}
++	if status.PythonDDLStale() {
++		return Status{}, fmt.Errorf("%w; nothing was committed", errPythonDDL)
++	}
+ 	if !status.Current {
+ 		return Status{}, errors.New("PostgreSQL schema is absent, outdated, or incompatible after apply; nothing was committed.")
+ 	}
