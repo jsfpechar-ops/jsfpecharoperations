@@ -112,27 +112,31 @@ func havelServerError(w http.ResponseWriter, err error) {
 	http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 }
 
-// enter runs the two Python dependencies in their order: protect_host_post on
-// the router (the CSRF check, a POST only), then auth.require_login. It
-// returns nil when it has written the response.
-func (d HavelDeps) enter(w http.ResponseWriter, r *http.Request) *havelCall {
-	at := d.Now()
-	getenv := d.Env.Getenv
-	if r.Method == http.MethodPost {
-		// request.form() reads multipart bodies too (havel.js posts FormData).
-		if havelIsMultipart(r) {
-			r.Body = http.MaxBytesReader(w, r.Body, havelMultipartMax)
-			if err := r.ParseMultipartForm(havelMultipartMax); err != nil {
-				log.Printf("havel: multipart form: %v", err)
-			}
-		}
-		if !hostweb.CSRF(w, r, getenv, at) {
-			return nil
-		}
-		if err := r.ParseForm(); err != nil {
-			log.Printf("havel: form: %v", err)
+// gate is protect_host_post on the router: for a POST, the multipart parse
+// (request.form() reads it, havel.js posts FormData) and the CSRF check. It
+// returns false when it has written the response.
+func (d HavelDeps) gate(w http.ResponseWriter, r *http.Request, at time.Time) bool {
+	if r.Method != http.MethodPost {
+		return true
+	}
+	if havelIsMultipart(r) {
+		r.Body = http.MaxBytesReader(w, r.Body, havelMultipartMax)
+		if err := r.ParseMultipartForm(havelMultipartMax); err != nil {
+			log.Printf("havel: multipart form: %v", err)
 		}
 	}
+	if !hostweb.CSRF(w, r, d.Env.Getenv, at) {
+		return false
+	}
+	if err := r.ParseForm(); err != nil {
+		log.Printf("havel: form: %v", err)
+	}
+	return true
+}
+
+// login is auth.require_login. It returns nil when it has written the response.
+func (d HavelDeps) login(w http.ResponseWriter, r *http.Request, at time.Time) *havelCall {
+	getenv := d.Env.Getenv
 	h, err := hostweb.Login(w, r, d.Pool, getenv, at)
 	if err != nil {
 		havelServerError(w, err)
@@ -148,6 +152,17 @@ func (d HavelDeps) enter(w http.ResponseWriter, r *http.Request) *havelCall {
 	}
 	return &havelCall{HavelDeps: d, store: HavelStore{Pool: d.Pool, Env: d.Env}, env: d.Env, w: w, r: r, h: h, at: at,
 		lang: hostweb.Lang(r), secret: secret}
+}
+
+// enter runs the two Python dependencies in their order: protect_host_post on
+// the router (the CSRF check, a POST only), then auth.require_login. It
+// returns nil when it has written the response.
+func (d HavelDeps) enter(w http.ResponseWriter, r *http.Request) *havelCall {
+	at := d.Now()
+	if !d.gate(w, r, at) {
+		return nil
+	}
+	return d.login(w, r, at)
 }
 
 func (c *havelCall) t(key string, params map[string]any) string {

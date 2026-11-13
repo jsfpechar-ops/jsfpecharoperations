@@ -49,7 +49,7 @@ def i18n_json() -> str:
 
 
 def catalog_json() -> str:
-    data = {"topics": list(guest_guide.TOPICS), "kinds": guest_guide.KINDS, "must_have": list(guest_guide.MUST_HAVE),
+    data = {"topics": list(guest_guide.TOPICS), "kinds": [[kind, topic] for kind, topic in guest_guide.KINDS.items()], "must_have": list(guest_guide.MUST_HAVE),
             "terms_version": leon.LEON_TERMS_VERSION, "setup_steps": list(leon.SETUP_STEPS)}
     return json.dumps(data, ensure_ascii=False, indent=1) + "\n"
 
