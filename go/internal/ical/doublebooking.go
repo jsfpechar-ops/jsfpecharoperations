@@ -96,57 +96,67 @@ func checkDoubleBookings(ctx context.Context, pool *pgxpool.Pool, getenv func(st
 	}
 
 	openRows, err := pool.Query(ctx,
-		`SELECT dedupe_key FROM alert WHERE kind = 'double_booking' AND apartment_id = $1 AND resolved_at IS NULL`,
+		`SELECT dedupe_key, created_at FROM alert WHERE kind = 'double_booking' AND apartment_id = $1 AND resolved_at IS NULL`,
 		apartmentID)
 	if err != nil {
 		return err
 	}
-	open := map[string]bool{}
+	open := map[string]string{} // dedupe_key -> created_at
 	for openRows.Next() {
-		var key string
-		if err := openRows.Scan(&key); err != nil {
+		var key, createdAt string
+		if err := openRows.Scan(&key, &createdAt); err != nil {
 			openRows.Close()
 			return err
 		}
-		open[key] = true
+		open[key] = createdAt
 	}
 	openRows.Close()
 	if err := openRows.Err(); err != nil {
 		return err
 	}
+	retryCutoff := time.Now().UTC().Add(-24*time.Hour).Format("2006-01-02T15:04:05") + "+00:00"
 
 	current := map[string]bool{}
 	for _, p := range pairs {
 		key := fmt.Sprintf("double_booking:%d:%d:%d", apartmentID, p.firstID, p.secondID)
 		current[key] = true
-		if open[key] {
-			continue // already alarmed; one e-mail per pair while it stays open
-		}
 		dates := fmtRange(p.firstFrom, p.firstTo)
 		otherDates := fmtRange(p.secondFrom, p.secondTo)
 		otherSource := p.secondSource
 		if otherSource == "" {
 			otherSource = "ical"
 		}
-		aid, rid := apartmentID, p.secondID
-		title := fmt.Sprintf("%s: two bookings overlap on %s.", property, dates)
-		detail := fmt.Sprintf("A second booking (%s, source %s) covers the same nights. Only one of them can happen: cancel or move one booking on the portal.", otherDates, otherSource)
-		if err := ubyport.RaiseAlert(ctx, pool, "warning", "double_booking", title, detail, key, &aid, &rid, nil,
-			ubyport.AlertParams{
-				"property": property, "dates": dates,
-				"other_dates": otherDates, "other_source": otherSource,
+		_, isOpen := open[key]
+		isNew := !isOpen
+		if isNew {
+			aid, rid := apartmentID, p.secondID
+			title := fmt.Sprintf("%s: two bookings overlap on %s.", property, dates)
+			detail := fmt.Sprintf("A second booking (%s, source %s) covers the same nights. Only one of them can happen: cancel or move one booking on the portal.", otherDates, otherSource)
+			if err := ubyport.RaiseAlert(ctx, pool, "warning", "double_booking", title, detail, key, &aid, &rid, nil,
+				ubyport.AlertParams{
+					"property": property, "dates": dates,
+					"other_dates": otherDates, "other_source": otherSource,
+				}); err != nil {
+				return err
+			}
+		}
+		// Queued for a new pair and retried while the alert is under 24 h old:
+		// EnqueueMail is idempotent on the alert dedupe key, so a failed enqueue is
+		// retried on the next hourly check. Not later: mail.purge_old deletes sent
+		// outbox rows after 14 days, and an older retry would mail the host again.
+		if isNew || open[key] >= retryCutoff {
+			if _, err := ubyport.QueueDoubleBookingMail(ctx, pool, getenv, ubyport.DoubleBooking{
+				ApartmentID: apartmentID, Property: property, Key: key,
+				FirstID: p.firstID, FirstFrom: p.firstFrom, FirstTo: p.firstTo, FirstSource: p.firstSource,
+				SecondID: p.secondID, SecondFrom: p.secondFrom, SecondTo: p.secondTo, SecondSource: p.secondSource,
 			}); err != nil {
-			return err
+				log.Printf("ical double_booking mail not queued apartment_id=%d key=%s: %v", apartmentID, key, err)
+			}
 		}
-		if _, err := ubyport.QueueDoubleBookingMail(ctx, pool, getenv, ubyport.DoubleBooking{
-			ApartmentID: apartmentID, Property: property, Key: key,
-			FirstID: p.firstID, FirstFrom: p.firstFrom, FirstTo: p.firstTo, FirstSource: p.firstSource,
-			SecondID: p.secondID, SecondFrom: p.secondFrom, SecondTo: p.secondTo, SecondSource: p.secondSource,
-		}); err != nil {
-			log.Printf("ical double_booking mail not queued apartment_id=%d key=%s: %v", apartmentID, key, err)
+		if isNew {
+			log.Printf("ical_double_booking apartment_id=%d pair=%d:%d dates=%s other=%s source=%s",
+				apartmentID, p.firstID, p.secondID, dates, otherDates, otherSource)
 		}
-		log.Printf("ical_double_booking apartment_id=%d pair=%d:%d dates=%s other=%s source=%s",
-			apartmentID, p.firstID, p.secondID, dates, otherDates, otherSource)
 	}
 	for key := range open {
 		if !current[key] {
