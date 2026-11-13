@@ -299,7 +299,9 @@ def test_drain_checks_for_stuck_rows_at_most_once_per_window(monkeypatch):
     calls = []
     monkeypatch.setattr(jobqueue, "watch_stuck", lambda: calls.append(1) or [])
     monkeypatch.setattr(jobqueue, "claim", lambda: None)
-    monkeypatch.setattr(jobqueue, "_last_stuck_check", 0.0)
+    monkeypatch.setattr(
+        jobqueue, "_last_stuck_check", jobqueue.time.monotonic() - jobqueue.STUCK_CHECK_SECONDS - 1
+    )
     assert jobqueue.drain(lambda kind: None, threading.Event()) == 0
     assert jobqueue.drain(lambda kind: None, threading.Event()) == 0
     assert calls == [1]
@@ -335,7 +337,9 @@ def test_drain_checks_again_once_the_window_has_passed(monkeypatch):
     calls = []
     monkeypatch.setattr(jobqueue, "watch_stuck", lambda: calls.append(1) or [])
     monkeypatch.setattr(jobqueue, "claim", lambda: None)
-    monkeypatch.setattr(jobqueue, "_last_stuck_check", 0.0)
+    monkeypatch.setattr(
+        jobqueue, "_last_stuck_check", jobqueue.time.monotonic() - jobqueue.STUCK_CHECK_SECONDS - 1
+    )
     jobqueue.drain(lambda kind: None, threading.Event())
     monkeypatch.setattr(
         jobqueue, "_last_stuck_check", jobqueue.time.monotonic() - jobqueue.STUCK_CHECK_SECONDS - 1
