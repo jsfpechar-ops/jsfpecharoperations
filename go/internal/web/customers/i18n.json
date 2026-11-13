@@ -1,0 +1,18 @@
+{
+ "cs": {
+  "auth.error.admins_only": "Pouze pro administrátory.",
+  "auth.error.own_disable": "Nemůžete vypnout vlastní administrátorský účet.",
+  "customers.ops.disabled": "Účet %(username)s deaktivován.",
+  "customers.ops.enabled": "Účet %(username)s aktivován."
+ },
+ "en": {
+  "auth.error.admins_only": "Administrators only.",
+  "auth.error.own_disable": "You cannot disable your own administrator account.",
+  "customers.ops.disabled": "Account %(username)s deactivated.",
+  "customers.ops.enabled": "Account %(username)s activated."
+ },
+ "vi": {
+  "auth.error.admins_only": "Chỉ dành cho quản trị viên.",
+  "auth.error.own_disable": "Bạn không thể tắt tài khoản quản trị của chính mình."
+ }
+}
