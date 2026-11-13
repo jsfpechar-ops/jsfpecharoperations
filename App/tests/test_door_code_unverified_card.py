@@ -45,6 +45,14 @@ def _issued_stay(monkeypatch, lock_id: str = "35662508"):
     db.execute("UPDATE apartment SET lock_id = ? WHERE id = ?", (lock_id, apartment))
     door_codes.reconcile()
     row = db.query_one("SELECT * FROM door_code WHERE reservation_id = ?", (stay,))
+    if row is None:
+        row_id = door_codes.ensure_row(stay)
+        assert row_id is not None
+        row = _row(row_id)
+    if row["state"] != door_codes.ISSUED:
+        # Full postgres runs may leave more than BATCH pending rows ahead in the queue.
+        assert door_codes.issue(int(row["id"]), allow_gateway=True)
+        row = _row(int(row["id"]))
     assert row["state"] == door_codes.ISSUED
     return stay, int(row["id"])
 
