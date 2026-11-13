@@ -1,7 +1,7 @@
 # 1173: the door-code issue queue cannot be starved by rows that never get issued
 
 Status: review
-Depends on: 1172 (merged in the base) | Base commit: claude/zealous-maxwell-a7ub54 HEAD (8f1b54cd) | Branch: task/1173-issue-queue-starvation
+Depends on: 1181 (merged in the base) | Base commit: claude/zealous-maxwell-a7ub54 HEAD (8f1b54cd) | Branch: task/1173-issue-queue-starvation
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (about 25 calls used; 1173b is the follow-up and must not be started in this chat)
 
 ## 1. Objective
@@ -23,12 +23,12 @@ Rules: rule 5 (SQL through `db` helpers, portable on SQLite and PostgreSQL), no 
 | Backoff `bad_window` | 60 min | The saved hours are invalid and need a host edit; the UI validates 0 to 23, so this is a rare data fault. |
 | Cost of 15 min | 4 cheap tries per hour per stuck row, no lock call (the release comes before any TTLock call). With the order below the batch still reaches new rows. | |
 | Expiry | `_expire_ended_stays`, first phase of `reconcile`: `pending`/`retrying` rows whose reservation is active, not archived and has `date_to < local date` become `expired`. Not `valid_to`: `_reissue_lost_pin` keeps the old window's `valid_to` on a pending row while the stay may have been extended, so `valid_to` would expire a live stay. Cancelled or archived stays stay with `_handle_cancellations` (`revoked`). | |
-| Order | `ORDER BY (attempts > 0), (next_attempt_at IS NOT NULL), next_attempt_at, id`. Rows never tried (attempts 0) first, then NULL `next_attempt_at` (1172), then oldest, then id. `(expr)` is a boolean on PostgreSQL and 0/1 on SQLite; false sorts first on both. | `ensure_row` inserts a new row with `next_attempt_at = now`, not NULL, so without the `attempts` key a new row sorted after every older retry (the review's F2). A row that failed has `attempts >= 1`; a released row has `attempts` 0 but is now put off by its backoff. |
+| Order | `ORDER BY (attempts > 0), (next_attempt_at IS NOT NULL), next_attempt_at, id`. Rows never tried (attempts 0) first, then NULL `next_attempt_at` (1181), then oldest, then id. `(expr)` is a boolean on PostgreSQL and 0/1 on SQLite; false sorts first on both. | `ensure_row` inserts a new row with `next_attempt_at = now`, not NULL, so without the `attempts` key a new row sorted after every older retry (the review's F2). A row that failed has `attempts >= 1`; a released row has `attempts` 0 but is now put off by its backoff. |
 | Revoke batch (`_handle_cancellations`, due query ~1170) | **Checked, no change.** Its rows are `revoke_pending` rows of cancelled stays. `_revoke_one` ends every try in `revoked`, `revoke_failed`, or a retry that sets `next_attempt_at` (1, 15, 60 min); a row skipped by the lease (2 min) is the only one left due and it clears itself. The `_stay_is_live` branch is a race: the due query excludes live stays. No row goes back with an unchanged `next_attempt_at`. | |
 
 **State machine.** `TRANSITIONS` had no `pending -> expired` or `retrying -> expired`. Added here, pinned in `App/tests/test_sm_door_code_state.py` (`PINNED`) and mirrored in `go/internal/statemachine/tables.go`; `App/tests/test_sm_go_parity.py` fails if they differ.
 
-**Existing tests that change.** `test_operator_pause_keeps_the_row_pending_until_the_plan_is_back` now sees the 15-minute backoff, so it clears `next_attempt_at` before the second `_issue_due` ("time passes"). `test_null_order_portability.py` is rewritten for the review's F2: the old docstring said a new row has NULL `next_attempt_at`, but `ensure_row` sets it to now. NULL belongs to re-issue rows (`pin_lost`) and rows whose time was cleared. Its competing rows are now "released rows whose backoff ended" (attempts 0), because with the new `attempts` key retries with `attempts = 1` would no longer compete with a NULL row, and the PostgreSQL bite of the 1172 fix would stop biting.
+**Existing tests that change.** `test_operator_pause_keeps_the_row_pending_until_the_plan_is_back` now sees the 15-minute backoff, so it clears `next_attempt_at` before the second `_issue_due` ("time passes"). `test_null_order_portability.py` is rewritten for the review's F2: the old docstring said a new row has NULL `next_attempt_at`, but `ensure_row` sets it to now. NULL belongs to re-issue rows (`pin_lost`) and rows whose time was cleared. Its competing rows are now "released rows whose backoff ended" (attempts 0), because with the new `attempts` key retries with `attempts = 1` would no longer compete with a NULL row, and the PostgreSQL bite of the 1181 fix would stop biting.
 
 **Anchors.** Each `sub(old, new)` in the scripts asserts that `old` occurs exactly once. If the assertion fails, STOP (section 8).
 
@@ -272,11 +272,11 @@ open(p, "w", encoding="utf-8").write(s)
 print("ok", p)
 PY
 ```
-6. Overwrite `App/tests/test_null_order_portability.py`. The guard stops the step if the file is not the 1172 version. Expect `written`.
+6. Overwrite `App/tests/test_null_order_portability.py`. The guard stops the step if the file is not the 1181 version. Expect `written`.
 ```bash
-head -1 App/tests/test_null_order_portability.py | grep -q "A new row (NULL next_attempt_at)" || { echo "STOP: not the 1172 file"; exit 1; }
+head -1 App/tests/test_null_order_portability.py | grep -q "A new row (NULL next_attempt_at)" || { echo "STOP: not the 1181 file"; exit 1; }
 cat > App/tests/test_null_order_portability.py <<'EOF'
-"""A due row with NULL next_attempt_at is taken before other due rows on SQLite and PostgreSQL (task 1172).
+"""A due row with NULL next_attempt_at is taken before other due rows on SQLite and PostgreSQL (task 1181).
 
 SQLite sorts NULL first ascending, PostgreSQL sorts it last. Every due-row query that has a LIMIT must say
 which it wants. Which rows have NULL: a re-issue row (_reissue_lost_pin sets state pending, last_error
@@ -520,7 +520,7 @@ UBYHOST_DATABASE_URL=postgresql://uby:uby@localhost:5432/ubytest .venv/bin/pytho
 cd .. && git checkout HEAD -- App/app/door_codes.py && git diff HEAD --stat | tail -3
 ```
    Expect: the `git diff --stat` after the `sed` shows `1 file changed`; both databases: `1 failed, 5 passed` (`test_a_new_row_is_taken_before_repeated_retries`); the last command prints nothing (empty `git diff HEAD --stat`). If it prints anything, run `git checkout HEAD -- App/app/door_codes.py` again and check again before going on.
-16. Bite B3. No NULL clause (the 1172 fix): this is the bite that differs between the databases. From the repo root:
+16. Bite B3. No NULL clause (the 1181 fix): this is the bite that differs between the databases. From the repo root:
 ```bash
 cd App && sed -i 's/(attempts > 0), (next_attempt_at IS NOT NULL), next_attempt_at, id/(attempts > 0), next_attempt_at, id/' app/door_codes.py && git diff --stat | tail -3
 env -u UBYHOST_DATABASE_URL .venv/bin/python -m pytest tests/test_null_order_portability.py -q --tb=no 2>&1 | tail -8

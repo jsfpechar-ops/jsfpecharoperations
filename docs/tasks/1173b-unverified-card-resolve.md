@@ -32,7 +32,7 @@ Anchors: each `sub(old, new)` asserts `old` occurs exactly once; if not, STOP.
 |---|---|---|
 | App/app/door_codes.py | edit | two `alerts.resolve` lines, `_resolve_unverified_cards`, one call in `reconcile` |
 | App/tests/test_door_code_unverified_card.py | create | 4 tests: move, re-issue, cancel, expiry |
-| App/tests/test_admin_operations.py | edit | docstring `Task 1170` -> `Task 1172` |
+| App/tests/test_admin_operations.py | edit | docstring `Task 1170` -> `Task 1181` |
 | App/tests/test_door_code_host_notices.py | edit | docstring `1166` -> `1168` |
 | docs/tasks/1173b-report.md | create | report |
 
@@ -220,7 +220,7 @@ def sub(old, new):
 
 sub(
 r'''"""Task 1170: NULL sorts first''',
-r'''"""Task 1172: NULL sorts first''',
+r'''"""Task 1181: NULL sorts first''',
 )
 
 open(p, "w", encoding="utf-8").write(s)

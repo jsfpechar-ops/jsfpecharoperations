@@ -1,7 +1,7 @@
-# 1172: NULL order is the same on SQLite and PostgreSQL in "due rows" queries
+# 1181: NULL order is the same on SQLite and PostgreSQL in "due rows" queries
 
 Status: todo
-Depends on: none | Base commit: claude/zealous-maxwell-a7ub54 HEAD (4bdf1939) | Branch: task/1172-null-order
+Depends on: none | Base commit: claude/zealous-maxwell-a7ub54 HEAD (4bdf1939) | Branch: task/1181-null-order
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
@@ -70,7 +70,7 @@ No other file may change.
    Check: `grep -n "IS NOT NULL), last_checked" App/app/admin_ops.py | tail -30` shows 1 line.
 4. Create `App/tests/test_null_order_portability.py` with exactly:
 ```python
-"""A new row (NULL next_attempt_at) is processed before due retries on SQLite and PostgreSQL (task 1172).
+"""A new row (NULL next_attempt_at) is processed before due retries on SQLite and PostgreSQL (task 1181).
 
 SQLite sorts NULL first ascending, PostgreSQL sorts it last. Every due-row query that has a LIMIT must say
 which it wants, so the guest who waits on a brand-new door code is never queued behind 20 retries.
@@ -136,7 +136,7 @@ def test_due_queries_put_null_next_attempt_first(monkeypatch):
 
 
 def test_a_never_checked_feed_is_listed_before_stale_ones():
-    """Task 1172: NULL sorts first on SQLite and last on PostgreSQL; the list must put it first on both."""
+    """Task 1181: NULL sorts first on SQLite and last on PostgreSQL; the list must put it first on both."""
     host_id = _account("feedsnull", "host")
     assert demo.seed(host_id)
     apartment = db.query_one(
@@ -187,7 +187,7 @@ Stop, and write the report, if an anchor is not found, a test fails twice, you r
 
 ## 9. Report
 
-Write `docs/tasks/1172-report.md` (600 tokens at most) and set `Status: review`: files changed, each command with its last 5 lines, section 7 ticked, deviations, questions, owner steps left (none).
+Write `docs/tasks/1181-report.md` (600 tokens at most) and set `Status: review`: files changed, each command with its last 5 lines, section 7 ticked, deviations, questions, owner steps left (none).
 
 ## Risk list (for the reviewer)
 

@@ -1,4 +1,4 @@
-# 1172 report: NULL order in due-row queries (re-verified)
+# 1181 report: NULL order in due-row queries (re-verified)
 
 Status review: the earlier report was invalid because the step-5 commit had reverted the ORDER BY fix (a bite checkout got committed). fa9b5d0c restored it. This report re-verifies on HEAD fb1598ef.
 

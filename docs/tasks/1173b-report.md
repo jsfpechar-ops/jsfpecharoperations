@@ -6,7 +6,7 @@ Status: review
 
 - App/app/door_codes.py: +16 (two alerts.resolve lines, _resolve_unverified_cards, one _phase call in reconcile)
 - App/tests/test_door_code_unverified_card.py: new, 4 tests
-- App/tests/test_admin_operations.py: docstring 1170 -> 1172
+- App/tests/test_admin_operations.py: docstring 1170 -> 1181
 - App/tests/test_door_code_host_notices.py: docstring 1166 -> 1168
 - docs/tasks/1173b-unverified-card-resolve.md: Status todo -> review
 - docs/tasks/1173b-report.md: this file
