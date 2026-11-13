@@ -554,14 +554,21 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   browser:
-    # The one name the deploy gate and the main ruleset require.
+    # The one name the deploy gate requires.
     if: always()
-    needs: browser-shard
+    needs: [changes, browser-shard]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: All browser shards passed
-        run: test "${{ needs.browser-shard.result }}" = "success"
+      - name: All browser shards passed, or were skipped because only briefs changed
+        env:
+          CODE: ${{ needs.changes.outputs.code }}
+          SHARDS: ${{ needs.browser-shard.result }}
+        run: |
+          if [ "${SHARDS}" = "success" ]; then exit 0; fi
+          if [ "${SHARDS}" = "skipped" ] && [ "${CODE}" = "false" ]; then exit 0; fi
+          echo "browser shards: ${SHARDS} (code=${CODE})" >&2
+          exit 1
 
 
   shellcheck:
