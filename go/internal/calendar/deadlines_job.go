@@ -1,4 +1,4 @@
-// The deadlines job: App/app/scheduler.py _job_deadlines in Go. It runs the
+// The deadlines job: the former Python _job_deadlines (removed in 1200). It runs the
 // deadline watch (check_deadlines, then raise_due_alerts), then the filing
 // watchdog even when the watch failed, then pings the filing heartbeat.
 package calendar
@@ -31,7 +31,7 @@ type deadlinesSteps struct {
 	getenv      func(string) string
 }
 
-// RunDeadlinesJob is _job_deadlines for the Go job queue. at is the instant of
+// RunDeadlinesJob is the deadlines job (the former Python _job_deadlines, removed in 1200). at is the instant of
 // the run; ping GETs the filing heartbeat URL (jobs.Ping in production). A
 // failed watch or watchdog raises the critical job_failed alert at once, as
 // Python's _job_failed does, and returns an error so the queue does not record
