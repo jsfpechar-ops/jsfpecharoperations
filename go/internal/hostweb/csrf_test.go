@@ -135,3 +135,25 @@ func TestCSRFFormBodies(t *testing.T) {
 		}
 	})
 }
+
+// TestCSRFMaxAge is security.CSRF_MAX_AGE: a token is good for 30 days.
+func TestCSRFMaxAge(t *testing.T) {
+	ck, token := csrfPair(t)
+	for _, c := range []struct {
+		name   string
+		at     time.Time
+		wantOK bool
+	}{
+		{"29 days", csrfTestNow.Add(29 * 24 * time.Hour), true},
+		{"31 days", csrfTestNow.Add(31 * 24 * time.Hour), false},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPost, "https://app.example.test/x", nil)
+			req.Header.Set(csrfHeader, token)
+			req.AddCookie(ck)
+			if got := CSRF(httptest.NewRecorder(), req, csrfTestEnv, c.at); got != c.wantOK {
+				t.Fatalf("CSRF = %v, want %v", got, c.wantOK)
+			}
+		})
+	}
+}

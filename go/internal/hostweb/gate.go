@@ -22,7 +22,7 @@ import (
 const csrfSalt = "ubyhost-csrf"
 
 // security.CSRF_MAX_AGE.
-const csrfMaxAge = 400 * 24 * time.Hour
+const csrfMaxAge = 30 * 24 * time.Hour
 
 // security.CSRF_COOKIE.
 const csrfCookie = "ubyhost_csrf"
@@ -118,6 +118,7 @@ func endExpired(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool, gete
 		"uid": admin.ID,
 		"sv":  admin.SessionVersion,
 		"iat": claimInt(h.Payload["iat"]),
+		"rf":  at.Unix(),
 	}, at)
 	http.SetCookie(w, &http.Cookie{
 		Name:     session.CookieName,
@@ -126,7 +127,7 @@ func endExpired(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool, gete
 		MaxAge:   sessionMaxAge,
 		HttpOnly: true,
 		Secure:   SecureCookies(getenv),
-		SameSite: http.SameSiteStrictMode,
+		SameSite: http.SameSiteLaxMode,
 	})
 	http.Redirect(w, r, "/admin/customers?msg="+url.PathEscape(ExpiredTexts[Lang(r)]), http.StatusSeeOther)
 	return nil
