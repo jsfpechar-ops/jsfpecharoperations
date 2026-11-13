@@ -24,6 +24,7 @@ import (
 // r1.date_to == r2.date_from is not an overlap. $2 is today (Europe/Prague):
 // only stays that have not ended yet count, so the first sync after deploy
 // does not alarm about overlaps from the past.
+// A manual stay with the same dates as another stay is a duplicate entry, not a double booking (owner, 1172-fix-1).
 const overlapPairsSQL = `SELECT r1.id, r1.date_from, r1.date_to, r1.source,
        r2.id, r2.date_from, r2.date_to, r2.source
   FROM reservation r1
@@ -33,6 +34,8 @@ const overlapPairsSQL = `SELECT r1.id, r1.date_from, r1.date_to, r1.source,
  WHERE r1.apartment_id = $1 AND r1.status = 'active' AND r1.archived_at IS NULL
    AND r2.status = 'active' AND r2.archived_at IS NULL
    AND r1.date_to > $2 AND r2.date_to > $2
+   AND NOT ((r1.source = 'manual' OR r2.source = 'manual')
+            AND r1.date_from = r2.date_from AND r1.date_to = r2.date_to)
  ORDER BY r1.id, r2.id`
 
 type stayPair struct {
