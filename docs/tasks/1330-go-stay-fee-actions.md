@@ -10,7 +10,23 @@ Port eight host routes of `App/app/routes/stay_fees.py` to Go in a new package `
 
 ## 2. Context
 
-All code is finished and dry-run. It waits in `/tmp/claude-0/brief1330/` under the same relative paths as in the repo. You copy each file into place, check its sha256, run the tests and commit. You write no code. If `/tmp/claude-0/brief1330/` is missing or a sha256 differs: STOP (§8).
+Rules (AGENTS.md): 1 filing stays on Python until switched; these routes only adjust stay-fee bookkeeping and CSV export; 2 no new personal-data field, no outbound request; 3 fixtures are synthetic; 4 no new dependency; 5 PostgreSQL through pgx.
+
+**All code is pre-written and dry-run** by the brief writer on a83df54. Sidecars live under `docs/tasks/1330-files/<repo path>.txt`; step 1 copies them byte for byte. You write no application code. Never retype or edit a copied file. A sha256 mismatch: STOP (§8).
+
+| sha256 | file (repo path; sidecar = `docs/tasks/1330-files/<path>.txt`) |
+|---|---|
+| `182de0abb1e6d2922a84de0dd680681b5acc3a972e5ec5bad8ca756af4e804cb` | `go/internal/web/stayfees/helpers.go` |
+| `a4cd7993732e3726f19899b547811149fa8b992cc93dd0299c77be7df3a33ac7` | `go/internal/web/stayfees/handlers.go` |
+| `0c4912becafd50ff5df7ce853f6759dafc2af0480fb4910cfda85658853ab7e4` | `go/internal/web/stayfees/i18n.json` |
+| `731646250ba74e2865ccf1e2d5e68a425e8a6ca432f6cbbe7412e4ad9f048166` | `go/internal/web/stayfees/actions_test.go` |
+| `4d1ed4293d49cccf0e5df1781d2534e8d8e3fab286dc9ded431e3b88dd1593ab` | `go/internal/web/stayfees/helpers_test.go` |
+| `95ed73c05bd7cd17b4c0b923f219f51e5e64dd9db4102fff52a2d443066e84ca` | `go/internal/web/stayfees/testdata/actions_golden.json` |
+| `5ce6e5b2478720464276413259e8bd5e1ec678b73b277fefbce3c52380738672` | `go/cmd/ubyhost-web/register_web_stayfees.go` |
+| `01301764e588fe58491b4b44ae62f2c98ea520fa65bcc848563db634717382ce` | `App/scripts/stay_fee_actions_golden.py` |
+| `bc7a9d332fb6021b7f62ef20b40365b7f4e701ecb182aa949727181447d8a4b5` | `App/tests/test_go_stay_fee_actions_golden.py` |
+
+Anchors that must exist verbatim (step 0, `grep -cF` prints 1 or more): App/app/routes/stay_fees.py `async def stay_fee_adjustment_undo(` and `def stay_fee_csv_download(`; App/app/security.py `async def protect_host_post(request: Request) -> None:`; go/internal/hostweb/gate.go `func CSRF(w http.ResponseWriter, r *http.Request, getenv func(string) string, at time.Time) bool {`; go/cmd/ubyhost-web/registry.go `func registerRoutes(fn func(*http.ServeMux, *metrics, *pgxpool.Pool)) {`; go/cmd/ubyhost-web/register_web_stayfees.go `registerRoutes(func(mux *http.ServeMux, m *metrics, pool *pgxpool.Pool) {`; go/internal/web/stayfees/handlers.go `func Routes(pool *pgxpool.Pool, getenv func(string) string, now func() time.Time) []Route {`.
 
 Routes (Python function in `App/app/routes/stay_fees.py` -> Go handler in `handlers.go`):
 
@@ -58,39 +74,42 @@ Deviations from Python (recorded in the code and in the PR):
 | go/cmd/ubyhost-web/register_web_stayfees.go | new | `init()` -> `registerRoutes`, `m.wrap` per route |
 | App/scripts/stay_fee_actions_golden.py | new | writes the two generated JSON files |
 | App/tests/test_go_stay_fee_actions_golden.py | new | fails when the JSON files are stale |
+| `docs/tasks/1330-files/**` | keep | sidecars (already committed with this brief; do not edit) |
 | docs/tasks/1330-report.md | new | your report |
 
-No other file may change. This brief is already committed.
+No other file may change.
 
 ## 4. Steps
 
 Run every command from the repo root unless it says `cd`.
 
-1. Check the source files (the hash list is the one in §7):
+0. Checks (one call): `git branch --show-current` prints `claude/1330-go-stay-fees`; `ls go/internal/web/stayfees App/scripts/stay_fee_actions_golden.py App/tests/test_go_stay_fee_actions_golden.py go/cmd/ubyhost-web/register_web_stayfees.go 2>&1 | tail -10` says "No such file" four times; `grep -cF` of each anchor in §2 prints 1 or more; `ls docs/tasks/1330-files | wc -l` prints at least `2`. If `App/.venv/bin/python` is missing: `cd App && python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt -r requirements-dev.txt 2>&1 | tail -5`. Anything else: STOP (§8).
+
+1. Verify the sidecars, then copy them into place (one call):
 
 ```bash
-cd /tmp/claude-0/brief1330 && sha256sum -c 2>&1 <<'EOF' | tail -30
-182de0abb1e6d2922a84de0dd680681b5acc3a972e5ec5bad8ca756af4e804cb  go/internal/web/stayfees/helpers.go
-a4cd7993732e3726f19899b547811149fa8b992cc93dd0299c77be7df3a33ac7  go/internal/web/stayfees/handlers.go
-0c4912becafd50ff5df7ce853f6759dafc2af0480fb4910cfda85658853ab7e4  go/internal/web/stayfees/i18n.json
-731646250ba74e2865ccf1e2d5e68a425e8a6ca432f6cbbe7412e4ad9f048166  go/internal/web/stayfees/actions_test.go
-4d1ed4293d49cccf0e5df1781d2534e8d8e3fab286dc9ded431e3b88dd1593ab  go/internal/web/stayfees/helpers_test.go
-95ed73c05bd7cd17b4c0b923f219f51e5e64dd9db4102fff52a2d443066e84ca  go/internal/web/stayfees/testdata/actions_golden.json
-5ce6e5b2478720464276413259e8bd5e1ec678b73b277fefbce3c52380738672  go/cmd/ubyhost-web/register_web_stayfees.go
-01301764e588fe58491b4b44ae62f2c98ea520fa65bcc848563db634717382ce  App/scripts/stay_fee_actions_golden.py
-bc7a9d332fb6021b7f62ef20b40365b7f4e701ecb182aa949727181447d8a4b5  App/tests/test_go_stay_fee_actions_golden.py
+cd docs/tasks/1330-files && sha256sum -c 2>&1 <<'EOF' | tail -15
+182de0abb1e6d2922a84de0dd680681b5acc3a972e5ec5bad8ca756af4e804cb  go/internal/web/stayfees/helpers.go.txt
+a4cd7993732e3726f19899b547811149fa8b992cc93dd0299c77be7df3a33ac7  go/internal/web/stayfees/handlers.go.txt
+0c4912becafd50ff5df7ce853f6759dafc2af0480fb4910cfda85658853ab7e4  go/internal/web/stayfees/i18n.json.txt
+731646250ba74e2865ccf1e2d5e68a425e8a6ca432f6cbbe7412e4ad9f048166  go/internal/web/stayfees/actions_test.go.txt
+4d1ed4293d49cccf0e5df1781d2534e8d8e3fab286dc9ded431e3b88dd1593ab  go/internal/web/stayfees/helpers_test.go.txt
+95ed73c05bd7cd17b4c0b923f219f51e5e64dd9db4102fff52a2d443066e84ca  go/internal/web/stayfees/testdata/actions_golden.json.txt
+5ce6e5b2478720464276413259e8bd5e1ec678b73b277fefbce3c52380738672  go/cmd/ubyhost-web/register_web_stayfees.go.txt
+01301764e588fe58491b4b44ae62f2c98ea520fa65bcc848563db634717382ce  App/scripts/stay_fee_actions_golden.py.txt
+bc7a9d332fb6021b7f62ef20b40365b7f4e701ecb182aa949727181447d8a4b5  App/tests/test_go_stay_fee_actions_golden.py.txt
 EOF
+for f in $(find . -name '*.txt' | sed 's|^\./||; s|\.txt$||'); do mkdir -p "../../../$(dirname "$f")" && cp "$f.txt" "../../../$f"; done
+cd ../../.. && sha256sum go/internal/web/stayfees/helpers.go go/internal/web/stayfees/handlers.go go/internal/web/stayfees/i18n.json go/internal/web/stayfees/actions_test.go go/internal/web/stayfees/helpers_test.go go/internal/web/stayfees/testdata/actions_golden.json go/cmd/ubyhost-web/register_web_stayfees.go App/scripts/stay_fee_actions_golden.py App/tests/test_go_stay_fee_actions_golden.py 2>&1 | tail -12
 ```
 
-   Every line must end `OK`. Otherwise STOP.
-2. Copy the Go files into place:
-   `mkdir -p go/internal/web/stayfees/testdata && for f in go/internal/web/stayfees/helpers.go go/internal/web/stayfees/handlers.go go/internal/web/stayfees/i18n.json go/internal/web/stayfees/actions_test.go go/internal/web/stayfees/helpers_test.go go/internal/web/stayfees/testdata/actions_golden.json go/cmd/ubyhost-web/register_web_stayfees.go; do cp /tmp/claude-0/brief1330/$f $f; done && git status --short 2>&1 | tail -30`
-   Expect only `?? go/cmd/ubyhost-web/register_web_stayfees.go` and `?? go/internal/web/`. Run the Go commands of §6. Commit: `git add go/internal/web/stayfees go/cmd/ubyhost-web/register_web_stayfees.go && git commit -m "1330 step 2: Go stay fee actions and CSV" 2>&1 | tail -5`
-3. Copy the Python files into place:
-   `for f in App/scripts/stay_fee_actions_golden.py App/tests/test_go_stay_fee_actions_golden.py; do cp /tmp/claude-0/brief1330/$f $f; done && git status --short 2>&1 | tail -30`
-   Expect only those two files as `??`. Run the Python commands of §6. Commit: `git add App/scripts/stay_fee_actions_golden.py App/tests/test_go_stay_fee_actions_golden.py && git commit -m "1330 step 3: stay fee actions golden script and staleness test" 2>&1 | tail -5`
-4. Check the repo copies: run the step 1 block again without the `cd /tmp/claude-0/brief1330 &&` (from the repo root); every line must end `OK`. Then `python3 scripts/context_lint.py 2>&1 | tail -3` ends with `context lint: OK`.
-5. Write the report (§9) and commit it as `1330 step 5: report`. Do not push: the orchestrator pushes and opens the draft PR. Put in the report, for the PR body: the four deviations of §2, and "No new outbound request. No new personal-data field. Routes are registered but off: Caddy routes only UBYHOST_GO_PATHS to Go."
+   Every `sha256sum -c` line must end `OK`; repo hashes must match the table in §2. Otherwise STOP. Run the Go commands of §6, then commit: `git add go/internal/web/stayfees go/cmd/ubyhost-web/register_web_stayfees.go && git commit -m "1330 step 1: Go stay fee actions and CSV" 2>&1 | tail -5`
+
+2. Run the Python commands of §6. Commit: `git add App/scripts/stay_fee_actions_golden.py App/tests/test_go_stay_fee_actions_golden.py && git commit -m "1330 step 2: stay fee actions golden script and staleness test" 2>&1 | tail -5`
+
+3. `python3 scripts/context_lint.py 2>&1 | tail -3` ends with `context lint: OK`.
+
+4. Write the report (§9) and commit it as `1330 step 4: report`. Do not push: the orchestrator pushes and opens the draft PR. Put in the report, for the PR body: the four deviations above, and "No new outbound request. No new personal-data field. Routes are registered but off: Caddy routes only UBYHOST_GO_PATHS to Go."
 
 ## 5. Do not touch
 
@@ -113,12 +132,12 @@ Go (step 2):
 
 Python (step 3; needs `App/.venv`; if missing: `cd App && python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt -r requirements-dev.txt 2>&1 | tail -3`):
 
-- `cd App && .venv/bin/python scripts/stay_fee_actions_golden.py 2>&1 | tail -2 && cd .. && git status --short 2>&1 | tail -30` -> two `wrote ...` lines (logged tracebacks for `/stay-fees/20/paid` and `/stay-fees/999/paid` before them are expected: deviation 1), then no output from `git status` (the regenerated JSON files are byte-identical).
+- `cd App && .venv/bin/python scripts/stay_fee_actions_golden.py 2>&1 | tail -2 && cd .. && git status --short 2>&1 | tail -30` -> `wrote go/internal/web/stayfees/testdata/actions_golden.json` and `wrote go/internal/web/stayfees/i18n.json` (logged tracebacks for `/stay-fees/20/paid` and `/stay-fees/999/paid` before them are expected: deviation 1), then no output from `git status` (the regenerated JSON files are byte-identical).
 - `cd App && .venv/bin/python -m pytest tests/test_go_stay_fee_actions_golden.py -q --tb=short -x 2>&1 | tail -30` -> `1 passed`.
 
 ## 7. Acceptance
 
-- [ ] sha256 of each file, in `/tmp/claude-0/brief1330/` and in the repo after step 4:
+- [ ] sha256 of each file in `docs/tasks/1330-files/` (sidecars) and in the repo after step 1:
 
 ```
 182de0abb1e6d2922a84de0dd680681b5acc3a972e5ec5bad8ca756af4e804cb  go/internal/web/stayfees/helpers.go
@@ -135,14 +154,14 @@ bc7a9d332fb6021b7f62ef20b40365b7f4e701ecb182aa949727181447d8a4b5  App/tests/test
 - [ ] gofmt and go vet print nothing.
 - [ ] Go tests: all PASS, with `TestActionsMatchPython` and `TestCSRFRequired` run (not skipped).
 - [ ] Golden script leaves `git status` clean; the pytest file passes.
-- [ ] `git diff --stat a83df54..HEAD` lists only §3 paths and this brief.
+- [ ] `git diff --stat a83df54..HEAD` lists only §3 paths, this brief and `docs/tasks/1330-files/`.
 - [ ] `python3 scripts/context_lint.py` ends `context lint: OK`.
 
 ## 8. Stop and ask
 
 Stop, and write the report, if:
 
-- `/tmp/claude-0/brief1330/` is missing or a sha256 differs;
+- a sidecar is missing or a sha256 differs;
 - a test fails twice, or a DB test skips;
 - the golden script changes a JSON file;
 - you reach 25 tool calls or about 50k tokens (write the report as `blocked`, see executor.md);
