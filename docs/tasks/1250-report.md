@@ -9,7 +9,7 @@ Status: review
 
 ## Verification
 - 19/19 sha256 OK against the brief; gofmt, go vet, go build clean.
-- `UBYHOST_TEST_DATABASE_URL=... go test -count=1 ./internal/guideimport/... ./internal/anthropic/... ./cmd/ubyhost-web/...`: 3 ok, Postgres tests ran (queue fetch and page fill, failure/budget/stale, merge, model-failure attempts, ledger).
+- `UBYHOST_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:55432/postgres go test -count=1 ./internal/guideimport/... ./internal/anthropic/... ./cmd/ubyhost-web/...`: 3 ok, Postgres tests ran (queue fetch and page fill, failure/budget/stale, merge, model-failure attempts, ledger).
 
 ## Known gaps
 - The 80% AI budget mail is not sent from Go (needs `go/internal/mail`); Go logs a warning once per feature and month.

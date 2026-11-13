@@ -330,7 +330,7 @@ From `go/`, with a Postgres 16 running (owner or orchestrator provides `UBYHOST_
 ```
 gofmt -l internal cmd 2>&1 | tail -30
 go vet ./internal/guideimport/... ./internal/anthropic/... 2>&1 | tail -30
-UBYHOST_TEST_DATABASE_URL=... go test -count=1 ./internal/guideimport/... ./internal/anthropic/... ./cmd/ubyhost-web/... 2>&1 | tail -30
+UBYHOST_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:55432/postgres go test -count=1 ./internal/guideimport/... ./internal/anthropic/... ./cmd/ubyhost-web/... 2>&1 | tail -30
 ```
 
 Expected: gofmt prints nothing, vet prints nothing, three `ok` lines. Run the tests with `-v -run 'MergeWriteRules|InputTooLarge|StaleCutoff|CancelledFetch|RetryAfter'` once and confirm none say SKIP.
