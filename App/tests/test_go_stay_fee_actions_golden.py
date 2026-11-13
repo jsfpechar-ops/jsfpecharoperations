@@ -24,7 +24,7 @@ def _load_generator():
 # The golden file is defined by a fresh SQLite database; the Go test replays it on PostgreSQL.
 @pytest.mark.sqlite_only
 def test_go_stay_fee_actions_golden_is_current(monkeypatch, tmp_path):
-    from app import config
+    from app import config, db
 
     generator = _load_generator()
     monkeypatch.setattr(config, "DB_PATH", tmp_path / "stay-fee-actions-golden.sqlite3")
@@ -32,6 +32,9 @@ def test_go_stay_fee_actions_golden_is_current(monkeypatch, tmp_path):
     monkeypatch.setenv("UBYHOST_SECRET_KEY", "golden-secret-key-not-for-real-use")
     monkeypatch.delenv("UBYHOST_DATA_KEYS", raising=False)
     monkeypatch.delenv("UBYHOST_DATA_KEY_LEGACY", raising=False)
+    # Earlier tests may have pinned config.secret_key(); drop that cache and db._fernet_cache.
+    monkeypatch.setattr(config, "_SECRET_KEY", None, raising=False)
+    db._fernet_cache.clear()
     golden, catalog = generator.render()
     assert golden.encode("utf-8") == generator.OUT.read_bytes()
     assert catalog.encode("utf-8") == generator.OUT_I18N.read_bytes()
