@@ -1,0 +1,23 @@
+# Brief 1540: keys the guest shell and the booking pages read (go_host_i18n.py writes i18n.json).
+a11y.skip_to_content
+a11y.loading
+confirm.cancel
+confirm.proceed
+host.delete
+unsaved.title
+unsaved.stay
+unsaved.discard
+unsaved.save
+data.export_csv_title
+data.export_csv_help
+data.export_csv_cancel
+data.export_csv_download
+housebook.apartment
+host.filter.all_properties
+common.from
+common.until
+payments.czk
+pp.lang.label
+pp.book.done
+pp.book.done_note
+pp.book.back

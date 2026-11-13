@@ -1,7 +1,7 @@
 package ai
 
 // havel_handlers.go: the four Havel routes, the port of App/app/routes/havel.py
-// lines 143-331: GET /havel, POST /havel, POST /havel/support and POST
+// lines 136-331: GET /havel, POST /havel, POST /havel/support and POST
 // /havel/not-helped. Each handler follows its Python function line by line.
 // Nothing routes here until the owner lists the paths in UBYHOST_GO_PATHS.
 //
@@ -337,7 +337,7 @@ func (c *havelCall) renderFragment(v HavelView) {
 	_, _ = io.WriteString(c.w, strings.TrimSpace(html[start+len(havelFragmentStart):end]))
 }
 
-// --- GET /havel (havel_page, lines 143-163) ---------------------------------------------
+// --- GET /havel (havel_page, lines 136-155) ---------------------------------------------
 
 func (d HavelDeps) pageHandler(w http.ResponseWriter, r *http.Request) {
 	c := d.enter(w, r)
@@ -367,7 +367,7 @@ func (d HavelDeps) pageHandler(w http.ResponseWriter, r *http.Request) {
 	c.renderPage(view)
 }
 
-// --- POST /havel (havel_send, lines 188-266) -------------------------------------------------
+// --- POST /havel (havel_send, lines 179-273) -------------------------------------------------
 
 // havelFallbackPage is ACTION_FALLBACK_PAGE: where an action reply points until the card is ready.
 var havelFallbackPage = map[string]string{"show_guest_link": "property_guests", "new_pin": "property_guests", "create_stay": "add_stay",
@@ -577,7 +577,7 @@ func (c *havelCall) card(ctx context.Context, action map[string]any, returnTo st
 	return card, "", err
 }
 
-// --- POST /havel/support (havel_support, lines 269-300) -----------------------------------------
+// --- POST /havel/support (havel_support, lines 275-311) -----------------------------------------
 
 func (d HavelDeps) supportHandler(w http.ResponseWriter, r *http.Request) {
 	c := d.enter(w, r)
@@ -639,7 +639,7 @@ func (d HavelDeps) supportHandler(w http.ResponseWriter, r *http.Request) {
 	c.renderPage(view)
 }
 
-// --- POST /havel/not-helped (havel_not_helped, lines 303-331) -------------------------------------
+// --- POST /havel/not-helped (havel_not_helped, lines 313-331) -------------------------------------
 
 const havelNotHelpedPerDay = 5
 

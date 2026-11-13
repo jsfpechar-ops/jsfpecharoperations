@@ -2,7 +2,7 @@ package ai
 
 // havel_store.go: what Havel reads and writes in the database and the switches
 // in front of it: the port of the limit and stat functions of App/app/havel.py
-// (lines 296-381, 536-555), of rate_limit.py (_prune, _count, record, blocked),
+// (lines 316-381, 571-583), of rate_limit.py (_prune, _count, record, blocked),
 // of billing.entitlements(...).ai_multiplier and of ai.enabled_for.
 
 import (
