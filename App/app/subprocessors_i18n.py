@@ -11,7 +11,10 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
             "The service providers that may process personal data for UbyHost, what they do, "
             "and when they are used. This register forms part of the Data Processing Agreement."
         ),
-        "subprocessors.effective": "Effective date: 4 October 2026. Version 1.2.",
+        "subprocessors.effective": (
+            "Effective date: 4 October 2026. Version 1.3. "
+            "The Hetzner Online GmbH row applies from 15 December 2026."
+        ),
         "subprocessors.controller_note_title": "Who appoints these providers",
         "subprocessors.controller_note": (
             "For Guest Data, the accommodation provider or alternate controller configured for the "
@@ -90,6 +93,24 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
         "subprocessors.google_safeguard": (
             "Provider DPA and lawful GDPR Chapter V safeguards where required."
         ),
+        # Brief 1170 (DR plan step 7): conditional disaster-recovery host. Its
+        # row applies from 15 December 2026 (see subprocessors.effective), at
+        # least 30 days after the notice to hosts (change_body); the owner
+        # confirms the date. Brief 1170-cont-1: the safeguard says EU only,
+        # because the owner picks an EU location when creating the server.
+        "subprocessors.hetzner_provider": "Hetzner Online GmbH",
+        "subprocessors.hetzner_purpose": (
+            "Disaster-recovery hosting: a replacement server used only if the main hosting is "
+            "unavailable, and for restore drills."
+        ),
+        "subprocessors.hetzner_data": "All app data, including Guest Data, restored from backup.",
+        "subprocessors.hetzner_location": (
+            "EU, Germany or Finland. Conditional; used only during a recovery or a drill."
+        ),
+        "subprocessors.hetzner_safeguard": (
+            "Hetzner data processing agreement under Art. 28 GDPR. Server located in the EU only "
+            "(Germany or Finland)."
+        ),
         "subprocessors.recipients_title": "Recipients that are not subprocessors",
         "subprocessors.recipient_google_ads": (
             "Google Ireland Ltd. (Google Ads conversion measurement, independent controller, only "
@@ -138,7 +159,10 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
             "Poskytovatelé, kteří mohou pro UbyHost zpracovávat osobní údaje, účel jejich zapojení "
             "a podmínky použití. Tento seznam je součástí zpracovatelské smlouvy."
         ),
-        "subprocessors.effective": "Účinnost od: 4. října 2026. Verze 1.2.",
+        "subprocessors.effective": (
+            "Účinnost od: 4. října 2026. Verze 1.3. "
+            "Řádek Hetzner Online GmbH platí od 15. prosince 2026."
+        ),
         "subprocessors.controller_note_title": "Kdo tyto poskytovatele zapojuje",
         "subprocessors.controller_note": (
             "Správcem údajů hostů je ubytovatel nebo alternativní správce nastavený pro dané "
@@ -213,6 +237,19 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "subprocessors.google_safeguard": (
             "DPA poskytovatele a zákonné záruky kapitoly V GDPR, jsou-li nutné."
+        ),
+        "subprocessors.hetzner_provider": "Hetzner Online GmbH",
+        "subprocessors.hetzner_purpose": (
+            "Hosting pro obnovu po havárii: náhradní server, který se použije jen tehdy, když "
+            "hlavní hosting není dostupný, a pro zkoušky obnovy."
+        ),
+        "subprocessors.hetzner_data": "Všechna data aplikace včetně údajů hostů, obnovená ze zálohy.",
+        "subprocessors.hetzner_location": (
+            "EU, Německo nebo Finsko. Podmíněné použití; jen při obnově nebo zkoušce obnovy."
+        ),
+        "subprocessors.hetzner_safeguard": (
+            "Smlouva o zpracování osobních údajů se společností Hetzner podle čl. 28 GDPR. "
+            "Server umístěn pouze v EU (Německo nebo Finsko)."
         ),
         "subprocessors.recipients_title": "Příjemci, kteří nejsou dalšími zpracovateli",
         "subprocessors.recipient_google_ads": (

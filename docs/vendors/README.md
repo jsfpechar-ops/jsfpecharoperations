@@ -13,6 +13,7 @@ counsel.
 | Cloudflare | DNS, proxy, TLS, Turnstile, WAF, challenges | Customer DPA incorporated into the Self-Serve Subscription Agreement, with SCCs | Global network (a transfer; see the register) | TODO |
 | Render | Staging/demo hosting | [render.com/dpa](https://render.com/dpa), DPF-certified | Only used with synthetic data; never real Guest Data | TODO |
 | Google Drive | Optional off-site backup | **Workspace/Cloud only** — the Cloud Data Processing Addendum. A consumer account has no processor DPA | Retire unless it is a Workspace account (OPS-2) | TODO |
+| Hetzner Online GmbH | Conditional disaster-recovery host (replacement server, restore drills) | Hetzner data processing agreement (Art. 28 GDPR), concluded in the Hetzner console | EU: Germany or Finland; record the server location here | TODO |
 | Support mailbox (`support@ubyhost.com`) | Support channel | Provider not yet identified | Identify it, sign its DPA, and add it to `/subprocessors` | TODO |
 
 The **Czech Police (UbyPort)** is a statutory recipient, not a subprocessor, and
