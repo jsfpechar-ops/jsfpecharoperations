@@ -1,6 +1,6 @@
 # 1340-fix-1: golden script env guard and review follow-ups
 
-Status: todo
+Status: review
 Depends on: 1340 | Base commit: HEAD of task/1340-go-billing-pages | Branch: task/1340-go-billing-pages (stay on it; no push)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
