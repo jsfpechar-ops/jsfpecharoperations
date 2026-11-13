@@ -1,6 +1,6 @@
 # 1173e: the revive keeps an expired row when the lock account is broken, so nobody tells the host
 
-Status: todo
+Status: review
 Depends on: 1173d | Base commit: claude/zealous-maxwell-a7ub54 HEAD (e8c30e72, PR #950, contains 1173d) | Branch: task/1173e-revive-broken-account
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (about 10 calls planned; at 25, stop and write the report as `blocked`)
 

@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from app import db, deadlines, door_codes, ttlock
+from app import alerts, db, deadlines, door_codes, ttlock
 from tests.test_door_codes_safeguards import _env, _stay  # noqa: F401
 
 OLD = "2000-01-01T00:00:00+00:00"
@@ -242,21 +242,29 @@ def _reset_audited(row_id: int):
     )
 
 
-@pytest.mark.parametrize("how", ["plan", "account"])
-def test_an_expired_row_is_kept_when_no_new_row_could_be_made(monkeypatch, lock, how):
-    """ensure_row would refuse this owner: deleting the row would leave the stay with none (1173d)."""
-    stay, row_id = _expired_unissued(2)
-    if how == "plan":
-        monkeypatch.setattr(ttlock, "allowed_for", lambda owner: False)
-    else:
-        db.execute(
-            "UPDATE lock_account SET status = 'error' WHERE owner_user_id = "
-            "(SELECT a.owner_user_id FROM apartment a JOIN reservation r ON r.apartment_id = a.id WHERE r.id = ?)",
-            (stay,),
-        )
+def test_an_expired_row_is_kept_when_the_plan_does_not_allow_ttlock(monkeypatch, lock):
+    """ensure_row would never make a new row for this owner: deleting would leave the stay with none (1173d)."""
+    _, row_id = _expired_unissued(2)
+    monkeypatch.setattr(ttlock, "allowed_for", lambda owner: False)
     assert door_codes._revive_unissued_expired() == 0
     assert _row(row_id)["state"] == door_codes.EXPIRED
     assert _reset_audited(row_id) is None
+
+
+def test_a_broken_lock_account_deletes_the_expired_row_and_the_host_is_told(lock):
+    """Plan allows TTLock, account not ok: the row goes so _alert_delayed raises the card (1173e)."""
+    stay, row_id = _expired_unissued(2)
+    db.execute(
+        "UPDATE lock_account SET status = 'error' WHERE owner_user_id = "
+        "(SELECT a.owner_user_id FROM apartment a JOIN reservation r ON r.apartment_id = a.id WHERE r.id = ?)",
+        (stay,),
+    )
+    assert door_codes._revive_unissued_expired() == 1
+    assert _row(row_id) is None
+    assert _reset_audited(row_id)
+    door_codes.reconcile()
+    card = alerts.open_alert(f"door_code_delayed:{stay}")
+    assert card is not None and "reason=not_set_up" in card["detail"]
 
 
 def test_an_expired_row_is_revived_when_the_owner_can_hold_a_code(lock):
