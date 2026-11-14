@@ -25,3 +25,4 @@ need=["test","smoke","browser","shellcheck","docker","secrets","caddy","test-pos
 - YAML is valid, but Actions semantics are unverified; first CI run is the real check.
 - No PR opened (orchestrator rule for this session).
 - No pytest run (per brief).
+- Follow-up: `Run this shard on PostgreSQL` script now uses mapfile and quoted array (fixes SC2010/SC2086). Disjoint check re-run on the new pipeline: 761 files, 0 duplicates, SAME.

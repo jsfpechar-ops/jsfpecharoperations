@@ -308,10 +308,11 @@ jobs:
         env:
           UBYHOST_DATABASE_URL: postgresql://postgres:ubyhost@localhost:5432/ubyhost_test
         run: |
-          files="$(ls tests/test_*.py tests/*_test.py 2>/dev/null | grep -v '^tests/test_db_postgres.py$' | sort -u \
-            | awk -v n=4 -v s=${{ matrix.shard }} '(NR - 1) % n == s - 1' | tr '\n' ' ')"
-          echo "Shard ${{ matrix.shard }}: ${files}"
-          python -m pytest ${files} -m "not sqlite_only" -q -o faulthandler_timeout=120 --junitxml=pg-full-${{ matrix.shard }}.xml
+          mapfile -t files < <(printf '%s\n' tests/test_*.py tests/*_test.py \
+            | grep -v -e '^tests/test_db_postgres\.py$' -e '[*]' | sort -u \
+            | awk -v n=4 -v s=${{ matrix.shard }} '(NR - 1) % n == s - 1')
+          echo "Shard ${{ matrix.shard }}: ${files[*]}"
+          python -m pytest "${files[@]}" -m "not sqlite_only" -q -o faulthandler_timeout=120 --junitxml=pg-full-${{ matrix.shard }}.xml
 
       - name: Upload junit XML
         if: always()
