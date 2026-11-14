@@ -1,6 +1,6 @@
 # 1570: Go cleaning host pages, part 1: the layout, the schedule page, the add and edit forms, the property list
 
-Status: todo
+Status: review
 Depends on: none (brief 1310 and its fix are on this branch) | Base commit: current tip of the working branch | Branch: task/1570-go-cleaning-host-pages
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
