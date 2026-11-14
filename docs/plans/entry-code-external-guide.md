@@ -20,10 +20,15 @@ Goal: a host-typed building/gate entry code and an optional external (e.g. Notio
 | [1641](../tasks/1641-entry-code-schema.md) | Goose 00018 columns + export guard | blocked on 1640 | 1640 | A |
 | [1642](../tasks/1642-entry-code-retention.md) | Retention step `entry_codes` (Go + Python twin for the golden) | todo after 1641 | 1641 | A |
 | [1643](../tasks/1643-go-mail-entry-code-marker.md) | Go mail `{{entry_code}}` marker | **todo, runnable now** | none | B |
-| [1644](../tasks/1644-go-guide-external-url.md) | Go guide editor: external link field | todo after 1641 | 1641 | B |
-| [1645](../tasks/1645-host-ui-entry-code-field.md) | Go apartment settings: entry code section | blocked | 1641, property settings port (no brief yet) | B |
-| [1646](../tasks/1646-stay-page-access-guide-blocks.md) | Go stay page blocks | blocked | 1641, 1644, guest registration port | B |
+| [1648](../tasks/1648-go-pages-layout-lint-harness.md) | Browser harness: layout lint + 390/768/1280 screenshots on Go pages (local Go binary, no staging) | **todo, runnable now** | none | B |
+| [1644](../tasks/1644-go-guide-external-url.md) | Go guide editor: external link field | todo after 1641 and 1648 | 1641, 1648 | B |
+| [1645](../tasks/1645-host-ui-entry-code-field.md) | Go apartment settings: entry code section | blocked | 1641, 1648, property settings port (no brief yet) | B |
+| [1646](../tasks/1646-stay-page-access-guide-blocks.md) | Go stay page blocks | blocked | 1641, 1644, 1648 (guest paths), guest registration port | B |
 | [1647](../tasks/1647-completion-receipt-entry-code-guide.md) | Go completion receipt | blocked | 1641, 1643, 1644, guest registration port, Go `mail` job live | B |
+
+## Proof it looks good (owner 2026-11-14)
+
+No PR merges with "screenshots pending". 1648 starts the Go web binary locally and runs `layout_lint.js` with 390/768/1280 screenshots, so 1644 and 1645 (host pages) use it directly. 1646 (stay page) adds guest browser and geometry tests plus nine screenshots (three combinations, three widths) and checks order, overflow, wrapping and 44 px targets. 1647 (receipt) renders the golden mail HTML in Chromium at 390 and 1280 and checks the text part and fallback.
 
 ## Why 1640 exists
 
@@ -31,4 +36,4 @@ Goal: a host-typed building/gate entry code and an optional external (e.g. Notio
 
 ## Reach production
 
-1643 and 1644 are dormant until the Go `mail` job and the Go guide-editor paths are switched on (owner steps in the briefs; Go host pages wait for the 1412 UX gate, paused without staging). Guests see nothing until 1646 and 1647, which wait for the guest registration port.
+1643 and 1644 are dormant until the Go `mail` job and the Go guide-editor paths are switched on (owner steps in the briefs; Go host pages get their UX gate from the 1648 harness, so brief 1412 no longer needs a staging server). Guests see nothing until 1646 and 1647, which wait for the guest registration port.

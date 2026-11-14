@@ -1,7 +1,7 @@
 # 1644: Go guide editor — external guide link field (https only, domain shown)
 
 Status: todo (after 1641 merges)
-Depends on: 1641 | Base commit: bdfaa4d4 | Branch: task/1644-go-guide-external-url
+Depends on: 1641, 1648 | Base commit: bdfaa4d4 | Branch: task/1644-go-guide-external-url
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B (host UI)
 
 ## 1. Objective
@@ -49,7 +49,7 @@ Index data is built in `buildIndex` (`guide_index.go:243`), `d := guideIndexData
 
 Strings: Go host catalogs are generated from Python (`go/internal/web/ai/guide_common.go:37`: "App/app/host_i18n.py by App/scripts/go_host_i18n.py (guide/i18n_keys.txt)"). `guide/i18n_keys.txt` already lists `guest_guide.*` and `flash.guest_guide.*`; error keys are listed one by one (`flash.error.guide_import_airbnb_path`, ...). **go-first exception 1 (port plumbing):** the new keys go into `App/app/host_i18n.py` (en and cs blocks, next to `"guest_guide.leon.title"` at `:10270` and `:10381`) and `App/app/host_vi_i18n.py` (next to `:214`), because the Go catalog is generated from them. No Python route or template reads them.
 
-UX gate (AGENTS rule 10, `docs/context/workflow.md#ux-gate`): `test_layout_lint_browser.py` drives the Python app and cannot reach a Go page; the Go guide editor is dormant (not in `UBYHOST_GO_PATHS`). As in 1445, the 390/768/1280 review of this page runs when the owner switches the guide editor paths, through the Go host-page gate of brief 1412 (paused: no staging server). This PR ticks the design-system checklist (`docs/design/design-system.md`) from the template diff and says the screenshots are pending that gate.
+UX gate (AGENTS rule 10, `docs/context/workflow.md#ux-gate`): brief 1648 adds `App/tests/test_go_pages_layout_lint_browser.py`, which starts the Go web binary locally, signs in a seeded host and runs `layout_lint.js` with 390/768/1280 screenshots on Go guide-editor paths. This PR extends that test (its `extra` hook, `lint_go_paths` in `App/tests/go_web_harness.py`) with the index page `/apartments/{id}/guide#external` in three states: external-link field empty; link saved (domain line and Remove button shown); validation error (POST `https://h.cz:8443`, flash shown). Screenshots are named `guide-external-empty|saved|error-<width>.png`.
 
 ## 3. Files
 
@@ -62,6 +62,7 @@ UX gate (AGENTS rule 10, `docs/context/workflow.md#ux-gate`): `test_layout_lint_
 | `go/internal/web/ai/guide/i18n.json` | regenerated | `App/scripts/go_host_i18n.py` |
 | `App/app/host_i18n.py`, `App/app/host_vi_i18n.py` | edit (exception 1) | keys of step 5 |
 | `go/internal/web/ai/guide_external_test.go` | new | tests of step 6 |
+| `App/tests/test_go_pages_layout_lint_browser.py` | edit | three external-link states of step 7 (harness from 1648) |
 
 No other file may change.
 
@@ -94,7 +95,8 @@ No other file may change.
    - `flash.error.guide_external_url`: "Use a full https:// link without a port or login, for example https://www.notion.so/…" / "Zadejte celý odkaz https:// bez portu a přihlášení, třeba https://www.notion.so/…" / "Dùng liên kết https:// đầy đủ, không có cổng hay đăng nhập, ví dụ https://www.notion.so/…"
    Then add `flash.error.guide_external_url` to `guide/i18n_keys.txt` after `flash.error.guide_import_link` (or after the last `flash.error.guide_import_*` line) and from `App/` run `.venv/bin/python scripts/go_host_i18n.py 2>&1 | tail -5`; only `go/internal/web/ai/guide/i18n.json` may change.
 6. Tests (`guide_external_test.go`, world from `guide_index_test.go:49-54`: `newGuideCardWorld`, `guideSeedApartment`, `guideTestDo`): validator table (accept `https://www.notion.so/x?y=1`; refuse `http://`, `javascript:`, `https://u:p@h.cz`, `https://h.cz:8443`, `https://1.2.3.4/`, `https://localhost/`, a 2049-char URL, non-ASCII); POST good → column set, audit row has the host and not the path; POST bad → column unchanged, error flash; POST clear → NULL; index shows the domain; foreign apartment → 404. Tests need PostgreSQL like the other guide tests (brief 1641 §4 step 3 recipe).
-7. Run §6, commit per step.
+7. Browser states: in the 1648 test add `test_go_guide_external_link_states_pass_the_lint`: per width, (a) GET the guide index with the field empty, (b) POST a valid `https://www.notion.so/page` through the form (fill `input[name=guide_external_url]`, click Save) and reload, (c) submit `https://h.cz:8443` and keep the error page; each state runs the lint (zero findings) and saves a 390/768/1280 screenshot. Look at the three 390 px images and the 768 and 1280 ones once.
+8. Run §6, commit per step.
 
 ## 5. Do not touch
 
@@ -106,6 +108,7 @@ From `go/`: `gofmt -l internal/web/ai/ 2>&1 | tail -5`; `go vet ./internal/web/a
 From `go/`, with `UBYHOST_TEST_DATABASE_URL` set: `go test ./internal/web/ai/... ./cmd/ubyhost-web/ -run 'Guide|Route' 2>&1 | tail -30`
 From `App/`: `.venv/bin/python scripts/go_host_i18n.py --check 2>&1 | tail -5`
 From `App/`: `.venv/bin/python -m pytest tests/test_host_i18n.py tests/test_no_em_dashes.py tests/test_copy_cleanup.py tests/test_flash_literals.py -q --tb=short -x 2>&1 | tail -30`
+From `App/`: `UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/shots .venv/bin/python -m pytest tests/test_go_pages_layout_lint_browser.py -q -rs --tb=short -x 2>&1 | tail -30` (0 skipped, 0 findings)
 From the repo root: `python3 scripts/context_lint.py 2>&1 | tail -10`
 
 ## 7. Acceptance
@@ -113,11 +116,12 @@ From the repo root: `python3 scripts/context_lint.py 2>&1 | tail -10`
 - [ ] Validator table and handler tests green; route listed by `GuideRoutes`.
 - [ ] Audit detail carries the domain only.
 - [ ] Catalog regenerated, `--check` clean; i18n and copy rows green.
-- [ ] Design-system checklist ticked in the PR; PR says "UX gate (390/768/1280): pending the Go guide-editor switch (1412 pattern)".
+- [ ] 1648 harness green: 0 findings, 0 skipped, for the editor with the external-link field empty, saved and showing the validation error, each at 390, 768 and 1280.
+- [ ] The PR writes per state "390: ...; 768: ...; 1280: ..." from the screenshots the executor opened, and ticks the design-system checklist (`docs/design/design-system.md`). Nothing says "pending".
 
 ## 8. Stop and ask
 
-Stop if: 1641 is not on main; an excerpt is not found; a Python i18n test rejects keys no Python template uses (ask: the orchestrator decides where Go-only keys live); a test fails twice; 25 tool calls or ~50k tokens; a file outside §3 needs a change.
+Stop if: 1641 or 1648 is not on main; an excerpt is not found; a Python i18n test rejects keys no Python template uses (ask: the orchestrator decides where Go-only keys live); a test fails twice; 25 tool calls or ~50k tokens; a file outside §3 needs a change.
 
 ## 9. Report
 
@@ -129,4 +133,4 @@ Stop if: 1641 is not on main; an excerpt is not found; a Python i18n test reject
 
 ## Owner steps
 
-1. None now: the field reaches hosts only when the guide editor paths (`/apartments/*/guide*`) are in `UBYHOST_GO_PATHS`, after the Go host-page UX gate (brief 1412, paused until a staging server exists). Until then Python serves the editor without this field.
+1. None now: the field reaches hosts only when the guide editor paths (`/apartments/*/guide*`) are in `UBYHOST_GO_PATHS`. The UX evidence comes from the 1648 harness, so no staging server is needed. Until then Python serves the editor without this field.

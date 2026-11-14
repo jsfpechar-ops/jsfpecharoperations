@@ -1,7 +1,7 @@
 # 1645: Go apartment settings — "Building entry code" section for every host
 
 Status: blocked — `GET/POST /apartments/{id}` (apartment_detail, apartment_update) and `POST /apartments/{id}/door-codes` are not in Go (`docs/plans/go-full-move-remaining.md` §2 "Property settings pages", §3 "only the list, guide, archive and regenerate routes exist"); no port brief exists yet
-Depends on: 1641; the "Port property settings pages" thread (`go/internal/web/properties/`), whose `/apartments/{id}` settings-page brief must be written first | Base commit: none | Branch: none
+Depends on: 1641, 1648; the "Port property settings pages" thread (`go/internal/web/properties/`), whose `/apartments/{id}` settings-page brief must be written first | Base commit: none | Branch: none
 Executor: Haiku 5.5 | Not runnable. Tier B (a secret on a host page). The orchestrator cuts this once the Go settings page exists.
 
 ## 1. Objective
@@ -17,7 +17,7 @@ Known design, verified on bdfaa4d4, kept for the later cut:
 - Encrypt with `go/internal/secure` (the Fernet the mail markers decrypt). Audit `entry_code_set` / `entry_code_cleared` with `apartment=<id>` only.
 - Display after saving: label, `••••` plus the last character at most, valid-until date; buttons Replace and Clear. No log line carries the value.
 - Strings in `App/app/host_i18n.py` / `host_vi_i18n.py` (go-first exception 1, the Go catalog is generated from them) unless the property port has moved its catalog by then.
-- UX gate: rule 10 on the Go page via the Go host-page gate (brief 1412 pattern); 390/768/1280 per page; design-system checklist.
+- UX gate (rule 10): through the 1648 harness (`App/tests/test_go_pages_layout_lint_browser.py`), no staging server. The settings section is shot in three states: no code; code set (masked as label, bullets plus last character, valid-until date, Replace and Clear); valid-until in the past (the expired notice). 390/768/1280 each, 0 findings, 0 skipped; the PR writes "390: ...; 768: ...; 1280: ..." per state and ticks the design-system checklist.
 
 ## 3. Files
 
@@ -33,11 +33,11 @@ Everything.
 
 ## 6. Commands
 
-None.
+Filled when the brief is cut. It must include, from `App/`: `UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/shots .venv/bin/python -m pytest tests/test_go_pages_layout_lint_browser.py -q -rs --tb=short -x 2>&1 | tail -30`.
 
 ## 7. Acceptance
 
-- [ ] Not applicable until the brief is cut.
+Filled when the brief is cut. It must contain: the 1648 harness green with 0 findings and 0 skipped for the three states above at 390, 768 and 1280; the per-state "390: ...; 768: ...; 1280: ..." text in the PR; the design-system checklist ticked; no "pending" wording.
 
 ## 8. Stop and ask
 
