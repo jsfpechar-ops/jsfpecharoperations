@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-// TestHavelRoutesRegistered checks that the four Havel routes reach their own
+// TestHavelRoutesRegistered checks that the four Havel routes and the Leon setup routes reach their own
 // patterns, that other methods on those paths get the 405 patterns, and that
 // paths next to them are not taken over.
 func TestHavelRoutesRegistered(t *testing.T) {
@@ -21,6 +21,13 @@ func TestHavelRoutesRegistered(t *testing.T) {
 		{http.MethodGet, "/havel/support", "GET /havel/support"},
 		{http.MethodGet, "/havel/not-helped", "GET /havel/not-helped"},
 		{http.MethodGet, "/havelx", "/"},
+		{http.MethodGet, "/apartments/5/leon/setup", "GET /apartments/{id}/leon/setup"},
+		{http.MethodPost, "/apartments/5/leon/setup", "POST /apartments/{id}/leon/setup"},
+		{http.MethodGet, "/apartments/5/leon/setup/cards", "GET /apartments/{id}/leon/setup/{step}"},
+		{http.MethodGet, "/apartments/5/leon/setup/try", "GET /apartments/{id}/leon/setup/{step}"},
+		{http.MethodPost, "/apartments/5/leon/setup/try", "POST /apartments/{id}/leon/setup/try"},
+		{http.MethodPost, "/apartments/5/leon/setup/cards", "/apartments/{id}/leon/setup/{step}"},
+		{http.MethodPut, "/apartments/5/leon/setup", "/apartments/{id}/leon/setup"},
 		{http.MethodGet, "/havel/other", "/"},
 	} {
 		_, pattern := mux.Handler(httptest.NewRequest(c.method, c.path, nil))
