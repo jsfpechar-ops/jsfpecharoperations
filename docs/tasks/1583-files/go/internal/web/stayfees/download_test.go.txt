@@ -27,6 +27,9 @@ const (
 	pdfQuart = "%PDF-1.4 made-up quarterly report for filing 9\n"
 )
 
+// dlAudit is one audit row as the tests read it.
+type dlAudit struct{ actor, action, detail string }
+
 type downloadEnv struct {
 	t    *testing.T
 	pool *pgxpool.Pool

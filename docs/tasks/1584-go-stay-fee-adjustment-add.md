@@ -72,7 +72,7 @@ No other file may change.
 
 0. Checks (repo root). Anything else than the stated result: STOP (§8).
    - `git branch --show-current | tail -1` prints the branch you were started on (not `main`).
-   - `git log --oneline --grep='^1330 step' | wc -l | tail -1` prints a number of 1 or more (brief 1330 is on this branch).
+   - `ls go/internal/web/stayfees/handlers.go go/internal/stayfee/adjust.go 2>&1 | tail -2` lists both files (briefs 1242 and 1330 are on this branch).
    - `grep -cF "async def stay_fee_adjustment_add(apartment_id: int, request: Request):" App/app/routes/stay_fees.py | tail -1` prints `1`.
    - `grep -cF "def _adjustment_bed_days(form) -> int:" App/app/routes/stay_fees.py | tail -1` prints `1`.
    - `grep -cF "func UndoHandler(" go/internal/web/stayfees/handlers.go | tail -1` prints `1`.

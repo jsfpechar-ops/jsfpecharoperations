@@ -23,7 +23,7 @@ Rules (AGENTS.md): 1 filing correctness is not touched (nothing is recalculated 
 | `6d8e33a93cd1a110bdfc8bc068fc2f62d9f973ffe621db6187c4dd9b7050bd09` | `go/cmd/ubyhost-web/register_web_stayfees_downloads.go` | create | 25 |
 | `972103b3ebc1bc7ad4f05571b09051d5f8301e3bb33352e41afef36fd433d655` | `go/cmd/ubyhost-web/register_web_stayfees_downloads_test.go` | create | 21 |
 | `a35905c876c4ee72bbb401c20e0134bce16d9e3272e616885924c8b302fde36c` | `go/internal/web/stayfees/download.go` | create | 237 |
-| `ace984794b7049755674b5c03e68b518dfeea6ee4c5c433aeb4b6b56c049c7b1` | `go/internal/web/stayfees/download_test.go` | create | 341 |
+| `c34d97154ac46badd74e405e8d11ee4ce917c6da6de67952aba00b08351e0427` | `go/internal/web/stayfees/download_test.go` | create | 344 |
 
 **How the code is built.** `download.go` holds `PDFHandler`, `PDFsZipHandler`, `DownloadRoutes` (the two patterns) and `(*call).pdfBytes` (`stay_fee_filing.pdf_bytes`). It reuses the unexported helpers of `handlers.go` and `helpers.go` (`deps.enter`, `pathID`, `pathApartment`, `monthPath`, `flash`, `back`, `audit`) and `stayfee.Covering`, `stayfee.LoadApartment`, `stayfee.VSOf`. `register_web_stayfees_downloads.go` registers the routes from a new file (pattern of `register_web_stayfees.go`). No existing file is edited.
 
@@ -69,7 +69,7 @@ No other file may change.
 
 0. Checks (repo root). Anything else than the stated result: STOP (§8).
    - `git branch --show-current | tail -1` prints the branch you were started on (not `main`).
-   - `git log --oneline --grep='^1330 step' | wc -l | tail -1` prints a number of 1 or more (brief 1330 is on this branch).
+   - `ls go/internal/web/stayfees/handlers.go go/internal/stayfee/filing.go 2>&1 | tail -2` lists both files (briefs 1240 and 1330 are on this branch).
    - `grep -cF "def stay_fee_pdfs_zip(request: Request):" App/app/routes/stay_fees.py | tail -1` prints `1`.
    - `grep -cF "def stay_fee_pdf_download(apartment_id: int, request: Request):" App/app/routes/stay_fees.py | tail -1` prints `1`.
    - `grep -cF "def pdf_bytes(row: Dict[str, Any]) -> bytes:" App/app/stay_fee_filing.py | tail -1` prints `1`.
@@ -88,7 +88,7 @@ No other file may change.
    6d8e33a93cd1a110bdfc8bc068fc2f62d9f973ffe621db6187c4dd9b7050bd09  go/cmd/ubyhost-web/register_web_stayfees_downloads.go
    972103b3ebc1bc7ad4f05571b09051d5f8301e3bb33352e41afef36fd433d655  go/cmd/ubyhost-web/register_web_stayfees_downloads_test.go
    a35905c876c4ee72bbb401c20e0134bce16d9e3272e616885924c8b302fde36c  go/internal/web/stayfees/download.go
-   ace984794b7049755674b5c03e68b518dfeea6ee4c5c433aeb4b6b56c049c7b1  go/internal/web/stayfees/download_test.go
+   c34d97154ac46badd74e405e8d11ee4ce917c6da6de67952aba00b08351e0427  go/internal/web/stayfees/download_test.go
    EOF
    ```
 
