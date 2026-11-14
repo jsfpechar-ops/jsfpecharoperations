@@ -279,8 +279,10 @@ func TestRequestSendDatabase(t *testing.T) {
 		if subject != "Žádost o platbu od vašeho hostitele (250 Kč)" || to != "guest@example.test" {
 			t.Errorf("subject %q to %q", subject, to)
 		}
-		// json.dumps with ensure_ascii, as Python writes it.
-		want := `{"text": "Dobr\u00fd den,\n\nV\u00e1\u0161 hostitel v\u00e1s \u017e\u00e1d\u00e1 o platbu 250 K\u010d za: P\u0159\u00edsp\u011bvek na opravu.\nZapla\u0165te zde: /payments/qr/10\n\nPokud jste tuto zpr\u00e1vu ne\u010dekali, ignorujte ji.\n", "lang": "cs", "reply_to": "ops@example.test", "apartment": null}`
+		// json.dumps with ensure_ascii, as Python writes it. QR mail uses the
+		// guest pay URL (app base + HMAC token), not the host QR preview path.
+		token := guestToken(connectTestSecret, 10, "")
+		want := `{"text": "Dobr\u00fd den,\n\nV\u00e1\u0161 hostitel v\u00e1s \u017e\u00e1d\u00e1 o platbu 250 K\u010d za: P\u0159\u00edsp\u011bvek na opravu.\nZapla\u0165te zde: https://ubyhost.example/pay/10/` + token + `\n\nPokud jste tuto zpr\u00e1vu ne\u010dekali, ignorujte ji.\n", "lang": "cs", "reply_to": "ops@example.test", "apartment": null}`
 		if payload != want {
 			t.Errorf("payload\n got %s\nwant %s", payload, want)
 		}
