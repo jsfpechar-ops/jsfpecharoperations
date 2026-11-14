@@ -1,6 +1,6 @@
 # 1472: goose-only schema equals Python's apply (PostgreSQL test in CI)
 
-Status: todo
+Status: review
 Depends on: 1471 (its `1471 step` commits on this branch) | Base: the current branch (claude/happy-babbage-2zeeam; writer verified on d3817813d plus 1471) | Branch: none, see below
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Tier A (migrations). Plan: [sqlite-retirement](../plans/sqlite-retirement.md) step S3.
