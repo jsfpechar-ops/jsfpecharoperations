@@ -57,12 +57,23 @@ func TestGuestRailsOrderAndNumbers(t *testing.T) {
 	if rails[0].Key != "cash" || rails[1].Key != "iban" || rails[2].Key != "revolut" {
 		t.Errorf("default first: %v", rails)
 	}
-	// A bank account number turns into an IBAN (apartment 2: 123456789/0800).
+	// A bank account number turns into an IBAN (apartment 2; 19-2000145399/0800
+	// is the account of CZ65 0800 0000 1920 0014 5399).
+	if _, err := pool.Exec(context.Background(), `UPDATE legal_entity SET bank_account = '19-2000145399/0800' WHERE id = 2`); err != nil {
+		t.Fatal(err)
+	}
 	r2, err := GuestRails(context.Background(), pool, 2, 9, 1500, stubQR)
-	if err != nil || len(r2) != 1 || r2[0].IBAN != "CZ75 0800 0000 0001 2345 6789" {
+	if err != nil || len(r2) != 1 || r2[0].IBAN != "CZ65 0800 0000 1920 0014 5399" {
 		t.Errorf("account number: %v %v", err, r2)
 	}
 	_ = d
+	// An account number that fails its check digits is an error, as in Python.
+	if _, err := pool.Exec(context.Background(), `UPDATE legal_entity SET bank_account = '123456789/0800' WHERE id = 2`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := GuestRails(context.Background(), pool, 2, 9, 1500, stubQR); err == nil {
+		t.Error("an invalid account must be an error")
+	}
 }
 
 func TestDirectStart(t *testing.T) {
@@ -106,7 +117,12 @@ func TestDirectStart(t *testing.T) {
 	if mails[0].To != "host@example.test" || mails[1].To != "ada@example.test" {
 		t.Errorf("recipients: %q %q", mails[0].To, mails[1].To)
 	}
-	var host, guest struct{ Text, Lang, ReplyTo string }
+	type payload struct {
+		Text    string `json:"text"`
+		Lang    string `json:"lang"`
+		ReplyTo string `json:"reply_to"`
+	}
+	var host, guest payload
 	_ = json.Unmarshal([]byte(mails[0].Payload), &host)
 	_ = json.Unmarshal([]byte(mails[1].Payload), &guest)
 	if host.Lang != "cs" || !strings.Contains(host.Text, "6500 Kč") || !strings.Contains(host.Text, "https://book.example.test/apartments/1/booking-site") {

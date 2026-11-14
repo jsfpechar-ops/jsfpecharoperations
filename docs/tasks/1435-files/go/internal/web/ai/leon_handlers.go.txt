@@ -47,9 +47,6 @@ func LeonRoutes(d HavelDeps) []HavelRoute {
 	return append(routes, d.leonExtraRoutes()...)
 }
 
-// leonExtraRoutes is where brief 1436 adds POST .../setup/try.
-func (d HavelDeps) leonExtraRoutes() []HavelRoute { return nil }
-
 // leonNotFound is FastAPI's HTTPException(404).
 func leonNotFound(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
