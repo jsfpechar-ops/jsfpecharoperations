@@ -173,6 +173,8 @@ func run() int {
 			jobs.Run(jobCtx, pool, goKinds, goHandlers(pool), goIntervals)
 		}()
 	}
+	// Brief 1452: tasks from registerBackground; joined with the jobs above.
+	startBackground(jobCtx, pool, &jobsDone)
 
 	m := &metrics{counts: map[key]int64{}}
 	mux := newMux(m, pool)
