@@ -1,0 +1,24 @@
+{{define "guest.content"}}{{$d := .Data}}
+{{fragment "pp_booking_css.html"}}
+<div class="pp-bk pp-bk-page pp-bk-req">
+  <h1>{{.T "pp.book.req_title"}} · {{$d.PageName}}</h1>
+  <p>{{.T "pp.book.req_lead" "dates" $d.Dates "total" $d.Total}}</p>
+  {{range $d.Rails}}
+  <section class="pp-bk-card">
+    {{if eq .Key "iban"}}
+      <h2>{{$.T "stay_fees.guest_pay.rail.iban"}}</h2>
+      <p class="ui-mono">{{.IBAN}}</p>
+      <p>{{$.T "pp.book.req_vs" "vs" .VS "amount" .Amount}}</p>
+      <img src="{{dataURI .QR}}" alt="{{$.T "pp.book.req_qr_alt"}}" width="200" height="200">
+    {{else if eq .Key "revolut"}}
+      <h2>{{$.T "stay_fees.guest_pay.rail.revolut"}}</h2>
+      <p><a class="ui-btn ui-btn-primary" href="{{.Link}}" rel="noopener noreferrer" data-no-prefetch>{{$.T "pp.book.req_revolut"}}</a></p>
+    {{else}}
+      <h2>{{$.T "stay_fees.guest_pay.rail.cash"}}</h2>
+      <p>{{if .Note}}{{.Note}}{{else}}{{$.T "pp.book.req_cash_default"}}{{end}}</p>
+    {{end}}
+  </section>
+  {{end}}
+  <p class="ui-sub">{{if $d.Expired}}{{.T "pp.book.req_expired"}}{{else}}{{.T "pp.book.req_hold"}}{{end}}</p>
+</div>
+{{end}}

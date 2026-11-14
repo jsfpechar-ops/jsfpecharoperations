@@ -1,6 +1,6 @@
 # 1544: Go guest booking page: manage and payment-details views (switched off)
 
-Status: todo
+Status: review
 Depends on: 1543 | Base commit: none (one big PR) | Branch: the current branch
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Tier B (guest-facing, amounts, refund text, bank details). Review: Opus orchestrator reads the risk-listed files.
