@@ -1,7 +1,7 @@
 # 1510: Go auth, admin downloads a workspace ZIP (`POST /admin/users/{id}/export`, dormant)
 
-Status: blocked — Go has no port of `App/app/workspace_export.build_workspace_zip` (checked at 859d114d5: no match for `build_workspace_zip`, `workspace_export` or a `workspace-<id>.zip` writer anywhere under `go/`; `go/internal/web/exports` serves the housebook, stays, submissions and guest JSON only). That port belongs to the exports and privacy-request briefs (1605-1619, written in another thread, not on this branch yet). This brief does not port the zip builder. Unblock: when one of those briefs puts a builder in Go, fill in its name below (section 2, "Needed from the exports briefs"), write the sidecar `docs/tasks/1510-files/` from the handler plan in section 4, set `Depends on` to that brief, and set `Status: todo`.
-Depends on: 1501, and the exports brief (1605-1619) that ports `build_workspace_zip` | Base commit: 859d114d5 | Branch: go-wave3
+Status: review
+Depends on: 1501, 1607 (`exports.BuildWorkspaceZip`) | Base commit: 859d114d5 | Branch: go-wave3
 Executor: Haiku 5.5 (once unblocked) | Fits one session: 30 tool calls, 60k tokens
 
 **One big PR mode** (when run): stay on the checked-out branch, commit `1510 step k`, no push, no PR.

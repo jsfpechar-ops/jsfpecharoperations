@@ -74,6 +74,7 @@ func Routes(pool *pgxpool.Pool, getenv func(string) string, now func() time.Time
 		{"POST /account/accept", "/account/accept", d.accountAcceptSubmit},
 		{"GET /account/2fa/setup", "/account/2fa/setup", d.twoFactorSetupForm},
 		{"POST /account/2fa/setup", "/account/2fa/setup", d.twoFactorSetupSubmit},
+		{"POST /admin/users/{id}/export", "/admin/users/{id}/export", d.workspaceExport},
 	}
 }
 
