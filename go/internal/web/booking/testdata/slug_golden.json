@@ -1,0 +1,82 @@
+[
+ {
+  "ID": 1,
+  "Name": "Vinohrady Studio (demo)",
+  "Slug": "vinohrady-studio-demo-cd48"
+ },
+ {
+  "ID": 101,
+  "Name": "Karlín Loft (demo)",
+  "Slug": "karlin-loft-demo-94cd"
+ },
+ {
+  "ID": 3,
+  "Name": "Byt č. 5 – Žižkov",
+  "Slug": "byt-c-5-zizkov-3f66"
+ },
+ {
+  "ID": 103,
+  "Name": "  --Flat__1--  ",
+  "Slug": "flat-1-7bc8"
+ },
+ {
+  "ID": 5,
+  "Name": "",
+  "Slug": "apartment-6177"
+ },
+ {
+  "ID": 105,
+  "Name": "Ünïcödé Ñandú",
+  "Slug": "unicode-nandu-8f4a"
+ },
+ {
+  "ID": 7,
+  "Name": "Ａｂｃ１２３ fullwidth",
+  "Slug": "abc123-fullwidth-249b"
+ },
+ {
+  "ID": 107,
+  "Name": "ﬁne ﬂat",
+  "Slug": "fine-flat-55cf"
+ },
+ {
+  "ID": 9,
+  "Name": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "Slug": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-c36c"
+ },
+ {
+  "ID": 109,
+  "Name": "Praha 1 / Malá Strana, 2+kk",
+  "Slug": "praha-1-mala-strana-2-kk-fc37"
+ },
+ {
+  "ID": 11,
+  "Name": "日本語のみ",
+  "Slug": "apartment-2068"
+ },
+ {
+  "ID": 111,
+  "Name": "Café №7",
+  "Slug": "cafe-no7-bcb2"
+ },
+ {
+  "ID": 13,
+  "Name": "a-b-c",
+  "Slug": "a-b-c-786e"
+ },
+ {
+  "ID": 113,
+  "Name": "İstanbul Loft",
+  "Slug": "istanbul-loft-2772"
+ },
+ {
+  "ID": 15,
+  "Name": "St. Wenceslas — Old Town ‘Penthouse’",
+  "Slug": "st-wenceslas-old-town-penthouse-b815"
+ },
+ {
+  "ID": 115,
+  "Name": "11111111111111111111111111111111111111111111111 2 3",
+  "Slug": "11111111111111111111111111111111111111111111111-992f"
+ }
+]
