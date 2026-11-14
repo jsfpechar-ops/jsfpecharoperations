@@ -1,6 +1,6 @@
 # 1441: Go guest guide editor, part 2: the card editor routes (open, save, discard, skip, delete, add)
 
-Status: todo
+Status: review
 Depends on: 1440 | Base commit: 68c0e0985 | Branch: task/1441-go-guide-editor-cards
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
