@@ -1,6 +1,6 @@
 # 1602: Go setup wizard, part 4: POST /apartments/{id}/setup (marks, hide and show, the police Wait, the demo stay)
 
-Status: todo
+Status: review
 Tier: A
 Depends on: 1601 (and through it 1599 and 1600; their files must be on the branch) | Base commit: current tip of the working branch | Branch: task/1602-go-setup-wizard-post
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
