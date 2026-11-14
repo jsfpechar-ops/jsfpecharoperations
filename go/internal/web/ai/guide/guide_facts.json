@@ -1,0 +1,231 @@
+{
+ "steps": [
+  "times",
+  "rules",
+  "access",
+  "kitchen",
+  "comfort"
+ ],
+ "facts": [
+  [
+   "checkin_from",
+   "times",
+   "time",
+   "checkin"
+  ],
+  [
+   "checkout_by",
+   "times",
+   "time",
+   "checkout"
+  ],
+  [
+   "late_checkout",
+   "times",
+   "yesno",
+   "checkout"
+  ],
+  [
+   "luggage",
+   "times",
+   "yesno",
+   "checkin"
+  ],
+  [
+   "pets",
+   "rules",
+   "yesno",
+   "house_rules"
+  ],
+  [
+   "smoking",
+   "rules",
+   "yesno",
+   "house_rules"
+  ],
+  [
+   "parties",
+   "rules",
+   "yesno",
+   "house_rules"
+  ],
+  [
+   "quiet_hours",
+   "rules",
+   "range",
+   "house_rules"
+  ],
+  [
+   "parking",
+   "access",
+   "yesno",
+   "parking"
+  ],
+  [
+   "lift",
+   "access",
+   "yesno",
+   "getting_here"
+  ],
+  [
+   "step_free",
+   "access",
+   "yesno",
+   "getting_here"
+  ],
+  [
+   "dishwasher",
+   "kitchen",
+   "yesno",
+   "kitchen_appliances"
+  ],
+  [
+   "coffee_machine",
+   "kitchen",
+   "yesno",
+   "kitchen_appliances"
+  ],
+  [
+   "washing_machine",
+   "kitchen",
+   "yesno",
+   "washing_machine"
+  ],
+  [
+   "dryer",
+   "kitchen",
+   "yesno",
+   "washing_machine"
+  ],
+  [
+   "iron",
+   "kitchen",
+   "yesno",
+   "bedrooms"
+  ],
+  [
+   "air_conditioning",
+   "comfort",
+   "yesno",
+   "heating"
+  ],
+  [
+   "balcony",
+   "comfort",
+   "yesno",
+   "bedrooms"
+  ],
+  [
+   "safe",
+   "comfort",
+   "yesno",
+   "bedrooms"
+  ],
+  [
+   "cot",
+   "comfort",
+   "yesno",
+   "bedrooms"
+  ],
+  [
+   "high_chair",
+   "comfort",
+   "yesno",
+   "bedrooms"
+  ],
+  [
+   "hair_dryer",
+   "comfort",
+   "yesno",
+   "bathroom"
+  ]
+ ],
+ "guest": {
+  "en": {
+   "guide_fact_air_conditioning_no": "There is no air conditioning.",
+   "guide_fact_air_conditioning_yes": "There is air conditioning.",
+   "guide_fact_balcony_no": "There is no balcony or terrace.",
+   "guide_fact_balcony_yes": "There is a balcony or terrace.",
+   "guide_fact_checkin_from": "Check-in from %(time)s.",
+   "guide_fact_checkout_by": "Checkout by %(time)s.",
+   "guide_fact_coffee_machine_no": "There is no coffee machine.",
+   "guide_fact_coffee_machine_yes": "There is a coffee machine.",
+   "guide_fact_cot_no": "There is no baby cot.",
+   "guide_fact_cot_yes": "A baby cot is available.",
+   "guide_fact_dishwasher_no": "There is no dishwasher.",
+   "guide_fact_dishwasher_yes": "There is a dishwasher.",
+   "guide_fact_dryer_no": "There is no tumble dryer.",
+   "guide_fact_dryer_yes": "There is a tumble dryer.",
+   "guide_fact_hair_dryer_no": "There is no hair dryer.",
+   "guide_fact_hair_dryer_yes": "There is a hair dryer.",
+   "guide_fact_high_chair_no": "There is no high chair.",
+   "guide_fact_high_chair_yes": "A high chair is available.",
+   "guide_fact_iron_no": "There is no iron.",
+   "guide_fact_iron_yes": "There is an iron.",
+   "guide_fact_late_checkout_no": "Late checkout is not possible.",
+   "guide_fact_late_checkout_yes": "Late checkout is possible on request.",
+   "guide_fact_lift_no": "There is no lift.",
+   "guide_fact_lift_yes": "There is a lift.",
+   "guide_fact_luggage_no": "Luggage cannot be left before check-in or after checkout.",
+   "guide_fact_luggage_yes": "You can leave luggage before check-in or after checkout.",
+   "guide_fact_parking_no": "No parking at the property.",
+   "guide_fact_parking_yes": "Parking is available.",
+   "guide_fact_parties_no": "No parties or events.",
+   "guide_fact_parties_yes": "Parties and events are allowed.",
+   "guide_fact_pets_no": "No pets.",
+   "guide_fact_pets_yes": "Pets are welcome.",
+   "guide_fact_quiet_hours": "Quiet hours from %(start)s to %(end)s.",
+   "guide_fact_safe_no": "There is no safe.",
+   "guide_fact_safe_yes": "There is a safe.",
+   "guide_fact_smoking_no": "No smoking.",
+   "guide_fact_smoking_yes": "Smoking is allowed.",
+   "guide_fact_step_free_no": "There are steps at the entrance.",
+   "guide_fact_step_free_yes": "Step-free access.",
+   "guide_fact_washing_machine_no": "There is no washing machine.",
+   "guide_fact_washing_machine_yes": "There is a washing machine."
+  },
+  "cs": {
+   "guide_fact_air_conditioning_no": "Klimatizace tu není.",
+   "guide_fact_air_conditioning_yes": "Je tu klimatizace.",
+   "guide_fact_balcony_no": "Balkon ani terasa tu nejsou.",
+   "guide_fact_balcony_yes": "Je tu balkon nebo terasa.",
+   "guide_fact_checkin_from": "Příjezd od %(time)s.",
+   "guide_fact_checkout_by": "Odjezd do %(time)s.",
+   "guide_fact_coffee_machine_no": "Kávovar tu není.",
+   "guide_fact_coffee_machine_yes": "Je tu kávovar.",
+   "guide_fact_cot_no": "Dětská postýlka tu není.",
+   "guide_fact_cot_yes": "Dětská postýlka je k dispozici.",
+   "guide_fact_dishwasher_no": "Myčka tu není.",
+   "guide_fact_dishwasher_yes": "Je tu myčka.",
+   "guide_fact_dryer_no": "Sušička tu není.",
+   "guide_fact_dryer_yes": "Je tu sušička.",
+   "guide_fact_hair_dryer_no": "Fén tu není.",
+   "guide_fact_hair_dryer_yes": "Je tu fén.",
+   "guide_fact_high_chair_no": "Dětská židlička tu není.",
+   "guide_fact_high_chair_yes": "Dětská židlička je k dispozici.",
+   "guide_fact_iron_no": "Žehlička tu není.",
+   "guide_fact_iron_yes": "Je tu žehlička.",
+   "guide_fact_late_checkout_no": "Pozdní odjezd není možný.",
+   "guide_fact_late_checkout_yes": "Pozdní odjezd je možný po domluvě.",
+   "guide_fact_lift_no": "V domě není výtah.",
+   "guide_fact_lift_yes": "V domě je výtah.",
+   "guide_fact_luggage_no": "Zavazadla tu před příjezdem ani po odjezdu nechat nejde.",
+   "guide_fact_luggage_yes": "Zavazadla si můžete nechat před příjezdem i po odjezdu.",
+   "guide_fact_parking_no": "U ubytování se parkovat nedá.",
+   "guide_fact_parking_yes": "Parkování je k dispozici.",
+   "guide_fact_parties_no": "Žádné oslavy ani akce.",
+   "guide_fact_parties_yes": "Oslavy a akce jsou povoleny.",
+   "guide_fact_pets_no": "Bez zvířat.",
+   "guide_fact_pets_yes": "Zvířata jsou vítána.",
+   "guide_fact_quiet_hours": "Noční klid od %(start)s do %(end)s.",
+   "guide_fact_safe_no": "Trezor tu není.",
+   "guide_fact_safe_yes": "Je tu trezor.",
+   "guide_fact_smoking_no": "Nekouří se.",
+   "guide_fact_smoking_yes": "Kouření je povoleno.",
+   "guide_fact_step_free_no": "Ke vchodu vedou schody.",
+   "guide_fact_step_free_yes": "Bezbariérový přístup.",
+   "guide_fact_washing_machine_no": "Pračka tu není.",
+   "guide_fact_washing_machine_yes": "Je tu pračka."
+  }
+ }
+}

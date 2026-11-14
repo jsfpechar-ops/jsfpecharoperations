@@ -1,0 +1,35 @@
+{{- /* Go twin of App/app/templates/guest_guide_quick.html (brief 1444). */ -}}
+{{define "guide_quick.title"}}{{end}}
+{{define "guide_quick.back_label"}}{{t "guest_guide.title"}}{{end}}
+{{define "guide_quick"}}
+<div class="guide-page guide-form-page">
+<div class="head guide-hd"><div><a class="guide-back" href="{{.Base}}">{{t "guest_guide.title"}}</a><h1 class="big">{{t (printf "guest_guide.quick.step.%s" .Step)}}</h1><p class="sub">{{t "guest_guide.quick.step_of" "n" .StepIndex "total" .StepTotal}}</p></div></div>
+{{if eq .StepIndex 1}}{{ui_banner "neutral" (t "guest_guide.quick.lede")}}{{end}}
+{{$choices := guide_pairs "yes" (t "guest_guide.quick.yes") "no" (t "guest_guide.quick.no") "" (t "guest_guide.quick.unsure")}}
+<section class="guide-form-card">
+<form method="post" action="{{.Base}}/quick/{{.Step}}">
+<input type="hidden" name="_csrf" value="{{csrf}}">
+{{range .Facts}}
+{{$label := t (printf "guest_guide.quick.q.%s" .Key)}}
+{{if eq .Type "yesno"}}
+<fieldset class="quick-choice" data-quick-fact="{{.Key}}">
+<legend class="ui-label">{{$label}}</legend>
+<div class="quick-choice-options">
+{{$fact := .}}{{range $choices}}<label class="quick-choice-option"><input type="radio" name="{{$fact.Key}}" value="{{index . 0}}"{{if eq $fact.Value (index . 0)}} checked{{end}}><span>{{index . 1}}</span></label>{{end}}
+</div>
+</fieldset>
+{{else if eq .Type "time"}}
+{{ui_field (printf "quick-%s" .Key) $label (kv "name" .Key "value" .Value "type" "time" "help" (t "guest_guide.quick.time_help") "optional" true)}}
+{{else}}
+{{ui_field (printf "quick-%s-from" .Key) (printf "%s: %s" $label (t "guest_guide.quick.from")) (kv "name" (printf "%s_from" .Key) "value" .Start "type" "time" "optional" true)}}
+{{ui_field (printf "quick-%s-to" .Key) (printf "%s: %s" $label (t "guest_guide.quick.to")) (kv "name" (printf "%s_to" .Key) "value" .End "type" "time" "help" (t "guest_guide.quick.range_help") "optional" true)}}
+{{end}}
+{{end}}
+<div class="ui-form-actions">
+{{if .Last}}{{ui_button (t "guest_guide.quick.finish") "primary" (kv "type" "submit")}}{{else}}{{ui_button (t "guest_guide.quick.next") "primary" (kv "type" "submit")}}{{end}}
+{{ui_button (t "guest_guide.quick.skip") "quiet" (kv "type" "submit" "attrs" (safe `name="skip" value="1"`))}}
+</div>
+</form>
+</section>
+</div>
+{{end}}
