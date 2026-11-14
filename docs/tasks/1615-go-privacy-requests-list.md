@@ -1,6 +1,6 @@
 # 1615: Go privacy requests: the list page GET /privacy-requests
 
-Status: todo
+Status: review
 Depends on: 1370 (merged on main, so on go-wave3) | Base commit: none (one big PR mode: the branch that is checked out, go-wave3) | Branch: the current one
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier A (writer: Opus)
 
