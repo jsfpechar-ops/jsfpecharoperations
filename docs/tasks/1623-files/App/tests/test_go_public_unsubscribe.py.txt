@@ -1,4 +1,4 @@
-"""Brief 1623: the Go unsubscribe page' catalog and golden pages are current.
+"""Brief 1623: the Go unsubscribe page's catalog and golden pages are current.
 
 go/internal/web/public/catalog_unsub.json and testdata/unsub/ are written by
 scripts/public_unsubscribe_golden.py; this fails when the Python pages or their

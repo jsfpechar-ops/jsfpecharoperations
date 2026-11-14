@@ -163,10 +163,10 @@ Test-map: no row covers Go packages; the commands above are this brief's tests. 
 ## 7. Acceptance
 
 - [ ] `git log --oneline --grep='^1501 step'` lists steps 1 to 4 (and `git log --oneline --grep='^1501 report'` the report).
-- [ ] `for c in $(git log --format=%h --grep='^1501 '); do git show --stat --format= $c; done | grep '|' | awk '{print $1}' | sort -u` lists exactly the 17 files of section 3.
+- [ ] `for c in $(git log --format=%h --grep='^1501 '); do git show --name-only --format= $c; done | sort -u` lists exactly the 17 files of section 3 plus `docs/tasks/1501-go-auth-shared.md` (the Status line).
 - [ ] The copied files equal the sidecar: `cd docs/tasks/1501-files && for f in $(find . -type f); do cmp $f ../../../$f; done` prints nothing.
 - [ ] Section 6 output exactly as stated.
-- [ ] `git show --stat --format= $(git log --format=%h --grep='^1501 ') | grep -E 'go\.mod|go\.sum|App/app/|hostweb/|cmd/ubyhost-web/|deploy/'` prints nothing.
+- [ ] `for c in $(git log --format=%h --grep='^1501 '); do git show --name-only --format= $c; done | grep -E 'go\.mod|go\.sum|App/app/|hostweb/|cmd/ubyhost-web/|deploy/'` prints nothing.
 
 ## 8. Stop and ask
 
