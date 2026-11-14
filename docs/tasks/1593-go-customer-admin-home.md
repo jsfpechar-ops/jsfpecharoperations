@@ -1,6 +1,6 @@
 # 1593: Go customer admin, part 4: the operator console home GET /admin
 
-Status: todo
+Status: review
 Depends on: 1592 | Base commit: none (one big PR mode: the branch that is checked out) | Branch: the current one
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B (operator pages, billing and mail; no filing, no guest data)
 
