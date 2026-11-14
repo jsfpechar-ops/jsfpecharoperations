@@ -28,3 +28,5 @@ users.invite.no_email
 auth.error.username
 auth.error.recent_login
 flash.error.no_such_user
+flash.error.confirm_username
+flash.users.deletion_scheduled

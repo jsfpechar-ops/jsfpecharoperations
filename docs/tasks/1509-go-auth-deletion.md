@@ -1,6 +1,6 @@
 # 1509: Go auth, admin schedules a workspace deletion (`POST /admin/users/{id}/schedule-deletion`, dormant)
 
-Status: todo
+Status: review
 Depends on: 1501 | Base commit: 859d114d5 | Branch: go-wave3
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
