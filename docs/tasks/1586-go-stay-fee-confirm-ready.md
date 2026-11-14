@@ -1,6 +1,6 @@
 # 1586: Go stay fees: seal every ready period (POST /stay-fees/confirm-ready)
 
-Status: todo
+Status: review
 Depends on: 1330, 1242a (stayfee.Save and Check), 1580 (the real PDF renderer, only needed for production, not for the tests) | Base commit: current tip of the working branch | Branch: task/1586-go-stay-fee-confirm-ready
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
