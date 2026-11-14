@@ -1,6 +1,6 @@
 # 1422: Go invoice pages: lookups, number allocation, issue and cancel transactions
 
-Status: todo
+Status: review
 Depends on: 1421 (merged or on this branch) | Base commit: the working branch head (no fixed commit) | Branch: the current branch (one big PR)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B
 
