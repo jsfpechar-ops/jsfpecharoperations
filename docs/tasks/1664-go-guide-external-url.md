@@ -1,12 +1,12 @@
-# 1644: Go guide editor — external guide link field (https only, domain shown)
+# 1664: Go guide editor — external guide link field (https only, domain shown)
 
-Status: todo (after 1641 merges)
-Depends on: 1641, 1648 | Base commit: bdfaa4d4 | Branch: task/1644-go-guide-external-url
+Status: todo (after 1661 merges)
+Depends on: 1661, 1668 | Base commit: bdfaa4d4 | Branch: task/1664-go-guide-external-url
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B (host UI)
 
 ## 1. Objective
 
-On the Go guide editor index (`GET /apartments/{id}/guide`, `go/internal/web/ai/`, briefs 1440-1447) add a section "External guide" with one URL field, saved by a new `POST /apartments/{id}/guide/external` into `apartment.guide_external_url`. Accept only `https` with a host name, no userinfo, no port, ASCII, at most 2048 characters. When set, the section shows the domain and a Clear button. The value is shown to guests later (1646, 1647).
+On the Go guide editor index (`GET /apartments/{id}/guide`, `go/internal/web/ai/`, briefs 1440-1447) add a section "External guide" with one URL field, saved by a new `POST /apartments/{id}/guide/external` into `apartment.guide_external_url`. Accept only `https` with a host name, no userinfo, no port, ASCII, at most 2048 characters. When set, the section shows the domain and a Clear button. The value is shown to guests later (1666, 1667).
 
 ## 2. Context (verified on bdfaa4d4)
 
@@ -49,7 +49,7 @@ Index data is built in `buildIndex` (`guide_index.go:243`), `d := guideIndexData
 
 Strings: Go host catalogs are generated from Python (`go/internal/web/ai/guide_common.go:37`: "App/app/host_i18n.py by App/scripts/go_host_i18n.py (guide/i18n_keys.txt)"). `guide/i18n_keys.txt` already lists `guest_guide.*` and `flash.guest_guide.*`; error keys are listed one by one (`flash.error.guide_import_airbnb_path`, ...). **go-first exception 1 (port plumbing):** the new keys go into `App/app/host_i18n.py` (en and cs blocks, next to `"guest_guide.leon.title"` at `:10270` and `:10381`) and `App/app/host_vi_i18n.py` (next to `:214`), because the Go catalog is generated from them. No Python route or template reads them.
 
-UX gate (AGENTS rule 10, `docs/context/workflow.md#ux-gate`): brief 1648 adds `App/tests/test_go_pages_layout_lint_browser.py`, which starts the Go web binary locally, signs in a seeded host and runs `layout_lint.js` with 390/768/1280 screenshots on Go guide-editor paths. This PR extends that test (its `extra` hook, `lint_go_paths` in `App/tests/go_web_harness.py`) with the index page `/apartments/{id}/guide#external` in three states: external-link field empty; link saved (domain line and Remove button shown); validation error (POST `https://h.cz:8443`, flash shown). Screenshots are named `guide-external-empty|saved|error-<width>.png`.
+UX gate (AGENTS rule 10, `docs/context/workflow.md#ux-gate`): brief 1668 adds `App/tests/test_go_pages_layout_lint_browser.py`, which starts the Go web binary locally, signs in a seeded host and runs `layout_lint.js` with 390/768/1280 screenshots on Go guide-editor paths. This PR extends that test (its `extra` hook, `lint_go_paths` in `App/tests/go_web_harness.py`) with the index page `/apartments/{id}/guide#external` in three states: external-link field empty; link saved (domain line and Remove button shown); validation error (POST `https://h.cz:8443`, flash shown). Screenshots are named `guide-external-empty|saved|error-<width>.png`.
 
 ## 3. Files
 
@@ -62,7 +62,7 @@ UX gate (AGENTS rule 10, `docs/context/workflow.md#ux-gate`): brief 1648 adds `A
 | `go/internal/web/ai/guide/i18n.json` | regenerated | `App/scripts/go_host_i18n.py` |
 | `App/app/host_i18n.py`, `App/app/host_vi_i18n.py` | edit (exception 1) | keys of step 5 |
 | `go/internal/web/ai/guide_external_test.go` | new | tests of step 6 |
-| `App/tests/test_go_pages_layout_lint_browser.py` | edit | three external-link states of step 7 (harness from 1648) |
+| `App/tests/test_go_pages_layout_lint_browser.py` | edit | three external-link states of step 7 (harness from 1668) |
 
 No other file may change.
 
@@ -94,8 +94,8 @@ No other file may change.
    - `flash.guest_guide.external_saved`: "Link saved." / "Odkaz je uložený." / "Đã lưu liên kết."; `flash.guest_guide.external_cleared`: "Link removed." / "Odkaz je odebraný." / "Đã gỡ liên kết."
    - `flash.error.guide_external_url`: "Use a full https:// link without a port or login, for example https://www.notion.so/…" / "Zadejte celý odkaz https:// bez portu a přihlášení, třeba https://www.notion.so/…" / "Dùng liên kết https:// đầy đủ, không có cổng hay đăng nhập, ví dụ https://www.notion.so/…"
    Then add `flash.error.guide_external_url` to `guide/i18n_keys.txt` after `flash.error.guide_import_link` (or after the last `flash.error.guide_import_*` line) and from `App/` run `.venv/bin/python scripts/go_host_i18n.py 2>&1 | tail -5`; only `go/internal/web/ai/guide/i18n.json` may change.
-6. Tests (`guide_external_test.go`, world from `guide_index_test.go:49-54`: `newGuideCardWorld`, `guideSeedApartment`, `guideTestDo`): validator table (accept `https://www.notion.so/x?y=1`; refuse `http://`, `javascript:`, `https://u:p@h.cz`, `https://h.cz:8443`, `https://1.2.3.4/`, `https://localhost/`, a 2049-char URL, non-ASCII); POST good → column set, audit row has the host and not the path; POST bad → column unchanged, error flash; POST clear → NULL; index shows the domain; foreign apartment → 404. Tests need PostgreSQL like the other guide tests (brief 1641 §4 step 3 recipe).
-7. Browser states: in the 1648 test add `test_go_guide_external_link_states_pass_the_lint`: per width, (a) GET the guide index with the field empty, (b) POST a valid `https://www.notion.so/page` through the form (fill `input[name=guide_external_url]`, click Save) and reload, (c) submit `https://h.cz:8443` and keep the error page; each state runs the lint (zero findings) and saves a 390/768/1280 screenshot. Look at the three 390 px images and the 768 and 1280 ones once.
+6. Tests (`guide_external_test.go`, world from `guide_index_test.go:49-54`: `newGuideCardWorld`, `guideSeedApartment`, `guideTestDo`): validator table (accept `https://www.notion.so/x?y=1`; refuse `http://`, `javascript:`, `https://u:p@h.cz`, `https://h.cz:8443`, `https://1.2.3.4/`, `https://localhost/`, a 2049-char URL, non-ASCII); POST good → column set, audit row has the host and not the path; POST bad → column unchanged, error flash; POST clear → NULL; index shows the domain; foreign apartment → 404. Tests need PostgreSQL like the other guide tests (brief 1661 §4 step 3 recipe).
+7. Browser states: in the 1668 test add `test_go_guide_external_link_states_pass_the_lint`: per width, (a) GET the guide index with the field empty, (b) POST a valid `https://www.notion.so/page` through the form (fill `input[name=guide_external_url]`, click Save) and reload, (c) submit `https://h.cz:8443` and keep the error page; each state runs the lint (zero findings) and saves a 390/768/1280 screenshot. Look at the three 390 px images and the 768 and 1280 ones once.
 8. Run §6, commit per step.
 
 ## 5. Do not touch
@@ -116,16 +116,16 @@ From the repo root: `python3 scripts/context_lint.py 2>&1 | tail -10`
 - [ ] Validator table and handler tests green; route listed by `GuideRoutes`.
 - [ ] Audit detail carries the domain only.
 - [ ] Catalog regenerated, `--check` clean; i18n and copy rows green.
-- [ ] 1648 harness green: 0 findings, 0 skipped, for the editor with the external-link field empty, saved and showing the validation error, each at 390, 768 and 1280.
+- [ ] 1668 harness green: 0 findings, 0 skipped, for the editor with the external-link field empty, saved and showing the validation error, each at 390, 768 and 1280.
 - [ ] The PR writes per state "390: ...; 768: ...; 1280: ..." from the screenshots the executor opened, and ticks the design-system checklist (`docs/design/design-system.md`). Nothing says "pending".
 
 ## 8. Stop and ask
 
-Stop if: 1641 or 1648 is not on main; an excerpt is not found; a Python i18n test rejects keys no Python template uses (ask: the orchestrator decides where Go-only keys live); a test fails twice; 25 tool calls or ~50k tokens; a file outside §3 needs a change.
+Stop if: 1661 or 1668 is not on main; an excerpt is not found; a Python i18n test rejects keys no Python template uses (ask: the orchestrator decides where Go-only keys live); a test fails twice; 25 tool calls or ~50k tokens; a file outside §3 needs a change.
 
 ## 9. Report
 
-`docs/tasks/1644-report.md` (≤600 tokens), `Status: review`, one PR.
+`docs/tasks/1664-report.md` (≤600 tokens), `Status: review`, one PR.
 
 ## Risk list (for the reviewer)
 
@@ -133,4 +133,4 @@ Stop if: 1641 or 1648 is not on main; an excerpt is not found; a Python i18n tes
 
 ## Owner steps
 
-1. None now: the field reaches hosts only when the guide editor paths (`/apartments/*/guide*`) are in `UBYHOST_GO_PATHS`. The UX evidence comes from the 1648 harness, so no staging server is needed. Until then Python serves the editor without this field.
+1. None now: the field reaches hosts only when the guide editor paths (`/apartments/*/guide*`) are in `UBYHOST_GO_PATHS`. The UX evidence comes from the 1668 harness, so no staging server is needed. Until then Python serves the editor without this field.

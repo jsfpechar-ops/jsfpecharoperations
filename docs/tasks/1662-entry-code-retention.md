@@ -1,7 +1,7 @@
-# 1642: Retention — wipe the entry code after `entry_code_until` or after archiving (Go step, Python twin for the golden)
+# 1662: Retention — wipe the entry code after `entry_code_until` or after archiving (Go step, Python twin for the golden)
 
-Status: todo (after 1641 merges)
-Depends on: 1641 | Base commit: bdfaa4d4 | Branch: task/1642-entry-code-retention
+Status: todo (after 1661 merges)
+Depends on: 1661 | Base commit: bdfaa4d4 | Branch: task/1662-entry-code-retention
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier A (deletes data)
 
 ## 1. Objective
@@ -94,7 +94,7 @@ func stepEntryCodes(ctx context.Context, r *runner) (int, error) {
 2. Python twin `_entry_code_step(today, dry_run, owner_user_id)` right after `_door_code_pin_step`: the same body shape as lines 495-511, table `apartment`, the where clause of step 1 with `?` for both placeholders (pass `cutoff` twice), and `UPDATE apartment SET entry_code_enc = NULL WHERE ...`. Registry `("entry_codes", _entry_code_step),` after line 558; label as in Go after line 589. Doc line: "apartment.entry_code_enc (building entry code, encrypted): wiped 1 day after entry_code_until or after archiving; kept while NULL until the host clears it; deleted with the workspace."
 3. `retention_golden.py`: add `"apartment_entry_code": ("SELECT id::text || '|' || COALESCE(entry_code_enc, '~') FROM apartment ORDER BY id"),` next to `"door_code"` (same tuple style).
 4. `fixture.sql`: append (use apartment ids that exist in the fixture: `grep -n "INSERT INTO apartment" go/internal/retention/testdata/fixture.sql`) one `UPDATE` each: an active apartment with `entry_code_enc = 'gAAAA-fixture-expired'`, `entry_code_until = '2020-01-01'`; one with `'gAAAA-fixture-open'` and `entry_code_until` NULL; one archived apartment (or set `archived_at = '2020-01-01T00:00:00+00:00'` on one) with `'gAAAA-fixture-archived'`. Fake ciphertext only.
-5. Start the throwaway PostgreSQL of brief 1641 §4 step 3, then from `App/`: `UBYHOST_TEST_DATABASE_URL=... .venv/bin/python scripts/retention_golden.py 2>&1 | tail -5` and `--check`. `git diff --stat` must show only `golden.json` from this run.
+5. Start the throwaway PostgreSQL of brief 1661 §4 step 3, then from `App/`: `UBYHOST_TEST_DATABASE_URL=... .venv/bin/python scripts/retention_golden.py 2>&1 | tail -5` and `--check`. `git diff --stat` must show only `golden.json` from this run.
 6. Python test file (use the retention test fixtures already used by `tests/test_retention*.py`; copy the setup of the door-code PIN test there: `grep -n "door_code_pins\|_door_code_pin_step" App/tests/test_retention*.py | head`).
 7. Run §6, commit per step.
 
@@ -116,11 +116,11 @@ From the repo root: `python3 scripts/context_lint.py 2>&1 | tail -10`
 
 ## 8. Stop and ask
 
-Stop if: 1641 is not on main; PostgreSQL cannot start (the golden cannot be regenerated: do not hand-edit `golden.json`); the golden diff changes counts of any other step; an excerpt is not found; a test fails twice; 25 tool calls or ~50k tokens; a file outside §3 needs a change.
+Stop if: 1661 is not on main; PostgreSQL cannot start (the golden cannot be regenerated: do not hand-edit `golden.json`); the golden diff changes counts of any other step; an excerpt is not found; a test fails twice; 25 tool calls or ~50k tokens; a file outside §3 needs a change.
 
 ## 9. Report
 
-`docs/tasks/1642-report.md` (≤600 tokens), `Status: review`, one PR.
+`docs/tasks/1662-report.md` (≤600 tokens), `Status: review`, one PR.
 
 ## Risk list (for the reviewer)
 

@@ -1,12 +1,12 @@
-# 1648: Browser harness that runs the layout lint on Go host pages (local Go binary, no staging)
+# 1668: Browser harness that runs the layout lint on Go host pages (local Go binary, no staging)
 
 Status: todo
-Depends on: none | Base commit: bdfaa4d4 | Branch: task/1648-go-pages-layout-lint-harness
+Depends on: none | Base commit: bdfaa4d4 | Branch: task/1668-go-pages-layout-lint-harness
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B (test harness, no product code)
 
 ## 1. Objective
 
-Today `App/tests/test_layout_lint_browser.py` only drives the Python app, so a Go host page has no automatic UX gate (AGENTS rule 10). Add a pytest browser test that builds `go/cmd/ubyhost-web`, starts it on a free port against a throwaway PostgreSQL database seeded with one host and one apartment, signs a host session cookie, and for a list of Go paths runs `App/tests/layout_lint.js` at 390, 768 and 1280, saves a full-page screenshot per path and width, and fails on any finding. First list: the Go guide editor pages (already ported, briefs 1440-1448). Later briefs (1644, 1645, 1646) extend the list and the seed; they do not rebuild the harness. This also lets brief 1412 run without a staging server (note for the plan, 1412 itself is not edited here).
+Today `App/tests/test_layout_lint_browser.py` only drives the Python app, so a Go host page has no automatic UX gate (AGENTS rule 10). Add a pytest browser test that builds `go/cmd/ubyhost-web`, starts it on a free port against a throwaway PostgreSQL database seeded with one host and one apartment, signs a host session cookie, and for a list of Go paths runs `App/tests/layout_lint.js` at 390, 768 and 1280, saves a full-page screenshot per path and width, and fails on any finding. First list: the Go guide editor pages (already ported, briefs 1440-1448). Later briefs (1664, 1665, 1666) extend the list and the seed; they do not rebuild the harness. This also lets brief 1412 run without a staging server (note for the plan, 1412 itself is not edited here).
 
 ## 2. Context (verified on origin/main bdfaa4d4)
 
@@ -31,14 +31,14 @@ Today `App/tests/test_layout_lint_browser.py` only drives the Python app, so a G
 | `App/tests/test_go_pages_layout_lint_browser.py` | new | the test over `GO_PATHS` |
 | `docs/context/test-map.md` | edit | one row for the new test |
 | `docs/context/workflow.md` | edit | under `## UX gate`, one line: Go host pages use `tests/test_go_pages_layout_lint_browser.py` |
-| `docs/tasks/1648-report.md` | new | the report (§9) |
+| `docs/tasks/1668-report.md` | new | the report (§9) |
 
 No other file may change (no Go, no `layout_lint.js`, no existing test).
 
 ## 4. Steps
 
 0. Checks (repo root). Anything else than the stated result: STOP (§8).
-   - `git branch --show-current | tail -1` prints `task/1648-go-pages-layout-lint-harness`.
+   - `git branch --show-current | tail -1` prints `task/1668-go-pages-layout-lint-harness`.
    - `grep -cF 'addr := getenv("UBYHOST_GO_ADDR", "127.0.0.1:8081")' go/cmd/ubyhost-web/main.go | tail -1` prints `1`; same for `migrations := getenv("UBYHOST_MIGRATIONS_DIR", "App/migrations_pg")`.
    - `grep -cF 'LINT = (Path(__file__).parent / "layout_lint.js").read_text()' App/tests/test_layout_lint_browser.py | tail -1` prints `1`.
    - `grep -cF 'func guideSeedApartment(' go/internal/web/ai/guide_testutil_test.go | tail -1` prints `1`.
@@ -53,7 +53,7 @@ No other file may change (no Go, no `layout_lint.js`, no existing test).
 2. Same file, `lint_go_paths(go_web, paths, cookie, *, extra=None)`: for each width in `(390, 768, 1280)` one `browser.new_context(viewport={"width": w, "height": 1000})`, `add_cookies` (`ubyhost_session`, and `ubyhost_lang=en`), `context.route("**/static/**", handler)` (§2 static bullet), then per path `page.goto(base + path)`, assert status < 400, wait for network idle, `settle_motion(page)`, scroll to top, `page.evaluate(LINT)`, save `<name>-<width>.png` full page into `_out_dir()` (import `_out_dir` and `LINT` from `tests.test_layout_lint_browser`; if that import runs its fixtures' module code with a side effect, copy the two small definitions instead). Return the findings as `{"route", "width", "finding"}` dicts like the existing test. `extra` is an optional per-path callable `(page) -> None` run before the lint, so later briefs can open a state (fill a field, submit a form) and name the screenshot (`<name>+<state>-<width>.png`).
 3. `test_go_pages_layout_lint_browser.py`: same `REQUIRE_BROWSER` import block as `test_host_wide_geometry_browser.py:19-25`; `GO_PATHS = {"guide": "/apartments/{apt}/guide", "leon": "...", ...}` from step 0's verified list, `{apt}` filled from the seed; one test `test_go_host_pages_pass_the_layout_lint` that calls `lint_go_paths` and asserts no findings with the same message format as `test_layout_lint_browser.py:187`; one test `test_go_harness_signs_in_and_loads_css` that loads `/apartments/{apt}/guide` and asserts the response is 200, the page has `body` text of the apartment name, and `getComputedStyle(document.body).fontFamily` is not the browser default serif (proves `app2.css` loaded); one test `test_go_harness_rejects_a_signed_out_request` (no cookie: status is a redirect to `/login` or 401/403, never 200 with the editor). If the binary exits with "goose files pending" (the only unproven link): STOP and report, do not edit migrations or `register_schema.go`.
 4. Docs: one test-map row `go-pages-layout-lint` mapping `go/internal/web/**/templates/**`, `go/internal/hostweb/**` → the new test; one line in workflow.md under `## UX gate` item 1: "Go host pages: `UBYHOST_REQUIRE_BROWSER=1 UBYHOST_TEST_DATABASE_URL=... .venv/bin/python -m pytest tests/test_go_pages_layout_lint_browser.py -q -rs 2>&1 | tail -30`, 0 skipped; screenshots in `$UBYHOST_SHOTS_DIR/layout-lint/`." Use `grep -n '^## \|^|' docs/context/test-map.md | head -20` to copy the row format.
-5. Run §6, commit per step (`1648 step k`), write the report.
+5. Run §6, commit per step (`1668 step k`), write the report.
 
 ## 5. Do not touch
 
@@ -78,7 +78,7 @@ Stop if: `go` or `UBYHOST_TEST_DATABASE_URL` is missing in the environment; an a
 
 ## 9. Report
 
-`docs/tasks/1648-report.md` (600 tokens at most), `Status: review`, one PR. The PR body states: no new dependency (psycopg, itsdangerous and Playwright are already pinned), no outbound request, fixtures only.
+`docs/tasks/1668-report.md` (600 tokens at most), `Status: review`, one PR. The PR body states: no new dependency (psycopg, itsdangerous and Playwright are already pinned), no outbound request, fixtures only.
 
 ## Risk list (for the reviewer)
 
@@ -87,4 +87,4 @@ Stop if: `go` or `UBYHOST_TEST_DATABASE_URL` is missing in the environment; an a
 ## Owner steps
 
 1. Optional, after merge: ask the orchestrator for a CI job that runs this test (it needs the `postgres` service and Go, which the Go job already has). Without it the test runs on the machine of whoever changes a Go host page, as rule 10 requires.
-2. Briefs 1644, 1645 and later Go host pages use this harness for their 390/768/1280 evidence; it also covers what brief 1412 asked for without a staging server (decision for the plan, not changed here).
+2. Briefs 1664, 1665 and later Go host pages use this harness for their 390/768/1280 evidence; it also covers what brief 1412 asked for without a staging server (decision for the plan, not changed here).

@@ -1,4 +1,4 @@
-# 1640: Python and Go schema checks accept columns that only a goose file adds
+# 1660: Python and Go schema checks accept columns that only a goose file adds
 
 Status: todo — owner approved 2026-11-14: run now as go-first exception 1 (port plumbing).
 Depends on: none | Base commit: bdfaa4d4 when cut | Branch: none yet
@@ -6,7 +6,7 @@ Executor: Haiku 5.5 | Tier A (schema check; a wrong change stops the app at boot
 
 ## 1. Objective
 
-Make a goose-only `ALTER TABLE ... ADD COLUMN` (no SQLite twin) pass Python's `db.postgres_schema_status()` and Go's embedded check, so [1641](1641-entry-code-schema.md) can add four `apartment` columns without the Python app refusing to start. Without this, every goose-only column is a production outage (rules.md §Database: "A goose-only file that adds a column is untried against Python's schema check until plan step S6").
+Make a goose-only `ALTER TABLE ... ADD COLUMN` (no SQLite twin) pass Python's `db.postgres_schema_status()` and Go's embedded check, so [1661](1661-entry-code-schema.md) can add four `apartment` columns without the Python app refusing to start. Without this, every goose-only column is a production outage (rules.md §Database: "A goose-only file that adds a column is untried against Python's schema check until plan step S6").
 
 ## 2. Context (verified on bdfaa4d4)
 
@@ -37,7 +37,7 @@ Proposed cut (tier A, written by Opus when approved):
 1. In `postgres_schema_status`, after `expected = _expected_sqlite_columns()`, append the columns that goose-only files add, in file order (goose-only = a file under `App/migrations_pg/` numbered above 17 that does not insert a `schema_migrations` row), parsed from `ALTER TABLE <t> ADD COLUMN [IF NOT EXISTS] <name> <TYPE>` with the type mapped like `expected_types`. Order matters: the check zips by position, and PostgreSQL appends added columns at the end.
 2. Same list in `pg_schema_golden.py` so `expected_schema.json` carries them; `go test ./internal/schema/...` green.
 3. Test on a throwaway PostgreSQL: a temporary goose-only file with one `ADD COLUMN` → `current` stays true; a column added by hand without a goose file → still a mismatch.
-4. Check against 1474 (S6) so the two do not fight; if 1474 is written first and covers this, close 1640.
+4. Check against 1474 (S6) so the two do not fight; if 1474 is written first and covers this, close 1660.
 
 ## 5. Do not touch
 

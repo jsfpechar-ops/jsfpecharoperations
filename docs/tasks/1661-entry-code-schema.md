@@ -1,12 +1,12 @@
-# 1641: Goose 00018 — apartment entry code + external guide URL columns, export guard
+# 1661: Goose 00018 — apartment entry code + external guide URL columns, export guard
 
-Status: blocked — waits for 1640 on main so the new columns do not stop the Python app at boot
-Depends on: 1640 | Base commit: bdfaa4d4 | Branch: task/1641-entry-code-schema
+Status: blocked — waits for 1660 on main so the new columns do not stop the Python app at boot
+Depends on: 1660 | Base commit: bdfaa4d4 | Branch: task/1661-entry-code-schema
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier A (migrations): brief reviewed as exact diff
 
 ## 1. Objective
 
-Add four nullable columns to `apartment` with one additive goose file, regenerate the schema golden, prove both schema checks still pass on the migrated database, and add a Go guard test that no export can carry `entry_code_enc`. No reader yet: Go briefs 1642-1647 use the columns. Python does not read them (owner 2026-11-14: Go only).
+Add four nullable columns to `apartment` with one additive goose file, regenerate the schema golden, prove both schema checks still pass on the migrated database, and add a Go guard test that no export can carry `entry_code_enc`. No reader yet: Go briefs 1662-1667 use the columns. Python does not read them (owner 2026-11-14: Go only).
 
 ## 2. Context (verified on bdfaa4d4)
 
@@ -45,7 +45,7 @@ No `App/app/` file changes. No other file may change.
 
 ```sql
 -- +goose Up
--- Building entry code and external guide link per apartment (brief 1641, plan entry-code-external-guide).
+-- Building entry code and external guide link per apartment (brief 1661, plan entry-code-external-guide).
 -- Goose-only: no SQLite twin, no schema_migrations row. Additive: the previous image ignores the columns.
 -- entry_code_enc is Fernet ciphertext (never plaintext); entry_code_until is an ISO date or NULL.
 ALTER TABLE apartment ADD COLUMN IF NOT EXISTS entry_code_enc TEXT;
@@ -71,13 +71,13 @@ psql -h /tmp/pgt/sock -p 55433 -U postgres -c "CREATE DATABASE ubyhost_test"
 export UBYHOST_TEST_DATABASE_URL='postgresql://postgres@/ubyhost_test?host=/tmp/pgt/sock&port=55433'
 ```
 
-   From `App/`: `UBYHOST_DATABASE_URL="$UBYHOST_TEST_DATABASE_URL" .venv/bin/python scripts/pg_schema.py apply --expect-database ubyhost_test 2>&1 | tail -3`, then the same with `check`. Both must succeed (this is the Python boot gate; it fails before 1640). Then run the §6 PostgreSQL row with the variable set.
+   From `App/`: `UBYHOST_DATABASE_URL="$UBYHOST_TEST_DATABASE_URL" .venv/bin/python scripts/pg_schema.py apply --expect-database ubyhost_test 2>&1 | tail -3`, then the same with `check`. Both must succeed (this is the Python boot gate; it fails before 1660). Then run the §6 PostgreSQL row with the variable set.
 4. Guard test `go/internal/web/exports/entry_code_guard_test.go`: read every non-test `.go` file of the package (`os.ReadDir(".")`) and fail if any contains `entry_code` or matches `(?i)SELECT\s+(a\.)?\*\s+FROM\s+apartment`. Name it `TestNoExportReadsEntryCode`. `cd go && go test ./internal/web/exports/ -run TestNoExportReadsEntryCode 2>&1 | tail -10`.
-5. Run §6, commit per step (`1641 step k`).
+5. Run §6, commit per step (`1661 step k`).
 
 ## 5. Do not touch
 
-`App/app/` (all of it: Python does not read the columns), `App/app/migrations/` (frozen), any guest template, mail, retention (brief 1642), `.env`, secrets. Never `git add -A`; before each commit run `git diff --cached | grep -iE 'secret|token|api[_-]?key|password|AKIA|ghp_'` (expect nothing).
+`App/app/` (all of it: Python does not read the columns), `App/app/migrations/` (frozen), any guest template, mail, retention (brief 1662), `.env`, secrets. Never `git add -A`; before each commit run `git diff --cached | grep -iE 'secret|token|api[_-]?key|password|AKIA|ghp_'` (expect nothing).
 
 ## 6. Commands
 
@@ -96,11 +96,11 @@ From the repo root: `python3 scripts/context_lint.py 2>&1 | tail -10`
 
 ## 8. Stop and ask
 
-Stop and write the report if: 1640 (or 1474) is not on main; `pg_schema.py check` reports a column mismatch (the boot gate would stop production); the golden script rewrites files outside `go/internal/schema/`; an excerpt is not found; a test fails twice; 25 tool calls or ~50k tokens; a file outside §3 needs a change; you need push, merge or deploy.
+Stop and write the report if: 1660 (or 1474) is not on main; `pg_schema.py check` reports a column mismatch (the boot gate would stop production); the golden script rewrites files outside `go/internal/schema/`; an excerpt is not found; a test fails twice; 25 tool calls or ~50k tokens; a file outside §3 needs a change; you need push, merge or deploy.
 
 ## 9. Report
 
-`docs/tasks/1641-report.md` (≤600 tokens): `git diff --stat`, each command with its last 5 lines, §7 ticked, deviations, owner steps left. `Status: review`, one PR.
+`docs/tasks/1661-report.md` (≤600 tokens): `git diff --stat`, each command with its last 5 lines, §7 ticked, deviations, owner steps left. `Status: review`, one PR.
 
 ## Risk list (for the reviewer)
 
