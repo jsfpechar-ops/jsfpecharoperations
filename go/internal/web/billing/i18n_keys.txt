@@ -1,0 +1,21 @@
+# Host strings the subscription billing pages and their flash messages read (briefs 1555 to 1561).
+# Generated catalog: python3 App/scripts/go_host_i18n.py
+admin.tab.*
+ares.*
+billing.admin.*
+billing.cancel.*
+billing.change.*
+billing.interval.*
+billing.invoices.*
+billing.order.*
+billing.plan.*
+billing.resume.*
+customers.title
+funnel.ads.title
+funnel.posthog.title
+funnel.posthog_body
+funnel.posthog_link
+users.ads_export
+users.ads_export_again
+users.ads_export_hint
+nav.settings
