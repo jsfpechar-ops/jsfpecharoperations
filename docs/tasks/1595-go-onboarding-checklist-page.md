@@ -117,7 +117,7 @@ No other file may change.
 
    Expected: `i18n rc=0` with nothing before it, and `5 passed` with no `skipped`. Nothing changed, so no commit.
 
-4. PostgreSQL. If `UBYHOST_TEST_DATABASE_URL` is already set to a server you may create databases on, use it and skip this step. Else start a throwaway one (as root; `pg_ctl` refuses root, so it runs as `postgres`). Skip the start if it is already running (`su postgres -c '/usr/lib/postgresql/16/bin/pg_ctl -D /var/tmp/pg55595/data status' | tail -1` says `server is running`):
+4. PostgreSQL. If `UBYHOST_TEST_DATABASE_URL` is already set to a server you may create databases on, use it and skip this step. Else start a throwaway one (as root; `pg_ctl` refuses root, so it runs as `postgres`). Skip the start if it is already running (`su postgres -c '/usr/lib/postgresql/16/bin/pg_ctl -D /var/tmp/pg55595/data status' | head -1` says `server is running`):
 
    ```bash
    mkdir -p /var/tmp/pg55595 && chown postgres /var/tmp/pg55595 && su postgres -c '/usr/lib/postgresql/16/bin/initdb -D /var/tmp/pg55595/data -A trust >/dev/null && /usr/lib/postgresql/16/bin/pg_ctl -D /var/tmp/pg55595/data -o "-p 55595 -k /var/tmp/pg55595" -l /var/tmp/pg55595/log start' 2>&1 | tail -3

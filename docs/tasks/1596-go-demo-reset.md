@@ -64,7 +64,7 @@ No other file may change.
 
 0. Checks (repo root). Anything else than the stated result: STOP (§8).
    - `git branch --show-current | tail -1` prints the branch you were started on (not `main`).
-   - `git log --oneline --grep='^1595 step' | wc -l | tail -1` prints a number of at least `2` (brief 1595 ran on this branch).
+   - `sha256sum go/internal/web/onboarding/onboarding_page.go | cut -c1-16 | tail -1` prints `7210470ddc6cf2b6` (brief 1595 ran on this branch).
    - `grep -cF 'var onboardingPageStrings = hostweb.Load(onboardingPageJSON)' go/internal/web/onboarding/onboarding_page.go | tail -1` prints `1`.
    - `grep -cF 'func onboardingPageSeed(t *testing.T, pool *pgxpool.Pool, g onboardingPageGolden, getenv func(string) string) {' go/internal/web/onboarding/onboarding_page_test.go | tail -1` prints `1`.
    - `grep -cF 'flash.demo.*' go/internal/web/onboarding/onboardingpage/i18n_keys.txt | tail -1` prints `1`.
@@ -106,7 +106,7 @@ No other file may change.
 
    Expected: `2 passed`, no `skipped`. No commit.
 
-4. PostgreSQL: exactly step 4 of brief 1595 (port 55595, data dir `/var/tmp/pg55595`); skip the start if `su postgres -c '/usr/lib/postgresql/16/bin/pg_ctl -D /var/tmp/pg55595/data status' | tail -1` says `server is running`. No PostgreSQL 16 binaries: write "CI only" in the report and STOP before step 5.
+4. PostgreSQL: exactly step 4 of brief 1595 (port 55595, data dir `/var/tmp/pg55595`); skip the start if `su postgres -c '/usr/lib/postgresql/16/bin/pg_ctl -D /var/tmp/pg55595/data status' | head -1` says `server is running`. No PostgreSQL 16 binaries: write "CI only" in the report and STOP before step 5.
 
 5. Run the tests on PostgreSQL (one call, from `go/`):
 
