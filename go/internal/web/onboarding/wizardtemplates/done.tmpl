@@ -1,0 +1,108 @@
+{{/* Port of App/app/templates/setup_wizard/done.html with _setup_ready_card.html and _workflow.html
+     (workflow_strip(apartment, heading=false)). Brief 1601. missing_row is the first checklist row that
+     is waiting or todo; next_stay_window(apartment) is .LinkNext. */}}
+{{define "wizard_content"}}
+{{$miss := .MissingRow}}
+{{if and .Ready (not $miss)}}
+{{if .Celebrate}}<span class="setup-wizard-confetti" aria-hidden="true">{{range seq 12}}<i></i>{{end}}</span>{{end}}
+<section class="ui-section-card ready-card" id="setup-ready" aria-labelledby="setup-ready-title" data-ready-card>
+  <h2 class="ui-section-h" id="setup-ready-title">{{t "setup.ready.title"}}</h2>
+  <p class="ui-sub">{{if .Pin}}{{t "setup.ready.text"}}{{else}}{{t "setup.ready.text_no_pin"}}{{end}}</p>
+  <div class="ready-card-body">
+    <img class="ready-card-qr" src="{{.ReadyQRURL}}" width="160" height="160" alt="{{t "setup.ready.qr_alt"}}">
+    <div class="ready-card-copy">
+      <p class="ready-card-row"><span class="muted">{{t "property_page.guest_link.title"}}</span> <code class="ready-card-link">{{.Permalink}}</code>
+        <input class="sr-only" type="text" id="ready-link" readonly value="{{.Permalink}}" tabindex="-1" aria-hidden="true">
+        <button class="ui-btn ui-btn-secondary" type="button" data-copy="ready-link" data-copy-label="{{t "common.copy_link"}}" data-copied-label="{{t "common.copied"}}">{{t "common.copy_link"}}</button></p>
+      {{if .Pin}}<p class="ready-card-row"><span class="muted">{{t "havel.card.pin"}}</span> <b class="ready-card-pin">{{.Pin}}</b>
+        <input class="sr-only" type="text" id="ready-pin" readonly value="{{.Pin}}" tabindex="-1" aria-hidden="true">
+        <button class="ui-btn ui-btn-secondary" type="button" data-copy="ready-pin" data-copy-label="{{t "property_page.guest_link.copy_pin"}}" data-copied-label="{{t "common.copied"}}">{{t "property_page.guest_link.copy_pin"}}</button></p>{{end}}
+    </div>
+  </div>
+</section>
+{{else}}
+<div class="ui-banner setup-wizard-celebrate{{if $miss}} is-partial{{end}}" role="status" data-setup-celebrate="{{if $miss}}partial{{else}}done{{end}}">
+  {{if and .Celebrate (not $miss)}}<span class="setup-wizard-confetti" aria-hidden="true">{{range seq 12}}<i></i>{{end}}</span>{{end}}
+  <span class="setup-wizard-celebrate-mark" aria-hidden="true">{{if $miss}}{{icon "triangle-alert" 20}}{{else}}{{icon "check" 20}}{{end}}</span>
+  <div class="grow setup-wizard-celebrate-copy">
+    <strong class="setup-wizard-celebrate-title">{{if $miss}}{{t "wizard.done.almost"}}{{else}}{{t "wizard.done.all_set"}}{{end}}</strong>
+    {{if $miss}}<span>{{if eq $miss.Key "police"}}{{t "wizard.done.left.police"}}{{else}}{{t "wizard.done.left.step"}}{{end}}</span>{{end}}
+  </div>
+</div>
+{{end}}
+<details class="setup-done-workflow">
+  <summary>{{t "workflow.title"}}</summary>
+  <section class="workflow-block" data-workflow-strip>
+    <ol class="workflow-strip" aria-label="{{t "workflow.title"}}">
+      {{range .Workflow}}
+      <li class="workflow-strip-step{{if ne .Who "auto"}} is-you{{end}}" data-workflow-step="{{.Key}}">
+        <span class="workflow-num" aria-hidden="true">{{.N}}</span>
+        <span class="workflow-strip-copy">
+          <span class="workflow-strip-label">{{t (print "workflow.step." .Key)}}</span>
+          <span class="workflow-tag">{{t (print "workflow.who." .Who)}}</span>
+        </span>
+      </li>
+      {{end}}
+    </ol>
+  </section>
+</details>
+<h2 class="setup-wizard-section-title">{{t "wizard.done.title"}}</h2>
+<ul class="setup-wizard-checklist setup-done-list">
+  {{range .Checklist}}{{$status := $.SummaryStatus .Status}}
+  <li class="is-{{.Status}}" data-setup-summary-step="{{.Key}}">
+    <div class="setup-summary-card">
+      <span class="setup-summary-icon">{{nav_icon ($.SummaryIcon .Key)}}</span>
+      <div class="setup-summary-copy">
+        <strong>{{if or (eq .Key "calendar") (eq .Key "try_it")}}{{t (print "wizard.summary." .Key)}}{{else}}{{t (print "wizard.step." .Key)}}{{end}}</strong>
+        <span class="ui-badge ui-badge-{{if eq $status "done"}}done{{else if eq $status "waiting"}}attention{{else}}neutral{{end}}" data-tone="{{if eq $status "done"}}green{{else if eq $status "waiting"}}amber{{else}}grey{{end}}">
+          {{if eq $status "done"}}<span aria-hidden="true">{{icon "check" 14}}</span>{{end}}
+          {{t (print "wizard.summary.status." $status)}}
+        </span>
+        {{if eq .Status "waiting"}}
+        <a class="setup-summary-action" href="/apartments/{{$.Apt.ID}}/setup/police">{{t "setup_guide.reporting.add_login"}}</a>
+        {{end}}
+      </div>
+    </div>
+  </li>
+  {{end}}
+</ul>
+<h2 class="setup-wizard-section-title">{{t "wizard.done.next_title"}}</h2>
+<ul class="setup-wizard-checklist setup-done-list setup-wizard-next" data-setup-next>
+  <li data-setup-next-step="stay_fee">
+    <a class="setup-summary-card setup-next-card" href="/apartments/{{.Apt.ID}}?view=settings&amp;section=reporting#stay-fee-settings">
+      <span class="setup-summary-icon">{{nav_icon "coins"}}</span>
+      <span class="setup-summary-copy"><strong>{{t "wizard.step.stay_fee"}}</strong></span>
+      <span class="setup-done-chevron" aria-hidden="true">{{icon "chevron-right" 16}}</span>
+    </a>
+  </li>
+  {{if .LockAvailable}}
+  <li data-setup-next-step="door_lock">
+    <a class="setup-summary-card setup-next-card" href="/apartments/{{.Apt.ID}}?view=settings&amp;section=lock#door-code">
+      <span class="setup-summary-icon">{{nav_icon "lock"}}</span>
+      <span class="setup-summary-copy"><strong>{{t "wizard.step.door_lock"}}</strong></span>
+      <span class="setup-done-chevron" aria-hidden="true">{{icon "chevron-right" 16}}</span>
+    </a>
+  </li>
+  {{end}}
+  <li data-setup-next-step="try_it">
+    <a class="setup-summary-card setup-next-card" href="/apartments/{{.Apt.ID}}/setup/try_it">
+      <span class="setup-summary-icon">{{nav_icon "users"}}</span>
+      <span class="setup-summary-copy"><strong>{{t "wizard.step.try_it"}}</strong></span>
+      <span class="setup-done-chevron" aria-hidden="true">{{icon "chevron-right" 16}}</span>
+    </a>
+  </li>
+</ul>
+{{if not $miss}}
+<p class="setup-wizard-instruction" data-finish-note>{{if and .LinkNext.HasStay (eq .LinkNext.Window "now")}}{{t "workflow.link.next_stay_now" "stay" (.DateShort .LinkNext.DateFrom)}}{{else if and .LinkNext.HasStay .LinkNext.Window}}{{t "workflow.link.next_stay" "stay" (.DateShort .LinkNext.DateFrom) "date" (.DateShort .LinkNext.Opens)}}{{else if .Facts.Feeds}}{{t "wizard.done.note_sync" "minutes" .PollMinutes}}{{else}}{{t "wizard.done.note_no_calendar"}}{{end}}</p>
+{{end}}
+{{end}}
+{{define "wizard_actions"}}
+{{$miss := .MissingRow}}
+{{if $miss}}
+<a class="ui-btn ui-btn-primary" href="/apartments/{{.Apt.ID}}/setup/{{$miss.Key}}" data-finish-go="fix">{{if eq $miss.Key "police"}}{{t "wizard.done.fix.police"}}{{else}}{{t "wizard.done.fix.step"}}{{end}}</a>
+{{else if .LinkNext.HasStay}}
+<a class="ui-btn ui-btn-primary" href="/apartments/{{.Apt.ID}}?view=bookings" data-finish-go="stays">{{t "wizard.done.go_stays"}}</a>
+{{else}}
+<a class="ui-btn ui-btn-primary" href="/apartments/{{.Apt.ID}}?view=overview" data-finish-go="property">{{t "wizard.done.go_property"}}</a>
+{{end}}
+{{end}}
