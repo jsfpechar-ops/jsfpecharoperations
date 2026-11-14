@@ -1,0 +1,5 @@
+# 1521: Sync now.
+flash.feeds.synced
+flash.feeds.synced.one
+flash.feeds.synced.few
+flash.error.feeds_unreadable

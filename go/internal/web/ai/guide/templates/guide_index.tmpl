@@ -1,0 +1,74 @@
+{{- /* Go twin of App/app/templates/guest_guide.html (brief 1445). The import_section macro is the "guide.import_section" template. */ -}}
+{{define "guide_index.title"}}{{end}}
+{{define "guide_index.back_label"}}{{.Apartment.InternalName}}{{end}}
+{{define "guide.import_section"}}
+{{guide_section_open "import" (t "guest_guide.import.title") (or (and (not .ImportOn) (help_tip "guide-import-off-help" (t "guest_guide.import.off"))) (help_tip "guide-import-help" (printf "%s %s" (t "guest_guide.import.help") (t "guest_guide.import.left" "n" .ImportLeft))))}}
+{{if .ImportOn}}
+{{if .ImportBusy}}{{ui_banner "neutral" (t "guest_guide.import.running")}}{{end}}
+{{if .ImportDrafts}}<p class="ui-sub">{{t "guest_guide.import.drafted" "n" .ImportDrafts}}</p>{{end}}
+{{if and (gt .ImportLeft 0) (not .ImportBusy)}}
+<form method="post" action="{{.Base}}/import">
+<input type="hidden" name="_csrf" value="{{csrf}}">
+{{if .WantBooking}}{{ui_field "guide-import-booking" (t "guest_guide.import.booking_url") (kv "name" "booking_url" "type" "url" "placeholder" "https://www.booking.com/hotel/cz/..." "attrs" (safe `maxlength="2048" inputmode="url" autocomplete="off"`))}}{{end}}
+{{if .WantAirbnb}}{{ui_field "guide-import-airbnb" (t "guest_guide.import.airbnb_url") (kv "name" "airbnb_url" "type" "url" "placeholder" "https://www.airbnb.com/rooms/..." "attrs" (safe `maxlength="2048" inputmode="url" autocomplete="off"`))}}{{end}}
+<div class="ui-form-actions">{{ui_button (t "guest_guide.import.button") "secondary" (kv "type" "submit" "icon_name" "download")}}</div>
+</form>
+{{end}}
+{{if .Imports}}
+{{ui_table_begin (guide_pairs (t "guest_guide.import.col.source") "" (t "guest_guide.import.col.state") "r") (t "guest_guide.import.title")}}
+{{range .Imports}}
+<tr class="ui-row">
+  <td class="ui-cell-first" data-card="primary">{{t (printf "guest_guide.import.source.%s" .Source)}}<span class="ui-sub"> {{.CreatedDay}}</span>{{if .MergeFailed}}<p class="ui-sub">{{t "guest_guide.import.merge_failed"}}</p>{{end}}</td>
+  <td class="ui-cell-r" data-card="badge">{{if or (eq .Status "queued") (eq .Status "running")}}{{ui_badge "action" (t "guest_guide.import.state.running")}}{{else if eq .Status "failed"}}{{ui_badge "attention" (t "guest_guide.import.state.failed")}}{{else if eq .Status "done"}}{{ui_badge "action" (t "guest_guide.import.state.drafting")}}{{else}}{{ui_badge "done" (t "guest_guide.import.state.done")}}{{end}}</td>
+</tr>
+{{end}}
+{{ui_table_end}}
+{{end}}
+{{end}}
+{{guide_section_close}}
+{{end}}
+{{define "guide_index"}}
+<div class="guide-page">
+<div class="head guide-hd"><div><a class="guide-back" href="/apartments/{{.Apartment.ID}}">{{.Apartment.InternalName}}</a><h1 class="big">{{t "guest_guide.title"}}</h1><p class="sub">{{if .Progress.Live}}{{t "guest_guide.progress_live" "answered" .Progress.Answered "total" .Progress.Cards}}{{else}}{{t "guest_guide.progress" "answered" .Progress.Answered "total" .Progress.Cards}}{{end}}</p><p class="guide-links"><a href="{{.Base}}/quick">{{t "guest_guide.quick.link"}}</a><a href="{{.Base}}/questions">{{t "guest_questions.link" "n" .QuestionsOpen}}</a><a class="ph-hide" href="{{.Base}}/qr">{{t "guest_guide.qr.link"}}</a></p></div>{{if .NextID}}<div class="guide-acts"><a class="btn" href="{{.Base}}/{{.NextID}}">{{t "guest_guide.continue"}}</a></div>{{end}}</div>
+{{if .Progress.Live}}
+{{ui_banner "neutral" (t "guest_guide.live")}}
+{{else}}
+{{ui_banner "attention" (t "guest_guide.not_live" "done" .Progress.MustHaveDone "total" .Progress.MustHaveTotal)}}
+{{end}}
+{{if .Progress.Check}}{{ui_banner "attention" (t "guest_guide.check_waiting")}}{{end}}
+{{if .QuickNext}}{{ui_banner "neutral" (t "guest_guide.quick.banner") (t "guest_guide.quick.start") (printf "%s/quick" .Base)}}{{end}}
+{{if or .Usage.Leon .Usage.Languages}}<p class="ui-sub" data-guide-usage>{{if .Usage.Leon}}{{t "guest_guide.usage.leon" "n" .Usage.Leon}}{{end}}{{if and .Usage.Leon .Usage.Languages}} · {{end}}{{if .Usage.Languages}}{{t "guest_guide.usage.languages" "langs" .UsageLangs}}{{end}}</p>{{end}}
+{{if .ImportFirst}}{{template "guide.import_section" .}}{{end}}
+
+{{range .Groups}}
+{{guide_section_open (printf "topic-%s" .Topic) (t (printf "guest_guide.topic.%s" .Topic)) ""}}
+{{ui_table_begin (guide_pairs (t "guest_guide.col.card") "" (t "guest_guide.col.state") "r") (t (printf "guest_guide.topic.%s" .Topic))}}
+{{range .Cards}}
+<tr class="ui-row clickable-row" data-href="{{$.Base}}/{{.ID}}" tabindex="0" role="link" aria-label="{{template "guide.card_title" .}}">
+  <td class="ui-cell-first" data-card="primary"><a href="{{$.Base}}/{{.ID}}">{{template "guide.card_title" .}}</a>{{if .MustHave}} <span class="ui-sub">{{t "guest_guide.must_have"}}</span>{{end}}</td>
+  <td class="ui-cell-r" data-card="badge">{{if eq .State "done"}}{{ui_badge "done" (t "guest_guide.state.done")}}{{else if eq .State "check"}}{{ui_badge "attention" (t "guest_guide.state.check")}}{{else if eq .State "skipped"}}{{ui_badge "neutral" (t "guest_guide.state.skipped")}}{{else}}{{ui_badge "action" (t "guest_guide.state.missing")}}{{end}}</td>
+</tr>
+{{end}}
+{{ui_table_end}}
+{{guide_section_close}}
+{{end}}
+
+{{if .LeonOffer}}
+{{guide_section_open "leon" (t "guest_guide.leon.title") ""}}
+{{help_tip "guide-leon-help" (t "guest_guide.leon.help")}}
+<p class="ui-sub">{{t (printf "leon_page.card.%s" .LeonState)}}</p>
+<div class="ui-form-actions">{{ui_button (t "guest_guide.leon.open") "secondary" (kv "href" (printf "/apartments/%d/leon" .Apartment.ID))}}</div>
+{{guide_section_close}}
+{{end}}
+{{if not .ImportFirst}}{{template "guide.import_section" .}}{{end}}
+
+{{guide_section_open "add-card" (t "guest_guide.add.title") ""}}
+<form method="post" action="{{.Base}}/cards">
+<input type="hidden" name="_csrf" value="{{csrf}}">
+{{ui_select "guide-add-topic" (t "guest_guide.add.topic") .TopicOptions (kv "name" "topic")}}
+{{ui_field "guide-add-title" (t "guest_guide.add.name") (kv "name" "title" "placeholder" (t "guest_guide.add.placeholder") "attrs" (safe `maxlength="120" required`))}}
+<div class="ui-form-actions">{{ui_button (t "guest_guide.add.button") "secondary" (kv "type" "submit" "icon_name" "plus")}}</div>
+</form>
+{{guide_section_close}}
+</div>
+{{end}}

@@ -1,0 +1,275 @@
+diff --git a/App/tests/test_pg_schema_dump_script.py b/App/tests/test_pg_schema_dump_script.py
+new file mode 100644
+index 000000000..ed0e9ef7a
+--- /dev/null
++++ b/App/tests/test_pg_schema_dump_script.py
+@@ -0,0 +1,122 @@
++"""Brief 1473: deploy/lightsail/scripts/pg-schema-dump.sh stays read-only.
++
++No Docker and no database: a fake ``docker`` on PATH records every call and
++prints a canned dump, so these tests check what the owner relies on before
++the script is run on the server.
++"""
++
++import os
++import stat
++import subprocess
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parents[2]
++SH = ROOT / "deploy/lightsail/scripts/pg-schema-dump.sh"
++
++FAKE_DOCKER = """#!/usr/bin/env bash
++printf '%s\\n' "$*" >> "$FAKE_LOG"
++case " $* " in
++  *" ps "*) echo fakeid ;;
++  *" pg_dump "*) cat "$FAKE_DUMP" ;;
++  *" psql "*) echo "guest 3" ;;
++esac
++"""
++
++SCHEMA = (
++    "SET statement_timeout = 0;\n"
++    "CREATE TABLE public.guest (\n    id bigint NOT NULL\n);\n"
++)
++
++
++def _run(tmp_path, *args, dump=SCHEMA):
++    bin_dir = tmp_path / "bin"
++    bin_dir.mkdir(exist_ok=True)
++    docker = bin_dir / "docker"
++    docker.write_text(FAKE_DOCKER)
++    docker.chmod(0o755)
++    (tmp_path / "dump.sql").write_text(dump)
++    env = dict(os.environ)
++    env["PATH"] = f"{bin_dir}:{env['PATH']}"
++    env["FAKE_LOG"] = str(tmp_path / "docker.log")
++    env["FAKE_DUMP"] = str(tmp_path / "dump.sql")
++    return subprocess.run(
++        ["bash", str(SH), *args], capture_output=True, text=True, env=env,
++        cwd=tmp_path, check=False,
++    )
++
++
++def _calls(tmp_path):
++    log = tmp_path / "docker.log"
++    return log.read_text() if log.exists() else ""
++
++
++def test_script_is_strict_executable_and_parses():
++    assert "set -euo pipefail" in SH.read_text(encoding="utf-8")
++    assert SH.stat().st_mode & stat.S_IXUSR
++    result = subprocess.run(["bash", "-n", str(SH)], capture_output=True, text=True, check=False)
++    assert result.returncode == 0, result.stderr
++
++
++def test_script_never_names_a_writing_command():
++    code = "\n".join(
++        line for line in SH.read_text(encoding="utf-8").splitlines()
++        if not line.lstrip().startswith("#")
++    )
++    for word in ("UPDATE ", "DELETE ", "DROP ", "ALTER ", "TRUNCATE", "GRANT ",
++                 "pg_restore", "createdb", "dropdb", "read_only=off", "--clean"):
++        assert word not in code, word
++
++
++def test_refuses_an_existing_output_and_reads_nothing(tmp_path):
++    out = tmp_path / "schema.sql"
++    out.write_text("keep me")
++    result = _run(tmp_path, str(out))
++    assert result.returncode == 2
++    assert "already exists" in result.stderr
++    assert out.read_text() == "keep me"
++    assert _calls(tmp_path) == ""
++
++
++def test_refuses_no_argument_and_an_option(tmp_path):
++    assert _run(tmp_path).returncode == 2
++    assert _run(tmp_path, "--schema").returncode == 2
++    assert _calls(tmp_path) == ""
++
++
++def test_writes_a_private_schema_only_dump_in_a_read_only_session(tmp_path):
++    result = _run(tmp_path, "schema.sql")
++    assert result.returncode == 0, result.stderr
++    out = tmp_path / "schema.sql"
++    assert out.read_text() == SCHEMA
++    assert stat.S_IMODE(out.stat().st_mode) == 0o600
++    assert not (tmp_path / "schema.sql.partial").exists()
++    assert "1 tables" in result.stdout
++    dump_call = [line for line in _calls(tmp_path).splitlines() if "pg_dump" in line]
++    assert len(dump_call) == 1
++    assert "-e PGOPTIONS=-c default_transaction_read_only=on postgres pg_dump" in dump_call[0]
++    for flag in ("--schema-only", "--no-owner", "--no-privileges", "-U ubyhost", "-d ubyhost"):
++        assert flag in dump_call[0], flag
++
++
++def test_a_dump_with_data_lines_is_deleted(tmp_path):
++    for line in ("COPY public.guest (id) FROM stdin;\n",
++                 "INSERT INTO public.guest VALUES (1);\n",
++                 "SELECT pg_catalog.setval('public.guest_id_seq', 5, true);\n"):
++        result = _run(tmp_path, "schema.sql", dump=SCHEMA + line)
++        assert result.returncode == 1, line
++        assert "data lines" in result.stderr
++        assert not (tmp_path / "schema.sql").exists()
++        assert not (tmp_path / "schema.sql.partial").exists()
++
++
++def test_counts_are_read_only_and_only_for_two_databases(tmp_path):
++    result = _run(tmp_path, "--counts")
++    assert result.returncode == 0, result.stderr
++    assert result.stdout == "guest 3\n"
++    call = next(line for line in _calls(tmp_path).splitlines() if "psql" in line)
++    assert "-e PGOPTIONS=-c default_transaction_read_only=on postgres psql -U ubyhost -d ubyhost" in call
++    assert "-c SELECT table_name" in call
++    assert _run(tmp_path, "--counts", "ubyhost_restoretest").returncode == 0
++    bad = _run(tmp_path, "--counts", "postgres")
++    assert bad.returncode == 2
++    assert "postgres psql -U ubyhost -d postgres" not in _calls(tmp_path)
+diff --git a/deploy/lightsail/scripts/pg-schema-dump.sh b/deploy/lightsail/scripts/pg-schema-dump.sh
+new file mode 100755
+index 000000000..fe08be6dc
+--- /dev/null
++++ b/deploy/lightsail/scripts/pg-schema-dump.sh
+@@ -0,0 +1,83 @@
++#!/usr/bin/env bash
++# 1473 (plan sqlite-retirement S4, S10): read-only looks at the production PostgreSQL.
++#   ./scripts/pg-schema-dump.sh /home/ubuntu/ubyhost-schema.sql
++#       Writes a schema-only dump (pg_dump --schema-only --no-owner --no-privileges)
++#       to a NEW file: tables, columns, defaults, constraints, indexes, triggers and
++#       functions. No rows, no sequence values, no owners, no grants. Refuses a path
++#       that exists. The file is safe to hand over (docs/OPERATIONS.md, "Proofs").
++#   ./scripts/pg-schema-dump.sh --counts [ubyhost|ubyhost_restoretest]
++#       Prints "table rows" for every table (numbers only, never row content).
++# Both modes are read-only: the session starts with default_transaction_read_only=on
++# and runs pg_dump or one SELECT. Nothing is written to the database.
++set -euo pipefail
++
++START_DIR="$PWD"
++ROOT="$(cd "$(dirname "$0")/.." && pwd)"
++READ_ONLY="-c default_transaction_read_only=on"
++USAGE="usage: $0 /path/to/new-file.sql | $0 --counts [ubyhost|ubyhost_restoretest]"
++
++die() { echo "ERROR: $1" >&2; exit "${2:-1}"; }
++
++COUNT_SQL="$(cat <<'SQL'
++SELECT table_name || ' ' || (xpath('/row/c/text()', query_to_xml(format('SELECT count(*) AS c FROM public.%I', table_name), false, true, '')))[1]::text
++FROM information_schema.tables
++WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
++ORDER BY table_name
++SQL
++)"
++
++need_postgres() {
++  cd "${ROOT}"
++  if [ -z "$(docker compose ps -q --status running postgres 2>/dev/null)" ]; then
++    die "the postgres container is not running; nothing was read"
++  fi
++}
++
++if [ "$#" -ge 1 ] && [ "$1" = "--counts" ]; then
++  [ "$#" -le 2 ] || die "${USAGE}" 2
++  DB="${2:-ubyhost}"
++  case "${DB}" in
++    ubyhost|ubyhost_restoretest) ;;
++    *) die "database must be ubyhost or ubyhost_restoretest, not '${DB}'" 2 ;;
++  esac
++  need_postgres
++  docker compose exec -T -e PGOPTIONS="${READ_ONLY}" postgres \
++    psql -U ubyhost -d "${DB}" -X -v ON_ERROR_STOP=1 -At -c "${COUNT_SQL}"
++  exit 0
++fi
++
++[ "$#" -eq 1 ] && [ -n "$1" ] && [ "${1#-}" = "$1" ] || die "${USAGE}" 2
++OUT="$1"
++case "${OUT}" in
++  /*) ;;
++  *) OUT="${START_DIR}/${OUT}" ;;
++esac
++TMP="${OUT}.partial"
++if [ -e "${OUT}" ] || [ -L "${OUT}" ]; then
++  die "${OUT} already exists; give a new file name (nothing was written)" 2
++fi
++if [ -e "${TMP}" ] || [ -L "${TMP}" ]; then
++  die "${TMP} is left from an earlier run; delete it, then run again" 2
++fi
++[ -d "$(dirname "${OUT}")" ] || die "the folder $(dirname "${OUT}") does not exist" 2
++
++need_postgres
++umask 077
++set -o noclobber
++trap 'rm -f -- "${TMP}"' EXIT
++docker compose exec -T -e PGOPTIONS="${READ_ONLY}" postgres \
++  pg_dump -U ubyhost -d ubyhost --schema-only --no-owner --no-privileges --lock-wait-timeout=10s \
++  > "${TMP}"
++
++# A schema-only dump has no data: refuse to keep a file that has any.
++if grep -Eq '^(COPY|INSERT INTO) |pg_catalog\.setval\(' "${TMP}"; then
++  die "the dump contains data lines; it was deleted, do not hand anything over"
++fi
++grep -q '^CREATE TABLE public\.' "${TMP}" || die "the dump has no tables; it was deleted"
++
++mv -n -- "${TMP}" "${OUT}"
++[ ! -e "${TMP}" ] || die "${OUT} appeared while the dump ran; the dump was deleted" 2
++trap - EXIT
++echo "Wrote ${OUT}: $(grep -c '^CREATE TABLE ' "${OUT}") tables, $(wc -l < "${OUT}") lines"
++echo "sha256 $(sha256sum "${OUT}" | cut -d' ' -f1)"
++echo "COMMENT ON lines: $(grep -c '^COMMENT ON ' "${OUT}" || true) (0 expected)"
+diff --git a/docs/OPERATIONS.md b/docs/OPERATIONS.md
+index ea0b2424a..7c599aaf7 100644
+--- a/docs/OPERATIONS.md
++++ b/docs/OPERATIONS.md
+@@ -648,6 +648,53 @@ tell you:
+ 
+ - **PostgreSQL dump (0464).** `backup.sh` writes `ubyhost-pg.dump.age` (`pg_dump -Fc`, age-encrypted, never plaintext) into the newest snapshot folder when the `postgres` service runs. Restore with `pg-restore.sh <stamp>`; the rehearsal (`pg-cutover.sh rehearse`) dumps, restores into `ubyhost_restoretest` and verifies it against SQLite.
+ 
++### Proofs before the SQLite rollback path ends (plan S10)
++
++[Plan sqlite-retirement](plans/sqlite-retirement.md) steps S11 and S12 (remove the SQLite rollback path, then the SQLite file) wait until every row below says Done, and none is older than 30 days. All are owner steps. When one is done, write in the orchestrator chat the proof letter, the date and the last lines the commands printed; the orchestrator writes `Done` and the date in the last column and one `[ops]` line in `docs/context/decisions.md`.
++
++| Proof | Steps | Recorded |
++|---|---|---|
++| (a) one `.age` backup decrypts with the owner's key (never done before) | A | not yet |
++| (b) a fresh dump restores into a scratch database on staging, row counts equal production's | B | not yet |
++| (c) the Drive copy runs daily (daily since 2026-11-13) and the S3 copy is current | C | not yet |
++| (d) one age-encrypted copy of the last SQLite file is kept offline until plan decision 5 says delete | A, step 8 | not yet |
++
++**A. Decrypt test, on your own computer (never on a server).**
++1. In the browser, open Google Drive, folder `UbyHost-backups`, then the newest folder (its name is a date and time such as `20261114T030000Z`).
++2. Download `ubyhost-pg.dump.age` and `ubyhost-backup.tar.age` into a new empty folder `Downloads/ubyhost-proof`.
++3. In your password manager, copy the backup key (the line that starts `AGE-SECRET-KEY-1`). Save it as a plain text file `ubyhost-backup.agekey` in the same folder.
++4. Open Terminal and type `cd ~/Downloads/ubyhost-proof`, then Enter.
++5. Type `age --decrypt --identity ubyhost-backup.agekey ubyhost-pg.dump.age | wc -c`, then Enter. Expected: one number above 10000 and no line that starts with `age:`. Nothing is saved.
++6. Type `age --decrypt --identity ubyhost-backup.agekey ubyhost-backup.tar.age | tar -t`, then Enter. Expected: file names only, among them `ubyhost.db` and `secret_key`.
++7. If you do part B today, keep `ubyhost-backup.agekey` until B11. Otherwise delete it now and empty the bin.
++8. Copy `ubyhost-backup.tar.age` (the last SQLite file and the secret key, encrypted) to a USB stick or disk that is not synced to any cloud. Write the date on it. That is proof (d).
++
++**B. Restore drill on staging.** Needs `pg-schema-dump.sh` on both servers (after the PR of brief 1473 is deployed). Guest data stays only in the scratch database, which the app never uses, and step 11 deletes it.
++1. In the Lightsail console, open the production instance, click **Connect using SSH**.
++2. Run `cd /opt/ubyhost/deploy/lightsail && ./scripts/backup.sh 2>&1 | tail -3`. Expected: a line `PostgreSQL dump bytes: ...`.
++3. Right after it, run `./scripts/pg-schema-dump.sh --counts > ~/counts-production.txt && wc -l ~/counts-production.txt`. Expected: about 70 lines.
++4. Run `docker compose exec -T ubyhost sh -c 'cat "/data/backups/$(ls -1 /data/backups | sort | tail -1)/ubyhost-pg.dump.age"' > ~/ubyhost-pg.dump.age && ls -l ~/ubyhost-pg.dump.age`. The file is encrypted.
++5. In the SSH window, click the gear (top right), **Download file**, and download `ubyhost-pg.dump.age` and then `counts-production.txt` (both in your home folder). Then run `rm ~/ubyhost-pg.dump.age ~/counts-production.txt`.
++6. In the Lightsail console, open the staging instance, click **Connect using SSH**. With the gear, **Upload file**: `ubyhost-pg.dump.age`, `counts-production.txt` and `ubyhost-backup.agekey` (from A3).
++7. Run `chmod 600 ~/ubyhost-backup.agekey && cd /opt/ubyhost/deploy/lightsail && docker compose exec -T postgres createdb -U ubyhost ubyhost_restoretest && echo CREATED`. Expected: `CREATED`. If it says the database already exists, run the first command of step 11 (`dropdb`), then this step again.
++8. Run `age --decrypt --identity ~/ubyhost-backup.agekey ~/ubyhost-pg.dump.age | docker compose exec -T postgres pg_restore -U ubyhost -d ubyhost_restoretest --no-owner --no-privileges --single-transaction --exit-on-error; echo "exit: ${PIPESTATUS[*]}"`. Expected: `exit: 0 0`.
++9. Run `./scripts/pg-schema-dump.sh --counts ubyhost_restoretest > ~/counts-restored.txt && diff ~/counts-production.txt ~/counts-restored.txt && echo COUNTS MATCH`. Expected: `COUNTS MATCH`.
++10. If lines were printed instead, copy them into the orchestrator chat (they are table names and numbers only). Do not run the drill again until the orchestrator answers.
++11. Clean up: `docker compose exec -T postgres dropdb -U ubyhost ubyhost_restoretest && shred -u ~/ubyhost-backup.agekey ~/ubyhost-pg.dump.age && rm ~/counts-production.txt ~/counts-restored.txt && echo CLEAN`. Expected: `CLEAN`. Then do A7 on your computer.
++
++**C. Off-site copies, on production** (Connect using SSH, as in B1).
++1. Run `crontab -l | grep -E 'backup-(s3|gdrive)\.sh'`. Expected: one line with `backup-s3.sh` and one with `backup-gdrive.sh`.
++2. Run `tail -n 1 /var/log/ubyhost-gdrive.log /var/log/ubyhost-s3.log`. Expected: each ends with `Uploaded to ...` and a folder name with today's date (yesterday's before 04:00 UTC).
++3. Run `rclone lsf gdrive:UbyHost-backups | tail -n 7`. Expected: one folder per day, the newest from today or yesterday.
++4. Run `B=$(crontab -l | grep -o 'UBYHOST_S3_BUCKET=[^ ]*' | cut -d= -f2) && rclone lsf "s3:$B/UbyHost-backups" | tail -n 3`. Expected: the newest folder is from today or yesterday.
++
++### Production schema dump (plan S4)
++
++`./scripts/pg-schema-dump.sh` writes the production schema to a new file for the goose check (brief 1472). It only reads: its session is read-only and it runs `pg_dump --schema-only --no-owner --no-privileges`. The file holds table, column, index, constraint, trigger and function definitions, column defaults (short codes such as `'CZK'` or `'pending'`) and the CHECK rules; no rows, no row counts, no sequence values, no owners, no grants, no passwords. It also holds one random `\restrict` line (a pg_dump safety token, not a secret). The script deletes the file if it finds a data line in it.
++1. On production (Connect using SSH, as in B1), run `cd /opt/ubyhost/deploy/lightsail && ./scripts/pg-schema-dump.sh ~/ubyhost-schema-$(date -u +%Y%m%d).sql`. Expected: `Wrote ...: N tables, N lines`, a `sha256` line and `COMMENT ON lines: 0 (0 expected)`. If that number is not 0, do not hand the file over; tell the orchestrator.
++2. With the gear, **Download file** `ubyhost-schema-<date>.sql` from your home folder, then run `rm ~/ubyhost-schema-*.sql`.
++3. Attach the file in the orchestrator chat with the `sha256` line. It may be shared; it holds no guest data.
++
+ ### App database role (K-S11)
+ 
+ Owner runbook, once. Until step 3 the app keeps connecting as `ubyhost`; the full checks and rollback are in PR 1206.

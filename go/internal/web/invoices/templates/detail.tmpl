@@ -1,0 +1,150 @@
+{{- /* Go twin of App/app/templates/invoice_detail.html (brief 1423). pages_detail.go builds the
+     state pill, the note and every formatted amount. */ -}}
+{{define "invoice_detail.title"}}{{end}}
+{{define "invoice_detail.meta"}}{{.Invoice.BuyerName}}{{end}}
+{{define "invoice_detail.back_label"}}{{t "nav.invoices"}}{{end}}
+{{define "invoice_detail"}}
+<div class="e-page">
+<div class="airbnb-header">
+  <a class="airbnb-back" href="/invoices" aria-label="{{t "common.back"}}">{{icon "arrow-left" 20}}</a>
+  <h1 class="airbnb-title">{{.Heading}}</h1>
+</div>
+
+<div class="invoice-workspace">
+  <div class="invoice-document">
+  <section class="panel stay-command-panel" id="now">
+    <div class="stay-command-main">
+      <div>
+        <div class="eyebrow">{{t "invoice.detail.status"}}</div>
+        <p class="stay-command-note">{{.StateNote}}</p>
+      </div>
+      <div class="stay-command-actions">
+        <div class="ui-btn-group">
+          <a data-turbo="false" class="ui-btn ui-btn-primary" href="/invoices/{{.Invoice.ID}}.pdf">{{t "invoice.detail.download"}}</a>
+          {{if .CanMarkPaid}}
+          <form method="post" action="/invoices/{{.Invoice.ID}}/paid" class="inline">
+            <input type="hidden" name="_csrf" value="{{csrf}}">
+            <button class="ui-btn ui-btn-secondary" type="submit">{{t "invoice.mark_paid"}}</button>
+          </form>
+          {{end}}
+          {{if .CanSend}}
+          <form method="post" action="/invoices/{{.Invoice.ID}}/send" class="inline">
+            <input type="hidden" name="_csrf" value="{{csrf}}">
+            <button class="ui-btn ui-btn-secondary" type="submit" data-confirm data-confirm-message="{{t "invoice.send_confirm" "email" .Invoice.BuyerEmail}}">{{t "invoice.send"}}</button>
+          </form>
+          {{end}}
+          {{if .Invoice.ReservationID}}<a class="ui-btn ui-btn-secondary" href="/reservations/{{.StayID}}">{{t "invoice.context.open_stay"}}</a>{{end}}
+          <a class="ui-btn ui-btn-quiet" href="{{.SettingsHref}}">{{t "host.invoice_settings"}}</a>
+        </div>
+      </div>
+    </div>
+    <div class="stay-metrics detail-hero">
+      <div class="detail-metric">
+        <div class="metric-label">{{t "invoice.detail.total"}}</div>
+        <div class="metric-value">{{.Total}}</div>
+      </div>
+      <div class="detail-metric">
+        <div class="metric-label">{{t "invoice.detail.status"}}</div>
+        <div class="metric-value small-value">{{.StatePill}}</div>
+      </div>
+      <div class="detail-metric">
+        <div class="metric-label">{{t "invoices.col.date"}}</div>
+        <div class="metric-value small-value">{{.IssueDate}}</div>
+      </div>
+      <div class="detail-metric">
+        <div class="metric-label">{{t "invoices.col.kind"}}</div>
+        <div class="metric-value small-value">{{t (printf "invoice.kind.%s" .Invoice.Kind)}}</div>
+      </div>
+      {{if .PaidRecorded}}
+      <div class="detail-metric">
+        <div class="metric-label">{{t "invoice.detail.paid_recorded"}}</div>
+        <div class="metric-value small-value">{{.PaidRecorded}}</div>
+      </div>
+      {{end}}
+    </div>
+  </section>
+
+  <h2>{{t "invoice.section.items"}}</h2>
+  <div class="ui-table-wrap">
+    <table class="ui-table ui-table-stack">
+      <thead>
+        {{if .Payer}}
+        <tr>
+          <th class="col-name">{{t "invoice.col.description"}}</th>
+          <th>{{t "invoice.col.qty"}}</th>
+          <th>{{t "invoice.detail.unit_excl_vat"}}</th>
+          <th>{{t "invoice.col.vat"}}</th>
+          <th>{{t "invoice.detail.vat_col"}}</th>
+          <th>{{t "invoice.col.total"}}</th>
+        </tr>
+        {{else}}
+        <tr><th class="col-name">{{t "invoice.col.description"}}</th><th>{{t "invoice.col.qty"}}</th><th>{{t "invoice.col.unit_price"}}</th><th>{{t "invoice.col.total"}}</th></tr>
+        {{end}}
+      </thead>
+      <tbody>
+        {{range .Items}}
+        {{if $.Payer}}
+        <tr>
+          <td data-label="{{t "invoice.col.description"}}">{{.Description}}</td>
+          <td data-label="{{t "invoice.col.qty"}}">{{.Quantity}}{{if .Unit}} {{.Unit}}{{end}}</td>
+          <td data-label="{{t "invoice.detail.unit_excl_vat"}}">{{.UnitBase}}</td>
+          <td data-label="{{t "invoice.col.vat"}}">{{.Rate}} %</td>
+          <td data-label="{{t "invoice.detail.vat_col"}}">{{.VAT}}</td>
+          <td data-label="{{t "invoice.col.total"}}">{{.Gross}}</td>
+        </tr>
+        {{else}}
+        <tr>
+          <td data-label="{{t "invoice.col.description"}}">{{.Description}}</td>
+          <td data-label="{{t "invoice.col.qty"}}">{{.Quantity}}{{if .Unit}} {{.Unit}}{{end}}</td>
+          <td data-label="{{t "invoice.col.unit_price"}}">{{.UnitGross}}</td>
+          <td data-label="{{t "invoice.col.total"}}">{{.Gross}}</td>
+        </tr>
+        {{end}}
+        {{else}}
+        <tr><td colspan="6" class="ui-sub">{{t "invoice.items_empty"}}</td></tr>
+        {{end}}
+      </tbody>
+      {{if and .Payer .Items}}
+      <tfoot>
+        <tr>
+          <th colspan="4">{{t "invoice.detail.base_total"}}</th>
+          <td class="ui-num">{{.BaseTotal}}</td>
+          <td></td>
+        </tr>
+        <tr>
+          <th colspan="4">{{t "invoice.detail.vat_total"}}</th>
+          <td class="ui-num">{{.VATTotal}}</td>
+          <td class="ui-num">{{.Total}}</td>
+        </tr>
+      </tfoot>
+      {{end}}
+    </table>
+  </div>
+  {{if .Invoice.Note}}
+  <p class="ui-sub"><strong>{{t "invoice.note"}}:</strong> {{.Invoice.Note}}</p>
+  {{end}}
+  </div>
+
+  {{if .CanCancel}}
+  <details class="ui-section danger-zone" id="cancel">
+    <summary><span>{{t "invoice.cancel"}} {{help_tip "invoice-cancel-help" (t "invoice.cancel_help")}}</span></summary>
+    <form method="post" action="/invoices/{{.Invoice.ID}}/cancel"
+          data-confirm data-confirm-message="{{t "confirm.cancel_invoice"}}">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <div class="ui-field">
+        <label for="reason">{{t "invoice.cancel_reason"}}</label>
+        <input type="text" id="reason" name="reason" maxlength="200" required>
+      </div>
+      {{if .Payer}}
+      <div class="ui-field invoice-cancel-reason">
+        <label for="correction_date">{{t "invoice.correction_date"}}</label>
+        <input type="date" id="correction_date" name="correction_date">
+      </div>
+      {{end}}
+      <button class="ui-btn ui-btn-secondary" type="submit">{{t "invoice.cancel"}}</button>
+    </form>
+  </details>
+  {{end}}
+</div>
+</div>
+{{end}}

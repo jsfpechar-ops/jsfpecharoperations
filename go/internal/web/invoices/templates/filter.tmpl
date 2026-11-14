@@ -1,0 +1,77 @@
+{{- /* Go twin of App/app/templates/_list_filter.html for the invoice list (not the compact
+     stay-fee variant). listfilter.go builds the view; labels are translated there. */ -}}
+{{define "invoices.filter"}}
+{{ui_toolbar (kv "filters_id" "list-filter-panel" "filters_count" .Active)}}
+<p class="ui-sub" data-filter-summary>{{template "invoices.filter.summary" .}}</p>
+<form id="list-filter-panel" method="get" action="{{.Action}}" class="filters list-filter ui-section host-filter-panel" data-filter-panel data-filter-route="month" role="search">
+  <div class="filter-fields">
+    <div class="ui-field list-filter-period" data-month-picker data-month-optional="{{.MonthOptional}}"
+         data-current-month="{{.CurrentMonth}}" data-min-month="2000-01" data-max-month="{{.MaxMonth}}">
+      <label for="filter-month">{{t .PeriodLabelKey}}</label>
+      <div class="month-row">
+        <button class="ui-btn ui-btn-secondary month-step" type="button" data-month-prev hidden {{if eq .MonthKey "2000-01"}}disabled{{end}} aria-label="{{t "host.filter.prev_month"}}">{{icon "chevron-left" 20 "month-chev"}}</button>
+        <div class="month-control{{if not .HasMonth}} is-empty{{end}}">
+          <button class="ui-btn ui-btn-secondary month-trigger" type="button" data-month-trigger hidden aria-expanded="false" aria-haspopup="dialog">
+            <span data-month-caption>{{.PeriodSummary}}</span>{{icon "chevron-down" 16 "month-trigger-chev"}}
+          </button>
+          {{if not .HasMonth}}<span class="month-control-face" data-month-all aria-hidden="true">{{t "host.filter.all_dates"}}</span>{{end}}
+          <input type="month" id="filter-month" name="month" value="{{.MonthKey}}" min="2000-01" max="{{.MaxMonth}}" data-month-native>
+        </div>
+        <button class="ui-btn ui-btn-secondary month-step" type="button" data-month-next hidden {{if not .NextHref}}disabled{{end}}
+                aria-label="{{t "host.filter.next_month"}}">{{icon "chevron-right" 20 "month-chev"}}</button>
+      </div>
+      <div class="month-grid-panel" data-month-grid-panel role="dialog" aria-label="{{t "host.filter.months"}}" hidden>
+        <div class="month-year-row">
+          <button class="ui-btn ui-btn-secondary year-step" type="button" data-year-prev aria-label="{{t "host.filter.previous_year"}}">{{icon "chevron-left" 18 "month-chev"}}</button>
+          <strong data-month-year>{{.GridYear}}</strong>
+          <button class="ui-btn ui-btn-secondary year-step" type="button" data-year-next aria-label="{{t "host.filter.next_year"}}">{{icon "chevron-right" 18 "month-chev"}}</button>
+        </div>
+        <div class="month-grid" data-month-grid role="group" aria-label="{{t "host.filter.months"}}">
+          {{range .MonthChoices}}
+          <button class="month-choice{{if .Selected}} selected{{end}}" type="button"
+                  data-month-choice="{{.Key}}"
+                  aria-pressed="{{.Selected}}"
+                  {{if .Disabled}}disabled{{end}}>{{.Label}}</button>
+          {{end}}
+        </div>
+        <button class="ui-btn ui-btn-quiet month-all-dates" type="button" data-month-all-choice>{{t "host.filter.all_dates"}}</button>
+      </div>
+    </div>
+    {{if gt (len .Properties) 1}}
+    <div class="ui-field">
+      <label for="filter-apartment">{{t "stays.filter.apartment"}}</label>
+      <select id="filter-apartment" name="apartment">
+        <option value="">{{t "host.filter.all_properties"}}</option>
+        {{range .Properties}}
+        <option value="{{.ID}}" {{if .Selected}}selected{{end}}>{{.Name}}</option>
+        {{end}}
+      </select>
+    </div>
+    {{end}}
+    {{if .Statuses}}
+    <div class="ui-field">
+      <label for="filter-status">{{t "filter.status"}}</label>
+      <select id="filter-status" name="status">
+        <option value="">{{t "host.filter.all_statuses"}}</option>
+        {{range .Statuses}}
+        <option value="{{.Value}}" {{if .Selected}}selected{{end}}>{{.Label}}</option>
+        {{end}}
+      </select>
+    </div>
+    {{end}}
+    <div class="ui-field list-filter-search">
+      <label for="filter-q">{{t "filter.search"}}</label>
+      <input type="search" id="filter-q" name="q" value="{{.Q}}" maxlength="60" placeholder="{{t "invoices.filter.search_placeholder"}}">
+    </div>
+  </div>
+  <div class="filter-panel-actions">
+    <button class="ui-btn ui-btn-primary filter-apply" type="submit">{{t "host.filter.apply_filters"}}</button>
+    <button class="ui-btn ui-btn-quiet" type="button" data-filter-cancel hidden>{{t "confirm.cancel"}}</button>
+    {{if .Active}}<a class="ui-btn ui-btn-quiet list-filter-reset" href="{{.ResetHref}}">{{t "host.filter.reset"}} <span class="list-filter-count" aria-label="{{t "filter.active" "count" .Active}}">{{.Active}}</span></a>{{end}}
+  </div>
+</form>
+{{end}}
+{{define "invoices.filter.summary"}}<span>{{.PeriodSummary}}</span>
+      <span aria-hidden="true"> · </span><span>{{.PropertyLabel}}</span>
+      {{if .Status}}<span aria-hidden="true"> · </span><span>{{.StatusLabel}}</span>{{end}}
+      {{if .Q}}<span aria-hidden="true"> · </span><span>{{.Q}}</span>{{end}}{{end}}

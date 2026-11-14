@@ -1,0 +1,186 @@
+{{/* Port of the editor card of App/app/templates/entities.html and of _entity_business_fields.html, _entity_invoice_fields.html, _account_parts.html. Brief 1523. */}}
+{{define "entities.register_messages"}}
+  {{if .AresError}}<p class="alert">{{.AresError}}</p>{{end}}
+  {{if .AresNote}}<p class="entity-register-note">{{t "ares.source_note"}} {{.AresNote}}</p>{{end}}
+{{end}}
+
+{{define "entities.business_body"}}
+  <p class="required-legend">{{t "common.required_legend"}}</p>
+  {{template "entities.register_messages" .}}
+  <div class="grid">
+    <div class="field">
+      <label for="{{.Prefix}}ico">{{t "entities.ico"}}<span class="req-star" aria-hidden="true">*</span></label>
+      <div class="action-group" style="align-items:flex-end">
+        <input type="text" id="{{.Prefix}}ico" name="ico" inputmode="numeric" autocomplete="off" placeholder="12345678" required value="{{.ICO}}">
+        <button class="btn" type="submit" name="fill_from_register" value="1" formnovalidate>{{t "ares.fill"}}</button>
+      </div>
+    </div>
+    <div class="field">
+      <label for="{{.Prefix}}dic">{{t "entities.dic"}}</label>
+      <input type="text" id="{{.Prefix}}dic" name="dic" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="CZ12345678" value="{{.DIC}}">
+    </div>
+  </div>
+  <div class="field">
+    <label for="{{.Prefix}}name">{{t "entities.name"}}<span class="req-star" aria-hidden="true">*</span></label>
+    <input type="text" id="{{.Prefix}}name" name="name" autocomplete="organization" autocapitalize="words" required value="{{.Name}}" placeholder="{{t "entities.name_placeholder"}}">
+  </div>
+  <p class="property-section-title">{{t "entities.seat_title"}}</p>
+  <p class="section-note">{{t "entities.seat_line"}}</p>
+  <div class="field">
+    <label for="{{.Prefix}}seat">{{t "entities.seat"}}<span class="req-star" aria-hidden="true">*</span></label>
+    <input type="text" id="{{.Prefix}}seat" name="seat" autocomplete="street-address" autocapitalize="words" required value="{{.Seat}}" placeholder="{{t "entities.seat_placeholder"}}">
+  </div>
+  <div class="grid">
+    <div class="field">
+      <label for="{{.Prefix}}contact_email">{{t "entities.email"}}<span class="req-star" aria-hidden="true">*</span></label>
+      <input type="email" id="{{.Prefix}}contact_email" name="contact_email" autocomplete="email" autocapitalize="none" spellcheck="false" required value="{{.Email}}">
+    </div>
+    <div class="field">
+      <div class="field-label-row"><label for="{{.Prefix}}contact_phone">{{t "entities.phone"}}</label>{{help_tip (printf "%scontact-phone-help" .Prefix) (t "entity.signature.moved")}}</div>
+      <div class="operator-phone">
+        <span class="operator-phone-prefix">
+          <span aria-hidden="true">+</span>
+          <input type="text" class="operator-phone-code" id="{{.Prefix}}contact_phone_country_code" name="contact_phone_country_code" value="{{.PhoneCode}}" inputmode="numeric" autocomplete="tel-country-code" maxlength="3" pattern="[1-9][0-9]{0,2}" aria-label="{{t "entities.phone_country_code"}}" data-phone-country-code>
+        </span>
+        <input type="tel" class="operator-phone-number" id="{{.Prefix}}contact_phone" name="contact_phone" autocomplete="tel-national" inputmode="tel" value="{{.PhoneNum}}">
+      </div>
+    </div>
+  </div>
+{{end}}
+
+{{define "entities.register_lookup"}}
+  <div class="field entity-register-lookup">
+    {{if .ICO}}
+    <input type="hidden" name="ico" value="{{.ICO}}">
+    <button class="btn" type="submit" name="fill_from_register" value="1" formnovalidate>{{t "ares.fill"}}</button>
+    {{else}}
+    <p class="small muted">{{t "entities.register_lookup.needs_ico"}} <a href="#entity-business">{{t "entities.section.business"}} </a></p>
+    {{end}}
+    {{if .AresError}}<p class="alert">{{.AresError}}</p>{{end}}
+    {{if .AresNote}}<p class="entity-register-note">{{t .AresSource}} {{.AresNote}}</p>{{end}}
+    {{if .AresVatFound}}<p class="hint">{{t "ares.vat_found"}}</p>{{end}}
+    {{if .VATUnreliable}}<p class="alert">{{t "vat_register.unreliable"}}</p>{{end}}
+    {{if .VATNeedsDIC}}<p class="small">{{t "vat_register.needs_dic"}} <a href="#entity-business">{{t "entities.section.business"}}</a></p>{{end}}
+    {{if .RegisterAccounts}}
+    <div class="register-accounts">
+      <p class="small">{{t "vat_register.accounts"}}</p>
+      {{range .RegisterAccounts}}
+      <button class="btn" type="submit" name="use_register_account" value="{{.}}" formnovalidate>{{t "vat_register.use" "account" .}}</button>
+      {{end}}
+    </div>
+    {{end}}
+  </div>
+{{end}}
+
+{{define "entities.invoice_fields"}}
+    <div class="field">
+      <span class="label">{{t "entities.bank.label"}}</span>
+      {{if .AccountError}}<p class="alert">{{.AccountError}}</p>{{end}}
+      <div class="account-parts" data-account-parts>
+        <div class="field">
+          <label for="invoice_account_prefix">{{t "account.prefix"}} <span class="opt">{{t "common.optional"}}</span></label>
+          <input id="invoice_account_prefix" name="account_prefix" inputmode="numeric" maxlength="6" value="{{.BankParts.Prefix}}">
+        </div>
+        <div class="field">
+          <label for="invoice_account_number">{{t "account.number"}}</label>
+          <input id="invoice_account_number" name="account_number" inputmode="numeric" maxlength="10" value="{{.BankParts.Number}}">
+        </div>
+        <div class="field">
+          <label for="invoice_account_bank">{{t "account.bank"}}</label>
+          <input id="invoice_account_bank" name="account_bank" inputmode="numeric" maxlength="4" value="{{.BankParts.Bank}}">
+        </div>
+      </div>
+      {{if .BankParts.IBAN}}<p class="small">IBAN {{.BankParts.IBAN}}</p>{{end}}
+    </div>
+    <div class="grid">
+      <div class="field">
+        <label for="bic">{{t "entities.bic.label"}} <span class="opt">{{t "common.optional"}}</span></label>
+        <input type="text" id="bic" name="bic" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABCDCZPP" value="{{.BIC}}">
+        {{if .BICFromBank}}
+        <div class="hint">{{t "invoice.fill_guest.bic_filled"}}</div>
+        {{end}}
+      </div>
+    </div>
+    <div class="grid">
+      <div class="field">
+        <label for="vat_status">{{t "entities.vat_status.label"}}</label>
+        <select id="vat_status" name="vat_status">
+          <option value="non_payer" {{if or (eq .VATStatus "non_payer") (eq .VATStatus "")}}selected{{end}}>{{t "entities.vat_status.non_payer"}}</option>
+          <option value="identified" {{if eq .VATStatus "identified"}}selected{{end}}>{{t "entities.vat_status.identified"}}</option>
+          <option value="payer" {{if eq .VATStatus "payer"}}selected{{end}}>{{t "entities.vat_status.payer"}}</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="registry_entry">{{t "entities.registry.label"}} <span class="opt">{{t "common.optional"}}</span></label>
+        <input type="text" id="registry_entry" name="registry_entry" value="{{.Registry}}" placeholder="{{t "entities.registry.trade"}}">
+      </div>
+    </div>
+    <details class="ui-details-box invoice-more"{{if or .Prefix .NextNumber}} open{{end}}>
+      <summary><span>{{t "entities.invoice_more"}}</span></summary>
+    <div class="grid">
+      <div class="field">
+        <label for="invoice_prefix">{{t "entities.invoice_prefix.label"}}</label>
+        <input type="text" id="invoice_prefix" name="invoice_prefix" maxlength="6" autocomplete="off" autocapitalize="characters" value="{{.Prefix}}">
+      </div>
+      <div class="field">
+        <div class="field-label-row"><label for="invoice_next_number">{{t "entities.invoice_next.label"}} <span class="opt">{{t "common.optional"}}</span>{{help_tip "invoice-next-number-help" (t "entities.invoice_next.hint")}}</label></div>
+        <input type="number" id="invoice_next_number" name="invoice_next_number" min="1" inputmode="numeric" value="{{.NextNumber}}">
+      </div>
+    </div>
+    </details>
+    <div class="grid">
+      <div class="field">
+        <label for="invoice_due_days">{{t "entities.invoice_due.label"}}</label>
+        <input type="number" id="invoice_due_days" name="invoice_due_days" min="0" max="365" inputmode="numeric" value="{{.DueDays}}">
+      </div>
+    </div>
+{{end}}
+
+{{define "entities.editor"}}{{with .Editor}}
+<div class="card entity-form" id="entity-edit">
+  <div class="ui-section-h">
+    <h2>{{t "entities.edit" "name" .Name}}</h2>
+    <a class="ui-btn ui-btn-quiet ui-btn-compact" href="{{if .NextPath}}{{.NextPath}}{{else}}/entities{{end}}">{{t "common.close"}}</a>
+  </div>
+  <div class="entity-linked" id="entity-linked">
+    <span class="entity-linked-label">{{t "entities.linked.label"}}</span>{{help_tip "entity-linked-help" (t "entities.linked.help")}}
+    {{if .Linked}}
+      <ul class="entity-linked-list">
+        {{range .Linked}}
+        <li><a href="/apartments/{{.ID}}?view=settings&amp;section=property#operator-picker">{{.Name}}</a></li>
+        {{end}}
+      </ul>
+    {{else}}
+      <span class="ui-sub">{{t "entities.linked.none"}}</span>
+    {{end}}
+  </div>
+
+  <section class="entity-section" id="entity-business" aria-labelledby="entity-business-title">
+    <h3 class="entity-section-title" id="entity-business-title">{{tip_label (t "entities.section.business") "entity-business-why-help" (t "why.business") "span"}}</h3>
+    <form method="post" action="/entities/{{.ID}}" enctype="multipart/form-data" data-unsaved-guard>
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      {{if .NextPath}}<input type="hidden" name="next" value="{{.NextPath}}">{{end}}
+      {{template "entities.business_body" .Form}}
+      <div class="actions"><button class="ui-btn ui-btn-primary" type="submit">{{t "entities.save"}}</button></div>
+    </form>
+  </section>
+
+  {{with .Invoice}}
+  <section class="entity-section invoice-settings-form" id="entity-invoice" aria-labelledby="entity-invoice-title">
+    <div class="entity-section-head">
+      <h3 class="entity-section-title" id="entity-invoice-title">{{t "entities.section.invoice"}}</h3>
+      {{help_tip "entity-invoice-help" (printf "%s %s" (t "invoice.settings.lede") (t "entities.invoice.snapshot_hint"))}}
+    </div>
+    <form method="post" action="/entities/{{$.Editor.ID}}/invoice" data-unsaved-guard>
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <input type="hidden" name="legal_entity_id" value="{{$.Editor.ID}}">
+      {{if $.Editor.NextPath}}<input type="hidden" name="next" value="{{$.Editor.NextPath}}">{{end}}
+      <input type="hidden" name="_invoice_account_existing" value="{{.Existing}}">
+      {{template "entities.register_lookup" .}}
+      {{template "entities.invoice_fields" .}}
+      <div class="actions"><button class="ui-btn ui-btn-primary" type="submit">{{t "common.save"}}</button></div>
+    </form>
+  </section>
+  {{end}}
+</div>
+{{end}}{{end}}

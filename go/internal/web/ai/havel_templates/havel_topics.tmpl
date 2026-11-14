@@ -1,0 +1,39 @@
+{{/* Port of App/app/templates/_havel_topics.html (brief 1433): quick help, three screens. */}}
+{{define "havel.topics"}}{{$v := .}}
+{{if and (not .Answer) (not .TopicData)}}
+<div class="havel-msg havel-msg-havel havel-greeting" data-havel-greeting>
+  <div class="havel-bubble"><p>{{t "havel.intro"}}</p></div>
+</div>
+{{end}}
+<div class="havel-topics" data-havel-topics>
+  {{if .Answer}}
+  <a class="ui-chip havel-chip-back" href="/havel?topic={{.Topic}}" data-havel-topic-link>{{icon "chevron-left" 16}}{{t .TopicData.Label}}</a>
+  <div class="havel-msg havel-msg-host"><span class="sr-only">{{t "havel.you"}}: </span><div class="havel-bubble"><p>{{t .Answer.Question.Label}}</p></div></div>
+  <div class="havel-msg havel-msg-havel havel-answer" tabindex="-1">
+    <div class="havel-who"><span class="havel-avatar" aria-hidden="true">{{icon "message-circle-question" 16}}</span><span class="havel-name">{{t "havel.name"}}</span></div>
+    <div class="havel-bubble">{{range .Answer.Paragraphs}}<p>{{.}}</p>{{end}}</div>
+    <div class="havel-links">
+      {{if .Answer.Page}}{{$url := $v.PageURL .Answer.Page}}{{if $url}}<a class="ui-btn ui-btn-secondary ui-btn-compact" href="{{$url}}">{{$v.PageLabel .Answer.Page}}{{icon "chevron-right" 16}}</a>{{end}}{{end}}
+      {{if .Answer.Support}}{{template "havel.support" (kv "V" $v "Prefill" (t .Answer.Question.Label))}}{{end}}
+    </div>
+  </div>
+  {{if .Ask}}
+  {{if not .State}}<div class="havel-msg havel-msg-havel" tabindex="-1"><div class="havel-who"><span class="havel-avatar" aria-hidden="true">{{icon "message-circle-question" 16}}</span><span class="havel-name">{{t "havel.name"}}</span></div><div class="havel-bubble"><p>{{t "havel.ask_prompt"}}</p></div></div>{{end}}
+  {{else}}
+  <a class="ui-chip havel-chip" href="/havel?topic={{.Topic}}&q={{.Q}}&ask=1" data-havel-ask-open>{{t "havel.topic.ask"}}</a>
+  {{end}}
+  {{else if .Ask}}
+  {{if not .State}}<div class="havel-msg havel-msg-havel havel-answer" tabindex="-1"><div class="havel-who"><span class="havel-avatar" aria-hidden="true">{{icon "message-circle-question" 16}}</span><span class="havel-name">{{t "havel.name"}}</span></div><div class="havel-bubble"><p>{{t "havel.other_prompt"}}</p></div></div>{{end}}
+  {{else if .TopicData}}
+  <a class="ui-chip havel-chip-back" href="/havel" data-havel-topic-link>{{icon "chevron-left" 16}}{{t "havel.topic.back"}}</a>
+  <div class="havel-msg havel-msg-host"><span class="sr-only">{{t "havel.you"}}: </span><div class="havel-bubble"><p>{{t .TopicData.Label}}</p></div></div>
+  <div class="ui-chips havel-chips" role="group" aria-label="{{t .TopicData.Label}}">
+    {{range .TopicData.Questions}}<a class="ui-chip havel-chip" href="/havel?topic={{$v.Topic}}&q={{.ID}}" data-havel-topic-link>{{t .Label}}</a>{{end}}
+  </div>
+  {{else}}
+  <div class="ui-chips havel-chips" role="group" aria-label="{{t "havel.topics_title"}}">
+    {{range .Topics}}<a class="ui-chip havel-chip" href="/havel?topic={{.ID}}" data-havel-topic-link><span class="havel-chip-ico" aria-hidden="true">{{icon .Icon 16}}</span><span class="havel-chip-text">{{t .Label}}</span></a>{{end}}
+  </div>
+  {{end}}
+</div>
+{{end}}

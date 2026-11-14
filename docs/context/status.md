@@ -6,11 +6,10 @@ Updated: 2026-11-13.
 - Magic-link 1–2 done; access log off. `/healthz` 1.1.0. Main 11-13: `84e966f` (#962).
 - Postgres cutover done. Billing ON. SQLite rollback only via pg-cutover scripts. `COMPOSE_PROFILES=walg,monitoring,go`.
 - Go jobs = queue: billing_snapshot, stripe_sweep, ical, push, submit, posthog, meta_capi, deadlines (live since 11-13, healthy). Python: mail, door_codes.
-- Go live, all routes on main (11-12): palette, calendar, payments QR/connect/requests, stripe webhook, push, pay PNGs — paths in [ENVIRONMENT](../ENVIRONMENT.md). Rollback: trim `UBYHOST_GO_PATHS`, `caddy-validate.sh`, `docker compose up -d caddy`. Go migration done (#934-936, #941/#942, #944/#945, #949).
+- Go live, all routes on main (11-12): palette, calendar, payments QR/connect/requests, stripe webhook, push, pay PNGs — paths in [ENVIRONMENT](../ENVIRONMENT.md). Rollback: trim `UBYHOST_GO_PATHS`, `caddy-validate.sh`, `docker compose up -d caddy`.
 - AI: `havel,leon,guide_import` (`guide_translate` off). Stripe test. Guest QR 404 on both when the owner has no IBAN.
 - 11-12: 1172 double-booking alarm, Go-only | [1172](../tasks/1172-double-booking-alarm.md)
 - 11-13: merged #946/#948/#953/#957 (DR; Hetzner copy pending), #958, #959, #962. Later: remove Python deadlines job.
-- 11-10 live: 1085/1086 police letter paste (#882, #892); 1089/1090 under-15 signature (#885, #888); 1091/1093 short guest titles (#883, #887); 1092 head-count single writer (#884); 1094 H0 check (#893); 1096 Save row, leave warning (#894).
 - Building: 1095 head-count H1 (flag `UBYHOST_HEADCOUNT_LEAD_LIVE` off). Next: H2a, H2b, H3, H4, guest form C.
 - 11-10: [Speed](../plans/speed-and-ease.md)/[group](../plans/guest-group-registration.md) overnight build: merged and auto-deployed #854-#867, #871; late-filing count was 0. Held drafts for copy review: #868 (F1 bill mail), #869 (F3 fee update mail).
 - 11-07: 0990-0992 (throttle, PG indexes 00008, edge cache) in review. **Owner:** deploy, `pg_schema.py apply`, CF rule, Grafana.
@@ -21,6 +20,7 @@ Updated: 2026-11-13.
 
 ## Next
 - CI 1413-1415, README 1416.
+- Go move ([remaining](../plans/go-full-move-remaining.md), [SQLite](../plans/sqlite-retirement.md)): #1010 has 1263, 1470-1473, 1450-1452, 1440-1446, 1420-1427, 1430-1435, switched off. Left: 1448, 1436, 1437, review, green CI. Next: 1501, 152x-162x. Server 11-13: W1-W3 on Go, retention dry-run.
 - 1291: host CC on guest completion (#988).
 - Door codes 0037–0038 on main → owner staging steps.
 - TTLock 0008–0016: [plan](../plans/ttlock-door-codes.md) §11; live after §12 + lawyer (K-L).

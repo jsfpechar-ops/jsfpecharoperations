@@ -1,0 +1,69 @@
+{{- /* Go twin of App/app/templates/invoices.html (brief 1423). pages_list.go builds the rows,
+     the pagination links and the filter view. */ -}}
+{{define "invoices.title"}}{{end}}
+{{define "invoices.pill"}}{{if eq .State "paid"}}<span class="pill p-ok">{{t "invoice.state.paid"}}</span>{{else if eq .State "unpaid"}}<span class="pill p-warn">{{t "invoice.state.unpaid"}}</span>{{else if eq .State "cancelled"}}<span class="pill p-n">{{t "invoice.state.cancelled"}}</span>{{else}}<span class="pill p-n">{{t (printf "invoice.kind.%s" .Kind)}}</span>{{end}}{{end}}
+{{define "invoices"}}
+<div class="invoices-page">
+<div class="head stays-head"><div class="head-title-row"><h1 class="big">{{t "invoices.title"}}</h1>
+<details class="ui-how stays-how" data-how="invoices">
+  <summary class="ui-how-toggle" aria-label="{{t "how.toggle"}}">{{icon "circle-help" 16}}</summary>
+  <div class="ui-how-body">
+    <ol class="ui-how-steps"><li>{{t "how.invoices.1"}}</li><li>{{t "how.invoices.2"}}</li><li>{{t "how.invoices.3"}}</li></ol>
+    <a class="ui-how-more" href="/guide#invoices">{{t "how.more"}}</a>
+  </div>
+</details></div><div class="stays-head-actions"><a class="btn ghost" href="{{.SettingsURL}}">{{t "host.invoice_settings"}}</a><a class="btn" href="/invoices/new">{{t "invoice.new"}}</a></div><a class="round stays-add ph-only" href="/invoices/new" aria-label="{{t "invoice.new"}}">{{icon "plus" 22}}</a></div>
+{{template "invoices.filter" .Filter}}
+
+{{if .Rows}}
+<div class="stays-phone">
+  {{range .Rows}}
+  <a class="card stay" href="/invoices/{{.ID}}">
+    <span class="sav">{{.Avatar}}</span>
+    <span class="in"><b>{{.BuyerName}}</b>
+      <small>{{.Number}} &middot; {{.IssueDate}}</small>
+      {{template "invoices.pill" .}}
+    </span>
+    {{icon "chevron-right" 20 "chev"}}
+  </a>
+  {{end}}
+</div>
+<div class="card stays-desk">
+  <table>
+    <thead>
+      <tr>
+        <th>{{t "invoices.col.number"}}</th>
+        <th>{{t "invoices.col.date"}}</th>
+        <th class="col-name">{{t "invoices.col.customer"}}</th>
+        <th>{{t "invoices.col.kind"}}</th>
+        <th>{{t "invoices.col.total"}}</th>
+        <th>{{t "filter.status"}}</th>
+        <th><span class="sr-only">{{t "common.actions"}}</span></th>
+      </tr>
+    </thead>
+    <tbody>
+    {{range .Rows}}
+      <tr class="clickable-row" data-href="/invoices/{{.ID}}" tabindex="0" role="link" aria-label="{{.Number}} · {{.BuyerName}}">
+        <td class="nowrap"><a href="/invoices/{{.ID}}">{{.Number}}</a></td>
+        <td><small>{{.IssueDate}}</small></td>
+        <td class="col-name" title="{{.BuyerName}}">{{.BuyerName}}</td>
+        <td><small>{{t (printf "invoice.kind.%s" .Kind)}}</small></td>
+        <td>{{.Total}}</td>
+        <td>{{template "invoices.pill" .}}</td>
+        <td class="row-actions">{{row_open (printf "/invoices/%d" .ID)}}<a data-turbo="false" class="btn ghost sm" href="/invoices/{{.ID}}.pdf">{{t "host.invoice_pdf"}}</a></td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+</div>
+{{if gt .Pages 1}}
+{{ui_pagination .Page .Pages (kv "prev_url" .PrevURL "next_url" .NextURL "label" (t "invoices.title") "more_label" (t "stays.pagination.next") "prev_label" (t "stays.pagination.prev") "next_label" (t "stays.pagination.next"))}}
+{{end}}
+{{else}}
+{{if .Filter.Active}}
+{{empty_state (t "filter.no_results") "" .Filter.ResetHref (t "filter.reset") (kv "primary" false)}}
+{{else}}
+{{empty_state (t "invoices.empty_title") (t "invoice.picker.lede")}}
+{{end}}
+{{end}}
+</div>
+{{end}}

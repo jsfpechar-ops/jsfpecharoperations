@@ -1,0 +1,19 @@
+--- a/go/cmd/ubyhost-web/register_web_booking_checkout.go
++++ b/go/cmd/ubyhost-web/register_web_booking_checkout.go
+@@ -2,7 +2,7 @@
+ 
+ // Brief 1542: POST /p/{slug}/checkout (card payments through Stripe Checkout).
+ // Off until the owner adds the path to UBYHOST_GO_PATHS (see brief 1550).
+-// pay_mode=direct answers "unavailable" until brief 1543 passes a Direct func.
++// pay_mode=direct is served by booking.Direct (brief 1543).
+ 
+ import (
+ 	"context"
+@@ -23,6 +23,7 @@
+ 			Session: func(ctx context.Context, in booking.SessionInput) (string, string, error) {
+ 				return stripe.CreateCheckoutSession(ctx, payments.CheckoutParams(in))
+ 			}}
++		c.Direct = booking.Direct{Pool: pool, Getenv: os.Getenv, Now: time.Now, QR: payments.QRDataURI}.Start
+ 		mux.Handle("POST /p/{slug}/checkout", m.wrap("/p/{slug}/checkout", c.Handler()))
+ 	})
+ }

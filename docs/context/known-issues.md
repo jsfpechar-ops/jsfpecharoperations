@@ -87,7 +87,7 @@
 - K-PICK: guest-enhancements.js:207 blur timer not cleared on refocus (1079).
 
 - K-HOUSEBOOK: house book Details popover unreachable at 390/768 (zero-size trigger).
-- K-FLAKY-DC: flaky `test_door_codes_safeguards::test_an_undeleted_old_code_after_a_move_tells_the_host` (test-postgres-full); passed on rerun.
+- K-FLAKY-DC: flaky `test_door_codes_safeguards` move test (test-postgres-full); OK on rerun.
 - K-GUEST-DATES: es/fr guest dates row wraps at 375, 360 px.
 - K-1091D: `test_1091_d` name no longer matches its test.
 - K-TAP43: local only (CI green): `test_design_guardrails_browser.py` guest-new 390 "Cancel" tap target 43 < 44.
@@ -100,3 +100,4 @@
 - K-DC-REMOVE (950): A-B-A-B move: no 2nd moved_failed mail.
 - K-DC-REVIVE-CARD (1173c): card closed in revoke_pending, delete refused, stay revived: stays closed.
 - K-DC-EXTEND (1173c review): stay extended after its issued code expired gets no new code.
+- K-PG-FK: goose 00004/11/13 FKs not DEFERRABLE (1263).

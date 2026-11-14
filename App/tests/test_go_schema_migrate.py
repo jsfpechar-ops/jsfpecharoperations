@@ -285,3 +285,83 @@ def test_go_apply_rolls_back_a_failing_goose_file(go_binary, throwaway, tmp_path
     assert probe_table is None and probe_column == 0
     check = _go(go_binary, "check", database, env)
     assert check.returncode == 0, check.stderr
+
+
+# Brief 1263: production has only ever run the goose twins after the SQLite
+# migration (Python apply), where they are no-ops; Go runs the twin alone. The
+# Go and Python checks compare names, types, NOT NULL, index names, triggers and
+# functions only, so a twin with a wrong DEFAULT, a missing CHECK/FK/UNIQUE or a
+# different index would pass both. This test compares those too. It cannot see
+# a missing data backfill: the throwaway databases have no rows.
+FINGERPRINT_SQL = {
+    "column": (
+        "SELECT table_name, column_name, coalesce(column_default, ''), is_identity, "
+        "coalesce(identity_generation, '') FROM information_schema.columns "
+        "WHERE table_schema = 'public'"
+    ),
+    "constraint": (
+        "SELECT conrelid::regclass::text, conname, contype::text, pg_get_constraintdef(oid) "
+        "FROM pg_constraint WHERE connamespace = 'public'::regnamespace"
+    ),
+    "index": "SELECT tablename, indexname, indexdef FROM pg_indexes WHERE schemaname = 'public'",
+}
+# Goose 00017 (brief 1471) made the 6 foreign keys of goose 4, 11 and 13
+# DEFERRABLE INITIALLY IMMEDIATE, so no known drift is left. Keep this set
+# empty: a new twin writes DEFERRABLE INITIALLY IMMEDIATE on every REFERENCES.
+KNOWN_NOT_DEFERRABLE: set = set()
+
+
+def _fingerprint(url: str) -> dict:
+    import psycopg
+
+    with psycopg.connect(url, autocommit=True) as conn:
+        return {kind: sorted(tuple(row) for row in conn.execute(sql).fetchall()) for kind, sql in FINGERPRINT_SQL.items()}
+
+
+def _fingerprint_diff(want: dict, got: dict) -> list:
+    want = dict(want, constraint=[
+        (table, name, kind, definition.removesuffix(" DEFERRABLE"))
+        if (table, name) in KNOWN_NOT_DEFERRABLE else (table, name, kind, definition)
+        for table, name, kind, definition in want["constraint"]
+    ])
+    lines = []
+    for kind in FINGERPRINT_SQL:
+        lines += [f"{kind} only in Python-built: {row}" for row in sorted(set(want[kind]) - set(got[kind]))]
+        lines += [f"{kind} only in Go-applied: {row}" for row in sorted(set(got[kind]) - set(want[kind]))]
+    return lines
+
+
+def test_go_applied_goose_twins_match_python_defaults_and_constraints(go_binary, throwaway, tmp_path):
+    """Every goose file after the baseline, run by Go alone, gives Python's schema."""
+    import psycopg
+
+    _python_db, python_url, _python_env = _fresh(go_binary, throwaway, tmp_path, "fp_python")
+    database, url, env = _fresh(go_binary, throwaway, tmp_path, "fp_go")
+    files = [p for p in sorted(GOOSE_DIR.glob("*.sql")) if int(p.name[:5]) > 1]
+    versions = [int(p.name[:5]) for p in files]
+    with psycopg.connect(url, autocommit=True) as conn:
+        for path in reversed(files):
+            conn.execute(_down_script(path))
+        conn.execute("DELETE FROM goose_db_version WHERE version_id = ANY(%s)", (versions,))
+    assert _applied(url) == {1}
+    applied = _go(go_binary, "apply", database, env)
+    assert applied.returncode == 0, applied.stderr
+    assert _applied(url) == {1, *versions}
+
+    want = _fingerprint(python_url)
+    assert all(want.values()), want
+    diff = _fingerprint_diff(want, _fingerprint(url))
+    assert not diff, "a goose twin differs from its SQLite migration:\n" + "\n".join(diff[:40])
+
+    # The comparison sees what both checks miss: a changed default and a lost constraint.
+    with psycopg.connect(url, autocommit=True) as conn:
+        conn.execute("ALTER TABLE user_account ALTER COLUMN guest_details_mail SET DEFAULT 0")
+        check_name = conn.execute(
+            "SELECT conname FROM pg_constraint WHERE conrelid = 'stay_fee_rate'::regclass AND contype = 'c'"
+        ).fetchone()[0]
+        conn.execute(f'ALTER TABLE stay_fee_rate DROP CONSTRAINT "{check_name}"')
+    assert _go(go_binary, "check", database, env).returncode == 0
+    assert _python("check", database, env).returncode == 0
+    drift = _fingerprint_diff(want, _fingerprint(url))
+    assert any("guest_details_mail" in line for line in drift), drift
+    assert any(check_name in line for line in drift), drift

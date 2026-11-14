@@ -1,0 +1,8 @@
+# 1522: entity create and update.
+flash.error.name_required
+flash.entities.signature_invalid
+entities.ico.invalid
+entities.bank.invalid
+flash.entities.added_first
+flash.entities.added
+flash.entities.saved

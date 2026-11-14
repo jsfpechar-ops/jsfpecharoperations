@@ -1,0 +1,520 @@
+{{- /* Go twin of App/app/templates/invoice_form.html (brief 1425). pages_new.go builds the values
+     map (values.get), the item rows, the country and extra-kind lists. The <script> at the end
+     is copied unchanged from the Jinja template. */ -}}
+{{define "invoice_form.title"}}{{end}}
+{{define "invoice_form.meta"}}{{t "invoices.lede"}}{{end}}
+{{define "invoice_form.back_label"}}{{t "nav.invoices"}}{{end}}
+{{define "invoice_form.rate_options"}}{{range .Rates}}<option value="{{.}}" {{if eq . $.Selected}}selected{{end}}>{{.}} %</option>{{end}}{{end}}
+{{define "invoice_form"}}
+{{if .Errors}}
+<div class="ui-banner ui-banner-attention">
+  <div class="grow">
+    <strong>{{t "invoice.err.fix"}}</strong>
+    <ul class="banner-list">
+      {{range .Errors}}<li>{{.}}</li>{{end}}
+    </ul>
+  </div>
+</div>
+{{end}}
+
+{{if .Entity}}
+<form method="post" action="/invoices" class="invoice-form" data-reservation-id="{{.StayID}}">
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <input type="hidden" name="reservation_id" value="{{.StayID}}">
+
+  <div class="invoice-workspace">
+  <div class="invoice-document">
+
+  <p class="invoice-stay-context">
+    <span class="ui-sub">{{t "invoice.context.stay"}}</span>
+    <strong>{{.StayLabel}}</strong>
+    <a class="ui-sub" href="/reservations/{{.StayID}}">{{t "invoice.context.open_stay"}}</a>
+  </p>
+  <div class="ui-section invoice-supplier">
+    <a class="invoice-supplier-edit" href="{{.EditHref}}">{{t "invoice.edit_details"}}</a>
+    <div class="ui-field invoice-supplier-picker"{{if lt (len .Entities) 2}} hidden{{end}}>
+      <label for="legal_entity_id">{{t "invoice.entity.label"}}</label>
+      <select id="legal_entity_id" name="legal_entity_id">
+        {{range .Entities}}
+          <option value="{{.ID}}"
+                   data-vat-payer="{{if .Payer}}1{{else}}0{{end}}"
+                   {{if .Selected}}selected{{end}}>{{.Name}}</option>
+        {{end}}
+      </select>
+    </div>
+    <div class="invoice-supplier-meta">
+      <span class="invoice-supplier-name">{{.Entity.Name}}</span>
+      <span class="ui-sub">
+        {{if .Entity.ICO}}IČO {{.Entity.ICO}}{{end}}
+        {{if .Entity.Seat}}· {{.Entity.Seat}}{{end}}
+      </span>
+    </div>
+  </div>
+
+  <div class="ui-section invoice-customer">
+    <h2 id="invoice-customer-title">{{t "invoice.section.customer"}}</h2>
+    <div class="ui-toolbar" role="radiogroup" aria-labelledby="invoice-customer-title">
+      {{choice_card "buyer_kind" "guest" (t "invoice.buyer_kind.guest") (eq .BuyerKind "guest")}}
+      {{choice_card "buyer_kind" "company" (t "invoice.buyer_kind.company") (eq .BuyerKind "company") "buyer-kind-company-help" (t "invoice.buyer_kind.company_help")}}
+    </div>
+    <div class="invoice-lookup"{{if not .ShowFillGuest}} data-buyer-only="company"{{end}}>
+      <div class="ui-field invoice-lookup-ico" data-buyer-only="company">
+        <label for="buyer_ico">{{t "invoice.buyer.ico"}} <span class="opt">{{t "common.optional"}}</span></label>
+        <div class="invoice-lookup-row">
+          <input type="text" id="buyer_ico" name="buyer_ico" inputmode="numeric" maxlength="8" autocomplete="off" value="{{vget .Values "buyer_ico" ""}}">
+          <button class="ui-btn ui-btn-primary" type="submit" name="fill_buyer_from_register" value="1" formnovalidate>{{t "ares.fill"}}</button>
+        </div>
+        {{if .AresError}}<p class="alert">{{.AresError}}</p>{{end}}
+        {{if .AresNote}}<p class="hint">{{t "ares.source_note"}} {{.AresNote}}</p>{{end}}
+      </div>
+      {{if .ShowFillGuest}}
+      <div class="invoice-lookup-guest" data-buyer-only="guest">
+        <span class="ui-sub" data-buyer-or>{{t "invoice.buyer.or"}}</span>
+        <button type="submit" name="fill_from_guest" value="1" formnovalidate class="ui-btn ui-btn-secondary">{{t "invoice.fill_guest.button"}}</button>
+      </div>
+      {{end}}
+    </div>
+    {{if .GuestPrefilled}}<p class="hint" role="status" data-buyer-only="guest">{{t "invoice.fill_guest.prefilled"}}</p>{{end}}
+    <div class="invoice-buyer-fields">
+      <div class="ui-field invoice-f-full">
+        <label for="buyer_name">{{t "invoice.buyer.name"}}</label>
+        <input type="text" id="buyer_name" name="buyer_name" required autocomplete="organization" value="{{vget .Values "buyer_name" ""}}">
+      </div>
+      <div class="ui-field invoice-f-full">
+        <label for="buyer_street">{{t "invoice.buyer.street"}}</label>
+        <input type="text" id="buyer_street" name="buyer_street" autocomplete="address-line1" value="{{vget .Values "buyer_street" ""}}">
+      </div>
+      <div class="ui-field invoice-f-zip">
+        <label for="buyer_zip">{{t "invoice.buyer.zip"}}</label>
+        <input type="text" id="buyer_zip" name="buyer_zip" autocomplete="postal-code" value="{{vget .Values "buyer_zip" ""}}">
+      </div>
+      <div class="ui-field invoice-f-city">
+        <label for="buyer_city">{{t "invoice.buyer.city"}}</label>
+        <input type="text" id="buyer_city" name="buyer_city" autocomplete="address-level2" value="{{vget .Values "buyer_city" ""}}">
+      </div>
+      <div class="ui-field invoice-f-full">
+        <label for="buyer_country">{{t "invoice.buyer.country"}}</label>
+        <select id="buyer_country" name="buyer_country">
+          {{range .Countries}}
+            <option value="{{.Code}}" {{if eq (vget $.Values "buyer_country" "CZE") .Code}}selected{{end}}>{{.Label}}</option>
+          {{end}}
+        </select>
+      </div>
+      <div class="ui-field invoice-f-half" data-buyer-only="company">
+        <label for="buyer_dic">{{t "invoice.buyer.dic"}} <span class="opt">{{t "common.optional"}}</span></label>
+        <input type="text" id="buyer_dic" name="buyer_dic" value="{{vget .Values "buyer_dic" ""}}">
+      </div>
+      <div class="ui-field invoice-f-half">
+        <label for="buyer_email">{{t "invoice.buyer.email"}} <span class="opt">{{t "common.optional"}}</span></label>
+        <input type="email" id="buyer_email" name="buyer_email" autocomplete="email" value="{{vget .Values "buyer_email" ""}}">
+      </div>
+    </div>
+  </div>
+
+  <div class="ui-section">
+    <div class="field-label-row invoice-items-heading">
+      <h2>{{t "invoice.section.items"}}</h2>
+      {{help_tip "invoice-items-help" (t "invoice.items_help")}}
+    </div>
+    <table class="table-cards invoice-items-grid" id="item-rows">
+      <thead>
+        <tr>
+          <th class="col-name">{{t "invoice.col.description"}}</th>
+          <th>{{t "invoice.col.qty"}}</th>
+          <th>{{t "invoice.col.unit"}}</th>
+          <th>{{t "invoice.col.unit_price"}}</th>
+          <th data-vat-col {{if not .Payer}}hidden{{end}}>{{t "invoice.col.vat"}}</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody data-stay-body>
+        <tr data-item-row data-stay-row>
+          <td data-label="{{t "invoice.col.description"}}">
+            <strong>{{t "invoice.stay.line"}}</strong><br><span class="ui-sub">{{.StayLabel}}</span>
+          </td>
+          <td data-label="{{t "invoice.col.qty"}}">1<input type="hidden" class="input-qty" value="1"></td>
+          <td data-label="{{t "invoice.col.unit"}}">{{t "invoice.stay.unit"}}</td>
+          <td data-label="{{t "invoice.col.unit_price"}}">
+            <input type="text" name="stay_price" inputmode="decimal" required class="input-price"
+                   aria-label="{{t "invoice.stay.price"}}"
+                   {{if .StayPriceHint}}placeholder="{{.StayPriceHint}}" aria-describedby="stay-price-hint"{{end}}
+                   value="{{vget .Values "stay_price" ""}}">
+            {{if .StayPriceHint}}
+            <span id="stay-price-hint" class="ui-sub">{{t "invoice.price_hint" "price" .StayPriceHint}}</span>
+            {{if not (vget .Values "stay_price" "")}}<button class="ui-btn ui-btn-quiet ui-btn-compact invoice-use-price" type="button" data-use-price="{{.StayPriceHint}}" hidden>{{t "invoice.price_use" "price" .StayPriceHint}}</button>{{end}}
+            {{end}}
+          </td>
+          <td data-label="{{t "invoice.col.vat"}}" data-vat-col {{if not .Payer}}hidden{{end}}>
+            <select name="stay_vat_rate" class="input-vat" {{if not .Payer}}disabled{{end}}>
+              {{template "invoice_form.rate_options" (kv "Rates" .StayRates "Selected" (vget .Values "stay_vat_rate" "12"))}}
+            </select>
+          </td>
+          <td></td>
+        </tr>
+      </tbody>
+      <tbody data-item-body>
+        {{if .ItemRows}}
+          {{range $row := .ItemRows}}
+          <tr data-item-row>
+            <td data-label="{{t "invoice.col.description"}}">
+              <select name="item_kind" class="input-kind" aria-label="{{t "invoice.extra.kind"}}">
+                <option value="">{{t "invoice.extra.choose"}}</option>
+                {{range $.ExtraKinds}}
+                  <option value="{{.Value}}" {{if eq $row.Kind .Value}}selected{{end}}>{{.Label}}</option>
+                {{end}}
+              </select>
+              <label class="invoice-other-description-field" data-other-description>
+                <span>{{t "invoice.col.description"}}</span>
+                <input type="text" name="item_description" maxlength="60" value="{{$row.Description}}"
+                       placeholder="{{t "invoice.extra.other_text"}}" aria-label="{{t "invoice.extra.other_text"}}">
+              </label>
+            </td>
+            <td data-label="{{t "invoice.col.qty"}}"><input type="number" name="item_quantity" min="1" step="1" value="{{$row.Quantity}}" inputmode="numeric" class="input-qty"></td>
+            <td data-label="{{t "invoice.col.unit"}}"><input type="text" name="item_unit" maxlength="20" value="{{$row.Unit}}" class="input-unit"></td>
+            <td data-label="{{t "invoice.col.unit_price"}}"><input type="text" name="item_unit_price" inputmode="decimal" value="{{$row.UnitPrice}}" class="input-price"></td>
+            <td data-label="{{t "invoice.col.vat"}}" data-vat-col {{if not $.Payer}}hidden{{end}}>
+              <select name="item_vat_rate" class="input-vat" {{if not $.Payer}}disabled{{end}}>
+                {{template "invoice_form.rate_options" (kv "Rates" $.ItemRates "Selected" $row.VATRate)}}
+              </select>
+            </td>
+            <td class="row-actions"><button type="button" class="ui-btn ui-btn-quiet ui-btn-compact" data-remove-item>{{t "invoice.remove_item"}}</button></td>
+          </tr>
+          {{end}}
+        {{else}}
+        <tr data-item-row>
+            <td data-label="{{t "invoice.col.description"}}">
+              <select name="item_kind" class="input-kind" aria-label="{{t "invoice.extra.kind"}}">
+                <option value="">{{t "invoice.extra.choose"}}</option>
+                {{range .ExtraKinds}}
+                  <option value="{{.Value}}">{{.Label}}</option>
+                {{end}}
+              </select>
+              <label class="invoice-other-description-field" data-other-description>
+                <span>{{t "invoice.col.description"}}</span>
+                <input type="text" name="item_description" maxlength="60" value=""
+                       placeholder="{{t "invoice.extra.other_text"}}" aria-label="{{t "invoice.extra.other_text"}}">
+              </label>
+            </td>
+          <td data-label="{{t "invoice.col.qty"}}"><input type="number" name="item_quantity" min="1" step="1" value="1" inputmode="numeric" class="input-qty"></td>
+          <td data-label="{{t "invoice.col.unit"}}"><input type="text" name="item_unit" maxlength="20" class="input-unit"></td>
+          <td data-label="{{t "invoice.col.unit_price"}}"><input type="text" name="item_unit_price" inputmode="decimal" class="input-price"></td>
+          <td data-label="{{t "invoice.col.vat"}}" data-vat-col {{if not .Payer}}hidden{{end}}>
+            <select name="item_vat_rate" class="input-vat" {{if not .Payer}}disabled{{end}}>
+              <option value="21">21 %</option>
+              <option value="12">12 %</option>
+              <option value="0">0 %</option>
+            </select>
+          </td>
+          <td class="row-actions"><button type="button" class="ui-btn ui-btn-quiet ui-btn-compact" data-remove-item>{{t "invoice.remove_item"}}</button></td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+    <div class="ui-form-actions"><button type="button" class="ui-btn ui-btn-secondary ui-btn-compact" data-add-item>{{t "invoice.add_item"}}</button></div>
+  </div>
+
+  <div class="ui-section">
+    <h2>{{t "invoice.section.payment"}}</h2>
+    <div class="invoice-paid-choice" role="radiogroup" aria-label="{{t "invoice.section.payment"}}">
+      <label class="checkline">
+        <input type="radio" id="already_paid" name="already_paid" value="1"
+               {{if eq (vget .Values "already_paid" "1") "1"}}checked{{end}}>
+        <span>{{t "invoice.already_paid"}}</span>
+      </label>
+      <label class="checkline">
+        <input type="radio" id="payment_requested" name="already_paid" value="0"
+               {{if eq (vget .Values "already_paid" "") "0"}}checked{{end}}>
+        <span>{{t "invoice.payment_requested"}}</span>
+      </label>
+    </div>
+    <div class="grid invoice-paid-grid" id="paid-fields" data-paid-fields
+         {{if eq (vget .Values "already_paid" "") "0"}}hidden{{end}}>
+      <div class="ui-field">
+        <label for="paid_via">{{t "invoice.paid_via"}}</label>
+        <select id="paid_via" name="paid_via" data-paid-via>
+          <option value="direct_transfer" {{if eq (vget .Values "paid_via" "direct_transfer") "direct_transfer"}}selected{{end}}>{{t "invoice.paid_via.direct_transfer"}}</option>
+          <option value="cash" {{if eq (vget .Values "paid_via" "") "cash"}}selected{{end}}>{{t "invoice.paid_via.cash"}}</option>
+          <option value="airbnb" {{if eq (vget .Values "paid_via" "") "airbnb"}}selected{{end}}>Airbnb</option>
+          <option value="booking" {{if eq (vget .Values "paid_via" "") "booking"}}selected{{end}}>Booking.com</option>
+          <option value="custom" {{if vget .Values "paid_via_custom" ""}}selected{{end}}>{{t "invoice.paid_via.custom"}}</option>
+        </select>
+        <input type="text" id="paid_via_custom" name="paid_via_custom" maxlength="60"
+               data-paid-via-custom value="{{vget .Values "paid_via_custom" ""}}"
+               placeholder="{{t "invoice.paid_via.custom_hint"}}"
+               {{if not (vget .Values "paid_via_custom" "")}}hidden{{end}}>
+      </div>
+      <div class="ui-field">
+        <label for="duzp">{{t "invoice.duzp"}}</label>
+        <input type="date" id="duzp" name="duzp" value="{{if vget .Values "duzp" ""}}{{vget .Values "duzp" ""}}{{else}}{{.Today}}{{end}}">
+      </div>
+    </div>
+    <div class="grid" id="due-fields" data-due-fields
+         {{if ne (vget .Values "already_paid" "1") "0"}}hidden{{end}}>
+      <div class="ui-field">
+        {{field_label "due_date" (t "invoice.due") (t "invoice.due_help")}}
+        <input type="date" id="due_date" name="due_date" value="{{vget .Values "due_date" ""}}" aria-describedby="due_date-help">
+      </div>
+      <div class="field invoice-paid-duzp-clone" hidden></div>
+    </div>
+    <details class="invoice-more" open>
+      <summary>{{t "invoice.section.language"}}</summary>
+      <div class="invoice-more-body">
+        <div class="ui-field">
+          <label for="lang">{{t "invoice.section.language"}}</label>
+          <select id="lang" name="lang">
+            <option value="cs" {{if eq (vget .Values "lang" "cs") "cs"}}selected{{end}}>{{t "invoice.lang.cs"}}</option>
+            <option value="en" {{if eq (vget .Values "lang" "") "en"}}selected{{end}}>{{t "invoice.lang.en"}}</option>
+          </select>
+        </div>
+        <div class="ui-field">
+          <label for="note">{{t "invoice.note"}} <span class="opt">{{t "common.optional"}}</span></label>
+          <input type="text" id="note" name="note" maxlength="300" value="{{vget .Values "note" ""}}">
+        </div>
+      </div>
+    </details>
+    <p class="ui-sub warn-text" data-bank-warning data-has-iban="{{if .Entity.IBAN}}1{{else}}0{{end}}" hidden>
+      {{t "invoice.warn_no_iban"}} <a class="ui-btn ui-btn-quiet ui-btn-compact" href="/entities">{{t "payments.fix.bank"}}</a>
+    </p>
+  </div>
+
+  </div>
+
+  <div class="invoice-actions" data-actions>
+    <div class="invoice-total">
+      <span class="invoice-total-label">{{t "invoice.total_live"}}</span>
+      <span class="invoice-total-value" data-total>0 Kč</span>
+    </div>
+    <span class="ui-sub" data-next-number>{{t "invoice.next_number" "number" .NextNumber}}</span>
+    <button class="ui-btn ui-btn-secondary" type="submit" formaction="/invoices/preview" formtarget="_blank">{{t "invoice.preview"}}</button>
+    <button class="ui-btn ui-btn-primary" type="submit" data-confirm data-confirm-message="{{t "invoice.issue_confirm"}}">{{t "invoice.issue"}}</button>
+  </div>
+  </div>
+</form>
+
+<script>
+(function () {
+  var form = document.querySelector(".invoice-form");
+  if (!form) return;
+
+  var body = document.querySelector("[data-item-body]");
+  var workspace = document.querySelector(".invoice-workspace");
+  var totalEl = document.querySelector("[data-total]");
+  var entitySel = document.getElementById("legal_entity_id");
+
+  /* 0888: one tap copies the last price on this property into the stay line. */
+  var usePrice = form.querySelector("[data-use-price]");
+  var priceInput = form.querySelector('input[name="stay_price"]');
+  if (usePrice && priceInput) {
+    var priceHint = document.getElementById("stay-price-hint");
+    usePrice.hidden = false;
+    if (priceHint) priceHint.hidden = true;
+    usePrice.addEventListener("click", function () {
+      priceInput.value = usePrice.getAttribute("data-use-price");
+      priceInput.dispatchEvent(new Event("input", { bubbles: true }));
+      usePrice.hidden = true;
+      priceInput.focus();
+    });
+  }
+
+  /* The VAT column answers the seller's VAT status, so it appears and
+     disappears with the operator; disabled selects are also never posted. */
+  function isPayer() {
+    var option = entitySel.selectedOptions && entitySel.selectedOptions[0];
+    return option && option.getAttribute("data-vat-payer") === "1";
+  }
+  function syncVat() {
+    var payer = isPayer();
+    workspace.classList.toggle("is-payer", payer);
+    form.querySelectorAll("[data-vat-col]").forEach(function (cell) { cell.hidden = !payer; });
+    form.querySelectorAll(".input-vat").forEach(function (sel) { sel.disabled = !payer; });
+  }
+
+  var nf = new Intl.NumberFormat("cs-CZ", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  var parseMoney = function (text) {
+    var value = parseFloat((text || "").replace(/\s+/g, "").replace(",", "."));
+    return isNaN(value) ? 0 : value;
+  };
+  function total() {
+    var sum = 0;
+    form.querySelectorAll("[data-item-row]").forEach(function (row) {
+      var qty = parseInt(row.querySelector(".input-qty").value, 10) || 1;
+      var price = parseMoney(row.querySelector(".input-price").value);
+      var gross = price * qty;
+      if (isPayer()) {
+        var rateSel = row.querySelector(".input-vat");
+        var rate = rateSel && !rateSel.disabled ? parseFloat(rateSel.value) || 0 : 21;
+        gross = gross * (1 + rate / 100);
+      }
+      sum += gross;
+    });
+    return sum;
+  }
+  function syncTotal() {
+    totalEl.textContent = nf.format(total()) + " Kč";
+  }
+
+  function syncOtherDescription(row) {
+    var kind = row.querySelector(".input-kind");
+    var description = row.querySelector("[data-other-description]");
+    if (kind && description) description.hidden = kind.value !== "other";
+  }
+
+  var MAX_EXTRAS = 3;
+  function syncAddButton() {
+    var add = document.querySelector("[data-add-item]");
+    if (add && body) add.hidden = body.querySelectorAll("[data-item-row]").length >= MAX_EXTRAS;
+  }
+  /* Items: cloning keeps the rate of the last visible row instead of
+     resetting it; the template row itself simply has no rate yet. */
+  if (body) {
+    var template = body.querySelector("[data-item-row]").cloneNode(true);
+    document.querySelector("[data-add-item]").addEventListener("click", function () {
+      var rowsList = body.querySelectorAll("[data-item-row]");
+      var previous = rowsList[rowsList.length - 1];
+      var row = template.cloneNode(true);
+      row.querySelectorAll("input, select").forEach(function (el) {
+        el.value = el.name === "item_quantity" ? "1" : "";
+      });
+      var vat = row.querySelector(".input-vat");
+      if (vat) {
+        var lastVat = previous.querySelector(".input-vat");
+        vat.value = lastVat && lastVat.value ? lastVat.value : "21";
+        vat.disabled = lastVat && lastVat.disabled;
+      }
+      body.appendChild(row);
+      syncOtherDescription(row);
+      syncAddButton();
+    });
+    body.addEventListener("click", function (event) {
+      var button = event.target.closest("[data-remove-item]");
+      if (!button) return;
+      if (body.querySelectorAll("[data-item-row]").length > 1) {
+        button.closest("[data-item-row]").remove();
+        syncAddButton();
+      }
+      syncTotal();
+    });
+    body.addEventListener("input", syncTotal);
+    body.addEventListener("change", function (event) {
+      if (event.target.matches(".input-kind")) syncOtherDescription(event.target.closest("[data-item-row]"));
+      syncTotal();
+    });
+    body.querySelectorAll("[data-item-row]").forEach(syncOtherDescription);
+  }
+
+  /* Payment: either the money is already here (and "paid via" says how), or
+     it is asked for with a due date. The two rows mirror each other. */
+  var paidRadio = document.getElementById("already_paid");
+  var dueRadio = document.getElementById("payment_requested");
+  var paidFields = document.querySelector("[data-paid-fields]");
+  var dueFields = document.querySelector("[data-due-fields]");
+  function syncPayment() {
+    var paid = paidRadio.checked;
+    paidFields.hidden = !paid;
+    dueFields.hidden = paid;
+    syncBank();
+  }
+
+  var via = document.querySelector("[data-paid-via]");
+  var viaCustom = document.querySelector("[data-paid-via-custom]");
+  if (via && viaCustom) {
+    var syncCustom = function () {
+      viaCustom.hidden = via.value !== "custom";
+      if (via.value === "custom") viaCustom.focus();
+      syncBank();
+    };
+    via.addEventListener("change", syncCustom);
+    syncCustom();
+  }
+
+  /* The QR code only makes sense for a bank transfer, so the missing
+     account warning waits for that combination. */
+  var warn = document.querySelector("[data-bank-warning]");
+  function syncBank() {
+    if (!warn) return;
+    var noIban = warn.getAttribute("data-has-iban") !== "1";
+    var needsBank = dueRadio.checked || (paidRadio.checked && via && via.value === "direct_transfer");
+    warn.hidden = !(noIban && needsBank);
+  }
+
+  /* Switching operator keeps everything typed. The fresh builder HTML is
+     fetched and only the operator-dependent chrome is swapped in (summary,
+     details link, next number, bank flag); the VAT columns re-derive from
+     the option flag already in the select. If the fetch fails, the honest
+     fallback is the reload. */
+  if (entitySel) {
+    entitySel.addEventListener("change", function () {
+      var wanted = entitySel.value;
+      var pendingMeta = document.querySelector(".invoice-supplier-meta");
+      if (pendingMeta) {
+        pendingMeta.setAttribute("aria-busy", "true");
+        pendingMeta.innerHTML = '<span class="skeleton skeleton-line medium" aria-hidden="true"></span>' +
+          '<span class="skeleton skeleton-line short" aria-hidden="true"></span>';
+      }
+      fetch("/invoices/new?reservation_id=" + encodeURIComponent(form.getAttribute("data-reservation-id")) + "&entity=" + encodeURIComponent(wanted))
+        .then(function (res) { return res.ok ? res.text() : null; })
+        .then(function (html) {
+          if (!html) throw new Error("fetch failed");
+          var fresh = new DOMParser().parseFromString(html, "text/html");
+          var freshSel = fresh.getElementById("legal_entity_id");
+          if (!freshSel || freshSel.value !== wanted) throw new Error("stale page");
+          var meta = document.querySelector(".invoice-supplier-meta");
+          var freshMeta = fresh.querySelector(".invoice-supplier-meta");
+          if (meta && freshMeta) meta.innerHTML = freshMeta.innerHTML;
+          if (meta) meta.removeAttribute("aria-busy");
+          var link = document.querySelector(".invoice-supplier a");
+          var freshLink = fresh.querySelector(".invoice-supplier a");
+          if (link && freshLink) link.href = freshLink.getAttribute("href");
+          var next = document.querySelector("[data-next-number]");
+          var freshNext = fresh.querySelector("[data-next-number]");
+          if (next && freshNext) next.textContent = freshNext.textContent;
+          var warn = document.querySelector("[data-bank-warning]");
+          var freshWarn = fresh.querySelector("[data-bank-warning]");
+          if (warn && freshWarn) {
+            warn.setAttribute("data-has-iban", freshWarn.getAttribute("data-has-iban"));
+          }
+          syncVat();
+          syncTotal();
+          syncBank();
+        })
+        .catch(function () {
+          window.location.assign("/invoices/new?reservation_id=" + encodeURIComponent(form.getAttribute("data-reservation-id")) + "&entity=" + encodeURIComponent(wanted));
+        });
+    });
+  }
+
+  /* 0843: Guest or Company. Without JS every buyer field shows. With JS the
+     other choice's parts are hidden and disabled, so they are never posted. */
+  function syncBuyerKind() {
+    var checked = form.querySelector('input[name="buyer_kind"]:checked');
+    var kind = checked ? checked.value : "";
+    form.querySelectorAll("[data-buyer-only]").forEach(function (part) {
+      var off = kind !== "" && part.getAttribute("data-buyer-only") !== kind;
+      part.hidden = off;
+      part.querySelectorAll("input, select, button").forEach(function (control) { control.disabled = off; });
+    });
+    form.querySelectorAll("[data-buyer-or]").forEach(function (part) { part.hidden = kind !== ""; });
+  }
+  form.querySelectorAll('input[name="buyer_kind"]').forEach(function (radio) {
+    radio.addEventListener("change", syncBuyerKind);
+  });
+  syncBuyerKind();
+
+  if (paidRadio && dueRadio) {
+    [paidRadio, dueRadio].forEach(function (radio) { radio.addEventListener("change", syncPayment); });
+    syncPayment();
+  }
+
+  form.addEventListener("submit", function () {
+    /* The authoritative total is summed in Python (Decimal); the live value
+       is only the display of it. */
+    totalEl.textContent = nf.format(total()) + " Kč";
+  });
+
+  syncVat();
+  syncTotal();
+  syncAddButton();
+})();
+</script>
+{{end}}
+{{end}}

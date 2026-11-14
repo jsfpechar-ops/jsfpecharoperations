@@ -34,14 +34,14 @@ The repo is **public**, including its full git history. A secret key and a guest
 
 ## Database
 
-Production stays on SQLite pending owner cutover. PostgreSQL migration code is owner-requested (0455–0456); verify compatibility and recovery before switching.
+Production runs on PostgreSQL. SQLite stays only as the Python suite's test database until Python is deleted ([plan](../plans/sqlite-retirement.md)).
 
 - All SQL goes through the `App/app/db.py` helpers, parameterised. f-strings may only build placeholder lists or name trusted columns.
 - No new triggers and no SQLite-only syntax:
   - No `INSERT OR IGNORE`/`OR REPLACE`; use `ON CONFLICT ... DO NOTHING/DO UPDATE`.
   - No `lastrowid`; `db.insert` uses `RETURNING id`.
   - No bare `x IS ?`; use `db.null_safe_eq("x")`.
-- PostgreSQL schema changes are goose files `App/migrations_pg/NNNNN_name.sql` (next number = highest + 1), applied by `scripts/pg_schema.py apply`; the app will not start while one is pending. `App/app/migrations/` is frozen at 0033. A change SQLite also needs (a column the Python code reads) adds the matching `App/app/migrations` file in the same PR until G6; `db.SCHEMA` and `db.ADDED_COLUMNS` never change.
+- Schema changes are goose files only: `App/migrations_pg/NNNNN_name.sql` (next number = highest + 1), applied by `scripts/pg_schema.py apply`; the app will not start while one is pending. `App/app/migrations/` is frozen at 0045 (`tests/test_sqlite_migrations_frozen.py`); `db.SCHEMA` and `db.ADDED_COLUMNS` never change. After adding one, rerun `App/scripts/pg_schema_golden.py`. A goose-only file that adds a column is untried against Python's schema check until plan step S6.
 - Keep `with db.immediate()` blocks small. Never call UbyPort or fetch a feed inside a transaction. No logic may assume a single writer: a block that reads, decides and writes takes `db.lock_key(cur, name, id)` first (ascending ids when several).
 
 - Goose files in `App/migrations_pg/` must be additive: the previous image must keep working on the migrated schema, so the healthz rollback stays valid.

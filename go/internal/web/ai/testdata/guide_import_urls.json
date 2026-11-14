@@ -1,0 +1,228 @@
+[
+ {
+  "input": "https://www.booking.com/hotel/cz/vivus-3.cs.html?aid=1#x",
+  "source": "booking",
+  "url": "https://www.booking.com/hotel/cz/vivus-3.cs.html"
+ },
+ {
+  "input": "https://booking.com/hotel/DE/Hotel_Name.html",
+  "source": "booking",
+  "url": "https://www.booking.com/hotel/de/Hotel_Name.html"
+ },
+ {
+  "input": "https://m.booking.com/hotel/at/a.html",
+  "source": "booking",
+  "url": "https://www.booking.com/hotel/at/a.html"
+ },
+ {
+  "input": "https://www.booking.com/hotel/cz/a.html/",
+  "error": "flash.error.guide_import_booking_path"
+ },
+ {
+  "input": "https://www.booking.com/searchresults.html",
+  "error": "flash.error.guide_import_booking_path"
+ },
+ {
+  "input": "https://www.booking.com/hotel/cz/-bad.html",
+  "error": "flash.error.guide_import_booking_path"
+ },
+ {
+  "input": "https://www.booking.com/hotel/cze/a.html",
+  "error": "flash.error.guide_import_booking_path"
+ },
+ {
+  "input": "https://www.airbnb.com/rooms/53997462?adults=2",
+  "source": "airbnb",
+  "url": "https://www.airbnb.com/rooms/53997462"
+ },
+ {
+  "input": "https://www.airbnb.co.uk/rooms/plus/123/",
+  "source": "airbnb",
+  "url": "https://www.airbnb.com/rooms/123"
+ },
+ {
+  "input": "https://airbnb.cz/rooms/9",
+  "source": "airbnb",
+  "url": "https://www.airbnb.com/rooms/9"
+ },
+ {
+  "input": "https://m.airbnb.com.au/rooms/9/",
+  "source": "airbnb",
+  "url": "https://www.airbnb.com/rooms/9"
+ },
+ {
+  "input": "https://www.airbnb.com/rooms/abc",
+  "error": "flash.error.guide_import_airbnb_path"
+ },
+ {
+  "input": "https://www.airbnb.com/s/Prague",
+  "error": "flash.error.guide_import_airbnb_path"
+ },
+ {
+  "input": "https://www.airbnb.org/rooms/1",
+  "error": "flash.error.guide_import_link"
+ },
+ {
+  "input": "  https://www.airbnb.com/rooms/123  ",
+  "source": "airbnb",
+  "url": "https://www.airbnb.com/rooms/123"
+ },
+ {
+  "input": "HTTPS://WWW.AIRBNB.COM/rooms/5",
+  "source": "airbnb",
+  "url": "https://www.airbnb.com/rooms/5"
+ },
+ {
+  "input": "https://WWW.Booking.com./hotel/cz/a.html",
+  "source": "booking",
+  "url": "https://www.booking.com/hotel/cz/a.html"
+ },
+ {
+  "input": "http://www.airbnb.com/rooms/1",
+  "error": "flash.error.guide_import_link"
+ },
+ {
+  "input": "ftp://www.airbnb.com/rooms/1",
+  "error": "flash.error.guide_import_link"
+ },
+ {
+  "input": "//www.airbnb.com/rooms/1",
+  "error": "flash.error.guide_import_link"
+ },
+ {
+  "input": "www.airbnb.com/rooms/1",
+  "error": "flash.error.guide_import_link"
+ },
+ {
+  "input": "https://user@www.airbnb.com/rooms/1",
+  "error": "flash.error.guide_import_link"
+ },
+ {
+  "input": "https://www.airbnb.com@evil.example/rooms/1",
+  "error": "flash.error.guide_import_link"
+ },
+ {
+  "input": "https://www.airbnb.com:443/rooms/1",
+  "error": "flash.error.guide_import_link"
+ },
+ {
+  "input": "https://www.airbnb.com:0/rooms/1",
+  "source": "airbnb",
+  "url": "https://www.airbnb.com/rooms/1"
+ },
+ {
+  "input": "https://www.airbnb.com:/rooms/1",
+  "source": "airbnb",
+  "url": "https://www.airbnb.com/rooms/1"
+ },
+ {
+  "input": "https://www.airbnb.com:abc/rooms/1",
+  "error": "ValueError"
+ },
+ {
+  "input": "https://www.airbnb.com:99999/rooms/1",
+  "error": "ValueError"
+ },
+ {
+  "input": "https://www.airbnb.com\\@evil.example/rooms/1",
+  "error": "flash.error.guide_import_link"
+ },
+ {
+  "input": "https://www.airbnb.com/rooms/1 2",
+  "error": "flash.error.guide_import_link"
+ },
+ {
+  "input": "https://www.airbnb.com/rooms/1\n",
+  "source": "airbnb",
+  "url": "https://www.airbnb.com/rooms/1"
+ },
+ {
+  "input": "https://www.airbnb.com/rooms/1\t",
+  "source": "airbnb",
+  "url": "https://www.airbnb.com/rooms/1"
+ },
+ {
+  "input": "\u0001https://www.airbnb.com/rooms/1",
+  "source": "airbnb",
+  "url": "https://www.airbnb.com/rooms/1"
+ },
+ {
+  "input": "https://[::1]/rooms/1",
+  "error": "flash.error.guide_import_link"
+ },
+ {
+  "input": "https://[::1/rooms/1",
+  "error": "ValueError"
+ },
+ {
+  "input": "https://127.0.0.1/rooms/1",
+  "error": "flash.error.guide_import_link"
+ },
+ {
+  "input": "https://2130706433/rooms/1",
+  "error": "flash.error.guide_import_link"
+ },
+ {
+  "input": "https://1.2.3.4./hotel/cz/a.html",
+  "error": "flash.error.guide_import_link"
+ },
+ {
+  "input": "https://.",
+  "error": "flash.error.guide_import_link"
+ },
+ {
+  "input": "https://",
+  "error": "flash.error.guide_import_link"
+ },
+ {
+  "input": "https:///rooms/1",
+  "error": "flash.error.guide_import_link"
+ },
+ {
+  "input": "https://www.airbnb.com",
+  "error": "flash.error.guide_import_airbnb_path"
+ },
+ {
+  "input": "https://www.airbnb.cz/rooms/1#frag",
+  "source": "airbnb",
+  "url": "https://www.airbnb.com/rooms/1"
+ },
+ {
+  "input": "https://www.airbnb.com/rooms/1?x=https://evil.example",
+  "source": "airbnb",
+  "url": "https://www.airbnb.com/rooms/1"
+ },
+ {
+  "input": "https://www.airbnb.com/rooms/%31",
+  "error": "flash.error.guide_import_airbnb_path"
+ },
+ {
+  "input": "https://www.airbnb.com/rooms/１２３",
+  "error": "flash.error.guide_import_link"
+ },
+ {
+  "input": "https://www.airbnb.com/rooms/99999999999999999999",
+  "source": "airbnb",
+  "url": "https://www.airbnb.com/rooms/99999999999999999999"
+ },
+ {
+  "input": "https://www.airbnb.com/rooms/999999999999999999999",
+  "error": "flash.error.guide_import_airbnb_path"
+ },
+ {
+  "input": "https://www.example.com/rooms/1",
+  "error": "flash.error.guide_import_link"
+ },
+ {
+  "input": "",
+  "error": "flash.error.guide_import_link"
+ },
+ {
+  "input": "   ",
+  "error": "flash.error.guide_import_link"
+ },
+ {
+  "input": "https://www.airbnb.com/rooms/1/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "error": "flash.error.guide_import_link"
+ }
+]

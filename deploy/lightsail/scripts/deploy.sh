@@ -262,10 +262,15 @@ if [ "${PG_MODE}" = "1" ]; then
   if [ "${SCHEMA_APPLY}" = "go" ]; then
     # 1261: build the new Go image first, so the apply runs the merged code.
     # --profile go: the service is profile-gated and may not be enabled.
-    echo "==> Building the Go image for the schema apply"
-    if ! docker compose --profile go build ubyhost-go; then
-      echo "Go image build failed." >&2
-      exit 1
+    # 1263: a Go image pulled above is that code already; never rebuild it.
+    if [ "${GO_IMAGE_PULLED}" = "1" ]; then
+      echo "==> Using the pulled Go image for the schema apply"
+    else
+      echo "==> Building the Go image for the schema apply"
+      if ! docker compose --profile go build ubyhost-go; then
+        echo "Go image build failed." >&2
+        exit 1
+      fi
     fi
     echo "==> Applying PostgreSQL goose migrations (new Go image)"
     if ! docker compose --profile go run --rm --no-deps -T ubyhost-go \
@@ -301,7 +306,7 @@ if [ "${GO_IMAGE_PULLED}" != "1" ] && [ "${SCHEMA_APPLY}" != "go" ] && docker co
   # deploy, or an old workflow run without UBYHOST_GO_IMAGE). A pulled Go image is never rebuilt.
   # Rebuild the local Go image so a merged change reaches production.
   # Runs before "up", so a failed build leaves the running stack untouched.
-  # With UBYHOST_SCHEMA_APPLY=go it was built before the schema apply.
+  # With UBYHOST_SCHEMA_APPLY=go it was built (or pulled) before the schema apply.
   if ! docker compose build ubyhost-go; then
     echo "Go image build failed." >&2
     exit 1

@@ -22,12 +22,14 @@ Read this file, then [status](docs/context/status.md). Open nothing else unless 
 2. Privacy first: store only what the law or a feature needs. No tracking cookies (`App/tests/test_privacy_first.py`). No third-party scripts except Turnstile, and PostHog on the public pages named in `App/app/analytics.py`. New personal-data field: add a line in `App/app/retention.py`. New outbound request: give the reason in the PR.
 3. Public repo: never commit secrets, `.env`, databases, guest data or operator identity.
 4. No new dependency without an owner decision line in [decisions](docs/context/decisions.md).
-5. SQL only through `App/app/db.py` helpers, Postgres-portable. A schema change is a new `App/app/migrations/` file.
+5. SQL only through `App/app/db.py` helpers, Postgres-portable. A schema change is a new `App/migrations_pg/` file.
 6. Light mode only. Auth forms work without JavaScript.
 7. Template, CSS or guest-page change: the browser and geometry tests for the changed pages pass with 0 skipped, plus one 390 px screenshot per changed page in the report.
 8. Never push to `main`. Merge only with `scripts/merge-pr-on-green.sh`. Green merges auto-deploy; keep drafts until they may ship.
 9. Copy: one explanation lives in one place; no sentence the button already says; write "no tracking cookies", never "no cookies".
 10. UX gate (owner does not review UX; you do): a PR touching a host page merges only after you ran `test_layout_lint_browser.py` green, opened the 390/768/1280 screenshots of each touched page, and wrote per page in the PR what you saw. Never ask the owner, never silence a finding. Tick the [design-system checklist](docs/design/design-system.md) in the PR. [Steps](docs/context/workflow.md#ux-gate).
+
+11. Go first: features and fixes in Go, not Python ([go-first](docs/context/go-first.md)).
 
 ## Test
 
@@ -52,6 +54,6 @@ From `App/`: `.venv/bin/python -m pytest <files from the test-map> -q --tb=short
 
 ## Session protocol (details: [workflow](docs/context/workflow.md))
 
-- **Start:** read this file, then status, then your routed row. Grep before you read. Read ranges, never whole files over 300 lines. If something is unclear, ask the owner instead of exploring.
+- **Start:** grep before you read. If something is unclear, ask the owner instead of exploring.
 - **End (orchestrator):** update status (5 lines at most), append to decisions and known-issues, run the lint. A workflow change gets a `[workflow]` decision and a [workflow](docs/context/workflow.md) edit.
 - One chat per task; close it when the brief or review is done.

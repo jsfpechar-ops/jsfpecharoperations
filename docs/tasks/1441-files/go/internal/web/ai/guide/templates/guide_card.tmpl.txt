@@ -1,0 +1,81 @@
+{{- /* Go twin of App/app/templates/guest_guide_card.html (brief 1441). Section call blocks are written out with guide_section_open / guide_section_close. */ -}}
+{{define "guide_card.title"}}{{end}}
+{{define "guide_card.back_label"}}{{t "guest_guide.title"}}{{end}}
+{{define "guide_card"}}
+<div class="guide-page guide-form-page">
+<div class="head guide-hd"><div><a class="guide-back" href="{{.Base}}">{{t "guest_guide.title"}}</a><div class="heading-with-tip"><h1 class="big">{{template "guide.card_title" .Item}}</h1>{{help_tip "guide-card-prompt-help" (or (and .Custom (t "guest_guide.custom_prompt")) (t (printf "guest_guide.kind.%s.prompt" .Item.Kind)))}}</div></div></div>
+{{if .Error}}{{ui_banner "attention" (t .Error)}}{{end}}
+{{if eq .Item.State "check"}}{{ui_banner "attention" (printf "%s %s" (t (printf "guest_guide.draft_from.%s" .DraftFrom)) (t "guest_guide.check_banner"))}}{{end}}
+{{if eq .Item.State "skipped"}}{{ui_banner "neutral" (t "guest_guide.skipped_banner")}}{{end}}
+{{guide_section_open "card-photos" (t "guest_guide.photos.title") ""}}
+{{if .Photos}}
+<ul class="guide-photos">
+{{range $i, $photo := .Photos}}
+<li class="guide-photo">
+<img src="{{$.Base}}/{{$.Item.ID}}/photos/{{$photo.ID}}" alt="{{t "guest_guide.photos.alt" "n" (add $i 1) "card" $.CardTitle}}" loading="lazy">
+<form method="post" action="{{$.Base}}/{{$.Item.ID}}/photos/{{$photo.ID}}/delete" data-confirm data-confirm-message="{{t "guest_guide.photos.delete_confirm"}}">
+<input type="hidden" name="_csrf" value="{{csrf}}">
+{{ui_button (t "guest_guide.photos.delete") "quiet" (kv "type" "submit" "size" "compact" "icon_name" "trash-2")}}
+</form>
+</li>
+{{end}}
+</ul>
+{{end}}
+{{if lt (len .Photos) .MaxPhotos}}
+<form method="post" action="{{.Base}}/{{.Item.ID}}/photos" enctype="multipart/form-data">
+<input type="hidden" name="_csrf" value="{{csrf}}">
+{{ui_field "guide-photo" (t "guest_guide.photos.add") (kv "name" "photo" "type" "file" "help" (t "guest_guide.photos.help" "max" .MaxPhotos) "attrs" (safe `accept="image/jpeg,image/png,image/webp" required`))}}
+<div class="ui-form-actions">{{ui_button (t "guest_guide.photos.upload") "secondary" (kv "type" "submit" "icon_name" "plus")}}</div>
+</form>
+{{else}}
+<p class="ui-help">{{t "guest_guide.photos.full" "max" .MaxPhotos}}</p>
+{{end}}
+{{guide_section_close}}
+
+<section class="guide-form-card">
+<form method="post" action="{{.Base}}/{{.Item.ID}}">
+<input type="hidden" name="_csrf" value="{{csrf}}">
+{{if .FromLeon}}<input type="hidden" name="from" value="leon">{{end}}
+{{if .Custom}}{{ui_field "guide-title" (t "guest_guide.field.title") (kv "name" "title" "value" .Values.Title "attrs" (safe `maxlength="120" required`))}}{{end}}
+{{$ph := "guest_guide.custom.ph."}}{{if not .Custom}}{{$ph = printf "guest_guide.kind.%s.ph." .Item.Kind}}{{end}}
+{{ui_field "guide-location" (t "guest_guide.field.location") (kv "name" "location" "value" .Values.Location "help" (t "guest_guide.field.location_help") "optional" true "attrs" (safe `maxlength="500"`) "placeholder" (t (printf "%slocation" $ph)))}}
+{{ui_textarea "guide-steps" (t "guest_guide.field.steps") (kv "value" .Values.Steps "name" "steps" "help" (t "guest_guide.field.steps_help") "rows" 8 "attrs" (safe `maxlength="4000"`) "placeholder" (t (printf "%ssteps" $ph)))}}
+{{ui_textarea "guide-watch-out" (t "guest_guide.field.watch_out") (kv "value" .Values.WatchOut "name" "watch_out" "help" (t "guest_guide.field.watch_out_help") "optional" true "rows" 3 "attrs" (safe `maxlength="1000"`) "placeholder" (t (printf "%swatch_out" $ph)))}}
+{{ui_field "guide-video" (t "guest_guide.field.video") (kv "name" "video_url" "value" .Values.VideoURL "type" "url" "help" (t "guest_guide.field.video_help") "optional" true "attrs" (safe `maxlength="500" inputmode="url"`))}}
+{{ui_select "guide-visibility" (t "guest_guide.field.visibility") (guide_pairs "everyone" (t "guest_guide.visibility.everyone") "booked" (t "guest_guide.visibility.booked") "host" (t "guest_guide.visibility.host")) (kv "selected" .Values.Visibility "name" "visibility" "help" (t "guest_guide.field.visibility_help"))}}
+<div class="ui-form-actions">
+{{ui_button (t "guest_guide.save_next") "primary" (kv "type" "submit" "attrs" (safe `name="then" value="next"`))}}
+{{ui_button (t "guest_guide.save") "secondary" (kv "type" "submit")}}
+</div>
+</form>
+</section>
+
+{{guide_section_open "card-more" (t "guest_guide.more.title") ""}}
+<div class="ui-btn-group">
+<form method="post" action="{{.Base}}/{{.Item.ID}}/skip">
+<input type="hidden" name="_csrf" value="{{csrf}}">
+{{if .FromLeon}}<input type="hidden" name="from" value="leon">{{end}}
+{{if eq .Item.State "skipped"}}
+<input type="hidden" name="skip" value="0">
+{{ui_button (t "guest_guide.unskip") "secondary" (kv "type" "submit")}}
+{{else}}
+<input type="hidden" name="skip" value="1">
+{{ui_button (t "guest_guide.skip") "quiet" (kv "type" "submit")}}
+{{end}}
+</form>
+{{if eq .Item.State "check"}}
+<form method="post" action="{{.Base}}/{{.Item.ID}}/discard" data-confirm data-confirm-message="{{t "guest_guide.discard_confirm"}}">
+<input type="hidden" name="_csrf" value="{{csrf}}">
+{{ui_button (t "guest_guide.discard") "secondary" (kv "type" "submit")}}
+</form>
+{{end}}
+{{if .Custom}}
+<form method="post" action="{{.Base}}/{{.Item.ID}}/delete" data-confirm data-confirm-message="{{t "guest_guide.delete_confirm"}}">
+<input type="hidden" name="_csrf" value="{{csrf}}">
+{{ui_button (t "guest_guide.delete") "danger" (kv "type" "submit")}}
+</form>
+{{end}}
+</div>
+{{guide_section_close}}
+</div>
+{{end}}

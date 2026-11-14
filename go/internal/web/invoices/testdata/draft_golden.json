@@ -1,0 +1,6282 @@
+{
+ "cases": [
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "Jana Testová",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": null,
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 150000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": "2026-11-13",
+    "paid_via": "cash",
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 150000,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "1500"
+    ],
+    [
+     "buyer_name",
+     "Jana Testová"
+    ],
+    [
+     "lang",
+     "cs"
+    ],
+    [
+     "already_paid",
+     "1"
+    ],
+    [
+     "paid_via",
+     "cash"
+    ]
+   ],
+   "issues": [],
+   "name": "non_payer_simple",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "John Doe",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": "2026-11-27",
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Accommodation – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 nights)",
+      "extra_kind": "stay",
+      "gross_haler": 9950,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "stay",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "en",
+    "note": "",
+    "paid_on": null,
+    "paid_via": null,
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 nights)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 9950,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "99,5"
+    ],
+    [
+     "buyer_name",
+     "John Doe"
+    ],
+    [
+     "lang",
+     "en"
+    ]
+   ],
+   "issues": [],
+   "name": "english_document",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "A B",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": "2026-11-27",
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 123450,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": null,
+    "paid_via": null,
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 123450,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "1.234,50"
+    ],
+    [
+     "buyer_name",
+     "A B"
+    ],
+    [
+     "lang",
+     "cs"
+    ]
+   ],
+   "issues": [],
+   "name": "czech_thousands",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "A",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": "2026-11-27",
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 123456700,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": null,
+    "paid_via": null,
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 123456700,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "1 234 567"
+    ],
+    [
+     "buyer_name",
+     "A"
+    ],
+    [
+     "lang",
+     "cs"
+    ]
+   ],
+   "issues": [],
+   "name": "spaces_and_nbsp",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "A",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": "2026-11-27",
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 0,
+      "kind": "accommodation",
+      "price_invalid": true,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": null,
+    "paid_via": null,
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 0,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "abc"
+    ],
+    [
+     "buyer_name",
+     "A"
+    ],
+    [
+     "lang",
+     "cs"
+    ]
+   ],
+   "issues": [
+    [
+     "price_czk",
+     "invoice.err.amount"
+    ]
+   ],
+   "name": "garbage_price",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "A",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": "2026-11-27",
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 0,
+      "kind": "accommodation",
+      "price_invalid": true,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": null,
+    "paid_via": null,
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 0,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     ""
+    ],
+    [
+     "buyer_name",
+     "A"
+    ],
+    [
+     "lang",
+     "cs"
+    ]
+   ],
+   "issues": [
+    [
+     "price_czk",
+     "invoice.err.amount"
+    ]
+   ],
+   "name": "empty_price",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "A",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": "2026-11-27",
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": -500,
+      "kind": "accommodation",
+      "price_invalid": true,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": null,
+    "paid_via": null,
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": -500,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "-5"
+    ],
+    [
+     "buyer_name",
+     "A"
+    ],
+    [
+     "lang",
+     "cs"
+    ]
+   ],
+   "issues": [
+    [
+     "price_czk",
+     "invoice.err.amount"
+    ]
+   ],
+   "name": "negative_price",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "A",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": "2026-11-27",
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 0,
+      "kind": "accommodation",
+      "price_invalid": true,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": null,
+    "paid_via": null,
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 0,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "10000001"
+    ],
+    [
+     "buyer_name",
+     "A"
+    ],
+    [
+     "lang",
+     "cs"
+    ]
+   ],
+   "issues": [
+    [
+     "price_czk",
+     "invoice.err.amount"
+    ]
+   ],
+   "name": "too_big_price",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "A",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": "2026-11-27",
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 100000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": null,
+    "paid_via": null,
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 100000,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "1e3"
+    ],
+    [
+     "buyer_name",
+     "A"
+    ],
+    [
+     "lang",
+     "cs"
+    ]
+   ],
+   "issues": [],
+   "name": "exponent_price",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "A",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": "2026-11-27",
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 1,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": null,
+    "paid_via": null,
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 1,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "0.005"
+    ],
+    [
+     "buyer_name",
+     "A"
+    ],
+    [
+     "lang",
+     "cs"
+    ]
+   ],
+   "issues": [],
+   "name": "rounding_half_up",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "A",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": "2026-11-27",
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": 100000,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 112000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": 12000,
+      "vat_rate": 12
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": null,
+    "paid_via": null,
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": 100000,
+    "total_haler": 112000,
+    "total_vat_haler": 12000,
+    "vat_status": "payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "1000"
+    ],
+    [
+     "buyer_name",
+     "A"
+    ],
+    [
+     "lang",
+     "cs"
+    ]
+   ],
+   "issues": [],
+   "name": "payer_default_rate",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "A",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": "2026-11-27",
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": 123457,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 149383,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": 25926,
+      "vat_rate": 21
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": null,
+    "paid_via": null,
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": 123457,
+    "total_haler": 149383,
+    "total_vat_haler": 25926,
+    "vat_status": "payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "1234.57"
+    ],
+    [
+     "stay_vat_rate",
+     "21"
+    ],
+    [
+     "buyer_name",
+     "A"
+    ],
+    [
+     "lang",
+     "cs"
+    ]
+   ],
+   "issues": [],
+   "name": "payer_21",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "A",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": "2026-11-27",
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": 10000,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 11200,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": 1200,
+      "vat_rate": 12
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": null,
+    "paid_via": null,
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": 10000,
+    "total_haler": 11200,
+    "total_vat_haler": 1200,
+    "vat_status": "payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "100"
+    ],
+    [
+     "stay_vat_rate",
+     "15"
+    ],
+    [
+     "buyer_name",
+     "A"
+    ],
+    [
+     "lang",
+     "cs"
+    ]
+   ],
+   "issues": [],
+   "name": "payer_bad_rate",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "A",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": "2026-11-27",
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": 10000,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 11200,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": 1200,
+      "vat_rate": 12
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": null,
+    "paid_via": null,
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": 10000,
+    "total_haler": 11200,
+    "total_vat_haler": 1200,
+    "vat_status": "payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "100"
+    ],
+    [
+     "buyer_name",
+     "A"
+    ],
+    [
+     "lang",
+     "cs"
+    ]
+   ],
+   "issues": [
+    [
+     "seller_dic",
+     "invoice.err.seller_dic"
+    ]
+   ],
+   "name": "payer_no_dic",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "Jana Testová",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": null,
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 150000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": null,
+      "vat_rate": null
+     },
+     {
+      "base_haler": null,
+      "description": "Úklid",
+      "extra_kind": "cleaning",
+      "gross_haler": 10000,
+      "kind": "other",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "ks",
+      "vat_haler": null,
+      "vat_rate": null
+     },
+     {
+      "base_haler": null,
+      "description": "Poplatek z pobytu",
+      "extra_kind": "stay_fee",
+      "gross_haler": 15000,
+      "kind": "stay_fee",
+      "price_invalid": false,
+      "quantity": 3,
+      "unit": "",
+      "vat_haler": null,
+      "vat_rate": null
+     },
+     {
+      "base_haler": null,
+      "description": "Pozdní příjezd",
+      "extra_kind": "other",
+      "gross_haler": 10000,
+      "kind": "other",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "x",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": "2026-11-13",
+    "paid_via": "cash",
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 185000,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "1500"
+    ],
+    [
+     "buyer_name",
+     "Jana Testová"
+    ],
+    [
+     "lang",
+     "cs"
+    ],
+    [
+     "already_paid",
+     "1"
+    ],
+    [
+     "paid_via",
+     "cash"
+    ],
+    [
+     "item_kind",
+     "cleaning"
+    ],
+    [
+     "item_description",
+     "ignored"
+    ],
+    [
+     "item_quantity",
+     "1"
+    ],
+    [
+     "item_unit",
+     "ks"
+    ],
+    [
+     "item_unit_price",
+     "100"
+    ],
+    [
+     "item_vat_rate",
+     "21"
+    ],
+    [
+     "item_kind",
+     "stay_fee"
+    ],
+    [
+     "item_description",
+     ""
+    ],
+    [
+     "item_quantity",
+     "3"
+    ],
+    [
+     "item_unit",
+     ""
+    ],
+    [
+     "item_unit_price",
+     "50"
+    ],
+    [
+     "item_vat_rate",
+     "21"
+    ],
+    [
+     "item_kind",
+     "other"
+    ],
+    [
+     "item_description",
+     "Pozdní příjezd"
+    ],
+    [
+     "item_quantity",
+     "1"
+    ],
+    [
+     "item_unit",
+     "x"
+    ],
+    [
+     "item_unit_price",
+     "100"
+    ],
+    [
+     "item_vat_rate",
+     "12"
+    ]
+   ],
+   "issues": [],
+   "name": "extras_all_kinds",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "Jana Testová",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": null,
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": 150000,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 168000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": 18000,
+      "vat_rate": 12
+     },
+     {
+      "base_haler": 24000,
+      "description": "Snídaně",
+      "extra_kind": "breakfast",
+      "gross_haler": 26880,
+      "kind": "other",
+      "price_invalid": false,
+      "quantity": 2,
+      "unit": "",
+      "vat_haler": 2880,
+      "vat_rate": 12
+     },
+     {
+      "base_haler": 15000,
+      "description": "Poplatek z pobytu",
+      "extra_kind": "stay_fee",
+      "gross_haler": 15000,
+      "kind": "stay_fee",
+      "price_invalid": false,
+      "quantity": 3,
+      "unit": "",
+      "vat_haler": 0,
+      "vat_rate": 0
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": "2026-11-13",
+    "paid_via": "cash",
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": 189000,
+    "total_haler": 209880,
+    "total_vat_haler": 20880,
+    "vat_status": "payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "1500"
+    ],
+    [
+     "buyer_name",
+     "Jana Testová"
+    ],
+    [
+     "lang",
+     "cs"
+    ],
+    [
+     "already_paid",
+     "1"
+    ],
+    [
+     "paid_via",
+     "cash"
+    ],
+    [
+     "item_kind",
+     "breakfast"
+    ],
+    [
+     "item_description",
+     ""
+    ],
+    [
+     "item_quantity",
+     "2"
+    ],
+    [
+     "item_unit",
+     ""
+    ],
+    [
+     "item_unit_price",
+     "120"
+    ],
+    [
+     "item_vat_rate",
+     "12"
+    ],
+    [
+     "item_kind",
+     "stay_fee"
+    ],
+    [
+     "item_description",
+     ""
+    ],
+    [
+     "item_quantity",
+     "3"
+    ],
+    [
+     "item_unit",
+     ""
+    ],
+    [
+     "item_unit_price",
+     "50"
+    ],
+    [
+     "item_vat_rate",
+     "21"
+    ]
+   ],
+   "issues": [],
+   "name": "payer_extras",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "Jana Testová",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": null,
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 150000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": null,
+      "vat_rate": null
+     },
+     {
+      "base_haler": null,
+      "description": "",
+      "extra_kind": "invalid",
+      "gross_haler": 1000,
+      "kind": "other",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": "2026-11-13",
+    "paid_via": "cash",
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 151000,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "1500"
+    ],
+    [
+     "buyer_name",
+     "Jana Testová"
+    ],
+    [
+     "lang",
+     "cs"
+    ],
+    [
+     "already_paid",
+     "1"
+    ],
+    [
+     "paid_via",
+     "cash"
+    ],
+    [
+     "item_kind",
+     "stay"
+    ],
+    [
+     "item_description",
+     "x"
+    ],
+    [
+     "item_quantity",
+     "1"
+    ],
+    [
+     "item_unit",
+     ""
+    ],
+    [
+     "item_unit_price",
+     "10"
+    ],
+    [
+     "item_vat_rate",
+     "21"
+    ]
+   ],
+   "issues": [
+    [
+     "items",
+     "invoice.err.extra_kind"
+    ]
+   ],
+   "name": "forged_stay_kind",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "Jana Testová",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": null,
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 150000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": null,
+      "vat_rate": null
+     },
+     {
+      "base_haler": null,
+      "description": "",
+      "extra_kind": "spa",
+      "gross_haler": 1000,
+      "kind": "other",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": "2026-11-13",
+    "paid_via": "cash",
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 151000,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "1500"
+    ],
+    [
+     "buyer_name",
+     "Jana Testová"
+    ],
+    [
+     "lang",
+     "cs"
+    ],
+    [
+     "already_paid",
+     "1"
+    ],
+    [
+     "paid_via",
+     "cash"
+    ],
+    [
+     "item_kind",
+     "spa"
+    ],
+    [
+     "item_description",
+     "x"
+    ],
+    [
+     "item_quantity",
+     "1"
+    ],
+    [
+     "item_unit",
+     ""
+    ],
+    [
+     "item_unit_price",
+     "10"
+    ],
+    [
+     "item_vat_rate",
+     "21"
+    ]
+   ],
+   "issues": [
+    [
+     "items",
+     "invoice.err.extra_kind"
+    ]
+   ],
+   "name": "unknown_kind",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "Jana Testová",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": null,
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 150000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": null,
+      "vat_rate": null
+     },
+     {
+      "base_haler": null,
+      "description": "A",
+      "extra_kind": "other",
+      "gross_haler": 1000,
+      "kind": "other",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "",
+      "vat_haler": null,
+      "vat_rate": null
+     },
+     {
+      "base_haler": null,
+      "description": "B",
+      "extra_kind": "other",
+      "gross_haler": 1000,
+      "kind": "other",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": "2026-11-13",
+    "paid_via": "cash",
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 152000,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "1500"
+    ],
+    [
+     "buyer_name",
+     "Jana Testová"
+    ],
+    [
+     "lang",
+     "cs"
+    ],
+    [
+     "already_paid",
+     "1"
+    ],
+    [
+     "paid_via",
+     "cash"
+    ],
+    [
+     "item_kind",
+     "other"
+    ],
+    [
+     "item_description",
+     "A"
+    ],
+    [
+     "item_quantity",
+     "1"
+    ],
+    [
+     "item_unit",
+     ""
+    ],
+    [
+     "item_unit_price",
+     "10"
+    ],
+    [
+     "item_vat_rate",
+     "21"
+    ],
+    [
+     "item_kind",
+     "other"
+    ],
+    [
+     "item_description",
+     "B"
+    ],
+    [
+     "item_quantity",
+     "1"
+    ],
+    [
+     "item_unit",
+     ""
+    ],
+    [
+     "item_unit_price",
+     "10"
+    ],
+    [
+     "item_vat_rate",
+     "21"
+    ]
+   ],
+   "issues": [
+    [
+     "items",
+     "invoice.err.one_other"
+    ]
+   ],
+   "name": "two_other_lines",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "Jana Testová",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": null,
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 150000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": null,
+      "vat_rate": null
+     },
+     {
+      "base_haler": null,
+      "description": "Big",
+      "extra_kind": "other",
+      "gross_haler": 45100,
+      "kind": "other",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": "2026-11-13",
+    "paid_via": "cash",
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 195100,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "1500"
+    ],
+    [
+     "buyer_name",
+     "Jana Testová"
+    ],
+    [
+     "lang",
+     "cs"
+    ],
+    [
+     "already_paid",
+     "1"
+    ],
+    [
+     "paid_via",
+     "cash"
+    ],
+    [
+     "item_kind",
+     "other"
+    ],
+    [
+     "item_description",
+     "Big"
+    ],
+    [
+     "item_quantity",
+     "1"
+    ],
+    [
+     "item_unit",
+     ""
+    ],
+    [
+     "item_unit_price",
+     "451"
+    ],
+    [
+     "item_vat_rate",
+     "21"
+    ]
+   ],
+   "issues": [
+    [
+     "items",
+     "invoice.err.other_cap"
+    ]
+   ],
+   "name": "other_over_30_percent",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "Jana Testová",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": null,
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 150000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": null,
+      "vat_rate": null
+     },
+     {
+      "base_haler": null,
+      "description": "Edge",
+      "extra_kind": "other",
+      "gross_haler": 45000,
+      "kind": "other",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": "2026-11-13",
+    "paid_via": "cash",
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 195000,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "1500"
+    ],
+    [
+     "buyer_name",
+     "Jana Testová"
+    ],
+    [
+     "lang",
+     "cs"
+    ],
+    [
+     "already_paid",
+     "1"
+    ],
+    [
+     "paid_via",
+     "cash"
+    ],
+    [
+     "item_kind",
+     "other"
+    ],
+    [
+     "item_description",
+     "Edge"
+    ],
+    [
+     "item_quantity",
+     "1"
+    ],
+    [
+     "item_unit",
+     ""
+    ],
+    [
+     "item_unit_price",
+     "450"
+    ],
+    [
+     "item_vat_rate",
+     "21"
+    ]
+   ],
+   "issues": [],
+   "name": "other_exactly_30_percent",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "Jana Testová",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": null,
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 150000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": null,
+      "vat_rate": null
+     },
+     {
+      "base_haler": null,
+      "description": "Parkování",
+      "extra_kind": "parking",
+      "gross_haler": 160000,
+      "kind": "other",
+      "price_invalid": false,
+      "quantity": 2,
+      "unit": "",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": "2026-11-13",
+    "paid_via": "cash",
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 310000,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "1500"
+    ],
+    [
+     "buyer_name",
+     "Jana Testová"
+    ],
+    [
+     "lang",
+     "cs"
+    ],
+    [
+     "already_paid",
+     "1"
+    ],
+    [
+     "paid_via",
+     "cash"
+    ],
+    [
+     "item_kind",
+     "parking"
+    ],
+    [
+     "item_description",
+     ""
+    ],
+    [
+     "item_quantity",
+     "2"
+    ],
+    [
+     "item_unit",
+     ""
+    ],
+    [
+     "item_unit_price",
+     "800"
+    ],
+    [
+     "item_vat_rate",
+     "21"
+    ]
+   ],
+   "issues": [
+    [
+     "items",
+     "invoice.err.extras_cap"
+    ]
+   ],
+   "name": "extras_over_stay",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "Jana Testová",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": null,
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 150000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": null,
+      "vat_rate": null
+     },
+     {
+      "base_haler": null,
+      "description": "Parkování",
+      "extra_kind": "parking",
+      "gross_haler": 150000,
+      "kind": "other",
+      "price_invalid": false,
+      "quantity": 3,
+      "unit": "",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": "2026-11-13",
+    "paid_via": "cash",
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 300000,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "1500"
+    ],
+    [
+     "buyer_name",
+     "Jana Testová"
+    ],
+    [
+     "lang",
+     "cs"
+    ],
+    [
+     "already_paid",
+     "1"
+    ],
+    [
+     "paid_via",
+     "cash"
+    ],
+    [
+     "item_kind",
+     "parking"
+    ],
+    [
+     "item_description",
+     ""
+    ],
+    [
+     "item_quantity",
+     "3"
+    ],
+    [
+     "item_unit",
+     ""
+    ],
+    [
+     "item_unit_price",
+     "500"
+    ],
+    [
+     "item_vat_rate",
+     "21"
+    ]
+   ],
+   "issues": [],
+   "name": "extras_exactly_stay",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "Jana Testová",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": null,
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 150000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": null,
+      "vat_rate": null
+     },
+     {
+      "base_haler": null,
+      "description": "Domácí zvíře",
+      "extra_kind": "pet",
+      "gross_haler": 0,
+      "kind": "other",
+      "price_invalid": false,
+      "quantity": 0,
+      "unit": "",
+      "vat_haler": null,
+      "vat_rate": null
+     },
+     {
+      "base_haler": null,
+      "description": "Domácí zvíře",
+      "extra_kind": "pet",
+      "gross_haler": 10000,
+      "kind": "other",
+      "price_invalid": false,
+      "quantity": 100,
+      "unit": "",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": "2026-11-13",
+    "paid_via": "cash",
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 160000,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "1500"
+    ],
+    [
+     "buyer_name",
+     "Jana Testová"
+    ],
+    [
+     "lang",
+     "cs"
+    ],
+    [
+     "already_paid",
+     "1"
+    ],
+    [
+     "paid_via",
+     "cash"
+    ],
+    [
+     "item_kind",
+     "pet"
+    ],
+    [
+     "item_description",
+     ""
+    ],
+    [
+     "item_quantity",
+     "0"
+    ],
+    [
+     "item_unit",
+     ""
+    ],
+    [
+     "item_unit_price",
+     "10"
+    ],
+    [
+     "item_vat_rate",
+     "21"
+    ],
+    [
+     "item_kind",
+     "pet"
+    ],
+    [
+     "item_description",
+     ""
+    ],
+    [
+     "item_quantity",
+     "100"
+    ],
+    [
+     "item_unit",
+     ""
+    ],
+    [
+     "item_unit_price",
+     "1"
+    ],
+    [
+     "item_vat_rate",
+     "21"
+    ]
+   ],
+   "issues": [
+    [
+     "items",
+     "invoice.err.extra_quantity"
+    ]
+   ],
+   "name": "extra_quantity_zero_and_100",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "Jana Testová",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": null,
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 150000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": null,
+      "vat_rate": null
+     },
+     {
+      "base_haler": null,
+      "description": "Domácí zvíře",
+      "extra_kind": "pet",
+      "gross_haler": 0,
+      "kind": "other",
+      "price_invalid": true,
+      "quantity": 0,
+      "unit": "",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": "2026-11-13",
+    "paid_via": "cash",
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 150000,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "1500"
+    ],
+    [
+     "buyer_name",
+     "Jana Testová"
+    ],
+    [
+     "lang",
+     "cs"
+    ],
+    [
+     "already_paid",
+     "1"
+    ],
+    [
+     "paid_via",
+     "cash"
+    ],
+    [
+     "item_kind",
+     "pet"
+    ],
+    [
+     "item_description",
+     ""
+    ],
+    [
+     "item_quantity",
+     ""
+    ],
+    [
+     "item_unit",
+     ""
+    ],
+    [
+     "item_unit_price",
+     "zz"
+    ],
+    [
+     "item_vat_rate",
+     ""
+    ]
+   ],
+   "issues": [
+    [
+     "price_czk",
+     "invoice.err.amount"
+    ],
+    [
+     "items",
+     "invoice.err.extra_quantity"
+    ]
+   ],
+   "name": "extra_blank_quantity_and_garbage_price",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "Jana Testová",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": null,
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 150000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": null,
+      "vat_rate": null
+     },
+     {
+      "base_haler": null,
+      "description": "Late fee",
+      "extra_kind": "other",
+      "gross_haler": 500,
+      "kind": "other",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": "2026-11-13",
+    "paid_via": "cash",
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 150500,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "1500"
+    ],
+    [
+     "buyer_name",
+     "Jana Testová"
+    ],
+    [
+     "lang",
+     "cs"
+    ],
+    [
+     "already_paid",
+     "1"
+    ],
+    [
+     "paid_via",
+     "cash"
+    ],
+    [
+     "item_kind",
+     ""
+    ],
+    [
+     "item_description",
+     "Late fee"
+    ],
+    [
+     "item_quantity",
+     "1"
+    ],
+    [
+     "item_unit",
+     ""
+    ],
+    [
+     "item_unit_price",
+     "5"
+    ],
+    [
+     "item_vat_rate",
+     "21"
+    ]
+   ],
+   "issues": [],
+   "name": "typed_text_without_kind",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "Jana Testová",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": null,
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 150000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": "2026-11-13",
+    "paid_via": "cash",
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 150000,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "1500"
+    ],
+    [
+     "buyer_name",
+     "Jana Testová"
+    ],
+    [
+     "lang",
+     "cs"
+    ],
+    [
+     "already_paid",
+     "1"
+    ],
+    [
+     "paid_via",
+     "cash"
+    ],
+    [
+     "item_kind",
+     ""
+    ],
+    [
+     "item_description",
+     ""
+    ],
+    [
+     "item_quantity",
+     "1"
+    ],
+    [
+     "item_unit",
+     ""
+    ],
+    [
+     "item_unit_price",
+     ""
+    ],
+    [
+     "item_vat_rate",
+     "21"
+    ]
+   ],
+   "issues": [],
+   "name": "blank_row_skipped",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "Jana Testová",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": null,
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 150000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": null,
+      "vat_rate": null
+     },
+     {
+      "base_haler": null,
+      "description": "Úklid",
+      "extra_kind": "cleaning",
+      "gross_haler": 100,
+      "kind": "other",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "",
+      "vat_haler": null,
+      "vat_rate": null
+     },
+     {
+      "base_haler": null,
+      "description": "Úklid",
+      "extra_kind": "cleaning",
+      "gross_haler": 100,
+      "kind": "other",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "",
+      "vat_haler": null,
+      "vat_rate": null
+     },
+     {
+      "base_haler": null,
+      "description": "Úklid",
+      "extra_kind": "cleaning",
+      "gross_haler": 100,
+      "kind": "other",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "",
+      "vat_haler": null,
+      "vat_rate": null
+     },
+     {
+      "base_haler": null,
+      "description": "Úklid",
+      "extra_kind": "cleaning",
+      "gross_haler": 100,
+      "kind": "other",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": "2026-11-13",
+    "paid_via": "cash",
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 150400,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "1500"
+    ],
+    [
+     "buyer_name",
+     "Jana Testová"
+    ],
+    [
+     "lang",
+     "cs"
+    ],
+    [
+     "already_paid",
+     "1"
+    ],
+    [
+     "paid_via",
+     "cash"
+    ],
+    [
+     "item_kind",
+     "cleaning"
+    ],
+    [
+     "item_description",
+     ""
+    ],
+    [
+     "item_quantity",
+     "1"
+    ],
+    [
+     "item_unit",
+     ""
+    ],
+    [
+     "item_unit_price",
+     "1"
+    ],
+    [
+     "item_vat_rate",
+     "21"
+    ],
+    [
+     "item_kind",
+     "cleaning"
+    ],
+    [
+     "item_description",
+     ""
+    ],
+    [
+     "item_quantity",
+     "1"
+    ],
+    [
+     "item_unit",
+     ""
+    ],
+    [
+     "item_unit_price",
+     "1"
+    ],
+    [
+     "item_vat_rate",
+     "21"
+    ],
+    [
+     "item_kind",
+     "cleaning"
+    ],
+    [
+     "item_description",
+     ""
+    ],
+    [
+     "item_quantity",
+     "1"
+    ],
+    [
+     "item_unit",
+     ""
+    ],
+    [
+     "item_unit_price",
+     "1"
+    ],
+    [
+     "item_vat_rate",
+     "21"
+    ],
+    [
+     "item_kind",
+     "cleaning"
+    ],
+    [
+     "item_description",
+     ""
+    ],
+    [
+     "item_quantity",
+     "1"
+    ],
+    [
+     "item_unit",
+     ""
+    ],
+    [
+     "item_unit_price",
+     "1"
+    ],
+    [
+     "item_vat_rate",
+     "21"
+    ]
+   ],
+   "issues": [
+    [
+     "items",
+     "invoice.err.too_many_items"
+    ]
+   ],
+   "name": "too_many_items",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "Jana Testová",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": null,
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 150000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": null,
+      "vat_rate": null
+     },
+     {
+      "base_haler": null,
+      "description": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "extra_kind": "other",
+      "gross_haler": 100,
+      "kind": "other",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "uuuuuuuuuuuuuuuuuuuu",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": "2026-11-13",
+    "paid_via": "cash",
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 150100,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "1500"
+    ],
+    [
+     "buyer_name",
+     "Jana Testová"
+    ],
+    [
+     "lang",
+     "cs"
+    ],
+    [
+     "already_paid",
+     "1"
+    ],
+    [
+     "paid_via",
+     "cash"
+    ],
+    [
+     "item_kind",
+     "other"
+    ],
+    [
+     "item_description",
+     "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    ],
+    [
+     "item_quantity",
+     "1"
+    ],
+    [
+     "item_unit",
+     "uuuuuuuuuuuuuuuuuuuuuuuuuuuuuu"
+    ],
+    [
+     "item_unit_price",
+     "1"
+    ],
+    [
+     "item_vat_rate",
+     "21"
+    ]
+   ],
+   "issues": [],
+   "name": "other_text_cut_to_60",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": "2026-11-27",
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 10000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": null,
+    "paid_via": null,
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 10000,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "100"
+    ],
+    [
+     "lang",
+     "cs"
+    ]
+   ],
+   "issues": [
+    [
+     "buyer_name",
+     "invoice.buyer.required"
+    ]
+   ],
+   "name": "missing_buyer",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "A",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": "2026-11-27",
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 10000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": null,
+    "paid_via": null,
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 10000,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "100"
+    ],
+    [
+     "buyer_name",
+     "A"
+    ],
+    [
+     "already_paid",
+     "0"
+    ],
+    [
+     "lang",
+     "cs"
+    ]
+   ],
+   "issues": [],
+   "name": "payment_requested_default_due",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "A",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": "2026-12-01",
+    "duzp": "2026-11-11",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 10000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": null,
+    "paid_via": null,
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 10000,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "100"
+    ],
+    [
+     "buyer_name",
+     "A"
+    ],
+    [
+     "already_paid",
+     "0"
+    ],
+    [
+     "due_date",
+     "2026-12-01"
+    ],
+    [
+     "duzp",
+     "2026-11-11"
+    ],
+    [
+     "lang",
+     "cs"
+    ]
+   ],
+   "issues": [],
+   "name": "payment_requested_own_due_and_duzp",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "A",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": "2026-11-13",
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Accommodation – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 nights)",
+      "extra_kind": "stay",
+      "gross_haler": 10000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "stay",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "en",
+    "note": "",
+    "paid_on": null,
+    "paid_via": null,
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 nights)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 10000,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 0,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "100"
+    ],
+    [
+     "buyer_name",
+     "A"
+    ],
+    [
+     "already_paid",
+     "0"
+    ]
+   ],
+   "issues": [],
+   "name": "due_days_zero",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "A",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": null,
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Accommodation – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 nights)",
+      "extra_kind": "stay",
+      "gross_haler": 10000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "stay",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "en",
+    "note": "",
+    "paid_on": "2026-11-13",
+    "paid_via": "airbnb",
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 nights)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 10000,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "100"
+    ],
+    [
+     "buyer_name",
+     "A"
+    ],
+    [
+     "already_paid",
+     "on"
+    ],
+    [
+     "paid_via",
+     "airbnb"
+    ]
+   ],
+   "issues": [],
+   "name": "checkbox_on_paid",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "A",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": null,
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Accommodation – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 nights)",
+      "extra_kind": "stay",
+      "gross_haler": 10000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "stay",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "en",
+    "note": "",
+    "paid_on": "2026-11-13",
+    "paid_via": "Karta v recepci",
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 nights)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 10000,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "100"
+    ],
+    [
+     "buyer_name",
+     "A"
+    ],
+    [
+     "already_paid",
+     "1"
+    ],
+    [
+     "paid_via",
+     "custom"
+    ],
+    [
+     "paid_via_custom",
+     "  Karta v recepci  "
+    ]
+   ],
+   "issues": [],
+   "name": "paid_via_custom",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "A",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": "2026-11-27",
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Accommodation – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 nights)",
+      "extra_kind": "stay",
+      "gross_haler": 10000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "stay",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "en",
+    "note": "",
+    "paid_on": null,
+    "paid_via": null,
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 nights)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 10000,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "100"
+    ],
+    [
+     "buyer_name",
+     "A"
+    ],
+    [
+     "already_paid",
+     "0"
+    ],
+    [
+     "paid_via",
+     "cash"
+    ]
+   ],
+   "issues": [],
+   "name": "paid_via_ignored_when_unpaid",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "Brno",
+     "country": "DEU",
+     "dic": "CZ27082440",
+     "email": "a@example.test",
+     "ico": "27082440",
+     "name": "Firma s.r.o.",
+     "street": "Ulice 2",
+     "zip": "602 00"
+    },
+    "due_date": "2026-11-27",
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Accommodation – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 nights)",
+      "extra_kind": "stay",
+      "gross_haler": 10000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "stay",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "en",
+    "note": "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
+    "paid_on": null,
+    "paid_via": null,
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 nights)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 10000,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "100"
+    ],
+    [
+     "buyer_name",
+     "Firma s.r.o."
+    ],
+    [
+     "buyer_street",
+     "Ulice 2"
+    ],
+    [
+     "buyer_city",
+     "Brno"
+    ],
+    [
+     "buyer_zip",
+     "602 00"
+    ],
+    [
+     "buyer_country",
+     "DEU"
+    ],
+    [
+     "buyer_ico",
+     "27082440"
+    ],
+    [
+     "buyer_dic",
+     "CZ27082440"
+    ],
+    [
+     "buyer_email",
+     "a@example.test"
+    ],
+    [
+     "note",
+     "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
+    ]
+   ],
+   "issues": [],
+   "name": "buyer_company",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "A",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": "2026-11-27",
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Accommodation – Chata U Lesa, 12.11.2026 – 20.11.2026 (8 nights)",
+      "extra_kind": "stay",
+      "gross_haler": 10000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "stay",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "en",
+    "note": "",
+    "paid_on": null,
+    "paid_via": null,
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-12",
+    "stay_label": "Chata U Lesa, 12.11.2026 – 20.11.2026 (8 nights)",
+    "stay_to": "2026-11-20",
+    "total_base_haler": null,
+    "total_haler": 10000,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "100"
+    ],
+    [
+     "buyer_name",
+     "A"
+    ]
+   ],
+   "issues": [],
+   "name": "future_checkout_duzp_today",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-12",
+     "date_to": "2026-11-20",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "Jana Testová",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": null,
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 150000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": "2026-11-13",
+    "paid_via": "cash",
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "",
+     "iban": "CZ0603000000000123456789",
+     "ico": "999",
+     "name": "Forged Name",
+     "phone": "+420 700 000 000",
+     "registry": "R 1",
+     "seat": ""
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 150000,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "1500"
+    ],
+    [
+     "buyer_name",
+     "Jana Testová"
+    ],
+    [
+     "lang",
+     "cs"
+    ],
+    [
+     "already_paid",
+     "1"
+    ],
+    [
+     "paid_via",
+     "cash"
+    ],
+    [
+     "seller_name",
+     "Forged Name"
+    ],
+    [
+     "seller_seat",
+     ""
+    ],
+    [
+     "seller_ico",
+     "999"
+    ],
+    [
+     "seller_registry",
+     "R 1"
+    ],
+    [
+     "seller_email",
+     ""
+    ]
+   ],
+   "issues": [
+    [
+     "seller_seat",
+     "invoice.err.seller_seat"
+    ]
+   ],
+   "name": "seller_fields_from_form",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "Jana Testová",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": null,
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 150000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": "2026-11-13",
+    "paid_via": "cash",
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "19-2000145399/0800",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ6508000000192000145399",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 150000,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "1500"
+    ],
+    [
+     "buyer_name",
+     "Jana Testová"
+    ],
+    [
+     "lang",
+     "cs"
+    ],
+    [
+     "already_paid",
+     "1"
+    ],
+    [
+     "paid_via",
+     "cash"
+    ],
+    [
+     "seller_bank_account",
+     "19-2000145399/0800"
+    ]
+   ],
+   "issues": [],
+   "name": "seller_valid_bank_account",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "Jana Testová",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": null,
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 150000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": "2026-11-13",
+    "paid_via": "cash",
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "CZ6508000000192000145399",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ6508000000192000145399",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 150000,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "1500"
+    ],
+    [
+     "buyer_name",
+     "Jana Testová"
+    ],
+    [
+     "lang",
+     "cs"
+    ],
+    [
+     "already_paid",
+     "1"
+    ],
+    [
+     "paid_via",
+     "cash"
+    ],
+    [
+     "seller_bank_account",
+     "CZ65 0800 0000 1920 0014 5399"
+    ]
+   ],
+   "issues": [],
+   "name": "seller_iban_account",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "Jana Testová",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": null,
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 150000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": "2026-11-13",
+    "paid_via": "cash",
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 150000,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "1500"
+    ],
+    [
+     "buyer_name",
+     "Jana Testová"
+    ],
+    [
+     "lang",
+     "cs"
+    ],
+    [
+     "already_paid",
+     "1"
+    ],
+    [
+     "paid_via",
+     "cash"
+    ],
+    [
+     "seller_bank_account",
+     "19-2000145398/0800"
+    ]
+   ],
+   "issues": [],
+   "name": "seller_bad_bank_account",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "Jana Testová",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": null,
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 150000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": "2026-11-13",
+    "paid_via": "cash",
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 150000,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "1500"
+    ],
+    [
+     "buyer_name",
+     "Jana Testová"
+    ],
+    [
+     "lang",
+     "cs"
+    ],
+    [
+     "already_paid",
+     "1"
+    ],
+    [
+     "paid_via",
+     "cash"
+    ],
+    [
+     "seller_bank_account",
+     ""
+    ]
+   ],
+   "issues": [],
+   "name": "seller_blank_bank_account",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "Jana Testová",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": null,
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Ubytování – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+      "extra_kind": "stay",
+      "gross_haler": 150000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": "2026-11-13",
+    "paid_via": "cash",
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 noci)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 150000,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": null,
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "1500"
+    ],
+    [
+     "buyer_name",
+     "Jana Testová"
+    ],
+    [
+     "lang",
+     "cs"
+    ],
+    [
+     "already_paid",
+     "1"
+    ],
+    [
+     "paid_via",
+     "cash"
+    ]
+   ],
+   "issues": [
+    [
+     "seller_registry",
+     "invoice.err.registry"
+    ]
+   ],
+   "name": "entity_without_registry",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "B",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": "2026-11-27",
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Accommodation – Chata U Lesa, 10.11.2026 – 13.11.2026 (3 nights)",
+      "extra_kind": "stay",
+      "gross_haler": 200000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "stay",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "en",
+    "note": "",
+    "paid_on": null,
+    "paid_via": null,
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-10",
+    "stay_label": "Chata U Lesa, 10.11.2026 – 13.11.2026 (3 nights)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 200000,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "1"
+    ],
+    [
+     "stay_price",
+     "2000"
+    ],
+    [
+     "buyer_name",
+     "A"
+    ],
+    [
+     "buyer_name",
+     "B"
+    ]
+   ],
+   "issues": [],
+   "name": "duplicate_form_keys_last_wins",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-10",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "Jana Testová",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": null,
+    "duzp": "2026-11-13",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Ubytování – Chata U Lesa, 12.11.2026 – 13.11.2026 (1 noc)",
+      "extra_kind": "stay",
+      "gross_haler": 150000,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "pobyt",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "cs",
+    "note": "",
+    "paid_on": "2026-11-13",
+    "paid_via": "cash",
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-12",
+    "stay_label": "Chata U Lesa, 12.11.2026 – 13.11.2026 (1 noc)",
+    "stay_to": "2026-11-13",
+    "total_base_haler": null,
+    "total_haler": 150000,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "1500"
+    ],
+    [
+     "buyer_name",
+     "Jana Testová"
+    ],
+    [
+     "lang",
+     "cs"
+    ],
+    [
+     "already_paid",
+     "1"
+    ],
+    [
+     "paid_via",
+     "cash"
+    ]
+   ],
+   "issues": [],
+   "name": "nights_one_cs",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-12",
+     "date_to": "2026-11-13",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  },
+  {
+   "draft": {
+    "apartment_id": 5,
+    "buyer": {
+     "city": "",
+     "country": "CZE",
+     "dic": "",
+     "email": "",
+     "ico": "",
+     "name": "A",
+     "street": "",
+     "zip": ""
+    },
+    "due_date": "2026-11-27",
+    "duzp": "2026-11-06",
+    "issue_date": "2026-11-13",
+    "items": [
+     {
+      "base_haler": null,
+      "description": "Accommodation – Chata U Lesa, 01.11.2026 – 06.11.2026 (5 nights)",
+      "extra_kind": "stay",
+      "gross_haler": 100,
+      "kind": "accommodation",
+      "price_invalid": false,
+      "quantity": 1,
+      "unit": "stay",
+      "vat_haler": null,
+      "vat_rate": null
+     }
+    ],
+    "kind": "invoice",
+    "lang": "en",
+    "note": "",
+    "paid_on": null,
+    "paid_via": null,
+    "reservation_id": 41,
+    "seller": {
+     "bank_account": "123-2000000000/0300",
+     "bic": "CEKOCZPP",
+     "dic": "CZ12345679",
+     "email": "host@example.test",
+     "iban": "CZ0603000000000123456789",
+     "ico": "12345679",
+     "name": "Test Provoz s.r.o.",
+     "phone": "+420 700 000 000",
+     "registry": "C 12345 vedená u Městského soudu v Praze",
+     "seat": "Ulice 1, 110 00 Praha"
+    },
+    "stay_from": "2026-11-01",
+    "stay_label": "Chata U Lesa, 01.11.2026 – 06.11.2026 (5 nights)",
+    "stay_to": "2026-11-06",
+    "total_base_haler": null,
+    "total_haler": 100,
+    "total_vat_haler": null,
+    "vat_status": "non_payer"
+   },
+   "entity": {
+    "bank_account": "123-2000000000/0300",
+    "bic": "CEKOCZPP",
+    "contact_email": "host@example.test",
+    "contact_phone": "+420 700 000 000",
+    "dic": "CZ12345679",
+    "iban": "CZ0603000000000123456789",
+    "ico": "12345679",
+    "id": 7,
+    "invoice_due_days": 14,
+    "invoice_next_number": null,
+    "invoice_next_number_year": null,
+    "invoice_prefix": "",
+    "name": "Test Provoz s.r.o.",
+    "registry_entry": "C 12345 vedená u Městského soudu v Praze",
+    "seat": "Ulice 1, 110 00 Praha",
+    "vat_status": "non_payer"
+   },
+   "form": [
+    [
+     "stay_price",
+     "1"
+    ],
+    [
+     "buyer_name",
+     "A"
+    ],
+    [
+     "lang",
+     "en"
+    ]
+   ],
+   "issues": [],
+   "name": "nights_five_en",
+   "stay": {
+    "entity_id": 7,
+    "property_name": "Chata U Lesa",
+    "reservation": {
+     "apartment_id": 5,
+     "date_from": "2026-11-01",
+     "date_to": "2026-11-06",
+     "guest_email": "guest@example.test",
+     "id": 41,
+     "source": "ical",
+     "status": "active"
+    }
+   },
+   "stay_problem": null,
+   "today": "2026-11-13"
+  }
+ ],
+ "stay_problems": [
+  {
+   "key": null,
+   "name": "ok",
+   "reservation": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-13",
+    "source": "ical",
+    "status": "active"
+   },
+   "today": "2026-11-13"
+  },
+  {
+   "key": "invoice.err.demo_stay",
+   "name": "demo",
+   "reservation": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-13",
+    "source": "demo",
+    "status": "active"
+   },
+   "today": "2026-11-13"
+  },
+  {
+   "key": "invoice.err.stay_cancelled",
+   "name": "cancelled",
+   "reservation": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-13",
+    "source": "ical",
+    "status": "cancelled"
+   },
+   "today": "2026-11-13"
+  },
+  {
+   "key": "invoice.err.stay_dates",
+   "name": "zero_nights",
+   "reservation": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-10",
+    "source": "ical",
+    "status": "active"
+   },
+   "today": "2026-11-13"
+  },
+  {
+   "key": "invoice.err.stay_dates",
+   "name": "bad_dates",
+   "reservation": {
+    "date_from": "x",
+    "date_to": "2026-11-10",
+    "source": "ical",
+    "status": "active"
+   },
+   "today": "2026-11-13"
+  },
+  {
+   "key": "invoice.err.stay_too_old",
+   "name": "too_old",
+   "reservation": {
+    "date_from": "2025-09-01",
+    "date_to": "2025-09-03",
+    "source": "ical",
+    "status": "active"
+   },
+   "today": "2026-11-13"
+  },
+  {
+   "key": null,
+   "name": "old_edge_ok",
+   "reservation": {
+    "date_from": "2025-10-04",
+    "date_to": "2025-10-10",
+    "source": "ical",
+    "status": "active"
+   },
+   "today": "2026-11-13"
+  },
+  {
+   "key": "invoice.err.stay_too_far",
+   "name": "too_far",
+   "reservation": {
+    "date_from": "2027-12-01",
+    "date_to": "2027-12-03",
+    "source": "ical",
+    "status": "active"
+   },
+   "today": "2026-11-13"
+  },
+  {
+   "key": null,
+   "name": "far_edge_ok",
+   "reservation": {
+    "date_from": "2027-11-13",
+    "date_to": "2027-11-15",
+    "source": "ical",
+    "status": "active"
+   },
+   "today": "2026-11-13"
+  },
+  {
+   "key": null,
+   "name": "no_source",
+   "reservation": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-13",
+    "source": null,
+    "status": "active"
+   },
+   "today": "2026-11-13"
+  }
+ ]
+}

@@ -1,0 +1,1290 @@
+{
+ "host_state": [
+  {
+   "enabled": 0,
+   "version": null,
+   "live": false,
+   "out": "off"
+  },
+  {
+   "enabled": 0,
+   "version": null,
+   "live": true,
+   "out": "off"
+  },
+  {
+   "enabled": 0,
+   "version": "",
+   "live": false,
+   "out": "off"
+  },
+  {
+   "enabled": 0,
+   "version": "",
+   "live": true,
+   "out": "off"
+  },
+  {
+   "enabled": 0,
+   "version": "2026-01-01",
+   "live": false,
+   "out": "off"
+  },
+  {
+   "enabled": 0,
+   "version": "2026-01-01",
+   "live": true,
+   "out": "off"
+  },
+  {
+   "enabled": 0,
+   "version": "2026-10-25",
+   "live": false,
+   "out": "off"
+  },
+  {
+   "enabled": 0,
+   "version": "2026-10-25",
+   "live": true,
+   "out": "off"
+  },
+  {
+   "enabled": 1,
+   "version": null,
+   "live": false,
+   "out": "terms"
+  },
+  {
+   "enabled": 1,
+   "version": null,
+   "live": true,
+   "out": "terms"
+  },
+  {
+   "enabled": 1,
+   "version": "",
+   "live": false,
+   "out": "terms"
+  },
+  {
+   "enabled": 1,
+   "version": "",
+   "live": true,
+   "out": "terms"
+  },
+  {
+   "enabled": 1,
+   "version": "2026-01-01",
+   "live": false,
+   "out": "terms"
+  },
+  {
+   "enabled": 1,
+   "version": "2026-01-01",
+   "live": true,
+   "out": "terms"
+  },
+  {
+   "enabled": 1,
+   "version": "2026-10-25",
+   "live": false,
+   "out": "waiting"
+  },
+  {
+   "enabled": 1,
+   "version": "2026-10-25",
+   "live": true,
+   "out": "on"
+  }
+ ],
+ "setup_step": [
+  {
+   "enabled": 0,
+   "version": null,
+   "live": false,
+   "checking": 0,
+   "import_started": false,
+   "import_on": false,
+   "out": "switch_on"
+  },
+  {
+   "enabled": 0,
+   "version": null,
+   "live": false,
+   "checking": 0,
+   "import_started": false,
+   "import_on": true,
+   "out": "switch_on"
+  },
+  {
+   "enabled": 0,
+   "version": null,
+   "live": false,
+   "checking": 0,
+   "import_started": true,
+   "import_on": false,
+   "out": "switch_on"
+  },
+  {
+   "enabled": 0,
+   "version": null,
+   "live": false,
+   "checking": 0,
+   "import_started": true,
+   "import_on": true,
+   "out": "switch_on"
+  },
+  {
+   "enabled": 0,
+   "version": null,
+   "live": false,
+   "checking": 2,
+   "import_started": false,
+   "import_on": false,
+   "out": "switch_on"
+  },
+  {
+   "enabled": 0,
+   "version": null,
+   "live": false,
+   "checking": 2,
+   "import_started": false,
+   "import_on": true,
+   "out": "switch_on"
+  },
+  {
+   "enabled": 0,
+   "version": null,
+   "live": false,
+   "checking": 2,
+   "import_started": true,
+   "import_on": false,
+   "out": "switch_on"
+  },
+  {
+   "enabled": 0,
+   "version": null,
+   "live": false,
+   "checking": 2,
+   "import_started": true,
+   "import_on": true,
+   "out": "switch_on"
+  },
+  {
+   "enabled": 0,
+   "version": null,
+   "live": true,
+   "checking": 0,
+   "import_started": false,
+   "import_on": false,
+   "out": "switch_on"
+  },
+  {
+   "enabled": 0,
+   "version": null,
+   "live": true,
+   "checking": 0,
+   "import_started": false,
+   "import_on": true,
+   "out": "switch_on"
+  },
+  {
+   "enabled": 0,
+   "version": null,
+   "live": true,
+   "checking": 0,
+   "import_started": true,
+   "import_on": false,
+   "out": "switch_on"
+  },
+  {
+   "enabled": 0,
+   "version": null,
+   "live": true,
+   "checking": 0,
+   "import_started": true,
+   "import_on": true,
+   "out": "switch_on"
+  },
+  {
+   "enabled": 0,
+   "version": null,
+   "live": true,
+   "checking": 2,
+   "import_started": false,
+   "import_on": false,
+   "out": "switch_on"
+  },
+  {
+   "enabled": 0,
+   "version": null,
+   "live": true,
+   "checking": 2,
+   "import_started": false,
+   "import_on": true,
+   "out": "switch_on"
+  },
+  {
+   "enabled": 0,
+   "version": null,
+   "live": true,
+   "checking": 2,
+   "import_started": true,
+   "import_on": false,
+   "out": "switch_on"
+  },
+  {
+   "enabled": 0,
+   "version": null,
+   "live": true,
+   "checking": 2,
+   "import_started": true,
+   "import_on": true,
+   "out": "switch_on"
+  },
+  {
+   "enabled": 1,
+   "version": "old",
+   "live": false,
+   "checking": 0,
+   "import_started": false,
+   "import_on": false,
+   "out": "switch_on"
+  },
+  {
+   "enabled": 1,
+   "version": "old",
+   "live": false,
+   "checking": 0,
+   "import_started": false,
+   "import_on": true,
+   "out": "switch_on"
+  },
+  {
+   "enabled": 1,
+   "version": "old",
+   "live": false,
+   "checking": 0,
+   "import_started": true,
+   "import_on": false,
+   "out": "switch_on"
+  },
+  {
+   "enabled": 1,
+   "version": "old",
+   "live": false,
+   "checking": 0,
+   "import_started": true,
+   "import_on": true,
+   "out": "switch_on"
+  },
+  {
+   "enabled": 1,
+   "version": "old",
+   "live": false,
+   "checking": 2,
+   "import_started": false,
+   "import_on": false,
+   "out": "switch_on"
+  },
+  {
+   "enabled": 1,
+   "version": "old",
+   "live": false,
+   "checking": 2,
+   "import_started": false,
+   "import_on": true,
+   "out": "switch_on"
+  },
+  {
+   "enabled": 1,
+   "version": "old",
+   "live": false,
+   "checking": 2,
+   "import_started": true,
+   "import_on": false,
+   "out": "switch_on"
+  },
+  {
+   "enabled": 1,
+   "version": "old",
+   "live": false,
+   "checking": 2,
+   "import_started": true,
+   "import_on": true,
+   "out": "switch_on"
+  },
+  {
+   "enabled": 1,
+   "version": "old",
+   "live": true,
+   "checking": 0,
+   "import_started": false,
+   "import_on": false,
+   "out": "switch_on"
+  },
+  {
+   "enabled": 1,
+   "version": "old",
+   "live": true,
+   "checking": 0,
+   "import_started": false,
+   "import_on": true,
+   "out": "switch_on"
+  },
+  {
+   "enabled": 1,
+   "version": "old",
+   "live": true,
+   "checking": 0,
+   "import_started": true,
+   "import_on": false,
+   "out": "switch_on"
+  },
+  {
+   "enabled": 1,
+   "version": "old",
+   "live": true,
+   "checking": 0,
+   "import_started": true,
+   "import_on": true,
+   "out": "switch_on"
+  },
+  {
+   "enabled": 1,
+   "version": "old",
+   "live": true,
+   "checking": 2,
+   "import_started": false,
+   "import_on": false,
+   "out": "switch_on"
+  },
+  {
+   "enabled": 1,
+   "version": "old",
+   "live": true,
+   "checking": 2,
+   "import_started": false,
+   "import_on": true,
+   "out": "switch_on"
+  },
+  {
+   "enabled": 1,
+   "version": "old",
+   "live": true,
+   "checking": 2,
+   "import_started": true,
+   "import_on": false,
+   "out": "switch_on"
+  },
+  {
+   "enabled": 1,
+   "version": "old",
+   "live": true,
+   "checking": 2,
+   "import_started": true,
+   "import_on": true,
+   "out": "switch_on"
+  },
+  {
+   "enabled": 1,
+   "version": "2026-10-25",
+   "live": false,
+   "checking": 0,
+   "import_started": false,
+   "import_on": false,
+   "out": "cards"
+  },
+  {
+   "enabled": 1,
+   "version": "2026-10-25",
+   "live": false,
+   "checking": 0,
+   "import_started": false,
+   "import_on": true,
+   "out": "import"
+  },
+  {
+   "enabled": 1,
+   "version": "2026-10-25",
+   "live": false,
+   "checking": 0,
+   "import_started": true,
+   "import_on": false,
+   "out": "cards"
+  },
+  {
+   "enabled": 1,
+   "version": "2026-10-25",
+   "live": false,
+   "checking": 0,
+   "import_started": true,
+   "import_on": true,
+   "out": "cards"
+  },
+  {
+   "enabled": 1,
+   "version": "2026-10-25",
+   "live": false,
+   "checking": 2,
+   "import_started": false,
+   "import_on": false,
+   "out": "cards"
+  },
+  {
+   "enabled": 1,
+   "version": "2026-10-25",
+   "live": false,
+   "checking": 2,
+   "import_started": false,
+   "import_on": true,
+   "out": "import"
+  },
+  {
+   "enabled": 1,
+   "version": "2026-10-25",
+   "live": false,
+   "checking": 2,
+   "import_started": true,
+   "import_on": false,
+   "out": "cards"
+  },
+  {
+   "enabled": 1,
+   "version": "2026-10-25",
+   "live": false,
+   "checking": 2,
+   "import_started": true,
+   "import_on": true,
+   "out": "cards"
+  },
+  {
+   "enabled": 1,
+   "version": "2026-10-25",
+   "live": true,
+   "checking": 0,
+   "import_started": false,
+   "import_on": false,
+   "out": "try"
+  },
+  {
+   "enabled": 1,
+   "version": "2026-10-25",
+   "live": true,
+   "checking": 0,
+   "import_started": false,
+   "import_on": true,
+   "out": "try"
+  },
+  {
+   "enabled": 1,
+   "version": "2026-10-25",
+   "live": true,
+   "checking": 0,
+   "import_started": true,
+   "import_on": false,
+   "out": "try"
+  },
+  {
+   "enabled": 1,
+   "version": "2026-10-25",
+   "live": true,
+   "checking": 0,
+   "import_started": true,
+   "import_on": true,
+   "out": "try"
+  },
+  {
+   "enabled": 1,
+   "version": "2026-10-25",
+   "live": true,
+   "checking": 2,
+   "import_started": false,
+   "import_on": false,
+   "out": "cards"
+  },
+  {
+   "enabled": 1,
+   "version": "2026-10-25",
+   "live": true,
+   "checking": 2,
+   "import_started": false,
+   "import_on": true,
+   "out": "cards"
+  },
+  {
+   "enabled": 1,
+   "version": "2026-10-25",
+   "live": true,
+   "checking": 2,
+   "import_started": true,
+   "import_on": false,
+   "out": "cards"
+  },
+  {
+   "enabled": 1,
+   "version": "2026-10-25",
+   "live": true,
+   "checking": 2,
+   "import_started": true,
+   "import_on": true,
+   "out": "cards"
+  }
+ ],
+ "progress": [
+  {
+   "name": "empty",
+   "rows": [],
+   "order": [],
+   "progress": {
+    "done": 0,
+    "total": 0,
+    "answered": 0,
+    "cards": 0,
+    "check": 0,
+    "must_have_done": 0,
+    "must_have_total": 5,
+    "live": false
+   },
+   "open_cards": []
+  },
+  {
+   "name": "fresh",
+   "rows": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "checkin",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "2026-01-01",
+     "updated_at": "2026-01-01",
+     "photos": 0
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "wifi",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "2026-01-01",
+     "updated_at": "2026-01-01",
+     "photos": 0
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "2026-01-01",
+     "updated_at": "2026-01-01",
+     "photos": 0
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "2026-01-01",
+     "updated_at": "2026-01-01",
+     "photos": 0
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "emergency",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "2026-01-01",
+     "updated_at": "2026-01-01",
+     "photos": 0
+    },
+    {
+     "id": 6,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "2026-01-01",
+     "updated_at": "2026-01-01",
+     "photos": 0
+    }
+   ],
+   "order": [
+    1,
+    2,
+    3,
+    6,
+    4,
+    5
+   ],
+   "progress": {
+    "done": 0,
+    "total": 6,
+    "answered": 0,
+    "cards": 6,
+    "check": 0,
+    "must_have_done": 0,
+    "must_have_total": 5,
+    "live": false
+   },
+   "open_cards": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ]
+  },
+  {
+   "name": "drafts",
+   "rows": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "checkin",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "check",
+     "source": "booking",
+     "sort_order": 0,
+     "created_at": "2026-01-01",
+     "updated_at": "2026-01-01",
+     "photos": 0
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "wifi",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "check",
+     "source": "airbnb",
+     "sort_order": 0,
+     "created_at": "2026-01-01",
+     "updated_at": "2026-01-01",
+     "photos": 0
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "2026-01-01",
+     "updated_at": "2026-01-01",
+     "photos": 0
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "2026-01-01",
+     "updated_at": "2026-01-01",
+     "photos": 0
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "emergency",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "skipped",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "2026-01-01",
+     "updated_at": "2026-01-01",
+     "photos": 0
+    }
+   ],
+   "order": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "progress": {
+    "done": 1,
+    "total": 4,
+    "answered": 2,
+    "cards": 5,
+    "check": 2,
+    "must_have_done": 2,
+    "must_have_total": 5,
+    "live": false
+   },
+   "open_cards": [
+    1,
+    2,
+    3
+   ]
+  },
+  {
+   "name": "live",
+   "rows": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "checkin",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "2026-01-01",
+     "updated_at": "2026-01-01",
+     "photos": 0
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "wifi",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "2026-01-01",
+     "updated_at": "2026-01-01",
+     "photos": 0
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "skipped",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "2026-01-01",
+     "updated_at": "2026-01-01",
+     "photos": 0
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "2026-01-01",
+     "updated_at": "2026-01-01",
+     "photos": 0
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "emergency",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "2026-01-01",
+     "updated_at": "2026-01-01",
+     "photos": 0
+    },
+    {
+     "id": 9,
+     "apartment_id": 1,
+     "topic": "area",
+     "kind": "custom",
+     "title": "Pool",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 3,
+     "created_at": "2026-01-01",
+     "updated_at": "2026-01-01",
+     "photos": 0
+    }
+   ],
+   "order": [
+    1,
+    2,
+    3,
+    4,
+    9,
+    5
+   ],
+   "progress": {
+    "done": 5,
+    "total": 5,
+    "answered": 6,
+    "cards": 6,
+    "check": 0,
+    "must_have_done": 5,
+    "must_have_total": 5,
+    "live": true
+   },
+   "open_cards": []
+  },
+  {
+   "name": "live with checks",
+   "rows": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "checkin",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "2026-01-01",
+     "updated_at": "2026-01-01",
+     "photos": 0
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "wifi",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "2026-01-01",
+     "updated_at": "2026-01-01",
+     "photos": 0
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "2026-01-01",
+     "updated_at": "2026-01-01",
+     "photos": 0
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "2026-01-01",
+     "updated_at": "2026-01-01",
+     "photos": 0
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "emergency",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "2026-01-01",
+     "updated_at": "2026-01-01",
+     "photos": 0
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "parking",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "check",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "2026-01-01",
+     "updated_at": "2026-01-01",
+     "photos": 0
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "rules",
+     "kind": "custom",
+     "title": "Bikes",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "2026-01-01",
+     "updated_at": "2026-01-01",
+     "photos": 0
+    },
+    {
+     "id": 10,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "garage",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "2026-01-01",
+     "updated_at": "2026-01-01",
+     "photos": 0
+    },
+    {
+     "id": 11,
+     "apartment_id": 1,
+     "topic": "trash",
+     "kind": "custom",
+     "title": "Zebra",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "check",
+     "source": "host",
+     "sort_order": 2,
+     "created_at": "2026-01-01",
+     "updated_at": "2026-01-01",
+     "photos": 0
+    },
+    {
+     "id": 12,
+     "apartment_id": 1,
+     "topic": "bogus-topic",
+     "kind": "custom",
+     "title": "Skipped",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "skipped",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "2026-01-01",
+     "updated_at": "2026-01-01",
+     "photos": 0
+    }
+   ],
+   "order": [
+    1,
+    7,
+    10,
+    2,
+    3,
+    8,
+    11,
+    4,
+    5,
+    12
+   ],
+   "progress": {
+    "done": 5,
+    "total": 9,
+    "answered": 6,
+    "cards": 10,
+    "check": 2,
+    "must_have_done": 5,
+    "must_have_total": 5,
+    "live": true
+   },
+   "open_cards": [
+    7,
+    11
+   ]
+  },
+  {
+   "name": "order",
+   "rows": [
+    {
+     "id": 30,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "emergency",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "2026-01-01",
+     "updated_at": "2026-01-01",
+     "photos": 0
+    },
+    {
+     "id": 20,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "custom",
+     "title": "B",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 1,
+     "created_at": "2026-01-01",
+     "updated_at": "2026-01-01",
+     "photos": 0
+    },
+    {
+     "id": 21,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "custom",
+     "title": "A",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 1,
+     "created_at": "2026-01-01",
+     "updated_at": "2026-01-01",
+     "photos": 0
+    },
+    {
+     "id": 22,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "checkin",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "2026-01-01",
+     "updated_at": "2026-01-01",
+     "photos": 0
+    },
+    {
+     "id": 23,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "keys",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "2026-01-01",
+     "updated_at": "2026-01-01",
+     "photos": 0
+    }
+   ],
+   "order": [
+    22,
+    23,
+    20,
+    21,
+    30
+   ],
+   "progress": {
+    "done": 5,
+    "total": 5,
+    "answered": 5,
+    "cards": 5,
+    "check": 0,
+    "must_have_done": 2,
+    "must_have_total": 5,
+    "live": false
+   },
+   "open_cards": []
+  }
+ ],
+ "host_first_name": null,
+ "constants": {
+  "terms_version": "2026-10-25",
+  "try_max": 5,
+  "try_window": 86400
+ },
+ "i18n": {
+  "en": {
+   "leon_setup.title": "Set up Leon for %(name)s",
+   "leon_setup.try.cap": "The test chat usage limit has been reached. Please try again later.",
+   "leon_page.not_live": "Leon starts answering once your guest guide is live.",
+   "leon_setup.try.would_ask": "In a real chat Leon now passes this to you, and you answer it in Guest questions."
+  },
+  "cs": {
+   "leon_setup.title": "Nastavení Leona pro %(name)s",
+   "leon_setup.try.cap": "Byl dosažen limit využití zkušebního chatu. Zkuste to prosím později.",
+   "leon_page.not_live": "Leon začne odpovídat, jakmile bude váš průvodce pro hosty zveřejněný.",
+   "leon_setup.try.would_ask": "Ve skutečném chatu vám to teď Leon předá a vy odpovíte v Otázkách hostů."
+  },
+  "vi": {
+   "leon_setup.title": "Thiết lập Leon cho %(name)s",
+   "leon_setup.try.cap": "Đó là tin nhắn thử cuối cùng hôm nay. Bạn có thể thử lại vào ngày mai.",
+   "leon_page.not_live": "Leon bắt đầu trả lời khi hướng dẫn cho khách của bạn được công khai.",
+   "leon_setup.try.would_ask": "Trong cuộc trò chuyện thật, Leon sẽ chuyển câu này cho bạn và bạn trả lời trong mục Câu hỏi của khách."
+  }
+ },
+ "i18n_param": "Set up Leon for Flat A"
+}

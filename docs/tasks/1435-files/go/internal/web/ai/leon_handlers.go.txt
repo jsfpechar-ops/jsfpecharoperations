@@ -1,0 +1,301 @@
+package ai
+
+// leon_handlers.go: the Leon setup wizard pages, the port of
+// App/app/routes/leon_setup.py lines 19-114: GET /apartments/{id}/leon/setup
+// (the first step still to do), GET /apartments/{id}/leon/setup/{step} and
+// POST /apartments/{id}/leon/setup (skip the import, finish). The test
+// message route (POST .../setup/try) is brief 1436. Nothing here calls the
+// model and nothing routes here until the owner lists the paths in
+// UBYHOST_GO_PATHS.
+
+import (
+	"embed"
+	"io"
+	"net/http"
+	"strconv"
+
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb/layout"
+)
+
+//go:embed leon_i18n.json
+var leonI18nJSON []byte
+
+//go:embed leon_templates/*.tmpl
+var leonTemplateFS embed.FS
+
+// leonCatalog holds the host strings of the wizard (host_i18n); the Havel
+// catalog is not reused so each file lists its own keys.
+var leonStrings = hostweb.Load(leonI18nJSON)
+
+var leonTemplates = layout.MustParse(leonStrings, leonTemplateFS, "leon_templates/*.tmpl")
+
+// LeonRoutes lists the setup wizard routes (the same type and deps as Havel's).
+func LeonRoutes(d HavelDeps) []HavelRoute {
+	any405 := func(allow string) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) { havelMethodNotAllowed(w, allow) }
+	}
+	routes := []HavelRoute{
+		{"GET /apartments/{id}/leon/setup", "/apartments/{id}/leon/setup", d.leonEntry},
+		{"POST /apartments/{id}/leon/setup", "/apartments/{id}/leon/setup", d.leonSave},
+		{"/apartments/{id}/leon/setup", "/apartments/{id}/leon/setup", any405("GET, POST")},
+		{"HEAD /apartments/{id}/leon/setup", "/apartments/{id}/leon/setup", any405("GET, POST")},
+		{"GET /apartments/{id}/leon/setup/{step}", "/apartments/{id}/leon/setup/{step}", d.leonStepPage},
+		{"/apartments/{id}/leon/setup/{step}", "/apartments/{id}/leon/setup/{step}", any405("GET")},
+		{"HEAD /apartments/{id}/leon/setup/{step}", "/apartments/{id}/leon/setup/{step}", any405("GET")},
+	}
+	return append(routes, d.leonExtraRoutes()...)
+}
+
+// leonNotFound is FastAPI's HTTPException(404).
+func leonNotFound(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusNotFound)
+	_, _ = io.WriteString(w, `{"detail":"Not Found"}`)
+}
+
+// leonPathID is FastAPI's int path parameter: an invalid value is a 422 (the
+// answer comes before the login, after the CSRF dependency).
+func leonPathID(w http.ResponseWriter, r *http.Request) (int64, bool) {
+	raw := r.PathValue("id")
+	id, err := strconv.ParseInt(raw, 10, 64)
+	if err != nil || raw == "" || raw[0] == '+' {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		_, _ = io.WriteString(w, `{"detail":[{"type":"int_parsing","loc":["path","apartment_id"],"msg":"Input should be a valid integer, unable to parse string as an integer","input":`+havelPyString(raw)+`}]}`)
+		return 0, false
+	}
+	return id, true
+}
+
+// leonCall is one signed-in wizard request for one property.
+type leonCall struct {
+	*havelCall
+	ls  LeonStore
+	id  int64
+	apt *LeonApartment
+}
+
+// leonEnter is the dependencies in Python's order (CSRF, the path id, login)
+// and then _offered: the host's own property (404 otherwise) and the Leon
+// switches (404 when Leon is not offered). It returns nil when it has written
+// the response.
+func (d HavelDeps) leonEnter(w http.ResponseWriter, r *http.Request) *leonCall {
+	at := d.Now()
+	if !d.gate(w, r, at) {
+		return nil
+	}
+	id, ok := leonPathID(w, r)
+	if !ok {
+		return nil
+	}
+	c := d.login(w, r, at)
+	if c == nil {
+		return nil
+	}
+	lc := &leonCall{havelCall: c, ls: LeonStore{HavelStore: c.store}, id: id}
+	apt, err := lc.ls.Apartment(r.Context(), c.h.Workspace.ID, id)
+	if err != nil {
+		havelServerError(w, err)
+		return nil
+	}
+	if apt == nil {
+		leonNotFound(w)
+		return nil
+	}
+	offered, err := lc.ls.Offered(r.Context(), *apt)
+	if err != nil {
+		havelServerError(w, err)
+		return nil
+	}
+	if !offered {
+		leonNotFound(w)
+		return nil
+	}
+	lc.apt = apt
+	return lc
+}
+
+func (c *leonCall) back(path string) {
+	hostweb.Back(c.w, c.r, path, hostweb.Flash{}, hostweb.Flash{})
+}
+
+func (c *leonCall) base() string { return "/apartments/" + strconv.FormatInt(c.id, 10) + "/leon/setup" }
+
+// --- GET /apartments/{id}/leon/setup (setup_entry, lines 47-60) ------------------------------
+
+func (d HavelDeps) leonEntry(w http.ResponseWriter, r *http.Request) {
+	c := d.leonEnter(w, r)
+	if c == nil {
+		return
+	}
+	f, err := c.ls.Facts(r.Context(), c.id)
+	if err != nil {
+		havelServerError(w, err)
+		return
+	}
+	c.back(c.base() + "/" + LeonSetupStep(*c.apt, f.Live, f.Checking, f.ImportStarted, f.ImportOn))
+}
+
+// --- GET /apartments/{id}/leon/setup/{step} (setup_step_page and _step_page, lines 62-99) -----
+
+func (d HavelDeps) leonStepPage(w http.ResponseWriter, r *http.Request) {
+	c := d.leonEnter(w, r)
+	if c == nil {
+		return
+	}
+	c.stepPage(r.PathValue("step"), "", nil)
+}
+
+// LeonAnswer is the reply the try step shows (brief 1436 fills it).
+type LeonAnswer struct {
+	Text     string
+	WouldAsk bool
+}
+
+type leonStepItem struct {
+	Key, State, Label, Short string
+	N                        int
+}
+
+// LeonView is the context of the wizard templates.
+type LeonView struct {
+	ApartmentID   int64
+	ApartmentName string
+	Step          string
+	Steps         []leonStepItem
+	Number        int // 0 on the finish page
+	Total         int
+	PrevStep      string
+	State         string
+	NextID        int64
+	Icon, Tone    string
+	TryBlocked    bool
+	Asked         string
+	Answer        *LeonAnswer
+	CountLabel    string
+	ImportColumns [][]string
+	CardColumns   [][]string
+	CardTitles    map[int64]string
+	LeonFacts
+}
+
+var leonStepIcons = map[string][2]string{"switch_on": {"message-circle-question", "blue"}, "import": {"download", "teal"}, "cards": {"book-open", "purple"}, "try": {"send", "blue"}}
+
+// stepPage is _step_page: login and _offered ran in leonEnter.
+func (c *leonCall) stepPage(step, asked string, answer *LeonAnswer) {
+	ctx := c.r.Context()
+	steps := LeonSetupSteps()
+	index := -1
+	for i, s := range steps {
+		if s == step {
+			index = i
+		}
+	}
+	if index < 0 && step != "done" {
+		leonNotFound(c.w)
+		return
+	}
+	f, err := c.ls.Facts(ctx, c.id)
+	if err != nil {
+		havelServerError(c.w, err)
+		return
+	}
+	state := LeonHostState(*c.apt, f.Live)
+	if (state == "off" || state == "terms") && step != "switch_on" {
+		c.back(c.base() + "/switch_on")
+		return
+	}
+	done := map[string]bool{}
+	if state == "on" || state == "waiting" {
+		done["switch_on"] = true
+	}
+	if f.ImportStarted || !f.ImportOn {
+		done["import"] = true
+	}
+	if f.Live && f.Checking == 0 {
+		done["cards"] = true
+	}
+	v := LeonView{ApartmentID: c.id, ApartmentName: c.apt.Name, Step: step, Total: len(steps), State: state, LeonFacts: f, Asked: asked, Answer: answer}
+	if step == "done" {
+		v.PrevStep = "try"
+	} else {
+		v.Number = index + 1
+		if index > 0 {
+			v.PrevStep = steps[index-1]
+		}
+		v.Icon, v.Tone = leonStepIcons[step][0], leonStepIcons[step][1]
+	}
+	for i, s := range steps {
+		st := "todo"
+		switch {
+		case step == "done":
+			st = "done"
+		case s == step:
+			st = "current"
+		case done[s]:
+			st = "done"
+		}
+		v.Steps = append(v.Steps, leonStepItem{Key: s, State: st, N: i + 1, Label: c.leonT("leon_setup.step." + s), Short: c.leonT("leon_setup.short." + s)})
+	}
+	if len(f.OpenCards) > 0 {
+		v.NextID = f.OpenCards[0].ID
+	}
+	if v.Number > 0 {
+		v.CountLabel = c.leonT("leon_setup.count", "n", v.Number, "total", v.Total, "step", c.leonT("leon_setup.step."+step))
+	} else {
+		v.CountLabel = c.leonT("leon_setup.done.title")
+	}
+	v.ImportColumns = [][]string{{c.leonT("guest_guide.import.col.source"), ""}, {c.leonT("guest_guide.import.col.state"), "r"}}
+	v.CardColumns = [][]string{{c.leonT("guest_guide.col.card"), ""}, {c.leonT("guest_guide.col.state"), "r"}}
+	v.CardTitles = map[int64]string{}
+	for _, card := range f.OpenCards {
+		if card.Kind == "custom" {
+			v.CardTitles[card.ID] = card.Title
+		} else {
+			v.CardTitles[card.ID] = c.leonT("guest_guide.kind." + card.Kind + ".title")
+		}
+	}
+	if step == "try" {
+		left, err := c.ls.TryLeft(ctx, c.id, c.at)
+		if err != nil {
+			havelServerError(c.w, err)
+			return
+		}
+		v.TryBlocked = left <= 0
+	}
+	c.w.Header().Set("Cache-Control", "no-store")
+	page := layout.Page{Title: c.leonT("leon_setup.title", "name", c.apt.Name), Nav: "apartments", BodyKind: "form", V2: true}
+	if err := layout.Render(c.w, c.r, c.env2(), c.h, page, leonTemplates, "leon_setup."+step, v); err != nil {
+		havelServerError(c.w, err)
+	}
+}
+
+// leonT is t() with name, value pairs.
+func (c *leonCall) leonT(key string, pairs ...any) string {
+	var p map[string]any
+	if len(pairs) > 0 {
+		p = map[string]any{}
+		for i := 0; i+1 < len(pairs); i += 2 {
+			p[pairs[i].(string)] = pairs[i+1]
+		}
+	}
+	return leonStrings.T(c.lang, key, p)
+}
+
+// --- POST /apartments/{id}/leon/setup (setup_save, lines 101-114) -----------------------------
+
+func (d HavelDeps) leonSave(w http.ResponseWriter, r *http.Request) {
+	c := d.leonEnter(w, r)
+	if c == nil {
+		return
+	}
+	switch c.form("action") {
+	case "skip_import":
+		c.back(c.base() + "/cards")
+	case "finish":
+		c.back(c.base() + "/done")
+	default:
+		c.back(c.base())
+	}
+}

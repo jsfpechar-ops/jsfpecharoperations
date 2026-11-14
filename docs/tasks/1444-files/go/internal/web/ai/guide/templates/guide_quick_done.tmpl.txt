@@ -1,0 +1,29 @@
+{{- /* Go twin of App/app/templates/guest_guide_quick_done.html (brief 1444). */ -}}
+{{define "guide_quick_done.title"}}{{end}}
+{{define "guide_quick_done.back_label"}}{{t "guest_guide.title"}}{{end}}
+{{define "guide_quick_done"}}
+<div class="guide-page">
+<div class="head guide-hd"><div><a class="guide-back" href="{{.Base}}">{{t "guest_guide.title"}}</a><h1 class="big">{{t "guest_guide.quick.done_title"}}</h1><p class="sub">{{t "guest_guide.progress" "answered" .Progress.Answered "total" .Progress.Cards}}</p></div><div class="guide-acts"><a class="btn line" href="{{.Base}}/quick/{{.FirstStep}}">{{t "guest_guide.quick.edit"}}</a>{{if and .NextID (ne .GuideState "none")}}<a class="btn" href="{{.Base}}/{{.NextID}}">{{t "guest_guide.quick.write"}}</a>{{else}}<a class="btn" href="{{.Base}}">{{t "guest_guide.quick.back"}}</a>{{end}}</div></div>
+{{ui_banner (or (and (or (eq .GuideState "none") (eq .GuideState "saved")) "attention") "neutral") (t (printf "guest_guide.quick.done_%s" .GuideState))}}
+{{if .Answered}}
+{{guide_section_open "quick-answers" (t "guest_guide.quick.answers_title") ""}}
+{{ui_facts .Answered}}
+{{guide_section_close}}
+{{end}}
+{{guide_section_open "quick-missing" (t "guest_guide.quick.missing_title") ""}}
+{{if .OpenCards}}
+{{help_tip "guide-quick-missing-help" (t "guest_guide.quick.missing_lede")}}
+{{ui_table_begin (guide_pairs (t "guest_guide.col.card") "" (t "guest_guide.col.state") "r") (t "guest_guide.quick.missing_title")}}
+{{range .OpenCards}}
+<tr class="ui-row clickable-row" data-href="{{$.Base}}/{{.ID}}" tabindex="0" role="link" aria-label="{{template "guide.card_title" .}}">
+  <td class="ui-cell-first" data-card="primary"><a href="{{$.Base}}/{{.ID}}">{{template "guide.card_title" .}}</a></td>
+  <td class="ui-cell-r" data-card="badge">{{if eq .State "check"}}{{ui_badge "attention" (t "guest_guide.state.check")}}{{else}}{{ui_badge "action" (t "guest_guide.state.missing")}}{{end}}</td>
+</tr>
+{{end}}
+{{ui_table_end}}
+{{else}}
+<p class="ui-sub">{{t "guest_guide.quick.all_done"}}</p>
+{{end}}
+{{guide_section_close}}
+</div>
+{{end}}

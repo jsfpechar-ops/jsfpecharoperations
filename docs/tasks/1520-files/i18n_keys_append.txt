@@ -1,0 +1,18 @@
+# 1520: alert dismiss, smart-locks redirect, phone menu.
+flash.error.resign_card_locked
+flash.error.unknown_card_locked
+flash.error.smart_locks_unavailable
+menu.tile.guests
+menu.tile.when
+menu.tile.police
+menu.add_stay_sub
+menu.help
+stays.add_stay
+nav.menu
+nav.account
+nav.cleaning
+nav.stay_fees
+nav.payments
+nav.settings
+nav.admin
+nav.logout
