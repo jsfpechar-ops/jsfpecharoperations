@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-11-13.
+Updated: 2026-11-14.
 
 ## Production
 - Magic-link 1–2 done; access log off. `/healthz` 1.1.0. Main 11-13: `84e966f` (#962).
@@ -21,7 +21,7 @@ Updated: 2026-11-13.
 ## Next
 - CI 1413-1415, README 1416.
 - Go move ([remaining](../plans/go-full-move-remaining.md), [SQLite](../plans/sqlite-retirement.md)): #1010 has 1263, 1470-1473, 1450-1452, 1440-1446, 1420-1427, 1430-1435, switched off. Left: 1448, 1436, 1437, review, green CI. Next: 1501, 152x-162x. Server 11-13: W1-W3 on Go, retention dry-run.
-- 1291: host CC on guest completion (#988).
+- 1291 host CC is on main; 1630 stops the extra `guest_details_host` mail (only completion + CC).
 - Door codes 0037–0038 on main → owner staging steps.
 - TTLock 0008–0016: [plan](../plans/ttlock-door-codes.md) §11; live after §12 + lawyer (K-L).
 - File-retention: decided; lawyer Terms/DPA line.

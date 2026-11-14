@@ -62,5 +62,6 @@ Append-only.
 - 2026-11-13 [infra] CI→GHCR; server pulls | owner | [1210](../tasks/1210-ci-built-go-image.md)
 - 2026-11-13 [security] #966: 1200-1205; Go env in compose; K-S12 ok; 1206-1207 after merge (owner)
 - 2026-11-13 [mail] Completion CC to host again; PII stays in guest_details_host | owner | 1291
+- 2026-11-14 [mail] Only completion (guest TO, host CC) after stay complete; stop guest_details_host (supersedes 1291 keep-both) | owner | 1630
 - 2026-11-13 [workflow] No GitHub branch protection or required checks (owner): merges gated by scripts/merge-pr-on-green.sh, production by the green-CI deploy gate; CI speed-ups in [1413](../tasks/1413-ci-skip-heavy-jobs-for-brief-only-changes.md), [1414](../tasks/1414-ci-postgres-full-four-shards.md), [1415](../tasks/1415-ci-balance-shards-by-duration.md), 1416 (README)
 - 2026-11-13 [workflow/db] [Go first](go-first.md); [SQLite plan](../plans/sqlite-retirement.md) 1-6 approved | owner
