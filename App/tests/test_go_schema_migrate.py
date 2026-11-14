@@ -305,18 +305,10 @@ FINGERPRINT_SQL = {
     ),
     "index": "SELECT tablename, indexname, indexdef FROM pg_indexes WHERE schemaname = 'public'",
 }
-# Known drift, frozen: these shipped twins (goose 4, 11, 13) write REFERENCES
-# without the DEFERRABLE INITIALLY IMMEDIATE that Python's translation adds.
-# Production ran the SQLite files, so it has DEFERRABLE. Do not add to this set:
-# a new twin writes DEFERRABLE INITIALLY IMMEDIATE on every REFERENCES.
-KNOWN_NOT_DEFERRABLE = {
-    ("guest_form_draft", "guest_form_draft_reservation_id_fkey"),
-    ("site_booking", "site_booking_apartment_id_fkey"),
-    ("site_booking", "site_booking_invoice_id_fkey"),
-    ("site_booking", "site_booking_owner_user_id_fkey"),
-    ("site_booking", "site_booking_reservation_id_fkey"),
-    ("stay_fee_rate", "stay_fee_rate_apartment_id_fkey"),
-}
+# Goose 00017 (brief 1471) made the 6 foreign keys of goose 4, 11 and 13
+# DEFERRABLE INITIALLY IMMEDIATE, so no known drift is left. Keep this set
+# empty: a new twin writes DEFERRABLE INITIALLY IMMEDIATE on every REFERENCES.
+KNOWN_NOT_DEFERRABLE: set = set()
 
 
 def _fingerprint(url: str) -> dict:
