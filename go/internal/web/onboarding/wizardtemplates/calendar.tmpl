@@ -1,0 +1,39 @@
+{{/* Port of App/app/templates/setup_wizard/calendar.html. Brief 1599. feed_draft and feed_errors come only
+     from the Python POST /apartments/{id}/feeds re-render, so here the form is always the empty one. */}}
+{{define "wizard_help"}}{{help_tip "wiz-why-calendar" (t "why.calendar")}}{{end}}
+{{define "wizard_content"}}
+<form method="post" action="/apartments/{{.Apt.ID}}/feeds" class="setup-wizard-form" id="calendar-add">
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <input type="hidden" name="return_to" value="{{.NextReturnTo}}">
+  <input type="hidden" name="setup_step" value="calendar">
+  <div class="field">
+    <label for="label">{{t "calendar.platform_label"}}<span class="req-star" aria-hidden="true">*</span></label>
+    <select id="label" name="label" required>
+      <option value="" disabled selected>{{t "calendar.choose_platform"}}</option>
+      {{range .Platforms}}
+      <option value="{{.Key}}">{{if .Name}}{{.Name}}{{else}}{{t "calendar.platform.other"}}{{end}}</option>
+      {{end}}
+    </select>
+  </div>
+  <div class="field calendar-other-platform">
+    <label for="label_other">{{t "calendar.other_label"}}</label>
+    <input type="text" id="label_other" name="label_other" maxlength="80" value="">
+  </div>
+  <div class="field">
+    {{field_label "url" (t "apartment.form.calendars.url_label") (t "apartment.form.calendars.url_hint") false "/guide#stays" true}}
+    <input type="url" id="url" name="url" required value="" placeholder="{{t "apartment.form.calendars.url_ph"}}">
+  </div>
+  <div class="field">
+    <label for="own_name">{{t "apartment.form.calendars.own_name_label"}} <span class="opt">{{t "common.optional"}}</span></label>
+    <input type="text" id="own_name" name="own_name" maxlength="100" value="">
+  </div>
+</form>
+{{end}}
+{{define "wizard_actions"}}
+<form method="post" action="/apartments/{{.Apt.ID}}/setup" class="inline setup-wizard-skip">
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <input type="hidden" name="step" value="calendar">
+  <button class="ui-btn ui-btn-secondary" type="submit" name="action" value="skip" formnovalidate>{{t "setup_guide.calendar.skip"}}</button>
+</form>
+<button class="ui-btn ui-btn-primary" type="submit" form="calendar-add">{{t "wizard.calendar.add"}}</button>
+{{end}}
