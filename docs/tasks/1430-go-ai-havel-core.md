@@ -1,8 +1,10 @@
 # 1430: Go port of Havel's core: prompt, redaction, signed history, validation and ask(), parity-checked against Python
 
 Status: todo
-Depends on: none | Base commit: c240f4445 (main when this brief was written) | Branch: task/1430-go-ai-havel-core
-Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B (privacy-relevant outbound request: Havel's model calls)
+Depends on: none | Base commit: the current head of the working branch | Branch: the current branch (one big PR)
+Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B (privacy-relevant outbound request: the assistant's model calls)
+
+**One big PR mode.** Work on the current branch. After each step that changes a file, commit it as `1430 step k` (k is the step number). Never create a branch, never push, never open a PR. Acceptance checks below use `git log --oneline --grep='^1430 step'` and `git show --stat`, not a fixed base commit.
 
 ## 1. Objective
 
@@ -46,7 +48,7 @@ No other file may change.
 
 ## 4. Steps
 
-0. Checks (repo root): `git branch --show-current` prints `task/1430-go-ai-havel-core`; `ls go/internal/web/ai 2>&1 | tail -5` shows no file named `havel*` (the directory may not exist, or may hold the guide editor's `guide*.go` files); `grep -cF 'def validate(data: Dict[str, Any], host: Host, message: str, history: List[Dict[str, str]],' App/app/havel.py` prints `1`; `grep -cF 'def ask(host: Host, history: List[Dict[str, str]], message: str, today: Optional[date] = None) -> Reply:' App/app/havel.py` prints `1`; `grep -cF 'def answer(lang: str, topic_id: str, q_id: str)' App/app/havel_topics.py` prints `1`; `find docs/tasks/1430-files -type f | wc -l` prints `12`. Anything else: STOP (§8).
+0. Checks (repo root): `ls go/internal/web/ai 2>&1 | tail -5` shows no file named `havel*` (the directory may not exist, or may hold the guide editor's `guide*.go` files); `grep -cF 'def validate(data: Dict[str, Any], host: Host, message: str, history: List[Dict[str, str]],' App/app/havel.py` prints `1`; `grep -cF 'def ask(host: Host, history: List[Dict[str, str]], message: str, today: Optional[date] = None) -> Reply:' App/app/havel.py` prints `1`; `grep -cF 'def answer(lang: str, topic_id: str, q_id: str)' App/app/havel_topics.py` prints `1`; `find docs/tasks/1430-files -type f | wc -l` prints `12`. Anything else: STOP (§8).
 
 1. Copy the files (one call, repo root). Run exactly:
 
@@ -84,7 +86,7 @@ No other file may change.
 
    Commit "1430 step 1".
 
-2. Golden freshness (from `App/`, no database needed): `.venv/bin/python scripts/havel_golden.py --check 2>&1 | tail -5; echo rc=$?` prints `rc=0` and no `stale:` line. Then, from the repo root, `git status --short | tail -5` prints nothing. A `stale:` line or a changed file: STOP (Python moved; never edit a sidecar, the Python or the Go to match).
+2. Golden freshness (from `App/`, no database needed): `.venv/bin/python scripts/havel_golden.py --check 2>&1 | tail -5; echo rc=$?` prints `rc=0` and no `stale:` line. Then, from the repo root, `git status --short | grep -E 'havel|leon' | tail -5` prints nothing. A `stale:` line or a changed file: STOP (Python moved; never edit a sidecar, the Python or the Go to match).
 
 3. Go (from `go/`): `test -z "$(gofmt -l ./internal/web/ai)" && go build ./... 2>&1 | tail -30 && go vet ./internal/web/ai/ 2>&1 | tail -30 && go test ./internal/web/ai/ -count=1 -v 2>&1 | grep -E '^(--- |ok|FAIL)' | tail -30`. Expected: no output from gofmt, build or vet, then `--- PASS:` for TestHavelRedactMatchesPython, TestHavelLocalReplyMatchesPython, TestHavelHistoryMatchesPython, TestHavelBlocksMatchPython, TestHavelSchemaMatchesPython, TestHavelMessagesMatchPython, TestHavelValidateMatchesPython, TestHavelAskMatchesPython, TestHavelAskPassesDatabaseErrorsOn, TestHavelTopicsMatchPython, TestHavelSystemBlocksAreConstantPerLanguage and one `ok`. No PostgreSQL is needed. A FAIL: read the last 30 lines, fix nothing in the sidecars, STOP and paste them. Commit "1430 step 3".
 
@@ -101,11 +103,11 @@ Step 2 (golden), step 3 (Go) and step 4 (pytest) above are the commands. From th
 ## 7. Acceptance
 
 - [ ] The 12 sha256 values match §4 step 1.
-- [ ] `havel_golden.py --check` prints no `stale:` line (exit 0); `git status --short` is empty after step 1's commit.
+- [ ] `havel_golden.py --check` prints no `stale:` line (exit 0); `git status --short | grep -E 'havel|leon'` is empty after step 1's commit.
 - [ ] gofmt, `go build ./...` and `go vet ./internal/web/ai/` print nothing; the 11 tests named in step 3 PASS, `ok` for the package.
 - [ ] `pytest tests/test_go_ai_havel.py` passes with 0 skipped.
-- [ ] `git diff --stat main..HEAD | tail -20` lists only §3 paths.
-- [ ] Commits "1430 step 1", "1430 step 3", "1430 step 4"; nothing pushed.
+- [ ] `git show --stat --format= $(git log --format=%h --grep='^1430 step') | grep '|' | tail -40` lists only §3 paths.
+- [ ] Commits "1430 step 1", "1430 step 3", "1430 step 4", nothing pushed.
 
 ## 8. Stop and ask
 

@@ -1,8 +1,10 @@
 # 1434: Register the Havel routes in the Go web service (dormant until UBYHOST_GO_PATHS names them)
 
 Status: todo
-Depends on: 1433 | Base commit: c240f4445 (main when this brief was written) | Branch: task/1434-go-ai-havel-register
-Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B (privacy-relevant outbound request: Havel's model calls)
+Depends on: 1433 | Base commit: the current head of the working branch | Branch: the current branch (one big PR)
+Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B (privacy-relevant outbound request: the assistant's model calls)
+
+**One big PR mode.** Work on the current branch. After each step that changes a file, commit it as `1434 step k` (k is the step number). Never create a branch, never push, never open a PR. Acceptance checks below use `git log --oneline --grep='^1434 step'` and `git show --stat`, not a fixed base commit.
 
 ## 1. Objective
 
@@ -32,7 +34,7 @@ No other file may change.
 
 ## 4. Steps
 
-0. Checks (repo root): `git branch --show-current` prints `task/1434-go-ai-havel-register`; `git log --oneline -60 | grep -c '1433 step 1'` prints at least `1`; `ls go/internal/web/ai/havel_handlers.go` exists; `ls go/cmd/ubyhost-web/register_web_ai_havel.go 2>&1 | tail -2` says "No such file"; `grep -cF 'func registerRoutes(fn func(*http.ServeMux, *metrics, *pgxpool.Pool)) {' go/cmd/ubyhost-web/registry.go` prints `1`; `grep -rn '"GET /havel"\|"POST /havel"' go/cmd/ubyhost-web | grep -v register_web_ai_havel | wc -l` prints `0`; `find docs/tasks/1434-files -type f | wc -l` prints `2`. Anything else: STOP (§8).
+0. Checks (repo root): `git log --oneline --grep='^1433 step 1' | wc -l` prints at least `1`; `ls go/internal/web/ai/havel_handlers.go` exists; `ls go/cmd/ubyhost-web/register_web_ai_havel.go 2>&1 | tail -2` says "No such file"; `grep -cF 'func registerRoutes(fn func(*http.ServeMux, *metrics, *pgxpool.Pool)) {' go/cmd/ubyhost-web/registry.go` prints `1`; `grep -rn '"GET /havel"\|"POST /havel"' go/cmd/ubyhost-web | grep -v register_web_ai_havel | wc -l` prints `0`; `find docs/tasks/1434-files -type f | wc -l` prints `2`. Anything else: STOP (§8).
 
 1. Copy the files (one call, repo root). Run exactly:
 
@@ -66,7 +68,7 @@ Steps 2 and 3 above (Go). From the repo root: `python3 scripts/context_lint.py 2
 
 - [ ] The 2 sha256 values match §4 step 1.
 - [ ] gofmt, build and vet print nothing; TestHavelRoutesRegistered and TestHavelRegistrationNeedsNoPool PASS; the package tests of `internal/web/ai` still PASS (or "CI only" with the reason).
-- [ ] `git diff --stat main..HEAD | tail -20` lists only §3 paths (plus earlier briefs' if they are on this branch); `main.go`, `registry.go` and `register_web.go` unchanged.
+- [ ] `git show --stat --format= $(git log --format=%h --grep='^1434 step') | grep '|' | tail -40` lists only §3 paths; `main.go`, `registry.go` and `register_web.go` are not among them.
 - [ ] Commits "1434 step 1" and "1434 step 3"; nothing pushed; the PR stays a draft.
 
 ## 8. Stop and ask

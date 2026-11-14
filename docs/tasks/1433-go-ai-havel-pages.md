@@ -1,8 +1,10 @@
 # 1433: Go port of the Havel pages: GET /havel, POST /havel, POST /havel/support, POST /havel/not-helped
 
 Status: todo
-Depends on: 1432 | Base commit: c240f4445 (main when this brief was written) | Branch: task/1433-go-ai-havel-pages
-Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B (privacy-relevant outbound request: Havel's model calls)
+Depends on: 1432 | Base commit: the current head of the working branch | Branch: the current branch (one big PR)
+Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B (privacy-relevant outbound request: the assistant's model calls)
+
+**One big PR mode.** Work on the current branch. After each step that changes a file, commit it as `1433 step k` (k is the step number). Never create a branch, never push, never open a PR. Acceptance checks below use `git log --oneline --grep='^1433 step'` and `git show --stat`, not a fixed base commit.
 
 ## 1. Objective
 
@@ -50,7 +52,7 @@ No other file may change.
 
 ## 4. Steps
 
-0. Checks (repo root): `git branch --show-current` prints `task/1433-go-ai-havel-pages`; `git log --oneline -50 | grep -c '1432 step 1'` prints at least `1`; `ls go/internal/web/ai/havel_cards.go go/internal/web/ai/havel_mail.go` both exist; `ls go/internal/web/ai/havel_handlers.go 2>&1 | tail -2` says "No such file"; `grep -cF 'async def havel_send(request: Request):' App/app/routes/havel.py` prints `1`; `grep -cF 'async def havel_not_helped(request: Request):' App/app/routes/havel.py` prints `1`; `grep -c 'data-havel-form' App/app/templates/_havel_form.html` prints `1`; `find docs/tasks/1433-files -type f | wc -l` prints `7`. Anything else: STOP (§8).
+0. Checks (repo root): `git log --oneline --grep='^1432 step 1' | wc -l` prints at least `1`; `ls go/internal/web/ai/havel_cards.go go/internal/web/ai/havel_mail.go` both exist; `ls go/internal/web/ai/havel_handlers.go 2>&1 | tail -2` says "No such file"; `grep -cF 'async def havel_send(request: Request):' App/app/routes/havel.py` prints `1`; `grep -cF 'async def havel_not_helped(request: Request):' App/app/routes/havel.py` prints `1`; `grep -c 'data-havel-form' App/app/templates/_havel_form.html` prints `1`; `find docs/tasks/1433-files -type f | wc -l` prints `7`. Anything else: STOP (§8).
 
 1. Copy the files (one call, repo root). Run exactly:
 
@@ -68,8 +70,8 @@ No other file may change.
 
 | sha256 | file (sidecar = `docs/tasks/1433-files/<path>.txt`) |
 |---|---|
-| `2550f33577f080861d53e540e3b5b4af9c28e8b50ab32b0d95b23cd5e653d748` | `go/internal/web/ai/havel_handlers.go` |
-| `55739f17ef094519c1038a6a54bf892685d3013e117938076ca75f5c75bdbdf0` | `go/internal/web/ai/havel_handlers_test.go` |
+| `124c4c438e233a9a397babe4517e9801b57c9e8800d5ff2a890becf3c36d8950` | `go/internal/web/ai/havel_handlers.go` |
+| `b9dda0a6052aee61de2179f573ab264d9b081b4b69012ba0fe70873d54ee6bd3` | `go/internal/web/ai/havel_handlers_test.go` |
 | `fa3202317ba19b4df188a5c615cca5aee06b2ef50b3892c90c371ba10d3c96dd` | `go/internal/web/ai/havel_pages.go` |
 | `079a80b15bb6bfbd9f995c3a5c6cb430482cbd3d66422c0a3ea60bcaf4f7d71e` | `go/internal/web/ai/havel_pages_test.go` |
 | `12522d9ed6e47aa240497b34b7026554b29284fbc011d99ad8616fa598f5a53e` | `go/internal/web/ai/havel_templates/havel.tmpl` |
@@ -100,9 +102,9 @@ Step 3 above (Go). From the repo root: `python3 scripts/context_lint.py 2>&1 | t
 
 - [ ] The 7 sha256 values match §4 step 1.
 - [ ] gofmt, build and vet print nothing; the 20 new tests PASS, none skipped (or each skip named with its reason), and the earlier tests still PASS.
-- [ ] `git diff --stat main..HEAD | tail -20` lists only §3 paths (plus earlier briefs' if they are on this branch).
-- [ ] `git diff main..HEAD -- go/internal/hostweb go/internal/session go/internal/anthropic go/go.mod | wc -l` prints `0`.
-- [ ] Commits "1433 step 1" and "1433 step 3"; nothing pushed.
+- [ ] `git show --stat --format= $(git log --format=%h --grep='^1433 step') | grep '|' | tail -40` lists only §3 paths.
+- [ ] `git show --stat --format= $(git log --format=%h --grep='^1433 step') | grep -cE 'go/internal/(hostweb|session|anthropic)/|go.mod'` prints `0`.
+- [ ] Commits "1433 step 1" and "1433 step 3", nothing pushed.
 
 ## 8. Stop and ask
 

@@ -1,8 +1,10 @@
 # 1432: Go port of Havel's confirm cards and the support mail to the operator
 
 Status: todo
-Depends on: 1431 | Base commit: c240f4445 (main when this brief was written) | Branch: task/1432-go-ai-havel-cards
-Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B (privacy-relevant outbound request: Havel's model calls)
+Depends on: 1431 | Base commit: the current head of the working branch | Branch: the current branch (one big PR)
+Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B (privacy-relevant outbound request: the assistant's model calls)
+
+**One big PR mode.** Work on the current branch. After each step that changes a file, commit it as `1432 step k` (k is the step number). Never create a branch, never push, never open a PR. Acceptance checks below use `git log --oneline --grep='^1432 step'` and `git show --stat`, not a fixed base commit.
 
 ## 1. Objective
 
@@ -40,7 +42,7 @@ No other file may change.
 
 ## 4. Steps
 
-0. Checks (repo root): `git branch --show-current` prints `task/1432-go-ai-havel-cards`; `git log --oneline -40 | grep -c '1431 step 1'` prints at least `1`; `ls go/internal/web/ai/havel_store.go go/internal/web/ai/havel_testdb_test.go` both exist; `ls go/internal/web/ai/havel_cards.go 2>&1 | tail -2` says "No such file"; `ls App/tests/test_go_ai_havel.py` exists (1430's file) and `ls App/tests/test_go_ai_havel_cards.py 2>&1 | tail -2` says "No such file"; `grep -cF 'def prepare(action: Dict[str, Any], properties: List[Any], today: date, *, return_to: str,' App/app/havel_actions.py` prints `1`; `grep -cF 'def build_havel_support(' App/app/mail_notify.py` prints `1`; `find docs/tasks/1432-files -type f | wc -l` prints `6`. Anything else: STOP (§8).
+0. Checks (repo root): `git log --oneline --grep='^1431 step 1' | wc -l` prints at least `1`; `ls go/internal/web/ai/havel_store.go go/internal/web/ai/havel_testdb_test.go` both exist; `ls go/internal/web/ai/havel_cards.go 2>&1 | tail -2` says "No such file"; `ls App/tests/test_go_ai_havel.py` exists (1430's file) and `ls App/tests/test_go_ai_havel_cards.py 2>&1 | tail -2` says "No such file"; `grep -cF 'def prepare(action: Dict[str, Any], properties: List[Any], today: date, *, return_to: str,' App/app/havel_actions.py` prints `1`; `grep -cF 'def build_havel_support(' App/app/mail_notify.py` prints `1`; `find docs/tasks/1432-files -type f | wc -l` prints `6`. Anything else: STOP (§8).
 
 1. Copy the files (one call, repo root). Run exactly:
 
@@ -66,7 +68,7 @@ No other file may change.
 
    Commit "1432 step 1".
 
-2. Golden freshness (from `App/`, no database needed): `.venv/bin/python scripts/havel_cards_golden.py --check 2>&1 | tail -5; echo rc=$?` and `.venv/bin/python scripts/havel_golden.py --check 2>&1 | tail -5; echo rc=$?` each print `rc=0` and no `stale:` line; `git status --short | tail -5` (repo root) prints nothing. A `stale:` line or a changed file: STOP.
+2. Golden freshness (from `App/`, no database needed): `.venv/bin/python scripts/havel_cards_golden.py --check 2>&1 | tail -5; echo rc=$?` and `.venv/bin/python scripts/havel_golden.py --check 2>&1 | tail -5; echo rc=$?` each print `rc=0` and no `stale:` line; `git status --short | grep -E 'havel|leon' | tail -5` (repo root) prints nothing. A `stale:` line or a changed file: STOP.
 
 3. PostgreSQL. If `UBYHOST_TEST_DATABASE_URL` is already set to a server you may create databases on, skip to step 4. Else:
 
@@ -91,11 +93,11 @@ Steps 2 (golden), 4 (Go) and 5 (pytest) above. From the repo root: `python3 scri
 ## 7. Acceptance
 
 - [ ] The 6 sha256 values match §4 step 1.
-- [ ] Both golden `--check` runs print no `stale:` line; `git status --short` is empty after step 1's commit.
+- [ ] Both golden `--check` runs print no `stale:` line; `git status --short | grep -E 'havel|leon'` is empty after step 1's commit.
 - [ ] gofmt, build and vet print nothing; the six new tests PASS (none skipped, or the skip named with its reason) and the earlier tests still PASS.
 - [ ] `pytest tests/test_go_ai_havel.py tests/test_go_ai_havel_cards.py` passes with 3 tests, 0 skipped.
-- [ ] `git diff --stat main..HEAD | tail -20` lists only §3 paths (plus earlier briefs' if they are on this branch).
-- [ ] Commits "1432 step 1", "1432 step 4", "1432 step 5"; nothing pushed.
+- [ ] `git show --stat --format= $(git log --format=%h --grep='^1432 step') | grep '|' | tail -40` lists only §3 paths.
+- [ ] Commits "1432 step 1", "1432 step 4", "1432 step 5", nothing pushed.
 
 ## 8. Stop and ask
 

@@ -37,8 +37,8 @@ Privacy and rules: no tracking cookies, no third-party script (the test checks t
 | Path | Action | What |
 |---|---|---|
 | `go/cmd/ubyhost-web/register_web_booking_pages.go` | create (20 lines) | new file, copied from the sidecar |
-| `go/internal/web/booking/i18n.json` | create (69 lines) | new file, copied from the sidecar |
-| `go/internal/web/booking/i18n_keys.txt` | create (23 lines) | new file, copied from the sidecar |
+| `go/internal/web/booking/i18n.json` | create (366 lines) | new file, copied from the sidecar |
+| `go/internal/web/booking/i18n_keys.txt` | create (36 lines) | new file, copied from the sidecar |
 | `go/internal/web/booking/pages.go` | create (31 lines) | new file, copied from the sidecar |
 | `go/internal/web/booking/pages_test.go` | create (113 lines) | new file, copied from the sidecar |
 | `go/internal/web/booking/shell.go` | create (122 lines) | new file, copied from the sidecar |
@@ -81,8 +81,8 @@ Expected: no output. Commit `1540 step 1`.
 ```bash
 sha256sum -c <<'EOT' 2>&1 | tail -15
 880383ab2b22ccc88182b795adfb826e6699572842bddb119c1d18095a7a9f8d  go/cmd/ubyhost-web/register_web_booking_pages.go
-addbc74bc177c3337f4e9d7e8fa19f8ba0a1a173b22a6184d3c41c61c79a2dea  go/internal/web/booking/i18n.json
-9fcf463286ddf81dfd2ea6b7fb4dafe6c15db163750d5ebc495ef9171a91326b  go/internal/web/booking/i18n_keys.txt
+c886bae9aa4af1cf6146d58677d75e8ab016dea4f93a80fb5dff574b5a178939  go/internal/web/booking/i18n.json
+6ad2e2d048d567bd7034a1234af8bd6b9604b0535f15b6bc725d5ab7f076103f  go/internal/web/booking/i18n_keys.txt
 f589ca5abf490ce2f7ce7f0bc68cb141098a9b96a7580a13f20e098294c7034b  go/internal/web/booking/pages.go
 bf36b1e1967488147ca157fdeae6f56049a8f0a6f6133d79153007fb952df383  go/internal/web/booking/pages_test.go
 c519323e5cbab24cbcaa56248903bd43f1f434f8c74bfd0b5c5c7ee9fc34985d  go/internal/web/booking/shell.go

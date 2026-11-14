@@ -1,8 +1,10 @@
 # 1431: Go port of Havel's limits, stats and gap log (rate-limit events, plan multiplier, AI switches)
 
 Status: todo
-Depends on: 1430 | Base commit: c240f4445 (main when this brief was written) | Branch: task/1431-go-ai-havel-store
-Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B (privacy-relevant outbound request: Havel's model calls)
+Depends on: 1430 | Base commit: the current head of the working branch | Branch: the current branch (one big PR)
+Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B (privacy-relevant outbound request: the assistant's model calls)
+
+**One big PR mode.** Work on the current branch. After each step that changes a file, commit it as `1431 step k` (k is the step number). Never create a branch, never push, never open a PR. Acceptance checks below use `git log --oneline --grep='^1431 step'` and `git show --stat`, not a fixed base commit.
 
 ## 1. Objective
 
@@ -33,7 +35,7 @@ No other file may change.
 
 ## 4. Steps
 
-0. Checks (repo root): `git branch --show-current` prints `task/1431-go-ai-havel-store`; `git log --oneline -30 | grep -c '1430 step 1'` prints at least `1` (1430 is on this branch or merged); `ls go/internal/web/ai/havel_engine.go` exists; `ls go/internal/web/ai/havel_store.go 2>&1 | tail -2` says "No such file"; `grep -cF 'def limit_state(user_id: int, now: Optional[datetime] = None) -> Optional[str]:' App/app/havel.py` prints `1`; `grep -cF 'def record_gap(lang: str, page: str, kind: str, question: str) -> None:' App/app/havel.py` prints `1`; `find docs/tasks/1431-files -type f | wc -l` prints `3`. Anything else: STOP (§8).
+0. Checks (repo root): `git log --oneline --grep='^1430 step 1' | wc -l` prints at least `1` (1430 is on this branch); `ls go/internal/web/ai/havel_engine.go` exists; `ls go/internal/web/ai/havel_store.go 2>&1 | tail -2` says "No such file"; `grep -cF 'def limit_state(user_id: int, now: Optional[datetime] = None) -> Optional[str]:' App/app/havel.py` prints `1`; `grep -cF 'def record_gap(lang: str, page: str, kind: str, question: str) -> None:' App/app/havel.py` prints `1`; `find docs/tasks/1431-files -type f | wc -l` prints `3`. Anything else: STOP (§8).
 
 1. Copy the files (one call, repo root). Run exactly:
 
@@ -75,8 +77,8 @@ Step 3 above (Go). From the repo root: `python3 scripts/context_lint.py 2>&1 | t
 
 - [ ] The 3 sha256 values match §4 step 1.
 - [ ] gofmt, build and vet print nothing; the five new tests PASS (none skipped, or the skip named with its reason) and the 1430 tests still PASS.
-- [ ] `git diff --stat main..HEAD | tail -20` lists only §3 paths (plus 1430's if it is on this branch).
-- [ ] Commits "1431 step 1" and "1431 step 3"; nothing pushed.
+- [ ] `git show --stat --format= $(git log --format=%h --grep='^1431 step') | grep '|' | tail -40` lists only §3 paths.
+- [ ] Commits "1431 step 1" and "1431 step 3", nothing pushed.
 
 ## 8. Stop and ask
 

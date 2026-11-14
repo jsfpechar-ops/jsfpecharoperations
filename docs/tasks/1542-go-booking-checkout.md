@@ -45,7 +45,7 @@ Known differences (accepted): the e-mail pattern is `_EMAIL` with Python's Unico
 | `go/cmd/ubyhost-web/register_web_booking_checkout.go` | create (28 lines) | new file, copied from the sidecar |
 | `go/internal/payments/checkout_session.go` | create (120 lines) | new file, copied from the sidecar |
 | `go/internal/payments/checkout_session_test.go` | create (136 lines) | new file, copied from the sidecar |
-| `go/internal/web/booking/checkout.go` | create (460 lines) | new file, copied from the sidecar |
+| `go/internal/web/booking/checkout.go` | create (471 lines) | new file, copied from the sidecar |
 | `go/internal/web/booking/checkout_test.go` | create (305 lines) | new file, copied from the sidecar |
 | `go/internal/web/booking/templates/pay.tmpl` | create (7 lines) | new file, copied from the sidecar |
 
@@ -75,7 +75,7 @@ sha256sum -c <<'EOT' 2>&1 | tail -15
 82405c6f42ecc184b81bf5c2c4374a8c950e987ad584cc43a09ce45f1b06c117  go/cmd/ubyhost-web/register_web_booking_checkout.go
 064c1f8f62ba8b3a83b64950401b1a5800f955cae31e034a866b4845e25bd4e4  go/internal/payments/checkout_session.go
 adf9183caba5b3dc0836b3074a86b7b7d1212c94c70d0e9dabd46349d5ec8c69  go/internal/payments/checkout_session_test.go
-78ea7a88e086bfdb5be3285a635f6f365d8ab61414b5484bb915845d4d3f84e8  go/internal/web/booking/checkout.go
+c6b3f0a723939567ed7e539c553b068c2e099ebcfea1bc76ef215581ea95361a  go/internal/web/booking/checkout.go
 fc18b059e84115a1ddbc591fe5cf885645d07c328f6a4a8402112ccd2366276f  go/internal/web/booking/checkout_test.go
 4ebb2b6fc4bee4a07f1bef43cc7bc1de87a6640fed47589bda00d000efc9ed68  go/internal/web/booking/templates/pay.tmpl
 EOT
