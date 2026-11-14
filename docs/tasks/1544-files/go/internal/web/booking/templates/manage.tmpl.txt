@@ -1,0 +1,51 @@
+{{define "guest.head"}}
+<meta name="robots" content="noindex">
+{{fragment "pp_booking_css.html"}}
+{{end}}
+{{define "guest.content"}}{{$d := .Data}}{{$v := $d.V}}
+<main class="pp-bk pp-bk-page">
+  <div class="pp-bk-head">
+    <span class="pp-bk-badge" data-tone="{{$v.Tone}}">{{.T (printf "bk.badge.%s" $v.State)}}</span>
+    <h1>{{.T (printf "bk.h1.%s" $v.State)}}</h1>
+    <p class="pp-bk-note">{{.T (printf "bk.sub.%s" $v.Sub) "email" $v.Email "refund" $v.Refunded}}</p>
+  </div>
+  {{if $d.Error}}<p class="pp-bk-error" role="alert">{{.T (printf "bk.err.%s" $d.Error)}}</p>{{end}}
+
+  <section class="pp-bk-card">
+    <h2>{{$v.Name}}</h2>
+    <div class="pp-bk-row"><span class="pp-bk-note">{{.T "bk.arrive"}}</span><span>{{$v.Arrive}}</span></div>
+    <div class="pp-bk-row"><span class="pp-bk-note">{{.T "bk.depart"}}</span><span>{{$v.Depart}}</span></div>
+    <div class="pp-bk-row"><span class="pp-bk-note">{{.T "bk.guests"}}</span><span>{{$v.Guests}}</span></div>
+    <div class="pp-bk-row pp-bk-total"><span>{{if $v.Direct}}{{.T "pp.book.total"}}{{else}}{{.T "bk.paid"}}{{end}}</span><span>{{.Money $v.Total}}</span></div>
+    {{if $v.CityTax}}<p class="pp-bk-note">{{.T "bk.city_tax" "amount" $v.CityTax}}</p>{{end}}
+  </section>
+
+  {{if not (and $v.Direct (ne $v.State "paid"))}}
+  <section class="pp-bk-card">
+    <h2>{{.T "pp.book.policy_title" "name" (.T (printf "pp.book.policy_name.%s" $v.Policy))}}</h2>
+    <p class="pp-bk-note">{{if $v.Direct}}{{.T "bk.policy.direct"}}{{else}}{{.T (printf "bk.policy.%s" $v.Policy) "when" $v.Deadline}}{{end}}</p>
+    {{if $v.CanCancel}}
+    <p class="pp-bk-refund">{{if $v.RefundNow}}{{.T "bk.refund_now" "amount" $v.RefundNow}}{{else}}{{.T "bk.refund_none"}}{{end}}</p>
+    <details>
+      <summary>{{.T "bk.cancel.open"}}</summary>
+      <form method="post" action="/p/{{$d.Slug}}/b/{{$v.ID}}/{{$d.Token}}/cancel?lang={{.Lang}}" class="pp-bk-actions">
+        <p class="pp-bk-note">{{.T "bk.cancel.confirm"}}</p>
+        <button class="ui-btn ui-btn-danger" type="submit">{{.T "bk.cancel.button"}}</button>
+      </form>
+    </details>
+    {{end}}
+  </section>
+  {{end}}
+
+  <div class="pp-bk-actions">
+    {{if $v.HasInvoice}}<a class="ui-btn ui-btn-secondary" href="/p/{{$d.Slug}}/b/{{$v.ID}}/{{$d.Token}}/invoice.pdf" data-no-prefetch>{{.T "bk.invoice"}}</a>{{end}}
+    {{if $v.HasCorrection}}<a class="ui-btn ui-btn-secondary" href="/p/{{$d.Slug}}/b/{{$v.ID}}/{{$d.Token}}/correction.pdf" data-no-prefetch>{{.T "bk.btn.correction"}}</a>{{end}}
+    {{if eq $v.State "paid"}}<a class="ui-btn ui-btn-secondary" href="/p/{{$d.Slug}}/b/{{$v.ID}}/{{$d.Token}}/calendar.ics" data-no-prefetch>{{.T "bk.calendar"}}</a>{{end}}
+  </div>
+  <p class="pp-bk-fine">{{.T "bk.link_note"}}</p>
+  <nav class="pp-bk-lang" aria-label="{{.T "pp.lang.label"}}">
+    <a href="/p/{{$d.Slug}}/b/{{$v.ID}}/{{$d.Token}}?lang=cs" hreflang="cs" lang="cs"{{if eq .Lang "cs"}} aria-current="true"{{end}}>CS</a>
+    <a href="/p/{{$d.Slug}}/b/{{$v.ID}}/{{$d.Token}}?lang=en" hreflang="en" lang="en"{{if eq .Lang "en"}} aria-current="true"{{end}}>EN</a>
+  </nav>
+</main>
+{{end}}

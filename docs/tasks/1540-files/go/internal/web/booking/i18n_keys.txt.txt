@@ -32,3 +32,5 @@ site_booking.mail.request_guest_text
 site_booking.mail.request_guest_iban
 site_booking.mail.request_guest_revolut
 site_booking.mail.request_guest_link
+bk.*
+stay_fees.guest_pay.rail.*
