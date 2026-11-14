@@ -1,6 +1,6 @@
 # 1630: A Go "not ported yet" answer falls back to Python instead of reaching the host
 
-Status: todo
+Status: review
 Depends on: none | Base commit: none (one big PR mode, see below) | Branch: the orchestrator's current branch
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
