@@ -1,6 +1,6 @@
 # 1444: Go guest guide editor, part 5: Quick answers (five steps and the done page)
 
-Status: todo
+Status: review
 Depends on: 1440 | Base commit: 68c0e0985 | Branch: task/1444-go-guide-editor-quick
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
