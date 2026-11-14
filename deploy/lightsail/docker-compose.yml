@@ -155,6 +155,9 @@ services:
     environment:
       UBYHOST_DATA_DIR: /data
       UBYHOST_ROLE: worker
+      # J7: "go" makes this worker enqueue nothing (the Go service does) and
+      # watch that Go keeps enqueuing; unset, it enqueues every job.
+      UBYHOST_SCHEDULER: ${UBYHOST_SCHEDULER:-}
     command: ["python", "-m", "app.worker"]
     volumes:
       - ubyhost-data:/data
@@ -222,11 +225,14 @@ services:
       UBYHOST_DEPLOYMENT:
       UBYHOST_DOOR_CODES:
       UBYHOST_DPA_VERSION:
+      UBYHOST_ENABLE_SCHEDULER:
       UBYHOST_HEARTBEAT_FILING_URL:
       UBYHOST_HEARTBEAT_ICAL_URL:
       UBYHOST_HEARTBEAT_URL:
       UBYHOST_ICAL_ALLOW_PRIVATE:
+      UBYHOST_ICAL_POLL_MINUTES:
       UBYHOST_IMPERSONATION_MAX_HOURS:
+      UBYHOST_JOB_QUEUE_KINDS:
       UBYHOST_MAIL_BACKEND:
       UBYHOST_MAX_BATCH:
       UBYHOST_META_ACCESS_TOKEN:
@@ -239,6 +245,7 @@ services:
       UBYHOST_PRIVACY_VERSION:
       UBYHOST_PUBLIC_BASE_URL:
       UBYHOST_PY_WEBHOOK_URL:
+      UBYHOST_SCHEDULER:
       UBYHOST_SECRET_KEY:
       UBYHOST_SOAP_WSA_HEADER:
       UBYHOST_STRIPE_MONTHLY_API_CALLS:
