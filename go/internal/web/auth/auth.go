@@ -70,6 +70,10 @@ func Routes(pool *pgxpool.Pool, getenv func(string) string, now func() time.Time
 		{"POST /admin/users", "/admin/users", d.userCreate},
 		{"POST /admin/users/{id}/invite", "/admin/users/{id}/invite", d.userInvite},
 		{"POST /admin/users/{id}/email", "/admin/users/{id}/email", d.userEmailSet},
+		{"GET /account/accept", "/account/accept", d.accountAcceptForm},
+		{"POST /account/accept", "/account/accept", d.accountAcceptSubmit},
+		{"GET /account/2fa/setup", "/account/2fa/setup", d.twoFactorSetupForm},
+		{"POST /account/2fa/setup", "/account/2fa/setup", d.twoFactorSetupSubmit},
 	}
 }
 
