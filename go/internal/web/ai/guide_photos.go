@@ -2,7 +2,7 @@ package ai
 
 // The photo routes of App/app/routes/guest_guide.py that Go serves (brief
 // 1442): show one stored photo and delete one. Adding a photo
-// (POST .../photos) stays on Python; see brief 1447.
+// (POST .../photos) is guide_photos_add.go (brief 1447).
 
 import (
 	"net/http"
