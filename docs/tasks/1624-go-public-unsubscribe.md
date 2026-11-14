@@ -1,6 +1,6 @@
 # 1624: Go mail unsubscribe page, part 2 (GET and POST /mail/unsubscribe/{token})
 
-Status: todo
+Status: review
 Depends on: [1623](1623-go-public-unsubscribe-golden.md) | Base commit: none (one-big-PR mode) | Branch: current branch
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (about 15 calls)
 
