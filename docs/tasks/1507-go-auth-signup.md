@@ -1,6 +1,6 @@
 # 1507: Go sign-up pages (dormant): GET/POST `/signup`, GET/POST `/signup/verify`
 
-Status: todo
+Status: review
 Depends on: 1501 (Turnstile check, client address, `loginLanguage`, `keepLoginLanguage`; built on go-wave3) | Base commit: 859d114d5 | Branch: go-wave3
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (about 14 calls)
 
