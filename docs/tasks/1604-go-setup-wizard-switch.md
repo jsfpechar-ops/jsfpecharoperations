@@ -1,6 +1,6 @@
 # 1604: Go setup wizard, part 6: verify and switch the wizard routes (without 1603)
 
-Status: todo
+Status: review
 Tier: B (switch-verify: no new Go code; re-runs existing tests; owner switches paths)
 Depends on: 1602 (and through it 1601, 1600 and 1599; all four must be on the branch) | Does NOT depend on 1603 | Base commit: current tip of the working branch | Branch: task/1604-go-setup-wizard-switch
 Executor: Haiku 5.5 | Fits one session: 15 tool calls, 30k tokens
