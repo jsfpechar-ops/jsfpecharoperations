@@ -38,5 +38,7 @@ func Routes(pool *pgxpool.Pool, getenv func(string) string, now func() time.Time
 		{"POST /settings/workspace-export", "/settings/workspace-export", WorkspaceExportHandler(pool, getenv, now)},
 		// Brief 1608.
 		{"GET /settings/archived", "/settings/archived", ArchivedHandler(pool, getenv, now)},
+		// Brief 1609.
+		{"POST /settings/purge-expired", "/settings/purge-expired", PurgeExpiredHandler(pool, getenv, now)},
 	}
 }

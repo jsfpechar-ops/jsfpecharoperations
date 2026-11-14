@@ -45,6 +45,8 @@
   "flash.error.too_many_entries": "Pro jedno stažení je příliš mnoho záznamů (%(count)s). Zúžte filtr data nebo ubytování na %(limit)s nebo méně.",
   "flash.error.too_many_receipts": "Pro jedno stažení je příliš mnoho Doručenek (%(count)s). Zúžte filtr data na %(limit)s nebo méně.",
   "flash.error.workspace_export_not_scheduled": "Export pracovního prostoru je dostupný jen při naplánovaném smazání účtu.",
+  "flash.settings.nothing_to_purge": "Není co smazat – žádný záznam není po uplynutí lhůty.",
+  "flash.settings.purged": "Smazáno: %(parts)s.",
   "nav.entities": "Provozovatelé",
   "nav.housebook": "Kniha hostů"
  },
@@ -94,6 +96,8 @@
   "flash.error.too_many_entries": "Too many entries (%(count)s) for one download. Narrow the date or property filter to %(limit)s or fewer.",
   "flash.error.too_many_receipts": "Too many receipts (%(count)s) for one download. Narrow the date filter to %(limit)s or fewer.",
   "flash.error.workspace_export_not_scheduled": "Workspace export is only available while account deletion is scheduled.",
+  "flash.settings.nothing_to_purge": "Nothing to delete - no record is past the retention period.",
+  "flash.settings.purged": "Deleted %(parts)s.",
   "nav.entities": "Operators",
   "nav.housebook": "Guest register"
  },
@@ -143,6 +147,8 @@
   "flash.error.too_many_entries": "Quá nhiều mục (%(count)s) cho một lần tải. Thu hẹp bộ lọc ngày hoặc chỗ ở xuống còn tối đa %(limit)s.",
   "flash.error.too_many_receipts": "Quá nhiều biên nhận (%(count)s) cho một lần tải. Thu hẹp bộ lọc ngày xuống còn tối đa %(limit)s.",
   "flash.error.workspace_export_not_scheduled": "Chỉ có thể xuất dữ liệu không gian làm việc khi đã lên lịch xóa tài khoản.",
+  "flash.settings.nothing_to_purge": "Không có gì để xóa: chưa hồ sơ nào quá thời hạn lưu giữ.",
+  "flash.settings.purged": "Đã xóa %(parts)s.",
   "nav.entities": "Đơn vị vận hành",
   "nav.housebook": "Sổ khách lưu trú"
  }

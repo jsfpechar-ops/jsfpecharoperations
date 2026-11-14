@@ -111,6 +111,18 @@ type runner struct {
 	now   time.Time // the instant (datetime.now(timezone.utc)), UTC
 	owner *int64
 	dry   bool
+	actor *Actor // nil in the job; the signed-in user in a request (RunAs)
+}
+
+// Actor is the signed-in user of a request, what db.set_current_actor and
+// db.set_current_owner hold there (brief 1609). Inside a request db.audit
+// fills owner_user_id, actor_user_id and impersonator_user_id from it and
+// writes the username where the caller named the actor "host".
+type Actor struct {
+	UserID         int64  // the signed-in account
+	Username       string // its username
+	ImpersonatorID *int64 // the account again while it supports a workspace, else nil
+	OwnerUserID    *int64 // the workspace (db.set_current_owner)
 }
 
 type step struct {
@@ -151,6 +163,16 @@ var steps = []step{
 // retention_due notices were written. A failure writing an audit row or the
 // setting returns at once, as the Python exception would.
 func Run(ctx context.Context, pool *pgxpool.Pool, cfg Config, today, now time.Time, owner *int64) (Summary, error) {
+	return RunAs(ctx, pool, cfg, today, now, owner, nil)
+}
+
+// RunAs is Run inside a request (brief 1609: the Settings button, which calls
+// retention.run(..., dry_run=False, owner_user_id=owner) as the signed-in
+// host). It is Run exactly, except that the rows db.audit writes (retention_run
+// and the purge lines of the steps) carry actor as Python's request context
+// does. The retention_delete rows (db.audit_retention) stay without user ids,
+// as in Python. A nil actor is Run.
+func RunAs(ctx context.Context, pool *pgxpool.Pool, cfg Config, today, now time.Time, owner *int64, actor *Actor) (Summary, error) {
 	r := &runner{
 		pool:  pool,
 		cfg:   cfg,
@@ -158,6 +180,7 @@ func Run(ctx context.Context, pool *pgxpool.Pool, cfg Config, today, now time.Ti
 		now:   now.UTC(),
 		owner: owner,
 		dry:   cfg.DryRun,
+		actor: actor,
 	}
 	sum := Summary{DryRun: r.dry, OwnerUserID: owner, Counts: []Count{}}
 	var first error
@@ -333,14 +356,28 @@ func summaryJSON(s Summary, at string) string {
 
 // --- audit, settings, alerts ------------------------------------------------
 
-// audit is db.audit(action, detail, actor) in the job's context: no current
-// owner and no signed-in actor, so owner_user_id, actor_user_id and
-// impersonator_user_id are NULL.
+// audit is db.audit(action, detail, actor). In the job's context there is no
+// current owner and no signed-in actor, so owner_user_id, actor_user_id and
+// impersonator_user_id are NULL. In a request (RunAs) they come from the
+// actor, and the placeholder actor "host" becomes the username.
 func (r *runner) audit(ctx context.Context, action, detail, actor string) error {
+	var owner, actorID, impersonator any
+	if a := r.actor; a != nil {
+		if a.OwnerUserID != nil {
+			owner = *a.OwnerUserID
+		}
+		actorID = a.UserID
+		if a.ImpersonatorID != nil {
+			impersonator = *a.ImpersonatorID
+		}
+		if actor == "host" {
+			actor = a.Username
+		}
+	}
 	_, err := r.pool.Exec(ctx,
 		`INSERT INTO audit (at, actor, action, detail, owner_user_id, actor_user_id, impersonator_user_id)
-		 VALUES ($1, $2, $3, $4, NULL, NULL, NULL)`,
-		pyISO(r.now), actor, action, detail)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+		pyISO(r.now), actor, action, detail, owner, actorID, impersonator)
 	return err
 }
 
