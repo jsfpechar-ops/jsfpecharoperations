@@ -1,6 +1,6 @@
 # 1601: Go setup wizard, part 3: the finish page and the try-it page
 
-Status: todo
+Status: review
 Tier: A
 Depends on: 1600 (and through it 1599; their files must be on the branch) | Base commit: current tip of the working branch | Branch: task/1601-go-setup-wizard-finish-try-it
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
