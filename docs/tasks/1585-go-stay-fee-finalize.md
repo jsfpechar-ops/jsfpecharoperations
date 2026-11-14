@@ -1,6 +1,6 @@
 # 1585: Go stay fees: seal one period (POST /stay-fees/{apartment_id}/finalize)
 
-Status: todo
+Status: review
 Depends on: 1330, 1242a (stayfee.Save), 1580 (the real PDF renderer, only needed for production, not for the tests) | Base commit: current tip of the working branch | Branch: task/1585-go-stay-fee-finalize
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
