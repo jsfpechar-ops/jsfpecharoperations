@@ -1,6 +1,6 @@
 # 1590: Go customer admin, part 1: the operator's account actions (status, extend trial, resend verification)
 
-Status: todo
+Status: review
 Depends on: 1364 (the customer admin pages 1360 to 1364 are in the branch) | Base commit: none (one big PR mode: the branch that is checked out) | Branch: the current one
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B (operator pages, billing and mail; no filing, no guest data)
 
