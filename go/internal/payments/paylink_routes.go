@@ -34,6 +34,23 @@ func guestToken(secret string, id int64, vs string) string {
 	return hex.EncodeToString(mac.Sum(nil))[:32]
 }
 
+// guestPayURL is payments.py payment_request_send for rail qr:
+// f"{config.app_base_url()}/pay/{id}/{guest_token(row)}".
+func guestPayURL(getenv func(string) string, id int64, vs string) (string, error) {
+	secret, err := secure.LoadSecret(getenv)
+	if err != nil {
+		return "", err
+	}
+	base := strings.TrimRight(strings.TrimSpace(getenv("UBYHOST_APP_BASE_URL")), "/")
+	if base == "" {
+		base = strings.TrimRight(strings.TrimSpace(getenv("UBYHOST_PUBLIC_BASE_URL")), "/")
+	}
+	if base == "" {
+		base = "http://127.0.0.1:8080"
+	}
+	return fmt.Sprintf("%s/pay/%d/%s", base, id, guestToken(secret, id, vs)), nil
+}
+
 // GuestQRPNGHandler serves GET /pay/{id}/{file} for <token>.png: no login, the
 // token is the proof. Anything else is a 404, as in Python.
 func GuestQRPNGHandler(pool *pgxpool.Pool, getenv func(string) string) http.HandlerFunc {
