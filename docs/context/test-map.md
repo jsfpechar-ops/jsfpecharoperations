@@ -4,6 +4,7 @@ Run only your area's row, from `App/`, always ending `-q --tb=short -x 2>&1 | ta
 
 | Changed | Run |
 |---|---|
+| CI shard script (`scripts/ci_shard.py`) | `test_ci_shard.py` |
 | Guest pages, guest templates | `test_guest_*.py` and `test_guest_browser_e2e.py` (0 skipped) |
 | Host pages, host templates, host CSS | `test_host_*.py` and `test_host_geometry.py` (0 skipped) |
 | Login, 2FA, passkeys | `test_login_*.py test_auth_*.py test_two_factor_*.py test_passkeys.py test_remember_me_reissue.py test_security*.py` |
