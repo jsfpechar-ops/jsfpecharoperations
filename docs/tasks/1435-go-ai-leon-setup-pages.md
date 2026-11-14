@@ -82,7 +82,7 @@ No other file may change.
 | `1f9fc11c896681190ad728f5dbba9da8c4bdaad29ff51abd6424825974ac9b19` | `App/scripts/leon_golden.py` |
 | `6b1ba02fc5840ef93067334b8f038e9c08f7fa19ffa9a86da4fadb272a9f59bb` | `App/tests/test_go_ai_leon.py` |
 | `c113ba98ef4676b774d928c8b6d94fda8d9d3d4baa68a584f4f121481d24decc` | `go/internal/web/ai/leon_catalog.json` |
-| `903bf801399e0d469750b79c4abc54504a823a89ecd73a617563d49c770e6410` | `go/internal/web/ai/leon_extra.go` |
+| `2e45acc3b5796a60970d1efef687fdb334112f902d9108ba6c994413ff9f3cba` | `go/internal/web/ai/leon_extra.go` |
 | `d27988282cec9df1b66c69741e4c1ad00b1c6cd4cbbb567d92863957fdf3757e` | `go/internal/web/ai/leon_facts.go` |
 | `9f7b604a971e2c6383b1eafd3ee1388b9b2c695e7e01d78775a2c1351674cb0e` | `go/internal/web/ai/leon_facts_test.go` |
 | `db6c701977ad79d2aa3b70ca551d3e29ad6fc32e28c8bb57ec18818240c49a35` | `go/internal/web/ai/leon_handlers.go` |
