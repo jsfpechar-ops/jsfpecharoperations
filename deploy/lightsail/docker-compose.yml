@@ -287,7 +287,7 @@ services:
       TURNSTILE_SITE_KEY:
     volumes:
       - ubyhost-pgsock:/var/run/postgresql
-      - ubyhost-data:/data:ro
+      - ubyhost-data:/data
     expose:
       - "8081"
     healthcheck:
