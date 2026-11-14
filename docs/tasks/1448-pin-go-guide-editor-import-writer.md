@@ -1,6 +1,6 @@
 # 1448: pin the Go guide editor's `guide_import.status` writer (CI fix for 1446)
 
-Status: todo
+Status: review
 Depends on: 1446 (on this branch) | Base commit: the current branch head | Branch: none (one big PR mode)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Tier B. Test file only: no behaviour changes.

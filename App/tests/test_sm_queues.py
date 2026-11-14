@@ -59,6 +59,7 @@ IMPORT = "App/app/guest_guide_import.py"
 MERGE = "App/app/guest_guide_merge.py"
 GOIMPORT = "go/internal/guideimport/job.go"
 RETENTION = "go/internal/retention/steps.go"
+GOGUIDEWEB = "go/internal/web/ai/guide_import.go"
 
 # ---- scanner ---------------------------------------------------------------
 
@@ -277,6 +278,7 @@ IMPORT_SITES = {
     (GOIMPORT, "merge"): 1,
     (GOIMPORT, "noteFailure"): 1,
     (RETENTION, "stepGuideImports"): 1,
+    (GOGUIDEWEB, "requestImports"): 1,
 }
 IMPORT_MOVES = [
     (IMPORT, "request_imports", '"status": "queued", "created_at": now,', NEW, "queued"),
@@ -297,6 +299,7 @@ IMPORT_MOVES = [
     (GOIMPORT, "merge", "SET status = 'used', raw_json = NULL", ("done",), "used"),
     (GOIMPORT, "noteFailure", "SET status = 'failed', error = $1, raw_json = NULL", ("done",), "failed"),
     (RETENTION, "stepGuideImports", "WHEN status = 'done' THEN 'expired'", ("done",), "expired"),
+    (GOGUIDEWEB, "requestImports", "INSERT INTO guide_import (apartment_id, source, url, status, created_at) VALUES ($1, $2, $3, 'queued', $4)", NEW, "queued"),
 ]
 
 
