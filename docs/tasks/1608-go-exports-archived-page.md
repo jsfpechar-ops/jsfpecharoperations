@@ -1,6 +1,6 @@
 # 1608: Go data exports, part 4: the archive page
 
-Status: todo
+Status: review
 Depends on: 1607 | Base commit: none (one big PR mode: the branch that is checked out) | Branch: the current one
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

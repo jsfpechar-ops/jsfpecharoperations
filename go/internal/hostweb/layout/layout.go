@@ -106,6 +106,9 @@ type Page struct {
 	PhHidePin            bool   // ph_hide_pin: hide the guest_pin_rotated line (ph-hide)
 	CelebrationMilestone string // celebration_milestone; "" shows no toast
 	SentGuestCount       int    // sent_guest_count for celebration.body
+
+	// Added in 1608.
+	BodyAlerts bool // the page body includes _host_alerts.html itself ({{host_alerts}}), as v2 pages such as settings_archived.html do
 }
 
 // Templates is a page package's parsed templates and catalog. The master set
@@ -300,6 +303,16 @@ func render(w http.ResponseWriter, r *http.Request, env Env, sh shell, token str
 	}
 	clone.Funcs(c.funcs())
 	v := buildView(r, env, sh, c, p)
+	if p.BodyAlerts && v.ShowNav {
+		// The same stack base.html would show, written where the page body
+		// includes _host_alerts.html. For a v2 page base.html shows none.
+		stack := bodyAlertStack(r, env, sh, c, p)
+		c.bodyAlerts = func() (template.HTML, error) {
+			var b bytes.Buffer
+			err := clone.ExecuteTemplate(&b, "layout.host_alerts", struct{ Alerts alertStack }{stack})
+			return template.HTML(b.String()), err
+		}
+	}
 	slot := func(suffix string) (template.HTML, bool, error) {
 		t := clone.Lookup(name + suffix)
 		if t == nil {
@@ -623,12 +636,7 @@ func buildView(r *http.Request, env Env, sh shell, c *reqCtx, p Page) view {
 	// 1381: alerts, billing line, Havel, security prompt, celebration.
 	v.ReturnPath = r.URL.Path
 	if v.ShowNav && !(p.HideAlertStack || p.V2) {
-		rows, more := sh.Alerts, 0
-		if r.URL.Path != "/" {
-			rows, more = shellSlice(rows)
-		}
-		cards := presentMany(rows, sh.Progress, alertText{lang: c.lang, now: env.Now})
-		v.Alerts = buildAlertStack(cards, more, r.URL.Path, lastQuery(r, "apartment"), p.AlertsExpanded, p.PhHidePin, c.t)
+		v.Alerts = bodyAlertStack(r, env, sh, c, p)
 	}
 	if sh.SignedIn {
 		pn := env.Now.In(prague)
@@ -717,4 +725,16 @@ func passkeysAvailable(getenv func(string) string) bool {
 		return false
 	}
 	return strings.ToLower(u.Scheme) == "https" || host == "localhost"
+}
+
+// bodyAlertStack is _host_alerts.html's state for this request: the open
+// alerts of the shell, sliced off the dashboard (shellSlice), presented and
+// folded as the template does.
+func bodyAlertStack(r *http.Request, env Env, sh shell, c *reqCtx, p Page) alertStack {
+	rows, more := sh.Alerts, 0
+	if r.URL.Path != "/" {
+		rows, more = shellSlice(rows)
+	}
+	cards := presentMany(rows, sh.Progress, alertText{lang: c.lang, now: env.Now})
+	return buildAlertStack(cards, more, r.URL.Path, lastQuery(r, "apartment"), p.AlertsExpanded, p.PhHidePin, c.t)
 }
