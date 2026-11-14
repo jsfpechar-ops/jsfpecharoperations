@@ -1,6 +1,6 @@
 # 1599: Go setup wizard, part 1: the entry route, the step route, the frame, the calendar and guest link pages
 
-Status: todo
+Status: review
 Tier: A
 Depends on: none (the onboarding package `go/internal/web/onboarding` with `setup.go` is on go-wave3) | Base commit: current tip of the working branch | Branch: task/1599-go-setup-wizard-core
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
