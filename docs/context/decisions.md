@@ -1,7 +1,5 @@
 # Decisions
 Append-only.
-- 2026-10-08/12 | Door codes (TTLock pilot): timed codes, test mode until live; one 1-min job, no polling; details 0037, 0067-69 | owner | [plan](../plans/ttlock-door-codes.md), [legal](../privacy/DOOR_CODES_LEGAL.md)
-- 2026-10-09 | [workflow] One brief per copy text; executors skip non-todo; lint warns on overlap; status `replaced` = newer brief took over | [workflow](workflow.md)
 - 2026-10-19 | Design v2: MASTER.md is the only host design source; Lucide inline SVG; CI blocks raw colours, inline styles, page CSS | owner | [plan](../plans/design-v2.md)
 - 2026-10-19 Accessibility: WCAG 2.2 AA, `a11y_guard.js`; no statement page (owner).
 - 2026-10-24 | [deps] `anthropic` 2.3.0 pinned+hashed; model `claude-haiku-5-5`; calls via `App/app/ai.py` | 0310
