@@ -1,0 +1,20 @@
+{{/* App/app/templates/login_link.html (brief 1502). Data: authpage.LoginLinkData. */}}
+{{define "login_link.title"}}{{t "login.link.page_title"}}{{end}}
+{{define "login_link.lang_next"}}/login{{end}}
+{{define "login_link"}}{{$d := .Data}}
+<section class="auth-card">
+  {{if $d.Expired}}
+  <h1 class="auth-title">{{t "login.link.expired.title"}}</h1>
+  <p class="auth-lede">{{if $d.Locked}}{{t "login.link.expired.locked"}}{{else}}{{t "login.link.expired.body"}}{{end}}</p>
+  <a class="auth-submit" href="/login?lang={{.Lang}}">{{t "login.link.expired.action"}}</a>
+  {{else}}
+  <h1 class="auth-title">{{if $d.Invite}}{{t "login.link.invite_title"}}{{else}}{{t "login.link.title"}}{{end}}</h1>
+  <p class="auth-lede">{{t "login.link.lede"}}</p>
+  <form method="post" action="/login/link" class="auth-form">
+    <input type="hidden" name="_csrf" value="{{.CSRF}}">
+    <input type="hidden" name="t" value="{{$d.Token}}">
+    <button class="auth-submit" type="submit" autofocus>{{t "login.link.submit"}}</button>
+  </form>
+  {{end}}
+</section>
+{{end}}
