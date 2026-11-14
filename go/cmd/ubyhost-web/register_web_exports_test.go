@@ -7,8 +7,8 @@ import (
 )
 
 // exportRoutes is each method and path of App/app/routes/exports.py that
-// briefs 1320, 1321 and 1605 to 1605 have ported, with the pattern that must
-// answer it (9 of 13).
+// briefs 1320, 1321 and 1605 to 1606 have ported, with the pattern that must
+// answer it (10 of 13).
 var exportRoutes = []struct{ method, path, pattern string }{
 	{http.MethodGet, "/reservations.csv", "GET /reservations.csv"},
 	{http.MethodGet, "/submissions/receipts.zip", "GET /submissions/receipts.zip"},
@@ -19,6 +19,7 @@ var exportRoutes = []struct{ method, path, pattern string }{
 	{http.MethodGet, "/housebook.csv", "GET /housebook.csv"},
 	{http.MethodGet, "/guests/5/export.json", "GET /guests/{id}/export.json"},
 	{http.MethodGet, "/guests/5/form.pdf", "GET /guests/{id}/form.pdf"},
+	{http.MethodGet, "/housebook/pdfs.zip", "GET /housebook/pdfs.zip"},
 }
 
 // TestExportRoutesRegistered checks that each ported export route reaches its

@@ -1,0 +1,2291 @@
+{
+ "extras": [
+  "UPDATE user_account SET deletion_due_at = '2026-12-13T00:00:00+00:00' WHERE id = 1",
+  "INSERT INTO legal_entity (id, owner_user_id, name, ico, archived_at, created_at) VALUES (1, 1, 'Novák & syn s.r.o.', '12345678', '2026-03-01T10:00:00+00:00', '2026-01-01'),(2, 1, 'Aktivní', NULL, NULL, '2026-01-01'),(3, 1, 'Bez IČO <b>', NULL, '2026-04-01T10:00:00+00:00', '2026-01-01')",
+  "INSERT INTO apartment (id, owner_user_id, internal_name, archived_at, created_at) VALUES (9, 1, 'Stará chata', '2026-02-01T00:00:00+00:00', '2026-01-01')",
+  "INSERT INTO reservation (id, apartment_id, source, uid, date_from, date_to, status, archived_at, created_at, updated_at) VALUES (10, 9, 'ical', 'u10', '2025-07-01', '2025-07-04', 'confirmed', '2026-02-02T00:00:00+00:00', '2026-01-01', '2026-01-01'),(20, 7, 'ical', 'u20', '2019-03-01', '2019-03-05', 'confirmed', NULL, '2019-01-01', '2019-01-01'),(50, 50, 'ical', 'u50', '2026-09-01', '2026-09-03', 'confirmed', NULL, '2026-01-01', '2026-01-01')",
+  "INSERT INTO guest (id, reservation_id, surname, first_name, nationality, submit_state, created_at, updated_at) VALUES (30, 20, 'Old', 'Stay', 'AUT', 'sent', '2019-01-01', '2019-01-01'),(31, 20, 'Old', 'Two', 'AUT', 'sent', '2019-01-01', '2019-01-01')",
+  "INSERT INTO guest (id, reservation_id, surname, first_name, nationality, submit_state, created_at, updated_at) SELECT 500 + n, 50, 'Many', 'G' || n, 'AUT', 'pending', '2026-01-01', '2026-01-01' FROM generate_series(1, 101) n",
+  "INSERT INTO guest (id, reservation_id, surname, first_name, nationality, doc_number_enc, submit_state, archived_at, created_at, updated_at) VALUES (401, 40, 'Broken', 'Archived', 'AUT', 'gAAAAABrNuyAMDEyMzQ1Njc4OWFiY2RlZr8oRiKiNTdBCtiLKWj8uVDkEpLNpN6ccmZr_wlCqh1yiLUFcZ-TXp7BPrhVU3s6cX==', 'pending', '2026-05-05T00:00:00+00:00', '2026-01-01', '2026-01-01')",
+  "INSERT INTO invoice (id, legal_entity_id, owner_user_id, kind, seq_year, seq_no, number, vs, lang, vat_status, issue_date, seller_name, seller_seat, buyer_name, total_haler, created_at, pdf_blob) VALUES (1, 2, 1, 'invoice', 2026, 1, '2026-0001', '2026000100', 'cs', 'non_payer', '2026-05-01', 'S', 'Seat', 'B', 100, '2026-05-01', convert_to('%PDF-1.4 invoice one', 'UTF8')),(2, 2, 1, 'invoice', 2026, 2, '2026-0002', '2026000200', 'cs', 'non_payer', '2026-05-02', 'S', 'Seat', 'B', 100, '2026-05-02', NULL)",
+  "INSERT INTO stay_fee_filing (id, apartment_id, period_key, version, cadence, rate_czk, liable_days, exempt_days, total_due_czk, total_collected_czk, pdf_enc, csv_enc, created_at, superseded_at) VALUES (1, 7, '2026-10', 2, 'monthly', 50, 3, 0, 150, 150, convert_to('gAAAAABrNuyAMDEyMzQ1Njc4OWFiY2RlZnXg-L2H7zRH3kq68fsC7I4Cf2OZnj_XZcS0dhfNT2fxVnKhDnX8I9WuaoxEvdvxaLuN0TI1F-kXU0RPk5KcOO0=', 'UTF8'), convert_to('gAAAAABrNuyAMDEyMzQ1Njc4OWFiY2RlZrCW5lvIVB0R-Dj2Z3QAAjLOGWQPvX4TLl0Mk2AlLcoMGtuOM2vUhHw5V1_hQV-eLw==', 'UTF8'), '2026-11-01', NULL),(2, 7, '2026-10', 1, 'monthly', 50, 3, 0, 150, 150, convert_to('gAAAAABrNuyAMDEyMzQ1Njc4OWFiY2RlZm0bWx6U-LzAtZMtB8cKS92yNx5IVBbx3ycERWSpP9BjODFpT_ifSgdafehN_ywOLQ==', 'UTF8'), NULL, '2026-10-31', '2026-11-01'),(3, 6, '2026-Q3', 1, 'quarterly', 50, 3, 0, 150, 150, NULL, convert_to('gAAAAABrNuyAMDEyMzQ1Njc4OWFiY2RlZnZOFTm_6vUD3Yijpw-EGWFQTCinPr1n-ykk1oXB9nLeiL6sRO9kjsIzuMZNhIUR5g==', 'UTF8'), '2026-10-01', NULL)",
+  "INSERT INTO alert (id, level, kind, owner_user_id, message, created_at) VALUES (1, 'warning', 'calendar_sync_failed', 1, 'Calendar sync failed', '2026-11-10T00:00:00+00:00')"
+ ],
+ "photos": [
+  "11.jpg.enc",
+  "14.png",
+  "30.jpg"
+ ],
+ "cases": [
+  {
+   "name": "form_signed_out",
+   "method": "GET",
+   "path": "/guests/11/form.pdf",
+   "session": null,
+   "lang": null,
+   "csrf": true,
+   "status": 303,
+   "headers": {
+    "location": "/login?next=/guests/11/form.pdf",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body": ""
+  },
+  {
+   "name": "form_11",
+   "method": "GET",
+   "path": "/guests/11/form.pdf",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 200,
+   "headers": {
+    "content-type": "application/pdf",
+    "content-disposition": "attachment; filename=\"registration-form-11.pdf\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "owner@example.test",
+     "export_registration_pdf",
+     "guest_id=11",
+     1,
+     1,
+     null
+    ]
+   ],
+   "body": "PDF"
+  },
+  {
+   "name": "form_12_child",
+   "method": "GET",
+   "path": "/guests/12/form.pdf",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 200,
+   "headers": {
+    "content-type": "application/pdf",
+    "content-disposition": "attachment; filename=\"registration-form-12.pdf\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "owner@example.test",
+     "export_registration_pdf",
+     "guest_id=12",
+     1,
+     1,
+     null
+    ]
+   ],
+   "body": "PDF"
+  },
+  {
+   "name": "form_15",
+   "method": "GET",
+   "path": "/guests/15/form.pdf",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 200,
+   "headers": {
+    "content-type": "application/pdf",
+    "content-disposition": "attachment; filename=\"registration-form-15.pdf\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "owner@example.test",
+     "export_registration_pdf",
+     "guest_id=15",
+     1,
+     1,
+     null
+    ]
+   ],
+   "body": "PDF"
+  },
+  {
+   "name": "form_19",
+   "method": "GET",
+   "path": "/guests/19/form.pdf",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 200,
+   "headers": {
+    "content-type": "application/pdf",
+    "content-disposition": "attachment; filename=\"registration-form-19.pdf\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "owner@example.test",
+     "export_registration_pdf",
+     "guest_id=19",
+     1,
+     1,
+     null
+    ]
+   ],
+   "body": "PDF"
+  },
+  {
+   "name": "form_missing",
+   "method": "GET",
+   "path": "/guests/999/form.pdf",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 303,
+   "headers": {
+    "location": "/reservations?err=This%20guest%20no%20longer%20exists.",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body": ""
+  },
+  {
+   "name": "form_missing_cs",
+   "method": "GET",
+   "path": "/guests/999/form.pdf",
+   "session": {
+    "uid": 1
+   },
+   "lang": "cs",
+   "csrf": true,
+   "status": 303,
+   "headers": {
+    "location": "/reservations?err=Tento%20host%20u%C5%BE%20neexistuje.",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body": ""
+  },
+  {
+   "name": "form_other_owner",
+   "method": "GET",
+   "path": "/guests/4/form.pdf",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 303,
+   "headers": {
+    "location": "/reservations?err=This%20guest%20no%20longer%20exists.",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body": ""
+  },
+  {
+   "name": "form_other_ws",
+   "method": "GET",
+   "path": "/guests/11/form.pdf",
+   "session": {
+    "uid": 2
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 303,
+   "headers": {
+    "location": "/reservations?err=This%20guest%20no%20longer%20exists.",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body": ""
+  },
+  {
+   "name": "form_broken",
+   "method": "GET",
+   "path": "/guests/400/form.pdf",
+   "session": {
+    "uid": 4
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 500,
+   "headers": {
+    "content-type": "text/plain; charset=utf-8",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body": "Internal Server Error"
+  },
+  {
+   "name": "form_support",
+   "method": "GET",
+   "path": "/guests/11/form.pdf",
+   "session": {
+    "uid": 3,
+    "as": 1
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 200,
+   "headers": {
+    "content-type": "application/pdf",
+    "content-disposition": "attachment; filename=\"registration-form-11.pdf\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "admin@example.test",
+     "export_registration_pdf",
+     "guest_id=11",
+     1,
+     3,
+     3
+    ]
+   ],
+   "body": "PDF"
+  },
+  {
+   "name": "zip_signed_out",
+   "method": "GET",
+   "path": "/housebook/pdfs.zip",
+   "session": null,
+   "lang": null,
+   "csrf": true,
+   "status": 303,
+   "headers": {
+    "location": "/login?next=/housebook/pdfs.zip",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body": ""
+  },
+  {
+   "name": "zip_all",
+   "method": "GET",
+   "path": "/housebook/pdfs.zip",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 200,
+   "headers": {
+    "content-type": "application/zip",
+    "content-disposition": "attachment; filename=\"domovni-kniha-pdf-20261113.zip\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "owner@example.test",
+     "export_housebook_pdfs",
+     "rows=13",
+     1,
+     1,
+     null
+    ]
+   ],
+   "zip": [
+    [
+     "2019-03-01-Old-Stay.pdf",
+     "PDF"
+    ],
+    [
+     "2019-03-01-Old-Two.pdf",
+     "PDF"
+    ],
+    [
+     "2026-05-01-Novak-Jan.pdf",
+     "PDF"
+    ],
+    [
+     "2026-05-01-Novak-Eva.pdf",
+     "PDF"
+    ],
+    [
+     "2026-05-01-Müller-Hans.pdf",
+     "PDF"
+    ],
+    [
+     "2026-05-01-Müller-Kid.pdf",
+     "PDF"
+    ],
+    [
+     "2026-05-01-Müller-Baby.pdf",
+     "PDF"
+    ],
+    [
+     "2026-05-10-Smith-Al.pdf",
+     "PDF"
+    ],
+    [
+     "2026-05-11-Dvořák-Petr.pdf",
+     "PDF"
+    ],
+    [
+     "2026-06-01-Tab_Name-Q_uote.pdf",
+     "PDF"
+    ],
+    [
+     "2026-07-01-Bad-Bo.pdf",
+     "PDF"
+    ],
+    [
+     "2026-07-01-Paper-Child.pdf",
+     "PDF"
+    ],
+    [
+     "2026-07-01-Paper-Adult.pdf",
+     "PDF"
+    ]
+   ]
+  },
+  {
+   "name": "zip_apartment",
+   "method": "GET",
+   "path": "/housebook/pdfs.zip?apartment=6",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 200,
+   "headers": {
+    "content-type": "application/zip",
+    "content-disposition": "attachment; filename=\"domovni-kniha-pdf-20261113.zip\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "owner@example.test",
+     "export_housebook_pdfs",
+     "rows=1",
+     1,
+     1,
+     null
+    ]
+   ],
+   "zip": [
+    [
+     "2026-06-01-Tab_Name-Q_uote.pdf",
+     "PDF"
+    ]
+   ]
+  },
+  {
+   "name": "zip_range",
+   "method": "GET",
+   "path": "/housebook/pdfs.zip?from=2026-05-02&to=2026-05-10",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 200,
+   "headers": {
+    "content-type": "application/zip",
+    "content-disposition": "attachment; filename=\"domovni-kniha-pdf-20261113.zip\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "owner@example.test",
+     "export_housebook_pdfs",
+     "rows=1",
+     1,
+     1,
+     null
+    ]
+   ],
+   "zip": [
+    [
+     "2026-05-10-Smith-Al.pdf",
+     "PDF"
+    ]
+   ]
+  },
+  {
+   "name": "zip_empty",
+   "method": "GET",
+   "path": "/housebook/pdfs.zip?from=2027-01-01",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 303,
+   "headers": {
+    "location": "/housebook?err=No%20house-book%20entries%20match%20this%20filter.",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body": ""
+  },
+  {
+   "name": "zip_empty_cs",
+   "method": "GET",
+   "path": "/housebook/pdfs.zip?from=2027-01-01",
+   "session": {
+    "uid": 1
+   },
+   "lang": "cs",
+   "csrf": true,
+   "status": 303,
+   "headers": {
+    "location": "/housebook?err=Tomuto%20filtru%20neodpov%C3%ADd%C3%A1%20%C5%BE%C3%A1dn%C3%BD%20z%C3%A1znam%20v%20domovn%C3%AD%20knize.",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body": ""
+  },
+  {
+   "name": "zip_too_many",
+   "method": "GET",
+   "path": "/housebook/pdfs.zip",
+   "session": {
+    "uid": 5
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 303,
+   "headers": {
+    "location": "/housebook?err=Too%20many%20entries%20%28101%29%20for%20one%20download.%20Narrow%20the%20date%20or%20property%20filter%20to%20100%20or%20fewer.",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body": ""
+  },
+  {
+   "name": "zip_too_many_vi",
+   "method": "GET",
+   "path": "/housebook/pdfs.zip",
+   "session": {
+    "uid": 5
+   },
+   "lang": "vi",
+   "csrf": true,
+   "status": 303,
+   "headers": {
+    "location": "/housebook?err=Qu%C3%A1%20nhi%E1%BB%81u%20m%E1%BB%A5c%20%28101%29%20cho%20m%E1%BB%99t%20l%E1%BA%A7n%20t%E1%BA%A3i.%20Thu%20h%E1%BA%B9p%20b%E1%BB%99%20l%E1%BB%8Dc%20ng%C3%A0y%20ho%E1%BA%B7c%20ch%E1%BB%97%20%E1%BB%9F%20xu%E1%BB%91ng%20c%C3%B2n%20t%E1%BB%91i%20%C4%91a%20100.",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body": ""
+  },
+  {
+   "name": "zip_limit_ok",
+   "method": "GET",
+   "path": "/housebook/pdfs.zip?to=2026-08-31",
+   "session": {
+    "uid": 5
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 303,
+   "headers": {
+    "location": "/housebook?err=No%20house-book%20entries%20match%20this%20filter.",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body": ""
+  },
+  {
+   "name": "zip_broken",
+   "method": "GET",
+   "path": "/housebook/pdfs.zip",
+   "session": {
+    "uid": 4
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 500,
+   "headers": {
+    "content-type": "text/plain; charset=utf-8",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body": "Internal Server Error"
+  },
+  {
+   "name": "zip_support",
+   "method": "GET",
+   "path": "/housebook/pdfs.zip?apartment=6",
+   "session": {
+    "uid": 3,
+    "as": 1
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 200,
+   "headers": {
+    "content-type": "application/zip",
+    "content-disposition": "attachment; filename=\"domovni-kniha-pdf-20261113.zip\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "admin@example.test",
+     "export_housebook_pdfs",
+     "rows=1",
+     1,
+     3,
+     3
+    ]
+   ],
+   "zip": [
+    [
+     "2026-06-01-Tab_Name-Q_uote.pdf",
+     "PDF"
+    ]
+   ]
+  },
+  {
+   "name": "arch_signed_out",
+   "method": "GET",
+   "path": "/settings/archived",
+   "session": null,
+   "lang": null,
+   "csrf": true,
+   "status": 303,
+   "headers": {
+    "location": "/login?next=/settings/archived",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body": ""
+  },
+  {
+   "name": "arch_all",
+   "method": "GET",
+   "path": "/settings/archived",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 200,
+   "headers": {
+    "content-type": "text/html; charset=utf-8",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body": "<main id=\"main-content\" class=\"main\"><aside class=\"env-banner mock\" role=\"alert\"><strong>Nothing is being reported to the police</strong><span class=\"env-body\">This workspace is pointed at the practice server, so records marked &#34;Reported&#34; were never filed. Set UBYHOST_UBYPORT_ENV to test or prod before you rely on it.</span><details class=\"env-more\"><summary>How does this work?</summary><span>This workspace is pointed at the practice server, so records marked &#34;Reported&#34; were never filed. Set UBYHOST_UBYPORT_ENV to test or prod before you rely on it.</span></details></aside><aside class=\"banner warning workspace-deletion-banner\" role=\"status\"><div class=\"grow\"><strong>This account will be deleted on 2026-12-13 01:00</strong><p class=\"small muted\" style=\"margin:6px 0 0\">Download everything you need before then. Invoices and filings you must keep by law are your responsibility after deletion.</p></div><form method=\"post\" action=\"/settings/workspace-export\" data-no-skeleton><button class=\"btn small\" type=\"submit\">Download everything (ZIP)</button></form></aside><div class=\"host-feedback-region\" data-host-feedback data-dismiss-label=\"Dismiss notification\" data-copy-success=\"Copied\" data-copy-failure=\"Copy failed\" data-copy-manual=\"Select the text and copy it manually.\" data-command-copied=\"Guest link copied\"><div class=\"toast-stack\" data-feedback-rail aria-live=\"off\"></div><div class=\"copy-manual-recovery\" data-copy-recovery role=\"group\" aria-label=\"Copy failed\" hidden><strong>Copy failed</strong><p>Select the text and copy it manually.</p><div data-copy-recovery-source></div><button type=\"button\" data-copy-recovery-close aria-label=\"Dismiss notification\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"x\"><path d=\"M18 6 6 18\"/><path d=\"m6 6 12 12\"/></svg></button></div><div class=\"sr-only\" data-feedback-live aria-live=\"polite\" aria-atomic=\"true\"></div><div class=\"sr-only\" data-feedback-alert role=\"alert\" aria-live=\"assertive\" aria-atomic=\"true\"></div></div><div class=\"ui-page\" data-body-kind=\"list\"><div class=\"ui-body ui-body-list\"><aside class=\"notification-stack\" data-host-alerts aria-label=\"Notifications\" aria-live=\"polite\"><article class=\"notification-bubble warning\" data-alert-id=\"1\" data-alert-compact data-notification><div class=\"notification-link\"><span class=\"notification-icon\" aria-hidden=\"true\">!</span><span class=\"grow\"><strong>Calendar sync failed</strong></span></div><form method=\"post\" action=\"/alerts/1/dismiss\" data-notification-dismiss><button type=\"submit\" aria-label=\"Dismiss notification\">&times;</button></form></article></aside><div class=\"airbnb-header\"><a class=\"airbnb-back\" href=\"/settings\" aria-label=\"Back\"><svg class=\"ui-icon\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"arrow-left\"><path d=\"m12 19-7-7 7-7\"/><path d=\"M19 12H5\"/></svg></a><h1 class=\"airbnb-title\"><span class=\"tip-nowrap\">Archive<span class=\"help-tip\" data-help-tip><button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"archive-retention-help\">?</button><span class=\"help-tip-body\" id=\"archive-retention-help\" role=\"tooltip\">Archiving hides items from your daily work but keeps their history. Only the six-year retention purge in Settings permanently deletes guest records.</span></span></span></h1></div><nav class=\"settings-pills\" aria-label=\"Archive\"><a class=\"settings-pill is-current\" href=\"/settings/archived?type=all\" aria-current=\"page\">All (6)</a><a class=\"settings-pill\" href=\"/settings/archived?type=stays\">Stays (2)</a><a class=\"settings-pill\" href=\"/settings/archived?type=properties\">Properties (1)</a><a class=\"settings-pill\" href=\"/settings/archived?type=housebook\">House book (1)</a><a class=\"settings-pill\" href=\"/settings/archived?type=entities\">Operators (2)</a></nav><div class=\"heading-with-tip\"><h2>Archived stays</h2><span class=\"help-tip\" data-help-tip><button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"archive-stays-help\">?</button><span class=\"help-tip-body\" id=\"archive-stays-help\" role=\"tooltip\">Hidden from your stay list. Reporting history is kept.</span></span></div><div class=\"card scroll-x\"><table class=\"ui-table ui-table-stack\"><thead><tr><th>Stay</th><th>Property</th><th>Archived</th><th><span class=\"sr-only\">Actions</span></th></tr></thead><tbody><tr class=\"clickable-row\" data-href=\"/reservations/10\" tabindex=\"0\" role=\"link\"><td class=\"nowrap\" data-label=\"Stay\"><a class=\"row-primary-link\" href=\"/reservations/10\"> 01.07.2025 &ndash; 04.07.2025 </a></td><td data-label=\"Property\">Stará chata</td><td class=\"ui-sub\" data-label=\"Archived\">02.02.2026</td><td class=\"nowrap row-actions\" data-label=\"\"><a class=\"row-open\" href=\"/reservations/10\" tabindex=\"-1\" aria-hidden=\"true\"><span class=\"row-open-text\">Open</span></a><div class=\"row-menu ui-menu\"><button class=\"ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact row-menu-trigger\" type=\"button\" aria-label=\"More actions\" aria-expanded=\"false\" aria-haspopup=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"ellipsis-vertical\"><circle cx=\"12\" cy=\"12\" r=\"1\"/><circle cx=\"12\" cy=\"5\" r=\"1\"/><circle cx=\"12\" cy=\"19\" r=\"1\"/></svg></button><div class=\"row-menu-panel ui-menu-panel\" role=\"menu\" hidden><a class=\"row-menu-item\" href=\"/reservations/10\" role=\"menuitem\">Open</a><form method=\"post\" action=\"/reservations/10/unarchive\" class=\"row-menu-form\"><input type=\"hidden\" name=\"return_to\" value=\"/settings/archived\"><button class=\"row-menu-item\" type=\"submit\" role=\"menuitem\">Restore</button></form></div></div></td></tr><tr class=\"clickable-row\" data-href=\"/reservations/5\" tabindex=\"0\" role=\"link\"><td class=\"nowrap\" data-label=\"Stay\"><a class=\"row-primary-link\" href=\"/reservations/5\"> 02.05.2026 &ndash; 03.05.2026 </a></td><td data-label=\"Property\">Byt Dole</td><td class=\"ui-sub\" data-label=\"Archived\">01.01.2026</td><td class=\"nowrap row-actions\" data-label=\"\"><a class=\"row-open\" href=\"/reservations/5\" tabindex=\"-1\" aria-hidden=\"true\"><span class=\"row-open-text\">Open</span></a><div class=\"row-menu ui-menu\"><button class=\"ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact row-menu-trigger\" type=\"button\" aria-label=\"More actions\" aria-expanded=\"false\" aria-haspopup=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"ellipsis-vertical\"><circle cx=\"12\" cy=\"12\" r=\"1\"/><circle cx=\"12\" cy=\"5\" r=\"1\"/><circle cx=\"12\" cy=\"19\" r=\"1\"/></svg></button><div class=\"row-menu-panel ui-menu-panel\" role=\"menu\" hidden><a class=\"row-menu-item\" href=\"/reservations/5\" role=\"menuitem\">Open</a><form method=\"post\" action=\"/reservations/5/unarchive\" class=\"row-menu-form\"><input type=\"hidden\" name=\"return_to\" value=\"/settings/archived\"><button class=\"row-menu-item\" type=\"submit\" role=\"menuitem\">Restore</button></form></div></div></td></tr></tbody></table></div><div class=\"heading-with-tip\"><h2>Archived properties</h2><span class=\"help-tip\" data-help-tip><button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"archive-properties-help\">?</button><span class=\"help-tip-body\" id=\"archive-properties-help\" role=\"tooltip\">Hidden from your dashboard and guest links. Their history is kept.</span></span></div><div class=\"card scroll-x\"><table class=\"ui-table ui-table-stack\"><thead><tr><th>Property</th><th>Archived</th><th>Stays</th><th><span class=\"sr-only\">Actions</span></th></tr></thead><tbody><tr class=\"clickable-row\" data-href=\"/apartments/9\" tabindex=\"0\" role=\"link\"><td data-label=\"Property\"><a class=\"row-primary-link\" href=\"/apartments/9\">Stará chata</a></td><td class=\"ui-sub\" data-label=\"Archived\">01.02.2026</td><td class=\"ui-num\" data-label=\"Stays\">1</td><td class=\"nowrap row-actions\" data-label=\"\"><a class=\"row-open\" href=\"/apartments/9\" tabindex=\"-1\" aria-hidden=\"true\"><span class=\"row-open-text\">Open</span></a><div class=\"row-menu ui-menu\"><button class=\"ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact row-menu-trigger\" type=\"button\" aria-label=\"More actions\" aria-expanded=\"false\" aria-haspopup=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"ellipsis-vertical\"><circle cx=\"12\" cy=\"12\" r=\"1\"/><circle cx=\"12\" cy=\"5\" r=\"1\"/><circle cx=\"12\" cy=\"19\" r=\"1\"/></svg></button><div class=\"row-menu-panel ui-menu-panel\" role=\"menu\" hidden><a class=\"row-menu-item\" href=\"/apartments/9\" role=\"menuitem\">Open</a><form method=\"post\" action=\"/apartments/9/unarchive\" class=\"row-menu-form\"><input type=\"hidden\" name=\"return_to\" value=\"/settings/archived\"><button class=\"row-menu-item\" type=\"submit\" role=\"menuitem\">Restore</button></form></div></div></td></tr></tbody></table></div><div class=\"heading-with-tip\"><h2>Archived house-book entries</h2><span class=\"help-tip\" data-help-tip><button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"archive-housebook-help\">?</button><span class=\"help-tip-body\" id=\"archive-housebook-help\" role=\"tooltip\">Mistaken imports or duplicates can be restored here.</span></span></div><div class=\"card scroll-x\"><table class=\"ui-table ui-table-stack\"><thead><tr><th>Stay</th><th>Property</th><th>Guest</th><th>Archived</th><th></th></tr></thead><tbody><tr><td class=\"ui-sub nowrap\" data-label=\"Stay\">01.05.2026<br>04.05.2026</td><td data-label=\"Property\">Byt Dole</td><td data-label=\"Guest\"><strong>Archived</strong> A</td><td class=\"ui-sub\" data-label=\"Archived\">01.01.2026</td><td class=\"nowrap\" data-label=\"\"><form method=\"post\" action=\"/guests/16/unarchive\" class=\"inline\"><input type=\"hidden\" name=\"return_to\" value=\"/settings/archived\"><button class=\"ui-btn ui-btn-secondary ui-btn-compact\" type=\"submit\">Restore</button></form></td></tr></tbody></table></div><div class=\"heading-with-tip\"><h2>Archived operators</h2><span class=\"help-tip\" data-help-tip><button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"archive-entities-help\">?</button><span class=\"help-tip-body\" id=\"archive-entities-help\" role=\"tooltip\">Hidden from property pickers until restored.</span></span></div><div class=\"card scroll-x\"><table class=\"ui-table ui-table-stack\"><thead><tr><th>Name</th><th>Archived</th><th>IČO</th><th><span class=\"sr-only\">Actions</span></th></tr></thead><tbody><tr class=\"clickable-row\" data-href=\"/entities?edit=3\" tabindex=\"0\" role=\"link\"><td data-label=\"Name\"><a class=\"row-primary-link\" href=\"/entities?edit=3\">Bez IČO &lt;b&gt;</a></td><td class=\"ui-sub\" data-label=\"Archived\">01.04.2026</td><td class=\"ui-mono\" data-label=\"IČO\">—</td><td class=\"nowrap row-actions\" data-label=\"\"><a class=\"row-open\" href=\"/entities?edit=3\" tabindex=\"-1\" aria-hidden=\"true\"><span class=\"row-open-text\">Open</span></a><div class=\"row-menu ui-menu\"><button class=\"ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact row-menu-trigger\" type=\"button\" aria-label=\"More actions\" aria-expanded=\"false\" aria-haspopup=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"ellipsis-vertical\"><circle cx=\"12\" cy=\"12\" r=\"1\"/><circle cx=\"12\" cy=\"5\" r=\"1\"/><circle cx=\"12\" cy=\"19\" r=\"1\"/></svg></button><div class=\"row-menu-panel ui-menu-panel\" role=\"menu\" hidden><a class=\"row-menu-item\" href=\"/entities?edit=3\" role=\"menuitem\">Open</a><form method=\"post\" action=\"/entities/3/unarchive\" class=\"row-menu-form\"><input type=\"hidden\" name=\"return_to\" value=\"/settings/archived\"><button class=\"row-menu-item\" type=\"submit\" role=\"menuitem\">Restore</button></form></div></div></td></tr><tr class=\"clickable-row\" data-href=\"/entities?edit=1\" tabindex=\"0\" role=\"link\"><td data-label=\"Name\"><a class=\"row-primary-link\" href=\"/entities?edit=1\">Novák &amp; syn s.r.o.</a></td><td class=\"ui-sub\" data-label=\"Archived\">01.03.2026</td><td class=\"ui-mono\" data-label=\"IČO\">12345678</td><td class=\"nowrap row-actions\" data-label=\"\"><a class=\"row-open\" href=\"/entities?edit=1\" tabindex=\"-1\" aria-hidden=\"true\"><span class=\"row-open-text\">Open</span></a><div class=\"row-menu ui-menu\"><button class=\"ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact row-menu-trigger\" type=\"button\" aria-label=\"More actions\" aria-expanded=\"false\" aria-haspopup=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"ellipsis-vertical\"><circle cx=\"12\" cy=\"12\" r=\"1\"/><circle cx=\"12\" cy=\"5\" r=\"1\"/><circle cx=\"12\" cy=\"19\" r=\"1\"/></svg></button><div class=\"row-menu-panel ui-menu-panel\" role=\"menu\" hidden><a class=\"row-menu-item\" href=\"/entities?edit=1\" role=\"menuitem\">Open</a><form method=\"post\" action=\"/entities/1/unarchive\" class=\"row-menu-form\"><input type=\"hidden\" name=\"return_to\" value=\"/settings/archived\"><button class=\"row-menu-item\" type=\"submit\" role=\"menuitem\">Restore</button></form></div></div></td></tr></tbody></table></div></div></div><div class=\"page-skeleton\" data-page-skeleton role=\"status\" hidden><span class=\"sr-only\">Loading…</span><div class=\"ui-skel\" aria-hidden=\"true\" data-skeleton-kind=\"list\"><div class=\"ui-skel-h\"><div><span class=\"ui-bone ui-bone-title\"></span><span class=\"ui-bone ui-bone-meta\"></span></div><span class=\"ui-bone ui-bone-btn\"></span></div><span class=\"ui-bone ui-bone-toolbar\"></span><div class=\"ui-skel-rows\"><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div></div><div class=\"ui-skel-cards\"><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div></div></div></div></main>"
+  },
+  {
+   "name": "arch_all_cs",
+   "method": "GET",
+   "path": "/settings/archived",
+   "session": {
+    "uid": 1
+   },
+   "lang": "cs",
+   "csrf": true,
+   "status": 200,
+   "headers": {
+    "content-type": "text/html; charset=utf-8",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body": "<main id=\"main-content\" class=\"main\"><aside class=\"env-banner mock\" role=\"alert\"><strong>Policii se nic nehlásí</strong><span class=\"env-body\">Tento účet je nastavený na cvičný server, takže záznamy označené jako „Nahlášeno“ nebyly nikdy podány. Než se na to spolehnete, nastavte UBYHOST_UBYPORT_ENV na test nebo prod.</span><details class=\"env-more\"><summary>Jak to funguje?</summary><span>Tento účet je nastavený na cvičný server, takže záznamy označené jako „Nahlášeno“ nebyly nikdy podány. Než se na to spolehnete, nastavte UBYHOST_UBYPORT_ENV na test nebo prod.</span></details></aside><aside class=\"banner warning workspace-deletion-banner\" role=\"status\"><div class=\"grow\"><strong>Tento účet bude 2026-12-13 01:00 smazán</strong><p class=\"small muted\" style=\"margin:6px 0 0\">Stáhněte si vše potřebné před tímto termínem. Faktury a podání, která musíte podle zákona uchovat, zůstávají po smazání na vás.</p></div><form method=\"post\" action=\"/settings/workspace-export\" data-no-skeleton><button class=\"btn small\" type=\"submit\">Stáhnout vše (ZIP)</button></form></aside><div class=\"host-feedback-region\" data-host-feedback data-dismiss-label=\"Skrýt oznámení\" data-copy-success=\"Zkopírováno\" data-copy-failure=\"Kopírování se nezdařilo\" data-copy-manual=\"Označte text a zkopírujte ho ručně.\" data-command-copied=\"Odkaz pro hosty zkopírován\"><div class=\"toast-stack\" data-feedback-rail aria-live=\"off\"></div><div class=\"copy-manual-recovery\" data-copy-recovery role=\"group\" aria-label=\"Kopírování se nezdařilo\" hidden><strong>Kopírování se nezdařilo</strong><p>Označte text a zkopírujte ho ručně.</p><div data-copy-recovery-source></div><button type=\"button\" data-copy-recovery-close aria-label=\"Skrýt oznámení\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"x\"><path d=\"M18 6 6 18\"/><path d=\"m6 6 12 12\"/></svg></button></div><div class=\"sr-only\" data-feedback-live aria-live=\"polite\" aria-atomic=\"true\"></div><div class=\"sr-only\" data-feedback-alert role=\"alert\" aria-live=\"assertive\" aria-atomic=\"true\"></div></div><div class=\"ui-page\" data-body-kind=\"list\"><div class=\"ui-body ui-body-list\"><aside class=\"notification-stack\" data-host-alerts aria-label=\"Oznámení\" aria-live=\"polite\"><article class=\"notification-bubble warning\" data-alert-id=\"1\" data-alert-compact data-notification><div class=\"notification-link\"><span class=\"notification-icon\" aria-hidden=\"true\">!</span><span class=\"grow\"><strong>Calendar sync failed</strong></span></div><form method=\"post\" action=\"/alerts/1/dismiss\" data-notification-dismiss><button type=\"submit\" aria-label=\"Skrýt oznámení\">&times;</button></form></article></aside><div class=\"airbnb-header\"><a class=\"airbnb-back\" href=\"/settings\" aria-label=\"Zpět\"><svg class=\"ui-icon\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"arrow-left\"><path d=\"m12 19-7-7 7-7\"/><path d=\"M19 12H5\"/></svg></a><h1 class=\"airbnb-title\"><span class=\"tip-nowrap\">Archiv<span class=\"help-tip\" data-help-tip><button type=\"button\" class=\"help-tip-btn\" aria-label=\"Nápověda\" aria-expanded=\"false\" aria-controls=\"archive-retention-help\">?</button><span class=\"help-tip-body\" id=\"archive-retention-help\" role=\"tooltip\">Archivace skryje položky z každodenní práce, ale historii ponechá. Trvalé smazání hostů provede pouze šestiletá retence v Nastavení.</span></span></span></h1></div><nav class=\"settings-pills\" aria-label=\"Archiv\"><a class=\"settings-pill is-current\" href=\"/settings/archived?type=all\" aria-current=\"page\">Vše (6)</a><a class=\"settings-pill\" href=\"/settings/archived?type=stays\">Pobyty (2)</a><a class=\"settings-pill\" href=\"/settings/archived?type=properties\">Ubytování (1)</a><a class=\"settings-pill\" href=\"/settings/archived?type=housebook\">Domovní kniha (1)</a><a class=\"settings-pill\" href=\"/settings/archived?type=entities\">Provozovatelé (2)</a></nav><div class=\"heading-with-tip\"><h2>Archivované pobyty</h2><span class=\"help-tip\" data-help-tip><button type=\"button\" class=\"help-tip-btn\" aria-label=\"Nápověda\" aria-expanded=\"false\" aria-controls=\"archive-stays-help\">?</button><span class=\"help-tip-body\" id=\"archive-stays-help\" role=\"tooltip\">Skryté ze seznamu pobytů. Historie hlášení zůstává.</span></span></div><div class=\"card scroll-x\"><table class=\"ui-table ui-table-stack\"><thead><tr><th>Pobyt</th><th>Ubytování</th><th>Archivováno</th><th><span class=\"sr-only\">Akce</span></th></tr></thead><tbody><tr class=\"clickable-row\" data-href=\"/reservations/10\" tabindex=\"0\" role=\"link\"><td class=\"nowrap\" data-label=\"Pobyt\"><a class=\"row-primary-link\" href=\"/reservations/10\"> 01.07.2025 &ndash; 04.07.2025 </a></td><td data-label=\"Ubytování\">Stará chata</td><td class=\"ui-sub\" data-label=\"Archivováno\">02.02.2026</td><td class=\"nowrap row-actions\" data-label=\"\"><a class=\"row-open\" href=\"/reservations/10\" tabindex=\"-1\" aria-hidden=\"true\"><span class=\"row-open-text\">Otevřít</span></a><div class=\"row-menu ui-menu\"><button class=\"ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact row-menu-trigger\" type=\"button\" aria-label=\"Další akce\" aria-expanded=\"false\" aria-haspopup=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"ellipsis-vertical\"><circle cx=\"12\" cy=\"12\" r=\"1\"/><circle cx=\"12\" cy=\"5\" r=\"1\"/><circle cx=\"12\" cy=\"19\" r=\"1\"/></svg></button><div class=\"row-menu-panel ui-menu-panel\" role=\"menu\" hidden><a class=\"row-menu-item\" href=\"/reservations/10\" role=\"menuitem\">Otevřít</a><form method=\"post\" action=\"/reservations/10/unarchive\" class=\"row-menu-form\"><input type=\"hidden\" name=\"return_to\" value=\"/settings/archived\"><button class=\"row-menu-item\" type=\"submit\" role=\"menuitem\">Obnovit</button></form></div></div></td></tr><tr class=\"clickable-row\" data-href=\"/reservations/5\" tabindex=\"0\" role=\"link\"><td class=\"nowrap\" data-label=\"Pobyt\"><a class=\"row-primary-link\" href=\"/reservations/5\"> 02.05.2026 &ndash; 03.05.2026 </a></td><td data-label=\"Ubytování\">Byt Dole</td><td class=\"ui-sub\" data-label=\"Archivováno\">01.01.2026</td><td class=\"nowrap row-actions\" data-label=\"\"><a class=\"row-open\" href=\"/reservations/5\" tabindex=\"-1\" aria-hidden=\"true\"><span class=\"row-open-text\">Otevřít</span></a><div class=\"row-menu ui-menu\"><button class=\"ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact row-menu-trigger\" type=\"button\" aria-label=\"Další akce\" aria-expanded=\"false\" aria-haspopup=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"ellipsis-vertical\"><circle cx=\"12\" cy=\"12\" r=\"1\"/><circle cx=\"12\" cy=\"5\" r=\"1\"/><circle cx=\"12\" cy=\"19\" r=\"1\"/></svg></button><div class=\"row-menu-panel ui-menu-panel\" role=\"menu\" hidden><a class=\"row-menu-item\" href=\"/reservations/5\" role=\"menuitem\">Otevřít</a><form method=\"post\" action=\"/reservations/5/unarchive\" class=\"row-menu-form\"><input type=\"hidden\" name=\"return_to\" value=\"/settings/archived\"><button class=\"row-menu-item\" type=\"submit\" role=\"menuitem\">Obnovit</button></form></div></div></td></tr></tbody></table></div><div class=\"heading-with-tip\"><h2>Archivovaná ubytování</h2><span class=\"help-tip\" data-help-tip><button type=\"button\" class=\"help-tip-btn\" aria-label=\"Nápověda\" aria-expanded=\"false\" aria-controls=\"archive-properties-help\">?</button><span class=\"help-tip-body\" id=\"archive-properties-help\" role=\"tooltip\">Skryté z přehledu a odkazů pro hosty. Historie zůstává.</span></span></div><div class=\"card scroll-x\"><table class=\"ui-table ui-table-stack\"><thead><tr><th>Ubytování</th><th>Archivováno</th><th>Pobyty</th><th><span class=\"sr-only\">Akce</span></th></tr></thead><tbody><tr class=\"clickable-row\" data-href=\"/apartments/9\" tabindex=\"0\" role=\"link\"><td data-label=\"Ubytování\"><a class=\"row-primary-link\" href=\"/apartments/9\">Stará chata</a></td><td class=\"ui-sub\" data-label=\"Archivováno\">01.02.2026</td><td class=\"ui-num\" data-label=\"Pobyty\">1</td><td class=\"nowrap row-actions\" data-label=\"\"><a class=\"row-open\" href=\"/apartments/9\" tabindex=\"-1\" aria-hidden=\"true\"><span class=\"row-open-text\">Otevřít</span></a><div class=\"row-menu ui-menu\"><button class=\"ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact row-menu-trigger\" type=\"button\" aria-label=\"Další akce\" aria-expanded=\"false\" aria-haspopup=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"ellipsis-vertical\"><circle cx=\"12\" cy=\"12\" r=\"1\"/><circle cx=\"12\" cy=\"5\" r=\"1\"/><circle cx=\"12\" cy=\"19\" r=\"1\"/></svg></button><div class=\"row-menu-panel ui-menu-panel\" role=\"menu\" hidden><a class=\"row-menu-item\" href=\"/apartments/9\" role=\"menuitem\">Otevřít</a><form method=\"post\" action=\"/apartments/9/unarchive\" class=\"row-menu-form\"><input type=\"hidden\" name=\"return_to\" value=\"/settings/archived\"><button class=\"row-menu-item\" type=\"submit\" role=\"menuitem\">Obnovit</button></form></div></div></td></tr></tbody></table></div><div class=\"heading-with-tip\"><h2>Archivované záznamy knihy</h2><span class=\"help-tip\" data-help-tip><button type=\"button\" class=\"help-tip-btn\" aria-label=\"Nápověda\" aria-expanded=\"false\" aria-controls=\"archive-housebook-help\">?</button><span class=\"help-tip-body\" id=\"archive-housebook-help\" role=\"tooltip\">Chybné importy nebo duplicity obnovíte zde.</span></span></div><div class=\"card scroll-x\"><table class=\"ui-table ui-table-stack\"><thead><tr><th>Pobyt</th><th>Ubytování</th><th>Host</th><th>Archivováno</th><th></th></tr></thead><tbody><tr><td class=\"ui-sub nowrap\" data-label=\"Pobyt\">01.05.2026<br>04.05.2026</td><td data-label=\"Ubytování\">Byt Dole</td><td data-label=\"Host\"><strong>Archived</strong> A</td><td class=\"ui-sub\" data-label=\"Archivováno\">01.01.2026</td><td class=\"nowrap\" data-label=\"\"><form method=\"post\" action=\"/guests/16/unarchive\" class=\"inline\"><input type=\"hidden\" name=\"return_to\" value=\"/settings/archived\"><button class=\"ui-btn ui-btn-secondary ui-btn-compact\" type=\"submit\">Obnovit</button></form></td></tr></tbody></table></div><div class=\"heading-with-tip\"><h2>Archivovaní provozovatelé</h2><span class=\"help-tip\" data-help-tip><button type=\"button\" class=\"help-tip-btn\" aria-label=\"Nápověda\" aria-expanded=\"false\" aria-controls=\"archive-entities-help\">?</button><span class=\"help-tip-body\" id=\"archive-entities-help\" role=\"tooltip\">Skryté z výběru u ubytování, dokud je neobnovíte.</span></span></div><div class=\"card scroll-x\"><table class=\"ui-table ui-table-stack\"><thead><tr><th>Název</th><th>Archivováno</th><th>IČO</th><th><span class=\"sr-only\">Akce</span></th></tr></thead><tbody><tr class=\"clickable-row\" data-href=\"/entities?edit=3\" tabindex=\"0\" role=\"link\"><td data-label=\"Název\"><a class=\"row-primary-link\" href=\"/entities?edit=3\">Bez IČO &lt;b&gt;</a></td><td class=\"ui-sub\" data-label=\"Archivováno\">01.04.2026</td><td class=\"ui-mono\" data-label=\"IČO\">—</td><td class=\"nowrap row-actions\" data-label=\"\"><a class=\"row-open\" href=\"/entities?edit=3\" tabindex=\"-1\" aria-hidden=\"true\"><span class=\"row-open-text\">Otevřít</span></a><div class=\"row-menu ui-menu\"><button class=\"ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact row-menu-trigger\" type=\"button\" aria-label=\"Další akce\" aria-expanded=\"false\" aria-haspopup=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"ellipsis-vertical\"><circle cx=\"12\" cy=\"12\" r=\"1\"/><circle cx=\"12\" cy=\"5\" r=\"1\"/><circle cx=\"12\" cy=\"19\" r=\"1\"/></svg></button><div class=\"row-menu-panel ui-menu-panel\" role=\"menu\" hidden><a class=\"row-menu-item\" href=\"/entities?edit=3\" role=\"menuitem\">Otevřít</a><form method=\"post\" action=\"/entities/3/unarchive\" class=\"row-menu-form\"><input type=\"hidden\" name=\"return_to\" value=\"/settings/archived\"><button class=\"row-menu-item\" type=\"submit\" role=\"menuitem\">Obnovit</button></form></div></div></td></tr><tr class=\"clickable-row\" data-href=\"/entities?edit=1\" tabindex=\"0\" role=\"link\"><td data-label=\"Název\"><a class=\"row-primary-link\" href=\"/entities?edit=1\">Novák &amp; syn s.r.o.</a></td><td class=\"ui-sub\" data-label=\"Archivováno\">01.03.2026</td><td class=\"ui-mono\" data-label=\"IČO\">12345678</td><td class=\"nowrap row-actions\" data-label=\"\"><a class=\"row-open\" href=\"/entities?edit=1\" tabindex=\"-1\" aria-hidden=\"true\"><span class=\"row-open-text\">Otevřít</span></a><div class=\"row-menu ui-menu\"><button class=\"ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact row-menu-trigger\" type=\"button\" aria-label=\"Další akce\" aria-expanded=\"false\" aria-haspopup=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"ellipsis-vertical\"><circle cx=\"12\" cy=\"12\" r=\"1\"/><circle cx=\"12\" cy=\"5\" r=\"1\"/><circle cx=\"12\" cy=\"19\" r=\"1\"/></svg></button><div class=\"row-menu-panel ui-menu-panel\" role=\"menu\" hidden><a class=\"row-menu-item\" href=\"/entities?edit=1\" role=\"menuitem\">Otevřít</a><form method=\"post\" action=\"/entities/1/unarchive\" class=\"row-menu-form\"><input type=\"hidden\" name=\"return_to\" value=\"/settings/archived\"><button class=\"row-menu-item\" type=\"submit\" role=\"menuitem\">Obnovit</button></form></div></div></td></tr></tbody></table></div></div></div><div class=\"page-skeleton\" data-page-skeleton role=\"status\" hidden><span class=\"sr-only\">Načítá se…</span><div class=\"ui-skel\" aria-hidden=\"true\" data-skeleton-kind=\"list\"><div class=\"ui-skel-h\"><div><span class=\"ui-bone ui-bone-title\"></span><span class=\"ui-bone ui-bone-meta\"></span></div><span class=\"ui-bone ui-bone-btn\"></span></div><span class=\"ui-bone ui-bone-toolbar\"></span><div class=\"ui-skel-rows\"><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div></div><div class=\"ui-skel-cards\"><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div></div></div></div></main>"
+  },
+  {
+   "name": "arch_stays",
+   "method": "GET",
+   "path": "/settings/archived?type=stays",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 200,
+   "headers": {
+    "content-type": "text/html; charset=utf-8",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body": "<main id=\"main-content\" class=\"main\"><aside class=\"env-banner mock\" role=\"alert\"><strong>Nothing is being reported to the police</strong><span class=\"env-body\">This workspace is pointed at the practice server, so records marked &#34;Reported&#34; were never filed. Set UBYHOST_UBYPORT_ENV to test or prod before you rely on it.</span><details class=\"env-more\"><summary>How does this work?</summary><span>This workspace is pointed at the practice server, so records marked &#34;Reported&#34; were never filed. Set UBYHOST_UBYPORT_ENV to test or prod before you rely on it.</span></details></aside><aside class=\"banner warning workspace-deletion-banner\" role=\"status\"><div class=\"grow\"><strong>This account will be deleted on 2026-12-13 01:00</strong><p class=\"small muted\" style=\"margin:6px 0 0\">Download everything you need before then. Invoices and filings you must keep by law are your responsibility after deletion.</p></div><form method=\"post\" action=\"/settings/workspace-export\" data-no-skeleton><button class=\"btn small\" type=\"submit\">Download everything (ZIP)</button></form></aside><div class=\"host-feedback-region\" data-host-feedback data-dismiss-label=\"Dismiss notification\" data-copy-success=\"Copied\" data-copy-failure=\"Copy failed\" data-copy-manual=\"Select the text and copy it manually.\" data-command-copied=\"Guest link copied\"><div class=\"toast-stack\" data-feedback-rail aria-live=\"off\"></div><div class=\"copy-manual-recovery\" data-copy-recovery role=\"group\" aria-label=\"Copy failed\" hidden><strong>Copy failed</strong><p>Select the text and copy it manually.</p><div data-copy-recovery-source></div><button type=\"button\" data-copy-recovery-close aria-label=\"Dismiss notification\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"x\"><path d=\"M18 6 6 18\"/><path d=\"m6 6 12 12\"/></svg></button></div><div class=\"sr-only\" data-feedback-live aria-live=\"polite\" aria-atomic=\"true\"></div><div class=\"sr-only\" data-feedback-alert role=\"alert\" aria-live=\"assertive\" aria-atomic=\"true\"></div></div><div class=\"ui-page\" data-body-kind=\"list\"><div class=\"ui-body ui-body-list\"><aside class=\"notification-stack\" data-host-alerts aria-label=\"Notifications\" aria-live=\"polite\"><article class=\"notification-bubble warning\" data-alert-id=\"1\" data-alert-compact data-notification><div class=\"notification-link\"><span class=\"notification-icon\" aria-hidden=\"true\">!</span><span class=\"grow\"><strong>Calendar sync failed</strong></span></div><form method=\"post\" action=\"/alerts/1/dismiss\" data-notification-dismiss><button type=\"submit\" aria-label=\"Dismiss notification\">&times;</button></form></article></aside><div class=\"airbnb-header\"><a class=\"airbnb-back\" href=\"/settings\" aria-label=\"Back\"><svg class=\"ui-icon\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"arrow-left\"><path d=\"m12 19-7-7 7-7\"/><path d=\"M19 12H5\"/></svg></a><h1 class=\"airbnb-title\"><span class=\"tip-nowrap\">Archive<span class=\"help-tip\" data-help-tip><button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"archive-retention-help\">?</button><span class=\"help-tip-body\" id=\"archive-retention-help\" role=\"tooltip\">Archiving hides items from your daily work but keeps their history. Only the six-year retention purge in Settings permanently deletes guest records.</span></span></span></h1></div><nav class=\"settings-pills\" aria-label=\"Archive\"><a class=\"settings-pill\" href=\"/settings/archived?type=all\">All (6)</a><a class=\"settings-pill is-current\" href=\"/settings/archived?type=stays\" aria-current=\"page\">Stays (2)</a><a class=\"settings-pill\" href=\"/settings/archived?type=properties\">Properties (1)</a><a class=\"settings-pill\" href=\"/settings/archived?type=housebook\">House book (1)</a><a class=\"settings-pill\" href=\"/settings/archived?type=entities\">Operators (2)</a></nav><div class=\"heading-with-tip\"><h2>Archived stays</h2><span class=\"help-tip\" data-help-tip><button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"archive-stays-help\">?</button><span class=\"help-tip-body\" id=\"archive-stays-help\" role=\"tooltip\">Hidden from your stay list. Reporting history is kept.</span></span></div><div class=\"card scroll-x\"><table class=\"ui-table ui-table-stack\"><thead><tr><th>Stay</th><th>Property</th><th>Archived</th><th><span class=\"sr-only\">Actions</span></th></tr></thead><tbody><tr class=\"clickable-row\" data-href=\"/reservations/10\" tabindex=\"0\" role=\"link\"><td class=\"nowrap\" data-label=\"Stay\"><a class=\"row-primary-link\" href=\"/reservations/10\"> 01.07.2025 &ndash; 04.07.2025 </a></td><td data-label=\"Property\">Stará chata</td><td class=\"ui-sub\" data-label=\"Archived\">02.02.2026</td><td class=\"nowrap row-actions\" data-label=\"\"><a class=\"row-open\" href=\"/reservations/10\" tabindex=\"-1\" aria-hidden=\"true\"><span class=\"row-open-text\">Open</span></a><div class=\"row-menu ui-menu\"><button class=\"ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact row-menu-trigger\" type=\"button\" aria-label=\"More actions\" aria-expanded=\"false\" aria-haspopup=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"ellipsis-vertical\"><circle cx=\"12\" cy=\"12\" r=\"1\"/><circle cx=\"12\" cy=\"5\" r=\"1\"/><circle cx=\"12\" cy=\"19\" r=\"1\"/></svg></button><div class=\"row-menu-panel ui-menu-panel\" role=\"menu\" hidden><a class=\"row-menu-item\" href=\"/reservations/10\" role=\"menuitem\">Open</a><form method=\"post\" action=\"/reservations/10/unarchive\" class=\"row-menu-form\"><input type=\"hidden\" name=\"return_to\" value=\"/settings/archived?type=stays\"><button class=\"row-menu-item\" type=\"submit\" role=\"menuitem\">Restore</button></form></div></div></td></tr><tr class=\"clickable-row\" data-href=\"/reservations/5\" tabindex=\"0\" role=\"link\"><td class=\"nowrap\" data-label=\"Stay\"><a class=\"row-primary-link\" href=\"/reservations/5\"> 02.05.2026 &ndash; 03.05.2026 </a></td><td data-label=\"Property\">Byt Dole</td><td class=\"ui-sub\" data-label=\"Archived\">01.01.2026</td><td class=\"nowrap row-actions\" data-label=\"\"><a class=\"row-open\" href=\"/reservations/5\" tabindex=\"-1\" aria-hidden=\"true\"><span class=\"row-open-text\">Open</span></a><div class=\"row-menu ui-menu\"><button class=\"ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact row-menu-trigger\" type=\"button\" aria-label=\"More actions\" aria-expanded=\"false\" aria-haspopup=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"ellipsis-vertical\"><circle cx=\"12\" cy=\"12\" r=\"1\"/><circle cx=\"12\" cy=\"5\" r=\"1\"/><circle cx=\"12\" cy=\"19\" r=\"1\"/></svg></button><div class=\"row-menu-panel ui-menu-panel\" role=\"menu\" hidden><a class=\"row-menu-item\" href=\"/reservations/5\" role=\"menuitem\">Open</a><form method=\"post\" action=\"/reservations/5/unarchive\" class=\"row-menu-form\"><input type=\"hidden\" name=\"return_to\" value=\"/settings/archived?type=stays\"><button class=\"row-menu-item\" type=\"submit\" role=\"menuitem\">Restore</button></form></div></div></td></tr></tbody></table></div></div></div><div class=\"page-skeleton\" data-page-skeleton role=\"status\" hidden><span class=\"sr-only\">Loading…</span><div class=\"ui-skel\" aria-hidden=\"true\" data-skeleton-kind=\"list\"><div class=\"ui-skel-h\"><div><span class=\"ui-bone ui-bone-title\"></span><span class=\"ui-bone ui-bone-meta\"></span></div><span class=\"ui-bone ui-bone-btn\"></span></div><span class=\"ui-bone ui-bone-toolbar\"></span><div class=\"ui-skel-rows\"><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div></div><div class=\"ui-skel-cards\"><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div></div></div></div></main>"
+  },
+  {
+   "name": "arch_properties",
+   "method": "GET",
+   "path": "/settings/archived?type=properties",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 200,
+   "headers": {
+    "content-type": "text/html; charset=utf-8",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body": "<main id=\"main-content\" class=\"main\"><aside class=\"env-banner mock\" role=\"alert\"><strong>Nothing is being reported to the police</strong><span class=\"env-body\">This workspace is pointed at the practice server, so records marked &#34;Reported&#34; were never filed. Set UBYHOST_UBYPORT_ENV to test or prod before you rely on it.</span><details class=\"env-more\"><summary>How does this work?</summary><span>This workspace is pointed at the practice server, so records marked &#34;Reported&#34; were never filed. Set UBYHOST_UBYPORT_ENV to test or prod before you rely on it.</span></details></aside><aside class=\"banner warning workspace-deletion-banner\" role=\"status\"><div class=\"grow\"><strong>This account will be deleted on 2026-12-13 01:00</strong><p class=\"small muted\" style=\"margin:6px 0 0\">Download everything you need before then. Invoices and filings you must keep by law are your responsibility after deletion.</p></div><form method=\"post\" action=\"/settings/workspace-export\" data-no-skeleton><button class=\"btn small\" type=\"submit\">Download everything (ZIP)</button></form></aside><div class=\"host-feedback-region\" data-host-feedback data-dismiss-label=\"Dismiss notification\" data-copy-success=\"Copied\" data-copy-failure=\"Copy failed\" data-copy-manual=\"Select the text and copy it manually.\" data-command-copied=\"Guest link copied\"><div class=\"toast-stack\" data-feedback-rail aria-live=\"off\"></div><div class=\"copy-manual-recovery\" data-copy-recovery role=\"group\" aria-label=\"Copy failed\" hidden><strong>Copy failed</strong><p>Select the text and copy it manually.</p><div data-copy-recovery-source></div><button type=\"button\" data-copy-recovery-close aria-label=\"Dismiss notification\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"x\"><path d=\"M18 6 6 18\"/><path d=\"m6 6 12 12\"/></svg></button></div><div class=\"sr-only\" data-feedback-live aria-live=\"polite\" aria-atomic=\"true\"></div><div class=\"sr-only\" data-feedback-alert role=\"alert\" aria-live=\"assertive\" aria-atomic=\"true\"></div></div><div class=\"ui-page\" data-body-kind=\"list\"><div class=\"ui-body ui-body-list\"><aside class=\"notification-stack\" data-host-alerts aria-label=\"Notifications\" aria-live=\"polite\"><article class=\"notification-bubble warning\" data-alert-id=\"1\" data-alert-compact data-notification><div class=\"notification-link\"><span class=\"notification-icon\" aria-hidden=\"true\">!</span><span class=\"grow\"><strong>Calendar sync failed</strong></span></div><form method=\"post\" action=\"/alerts/1/dismiss\" data-notification-dismiss><button type=\"submit\" aria-label=\"Dismiss notification\">&times;</button></form></article></aside><div class=\"airbnb-header\"><a class=\"airbnb-back\" href=\"/settings\" aria-label=\"Back\"><svg class=\"ui-icon\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"arrow-left\"><path d=\"m12 19-7-7 7-7\"/><path d=\"M19 12H5\"/></svg></a><h1 class=\"airbnb-title\"><span class=\"tip-nowrap\">Archive<span class=\"help-tip\" data-help-tip><button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"archive-retention-help\">?</button><span class=\"help-tip-body\" id=\"archive-retention-help\" role=\"tooltip\">Archiving hides items from your daily work but keeps their history. Only the six-year retention purge in Settings permanently deletes guest records.</span></span></span></h1></div><nav class=\"settings-pills\" aria-label=\"Archive\"><a class=\"settings-pill\" href=\"/settings/archived?type=all\">All (6)</a><a class=\"settings-pill\" href=\"/settings/archived?type=stays\">Stays (2)</a><a class=\"settings-pill is-current\" href=\"/settings/archived?type=properties\" aria-current=\"page\">Properties (1)</a><a class=\"settings-pill\" href=\"/settings/archived?type=housebook\">House book (1)</a><a class=\"settings-pill\" href=\"/settings/archived?type=entities\">Operators (2)</a></nav><div class=\"heading-with-tip\"><h2>Archived properties</h2><span class=\"help-tip\" data-help-tip><button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"archive-properties-help\">?</button><span class=\"help-tip-body\" id=\"archive-properties-help\" role=\"tooltip\">Hidden from your dashboard and guest links. Their history is kept.</span></span></div><div class=\"card scroll-x\"><table class=\"ui-table ui-table-stack\"><thead><tr><th>Property</th><th>Archived</th><th>Stays</th><th><span class=\"sr-only\">Actions</span></th></tr></thead><tbody><tr class=\"clickable-row\" data-href=\"/apartments/9\" tabindex=\"0\" role=\"link\"><td data-label=\"Property\"><a class=\"row-primary-link\" href=\"/apartments/9\">Stará chata</a></td><td class=\"ui-sub\" data-label=\"Archived\">01.02.2026</td><td class=\"ui-num\" data-label=\"Stays\">1</td><td class=\"nowrap row-actions\" data-label=\"\"><a class=\"row-open\" href=\"/apartments/9\" tabindex=\"-1\" aria-hidden=\"true\"><span class=\"row-open-text\">Open</span></a><div class=\"row-menu ui-menu\"><button class=\"ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact row-menu-trigger\" type=\"button\" aria-label=\"More actions\" aria-expanded=\"false\" aria-haspopup=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"ellipsis-vertical\"><circle cx=\"12\" cy=\"12\" r=\"1\"/><circle cx=\"12\" cy=\"5\" r=\"1\"/><circle cx=\"12\" cy=\"19\" r=\"1\"/></svg></button><div class=\"row-menu-panel ui-menu-panel\" role=\"menu\" hidden><a class=\"row-menu-item\" href=\"/apartments/9\" role=\"menuitem\">Open</a><form method=\"post\" action=\"/apartments/9/unarchive\" class=\"row-menu-form\"><input type=\"hidden\" name=\"return_to\" value=\"/settings/archived?type=properties\"><button class=\"row-menu-item\" type=\"submit\" role=\"menuitem\">Restore</button></form></div></div></td></tr></tbody></table></div></div></div><div class=\"page-skeleton\" data-page-skeleton role=\"status\" hidden><span class=\"sr-only\">Loading…</span><div class=\"ui-skel\" aria-hidden=\"true\" data-skeleton-kind=\"list\"><div class=\"ui-skel-h\"><div><span class=\"ui-bone ui-bone-title\"></span><span class=\"ui-bone ui-bone-meta\"></span></div><span class=\"ui-bone ui-bone-btn\"></span></div><span class=\"ui-bone ui-bone-toolbar\"></span><div class=\"ui-skel-rows\"><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div></div><div class=\"ui-skel-cards\"><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div></div></div></div></main>"
+  },
+  {
+   "name": "arch_housebook",
+   "method": "GET",
+   "path": "/settings/archived?type=housebook",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 200,
+   "headers": {
+    "content-type": "text/html; charset=utf-8",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body": "<main id=\"main-content\" class=\"main\"><aside class=\"env-banner mock\" role=\"alert\"><strong>Nothing is being reported to the police</strong><span class=\"env-body\">This workspace is pointed at the practice server, so records marked &#34;Reported&#34; were never filed. Set UBYHOST_UBYPORT_ENV to test or prod before you rely on it.</span><details class=\"env-more\"><summary>How does this work?</summary><span>This workspace is pointed at the practice server, so records marked &#34;Reported&#34; were never filed. Set UBYHOST_UBYPORT_ENV to test or prod before you rely on it.</span></details></aside><aside class=\"banner warning workspace-deletion-banner\" role=\"status\"><div class=\"grow\"><strong>This account will be deleted on 2026-12-13 01:00</strong><p class=\"small muted\" style=\"margin:6px 0 0\">Download everything you need before then. Invoices and filings you must keep by law are your responsibility after deletion.</p></div><form method=\"post\" action=\"/settings/workspace-export\" data-no-skeleton><button class=\"btn small\" type=\"submit\">Download everything (ZIP)</button></form></aside><div class=\"host-feedback-region\" data-host-feedback data-dismiss-label=\"Dismiss notification\" data-copy-success=\"Copied\" data-copy-failure=\"Copy failed\" data-copy-manual=\"Select the text and copy it manually.\" data-command-copied=\"Guest link copied\"><div class=\"toast-stack\" data-feedback-rail aria-live=\"off\"></div><div class=\"copy-manual-recovery\" data-copy-recovery role=\"group\" aria-label=\"Copy failed\" hidden><strong>Copy failed</strong><p>Select the text and copy it manually.</p><div data-copy-recovery-source></div><button type=\"button\" data-copy-recovery-close aria-label=\"Dismiss notification\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"x\"><path d=\"M18 6 6 18\"/><path d=\"m6 6 12 12\"/></svg></button></div><div class=\"sr-only\" data-feedback-live aria-live=\"polite\" aria-atomic=\"true\"></div><div class=\"sr-only\" data-feedback-alert role=\"alert\" aria-live=\"assertive\" aria-atomic=\"true\"></div></div><div class=\"ui-page\" data-body-kind=\"list\"><div class=\"ui-body ui-body-list\"><aside class=\"notification-stack\" data-host-alerts aria-label=\"Notifications\" aria-live=\"polite\"><article class=\"notification-bubble warning\" data-alert-id=\"1\" data-alert-compact data-notification><div class=\"notification-link\"><span class=\"notification-icon\" aria-hidden=\"true\">!</span><span class=\"grow\"><strong>Calendar sync failed</strong></span></div><form method=\"post\" action=\"/alerts/1/dismiss\" data-notification-dismiss><button type=\"submit\" aria-label=\"Dismiss notification\">&times;</button></form></article></aside><div class=\"airbnb-header\"><a class=\"airbnb-back\" href=\"/settings\" aria-label=\"Back\"><svg class=\"ui-icon\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"arrow-left\"><path d=\"m12 19-7-7 7-7\"/><path d=\"M19 12H5\"/></svg></a><h1 class=\"airbnb-title\"><span class=\"tip-nowrap\">Archive<span class=\"help-tip\" data-help-tip><button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"archive-retention-help\">?</button><span class=\"help-tip-body\" id=\"archive-retention-help\" role=\"tooltip\">Archiving hides items from your daily work but keeps their history. Only the six-year retention purge in Settings permanently deletes guest records.</span></span></span></h1></div><nav class=\"settings-pills\" aria-label=\"Archive\"><a class=\"settings-pill\" href=\"/settings/archived?type=all\">All (6)</a><a class=\"settings-pill\" href=\"/settings/archived?type=stays\">Stays (2)</a><a class=\"settings-pill\" href=\"/settings/archived?type=properties\">Properties (1)</a><a class=\"settings-pill is-current\" href=\"/settings/archived?type=housebook\" aria-current=\"page\">House book (1)</a><a class=\"settings-pill\" href=\"/settings/archived?type=entities\">Operators (2)</a></nav><div class=\"heading-with-tip\"><h2>Archived house-book entries</h2><span class=\"help-tip\" data-help-tip><button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"archive-housebook-help\">?</button><span class=\"help-tip-body\" id=\"archive-housebook-help\" role=\"tooltip\">Mistaken imports or duplicates can be restored here.</span></span></div><div class=\"card scroll-x\"><table class=\"ui-table ui-table-stack\"><thead><tr><th>Stay</th><th>Property</th><th>Guest</th><th>Archived</th><th></th></tr></thead><tbody><tr><td class=\"ui-sub nowrap\" data-label=\"Stay\">01.05.2026<br>04.05.2026</td><td data-label=\"Property\">Byt Dole</td><td data-label=\"Guest\"><strong>Archived</strong> A</td><td class=\"ui-sub\" data-label=\"Archived\">01.01.2026</td><td class=\"nowrap\" data-label=\"\"><form method=\"post\" action=\"/guests/16/unarchive\" class=\"inline\"><input type=\"hidden\" name=\"return_to\" value=\"/settings/archived?type=housebook\"><button class=\"ui-btn ui-btn-secondary ui-btn-compact\" type=\"submit\">Restore</button></form></td></tr></tbody></table></div></div></div><div class=\"page-skeleton\" data-page-skeleton role=\"status\" hidden><span class=\"sr-only\">Loading…</span><div class=\"ui-skel\" aria-hidden=\"true\" data-skeleton-kind=\"list\"><div class=\"ui-skel-h\"><div><span class=\"ui-bone ui-bone-title\"></span><span class=\"ui-bone ui-bone-meta\"></span></div><span class=\"ui-bone ui-bone-btn\"></span></div><span class=\"ui-bone ui-bone-toolbar\"></span><div class=\"ui-skel-rows\"><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div></div><div class=\"ui-skel-cards\"><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div></div></div></div></main>"
+  },
+  {
+   "name": "arch_entities",
+   "method": "GET",
+   "path": "/settings/archived?type=entities",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 200,
+   "headers": {
+    "content-type": "text/html; charset=utf-8",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body": "<main id=\"main-content\" class=\"main\"><aside class=\"env-banner mock\" role=\"alert\"><strong>Nothing is being reported to the police</strong><span class=\"env-body\">This workspace is pointed at the practice server, so records marked &#34;Reported&#34; were never filed. Set UBYHOST_UBYPORT_ENV to test or prod before you rely on it.</span><details class=\"env-more\"><summary>How does this work?</summary><span>This workspace is pointed at the practice server, so records marked &#34;Reported&#34; were never filed. Set UBYHOST_UBYPORT_ENV to test or prod before you rely on it.</span></details></aside><aside class=\"banner warning workspace-deletion-banner\" role=\"status\"><div class=\"grow\"><strong>This account will be deleted on 2026-12-13 01:00</strong><p class=\"small muted\" style=\"margin:6px 0 0\">Download everything you need before then. Invoices and filings you must keep by law are your responsibility after deletion.</p></div><form method=\"post\" action=\"/settings/workspace-export\" data-no-skeleton><button class=\"btn small\" type=\"submit\">Download everything (ZIP)</button></form></aside><div class=\"host-feedback-region\" data-host-feedback data-dismiss-label=\"Dismiss notification\" data-copy-success=\"Copied\" data-copy-failure=\"Copy failed\" data-copy-manual=\"Select the text and copy it manually.\" data-command-copied=\"Guest link copied\"><div class=\"toast-stack\" data-feedback-rail aria-live=\"off\"></div><div class=\"copy-manual-recovery\" data-copy-recovery role=\"group\" aria-label=\"Copy failed\" hidden><strong>Copy failed</strong><p>Select the text and copy it manually.</p><div data-copy-recovery-source></div><button type=\"button\" data-copy-recovery-close aria-label=\"Dismiss notification\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"x\"><path d=\"M18 6 6 18\"/><path d=\"m6 6 12 12\"/></svg></button></div><div class=\"sr-only\" data-feedback-live aria-live=\"polite\" aria-atomic=\"true\"></div><div class=\"sr-only\" data-feedback-alert role=\"alert\" aria-live=\"assertive\" aria-atomic=\"true\"></div></div><div class=\"ui-page\" data-body-kind=\"list\"><div class=\"ui-body ui-body-list\"><aside class=\"notification-stack\" data-host-alerts aria-label=\"Notifications\" aria-live=\"polite\"><article class=\"notification-bubble warning\" data-alert-id=\"1\" data-alert-compact data-notification><div class=\"notification-link\"><span class=\"notification-icon\" aria-hidden=\"true\">!</span><span class=\"grow\"><strong>Calendar sync failed</strong></span></div><form method=\"post\" action=\"/alerts/1/dismiss\" data-notification-dismiss><button type=\"submit\" aria-label=\"Dismiss notification\">&times;</button></form></article></aside><div class=\"airbnb-header\"><a class=\"airbnb-back\" href=\"/settings\" aria-label=\"Back\"><svg class=\"ui-icon\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"arrow-left\"><path d=\"m12 19-7-7 7-7\"/><path d=\"M19 12H5\"/></svg></a><h1 class=\"airbnb-title\"><span class=\"tip-nowrap\">Archive<span class=\"help-tip\" data-help-tip><button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"archive-retention-help\">?</button><span class=\"help-tip-body\" id=\"archive-retention-help\" role=\"tooltip\">Archiving hides items from your daily work but keeps their history. Only the six-year retention purge in Settings permanently deletes guest records.</span></span></span></h1></div><nav class=\"settings-pills\" aria-label=\"Archive\"><a class=\"settings-pill\" href=\"/settings/archived?type=all\">All (6)</a><a class=\"settings-pill\" href=\"/settings/archived?type=stays\">Stays (2)</a><a class=\"settings-pill\" href=\"/settings/archived?type=properties\">Properties (1)</a><a class=\"settings-pill\" href=\"/settings/archived?type=housebook\">House book (1)</a><a class=\"settings-pill is-current\" href=\"/settings/archived?type=entities\" aria-current=\"page\">Operators (2)</a></nav><div class=\"heading-with-tip\"><h2>Archived operators</h2><span class=\"help-tip\" data-help-tip><button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"archive-entities-help\">?</button><span class=\"help-tip-body\" id=\"archive-entities-help\" role=\"tooltip\">Hidden from property pickers until restored.</span></span></div><div class=\"card scroll-x\"><table class=\"ui-table ui-table-stack\"><thead><tr><th>Name</th><th>Archived</th><th>IČO</th><th><span class=\"sr-only\">Actions</span></th></tr></thead><tbody><tr class=\"clickable-row\" data-href=\"/entities?edit=3\" tabindex=\"0\" role=\"link\"><td data-label=\"Name\"><a class=\"row-primary-link\" href=\"/entities?edit=3\">Bez IČO &lt;b&gt;</a></td><td class=\"ui-sub\" data-label=\"Archived\">01.04.2026</td><td class=\"ui-mono\" data-label=\"IČO\">—</td><td class=\"nowrap row-actions\" data-label=\"\"><a class=\"row-open\" href=\"/entities?edit=3\" tabindex=\"-1\" aria-hidden=\"true\"><span class=\"row-open-text\">Open</span></a><div class=\"row-menu ui-menu\"><button class=\"ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact row-menu-trigger\" type=\"button\" aria-label=\"More actions\" aria-expanded=\"false\" aria-haspopup=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"ellipsis-vertical\"><circle cx=\"12\" cy=\"12\" r=\"1\"/><circle cx=\"12\" cy=\"5\" r=\"1\"/><circle cx=\"12\" cy=\"19\" r=\"1\"/></svg></button><div class=\"row-menu-panel ui-menu-panel\" role=\"menu\" hidden><a class=\"row-menu-item\" href=\"/entities?edit=3\" role=\"menuitem\">Open</a><form method=\"post\" action=\"/entities/3/unarchive\" class=\"row-menu-form\"><input type=\"hidden\" name=\"return_to\" value=\"/settings/archived?type=entities\"><button class=\"row-menu-item\" type=\"submit\" role=\"menuitem\">Restore</button></form></div></div></td></tr><tr class=\"clickable-row\" data-href=\"/entities?edit=1\" tabindex=\"0\" role=\"link\"><td data-label=\"Name\"><a class=\"row-primary-link\" href=\"/entities?edit=1\">Novák &amp; syn s.r.o.</a></td><td class=\"ui-sub\" data-label=\"Archived\">01.03.2026</td><td class=\"ui-mono\" data-label=\"IČO\">12345678</td><td class=\"nowrap row-actions\" data-label=\"\"><a class=\"row-open\" href=\"/entities?edit=1\" tabindex=\"-1\" aria-hidden=\"true\"><span class=\"row-open-text\">Open</span></a><div class=\"row-menu ui-menu\"><button class=\"ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact row-menu-trigger\" type=\"button\" aria-label=\"More actions\" aria-expanded=\"false\" aria-haspopup=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"ellipsis-vertical\"><circle cx=\"12\" cy=\"12\" r=\"1\"/><circle cx=\"12\" cy=\"5\" r=\"1\"/><circle cx=\"12\" cy=\"19\" r=\"1\"/></svg></button><div class=\"row-menu-panel ui-menu-panel\" role=\"menu\" hidden><a class=\"row-menu-item\" href=\"/entities?edit=1\" role=\"menuitem\">Open</a><form method=\"post\" action=\"/entities/1/unarchive\" class=\"row-menu-form\"><input type=\"hidden\" name=\"return_to\" value=\"/settings/archived?type=entities\"><button class=\"row-menu-item\" type=\"submit\" role=\"menuitem\">Restore</button></form></div></div></td></tr></tbody></table></div></div></div><div class=\"page-skeleton\" data-page-skeleton role=\"status\" hidden><span class=\"sr-only\">Loading…</span><div class=\"ui-skel\" aria-hidden=\"true\" data-skeleton-kind=\"list\"><div class=\"ui-skel-h\"><div><span class=\"ui-bone ui-bone-title\"></span><span class=\"ui-bone ui-bone-meta\"></span></div><span class=\"ui-bone ui-bone-btn\"></span></div><span class=\"ui-bone ui-bone-toolbar\"></span><div class=\"ui-skel-rows\"><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div></div><div class=\"ui-skel-cards\"><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div></div></div></div></main>"
+  },
+  {
+   "name": "arch_bogus",
+   "method": "GET",
+   "path": "/settings/archived?type=bogus&type=entities",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 200,
+   "headers": {
+    "content-type": "text/html; charset=utf-8",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body": "<main id=\"main-content\" class=\"main\"><aside class=\"env-banner mock\" role=\"alert\"><strong>Nothing is being reported to the police</strong><span class=\"env-body\">This workspace is pointed at the practice server, so records marked &#34;Reported&#34; were never filed. Set UBYHOST_UBYPORT_ENV to test or prod before you rely on it.</span><details class=\"env-more\"><summary>How does this work?</summary><span>This workspace is pointed at the practice server, so records marked &#34;Reported&#34; were never filed. Set UBYHOST_UBYPORT_ENV to test or prod before you rely on it.</span></details></aside><aside class=\"banner warning workspace-deletion-banner\" role=\"status\"><div class=\"grow\"><strong>This account will be deleted on 2026-12-13 01:00</strong><p class=\"small muted\" style=\"margin:6px 0 0\">Download everything you need before then. Invoices and filings you must keep by law are your responsibility after deletion.</p></div><form method=\"post\" action=\"/settings/workspace-export\" data-no-skeleton><button class=\"btn small\" type=\"submit\">Download everything (ZIP)</button></form></aside><div class=\"host-feedback-region\" data-host-feedback data-dismiss-label=\"Dismiss notification\" data-copy-success=\"Copied\" data-copy-failure=\"Copy failed\" data-copy-manual=\"Select the text and copy it manually.\" data-command-copied=\"Guest link copied\"><div class=\"toast-stack\" data-feedback-rail aria-live=\"off\"></div><div class=\"copy-manual-recovery\" data-copy-recovery role=\"group\" aria-label=\"Copy failed\" hidden><strong>Copy failed</strong><p>Select the text and copy it manually.</p><div data-copy-recovery-source></div><button type=\"button\" data-copy-recovery-close aria-label=\"Dismiss notification\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"x\"><path d=\"M18 6 6 18\"/><path d=\"m6 6 12 12\"/></svg></button></div><div class=\"sr-only\" data-feedback-live aria-live=\"polite\" aria-atomic=\"true\"></div><div class=\"sr-only\" data-feedback-alert role=\"alert\" aria-live=\"assertive\" aria-atomic=\"true\"></div></div><div class=\"ui-page\" data-body-kind=\"list\"><div class=\"ui-body ui-body-list\"><aside class=\"notification-stack\" data-host-alerts aria-label=\"Notifications\" aria-live=\"polite\"><article class=\"notification-bubble warning\" data-alert-id=\"1\" data-alert-compact data-notification><div class=\"notification-link\"><span class=\"notification-icon\" aria-hidden=\"true\">!</span><span class=\"grow\"><strong>Calendar sync failed</strong></span></div><form method=\"post\" action=\"/alerts/1/dismiss\" data-notification-dismiss><button type=\"submit\" aria-label=\"Dismiss notification\">&times;</button></form></article></aside><div class=\"airbnb-header\"><a class=\"airbnb-back\" href=\"/settings\" aria-label=\"Back\"><svg class=\"ui-icon\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"arrow-left\"><path d=\"m12 19-7-7 7-7\"/><path d=\"M19 12H5\"/></svg></a><h1 class=\"airbnb-title\"><span class=\"tip-nowrap\">Archive<span class=\"help-tip\" data-help-tip><button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"archive-retention-help\">?</button><span class=\"help-tip-body\" id=\"archive-retention-help\" role=\"tooltip\">Archiving hides items from your daily work but keeps their history. Only the six-year retention purge in Settings permanently deletes guest records.</span></span></span></h1></div><nav class=\"settings-pills\" aria-label=\"Archive\"><a class=\"settings-pill\" href=\"/settings/archived?type=all\">All (6)</a><a class=\"settings-pill\" href=\"/settings/archived?type=stays\">Stays (2)</a><a class=\"settings-pill\" href=\"/settings/archived?type=properties\">Properties (1)</a><a class=\"settings-pill\" href=\"/settings/archived?type=housebook\">House book (1)</a><a class=\"settings-pill is-current\" href=\"/settings/archived?type=entities\" aria-current=\"page\">Operators (2)</a></nav><div class=\"heading-with-tip\"><h2>Archived operators</h2><span class=\"help-tip\" data-help-tip><button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"archive-entities-help\">?</button><span class=\"help-tip-body\" id=\"archive-entities-help\" role=\"tooltip\">Hidden from property pickers until restored.</span></span></div><div class=\"card scroll-x\"><table class=\"ui-table ui-table-stack\"><thead><tr><th>Name</th><th>Archived</th><th>IČO</th><th><span class=\"sr-only\">Actions</span></th></tr></thead><tbody><tr class=\"clickable-row\" data-href=\"/entities?edit=3\" tabindex=\"0\" role=\"link\"><td data-label=\"Name\"><a class=\"row-primary-link\" href=\"/entities?edit=3\">Bez IČO &lt;b&gt;</a></td><td class=\"ui-sub\" data-label=\"Archived\">01.04.2026</td><td class=\"ui-mono\" data-label=\"IČO\">—</td><td class=\"nowrap row-actions\" data-label=\"\"><a class=\"row-open\" href=\"/entities?edit=3\" tabindex=\"-1\" aria-hidden=\"true\"><span class=\"row-open-text\">Open</span></a><div class=\"row-menu ui-menu\"><button class=\"ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact row-menu-trigger\" type=\"button\" aria-label=\"More actions\" aria-expanded=\"false\" aria-haspopup=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"ellipsis-vertical\"><circle cx=\"12\" cy=\"12\" r=\"1\"/><circle cx=\"12\" cy=\"5\" r=\"1\"/><circle cx=\"12\" cy=\"19\" r=\"1\"/></svg></button><div class=\"row-menu-panel ui-menu-panel\" role=\"menu\" hidden><a class=\"row-menu-item\" href=\"/entities?edit=3\" role=\"menuitem\">Open</a><form method=\"post\" action=\"/entities/3/unarchive\" class=\"row-menu-form\"><input type=\"hidden\" name=\"return_to\" value=\"/settings/archived?type=entities\"><button class=\"row-menu-item\" type=\"submit\" role=\"menuitem\">Restore</button></form></div></div></td></tr><tr class=\"clickable-row\" data-href=\"/entities?edit=1\" tabindex=\"0\" role=\"link\"><td data-label=\"Name\"><a class=\"row-primary-link\" href=\"/entities?edit=1\">Novák &amp; syn s.r.o.</a></td><td class=\"ui-sub\" data-label=\"Archived\">01.03.2026</td><td class=\"ui-mono\" data-label=\"IČO\">12345678</td><td class=\"nowrap row-actions\" data-label=\"\"><a class=\"row-open\" href=\"/entities?edit=1\" tabindex=\"-1\" aria-hidden=\"true\"><span class=\"row-open-text\">Open</span></a><div class=\"row-menu ui-menu\"><button class=\"ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact row-menu-trigger\" type=\"button\" aria-label=\"More actions\" aria-expanded=\"false\" aria-haspopup=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"ellipsis-vertical\"><circle cx=\"12\" cy=\"12\" r=\"1\"/><circle cx=\"12\" cy=\"5\" r=\"1\"/><circle cx=\"12\" cy=\"19\" r=\"1\"/></svg></button><div class=\"row-menu-panel ui-menu-panel\" role=\"menu\" hidden><a class=\"row-menu-item\" href=\"/entities?edit=1\" role=\"menuitem\">Open</a><form method=\"post\" action=\"/entities/1/unarchive\" class=\"row-menu-form\"><input type=\"hidden\" name=\"return_to\" value=\"/settings/archived?type=entities\"><button class=\"row-menu-item\" type=\"submit\" role=\"menuitem\">Restore</button></form></div></div></td></tr></tbody></table></div></div></div><div class=\"page-skeleton\" data-page-skeleton role=\"status\" hidden><span class=\"sr-only\">Loading…</span><div class=\"ui-skel\" aria-hidden=\"true\" data-skeleton-kind=\"list\"><div class=\"ui-skel-h\"><div><span class=\"ui-bone ui-bone-title\"></span><span class=\"ui-bone ui-bone-meta\"></span></div><span class=\"ui-bone ui-bone-btn\"></span></div><span class=\"ui-bone ui-bone-toolbar\"></span><div class=\"ui-skel-rows\"><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div></div><div class=\"ui-skel-cards\"><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div></div></div></div></main>"
+  },
+  {
+   "name": "arch_empty_other",
+   "method": "GET",
+   "path": "/settings/archived",
+   "session": {
+    "uid": 2
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 200,
+   "headers": {
+    "content-type": "text/html; charset=utf-8",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body": "<main id=\"main-content\" class=\"main\"><aside class=\"env-banner mock\" role=\"alert\"><strong>Nothing is being reported to the police</strong><span class=\"env-body\">This workspace is pointed at the practice server, so records marked &#34;Reported&#34; were never filed. Set UBYHOST_UBYPORT_ENV to test or prod before you rely on it.</span><details class=\"env-more\"><summary>How does this work?</summary><span>This workspace is pointed at the practice server, so records marked &#34;Reported&#34; were never filed. Set UBYHOST_UBYPORT_ENV to test or prod before you rely on it.</span></details></aside><div class=\"host-feedback-region\" data-host-feedback data-dismiss-label=\"Dismiss notification\" data-copy-success=\"Copied\" data-copy-failure=\"Copy failed\" data-copy-manual=\"Select the text and copy it manually.\" data-command-copied=\"Guest link copied\"><div class=\"toast-stack\" data-feedback-rail aria-live=\"off\"></div><div class=\"copy-manual-recovery\" data-copy-recovery role=\"group\" aria-label=\"Copy failed\" hidden><strong>Copy failed</strong><p>Select the text and copy it manually.</p><div data-copy-recovery-source></div><button type=\"button\" data-copy-recovery-close aria-label=\"Dismiss notification\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"x\"><path d=\"M18 6 6 18\"/><path d=\"m6 6 12 12\"/></svg></button></div><div class=\"sr-only\" data-feedback-live aria-live=\"polite\" aria-atomic=\"true\"></div><div class=\"sr-only\" data-feedback-alert role=\"alert\" aria-live=\"assertive\" aria-atomic=\"true\"></div></div><div class=\"ui-page\" data-body-kind=\"list\"><div class=\"ui-body ui-body-list\"><div class=\"airbnb-header\"><a class=\"airbnb-back\" href=\"/settings\" aria-label=\"Back\"><svg class=\"ui-icon\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"arrow-left\"><path d=\"m12 19-7-7 7-7\"/><path d=\"M19 12H5\"/></svg></a><h1 class=\"airbnb-title\"><span class=\"tip-nowrap\">Archive<span class=\"help-tip\" data-help-tip><button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"archive-retention-help\">?</button><span class=\"help-tip-body\" id=\"archive-retention-help\" role=\"tooltip\">Archiving hides items from your daily work but keeps their history. Only the six-year retention purge in Settings permanently deletes guest records.</span></span></span></h1></div><nav class=\"settings-pills\" aria-label=\"Archive\"><a class=\"settings-pill is-current\" href=\"/settings/archived?type=all\" aria-current=\"page\">All (0)</a><a class=\"settings-pill\" href=\"/settings/archived?type=stays\">Stays (0)</a><a class=\"settings-pill\" href=\"/settings/archived?type=properties\">Properties (0)</a><a class=\"settings-pill\" href=\"/settings/archived?type=housebook\">House book (0)</a><a class=\"settings-pill\" href=\"/settings/archived?type=entities\">Operators (0)</a></nav><div class=\"ui-empty\"><p>Nothing is archived yet. You can archive stays, properties, house-book entries, and operators from their usual pages.</p><div class=\"ui-form-actions ui-center\"><a class=\"ui-btn ui-btn-secondary\" href=\"/reservations\">Stays</a><a class=\"ui-btn ui-btn-secondary\" href=\"/apartments\">Properties</a><a class=\"ui-btn ui-btn-secondary\" href=\"/housebook\">Guest register</a><a class=\"ui-btn ui-btn-secondary\" href=\"/entities\">Operators</a></div></div></div></div><div class=\"page-skeleton\" data-page-skeleton role=\"status\" hidden><span class=\"sr-only\">Loading…</span><div class=\"ui-skel\" aria-hidden=\"true\" data-skeleton-kind=\"list\"><div class=\"ui-skel-h\"><div><span class=\"ui-bone ui-bone-title\"></span><span class=\"ui-bone ui-bone-meta\"></span></div><span class=\"ui-bone ui-bone-btn\"></span></div><span class=\"ui-bone ui-bone-toolbar\"></span><div class=\"ui-skel-rows\"><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div></div><div class=\"ui-skel-cards\"><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div></div></div></div></main>"
+  },
+  {
+   "name": "arch_empty_type_other",
+   "method": "GET",
+   "path": "/settings/archived?type=stays",
+   "session": {
+    "uid": 2
+   },
+   "lang": "vi",
+   "csrf": true,
+   "status": 200,
+   "headers": {
+    "content-type": "text/html; charset=utf-8",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body": "<main id=\"main-content\" class=\"main\"><aside class=\"env-banner mock\" role=\"alert\"><strong>Không có gì đang được khai báo với cảnh sát</strong><span class=\"env-body\">Không gian làm việc này đang kết nối với máy chủ thử, nên các hồ sơ ghi &#34;Đã khai báo&#34; thực ra chưa được nộp. Hãy đặt UBYHOST_UBYPORT_ENV thành test hoặc prod trước khi dựa vào nó.</span><details class=\"env-more\"><summary>Hoạt động như thế nào?</summary><span>Không gian làm việc này đang kết nối với máy chủ thử, nên các hồ sơ ghi &#34;Đã khai báo&#34; thực ra chưa được nộp. Hãy đặt UBYHOST_UBYPORT_ENV thành test hoặc prod trước khi dựa vào nó.</span></details></aside><div class=\"host-feedback-region\" data-host-feedback data-dismiss-label=\"Ẩn thông báo\" data-copy-success=\"Đã sao chép\" data-copy-failure=\"Sao chép thất bại\" data-copy-manual=\"Chọn đoạn văn bản và tự sao chép.\" data-command-copied=\"Đã sao chép liên kết cho khách\"><div class=\"toast-stack\" data-feedback-rail aria-live=\"off\"></div><div class=\"copy-manual-recovery\" data-copy-recovery role=\"group\" aria-label=\"Sao chép thất bại\" hidden><strong>Sao chép thất bại</strong><p>Chọn đoạn văn bản và tự sao chép.</p><div data-copy-recovery-source></div><button type=\"button\" data-copy-recovery-close aria-label=\"Ẩn thông báo\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"x\"><path d=\"M18 6 6 18\"/><path d=\"m6 6 12 12\"/></svg></button></div><div class=\"sr-only\" data-feedback-live aria-live=\"polite\" aria-atomic=\"true\"></div><div class=\"sr-only\" data-feedback-alert role=\"alert\" aria-live=\"assertive\" aria-atomic=\"true\"></div></div><div class=\"ui-page\" data-body-kind=\"list\"><div class=\"ui-body ui-body-list\"><div class=\"airbnb-header\"><a class=\"airbnb-back\" href=\"/settings\" aria-label=\"Quay lại\"><svg class=\"ui-icon\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"arrow-left\"><path d=\"m12 19-7-7 7-7\"/><path d=\"M19 12H5\"/></svg></a><h1 class=\"airbnb-title\">Lưu <span class=\"tip-nowrap\">trữ<span class=\"help-tip\" data-help-tip><button type=\"button\" class=\"help-tip-btn\" aria-label=\"Trợ giúp\" aria-expanded=\"false\" aria-controls=\"archive-retention-help\">?</button><span class=\"help-tip-body\" id=\"archive-retention-help\" role=\"tooltip\">Lưu trữ chỉ ẩn mục khỏi công việc hằng ngày, lịch sử vẫn được giữ. Chỉ thao tác xóa hồ sơ quá hạn sáu năm trong Cài đặt mới xóa vĩnh viễn hồ sơ khách.</span></span></span></h1></div><nav class=\"settings-pills\" aria-label=\"Lưu trữ\"><a class=\"settings-pill\" href=\"/settings/archived?type=all\">Tất cả (0)</a><a class=\"settings-pill is-current\" href=\"/settings/archived?type=stays\" aria-current=\"page\">Lưu trú (0)</a><a class=\"settings-pill\" href=\"/settings/archived?type=properties\">Chỗ ở (0)</a><a class=\"settings-pill\" href=\"/settings/archived?type=housebook\">Sổ khách lưu trú (0)</a><a class=\"settings-pill\" href=\"/settings/archived?type=entities\">Đơn vị vận hành (0)</a></nav><div class=\"ui-empty\"><p>Chưa có gì được lưu trữ. Bạn có thể lưu trữ lượt lưu trú, chỗ ở, mục sổ khách lưu trú và đơn vị vận hành từ trang thường dùng của chúng.</p><div class=\"ui-form-actions ui-center\"><a class=\"ui-btn ui-btn-secondary\" href=\"/reservations\">Lưu trú</a><a class=\"ui-btn ui-btn-secondary\" href=\"/apartments\">Chỗ ở</a><a class=\"ui-btn ui-btn-secondary\" href=\"/housebook\">Sổ khách lưu trú</a><a class=\"ui-btn ui-btn-secondary\" href=\"/entities\">Đơn vị vận hành</a></div></div></div></div><div class=\"page-skeleton\" data-page-skeleton role=\"status\" hidden><span class=\"sr-only\">Đang tải…</span><div class=\"ui-skel\" aria-hidden=\"true\" data-skeleton-kind=\"list\"><div class=\"ui-skel-h\"><div><span class=\"ui-bone ui-bone-title\"></span><span class=\"ui-bone ui-bone-meta\"></span></div><span class=\"ui-bone ui-bone-btn\"></span></div><span class=\"ui-bone ui-bone-toolbar\"></span><div class=\"ui-skel-rows\"><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div></div><div class=\"ui-skel-cards\"><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div></div></div></div></main>"
+  },
+  {
+   "name": "arch_broken",
+   "method": "GET",
+   "path": "/settings/archived",
+   "session": {
+    "uid": 4
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 500,
+   "headers": {
+    "content-type": "text/plain; charset=utf-8",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body": "Internal Server Error"
+  },
+  {
+   "name": "arch_broken_stays",
+   "method": "GET",
+   "path": "/settings/archived?type=stays",
+   "session": {
+    "uid": 4
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 200,
+   "headers": {
+    "content-type": "text/html; charset=utf-8",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body": "<main id=\"main-content\" class=\"main\"><aside class=\"env-banner mock\" role=\"alert\"><strong>Nothing is being reported to the police</strong><span class=\"env-body\">This workspace is pointed at the practice server, so records marked &#34;Reported&#34; were never filed. Set UBYHOST_UBYPORT_ENV to test or prod before you rely on it.</span><details class=\"env-more\"><summary>How does this work?</summary><span>This workspace is pointed at the practice server, so records marked &#34;Reported&#34; were never filed. Set UBYHOST_UBYPORT_ENV to test or prod before you rely on it.</span></details></aside><div class=\"host-feedback-region\" data-host-feedback data-dismiss-label=\"Dismiss notification\" data-copy-success=\"Copied\" data-copy-failure=\"Copy failed\" data-copy-manual=\"Select the text and copy it manually.\" data-command-copied=\"Guest link copied\"><div class=\"toast-stack\" data-feedback-rail aria-live=\"off\"></div><div class=\"copy-manual-recovery\" data-copy-recovery role=\"group\" aria-label=\"Copy failed\" hidden><strong>Copy failed</strong><p>Select the text and copy it manually.</p><div data-copy-recovery-source></div><button type=\"button\" data-copy-recovery-close aria-label=\"Dismiss notification\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"x\"><path d=\"M18 6 6 18\"/><path d=\"m6 6 12 12\"/></svg></button></div><div class=\"sr-only\" data-feedback-live aria-live=\"polite\" aria-atomic=\"true\"></div><div class=\"sr-only\" data-feedback-alert role=\"alert\" aria-live=\"assertive\" aria-atomic=\"true\"></div></div><div class=\"ui-page\" data-body-kind=\"list\"><div class=\"ui-body ui-body-list\"><div class=\"airbnb-header\"><a class=\"airbnb-back\" href=\"/settings\" aria-label=\"Back\"><svg class=\"ui-icon\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"arrow-left\"><path d=\"m12 19-7-7 7-7\"/><path d=\"M19 12H5\"/></svg></a><h1 class=\"airbnb-title\"><span class=\"tip-nowrap\">Archive<span class=\"help-tip\" data-help-tip><button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"archive-retention-help\">?</button><span class=\"help-tip-body\" id=\"archive-retention-help\" role=\"tooltip\">Archiving hides items from your daily work but keeps their history. Only the six-year retention purge in Settings permanently deletes guest records.</span></span></span></h1></div><nav class=\"settings-pills\" aria-label=\"Archive\"><a class=\"settings-pill\" href=\"/settings/archived?type=all\">All (1)</a><a class=\"settings-pill is-current\" href=\"/settings/archived?type=stays\" aria-current=\"page\">Stays (0)</a><a class=\"settings-pill\" href=\"/settings/archived?type=properties\">Properties (0)</a><a class=\"settings-pill\" href=\"/settings/archived?type=housebook\">House book (1)</a><a class=\"settings-pill\" href=\"/settings/archived?type=entities\">Operators (0)</a></nav><div class=\"ui-empty\">No archived stays.</div></div></div><div class=\"page-skeleton\" data-page-skeleton role=\"status\" hidden><span class=\"sr-only\">Loading…</span><div class=\"ui-skel\" aria-hidden=\"true\" data-skeleton-kind=\"list\"><div class=\"ui-skel-h\"><div><span class=\"ui-bone ui-bone-title\"></span><span class=\"ui-bone ui-bone-meta\"></span></div><span class=\"ui-bone ui-bone-btn\"></span></div><span class=\"ui-bone ui-bone-toolbar\"></span><div class=\"ui-skel-rows\"><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div><div class=\"ui-skel-row\"><span class=\"ui-bone ui-w30\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w18\"></span><span class=\"ui-bone ui-w14\"></span><span class=\"ui-bone ui-bone-badge\"></span></div></div><div class=\"ui-skel-cards\"><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div><div class=\"ui-skel-card\"><span class=\"ui-bone ui-w40\"></span><span class=\"ui-bone ui-w60\"></span><span class=\"ui-bone ui-w30\"></span></div></div></div></div></main>"
+  },
+  {
+   "name": "ws_signed_out",
+   "method": "POST",
+   "path": "/settings/workspace-export",
+   "session": null,
+   "lang": null,
+   "csrf": true,
+   "status": 303,
+   "headers": {
+    "location": "/login?next=/settings/workspace-export",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body": ""
+  },
+  {
+   "name": "ws_no_csrf",
+   "method": "POST",
+   "path": "/settings/workspace-export",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "csrf": false,
+   "status": 303,
+   "headers": {
+    "location": "/login?notice=form_expired",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body": ""
+  },
+  {
+   "name": "ws_stale",
+   "method": "POST",
+   "path": "/settings/workspace-export",
+   "session": {
+    "uid": 1,
+    "stale": 1
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 303,
+   "headers": {
+    "location": "/settings/security?err=For%20your%20safety%2C%20log%20out%20and%20log%20in%20again%2C%20then%20repeat%20this%20within%2010%20minutes.#settings-security",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body": ""
+  },
+  {
+   "name": "ws_not_scheduled",
+   "method": "POST",
+   "path": "/settings/workspace-export",
+   "session": {
+    "uid": 2
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 303,
+   "headers": {
+    "location": "/settings?err=Workspace%20export%20is%20only%20available%20while%20account%20deletion%20is%20scheduled.",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body": ""
+  },
+  {
+   "name": "ws_owner",
+   "method": "POST",
+   "path": "/settings/workspace-export",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 200,
+   "headers": {
+    "content-type": "application/zip",
+    "content-disposition": "attachment; filename=\"workspace-1.zip\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "owner@example.test",
+     "workspace_exported",
+     "user=1",
+     1,
+     1,
+     null
+    ]
+   ],
+   "zip": [
+    [
+     "housebook.csv",
+     "77u/QXBhcnRtZW50O0lEVUI7U3RheSBmcm9tO1N0YXkgdG87U3VybmFtZTtHaXZlbiBuYW1lKHMpO0RhdGUgb2YgYmlydGg7TmF0aW9uYWxpdHk7VHJhdmVsIGRvY3VtZW50IG5vLjtWaXNhIG5vLjtQZXJtYW5lbnQgcmVzaWRlbmNlIGFicm9hZDtQdXJwb3NlIG9mIHN0YXk7Tm90ZTtTaWduZWQ7UmVwb3J0ZWQgdG8gcG9saWNlO1JlcG9ydGVkIGF0O1JlY2VpcHQgc3RhbXANCkJ5dCBEb2xlO0lEVUI3OzIwMTktMDMtMDE7MjAxOS0wMy0wNTtPbGQ7U3RheTs7QVVUOzs7Ozs7bm87eWVzOzsNCkJ5dCBEb2xlO0lEVUI3OzIwMTktMDMtMDE7MjAxOS0wMy0wNTtPbGQ7VHdvOztBVVQ7Ozs7Oztubzt5ZXM7Ow0KQnl0IERvbGU7SURVQjc7MjAyNi0wNS0wMTsyMDI2LTA1LTA0O05vdmFrO0phbjs7REVVOzs7Ozs7bm87eWVzOztBQkMvMTIzIMSNeA0KQnl0IERvbGU7SURVQjc7MjAyNi0wNS0wMTsyMDI2LTA1LTA0O05vdmFrO0V2YTs7REVVOzs7Ozs7bm87eWVzOzsNCkJ5dCBEb2xlO0lEVUI3OzIwMjYtMDUtMDE7MjAyNi0wNS0wNDtNw7xsbGVyO0hhbnM7MTUuMDYuMTk4MDtERVU7QzAxWDAwVDQ3OztIYXVwdHN0ci4gMSwgQmVybGluLCBERVUtTsSbbWVja287VHVyaXN0aWthOyc9Y21kO3llczt5ZXM7MjAyNi0wNS0wMlQxMDowMDowMCswMDowMDtBQkMvMTIzIMSNeA0KQnl0IERvbGU7SURVQjc7MjAyNi0wNS0wMTsyMDI2LTA1LTA0O03DvGxsZXI7S2lkOzAxLjAxLjIwMjA7REVVOzs7REVVLU7Em21lY2tvO1R1cmlzdGlrYTs7YnkgYWR1bHQ7bm90IHlldDs7DQpCeXQgRG9sZTtJRFVCNzsyMDI2LTA1LTAxOzIwMjYtMDUtMDQ7TcO8bGxlcjtCYWJ5OzAwLjAwLjIwMTk7REVVOzs7O07DoXbFoXTEm3ZhIHJvZGlueSBuZWJvIHDFmcOhdGVsOyJsaW5lCmJyZWFrIjtub3QgcmVxdWlyZWQ7bm90IHlldDs7DQpCeXQgRG9sZTtJRFVCNzsyMDI2LTA1LTEwOzIwMjYtMDUtMTI7U21pdGg7QWw7O0dCUjs7Ozs7O25vO3llczs7UzEwDQpCeXQgRG9sZTtJRFVCNzsyMDI2LTA1LTExOzIwMjYtMDUtMTI7RHZvxZnDoWs7UGV0cjswMi4wMy4xOTc1O0NaRTs7O0NaRS3EjGVza287Nzc7O3llczt5ZXMgLSBmaWxlZCBieSBoYW5kIGluIFVieVBvcnQ7MjAyNi0wNS0xMVQwODowMDowMCswMDowMDtNQU4tMQ0KJz1BdHRpYzs7MjAyNi0wNi0wMTsyMDI2LTA2LTAyO1RhYglOYW1lOyJRIiJ1b3RlIjsxOTkwO0FVVDs7O1hYWC1OZXVyxI1lbsOhIHN0w6F0bsOtIHDFmcOtc2x1xaFub3N0Ozs7eWVzO05PIC0gcmVqZWN0ZWQ7Ow0KQnl0IERvbGU7SURVQjc7MjAyNi0wNy0wMTsyMDI2LTA3LTA1O0JhZDtCbzs7QVVUOzs7Ozs7bm87eWVzOztTMw0KQnl0IERvbGU7SURVQjc7MjAyNi0wNy0wMTsyMDI2LTA3LTA1O1BhcGVyO0NoaWxkOzAxLjAxLjIwMjE7QVVUOzs7Ozs7bm90IHJlcXVpcmVkO25vdCByZXF1aXJlZCAoQ3plY2ggbmF0aW9uYWwpOzsNCkJ5dCBEb2xlO0lEVUI3OzIwMjYtMDctMDE7MjAyNi0wNy0wNTtQYXBlcjtBZHVsdDswMS4wMS4xOTgwO0FVVDs7Ozs7O3llcztub3QgeWV0OzsNCg=="
+    ],
+    [
+     "archived_housebook.csv",
+     "77u/QXBhcnRtZW50O0lEVUI7U3RheSBmcm9tO1N0YXkgdG87U3VybmFtZTtHaXZlbiBuYW1lKHMpO0RhdGUgb2YgYmlydGg7TmF0aW9uYWxpdHk7VHJhdmVsIGRvY3VtZW50IG5vLjtWaXNhIG5vLjtQZXJtYW5lbnQgcmVzaWRlbmNlIGFicm9hZDtQdXJwb3NlIG9mIHN0YXk7Tm90ZTtTaWduZWQ7UmVwb3J0ZWQgdG8gcG9saWNlO1JlcG9ydGVkIGF0O1JlY2VpcHQgc3RhbXANCkJ5dCBEb2xlOzsyMDI2LTA1LTAxOzIwMjYtMDUtMDQ7QXJjaGl2ZWQ7QTs7Ozs7Ozs7Ozs7DQo="
+    ],
+    [
+     "guests/30.pdf",
+     "PDF"
+    ],
+    [
+     "guests/31.pdf",
+     "PDF"
+    ],
+    [
+     "guests/1.pdf",
+     "PDF"
+    ],
+    [
+     "guests/2.pdf",
+     "PDF"
+    ],
+    [
+     "guests/11.pdf",
+     "PDF"
+    ],
+    [
+     "guests/12.pdf",
+     "PDF"
+    ],
+    [
+     "guests/13.pdf",
+     "PDF"
+    ],
+    [
+     "guests/16.pdf",
+     "PDF"
+    ],
+    [
+     "guests/17.pdf",
+     "PDF"
+    ],
+    [
+     "guests/18.pdf",
+     "PDF"
+    ],
+    [
+     "guests/3.pdf",
+     "PDF"
+    ],
+    [
+     "guests/14.pdf",
+     "PDF"
+    ],
+    [
+     "guests/5.pdf",
+     "PDF"
+    ],
+    [
+     "guests/20.pdf",
+     "PDF"
+    ],
+    [
+     "guests/19.pdf",
+     "PDF"
+    ],
+    [
+     "guests/15.pdf",
+     "PDF"
+    ],
+    [
+     "receipts/1.pdf",
+     "JVBERi0xLjQgcmVjZWlwdCBBCg=="
+    ],
+    [
+     "receipts/2.pdf",
+     "JVBERi0xLjQgcmVjZWlwdCBCCg=="
+    ],
+    [
+     "receipts/10.pdf",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "stay_fees/7-2026-10-v2.pdf",
+     "JVBERi0xLjQgc3RheSBmZWU="
+    ],
+    [
+     "stay_fees/7-2026-10-v2.csv",
+     "YTti"
+    ],
+    [
+     "stay_fees/6-2026-Q3-v1.csv",
+     "b25seTtjc3Y="
+    ],
+    [
+     "invoices/1.pdf",
+     "JVBERi0xLjQgaW52b2ljZSBvbmU="
+    ],
+    [
+     "manifest.json",
+     "{\n  \"generated_at\": \"2026-11-13T12:00:00+00:00\",\n  \"owner_user_id\": 1,\n  \"counts\": {\n    \"guests\": 16,\n    \"receipts\": 3,\n    \"invoices\": 1,\n    \"stay_fee_filings\": 2\n  },\n  \"housebook_rows\": 13,\n  \"archived_rows\": 1,\n  \"stay_fee_files\": [\n    \"stay_fees/7-2026-10-v2.pdf\",\n    \"stay_fees/7-2026-10-v2.csv\",\n    \"stay_fees/6-2026-Q3-v1.csv\"\n  ]\n}"
+    ]
+   ]
+  },
+  {
+   "name": "ws_support",
+   "method": "POST",
+   "path": "/settings/workspace-export",
+   "session": {
+    "uid": 3,
+    "as": 1
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 200,
+   "headers": {
+    "content-type": "application/zip",
+    "content-disposition": "attachment; filename=\"workspace-1.zip\"",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "owner@example.test",
+     "workspace_exported",
+     "user=1",
+     1,
+     3,
+     3
+    ]
+   ],
+   "zip": [
+    [
+     "housebook.csv",
+     "77u/QXBhcnRtZW50O0lEVUI7U3RheSBmcm9tO1N0YXkgdG87U3VybmFtZTtHaXZlbiBuYW1lKHMpO0RhdGUgb2YgYmlydGg7TmF0aW9uYWxpdHk7VHJhdmVsIGRvY3VtZW50IG5vLjtWaXNhIG5vLjtQZXJtYW5lbnQgcmVzaWRlbmNlIGFicm9hZDtQdXJwb3NlIG9mIHN0YXk7Tm90ZTtTaWduZWQ7UmVwb3J0ZWQgdG8gcG9saWNlO1JlcG9ydGVkIGF0O1JlY2VpcHQgc3RhbXANCkJ5dCBEb2xlO0lEVUI3OzIwMTktMDMtMDE7MjAxOS0wMy0wNTtPbGQ7U3RheTs7QVVUOzs7Ozs7bm87eWVzOzsNCkJ5dCBEb2xlO0lEVUI3OzIwMTktMDMtMDE7MjAxOS0wMy0wNTtPbGQ7VHdvOztBVVQ7Ozs7Oztubzt5ZXM7Ow0KQnl0IERvbGU7SURVQjc7MjAyNi0wNS0wMTsyMDI2LTA1LTA0O05vdmFrO0phbjs7REVVOzs7Ozs7bm87eWVzOztBQkMvMTIzIMSNeA0KQnl0IERvbGU7SURVQjc7MjAyNi0wNS0wMTsyMDI2LTA1LTA0O05vdmFrO0V2YTs7REVVOzs7Ozs7bm87eWVzOzsNCkJ5dCBEb2xlO0lEVUI3OzIwMjYtMDUtMDE7MjAyNi0wNS0wNDtNw7xsbGVyO0hhbnM7MTUuMDYuMTk4MDtERVU7QzAxWDAwVDQ3OztIYXVwdHN0ci4gMSwgQmVybGluLCBERVUtTsSbbWVja287VHVyaXN0aWthOyc9Y21kO3llczt5ZXM7MjAyNi0wNS0wMlQxMDowMDowMCswMDowMDtBQkMvMTIzIMSNeA0KQnl0IERvbGU7SURVQjc7MjAyNi0wNS0wMTsyMDI2LTA1LTA0O03DvGxsZXI7S2lkOzAxLjAxLjIwMjA7REVVOzs7REVVLU7Em21lY2tvO1R1cmlzdGlrYTs7YnkgYWR1bHQ7bm90IHlldDs7DQpCeXQgRG9sZTtJRFVCNzsyMDI2LTA1LTAxOzIwMjYtMDUtMDQ7TcO8bGxlcjtCYWJ5OzAwLjAwLjIwMTk7REVVOzs7O07DoXbFoXTEm3ZhIHJvZGlueSBuZWJvIHDFmcOhdGVsOyJsaW5lCmJyZWFrIjtub3QgcmVxdWlyZWQ7bm90IHlldDs7DQpCeXQgRG9sZTtJRFVCNzsyMDI2LTA1LTEwOzIwMjYtMDUtMTI7U21pdGg7QWw7O0dCUjs7Ozs7O25vO3llczs7UzEwDQpCeXQgRG9sZTtJRFVCNzsyMDI2LTA1LTExOzIwMjYtMDUtMTI7RHZvxZnDoWs7UGV0cjswMi4wMy4xOTc1O0NaRTs7O0NaRS3EjGVza287Nzc7O3llczt5ZXMgLSBmaWxlZCBieSBoYW5kIGluIFVieVBvcnQ7MjAyNi0wNS0xMVQwODowMDowMCswMDowMDtNQU4tMQ0KJz1BdHRpYzs7MjAyNi0wNi0wMTsyMDI2LTA2LTAyO1RhYglOYW1lOyJRIiJ1b3RlIjsxOTkwO0FVVDs7O1hYWC1OZXVyxI1lbsOhIHN0w6F0bsOtIHDFmcOtc2x1xaFub3N0Ozs7eWVzO05PIC0gcmVqZWN0ZWQ7Ow0KQnl0IERvbGU7SURVQjc7MjAyNi0wNy0wMTsyMDI2LTA3LTA1O0JhZDtCbzs7QVVUOzs7Ozs7bm87eWVzOztTMw0KQnl0IERvbGU7SURVQjc7MjAyNi0wNy0wMTsyMDI2LTA3LTA1O1BhcGVyO0NoaWxkOzAxLjAxLjIwMjE7QVVUOzs7Ozs7bm90IHJlcXVpcmVkO25vdCByZXF1aXJlZCAoQ3plY2ggbmF0aW9uYWwpOzsNCkJ5dCBEb2xlO0lEVUI3OzIwMjYtMDctMDE7MjAyNi0wNy0wNTtQYXBlcjtBZHVsdDswMS4wMS4xOTgwO0FVVDs7Ozs7O3llcztub3QgeWV0OzsNCg=="
+    ],
+    [
+     "archived_housebook.csv",
+     "77u/QXBhcnRtZW50O0lEVUI7U3RheSBmcm9tO1N0YXkgdG87U3VybmFtZTtHaXZlbiBuYW1lKHMpO0RhdGUgb2YgYmlydGg7TmF0aW9uYWxpdHk7VHJhdmVsIGRvY3VtZW50IG5vLjtWaXNhIG5vLjtQZXJtYW5lbnQgcmVzaWRlbmNlIGFicm9hZDtQdXJwb3NlIG9mIHN0YXk7Tm90ZTtTaWduZWQ7UmVwb3J0ZWQgdG8gcG9saWNlO1JlcG9ydGVkIGF0O1JlY2VpcHQgc3RhbXANCkJ5dCBEb2xlOzsyMDI2LTA1LTAxOzIwMjYtMDUtMDQ7QXJjaGl2ZWQ7QTs7Ozs7Ozs7Ozs7DQo="
+    ],
+    [
+     "guests/30.pdf",
+     "PDF"
+    ],
+    [
+     "guests/31.pdf",
+     "PDF"
+    ],
+    [
+     "guests/1.pdf",
+     "PDF"
+    ],
+    [
+     "guests/2.pdf",
+     "PDF"
+    ],
+    [
+     "guests/11.pdf",
+     "PDF"
+    ],
+    [
+     "guests/12.pdf",
+     "PDF"
+    ],
+    [
+     "guests/13.pdf",
+     "PDF"
+    ],
+    [
+     "guests/16.pdf",
+     "PDF"
+    ],
+    [
+     "guests/17.pdf",
+     "PDF"
+    ],
+    [
+     "guests/18.pdf",
+     "PDF"
+    ],
+    [
+     "guests/3.pdf",
+     "PDF"
+    ],
+    [
+     "guests/14.pdf",
+     "PDF"
+    ],
+    [
+     "guests/5.pdf",
+     "PDF"
+    ],
+    [
+     "guests/20.pdf",
+     "PDF"
+    ],
+    [
+     "guests/19.pdf",
+     "PDF"
+    ],
+    [
+     "guests/15.pdf",
+     "PDF"
+    ],
+    [
+     "receipts/1.pdf",
+     "JVBERi0xLjQgcmVjZWlwdCBBCg=="
+    ],
+    [
+     "receipts/2.pdf",
+     "JVBERi0xLjQgcmVjZWlwdCBCCg=="
+    ],
+    [
+     "receipts/10.pdf",
+     "JVBERi0xLjQgcmVjZWlwdCBDCg=="
+    ],
+    [
+     "stay_fees/7-2026-10-v2.pdf",
+     "JVBERi0xLjQgc3RheSBmZWU="
+    ],
+    [
+     "stay_fees/7-2026-10-v2.csv",
+     "YTti"
+    ],
+    [
+     "stay_fees/6-2026-Q3-v1.csv",
+     "b25seTtjc3Y="
+    ],
+    [
+     "invoices/1.pdf",
+     "JVBERi0xLjQgaW52b2ljZSBvbmU="
+    ],
+    [
+     "manifest.json",
+     "{\n  \"generated_at\": \"2026-11-13T12:00:00+00:00\",\n  \"owner_user_id\": 1,\n  \"counts\": {\n    \"guests\": 16,\n    \"receipts\": 3,\n    \"invoices\": 1,\n    \"stay_fee_filings\": 2\n  },\n  \"housebook_rows\": 13,\n  \"archived_rows\": 1,\n  \"stay_fee_files\": [\n    \"stay_fees/7-2026-10-v2.pdf\",\n    \"stay_fees/7-2026-10-v2.csv\",\n    \"stay_fees/6-2026-Q3-v1.csv\"\n  ]\n}"
+    ]
+   ]
+  },
+  {
+   "name": "ws_broken",
+   "method": "POST",
+   "path": "/settings/workspace-export",
+   "session": {
+    "uid": 4
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 303,
+   "headers": {
+    "location": "/settings?err=Workspace%20export%20is%20only%20available%20while%20account%20deletion%20is%20scheduled.",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body": ""
+  },
+  {
+   "name": "purge_signed_out",
+   "method": "POST",
+   "path": "/settings/purge-expired",
+   "session": null,
+   "lang": null,
+   "csrf": true,
+   "status": 303,
+   "headers": {
+    "location": "/login?next=/settings/purge-expired",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body": "",
+   "state": {
+    "SELECT COUNT(*) FROM guest": 120,
+    "SELECT COUNT(*) FROM guest WHERE passport_photo_at IS NOT NULL": 2,
+    "SELECT COUNT(*) FROM submission WHERE request_xml IS NOT NULL OR request_xml_enc IS NOT NULL OR response_xml IS NOT NULL": 4,
+    "SELECT COUNT(*) FROM submission": 108,
+    "SELECT COUNT(*) FROM invoice": 2,
+    "SELECT COUNT(*) FROM reservation": 11,
+    "SELECT string_agg(id::text, ',' ORDER BY id) FROM guest WHERE id < 500": "1,2,3,4,5,11,12,13,14,15,16,17,18,19,20,30,31,400,401",
+    "photos": [
+     "11.jpg.enc",
+     "14.png",
+     "30.jpg"
+    ]
+   }
+  },
+  {
+   "name": "purge_no_csrf",
+   "method": "POST",
+   "path": "/settings/purge-expired",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "csrf": false,
+   "status": 303,
+   "headers": {
+    "location": "/login?notice=form_expired",
+    "cache-control": "no-store, private"
+   },
+   "audit": [],
+   "body": "",
+   "state": {
+    "SELECT COUNT(*) FROM guest": 120,
+    "SELECT COUNT(*) FROM guest WHERE passport_photo_at IS NOT NULL": 2,
+    "SELECT COUNT(*) FROM submission WHERE request_xml IS NOT NULL OR request_xml_enc IS NOT NULL OR response_xml IS NOT NULL": 4,
+    "SELECT COUNT(*) FROM submission": 108,
+    "SELECT COUNT(*) FROM invoice": 2,
+    "SELECT COUNT(*) FROM reservation": 11,
+    "SELECT string_agg(id::text, ',' ORDER BY id) FROM guest WHERE id < 500": "1,2,3,4,5,11,12,13,14,15,16,17,18,19,20,30,31,400,401",
+    "photos": [
+     "11.jpg.enc",
+     "14.png",
+     "30.jpg"
+    ]
+   }
+  },
+  {
+   "name": "purge_other",
+   "method": "POST",
+   "path": "/settings/purge-expired",
+   "session": {
+    "uid": 2
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 303,
+   "headers": {
+    "location": "/settings?msg=Deleted%201%20submission%20envelope%28s%29%20no%20longer%20needed.",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"guests\", \"count\": 0, \"cutoff\": \"stay ended before 2020-01-01\", \"dry_run\": false, \"owner_user_id\": 2}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"invoices\", \"count\": 0, \"cutoff\": \"issued before 2016-01-01\", \"dry_run\": false, \"owner_user_id\": 2}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"platform_invoices\", \"count\": 0, \"cutoff\": \"issued before 2016-01-01\", \"dry_run\": false, \"owner_user_id\": 2}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"claim_emails\", \"count\": 0, \"cutoff\": \"stay ended before 2026-10-14\", \"dry_run\": false, \"owner_user_id\": 2}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"reservation_contacts\", \"count\": 0, \"cutoff\": \"stay ended before 2026-10-14\", \"dry_run\": false, \"owner_user_id\": 2}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"submitter_ips\", \"count\": 0, \"cutoff\": \"stay ended before 2026-08-15\", \"dry_run\": false, \"owner_user_id\": 2}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"empty_reservations\", \"count\": 0, \"cutoff\": \"stay ended before 2020-01-01\", \"dry_run\": false, \"owner_user_id\": 2}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"stay_fee_records\", \"count\": 0, \"cutoff\": \"period before 2020-01-01\", \"dry_run\": false, \"owner_user_id\": 2}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"audit_rows\", \"count\": 0, \"cutoff\": \"logged before 2023-11-14T12:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": 2}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"alerts\", \"count\": 0, \"cutoff\": \"resolved before 2025-11-13T12:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": 2}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"rate_limit_events\", \"count\": 0, \"cutoff\": \"older than 24 hours, Havel limits 32 days\", \"dry_run\": false, \"owner_user_id\": 2}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"havel_gap\", \"count\": 0, \"cutoff\": \"created before 2026-08-15\", \"dry_run\": false, \"owner_user_id\": 2}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"login_tokens\", \"count\": 0, \"cutoff\": \"expired more than 1 day ago\", \"dry_run\": false, \"owner_user_id\": 2}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"webauthn_challenges\", \"count\": 0, \"cutoff\": \"expired more than 1 day ago\", \"dry_run\": false, \"owner_user_id\": 2}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"door_code_pins\", \"count\": 0, \"cutoff\": \"valid_to more than 1 day ago\", \"dry_run\": false, \"owner_user_id\": 2}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"cleaning\", \"count\": 0, \"cutoff\": \"event or link expiry before 2026-10-14\", \"dry_run\": false, \"owner_user_id\": 2}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"push\", \"count\": 0, \"cutoff\": \"alert queued over 30 days ago, or device unseen for 180 days\", \"dry_run\": false, \"owner_user_id\": 2}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"guide_imports\", \"count\": 0, \"cutoff\": \"listing text fetched before 2026-11-06, failed request rows before 2026-09-14\", \"dry_run\": false, \"owner_user_id\": 2}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"guest_chats\", \"count\": 0, \"cutoff\": \"stay ended, or QR chat last used, before 2026-10-14\", \"dry_run\": false, \"owner_user_id\": 2}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"legal_acceptance\", \"count\": 0, \"cutoff\": \"inactive account, last login before 2023-11-14T12:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": 2}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"workspaces\", \"count\": 0, \"cutoff\": \"deletion due on or before 2026-11-13T12:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": 2}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_run",
+     "{\"dry_run\": false, \"owner_user_id\": 2, \"counts\": {\"guests\": 0, \"invoices\": 0, \"platform_invoices\": 0, \"claim_emails\": 0, \"reservation_contacts\": 0, \"submitter_ips\": 0, \"empty_reservations\": 0, \"stay_fee_records\": 0, \"audit_rows\": 0, \"alerts\": 0, \"rate_limit_events\": 0, \"havel_gap\": 0, \"login_tokens\": 0, \"webauthn_challenges\": 0, \"door_code_pins\": 0, \"cleaning\": 0, \"push\": 0, \"guide_imports\": 0, \"guest_chats\": 0, \"legal_acceptance\": 0, \"workspaces\": 0}}",
+     2,
+     2,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"passport_photos\", \"count\": 0, \"cutoff\": \"check-in on or before 2026-11-06; upload on or before 2026-10-14; or verified\", \"dry_run\": false, \"owner_user_id\": 2}",
+     null,
+     null,
+     null
+    ],
+    [
+     "other@example.test",
+     "submission_payload_purge",
+     "blanked the request and response envelope on 1 submission(s) older than 90 days",
+     2,
+     2,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"ubyport_xml\", \"count\": 1, \"cutoff\": \"2026-08-15T12:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": 2}",
+     null,
+     null,
+     null
+    ]
+   ],
+   "body": "",
+   "state": {
+    "SELECT COUNT(*) FROM guest": 120,
+    "SELECT COUNT(*) FROM guest WHERE passport_photo_at IS NOT NULL": 2,
+    "SELECT COUNT(*) FROM submission WHERE request_xml IS NOT NULL OR request_xml_enc IS NOT NULL OR response_xml IS NOT NULL": 3,
+    "SELECT COUNT(*) FROM submission": 108,
+    "SELECT COUNT(*) FROM invoice": 2,
+    "SELECT COUNT(*) FROM reservation": 11,
+    "SELECT string_agg(id::text, ',' ORDER BY id) FROM guest WHERE id < 500": "1,2,3,4,5,11,12,13,14,15,16,17,18,19,20,30,31,400,401",
+    "photos": [
+     "11.jpg.enc",
+     "14.png",
+     "30.jpg"
+    ]
+   }
+  },
+  {
+   "name": "purge_owner",
+   "method": "POST",
+   "path": "/settings/purge-expired",
+   "session": {
+    "uid": 1
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 303,
+   "headers": {
+    "location": "/settings?msg=Deleted%202%20guest%20record%28s%29%20past%20the%20retention%20period%20and%202%20passport%20image%28s%29%20no%20longer%20needed%20and%202%20submission%20envelope%28s%29%20no%20longer%20needed.",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "owner@example.test",
+     "retention_purge",
+     "deleted 2 guest record(s) whose stay ended before 2020-01-01",
+     1,
+     1,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"guests\", \"count\": 2, \"cutoff\": \"stay ended before 2020-01-01\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"invoices\", \"count\": 0, \"cutoff\": \"issued before 2016-01-01\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"platform_invoices\", \"count\": 0, \"cutoff\": \"issued before 2016-01-01\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"claim_emails\", \"count\": 0, \"cutoff\": \"stay ended before 2026-10-14\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"reservation_contacts\", \"count\": 2, \"cutoff\": \"stay ended before 2026-10-14\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"submitter_ips\", \"count\": 0, \"cutoff\": \"stay ended before 2026-08-15\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"empty_reservations\", \"count\": 1, \"cutoff\": \"stay ended before 2020-01-01\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"stay_fee_records\", \"count\": 0, \"cutoff\": \"period before 2020-01-01\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"audit_rows\", \"count\": 0, \"cutoff\": \"logged before 2023-11-14T12:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"alerts\", \"count\": 0, \"cutoff\": \"resolved before 2025-11-13T12:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"rate_limit_events\", \"count\": 0, \"cutoff\": \"older than 24 hours, Havel limits 32 days\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"havel_gap\", \"count\": 0, \"cutoff\": \"created before 2026-08-15\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"login_tokens\", \"count\": 0, \"cutoff\": \"expired more than 1 day ago\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"webauthn_challenges\", \"count\": 0, \"cutoff\": \"expired more than 1 day ago\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"door_code_pins\", \"count\": 0, \"cutoff\": \"valid_to more than 1 day ago\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"cleaning\", \"count\": 0, \"cutoff\": \"event or link expiry before 2026-10-14\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"push\", \"count\": 0, \"cutoff\": \"alert queued over 30 days ago, or device unseen for 180 days\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"guide_imports\", \"count\": 0, \"cutoff\": \"listing text fetched before 2026-11-06, failed request rows before 2026-09-14\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"guest_chats\", \"count\": 0, \"cutoff\": \"stay ended, or QR chat last used, before 2026-10-14\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"legal_acceptance\", \"count\": 0, \"cutoff\": \"inactive account, last login before 2023-11-14T12:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"workspaces\", \"count\": 0, \"cutoff\": \"deletion due on or before 2026-11-13T12:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_run",
+     "{\"dry_run\": false, \"owner_user_id\": 1, \"counts\": {\"guests\": 2, \"invoices\": 0, \"platform_invoices\": 0, \"claim_emails\": 0, \"reservation_contacts\": 2, \"submitter_ips\": 0, \"empty_reservations\": 1, \"stay_fee_records\": 0, \"audit_rows\": 0, \"alerts\": 0, \"rate_limit_events\": 0, \"havel_gap\": 0, \"login_tokens\": 0, \"webauthn_challenges\": 0, \"door_code_pins\": 0, \"cleaning\": 0, \"push\": 0, \"guide_imports\": 0, \"guest_chats\": 0, \"legal_acceptance\": 0, \"workspaces\": 0}}",
+     1,
+     1,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"passport_photos\", \"count\": 2, \"cutoff\": \"check-in on or before 2026-11-06; upload on or before 2026-10-14; or verified\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "owner@example.test",
+     "submission_payload_purge",
+     "blanked the request and response envelope on 2 submission(s) older than 90 days",
+     1,
+     1,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"ubyport_xml\", \"count\": 2, \"cutoff\": \"2026-08-15T12:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ]
+   ],
+   "body": "",
+   "state": {
+    "SELECT COUNT(*) FROM guest": 118,
+    "SELECT COUNT(*) FROM guest WHERE passport_photo_at IS NOT NULL": 0,
+    "SELECT COUNT(*) FROM submission WHERE request_xml IS NOT NULL OR request_xml_enc IS NOT NULL OR response_xml IS NOT NULL": 1,
+    "SELECT COUNT(*) FROM submission": 108,
+    "SELECT COUNT(*) FROM invoice": 2,
+    "SELECT COUNT(*) FROM reservation": 10,
+    "SELECT string_agg(id::text, ',' ORDER BY id) FROM guest WHERE id < 500": "1,2,3,4,5,11,12,13,14,15,16,17,18,19,20,400,401",
+    "photos": []
+   }
+  },
+  {
+   "name": "purge_owner_again",
+   "method": "POST",
+   "path": "/settings/purge-expired",
+   "session": {
+    "uid": 1
+   },
+   "lang": "cs",
+   "csrf": true,
+   "status": 303,
+   "headers": {
+    "location": "/settings?msg=Nen%C3%AD%20co%20smazat%20%E2%80%93%20%C5%BE%C3%A1dn%C3%BD%20z%C3%A1znam%20nen%C3%AD%20po%20uplynut%C3%AD%20lh%C5%AFty.",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"guests\", \"count\": 0, \"cutoff\": \"stay ended before 2020-01-01\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"invoices\", \"count\": 0, \"cutoff\": \"issued before 2016-01-01\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"platform_invoices\", \"count\": 0, \"cutoff\": \"issued before 2016-01-01\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"claim_emails\", \"count\": 0, \"cutoff\": \"stay ended before 2026-10-14\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"reservation_contacts\", \"count\": 0, \"cutoff\": \"stay ended before 2026-10-14\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"submitter_ips\", \"count\": 0, \"cutoff\": \"stay ended before 2026-08-15\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"empty_reservations\", \"count\": 0, \"cutoff\": \"stay ended before 2020-01-01\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"stay_fee_records\", \"count\": 0, \"cutoff\": \"period before 2020-01-01\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"audit_rows\", \"count\": 0, \"cutoff\": \"logged before 2023-11-14T12:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"alerts\", \"count\": 0, \"cutoff\": \"resolved before 2025-11-13T12:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"rate_limit_events\", \"count\": 0, \"cutoff\": \"older than 24 hours, Havel limits 32 days\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"havel_gap\", \"count\": 0, \"cutoff\": \"created before 2026-08-15\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"login_tokens\", \"count\": 0, \"cutoff\": \"expired more than 1 day ago\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"webauthn_challenges\", \"count\": 0, \"cutoff\": \"expired more than 1 day ago\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"door_code_pins\", \"count\": 0, \"cutoff\": \"valid_to more than 1 day ago\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"cleaning\", \"count\": 0, \"cutoff\": \"event or link expiry before 2026-10-14\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"push\", \"count\": 0, \"cutoff\": \"alert queued over 30 days ago, or device unseen for 180 days\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"guide_imports\", \"count\": 0, \"cutoff\": \"listing text fetched before 2026-11-06, failed request rows before 2026-09-14\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"guest_chats\", \"count\": 0, \"cutoff\": \"stay ended, or QR chat last used, before 2026-10-14\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"legal_acceptance\", \"count\": 0, \"cutoff\": \"inactive account, last login before 2023-11-14T12:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"workspaces\", \"count\": 0, \"cutoff\": \"deletion due on or before 2026-11-13T12:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_run",
+     "{\"dry_run\": false, \"owner_user_id\": 1, \"counts\": {\"guests\": 0, \"invoices\": 0, \"platform_invoices\": 0, \"claim_emails\": 0, \"reservation_contacts\": 0, \"submitter_ips\": 0, \"empty_reservations\": 0, \"stay_fee_records\": 0, \"audit_rows\": 0, \"alerts\": 0, \"rate_limit_events\": 0, \"havel_gap\": 0, \"login_tokens\": 0, \"webauthn_challenges\": 0, \"door_code_pins\": 0, \"cleaning\": 0, \"push\": 0, \"guide_imports\": 0, \"guest_chats\": 0, \"legal_acceptance\": 0, \"workspaces\": 0}}",
+     1,
+     1,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"passport_photos\", \"count\": 0, \"cutoff\": \"check-in on or before 2026-11-06; upload on or before 2026-10-14; or verified\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"ubyport_xml\", \"count\": 0, \"cutoff\": \"2026-08-15T12:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ]
+   ],
+   "body": "",
+   "state": {
+    "SELECT COUNT(*) FROM guest": 118,
+    "SELECT COUNT(*) FROM guest WHERE passport_photo_at IS NOT NULL": 0,
+    "SELECT COUNT(*) FROM submission WHERE request_xml IS NOT NULL OR request_xml_enc IS NOT NULL OR response_xml IS NOT NULL": 1,
+    "SELECT COUNT(*) FROM submission": 108,
+    "SELECT COUNT(*) FROM invoice": 2,
+    "SELECT COUNT(*) FROM reservation": 10,
+    "SELECT string_agg(id::text, ',' ORDER BY id) FROM guest WHERE id < 500": "1,2,3,4,5,11,12,13,14,15,16,17,18,19,20,400,401",
+    "photos": []
+   }
+  },
+  {
+   "name": "purge_many",
+   "method": "POST",
+   "path": "/settings/purge-expired",
+   "session": {
+    "uid": 5
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 303,
+   "headers": {
+    "location": "/settings?msg=Nothing%20to%20delete%20-%20no%20record%20is%20past%20the%20retention%20period.",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"guests\", \"count\": 0, \"cutoff\": \"stay ended before 2020-01-01\", \"dry_run\": false, \"owner_user_id\": 5}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"invoices\", \"count\": 0, \"cutoff\": \"issued before 2016-01-01\", \"dry_run\": false, \"owner_user_id\": 5}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"platform_invoices\", \"count\": 0, \"cutoff\": \"issued before 2016-01-01\", \"dry_run\": false, \"owner_user_id\": 5}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"claim_emails\", \"count\": 0, \"cutoff\": \"stay ended before 2026-10-14\", \"dry_run\": false, \"owner_user_id\": 5}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"reservation_contacts\", \"count\": 0, \"cutoff\": \"stay ended before 2026-10-14\", \"dry_run\": false, \"owner_user_id\": 5}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"submitter_ips\", \"count\": 0, \"cutoff\": \"stay ended before 2026-08-15\", \"dry_run\": false, \"owner_user_id\": 5}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"empty_reservations\", \"count\": 0, \"cutoff\": \"stay ended before 2020-01-01\", \"dry_run\": false, \"owner_user_id\": 5}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"stay_fee_records\", \"count\": 0, \"cutoff\": \"period before 2020-01-01\", \"dry_run\": false, \"owner_user_id\": 5}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"audit_rows\", \"count\": 0, \"cutoff\": \"logged before 2023-11-14T12:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": 5}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"alerts\", \"count\": 0, \"cutoff\": \"resolved before 2025-11-13T12:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": 5}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"rate_limit_events\", \"count\": 0, \"cutoff\": \"older than 24 hours, Havel limits 32 days\", \"dry_run\": false, \"owner_user_id\": 5}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"havel_gap\", \"count\": 0, \"cutoff\": \"created before 2026-08-15\", \"dry_run\": false, \"owner_user_id\": 5}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"login_tokens\", \"count\": 0, \"cutoff\": \"expired more than 1 day ago\", \"dry_run\": false, \"owner_user_id\": 5}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"webauthn_challenges\", \"count\": 0, \"cutoff\": \"expired more than 1 day ago\", \"dry_run\": false, \"owner_user_id\": 5}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"door_code_pins\", \"count\": 0, \"cutoff\": \"valid_to more than 1 day ago\", \"dry_run\": false, \"owner_user_id\": 5}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"cleaning\", \"count\": 0, \"cutoff\": \"event or link expiry before 2026-10-14\", \"dry_run\": false, \"owner_user_id\": 5}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"push\", \"count\": 0, \"cutoff\": \"alert queued over 30 days ago, or device unseen for 180 days\", \"dry_run\": false, \"owner_user_id\": 5}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"guide_imports\", \"count\": 0, \"cutoff\": \"listing text fetched before 2026-11-06, failed request rows before 2026-09-14\", \"dry_run\": false, \"owner_user_id\": 5}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"guest_chats\", \"count\": 0, \"cutoff\": \"stay ended, or QR chat last used, before 2026-10-14\", \"dry_run\": false, \"owner_user_id\": 5}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"legal_acceptance\", \"count\": 0, \"cutoff\": \"inactive account, last login before 2023-11-14T12:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": 5}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"workspaces\", \"count\": 0, \"cutoff\": \"deletion due on or before 2026-11-13T12:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": 5}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_run",
+     "{\"dry_run\": false, \"owner_user_id\": 5, \"counts\": {\"guests\": 0, \"invoices\": 0, \"platform_invoices\": 0, \"claim_emails\": 0, \"reservation_contacts\": 0, \"submitter_ips\": 0, \"empty_reservations\": 0, \"stay_fee_records\": 0, \"audit_rows\": 0, \"alerts\": 0, \"rate_limit_events\": 0, \"havel_gap\": 0, \"login_tokens\": 0, \"webauthn_challenges\": 0, \"door_code_pins\": 0, \"cleaning\": 0, \"push\": 0, \"guide_imports\": 0, \"guest_chats\": 0, \"legal_acceptance\": 0, \"workspaces\": 0}}",
+     5,
+     5,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"passport_photos\", \"count\": 0, \"cutoff\": \"check-in on or before 2026-11-06; upload on or before 2026-10-14; or verified\", \"dry_run\": false, \"owner_user_id\": 5}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"ubyport_xml\", \"count\": 0, \"cutoff\": \"2026-08-15T12:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": 5}",
+     null,
+     null,
+     null
+    ]
+   ],
+   "body": "",
+   "state": {
+    "SELECT COUNT(*) FROM guest": 118,
+    "SELECT COUNT(*) FROM guest WHERE passport_photo_at IS NOT NULL": 0,
+    "SELECT COUNT(*) FROM submission WHERE request_xml IS NOT NULL OR request_xml_enc IS NOT NULL OR response_xml IS NOT NULL": 1,
+    "SELECT COUNT(*) FROM submission": 108,
+    "SELECT COUNT(*) FROM invoice": 2,
+    "SELECT COUNT(*) FROM reservation": 10,
+    "SELECT string_agg(id::text, ',' ORDER BY id) FROM guest WHERE id < 500": "1,2,3,4,5,11,12,13,14,15,16,17,18,19,20,400,401",
+    "photos": []
+   }
+  },
+  {
+   "name": "purge_support",
+   "method": "POST",
+   "path": "/settings/purge-expired",
+   "session": {
+    "uid": 3,
+    "as": 1
+   },
+   "lang": null,
+   "csrf": true,
+   "status": 303,
+   "headers": {
+    "location": "/settings?msg=Nothing%20to%20delete%20-%20no%20record%20is%20past%20the%20retention%20period.",
+    "cache-control": "no-store, private"
+   },
+   "audit": [
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"guests\", \"count\": 0, \"cutoff\": \"stay ended before 2020-01-01\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"invoices\", \"count\": 0, \"cutoff\": \"issued before 2016-01-01\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"platform_invoices\", \"count\": 0, \"cutoff\": \"issued before 2016-01-01\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"claim_emails\", \"count\": 0, \"cutoff\": \"stay ended before 2026-10-14\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"reservation_contacts\", \"count\": 0, \"cutoff\": \"stay ended before 2026-10-14\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"submitter_ips\", \"count\": 0, \"cutoff\": \"stay ended before 2026-08-15\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"empty_reservations\", \"count\": 0, \"cutoff\": \"stay ended before 2020-01-01\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"stay_fee_records\", \"count\": 0, \"cutoff\": \"period before 2020-01-01\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"audit_rows\", \"count\": 0, \"cutoff\": \"logged before 2023-11-14T12:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"alerts\", \"count\": 0, \"cutoff\": \"resolved before 2025-11-13T12:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"rate_limit_events\", \"count\": 0, \"cutoff\": \"older than 24 hours, Havel limits 32 days\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"havel_gap\", \"count\": 0, \"cutoff\": \"created before 2026-08-15\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"login_tokens\", \"count\": 0, \"cutoff\": \"expired more than 1 day ago\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"webauthn_challenges\", \"count\": 0, \"cutoff\": \"expired more than 1 day ago\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"door_code_pins\", \"count\": 0, \"cutoff\": \"valid_to more than 1 day ago\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"cleaning\", \"count\": 0, \"cutoff\": \"event or link expiry before 2026-10-14\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"push\", \"count\": 0, \"cutoff\": \"alert queued over 30 days ago, or device unseen for 180 days\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"guide_imports\", \"count\": 0, \"cutoff\": \"listing text fetched before 2026-11-06, failed request rows before 2026-09-14\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"guest_chats\", \"count\": 0, \"cutoff\": \"stay ended, or QR chat last used, before 2026-10-14\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"legal_acceptance\", \"count\": 0, \"cutoff\": \"inactive account, last login before 2023-11-14T12:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"workspaces\", \"count\": 0, \"cutoff\": \"deletion due on or before 2026-11-13T12:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_run",
+     "{\"dry_run\": false, \"owner_user_id\": 1, \"counts\": {\"guests\": 0, \"invoices\": 0, \"platform_invoices\": 0, \"claim_emails\": 0, \"reservation_contacts\": 0, \"submitter_ips\": 0, \"empty_reservations\": 0, \"stay_fee_records\": 0, \"audit_rows\": 0, \"alerts\": 0, \"rate_limit_events\": 0, \"havel_gap\": 0, \"login_tokens\": 0, \"webauthn_challenges\": 0, \"door_code_pins\": 0, \"cleaning\": 0, \"push\": 0, \"guide_imports\": 0, \"guest_chats\": 0, \"legal_acceptance\": 0, \"workspaces\": 0}}",
+     1,
+     3,
+     3
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"passport_photos\", \"count\": 0, \"cutoff\": \"check-in on or before 2026-11-06; upload on or before 2026-10-14; or verified\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ],
+    [
+     "system",
+     "retention_delete",
+     "{\"class\": \"ubyport_xml\", \"count\": 0, \"cutoff\": \"2026-08-15T12:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": 1}",
+     null,
+     null,
+     null
+    ]
+   ],
+   "body": "",
+   "state": {
+    "SELECT COUNT(*) FROM guest": 118,
+    "SELECT COUNT(*) FROM guest WHERE passport_photo_at IS NOT NULL": 0,
+    "SELECT COUNT(*) FROM submission WHERE request_xml IS NOT NULL OR request_xml_enc IS NOT NULL OR response_xml IS NOT NULL": 1,
+    "SELECT COUNT(*) FROM submission": 108,
+    "SELECT COUNT(*) FROM invoice": 2,
+    "SELECT COUNT(*) FROM reservation": 10,
+    "SELECT string_agg(id::text, ',' ORDER BY id) FROM guest WHERE id < 500": "1,2,3,4,5,11,12,13,14,15,16,17,18,19,20,400,401",
+    "photos": []
+   }
+  }
+ ]
+}
