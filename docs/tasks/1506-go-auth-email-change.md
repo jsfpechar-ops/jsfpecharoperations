@@ -1,6 +1,6 @@
 # 1506: Go login address change (dormant): `POST /account/email`, `GET`/`POST /account/email/confirm`
 
-Status: todo
+Status: review
 Depends on: 1501 (built on go-wave3: `mail.QueueLinkMail`, `mail.QueueEmailChanged`, `mail.KindEmailConfirm`, `clientip.Key`), 1505 (its `acct_shell.go` shell and send hooks, `acct_i18n.json` with this brief's strings, and the golden harness `runAccountGolden` in `account_golden_test.go`; run 1505 first) | Base commit: 859d114d5 | Branch: go-wave3
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
