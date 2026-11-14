@@ -1,8 +1,10 @@
 # 1420: Go invoice pages: package foundation, decimal maths, string catalog
 
 Status: todo
-Depends on: none (the PDF library `go/internal/pdf/` and the billing job are merged) | Base commit: main (sidecars replayed in order on 0eaed0a78) | Branch: task/1420-go-invoices-foundation
+Depends on: none (the PDF library `go/internal/pdf/` and the billing job are merged) | Base commit: the working branch head (no fixed commit) | Branch: the current branch (one big PR)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B
+
+> **One big PR mode.** Work on the current branch: never create a branch, never push, never open a PR. Commit `1420 step k` after each step that changes a file. The owner opens one pull request for all briefs.
 
 ## 1. Objective
 
@@ -69,7 +71,7 @@ No other file may change.
 
 ## 4. Steps
 
-0. Checks (repo root): `git branch --show-current` prints `task/1420-go-invoices-foundation`; `ls go/internal/web/invoices 2>&1 | tail -3` says "No such file"; `ls go/internal/pdf/invoice.go go/internal/billingjob/invoicer.go go/internal/web/stayfees/handlers.go | tail -3` lists all three; `grep -cF 'func CSRF(w http.ResponseWriter' go/internal/hostweb/gate.go` and `grep -cF 'func Login(' go/internal/hostweb/gate.go` each print 1 or more; `grep -cF 'def _money_czk(' App/app/templating.py` and `grep -cF 'def vat_parts(' App/app/invoices.py` each print 1 or more; `grep -c 'registerRoutes' go/cmd/ubyhost-web/registry.go` prints 1 or more; `find docs/tasks/1420-files -name '*.txt' | wc -l` prints `8`.
+0. Checks (repo root): `ls go/internal/web/invoices 2>&1 | tail -3` says "No such file"; `ls go/internal/pdf/invoice.go go/internal/billingjob/invoicer.go go/internal/web/stayfees/handlers.go | tail -3` lists all three; `grep -cF 'func CSRF(w http.ResponseWriter' go/internal/hostweb/gate.go` and `grep -cF 'func Login(' go/internal/hostweb/gate.go` each print 1 or more; `grep -cF 'def _money_czk(' App/app/templating.py` and `grep -cF 'def vat_parts(' App/app/invoices.py` each print 1 or more; `grep -c 'registerRoutes' go/cmd/ubyhost-web/registry.go` prints 1 or more; `find docs/tasks/1420-files -name '*.txt' | wc -l` prints `8`.
 
 1. Copy and check (one call, repo root):
 
@@ -107,8 +109,8 @@ Step 3 only, plus from the repo root `python3 scripts/context_lint.py 2>&1 | tai
 - [ ] `go test` prints `ok` for `internal/web/invoices` and `cmd/ubyhost-web`; with PostgreSQL there is no `--- SKIP` line in `go test -v` (without it the report says "CI only").
 - [ ] `go test -count=1 -v -run 'TestParseDecimal|TestVATParts|TestMoneyCZK|TestEveryKey|TestBadID' ./internal/web/invoices/ 2>&1 | grep -c '^--- PASS'` (from `go/`) prints 5.
 - [ ] `go list ./internal/web/invoices/ 2>&1 | tail -3` prints the package path (it compiles with no route).
-- [ ] `git diff --stat HEAD~2..HEAD | tail -15` lists only §3 paths.
-- [ ] Commits "1420 step 1" and "1420 step 3"; nothing pushed.
+- [ ] `git log --oneline --grep='^1420 step' | tail -5` shows the step commits, and `git show --stat --format=%s $(git log --format=%h --grep='^1420 step') | tail -30` lists only §3 paths.
+- [ ] Nothing pushed, no branch created.
 
 ## 8. Stop and ask
 

@@ -1,8 +1,10 @@
 # 1423: Go invoice pages: the list, the detail page and the PDF download
 
 Status: todo
-Depends on: 1422 (merged or on this branch) | Base commit: main (sidecars replayed in order on 0eaed0a78) | Branch: task/1423-go-invoices-list-detail
+Depends on: 1422 (merged or on this branch) | Base commit: the working branch head (no fixed commit) | Branch: the current branch (one big PR)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B
+
+> **One big PR mode.** Work on the current branch: never create a branch, never push, never open a PR. Commit `1423 step k` after each step that changes a file. The owner opens one pull request for all briefs.
 
 ## 1. Objective
 
@@ -60,7 +62,7 @@ No other file may change.
 
 ## 4. Steps
 
-0. Checks (repo root): `git branch --show-current` prints `task/1423-go-invoices-list-detail`; `ls go/internal/web/invoices/store.go go/internal/web/invoices/testenv_test.go | tail -3` lists both; `ls go/internal/web/invoices/pages_list.go 2>&1 | tail -2` says "No such file"; `grep -cF 'def invoices_list(request: Request):' App/app/routes/invoices.py` and `grep -cF 'def invoice_detail(invoice_id: int, request: Request):' App/app/routes/invoices.py` each print 1 or more; `grep -cF 'func MustParseFuncs(' go/internal/hostweb/layout/pagefuncs.go` prints 1 or more; `find docs/tasks/1423-files -name '*.txt' | wc -l` prints `9`.
+0. Checks (repo root): `ls go/internal/web/invoices/store.go go/internal/web/invoices/testenv_test.go | tail -3` lists both; `ls go/internal/web/invoices/pages_list.go 2>&1 | tail -2` says "No such file"; `grep -cF 'def invoices_list(request: Request):' App/app/routes/invoices.py` and `grep -cF 'def invoice_detail(invoice_id: int, request: Request):' App/app/routes/invoices.py` each print 1 or more; `grep -cF 'func MustParseFuncs(' go/internal/hostweb/layout/pagefuncs.go` prints 1 or more; `find docs/tasks/1423-files -name '*.txt' | wc -l` prints `9`.
 
 1. Copy and check (one call, repo root):
 
@@ -106,8 +108,8 @@ Step 3 only, plus from the repo root `python3 scripts/context_lint.py 2>&1 | tai
 - [ ] `go test` prints `ok` for `internal/web/invoices` and `cmd/ubyhost-web`; with PostgreSQL there is no `--- SKIP` line in `go test -v` (without it the report says "CI only").
 - [ ] `cd go && UBYHOST_TEST_DATABASE_URL=<url> go test -count=1 -v -run 'TestList|TestDetail|TestPDF|TestPyQuote' ./internal/web/invoices/ 2>&1 | grep -c '^--- PASS'` prints 7.
 - [ ] UX gate (rules 7, 10): not applicable, the pages are not served; it is run at the switch (brief 1427, Owner steps).
-- [ ] `git diff --stat HEAD~2..HEAD | tail -15` lists only §3 paths.
-- [ ] Commits "1423 step 1" and "1423 step 3"; nothing pushed.
+- [ ] `git log --oneline --grep='^1423 step' | tail -5` shows the step commits, and `git show --stat --format=%s $(git log --format=%h --grep='^1423 step') | tail -30` lists only §3 paths.
+- [ ] Nothing pushed, no branch created.
 
 ## 8. Stop and ask
 

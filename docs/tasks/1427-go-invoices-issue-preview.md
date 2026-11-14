@@ -1,8 +1,10 @@
 # 1427: Go invoice pages: issue, preview and the route table
 
 Status: todo
-Depends on: 1425 and 1426 (both merged or on this branch) | Base commit: main (sidecars replayed in order on 0eaed0a78) | Branch: task/1427-go-invoices-issue-preview
+Depends on: 1425 and 1426 (both merged or on this branch) | Base commit: the working branch head (no fixed commit) | Branch: the current branch (one big PR)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B
+
+> **One big PR mode.** Work on the current branch: never create a branch, never push, never open a PR. Commit `1427 step k` after each step that changes a file. The owner opens one pull request for all briefs.
 
 ## 1. Objective
 
@@ -47,7 +49,7 @@ No other file may change.
 
 ## 4. Steps
 
-0. Checks (repo root): `git branch --show-current` prints `task/1427-go-invoices-issue-preview`; `ls go/internal/web/invoices/formctx.go go/internal/web/invoices/ares.go go/internal/web/invoices/public.go | tail -4` lists all three; `ls go/internal/web/invoices/post_issue.go 2>&1 | tail -2` says "No such file"; `grep -cF 'async def invoice_issue(request: Request):' App/app/routes/invoices.py` and `grep -cF 'async def invoice_preview(request: Request):' App/app/routes/invoices.py` each print 1 or more; `find docs/tasks/1427-files -name '*.txt' | wc -l` prints `5`.
+0. Checks (repo root): `ls go/internal/web/invoices/formctx.go go/internal/web/invoices/ares.go go/internal/web/invoices/public.go | tail -4` lists all three; `ls go/internal/web/invoices/post_issue.go 2>&1 | tail -2` says "No such file"; `grep -cF 'async def invoice_issue(request: Request):' App/app/routes/invoices.py` and `grep -cF 'async def invoice_preview(request: Request):' App/app/routes/invoices.py` each print 1 or more; `find docs/tasks/1427-files -name '*.txt' | wc -l` prints `5`.
 
 1. Copy and check (one call, repo root):
 
@@ -93,10 +95,10 @@ Step 3 only, plus from the repo root `python3 scripts/context_lint.py 2>&1 | tai
 - [ ] The 5 sha256 values match §2.
 - [ ] `gofmt -l` prints nothing; `go build ./...` and `go vet` print nothing.
 - [ ] `go test` prints `ok` for `internal/web/invoices` and `cmd/ubyhost-web`; with PostgreSQL there is no `--- SKIP` line in `go test -v` (without it the report says "CI only").
-- [ ] `cd go && UBYHOST_TEST_DATABASE_URL=<url> go test -count=1 -v -run 'TestIssue|TestPreview|TestFill|TestFormState|TestRoutes|TestSendRoute' ./internal/web/invoices/ 2>&1 | grep -c '^--- PASS'` prints 9.
+- [ ] `cd go && UBYHOST_TEST_DATABASE_URL=<url> go test -count=1 -v -run 'TestIssue|TestPreview|TestFill|TestFormState|TestRoutes|TestSendRoute' ./internal/web/invoices/ 2>&1 | grep -c '^--- PASS'` prints 12.
 - [ ] `cd go && go test -count=1 -run TestInvoiceRoutesRegistered ./cmd/ubyhost-web/ 2>&1 | tail -3` prints `ok`.
-- [ ] `git diff --stat HEAD~2..HEAD | tail -15` lists only §3 paths.
-- [ ] Commits "1427 step 1" and "1427 step 3"; nothing pushed.
+- [ ] `git log --oneline --grep='^1427 step' | tail -5` shows the step commits, and `git show --stat --format=%s $(git log --format=%h --grep='^1427 step') | tail -30` lists only §3 paths.
+- [ ] Nothing pushed, no branch created.
 
 ## 8. Stop and ask
 

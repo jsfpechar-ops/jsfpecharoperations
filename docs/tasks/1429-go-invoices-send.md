@@ -1,7 +1,9 @@
 # 1429: Go invoice pages: send the invoice by e-mail (POST /invoices/{id}/send)
 
+> **One big PR mode.** Work on the current branch: never create a branch, never push, never open a PR; commit `1429 step k` after each step. This brief is blocked: do not run it.
+
 Status: blocked — the Go mail package has no builder for the `invoice_issued` message (no `mail.BuildInvoiceIssued`), and `go/internal/mail/` is owned by the mail thread, which this thread may not edit
-Depends on: 1427 and the mail thread adding `BuildInvoiceIssued` | Base commit: main | Branch: task/1429-go-invoices-send
+Depends on: 1427 and the mail thread adding `BuildInvoiceIssued` | Base commit: the working branch head | Branch: the current branch (one big PR)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B (e-mail to a guest)
 
 ## 1. Objective

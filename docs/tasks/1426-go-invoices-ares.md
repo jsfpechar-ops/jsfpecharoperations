@@ -1,8 +1,10 @@
 # 1426: Go invoice pages: the ARES register lookup for the buyer
 
 Status: todo
-Depends on: 1420 (merged or on this branch; brief 1427 uses it) | Base commit: main (sidecars replayed in order on 0eaed0a78) | Branch: task/1426-go-invoices-ares
+Depends on: 1420 (merged or on this branch; brief 1427 uses it) | Base commit: the working branch head (no fixed commit) | Branch: the current branch (one big PR)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B
+
+> **One big PR mode.** Work on the current branch: never create a branch, never push, never open a PR. Commit `1426 step k` after each step that changes a file. The owner opens one pull request for all briefs.
 
 ## 1. Objective
 
@@ -44,7 +46,7 @@ No other file may change.
 
 ## 4. Steps
 
-0. Checks (repo root): `git branch --show-current` prints `task/1426-go-invoices-ares`; `ls go/internal/web/invoices/handlers.go go/internal/web/invoices/dec.go | tail -3` lists both; `ls go/internal/web/invoices/ares.go 2>&1 | tail -2` says "No such file"; `grep -cF 'def _map_payload(' App/app/ares.py` and `grep -cF 'def _buyer_ares_fill(' App/app/routes/invoices.py` each print 1 or more; `find docs/tasks/1426-files -name '*.txt' | wc -l` prints `2`.
+0. Checks (repo root): `ls go/internal/web/invoices/handlers.go go/internal/web/invoices/dec.go | tail -3` lists both; `ls go/internal/web/invoices/ares.go 2>&1 | tail -2` says "No such file"; `grep -cF 'def _map_payload(' App/app/ares.py` and `grep -cF 'def _buyer_ares_fill(' App/app/routes/invoices.py` each print 1 or more; `find docs/tasks/1426-files -name '*.txt' | wc -l` prints `2`.
 
 1. Copy and check (one call, repo root):
 
@@ -82,8 +84,8 @@ Step 3 only, plus from the repo root `python3 scripts/context_lint.py 2>&1 | tai
 - [ ] `go test` prints `ok` for `internal/web/invoices` and `cmd/ubyhost-web`; with PostgreSQL there is no `--- SKIP` line in `go test -v` (without it the report says "CI only").
 - [ ] `cd go && go test -count=1 -v -run 'TestICOOK|TestMapAres|TestAres' ./internal/web/invoices/ 2>&1 | grep -c '^--- PASS'` prints 3.
 - [ ] `grep -n 'http.Client\|ares.gov.cz' go/internal/web/invoices/ares.go | head -5` shows one client with a 4-second timeout and the one URL.
-- [ ] `git diff --stat HEAD~2..HEAD | tail -15` lists only §3 paths.
-- [ ] Commits "1426 step 1" and "1426 step 3"; nothing pushed.
+- [ ] `git log --oneline --grep='^1426 step' | tail -5` shows the step commits, and `git show --stat --format=%s $(git log --format=%h --grep='^1426 step') | tail -30` lists only §3 paths.
+- [ ] Nothing pushed, no branch created.
 
 ## 8. Stop and ask
 
