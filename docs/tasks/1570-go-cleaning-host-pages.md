@@ -49,7 +49,7 @@ Details that are easy to get wrong and are tested: `from`, else `cal_date`, else
 
 **Anchors that must exist verbatim** (step 0): the Python function lines and the Go function lines listed there.
 
-**Verified by the brief writer:** (filled in after the check run)
+**Verified by the brief writer** (in a throwaway worktree of this branch, with the steps of briefs 1570 to 1570 applied exactly and in order, sidecars copied as step 1 does): `gofmt -l` printed nothing, `go build ./...` and `go vet ./internal/web/cleaning/... ./cmd/...` were silent, and `go test ./internal/web/cleaning/... ./cmd/ubyhost-web/... -count=1` passed on PostgreSQL 16, with the golden test of brief 1310 still green and the named tests PASS. The tests cover: the schedule page (calendar attributes, add-type buttons, `/reservations` form with a CSRF token, the list HTML, another owner's and an archived property absent, `notice` shown and escaped, `cal_date` and the 30-day default, Czech from the language cookie), its errors (foreign, archived, text, malformed and impossible dates, empty and too long range, signed out), the add form (`date` and `property` kept, no revision field), the edit form (a booking-based cleaning with the property read-only and the decrypted note, a hand-made one with the select, a foreign, missing, text, dismissed and archived-property id, signed out), the property list, every template key in all three languages, and the registration patterns.
 
 ## 3. Files
 
