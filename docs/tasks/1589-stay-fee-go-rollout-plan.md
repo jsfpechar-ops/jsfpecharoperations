@@ -1,6 +1,6 @@
 # 1589: Stay fee pages on Go: rollout plan (docs only)
 
-Status: todo
+Status: review
 Depends on: 1580, 1581, 1582, 1583, 1584, 1585, 1586, 1587, 1588 (the plan describes their routes; the file itself needs none of them to be applied) | Base commit: current tip of the working branch | Branch: task/1589-stay-fee-go-rollout-plan
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier C
 
