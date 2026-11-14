@@ -1,0 +1,19 @@
+# Host strings the Leon setup pages read (App/scripts/leon_golden.py writes leon_i18n.json from this file).
+# "prefix.*" lists every key with that prefix; "@kind_titles" lists guest_guide.kind.<kind>.title for every card kind.
+leon_setup.*
+leon_page.*
+guest_guide.import.*
+guest_guide.not_live
+guest_guide.check_waiting
+guest_guide.col.card
+guest_guide.col.state
+guest_guide.state.check
+guest_guide.state.missing
+guest_guide.quick.link
+guest_guide.qr.link
+guest_guide.leon.open
+@kind_titles
+wizard.exit
+wizard.back
+wizard.try_it.check_again
+common.back

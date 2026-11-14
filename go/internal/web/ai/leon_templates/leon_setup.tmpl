@@ -1,0 +1,206 @@
+{{/* Port of App/app/templates/leon_setup/_layout.html and the five step pages (brief 1435). The Jinja blocks wizard_content and wizard_actions are the three parts of each step page: leon.open, the content, leon.mid, the actions, leon.close. */}}
+{{define "leon_setup.switch_on.title"}}{{end}}{{define "leon_setup.switch_on.meta"}}{{end}}
+{{define "leon_setup.import.title"}}{{end}}{{define "leon_setup.import.meta"}}{{end}}
+{{define "leon_setup.cards.title"}}{{end}}{{define "leon_setup.cards.meta"}}{{end}}
+{{define "leon_setup.try.title"}}{{end}}{{define "leon_setup.try.meta"}}{{end}}
+{{define "leon_setup.done.title"}}{{end}}{{define "leon_setup.done.meta"}}{{end}}
+
+{{define "leon.open"}}
+<div class="settings-lane">
+<div class="airbnb-header">
+  <a class="airbnb-back" href="/apartments/{{.ApartmentID}}/leon" aria-label="{{t "common.back"}}">{{icon "arrow-left" 20}}</a>
+  <h1 class="airbnb-title">{{t "leon_setup.heading"}}</h1>
+</div>
+<div class="setup-wizard wiz-page" data-leon-setup data-leon-setup-step="{{.Step}}">
+  <div class="setup-wizard-head">
+    <p class="ui-sub" data-leon-setup-property>{{.ApartmentName}}</p>
+    <div class="setup-wizard-exit"><a class="ui-btn ui-btn-secondary" href="/apartments/{{.ApartmentID}}">{{t "wizard.exit"}}</a></div>
+  </div>
+  <div class="setup-wizard-meter stay-fees-page">
+    <ol class="fee-stepper" data-leon-stepper aria-label="{{.CountLabel}}">
+      {{range .Steps}}
+      <li class="fee-stepper-item" data-state="{{.State}}"{{if eq .State "current"}} aria-current="step"{{end}}>
+        <span class="fee-stepper-dot" aria-hidden="true">{{if eq .State "done"}}&#10003;{{else}}{{.N}}{{end}}</span>
+        <span class="fee-stepper-label">{{.Short}}{{if eq .State "done"}}<span class="sr-only"> {{t "leon_setup.step_done"}}</span>{{end}}</span>
+      </li>
+      {{end}}
+    </ol>
+    {{if ne .Step "done"}}<p class="ui-sub" data-leon-exit-note>{{if eq .Step "switch_on"}}{{t "leon_setup.exit_note.switch_on"}}{{else}}{{t "leon_setup.exit_note.later"}}{{end}}</p>{{end}}
+  </div>
+  <div class="setup-wizard-body">
+    {{if .Icon}}
+    <div class="setup-wizard-ask" data-step-tone="{{.Tone}}">
+      <span class="setup-wizard-ask-icon">{{icon .Icon 22}}</span>
+      <h2 class="setup-wizard-question">{{t (printf "leon_setup.question.%s" .Step)}}</h2>
+    </div>
+    {{end}}
+{{end}}
+
+{{define "leon.mid"}}
+  </div>
+  <footer class="setup-wizard-foot">
+    {{if .PrevStep}}
+    <a class="ui-btn ui-btn-quiet setup-wizard-back" href="/apartments/{{.ApartmentID}}/leon/setup/{{.PrevStep}}">{{t "wizard.back"}}</a>
+    {{else}}
+    <span></span>
+    {{end}}
+{{end}}
+
+{{define "leon.close"}}
+  </footer>
+</div>
+<script src="/static/leon-setup.js?v=20261027-ai-usage" defer></script>
+</div>
+{{end}}
+
+{{define "leon.history"}}
+{{ui_table_begin .ImportColumns (t "guest_guide.import.title")}}
+{{range .Imports}}
+<tr class="ui-row">
+  <td class="ui-cell-first" data-card="primary">{{t (printf "guest_guide.import.source.%s" .Source)}}<span class="ui-sub"> {{.CreatedDay}}</span>{{if .MergeFailed}}<p class="ui-sub">{{t "guest_guide.import.merge_failed"}}</p>{{end}}</td>
+  <td class="ui-cell-r" data-card="badge">{{if or (eq .Status "queued") (eq .Status "running")}}{{ui_badge "action" (t "guest_guide.import.state.running")}}{{else if eq .Status "failed"}}{{ui_badge "attention" (t "guest_guide.import.state.failed")}}{{else if eq .Status "done"}}{{ui_badge "action" (t "guest_guide.import.state.drafting")}}{{else}}{{ui_badge "done" (t "guest_guide.import.state.done")}}{{end}}</td>
+</tr>
+{{end}}
+{{ui_table_end}}
+{{end}}
+
+{{define "leon_setup.switch_on"}}{{template "leon.open" .}}
+<div class="setup-wizard-lede">{{t "leon_page.what"}}</div>
+{{if eq .State "terms"}}{{ui_banner "attention" (t "leon_page.terms_updated")}}{{end}}
+{{if or (eq .State "off") (eq .State "terms")}}
+<h2 class="setup-wizard-section-title">{{t "leon_page.warn_title"}}</h2>
+<ul data-leon-terms-key><li>{{t "leon_page.warn1"}}</li><li>{{t "leon_page.warn5"}}</li></ul>
+<details class="setup-wizard-more" data-leon-terms-more>
+  <summary>{{t "leon_setup.terms_more"}}</summary>
+  <ul><li>{{t "leon_page.warn2"}}</li><li>{{t "leon_page.warn3"}}</li><li>{{t "leon_page.warn4"}}</li><li>{{t "leon_page.warn6"}}</li></ul>
+</details>
+<form method="post" action="/apartments/{{.ApartmentID}}/leon" id="leon-setup-on">
+<input type="hidden" name="_csrf" value="{{csrf}}">
+<input type="hidden" name="action" value="on">
+<input type="hidden" name="next" value="setup">
+<div class="checkline"><input type="checkbox" id="leon-terms" name="terms" value="1" required>
+  <label for="leon-terms">{{t "leon_page.accept"}} <a href="/guide#leon-terms" target="_blank" rel="noopener">{{t "leon_page.terms_link"}}</a></label></div>
+</form>
+{{else}}
+<div class="setup-wizard-instruction">{{t "leon_setup.switch_on.already"}}</div>
+{{end}}
+{{template "leon.mid" .}}
+{{if or (eq .State "off") (eq .State "terms")}}
+<button class="ui-btn ui-btn-primary" type="submit" form="leon-setup-on">{{t "leon_page.switch_on"}}</button>
+{{else}}
+<a class="ui-btn ui-btn-primary" href="/apartments/{{.ApartmentID}}/leon/setup/import">{{t "leon_setup.next"}}</a>
+{{end}}
+{{template "leon.close" .}}{{end}}
+
+{{define "leon_setup.import"}}{{$v := .}}{{template "leon.open" .}}
+{{if not .ImportOn}}
+<div class="setup-wizard-lede">{{t "leon_setup.import.off"}}</div>
+{{else if .ImportBusy}}
+<div class="setup-wizard-instruction" data-leon-import-wait>{{t "leon_setup.import.waiting"}}</div>
+{{if .Imports}}{{template "leon.history" .}}{{end}}
+<p><a class="ui-btn ui-btn-secondary" href="/apartments/{{.ApartmentID}}/leon/setup/import">{{t "wizard.try_it.check_again"}}</a></p>
+{{else if .Sources}}
+<div class="setup-wizard-lede">{{t "leon_setup.import.lede"}}</div>
+<form method="post" action="/apartments/{{.ApartmentID}}/guide/import" id="leon-setup-import">
+<input type="hidden" name="_csrf" value="{{csrf}}">
+<input type="hidden" name="next" value="leon">
+{{range .Sources}}{{if eq . "booking"}}{{ui_field "leon-setup-booking" (t "guest_guide.import.booking_url") (kv "name" "booking_url" "type" "url" "placeholder" "https://www.booking.com/hotel/cz/..." "attrs" (safe `maxlength="2048" inputmode="url" autocomplete="off"`))}}{{end}}{{if eq . "airbnb"}}{{ui_field "leon-setup-airbnb" (t "guest_guide.import.airbnb_url") (kv "name" "airbnb_url" "type" "url" "placeholder" "https://www.airbnb.com/rooms/..." "attrs" (safe `maxlength="2048" inputmode="url" autocomplete="off"`))}}{{end}}{{end}}
+</form>
+{{if .Imports}}{{template "leon.history" .}}{{end}}
+{{else}}
+<div class="setup-wizard-instruction">{{t "leon_setup.import.result" (kv "n" .Drafts)}}</div>
+{{if .Imports}}{{template "leon.history" .}}{{end}}
+{{end}}
+{{template "leon.mid" .}}
+{{if not .ImportOn}}
+<a class="ui-btn ui-btn-primary" href="/apartments/{{.ApartmentID}}/leon/setup/cards">{{t "leon_setup.next"}}</a>
+{{else if .ImportBusy}}
+<form method="post" action="/apartments/{{.ApartmentID}}/leon/setup">
+<input type="hidden" name="_csrf" value="{{csrf}}">
+<button class="ui-btn ui-btn-primary" type="submit" name="action" value="skip_import">{{t "leon_setup.import.meanwhile"}}</button>
+</form>
+{{else if .Sources}}
+<form method="post" action="/apartments/{{.ApartmentID}}/leon/setup">
+<input type="hidden" name="_csrf" value="{{csrf}}">
+<button class="ui-btn ui-btn-secondary setup-wizard-skip" type="submit" name="action" value="skip_import">{{t "leon_setup.import.by_hand"}}</button>
+</form>
+<button class="ui-btn ui-btn-primary" type="submit" form="leon-setup-import">{{t "leon_setup.import.button"}}</button>
+{{else}}
+<a class="ui-btn ui-btn-primary" href="/apartments/{{.ApartmentID}}/leon/setup/cards">{{t "leon_setup.import.check_cards"}}</a>
+{{end}}
+{{template "leon.close" .}}{{end}}
+
+{{define "leon_setup.cards"}}{{$v := .}}{{template "leon.open" .}}
+<div class="setup-wizard-lede">{{t "leon_setup.cards.lede"}}</div>
+{{if .Live}}
+<div class="setup-wizard-instruction">{{t "leon_setup.cards.live"}}</div>
+{{else}}
+<div class="setup-wizard-instruction">{{t "guest_guide.not_live" (kv "done" .Progress.MustHaveDone "total" .Progress.MustHaveTotal)}}</div>
+{{end}}
+{{if .Progress.Check}}{{ui_banner "attention" (t "guest_guide.check_waiting")}}{{end}}
+{{if .OpenCards}}
+{{ui_table_begin .CardColumns (t "leon_setup.step.cards")}}
+{{range .OpenCards}}{{$title := index $v.CardTitles .ID}}
+<tr class="ui-row clickable-row" data-href="/apartments/{{$v.ApartmentID}}/guide/{{.ID}}?from=leon" tabindex="0" role="link" aria-label="{{$title}}">
+  <td class="ui-cell-first" data-card="primary"><a href="/apartments/{{$v.ApartmentID}}/guide/{{.ID}}?from=leon">{{$title}}</a></td>
+  <td class="ui-cell-r" data-card="badge">{{if eq .State "check"}}{{ui_badge "attention" (t "guest_guide.state.check")}}{{else}}{{ui_badge "action" (t "guest_guide.state.missing")}}{{end}}</td>
+</tr>
+{{end}}
+{{ui_table_end}}
+{{end}}
+<div class="ui-form-actions">{{ui_button (t "guest_guide.quick.link") "secondary" (kv "href" (printf "/apartments/%d/guide/quick" .ApartmentID))}}{{ui_button (t "leon_page.guide_link") "secondary" (kv "href" (printf "/apartments/%d/guide" .ApartmentID))}}</div>
+{{template "leon.mid" .}}
+{{if .NextID}}
+<a class="ui-btn ui-btn-primary" href="/apartments/{{.ApartmentID}}/guide/{{.NextID}}?from=leon">{{t "leon_setup.cards.next"}}</a>
+{{else}}
+<a class="ui-btn ui-btn-primary" href="/apartments/{{.ApartmentID}}/leon/setup/try">{{t "leon_setup.next"}}</a>
+{{end}}
+{{template "leon.close" .}}{{end}}
+
+{{define "leon_setup.try"}}{{template "leon.open" .}}
+<div class="setup-wizard-lede">{{t "leon_setup.try.lede"}} {{t "leon_setup.try.limit"}}</div>
+{{if not .Live}}
+<div class="setup-wizard-instruction">{{t "leon_page.not_live"}}</div>
+{{else}}
+<div class="havel-card" data-leon-try data-leon-try-url="/apartments/{{.ApartmentID}}/leon/setup/try">
+  <ol data-leon-try-log aria-live="polite">
+    {{if .Asked}}<li class="havel-bubble" data-role="host">{{.Asked}}</li>
+    <li class="havel-answer" data-role="leon">{{.Answer.Text}}{{if .Answer.WouldAsk}}<p class="ui-sub">{{t "leon_setup.try.would_ask"}}</p>{{end}}</li>{{end}}
+  </ol>
+  <form method="post" action="/apartments/{{.ApartmentID}}/leon/setup/try" class="havel-composer" data-leon-try-form>
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <label for="leon-try-input">{{t "leon_setup.try.label"}}</label>
+    <input class="havel-input" id="leon-try-input" name="message" maxlength="500" autocomplete="off" placeholder="{{t "leon_setup.try.placeholder"}}"{{if .TryBlocked}} disabled{{end}} required>
+    <button class="ui-btn ui-btn-secondary" type="submit">{{t "leon_setup.try.send"}}</button>
+  </form>
+  {{if .TryBlocked}}<p class="ui-sub" data-leon-try-cap>{{t "leon_setup.try.cap"}}</p>{{end}}
+</div>
+{{end}}
+{{template "leon.mid" .}}
+{{if .Live}}
+<form method="post" action="/apartments/{{.ApartmentID}}/leon/setup">
+<input type="hidden" name="_csrf" value="{{csrf}}">
+<button class="ui-btn ui-btn-primary" type="submit" name="action" value="finish">{{t "leon_setup.finish"}}</button>
+</form>
+{{else}}
+<a class="ui-btn ui-btn-primary" href="/apartments/{{.ApartmentID}}/leon/setup/cards">{{t "leon_setup.step.cards"}}</a>
+{{end}}
+{{template "leon.close" .}}{{end}}
+
+{{define "leon_setup.done"}}{{template "leon.open" .}}
+<div class="ui-banner setup-wizard-celebrate" role="status" data-setup-celebrate="done">
+  <span class="setup-wizard-confetti" aria-hidden="true">{{range seq 12}}<i></i>{{end}}</span>
+  <span class="setup-wizard-celebrate-mark" aria-hidden="true">{{icon "check" 20}}</span>
+  <div class="grow setup-wizard-celebrate-copy">
+    <strong class="setup-wizard-celebrate-title">{{t "leon_setup.done.title"}}</strong>
+    <span>{{t "leon_setup.done.text"}}</span>
+  </div>
+</div>
+<ul class="setup-wizard-checklist host-property-grid">
+  <li><a class="host-property-card" href="/apartments/{{.ApartmentID}}/guide/qr"><div><strong>{{t "guest_guide.qr.link"}}</strong></div></a></li>
+  <li><a class="host-property-card" href="/apartments/{{.ApartmentID}}/guide"><div><strong>{{t "leon_page.guide_link"}}</strong></div></a></li>
+  <li><a class="host-property-card" href="/apartments/{{.ApartmentID}}/leon"><div><strong>{{t "guest_guide.leon.open"}}</strong></div></a></li>
+</ul>
+{{template "leon.mid" .}}
+<a class="ui-btn ui-btn-primary" href="/apartments/{{.ApartmentID}}">{{t "leon_setup.done.back"}}</a>
+{{template "leon.close" .}}{{end}}

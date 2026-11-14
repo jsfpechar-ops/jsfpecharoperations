@@ -1,0 +1,131 @@
+"""Write Leon's setup-wizard data and golden cases for go/internal/web/ai from the real Python.
+
+Briefs 1435 and 1436. Run from App/ (no database: the item rows are fed to guest_guide.items):
+
+    .venv/bin/python scripts/leon_golden.py            write the files
+    .venv/bin/python scripts/leon_golden.py --check    exit 1 and name each stale file
+
+Files written into go/internal/web/ai/:
+  leon_i18n.json            the host strings the wizard pages read, from leon_i18n_keys.txt
+  leon_catalog.json         the guest guide's topics, kinds and must-have cards (guest_guide.py)
+  testdata/leon_golden.json   Python's answers for host_state, setup_step and the progress of a card list
+"""
+from __future__ import annotations
+
+import json
+import os
+import sys
+from pathlib import Path
+
+os.environ.setdefault("UBYHOST_SECRET_KEY", "leon-golden-secret-0123456789-abcdef")
+APP = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(APP))
+PKG = APP.parent / "go" / "internal" / "web" / "ai"
+
+from app import guest_guide, host_i18n, leon  # noqa: E402
+
+
+def read_keys(path: Path) -> list:
+    return [ln.strip() for ln in path.read_text(encoding="utf-8").splitlines() if ln.strip() and not ln.startswith("#")]
+
+
+def expand(keys: list) -> list:
+    out = []
+    for key in keys:
+        if key.endswith(".*"):
+            prefix = key[:-1]
+            out.extend(sorted({k for table in host_i18n.STRINGS.values() for k in table if k.startswith(prefix)}))
+        elif key == "@kind_titles":
+            out.extend(f"guest_guide.kind.{kind}.title" for kind in guest_guide.KINDS)
+        else:
+            out.append(key)
+    return list(dict.fromkeys(out))
+
+
+def i18n_json() -> str:
+    keys = expand(read_keys(PKG / "leon_i18n_keys.txt"))
+    catalog = {lang: {k: t[k] for k in keys if k in t} for lang, t in host_i18n.STRINGS.items()}
+    return json.dumps(catalog, sort_keys=True, ensure_ascii=False, indent=1) + "\n"
+
+
+def catalog_json() -> str:
+    data = {"topics": list(guest_guide.TOPICS), "kinds": [[kind, topic] for kind, topic in guest_guide.KINDS.items()], "must_have": list(guest_guide.MUST_HAVE),
+            "terms_version": leon.LEON_TERMS_VERSION, "setup_steps": list(leon.SETUP_STEPS)}
+    return json.dumps(data, ensure_ascii=False, indent=1) + "\n"
+
+
+def row(item_id, kind, state, visibility="everyone", title="", topic="custom", sort_order=0, source="host", photos=0):
+    return {"id": item_id, "apartment_id": 1, "topic": topic, "kind": kind, "title": title, "location": "", "steps": "", "watch_out": "",
+            "video_url": "", "visibility": visibility, "state": state, "source": source, "sort_order": sort_order,
+            "created_at": "2026-01-01", "updated_at": "2026-01-01", "photos": photos}
+
+
+SCENARIOS = {
+    "empty": [],
+    "fresh": [row(1, "checkin", "missing"), row(2, "wifi", "missing"), row(3, "heating", "missing"), row(4, "checkout", "missing"), row(5, "emergency", "missing"), row(6, "kitchen_appliances", "missing")],
+    "drafts": [row(1, "checkin", "check", source="booking"), row(2, "wifi", "check", source="airbnb"), row(3, "heating", "missing"), row(4, "checkout", "done"), row(5, "emergency", "skipped")],
+    "live": [row(1, "checkin", "done"), row(2, "wifi", "done"), row(3, "heating", "skipped"), row(4, "checkout", "done"), row(5, "emergency", "done"), row(9, "custom", "done", title="Pool", topic="area", sort_order=3)],
+    "live with checks": [row(1, "checkin", "done"), row(2, "wifi", "done"), row(3, "heating", "done"), row(4, "checkout", "done"), row(5, "emergency", "done"), row(7, "parking", "check"), row(8, "custom", "missing", title="Bikes", topic="rules"), row(10, "garage", "missing"), row(11, "custom", "check", title="Zebra", topic="trash", sort_order=2), row(12, "custom", "skipped", title="Skipped", topic="bogus-topic")],
+    "order": [row(30, "emergency", "done"), row(20, "custom", "done", title="B", topic="wifi", sort_order=1), row(21, "custom", "done", title="A", topic="wifi", sort_order=1), row(22, "checkin", "done"), row(23, "keys", "done")],
+}
+
+
+def cases() -> dict:
+    out: dict = {}
+    out["host_state"] = []
+    for enabled in (0, 1):
+        for version in (None, "", "2026-01-01", leon.LEON_TERMS_VERSION):
+            for live in (False, True):
+                apartment = {"leon_enabled": enabled, "leon_terms_version": version}
+                out["host_state"].append({"enabled": enabled, "version": version, "live": live, "out": leon.host_state(apartment, live)})
+    out["setup_step"] = []
+    for enabled, version in [(0, None), (1, "old"), (1, leon.LEON_TERMS_VERSION)]:
+        for live in (False, True):
+            for checking in (0, 2):
+                for started in (False, True):
+                    for import_on in (False, True):
+                        apartment = {"leon_enabled": enabled, "leon_terms_version": version}
+                        out["setup_step"].append({"enabled": enabled, "version": version, "live": live, "checking": checking, "import_started": started,
+                                                  "import_on": import_on,
+                                                  "out": leon.setup_step(apartment, live=live, checking=checking, import_started=started, import_on=import_on)})
+    out["progress"] = []
+    real_query = guest_guide.db.query
+    try:
+        for name, rows in SCENARIOS.items():
+            guest_guide.db.query = lambda sql, params=(), _rows=rows: [dict(r) for r in _rows]
+            items = guest_guide.items(1)
+            progress = guest_guide.progress(1)
+            open_cards = [r["id"] for r in items if r["state"] == "check" or (r["state"] == "missing" and r["kind"] in guest_guide.MUST_HAVE)]
+            out["progress"].append({"name": name, "rows": rows, "order": [r["id"] for r in items], "progress": progress, "open_cards": open_cards})
+    finally:
+        guest_guide.db.query = real_query
+    out["host_first_name"] = None
+    out["constants"] = {"terms_version": leon.LEON_TERMS_VERSION, "try_max": leon.TRY_MAX, "try_window": leon.TRY_WINDOW}
+    out["i18n"] = {lang: {k: host_i18n.translate(lang, k) for k in ("leon_setup.title", "leon_setup.try.cap", "leon_page.not_live", "leon_setup.try.would_ask")}
+                   for lang in ("en", "cs", "vi")}
+    out["i18n_param"] = host_i18n.translate("en", "leon_setup.title", name="Flat A")
+    return out
+
+
+def main(argv: list) -> int:
+    check = "--check" in argv
+    files = {
+        PKG / "leon_i18n.json": i18n_json(),
+        PKG / "leon_catalog.json": catalog_json(),
+        PKG / "testdata" / "leon_golden.json": json.dumps(cases(), ensure_ascii=False, indent=1) + "\n",
+    }
+    stale = []
+    for path, text in files.items():
+        if check:
+            if not path.exists() or path.read_text(encoding="utf-8") != text:
+                stale.append(path)
+        else:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(text, encoding="utf-8")
+    for path in stale:
+        print("stale:", path.relative_to(APP.parent))
+    return 1 if stale else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
