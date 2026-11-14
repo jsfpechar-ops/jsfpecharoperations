@@ -109,6 +109,7 @@ type havelReq struct {
 	noToken      bool
 	fragment     bool
 	lang         string
+	accept       string
 }
 
 func (g *havelRig) do(r havelReq) *httptest.ResponseRecorder {
@@ -135,6 +136,9 @@ func (g *havelRig) do(r havelReq) *httptest.ResponseRecorder {
 	}
 	if r.fragment {
 		req.Header.Set("X-Havel", "1")
+	}
+	if r.accept != "" {
+		req.Header.Set("Accept", r.accept)
 	}
 	rec := httptest.NewRecorder()
 	g.mux.ServeHTTP(rec, req)

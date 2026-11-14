@@ -1,9 +1,11 @@
 # 1472: goose-only schema equals Python's apply (PostgreSQL test in CI)
 
 Status: todo
-Depends on: 1471 (merged to main) | Base commit: origin/main after the 1471 merge (writer verified on b5f353682 plus 1471) | Branch: task/1472-goose-equivalence-test
+Depends on: 1471 (its `1471 step` commits on this branch) | Base: the current branch (claude/happy-babbage-2zeeam; writer verified on d3817813d plus 1471) | Branch: none, see below
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Tier A (migrations). Plan: [sqlite-retirement](../plans/sqlite-retirement.md) step S3.
+
+**One big PR mode.** Work on the current branch. Commit `1472 step k` after each step. Never create a branch, never push, never open a PR. Acceptance uses `git log --oneline --grep='^1472 step'` and `git show --stat`, not a base commit.
 
 ## 1. Objective
 
@@ -44,14 +46,14 @@ No other file may change.
 
 From the repo root unless a step says `App/`.
 
-**Step 0. Check 1471 is on main and branch.**
+**Step 0. Check 1471 is on this branch.**
 
 ```bash
-git fetch origin main 2>&1 | tail -2; git switch -c task/1472-goose-equivalence-test origin/main 2>&1 | tail -2
-test -f App/migrations_pg/00017_fk_deferrable.sql && echo has-00017; test -f App/tests/test_goose_equivalence.py && echo test-exists
+git status --short | wc -l; git log --oneline --grep='^1471 step' | wc -l
+test -f App/migrations_pg/00017_goose_parity.sql && echo has-00017; test -f App/tests/test_goose_equivalence.py && echo test-exists
 ```
 
-Expected: `has-00017` only. No `has-00017`: STOP (1471 is not merged). `test-exists`: STOP.
+Expected: `0` (clean tree), `4` or more, `has-00017`, and no `test-exists`. Otherwise STOP (1471 is not done, or this brief already ran).
 
 **Step 1. Add the test.**
 
@@ -72,13 +74,13 @@ python3 -c "import yaml; yaml.safe_load(open('.github/workflows/ci.yml')); print
 sha256sum .github/workflows/ci.yml | cut -c1-64
 ```
 
-Expected: `1`; `1 file changed, 10 insertions(+), 1 deletion(-)`; `yaml ok`; hash `801f565f78e647cbfdbfb23cb5ce921a9bfb4480b59a2d5109dba7e0a377fb91` (a different hash after a clean apply means another PR changed `ci.yml`: write it under Deviations and go on). `git apply --check` fails: STOP, never `--reject`, never edit by hand. Commit: `git add .github/workflows/ci.yml && git commit -m "1472 step 2" 2>&1 | tail -1`.
+Expected: `1`; `1 file changed, 10 insertions(+), 1 deletion(-)`; `yaml ok`; hash `f2d116644ebc7bd0fb8cce08ae6b773403e3928e7add4824d8e883251e55d390` (a different hash after a clean apply means a later commit changed `ci.yml`: write it under Deviations and go on). `git apply --check` fails: STOP, never `--reject`, never edit by hand. Commit: `git add .github/workflows/ci.yml && git commit -m "1472 step 2" 2>&1 | tail -1`.
 
-**Step 3.** Run §6, including the mutation check. **Step 4.** Write the report (§9), commit it as `1472 step 4: report`, open one draft PR.
+**Step 3.** Run §6, including the mutation check. **Step 4.** Write the report (§9), commit it as `1472 step 4: report`.
 
 ## 5. Do not touch
 
-`App/migrations_pg/**` (the mutation in §6 is reverted before any commit), `App/app/**`, `App/scripts/**`, `App/tests/conftest.py`, every other job in `ci.yml`, `go/**`, `deploy/**`, `docs/context/*`. Rules 3, 4 and 8: no secrets, no new dependency, never push to main. Never connect to any database but the disposable one below.
+`App/migrations_pg/**` (the mutation in §6 is reverted before any commit), `App/app/**`, `App/scripts/**`, `App/tests/conftest.py`, every other job in `ci.yml`, `go/**`, `deploy/**`, `docs/context/*`. Rules 3, 4 and 8: no secrets, no new dependency, never push. Never connect to any database but the disposable one below.
 
 ## 6. Commands
 
@@ -131,16 +133,16 @@ From the repo root: `python3 scripts/context_lint.py 2>&1 | grep -v '^WARN' | ta
 
 - [ ] Step 0 `has-00017`; step 1 hash matches; step 2 applied and `yaml ok`.
 - [ ] §6: skip without URL; `1 passed` on PostgreSQL; the mutation made it fail with the two `guest_details_mail` lines and was reverted (`git status --short migrations_pg` empty); server stopped and `/var/tmp/pg1472` gone.
-- [ ] `git diff --stat origin/main..HEAD` lists only §3 files.
-- [ ] After push, CI `test-postgres`: step "pg_dump from the PostgreSQL service image" prints `pg_dump (PostgreSQL) 17`; "Run PostgreSQL tests" passes with 0 skipped and the log names `test_goose_equivalence.py` as passed (one more test than on main).
+- [ ] `git log --oneline --grep='^1472 step'` lists steps 1, 2 and 4; `git show --stat` of step 1 = only the test file, step 2 = only `ci.yml` (10+, 1-), step 4 = only the report and this brief's Status line.
+- [ ] When the branch's PR runs CI, `test-postgres`: step "pg_dump from the PostgreSQL service image" prints `pg_dump (PostgreSQL) 17`; "Run PostgreSQL tests" passes with 0 skipped and the log names `test_goose_equivalence.py` as passed (one more test than on main).
 
 ## 8. Stop and ask
 
-Stop, and write the report, if: a step's expected value differs where it says STOP; a test fails twice (the new test failing on main with the mutation reverted means a real drift: copy its diff lines into the report and never add an allowlist); the CI wrapper step fails (report its log lines; do not install a PostgreSQL client package, that is a new dependency); you reach 25 tool calls or about 50k tokens (report as `blocked`); a file outside §3 needs a change; §5 would be touched; a step is unclear; you need push to main, merge, secrets, SSH or deploy.
+Stop, and write the report, if: a step's expected value differs where it says STOP; a test fails twice (the new test failing on main with the mutation reverted means a real drift: copy its diff lines into the report and never add an allowlist); the CI wrapper step fails (report its log lines; do not install a PostgreSQL client package, that is a new dependency); you reach 25 tool calls or about 50k tokens (report as `blocked`); a file outside §3 needs a change; §5 would be touched; a step is unclear; you need push, merge, secrets, SSH or deploy.
 
 ## 9. Report
 
-Write `docs/tasks/1472-report.md` (600 tokens at most) and set `Status: review`. It has: the files changed (`git diff --stat origin/main..HEAD`), each command with its last 5 lines, §7 ticked, Deviations, Questions, Owner steps left.
+Write `docs/tasks/1472-report.md` (600 tokens at most) and set `Status: review`. It has: the files changed (`git show --stat` of each `1472 step` commit), each command with its last 5 lines, §7 ticked, Deviations, Questions, Owner steps left.
 
 ## Risk list (for the reviewer)
 

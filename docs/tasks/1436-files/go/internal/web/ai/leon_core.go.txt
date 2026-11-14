@@ -71,7 +71,7 @@ func leonPhones(s string) [][2]int {
 	folded, _ := havelFold(s)
 	var out [][2]int
 	for i := 0; i < len(folded); {
-		if (i == 0 || !leonIsWord(folded[i-1])) {
+		if i == 0 || !leonIsWord(folded[i-1]) {
 			if m := leonPhoneRE.FindStringIndex(folded[i:]); m != nil {
 				out = append(out, [2]int{i, i + m[1]})
 				i += m[1]
@@ -200,11 +200,11 @@ func leonNamed(lang, key, hostName string) string {
 // LeonCard is one card of guide_facts.for_guest: the card's own text, its
 // quick-answer lines and its photo count.
 type LeonCard struct {
-	ID                                 int64
-	Kind, Title, Location, Steps       string
-	WatchOut, VideoURL                 string
-	Photos                             int64
-	Facts                              []string
+	ID                           int64
+	Kind, Title, Location, Steps string
+	WatchOut, VideoURL           string
+	Photos                       int64
+	Facts                        []string
 }
 
 func leonClean(text string) string {
