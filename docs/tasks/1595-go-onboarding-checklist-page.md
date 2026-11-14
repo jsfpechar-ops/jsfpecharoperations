@@ -1,6 +1,6 @@
 # 1595: Go onboarding part 2: the checklist page (GET /onboarding)
 
-Status: todo
+Status: review
 Depends on: none (brief 1290 and the host layout 1380/1381 are on this branch; verified on go-wave3 at 859d114d5) | Base commit: current tip of the working branch | Branch: task/1595-go-onboarding-checklist-page
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Tier: A (exact files; fresh Fable review of the full diff before ready)
