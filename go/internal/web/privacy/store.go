@@ -1,6 +1,6 @@
 // Package privacy is the host data-subject request register (BE-8): the two
 // POST routes of App/app/routes/privacy_requests.py and the store functions
-// of App/app/dsr.py they use. The GET page comes in a later brief.
+// of App/app/dsr.py they use, and the GET list page (page.go, brief 1615).
 package privacy
 
 import (
