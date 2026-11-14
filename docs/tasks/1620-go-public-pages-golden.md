@@ -88,7 +88,7 @@ Steps 0 to 5 above are the whole list; no other test runs. CI runs `App/tests/te
 - [ ] `git log --oneline --grep='^1620 step'` lists steps 1 and 2 (and 5).
 - [ ] `git show --stat --format= $(git log --grep='^1620 step 2' -1 --format=%h) | tail -3` lists `catalog_pages.json` and the 29 files of `testdata/pages`.
 - [ ] Step 1 printed `: OK` for 4 files; step 3 printed `rc=0`; step 4 printed `1 passed`.
-- [ ] No `.html` under `testdata/pages` contains `phc_golden_key` except the `*-posthog` ones: `grep -l phc_golden_key go/internal/web/public/testdata/pages/*.html | wc -l` prints `10`.
+- [ ] No `.html` under `testdata/pages` contains `phc_golden_key` except the five `*-posthog` ones: `grep -l phc_golden_key go/internal/web/public/testdata/pages/*.html | wc -l` prints `5`.
 
 ## 8. Stop and ask
 
