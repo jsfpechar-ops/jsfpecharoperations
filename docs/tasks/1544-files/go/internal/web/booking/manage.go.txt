@@ -32,13 +32,13 @@ func init() {
 
 // SiteBooking is the site_booking columns the guest pages read.
 type SiteBooking struct {
-	ID, ApartmentID                        int64
-	Status, PayMethod, DateFrom, DateTo    string
-	Guests, Nights, TotalCZK, RefundedCZK  int
-	CleaningFeeCZK                         int
-	Policy, GuestEmail, Lang               string
-	PaidAt                                 bool
-	InvoiceID                              *int64
+	ID, ApartmentID                       int64
+	Status, PayMethod, DateFrom, DateTo   string
+	Guests, Nights, TotalCZK, RefundedCZK int
+	CleaningFeeCZK                        int
+	Policy, GuestEmail, Lang              string
+	PaidAt                                bool
+	InvoiceID                             *int64
 }
 
 // LoadSiteBooking is booking_site.get. ok is false when there is no row.
