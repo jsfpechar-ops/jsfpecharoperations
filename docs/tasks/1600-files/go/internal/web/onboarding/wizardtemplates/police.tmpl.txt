@@ -1,0 +1,127 @@
+{{/* Port of App/app/templates/setup_wizard/police.html with _police_fields.html (police_in_wizard true)
+     and _police_letter_figure.html. Brief 1600. police_errors, letter_prefill, letter_saved, letter_message
+     and letter_status come only from the Python POSTs (/apartments/{id}, /test-connection, /police-letter),
+     so here the letter helpers are open (letter_first) and no box carries a read value. The one Go refusal
+     (POST /setup, wait with a bad hour, brief 1602) sets OperatorError and the draft in Values. */}}
+{{define "wizard_help"}}{{help_tip "wiz-why-police" (print (t "why.police") " " (t "why.police_wait"))}}{{end}}
+{{define "wizard_police_box"}}
+  <div class="field">
+    {{field_label .name .label .help .optional "" .required}}
+    <input type="text" id="{{.name}}" name="{{.name}}" value="{{.value}}"{{if .max}} maxlength="{{.max}}"{{end}}{{if .required}} aria-required="true"{{end}}{{if .help}} aria-describedby="{{.name}}-help"{{end}}>
+  </div>
+{{end}}
+{{define "wizard_content"}}
+{{if .OperatorError}}<p class="err-text" role="alert">{{t .OperatorError}}</p>{{end}}
+
+<form method="post" action="/apartments/{{.Apt.ID}}" class="setup-wizard-form" id="police-form">
+  <button class="sr-only" type="submit" tabindex="-1" aria-hidden="true" formaction="/apartments/{{.Apt.ID}}/test-connection" formmethod="post" formnovalidate></button>
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <input type="hidden" name="return_to" value="/apartments/{{.Apt.ID}}/setup/police">
+  <input type="hidden" name="setup_step" value="police">
+  <input type="hidden" name="internal_name" value="{{.Values.InternalName}}">
+  <input type="hidden" name="legal_entity_id" value="{{.Values.LegalEntityID}}">
+  <input type="hidden" name="city_en" value="{{.Values.CityEN}}">
+  <input type="hidden" name="default_purpose" value="{{or .Values.DefaultPurpose "10"}}">
+  <input type="hidden" name="step" value="police">
+      <div class="police-letter-helpers">
+      <details class="police-letter-find" open>
+        <summary>{{t "police_letter.find_title"}}</summary>
+        {{template "wizard_letter_figure" .}}
+      </details>
+      <details class="police-letter-paste" id="police-letter-paste" open>
+        <summary>{{t "police_letter.paste_title"}}</summary>
+        <div class="field">
+          <div class="field-label-row"><label for="letter_text">{{t "police_letter.paste_label"}}{{help_tip "police-letter-help" (t "police_letter.paste_help")}}</label></div>
+          <textarea id="letter_text" name="letter_text" form="police-letter-form" rows="6" maxlength="20000" autocomplete="off" spellcheck="false" data-letter-paste></textarea>
+        </div>
+        <div class="actions">
+          <button class="ui-btn ui-btn-secondary" type="submit" form="police-letter-form" data-letter-read>{{t "police_letter.read_button"}}</button>
+        </div>
+      </details>
+      </div>
+      <p class="police-letter-status small" id="police-letter-status" role="status" aria-live="polite" data-letter-status data-read-failed="{{t "police_letter.read_failed"}}" data-saved-now="{{t "police_letter.saved_now" "value" "%s"}}"></p>
+      <input type="hidden" name="letter_fields" value="" data-letter-fields data-letter-fields-initial="">
+      <div class="grid">
+        {{template "wizard_police_box" (kv "name" "uby_idub" "label" (t "setup.label.idub") "value" .Values.UbyIDUB "help" (t "apartment.form.ubyport.idub_hint") "optional" false "max" 14 "required" true)}}
+      </div>
+      <div class="grid two">
+        {{template "wizard_police_box" (kv "name" "uby_ws_user" "label" (t "setup.label.login") "value" .Values.UbyWSUser "help" (t "apartment.form.ubyport.login_hint") "optional" false "max" 0 "required" true)}}
+        <div class="field">
+          {{field_label "uby_ws_password" (t "setup.label.password") (t "apartment.form.ubyport.password_help") false "" (not .HasPassword)}}
+          <input type="text" id="uby_ws_password" name="uby_ws_password" autocomplete="off" autocapitalize="off" spellcheck="false"
+                 {{if .HasPassword}}placeholder="••••••••" {{end}}{{if not .HasPassword}}aria-required="true" {{end}}aria-describedby="uby_ws_password-help uby_ws_password-hint">
+          <div class="hint" id="uby_ws_password-hint">
+            {{if .HasPassword}}
+            {{t "apartment.form.ubyport.password_edit_hint"}}
+            {{else}}
+            {{t "apartment.form.ubyport.password_new_hint"}}
+            {{end}}
+          </div>
+        </div>
+      </div>
+      <p class="small muted police-no-credentials">{{t "apartment.form.ubyport.no_credentials"}}
+        <a href="https://policie.gov.cz/reditelstvi-sluzby-cizinecke-policie/jake-jsou-moznosti-zasilani-dat-aplikaci-ubyport" target="_blank" rel="noopener">{{t "apartment.form.ubyport.no_credentials_link"}}</a></p>
+      <div class="field-label-row"><h2 class="property-section-title">{{t "property_page.police.facility"}}</h2></div>
+      <div class="grid">
+        {{template "wizard_police_box" (kv "name" "uby_mark" "label" (t "setup.label.mark") "value" .Values.UbyMark "help" (t "apartment.form.ubyport.mark_hint") "optional" false "max" 6 "required" true)}}
+      </div>
+      <div class="grid two">
+        {{template "wizard_police_box" (kv "name" "uby_name" "label" (t "setup.label.facility") "value" .Values.UbyName "help" .FacilityHelp "optional" false "max" 35 "required" true)}}
+        {{template "wizard_police_box" (kv "name" "uby_contact" "label" (t "automation.contact") "value" .Values.UbyContact "help" (t "apartment.form.ubyport.contact_hint") "optional" true "max" 50 "required" false)}}
+      </div>
+  <h3 class="property-section-title">{{t "wizard.question.automation"}}{{help_tip "wiz-why-automation" (t "why.automation")}}</h3>
+  <div class="ui-choice-cards">
+    {{choice_card "automation_mode" "manual" (t "automation.mode.manual") (eq .AutoMode "manual") "wizard-manual-help" (t "wizard.automation.manual_detail")}}
+    {{choice_card "automation_mode" "scheduled" (t "automation.mode.scheduled") (eq .AutoMode "scheduled") "wizard-scheduled-help" (t "wizard.automation.scheduled_detail") (kv "caller" .HoursField)}}
+    {{choice_card "automation_mode" "immediate" (t "automation.mode.immediate") (eq .AutoMode "immediate") "wizard-immediate-help" (t "wizard.automation.immediate_detail")}}
+  </div>
+</form>
+<form id="police-letter-form" method="post" action="/apartments/{{.Apt.ID}}/police-letter" data-discard-warning="{{t "police_letter.discard_warning"}}">
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <input type="hidden" name="setup_step" value="police">
+</form>
+{{end}}
+{{define "wizard_actions"}}
+<div class="setup-wizard-actions">
+  <button class="ui-btn ui-btn-secondary setup-wizard-wait" type="submit" form="police-form" formaction="/apartments/{{.Apt.ID}}/setup" name="action" value="wait" formnovalidate>{{t "setup_guide.reporting.wait"}}</button>
+  <button class="ui-btn ui-btn-primary" type="submit" form="police-form" formaction="/apartments/{{.Apt.ID}}/test-connection" formmethod="post" formnovalidate>{{t "apartment.form.test_connection"}}</button>
+</div>
+{{end}}
+{{define "wizard_notes"}}
+<div class="setup-wizard-note-box setup-wizard-police-notes">
+  <p class="setup-wizard-instruction">{{t "setup_guide.reporting.wait_now"}}
+    {{help_tip "wizard-police-wait-help" (t (.WaitHelpKey) "minutes" .SweepMinutes)}}</p>
+  <p class="setup-wizard-instruction">{{t "setup_guide.reporting.wait_deadline"}}
+    <a href="/guide#manual-filing">{{t "setup_guide.reporting.wait_by_hand"}}</a></p>
+</div>
+{{end}}
+{{define "wizard_letter_figure"}}
+<figure class="police-letter-figure">
+  <svg class="police-letter-svg" viewBox="0 0 320 200" role="img" aria-labelledby="pl-fig-t">
+    <title id="pl-fig-t">{{t "police_letter.figure_title"}}</title>
+    <rect class="pl-sheet" x="4" y="4" width="312" height="192" rx="6"/>
+    <rect class="pl-bar" x="20" y="16" width="90" height="6" rx="3"/>
+    <rect class="pl-bar" x="20" y="27" width="60" height="5" rx="2.5"/>
+    <rect class="pl-bar" x="230" y="16" width="70" height="5" rx="2.5"/>
+    <text class="pl-title" x="160" y="52" text-anchor="middle">Přihlašovací údaje pro robotické vkládání</text>
+    <text class="pl-title" x="160" y="64" text-anchor="middle">Ubyport Webová služba</text>
+    <circle class="pl-num" cx="30" cy="88" r="9"/><text class="pl-num-text" x="30" y="91.5" text-anchor="middle">1</text>
+    <text class="pl-label" x="46" y="91.5">Přihlašovací jméno:</text><text class="pl-value" x="160" y="91.5">UBY-WS_ABCDE</text>
+    <circle class="pl-num" cx="30" cy="114" r="9"/><text class="pl-num-text" x="30" y="117.5" text-anchor="middle">2</text>
+    <text class="pl-label" x="46" y="117.5">Přístupové heslo:</text><text class="pl-value" x="160" y="117.5">••••••••</text>
+    <circle class="pl-num" cx="30" cy="140" r="9"/><text class="pl-num-text" x="30" y="143.5" text-anchor="middle">3</text>
+    <text class="pl-label" x="46" y="143.5">IDUB:</text><text class="pl-value" x="160" y="143.5">000000000000</text>
+    <rect class="pl-bar" x="20" y="162" width="280" height="5" rx="2.5"/>
+    <rect class="pl-bar" x="20" y="173" width="250" height="5" rx="2.5"/>
+    <rect class="pl-bar" x="20" y="184" width="120" height="5" rx="2.5"/>
+  </svg>
+  <figcaption class="police-letter-legend">
+    <ol>
+      <li>{{t "automation.login"}}</li>
+      <li>{{t "automation.password"}}: {{t "police_letter.by_hand"}}</li>
+      <li>{{t "apartment.form.ubyport.idub_label"}}</li>
+    </ol>
+    <p class="police-letter-note">{{t "apartment.form.ubyport.mark_label"}}: {{t "police_letter.mark_note"}}</p>
+  </figcaption>
+</figure>
+{{end}}

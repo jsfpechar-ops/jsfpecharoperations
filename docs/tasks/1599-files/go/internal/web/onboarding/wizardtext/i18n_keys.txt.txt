@@ -1,0 +1,35 @@
+# Host strings read by the setup wizard pages and flashes (go/internal/web/onboarding/wizard*.go,
+# wizardtemplates/). Briefs 1599 to 1602. App/scripts/go_host_i18n.py writes i18n.json from this list.
+wizard.*
+setup_guide.*
+why.*
+workflow.*
+police_letter.*
+apartment.form.*
+door_code.window.*
+setup.label.*
+setup.ready.*
+automation.contact
+automation.hours
+automation.login
+automation.password
+automation.mode.*
+calendar.choose_platform
+calendar.other_label
+calendar.platform.other
+calendar.platform_label
+common.copied
+common.copy_link
+common.optional
+common.required_legend
+entities.ico
+ares.fill
+havel.card.pin
+host.business
+property_page.guest_link.copy_pin
+property_page.guest_link.title
+property_page.police.facility
+flash.error.no_such_apartment
+flash.properties.timing_hours
+flash.properties.timing_invalid
+flash.setup.*
