@@ -19,7 +19,6 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 	"unicode"
 
@@ -199,6 +198,8 @@ type entitiesData struct {
 	Entities, Archived []entityRow
 	AccountEmail       string
 	NextPath           string
+	Editor             *editorView   // the open business editor (brief 1523)
+	NewForm            *businessForm // the add form, with its typed values after a register lookup
 }
 
 func (s *Pages) entities(w http.ResponseWriter, r *http.Request) {
@@ -211,8 +212,10 @@ func (s *Pages) entities(w http.ResponseWriter, r *http.Request) {
 	if host == nil {
 		return
 	}
-	if editAsked(queryLast(r, "edit")) {
-		notPorted(w, "the business editor (?edit=)")
+	edit := queryLast(r, "edit")
+	if editAsked(edit) && !allDigits(edit) {
+		// int() of a non-ASCII digit string is not reproduced.
+		notPorted(w, "the business editor (?edit= with a non-ASCII number)")
 		return
 	}
 	ctx := r.Context()
@@ -226,32 +229,19 @@ func (s *Pages) entities(w http.ResponseWriter, r *http.Request) {
 		notPorted(w, "host alerts on this page")
 		return
 	}
-	d := entitiesData{NextPath: safeLocalPath(queryLast(r, "next"), "")}
-	if d.Entities, err = s.entityRows(ctx, liveEntitiesSQL, ws); err != nil {
-		fail(w, err)
-		return
-	}
-	if d.Archived, err = s.entityRows(ctx, archivedEntitiesSQL, ws); err != nil {
-		fail(w, err)
-		return
-	}
+	d := &entitiesData{NextPath: safeLocalPath(queryLast(r, "next"), "")}
 	// account_email: the signed-in account (the admin inside a workspace).
 	if err := s.pool.QueryRow(ctx, accountEmailSQL, host.Account.ID).Scan(&d.AccountEmail); err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		fail(w, err)
 		return
 	}
-	if d.Banner, err = s.onboardingBanner(ctx, ws, "/entities"); err != nil {
-		fail(w, err)
-		return
+	if allDigits(edit) {
+		if err := s.openEditor(ctx, d, ws, edit); err != nil {
+			fail(w, err)
+			return
+		}
 	}
-	title := catalog.T(hostweb.Lang(r), "entities.title", nil)
-	if i := strings.LastIndex(title, " "); i >= 0 {
-		d.TitleHead, d.TitleLast = title[:i], title[i+1:]
-	} else {
-		d.TitleLast = title
-	}
-	page := layout.Page{Title: title, Nav: "entities", BodyKind: "list", V2: true}
-	if err := layout.Render(w, r, layout.Env{Pool: s.pool, Getenv: s.getenv, Now: now}, host, page, pages, "entities", d); err != nil {
+	if err := s.renderEntities(w, r, host, now, d); err != nil {
 		fail(w, err)
 	}
 }
