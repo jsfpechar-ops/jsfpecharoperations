@@ -1,0 +1,17 @@
+{{define "account_email_confirm"}}{{template "acct.head" .}}
+<section class="auth-card">
+  {{- if .Page.Expired}}
+  <h1 class="auth-title">{{.T "login.link.expired.title"}}</h1>
+  <p class="auth-lede">{{.T "account.email_confirm.expired"}}</p>
+  <a class="auth-submit" href="/settings/account#settings-account">{{.T "account.email_confirm.back"}}</a>
+  {{- else}}
+  <h1 class="auth-title">{{.T "account.email_confirm.title"}}</h1>
+  <p class="auth-lede">{{.T "account.email_confirm.lede" "email" .Page.Email}}</p>
+  <form method="post" action="/account/email/confirm" class="auth-form">
+    <input type="hidden" name="_csrf" value="{{.CSRF}}">
+    <input type="hidden" name="t" value="{{.E .Page.Token}}">
+    <button class="auth-submit" type="submit" autofocus>{{.T "account.email_confirm.submit"}}</button>
+  </form>
+  {{- end}}
+</section>
+{{template "acct.foot" .}}{{end}}
