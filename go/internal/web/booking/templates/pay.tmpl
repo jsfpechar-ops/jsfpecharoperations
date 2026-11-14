@@ -1,0 +1,7 @@
+{{define "guest.content"}}
+<main style="max-width:480px;margin:2rem auto;padding:0 1rem;">
+  <h1>{{.T "pp.book.pay_title"}}</h1>
+  <p>{{.T "pp.book.pay_note"}}</p>
+  <p><a class="ui-btn ui-btn-primary" href="{{.Data.PayURL}}" rel="noopener" data-no-prefetch>{{.T "pp.book.pay_button"}} · {{.Data.Total}} {{.T "payments.czk"}}</a></p>
+</main>
+{{end}}
