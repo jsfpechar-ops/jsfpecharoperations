@@ -1,0 +1,246 @@
+package ai
+
+// Tests of the Leon setup wizard routes on PostgreSQL.
+
+import (
+	"context"
+	"net/http"
+	"net/url"
+	"strings"
+	"testing"
+	"time"
+)
+
+func leonNewRig(t *testing.T, extra map[string]string) *havelRig {
+	t.Helper()
+	env := map[string]string{"UBYHOST_AI_FEATURES": "havel,leon"}
+	for k, v := range extra {
+		env[k] = v
+	}
+	g := havelNewRig(t, env)
+	for _, route := range LeonRoutes(HavelDeps{Pool: g.pool, Env: g.env, Now: func() time.Time { return havelTNow }, Model: g.model}) {
+		g.mux.Handle(route.Pattern, route.Handler)
+	}
+	havelExec(t, g.pool, `UPDATE apartment SET leon_enabled = 0, leon_terms_version = NULL WHERE id = 11`)
+	return g
+}
+
+func (g *havelRig) leonOn() {
+	havelExec(g.t, g.pool, `UPDATE apartment SET leon_enabled = 1, leon_terms_version = '2026-10-25' WHERE id = 11`)
+}
+
+func (g *havelRig) cards(states map[string]string) {
+	for kind, state := range states {
+		havelExec(g.t, g.pool, `INSERT INTO guide_item (apartment_id, topic, kind, state, created_at, updated_at) VALUES (11, 'arrival', '`+kind+`', '`+state+`', 'x', 'x')`)
+	}
+}
+
+var leonMust = []string{"checkin", "wifi", "heating", "checkout", "emergency"}
+
+func (g *havelRig) live() {
+	m := map[string]string{}
+	for _, k := range leonMust {
+		m[k] = "done"
+	}
+	g.cards(m)
+}
+
+const leonBase = "/apartments/11/leon/setup"
+
+func TestLeonGatesAndErrors(t *testing.T) {
+	g := leonNewRig(t, nil)
+	rec := g.do(havelReq{method: "GET", path: leonBase, signedOut: true})
+	if rec.Code != 303 || rec.Header().Get("Location") != "/login?next="+leonBase {
+		t.Errorf("signed out: %d %q", rec.Code, rec.Header().Get("Location"))
+	}
+	rec = g.do(havelReq{method: "GET", path: "/apartments/abc/leon/setup", signedOut: true})
+	if rec.Code != 422 || !strings.Contains(rec.Body.String(), `"type":"int_parsing"`) {
+		t.Errorf("a bad id is a 422 before the login: %d %s", rec.Code, rec.Body.String())
+	}
+	for _, path := range []string{"/apartments/13/leon/setup", "/apartments/99/leon/setup/cards"} {
+		rec = g.do(havelReq{method: "GET", path: path})
+		if rec.Code != 404 || rec.Body.String() != `{"detail":"Not Found"}` {
+			t.Errorf("%s: %d %s", path, rec.Code, rec.Body.String())
+		}
+	}
+	havelExec(t, g.pool, `UPDATE apartment SET archived_at = '2026-02-01' WHERE id = 11`)
+	if rec = g.do(havelReq{method: "GET", path: leonBase}); rec.Code != 404 {
+		t.Errorf("an archived property is a 404: %d", rec.Code)
+	}
+	havelExec(t, g.pool, `UPDATE apartment SET archived_at = NULL WHERE id = 11`)
+	if rec = g.do(havelReq{method: "GET", path: leonBase + "/nope"}); rec.Code != 404 {
+		t.Errorf("an unknown step is a 404: %d", rec.Code)
+	}
+	for _, c := range [][3]string{{"PUT", leonBase, "GET, POST"}, {"HEAD", leonBase, "GET, POST"}, {"POST", leonBase + "/cards", "GET"}, {"DELETE", leonBase + "/try", "GET"}} {
+		rec = g.do(havelReq{method: c[0], path: c[1], signedOut: true})
+		if rec.Code != 405 || rec.Header().Get("Allow") != c[2] {
+			t.Errorf("%s %s: %d %q", c[0], c[1], rec.Code, rec.Header().Get("Allow"))
+		}
+	}
+	rec = g.do(havelReq{method: "POST", path: leonBase, form: url.Values{"action": {"finish"}}, noToken: true})
+	if rec.Code != 303 || rec.Header().Get("Location") != "/login?notice=form_expired" {
+		t.Errorf("POST without a token: %d %q", rec.Code, rec.Header().Get("Location"))
+	}
+	// Leon is not offered: feature off, plan paused, owner off the test list.
+	for name, extra := range map[string]map[string]string{"feature": {"UBYHOST_AI_FEATURES": "havel"}, "test list": {"UBYHOST_AI_TEST_EMAILS": "other@example.test"}} {
+		g2 := leonNewRig(t, extra)
+		if rec := g2.do(havelReq{method: "GET", path: leonBase}); rec.Code != 404 {
+			t.Errorf("%s: Leon not offered must be a 404, got %d", name, rec.Code)
+		}
+	}
+	g3 := leonNewRig(t, map[string]string{"UBYHOST_BILLING_ENABLED": "1"})
+	havelExec(t, g3.pool, `INSERT INTO billing_account (owner_user_id, status, plan, updated_at) VALUES (1, 'paused', 'standard', '2026-01-01')`)
+	if rec := g3.do(havelReq{method: "GET", path: leonBase}); rec.Code != 404 {
+		t.Errorf("a paused plan is a 404: %d", rec.Code)
+	}
+}
+
+func TestLeonEntryPicksTheFirstStepToDo(t *testing.T) {
+	g := leonNewRig(t, nil)
+	where := func() string {
+		rec := g.do(havelReq{method: "GET", path: leonBase})
+		if rec.Code != 303 {
+			t.Fatalf("entry: %d", rec.Code)
+		}
+		return strings.TrimPrefix(rec.Header().Get("Location"), leonBase+"/")
+	}
+	if got := where(); got != "switch_on" {
+		t.Errorf("Leon off: %s", got)
+	}
+	g.leonOn()
+	if got := where(); got != "cards" {
+		t.Errorf("on, import off, not live: %s", got)
+	}
+	g2 := leonNewRig(t, map[string]string{"UBYHOST_APIFY_TOKEN": "tok"})
+	g2.leonOn()
+	rec := g2.do(havelReq{method: "GET", path: leonBase})
+	if rec.Header().Get("Location") != leonBase+"/import" {
+		t.Errorf("import on, none started: %q", rec.Header().Get("Location"))
+	}
+	g.live()
+	if got := where(); got != "try" {
+		t.Errorf("live: %s", got)
+	}
+	havelExec(t, g.pool, `UPDATE guide_item SET state = 'check' WHERE kind = 'wifi'`)
+	if got := where(); got != "cards" {
+		t.Errorf("a card to check: %s", got)
+	}
+}
+
+func TestLeonStepPages(t *testing.T) {
+	g := leonNewRig(t, nil)
+	get := func(step string) (int, string, http.Header) {
+		rec := g.do(havelReq{method: "GET", path: leonBase + "/" + step})
+		return rec.Code, rec.Body.String(), rec.Header()
+	}
+	// Off: every step goes back to the switch-on page.
+	for _, step := range []string{"import", "cards", "try", "done"} {
+		code, _, h := get(step)
+		if code != 303 || h.Get("Location") != leonBase+"/switch_on" {
+			t.Errorf("%s while off: %d %q", step, code, h.Get("Location"))
+		}
+	}
+	code, body, h := get("switch_on")
+	if code != 200 || h.Get("Cache-Control") != "no-store" || !strings.Contains(body, `id="leon-terms"`) || !strings.Contains(body, `name="next" value="setup"`) ||
+		!strings.Contains(body, `data-leon-setup-step="switch_on"`) || !strings.Contains(body, `aria-current="step"`) || !strings.Contains(body, "Flat A") {
+		t.Errorf("switch_on: %d %.200s", code, body)
+	}
+	if !strings.Contains(body, `action="/apartments/11/leon"`) || strings.Contains(body, "setup-wizard-back") {
+		t.Error("the form posts to the Leon page and the first step has no back link")
+	}
+	// Terms out of date.
+	havelExec(t, g.pool, `UPDATE apartment SET leon_enabled = 1, leon_terms_version = '2025-01-01' WHERE id = 11`)
+	if _, body, _ := get("switch_on"); !strings.Contains(body, havelTxtLeon("leon_page.terms_updated")) {
+		t.Error("the terms-updated banner")
+	}
+	g.leonOn()
+	_, body, _ = get("switch_on")
+	if strings.Contains(body, `id="leon-terms"`) || !strings.Contains(body, havelTxtLeon("leon_setup.switch_on.already")) || !strings.Contains(body, `/leon/setup/import">`) {
+		t.Error("switched on: already, and a link to the next step")
+	}
+	// Import off: the lede and a link to the cards.
+	_, body, _ = get("import")
+	if !strings.Contains(body, havelTxtLeon("leon_setup.import.off")) || !strings.Contains(body, leonBase+`/cards">`) || !strings.Contains(body, `href="`+leonBase+`/switch_on"`) {
+		t.Error("import step with the import off, and its back link")
+	}
+	// Import on: the form, then busy, then the result.
+	g2 := leonNewRig(t, map[string]string{"UBYHOST_APIFY_TOKEN": "tok"})
+	g2.leonOn()
+	imp := func() string { return g2.do(havelReq{method: "GET", path: leonBase + "/import"}).Body.String() }
+	body = imp()
+	if !strings.Contains(body, `action="/apartments/11/guide/import"`) || !strings.Contains(body, `name="booking_url"`) || !strings.Contains(body, `name="airbnb_url"`) ||
+		!strings.Contains(body, `name="next" value="leon"`) || !strings.Contains(body, `value="skip_import"`) {
+		t.Errorf("import form: %.300s", body)
+	}
+	havelExec(t, g2.pool, `INSERT INTO guide_import (apartment_id, source, url, status, created_at) VALUES (11, 'booking', 'https://b.example', 'running', '2026-11-12T10:00:00+00:00')`)
+	body = imp()
+	if !strings.Contains(body, "data-leon-import-wait") || strings.Contains(body, `name="booking_url"`) || !strings.Contains(body, "2026-11-12") || !strings.Contains(body, `class="ui-table"`) {
+		t.Error("import running: the waiting text and the history")
+	}
+	havelExec(t, g2.pool, `UPDATE guide_import SET status = 'done'`, `INSERT INTO guide_import (apartment_id, source, url, status, created_at) VALUES (11, 'airbnb', 'https://a.example', 'done', '2026-11-12T11:00:00+00:00')`)
+	body = imp()
+	if strings.Contains(body, "data-leon-import-wait") || !strings.Contains(body, leonBase+`/cards">`) {
+		t.Error("import done: the link to the cards")
+	}
+	// Cards: the open ones, in order, with state badges and the first as "next".
+	g.cards(map[string]string{"checkin": "check", "wifi": "missing", "kitchen_appliances": "missing"})
+	havelExec(t, g.pool, `INSERT INTO guide_item (apartment_id, topic, kind, title, state, created_at, updated_at) VALUES (11, 'area', 'custom', 'Pool', 'check', 'x', 'x')`)
+	_, body, _ = get("cards")
+	if strings.Count(body, `class="ui-row clickable-row"`) != 3 || !strings.Contains(body, "/apartments/11/guide/") || !strings.Contains(body, "?from=leon") ||
+		!strings.Contains(body, ">Pool<") || strings.Contains(body, "kitchen_appliances") || !strings.Contains(body, havelTxtLeon("guest_guide.check_waiting")) {
+		t.Errorf("cards: %d rows", strings.Count(body, `class="ui-row clickable-row"`))
+	}
+	if !strings.Contains(body, leonBase+"/import") && !strings.Contains(body, leonBase+"/switch_on") {
+		t.Error("cards has a back link")
+	}
+	// Live with nothing to check: a link to the try step; the stepper marks the steps done.
+	g3 := leonNewRig(t, nil)
+	g3.leonOn()
+	g3.live()
+	rec := g3.do(havelReq{method: "GET", path: leonBase + "/cards"})
+	if !strings.Contains(rec.Body.String(), `/leon/setup/try">`) || strings.Count(rec.Body.String(), `data-state="done"`) != 2 || strings.Count(rec.Body.String(), `data-state="current"`) != 1 {
+		t.Errorf("live cards page: %d done steps", strings.Count(rec.Body.String(), `data-state="done"`))
+	}
+	// Try: not live shows the not-live text; live shows the composer; the allowance disables it.
+	_, body, _ = get("try")
+	if !strings.Contains(body, havelTxtLeon("leon_page.not_live")) || strings.Contains(body, "data-leon-try-form") {
+		t.Error("try step before the guide is live")
+	}
+	body = g3.do(havelReq{method: "GET", path: leonBase + "/try"}).Body.String()
+	if !strings.Contains(body, "data-leon-try-form") || strings.Contains(body, " disabled required") || !strings.Contains(body, `value="finish"`) {
+		t.Error("try step: the composer and the finish button")
+	}
+	for i := 0; i < 5; i++ {
+		_ = g3.pool.QueryRow(context.Background(), `INSERT INTO rate_limit_event (scope, key, at) VALUES ('leon_try', '11', $1) RETURNING id`, float64(havelTNow.Unix())-60).Scan(new(int64))
+	}
+	body = g3.do(havelReq{method: "GET", path: leonBase + "/try"}).Body.String()
+	if !strings.Contains(body, " disabled required") || !strings.Contains(body, "data-leon-try-cap") {
+		t.Error("after five test messages the composer is disabled")
+	}
+	// Done.
+	body = g3.do(havelReq{method: "GET", path: leonBase + "/done"}).Body.String()
+	if !strings.Contains(body, `data-setup-celebrate="done"`) || strings.Count(body, "<i></i>") != 12 || !strings.Contains(body, `href="`+leonBase+`/try"`) ||
+		!strings.Contains(body, `/apartments/11/guide/qr`) || strings.Contains(body, "setup-wizard-ask") {
+		t.Error("done page")
+	}
+}
+
+func havelTxtLeon(key string) string {
+	return strings.NewReplacer("&", "&amp;", "'", "&#39;", "\"", "&#34;", "<", "&lt;", ">", "&gt;").Replace(leonStrings.T("en", key, nil))
+}
+
+func TestLeonSaveRedirects(t *testing.T) {
+	g := leonNewRig(t, nil)
+	for action, want := range map[string]string{"skip_import": leonBase + "/cards", "finish": leonBase + "/done", "other": leonBase, "": leonBase} {
+		rec := g.do(havelReq{method: "POST", path: leonBase, form: url.Values{"action": {action}}})
+		if rec.Code != 303 || rec.Header().Get("Location") != want {
+			t.Errorf("action %q: %d %q, want %q", action, rec.Code, rec.Header().Get("Location"), want)
+		}
+	}
+	if rec := g.do(havelReq{method: "POST", path: "/apartments/13/leon/setup", form: url.Values{"action": {"finish"}}}); rec.Code != 404 {
+		t.Errorf("a foreign property: %d", rec.Code)
+	}
+	if len(g.model.calls) != 0 {
+		t.Error("the wizard pages never call the model")
+	}
+}
