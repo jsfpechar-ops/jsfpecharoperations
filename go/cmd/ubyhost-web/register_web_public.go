@@ -27,6 +27,9 @@ func init() {
 			h, err := session.Load(r.Context(), pool, c.Value, time.Now(), os.Getenv)
 			return err == nil && h != nil
 		}}
+		unsub := public.UnsubDeps{Pool: pool, Getenv: os.Getenv, SignedIn: deps.SignedIn}
+		mux.Handle("GET /mail/unsubscribe/{token}", m.wrap("/mail/unsubscribe/{token}", public.UnsubscribeForm(unsub)))
+		mux.Handle("POST /mail/unsubscribe/{token}", m.wrap("/mail/unsubscribe/{token}", public.UnsubscribeSubmit(unsub)))
 		for _, path := range public.Paths {
 			mux.Handle("GET "+path, m.wrap(path, public.Handler(path, deps)))
 		}
