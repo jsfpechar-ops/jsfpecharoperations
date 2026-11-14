@@ -165,3 +165,27 @@ billing.admin.plan.bad_field
 billing.admin.plan.bad_value
 billing.admin.plan.done
 billing.admin.plan.refused
+# Console home (brief 1593).
+admin.today.clear
+admin.today.system
+home.admin.arr
+home.admin.customer
+home.admin.days_late
+home.admin.late
+home.admin.meta
+home.admin.mrr
+home.admin.open
+home.admin.queue.ending
+home.admin.queue.none
+home.admin.queue.overdue
+home.admin.queue.trials
+home.admin.queue.unverified
+home.admin.title
+home.admin.trialing
+incidents.review_title
+ops.alerts.title
+ops.feeds.title
+ops.filings.title
+ops.jobs.title
+ops.mail.title
+ops.stuck.title
