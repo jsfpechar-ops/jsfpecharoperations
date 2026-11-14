@@ -321,7 +321,7 @@ func (c *call) renderPlan(owner int64, pg planPage) {
 // hostPlanPage serves GET /predplatne (plan_page, lines 69-81). The POST of the
 // same path is hostPlanOrder (brief 1557).
 func (d deps) hostPlanPage(w http.ResponseWriter, r *http.Request) {
-	c := d.enter(w, r, gate{open: true})
+	c := d.enter(w, r, gate{})
 	if c == nil {
 		return
 	}
