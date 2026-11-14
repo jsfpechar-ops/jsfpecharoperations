@@ -48,7 +48,7 @@ No other file may change.
 
 ## 4. Steps
 
-0. Checks (repo root): `ls go/internal/web/ai/leon_handlers.go go/internal/web/ai/leon_facts.go` both exist; `sha256sum go/internal/web/ai/leon_extra.go | cut -c1-64` prints `903bf801399e0d469750b79c4abc54504a823a89ecd73a617563d49c770e6410` (brief 1435's file); `ls go/internal/web/ai/leon_core.go 2>&1 | tail -2` says "No such file"; `grep -cF 'def try_reply(apartment, text: str, *, lang: str, host_name: str) -> Dict[str, Any]:' App/app/leon.py` prints `1`; `grep -cF 'def for_guest(apartment_id: int, level: str, lang: str) -> List[Dict[str, Any]]:' App/app/guide_facts.py` prints `1`; `find docs/tasks/1436-files -type f | wc -l` prints `10`. Anything else: STOP (§8).
+0. Checks (repo root): `ls go/internal/web/ai/leon_handlers.go go/internal/web/ai/leon_facts.go` both exist; `sha256sum go/internal/web/ai/leon_extra.go | cut -c1-64` prints `2e45acc3b5796a60970d1efef687fdb334112f902d9108ba6c994413ff9f3cba` (brief 1435's file); `ls go/internal/web/ai/leon_core.go 2>&1 | tail -2` says "No such file"; `grep -cF 'def try_reply(apartment, text: str, *, lang: str, host_name: str) -> Dict[str, Any]:' App/app/leon.py` prints `1`; `grep -cF 'def for_guest(apartment_id: int, level: str, lang: str) -> List[Dict[str, Any]]:' App/app/guide_facts.py` prints `1`; `find docs/tasks/1436-files -type f | wc -l` prints `10`. Anything else: STOP (§8).
 
 1. Copy the files (one call, repo root). Run exactly:
 
