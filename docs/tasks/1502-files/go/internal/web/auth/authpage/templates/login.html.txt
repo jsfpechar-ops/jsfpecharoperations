@@ -1,0 +1,97 @@
+{{/* App/app/templates/login.html (brief 1502). Data: authpage.LoginData. */}}
+{{define "login.title"}}{{t "login.page_title"}}{{end}}
+{{define "login.meta"}}{{t "login.meta_description"}}{{end}}
+{{define "login"}}{{$d := .Data}}
+<section class="auth-card">
+  <h1 class="auth-title">{{t "login.title"}}</h1>
+  <p class="auth-lede">{{t "login.lede"}}</p>
+
+  {{if $d.Error}}
+    <div class="auth-alert" role="alert">{{t $d.Error "email" .OperatorEmail}}</div>
+  {{end}}
+
+  {{if $d.StagingPasswordEnabled}}
+    <div class="auth-notice" role="status">
+      <p><strong>{{t "login.staging.title"}}</strong></p>
+      <p>{{t "login.staging.username_password_help" "username" $d.StagingAdminUsername}}</p>
+    </div>
+    <form method="post" action="/login" class="auth-form" data-login-form>
+      <input type="hidden" name="_csrf" value="{{.CSRF}}">
+      <input type="hidden" name="next" value="{{$d.Next}}">
+      <div class="auth-field">
+        <label for="username">{{t "login.username"}}</label>
+        <input type="text" id="username" name="username" required autofocus maxlength="64"
+               value="{{$d.StagingAdminUsername}}"
+               autocomplete="username" autocapitalize="none" spellcheck="false"
+               placeholder="{{t "login.username_ph"}}">
+      </div>
+      <div class="auth-field">
+        <label for="staging_password">{{t "login.password"}}</label>
+        <input type="password" id="staging_password" name="staging_password" required maxlength="200"
+               autocomplete="current-password" placeholder="{{t "login.password_ph"}}">
+      </div>
+      {{if .SiteKey}}
+        <div class="cf-turnstile" data-sitekey="{{.SiteKey}}"
+             data-action="host_login" data-language="{{.Lang}}"></div>
+      {{end}}
+      <button class="auth-submit" type="submit">{{t "login.staging.submit"}}</button>
+      <p class="auth-acceptance">
+        {{template "login.acceptance" .}}
+      </p>
+    </form>
+  {{else}}
+    {{if $d.StagingLoginEmail}}
+      <div class="auth-notice" role="status">
+        <p><strong>{{t "login.staging.title"}}</strong></p>
+        <p>{{t "login.staging.missing_password"}}</p>
+      </div>
+    {{end}}
+
+    {{if .Passkeys}}
+      <div class="auth-passkey" data-passkey-login data-passkey-supported hidden>
+        <button class="auth-submit" type="button" data-passkey-login-button>{{t "login.passkey"}}</button>
+        <p class="auth-hint" data-pwa-standalone hidden>{{t "pwa.login_hint"}}</p>
+        <p class="auth-alert" data-passkey-error data-generic="{{t "passkeys.error.login_failed"}}" role="alert" hidden></p>
+        <p class="auth-divider"><span>{{t "login.passkey_or"}}</span></p>
+      </div>
+    {{end}}
+
+    <form method="post" action="/login" class="auth-form" data-login-form>
+      <input type="hidden" name="_csrf" value="{{.CSRF}}">
+      <input type="hidden" name="next" value="{{$d.Next}}">
+      <div class="auth-field">
+        <label for="email">{{t "login.email"}}</label>
+        <input type="email" id="email" name="email" required autofocus maxlength="254"
+               value="{{$d.Email}}"
+               autocomplete="{{if .Passkeys}}email webauthn{{else}}email{{end}}" autocapitalize="none" spellcheck="false"
+               placeholder="{{t "login.email_ph"}}">
+      </div>
+      {{if and .SiteKey (not $d.SkipTurnstile)}}
+        <div class="cf-turnstile" data-sitekey="{{.SiteKey}}"
+             data-action="host_login" data-language="{{.Lang}}"></div>
+      {{end}}
+      <button class="auth-submit" type="submit">{{t "login.submit"}}</button>
+      <p class="auth-acceptance">
+        {{template "login.acceptance" .}}
+      </p>
+    </form>
+  {{end}}
+
+  <details class="auth-help">
+    <summary>{{t "login.help_summary"}}</summary>
+    <p class="auth-help-note">{{t "login.help_body" "email" .OperatorEmail}}</p>
+  </details>
+
+  <div class="auth-foot">
+    <p>{{t "login.footnote" "email" .OperatorEmail}}</p>
+  </div>
+</section>
+{{if and .SiteKey (or $d.StagingPasswordEnabled (not $d.SkipTurnstile))}}
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+{{end}}
+{{if and .Passkeys (not $d.StagingPasswordEnabled)}}
+<script src="/static/passkeys.js?v=20261102-0789a" defer></script>
+{{end}}
+{{end}}
+
+{{define "login.acceptance"}}{{t "login.acceptance_before"}}<a href="/terms" target="_blank" rel="noopener noreferrer">{{t "login.acceptance_terms"}}</a>{{t "login.acceptance_between_terms_dpa"}}<a href="/dpa" target="_blank" rel="noopener noreferrer">{{t "login.acceptance_dpa"}}</a>{{t "login.acceptance_between_dpa_privacy"}}<a href="/privacy" target="_blank" rel="noopener noreferrer">{{t "login.acceptance_privacy"}}</a>{{t "login.acceptance_between_privacy_legal"}}<a href="/legal" target="_blank" rel="noopener noreferrer">{{t "login.acceptance_legal"}}</a>{{t "login.acceptance_after"}}{{end}}

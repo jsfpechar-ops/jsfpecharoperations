@@ -1,0 +1,32 @@
+# Strings of the signed-out auth pages (go/internal/web/auth/authpage, brief 1502).
+# App/scripts/go_host_i18n.py writes i18n.json from this list. A later brief
+# that adds a page here appends its keys at the end.
+# auth_base.html, _env_banner.html
+a11y.skip_to_content
+lang.en
+lang.cs
+lang.vi
+env.mock_title
+env.mock_body
+env.mock_production_title
+env.mock_production_body
+how.toggle
+auth.notice.*
+auth.not_you
+legal.footer_link
+terms.footer_link
+privacy.footer_link
+dpa.footer_link
+login.hero_title
+login.hero_body
+landing.demo.scene.calendar
+landing.demo.scene.form
+landing.demo.scene.receipt
+landing.demo.queue.ready
+# login.html, login_sent.html, login_link.html
+login.*
+auth.error.*
+passkeys.error.login_failed
+pwa.login_hint
+# two_factor_login.html
+account.2fa.*
