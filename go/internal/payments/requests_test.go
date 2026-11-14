@@ -286,6 +286,9 @@ func TestRequestSendDatabase(t *testing.T) {
 		if payload != want {
 			t.Errorf("payload\n got %s\nwant %s", payload, want)
 		}
+		if strings.Contains(payload, "/payments/qr") {
+			t.Error("QR send mail must not link to the host-only /payments/qr preview")
+		}
 	})
 
 	t.Run("resend keeps the status and uses key v2", func(t *testing.T) {
