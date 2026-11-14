@@ -83,6 +83,7 @@ func Routes(pool *pgxpool.Pool, getenv func(string) string, now func() time.Time
 		{"GET /signup/verify", "/signup/verify", d.signupVerifyForm},
 		{"POST /signup/verify", "/signup/verify", d.signupVerifySubmit},
 		{"GET /admin/operations", "/admin/operations", d.operationsAdmin},
+		{"POST /admin/users/{id}/schedule-deletion", "/admin/users/{id}/schedule-deletion", d.scheduleDeletion},
 	}
 }
 
