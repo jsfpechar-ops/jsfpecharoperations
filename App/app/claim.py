@@ -874,17 +874,6 @@ def maybe_notify_completion(reservation, apartment, *, force: bool = False) -> N
         apartment_id=apartment["id"],
         owner_user_id=apartment["owner_user_id"],
     )
-    try:
-        fee_now = _completion_fee(apartment, reservation)
-        mail_notify.host_guest_details(
-            apartment,
-            reservation,
-            filled=progress["filled"],
-            expected=expected,
-            fee_total=fee_now["total"] if fee_now else None,
-        )
-    except Exception:  # the host mail must never cost the guest their receipt
-        log.exception("host guest details not queued reservation_id=%s", reservation["id"])
     db.execute(
         "UPDATE reservation_claim SET completion_notified_at = ?, updated_at = ? "
         "WHERE reservation_id = ?",
