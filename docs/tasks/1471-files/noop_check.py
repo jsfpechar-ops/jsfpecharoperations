@@ -1,4 +1,4 @@
-"""Brief 1471: prove goose 00017 writes nothing on a database built the way production was.
+"""Brief 1471: prove goose 00017_goose_parity.sql writes nothing on a database built the way production was.
 
 Run from App/ with a disposable PostgreSQL only (never production):
     .venv/bin/python ../docs/tasks/1471-files/noop_check.py "$UBYHOST_TEST_DATABASE_URL"

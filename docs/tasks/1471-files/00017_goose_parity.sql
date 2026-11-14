@@ -1,12 +1,15 @@
 -- +goose Up
--- Brief 1471 (plan sqlite-retirement S2). Goose-only, no SQLite twin, no schema_migrations row.
--- Production was built by Python's translation of the SQLite migrations, which makes every
--- foreign key DEFERRABLE INITIALLY IMMEDIATE and every TEXT column COLLATE "C". Goose 00004,
--- 00011 and 00013 left DEFERRABLE out of 6 foreign keys, and goose 00006-00015 left COLLATE "C"
--- out of 19 text columns, so a database built from goose files alone differed from production.
--- On production this file changes nothing: ALTER CONSTRAINT with the attributes a constraint
--- already has writes no catalog row, and the DO block alters only a listed column whose
--- collation is not "C".
+-- Goose parity (brief 1471, plan sqlite-retirement S2). Goose-only: no SQLite twin, no
+-- schema_migrations row. It makes a database built from goose files alone equal to one built
+-- by Python's apply (production), in two things:
+--   1. 6 foreign keys become DEFERRABLE INITIALLY IMMEDIATE (goose 00004, 00011, 00013 left it out);
+--   2. 19 text columns become COLLATE "C" (goose 00006-00015 left it out).
+-- On a database built by Python's apply (production) it is a no-op: ALTER CONSTRAINT with the
+-- attributes a constraint already has writes nothing, and the DO block alters only a listed
+-- column whose collation is not "C". The statements still take their table locks, so
+-- lock_timeout is short: if the running app holds a lock, the apply fails within 5 s (the
+-- deploy stops, the old stack keeps running; deploy again) instead of queueing the site behind it.
+SET LOCAL lock_timeout = '5s';
 ALTER TABLE site_booking ALTER CONSTRAINT site_booking_apartment_id_fkey DEFERRABLE INITIALLY IMMEDIATE;
 ALTER TABLE site_booking ALTER CONSTRAINT site_booking_invoice_id_fkey DEFERRABLE INITIALLY IMMEDIATE;
 ALTER TABLE site_booking ALTER CONSTRAINT site_booking_owner_user_id_fkey DEFERRABLE INITIALLY IMMEDIATE;

@@ -1,8 +1,8 @@
 diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
-index 0c280a1a2..20eef9397 100644
+index f8934e19d..442e11a34 100644
 --- a/.github/workflows/ci.yml
 +++ b/.github/workflows/ci.yml
-@@ -192,13 +192,22 @@ jobs:
+@@ -230,13 +230,22 @@ jobs:
            echo "$out"
            grep -q "no migrations to run" <<<"$out"
  

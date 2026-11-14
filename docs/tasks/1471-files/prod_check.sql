@@ -1,4 +1,4 @@
--- Brief 1471, read-only: the 6 foreign keys and 19 text columns goose 00017 covers.
+-- Brief 1471, read-only: the 6 foreign keys and 19 text columns goose 00017_goose_parity.sql covers.
 -- Expected on production, before and after 00017: 6|19
 SELECT
     (SELECT count(*) FROM pg_constraint
