@@ -348,7 +348,7 @@ index a1d5c5633..a012105c5 100644
 +}
 ````
 
-**Verified by the brief writer** in a throwaway worktree of the branch head (f7875b56e), with 1452 and 1450 applied by their steps first. `git apply --check` was clean. Under SQLite, `pytest tests/test_scheduler_go_switch.py tests/test_scheduler.py tests/test_worker.py -q` gave 33 passed, 8 skipped (the 8 watch tests need PostgreSQL). Against a disposable PostgreSQL 16, `UBYHOST_DATABASE_URL=... pytest tests/test_scheduler_go_switch.py` gave 16 passed. Go `gofmt`, `vet` and `go test -race ./internal/scheduler/ ./cmd/ubyhost-web/` passed with that PostgreSQL. Mutations caught: no takeover, no resolve, no fallback enqueue.
+**Verified by the brief writer** in a throwaway worktree of the branch head (0c8ceec56, where the executors had already applied 1452 and 1450), following steps 0 to 2 of this brief. `git apply --check` was clean. Under SQLite, `pytest tests/test_scheduler_go_switch.py tests/test_scheduler.py tests/test_worker.py -q` gave 33 passed, 8 skipped (the 8 watch tests need PostgreSQL). Against a disposable PostgreSQL 16, `UBYHOST_DATABASE_URL=... pytest tests/test_scheduler_go_switch.py` gave 16 passed. Go `gofmt`, `vet` and `go test -race ./internal/scheduler/ ./cmd/ubyhost-web/` passed with that PostgreSQL. Mutations caught: no takeover, no resolve, no fallback enqueue.
 
 Anchors (step 0): `grep -cF 'func registerBackground(' go/cmd/ubyhost-web/registry.go` and `grep -cF 'func Enabled(getenv func(string) string) bool {' go/internal/scheduler/scheduler.go` print 1 (1452 and 1450 are in); `grep -cF 'def go_scheduler' App/app/scheduler.py` prints 0.
 
