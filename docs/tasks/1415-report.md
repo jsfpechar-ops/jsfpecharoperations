@@ -48,3 +48,6 @@ Missing or non-object weights file: round-robin on the sorted list, stderr `ci_s
 ## Owner steps
 1. Open the PR from `claude/optimistic-allen-ybxnjg`, wait for green, merge with `scripts/merge-pr-on-green.sh <PR number>`.
 2. After merge, compare the next CI shard times with 10.5 / 13 / 23.5 / 13 minutes (browser) and the Postgres shard times.
+
+## Fix after review
+- test-map.md under the 1200-token cap: row shortened to `scripts/ci_shard.py` and two wordings tightened; no test names changed. context lint: OK.

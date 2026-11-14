@@ -1,12 +1,12 @@
 # Test map
 
-Run only your area's row, from `App/`, always ending `-q --tb=short -x 2>&1 | tail -30`. Full suite: CI, or locally only if the owner asks. Globs are under `tests/`. Add the test file you wrote or changed.
+Run only your area's row from `App/`, ending `-q --tb=short -x 2>&1 | tail -30`. Full suite: CI unless the owner asks. Globs are under `tests/`. Add the test file you changed.
 
 | Changed | Run |
 |---|---|
-| CI shard script (`scripts/ci_shard.py`) | `test_ci_shard.py` |
+| `scripts/ci_shard.py` | `test_ci_shard.py` |
 | Guest pages, guest templates | `test_guest_*.py` and `test_guest_browser_e2e.py` (0 skipped) |
-| Host pages, host templates, host CSS | `test_host_*.py` and `test_host_geometry.py` (0 skipped) |
+| Host pages, templates, CSS | `test_host_*.py` and `test_host_geometry.py` (0 skipped) |
 | Login, 2FA, passkeys | `test_login_*.py test_auth_*.py test_two_factor_*.py test_passkeys.py test_remember_me_reissue.py test_security*.py` |
 | Filing, UbyPort, claim | `test_ubyport_*.py test_soap.py test_worker.py test_submission_*.py test_stale_submission.py test_filed_by_hand.py test_filing_watchdog.py test_police_*.py test_*deadline*.py test_claim_*.py test_endtoend.py` |
 | Platform billing, subscription, trial | `test_billing_*.py` |
