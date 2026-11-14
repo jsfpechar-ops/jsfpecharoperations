@@ -63,3 +63,4 @@ Append-only.
 - 2026-11-14 [mail] Only completion (guest TO, host CC) after stay complete; stop guest_details_host (supersedes 1291 keep-both) | owner | 1630
 - 2026-11-13 [workflow] No GitHub branch protection or required checks (owner): merges gated by scripts/merge-pr-on-green.sh, production by the green-CI deploy gate; CI speed-ups in [1413](../tasks/1413-ci-skip-heavy-jobs-for-brief-only-changes.md), [1414](../tasks/1414-ci-postgres-full-four-shards.md), [1415](../tasks/1415-ci-balance-shards-by-duration.md), 1416 (README)
 - 2026-11-13 [workflow/db] [Go first](go-first.md); [SQLite plan](../plans/sqlite-retirement.md) 1-6 approved | owner
+- 2026-11-14 [dep/infra] golang.org/x/image v0.45.0 (v0.46 needs Go 1.26); Go /data writable (was :ro) | owner | 1641, 1640
