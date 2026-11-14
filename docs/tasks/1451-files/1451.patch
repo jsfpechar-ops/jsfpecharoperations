@@ -1,5 +1,5 @@
 diff --git a/App/app/scheduler.py b/App/app/scheduler.py
-index bbcaa9969..dd340bf8c 100644
+index bbcaa9969..d9a7ea4ce 100644
 --- a/App/app/scheduler.py
 +++ b/App/app/scheduler.py
 @@ -3,8 +3,9 @@ from __future__ import annotations
@@ -13,7 +13,7 @@ index bbcaa9969..dd340bf8c 100644
  import threading
  import time
  
-@@ -534,6 +535,133 @@ def _queued(kind: str) -> bool:
+@@ -534,6 +535,172 @@ def _queued(kind: str) -> bool:
      return config.DB_BACKEND == "postgresql" and kind in config.JOB_QUEUE_KINDS
  
  
@@ -61,78 +61,117 @@ index bbcaa9969..dd340bf8c 100644
 +    "billing_snapshot": (6, 15),
 +}
 +GO_WATCH_SECONDS = 60
-+# A daily job counts as missed this long after its local time.
++# A daily job counts as missed this long after its local time (Go running).
 +GO_WATCH_CRON_GRACE_MINUTES = 15
-+# The card hosts and the operator see: "Background job 'job queue' failed."
++# Go counts as enqueuing while it wrote any row this recently (push alone
++# writes one a minute, mail and door_codes every 5 minutes).
++GO_ALIVE_MINUTES = 6
++# The card hosts see ("Background job 'job queue' failed"); the admin
++# Operations page shows the message and detail below, with the first step.
 +GO_WATCH_ALERT = "job_failed:job_queue"
-+# kind -> created_at of the newest row this worker enqueued for it in place of Go.
-+_go_fallback: dict = {}
++GO_WATCH_MESSAGE = "Go scheduler is not enqueuing"
++# Rows this watch writes carry this payload, so "did Go write it" is read
++# from the job table itself, never from this process's memory. Both
++# consumers ignore the payload (Python passes the kind only, Go reads id,
++# kind and attempts).
++GO_WATCH_PAYLOAD = '{"enqueued_by": "python_watch"}'
 +
 +
-+def _go_due_since(kind: str, now: datetime) -> str:
-+    """The stamp by which Go should have written or finished a row of kind."""
++def _utc_stamp(moment: datetime) -> str:
++    return moment.astimezone(timezone.utc).replace(microsecond=0).isoformat()
++
++
++def _go_due_since(kind: str, now: datetime, takeover: bool = False) -> str:
++    """The stamp by which kind should have a row.
++
++    Go running (takeover False): a kind is left out after twice its
++    interval plus a minute, a daily job 15 minutes after its local time.
++    Go not enqueuing (takeover True): this worker keeps the normal schedule,
++    one interval (30 s of slack for the one-minute watch tick), a daily job
++    at its local time.
++    """
 +    if kind in CRON_TIMES:
 +        from zoneinfo import ZoneInfo
 +
 +        hour, minute = CRON_TIMES[kind]
-+        local = (now - timedelta(minutes=GO_WATCH_CRON_GRACE_MINUTES)).astimezone(ZoneInfo(config.TIMEZONE))
++        grace = 0 if takeover else GO_WATCH_CRON_GRACE_MINUTES
++        local = (now - timedelta(minutes=grace)).astimezone(ZoneInfo(config.TIMEZONE))
 +        due = local.replace(hour=hour, minute=minute, second=0, microsecond=0)
 +        if due > local:
 +            due -= timedelta(days=1)  # wall-clock arithmetic: the same local time a day earlier
-+        moment = due
-+    else:
-+        moment = now - timedelta(minutes=2 * job_intervals()[kind] + 1)
-+    return moment.astimezone(timezone.utc).replace(microsecond=0).isoformat()
++        return _utc_stamp(due)
++    minutes = job_intervals()[kind]
++    if takeover:
++        return _utc_stamp(now - timedelta(minutes=minutes) + timedelta(seconds=30))
++    return _utc_stamp(now - timedelta(minutes=2 * minutes + 1))
++
++
++def _watch_enqueue(kind: str) -> bool:
++    """jobqueue.enqueue with the watch payload; True when a row was added."""
++    now = db.utcnow()
++    added = db.execute(
++        "INSERT INTO job (kind, run_at, payload, created_at) VALUES (?, ?, ?, ?) "
++        "ON CONFLICT (kind) WHERE done_at IS NULL AND dead_at IS NULL DO NOTHING",
++        (kind, now, GO_WATCH_PAYLOAD, now),
++    )
++    return added == 1
 +
 +
 +def watch_go_scheduler(now: datetime | None = None) -> list:
-+    """With UBYHOST_SCHEDULER=go: enqueue every kind Go left out; the kinds enqueued.
++    """With UBYHOST_SCHEDULER=go: enqueue what Go leaves out; the kinds enqueued.
 +
-+    A kind is left out when it has no open row and its newest row was neither
-+    created nor finished within twice its interval (plus a minute), or, for a
-+    daily job, since its last local time (15 minutes of grace). This worker
-+    then enqueues it itself (one open row per kind, so never a duplicate) and
-+    keeps the critical alert open until a row it did not write appears for
-+    every such kind. Go down, crash-looping or set up wrong all end here.
++    Everything is read from the job and alert tables, so a worker restart
++    changes nothing. Go is "enqueuing" while it wrote any row (payload not
++    GO_WATCH_PAYLOAD) in the last GO_ALIVE_MINUTES. Then a kind with no open
++    row is enqueued here only when it was left out (Go restarted across its
++    time, an insert failed). When Go is not enqueuing (down, crash-looping,
++    set up wrong), this worker takes over every kind on its normal schedule
++    until Go writes again. Either way it keeps the critical alert open; when
++    Go is enqueuing and nothing was left out, it resolves the alert (also
++    one left open by a process that has since restarted). One open row per
++    kind, so this can never add a duplicate.
 +    """
 +    now = now or datetime.now(timezone.utc)
-+    had_fallback = bool(_go_fallback)
 +    rows = {
 +        row["kind"]: row
 +        for row in db.query(
 +            "SELECT kind, MAX(created_at) AS created, MAX(done_at) AS done, "
++            "MAX(CASE WHEN payload <> ? THEN created_at END) AS go_created, "
 +            "SUM(CASE WHEN done_at IS NULL AND dead_at IS NULL THEN 1 ELSE 0 END) AS open_rows "
-+            "FROM job GROUP BY kind"
++            "FROM job GROUP BY kind",
++            (GO_WATCH_PAYLOAD,),
 +        )
 +    }
++    go_last = max([(row["go_created"] or "") for row in rows.values()] or [""])
++    takeover = go_last < _utc_stamp(now - timedelta(minutes=GO_ALIVE_MINUTES))
 +    added = []
 +    for kind in JOB_KINDS:
 +        row = rows.get(kind)
-+        created = (row["created"] if row else None) or ""
-+        if kind in _go_fallback and created > _go_fallback[kind]:
-+            del _go_fallback[kind]
-+            log.info("the Go scheduler enqueues %s again", kind)
 +        if row and row["open_rows"]:
 +            continue
-+        last = max(created, (row["done"] if row else None) or "")
-+        if last >= _go_due_since(kind, now):
++        created = (row["created"] if row else None) or ""
++        last = created if takeover else max(created, (row["done"] if row else None) or "")
++        if last >= _go_due_since(kind, now, takeover):
 +            continue
-+        if jobqueue.enqueue(kind):
-+            _go_fallback[kind] = db.utcnow()
++        if _watch_enqueue(kind):
 +            added.append(kind)
-+    if _go_fallback:
-+        kinds = ", ".join(sorted(_go_fallback))
-+        log.error("the Go scheduler is not enqueuing %s; this worker enqueues them (UBYHOST_SCHEDULER=go)", kinds)
++    if takeover or added:
++        what = "any job" if takeover else ", ".join(added)
++        log.error("the Go scheduler is not enqueuing %s; this worker enqueues it (UBYHOST_SCHEDULER=go)", what)
 +        alerts.raise_alert(
 +            "critical",
 +            "job_failed",
-+            f"Go scheduler is not enqueuing: {kinds}",
-+            "The Python worker enqueues these jobs until the Go scheduler runs again.",
++            f"{GO_WATCH_MESSAGE} {what}. First check that the ubyhost-go container is running "
++            "(docker compose ps ubyhost-go on the server).",
++            "The Python worker enqueues these jobs until the Go scheduler writes them again; "
++            "jobs the Go service runs, filing included, wait for it.",
 +            dedupe_key=GO_WATCH_ALERT,
 +        )
-+    elif had_fallback:
-+        alerts.resolve(GO_WATCH_ALERT)
-+        log.info("the Go scheduler enqueues every job again; alert resolved")
++    else:
++        stale = alerts.open_alert(GO_WATCH_ALERT)
++        if stale is not None and (stale["message"] or "").startswith(GO_WATCH_MESSAGE):
++            alerts.resolve(GO_WATCH_ALERT)
++            log.info("the Go scheduler enqueues every job again; alert resolved")
 +    return added
 +
 +
@@ -147,7 +186,7 @@ index bbcaa9969..dd340bf8c 100644
  def _target(kind: str):
      """The callable APScheduler runs for kind: enqueue a row, or the job itself."""
      if _queued(kind):
-@@ -577,6 +705,9 @@ def start() -> bool:
+@@ -577,6 +744,9 @@ def start() -> bool:
          )
      if config.JOB_QUEUE_KINDS and config.DB_BACKEND != "postgresql":
          raise RuntimeError("UBYHOST_JOB_QUEUE_KINDS needs PostgreSQL")
@@ -157,7 +196,7 @@ index bbcaa9969..dd340bf8c 100644
      if config.DB_BACKEND != "postgresql":
          log.warning("no deadline watch runs here: the deadlines job runs only in the Go service (PostgreSQL, 1290)")
      elif "deadlines" not in config.GO_JOB_KINDS:
-@@ -650,6 +781,19 @@ def start() -> bool:
+@@ -650,6 +820,19 @@ def start() -> bool:
          _target("guide_import"), "interval", minutes=minutes["guide_import"],
          id="guide_import", max_instances=1, coalesce=True,
      )
@@ -178,7 +217,7 @@ index bbcaa9969..dd340bf8c 100644
          _scheduler.add_job(
              _job_queue, "interval", seconds=15, id="job_queue",
 diff --git a/deploy/lightsail/docker-compose.yml b/deploy/lightsail/docker-compose.yml
-index b099b977e..8686d3461 100644
+index b099b977e..1f74cf592 100644
 --- a/deploy/lightsail/docker-compose.yml
 +++ b/deploy/lightsail/docker-compose.yml
 @@ -155,6 +155,9 @@ services:
@@ -191,7 +230,12 @@ index b099b977e..8686d3461 100644
      command: ["python", "-m", "app.worker"]
      volumes:
        - ubyhost-data:/data
-@@ -226,7 +229,9 @@ services:
+@@ -222,11 +225,14 @@ services:
+       UBYHOST_DEPLOYMENT:
+       UBYHOST_DOOR_CODES:
+       UBYHOST_DPA_VERSION:
++      UBYHOST_ENABLE_SCHEDULER:
+       UBYHOST_HEARTBEAT_FILING_URL:
        UBYHOST_HEARTBEAT_ICAL_URL:
        UBYHOST_HEARTBEAT_URL:
        UBYHOST_ICAL_ALLOW_PRIVATE:
@@ -201,7 +245,7 @@ index b099b977e..8686d3461 100644
        UBYHOST_MAIL_BACKEND:
        UBYHOST_MAX_BATCH:
        UBYHOST_META_ACCESS_TOKEN:
-@@ -239,6 +244,7 @@ services:
+@@ -239,6 +245,7 @@ services:
        UBYHOST_PRIVACY_VERSION:
        UBYHOST_PUBLIC_BASE_URL:
        UBYHOST_PY_WEBHOOK_URL:
@@ -210,14 +254,54 @@ index b099b977e..8686d3461 100644
        UBYHOST_SOAP_WSA_HEADER:
        UBYHOST_STRIPE_MONTHLY_API_CALLS:
 diff --git a/docs/ENVIRONMENT.md b/docs/ENVIRONMENT.md
-index ec7a61fbe..744d4f5ad 100644
+index ec7a61fbe..5caca8417 100644
 --- a/docs/ENVIRONMENT.md
 +++ b/docs/ENVIRONMENT.md
-@@ -51,6 +51,7 @@ Optional host subdomain: [deployment, exact values and rollback](APP_SUBDOMAIN.m
+@@ -51,7 +51,8 @@ Optional host subdomain: [deployment, exact values and rollback](APP_SUBDOMAIN.m
  | --- | --- | --- |
  | `UBYHOST_JOB_QUEUE_KINDS` | empty | PostgreSQL only. Comma list of scheduler job ids that go through the job table instead of running directly; unknown ids stop the worker. An open row unclaimed past twice its interval (Python or Go consumer missing) raises the `job_failed` alert for that job. |
  | `UBYHOST_GO_JOB_KINDS` | empty | PostgreSQL only. Kinds the Go service runs instead of Python; each must also be in `UBYHOST_JOB_QUEUE_KINDS`. Today `billing_snapshot`, `stripe_sweep`, `ical`, `push`, `submit`, `posthog`, `meta_capi` and `deadlines` (the Go service reads the same `POSTHOG_*`, `UBYHOST_META_*` and `UBYHOST_HEARTBEAT_*` variables from `.env`). `deadlines` is the deadline watch plus the filing watchdog and its heartbeat; it must stay in both lists, because Python no longer has this job (1290): without Go it only raises the `job_failed` alert. Rollback: `git revert` the 1290 PR, merge and deploy, then remove `deadlines` from this list (keep it in `UBYHOST_JOB_QUEUE_KINDS`) and run `./scripts/deploy.sh`. The `ubyhost-go` service receives only the variables listed under its `environment:` in `docker-compose.yml`, not the whole `.env`; a new variable read in `go/` must be added there. |
-+| `UBYHOST_SCHEDULER` | unset | PostgreSQL only. Who enqueues the timed job rows (J7). `go`: the Go service enqueues all 15 kinds on the schedule of `App/app/scheduler.py` (same intervals, cron times and Europe/Prague time zone); the Python `worker` enqueues none, still runs the queued kinds not in `UBYHOST_GO_JOB_KINDS`, and every minute checks that each kind got a row in time. A kind Go left out (Go down, crash-looping or set up wrong) is enqueued by the worker itself and raises the critical alert "Background job 'job queue' failed" until Go writes that kind again. `go` is ignored on both sides (the worker enqueues as before and both log the reason) unless every kind is in `UBYHOST_JOB_QUEUE_KINDS` and `UBYHOST_ICAL_POLL_MINUTES` and `UBYHOST_SUBMIT_SWEEP_MINUTES` are above 0. One open row per kind (index `job_one_open_per_kind`), so both sides enqueuing at once write no duplicate. Rollback: remove the line, recreate `worker`, then `ubyhost-go` (both with `--no-deps`). |
- | `UBYHOST_ENABLE_SCHEDULER` | `1` | `0` stops **all** background work: calendar polling, automatic submission, the deadline watch, the guest e-mail outbox, claim-hold expiry and the passport-photo sweep. |
+-| `UBYHOST_ENABLE_SCHEDULER` | `1` | `0` stops **all** background work: calendar polling, automatic submission, the deadline watch, the guest e-mail outbox, claim-hold expiry and the passport-photo sweep. |
++| `UBYHOST_SCHEDULER` | unset | PostgreSQL only. Who enqueues the timed job rows (J7). `go`: the Go service enqueues all 15 kinds on the schedule of `App/app/scheduler.py` (same intervals, cron times and Europe/Prague time zone); the Python `worker` enqueues none, still runs the queued kinds not in `UBYHOST_GO_JOB_KINDS`, and every minute checks the job table. A kind Go left out is enqueued by the worker; if Go wrote no row for 6 minutes (down, crash-looping, set up wrong) the worker enqueues every kind on its normal schedule until Go writes again. Meanwhile the critical alert "Background job 'job queue' failed" is open; the admin Operations page shows its first step (check that `ubyhost-go` is running). It closes by itself when Go writes again, also after a worker restart. `go` is ignored on both sides (the worker enqueues as before and both log the reason) unless every kind is in `UBYHOST_JOB_QUEUE_KINDS` and `UBYHOST_ICAL_POLL_MINUTES` and `UBYHOST_SUBMIT_SWEEP_MINUTES` are above 0. `UBYHOST_ENABLE_SCHEDULER=0` still stops all enqueuing on both sides, filing included. One open row per kind (index `job_one_open_per_kind`), so both sides enqueuing at once write no duplicate. Rollback: remove the line, recreate `worker`, then `ubyhost-go` (both with `--no-deps`). |
++| `UBYHOST_ENABLE_SCHEDULER` | `1` | `0` (or `false`, `no`) stops **all** background work, in the Python worker and in the Go scheduler (`UBYHOST_SCHEDULER=go`) alike: calendar polling, automatic submission, the deadline watch, the guest e-mail outbox, claim-hold expiry and the passport-photo sweep. |
  | `UBYHOST_ROLE` | `web` | What the process runs (WP06). `web`: HTTP only, never starts the scheduler (the Docker image, two uvicorn workers). `worker`: only the background jobs, started with `python -m app.worker` (the Lightsail `worker` container). `all`: both in one process (`run.sh` and `render_start.sh` default to it). Only one scheduler can run per data directory: it holds `DATA_DIR/scheduler.lock`. |
  | `UBYHOST_WEB_WORKERS` | `2` | uvicorn workers in the Docker image's web process (WP32). `4` on the 8 GB / 2 vCPU production server. `docker-entrypoint.sh` and `preflight.sh` refuse anything but 1 to 16. |
+ | `UBYHOST_WEB_MEM`, `UBYHOST_WORKER_MEM`, `UBYHOST_CADDY_MEM` | `2g`, `1g`, `256m` | Lightsail compose `mem_limit` per container (WP32). Read by `docker compose` from `deploy/lightsail/.env`. Staging on 2 GB: `896m`, `448m`, `128m`. |
+diff --git a/go/cmd/ubyhost-web/register_scheduler.go b/go/cmd/ubyhost-web/register_scheduler.go
+index a1d5c5633..a012105c5 100644
+--- a/go/cmd/ubyhost-web/register_scheduler.go
++++ b/go/cmd/ubyhost-web/register_scheduler.go
+@@ -16,6 +16,7 @@ package main
+ 
+ import (
+ 	"context"
++	"errors"
+ 	"fmt"
+ 	"os"
+ 	"time"
+@@ -32,6 +33,10 @@ func schedulerTask(pool *pgxpool.Pool) (func(context.Context), error) {
+ 	if !scheduler.Enabled(os.Getenv) {
+ 		return nil, nil
+ 	}
++	if killSwitch(os.Getenv) {
++		return nil, errors.New("UBYHOST_ENABLE_SCHEDULER=" + os.Getenv("UBYHOST_ENABLE_SCHEDULER") +
++			" stops all background work: the Go scheduler enqueues nothing (brief 1451)")
++	}
+ 	plan, loc, err := scheduler.Setup(os.LookupEnv)
+ 	if err != nil {
+ 		return nil, fmt.Errorf("UBYHOST_SCHEDULER=go is ignored, the Python worker keeps enqueuing: %w", err)
+@@ -44,3 +49,14 @@ func schedulerTask(pool *pgxpool.Pool) (func(context.Context), error) {
+ 		scheduler.Run(ctx, state, enqueue, time.Now)
+ 	}, nil
+ }
++
++// killSwitch is Python's config.ENABLE_SCHEDULER turned round: exactly "0",
++// "false" or "no" (case and spaces count, unset is on) stops all enqueuing,
++// filing included, on both sides (brief 1451).
++func killSwitch(getenv func(string) string) bool {
++	switch getenv("UBYHOST_ENABLE_SCHEDULER") {
++	case "0", "false", "no":
++		return true
++	}
++	return false
++}
