@@ -1,6 +1,6 @@
 # 1508: Go auth, the operator's System page GET /admin/operations (dormant)
 
-Status: todo
+Status: review
 Depends on: 1282 (auth `Routes`, `d.admin`, the incident POSTs) and 1430-1434 (Go Havel: `havelGuideAnchors`, `HavelFeature`, `go/internal/anthropic`), both already on go-wave3. No 1501 helper is used. | Base commit: 859d114d5 | Branch: go-wave3
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
