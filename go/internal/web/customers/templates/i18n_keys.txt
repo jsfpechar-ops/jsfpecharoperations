@@ -142,3 +142,12 @@ users.menu.schedule_deletion_confirm
 users.menu.send_invite
 users.menu.withdraw_ads_consent
 users.menu.withdraw_meta_consent
+# Operator actions on a customer: status and trial (brief 1590).
+billing.admin.extend.bad_days
+billing.admin.extend.done
+billing.admin.extend.not_trialing
+billing.admin.status.bad
+billing.admin.status.done
+billing.admin.status.refused
+customers.ops.verify_refused
+customers.ops.verify_sent
