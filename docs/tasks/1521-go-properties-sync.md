@@ -129,5 +129,5 @@ Write `docs/tasks/1521-report.md` (600 tokens at most) and set `Status: review`.
 
 ## Owner steps
 
-1. Nothing to deploy yet. Before `/sync` goes into `UBYHOST_GO_PATHS`, brief 1522-1524 are not needed (it is its own path).
+1. Nothing to deploy yet. `/sync` is its own path: it can go into `UBYHOST_GO_PATHS` without waiting for the other briefs.
 2. On staging, press Sync now on `/` and compare the flash with Python.

@@ -24,7 +24,7 @@ Python ported (read-only, for the reviewer), with the parity each Go test checks
 
 **Known deviation D1 (decision for the reviewer).** `menu_view` also calls `cleaning.schedule(owner, today, today)` for a badge. That range is empty, so the badge count is always 0 and the badge never shows; the call's only effect is `cleaning.reconcile(owner)`, which writes cleaning events. Go does not call it (`go/internal/web/cleaning` keeps `reconcile` private); the next cleaning page view does the same work. If the reviewer wants strict parity, the menu route stays blocked until `reconcile` is exported.
 
-**Paths.** None of the three paths is fully Go yet in the sense of "can be switched with no gap": `/alerts/*` has only this route in Python (POST), `/menu` and `/smart-locks` (GET) are exact paths, so **`/alerts/{id}/dismiss` and `/menu` become fully served by Go**. `/smart-locks` as an exact path is fully served (GET); `/smart-locks/setup`, `/smart-locks/refresh` and `/smart-locks/remove` are other paths and stay on Python (brief 1526, blocked).
+**Paths.** The exact paths `/menu`, `/smart-locks` (GET only in Python) and the one dismiss route under `/alerts/` become fully served by Go. `/smart-locks/setup`, `/smart-locks/refresh` and `/smart-locks/remove` are other paths; they stay on Python (brief 1526, blocked), so do not switch a `/smart-locks/*` prefix.
 
 **Live on deploy.** The routes are registered the moment this deploys. Assumption: `UBYHOST_GO_PATHS` does not name `/menu`, `/smart-locks` or `/alerts/*` today (the server value cannot be read). If any is named, the route is live at once.
 
@@ -70,7 +70,7 @@ e18416986e2107465a7be185542fb359fe675849be7532d1706486f29ef5f579  go/cmd/ubyhost
 SUMS
 ```
 
-Expected: 5 lines ending `OK`. Then `git add go docs/tasks/1520-files 2>/dev/null; git commit -q -m "1520 step 2: copy files"` is NOT needed; commit after step 3.
+Expected: 5 lines ending `OK`.
 
 3. Append the keys and regenerate the catalog (run from the repo root):
 
