@@ -155,8 +155,8 @@ Platform admins see full guest data and all downloads while previewing; optional
 | `UBYHOST_MAIL_BACKEND` | `disabled` | `disabled`, `console` or `ses`. `disabled` also **switches off the claim gate on the guest form**, because there is no way to send the claim link. `ses` is refused unless deployment is production and credentials are complete. |
 | `UBYHOST_MAIL_FROM` | unset | Envelope sender; required for `ses`. |
 | `UBYHOST_SES_REGION` | `eu-central-1` | |
-| `UBYHOST_AWS_ACCESS_KEY_ID` | unset | |
-| `UBYHOST_AWS_SECRET_ACCESS_KEY` | unset | |
+| `UBYHOST_AWS_ACCESS_KEY_ID` | unset | SES credentials of the IAM user with `ses:SendEmail`. Passed to `ubyhost` and, since 1632, to `ubyhost-go` (with `UBYHOST_MAIL_FROM` and `UBYHOST_SES_REGION`), so Go sends login, email-change confirm and invite mails at once. |
+| `UBYHOST_AWS_SECRET_ACCESS_KEY` | unset | SECRET: only in the VM's `.env`. Same services as `UBYHOST_AWS_ACCESS_KEY_ID`. |
 
 ## Door codes (TTLock)
 
