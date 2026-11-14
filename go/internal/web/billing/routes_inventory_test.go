@@ -3,13 +3,15 @@ package billingweb
 import "testing"
 
 // wantRoutes is every method and path of routes/billing.py and routes/admin_billing.py
-// that the briefs 1555 to 1556 have ported so far (13 when 1560 is done).
+// that the briefs 1555 to 1557 have ported so far (13 when 1560 is done).
 var wantRoutes = []string{
 	"GET /predplatne/faktury/{file}",
 	"POST /predplatne/zrusit",
 	"POST /predplatne/obnovit",
 	"GET /admin/fakturace/{file}",
 	"GET /predplatne",
+	"POST /predplatne",
+	"POST /predplatne/zmena",
 }
 
 // TestRoutesNeedNoPool: Routes builds without a pool, and its patterns are exactly wantRoutes.

@@ -14,10 +14,11 @@ type deps struct {
 	pool   *pgxpool.Pool
 	getenv func(string) string
 	now    func() time.Time
+	ares   *AresClient
 }
 
 func newDeps(pool *pgxpool.Pool, getenv func(string) string, now func() time.Time) deps {
-	return deps{pool: pool, getenv: getenv, now: now}
+	return deps{pool: pool, getenv: getenv, now: now, ares: &AresClient{}}
 }
 
 // Routes lists the ported routes. It never touches the pool, so it can be
@@ -34,5 +35,7 @@ func newRoutes(d deps) []Route {
 		{"POST /predplatne/obnovit", d.hostResume},
 		{"GET /admin/fakturace/{file}", d.adminInvoicePDF},
 		{"GET /predplatne", d.hostPlanPage},
+		{"POST /predplatne", d.hostPlanOrder},
+		{"POST /predplatne/zmena", d.hostPlanChange},
 	}
 }
