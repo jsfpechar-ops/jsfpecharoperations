@@ -103,11 +103,11 @@ No other file may change.
 
    Expected: one `--- PASS` line for each of the 5 tests and a final `ok`; no `--- SKIP`, no `--- FAIL`:
 
-   --- PASS: TestWizardEntryMatchesPython (N.NNs)
-   --- PASS: TestWizardTemplatesUseKnownKeys (0.NNs)
+   --- PASS: TestWizardEntryMatchesPython (0.NNs)
    --- PASS: TestWizardPagesMatchesPython (0.NNs)
    --- PASS: TestWizardDoorWindow (0.NNs)
    --- PASS: TestWizardOperatorSelected (0.NNs)
+   --- PASS: TestWizardTemplatesUseKnownKeys (0.NNs)
 
 5. Run the Python side (one call, from `App/`; no `App/.venv`: write "CI only" and go on):
 
@@ -137,7 +137,7 @@ Exactly the commands of §4 (steps 2, 4 and 5). Never the full suite, never `go 
 - [ ] No path was added to `UBYHOST_GO_PATHS`; no Caddy, compose, env or `App/app/` file changed; nothing was pushed to `main`.
 - [ ] UI: the UX gate of rule 10 is **pending** for both pages (dormant; it runs on staging before the owner adds the paths, brief 1602 Owner steps).
 
-**Verified by the brief writer:** in a throwaway worktree of go-wave3 with the steps of briefs 1599 and 1600 applied exactly and in order (`sha256sum -c` all OK), `gofmt -l` printed nothing, build and vet were silent, step 4 passed on PostgreSQL 16 (port 55599) with the 5 named tests `--- PASS` and 0 SKIP, and step 5 printed `4 passed`.
+**Verified by the brief writer:** in a throwaway copy of go-wave3 (an archive of this branch, so none of the writer's untracked files) with the steps of briefs 1599 and 1600 applied exactly and in order (`sha256sum -c` all OK), `gofmt -l` printed nothing, build and vet were silent, step 4 passed on PostgreSQL 16 (port 55599) with the 5 named tests `--- PASS` and 0 SKIP, and step 5 printed `4 passed`.
 
 ## 8. Stop and ask
 

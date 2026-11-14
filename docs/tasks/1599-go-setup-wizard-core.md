@@ -55,7 +55,7 @@ The golden (`testdata/wizard_golden_entry.json`, 31 cases, made by the Python ro
 
 **Paths that become fully served by Go:** none yet. `/apartments/*/setup` and `/apartments/*/setup/*` also take a POST (brief 1602), and four step pages come in 1600 and 1601. **Assumption:** no `/apartments` path is in `UBYHOST_GO_PATHS` today (brief 1527's owner step 1 removes it). If the owner added `/apartments` or `/apartments/*`, these GET pages go live with 501 on four steps the moment this deploys.
 
-**Verified by the brief writer** (in a throwaway worktree of go-wave3, with the steps of this brief applied exactly, sidecars copied as step 1 does): see the paragraph at the end of §7.
+**Verified by the brief writer** (in a throwaway copy of go-wave3 (an archive of this branch, so none of the writer's untracked files), with the steps of this brief applied exactly, sidecars copied as step 1 does): see the paragraph at the end of §7.
 
 ## 3. Files
 
@@ -150,7 +150,7 @@ No other file may change.
 
    Expected: one `--- PASS` line for each of the 8 tests and two final `ok` lines; no `--- SKIP`, no `--- FAIL`:
 
-   --- PASS: TestWizardEntryMatchesPython (N.NNs)
+   --- PASS: TestWizardEntryMatchesPython (0.NNs)
    --- PASS: TestWizardSlugIsCreatedOnce (0.NNs)
    --- PASS: TestWizardLockAllowed (0.NNs)
    --- PASS: TestWizardOperatorFirstName (0.NNs)
@@ -187,7 +187,7 @@ Exactly the commands of §4 (steps 2, 4 and 5). Never the full suite, never `go 
 - [ ] No path was added to `UBYHOST_GO_PATHS`; no Caddy, compose, env or `App/app/` file changed; nothing was pushed to `main`.
 - [ ] UI: the UX gate of rule 10 is **pending**. The pages are dormant (no path routes to them) and the Python-side browser tests cannot reach the Go service. `test_layout_lint_browser.py`, the 390, 768 and 1280 px screenshots of each wizard page and a line per page in the PR run on staging before the owner adds the paths (brief 1602, Owner steps).
 
-**Verified by the brief writer:** in a throwaway worktree of go-wave3 with the steps of this brief applied exactly (sidecars copied as step 1 does, `sha256sum -c` all OK), `gofmt -l` printed nothing, `go build ./...` and `go vet ./internal/web/onboarding/... ./cmd/...` were silent, step 4 passed on PostgreSQL 16 (port 55599) with the 8 named tests `--- PASS` and 0 SKIP, and step 5 printed `3 passed`. Running `App/scripts/onboarding_wizard_golden.py` twice wrote a byte-identical golden.
+**Verified by the brief writer:** in a throwaway copy of go-wave3 (an archive of this branch, so none of the writer's untracked files) with the steps of this brief applied exactly (sidecars copied as step 1 does, `sha256sum -c` all OK), `gofmt -l` printed nothing, `go build ./...` and `go vet ./internal/web/onboarding/... ./cmd/...` were silent, step 4 passed on PostgreSQL 16 (port 55599) with the 8 named tests `--- PASS` and 0 SKIP, and step 5 printed `3 passed`. Running `App/scripts/onboarding_wizard_golden.py` twice wrote a byte-identical golden.
 
 ## 8. Stop and ask
 

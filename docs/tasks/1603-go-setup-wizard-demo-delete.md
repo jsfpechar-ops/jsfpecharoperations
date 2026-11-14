@@ -11,7 +11,7 @@ Executor: none until unblocked
 
 Serve the last branch of `POST /apartments/{apartment_id}/setup` on Go: `step=try_it`, `action=skip` while the property has a demo stay. Python (`App/app/routes/onboarding_wizard.py` 362-366) calls `demo.delete_demo_stay` (`App/app/demo.py` 126-144), audits `apartment=N step=try_it action=skip` and goes back to the finish page with the flash `flash.setup.demo_deleted`. After brief 1602, Go answers 501 there and writes nothing (`wizard_post.go`, `TestWizardSkipWithDemoStayIs501`). Without this brief the owner should not route the wizard paths to Go: "Delete and continue" is the main button of the try-it page once a demo guest has registered.
 
-## 2. What is missing (why it is blocked)
+## 2. Context: what is missing (why it is blocked)
 
 `delete_demo_stay` does four things in order: for each guest of the demo stay `passport_photos.delete_photo(guest_id)` (it unlinks every file `$UBYHOST_DATA_DIR/passport_photos/<guest_id>.*`), then `DELETE FROM alert`, `DELETE FROM guest` and `DELETE FROM reservation WHERE ... AND source = 'demo'`. The three DELETEs are plain SQL and easy to port. The file part is not, inside the rules of this series:
 
@@ -20,13 +20,43 @@ Serve the last branch of `POST /apartments/{apartment_id}/setup` on Go: `step=tr
 
 Nothing else is missing: the 1599 context, the 1602 route and its audit helper are in place.
 
-## 3. When unblocked (plan for the brief writer)
+## 3. Files
+
+None until unblocked (then `go/internal/web/onboarding/wizard_post.go` changes, a golden part and its tests are added; see §4).
+
+## 4. Steps
+
+None. Plan for the brief writer once unblocked:
 
 - Owner: a writable `/data` for `ubyhost-go` (or a dedicated writable `passport_photos` mount), decided in `docs/context/decisions.md`.
 - A small brief in the photo-sweep area exports the delete of `photosweep/files.go` with its tests.
 - This brief then: in `wizard_post.go`, replace the 501 branch by a port of `delete_demo_stay` (check the stay is the property's and `source = 'demo'`, delete the photo files of its guests through the exported function, then the alerts, guests and the stay, in one transaction for the rows), the audit line and `hostweb.Back(... done, msg flash.setup.demo_deleted)`; remove `TestWizardSkipWithDemoStayIs501`; add a golden part (`onboarding_wizard_golden_demo.py`) with the skip on apartments 20 and 22 of the 1599 seed and a photo file for guest 501, comparing the final rows and that the file is gone.
 
-## 4. Owner steps
+## 5. Do not touch
+
+Everything: do not run this brief.
+
+## 6. Commands
+
+None.
+
+## 7. Acceptance
+
+None.
+
+## 8. Stop and ask
+
+Do not run this brief.
+
+## 9. Report
+
+None.
+
+## Risk list (for the reviewer)
+
+When unblocked: the delete must keep Python's guard (`is_demo_stay`: only a stay of that property with `source = 'demo'`), delete the photo files before the rows, and never touch a real stay.
+
+## Owner steps
 
 1. Decide whether the Go web service may write to the data volume (the same question as brief 1447). Tell the orchestrator.
 2. Until this brief is done, keep `/apartments/*/setup` and `/apartments/*/setup/*` out of `UBYHOST_GO_PATHS` (brief 1602, Owner steps).
