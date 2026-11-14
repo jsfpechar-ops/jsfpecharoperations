@@ -1,6 +1,6 @@
 # 1559: Go subscription billing, part 5: operator storno and the two zip exports
 
-Status: todo
+Status: review
 Depends on: 1558 | Base commit: none (one big PR mode: the branch that is checked out) | Branch: the current one
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

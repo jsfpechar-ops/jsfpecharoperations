@@ -39,5 +39,8 @@ func newRoutes(d deps) []Route {
 		{"POST /predplatne/zmena", d.hostPlanChange},
 		{"POST /admin/fakturace/vypis", d.adminStatement},
 		{"POST /admin/fakturace/{invoice_id}/zaplaceno", d.adminMarkPaid},
+		{"POST /admin/fakturace/{invoice_id}/storno", d.adminStorno},
+		{"GET /admin/fakturace/export-vse", d.adminExportAll},
+		{"GET /admin/fakturace/export", d.adminExport},
 	}
 }
