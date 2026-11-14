@@ -6,7 +6,7 @@ import (
 )
 
 // wantRoutes is every method and path of App/app/routes/exports.py that
-// briefs 1320, 1321 and 1605 to 1605 have ported (9 of 13; 13 when 1609 is done).
+// briefs 1320, 1321 and 1605 to 1606 have ported (10 of 13; 13 when 1609 is done).
 var wantRoutes = []string{
 	"GET /reservations.csv",
 	"GET /submissions/receipts.zip",
@@ -17,6 +17,7 @@ var wantRoutes = []string{
 	"GET /housebook.csv",
 	"GET /guests/{id}/export.json",
 	"GET /guests/{id}/form.pdf",
+	"GET /housebook/pdfs.zip",
 }
 
 // TestExportRoutesInventory: Routes builds without a pool, and its patterns
