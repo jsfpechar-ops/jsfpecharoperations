@@ -1,0 +1,263 @@
+package booking
+
+// GET /p/{slug} (property_page_view, property_page.py 38-76) and
+// POST /p/{slug}/book (property_page_book, 294-315). Both read the database;
+// the pay_mode choice here mirrors booking_rails.pay_modes.
+
+import (
+	"html/template"
+	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+const scopeProperty = "property_page"
+
+// BookErrors is property_page.BOOK_ERRORS: the only ?book= values shown.
+var BookErrors = []string{"bad_dates", "min_nights", "too_soon", "guests", "no_price", "taken",
+	"bad_email", "bad_name", "name_too_long", "terms", "unavailable", "cancelled"}
+
+var iconPaths = map[string]string{
+	"arrow-right": `<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>`,
+}
+
+func init() {
+	guestFuncs["icon"] = func(name string, size int) template.HTML {
+		width := "1.75"
+		if size <= 16 {
+			width = "2"
+		}
+		return template.HTML(`<svg class="ui-icon" width="` + strconv.Itoa(size) + `" height="` + strconv.Itoa(size) +
+			`" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="` + width +
+			`" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="` +
+			template.HTMLEscapeString(name) + `">` + iconPaths[name] + `</svg>`)
+	}
+	guestFuncs["inc"] = func(i int) int { return i + 1 }
+}
+
+// Money is the page's money macro: 12 345 with no-break spaces, then the unit.
+func (g Guest) Money(n int) string { return money(g.Lang, n) }
+
+func money(lang string, n int) string {
+	digits := strconv.Itoa(n)
+	sign := ""
+	if n < 0 {
+		sign, digits = "-", digits[1:]
+	}
+	var b strings.Builder
+	for i, c := range digits {
+		if i > 0 && (len(digits)-i)%3 == 0 {
+			b.WriteString(" ")
+		}
+		b.WriteRune(c)
+	}
+	return sign + b.String() + " " + guestStrings.T(lang, "payments.czk", nil)
+}
+
+// TP is tp(): a counted string in the form its count needs (one, few, many).
+func (g Guest) TP(base string, n int) string {
+	key := base
+	switch {
+	case n == 1:
+		key = base + ".one"
+	case n >= 2 && n <= 4:
+		key = base + ".few"
+	}
+	return guestStrings.T(g.Lang, key, map[string]any{"count": n, "n": n})
+}
+
+// PageData is the Data of the property page and the quote page.
+type PageData struct {
+	Page *Page
+	Slug string
+	Q    Quote
+}
+
+// Deps are what the page handlers read besides the request.
+type Deps struct {
+	Pool   *pgxpool.Pool
+	Getenv func(string) string
+	Now    func() time.Time
+}
+
+func queryParam(r *http.Request) func(string) string {
+	return func(k string) string {
+		v := r.URL.Query()[k]
+		if len(v) == 0 {
+			return ""
+		}
+		return v[len(v)-1]
+	}
+}
+
+func isBookError(v string) bool {
+	for _, e := range BookErrors {
+		if v == e {
+			return true
+		}
+	}
+	return false
+}
+
+// RenderPage is _render_page: the public page for apartmentID, with an
+// optional book error and typed values. status is the HTTP status; extra are
+// response headers. A missing apartment is 404.
+func (d Deps) RenderPage(w http.ResponseWriter, r *http.Request, set *template.Template, slug string, apartmentID int64,
+	get func(string) string, bookErr string, values FormValues, status int, extra map[string]string) {
+	ctx := r.Context()
+	at := d.Now()
+	pg, err := LoadPage(ctx, d.Pool, d.Getenv, apartmentID)
+	if err != nil {
+		serverError(w, "page", err)
+		return
+	}
+	if pg == nil {
+		http.NotFound(w, r)
+		return
+	}
+	lang := pageLang(r)
+	if l := get("lang"); l == "cs" || l == "en" {
+		lang = l
+	}
+	ready, err := WidgetReady(ctx, d.Pool, d.Getenv, apartmentID)
+	if err != nil {
+		serverError(w, "widget", err)
+		return
+	}
+	pg.Bookable = ready
+	pg.BookError = bookErr
+	if pg.BookError == "" {
+		pg.BookError = get("book")
+	}
+	if !isBookError(pg.BookError) {
+		pg.BookError = ""
+	}
+	pg.FormValues = values
+	if ready {
+		if pg.Booking, err = BuildBookingView(ctx, d.Pool, slug, apartmentID, lang, get, at); err != nil {
+			serverError(w, "booking view", err)
+			return
+		}
+		owner, _, err := OwnerOf(ctx, d.Pool, apartmentID)
+		if err == nil {
+			pg.PayModes, err = PayModes(ctx, d.Pool, StripeMode(d.Getenv), apartmentID, owner)
+		}
+		if err != nil {
+			serverError(w, "pay modes", err)
+			return
+		}
+	}
+	g := Guest{Lang: lang, Title: pg.Name, Data: PageData{Page: pg, Slug: slug}}
+	writeGuest(w, r, set, status, g, extra)
+}
+
+// PropertyPageHandler serves GET /p/{slug}.
+func PropertyPageHandler(pool *pgxpool.Pool, getenv func(string) string, now func() time.Time) http.HandlerFunc {
+	set := newSet("property.tmpl")
+	d := Deps{pool, getenv, now}
+	return func(w http.ResponseWriter, r *http.Request) {
+		if limited(w, r, pool, scopeProperty, now()) {
+			return
+		}
+		slug := r.PathValue("slug")
+		res, err := Resolve(r.Context(), pool, slug)
+		if err != nil {
+			serverError(w, "resolve", err)
+			return
+		}
+		switch res.Kind {
+		case "redirect":
+			w.Header().Set("Location", RedirectPath(res))
+			w.WriteHeader(http.StatusMovedPermanently)
+		case "live":
+			d.RenderPage(w, r, set, slug, res.ApartmentID, queryParam(r), "", FormValues{}, http.StatusOK, nil)
+		default:
+			http.NotFound(w, r)
+		}
+	}
+}
+
+// BookErrorRedirect is _book_error: 303 back to the page with ?book=<kind>.
+// With a form, its dates and guests (first 10 characters) are kept.
+func BookErrorRedirect(w http.ResponseWriter, slug, kind, lang string, form url.Values) {
+	q := "book=" + url.QueryEscape(kind) + "&lang=" + url.QueryEscape(lang)
+	if form != nil {
+		for _, name := range []string{"date_from", "date_to", "guests"} {
+			if v := first10(strings.TrimSpace(form.Get(name))); v != "" {
+				q += "&" + name + "=" + url.QueryEscape(v)
+			}
+		}
+	}
+	w.Header().Set("Location", "/p/"+slug+"?"+q+"#book")
+	w.WriteHeader(http.StatusSeeOther)
+}
+
+// readForm parses a urlencoded or multipart body of at most 1 MiB.
+func readForm(w http.ResponseWriter, r *http.Request) url.Values {
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+	if err := r.ParseMultipartForm(1 << 20); err != nil && err != http.ErrNotMultipart {
+		_ = r.ParseForm()
+	}
+	return r.PostForm
+}
+
+// BookHandler serves POST /p/{slug}/book: dates and guests in, the quote and
+// the guest form out. Nothing is held here.
+func BookHandler(pool *pgxpool.Pool, getenv func(string) string, now func() time.Time) http.HandlerFunc {
+	set := newSet("book.tmpl")
+	return func(w http.ResponseWriter, r *http.Request) {
+		slug := r.PathValue("slug")
+		ctx := r.Context()
+		apartmentID, ok, err := BookableApartment(ctx, pool, getenv, slug)
+		if err != nil {
+			serverError(w, "book apartment", err)
+			return
+		}
+		if !ok {
+			http.NotFound(w, r)
+			return
+		}
+		form := readForm(w, r)
+		guests := form.Get("guests")
+		if guests == "" {
+			guests = "1"
+		}
+		q, err := GetQuote(ctx, pool, apartmentID, strings.TrimSpace(form.Get("date_from")),
+			strings.TrimSpace(form.Get("date_to")), pyInt(guests), now())
+		if err != nil {
+			serverError(w, "book quote", err)
+			return
+		}
+		if q.Error != "" {
+			BookErrorRedirect(w, slug, q.Error, "cs", nil)
+			return
+		}
+		pg, err := LoadPage(ctx, pool, getenv, apartmentID)
+		if err != nil || pg == nil {
+			if err != nil {
+				serverError(w, "book page", err)
+				return
+			}
+			http.NotFound(w, r)
+			return
+		}
+		// Python renders this page with lang "en" and a page dict without
+		// pay_modes, so the hidden pay_mode is always "stripe".
+		writeGuest(w, r, set, http.StatusOK, Guest{Lang: "en", Title: guestStrings.T("en", "pp.book.title", nil) + " · " + pg.Name,
+			Data: PageData{Page: pg, Slug: slug, Q: q}}, nil)
+	}
+}
+
+func init() {
+	guestFuncs["seq"] = func(from, to int) []int {
+		var out []int
+		for i := from; i <= to; i++ {
+			out = append(out, i)
+		}
+		return out
+	}
+}
