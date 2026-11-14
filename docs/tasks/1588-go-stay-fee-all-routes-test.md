@@ -1,6 +1,6 @@
 # 1588: Go stay fee pages: all 16 routes registered (test only)
 
-Status: todo
+Status: review
 Depends on: 1581, 1582, 1583, 1584, 1585, 1586, 1587 (and the routes that were already in Go from 1330) | Base commit: current tip of the working branch | Branch: task/1588-go-stay-fee-all-routes-test
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier C
 
