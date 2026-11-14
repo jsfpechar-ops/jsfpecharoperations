@@ -1,6 +1,6 @@
 # 1502: Go login pages (dormant): GET/POST /login, GET/POST /login/link, and the signed-out page renderer
 
-Status: todo
+Status: review
 Depends on: 1501 (on go-wave3: `clientip`, `turnstile`, `web/auth/finish.go`, `mail/auth_queue.go`); 1280 and 1282 are merged (`session/loginlink.go`, `web/auth/auth.go` `Routes`). Not 1514. | Base commit: 859d114d5 | Branch: go-wave3
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (about 14 calls)
 
