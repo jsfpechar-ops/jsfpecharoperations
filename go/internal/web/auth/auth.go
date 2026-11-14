@@ -62,6 +62,10 @@ func Routes(pool *pgxpool.Pool, getenv func(string) string, now func() time.Time
 		{"POST /admin/ads-conversions.csv", "/admin/ads-conversions.csv", d.adsConversionsCSV},
 		{"POST /admin/users/{id}/ads-consent/withdraw", "/admin/users/{id}/ads-consent/withdraw", d.adsConsentWithdraw},
 		{"POST /settings/privacy/ad-consent", "/settings/privacy/ad-consent", d.adConsentSettings},
+		{"GET /login", "/login", d.loginForm},
+		{"POST /login", "/login", d.loginSubmit},
+		{"GET /login/link", "/login/link", d.loginLinkForm},
+		{"POST /login/link", "/login/link", d.loginLinkSubmit},
 	}
 }
 
