@@ -12,6 +12,8 @@ Python `require_login` lets a paused (read-only) workspace POST to a short list 
 
 ## 2. Context
 
+**Verified by the brief writer** (PostgreSQL 16, all five steps applied exactly as written on go-wave3, then dropped): gofmt clean, `go build ./...` and `go vet` clean; `TestReadOnlyOpenMatchesPython`, `TestReadOnlyOpen`, `TestLoginPausedExemptions` (12 subtests) and `TestPausedHostStillPostsToPlanPage` pass; `go test ./internal/hostweb/... ./internal/web/... ./internal/session/...` all `ok` (17 packages, no FAIL) including the existing web/auth, web/billing, web/exports, web/privacy and web/properties tests, with the removed masks, so no mask had to be kept. Skips: 2 (screenshot servers). Two corrections made while verifying: the billing test package is `billingweb`, and web/auth.go loses the `regexp` import.
+
 Tier A (sessions). Rules: 3 nothing real in the repo; 4 no new dependency. No file under `App/app/` changes. Dormant: nothing changes in production until a path is switched to Go.
 
 **Python (the documented side), `App/app/auth.py`:**
@@ -107,11 +109,11 @@ func ReadOnlyOpen(path string) bool {
 
 2. Create `go/internal/hostweb/gate_paused_test.go` (package `hostweb`): `TestReadOnlyOpenMatchesPython` reads `../../../App/app/auth.py` with `os.ReadFile` (fatal if missing), finds the tuple with the regexp `_READ_ONLY_OPEN_PREFIXES = \(([^)]*)\)` and the path regex with `_READ_ONLY_OPEN_PATHS = re\.compile\(\s*r"([^"]+)"`, and checks: the quoted strings of the tuple, in order, equal `readOnlyOpenPrefixes`; the Python regex string equals `readOnlyOpenPaths.String()`. Then a table test of `ReadOnlyOpen`: true for `/predplatne`, `/predplatne/obnovit`, `/logout`, `/account/logout-all`, `/settings/privacy/ad-consent`, `/exports/x`, `/reservations/submit-ready`, `/reservations/12/submit`, `/guests/7/resend`; false for `/reservations/12`, `/reservations/x/submit`, `/guests/7`, `/apartments`, `/admin/incidents`, `/`. Run `cd go && go test ./internal/hostweb/ -run 'ReadOnlyOpen' -count=1 -v 2>&1 | tail -15`: PASS. Commit `1631 step 2`.
 
-3. Remove the web/auth mask. In `go/internal/web/auth/auth.go` delete the comment and `var (readOnlyOpenPrefixes ... readOnlyOpenPaths ...)` block, `func readOnlyOpen`, the `openPost` comment and const, and in `login()` replace the `req := r` ... `req.Method = openPost` ... `}` lines so the body is: `h, err := hostweb.Login(bare{w}, r, d.pool, d.getenv, at)` (keep the error handling and the return). Fix the doc comment of `login` to say `hostweb.Login exempts the read-only-open paths itself`. Remove imports left unused (`regexp`, maybe `strings`; check with the build). Run `cd go && gofmt -l internal/web/auth; go vet ./internal/web/auth/ 2>&1 | tail -5`. Commit `1631 step 3`.
+3. Remove the web/auth mask. In `go/internal/web/auth/auth.go` delete the comment and `var (readOnlyOpenPrefixes ... readOnlyOpenPaths ...)` block, `func readOnlyOpen`, the `openPost` comment and const, and in `login()` replace the `req := r` ... `req.Method = openPost` ... `}` lines so the body is: `h, err := hostweb.Login(bare{w}, r, d.pool, d.getenv, at)` (keep the error handling and the return). Fix the doc comment of `login` to say `hostweb.Login exempts the read-only-open paths itself`. Remove the now-unused import `"regexp"` (`strings` is still used; check with the build). Run `cd go && gofmt -l internal/web/auth; go vet ./internal/web/auth/ 2>&1 | tail -5`. Commit `1631 step 3`.
 
 4. Remove the web/billing mask. In `routes.go` delete the `open bool` field and its comment lines in `gate`, and in `login()` replace the `lr := r ... lr.Method = http.MethodGet ... }` block with a direct `h, err = hostweb.Login(w, r, d.pool, d.getenv, at)`; then `sed -i 's/gate{open: true}/gate{}/' go/internal/web/billing/{plan_page,host_actions,routes}.go`. Run `cd go && gofmt -l internal/web/billing; go vet ./internal/web/billing/ 2>&1 | tail -5`. Commit `1631 step 4`.
 
-5. Create `go/internal/web/billing/paused_exempt_test.go` (package `billing`; reuse `testPool`, `seedUsers`, `seedAccount`, `sessionFor`, `csrfPair`, `testEnvMap`, `testNow`, `testSecret`; `go test` must not skip, so `UBYHOST_TEST_DATABASE_URL` is set). `TestLoginPausedExemptions`: pool, `seedUsers`, `seedAccount(t, pool, 1, "paused", "standard", "month")`; a handler `func(w, r)` that calls `hostweb.Login(w, r, pool, testEnvMap(nil), testNow)` and, when it returns a host, writes `204`. Table of `(who, method, path, want)` sent through `httptest` with the session cookie `sessionFor(who, testNow)` (no CSRF needed, `Login` does not check it):
+5. Create `go/internal/web/billing/paused_exempt_test.go` (package `billingweb`, not `billing`; reuse `testPool`, `seedUsers`, `seedAccount`, `sessionFor`, `csrfPair`, `testEnvMap`, `testNow`, `testSecret`; `go test` must not skip, so `UBYHOST_TEST_DATABASE_URL` is set). `TestLoginPausedExemptions`: pool, `seedUsers`, `seedAccount(t, pool, 1, "paused", "standard", "month")`; a handler `func(w, r)` that calls `hostweb.Login(w, r, pool, testEnvMap(nil), testNow)` and, when it returns a host, writes `204`. Table of `(who, method, path, want)` sent through `httptest` with the session cookie `sessionFor(who, testNow)` (no CSRF needed, `Login` does not check it):
    - `host1` POST `/account/logout-all`, `/settings/privacy/ad-consent`, `/predplatne/obnovit`, `/logout`, `/exports/x`, `/reservations/5/submit`, `/guests/5/resend`: `204`.
    - `host1` POST `/apartments`, `/reservations/5`: `303` with Location exactly `/predplatne?paused=1`.
    - `host1` GET `/apartments`: `204` (a paused plan only blocks POST).
@@ -130,7 +132,7 @@ From the repo root. Start a PostgreSQL 16 on a unique port with data dir under `
 
 - `cd go && go build ./... 2>&1 | tail -30` prints nothing.
 - `cd go && go vet ./internal/... ./cmd/... 2>&1 | tail -30` prints nothing.
-- `cd go && go test ./internal/hostweb/... ./internal/web/... ./internal/session/... -count=1 -v 2>&1 | grep -c '^\s*--- SKIP'` prints `0` (no test skipped; report the number). Then the same command with `| grep -v '^\(=== \|\s*--- PASS\|PASS\|ok\)' | tail -30` shows no FAIL.
+- `cd go && go test ./internal/hostweb/... ./internal/web/... ./internal/session/... -count=1 -v 2>&1 | grep -c '^\s*--- SKIP'` prints `2`: the only skips are `TestServePagesForScreenshots` and `TestServeForScreenshots` (they need `PUBLIC_PAGES_SHOTS_ADDR` / `PUBLIC_LEGAL_SHOTS_ADDR`, unrelated); any other skip is a failure. Report the number. Then the same command with `| grep -v '^\(=== \|\s*--- PASS\|PASS\|ok\)' | tail -30` shows no FAIL.
 - `python3 scripts/context_lint.py 2>&1 | grep -v '^WARN' | tail -5` shows no error naming 1631.
 
 ## 7. Acceptance
@@ -139,7 +141,7 @@ From the repo root. Start a PostgreSQL 16 on a unique port with data dir under `
 - [ ] `grep -rn 'openPost\|g\.open\|gate{open' go/internal | wc -l` prints `0` (or, if you kept a mask per section 2, the report says which and why).
 - [ ] `grep -c '_READ_ONLY_OPEN' go/internal/hostweb/gate_paused_test.go` prints at least `2`.
 - [ ] The tests of step 2 and 5 pass; the paused POST to `/apartments` is `303 /predplatne?paused=1`, to the five exempt paths `204`, impersonating admin `204`.
-- [ ] Section 6 output as stated, 0 skipped.
+- [ ] Section 6 output as stated, exactly the 2 screenshot skips.
 - [ ] `git diff --stat <first 1631 commit>^..HEAD` lists only section 3 files.
 
 ## 8. Stop and ask
