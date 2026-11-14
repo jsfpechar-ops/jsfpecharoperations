@@ -1,6 +1,6 @@
 # 1471: goose 00017_goose_parity (6 foreign keys DEFERRABLE, 19 text columns COLLATE "C")
 
-Status: todo
+Status: blocked
 Depends on: none | Base: the current branch (claude/happy-babbage-2zeeam: holds PR #982, 1263 and 1470; writer verified on d3817813d) | Branch: none, see below
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Tier A (migrations). Plan: [sqlite-retirement](../plans/sqlite-retirement.md) step S2.
