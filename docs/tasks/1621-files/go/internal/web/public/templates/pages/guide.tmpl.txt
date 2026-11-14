@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="{{.Lang}}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f7f5">
+  <title>{{.E .Guide.Title}} · UbyHost</title>
+  <meta name="description" content="{{.E .Guide.Description}}">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="{{.Canonical}}">
+  {{range .Alternates}}
+  <link rel="alternate" hreflang="{{.Code}}" href="{{.Href}}">
+  {{end}}
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="UbyHost">
+  <meta property="og:title" content="{{.E .Guide.Title}}">
+  <meta property="og:description" content="{{.E .Guide.Description}}">
+  <meta property="og:url" content="{{.Canonical}}">
+  <meta property="og:locale" content="{{.OGLocale}}">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
+  <link rel="stylesheet" href="/static/tokens.css?v=20261022-0284">
+  <link rel="stylesheet" href="/static/landing.css?v=20261109-1063a">
+  <script type="application/ld+json">
+  {{.ArticleJSON}}
+  </script>
+  {{template "pposthog" .}}
+</head>
+<body>
+{{template "pheader" .}}
+
+  <main id="content" class="guide-shell">
+    <nav class="guide-breadcrumbs" aria-label="{{.T "guide.breadcrumb_nav"}}">
+      <a href="/?lang={{.Lang}}">UbyHost</a><span aria-hidden="true">/</span><span aria-current="page">{{.E .Guide.Title}}</span>
+    </nav>
+    <article>
+      <header class="guide-hero">
+        <p class="landing-eyebrow">{{.E .Guide.Eyebrow}}</p>
+        <h1>{{.E .Guide.Title}}</h1>
+        <p class="guide-lede">{{.E .Guide.Lede}}</p>
+        <p class="guide-updated">{{.T "guide.updated" "date" .Guide.Updated}}</p>
+      </header>
+
+      <div class="guide-layout">
+        <div class="guide-content">
+          {{range .Guide.Sections}}
+            <section>
+              <h2>{{$.E .Heading}}</h2>
+              {{range .Paragraphs}}
+                <p>{{$.E .}}</p>
+              {{end}}
+            </section>
+          {{end}}
+        </div>
+
+        <aside class="guide-checklist">
+          <p class="landing-eyebrow">{{.T "guide.checklist"}}</p>
+          <ul>
+            {{range .Guide.Checklist}}
+              <li><span aria-hidden="true">{{$.Icon "check"}}</span>{{$.E .}}</li>
+            {{end}}
+          </ul>
+          <a href="/login?lang={{.Lang}}" class="landing-button primary" data-analytics-event="login_click">{{.T "landing.cta"}}</a>
+          <a href="/jak-to-funguje?lang={{.Lang}}" class="guide-product-link">{{.T "landing.details.link"}} </a>
+        </aside>
+      </div>
+
+      <aside class="landing-official guide-official">
+        <div>
+          <strong>{{.T "guide.official_title"}}</strong>
+          <p>{{.T "landing.disclaimer"}}</p>
+        </div>
+        <a href="{{.E .Guide.OfficialURL}}" rel="noopener noreferrer" target="_blank">ipc.gov.cz <span aria-hidden="true">{{.Icon "external-link"}}</span></a>
+      </aside>
+
+      <nav class="guide-more" aria-label="{{.T "guide.more_nav"}}">
+        <strong>{{.T "guide.more"}}</strong>
+        {{range .Guides}}
+            <a href="/pruvodce/{{$.E .Slug}}?lang={{$.Lang}}">{{$.E .Title}} </a>
+        {{end}}
+      </nav>
+    </article>
+  </main>
+
+{{template "pfooter" .}}
+</body>
+</html>
