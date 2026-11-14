@@ -1,6 +1,6 @@
 # 1435: Go port of the Leon setup wizard pages: entry, steps and save
 
-Status: todo
+Status: review
 Depends on: 1433 (Havel pages: its handler gate and test rig) | Base commit: the current head of the working branch | Branch: the current branch (one big PR)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B (privacy-relevant outbound request: the assistant's model calls)
 
