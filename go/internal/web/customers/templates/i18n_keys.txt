@@ -151,3 +151,17 @@ billing.admin.status.done
 billing.admin.status.refused
 customers.ops.verify_refused
 customers.ops.verify_sent
+# Plan, discount and assign actions (brief 1591).
+billing.admin.assign.done
+billing.admin.assign.error
+billing.admin.assign.refused
+billing.admin.discount.bad_percent
+billing.admin.discount.discount_out_of_range
+billing.admin.discount.done
+billing.admin.discount.done_reissued
+billing.admin.discount.no_plan
+billing.admin.discount.reason_missing
+billing.admin.plan.bad_field
+billing.admin.plan.bad_value
+billing.admin.plan.done
+billing.admin.plan.refused
