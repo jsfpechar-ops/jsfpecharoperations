@@ -70,6 +70,7 @@ func Routes(pool *pgxpool.Pool, getenv func(string) string, now func() time.Time
 		{"POST /admin/users", "/admin/users", d.userCreate},
 		{"POST /admin/users/{id}/invite", "/admin/users/{id}/invite", d.userInvite},
 		{"POST /admin/users/{id}/email", "/admin/users/{id}/email", d.userEmailSet},
+		{"POST /admin/users/{id}/export", "/admin/users/{id}/export", d.workspaceExport},
 	}
 }
 

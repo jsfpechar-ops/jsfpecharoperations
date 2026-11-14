@@ -2,6 +2,7 @@
  "cs": {
   "auth.error.code_invalid": "Kód nefunguje. Kódy se mění každých 30 vteřin. Zadejte ten, který vidíte teď.",
   "auth.error.code_locked": "Příliš mnoho chybných kódů. Počkejte 15 minut a pak se přihlaste znovu od začátku.",
+  "auth.error.recent_login": "Z bezpečnostních důvodů se odhlaste, znovu přihlaste a do 10 minut to zopakujte.",
   "auth.error.username": "Použijte 3–32 malých písmen, číslic, teček, pomlček nebo podtržítek.",
   "flash.accounts.guest_details_mail_off": "Potvrzovací e-mail obsahuje jen jména.",
   "flash.accounts.guest_details_mail_on": "Potvrzovací e-mail obsahuje údaje o hostech.",
@@ -12,6 +13,7 @@
   "flash.accounts.twofa_disabled": "Autentizační aplikace vypnuta.",
   "flash.error.incident_summary": "Je vyžadováno shrnutí.",
   "flash.error.no_such_incident": "Takový incident neexistuje.",
+  "flash.error.no_such_user": "Takový uživatel neexistuje.",
   "flash.incidents.created": "Incident zaznamenán.",
   "flash.incidents.saved": "Incident aktualizován.",
   "flash.signup.consent_withdrawn.google": "Souhlas pro Google Ads byl odvolán a identifikátor kliknutí smazán.",
@@ -28,6 +30,7 @@
  "en": {
   "auth.error.code_invalid": "That code didn't work. Codes change every 30 seconds. Enter the one showing now.",
   "auth.error.code_locked": "Too many wrong codes. Wait 15 minutes, then log in again from the start.",
+  "auth.error.recent_login": "For your safety, log out and log in again, then repeat this within 10 minutes.",
   "auth.error.username": "Use 3–32 lowercase letters, numbers, dots, dashes, or underscores.",
   "flash.accounts.guest_details_mail_off": "The confirmation e-mail shows names only.",
   "flash.accounts.guest_details_mail_on": "Guest details are in the confirmation e-mail.",
@@ -38,6 +41,7 @@
   "flash.accounts.twofa_disabled": "Authenticator app switched off.",
   "flash.error.incident_summary": "A summary is required.",
   "flash.error.no_such_incident": "No such incident.",
+  "flash.error.no_such_user": "No such user.",
   "flash.incidents.created": "Incident recorded.",
   "flash.incidents.saved": "Incident updated.",
   "flash.signup.consent_withdrawn.google": "Google Ads consent withdrawn and the click identifier deleted.",
@@ -54,6 +58,7 @@
  "vi": {
   "auth.error.code_invalid": "Mã không đúng. Mã thay đổi mỗi 30 giây. Hãy nhập mã đang hiển thị.",
   "auth.error.code_locked": "Nhập sai mã quá nhiều lần. Đợi 15 phút rồi đăng nhập lại từ đầu.",
+  "auth.error.recent_login": "Vì lý do an toàn, hãy đăng xuất rồi đăng nhập lại, sau đó thực hiện lại trong vòng 10 phút.",
   "auth.error.username": "Dùng 3–32 ký tự gồm chữ thường, chữ số, dấu chấm, dấu gạch ngang hoặc gạch dưới.",
   "flash.accounts.onboarding_emails_off": "Đã tắt mẹo thiết lập qua e-mail.",
   "flash.accounts.onboarding_emails_on": "Đã bật mẹo thiết lập qua e-mail.",
@@ -62,6 +67,7 @@
   "flash.accounts.twofa_disabled": "Đã tắt ứng dụng xác thực.",
   "flash.error.incident_summary": "Cần có tóm tắt.",
   "flash.error.no_such_incident": "Không có sự cố này.",
+  "flash.error.no_such_user": "Không có người dùng này.",
   "flash.incidents.created": "Đã ghi nhận sự cố.",
   "flash.incidents.saved": "Đã cập nhật sự cố.",
   "flash.signup.consent_withdrawn.google": "Đã rút lại đồng ý Google Ads và xóa mã nhấp chuột.",
