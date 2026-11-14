@@ -1,6 +1,6 @@
 # 1641: Go image pipeline: golang.org/x/image and `go/internal/imgproc` (uploaded photo to a clean JPEG)
 
-Status: todo
+Status: review
 Tier: A (a new dependency, and the code that decodes files strangers upload)
 Depends on: none (nothing routes to it yet; brief 1447 uses it) | Base commit: current branch (One big PR mode) | Branch: current branch
 Executor: Haiku 5.5 | Fits one session: 20 tool calls, 40k tokens

@@ -4,6 +4,7 @@ Docker and age are not available in CI, so stub `docker` and `age` binaries on
 PATH record every call and stand in for the real ones. No test touches a server.
 """
 
+import json
 import os
 import re
 import shutil
@@ -580,7 +581,7 @@ def test_walg_sidecar_is_profiled_unprivileged_and_has_no_secrets():
     assert "ubyhost-pgsock:/var/run/postgresql" in walg["volumes"]
     for key in ("ports", "expose", "network_mode", "networks", "environment"):
         assert key not in walg
-    text = COMPOSE.read_text() + (WALG_DIR / "Dockerfile").read_text()
+    text = json.dumps(walg) + (WALG_DIR / "Dockerfile").read_text()
     for forbidden in ("AWS_SECRET", "AKIA", "LIBSODIUM_KEY=", "s3://"):
         assert forbidden not in text
 

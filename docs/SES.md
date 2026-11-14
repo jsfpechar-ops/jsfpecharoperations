@@ -208,3 +208,7 @@ present, never that they work — a well-formed deploy can still be unable to se
 app does not send one, so use a long-term `AKIA…` key.
 
 See also [DEPLOYMENT.md](DEPLOYMENT.md) (guest e-mail section).
+
+## Go service (1632)
+
+`ubyhost-go` receives the same four settings as `ubyhost`: `UBYHOST_MAIL_FROM`, `UBYHOST_SES_REGION`, `UBYHOST_AWS_ACCESS_KEY_ID`, `UBYHOST_AWS_SECRET_ACCESS_KEY` (bare keys in `docker-compose.yml`, values from `.env`). Go sends the mails a person waits for (login link, email-change confirm, admin invite) at once through `mail.SendNow`; everything else, and any send that failed, still goes out with the Python mail job. Sign-up verification only queues, in Python and in Go. Check after a deploy: `docker compose exec ubyhost-go sh -c 'tr "\0" "\n" < /proc/1/environ | grep -c "^UBYHOST_AWS_"'` prints 2, and `docker compose logs --tail=50 ubyhost-go | grep send_now` shows no "incomplete" line. Rollback: revert the PR and run `./scripts/deploy.sh`; mail then waits for the 5-minute job again.

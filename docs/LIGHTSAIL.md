@@ -53,7 +53,7 @@ Internet → :443 Caddy (auto TLS) → ubyhost:8080 (FastAPI)
                               (ubyhost.db, photos, backups)
 ```
 
-Optional `ubyhost-go` (Go port, G1b, profile `go`) serves no traffic until a Caddy route exists (G2).
+Optional `ubyhost-go` (Go port, G1b, profile `go`) serves no traffic until a Caddy route exists (G2). Its data volume is mounted writable (decision 2026-11-14): the Go routes that add a guide photo or delete passport photo files need it; after changing the mount run "docker compose --profile go up -d ubyhost-go".
 
 Owner step: add `go` to `COMPOSE_PROFILES` in `.env` (for example `COMPOSE_PROFILES=go`, or append `,go`), then deploy. It serves nothing until G2.
 

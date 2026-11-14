@@ -6,10 +6,9 @@ package onboarding
 // police step's Wait keeps the automation choice), refuse_setup_save for that
 // one refusal, demo.create_demo_stay and db.audit. Brief 1602.
 //
-// Not ported (brief 1603, blocked): "skip" on the try-it page while a demo
-// stay exists deletes it with demo.delete_demo_stay, which also removes the
-// demo guests' passport photo files. The Go web container mounts /data
-// read-only, so that branch answers 501 and writes nothing.
+// Brief 1603: "skip" on the try-it page while a demo stay exists deletes it with
+// demo.delete_demo_stay (wizard_demo_delete.go), which also removes the demo
+// guests' passport photo files and so needs the writable data volume of brief 1640.
 
 import (
 	"context"
@@ -201,13 +200,18 @@ func (s *wizardServer) wizardActionFor(w http.ResponseWriter, r *http.Request, h
 			if err != nil {
 				return err
 			}
+			deleted := false
 			if stayID != 0 {
-				// demo.delete_demo_stay also deletes passport photo files (brief 1603).
-				wizardNotPorted(w, "deleting a demo stay (brief 1603)")
-				return nil
+				if deleted, err = s.wizardDeleteDemoStay(ctx, a.ID, stayID); err != nil {
+					return err
+				}
 			}
 			if err := s.wizardAudit(ctx, h, at, "property_setup_step", fmt.Sprintf("apartment=%d step=try_it action=skip", a.ID)); err != nil {
 				return err
+			}
+			if deleted {
+				hostweb.Back(w, r, doneURL, wizardFlash(r, "flash.setup.demo_deleted"), hostweb.Flash{})
+				return nil
 			}
 		case "keep_demo":
 			if err := s.wizardAudit(ctx, h, at, "property_setup_step", fmt.Sprintf("apartment=%d step=try_it action=keep_demo", a.ID)); err != nil {

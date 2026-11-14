@@ -204,7 +204,7 @@ services:
     stop_grace_period: 15s
     profiles: ["go"]
     # Only the variables the Go code reads are passed in, not the whole .env
-    # (no SES/AWS, Grafana or backup secrets). A bare key is passed
+    # (no Grafana or backup secrets; the four SES keys only so mail.SendNow can send). A bare key is passed
     # through from .env (auto-loaded beside this file) only when it is set there;
     # do not write NAME: ${NAME:-}, an empty string is not the same as unset.
     # A new variable read in go/ must be added here.
@@ -224,6 +224,8 @@ services:
       UBYHOST_AI_TEST_EMAILS:
       UBYHOST_ANTHROPIC_API_KEY:
       UBYHOST_APP_BASE_URL:
+      UBYHOST_AWS_ACCESS_KEY_ID:
+      UBYHOST_AWS_SECRET_ACCESS_KEY:
       UBYHOST_BILLING_BANK_ACCOUNT:
       UBYHOST_BILLING_ENABLED:
       UBYHOST_BILLING_IBAN:
@@ -243,6 +245,7 @@ services:
       UBYHOST_IMPERSONATION_MAX_HOURS:
       UBYHOST_JOB_QUEUE_KINDS:
       UBYHOST_MAIL_BACKEND:
+      UBYHOST_MAIL_FROM:
       UBYHOST_MAX_BATCH:
       UBYHOST_META_ACCESS_TOKEN:
       UBYHOST_META_DATASET_ID:
@@ -260,6 +263,7 @@ services:
       UBYHOST_PY_WEBHOOK_URL:
       UBYHOST_SCHEDULER:
       UBYHOST_SECRET_KEY:
+      UBYHOST_SES_REGION:
       UBYHOST_SIGNUP_ENABLED:
       UBYHOST_SIGNUP_NOTIFY_EMAIL:
       UBYHOST_SOAP_WSA_HEADER:
@@ -283,7 +287,7 @@ services:
       TURNSTILE_SITE_KEY:
     volumes:
       - ubyhost-pgsock:/var/run/postgresql
-      - ubyhost-data:/data:ro
+      - ubyhost-data:/data
     expose:
       - "8081"
     healthcheck:
