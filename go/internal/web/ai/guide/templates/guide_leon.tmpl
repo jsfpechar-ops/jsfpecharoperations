@@ -1,0 +1,47 @@
+{{- /* Go twin of App/app/templates/leon_settings.html (brief 1446). The two partials (settings_back_header, settings_value_card) are written out as their markup. */ -}}
+{{define "guide_leon.title"}}{{end}}
+{{define "guide_leon.back_label"}}{{end}}
+{{define "guide.value_card"}}<div class="settings-value-card">
+  <span class="settings-value-label">{{.Label}}</span>
+  <strong class="settings-value">{{.Value}}</strong>
+  {{if .Href}}<a class="settings-value-link" href="{{.Href}}">{{.LinkLabel}} {{icon "chevron-right" 20}}</a>{{end}}
+</div>{{end}}
+{{define "guide_leon"}}
+<div class="settings-lane">
+<div class="airbnb-header">
+  <a class="airbnb-back" href="/apartments/{{.Apartment.ID}}" aria-label="{{t "common.back"}}">{{icon "arrow-left" 20}}</a>
+  <h1 class="airbnb-title">{{t "leon_page.title"}}</h1>
+</div>
+{{template "guide.value_card" .StateCard}}
+{{if eq .State "terms"}}{{ui_banner "attention" (t "leon_page.terms_updated")}}
+{{else if or (eq .State "on") (eq .State "waiting")}}{{ui_banner "neutral" (or (and .Live (t "leon_page.on_banner")) (t "leon_page.waiting_banner"))}}{{end}}
+{{guide_section_open "" (t "leon_page.what_title") ""}}
+<span class="f1-tip">{{help_tip "leon-what" (t "leon_page.what")}}</span>
+{{guide_section_close}}
+{{if or (eq .State "off") (eq .State "terms")}}
+{{guide_section_open "" (t "leon_page.warn_title") ""}}
+<ul class="f1-list">{{range .Warnings}}<li>{{t .}}</li>{{end}}</ul>
+<form method="post" action="/apartments/{{.Apartment.ID}}/leon">
+<input type="hidden" name="_csrf" value="{{csrf}}">
+<input type="hidden" name="action" value="on">
+<div class="checkline f1-terms"><input type="checkbox" id="leon-terms" name="terms" value="1" required>
+  <label for="leon-terms">{{t "leon_page.accept"}} <a class="f1-terms-link" href="/guide#leon-terms">{{t "leon_page.terms_link"}}</a></label></div>
+<div class="ui-form-actions">{{ui_button (t "leon_page.switch_on") "primary" (kv "type" "submit")}}</div>
+</form>
+{{if not .Live}}{{ui_banner "neutral" (t "leon_page.not_live")}}{{ui_button (t "leon_page.guide_link") "secondary" (kv "href" (printf "/apartments/%d/guide" .Apartment.ID))}}{{end}}
+{{guide_section_close}}
+{{else}}
+{{guide_section_open "" (t "leon_page.accepted_title") ""}}
+<div class="f1-leon-terms">{{template "guide.value_card" .VersionCard}}</div>
+{{template "guide.value_card" .AcceptedAtCard}}
+{{template "guide.value_card" .AcceptedByCard}}
+<div class="ui-form-actions">{{ui_button (t "leon_page.edit_guide") "secondary" (kv "href" (printf "/apartments/%d/guide" .Apartment.ID))}}</div>
+<form method="post" action="/apartments/{{.Apartment.ID}}/leon" data-confirm data-confirm-message="{{t "leon_page.off_confirm"}}">
+<input type="hidden" name="_csrf" value="{{csrf}}">
+<input type="hidden" name="action" value="off">
+<div class="ui-form-actions">{{ui_button (t "leon_page.switch_off") "secondary" (kv "type" "submit")}}</div>
+</form>
+{{guide_section_close}}
+{{end}}
+</div>
+{{end}}
