@@ -14,7 +14,7 @@ Updated: 2026-11-14 (later).
 - 11-13: security audit draft #966 (1200-1204). **Owner:** K-S11–K-S15. 0990-0992: deploy, `pg_schema.py apply`, CF, Grafana.
 
 ## Next
-- Entry code + external guide link on stay page/receipt: [plan](../plans/entry-code-external-guide.md), briefs 1631-1634 (docs-only PR first). **Owner:** go-first decision for Python-served paths (decisions.md 2026-11-14).
+- Entry code + guide link (Go only): [plan](../plans/entry-code-external-guide.md). Runnable: 1643. 1640 needs owner (exception 1 vs S6/1474); 1641→1642, 1644 after it; 1645-1647 blocked on property-settings and guest-pages ports.
 - CI 1413-1415, README 1416.
 - Go move ([remaining](../plans/go-full-move-remaining.md), [SQLite](../plans/sqlite-retirement.md)): #1010 merged 11-14 (1263, 1448, 1470-1473, 1450-1452, 1436-1446, 1420-1427, 1430-1435, switched off). go-wave3 PR #1021: 1501, 1514, 152x-157x, 1620-1624, 1580+. Server 11-13: W1-W3 on Go, retention dry-run.
 - 1291 host CC is on main; 1630 stops the extra `guest_details_host` mail (only completion + CC).
