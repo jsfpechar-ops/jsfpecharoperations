@@ -30,5 +30,7 @@ func Routes(pool *pgxpool.Pool, getenv func(string) string, now func() time.Time
 		{"GET /reservations/{id}/dorucenka.zip", "/reservations/{id}/dorucenka.zip", StayReceiptsHandler(pool, getenv, now)},
 		{"GET /housebook.csv", "/housebook.csv", HousebookCSVHandler(pool, getenv, now)},
 		{"GET /guests/{id}/export.json", "/guests/{id}/export.json", GuestExportHandler(pool, getenv, now)},
+		// Brief 1605.
+		{"GET /guests/{id}/form.pdf", "/guests/{id}/form.pdf", GuestFormPDFHandler(pool, getenv, now)},
 	}
 }

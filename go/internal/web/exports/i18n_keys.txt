@@ -6,3 +6,4 @@ flash.error.identity_hidden_export
 flash.error.identity_hidden_guest
 flash.error.no_receipts
 flash.error.too_many_receipts
+flash.error.no_such_guest

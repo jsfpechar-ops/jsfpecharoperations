@@ -1,6 +1,6 @@
 # 1605: Go data exports, part 1: the signed registration form PDF
 
-Status: todo
+Status: review
 Depends on: none (first brief of the thread; needs briefs 1320 and 1321, already in this branch) | Base commit: none (one big PR mode: the branch that is checked out) | Branch: the current one
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
