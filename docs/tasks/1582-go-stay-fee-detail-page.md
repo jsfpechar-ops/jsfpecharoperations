@@ -1,6 +1,6 @@
 # 1582: Go stay fee host pages, part 2: the property detail page GET /stay-fees/{apartment_id}
 
-Status: todo
+Status: review
 Depends on: 1581, 1240, 1240a, 1242, 1330, 1330-fix-1, 1380, 1381, 1543 | Base commit: current tip of the working branch | Branch: task/1582-go-stay-fee-detail-page
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B
 
