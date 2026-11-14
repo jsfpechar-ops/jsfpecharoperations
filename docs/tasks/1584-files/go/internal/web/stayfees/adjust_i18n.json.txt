@@ -1,0 +1,17 @@
+{
+ "cs": {
+  "flash.stay_fees.adjust_frozen": "Období je už uložené. Pro změnu otevřete opravu.",
+  "flash.stay_fees.adjust_invalid": "Uveďte krátký důvod a počet, který formulář dovoluje.",
+  "flash.stay_fees.adjust_negative": "Úprava by udělala celkový poplatek záporný."
+ },
+ "en": {
+  "flash.stay_fees.adjust_frozen": "This period is already filed. Open a correction to change it.",
+  "flash.stay_fees.adjust_invalid": "Enter a short reason and a count the form allows.",
+  "flash.stay_fees.adjust_negative": "That adjustment would make the fee total negative."
+ },
+ "vi": {
+  "flash.stay_fees.adjust_frozen": "Kỳ này đã được nộp. Hãy mở điều chỉnh để thay đổi.",
+  "flash.stay_fees.adjust_invalid": "Nhập lý do ngắn và số lượng hợp lệ theo biểu mẫu.",
+  "flash.stay_fees.adjust_negative": "Điều chỉnh này sẽ làm tổng phí bị âm."
+ }
+}
