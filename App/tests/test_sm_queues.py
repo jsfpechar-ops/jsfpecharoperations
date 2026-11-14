@@ -53,6 +53,7 @@ GOCAPI = "go/internal/metacapi/send.go"
 PHOTOSWEEP = "go/internal/photosweep/db.go"
 SIGNUP = "App/app/signup.py"
 SIGNUPGO = "go/internal/signup/store.go"
+AUTHQUEUE = "go/internal/mail/auth_queue.go"
 MAILDRAIN = "go/internal/mail/outbox_drain.go"
 GOSIGNUP = "go/internal/signup/register.go"
 IMPORT = "App/app/guest_guide_import.py"
@@ -166,6 +167,7 @@ OUTBOX_SITES = {
     (RECONCILE, "expireOnCancel"): 1,
     (NOTIFY, "EnqueueMail"): 1,
     (SIGNUPGO, "enqueue"): 1,
+    (AUTHQUEUE, "accountEnqueue"): 1,
     (MAILDRAIN, "Drain"): 1,
     (MAILDRAIN, "claim"): 1,
     (MAILDRAIN, "deliver"): 3,
@@ -183,6 +185,7 @@ OUTBOX_MOVES = [
     (RECONCILE, "expireOnCancel", "SET state = 'failed'", ("queued",), "failed"),
     (NOTIFY, "EnqueueMail", "$9, 'queued', 0", NEW, "queued"),
     (SIGNUPGO, "enqueue", "'queued', 0, $7, $7, $7)", NEW, "queued"),
+    (AUTHQUEUE, "accountEnqueue", "'queued', 0, $7, $7, $7)", NEW, "queued"),
     (MAILDRAIN, "Drain", "SET state = 'queued' WHERE state = 'sending'", ("sending",), "queued"),
     (MAILDRAIN, "claim", "SET state = 'sending'", ("queued",), "sending"),
     (MAILDRAIN, "deliver", "SET state = 'sent'", ANY, "sent"),

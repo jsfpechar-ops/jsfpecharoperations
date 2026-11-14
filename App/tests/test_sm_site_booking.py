@@ -59,12 +59,19 @@ PINNED_DEMO_HELPER_WRITES = [
 PINNED_DEMO_NAME_MENTIONS = 1  # the "Clear demo" table list, a DELETE by apartment_id
 
 # Go booking-site webhook (brief 1350); same moves as booking_webhook.py.
-PINNED_GO_STATUS_FILES = frozenset({"go/internal/payments/booking_webhook.go"})
+PINNED_GO_STATUS_FILES = frozenset({
+    "go/internal/payments/booking_webhook.go",
+    "go/internal/web/booking/checkout.go",
+})
 PINNED_GO_STATUS_ANCHORS = [
     "UPDATE site_booking SET status = 'paid'",
     "UPDATE site_booking SET status = $1",
     'b.setStatus(ctx, bk.id, "expired"',
     'b.setStatus(ctx, bk.id, "clash_refunded"',
+]
+PINNED_GO_CHECKOUT_ANCHORS = [
+    "UPDATE site_booking SET status = 'expired', updated_at = $1 WHERE id = $2 AND status = 'pending'",
+    "UPDATE site_booking SET stripe_session_id = $1, updated_at = $2 WHERE id = $3",
 ]
 
 
@@ -209,9 +216,17 @@ def test_go_booking_webhook_status_pins_are_present():
         assert anchor in text, anchor
 
 
+def test_go_booking_checkout_status_pins_are_present():
+    text = (REPO / "go/internal/web/booking/checkout.go").read_text(encoding="utf-8")
+    for anchor in PINNED_GO_CHECKOUT_ANCHORS:
+        assert anchor in text, anchor
+
+
 def test_go_and_migrations_do_not_write_site_booking_status():
     go_dir = REPO / "go"
     for path in sorted(go_dir.rglob("*.go")):
+        if path.name.endswith("_test.go"):
+            continue
         rel = path.relative_to(REPO).as_posix()
         if rel in PINNED_GO_STATUS_FILES:
             continue

@@ -99,5 +99,6 @@ def test_cases_cover_the_brief():
         assert {c["lang"] for c in mine} == {"en", "cs", "vi"}
         assert any(c.get("as") for c in mine) and any(not c["user"] for c in mine)
     assert sorted(n for n, c in names.items() if c.get("go")) == [
-        "apartments_rows_not_ported", "entities_alert_not_ported", "entities_edit_not_ported",
+        "apartments_rows_not_ported",
+        "entities_alert_not_ported",
     ]
