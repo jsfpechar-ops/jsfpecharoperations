@@ -1,6 +1,6 @@
 # 1630: Stop the separate "guest details" mail to the host after completion
 
-Status: todo
+Status: review
 Depends on: none | Base commit: e90d2412a | Branch: cursor/1630-stop-host-guest-details-mail-4527
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
