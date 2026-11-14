@@ -39,7 +39,7 @@ Caddy routes by path only. Paths with two methods: `/predplatne` (GET 1556, POST
 - F2. `billingjob.Invoicer.issue` (read-only) writes the audit row `platform_invoice_issued` with `actor_user_id` and `impersonator_user_id` NULL. Python's `db.audit` inside a request fills them from the signed-in user. Affects an order of a paused host (1557), a confirmed upgrade with a supplementary invoice (1557) and an operator storno (1559). The row exists and has the same actor text `system`, owner and detail.
 - F3. A wrong method on a Go pattern answers Go's plain-text `405`; Python answers JSON `{"detail":"Method Not Allowed"}`. A non-integer path id answers `422` plain text; Python answers FastAPI's JSON.
 - F4. `validation.ico_ok` and path integers accept only ASCII digits in Go; Python also accepts other Unicode digits.
-- F5. A multipart body is capped at 11 MiB (`hostweb` limit); Python has no cap, so a statement between 11 MiB and the 5 MiB route limit... above 5 MiB is "unreadable" in both, but between 11 MiB and larger Go answers the CSRF recovery redirect instead.
+- F5. A multipart body is capped at 11 MiB (hostweb's limit, applied before CSRF). Python has no cap: a statement over 5 MiB is "unreadable" at any size there; Go says "unreadable" up to 11 MiB and answers the CSRF recovery redirect above it.
 - F6. `date.today()` is the server-local date in Python; Go uses `billingjob.Today(time.Now())`, the same choice the billing job makes.
 
 **What this brief ports, with the Python lines:**
