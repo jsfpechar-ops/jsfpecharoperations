@@ -1,6 +1,6 @@
 # 1426: Go invoice pages: the ARES register lookup for the buyer
 
-Status: todo
+Status: review
 Depends on: 1422 (merged or on this branch: `ares.go` uses `isDigits` from 1422's `store.go`; brief 1427 uses this one) | Base commit: the working branch head (no fixed commit) | Branch: the current branch (one big PR)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B
 
