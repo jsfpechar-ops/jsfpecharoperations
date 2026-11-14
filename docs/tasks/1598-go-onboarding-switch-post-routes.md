@@ -1,6 +1,6 @@
 # 1598: Go onboarding: verify and switch the POST /onboarding/* routes (brief 1290)
 
-Status: blocked
+Status: review
 Tier: B (switch-verify: no new Go code; re-runs existing tests; owner switches paths)
 Depends on: 1596 (and through it 1595; all three must be on the branch) | Base commit: current tip of the working branch | Branch: task/1598-go-onboarding-switch-post-routes
 Executor: Haiku 5.5 | Fits one session: 15 tool calls, 30k tokens
