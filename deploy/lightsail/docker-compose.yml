@@ -204,7 +204,7 @@ services:
     stop_grace_period: 15s
     profiles: ["go"]
     # Only the variables the Go code reads are passed in, not the whole .env
-    # (no SES/AWS, Turnstile, Grafana or backup secrets). A bare key is passed
+    # (no SES/AWS, Grafana or backup secrets). A bare key is passed
     # through from .env (auto-loaded beside this file) only when it is set there;
     # do not write NAME: ${NAME:-}, an empty string is not the same as unset.
     # A new variable read in go/ must be added here.
@@ -252,6 +252,7 @@ services:
       UBYHOST_STRIPE_SECRET_KEY:
       UBYHOST_SUBMIT_SWEEP_MINUTES:
       UBYHOST_TERMS_VERSION:
+      UBYHOST_TRUSTED_PROXY_CIDRS:
       UBYHOST_TTLOCK_CLIENT_ID:
       UBYHOST_TTLOCK_CLIENT_SECRET:
       UBYHOST_UBYPORT_DOMAIN:
@@ -261,6 +262,9 @@ services:
       POSTHOG_ASSETS_HOST:
       POSTHOG_HOST:
       POSTHOG_PROJECT_API_KEY:
+      TURNSTILE_HOSTNAMES:
+      TURNSTILE_SECRET:
+      TURNSTILE_SITE_KEY:
     volumes:
       - ubyhost-pgsock:/var/run/postgresql
       - ubyhost-data:/data:ro
