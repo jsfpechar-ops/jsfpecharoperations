@@ -1,6 +1,6 @@
 # 1621: Go public marketing pages, part 2 (/jak-to-funguje and /pruvodce/{slug})
 
-Status: todo
+Status: review
 Depends on: [1620](1620-go-public-pages-golden.md) | Base commit: none (one-big-PR mode) | Branch: current branch
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (about 12 calls)
 Next: [1622](1622-go-public-pages-pricing.md) (pricing page, screenshots)

@@ -1,0 +1,8257 @@
+{
+ "redact": [
+  {
+   "in": "",
+   "out": ""
+  },
+  {
+   "in": "hello",
+   "out": "hello"
+  },
+  {
+   "in": "mail me at anna.b@example.test or +420 777 123 456",
+   "out": "mail me at [email] or [phone]"
+  },
+  {
+   "in": "booking AB1234567 and room 12",
+   "out": "booking [number] and room 12"
+  },
+  {
+   "in": "call 777 123 456 now",
+   "out": "call [phone] now"
+  },
+  {
+   "in": "x1234-5678y",
+   "out": "[number]"
+  },
+  {
+   "in": "a-1-2-3-4",
+   "out": "a-1-2-3-4"
+  },
+  {
+   "in": "code 12345 and 123456",
+   "out": "code 12345 and [number]"
+  },
+  {
+   "in": "id AB-12-34-56",
+   "out": "id AB-[phone]"
+  },
+  {
+   "in": "á123456 and 123456á",
+   "out": "á123456 and 123456á"
+  },
+  {
+   "in": "+420 777 123 4567a",
+   "out": "[phone] 4567a"
+  },
+  {
+   "in": "(0049) 123-4567-89",
+   "out": "([phone]"
+  },
+  {
+   "in": "phone 12 34 56 78 90",
+   "out": "phone [phone]"
+  },
+  {
+   "in": "1111 2222 3333 4444",
+   "out": "[phone]"
+  },
+  {
+   "in": "abc123def456",
+   "out": "[number]"
+  },
+  {
+   "in": "12-34-56-78",
+   "out": "[phone]"
+  },
+  {
+   "in": "١٢٣٤٥٦٧٨",
+   "out": "[phone]"
+  },
+  {
+   "in": "tel.+420777123456.",
+   "out": "tel.[phone]."
+  }
+ ],
+ "fold": [
+  {
+   "in": "Hello!",
+   "fold": "hello",
+   "small": "hi"
+  },
+  {
+   "in": "  HI  ",
+   "fold": "hi",
+   "small": "hi"
+  },
+  {
+   "in": "Dobrý den",
+   "fold": "dobrý den",
+   "small": "hi"
+  },
+  {
+   "in": "dobry   den!!",
+   "fold": "dobry den",
+   "small": "hi"
+  },
+  {
+   "in": "Thank you.",
+   "fold": "thank you",
+   "small": "thanks"
+  },
+  {
+   "in": "Thanks a LOT",
+   "fold": "thanks a lot",
+   "small": "thanks"
+  },
+  {
+   "in": "danke schön",
+   "fold": "danke schön",
+   "small": "thanks"
+  },
+  {
+   "in": "Straße",
+   "fold": "strasse",
+   "small": null
+  },
+  {
+   "in": "Ça va?",
+   "fold": "ça va",
+   "small": null
+  },
+  {
+   "in": "hello, where is the wifi",
+   "fold": "hello where is the wifi",
+   "small": null
+  },
+  {
+   "in": "díky",
+   "fold": "díky",
+   "small": "thanks"
+  },
+  {
+   "in": "ok thanks",
+   "fold": "ok thanks",
+   "small": "thanks"
+  },
+  {
+   "in": "Дякую",
+   "fold": "дякую",
+   "small": "thanks"
+  },
+  {
+   "in": "...",
+   "fold": "",
+   "small": null
+  }
+ ],
+ "noise": [
+  {
+   "in": "?",
+   "out": true
+  },
+  {
+   "in": "123",
+   "out": true
+  },
+  {
+   "in": "😀",
+   "out": true
+  },
+  {
+   "in": "https://x.example/a",
+   "out": true
+  },
+  {
+   "in": "www.x.com",
+   "out": true
+  },
+  {
+   "in": "see https://x.example",
+   "out": false
+  },
+  {
+   "in": "²",
+   "out": false
+  },
+  {
+   "in": "Ⅰ",
+   "out": false
+  },
+  {
+   "in": "_",
+   "out": true
+  },
+  {
+   "in": "a",
+   "out": false
+  },
+  {
+   "in": "中",
+   "out": false
+  },
+  {
+   "in": " ",
+   "out": true
+  },
+  {
+   "in": "12 34",
+   "out": true
+  },
+  {
+   "in": "http://",
+   "out": false
+  },
+  {
+   "in": "-- ?? 77",
+   "out": true
+  }
+ ],
+ "first_name": [
+  {
+   "in": "Jan Novak",
+   "out": "Jan"
+  },
+  {
+   "in": "  Jana   Nováková ",
+   "out": "Jana"
+  },
+  {
+   "in": "Firma s.r.o.",
+   "out": "Firma s.r.o."
+  },
+  {
+   "in": "ACME Ltd",
+   "out": "ACME Ltd"
+  },
+  {
+   "in": "Hotel 5",
+   "out": "Hotel 5"
+  },
+  {
+   "in": "",
+   "out": ""
+  },
+  {
+   "in": "Beach GmbH",
+   "out": "Beach GmbH"
+  },
+  {
+   "in": "Anna",
+   "out": "Anna"
+  },
+  {
+   "in": "Foo Inc",
+   "out": "Foo Inc"
+  },
+  {
+   "in": "Foo Incorporated",
+   "out": "Foo"
+  },
+  {
+   "in": "A.S. Holding",
+   "out": "A.S. Holding"
+  },
+  {
+   "in": "spol. s r. o.",
+   "out": "spol. s r. o."
+  }
+ ],
+ "named": [
+  {
+   "lang": "en",
+   "key": "leon_passed_to_host",
+   "host": "Jan Novak",
+   "out": "I've passed your message to Jan, your host. The answer will appear here."
+  },
+  {
+   "lang": "en",
+   "key": "leon_passed_to_host",
+   "host": "",
+   "out": "I've passed your message to your host. The answer will appear here."
+  },
+  {
+   "lang": "en",
+   "key": "leon_asked_host",
+   "host": "Jan Novak",
+   "out": "I don't want to guess about this, so I've asked Jan, your host. I'll show the answer here as soon as it comes."
+  },
+  {
+   "lang": "en",
+   "key": "leon_asked_host",
+   "host": "",
+   "out": "I don't want to guess about this, so I've asked your host. I'll show the answer here as soon as it comes."
+  },
+  {
+   "lang": "en",
+   "key": "leon_asked_host_sorry",
+   "host": "Jan Novak",
+   "out": "I'm sorry about this. I've passed it to Jan, your host, and I'll show the answer here as soon as it comes."
+  },
+  {
+   "lang": "en",
+   "key": "leon_asked_host_sorry",
+   "host": "",
+   "out": "I'm sorry about this. I've passed it to your host and I'll show the answer here as soon as it comes."
+  },
+  {
+   "lang": "cs",
+   "key": "leon_passed_to_host",
+   "host": "Jan Novak",
+   "out": "Vaši zprávu jsem předal vašemu hostiteli, Jan. Odpověď se objeví tady."
+  },
+  {
+   "lang": "cs",
+   "key": "leon_passed_to_host",
+   "host": "",
+   "out": "Vaši zprávu jsem předal vašemu hostiteli. Odpověď se objeví tady."
+  },
+  {
+   "lang": "cs",
+   "key": "leon_asked_host",
+   "host": "Jan Novak",
+   "out": "Nechci v tomhle hádat, proto jsem se zeptal vašeho hostitele, Jan. Odpověď vám tady ukážu, jakmile přijde."
+  },
+  {
+   "lang": "cs",
+   "key": "leon_asked_host",
+   "host": "",
+   "out": "Nechci v tomhle hádat, proto jsem se zeptal vašeho hostitele. Odpověď vám tady ukážu, jakmile přijde."
+  },
+  {
+   "lang": "cs",
+   "key": "leon_asked_host_sorry",
+   "host": "Jan Novak",
+   "out": "Je mi to líto. Předal jsem to vašemu hostiteli, Jan, a odpověď vám tady ukážu, jakmile přijde."
+  },
+  {
+   "lang": "cs",
+   "key": "leon_asked_host_sorry",
+   "host": "",
+   "out": "Je mi to líto. Předal jsem to vašemu hostiteli a odpověď vám tady ukážu, jakmile přijde."
+  }
+ ],
+ "fixed": {
+  "en": {
+   "leon_hi": "Hello! What can I do for you?",
+   "leon_thanks": "You're welcome. I'm here if you need anything else.",
+   "leon_unclear": "I'm not sure what you need. Tell me in a few words and I'll help.",
+   "leon_refuse": "I can only help with your stay and this property. Is there anything about them I can do for you?",
+   "leon_about": "I'm Leon, your 24/7 concierge. I'm an AI, not a person: I answer from your host's guide, and when it has no answer I ask your host for you.",
+   "leon_emergency": "If anyone is in danger, call 112 now (in Czechia also 150 fire, 155 ambulance, 158 police). I've told your host it is urgent.",
+   "leon_asked_host_part": "The rest I've passed to your host; the answer will appear here."
+  },
+  "cs": {
+   "leon_hi": "Dobrý den! Co pro vás můžu udělat?",
+   "leon_thanks": "Rádo se stalo. Kdybyste ještě něco potřebovali, jsem tu.",
+   "leon_unclear": "Nejsem si jistý, co potřebujete. Napište mi to pár slovy a pomůžu.",
+   "leon_refuse": "Můžu pomoct jen s vaším pobytem a s tímto ubytováním. Můžu pro vás v tomhle něco udělat?",
+   "leon_about": "Jsem Leon, váš concierge nonstop. Jsem AI, ne člověk: odpovídám podle průvodce od hostitele, a když v něm odpověď není, zeptám se hostitele za vás.",
+   "leon_emergency": "Pokud je někdo v nebezpečí, volejte hned 112 (v Česku také 150 hasiči, 155 záchranka, 158 policie). Hostiteli jsem dal vědět, že to spěchá.",
+   "leon_asked_host_part": "Zbytek jsem předal hostiteli; odpověď se objeví tady."
+  }
+ },
+ "too_long": {
+  "en": "Please keep a message under 500 characters.",
+  "cs": "Napište prosím zprávu kratší než 500 znaků."
+ },
+ "schema_compact": "{\"type\":\"object\",\"additionalProperties\":false,\"required\":[\"kind\",\"reply\",\"sources\",\"host_summary\",\"upset\"],\"properties\":{\"kind\":{\"type\":\"string\",\"enum\":[\"answer\",\"ask_host\",\"refuse\",\"about_me\",\"emergency\",\"unclear\"]},\"reply\":{\"type\":\"string\"},\"sources\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"host_summary\":{\"type\":[\"string\",\"null\"]},\"upset\":{\"type\":\"boolean\"}}}",
+ "constants": {
+  "max_tokens": 500,
+  "max_message": 500,
+  "max_reply": 800,
+  "max_summary": 300,
+  "try_max": 5,
+  "prompt_sha": "6fb3bce3afbaaa49ab5b57aa919a15147c6f9720160c0e5a4232443839165308"
+ },
+ "for_guest": [
+  {
+   "name": "not live",
+   "rows": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "checkin",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "wifi",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0
+    }
+   ],
+   "facts": [
+    {
+     "fact": "checkin_from",
+     "value": "15:00"
+    },
+    {
+     "fact": "pets",
+     "value": "yes"
+    },
+    {
+     "fact": "smoking",
+     "value": "no"
+    },
+    {
+     "fact": "quiet_hours",
+     "value": "22:00-07:00"
+    },
+    {
+     "fact": "dishwasher",
+     "value": "yes"
+    },
+    {
+     "fact": "washing_machine",
+     "value": "no"
+    },
+    {
+     "fact": "balcony",
+     "value": ""
+    },
+    {
+     "fact": "step.times",
+     "value": "seen"
+    }
+   ],
+   "cards": [],
+   "guide_block": "<guide property=\"Flat \"A\"  b\">\n</guide>",
+   "system_sha": [
+    "6fb3bce3afbaaa49ab5b57aa919a15147c6f9720160c0e5a4232443839165308",
+    "c8ac02da7fd15c053b6877ed16df77c2142a7128d2434f01bdbe79a68ffa43fe"
+   ],
+   "emergency": {
+    "en": "If anyone is in danger, call 112 now (in Czechia also 150 fire, 155 ambulance, 158 police). I've told your host it is urgent.",
+    "cs": "Pokud je někdo v nebezpečí, volejte hned 112 (v Česku také 150 hasiči, 155 záchranka, 158 policie). Hostiteli jsem dal vědět, že to spěchá."
+   }
+  },
+  {
+   "name": "live",
+   "rows": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0
+    },
+    {
+     "id": 6,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "parking",
+     "title": "",
+     "location": "",
+     "steps": "Secret garage code 99999",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "host",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0
+    },
+    {
+     "id": 9,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "bathroom",
+     "title": "",
+     "location": "draft text",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "check",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0
+    },
+    {
+     "id": 10,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "washing_machine",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "skipped",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0
+    }
+   ],
+   "facts": [
+    {
+     "fact": "checkin_from",
+     "value": "15:00"
+    },
+    {
+     "fact": "pets",
+     "value": "yes"
+    },
+    {
+     "fact": "smoking",
+     "value": "no"
+    },
+    {
+     "fact": "quiet_hours",
+     "value": "22:00-07:00"
+    },
+    {
+     "fact": "dishwasher",
+     "value": "yes"
+    },
+    {
+     "fact": "washing_machine",
+     "value": "no"
+    },
+    {
+     "fact": "balcony",
+     "value": ""
+    },
+    {
+     "fact": "step.times",
+     "value": "seen"
+    }
+   ],
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "guide_block": "<guide property=\"Flat \"A\"  b\">\n[c1] Check-in and arrival\nfacts: Check-in from 15:00.\nwhere: Key box by the door\nsteps:\n1. Enter code 4711\n2. Take the key\n3. Lock up\nwatch out: Do not slam the  door\nmedia: photo\n\n[c2] Wi-Fi\nwhere: Router in the hall\nsteps:\nNetwork Flat-5G\nPassword on the router\n\n[c3] Heating and cooling\n\n[c4] Checkout\nsteps:\nLeave by 11:00\n\n[c5] Emergency contacts\nwhere: Phone 112 for all emergencies\nsteps:\nFire 150\nAmbulance 155\nHost: ask in the app\n\n[c7] Pool  fun\nsteps:\nOpen 9:00-20:00\nmedia: video\n\n[c8] Kitchen\nfacts: There is a dishwasher.\n\n</guide>",
+   "system_sha": [
+    "6fb3bce3afbaaa49ab5b57aa919a15147c6f9720160c0e5a4232443839165308",
+    "bf10d5bf8b2fdcfb410bca4f05a62176eaf2ba56facebc689a5b5239ebcfb8c9"
+   ],
+   "emergency": {
+    "en": "If anyone is in danger, call 112 now (in Czechia also 150 fire, 155 ambulance, 158 police). I've told your host it is urgent.\nPhone 112 for all emergencies\nFire 150\nAmbulance 155\nHost: ask in the app",
+    "cs": "Pokud je někdo v nebezpečí, volejte hned 112 (v Česku také 150 hasiči, 155 záchranka, 158 policie). Hostiteli jsem dal vědět, že to spěchá.\nPhone 112 for all emergencies\nFire 150\nAmbulance 155\nHost: ask in the app"
+   }
+  },
+  {
+   "name": "live no emergency text",
+   "rows": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "emergency",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "skipped",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0
+    }
+   ],
+   "facts": [
+    {
+     "fact": "checkin_from",
+     "value": "15:00"
+    },
+    {
+     "fact": "pets",
+     "value": "yes"
+    },
+    {
+     "fact": "smoking",
+     "value": "no"
+    },
+    {
+     "fact": "quiet_hours",
+     "value": "22:00-07:00"
+    },
+    {
+     "fact": "dishwasher",
+     "value": "yes"
+    },
+    {
+     "fact": "washing_machine",
+     "value": "no"
+    },
+    {
+     "fact": "balcony",
+     "value": ""
+    },
+    {
+     "fact": "step.times",
+     "value": "seen"
+    }
+   ],
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "guide_block": "<guide property=\"Flat \"A\"  b\">\n[c1] Check-in and arrival\nfacts: Check-in from 15:00.\nwhere: Key box by the door\nsteps:\n1. Enter code 4711\n2. Take the key\n3. Lock up\nwatch out: Do not slam the  door\nmedia: photo\n\n[c2] Wi-Fi\nwhere: Router in the hall\nsteps:\nNetwork Flat-5G\nPassword on the router\n\n[c3] Heating and cooling\n\n[c4] Checkout\nsteps:\nLeave by 11:00\n\n</guide>",
+   "system_sha": [
+    "6fb3bce3afbaaa49ab5b57aa919a15147c6f9720160c0e5a4232443839165308",
+    "5045b02c1acc49fe1d9512186020b2833236337c4fe97110336ca1d43bc2fa00"
+   ],
+   "emergency": {
+    "en": "If anyone is in danger, call 112 now (in Czechia also 150 fire, 155 ambulance, 158 police). I've told your host it is urgent.",
+    "cs": "Pokud je někdo v nebezpečí, volejte hned 112 (v Česku také 150 hasiči, 155 záchranka, 158 policie). Hostiteli jsem dal vědět, že to spěchá."
+   }
+  }
+ ],
+ "user_turn": [
+  {
+   "in": "where is the key?",
+   "lang": "en",
+   "out": "Page language: en.\n<guest_message>\nwhere is the key?\n</guest_message>"
+  },
+  {
+   "in": "where is the key?",
+   "lang": "cs",
+   "out": "Page language: cs.\n<guest_message>\nwhere is the key?\n</guest_message>"
+  },
+  {
+   "in": "a <b> tag",
+   "lang": "en",
+   "out": "Page language: en.\n<guest_message>\na  b  tag\n</guest_message>"
+  },
+  {
+   "in": "a <b> tag",
+   "lang": "cs",
+   "out": "Page language: cs.\n<guest_message>\na  b  tag\n</guest_message>"
+  },
+  {
+   "in": "  spaced  ",
+   "lang": "en",
+   "out": "Page language: en.\n<guest_message>\nspaced\n</guest_message>"
+  },
+  {
+   "in": "  spaced  ",
+   "lang": "cs",
+   "out": "Page language: cs.\n<guest_message>\nspaced\n</guest_message>"
+  }
+ ],
+ "validate": [
+  {
+   "name": "answer",
+   "data": {
+    "kind": "answer",
+    "reply": "Check-in is from 15:00.",
+    "sources": [
+     "c1"
+    ],
+    "host_summary": null,
+    "upset": false
+   },
+   "guest_text": "What time is check-in? my number is 777 123 456 and code 4711",
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "out": {
+    "kind": "answer",
+    "text": "Check-in is from 15:00.",
+    "sources": [
+     1
+    ],
+    "summary": "",
+    "upset": false,
+    "reason": ""
+   }
+  },
+  {
+   "name": "answer many sources",
+   "data": {
+    "kind": "answer",
+    "reply": "Key box by the door. Wifi is Flat-5G.",
+    "sources": [
+     "c1",
+     "c2",
+     "c1"
+    ],
+    "host_summary": null,
+    "upset": false
+   },
+   "guest_text": "What time is check-in? my number is 777 123 456 and code 4711",
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "out": {
+    "kind": "answer",
+    "text": "Key box by the door. Wifi is Flat-5G.",
+    "sources": [
+     1,
+     2
+    ],
+    "summary": "",
+    "upset": false,
+    "reason": ""
+   }
+  },
+  {
+   "name": "answer bad source",
+   "data": {
+    "kind": "answer",
+    "reply": "Check-in is from 15:00.",
+    "sources": [
+     "c99"
+    ],
+    "host_summary": null,
+    "upset": false
+   },
+   "guest_text": "What time is check-in? my number is 777 123 456 and code 4711",
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "out": {
+    "kind": "ask_host",
+    "text": "",
+    "sources": [],
+    "summary": "",
+    "upset": false,
+    "reason": "no_source"
+   }
+  },
+  {
+   "name": "answer no source",
+   "data": {
+    "kind": "answer",
+    "reply": "Check-in is from 15:00.",
+    "sources": [],
+    "host_summary": null,
+    "upset": false
+   },
+   "guest_text": "What time is check-in? my number is 777 123 456 and code 4711",
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "out": {
+    "kind": "ask_host",
+    "text": "",
+    "sources": [],
+    "summary": "",
+    "upset": false,
+    "reason": "no_source"
+   }
+  },
+  {
+   "name": "answer source text",
+   "data": {
+    "kind": "answer",
+    "reply": "Check-in is from 15:00.",
+    "sources": [
+     "zzz",
+     5,
+     "c1 "
+    ],
+    "host_summary": null,
+    "upset": false
+   },
+   "guest_text": "What time is check-in? my number is 777 123 456 and code 4711",
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "out": {
+    "kind": "answer",
+    "text": "Check-in is from 15:00.",
+    "sources": [
+     1
+    ],
+    "summary": "",
+    "upset": false,
+    "reason": ""
+   }
+  },
+  {
+   "name": "answer empty",
+   "data": {
+    "kind": "answer",
+    "reply": " ",
+    "sources": [
+     "c1"
+    ],
+    "host_summary": null,
+    "upset": false
+   },
+   "guest_text": "What time is check-in? my number is 777 123 456 and code 4711",
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "out": {
+    "kind": "ask_host",
+    "text": "",
+    "sources": [],
+    "summary": "",
+    "upset": false,
+    "reason": "length"
+   }
+  },
+  {
+   "name": "answer long",
+   "data": {
+    "kind": "answer",
+    "reply": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "sources": [
+     "c1"
+    ],
+    "host_summary": null,
+    "upset": false
+   },
+   "guest_text": "What time is check-in? my number is 777 123 456 and code 4711",
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "out": {
+    "kind": "ask_host",
+    "text": "",
+    "sources": [],
+    "summary": "",
+    "upset": false,
+    "reason": "length"
+   }
+  },
+  {
+   "name": "answer max",
+   "data": {
+    "kind": "answer",
+    "reply": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "sources": [
+     "c1"
+    ],
+    "host_summary": null,
+    "upset": false
+   },
+   "guest_text": "What time is check-in? my number is 777 123 456 and code 4711",
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "out": {
+    "kind": "answer",
+    "text": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "sources": [
+     1
+    ],
+    "summary": "",
+    "upset": false,
+    "reason": ""
+   }
+  },
+  {
+   "name": "answer url",
+   "data": {
+    "kind": "answer",
+    "reply": "see https://x.example",
+    "sources": [
+     "c1"
+    ],
+    "host_summary": null,
+    "upset": false
+   },
+   "guest_text": "What time is check-in? my number is 777 123 456 and code 4711",
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "out": {
+    "kind": "ask_host",
+    "text": "",
+    "sources": [],
+    "summary": "",
+    "upset": false,
+    "reason": "markup"
+   }
+  },
+  {
+   "name": "answer at",
+   "data": {
+    "kind": "answer",
+    "reply": "mail a@b",
+    "sources": [
+     "c1"
+    ],
+    "host_summary": null,
+    "upset": false
+   },
+   "guest_text": "What time is check-in? my number is 777 123 456 and code 4711",
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "out": {
+    "kind": "ask_host",
+    "text": "",
+    "sources": [],
+    "summary": "",
+    "upset": false,
+    "reason": "markup"
+   }
+  },
+  {
+   "name": "answer markup",
+   "data": {
+    "kind": "answer",
+    "reply": "use **bold**",
+    "sources": [
+     "c1"
+    ],
+    "host_summary": null,
+    "upset": false
+   },
+   "guest_text": "What time is check-in? my number is 777 123 456 and code 4711",
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "out": {
+    "kind": "ask_host",
+    "text": "",
+    "sources": [],
+    "summary": "",
+    "upset": false,
+    "reason": "markup"
+   }
+  },
+  {
+   "name": "answer backtick",
+   "data": {
+    "kind": "answer",
+    "reply": "run `x`",
+    "sources": [
+     "c1"
+    ],
+    "host_summary": null,
+    "upset": false
+   },
+   "guest_text": "What time is check-in? my number is 777 123 456 and code 4711",
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "out": {
+    "kind": "ask_host",
+    "text": "",
+    "sources": [],
+    "summary": "",
+    "upset": false,
+    "reason": "markup"
+   }
+  },
+  {
+   "name": "answer angle",
+   "data": {
+    "kind": "answer",
+    "reply": "<b>x</b>",
+    "sources": [
+     "c1"
+    ],
+    "host_summary": null,
+    "upset": false
+   },
+   "guest_text": "What time is check-in? my number is 777 123 456 and code 4711",
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "out": {
+    "kind": "ask_host",
+    "text": "",
+    "sources": [],
+    "summary": "",
+    "upset": false,
+    "reason": "markup"
+   }
+  },
+  {
+   "name": "answer number bad",
+   "data": {
+    "kind": "answer",
+    "reply": "Code is 9999",
+    "sources": [
+     "c1"
+    ],
+    "host_summary": null,
+    "upset": false
+   },
+   "guest_text": "What time is check-in? my number is 777 123 456 and code 4711",
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "out": {
+    "kind": "ask_host",
+    "text": "",
+    "sources": [],
+    "summary": "",
+    "upset": false,
+    "reason": "number"
+   }
+  },
+  {
+   "name": "answer number card",
+   "data": {
+    "kind": "answer",
+    "reply": "Enter code 4711",
+    "sources": [
+     "c1"
+    ],
+    "host_summary": null,
+    "upset": false
+   },
+   "guest_text": "What time is check-in? my number is 777 123 456 and code 4711",
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "out": {
+    "kind": "answer",
+    "text": "Enter code 4711",
+    "sources": [
+     1
+    ],
+    "summary": "",
+    "upset": false,
+    "reason": ""
+   }
+  },
+  {
+   "name": "answer number message",
+   "data": {
+    "kind": "answer",
+    "reply": "You said 123456 earlier",
+    "sources": [
+     "c1"
+    ],
+    "host_summary": null,
+    "upset": false
+   },
+   "guest_text": "What time is check-in? my number is 777 123 456 and code 4711",
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "out": {
+    "kind": "ask_host",
+    "text": "",
+    "sources": [],
+    "summary": "",
+    "upset": false,
+    "reason": "number"
+   }
+  },
+  {
+   "name": "answer step numbers",
+   "data": {
+    "kind": "answer",
+    "reply": "1. Enter code 4711\n2) Take the key",
+    "sources": [
+     "c1"
+    ],
+    "host_summary": null,
+    "upset": false
+   },
+   "guest_text": "What time is check-in? my number is 777 123 456 and code 4711",
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "out": {
+    "kind": "answer",
+    "text": "1. Enter code 4711\n2) Take the key",
+    "sources": [
+     1
+    ],
+    "summary": "",
+    "upset": false,
+    "reason": ""
+   }
+  },
+  {
+   "name": "answer step then bad",
+   "data": {
+    "kind": "answer",
+    "reply": "1. Enter code 4711\n9. Take 8 keys",
+    "sources": [
+     "c1"
+    ],
+    "host_summary": null,
+    "upset": false
+   },
+   "guest_text": "What time is check-in? my number is 777 123 456 and code 4711",
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "out": {
+    "kind": "ask_host",
+    "text": "",
+    "sources": [],
+    "summary": "",
+    "upset": false,
+    "reason": "number"
+   }
+  },
+  {
+   "name": "answer emergency number",
+   "data": {
+    "kind": "answer",
+    "reply": "Call 112 now",
+    "sources": [
+     "c5"
+    ],
+    "host_summary": null,
+    "upset": false
+   },
+   "guest_text": "What time is check-in? my number is 777 123 456 and code 4711",
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "out": {
+    "kind": "answer",
+    "text": "Call 112 now",
+    "sources": [
+     5
+    ],
+    "summary": "",
+    "upset": false,
+    "reason": ""
+   }
+  },
+  {
+   "name": "answer summary",
+   "data": {
+    "kind": "answer",
+    "reply": "Check-in is from 15:00.",
+    "sources": [
+     "c1"
+    ],
+    "host_summary": "Where is the pool? mail a@b.cz",
+    "upset": false
+   },
+   "guest_text": "What time is check-in? my number is 777 123 456 and code 4711",
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "out": {
+    "kind": "answer",
+    "text": "Check-in is from 15:00.",
+    "sources": [
+     1
+    ],
+    "summary": "Where is the pool? mail [email]",
+    "upset": false,
+    "reason": ""
+   }
+  },
+  {
+   "name": "answer summary long",
+   "data": {
+    "kind": "answer",
+    "reply": "Check-in is from 15:00.",
+    "sources": [
+     "c1"
+    ],
+    "host_summary": "ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss",
+    "upset": false
+   },
+   "guest_text": "What time is check-in? my number is 777 123 456 and code 4711",
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "out": {
+    "kind": "answer",
+    "text": "Check-in is from 15:00.",
+    "sources": [
+     1
+    ],
+    "summary": "ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss",
+    "upset": false,
+    "reason": ""
+   }
+  },
+  {
+   "name": "answer upset",
+   "data": {
+    "kind": "answer",
+    "reply": "Check-in is from 15:00.",
+    "sources": [
+     "c1"
+    ],
+    "host_summary": null,
+    "upset": true
+   },
+   "guest_text": "What time is check-in? my number is 777 123 456 and code 4711",
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "out": {
+    "kind": "answer",
+    "text": "Check-in is from 15:00.",
+    "sources": [
+     1
+    ],
+    "summary": "",
+    "upset": false,
+    "reason": ""
+   }
+  },
+  {
+   "name": "ask_host",
+   "data": {
+    "kind": "ask_host",
+    "reply": "Check-in is from 15:00.",
+    "sources": [
+     "c1"
+    ],
+    "host_summary": "no wifi card",
+    "upset": true
+   },
+   "guest_text": "What time is check-in? my number is 777 123 456 and code 4711",
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "out": {
+    "kind": "ask_host",
+    "text": "",
+    "sources": [],
+    "summary": "no wifi card",
+    "upset": true,
+    "reason": "model"
+   }
+  },
+  {
+   "name": "ask_host no summary",
+   "data": {
+    "kind": "ask_host",
+    "reply": "Check-in is from 15:00.",
+    "sources": [
+     "c1"
+    ],
+    "host_summary": null,
+    "upset": false
+   },
+   "guest_text": "What time is check-in? my number is 777 123 456 and code 4711",
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "out": {
+    "kind": "ask_host",
+    "text": "",
+    "sources": [],
+    "summary": "",
+    "upset": false,
+    "reason": "model"
+   }
+  },
+  {
+   "name": "refuse",
+   "data": {
+    "kind": "refuse",
+    "reply": "Check-in is from 15:00.",
+    "sources": [
+     "c1"
+    ],
+    "host_summary": "x",
+    "upset": true
+   },
+   "guest_text": "What time is check-in? my number is 777 123 456 and code 4711",
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "out": {
+    "kind": "refuse",
+    "text": "",
+    "sources": [],
+    "summary": "",
+    "upset": false,
+    "reason": "model"
+   }
+  },
+  {
+   "name": "about_me",
+   "data": {
+    "kind": "about_me",
+    "reply": "Check-in is from 15:00.",
+    "sources": [
+     "c1"
+    ],
+    "host_summary": null,
+    "upset": false
+   },
+   "guest_text": "What time is check-in? my number is 777 123 456 and code 4711",
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "out": {
+    "kind": "about_me",
+    "text": "",
+    "sources": [],
+    "summary": "",
+    "upset": false,
+    "reason": "model"
+   }
+  },
+  {
+   "name": "unclear",
+   "data": {
+    "kind": "unclear",
+    "reply": "Check-in is from 15:00.",
+    "sources": [
+     "c1"
+    ],
+    "host_summary": null,
+    "upset": false
+   },
+   "guest_text": "What time is check-in? my number is 777 123 456 and code 4711",
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "out": {
+    "kind": "unclear",
+    "text": "",
+    "sources": [],
+    "summary": "",
+    "upset": false,
+    "reason": "model"
+   }
+  },
+  {
+   "name": "emergency",
+   "data": {
+    "kind": "emergency",
+    "reply": "Check-in is from 15:00.",
+    "sources": [
+     "c1"
+    ],
+    "host_summary": "Fire in the kitchen",
+    "upset": false
+   },
+   "guest_text": "What time is check-in? my number is 777 123 456 and code 4711",
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "out": {
+    "kind": "emergency",
+    "text": "",
+    "sources": [],
+    "summary": "Fire in the kitchen",
+    "upset": true,
+    "reason": "model"
+   }
+  },
+  {
+   "name": "emergency upset false",
+   "data": {
+    "kind": "emergency",
+    "reply": "Check-in is from 15:00.",
+    "sources": [
+     "c1"
+    ],
+    "host_summary": null,
+    "upset": false
+   },
+   "guest_text": "What time is check-in? my number is 777 123 456 and code 4711",
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "out": {
+    "kind": "emergency",
+    "text": "",
+    "sources": [],
+    "summary": "",
+    "upset": true,
+    "reason": "model"
+   }
+  },
+  {
+   "name": "unknown kind",
+   "data": {
+    "kind": "weird",
+    "reply": "Check-in is from 15:00.",
+    "sources": [
+     "c1"
+    ],
+    "host_summary": "s",
+    "upset": true
+   },
+   "guest_text": "What time is check-in? my number is 777 123 456 and code 4711",
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "out": {
+    "kind": "ask_host",
+    "text": "",
+    "sources": [],
+    "summary": "s",
+    "upset": true,
+    "reason": "model"
+   }
+  },
+  {
+   "name": "host_summary not str",
+   "data": {
+    "kind": "ask_host",
+    "reply": "",
+    "sources": [],
+    "host_summary": 5,
+    "upset": 1
+   },
+   "guest_text": "What time is check-in? my number is 777 123 456 and code 4711",
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "out": {
+    "kind": "ask_host",
+    "text": "",
+    "sources": [],
+    "summary": "5",
+    "upset": true,
+    "reason": "model"
+   }
+  },
+  {
+   "name": "sources not list",
+   "data": {
+    "kind": "answer",
+    "reply": "Hi 15",
+    "sources": "c1",
+    "host_summary": null,
+    "upset": false
+   },
+   "guest_text": "What time is check-in? my number is 777 123 456 and code 4711",
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "out": {
+    "kind": "ask_host",
+    "text": "",
+    "sources": [],
+    "summary": "",
+    "upset": false,
+    "reason": "no_source"
+   }
+  },
+  {
+   "name": "sources newline",
+   "data": {
+    "kind": "answer",
+    "reply": "Check-in is from 15:00.",
+    "sources": [
+     "c1\n"
+    ],
+    "host_summary": null,
+    "upset": false
+   },
+   "guest_text": "What time is check-in? my number is 777 123 456 and code 4711",
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "out": {
+    "kind": "answer",
+    "text": "Check-in is from 15:00.",
+    "sources": [
+     1
+    ],
+    "summary": "",
+    "upset": false,
+    "reason": ""
+   }
+  },
+  {
+   "name": "sources padded",
+   "data": {
+    "kind": "answer",
+    "reply": "Wifi is Flat-5G",
+    "sources": [
+     " c2 "
+    ],
+    "host_summary": null,
+    "upset": false
+   },
+   "guest_text": "What time is check-in? my number is 777 123 456 and code 4711",
+   "cards": [
+    {
+     "id": 1,
+     "apartment_id": 1,
+     "topic": "arrival",
+     "kind": "checkin",
+     "title": "",
+     "location": "Key box by the door",
+     "steps": "1. Enter code 4711\n2. Take the key\n  3. Lock up",
+     "watch_out": "Do not slam the <door>",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 2,
+     "facts": [
+      "Check-in from 15:00."
+     ]
+    },
+    {
+     "id": 2,
+     "apartment_id": 1,
+     "topic": "wifi",
+     "kind": "wifi",
+     "title": "",
+     "location": "Router in the hall",
+     "steps": "Network Flat-5G\nPassword on the router",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 5,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 3,
+     "apartment_id": 1,
+     "topic": "heating",
+     "kind": "heating",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 7,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 8,
+     "apartment_id": 1,
+     "topic": "kitchen",
+     "kind": "kitchen_appliances",
+     "title": "",
+     "location": "",
+     "steps": "",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "missing",
+     "source": "host",
+     "sort_order": 10,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": [
+      "There is a dishwasher."
+     ]
+    },
+    {
+     "id": 4,
+     "apartment_id": 1,
+     "topic": "checkout",
+     "kind": "checkout",
+     "title": "",
+     "location": "",
+     "steps": "Leave by 11:00",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 20,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 5,
+     "apartment_id": 1,
+     "topic": "emergency",
+     "kind": "emergency",
+     "title": "",
+     "location": "Phone 112 for all emergencies",
+     "steps": "Fire 150\nAmbulance 155\nHost: ask in the app",
+     "watch_out": "",
+     "video_url": "",
+     "visibility": "everyone",
+     "state": "done",
+     "source": "host",
+     "sort_order": 22,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    },
+    {
+     "id": 7,
+     "apartment_id": 1,
+     "topic": "custom",
+     "kind": "custom",
+     "title": "Pool <fun>",
+     "location": "",
+     "steps": "Open 9:00-20:00",
+     "watch_out": "",
+     "video_url": "https://v.example/x",
+     "visibility": "booked",
+     "state": "done",
+     "source": "host",
+     "sort_order": 0,
+     "created_at": "x",
+     "updated_at": "x",
+     "photos": 0,
+     "facts": []
+    }
+   ],
+   "out": {
+    "kind": "answer",
+    "text": "Wifi is Flat-5G",
+    "sources": [
+     2
+    ],
+    "summary": "",
+    "upset": false,
+    "reason": ""
+   }
+  }
+ ],
+ "try": [
+  {
+   "name": "answer",
+   "text": "What time is check-in?",
+   "scenario": "live",
+   "lang": "en",
+   "host_name": "Jan Novak",
+   "mult": 1,
+   "blocked": false,
+   "count": 0,
+   "script": [
+    {
+     "kind": "answer",
+     "reply": "Check-in is from 15:00.",
+     "sources": [
+      "c1"
+     ],
+     "host_summary": null,
+     "upset": false
+    }
+   ],
+   "result": {
+    "kind": "answer",
+    "text": "Check-in is from 15:00.",
+    "would_ask": false,
+    "left": 4
+   },
+   "recorded": 1,
+   "calls": [
+    {
+     "feature": "leon",
+     "system_sha": [
+      "6fb3bce3afbaaa49ab5b57aa919a15147c6f9720160c0e5a4232443839165308",
+      "bf10d5bf8b2fdcfb410bca4f05a62176eaf2ba56facebc689a5b5239ebcfb8c9"
+     ],
+     "messages": [
+      {
+       "role": "user",
+       "content": "Page language: en.\n<guest_message>\nWhat time is check-in?\n</guest_message>"
+      }
+     ],
+     "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "kind",
+       "reply",
+       "sources",
+       "host_summary",
+       "upset"
+      ],
+      "properties": {
+       "kind": {
+        "type": "string",
+        "enum": [
+         "answer",
+         "ask_host",
+         "refuse",
+         "about_me",
+         "emergency",
+         "unclear"
+        ]
+       },
+       "reply": {
+        "type": "string"
+       },
+       "sources": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "host_summary": {
+        "type": [
+         "string",
+         "null"
+        ]
+       },
+       "upset": {
+        "type": "boolean"
+       }
+      }
+     },
+     "key": "11",
+     "max_tokens": 500
+    }
+   ]
+  },
+  {
+   "name": "answer with summary",
+   "text": "Check-in time and where is the pool?",
+   "scenario": "live",
+   "lang": "en",
+   "host_name": "Jan Novak",
+   "mult": 1,
+   "blocked": false,
+   "count": 0,
+   "script": [
+    {
+     "kind": "answer",
+     "reply": "Check-in is from 15:00.",
+     "sources": [
+      "c1"
+     ],
+     "host_summary": "Where is the pool?",
+     "upset": false
+    }
+   ],
+   "result": {
+    "kind": "answer",
+    "text": "Check-in is from 15:00.\nThe rest I've passed to your host; the answer will appear here.",
+    "would_ask": true,
+    "left": 4
+   },
+   "recorded": 1,
+   "calls": [
+    {
+     "feature": "leon",
+     "system_sha": [
+      "6fb3bce3afbaaa49ab5b57aa919a15147c6f9720160c0e5a4232443839165308",
+      "bf10d5bf8b2fdcfb410bca4f05a62176eaf2ba56facebc689a5b5239ebcfb8c9"
+     ],
+     "messages": [
+      {
+       "role": "user",
+       "content": "Page language: en.\n<guest_message>\nCheck-in time and where is the pool?\n</guest_message>"
+      }
+     ],
+     "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "kind",
+       "reply",
+       "sources",
+       "host_summary",
+       "upset"
+      ],
+      "properties": {
+       "kind": {
+        "type": "string",
+        "enum": [
+         "answer",
+         "ask_host",
+         "refuse",
+         "about_me",
+         "emergency",
+         "unclear"
+        ]
+       },
+       "reply": {
+        "type": "string"
+       },
+       "sources": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "host_summary": {
+        "type": [
+         "string",
+         "null"
+        ]
+       },
+       "upset": {
+        "type": "boolean"
+       }
+      }
+     },
+     "key": "11",
+     "max_tokens": 500
+    }
+   ]
+  },
+  {
+   "name": "answer cs",
+   "text": "Kdy je check-in?",
+   "scenario": "live",
+   "lang": "cs",
+   "host_name": "Jan Novak",
+   "mult": 1,
+   "blocked": false,
+   "count": 0,
+   "script": [
+    {
+     "kind": "answer",
+     "reply": "Check-in is from 15:00.",
+     "sources": [
+      "c1"
+     ],
+     "host_summary": null,
+     "upset": false
+    }
+   ],
+   "result": {
+    "kind": "answer",
+    "text": "Check-in is from 15:00.",
+    "would_ask": false,
+    "left": 4
+   },
+   "recorded": 1,
+   "calls": [
+    {
+     "feature": "leon",
+     "system_sha": [
+      "6fb3bce3afbaaa49ab5b57aa919a15147c6f9720160c0e5a4232443839165308",
+      "bf10d5bf8b2fdcfb410bca4f05a62176eaf2ba56facebc689a5b5239ebcfb8c9"
+     ],
+     "messages": [
+      {
+       "role": "user",
+       "content": "Page language: cs.\n<guest_message>\nKdy je check-in?\n</guest_message>"
+      }
+     ],
+     "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "kind",
+       "reply",
+       "sources",
+       "host_summary",
+       "upset"
+      ],
+      "properties": {
+       "kind": {
+        "type": "string",
+        "enum": [
+         "answer",
+         "ask_host",
+         "refuse",
+         "about_me",
+         "emergency",
+         "unclear"
+        ]
+       },
+       "reply": {
+        "type": "string"
+       },
+       "sources": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "host_summary": {
+        "type": [
+         "string",
+         "null"
+        ]
+       },
+       "upset": {
+        "type": "boolean"
+       }
+      }
+     },
+     "key": "11",
+     "max_tokens": 500
+    }
+   ]
+  },
+  {
+   "name": "ask host",
+   "text": "Can I bring a horse?",
+   "scenario": "live",
+   "lang": "en",
+   "host_name": "Jan Novak",
+   "mult": 1,
+   "blocked": false,
+   "count": 0,
+   "script": [
+    {
+     "kind": "ask_host",
+     "reply": "Check-in is from 15:00.",
+     "sources": [
+      "c1"
+     ],
+     "host_summary": "horse",
+     "upset": false
+    }
+   ],
+   "result": {
+    "kind": "ask_host",
+    "text": "I don't want to guess about this, so I've asked Jan, your host. I'll show the answer here as soon as it comes.",
+    "would_ask": true,
+    "left": 4
+   },
+   "recorded": 1,
+   "calls": [
+    {
+     "feature": "leon",
+     "system_sha": [
+      "6fb3bce3afbaaa49ab5b57aa919a15147c6f9720160c0e5a4232443839165308",
+      "bf10d5bf8b2fdcfb410bca4f05a62176eaf2ba56facebc689a5b5239ebcfb8c9"
+     ],
+     "messages": [
+      {
+       "role": "user",
+       "content": "Page language: en.\n<guest_message>\nCan I bring a horse?\n</guest_message>"
+      }
+     ],
+     "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "kind",
+       "reply",
+       "sources",
+       "host_summary",
+       "upset"
+      ],
+      "properties": {
+       "kind": {
+        "type": "string",
+        "enum": [
+         "answer",
+         "ask_host",
+         "refuse",
+         "about_me",
+         "emergency",
+         "unclear"
+        ]
+       },
+       "reply": {
+        "type": "string"
+       },
+       "sources": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "host_summary": {
+        "type": [
+         "string",
+         "null"
+        ]
+       },
+       "upset": {
+        "type": "boolean"
+       }
+      }
+     },
+     "key": "11",
+     "max_tokens": 500
+    }
+   ]
+  },
+  {
+   "name": "ask host upset",
+   "text": "This is terrible, the heating is broken",
+   "scenario": "live",
+   "lang": "en",
+   "host_name": "Jan Novak",
+   "mult": 1,
+   "blocked": false,
+   "count": 0,
+   "script": [
+    {
+     "kind": "ask_host",
+     "reply": "Check-in is from 15:00.",
+     "sources": [
+      "c1"
+     ],
+     "host_summary": "heating",
+     "upset": true
+    }
+   ],
+   "result": {
+    "kind": "ask_host",
+    "text": "I'm sorry about this. I've passed it to Jan, your host, and I'll show the answer here as soon as it comes.",
+    "would_ask": true,
+    "left": 4
+   },
+   "recorded": 1,
+   "calls": [
+    {
+     "feature": "leon",
+     "system_sha": [
+      "6fb3bce3afbaaa49ab5b57aa919a15147c6f9720160c0e5a4232443839165308",
+      "bf10d5bf8b2fdcfb410bca4f05a62176eaf2ba56facebc689a5b5239ebcfb8c9"
+     ],
+     "messages": [
+      {
+       "role": "user",
+       "content": "Page language: en.\n<guest_message>\nThis is terrible, the heating is broken\n</guest_message>"
+      }
+     ],
+     "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "kind",
+       "reply",
+       "sources",
+       "host_summary",
+       "upset"
+      ],
+      "properties": {
+       "kind": {
+        "type": "string",
+        "enum": [
+         "answer",
+         "ask_host",
+         "refuse",
+         "about_me",
+         "emergency",
+         "unclear"
+        ]
+       },
+       "reply": {
+        "type": "string"
+       },
+       "sources": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "host_summary": {
+        "type": [
+         "string",
+         "null"
+        ]
+       },
+       "upset": {
+        "type": "boolean"
+       }
+      }
+     },
+     "key": "11",
+     "max_tokens": 500
+    }
+   ]
+  },
+  {
+   "name": "ask host no name",
+   "text": "Can I bring a horse?",
+   "scenario": "live",
+   "lang": "en",
+   "host_name": "",
+   "mult": 1,
+   "blocked": false,
+   "count": 0,
+   "script": [
+    {
+     "kind": "ask_host",
+     "reply": "Check-in is from 15:00.",
+     "sources": [
+      "c1"
+     ],
+     "host_summary": "horse",
+     "upset": false
+    }
+   ],
+   "result": {
+    "kind": "ask_host",
+    "text": "I don't want to guess about this, so I've asked your host. I'll show the answer here as soon as it comes.",
+    "would_ask": true,
+    "left": 4
+   },
+   "recorded": 1,
+   "calls": [
+    {
+     "feature": "leon",
+     "system_sha": [
+      "6fb3bce3afbaaa49ab5b57aa919a15147c6f9720160c0e5a4232443839165308",
+      "bf10d5bf8b2fdcfb410bca4f05a62176eaf2ba56facebc689a5b5239ebcfb8c9"
+     ],
+     "messages": [
+      {
+       "role": "user",
+       "content": "Page language: en.\n<guest_message>\nCan I bring a horse?\n</guest_message>"
+      }
+     ],
+     "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "kind",
+       "reply",
+       "sources",
+       "host_summary",
+       "upset"
+      ],
+      "properties": {
+       "kind": {
+        "type": "string",
+        "enum": [
+         "answer",
+         "ask_host",
+         "refuse",
+         "about_me",
+         "emergency",
+         "unclear"
+        ]
+       },
+       "reply": {
+        "type": "string"
+       },
+       "sources": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "host_summary": {
+        "type": [
+         "string",
+         "null"
+        ]
+       },
+       "upset": {
+        "type": "boolean"
+       }
+      }
+     },
+     "key": "11",
+     "max_tokens": 500
+    }
+   ]
+  },
+  {
+   "name": "guardrail",
+   "text": "What is the door code?",
+   "scenario": "live",
+   "lang": "en",
+   "host_name": "Jan Novak",
+   "mult": 1,
+   "blocked": false,
+   "count": 0,
+   "script": [
+    {
+     "kind": "answer",
+     "reply": "Code is 9999",
+     "sources": [
+      "c1"
+     ],
+     "host_summary": null,
+     "upset": false
+    }
+   ],
+   "result": {
+    "kind": "ask_host",
+    "text": "I don't want to guess about this, so I've asked Jan, your host. I'll show the answer here as soon as it comes.",
+    "would_ask": true,
+    "left": 4
+   },
+   "recorded": 1,
+   "calls": [
+    {
+     "feature": "leon",
+     "system_sha": [
+      "6fb3bce3afbaaa49ab5b57aa919a15147c6f9720160c0e5a4232443839165308",
+      "bf10d5bf8b2fdcfb410bca4f05a62176eaf2ba56facebc689a5b5239ebcfb8c9"
+     ],
+     "messages": [
+      {
+       "role": "user",
+       "content": "Page language: en.\n<guest_message>\nWhat is the door code?\n</guest_message>"
+      }
+     ],
+     "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "kind",
+       "reply",
+       "sources",
+       "host_summary",
+       "upset"
+      ],
+      "properties": {
+       "kind": {
+        "type": "string",
+        "enum": [
+         "answer",
+         "ask_host",
+         "refuse",
+         "about_me",
+         "emergency",
+         "unclear"
+        ]
+       },
+       "reply": {
+        "type": "string"
+       },
+       "sources": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "host_summary": {
+        "type": [
+         "string",
+         "null"
+        ]
+       },
+       "upset": {
+        "type": "boolean"
+       }
+      }
+     },
+     "key": "11",
+     "max_tokens": 500
+    }
+   ]
+  },
+  {
+   "name": "emergency",
+   "text": "There is a fire!",
+   "scenario": "live",
+   "lang": "en",
+   "host_name": "Jan Novak",
+   "mult": 1,
+   "blocked": false,
+   "count": 0,
+   "script": [
+    {
+     "kind": "emergency",
+     "reply": "Check-in is from 15:00.",
+     "sources": [
+      "c1"
+     ],
+     "host_summary": "fire",
+     "upset": false
+    }
+   ],
+   "result": {
+    "kind": "emergency",
+    "text": "If anyone is in danger, call 112 now (in Czechia also 150 fire, 155 ambulance, 158 police). I've told your host it is urgent.\nPhone 112 for all emergencies\nFire 150\nAmbulance 155\nHost: ask in the app",
+    "would_ask": true,
+    "left": 4
+   },
+   "recorded": 1,
+   "calls": [
+    {
+     "feature": "leon",
+     "system_sha": [
+      "6fb3bce3afbaaa49ab5b57aa919a15147c6f9720160c0e5a4232443839165308",
+      "bf10d5bf8b2fdcfb410bca4f05a62176eaf2ba56facebc689a5b5239ebcfb8c9"
+     ],
+     "messages": [
+      {
+       "role": "user",
+       "content": "Page language: en.\n<guest_message>\nThere is a fire!\n</guest_message>"
+      }
+     ],
+     "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "kind",
+       "reply",
+       "sources",
+       "host_summary",
+       "upset"
+      ],
+      "properties": {
+       "kind": {
+        "type": "string",
+        "enum": [
+         "answer",
+         "ask_host",
+         "refuse",
+         "about_me",
+         "emergency",
+         "unclear"
+        ]
+       },
+       "reply": {
+        "type": "string"
+       },
+       "sources": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "host_summary": {
+        "type": [
+         "string",
+         "null"
+        ]
+       },
+       "upset": {
+        "type": "boolean"
+       }
+      }
+     },
+     "key": "11",
+     "max_tokens": 500
+    }
+   ]
+  },
+  {
+   "name": "emergency no card",
+   "text": "There is a fire!",
+   "scenario": "live no emergency text",
+   "lang": "en",
+   "host_name": "Jan Novak",
+   "mult": 1,
+   "blocked": false,
+   "count": 0,
+   "script": [
+    {
+     "kind": "emergency",
+     "reply": "Check-in is from 15:00.",
+     "sources": [
+      "c1"
+     ],
+     "host_summary": "fire",
+     "upset": false
+    }
+   ],
+   "result": {
+    "kind": "emergency",
+    "text": "If anyone is in danger, call 112 now (in Czechia also 150 fire, 155 ambulance, 158 police). I've told your host it is urgent.",
+    "would_ask": true,
+    "left": 4
+   },
+   "recorded": 1,
+   "calls": [
+    {
+     "feature": "leon",
+     "system_sha": [
+      "6fb3bce3afbaaa49ab5b57aa919a15147c6f9720160c0e5a4232443839165308",
+      "5045b02c1acc49fe1d9512186020b2833236337c4fe97110336ca1d43bc2fa00"
+     ],
+     "messages": [
+      {
+       "role": "user",
+       "content": "Page language: en.\n<guest_message>\nThere is a fire!\n</guest_message>"
+      }
+     ],
+     "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "kind",
+       "reply",
+       "sources",
+       "host_summary",
+       "upset"
+      ],
+      "properties": {
+       "kind": {
+        "type": "string",
+        "enum": [
+         "answer",
+         "ask_host",
+         "refuse",
+         "about_me",
+         "emergency",
+         "unclear"
+        ]
+       },
+       "reply": {
+        "type": "string"
+       },
+       "sources": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "host_summary": {
+        "type": [
+         "string",
+         "null"
+        ]
+       },
+       "upset": {
+        "type": "boolean"
+       }
+      }
+     },
+     "key": "11",
+     "max_tokens": 500
+    }
+   ]
+  },
+  {
+   "name": "refuse",
+   "text": "Write my homework",
+   "scenario": "live",
+   "lang": "en",
+   "host_name": "Jan Novak",
+   "mult": 1,
+   "blocked": false,
+   "count": 0,
+   "script": [
+    {
+     "kind": "refuse",
+     "reply": "Check-in is from 15:00.",
+     "sources": [
+      "c1"
+     ],
+     "host_summary": null,
+     "upset": false
+    }
+   ],
+   "result": {
+    "kind": "refuse",
+    "text": "I can only help with your stay and this property. Is there anything about them I can do for you?",
+    "would_ask": false,
+    "left": 4
+   },
+   "recorded": 1,
+   "calls": [
+    {
+     "feature": "leon",
+     "system_sha": [
+      "6fb3bce3afbaaa49ab5b57aa919a15147c6f9720160c0e5a4232443839165308",
+      "bf10d5bf8b2fdcfb410bca4f05a62176eaf2ba56facebc689a5b5239ebcfb8c9"
+     ],
+     "messages": [
+      {
+       "role": "user",
+       "content": "Page language: en.\n<guest_message>\nWrite my homework\n</guest_message>"
+      }
+     ],
+     "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "kind",
+       "reply",
+       "sources",
+       "host_summary",
+       "upset"
+      ],
+      "properties": {
+       "kind": {
+        "type": "string",
+        "enum": [
+         "answer",
+         "ask_host",
+         "refuse",
+         "about_me",
+         "emergency",
+         "unclear"
+        ]
+       },
+       "reply": {
+        "type": "string"
+       },
+       "sources": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "host_summary": {
+        "type": [
+         "string",
+         "null"
+        ]
+       },
+       "upset": {
+        "type": "boolean"
+       }
+      }
+     },
+     "key": "11",
+     "max_tokens": 500
+    }
+   ]
+  },
+  {
+   "name": "about me",
+   "text": "Are you a robot?",
+   "scenario": "live",
+   "lang": "en",
+   "host_name": "Jan Novak",
+   "mult": 1,
+   "blocked": false,
+   "count": 0,
+   "script": [
+    {
+     "kind": "about_me",
+     "reply": "Check-in is from 15:00.",
+     "sources": [
+      "c1"
+     ],
+     "host_summary": null,
+     "upset": false
+    }
+   ],
+   "result": {
+    "kind": "about_me",
+    "text": "I'm Leon, your 24/7 concierge. I'm an AI, not a person: I answer from your host's guide, and when it has no answer I ask your host for you.",
+    "would_ask": false,
+    "left": 4
+   },
+   "recorded": 1,
+   "calls": [
+    {
+     "feature": "leon",
+     "system_sha": [
+      "6fb3bce3afbaaa49ab5b57aa919a15147c6f9720160c0e5a4232443839165308",
+      "bf10d5bf8b2fdcfb410bca4f05a62176eaf2ba56facebc689a5b5239ebcfb8c9"
+     ],
+     "messages": [
+      {
+       "role": "user",
+       "content": "Page language: en.\n<guest_message>\nAre you a robot?\n</guest_message>"
+      }
+     ],
+     "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "kind",
+       "reply",
+       "sources",
+       "host_summary",
+       "upset"
+      ],
+      "properties": {
+       "kind": {
+        "type": "string",
+        "enum": [
+         "answer",
+         "ask_host",
+         "refuse",
+         "about_me",
+         "emergency",
+         "unclear"
+        ]
+       },
+       "reply": {
+        "type": "string"
+       },
+       "sources": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "host_summary": {
+        "type": [
+         "string",
+         "null"
+        ]
+       },
+       "upset": {
+        "type": "boolean"
+       }
+      }
+     },
+     "key": "11",
+     "max_tokens": 500
+    }
+   ]
+  },
+  {
+   "name": "unclear",
+   "text": "Hmm what",
+   "scenario": "live",
+   "lang": "en",
+   "host_name": "Jan Novak",
+   "mult": 1,
+   "blocked": false,
+   "count": 0,
+   "script": [
+    {
+     "kind": "unclear",
+     "reply": "Check-in is from 15:00.",
+     "sources": [
+      "c1"
+     ],
+     "host_summary": null,
+     "upset": false
+    }
+   ],
+   "result": {
+    "kind": "unclear",
+    "text": "I'm not sure what you need. Tell me in a few words and I'll help.",
+    "would_ask": false,
+    "left": 4
+   },
+   "recorded": 1,
+   "calls": [
+    {
+     "feature": "leon",
+     "system_sha": [
+      "6fb3bce3afbaaa49ab5b57aa919a15147c6f9720160c0e5a4232443839165308",
+      "bf10d5bf8b2fdcfb410bca4f05a62176eaf2ba56facebc689a5b5239ebcfb8c9"
+     ],
+     "messages": [
+      {
+       "role": "user",
+       "content": "Page language: en.\n<guest_message>\nHmm what\n</guest_message>"
+      }
+     ],
+     "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "kind",
+       "reply",
+       "sources",
+       "host_summary",
+       "upset"
+      ],
+      "properties": {
+       "kind": {
+        "type": "string",
+        "enum": [
+         "answer",
+         "ask_host",
+         "refuse",
+         "about_me",
+         "emergency",
+         "unclear"
+        ]
+       },
+       "reply": {
+        "type": "string"
+       },
+       "sources": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "host_summary": {
+        "type": [
+         "string",
+         "null"
+        ]
+       },
+       "upset": {
+        "type": "boolean"
+       }
+      }
+     },
+     "key": "11",
+     "max_tokens": 500
+    }
+   ]
+  },
+  {
+   "name": "ai error",
+   "text": "What time is check-in?",
+   "scenario": "live",
+   "lang": "en",
+   "host_name": "Jan Novak",
+   "mult": 1,
+   "blocked": false,
+   "count": 0,
+   "script": [
+    {
+     "error": "api"
+    }
+   ],
+   "result": {
+    "kind": "passed",
+    "text": "I've passed your message to Jan, your host. The answer will appear here.",
+    "would_ask": true,
+    "left": 4
+   },
+   "recorded": 1,
+   "calls": [
+    {
+     "feature": "leon",
+     "system_sha": [
+      "6fb3bce3afbaaa49ab5b57aa919a15147c6f9720160c0e5a4232443839165308",
+      "bf10d5bf8b2fdcfb410bca4f05a62176eaf2ba56facebc689a5b5239ebcfb8c9"
+     ],
+     "messages": [
+      {
+       "role": "user",
+       "content": "Page language: en.\n<guest_message>\nWhat time is check-in?\n</guest_message>"
+      }
+     ],
+     "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "kind",
+       "reply",
+       "sources",
+       "host_summary",
+       "upset"
+      ],
+      "properties": {
+       "kind": {
+        "type": "string",
+        "enum": [
+         "answer",
+         "ask_host",
+         "refuse",
+         "about_me",
+         "emergency",
+         "unclear"
+        ]
+       },
+       "reply": {
+        "type": "string"
+       },
+       "sources": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "host_summary": {
+        "type": [
+         "string",
+         "null"
+        ]
+       },
+       "upset": {
+        "type": "boolean"
+       }
+      }
+     },
+     "key": "11",
+     "max_tokens": 500
+    }
+   ]
+  },
+  {
+   "name": "ai disabled",
+   "text": "What time is check-in?",
+   "scenario": "live",
+   "lang": "en",
+   "host_name": "Jan Novak",
+   "mult": 1,
+   "blocked": false,
+   "count": 0,
+   "script": [
+    {
+     "error": "disabled"
+    }
+   ],
+   "result": {
+    "kind": "passed",
+    "text": "I've passed your message to Jan, your host. The answer will appear here.",
+    "would_ask": true,
+    "left": 4
+   },
+   "recorded": 1,
+   "calls": [
+    {
+     "feature": "leon",
+     "system_sha": [
+      "6fb3bce3afbaaa49ab5b57aa919a15147c6f9720160c0e5a4232443839165308",
+      "bf10d5bf8b2fdcfb410bca4f05a62176eaf2ba56facebc689a5b5239ebcfb8c9"
+     ],
+     "messages": [
+      {
+       "role": "user",
+       "content": "Page language: en.\n<guest_message>\nWhat time is check-in?\n</guest_message>"
+      }
+     ],
+     "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "kind",
+       "reply",
+       "sources",
+       "host_summary",
+       "upset"
+      ],
+      "properties": {
+       "kind": {
+        "type": "string",
+        "enum": [
+         "answer",
+         "ask_host",
+         "refuse",
+         "about_me",
+         "emergency",
+         "unclear"
+        ]
+       },
+       "reply": {
+        "type": "string"
+       },
+       "sources": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "host_summary": {
+        "type": [
+         "string",
+         "null"
+        ]
+       },
+       "upset": {
+        "type": "boolean"
+       }
+      }
+     },
+     "key": "11",
+     "max_tokens": 500
+    }
+   ]
+  },
+  {
+   "name": "ai budget",
+   "text": "What time is check-in?",
+   "scenario": "live",
+   "lang": "en",
+   "host_name": "Jan Novak",
+   "mult": 1,
+   "blocked": false,
+   "count": 0,
+   "script": [
+    {
+     "error": "month"
+    }
+   ],
+   "result": {
+    "kind": "passed",
+    "text": "I've passed your message to Jan, your host. The answer will appear here.",
+    "would_ask": true,
+    "left": 4
+   },
+   "recorded": 1,
+   "calls": [
+    {
+     "feature": "leon",
+     "system_sha": [
+      "6fb3bce3afbaaa49ab5b57aa919a15147c6f9720160c0e5a4232443839165308",
+      "bf10d5bf8b2fdcfb410bca4f05a62176eaf2ba56facebc689a5b5239ebcfb8c9"
+     ],
+     "messages": [
+      {
+       "role": "user",
+       "content": "Page language: en.\n<guest_message>\nWhat time is check-in?\n</guest_message>"
+      }
+     ],
+     "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "kind",
+       "reply",
+       "sources",
+       "host_summary",
+       "upset"
+      ],
+      "properties": {
+       "kind": {
+        "type": "string",
+        "enum": [
+         "answer",
+         "ask_host",
+         "refuse",
+         "about_me",
+         "emergency",
+         "unclear"
+        ]
+       },
+       "reply": {
+        "type": "string"
+       },
+       "sources": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "host_summary": {
+        "type": [
+         "string",
+         "null"
+        ]
+       },
+       "upset": {
+        "type": "boolean"
+       }
+      }
+     },
+     "key": "11",
+     "max_tokens": 500
+    }
+   ]
+  },
+  {
+   "name": "paused plan",
+   "text": "What time is check-in?",
+   "scenario": "live",
+   "lang": "en",
+   "host_name": "Jan Novak",
+   "mult": 0,
+   "blocked": false,
+   "count": 0,
+   "script": [],
+   "result": {
+    "kind": "passed",
+    "text": "I've passed your message to Jan, your host. The answer will appear here.",
+    "would_ask": true,
+    "left": 5
+   },
+   "recorded": 0,
+   "calls": []
+  },
+  {
+   "name": "empty",
+   "text": "   ",
+   "scenario": "live",
+   "lang": "en",
+   "host_name": "Jan Novak",
+   "mult": 1,
+   "blocked": false,
+   "count": 0,
+   "script": [],
+   "result": {
+    "kind": "too_long",
+    "text": "Please keep a message under 500 characters.",
+    "would_ask": false,
+    "left": 5
+   },
+   "recorded": 0,
+   "calls": []
+  },
+  {
+   "name": "too long",
+   "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "scenario": "live",
+   "lang": "en",
+   "host_name": "Jan Novak",
+   "mult": 1,
+   "blocked": false,
+   "count": 0,
+   "script": [],
+   "result": {
+    "kind": "too_long",
+    "text": "Please keep a message under 500 characters.",
+    "would_ask": false,
+    "left": 5
+   },
+   "recorded": 0,
+   "calls": []
+  },
+  {
+   "name": "too long cs",
+   "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "scenario": "live",
+   "lang": "cs",
+   "host_name": "Jan Novak",
+   "mult": 1,
+   "blocked": false,
+   "count": 0,
+   "script": [],
+   "result": {
+    "kind": "too_long",
+    "text": "Napište prosím zprávu kratší než 500 znaků.",
+    "would_ask": false,
+    "left": 5
+   },
+   "recorded": 0,
+   "calls": []
+  },
+  {
+   "name": "max length",
+   "text": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "scenario": "live",
+   "lang": "en",
+   "host_name": "Jan Novak",
+   "mult": 1,
+   "blocked": false,
+   "count": 0,
+   "script": [
+    {
+     "kind": "answer",
+     "reply": "Check-in is from 15:00.",
+     "sources": [
+      "c1"
+     ],
+     "host_summary": null,
+     "upset": false
+    }
+   ],
+   "result": {
+    "kind": "answer",
+    "text": "Check-in is from 15:00.",
+    "would_ask": false,
+    "left": 4
+   },
+   "recorded": 1,
+   "calls": [
+    {
+     "feature": "leon",
+     "system_sha": [
+      "6fb3bce3afbaaa49ab5b57aa919a15147c6f9720160c0e5a4232443839165308",
+      "bf10d5bf8b2fdcfb410bca4f05a62176eaf2ba56facebc689a5b5239ebcfb8c9"
+     ],
+     "messages": [
+      {
+       "role": "user",
+       "content": "Page language: en.\n<guest_message>\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n</guest_message>"
+      }
+     ],
+     "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "kind",
+       "reply",
+       "sources",
+       "host_summary",
+       "upset"
+      ],
+      "properties": {
+       "kind": {
+        "type": "string",
+        "enum": [
+         "answer",
+         "ask_host",
+         "refuse",
+         "about_me",
+         "emergency",
+         "unclear"
+        ]
+       },
+       "reply": {
+        "type": "string"
+       },
+       "sources": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "host_summary": {
+        "type": [
+         "string",
+         "null"
+        ]
+       },
+       "upset": {
+        "type": "boolean"
+       }
+      }
+     },
+     "key": "11",
+     "max_tokens": 500
+    }
+   ]
+  },
+  {
+   "name": "smalltalk hi",
+   "text": "Hello!",
+   "scenario": "live",
+   "lang": "en",
+   "host_name": "Jan Novak",
+   "mult": 1,
+   "blocked": false,
+   "count": 0,
+   "script": [],
+   "result": {
+    "kind": "smalltalk",
+    "text": "Hello! What can I do for you?",
+    "would_ask": false,
+    "left": 5
+   },
+   "recorded": 0,
+   "calls": []
+  },
+  {
+   "name": "smalltalk thanks cs",
+   "text": "Děkuji",
+   "scenario": "live",
+   "lang": "cs",
+   "host_name": "Jan Novak",
+   "mult": 1,
+   "blocked": false,
+   "count": 0,
+   "script": [],
+   "result": {
+    "kind": "smalltalk",
+    "text": "Rádo se stalo. Kdybyste ještě něco potřebovali, jsem tu.",
+    "would_ask": false,
+    "left": 5
+   },
+   "recorded": 0,
+   "calls": []
+  },
+  {
+   "name": "noise",
+   "text": "???",
+   "scenario": "live",
+   "lang": "en",
+   "host_name": "Jan Novak",
+   "mult": 1,
+   "blocked": false,
+   "count": 0,
+   "script": [],
+   "result": {
+    "kind": "unclear",
+    "text": "I'm not sure what you need. Tell me in a few words and I'll help.",
+    "would_ask": false,
+    "left": 5
+   },
+   "recorded": 0,
+   "calls": []
+  },
+  {
+   "name": "cap",
+   "text": "What time is check-in?",
+   "scenario": "live",
+   "lang": "en",
+   "host_name": "Jan Novak",
+   "mult": 1,
+   "blocked": true,
+   "count": 5,
+   "script": [],
+   "result": {
+    "kind": "cap",
+    "text": "",
+    "would_ask": false,
+    "left": 0
+   },
+   "recorded": 0,
+   "calls": []
+  },
+  {
+   "name": "no guide",
+   "text": "What time is check-in?",
+   "scenario": "not live",
+   "lang": "en",
+   "host_name": "Jan Novak",
+   "mult": 1,
+   "blocked": false,
+   "count": 0,
+   "script": [],
+   "result": {
+    "kind": "no_guide",
+    "text": "",
+    "would_ask": false,
+    "left": 5
+   },
+   "recorded": 0,
+   "calls": []
+  },
+  {
+   "name": "left",
+   "text": "What time is check-in?",
+   "scenario": "live",
+   "lang": "en",
+   "host_name": "Jan Novak",
+   "mult": 1,
+   "blocked": false,
+   "count": 3,
+   "script": [
+    {
+     "kind": "answer",
+     "reply": "Check-in is from 15:00.",
+     "sources": [
+      "c1"
+     ],
+     "host_summary": null,
+     "upset": false
+    }
+   ],
+   "result": {
+    "kind": "answer",
+    "text": "Check-in is from 15:00.",
+    "would_ask": false,
+    "left": 1
+   },
+   "recorded": 1,
+   "calls": [
+    {
+     "feature": "leon",
+     "system_sha": [
+      "6fb3bce3afbaaa49ab5b57aa919a15147c6f9720160c0e5a4232443839165308",
+      "bf10d5bf8b2fdcfb410bca4f05a62176eaf2ba56facebc689a5b5239ebcfb8c9"
+     ],
+     "messages": [
+      {
+       "role": "user",
+       "content": "Page language: en.\n<guest_message>\nWhat time is check-in?\n</guest_message>"
+      }
+     ],
+     "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "kind",
+       "reply",
+       "sources",
+       "host_summary",
+       "upset"
+      ],
+      "properties": {
+       "kind": {
+        "type": "string",
+        "enum": [
+         "answer",
+         "ask_host",
+         "refuse",
+         "about_me",
+         "emergency",
+         "unclear"
+        ]
+       },
+       "reply": {
+        "type": "string"
+       },
+       "sources": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "host_summary": {
+        "type": [
+         "string",
+         "null"
+        ]
+       },
+       "upset": {
+        "type": "boolean"
+       }
+      }
+     },
+     "key": "11",
+     "max_tokens": 500
+    }
+   ]
+  },
+  {
+   "name": "redacted",
+   "text": "My email is anna@example.test, phone +420 777 123 456, booking AB1234567: when is check-in?",
+   "scenario": "live",
+   "lang": "en",
+   "host_name": "Jan Novak",
+   "mult": 1,
+   "blocked": false,
+   "count": 0,
+   "script": [
+    {
+     "kind": "answer",
+     "reply": "Check-in is from 15:00.",
+     "sources": [
+      "c1"
+     ],
+     "host_summary": null,
+     "upset": false
+    }
+   ],
+   "result": {
+    "kind": "answer",
+    "text": "Check-in is from 15:00.",
+    "would_ask": false,
+    "left": 4
+   },
+   "recorded": 1,
+   "calls": [
+    {
+     "feature": "leon",
+     "system_sha": [
+      "6fb3bce3afbaaa49ab5b57aa919a15147c6f9720160c0e5a4232443839165308",
+      "bf10d5bf8b2fdcfb410bca4f05a62176eaf2ba56facebc689a5b5239ebcfb8c9"
+     ],
+     "messages": [
+      {
+       "role": "user",
+       "content": "Page language: en.\n<guest_message>\nMy email is [email], phone [phone], booking [number]: when is check-in?\n</guest_message>"
+      }
+     ],
+     "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "kind",
+       "reply",
+       "sources",
+       "host_summary",
+       "upset"
+      ],
+      "properties": {
+       "kind": {
+        "type": "string",
+        "enum": [
+         "answer",
+         "ask_host",
+         "refuse",
+         "about_me",
+         "emergency",
+         "unclear"
+        ]
+       },
+       "reply": {
+        "type": "string"
+       },
+       "sources": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "host_summary": {
+        "type": [
+         "string",
+         "null"
+        ]
+       },
+       "upset": {
+        "type": "boolean"
+       }
+      }
+     },
+     "key": "11",
+     "max_tokens": 500
+    }
+   ]
+  }
+ ]
+}

@@ -1,6 +1,6 @@
 # 1572: Go cleaning host pages, part 3: property settings (instructions) and the cleaner share links
 
-Status: todo
+Status: review
 Depends on: 1570, 1571 | Base commit: current tip of the working branch | Branch: task/1572-go-cleaning-settings-shares
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

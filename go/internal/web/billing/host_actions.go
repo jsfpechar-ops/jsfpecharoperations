@@ -46,7 +46,7 @@ func valueError(err error) bool {
 
 // hostPlanOrder serves POST /predplatne (plan_order, lines 84-109).
 func (d deps) hostPlanOrder(w http.ResponseWriter, r *http.Request) {
-	c := d.enter(w, r, gate{open: true})
+	c := d.enter(w, r, gate{})
 	if c == nil {
 		return
 	}
@@ -136,7 +136,7 @@ var changeValues = map[string][]string{
 
 // hostPlanChange serves POST /predplatne/zmena (plan_change, lines 133-146).
 func (d deps) hostPlanChange(w http.ResponseWriter, r *http.Request) {
-	c := d.enter(w, r, gate{open: true})
+	c := d.enter(w, r, gate{})
 	if c == nil {
 		return
 	}

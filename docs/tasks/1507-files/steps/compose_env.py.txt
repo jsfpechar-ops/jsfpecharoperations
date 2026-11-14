@@ -1,0 +1,32 @@
+"""Brief 1507 step 3: pass the sign-up, Turnstile and proxy variables to the ubyhost-go service.
+
+Run from the repo root. Adds each bare key only when the service does not list it yet
+(brief 1502 may have added the Turnstile and proxy keys already), so a second run changes nothing.
+"""
+import re
+p = "deploy/lightsail/docker-compose.yml"
+s = open(p).read()
+start = s.index("  ubyhost-go:\n")
+end = s.index("    volumes:\n", start)
+block = s[start:end]
+added = []
+for key, after in (("UBYHOST_SIGNUP_ENABLED", "UBYHOST_SECRET_KEY"),
+                   ("UBYHOST_SIGNUP_NOTIFY_EMAIL", "UBYHOST_SIGNUP_ENABLED"),
+                   ("UBYHOST_TRUSTED_PROXY_CIDRS", "UBYHOST_TERMS_VERSION"),
+                   ("TURNSTILE_HOSTNAMES", "POSTHOG_PROJECT_API_KEY"),
+                   ("TURNSTILE_SECRET", "TURNSTILE_HOSTNAMES"),
+                   ("TURNSTILE_SITE_KEY", "TURNSTILE_SECRET")):
+    if re.search(r"^      " + key + r":", block, re.M):
+        continue
+    line = "      " + after + ":"
+    i = block.index(line)
+    j = block.index("\n", i) + 1
+    block = block[:j] + "      " + key + ":\n" + block[j:]
+    added.append(key)
+old_comment = "(no SES/AWS, Turnstile, Grafana or backup secrets)"
+if old_comment in block:
+    block = block.replace(old_comment, "(no SES/AWS, Grafana or backup secrets)")
+    added.append("(comment)")
+s = s[:start] + block + s[end:]
+open(p, "w").write(s)
+print("added:", " ".join(added) or "none")

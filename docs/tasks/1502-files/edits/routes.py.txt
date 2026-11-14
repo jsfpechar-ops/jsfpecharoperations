@@ -1,0 +1,15 @@
+import sys
+p = 'go/internal/web/auth/auth.go'
+s = open(p, encoding='utf-8').read()
+rows = (
+    '\t\t{"GET /login", "/login", d.loginForm},\n'
+    '\t\t{"POST /login", "/login", d.loginSubmit},\n'
+    '\t\t{"GET /login/link", "/login/link", d.loginLinkForm},\n'
+    '\t\t{"POST /login/link", "/login/link", d.loginLinkSubmit},\n'
+)
+if rows in s:
+    sys.exit('rows already there')
+start = s.index('func Routes(')
+end = s.index('\n\t}\n}\n', start) + 1
+open(p, 'w', encoding='utf-8').write(s[:end] + rows + s[end:])
+print('added 4 rows')
