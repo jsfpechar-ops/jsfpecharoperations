@@ -1,6 +1,6 @@
 # 1442: Go guest guide editor, part 3: show and delete a card photo
 
-Status: todo
+Status: review
 Depends on: 1440 | Base commit: 68c0e0985 | Branch: task/1442-go-guide-editor-photos
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
