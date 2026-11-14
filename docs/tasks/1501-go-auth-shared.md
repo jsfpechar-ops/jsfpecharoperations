@@ -1,6 +1,6 @@
 # 1501: Go auth shared pieces (dormant): Turnstile check, client address, `_finish_login`, login language, account mails
 
-Status: todo
+Status: review
 Depends on: none | Base commit: none (one big PR mode, see below) | Branch: the orchestrator's current branch
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
