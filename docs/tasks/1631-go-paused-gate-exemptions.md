@@ -1,6 +1,6 @@
 # 1631: Go paused-plan exemptions live in hostweb.Login, with Python parity and PostgreSQL tests
 
-Status: todo
+Status: review
 Depends on: none (independent; run on go-wave3) | Base commit: none (one big PR mode, see below) | Branch: the orchestrator's current branch
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

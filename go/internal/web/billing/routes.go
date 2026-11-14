@@ -54,10 +54,6 @@ type call struct {
 // gate says which Python dependencies a route has besides the CSRF check.
 type gate struct {
 	admin bool // _require_admin (routes/admin_accounts.py 716-723)
-	// open is auth._READ_ONLY_OPEN_PREFIXES: a paused account may still post here
-	// (/predplatne). hostweb.Login redirects every POST of a paused workspace, so
-	// an open route masks the method for that one call.
-	open bool
 }
 
 // enter runs the Python dependencies in their order: protect_host_post (CSRF,
@@ -109,12 +105,7 @@ func (d deps) login(w http.ResponseWriter, r *http.Request, g gate) *call {
 	if g.admin {
 		h, err = admingate.Require(w, r, d.pool, d.getenv, at)
 	} else {
-		lr := r
-		if g.open && r.Method == http.MethodPost {
-			lr = r.Clone(r.Context())
-			lr.Method = http.MethodGet
-		}
-		h, err = hostweb.Login(w, lr, d.pool, d.getenv, at)
+		h, err = hostweb.Login(w, r, d.pool, d.getenv, at)
 	}
 	if err != nil {
 		fail(w, err)
@@ -248,7 +239,7 @@ func (d deps) hostInvoicePDF(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	c := d.enter(w, r, gate{open: true})
+	c := d.enter(w, r, gate{})
 	if c == nil {
 		return
 	}
@@ -267,7 +258,7 @@ func (d deps) hostInvoicePDF(w http.ResponseWriter, r *http.Request) {
 
 // hostCancel serves POST /predplatne/zrusit (plan_cancel, lines 149-159).
 func (d deps) hostCancel(w http.ResponseWriter, r *http.Request) {
-	c := d.enter(w, r, gate{open: true})
+	c := d.enter(w, r, gate{})
 	if c == nil {
 		return
 	}
@@ -288,7 +279,7 @@ func (d deps) hostCancel(w http.ResponseWriter, r *http.Request) {
 
 // hostResume serves POST /predplatne/obnovit (plan_resume, lines 162-172).
 func (d deps) hostResume(w http.ResponseWriter, r *http.Request) {
-	c := d.enter(w, r, gate{open: true})
+	c := d.enter(w, r, gate{})
 	if c == nil {
 		return
 	}
