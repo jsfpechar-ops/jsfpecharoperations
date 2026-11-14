@@ -1,6 +1,6 @@
 # 1427: Go invoice pages: issue, preview and the route table
 
-Status: todo
+Status: review
 Depends on: 1425 and 1426 (both merged or on this branch) | Base commit: the working branch head (no fixed commit) | Branch: the current branch (one big PR)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B
 
