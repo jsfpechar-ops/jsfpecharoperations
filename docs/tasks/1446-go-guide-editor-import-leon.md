@@ -1,6 +1,6 @@
 # 1446: Go guest guide editor, part 7: queue a listing import and the Leon switch page
 
-Status: todo
+Status: review
 Depends on: 1445 | Base commit: 68c0e0985 | Branch: task/1446-go-guide-editor-import-leon
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
