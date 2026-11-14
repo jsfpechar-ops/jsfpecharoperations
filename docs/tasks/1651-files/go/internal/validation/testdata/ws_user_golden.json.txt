@@ -1,0 +1,114 @@
+[
+ {
+  "In": "uby-ws_MLJNO",
+  "Out": "MLJNO"
+ },
+ {
+  "In": "UBY-WS_MLJNO",
+  "Out": "MLJNO"
+ },
+ {
+  "In": "uby-ws_mljnoX",
+  "Out": "MLJNOX"
+ },
+ {
+  "In": "uby-ws_abcd",
+  "Out": ""
+ },
+ {
+  "In": "uby-ws_abcdefg",
+  "Out": ""
+ },
+ {
+  "In": "uby-wsab12cd",
+  "Out": "AB12CD"
+ },
+ {
+  "In": "UBY-WSAB12CD",
+  "Out": "AB12CD"
+ },
+ {
+  "In": "uby-wsab12c",
+  "Out": ""
+ },
+ {
+  "In": "uby-wsab12cde",
+  "Out": ""
+ },
+ {
+  "In": "uby-tws12345",
+  "Out": ""
+ },
+ {
+  "In": "uby-tws1234",
+  "Out": ""
+ },
+ {
+  "In": "UBY-TWS12345",
+  "Out": ""
+ },
+ {
+  "In": " uby-ws_MLJNO ",
+  "Out": "MLJNO"
+ },
+ {
+  "In": "\tuby-wsab12cd\n",
+  "Out": "AB12CD"
+ },
+ {
+  "In": "uby-ws_ab-de",
+  "Out": ""
+ },
+ {
+  "In": "uby-ws_ab dé",
+  "Out": ""
+ },
+ {
+  "In": "",
+  "Out": ""
+ },
+ {
+  "In": "uby-ws",
+  "Out": ""
+ },
+ {
+  "In": "uby-ws_",
+  "Out": ""
+ },
+ {
+  "In": "xuby-ws_abcde",
+  "Out": ""
+ },
+ {
+  "In": "uby-ws_abcde\n\n",
+  "Out": "ABCDE"
+ },
+ {
+  "In": "uby-wsſabcde",
+  "Out": "SABCDE"
+ },
+ {
+  "In": "uby-ws_Kabcd",
+  "Out": "KABCD"
+ },
+ {
+  "In": "uby-wséabcd",
+  "Out": ""
+ },
+ {
+  "In": "uby_ws_abcde",
+  "Out": ""
+ },
+ {
+  "In": "uby-wſ_abcde",
+  "Out": ""
+ },
+ {
+  "In": "uby-wsKabcde",
+  "Out": "KABCDE"
+ },
+ {
+  "In": "uby-ws_abcdé",
+  "Out": ""
+ }
+]
