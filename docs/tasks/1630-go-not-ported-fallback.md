@@ -26,6 +26,8 @@ Tier A (deploy routing). Rules: 3 nothing real in the repo; 4 no new dependency 
 
 **What a signed-in user notices when this deploys:** nothing, until `/apartments` or `/entities` is in `UBYHOST_GO_PATHS`. With the paths listed and a host that has a live property, `/apartments` shows the Python page (200) instead of a bare "not served by Go yet" error. With the paths not listed, Caddy behaves as before.
 
+**Verified by the brief writer (2026-11-14).** Steps 1-4 applied exactly as written in a scratch tree (dropped afterwards): gofmt, `go build ./...` and `go vet` clean; `go test -v ./internal/web/properties/...` with PostgreSQL 16 passes, 0 FAIL, 0 SKIP, `TestNotPortedHeader` passes. `caddy validate --adapter caddyfile` (Caddy v2.10.2 built locally) prints `Valid configuration` for Caddyfile.acme and Caddyfile.cloudflare, each with and without `UBYHOST_APP_DOMAIN` (cloudflare needs the origin cert files, as in CI). Functional check with the same block on localhost and two stub upstreams (Go stub, Python stub): GET to a Go path with a 501 plus the header returns Python's 200; HEAD likewise; a 501 without the header passes through as 501; a POST to the same path is not re-sent (501 from Go); a path not in the list goes to Python; a client-sent `CF-Connecting-IP: 6.6.6.6` was replaced on both the Go hop and the Python fallback hop. Not run here: Docker (no daemon), so the `caddy-validate.sh` wrapper itself (step 5) was not run.
+
 Anchors (step 0, each `grep -cF '<anchor>' <file>` prints 1 unless the table says 2):
 
 | File | Anchor | Count |
