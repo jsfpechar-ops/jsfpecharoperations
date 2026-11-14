@@ -1,0 +1,86 @@
+{{/* Port of App/app/templates/_havel_thread.html and _havel_card.html (brief 1433). */}}
+{{define "havel.thread"}}{{$v := .}}
+{{range $i, $it := .ThreadItems}}
+  {{if eq $it.Role "host"}}
+  <div class="havel-msg havel-msg-host"><span class="sr-only">{{t "havel.you"}}: </span>
+    <div class="havel-bubble">{{range $it.Blocks}}<p>{{if eq .Kind "p"}}{{.Text}}{{else}}{{.Joined}}{{end}}</p>{{end}}</div>
+  </div>
+  {{else}}
+  <div class="havel-msg havel-msg-havel" tabindex="-1"{{if $v.IsGreeting $i $it}} data-havel-greeting{{end}}>
+    <div class="havel-who"><span class="havel-avatar" aria-hidden="true">{{icon "message-circle-question" 16}}</span><span class="havel-name">{{t "havel.name"}}</span></div>
+    <div class="havel-bubble">
+      {{range $it.Blocks}}{{if eq .Kind "ol"}}<ol>{{range .Items}}<li>{{.}}</li>{{end}}</ol>{{else}}<p>{{.Text}}</p>{{end}}{{end}}
+    </div>
+    {{if $it.Card}}{{template "havel.card" $it.Card}}{{end}}
+    {{if or $it.Links $it.Support $it.NotHelped}}
+    <div class="havel-links">
+      {{range $it.Links}}<a class="ui-btn ui-btn-secondary ui-btn-compact" href="{{.URL}}">{{.Label}}{{icon "chevron-right" 16}}</a>{{end}}
+      {{if and $it.NotHelped ($v.IsLast $i)}}<form method="post" action="/havel/not-helped" data-havel-not-helped><input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="history" value="{{$v.History}}"><input type="hidden" name="history_sig" value="{{$v.HistorySig}}"><input type="hidden" name="page" value="{{$v.Page}}"><button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{t "havel.not_helped"}}</button></form>{{end}}
+      {{if and $it.Support ($v.IsLast $i)}}{{template "havel.support" (kv "V" $v "Prefill" $it.SupportSummary)}}{{end}}
+    </div>
+    {{end}}
+    {{if $it.Next}}
+    <form method="post" action="/havel" class="havel-next" data-havel-next>
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <input type="hidden" name="history" value="{{$v.History}}">
+      <input type="hidden" name="history_sig" value="{{$v.HistorySig}}">
+      <input type="hidden" name="page" value="{{$v.Page}}">
+      <input type="hidden" name="return_to" value="{{$v.ReturnTo}}">
+      <p class="havel-meta">{{t "havel.next_title"}}</p>
+      <div class="ui-chips havel-chips">{{range $it.Next}}<button class="ui-chip havel-chip" type="submit" name="message" value="{{.}}">{{.}}</button>{{end}}</div>
+    </form>
+    {{end}}
+  </div>
+  {{end}}
+{{end}}
+{{if .Fragment}}<div hidden data-havel-state data-history="{{.History}}" data-sig="{{.HistorySig}}" data-state="{{.State}}"{{if .Error}} data-error="{{.Error}}"{{end}}></div>{{end}}
+{{end}}
+
+{{/* The confirm card; the data is the *HavelCard. */}}
+{{define "havel.card"}}{{$card := .}}
+<div class="ui-card havel-card" data-havel-card="{{.Type}}">
+  <p class="havel-card-title">{{t .Title}}</p>
+  {{if eq .Type "show_guest_link"}}
+  <dl class="havel-card-facts">
+    <div><dt class="sr-only">{{t "stays.add_panel.apartment"}}</dt><dd>{{ui_pdot .Property.Index .Property.Name}}</dd></div>
+    <div><dt class="sr-only">{{t "havel.card.title_link"}}</dt><dd class="havel-card-link"><span id="havel-link-{{.Property.ID}}">{{.Link}}</span>{{copy_button (printf "havel-link-%d" .Property.ID)}}</dd></div>
+    {{if .Pin}}<div><dt>{{t "havel.card.pin"}}</dt><dd class="havel-card-pin">{{.Pin}}</dd></div>{{end}}
+  </dl>
+  <div class="havel-card-actions"><a class="ui-btn ui-btn-quiet ui-btn-compact" href="{{.GuestsURL}}">{{t "havel.card.open_guest_links"}}{{icon "chevron-right" 16}}</a></div>
+  {{else}}
+  <form method="post" action="{{.Action}}" class="havel-card-form">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    {{range .Hidden}}<input type="hidden" name="{{index . 0}}" value="{{index . 1}}">{{end}}
+    <dl class="havel-card-facts">
+      {{if .Property}}<div><dt class="sr-only">{{t "stays.add_panel.apartment"}}</dt><dd>{{ui_pdot .Property.Index .Property.Name}}</dd></div>{{end}}
+      {{if .DateFrom}}<div><dt class="sr-only">{{t "stays.add_panel.arrival"}}</dt><dd>{{.DateFromLabel}}{{if .DateTo}} – {{.DateToLabel}}{{end}}{{if .StartTime}} · {{.StartTime}}{{if .EndTime}}–{{.EndTime}}{{end}}{{end}}</dd></div>{{end}}
+      {{if .Nights}}<div><dd>{{t "havel.card.nights" (kv "n" .Nights)}}</dd></div>{{end}}
+      {{if .Guests}}<div><dd>{{t "havel.card.guests" (kv "n" .Guests)}}</dd></div>{{end}}
+      {{if .GuestEmail}}<div><dd>{{.GuestEmail}}</dd></div>{{end}}
+      {{if .Note}}<div><dd>{{.Note}}</dd></div>{{end}}
+    </dl>
+    {{if .Overlap}}<p class="havel-card-warning">{{icon "triangle-alert" 16}}{{t "havel.card.overlap"}}</p>{{end}}
+    {{if .Warning}}<p class="havel-card-warning havel-card-danger">{{icon "triangle-alert" 16}}{{t .Warning}}</p>{{end}}
+    {{if .Fields}}
+    <details class="havel-card-change">
+      <summary class="ui-btn ui-btn-quiet ui-btn-compact">{{t "havel.card.change"}}</summary>
+      {{range .Fields}}{{$f := .}}
+      <label class="ui-field">
+        <span>{{$card.FieldLabel $f}}</span>
+        {{if eq .Type "select"}}
+        <select class="ui-select" name="{{.Name}}">{{range .Options}}<option value="{{.Value}}"{{if $f.Selected .}} selected{{end}}>{{.Name}}</option>{{end}}</select>
+        {{else}}
+        <input class="ui-input" type="{{.Type}}" name="{{.Name}}" value="{{.Value}}"{{if .Min}} min="{{.Min}}"{{end}}{{if .Max}} max="{{.Max}}"{{end}}{{if eq .Type "date"}} required{{end}}>
+        {{end}}
+      </label>
+      {{end}}
+    </details>
+    {{end}}
+    <div class="havel-card-actions">
+      <button class="ui-btn ui-btn-quiet" type="button" data-havel-cancel>{{t "havel.card.cancel"}}</button>
+      <button class="ui-btn {{if .Danger}}ui-btn-danger{{else}}ui-btn-primary{{end}}" type="submit">{{t .Confirm}}</button>
+    </div>
+  </form>
+  {{end}}
+</div>
+{{end}}
