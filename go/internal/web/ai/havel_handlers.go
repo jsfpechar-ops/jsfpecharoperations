@@ -1,0 +1,710 @@
+package ai
+
+// havel_handlers.go: the four Havel routes, the port of App/app/routes/havel.py
+// lines 136-331: GET /havel, POST /havel, POST /havel/support and POST
+// /havel/not-helped. Each handler follows its Python function line by line.
+// Nothing routes here until the owner lists the paths in UBYHOST_GO_PATHS.
+//
+// What is sent to the model: only what havel.build_messages makes (see
+// HavelBuildMessages): the constant system blocks, the redacted earlier
+// questions and answers of this conversation, and the redacted new message
+// with a few facts (date, language, device, property names and cities, page).
+// No guest data, no door codes, no e-mail address, no phone number.
+
+import (
+	"bytes"
+	"context"
+	"embed"
+	"errors"
+	"io"
+	"log"
+	"mime"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/anthropic"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb/layout"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/session"
+)
+
+//go:embed havel_templates/*.tmpl
+var havelTemplateFS embed.FS
+
+var havelTemplates = layout.MustParse(havelCatalog, havelTemplateFS, "havel_templates/*.tmpl")
+
+// HavelRoute is one pattern for http.ServeMux with its metrics label.
+type HavelRoute struct {
+	Pattern string
+	Label   string
+	Handler http.HandlerFunc
+}
+
+// HavelDeps is what the handlers need. Nothing here touches the pool or the
+// network until a request comes in.
+type HavelDeps struct {
+	Pool  *pgxpool.Pool
+	Env   HavelEnv
+	Now   func() time.Time
+	Model HavelModel // *anthropic.Service in production
+}
+
+// HavelRoutes lists the Havel routes. Methods the Python routes do not list
+// answer 405 as Starlette does (a HEAD on a GET route included).
+func HavelRoutes(d HavelDeps) []HavelRoute {
+	notAllowed := func(allow string) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) { havelMethodNotAllowed(w, allow) }
+	}
+	return []HavelRoute{
+		{"GET /havel", "/havel", d.pageHandler},
+		{"POST /havel", "/havel", d.sendHandler},
+		{"HEAD /havel", "/havel", notAllowed("GET, POST")},
+		{"PUT /havel", "/havel", notAllowed("GET, POST")},
+		{"DELETE /havel", "/havel", notAllowed("GET, POST")},
+		{"PATCH /havel", "/havel", notAllowed("GET, POST")},
+		{"POST /havel/support", "/havel/support", d.supportHandler},
+		{"GET /havel/support", "/havel/support", notAllowed("POST")},
+		{"POST /havel/not-helped", "/havel/not-helped", d.notHelpedHandler},
+		{"GET /havel/not-helped", "/havel/not-helped", notAllowed("POST")},
+	}
+}
+
+func havelMethodNotAllowed(w http.ResponseWriter, allow string) {
+	w.Header().Set("Allow", allow)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusMethodNotAllowed)
+	_, _ = io.WriteString(w, `{"detail":"Method Not Allowed"}`)
+}
+
+// havelCall is one signed-in request.
+type havelCall struct {
+	HavelDeps
+	store  HavelStore
+	env    HavelEnv
+	w      http.ResponseWriter
+	r      *http.Request
+	h      *session.Host
+	at     time.Time
+	lang   string
+	secret string
+
+	props   []HavelProperty
+	rows    []HavelApartment
+	loaded  bool
+	account *struct{ email, display, username string }
+}
+
+const havelMultipartMax = 1 << 20
+
+func havelIsMultipart(r *http.Request) bool {
+	mt, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
+	return err == nil && mt == "multipart/form-data"
+}
+
+func havelServerError(w http.ResponseWriter, err error) {
+	log.Printf("havel: %v", err)
+	http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+}
+
+// gate is protect_host_post on the router: for a POST, the multipart parse
+// (request.form() reads it, havel.js posts FormData) and the CSRF check. It
+// returns false when it has written the response.
+func (d HavelDeps) gate(w http.ResponseWriter, r *http.Request, at time.Time) bool {
+	if r.Method != http.MethodPost {
+		return true
+	}
+	if havelIsMultipart(r) {
+		r.Body = http.MaxBytesReader(w, r.Body, havelMultipartMax)
+		if err := r.ParseMultipartForm(havelMultipartMax); err != nil {
+			log.Printf("havel: multipart form: %v", err)
+		}
+	}
+	if !hostweb.CSRF(w, r, d.Env.Getenv, at) {
+		return false
+	}
+	if err := r.ParseForm(); err != nil {
+		log.Printf("havel: form: %v", err)
+	}
+	return true
+}
+
+// login is auth.require_login. It returns nil when it has written the response.
+func (d HavelDeps) login(w http.ResponseWriter, r *http.Request, at time.Time) *havelCall {
+	getenv := d.Env.Getenv
+	h, err := hostweb.Login(w, r, d.Pool, getenv, at)
+	if err != nil {
+		havelServerError(w, err)
+		return nil
+	}
+	if h == nil {
+		return nil
+	}
+	secret, err := secure.LoadSecret(getenv)
+	if err != nil {
+		havelServerError(w, err)
+		return nil
+	}
+	return &havelCall{HavelDeps: d, store: HavelStore{Pool: d.Pool, Env: d.Env}, env: d.Env, w: w, r: r, h: h, at: at,
+		lang: hostweb.Lang(r), secret: secret}
+}
+
+// enter runs the two Python dependencies in their order: protect_host_post on
+// the router (the CSRF check, a POST only), then auth.require_login. It
+// returns nil when it has written the response.
+func (d HavelDeps) enter(w http.ResponseWriter, r *http.Request) *havelCall {
+	at := d.Now()
+	if !d.gate(w, r, at) {
+		return nil
+	}
+	return d.login(w, r, at)
+}
+
+func (c *havelCall) t(key string, params map[string]any) string {
+	return havelCatalog.T(c.lang, key, params)
+}
+
+// form is the last posted value of a field, "" when missing (Starlette keeps the last).
+func (c *havelCall) form(key string) string {
+	v := c.r.PostForm[key]
+	if len(v) == 0 {
+		return ""
+	}
+	return v[len(v)-1]
+}
+
+func (c *havelCall) query(key string) string {
+	v := c.r.URL.Query()[key]
+	if len(v) == 0 {
+		return ""
+	}
+	return v[len(v)-1]
+}
+
+// today is ai.today(): the date in Prague.
+func (c *havelCall) today() time.Time {
+	y, m, d := c.at.In(havelPrague).Date()
+	return time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
+}
+
+func (c *havelCall) load(ctx context.Context) error {
+	if c.loaded {
+		return nil
+	}
+	rows, err := c.store.Apartments(ctx, c.h.Workspace.ID)
+	if err != nil {
+		return err
+	}
+	c.rows = rows
+	for _, a := range rows {
+		c.props = append(c.props, HavelProperty{ID: a.ID, Name: a.DisplayName(), City: a.City})
+	}
+	c.loaded = true
+	return nil
+}
+
+// properties is _properties.
+func (c *havelCall) properties(ctx context.Context) ([]HavelProperty, error) {
+	return c.props, c.load(ctx)
+}
+
+func (c *havelCall) loadAccount(ctx context.Context) error {
+	if c.account != nil {
+		return nil
+	}
+	a := &struct{ email, display, username string }{}
+	err := c.Pool.QueryRow(ctx, `SELECT COALESCE(email, '') FROM user_account WHERE id = $1`, c.h.Account.ID).Scan(&a.email)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return err
+	}
+	err = c.Pool.QueryRow(ctx, `SELECT COALESCE(display_name, ''), username FROM user_account WHERE id = $1`, c.h.Workspace.ID).Scan(&a.display, &a.username)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return err
+	}
+	c.account = a
+	return nil
+}
+
+func (c *havelCall) accountEmail(ctx context.Context) (string, error) {
+	if err := c.loadAccount(ctx); err != nil {
+		return "", err
+	}
+	return c.account.email, nil
+}
+
+// on is _on: Havel is on for the signed-in host.
+func (c *havelCall) on(ctx context.Context) (bool, error) {
+	email, err := c.accountEmail(ctx)
+	if err != nil {
+		return false, err
+	}
+	return HavelAIOn(c.env, HavelFeature, email), nil
+}
+
+// state is _state: "off", a limit key suffix, or "".
+func (c *havelCall) state(ctx context.Context) (string, error) {
+	on, err := c.on(ctx)
+	if err != nil || !on {
+		return "off", err
+	}
+	return c.store.LimitState(ctx, c.h.Account.ID, c.at)
+}
+
+// forward is _forward: a limit was hit, so the host's message goes to support
+// instead of the model. False when the weekly support cap is used up.
+func (c *havelCall) forward(ctx context.Context, message string, exchanges []HavelExchange, page, reason string) (bool, error) {
+	uid := c.h.Account.ID
+	blocked, err := c.store.SupportBlocked(ctx, uid, c.at)
+	if err != nil || blocked {
+		return false, err
+	}
+	if err := c.loadAccount(ctx); err != nil {
+		return false, err
+	}
+	workspace := c.account.display
+	if workspace == "" {
+		workspace = c.account.username
+	}
+	if _, err := c.store.EnqueueSupport(ctx, HavelSupportInput{
+		UserID: uid, AccountEmail: c.account.email, Workspace: workspace, Lang: c.lang, Page: page,
+		Summary: "Havel limit reached (" + reason + "). The host's message below was forwarded without an AI answer.",
+		Note:    message, Turns: havelLastHostTurns(exchanges),
+	}, c.at); err != nil {
+		return false, err
+	}
+	if err := c.store.RecordSupport(ctx, uid, c.at); err != nil {
+		return false, err
+	}
+	return true, c.store.RecordStat(ctx, "support_forwarded", c.today())
+}
+
+func havelLastHostTurns(exchanges []HavelExchange) []string {
+	var turns []string
+	for _, e := range exchanges {
+		turns = append(turns, e.Host)
+	}
+	if len(turns) > 4 {
+		turns = turns[len(turns)-4:]
+	}
+	return turns
+}
+
+// --- rendering -----------------------------------------------------------------
+
+func (c *havelCall) env2() layout.Env {
+	return layout.Env{Pool: c.Pool, Getenv: c.env.Getenv, Now: c.at}
+}
+
+// renderPage renders havel.html inside the host layout.
+func (c *havelCall) renderPage(v HavelView) {
+	page := layout.Page{Title: c.t("havel.title", nil), Nav: "havel", BodyKind: "detail", V2: true}
+	if err := layout.Render(c.w, c.r, c.env2(), c.h, page, havelTemplates, "havel", v); err != nil {
+		havelServerError(c.w, err)
+	}
+}
+
+// bufferedResponse collects what layout.Render writes.
+type bufferedResponse struct {
+	header http.Header
+	status int
+	body   bytes.Buffer
+}
+
+func (b *bufferedResponse) Header() http.Header         { return b.header }
+func (b *bufferedResponse) WriteHeader(code int)        { b.status = code }
+func (b *bufferedResponse) Write(p []byte) (int, error) { return b.body.Write(p) }
+
+const (
+	havelFragmentStart = `<div hidden data-havel-fragment-start></div>`
+	havelFragmentEnd   = `<div hidden data-havel-fragment-end></div>`
+)
+
+// renderFragment answers a request with the header X-Havel: 1 with the thread
+// fragment (_havel_fragment.html). The host layout has no fragment mode, so the
+// fragment is rendered as the body of the page "havel.fragment_page" and cut
+// out between two marker elements; the CSRF cookie layout.Render sets is passed
+// on. This costs the shell's own reads (alerts, counts); a later layout change
+// (a RenderFragment) would remove them.
+func (c *havelCall) renderFragment(v HavelView) {
+	buf := &bufferedResponse{header: http.Header{}}
+	page := layout.Page{Title: c.t("havel.title", nil), Nav: "havel", BodyKind: "detail", V2: true}
+	if err := layout.Render(buf, c.r, c.env2(), c.h, page, havelTemplates, "havel.fragment_page", v); err != nil {
+		havelServerError(c.w, err)
+		return
+	}
+	html := buf.body.String()
+	start := strings.Index(html, havelFragmentStart)
+	end := strings.Index(html, havelFragmentEnd)
+	if start < 0 || end < start {
+		havelServerError(c.w, errors.New("havel fragment markers not found"))
+		return
+	}
+	for _, cookie := range buf.header.Values("Set-Cookie") {
+		c.w.Header().Add("Set-Cookie", cookie)
+	}
+	c.w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	c.w.WriteHeader(http.StatusOK)
+	_, _ = io.WriteString(c.w, strings.TrimSpace(html[start+len(havelFragmentStart):end]))
+}
+
+// --- GET /havel (havel_page, lines 136-155) ---------------------------------------------
+
+func (d HavelDeps) pageHandler(w http.ResponseWriter, r *http.Request) {
+	c := d.enter(w, r)
+	if c == nil {
+		return
+	}
+	ctx := r.Context()
+	topic, q := havelCleanID(c.query("topic")), havelCleanID(c.query("q"))
+	if HavelFindTopic(topic) == nil {
+		topic, q = "", ""
+	}
+	page, ok := havelNavToPage[c.query("page")]
+	if !ok {
+		page = "guide"
+	}
+	view, err := c.pageContext(ctx, nil, nil, havelOptions{Topic: topic, Q: q, Page: page, Ask: c.query("ask") == "1",
+		ReturnTo: HavelSafeLocalPath(c.query("return_to"), "/havel")})
+	if err != nil {
+		havelServerError(w, err)
+		return
+	}
+	if r.Header.Get("X-Havel") == "1" {
+		view.Fragment, view.Locked = true, false
+		c.renderFragment(view)
+		return
+	}
+	c.renderPage(view)
+}
+
+// --- POST /havel (havel_send, lines 179-273) -------------------------------------------------
+
+// havelFallbackPage is ACTION_FALLBACK_PAGE: where an action reply points until the card is ready.
+var havelFallbackPage = map[string]string{"show_guest_link": "property_guests", "new_pin": "property_guests", "create_stay": "add_stay",
+	"create_cleaning": "cleaning", "sync_calendars": "dashboard"}
+
+func (d HavelDeps) sendHandler(w http.ResponseWriter, r *http.Request) {
+	c := d.enter(w, r)
+	if c == nil {
+		return
+	}
+	ctx := r.Context()
+	uid := c.h.Account.ID
+	message := havelStrip(c.form("message"))
+	exchanges := HavelReadHistory(c.secret, uid, c.form("history"), c.form("history_sig"))
+	topic, q := havelCleanID(c.form("topic")), havelCleanID(c.form("q"))
+	if HavelFindTopic(topic) == nil {
+		topic, q = "", ""
+	}
+	page := c.form("page")
+	if mapped, ok := havelNavToPage[page]; ok {
+		page = mapped
+	}
+	if _, ok := havelPageByID[page]; !ok {
+		page = ""
+	}
+	device := "computer"
+	if c.form("device") == "phone" {
+		device = "phone"
+	}
+	returnTo := HavelSafeLocalPath(c.form("return_to"), "/havel")
+	fragment := r.Header.Get("X-Havel") == "1"
+	if c.form("reset") == "1" {
+		exchanges = []HavelExchange{}
+	}
+	errText := ""
+	var last []havelItem
+	hasLast := false
+
+	fail := func(err error) { havelServerError(w, err) }
+	if message != "" && havelLen(message) > HavelMaxMessageChars {
+		errText = c.t("havel.too_long", nil)
+	} else if message != "" {
+		items := []havelItem{havelNewItem("host", message)}
+		key := HavelLocalReply(message)
+		support := false
+		forward, prior := "", exchanges
+		var replyText string
+		switch {
+		case key != "":
+			replyText = c.t(key, nil)
+		case len(exchanges) >= HavelMaxExchanges:
+			forward = "conversation"
+			replyText = c.t("havel.limit_turns", nil)
+			exchanges = []HavelExchange{}
+		default:
+			on, err := c.on(ctx)
+			if err != nil {
+				fail(err)
+				return
+			}
+			if !on {
+				replyText, support = c.t("havel.off", nil), true
+				break
+			}
+			limit, err := c.store.LimitState(ctx, uid, c.at)
+			if err != nil {
+				fail(err)
+				return
+			}
+			if limit != "" {
+				replyText, support = c.t("havel."+limit, nil), true
+				if err := c.store.RecordStat(ctx, "limit_hit", c.today()); err != nil {
+					fail(err)
+					return
+				}
+				if limit == "limit_week" || limit == "limit_month" {
+					forward = limit
+				}
+				break
+			}
+			props, err := c.properties(ctx)
+			if err != nil {
+				fail(err)
+				return
+			}
+			host := HavelHost{UserID: uid, Lang: c.lang, Device: device, Properties: props, Page: page, Topic: topic,
+				ReadKeys: HavelReadKeys(topic, q)}
+			reply, err := HavelAsk(ctx, d.Model, c.store.StatSink(), host, exchanges, message, c.today())
+			if aerr := anthropic.AsError(err); aerr != nil && aerr.Disabled {
+				replyText, support = c.t("havel.off", nil), true
+				break
+			} else if aerr != nil && aerr.Budget {
+				if aerr.Reason == "month" {
+					replyText = c.t("havel.off", nil)
+				} else {
+					replyText = c.t("havel.resting", nil)
+				}
+				support, forward = true, "budget_"+aerr.Reason
+				break
+			} else if err != nil {
+				fail(err)
+				return
+			}
+			if err := c.store.RecordMessage(ctx, uid, c.at); err != nil {
+				fail(err)
+				return
+			}
+			if reply.Kind == "escalate" || reply.Kind == "fail" {
+				if err := c.store.RecordGap(ctx, c.lang, page, reply.Kind, message, c.at); err != nil {
+					fail(err)
+					return
+				}
+			}
+			if reply.Kind == "refuse" {
+				if err := c.store.RecordRefusal(ctx, uid, c.at); err != nil {
+					fail(err)
+					return
+				}
+			}
+			if reply.Kind == "fail" {
+				replyText, support = c.t("havel.dont_know", nil), true
+				break
+			}
+			replyText = reply.Text
+			links := append([]HavelLink(nil), reply.Links...)
+			var card *HavelCard
+			if reply.Action != nil {
+				var notPrepared string
+				card, notPrepared, err = c.card(ctx, reply.Action, returnTo)
+				if err != nil {
+					fail(err)
+					return
+				}
+				if notPrepared != "" {
+					replyText = havelStrip(replyText + "\n" + notPrepared)
+					pageID := havelFallbackPage[havelStrField(reply.Action["type"])]
+					var pid *int64
+					if n, ok := havelPyInt(reply.Action["property_id"]); ok {
+						pid = &n
+					}
+					links = append(links, HavelLink{c.t("havel.card.open_form", nil), HavelPageURL(pageID, pid, host.PropertyIDs())})
+				}
+			}
+			summary := message
+			if reply.SupportSummary != nil && *reply.SupportSummary != "" {
+				summary = *reply.SupportSummary
+			}
+			item := havelNewItem("havel", replyText)
+			item.Links, item.Support, item.SupportSummary, item.Card, item.Next = links, reply.Kind == "escalate", summary, card, reply.Next
+			item.NotHelped = reply.Kind == "answer" || reply.Kind == "clarify"
+			items = append(items, item)
+		}
+		if forward != "" {
+			sent, err := c.forward(ctx, message, prior, page, forward)
+			if err != nil {
+				fail(err)
+				return
+			}
+			if sent {
+				replyText, support = c.t("havel.forwarded", nil), false
+			}
+		}
+		if len(items) == 1 {
+			it := havelNewItem("havel", replyText)
+			it.Support = support
+			if support {
+				it.SupportSummary = message
+			}
+			items = append(items, it)
+		}
+		if replyText != c.t("havel.limit_turns", nil) {
+			exchanges = append(exchanges, HavelExchange{Host: message, Havel: replyText})
+		}
+		last, hasLast = items, true
+	}
+
+	opts := havelOptions{Topic: topic, Q: q, Page: page, ReturnTo: returnTo, Error: errText, Ask: c.form("reset") != "1"}
+	if fragment {
+		view, err := c.pageContext(ctx, last, exchanges, opts)
+		if err != nil {
+			fail(err)
+			return
+		}
+		view.Fragment, view.Locked = true, false
+		c.renderFragment(view)
+		return
+	}
+	view, err := c.pageContext(ctx, havelThread(c.t("havel.intro", nil), exchanges, last, hasLast), exchanges, opts)
+	if err != nil {
+		fail(err)
+		return
+	}
+	c.renderPage(view)
+}
+
+// card is _card: (card, "") or (nil, the reason sentence).
+func (c *havelCall) card(ctx context.Context, action map[string]any, returnTo string) (*HavelCard, string, error) {
+	if err := c.load(ctx); err != nil {
+		return nil, "", err
+	}
+	card, err := HavelPrepareCard(ctx, action, c.rows, c.today(), returnTo, hostweb.PublicBase(c.env.Getenv), c.lang, HavelCardLookups{
+		FeedCount: c.store.FeedCount, Overlaps: c.store.OverlappingCount, LinkKey: c.store.LinkKey})
+	var np *HavelNotPrepared
+	if errors.As(err, &np) {
+		return nil, c.t("havel.card.not_prepared", map[string]any{"reason": c.t("havel.reason."+np.Reason, nil)}), nil
+	}
+	return card, "", err
+}
+
+// --- POST /havel/support (havel_support, lines 275-311) -----------------------------------------
+
+func (d HavelDeps) supportHandler(w http.ResponseWriter, r *http.Request) {
+	c := d.enter(w, r)
+	if c == nil {
+		return
+	}
+	ctx := r.Context()
+	uid := c.h.Account.ID
+	exchanges := HavelReadHistory(c.secret, uid, c.form("history"), c.form("history_sig"))
+	page := c.form("page")
+	if _, ok := havelPageByID[page]; !ok {
+		page = ""
+	}
+	returnTo := HavelSafeLocalPath(c.form("return_to"), "/havel")
+	summary := havelClip(havelStrip(c.form("summary")), HavelMaxSummaryChars)
+	note := havelClip(havelStrip(c.form("note")), HavelMaxMessageChars)
+	items := havelThread(c.t("havel.intro", nil), exchanges, nil, false)
+	blocked, err := c.store.SupportBlocked(ctx, uid, c.at)
+	if err != nil {
+		havelServerError(w, err)
+		return
+	}
+	switch {
+	case blocked:
+		items = append(items, havelNewItem("havel", c.t("havel.support.limit", map[string]any{"email": havelOperatorEmail(c.env)})))
+	case summary == "" && note == "":
+		it := havelNewItem("havel", c.t("havel.support.empty", nil))
+		it.Support = true
+		items = append(items, it)
+	default:
+		if err := c.loadAccount(ctx); err != nil {
+			havelServerError(w, err)
+			return
+		}
+		workspace := c.account.display
+		if workspace == "" {
+			workspace = c.account.username
+		}
+		if _, err := c.store.EnqueueSupport(ctx, HavelSupportInput{UserID: uid, AccountEmail: c.account.email, Workspace: workspace,
+			Lang: c.lang, Page: page, Summary: summary, Note: note, Turns: havelLastHostTurns(exchanges)}, c.at); err != nil {
+			havelServerError(w, err)
+			return
+		}
+		if err := c.store.RecordSupport(ctx, uid, c.at); err != nil {
+			havelServerError(w, err)
+			return
+		}
+		if err := c.store.RecordStat(ctx, "support_sent", c.today()); err != nil {
+			havelServerError(w, err)
+			return
+		}
+		items = append(items, havelNewItem("havel", c.t("havel.support.sent", nil)))
+	}
+	view, err := c.pageContext(ctx, items, exchanges, havelOptions{Page: page, ReturnTo: returnTo})
+	if err != nil {
+		havelServerError(w, err)
+		return
+	}
+	c.renderPage(view)
+}
+
+// --- POST /havel/not-helped (havel_not_helped, lines 313-331) -------------------------------------
+
+const havelNotHelpedPerDay = 5
+
+func (d HavelDeps) notHelpedHandler(w http.ResponseWriter, r *http.Request) {
+	c := d.enter(w, r)
+	if c == nil {
+		return
+	}
+	ctx := r.Context()
+	uid := c.h.Account.ID
+	exchanges := HavelReadHistory(c.secret, uid, c.form("history"), c.form("history_sig"))
+	page := c.form("page")
+	if _, ok := havelPageByID[page]; !ok {
+		page = ""
+	}
+	question := ""
+	if len(exchanges) > 0 {
+		question = exchanges[len(exchanges)-1].Host
+	}
+	if question != "" {
+		blocked, err := c.store.Blocked(ctx, "havel_gap", havelItoa(uid), havelNotHelpedPerDay, 86400, c.at)
+		if err != nil {
+			havelServerError(w, err)
+			return
+		}
+		if !blocked {
+			if err := c.store.Record(ctx, "havel_gap", havelItoa(uid), c.at); err != nil {
+				havelServerError(w, err)
+				return
+			}
+			if err := c.store.RecordGap(ctx, c.lang, page, "not_helped", question, c.at); err != nil {
+				havelServerError(w, err)
+				return
+			}
+			if err := c.store.RecordStat(ctx, "not_helped", c.today()); err != nil {
+				havelServerError(w, err)
+				return
+			}
+		}
+	}
+	items := havelThread(c.t("havel.intro", nil), exchanges, nil, false)
+	ack := havelNewItem("havel", c.t("havel.not_helped_ack", nil))
+	ack.Support, ack.SupportSummary = true, question
+	items = append(items, ack)
+	view, err := c.pageContext(ctx, items, exchanges, havelOptions{Page: page, ReturnTo: "/havel"})
+	if err != nil {
+		havelServerError(w, err)
+		return
+	}
+	c.renderPage(view)
+}
+
+func havelItoa(n int64) string { return strconv.FormatInt(n, 10) }

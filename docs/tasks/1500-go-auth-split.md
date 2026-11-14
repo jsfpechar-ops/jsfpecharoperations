@@ -30,7 +30,7 @@ None: this plan is not run. The split, one brief each, in this order:
 
 | Brief | Routes | Python | Closes / switches | Notes |
 |---|---|---|---|---|
-| 1501 shared | none (helpers) | `turnstile.py`, `_finish_login`, `_keep_login_language`, `mail_notify.link_mail`, `email_changed` | nothing | Turnstile siteverify is a new outbound request (same host and reason as Python); mail builders in a new `mail/auth_link.go` with goldens |
+| 1501 shared | none (helpers) | `turnstile.py`, `client_ip.py`, `_finish_login`, `_keep_login_language`, `link_mail`, `email_changed`, `passkey_added`, `workspace_deletion` | nothing | **written: [1501](1501-go-auth-shared.md)** (todo). New `clientip`, `turnstile`, `web/auth/finish.go`, `mail/auth_link.go` + `auth_queue.go`; signatures in its "API for the later briefs". 1502 must add `TURNSTILE_*` and `UBYHOST_TRUSTED_PROXY_CIDRS` to the `ubyhost-go` service |
 | 1502 login | `GET`/`POST /login`, `GET`/`POST /login/link` | 60-267 | `/login`, `/login/link` fully Go | device cookie skip of Turnstile, rate limits 3/15 min, 10/day, 10 per IP, 20 bad links; `no-store` and `no-referrer` on the link page |
 | 1503 2fa login | `POST /login/2fa` | 275-316 | `/login/2fa` (collision) | 429 locked, 401 invalid, audit `two_factor_failed` |
 | 1504 admin users | `POST /admin/users`, `/admin/users/{id}/invite`, `/admin/users/{id}/email` | 731-853 | `/admin/users` (collision) | `mail.SendNow` after enqueue; own-account email change re-attaches the session |
@@ -41,6 +41,7 @@ None: this plan is not run. The split, one brief each, in this order:
 | 1509 deletion | `POST /admin/users/{id}/schedule-deletion` | 1042- | with 1504 | `workspace_deletion` mail is shared with the retention job: coordinator names the owner |
 | 1510 export | `POST /admin/users/{id}/export` | 1013-1041 | with 1504 | uses `workspace_export.build_workspace_zip`: exports thread first |
 | 1511-1513 passkeys | the 6 `passkeys.py` JSON routes | 94-253 | `/account/passkeys*`, `/login/passkey*` | blocked until go-webauthn is in go.mod (see §2) |
+| 1514 session parity | none | `auth.py` `end_expired_impersonation`, `security.CSRF_MAX_AGE` | nothing | **written: [1514](1514-go-session-parity-fix.md)** (todo). Both 1282 gaps already fixed by 1382 (`8a1241966`); test-only: drops the `knownGaps` waiver in `web/auth/routes_test.go` |
 
 ## 5. Do not touch
 

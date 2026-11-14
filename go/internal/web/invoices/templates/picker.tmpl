@@ -1,0 +1,40 @@
+{{- /* Go twin of App/app/templates/invoice_stay_picker.html (brief 1425). */ -}}
+{{define "invoice_picker.title"}}{{end}}
+{{define "invoice_picker.meta"}}{{t "invoice.picker.lede"}}{{end}}
+{{define "invoice_picker.back_label"}}{{t "nav.invoices"}}{{end}}
+{{define "invoice_picker"}}
+<div class="e-page">
+<div class="airbnb-header">
+  <a class="airbnb-back" href="/invoices" aria-label="{{t "common.back"}}">{{icon "arrow-left" 20}}</a>
+  <h1 class="airbnb-title">{{t "invoice.new"}}</h1>
+</div>
+
+<div class="ui-section">
+  {{if .Stays}}
+  {{if .QuickStays}}
+  <h2 class="invoice-quick-title">{{t "invoice.picker.recent"}}</h2>
+  <ul class="invoice-quick-stays">
+    {{range .QuickStays}}<li><a class="ui-btn ui-btn-secondary" href="/invoices/new?reservation_id={{.ID}}">{{.Label}}</a></li>{{end}}
+  </ul>
+  <h2 class="invoice-quick-title">{{t "invoice.picker.other"}}</h2>
+  {{end}}
+  <form method="get" action="/invoices/new">
+    <div class="ui-field">
+      {{field_label "reservation_id" (t "invoice.picker.label") (t "invoice.picker.help")}}
+      <select id="reservation_id" name="reservation_id" required aria-describedby="reservation_id-help">
+        {{range .Stays}}
+          <option value="{{.ID}}">{{.Label}}</option>
+        {{end}}
+      </select>
+    </div>
+    <div class="ui-form-actions">
+      <button class="ui-btn ui-btn-primary" type="submit">{{t "invoice.picker.continue"}}</button>
+    </div>
+  </form>
+  {{else}}
+  <p>{{t "invoice.picker.empty"}}</p>
+  {{end}}
+  <p class="ui-sub picker-links"><a href="/reservations">{{t "invoice.picker.add_stay"}}</a><a href="{{.DetailsURL}}">{{t "host.invoice_settings"}}</a></p>
+</div>
+</div>
+{{end}}
