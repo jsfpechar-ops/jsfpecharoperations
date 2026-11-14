@@ -1,6 +1,6 @@
 # 1571: Go cleaning host pages, part 2: saving a cleaning (create and update)
 
-Status: todo
+Status: review
 Depends on: 1570 | Base commit: current tip of the working branch | Branch: task/1571-go-cleaning-event-save
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
