@@ -2,6 +2,7 @@
  "cs": {
   "auth.error.code_invalid": "Kód nefunguje. Kódy se mění každých 30 vteřin. Zadejte ten, který vidíte teď.",
   "auth.error.code_locked": "Příliš mnoho chybných kódů. Počkejte 15 minut a pak se přihlaste znovu od začátku.",
+  "auth.error.username": "Použijte 3–32 malých písmen, číslic, teček, pomlček nebo podtržítek.",
   "flash.accounts.guest_details_mail_off": "Potvrzovací e-mail obsahuje jen jména.",
   "flash.accounts.guest_details_mail_on": "Potvrzovací e-mail obsahuje údaje o hostech.",
   "flash.accounts.onboarding_emails_off": "Tipy k nastavení e-mailem jsou vypnuté.",
@@ -14,11 +15,20 @@
   "flash.incidents.created": "Incident zaznamenán.",
   "flash.incidents.saved": "Incident aktualizován.",
   "flash.signup.consent_withdrawn.google": "Souhlas pro Google Ads byl odvolán a identifikátor kliknutí smazán.",
-  "flash.signup.consent_withdrawn.meta": "Souhlas pro Metu byl odvolán a identifikátor kliknutí smazán."
+  "flash.signup.consent_withdrawn.meta": "Souhlas pro Metu byl odvolán a identifikátor kliknutí smazán.",
+  "users.email.error.invalid": "Zadejte platnou e-mailovou adresu.",
+  "users.email.error.not_found": "Tento účet už neexistuje.",
+  "users.email.error.reason": "Uveďte důvod změny přihlašovacího e-mailu (5 až 300 znaků).",
+  "users.email.error.taken": "Tento e-mail už používá jiný účet.",
+  "users.email.saved": "Přihlašovací e-mail uložen.",
+  "users.email.unchanged": "Tohle už je přihlašovací e-mail.",
+  "users.invite.no_email": "Nejdřív doplňte přihlašovací e-mail.",
+  "users.invite.sent": "Pozvánka odeslána na %(email)s."
  },
  "en": {
   "auth.error.code_invalid": "That code didn't work. Codes change every 30 seconds. Enter the one showing now.",
   "auth.error.code_locked": "Too many wrong codes. Wait 15 minutes, then log in again from the start.",
+  "auth.error.username": "Use 3–32 lowercase letters, numbers, dots, dashes, or underscores.",
   "flash.accounts.guest_details_mail_off": "The confirmation e-mail shows names only.",
   "flash.accounts.guest_details_mail_on": "Guest details are in the confirmation e-mail.",
   "flash.accounts.onboarding_emails_off": "Setup tips by e-mail are off.",
@@ -31,11 +41,20 @@
   "flash.incidents.created": "Incident recorded.",
   "flash.incidents.saved": "Incident updated.",
   "flash.signup.consent_withdrawn.google": "Google Ads consent withdrawn and the click identifier deleted.",
-  "flash.signup.consent_withdrawn.meta": "Meta consent withdrawn and the click identifier deleted."
+  "flash.signup.consent_withdrawn.meta": "Meta consent withdrawn and the click identifier deleted.",
+  "users.email.error.invalid": "Enter a valid e-mail address.",
+  "users.email.error.not_found": "That account no longer exists.",
+  "users.email.error.reason": "Give a reason of 5 to 300 characters for changing the login e-mail.",
+  "users.email.error.taken": "Another account already uses that e-mail.",
+  "users.email.saved": "Login e-mail saved.",
+  "users.email.unchanged": "That is already the login e-mail.",
+  "users.invite.no_email": "Add a login e-mail first.",
+  "users.invite.sent": "Invitation link sent to %(email)s."
  },
  "vi": {
   "auth.error.code_invalid": "Mã không đúng. Mã thay đổi mỗi 30 giây. Hãy nhập mã đang hiển thị.",
   "auth.error.code_locked": "Nhập sai mã quá nhiều lần. Đợi 15 phút rồi đăng nhập lại từ đầu.",
+  "auth.error.username": "Dùng 3–32 ký tự gồm chữ thường, chữ số, dấu chấm, dấu gạch ngang hoặc gạch dưới.",
   "flash.accounts.onboarding_emails_off": "Đã tắt mẹo thiết lập qua e-mail.",
   "flash.accounts.onboarding_emails_on": "Đã bật mẹo thiết lập qua e-mail.",
   "flash.accounts.stay_fee_emails_off": "Đã tắt email phí lưu trú. Hãy tự xác nhận từng kỳ trên trang Phí lưu trú.",
@@ -46,6 +65,14 @@
   "flash.incidents.created": "Đã ghi nhận sự cố.",
   "flash.incidents.saved": "Đã cập nhật sự cố.",
   "flash.signup.consent_withdrawn.google": "Đã rút lại đồng ý Google Ads và xóa mã nhấp chuột.",
-  "flash.signup.consent_withdrawn.meta": "Đã rút lại đồng ý Meta và xóa mã nhấp chuột."
+  "flash.signup.consent_withdrawn.meta": "Đã rút lại đồng ý Meta và xóa mã nhấp chuột.",
+  "users.email.error.invalid": "Nhập địa chỉ e-mail hợp lệ.",
+  "users.email.error.not_found": "Tài khoản đó không còn tồn tại.",
+  "users.email.error.reason": "Nêu lý do đổi e-mail đăng nhập, từ 5 đến 300 ký tự.",
+  "users.email.error.taken": "Một tài khoản khác đã dùng e-mail đó.",
+  "users.email.saved": "Đã lưu e-mail đăng nhập.",
+  "users.email.unchanged": "Đó đã là e-mail đăng nhập hiện tại.",
+  "users.invite.no_email": "Hãy thêm e-mail đăng nhập trước.",
+  "users.invite.sent": "Đã gửi liên kết mời đến %(email)s."
  }
 }

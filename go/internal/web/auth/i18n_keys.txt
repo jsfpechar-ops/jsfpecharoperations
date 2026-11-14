@@ -17,3 +17,12 @@ flash.incidents.created
 flash.incidents.saved
 flash.signup.consent_withdrawn.google
 flash.signup.consent_withdrawn.meta
+users.email.error.invalid
+users.email.error.taken
+users.email.error.not_found
+users.email.error.reason
+users.email.unchanged
+users.email.saved
+users.invite.sent
+users.invite.no_email
+auth.error.username
