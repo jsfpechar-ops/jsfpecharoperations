@@ -10,3 +10,7 @@ flash.error.no_such_guest
 flash.error.no_housebook_matches
 flash.error.too_many_entries
 flash.error.workspace_export_not_scheduled
+archive.*
+nav.housebook
+nav.entities
+common.restore

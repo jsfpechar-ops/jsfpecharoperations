@@ -36,5 +36,7 @@ func Routes(pool *pgxpool.Pool, getenv func(string) string, now func() time.Time
 		{"GET /housebook/pdfs.zip", "/housebook/pdfs.zip", HousebookPDFsHandler(pool, getenv, now)},
 		// Brief 1607.
 		{"POST /settings/workspace-export", "/settings/workspace-export", WorkspaceExportHandler(pool, getenv, now)},
+		// Brief 1608.
+		{"GET /settings/archived", "/settings/archived", ArchivedHandler(pool, getenv, now)},
 	}
 }
