@@ -193,7 +193,7 @@ func (s *guideServer) cardSave(w http.ResponseWriter, r *http.Request) {
 }
 
 // cardAction routes POST /apartments/{id}/guide/{item}/{action}: discard,
-// skip and delete. Any other action is the router's 404, before CSRF.
+// skip and delete, and photos (brief 1447: add a photo). Any other action is the router's 404, before CSRF.
 func (s *guideServer) cardAction(w http.ResponseWriter, r *http.Request) {
 	switch r.PathValue("action") {
 	case "discard":
@@ -202,6 +202,8 @@ func (s *guideServer) cardAction(w http.ResponseWriter, r *http.Request) {
 		s.cardSkip(w, r)
 	case "delete":
 		s.cardDelete(w, r)
+	case "photos":
+		s.photoAdd(w, r)
 	default:
 		guideNotFound(w)
 	}

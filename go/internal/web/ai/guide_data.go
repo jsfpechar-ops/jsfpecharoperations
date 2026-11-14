@@ -559,8 +559,8 @@ func (s *guideServer) photosDir() string {
 	return filepath.Join(dir, "guide_photos")
 }
 
-// deletePhoto is guide_photos.delete: the row goes, then the file. The Go
-// container mounts the data volume read-only, so a file it cannot remove is
+// deletePhoto is guide_photos.delete: the row goes, then the file. The data
+// volume is writable since brief 1640; a file that still cannot be removed is
 // left for guide_photos.purge_orphans (the scheduler's sweep of files no row
 // names, once they are an hour old). It reports false when the photo is not on
 // this card of this property.
