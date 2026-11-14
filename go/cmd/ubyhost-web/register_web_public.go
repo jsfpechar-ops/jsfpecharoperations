@@ -30,5 +30,7 @@ func init() {
 		for _, path := range public.Paths {
 			mux.Handle("GET "+path, m.wrap(path, public.Handler(path, deps)))
 		}
+		mux.Handle("GET /jak-to-funguje", m.wrap("/jak-to-funguje", public.ProductHandler(deps)))
+		mux.Handle(public.GuidePattern, m.wrap("/pruvodce/{slug}", public.GuideHandler(deps)))
 	})
 }
