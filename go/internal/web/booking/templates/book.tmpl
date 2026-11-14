@@ -1,0 +1,46 @@
+{{define "guest.content"}}{{$d := .Data}}
+<main class="pp" style="max-width:520px;margin:2rem auto;padding:0 1rem;">
+  <h1>{{.T "pp.book.title"}} — {{$d.Page.Name}}</h1>
+  <p class="pp-location">{{$d.Page.District}}</p>
+  <table class="ui-table">
+    <tbody>
+      <tr><td>{{.T "pp.book.dates"}}</td><td>{{$d.Q.DateFrom}} <span aria-hidden="true">{{icon "arrow-right" 14}}</span><span class="sr-only"> – </span> {{$d.Q.DateTo}} ({{$d.Q.Nights}} {{.T "pp.book.nights"}})</td></tr>
+      <tr><td>{{.T "pp.book.guests"}}</td><td>{{$d.Q.Guests}}</td></tr>
+      <tr><td>{{$d.Q.NightlyCZK}} {{.T "payments.czk"}} × {{$d.Q.Nights}} {{.T "pp.book.nights"}}</td><td>{{$d.Q.AccommodationCZK}} {{.T "payments.czk"}}</td></tr>
+      {{if $d.Q.CleaningFeeCZK}}<tr><td>{{.T "pp.book.cleaning"}}</td><td>{{$d.Q.CleaningFeeCZK}} {{.T "payments.czk"}}</td></tr>{{end}}
+      <tr><td>{{.T "pp.book.total"}}</td><td><strong>{{$d.Q.TotalCZK}} {{.T "payments.czk"}}</strong></td></tr>
+      {{if $d.Q.CityTaxOnSiteCZK}}<tr><td>{{.T "pp.book.city_tax"}}</td><td>{{$d.Q.CityTaxOnSiteCZK}} {{.T "payments.czk"}}</td></tr>{{end}}
+    </tbody>
+  </table>
+  <p class="ui-sub">{{.T (printf "pp.book.policy.%s" $d.Q.CancellationPolicy)}}</p>
+  <form method="post" action="/p/{{$d.Slug}}/checkout" class="ui-form">
+    <label class="ui-field">
+      <span>{{.T "pp.book.name"}}</span>
+      <input class="ui-input" type="text" name="guest_name" autocomplete="name" minlength="3" maxlength="120" required>
+    </label>
+    <label class="ui-field">
+      <span>{{.T "pp.book.email"}}</span>
+      <input class="ui-input" type="email" name="guest_email" autocomplete="email" required>
+    </label>
+    <label class="ui-check">
+      <input type="checkbox" name="terms" value="1" required>
+      <span>{{.T "pp.book.terms"}}</span>
+    </label>
+    <input type="hidden" name="date_from" value="{{$d.Q.DateFrom}}">
+    <input type="hidden" name="date_to" value="{{$d.Q.DateTo}}">
+    <input type="hidden" name="guests" value="{{$d.Q.Guests}}">
+    <input type="hidden" name="lang" value="{{.Lang}}">
+    {{if gt (len $d.Page.PayModes) 1}}
+    <fieldset class="ui-field">
+      <legend class="ui-label">{{.T "pp.book.pay_mode"}}</legend>
+      <label class="checkline"><input type="radio" name="pay_mode" value="stripe" checked> <span>{{.T "pp.book.mode.stripe"}}</span></label>
+      <label class="checkline"><input type="radio" name="pay_mode" value="direct"> <span>{{.T "pp.book.mode.direct"}}</span></label>
+    </fieldset>
+    {{else}}
+    <input type="hidden" name="pay_mode" value="{{index $d.Page.Modes 0}}">
+    {{end}}
+    <button class="ui-btn ui-btn-primary" type="submit">{{.T "pp.book.send_request"}}</button>
+  </form>
+  <p class="ui-sub">{{.T "pp.book.request_note"}}</p>
+</main>
+{{end}}

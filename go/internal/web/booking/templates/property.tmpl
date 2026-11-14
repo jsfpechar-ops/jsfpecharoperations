@@ -1,0 +1,154 @@
+{{define "guest.head"}}{{$p := .Data.Page}}
+{{if $p.Noindex}}<meta name="robots" content="noindex">{{end}}
+{{fragment "pp_booking_css.html"}}
+<meta property="og:title" content="{{$p.OG.Title}}">
+<meta property="og:description" content="{{$p.OG.Description}}">
+<meta property="og:url" content="{{$p.OG.URL}}">
+{{if $p.OG.Image}}<meta property="og:image" content="{{$p.OG.Image}}">{{end}}
+<meta name="twitter:card" content="summary_large_image">
+{{end}}
+{{define "guest.content"}}{{$p := .Data.Page}}{{$slug := .Data.Slug}}
+<main class="pp">
+  <section class="pp-hero">
+    {{if $p.Photos}}
+    <div class="pp-hero-grid">
+      {{range $i, $photo := $p.TopPhotos}}
+      <img class="pp-photo {{if eq $i 0}}pp-photo-main{{end}}" src="{{$photo}}" alt="{{$p.Name}} — photo {{inc $i}}" loading="lazy">
+      {{end}}
+    </div>
+    {{else}}
+    <div class="pp-hero pp-hero-empty"></div>
+    {{end}}
+  </section>
+  <section class="pp-main">
+    <h1>{{$p.Name}}</h1>
+    <p class="pp-location">{{$p.District}}{{if $p.MapURL}} · <a href="{{$p.MapURL}}" target="_blank" rel="noopener noreferrer">{{.T "pp.map"}}</a>{{end}}</p>
+    {{if or $p.CheckinText $p.CheckoutText}}
+    <p class="pp-times">
+      {{if $p.CheckinText}}<span>{{.T "pp.checkin"}}: <strong>{{$p.CheckinText}}</strong></span>{{end}}
+      {{if $p.CheckoutText}}<span>{{.T "pp.checkout"}}: <strong>{{$p.CheckoutText}}</strong></span>{{end}}
+    </p>
+    {{end}}
+    {{if $p.Description}}
+    <div class="pp-desc">
+      {{$p.DescHead}}
+      {{if $p.DescLong}}
+      <details>
+        <summary>{{.T "pp.more"}}</summary>
+        {{$p.DescTail}}
+      </details>
+      {{end}}
+    </div>
+    {{end}}
+    {{if $p.Amenities}}
+    <h2>{{.T "pp.amenities"}}</h2>
+    <ul class="pp-amenities">
+      {{range $p.Amenities}}<li>{{.}}</li>{{end}}
+    </ul>
+    {{end}}
+    {{if $p.HouseRules}}
+    <h2>{{.T "pp.rules"}}</h2>
+    <ul class="pp-amenities">
+      {{range $p.HouseRules}}<li>{{.}}</li>{{end}}
+    </ul>
+    {{end}}
+    {{if $p.Cards}}
+    <h2>{{.T "pp.guide"}}</h2>
+    <div class="pp-cards">
+      {{range $p.Cards}}
+      <div class="pp-card">
+        {{if .Title}}<h3>{{.Title}}</h3>{{end}}
+        <p>{{.Body}}</p>
+      </div>
+      {{end}}
+    </div>
+    {{end}}
+    {{if $p.Bookable}}{{$b := $p.Booking}}
+    <section class="pp-book pp-bk" id="book" aria-labelledby="bk-title">
+      <div class="pp-bk-card">
+        <h2 id="bk-title">{{.T "pp.cal.title"}}</h2>
+        <div class="pp-bk-months">
+          {{if $b.PrevHref}}<a class="pp-bk-nav" href="{{$b.PrevHref}}" aria-label="{{.T "pp.cal.prev"}}">&lsaquo;</a>{{else}}<span class="pp-bk-nav" aria-disabled="true">&lsaquo;</span>{{end}}
+          <strong>{{.T (printf "pp.cal.month.%d" $b.Month)}} {{$b.Year}}</strong>
+          {{if $b.NextHref}}<a class="pp-bk-nav" href="{{$b.NextHref}}" aria-label="{{.T "pp.cal.next"}}">&rsaquo;</a>{{else}}<span class="pp-bk-nav" aria-disabled="true">&rsaquo;</span>{{end}}
+        </div>
+        <div class="pp-bk-grid" role="grid">
+          {{range $n := seq 1 7}}<div class="pp-bk-dow">{{$.T (printf "pp.cal.dow.%d" $n)}}</div>{{end}}
+          {{range $week := $b.Weeks}}{{range $cell := $week}}
+            {{if eq $cell.State "pad"}}<span></span>
+            {{else if $cell.Href}}<a class="pp-bk-day" data-state="{{$cell.State}}" href="{{$cell.Href}}" aria-label="{{$cell.Day}}. {{$b.Month}}. {{$b.Year}}, {{$.T (printf "pp.cal.state.%s" $cell.State)}}">{{$cell.Day}}</a>
+            {{else}}<span class="pp-bk-day" data-state="{{$cell.State}}" aria-label="{{$cell.Day}}. {{$b.Month}}. {{$b.Year}}, {{$.T (printf "pp.cal.state.%s" $cell.State)}}">{{$cell.Day}}</span>{{end}}
+          {{end}}{{end}}
+        </div>
+        <p class="pp-bk-note">
+          {{if $b.Q}}{{.T "pp.cal.summary" "from" $b.Arrive "to" $b.Depart}} · {{.TP "stay_fees.nights" $b.Q.Nights}}
+          {{else if and $b.DateFrom (not $b.DateTo)}}{{.T "pp.cal.pick_to"}}
+          {{else}}{{.T "pp.cal.pick_from"}}{{end}}
+        </p>
+        <form method="get" action="/p/{{$b.Slug}}#book" class="pp-bk-guests">
+          <input type="hidden" name="lang" value="{{.Lang}}">
+          <input type="hidden" name="month" value="{{$b.MonthValue}}">
+          <input type="hidden" name="date_from" value="{{$b.DateFrom}}">
+          <input type="hidden" name="date_to" value="{{$b.DateTo}}">
+          <label class="ui-field"><span>{{.T "pp.book.guests"}}</span>
+            <select class="ui-input" name="guests">{{range $n := $b.GuestOptions}}<option value="{{$n}}"{{if eq $n $b.Guests}} selected{{end}}>{{$n}}</option>{{end}}</select></label>
+          <button class="ui-btn ui-btn-secondary" type="submit">{{.T "pp.cal.guests_apply"}}</button>
+        </form>
+        {{if or $b.QError $p.BookError}}
+        <p class="pp-bk-error" role="alert">{{if $b.QError}}{{.T (printf "pp.book.err.%s" $b.QError)}}{{else}}{{.T (printf "pp.book.err.%s" $p.BookError)}}{{end}}</p>
+        {{end}}
+      </div>
+
+      {{if $b.Q}}{{$q := $b.Q}}
+      <div class="pp-bk-card">
+        <div class="pp-bk-row"><span>{{.T "pp.book.nightly_line" "price" (.Money $q.NightlyCZK) "nights" $q.Nights}}</span><span>{{.Money $q.AccommodationCZK}}</span></div>
+        {{if $q.CleaningFeeCZK}}<div class="pp-bk-row"><span>{{.T "pp.book.cleaning"}}</span><span>{{.Money $q.CleaningFeeCZK}}</span></div>{{end}}
+        <div class="pp-bk-row pp-bk-total"><span>{{.T "pp.book.total"}}</span><span>{{.Money $q.TotalCZK}}</span></div>
+        {{if $q.CityTaxOnSiteCZK}}<p class="pp-bk-note">{{.T "pp.book.city_tax_note" "amount" $q.CityTaxOnSiteCZK "guests" $q.Guests "nights" $q.Nights "rate" $b.CityTaxRate}}</p>{{end}}
+      </div>
+
+      <div class="pp-bk-card">
+        <h2>{{.T "pp.book.policy_title" "name" (.T (printf "pp.book.policy_name.%s" $q.CancellationPolicy))}}</h2>
+        <p class="pp-bk-note">{{.T (printf "pp.book.policy.%s" $q.CancellationPolicy)}}</p>
+      </div>
+
+      <form method="post" action="/p/{{$b.Slug}}/checkout" class="pp-bk-card ui-form">
+        <input type="hidden" name="date_from" value="{{$q.DateFrom}}">
+        <input type="hidden" name="date_to" value="{{$q.DateTo}}">
+        <input type="hidden" name="guests" value="{{$q.Guests}}">
+        <input type="hidden" name="lang" value="{{.Lang}}">
+        <input type="hidden" name="terms_version" value="{{$b.TermsVersion}}">
+        <label class="ui-field"><span>{{.T "pp.book.name"}}</span>
+          <input class="ui-input" type="text" name="guest_name" value="{{$p.FormValues.Name}}" autocomplete="name" minlength="3" maxlength="120" required></label>
+        <label class="ui-field"><span>{{.T "pp.book.email"}}</span>
+          <input class="ui-input" type="email" name="guest_email" value="{{$p.FormValues.Email}}" autocomplete="email" required></label>
+        <label class="ui-check"><input type="checkbox" name="terms" value="1" required><span>{{.T "pp.book.terms"}}</span></label>
+        <p class="pp-bk-note"><a href="/terms/booking?lang={{.Lang}}" target="_blank" rel="noopener">{{.T "pp.book.terms_read"}}</a></p>
+        {{$modes := $p.Modes}}
+        {{if gt (len $modes) 1}}
+        <fieldset class="pp-bk-pay">
+          <legend>{{.T "pp.book.pay_mode"}}</legend>
+          <label class="ui-check"><input type="radio" name="pay_mode" value="stripe" checked><span>{{.T "pp.book.mode.stripe"}}</span></label>
+          <label class="ui-check"><input type="radio" name="pay_mode" value="direct"><span>{{.T "pp.book.mode.direct"}}</span></label>
+        </fieldset>
+        <button class="ui-btn ui-btn-primary" type="submit">{{.T "pp.book.send_request"}}</button>
+        {{else if eq (index $modes 0) "direct"}}
+        <input type="hidden" name="pay_mode" value="direct">
+        <button class="ui-btn ui-btn-primary" type="submit">{{.T "pp.book.send_direct"}}</button>
+        {{else}}
+        <input type="hidden" name="pay_mode" value="stripe">
+        <button class="ui-btn ui-btn-primary" type="submit">{{.T "pp.book.pay_card" "total" $q.TotalCZK}}</button>
+        <p class="pp-bk-fine">{{.T "pp.book.stripe_note"}}</p>
+        {{end}}
+      </form>
+      {{end}}
+
+      <nav class="pp-bk-lang" aria-label="{{.T "pp.lang.label"}}">
+        <a href="{{$b.LangCS}}" hreflang="cs" lang="cs"{{if eq .Lang "cs"}} aria-current="true"{{end}}>CS</a>
+        <a href="{{$b.LangEN}}" hreflang="en" lang="en"{{if eq .Lang "en"}} aria-current="true"{{end}}>EN</a>
+      </nav>
+    </section>
+    {{end}}
+  </section>
+</main>
+{{end}}
