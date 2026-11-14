@@ -1,6 +1,6 @@
 # 1580: Go stay-fee hlášení PDF renderer (`go/internal/stayfeepdf`) and its wiring into the stay_fee_mail job
 
-Status: todo
+Status: review
 Depends on: 1220, 1240, 1241, 1242 | Base commit: current tip of the working branch | Branch: task/1580-go-stay-fee-hlaseni-pdf
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B
 

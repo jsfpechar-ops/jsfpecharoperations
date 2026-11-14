@@ -231,7 +231,15 @@ func u8(v float64) uint8 { return uint8(math.Round(v * 255)) }
 
 // Bytes replays the ops into a PDF. Creation date and ids are fixed, so the
 // same ops always give the same bytes.
-func (d *Doc) Bytes() ([]byte, error) {
+func (d *Doc) Bytes() ([]byte, error) { return PagesBytes(d) }
+
+// Mark is the UbyHost mark PNG (192 px) the invoice footer draws.
+func Mark() []byte { return markPNG }
+
+// PagesBytes replays several Docs into one PDF, one A4 page per Doc (a
+// multi-page document such as the stay-fee hlášení). Meta ops of any page set
+// the document info. Like Bytes it is deterministic.
+func PagesBytes(docs ...*Doc) ([]byte, error) {
 	p := &gopdf.GoPdf{}
 	p.Start(gopdf.Config{Unit: gopdf.UnitPT, PageSize: gopdf.Rect{W: W, H: H}})
 	if err := p.AddTTFFontData(Reg, fontReg); err != nil {
@@ -240,75 +248,77 @@ func (d *Doc) Bytes() ([]byte, error) {
 	if err := p.AddTTFFontData(Bold, fontBold); err != nil {
 		return nil, err
 	}
-	p.AddPage()
 	info := gopdf.PdfInfo{Producer: "UbyHost", Creator: "UbyHost"}
-	for _, o := range d.ops {
-		switch o.Kind {
-		case "meta":
-			info.Title, info.Author, info.Creator = o.Title, o.Author, o.Creator
-		case "text":
-			if err := p.SetFont(o.Font, "", o.Size); err != nil {
-				return nil, err
-			}
-			p.SetTextColor(u8(o.Color[0]), u8(o.Color[1]), u8(o.Color[2]))
-			x := o.X
-			if o.Right {
-				x -= fontMetrics(o.Font).width(o.S, o.Size)
-			}
-			p.SetXY(x, H-o.Y-baselineOffset(o.Size))
-			if err := p.Text(o.S); err != nil {
-				return nil, err
-			}
-		case "rect":
-			style := ""
-			if o.Fill != nil {
-				p.SetFillColor(u8(o.Fill[0]), u8(o.Fill[1]), u8(o.Fill[2]))
-				style += "F"
-			}
-			if o.Stroke != nil {
-				p.SetStrokeColor(u8(o.Stroke[0]), u8(o.Stroke[1]), u8(o.Stroke[2]))
+	for _, d := range docs {
+		p.AddPage()
+		for _, o := range d.ops {
+			switch o.Kind {
+			case "meta":
+				info.Title, info.Author, info.Creator = o.Title, o.Author, o.Creator
+			case "text":
+				if err := p.SetFont(o.Font, "", o.Size); err != nil {
+					return nil, err
+				}
+				p.SetTextColor(u8(o.Color[0]), u8(o.Color[1]), u8(o.Color[2]))
+				x := o.X
+				if o.Right {
+					x -= fontMetrics(o.Font).width(o.S, o.Size)
+				}
+				p.SetXY(x, H-o.Y-baselineOffset(o.Size))
+				if err := p.Text(o.S); err != nil {
+					return nil, err
+				}
+			case "rect":
+				style := ""
+				if o.Fill != nil {
+					p.SetFillColor(u8(o.Fill[0]), u8(o.Fill[1]), u8(o.Fill[2]))
+					style += "F"
+				}
+				if o.Stroke != nil {
+					p.SetStrokeColor(u8(o.Stroke[0]), u8(o.Stroke[1]), u8(o.Stroke[2]))
+					p.SetLineWidth(o.LW)
+					style += "D"
+				}
+				top := H - (o.Y + o.H)
+				if o.R > 0 {
+					if err := p.Rectangle(o.X, top, o.X+o.W, top+o.H, style, o.R, 20); err != nil {
+						return nil, err
+					}
+				} else {
+					if o.Stroke == nil {
+						p.SetLineWidth(0)
+					}
+					if err := p.Rectangle(o.X, top, o.X+o.W, top+o.H, style, 0, 0); err != nil {
+						return nil, err
+					}
+				}
+			case "line":
+				p.SetStrokeColor(u8(o.Color[0]), u8(o.Color[1]), u8(o.Color[2]))
 				p.SetLineWidth(o.LW)
-				style += "D"
-			}
-			top := H - (o.Y + o.H)
-			if o.R > 0 {
-				if err := p.Rectangle(o.X, top, o.X+o.W, top+o.H, style, o.R, 20); err != nil {
+				p.Line(o.X, H-o.Y, o.X2, H-o.Y2)
+			case "image":
+				h, err := gopdf.ImageHolderByBytes(o.PNG)
+				if err != nil {
 					return nil, err
 				}
-			} else {
-				if o.Stroke == nil {
-					p.SetLineWidth(0)
-				}
-				if err := p.Rectangle(o.X, top, o.X+o.W, top+o.H, style, 0, 0); err != nil {
+				if err := p.ImageByHolderWithOptions(h, gopdf.ImageOptions{X: o.X, Y: H - o.Y - o.H, Rect: &gopdf.Rect{W: o.W, H: o.H}}); err != nil {
 					return nil, err
 				}
+			case "link":
+				p.AddExternalLink(o.URL, o.X, H-o.Y2, o.X2-o.X, o.Y2-o.Y)
+			case "watermark":
+				if err := p.SetFont(o.Font, "", o.Size); err != nil {
+					return nil, err
+				}
+				p.SetTextColor(u8(o.Color[0]), u8(o.Color[1]), u8(o.Color[2]))
+				p.Rotate(o.Ang, o.X, H-o.Y)
+				p.SetXY(o.X-fontMetrics(o.Font).width(o.S, o.Size)/2, H-o.Y-wmOffset(o.Font, o.Size))
+				opt := gopdf.CellOption{Transparency: &gopdf.Transparency{Alpha: o.Alpha, BlendModeType: gopdf.NormalBlendMode}}
+				if err := p.CellWithOption(&gopdf.Rect{W: fontMetrics(o.Font).width(o.S, o.Size) + 1, H: o.Size}, o.S, opt); err != nil {
+					return nil, err
+				}
+				p.RotateReset()
 			}
-		case "line":
-			p.SetStrokeColor(u8(o.Color[0]), u8(o.Color[1]), u8(o.Color[2]))
-			p.SetLineWidth(o.LW)
-			p.Line(o.X, H-o.Y, o.X2, H-o.Y2)
-		case "image":
-			h, err := gopdf.ImageHolderByBytes(o.PNG)
-			if err != nil {
-				return nil, err
-			}
-			if err := p.ImageByHolderWithOptions(h, gopdf.ImageOptions{X: o.X, Y: H - o.Y - o.H, Rect: &gopdf.Rect{W: o.W, H: o.H}}); err != nil {
-				return nil, err
-			}
-		case "link":
-			p.AddExternalLink(o.URL, o.X, H-o.Y2, o.X2-o.X, o.Y2-o.Y)
-		case "watermark":
-			if err := p.SetFont(o.Font, "", o.Size); err != nil {
-				return nil, err
-			}
-			p.SetTextColor(u8(o.Color[0]), u8(o.Color[1]), u8(o.Color[2]))
-			p.Rotate(o.Ang, o.X, H-o.Y)
-			p.SetXY(o.X-fontMetrics(o.Font).width(o.S, o.Size)/2, H-o.Y-wmOffset(o.Font, o.Size))
-			opt := gopdf.CellOption{Transparency: &gopdf.Transparency{Alpha: o.Alpha, BlendModeType: gopdf.NormalBlendMode}}
-			if err := p.CellWithOption(&gopdf.Rect{W: fontMetrics(o.Font).width(o.S, o.Size) + 1, H: o.Size}, o.S, opt); err != nil {
-				return nil, err
-			}
-			p.RotateReset()
 		}
 	}
 	p.SetInfo(info)
