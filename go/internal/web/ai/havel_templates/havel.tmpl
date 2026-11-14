@@ -1,0 +1,73 @@
+{{/* Port of App/app/templates/havel.html, _havel_fragment.html, _havel_form.html and _havel_support.html (brief 1433). */}}
+{{define "havel.title"}}{{end}}
+{{define "havel.meta"}}{{end}}
+{{define "havel"}}
+<div class="head"><div><h1 class="big">{{t "havel.name"}}{{help_tip "havel-subtitle-help" (t "havel.subtitle")}}</h1></div></div>
+<div class="havel-v2">
+<section class="ui-section havel-page" data-havel-page data-havel-owner="{{.OwnerID}}">
+  <div class="havel-thread" role="log" aria-live="polite" data-havel-thread>
+    {{if .ShowTopics}}{{template "havel.topics" .}}{{end}}
+    {{template "havel.thread" .}}
+  </div>
+  {{template "havel.form" .}}
+</section>
+</div>
+{{end}}
+
+{{/* The X-Havel: 1 answer (_havel_fragment.html). The handler cuts it out between the two marker elements. */}}
+{{define "havel.fragment_page.title"}}{{end}}
+{{define "havel.fragment_page.meta"}}{{end}}
+{{define "havel.fragment_page"}}<div hidden data-havel-fragment-start></div>
+<div data-havel-items data-mode="{{if .ShowTopics}}replace{{else}}append{{end}}">
+  {{if .ShowTopics}}{{template "havel.topics" .}}{{end}}
+  {{template "havel.thread" .}}
+</div>
+<div data-havel-form-wrap>{{template "havel.form" .}}</div>
+<div hidden data-havel-fragment-end></div>{{end}}
+
+{{define "havel.form"}}
+<form method="post" action="/havel" class="havel-composer" data-havel-form{{if .Locked}} hidden data-havel-locked{{end}}>
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <input type="hidden" name="history" value="{{.History}}" data-havel-history>
+  <input type="hidden" name="history_sig" value="{{.HistorySig}}" data-havel-sig>
+  <input type="hidden" name="page" value="{{.Page}}">
+  <input type="hidden" name="device" value="computer" data-havel-device>
+  <input type="hidden" name="topic" value="{{.Topic}}" data-havel-topic>
+  <input type="hidden" name="q" value="{{.Q}}" data-havel-q>
+  <input type="hidden" name="return_to" value="{{.ReturnTo}}">
+  {{if .State}}
+  <p class="havel-meta havel-status">{{t (printf "havel.%s" .State)}}</p>
+  <a class="ui-btn ui-btn-secondary havel-support-open" href="/havel?topic=wrong&q=error" data-havel-topic-link>{{icon "mail" 16}}{{t "havel.write_support"}}</a>
+  {{else}}
+  <label for="havel-message" class="sr-only">{{t "havel.placeholder"}}</label>
+  <div class="havel-input">
+    <textarea id="havel-message" name="message" rows="1" maxlength="{{.Max}}" placeholder="{{t "havel.placeholder"}}" required{{if .Error}} aria-invalid="true" aria-describedby="havel-error"{{end}}></textarea>
+    <button class="ui-btn ui-btn-secondary ui-btn-icon havel-send" type="submit" data-havel-send aria-label="{{t "havel.send"}}">{{icon "arrow-up" 20}}</button>
+  </div>
+  {{if .Error}}<p id="havel-error" class="havel-error">{{.Error}}</p>{{end}}
+  {{if not .Fresh}}<div class="havel-actions"><button class="ui-btn ui-btn-quiet ui-btn-compact" type="submit" name="reset" value="1" formnovalidate>{{t "havel.new"}}</button></div>{{end}}
+  <p class="havel-meta havel-note">{{t "havel.ai_note"}}</p>
+  {{end}}
+</form>
+{{end}}
+
+{{/* _havel_support.html: the data is {V: the view, Prefill: Havel's summary}. */}}
+{{define "havel.support"}}
+{{if .V.SupportBlocked}}
+<p class="havel-meta">{{t "havel.support.limit" (kv "email" .V.OperatorEmail)}}</p>
+{{else}}
+<form method="post" action="/havel/support" class="havel-support" data-havel-support>
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <input type="hidden" name="history" value="{{.V.History}}">
+  <input type="hidden" name="history_sig" value="{{.V.HistorySig}}">
+  <input type="hidden" name="page" value="{{.V.Page}}">
+  <input type="hidden" name="return_to" value="{{.V.ReturnTo}}">
+  <h3 class="havel-support-title">{{t "havel.support.title"}}</h3>
+  {{ui_textarea "havel-support-summary" (t "havel.support.summary") (kv "value" .Prefill "name" "summary" "rows" 4 "attrs" (safe `maxlength="800"`))}}
+  {{ui_textarea "havel-support-note" (t "havel.support.add") (kv "name" "note" "optional" true "rows" 2 "attrs" (safe `maxlength="600"`))}}
+  <p class="havel-meta">{{t "havel.support.includes"}}</p>
+  {{if .V.SupportTo}}<p class="havel-meta">{{t "havel.support.replies_to" (kv "email" .V.SupportTo)}}</p>{{end}}
+  {{ui_button (t "havel.support.send") "primary" (kv "type" "submit" "icon_name" "send")}}
+</form>
+{{end}}
+{{end}}
