@@ -1,6 +1,6 @@
 # 1436: Go port of Leon's setup test message: POST /apartments/{id}/leon/setup/try
 
-Status: todo
+Status: review
 Depends on: 1435 | Base commit: the current head of the working branch | Branch: the current branch (one big PR)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B (privacy-relevant outbound request: the assistant's model calls)
 
