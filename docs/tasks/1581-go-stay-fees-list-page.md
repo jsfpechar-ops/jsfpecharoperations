@@ -1,6 +1,6 @@
 # 1581: Go stay fee host pages, part 1: the list page GET /stay-fees (and the shared page plumbing)
 
-Status: todo
+Status: review
 Depends on: 1240, 1240a, 1242, 1330, 1330-fix-1, 1380, 1381, 1543 | Base commit: current tip of the working branch | Branch: task/1581-go-stay-fees-list-page
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B
 
