@@ -47,7 +47,7 @@ No new outbound request (only queued mail). No schema change. No new personal-da
 | `go/internal/web/booking/direct_test.go` | create (170 lines) | new file, copied from the sidecar |
 | `go/cmd/ubyhost-web/register_web_booking_checkout.go` | edit (step 2, one line) | passes `booking.Direct{...}.Start` as `c.Direct` |
 
-No other file may change. `docs/tasks/1543-register-direct.patch` is the exact diff of the last row.
+Order: 1542 goes first (it creates `register_web_booking_checkout.go`); this brief edits that file. No other file may change. `docs/tasks/1543-register-direct.patch` is the exact diff of the last row.
 
 ## 4. Steps
 
