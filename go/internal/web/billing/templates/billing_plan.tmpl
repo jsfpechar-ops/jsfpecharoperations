@@ -1,0 +1,126 @@
+{{- /* Go twin of App/app/templates/billing_plan.html (brief 1556). plan_page.go builds the
+     lists (cards, facts, invoice rows) and the translated lines that Jinja builds inline;
+     ui_section call blocks are written out with sec_head. */ -}}
+{{define "billing_plan.title"}}{{end}}
+{{define "billing_plan.back_label"}}{{t "nav.settings"}}{{end}}
+{{define "billing_plan"}}
+<div class="settings-lane ui-page-narrow">
+<div class="airbnb-header">
+  <a class="airbnb-back" href="/settings" aria-label="{{t "common.back"}}">{{icon "arrow-left" 20}}</a>
+  <h1 class="airbnb-title">{{t "billing.plan.title"}}</h1>
+</div>
+{{if .Note}}{{ui_banner "neutral" .Note}}{{end}}
+
+{{if not .HasAcc}}
+{{sec_head (t "billing.plan.title") "" ""}}
+{{ui_tip "tip-billing-og" (t "billing.plan.og")}}
+</section>
+
+{{else if .Orderable}}
+{{sec_head (t "billing.plan.status_title") "" ""}}
+<p class="ui-sub">{{.StatusLine}}</p>
+{{if .Plan}}<p class="ui-sub">{{.OrderedLine}}</p>{{end}}
+</section>
+<form method="post" action="/predplatne" data-billing-order>
+<input type="hidden" name="_csrf" value="{{csrf}}">
+{{sec_head (t "billing.order.plan_title") "" ""}}
+<div class="ui-choice-cards">
+{{range .PlanCards}}
+{{choice_card "plan" .Value .Label .Checked (kv "caller" .Extra)}}
+{{end}}
+</div>
+{{with .Errors.plan}}<p class="ui-error">{{.}}</p>{{end}}
+<div class="ui-choice-cards">
+{{range .IntervalCards}}
+{{choice_card "billing_interval" .Value .Label .Checked}}
+{{end}}
+</div>
+{{ui_check "addon_ttlock" (t "billing.order.ttlock") (kv "checked" .Values.AddonTTLock)}}
+{{ui_tip "tip-billing-apartments" (t "billing.order.apartments" "n" .ApartmentCount)}}
+</section>
+{{sec_head (t "billing.order.buyer_title") "" ""}}
+{{ui_field "buyer_ico" (t "billing.order.ico") (kv "value" .Values.BuyerICO "error" .Errors.buyer_ico "optional" true "attrs" (safe `inputmode="numeric" autocomplete="off"`))}}
+<div class="ui-form-actions">{{ui_button (t "billing.order.ares") "secondary" (kv "type" "submit" "attrs" (safe `name="do" value="ares" formnovalidate`))}}</div>
+{{ui_field "buyer_name" (t "billing.order.name") (kv "value" .Values.BuyerName "error" .Errors.buyer_name "attrs" (safe `autocomplete="organization"`))}}
+{{ui_field "buyer_street" (t "billing.order.street") (kv "value" .Values.BuyerStreet "error" .Errors.buyer_street "attrs" (safe `autocomplete="street-address"`))}}
+{{ui_field "buyer_city" (t "billing.order.city") (kv "value" .Values.BuyerCity "error" .Errors.buyer_city "attrs" (safe `autocomplete="address-level2"`))}}
+{{ui_field "buyer_zip" (t "billing.order.zip") (kv "value" .Values.BuyerZip "error" .Errors.buyer_zip "attrs" (safe `inputmode="numeric" autocomplete="postal-code"`))}}
+{{ui_field "buyer_dic" (t "billing.order.dic") (kv "value" .Values.BuyerDIC "optional" true)}}
+{{ui_field "buyer_email" (t "billing.order.email") (kv "value" .Values.BuyerEmail "type" "email" "error" .Errors.buyer_email "help" (t "billing.order.email_help") "attrs" (safe `autocomplete="email"`))}}
+</section>
+{{sec_head (t "billing.order.total_title") "" ""}}
+{{ui_facts .TotalFact}}
+{{ui_tip "tip-billing-pay" (t "billing.order.pay_note")}}
+<div class="ui-form-actions">{{ui_button (t "billing.order.submit") "primary" (kv "type" "submit")}}</div>
+</section>
+</form>
+
+{{else}}
+{{sec_head (t "billing.plan.current_title") "" ""}}
+{{ui_facts .CurrentFacts}}
+</section>
+{{if .Preview}}
+{{sec_head (t "billing.change.preview_title") "" ""}}
+<p class="ui-sub" data-billing-preview="{{.Preview.When}}">{{.PreviewLine}}</p>
+<form method="post" action="/predplatne/zmena">
+<input type="hidden" name="_csrf" value="{{csrf}}">
+<input type="hidden" name="field" value="{{.Preview.Field}}"><input type="hidden" name="value" value="{{.Preview.Value}}"><input type="hidden" name="confirm" value="1">
+<div class="ui-form-actions">{{ui_button (t "billing.change.confirm") "primary" (kv "type" "submit")}}{{ui_button (t "billing.change.back") "secondary" (kv "href" "/predplatne")}}</div>
+</form>
+</section>
+{{end}}
+{{if .CanChange}}
+{{sec_head (t "billing.change.title") "" (ui_tip "tip-billing-change" (t "billing.change.apartments_note"))}}
+{{if not .IsMax}}
+<div class="ui-upgrade-card">
+  <h3 class="ui-upgrade-name">{{t "billing.plan.name.max"}}</h3>
+  <p class="ui-upgrade-price">{{.UpgradePerLine}}</p>
+  <p class="ui-sub">{{t "billing.order.plan_max"}}</p>
+  {{change_open csrf "plan" "max"}}{{ui_button (t "billing.change.to_plan" "plan" (t "billing.plan.name.max")) "primary" (kv "type" "submit")}}</form>
+</div>
+{{else}}
+{{change_open csrf "plan" "standard"}}<div class="ui-form-actions">{{ui_button (t "billing.change.to_plan" "plan" (t "billing.plan.name.standard")) "secondary" (kv "type" "submit")}}</div></form>
+{{end}}
+{{if eq .Interval "month"}}
+{{change_open csrf "billing_interval" "year"}}
+<div class="ui-upgrade-strip">{{if .SaveLine}}<span>{{.SaveLine}}</span>{{end}}{{ui_button (t "billing.change.yearly_cta") "secondary" (kv "type" "submit")}}</div>
+</form>
+{{else}}
+{{change_open csrf "billing_interval" "month"}}<div class="ui-form-actions">{{ui_button (t "billing.change.to_interval_month") "secondary" (kv "type" "submit")}}</div></form>
+{{end}}
+{{if .HasWhitelabel}}
+{{change_open csrf "addon_whitelabel" "0"}}<div class="ui-form-actions">{{ui_button (t "billing.change.whitelabel_off") "secondary" (kv "type" "submit")}}</div></form>
+{{end}}
+{{if not .IsMax}}
+{{change_open csrf "addon_ttlock" .TTLockValue}}
+<div class="ui-addon-row"><div class="ui-addon-text"><strong>{{t "billing.change.ttlock_title"}}</strong><span class="ui-sub">{{.TTLockLine}}</span></div>{{ui_button (t .TTLockButton) "secondary" (kv "type" "submit" "attrs" (safe (printf `aria-label="%s"` (t .TTLockLabel))))}}</div>
+</form>
+{{end}}
+</section>
+{{end}}
+{{sec_head (t "billing.cancel.title") "" (ui_tip "tip-billing-cancel" .CancelTip)}}
+{{if .Canceling}}
+<form method="post" action="/predplatne/obnovit"><input type="hidden" name="_csrf" value="{{csrf}}">
+<div class="ui-form-actions">{{ui_button (t "billing.resume.submit") "primary" (kv "type" "submit")}}</div></form>
+{{else}}
+<form method="post" action="/predplatne/zrusit" data-confirm data-confirm-message="{{.CancelConfirm}}"><input type="hidden" name="_csrf" value="{{csrf}}">
+<div class="ui-form-actions">{{ui_button (t "billing.cancel.submit") "danger" (kv "type" "submit")}}</div></form>
+{{end}}
+</section>
+{{end}}
+
+{{if .Invoices}}
+{{card_head (t "billing.invoices.title") (ui_tip "tip-billing-invoices" (t "billing.invoices.pay_hint"))}}
+{{ui_table_begin .InvoiceColumns (t "billing.invoices.title")}}
+{{range .Invoices}}
+<tr class="ui-row">
+  <td class="ui-cell-first" data-card="primary"><a data-turbo="false" href="/predplatne/faktury/{{.ID}}.pdf">{{.Number}}</a><span class="ui-sub"> {{.Date}}</span></td>
+  <td class="ui-cell-r ui-num">{{.Amt}} Kč</td>
+  <td class="ui-cell-r" data-card="badge">{{ui_badge .StateKind .StateTx}}</td>
+</tr>
+{{end}}
+{{ui_table_end}}
+</section>
+{{end}}
+</div>
+{{end}}

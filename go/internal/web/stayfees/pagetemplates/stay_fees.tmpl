@@ -1,0 +1,231 @@
+{{- /* Go twin of App/app/templates/stay_fees.html (brief 1581). page_list.go builds the rows:
+     status, step, the payment panel, the copy source and every link. */ -}}
+{{define "stay_fees.title"}}{{end}}
+{{define "stay_fees"}}
+<div class="stay-fees-page">
+<div class="head stays-head"><div class="head-title-row"><h1 class="big">{{t "stay_fees.title"}}</h1>
+<details class="ui-how stays-how" data-how="stay_fees">
+  <summary class="ui-how-toggle" aria-label="{{t "how.toggle"}}">{{icon "circle-help" 16}}</summary>
+  <div class="ui-how-body">
+    <p id="fee-list-email">{{if .EmailsOn}}{{t "stay_fees.list.email_on"}}{{else}}{{t "stay_fees.list.email_off"}}{{end}} <a href="/settings/account#settings-stay-fee-emails">{{t "stay_fees.list.email_change"}}</a></p>
+    <p>{{t "stay_fees.pay.send"}}</p>
+    <ol class="ui-how-steps"><li>{{t "how.stay_fees.1"}}</li><li>{{t "how.stay_fees.2"}}</li><li>{{t "how.stay_fees.3"}}</li></ol>
+    <a class="ui-how-more" href="/guide#stay_fee">{{t "how.more"}}</a>
+  </div>
+</details>
+</div><div class="stays-head-actions">{{range .Tabs}}<a class="btn ghost" href="{{.Href}}">{{t .Key}}</a>{{end}}<a class="btn ghost" href="/settings#settings-stay-fee-emails">{{t "stay_fees.list.email_change"}}</a></div></div>
+<div class="stay-fees-toolbar">{{template "stayfees.filter" .Filter}}</div>
+{{if .Rows}}
+{{if or (gt (len .BulkReady) 1) (gt .BulkSaved 1)}}
+<section class="card fee-bulk" aria-label="{{t "stay_fees.bulk.label"}}">
+  {{if gt (len .BulkReady) 1}}
+  <form method="post" action="/stay-fees/confirm-ready">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <input type="hidden" name="month" value="{{.MonthKey}}">
+    <input type="hidden" name="return_to" value="{{.FeeReturn}}">
+    {{range .BulkReady}}<input type="hidden" name="apartment_id" value="{{.}}">{{end}}
+    <button class="btn" type="submit" data-confirm data-confirm-message="{{t "stay_fees.bulk.confirm_ask"}}">{{t "stay_fees.bulk.confirm" "count" (len .BulkReady)}}</button>
+  </form>
+  {{end}}
+  {{if gt .BulkSaved 1}}
+  <a data-turbo="false" class="btn ghost" href="/stay-fees/pdfs.zip?month={{.MonthKey}}" download>{{t "stay_fees.bulk.pdfs" "count" .BulkSaved}}</a>
+  {{end}}
+</section>
+{{end}}
+{{range .Rows}}{{if not .Unset}}
+<section class="card fee-pay" id="fee-pay-{{.ID}}" aria-labelledby="fee-pay-h-{{.ID}}" data-fee-step="{{.Step}}">
+  <div class="fee-pay-h">
+    <h2 id="fee-pay-h-{{.ID}}">{{.Name}}</h2>
+    <span class="sub">{{.PeriodLabel}}</span>
+  </div>
+  {{$step := .Step}}
+  <ol class="fee-stepper" aria-label="{{t "stay_fees.pay.step" "n" .Step}}">
+    {{range $n := seq 1 3}}
+    <li class="fee-stepper-item" data-state="{{if lt $n $step}}done{{else if eq $n $step}}current{{else}}todo{{end}}"{{if eq $n $step}} aria-current="step"{{end}}>
+      <span class="fee-stepper-dot" aria-hidden="true">{{if lt $n $step}}{{icon "check" 14}}{{else}}{{$n}}{{end}}</span>
+      <span class="fee-stepper-label">{{t (printf "stay_fees.pay.short%d" $n)}}</span>
+    </li>
+    {{end}}
+  </ol>
+  <div class="fee-step">
+  {{if eq .Step 1}}
+    {{if eq .Status "ready"}}
+      <h3>{{t "stay_fees.pay.ask"}}</h3>
+      <dl class="fee-figures">
+        <div><dt>{{t "stay_fees.col.liable"}}</dt><dd>{{.Liable}}</dd></div>
+        <div><dt>{{t "stay_fees.col.exempt"}}</dt><dd>{{.Exempt}}</dd></div>
+        <div class="fee-figures-total"><dt>{{t "stay_fees.col.total"}}</dt><dd>{{.PayTotalDisplay}}</dd></div>
+      </dl>
+      <form method="post" action="/stay-fees/{{.ID}}/finalize" class="fee-step-actions">
+        <input type="hidden" name="_csrf" value="{{csrf}}">
+        <input type="hidden" name="month" value="{{$.MonthKey}}">
+        <input type="hidden" name="confirm_collected" value="1">
+        <input type="hidden" name="return_to" value="{{$.FeeReturn}}">
+        <button class="btn" type="submit">{{t "stay_fees.pay.yes"}}</button>
+        <a class="btn ghost" href="{{.ReportURL}}">{{t "stay_fees.pay.edit"}}</a>
+      </form>
+    {{else if eq .Status "waiting"}}
+      <h3>{{t "stay_fees.pay.ask"}}</h3>
+      <p class="sub">{{t "stay_fees.issue.period_running"}}</p>
+    {{else}}
+      <h3>{{t "stay_fees.pay.fix_first"}}</h3>
+      <ul class="fee-step-issues">
+        {{range .Issues}}<li>{{t .}}</li>{{end}}
+      </ul>
+      <div class="fee-step-actions"><a class="btn" href="{{.ReportURL}}">{{t "stay_fees.pay.fix"}}</a></div>
+    {{end}}
+  {{else if eq .Step 3}}
+    <h3>{{t "stay_fees.pay.done_title"}}</h3>
+    <div class="fee-step-actions"><a data-turbo="false" class="btn line" href="{{.PDFURL}}" download>{{t "stay_fees.download_pdf"}}</a></div>
+  {{else}}
+    <h3>{{t "stay_fees.pay.step2"}}</h3>
+    <div class="fee-send-pay">
+    <ol class="fee-tasks">
+      <li>
+        <strong>{{t "stay_fees.pay.task_pdf"}}</strong>
+        <a data-turbo="false" class="btn line" href="{{.PDFURL}}" download>{{t "stay_fees.download_pdf"}}</a>
+      </li>
+      <li>
+        <strong>{{t "stay_fees.pay.task_send"}}</strong>
+        <a class="btn" href="https://www.mojedatovaschranka.cz/" target="_blank" rel="noopener noreferrer">{{t "stay_fees.pay.open_databox"}}</a>
+      </li>
+    </ol>
+    <div class="fee-qr-panel">
+    {{if eq .PayTotalCZK 0}}
+      <p>{{t "stay_fees.pay.nothing"}}</p>
+    {{else if .PayQR}}
+      <h4 class="fee-qr-title"><span class="fee-qr-n" aria-hidden="true">3</span>{{t "stay_fees.pay.task_pay"}}</h4>
+      <div class="fee-qr-body">
+        <img src="{{.PayQR}}" width="176" height="176" alt="{{t "stay_fees.payment.qr_alt"}}">
+        <div class="fee-qr-side">
+          <p class="fee-qr-amount">{{.PayTotalDisplay}}</p>
+          <dl class="fee-qr-meta">
+            <div><dt>{{t "stay_fees.payment.account"}}</dt><dd><span class="fee-qr-val">{{.PayAccount}}</span>{{copy_inline (printf "fee-acc-%d" .ID) .PayAccount (t "common.copy")}}</dd></div>
+            <div><dt>{{t "stay_fees.payment.vs"}}</dt><dd><span class="fee-qr-val">{{.PayVS}}</span>{{copy_inline (printf "fee-vs-%d" .ID) .PayVS (t "common.copy")}}</dd></div>
+          </dl>
+        </div>
+      </div>
+    {{else}}
+      <p class="sub">{{t "stay_fees.pay.no_account"}} <a href="{{.SetURL}}">{{t "stay_fees.pay.add_account"}}</a></p>
+    {{end}}
+    </div>
+    </div>
+    <form method="post" action="/stay-fees/{{.ID}}/paid" class="fee-step-actions fee-paid-form">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <input type="hidden" name="month" value="{{$.MonthKey}}">
+      <input type="hidden" name="return_to" value="{{$.FeeReturn}}">
+      <button class="btn" type="submit">{{t "stay_fees.pay.paid_button"}}</button>
+    </form>
+  {{end}}
+  </div>
+</section>
+{{end}}{{end}}
+{{range .Rows}}{{if and .Unset .CopyFrom}}
+{{$source := .CopyFrom}}
+<section class="card fee-copy" id="fee-copy-{{.ID}}" aria-label="{{t "stay_fees.copy.label"}}">
+  <div class="fee-pay-h">
+    <h2>{{.Name}}</h2>
+    <span class="sub">{{t "stay_fees.copy.title" "name" $source.Name}}</span>
+  </div>
+  <dl class="fee-figures">
+    <div><dt>{{t "apartment.form.stay_fee.rate_label"}}</dt><dd>{{t "stay_fees.rate_line" "rate" $source.Rate}}</dd></div>
+    <div><dt>{{t "stay_fees.col.period"}}</dt><dd>{{if eq $source.Cadence "quarterly"}}{{t "apartment.form.stay_fee.cadence.quarterly"}}{{else}}{{t "apartment.form.stay_fee.cadence.monthly"}}{{end}}</dd></div>
+    {{if $source.VS}}<div><dt>{{t "stay_fees.payment.vs"}}</dt><dd>{{$source.VS}}</dd></div>{{end}}
+    {{if $source.Account}}<div><dt>{{t "stay_fees.payment.account"}}</dt><dd>{{$source.Account}}</dd></div>{{end}}
+    {{if $source.AuthorityName}}<div><dt>{{t "apartment.form.stay_fee.authority_name_label"}}</dt><dd>{{$source.AuthorityName}}</dd></div>{{end}}
+    {{if $source.Databox}}<div><dt>{{t "stay_fees.send.databox"}}</dt><dd>{{$source.Databox}}</dd></div>{{end}}
+  </dl>
+  <form method="post" action="/stay-fees/{{.ID}}/copy-setup" class="fee-step-actions">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <input type="hidden" name="source_id" value="{{$source.ID}}">
+    <input type="hidden" name="return_to" value="{{$.FeeReturn}}">
+    <button class="btn" type="submit">{{t "stay_fees.copy.use"}}</button>
+    <a class="btn ghost" href="{{.SetURL}}">{{t "stay_fees.copy.other"}}</a>
+  </form>
+</section>
+{{end}}{{end}}
+<div class="card stays-desk fee-periods{{if .AllUnset}} fee-periods-unset{{end}}">
+  <table>
+    <thead>
+      {{if .AllUnset}}
+      <tr>
+        <th>{{t "stay_fees.col.property"}}</th>
+        <th>{{t "filter.status"}}</th>
+        <th><span class="sr-only">{{t "common.actions"}}</span></th>
+      </tr>
+      {{else}}
+      <tr>
+        <th>{{t "stay_fees.col.property"}}</th>
+        <th>{{t "stay_fees.col.period"}}</th>
+        <th class="num">{{t "stay_fees.col.liable"}}</th>
+        <th class="num">{{t "stay_fees.col.exempt"}}</th>
+        <th class="num">{{t "stay_fees.col.total"}}</th>
+        <th>{{t "filter.status"}}</th>
+        <th><span class="sr-only">{{t "common.actions"}}</span></th>
+      </tr>
+      {{end}}
+    </thead>
+    <tbody>
+    {{range .Rows}}
+      {{if .Unset}}
+      <tr class="clickable-row" data-href="{{.SetURL}}" tabindex="0" role="link" aria-label="{{.Name}}">
+        <td data-label="{{t "stay_fees.col.property"}}">
+          <a class="row-primary-link stay-identity-link" href="{{.SetURL}}">{{.Name}}</a>
+          <small>{{.Obec}}</small>
+        </td>
+        {{if $.AllUnset}}
+        <td data-label="{{t "filter.status"}}"><span class="pill p-n">{{t "stay_fees.status.not_setup"}}</span></td>
+        <td class="nowrap row-actions" data-label=""><a class="btn sm" href="{{.SetURL}}">{{t "stay_fees.setup.action"}}</a></td>
+        {{else}}
+        <td data-label="{{t "stay_fees.col.period"}}">—</td>
+        <td class="num" data-label="{{t "stay_fees.col.liable"}}">—</td>
+        <td class="num" data-label="{{t "stay_fees.col.exempt"}}">—</td>
+        <td class="num" data-label="{{t "stay_fees.col.total"}}">—</td>
+        <td data-label="{{t "filter.status"}}"><span class="pill p-n">{{t "stay_fees.status.not_setup"}}</span></td>
+        <td class="nowrap row-actions" data-label=""><a class="btn sm" href="{{.SetURL}}">{{t "stay_fees.setup.action"}}</a></td>
+        {{end}}
+      </tr>
+      {{else}}
+      <tr class="clickable-row" data-href="{{.ReportURL}}" tabindex="0" role="link" aria-label="{{.Name}}">
+        <td data-label="{{t "stay_fees.col.property"}}">
+          <a class="row-primary-link stay-identity-link" href="{{.ReportURL}}">{{.Name}}</a>
+          <small>{{.Obec}} · {{t "stay_fees.rate_line" "rate" .RateCZK}}</small>
+        </td>
+        <td class="nowrap" data-label="{{t "stay_fees.col.period"}}">
+          {{.TableLabel}}
+        </td>
+        <td class="num" data-label="{{t "stay_fees.col.liable"}}">{{.Liable}}</td>
+        <td class="num" data-label="{{t "stay_fees.col.exempt"}}">{{.Exempt}}</td>
+        <td class="num" data-label="{{t "stay_fees.col.total"}}">{{.TotalDisplay}}</td>
+        <td class="nowrap" data-label="{{t "filter.status"}}">
+          {{if eq .Status "saved"}}
+            <span class="pill p-ok">{{t "stay_fees.saved_version" "version" .Version}}</span>
+          {{else if eq .Status "attention"}}
+            <span class="pill p-warn">{{t "stay_fees.needs_setup"}}</span>
+          {{else if eq .Status "waiting"}}
+            <span class="pill p-n">{{t "stay_fees.status.in_progress"}}</span>
+          {{else}}
+            <span class="pill p-warn">{{t "stay_fees.status.ready"}}</span>
+          {{end}}
+        </td>
+        <td class="nowrap row-actions" data-label="">{{row_menu_begin}}<a class="row-menu-item" href="{{.ReportURL}}" role="menuitem">{{t "stay_fees.open_report"}}</a>{{row_menu_end}}</td>
+      </tr>
+      {{end}}
+    {{end}}
+    </tbody>
+  </table>
+</div>
+<div class="stays-phone">
+  {{range .Rows}}
+    <a class="card stay" href="{{if .Unset}}{{.SetURL}}{{else}}{{.ReportURL}}{{end}}"><span class="sav">{{first_letter .Name}}</span><span class="in"><b>{{.Name}}</b><small>{{.Obec}}</small>{{if .Unset}}<span class="pill p-n">{{t "stay_fees.status.not_setup"}}</span>{{else if eq .Status "saved"}}<span class="pill p-ok">{{t "stay_fees.saved_version" "version" .Version}}</span>{{else if eq .Status "attention"}}<span class="pill p-warn">{{t "stay_fees.needs_setup"}}</span>{{else if eq .Status "waiting"}}<span class="pill p-n">{{t "stay_fees.status.in_progress"}}</span>{{else}}<span class="pill p-warn">{{t "stay_fees.status.ready"}}</span>{{end}}</span>{{icon "chevron-right" 20 "chev"}}</a>
+  {{end}}
+</div>
+{{else}}
+{{if and .FilterActive .HasProperties}}
+{{empty_state (t "filter.no_results") "" .Filter.ResetHref (t "filter.reset") false}}
+{{else}}
+{{empty_state (t "stay_fees.empty_title") "" "/apartments/new" (t "apartments.add")}}
+{{end}}
+{{end}}
+</div>
+{{end}}

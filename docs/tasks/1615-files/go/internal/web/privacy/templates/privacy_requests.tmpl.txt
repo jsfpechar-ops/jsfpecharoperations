@@ -1,0 +1,70 @@
+{{- /* Go twin of App/app/templates/privacy_requests.html (brief 1615). The partial settings_back_header is written out as its markup (no help, no actions). */ -}}
+{{define "privacy_requests.title"}}{{end}}
+{{define "privacy_requests"}}
+<div class="airbnb-header">
+  <a class="airbnb-back" href="/settings" aria-label="{{t "common.back"}}">{{icon "arrow-left" 20}}</a>
+  <h1 class="airbnb-title">{{t "privacy_requests.title"}}</h1>
+</div>
+<div class="pr-lane">
+
+<details class="card" {{if not .Requests}}open{{end}}>
+  <summary>{{t "privacy_requests.create_title"}}</summary>
+  <form method="post" action="/privacy-requests">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <div class="ui-pair">
+      <div class="ui-field"><label for="received_at">{{t "privacy_requests.received"}}</label>
+        <input type="date" id="received_at" name="received_at" value=""></div>
+      <div class="ui-field"><label for="channel">{{t "privacy_requests.channel"}}</label>
+        <select id="channel" name="channel">
+          {{range .Channels}}<option value="{{.}}">{{t (printf "privacy_requests.channel.%s" .)}}</option>{{end}}
+        </select>
+      </div>
+      <div class="ui-field"><label for="request_type">{{t "privacy_requests.type"}}</label>
+        <select id="request_type" name="request_type">
+          {{range .RequestTypes}}<option value="{{.}}">{{t (printf "privacy_requests.type.%s" .)}}</option>{{end}}
+        </select>
+      </div>
+      <div class="ui-field"><label for="subject_kind">{{t "privacy_requests.subject"}}</label>
+        <select id="subject_kind" name="subject_kind">
+          {{range .SubjectKinds}}<option value="{{.}}">{{t (printf "privacy_requests.subject.%s" .)}}</option>{{end}}
+        </select>
+      </div>
+      <div class="ui-field"><label for="guest_id">{{t "privacy_requests.guest_id"}}</label>
+        <input id="guest_id" name="guest_id" inputmode="numeric"></div>
+    </div>
+    <div class="ui-form-actions"><button class="ui-btn ui-btn-primary" type="submit">{{t "privacy_requests.create"}}</button></div>
+  </form>
+</details>
+{{$statuses := .Statuses}}
+{{range .Requests}}{{$row := .}}
+<div class="card">
+  <h2>
+    {{t (printf "privacy_requests.type.%s" .RequestType)}} &middot; {{t (printf "privacy_requests.status.%s" .Status)}}
+  </h2>
+  <p class="ui-sub">
+    {{t "privacy_requests.received"}}: {{date_cz .ReceivedAt}}
+    &middot; {{t "privacy_requests.due"}}: {{datetime_local .DueAt}}
+    {{if .GuestID}}&middot; {{t "privacy_requests.guest_id"}}: {{.GuestID}}{{end}}
+  </p>
+  <form method="post" action="/privacy-requests/{{.ID}}">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <div class="ui-pair">
+      <div class="ui-field"><label for="status-{{.ID}}">{{t "privacy_requests.status_label"}}</label>
+        <select id="status-{{.ID}}" name="status">
+          {{range $statuses}}<option value="{{.}}" {{if eq . $row.Status}}selected{{end}}>{{t (printf "privacy_requests.status.%s" .)}}</option>{{end}}
+        </select>
+      </div>
+      <div class="ui-field"><label for="outcome-{{.ID}}">{{t "privacy_requests.outcome"}}</label>
+        <input id="outcome-{{.ID}}" name="outcome_note" value="{{.OutcomeNote}}"></div>
+      {{if not .IdentityCheckedAt}}
+      <div class="ui-field"><label class="checkline"><input type="checkbox" name="identity_checked"> {{t "privacy_requests.identity_checked"}}</label></div>
+      {{end}}
+    </div>
+    <div class="ui-form-actions"><button class="ui-btn ui-btn-secondary" type="submit">{{t "privacy_requests.save"}}</button></div>
+  </form>
+</div>
+{{else}}
+<p class="ui-sub">{{t "privacy_requests.empty"}}</p>
+{{end}}
+</div>
+{{end}}

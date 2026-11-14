@@ -327,6 +327,68 @@ func housebookRow(ctx context.Context, d deps, g row) ([]string, error) {
 	}, nil
 }
 
+// housebookGuestsSQL is housebook._housebook_sql without its optional filters.
+const housebookGuestsSQL = `SELECT g.*, r.date_from AS res_from, r.date_to AS res_to, r.id AS res_id,
+	a.id AS apartment_id, a.internal_name, a.uby_idub
+	FROM guest g
+	JOIN reservation r ON r.id = g.reservation_id
+	JOIN apartment a ON a.id = r.apartment_id
+	WHERE r.status != 'ignored' AND g.archived_at IS NULL
+	AND g.restricted_at IS NULL
+	AND COALESCE(r.source, '') != 'demo'
+	AND ($1::bigint IS NULL OR a.owner_user_id = $1)`
+
+// housebookGuests is the query of housebook.housebook_rows(apartment,
+// date_from, date_to, owner_user_id): the hydrated guest rows in house-book
+// order. 0 and "" leave a filter out, as None does in Python. owner must not
+// be nil (requireOwner): nil would read every workspace.
+func housebookGuests(ctx context.Context, d deps, owner any, apartment int64, from, to string) ([]row, error) {
+	query := housebookGuestsSQL
+	args := []any{owner}
+	if apartment != 0 {
+		args = append(args, apartment)
+		query += fmt.Sprintf(" AND a.id = $%d", len(args))
+	}
+	if from != "" {
+		args = append(args, from)
+		query += fmt.Sprintf(" AND COALESCE(g.stay_from, r.date_from) >= $%d", len(args))
+	}
+	if to != "" {
+		args = append(args, to)
+		query += fmt.Sprintf(" AND COALESCE(g.stay_from, r.date_from) <= $%d", len(args))
+	}
+	query += " ORDER BY COALESCE(g.stay_from, r.date_from), g.id"
+	guests, _, err := queryRows(ctx, d.pool, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	for _, g := range guests {
+		if err := hydrate(d.getenv, g); err != nil {
+			return nil, err
+		}
+	}
+	return guests, nil
+}
+
+// housebookCSV is iter_housebook_csv_rows over housebook_rows: the BOM, the
+// label row and one row per guest.
+func housebookCSV(ctx context.Context, d deps, guests []row) ([]byte, error) {
+	var out bytes.Buffer
+	out.WriteString(bom)
+	writeCSVRow(&out, housebookHeader)
+	for _, g := range guests {
+		fields, err := housebookRow(ctx, d, g)
+		if err != nil {
+			return nil, err
+		}
+		for i := range fields {
+			fields[i] = csvSafe(fields[i])
+		}
+		writeCSVRow(&out, fields)
+	}
+	return out.Bytes(), nil
+}
+
 // HousebookCSVHandler is exports.housebook_download with housebook.housebook_rows
 // and iter_housebook_csv_rows.
 func HousebookCSVHandler(pool *pgxpool.Pool, getenv func(string) string, now func() time.Time) http.HandlerFunc {
@@ -340,62 +402,25 @@ func HousebookCSVHandler(pool *pgxpool.Pool, getenv func(string) string, now fun
 			backErr(w, r, "/housebook", "flash.error.identity_hidden_export", nil)
 			return
 		}
-		// housebook._housebook_sql
-		query := `SELECT g.*, r.date_from AS res_from, r.date_to AS res_to, r.id AS res_id,
-			a.id AS apartment_id, a.internal_name, a.uby_idub
-			FROM guest g
-			JOIN reservation r ON r.id = g.reservation_id
-			JOIN apartment a ON a.id = r.apartment_id
-			WHERE r.status != 'ignored' AND g.archived_at IS NULL
-			AND g.restricted_at IS NULL
-			AND COALESCE(r.source, '') != 'demo'
-			AND ($1::bigint IS NULL OR a.owner_user_id = $1)`
 		owner, ok := requireOwner(w, h)
 		if !ok {
 			return
 		}
-		args := []any{owner}
-		if apartment := queryInt(r, "apartment"); apartment != 0 {
-			args = append(args, apartment)
-			query += fmt.Sprintf(" AND a.id = $%d", len(args))
-		}
-		if from := queryDate(r, "from"); from != "" {
-			args = append(args, from)
-			query += fmt.Sprintf(" AND COALESCE(g.stay_from, r.date_from) >= $%d", len(args))
-		}
-		if to := queryDate(r, "to"); to != "" {
-			args = append(args, to)
-			query += fmt.Sprintf(" AND COALESCE(g.stay_from, r.date_from) <= $%d", len(args))
-		}
-		query += " ORDER BY COALESCE(g.stay_from, r.date_from), g.id"
 		ctx := r.Context()
-		guests, _, err := queryRows(ctx, pool, query, args...)
+		guests, err := housebookGuests(ctx, d, owner, queryInt(r, "apartment"), queryDate(r, "from"), queryDate(r, "to"))
 		if err != nil {
 			serverError(w, err)
 			return
 		}
-		var out bytes.Buffer
-		out.WriteString(bom)
-		writeCSVRow(&out, housebookHeader)
-		for _, g := range guests {
-			if err := hydrate(getenv, g); err != nil {
-				serverError(w, err)
-				return
-			}
-			fields, err := housebookRow(ctx, d, g)
-			if err != nil {
-				serverError(w, err)
-				return
-			}
-			for i := range fields {
-				fields[i] = csvSafe(fields[i])
-			}
-			writeCSVRow(&out, fields)
+		body, err := housebookCSV(ctx, d, guests)
+		if err != nil {
+			serverError(w, err)
+			return
 		}
 		if err := audit(ctx, pool, h, at, "export_housebook_csv", fmt.Sprintf("rows=%d", len(guests))); err != nil {
 			serverError(w, err)
 			return
 		}
-		attachment(w, "text/csv; charset=utf-8", "domovni-kniha-"+dayStamp(at)+".csv", out.Bytes())
+		attachment(w, "text/csv; charset=utf-8", "domovni-kniha-"+dayStamp(at)+".csv", body)
 	}
 }

@@ -1,0 +1,81 @@
+{{- /* Go twin of App/app/templates/admin_home.html (brief 1593). home.go builds the lists
+     that Jinja builds inline; ui_section call blocks are written out as their markup. */ -}}
+{{define "admin_home.head"}}<link rel="stylesheet" href="/static/admin2.css?v=20261106-0893q">{{end}}
+{{define "admin_home.title"}}{{tip_label (t "home.admin.title") "admin-home-help" (t "home.admin.meta" "date" .Today) (kv "tag" "span")}}{{end}}
+{{define "admin_home.tabs"}}{{ui_tabs .Tabs}}{{end}}
+{{define "admin_home"}}
+{{if not .BillingOn}}{{ui_banner "neutral" (t "customers.billing_off")}}{{end}}
+
+{{if .Stats}}{{ui_stats .Stats}}{{end}}
+
+{{if and (not .Problems) .QueuesEmpty}}
+{{ui_empty (t "admin.today.clear") ""}}
+{{else}}
+{{if .Problems}}
+<section class="ui-section" id="today-system">
+  <h2>{{t "admin.today.system"}}</h2>
+  <ul>
+  {{range .Problems}}
+    <li><a data-turbo="false" href="/admin/operations#{{.Anchor}}">{{.Title}}</a> <span class="ui-badge ui-badge-action">{{.Count}}</span></li>
+  {{end}}
+  </ul>
+</section>
+{{end}}
+
+<section class="ui-section" id="queue-overdue"><div class="ui-section-h"><h2>{{t "home.admin.queue.overdue"}}</h2></div>
+{{if .Overdue}}
+{{ui_table_begin .OverdueColumns (t "home.admin.queue.overdue")}}
+{{range .Overdue}}
+<tr class="ui-row">
+  <td class="ui-cell-first" data-card="primary"><a data-turbo="false" href="/admin/fakturace/{{.ID}}.pdf">{{.Number}}</a></td>
+  <td class="ui-cell-r" data-card="meta">{{.Amount}}</td>
+  <td data-card="secondary">{{.Late}}</td>
+  <td data-card="badge"><a data-turbo="false" href="/admin/customers/{{.OwnerID}}">{{.CustomerStr}}</a></td>
+</tr>
+{{end}}
+{{ui_table_end}}
+{{else}}<p class="ui-sub">{{t "home.admin.queue.none"}}</p>{{end}}
+</section>
+
+<section class="ui-section" id="queue-trials"><div class="ui-section-h"><h2>{{t "home.admin.queue.trials"}}</h2></div>
+{{if .Trials}}
+{{ui_table_begin .TrialsColumns (t "home.admin.queue.trials")}}
+{{range .Trials}}
+<tr class="ui-row">
+  <td class="ui-cell-first" data-card="primary"><a data-turbo="false" href="{{.Link}}">{{.Name}}</a></td>
+  <td data-card="secondary">{{.Date}}</td>
+  <td data-card="meta"><a data-turbo="false" href="{{.Link}}">{{t "home.admin.open"}}</a></td>
+</tr>
+{{end}}
+{{ui_table_end}}
+{{else}}<p class="ui-sub">{{t "home.admin.queue.none"}}</p>{{end}}
+</section>
+
+<section class="ui-section" id="queue-unverified"><div class="ui-section-h"><h2>{{t "home.admin.queue.unverified"}}</h2></div>
+{{if .Unverified}}
+{{ui_table_begin .UnverifiedColumns (t "home.admin.queue.unverified")}}
+{{range .Unverified}}
+<tr class="ui-row">
+  <td class="ui-cell-first" data-card="primary"><a data-turbo="false" href="{{.Link}}">{{.Name}}</a></td>
+  <td data-card="secondary">{{.Date}}</td>
+  <td data-card="meta"><a data-turbo="false" href="{{.Link}}">{{t "home.admin.open"}}</a></td>
+</tr>
+{{end}}
+{{ui_table_end}}
+{{else}}<p class="ui-sub">{{t "home.admin.queue.none"}}</p>{{end}}
+</section>
+
+<section class="ui-section" id="queue-ending"><div class="ui-section-h"><h2>{{t "home.admin.queue.ending"}}</h2></div>
+{{if .Ending}}
+{{ui_table_begin .EndingColumns (t "home.admin.queue.ending")}}
+{{range .Ending}}
+<tr class="ui-row">
+  <td class="ui-cell-first" data-card="primary"><a data-turbo="false" href="{{.Link}}">{{.Name}}</a></td>
+  <td data-card="secondary">{{.Date}}</td>
+</tr>
+{{end}}
+{{ui_table_end}}
+{{else}}<p class="ui-sub">{{t "home.admin.queue.none"}}</p>{{end}}
+</section>
+{{end}}
+{{end}}

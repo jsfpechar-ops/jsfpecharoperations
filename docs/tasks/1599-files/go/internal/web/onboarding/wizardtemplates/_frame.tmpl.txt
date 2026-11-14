@@ -1,0 +1,50 @@
+{{/* Port of App/app/templates/setup_wizard/_layout.html (the frame every wizard step fills). Brief 1599.
+     A step file defines wizard_help, wizard_content, wizard_actions and wizard_notes, as the Jinja page fills the blocks.
+     page_title is empty, so the layout prints no page header; the count line is in the body, as in Python. */}}
+{{define "wizard_page.title"}}{{end}}
+{{define "wizard_page"}}
+<div class="setup-wizard wiz-page" data-setup-wizard data-setup-step="{{.Step}}">
+  <div class="setup-wizard-head">
+    <div class="wiz-title">
+    {{with .CountLine}}<p class="wiz-count">{{.}}</p>{{end}}
+    {{if and .Guide (ne .Step "try_it")}}
+    <div class="setup-wizard-meter">
+      <ol class="setup-wizard-progress" aria-hidden="true">
+        {{range .Guide.Progress}}
+        <li class="is-{{.State}}"></li>
+        {{end}}
+      </ol>
+      <p class="setup-wizard-done-count">{{if .Guide.DoneCount}}<span class="setup-wizard-tick" aria-hidden="true">{{icon "check" 14}}</span> {{end}}{{t "wizard.done_count" "n" .Guide.DoneCount "total" .Guide.Total}}</p>
+    </div>
+    {{end}}
+    <h1 class="big">{{t "wizard.title" "name" .Apt.InternalName}}</h1>
+    </div>
+    {{if ne .Step "try_it"}}
+    <form method="post" action="/apartments/{{.Apt.ID}}/setup" class="setup-wizard-exit">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <button class="ui-btn ui-btn-secondary" type="submit" name="action" value="hide" formnovalidate>{{t "wizard.exit"}}</button>
+    </form>
+    {{end}}
+  </div>
+  <div class="setup-wizard-body">
+    {{with .StepIcon}}
+    <div class="setup-wizard-ask" data-step-tone="{{$.StepTone}}">
+      <span class="setup-wizard-ask-icon">{{nav_icon .}}</span>
+      <h2 class="setup-wizard-question">{{t (print "wizard.question." $.Step)}}{{block "wizard_help" $}}{{end}}</h2>
+    </div>
+    {{end}}
+    {{if .Legend}}<p class="required-legend">{{t "common.required_legend"}}</p>{{end}}
+    {{block "wizard_content" .}}{{end}}
+  </div>
+  <footer class="setup-wizard-foot">
+    {{if .PrevStep}}
+    <a class="ui-btn ui-btn-quiet setup-wizard-back" href="/apartments/{{.Apt.ID}}/setup/{{.PrevStep}}">{{if eq .Step "try_it"}}{{t "wizard.try_it.leave"}}{{else}}{{t "wizard.back"}}{{end}}</a>
+    {{else}}
+    <span></span>
+    {{end}}
+    {{block "wizard_actions" .}}{{end}}
+  </footer>
+  {{block "wizard_notes" .}}{{end}}
+</div>
+{{end}}
+{{define "wizard_link_note"}}{{if eq .LinkNext.Window "now"}}{{t "workflow.link.next_stay_now" "stay" (.DateShort .LinkNext.DateFrom)}}{{else if .LinkNext.Window}}{{t "workflow.link.next_stay" "stay" (.DateShort .LinkNext.DateFrom) "date" (.DateShort .LinkNext.Opens)}}{{else}}{{tp "workflow.link.no_stay" .LinkNext.Days}}{{end}}{{end}}

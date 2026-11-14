@@ -1,6 +1,6 @@
 # 1623: Go mail unsubscribe page, part 1 (golden script, tokens, catalog and golden pages)
 
-Status: todo
+Status: review
 Depends on: none (brief 1270 is merged: `App/scripts/public_legal_golden.py` exists) | Base commit: none (one-big-PR mode) | Branch: current branch
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (about 9 calls)
 Next: [1624](1624-go-public-unsubscribe.md)

@@ -17,6 +17,19 @@ type reqCtx struct {
 	v2     bool
 	now    time.Time
 	getenv func(string) string // nil at parse time
+
+	// bodyAlerts writes _host_alerts.html inside a page body (Page.BodyAlerts,
+	// brief 1608); nil at parse time and on pages that do not ask for it.
+	bodyAlerts func() (template.HTML, error)
+}
+
+// hostAlerts is {% include "_host_alerts.html" %} in a page body: the alert
+// stack of the shell, empty unless the page set Page.BodyAlerts.
+func (c *reqCtx) hostAlerts() (template.HTML, error) {
+	if c.bodyAlerts == nil {
+		return "", nil
+	}
+	return c.bodyAlerts()
 }
 
 // has reports whether the catalog has the key in lang or the default table.
@@ -91,6 +104,7 @@ func (c *reqCtx) funcs() template.FuncMap {
 		"tp":                    c.tp,
 		"lang":                  func() string { return c.lang },
 		"csrf":                  func() string { return c.csrf },
+		"host_alerts":           c.hostAlerts,
 		"kv":                    kv,
 		"safe":                  func(s string) template.HTML { return template.HTML(s) },
 		"icon":                  icon,

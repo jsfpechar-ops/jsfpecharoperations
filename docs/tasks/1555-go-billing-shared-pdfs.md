@@ -1,6 +1,6 @@
 # 1555: Go subscription billing, part 1: shared gate, catalog, test helpers, invoice PDFs, cancel and resume
 
-Status: todo
+Status: review
 Depends on: none | Base commit: none (one big PR mode: the branch that is checked out) | Branch: the current one
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

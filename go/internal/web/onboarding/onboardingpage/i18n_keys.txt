@@ -1,0 +1,11 @@
+# Host strings of the Go onboarding checklist page and the demo routes (briefs 1595, 1596).
+# App/scripts/go_host_i18n.py writes the sibling i18n.json from App/app/host_i18n.py.
+onboarding.*
+demo.load
+guest_links.pin
+apartment.form.passport_policy.off
+apartment.form.passport_policy.required
+nav.guide
+flash.demo.*
+flash.error.demo_missing
+flash.error.demo_staging_only

@@ -1,0 +1,38 @@
+{{define "two_factor_setup"}}{{template "acct.head" .}}
+<section class="auth-card">
+  <h1 class="auth-title">{{.T "account.2fa.setup_title"}}</h1>
+  <p class="auth-lede">{{.T "account.2fa.setup_lede"}}</p>
+  {{- if .Page.Moved}}<p class="auth-notice" role="status">{{.T "account.2fa.moved_notice"}}</p>{{end}}
+  {{- if .Page.Error}}<div class="auth-alert" role="alert">{{.T .Page.Error}}</div>{{end}}
+  {{- if .Page.QRData}}
+    <div class="auth-setup-media">
+      <img class="auth-setup-qr" src="{{.E .Page.QRData}}" alt="{{.T "account.2fa.qr_alt"}}">
+      {{- if .Page.TOTPURI}}
+        <a class="btn auth-setup-open" href="{{.E .Page.TOTPURI}}">{{.T "account.2fa.setup_open_app"}}</a>
+      {{- end}}
+    </div>
+  {{- end}}
+  <ol class="small">
+    <li>{{.T "account.2fa.setup_scan"}}</li>
+    <li>
+      {{.T "account.2fa.setup_key"}}
+      <span class="auth-setup-key">
+        <code id="totp-setup-key">{{.E .Page.GroupedSecret}}</code>
+        <button class="btn small ghost" type="button" data-copy="totp-setup-key"
+                data-copy-label="{{.T "common.copy"}}"
+                data-copied-label="{{.T "common.copied"}}">{{.T "common.copy"}}</button>
+      </span>
+    </li>
+    <li>{{.T "account.2fa.setup_enter"}}</li>
+  </ol>
+  <form method="post" action="/account/2fa/setup" class="auth-form">
+    <input type="hidden" name="_csrf" value="{{.CSRF}}">
+    <div class="auth-field">
+      <label for="code">{{.T "account.2fa.six_digit"}}</label>
+      <input type="text" id="code" name="code" required autofocus
+             inputmode="numeric" autocomplete="one-time-code" maxlength="7">
+    </div>
+    <button class="auth-submit" type="submit">{{.T "account.2fa.enable"}}</button>
+  </form>
+</section>
+{{template "acct.foot" .}}{{end}}

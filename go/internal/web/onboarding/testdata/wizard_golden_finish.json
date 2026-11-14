@@ -1,0 +1,1405 @@
+{
+ "base": "https://app.example.test",
+ "cases": [
+  {
+   "body": "",
+   "content_type": "text/html; charset=utf-8",
+   "csrf": false,
+   "form": null,
+   "fragment": "<div class=\"setup-wizard wiz-page\" data-setup-wizard data-setup-step=\"done\">\n  <div class=\"setup-wizard-head\">\n    <div class=\"wiz-title\">\n    \n    \n    <h1 class=\"big\">Set up Iota &lt;b&gt;</h1>\n    </div>\n    \n    <form method=\"post\" action=\"/apartments/19/setup\" class=\"setup-wizard-exit\">\n      <input type=\"hidden\" name=\"_csrf\" value=\"\">\n      <button class=\"ui-btn ui-btn-secondary\" type=\"submit\" name=\"action\" value=\"hide\" formnovalidate>Exit setup</button>\n    </form>\n    \n  </div>\n  <div class=\"setup-wizard-body\">\n    \n    \n    \n    \n    \n    \n\n<span class=\"setup-wizard-confetti\" aria-hidden=\"true\"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>\n<section class=\"ui-section-card ready-card\" id=\"setup-ready\" aria-labelledby=\"setup-ready-title\" data-ready-card>\n  <h2 class=\"ui-section-h\" id=\"setup-ready-title\">You&#39;re ready</h2>\n  <p class=\"ui-sub\">Send this link and PIN to your guests.</p>\n  <div class=\"ready-card-body\">\n    <img class=\"ready-card-qr\" src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAN4AAADeAQAAAAB6HIMaAAABrElEQVR4nO2YQY7bMAxFH0MBs6SBHiBHUY6uHGUOEEBeFqDwu5DTaRcZdGcVCFe2/+aB/vy0bOJljctrDd7iWzxXNDOz29gYG4U7u5lZORHoW9EldQB2S2qhSjoT6HtxtwL+aYRsAzC7nQr0qspfd7tpN+1nAv0zbYVa8o8AXpM2xI5FH5D75g80heVoL8Awsw3/vH10ChXuZnYm0MsqwHz3o+Dw80cv8TTDcrRIcrWkupqrea9EkyQpl6RVr1KD6h1JUDPkq9JmNKguuUQ0Qjmfr0kLRMuQd2afZ5PXpHU1dbwjtdnnjLasE9SRGtF8kmv1KfMOVEkZcjVgyd5egLExrg0wM7iPjYyWJwK9LknPEGhJBYjDDOv1lmlRVzsmK5Swct7+Dq4MZcj73GuL0k4zEMpoeWy0dWldLed15wiEXlf27WSe4+aS9zUTjOPASE1qUqFO3y7bWz8WRH2OmFh0OxSAffMHufPxuI1rN8Nz3ZPOLNvuY0Md9TrMlt1l3p8hEMrQ/CBf0glfvk1Qh5D3uurm/TrzFurYKjCubf6xWc8J9v7b/Bb/Q/EXKVF0lg5SV2gAAAAASUVORK5CYII=\" width=\"160\" height=\"160\" alt=\"QR code for the guest link\">\n    <div class=\"ready-card-copy\">\n      <p class=\"ready-card-row\"><span class=\"muted\">Guest link</span> <code class=\"ready-card-link\">https://app.example.test/l/slug-19</code>\n        <input class=\"sr-only\" type=\"text\" id=\"ready-link\" readonly value=\"https://app.example.test/l/slug-19\" tabindex=\"-1\" aria-hidden=\"true\">\n        <button class=\"ui-btn ui-btn-secondary\" type=\"button\" data-copy=\"ready-link\" data-copy-label=\"Copy link\" data-copied-label=\"Copied\">Copy link</button></p>\n      <p class=\"ready-card-row\"><span class=\"muted\">PIN</span> <b class=\"ready-card-pin\">123456</b>\n        <input class=\"sr-only\" type=\"text\" id=\"ready-pin\" readonly value=\"123456\" tabindex=\"-1\" aria-hidden=\"true\">\n        <button class=\"ui-btn ui-btn-secondary\" type=\"button\" data-copy=\"ready-pin\" data-copy-label=\"Copy PIN\" data-copied-label=\"Copied\">Copy PIN</button></p>\n    </div>\n  </div>\n</section>\n\n<details class=\"setup-done-workflow\">\n  <summary>How each stay works</summary>\n  \n<section class=\"workflow-block\" data-workflow-strip>\n  \n  <ol class=\"workflow-strip\" aria-label=\"How each stay works\">\n    \n    <li class=\"workflow-strip-step is-you\" data-workflow-step=\"paste\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">1</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">You paste the guest message into Airbnb or Booking.com</span>\n        <span class=\"workflow-tag\">You, once</span>\n      </span>\n    </li>\n    \n    <li class=\"workflow-strip-step\" data-workflow-step=\"form\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">2</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">The guest fills in the guest form</span>\n        <span class=\"workflow-tag\">Automatic</span>\n      </span>\n    </li>\n    \n    <li class=\"workflow-strip-step\" data-workflow-step=\"email\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">3</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">You get an email</span>\n        <span class=\"workflow-tag\">Automatic</span>\n      </span>\n    </li>\n    \n    <li class=\"workflow-strip-step\" data-workflow-step=\"police_immediate\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">4</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">The police report goes out at once</span>\n        <span class=\"workflow-tag\">Automatic</span>\n      </span>\n    </li>\n    \n    <li class=\"workflow-strip-step\" data-workflow-step=\"finish_lock\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">5</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">The guest gets the door code and a confirmation email</span>\n        <span class=\"workflow-tag\">Automatic</span>\n      </span>\n    </li>\n    \n  </ol>\n</section>\n\n</details>\n<h2 class=\"setup-wizard-section-title\">Setup summary</h2>\n\n<ul class=\"setup-wizard-checklist setup-done-list\">\n  \n  \n  <li class=\"is-done\" data-setup-summary-step=\"property\">\n    <div class=\"setup-summary-card\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M3.5 9 10 3.5 16.5 9V16a1 1 0 0 1-1 1H4.5a1 1 0 0 1-1-1V9Z\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M8 17v-5h4v5\" stroke=\"currentColor\" stroke-width=\"1.5\"/></svg>\n  \n</span>\n      <div class=\"setup-summary-copy\">\n        <strong>Property details</strong>\n        <span class=\"ui-badge ui-badge-done\" data-tone=\"green\">\n          <span aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"check\"><path d=\"M20 6 9 17l-5-5\"/></svg></span>\n          Set up\n        </span>\n        \n      </div>\n    </div>\n  </li>\n  \n  \n  <li class=\"is-done\" data-setup-summary-step=\"calendar\">\n    <div class=\"setup-summary-card\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><rect x=\"3\" y=\"4.5\" width=\"14\" height=\"12.5\" rx=\"2\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M3 8.5h14M7 2.5v3M13 2.5v3\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <div class=\"setup-summary-copy\">\n        <strong>Bookings &amp; calendars</strong>\n        <span class=\"ui-badge ui-badge-done\" data-tone=\"green\">\n          <span aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"check\"><path d=\"M20 6 9 17l-5-5\"/></svg></span>\n          Set up\n        </span>\n        \n      </div>\n    </div>\n  </li>\n  \n  \n  <li class=\"is-done\" data-setup-summary-step=\"police\">\n    <div class=\"setup-summary-card\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M5.5 3.5h6l3.5 3.5v9.5a1 1 0 0 1-1 1h-8.5a1 1 0 0 1-1-1v-12a1 1 0 0 1 1-1Z\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M11.5 3.5v4h4M7.5 11h5M7.5 14h3.5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <div class=\"setup-summary-copy\">\n        <strong>Police reporting</strong>\n        <span class=\"ui-badge ui-badge-done\" data-tone=\"green\">\n          <span aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"check\"><path d=\"M20 6 9 17l-5-5\"/></svg></span>\n          Set up\n        </span>\n        \n      </div>\n    </div>\n  </li>\n  \n  \n  <li class=\"is-done\" data-setup-summary-step=\"guest_link\">\n    <div class=\"setup-summary-card\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"m8 12 4-4M6.5 13.5l-1 1a2.8 2.8 0 0 1-4-4l2.3-2.3a2.8 2.8 0 0 1 4 0M13.5 6.5l1-1a2.8 2.8 0 1 1 4 4l-2.3 2.3a2.8 2.8 0 0 1-4 0\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <div class=\"setup-summary-copy\">\n        <strong>Guest link and PIN</strong>\n        <span class=\"ui-badge ui-badge-done\" data-tone=\"green\">\n          <span aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"check\"><path d=\"M20 6 9 17l-5-5\"/></svg></span>\n          Set up\n        </span>\n        \n      </div>\n    </div>\n  </li>\n  \n</ul>\n<h2 class=\"setup-wizard-section-title\">Do next</h2>\n<ul class=\"setup-wizard-checklist setup-done-list setup-wizard-next\" data-setup-next>\n  <li data-setup-next-step=\"stay_fee\">\n    <a class=\"setup-summary-card setup-next-card\" href=\"/apartments/19?view=settings&amp;section=reporting#stay-fee-settings\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><circle cx=\"8\" cy=\"8.5\" r=\"4.75\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M11.6 6.1a4.75 4.75 0 1 1-2.1 9.2\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <span class=\"setup-summary-copy\"><strong>Stay fee</strong></span>\n      <span class=\"setup-done-chevron\" aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"chevron-right\"><path d=\"m9 18 6-6-6-6\"/></svg></span>\n    </a>\n  </li>\n  \n  <li data-setup-next-step=\"door_lock\">\n    <a class=\"setup-summary-card setup-next-card\" href=\"/apartments/19?view=settings&amp;section=lock#door-code\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><rect x=\"4\" y=\"8.5\" width=\"12\" height=\"9\" rx=\"2\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M7 8.5V6a3 3 0 0 1 6 0v2.5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/><circle cx=\"10\" cy=\"13\" r=\"1.2\" fill=\"currentColor\"/></svg>\n  \n</span>\n      <span class=\"setup-summary-copy\"><strong>Door lock</strong></span>\n      <span class=\"setup-done-chevron\" aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"chevron-right\"><path d=\"m9 18 6-6-6-6\"/></svg></span>\n    </a>\n  </li>\n  \n  <li data-setup-next-step=\"try_it\">\n    <a class=\"setup-summary-card setup-next-card\" href=\"/apartments/19/setup/try_it\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"7\" r=\"2.75\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M4.5 16.5c0-2.8 2.2-4.5 5.5-4.5s5.5 1.7 5.5 4.5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <span class=\"setup-summary-copy\"><strong>Test run</strong></span>\n      <span class=\"setup-done-chevron\" aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"chevron-right\"><path d=\"m9 18 6-6-6-6\"/></svg></span>\n    </a>\n  </li>\n</ul>\n\n<p class=\"setup-wizard-instruction\" data-finish-note>Your next stay, 10. 6., appears on your guest link from 7. 6..</p>\n\n\n  </div>\n  <footer class=\"setup-wizard-foot\">\n    \n    <span></span>\n    \n    \n\n\n\n\n\n<a class=\"ui-btn ui-btn-primary\" href=\"/apartments/19?view=bookings\" data-finish-go=\"stays\">Open my stays</a>\n\n  </footer>\n  \n</div>",
+   "lang_cookie": null,
+   "location": null,
+   "method": "GET",
+   "name": "done_ready_celebrate",
+   "path": "/apartments/19/setup/done",
+   "status": 200,
+   "title": "Set up Iota &lt;b&gt;",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": "text/html; charset=utf-8",
+   "csrf": false,
+   "form": null,
+   "fragment": "<div class=\"setup-wizard wiz-page\" data-setup-wizard data-setup-step=\"done\">\n  <div class=\"setup-wizard-head\">\n    <div class=\"wiz-title\">\n    \n    \n    <h1 class=\"big\">Nastavení: Iota &lt;b&gt;</h1>\n    </div>\n    \n    <form method=\"post\" action=\"/apartments/19/setup\" class=\"setup-wizard-exit\">\n      <input type=\"hidden\" name=\"_csrf\" value=\"\">\n      <button class=\"ui-btn ui-btn-secondary\" type=\"submit\" name=\"action\" value=\"hide\" formnovalidate>Ukončit nastavení</button>\n    </form>\n    \n  </div>\n  <div class=\"setup-wizard-body\">\n    \n    \n    \n    \n    \n    \n\n\n<section class=\"ui-section-card ready-card\" id=\"setup-ready\" aria-labelledby=\"setup-ready-title\" data-ready-card>\n  <h2 class=\"ui-section-h\" id=\"setup-ready-title\">Máte hotovo</h2>\n  <p class=\"ui-sub\">Pošlete hostům tento odkaz a PIN.</p>\n  <div class=\"ready-card-body\">\n    <img class=\"ready-card-qr\" src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAN4AAADeAQAAAAB6HIMaAAABrElEQVR4nO2YQY7bMAxFH0MBs6SBHiBHUY6uHGUOEEBeFqDwu5DTaRcZdGcVCFe2/+aB/vy0bOJljctrDd7iWzxXNDOz29gYG4U7u5lZORHoW9EldQB2S2qhSjoT6HtxtwL+aYRsAzC7nQr0qspfd7tpN+1nAv0zbYVa8o8AXpM2xI5FH5D75g80heVoL8Awsw3/vH10ChXuZnYm0MsqwHz3o+Dw80cv8TTDcrRIcrWkupqrea9EkyQpl6RVr1KD6h1JUDPkq9JmNKguuUQ0Qjmfr0kLRMuQd2afZ5PXpHU1dbwjtdnnjLasE9SRGtF8kmv1KfMOVEkZcjVgyd5egLExrg0wM7iPjYyWJwK9LknPEGhJBYjDDOv1lmlRVzsmK5Swct7+Dq4MZcj73GuL0k4zEMpoeWy0dWldLed15wiEXlf27WSe4+aS9zUTjOPASE1qUqFO3y7bWz8WRH2OmFh0OxSAffMHufPxuI1rN8Nz3ZPOLNvuY0Md9TrMlt1l3p8hEMrQ/CBf0glfvk1Qh5D3uurm/TrzFurYKjCubf6xWc8J9v7b/Bb/Q/EXKVF0lg5SV2gAAAAASUVORK5CYII=\" width=\"160\" height=\"160\" alt=\"QR kód odkazu pro hosty\">\n    <div class=\"ready-card-copy\">\n      <p class=\"ready-card-row\"><span class=\"muted\">Odkaz pro hosty</span> <code class=\"ready-card-link\">https://app.example.test/l/slug-19</code>\n        <input class=\"sr-only\" type=\"text\" id=\"ready-link\" readonly value=\"https://app.example.test/l/slug-19\" tabindex=\"-1\" aria-hidden=\"true\">\n        <button class=\"ui-btn ui-btn-secondary\" type=\"button\" data-copy=\"ready-link\" data-copy-label=\"Kopírovat odkaz\" data-copied-label=\"Zkopírováno\">Kopírovat odkaz</button></p>\n      <p class=\"ready-card-row\"><span class=\"muted\">PIN</span> <b class=\"ready-card-pin\">123456</b>\n        <input class=\"sr-only\" type=\"text\" id=\"ready-pin\" readonly value=\"123456\" tabindex=\"-1\" aria-hidden=\"true\">\n        <button class=\"ui-btn ui-btn-secondary\" type=\"button\" data-copy=\"ready-pin\" data-copy-label=\"Kopírovat PIN\" data-copied-label=\"Zkopírováno\">Kopírovat PIN</button></p>\n    </div>\n  </div>\n</section>\n\n<details class=\"setup-done-workflow\">\n  <summary>Jak probíhá každý pobyt</summary>\n  \n<section class=\"workflow-block\" data-workflow-strip>\n  \n  <ol class=\"workflow-strip\" aria-label=\"Jak probíhá každý pobyt\">\n    \n    <li class=\"workflow-strip-step is-you\" data-workflow-step=\"paste\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">1</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">Vložíte zprávu pro hosty do Airbnb nebo Booking.com</span>\n        <span class=\"workflow-tag\">Vy, jednou</span>\n      </span>\n    </li>\n    \n    <li class=\"workflow-strip-step\" data-workflow-step=\"form\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">2</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">Host vyplní formulář pro hosty</span>\n        <span class=\"workflow-tag\">Automaticky</span>\n      </span>\n    </li>\n    \n    <li class=\"workflow-strip-step\" data-workflow-step=\"email\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">3</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">Přijde vám e-mail</span>\n        <span class=\"workflow-tag\">Automaticky</span>\n      </span>\n    </li>\n    \n    <li class=\"workflow-strip-step\" data-workflow-step=\"police_immediate\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">4</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">Hlášení policii odejde hned</span>\n        <span class=\"workflow-tag\">Automaticky</span>\n      </span>\n    </li>\n    \n    <li class=\"workflow-strip-step\" data-workflow-step=\"finish_lock\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">5</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">Host dostane kód ke dveřím a potvrzovací e-mail</span>\n        <span class=\"workflow-tag\">Automaticky</span>\n      </span>\n    </li>\n    \n  </ol>\n</section>\n\n</details>\n<h2 class=\"setup-wizard-section-title\">Shrnutí nastavení</h2>\n\n<ul class=\"setup-wizard-checklist setup-done-list\">\n  \n  \n  <li class=\"is-done\" data-setup-summary-step=\"property\">\n    <div class=\"setup-summary-card\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M3.5 9 10 3.5 16.5 9V16a1 1 0 0 1-1 1H4.5a1 1 0 0 1-1-1V9Z\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M8 17v-5h4v5\" stroke=\"currentColor\" stroke-width=\"1.5\"/></svg>\n  \n</span>\n      <div class=\"setup-summary-copy\">\n        <strong>Údaje o ubytování</strong>\n        <span class=\"ui-badge ui-badge-done\" data-tone=\"green\">\n          <span aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"check\"><path d=\"M20 6 9 17l-5-5\"/></svg></span>\n          Nastaveno\n        </span>\n        \n      </div>\n    </div>\n  </li>\n  \n  \n  <li class=\"is-done\" data-setup-summary-step=\"calendar\">\n    <div class=\"setup-summary-card\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><rect x=\"3\" y=\"4.5\" width=\"14\" height=\"12.5\" rx=\"2\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M3 8.5h14M7 2.5v3M13 2.5v3\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <div class=\"setup-summary-copy\">\n        <strong>Pobyty a kalendáře</strong>\n        <span class=\"ui-badge ui-badge-done\" data-tone=\"green\">\n          <span aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"check\"><path d=\"M20 6 9 17l-5-5\"/></svg></span>\n          Nastaveno\n        </span>\n        \n      </div>\n    </div>\n  </li>\n  \n  \n  <li class=\"is-done\" data-setup-summary-step=\"police\">\n    <div class=\"setup-summary-card\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M5.5 3.5h6l3.5 3.5v9.5a1 1 0 0 1-1 1h-8.5a1 1 0 0 1-1-1v-12a1 1 0 0 1 1-1Z\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M11.5 3.5v4h4M7.5 11h5M7.5 14h3.5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <div class=\"setup-summary-copy\">\n        <strong>Hlášení policii</strong>\n        <span class=\"ui-badge ui-badge-done\" data-tone=\"green\">\n          <span aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"check\"><path d=\"M20 6 9 17l-5-5\"/></svg></span>\n          Nastaveno\n        </span>\n        \n      </div>\n    </div>\n  </li>\n  \n  \n  <li class=\"is-done\" data-setup-summary-step=\"guest_link\">\n    <div class=\"setup-summary-card\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"m8 12 4-4M6.5 13.5l-1 1a2.8 2.8 0 0 1-4-4l2.3-2.3a2.8 2.8 0 0 1 4 0M13.5 6.5l1-1a2.8 2.8 0 1 1 4 4l-2.3 2.3a2.8 2.8 0 0 1-4 0\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <div class=\"setup-summary-copy\">\n        <strong>Odkaz a PIN pro hosty</strong>\n        <span class=\"ui-badge ui-badge-done\" data-tone=\"green\">\n          <span aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"check\"><path d=\"M20 6 9 17l-5-5\"/></svg></span>\n          Nastaveno\n        </span>\n        \n      </div>\n    </div>\n  </li>\n  \n</ul>\n<h2 class=\"setup-wizard-section-title\">Co dál</h2>\n<ul class=\"setup-wizard-checklist setup-done-list setup-wizard-next\" data-setup-next>\n  <li data-setup-next-step=\"stay_fee\">\n    <a class=\"setup-summary-card setup-next-card\" href=\"/apartments/19?view=settings&amp;section=reporting#stay-fee-settings\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><circle cx=\"8\" cy=\"8.5\" r=\"4.75\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M11.6 6.1a4.75 4.75 0 1 1-2.1 9.2\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <span class=\"setup-summary-copy\"><strong>Poplatek z pobytu</strong></span>\n      <span class=\"setup-done-chevron\" aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"chevron-right\"><path d=\"m9 18 6-6-6-6\"/></svg></span>\n    </a>\n  </li>\n  \n  <li data-setup-next-step=\"door_lock\">\n    <a class=\"setup-summary-card setup-next-card\" href=\"/apartments/19?view=settings&amp;section=lock#door-code\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><rect x=\"4\" y=\"8.5\" width=\"12\" height=\"9\" rx=\"2\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M7 8.5V6a3 3 0 0 1 6 0v2.5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/><circle cx=\"10\" cy=\"13\" r=\"1.2\" fill=\"currentColor\"/></svg>\n  \n</span>\n      <span class=\"setup-summary-copy\"><strong>Zámek dveří</strong></span>\n      <span class=\"setup-done-chevron\" aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"chevron-right\"><path d=\"m9 18 6-6-6-6\"/></svg></span>\n    </a>\n  </li>\n  \n  <li data-setup-next-step=\"try_it\">\n    <a class=\"setup-summary-card setup-next-card\" href=\"/apartments/19/setup/try_it\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"7\" r=\"2.75\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M4.5 16.5c0-2.8 2.2-4.5 5.5-4.5s5.5 1.7 5.5 4.5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <span class=\"setup-summary-copy\"><strong>Zkušební běh</strong></span>\n      <span class=\"setup-done-chevron\" aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"chevron-right\"><path d=\"m9 18 6-6-6-6\"/></svg></span>\n    </a>\n  </li>\n</ul>\n\n<p class=\"setup-wizard-instruction\" data-finish-note>Váš další pobyt (10. 6.) se na odkazu pro hosty objeví od 7. 6..</p>\n\n\n  </div>\n  <footer class=\"setup-wizard-foot\">\n    \n    <span></span>\n    \n    \n\n\n\n\n\n<a class=\"ui-btn ui-btn-primary\" href=\"/apartments/19?view=bookings\" data-finish-go=\"stays\">Otevřít moje pobyty</a>\n\n  </footer>\n  \n</div>",
+   "lang_cookie": "cs",
+   "location": null,
+   "method": "GET",
+   "name": "done_ready_again_cs",
+   "path": "/apartments/19/setup/done",
+   "status": 200,
+   "title": "Nastavení: Iota &lt;b&gt;",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": "text/html; charset=utf-8",
+   "csrf": false,
+   "form": null,
+   "fragment": "<div class=\"setup-wizard wiz-page\" data-setup-wizard data-setup-step=\"done\">\n  <div class=\"setup-wizard-head\">\n    <div class=\"wiz-title\">\n    \n    \n    <h1 class=\"big\">Set up Gama</h1>\n    </div>\n    \n    <form method=\"post\" action=\"/apartments/13/setup\" class=\"setup-wizard-exit\">\n      <input type=\"hidden\" name=\"_csrf\" value=\"\">\n      <button class=\"ui-btn ui-btn-secondary\" type=\"submit\" name=\"action\" value=\"hide\" formnovalidate>Exit setup</button>\n    </form>\n    \n  </div>\n  <div class=\"setup-wizard-body\">\n    \n    \n    \n    \n    \n    \n\n<div class=\"ui-banner setup-wizard-celebrate is-partial\" role=\"status\" data-setup-celebrate=\"partial\">\n  \n  <span class=\"setup-wizard-celebrate-mark\" aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"triangle-alert\"><path d=\"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3\"/><path d=\"M12 9v4\"/><path d=\"M12 17h.01\"/></svg></span>\n  <div class=\"grow setup-wizard-celebrate-copy\">\n    <strong class=\"setup-wizard-celebrate-title\">Almost there: one thing left.</strong>\n    <span>Finish the step below and you are done.</span>\n  </div>\n</div>\n\n<details class=\"setup-done-workflow\">\n  <summary>How each stay works</summary>\n  \n<section class=\"workflow-block\" data-workflow-strip>\n  \n  <ol class=\"workflow-strip\" aria-label=\"How each stay works\">\n    \n    <li class=\"workflow-strip-step is-you\" data-workflow-step=\"paste\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">1</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">You paste the guest message into Airbnb or Booking.com</span>\n        <span class=\"workflow-tag\">You, once</span>\n      </span>\n    </li>\n    \n    <li class=\"workflow-strip-step\" data-workflow-step=\"form\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">2</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">The guest fills in the guest form</span>\n        <span class=\"workflow-tag\">Automatic</span>\n      </span>\n    </li>\n    \n    <li class=\"workflow-strip-step\" data-workflow-step=\"email\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">3</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">You get an email</span>\n        <span class=\"workflow-tag\">Automatic</span>\n      </span>\n    </li>\n    \n    <li class=\"workflow-strip-step is-you\" data-workflow-step=\"police_manual\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">4</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">You press Send for the police report</span>\n        <span class=\"workflow-tag\">You</span>\n      </span>\n    </li>\n    \n    <li class=\"workflow-strip-step\" data-workflow-step=\"finish\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">5</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">The guest gets a confirmation email</span>\n        <span class=\"workflow-tag\">Automatic</span>\n      </span>\n    </li>\n    \n  </ol>\n</section>\n\n</details>\n<h2 class=\"setup-wizard-section-title\">Setup summary</h2>\n\n<ul class=\"setup-wizard-checklist setup-done-list\">\n  \n  \n  <li class=\"is-done\" data-setup-summary-step=\"property\">\n    <div class=\"setup-summary-card\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M3.5 9 10 3.5 16.5 9V16a1 1 0 0 1-1 1H4.5a1 1 0 0 1-1-1V9Z\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M8 17v-5h4v5\" stroke=\"currentColor\" stroke-width=\"1.5\"/></svg>\n  \n</span>\n      <div class=\"setup-summary-copy\">\n        <strong>Property details</strong>\n        <span class=\"ui-badge ui-badge-done\" data-tone=\"green\">\n          <span aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"check\"><path d=\"M20 6 9 17l-5-5\"/></svg></span>\n          Set up\n        </span>\n        \n      </div>\n    </div>\n  </li>\n  \n  \n  <li class=\"is-todo\" data-setup-summary-step=\"calendar\">\n    <div class=\"setup-summary-card\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><rect x=\"3\" y=\"4.5\" width=\"14\" height=\"12.5\" rx=\"2\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M3 8.5h14M7 2.5v3M13 2.5v3\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <div class=\"setup-summary-copy\">\n        <strong>Bookings &amp; calendars</strong>\n        <span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\">\n          \n          Not set up\n        </span>\n        \n      </div>\n    </div>\n  </li>\n  \n  \n  <li class=\"is-todo\" data-setup-summary-step=\"police\">\n    <div class=\"setup-summary-card\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M5.5 3.5h6l3.5 3.5v9.5a1 1 0 0 1-1 1h-8.5a1 1 0 0 1-1-1v-12a1 1 0 0 1 1-1Z\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M11.5 3.5v4h4M7.5 11h5M7.5 14h3.5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <div class=\"setup-summary-copy\">\n        <strong>Police reporting</strong>\n        <span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\">\n          \n          Not set up\n        </span>\n        \n      </div>\n    </div>\n  </li>\n  \n  \n  <li class=\"is-done\" data-setup-summary-step=\"guest_link\">\n    <div class=\"setup-summary-card\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"m8 12 4-4M6.5 13.5l-1 1a2.8 2.8 0 0 1-4-4l2.3-2.3a2.8 2.8 0 0 1 4 0M13.5 6.5l1-1a2.8 2.8 0 1 1 4 4l-2.3 2.3a2.8 2.8 0 0 1-4 0\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <div class=\"setup-summary-copy\">\n        <strong>Guest link and PIN</strong>\n        <span class=\"ui-badge ui-badge-done\" data-tone=\"green\">\n          <span aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"check\"><path d=\"M20 6 9 17l-5-5\"/></svg></span>\n          Set up\n        </span>\n        \n      </div>\n    </div>\n  </li>\n  \n</ul>\n<h2 class=\"setup-wizard-section-title\">Do next</h2>\n<ul class=\"setup-wizard-checklist setup-done-list setup-wizard-next\" data-setup-next>\n  <li data-setup-next-step=\"stay_fee\">\n    <a class=\"setup-summary-card setup-next-card\" href=\"/apartments/13?view=settings&amp;section=reporting#stay-fee-settings\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><circle cx=\"8\" cy=\"8.5\" r=\"4.75\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M11.6 6.1a4.75 4.75 0 1 1-2.1 9.2\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <span class=\"setup-summary-copy\"><strong>Stay fee</strong></span>\n      <span class=\"setup-done-chevron\" aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"chevron-right\"><path d=\"m9 18 6-6-6-6\"/></svg></span>\n    </a>\n  </li>\n  \n  <li data-setup-next-step=\"door_lock\">\n    <a class=\"setup-summary-card setup-next-card\" href=\"/apartments/13?view=settings&amp;section=lock#door-code\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><rect x=\"4\" y=\"8.5\" width=\"12\" height=\"9\" rx=\"2\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M7 8.5V6a3 3 0 0 1 6 0v2.5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/><circle cx=\"10\" cy=\"13\" r=\"1.2\" fill=\"currentColor\"/></svg>\n  \n</span>\n      <span class=\"setup-summary-copy\"><strong>Door lock</strong></span>\n      <span class=\"setup-done-chevron\" aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"chevron-right\"><path d=\"m9 18 6-6-6-6\"/></svg></span>\n    </a>\n  </li>\n  \n  <li data-setup-next-step=\"try_it\">\n    <a class=\"setup-summary-card setup-next-card\" href=\"/apartments/13/setup/try_it\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"7\" r=\"2.75\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M4.5 16.5c0-2.8 2.2-4.5 5.5-4.5s5.5 1.7 5.5 4.5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <span class=\"setup-summary-copy\"><strong>Test run</strong></span>\n      <span class=\"setup-done-chevron\" aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"chevron-right\"><path d=\"m9 18 6-6-6-6\"/></svg></span>\n    </a>\n  </li>\n</ul>\n\n\n  </div>\n  <footer class=\"setup-wizard-foot\">\n    \n    <span></span>\n    \n    \n\n\n\n\n\n<a class=\"ui-btn ui-btn-primary\" href=\"/apartments/13/setup/calendar\" data-finish-go=\"fix\">Finish setup</a>\n\n  </footer>\n  \n</div>",
+   "lang_cookie": null,
+   "location": null,
+   "method": "GET",
+   "name": "done_all_set",
+   "path": "/apartments/13/setup/done",
+   "status": 200,
+   "title": "Set up Gama",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": "text/html; charset=utf-8",
+   "csrf": false,
+   "form": null,
+   "fragment": "<div class=\"setup-wizard wiz-page\" data-setup-wizard data-setup-step=\"done\">\n  <div class=\"setup-wizard-head\">\n    <div class=\"wiz-title\">\n    \n    \n    <h1 class=\"big\">Set up Eta</h1>\n    </div>\n    \n    <form method=\"post\" action=\"/apartments/17/setup\" class=\"setup-wizard-exit\">\n      <input type=\"hidden\" name=\"_csrf\" value=\"\">\n      <button class=\"ui-btn ui-btn-secondary\" type=\"submit\" name=\"action\" value=\"hide\" formnovalidate>Exit setup</button>\n    </form>\n    \n  </div>\n  <div class=\"setup-wizard-body\">\n    \n    \n    \n    \n    \n    \n\n<div class=\"ui-banner setup-wizard-celebrate is-partial\" role=\"status\" data-setup-celebrate=\"partial\">\n  \n  <span class=\"setup-wizard-celebrate-mark\" aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"triangle-alert\"><path d=\"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3\"/><path d=\"M12 9v4\"/><path d=\"M12 17h.01\"/></svg></span>\n  <div class=\"grow setup-wizard-celebrate-copy\">\n    <strong class=\"setup-wizard-celebrate-title\">Almost there: one thing left.</strong>\n    <span>Add your police login and reports go out by themselves.</span>\n  </div>\n</div>\n\n<details class=\"setup-done-workflow\">\n  <summary>How each stay works</summary>\n  \n<section class=\"workflow-block\" data-workflow-strip>\n  \n  <ol class=\"workflow-strip\" aria-label=\"How each stay works\">\n    \n    <li class=\"workflow-strip-step is-you\" data-workflow-step=\"paste\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">1</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">You paste the guest message into Airbnb or Booking.com</span>\n        <span class=\"workflow-tag\">You, once</span>\n      </span>\n    </li>\n    \n    <li class=\"workflow-strip-step\" data-workflow-step=\"form\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">2</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">The guest fills in the guest form</span>\n        <span class=\"workflow-tag\">Automatic</span>\n      </span>\n    </li>\n    \n    <li class=\"workflow-strip-step\" data-workflow-step=\"email\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">3</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">You get an email</span>\n        <span class=\"workflow-tag\">Automatic</span>\n      </span>\n    </li>\n    \n    <li class=\"workflow-strip-step\" data-workflow-step=\"police_scheduled\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">4</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">The police report goes out by itself after a short delay</span>\n        <span class=\"workflow-tag\">Automatic</span>\n      </span>\n    </li>\n    \n    <li class=\"workflow-strip-step\" data-workflow-step=\"finish\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">5</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">The guest gets a confirmation email</span>\n        <span class=\"workflow-tag\">Automatic</span>\n      </span>\n    </li>\n    \n  </ol>\n</section>\n\n</details>\n<h2 class=\"setup-wizard-section-title\">Setup summary</h2>\n\n<ul class=\"setup-wizard-checklist setup-done-list\">\n  \n  \n  <li class=\"is-done\" data-setup-summary-step=\"property\">\n    <div class=\"setup-summary-card\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M3.5 9 10 3.5 16.5 9V16a1 1 0 0 1-1 1H4.5a1 1 0 0 1-1-1V9Z\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M8 17v-5h4v5\" stroke=\"currentColor\" stroke-width=\"1.5\"/></svg>\n  \n</span>\n      <div class=\"setup-summary-copy\">\n        <strong>Property details</strong>\n        <span class=\"ui-badge ui-badge-done\" data-tone=\"green\">\n          <span aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"check\"><path d=\"M20 6 9 17l-5-5\"/></svg></span>\n          Set up\n        </span>\n        \n      </div>\n    </div>\n  </li>\n  \n  \n  <li class=\"is-skipped\" data-setup-summary-step=\"calendar\">\n    <div class=\"setup-summary-card\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><rect x=\"3\" y=\"4.5\" width=\"14\" height=\"12.5\" rx=\"2\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M3 8.5h14M7 2.5v3M13 2.5v3\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <div class=\"setup-summary-copy\">\n        <strong>Bookings &amp; calendars</strong>\n        <span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\">\n          \n          Skipped\n        </span>\n        \n      </div>\n    </div>\n  </li>\n  \n  \n  <li class=\"is-waiting\" data-setup-summary-step=\"police\">\n    <div class=\"setup-summary-card\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M5.5 3.5h6l3.5 3.5v9.5a1 1 0 0 1-1 1h-8.5a1 1 0 0 1-1-1v-12a1 1 0 0 1 1-1Z\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M11.5 3.5v4h4M7.5 11h5M7.5 14h3.5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <div class=\"setup-summary-copy\">\n        <strong>Police reporting</strong>\n        <span class=\"ui-badge ui-badge-attention\" data-tone=\"amber\">\n          \n          Waiting for login\n        </span>\n        \n        <a class=\"setup-summary-action\" href=\"/apartments/17/setup/police\">Add police login</a>\n        \n      </div>\n    </div>\n  </li>\n  \n  \n  <li class=\"is-done\" data-setup-summary-step=\"guest_link\">\n    <div class=\"setup-summary-card\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"m8 12 4-4M6.5 13.5l-1 1a2.8 2.8 0 0 1-4-4l2.3-2.3a2.8 2.8 0 0 1 4 0M13.5 6.5l1-1a2.8 2.8 0 1 1 4 4l-2.3 2.3a2.8 2.8 0 0 1-4 0\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <div class=\"setup-summary-copy\">\n        <strong>Guest link and PIN</strong>\n        <span class=\"ui-badge ui-badge-done\" data-tone=\"green\">\n          <span aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"check\"><path d=\"M20 6 9 17l-5-5\"/></svg></span>\n          Set up\n        </span>\n        \n      </div>\n    </div>\n  </li>\n  \n</ul>\n<h2 class=\"setup-wizard-section-title\">Do next</h2>\n<ul class=\"setup-wizard-checklist setup-done-list setup-wizard-next\" data-setup-next>\n  <li data-setup-next-step=\"stay_fee\">\n    <a class=\"setup-summary-card setup-next-card\" href=\"/apartments/17?view=settings&amp;section=reporting#stay-fee-settings\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><circle cx=\"8\" cy=\"8.5\" r=\"4.75\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M11.6 6.1a4.75 4.75 0 1 1-2.1 9.2\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <span class=\"setup-summary-copy\"><strong>Stay fee</strong></span>\n      <span class=\"setup-done-chevron\" aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"chevron-right\"><path d=\"m9 18 6-6-6-6\"/></svg></span>\n    </a>\n  </li>\n  \n  <li data-setup-next-step=\"door_lock\">\n    <a class=\"setup-summary-card setup-next-card\" href=\"/apartments/17?view=settings&amp;section=lock#door-code\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><rect x=\"4\" y=\"8.5\" width=\"12\" height=\"9\" rx=\"2\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M7 8.5V6a3 3 0 0 1 6 0v2.5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/><circle cx=\"10\" cy=\"13\" r=\"1.2\" fill=\"currentColor\"/></svg>\n  \n</span>\n      <span class=\"setup-summary-copy\"><strong>Door lock</strong></span>\n      <span class=\"setup-done-chevron\" aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"chevron-right\"><path d=\"m9 18 6-6-6-6\"/></svg></span>\n    </a>\n  </li>\n  \n  <li data-setup-next-step=\"try_it\">\n    <a class=\"setup-summary-card setup-next-card\" href=\"/apartments/17/setup/try_it\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"7\" r=\"2.75\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M4.5 16.5c0-2.8 2.2-4.5 5.5-4.5s5.5 1.7 5.5 4.5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <span class=\"setup-summary-copy\"><strong>Test run</strong></span>\n      <span class=\"setup-done-chevron\" aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"chevron-right\"><path d=\"m9 18 6-6-6-6\"/></svg></span>\n    </a>\n  </li>\n</ul>\n\n\n  </div>\n  <footer class=\"setup-wizard-foot\">\n    \n    <span></span>\n    \n    \n\n\n\n\n\n<a class=\"ui-btn ui-btn-primary\" href=\"/apartments/17/setup/police\" data-finish-go=\"fix\">Add your police login</a>\n\n  </footer>\n  \n</div>",
+   "lang_cookie": null,
+   "location": null,
+   "method": "GET",
+   "name": "done_police_waiting",
+   "path": "/apartments/17/setup/done",
+   "status": 200,
+   "title": "Set up Eta",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": "text/html; charset=utf-8",
+   "csrf": false,
+   "form": null,
+   "fragment": "<div class=\"setup-wizard wiz-page\" data-setup-wizard data-setup-step=\"done\">\n  <div class=\"setup-wizard-head\">\n    <div class=\"wiz-title\">\n    <p class=\"wiz-count\">Bước 4 / 4 · Liên kết khách và PIN</p>\n    \n    <div class=\"setup-wizard-meter\">\n      <ol class=\"setup-wizard-progress\" aria-hidden=\"true\">\n        \n        <li class=\"is-done\"></li>\n        \n        <li class=\"is-done\"></li>\n        \n        <li class=\"is-done\"></li>\n        \n        <li class=\"is-current\"></li>\n        \n      </ol>\n      <p class=\"setup-wizard-done-count\"><span class=\"setup-wizard-tick\" aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"check\"><path d=\"M20 6 9 17l-5-5\"/></svg></span> Đã xong 3/4</p>\n    </div>\n    \n    <h1 class=\"big\">Thiết lập Alfa byt</h1>\n    </div>\n    \n    <form method=\"post\" action=\"/apartments/11/setup\" class=\"setup-wizard-exit\">\n      <input type=\"hidden\" name=\"_csrf\" value=\"\">\n      <button class=\"ui-btn ui-btn-secondary\" type=\"submit\" name=\"action\" value=\"hide\" formnovalidate>Thoát thiết lập</button>\n    </form>\n    \n  </div>\n  <div class=\"setup-wizard-body\">\n    \n    \n    \n    \n    \n    \n\n<div class=\"ui-banner setup-wizard-celebrate is-partial\" role=\"status\" data-setup-celebrate=\"partial\">\n  \n  <span class=\"setup-wizard-celebrate-mark\" aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"triangle-alert\"><path d=\"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3\"/><path d=\"M12 9v4\"/><path d=\"M12 17h.01\"/></svg></span>\n  <div class=\"grow setup-wizard-celebrate-copy\">\n    <strong class=\"setup-wizard-celebrate-title\">Sắp xong: còn một việc.</strong>\n    <span>Hoàn tất bước bên dưới là xong.</span>\n  </div>\n</div>\n\n<details class=\"setup-done-workflow\">\n  <summary>Mỗi lượt lưu trú diễn ra thế nào</summary>\n  \n<section class=\"workflow-block\" data-workflow-strip>\n  \n  <ol class=\"workflow-strip\" aria-label=\"Mỗi lượt lưu trú diễn ra thế nào\">\n    \n    <li class=\"workflow-strip-step is-you\" data-workflow-step=\"paste\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">1</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">Bạn dán tin nhắn cho khách vào Airbnb hoặc Booking.com</span>\n        <span class=\"workflow-tag\">Bạn, một lần</span>\n      </span>\n    </li>\n    \n    <li class=\"workflow-strip-step\" data-workflow-step=\"form\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">2</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">Khách điền biểu mẫu cho khách</span>\n        <span class=\"workflow-tag\">Tự động</span>\n      </span>\n    </li>\n    \n    <li class=\"workflow-strip-step\" data-workflow-step=\"email\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">3</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">Bạn nhận được email</span>\n        <span class=\"workflow-tag\">Tự động</span>\n      </span>\n    </li>\n    \n    <li class=\"workflow-strip-step is-you\" data-workflow-step=\"police_manual\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">4</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">Bạn bấm Gửi để gửi báo cáo cho công an</span>\n        <span class=\"workflow-tag\">Bạn</span>\n      </span>\n    </li>\n    \n    <li class=\"workflow-strip-step\" data-workflow-step=\"finish\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">5</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">Khách nhận email xác nhận</span>\n        <span class=\"workflow-tag\">Tự động</span>\n      </span>\n    </li>\n    \n  </ol>\n</section>\n\n</details>\n<h2 class=\"setup-wizard-section-title\">Tóm tắt thiết lập</h2>\n\n<ul class=\"setup-wizard-checklist setup-done-list\">\n  \n  \n  <li class=\"is-done\" data-setup-summary-step=\"property\">\n    <div class=\"setup-summary-card\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M3.5 9 10 3.5 16.5 9V16a1 1 0 0 1-1 1H4.5a1 1 0 0 1-1-1V9Z\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M8 17v-5h4v5\" stroke=\"currentColor\" stroke-width=\"1.5\"/></svg>\n  \n</span>\n      <div class=\"setup-summary-copy\">\n        <strong>Thông tin chỗ ở</strong>\n        <span class=\"ui-badge ui-badge-done\" data-tone=\"green\">\n          <span aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"check\"><path d=\"M20 6 9 17l-5-5\"/></svg></span>\n          Đã thiết lập\n        </span>\n        \n      </div>\n    </div>\n  </li>\n  \n  \n  <li class=\"is-done\" data-setup-summary-step=\"calendar\">\n    <div class=\"setup-summary-card\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><rect x=\"3\" y=\"4.5\" width=\"14\" height=\"12.5\" rx=\"2\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M3 8.5h14M7 2.5v3M13 2.5v3\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <div class=\"setup-summary-copy\">\n        <strong>Đặt phòng &amp; lịch</strong>\n        <span class=\"ui-badge ui-badge-done\" data-tone=\"green\">\n          <span aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"check\"><path d=\"M20 6 9 17l-5-5\"/></svg></span>\n          Đã thiết lập\n        </span>\n        \n      </div>\n    </div>\n  </li>\n  \n  \n  <li class=\"is-done\" data-setup-summary-step=\"police\">\n    <div class=\"setup-summary-card\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M5.5 3.5h6l3.5 3.5v9.5a1 1 0 0 1-1 1h-8.5a1 1 0 0 1-1-1v-12a1 1 0 0 1 1-1Z\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M11.5 3.5v4h4M7.5 11h5M7.5 14h3.5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <div class=\"setup-summary-copy\">\n        <strong>Khai báo cảnh sát</strong>\n        <span class=\"ui-badge ui-badge-done\" data-tone=\"green\">\n          <span aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"check\"><path d=\"M20 6 9 17l-5-5\"/></svg></span>\n          Đã thiết lập\n        </span>\n        \n      </div>\n    </div>\n  </li>\n  \n  \n  <li class=\"is-todo\" data-setup-summary-step=\"guest_link\">\n    <div class=\"setup-summary-card\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"m8 12 4-4M6.5 13.5l-1 1a2.8 2.8 0 0 1-4-4l2.3-2.3a2.8 2.8 0 0 1 4 0M13.5 6.5l1-1a2.8 2.8 0 1 1 4 4l-2.3 2.3a2.8 2.8 0 0 1-4 0\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <div class=\"setup-summary-copy\">\n        <strong>Liên kết khách và PIN</strong>\n        <span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\">\n          \n          Chưa thiết lập\n        </span>\n        \n      </div>\n    </div>\n  </li>\n  \n</ul>\n<h2 class=\"setup-wizard-section-title\">Việc tiếp theo</h2>\n<ul class=\"setup-wizard-checklist setup-done-list setup-wizard-next\" data-setup-next>\n  <li data-setup-next-step=\"stay_fee\">\n    <a class=\"setup-summary-card setup-next-card\" href=\"/apartments/11?view=settings&amp;section=reporting#stay-fee-settings\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><circle cx=\"8\" cy=\"8.5\" r=\"4.75\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M11.6 6.1a4.75 4.75 0 1 1-2.1 9.2\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <span class=\"setup-summary-copy\"><strong>Phí lưu trú</strong></span>\n      <span class=\"setup-done-chevron\" aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"chevron-right\"><path d=\"m9 18 6-6-6-6\"/></svg></span>\n    </a>\n  </li>\n  \n  <li data-setup-next-step=\"door_lock\">\n    <a class=\"setup-summary-card setup-next-card\" href=\"/apartments/11?view=settings&amp;section=lock#door-code\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><rect x=\"4\" y=\"8.5\" width=\"12\" height=\"9\" rx=\"2\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M7 8.5V6a3 3 0 0 1 6 0v2.5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/><circle cx=\"10\" cy=\"13\" r=\"1.2\" fill=\"currentColor\"/></svg>\n  \n</span>\n      <span class=\"setup-summary-copy\"><strong>Khóa cửa</strong></span>\n      <span class=\"setup-done-chevron\" aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"chevron-right\"><path d=\"m9 18 6-6-6-6\"/></svg></span>\n    </a>\n  </li>\n  \n  <li data-setup-next-step=\"try_it\">\n    <a class=\"setup-summary-card setup-next-card\" href=\"/apartments/11/setup/try_it\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"7\" r=\"2.75\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M4.5 16.5c0-2.8 2.2-4.5 5.5-4.5s5.5 1.7 5.5 4.5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <span class=\"setup-summary-copy\"><strong>Chạy thử</strong></span>\n      <span class=\"setup-done-chevron\" aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"chevron-right\"><path d=\"m9 18 6-6-6-6\"/></svg></span>\n    </a>\n  </li>\n</ul>\n\n\n  </div>\n  <footer class=\"setup-wizard-foot\">\n    \n    <span></span>\n    \n    \n\n\n\n\n\n<a class=\"ui-btn ui-btn-primary\" href=\"/apartments/11/setup/guest_link\" data-finish-go=\"fix\">Hoàn tất thiết lập</a>\n\n  </footer>\n  \n</div>",
+   "lang_cookie": "vi",
+   "location": null,
+   "method": "GET",
+   "name": "done_guide_open_vi",
+   "path": "/apartments/11/setup/done",
+   "status": 200,
+   "title": "Thiết lập Alfa byt",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": "text/html; charset=utf-8",
+   "csrf": false,
+   "form": null,
+   "fragment": "<div class=\"setup-wizard wiz-page\" data-setup-wizard data-setup-step=\"done\">\n  <div class=\"setup-wizard-head\">\n    <div class=\"wiz-title\">\n    \n    \n    <h1 class=\"big\">Set up Lambda</h1>\n    </div>\n    \n    <form method=\"post\" action=\"/apartments/22/setup\" class=\"setup-wizard-exit\">\n      <input type=\"hidden\" name=\"_csrf\" value=\"\">\n      <button class=\"ui-btn ui-btn-secondary\" type=\"submit\" name=\"action\" value=\"hide\" formnovalidate>Exit setup</button>\n    </form>\n    \n  </div>\n  <div class=\"setup-wizard-body\">\n    \n    \n    \n    \n    \n    \n\n\n<section class=\"ui-section-card ready-card\" id=\"setup-ready\" aria-labelledby=\"setup-ready-title\" data-ready-card>\n  <h2 class=\"ui-section-h\" id=\"setup-ready-title\">You&#39;re ready</h2>\n  <p class=\"ui-sub\">Send this link and PIN to your guests.</p>\n  <div class=\"ready-card-body\">\n    <img class=\"ready-card-qr\" src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAN4AAADeAQAAAAB6HIMaAAABv0lEQVR4nO2YMa7jMAxEH0MDKaUb5CjyzT5yM/ko/wZ0GUDCbKEkfxvvbmctkIELQ9M80JKGtIlD9cuxBx/zY55rmpnZ2jOwWYbdzGw5EehYklxSFA+gQPEoY7FNR3sB2G2Bfquku1QBs/VUoCMt7zf/zgJLcS7QP9I+Fpa2eWznAv2dNokdUizQKG1Hw5iOFmmkWfF4PwBTnjL0kgceeBR/rcxHe2F89H3tuZD0yHRbu9mZQMeSRKqk6gFJgFQ9mLK2SGqgQFEatPTeGhPSXoCrRKo9s6TqsVneej4V6FiSXFXj06c6jtusyftzJ7RUXbVBo7jqlLTPPoF99aCBSwt0+2pnAv3J7DeR7t2+Flj2VYHHnFl2ATy2bus1AHqGdH9kpqzt85S5qkcBGjxDbcZ9O/qEwggF1dHfkua9EzyKq0pqSS4N1CnT4UkL5RlnqcLUO2FoALue5Z2ytj8zb4Ml1W7GvrKvZwId6z3ztiQFI8V80uT9mXn920Yz08163k4FOtRraijvXwot1UaZsra/076ugtf6fLQXgKQGPZfHTW03UoUybZ/QzSxzDTw2u9Ux9k7ZJ9jnb/PH/A/NX6NRYD3tvR82AAAAAElFTkSuQmCC\" width=\"160\" height=\"160\" alt=\"QR code for the guest link\">\n    <div class=\"ready-card-copy\">\n      <p class=\"ready-card-row\"><span class=\"muted\">Guest link</span> <code class=\"ready-card-link\">https://app.example.test/l/slug-22</code>\n        <input class=\"sr-only\" type=\"text\" id=\"ready-link\" readonly value=\"https://app.example.test/l/slug-22\" tabindex=\"-1\" aria-hidden=\"true\">\n        <button class=\"ui-btn ui-btn-secondary\" type=\"button\" data-copy=\"ready-link\" data-copy-label=\"Copy link\" data-copied-label=\"Copied\">Copy link</button></p>\n      <p class=\"ready-card-row\"><span class=\"muted\">PIN</span> <b class=\"ready-card-pin\">123456</b>\n        <input class=\"sr-only\" type=\"text\" id=\"ready-pin\" readonly value=\"123456\" tabindex=\"-1\" aria-hidden=\"true\">\n        <button class=\"ui-btn ui-btn-secondary\" type=\"button\" data-copy=\"ready-pin\" data-copy-label=\"Copy PIN\" data-copied-label=\"Copied\">Copy PIN</button></p>\n    </div>\n  </div>\n</section>\n\n<details class=\"setup-done-workflow\">\n  <summary>How each stay works</summary>\n  \n<section class=\"workflow-block\" data-workflow-strip>\n  \n  <ol class=\"workflow-strip\" aria-label=\"How each stay works\">\n    \n    <li class=\"workflow-strip-step is-you\" data-workflow-step=\"paste\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">1</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">You paste the guest message into Airbnb or Booking.com</span>\n        <span class=\"workflow-tag\">You, once</span>\n      </span>\n    </li>\n    \n    <li class=\"workflow-strip-step\" data-workflow-step=\"form\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">2</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">The guest fills in the guest form</span>\n        <span class=\"workflow-tag\">Automatic</span>\n      </span>\n    </li>\n    \n    <li class=\"workflow-strip-step\" data-workflow-step=\"email\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">3</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">You get an email</span>\n        <span class=\"workflow-tag\">Automatic</span>\n      </span>\n    </li>\n    \n    <li class=\"workflow-strip-step\" data-workflow-step=\"police_scheduled\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">4</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">The police report goes out by itself after a short delay</span>\n        <span class=\"workflow-tag\">Automatic</span>\n      </span>\n    </li>\n    \n    <li class=\"workflow-strip-step\" data-workflow-step=\"finish\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">5</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">The guest gets a confirmation email</span>\n        <span class=\"workflow-tag\">Automatic</span>\n      </span>\n    </li>\n    \n  </ol>\n</section>\n\n</details>\n<h2 class=\"setup-wizard-section-title\">Setup summary</h2>\n\n<ul class=\"setup-wizard-checklist setup-done-list\">\n  \n  \n  <li class=\"is-done\" data-setup-summary-step=\"property\">\n    <div class=\"setup-summary-card\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M3.5 9 10 3.5 16.5 9V16a1 1 0 0 1-1 1H4.5a1 1 0 0 1-1-1V9Z\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M8 17v-5h4v5\" stroke=\"currentColor\" stroke-width=\"1.5\"/></svg>\n  \n</span>\n      <div class=\"setup-summary-copy\">\n        <strong>Property details</strong>\n        <span class=\"ui-badge ui-badge-done\" data-tone=\"green\">\n          <span aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"check\"><path d=\"M20 6 9 17l-5-5\"/></svg></span>\n          Set up\n        </span>\n        \n      </div>\n    </div>\n  </li>\n  \n  \n  <li class=\"is-done\" data-setup-summary-step=\"calendar\">\n    <div class=\"setup-summary-card\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><rect x=\"3\" y=\"4.5\" width=\"14\" height=\"12.5\" rx=\"2\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M3 8.5h14M7 2.5v3M13 2.5v3\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <div class=\"setup-summary-copy\">\n        <strong>Bookings &amp; calendars</strong>\n        <span class=\"ui-badge ui-badge-done\" data-tone=\"green\">\n          <span aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"check\"><path d=\"M20 6 9 17l-5-5\"/></svg></span>\n          Set up\n        </span>\n        \n      </div>\n    </div>\n  </li>\n  \n  \n  <li class=\"is-done\" data-setup-summary-step=\"police\">\n    <div class=\"setup-summary-card\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M5.5 3.5h6l3.5 3.5v9.5a1 1 0 0 1-1 1h-8.5a1 1 0 0 1-1-1v-12a1 1 0 0 1 1-1Z\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M11.5 3.5v4h4M7.5 11h5M7.5 14h3.5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <div class=\"setup-summary-copy\">\n        <strong>Police reporting</strong>\n        <span class=\"ui-badge ui-badge-done\" data-tone=\"green\">\n          <span aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"check\"><path d=\"M20 6 9 17l-5-5\"/></svg></span>\n          Set up\n        </span>\n        \n      </div>\n    </div>\n  </li>\n  \n  \n  <li class=\"is-done\" data-setup-summary-step=\"guest_link\">\n    <div class=\"setup-summary-card\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"m8 12 4-4M6.5 13.5l-1 1a2.8 2.8 0 0 1-4-4l2.3-2.3a2.8 2.8 0 0 1 4 0M13.5 6.5l1-1a2.8 2.8 0 1 1 4 4l-2.3 2.3a2.8 2.8 0 0 1-4 0\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <div class=\"setup-summary-copy\">\n        <strong>Guest link and PIN</strong>\n        <span class=\"ui-badge ui-badge-done\" data-tone=\"green\">\n          <span aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"check\"><path d=\"M20 6 9 17l-5-5\"/></svg></span>\n          Set up\n        </span>\n        \n      </div>\n    </div>\n  </li>\n  \n</ul>\n<h2 class=\"setup-wizard-section-title\">Do next</h2>\n<ul class=\"setup-wizard-checklist setup-done-list setup-wizard-next\" data-setup-next>\n  <li data-setup-next-step=\"stay_fee\">\n    <a class=\"setup-summary-card setup-next-card\" href=\"/apartments/22?view=settings&amp;section=reporting#stay-fee-settings\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><circle cx=\"8\" cy=\"8.5\" r=\"4.75\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M11.6 6.1a4.75 4.75 0 1 1-2.1 9.2\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <span class=\"setup-summary-copy\"><strong>Stay fee</strong></span>\n      <span class=\"setup-done-chevron\" aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"chevron-right\"><path d=\"m9 18 6-6-6-6\"/></svg></span>\n    </a>\n  </li>\n  \n  <li data-setup-next-step=\"door_lock\">\n    <a class=\"setup-summary-card setup-next-card\" href=\"/apartments/22?view=settings&amp;section=lock#door-code\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><rect x=\"4\" y=\"8.5\" width=\"12\" height=\"9\" rx=\"2\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M7 8.5V6a3 3 0 0 1 6 0v2.5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/><circle cx=\"10\" cy=\"13\" r=\"1.2\" fill=\"currentColor\"/></svg>\n  \n</span>\n      <span class=\"setup-summary-copy\"><strong>Door lock</strong></span>\n      <span class=\"setup-done-chevron\" aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"chevron-right\"><path d=\"m9 18 6-6-6-6\"/></svg></span>\n    </a>\n  </li>\n  \n  <li data-setup-next-step=\"try_it\">\n    <a class=\"setup-summary-card setup-next-card\" href=\"/apartments/22/setup/try_it\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"7\" r=\"2.75\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M4.5 16.5c0-2.8 2.2-4.5 5.5-4.5s5.5 1.7 5.5 4.5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <span class=\"setup-summary-copy\"><strong>Test run</strong></span>\n      <span class=\"setup-done-chevron\" aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"chevron-right\"><path d=\"m9 18 6-6-6-6\"/></svg></span>\n    </a>\n  </li>\n</ul>\n\n<p class=\"setup-wizard-instruction\" data-finish-note>No calendar is connected yet. You can add stays by hand on the property page.</p>\n\n\n  </div>\n  <footer class=\"setup-wizard-foot\">\n    \n    <span></span>\n    \n    \n\n\n\n\n\n<a class=\"ui-btn ui-btn-primary\" href=\"/apartments/22?view=overview\" data-finish-go=\"property\">Open my property</a>\n\n  </footer>\n  \n</div>",
+   "lang_cookie": null,
+   "location": null,
+   "method": "GET",
+   "name": "done_ready_celebrated",
+   "path": "/apartments/22/setup/done",
+   "status": 200,
+   "title": "Set up Lambda",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": "text/html; charset=utf-8",
+   "csrf": false,
+   "form": null,
+   "fragment": "<div class=\"setup-wizard wiz-page\" data-setup-wizard data-setup-step=\"done\">\n  <div class=\"setup-wizard-head\">\n    <div class=\"wiz-title\">\n    <p class=\"wiz-count\">Step 1 of 4 · Property details</p>\n    \n    <div class=\"setup-wizard-meter\">\n      <ol class=\"setup-wizard-progress\" aria-hidden=\"true\">\n        \n        <li class=\"is-current\"></li>\n        \n        <li class=\"is-todo\"></li>\n        \n        <li class=\"is-todo\"></li>\n        \n        <li class=\"is-todo\"></li>\n        \n      </ol>\n      <p class=\"setup-wizard-done-count\">0 of 4 done</p>\n    </div>\n    \n    <h1 class=\"big\">Set up Beta</h1>\n    </div>\n    \n    <form method=\"post\" action=\"/apartments/12/setup\" class=\"setup-wizard-exit\">\n      <input type=\"hidden\" name=\"_csrf\" value=\"\">\n      <button class=\"ui-btn ui-btn-secondary\" type=\"submit\" name=\"action\" value=\"hide\" formnovalidate>Exit setup</button>\n    </form>\n    \n  </div>\n  <div class=\"setup-wizard-body\">\n    \n    \n    \n    \n    \n    \n\n<div class=\"ui-banner setup-wizard-celebrate is-partial\" role=\"status\" data-setup-celebrate=\"partial\">\n  \n  <span class=\"setup-wizard-celebrate-mark\" aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"triangle-alert\"><path d=\"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3\"/><path d=\"M12 9v4\"/><path d=\"M12 17h.01\"/></svg></span>\n  <div class=\"grow setup-wizard-celebrate-copy\">\n    <strong class=\"setup-wizard-celebrate-title\">Almost there: one thing left.</strong>\n    <span>Finish the step below and you are done.</span>\n  </div>\n</div>\n\n<details class=\"setup-done-workflow\">\n  <summary>How each stay works</summary>\n  \n<section class=\"workflow-block\" data-workflow-strip>\n  \n  <ol class=\"workflow-strip\" aria-label=\"How each stay works\">\n    \n    <li class=\"workflow-strip-step is-you\" data-workflow-step=\"paste\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">1</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">You paste the guest message into Airbnb or Booking.com</span>\n        <span class=\"workflow-tag\">You, once</span>\n      </span>\n    </li>\n    \n    <li class=\"workflow-strip-step\" data-workflow-step=\"form\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">2</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">The guest fills in the guest form</span>\n        <span class=\"workflow-tag\">Automatic</span>\n      </span>\n    </li>\n    \n    <li class=\"workflow-strip-step\" data-workflow-step=\"email\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">3</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">You get an email</span>\n        <span class=\"workflow-tag\">Automatic</span>\n      </span>\n    </li>\n    \n    <li class=\"workflow-strip-step is-you\" data-workflow-step=\"police_manual\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">4</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">You press Send for the police report</span>\n        <span class=\"workflow-tag\">You</span>\n      </span>\n    </li>\n    \n    <li class=\"workflow-strip-step\" data-workflow-step=\"finish\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">5</span>\n      <span class=\"workflow-strip-copy\">\n        <span class=\"workflow-strip-label\">The guest gets a confirmation email</span>\n        <span class=\"workflow-tag\">Automatic</span>\n      </span>\n    </li>\n    \n  </ol>\n</section>\n\n</details>\n<h2 class=\"setup-wizard-section-title\">Setup summary</h2>\n\n<ul class=\"setup-wizard-checklist setup-done-list\">\n  \n  \n  <li class=\"is-todo\" data-setup-summary-step=\"property\">\n    <div class=\"setup-summary-card\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M3.5 9 10 3.5 16.5 9V16a1 1 0 0 1-1 1H4.5a1 1 0 0 1-1-1V9Z\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M8 17v-5h4v5\" stroke=\"currentColor\" stroke-width=\"1.5\"/></svg>\n  \n</span>\n      <div class=\"setup-summary-copy\">\n        <strong>Property details</strong>\n        <span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\">\n          \n          Not set up\n        </span>\n        \n      </div>\n    </div>\n  </li>\n  \n  \n  <li class=\"is-todo\" data-setup-summary-step=\"calendar\">\n    <div class=\"setup-summary-card\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><rect x=\"3\" y=\"4.5\" width=\"14\" height=\"12.5\" rx=\"2\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M3 8.5h14M7 2.5v3M13 2.5v3\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <div class=\"setup-summary-copy\">\n        <strong>Bookings &amp; calendars</strong>\n        <span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\">\n          \n          Not set up\n        </span>\n        \n      </div>\n    </div>\n  </li>\n  \n  \n  <li class=\"is-todo\" data-setup-summary-step=\"police\">\n    <div class=\"setup-summary-card\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M5.5 3.5h6l3.5 3.5v9.5a1 1 0 0 1-1 1h-8.5a1 1 0 0 1-1-1v-12a1 1 0 0 1 1-1Z\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M11.5 3.5v4h4M7.5 11h5M7.5 14h3.5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <div class=\"setup-summary-copy\">\n        <strong>Police reporting</strong>\n        <span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\">\n          \n          Not set up\n        </span>\n        \n      </div>\n    </div>\n  </li>\n  \n  \n  <li class=\"is-todo\" data-setup-summary-step=\"guest_link\">\n    <div class=\"setup-summary-card\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"m8 12 4-4M6.5 13.5l-1 1a2.8 2.8 0 0 1-4-4l2.3-2.3a2.8 2.8 0 0 1 4 0M13.5 6.5l1-1a2.8 2.8 0 1 1 4 4l-2.3 2.3a2.8 2.8 0 0 1-4 0\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <div class=\"setup-summary-copy\">\n        <strong>Guest link and PIN</strong>\n        <span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\">\n          \n          Not set up\n        </span>\n        \n      </div>\n    </div>\n  </li>\n  \n</ul>\n<h2 class=\"setup-wizard-section-title\">Do next</h2>\n<ul class=\"setup-wizard-checklist setup-done-list setup-wizard-next\" data-setup-next>\n  <li data-setup-next-step=\"stay_fee\">\n    <a class=\"setup-summary-card setup-next-card\" href=\"/apartments/12?view=settings&amp;section=reporting#stay-fee-settings\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><circle cx=\"8\" cy=\"8.5\" r=\"4.75\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M11.6 6.1a4.75 4.75 0 1 1-2.1 9.2\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <span class=\"setup-summary-copy\"><strong>Stay fee</strong></span>\n      <span class=\"setup-done-chevron\" aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"chevron-right\"><path d=\"m9 18 6-6-6-6\"/></svg></span>\n    </a>\n  </li>\n  \n  <li data-setup-next-step=\"door_lock\">\n    <a class=\"setup-summary-card setup-next-card\" href=\"/apartments/12?view=settings&amp;section=lock#door-code\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><rect x=\"4\" y=\"8.5\" width=\"12\" height=\"9\" rx=\"2\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M7 8.5V6a3 3 0 0 1 6 0v2.5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/><circle cx=\"10\" cy=\"13\" r=\"1.2\" fill=\"currentColor\"/></svg>\n  \n</span>\n      <span class=\"setup-summary-copy\"><strong>Door lock</strong></span>\n      <span class=\"setup-done-chevron\" aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"chevron-right\"><path d=\"m9 18 6-6-6-6\"/></svg></span>\n    </a>\n  </li>\n  \n  <li data-setup-next-step=\"try_it\">\n    <a class=\"setup-summary-card setup-next-card\" href=\"/apartments/12/setup/try_it\">\n      <span class=\"setup-summary-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"7\" r=\"2.75\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M4.5 16.5c0-2.8 2.2-4.5 5.5-4.5s5.5 1.7 5.5 4.5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <span class=\"setup-summary-copy\"><strong>Test run</strong></span>\n      <span class=\"setup-done-chevron\" aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"chevron-right\"><path d=\"m9 18 6-6-6-6\"/></svg></span>\n    </a>\n  </li>\n</ul>\n\n\n  </div>\n  <footer class=\"setup-wizard-foot\">\n    \n    <span></span>\n    \n    \n\n\n\n\n\n<a class=\"ui-btn ui-btn-primary\" href=\"/apartments/12/setup/property\" data-finish-go=\"fix\">Finish setup</a>\n\n  </footer>\n  \n</div>",
+   "lang_cookie": null,
+   "location": null,
+   "method": "GET",
+   "name": "done_legacy",
+   "path": "/apartments/12/setup/done",
+   "status": 200,
+   "title": "Set up Beta",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": null,
+   "csrf": false,
+   "form": null,
+   "fragment": "",
+   "lang_cookie": null,
+   "location": "/login?next=/apartments/19/setup/done",
+   "method": "GET",
+   "name": "done_signed_out",
+   "path": "/apartments/19/setup/done",
+   "status": 303,
+   "title": "",
+   "user": null
+  },
+  {
+   "body": "",
+   "content_type": null,
+   "csrf": false,
+   "form": null,
+   "fragment": "",
+   "lang_cookie": null,
+   "location": "/apartments?err=This%20property%20no%20longer%20exists.",
+   "method": "GET",
+   "name": "done_foreign",
+   "path": "/apartments/21/setup/done",
+   "status": 303,
+   "title": "",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": "text/html; charset=utf-8",
+   "csrf": false,
+   "form": null,
+   "fragment": "<div class=\"setup-wizard wiz-page\" data-setup-wizard data-setup-step=\"try_it\">\n  <div class=\"setup-wizard-head\">\n    <div class=\"wiz-title\">\n    \n    \n    <h1 class=\"big\">Set up Alfa byt</h1>\n    </div>\n    \n  </div>\n  <div class=\"setup-wizard-body\">\n    \n    \n    \n    <div class=\"setup-wizard-ask\" data-step-tone=\"teal\">\n      <span class=\"setup-wizard-ask-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"7\" r=\"2.75\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M4.5 16.5c0-2.8 2.2-4.5 5.5-4.5s5.5 1.7 5.5 4.5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <h2 class=\"setup-wizard-question\">Shall we do a test run?<span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"setup-try-help\">?</button>\n    <span class=\"help-tip-body\" id=\"setup-try-help\" role=\"tooltip\">Last step: a test run. Be your own guest: open the link in the message, type the PIN and fill in the form with made-up details. Then see what happens next. Nothing goes to the police, and you can delete the test stay afterwards. A demo stay is never sent to the police. It is left out of stay fees, invoices and the house book.</span>\n  </span>\n</h2>\n    </div>\n    \n    \n    \n    \n\n\n\n<section class=\"setup-wizard-demo\" aria-labelledby=\"demo-property-heading\">\n  <h2 id=\"demo-property-heading\">Your property</h2>\n  <a class=\"setup-demo-property\" href=\"/apartments/11?view=overview\">\n    <span class=\"setup-demo-mark\" aria-hidden=\"true\">A</span>\n    <span><strong>Alfa byt</strong><span>Prague</span></span>\n    <span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\">Demo preview</span>\n  </a>\n  <h2>Your demo stay</h2>\n  <div class=\"setup-demo-stay\">\n    <div><strong>Example guest</strong><span>Alfa byt</span></div>\n    <div><strong>Stay dates</strong><span>10.05.2026 – 11.05.2026</span></div>\n    <div>\n      <span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\">Demo preview</span>\n    </div>\n    \n  </div>\n</section>\n<section class=\"setup-demo-message\" aria-labelledby=\"demo-message-heading\">\n  <header><span class=\"setup-demo-mark\" aria-hidden=\"true\">J</span><div><h2 id=\"demo-message-heading\">Example guest message <span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\">Demo preview</span></h2><strong>Jana</strong></div><span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"demo-message-help\">?</button>\n    <span class=\"help-tip-body\" id=\"demo-message-help\" role=\"tooltip\">These are example arrival instructions. Replace the bracketed sections before sending a message to real guests.</span>\n  </span>\n</header>\n  <div class=\"ui-banner ui-banner-neutral setup-demo-disclaimer\" role=\"status\"><svg class=\"ui-icon\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"info\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 16v-4\"/><path d=\"M12 8h.01\"/></svg><div class=\"grow\">This is a demo example. The message your guests receive and when it is sent depend on your automated message settings in Airbnb, Booking.com or your booking platform.</div></div>\n  \n  \n  <div class=\"setup-demo-bubble\">Hi [FIRST_NAME],\n\nWe&#39;re looking forward to welcoming you to Alfa byt! 👋\n\n1. Complete your online registration (about 2 minutes)\nPlease fill in the guest form before you arrive. Czech law requires foreign guests to be registered with the police. Completing the form also helps us prepare a smooth check-in.\n<button class=\"setup-demo-message-link\" type=\"submit\" form=\"setup-create-demo\">https://app.example.test/l/slug-11</button>\nPIN: 123456\nPlease keep the link and PIN private.\n\n2. Collect your keys\n[Example: collect your keys from the key safe at the entrance. Replace this with your own collection instructions.]\n\n3. Find your property\n[Example: use the main entrance and follow the signs to the property. Replace this with your own directions.]\n\n4. Quiet hours\n[Add your quiet hours, e.g. 22:00–06:00.] Please keep noise down at the property and in shared areas. No parties or loud music. Thank you for being considerate of our neighbours.\n\nWhat time do you expect to arrive? If anything is unclear, just send us a message.\n\nWe look forward to hosting you!\n\nBest regards,\nJana</div>\n  <p class=\"setup-wizard-instruction\">Open the link in this message, enter the PIN, and register as a guest. Then return here to see the result.</p>\n</section>\n\n\n  </div>\n  <footer class=\"setup-wizard-foot\">\n    \n    <a class=\"ui-btn ui-btn-quiet setup-wizard-back\" href=\"/apartments/11/setup/done\">Leave the demo</a>\n    \n    \n\n\n<form method=\"post\" action=\"/apartments/11/setup\" class=\"inline setup-wizard-skip\">\n  <input type=\"hidden\" name=\"_csrf\" value=\"\">\n  <input type=\"hidden\" name=\"step\" value=\"try_it\">\n  <button class=\"ui-btn ui-btn-secondary\" type=\"submit\" name=\"action\" value=\"skip\" formnovalidate>Continue without the demo</button>\n</form>\n<form method=\"post\" action=\"/apartments/11/setup\" class=\"inline\" id=\"setup-create-demo\" target=\"_blank\" rel=\"noopener\" data-wizard-demo>\n  <input type=\"hidden\" name=\"action\" value=\"demo\">\n  <input type=\"hidden\" name=\"_csrf\" value=\"\">\n  <input type=\"hidden\" name=\"step\" value=\"try_it\">\n  <button class=\"ui-btn ui-btn-primary\" type=\"submit\" name=\"action\" value=\"demo\">Create a demo stay</button>\n</form>\n<noscript><a class=\"ui-btn ui-btn-secondary\" href=\"/apartments/11/setup/try_it\">Check again</a></noscript>\n\n\n  </footer>\n  \n</div>",
+   "lang_cookie": null,
+   "location": null,
+   "method": "GET",
+   "name": "try_none",
+   "path": "/apartments/11/setup/try_it",
+   "status": 200,
+   "title": "Set up Alfa byt",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": "text/html; charset=utf-8",
+   "csrf": false,
+   "form": null,
+   "fragment": "<div class=\"setup-wizard wiz-page\" data-setup-wizard data-setup-step=\"try_it\">\n  <div class=\"setup-wizard-head\">\n    <div class=\"wiz-title\">\n    \n    \n    <h1 class=\"big\">Set up Kappa</h1>\n    </div>\n    \n  </div>\n  <div class=\"setup-wizard-body\">\n    \n    \n    \n    <div class=\"setup-wizard-ask\" data-step-tone=\"teal\">\n      <span class=\"setup-wizard-ask-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"7\" r=\"2.75\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M4.5 16.5c0-2.8 2.2-4.5 5.5-4.5s5.5 1.7 5.5 4.5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <h2 class=\"setup-wizard-question\">Shall we do a test run?<span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"setup-try-help\">?</button>\n    <span class=\"help-tip-body\" id=\"setup-try-help\" role=\"tooltip\">Last step: a test run. Be your own guest: open the link in the message, type the PIN and fill in the form with made-up details. Then see what happens next. Nothing goes to the police, and you can delete the test stay afterwards. A demo stay is never sent to the police. It is left out of stay fees, invoices and the house book.</span>\n  </span>\n</h2>\n    </div>\n    \n    \n    \n    \n\n\n\n<section class=\"setup-wizard-demo\" aria-labelledby=\"demo-property-heading\">\n  <h2 id=\"demo-property-heading\">Your property</h2>\n  <a class=\"setup-demo-property\" href=\"/apartments/20?view=overview\">\n    <span class=\"setup-demo-mark\" aria-hidden=\"true\">K</span>\n    <span><strong>Kappa</strong><span>Prague</span></span>\n    <span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\">Demo preview</span>\n  </a>\n  <h2>Your demo stay</h2>\n  <div class=\"setup-demo-stay\">\n    <div><strong>Example guest</strong><span>Kappa</span></div>\n    <div><strong>Stay dates</strong><span>10.05.2026 – 11.05.2026</span></div>\n    <div>\n      \n      \n  \n  \n  \n  \n  \n    \n    \n  \n  <span class=\"ui-badge ui-badge-neutral\" data-tone=\"teal\">Waiting for guest</span>\n\n      \n  \n\n      \n    </div>\n    \n  </div>\n</section>\n<section class=\"setup-demo-message\" aria-labelledby=\"demo-message-heading\">\n  <header><span class=\"setup-demo-mark\" aria-hidden=\"true\">J</span><div><h2 id=\"demo-message-heading\">Example guest message <span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\">Demo preview</span></h2><strong>Jana</strong></div><span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"demo-message-help\">?</button>\n    <span class=\"help-tip-body\" id=\"demo-message-help\" role=\"tooltip\">These are example arrival instructions. Replace the bracketed sections before sending a message to real guests.</span>\n  </span>\n</header>\n  <div class=\"ui-banner ui-banner-neutral setup-demo-disclaimer\" role=\"status\"><svg class=\"ui-icon\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"info\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 16v-4\"/><path d=\"M12 8h.01\"/></svg><div class=\"grow\">This is a demo example. The message your guests receive and when it is sent depend on your automated message settings in Airbnb, Booking.com or your booking platform.</div></div>\n  \n  \n  <div class=\"setup-demo-bubble\">Hi [FIRST_NAME],\n\nWe&#39;re looking forward to welcoming you to Kappa! 👋\n\n1. Complete your online registration (about 2 minutes)\nPlease fill in the guest form before you arrive. Czech law requires foreign guests to be registered with the police. Completing the form also helps us prepare a smooth check-in.\n<a href=\"/l/slug-20/demo/105?lang=en\" target=\"_blank\" rel=\"noopener\">https://app.example.test/l/slug-20</a>\nPIN: 123456\nPlease keep the link and PIN private.\n\n2. Collect your keys\n[Example: collect your keys from the key safe at the entrance. Replace this with your own collection instructions.]\n\n3. Find your property\n[Example: use the main entrance and follow the signs to the property. Replace this with your own directions.]\n\n4. Quiet hours\n[Add your quiet hours, e.g. 22:00–06:00.] Please keep noise down at the property and in shared areas. No parties or loud music. Thank you for being considerate of our neighbours.\n\nWhat time do you expect to arrive? If anything is unclear, just send us a message.\n\nWe look forward to hosting you!\n\nBest regards,\nJana</div>\n  <p class=\"setup-wizard-instruction\">Open the link in this message, enter the PIN, and register as a guest. Then return here to see the result.</p>\n</section>\n\n<p class=\"setup-wizard-instruction\" data-wizard-demo-wait>Waiting for your demo registration…</p>\n\n\n  </div>\n  <footer class=\"setup-wizard-foot\">\n    \n    <a class=\"ui-btn ui-btn-quiet setup-wizard-back\" href=\"/apartments/20/setup/done\">Leave the demo</a>\n    \n    \n\n\n<form method=\"post\" action=\"/apartments/20/setup\" class=\"inline setup-wizard-skip\">\n  <input type=\"hidden\" name=\"_csrf\" value=\"\">\n  <input type=\"hidden\" name=\"step\" value=\"try_it\">\n  <button class=\"ui-btn ui-btn-secondary\" type=\"submit\" name=\"action\" value=\"skip\" formnovalidate>Continue without the demo</button>\n</form>\n<form method=\"get\" action=\"/apartments/20/setup/try_it\" class=\"inline\">\n  <button class=\"ui-btn ui-btn-secondary\" type=\"submit\">Check again</button>\n</form>\n<a class=\"ui-btn ui-btn-primary\" href=\"/l/slug-20/demo/105?lang=en\" target=\"_blank\" rel=\"noopener\">Open the guest form</a>\n\n\n  </footer>\n  \n</div>",
+   "lang_cookie": null,
+   "location": null,
+   "method": "GET",
+   "name": "try_open",
+   "path": "/apartments/20/setup/try_it",
+   "status": 200,
+   "title": "Set up Kappa",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": "text/html; charset=utf-8",
+   "csrf": false,
+   "form": null,
+   "fragment": "<div class=\"setup-wizard wiz-page\" data-setup-wizard data-setup-step=\"try_it\">\n  <div class=\"setup-wizard-head\">\n    <div class=\"wiz-title\">\n    \n    \n    <h1 class=\"big\">Thiết lập Kappa</h1>\n    </div>\n    \n  </div>\n  <div class=\"setup-wizard-body\">\n    \n    \n    \n    <div class=\"setup-wizard-ask\" data-step-tone=\"teal\">\n      <span class=\"setup-wizard-ask-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"7\" r=\"2.75\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M4.5 16.5c0-2.8 2.2-4.5 5.5-4.5s5.5 1.7 5.5 4.5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <h2 class=\"setup-wizard-question\">Chạy thử một lần nhé?<span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Trợ giúp\" aria-expanded=\"false\" aria-controls=\"setup-try-help\">?</button>\n    <span class=\"help-tip-body\" id=\"setup-try-help\" role=\"tooltip\">Bước cuối: chạy thử. Hãy tự làm khách của mình: mở liên kết trong tin nhắn, nhập PIN và điền biểu mẫu bằng thông tin giả. Sau đó xem điều gì xảy ra tiếp theo. Không có gì được gửi cho cảnh sát, và bạn có thể xóa lượt lưu trú thử sau đó. Lượt lưu trú mẫu không bao giờ được gửi cho cảnh sát. Lượt này không được tính vào phí lưu trú, hóa đơn và sổ khách lưu trú.</span>\n  </span>\n</h2>\n    </div>\n    \n    \n    \n    \n\n\n\n<section class=\"setup-wizard-demo\" aria-labelledby=\"demo-property-heading\">\n  <h2 id=\"demo-property-heading\">Chỗ ở của bạn</h2>\n  <a class=\"setup-demo-property\" href=\"/apartments/20?view=overview\">\n    <span class=\"setup-demo-mark\" aria-hidden=\"true\">K</span>\n    <span><strong>Kappa</strong><span>Prague</span></span>\n    <span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\">Xem trước bản mẫu</span>\n  </a>\n  <h2>Lượt lưu trú mẫu của bạn</h2>\n  <div class=\"setup-demo-stay\">\n    <div><strong>Khách mẫu</strong><span>Kappa</span></div>\n    <div><strong>Ngày lưu trú</strong><span>10.05.2026 – 11.05.2026</span></div>\n    <div>\n      \n      \n  \n  \n  \n  \n  \n    \n    \n  \n  <span class=\"ui-badge ui-badge-neutral\" data-tone=\"teal\">Chờ khách</span>\n\n      \n  \n\n      \n    </div>\n    \n  </div>\n</section>\n<section class=\"setup-demo-message\" aria-labelledby=\"demo-message-heading\">\n  <header><span class=\"setup-demo-mark\" aria-hidden=\"true\">J</span><div><h2 id=\"demo-message-heading\">Tin nhắn mẫu gửi khách <span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\">Xem trước bản mẫu</span></h2><strong>Jana</strong></div><span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Trợ giúp\" aria-expanded=\"false\" aria-controls=\"demo-message-help\">?</button>\n    <span class=\"help-tip-body\" id=\"demo-message-help\" role=\"tooltip\">Đây là hướng dẫn nhận phòng mẫu. Hãy thay các phần trong ngoặc vuông trước khi gửi cho khách thật.</span>\n  </span>\n</header>\n  <div class=\"ui-banner ui-banner-neutral setup-demo-disclaimer\" role=\"status\"><svg class=\"ui-icon\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"info\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 16v-4\"/><path d=\"M12 8h.01\"/></svg><div class=\"grow\">Đây là ví dụ mẫu. Nội dung khách nhận được và thời điểm gửi phụ thuộc vào cài đặt tin nhắn tự động trên Airbnb, Booking.com hoặc nền tảng đặt phòng của bạn.</div></div>\n  \n  \n  <div class=\"setup-demo-bubble\">Hi [FIRST_NAME],\n\nWe&#39;re looking forward to welcoming you to Kappa! 👋\n\n1. Complete your online registration (about 2 minutes)\nPlease fill in the guest form before you arrive. Czech law requires foreign guests to be registered with the police. Completing the form also helps us prepare a smooth check-in.\n<a href=\"/l/slug-20/demo/105?lang=vi\" target=\"_blank\" rel=\"noopener\">https://app.example.test/l/slug-20</a>\nPIN: 123456\nPlease keep the link and PIN private.\n\n2. Collect your keys\n[Example: collect your keys from the key safe at the entrance. Replace this with your own collection instructions.]\n\n3. Find your property\n[Example: use the main entrance and follow the signs to the property. Replace this with your own directions.]\n\n4. Quiet hours\n[Add your quiet hours, e.g. 22:00–06:00.] Please keep noise down at the property and in shared areas. No parties or loud music. Thank you for being considerate of our neighbours.\n\nWhat time do you expect to arrive? If anything is unclear, just send us a message.\n\nWe look forward to hosting you!\n\nBest regards,\nJana</div>\n  <p class=\"setup-wizard-instruction\">Mở liên kết trong tin nhắn này, nhập PIN và đăng ký như một vị khách. Sau đó quay lại đây để xem kết quả.</p>\n</section>\n\n<p class=\"setup-wizard-instruction\" data-wizard-demo-wait>Đang chờ đăng ký mẫu của bạn…</p>\n\n\n  </div>\n  <footer class=\"setup-wizard-foot\">\n    \n    <a class=\"ui-btn ui-btn-quiet setup-wizard-back\" href=\"/apartments/20/setup/done\">Rời khỏi bản mẫu</a>\n    \n    \n\n\n<form method=\"post\" action=\"/apartments/20/setup\" class=\"inline setup-wizard-skip\">\n  <input type=\"hidden\" name=\"_csrf\" value=\"\">\n  <input type=\"hidden\" name=\"step\" value=\"try_it\">\n  <button class=\"ui-btn ui-btn-secondary\" type=\"submit\" name=\"action\" value=\"skip\" formnovalidate>Tiếp tục mà không dùng bản mẫu</button>\n</form>\n<form method=\"get\" action=\"/apartments/20/setup/try_it\" class=\"inline\">\n  <button class=\"ui-btn ui-btn-secondary\" type=\"submit\">Kiểm tra lại</button>\n</form>\n<a class=\"ui-btn ui-btn-primary\" href=\"/l/slug-20/demo/105?lang=vi\" target=\"_blank\" rel=\"noopener\">Mở biểu mẫu khách</a>\n\n\n  </footer>\n  \n</div>",
+   "lang_cookie": "vi",
+   "location": null,
+   "method": "GET",
+   "name": "try_open_vi",
+   "path": "/apartments/20/setup/try_it",
+   "status": 200,
+   "title": "Thiết lập Kappa",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": "text/html; charset=utf-8",
+   "csrf": false,
+   "form": null,
+   "fragment": "<div class=\"setup-wizard wiz-page\" data-setup-wizard data-setup-step=\"try_it\">\n  <div class=\"setup-wizard-head\">\n    <div class=\"wiz-title\">\n    \n    \n    <h1 class=\"big\">Set up Lambda</h1>\n    </div>\n    \n  </div>\n  <div class=\"setup-wizard-body\">\n    \n    \n    \n    <div class=\"setup-wizard-ask\" data-step-tone=\"teal\">\n      <span class=\"setup-wizard-ask-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"7\" r=\"2.75\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M4.5 16.5c0-2.8 2.2-4.5 5.5-4.5s5.5 1.7 5.5 4.5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <h2 class=\"setup-wizard-question\">Shall we do a test run?<span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"setup-try-help\">?</button>\n    <span class=\"help-tip-body\" id=\"setup-try-help\" role=\"tooltip\">Last step: a test run. Be your own guest: open the link in the message, type the PIN and fill in the form with made-up details. Then see what happens next. Nothing goes to the police, and you can delete the test stay afterwards. A demo stay is never sent to the police. It is left out of stay fees, invoices and the house book.</span>\n  </span>\n</h2>\n    </div>\n    \n    \n    \n    \n\n\n\n<section class=\"setup-rehearsal\" aria-labelledby=\"rehearsal-title\" data-rehearsal>\n  <h2 id=\"rehearsal-title\">Your test run, step by step</h2>\n  <ol class=\"setup-rehearsal-steps\">\n    \n    \n    <li class=\"is-done\" data-rehearsal-step=\"paste\">\n      <span class=\"workflow-num\" aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"check\"><path d=\"M20 6 9 17l-5-5\"/></svg></span>\n      <span class=\"setup-rehearsal-copy\">\n        <strong>You paste the guest message into Airbnb or Booking.com</strong>\n        <span>Done: you opened the link from your guest message.</span>\n      </span>\n      <span class=\"ui-badge ui-badge-done\" data-tone=\"green\">Done</span>\n    </li>\n    \n    \n    <li class=\"is-done\" data-rehearsal-step=\"form\">\n      <span class=\"workflow-num\" aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"check\"><path d=\"M20 6 9 17l-5-5\"/></svg></span>\n      <span class=\"setup-rehearsal-copy\">\n        <strong>The guest fills in the guest form</strong>\n        <span>Done: you filled in the guest form.</span>\n      </span>\n      <span class=\"ui-badge ui-badge-done\" data-tone=\"green\">Done</span>\n    </li>\n    \n    \n    <li class=\"is-test\" data-rehearsal-step=\"email\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">3</span>\n      <span class=\"setup-rehearsal-copy\">\n        <strong>You get an email</strong>\n        <span>With a real stay you get an email now. A test run sends no email.</span>\n      </span>\n      <span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\">Test only</span>\n    </li>\n    \n    \n    <li class=\"is-test\" data-rehearsal-step=\"police_scheduled\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">4</span>\n      <span class=\"setup-rehearsal-copy\">\n        <strong>The police report goes out by itself after a short delay</strong>\n        <span>With a real stay it goes out by itself 12 hours after the form.</span>\n      </span>\n      <span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\">Test only</span>\n    </li>\n    \n    \n    <li class=\"is-test\" data-rehearsal-step=\"finish\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">5</span>\n      <span class=\"setup-rehearsal-copy\">\n        <strong>The guest gets a confirmation email</strong>\n        <span>With a real stay the guest gets a confirmation email.</span>\n      </span>\n      <span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\">Test only</span>\n    </li>\n    \n  </ol>\n  <p class=\"setup-wizard-instruction\">A test stay never goes to the police and is left out of stay fees and invoices.</p>\n</section>\n\n<section class=\"setup-wizard-demo\" aria-labelledby=\"demo-property-heading\">\n  <h2 id=\"demo-property-heading\">Your property</h2>\n  <a class=\"setup-demo-property\" href=\"/apartments/22?view=overview\">\n    <span class=\"setup-demo-mark\" aria-hidden=\"true\">L</span>\n    <span><strong>Lambda</strong><span>Prague</span></span>\n    <span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\">Demo preview</span>\n  </a>\n  <h2>Your demo stay</h2>\n  <div class=\"setup-demo-stay\">\n    <div><strong>Example guest</strong><span>Lambda</span></div>\n    <div><strong>Stay dates</strong><span>10.05.2026 – 11.05.2026</span></div>\n    <div>\n      \n      \n  \n  \n  \n  \n  \n    \n    \n    \n  \n  <span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\" title=\"Demo data is never sent to the police.\">Preview only</span>\n\n      \n  \n    <span class=\"guest-count\" title=\"Guests\">\n      <svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"users\"><path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"/><path d=\"M16 3.13a4 4 0 0 1 0 7.75\"/></svg>\n      <span class=\"sr-only\">Guests:</span>\n      1\n    </span>\n  \n\n      \n    </div>\n    <a class=\"ui-btn ui-btn-secondary\" href=\"/reservations/106\">Open the demo stay</a>\n  </div>\n</section>\n<section class=\"setup-demo-message\" aria-labelledby=\"demo-message-heading\">\n  <header><span class=\"setup-demo-mark\" aria-hidden=\"true\">P</span><div><h2 id=\"demo-message-heading\">Example guest message <span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\">Demo preview</span></h2><strong>Petr</strong></div><span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"demo-message-help\">?</button>\n    <span class=\"help-tip-body\" id=\"demo-message-help\" role=\"tooltip\">These are example arrival instructions. Replace the bracketed sections before sending a message to real guests.</span>\n  </span>\n</header>\n  <div class=\"ui-banner ui-banner-neutral setup-demo-disclaimer\" role=\"status\"><svg class=\"ui-icon\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"info\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 16v-4\"/><path d=\"M12 8h.01\"/></svg><div class=\"grow\">This is a demo example. The message your guests receive and when it is sent depend on your automated message settings in Airbnb, Booking.com or your booking platform.</div></div>\n  \n  \n  <div class=\"setup-demo-bubble\">Hi [FIRST_NAME],\n\nWe&#39;re looking forward to welcoming you to Lambda! 👋\n\n1. Complete your online registration (about 2 minutes)\nPlease fill in the guest form before you arrive. Czech law requires foreign guests to be registered with the police. Completing the form also helps us prepare a smooth check-in.\n<a href=\"/l/slug-22/demo/106?lang=en\" target=\"_blank\" rel=\"noopener\">https://app.example.test/l/slug-22</a>\nPIN: 123456\nPlease keep the link and PIN private.\n\n2. Collect your keys\n[Example: collect your keys from the key safe at the entrance. Replace this with your own collection instructions.]\n\n3. Find your property\n[Example: use the main entrance and follow the signs to the property. Replace this with your own directions.]\n\n4. Quiet hours\n[Add your quiet hours, e.g. 22:00–06:00.] Please keep noise down at the property and in shared areas. No parties or loud music. Thank you for being considerate of our neighbours.\n\nWhat time do you expect to arrive? If anything is unclear, just send us a message.\n\nWe look forward to hosting you!\n\nBest regards,\nPetr</div>\n  \n</section>\n\n\n  </div>\n  <footer class=\"setup-wizard-foot\">\n    \n    <a class=\"ui-btn ui-btn-quiet setup-wizard-back\" href=\"/apartments/22/setup/done\">Leave the demo</a>\n    \n    \n\n\n<form method=\"post\" action=\"/apartments/22/setup\" class=\"inline setup-wizard-skip\">\n  <input type=\"hidden\" name=\"_csrf\" value=\"\">\n  <input type=\"hidden\" name=\"step\" value=\"try_it\">\n  <button class=\"ui-btn ui-btn-secondary\" type=\"submit\" name=\"action\" value=\"skip\" formnovalidate>Delete demo stay and continue</button>\n</form>\n<form method=\"post\" action=\"/apartments/22/setup\" class=\"inline\">\n  <input type=\"hidden\" name=\"_csrf\" value=\"\">\n  <input type=\"hidden\" name=\"step\" value=\"try_it\">\n  <button class=\"ui-btn ui-btn-primary\" type=\"submit\" name=\"action\" value=\"keep_demo\" formnovalidate>Continue</button>\n</form>\n\n\n  </footer>\n  \n</div>",
+   "lang_cookie": null,
+   "location": null,
+   "method": "GET",
+   "name": "try_registered",
+   "path": "/apartments/22/setup/try_it",
+   "status": 200,
+   "title": "Set up Lambda",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": "text/html; charset=utf-8",
+   "csrf": false,
+   "form": null,
+   "fragment": "<div class=\"setup-wizard wiz-page\" data-setup-wizard data-setup-step=\"try_it\">\n  <div class=\"setup-wizard-head\">\n    <div class=\"wiz-title\">\n    \n    \n    <h1 class=\"big\">Nastavení: Lambda</h1>\n    </div>\n    \n  </div>\n  <div class=\"setup-wizard-body\">\n    \n    \n    \n    <div class=\"setup-wizard-ask\" data-step-tone=\"teal\">\n      <span class=\"setup-wizard-ask-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"7\" r=\"2.75\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M4.5 16.5c0-2.8 2.2-4.5 5.5-4.5s5.5 1.7 5.5 4.5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <h2 class=\"setup-wizard-question\">Vyzkoušíme to nanečisto?<span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Nápověda\" aria-expanded=\"false\" aria-controls=\"setup-try-help\">?</button>\n    <span class=\"help-tip-body\" id=\"setup-try-help\" role=\"tooltip\">Poslední krok: zkušební běh. Buďte sami sobě hostem: otevřete odkaz ze zprávy, zadejte PIN a vyplňte formulář smyšlenými údaji. Pak uvidíte, co se stane dál. Nic se neodešle policii a zkušební pobyt pak můžete smazat. Ukázkový pobyt se nikdy neodešle policii. Nepočítá se do poplatků z pobytu, faktur ani domovní knihy.</span>\n  </span>\n</h2>\n    </div>\n    \n    \n    \n    \n\n\n\n<section class=\"setup-rehearsal\" aria-labelledby=\"rehearsal-title\" data-rehearsal>\n  <h2 id=\"rehearsal-title\">Váš zkušební běh krok za krokem</h2>\n  <ol class=\"setup-rehearsal-steps\">\n    \n    \n    <li class=\"is-done\" data-rehearsal-step=\"paste\">\n      <span class=\"workflow-num\" aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"check\"><path d=\"M20 6 9 17l-5-5\"/></svg></span>\n      <span class=\"setup-rehearsal-copy\">\n        <strong>Vložíte zprávu pro hosty do Airbnb nebo Booking.com</strong>\n        <span>Hotovo: otevřeli jste odkaz ze zprávy pro hosty.</span>\n      </span>\n      <span class=\"ui-badge ui-badge-done\" data-tone=\"green\">Hotovo</span>\n    </li>\n    \n    \n    <li class=\"is-done\" data-rehearsal-step=\"form\">\n      <span class=\"workflow-num\" aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"check\"><path d=\"M20 6 9 17l-5-5\"/></svg></span>\n      <span class=\"setup-rehearsal-copy\">\n        <strong>Host vyplní formulář pro hosty</strong>\n        <span>Hotovo: vyplnili jste formulář pro hosty.</span>\n      </span>\n      <span class=\"ui-badge ui-badge-done\" data-tone=\"green\">Hotovo</span>\n    </li>\n    \n    \n    <li class=\"is-test\" data-rehearsal-step=\"email\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">3</span>\n      <span class=\"setup-rehearsal-copy\">\n        <strong>Přijde vám e-mail</strong>\n        <span>U skutečného pobytu vám teď přijde e-mail. Zkušební běh žádný e-mail neposílá.</span>\n      </span>\n      <span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\">Jen nanečisto</span>\n    </li>\n    \n    \n    <li class=\"is-test\" data-rehearsal-step=\"police_scheduled\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">4</span>\n      <span class=\"setup-rehearsal-copy\">\n        <strong>Hlášení policii odejde samo po krátké prodlevě</strong>\n        <span>U skutečného pobytu odejde samo 12 hodin po vyplnění formuláře.</span>\n      </span>\n      <span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\">Jen nanečisto</span>\n    </li>\n    \n    \n    <li class=\"is-test\" data-rehearsal-step=\"finish\">\n      <span class=\"workflow-num\" aria-hidden=\"true\">5</span>\n      <span class=\"setup-rehearsal-copy\">\n        <strong>Host dostane potvrzovací e-mail</strong>\n        <span>U skutečného pobytu dostane host potvrzovací e-mail.</span>\n      </span>\n      <span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\">Jen nanečisto</span>\n    </li>\n    \n  </ol>\n  <p class=\"setup-wizard-instruction\">Zkušební pobyt se nikdy neodešle policii a nepočítá se do poplatků ani faktur.</p>\n</section>\n\n<section class=\"setup-wizard-demo\" aria-labelledby=\"demo-property-heading\">\n  <h2 id=\"demo-property-heading\">Vaše ubytování</h2>\n  <a class=\"setup-demo-property\" href=\"/apartments/22?view=overview\">\n    <span class=\"setup-demo-mark\" aria-hidden=\"true\">L</span>\n    <span><strong>Lambda</strong><span>Prague</span></span>\n    <span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\">Ukázka</span>\n  </a>\n  <h2>Váš ukázkový pobyt</h2>\n  <div class=\"setup-demo-stay\">\n    <div><strong>Ukázkový host</strong><span>Lambda</span></div>\n    <div><strong>Termín pobytu</strong><span>10.05.2026 – 11.05.2026</span></div>\n    <div>\n      \n      \n  \n  \n  \n  \n  \n    \n    \n    \n  \n  <span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\" title=\"Ukázková data se na policii nikdy neodešlou.\">Jen náhled</span>\n\n      \n  \n    <span class=\"guest-count\" title=\"Hosté\">\n      <svg class=\"ui-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"users\"><path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"/><path d=\"M16 3.13a4 4 0 0 1 0 7.75\"/></svg>\n      <span class=\"sr-only\">Hosté:</span>\n      1\n    </span>\n  \n\n      \n    </div>\n    <a class=\"ui-btn ui-btn-secondary\" href=\"/reservations/106\">Otevřít ukázkový pobyt</a>\n  </div>\n</section>\n<section class=\"setup-demo-message\" aria-labelledby=\"demo-message-heading\">\n  <header><span class=\"setup-demo-mark\" aria-hidden=\"true\">P</span><div><h2 id=\"demo-message-heading\">Vzorová zpráva pro hosty <span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\">Ukázka</span></h2><strong>Petr</strong></div><span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Nápověda\" aria-expanded=\"false\" aria-controls=\"demo-message-help\">?</button>\n    <span class=\"help-tip-body\" id=\"demo-message-help\" role=\"tooltip\">Toto jsou vzorové pokyny k příjezdu. Než zprávu pošlete skutečným hostům, nahraďte části v hranatých závorkách.</span>\n  </span>\n</header>\n  <div class=\"ui-banner ui-banner-neutral setup-demo-disclaimer\" role=\"status\"><svg class=\"ui-icon\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"info\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 16v-4\"/><path d=\"M12 8h.01\"/></svg><div class=\"grow\">Toto je ukázkový příklad. Zpráva, kterou hosté dostanou, i čas jejího odeslání závisí na vašem nastavení automatických zpráv v Airbnb, Booking.com nebo jiné rezervační platformě.</div></div>\n  \n  \n  <div class=\"setup-demo-bubble\">Dobrý den, [FIRST_NAME],\n\ntěšíme se na vás v ubytování Lambda! 👋\n\n1. Vyplňte online registraci (asi 2 minuty)\nProsíme o vyplnění formuláře pro hosty ještě před příjezdem. Český zákon vyžaduje přihlášení cizinců k pobytu na policii. Vyplnění formuláře nám také pomůže připravit hladké ubytování.\n<a href=\"/l/slug-22/demo/106?lang=cs\" target=\"_blank\" rel=\"noopener\">https://app.example.test/l/slug-22</a>\nPIN: 123456\nOdkaz a PIN si prosím ponechte v soukromí.\n\n2. Vyzvedněte si klíče\n[Příklad: klíče si vyzvednete ze schránky u vchodu. Nahraďte vlastními pokyny k předání klíčů.]\n\n3. Cesta k ubytování\n[Příklad: použijte hlavní vchod a pokračujte podle označení ubytování. Nahraďte vlastními pokyny k cestě.]\n\n4. Noční klid\n[Doplňte dobu nočního klidu, např. 22:00–06:00.] Prosíme o ticho v ubytování i ve společných prostorách. Večírky a hlasitá hudba nejsou povoleny. Děkujeme za ohleduplnost k sousedům.\n\nV kolik hodin plánujete přijet? Pokud je něco nejasné, napište nám.\n\nTěšíme se na vás!\n\nS pozdravem\nPetr</div>\n  \n</section>\n\n\n  </div>\n  <footer class=\"setup-wizard-foot\">\n    \n    <a class=\"ui-btn ui-btn-quiet setup-wizard-back\" href=\"/apartments/22/setup/done\">Opustit ukázku</a>\n    \n    \n\n\n<form method=\"post\" action=\"/apartments/22/setup\" class=\"inline setup-wizard-skip\">\n  <input type=\"hidden\" name=\"_csrf\" value=\"\">\n  <input type=\"hidden\" name=\"step\" value=\"try_it\">\n  <button class=\"ui-btn ui-btn-secondary\" type=\"submit\" name=\"action\" value=\"skip\" formnovalidate>Smazat ukázkový pobyt a pokračovat</button>\n</form>\n<form method=\"post\" action=\"/apartments/22/setup\" class=\"inline\">\n  <input type=\"hidden\" name=\"_csrf\" value=\"\">\n  <input type=\"hidden\" name=\"step\" value=\"try_it\">\n  <button class=\"ui-btn ui-btn-primary\" type=\"submit\" name=\"action\" value=\"keep_demo\" formnovalidate>Pokračovat</button>\n</form>\n\n\n  </footer>\n  \n</div>",
+   "lang_cookie": "cs",
+   "location": null,
+   "method": "GET",
+   "name": "try_registered_cs",
+   "path": "/apartments/22/setup/try_it",
+   "status": 200,
+   "title": "Nastavení: Lambda",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": "text/html; charset=utf-8",
+   "csrf": false,
+   "form": null,
+   "fragment": "<div class=\"setup-wizard wiz-page\" data-setup-wizard data-setup-step=\"try_it\">\n  <div class=\"setup-wizard-head\">\n    <div class=\"wiz-title\">\n    \n    \n    <h1 class=\"big\">Set up Iota &lt;b&gt;</h1>\n    </div>\n    \n  </div>\n  <div class=\"setup-wizard-body\">\n    \n    \n    \n    <div class=\"setup-wizard-ask\" data-step-tone=\"teal\">\n      <span class=\"setup-wizard-ask-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"7\" r=\"2.75\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M4.5 16.5c0-2.8 2.2-4.5 5.5-4.5s5.5 1.7 5.5 4.5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <h2 class=\"setup-wizard-question\">Shall we do a test run?<span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"setup-try-help\">?</button>\n    <span class=\"help-tip-body\" id=\"setup-try-help\" role=\"tooltip\">Last step: a test run. Be your own guest: open the link in the message, type the PIN and fill in the form with made-up details. Then see what happens next. Nothing goes to the police, and you can delete the test stay afterwards. A demo stay is never sent to the police. It is left out of stay fees, invoices and the house book.</span>\n  </span>\n</h2>\n    </div>\n    \n    \n    \n    \n\n\n\n<section class=\"setup-wizard-demo\" aria-labelledby=\"demo-property-heading\">\n  <h2 id=\"demo-property-heading\">Your property</h2>\n  <a class=\"setup-demo-property\" href=\"/apartments/19?view=overview\">\n    <span class=\"setup-demo-mark\" aria-hidden=\"true\">I</span>\n    <span><strong>Iota &lt;b&gt;</strong><span>Prague</span></span>\n    <span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\">Demo preview</span>\n  </a>\n  <h2>Your demo stay</h2>\n  <div class=\"setup-demo-stay\">\n    <div><strong>Example guest</strong><span>Iota &lt;b&gt;</span></div>\n    <div><strong>Stay dates</strong><span>10.05.2026 – 11.05.2026</span></div>\n    <div>\n      <span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\">Demo preview</span>\n    </div>\n    \n  </div>\n</section>\n<section class=\"setup-demo-message\" aria-labelledby=\"demo-message-heading\">\n  <header><span class=\"setup-demo-mark\" aria-hidden=\"true\">P</span><div><h2 id=\"demo-message-heading\">Example guest message <span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\">Demo preview</span></h2><strong>Petr</strong></div><span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"demo-message-help\">?</button>\n    <span class=\"help-tip-body\" id=\"demo-message-help\" role=\"tooltip\">These are example arrival instructions. Replace the bracketed sections before sending a message to real guests.</span>\n  </span>\n</header>\n  <div class=\"ui-banner ui-banner-neutral setup-demo-disclaimer\" role=\"status\"><svg class=\"ui-icon\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"info\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 16v-4\"/><path d=\"M12 8h.01\"/></svg><div class=\"grow\">This is a demo example. The message your guests receive and when it is sent depend on your automated message settings in Airbnb, Booking.com or your booking platform.</div></div>\n  \n  \n  <div class=\"setup-demo-bubble\">Hi [FIRST_NAME],\n\nWe&#39;re looking forward to welcoming you to Iota &lt;b&gt;! 👋\n\n1. Complete your online registration (about 2 minutes)\nPlease fill in the guest form before you arrive. Czech law requires foreign guests to be registered with the police. Completing the form also helps us prepare a smooth check-in.\n<button class=\"setup-demo-message-link\" type=\"submit\" form=\"setup-create-demo\">https://app.example.test/l/slug-19</button>\nPIN: 123456\nPlease keep the link and PIN private.\n\n2. Collect your keys\n[Example: collect your keys from the key safe at the entrance. Replace this with your own collection instructions.]\n\n3. Find your property\n[Example: use the main entrance and follow the signs to the property. Replace this with your own directions.]\n\n4. Quiet hours\n[Add your quiet hours, e.g. 22:00–06:00.] Please keep noise down at the property and in shared areas. No parties or loud music. Thank you for being considerate of our neighbours.\n\nWhat time do you expect to arrive? If anything is unclear, just send us a message.\n\nWe look forward to hosting you!\n\nBest regards,\nPetr</div>\n  <p class=\"setup-wizard-instruction\">Open the link in this message, enter the PIN, and register as a guest. Then return here to see the result.</p>\n</section>\n\n\n  </div>\n  <footer class=\"setup-wizard-foot\">\n    \n    <a class=\"ui-btn ui-btn-quiet setup-wizard-back\" href=\"/apartments/19/setup/done\">Leave the demo</a>\n    \n    \n\n\n<form method=\"post\" action=\"/apartments/19/setup\" class=\"inline setup-wizard-skip\">\n  <input type=\"hidden\" name=\"_csrf\" value=\"\">\n  <input type=\"hidden\" name=\"step\" value=\"try_it\">\n  <button class=\"ui-btn ui-btn-secondary\" type=\"submit\" name=\"action\" value=\"skip\" formnovalidate>Continue without the demo</button>\n</form>\n<form method=\"post\" action=\"/apartments/19/setup\" class=\"inline\" id=\"setup-create-demo\" target=\"_blank\" rel=\"noopener\" data-wizard-demo>\n  <input type=\"hidden\" name=\"action\" value=\"demo\">\n  <input type=\"hidden\" name=\"_csrf\" value=\"\">\n  <input type=\"hidden\" name=\"step\" value=\"try_it\">\n  <button class=\"ui-btn ui-btn-primary\" type=\"submit\" name=\"action\" value=\"demo\">Create a demo stay</button>\n</form>\n<noscript><a class=\"ui-btn ui-btn-secondary\" href=\"/apartments/19/setup/try_it\">Check again</a></noscript>\n\n\n  </footer>\n  \n</div>",
+   "lang_cookie": null,
+   "location": null,
+   "method": "GET",
+   "name": "try_immediate_company",
+   "path": "/apartments/19/setup/try_it",
+   "status": 200,
+   "title": "Set up Iota &lt;b&gt;",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": "text/html; charset=utf-8",
+   "csrf": false,
+   "form": null,
+   "fragment": "<div class=\"setup-wizard wiz-page\" data-setup-wizard data-setup-step=\"try_it\">\n  <div class=\"setup-wizard-head\">\n    <div class=\"wiz-title\">\n    \n    \n    <h1 class=\"big\">Set up Beta</h1>\n    </div>\n    \n  </div>\n  <div class=\"setup-wizard-body\">\n    \n    \n    \n    <div class=\"setup-wizard-ask\" data-step-tone=\"teal\">\n      <span class=\"setup-wizard-ask-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"7\" r=\"2.75\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M4.5 16.5c0-2.8 2.2-4.5 5.5-4.5s5.5 1.7 5.5 4.5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <h2 class=\"setup-wizard-question\">Shall we do a test run?<span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"setup-try-help\">?</button>\n    <span class=\"help-tip-body\" id=\"setup-try-help\" role=\"tooltip\">Last step: a test run. Be your own guest: open the link in the message, type the PIN and fill in the form with made-up details. Then see what happens next. Nothing goes to the police, and you can delete the test stay afterwards. A demo stay is never sent to the police. It is left out of stay fees, invoices and the house book.</span>\n  </span>\n</h2>\n    </div>\n    \n    \n    \n    \n\n\n\n<section class=\"setup-wizard-demo\" aria-labelledby=\"demo-property-heading\">\n  <h2 id=\"demo-property-heading\">Your property</h2>\n  <a class=\"setup-demo-property\" href=\"/apartments/12?view=overview\">\n    <span class=\"setup-demo-mark\" aria-hidden=\"true\">B</span>\n    <span><strong>Beta</strong><span></span></span>\n    <span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\">Demo preview</span>\n  </a>\n  <h2>Your demo stay</h2>\n  <div class=\"setup-demo-stay\">\n    <div><strong>Example guest</strong><span>Beta</span></div>\n    <div><strong>Stay dates</strong><span>10.05.2026 – 11.05.2026</span></div>\n    <div>\n      <span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\">Demo preview</span>\n    </div>\n    \n  </div>\n</section>\n<section class=\"setup-demo-message\" aria-labelledby=\"demo-message-heading\">\n  <header><span class=\"setup-demo-mark\" aria-hidden=\"true\">Y</span><div><h2 id=\"demo-message-heading\">Example guest message <span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\">Demo preview</span></h2><strong>[Your first name]</strong></div><span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"demo-message-help\">?</button>\n    <span class=\"help-tip-body\" id=\"demo-message-help\" role=\"tooltip\">These are example arrival instructions. Replace the bracketed sections before sending a message to real guests.</span>\n  </span>\n</header>\n  <div class=\"ui-banner ui-banner-neutral setup-demo-disclaimer\" role=\"status\"><svg class=\"ui-icon\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"info\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 16v-4\"/><path d=\"M12 8h.01\"/></svg><div class=\"grow\">This is a demo example. The message your guests receive and when it is sent depend on your automated message settings in Airbnb, Booking.com or your booking platform.</div></div>\n  \n  \n  <div class=\"setup-demo-bubble\">Hi [FIRST_NAME],\n\nWe&#39;re looking forward to welcoming you to Beta! 👋\n\n1. Complete your online registration (about 2 minutes)\nPlease fill in the guest form before you arrive. Czech law requires foreign guests to be registered with the police. Completing the form also helps us prepare a smooth check-in.\n<button class=\"setup-demo-message-link\" type=\"submit\" form=\"setup-create-demo\">https://app.example.test/l/slug-12</button>\nPIN: 123456\nPlease keep the link and PIN private.\n\n2. Collect your keys\n[Example: collect your keys from the key safe at the entrance. Replace this with your own collection instructions.]\n\n3. Find your property\n[Example: use the main entrance and follow the signs to the property. Replace this with your own directions.]\n\n4. Quiet hours\n[Add your quiet hours, e.g. 22:00–06:00.] Please keep noise down at the property and in shared areas. No parties or loud music. Thank you for being considerate of our neighbours.\n\nWhat time do you expect to arrive? If anything is unclear, just send us a message.\n\nWe look forward to hosting you!\n\nBest regards,\n[Your first name]</div>\n  <p class=\"setup-wizard-instruction\">Open the link in this message, enter the PIN, and register as a guest. Then return here to see the result.</p>\n</section>\n\n\n  </div>\n  <footer class=\"setup-wizard-foot\">\n    \n    <a class=\"ui-btn ui-btn-quiet setup-wizard-back\" href=\"/apartments/12/setup/done\">Leave the demo</a>\n    \n    \n\n\n<form method=\"post\" action=\"/apartments/12/setup\" class=\"inline setup-wizard-skip\">\n  <input type=\"hidden\" name=\"_csrf\" value=\"\">\n  <input type=\"hidden\" name=\"step\" value=\"try_it\">\n  <button class=\"ui-btn ui-btn-secondary\" type=\"submit\" name=\"action\" value=\"skip\" formnovalidate>Continue without the demo</button>\n</form>\n<form method=\"post\" action=\"/apartments/12/setup\" class=\"inline\" id=\"setup-create-demo\" target=\"_blank\" rel=\"noopener\" data-wizard-demo>\n  <input type=\"hidden\" name=\"action\" value=\"demo\">\n  <input type=\"hidden\" name=\"_csrf\" value=\"\">\n  <input type=\"hidden\" name=\"step\" value=\"try_it\">\n  <button class=\"ui-btn ui-btn-primary\" type=\"submit\" name=\"action\" value=\"demo\">Create a demo stay</button>\n</form>\n<noscript><a class=\"ui-btn ui-btn-secondary\" href=\"/apartments/12/setup/try_it\">Check again</a></noscript>\n\n\n  </footer>\n  \n</div>",
+   "lang_cookie": null,
+   "location": null,
+   "method": "GET",
+   "name": "try_legacy",
+   "path": "/apartments/12/setup/try_it",
+   "status": 200,
+   "title": "Set up Beta",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": null,
+   "csrf": false,
+   "form": null,
+   "fragment": "",
+   "lang_cookie": null,
+   "location": "/apartments?err=This%20property%20no%20longer%20exists.",
+   "method": "GET",
+   "name": "try_foreign",
+   "path": "/apartments/21/setup/try_it",
+   "status": 303,
+   "title": "",
+   "user": 1
+  }
+ ],
+ "csrf_nonce": "golden-csrf-nonce-0123456789",
+ "final": {
+  "audit": [],
+  "demo_stays": [
+   {
+    "apartment_id": 20,
+    "date_from": "2026-05-10",
+    "date_to": "2026-05-11",
+    "expected_guests_override": null,
+    "status": "active",
+    "summary": "Stay 105",
+    "uid_demo": false
+   },
+   {
+    "apartment_id": 22,
+    "date_from": "2026-05-10",
+    "date_to": "2026-05-11",
+    "expected_guests_override": null,
+    "status": "active",
+    "summary": "Stay 106",
+    "uid_demo": false
+   }
+  ],
+  "pins": {
+   "11": true,
+   "12": true,
+   "13": true,
+   "14": true,
+   "15": false,
+   "16": true,
+   "17": true,
+   "18": true,
+   "19": true,
+   "20": true,
+   "21": true,
+   "22": true,
+   "23": true,
+   "24": true,
+   "25": true,
+   "26": true,
+   "27": true
+  },
+  "settings": {
+   "property_setup:11": "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": false, \"steps\": {}, \"tested\": false}",
+   "property_setup:13": "{\"celebrated\": true, \"finished\": true, \"hidden\": false, \"legacy\": false, \"steps\": {\"guest_link\": \"done\"}, \"tested\": false}",
+   "property_setup:14": "{\"celebrated\": false, \"finished\": false, \"hidden\": true, \"legacy\": false, \"steps\": {}, \"tested\": false}",
+   "property_setup:17": "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": false, \"steps\": {\"calendar\": \"skipped\", \"guest_link\": \"done\", \"police\": \"waiting\"}, \"tested\": false}",
+   "property_setup:18": "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": true, \"steps\": {}, \"tested\": false}",
+   "property_setup:19": "{\"celebrated\": true, \"finished\": true, \"hidden\": false, \"legacy\": false, \"steps\": {\"guest_link\": \"done\"}, \"tested\": true}",
+   "property_setup:20": "{\"celebrated\": false, \"finished\": true, \"hidden\": false, \"legacy\": false, \"steps\": {\"calendar\": \"done\", \"guest_link\": \"done\"}, \"tested\": false}",
+   "property_setup:22": "{\"celebrated\": true, \"finished\": true, \"hidden\": false, \"legacy\": false, \"steps\": {\"calendar\": \"done\", \"guest_link\": \"done\"}, \"tested\": true}",
+   "property_setup:23": "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": false, \"steps\": {\"calendar\": \"skipped\"}, \"tested\": false}",
+   "property_setup:24": "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": false, \"steps\": {}, \"tested\": false}",
+   "property_setup:27": "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": false, \"steps\": {\"calendar\": \"done\"}, \"tested\": false}"
+  },
+  "timing": [
+   {
+    "automation_mode": "manual",
+    "id": 11,
+    "submit_after_hours": 24
+   },
+   {
+    "automation_mode": "manual",
+    "id": 12,
+    "submit_after_hours": 24
+   },
+   {
+    "automation_mode": "manual",
+    "id": 13,
+    "submit_after_hours": 24
+   },
+   {
+    "automation_mode": "manual",
+    "id": 14,
+    "submit_after_hours": 24
+   },
+   {
+    "automation_mode": "manual",
+    "id": 15,
+    "submit_after_hours": 24
+   },
+   {
+    "automation_mode": "manual",
+    "id": 16,
+    "submit_after_hours": 24
+   },
+   {
+    "automation_mode": "scheduled",
+    "id": 17,
+    "submit_after_hours": 6
+   },
+   {
+    "automation_mode": "manual",
+    "id": 18,
+    "submit_after_hours": 24
+   },
+   {
+    "automation_mode": "immediate",
+    "id": 19,
+    "submit_after_hours": 24
+   },
+   {
+    "automation_mode": "manual",
+    "id": 20,
+    "submit_after_hours": 24
+   },
+   {
+    "automation_mode": "manual",
+    "id": 21,
+    "submit_after_hours": 24
+   },
+   {
+    "automation_mode": "scheduled",
+    "id": 22,
+    "submit_after_hours": 12
+   },
+   {
+    "automation_mode": "manual",
+    "id": 23,
+    "submit_after_hours": 24
+   },
+   {
+    "automation_mode": "manual",
+    "id": 24,
+    "submit_after_hours": 24
+   },
+   {
+    "automation_mode": "manual",
+    "id": 25,
+    "submit_after_hours": 24
+   },
+   {
+    "automation_mode": "manual",
+    "id": 26,
+    "submit_after_hours": 24
+   },
+   {
+    "automation_mode": "manual",
+    "id": 27,
+    "submit_after_hours": 24
+   }
+  ]
+ },
+ "seed": [
+  {
+   "columns": [
+    "id",
+    "username",
+    "password_hash",
+    "role",
+    "created_at"
+   ],
+   "rows": [
+    [
+     1,
+     "owner@example.test",
+     "x",
+     "host",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     2,
+     "other@example.test",
+     "x",
+     "host",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     3,
+     "third@example.test",
+     "x",
+     "host",
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "user_account"
+  },
+  {
+   "columns": [
+    "user_account_id",
+    "document",
+    "version",
+    "accepted_at",
+    "method"
+   ],
+   "rows": [
+    [
+     1,
+     "terms",
+     "1.7",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     1,
+     "privacy",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     1,
+     "dpa",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     2,
+     "terms",
+     "1.7",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     2,
+     "privacy",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     2,
+     "dpa",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     3,
+     "terms",
+     "1.7",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     3,
+     "privacy",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     3,
+     "dpa",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ]
+   ],
+   "table": "legal_acceptance"
+  },
+  {
+   "columns": [
+    "id",
+    "owner_user_id",
+    "name",
+    "signature_name",
+    "archived_at",
+    "created_at"
+   ],
+   "rows": [
+    [
+     31,
+     1,
+     "Jana Nováková",
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     32,
+     1,
+     "Beta s.r.o.",
+     "Petr Svoboda",
+     null,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     33,
+     2,
+     "Cizí s.r.o.",
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     35,
+     1,
+     "Archiv a.s.",
+     null,
+     "2026-02-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "legal_entity"
+  },
+  {
+   "columns": [
+    "id",
+    "owner_user_id",
+    "internal_name",
+    "legal_entity_id",
+    "city_en",
+    "addr_street",
+    "addr_house_no",
+    "addr_zip",
+    "addr_obec",
+    "uby_idub",
+    "uby_mark",
+    "uby_name",
+    "uby_ws_user",
+    "uby_ws_password_enc",
+    "automation_mode",
+    "submit_after_hours",
+    "permalink_token",
+    "permalink_pin",
+    "archived_at",
+    "active",
+    "lock_provider",
+    "checkin_hour",
+    "checkout_hour",
+    "permalink_window_days",
+    "created_at"
+   ],
+   "rows": [
+    [
+     11,
+     1,
+     "Alfa byt",
+     31,
+     "Prague",
+     "Vinohradská",
+     "12",
+     "12000",
+     "Praha",
+     "123456789012",
+     "AAKLI",
+     "BYT 11",
+     "UBY-WS_ABCDE",
+     "heslo-golden",
+     "manual",
+     24,
+     "tok11",
+     "123456",
+     null,
+     1,
+     null,
+     15,
+     10,
+     2,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     12,
+     1,
+     "Beta",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     "manual",
+     24,
+     "tok12",
+     "123456",
+     null,
+     1,
+     null,
+     null,
+     null,
+     2,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     13,
+     1,
+     "Gama",
+     31,
+     "Prague",
+     "Vinohradská",
+     "12",
+     "12000",
+     "Praha",
+     null,
+     null,
+     null,
+     null,
+     null,
+     "manual",
+     24,
+     "tok13",
+     "123456",
+     null,
+     1,
+     null,
+     null,
+     null,
+     2,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     14,
+     1,
+     "Delta",
+     31,
+     "Prague",
+     "Vinohradská",
+     "12",
+     "12000",
+     "Praha",
+     null,
+     null,
+     null,
+     null,
+     null,
+     "manual",
+     24,
+     "tok14",
+     "123456",
+     null,
+     1,
+     null,
+     null,
+     null,
+     2,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     15,
+     1,
+     "Epsilon",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     "manual",
+     24,
+     "tok15",
+     null,
+     null,
+     1,
+     null,
+     null,
+     null,
+     2,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     16,
+     1,
+     "Zeta",
+     31,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     "manual",
+     24,
+     "tok16",
+     "123456",
+     "2026-03-01T00:00:00+00:00",
+     1,
+     null,
+     null,
+     null,
+     2,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     17,
+     1,
+     "Eta",
+     31,
+     "Prague",
+     "Vinohradská",
+     "12",
+     "12000",
+     "Praha",
+     null,
+     null,
+     null,
+     null,
+     null,
+     "scheduled",
+     6,
+     "tok17",
+     "123456",
+     null,
+     1,
+     null,
+     null,
+     null,
+     2,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     18,
+     1,
+     "Theta",
+     31,
+     "Prague",
+     "Vinohradská",
+     "12",
+     "12000",
+     "Praha",
+     "123456789012",
+     "AAKLI",
+     "BYT 18",
+     "UBY-WS_ABCDE",
+     "heslo-golden",
+     "manual",
+     24,
+     "tok18",
+     "123456",
+     null,
+     1,
+     null,
+     null,
+     null,
+     2,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     19,
+     1,
+     "Iota <b>",
+     32,
+     "Prague",
+     "Vinohradská",
+     "12",
+     "12000",
+     "Praha",
+     "123456789012",
+     "AAKLI",
+     "BYT 19",
+     "UBY-WS_ABCDE",
+     "heslo-golden",
+     "immediate",
+     24,
+     "tok19",
+     "123456",
+     null,
+     1,
+     "ttlock",
+     14,
+     11,
+     3,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     20,
+     1,
+     "Kappa",
+     31,
+     "Prague",
+     "Vinohradská",
+     "12",
+     "12000",
+     "Praha",
+     "123456789012",
+     "AAKLI",
+     "BYT 20",
+     "UBY-WS_ABCDE",
+     "heslo-golden",
+     "manual",
+     24,
+     "tok20",
+     "123456",
+     null,
+     1,
+     null,
+     null,
+     null,
+     2,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     21,
+     2,
+     "Cizí",
+     33,
+     "Prague",
+     "Vinohradská",
+     "12",
+     "12000",
+     "Praha",
+     null,
+     null,
+     null,
+     null,
+     null,
+     "manual",
+     24,
+     "tok21",
+     "123456",
+     null,
+     1,
+     null,
+     null,
+     null,
+     2,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     22,
+     1,
+     "Lambda",
+     32,
+     "Prague",
+     "Vinohradská",
+     "12",
+     "12000",
+     "Praha",
+     "123456789012",
+     "AAKLI",
+     "BYT 22",
+     "UBY-WS_ABCDE",
+     "heslo-golden",
+     "scheduled",
+     12,
+     "tok22",
+     "123456",
+     null,
+     1,
+     null,
+     null,
+     null,
+     2,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     23,
+     1,
+     "My",
+     31,
+     "Prague",
+     "Vinohradská",
+     "12",
+     "12000",
+     "Praha",
+     null,
+     null,
+     null,
+     null,
+     null,
+     "manual",
+     24,
+     "tok23",
+     "123456",
+     null,
+     1,
+     null,
+     null,
+     null,
+     2,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     24,
+     1,
+     "Ny",
+     32,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     "manual",
+     24,
+     null,
+     "123456",
+     null,
+     1,
+     null,
+     null,
+     null,
+     2,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     25,
+     3,
+     "Omikron",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     "manual",
+     24,
+     "tok25",
+     "123456",
+     null,
+     1,
+     null,
+     null,
+     null,
+     2,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     26,
+     2,
+     "Xi",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     "manual",
+     24,
+     "tok26",
+     "123456",
+     null,
+     1,
+     null,
+     0,
+     23,
+     2,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     27,
+     1,
+     "Pí",
+     31,
+     "Prague",
+     "Vinohradská",
+     "12",
+     "12000",
+     "Praha",
+     null,
+     null,
+     null,
+     null,
+     null,
+     "manual",
+     24,
+     "tok27",
+     "123456",
+     null,
+     1,
+     null,
+     null,
+     null,
+     2,
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ],
+   "secret": [
+    "uby_ws_password_enc"
+   ],
+   "table": "apartment"
+  },
+  {
+   "columns": [
+    "slug",
+    "apartment_id",
+    "is_current",
+    "created_at"
+   ],
+   "rows": [
+    [
+     "slug-11",
+     11,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     "slug-12",
+     12,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     "slug-13",
+     13,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     "slug-14",
+     14,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     "slug-15",
+     15,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     "slug-16",
+     16,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     "slug-17",
+     17,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     "slug-18",
+     18,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     "slug-19",
+     19,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     "slug-20",
+     20,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     "slug-21",
+     21,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     "slug-22",
+     22,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     "slug-23",
+     23,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     "slug-25",
+     25,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     "slug-26",
+     26,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     "slug-27",
+     27,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "apartment_slug"
+  },
+  {
+   "columns": [
+    "id",
+    "apartment_id",
+    "url",
+    "created_at"
+   ],
+   "rows": [
+    [
+     1,
+     11,
+     "https://example.test/a.ics",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     2,
+     18,
+     "https://example.test/b.ics",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     3,
+     19,
+     "https://example.test/c.ics",
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "ical_feed"
+  },
+  {
+   "columns": [
+    "id",
+    "apartment_id",
+    "uid",
+    "date_from",
+    "date_to",
+    "summary",
+    "status",
+    "source",
+    "declared_guests",
+    "archived_at",
+    "created_at",
+    "updated_at"
+   ],
+   "rows": [
+    [
+     101,
+     11,
+     "u101",
+     "2026-05-11",
+     "2026-05-13",
+     "Stay 101",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     102,
+     11,
+     "u102",
+     "2026-05-20",
+     "2026-05-22",
+     "Stay 102",
+     "cancelled",
+     "host",
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     103,
+     19,
+     "u103",
+     "2026-06-10",
+     "2026-06-12",
+     "Stay 103",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     104,
+     19,
+     "u104",
+     "2026-05-01",
+     "2026-05-03",
+     "Stay 104",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     105,
+     20,
+     "u105",
+     "2026-05-10",
+     "2026-05-11",
+     "Stay 105",
+     "active",
+     "demo",
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     106,
+     22,
+     "u106",
+     "2026-05-10",
+     "2026-05-11",
+     "Stay 106",
+     "active",
+     "demo",
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     107,
+     23,
+     "u107",
+     "2026-07-01",
+     "2026-07-04",
+     "Stay 107",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "reservation"
+  },
+  {
+   "columns": [
+    "id",
+    "reservation_id",
+    "is_lead",
+    "surname",
+    "first_name",
+    "birth_date",
+    "nationality",
+    "doc_number",
+    "res_street",
+    "res_city",
+    "res_country",
+    "purpose",
+    "signature_png",
+    "entered_by",
+    "created_at",
+    "updated_at"
+   ],
+   "rows": [
+    [
+     501,
+     106,
+     1,
+     "Mustermann",
+     "Erika",
+     "01011980",
+     "DEU",
+     "C01X00T47",
+     "Hauptstr. 1",
+     "Berlin",
+     "DEU",
+     "10",
+     "imported",
+     "guest",
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "guest"
+  },
+  {
+   "columns": [
+    "key",
+    "value"
+   ],
+   "rows": [
+    [
+     "property_setup:11",
+     "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": false, \"steps\": {}, \"tested\": false}"
+    ],
+    [
+     "property_setup:13",
+     "{\"celebrated\": false, \"finished\": true, \"hidden\": false, \"legacy\": false, \"steps\": {\"guest_link\": \"done\"}, \"tested\": false}"
+    ],
+    [
+     "property_setup:14",
+     "{\"celebrated\": false, \"finished\": false, \"hidden\": true, \"legacy\": false, \"steps\": {}, \"tested\": false}"
+    ],
+    [
+     "property_setup:17",
+     "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": false, \"steps\": {\"calendar\": \"skipped\", \"guest_link\": \"done\", \"police\": \"waiting\"}, \"tested\": false}"
+    ],
+    [
+     "property_setup:18",
+     "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": true, \"steps\": {}, \"tested\": false}"
+    ],
+    [
+     "property_setup:19",
+     "{\"celebrated\": false, \"finished\": true, \"hidden\": false, \"legacy\": false, \"steps\": {\"guest_link\": \"done\"}, \"tested\": true}"
+    ],
+    [
+     "property_setup:20",
+     "{\"celebrated\": false, \"finished\": true, \"hidden\": false, \"legacy\": false, \"steps\": {\"calendar\": \"done\", \"guest_link\": \"done\"}, \"tested\": false}"
+    ],
+    [
+     "property_setup:22",
+     "{\"celebrated\": true, \"finished\": true, \"hidden\": false, \"legacy\": false, \"steps\": {\"calendar\": \"done\", \"guest_link\": \"done\"}, \"tested\": true}"
+    ],
+    [
+     "property_setup:23",
+     "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": false, \"steps\": {\"calendar\": \"skipped\"}, \"tested\": false}"
+    ],
+    [
+     "property_setup:24",
+     "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": false, \"steps\": {}, \"tested\": false}"
+    ],
+    [
+     "property_setup:27",
+     "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": false, \"steps\": {\"calendar\": \"done\"}, \"tested\": false}"
+    ]
+   ],
+   "table": "settings"
+  }
+ ],
+ "today": "2026-05-10",
+ "versions": {
+  "dpa": "1.8",
+  "privacy": "1.8",
+  "terms": "1.7"
+ }
+}

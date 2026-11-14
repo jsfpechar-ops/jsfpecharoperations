@@ -30,5 +30,15 @@ func Routes(pool *pgxpool.Pool, getenv func(string) string, now func() time.Time
 		{"GET /reservations/{id}/dorucenka.zip", "/reservations/{id}/dorucenka.zip", StayReceiptsHandler(pool, getenv, now)},
 		{"GET /housebook.csv", "/housebook.csv", HousebookCSVHandler(pool, getenv, now)},
 		{"GET /guests/{id}/export.json", "/guests/{id}/export.json", GuestExportHandler(pool, getenv, now)},
+		// Brief 1605.
+		{"GET /guests/{id}/form.pdf", "/guests/{id}/form.pdf", GuestFormPDFHandler(pool, getenv, now)},
+		// Brief 1606.
+		{"GET /housebook/pdfs.zip", "/housebook/pdfs.zip", HousebookPDFsHandler(pool, getenv, now)},
+		// Brief 1607.
+		{"POST /settings/workspace-export", "/settings/workspace-export", WorkspaceExportHandler(pool, getenv, now)},
+		// Brief 1608.
+		{"GET /settings/archived", "/settings/archived", ArchivedHandler(pool, getenv, now)},
+		// Brief 1609.
+		{"POST /settings/purge-expired", "/settings/purge-expired", PurgeExpiredHandler(pool, getenv, now)},
 	}
 }

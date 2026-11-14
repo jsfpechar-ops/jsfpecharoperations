@@ -1,0 +1,91 @@
+{{define "host_calendar"}}{{ if .Props }}
+<div class="cleaning-legend"><span class="cleaning-legend-booking">{{ ct $.Lang "booking" }}</span><span class="cleaning-legend-event">{{ ct $.Lang "title" }}</span></div>
+<link rel="stylesheet" href="/static/dashboard-calendar.css?v=20261109-1054a">
+<section id="calendar" class="dashboard-calendar" data-calendar data-today="{{ .Today }}" data-source="{{ .Source }}" data-cleaning="true" data-readonly="false" data-calendar-date="{{ .Date }}" data-range-from="{{ .From }}" data-range-to="{{ .To }}" data-lang="{{ .Lang }}" aria-labelledby="calendar-title">
+  <div class="cal-head" data-cal-head>
+  <div class="cal-heading">
+    <h2 id="calendar-title">{{ ct $.Lang "schedule" }}</h2>
+    <div class="cal-heading-actions cal-enhanced" hidden>
+      <select data-cal-property aria-label="{{ t "calendar.property" }}"><option value="">{{ t "calendar.all_properties" }}</option></select>
+      <div class="cal-segment cal-view-segment" role="group" aria-label="{{ t "calendar.view" }}">
+        <button type="button" data-cal-view="calendar" aria-pressed="true"><svg class="cal-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18M8 15h2M14 15h2M8 18h2"/></svg><span>{{ t "calendar.calendar" }}</span></button>
+        <button type="button" data-cal-view="gantt" aria-pressed="false"><svg class="cal-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 3v18h17M8 6h5M8 10h10M12 14h9M8 18h8"/></svg><span>{{ t "calendar.gantt" }}</span></button>
+      </div>
+      <button type="button" class="btn soft cal-settings" data-cal-settings aria-label="{{ t "calendar.settings" }}"><svg class="cal-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 6h4M11 6h10M3 18h10M17 18h4"/><circle cx="9" cy="6" r="2"/><circle cx="15" cy="18" r="2"/></svg></button>
+    </div>
+  </div>
+  <div class="cal-toolbar cal-enhanced" hidden>
+    <div class="cal-navigation">
+      <button type="button" class="btn soft cal-today" data-cal-today>{{ t "calendar.today" }}</button>
+      <button type="button" class="btn soft cal-arrow" data-cal-prev aria-label="{{ t "calendar.previous" }}"><svg class="cal-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m14 7-5 5 5 5"/></svg></button>
+      <button type="button" class="btn soft cal-arrow" data-cal-next aria-label="{{ t "calendar.next" }}"><svg class="cal-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m10 7 5 5-5 5"/></svg></button>
+    </div>
+    <h3 data-cal-period></h3>
+    <div class="cal-toolbar-options">
+      <div class="cal-segment cal-scale-segment" data-cal-scales role="group" aria-label="{{ t "calendar.calendar" }}">
+        {{ range $v := scales }}<button type="button" data-cal-scale="{{ $v }}" aria-pressed="{{ if eq $v "month" }}true{{ else }}false{{ end }}">{{ t (print "calendar." $v) }}</button>{{ end }}
+      </div>
+      <select data-cal-month aria-label="{{ t "calendar.month_label" }}"></select>
+      <select data-cal-year aria-label="{{ t "calendar.year_label" }}"></select>
+    </div>
+  </div>
+  </div>
+  <div class="cal-message cal-enhanced" data-cal-message role="status" aria-live="polite" hidden></div>
+  <div class="cal-body cal-enhanced" data-cal-body aria-describedby="cal-hint" tabindex="-1" aria-busy="false" hidden></div>
+  <button type="button" class="cal-to-top" data-cal-top aria-label="{{ t "calendar.back_to_top" }}" title="{{ t "calendar.back_to_top" }}" hidden><svg class="cal-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+  <p id="cal-hint" class="cal-hint cal-enhanced sr-only" hidden>{{ ct $.Lang "read_only" }}</p>
+  <p class="cal-selection sr-only" data-cal-selection role="status" aria-live="polite"></p>
+  <div data-cal-fallback><a href="#cleaning-list">{{ ct $.Lang "skip" }}</a></div>
+
+  <dialog class="cal-dialog cal-create-popover" data-cal-create aria-labelledby="cal-create-title">
+    <form action="/reservations" method="post" data-cal-form>
+      <input type="hidden" name="_csrf" value="{{ csrf }}">
+      <input type="hidden" name="calendar" value="1">
+      <div class="cal-dialog-heading"><h2 id="cal-create-title" data-cal-create-title>{{ t "calendar.add" }}</h2><button type="button" class="btn soft cal-close" data-cal-close aria-label="{{ t "calendar.close" }}">{{ icon "x" 16 }}</button></div>
+      <div class="cal-create-types" role="group" aria-label="{{ t "calendar.create_type" }}"><button type="button" class="btn" data-cal-type-choice="stay">{{ t "calendar.kind_stay" }}</button><button type="button" class="btn" data-cal-type-choice="cleaning">{{ t "calendar.kind_cleaning" }}</button></div>
+      <div class="field"><label for="cal-property">{{ t "calendar.property" }}</label><select id="cal-property" name="apartment_id" required></select><p class="cal-field-error" data-cal-error-for="apartment_id"></p></div>
+      <div data-cal-stay-fields>
+        <div class="cal-form-dates">
+          <div class="field"><label for="cal-arrival">{{ t "calendar.arrival" }}</label><input id="cal-arrival" name="date_from" type="date" min="1900-01-01" max="2100-12-30" required></div>
+          <div class="field"><label for="cal-departure">{{ t "calendar.departure" }}</label><input id="cal-departure" name="date_to" type="date" min="1900-01-02" max="2100-12-31" required></div>
+        </div>
+        <p class="cal-field-error" data-cal-error-for="date_to"></p>
+        <p class="cal-nights" data-cal-nights></p>
+        <div class="field"><label for="cal-guests">{{ t "stays.add_panel.guests" }} <span class="opt">{{ t "common.optional" }}</span></label><input id="cal-guests" name="expected_guests" type="number" min="1" max="60"><p class="cal-field-error" data-cal-error-for="expected_guests"></p></div>
+        <div class="field"><label for="cal-label">{{ t "stays.add_panel.label" }} <span class="opt">{{ t "common.optional" }}</span></label><input id="cal-label" name="summary" type="text" maxlength="500"></div>
+        <div class="field"><label for="cal-email">{{ t "stays.add_panel.email" }} <span class="opt">{{ t "common.optional" }}</span></label><input id="cal-email" name="guest_email" type="email" maxlength="254"></div>
+        <div class="cal-overlap" data-cal-overlap hidden><p>{{ t "calendar.overlap" }}</p><label><input type="checkbox" name="allow_overlap" value="1"> {{ t "calendar.overlap_confirm" }}</label></div>
+      </div>
+      <div data-cal-cleaning-fields hidden>
+        <div class="field"><label for="cal-clean-date">{{ t "calendar.scheduled_day" }}</label><input id="cal-clean-date" name="scheduled_date" type="date" min="1900-01-01" max="2100-12-31" disabled required><p class="cal-field-error" data-cal-error-for="scheduled_date"></p></div>
+        <div class="field"><label for="cal-clean-notes">{{ t "calendar.cleaning_notes" }} <span class="opt">{{ t "common.optional" }}</span></label><textarea id="cal-clean-notes" name="notes" maxlength="2000" disabled></textarea><p class="cal-field-error" data-cal-error-for="notes"></p></div>
+      </div>
+      <p class="cal-field-error" data-cal-save-error role="alert"></p>
+      <div class="cal-dialog-actions"><button type="button" class="btn soft" data-cal-close>{{ t "calendar.cancel" }}</button><button type="submit" class="btn primary" data-cal-save>{{ t "calendar.create_stay" }}</button></div>
+    </form>
+  </dialog>
+
+  <dialog class="cal-dialog" data-cal-details aria-labelledby="cal-details-title">
+    <div class="cal-dialog-heading"><h2 id="cal-details-title">{{ t "calendar.details" }}</h2><button type="button" class="btn soft cal-close" data-cal-close aria-label="{{ t "calendar.close" }}">{{ icon "x" 16 }}</button></div>
+    <div data-cal-detail-content></div>
+    <div class="cal-dialog-actions"><a class="btn primary" data-cal-open href="/reservations">{{ t "calendar.open" }}</a></div>
+  </dialog>
+
+  <dialog class="cal-dialog" data-cal-day-dialog aria-labelledby="cal-day-title">
+    <div class="cal-dialog-heading"><h2 id="cal-day-title"></h2><button type="button" class="btn soft cal-close" data-cal-close aria-label="{{ t "calendar.close" }}">{{ icon "x" 16 }}</button></div>
+    <div data-cal-day-list></div>
+    <div class="cal-dialog-actions"><button type="button" class="btn" data-cal-day-add>{{ t "calendar.add" }}</button></div>
+  </dialog>
+
+  <dialog class="cal-dialog" data-cal-settings-dialog aria-labelledby="cal-settings-title">
+    <div class="cal-dialog-heading"><h2 id="cal-settings-title">{{ t "calendar.settings" }}</h2><button type="button" class="btn soft cal-close" data-cal-close aria-label="{{ t "calendar.close" }}">{{ icon "x" 16 }}</button></div>
+    <label class="cal-setting"><span>{{ t "calendar.automatic" }}</span><input type="checkbox" data-cal-auto checked></label>
+    <p class="cal-setting-help">{{ t "calendar.automatic_help" }}</p>
+    {{ range $v := shows }}<label class="cal-setting"><span>{{ t (print "calendar.show_" $v) }}</span><input type="checkbox" data-cal-display="{{ $v }}" checked></label>{{ end }}
+  </dialog>
+  {{ .CalScripts }}
+</section>
+<script src="/static/dashboard-calendar.js?v=20261107-1001" defer></script>
+{{ else }}
+<p class="cleaning-empty">{{ ct $.Lang "no_properties" }}</p>
+{{ end }}{{end}}

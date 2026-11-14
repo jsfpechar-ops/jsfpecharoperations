@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="{{.E .Lang}}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f7f5">
+  <meta name="csrf-token" content="{{.CSRF}}">
+  <title>{{template "title" .}}</title>
+  {{template "meta" .}}
+  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="UbyHost">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="stylesheet" href="/static/tokens.css?v=20261022-0284">
+  <link rel="stylesheet" href="/static/app.css?v=20261104-0916">
+  <link rel="stylesheet" href="/static/components.css?v=20261002a">
+</head>
+<body class="auth-page">
+  <a class="skip-link" href="#main-content">{{.T "a11y.skip_to_content"}}</a>
+  <div class="auth-layout">
+    <section id="main-content" class="auth-panel">
+      <header class="auth-brand">
+        <img class="auth-logo" src="/static/ubyhost-logo.png?v=20261004a" alt="UbyHost">
+      </header>
+      <form method="post" action="/language" class="lang-switch auth-lang-switch">
+        <input type="hidden" name="_csrf" value="{{.CSRF}}">
+        <input type="hidden" name="next" value="{{.E .Next}}">
+        <button type="submit" name="lang" value="en" class="{{.LangOn "en"}}">{{.T "lang.en"}}</button>
+        <button type="submit" name="lang" value="cs" class="{{.LangOn "cs"}}">{{.T "lang.cs"}}</button>
+        <button type="submit" name="lang" value="vi" class="{{.LangOn "vi"}}">{{.T "lang.vi"}}</button>
+      </form>
+      {{if .Mock}}
+  <aside class="env-banner mock" role="alert">
+    <strong>{{if .MockProduction}}{{.T "env.mock_production_title"}}{{else}}{{.T "env.mock_title"}}{{end}}</strong>
+    <span class="env-body">{{if .MockProduction}}{{.T "env.mock_production_body"}}{{else}}{{.T "env.mock_body"}}{{end}}</span>
+    <details class="env-more"><summary>{{.T "how.toggle"}}</summary><span>{{if .MockProduction}}{{.T "env.mock_production_body"}}{{else}}{{.T "env.mock_body"}}{{end}}</span></details>
+  </aside>
+      {{end}}
+      {{if .Notice}}
+      <p class="auth-notice" role="alert">{{.T .Notice}}</p>
+      {{end}}
+      {{template "body" .}}
+      {{if .SignedIn}}
+      <form method="post" action="/logout" class="auth-not-you">
+        <input type="hidden" name="_csrf" value="{{.CSRF}}">
+        <button type="submit">{{.T "auth.not_you"}}</button>
+      </form>
+      {{end}}
+      <footer class="auth-foot-legal small muted">
+        <p class="auth-foot-links">
+          <a href="/legal">{{.T "legal.footer_link"}}</a>
+          &middot; <a href="/terms">{{.T "terms.footer_link"}}</a>
+          &middot; <a href="/privacy">{{.T "privacy.footer_link"}}</a>
+          &middot; <a href="/dpa">{{.T "dpa.footer_link"}}</a>
+          {{if .OperatorEmail}}
+            &middot; <a href="mailto:{{.E .OperatorEmail}}">{{.E .OperatorEmail}}</a>
+          {{end}}
+        </p>
+      </footer>
+    </section>
+    <aside class="auth-hero" aria-hidden="true">
+      <div class="auth-hero-inner">
+        <img class="auth-hero-mark" src="/static/ubyhost-logo-stacked.png?v=20261004a" alt="">
+        <h2>{{.T "login.hero_title"}}</h2>
+        <p>{{.T "login.hero_body"}}</p>
+        <div class="auth-product-card">
+          <div class="auth-product-bar"><i></i><i></i><i></i><span>ubyhost.com</span></div>
+          <div class="auth-product-flow">
+            <div class="auth-flow-step is-blue">
+              <span>01</span><strong>{{.T "landing.demo.scene.calendar"}}</strong><em>Airbnb</em>
+            </div>
+            <div class="auth-flow-line"></div>
+            <div class="auth-flow-step is-yellow">
+              <span>02</span><strong>{{.T "landing.demo.scene.form"}}</strong><em>{{.Check}}</em>
+            </div>
+            <div class="auth-flow-line"></div>
+            <div class="auth-flow-step is-green">
+              <span>03</span><strong>{{.T "landing.demo.scene.receipt"}}</strong><em>UbyPort {{.Check}}</em>
+            </div>
+          </div>
+        </div>
+        <span class="auth-float auth-float-ready">{{.T "landing.demo.queue.ready"}} {{.Check}}</span>
+      </div>
+    </aside>
+  </div>
+  <script src="/static/csrf.js?v=20260915a"></script>
+  <script src="/static/auth.js?v=20260925a"></script>
+  <script src="/static/pwa.js?v=20261102-0507" defer></script>
+</body>
+</html>

@@ -1,0 +1,100 @@
+{{/* Port of App/app/templates/onboarding.html: onboarding_welcome(onboarding, v2=true) and onboarding_finish(onboarding, show_toggle=False) of _components.html. Brief 1595. */}}
+{{define "onboarding.title"}}{{end}}
+{{define "onboarding"}}
+{{- $p := .P -}}
+<section class="onboarding-welcome" data-layout="v2">
+    <header class="onboarding-intro">
+      <div>
+        <h1>{{t "onboarding.welcome_title"}}</h1>
+        <p class="sub">{{t "onboarding.progress" "done" $p.Completed "total" $p.Total}}</p>
+      </div>
+    </header>
+{{if $p.Finished}}{{template "onboarding.finish" .}}{{end}}
+    <p class="onboarding-finish-line">
+      {{if $p.Finished}}{{t "onboarding.finish_line_done"}}{{else}}{{t "onboarding.finish_line"}}{{end}}
+    </p>
+    <div class="onboarding-steps" aria-label="{{t "onboarding.welcome_title"}}">
+      {{- range $i, $step := $p.Steps}}
+      {{- $current := and $p.Current (eq $step.ID $p.Current.ID)}}
+        <article class="onboarding-step {{if $step.Done}}is-done{{end}} {{if $current}}is-current{{end}}">
+          <div class="onboarding-step-index" aria-hidden="true">{{if $step.Done}}{{icon "check" 16}}{{else}}{{add $i 1}}{{end}}</div>
+          <div class="onboarding-step-copy">
+            <h3>{{t (printf "onboarding.%s.title" $step.ID)}}</h3>
+          </div>
+          <div class="onboarding-step-group">
+          {{- if $step.Done}}
+            <span class="pill green">{{t "onboarding.step_done"}}</span>
+          {{- else if $current}}
+            <span class="onboarding-current-dot" aria-hidden="true"></span>
+            <a class="btn primary small onboarding-step-action" href="{{$p.Current.URL}}">{{t (printf "onboarding.%s.action" $step.ID)}}</a>
+            {{if $step.ManualURL}}<a class="small onboarding-step-manual" href="{{$step.ManualURL}}">{{t (printf "onboarding.%s.manual" $step.ID)}}</a>{{end}}
+          {{- end}}
+            <details>
+              <summary>{{t "onboarding.learn"}}</summary>
+              <p>{{t (printf "onboarding.%s.detail" $step.ID)}} {{t (printf "onboarding.%s.prepare" $step.ID)}}</p>
+              <p>{{t (printf "onboarding.%s.why" $step.ID)}}</p>
+              <a href="{{$step.LearnURL}}">{{t "nav.guide"}} </a>
+            </details>
+          </div>
+        </article>
+      {{- end}}
+    </div>
+{{if .DemoAvailable}}
+    <div class="onboarding-bottom single">
+      <div class="onboarding-demo">
+        <div>
+          <strong>{{t "onboarding.demo_title"}}{{help_tip "onboarding-demo-help" (printf "%s %s" (t "onboarding.demo_body") (t "onboarding.demo_hint"))}}</strong>
+        </div>
+        <form method="post" action="/demo">
+          <input type="hidden" name="_csrf" value="{{csrf}}">
+          <button class="btn" type="submit">{{t "demo.load"}}</button>
+        </form>
+      </div>
+    </div>
+{{end}}
+    <div class="onboarding-foot">
+      {{- if $p.Dismissed}}
+        <form method="post" action="/onboarding/resume">
+          <input type="hidden" name="_csrf" value="{{csrf}}">
+          <input type="hidden" name="return_to" value="{{.Path}}">
+          <button class="onboarding-skip-link" type="submit">{{t "onboarding.resume"}}</button>
+        </form>
+      {{- else}}
+        <form method="post" action="/onboarding/dismiss">
+          <input type="hidden" name="_csrf" value="{{csrf}}">
+          <input type="hidden" name="return_to" value="/">
+          <button class="onboarding-skip-link" type="submit">{{t "onboarding.skip"}}</button>
+        </form>
+      {{- end}}
+    </div>
+  </section>
+{{end}}
+
+{{define "onboarding.finish"}}
+{{- with .P.Finish}}
+{{- $policy := "off"}}{{if eq .PassportPolicy "required_foreign"}}{{$policy = "required"}}{{end}}
+    <section class="onboarding-finish" data-layout="v2" aria-label="{{t "onboarding.finish_title"}}">
+      <header class="onboarding-finish-intro">
+        <p class="onboarding-kicker">{{t "onboarding.finish_kicker"}}</p>
+        <div class="onboarding-finish-title"><h2>{{t "onboarding.finish_title"}}</h2>{{help_tip "onboarding-finish-help" (printf "%s %s %s. %s" (t "onboarding.finish_message_tip") (t "onboarding.finish_passport_tip") (t (printf "apartment.form.passport_policy.%s" $policy)) (t "onboarding.finish_reopen_tip"))}}</div>
+        <p class="lede">{{t "onboarding.finish_lede"}}</p>
+      </header>
+      <div class="onboarding-finish-share">
+        <div class="onboarding-finish-field">
+          <span class="onboarding-finish-label">{{t "onboarding.finish_link_label"}}</span>
+          <code id="onboarding-finish-link">{{.Permalink}}</code>
+          {{copy_button "onboarding-finish-link"}}
+        </div>
+        <div class="onboarding-finish-field">
+          <span class="onboarding-finish-label">{{t "guest_links.pin"}}</span>
+          <strong id="onboarding-finish-pin" class="onboarding-finish-pin">{{.Pin}}</strong>
+          {{copy_button "onboarding-finish-pin"}}
+        </div>
+      </div>
+      <div class="onboarding-finish-actions">
+        <a class="ui-btn ui-btn-primary" href="{{.CommunicationURL}}">{{t "onboarding.finish_open_communication"}}</a>
+        <a class="ui-btn ui-btn-secondary" href="/l/{{.LinkKey}}" target="_blank" rel="noopener">{{t "onboarding.finish_preview"}}</a>
+      </div>
+    </section>
+{{- end}}
+{{end}}

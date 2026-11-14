@@ -1,0 +1,193 @@
+{{- /* Go twin of App/app/templates/admin_billing.html (brief 1560). admin_page.go builds the
+     rows, lists and translated lines that Jinja builds inline; ui_section call blocks are
+     written out with sec_head and sec_head_raw. */ -}}
+{{define "admin_billing.head"}}<link rel="stylesheet" href="/static/admin2.css?v=20261106-0893q"><link rel="stylesheet" href="/static/admin2-system.css?v=20261102-0894e"><link rel="stylesheet" href="/static/admin2-operator-0974.css?v=20261105-0974a">{{end}}
+{{define "admin_billing.title"}}{{tip_label (t "billing.admin.title") "admin-billing-help" (t "billing.admin.lede") (kv "tag" "span")}}{{end}}
+{{define "admin_billing.tabs"}}{{ui_tabs .Tabs}}{{end}}
+{{define "admin_billing_watch"}}
+{{sec_head (t "billing.admin.watch.title") "watch" ""}}
+{{if .WatchRows}}
+{{ui_table_begin .WatchCols (t "billing.admin.watch.title")}}
+{{range .WatchRows}}
+<tr class="ui-row" data-billing-admin-watch="{{.Index}}">
+  <td class="ui-cell-first" data-card="primary">{{.Kind}}</td>
+  <td>{{.Who}}</td>
+  <td class="ui-cell-r">{{.When}}</td>
+</tr>
+{{end}}
+{{ui_table_end}}
+{{else}}<p class="ui-sub" data-billing-admin-watch="none">{{t "billing.admin.watch.none"}}</p>{{end}}
+</section>
+{{end}}
+{{define "admin_billing"}}
+{{sec_head (t "billing.admin.unpaid.title") "unpaid" ""}}
+{{if .Unpaid}}
+{{ui_table_begin .UnpaidCols (t "billing.admin.unpaid.title")}}
+{{range .Unpaid}}
+<tr class="ui-row" data-billing-admin-unpaid="{{.Number}}">
+  <td class="ui-cell-first" data-card="primary"><a data-turbo="false" href="/admin/fakturace/{{.ID}}.pdf">{{.Number}}</a><span class="ui-sub"> VS {{.VS}}</span></td>
+  <td>{{.Buyer}}</td>
+  <td class="ui-cell-r ui-num">{{.Amt}} Kč</td>
+  <td class="ui-cell-r" data-card="badge">{{if .Overdue}}{{ui_badge "action" .Due (kv "overdue" true)}}{{else}}{{.Due}}{{end}}</td>
+</tr>
+<tr class="ui-row ui-row-actions">
+  <td colspan="4">
+    <form method="post" action="/admin/fakturace/{{.ID}}/zaplaceno" class="admin-controls">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      {{ui_field (printf "paid-%d" .ID) (t "billing.admin.paid.date") (kv "name" "paid_on" "value" $.Today "type" "date" "attrs" (safe "required"))}}
+      {{ui_button (t "billing.admin.paid.submit") "secondary" (kv "type" "submit")}}
+    </form>
+    <details>
+      <summary>{{t "billing.admin.storno.open"}}</summary>
+      <form method="post" action="/admin/fakturace/{{.ID}}/storno" class="admin-controls">
+        <input type="hidden" name="_csrf" value="{{csrf}}">
+        {{ui_field (printf "reason-%d" .ID) (t "billing.admin.storno.reason") (kv "name" "reason" "attrs" (safe `maxlength="200" required`))}}
+        {{ui_button (t "billing.admin.storno.submit") "danger" (kv "type" "submit")}}
+      </form>
+    </details>
+  </td>
+</tr>
+{{end}}
+{{ui_table_end}}
+{{else}}<p class="ui-sub">{{t "billing.admin.unpaid.none"}}</p>{{end}}
+</section>
+
+{{sec_head_raw (tip_label (t "billing.admin.month.title") "month-help" (t "billing.admin.month.export_help") (kv "tag" "span")) "month"}}
+<form method="get" action="/admin/fakturace" class="admin-controls">
+  {{ui_field "month-pick" (t "billing.admin.month.pick") (kv "name" "mesic" "value" .Month "type" "month")}}
+  {{ui_button (t "billing.admin.month.show") "primary" (kv "type" "submit")}}
+  {{ui_button (t "billing.admin.month.export") "secondary" (kv "href" (printf "/admin/fakturace/export?mesic=%s" .Month) "icon_name" "download" "attrs" (safe "download"))}}
+</form>
+{{if .Invoices}}
+{{ui_table_begin .MonthCols (t "billing.admin.month.title")}}
+{{range .Invoices}}
+<tr class="ui-row">
+  <td class="ui-cell-first" data-card="primary"><a data-turbo="false" href="/admin/fakturace/{{.ID}}.pdf">{{.Number}}</a><span class="ui-sub"> {{.Issued}}</span></td>
+  <td>{{.Buyer}}</td>
+  <td class="ui-cell-r ui-num">{{.Amt}} Kč</td>
+  <td class="ui-cell-r" data-card="badge">{{ui_badge .StateKind .StateText}}</td>
+</tr>
+{{end}}
+{{ui_table_end}}
+{{else}}<p class="ui-sub">{{t "billing.admin.month.none"}}</p>{{end}}
+</section>
+
+{{if .WatchFirst}}{{template "admin_billing_watch" .}}{{end}}
+
+<details class="ui-section" id="reports"><summary>{{t "billing.admin.reports"}}</summary>
+
+{{sec_head (t "billing.admin.portfolio.title") "portfolio" ""}}
+<form method="get" action="/admin/fakturace" class="admin-controls" data-billing-admin-portfolio-filter>
+  {{ui_field "portfolio-q" (t "billing.admin.portfolio.search") (kv "name" "q" "value" .Q "type" "search" "placeholder" (t "billing.admin.portfolio.search_placeholder"))}}
+  {{ui_select "portfolio-state" (t "billing.admin.portfolio.state") .StateOptions (kv "selected" .State "name" "state")}}
+  {{ui_button (t "billing.admin.portfolio.show") "primary" (kv "type" "submit")}}
+  {{ui_button (t "billing.admin.portfolio.export_all") "secondary" (kv "href" "/admin/fakturace/export-vse" "icon_name" "download" "attrs" (safe "download"))}}
+</form>
+{{if .Portfolio}}
+{{ui_table_begin .PortfolioCols (t "billing.admin.portfolio.title")}}
+{{range .Portfolio}}
+<tr class="ui-row" data-billing-admin-portfolio="{{.Owner}}">
+  <td class="ui-cell-first" data-card="primary"><a data-turbo="false" href="/admin/customers/{{.Owner}}">{{.Name}}</a><span class="ui-sub"> {{.Email}}</span></td>
+  <td>{{.Plan}}</td>
+  <td>{{ui_badge .BadgeKind .BadgeText}}</td>
+  <td class="ui-cell-r ui-num">{{.Net}} Kč</td>
+  <td class="ui-cell-r ui-num">{{.Monthly}} Kč</td>
+  <td class="ui-cell-r">{{.PeriodEnd}}</td>
+</tr>
+{{end}}
+{{ui_table_end}}
+{{else}}<p class="ui-sub">{{t "billing.admin.portfolio.none"}}</p>{{end}}
+</section>
+
+{{sec_head (t "billing.admin.payments.title") "payments" ""}}
+{{if .Payments}}
+{{ui_table_begin .PaymentCols (t "billing.admin.payments.title")}}
+{{range .Payments}}
+<tr class="ui-row">
+  <td class="ui-cell-first" data-card="primary">{{.Received}}<span class="ui-sub"> {{.Message}}</span></td>
+  <td class="ui-mono">{{.VS}}</td>
+  <td class="ui-cell-r ui-num">{{.Amt}} Kč</td>
+  <td class="ui-cell-r" data-card="badge">{{ui_badge .BadgeKind .BadgeText}}</td>
+</tr>
+{{end}}
+{{ui_table_end}}
+{{else}}<p class="ui-sub">{{t "billing.admin.payments.none"}}</p>{{end}}
+</section>
+
+{{sec_head_raw (tip_label (t "billing.admin.statement.title") "statement-help" (t "billing.admin.statement.help") (kv "tag" "span")) "statement"}}
+<form method="post" action="/admin/fakturace/vypis" enctype="multipart/form-data" class="admin-controls" data-billing-admin-statement>
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  {{ui_field "statement-file" (t "billing.admin.statement.file") (kv "name" "statement" "type" "file" "attrs" (safe `accept=".gpc,.csv,.txt" required`))}}
+  {{ui_button (t "billing.admin.statement.submit") "primary" (kv "type" "submit")}}
+</form>
+</section>
+
+{{sec_head (t "billing.admin.revenue.title") "revenue" ""}}
+{{ui_facts .RevenueFacts}}
+</section>
+
+{{sec_head (t "billing.admin.trend.title") "trend" ""}}
+{{if .Trend}}
+{{ui_table_begin .TrendCols (t "billing.admin.trend.title")}}
+{{range .Trend}}
+<tr class="ui-row" data-billing-admin-trend="{{.Month}}">
+  <td class="ui-cell-first" data-card="primary">{{.Month}}</td>
+  <td class="ui-cell-r ui-num">{{.Billed}} Kč</td>
+  <td class="ui-cell-r ui-num">{{.Collected}} Kč</td>
+</tr>
+{{end}}
+{{ui_table_end}}
+{{else}}<p class="ui-sub">{{t "billing.admin.trend.none"}}</p>{{end}}
+</section>
+
+{{sec_head_raw (tip_label (t "billing.admin.movement.title") "movement-help" (t "billing.admin.movement.help") (kv "tag" "span")) "movement"}}
+{{ui_facts .MovementFacts}}
+</section>
+
+{{sec_head (t "billing.admin.funnel.title") "funnel" ""}}
+{{ui_facts .FunnelFacts}}
+</section>
+
+{{sec_head (t "billing.admin.discounts.title") "discounts" ""}}
+{{ui_facts .DiscountFacts}}
+{{if .Discounts}}
+{{ui_table_begin .DiscountCols (t "billing.admin.discounts.title")}}
+{{range .Discounts}}
+<tr class="ui-row" data-billing-admin-discount="{{.Owner}}">
+  <td class="ui-cell-first" data-card="primary"><a data-turbo="false" href="/admin/customers/{{.Owner}}">{{.Name}}</a></td>
+  <td class="ui-cell-r ui-num">{{.Percent}} %</td>
+  <td>{{.Reason}}</td>
+  <td class="ui-cell-r ui-num">{{.Monthly}} Kč</td>
+</tr>
+{{end}}
+{{ui_table_end}}
+{{else}}<p class="ui-sub">{{t "billing.admin.discounts.none"}}</p>{{end}}
+</section>
+
+{{sec_head (t "billing.admin.accounts.title") "accounts" ""}}
+<ul class="admin-status" data-billing-admin-accounts>{{range .AccountLines}}<li>{{.}}</li>{{end}}</ul>
+</section>
+
+{{if not .WatchFirst}}{{template "admin_billing_watch" .}}{{end}}
+
+{{sec_head (t "funnel.posthog.title") "funnel-posthog" ""}}
+  <p class="ui-sub">{{t "funnel.posthog_body"}}</p>
+  {{if .PostHogURL}}{{ui_button (t "funnel.posthog_link") "secondary" (kv "href" .PostHogURL)}}{{end}}
+</section>
+{{if .SignupEnabled}}
+{{sec_head (t "funnel.ads.title") "funnel-ads-export" ""}}
+  <p class="ui-sub">{{t "users.ads_export_hint" "days" .AdsDays}}</p>
+  <div class="ui-btn-group">
+    <form method="post" action="/admin/ads-conversions.csv">
+      {{ui_button (t "users.ads_export") "primary"}}
+    </form>
+    <form method="post" action="/admin/ads-conversions.csv">
+      <input type="hidden" name="again" value="1">
+      {{ui_button (t "users.ads_export_again") "secondary"}}
+    </form>
+  </div>
+</section>
+{{end}}
+
+</details>
+{{end}}

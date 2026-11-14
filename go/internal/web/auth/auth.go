@@ -14,7 +14,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -63,6 +62,28 @@ func Routes(pool *pgxpool.Pool, getenv func(string) string, now func() time.Time
 		{"POST /admin/ads-conversions.csv", "/admin/ads-conversions.csv", d.adsConversionsCSV},
 		{"POST /admin/users/{id}/ads-consent/withdraw", "/admin/users/{id}/ads-consent/withdraw", d.adsConsentWithdraw},
 		{"POST /settings/privacy/ad-consent", "/settings/privacy/ad-consent", d.adConsentSettings},
+		{"GET /login", "/login", d.loginForm},
+		{"POST /login", "/login", d.loginSubmit},
+		{"GET /login/link", "/login/link", d.loginLinkForm},
+		{"POST /login/link", "/login/link", d.loginLinkSubmit},
+		{"POST /login/2fa", "/login/2fa", d.twoFactorLogin},
+		{"POST /admin/users", "/admin/users", d.userCreate},
+		{"POST /admin/users/{id}/invite", "/admin/users/{id}/invite", d.userInvite},
+		{"POST /admin/users/{id}/email", "/admin/users/{id}/email", d.userEmailSet},
+		{"GET /account/accept", "/account/accept", d.accountAcceptForm},
+		{"POST /account/accept", "/account/accept", d.accountAcceptSubmit},
+		{"GET /account/2fa/setup", "/account/2fa/setup", d.twoFactorSetupForm},
+		{"POST /account/2fa/setup", "/account/2fa/setup", d.twoFactorSetupSubmit},
+		{"POST /account/email", "/account/email", d.accountEmailRequest},
+		{"GET /account/email/confirm", "/account/email/confirm", d.accountEmailConfirmForm},
+		{"POST /account/email/confirm", "/account/email/confirm", d.accountEmailConfirmSubmit},
+		{"POST /admin/users/{id}/export", "/admin/users/{id}/export", d.workspaceExport},
+		{"GET /signup", "/signup", d.signupForm},
+		{"POST /signup", "/signup", d.signupSubmit},
+		{"GET /signup/verify", "/signup/verify", d.signupVerifyForm},
+		{"POST /signup/verify", "/signup/verify", d.signupVerifySubmit},
+		{"GET /admin/operations", "/admin/operations", d.operationsAdmin},
+		{"POST /admin/users/{id}/schedule-deletion", "/admin/users/{id}/schedule-deletion", d.scheduleDeletion},
 	}
 }
 
@@ -72,38 +93,10 @@ type deps struct {
 	now    func() time.Time
 }
 
-// readOnlyOpenPrefixes and readOnlyOpenPaths are auth.py
-// _READ_ONLY_OPEN_PREFIXES and _READ_ONLY_OPEN_PATHS: a paused plan may still post there.
-var (
-	readOnlyOpenPrefixes = []string{"/predplatne", "/logout", "/account", "/settings", "/exports"}
-	readOnlyOpenPaths    = regexp.MustCompile(`^/(reservations/submit-ready|reservations/\d+/submit|guests/\d+/resend)$`)
-)
-
-func readOnlyOpen(path string) bool {
-	for _, p := range readOnlyOpenPrefixes {
-		if strings.HasPrefix(path, p) {
-			return true
-		}
-	}
-	return readOnlyOpenPaths.MatchString(path)
-}
-
-// openPost is the method Login sees for a POST to a read-only-open path. It
-// is neither POST (so Login skips the paused check) nor GET or HEAD (so
-// http.Redirect writes no HTML body, as RedirectResponse does not).
-const openPost = "POST-READ-ONLY-OPEN"
-
-// login is auth.require_login. hostweb.Login checks the paused plan on every
-// POST; Python skips that check on the read-only-open paths, so Login sees a
-// copy of the request with method openPost there. ok is false when the
-// response is written.
+// login is auth.require_login. hostweb.Login exempts the read-only-open paths
+// itself. ok is false when the response is written.
 func (d deps) login(w http.ResponseWriter, r *http.Request, at time.Time) (*session.Host, bool) {
-	req := r
-	if r.Method == http.MethodPost && readOnlyOpen(r.URL.Path) {
-		req = r.WithContext(r.Context())
-		req.Method = openPost
-	}
-	h, err := hostweb.Login(bare{w}, req, d.pool, d.getenv, at)
+	h, err := hostweb.Login(bare{w}, r, d.pool, d.getenv, at)
 	if err != nil {
 		serverError(w, err)
 		return nil, false

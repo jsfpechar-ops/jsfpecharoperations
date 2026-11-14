@@ -1,0 +1,12 @@
+{
+ "cs": {
+  "flash.stay_fees.already_saved": "Období je už uloženo. Pro změnu spusťte opravu.",
+  "flash.stay_fees.confirm_collected": "Potvrďte, že jste zkontrolovali skutečně vybrané částky.",
+  "flash.stay_fees.period_saved": "Období uloženo. PDF a CSV jsou k dispozici."
+ },
+ "en": {
+  "flash.stay_fees.already_saved": "This period is already saved. Start a correction if you need to change it.",
+  "flash.stay_fees.confirm_collected": "Confirm you checked the amounts actually collected.",
+  "flash.stay_fees.period_saved": "Period saved. You can download the PDF and CSV."
+ }
+}

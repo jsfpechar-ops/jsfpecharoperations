@@ -1,0 +1,246 @@
+{{- /* Go twin of App/app/templates/admin_operations.html (brief 1508). page.go builds the
+     translated rows, ages and lines that Jinja builds inline (macros age and workspace_link). */ -}}
+{{define "admin_operations.head"}}<link rel="stylesheet" href="/static/admin2.css?v=20261106-0893q"><link rel="stylesheet" href="/static/admin2-system.css?v=20261102-0894e">{{end}}
+{{define "admin_operations.title"}}{{tip_label (t "ops.title") "admin-ops-help" (t "ops.lede") (kv "tag" "span")}}{{end}}
+{{define "admin_operations.tabs"}}{{ui_tabs .Tabs}}{{end}}
+{{define "ops_workspace"}}{{if .OwnerID}}<a data-turbo="false" href="/admin/customers/{{.OwnerID}}">{{.Label}}</a>{{else}}<span class="ui-sub">{{t "ops.no_workspace"}}</span>{{end}}{{end}}
+{{define "admin_operations"}}
+<details class="ui-section" id="ops-filings"{{if or .FilingsCount .StuckCount}} open{{end}}>
+  <summary><h2><span class="tip-label">{{t "ops.filings.title"}}{{help_tip "ops-filings-help" (t "ops.filings.help")}}</span> <span class="ui-badge {{if .FilingsCount}}ui-badge-action{{else}}ui-badge-done{{end}}">{{.FilingsCount}}</span></h2></summary>
+  {{if .Filings}}
+  <table class="ui-table ui-table-stack">
+    <thead><tr><th>{{t "ops.col.workspace"}}</th><th>{{t "ops.col.property"}}</th><th>{{t "ops.col.stay"}}</th><th>{{t "ops.col.state"}}</th><th>{{t "ops.col.age"}}</th></tr></thead>
+    <tbody>
+    {{range .Filings}}
+      <tr>
+        <td data-label="{{t "ops.col.workspace"}}">{{template "ops_workspace" .Workspace}}</td>
+        <td data-label="{{t "ops.col.property"}}">{{.Property}}</td>
+        <td data-label="{{t "ops.col.stay"}}" class="ui-mono">#{{.StayID}}</td>
+        <td data-label="{{t "ops.col.state"}}">{{.State}}</td>
+        <td data-label="{{t "ops.col.age"}}">{{.Age}}</td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+  {{else}}<p class="ui-sub">{{t "ops.none"}}</p>{{end}}
+  {{if .StuckCount}}
+  <h3>{{t "ops.stuck.title"}} <span class="ui-badge ui-badge-action">{{.StuckCount}}</span></h3>
+  <table class="ui-table ui-table-stack">
+    <thead><tr><th>{{t "ops.col.workspace"}}</th><th>{{t "ops.col.property"}}</th><th>{{t "ops.col.submission"}}</th><th>{{t "ops.col.age"}}</th></tr></thead>
+    <tbody>
+    {{range .Stuck}}
+      <tr>
+        <td data-label="{{t "ops.col.workspace"}}">{{template "ops_workspace" .Workspace}}</td>
+        <td data-label="{{t "ops.col.property"}}">{{.Property}}</td>
+        <td data-label="{{t "ops.col.submission"}}" class="ui-mono">#{{.SubmissionID}}</td>
+        <td data-label="{{t "ops.col.age"}}">{{.Age}}</td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+  {{end}}
+</details>
+
+<details class="ui-section" id="ops-feeds"{{if .FeedsCount}} open{{end}}>
+  <summary><h2>{{tip_label (t "ops.feeds.title") "ops-feeds-help" (t "ops.feeds.help") (kv "tag" "span")}} <span class="ui-badge {{if .FeedsCount}}ui-badge-attention{{else}}ui-badge-done{{end}}">{{.FeedsCount}}</span></h2></summary>
+  {{if .Feeds}}
+  <table class="ui-table ui-table-stack">
+    <thead><tr><th>{{t "ops.col.workspace"}}</th><th>{{t "ops.col.property"}}</th><th>{{t "ops.col.feed"}}</th><th>{{t "ops.col.state"}}</th><th>{{t "ops.col.last_sync"}}</th></tr></thead>
+    <tbody>
+    {{range .Feeds}}
+      <tr>
+        <td data-label="{{t "ops.col.workspace"}}">{{template "ops_workspace" .Workspace}}</td>
+        <td data-label="{{t "ops.col.property"}}">{{.Property}}</td>
+        <td data-label="{{t "ops.col.feed"}}"><span class="ui-mono">#{{.FeedID}}</span> {{.Label}}</td>
+        <td data-label="{{t "ops.col.state"}}">{{.StateText}}</td>
+        <td data-label="{{t "ops.col.last_sync"}}">{{.Age}}</td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+  {{else}}<p class="ui-sub">{{t "ops.none"}}</p>{{end}}
+</details>
+
+<details class="ui-section" id="ops-jobs"{{if .JobsCount}} open{{end}}>
+  <summary><h2>{{tip_label (t "ops.jobs.title") "ops-jobs-help" (t "ops.jobs.help") (kv "tag" "span")}} <span class="ui-badge {{if .JobsCount}}ui-badge-action{{else}}ui-badge-done{{end}}">{{.JobsCount}}</span></h2></summary>
+  <table class="ui-table ui-table-stack">
+    <thead><tr><th>{{t "ops.col.job"}}</th><th>{{t "ops.col.interval"}}</th><th>{{t "ops.col.last_ok"}}</th><th>{{t "ops.col.state"}}</th></tr></thead>
+    <tbody>
+    {{range .Jobs}}
+      <tr>
+        <td data-label="{{t "ops.col.job"}}">{{.Name}}</td>
+        <td data-label="{{t "ops.col.interval"}}">{{.Interval}}</td>
+        <td data-label="{{t "ops.col.last_ok"}}">{{.LastOK}}</td>
+        <td data-label="{{t "ops.col.state"}}">
+          {{if .Failed}}<span class="ui-badge ui-badge-action">{{t "ops.job_state.failed"}}</span>
+          {{else if .Late}}<span class="ui-badge ui-badge-attention">{{t "ops.job_state.late"}}</span>
+          {{else}}<span class="ui-badge ui-badge-done">{{t "ops.job_state.ok"}}</span>{{end}}
+        </td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+</details>
+
+<details class="ui-section" id="ops-mail"{{if .MailCount}} open{{end}}>
+  <summary><h2>{{tip_label (t "ops.mail.title") "ops-mail-help" (t "ops.mail.help") (kv "tag" "span")}} <span class="ui-badge {{if .MailCount}}ui-badge-attention{{else}}ui-badge-done{{end}}">{{.MailCount}}</span></h2></summary>
+  {{if .Mail}}
+  <table class="ui-table ui-table-stack">
+    <thead><tr><th>{{t "ops.col.mail"}}</th><th>{{t "ops.col.kind"}}</th><th>{{t "ops.col.state"}}</th><th>{{t "ops.col.attempts"}}</th><th>{{t "ops.col.age"}}</th></tr></thead>
+    <tbody>
+    {{range .Mail}}
+      <tr>
+        <td data-label="{{t "ops.col.mail"}}" class="ui-mono">#{{.OutboxID}}</td>
+        <td data-label="{{t "ops.col.kind"}}" class="ui-mono">{{.Kind}}</td>
+        <td data-label="{{t "ops.col.state"}}" class="ui-mono">{{.State}}</td>
+        <td data-label="{{t "ops.col.attempts"}}">{{.Attempts}}</td>
+        <td data-label="{{t "ops.col.age"}}">{{.Age}}</td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+  {{else}}<p class="ui-sub">{{t "ops.none"}}</p>{{end}}
+</details>
+
+{{if .TTLockEnabled}}
+<details class="ui-section" id="ops-ttlock"{{if .TTLockOpen}} open{{end}}>
+  <summary><h2>{{tip_label (t "ops.ttlock.title") "ops-ttlock-help" (t "ops.ttlock.help") (kv "tag" "span")}} <span class="ui-badge {{if .TTLockHigh}}ui-badge-attention{{else}}ui-badge-done{{end}}">{{.TTLockBadge}}</span></h2></summary>
+  <p class="ui-sub">{{.TTLockLine}}</p>
+</details>
+{{end}}
+
+<details class="ui-section" id="ops-alerts"{{if .AlertsCount}} open{{end}}>
+  <summary><h2>{{tip_label (t "ops.alerts.title") "ops-alerts-help" (t "ops.alerts.help") (kv "tag" "span")}} <span class="ui-badge {{if .AlertsCount}}ui-badge-attention{{else}}ui-badge-done{{end}}">{{.AlertsCount}}</span></h2></summary>
+  {{if .Alerts}}
+  <table class="ui-table ui-table-stack">
+    <thead><tr><th>{{t "ops.col.kind"}}</th><th>{{t "ops.col.level"}}</th><th>{{t "ops.col.count"}}</th><th>{{t "ops.col.oldest"}}</th></tr></thead>
+    <tbody>
+    {{range .Alerts}}
+      <tr>
+        <td data-label="{{t "ops.col.kind"}}">{{if .KindLabel}}{{.KindLabel}} {{end}}<code class="ui-mono ui-sub">{{.Kind}}</code></td>
+        <td data-label="{{t "ops.col.level"}}">{{.Level}}</td>
+        <td data-label="{{t "ops.col.count"}}">{{.Count}}</td>
+        <td data-label="{{t "ops.col.oldest"}}">{{.Age}}</td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+  {{else}}<p class="ui-sub">{{t "ops.none"}}</p>{{end}}
+</details>
+<details class="ui-section" id="ops-havel"{{if .HavelOpen}} open{{end}}>
+  <summary><h2>{{tip_label (t "ops.havel.title") "ops-havel-help" (t "ops.havel.help") (kv "tag" "span")}}</h2></summary>
+  <p class="ui-sub">{{.HavelLine}}</p>
+  <h3>{{t "ops.havel.how_title"}}</h3>
+  <ol>
+    <li>{{t "ops.havel.how_1"}}</li>
+    <li>{{t "ops.havel.how_2"}}</li>
+    <li>{{t "ops.havel.how_3"}}</li>
+  </ol>
+  <h3>{{t "ops.havel.gaps"}}</h3>
+  {{if .Gaps}}
+  <table class="ui-table ui-table-stack">
+    <thead><tr><th>{{t "ops.havel.col.count"}}</th><th>{{t "ops.havel.col.question"}}</th><th>{{t "ops.havel.col.why"}}</th><th>{{t "ops.havel.col.fix"}}</th><th>{{t "ops.havel.col.where"}}</th></tr></thead>
+    <tbody>
+    {{range .Gaps}}
+      <tr>
+        <td data-label="{{t "ops.havel.col.count"}}">{{.Count}}</td>
+        <td data-label="{{t "ops.havel.col.question"}}">{{.Question}}</td>
+        <td data-label="{{t "ops.havel.col.why"}}">{{.Why}}</td>
+        <td data-label="{{t "ops.havel.col.fix"}}"><a href="/guide#{{.Anchor}}">{{.Label}}</a></td>
+        <td data-label="{{t "ops.havel.col.where"}}">{{.Where}}</td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+  {{else}}<p class="ui-sub">{{t "ops.none"}}</p>{{end}}
+  {{if .HavelStats}}
+  <h3>{{t "ops.havel.stats"}}</h3>
+  <table class="ui-table ui-table-stack">
+    <thead><tr><th>{{t "ops.col.kind"}}</th><th>{{t "ops.col.count"}}</th></tr></thead>
+    <tbody>
+    {{range .HavelStats}}<tr><td data-label="{{t "ops.col.kind"}}" class="ui-mono">{{.Kind}}</td><td data-label="{{t "ops.col.count"}}">{{.N}}</td></tr>{{end}}
+    </tbody>
+  </table>
+  {{end}}
+</details>
+<div id="incidents">
+<h2>{{t "incidents.title"}}</h2>
+
+
+{{if .ReviewAlerts}}
+<div class="ui-section">
+  <h2>{{tip_label (t "incidents.review_title") "incidents-review-help" (t "incidents.review_help") (kv "tag" "span")}}</h2>
+    <ul>
+    {{range .ReviewAlerts}}
+    <li>{{.Message}} <span class="ui-sub">{{.Detail}}</span></li>
+    {{end}}
+  </ul>
+</div>
+{{end}}
+
+<details class="ui-section" {{if not .Incidents}}open{{end}}>
+  <summary>{{t "incidents.create_title"}}</summary>
+  <form method="post" action="/admin/incidents">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <div class="ui-pair">
+      <div class="ui-field"><label for="summary">{{t "incidents.summary"}}</label>
+        <input id="summary" name="summary" required></div>
+      <div class="ui-field"><label for="detected_at">{{t "incidents.detected_at"}}</label>
+        <input id="detected_at" name="detected_at" placeholder="2026-01-01T00:00:00+00:00"></div>
+      <div class="ui-field"><label for="reported_by">{{t "incidents.reported_by"}}</label>
+        <input id="reported_by" name="reported_by"></div>
+      <div class="ui-field"><label for="data_categories">{{t "incidents.data_categories"}}</label>
+        <input id="data_categories" name="data_categories"></div>
+      <div class="ui-field"><label for="approx_subjects">{{t "incidents.approx_subjects"}}</label>
+        <input id="approx_subjects" name="approx_subjects" inputmode="numeric"></div>
+      <div class="ui-field"><label for="risk_level">{{t "incidents.risk"}}</label>
+        <select id="risk_level" name="risk_level">
+          <option value="none">{{t "incidents.risk.none"}}</option>
+          <option value="low">{{t "incidents.risk.low"}}</option>
+          <option value="high">{{t "incidents.risk.high"}}</option>
+        </select>
+      </div>
+      <div class="ui-field"><label for="notes">{{t "incidents.notes"}}</label>
+        <input id="notes" name="notes"></div>
+    </div>
+    <div class="ui-field">
+      <label>{{t "incidents.affected"}}</label>
+      {{range .Owners}}
+      <label class="checkline"><input type="checkbox" name="owner_ids" value="{{.ID}}"> {{.Username}}</label>
+      {{end}}
+    </div>
+    <div class="ui-btn-group"><button class="ui-btn ui-btn-primary" type="submit">{{t "incidents.create"}}</button></div>
+  </form>
+</details>
+
+{{range .Incidents}}
+<div class="ui-section">
+  <h2>{{.Summary}}</h2>
+  <p class="ui-sub">
+    {{t "incidents.detected_at"}}: {{.DetectedAt}}
+    &middot; {{t "incidents.risk"}}: {{.RiskText}}
+  </p>
+  <form method="post" action="/admin/incidents/{{.ID}}">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <div class="ui-pair">
+      {{range .Stamps}}
+      <div class="ui-field">
+        <label>{{.Label}}</label>
+        <button class="ui-btn ui-btn-quiet" type="submit" name="action" value="{{.Field}}" {{if .Value}}disabled{{end}}>
+          {{if .Value}}{{.Value}}{{else}}{{t "incidents.mark"}}{{end}}
+        </button>
+      </div>
+      {{end}}
+    </div>
+    <div class="ui-btn-group"><button class="ui-btn ui-btn-secondary" type="submit">{{t "incidents.save"}}</button></div>
+  </form>
+  <details>
+    <summary>{{tip_label (t "incidents.draft_title") "incidents-draft-help" (t "incidents.draft_help") (kv "tag" "span")}}</summary>
+    <pre class="ui-sub">{{.Draft}}</pre>
+  </details>
+</div>
+{{else}}
+<p class="ui-sub">{{t "incidents.empty"}}</p>
+{{end}}
+</div>
+{{end}}

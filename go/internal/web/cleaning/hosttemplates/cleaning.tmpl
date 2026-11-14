@@ -1,0 +1,17 @@
+{{/* Port of App/app/templates/cleaning.html with _cleaning_screen.html (host, not read-only). Brief 1570. */}}
+{{define "cleaning.title"}}{{end}}
+{{define "cleaning"}}
+<h1 class="sr-only cleaning-phone">{{ct $.Lang "title"}}</h1>
+<div class="head cleaning-head"><div><h1 class="big">{{ct $.Lang "title"}}</h1><p class="sub cleaning-phone">{{ct $.Lang "subtitle_short"}}</p></div><div class="cleaning-actions"><a class="btn soft" href="/cleaning/new" data-calendar-add data-cal-create-type="cleaning">+ {{ct $.Lang "add"}}</a><a class="btn soft" href="/cleaning/properties">{{ct $.Lang "settings"}}</a></div><a class="btn" href="/cleaning/shares">{{ct $.Lang "share_cleaner"}}</a></div>
+<div class="cleaning-page">
+{{if .Notice}}<p class="cleaning-notice" role="status">{{ct $.Lang .Notice}}</p>{{end}}
+{{template "host_calendar" .}}
+<section id="cleaning-list" class="cleaning-list" aria-labelledby="cleaning-list-title" tabindex="-1">
+  <h2 id="cleaning-list-title" class="visually-hidden">{{ct $.Lang "list"}}</h2>
+  <p class="cleaning-list-error" data-cleaning-error role="alert" hidden></p>
+  <div data-cleaning-list>{{.ListHTML}}</div>
+</section>
+{{.LabelsScript}}
+<script src="/static/cleaning.js?v=20261106-0963" defer></script>
+</div>
+{{end}}

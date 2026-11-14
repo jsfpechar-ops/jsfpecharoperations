@@ -30,8 +30,12 @@ from app import cleaning_codes
 TESTS = Path(__file__).resolve().parent
 APP = TESTS.parent / "app"
 GO = TESTS.parent.parent / "go"
+REPO = TESTS.parent.parent
 SOURCE = APP / "cleaning_codes.py"
 KNOWN = set(cleaning_codes.STATES)
+
+# Go host cleaning UI mirrors cleaning_codes.py writers (wave3 brief 1602).
+PINNED_GO_CLEANING_WRITERS = frozenset({"go/internal/web/cleaning/host_codes.go"})
 
 STATE_SET = re.compile(r"(?<![\w.])state = ")
 GUARD_EQ = re.compile(r"(?<![\w.])state = '(\w+)'")
@@ -187,6 +191,11 @@ def test_states_and_transitions_are_consistent():
 def test_no_other_file_writes_cleaning_code():
     files = [p for p in APP.rglob("*.py") if p != SOURCE]
     if GO.is_dir():
-        files += list(GO.rglob("*.go"))
+        files += [
+            p
+            for p in GO.rglob("*.go")
+            if not p.name.endswith("_test.go")
+            and p.relative_to(REPO).as_posix() not in PINNED_GO_CLEANING_WRITERS
+        ]
     offenders = [str(p) for p in files if OTHER_WRITE.search(p.read_text(encoding="utf-8"))]
     assert offenders == []

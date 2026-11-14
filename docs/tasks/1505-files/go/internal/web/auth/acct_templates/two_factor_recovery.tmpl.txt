@@ -1,0 +1,16 @@
+{{define "two_factor_recovery"}}{{template "acct.head" .}}
+<section class="auth-card">
+  <h1 class="auth-title">{{.T "account.2fa.recovery_title"}}</h1>
+  <p class="auth-lede">{{.T "account.2fa.recovery_lede"}}</p>
+  <p class="small"><strong>{{.T "account.2fa.recovery_once"}}</strong></p>
+  <div class="auth-codes" id="recovery-codes">{{range $i, $c := .Page.Codes}}{{if $i}}
+{{end}}<code>{{$.E $c}}</code>{{end}}</div>
+  <div class="auth-codes-actions">
+    <button class="btn small ghost" type="button" data-copy="recovery-codes"
+            data-copy-label="{{.T "account.2fa.recovery_copy_all"}}"
+            data-copied-label="{{.T "common.copied"}}">{{.T "account.2fa.recovery_copy_all"}}</button>
+    <button class="btn small ghost" type="button" data-print>{{.T "account.2fa.recovery_print"}}</button>
+  </div>
+  <a class="auth-submit auth-submit-link" href="/">{{.T "account.2fa.recovery_continue"}}</a>
+</section>
+{{template "acct.foot" .}}{{end}}

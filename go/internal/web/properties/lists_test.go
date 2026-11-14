@@ -76,7 +76,7 @@ func TestListsMatchPython(t *testing.T) {
 		want := golden[i]
 		if tc.Go != 0 {
 			notPortedSeen++
-			if rec.Code != tc.Go || want.Status != http.StatusOK || want.Name != tc.Name {
+			if rec.Code != tc.Go || want.Status != http.StatusOK || want.Name != tc.Name || rec.Header().Get("X-Ubyhost-Not-Ported") != "1" {
 				t.Errorf("case %s: Go code %d (want %d), Python status %d", tc.Name, rec.Code, tc.Go, want.Status)
 			}
 			continue
@@ -108,8 +108,8 @@ func TestListsMatchPython(t *testing.T) {
 				got.Items[lo:min(len(got.Items), n+4)], want.Items[lo:min(len(want.Items), n+4)])
 		}
 	}
-	if notPortedSeen != 3 {
-		t.Errorf("%d not-ported cases, want 3", notPortedSeen)
+	if notPortedSeen != 2 {
+		t.Errorf("%d not-ported cases, want 2", notPortedSeen)
 	}
 }
 

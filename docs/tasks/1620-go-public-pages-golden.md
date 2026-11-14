@@ -1,6 +1,6 @@
 # 1620: Go public marketing pages, part 1 (golden script, catalog and golden pages)
 
-Status: todo
+Status: review
 Depends on: none (briefs 1270 and 1271 are merged: `App/scripts/public_legal_golden.py` and `go/internal/web/public/` exist) | Base commit: none (one-big-PR mode) | Branch: current branch
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (about 10 calls)
 Next: [1621](1621-go-public-pages-product-guide.md), then [1622](1622-go-public-pages-pricing.md)

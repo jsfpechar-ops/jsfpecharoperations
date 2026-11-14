@@ -1,0 +1,35 @@
+{
+ "cs": {
+  "auth.error.recent_login": "Z bezpečnostních důvodů se odhlaste, znovu přihlaste a do 10 minut to zopakujte.",
+  "flash.error.export_range_required": "Nejprve zvolte rozsah dat.",
+  "flash.error.identity_hidden_export": "Skryto během podpory: stahování s doklady, podpisy nebo fotografiemi hostů je v pracovním prostoru hostitele zablokované.",
+  "flash.error.identity_hidden_guest": "Skryto během podpory: nejprve odkryjte údaje tohoto hosta.",
+  "flash.error.no_housebook_matches": "Tomuto filtru neodpovídá žádný záznam v domovní knize.",
+  "flash.error.no_receipts": "Zatím nejsou k dispozici žádné Doručenky ke stažení.",
+  "flash.error.no_such_guest": "Tento host už neexistuje.",
+  "flash.error.too_many_entries": "Pro jedno stažení je příliš mnoho záznamů (%(count)s). Zúžte filtr data nebo ubytování na %(limit)s nebo méně.",
+  "flash.error.too_many_receipts": "Pro jedno stažení je příliš mnoho Doručenek (%(count)s). Zúžte filtr data na %(limit)s nebo méně."
+ },
+ "en": {
+  "auth.error.recent_login": "For your safety, log out and log in again, then repeat this within 10 minutes.",
+  "flash.error.export_range_required": "Choose a date range first.",
+  "flash.error.identity_hidden_export": "Hidden while supporting: downloads with guest documents, signatures or photos are blocked in a host's workspace.",
+  "flash.error.identity_hidden_guest": "Hidden while supporting: reveal this guest's identity first.",
+  "flash.error.no_housebook_matches": "No house-book entries match this filter.",
+  "flash.error.no_receipts": "There are no Doručenka receipts to download yet.",
+  "flash.error.no_such_guest": "This guest no longer exists.",
+  "flash.error.too_many_entries": "Too many entries (%(count)s) for one download. Narrow the date or property filter to %(limit)s or fewer.",
+  "flash.error.too_many_receipts": "Too many receipts (%(count)s) for one download. Narrow the date filter to %(limit)s or fewer."
+ },
+ "vi": {
+  "auth.error.recent_login": "Vì lý do an toàn, hãy đăng xuất rồi đăng nhập lại, sau đó thực hiện lại trong vòng 10 phút.",
+  "flash.error.export_range_required": "Hãy chọn khoảng ngày trước.",
+  "flash.error.identity_hidden_export": "Ẩn trong khi hỗ trợ: không thể tải tệp có giấy tờ, chữ ký hoặc ảnh của khách trong không gian làm việc của chủ nhà.",
+  "flash.error.identity_hidden_guest": "Ẩn trong khi hỗ trợ: hãy hiện danh tính của khách này trước.",
+  "flash.error.no_housebook_matches": "Không có mục nào trong sổ khách lưu trú khớp với bộ lọc này.",
+  "flash.error.no_receipts": "Chưa có biên nhận Doručenka nào để tải.",
+  "flash.error.no_such_guest": "Khách này không còn tồn tại.",
+  "flash.error.too_many_entries": "Quá nhiều mục (%(count)s) cho một lần tải. Thu hẹp bộ lọc ngày hoặc chỗ ở xuống còn tối đa %(limit)s.",
+  "flash.error.too_many_receipts": "Quá nhiều biên nhận (%(count)s) cho một lần tải. Thu hẹp bộ lọc ngày xuống còn tối đa %(limit)s."
+ }
+}

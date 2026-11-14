@@ -17,9 +17,6 @@ func TestCleaningRoutesRegistered(t *testing.T) {
 		{http.MethodGet, "/cleaning/shared/" + token + "/schedule", "GET /cleaning/shared/{token}/schedule"},
 		{http.MethodPost, "/cleaning/events/7/delete", "POST /cleaning/events/{id}/delete"},
 		{http.MethodPost, "/cleaning/shares/3/revoke", "POST /cleaning/shares/{id}/revoke"},
-		{http.MethodGet, "/cleaning", "/"},
-		{http.MethodGet, "/cleaning/shares", "/"},
-		{http.MethodPost, "/cleaning/events", "/"},
 	} {
 		_, pattern := mux.Handler(httptest.NewRequest(c.method, c.path, nil))
 		if pattern != c.pattern {

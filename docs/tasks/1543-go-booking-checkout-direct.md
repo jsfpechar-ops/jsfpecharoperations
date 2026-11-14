@@ -1,6 +1,6 @@
 # 1543: Go booking checkout: direct payment requests (switched off)
 
-Status: todo
+Status: review
 Depends on: 1542 | Base commit: none (one big PR) | Branch: the current branch
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Tier B (guest data, two mails, bank details shown to a guest). Review: Opus orchestrator reads the risk-listed files.

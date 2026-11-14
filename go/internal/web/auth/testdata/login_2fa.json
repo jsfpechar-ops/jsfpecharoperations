@@ -1,0 +1,3901 @@
+{
+ "cases": [
+  {
+   "form": [],
+   "method": "POST",
+   "name": "no_pending",
+   "path": "/login/2fa",
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "rate_limit_event": [],
+     "user_account": [
+      [
+       "1",
+       "1",
+       null,
+       null
+      ],
+      [
+       "2",
+       "1",
+       null,
+       null
+      ],
+      [
+       "3",
+       "1",
+       null,
+       "[\"df8e5a001feaf4f035774670f3148504854cad53560c2e2c01ab2818a269f508\", \"cc77d77e1857d12b99c674a2169a1967bd420c8c3359b07ed91d839da313bf1e\"]"
+      ],
+      [
+       "4",
+       "1",
+       null,
+       null
+      ],
+      [
+       "5",
+       "1",
+       null,
+       null
+      ]
+     ]
+    },
+    "location": "/login?notice=2fa_expired",
+    "status": 303
+   }
+  },
+  {
+   "form": [
+    [
+     "code",
+     "AAAA-1111"
+    ]
+   ],
+   "method": "POST",
+   "name": "garbage_pending",
+   "path": "/login/2fa",
+   "pending_raw": "not-a-token",
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "rate_limit_event": [],
+     "user_account": [
+      [
+       "1",
+       "1",
+       null,
+       null
+      ],
+      [
+       "2",
+       "1",
+       null,
+       null
+      ],
+      [
+       "3",
+       "1",
+       null,
+       "[\"df8e5a001feaf4f035774670f3148504854cad53560c2e2c01ab2818a269f508\", \"cc77d77e1857d12b99c674a2169a1967bd420c8c3359b07ed91d839da313bf1e\"]"
+      ],
+      [
+       "4",
+       "1",
+       null,
+       null
+      ],
+      [
+       "5",
+       "1",
+       null,
+       null
+      ]
+     ]
+    },
+    "location": "/login?notice=2fa_expired",
+    "status": 303
+   }
+  },
+  {
+   "form": [
+    [
+     "code",
+     "AAAA-1111"
+    ]
+   ],
+   "method": "POST",
+   "name": "other_salt_pending",
+   "path": "/login/2fa",
+   "pending_raw": ".eJyrVirNTFGyMtZRKi5TsjLUUcpMLAHS5pYmZuYGxqZAgaI0ON_E0LAWAD_EDC0.avh_Sw.nechKL32IjbVdgrMpYBq57O3pcQ",
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "rate_limit_event": [],
+     "user_account": [
+      [
+       "1",
+       "1",
+       null,
+       null
+      ],
+      [
+       "2",
+       "1",
+       null,
+       null
+      ],
+      [
+       "3",
+       "1",
+       null,
+       "[\"df8e5a001feaf4f035774670f3148504854cad53560c2e2c01ab2818a269f508\", \"cc77d77e1857d12b99c674a2169a1967bd420c8c3359b07ed91d839da313bf1e\"]"
+      ],
+      [
+       "4",
+       "1",
+       null,
+       null
+      ],
+      [
+       "5",
+       "1",
+       null,
+       null
+      ]
+     ]
+    },
+    "location": "/login?notice=2fa_expired",
+    "status": 303
+   }
+  },
+  {
+   "form": [
+    [
+     "code",
+     "AAAA-1111"
+    ]
+   ],
+   "method": "POST",
+   "name": "inactive_account",
+   "path": "/login/2fa",
+   "pending": {
+    "uid": 5
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "rate_limit_event": [],
+     "user_account": [
+      [
+       "1",
+       "1",
+       null,
+       null
+      ],
+      [
+       "2",
+       "1",
+       null,
+       null
+      ],
+      [
+       "3",
+       "1",
+       null,
+       "[\"df8e5a001feaf4f035774670f3148504854cad53560c2e2c01ab2818a269f508\", \"cc77d77e1857d12b99c674a2169a1967bd420c8c3359b07ed91d839da313bf1e\"]"
+      ],
+      [
+       "4",
+       "1",
+       null,
+       null
+      ],
+      [
+       "5",
+       "1",
+       null,
+       null
+      ]
+     ]
+    },
+    "location": "/login",
+    "status": 303
+   }
+  },
+  {
+   "form": [
+    [
+     "code",
+     "AAAA-1111"
+    ]
+   ],
+   "method": "POST",
+   "name": "missing_account",
+   "path": "/login/2fa",
+   "pending": {
+    "uid": 99
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "rate_limit_event": [],
+     "user_account": [
+      [
+       "1",
+       "1",
+       null,
+       null
+      ],
+      [
+       "2",
+       "1",
+       null,
+       null
+      ],
+      [
+       "3",
+       "1",
+       null,
+       "[\"df8e5a001feaf4f035774670f3148504854cad53560c2e2c01ab2818a269f508\", \"cc77d77e1857d12b99c674a2169a1967bd420c8c3359b07ed91d839da313bf1e\"]"
+      ],
+      [
+       "4",
+       "1",
+       null,
+       null
+      ],
+      [
+       "5",
+       "1",
+       null,
+       null
+      ]
+     ]
+    },
+    "location": "/login",
+    "status": 303
+   }
+  },
+  {
+   "form": [
+    [
+     "code",
+     " aaaa-1111 "
+    ]
+   ],
+   "method": "POST",
+   "name": "ok_recovery_remember",
+   "path": "/login/2fa",
+   "pending": {
+    "next": "/reservations?view=list",
+    "rm": true,
+    "uid": 3
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [
+     {
+      "attrs": {
+       "httponly": "true",
+       "max-age": "2592000",
+       "path": "/",
+       "samesite": "lax"
+      },
+      "empty": false,
+      "name": "ubyhost_session",
+      "payload": {
+       "iat": -1,
+       "rf": -1,
+       "rm": 1,
+       "sv": 1,
+       "uid": 3
+      }
+     },
+     {
+      "attrs": {
+       "httponly": "true",
+       "max-age": "2592000",
+       "path": "/",
+       "samesite": "lax"
+      },
+      "empty": false,
+      "name": "ubyhost_device"
+     },
+     {
+      "attrs": {
+       "max-age": "15552000",
+       "path": "/",
+       "samesite": "lax"
+      },
+      "empty": false,
+      "name": "ubyhost_lang"
+     }
+    ],
+    "db": {
+     "audit": [
+      [
+       "two_factor_login",
+       "totp",
+       "method=link+totp",
+       "3",
+       null,
+       null
+      ]
+     ],
+     "rate_limit_event": [],
+     "user_account": [
+      [
+       "1",
+       "1",
+       null,
+       null
+      ],
+      [
+       "2",
+       "1",
+       null,
+       null
+      ],
+      [
+       "3",
+       "1",
+       "<now>",
+       "[\"cc77d77e1857d12b99c674a2169a1967bd420c8c3359b07ed91d839da313bf1e\"]"
+      ],
+      [
+       "4",
+       "1",
+       null,
+       null
+      ],
+      [
+       "5",
+       "1",
+       null,
+       null
+      ]
+     ]
+    },
+    "location": "/reservations?view=list",
+    "status": 303
+   }
+  },
+  {
+   "form": [
+    [
+     "code",
+     "BBBB-2222"
+    ]
+   ],
+   "lang": "cs",
+   "method": "POST",
+   "name": "ok_not_remembered_cs",
+   "path": "/login/2fa",
+   "pending": {
+    "next": "",
+    "uid": 3
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [
+     {
+      "attrs": {
+       "httponly": "true",
+       "max-age": "43200",
+       "path": "/",
+       "samesite": "lax"
+      },
+      "empty": false,
+      "name": "ubyhost_session",
+      "payload": {
+       "iat": -1,
+       "rf": -1,
+       "sv": 1,
+       "uid": 3
+      }
+     },
+     {
+      "attrs": {
+       "httponly": "true",
+       "max-age": "2592000",
+       "path": "/",
+       "samesite": "lax"
+      },
+      "empty": false,
+      "name": "ubyhost_device"
+     }
+    ],
+    "db": {
+     "audit": [
+      [
+       "two_factor_login",
+       "totp",
+       "method=link+totp",
+       "3",
+       null,
+       null
+      ]
+     ],
+     "rate_limit_event": [],
+     "user_account": [
+      [
+       "1",
+       "1",
+       null,
+       null
+      ],
+      [
+       "2",
+       "1",
+       null,
+       null
+      ],
+      [
+       "3",
+       "1",
+       "<now>",
+       "[\"df8e5a001feaf4f035774670f3148504854cad53560c2e2c01ab2818a269f508\"]"
+      ],
+      [
+       "4",
+       "1",
+       null,
+       null
+      ],
+      [
+       "5",
+       "1",
+       null,
+       null
+      ]
+     ]
+    },
+    "location": "/",
+    "status": 303
+   }
+  },
+  {
+   "form": [
+    [
+     "code",
+     "AAAA-1111"
+    ]
+   ],
+   "method": "POST",
+   "name": "ok_lang_query_vi",
+   "path": "/login/2fa",
+   "pending": {
+    "next": "//evil.example/x",
+    "uid": 3
+   },
+   "query": "lang=vi",
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [
+     {
+      "attrs": {
+       "httponly": "true",
+       "max-age": "43200",
+       "path": "/",
+       "samesite": "lax"
+      },
+      "empty": false,
+      "name": "ubyhost_session",
+      "payload": {
+       "iat": 0,
+       "rf": 0,
+       "sv": 1,
+       "uid": 3
+      }
+     },
+     {
+      "attrs": {
+       "httponly": "true",
+       "max-age": "2592000",
+       "path": "/",
+       "samesite": "lax"
+      },
+      "empty": false,
+      "name": "ubyhost_device"
+     },
+     {
+      "attrs": {
+       "max-age": "15552000",
+       "path": "/",
+       "samesite": "lax"
+      },
+      "empty": false,
+      "name": "ubyhost_lang"
+     }
+    ],
+    "db": {
+     "audit": [
+      [
+       "two_factor_login",
+       "totp",
+       "method=link+totp",
+       "3",
+       null,
+       null
+      ]
+     ],
+     "rate_limit_event": [],
+     "user_account": [
+      [
+       "1",
+       "1",
+       null,
+       null
+      ],
+      [
+       "2",
+       "1",
+       null,
+       null
+      ],
+      [
+       "3",
+       "1",
+       "<now>",
+       "[\"cc77d77e1857d12b99c674a2169a1967bd420c8c3359b07ed91d839da313bf1e\"]"
+      ],
+      [
+       "4",
+       "1",
+       null,
+       null
+      ],
+      [
+       "5",
+       "1",
+       null,
+       null
+      ]
+     ]
+    },
+    "location": "/",
+    "status": 303
+   }
+  },
+  {
+   "form": [
+    [
+     "code",
+     "AAAA-1111"
+    ]
+   ],
+   "lang": "en",
+   "method": "POST",
+   "name": "ok_padded_pending_en",
+   "path": "/login/2fa",
+   "pending": {
+    "next": "/settings#security",
+    "pad": true,
+    "uid": 3
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [
+     {
+      "attrs": {
+       "httponly": "true",
+       "max-age": "43200",
+       "path": "/",
+       "samesite": "lax"
+      },
+      "empty": false,
+      "name": "ubyhost_session",
+      "payload": {
+       "iat": 0,
+       "rf": 0,
+       "sv": 1,
+       "uid": 3
+      }
+     },
+     {
+      "attrs": {
+       "httponly": "true",
+       "max-age": "2592000",
+       "path": "/",
+       "samesite": "lax"
+      },
+      "empty": false,
+      "name": "ubyhost_device"
+     }
+    ],
+    "db": {
+     "audit": [
+      [
+       "two_factor_login",
+       "totp",
+       "method=link+totp",
+       "3",
+       null,
+       null
+      ]
+     ],
+     "rate_limit_event": [],
+     "user_account": [
+      [
+       "1",
+       "1",
+       null,
+       null
+      ],
+      [
+       "2",
+       "1",
+       null,
+       null
+      ],
+      [
+       "3",
+       "1",
+       "<now>",
+       "[\"cc77d77e1857d12b99c674a2169a1967bd420c8c3359b07ed91d839da313bf1e\"]"
+      ],
+      [
+       "4",
+       "1",
+       null,
+       null
+      ],
+      [
+       "5",
+       "1",
+       null,
+       null
+      ]
+     ]
+    },
+    "location": "/settings",
+    "status": 303
+   }
+  },
+  {
+   "form": [
+    [
+     "code",
+     "000000"
+    ]
+   ],
+   "method": "POST",
+   "name": "bad_code",
+   "page": {
+    "alert": "Kód nefunguje. Kódy se mění každých 30 vteřin. Zadejte ten, který vidíte teď.",
+    "pending_fields": 2
+   },
+   "path": "/login/2fa",
+   "pending": {
+    "next": "/reservations?view=list",
+    "rm": true,
+    "uid": 3
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": "text/html; charset=utf-8",
+    "cookies": [],
+    "db": {
+     "audit": [
+      [
+       "two_factor_failed",
+       "totp",
+       "",
+       "3",
+       null,
+       null
+      ]
+     ],
+     "rate_limit_event": [
+      [
+       "login_fail",
+       "testclient:totp:2fa"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "2fa_fail_account",
+       "3"
+      ]
+     ],
+     "user_account": [
+      [
+       "1",
+       "1",
+       null,
+       null
+      ],
+      [
+       "2",
+       "1",
+       null,
+       null
+      ],
+      [
+       "3",
+       "1",
+       null,
+       "[\"df8e5a001feaf4f035774670f3148504854cad53560c2e2c01ab2818a269f508\", \"cc77d77e1857d12b99c674a2169a1967bd420c8c3359b07ed91d839da313bf1e\"]"
+      ],
+      [
+       "4",
+       "1",
+       null,
+       null
+      ],
+      [
+       "5",
+       "1",
+       null,
+       null
+      ]
+     ]
+    },
+    "location": null,
+    "status": 401
+   }
+  },
+  {
+   "form": [
+    [
+     "code",
+     "12 34 56"
+    ]
+   ],
+   "lang": "cs",
+   "method": "POST",
+   "name": "bad_code_cs_padded",
+   "page": {
+    "alert": "Kód nefunguje. Kódy se mění každých 30 vteřin. Zadejte ten, který vidíte teď.",
+    "pending_fields": 2
+   },
+   "path": "/login/2fa",
+   "pending": {
+    "next": "/reservations?view=list",
+    "pad": true,
+    "rm": true,
+    "uid": 3
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": "text/html; charset=utf-8",
+    "cookies": [],
+    "db": {
+     "audit": [
+      [
+       "two_factor_failed",
+       "totp",
+       "",
+       "3",
+       null,
+       null
+      ]
+     ],
+     "rate_limit_event": [
+      [
+       "login_fail",
+       "testclient:totp:2fa"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "2fa_fail_account",
+       "3"
+      ]
+     ],
+     "user_account": [
+      [
+       "1",
+       "1",
+       null,
+       null
+      ],
+      [
+       "2",
+       "1",
+       null,
+       null
+      ],
+      [
+       "3",
+       "1",
+       null,
+       "[\"df8e5a001feaf4f035774670f3148504854cad53560c2e2c01ab2818a269f508\", \"cc77d77e1857d12b99c674a2169a1967bd420c8c3359b07ed91d839da313bf1e\"]"
+      ],
+      [
+       "4",
+       "1",
+       null,
+       null
+      ],
+      [
+       "5",
+       "1",
+       null,
+       null
+      ]
+     ]
+    },
+    "location": null,
+    "status": 401
+   }
+  },
+  {
+   "form": [],
+   "method": "POST",
+   "name": "no_code_no_totp",
+   "page": {
+    "alert": "Kód nefunguje. Kódy se mění každých 30 vteřin. Zadejte ten, který vidíte teď.",
+    "pending_fields": 2
+   },
+   "path": "/login/2fa",
+   "pending": {
+    "uid": 2
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": "text/html; charset=utf-8",
+    "cookies": [],
+    "db": {
+     "audit": [
+      [
+       "two_factor_failed",
+       "host",
+       "",
+       "2",
+       null,
+       null
+      ]
+     ],
+     "rate_limit_event": [
+      [
+       "login_fail",
+       "testclient:host:2fa"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "2fa_fail_account",
+       "2"
+      ]
+     ],
+     "user_account": [
+      [
+       "1",
+       "1",
+       null,
+       null
+      ],
+      [
+       "2",
+       "1",
+       null,
+       null
+      ],
+      [
+       "3",
+       "1",
+       null,
+       "[\"df8e5a001feaf4f035774670f3148504854cad53560c2e2c01ab2818a269f508\", \"cc77d77e1857d12b99c674a2169a1967bd420c8c3359b07ed91d839da313bf1e\"]"
+      ],
+      [
+       "4",
+       "1",
+       null,
+       null
+      ],
+      [
+       "5",
+       "1",
+       null,
+       null
+      ]
+     ]
+    },
+    "location": null,
+    "status": 401
+   }
+  },
+  {
+   "form": [
+    [
+     "code",
+     "AAAA-1111"
+    ]
+   ],
+   "method": "POST",
+   "name": "recovery_code_spent",
+   "page": {
+    "alert": "Kód nefunguje. Kódy se mění každých 30 vteřin. Zadejte ten, který vidíte teď.",
+    "pending_fields": 2
+   },
+   "path": "/login/2fa",
+   "pending": {
+    "uid": 8
+   },
+   "seed": [
+    [
+     "user_account",
+     {
+      "active": 1,
+      "created_at": "2001-01-01T00:00:00+00:00",
+      "email": "spent@example.test",
+      "id": 8,
+      "must_change_password": 0,
+      "password_hash": "",
+      "recovery_codes_hash": "[\"cc77d77e1857d12b99c674a2169a1967bd420c8c3359b07ed91d839da313bf1e\"]",
+      "role": "host",
+      "session_version": 1,
+      "totp_enabled": 1,
+      "totp_secret_enc": "gAAAAABq-H9Lk_PHcDb_1crTsKopisWOvKtT5bIPzM-a1DnHXLzFOA6lTGx1A7eMhJqbAbR7ZMXXIeQsq2wDVRnnq74CZXgkyu5WMAUdqrxAiSMbAFRAedA=",
+      "username": "spent"
+     }
+    ]
+   ],
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": "text/html; charset=utf-8",
+    "cookies": [],
+    "db": {
+     "audit": [
+      [
+       "two_factor_failed",
+       "spent",
+       "",
+       "8",
+       null,
+       null
+      ]
+     ],
+     "rate_limit_event": [
+      [
+       "login_fail",
+       "testclient:spent:2fa"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "2fa_fail_account",
+       "8"
+      ]
+     ],
+     "user_account": [
+      [
+       "1",
+       "1",
+       null,
+       null
+      ],
+      [
+       "2",
+       "1",
+       null,
+       null
+      ],
+      [
+       "3",
+       "1",
+       null,
+       "[\"df8e5a001feaf4f035774670f3148504854cad53560c2e2c01ab2818a269f508\", \"cc77d77e1857d12b99c674a2169a1967bd420c8c3359b07ed91d839da313bf1e\"]"
+      ],
+      [
+       "4",
+       "1",
+       null,
+       null
+      ],
+      [
+       "5",
+       "1",
+       null,
+       null
+      ],
+      [
+       "8",
+       "1",
+       null,
+       "[\"cc77d77e1857d12b99c674a2169a1967bd420c8c3359b07ed91d839da313bf1e\"]"
+      ]
+     ]
+    },
+    "location": null,
+    "status": 401
+   }
+  },
+  {
+   "form": [
+    [
+     "code",
+     "BBBB-2222"
+    ]
+   ],
+   "method": "POST",
+   "name": "recovery_code_left",
+   "path": "/login/2fa",
+   "pending": {
+    "uid": 8
+   },
+   "seed": [
+    [
+     "user_account",
+     {
+      "active": 1,
+      "created_at": "2001-01-01T00:00:00+00:00",
+      "email": "spent@example.test",
+      "id": 8,
+      "must_change_password": 0,
+      "password_hash": "",
+      "recovery_codes_hash": "[\"cc77d77e1857d12b99c674a2169a1967bd420c8c3359b07ed91d839da313bf1e\"]",
+      "role": "host",
+      "session_version": 1,
+      "totp_enabled": 1,
+      "totp_secret_enc": "gAAAAABq-H9Lk_PHcDb_1crTsKopisWOvKtT5bIPzM-a1DnHXLzFOA6lTGx1A7eMhJqbAbR7ZMXXIeQsq2wDVRnnq74CZXgkyu5WMAUdqrxAiSMbAFRAedA=",
+      "username": "spent"
+     }
+    ]
+   ],
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [
+     {
+      "attrs": {
+       "httponly": "true",
+       "max-age": "43200",
+       "path": "/",
+       "samesite": "lax"
+      },
+      "empty": false,
+      "name": "ubyhost_session",
+      "payload": {
+       "iat": 0,
+       "rf": 0,
+       "sv": 1,
+       "uid": 8
+      }
+     },
+     {
+      "attrs": {
+       "httponly": "true",
+       "max-age": "2592000",
+       "path": "/",
+       "samesite": "lax"
+      },
+      "empty": false,
+      "name": "ubyhost_device"
+     },
+     {
+      "attrs": {
+       "max-age": "15552000",
+       "path": "/",
+       "samesite": "lax"
+      },
+      "empty": false,
+      "name": "ubyhost_lang"
+     }
+    ],
+    "db": {
+     "audit": [
+      [
+       "two_factor_login",
+       "spent",
+       "method=link+totp",
+       "8",
+       null,
+       null
+      ]
+     ],
+     "rate_limit_event": [],
+     "user_account": [
+      [
+       "1",
+       "1",
+       null,
+       null
+      ],
+      [
+       "2",
+       "1",
+       null,
+       null
+      ],
+      [
+       "3",
+       "1",
+       null,
+       "[\"df8e5a001feaf4f035774670f3148504854cad53560c2e2c01ab2818a269f508\", \"cc77d77e1857d12b99c674a2169a1967bd420c8c3359b07ed91d839da313bf1e\"]"
+      ],
+      [
+       "4",
+       "1",
+       null,
+       null
+      ],
+      [
+       "5",
+       "1",
+       null,
+       null
+      ],
+      [
+       "8",
+       "1",
+       "<now>",
+       "[]"
+      ]
+     ]
+    },
+    "location": "/",
+    "status": 303
+   }
+  },
+  {
+   "form": [
+    [
+     "code",
+     "AAAA-1111"
+    ]
+   ],
+   "method": "POST",
+   "name": "locked_account",
+   "page": {
+    "alert": "Příliš mnoho chybných kódů. Počkejte 15 minut a pak se přihlaste znovu od začátku. <a href=\"/login\">Přihlásit se znovu</a>",
+    "pending_fields": 2
+   },
+   "path": "/login/2fa",
+   "pending": {
+    "next": "/reservations?view=list",
+    "rm": true,
+    "uid": 3
+   },
+   "seed": [
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ]
+   ],
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": "text/html; charset=utf-8",
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "rate_limit_event": [
+      [
+       "2fa_fail_account",
+       "3"
+      ],
+      [
+       "2fa_fail_account",
+       "3"
+      ],
+      [
+       "2fa_fail_account",
+       "3"
+      ],
+      [
+       "2fa_fail_account",
+       "3"
+      ],
+      [
+       "2fa_fail_account",
+       "3"
+      ],
+      [
+       "2fa_fail_account",
+       "3"
+      ],
+      [
+       "2fa_fail_account",
+       "3"
+      ],
+      [
+       "2fa_fail_account",
+       "3"
+      ],
+      [
+       "2fa_fail_account",
+       "3"
+      ],
+      [
+       "2fa_fail_account",
+       "3"
+      ]
+     ],
+     "user_account": [
+      [
+       "1",
+       "1",
+       null,
+       null
+      ],
+      [
+       "2",
+       "1",
+       null,
+       null
+      ],
+      [
+       "3",
+       "1",
+       null,
+       "[\"df8e5a001feaf4f035774670f3148504854cad53560c2e2c01ab2818a269f508\", \"cc77d77e1857d12b99c674a2169a1967bd420c8c3359b07ed91d839da313bf1e\"]"
+      ],
+      [
+       "4",
+       "1",
+       null,
+       null
+      ],
+      [
+       "5",
+       "1",
+       null,
+       null
+      ]
+     ]
+    },
+    "location": null,
+    "status": 429
+   }
+  },
+  {
+   "form": [
+    [
+     "code",
+     "AAAA-1111"
+    ]
+   ],
+   "lang": "vi",
+   "method": "POST",
+   "name": "locked_account_vi",
+   "page": {
+    "alert": "Nhập sai mã quá nhiều lần. Đợi 15 phút rồi đăng nhập lại từ đầu. <a href=\"/login\">Đăng nhập lại</a>",
+    "pending_fields": 2
+   },
+   "path": "/login/2fa",
+   "pending": {
+    "next": "/reservations?view=list",
+    "rm": true,
+    "uid": 3
+   },
+   "seed": [
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ]
+   ],
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": "text/html; charset=utf-8",
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "rate_limit_event": [
+      [
+       "2fa_fail_account",
+       "3"
+      ],
+      [
+       "2fa_fail_account",
+       "3"
+      ],
+      [
+       "2fa_fail_account",
+       "3"
+      ],
+      [
+       "2fa_fail_account",
+       "3"
+      ],
+      [
+       "2fa_fail_account",
+       "3"
+      ],
+      [
+       "2fa_fail_account",
+       "3"
+      ],
+      [
+       "2fa_fail_account",
+       "3"
+      ],
+      [
+       "2fa_fail_account",
+       "3"
+      ],
+      [
+       "2fa_fail_account",
+       "3"
+      ],
+      [
+       "2fa_fail_account",
+       "3"
+      ]
+     ],
+     "user_account": [
+      [
+       "1",
+       "1",
+       null,
+       null
+      ],
+      [
+       "2",
+       "1",
+       null,
+       null
+      ],
+      [
+       "3",
+       "1",
+       null,
+       "[\"df8e5a001feaf4f035774670f3148504854cad53560c2e2c01ab2818a269f508\", \"cc77d77e1857d12b99c674a2169a1967bd420c8c3359b07ed91d839da313bf1e\"]"
+      ],
+      [
+       "4",
+       "1",
+       null,
+       null
+      ],
+      [
+       "5",
+       "1",
+       null,
+       null
+      ]
+     ]
+    },
+    "location": null,
+    "status": 429
+   }
+  },
+  {
+   "form": [
+    [
+     "code",
+     "1"
+    ]
+   ],
+   "method": "POST",
+   "name": "nearly_locked_account",
+   "page": {
+    "alert": "Kód nefunguje. Kódy se mění každých 30 vteřin. Zadejte ten, který vidíte teď.",
+    "pending_fields": 2
+   },
+   "path": "/login/2fa",
+   "pending": {
+    "next": "/reservations?view=list",
+    "rm": true,
+    "uid": 3
+   },
+   "seed": [
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ]
+   ],
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": "text/html; charset=utf-8",
+    "cookies": [],
+    "db": {
+     "audit": [
+      [
+       "two_factor_failed",
+       "totp",
+       "",
+       "3",
+       null,
+       null
+      ]
+     ],
+     "rate_limit_event": [
+      [
+       "2fa_fail_account",
+       "3"
+      ],
+      [
+       "2fa_fail_account",
+       "3"
+      ],
+      [
+       "2fa_fail_account",
+       "3"
+      ],
+      [
+       "2fa_fail_account",
+       "3"
+      ],
+      [
+       "2fa_fail_account",
+       "3"
+      ],
+      [
+       "2fa_fail_account",
+       "3"
+      ],
+      [
+       "2fa_fail_account",
+       "3"
+      ],
+      [
+       "2fa_fail_account",
+       "3"
+      ],
+      [
+       "2fa_fail_account",
+       "3"
+      ],
+      [
+       "login_fail",
+       "testclient:totp:2fa"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "2fa_fail_account",
+       "3"
+      ]
+     ],
+     "user_account": [
+      [
+       "1",
+       "1",
+       null,
+       null
+      ],
+      [
+       "2",
+       "1",
+       null,
+       null
+      ],
+      [
+       "3",
+       "1",
+       null,
+       "[\"df8e5a001feaf4f035774670f3148504854cad53560c2e2c01ab2818a269f508\", \"cc77d77e1857d12b99c674a2169a1967bd420c8c3359b07ed91d839da313bf1e\"]"
+      ],
+      [
+       "4",
+       "1",
+       null,
+       null
+      ],
+      [
+       "5",
+       "1",
+       null,
+       null
+      ]
+     ]
+    },
+    "location": null,
+    "status": 401
+   }
+  },
+  {
+   "form": [
+    [
+     "code",
+     "AAAA-1111"
+    ]
+   ],
+   "method": "POST",
+   "name": "locked_login",
+   "page": {
+    "alert": "Příliš mnoho chybných kódů. Počkejte 15 minut a pak se přihlaste znovu od začátku. <a href=\"/login\">Přihlásit se znovu</a>",
+    "pending_fields": 2
+   },
+   "path": "/login/2fa",
+   "pending": {
+    "next": "/reservations?view=list",
+    "rm": true,
+    "uid": 3
+   },
+   "seed": [
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:totp:2fa",
+      "scope": "login_fail"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:totp:2fa",
+      "scope": "login_fail"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:totp:2fa",
+      "scope": "login_fail"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:totp:2fa",
+      "scope": "login_fail"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:totp:2fa",
+      "scope": "login_fail"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:totp:2fa",
+      "scope": "login_fail"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:totp:2fa",
+      "scope": "login_fail"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:totp:2fa",
+      "scope": "login_fail"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:totp:2fa",
+      "scope": "login_fail"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:totp:2fa",
+      "scope": "login_fail"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:totp:2fa",
+      "scope": "login_fail"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:totp:2fa",
+      "scope": "login_fail"
+     }
+    ]
+   ],
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": "text/html; charset=utf-8",
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "rate_limit_event": [
+      [
+       "login_fail",
+       "testclient:totp:2fa"
+      ],
+      [
+       "login_fail",
+       "testclient:totp:2fa"
+      ],
+      [
+       "login_fail",
+       "testclient:totp:2fa"
+      ],
+      [
+       "login_fail",
+       "testclient:totp:2fa"
+      ],
+      [
+       "login_fail",
+       "testclient:totp:2fa"
+      ],
+      [
+       "login_fail",
+       "testclient:totp:2fa"
+      ],
+      [
+       "login_fail",
+       "testclient:totp:2fa"
+      ],
+      [
+       "login_fail",
+       "testclient:totp:2fa"
+      ],
+      [
+       "login_fail",
+       "testclient:totp:2fa"
+      ],
+      [
+       "login_fail",
+       "testclient:totp:2fa"
+      ],
+      [
+       "login_fail",
+       "testclient:totp:2fa"
+      ],
+      [
+       "login_fail",
+       "testclient:totp:2fa"
+      ]
+     ],
+     "user_account": [
+      [
+       "1",
+       "1",
+       null,
+       null
+      ],
+      [
+       "2",
+       "1",
+       null,
+       null
+      ],
+      [
+       "3",
+       "1",
+       null,
+       "[\"df8e5a001feaf4f035774670f3148504854cad53560c2e2c01ab2818a269f508\", \"cc77d77e1857d12b99c674a2169a1967bd420c8c3359b07ed91d839da313bf1e\"]"
+      ],
+      [
+       "4",
+       "1",
+       null,
+       null
+      ],
+      [
+       "5",
+       "1",
+       null,
+       null
+      ]
+     ]
+    },
+    "location": null,
+    "status": 429
+   }
+  },
+  {
+   "form": [
+    [
+     "code",
+     "1"
+    ]
+   ],
+   "method": "POST",
+   "name": "nearly_locked_login",
+   "page": {
+    "alert": "Kód nefunguje. Kódy se mění každých 30 vteřin. Zadejte ten, který vidíte teď.",
+    "pending_fields": 2
+   },
+   "path": "/login/2fa",
+   "pending": {
+    "next": "/reservations?view=list",
+    "rm": true,
+    "uid": 3
+   },
+   "seed": [
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:totp:2fa",
+      "scope": "login_fail"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:totp:2fa",
+      "scope": "login_fail"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:totp:2fa",
+      "scope": "login_fail"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:totp:2fa",
+      "scope": "login_fail"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:totp:2fa",
+      "scope": "login_fail"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:totp:2fa",
+      "scope": "login_fail"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:totp:2fa",
+      "scope": "login_fail"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:totp:2fa",
+      "scope": "login_fail"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:totp:2fa",
+      "scope": "login_fail"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:totp:2fa",
+      "scope": "login_fail"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:totp:2fa",
+      "scope": "login_fail"
+     }
+    ]
+   ],
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": "text/html; charset=utf-8",
+    "cookies": [],
+    "db": {
+     "audit": [
+      [
+       "two_factor_failed",
+       "totp",
+       "",
+       "3",
+       null,
+       null
+      ]
+     ],
+     "rate_limit_event": [
+      [
+       "login_fail",
+       "testclient:totp:2fa"
+      ],
+      [
+       "login_fail",
+       "testclient:totp:2fa"
+      ],
+      [
+       "login_fail",
+       "testclient:totp:2fa"
+      ],
+      [
+       "login_fail",
+       "testclient:totp:2fa"
+      ],
+      [
+       "login_fail",
+       "testclient:totp:2fa"
+      ],
+      [
+       "login_fail",
+       "testclient:totp:2fa"
+      ],
+      [
+       "login_fail",
+       "testclient:totp:2fa"
+      ],
+      [
+       "login_fail",
+       "testclient:totp:2fa"
+      ],
+      [
+       "login_fail",
+       "testclient:totp:2fa"
+      ],
+      [
+       "login_fail",
+       "testclient:totp:2fa"
+      ],
+      [
+       "login_fail",
+       "testclient:totp:2fa"
+      ],
+      [
+       "login_fail",
+       "testclient:totp:2fa"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "2fa_fail_account",
+       "3"
+      ]
+     ],
+     "user_account": [
+      [
+       "1",
+       "1",
+       null,
+       null
+      ],
+      [
+       "2",
+       "1",
+       null,
+       null
+      ],
+      [
+       "3",
+       "1",
+       null,
+       "[\"df8e5a001feaf4f035774670f3148504854cad53560c2e2c01ab2818a269f508\", \"cc77d77e1857d12b99c674a2169a1967bd420c8c3359b07ed91d839da313bf1e\"]"
+      ],
+      [
+       "4",
+       "1",
+       null,
+       null
+      ],
+      [
+       "5",
+       "1",
+       null,
+       null
+      ]
+     ]
+    },
+    "location": null,
+    "status": 401
+   }
+  },
+  {
+   "form": [
+    [
+     "code",
+     "AAAA-1111"
+    ]
+   ],
+   "method": "POST",
+   "name": "locked_ip",
+   "page": {
+    "alert": "Příliš mnoho chybných kódů. Počkejte 15 minut a pak se přihlaste znovu od začátku. <a href=\"/login\">Přihlásit se znovu</a>",
+    "pending_fields": 2
+   },
+   "path": "/login/2fa",
+   "pending": {
+    "next": "/reservations?view=list",
+    "rm": true,
+    "uid": 3
+   },
+   "seed": [
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient",
+      "scope": "login_fail_ip"
+     }
+    ]
+   ],
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": "text/html; charset=utf-8",
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "rate_limit_event": [
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ],
+      [
+       "login_fail_ip",
+       "testclient"
+      ]
+     ],
+     "user_account": [
+      [
+       "1",
+       "1",
+       null,
+       null
+      ],
+      [
+       "2",
+       "1",
+       null,
+       null
+      ],
+      [
+       "3",
+       "1",
+       null,
+       "[\"df8e5a001feaf4f035774670f3148504854cad53560c2e2c01ab2818a269f508\", \"cc77d77e1857d12b99c674a2169a1967bd420c8c3359b07ed91d839da313bf1e\"]"
+      ],
+      [
+       "4",
+       "1",
+       null,
+       null
+      ],
+      [
+       "5",
+       "1",
+       null,
+       null
+      ]
+     ]
+    },
+    "location": null,
+    "status": 429
+   }
+  },
+  {
+   "form": [
+    [
+     "code",
+     "AAAA-1111"
+    ]
+   ],
+   "method": "POST",
+   "name": "other_ip_not_locked",
+   "path": "/login/2fa",
+   "pending": {
+    "next": "/reservations?view=list",
+    "rm": true,
+    "uid": 3
+   },
+   "seed": [
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "192.0.2.9",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "192.0.2.9",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "192.0.2.9",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "192.0.2.9",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "192.0.2.9",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "192.0.2.9",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "192.0.2.9",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "192.0.2.9",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "192.0.2.9",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "192.0.2.9",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "192.0.2.9",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "192.0.2.9",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "192.0.2.9",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "192.0.2.9",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "192.0.2.9",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "192.0.2.9",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "192.0.2.9",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "192.0.2.9",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "192.0.2.9",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "192.0.2.9",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "192.0.2.9",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "192.0.2.9",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "192.0.2.9",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "192.0.2.9",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "192.0.2.9",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "192.0.2.9",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "192.0.2.9",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "192.0.2.9",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "192.0.2.9",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "192.0.2.9",
+      "scope": "login_fail_ip"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:host:2fa",
+      "scope": "login_fail"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:host:2fa",
+      "scope": "login_fail"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:host:2fa",
+      "scope": "login_fail"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:host:2fa",
+      "scope": "login_fail"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:host:2fa",
+      "scope": "login_fail"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:host:2fa",
+      "scope": "login_fail"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:host:2fa",
+      "scope": "login_fail"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:host:2fa",
+      "scope": "login_fail"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:host:2fa",
+      "scope": "login_fail"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:host:2fa",
+      "scope": "login_fail"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:host:2fa",
+      "scope": "login_fail"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": "<now-epoch>",
+      "key": "testclient:host:2fa",
+      "scope": "login_fail"
+     }
+    ]
+   ],
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [
+     {
+      "attrs": {
+       "httponly": "true",
+       "max-age": "2592000",
+       "path": "/",
+       "samesite": "lax"
+      },
+      "empty": false,
+      "name": "ubyhost_session",
+      "payload": {
+       "iat": 0,
+       "rf": 0,
+       "rm": 1,
+       "sv": 1,
+       "uid": 3
+      }
+     },
+     {
+      "attrs": {
+       "httponly": "true",
+       "max-age": "2592000",
+       "path": "/",
+       "samesite": "lax"
+      },
+      "empty": false,
+      "name": "ubyhost_device"
+     },
+     {
+      "attrs": {
+       "max-age": "15552000",
+       "path": "/",
+       "samesite": "lax"
+      },
+      "empty": false,
+      "name": "ubyhost_lang"
+     }
+    ],
+    "db": {
+     "audit": [
+      [
+       "two_factor_login",
+       "totp",
+       "method=link+totp",
+       "3",
+       null,
+       null
+      ]
+     ],
+     "rate_limit_event": [
+      [
+       "login_fail_ip",
+       "192.0.2.9"
+      ],
+      [
+       "login_fail_ip",
+       "192.0.2.9"
+      ],
+      [
+       "login_fail_ip",
+       "192.0.2.9"
+      ],
+      [
+       "login_fail_ip",
+       "192.0.2.9"
+      ],
+      [
+       "login_fail_ip",
+       "192.0.2.9"
+      ],
+      [
+       "login_fail_ip",
+       "192.0.2.9"
+      ],
+      [
+       "login_fail_ip",
+       "192.0.2.9"
+      ],
+      [
+       "login_fail_ip",
+       "192.0.2.9"
+      ],
+      [
+       "login_fail_ip",
+       "192.0.2.9"
+      ],
+      [
+       "login_fail_ip",
+       "192.0.2.9"
+      ],
+      [
+       "login_fail_ip",
+       "192.0.2.9"
+      ],
+      [
+       "login_fail_ip",
+       "192.0.2.9"
+      ],
+      [
+       "login_fail_ip",
+       "192.0.2.9"
+      ],
+      [
+       "login_fail_ip",
+       "192.0.2.9"
+      ],
+      [
+       "login_fail_ip",
+       "192.0.2.9"
+      ],
+      [
+       "login_fail_ip",
+       "192.0.2.9"
+      ],
+      [
+       "login_fail_ip",
+       "192.0.2.9"
+      ],
+      [
+       "login_fail_ip",
+       "192.0.2.9"
+      ],
+      [
+       "login_fail_ip",
+       "192.0.2.9"
+      ],
+      [
+       "login_fail_ip",
+       "192.0.2.9"
+      ],
+      [
+       "login_fail_ip",
+       "192.0.2.9"
+      ],
+      [
+       "login_fail_ip",
+       "192.0.2.9"
+      ],
+      [
+       "login_fail_ip",
+       "192.0.2.9"
+      ],
+      [
+       "login_fail_ip",
+       "192.0.2.9"
+      ],
+      [
+       "login_fail_ip",
+       "192.0.2.9"
+      ],
+      [
+       "login_fail_ip",
+       "192.0.2.9"
+      ],
+      [
+       "login_fail_ip",
+       "192.0.2.9"
+      ],
+      [
+       "login_fail_ip",
+       "192.0.2.9"
+      ],
+      [
+       "login_fail_ip",
+       "192.0.2.9"
+      ],
+      [
+       "login_fail_ip",
+       "192.0.2.9"
+      ],
+      [
+       "login_fail",
+       "testclient:host:2fa"
+      ],
+      [
+       "login_fail",
+       "testclient:host:2fa"
+      ],
+      [
+       "login_fail",
+       "testclient:host:2fa"
+      ],
+      [
+       "login_fail",
+       "testclient:host:2fa"
+      ],
+      [
+       "login_fail",
+       "testclient:host:2fa"
+      ],
+      [
+       "login_fail",
+       "testclient:host:2fa"
+      ],
+      [
+       "login_fail",
+       "testclient:host:2fa"
+      ],
+      [
+       "login_fail",
+       "testclient:host:2fa"
+      ],
+      [
+       "login_fail",
+       "testclient:host:2fa"
+      ],
+      [
+       "login_fail",
+       "testclient:host:2fa"
+      ],
+      [
+       "login_fail",
+       "testclient:host:2fa"
+      ],
+      [
+       "login_fail",
+       "testclient:host:2fa"
+      ]
+     ],
+     "user_account": [
+      [
+       "1",
+       "1",
+       null,
+       null
+      ],
+      [
+       "2",
+       "1",
+       null,
+       null
+      ],
+      [
+       "3",
+       "1",
+       "<now>",
+       "[\"cc77d77e1857d12b99c674a2169a1967bd420c8c3359b07ed91d839da313bf1e\"]"
+      ],
+      [
+       "4",
+       "1",
+       null,
+       null
+      ],
+      [
+       "5",
+       "1",
+       null,
+       null
+      ]
+     ]
+    },
+    "location": "/reservations?view=list",
+    "status": 303
+   }
+  },
+  {
+   "form": [
+    [
+     "code",
+     "AAAA-1111"
+    ]
+   ],
+   "method": "POST",
+   "name": "old_failures_pruned",
+   "path": "/login/2fa",
+   "pending": {
+    "next": "/reservations?view=list",
+    "rm": true,
+    "uid": 3
+   },
+   "seed": [
+    [
+     "rate_limit_event",
+     {
+      "at": 1.0,
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": 1.0,
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": 1.0,
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": 1.0,
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": 1.0,
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": 1.0,
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": 1.0,
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": 1.0,
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": 1.0,
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ],
+    [
+     "rate_limit_event",
+     {
+      "at": 1.0,
+      "key": "3",
+      "scope": "2fa_fail_account"
+     }
+    ]
+   ],
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [
+     {
+      "attrs": {
+       "httponly": "true",
+       "max-age": "2592000",
+       "path": "/",
+       "samesite": "lax"
+      },
+      "empty": false,
+      "name": "ubyhost_session",
+      "payload": {
+       "iat": 0,
+       "rf": 0,
+       "rm": 1,
+       "sv": 1,
+       "uid": 3
+      }
+     },
+     {
+      "attrs": {
+       "httponly": "true",
+       "max-age": "2592000",
+       "path": "/",
+       "samesite": "lax"
+      },
+      "empty": false,
+      "name": "ubyhost_device"
+     },
+     {
+      "attrs": {
+       "max-age": "15552000",
+       "path": "/",
+       "samesite": "lax"
+      },
+      "empty": false,
+      "name": "ubyhost_lang"
+     }
+    ],
+    "db": {
+     "audit": [
+      [
+       "two_factor_login",
+       "totp",
+       "method=link+totp",
+       "3",
+       null,
+       null
+      ]
+     ],
+     "rate_limit_event": [],
+     "user_account": [
+      [
+       "1",
+       "1",
+       null,
+       null
+      ],
+      [
+       "2",
+       "1",
+       null,
+       null
+      ],
+      [
+       "3",
+       "1",
+       "<now>",
+       "[\"cc77d77e1857d12b99c674a2169a1967bd420c8c3359b07ed91d839da313bf1e\"]"
+      ],
+      [
+       "4",
+       "1",
+       null,
+       null
+      ],
+      [
+       "5",
+       "1",
+       null,
+       null
+      ]
+     ]
+    },
+    "location": "/reservations?view=list",
+    "status": 303
+   }
+  },
+  {
+   "csrf": false,
+   "form": [
+    [
+     "code",
+     "AAAA-1111"
+    ]
+   ],
+   "headers": {
+    "origin": "http://testserver"
+   },
+   "method": "POST",
+   "name": "no_csrf_same_site",
+   "path": "/login/2fa",
+   "pending": {
+    "next": "/reservations?view=list",
+    "rm": true,
+    "uid": 3
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "rate_limit_event": [],
+     "user_account": [
+      [
+       "1",
+       "1",
+       null,
+       null
+      ],
+      [
+       "2",
+       "1",
+       null,
+       null
+      ],
+      [
+       "3",
+       "1",
+       null,
+       "[\"df8e5a001feaf4f035774670f3148504854cad53560c2e2c01ab2818a269f508\", \"cc77d77e1857d12b99c674a2169a1967bd420c8c3359b07ed91d839da313bf1e\"]"
+      ],
+      [
+       "4",
+       "1",
+       null,
+       null
+      ],
+      [
+       "5",
+       "1",
+       null,
+       null
+      ]
+     ]
+    },
+    "location": "/login?notice=form_expired",
+    "status": 303
+   }
+  },
+  {
+   "csrf": false,
+   "form": [
+    [
+     "code",
+     "AAAA-1111"
+    ]
+   ],
+   "headers": {
+    "origin": "http://testserver",
+    "referer": "http://testserver/account"
+   },
+   "method": "POST",
+   "name": "no_csrf_from_account_page",
+   "path": "/login/2fa",
+   "pending": {
+    "next": "/reservations?view=list",
+    "rm": true,
+    "uid": 3
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "rate_limit_event": [],
+     "user_account": [
+      [
+       "1",
+       "1",
+       null,
+       null
+      ],
+      [
+       "2",
+       "1",
+       null,
+       null
+      ],
+      [
+       "3",
+       "1",
+       null,
+       "[\"df8e5a001feaf4f035774670f3148504854cad53560c2e2c01ab2818a269f508\", \"cc77d77e1857d12b99c674a2169a1967bd420c8c3359b07ed91d839da313bf1e\"]"
+      ],
+      [
+       "4",
+       "1",
+       null,
+       null
+      ],
+      [
+       "5",
+       "1",
+       null,
+       null
+      ]
+     ]
+    },
+    "location": "/account?err=This+form+expired.+Please+try+again.",
+    "status": 303
+   }
+  }
+ ],
+ "env": {
+  "UBYHOST_ADS_CONVERSION_NAME": "UbyHost sign-up",
+  "UBYHOST_SECRET_KEY": "auth-routes-golden-secret-0123456789-abcdef",
+  "UBYHOST_SIGNUP_ENABLED": "1"
+ },
+ "nonce": "golden-csrf-nonce",
+ "secret": "auth-routes-golden-secret-0123456789-abcdef",
+ "seed": [
+  [
+   "user_account",
+   {
+    "active": 1,
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "email": "admin@example.test",
+    "id": 1,
+    "must_change_password": 0,
+    "password_hash": "",
+    "role": "admin",
+    "session_version": 1,
+    "username": "admin"
+   }
+  ],
+  [
+   "user_account",
+   {
+    "active": 1,
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "email": "host@example.test",
+    "email_verified_at": "2001-01-02T03:04:05+00:00",
+    "id": 2,
+    "must_change_password": 0,
+    "onboarding_emails_opt_out": 1,
+    "onboarding_emails_opt_out_at": "2001-01-01T00:00:00+00:00",
+    "password_hash": "",
+    "role": "host",
+    "session_version": 1,
+    "username": "host"
+   }
+  ],
+  [
+   "user_account",
+   {
+    "active": 1,
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "email": "totp@example.test",
+    "id": 3,
+    "must_change_password": 0,
+    "password_hash": "",
+    "recovery_codes_hash": "[\"df8e5a001feaf4f035774670f3148504854cad53560c2e2c01ab2818a269f508\", \"cc77d77e1857d12b99c674a2169a1967bd420c8c3359b07ed91d839da313bf1e\"]",
+    "role": "host",
+    "session_version": 1,
+    "totp_enabled": 1,
+    "totp_secret_enc": "gAAAAABq-H9Lk_PHcDb_1crTsKopisWOvKtT5bIPzM-a1DnHXLzFOA6lTGx1A7eMhJqbAbR7ZMXXIeQsq2wDVRnnq74CZXgkyu5WMAUdqrxAiSMbAFRAedA=",
+    "username": "totp"
+   }
+  ],
+  [
+   "user_account",
+   {
+    "active": 1,
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "email": "late@example.test",
+    "id": 4,
+    "must_change_password": 0,
+    "password_hash": "",
+    "role": "host",
+    "session_version": 1,
+    "username": "late"
+   }
+  ],
+  [
+   "user_account",
+   {
+    "active": 0,
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "email": "gone@example.test",
+    "id": 5,
+    "must_change_password": 0,
+    "password_hash": "",
+    "role": "host",
+    "session_version": 1,
+    "username": "gone"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "terms",
+    "id": 1,
+    "method": "clickwrap",
+    "user_account_id": 1,
+    "version": "1.7"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "privacy",
+    "id": 2,
+    "method": "clickwrap",
+    "user_account_id": 1,
+    "version": "1.8"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "dpa",
+    "id": 3,
+    "method": "clickwrap",
+    "user_account_id": 1,
+    "version": "1.8"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "terms",
+    "id": 4,
+    "method": "clickwrap",
+    "user_account_id": 2,
+    "version": "1.7"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "privacy",
+    "id": 5,
+    "method": "clickwrap",
+    "user_account_id": 2,
+    "version": "1.8"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "dpa",
+    "id": 6,
+    "method": "clickwrap",
+    "user_account_id": 2,
+    "version": "1.8"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "terms",
+    "id": 7,
+    "method": "clickwrap",
+    "user_account_id": 3,
+    "version": "1.7"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "privacy",
+    "id": 8,
+    "method": "clickwrap",
+    "user_account_id": 3,
+    "version": "1.8"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "dpa",
+    "id": 9,
+    "method": "clickwrap",
+    "user_account_id": 3,
+    "version": "1.8"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "terms",
+    "id": 10,
+    "method": "clickwrap",
+    "user_account_id": 5,
+    "version": "1.7"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "privacy",
+    "id": 11,
+    "method": "clickwrap",
+    "user_account_id": 5,
+    "version": "1.8"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "dpa",
+    "id": 12,
+    "method": "clickwrap",
+    "user_account_id": 5,
+    "version": "1.8"
+   }
+  ],
+  [
+   "legal_entity",
+   {
+    "contact_email": "Host <Host@Example.test>",
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "id": 1,
+    "name": "E1",
+    "owner_user_id": 2
+   }
+  ],
+  [
+   "legal_entity",
+   {
+    "contact_email": "other@example.test",
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "id": 2,
+    "name": "E2",
+    "owner_user_id": 2
+   }
+  ],
+  [
+   "legal_entity",
+   {
+    "contact_email": "third@example.test",
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "id": 3,
+    "name": "E3",
+    "owner_user_id": 3
+   }
+  ],
+  [
+   "mail_suppression",
+   {
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "email_hash": "1c6aae1d1394671bc92b8c2a725d82400c32b77ae5a19a1c2d2a1cc6a5bc098e",
+    "scope": "onboarding"
+   }
+  ],
+  [
+   "mail_suppression",
+   {
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "email_hash": "bd2454f02f4ab260da2edb0ea15d08357ddeabdac650ad041e4ace29761cfc01",
+    "scope": "onboarding"
+   }
+  ],
+  [
+   "mail_suppression",
+   {
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "email_hash": "d285c1de1f7df90e1914af8521b840551d539d409c971b095fa378c13a2497d7",
+    "scope": "onboarding"
+   }
+  ],
+  [
+   "mail_suppression",
+   {
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "email_hash": "1c6aae1d1394671bc92b8c2a725d82400c32b77ae5a19a1c2d2a1cc6a5bc098e",
+    "scope": "other"
+   }
+  ],
+  [
+   "security_incident",
+   {
+    "affected_owner_ids": "[]",
+    "approx_subjects": null,
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "data_categories": "",
+    "detected_at": "2001-01-01T00:00:00+00:00",
+    "id": 1,
+    "notes": "",
+    "reported_by": "ops",
+    "risk_level": null,
+    "summary": "Old",
+    "updated_at": "2001-01-01T00:00:00+00:00"
+   }
+  ],
+  [
+   "consent_texts",
+   {
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "id": 1,
+    "lang": "en",
+    "purpose": "ads_google",
+    "text": "t",
+    "text_sha256": "x",
+    "version": "1"
+   }
+  ],
+  [
+   "ad_click",
+   {
+    "clicked_at": "2099-01-01T00:00:00+00:00",
+    "consent_text_id": 1,
+    "consented_at": "2001-01-01T00:00:00+00:00",
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "gbraid": "B2",
+    "gclid": "Cj0KCQ_abc-1",
+    "id": 1,
+    "platform": "google",
+    "user_account_id": 2,
+    "wbraid": null
+   }
+  ],
+  [
+   "ad_click",
+   {
+    "clicked_at": "2099-01-01T00:00:00+00:00",
+    "consent_text_id": 1,
+    "consented_at": "2001-01-01T00:00:00+00:00",
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "event_id": "ev-1",
+    "fbc": "fb.1.1.IwAR0",
+    "id": 2,
+    "platform": "meta",
+    "send_state": "pending",
+    "user_account_id": 2
+   }
+  ]
+ ],
+ "watch": {
+  "audit": "SELECT action, actor, detail, owner_user_id, actor_user_id, impersonator_user_id FROM audit ORDER BY id",
+  "rate_limit_event": "SELECT scope, key FROM rate_limit_event ORDER BY id",
+  "user_account": "SELECT id, session_version, last_login_at, recovery_codes_hash FROM user_account ORDER BY id"
+ }
+}

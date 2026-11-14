@@ -1,0 +1,73 @@
+{{- /* Go twin of App/app/templates/_list_filter.html, the compact variant (filter_compact = true)
+     the stay fee pages use. page_host.go (filterContext) builds the view. */ -}}
+{{define "stayfees.filter"}}
+<form id="list-filter-panel" method="get" action="{{.Action}}" class="filters list-filter list-filter--compact" data-filter-panel data-filter-compact data-filter-route="month" role="search">
+  <div class="filter-fields">
+    <div class="ui-field list-filter-period" data-month-picker data-month-optional="false"
+         data-current-month="{{.MonthKey}}" data-min-month="2000-01" data-max-month="{{.MaxMonth}}">
+      <label for="filter-month" class="sr-only">{{t .PeriodLabelKey}}</label>
+      <div class="month-row">
+        <button class="ui-btn ui-btn-secondary month-step" type="button" data-month-prev hidden {{if eq .MonthKey "2000-01"}}disabled{{end}} aria-label="{{t "host.filter.prev_month"}}">{{icon "chevron-left" 20 "month-chev"}}</button>
+        <div class="month-control">
+          <button class="ui-btn ui-btn-secondary month-trigger" type="button" data-month-trigger hidden aria-expanded="false" aria-haspopup="dialog">
+            <span data-month-caption>{{.PeriodSummary}}</span>{{icon "chevron-down" 16 "month-trigger-chev"}}
+          </button>
+          <input type="month" id="filter-month" name="month" value="{{.MonthKey}}" min="2000-01" max="{{.MaxMonth}}" required data-month-native>
+        </div>
+        <button class="ui-btn ui-btn-secondary month-step" type="button" data-month-next hidden {{if not .HasNext}}disabled{{end}}
+                aria-label="{{t "host.filter.next_month"}}">{{icon "chevron-right" 20 "month-chev"}}</button>
+      </div>
+      <div class="month-grid-panel" data-month-grid-panel role="dialog" aria-label="{{t "host.filter.months"}}" hidden>
+        <div class="month-year-row">
+          <button class="ui-btn ui-btn-secondary year-step" type="button" data-year-prev aria-label="{{t "host.filter.previous_year"}}">{{icon "chevron-left" 18 "month-chev"}}</button>
+          <strong data-month-year>{{.GridYear}}</strong>
+          <button class="ui-btn ui-btn-secondary year-step" type="button" data-year-next aria-label="{{t "host.filter.next_year"}}">{{icon "chevron-right" 18 "month-chev"}}</button>
+        </div>
+        <div class="month-grid" data-month-grid role="group" aria-label="{{t "host.filter.months"}}">
+          {{range .MonthChoices}}
+          <button class="month-choice{{if .Selected}} selected{{end}}" type="button"
+                  data-month-choice="{{.Key}}"
+                  aria-pressed="{{.Selected}}"
+                  {{if .Disable}}disabled{{end}}>{{.Label}}</button>
+          {{end}}
+        </div>
+      </div>
+    </div>
+    {{if or (gt (len .Properties) 1) .Statuses}}
+    <details class="list-filter-more"{{if .SecondaryActive}} open{{end}}>
+      <summary class="ui-btn ui-btn-quiet list-filter-more-toggle">{{t "host.filter.filters"}}</summary>
+      <div class="list-filter-more-fields">
+    {{end}}
+    {{if gt (len .Properties) 1}}
+    <div class="ui-field">
+      <label for="filter-apartment">{{t "stays.filter.apartment"}}</label>
+      <select id="filter-apartment" name="apartment">
+        <option value="">{{t "host.filter.all_properties"}}</option>
+        {{range .Properties}}
+        <option value="{{.ID}}" {{if .Selected}}selected{{end}}>{{.Name}}</option>
+        {{end}}
+      </select>
+    </div>
+    {{end}}
+    {{if .Statuses}}
+    <div class="ui-field">
+      <label for="filter-status">{{t "filter.status"}}</label>
+      <select id="filter-status" name="status">
+        <option value="">{{t "host.filter.all_statuses"}}</option>
+        {{range .Statuses}}
+        <option value="{{.Value}}" {{if .Selected}}selected{{end}}>{{.Label}}</option>
+        {{end}}
+      </select>
+    </div>
+    {{end}}
+    {{if or (gt (len .Properties) 1) .Statuses}}
+        {{if .SecondaryActive}}<a class="ui-btn ui-btn-quiet list-filter-reset" href="{{.Action}}?month={{.MonthKey}}">{{t "host.filter.reset"}}</a>{{end}}
+      </div>
+    </details>
+    {{end}}
+  </div>
+  <div class="filter-panel-actions list-filter-nojs">
+    <button class="ui-btn ui-btn-secondary filter-apply" type="submit">{{t "host.filter.apply_filters"}}</button>
+  </div>
+</form>
+{{end}}

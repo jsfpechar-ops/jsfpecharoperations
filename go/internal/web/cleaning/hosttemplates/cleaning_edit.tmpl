@@ -1,0 +1,21 @@
+{{/* Port of App/app/templates/cleaning_edit.html (add and edit one cleaning). Brief 1570. */}}
+{{define "cleaning_edit.title"}}{{end}}
+{{define "cleaning_edit"}}
+<div class="cleaning-page cleaning-form-page cl-v2-edit">
+<div class="head"><div><p class="crumb"><a href="/cleaning">{{ct $.Lang "back"}}</a></p><h1 class="big">{{if .Event}}{{ct $.Lang "edit"}}{{else}}{{ct $.Lang "add"}}{{end}}</h1></div></div>
+{{if .Error}}<p class="cleaning-warning" role="alert">{{errtext $.Lang .Error}}</p>{{end}}
+<form method="post" action="{{if .Event}}/cleaning/events/{{.Event.ID}}{{else}}/cleaning/events{{end}}" class="cleaning-panel cleaning-form card">
+<input type="hidden" name="_csrf" value="{{csrf}}">
+{{if .Event}}<input type="hidden" name="revision" value="{{.Values.Revision}}">{{end}}
+<div class="ui-field"><label for="clean-property">{{ct $.Lang "property"}}</label>
+{{if and .Event .Event.Auto}}<input type="hidden" name="apartment_id" value="{{.Event.ApartmentID}}"><p class="cleaning-readonly">{{range .Homes}}{{if eq .ID $.Event.ApartmentID}}{{.Name}}{{end}}{{end}}</p>
+{{else}}<select id="clean-property" name="apartment_id" required><option value="">…</option>{{range .Homes}}<option value="{{.ID}}" {{if eq $.Values.ApartmentID (print .ID)}}selected{{end}}>{{.Name}}</option>{{end}}</select>{{end}}</div>
+<div class="ui-field"><label for="clean-date">{{ct $.Lang "date"}}{{help_tip "cleaning-times-help" (ct $.Lang "property_times_hint")}}</label><input id="clean-date" type="date" name="scheduled_date" value="{{.Values.ScheduledDate}}" min="1900-01-01" max="2100-12-31" required></div>
+<p class="cleaning-timing-summary"><a class="cleaning-link" href="{{.TimesURL}}">{{ct $.Lang "edit_property_times"}}</a></p>
+<div class="ui-field"><label for="clean-notes">{{ct $.Lang "notes"}}{{help_tip "clean-notes-hint" (ct $.Lang "notes_hint")}}</label><textarea id="clean-notes" name="notes" rows="5" maxlength="5000" aria-describedby="clean-notes-hint">{{.Values.Notes}}</textarea></div>
+{{if and .Event .Event.Auto}}{{help_tip "clean-auto-help" (ct $.Lang "auto_help")}}{{end}}
+<div class="cleaning-actions"><button class="ui-btn ui-btn-primary" type="submit">{{ct $.Lang "save"}}</button><a class="ui-btn ui-btn-secondary" href="/cleaning">{{ct $.Lang "cancel"}}</a></div>
+</form>
+{{if .Event}}<details class="cleaning-panel cleaning-remove"><summary>{{ct $.Lang "delete"}}</summary><p>{{ct $.Lang "delete_hint"}}</p><form action="/cleaning/events/{{.Event.ID}}/delete" method="post" data-confirm data-confirm-message="{{ct $.Lang "delete_hint"}}"><input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="revision" value="{{.Event.Revision}}"><button class="ui-btn ui-btn-danger" type="submit">{{ct $.Lang "delete"}}</button></form></details>{{end}}
+</div>
+{{end}}

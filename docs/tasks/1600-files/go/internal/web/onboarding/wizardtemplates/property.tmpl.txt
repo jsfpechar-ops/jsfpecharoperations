@@ -1,0 +1,113 @@
+{{/* Port of App/app/templates/setup_wizard/property.html with _workflow.html (workflow_strip(none)),
+     _property_identity_fields.html, _door_code_window.html, _property_operator.html,
+     _property_address_fields.html and _ruian_suggest.html. Brief 1600. The details form posts to the
+     Python route POST /apartments/{id}; its refusals (name_error, address_errors, operator_error,
+     draft) re-render there, so here the form always shows the stored row. */}}
+{{define "wizard_help"}}{{help_tip "wiz-why-property" (print (t "why.property") " " (t "why.times") " " (t "why.address"))}}{{end}}
+{{define "wizard_content"}}
+
+<section class="workflow-block" data-workflow-strip aria-labelledby="workflow-title">
+  <h2 id="workflow-title" class="workflow-title">{{t "workflow.title"}}</h2>
+  <ol class="workflow-strip">
+    {{range .GenericWorkflow}}
+    <li class="workflow-strip-step{{if ne .Who "auto"}} is-you{{end}}" data-workflow-step="{{.Key}}">
+      <span class="workflow-num" aria-hidden="true">{{.N}}</span>
+      <span class="workflow-strip-copy">
+        <span class="workflow-strip-label">{{t (print "workflow.step." .Key)}}</span>
+        <span class="workflow-tag">{{t (print "workflow.who." .Who)}}</span>
+      </span>
+    </li>
+    {{end}}
+  </ol>
+</section>
+{{if not .Entities}}
+<form method="post" action="/entities" class="wizard-ares" id="wizard-ares-form">
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <input type="hidden" name="next" value="/apartments/{{.Apt.ID}}/setup/property">
+  <div class="field">
+    <label for="wizard-ares-ico">{{t "entities.ico"}}<span class="req-star" aria-hidden="true">*</span></label>
+    <input type="text" id="wizard-ares-ico" name="ico" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="12345678" required>
+  </div>
+  <button class="ui-btn ui-btn-secondary" type="submit" name="fill_from_register" value="1">{{t "ares.fill"}}</button>
+</form>
+{{end}}
+<form method="post" action="/apartments/{{.Apt.ID}}" class="setup-wizard-form" id="property-details-form">
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <input type="hidden" name="return_to" value="{{.NextReturnTo}}">
+  <input type="hidden" name="setup_step" value="property">
+  <input type="hidden" name="default_purpose" value="{{or .Values.DefaultPurpose "10"}}">
+  <div class="grid two property-identity-fields">
+    <div class="field">
+      {{field_label "internal_name" (t "apartment.form.internal_name.label") (t "apartment.form.internal_name.hint") false "" true}}
+      <input type="text" id="internal_name" name="internal_name" value="{{.Values.InternalName}}" required
+             aria-describedby="internal_name-help">
+    </div>
+    <input type="hidden" id="city_en" name="city_en" value="{{.Values.CityEN}}">
+  </div>
+  <h3 class="property-section-title">{{t "apartment.form.door_code.checkin"}} / {{t "apartment.form.door_code.checkout"}}</h3>
+
+  <div class="grid two">
+    {{range .HourSelects}}{{$sel := .Selected}}
+    <div class="field"><label for="{{.Name}}">{{t .Label}}<span class="req-star" aria-hidden="true">*</span></label>
+      <select id="{{.Name}}" name="{{.Name}}" required><option value="">{{t "apartment.form.door_code.choose"}}</option>
+        {{range $h := seq 24}}<option value="{{$h}}" {{if eq $h $sel}}selected{{end}}>{{wizard_hour $h}}</option>{{end}}
+      </select></div>
+    {{end}}
+  </div>
+  {{if .LockAvailable}}{{with .DoorWindow}}
+  <div data-door-code-window data-buffer="{{.Buffer}}"
+       data-checkin="{{.CheckIn}}" data-checkout="{{.CheckOut}}"
+       data-arrival="{{t "door_code.window.arrival"}}" data-departure="{{t "door_code.window.departure"}}"
+       data-previous="{{t "door_code.window.previous"}}" data-next="{{t "door_code.window.next"}}">
+    <p><strong>{{t "door_code.window.title"}}</strong><br>{{t "door_code.window.margin" "hours" .Buffer}}</p>
+    <div aria-live="polite" aria-atomic="true">
+      <dl class="ui-facts" data-window-values{{if not .Complete}} hidden{{end}}>
+        <div><dt>{{t "door_code.window.from"}}</dt>
+        <dd data-window-start>{{if .Complete}}{{.Start}} · {{t .StartKey}}{{end}}</dd></div>
+        <div><dt>{{t "door_code.window.until"}}</dt>
+        <dd data-window-end>{{if .Complete}}{{.End}} · {{t .EndKey}}{{end}}</dd></div>
+      </dl>
+      <p data-window-missing{{if .Complete}} hidden{{end}}>{{t "door_code.window.missing"}}</p>
+    </div>
+  </div>
+  {{end}}{{end}}
+  {{$op := .OperatorSelected}}
+  <div class="field property-operator" id="operator-picker">
+    <label for="legal_entity_id">{{t "apartment.form.entity.label"}}<span class="req-star" aria-hidden="true">*</span></label>
+    <select id="legal_entity_id" name="legal_entity_id" required{{if not .Entities}} aria-describedby="operator-message"{{end}}>
+      {{if not $op}}<option value="" disabled selected>{{t "apartment.form.operator.choose"}}</option>{{end}}
+      {{range .Entities}}
+      <option value="{{.ID}}" {{if eq .ID $op}}selected{{end}}>{{.Name}}</option>
+      {{end}}
+    </select>
+    {{if not .Entities}}
+    <div class="property-operator-empty" id="operator-message">
+      <p class="err-text">{{t "apartment.form.operator.add_first"}}</p>
+      <div class="actions">
+        <a class="btn small" href="/entities" target="_blank" rel="noopener">{{t "apartment.form.operator.add_business"}}</a>
+        <button class="btn small ghost" type="submit" name="operator_refresh" value="1" formnovalidate>{{t "apartment.form.operator.check_again"}}</button>
+      </div>
+    </div>
+    {{end}}
+  </div>
+  {{if .Entities}}<div class="setup-wizard-instruction property-operator-hint"><a href="/entities{{with .Apt.LegalEntityID}}?edit={{.}}{{end}}">{{t "host.business"}} </a> {{help_tip "legal_entity_id-help" (t "apartment.form.entity.hint")}}</div>{{end}}
+  <h3 class="property-section-title">{{t "apartment.form.address.title"}}</h3>
+  <p class="section-note">{{t "apartment.form.address.line"}}</p>
+
+  {{range .AddressRows}}
+  <div class="grid property-address-grid">
+    {{range .}}
+    <div class="field">
+      {{field_label .Name .Label .Help false "" .Required}}
+      <input type="text" id="{{.Name}}" name="{{.Name}}" autocomplete="off" value="{{.Value}}"{{if .MaxLen}} maxlength="{{.MaxLen}}"{{end}}{{if .InputMode}} inputmode="{{.InputMode}}"{{end}}{{if .AutoCap}} autocapitalize="{{.AutoCap}}"{{end}}{{if .Placeholder}} placeholder="{{.Placeholder}}"{{end}}{{if .Required}} required aria-required="true"{{end}}{{if .Help}} aria-describedby="{{.Name}}-help"{{end}}{{if .Suggest}} data-ruian-suggest data-ruian-loading="{{t "apartment.form.addr.suggest_loading"}}" data-ruian-none="{{t "apartment.form.addr.suggest_none"}}"{{end}}>
+    </div>
+    {{end}}
+  </div>
+  {{end}}
+<script src="/static/ruian_suggest.js?v=20261111-1103b" defer data-turbo-track="reload"></script>
+</form>
+{{end}}
+{{define "wizard_actions"}}
+<span></span>
+<button class="ui-btn ui-btn-primary" type="submit" form="property-details-form">{{t "wizard.save_continue"}}</button>
+{{end}}

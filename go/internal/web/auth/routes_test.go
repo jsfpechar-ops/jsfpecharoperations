@@ -287,12 +287,9 @@ func header(h http.Header, k string) *string {
 }
 
 // knownGaps are differences that live in read-only packages, not here.
-var knownGaps = map[string]string{
-	// hostweb.endExpired signs {uid, sv, iat} with SameSite=Strict; Python's
-	// end_expired_impersonation goes through issue_session (adds rf) and
-	// attach_session (SameSite=Lax). Reported for the hostweb owner.
-	"stop_expired": "rf",
-}
+// None: brief 1382 gave hostweb.endExpired the rf claim and SameSite=Lax,
+// so stop_expired is compared in full (brief 1514).
+var knownGaps = map[string]string{}
 
 func TestRoutesGoldenDatabase(t *testing.T) {
 	g := loadGolden(t)

@@ -1,0 +1,13 @@
+{{/* Port of App/app/templates/cleaning_shares.html (share links for the cleaning team). Brief 1572. */}}
+{{define "cleaning_shares.title"}}{{end}}
+{{define "cleaning_shares"}}
+<div class="cleaning-page cleaning-form-page cl-v2-shares">
+<div class="head"><div><p class="crumb"><a href="/cleaning">{{ct $.Lang "back"}}</a></p><div class="heading-with-tip"><h1 class="big">{{ct $.Lang "share"}}{{help_tip "cleaning-share-intro-help" (ct $.Lang "share_intro")}}</h1></div></div></div>
+{{if .Error}}<p class="cleaning-warning" role="alert">{{if eq .Error "property"}}{{ct $.Lang "property_error"}}{{else}}{{ct $.Lang .Error}}{{end}}</p>{{end}}
+{{if .ShareURL}}<section class="cleaning-panel cleaning-form card"><h2>{{ct $.Lang "share_ready"}}</h2>{{help_tip "cleaning-share-once-help" (ct $.Lang "share_once")}}<a class="cleaning-share-url" href="{{.ShareURL}}">{{.ShareURL}}</a></section>{{end}}
+<form class="cleaning-panel cleaning-form card" method="post" action="/cleaning/shares"><input type="hidden" name="_csrf" value="{{csrf}}">
+<fieldset><legend>{{ct $.Lang "property"}}</legend>{{range .Homes}}<label class="cleaning-share-option"><input type="checkbox" name="properties" value="{{.ID}}"><span>{{.Name}}</span></label>{{end}}</fieldset>
+<div class="cleaning-actions"><button class="ui-btn ui-btn-primary" type="submit">{{ct $.Lang "create_share"}}</button>{{help_tip "cleaning-share-caution-help" (ct $.Lang "share_caution")}}</div></form>
+{{range .Shares}}<div class="cleaning-panel cleaning-share-row card"><div><strong>{{ct $.Lang "share_number"}} {{.ID}}</strong><p>{{ct $.Lang "expires"}} {{datetime_local .ExpiresAt}}</p></div><form action="/cleaning/shares/{{.ID}}/revoke" method="post"><input type="hidden" name="_csrf" value="{{csrf}}"><button class="ui-btn ui-btn-secondary" type="submit">{{ct $.Lang "revoke"}}</button></form></div>{{end}}
+</div>
+{{end}}

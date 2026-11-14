@@ -1,6 +1,6 @@
 # 1540: Go guest page shell, booking terms and thanks pages (switched off)
 
-Status: todo
+Status: review
 Depends on: none | Base commit: none (one big PR) | Branch: the current branch
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Tier B (public guest pages). Review: Opus orchestrator reads the risk-listed files.

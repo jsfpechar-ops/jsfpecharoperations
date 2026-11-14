@@ -1,0 +1,64 @@
+{{define "title"}}{{.T "signup.page_title"}}{{end}}
+{{define "meta"}}<meta name="description" content="{{.T "signup.meta_description"}}">
+{{end}}
+{{define "body"}}
+<section class="auth-card">
+  <h1 class="auth-title">{{.T "signup.title"}}</h1>
+  <p class="auth-lede">{{.T "signup.lede"}}</p>
+
+  {{if and .V.Error (not .V.ErrorField)}}
+    <div class="auth-alert" role="alert">{{.T .V.Error}}</div>
+  {{end}}
+
+  <form method="post" action="/signup" class="auth-form">
+    <input type="hidden" name="_csrf" value="{{.CSRF}}">
+    {{range .AttrHidden}}
+      <input type="hidden" name="{{index . 0}}" value="{{$.E (index . 1)}}">
+    {{end}}
+    {{range .V.Selection}}
+    <input type="hidden" name="{{index . 0}}" value="{{$.E (index . 1)}}">
+    {{end}}
+    <div class="auth-field">
+      <label for="email">{{.T "signup.email"}}</label>
+      <input type="email" id="email" name="email" required maxlength="254"
+             value="{{.E .V.Email}}"
+             autocomplete="email" autocapitalize="none" spellcheck="false"
+             placeholder="{{.T "signup.email_ph"}}"{{if not .V.Error}} autofocus{{end}}
+             {{if eq .V.ErrorField "email"}}aria-invalid="true" aria-describedby="email-error"{{end}}>
+      {{if eq .V.ErrorField "email"}}
+      <p class="auth-hint err-text" id="email-error" role="alert">{{.T .V.Error}}</p>
+      {{end}}
+    </div>
+    <label class="auth-remember">
+      <input type="checkbox" name="accept" value="1" required
+             {{if eq .V.ErrorField "accept"}}aria-invalid="true" aria-describedby="accept-error"{{end}}>
+      <span>{{.T "signup.accept_before"}}<a href="/terms" target="_blank" rel="noopener noreferrer">{{.T "signup.accept_terms"}}</a>{{.T "signup.accept_between"}}<a href="/dpa" target="_blank" rel="noopener noreferrer">{{.T "signup.accept_dpa"}}</a>{{.T "signup.accept_privacy_before"}}<a href="/privacy" target="_blank" rel="noopener noreferrer">{{.T "signup.accept_privacy"}}</a>{{.T "signup.accept_after"}}</span>
+    </label>
+    {{if eq .V.ErrorField "accept"}}
+    <p class="auth-hint err-text" id="accept-error" role="alert">{{.T .V.Error}}</p>
+    {{end}}
+    {{range .V.Boxes}}
+    <label class="auth-remember" data-consent="{{$.E .Platform}}">
+      <input type="checkbox" name="{{$.E .Field}}" value="1"{{if .Checked}} checked{{end}}>
+      <span>{{$.E .Text}} <a href="{{$.E .LinkURL}}" target="_blank" rel="noopener noreferrer">{{$.E .LinkLabel}}</a></span>
+    </label>
+    {{end}}
+    <label class="auth-remember">
+      <input type="checkbox" name="marketing_opt_in" value="1"{{if .V.MarketingOptIn}} checked{{end}}>
+      <span>{{.T "signup.marketing_opt_in"}}</span>
+    </label>
+    {{if .SiteKey}}
+      <div class="cf-turnstile" data-sitekey="{{.E .SiteKey}}"
+           data-action="host_signup" data-language="{{.E .Lang}}"></div>
+    {{end}}
+    <button class="auth-submit" type="submit">{{.T "signup.submit"}}</button>
+  </form>
+
+  <div class="auth-foot">
+    <p>{{.T "signup.have_account"}} <a href="/login?lang={{.E .Lang}}">{{.T "signup.login_link"}}</a></p>
+  </div>
+</section>
+{{if .SiteKey}}
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+{{end}}
+{{end}}

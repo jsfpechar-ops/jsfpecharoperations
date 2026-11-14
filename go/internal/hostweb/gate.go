@@ -8,6 +8,7 @@ import (
 	"mime"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 
@@ -56,6 +57,24 @@ var ExpiredTexts = map[string]string{
 	"vi": "Phiên xem trước không gian làm việc đã kết thúc sau 60 phút. Bạn đã quay lại tài khoản của mình.",
 }
 
+// readOnlyOpenPrefixes and readOnlyOpenPaths are auth.py
+// _READ_ONLY_OPEN_PREFIXES and _READ_ONLY_OPEN_PATHS (0415): what a paused plan
+// may still POST. gate_paused_test.go checks them against auth.py.
+var (
+	readOnlyOpenPrefixes = []string{"/predplatne", "/logout", "/account", "/settings", "/exports"}
+	readOnlyOpenPaths    = regexp.MustCompile(`^/(reservations/submit-ready|reservations/\d+/submit|guests/\d+/resend)$`)
+)
+
+// ReadOnlyOpen reports whether a POST to path is allowed on a paused plan.
+func ReadOnlyOpen(path string) bool {
+	for _, p := range readOnlyOpenPrefixes {
+		if strings.HasPrefix(path, p) {
+			return true
+		}
+	}
+	return readOnlyOpenPaths.MatchString(path)
+}
+
 // Login is require_login (auth.py 481-560). It returns a nil host when it has
 // written the response (or failed), and the signed-in host otherwise.
 func Login(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool, getenv func(string) string, at time.Time) (*session.Host, error) {
@@ -81,7 +100,7 @@ func Login(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool, getenv fu
 			return nil, nil
 		}
 	}
-	if r.Method == http.MethodPost && !h.Impersonating && billingOn(getenv) {
+	if r.Method == http.MethodPost && !h.Impersonating && !ReadOnlyOpen(r.URL.Path) && billingOn(getenv) {
 		var status string
 		err := pool.QueryRow(ctx, pausedSQL, h.Workspace.ID).Scan(&status)
 		if err != nil && !errors.Is(err, pgx.ErrNoRows) {

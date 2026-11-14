@@ -1,0 +1,1815 @@
+{
+ "base": "https://app.example.test",
+ "cases": [
+  {
+   "body": "",
+   "content_type": null,
+   "csrf": false,
+   "form": {
+    "action": "skip",
+    "step": "calendar"
+   },
+   "fragment": "",
+   "lang_cookie": null,
+   "location": "/login?notice=form_expired",
+   "method": "POST",
+   "name": "no_csrf",
+   "path": "/apartments/11/setup",
+   "status": 303,
+   "title": "",
+   "user": 1
+  },
+  {
+   "body": "{\"detail\":[{\"type\":\"int_parsing\",\"loc\":[\"path\",\"apartment_id\"],\"msg\":\"Input should be a valid integer, unable to parse string as an integer\",\"input\":\"abc\"}]}",
+   "content_type": "application/json",
+   "csrf": true,
+   "form": {
+    "action": "skip",
+    "step": "calendar"
+   },
+   "fragment": "",
+   "lang_cookie": null,
+   "location": null,
+   "method": "POST",
+   "name": "bad_id",
+   "path": "/apartments/abc/setup",
+   "status": 422,
+   "title": "",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": null,
+   "csrf": true,
+   "form": {
+    "action": "skip",
+    "step": "calendar"
+   },
+   "fragment": "",
+   "lang_cookie": null,
+   "location": "/login?next=/apartments/11/setup",
+   "method": "POST",
+   "name": "signed_out",
+   "path": "/apartments/11/setup",
+   "status": 303,
+   "title": "",
+   "user": null
+  },
+  {
+   "body": "",
+   "content_type": null,
+   "csrf": true,
+   "form": {
+    "action": "hide"
+   },
+   "fragment": "",
+   "lang_cookie": null,
+   "location": "/apartments?err=This%20property%20no%20longer%20exists.",
+   "method": "POST",
+   "name": "foreign",
+   "path": "/apartments/21/setup",
+   "status": 303,
+   "title": "",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": null,
+   "csrf": true,
+   "form": {
+    "action": "hide"
+   },
+   "fragment": "",
+   "lang_cookie": null,
+   "location": "/apartments?err=This%20property%20no%20longer%20exists.",
+   "method": "POST",
+   "name": "missing",
+   "path": "/apartments/999/setup",
+   "status": 303,
+   "title": "",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": null,
+   "csrf": true,
+   "form": {
+    "action": "hide"
+   },
+   "fragment": "",
+   "lang_cookie": null,
+   "location": "/apartments/23?view=overview&msg=Setup%20guide%20hidden.",
+   "method": "POST",
+   "name": "hide",
+   "path": "/apartments/23/setup",
+   "status": 303,
+   "title": "",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": null,
+   "csrf": true,
+   "form": {
+    "action": "show"
+   },
+   "fragment": "",
+   "lang_cookie": null,
+   "location": "/apartments/23/setup",
+   "method": "POST",
+   "name": "show",
+   "path": "/apartments/23/setup",
+   "status": 303,
+   "title": "",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": null,
+   "csrf": true,
+   "form": {
+    "action": "show"
+   },
+   "fragment": "",
+   "lang_cookie": null,
+   "location": "/apartments/11/setup",
+   "method": "POST",
+   "name": "show_not_hidden",
+   "path": "/apartments/11/setup",
+   "status": 303,
+   "title": "",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": null,
+   "csrf": true,
+   "form": {
+    "action": "show"
+   },
+   "fragment": "",
+   "lang_cookie": "cs",
+   "location": "/apartments/14/setup",
+   "method": "POST",
+   "name": "show_hidden_cs",
+   "path": "/apartments/14/setup",
+   "status": 303,
+   "title": "",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": null,
+   "csrf": true,
+   "form": {
+    "action": "wait",
+    "step": "police"
+   },
+   "fragment": "",
+   "lang_cookie": null,
+   "location": "/apartments/11/setup/guest_link",
+   "method": "POST",
+   "name": "wrong_step",
+   "path": "/apartments/11/setup",
+   "status": 303,
+   "title": "",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": null,
+   "csrf": true,
+   "form": {
+    "action": "",
+    "step": ""
+   },
+   "fragment": "",
+   "lang_cookie": null,
+   "location": "/apartments/13?view=overview",
+   "method": "POST",
+   "name": "no_guide",
+   "path": "/apartments/13/setup",
+   "status": 303,
+   "title": "",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": null,
+   "csrf": true,
+   "form": {
+    "action": "skip",
+    "step": "property"
+   },
+   "fragment": "",
+   "lang_cookie": null,
+   "location": "/apartments/24/setup/property",
+   "method": "POST",
+   "name": "property_not_skippable",
+   "path": "/apartments/24/setup",
+   "status": 303,
+   "title": "",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": null,
+   "csrf": true,
+   "form": {
+    "action": "none",
+    "step": "door_lock"
+   },
+   "fragment": "",
+   "lang_cookie": null,
+   "location": "/apartments/14/setup/calendar",
+   "method": "POST",
+   "name": "retired_none",
+   "path": "/apartments/14/setup",
+   "status": 303,
+   "title": "",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": null,
+   "csrf": true,
+   "form": {
+    "action": "done",
+    "step": "calendar"
+   },
+   "fragment": "",
+   "lang_cookie": null,
+   "location": "/apartments/14/setup/calendar",
+   "method": "POST",
+   "name": "calendar_done_refused",
+   "path": "/apartments/14/setup",
+   "status": 303,
+   "title": "",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": null,
+   "csrf": true,
+   "form": {
+    "action": "skip",
+    "step": "calendar"
+   },
+   "fragment": "",
+   "lang_cookie": null,
+   "location": "/apartments/14/setup/police",
+   "method": "POST",
+   "name": "calendar_skip",
+   "path": "/apartments/14/setup",
+   "status": 303,
+   "title": "",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": "text/html; charset=utf-8",
+   "csrf": true,
+   "form": {
+    "action": "wait",
+    "automation_mode": "scheduled",
+    "internal_name": "My",
+    "legal_entity_id": "31",
+    "setup_step": "police",
+    "step": "police",
+    "submit_after_hours": "0",
+    "uby_contact": "",
+    "uby_idub": " 123456789012 ",
+    "uby_mark": "aakli",
+    "uby_name": "BYT <1>",
+    "uby_ws_user": "UBY-WS_X"
+   },
+   "fragment": "<div class=\"setup-wizard wiz-page\" data-setup-wizard data-setup-step=\"police\">\n  <div class=\"setup-wizard-head\">\n    <div class=\"wiz-title\">\n    <p class=\"wiz-count\">Step 3 of 4 · Police reporting</p>\n    \n    <div class=\"setup-wizard-meter\">\n      <ol class=\"setup-wizard-progress\" aria-hidden=\"true\">\n        \n        <li class=\"is-done\"></li>\n        \n        <li class=\"is-skipped\"></li>\n        \n        <li class=\"is-current\"></li>\n        \n        <li class=\"is-todo\"></li>\n        \n      </ol>\n      <p class=\"setup-wizard-done-count\"><span class=\"setup-wizard-tick\" aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"check\"><path d=\"M20 6 9 17l-5-5\"/></svg></span> 2 of 4 done</p>\n    </div>\n    \n    <h1 class=\"big\">Set up My</h1>\n    </div>\n    \n    <form method=\"post\" action=\"/apartments/23/setup\" class=\"setup-wizard-exit\">\n      <input type=\"hidden\" name=\"_csrf\" value=\"\">\n      <button class=\"ui-btn ui-btn-secondary\" type=\"submit\" name=\"action\" value=\"hide\" formnovalidate>Exit setup</button>\n    </form>\n    \n  </div>\n  <div class=\"setup-wizard-body\">\n    \n    \n    \n    <div class=\"setup-wizard-ask\" data-step-tone=\"purple\">\n      <span class=\"setup-wizard-ask-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M5.5 3.5h6l3.5 3.5v9.5a1 1 0 0 1-1 1h-8.5a1 1 0 0 1-1-1v-12a1 1 0 0 1 1-1Z\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M11.5 3.5v4h4M7.5 11h5M7.5 14h3.5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <h2 class=\"setup-wizard-question\">What is your police login?<span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"wiz-why-police\">?</button>\n    <span class=\"help-tip-body\" id=\"wiz-why-police\" role=\"tooltip\">Every foreign guest has to be reported to the police within three working days of arrival. UbyHost does it for you through Ubyport. It needs the login the police sent you by letter. Don&#39;t have it yet? Tap “I&#39;m still waiting for my police login” and carry on.</span>\n  </span>\n</h2>\n    </div>\n    \n    <p class=\"required-legend\">Fields marked * are required.</p>\n    \n    \n<p class=\"err-text\" role=\"alert\">Enter the delay in whole hours, from 1 to 48. Nothing was saved.</p>\n\n\n<form method=\"post\" action=\"/apartments/23\" class=\"setup-wizard-form\" id=\"police-form\"><button class=\"sr-only\" type=\"submit\" tabindex=\"-1\" aria-hidden=\"true\" formaction=\"/apartments/23/test-connection\" formmethod=\"post\" formnovalidate></button>\n  <input type=\"hidden\" name=\"_csrf\" value=\"\">\n  <input type=\"hidden\" name=\"return_to\" value=\"/apartments/23/setup/police\">\n  <input type=\"hidden\" name=\"setup_step\" value=\"police\">\n  <input type=\"hidden\" name=\"internal_name\" value=\"My\">\n  <input type=\"hidden\" name=\"legal_entity_id\" value=\"31\">\n  <input type=\"hidden\" name=\"city_en\" value=\"Prague\">\n  <input type=\"hidden\" name=\"default_purpose\" value=\"10\">\n  <input type=\"hidden\" name=\"step\" value=\"police\">\n  \n  \n  \n  \n      <div class=\"police-letter-helpers\">\n      <details class=\"police-letter-find\" open>\n        <summary>Where do I find these?</summary>\n        \n<figure class=\"police-letter-figure\">\n  <svg class=\"police-letter-svg\" viewBox=\"0 0 320 200\" role=\"img\" aria-labelledby=\"pl-fig-t\">\n    <title id=\"pl-fig-t\">Drawing of the police web-service letter with the values marked</title>\n    <rect class=\"pl-sheet\" x=\"4\" y=\"4\" width=\"312\" height=\"192\" rx=\"6\"/>\n    <rect class=\"pl-bar\" x=\"20\" y=\"16\" width=\"90\" height=\"6\" rx=\"3\"/>\n    <rect class=\"pl-bar\" x=\"20\" y=\"27\" width=\"60\" height=\"5\" rx=\"2.5\"/>\n    <rect class=\"pl-bar\" x=\"230\" y=\"16\" width=\"70\" height=\"5\" rx=\"2.5\"/>\n    <text class=\"pl-title\" x=\"160\" y=\"52\" text-anchor=\"middle\">Přihlašovací údaje pro robotické vkládání</text>\n    <text class=\"pl-title\" x=\"160\" y=\"64\" text-anchor=\"middle\">Ubyport Webová služba</text>\n    <circle class=\"pl-num\" cx=\"30\" cy=\"88\" r=\"9\"/><text class=\"pl-num-text\" x=\"30\" y=\"91.5\" text-anchor=\"middle\">1</text>\n    <text class=\"pl-label\" x=\"46\" y=\"91.5\">Přihlašovací jméno:</text><text class=\"pl-value\" x=\"160\" y=\"91.5\">UBY-WS_ABCDE</text>\n    <circle class=\"pl-num\" cx=\"30\" cy=\"114\" r=\"9\"/><text class=\"pl-num-text\" x=\"30\" y=\"117.5\" text-anchor=\"middle\">2</text>\n    <text class=\"pl-label\" x=\"46\" y=\"117.5\">Přístupové heslo:</text><text class=\"pl-value\" x=\"160\" y=\"117.5\">••••••••</text>\n    <circle class=\"pl-num\" cx=\"30\" cy=\"140\" r=\"9\"/><text class=\"pl-num-text\" x=\"30\" y=\"143.5\" text-anchor=\"middle\">3</text>\n    <text class=\"pl-label\" x=\"46\" y=\"143.5\">IDUB:</text><text class=\"pl-value\" x=\"160\" y=\"143.5\">000000000000</text>\n    <rect class=\"pl-bar\" x=\"20\" y=\"162\" width=\"280\" height=\"5\" rx=\"2.5\"/>\n    <rect class=\"pl-bar\" x=\"20\" y=\"173\" width=\"250\" height=\"5\" rx=\"2.5\"/>\n    <rect class=\"pl-bar\" x=\"20\" y=\"184\" width=\"120\" height=\"5\" rx=\"2.5\"/>\n  </svg>\n  <figcaption class=\"police-letter-legend\">\n    <ol>\n      <li>Web-service login</li>\n      <li>Web-service password: Type it yourself</li>\n      <li>Police accommodation number (IDUB)</li>\n    </ol>\n    <p class=\"police-letter-note\">Short name from the police (zkratka): Usually not printed. UbyHost takes it from the login, and you check it.</p>\n  </figcaption>\n</figure>\n      </details>\n      <details class=\"police-letter-paste\" id=\"police-letter-paste\" open>\n        <summary>Paste the letter text</summary>\n        <div class=\"field\">\n          <div class=\"field-label-row\"><label for=\"letter_text\">Text of the police letter<span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"police-letter-help\">?</button>\n    <span class=\"help-tip-body\" id=\"police-letter-help\" role=\"tooltip\">Paste the whole letter. UbyHost fills the boxes below and does not keep the text.</span>\n  </span>\n</label></div>\n          <textarea id=\"letter_text\" name=\"letter_text\" form=\"police-letter-form\" rows=\"6\" maxlength=\"20000\" autocomplete=\"off\" spellcheck=\"false\" data-letter-paste></textarea>\n          \n        </div>\n        <div class=\"actions\">\n          <button class=\"ui-btn ui-btn-secondary\" type=\"submit\" form=\"police-letter-form\" data-letter-read>Read the letter</button>\n        </div>\n      </details>\n      </div>\n      <p class=\"police-letter-status small\" id=\"police-letter-status\" role=\"status\" aria-live=\"polite\" data-letter-status data-read-failed=\"Could not read the letter here. Use the button below.\" data-saved-now=\"Saved now: %s\"></p>\n      <input type=\"hidden\" name=\"letter_fields\" value=\"\" data-letter-fields data-letter-fields-initial=\"\">\n      <div class=\"grid\">\n        \n  <div class=\"field\">\n    \n  <div class=\"field-label-row\">\n    <label for=\"uby_idub\">Accommodation number (IDUB)<span class=\"req-star\" aria-hidden=\"true\">*</span><span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"uby_idub-help\">?</button>\n    <span class=\"help-tip-body\" id=\"uby_idub-help\" role=\"tooltip\">12 to 14 numbers. On the police letter it is the line “IDUB:”. Copy it exactly.</span>\n  </span>\n</label>\n  </div>\n\n    <input type=\"text\" id=\"uby_idub\" name=\"uby_idub\" value=\"123456789012\" maxlength=\"14\" aria-required=\"true\" aria-describedby=\"uby_idub-help\">\n    \n  </div>\n\n      </div>\n      <div class=\"grid two\">\n        \n  <div class=\"field\">\n    \n  <div class=\"field-label-row\">\n    <label for=\"uby_ws_user\">Login from the police letter<span class=\"req-star\" aria-hidden=\"true\">*</span><span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"uby_ws_user-help\">?</button>\n    <span class=\"help-tip-body\" id=\"uby_ws_user-help\" role=\"tooltip\">The user name UbyHost uses to send reports for you. It starts with UBY-WS. On the web-service letter it is the line “Přihlašovací jméno:”. It is not your normal UbyPort portal login. Copy it exactly, including _ and numbers.</span>\n  </span>\n</label>\n  </div>\n\n    <input type=\"text\" id=\"uby_ws_user\" name=\"uby_ws_user\" value=\"UBY-WS_X\" aria-required=\"true\" aria-describedby=\"uby_ws_user-help\">\n    \n  </div>\n\n        <div class=\"field\">\n          \n  <div class=\"field-label-row\">\n    <label for=\"uby_ws_password\">Password from the police letter<span class=\"req-star\" aria-hidden=\"true\">*</span><span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"uby_ws_password-help\">?</button>\n    <span class=\"help-tip-body\" id=\"uby_ws_password-help\" role=\"tooltip\">The password that belongs to the web-service login. On the web-service letter it is the line “Přístupové heslo:”. Copy it exactly.</span>\n  </span>\n</label>\n  </div>\n\n          <input type=\"text\" id=\"uby_ws_password\" name=\"uby_ws_password\" autocomplete=\"off\" autocapitalize=\"off\" spellcheck=\"false\"\n                 aria-required=\"true\" aria-describedby=\"uby_ws_password-help uby_ws_password-hint\">\n          <div class=\"hint\" id=\"uby_ws_password-hint\">\n            \n            Password from your police letter.\n            \n          </div>\n        </div>\n      </div>\n      <p class=\"small muted police-no-credentials\">No web-service credentials yet? The Foreign Police explain how to request them:\n        <a href=\"https://policie.gov.cz/reditelstvi-sluzby-cizinecke-policie/jake-jsou-moznosti-zasilani-dat-aplikaci-ubyport\" target=\"_blank\" rel=\"noopener\">UbyPort data sending options (policie.gov.cz)</a></p>\n      <div class=\"field-label-row\"><h2 class=\"property-section-title\">Accommodation facility</h2></div>\n      <div class=\"grid\">\n        \n  <div class=\"field\">\n    \n  <div class=\"field-label-row\">\n    <label for=\"uby_mark\">Short name (zkratka)<span class=\"req-star\" aria-hidden=\"true\">*</span><span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"uby_mark-help\">?</button>\n    <span class=\"help-tip-body\" id=\"uby_mark-help\" role=\"tooltip\">Fills in by itself from your login: the part after UBY-WS_. Change it only if the police letter gives a different “Zkratka ubytovacího zařízení”.</span>\n  </span>\n</label>\n  </div>\n\n    <input type=\"text\" id=\"uby_mark\" name=\"uby_mark\" value=\"aakli\" maxlength=\"6\" aria-required=\"true\" aria-describedby=\"uby_mark-help\">\n    \n  </div>\n\n      </div>\n      <div class=\"grid two\">\n        \n  <div class=\"field\">\n    \n  <div class=\"field-label-row\">\n    <label for=\"uby_name\">Facility name on the letter<span class=\"req-star\" aria-hidden=\"true\">*</span><span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"uby_name-help\">?</button>\n    <span class=\"help-tip-body\" id=\"uby_name-help\" role=\"tooltip\">From your police letter, line “Ubytovací zařízení:”. Type only the highlighted first line (max 35 characters). Never your property or listing name: the police reject reports with a different name. <span class=\"facility-example\"><span class=\"facility-example-label\">Example from a police letter:</span>Ubytovací zařízení: <mark>BYT Č. [2] FIKTVNÍ 1234/56 (PRAHA,</mark> PRAHA 2, FIKTVNÍ, 1234/56)</span></span>\n  </span>\n</label>\n  </div>\n\n    <input type=\"text\" id=\"uby_name\" name=\"uby_name\" value=\"BYT &lt;1&gt;\" maxlength=\"35\" aria-required=\"true\" aria-describedby=\"uby_name-help\">\n    \n  </div>\n\n        \n  <div class=\"field\">\n    \n  <div class=\"field-label-row\">\n    <label for=\"uby_contact\">Contact at registration<span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"uby_contact-help\">?</button>\n    <span class=\"help-tip-body\" id=\"uby_contact-help\" role=\"tooltip\">An e-mail or phone where the police can reach you about your reports, as given when you registered in UbyPort. The web-service letter often does not show it.</span>\n  </span>\n</label>\n  </div>\n\n    <input type=\"text\" id=\"uby_contact\" name=\"uby_contact\" value=\"\" maxlength=\"50\" aria-describedby=\"uby_contact-help\">\n    \n  </div>\n\n      </div>\n      \n  <h3 class=\"property-section-title\">When should reports go to the police?<span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"wiz-why-automation\">?</button>\n    <span class=\"help-tip-body\" id=\"wiz-why-automation\" role=\"tooltip\">Choose when UbyHost reports your guests to the police. We recommend the delay: you have time to check the details and you never miss the three-day deadline. You can change this at any time.</span>\n  </span>\n</h3>\n  <div class=\"ui-choice-cards\">\n    \n<div class=\"ui-choice-card\">\n  <label class=\"ui-choice-card-label\">\n    <input type=\"radio\" name=\"automation_mode\" value=\"manual\">\n    <strong class=\"tip-label\">Only when I press <span class=\"tip-nowrap\">send<span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help with Only when I press send\" aria-expanded=\"false\" aria-controls=\"wizard-manual-help\">?</button>\n    <span class=\"help-tip-body\" id=\"wizard-manual-help\" role=\"tooltip\">You press Send when a stay is ready to report.</span>\n  </span>\n</span></strong>\n  </label>\n  \n</div>\n\n    \n<div class=\"ui-choice-card\">\n  <label class=\"ui-choice-card-label\">\n    <input type=\"radio\" name=\"automation_mode\" value=\"scheduled\" checked>\n    <strong class=\"tip-label\">Automatically after a delay from <span class=\"tip-nowrap\">completion<span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help with Automatically after a delay from completion\" aria-expanded=\"false\" aria-controls=\"wizard-scheduled-help\">?</button>\n    <span class=\"help-tip-body\" id=\"wizard-scheduled-help\" role=\"tooltip\">UbyHost sends after a delay you choose.</span>\n  </span>\n</span></strong>\n  </label>\n  <div class=\"ui-choice-card-extra\">\n      <div class=\"field inline-hours\">\n        <label for=\"submit_after_hours\">Hours after completion</label>\n        <input type=\"number\" id=\"submit_after_hours\" name=\"submit_after_hours\" min=\"1\" max=\"48\" value=\"0\">\n      </div>\n    </div>\n</div>\n\n    \n<div class=\"ui-choice-card\">\n  <label class=\"ui-choice-card-label\">\n    <input type=\"radio\" name=\"automation_mode\" value=\"immediate\">\n    <strong class=\"tip-label\">Immediately when all forms are <span class=\"tip-nowrap\">complete<span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help with Immediately when all forms are complete\" aria-expanded=\"false\" aria-controls=\"wizard-immediate-help\">?</button>\n    <span class=\"help-tip-body\" id=\"wizard-immediate-help\" role=\"tooltip\">UbyHost sends as soon as guest forms are complete.</span>\n  </span>\n</span></strong>\n  </label>\n  \n</div>\n\n  </div>\n</form>\n<form id=\"police-letter-form\" method=\"post\" action=\"/apartments/23/police-letter\" data-discard-warning=\"Reading the letter reloads this page. Your unsaved changes here, and a typed password, will be lost.\">\n  <input type=\"hidden\" name=\"_csrf\" value=\"\">\n  <input type=\"hidden\" name=\"setup_step\" value=\"police\">\n</form>\n\n  </div>\n  <footer class=\"setup-wizard-foot\">\n    \n    <a class=\"ui-btn ui-btn-quiet setup-wizard-back\" href=\"/apartments/23/setup/calendar\">Back</a>\n    \n    \n<div class=\"setup-wizard-actions\">\n  <button class=\"ui-btn ui-btn-secondary setup-wizard-wait\" type=\"submit\" form=\"police-form\" formaction=\"/apartments/23/setup\" name=\"action\" value=\"wait\" formnovalidate>I&#39;m still waiting for my police login</button>\n  <button class=\"ui-btn ui-btn-primary\" type=\"submit\" form=\"police-form\" formaction=\"/apartments/23/test-connection\" formmethod=\"post\" formnovalidate>Save and test connection</button>\n</div>\n\n  </footer>\n  \n<div class=\"setup-wizard-note-box setup-wizard-police-notes\">\n  <p class=\"setup-wizard-instruction\">You can keep setting up, and guests can register as usual. Nothing goes to the police until your login is saved.\n    <span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Help\" aria-expanded=\"false\" aria-controls=\"wizard-police-wait-help\">?</button>\n    <span class=\"help-tip-body\" id=\"wizard-police-wait-help\" role=\"tooltip\">Then finished stays wait in Stays as “Ready to report” until you press Send to UbyPort.</span>\n  </span>\n</p>\n  <p class=\"setup-wizard-instruction\">The legal deadline still applies: report foreign guests within 3 working days of arrival.\n    <a href=\"/guide#manual-filing\">If your login won&#39;t come in time, report them by hand</a></p>\n</div>\n\n</div>",
+   "lang_cookie": null,
+   "location": null,
+   "method": "POST",
+   "name": "police_wait_bad_hours",
+   "path": "/apartments/23/setup",
+   "status": 400,
+   "title": "Set up My",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": "text/html; charset=utf-8",
+   "csrf": true,
+   "form": {
+    "action": "wait",
+    "automation_mode": "sometimes",
+    "internal_name": "My",
+    "legal_entity_id": "31",
+    "setup_step": "police",
+    "step": "police",
+    "submit_after_hours": "5",
+    "uby_contact": "",
+    "uby_idub": " 123456789012 ",
+    "uby_mark": "aakli",
+    "uby_name": "BYT <1>",
+    "uby_ws_user": "UBY-WS_X"
+   },
+   "fragment": "<div class=\"setup-wizard wiz-page\" data-setup-wizard data-setup-step=\"police\">\n  <div class=\"setup-wizard-head\">\n    <div class=\"wiz-title\">\n    <p class=\"wiz-count\">Bước 3 / 4 · Khai báo cảnh sát</p>\n    \n    <div class=\"setup-wizard-meter\">\n      <ol class=\"setup-wizard-progress\" aria-hidden=\"true\">\n        \n        <li class=\"is-done\"></li>\n        \n        <li class=\"is-skipped\"></li>\n        \n        <li class=\"is-current\"></li>\n        \n        <li class=\"is-todo\"></li>\n        \n      </ol>\n      <p class=\"setup-wizard-done-count\"><span class=\"setup-wizard-tick\" aria-hidden=\"true\"><svg class=\"ui-icon\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" data-icon=\"check\"><path d=\"M20 6 9 17l-5-5\"/></svg></span> Đã xong 2/4</p>\n    </div>\n    \n    <h1 class=\"big\">Thiết lập My</h1>\n    </div>\n    \n    <form method=\"post\" action=\"/apartments/23/setup\" class=\"setup-wizard-exit\">\n      <input type=\"hidden\" name=\"_csrf\" value=\"\">\n      <button class=\"ui-btn ui-btn-secondary\" type=\"submit\" name=\"action\" value=\"hide\" formnovalidate>Thoát thiết lập</button>\n    </form>\n    \n  </div>\n  <div class=\"setup-wizard-body\">\n    \n    \n    \n    <div class=\"setup-wizard-ask\" data-step-tone=\"purple\">\n      <span class=\"setup-wizard-ask-icon\">\n  \n    <svg class=\"nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M5.5 3.5h6l3.5 3.5v9.5a1 1 0 0 1-1 1h-8.5a1 1 0 0 1-1-1v-12a1 1 0 0 1 1-1Z\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M11.5 3.5v4h4M7.5 11h5M7.5 14h3.5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>\n  \n</span>\n      <h2 class=\"setup-wizard-question\">Thông tin đăng nhập cảnh sát của bạn là gì?<span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Trợ giúp\" aria-expanded=\"false\" aria-controls=\"wiz-why-police\">?</button>\n    <span class=\"help-tip-body\" id=\"wiz-why-police\" role=\"tooltip\">Mỗi khách nước ngoài phải được khai báo với cảnh sát trong vòng ba ngày làm việc kể từ khi đến. UbyHost làm việc này cho bạn qua Ubyport. Nó cần thông tin đăng nhập mà cảnh sát đã gửi cho bạn qua thư. Chưa có? Bấm “Tôi vẫn đang chờ thông tin đăng nhập từ cảnh sát” và tiếp tục.</span>\n  </span>\n</h2>\n    </div>\n    \n    <p class=\"required-legend\">Các trường có dấu * là bắt buộc.</p>\n    \n    \n<p class=\"err-text\" role=\"alert\">Chọn thời điểm gửi đến UbyPort. Chưa có gì được lưu.</p>\n\n\n<form method=\"post\" action=\"/apartments/23\" class=\"setup-wizard-form\" id=\"police-form\"><button class=\"sr-only\" type=\"submit\" tabindex=\"-1\" aria-hidden=\"true\" formaction=\"/apartments/23/test-connection\" formmethod=\"post\" formnovalidate></button>\n  <input type=\"hidden\" name=\"_csrf\" value=\"\">\n  <input type=\"hidden\" name=\"return_to\" value=\"/apartments/23/setup/police\">\n  <input type=\"hidden\" name=\"setup_step\" value=\"police\">\n  <input type=\"hidden\" name=\"internal_name\" value=\"My\">\n  <input type=\"hidden\" name=\"legal_entity_id\" value=\"31\">\n  <input type=\"hidden\" name=\"city_en\" value=\"Prague\">\n  <input type=\"hidden\" name=\"default_purpose\" value=\"10\">\n  <input type=\"hidden\" name=\"step\" value=\"police\">\n  \n  \n  \n  \n      <div class=\"police-letter-helpers\">\n      <details class=\"police-letter-find\" open>\n        <summary>Tìm các thông tin này ở đâu?</summary>\n        \n<figure class=\"police-letter-figure\">\n  <svg class=\"police-letter-svg\" viewBox=\"0 0 320 200\" role=\"img\" aria-labelledby=\"pl-fig-t\">\n    <title id=\"pl-fig-t\">Hình vẽ thư dịch vụ web của cảnh sát với các thông tin được đánh dấu</title>\n    <rect class=\"pl-sheet\" x=\"4\" y=\"4\" width=\"312\" height=\"192\" rx=\"6\"/>\n    <rect class=\"pl-bar\" x=\"20\" y=\"16\" width=\"90\" height=\"6\" rx=\"3\"/>\n    <rect class=\"pl-bar\" x=\"20\" y=\"27\" width=\"60\" height=\"5\" rx=\"2.5\"/>\n    <rect class=\"pl-bar\" x=\"230\" y=\"16\" width=\"70\" height=\"5\" rx=\"2.5\"/>\n    <text class=\"pl-title\" x=\"160\" y=\"52\" text-anchor=\"middle\">Přihlašovací údaje pro robotické vkládání</text>\n    <text class=\"pl-title\" x=\"160\" y=\"64\" text-anchor=\"middle\">Ubyport Webová služba</text>\n    <circle class=\"pl-num\" cx=\"30\" cy=\"88\" r=\"9\"/><text class=\"pl-num-text\" x=\"30\" y=\"91.5\" text-anchor=\"middle\">1</text>\n    <text class=\"pl-label\" x=\"46\" y=\"91.5\">Přihlašovací jméno:</text><text class=\"pl-value\" x=\"160\" y=\"91.5\">UBY-WS_ABCDE</text>\n    <circle class=\"pl-num\" cx=\"30\" cy=\"114\" r=\"9\"/><text class=\"pl-num-text\" x=\"30\" y=\"117.5\" text-anchor=\"middle\">2</text>\n    <text class=\"pl-label\" x=\"46\" y=\"117.5\">Přístupové heslo:</text><text class=\"pl-value\" x=\"160\" y=\"117.5\">••••••••</text>\n    <circle class=\"pl-num\" cx=\"30\" cy=\"140\" r=\"9\"/><text class=\"pl-num-text\" x=\"30\" y=\"143.5\" text-anchor=\"middle\">3</text>\n    <text class=\"pl-label\" x=\"46\" y=\"143.5\">IDUB:</text><text class=\"pl-value\" x=\"160\" y=\"143.5\">000000000000</text>\n    <rect class=\"pl-bar\" x=\"20\" y=\"162\" width=\"280\" height=\"5\" rx=\"2.5\"/>\n    <rect class=\"pl-bar\" x=\"20\" y=\"173\" width=\"250\" height=\"5\" rx=\"2.5\"/>\n    <rect class=\"pl-bar\" x=\"20\" y=\"184\" width=\"120\" height=\"5\" rx=\"2.5\"/>\n  </svg>\n  <figcaption class=\"police-letter-legend\">\n    <ol>\n      <li>Tên đăng nhập dịch vụ web</li>\n      <li>Mật khẩu dịch vụ web: Bạn tự nhập</li>\n      <li>Số cơ sở lưu trú của cảnh sát (IDUB)</li>\n    </ol>\n    <p class=\"police-letter-note\">Tên viết tắt từ cảnh sát (zkratka): Thường không in trong thư. UbyHost lấy từ tên đăng nhập và bạn kiểm tra lại.</p>\n  </figcaption>\n</figure>\n      </details>\n      <details class=\"police-letter-paste\" id=\"police-letter-paste\" open>\n        <summary>Dán nội dung thư</summary>\n        <div class=\"field\">\n          <div class=\"field-label-row\"><label for=\"letter_text\">Nội dung thư của cảnh sát<span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Trợ giúp\" aria-expanded=\"false\" aria-controls=\"police-letter-help\">?</button>\n    <span class=\"help-tip-body\" id=\"police-letter-help\" role=\"tooltip\">Paste the whole letter. UbyHost fills the boxes below and does not keep the text.</span>\n  </span>\n</label></div>\n          <textarea id=\"letter_text\" name=\"letter_text\" form=\"police-letter-form\" rows=\"6\" maxlength=\"20000\" autocomplete=\"off\" spellcheck=\"false\" data-letter-paste></textarea>\n          \n        </div>\n        <div class=\"actions\">\n          <button class=\"ui-btn ui-btn-secondary\" type=\"submit\" form=\"police-letter-form\" data-letter-read>Đọc thư</button>\n        </div>\n      </details>\n      </div>\n      <p class=\"police-letter-status small\" id=\"police-letter-status\" role=\"status\" aria-live=\"polite\" data-letter-status data-read-failed=\"Could not read the letter here. Use the button below.\" data-saved-now=\"Hiện đang lưu: %s\"></p>\n      <input type=\"hidden\" name=\"letter_fields\" value=\"\" data-letter-fields data-letter-fields-initial=\"\">\n      <div class=\"grid\">\n        \n  <div class=\"field\">\n    \n  <div class=\"field-label-row\">\n    <label for=\"uby_idub\">Accommodation number (IDUB)<span class=\"req-star\" aria-hidden=\"true\">*</span><span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Trợ giúp\" aria-expanded=\"false\" aria-controls=\"uby_idub-help\">?</button>\n    <span class=\"help-tip-body\" id=\"uby_idub-help\" role=\"tooltip\">12 đến 14 chữ số. Trên thư của cảnh sát, đó là dòng “IDUB:”. Sao chép chính xác.</span>\n  </span>\n</label>\n  </div>\n\n    <input type=\"text\" id=\"uby_idub\" name=\"uby_idub\" value=\"123456789012\" maxlength=\"14\" aria-required=\"true\" aria-describedby=\"uby_idub-help\">\n    \n  </div>\n\n      </div>\n      <div class=\"grid two\">\n        \n  <div class=\"field\">\n    \n  <div class=\"field-label-row\">\n    <label for=\"uby_ws_user\">Login from the police letter<span class=\"req-star\" aria-hidden=\"true\">*</span><span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Trợ giúp\" aria-expanded=\"false\" aria-controls=\"uby_ws_user-help\">?</button>\n    <span class=\"help-tip-body\" id=\"uby_ws_user-help\" role=\"tooltip\">Tên người dùng mà UbyHost dùng để gửi khai báo thay bạn. Bắt đầu bằng UBY-WS. Trên thư dịch vụ web, đó là dòng “Přihlašovací jméno:”. Đây không phải thông tin đăng nhập cổng UbyPort thông thường. Sao chép chính xác, kể cả dấu _ và chữ số.</span>\n  </span>\n</label>\n  </div>\n\n    <input type=\"text\" id=\"uby_ws_user\" name=\"uby_ws_user\" value=\"UBY-WS_X\" aria-required=\"true\" aria-describedby=\"uby_ws_user-help\">\n    \n  </div>\n\n        <div class=\"field\">\n          \n  <div class=\"field-label-row\">\n    <label for=\"uby_ws_password\">Password from the police letter<span class=\"req-star\" aria-hidden=\"true\">*</span><span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Trợ giúp\" aria-expanded=\"false\" aria-controls=\"uby_ws_password-help\">?</button>\n    <span class=\"help-tip-body\" id=\"uby_ws_password-help\" role=\"tooltip\">Mật khẩu đi kèm tên đăng nhập web-service. Trong thư về web-service, đó là dòng “Přístupové heslo:”. Sao chép chính xác.</span>\n  </span>\n</label>\n  </div>\n\n          <input type=\"text\" id=\"uby_ws_password\" name=\"uby_ws_password\" autocomplete=\"off\" autocapitalize=\"off\" spellcheck=\"false\"\n                 aria-required=\"true\" aria-describedby=\"uby_ws_password-help uby_ws_password-hint\">\n          <div class=\"hint\" id=\"uby_ws_password-hint\">\n            \n            Mật khẩu trong thư của cảnh sát.\n            \n          </div>\n        </div>\n      </div>\n      <p class=\"small muted police-no-credentials\">Chưa có thông tin đăng nhập web-service? Cảnh sát ngoại kiều hướng dẫn cách xin:\n        <a href=\"https://policie.gov.cz/reditelstvi-sluzby-cizinecke-policie/jake-jsou-moznosti-zasilani-dat-aplikaci-ubyport\" target=\"_blank\" rel=\"noopener\">Các cách gửi dữ liệu UbyPort (policie.gov.cz)</a></p>\n      <div class=\"field-label-row\"><h2 class=\"property-section-title\">Accommodation facility</h2></div>\n      <div class=\"grid\">\n        \n  <div class=\"field\">\n    \n  <div class=\"field-label-row\">\n    <label for=\"uby_mark\">Short name (zkratka)<span class=\"req-star\" aria-hidden=\"true\">*</span><span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Trợ giúp\" aria-expanded=\"false\" aria-controls=\"uby_mark-help\">?</button>\n    <span class=\"help-tip-body\" id=\"uby_mark-help\" role=\"tooltip\">Tự điền từ tên đăng nhập: phần sau UBY-WS_. Chỉ sửa nếu thư của cảnh sát ghi “Zkratka ubytovacího zařízení” khác.</span>\n  </span>\n</label>\n  </div>\n\n    <input type=\"text\" id=\"uby_mark\" name=\"uby_mark\" value=\"aakli\" maxlength=\"6\" aria-required=\"true\" aria-describedby=\"uby_mark-help\">\n    \n  </div>\n\n      </div>\n      <div class=\"grid two\">\n        \n  <div class=\"field\">\n    \n  <div class=\"field-label-row\">\n    <label for=\"uby_name\">Facility name on the letter<span class=\"req-star\" aria-hidden=\"true\">*</span><span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Trợ giúp\" aria-expanded=\"false\" aria-controls=\"uby_name-help\">?</button>\n    <span class=\"help-tip-body\" id=\"uby_name-help\" role=\"tooltip\">Lấy từ thư của cảnh sát, dòng “Ubytovací zařízení:”. Chỉ nhập dòng đầu được tô sáng (tối đa 35 ký tự). Không bao giờ dùng tên chỗ ở hay tên tin đăng: cảnh sát từ chối khai báo có tên khác. <span class=\"facility-example\"><span class=\"facility-example-label\">Ví dụ từ thư của cảnh sát:</span>Ubytovací zařízení: <mark>BYT Č. [2] FIKTVNÍ 1234/56 (PRAHA,</mark> PRAHA 2, FIKTVNÍ, 1234/56)</span></span>\n  </span>\n</label>\n  </div>\n\n    <input type=\"text\" id=\"uby_name\" name=\"uby_name\" value=\"BYT &lt;1&gt;\" maxlength=\"35\" aria-required=\"true\" aria-describedby=\"uby_name-help\">\n    \n  </div>\n\n        \n  <div class=\"field\">\n    \n  <div class=\"field-label-row\">\n    <label for=\"uby_contact\">Liên hệ khi đăng ký<span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Trợ giúp\" aria-expanded=\"false\" aria-controls=\"uby_contact-help\">?</button>\n    <span class=\"help-tip-body\" id=\"uby_contact-help\" role=\"tooltip\">Email hoặc số điện thoại để cảnh sát liên hệ với bạn về các khai báo, như bạn đã khai khi đăng ký UbyPort. Thư dịch vụ web thường không ghi thông tin này.</span>\n  </span>\n</label>\n  </div>\n\n    <input type=\"text\" id=\"uby_contact\" name=\"uby_contact\" value=\"\" maxlength=\"50\" aria-describedby=\"uby_contact-help\">\n    \n  </div>\n\n      </div>\n      \n  <h3 class=\"property-section-title\">Khi nào gửi khai báo cho cảnh sát?<span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Trợ giúp\" aria-expanded=\"false\" aria-controls=\"wiz-why-automation\">?</button>\n    <span class=\"help-tip-body\" id=\"wiz-why-automation\" role=\"tooltip\">Chọn khi nào UbyHost khai báo khách với cảnh sát. Chúng tôi khuyên dùng gửi sau một khoảng chờ: bạn có thời gian kiểm tra thông tin và không bao giờ trễ hạn ba ngày. Bạn có thể đổi lựa chọn này bất cứ lúc nào.</span>\n  </span>\n</h3>\n  <div class=\"ui-choice-cards\">\n    \n<div class=\"ui-choice-card\">\n  <label class=\"ui-choice-card-label\">\n    <input type=\"radio\" name=\"automation_mode\" value=\"manual\" checked>\n    <strong class=\"tip-label\">Chỉ khi tôi bấm <span class=\"tip-nowrap\">gửi<span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Trợ giúp: Chỉ khi tôi bấm gửi\" aria-expanded=\"false\" aria-controls=\"wizard-manual-help\">?</button>\n    <span class=\"help-tip-body\" id=\"wizard-manual-help\" role=\"tooltip\">Bạn nhấn Gửi khi lượt lưu trú sẵn sàng khai báo.</span>\n  </span>\n</span></strong>\n  </label>\n  \n</div>\n\n    \n<div class=\"ui-choice-card\">\n  <label class=\"ui-choice-card-label\">\n    <input type=\"radio\" name=\"automation_mode\" value=\"scheduled\">\n    <strong class=\"tip-label\">Tự động sau một khoảng thời gian kể từ khi hoàn <span class=\"tip-nowrap\">tất<span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Trợ giúp: Tự động sau một khoảng thời gian kể từ khi hoàn tất\" aria-expanded=\"false\" aria-controls=\"wizard-scheduled-help\">?</button>\n    <span class=\"help-tip-body\" id=\"wizard-scheduled-help\" role=\"tooltip\">UbyHost gửi sau khoảng thời gian bạn chọn.</span>\n  </span>\n</span></strong>\n  </label>\n  <div class=\"ui-choice-card-extra\">\n      <div class=\"field inline-hours\">\n        <label for=\"submit_after_hours\">Số giờ sau khi hoàn tất</label>\n        <input type=\"number\" id=\"submit_after_hours\" name=\"submit_after_hours\" min=\"1\" max=\"48\" value=\"5\">\n      </div>\n    </div>\n</div>\n\n    \n<div class=\"ui-choice-card\">\n  <label class=\"ui-choice-card-label\">\n    <input type=\"radio\" name=\"automation_mode\" value=\"immediate\">\n    <strong class=\"tip-label\">Ngay khi mọi biểu mẫu hoàn <span class=\"tip-nowrap\">tất<span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Trợ giúp: Ngay khi mọi biểu mẫu hoàn tất\" aria-expanded=\"false\" aria-controls=\"wizard-immediate-help\">?</button>\n    <span class=\"help-tip-body\" id=\"wizard-immediate-help\" role=\"tooltip\">UbyHost gửi ngay khi khách hoàn tất biểu mẫu.</span>\n  </span>\n</span></strong>\n  </label>\n  \n</div>\n\n  </div>\n</form>\n<form id=\"police-letter-form\" method=\"post\" action=\"/apartments/23/police-letter\" data-discard-warning=\"Đọc thư sẽ tải lại trang này. Các thay đổi chưa lưu ở đây và mật khẩu đã nhập sẽ bị mất.\">\n  <input type=\"hidden\" name=\"_csrf\" value=\"\">\n  <input type=\"hidden\" name=\"setup_step\" value=\"police\">\n</form>\n\n  </div>\n  <footer class=\"setup-wizard-foot\">\n    \n    <a class=\"ui-btn ui-btn-quiet setup-wizard-back\" href=\"/apartments/23/setup/calendar\">Quay lại</a>\n    \n    \n<div class=\"setup-wizard-actions\">\n  <button class=\"ui-btn ui-btn-secondary setup-wizard-wait\" type=\"submit\" form=\"police-form\" formaction=\"/apartments/23/setup\" name=\"action\" value=\"wait\" formnovalidate>Tôi vẫn đang chờ thông tin đăng nhập của cảnh sát</button>\n  <button class=\"ui-btn ui-btn-primary\" type=\"submit\" form=\"police-form\" formaction=\"/apartments/23/test-connection\" formmethod=\"post\" formnovalidate>Lưu và kiểm tra kết nối</button>\n</div>\n\n  </footer>\n  \n<div class=\"setup-wizard-note-box setup-wizard-police-notes\">\n  <p class=\"setup-wizard-instruction\">Bạn có thể tiếp tục thiết lập, và khách vẫn đăng ký bình thường. Không có gì được gửi cho cảnh sát cho đến khi thông tin đăng nhập được lưu.\n    <span class=\"help-tip\" data-help-tip>\n    <button type=\"button\" class=\"help-tip-btn\" aria-label=\"Trợ giúp\" aria-expanded=\"false\" aria-controls=\"wizard-police-wait-help\">?</button>\n    <span class=\"help-tip-body\" id=\"wizard-police-wait-help\" role=\"tooltip\">Sau đó các lượt lưu trú đã hoàn tất sẽ chờ trong mục Lưu trú với trạng thái “Sẵn sàng khai báo” cho đến khi bạn nhấn Gửi đến UbyPort.</span>\n  </span>\n</p>\n  <p class=\"setup-wizard-instruction\">Thời hạn theo luật vẫn áp dụng: khai báo khách nước ngoài trong vòng 3 ngày làm việc kể từ khi đến.\n    <a href=\"/guide#manual-filing\">Nếu thông tin đăng nhập không đến kịp, hãy khai báo thủ công</a></p>\n</div>\n\n</div>",
+   "lang_cookie": "vi",
+   "location": null,
+   "method": "POST",
+   "name": "police_wait_bad_mode_vi",
+   "path": "/apartments/23/setup",
+   "status": 400,
+   "title": "Thiết lập My",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": null,
+   "csrf": true,
+   "form": {
+    "action": "wait",
+    "automation_mode": "",
+    "step": "police",
+    "submit_after_hours": ""
+   },
+   "fragment": "",
+   "lang_cookie": null,
+   "location": "/apartments/23/setup/police",
+   "method": "POST",
+   "name": "police_wait_bad_no_setup_step",
+   "path": "/apartments/23/setup",
+   "status": 303,
+   "title": "",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": null,
+   "csrf": true,
+   "form": {
+    "action": "wait",
+    "automation_mode": "immediate",
+    "internal_name": "My",
+    "legal_entity_id": "31",
+    "setup_step": "police",
+    "step": "police",
+    "submit_after_hours": "100",
+    "uby_contact": "",
+    "uby_idub": " 123456789012 ",
+    "uby_mark": "aakli",
+    "uby_name": "BYT <1>",
+    "uby_ws_user": "UBY-WS_X"
+   },
+   "fragment": "",
+   "lang_cookie": null,
+   "location": "/apartments/23/setup/guest_link",
+   "method": "POST",
+   "name": "police_wait_timing",
+   "path": "/apartments/23/setup",
+   "status": 303,
+   "title": "",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": null,
+   "csrf": true,
+   "form": {
+    "action": "wait",
+    "step": "police"
+   },
+   "fragment": "",
+   "lang_cookie": null,
+   "location": "/apartments/27/setup/guest_link",
+   "method": "POST",
+   "name": "police_wait_plain",
+   "path": "/apartments/27/setup",
+   "status": 303,
+   "title": "",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": null,
+   "csrf": true,
+   "form": {
+    "action": "done",
+    "step": "guest_link"
+   },
+   "fragment": "",
+   "lang_cookie": null,
+   "location": "/apartments/11/setup/done?msg=Setup%20complete.&toast_kind=success",
+   "method": "POST",
+   "name": "guest_link_done_finishes",
+   "path": "/apartments/11/setup",
+   "status": 303,
+   "title": "",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": null,
+   "csrf": true,
+   "form": {
+    "action": "done",
+    "step": "guest_link"
+   },
+   "fragment": "",
+   "lang_cookie": null,
+   "location": "/apartments/11?view=overview",
+   "method": "POST",
+   "name": "guest_link_done_again",
+   "path": "/apartments/11/setup",
+   "status": 303,
+   "title": "",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": null,
+   "csrf": true,
+   "form": {
+    "action": "demo",
+    "step": "try_it"
+   },
+   "fragment": "",
+   "lang_cookie": null,
+   "location": "/l/slug-11/demo/108?lang=en",
+   "method": "POST",
+   "name": "try_demo",
+   "path": "/apartments/11/setup",
+   "status": 303,
+   "title": "",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": null,
+   "csrf": true,
+   "form": {
+    "action": "demo",
+    "step": "try_it"
+   },
+   "fragment": "",
+   "lang_cookie": null,
+   "location": "/l/slug-11/demo/108?lang=en",
+   "method": "POST",
+   "name": "try_demo_again",
+   "path": "/apartments/11/setup",
+   "status": 303,
+   "title": "",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": null,
+   "csrf": true,
+   "form": {
+    "action": "demo",
+    "step": "try_it"
+   },
+   "fragment": "",
+   "lang_cookie": "cs",
+   "location": "/l/slug-20/demo/105?lang=cs",
+   "method": "POST",
+   "name": "try_demo_existing_cs",
+   "path": "/apartments/20/setup",
+   "status": 303,
+   "title": "",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": null,
+   "csrf": true,
+   "form": {
+    "action": "demo",
+    "step": "try_it"
+   },
+   "fragment": "",
+   "lang_cookie": null,
+   "location": "/l//demo/109?lang=en",
+   "method": "POST",
+   "name": "try_demo_no_token",
+   "path": "/apartments/24/setup",
+   "status": 303,
+   "title": "",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": null,
+   "csrf": true,
+   "form": {
+    "action": "keep_demo",
+    "step": "try_it"
+   },
+   "fragment": "",
+   "lang_cookie": null,
+   "location": "/apartments/22/setup/done",
+   "method": "POST",
+   "name": "try_keep",
+   "path": "/apartments/22/setup",
+   "status": 303,
+   "title": "",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": null,
+   "csrf": true,
+   "form": {
+    "action": "skip",
+    "step": "try_it"
+   },
+   "fragment": "",
+   "lang_cookie": null,
+   "location": "/apartments/13/setup/done",
+   "method": "POST",
+   "name": "try_skip_no_stay",
+   "path": "/apartments/13/setup",
+   "status": 303,
+   "title": "",
+   "user": 1
+  },
+  {
+   "body": "",
+   "content_type": null,
+   "csrf": true,
+   "form": {
+    "action": "x",
+    "step": "try_it"
+   },
+   "fragment": "",
+   "lang_cookie": null,
+   "location": "/apartments/13/setup/done",
+   "method": "POST",
+   "name": "try_other",
+   "path": "/apartments/13/setup",
+   "status": 303,
+   "title": "",
+   "user": 1
+  }
+ ],
+ "csrf_nonce": "golden-csrf-nonce-0123456789",
+ "final": {
+  "audit": [
+   {
+    "action": "property_setup_step",
+    "actor": "owner@example.test",
+    "actor_user_id": 1,
+    "detail": "apartment=23 action=hide",
+    "owner_user_id": 1
+   },
+   {
+    "action": "property_setup_step",
+    "actor": "owner@example.test",
+    "actor_user_id": 1,
+    "detail": "apartment=23 action=show",
+    "owner_user_id": 1
+   },
+   {
+    "action": "property_setup_step",
+    "actor": "owner@example.test",
+    "actor_user_id": 1,
+    "detail": "apartment=14 action=show",
+    "owner_user_id": 1
+   },
+   {
+    "action": "property_setup_step",
+    "actor": "owner@example.test",
+    "actor_user_id": 1,
+    "detail": "apartment=14 step=calendar action=skip",
+    "owner_user_id": 1
+   },
+   {
+    "action": "apartment_updated",
+    "actor": "owner@example.test",
+    "actor_user_id": 1,
+    "detail": "id=23",
+    "owner_user_id": 1
+   },
+   {
+    "action": "property_setup_step",
+    "actor": "owner@example.test",
+    "actor_user_id": 1,
+    "detail": "apartment=23 step=police action=wait",
+    "owner_user_id": 1
+   },
+   {
+    "action": "property_setup_step",
+    "actor": "owner@example.test",
+    "actor_user_id": 1,
+    "detail": "apartment=27 step=police action=wait",
+    "owner_user_id": 1
+   },
+   {
+    "action": "property_setup_step",
+    "actor": "owner@example.test",
+    "actor_user_id": 1,
+    "detail": "apartment=11 step=guest_link action=done",
+    "owner_user_id": 1
+   },
+   {
+    "action": "property_setup_step",
+    "actor": "owner@example.test",
+    "actor_user_id": 1,
+    "detail": "apartment=11 step=try_it action=demo",
+    "owner_user_id": 1
+   },
+   {
+    "action": "property_setup_step",
+    "actor": "owner@example.test",
+    "actor_user_id": 1,
+    "detail": "apartment=11 step=try_it action=demo",
+    "owner_user_id": 1
+   },
+   {
+    "action": "property_setup_step",
+    "actor": "owner@example.test",
+    "actor_user_id": 1,
+    "detail": "apartment=20 step=try_it action=demo",
+    "owner_user_id": 1
+   },
+   {
+    "action": "property_setup_step",
+    "actor": "owner@example.test",
+    "actor_user_id": 1,
+    "detail": "apartment=24 step=try_it action=demo",
+    "owner_user_id": 1
+   },
+   {
+    "action": "property_setup_step",
+    "actor": "owner@example.test",
+    "actor_user_id": 1,
+    "detail": "apartment=22 step=try_it action=keep_demo",
+    "owner_user_id": 1
+   },
+   {
+    "action": "property_setup_step",
+    "actor": "owner@example.test",
+    "actor_user_id": 1,
+    "detail": "apartment=13 step=try_it action=skip",
+    "owner_user_id": 1
+   }
+  ],
+  "demo_stays": [
+   {
+    "apartment_id": 20,
+    "date_from": "2026-05-10",
+    "date_to": "2026-05-11",
+    "expected_guests_override": null,
+    "status": "active",
+    "summary": "Stay 105",
+    "uid_demo": false
+   },
+   {
+    "apartment_id": 22,
+    "date_from": "2026-05-10",
+    "date_to": "2026-05-11",
+    "expected_guests_override": null,
+    "status": "active",
+    "summary": "Stay 106",
+    "uid_demo": false
+   },
+   {
+    "apartment_id": 11,
+    "date_from": "2026-05-10",
+    "date_to": "2026-05-11",
+    "expected_guests_override": 1,
+    "status": "active",
+    "summary": "Demo",
+    "uid_demo": true
+   },
+   {
+    "apartment_id": 24,
+    "date_from": "2026-05-10",
+    "date_to": "2026-05-11",
+    "expected_guests_override": 1,
+    "status": "active",
+    "summary": "Demo",
+    "uid_demo": true
+   }
+  ],
+  "pins": {
+   "11": true,
+   "12": true,
+   "13": true,
+   "14": true,
+   "15": false,
+   "16": true,
+   "17": true,
+   "18": true,
+   "19": true,
+   "20": true,
+   "21": true,
+   "22": true,
+   "23": true,
+   "24": true,
+   "25": true,
+   "26": true,
+   "27": true
+  },
+  "settings": {
+   "property_setup:11": "{\"celebrated\": false, \"finished\": true, \"hidden\": false, \"legacy\": false, \"steps\": {\"guest_link\": \"done\"}, \"tested\": false}",
+   "property_setup:13": "{\"celebrated\": false, \"finished\": true, \"hidden\": false, \"legacy\": false, \"steps\": {\"guest_link\": \"done\"}, \"tested\": false}",
+   "property_setup:14": "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": false, \"steps\": {\"calendar\": \"skipped\"}, \"tested\": false}",
+   "property_setup:17": "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": false, \"steps\": {\"calendar\": \"skipped\", \"guest_link\": \"done\", \"police\": \"waiting\"}, \"tested\": false}",
+   "property_setup:18": "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": true, \"steps\": {}, \"tested\": false}",
+   "property_setup:19": "{\"celebrated\": false, \"finished\": true, \"hidden\": false, \"legacy\": false, \"steps\": {\"guest_link\": \"done\"}, \"tested\": true}",
+   "property_setup:20": "{\"celebrated\": false, \"finished\": true, \"hidden\": false, \"legacy\": false, \"steps\": {\"calendar\": \"done\", \"guest_link\": \"done\"}, \"tested\": false}",
+   "property_setup:22": "{\"celebrated\": true, \"finished\": true, \"hidden\": false, \"legacy\": false, \"steps\": {\"calendar\": \"done\", \"guest_link\": \"done\"}, \"tested\": true}",
+   "property_setup:23": "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": false, \"steps\": {\"automation\": \"done\", \"calendar\": \"skipped\", \"police\": \"waiting\"}, \"tested\": false}",
+   "property_setup:24": "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": false, \"steps\": {}, \"tested\": false}",
+   "property_setup:27": "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": false, \"steps\": {\"calendar\": \"done\", \"police\": \"waiting\"}, \"tested\": false}"
+  },
+  "timing": [
+   {
+    "automation_mode": "manual",
+    "id": 11,
+    "submit_after_hours": 24
+   },
+   {
+    "automation_mode": "manual",
+    "id": 12,
+    "submit_after_hours": 24
+   },
+   {
+    "automation_mode": "manual",
+    "id": 13,
+    "submit_after_hours": 24
+   },
+   {
+    "automation_mode": "manual",
+    "id": 14,
+    "submit_after_hours": 24
+   },
+   {
+    "automation_mode": "manual",
+    "id": 15,
+    "submit_after_hours": 24
+   },
+   {
+    "automation_mode": "manual",
+    "id": 16,
+    "submit_after_hours": 24
+   },
+   {
+    "automation_mode": "scheduled",
+    "id": 17,
+    "submit_after_hours": 6
+   },
+   {
+    "automation_mode": "manual",
+    "id": 18,
+    "submit_after_hours": 24
+   },
+   {
+    "automation_mode": "immediate",
+    "id": 19,
+    "submit_after_hours": 24
+   },
+   {
+    "automation_mode": "manual",
+    "id": 20,
+    "submit_after_hours": 24
+   },
+   {
+    "automation_mode": "manual",
+    "id": 21,
+    "submit_after_hours": 24
+   },
+   {
+    "automation_mode": "scheduled",
+    "id": 22,
+    "submit_after_hours": 12
+   },
+   {
+    "automation_mode": "immediate",
+    "id": 23,
+    "submit_after_hours": 48
+   },
+   {
+    "automation_mode": "manual",
+    "id": 24,
+    "submit_after_hours": 24
+   },
+   {
+    "automation_mode": "manual",
+    "id": 25,
+    "submit_after_hours": 24
+   },
+   {
+    "automation_mode": "manual",
+    "id": 26,
+    "submit_after_hours": 24
+   },
+   {
+    "automation_mode": "manual",
+    "id": 27,
+    "submit_after_hours": 24
+   }
+  ]
+ },
+ "seed": [
+  {
+   "columns": [
+    "id",
+    "username",
+    "password_hash",
+    "role",
+    "created_at"
+   ],
+   "rows": [
+    [
+     1,
+     "owner@example.test",
+     "x",
+     "host",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     2,
+     "other@example.test",
+     "x",
+     "host",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     3,
+     "third@example.test",
+     "x",
+     "host",
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "user_account"
+  },
+  {
+   "columns": [
+    "user_account_id",
+    "document",
+    "version",
+    "accepted_at",
+    "method"
+   ],
+   "rows": [
+    [
+     1,
+     "terms",
+     "1.7",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     1,
+     "privacy",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     1,
+     "dpa",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     2,
+     "terms",
+     "1.7",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     2,
+     "privacy",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     2,
+     "dpa",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     3,
+     "terms",
+     "1.7",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     3,
+     "privacy",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     3,
+     "dpa",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ]
+   ],
+   "table": "legal_acceptance"
+  },
+  {
+   "columns": [
+    "id",
+    "owner_user_id",
+    "name",
+    "signature_name",
+    "archived_at",
+    "created_at"
+   ],
+   "rows": [
+    [
+     31,
+     1,
+     "Jana Nováková",
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     32,
+     1,
+     "Beta s.r.o.",
+     "Petr Svoboda",
+     null,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     33,
+     2,
+     "Cizí s.r.o.",
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     35,
+     1,
+     "Archiv a.s.",
+     null,
+     "2026-02-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "legal_entity"
+  },
+  {
+   "columns": [
+    "id",
+    "owner_user_id",
+    "internal_name",
+    "legal_entity_id",
+    "city_en",
+    "addr_street",
+    "addr_house_no",
+    "addr_zip",
+    "addr_obec",
+    "uby_idub",
+    "uby_mark",
+    "uby_name",
+    "uby_ws_user",
+    "uby_ws_password_enc",
+    "automation_mode",
+    "submit_after_hours",
+    "permalink_token",
+    "permalink_pin",
+    "archived_at",
+    "active",
+    "lock_provider",
+    "checkin_hour",
+    "checkout_hour",
+    "permalink_window_days",
+    "created_at"
+   ],
+   "rows": [
+    [
+     11,
+     1,
+     "Alfa byt",
+     31,
+     "Prague",
+     "Vinohradská",
+     "12",
+     "12000",
+     "Praha",
+     "123456789012",
+     "AAKLI",
+     "BYT 11",
+     "UBY-WS_ABCDE",
+     "heslo-golden",
+     "manual",
+     24,
+     "tok11",
+     "123456",
+     null,
+     1,
+     null,
+     15,
+     10,
+     2,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     12,
+     1,
+     "Beta",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     "manual",
+     24,
+     "tok12",
+     "123456",
+     null,
+     1,
+     null,
+     null,
+     null,
+     2,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     13,
+     1,
+     "Gama",
+     31,
+     "Prague",
+     "Vinohradská",
+     "12",
+     "12000",
+     "Praha",
+     null,
+     null,
+     null,
+     null,
+     null,
+     "manual",
+     24,
+     "tok13",
+     "123456",
+     null,
+     1,
+     null,
+     null,
+     null,
+     2,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     14,
+     1,
+     "Delta",
+     31,
+     "Prague",
+     "Vinohradská",
+     "12",
+     "12000",
+     "Praha",
+     null,
+     null,
+     null,
+     null,
+     null,
+     "manual",
+     24,
+     "tok14",
+     "123456",
+     null,
+     1,
+     null,
+     null,
+     null,
+     2,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     15,
+     1,
+     "Epsilon",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     "manual",
+     24,
+     "tok15",
+     null,
+     null,
+     1,
+     null,
+     null,
+     null,
+     2,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     16,
+     1,
+     "Zeta",
+     31,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     "manual",
+     24,
+     "tok16",
+     "123456",
+     "2026-03-01T00:00:00+00:00",
+     1,
+     null,
+     null,
+     null,
+     2,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     17,
+     1,
+     "Eta",
+     31,
+     "Prague",
+     "Vinohradská",
+     "12",
+     "12000",
+     "Praha",
+     null,
+     null,
+     null,
+     null,
+     null,
+     "scheduled",
+     6,
+     "tok17",
+     "123456",
+     null,
+     1,
+     null,
+     null,
+     null,
+     2,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     18,
+     1,
+     "Theta",
+     31,
+     "Prague",
+     "Vinohradská",
+     "12",
+     "12000",
+     "Praha",
+     "123456789012",
+     "AAKLI",
+     "BYT 18",
+     "UBY-WS_ABCDE",
+     "heslo-golden",
+     "manual",
+     24,
+     "tok18",
+     "123456",
+     null,
+     1,
+     null,
+     null,
+     null,
+     2,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     19,
+     1,
+     "Iota <b>",
+     32,
+     "Prague",
+     "Vinohradská",
+     "12",
+     "12000",
+     "Praha",
+     "123456789012",
+     "AAKLI",
+     "BYT 19",
+     "UBY-WS_ABCDE",
+     "heslo-golden",
+     "immediate",
+     24,
+     "tok19",
+     "123456",
+     null,
+     1,
+     "ttlock",
+     14,
+     11,
+     3,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     20,
+     1,
+     "Kappa",
+     31,
+     "Prague",
+     "Vinohradská",
+     "12",
+     "12000",
+     "Praha",
+     "123456789012",
+     "AAKLI",
+     "BYT 20",
+     "UBY-WS_ABCDE",
+     "heslo-golden",
+     "manual",
+     24,
+     "tok20",
+     "123456",
+     null,
+     1,
+     null,
+     null,
+     null,
+     2,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     21,
+     2,
+     "Cizí",
+     33,
+     "Prague",
+     "Vinohradská",
+     "12",
+     "12000",
+     "Praha",
+     null,
+     null,
+     null,
+     null,
+     null,
+     "manual",
+     24,
+     "tok21",
+     "123456",
+     null,
+     1,
+     null,
+     null,
+     null,
+     2,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     22,
+     1,
+     "Lambda",
+     32,
+     "Prague",
+     "Vinohradská",
+     "12",
+     "12000",
+     "Praha",
+     "123456789012",
+     "AAKLI",
+     "BYT 22",
+     "UBY-WS_ABCDE",
+     "heslo-golden",
+     "scheduled",
+     12,
+     "tok22",
+     "123456",
+     null,
+     1,
+     null,
+     null,
+     null,
+     2,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     23,
+     1,
+     "My",
+     31,
+     "Prague",
+     "Vinohradská",
+     "12",
+     "12000",
+     "Praha",
+     null,
+     null,
+     null,
+     null,
+     null,
+     "manual",
+     24,
+     "tok23",
+     "123456",
+     null,
+     1,
+     null,
+     null,
+     null,
+     2,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     24,
+     1,
+     "Ny",
+     32,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     "manual",
+     24,
+     null,
+     "123456",
+     null,
+     1,
+     null,
+     null,
+     null,
+     2,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     25,
+     3,
+     "Omikron",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     "manual",
+     24,
+     "tok25",
+     "123456",
+     null,
+     1,
+     null,
+     null,
+     null,
+     2,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     26,
+     2,
+     "Xi",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     "manual",
+     24,
+     "tok26",
+     "123456",
+     null,
+     1,
+     null,
+     0,
+     23,
+     2,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     27,
+     1,
+     "Pí",
+     31,
+     "Prague",
+     "Vinohradská",
+     "12",
+     "12000",
+     "Praha",
+     null,
+     null,
+     null,
+     null,
+     null,
+     "manual",
+     24,
+     "tok27",
+     "123456",
+     null,
+     1,
+     null,
+     null,
+     null,
+     2,
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ],
+   "secret": [
+    "uby_ws_password_enc"
+   ],
+   "table": "apartment"
+  },
+  {
+   "columns": [
+    "slug",
+    "apartment_id",
+    "is_current",
+    "created_at"
+   ],
+   "rows": [
+    [
+     "slug-11",
+     11,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     "slug-12",
+     12,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     "slug-13",
+     13,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     "slug-14",
+     14,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     "slug-15",
+     15,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     "slug-16",
+     16,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     "slug-17",
+     17,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     "slug-18",
+     18,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     "slug-19",
+     19,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     "slug-20",
+     20,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     "slug-21",
+     21,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     "slug-22",
+     22,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     "slug-23",
+     23,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     "slug-25",
+     25,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     "slug-26",
+     26,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     "slug-27",
+     27,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "apartment_slug"
+  },
+  {
+   "columns": [
+    "id",
+    "apartment_id",
+    "url",
+    "created_at"
+   ],
+   "rows": [
+    [
+     1,
+     11,
+     "https://example.test/a.ics",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     2,
+     18,
+     "https://example.test/b.ics",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     3,
+     19,
+     "https://example.test/c.ics",
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "ical_feed"
+  },
+  {
+   "columns": [
+    "id",
+    "apartment_id",
+    "uid",
+    "date_from",
+    "date_to",
+    "summary",
+    "status",
+    "source",
+    "declared_guests",
+    "archived_at",
+    "created_at",
+    "updated_at"
+   ],
+   "rows": [
+    [
+     101,
+     11,
+     "u101",
+     "2026-05-11",
+     "2026-05-13",
+     "Stay 101",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     102,
+     11,
+     "u102",
+     "2026-05-20",
+     "2026-05-22",
+     "Stay 102",
+     "cancelled",
+     "host",
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     103,
+     19,
+     "u103",
+     "2026-06-10",
+     "2026-06-12",
+     "Stay 103",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     104,
+     19,
+     "u104",
+     "2026-05-01",
+     "2026-05-03",
+     "Stay 104",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     105,
+     20,
+     "u105",
+     "2026-05-10",
+     "2026-05-11",
+     "Stay 105",
+     "active",
+     "demo",
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     106,
+     22,
+     "u106",
+     "2026-05-10",
+     "2026-05-11",
+     "Stay 106",
+     "active",
+     "demo",
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     107,
+     23,
+     "u107",
+     "2026-07-01",
+     "2026-07-04",
+     "Stay 107",
+     "active",
+     "host",
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "reservation"
+  },
+  {
+   "columns": [
+    "id",
+    "reservation_id",
+    "is_lead",
+    "surname",
+    "first_name",
+    "birth_date",
+    "nationality",
+    "doc_number",
+    "res_street",
+    "res_city",
+    "res_country",
+    "purpose",
+    "signature_png",
+    "entered_by",
+    "created_at",
+    "updated_at"
+   ],
+   "rows": [
+    [
+     501,
+     106,
+     1,
+     "Mustermann",
+     "Erika",
+     "01011980",
+     "DEU",
+     "C01X00T47",
+     "Hauptstr. 1",
+     "Berlin",
+     "DEU",
+     "10",
+     "imported",
+     "guest",
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "guest"
+  },
+  {
+   "columns": [
+    "key",
+    "value"
+   ],
+   "rows": [
+    [
+     "property_setup:11",
+     "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": false, \"steps\": {}, \"tested\": false}"
+    ],
+    [
+     "property_setup:13",
+     "{\"celebrated\": false, \"finished\": true, \"hidden\": false, \"legacy\": false, \"steps\": {\"guest_link\": \"done\"}, \"tested\": false}"
+    ],
+    [
+     "property_setup:14",
+     "{\"celebrated\": false, \"finished\": false, \"hidden\": true, \"legacy\": false, \"steps\": {}, \"tested\": false}"
+    ],
+    [
+     "property_setup:17",
+     "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": false, \"steps\": {\"calendar\": \"skipped\", \"guest_link\": \"done\", \"police\": \"waiting\"}, \"tested\": false}"
+    ],
+    [
+     "property_setup:18",
+     "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": true, \"steps\": {}, \"tested\": false}"
+    ],
+    [
+     "property_setup:19",
+     "{\"celebrated\": false, \"finished\": true, \"hidden\": false, \"legacy\": false, \"steps\": {\"guest_link\": \"done\"}, \"tested\": true}"
+    ],
+    [
+     "property_setup:20",
+     "{\"celebrated\": false, \"finished\": true, \"hidden\": false, \"legacy\": false, \"steps\": {\"calendar\": \"done\", \"guest_link\": \"done\"}, \"tested\": false}"
+    ],
+    [
+     "property_setup:22",
+     "{\"celebrated\": true, \"finished\": true, \"hidden\": false, \"legacy\": false, \"steps\": {\"calendar\": \"done\", \"guest_link\": \"done\"}, \"tested\": true}"
+    ],
+    [
+     "property_setup:23",
+     "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": false, \"steps\": {\"calendar\": \"skipped\"}, \"tested\": false}"
+    ],
+    [
+     "property_setup:24",
+     "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": false, \"steps\": {}, \"tested\": false}"
+    ],
+    [
+     "property_setup:27",
+     "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": false, \"steps\": {\"calendar\": \"done\"}, \"tested\": false}"
+    ]
+   ],
+   "table": "settings"
+  }
+ ],
+ "today": "2026-05-10",
+ "versions": {
+  "dpa": "1.8",
+  "privacy": "1.8",
+  "terms": "1.7"
+ }
+}

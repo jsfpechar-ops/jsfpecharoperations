@@ -1,0 +1,11 @@
+import re
+import sys
+p = 'go/internal/web/auth/auth_test.go'
+s = open(p, encoding='utf-8').read()
+m = re.search(r'if len\(seen\) != (\d+) \{\n\t\tt\.Errorf\("%d routes, want (\d+)", len\(seen\)\)', s)
+if not m or m.group(1) != m.group(2):
+    sys.exit('STOP: route count check not found')
+n = int(m.group(1))
+new = f'if len(seen) != {n + 4} {{\n\t\tt.Errorf("%d routes, want {n + 4}", len(seen))'
+open(p, 'w', encoding='utf-8').write(s[:m.start()] + new + s[m.end():])
+print(f'route count {n} -> {n + 4}')

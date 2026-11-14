@@ -1,0 +1,18 @@
+{{define "pfooter"}}
+  <footer class="landing-footer">
+    <a class="landing-brand" href="/?lang={{.Lang}}"><img src="/static/ubyhost-logo.png?v=20261004a" alt="UbyHost"></a>
+    <nav aria-label="{{.T "legal.footer_nav_label"}}">
+      <a href="/jak-to-funguje?lang={{.Lang}}">{{.T "landing.nav.how"}}</a>
+      <a href="/cenik?lang={{.Lang}}">{{.T "landing.nav.pricing"}}</a>
+      <a href="/pruvodce/hlaseni-cizincu-ubyport?lang={{.Lang}}">{{.T "landing.nav.guides"}}</a>
+      <a href="/pruvodce/online-ubytovaci-kniha?lang={{.Lang}}">{{.T "landing.footer.guestbook"}}</a>
+      <a href="/legal?lang={{.Lang}}">{{.T "legal.footer_short"}}</a>
+      <a href="/terms?lang={{.Lang}}">{{.T "terms.footer_short"}}</a>
+      <a href="/privacy?lang={{.Lang}}">{{.T "privacy.footer_short"}}</a>
+      <a href="/dpa?lang={{.Lang}}">{{.T "dpa.footer_short"}}</a>
+      <a href="/subprocessors?lang={{.Lang}}">{{.T "subprocessors.footer_short"}}</a>
+      <a href="/login?lang={{.Lang}}" data-analytics-event="login_click">{{.T "landing.footer.login"}}</a>
+    </nav>
+    <a href="mailto:support@ubyhost.com" data-analytics-event="contact_click">support@ubyhost.com</a>
+  </footer>
+{{end}}

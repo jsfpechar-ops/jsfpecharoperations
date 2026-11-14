@@ -1,0 +1,390 @@
+{
+ "cookies": [
+  {
+   "base": "http://127.0.0.1:8080",
+   "deployment": "local",
+   "device_did_len": 22,
+   "device_keys": [
+    "uid",
+    "sv",
+    "did"
+   ],
+   "device_uid_sv": [
+    7,
+    3
+   ],
+   "remember": true,
+   "session_token": ".eJyrVirNTFGyMtdRKi5TsjLWUcpMLFGyMjS3tDA3MzQzMNBRKkpD4-cC-bUAm_oN9A.azbsgA.vuVvUr_dmgXTeZGsmeKIviW-nhY",
+   "set_cookie": [
+    "ubyhost_session=TOKEN; HttpOnly; Max-Age=2592000; Path=/; SameSite=lax",
+    "ubyhost_device=DEVICE; HttpOnly; Max-Age=2592000; Path=/; SameSite=lax"
+   ]
+  },
+  {
+   "base": "http://127.0.0.1:8080",
+   "deployment": "local",
+   "device_did_len": 22,
+   "device_keys": [
+    "uid",
+    "sv",
+    "did"
+   ],
+   "device_uid_sv": [
+    7,
+    3
+   ],
+   "remember": false,
+   "session_token": ".eJyrVirNTFGyMtdRKi5TsjLWUcpMLFGyMjS3tDA3MzQzMNBRKkpD5tcCAEEcDDo.azbsgA.ipvven047ygdF1ip7L2jrm3jVOk",
+   "set_cookie": [
+    "ubyhost_session=TOKEN; HttpOnly; Max-Age=43200; Path=/; SameSite=lax",
+    "ubyhost_device=DEVICE; HttpOnly; Max-Age=2592000; Path=/; SameSite=lax"
+   ]
+  },
+  {
+   "base": "http://127.0.0.1:8080",
+   "deployment": "production",
+   "device_did_len": 22,
+   "device_keys": [
+    "uid",
+    "sv",
+    "did"
+   ],
+   "device_uid_sv": [
+    7,
+    3
+   ],
+   "remember": true,
+   "session_token": ".eJyrVirNTFGyMtdRKi5TsjLWUcpMLFGyMjS3tDA3MzQzMNBRKkpD4-cC-bUAm_oN9A.azbsgA.vuVvUr_dmgXTeZGsmeKIviW-nhY",
+   "set_cookie": [
+    "ubyhost_session=TOKEN; HttpOnly; Max-Age=2592000; Path=/; SameSite=lax; Secure",
+    "ubyhost_device=DEVICE; HttpOnly; Max-Age=2592000; Path=/; SameSite=lax; Secure"
+   ]
+  },
+  {
+   "base": "http://127.0.0.1:8080",
+   "deployment": "production",
+   "device_did_len": 22,
+   "device_keys": [
+    "uid",
+    "sv",
+    "did"
+   ],
+   "device_uid_sv": [
+    7,
+    3
+   ],
+   "remember": false,
+   "session_token": ".eJyrVirNTFGyMtdRKi5TsjLWUcpMLFGyMjS3tDA3MzQzMNBRKkpD5tcCAEEcDDo.azbsgA.ipvven047ygdF1ip7L2jrm3jVOk",
+   "set_cookie": [
+    "ubyhost_session=TOKEN; HttpOnly; Max-Age=43200; Path=/; SameSite=lax; Secure",
+    "ubyhost_device=DEVICE; HttpOnly; Max-Age=2592000; Path=/; SameSite=lax; Secure"
+   ]
+  },
+  {
+   "base": "https://ubyhost.example",
+   "deployment": "local",
+   "device_did_len": 22,
+   "device_keys": [
+    "uid",
+    "sv",
+    "did"
+   ],
+   "device_uid_sv": [
+    7,
+    3
+   ],
+   "remember": true,
+   "session_token": ".eJyrVirNTFGyMtdRKi5TsjLWUcpMLFGyMjS3tDA3MzQzMNBRKkpD4-cC-bUAm_oN9A.azbsgA.vuVvUr_dmgXTeZGsmeKIviW-nhY",
+   "set_cookie": [
+    "ubyhost_session=TOKEN; HttpOnly; Max-Age=2592000; Path=/; SameSite=lax; Secure",
+    "ubyhost_device=DEVICE; HttpOnly; Max-Age=2592000; Path=/; SameSite=lax; Secure"
+   ]
+  },
+  {
+   "base": "https://ubyhost.example",
+   "deployment": "local",
+   "device_did_len": 22,
+   "device_keys": [
+    "uid",
+    "sv",
+    "did"
+   ],
+   "device_uid_sv": [
+    7,
+    3
+   ],
+   "remember": false,
+   "session_token": ".eJyrVirNTFGyMtdRKi5TsjLWUcpMLFGyMjS3tDA3MzQzMNBRKkpD5tcCAEEcDDo.azbsgA.ipvven047ygdF1ip7L2jrm3jVOk",
+   "set_cookie": [
+    "ubyhost_session=TOKEN; HttpOnly; Max-Age=43200; Path=/; SameSite=lax; Secure",
+    "ubyhost_device=DEVICE; HttpOnly; Max-Age=2592000; Path=/; SameSite=lax; Secure"
+   ]
+  }
+ ],
+ "langs": [
+  {
+   "base": "http://127.0.0.1:8080",
+   "cookie": null,
+   "query": "",
+   "set_cookie": "ubyhost_lang=cs; Max-Age=15552000; Path=/; SameSite=lax"
+  },
+  {
+   "base": "http://127.0.0.1:8080",
+   "cookie": null,
+   "query": "lang=en",
+   "set_cookie": "ubyhost_lang=en; Max-Age=15552000; Path=/; SameSite=lax"
+  },
+  {
+   "base": "http://127.0.0.1:8080",
+   "cookie": null,
+   "query": "lang=vi&lang=cs",
+   "set_cookie": "ubyhost_lang=cs; Max-Age=15552000; Path=/; SameSite=lax"
+  },
+  {
+   "base": "http://127.0.0.1:8080",
+   "cookie": "en",
+   "query": "lang=de",
+   "set_cookie": null
+  },
+  {
+   "base": "http://127.0.0.1:8080",
+   "cookie": "cs",
+   "query": "",
+   "set_cookie": null
+  },
+  {
+   "base": "http://127.0.0.1:8080",
+   "cookie": "vi",
+   "query": "",
+   "set_cookie": null
+  },
+  {
+   "base": "http://127.0.0.1:8080",
+   "cookie": "EN-gb",
+   "query": "",
+   "set_cookie": "ubyhost_lang=en; Max-Age=15552000; Path=/; SameSite=lax"
+  },
+  {
+   "base": "http://127.0.0.1:8080",
+   "cookie": " de ",
+   "query": "",
+   "set_cookie": "ubyhost_lang=cs; Max-Age=15552000; Path=/; SameSite=lax"
+  },
+  {
+   "base": "http://127.0.0.1:8080",
+   "cookie": "cs",
+   "query": "lang= CS",
+   "set_cookie": null
+  },
+  {
+   "base": "http://127.0.0.1:8080",
+   "cookie": "vi",
+   "query": "lang=VI",
+   "set_cookie": null
+  },
+  {
+   "base": "https://ubyhost.example",
+   "cookie": null,
+   "query": "",
+   "set_cookie": "ubyhost_lang=cs; Max-Age=15552000; Path=/; SameSite=lax; Secure"
+  },
+  {
+   "base": "https://ubyhost.example",
+   "cookie": null,
+   "query": "lang=en",
+   "set_cookie": "ubyhost_lang=en; Max-Age=15552000; Path=/; SameSite=lax; Secure"
+  },
+  {
+   "base": "https://ubyhost.example",
+   "cookie": null,
+   "query": "lang=vi&lang=cs",
+   "set_cookie": "ubyhost_lang=cs; Max-Age=15552000; Path=/; SameSite=lax; Secure"
+  },
+  {
+   "base": "https://ubyhost.example",
+   "cookie": "en",
+   "query": "lang=de",
+   "set_cookie": null
+  },
+  {
+   "base": "https://ubyhost.example",
+   "cookie": "cs",
+   "query": "",
+   "set_cookie": null
+  },
+  {
+   "base": "https://ubyhost.example",
+   "cookie": "vi",
+   "query": "",
+   "set_cookie": null
+  },
+  {
+   "base": "https://ubyhost.example",
+   "cookie": "EN-gb",
+   "query": "",
+   "set_cookie": "ubyhost_lang=en; Max-Age=15552000; Path=/; SameSite=lax; Secure"
+  },
+  {
+   "base": "https://ubyhost.example",
+   "cookie": " de ",
+   "query": "",
+   "set_cookie": "ubyhost_lang=cs; Max-Age=15552000; Path=/; SameSite=lax; Secure"
+  },
+  {
+   "base": "https://ubyhost.example",
+   "cookie": "cs",
+   "query": "lang= CS",
+   "set_cookie": null
+  },
+  {
+   "base": "https://ubyhost.example",
+   "cookie": "vi",
+   "query": "lang=VI",
+   "set_cookie": null
+  }
+ ],
+ "now": 1798761600,
+ "paths": [
+  {
+   "in": "",
+   "location": "/",
+   "safe": "/"
+  },
+  {
+   "in": "/",
+   "location": "/",
+   "safe": "/"
+  },
+  {
+   "in": "/reservations",
+   "location": "/reservations",
+   "safe": "/reservations"
+  },
+  {
+   "in": "  /reservations?x=1  ",
+   "location": "/reservations?x=1",
+   "safe": "/reservations?x=1"
+  },
+  {
+   "in": "/a/./b/../c",
+   "location": "/a/c",
+   "safe": "/a/c"
+  },
+  {
+   "in": "/a//b",
+   "location": "/a/b",
+   "safe": "/a/b"
+  },
+  {
+   "in": "//evil.example/x",
+   "location": "/",
+   "safe": "/"
+  },
+  {
+   "in": "///x",
+   "location": "/x",
+   "safe": "/x"
+  },
+  {
+   "in": "////x",
+   "location": "/",
+   "safe": "/"
+  },
+  {
+   "in": "/%2F%2Fevil",
+   "location": "/",
+   "safe": "/"
+  },
+  {
+   "in": "/x\\y",
+   "location": "/",
+   "safe": "/"
+  },
+  {
+   "in": "https://evil.example/",
+   "location": "/",
+   "safe": "/"
+  },
+  {
+   "in": "javascript:alert(1)",
+   "location": "/",
+   "safe": "/"
+  },
+  {
+   "in": "relative",
+   "location": "/",
+   "safe": "/"
+  },
+  {
+   "in": "/x#frag",
+   "location": "/x",
+   "safe": "/x"
+  },
+  {
+   "in": "/x?q=a b&c=č",
+   "location": "/x?q=a%20b&c=%C4%8D",
+   "safe": "/x?q=a b&c=č"
+  },
+  {
+   "in": "/čeština",
+   "location": "/%C4%8De%C5%A1tina",
+   "safe": "/čeština"
+  },
+  {
+   "in": "/x?",
+   "location": "/x",
+   "safe": "/x"
+  },
+  {
+   "in": "/..",
+   "location": "/",
+   "safe": "/"
+  },
+  {
+   "in": "/a/",
+   "location": "/a",
+   "safe": "/a"
+  },
+  {
+   "in": "/%zz",
+   "location": "/%zz",
+   "safe": "/%zz"
+  },
+  {
+   "in": "/x\u0001",
+   "location": "/",
+   "safe": "/"
+  },
+  {
+   "in": "/%5Cx",
+   "location": "/",
+   "safe": "/"
+  },
+  {
+   "in": "/?next=//e",
+   "location": "/?next=//e",
+   "safe": "/?next=//e"
+  },
+  {
+   "in": "/x?y=1#z",
+   "location": "/x?y=1",
+   "safe": "/x?y=1"
+  },
+  {
+   "in": "\t/tab",
+   "location": "/tab",
+   "safe": "/tab"
+  },
+  {
+   "in": "/a%20b",
+   "location": "/a%20b",
+   "safe": "/a%20b"
+  },
+  {
+   "in": "/a?b=%2F",
+   "location": "/a?b=%2F",
+   "safe": "/a?b=%2F"
+  }
+ ],
+ "secret": "auth-shared-golden-secret-0123456789-abcd"
+}

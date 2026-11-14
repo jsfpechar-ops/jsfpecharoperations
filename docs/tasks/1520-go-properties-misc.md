@@ -1,6 +1,6 @@
 # 1520: Go port of the alert dismiss, the smart-locks redirect and the phone menu
 
-Status: todo
+Status: review
 Depends on: none | Base commit: current branch (One big PR mode) | Branch: current branch
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B
 

@@ -31,15 +31,15 @@ None: this plan is not run. The split, one brief each, in this order:
 | Brief | Routes | Python | Closes / switches | Notes |
 |---|---|---|---|---|
 | 1501 shared | none (helpers) | `turnstile.py`, `client_ip.py`, `_finish_login`, `_keep_login_language`, `link_mail`, `email_changed`, `passkey_added`, `workspace_deletion` | nothing | **written: [1501](1501-go-auth-shared.md)** (todo). New `clientip`, `turnstile`, `web/auth/finish.go`, `mail/auth_link.go` + `auth_queue.go`; signatures in its "API for the later briefs". 1502 must add `TURNSTILE_*` and `UBYHOST_TRUSTED_PROXY_CIDRS` to the `ubyhost-go` service |
-| 1502 login | `GET`/`POST /login`, `GET`/`POST /login/link` | 60-267 | `/login`, `/login/link` fully Go | device cookie skip of Turnstile, rate limits 3/15 min, 10/day, 10 per IP, 20 bad links; `no-store` and `no-referrer` on the link page |
-| 1503 2fa login | `POST /login/2fa` | 275-316 | `/login/2fa` (collision) | 429 locked, 401 invalid, audit `two_factor_failed` |
-| 1504 admin users | `POST /admin/users`, `/admin/users/{id}/invite`, `/admin/users/{id}/email` | 731-853 | `/admin/users` (collision) | `mail.SendNow` after enqueue; own-account email change re-attaches the session |
-| 1505 account setup | `GET`/`POST /account/accept`, `GET`/`POST /account/2fa/setup` | 420-540 | both paths | QR via `skip2/go-qrcode` (already in go.mod); 10-minute fresh-login rule |
-| 1506 email change | `POST /account/email`, `GET`/`POST /account/email/confirm` | 612-725 | `/account/email*` | link to new address, notice to old |
-| 1507 signup | `GET`/`POST /signup`, `GET`/`POST /signup/verify` | `signup.py` 66-176 | `/signup*` | 410 on expired verify |
-| 1508 operations | `GET /admin/operations` | 929-950 | `/admin/operations` | 267-line template; may need two briefs |
-| 1509 deletion | `POST /admin/users/{id}/schedule-deletion` | 1042- | with 1504 | `workspace_deletion` mail is shared with the retention job: coordinator names the owner |
-| 1510 export | `POST /admin/users/{id}/export` | 1013-1041 | with 1504 | uses `workspace_export.build_workspace_zip`: exports thread first |
+| 1502 login | `GET`/`POST /login`, `GET`/`POST /login/link` | 60-267 | `/login`, `/login/link` fully Go | device cookie skip of Turnstile, rate limits 3/15 min, 10/day, 10 per IP, 20 bad links; `no-store` and `no-referrer` on the link page; **written: [1502](1502-go-auth-login.md)** (todo) |
+| 1503 2fa login | `POST /login/2fa` | 275-316 | `/login/2fa` (collision) | 429 locked, 401 invalid, audit `two_factor_failed`; **written: [1503](1503-go-auth-2fa-login.md)** (todo) |
+| 1504 admin users | `POST /admin/users`, `/admin/users/{id}/invite`, `/admin/users/{id}/email` | 731-853 | `/admin/users` (collision) | `mail.SendNow` after enqueue; own-account email change re-attaches the session; **written: [1504](1504-go-auth-admin-users.md)** (todo) |
+| 1505 account setup | `GET`/`POST /account/accept`, `GET`/`POST /account/2fa/setup` | 420-540 | both paths | QR via `skip2/go-qrcode` (already in go.mod); 10-minute fresh-login rule; **written: [1505](1505-go-auth-account-setup.md)** (todo) |
+| 1506 email change | `POST /account/email`, `GET`/`POST /account/email/confirm` | 612-725 | `/account/email*` | link to new address, notice to old; **written: [1506](1506-go-auth-email-change.md)** (todo) |
+| 1507 signup | `GET`/`POST /signup`, `GET`/`POST /signup/verify` | `signup.py` 66-176 | `/signup*` | 410 on expired verify; **written: [1507](1507-go-auth-signup.md)** (todo) |
+| 1508 operations | `GET /admin/operations` | 929-950 | `/admin/operations` | 267-line template; may need two briefs; **written: [1508](1508-go-auth-operations.md)** (todo) |
+| 1509 deletion | `POST /admin/users/{id}/schedule-deletion` | 1042- | with 1504 | `workspace_deletion` mail is shared with the retention job: coordinator names the owner; **written: [1509](1509-go-auth-deletion.md)** (todo) |
+| 1510 export | `POST /admin/users/{id}/export` | 1013-1041 | with 1504 | uses `workspace_export.build_workspace_zip`: exports thread first; **written: [1510](1510-go-auth-export.md) (blocked: no Go `build_workspace_zip` yet)** |
 | 1511-1513 passkeys | the 6 `passkeys.py` JSON routes | 94-253 | `/account/passkeys*`, `/login/passkey*` | blocked until go-webauthn is in go.mod (see §2) |
 | 1514 session parity | none | `auth.py` `end_expired_impersonation`, `security.CSRF_MAX_AGE` | nothing | **written: [1514](1514-go-session-parity-fix.md)** (todo). Both 1282 gaps already fixed by 1382 (`8a1241966`); test-only: drops the `knownGaps` waiver in `web/auth/routes_test.go` |
 
@@ -70,3 +70,15 @@ None: this file changes no code.
 ## Owner steps
 
 1. Confirm in chat whether the go-webauthn approval covers its transitive modules, so the passkey briefs can add it to `go/go.mod`.
+
+
+## Run order and notes (2026-11-14, briefs 1502-1510 written)
+
+Run order: 1502, 1503, 1504, 1505, 1506, 1507, 1508, 1509. Real dependencies: 1503 needs 1502 (`renderTwoFactorLogin`), 1506 needs 1505 (shell, hooks, harness); the rest need only 1501 (1508 needs 1282 and 1430-1434, already on go-wave3). Shared files (`auth.go` Routes, route count in `auth_test.go`, compose env) are edited by scripts that apply in any order.
+
+Open points for the reviewer or owner:
+- Three signed-out page shells exist: `authpage` (1502), `signup_render.go` (1507), `acct_shell.go` (1505). A clean-up brief can merge them.
+- The `ubyhost-go` service has no SES keys: login, confirm and invite mails wait for Python's mail job. Owner decision before switching `/login` (1502 owner step 3).
+- Go pages lack Python's `X-Robots-Tag: noindex` (`hardenHeaders` in `main.go`).
+- `hostweb/gate.go` 242-244 sorts the Referer query on a CSRF failure (Python keeps order); read-only package, needs its own brief.
+- 1508 adds seven env keys to `ubyhost-go`, two of which change the Go Havel budget toward Python's values on servers that set them.

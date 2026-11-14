@@ -1,0 +1,32 @@
+"""Brief 1507 step 2: append the four sign-up rows to auth.Routes and raise the route count by 4.
+
+Run from the repo root. Sibling briefs (1502-1506) may have appended rows before this one;
+the rows go after the last row, whatever it is, and the count is read from the file.
+"""
+import re
+import sys
+
+routes = "go/internal/web/auth/auth.go"
+s = open(routes).read()
+if '"GET /signup"' in s:
+    sys.exit("STOP: auth.go already has a GET /signup row")
+anchor = "\t}\n}\n\ntype deps struct {"
+if s.count(anchor) != 1:
+    sys.exit("STOP: the end of the Routes slice was not found exactly once")
+rows = (
+    '\t\t{"GET /signup", "/signup", d.signupForm},\n'
+    '\t\t{"POST /signup", "/signup", d.signupSubmit},\n'
+    '\t\t{"GET /signup/verify", "/signup/verify", d.signupVerifyForm},\n'
+    '\t\t{"POST /signup/verify", "/signup/verify", d.signupVerifySubmit},\n'
+)
+open(routes, "w").write(s.replace(anchor, rows + anchor))
+
+test = "go/internal/web/auth/auth_test.go"
+t = open(test).read()
+m = re.search(r'if len\(seen\) != (\d+) \{\n\t\tt\.Errorf\("%d routes, want (\d+)"', t)
+if not m or m.group(1) != m.group(2):
+    sys.exit("STOP: the route count in TestRoutesBuildWithoutPool was not found")
+n = int(m.group(1))
+new = m.group(0).replace(f"!= {n} ", f"!= {n + 4} ").replace(f'want {n}"', f'want {n + 4}"')
+open(test, "w").write(t.replace(m.group(0), new))
+print(f"routes: 4 rows appended; count {n} -> {n + 4}")

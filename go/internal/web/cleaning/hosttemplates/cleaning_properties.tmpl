@@ -1,0 +1,8 @@
+{{/* Port of App/app/templates/cleaning_properties.html (choose a property for the cleaning settings). Brief 1570. */}}
+{{define "cleaning_properties.title"}}{{end}}
+{{define "cleaning_properties"}}
+<div class="cleaning-page cl-v2-props">
+<div class="head"><div><p class="crumb"><a href="/cleaning">{{ct $.Lang "back"}}</a></p><h1 class="big">{{ct $.Lang "settings"}}</h1></div></div>
+<div class="cleaning-property-links card">{{range .Homes}}<a class="cleaning-panel cleaning-property-row" href="/cleaning/properties/{{.ID}}"><strong>{{.Name}}</strong><span class="ui-btn ui-btn-open ui-btn-compact" aria-hidden="true">{{t "common.open"}}</span></a>{{else}}<p>{{ct $.Lang "no_properties"}}</p>{{end}}</div>
+</div>
+{{end}}

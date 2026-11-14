@@ -1,0 +1,224 @@
+package booking
+
+import (
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"strings"
+	"testing"
+	"time"
+)
+
+// propertyMux builds the two routes on the golden fixture (clock 2026-11-28,
+// Stripe test mode, apartment 1 "old-town" priced 2000, apartment 3 "draft").
+func propertyMux(t *testing.T, extra func(pool DB)) (*http.ServeMux, DB) {
+	t.Helper()
+	g := loadGolden(t)
+	pool := testPool(t)
+	seed(t, pool, g)
+	if extra != nil {
+		extra(pool)
+	}
+	env := map[string]string{"UBYHOST_SECRET_KEY": g.Secret, "UBYHOST_STRIPE_MODE": "test", "UBYHOST_PUBLIC_BASE_URL": "https://book.example.test/"}
+	getenv := func(k string) string { return env[k] }
+	now := mustTime(t, g.Now)
+	mux := http.NewServeMux()
+	mux.Handle("GET /p/{slug}", PropertyPageHandler(pool, getenv, func() time.Time { return now }))
+	mux.Handle("POST /p/{slug}/book", BookHandler(pool, getenv, func() time.Time { return now }))
+	return mux, pool
+}
+
+func post(mux *http.ServeMux, path string, form url.Values) *httptest.ResponseRecorder {
+	req := httptest.NewRequest(http.MethodPost, path, strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.RemoteAddr = "203.0.113.9:1000"
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	return rec
+}
+
+func TestPropertyPageShowsQuote(t *testing.T) {
+	mux, _ := propertyMux(t, nil)
+	rec := get(mux, "/p/old-town?lang=en&month=2026-12&date_from=2026-12-01&date_to=2026-12-04&guests=2")
+	body := rec.Body.String()
+	if rec.Code != 200 {
+		t.Fatalf("status %d", rec.Code)
+	}
+	// 3 nights x 2000 + 500 cleaning = 6500; city tax 50 x 2 guests x 3 nights = 300 on site.
+	for _, want := range []string{
+		"6 000 CZK", "6 500 CZK", "2 000 CZK × 3", "City tax 300 CZK (2 guests × 3 nights × 50 CZK)",
+		`action="/p/old-town/checkout"`, `name="terms_version" value="2026-11-03"`, `name="pay_mode" value="stripe"`,
+		`name="pay_mode" value="direct"`, "3 nights", "December 2026", `id="book"`, `<meta property="og:url" content="https://book.example.test/p/old-town">`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("missing %q", want)
+		}
+	}
+	if rec.Header().Get("Set-Cookie") != "" {
+		t.Error("a guest page sets no cookie")
+	}
+}
+
+func TestPropertyPageCalendarLinks(t *testing.T) {
+	mux, _ := propertyMux(t, nil)
+	body := get(mux, "/p/old-town?lang=cs&month=2026-12").Body.String()
+	// A free day links to itself as arrival, keeps lang, month and guests (2 by default).
+	if !strings.Contains(body, `href="/p/old-town?lang=cs&amp;month=2026-12&amp;date_from=2026-12-01&amp;guests=2#book"`) {
+		t.Error("free-day link missing or in the wrong order")
+	}
+	// 10 to 12 December is taken by reservation 101: no link on 2026-12-10.
+	if strings.Contains(body, "date_from=2026-12-10") {
+		t.Error("a taken night must not be clickable")
+	}
+	if !strings.Contains(body, "Prosinec 2026") {
+		t.Error("Czech month name missing")
+	}
+}
+
+func TestPropertyPageRedirectAndMissing(t *testing.T) {
+	mux, _ := propertyMux(t, nil)
+	rec := get(mux, "/p/old-town-2025")
+	if rec.Code != 301 || rec.Header().Get("Location") != "/p/old-town" {
+		t.Errorf("history slug: %d %q", rec.Code, rec.Header().Get("Location"))
+	}
+	for _, slug := range []string{"draft", "nope"} {
+		if rec := get(mux, "/p/"+slug); rec.Code != 404 {
+			t.Errorf("%s: %d, want 404", slug, rec.Code)
+		}
+	}
+}
+
+func TestPropertyPageEscapesAndSplits(t *testing.T) {
+	mux, _ := propertyMux(t, func(db DB) {
+		long := strings.Repeat("a", 399) + "é" + "TAIL<script>alert(1)</script>"
+		_, err := db.Exec(context.Background(), `UPDATE property_page SET description = $1, house_rules = $2,
+			amenities_json = $3, photos_json = $4, checkin_text = 'from 15', hide_from_search = 0 WHERE apartment_id = 1`,
+			long, "No parties\r\n\r\n  Quiet after 22  \nNo pets", `["Wi-Fi","<b>x</b>"]`, `["/photos/property/`+strings.Repeat("a", 32)+`.jpg"]`)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+	body := get(mux, "/p/old-town?lang=en").Body.String()
+	if strings.Contains(body, "<script>alert(1)") || strings.Contains(body, "<b>x</b>") {
+		t.Error("host text was not escaped")
+	}
+	if !strings.Contains(body, "<details>") || !strings.Contains(body, "TAIL&lt;script&gt;") {
+		t.Error("description over 400 characters must continue inside <details>")
+	}
+	for _, want := range []string{"<li>No parties</li>", "<li>Quiet after 22</li>", "<li>No pets</li>", `pp-photo pp-photo-main`, "from 15"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("missing %q", want)
+		}
+	}
+	if strings.Contains(body, `name="robots"`) {
+		t.Error("hide_from_search = 0 must not add noindex")
+	}
+	if !strings.Contains(get(mux, "/p/garden?lang=en").Body.String(), `name="robots" content="noindex"`) {
+		t.Log("garden has no page row flags in the fixture; noindex is checked on apartment 1 above")
+	}
+}
+
+func TestBookStep(t *testing.T) {
+	mux, _ := propertyMux(t, nil)
+	ok := post(mux, "/p/old-town/book", url.Values{"date_from": {" 2026-12-01 "}, "date_to": {"2026-12-04"}, "guests": {"2"}})
+	body := ok.Body.String()
+	if ok.Code != 200 || !strings.Contains(body, `<html lang="en">`) || !strings.Contains(body, `action="/p/old-town/checkout"`) ||
+		!strings.Contains(body, `name="pay_mode" value="stripe"`) || !strings.Contains(body, "6500 CZK") {
+		t.Errorf("quote page wrong: %d", ok.Code)
+	}
+	bad := post(mux, "/p/old-town/book", url.Values{"date_from": {"2026-12-01"}, "date_to": {"2026-12-02"}, "guests": {"2"}})
+	if bad.Code != 303 || bad.Header().Get("Location") != "/p/old-town?book=min_nights&lang=cs#book" {
+		t.Errorf("min_nights: %d %q", bad.Code, bad.Header().Get("Location"))
+	}
+	dates := post(mux, "/p/old-town/book", url.Values{"date_from": {"x"}, "date_to": {"y"}})
+	if dates.Header().Get("Location") != "/p/old-town?book=bad_dates&lang=cs#book" {
+		t.Errorf("bad_dates: %q", dates.Header().Get("Location"))
+	}
+	if rec := post(mux, "/p/draft/book", url.Values{}); rec.Code != 404 {
+		t.Errorf("unpublished: %d", rec.Code)
+	}
+	if rec := post(mux, "/p/old-town-2025/book", url.Values{}); rec.Code != 404 {
+		t.Errorf("history slug on book: %d, want 404 (no redirect)", rec.Code)
+	}
+}
+
+func TestBookErrorShownOnlyFromTheList(t *testing.T) {
+	mux, _ := propertyMux(t, nil)
+	if body := get(mux, "/p/old-town?lang=en&book=taken").Body.String(); !strings.Contains(body, "These dates are already taken.") {
+		t.Error("a listed book error must show")
+	}
+	if body := get(mux, "/p/old-town?lang=en&book=%3Cscript%3E").Body.String(); strings.Contains(body, `role="alert"`) {
+		t.Error("an unlisted book error must not show")
+	}
+}
+
+func TestPropertyPageRateLimit(t *testing.T) {
+	mux, _ := propertyMux(t, nil)
+	var last int
+	for i := 0; i < rateMax+1; i++ {
+		last = get(mux, "/p/nope").Code
+	}
+	if last != http.StatusTooManyRequests {
+		t.Errorf("request %d: %d, want 429", rateMax+1, last)
+	}
+}
+
+func TestMonthParamAndHrefAndMoney(t *testing.T) {
+	now := time.Date(2026, 11, 28, 23, 30, 0, 0, time.UTC) // 29 Nov in Prague
+	cases := []struct {
+		in   string
+		y, m int
+	}{{"2026-12", 2026, 12}, {"2026-11", 2026, 11}, {"2026-10", 2026, 11}, {"2027-11", 2027, 11}, {"2027-12", 2026, 11},
+		{"junk", 2026, 11}, {"2026-13", 2026, 11}, {"2026-12-01", 2026, 11}, {"", 2026, 11}}
+	for _, c := range cases {
+		if y, m := monthParam(c.in, now); y != c.y || m != c.m {
+			t.Errorf("monthParam(%q) = %d-%d, want %d-%d", c.in, y, m, c.y, c.m)
+		}
+	}
+	if got := PageHref("s", "en", 2026, 12, "2026-12-01", "", 3); got != "/p/s?lang=en&month=2026-12&date_from=2026-12-01&guests=3#book" {
+		t.Errorf("href %q", got)
+	}
+	if money("en", 1234567) != "1 234 567 CZK" || money("cs", 500) != "500 Kč" || money("en", 0) != "0 CZK" {
+		t.Error("money format")
+	}
+	if g := (Guest{Lang: "cs"}); g.TP("stay_fees.nights", 1) != "1 noc" || g.TP("stay_fees.nights", 3) != "3 noci" || g.TP("stay_fees.nights", 5) != "5 nocí" {
+		t.Error("plural forms")
+	}
+	if got := splitLines("a\r\nb\rc\n\nd\u0085e"); strings.Join(got, "|") != "a|b|c||d|e" {
+		t.Errorf("splitLines %q", got)
+	}
+	if first10("2026-12-01XYZ") != "2026-12-01" || runeSlice("ěščř", 1, 3) != "šč" {
+		t.Error("rune slicing")
+	}
+}
+
+func TestSiteAllowedPlans(t *testing.T) {
+	_, pool := propertyMux(t, nil)
+	on := func(k string) string {
+		if k == "UBYHOST_BILLING_ENABLED" {
+			return "1"
+		}
+		return ""
+	}
+	ctx := context.Background()
+	if ok, _ := SiteAllowed(ctx, pool, func(string) string { return "" }, 1); !ok {
+		t.Error("billing off allows everyone")
+	}
+	if ok, _ := SiteAllowed(ctx, pool, on, 1); ok {
+		t.Error("billing on and no billing row: standard plan, not allowed")
+	}
+	ins := `INSERT INTO billing_account (owner_user_id, status, plan, updated_at) VALUES ($1, $2, $3, '2026-11-01T00:00:00+00:00')`
+	for _, c := range []struct {
+		owner        int64
+		status, plan string
+		want         bool
+	}{{1, "active", "max", true}, {2, "trialing", "max", false}, {3, "active", "standard", false}} {
+		if _, err := pool.Exec(ctx, ins, c.owner, c.status, c.plan); err != nil {
+			t.Fatal(err)
+		}
+		if ok, err := SiteAllowed(ctx, pool, on, c.owner); err != nil || ok != c.want {
+			t.Errorf("%s/%s: %v %v, want %v", c.status, c.plan, ok, err, c.want)
+		}
+	}
+}

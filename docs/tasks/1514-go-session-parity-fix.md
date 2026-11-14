@@ -1,6 +1,6 @@
 # 1514: Go session parity: the two hostweb gaps of 1282 are closed; drop the test waiver that still hides them
 
-Status: todo
+Status: review
 Depends on: none (independent of 1501) | Base commit: none (one big PR mode, see below) | Branch: the orchestrator's current branch
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

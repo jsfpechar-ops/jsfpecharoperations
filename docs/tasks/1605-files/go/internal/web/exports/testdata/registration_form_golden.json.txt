@@ -1,0 +1,6999 @@
+[
+ {
+  "guest": {
+   "addr_house_no": "12",
+   "addr_obec": "Praha",
+   "addr_obec_cast": "Staré Město",
+   "addr_okres": null,
+   "addr_orient_no": "3a",
+   "addr_street": "Dlouhá",
+   "addr_zip": "110 00",
+   "birth_date": "15061980",
+   "doc_number": "C01X00T47",
+   "filled_at": "2026-05-01T09:59:00+00:00",
+   "first_name": "Hans",
+   "id": 11,
+   "internal_name": "Byt Dole",
+   "manual_filed_at": null,
+   "manual_reference": null,
+   "nationality": "DEU",
+   "note": null,
+   "notice_ack_at": "2026-05-01T09:58:00+00:00",
+   "notice_lang": "de",
+   "notice_version": "2",
+   "purpose": "10",
+   "res_city": "Berlin",
+   "res_country": "deu",
+   "res_from": "2026-05-01",
+   "res_street": "Hauptstr. 1",
+   "res_to": "2026-05-04",
+   "reservation_id": 1,
+   "signature_png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
+   "signed_at": "2026-05-01T10:00:00+00:00",
+   "signed_for_at": null,
+   "signed_for_guest_id": null,
+   "signed_for_role": null,
+   "signed_for_wording": null,
+   "stay_from": null,
+   "stay_to": null,
+   "submit_state": "sent",
+   "submitted_at": "2026-05-02T10:00:00+00:00",
+   "surname": "Müller",
+   "uby_idub": "IDUB7",
+   "uby_mark": null,
+   "uby_name": "Penzion U Lípy",
+   "visa_number": null
+  },
+  "name": "own_signature_sent",
+  "now": "2026-11-13T13:05:00",
+  "ops": [
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Přihlašovací tiskopis cizince",
+    "size": 14,
+    "x": 56.69291338582678,
+    "y": 771.0236220472442
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Foreigner's registration form / house book entry",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 754.0157480314962
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Ubytovatel / Accommodation provider",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 714.3307086614175
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "NÁZEV ZAŘÍZENÍ / FACILITY",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 703.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Penzion U Lípy",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 691.6535433070868
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 345.82677165354335,
+    "y": 688.6535433070868,
+    "y2": 688.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "IDUB",
+    "size": 7,
+    "x": 369.9212598425197,
+    "y": 703.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "IDUB7",
+    "size": 10,
+    "x": 369.9212598425197,
+    "y": 691.6535433070868
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 369.9212598425197,
+    "x2": 538.5826771653543,
+    "y": 688.6535433070868,
+    "y2": 688.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ADRESA / ADDRESS",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 663.9685039370081
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Dlouhá 12/3a, Staré Město, 110 00 Praha",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 651.9685039370081
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 538.5826771653543,
+    "y": 648.9685039370081,
+    "y2": 648.9685039370081
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Ubytovaný cizinec / Accommodated foreigner",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 600.944881889764
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "PŘÍJMENÍ / SURNAME",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 590.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Müller",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 578.2677165354334
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 575.2677165354334,
+    "y2": 575.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "JMÉNO / GIVEN NAME(S)",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 590.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Hans",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 578.2677165354334
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 575.2677165354334,
+    "y2": 575.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "DATUM NAROZENÍ / DATE OF BIRTH",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 550.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "15.06.1980",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 538.5826771653547
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 535.5826771653547,
+    "y2": 535.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "STÁTNÍ OBČANSTVÍ / NATIONALITY",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 550.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "DEU Germany",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 538.5826771653547
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 535.5826771653547,
+    "y2": 535.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ČÍSLO CESTOVNÍHO DOKLADU / TRAVEL DOCUMENT NO.",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 510.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "C01X00T47",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 498.8976377952759
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 495.8976377952759,
+    "y2": 495.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ČÍSLO VÍZA / VISA NO.",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 510.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "-",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 498.8976377952759
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 495.8976377952759,
+    "y2": 495.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "BYDLIŠTĚ V ZAHRANIČÍ / PERMANENT RESIDENCE ABROAD",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 471.21259842519714
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Hauptstr. 1, Berlin, DEU-Německo",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 459.21259842519714
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 538.5826771653543,
+    "y": 456.21259842519714,
+    "y2": 456.21259842519714
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ÚČEL POBYTU / PURPOSE OF STAY",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 431.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Turistika",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 419.5275590551184
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 416.5275590551184,
+    "y2": 416.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "POZNÁMKA / NOTE",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 431.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "-",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 419.5275590551184
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 416.5275590551184,
+    "y2": 416.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "OD / FROM",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 391.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "2026-05-01",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 379.84251968503963
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 376.84251968503963,
+    "y2": 376.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "DO / TO",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 391.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "2026-05-04",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 379.84251968503963
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 376.84251968503963,
+    "y2": 376.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Podpis cizince / Signature of the foreigner",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 362.8346456692916
+   },
+   {
+    "h": 62.36220471440945,
+    "name": "signature",
+    "op": "image",
+    "w": 62.36220471440945,
+    "x": 56.69291338582678,
+    "y": 294.8031496062995
+   },
+   {
+    "color": [
+     0.6,
+     0.6,
+     0.6
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 283.46456692913387,
+    "y": 289.1338582677168,
+    "y2": 289.1338582677168
+   },
+   {
+    "align": "left",
+    "color": [
+     0.4,
+     0.4,
+     0.4
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Signed electronically: 2026-05-01T10:00:00+00:00",
+    "size": 8,
+    "x": 56.69291338582678,
+    "y": 274.96062992126014
+   },
+   {
+    "align": "right",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Reported to the Foreign Police",
+    "size": 9,
+    "x": 538.5826771653544,
+    "y": 274.96062992126014
+   },
+   {
+    "align": "right",
+    "color": [
+     0.4,
+     0.4,
+     0.4
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "at 2026-05-02T10:00:00+00:00",
+    "size": 9,
+    "x": 538.5826771653544,
+    "y": 260.7874015748034
+   },
+   {
+    "align": "left",
+    "color": [
+     0.45,
+     0.45,
+     0.45
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Privacy notice v2 acknowledged 2026-05-01T09:58:00+00:00 (de)",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 53.85826771653544
+   },
+   {
+    "align": "left",
+    "color": [
+     0.45,
+     0.45,
+     0.45
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Generated 2026-11-13 13:05 - retain for 6 years from the end of the stay (§ 101 Act 326/1999 Coll.)",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 42.51968503937008
+   }
+  ],
+  "record": {
+   "kind": "own",
+   "text": ""
+  }
+ },
+ {
+  "guest": {
+   "addr_house_no": "12",
+   "addr_obec": "Praha",
+   "addr_obec_cast": "Staré Město",
+   "addr_okres": null,
+   "addr_orient_no": null,
+   "addr_street": "Nábřeží Kapitána Jaroše s velmi dlouhým názvem ulice",
+   "addr_zip": "110 00",
+   "birth_date": "15061980",
+   "doc_number": "C01X00T47",
+   "filled_at": "2026-05-01T09:59:00+00:00",
+   "first_name": "Maximilián Jindřich",
+   "id": 11,
+   "internal_name": "Velmi dlouhý název ubytovacího zařízení v centru",
+   "manual_filed_at": "2026-05-02T08:00:00+00:00",
+   "manual_reference": "UBY-12345",
+   "nationality": "XXX",
+   "note": "Pozdní příjezd po půlnoci, klíče u souseda v přízemí",
+   "notice_ack_at": "2026-05-01T09:58:00+00:00",
+   "notice_lang": "de",
+   "notice_version": null,
+   "purpose": "99",
+   "res_city": "Madrid",
+   "res_country": "esp",
+   "res_from": "2026-05-01",
+   "res_street": "Calle de Alcalá 1234, escalera izquierda, piso tercero",
+   "res_to": "2026-05-04",
+   "reservation_id": 1,
+   "signature_png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
+   "signed_at": "2026-05-01T10:00:00+00:00",
+   "signed_for_at": null,
+   "signed_for_guest_id": null,
+   "signed_for_role": null,
+   "signed_for_wording": null,
+   "stay_from": "2026-05-02",
+   "stay_to": "2026-05-03",
+   "submit_state": "sent",
+   "submitted_at": "2026-05-02T10:00:00+00:00",
+   "surname": "Wolfeschlegelsteinhausenbergerdorff-Ostrava-Poruba",
+   "uby_idub": "IDUB7",
+   "uby_mark": null,
+   "uby_name": null,
+   "visa_number": null
+  },
+  "name": "long_values_by_hand",
+  "now": "2026-11-13T13:05:00",
+  "ops": [
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Přihlašovací tiskopis cizince",
+    "size": 14,
+    "x": 56.69291338582678,
+    "y": 771.0236220472442
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Foreigner's registration form / house book entry",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 754.0157480314962
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Ubytovatel / Accommodation provider",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 714.3307086614175
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "NÁZEV ZAŘÍZENÍ / FACILITY",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 703.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Velmi dlouhý název ubytovacího zařízení v centru",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 691.6535433070868
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 345.82677165354335,
+    "y": 688.6535433070868,
+    "y2": 688.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "IDUB",
+    "size": 7,
+    "x": 369.9212598425197,
+    "y": 703.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "IDUB7",
+    "size": 10,
+    "x": 369.9212598425197,
+    "y": 691.6535433070868
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 369.9212598425197,
+    "x2": 538.5826771653543,
+    "y": 688.6535433070868,
+    "y2": 688.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ADRESA / ADDRESS",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 663.9685039370081
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Nábřeží Kapitána Jaroše s velmi dlouhým názvem ulice 12, Staré Město, 110 00 Praha",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 651.9685039370081
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 538.5826771653543,
+    "y": 648.9685039370081,
+    "y2": 648.9685039370081
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Ubytovaný cizinec / Accommodated foreigner",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 600.944881889764
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "PŘÍJMENÍ / SURNAME",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 590.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Wolfeschlegelsteinhausenbergerdorff-Ostrav",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 578.2677165354334
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 575.2677165354334,
+    "y2": 575.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "JMÉNO / GIVEN NAME(S)",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 590.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Maximilián Jindřich",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 578.2677165354334
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 575.2677165354334,
+    "y2": 575.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "DATUM NAROZENÍ / DATE OF BIRTH",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 550.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "15.06.1980",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 538.5826771653547
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 535.5826771653547,
+    "y2": 535.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "STÁTNÍ OBČANSTVÍ / NATIONALITY",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 550.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "XXX Unspecified nationality",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 538.5826771653547
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 535.5826771653547,
+    "y2": 535.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ČÍSLO CESTOVNÍHO DOKLADU / TRAVEL DOCUMENT NO.",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 510.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "C01X00T47",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 498.8976377952759
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 495.8976377952759,
+    "y2": 495.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ČÍSLO VÍZA / VISA NO.",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 510.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "-",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 498.8976377952759
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 495.8976377952759,
+    "y2": 495.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "BYDLIŠTĚ V ZAHRANIČÍ / PERMANENT RESIDENCE ABROAD",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 471.21259842519714
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Calle de Alcalá 1234, escalera izquierda, piso tercero, Madrid, ESP-Španělsko",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 459.21259842519714
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 538.5826771653543,
+    "y": 456.21259842519714,
+    "y2": 456.21259842519714
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ÚČEL POBYTU / PURPOSE OF STAY",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 431.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Ostatní",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 419.5275590551184
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 416.5275590551184,
+    "y2": 416.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "POZNÁMKA / NOTE",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 431.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Pozdní příjezd po půlnoci, klíče u souseda v p",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 419.5275590551184
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 416.5275590551184,
+    "y2": 416.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "OD / FROM",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 391.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "2026-05-02",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 379.84251968503963
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 376.84251968503963,
+    "y2": 376.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "DO / TO",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 391.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "2026-05-03",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 379.84251968503963
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 376.84251968503963,
+    "y2": 376.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Podpis cizince / Signature of the foreigner",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 362.8346456692916
+   },
+   {
+    "h": 62.36220471440945,
+    "name": "signature",
+    "op": "image",
+    "w": 62.36220471440945,
+    "x": 56.69291338582678,
+    "y": 294.8031496062995
+   },
+   {
+    "color": [
+     0.6,
+     0.6,
+     0.6
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 283.46456692913387,
+    "y": 289.1338582677168,
+    "y2": 289.1338582677168
+   },
+   {
+    "align": "left",
+    "color": [
+     0.4,
+     0.4,
+     0.4
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Signed electronically: 2026-05-01T10:00:00+00:00",
+    "size": 8,
+    "x": 56.69291338582678,
+    "y": 274.96062992126014
+   },
+   {
+    "align": "right",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Reported to the Foreign Police (filed by hand in UbyPort)",
+    "size": 9,
+    "x": 538.5826771653544,
+    "y": 274.96062992126014
+   },
+   {
+    "align": "right",
+    "color": [
+     0.4,
+     0.4,
+     0.4
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "at 2026-05-02T08:00:00+00:00, ref. UBY-12345",
+    "size": 9,
+    "x": 538.5826771653544,
+    "y": 260.7874015748034
+   },
+   {
+    "align": "left",
+    "color": [
+     0.45,
+     0.45,
+     0.45
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Generated 2026-11-13 13:05 - retain for 6 years from the end of the stay (§ 101 Act 326/1999 Coll.)",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 42.51968503937008
+   }
+  ],
+  "record": {
+   "kind": "own",
+   "text": ""
+  }
+ },
+ {
+  "guest": {
+   "addr_house_no": "12",
+   "addr_obec": "Praha",
+   "addr_obec_cast": "Staré Město",
+   "addr_okres": null,
+   "addr_orient_no": "3a",
+   "addr_street": "Dlouhá",
+   "addr_zip": "110 00",
+   "birth_date": "01012020",
+   "doc_number": "C01X00T47",
+   "filled_at": null,
+   "first_name": "Kid",
+   "id": 12,
+   "internal_name": "Byt Dole",
+   "manual_filed_at": null,
+   "manual_reference": null,
+   "nationality": "DEU",
+   "note": null,
+   "notice_ack_at": "2026-05-01T09:58:00+00:00",
+   "notice_lang": "de",
+   "notice_version": null,
+   "purpose": "10",
+   "res_city": "Berlin",
+   "res_country": "deu",
+   "res_from": "2026-05-01",
+   "res_street": "Hauptstr. 1",
+   "res_to": "2026-05-04",
+   "reservation_id": 1,
+   "signature_png": null,
+   "signed_at": null,
+   "signed_for_at": "2026-05-01T10:05:00+00:00",
+   "signed_for_guest_id": 21,
+   "signed_for_role": "parent",
+   "signed_for_wording": "v1",
+   "stay_from": null,
+   "stay_to": null,
+   "submit_state": "pending",
+   "submitted_at": null,
+   "surname": "Müller",
+   "uby_idub": "IDUB7",
+   "uby_mark": null,
+   "uby_name": "Penzion U Lípy",
+   "visa_number": null
+  },
+  "name": "signed_for_child",
+  "now": "2026-11-13T13:05:00",
+  "ops": [
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Přihlašovací tiskopis cizince",
+    "size": 14,
+    "x": 56.69291338582678,
+    "y": 771.0236220472442
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Foreigner's registration form / house book entry",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 754.0157480314962
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Ubytovatel / Accommodation provider",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 714.3307086614175
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "NÁZEV ZAŘÍZENÍ / FACILITY",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 703.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Penzion U Lípy",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 691.6535433070868
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 345.82677165354335,
+    "y": 688.6535433070868,
+    "y2": 688.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "IDUB",
+    "size": 7,
+    "x": 369.9212598425197,
+    "y": 703.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "IDUB7",
+    "size": 10,
+    "x": 369.9212598425197,
+    "y": 691.6535433070868
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 369.9212598425197,
+    "x2": 538.5826771653543,
+    "y": 688.6535433070868,
+    "y2": 688.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ADRESA / ADDRESS",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 663.9685039370081
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Dlouhá 12/3a, Staré Město, 110 00 Praha",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 651.9685039370081
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 538.5826771653543,
+    "y": 648.9685039370081,
+    "y2": 648.9685039370081
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Ubytovaný cizinec / Accommodated foreigner",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 600.944881889764
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "PŘÍJMENÍ / SURNAME",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 590.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Müller",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 578.2677165354334
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 575.2677165354334,
+    "y2": 575.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "JMÉNO / GIVEN NAME(S)",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 590.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Kid",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 578.2677165354334
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 575.2677165354334,
+    "y2": 575.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "DATUM NAROZENÍ / DATE OF BIRTH",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 550.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "01.01.2020",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 538.5826771653547
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 535.5826771653547,
+    "y2": 535.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "STÁTNÍ OBČANSTVÍ / NATIONALITY",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 550.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "DEU Germany",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 538.5826771653547
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 535.5826771653547,
+    "y2": 535.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ČÍSLO CESTOVNÍHO DOKLADU / TRAVEL DOCUMENT NO.",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 510.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "C01X00T47",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 498.8976377952759
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 495.8976377952759,
+    "y2": 495.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ČÍSLO VÍZA / VISA NO.",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 510.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "-",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 498.8976377952759
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 495.8976377952759,
+    "y2": 495.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "BYDLIŠTĚ V ZAHRANIČÍ / PERMANENT RESIDENCE ABROAD",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 471.21259842519714
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Hauptstr. 1, Berlin, DEU-Německo",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 459.21259842519714
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 538.5826771653543,
+    "y": 456.21259842519714,
+    "y2": 456.21259842519714
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ÚČEL POBYTU / PURPOSE OF STAY",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 431.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Turistika",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 419.5275590551184
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 416.5275590551184,
+    "y2": 416.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "POZNÁMKA / NOTE",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 431.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "-",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 419.5275590551184
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 416.5275590551184,
+    "y2": 416.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "OD / FROM",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 391.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "2026-05-01",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 379.84251968503963
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 376.84251968503963,
+    "y2": 376.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "DO / TO",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 391.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "2026-05-04",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 379.84251968503963
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 376.84251968503963,
+    "y2": 376.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Podpis cizince / Signature of the foreigner",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 362.8346456692916
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "wording v1",
+    "size": 9,
+    "x": 56.69291338582678,
+    "y": 302.8031496062995
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Signed by Eva Nováková for Kid Müller, as parent or legal guardian, 2026-05-01T10:05:00+00:00,",
+    "size": 9,
+    "x": 56.69291338582678,
+    "y": 313.8031496062995
+   },
+   {
+    "color": [
+     0.6,
+     0.6,
+     0.6
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 283.46456692913387,
+    "y": 289.1338582677168,
+    "y2": 289.1338582677168
+   },
+   {
+    "align": "right",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "NOT YET REPORTED",
+    "size": 9,
+    "x": 538.5826771653544,
+    "y": 274.96062992126014
+   },
+   {
+    "align": "left",
+    "color": [
+     0.45,
+     0.45,
+     0.45
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Generated 2026-11-13 13:05 - retain for 6 years from the end of the stay (§ 101 Act 326/1999 Coll.)",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 42.51968503937008
+   }
+  ],
+  "record": {
+   "kind": "signed_for",
+   "text": "Signed by Eva Nováková for Kid Müller, as parent or legal guardian, 2026-05-01T10:05:00+00:00, wording v1"
+  }
+ },
+ {
+  "guest": {
+   "addr_house_no": "12",
+   "addr_obec": "Praha",
+   "addr_obec_cast": "Staré Město",
+   "addr_okres": null,
+   "addr_orient_no": "3a",
+   "addr_street": "Dlouhá",
+   "addr_zip": "110 00",
+   "birth_date": "01012021",
+   "doc_number": "C01X00T47",
+   "filled_at": null,
+   "first_name": "Ann",
+   "id": 13,
+   "internal_name": "Byt Dole",
+   "manual_filed_at": null,
+   "manual_reference": null,
+   "nationality": "DEU",
+   "note": null,
+   "notice_ack_at": "2026-05-01T09:58:00+00:00",
+   "notice_lang": "de",
+   "notice_version": "2",
+   "purpose": "10",
+   "res_city": "Berlin",
+   "res_country": "deu",
+   "res_from": "2026-05-01",
+   "res_street": "Hauptstr. 1",
+   "res_to": "2026-05-04",
+   "reservation_id": 1,
+   "signature_png": null,
+   "signed_at": null,
+   "signed_for_at": null,
+   "signed_for_guest_id": 21,
+   "signed_for_role": "cousin",
+   "signed_for_wording": null,
+   "stay_from": null,
+   "stay_to": null,
+   "submit_state": "not_required",
+   "submitted_at": null,
+   "surname": "Müller",
+   "uby_idub": "IDUB7",
+   "uby_mark": null,
+   "uby_name": "Penzion U Lípy",
+   "visa_number": null
+  },
+  "name": "signed_for_unknown_role",
+  "now": "2026-11-13T13:05:00",
+  "ops": [
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Přihlašovací tiskopis cizince",
+    "size": 14,
+    "x": 56.69291338582678,
+    "y": 771.0236220472442
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Foreigner's registration form / house book entry",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 754.0157480314962
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Ubytovatel / Accommodation provider",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 714.3307086614175
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "NÁZEV ZAŘÍZENÍ / FACILITY",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 703.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Penzion U Lípy",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 691.6535433070868
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 345.82677165354335,
+    "y": 688.6535433070868,
+    "y2": 688.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "IDUB",
+    "size": 7,
+    "x": 369.9212598425197,
+    "y": 703.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "IDUB7",
+    "size": 10,
+    "x": 369.9212598425197,
+    "y": 691.6535433070868
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 369.9212598425197,
+    "x2": 538.5826771653543,
+    "y": 688.6535433070868,
+    "y2": 688.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ADRESA / ADDRESS",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 663.9685039370081
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Dlouhá 12/3a, Staré Město, 110 00 Praha",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 651.9685039370081
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 538.5826771653543,
+    "y": 648.9685039370081,
+    "y2": 648.9685039370081
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Ubytovaný cizinec / Accommodated foreigner",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 600.944881889764
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "PŘÍJMENÍ / SURNAME",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 590.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Müller",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 578.2677165354334
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 575.2677165354334,
+    "y2": 575.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "JMÉNO / GIVEN NAME(S)",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 590.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Ann",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 578.2677165354334
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 575.2677165354334,
+    "y2": 575.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "DATUM NAROZENÍ / DATE OF BIRTH",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 550.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "01.01.2021",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 538.5826771653547
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 535.5826771653547,
+    "y2": 535.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "STÁTNÍ OBČANSTVÍ / NATIONALITY",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 550.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "DEU Germany",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 538.5826771653547
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 535.5826771653547,
+    "y2": 535.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ČÍSLO CESTOVNÍHO DOKLADU / TRAVEL DOCUMENT NO.",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 510.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "C01X00T47",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 498.8976377952759
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 495.8976377952759,
+    "y2": 495.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ČÍSLO VÍZA / VISA NO.",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 510.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "-",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 498.8976377952759
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 495.8976377952759,
+    "y2": 495.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "BYDLIŠTĚ V ZAHRANIČÍ / PERMANENT RESIDENCE ABROAD",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 471.21259842519714
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Hauptstr. 1, Berlin, DEU-Německo",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 459.21259842519714
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 538.5826771653543,
+    "y": 456.21259842519714,
+    "y2": 456.21259842519714
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ÚČEL POBYTU / PURPOSE OF STAY",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 431.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Turistika",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 419.5275590551184
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 416.5275590551184,
+    "y2": 416.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "POZNÁMKA / NOTE",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 431.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "-",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 419.5275590551184
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 416.5275590551184,
+    "y2": 416.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "OD / FROM",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 391.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "2026-05-01",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 379.84251968503963
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 376.84251968503963,
+    "y2": 376.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "DO / TO",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 391.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "2026-05-04",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 379.84251968503963
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 376.84251968503963,
+    "y2": 376.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Podpis cizince / Signature of the foreigner",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 362.8346456692916
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Signed by Eva Nováková for Ann Müller, as cousin, None, wording None",
+    "size": 9,
+    "x": 56.69291338582678,
+    "y": 302.8031496062995
+   },
+   {
+    "color": [
+     0.6,
+     0.6,
+     0.6
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 283.46456692913387,
+    "y": 289.1338582677168,
+    "y2": 289.1338582677168
+   },
+   {
+    "align": "right",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "No reporting duty (Czech national)",
+    "size": 9,
+    "x": 538.5826771653544,
+    "y": 274.96062992126014
+   },
+   {
+    "align": "left",
+    "color": [
+     0.45,
+     0.45,
+     0.45
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Privacy notice v2 acknowledged 2026-05-01T09:58:00+00:00 (de)",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 53.85826771653544
+   },
+   {
+    "align": "left",
+    "color": [
+     0.45,
+     0.45,
+     0.45
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Generated 2026-11-13 13:05 - retain for 6 years from the end of the stay (§ 101 Act 326/1999 Coll.)",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 42.51968503937008
+   }
+  ],
+  "record": {
+   "kind": "signed_for",
+   "text": "Signed by Eva Nováková for Ann Müller, as cousin, None, wording None"
+  }
+ },
+ {
+  "guest": {
+   "addr_house_no": "12",
+   "addr_obec": "Praha",
+   "addr_obec_cast": "Staré Město",
+   "addr_okres": null,
+   "addr_orient_no": "3a",
+   "addr_street": "Dlouhá",
+   "addr_zip": "110 00",
+   "birth_date": "00002019",
+   "doc_number": "C01X00T47",
+   "filled_at": null,
+   "first_name": "Baby",
+   "id": 14,
+   "internal_name": "Byt Dole",
+   "manual_filed_at": null,
+   "manual_reference": null,
+   "nationality": "DEU",
+   "note": null,
+   "notice_ack_at": "2026-05-01T09:58:00+00:00",
+   "notice_lang": "de",
+   "notice_version": null,
+   "purpose": "10",
+   "res_city": "Berlin",
+   "res_country": "deu",
+   "res_from": "2026-05-01",
+   "res_street": "Hauptstr. 1",
+   "res_to": "2026-05-04",
+   "reservation_id": 1,
+   "signature_png": null,
+   "signed_at": null,
+   "signed_for_at": null,
+   "signed_for_guest_id": null,
+   "signed_for_role": null,
+   "signed_for_wording": null,
+   "stay_from": null,
+   "stay_to": null,
+   "submit_state": "error",
+   "submitted_at": null,
+   "surname": "Müller",
+   "uby_idub": "IDUB7",
+   "uby_mark": null,
+   "uby_name": "Penzion U Lípy",
+   "visa_number": null
+  },
+  "name": "exempt_child",
+  "now": "2026-11-13T13:05:00",
+  "ops": [
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Přihlašovací tiskopis cizince",
+    "size": 14,
+    "x": 56.69291338582678,
+    "y": 771.0236220472442
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Foreigner's registration form / house book entry",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 754.0157480314962
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Ubytovatel / Accommodation provider",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 714.3307086614175
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "NÁZEV ZAŘÍZENÍ / FACILITY",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 703.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Penzion U Lípy",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 691.6535433070868
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 345.82677165354335,
+    "y": 688.6535433070868,
+    "y2": 688.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "IDUB",
+    "size": 7,
+    "x": 369.9212598425197,
+    "y": 703.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "IDUB7",
+    "size": 10,
+    "x": 369.9212598425197,
+    "y": 691.6535433070868
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 369.9212598425197,
+    "x2": 538.5826771653543,
+    "y": 688.6535433070868,
+    "y2": 688.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ADRESA / ADDRESS",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 663.9685039370081
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Dlouhá 12/3a, Staré Město, 110 00 Praha",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 651.9685039370081
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 538.5826771653543,
+    "y": 648.9685039370081,
+    "y2": 648.9685039370081
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Ubytovaný cizinec / Accommodated foreigner",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 600.944881889764
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "PŘÍJMENÍ / SURNAME",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 590.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Müller",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 578.2677165354334
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 575.2677165354334,
+    "y2": 575.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "JMÉNO / GIVEN NAME(S)",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 590.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Baby",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 578.2677165354334
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 575.2677165354334,
+    "y2": 575.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "DATUM NAROZENÍ / DATE OF BIRTH",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 550.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "00.00.2019",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 538.5826771653547
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 535.5826771653547,
+    "y2": 535.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "STÁTNÍ OBČANSTVÍ / NATIONALITY",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 550.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "DEU Germany",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 538.5826771653547
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 535.5826771653547,
+    "y2": 535.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ČÍSLO CESTOVNÍHO DOKLADU / TRAVEL DOCUMENT NO.",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 510.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "C01X00T47",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 498.8976377952759
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 495.8976377952759,
+    "y2": 495.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ČÍSLO VÍZA / VISA NO.",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 510.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "-",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 498.8976377952759
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 495.8976377952759,
+    "y2": 495.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "BYDLIŠTĚ V ZAHRANIČÍ / PERMANENT RESIDENCE ABROAD",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 471.21259842519714
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Hauptstr. 1, Berlin, DEU-Německo",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 459.21259842519714
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 538.5826771653543,
+    "y": 456.21259842519714,
+    "y2": 456.21259842519714
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ÚČEL POBYTU / PURPOSE OF STAY",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 431.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Turistika",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 419.5275590551184
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 416.5275590551184,
+    "y2": 416.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "POZNÁMKA / NOTE",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 431.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "-",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 419.5275590551184
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 416.5275590551184,
+    "y2": 416.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "OD / FROM",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 391.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "2026-05-01",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 379.84251968503963
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 376.84251968503963,
+    "y2": 376.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "DO / TO",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 391.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "2026-05-04",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 379.84251968503963
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 376.84251968503963,
+    "y2": 376.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Podpis cizince / Signature of the foreigner",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 362.8346456692916
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Under 15, no signature required (§ 103(b))",
+    "size": 9,
+    "x": 56.69291338582678,
+    "y": 302.8031496062995
+   },
+   {
+    "color": [
+     0.6,
+     0.6,
+     0.6
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 283.46456692913387,
+    "y": 289.1338582677168,
+    "y2": 289.1338582677168
+   },
+   {
+    "align": "left",
+    "color": [
+     0.4,
+     0.4,
+     0.4
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Under 15, no signature required (§ 103(b))",
+    "size": 8,
+    "x": 56.69291338582678,
+    "y": 274.96062992126014
+   },
+   {
+    "align": "right",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "REJECTED BY UBYPORT",
+    "size": 9,
+    "x": 538.5826771653544,
+    "y": 274.96062992126014
+   },
+   {
+    "align": "left",
+    "color": [
+     0.45,
+     0.45,
+     0.45
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Generated 2026-11-13 13:05 - retain for 6 years from the end of the stay (§ 101 Act 326/1999 Coll.)",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 42.51968503937008
+   }
+  ],
+  "record": {
+   "kind": "exempt",
+   "text": "Under 15, no signature required (§ 103(b))"
+  }
+ },
+ {
+  "guest": {
+   "addr_house_no": null,
+   "addr_obec": null,
+   "addr_obec_cast": null,
+   "addr_okres": null,
+   "addr_orient_no": "3a",
+   "addr_street": null,
+   "addr_zip": null,
+   "birth_date": null,
+   "doc_number": null,
+   "filled_at": null,
+   "first_name": "Hans",
+   "id": 15,
+   "internal_name": "Byt Dole",
+   "manual_filed_at": null,
+   "manual_reference": null,
+   "nationality": null,
+   "note": null,
+   "notice_ack_at": "2026-05-01T09:58:00+00:00",
+   "notice_lang": "de",
+   "notice_version": "2",
+   "purpose": null,
+   "res_city": null,
+   "res_country": null,
+   "res_from": "2026-05-01",
+   "res_street": null,
+   "res_to": "2026-05-04",
+   "reservation_id": 1,
+   "signature_png": "imported",
+   "signed_at": null,
+   "signed_for_at": null,
+   "signed_for_guest_id": null,
+   "signed_for_role": null,
+   "signed_for_wording": null,
+   "stay_from": null,
+   "stay_to": null,
+   "submit_state": "blocked",
+   "submitted_at": null,
+   "surname": "Müller",
+   "uby_idub": null,
+   "uby_mark": null,
+   "uby_name": "Penzion U Lípy",
+   "visa_number": null
+  },
+  "name": "imported_signature",
+  "now": "2026-11-13T13:05:00",
+  "ops": [
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Přihlašovací tiskopis cizince",
+    "size": 14,
+    "x": 56.69291338582678,
+    "y": 771.0236220472442
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Foreigner's registration form / house book entry",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 754.0157480314962
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Ubytovatel / Accommodation provider",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 714.3307086614175
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "NÁZEV ZAŘÍZENÍ / FACILITY",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 703.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Penzion U Lípy",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 691.6535433070868
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 345.82677165354335,
+    "y": 688.6535433070868,
+    "y2": 688.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "IDUB",
+    "size": 7,
+    "x": 369.9212598425197,
+    "y": 703.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "-",
+    "size": 10,
+    "x": 369.9212598425197,
+    "y": 691.6535433070868
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 369.9212598425197,
+    "x2": 538.5826771653543,
+    "y": 688.6535433070868,
+    "y2": 688.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ADRESA / ADDRESS",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 663.9685039370081
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "3a",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 651.9685039370081
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 538.5826771653543,
+    "y": 648.9685039370081,
+    "y2": 648.9685039370081
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Ubytovaný cizinec / Accommodated foreigner",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 600.944881889764
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "PŘÍJMENÍ / SURNAME",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 590.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Müller",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 578.2677165354334
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 575.2677165354334,
+    "y2": 575.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "JMÉNO / GIVEN NAME(S)",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 590.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Hans",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 578.2677165354334
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 575.2677165354334,
+    "y2": 575.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "DATUM NAROZENÍ / DATE OF BIRTH",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 550.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "-",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 538.5826771653547
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 535.5826771653547,
+    "y2": 535.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "STÁTNÍ OBČANSTVÍ / NATIONALITY",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 550.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "-",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 538.5826771653547
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 535.5826771653547,
+    "y2": 535.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ČÍSLO CESTOVNÍHO DOKLADU / TRAVEL DOCUMENT NO.",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 510.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "-",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 498.8976377952759
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 495.8976377952759,
+    "y2": 495.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ČÍSLO VÍZA / VISA NO.",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 510.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "-",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 498.8976377952759
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 495.8976377952759,
+    "y2": 495.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "BYDLIŠTĚ V ZAHRANIČÍ / PERMANENT RESIDENCE ABROAD",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 471.21259842519714
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "-",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 459.21259842519714
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 538.5826771653543,
+    "y": 456.21259842519714,
+    "y2": 456.21259842519714
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ÚČEL POBYTU / PURPOSE OF STAY",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 431.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "-",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 419.5275590551184
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 416.5275590551184,
+    "y2": 416.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "POZNÁMKA / NOTE",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 431.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "-",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 419.5275590551184
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 416.5275590551184,
+    "y2": 416.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "OD / FROM",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 391.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "2026-05-01",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 379.84251968503963
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 376.84251968503963,
+    "y2": 376.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "DO / TO",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 391.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "2026-05-04",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 379.84251968503963
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 376.84251968503963,
+    "y2": 376.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Podpis cizince / Signature of the foreigner",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 362.8346456692916
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "(signature could not be rendered)",
+    "size": 9,
+    "x": 56.69291338582678,
+    "y": 302.8031496062995
+   },
+   {
+    "color": [
+     0.6,
+     0.6,
+     0.6
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 283.46456692913387,
+    "y": 289.1338582677168,
+    "y2": 289.1338582677168
+   },
+   {
+    "align": "left",
+    "color": [
+     0.4,
+     0.4,
+     0.4
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Signed electronically: ",
+    "size": 8,
+    "x": 56.69291338582678,
+    "y": 274.96062992126014
+   },
+   {
+    "align": "right",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "REJECTED BY UBYPORT (not correctable)",
+    "size": 9,
+    "x": 538.5826771653544,
+    "y": 274.96062992126014
+   },
+   {
+    "align": "left",
+    "color": [
+     0.45,
+     0.45,
+     0.45
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Privacy notice v2 acknowledged 2026-05-01T09:58:00+00:00 (de)",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 53.85826771653544
+   },
+   {
+    "align": "left",
+    "color": [
+     0.45,
+     0.45,
+     0.45
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Generated 2026-11-13 13:05 - retain for 6 years from the end of the stay (§ 101 Act 326/1999 Coll.)",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 42.51968503937008
+   }
+  ],
+  "record": {
+   "kind": "imported",
+   "text": "Signature on paper (host)"
+  }
+ },
+ {
+  "guest": {
+   "addr_house_no": "12",
+   "addr_obec": "Praha",
+   "addr_obec_cast": "Staré Město",
+   "addr_okres": null,
+   "addr_orient_no": "3a",
+   "addr_street": "Dlouhá",
+   "addr_zip": "110 00",
+   "birth_date": "15061980",
+   "doc_number": "C01X00T47",
+   "filled_at": "2026-05-01T09:59:00+00:00",
+   "first_name": "Hans",
+   "id": 16,
+   "internal_name": "Byt Dole",
+   "manual_filed_at": null,
+   "manual_reference": null,
+   "nationality": "DEU",
+   "note": null,
+   "notice_ack_at": "2026-05-01T09:58:00+00:00",
+   "notice_lang": "de",
+   "notice_version": "2",
+   "purpose": "10",
+   "res_city": "Berlin",
+   "res_country": "deu",
+   "res_from": "2026-05-01",
+   "res_street": "Hauptstr. 1",
+   "res_to": "2026-05-04",
+   "reservation_id": 1,
+   "signature_png": "data:image/png;base64,xx",
+   "signed_at": "2026-05-01T10:00:00+00:00",
+   "signed_for_at": null,
+   "signed_for_guest_id": null,
+   "signed_for_role": null,
+   "signed_for_wording": null,
+   "stay_from": null,
+   "stay_to": null,
+   "submit_state": "odd_state",
+   "submitted_at": null,
+   "surname": "Müller",
+   "uby_idub": "IDUB7",
+   "uby_mark": null,
+   "uby_name": "Penzion U Lípy",
+   "visa_number": null
+  },
+  "name": "bad_base64_signature",
+  "now": "2026-11-13T13:05:00",
+  "ops": [
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Přihlašovací tiskopis cizince",
+    "size": 14,
+    "x": 56.69291338582678,
+    "y": 771.0236220472442
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Foreigner's registration form / house book entry",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 754.0157480314962
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Ubytovatel / Accommodation provider",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 714.3307086614175
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "NÁZEV ZAŘÍZENÍ / FACILITY",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 703.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Penzion U Lípy",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 691.6535433070868
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 345.82677165354335,
+    "y": 688.6535433070868,
+    "y2": 688.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "IDUB",
+    "size": 7,
+    "x": 369.9212598425197,
+    "y": 703.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "IDUB7",
+    "size": 10,
+    "x": 369.9212598425197,
+    "y": 691.6535433070868
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 369.9212598425197,
+    "x2": 538.5826771653543,
+    "y": 688.6535433070868,
+    "y2": 688.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ADRESA / ADDRESS",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 663.9685039370081
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Dlouhá 12/3a, Staré Město, 110 00 Praha",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 651.9685039370081
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 538.5826771653543,
+    "y": 648.9685039370081,
+    "y2": 648.9685039370081
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Ubytovaný cizinec / Accommodated foreigner",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 600.944881889764
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "PŘÍJMENÍ / SURNAME",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 590.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Müller",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 578.2677165354334
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 575.2677165354334,
+    "y2": 575.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "JMÉNO / GIVEN NAME(S)",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 590.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Hans",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 578.2677165354334
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 575.2677165354334,
+    "y2": 575.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "DATUM NAROZENÍ / DATE OF BIRTH",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 550.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "15.06.1980",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 538.5826771653547
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 535.5826771653547,
+    "y2": 535.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "STÁTNÍ OBČANSTVÍ / NATIONALITY",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 550.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "DEU Germany",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 538.5826771653547
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 535.5826771653547,
+    "y2": 535.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ČÍSLO CESTOVNÍHO DOKLADU / TRAVEL DOCUMENT NO.",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 510.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "C01X00T47",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 498.8976377952759
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 495.8976377952759,
+    "y2": 495.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ČÍSLO VÍZA / VISA NO.",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 510.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "-",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 498.8976377952759
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 495.8976377952759,
+    "y2": 495.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "BYDLIŠTĚ V ZAHRANIČÍ / PERMANENT RESIDENCE ABROAD",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 471.21259842519714
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Hauptstr. 1, Berlin, DEU-Německo",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 459.21259842519714
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 538.5826771653543,
+    "y": 456.21259842519714,
+    "y2": 456.21259842519714
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ÚČEL POBYTU / PURPOSE OF STAY",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 431.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Turistika",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 419.5275590551184
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 416.5275590551184,
+    "y2": 416.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "POZNÁMKA / NOTE",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 431.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "-",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 419.5275590551184
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 416.5275590551184,
+    "y2": 416.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "OD / FROM",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 391.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "2026-05-01",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 379.84251968503963
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 376.84251968503963,
+    "y2": 376.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "DO / TO",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 391.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "2026-05-04",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 379.84251968503963
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 376.84251968503963,
+    "y2": 376.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Podpis cizince / Signature of the foreigner",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 362.8346456692916
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "(signature could not be rendered)",
+    "size": 9,
+    "x": 56.69291338582678,
+    "y": 302.8031496062995
+   },
+   {
+    "color": [
+     0.6,
+     0.6,
+     0.6
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 283.46456692913387,
+    "y": 289.1338582677168,
+    "y2": 289.1338582677168
+   },
+   {
+    "align": "left",
+    "color": [
+     0.4,
+     0.4,
+     0.4
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Signed electronically: 2026-05-01T10:00:00+00:00",
+    "size": 8,
+    "x": 56.69291338582678,
+    "y": 274.96062992126014
+   },
+   {
+    "align": "right",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "odd_state",
+    "size": 9,
+    "x": 538.5826771653544,
+    "y": 274.96062992126014
+   },
+   {
+    "align": "left",
+    "color": [
+     0.45,
+     0.45,
+     0.45
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Privacy notice v2 acknowledged 2026-05-01T09:58:00+00:00 (de)",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 53.85826771653544
+   },
+   {
+    "align": "left",
+    "color": [
+     0.45,
+     0.45,
+     0.45
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Generated 2026-11-13 13:05 - retain for 6 years from the end of the stay (§ 101 Act 326/1999 Coll.)",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 42.51968503937008
+   }
+  ],
+  "record": {
+   "kind": "own",
+   "text": ""
+  }
+ },
+ {
+  "guest": {
+   "addr_house_no": null,
+   "addr_obec": "Praha",
+   "addr_obec_cast": "Staré Město",
+   "addr_okres": null,
+   "addr_orient_no": "7",
+   "addr_street": "Dlouhá",
+   "addr_zip": "110 00",
+   "birth_date": "15061980",
+   "doc_number": "C01X00T47",
+   "filled_at": "2026-05-01T09:59:00+00:00",
+   "first_name": "Hans",
+   "id": 17,
+   "internal_name": "Byt Dole",
+   "manual_filed_at": null,
+   "manual_reference": null,
+   "nationality": "DEU",
+   "note": null,
+   "notice_ack_at": "2026-05-01T09:58:00+00:00",
+   "notice_lang": "de",
+   "notice_version": "2",
+   "purpose": "10",
+   "res_city": "Berlin",
+   "res_country": "deu",
+   "res_from": "2026-05-01",
+   "res_street": "Hauptstr. 1",
+   "res_to": "2026-05-04",
+   "reservation_id": 1,
+   "signature_png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAABCAYAAAD5PA/NAAAAD0lEQVR4nGNkYGD4z4AEAA0VAQE65TbjAAAAAElFTkSuQmCC",
+   "signed_at": "2026-05-01T10:00:00+00:00",
+   "signed_for_at": null,
+   "signed_for_guest_id": null,
+   "signed_for_role": null,
+   "signed_for_wording": null,
+   "stay_from": "2026-05-01",
+   "stay_to": "2026-05-04",
+   "submit_state": "sent",
+   "submitted_at": "2026-05-02T10:00:00+00:00",
+   "surname": "Müller",
+   "uby_idub": "IDUB7",
+   "uby_mark": null,
+   "uby_name": "Penzion U Lípy",
+   "visa_number": "VISA-1"
+  },
+  "name": "wide_signature_no_house",
+  "now": "2026-11-13T13:05:00",
+  "ops": [
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Přihlašovací tiskopis cizince",
+    "size": 14,
+    "x": 56.69291338582678,
+    "y": 771.0236220472442
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Foreigner's registration form / house book entry",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 754.0157480314962
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Ubytovatel / Accommodation provider",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 714.3307086614175
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "NÁZEV ZAŘÍZENÍ / FACILITY",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 703.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Penzion U Lípy",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 691.6535433070868
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 345.82677165354335,
+    "y": 688.6535433070868,
+    "y2": 688.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "IDUB",
+    "size": 7,
+    "x": 369.9212598425197,
+    "y": 703.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "IDUB7",
+    "size": 10,
+    "x": 369.9212598425197,
+    "y": 691.6535433070868
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 369.9212598425197,
+    "x2": 538.5826771653543,
+    "y": 688.6535433070868,
+    "y2": 688.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ADRESA / ADDRESS",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 663.9685039370081
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Dlouhá 7, Staré Město, 110 00 Praha",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 651.9685039370081
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 538.5826771653543,
+    "y": 648.9685039370081,
+    "y2": 648.9685039370081
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Ubytovaný cizinec / Accommodated foreigner",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 600.944881889764
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "PŘÍJMENÍ / SURNAME",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 590.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Müller",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 578.2677165354334
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 575.2677165354334,
+    "y2": 575.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "JMÉNO / GIVEN NAME(S)",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 590.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Hans",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 578.2677165354334
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 575.2677165354334,
+    "y2": 575.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "DATUM NAROZENÍ / DATE OF BIRTH",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 550.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "15.06.1980",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 538.5826771653547
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 535.5826771653547,
+    "y2": 535.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "STÁTNÍ OBČANSTVÍ / NATIONALITY",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 550.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "DEU Germany",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 538.5826771653547
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 535.5826771653547,
+    "y2": 535.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ČÍSLO CESTOVNÍHO DOKLADU / TRAVEL DOCUMENT NO.",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 510.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "C01X00T47",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 498.8976377952759
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 495.8976377952759,
+    "y2": 495.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ČÍSLO VÍZA / VISA NO.",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 510.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "VISA-1",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 498.8976377952759
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 495.8976377952759,
+    "y2": 495.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "BYDLIŠTĚ V ZAHRANIČÍ / PERMANENT RESIDENCE ABROAD",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 471.21259842519714
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Hauptstr. 1, Berlin, DEU-Německo",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 459.21259842519714
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 538.5826771653543,
+    "y": 456.21259842519714,
+    "y2": 456.21259842519714
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ÚČEL POBYTU / PURPOSE OF STAY",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 431.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Turistika",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 419.5275590551184
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 416.5275590551184,
+    "y2": 416.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "POZNÁMKA / NOTE",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 431.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "-",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 419.5275590551184
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 416.5275590551184,
+    "y2": 416.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "OD / FROM",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 391.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "2026-05-01",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 379.84251968503963
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 376.84251968503963,
+    "y2": 376.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "DO / TO",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 391.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "2026-05-04",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 379.84251968503963
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 376.84251968503963,
+    "y2": 376.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Podpis cizince / Signature of the foreigner",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 362.8346456692916
+   },
+   {
+    "h": 49.60629920259843,
+    "name": "signature",
+    "op": "image",
+    "w": 198.4251968403937,
+    "x": 56.69291338582678,
+    "y": 294.8031496062995
+   },
+   {
+    "color": [
+     0.6,
+     0.6,
+     0.6
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 283.46456692913387,
+    "y": 289.1338582677168,
+    "y2": 289.1338582677168
+   },
+   {
+    "align": "left",
+    "color": [
+     0.4,
+     0.4,
+     0.4
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Signed electronically: 2026-05-01T10:00:00+00:00",
+    "size": 8,
+    "x": 56.69291338582678,
+    "y": 274.96062992126014
+   },
+   {
+    "align": "right",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Reported to the Foreign Police",
+    "size": 9,
+    "x": 538.5826771653544,
+    "y": 274.96062992126014
+   },
+   {
+    "align": "right",
+    "color": [
+     0.4,
+     0.4,
+     0.4
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "at 2026-05-02T10:00:00+00:00",
+    "size": 9,
+    "x": 538.5826771653544,
+    "y": 260.7874015748034
+   },
+   {
+    "align": "left",
+    "color": [
+     0.45,
+     0.45,
+     0.45
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Privacy notice v2 acknowledged 2026-05-01T09:58:00+00:00 (de)",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 53.85826771653544
+   },
+   {
+    "align": "left",
+    "color": [
+     0.45,
+     0.45,
+     0.45
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Generated 2026-11-13 13:05 - retain for 6 years from the end of the stay (§ 101 Act 326/1999 Coll.)",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 42.51968503937008
+   }
+  ],
+  "record": {
+   "kind": "own",
+   "text": ""
+  }
+ },
+ {
+  "guest": {
+   "addr_house_no": "12",
+   "addr_obec": "Praha",
+   "addr_obec_cast": "Staré Město",
+   "addr_okres": null,
+   "addr_orient_no": "3a",
+   "addr_street": "Dlouhá",
+   "addr_zip": "110 00",
+   "birth_date": "15061980",
+   "doc_number": "C01X00T47",
+   "filled_at": "2026-05-01T09:59:00+00:00",
+   "first_name": "Hans",
+   "id": 18,
+   "internal_name": "Byt Dole",
+   "manual_filed_at": null,
+   "manual_reference": null,
+   "nationality": "DEU",
+   "note": null,
+   "notice_ack_at": "2026-05-01T09:58:00+00:00",
+   "notice_lang": "de",
+   "notice_version": "2",
+   "purpose": "10",
+   "res_city": "Berlin",
+   "res_country": "deu",
+   "res_from": "2026-05-01",
+   "res_street": "Hauptstr. 1",
+   "res_to": "2026-05-04",
+   "reservation_id": 1,
+   "signature_png": null,
+   "signed_at": null,
+   "signed_for_at": null,
+   "signed_for_guest_id": null,
+   "signed_for_role": null,
+   "signed_for_wording": null,
+   "stay_from": null,
+   "stay_to": null,
+   "submit_state": "sent",
+   "submitted_at": "2026-05-02T10:00:00+00:00",
+   "surname": "Müller",
+   "uby_idub": "IDUB7",
+   "uby_mark": null,
+   "uby_name": "Penzion U Lípy",
+   "visa_number": null
+  },
+  "name": "no_signature",
+  "now": "2026-11-13T13:05:00",
+  "ops": [
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Přihlašovací tiskopis cizince",
+    "size": 14,
+    "x": 56.69291338582678,
+    "y": 771.0236220472442
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Foreigner's registration form / house book entry",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 754.0157480314962
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Ubytovatel / Accommodation provider",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 714.3307086614175
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "NÁZEV ZAŘÍZENÍ / FACILITY",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 703.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Penzion U Lípy",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 691.6535433070868
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 345.82677165354335,
+    "y": 688.6535433070868,
+    "y2": 688.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "IDUB",
+    "size": 7,
+    "x": 369.9212598425197,
+    "y": 703.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "IDUB7",
+    "size": 10,
+    "x": 369.9212598425197,
+    "y": 691.6535433070868
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 369.9212598425197,
+    "x2": 538.5826771653543,
+    "y": 688.6535433070868,
+    "y2": 688.6535433070868
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ADRESA / ADDRESS",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 663.9685039370081
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Dlouhá 12/3a, Staré Město, 110 00 Praha",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 651.9685039370081
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 538.5826771653543,
+    "y": 648.9685039370081,
+    "y2": 648.9685039370081
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Ubytovaný cizinec / Accommodated foreigner",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 600.944881889764
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "PŘÍJMENÍ / SURNAME",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 590.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Müller",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 578.2677165354334
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 575.2677165354334,
+    "y2": 575.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "JMÉNO / GIVEN NAME(S)",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 590.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Hans",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 578.2677165354334
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 575.2677165354334,
+    "y2": 575.2677165354334
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "DATUM NAROZENÍ / DATE OF BIRTH",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 550.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "15.06.1980",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 538.5826771653547
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 535.5826771653547,
+    "y2": 535.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "STÁTNÍ OBČANSTVÍ / NATIONALITY",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 550.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "DEU Germany",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 538.5826771653547
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 535.5826771653547,
+    "y2": 535.5826771653547
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ČÍSLO CESTOVNÍHO DOKLADU / TRAVEL DOCUMENT NO.",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 510.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "C01X00T47",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 498.8976377952759
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 495.8976377952759,
+    "y2": 495.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ČÍSLO VÍZA / VISA NO.",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 510.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "-",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 498.8976377952759
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 495.8976377952759,
+    "y2": 495.8976377952759
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "BYDLIŠTĚ V ZAHRANIČÍ / PERMANENT RESIDENCE ABROAD",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 471.21259842519714
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Hauptstr. 1, Berlin, DEU-Německo",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 459.21259842519714
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 538.5826771653543,
+    "y": 456.21259842519714,
+    "y2": 456.21259842519714
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "ÚČEL POBYTU / PURPOSE OF STAY",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 431.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Turistika",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 419.5275590551184
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 416.5275590551184,
+    "y2": 416.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "POZNÁMKA / NOTE",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 431.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "-",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 419.5275590551184
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 416.5275590551184,
+    "y2": 416.5275590551184
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "OD / FROM",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 391.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "2026-05-01",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 379.84251968503963
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 288.0,
+    "y": 376.84251968503963,
+    "y2": 376.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "DO / TO",
+    "size": 7,
+    "x": 307.2755905511811,
+    "y": 391.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "2026-05-04",
+    "size": 10,
+    "x": 307.2755905511811,
+    "y": 379.84251968503963
+   },
+   {
+    "color": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 307.2755905511811,
+    "x2": 538.5826771653543,
+    "y": 376.84251968503963,
+    "y2": 376.84251968503963
+   },
+   {
+    "align": "left",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans-Bold",
+    "op": "text",
+    "s": "Podpis cizince / Signature of the foreigner",
+    "size": 10,
+    "x": 56.69291338582678,
+    "y": 362.8346456692916
+   },
+   {
+    "color": [
+     0.6,
+     0.6,
+     0.6
+    ],
+    "lw": 1.0,
+    "op": "line",
+    "x": 56.69291338582678,
+    "x2": 283.46456692913387,
+    "y": 289.1338582677168,
+    "y2": 289.1338582677168
+   },
+   {
+    "align": "left",
+    "color": [
+     0.4,
+     0.4,
+     0.4
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Signed electronically: 2026-05-01T09:59:00+00:00",
+    "size": 8,
+    "x": 56.69291338582678,
+    "y": 274.96062992126014
+   },
+   {
+    "align": "right",
+    "color": [
+     0,
+     0,
+     0
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Reported to the Foreign Police",
+    "size": 9,
+    "x": 538.5826771653544,
+    "y": 274.96062992126014
+   },
+   {
+    "align": "right",
+    "color": [
+     0.4,
+     0.4,
+     0.4
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "at 2026-05-02T10:00:00+00:00",
+    "size": 9,
+    "x": 538.5826771653544,
+    "y": 260.7874015748034
+   },
+   {
+    "align": "left",
+    "color": [
+     0.45,
+     0.45,
+     0.45
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Privacy notice v2 acknowledged 2026-05-01T09:58:00+00:00 (de)",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 53.85826771653544
+   },
+   {
+    "align": "left",
+    "color": [
+     0.45,
+     0.45,
+     0.45
+    ],
+    "font": "UHSans",
+    "op": "text",
+    "s": "Generated 2026-11-13 13:05 - retain for 6 years from the end of the stay (§ 101 Act 326/1999 Coll.)",
+    "size": 7,
+    "x": 56.69291338582678,
+    "y": 42.51968503937008
+   }
+  ],
+  "record": {
+   "kind": "missing",
+   "text": ""
+  }
+ }
+]

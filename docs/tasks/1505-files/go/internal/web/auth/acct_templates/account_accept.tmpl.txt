@@ -1,0 +1,26 @@
+{{define "account_accept"}}{{template "acct.head" .}}
+<section class="auth-card">
+  <h1 class="auth-title">{{.T "account.accept.title"}}</h1>
+  <p class="auth-lede">{{.T "account.accept.lede"}}</p>
+  {{- if .Page.Error}}
+  <div class="auth-alert" role="alert">{{.T .Page.Error}}</div>
+  {{- end}}
+  <ul class="auth-accept-docs">
+    {{- range .Page.Docs}}
+    <li>
+      <a href="{{$.E .Href}}?lang={{$.E $.Lang}}" target="_blank" rel="noopener noreferrer">{{$.T (print "account.accept.doc." .Key)}}</a>
+      <span class="auth-accept-version">{{$.T "account.accept.version" "version" .Version}}</span>
+    </li>
+    {{- end}}
+  </ul>
+  <form method="post" action="/account/accept" class="auth-form">
+    <input type="hidden" name="_csrf" value="{{.CSRF}}">
+    <input type="hidden" name="next" value="{{.E .Page.Next}}">
+    <label class="auth-accept-check">
+      <input type="checkbox" name="accept" value="1">
+      <span>{{.T "account.accept.checkbox"}}</span>
+    </label>
+    <button class="auth-submit" type="submit">{{.T "account.accept.continue"}}</button>
+  </form>
+</section>
+{{template "acct.foot" .}}{{end}}

@@ -1,0 +1,5147 @@
+{
+ "cases": [
+  {
+   "form": [
+    [
+     "email",
+     " New.Host@Example.test "
+    ],
+    [
+     "display_name",
+     "  New Host "
+    ]
+   ],
+   "method": "POST",
+   "name": "create",
+   "path": "/admin/users",
+   "session": {
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [
+      [
+       "user_created",
+       "admin",
+       "user=6",
+       "6",
+       "1",
+       null
+      ]
+     ],
+     "console_mail_log": [
+      [
+       "1",
+       "new.host@example.test",
+       "Your UbyHost account is ready"
+      ]
+     ],
+     "email_outbox": [
+      [
+       "1",
+       "account_invite",
+       "account_invite:6:<hash>",
+       "6",
+       "new.host@example.test",
+       "Your UbyHost account is ready",
+       "sent",
+       "1",
+       "console:1",
+       "1",
+       "1",
+       ""
+      ]
+     ],
+     "login_token": [
+      [
+       "6",
+       "invite",
+       "new.host@example.test",
+       "1",
+       "/",
+       null
+      ]
+     ],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "6",
+       "new.host-<hex>",
+       "New Host",
+       "new.host@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/admin/customers?msg=Invitation%20link%20sent%20to%20new.host%40example.test.",
+    "status": 303
+   }
+  },
+  {
+   "form": [
+    [
+     "email",
+     "Jana <jana@example.test>"
+    ]
+   ],
+   "lang": "cs",
+   "method": "POST",
+   "name": "create_named_address_cs",
+   "path": "/admin/users",
+   "session": {
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [
+      [
+       "user_created",
+       "admin",
+       "user=6",
+       "6",
+       "1",
+       null
+      ]
+     ],
+     "console_mail_log": [
+      [
+       "1",
+       "jana@example.test",
+       "Your UbyHost account is ready"
+      ]
+     ],
+     "email_outbox": [
+      [
+       "1",
+       "account_invite",
+       "account_invite:6:<hash>",
+       "6",
+       "jana@example.test",
+       "Your UbyHost account is ready",
+       "sent",
+       "1",
+       "console:1",
+       "1",
+       "1",
+       ""
+      ]
+     ],
+     "login_token": [
+      [
+       "6",
+       "invite",
+       "jana@example.test",
+       "1",
+       "/",
+       null
+      ]
+     ],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "6",
+       "jana-<hex>",
+       "",
+       "jana@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/admin/customers?msg=Pozv%C3%A1nka%20odesl%C3%A1na%20na%20jana%40example.test.",
+    "status": 303
+   }
+  },
+  {
+   "form": [
+    [
+     "email",
+     "third@example.test"
+    ]
+   ],
+   "method": "POST",
+   "name": "create_impersonating",
+   "path": "/admin/users",
+   "session": {
+    "as": 2,
+    "ast": -60,
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [
+      [
+       "user_created",
+       "admin",
+       "user=6",
+       "6",
+       "1",
+       "1"
+      ]
+     ],
+     "console_mail_log": [
+      [
+       "1",
+       "third@example.test",
+       "Your UbyHost account is ready"
+      ]
+     ],
+     "email_outbox": [
+      [
+       "1",
+       "account_invite",
+       "account_invite:6:<hash>",
+       "6",
+       "third@example.test",
+       "Your UbyHost account is ready",
+       "sent",
+       "1",
+       "console:1",
+       "1",
+       "1",
+       ""
+      ]
+     ],
+     "login_token": [
+      [
+       "6",
+       "invite",
+       "third@example.test",
+       "1",
+       "/",
+       null
+      ]
+     ],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "6",
+       "third-<hex>",
+       "",
+       "third@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/admin/customers?msg=Invitation%20link%20sent%20to%20third%40example.test.",
+    "status": 303
+   }
+  },
+  {
+   "env": {
+    "UBYHOST_MAIL_BACKEND": "disabled"
+   },
+   "form": [
+    [
+     "email",
+     "quiet@example.test"
+    ]
+   ],
+   "method": "POST",
+   "name": "create_mail_off",
+   "path": "/admin/users",
+   "py_config": {
+    "MAIL_BACKEND": "disabled"
+   },
+   "session": {
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [
+      [
+       "user_created",
+       "admin",
+       "user=6",
+       "6",
+       "1",
+       null
+      ]
+     ],
+     "console_mail_log": [],
+     "email_outbox": [],
+     "login_token": [
+      [
+       "6",
+       "invite",
+       "quiet@example.test",
+       "1",
+       "/",
+       null
+      ]
+     ],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "6",
+       "quiet-<hex>",
+       "",
+       "quiet@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/admin/customers?msg=Invitation%20link%20sent%20to%20quiet%40example.test.",
+    "status": 303
+   }
+  },
+  {
+   "form": [
+    [
+     "email",
+     "nope"
+    ]
+   ],
+   "method": "POST",
+   "name": "create_invalid",
+   "path": "/admin/users",
+   "session": {
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "console_mail_log": [],
+     "email_outbox": [],
+     "login_token": [],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/admin/customers?err=Enter%20a%20valid%20e-mail%20address.",
+    "status": 303
+   }
+  },
+  {
+   "lang": "vi",
+   "method": "POST",
+   "name": "create_empty_vi",
+   "path": "/admin/users",
+   "session": {
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "console_mail_log": [],
+     "email_outbox": [],
+     "login_token": [],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/admin/customers?err=Nh%E1%BA%ADp%20%C4%91%E1%BB%8Ba%20ch%E1%BB%89%20e-mail%20h%E1%BB%A3p%20l%E1%BB%87.",
+    "status": 303
+   }
+  },
+  {
+   "form": [
+    [
+     "email",
+     "HOST@example.test"
+    ]
+   ],
+   "method": "POST",
+   "name": "create_taken",
+   "path": "/admin/users",
+   "session": {
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "console_mail_log": [],
+     "email_outbox": [],
+     "login_token": [],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/admin/customers?err=Another%20account%20already%20uses%20that%20e-mail.",
+    "status": 303
+   }
+  },
+  {
+   "form": [
+    [
+     "email",
+     "gone@example.test"
+    ]
+   ],
+   "method": "POST",
+   "name": "create_taken_inactive",
+   "path": "/admin/users",
+   "session": {
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "console_mail_log": [],
+     "email_outbox": [],
+     "login_token": [],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/admin/customers?err=Another%20account%20already%20uses%20that%20e-mail.",
+    "status": 303
+   }
+  },
+  {
+   "form": [
+    [
+     "email",
+     "x@example.test"
+    ]
+   ],
+   "method": "POST",
+   "name": "create_host",
+   "path": "/admin/users",
+   "session": {
+    "uid": 2
+   },
+   "want": {
+    "body": "Administrators only.",
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "console_mail_log": [],
+     "email_outbox": [],
+     "login_token": [],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": null,
+    "status": 403
+   }
+  },
+  {
+   "form": [
+    [
+     "email",
+     "x@example.test"
+    ]
+   ],
+   "method": "POST",
+   "name": "create_signed_out",
+   "path": "/admin/users",
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "console_mail_log": [],
+     "email_outbox": [],
+     "login_token": [],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/login?next=/admin/users",
+    "status": 303
+   }
+  },
+  {
+   "csrf": false,
+   "form": [
+    [
+     "email",
+     "x@example.test"
+    ]
+   ],
+   "headers": {
+    "origin": "http://testserver"
+   },
+   "method": "POST",
+   "name": "create_no_csrf_same_site",
+   "path": "/admin/users",
+   "session": {
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "console_mail_log": [],
+     "email_outbox": [],
+     "login_token": [],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/login?notice=form_expired",
+    "status": 303
+   }
+  },
+  {
+   "csrf": false,
+   "form": [
+    [
+     "email",
+     "x@example.test"
+    ]
+   ],
+   "method": "POST",
+   "name": "create_no_csrf_cross_site",
+   "path": "/admin/users",
+   "session": {
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "console_mail_log": [],
+     "email_outbox": [],
+     "login_token": [],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/login?notice=form_expired",
+    "status": 303
+   }
+  },
+  {
+   "method": "POST",
+   "name": "invite",
+   "path": "/admin/users/2/invite",
+   "seed": [
+    [
+     "login_token",
+     {
+      "created_at": "2001-01-01T00:00:00+00:00",
+      "email": "host@example.test",
+      "expires_at": "2099-01-01T00:00:00+00:00",
+      "next_path": "/",
+      "purpose": "invite",
+      "remember": 1,
+      "token_hash": "0000000000000000000000000000000000000000000000000000000000000001",
+      "used_at": null,
+      "user_account_id": 2
+     }
+    ],
+    [
+     "login_token",
+     {
+      "created_at": "2001-01-01T00:00:00+00:00",
+      "email": "host@example.test",
+      "expires_at": "2099-01-01T00:00:00+00:00",
+      "next_path": "/",
+      "purpose": "invite",
+      "remember": 1,
+      "token_hash": "0000000000000000000000000000000000000000000000000000000000000002",
+      "used_at": "2001-01-01T00:00:00+00:00",
+      "user_account_id": 2
+     }
+    ]
+   ],
+   "session": {
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [
+      [
+       "invite_sent",
+       "admin",
+       "",
+       "2",
+       "1",
+       null
+      ]
+     ],
+     "console_mail_log": [
+      [
+       "1",
+       "host@example.test",
+       "Your UbyHost account is ready"
+      ]
+     ],
+     "email_outbox": [
+      [
+       "1",
+       "account_invite",
+       "account_invite:2:<hash>",
+       "2",
+       "host@example.test",
+       "Your UbyHost account is ready",
+       "sent",
+       "1",
+       "console:1",
+       "1",
+       "1",
+       ""
+      ]
+     ],
+     "login_token": [
+      [
+       "2",
+       "invite",
+       "host@example.test",
+       "1",
+       "/",
+       "<now>"
+      ],
+      [
+       "2",
+       "invite",
+       "host@example.test",
+       "1",
+       "/",
+       "2001-01-01T00:00:00+00:00"
+      ],
+      [
+       "2",
+       "invite",
+       "host@example.test",
+       "1",
+       "/",
+       null
+      ]
+     ],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/admin/customers/2?msg=Invitation%20link%20sent%20to%20host%40example.test.",
+    "status": 303
+   }
+  },
+  {
+   "lang": "cs",
+   "method": "POST",
+   "name": "invite_cs",
+   "path": "/admin/users/3/invite",
+   "session": {
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [
+      [
+       "invite_sent",
+       "admin",
+       "",
+       "3",
+       "1",
+       null
+      ]
+     ],
+     "console_mail_log": [
+      [
+       "1",
+       "totp@example.test",
+       "Your UbyHost account is ready"
+      ]
+     ],
+     "email_outbox": [
+      [
+       "1",
+       "account_invite",
+       "account_invite:3:<hash>",
+       "3",
+       "totp@example.test",
+       "Your UbyHost account is ready",
+       "sent",
+       "1",
+       "console:1",
+       "1",
+       "1",
+       ""
+      ]
+     ],
+     "login_token": [
+      [
+       "3",
+       "invite",
+       "totp@example.test",
+       "1",
+       "/",
+       null
+      ]
+     ],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/admin/customers/3?msg=Pozv%C3%A1nka%20odesl%C3%A1na%20na%20totp%40example.test.",
+    "status": 303
+   }
+  },
+  {
+   "env": {
+    "UBYHOST_MAIL_BACKEND": "disabled"
+   },
+   "method": "POST",
+   "name": "invite_mail_off",
+   "path": "/admin/users/4/invite",
+   "py_config": {
+    "MAIL_BACKEND": "disabled"
+   },
+   "session": {
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [
+      [
+       "invite_sent",
+       "admin",
+       "",
+       "4",
+       "1",
+       null
+      ]
+     ],
+     "console_mail_log": [],
+     "email_outbox": [],
+     "login_token": [
+      [
+       "4",
+       "invite",
+       "late@example.test",
+       "1",
+       "/",
+       null
+      ]
+     ],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/admin/customers/4?msg=Invitation%20link%20sent%20to%20late%40example.test.",
+    "status": 303
+   }
+  },
+  {
+   "method": "POST",
+   "name": "invite_impersonating",
+   "path": "/admin/users/2/invite",
+   "session": {
+    "as": 2,
+    "ast": -60,
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [
+      [
+       "invite_sent",
+       "admin",
+       "",
+       "2",
+       "1",
+       "1"
+      ]
+     ],
+     "console_mail_log": [
+      [
+       "1",
+       "host@example.test",
+       "Your UbyHost account is ready"
+      ]
+     ],
+     "email_outbox": [
+      [
+       "1",
+       "account_invite",
+       "account_invite:2:<hash>",
+       "2",
+       "host@example.test",
+       "Your UbyHost account is ready",
+       "sent",
+       "1",
+       "console:1",
+       "1",
+       "1",
+       ""
+      ]
+     ],
+     "login_token": [
+      [
+       "2",
+       "invite",
+       "host@example.test",
+       "1",
+       "/",
+       null
+      ]
+     ],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/admin/customers/2?msg=Invitation%20link%20sent%20to%20host%40example.test.",
+    "status": 303
+   }
+  },
+  {
+   "method": "POST",
+   "name": "invite_inactive",
+   "path": "/admin/users/5/invite",
+   "session": {
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "console_mail_log": [],
+     "email_outbox": [],
+     "login_token": [],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/admin/customers/5?err=Add%20a%20login%20e-mail%20first.",
+    "status": 303
+   }
+  },
+  {
+   "method": "POST",
+   "name": "invite_missing",
+   "path": "/admin/users/99/invite",
+   "session": {
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "console_mail_log": [],
+     "email_outbox": [],
+     "login_token": [],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/admin/customers/99?err=Add%20a%20login%20e-mail%20first.",
+    "status": 303
+   }
+  },
+  {
+   "method": "POST",
+   "name": "invite_no_email",
+   "path": "/admin/users/6/invite",
+   "seed": [
+    [
+     "user_account",
+     {
+      "active": 1,
+      "created_at": "2001-01-01T00:00:00+00:00",
+      "email": null,
+      "id": 6,
+      "must_change_password": 0,
+      "password_hash": "",
+      "role": "host",
+      "session_version": 1,
+      "username": "noemail"
+     }
+    ],
+    [
+     "user_account",
+     {
+      "active": 1,
+      "created_at": "2001-01-01T00:00:00+00:00",
+      "email": "  ",
+      "id": 7,
+      "must_change_password": 0,
+      "password_hash": "",
+      "role": "host",
+      "session_version": 1,
+      "username": "blank"
+     }
+    ]
+   ],
+   "session": {
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "console_mail_log": [],
+     "email_outbox": [],
+     "login_token": [],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "6",
+       "noemail",
+       null,
+       null,
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "7",
+       "blank",
+       null,
+       "  ",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/admin/customers/6?err=Add%20a%20login%20e-mail%20first.",
+    "status": 303
+   }
+  },
+  {
+   "lang": "cs",
+   "method": "POST",
+   "name": "invite_blank_email_cs",
+   "path": "/admin/users/7/invite",
+   "seed": [
+    [
+     "user_account",
+     {
+      "active": 1,
+      "created_at": "2001-01-01T00:00:00+00:00",
+      "email": null,
+      "id": 6,
+      "must_change_password": 0,
+      "password_hash": "",
+      "role": "host",
+      "session_version": 1,
+      "username": "noemail"
+     }
+    ],
+    [
+     "user_account",
+     {
+      "active": 1,
+      "created_at": "2001-01-01T00:00:00+00:00",
+      "email": "  ",
+      "id": 7,
+      "must_change_password": 0,
+      "password_hash": "",
+      "role": "host",
+      "session_version": 1,
+      "username": "blank"
+     }
+    ]
+   ],
+   "session": {
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "console_mail_log": [],
+     "email_outbox": [],
+     "login_token": [],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "6",
+       "noemail",
+       null,
+       null,
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "7",
+       "blank",
+       null,
+       "  ",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/admin/customers/7?err=Nejd%C5%99%C3%ADv%20dopl%C5%88te%20p%C5%99ihla%C5%A1ovac%C3%AD%20e-mail.",
+    "status": 303
+   }
+  },
+  {
+   "method": "POST",
+   "name": "invite_bad_id",
+   "path": "/admin/users/x/invite",
+   "session": {
+    "uid": 1
+   },
+   "want": {
+    "body": "{\"detail\":[{\"type\":\"int_parsing\",\"loc\":[\"path\",\"user_id\"],\"msg\":\"Input should be a valid integer, unable to parse string as an integer\",\"input\":\"x\"}]}",
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": "application/json",
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "console_mail_log": [],
+     "email_outbox": [],
+     "login_token": [],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": null,
+    "status": 422
+   }
+  },
+  {
+   "method": "POST",
+   "name": "invite_host",
+   "path": "/admin/users/2/invite",
+   "session": {
+    "uid": 2
+   },
+   "want": {
+    "body": "Administrators only.",
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "console_mail_log": [],
+     "email_outbox": [],
+     "login_token": [],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": null,
+    "status": 403
+   }
+  },
+  {
+   "method": "POST",
+   "name": "invite_signed_out",
+   "path": "/admin/users/2/invite",
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "console_mail_log": [],
+     "email_outbox": [],
+     "login_token": [],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/login?next=/admin/users/2/invite",
+    "status": 303
+   }
+  },
+  {
+   "form": [
+    [
+     "email",
+     " First@Example.test "
+    ]
+   ],
+   "method": "POST",
+   "name": "email_first",
+   "path": "/admin/users/6/email",
+   "seed": [
+    [
+     "user_account",
+     {
+      "active": 1,
+      "created_at": "2001-01-01T00:00:00+00:00",
+      "email": null,
+      "id": 6,
+      "must_change_password": 0,
+      "password_hash": "",
+      "role": "host",
+      "session_version": 1,
+      "username": "noemail"
+     }
+    ],
+    [
+     "user_account",
+     {
+      "active": 1,
+      "created_at": "2001-01-01T00:00:00+00:00",
+      "email": "  ",
+      "id": 7,
+      "must_change_password": 0,
+      "password_hash": "",
+      "role": "host",
+      "session_version": 1,
+      "username": "blank"
+     }
+    ]
+   ],
+   "session": {
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [
+      [
+       "email_set",
+       "admin",
+       "to=f****@e******.test",
+       "6",
+       "1",
+       null
+      ]
+     ],
+     "console_mail_log": [],
+     "email_outbox": [],
+     "login_token": [],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "6",
+       "noemail",
+       null,
+       "first@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "7",
+       "blank",
+       null,
+       "  ",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/admin/customers/6?msg=Login%20e-mail%20saved.",
+    "status": 303
+   }
+  },
+  {
+   "form": [
+    [
+     "email",
+     "blank@example.test"
+    ],
+    [
+     "reason",
+     "x"
+    ]
+   ],
+   "method": "POST",
+   "name": "email_first_blank",
+   "path": "/admin/users/7/email",
+   "seed": [
+    [
+     "user_account",
+     {
+      "active": 1,
+      "created_at": "2001-01-01T00:00:00+00:00",
+      "email": null,
+      "id": 6,
+      "must_change_password": 0,
+      "password_hash": "",
+      "role": "host",
+      "session_version": 1,
+      "username": "noemail"
+     }
+    ],
+    [
+     "user_account",
+     {
+      "active": 1,
+      "created_at": "2001-01-01T00:00:00+00:00",
+      "email": "  ",
+      "id": 7,
+      "must_change_password": 0,
+      "password_hash": "",
+      "role": "host",
+      "session_version": 1,
+      "username": "blank"
+     }
+    ]
+   ],
+   "session": {
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [
+      [
+       "email_set",
+       "admin",
+       "to=b****@e******.test",
+       "7",
+       "1",
+       null
+      ]
+     ],
+     "console_mail_log": [],
+     "email_outbox": [],
+     "login_token": [],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "6",
+       "noemail",
+       null,
+       null,
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "7",
+       "blank",
+       null,
+       "blank@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/admin/customers/7?msg=Login%20e-mail%20saved.",
+    "status": 303
+   }
+  },
+  {
+   "form": [
+    [
+     "email",
+     "moved@example.test"
+    ],
+    [
+     "reason",
+     "  lost\n her   mailbox "
+    ]
+   ],
+   "method": "POST",
+   "name": "email_change",
+   "path": "/admin/users/2/email",
+   "seed": [
+    [
+     "login_token",
+     {
+      "created_at": "2001-01-01T00:00:00+00:00",
+      "email": "host@example.test",
+      "expires_at": "2099-01-01T00:00:00+00:00",
+      "next_path": "/",
+      "purpose": "invite",
+      "remember": 1,
+      "token_hash": "0000000000000000000000000000000000000000000000000000000000000001",
+      "used_at": null,
+      "user_account_id": 2
+     }
+    ],
+    [
+     "login_token",
+     {
+      "created_at": "2001-01-01T00:00:00+00:00",
+      "email": "host@example.test",
+      "expires_at": "2099-01-01T00:00:00+00:00",
+      "next_path": "/",
+      "purpose": "invite",
+      "remember": 1,
+      "token_hash": "0000000000000000000000000000000000000000000000000000000000000002",
+      "used_at": "2001-01-01T00:00:00+00:00",
+      "user_account_id": 2
+     }
+    ]
+   ],
+   "session": {
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [
+      [
+       "email_changed",
+       "admin",
+       "from=h***@e******.test to=m****@e******.test reason=lost her mailbox",
+       "2",
+       "1",
+       null
+      ]
+     ],
+     "console_mail_log": [],
+     "email_outbox": [
+      [
+       "1",
+       "email_changed",
+       "email_changed:2:<ts>:old",
+       "2",
+       "host@example.test",
+       "Your UbyHost login e-mail changed",
+       "queued",
+       "0",
+       null,
+       "0",
+       "0",
+       "{\"text\": \"UbyHost support changed the login e-mail of your account to m****@e******.test. This address no longer logs in.\\n\\nIf you did not ask for this, write to support@ubyhost.com straight away.\\n\\n--\\nUbyHost\\nQuestions: support@ubyhost.com\", \"html\": \"<!doctype html>\\n<html lang=\\\"en\\\">\\n<head>\\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width,initial-scale=1\\\">\\n<meta name=\\\"color-scheme\\\" content=\\\"light only\\\">\\n<title>Login e-mail changed</title>\\n</head>\\n<body style=\\\"margin:0;padding:0;background:#f7f7f5;\\\">\\n<div style=\\\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\\\">UbyHost support changed the login e-mail of your account to m****@e******.test. This address no longer logs in.\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f</div>\\n<table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"background:#f7f7f5;border-collapse:collapse;\\\">\\n<tr><td align=\\\"center\\\" style=\\\"padding:28px 12px;\\\">\\n<table role=\\\"presentation\\\" width=\\\"600\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\\\">\\n<tr><td style=\\\"padding:28px 24px 0 24px;\\\">\\n<img src=\\\"http://127.0.0.1:8080/static/ubyhost-logo.jpg\\\" width=\\\"180\\\" alt=\\\"UbyHost\\\" style=\\\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\\\">\\n</td></tr>\\n<tr><td style=\\\"padding:20px 24px 0 24px;\\\"><h1 style=\\\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\\\">Login e-mail changed</h1></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">UbyHost support changed the login e-mail of your account to m****@e******.test. This address no longer logs in.</p></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">If you did not ask for this, write to support@ubyhost.com straight away.</p></td></tr>\\n<tr><td style=\\\"padding:28px 24px 28px 24px;\\\">\\n<div style=\\\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\\\">\\n<div>UbyHost</div><div style=\\\"padding:4px 0 0 0;\\\">Questions: support@ubyhost.com</div>\\n</div>\\n</td></tr>\\n</table>\\n</td></tr>\\n</table>\\n</body>\\n</html>\\n\", \"lang\": \"en\", \"reply_to\": \"support@ubyhost.com\"}"
+      ],
+      [
+       "2",
+       "email_changed",
+       "email_changed:2:<ts>:new",
+       "2",
+       "moved@example.test",
+       "Your UbyHost login e-mail changed",
+       "queued",
+       "0",
+       null,
+       "0",
+       "0",
+       "{\"text\": \"This address is now the login e-mail of a UbyHost account.\\n\\nLog in from the UbyHost login page with this address. If you did not expect this, write to support@ubyhost.com.\\n\\n--\\nUbyHost\\nQuestions: support@ubyhost.com\", \"html\": \"<!doctype html>\\n<html lang=\\\"en\\\">\\n<head>\\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width,initial-scale=1\\\">\\n<meta name=\\\"color-scheme\\\" content=\\\"light only\\\">\\n<title>Login e-mail changed</title>\\n</head>\\n<body style=\\\"margin:0;padding:0;background:#f7f7f5;\\\">\\n<div style=\\\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\\\">This address is now the login e-mail of a UbyHost account.\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f</div>\\n<table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"background:#f7f7f5;border-collapse:collapse;\\\">\\n<tr><td align=\\\"center\\\" style=\\\"padding:28px 12px;\\\">\\n<table role=\\\"presentation\\\" width=\\\"600\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\\\">\\n<tr><td style=\\\"padding:28px 24px 0 24px;\\\">\\n<img src=\\\"http://127.0.0.1:8080/static/ubyhost-logo.jpg\\\" width=\\\"180\\\" alt=\\\"UbyHost\\\" style=\\\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\\\">\\n</td></tr>\\n<tr><td style=\\\"padding:20px 24px 0 24px;\\\"><h1 style=\\\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\\\">Login e-mail changed</h1></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">This address is now the login e-mail of a UbyHost account.</p></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">Log in from the UbyHost login page with this address. If you did not expect this, write to support@ubyhost.com.</p></td></tr>\\n<tr><td style=\\\"padding:28px 24px 28px 24px;\\\">\\n<div style=\\\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\\\">\\n<div>UbyHost</div><div style=\\\"padding:4px 0 0 0;\\\">Questions: support@ubyhost.com</div>\\n</div>\\n</td></tr>\\n</table>\\n</td></tr>\\n</table>\\n</body>\\n</html>\\n\", \"lang\": \"en\", \"reply_to\": \"support@ubyhost.com\"}"
+      ]
+     ],
+     "login_token": [
+      [
+       "2",
+       "invite",
+       "host@example.test",
+       "1",
+       "/",
+       "<now>"
+      ],
+      [
+       "2",
+       "invite",
+       "host@example.test",
+       "1",
+       "/",
+       "2001-01-01T00:00:00+00:00"
+      ]
+     ],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "moved@example.test",
+       "host",
+       "1",
+       "2",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/admin/customers/2?msg=Login%20e-mail%20saved.",
+    "status": 303
+   }
+  },
+  {
+   "form": [
+    [
+     "email",
+     "Neu <neu@example.test>"
+    ],
+    [
+     "reason",
+     "ticket 42"
+    ]
+   ],
+   "lang": "cs",
+   "method": "POST",
+   "name": "email_change_cs",
+   "path": "/admin/users/3/email",
+   "session": {
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [
+      [
+       "email_changed",
+       "admin",
+       "from=t***@e******.test to=n***@e******.test reason=ticket 42",
+       "3",
+       "1",
+       null
+      ]
+     ],
+     "console_mail_log": [],
+     "email_outbox": [
+      [
+       "1",
+       "email_changed",
+       "email_changed:3:<ts>:old",
+       "3",
+       "totp@example.test",
+       "Your UbyHost login e-mail changed",
+       "queued",
+       "0",
+       null,
+       "0",
+       "0",
+       "{\"text\": \"UbyHost support changed the login e-mail of your account to n***@e******.test. This address no longer logs in.\\n\\nIf you did not ask for this, write to support@ubyhost.com straight away.\\n\\n--\\nUbyHost\\nQuestions: support@ubyhost.com\", \"html\": \"<!doctype html>\\n<html lang=\\\"en\\\">\\n<head>\\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width,initial-scale=1\\\">\\n<meta name=\\\"color-scheme\\\" content=\\\"light only\\\">\\n<title>Login e-mail changed</title>\\n</head>\\n<body style=\\\"margin:0;padding:0;background:#f7f7f5;\\\">\\n<div style=\\\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\\\">UbyHost support changed the login e-mail of your account to n***@e******.test. This address no longer logs in.\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f</div>\\n<table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"background:#f7f7f5;border-collapse:collapse;\\\">\\n<tr><td align=\\\"center\\\" style=\\\"padding:28px 12px;\\\">\\n<table role=\\\"presentation\\\" width=\\\"600\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\\\">\\n<tr><td style=\\\"padding:28px 24px 0 24px;\\\">\\n<img src=\\\"http://127.0.0.1:8080/static/ubyhost-logo.jpg\\\" width=\\\"180\\\" alt=\\\"UbyHost\\\" style=\\\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\\\">\\n</td></tr>\\n<tr><td style=\\\"padding:20px 24px 0 24px;\\\"><h1 style=\\\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\\\">Login e-mail changed</h1></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">UbyHost support changed the login e-mail of your account to n***@e******.test. This address no longer logs in.</p></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">If you did not ask for this, write to support@ubyhost.com straight away.</p></td></tr>\\n<tr><td style=\\\"padding:28px 24px 28px 24px;\\\">\\n<div style=\\\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\\\">\\n<div>UbyHost</div><div style=\\\"padding:4px 0 0 0;\\\">Questions: support@ubyhost.com</div>\\n</div>\\n</td></tr>\\n</table>\\n</td></tr>\\n</table>\\n</body>\\n</html>\\n\", \"lang\": \"en\", \"reply_to\": \"support@ubyhost.com\"}"
+      ],
+      [
+       "2",
+       "email_changed",
+       "email_changed:3:<ts>:new",
+       "3",
+       "neu@example.test",
+       "Your UbyHost login e-mail changed",
+       "queued",
+       "0",
+       null,
+       "0",
+       "0",
+       "{\"text\": \"This address is now the login e-mail of a UbyHost account.\\n\\nLog in from the UbyHost login page with this address. If you did not expect this, write to support@ubyhost.com.\\n\\n--\\nUbyHost\\nQuestions: support@ubyhost.com\", \"html\": \"<!doctype html>\\n<html lang=\\\"en\\\">\\n<head>\\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width,initial-scale=1\\\">\\n<meta name=\\\"color-scheme\\\" content=\\\"light only\\\">\\n<title>Login e-mail changed</title>\\n</head>\\n<body style=\\\"margin:0;padding:0;background:#f7f7f5;\\\">\\n<div style=\\\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\\\">This address is now the login e-mail of a UbyHost account.\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f</div>\\n<table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"background:#f7f7f5;border-collapse:collapse;\\\">\\n<tr><td align=\\\"center\\\" style=\\\"padding:28px 12px;\\\">\\n<table role=\\\"presentation\\\" width=\\\"600\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\\\">\\n<tr><td style=\\\"padding:28px 24px 0 24px;\\\">\\n<img src=\\\"http://127.0.0.1:8080/static/ubyhost-logo.jpg\\\" width=\\\"180\\\" alt=\\\"UbyHost\\\" style=\\\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\\\">\\n</td></tr>\\n<tr><td style=\\\"padding:20px 24px 0 24px;\\\"><h1 style=\\\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\\\">Login e-mail changed</h1></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">This address is now the login e-mail of a UbyHost account.</p></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">Log in from the UbyHost login page with this address. If you did not expect this, write to support@ubyhost.com.</p></td></tr>\\n<tr><td style=\\\"padding:28px 24px 28px 24px;\\\">\\n<div style=\\\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\\\">\\n<div>UbyHost</div><div style=\\\"padding:4px 0 0 0;\\\">Questions: support@ubyhost.com</div>\\n</div>\\n</td></tr>\\n</table>\\n</td></tr>\\n</table>\\n</body>\\n</html>\\n\", \"lang\": \"en\", \"reply_to\": \"support@ubyhost.com\"}"
+      ]
+     ],
+     "login_token": [],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "neu@example.test",
+       "host",
+       "1",
+       "2",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/admin/customers/3?msg=P%C5%99ihla%C5%A1ovac%C3%AD%20e-mail%20ulo%C5%BEen.",
+    "status": 303
+   }
+  },
+  {
+   "form": [
+    [
+     "email",
+     "back@example.test"
+    ],
+    [
+     "reason",
+     "reopened"
+    ]
+   ],
+   "method": "POST",
+   "name": "email_change_inactive",
+   "path": "/admin/users/5/email",
+   "session": {
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [
+      [
+       "email_changed",
+       "admin",
+       "from=g***@e******.test to=b***@e******.test reason=reopened",
+       "5",
+       "1",
+       null
+      ]
+     ],
+     "console_mail_log": [],
+     "email_outbox": [
+      [
+       "1",
+       "email_changed",
+       "email_changed:5:<ts>:old",
+       "5",
+       "gone@example.test",
+       "Your UbyHost login e-mail changed",
+       "queued",
+       "0",
+       null,
+       "0",
+       "0",
+       "{\"text\": \"UbyHost support changed the login e-mail of your account to b***@e******.test. This address no longer logs in.\\n\\nIf you did not ask for this, write to support@ubyhost.com straight away.\\n\\n--\\nUbyHost\\nQuestions: support@ubyhost.com\", \"html\": \"<!doctype html>\\n<html lang=\\\"en\\\">\\n<head>\\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width,initial-scale=1\\\">\\n<meta name=\\\"color-scheme\\\" content=\\\"light only\\\">\\n<title>Login e-mail changed</title>\\n</head>\\n<body style=\\\"margin:0;padding:0;background:#f7f7f5;\\\">\\n<div style=\\\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\\\">UbyHost support changed the login e-mail of your account to b***@e******.test. This address no longer logs in.\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f</div>\\n<table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"background:#f7f7f5;border-collapse:collapse;\\\">\\n<tr><td align=\\\"center\\\" style=\\\"padding:28px 12px;\\\">\\n<table role=\\\"presentation\\\" width=\\\"600\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\\\">\\n<tr><td style=\\\"padding:28px 24px 0 24px;\\\">\\n<img src=\\\"http://127.0.0.1:8080/static/ubyhost-logo.jpg\\\" width=\\\"180\\\" alt=\\\"UbyHost\\\" style=\\\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\\\">\\n</td></tr>\\n<tr><td style=\\\"padding:20px 24px 0 24px;\\\"><h1 style=\\\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\\\">Login e-mail changed</h1></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">UbyHost support changed the login e-mail of your account to b***@e******.test. This address no longer logs in.</p></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">If you did not ask for this, write to support@ubyhost.com straight away.</p></td></tr>\\n<tr><td style=\\\"padding:28px 24px 28px 24px;\\\">\\n<div style=\\\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\\\">\\n<div>UbyHost</div><div style=\\\"padding:4px 0 0 0;\\\">Questions: support@ubyhost.com</div>\\n</div>\\n</td></tr>\\n</table>\\n</td></tr>\\n</table>\\n</body>\\n</html>\\n\", \"lang\": \"en\", \"reply_to\": \"support@ubyhost.com\"}"
+      ],
+      [
+       "2",
+       "email_changed",
+       "email_changed:5:<ts>:new",
+       "5",
+       "back@example.test",
+       "Your UbyHost login e-mail changed",
+       "queued",
+       "0",
+       null,
+       "0",
+       "0",
+       "{\"text\": \"This address is now the login e-mail of a UbyHost account.\\n\\nLog in from the UbyHost login page with this address. If you did not expect this, write to support@ubyhost.com.\\n\\n--\\nUbyHost\\nQuestions: support@ubyhost.com\", \"html\": \"<!doctype html>\\n<html lang=\\\"en\\\">\\n<head>\\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width,initial-scale=1\\\">\\n<meta name=\\\"color-scheme\\\" content=\\\"light only\\\">\\n<title>Login e-mail changed</title>\\n</head>\\n<body style=\\\"margin:0;padding:0;background:#f7f7f5;\\\">\\n<div style=\\\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\\\">This address is now the login e-mail of a UbyHost account.\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f</div>\\n<table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"background:#f7f7f5;border-collapse:collapse;\\\">\\n<tr><td align=\\\"center\\\" style=\\\"padding:28px 12px;\\\">\\n<table role=\\\"presentation\\\" width=\\\"600\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\\\">\\n<tr><td style=\\\"padding:28px 24px 0 24px;\\\">\\n<img src=\\\"http://127.0.0.1:8080/static/ubyhost-logo.jpg\\\" width=\\\"180\\\" alt=\\\"UbyHost\\\" style=\\\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\\\">\\n</td></tr>\\n<tr><td style=\\\"padding:20px 24px 0 24px;\\\"><h1 style=\\\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\\\">Login e-mail changed</h1></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">This address is now the login e-mail of a UbyHost account.</p></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">Log in from the UbyHost login page with this address. If you did not expect this, write to support@ubyhost.com.</p></td></tr>\\n<tr><td style=\\\"padding:28px 24px 28px 24px;\\\">\\n<div style=\\\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\\\">\\n<div>UbyHost</div><div style=\\\"padding:4px 0 0 0;\\\">Questions: support@ubyhost.com</div>\\n</div>\\n</td></tr>\\n</table>\\n</td></tr>\\n</table>\\n</body>\\n</html>\\n\", \"lang\": \"en\", \"reply_to\": \"support@ubyhost.com\"}"
+      ]
+     ],
+     "login_token": [],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "back@example.test",
+       "host",
+       "0",
+       "2",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/admin/customers/5?msg=Login%20e-mail%20saved.",
+    "status": 303
+   }
+  },
+  {
+   "env": {
+    "UBYHOST_MAIL_BACKEND": "disabled"
+   },
+   "form": [
+    [
+     "email",
+     "later@example.test"
+    ],
+    [
+     "reason",
+     "mailbox gone"
+    ]
+   ],
+   "method": "POST",
+   "name": "email_change_mail_off",
+   "path": "/admin/users/4/email",
+   "py_config": {
+    "MAIL_BACKEND": "disabled"
+   },
+   "session": {
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [
+      [
+       "email_changed",
+       "admin",
+       "from=l***@e******.test to=l****@e******.test reason=mailbox gone",
+       "4",
+       "1",
+       null
+      ]
+     ],
+     "console_mail_log": [],
+     "email_outbox": [],
+     "login_token": [],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "later@example.test",
+       "host",
+       "1",
+       "2",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/admin/customers/4?msg=Login%20e-mail%20saved.",
+    "status": 303
+   }
+  },
+  {
+   "form": [
+    [
+     "email",
+     "moved@example.test"
+    ],
+    [
+     "reason",
+     "support call"
+    ]
+   ],
+   "method": "POST",
+   "name": "email_change_impersonating",
+   "path": "/admin/users/2/email",
+   "session": {
+    "as": 2,
+    "ast": -60,
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [
+      [
+       "email_changed",
+       "admin",
+       "from=h***@e******.test to=m****@e******.test reason=support call",
+       "2",
+       "1",
+       "1"
+      ]
+     ],
+     "console_mail_log": [],
+     "email_outbox": [
+      [
+       "1",
+       "email_changed",
+       "email_changed:2:<ts>:old",
+       "2",
+       "host@example.test",
+       "Your UbyHost login e-mail changed",
+       "queued",
+       "0",
+       null,
+       "0",
+       "0",
+       "{\"text\": \"UbyHost support changed the login e-mail of your account to m****@e******.test. This address no longer logs in.\\n\\nIf you did not ask for this, write to support@ubyhost.com straight away.\\n\\n--\\nUbyHost\\nQuestions: support@ubyhost.com\", \"html\": \"<!doctype html>\\n<html lang=\\\"en\\\">\\n<head>\\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width,initial-scale=1\\\">\\n<meta name=\\\"color-scheme\\\" content=\\\"light only\\\">\\n<title>Login e-mail changed</title>\\n</head>\\n<body style=\\\"margin:0;padding:0;background:#f7f7f5;\\\">\\n<div style=\\\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\\\">UbyHost support changed the login e-mail of your account to m****@e******.test. This address no longer logs in.\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f</div>\\n<table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"background:#f7f7f5;border-collapse:collapse;\\\">\\n<tr><td align=\\\"center\\\" style=\\\"padding:28px 12px;\\\">\\n<table role=\\\"presentation\\\" width=\\\"600\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\\\">\\n<tr><td style=\\\"padding:28px 24px 0 24px;\\\">\\n<img src=\\\"http://127.0.0.1:8080/static/ubyhost-logo.jpg\\\" width=\\\"180\\\" alt=\\\"UbyHost\\\" style=\\\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\\\">\\n</td></tr>\\n<tr><td style=\\\"padding:20px 24px 0 24px;\\\"><h1 style=\\\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\\\">Login e-mail changed</h1></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">UbyHost support changed the login e-mail of your account to m****@e******.test. This address no longer logs in.</p></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">If you did not ask for this, write to support@ubyhost.com straight away.</p></td></tr>\\n<tr><td style=\\\"padding:28px 24px 28px 24px;\\\">\\n<div style=\\\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\\\">\\n<div>UbyHost</div><div style=\\\"padding:4px 0 0 0;\\\">Questions: support@ubyhost.com</div>\\n</div>\\n</td></tr>\\n</table>\\n</td></tr>\\n</table>\\n</body>\\n</html>\\n\", \"lang\": \"en\", \"reply_to\": \"support@ubyhost.com\"}"
+      ],
+      [
+       "2",
+       "email_changed",
+       "email_changed:2:<ts>:new",
+       "2",
+       "moved@example.test",
+       "Your UbyHost login e-mail changed",
+       "queued",
+       "0",
+       null,
+       "0",
+       "0",
+       "{\"text\": \"This address is now the login e-mail of a UbyHost account.\\n\\nLog in from the UbyHost login page with this address. If you did not expect this, write to support@ubyhost.com.\\n\\n--\\nUbyHost\\nQuestions: support@ubyhost.com\", \"html\": \"<!doctype html>\\n<html lang=\\\"en\\\">\\n<head>\\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width,initial-scale=1\\\">\\n<meta name=\\\"color-scheme\\\" content=\\\"light only\\\">\\n<title>Login e-mail changed</title>\\n</head>\\n<body style=\\\"margin:0;padding:0;background:#f7f7f5;\\\">\\n<div style=\\\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\\\">This address is now the login e-mail of a UbyHost account.\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f</div>\\n<table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"background:#f7f7f5;border-collapse:collapse;\\\">\\n<tr><td align=\\\"center\\\" style=\\\"padding:28px 12px;\\\">\\n<table role=\\\"presentation\\\" width=\\\"600\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\\\">\\n<tr><td style=\\\"padding:28px 24px 0 24px;\\\">\\n<img src=\\\"http://127.0.0.1:8080/static/ubyhost-logo.jpg\\\" width=\\\"180\\\" alt=\\\"UbyHost\\\" style=\\\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\\\">\\n</td></tr>\\n<tr><td style=\\\"padding:20px 24px 0 24px;\\\"><h1 style=\\\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\\\">Login e-mail changed</h1></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">This address is now the login e-mail of a UbyHost account.</p></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">Log in from the UbyHost login page with this address. If you did not expect this, write to support@ubyhost.com.</p></td></tr>\\n<tr><td style=\\\"padding:28px 24px 28px 24px;\\\">\\n<div style=\\\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\\\">\\n<div>UbyHost</div><div style=\\\"padding:4px 0 0 0;\\\">Questions: support@ubyhost.com</div>\\n</div>\\n</td></tr>\\n</table>\\n</td></tr>\\n</table>\\n</body>\\n</html>\\n\", \"lang\": \"en\", \"reply_to\": \"support@ubyhost.com\"}"
+      ]
+     ],
+     "login_token": [],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "moved@example.test",
+       "host",
+       "1",
+       "2",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/admin/customers/2?msg=Login%20e-mail%20saved.",
+    "status": 303
+   }
+  },
+  {
+   "form": [
+    [
+     "email",
+     "boss@example.test"
+    ],
+    [
+     "reason",
+     "new mailbox"
+    ]
+   ],
+   "method": "POST",
+   "name": "email_own",
+   "path": "/admin/users/1/email",
+   "session": {
+    "iat": -300,
+    "rm": 1,
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [
+     {
+      "attrs": {
+       "httponly": "true",
+       "max-age": "2592000",
+       "path": "/",
+       "samesite": "lax"
+      },
+      "empty": false,
+      "name": "ubyhost_session",
+      "payload": {
+       "iat": -301,
+       "rf": -1,
+       "rm": 1,
+       "sv": 2,
+       "uid": 1
+      }
+     }
+    ],
+    "db": {
+     "audit": [
+      [
+       "email_changed",
+       "admin",
+       "from=a****@e******.test to=b***@e******.test reason=new mailbox",
+       "1",
+       "1",
+       null
+      ]
+     ],
+     "console_mail_log": [],
+     "email_outbox": [
+      [
+       "1",
+       "email_changed",
+       "email_changed:1:<ts>:old",
+       "1",
+       "admin@example.test",
+       "Your UbyHost login e-mail changed",
+       "queued",
+       "0",
+       null,
+       "0",
+       "0",
+       "{\"text\": \"UbyHost support changed the login e-mail of your account to b***@e******.test. This address no longer logs in.\\n\\nIf you did not ask for this, write to support@ubyhost.com straight away.\\n\\n--\\nUbyHost\\nQuestions: support@ubyhost.com\", \"html\": \"<!doctype html>\\n<html lang=\\\"en\\\">\\n<head>\\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width,initial-scale=1\\\">\\n<meta name=\\\"color-scheme\\\" content=\\\"light only\\\">\\n<title>Login e-mail changed</title>\\n</head>\\n<body style=\\\"margin:0;padding:0;background:#f7f7f5;\\\">\\n<div style=\\\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\\\">UbyHost support changed the login e-mail of your account to b***@e******.test. This address no longer logs in.\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f</div>\\n<table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"background:#f7f7f5;border-collapse:collapse;\\\">\\n<tr><td align=\\\"center\\\" style=\\\"padding:28px 12px;\\\">\\n<table role=\\\"presentation\\\" width=\\\"600\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\\\">\\n<tr><td style=\\\"padding:28px 24px 0 24px;\\\">\\n<img src=\\\"http://127.0.0.1:8080/static/ubyhost-logo.jpg\\\" width=\\\"180\\\" alt=\\\"UbyHost\\\" style=\\\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\\\">\\n</td></tr>\\n<tr><td style=\\\"padding:20px 24px 0 24px;\\\"><h1 style=\\\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\\\">Login e-mail changed</h1></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">UbyHost support changed the login e-mail of your account to b***@e******.test. This address no longer logs in.</p></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">If you did not ask for this, write to support@ubyhost.com straight away.</p></td></tr>\\n<tr><td style=\\\"padding:28px 24px 28px 24px;\\\">\\n<div style=\\\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\\\">\\n<div>UbyHost</div><div style=\\\"padding:4px 0 0 0;\\\">Questions: support@ubyhost.com</div>\\n</div>\\n</td></tr>\\n</table>\\n</td></tr>\\n</table>\\n</body>\\n</html>\\n\", \"lang\": \"en\", \"reply_to\": \"support@ubyhost.com\"}"
+      ],
+      [
+       "2",
+       "email_changed",
+       "email_changed:1:<ts>:new",
+       "1",
+       "boss@example.test",
+       "Your UbyHost login e-mail changed",
+       "queued",
+       "0",
+       null,
+       "0",
+       "0",
+       "{\"text\": \"This address is now the login e-mail of a UbyHost account.\\n\\nLog in from the UbyHost login page with this address. If you did not expect this, write to support@ubyhost.com.\\n\\n--\\nUbyHost\\nQuestions: support@ubyhost.com\", \"html\": \"<!doctype html>\\n<html lang=\\\"en\\\">\\n<head>\\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width,initial-scale=1\\\">\\n<meta name=\\\"color-scheme\\\" content=\\\"light only\\\">\\n<title>Login e-mail changed</title>\\n</head>\\n<body style=\\\"margin:0;padding:0;background:#f7f7f5;\\\">\\n<div style=\\\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\\\">This address is now the login e-mail of a UbyHost account.\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f</div>\\n<table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"background:#f7f7f5;border-collapse:collapse;\\\">\\n<tr><td align=\\\"center\\\" style=\\\"padding:28px 12px;\\\">\\n<table role=\\\"presentation\\\" width=\\\"600\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\\\">\\n<tr><td style=\\\"padding:28px 24px 0 24px;\\\">\\n<img src=\\\"http://127.0.0.1:8080/static/ubyhost-logo.jpg\\\" width=\\\"180\\\" alt=\\\"UbyHost\\\" style=\\\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\\\">\\n</td></tr>\\n<tr><td style=\\\"padding:20px 24px 0 24px;\\\"><h1 style=\\\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\\\">Login e-mail changed</h1></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">This address is now the login e-mail of a UbyHost account.</p></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">Log in from the UbyHost login page with this address. If you did not expect this, write to support@ubyhost.com.</p></td></tr>\\n<tr><td style=\\\"padding:28px 24px 28px 24px;\\\">\\n<div style=\\\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\\\">\\n<div>UbyHost</div><div style=\\\"padding:4px 0 0 0;\\\">Questions: support@ubyhost.com</div>\\n</div>\\n</td></tr>\\n</table>\\n</td></tr>\\n</table>\\n</body>\\n</html>\\n\", \"lang\": \"en\", \"reply_to\": \"support@ubyhost.com\"}"
+      ]
+     ],
+     "login_token": [],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "boss@example.test",
+       "admin",
+       "1",
+       "2",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/admin/customers/1?msg=Login%20e-mail%20saved.",
+    "status": 303
+   }
+  },
+  {
+   "form": [
+    [
+     "email",
+     "boss@example.test"
+    ],
+    [
+     "reason",
+     "new mailbox"
+    ]
+   ],
+   "method": "POST",
+   "name": "email_own_short_session",
+   "path": "/admin/users/1/email",
+   "session": {
+    "iat": -5000,
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [
+     {
+      "attrs": {
+       "httponly": "true",
+       "max-age": "43200",
+       "path": "/",
+       "samesite": "lax"
+      },
+      "empty": false,
+      "name": "ubyhost_session",
+      "payload": {
+       "iat": -5001,
+       "rf": -1,
+       "sv": 2,
+       "uid": 1
+      }
+     }
+    ],
+    "db": {
+     "audit": [
+      [
+       "email_changed",
+       "admin",
+       "from=a****@e******.test to=b***@e******.test reason=new mailbox",
+       "1",
+       "1",
+       null
+      ]
+     ],
+     "console_mail_log": [],
+     "email_outbox": [
+      [
+       "1",
+       "email_changed",
+       "email_changed:1:<ts>:old",
+       "1",
+       "admin@example.test",
+       "Your UbyHost login e-mail changed",
+       "queued",
+       "0",
+       null,
+       "0",
+       "0",
+       "{\"text\": \"UbyHost support changed the login e-mail of your account to b***@e******.test. This address no longer logs in.\\n\\nIf you did not ask for this, write to support@ubyhost.com straight away.\\n\\n--\\nUbyHost\\nQuestions: support@ubyhost.com\", \"html\": \"<!doctype html>\\n<html lang=\\\"en\\\">\\n<head>\\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width,initial-scale=1\\\">\\n<meta name=\\\"color-scheme\\\" content=\\\"light only\\\">\\n<title>Login e-mail changed</title>\\n</head>\\n<body style=\\\"margin:0;padding:0;background:#f7f7f5;\\\">\\n<div style=\\\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\\\">UbyHost support changed the login e-mail of your account to b***@e******.test. This address no longer logs in.\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f</div>\\n<table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"background:#f7f7f5;border-collapse:collapse;\\\">\\n<tr><td align=\\\"center\\\" style=\\\"padding:28px 12px;\\\">\\n<table role=\\\"presentation\\\" width=\\\"600\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\\\">\\n<tr><td style=\\\"padding:28px 24px 0 24px;\\\">\\n<img src=\\\"http://127.0.0.1:8080/static/ubyhost-logo.jpg\\\" width=\\\"180\\\" alt=\\\"UbyHost\\\" style=\\\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\\\">\\n</td></tr>\\n<tr><td style=\\\"padding:20px 24px 0 24px;\\\"><h1 style=\\\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\\\">Login e-mail changed</h1></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">UbyHost support changed the login e-mail of your account to b***@e******.test. This address no longer logs in.</p></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">If you did not ask for this, write to support@ubyhost.com straight away.</p></td></tr>\\n<tr><td style=\\\"padding:28px 24px 28px 24px;\\\">\\n<div style=\\\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\\\">\\n<div>UbyHost</div><div style=\\\"padding:4px 0 0 0;\\\">Questions: support@ubyhost.com</div>\\n</div>\\n</td></tr>\\n</table>\\n</td></tr>\\n</table>\\n</body>\\n</html>\\n\", \"lang\": \"en\", \"reply_to\": \"support@ubyhost.com\"}"
+      ],
+      [
+       "2",
+       "email_changed",
+       "email_changed:1:<ts>:new",
+       "1",
+       "boss@example.test",
+       "Your UbyHost login e-mail changed",
+       "queued",
+       "0",
+       null,
+       "0",
+       "0",
+       "{\"text\": \"This address is now the login e-mail of a UbyHost account.\\n\\nLog in from the UbyHost login page with this address. If you did not expect this, write to support@ubyhost.com.\\n\\n--\\nUbyHost\\nQuestions: support@ubyhost.com\", \"html\": \"<!doctype html>\\n<html lang=\\\"en\\\">\\n<head>\\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width,initial-scale=1\\\">\\n<meta name=\\\"color-scheme\\\" content=\\\"light only\\\">\\n<title>Login e-mail changed</title>\\n</head>\\n<body style=\\\"margin:0;padding:0;background:#f7f7f5;\\\">\\n<div style=\\\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\\\">This address is now the login e-mail of a UbyHost account.\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f</div>\\n<table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"background:#f7f7f5;border-collapse:collapse;\\\">\\n<tr><td align=\\\"center\\\" style=\\\"padding:28px 12px;\\\">\\n<table role=\\\"presentation\\\" width=\\\"600\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\\\">\\n<tr><td style=\\\"padding:28px 24px 0 24px;\\\">\\n<img src=\\\"http://127.0.0.1:8080/static/ubyhost-logo.jpg\\\" width=\\\"180\\\" alt=\\\"UbyHost\\\" style=\\\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\\\">\\n</td></tr>\\n<tr><td style=\\\"padding:20px 24px 0 24px;\\\"><h1 style=\\\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\\\">Login e-mail changed</h1></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">This address is now the login e-mail of a UbyHost account.</p></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">Log in from the UbyHost login page with this address. If you did not expect this, write to support@ubyhost.com.</p></td></tr>\\n<tr><td style=\\\"padding:28px 24px 28px 24px;\\\">\\n<div style=\\\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\\\">\\n<div>UbyHost</div><div style=\\\"padding:4px 0 0 0;\\\">Questions: support@ubyhost.com</div>\\n</div>\\n</td></tr>\\n</table>\\n</td></tr>\\n</table>\\n</body>\\n</html>\\n\", \"lang\": \"en\", \"reply_to\": \"support@ubyhost.com\"}"
+      ]
+     ],
+     "login_token": [],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "boss@example.test",
+       "admin",
+       "1",
+       "2",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/admin/customers/1?msg=Login%20e-mail%20saved.",
+    "status": 303
+   }
+  },
+  {
+   "form": [
+    [
+     "email",
+     "boss@example.test"
+    ],
+    [
+     "reason",
+     "new mailbox"
+    ]
+   ],
+   "method": "POST",
+   "name": "email_own_impersonating",
+   "path": "/admin/users/1/email",
+   "session": {
+    "as": 2,
+    "ast": -60,
+    "iat": -400,
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [
+     {
+      "attrs": {
+       "httponly": "true",
+       "max-age": "43200",
+       "path": "/",
+       "samesite": "lax"
+      },
+      "empty": false,
+      "name": "ubyhost_session",
+      "payload": {
+       "iat": -401,
+       "rf": -1,
+       "sv": 2,
+       "uid": 1
+      }
+     }
+    ],
+    "db": {
+     "audit": [
+      [
+       "email_changed",
+       "admin",
+       "from=a****@e******.test to=b***@e******.test reason=new mailbox",
+       "1",
+       "1",
+       "1"
+      ]
+     ],
+     "console_mail_log": [],
+     "email_outbox": [
+      [
+       "1",
+       "email_changed",
+       "email_changed:1:<ts>:old",
+       "1",
+       "admin@example.test",
+       "Your UbyHost login e-mail changed",
+       "queued",
+       "0",
+       null,
+       "0",
+       "0",
+       "{\"text\": \"UbyHost support changed the login e-mail of your account to b***@e******.test. This address no longer logs in.\\n\\nIf you did not ask for this, write to support@ubyhost.com straight away.\\n\\n--\\nUbyHost\\nQuestions: support@ubyhost.com\", \"html\": \"<!doctype html>\\n<html lang=\\\"en\\\">\\n<head>\\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width,initial-scale=1\\\">\\n<meta name=\\\"color-scheme\\\" content=\\\"light only\\\">\\n<title>Login e-mail changed</title>\\n</head>\\n<body style=\\\"margin:0;padding:0;background:#f7f7f5;\\\">\\n<div style=\\\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\\\">UbyHost support changed the login e-mail of your account to b***@e******.test. This address no longer logs in.\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f</div>\\n<table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"background:#f7f7f5;border-collapse:collapse;\\\">\\n<tr><td align=\\\"center\\\" style=\\\"padding:28px 12px;\\\">\\n<table role=\\\"presentation\\\" width=\\\"600\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\\\">\\n<tr><td style=\\\"padding:28px 24px 0 24px;\\\">\\n<img src=\\\"http://127.0.0.1:8080/static/ubyhost-logo.jpg\\\" width=\\\"180\\\" alt=\\\"UbyHost\\\" style=\\\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\\\">\\n</td></tr>\\n<tr><td style=\\\"padding:20px 24px 0 24px;\\\"><h1 style=\\\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\\\">Login e-mail changed</h1></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">UbyHost support changed the login e-mail of your account to b***@e******.test. This address no longer logs in.</p></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">If you did not ask for this, write to support@ubyhost.com straight away.</p></td></tr>\\n<tr><td style=\\\"padding:28px 24px 28px 24px;\\\">\\n<div style=\\\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\\\">\\n<div>UbyHost</div><div style=\\\"padding:4px 0 0 0;\\\">Questions: support@ubyhost.com</div>\\n</div>\\n</td></tr>\\n</table>\\n</td></tr>\\n</table>\\n</body>\\n</html>\\n\", \"lang\": \"en\", \"reply_to\": \"support@ubyhost.com\"}"
+      ],
+      [
+       "2",
+       "email_changed",
+       "email_changed:1:<ts>:new",
+       "1",
+       "boss@example.test",
+       "Your UbyHost login e-mail changed",
+       "queued",
+       "0",
+       null,
+       "0",
+       "0",
+       "{\"text\": \"This address is now the login e-mail of a UbyHost account.\\n\\nLog in from the UbyHost login page with this address. If you did not expect this, write to support@ubyhost.com.\\n\\n--\\nUbyHost\\nQuestions: support@ubyhost.com\", \"html\": \"<!doctype html>\\n<html lang=\\\"en\\\">\\n<head>\\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width,initial-scale=1\\\">\\n<meta name=\\\"color-scheme\\\" content=\\\"light only\\\">\\n<title>Login e-mail changed</title>\\n</head>\\n<body style=\\\"margin:0;padding:0;background:#f7f7f5;\\\">\\n<div style=\\\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\\\">This address is now the login e-mail of a UbyHost account.\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f\\u2007\\ufeff\\u034f</div>\\n<table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"background:#f7f7f5;border-collapse:collapse;\\\">\\n<tr><td align=\\\"center\\\" style=\\\"padding:28px 12px;\\\">\\n<table role=\\\"presentation\\\" width=\\\"600\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" style=\\\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\\\">\\n<tr><td style=\\\"padding:28px 24px 0 24px;\\\">\\n<img src=\\\"http://127.0.0.1:8080/static/ubyhost-logo.jpg\\\" width=\\\"180\\\" alt=\\\"UbyHost\\\" style=\\\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\\\">\\n</td></tr>\\n<tr><td style=\\\"padding:20px 24px 0 24px;\\\"><h1 style=\\\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\\\">Login e-mail changed</h1></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">This address is now the login e-mail of a UbyHost account.</p></td></tr><tr><td style=\\\"padding:12px 24px 0 24px;\\\"><p style=\\\"margin:0;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\\\">Log in from the UbyHost login page with this address. If you did not expect this, write to support@ubyhost.com.</p></td></tr>\\n<tr><td style=\\\"padding:28px 24px 28px 24px;\\\">\\n<div style=\\\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\\\">\\n<div>UbyHost</div><div style=\\\"padding:4px 0 0 0;\\\">Questions: support@ubyhost.com</div>\\n</div>\\n</td></tr>\\n</table>\\n</td></tr>\\n</table>\\n</body>\\n</html>\\n\", \"lang\": \"en\", \"reply_to\": \"support@ubyhost.com\"}"
+      ]
+     ],
+     "login_token": [],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "boss@example.test",
+       "admin",
+       "1",
+       "2",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/admin/customers/1?msg=Login%20e-mail%20saved.",
+    "status": 303
+   }
+  },
+  {
+   "form": [
+    [
+     "email",
+     "moved@example.test"
+    ]
+   ],
+   "method": "POST",
+   "name": "email_no_reason",
+   "path": "/admin/users/2/email",
+   "session": {
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "console_mail_log": [],
+     "email_outbox": [],
+     "login_token": [],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/admin/customers/2?err=Give%20a%20reason%20of%205%20to%20300%20characters%20for%20changing%20the%20login%20e-mail.",
+    "status": 303
+   }
+  },
+  {
+   "form": [
+    [
+     "email",
+     "moved@example.test"
+    ],
+    [
+     "reason",
+     " abc "
+    ]
+   ],
+   "lang": "cs",
+   "method": "POST",
+   "name": "email_short_reason_cs",
+   "path": "/admin/users/2/email",
+   "session": {
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "console_mail_log": [],
+     "email_outbox": [],
+     "login_token": [],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/admin/customers/2?err=Uve%C4%8Fte%20d%C5%AFvod%20zm%C4%9Bny%20p%C5%99ihla%C5%A1ovac%C3%ADho%20e-mailu%20%285%20a%C5%BE%20300%20znak%C5%AF%29.",
+    "status": 303
+   }
+  },
+  {
+   "form": [
+    [
+     "email",
+     "HOST@example.test"
+    ]
+   ],
+   "method": "POST",
+   "name": "email_unchanged",
+   "path": "/admin/users/2/email",
+   "session": {
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "console_mail_log": [],
+     "email_outbox": [],
+     "login_token": [],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/admin/customers/2?msg=That%20is%20already%20the%20login%20e-mail.",
+    "status": 303
+   }
+  },
+  {
+   "form": [
+    [
+     "email",
+     "host@"
+    ],
+    [
+     "reason",
+     "a reason"
+    ]
+   ],
+   "method": "POST",
+   "name": "email_invalid",
+   "path": "/admin/users/2/email",
+   "session": {
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "console_mail_log": [],
+     "email_outbox": [],
+     "login_token": [],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/admin/customers/2?err=Enter%20a%20valid%20e-mail%20address.",
+    "status": 303
+   }
+  },
+  {
+   "form": [
+    [
+     "email",
+     "totp@example.test"
+    ],
+    [
+     "reason",
+     "a reason"
+    ]
+   ],
+   "method": "POST",
+   "name": "email_taken",
+   "path": "/admin/users/2/email",
+   "session": {
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "console_mail_log": [],
+     "email_outbox": [],
+     "login_token": [],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/admin/customers/2?err=Another%20account%20already%20uses%20that%20e-mail.",
+    "status": 303
+   }
+  },
+  {
+   "form": [
+    [
+     "email",
+     "x@example.test"
+    ]
+   ],
+   "method": "POST",
+   "name": "email_missing",
+   "path": "/admin/users/99/email",
+   "session": {
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "console_mail_log": [],
+     "email_outbox": [],
+     "login_token": [],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/admin/customers/99?err=That%20account%20no%20longer%20exists.",
+    "status": 303
+   }
+  },
+  {
+   "method": "POST",
+   "name": "email_bad_id",
+   "path": "/admin/users/1.5/email",
+   "session": {
+    "uid": 1
+   },
+   "want": {
+    "body": "{\"detail\":[{\"type\":\"int_parsing\",\"loc\":[\"path\",\"user_id\"],\"msg\":\"Input should be a valid integer, unable to parse string as an integer\",\"input\":\"1.5\"}]}",
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": "application/json",
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "console_mail_log": [],
+     "email_outbox": [],
+     "login_token": [],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": null,
+    "status": 422
+   }
+  },
+  {
+   "form": [
+    [
+     "email",
+     "x@example.test"
+    ],
+    [
+     "reason",
+     "a reason"
+    ]
+   ],
+   "method": "POST",
+   "name": "email_host",
+   "path": "/admin/users/2/email",
+   "session": {
+    "uid": 2
+   },
+   "want": {
+    "body": "Administrators only.",
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "console_mail_log": [],
+     "email_outbox": [],
+     "login_token": [],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": null,
+    "status": 403
+   }
+  },
+  {
+   "method": "POST",
+   "name": "email_signed_out",
+   "path": "/admin/users/2/email",
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": null,
+    "cookies": [],
+    "db": {
+     "audit": [],
+     "console_mail_log": [],
+     "email_outbox": [],
+     "login_token": [],
+     "user_account": [
+      [
+       "1",
+       "admin",
+       null,
+       "admin@example.test",
+       "admin",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "2",
+       "host",
+       null,
+       "host@example.test",
+       "host",
+       "1",
+       "1",
+       "2001-01-02T03:04:05+00:00",
+       "0",
+       ""
+      ],
+      [
+       "3",
+       "totp",
+       null,
+       "totp@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "4",
+       "late",
+       null,
+       "late@example.test",
+       "host",
+       "1",
+       "1",
+       null,
+       "0",
+       ""
+      ],
+      [
+       "5",
+       "gone",
+       null,
+       "gone@example.test",
+       "host",
+       "0",
+       "1",
+       null,
+       "0",
+       ""
+      ]
+     ]
+    },
+    "location": "/login?next=/admin/users/2/email",
+    "status": 303
+   }
+  }
+ ],
+ "env": {
+  "UBYHOST_ADS_CONVERSION_NAME": "UbyHost sign-up",
+  "UBYHOST_MAIL_BACKEND": "console",
+  "UBYHOST_SECRET_KEY": "auth-routes-golden-secret-0123456789-abcdef",
+  "UBYHOST_SIGNUP_ENABLED": "1"
+ },
+ "nonce": "golden-csrf-nonce",
+ "secret": "auth-routes-golden-secret-0123456789-abcdef",
+ "seed": [
+  [
+   "user_account",
+   {
+    "active": 1,
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "email": "admin@example.test",
+    "id": 1,
+    "must_change_password": 0,
+    "password_hash": "",
+    "role": "admin",
+    "session_version": 1,
+    "username": "admin"
+   }
+  ],
+  [
+   "user_account",
+   {
+    "active": 1,
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "email": "host@example.test",
+    "email_verified_at": "2001-01-02T03:04:05+00:00",
+    "id": 2,
+    "must_change_password": 0,
+    "onboarding_emails_opt_out": 1,
+    "onboarding_emails_opt_out_at": "2001-01-01T00:00:00+00:00",
+    "password_hash": "",
+    "role": "host",
+    "session_version": 1,
+    "username": "host"
+   }
+  ],
+  [
+   "user_account",
+   {
+    "active": 1,
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "email": "totp@example.test",
+    "id": 3,
+    "must_change_password": 0,
+    "password_hash": "",
+    "recovery_codes_hash": "[\"df8e5a001feaf4f035774670f3148504854cad53560c2e2c01ab2818a269f508\", \"cc77d77e1857d12b99c674a2169a1967bd420c8c3359b07ed91d839da313bf1e\"]",
+    "role": "host",
+    "session_version": 1,
+    "totp_enabled": 1,
+    "totp_secret_enc": "gAAAAABq-H5blAGlIpuxkvRjjPuDKvmZSdyszFfG_KO-2a7feqvOowCw39O4LfDsw-IfYoX0GDRdG8p6x24_QMofj7bJgbbGAiV_WQKSJ-HODILV2RqVnnk=",
+    "username": "totp"
+   }
+  ],
+  [
+   "user_account",
+   {
+    "active": 1,
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "email": "late@example.test",
+    "id": 4,
+    "must_change_password": 0,
+    "password_hash": "",
+    "role": "host",
+    "session_version": 1,
+    "username": "late"
+   }
+  ],
+  [
+   "user_account",
+   {
+    "active": 0,
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "email": "gone@example.test",
+    "id": 5,
+    "must_change_password": 0,
+    "password_hash": "",
+    "role": "host",
+    "session_version": 1,
+    "username": "gone"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "terms",
+    "id": 1,
+    "method": "clickwrap",
+    "user_account_id": 1,
+    "version": "1.7"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "privacy",
+    "id": 2,
+    "method": "clickwrap",
+    "user_account_id": 1,
+    "version": "1.8"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "dpa",
+    "id": 3,
+    "method": "clickwrap",
+    "user_account_id": 1,
+    "version": "1.8"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "terms",
+    "id": 4,
+    "method": "clickwrap",
+    "user_account_id": 2,
+    "version": "1.7"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "privacy",
+    "id": 5,
+    "method": "clickwrap",
+    "user_account_id": 2,
+    "version": "1.8"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "dpa",
+    "id": 6,
+    "method": "clickwrap",
+    "user_account_id": 2,
+    "version": "1.8"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "terms",
+    "id": 7,
+    "method": "clickwrap",
+    "user_account_id": 3,
+    "version": "1.7"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "privacy",
+    "id": 8,
+    "method": "clickwrap",
+    "user_account_id": 3,
+    "version": "1.8"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "dpa",
+    "id": 9,
+    "method": "clickwrap",
+    "user_account_id": 3,
+    "version": "1.8"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "terms",
+    "id": 10,
+    "method": "clickwrap",
+    "user_account_id": 5,
+    "version": "1.7"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "privacy",
+    "id": 11,
+    "method": "clickwrap",
+    "user_account_id": 5,
+    "version": "1.8"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "dpa",
+    "id": 12,
+    "method": "clickwrap",
+    "user_account_id": 5,
+    "version": "1.8"
+   }
+  ],
+  [
+   "legal_entity",
+   {
+    "contact_email": "Host <Host@Example.test>",
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "id": 1,
+    "name": "E1",
+    "owner_user_id": 2
+   }
+  ],
+  [
+   "legal_entity",
+   {
+    "contact_email": "other@example.test",
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "id": 2,
+    "name": "E2",
+    "owner_user_id": 2
+   }
+  ],
+  [
+   "legal_entity",
+   {
+    "contact_email": "third@example.test",
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "id": 3,
+    "name": "E3",
+    "owner_user_id": 3
+   }
+  ],
+  [
+   "mail_suppression",
+   {
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "email_hash": "1c6aae1d1394671bc92b8c2a725d82400c32b77ae5a19a1c2d2a1cc6a5bc098e",
+    "scope": "onboarding"
+   }
+  ],
+  [
+   "mail_suppression",
+   {
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "email_hash": "bd2454f02f4ab260da2edb0ea15d08357ddeabdac650ad041e4ace29761cfc01",
+    "scope": "onboarding"
+   }
+  ],
+  [
+   "mail_suppression",
+   {
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "email_hash": "d285c1de1f7df90e1914af8521b840551d539d409c971b095fa378c13a2497d7",
+    "scope": "onboarding"
+   }
+  ],
+  [
+   "mail_suppression",
+   {
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "email_hash": "1c6aae1d1394671bc92b8c2a725d82400c32b77ae5a19a1c2d2a1cc6a5bc098e",
+    "scope": "other"
+   }
+  ],
+  [
+   "security_incident",
+   {
+    "affected_owner_ids": "[]",
+    "approx_subjects": null,
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "data_categories": "",
+    "detected_at": "2001-01-01T00:00:00+00:00",
+    "id": 1,
+    "notes": "",
+    "reported_by": "ops",
+    "risk_level": null,
+    "summary": "Old",
+    "updated_at": "2001-01-01T00:00:00+00:00"
+   }
+  ],
+  [
+   "consent_texts",
+   {
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "id": 1,
+    "lang": "en",
+    "purpose": "ads_google",
+    "text": "t",
+    "text_sha256": "x",
+    "version": "1"
+   }
+  ],
+  [
+   "ad_click",
+   {
+    "clicked_at": "2099-01-01T00:00:00+00:00",
+    "consent_text_id": 1,
+    "consented_at": "2001-01-01T00:00:00+00:00",
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "gbraid": "B2",
+    "gclid": "Cj0KCQ_abc-1",
+    "id": 1,
+    "platform": "google",
+    "user_account_id": 2,
+    "wbraid": null
+   }
+  ],
+  [
+   "ad_click",
+   {
+    "clicked_at": "2099-01-01T00:00:00+00:00",
+    "consent_text_id": 1,
+    "consented_at": "2001-01-01T00:00:00+00:00",
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "event_id": "ev-1",
+    "fbc": "fb.1.1.IwAR0",
+    "id": 2,
+    "platform": "meta",
+    "send_state": "pending",
+    "user_account_id": 2
+   }
+  ]
+ ],
+ "watch": {
+  "audit": "SELECT action, actor, detail, owner_user_id, actor_user_id, impersonator_user_id FROM audit ORDER BY id",
+  "console_mail_log": "SELECT outbox_id, to_email, subject FROM console_mail_log ORDER BY id",
+  "email_outbox": "SELECT id, kind, idempotency_key, owner_user_id, to_email, subject, state, attempts, provider_id, CASE WHEN payload LIKE '%\"claim_secret_enc\": \"%' THEN 1 ELSE 0 END AS sealed, CASE WHEN payload LIKE '%{{claim_secret}}%' THEN 1 ELSE 0 END AS marker, CASE WHEN kind = 'email_changed' THEN payload ELSE '' END AS notice FROM email_outbox ORDER BY id",
+  "login_token": "SELECT user_account_id, purpose, email, remember, next_path, used_at FROM login_token ORDER BY id",
+  "user_account": "SELECT id, username, display_name, email, role, active, session_version, email_verified_at, must_change_password, password_hash FROM user_account ORDER BY id"
+ }
+}

@@ -1,0 +1,102 @@
+{{/* App/app/templates/auth_base.html with _seo_head.html and _env_banner.html (brief 1502). */}}
+{{define "authpage.base" -}}
+<!doctype html>
+<html lang="{{.Lang}}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f7f5">
+  <meta name="csrf-token" content="{{.CSRF}}">
+  <title>{{.Title}}</title>
+  {{if .MetaDescription}}<meta name="description" content="{{.MetaDescription}}">
+{{end}}{{if .Canonical}}  <link rel="canonical" href="{{.Canonical}}">
+{{end}}{{range .Alternates}}  <link rel="alternate" hreflang="{{.Code}}" href="{{.Href}}">
+{{end}}
+  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="UbyHost">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="stylesheet" href="/static/tokens.css?v=20261022-0284">
+  <link rel="stylesheet" href="/static/app.css?v=20261104-0916">
+  <link rel="stylesheet" href="/static/components.css?v=20261002a">
+</head>
+<body class="auth-page">
+  <a class="skip-link" href="#main-content">{{t "a11y.skip_to_content"}}</a>
+  <div class="auth-layout">
+    <section id="main-content" class="auth-panel">
+      <header class="auth-brand">
+        <img class="auth-logo" src="/static/ubyhost-logo.png?v=20261004a" alt="UbyHost">
+      </header>
+      <form method="post" action="/language" class="lang-switch auth-lang-switch">
+        <input type="hidden" name="_csrf" value="{{.CSRF}}">
+        <input type="hidden" name="next" value="{{.LangNext}}">
+        <button type="submit" name="lang" value="en" class="{{if eq .Lang "en"}}is-active{{end}}">{{t "lang.en"}}</button>
+        <button type="submit" name="lang" value="cs" class="{{if eq .Lang "cs"}}is-active{{end}}">{{t "lang.cs"}}</button>
+        <button type="submit" name="lang" value="vi" class="{{if eq .Lang "vi"}}is-active{{end}}">{{t "lang.vi"}}</button>
+      </form>
+      {{if .UbyportMock}}
+  <aside class="env-banner mock" role="alert">
+    <strong>{{if .ProductionMock}}{{t "env.mock_production_title"}}{{else}}{{t "env.mock_title"}}{{end}}</strong>
+    <span class="env-body">{{if .ProductionMock}}{{t "env.mock_production_body"}}{{else}}{{t "env.mock_body"}}{{end}}</span>
+    <details class="env-more"><summary>{{t "how.toggle"}}</summary><span>{{if .ProductionMock}}{{t "env.mock_production_body"}}{{else}}{{t "env.mock_body"}}{{end}}</span></details>
+  </aside>
+      {{end}}
+      {{if .Notice}}
+      <p class="auth-notice" role="alert">{{t .Notice}}</p>
+      {{end}}
+      {{.Body}}
+      {{if .SignedIn}}
+      <form method="post" action="/logout" class="auth-not-you">
+        <input type="hidden" name="_csrf" value="{{.CSRF}}">
+        <button type="submit">{{t "auth.not_you"}}</button>
+      </form>
+      {{end}}
+      <footer class="auth-foot-legal small muted">
+        <p class="auth-foot-links">
+          <a href="/legal">{{t "legal.footer_link"}}</a>
+          &middot; <a href="/terms">{{t "terms.footer_link"}}</a>
+          &middot; <a href="/privacy">{{t "privacy.footer_link"}}</a>
+          &middot; <a href="/dpa">{{t "dpa.footer_link"}}</a>
+          {{if .OperatorEmail}}
+            &middot; <a href="mailto:{{.OperatorEmail}}">{{.OperatorEmail}}</a>
+          {{end}}
+        </p>
+      </footer>
+    </section>
+    <aside class="auth-hero" aria-hidden="true">
+      <div class="auth-hero-inner">
+        <img class="auth-hero-mark" src="/static/ubyhost-logo-stacked.png?v=20261004a" alt="">
+        <h2>{{t "login.hero_title"}}</h2>
+        <p>{{t "login.hero_body"}}</p>
+        <div class="auth-product-card">
+          <div class="auth-product-bar"><i></i><i></i><i></i><span>ubyhost.com</span></div>
+          <div class="auth-product-flow">
+            <div class="auth-flow-step is-blue">
+              <span>01</span><strong>{{t "landing.demo.scene.calendar"}}</strong><em>Airbnb</em>
+            </div>
+            <div class="auth-flow-line"></div>
+            <div class="auth-flow-step is-yellow">
+              <span>02</span><strong>{{t "landing.demo.scene.form"}}</strong><em>{{template "authpage.check"}}</em>
+            </div>
+            <div class="auth-flow-line"></div>
+            <div class="auth-flow-step is-green">
+              <span>03</span><strong>{{t "landing.demo.scene.receipt"}}</strong><em>UbyPort {{template "authpage.check"}}</em>
+            </div>
+          </div>
+        </div>
+        <span class="auth-float auth-float-ready">{{t "landing.demo.queue.ready"}} {{template "authpage.check"}}</span>
+      </div>
+    </aside>
+  </div>
+  <script src="/static/csrf.js?v=20260915a"></script>
+  <script src="/static/auth.js?v=20260925a"></script>
+  <script src="/static/pwa.js?v=20261102-0507" defer></script>
+</body>
+</html>
+{{end}}
+
+{{/* _icons.html icon('check', 14). */}}
+{{define "authpage.check"}}<svg class="ui-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="check"><path d="M20 6 9 17l-5-5"/></svg>{{end}}

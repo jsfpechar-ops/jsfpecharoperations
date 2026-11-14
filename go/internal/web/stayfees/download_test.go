@@ -1,0 +1,344 @@
+package stayfees
+
+// Brief 1583 route tests on PostgreSQL, with the made-up rows of
+// testdata/actions_golden.json. The PDFs are fake bytes sealed with the test
+// key; no real report is involved.
+
+import (
+	"archive/zip"
+	"bytes"
+	"context"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/session"
+)
+
+const (
+	pdfOne   = "%PDF-1.4 made-up report for filing 1\n"
+	pdfQuart = "%PDF-1.4 made-up quarterly report for filing 9\n"
+)
+
+// dlAudit is one audit row as the tests read it.
+type dlAudit struct{ actor, action, detail string }
+
+type downloadEnv struct {
+	t    *testing.T
+	pool *pgxpool.Pool
+	mux  *http.ServeMux
+	at   time.Time
+	keys *secure.MultiFernet
+}
+
+func newDownloadEnv(t *testing.T) *downloadEnv {
+	t.Helper()
+	g := loadGolden(t)
+	pool := testPool(t)
+	seed(t, pool, g)
+	at, err := time.Parse(time.RFC3339, g.Now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	getenv := goldenEnv()
+	keys, err := secure.LoadDataKeys(getenv)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for id, text := range map[int]string{1: pdfOne, 9: pdfQuart, 5: "%PDF-1.4 made-up Q3 report\n"} {
+		token, err := keys.EncryptString(text)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := pool.Exec(context.Background(), `UPDATE stay_fee_filing SET pdf_enc = $1 WHERE id = $2`, []byte(token), id); err != nil {
+			t.Fatal(err)
+		}
+	}
+	now := func() time.Time { return at }
+	mux := http.NewServeMux()
+	for _, r := range DownloadRoutes(pool, getenv, now) {
+		mux.Handle(r.Pattern, r.Handler)
+	}
+	return &downloadEnv{t: t, pool: pool, mux: mux, at: at, keys: keys}
+}
+
+func (e *downloadEnv) get(who, path string) *httptest.ResponseRecorder {
+	e.t.Helper()
+	c := goldenCase{Method: http.MethodGet, Path: path}
+	if who != "" {
+		c.Who = &who
+	}
+	rec := httptest.NewRecorder()
+	e.mux.ServeHTTP(rec, request(e.t, c, e.at))
+	return rec
+}
+
+func (e *downloadEnv) audits() []dlAudit {
+	e.t.Helper()
+	rs, err := e.pool.Query(context.Background(), `SELECT actor, action, detail FROM audit ORDER BY id`)
+	if err != nil {
+		e.t.Fatal(err)
+	}
+	defer rs.Close()
+	var out []dlAudit
+	for rs.Next() {
+		var a dlAudit
+		if err := rs.Scan(&a.actor, &a.action, &a.detail); err != nil {
+			e.t.Fatal(err)
+		}
+		out = append(out, a)
+	}
+	return out
+}
+
+// redirect checks a 303 and returns its target.
+func (e *downloadEnv) redirect(rec *httptest.ResponseRecorder) *url.URL {
+	e.t.Helper()
+	if rec.Code != http.StatusSeeOther {
+		e.t.Fatalf("status %d, want 303 (%s)", rec.Code, rec.Body.String())
+	}
+	u, err := url.Parse(rec.Header().Get("Location"))
+	if err != nil {
+		e.t.Fatal(err)
+	}
+	return u
+}
+
+func TestPDFDownload(t *testing.T) {
+	e := newDownloadEnv(t)
+	rec := e.get("host1", "/stay-fees/12/pdf?month=2026-10")
+	if rec.Code != http.StatusOK || rec.Body.String() != pdfOne {
+		t.Fatalf("status %d body %q", rec.Code, rec.Body.String())
+	}
+	for h, want := range map[string]string{
+		"Content-Type":        "application/pdf",
+		"Content-Disposition": `attachment; filename="hlaseni-poplatek-z-pobytu-2026-10-12.pdf"`,
+		"Cache-Control":       "no-store",
+	} {
+		if got := rec.Header().Get(h); got != want {
+			t.Errorf("%s %q, want %q", h, got, want)
+		}
+	}
+	want := dlAudit{"host1@example.test", "stay_fee_pdf", "apartment_id=12 period=2026-10 total=500"}
+	if a := e.audits(); len(a) != 1 || a[0] != want {
+		t.Errorf("audit %v, want [%v]", a, want)
+	}
+
+	// A quarterly seal covers every month of its quarter; the name carries the quarter key.
+	rec = e.get("host1", "/stay-fees/17/pdf?month=2026-08")
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "Q3") ||
+		rec.Header().Get("Content-Disposition") != `attachment; filename="hlaseni-poplatek-z-pobytu-2026-Q3-17.pdf"` {
+		t.Errorf("quarterly: %d %q %q", rec.Code, rec.Header().Get("Content-Disposition"), rec.Body.String())
+	}
+
+	// A seal without a stored PDF downloads as an empty file (pdf_bytes returns b""),
+	// even for a property whose fee was switched off since.
+	rec = e.get("host1", "/stay-fees/13/pdf?month=2026-10")
+	if rec.Code != http.StatusOK || rec.Body.Len() != 0 {
+		t.Errorf("empty seal: %d %q", rec.Code, rec.Body.String())
+	}
+
+	// An admin working inside the workspace.
+	if rec = e.get("admin_imp", "/stay-fees/12/pdf?month=2026-10"); rec.Code != http.StatusOK {
+		t.Errorf("admin: status %d", rec.Code)
+	}
+	var impersonator int64
+	if err := e.pool.QueryRow(context.Background(), `SELECT impersonator_user_id FROM audit ORDER BY id DESC LIMIT 1`).Scan(&impersonator); err != nil || impersonator != 3 {
+		t.Errorf("impersonator %d %v", impersonator, err)
+	}
+}
+
+func TestPDFDownloadRedirects(t *testing.T) {
+	e := newDownloadEnv(t)
+	// A future month goes back to the current one.
+	if u := e.redirect(e.get("host1", "/stay-fees/12/pdf?month=2027-01")); u.String() != "/stay-fees/12/pdf?month=2026-11" {
+		t.Errorf("future month: %q", u)
+	}
+	// The current month has no seal: back to the detail page with the hint.
+	u := e.redirect(e.get("host1", "/stay-fees/12/pdf"))
+	if u.Path != "/stay-fees/12" || u.Query().Get("month") != "2026-11" || u.Query().Get("err") != catalog.T("en", "flash.stay_fees.not_saved", nil) {
+		t.Errorf("not saved: %q", u)
+	}
+	// A bad month is the current month.
+	if u := e.redirect(e.get("host1", "/stay-fees/12/pdf?month=garbage")); u.Query().Get("month") != "2026-11" {
+		t.Errorf("bad month: %q", u)
+	}
+	// No seal and no fee: the property list.
+	for _, path := range []string{"/stay-fees/11/pdf?month=2026-10", "/stay-fees/20/pdf?month=2026-10", "/stay-fees/999/pdf", "/stay-fees/99999999999999999999/pdf"} {
+		u := e.redirect(e.get("host1", path))
+		if u.Path != "/stay-fees" || u.Query().Get("err") != catalog.T("en", "flash.error.no_such_apartment", nil) {
+			t.Errorf("%s: %q", path, u)
+		}
+	}
+	// Signed out.
+	if u := e.redirect(e.get("", "/stay-fees/12/pdf?month=2026-10")); u.Path != "/login" {
+		t.Errorf("signed out: %q", u)
+	}
+	// A non-integer id is a 422; HEAD is a 405.
+	if rec := e.get("host1", "/stay-fees/1x/pdf"); rec.Code != http.StatusUnprocessableEntity {
+		t.Errorf("text id: %d", rec.Code)
+	}
+	req := httptest.NewRequest(http.MethodHead, "/stay-fees/12/pdf?month=2026-10", nil)
+	req.AddCookie(&http.Cookie{Name: session.CookieName, Value: sessionFor("host1", e.at)})
+	head := httptest.NewRecorder()
+	e.mux.ServeHTTP(head, req)
+	if head.Code != http.StatusMethodNotAllowed || head.Header().Get("Allow") != "GET" {
+		t.Errorf("HEAD: %d %q", head.Code, head.Header().Get("Allow"))
+	}
+	if a := e.audits(); len(a) != 0 {
+		t.Errorf("a refusal wrote audit rows: %v", a)
+	}
+}
+
+func TestPDFDownloadUndecryptable(t *testing.T) {
+	e := newDownloadEnv(t)
+	if _, err := e.pool.Exec(context.Background(), `UPDATE stay_fee_filing SET pdf_enc = $1 WHERE id = 1`, []byte("not-a-token")); err != nil {
+		t.Fatal(err)
+	}
+	rec := e.get("host1", "/stay-fees/12/pdf?month=2026-10")
+	if rec.Code != http.StatusInternalServerError || strings.Contains(rec.Body.String(), "not-a-token") {
+		t.Errorf("status %d body %q", rec.Code, rec.Body.String())
+	}
+	if a := e.audits(); len(a) != 0 {
+		t.Errorf("audit %v", a)
+	}
+}
+
+type zipEntry struct{ name, body string }
+
+func readZip(t *testing.T, data []byte) ([]zipEntry, []uint16) {
+	t.Helper()
+	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out []zipEntry
+	var methods []uint16
+	for _, f := range zr.File {
+		rc, err := f.Open()
+		if err != nil {
+			t.Fatal(err)
+		}
+		body, err := io.ReadAll(rc)
+		rc.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+		out = append(out, zipEntry{f.Name, string(body)})
+		methods = append(methods, f.Method)
+	}
+	return out, methods
+}
+
+func TestPDFsZip(t *testing.T) {
+	e := newDownloadEnv(t)
+	rec := e.get("host1", "/stay-fees/pdfs.zip?month=2026-10")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status %d (%s)", rec.Code, rec.Body.String())
+	}
+	for h, want := range map[string]string{
+		"Content-Type":        "application/zip",
+		"Content-Disposition": `attachment; filename="poplatek-z-pobytu-2026-10.zip"`,
+		"Cache-Control":       "no-store",
+	} {
+		if got := rec.Header().Get(h); got != want {
+			t.Errorf("%s %q, want %q", h, got, want)
+		}
+	}
+	entries, methods := readZip(t, rec.Body.Bytes())
+	// Order is internal_name, id: "Byt B" (12), "Byt C" (13, no stored PDF), "Byt Q" (17, quarter seal).
+	want := []zipEntry{
+		{"hlaseni-poplatek-z-pobytu-2026-10-12-12.pdf", pdfOne},
+		{"hlaseni-poplatek-z-pobytu-2026-10--13.pdf", ""},
+		{"hlaseni-poplatek-z-pobytu-2026-Q4-17-17.pdf", pdfQuart},
+	}
+	if len(entries) != len(want) {
+		t.Fatalf("entries %v, want %v", entries, want)
+	}
+	for i := range want {
+		if entries[i] != want[i] {
+			t.Errorf("entry %d: %v, want %v", i, entries[i], want[i])
+		}
+		if methods[i] != zip.Deflate {
+			t.Errorf("entry %d method %d, want deflate", i, methods[i])
+		}
+	}
+	a := e.audits()
+	if len(a) != 1 || a[0] != (dlAudit{"host1@example.test", "stay_fee_pdf_zip", "month=2026-10 files=3"}) {
+		t.Errorf("audit %v", a)
+	}
+
+	// The other host sees only its own property, which has no seal.
+	u := e.redirect(e.get("host2", "/stay-fees/pdfs.zip?month=2026-10"))
+	if u.Path != "/stay-fees" || u.Query().Get("month") != "2026-10" || u.Query().Get("err") != catalog.T("en", "flash.stay_fees.not_saved", nil) {
+		t.Errorf("host2: %q", u)
+	}
+	// A future month and a missing month both mean the current month, 2026-11,
+	// where only the Q4 seal of apartment 17 applies (no redirect to the ZIP itself).
+	for _, path := range []string{"/stay-fees/pdfs.zip?month=2027-05", "/stay-fees/pdfs.zip", "/stay-fees/pdfs.zip?month=bad"} {
+		rec := e.get("host1", path)
+		if rec.Code != http.StatusOK || rec.Header().Get("Content-Disposition") != `attachment; filename="poplatek-z-pobytu-2026-11.zip"` {
+			t.Fatalf("%s: %d %q", path, rec.Code, rec.Header().Get("Content-Disposition"))
+		}
+		if got, _ := readZip(t, rec.Body.Bytes()); len(got) != 1 || got[0].name != "hlaseni-poplatek-z-pobytu-2026-Q4-17-17.pdf" {
+			t.Errorf("%s: entries %v", path, got)
+		}
+	}
+	// A month nobody sealed goes back to the list.
+	u = e.redirect(e.get("host1", "/stay-fees/pdfs.zip?month=2026-01"))
+	if u.Path != "/stay-fees" || u.Query().Get("month") != "2026-01" {
+		t.Errorf("no seals: %q", u)
+	}
+	// Signed out.
+	if u := e.redirect(e.get("", "/stay-fees/pdfs.zip?month=2026-10")); u.Path != "/login" {
+		t.Errorf("signed out: %q", u)
+	}
+	if n := len(e.audits()); n != 4 {
+		t.Errorf("want 4 audit rows (1 + 3 current-month ZIPs), got %d", n)
+	}
+	// A seal in August is the monthly one of apartment 12 (filing 3, no PDF) and Q3 of 17.
+	rec = e.get("host1", "/stay-fees/pdfs.zip?month=2026-08")
+	entries, _ = readZip(t, rec.Body.Bytes())
+	if len(entries) != 2 || entries[0].name != "hlaseni-poplatek-z-pobytu-2026-08-12-12.pdf" ||
+		entries[1].name != "hlaseni-poplatek-z-pobytu-2026-Q3-17-17.pdf" || !strings.Contains(entries[1].body, "Q3") {
+		t.Errorf("August entries %v", entries)
+	}
+}
+
+// TestPDFsZipBeatsDetailPattern: with a "GET /stay-fees/{apartment_id}" route
+// registered next to it (the detail page of brief 1582) the literal ZIP path
+// still reaches this handler, and the PDF route is not shadowed.
+func TestPDFsZipBeatsDetailPattern(t *testing.T) {
+	var detail []string
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /stay-fees/{apartment_id}", func(w http.ResponseWriter, r *http.Request) {
+		detail = append(detail, r.PathValue("apartment_id"))
+		w.WriteHeader(http.StatusTeapot)
+	})
+	for _, r := range DownloadRoutes(nil, goldenEnv(), time.Now) {
+		mux.Handle(r.Pattern, r.Handler)
+	}
+	for path, pattern := range map[string]string{
+		"/stay-fees/pdfs.zip":     "GET /stay-fees/pdfs.zip",
+		"/stay-fees/12/pdf":       "GET /stay-fees/{apartment_id}/pdf",
+		"/stay-fees/12":           "GET /stay-fees/{apartment_id}",
+		"/stay-fees/pdfs.zip/pdf": "GET /stay-fees/{apartment_id}/pdf",
+	} {
+		if _, got := mux.Handler(httptest.NewRequest(http.MethodGet, path, nil)); got != pattern {
+			t.Errorf("%s: pattern %q, want %q", path, got, pattern)
+		}
+	}
+	// A HEAD request reaches the ZIP handler too and is answered 405 without a pool.
+	head := httptest.NewRecorder()
+	mux.ServeHTTP(head, httptest.NewRequest(http.MethodHead, "/stay-fees/pdfs.zip", nil))
+	if head.Code != http.StatusMethodNotAllowed || len(detail) != 0 {
+		t.Errorf("HEAD zip: %d, detail hits %v", head.Code, detail)
+	}
+}

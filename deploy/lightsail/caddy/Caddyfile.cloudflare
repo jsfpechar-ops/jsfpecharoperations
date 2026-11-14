@@ -77,6 +77,28 @@
 	# UBYHOST_GO_PATHS: space-separated paths for the Go service (ubyhost-go); unset = all traffic to Python (compose defaults it to /__go_off__; an empty value breaks Caddy).
 	# Unset or empty keeps every request on Python, so this changes nothing until the owner sets it.
 	@go path {$UBYHOST_GO_PATHS:/__go_off__}
+	# 1630: a Go page that is not ported yet answers 501 plus X-Ubyhost-Not-Ported.
+	# For GET and HEAD (no body, safe to send again) Caddy then asks Python for the
+	# same URL. Other methods and every other 501 are passed through unchanged.
+	@go_read {
+		path {$UBYHOST_GO_PATHS:/__go_off__}
+		method GET HEAD
+	}
+	handle @go_read {
+		reverse_proxy ubyhost-go:8081 {
+			header_up CF-Connecting-IP {client_ip}
+			@not_ported {
+				status 501
+				header X-Ubyhost-Not-Ported 1
+			}
+			handle_response @not_ported {
+				reverse_proxy ubyhost:8080 {
+					# Always overwrite: a client-sent CF-Connecting-IP must never reach the app.
+					header_up CF-Connecting-IP {client_ip}
+				}
+			}
+		}
+	}
 	handle @go {
 		reverse_proxy ubyhost-go:8081 {
 			header_up CF-Connecting-IP {client_ip}

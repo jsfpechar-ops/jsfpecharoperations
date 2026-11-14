@@ -1,0 +1,177 @@
+{{/* Port of App/app/templates/settings_archived.html (brief 1608). The
+     back header is partials/settings_back_header.html with a help tip and the
+     pills partials/settings_pills.html; the restore forms post to the Python
+     unarchive routes exactly as the Jinja page does. */}}
+{{define "archived.title"}}{{end}}
+{{define "archived"}}
+{{host_alerts}}
+<div class="airbnb-header">
+  <a class="airbnb-back" href="/settings" aria-label="{{t "common.back"}}">{{icon "arrow-left" 20}}</a>
+  <h1 class="airbnb-title">{{if .TitleHead}}{{.TitleHead}} {{end}}<span class="tip-nowrap">{{.TitleLast}}{{help_tip "archive-retention-help" (t "archive.retention_note")}}</span></h1>
+</div>
+<nav class="settings-pills" aria-label="{{t "archive.title"}}">
+  {{range .Pills}}<a class="settings-pill{{if .Current}} is-current{{end}}" href="{{.Href}}"{{if .Current}} aria-current="page"{{end}}>{{.Label}}</a>{{end}}
+</nav>
+{{if eq .Counts.All 0}}
+  <div class="ui-empty">
+    <p>{{t "archive.empty_detailed"}}</p>
+    <div class="ui-form-actions ui-center">
+      <a class="ui-btn ui-btn-secondary" href="/reservations">{{t "nav.stays"}}</a>
+      <a class="ui-btn ui-btn-secondary" href="/apartments">{{t "nav.properties"}}</a>
+      <a class="ui-btn ui-btn-secondary" href="/housebook">{{t "nav.housebook"}}</a>
+      <a class="ui-btn ui-btn-secondary" href="/entities">{{t "nav.entities"}}</a>
+    </div>
+  </div>
+{{else}}
+  {{if and (.Show "stays") .Stays}}
+  <div class="heading-with-tip"><h2>{{t "archive.section.stays"}}</h2> {{help_tip "archive-stays-help" (t "archive.hint.stays")}}</div>
+  <div class="card scroll-x">
+    <table class="ui-table ui-table-stack">
+      <thead>
+        <tr>
+          <th>{{t "archive.col.stay"}}</th>
+          <th>{{t "archive.col.property"}}</th>
+          <th>{{t "archive.col.when"}}</th>
+          <th><span class="sr-only">{{t "common.actions"}}</span></th>
+        </tr>
+      </thead>
+      <tbody>
+      {{range .Stays}}
+        <tr class="clickable-row" data-href="/reservations/{{.ID}}" tabindex="0" role="link">
+          <td class="nowrap" data-label="{{t "archive.col.stay"}}">
+            <a class="row-primary-link" href="/reservations/{{.ID}}">
+              {{date_cz .DateFrom}} &ndash; {{date_cz .DateTo}}
+            </a>
+          </td>
+          <td data-label="{{t "archive.col.property"}}">{{.InternalName}}</td>
+          <td class="ui-sub" data-label="{{t "archive.col.when"}}">{{date_cz .Archived}}</td>
+          <td class="nowrap row-actions" data-label="">{{row_open (printf "/reservations/%d" .ID)}}
+            {{row_menu_begin}}
+              <a class="row-menu-item" href="/reservations/{{.ID}}" role="menuitem">{{t "common.open"}}</a>
+              <form method="post" action="/reservations/{{.ID}}/unarchive" class="row-menu-form">
+                <input type="hidden" name="return_to" value="{{$.ReturnTo}}">
+                <button class="row-menu-item" type="submit" role="menuitem">{{t "common.restore"}}</button>
+              </form>
+            {{row_menu_end}}
+          </td>
+        </tr>
+      {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else if eq .Type "stays"}}
+    <div class="ui-empty">{{t "archive.empty.stays"}}</div>
+  {{end}}
+
+  {{if and (.Show "properties") .Properties}}
+  <div class="heading-with-tip"><h2>{{t "archive.section.properties"}}</h2> {{help_tip "archive-properties-help" (t "archive.hint.properties")}}</div>
+  <div class="card scroll-x">
+    <table class="ui-table ui-table-stack">
+      <thead>
+        <tr>
+          <th>{{t "archive.col.property"}}</th>
+          <th>{{t "archive.col.when"}}</th>
+          <th>{{t "archive.col.stays_count"}}</th>
+          <th><span class="sr-only">{{t "common.actions"}}</span></th>
+        </tr>
+      </thead>
+      <tbody>
+      {{range .Properties}}
+        <tr class="clickable-row" data-href="/apartments/{{.ID}}" tabindex="0" role="link">
+          <td data-label="{{t "archive.col.property"}}">
+            <a class="row-primary-link" href="/apartments/{{.ID}}">{{.InternalName}}</a>
+          </td>
+          <td class="ui-sub" data-label="{{t "archive.col.when"}}">{{date_cz .Archived}}</td>
+          <td class="ui-num" data-label="{{t "archive.col.stays_count"}}">{{.Reservations}}</td>
+          <td class="nowrap row-actions" data-label="">{{row_open (printf "/apartments/%d" .ID)}}
+            {{row_menu_begin}}
+              <a class="row-menu-item" href="/apartments/{{.ID}}" role="menuitem">{{t "common.open"}}</a>
+              <form method="post" action="/apartments/{{.ID}}/unarchive" class="row-menu-form">
+                <input type="hidden" name="return_to" value="{{$.ReturnTo}}">
+                <button class="row-menu-item" type="submit" role="menuitem">{{t "common.restore"}}</button>
+              </form>
+            {{row_menu_end}}
+          </td>
+        </tr>
+      {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else if eq .Type "properties"}}
+    <div class="ui-empty">{{t "archive.empty.properties"}}</div>
+  {{end}}
+
+  {{if and (.Show "housebook") .Housebook}}
+  <div class="heading-with-tip"><h2>{{t "archive.section.guests"}}</h2> {{help_tip "archive-housebook-help" (t "archive.hint.housebook")}}</div>
+  <div class="card scroll-x">
+    <table class="ui-table ui-table-stack">
+      <thead>
+        <tr>
+          <th>{{t "archive.col.stay"}}</th>
+          <th>{{t "archive.col.property"}}</th>
+          <th>{{t "archive.col.guest"}}</th>
+          <th>{{t "archive.col.when"}}</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+      {{range .Housebook}}
+        <tr>
+          <td class="ui-sub nowrap" data-label="{{t "archive.col.stay"}}">{{date_cz .StayFrom}}<br>{{date_cz .StayTo}}</td>
+          <td data-label="{{t "archive.col.property"}}">{{.Apartment}}</td>
+          <td data-label="{{t "archive.col.guest"}}"><strong>{{.Surname}}</strong> {{.FirstName}}</td>
+          <td class="ui-sub" data-label="{{t "archive.col.when"}}">{{date_cz .Archived}}</td>
+          <td class="nowrap" data-label="">
+            <form method="post" action="/guests/{{.GuestID}}/unarchive" class="inline">
+              <input type="hidden" name="return_to" value="{{$.ReturnTo}}">
+              <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{t "common.restore"}}</button>
+            </form>
+          </td>
+        </tr>
+      {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else if eq .Type "housebook"}}
+    <div class="ui-empty">{{t "archive.empty.housebook"}}</div>
+  {{end}}
+
+  {{if and (.Show "entities") .Entities}}
+  <div class="heading-with-tip"><h2>{{t "archive.section.entities"}}</h2> {{help_tip "archive-entities-help" (t "archive.hint.entities")}}</div>
+  <div class="card scroll-x">
+    <table class="ui-table ui-table-stack">
+      <thead>
+        <tr>
+          <th>{{t "archive.col.name"}}</th>
+          <th>{{t "archive.col.when"}}</th>
+          <th>IČO</th>
+          <th><span class="sr-only">{{t "common.actions"}}</span></th>
+        </tr>
+      </thead>
+      <tbody>
+      {{range .Entities}}
+        <tr class="clickable-row" data-href="/entities?edit={{.ID}}" tabindex="0" role="link">
+          <td data-label="{{t "archive.col.name"}}">
+            <a class="row-primary-link" href="/entities?edit={{.ID}}">{{.Name}}</a>
+          </td>
+          <td class="ui-sub" data-label="{{t "archive.col.when"}}">{{date_cz .Archived}}</td>
+          <td class="ui-mono" data-label="IČO">{{or .ICO "—"}}</td>
+          <td class="nowrap row-actions" data-label="">{{row_open (printf "/entities?edit=%d" .ID)}}
+            {{row_menu_begin}}
+              <a class="row-menu-item" href="/entities?edit={{.ID}}" role="menuitem">{{t "common.open"}}</a>
+              <form method="post" action="/entities/{{.ID}}/unarchive" class="row-menu-form">
+                <input type="hidden" name="return_to" value="{{$.ReturnTo}}">
+                <button class="row-menu-item" type="submit" role="menuitem">{{t "common.restore"}}</button>
+              </form>
+            {{row_menu_end}}
+          </td>
+        </tr>
+      {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else if eq .Type "entities"}}
+    <div class="ui-empty">{{t "archive.empty.entities"}}</div>
+  {{end}}
+{{end}}
+{{end}}

@@ -1,0 +1,45 @@
+# Host strings read by the account pages of go/internal/web/auth (briefs
+# 1505 and 1506): the auth_base.html shell, account_accept,
+# two_factor_setup, two_factor_recovery, account_email_confirm and the
+# flashes their routes raise. App/scripts/auth_account_golden.py writes
+# acct_i18n.json from this list; App/tests/test_go_auth_account.py checks it
+# is fresh.
+a11y.skip_to_content
+lang.en
+lang.cs
+lang.vi
+env.mock_title
+env.mock_body
+env.mock_production_title
+env.mock_production_body
+how.toggle
+auth.notice.2fa_expired
+auth.notice.form_expired
+auth.notice.logged_out
+auth.notice.email_changed
+auth.not_you
+legal.footer_link
+terms.footer_link
+privacy.footer_link
+dpa.footer_link
+login.hero_title
+login.hero_body
+landing.demo.scene.calendar
+landing.demo.scene.form
+landing.demo.scene.receipt
+landing.demo.queue.ready
+account.accept.*
+account.2fa.*
+account.email_confirm.*
+common.copy
+common.copied
+login.link.expired.title
+auth.error.accept_required
+auth.error.setup_code_invalid
+auth.error.recent_login
+auth.error.admins_only
+auth.error.link_rate_limited
+flash.accounts.twofa_enabled
+users.email.error.invalid
+users.email.unchanged
+settings.account.email_sent

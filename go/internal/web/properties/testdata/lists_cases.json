@@ -338,8 +338,7 @@
    "name": "entities_edit_not_ported",
    "path": "/entities?edit=132101",
    "user": 132001,
-   "lang": "en",
-   "go": 501
+   "lang": "en"
   },
   {
    "name": "entities_alert_not_ported",

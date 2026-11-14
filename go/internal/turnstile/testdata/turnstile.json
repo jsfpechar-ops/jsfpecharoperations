@@ -1,0 +1,417 @@
+{
+ "env": [
+  {
+   "deployment": "local",
+   "enabled": false,
+   "env": {},
+   "hostnames": [],
+   "required": false,
+   "secret": "",
+   "site_key": "0x4AAAAAAE0LDM2eoIjssN00"
+  },
+  {
+   "deployment": "production",
+   "enabled": false,
+   "env": {
+    "UBYHOST_DEPLOYMENT": "production"
+   },
+   "hostnames": [],
+   "required": false,
+   "secret": "",
+   "site_key": "0x4AAAAAAE0LDM2eoIjssN00"
+  },
+  {
+   "deployment": "production",
+   "enabled": true,
+   "env": {
+    "TURNSTILE_HOSTNAMES": "ubyhost.com",
+    "TURNSTILE_SECRET": " s3cret ",
+    "UBYHOST_DEPLOYMENT": "production"
+   },
+   "hostnames": [
+    "ubyhost.com"
+   ],
+   "required": true,
+   "secret": "s3cret",
+   "site_key": "0x4AAAAAAE0LDM2eoIjssN00"
+  },
+  {
+   "deployment": "production",
+   "enabled": true,
+   "env": {
+    "TURNSTILE_HOSTNAMES": " UbyHost.com , ,www.ubyhost.com",
+    "TURNSTILE_SECRET": "s",
+    "UBYHOST_DEPLOYMENT": "PRODUCTION"
+   },
+   "hostnames": [
+    "ubyhost.com",
+    "www.ubyhost.com"
+   ],
+   "required": true,
+   "secret": "s",
+   "site_key": "0x4AAAAAAE0LDM2eoIjssN00"
+  },
+  {
+   "deployment": "staging",
+   "enabled": true,
+   "env": {
+    "TURNSTILE_HOSTNAMES": "ubyhost.com",
+    "TURNSTILE_SECRET": "s",
+    "UBYHOST_DEPLOYMENT": "staging"
+   },
+   "hostnames": [
+    "ubyhost.com"
+   ],
+   "required": false,
+   "secret": "s",
+   "site_key": "0x4AAAAAAE0LDM2eoIjssN00"
+  },
+  {
+   "deployment": "production",
+   "enabled": false,
+   "env": {
+    "TURNSTILE_HOSTNAMES": " , ",
+    "TURNSTILE_SECRET": "s",
+    "UBYHOST_DEPLOYMENT": "production"
+   },
+   "hostnames": [],
+   "required": false,
+   "secret": "s",
+   "site_key": "0x4AAAAAAE0LDM2eoIjssN00"
+  },
+  {
+   "deployment": "production",
+   "enabled": true,
+   "env": {
+    "TURNSTILE_HOSTNAMES": "a.com",
+    "TURNSTILE_SECRET": "s",
+    "TURNSTILE_SITE_KEY": " 0xOTHER ",
+    "UBYHOST_DEPLOYMENT": "production"
+   },
+   "hostnames": [
+    "a.com"
+   ],
+   "required": true,
+   "secret": "s",
+   "site_key": "0xOTHER"
+  }
+ ],
+ "hostnames": [
+  "ubyhost.com",
+  "www.ubyhost.com"
+ ],
+ "remoteip": "203.0.113.9",
+ "secret": "s3cret value&x",
+ "unreachable": {
+  "max": 5,
+  "window": 900
+ },
+ "verify": [
+  {
+   "body": "{\"success\": true, \"action\": \"host_login\", \"hostname\": \"ubyhost.com\"}",
+   "name": "ok",
+   "posted": {
+    "data": {
+     "remoteip": "203.0.113.9",
+     "response": "tok",
+     "secret": "s3cret value&x"
+    },
+    "extra": [],
+    "timeout": 10,
+    "url": "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+   },
+   "result": true,
+   "status": 200,
+   "token": "tok"
+  },
+  {
+   "body": "{\"success\": true, \"action\": \"host_login\", \"hostname\": \"UbyHost.COM\"}",
+   "name": "ok_upper_host",
+   "posted": {
+    "data": {
+     "remoteip": "203.0.113.9",
+     "response": "tok",
+     "secret": "s3cret value&x"
+    },
+    "extra": [],
+    "timeout": 10,
+    "url": "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+   },
+   "result": true,
+   "status": 200,
+   "token": "tok"
+  },
+  {
+   "body": "{\"success\": true, \"action\": \"host_login\", \"hostname\": \"evil.example\"}",
+   "name": "other_host",
+   "posted": {
+    "data": {
+     "remoteip": "203.0.113.9",
+     "response": "tok",
+     "secret": "s3cret value&x"
+    },
+    "extra": [],
+    "timeout": 10,
+    "url": "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+   },
+   "result": false,
+   "status": 200,
+   "token": "tok"
+  },
+  {
+   "body": "{\"success\": true, \"action\": \"host_login\"}",
+   "name": "no_host",
+   "posted": {
+    "data": {
+     "remoteip": "203.0.113.9",
+     "response": "tok",
+     "secret": "s3cret value&x"
+    },
+    "extra": [],
+    "timeout": 10,
+    "url": "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+   },
+   "result": false,
+   "status": 200,
+   "token": "tok"
+  },
+  {
+   "body": "{\"success\": true, \"action\": \"host_login\", \"hostname\": null}",
+   "name": "null_host",
+   "posted": {
+    "data": {
+     "remoteip": "203.0.113.9",
+     "response": "tok",
+     "secret": "s3cret value&x"
+    },
+    "extra": [],
+    "timeout": 10,
+    "url": "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+   },
+   "result": false,
+   "status": 200,
+   "token": "tok"
+  },
+  {
+   "body": "{\"success\": true, \"action\": \"guest_claim\", \"hostname\": \"ubyhost.com\"}",
+   "name": "wrong_action",
+   "posted": {
+    "data": {
+     "remoteip": "203.0.113.9",
+     "response": "tok",
+     "secret": "s3cret value&x"
+    },
+    "extra": [],
+    "timeout": 10,
+    "url": "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+   },
+   "result": false,
+   "status": 200,
+   "token": "tok"
+  },
+  {
+   "body": "{\"success\": true, \"hostname\": \"ubyhost.com\"}",
+   "name": "no_action",
+   "posted": {
+    "data": {
+     "remoteip": "203.0.113.9",
+     "response": "tok",
+     "secret": "s3cret value&x"
+    },
+    "extra": [],
+    "timeout": 10,
+    "url": "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+   },
+   "result": false,
+   "status": 200,
+   "token": "tok"
+  },
+  {
+   "body": "{\"success\": false, \"action\": \"host_login\", \"hostname\": \"ubyhost.com\"}",
+   "name": "success_false",
+   "posted": {
+    "data": {
+     "remoteip": "203.0.113.9",
+     "response": "tok",
+     "secret": "s3cret value&x"
+    },
+    "extra": [],
+    "timeout": 10,
+    "url": "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+   },
+   "result": false,
+   "status": 200,
+   "token": "tok"
+  },
+  {
+   "body": "{\"success\": 1, \"action\": \"host_login\", \"hostname\": \"ubyhost.com\"}",
+   "name": "success_one",
+   "posted": {
+    "data": {
+     "remoteip": "203.0.113.9",
+     "response": "tok",
+     "secret": "s3cret value&x"
+    },
+    "extra": [],
+    "timeout": 10,
+    "url": "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+   },
+   "result": false,
+   "status": 200,
+   "token": "tok"
+  },
+  {
+   "body": "{\"success\": \"true\", \"action\": \"host_login\", \"hostname\": \"ubyhost.com\"}",
+   "name": "success_string",
+   "posted": {
+    "data": {
+     "remoteip": "203.0.113.9",
+     "response": "tok",
+     "secret": "s3cret value&x"
+    },
+    "extra": [],
+    "timeout": 10,
+    "url": "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+   },
+   "result": false,
+   "status": 200,
+   "token": "tok"
+  },
+  {
+   "body": "{\"success\": true, \"action\": \"host_login\", \"hostname\": \"ubyhost.com\"}",
+   "name": "empty_token",
+   "posted": null,
+   "result": false,
+   "status": 200,
+   "token": ""
+  },
+  {
+   "body": "{\"success\": true, \"action\": \"host_login\", \"hostname\": \"ubyhost.com\"}",
+   "name": "max_token",
+   "posted": {
+    "data": {
+     "remoteip": "203.0.113.9",
+     "response": "tttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt",
+     "secret": "s3cret value&x"
+    },
+    "extra": [],
+    "timeout": 10,
+    "url": "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+   },
+   "result": true,
+   "status": 200,
+   "token": "tttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt"
+  },
+  {
+   "body": "{\"success\": true, \"action\": \"host_login\", \"hostname\": \"ubyhost.com\"}",
+   "name": "long_token",
+   "posted": null,
+   "result": false,
+   "status": 200,
+   "token": "ttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt"
+  },
+  {
+   "body": "{\"success\": true, \"action\": \"host_login\", \"hostname\": \"ubyhost.com\"}",
+   "name": "long_unicode_token",
+   "posted": {
+    "data": {
+     "remoteip": "203.0.113.9",
+     "response": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé",
+     "secret": "s3cret value&x"
+    },
+    "extra": [],
+    "timeout": 10,
+    "url": "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+   },
+   "result": true,
+   "status": 200,
+   "token": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé"
+  },
+  {
+   "body": "{\"success\": true, \"action\": \"host_login\", \"hostname\": \"ubyhost.com\"}",
+   "name": "status_500",
+   "posted": {
+    "data": {
+     "remoteip": "203.0.113.9",
+     "response": "tok",
+     "secret": "s3cret value&x"
+    },
+    "extra": [],
+    "timeout": 10,
+    "url": "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+   },
+   "result": "fail_open",
+   "status": 500,
+   "token": "tok"
+  },
+  {
+   "body": "{\"success\": true, \"action\": \"host_login\", \"hostname\": \"ubyhost.com\"}",
+   "name": "status_403",
+   "posted": {
+    "data": {
+     "remoteip": "203.0.113.9",
+     "response": "tok",
+     "secret": "s3cret value&x"
+    },
+    "extra": [],
+    "timeout": 10,
+    "url": "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+   },
+   "result": "fail_open",
+   "status": 403,
+   "token": "tok"
+  },
+  {
+   "body": "<html>busy</html>",
+   "name": "not_json",
+   "posted": {
+    "data": {
+     "remoteip": "203.0.113.9",
+     "response": "tok",
+     "secret": "s3cret value&x"
+    },
+    "extra": [],
+    "timeout": 10,
+    "url": "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+   },
+   "result": "fail_open",
+   "status": 200,
+   "token": "tok"
+  },
+  {
+   "body": null,
+   "name": "timeout",
+   "posted": {
+    "data": {
+     "remoteip": "203.0.113.9",
+     "response": "tok",
+     "secret": "s3cret value&x"
+    },
+    "extra": [],
+    "timeout": 10,
+    "url": "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+   },
+   "result": "fail_open",
+   "status": null,
+   "token": "tok"
+  },
+  {
+   "body": null,
+   "name": "connection",
+   "posted": {
+    "data": {
+     "remoteip": "203.0.113.9",
+     "response": "tok",
+     "secret": "s3cret value&x"
+    },
+    "extra": [],
+    "timeout": 10,
+    "url": "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+   },
+   "result": "fail_open",
+   "status": "connection",
+   "token": "tok"
+  }
+ ],
+ "verify_url": "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+}

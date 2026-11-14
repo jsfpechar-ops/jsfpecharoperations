@@ -1,0 +1,717 @@
+{
+ "cases": [
+  {
+   "method": "POST",
+   "name": "export",
+   "path": "/admin/users/2/export",
+   "session": {
+    "iat": -60,
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": "attachment; filename=\"workspace-2.zip\"",
+    "content_type": "application/zip",
+    "cookies": [],
+    "db": {
+     "audit": [
+      [
+       "workspace_exported",
+       "admin",
+       "user=2",
+       "2",
+       "1",
+       null
+      ]
+     ]
+    },
+    "location": null,
+    "manifest": {
+     "archived_rows": 0,
+     "counts": {
+      "guests": 1,
+      "invoices": 1,
+      "receipts": 1,
+      "stay_fee_filings": 0
+     },
+     "housebook_rows": 1,
+     "owner_user_id": 2,
+     "stay_fee_files": []
+    },
+    "status": 200,
+    "zip_names": [
+     "housebook.csv",
+     "guests/20111.pdf",
+     "receipts/101.pdf",
+     "invoices/201.pdf",
+     "manifest.json"
+    ]
+   }
+  },
+  {
+   "lang": "cs",
+   "method": "POST",
+   "name": "export_stale",
+   "path": "/admin/users/2/export",
+   "session": {
+    "iat": -3600,
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": "",
+    "cookies": [],
+    "db": {
+     "audit": []
+    },
+    "location": "/settings/security?err=Z%20bezpe%C4%8Dnostn%C3%ADch%20d%C5%AFvod%C5%AF%20se%20odhlaste%2C%20znovu%20p%C5%99ihlaste%20a%20do%2010%20minut%20to%20zopakujte.#settings-security",
+    "status": 303
+   }
+  },
+  {
+   "method": "POST",
+   "name": "missing_user",
+   "path": "/admin/users/99/export",
+   "session": {
+    "iat": -60,
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": "",
+    "cookies": [],
+    "db": {
+     "audit": []
+    },
+    "location": "/admin/customers/99?err=No%20such%20user.",
+    "status": 303
+   }
+  },
+  {
+   "method": "POST",
+   "name": "export_empty",
+   "path": "/admin/users/3/export",
+   "session": {
+    "iat": -60,
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": "attachment; filename=\"workspace-3.zip\"",
+    "content_type": "application/zip",
+    "cookies": [],
+    "db": {
+     "audit": [
+      [
+       "workspace_exported",
+       "admin",
+       "user=3",
+       "3",
+       "1",
+       null
+      ]
+     ]
+    },
+    "location": null,
+    "manifest": {
+     "archived_rows": 0,
+     "counts": {
+      "guests": 0,
+      "invoices": 0,
+      "receipts": 0,
+      "stay_fee_filings": 0
+     },
+     "housebook_rows": 0,
+     "owner_user_id": 3,
+     "stay_fee_files": []
+    },
+    "status": 200,
+    "zip_names": [
+     "housebook.csv",
+     "manifest.json"
+    ]
+   }
+  },
+  {
+   "method": "POST",
+   "name": "bad_id",
+   "path": "/admin/users/abc/export",
+   "session": {
+    "iat": -60,
+    "uid": 1
+   },
+   "want": {
+    "body": "{\"detail\":[{\"type\":\"int_parsing\",\"loc\":[\"path\",\"user_id\"],\"msg\":\"Input should be a valid integer, unable to parse string as an integer\",\"input\":\"abc\"}]}",
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": "application/json",
+    "cookies": [],
+    "db": {
+     "audit": []
+    },
+    "location": null,
+    "status": 422
+   }
+  },
+  {
+   "method": "POST",
+   "name": "bad_id_signed_out",
+   "path": "/admin/users/abc/export",
+   "want": {
+    "body": "{\"detail\":[{\"type\":\"int_parsing\",\"loc\":[\"path\",\"user_id\"],\"msg\":\"Input should be a valid integer, unable to parse string as an integer\",\"input\":\"abc\"}]}",
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": "application/json",
+    "cookies": [],
+    "db": {
+     "audit": []
+    },
+    "location": null,
+    "status": 422
+   }
+  },
+  {
+   "lang": "cs",
+   "method": "POST",
+   "name": "host",
+   "path": "/admin/users/2/export",
+   "session": {
+    "uid": 2
+   },
+   "want": {
+    "body": "Pouze pro administrátory.",
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": "",
+    "cookies": [],
+    "db": {
+     "audit": []
+    },
+    "location": null,
+    "status": 403
+   }
+  },
+  {
+   "method": "POST",
+   "name": "signed_out",
+   "path": "/admin/users/2/export",
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": "",
+    "cookies": [],
+    "db": {
+     "audit": []
+    },
+    "location": "/login?next=/admin/users/2/export",
+    "status": 303
+   }
+  },
+  {
+   "csrf": false,
+   "headers": {
+    "origin": "http://testserver"
+   },
+   "method": "POST",
+   "name": "no_csrf_same_site",
+   "path": "/admin/users/2/export",
+   "session": {
+    "iat": -60,
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": "",
+    "cookies": [],
+    "db": {
+     "audit": []
+    },
+    "location": "/login?notice=form_expired",
+    "status": 303
+   }
+  },
+  {
+   "csrf": false,
+   "method": "POST",
+   "name": "no_csrf_cross_site",
+   "path": "/admin/users/2/export",
+   "session": {
+    "iat": -60,
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": null,
+    "content_type": "",
+    "cookies": [],
+    "db": {
+     "audit": []
+    },
+    "location": "/login?notice=form_expired",
+    "status": 303
+   }
+  },
+  {
+   "method": "POST",
+   "name": "export_impersonating",
+   "path": "/admin/users/3/export",
+   "session": {
+    "as": 2,
+    "ast": -60,
+    "iat": -60,
+    "uid": 1
+   },
+   "want": {
+    "body": null,
+    "cache_control": "no-store, private",
+    "content_disposition": "attachment; filename=\"workspace-3.zip\"",
+    "content_type": "application/zip",
+    "cookies": [],
+    "db": {
+     "audit": [
+      [
+       "workspace_exported",
+       "admin",
+       "user=3",
+       "3",
+       "1",
+       "1"
+      ]
+     ]
+    },
+    "location": null,
+    "manifest": {
+     "archived_rows": 0,
+     "counts": {
+      "guests": 0,
+      "invoices": 0,
+      "receipts": 0,
+      "stay_fee_filings": 0
+     },
+     "housebook_rows": 0,
+     "owner_user_id": 3,
+     "stay_fee_files": []
+    },
+    "status": 200,
+    "zip_names": [
+     "housebook.csv",
+     "manifest.json"
+    ]
+   }
+  }
+ ],
+ "env": {
+  "UBYHOST_ADS_CONVERSION_NAME": "UbyHost sign-up",
+  "UBYHOST_SECRET_KEY": "auth-routes-golden-secret-0123456789-abcdef",
+  "UBYHOST_SIGNUP_ENABLED": "1"
+ },
+ "fixed": "2099-03-04T05:06:07.890123+00:00",
+ "nonce": "golden-csrf-nonce",
+ "secret": "auth-routes-golden-secret-0123456789-abcdef",
+ "seed": [
+  [
+   "user_account",
+   {
+    "active": 1,
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "email": "admin@example.test",
+    "id": 1,
+    "must_change_password": 0,
+    "password_hash": "",
+    "role": "admin",
+    "session_version": 1,
+    "username": "admin"
+   }
+  ],
+  [
+   "user_account",
+   {
+    "active": 1,
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "email": "host@example.test",
+    "email_verified_at": "2001-01-02T03:04:05+00:00",
+    "id": 2,
+    "must_change_password": 0,
+    "onboarding_emails_opt_out": 1,
+    "onboarding_emails_opt_out_at": "2001-01-01T00:00:00+00:00",
+    "password_hash": "",
+    "role": "host",
+    "session_version": 1,
+    "username": "host"
+   }
+  ],
+  [
+   "user_account",
+   {
+    "active": 1,
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "email": "totp@example.test",
+    "id": 3,
+    "must_change_password": 0,
+    "password_hash": "",
+    "role": "host",
+    "session_version": 1,
+    "username": "totp"
+   }
+  ],
+  [
+   "user_account",
+   {
+    "active": 1,
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "email": "late@example.test",
+    "id": 4,
+    "must_change_password": 0,
+    "password_hash": "",
+    "role": "host",
+    "session_version": 1,
+    "username": "late"
+   }
+  ],
+  [
+   "user_account",
+   {
+    "active": 0,
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "email": "gone@example.test",
+    "id": 5,
+    "must_change_password": 0,
+    "password_hash": "",
+    "role": "host",
+    "session_version": 1,
+    "username": "gone"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "terms",
+    "id": 1,
+    "method": "clickwrap",
+    "user_account_id": 1,
+    "version": "1.7"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "privacy",
+    "id": 2,
+    "method": "clickwrap",
+    "user_account_id": 1,
+    "version": "1.8"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "dpa",
+    "id": 3,
+    "method": "clickwrap",
+    "user_account_id": 1,
+    "version": "1.8"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "terms",
+    "id": 4,
+    "method": "clickwrap",
+    "user_account_id": 2,
+    "version": "1.7"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "privacy",
+    "id": 5,
+    "method": "clickwrap",
+    "user_account_id": 2,
+    "version": "1.8"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "dpa",
+    "id": 6,
+    "method": "clickwrap",
+    "user_account_id": 2,
+    "version": "1.8"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "terms",
+    "id": 7,
+    "method": "clickwrap",
+    "user_account_id": 3,
+    "version": "1.7"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "privacy",
+    "id": 8,
+    "method": "clickwrap",
+    "user_account_id": 3,
+    "version": "1.8"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "dpa",
+    "id": 9,
+    "method": "clickwrap",
+    "user_account_id": 3,
+    "version": "1.8"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "terms",
+    "id": 10,
+    "method": "clickwrap",
+    "user_account_id": 5,
+    "version": "1.7"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "privacy",
+    "id": 11,
+    "method": "clickwrap",
+    "user_account_id": 5,
+    "version": "1.8"
+   }
+  ],
+  [
+   "legal_acceptance",
+   {
+    "accepted_at": "2001-01-01T00:00:00+00:00",
+    "document": "dpa",
+    "id": 12,
+    "method": "clickwrap",
+    "user_account_id": 5,
+    "version": "1.8"
+   }
+  ],
+  [
+   "legal_entity",
+   {
+    "contact_email": "Host <Host@Example.test>",
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "id": 1,
+    "name": "E1",
+    "owner_user_id": 2
+   }
+  ],
+  [
+   "legal_entity",
+   {
+    "contact_email": "other@example.test",
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "id": 2,
+    "name": "E2",
+    "owner_user_id": 2
+   }
+  ],
+  [
+   "legal_entity",
+   {
+    "contact_email": "third@example.test",
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "id": 3,
+    "name": "E3",
+    "owner_user_id": 3
+   }
+  ],
+  [
+   "mail_suppression",
+   {
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "email_hash": "1c6aae1d1394671bc92b8c2a725d82400c32b77ae5a19a1c2d2a1cc6a5bc098e",
+    "scope": "onboarding"
+   }
+  ],
+  [
+   "mail_suppression",
+   {
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "email_hash": "bd2454f02f4ab260da2edb0ea15d08357ddeabdac650ad041e4ace29761cfc01",
+    "scope": "onboarding"
+   }
+  ],
+  [
+   "mail_suppression",
+   {
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "email_hash": "d285c1de1f7df90e1914af8521b840551d539d409c971b095fa378c13a2497d7",
+    "scope": "onboarding"
+   }
+  ],
+  [
+   "mail_suppression",
+   {
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "email_hash": "1c6aae1d1394671bc92b8c2a725d82400c32b77ae5a19a1c2d2a1cc6a5bc098e",
+    "scope": "other"
+   }
+  ],
+  [
+   "security_incident",
+   {
+    "affected_owner_ids": "[]",
+    "approx_subjects": null,
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "data_categories": "",
+    "detected_at": "2001-01-01T00:00:00+00:00",
+    "id": 1,
+    "notes": "",
+    "reported_by": "ops",
+    "risk_level": null,
+    "summary": "Old",
+    "updated_at": "2001-01-01T00:00:00+00:00"
+   }
+  ],
+  [
+   "consent_texts",
+   {
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "id": 1,
+    "lang": "en",
+    "purpose": "ads_google",
+    "text": "t",
+    "text_sha256": "x",
+    "version": "1"
+   }
+  ],
+  [
+   "ad_click",
+   {
+    "clicked_at": "2099-01-01T00:00:00+00:00",
+    "consent_text_id": 1,
+    "consented_at": "2001-01-01T00:00:00+00:00",
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "gbraid": "B2",
+    "gclid": "Cj0KCQ_abc-1",
+    "id": 1,
+    "platform": "google",
+    "user_account_id": 2,
+    "wbraid": null
+   }
+  ],
+  [
+   "ad_click",
+   {
+    "clicked_at": "2099-01-01T00:00:00+00:00",
+    "consent_text_id": 1,
+    "consented_at": "2001-01-01T00:00:00+00:00",
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "event_id": "ev-1",
+    "fbc": "fb.1.1.IwAR0",
+    "id": 2,
+    "platform": "meta",
+    "send_state": "pending",
+    "user_account_id": 2
+   }
+  ],
+  [
+   "apartment",
+   {
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "id": 201,
+    "internal_name": "Studio",
+    "legal_entity_id": 1,
+    "owner_user_id": 2
+   }
+  ],
+  [
+   "reservation",
+   {
+    "apartment_id": 201,
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "date_from": "2026-02-01",
+    "date_to": "2026-02-03",
+    "id": 2011,
+    "source": "ical",
+    "status": "confirmed",
+    "uid": "u2011",
+    "updated_at": "2001-01-01T00:00:00+00:00"
+   }
+  ],
+  [
+   "guest",
+   {
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "first_name": "Guest",
+    "id": 20111,
+    "nationality": "CZE",
+    "reservation_id": 2011,
+    "submit_state": "sent",
+    "surname": "Export",
+    "updated_at": "2001-01-01T00:00:00+00:00"
+   }
+  ],
+  [
+   "submission",
+   {
+    "apartment_id": 201,
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "id": 101,
+    "receipt_pdf": "JVBERi0xLjQgcmVjZWlwdAo=",
+    "state": "ok"
+   }
+  ],
+  [
+   "invoice",
+   {
+    "buyer_name": "B",
+    "created_at": "2001-01-01T00:00:00+00:00",
+    "id": 201,
+    "issue_date": "2026-05-01",
+    "kind": "invoice",
+    "lang": "cs",
+    "legal_entity_id": 1,
+    "number": "2026-0001",
+    "owner_user_id": 2,
+    "pdf_blob": "%PDF-1.4 invoice one",
+    "seller_name": "S",
+    "seller_seat": "Seat",
+    "seq_no": 1,
+    "seq_year": 2026,
+    "total_haler": 100,
+    "vat_status": "non_payer",
+    "vs": "2026000100"
+   }
+  ]
+ ]
+}

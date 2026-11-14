@@ -1,0 +1,12 @@
+{{define "title"}}{{.T "signup.sent.page_title"}}{{end}}
+{{define "meta"}}{{end}}
+{{define "body"}}
+<section class="auth-card">
+  <h1 class="auth-title">{{.T "signup.sent.title"}}</h1>
+  <p class="auth-lede">{{.TP "signup.sent.body" "email" .V.Email}}</p>
+  <p class="auth-lede">{{.T "signup.sent.expiry"}}</p>
+  <div class="auth-foot">
+    <p>{{.T "signup.sent.spam"}}</p>
+  </div>
+</section>
+{{end}}
