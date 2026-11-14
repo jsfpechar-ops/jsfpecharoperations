@@ -1,6 +1,6 @@
 # 1632: Pass the SES settings to the Go service (login, confirm and invite mails leave at once)
 
-Status: todo
+Status: review
 Depends on: none (Go login, email-change and admin-invite code already calls `mail.SendNow`; main has #1021) | Base commit: bdfaa4d | Branch: task/1632-go-ses-keys
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (about 9 calls)
 
