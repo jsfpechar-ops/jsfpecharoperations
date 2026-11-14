@@ -1,6 +1,6 @@
 # 1420: Go invoice pages: package foundation, decimal maths, string catalog
 
-Status: todo
+Status: review
 Depends on: none (the PDF library `go/internal/pdf/` and the billing job are merged) | Base commit: the working branch head (no fixed commit) | Branch: the current branch (one big PR)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B
 
