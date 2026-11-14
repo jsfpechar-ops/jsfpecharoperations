@@ -1,6 +1,6 @@
 # 1432: Go port of Havel's confirm cards and the support mail to the operator
 
-Status: todo
+Status: review
 Depends on: 1431 | Base commit: the current head of the working branch | Branch: the current branch (one big PR)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B (privacy-relevant outbound request: the assistant's model calls)
 
