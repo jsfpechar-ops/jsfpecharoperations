@@ -1,6 +1,6 @@
 # 1609: Go data exports, part 5: the purge button
 
-Status: todo
+Status: review
 Depends on: 1608 | Base commit: none (one big PR mode: the branch that is checked out) | Branch: the current one
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
