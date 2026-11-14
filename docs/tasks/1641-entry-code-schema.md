@@ -1,6 +1,6 @@
 # 1641: Goose 00018 — apartment entry code + external guide URL columns, export guard
 
-Status: blocked — waits for 1640 (or 1474) so the new columns do not stop the Python app at boot
+Status: blocked — waits for 1640 on main so the new columns do not stop the Python app at boot
 Depends on: 1640 | Base commit: bdfaa4d4 | Branch: task/1641-entry-code-schema
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier A (migrations): brief reviewed as exact diff
 

@@ -1,8 +1,8 @@
 # 1640: Python and Go schema checks accept columns that only a goose file adds
 
-Status: blocked — owner decision: run this as port plumbing (go-first exception 1) now, or wait for 1474 (sqlite-retirement S6, not written yet). Not runnable until the owner picks.
-Depends on: owner decision above | Base commit: bdfaa4d4 when cut | Branch: none yet
-Executor: Haiku 5.5 | Not runnable. Tier A (schema check; a wrong change stops the app at boot). The brief writer is Opus (go-first: tier A).
+Status: todo — owner approved 2026-11-14: run now as go-first exception 1 (port plumbing).
+Depends on: none | Base commit: bdfaa4d4 when cut | Branch: none yet
+Executor: Haiku 5.5 | Tier A (schema check; a wrong change stops the app at boot). The brief writer is Opus (go-first: tier A).
 
 ## 1. Objective
 
@@ -65,4 +65,4 @@ None.
 
 ## Owner steps
 
-1. Decide: approve 1640 as go-first exception 1 (plumbing), or wait for 1474 (S6). Write the line in `docs/context/decisions.md`.
+1. Done 2026-11-14: approved as go-first exception 1 (decisions.md).

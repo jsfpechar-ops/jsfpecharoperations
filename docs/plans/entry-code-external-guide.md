@@ -16,7 +16,7 @@ Goal: a host-typed building/gate entry code and an optional external (e.g. Notio
 
 | # | Title | Status | Depends on | Tier |
 |---|---|---|---|---|
-| [1640](../tasks/1640-schema-check-goose-only-columns.md) | Schema checks accept goose-only columns | blocked: owner picks exception 1 now or 1474 (S6) | owner | A |
+| [1640](../tasks/1640-schema-check-goose-only-columns.md) | Schema checks accept goose-only columns | todo (owner approved exception 1, 2026-11-14) | none | A |
 | [1641](../tasks/1641-entry-code-schema.md) | Goose 00018 columns + export guard | blocked on 1640 | 1640 | A |
 | [1642](../tasks/1642-entry-code-retention.md) | Retention step `entry_codes` (Go + Python twin for the golden) | todo after 1641 | 1641 | A |
 | [1643](../tasks/1643-go-mail-entry-code-marker.md) | Go mail `{{entry_code}}` marker | **todo, runnable now** | none | B |
