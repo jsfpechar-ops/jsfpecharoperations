@@ -1,6 +1,6 @@
 # 1583: Go stay fee PDF downloads (single report and monthly ZIP)
 
-Status: todo
+Status: review
 Depends on: 1240, 1242, 1330 | Base commit: current tip of the working branch | Branch: task/1583-go-stay-fee-pdf-downloads
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B
 
