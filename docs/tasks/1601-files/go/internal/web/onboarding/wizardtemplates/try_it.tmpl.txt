@@ -1,0 +1,92 @@
+{{/* Port of App/app/templates/setup_wizard/try_it.html. Brief 1601. setup_demo is .Demo (state none,
+     open or registered); the message is wizard.guest_link.message_template split at the guest link. */}}
+{{define "wizard_help"}}{{help_tip "setup-try-help" (print (t "why.try") " " (t "setup_guide.try.help"))}}{{end}}
+{{define "wizard_content"}}
+
+{{$state := .Demo.State}}
+{{if eq $state "registered"}}
+<section class="setup-rehearsal" aria-labelledby="rehearsal-title" data-rehearsal>
+  <h2 id="rehearsal-title">{{t "wizard.rehearsal.title"}}</h2>
+  <ol class="setup-rehearsal-steps">
+    {{range .Workflow}}{{$real := le .N 2}}
+    <li class="{{if $real}}is-done{{else}}is-test{{end}}" data-rehearsal-step="{{.Key}}">
+      <span class="workflow-num" aria-hidden="true">{{if $real}}{{icon "check" 14}}{{else}}{{.N}}{{end}}</span>
+      <span class="setup-rehearsal-copy">
+        <strong>{{t (print "workflow.step." .Key)}}</strong>
+        <span>{{if eq .Key "police_scheduled"}}{{t "wizard.rehearsal.police_scheduled" "hours" $.RehearsalHours}}{{else if eq .Key "police_immediate"}}{{t "wizard.rehearsal.police_immediate" "minutes" $.SweepMinutes}}{{else}}{{t (print "wizard.rehearsal." .Key)}}{{end}}</span>
+      </span>
+      <span class="ui-badge ui-badge-{{if $real}}done{{else}}neutral{{end}}" data-tone="{{if $real}}green{{else}}grey{{end}}">{{if $real}}{{t "wizard.rehearsal.badge_done"}}{{else}}{{t "wizard.rehearsal.badge_test"}}{{end}}</span>
+    </li>
+    {{end}}
+  </ol>
+  <p class="setup-wizard-instruction">{{t "wizard.rehearsal.never_police"}}</p>
+</section>
+{{end}}
+<section class="setup-wizard-demo" aria-labelledby="demo-property-heading">
+  <h2 id="demo-property-heading">{{t "wizard.try_it.property"}}</h2>
+  <a class="setup-demo-property" href="/apartments/{{.Apt.ID}}?view=overview">
+    <span class="setup-demo-mark" aria-hidden="true">{{wizard_first .Apt.InternalName}}</span>
+    <span><strong>{{.Apt.InternalName}}</strong><span>{{or .Apt.CityEN .Apt.AddrObec}}</span></span>
+    <span class="ui-badge ui-badge-neutral" data-tone="grey">{{t "wizard.try_it.preview"}}</span>
+  </a>
+  <h2>{{t "wizard.try_it.stay"}}</h2>
+  <div class="setup-demo-stay">
+    <div><strong>{{t "wizard.try_it.guest"}}</strong><span>{{.Apt.InternalName}}</span></div>
+    <div><strong>{{t "wizard.try_it.dates"}}</strong><span>{{.DateCZ .Demo.DateFrom}} – {{.DateCZ .Demo.DateTo}}</span></div>
+    <div>
+      {{if ne $state "none"}}
+      {{progress_pill .Demo.Status .Apt.AutomationMode (kv "is_demo" true)}}
+      {{guest_count .Demo.Progress}}
+      {{else}}<span class="ui-badge ui-badge-neutral" data-tone="grey">{{t "wizard.try_it.preview"}}</span>{{end}}
+    </div>
+    {{if eq $state "registered"}}<a class="ui-btn ui-btn-secondary" href="/reservations/{{.Demo.ReservationID}}">{{t "setup_guide.try.open_stay"}}</a>{{end}}
+  </div>
+</section>
+<section class="setup-demo-message" aria-labelledby="demo-message-heading">
+  <header><span class="setup-demo-mark" aria-hidden="true">{{.OperatorMark}}</span><div><h2 id="demo-message-heading">{{t "wizard.try_it.message"}} <span class="ui-badge ui-badge-neutral" data-tone="grey">{{t "wizard.try_it.preview"}}</span></h2><strong>{{.OperatorFirst}}</strong></div>{{help_tip "demo-message-help" (t "wizard.try_it.message_help")}}</header>
+  <div class="ui-banner ui-banner-neutral setup-demo-disclaimer" role="status">{{icon "info" 20}}<div class="grow">{{t "wizard.try_it.model_note"}}</div></div>
+  <div class="setup-demo-bubble">{{range .DemoMessage}}{{.Text}}{{if not .Last}}{{if eq $state "none"}}<button class="setup-demo-message-link" type="submit" form="setup-create-demo">{{$.Permalink}}</button>{{else}}<a href="{{$.Demo.GuestURL}}" target="_blank" rel="noopener">{{$.Permalink}}</a>{{end}}{{end}}{{end}}</div>
+  {{if ne $state "registered"}}<p class="setup-wizard-instruction">{{t "wizard.try_it.instructions"}}</p>{{end}}
+</section>
+{{if eq $state "open"}}
+<p class="setup-wizard-instruction" data-wizard-demo-wait>{{t "wizard.try_it.waiting"}}</p>
+{{end}}
+{{end}}
+{{define "wizard_actions"}}
+{{$state := .Demo.State}}
+{{if eq $state "registered"}}
+<form method="post" action="/apartments/{{.Apt.ID}}/setup" class="inline setup-wizard-skip">
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <input type="hidden" name="step" value="try_it">
+  <button class="ui-btn ui-btn-secondary" type="submit" name="action" value="skip" formnovalidate>{{t "wizard.try_it.delete_continue"}}</button>
+</form>
+<form method="post" action="/apartments/{{.Apt.ID}}/setup" class="inline">
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <input type="hidden" name="step" value="try_it">
+  <button class="ui-btn ui-btn-primary" type="submit" name="action" value="keep_demo" formnovalidate>{{t "wizard.try_it.keep"}}</button>
+</form>
+{{else if eq $state "open"}}
+<form method="post" action="/apartments/{{.Apt.ID}}/setup" class="inline setup-wizard-skip">
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <input type="hidden" name="step" value="try_it">
+  <button class="ui-btn ui-btn-secondary" type="submit" name="action" value="skip" formnovalidate>{{t "wizard.try_it.skip"}}</button>
+</form>
+<form method="get" action="/apartments/{{.Apt.ID}}/setup/try_it" class="inline">
+  <button class="ui-btn ui-btn-secondary" type="submit">{{t "wizard.try_it.check_again"}}</button>
+</form>
+<a class="ui-btn ui-btn-primary" href="{{.Demo.GuestURL}}" target="_blank" rel="noopener">{{t "setup_guide.try.open"}}</a>
+{{else}}
+<form method="post" action="/apartments/{{.Apt.ID}}/setup" class="inline setup-wizard-skip">
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <input type="hidden" name="step" value="try_it">
+  <button class="ui-btn ui-btn-secondary" type="submit" name="action" value="skip" formnovalidate>{{t "wizard.try_it.skip"}}</button>
+</form>
+<form method="post" action="/apartments/{{.Apt.ID}}/setup" class="inline" id="setup-create-demo" target="_blank" rel="noopener" data-wizard-demo>
+  <input type="hidden" name="action" value="demo">
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <input type="hidden" name="step" value="try_it">
+  <button class="ui-btn ui-btn-primary" type="submit" name="action" value="demo">{{t "setup_guide.try.create"}}</button>
+</form>
+<noscript><a class="ui-btn ui-btn-secondary" href="/apartments/{{.Apt.ID}}/setup/try_it">{{t "wizard.try_it.check_again"}}</a></noscript>
+{{end}}
+{{end}}
