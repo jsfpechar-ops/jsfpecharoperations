@@ -156,7 +156,7 @@ def cases() -> dict:
         leon.rate_limit.record = record
         db.query = patched_db(SCENARIOS[scenario], FACT_ROWS)
         try:
-            result = leon.try_reply({"id": 1, "internal_name": 'Flat "A" <b>'}, text, lang=lang, host_name=host_name)
+            result = leon.try_reply({"id": 11, "internal_name": 'Flat "A" <b>'}, text, lang=lang, host_name=host_name)
         finally:
             ai.call, leon.plan_multiplier, leon.rate_limit.blocked, leon.rate_limit._count, leon.rate_limit.record, db.query = saved
         out["try"].append({"name": name, "text": text, "scenario": scenario, "lang": lang, "host_name": host_name, "mult": mult, "blocked": blocked, "count": count,
