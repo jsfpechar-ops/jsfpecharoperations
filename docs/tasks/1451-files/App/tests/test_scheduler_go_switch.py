@@ -11,7 +11,7 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from app import alerts, config, db, jobqueue, scheduler
+from app import alerts, config, db, scheduler
 
 ON_POSTGRES = config.DB_BACKEND == "postgresql"
 
@@ -86,6 +86,16 @@ def test_a_switch_go_cannot_use_is_ignored_and_python_enqueues(monkeypatch, capl
         scheduler.shutdown()
 
 
+def test_the_kill_switch_also_stops_the_watch(monkeypatch):
+    # UBYHOST_ENABLE_SCHEDULER=0: start() returns before anything, so no
+    # go_watch either; Go refuses the same value (TestKillSwitchStopsTheGoScheduler).
+    monkeypatch.setenv("UBYHOST_SCHEDULER", "go")
+    _all_queued(monkeypatch)
+    monkeypatch.setattr(config, "ENABLE_SCHEDULER", False)
+    assert scheduler.start() is False
+    assert scheduler._scheduler is None
+
+
 def test_cron_times_match_start(monkeypatch):
     monkeypatch.delenv("UBYHOST_SCHEDULER", raising=False)
     _all_queued(monkeypatch)
@@ -113,86 +123,128 @@ def watch_db(monkeypatch):
     _all_queued(monkeypatch)
     db.execute("DELETE FROM job")
     db.execute("DELETE FROM alert WHERE dedupe_key = ?", (scheduler.GO_WATCH_ALERT,))
-    scheduler._go_fallback.clear()
     yield
-    scheduler._go_fallback.clear()
     db.execute("DELETE FROM job")
     db.execute("DELETE FROM alert WHERE dedupe_key = ?", (scheduler.GO_WATCH_ALERT,))
-
-
-def _go_row(kind, created, done=True):
-    """A row as the Go scheduler writes it, finished by its consumer."""
-    db.execute(
-        "INSERT INTO job (kind, run_at, payload, done_at, created_at) VALUES (?, ?, '{}', ?, ?)",
-        (kind, created, created if done else None, created),
-    )
-
-
-def _count(kind=None):
-    if kind:
-        return db.query_one("SELECT COUNT(*) AS n FROM job WHERE kind = ?", (kind,))["n"]
-    return db.query_one("SELECT COUNT(*) AS n FROM job")["n"]
-
-
-def _alert():
-    return alerts.open_alert(scheduler.GO_WATCH_ALERT)
 
 
 def _stamp(moment):
     return moment.astimezone(timezone.utc).replace(microsecond=0).isoformat()
 
 
+def _go_row(kind, created, done=True):
+    """A row as the Go scheduler writes it (payload '{}'), finished by its consumer."""
+    db.execute(
+        "INSERT INTO job (kind, run_at, payload, done_at, created_at) VALUES (?, ?, '{}', ?, ?)",
+        (kind, created, created if done else None, created),
+    )
+
+
+def _go_fresh(now, skip=()):
+    """Go is healthy: every kind has a row a minute old (daily ones too)."""
+    for kind in scheduler.JOB_KINDS:
+        if kind not in skip:
+            _go_row(kind, _stamp(now - timedelta(minutes=1)))
+
+
+def _finish_all():
+    db.execute("UPDATE job SET done_at = created_at WHERE done_at IS NULL")
+
+
+def _watch_rows(kind=None):
+    sql = "SELECT COUNT(*) AS n FROM job WHERE payload = ?"
+    args = [scheduler.GO_WATCH_PAYLOAD]
+    if kind:
+        sql += " AND kind = ?"
+        args.append(kind)
+    return db.query_one(sql, tuple(args))["n"]
+
+
+def _alert():
+    return alerts.open_alert(scheduler.GO_WATCH_ALERT)
+
+
 def test_watch_with_go_healthy_enqueues_nothing(watch_db):
     now = datetime.now(timezone.utc)
-    for kind in scheduler.JOB_KINDS:
-        if kind in scheduler.CRON_TIMES:
-            # the last local cron time, as Go writes it
-            due = scheduler._go_due_since(kind, now + timedelta(minutes=scheduler.GO_WATCH_CRON_GRACE_MINUTES))
-            _go_row(kind, due)
-        else:
-            _go_row(kind, _stamp(now - timedelta(minutes=scheduler.job_intervals()[kind])))
-    before = _count()
+    _go_fresh(now)
     assert scheduler.watch_go_scheduler(now) == []
-    assert _count() == before
+    assert _watch_rows() == 0
     assert _alert() is None
 
 
-def test_watch_with_go_silent_enqueues_and_alerts_until_go_is_back(watch_db):
+def test_go_silent_takes_over_on_the_normal_schedule_and_alerts(watch_db):
     now = datetime.now(timezone.utc)
-    old = _stamp(now - timedelta(days=3))
     for kind in scheduler.JOB_KINDS:
-        _go_row(kind, old)
-    added = scheduler.watch_go_scheduler(now)
-    assert sorted(added) == sorted(scheduler.JOB_KINDS)
-    assert _count() == 2 * len(scheduler.JOB_KINDS)
+        _go_row(kind, _stamp(now - timedelta(days=3)))
+    assert sorted(scheduler.watch_go_scheduler(now)) == sorted(scheduler.JOB_KINDS)
     alert = _alert()
     assert alert is not None and alert["level"] == "critical" and alert["kind"] == "job_failed"
-    assert "submit" in alert["message"] and "door_codes" in alert["message"]
-    # One open row per kind: a second pass adds nothing, the alert stays.
+    assert alert["message"].startswith(scheduler.GO_WATCH_MESSAGE)
+    assert "check that the ubyhost-go container is running" in alert["message"]
+    # One open row per kind: the same pass again adds nothing.
     assert scheduler.watch_go_scheduler(now) == []
-    assert _count() == 2 * len(scheduler.JOB_KINDS)
+    # Five minutes on, with the rows run: the 1- and 5-minute kinds again,
+    # nothing slower (normal schedule, not twice the interval).
+    _finish_all()
+    later = datetime.now(timezone.utc) + timedelta(minutes=5, seconds=1)
+    assert sorted(scheduler.watch_go_scheduler(later)) == ["door_codes", "mail", "push"]
     assert _alert() is not None
-    # Go writes again: the consumer finished the Python rows, Go adds newer ones.
-    db.execute("UPDATE job SET done_at = created_at WHERE done_at IS NULL")
-    later = _stamp(datetime.now(timezone.utc) + timedelta(seconds=5))
+
+
+def test_hand_back_to_go_resolves_and_stops_the_takeover(watch_db):
+    now = datetime.now(timezone.utc)
     for kind in scheduler.JOB_KINDS:
-        _go_row(kind, later)
+        _go_row(kind, _stamp(now - timedelta(days=3)))
+    scheduler.watch_go_scheduler(now)
+    _finish_all()
+    later = datetime.now(timezone.utc) + timedelta(minutes=5, seconds=1)
+    _go_fresh(later)  # Go writes again
+    assert scheduler.watch_go_scheduler(later) == []
+    assert _alert() is None
+
+
+def test_a_worker_restart_does_not_leave_the_alert_open(watch_db):
+    # The alert was raised by a worker process that is gone; this one has
+    # no memory of it. Go is healthy: the first pass closes the alert.
+    alerts.raise_alert("critical", "job_failed", f"{scheduler.GO_WATCH_MESSAGE} any job.", "", dedupe_key=scheduler.GO_WATCH_ALERT)
+    now = datetime.now(timezone.utc)
+    _go_fresh(now)
     assert scheduler.watch_go_scheduler(now) == []
     assert _alert() is None
-    assert scheduler._go_fallback == {}
+
+
+def test_a_job_queue_failure_alert_is_left_alone(watch_db):
+    # The same card from a failing drain (scheduler._job_failed) is not ours to close.
+    alerts.raise_alert("warning", "job_failed", "Background job 'job queue' failed.", "", dedupe_key=scheduler.GO_WATCH_ALERT)
+    now = datetime.now(timezone.utc)
+    _go_fresh(now)
+    assert scheduler.watch_go_scheduler(now) == []
+    assert _alert() is not None
+
+
+def test_go_restart_across_a_daily_time_one_fallback_then_resolved(watch_db):
+    now = datetime.now(timezone.utc)
+    _go_fresh(now, skip={"billing"})
+    due = datetime.fromisoformat(scheduler._go_due_since("billing", now))
+    _go_row("billing", _stamp(due - timedelta(days=1)))  # Go was down at the last 06:00
+    assert scheduler.watch_go_scheduler(now) == ["billing"]
+    assert _watch_rows("billing") == 1 and _alert() is not None
+    _finish_all()  # the billing run is done
+    assert scheduler.watch_go_scheduler(now + timedelta(minutes=1)) == []
+    assert _watch_rows("billing") == 1
+    assert _alert() is None
 
 
 def test_watch_waits_for_open_rows_and_long_runs(watch_db):
     now = datetime.now(timezone.utc)
+    _go_fresh(now, skip={"ical", "submit"})
     old = _stamp(now - timedelta(days=3))
     _go_row("ical", old, done=False)  # still open: the queue's own stuck check covers it
     db.execute(
         "INSERT INTO job (kind, run_at, payload, done_at, created_at) VALUES ('submit', ?, '{}', ?, ?)",
         (old, _stamp(now - timedelta(minutes=5)), old),
-    )  # a long run that finished 5 minutes ago counts as fresh
-    added = scheduler.watch_go_scheduler(now)
-    assert "ical" not in added and "submit" not in added
-    assert _count("ical") == 1 and _count("submit") == 1
+    )  # a long run that finished 5 minutes ago counts as fresh while Go runs
+    assert scheduler.watch_go_scheduler(now) == []
 
 
 def test_watch_daily_job_waits_for_its_grace(watch_db):
@@ -200,10 +252,9 @@ def test_watch_daily_job_waits_for_its_grace(watch_db):
     now_local = datetime.now(prague)
     yesterday = (now_local - timedelta(days=1)).replace(hour=6, minute=0, second=0, microsecond=0)
     today_due = yesterday + timedelta(days=1)  # 06:00 local today (wall clock)
-    _go_row("billing", _stamp(yesterday))
     in_grace = today_due + timedelta(minutes=scheduler.GO_WATCH_CRON_GRACE_MINUTES - 1)
-    assert "billing" not in scheduler.watch_go_scheduler(in_grace.astimezone(timezone.utc))
-    assert _count("billing") == 1
     past_grace = today_due + timedelta(minutes=scheduler.GO_WATCH_CRON_GRACE_MINUTES + 1)
+    _go_fresh(past_grace.astimezone(timezone.utc), skip={"billing"})
+    _go_row("billing", _stamp(yesterday))
+    assert "billing" not in scheduler.watch_go_scheduler(in_grace.astimezone(timezone.utc))
     assert "billing" in scheduler.watch_go_scheduler(past_grace.astimezone(timezone.utc))
-    assert _count("billing") == 2
