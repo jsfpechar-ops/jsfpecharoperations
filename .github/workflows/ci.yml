@@ -230,13 +230,22 @@ jobs:
           echo "$out"
           grep -q "no migrations to run" <<<"$out"
 
+      - name: pg_dump from the PostgreSQL service image
+        run: |
+          set -euo pipefail
+          # 1472: the runner's pg_dump can be older than the service (postgres:17);
+          # run the service container's own pg_dump instead. No new package.
+          printf '#!/bin/sh\nexec docker exec -i %s pg_dump "$@"\n' "${{ job.services.postgres.id }}" > "$RUNNER_TEMP/bin/pg_dump"
+          chmod +x "$RUNNER_TEMP/bin/pg_dump"
+          pg_dump --version
+
       - name: Run PostgreSQL tests
         if: hashFiles('App/tests/test_db_postgres.py') != ''
         env:
           UBYHOST_TEST_DATABASE_URL: postgresql://postgres:ubyhost@localhost:5432/ubyhost_test
         run: |
           set -o pipefail
-          python -m pytest tests/test_db_postgres.py -q -rs --tb=short 2>&1 | tee "$RUNNER_TEMP/pg-tests.log" | tail -30
+          python -m pytest tests/test_db_postgres.py tests/test_goose_equivalence.py -q -rs --tb=short 2>&1 | tee "$RUNNER_TEMP/pg-tests.log" | tail -30
 
       - name: Fail if PostgreSQL tests were skipped
         if: hashFiles('App/tests/test_db_postgres.py') != ''
