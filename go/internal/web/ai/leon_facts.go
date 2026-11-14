@@ -1,0 +1,392 @@
+package ai
+
+// leon_facts.go: what the Leon setup wizard reads about a property: the host's
+// property row, the card list and its progress, the listing imports, and the
+// state of the wizard. Ports of App/app/leon.py (lines 442-480), of
+// App/app/guest_guide.py items() and progress() (lines 152-168, 278-295), of
+// guest_guide_import.imports, in_progress, sources_left and enabled
+// (lines 111-137, 199-210), guest_guide_merge.drafted_count (255-261) and of
+// ai.enabled_for_property for Leon (ai.py 107-115). Nothing here writes.
+
+import (
+	"context"
+	_ "embed"
+	"encoding/json"
+	"errors"
+	"sort"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/jackc/pgx/v5"
+)
+
+// LeonFeature is leon.FEATURE.
+const LeonFeature = "leon"
+
+//go:embed leon_catalog.json
+var leonCatalogJSON []byte
+
+// leonCatalog is the guest guide's topics, kinds and must-have cards (guest_guide.py),
+// written by App/scripts/leon_golden.py.
+var leonCatalog struct {
+	Topics       []string    `json:"topics"`
+	Kinds        [][2]string `json:"kinds"` // kind, topic, in KINDS order
+	MustHave     []string    `json:"must_have"`
+	TermsVersion string      `json:"terms_version"`
+	SetupSteps   []string    `json:"setup_steps"`
+}
+
+var leonCatalogOnce sync.Once
+
+func leonCat() {
+	leonCatalogOnce.Do(func() {
+		if err := json.Unmarshal(leonCatalogJSON, &leonCatalog); err != nil {
+			panic("leon: bad leon_catalog.json: " + err.Error())
+		}
+	})
+}
+
+// LeonSetupSteps is leon.SETUP_STEPS; "done" is the finish page, not a step.
+func LeonSetupSteps() []string { leonCat(); return leonCatalog.SetupSteps }
+
+// LeonTermsVersion is leon.LEON_TERMS_VERSION.
+func LeonTermsVersion() string { leonCat(); return leonCatalog.TermsVersion }
+
+// LeonApartment is the part of the apartment row the wizard reads.
+type LeonApartment struct {
+	ID            int64
+	OwnerID       int64 // 0 when the property has no owner
+	Name          string
+	Enabled       bool   // leon_enabled
+	TermsVersion  string // leon_terms_version
+	LegalEntityID int64  // 0 when none
+}
+
+// LeonStore is the database side of the Leon pages.
+type LeonStore struct{ HavelStore }
+
+// Apartment is routes/guest_guide._home: the host's own property, or nil when
+// it is not the workspace's or is archived (the page answers 404).
+func (s LeonStore) Apartment(ctx context.Context, owner, id int64) (*LeonApartment, error) {
+	var a LeonApartment
+	var enabled int64
+	err := s.Pool.QueryRow(ctx, `SELECT id, COALESCE(owner_user_id, 0), COALESCE(internal_name, ''), leon_enabled,
+       COALESCE(leon_terms_version, ''), COALESCE(legal_entity_id, 0)
+  FROM apartment WHERE id = $1 AND owner_user_id IS NOT DISTINCT FROM $2 AND archived_at IS NULL`, id, owner).
+		Scan(&a.ID, &a.OwnerID, &a.Name, &enabled, &a.TermsVersion, &a.LegalEntityID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	a.Enabled = enabled != 0
+	return &a, err
+}
+
+// Offered is ai.enabled_for_property("leon", id): the owner's plan allows Leon
+// (not paused while billing is on), the feature is switched on with a key, and
+// the owner is on the test list while it is set.
+func (s LeonStore) Offered(ctx context.Context, a LeonApartment) (bool, error) {
+	if a.OwnerID != 0 {
+		var status string
+		err := s.Pool.QueryRow(ctx, `SELECT status FROM billing_account WHERE owner_user_id = $1`, a.OwnerID).Scan(&status)
+		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+			return false, err
+		}
+		if err == nil && HavelBillingOn(s.Env) && status == "paused" {
+			return false, nil
+		}
+	}
+	var email string
+	err := s.Pool.QueryRow(ctx, `SELECT COALESCE(u.email, '') FROM apartment a JOIN user_account u ON u.id = a.owner_user_id WHERE a.id = $1`, a.ID).Scan(&email)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return false, err
+	}
+	return HavelAIOn(s.Env, LeonFeature, email), nil
+}
+
+// --- the card list -----------------------------------------------------------------
+
+// LeonItem is one row of guest_guide.items().
+type LeonItem struct {
+	ID                                                      int64
+	Kind, Topic, Title, Location, Steps, WatchOut, VideoURL string
+	Visibility, State, Source                               string
+	SortOrder, Photos                                       int64
+}
+
+// Items is guest_guide.items: every card of the property in guest order. A
+// built-in kind takes its topic and place from the catalog, so cards added
+// later line up with the ones a property already had.
+func (s LeonStore) Items(ctx context.Context, apartmentID int64) ([]LeonItem, error) {
+	leonCat()
+	rows, err := s.Pool.Query(ctx, `SELECT i.id, i.kind, i.topic, i.title, i.location, i.steps, i.watch_out, i.video_url, i.visibility, i.state, i.source, i.sort_order,
+       (SELECT COUNT(*) FROM guide_photo p WHERE p.item_id = i.id)
+  FROM guide_item i WHERE i.apartment_id = $1 ORDER BY i.sort_order, i.id`, apartmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []LeonItem
+	for rows.Next() {
+		var it LeonItem
+		if err := rows.Scan(&it.ID, &it.Kind, &it.Topic, &it.Title, &it.Location, &it.Steps, &it.WatchOut, &it.VideoURL, &it.Visibility, &it.State, &it.Source, &it.SortOrder, &it.Photos); err != nil {
+			return nil, err
+		}
+		out = append(out, it)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return LeonOrder(out), nil
+}
+
+// LeonOrder applies the catalog and sorts by topic, place and id (guest_guide.items).
+func LeonOrder(items []LeonItem) []LeonItem {
+	leonCat()
+	topicIndex := map[string]int{}
+	for i, t := range leonCatalog.Topics {
+		topicIndex[t] = i
+	}
+	kindIndex := map[string]int{}
+	kindTopic := map[string]string{}
+	for i, k := range leonCatalog.Kinds {
+		kindIndex[k[0]], kindTopic[k[0]] = i, k[1]
+	}
+	for i := range items {
+		if t, ok := kindTopic[items[i].Kind]; ok {
+			items[i].Topic, items[i].SortOrder = t, int64(kindIndex[items[i].Kind])
+		}
+	}
+	rank := func(t string) int {
+		if i, ok := topicIndex[t]; ok {
+			return i
+		}
+		return len(leonCatalog.Topics)
+	}
+	sort.SliceStable(items, func(a, b int) bool {
+		x, y := items[a], items[b]
+		if rank(x.Topic) != rank(y.Topic) {
+			return rank(x.Topic) < rank(y.Topic)
+		}
+		if x.SortOrder != y.SortOrder {
+			return x.SortOrder < y.SortOrder
+		}
+		return x.ID < y.ID
+	})
+	return items
+}
+
+// LeonProgress is guest_guide.progress.
+type LeonProgress struct {
+	Done, Total, Answered, Cards, Check, MustHaveDone, MustHaveTotal int
+	Live                                                             bool
+}
+
+// LeonProgressOf is guest_guide.progress for a card list in guest order.
+func LeonProgressOf(items []LeonItem) LeonProgress {
+	leonCat()
+	p := LeonProgress{Cards: len(items), MustHaveTotal: len(leonCatalog.MustHave)}
+	must := map[string]string{}
+	must5 := map[string]bool{}
+	for _, m := range leonCatalog.MustHave {
+		must5[m] = true
+	}
+	for _, it := range items {
+		if must5[it.Kind] {
+			must[it.Kind] = it.State
+		}
+		if it.State == "done" || it.State == "skipped" {
+			p.Answered++
+		}
+		if it.State == "skipped" {
+			continue
+		}
+		p.Total++
+		if it.State == "done" {
+			p.Done++
+		}
+		if it.State == "check" {
+			p.Check++
+		}
+	}
+	for _, m := range leonCatalog.MustHave {
+		if s := must[m]; s == "done" || s == "skipped" {
+			p.MustHaveDone++
+		}
+	}
+	p.Live = p.MustHaveDone == p.MustHaveTotal
+	return p
+}
+
+// LeonOpenCards are the cards the wizard still asks about: to check, or a
+// must-have card still missing.
+func LeonOpenCards(items []LeonItem) []LeonItem {
+	leonCat()
+	must := map[string]bool{}
+	for _, m := range leonCatalog.MustHave {
+		must[m] = true
+	}
+	var out []LeonItem
+	for _, it := range items {
+		if it.State == "check" || (it.State == "missing" && must[it.Kind]) {
+			out = append(out, it)
+		}
+	}
+	return out
+}
+
+// --- imports ---------------------------------------------------------------------------
+
+// LeonImport is one row of guest_guide_import.imports().
+type LeonImport struct {
+	ID                                  int64
+	Source, URL, Status, Error, Created string
+}
+
+// CreatedDay is created_at[:10].
+func (i LeonImport) CreatedDay() string { return havelClip(i.Created, 10) }
+
+// MergeFailed is row.status == 'failed' and row.error startswith 'merge'.
+func (i LeonImport) MergeFailed() bool {
+	return i.Status == "failed" && strings.HasPrefix(i.Error, "merge")
+}
+
+// Imports is guest_guide_import.imports: the newest ten, without the raw data.
+func (s LeonStore) Imports(ctx context.Context, apartmentID int64) ([]LeonImport, error) {
+	rows, err := s.Pool.Query(ctx, `SELECT id, source, url, status, COALESCE(error, ''), created_at FROM guide_import
+ WHERE apartment_id = $1 ORDER BY id DESC LIMIT 10`, apartmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []LeonImport
+	for rows.Next() {
+		var i LeonImport
+		if err := rows.Scan(&i.ID, &i.Source, &i.URL, &i.Status, &i.Error, &i.Created); err != nil {
+			return nil, err
+		}
+		out = append(out, i)
+	}
+	return out, rows.Err()
+}
+
+// SourcesLeft is guest_guide_import.sources_left: the platforms this property
+// may still import (a failed run does not use one up), in form order.
+func (s LeonStore) SourcesLeft(ctx context.Context, apartmentID int64) ([]string, error) {
+	rows, err := s.Pool.Query(ctx, `SELECT DISTINCT source FROM guide_import WHERE apartment_id = $1 AND status != 'failed'`, apartmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	used := map[string]bool{}
+	for rows.Next() {
+		var src string
+		if err := rows.Scan(&src); err != nil {
+			return nil, err
+		}
+		used[src] = true
+	}
+	var out []string
+	for _, src := range []string{"booking", "airbnb"} {
+		if !used[src] {
+			out = append(out, src)
+		}
+	}
+	return out, rows.Err()
+}
+
+// DraftedCount is guest_guide_merge.drafted_count.
+func (s LeonStore) DraftedCount(ctx context.Context, apartmentID int64) (int64, error) {
+	var n int64
+	err := s.Pool.QueryRow(ctx, `SELECT COUNT(*) FROM guide_item WHERE apartment_id = $1 AND state = 'check' AND source IN ('booking', 'airbnb')`, apartmentID).Scan(&n)
+	return n, err
+}
+
+// LeonImportOn is guest_guide_import.enabled: an Apify token is set.
+func LeonImportOn(env HavelEnv) bool {
+	return strings.TrimSpace(env.Get("UBYHOST_APIFY_TOKEN", "")) != ""
+}
+
+// LeonFacts is routes/leon_setup._facts.
+type LeonFacts struct {
+	Progress      LeonProgress
+	Live          bool
+	Checking      int
+	ImportOn      bool
+	Imports       []LeonImport
+	ImportStarted bool
+	ImportBusy    bool
+	Sources       []string
+	Drafts        int64
+	OpenCards     []LeonItem
+}
+
+// Facts is _facts(apartment_id).
+func (s LeonStore) Facts(ctx context.Context, apartmentID int64) (LeonFacts, error) {
+	items, err := s.Items(ctx, apartmentID)
+	if err != nil {
+		return LeonFacts{}, err
+	}
+	f := LeonFacts{Progress: LeonProgressOf(items), OpenCards: LeonOpenCards(items), ImportOn: LeonImportOn(s.Env)}
+	f.Live, f.Checking = f.Progress.Live, f.Progress.Check
+	if f.Imports, err = s.Imports(ctx, apartmentID); err != nil {
+		return f, err
+	}
+	for _, i := range f.Imports {
+		if i.Status != "failed" {
+			f.ImportStarted = true
+		}
+		if i.Status == "queued" || i.Status == "running" {
+			f.ImportBusy = true
+		}
+	}
+	if f.Sources, err = s.SourcesLeft(ctx, apartmentID); err != nil {
+		return f, err
+	}
+	f.Drafts, err = s.DraftedCount(ctx, apartmentID)
+	return f, err
+}
+
+// --- the state of the wizard -------------------------------------------------------------
+
+// LeonTermsCurrent is leon.terms_current.
+func LeonTermsCurrent(a LeonApartment) bool { return a.TermsVersion == LeonTermsVersion() }
+
+// LeonHostState is leon.host_state: off, terms, on or waiting.
+func LeonHostState(a LeonApartment, live bool) string {
+	switch {
+	case !a.Enabled:
+		return "off"
+	case !LeonTermsCurrent(a):
+		return "terms"
+	case live:
+		return "on"
+	}
+	return "waiting"
+}
+
+// LeonSetupStep is leon.setup_step: the first step the host still has to do.
+func LeonSetupStep(a LeonApartment, live bool, checking int, importStarted, importOn bool) string {
+	if st := LeonHostState(a, live); st == "off" || st == "terms" {
+		return "switch_on"
+	}
+	if importOn && !importStarted && !live {
+		return "import"
+	}
+	if !live || checking > 0 {
+		return "cards"
+	}
+	return "try"
+}
+
+// TryLeft is leon.try_left: test messages left today for the property.
+func (s LeonStore) TryLeft(ctx context.Context, apartmentID int64, at time.Time) (int64, error) {
+	n, err := s.count(ctx, "leon_try", strconv.FormatInt(apartmentID, 10), leonTryWindow, at)
+	return max(0, leonTryMax-n), err
+}
+
+const (
+	leonTryMax    = 5
+	leonTryWindow = 24 * 3600
+)
