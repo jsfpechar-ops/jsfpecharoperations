@@ -17,6 +17,26 @@ func TestGuestToken(t *testing.T) {
 	}
 }
 
+func TestGuestPayURL(t *testing.T) {
+	env := connectEnv("test", nil)
+	got, err := guestPayURL(env, 10, "2600000010")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "https://ubyhost.example/pay/10/" + guestToken(connectTestSecret, 10, "2600000010")
+	if got != want {
+		t.Errorf("guestPayURL = %q, want %q", got, want)
+	}
+	app := connectEnv("test", map[string]string{"UBYHOST_APP_BASE_URL": "https://app.example/"})
+	got, err = guestPayURL(app, 10, "2600000010")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(got, "https://app.example/pay/10/") {
+		t.Errorf("APP_BASE_URL not used: %q", got)
+	}
+}
+
 func TestPaylinkNameCustomNote(t *testing.T) {
 	long := strings.Repeat("ž", 70)
 	for _, c := range []struct {

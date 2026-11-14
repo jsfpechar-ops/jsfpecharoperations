@@ -56,6 +56,8 @@ const (
 const (
 	requestRowSQL = `SELECT owner_user_id, status, rail, reason, amount_czk, reservation_id, guest_email
 		FROM payment_request WHERE id = $1`
+	requestSendRowSQL = `SELECT owner_user_id, status, rail, reason, amount_czk, reservation_id, guest_email, variable_symbol
+		FROM payment_request WHERE id = $1`
 	requestStayOwnerSQL = `SELECT r.id FROM reservation r JOIN apartment a ON a.id = r.apartment_id
 		WHERE r.id = $1 AND a.owner_user_id = $2`
 	requestInsertSQL = `INSERT INTO payment_request (owner_user_id, apartment_id, reservation_id, reason, amount_czk,
@@ -223,9 +225,9 @@ func RequestSendHandler(pool *pgxpool.Pool, getenv func(string) string, now func
 			status, rail, reason string
 			amount               int64
 			reservationID        *int64
-			guestEmail           *string
+			guestEmail, vs       *string
 		)
-		err = pool.QueryRow(ctx, requestRowSQL, id).Scan(&rowOwner, &status, &rail, &reason, &amount, &reservationID, &guestEmail)
+		err = pool.QueryRow(ctx, requestSendRowSQL, id).Scan(&rowOwner, &status, &rail, &reason, &amount, &reservationID, &guestEmail, &vs)
 		if errors.Is(err, pgx.ErrNoRows) {
 			flashErr("payments.err.invalid")
 			return
@@ -269,7 +271,15 @@ func RequestSendHandler(pool *pgxpool.Pool, getenv func(string) string, now func
 				return
 			}
 		} else {
-			link = fmt.Sprintf("/payments/qr/%d", id)
+			vsText := ""
+			if vs != nil {
+				vsText = *vs
+			}
+			link, err = guestPayURL(getenv, id, vsText)
+			if err != nil {
+				requestFail(w, err)
+				return
+			}
 		}
 
 		stamp := stampAt(at)
