@@ -1,0 +1,10 @@
+{
+ "cs": {
+  "flash.stay_fees.bulk_none": "Žádné období nebylo připravené k uložení.",
+  "flash.stay_fees.bulk_saved": "Uložená období: %(count)s. PDF jsou k dispozici."
+ },
+ "en": {
+  "flash.stay_fees.bulk_none": "No period was ready to save.",
+  "flash.stay_fees.bulk_saved": "Periods saved: %(count)s. You can download the PDFs."
+ }
+}
