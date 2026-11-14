@@ -1,0 +1,136 @@
+package payments
+
+import (
+	"context"
+	"errors"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"strconv"
+	"strings"
+	"sync"
+	"testing"
+	"time"
+)
+
+func sampleCheckout() CheckoutParams {
+	return CheckoutParams{
+		Account: "acct_host1", ProductName: "Stay at Garden, 2026-12-01 – 2026-12-04", AmountCZK: 6500,
+		Email: "guest@example.test", Lang: "en",
+		SuccessURL: "https://book.example.test/p/garden/thanks?lang=en",
+		CancelURL:  "https://book.example.test/p/garden?book=cancelled&lang=en", BookingID: 42,
+	}
+}
+
+// The numbers are fixed: 6 500 CZK is 650 000 haléř, a session lives
+// 31 minutes (1860 s) from the clock.
+func TestCheckoutFormFixedNumbers(t *testing.T) {
+	f := CheckoutForm(sampleCheckout(), 1788000000+SessionMinutes*60)
+	want := map[string]string{
+		"mode": "payment", "line_items[0][quantity]": "1", "line_items[0][price_data][currency]": "czk",
+		"line_items[0][price_data][unit_amount]":        "650000",
+		"line_items[0][price_data][product_data][name]": "Stay at Garden, 2026-12-01 – 2026-12-04",
+		"customer_email": "guest@example.test", "locale": "en", "expires_at": "1788001860",
+		"success_url":               "https://book.example.test/p/garden/thanks?lang=en",
+		"cancel_url":                "https://book.example.test/p/garden?book=cancelled&lang=en",
+		"metadata[site_booking_id]": "42", "payment_intent_data[metadata][site_booking_id]": "42",
+	}
+	for k, v := range want {
+		if f.Get(k) != v {
+			t.Errorf("%s = %q, want %q", k, f.Get(k), v)
+		}
+	}
+	if len(f) != len(want) {
+		t.Errorf("%d fields, want %d (no application fee, no extra field)", len(f), len(want))
+	}
+	cs := sampleCheckout()
+	cs.Lang = "cs"
+	if CheckoutForm(cs, 1).Get("locale") != "cs" {
+		t.Error("cs locale")
+	}
+	cs.Lang = "vi"
+	if CheckoutForm(cs, 1).Get("locale") != "en" {
+		t.Error("any other language is English")
+	}
+}
+
+type sessionFake struct {
+	mu     sync.Mutex
+	hits   []http.Header
+	bodies []string
+	status int
+}
+
+func (f *sessionFake) server(t *testing.T) *httptest.Server {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		f.mu.Lock()
+		defer f.mu.Unlock()
+		if r.URL.Path != "/v1/checkout/sessions" || r.Method != http.MethodPost {
+			t.Errorf("unexpected %s %s", r.Method, r.URL.Path)
+		}
+		f.hits = append(f.hits, r.Header.Clone())
+		f.bodies = append(f.bodies, string(raw))
+		w.Header().Set("Content-Type", "application/json")
+		if f.status != 0 {
+			w.WriteHeader(f.status)
+			_, _ = w.Write([]byte(`{"error":{"message":"Bad amount","code":"amount_too_small","secret":"sk_leak"}}`))
+			return
+		}
+		_, _ = w.Write([]byte(`{"id":"cs_test_a1","url":"https://checkout.stripe.test/c/pay/cs_test_a1"}`))
+	}))
+	t.Cleanup(srv.Close)
+	return srv
+}
+
+func TestCreateCheckoutSession(t *testing.T) {
+	pool := testPool(t)
+	fake := &sessionFake{}
+	srv := fake.server(t)
+	ob := NewStripeOnboarder(pool, onboardEnv("test", onboardTestKey, nil), func() time.Time { return testNow })
+	ob.APIBase = srv.URL
+	id, link, err := ob.CreateCheckoutSession(context.Background(), sampleCheckout())
+	if err != nil || id != "cs_test_a1" || link != "https://checkout.stripe.test/c/pay/cs_test_a1" {
+		t.Fatalf("got %q %q %v", id, link, err)
+	}
+	if _, _, err := ob.CreateCheckoutSession(context.Background(), sampleCheckout()); err != nil {
+		t.Fatal(err)
+	}
+	h := fake.hits[0]
+	if h.Get("Authorization") != "Bearer "+onboardTestKey || h.Get("Stripe-Account") != "acct_host1" ||
+		h.Get("Stripe-Version") != stripeVersion || h.Get("Content-Type") != "application/x-www-form-urlencoded" {
+		t.Errorf("headers: %v", h)
+	}
+	if h.Get("Idempotency-Key") == "" || h.Get("Idempotency-Key") == fake.hits[1].Get("Idempotency-Key") {
+		t.Error("every POST needs its own idempotency key (stripe-python does the same)")
+	}
+	body, _ := url.ParseQuery(fake.bodies[0])
+	if body.Get("line_items[0][price_data][unit_amount]") != "650000" || body.Get("expires_at") != itoa(testNow.Unix()+SessionMinutes*60) {
+		t.Errorf("body: %v", body)
+	}
+	var used int64
+	if err := pool.QueryRow(context.Background(), `SELECT calls FROM lock_api_usage WHERE provider = 'stripe'`).Scan(&used); err != nil || used != 2 {
+		t.Errorf("each call is counted in the monthly budget: %d %v", used, err)
+	}
+}
+
+func itoa(n int64) string { return strconv.FormatInt(n, 10) }
+
+func TestCreateCheckoutSessionErrors(t *testing.T) {
+	pool := testPool(t)
+	fake := &sessionFake{status: 400}
+	srv := fake.server(t)
+	ob := NewStripeOnboarder(pool, onboardEnv("test", onboardTestKey, nil), func() time.Time { return testNow })
+	ob.APIBase = srv.URL
+	_, _, err := ob.CreateCheckoutSession(context.Background(), sampleCheckout())
+	if err == nil || !strings.Contains(err.Error(), "HTTP 400") || strings.Contains(err.Error(), "sk_") {
+		t.Errorf("error must name the status and stay free of secrets: %v", err)
+	}
+	off := NewStripeOnboarder(pool, onboardEnv("off", onboardTestKey, nil), func() time.Time { return testNow })
+	off.APIBase = srv.URL
+	before := len(fake.hits)
+	if _, _, err := off.CreateCheckoutSession(context.Background(), sampleCheckout()); !errors.Is(err, ErrStripeOff) || len(fake.hits) != before {
+		t.Errorf("Stripe off must send nothing: %v", err)
+	}
+}
