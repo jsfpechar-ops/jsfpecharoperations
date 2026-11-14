@@ -1,6 +1,6 @@
 # 1600: Go setup wizard, part 2: the police and property step pages
 
-Status: todo
+Status: review
 Tier: A
 Depends on: 1599 (its files must be on the branch: `go/internal/web/onboarding/wizard*.go`, `wizardtemplates/_frame.tmpl`, `App/scripts/onboarding_wizard_golden.py`) | Base commit: current tip of the working branch | Branch: task/1600-go-setup-wizard-police-property
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
