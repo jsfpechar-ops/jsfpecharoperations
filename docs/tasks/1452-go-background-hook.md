@@ -1,6 +1,6 @@
 # 1452: `registerBackground`: a start hook for long-running Go background tasks
 
-Status: todo
+Status: review
 Depends on: none | Base: the orchestrator's branch (claude/happy-babbage-2zeeam); anchors checked in step 0 | Branch: the current one
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
