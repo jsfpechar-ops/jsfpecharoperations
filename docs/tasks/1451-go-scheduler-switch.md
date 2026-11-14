@@ -1,6 +1,6 @@
 # 1451: Python side of `UBYHOST_SCHEDULER=go` (worker stops enqueuing, watches and backs up Go), kill switch in Go, compose lines, ENVIRONMENT rows; owner switch steps
 
-Status: todo
+Status: review
 Depends on: 1452, 1450 | Base: the orchestrator's branch (claude/happy-babbage-2zeeam); `git apply --check` in step 0 | Branch: the current one
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
