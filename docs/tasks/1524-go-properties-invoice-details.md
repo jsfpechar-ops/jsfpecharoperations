@@ -1,6 +1,6 @@
 # 1524: Go port of Invoice details (POST /entities/{id}/invoice) with the VAT register lookup
 
-Status: todo
+Status: review
 Depends on: 1523 | Base commit: current branch (One big PR mode) | Branch: current branch
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B
 
