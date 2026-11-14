@@ -14,7 +14,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -72,38 +71,10 @@ type deps struct {
 	now    func() time.Time
 }
 
-// readOnlyOpenPrefixes and readOnlyOpenPaths are auth.py
-// _READ_ONLY_OPEN_PREFIXES and _READ_ONLY_OPEN_PATHS: a paused plan may still post there.
-var (
-	readOnlyOpenPrefixes = []string{"/predplatne", "/logout", "/account", "/settings", "/exports"}
-	readOnlyOpenPaths    = regexp.MustCompile(`^/(reservations/submit-ready|reservations/\d+/submit|guests/\d+/resend)$`)
-)
-
-func readOnlyOpen(path string) bool {
-	for _, p := range readOnlyOpenPrefixes {
-		if strings.HasPrefix(path, p) {
-			return true
-		}
-	}
-	return readOnlyOpenPaths.MatchString(path)
-}
-
-// openPost is the method Login sees for a POST to a read-only-open path. It
-// is neither POST (so Login skips the paused check) nor GET or HEAD (so
-// http.Redirect writes no HTML body, as RedirectResponse does not).
-const openPost = "POST-READ-ONLY-OPEN"
-
-// login is auth.require_login. hostweb.Login checks the paused plan on every
-// POST; Python skips that check on the read-only-open paths, so Login sees a
-// copy of the request with method openPost there. ok is false when the
-// response is written.
+// login is auth.require_login. hostweb.Login exempts the read-only-open paths
+// itself. ok is false when the response is written.
 func (d deps) login(w http.ResponseWriter, r *http.Request, at time.Time) (*session.Host, bool) {
-	req := r
-	if r.Method == http.MethodPost && readOnlyOpen(r.URL.Path) {
-		req = r.WithContext(r.Context())
-		req.Method = openPost
-	}
-	h, err := hostweb.Login(bare{w}, req, d.pool, d.getenv, at)
+	h, err := hostweb.Login(bare{w}, r, d.pool, d.getenv, at)
 	if err != nil {
 		serverError(w, err)
 		return nil, false

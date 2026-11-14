@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="{{.Lang}}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f7f5">
+  <title>{{.T "product.page_title"}}</title>
+  <meta name="description" content="{{.T "product.meta_description"}}">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="{{.Canonical}}">
+  {{range .Alternates}}
+  <link rel="alternate" hreflang="{{.Code}}" href="{{.Href}}">
+  {{end}}
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="UbyHost">
+  <meta property="og:title" content="{{.T "product.page_title"}}">
+  <meta property="og:description" content="{{.T "product.meta_description"}}">
+  <meta property="og:url" content="{{.Canonical}}">
+  <meta property="og:locale" content="{{.OGLocale}}">
+  <meta property="og:image" content="{{.PublicBase}}/static/apple-touch-icon.png">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
+  <link rel="stylesheet" href="/static/tokens.css?v=20261022-0284">
+  <link rel="stylesheet" href="/static/landing.css?v=20261109-1063a">
+  <script type="application/ld+json">
+  {{.FAQJSON}}
+  </script>
+  {{template "pposthog" .}}
+</head>
+<body>
+{{template "pheader" .}}
+
+  <main id="content" class="product-details">
+    <header class="product-details-hero">
+      <p class="landing-eyebrow">{{.T "product.eyebrow"}}</p>
+      <h1>{{.T "product.title"}}</h1>
+      <p>{{.T "product.lede"}}</p>
+      <a class="landing-button primary" href="/login?lang={{.Lang}}" data-analytics-event="login_click">{{.T "landing.cta"}}</a>
+    </header>
+
+    <section class="product-feature-section" id="features" aria-labelledby="feature-title">
+      <header>
+        <p class="landing-eyebrow">{{.T "landing.features.eyebrow"}}</p>
+        <h2 id="feature-title">{{.T "product.features.title"}}</h2>
+        <p>{{.T "product.features.lede"}}</p>
+      </header>
+      <div class="product-feature-list">
+        <article class="product-feature-row">
+          <div>
+            <p>{{.T "landing.feature.calendar.icon"}}</p>
+            <h3>{{.T "landing.feature.calendar.title"}}</h3>
+            <p>{{.T "landing.feature.calendar.body"}}</p>
+          </div>
+        </article>
+        <article class="product-feature-row">
+          <div>
+            <p>{{.T "landing.feature.form.icon"}}</p>
+            <h3>{{.T "landing.feature.form.title"}}</h3>
+            <p>{{.T "landing.feature.form.body"}}</p>
+          </div>
+        </article>
+        <article class="product-feature-row">
+          <div>
+            <p>{{.T "landing.feature.book.icon"}}</p>
+            <h3>{{.T "landing.feature.book.title"}}</h3>
+            <p>{{.T "landing.feature.book.body"}}</p>
+          </div>
+        </article>
+        <article class="product-feature-row">
+          <div>
+            <p>{{.T "landing.feature.ubyport.icon"}}</p>
+            <h3>{{.T "landing.feature.ubyport.title"}}</h3>
+            <p>{{.T "landing.feature.ubyport.body"}}</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="product-faq" id="questions" aria-labelledby="faq-title">
+      <header>
+        <p class="landing-eyebrow">{{.T "landing.faq.eyebrow"}}</p>
+        <h2 id="faq-title">{{.T "product.faq.title"}}</h2>
+      </header>
+      <div class="landing-faq-list">
+        <details>
+          <summary>{{.T "landing.faq.1.q"}}</summary>
+          <p>{{.T "landing.faq.1.a"}}</p>
+        </details>
+        <details>
+          <summary>{{.T "landing.faq.2.q"}}</summary>
+          <p>{{.T "landing.faq.2.a"}}</p>
+        </details>
+        <details>
+          <summary>{{.T "landing.faq.3.q"}}</summary>
+          <p>{{.T "landing.faq.3.a"}}</p>
+        </details>
+        <details>
+          <summary>{{.T "landing.faq.4.q"}}</summary>
+          <p>{{.T "landing.faq.4.a"}}</p>
+        </details>
+      </div>
+      <aside class="landing-official">
+        <div><strong>{{.T "landing.official"}}</strong><p>{{.T "landing.disclaimer"}}</p></div>
+        <a href="{{.OfficialLink}}"
+           rel="noopener noreferrer" target="_blank">ipc.gov.cz <span aria-hidden="true">{{.Icon "external-link"}}</span></a>
+      </aside>
+    </section>
+
+    <section class="product-guides" id="guides" aria-labelledby="guides-title">
+      <p class="landing-eyebrow">{{.T "landing.nav.guides"}}</p>
+      <h2 id="guides-title">{{.T "product.guides.title"}}</h2>
+      <div class="landing-guide-grid">
+        <a href="/pruvodce/hlaseni-cizincu-ubyport?lang={{.Lang}}">
+          <span>{{.T "landing.guide.ubyport.kicker"}}</span>
+          <strong>{{.T "landing.guide.ubyport.title"}}</strong>
+          <small>{{.T "landing.guide.ubyport.meta"}} </small>
+        </a>
+        <a href="/pruvodce/online-ubytovaci-kniha?lang={{.Lang}}">
+          <span>{{.T "landing.guide.book.kicker"}}</span>
+          <strong>{{.T "landing.guide.book.title"}}</strong>
+          <small>{{.T "landing.guide.book.meta"}} </small>
+        </a>
+      </div>
+    </section>
+
+    {{template "privacy_first" .}}
+
+    <section class="landing-final product-final">
+      <img src="/static/ubyhost-mark.png?v=20261004a" alt="">
+      <div><h2>{{.T "product.cta.title"}}</h2><p>{{.T "landing.final.body"}}</p></div>
+      <a class="landing-button primary" href="/login?lang={{.Lang}}" data-analytics-event="login_click">{{.T "landing.cta"}}</a>
+    </section>
+  </main>
+
+{{template "pfooter" .}}
+</body>
+</html>

@@ -1,6 +1,6 @@
 # 1622: Go public marketing pages, part 3 (/cenik and the screenshots)
 
-Status: todo
+Status: review
 Depends on: [1621](1621-go-public-pages-product-guide.md) | Base commit: none (one-big-PR mode) | Branch: current branch
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (about 14 calls)
 

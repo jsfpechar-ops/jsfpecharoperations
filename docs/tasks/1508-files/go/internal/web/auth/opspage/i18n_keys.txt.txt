@@ -1,0 +1,18 @@
+# Host strings GET /admin/operations reads (brief 1508), package go/internal/web/auth/opspage.
+# Generated catalog: python3 App/scripts/go_host_i18n.py
+admin.tab.*
+customers.title
+incidents.*
+notification.job_name.*
+ops.*
+# havel.GUIDE_ANCHORS labels (the "Fix in the guide" column)
+guide.nav.*
+guide.reporting.manual_filing_title
+apartment.form.ubyport.credentials_help_heading
+guide.setup.add_title
+guide.setup.wizard_title
+guide.stays.calendar_title
+guide.stays.add_title
+guide.stay_fee.setup_title
+guide.stay_fee.pay_title
+guide.leon_terms.title

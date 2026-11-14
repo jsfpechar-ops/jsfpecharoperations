@@ -1,0 +1,22 @@
+{{define "title"}}{{.T "signup.verify.page_title"}}{{end}}
+{{define "meta"}}{{end}}
+{{define "body"}}
+<section class="auth-card">
+  {{if .V.Expired}}
+  <h1 class="auth-title">{{.T "signup.verify.expired.title"}}</h1>
+  <p class="auth-lede">{{.T "signup.verify.expired.body"}}</p>
+  <a class="auth-submit" href="/signup?lang={{.E .Lang}}">{{.T "signup.verify.expired.action"}}</a>
+  {{else}}
+  <h1 class="auth-title">{{.T "signup.verify.title"}}</h1>
+  <p class="auth-lede">{{.T "signup.verify.lede"}}</p>
+  {{if .V.Error}}
+    <div class="auth-alert" role="alert">{{.T .V.Error}}</div>
+  {{end}}
+  <form method="post" action="/signup/verify" class="auth-form">
+    <input type="hidden" name="_csrf" value="{{.CSRF}}">
+    <input type="hidden" name="t" value="{{.E .V.Token}}">
+    <button class="auth-submit" type="submit" autofocus>{{.T "signup.verify.submit"}}</button>
+  </form>
+  {{end}}
+</section>
+{{end}}

@@ -1,0 +1,38 @@
+{{/* App/app/templates/two_factor_login.html (brief 1502; 1503 renders it too). Data: authpage.TwoFactorLoginData. */}}
+{{define "two_factor_login.title"}}{{t "account.2fa.code_title"}}{{end}}
+{{define "two_factor_login.lang_next"}}/login{{end}}
+{{define "two_factor_login"}}{{$d := .Data}}
+<section class="auth-card">
+  <h1 class="auth-title">{{t "account.2fa.code_title"}}</h1>
+  <p class="auth-lede">{{t "account.2fa.code_lede"}}</p>
+  {{if $d.Error}}<div class="auth-alert" role="alert">{{t $d.Error}}{{if eq $d.Error "auth.error.code_locked"}} <a href="/login">{{t "auth.error.code_locked_again"}}</a>{{end}}</div>{{end}}
+  <form method="post" action="/login/2fa" class="auth-form">
+    <input type="hidden" name="_csrf" value="{{.CSRF}}">
+    <input type="hidden" name="pending" value="{{$d.Pending}}">
+    <div class="auth-field">
+      <label for="code">{{t "account.2fa.code_label"}}</label>
+      <input type="text" id="code" name="code" required autofocus
+             inputmode="numeric" autocomplete="one-time-code" maxlength="12">
+    </div>
+    <button class="auth-submit" type="submit">{{t "account.2fa.verify"}}</button>
+  </form>
+  <details class="auth-help">
+    <summary>{{t "account.2fa.lost_summary"}}</summary>
+    <form method="post" action="/login/2fa" class="auth-form">
+      <input type="hidden" name="_csrf" value="{{.CSRF}}">
+      <input type="hidden" name="pending" value="{{$d.Pending}}">
+      <div class="auth-field">
+        <label for="recovery-code">{{t "account.2fa.recovery_label"}}</label>
+        <input type="text" id="recovery-code" name="code" required
+               inputmode="text" autocapitalize="characters" autocomplete="off"
+               spellcheck="false" placeholder="XXXX-XXXX">
+      </div>
+      <button class="auth-submit" type="submit">{{t "account.2fa.verify"}}</button>
+    </form>
+    {{if .OperatorEmail}}
+      <p class="auth-help-note">{{t "account.2fa.no_codes" "email" .OperatorEmail}}</p>
+    {{end}}
+  </details>
+  <div class="auth-foot"><a href="/login">{{t "account.2fa.start_over"}}</a></div>
+</section>
+{{end}}
