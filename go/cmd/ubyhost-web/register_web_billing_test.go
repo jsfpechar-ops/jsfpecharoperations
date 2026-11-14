@@ -7,12 +7,13 @@ import (
 )
 
 // billingRoutes is each method and path of routes/billing.py and routes/admin_billing.py
-// that the briefs 1555 to 1555 have ported, with the pattern that must answer it.
+// that the briefs 1555 to 1556 have ported, with the pattern that must answer it.
 var billingRoutes = []struct{ method, path, pattern string }{
 	{http.MethodGet, "/predplatne/faktury/5.pdf", "GET /predplatne/faktury/{file}"},
 	{http.MethodPost, "/predplatne/zrusit", "POST /predplatne/zrusit"},
 	{http.MethodPost, "/predplatne/obnovit", "POST /predplatne/obnovit"},
 	{http.MethodGet, "/admin/fakturace/5.pdf", "GET /admin/fakturace/{file}"},
+	{http.MethodGet, "/predplatne", "GET /predplatne"},
 }
 
 // TestBillingRoutesRegistered checks that each ported billing route reaches
