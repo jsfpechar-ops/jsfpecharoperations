@@ -19,8 +19,8 @@ func TestRoutesBuildWithoutPool(t *testing.T) {
 		}
 		seen[r.Pattern] = true
 	}
-	if len(seen) != 38 {
-		t.Errorf("%d routes, want 38", len(seen))
+	if len(seen) != 39 {
+		t.Errorf("%d routes, want 39", len(seen))
 	}
 }
 
