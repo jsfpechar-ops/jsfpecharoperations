@@ -1,6 +1,6 @@
 # 1450: Go scheduler package (dormant): enqueue every job kind on Python's schedule behind `UBYHOST_SCHEDULER=go`
 
-Status: todo
+Status: review
 Depends on: 1452 (`registerBackground`) | Base: the orchestrator's branch (claude/happy-babbage-2zeeam); anchors checked in step 0 | Branch: the current one
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
