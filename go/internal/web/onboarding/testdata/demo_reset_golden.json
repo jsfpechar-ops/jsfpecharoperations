@@ -1,0 +1,848 @@
+{
+ "audit": [
+  {
+   "action": "demo_cleared",
+   "actor": "host2@example.test",
+   "actor_user_id": 2,
+   "detail": "",
+   "impersonator_user_id": null,
+   "owner_user_id": 2
+  },
+  {
+   "action": "demo_cleared",
+   "actor": "host1@example.test",
+   "actor_user_id": 1,
+   "detail": "",
+   "impersonator_user_id": 1,
+   "owner_user_id": 3
+  }
+ ],
+ "cases": [
+  {
+   "csrf": true,
+   "lang": "en",
+   "location": "/login?next=/demo/reset",
+   "name": "signed out",
+   "status": 303,
+   "user": 0,
+   "workspace": 0
+  },
+  {
+   "csrf": false,
+   "lang": "en",
+   "location": "/login?notice=form_expired",
+   "name": "no CSRF token",
+   "status": 303,
+   "user": 2,
+   "workspace": 0
+  },
+  {
+   "csrf": true,
+   "lang": "en",
+   "location": "/?err=The%20built-in%20demo%20dataset%20wasn%27t%20found.",
+   "name": "host without a demo",
+   "status": 303,
+   "user": 5,
+   "workspace": 0
+  },
+  {
+   "csrf": true,
+   "lang": "cs",
+   "location": "/?err=Vestav%C4%9Bn%C3%A1%20demo%20data%20nebyla%20nalezena.",
+   "name": "demo entity without a property",
+   "status": 303,
+   "user": 4,
+   "workspace": 0
+  },
+  {
+   "csrf": true,
+   "lang": "en",
+   "location": "/?msg=Demo%20data%20cleared.",
+   "name": "clear the demo",
+   "status": 303,
+   "user": 2,
+   "workspace": 0
+  },
+  {
+   "csrf": true,
+   "lang": "cs",
+   "location": "/?err=Vestav%C4%9Bn%C3%A1%20demo%20data%20nebyla%20nalezena.",
+   "name": "clear again in Czech",
+   "status": 303,
+   "user": 2,
+   "workspace": 0
+  },
+  {
+   "csrf": true,
+   "lang": "vi",
+   "location": "/?msg=%C4%90%C3%A3%20x%C3%B3a%20d%E1%BB%AF%20li%E1%BB%87u%20m%E1%BA%ABu.",
+   "name": "admin clears a previewed demo in Vietnamese",
+   "status": 303,
+   "user": 1,
+   "workspace": 3
+  }
+ ],
+ "csrf_nonce": "golden-demo-csrf-nonce-0123456789",
+ "final": {
+  "alert": [
+   2,
+   3
+  ],
+  "apartment": [
+   203,
+   302,
+   501
+  ],
+  "apartment_slug": [
+   "real-bbb333"
+  ],
+  "booking_hold": [
+   2
+  ],
+  "cleaning_event": [
+   2
+  ],
+  "cleaning_property": [
+   203
+  ],
+  "door_code": [
+   2
+  ],
+  "guest": [
+   20311,
+   30211
+  ],
+  "ical_feed": [
+   2
+  ],
+  "legal_entity": [
+   23,
+   32,
+   41,
+   51
+  ],
+  "payment_request": [
+   2
+  ],
+  "property_page": [
+   2
+  ],
+  "reservation": [
+   2031,
+   3021
+  ],
+  "stay_fee_rate": [
+   2
+  ]
+ },
+ "photos": [
+  "20111.jpg.enc",
+  "20111.png",
+  "20112.pdf.enc",
+  "20211.webp.enc",
+  "20311.jpg.enc",
+  "30111.png.enc",
+  "30211.jpg.enc",
+  "20111.gif",
+  "notes.txt"
+ ],
+ "photos_left": [
+  "20111.gif",
+  "20311.jpg.enc",
+  "30211.jpg.enc",
+  "notes.txt"
+ ],
+ "seed": [
+  {
+   "columns": [
+    "id",
+    "username",
+    "password_hash",
+    "role",
+    "created_at"
+   ],
+   "rows": [
+    [
+     1,
+     "host1@example.test",
+     "x",
+     "admin",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     2,
+     "host2@example.test",
+     "x",
+     "host",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     3,
+     "host3@example.test",
+     "x",
+     "host",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     4,
+     "host4@example.test",
+     "x",
+     "host",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     5,
+     "host5@example.test",
+     "x",
+     "host",
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "user_account"
+  },
+  {
+   "columns": [
+    "user_account_id",
+    "document",
+    "version",
+    "accepted_at",
+    "method"
+   ],
+   "rows": [
+    [
+     1,
+     "terms",
+     "1.7",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     1,
+     "privacy",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     1,
+     "dpa",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     2,
+     "terms",
+     "1.7",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     2,
+     "privacy",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     2,
+     "dpa",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     3,
+     "terms",
+     "1.7",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     3,
+     "privacy",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     3,
+     "dpa",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     4,
+     "terms",
+     "1.7",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     4,
+     "privacy",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     4,
+     "dpa",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     5,
+     "terms",
+     "1.7",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     5,
+     "privacy",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     5,
+     "dpa",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ]
+   ],
+   "table": "legal_acceptance"
+  },
+  {
+   "columns": [
+    "id",
+    "owner_user_id",
+    "name",
+    "created_at"
+   ],
+   "rows": [
+    [
+     21,
+     2,
+     "Josef Novák (demo)",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     22,
+     2,
+     "Demo Controller s.r.o.",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     23,
+     2,
+     "Real s.r.o.",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     31,
+     3,
+     "Josef Novák (demo)",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     32,
+     3,
+     "Real Three",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     41,
+     4,
+     "Demo Controller s.r.o.",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     51,
+     5,
+     "Real Five",
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "legal_entity"
+  },
+  {
+   "columns": [
+    "id",
+    "owner_user_id",
+    "internal_name",
+    "legal_entity_id",
+    "data_controller_entity_id",
+    "archived_at",
+    "created_at"
+   ],
+   "rows": [
+    [
+     201,
+     2,
+     "Vinohrady Studio (demo)",
+     21,
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     202,
+     2,
+     "Karlín Loft (demo)",
+     21,
+     22,
+     null,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     203,
+     2,
+     "Real flat",
+     23,
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     204,
+     2,
+     "Renamed",
+     23,
+     22,
+     null,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     205,
+     2,
+     "Vinohrady Studio (demo)",
+     23,
+     null,
+     "2026-01-02",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     301,
+     3,
+     "Karlín Loft (demo)",
+     31,
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     302,
+     3,
+     "Real Three flat",
+     32,
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     501,
+     5,
+     "Vinohrady Studio (demo) copy",
+     51,
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "apartment"
+  },
+  {
+   "columns": [
+    "id",
+    "apartment_id",
+    "uid",
+    "date_from",
+    "date_to",
+    "status",
+    "created_at",
+    "updated_at"
+   ],
+   "rows": [
+    [
+     2011,
+     201,
+     "golden-2011",
+     "2026-02-01",
+     "2026-02-03",
+     "active",
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     2021,
+     202,
+     "golden-2021",
+     "2026-02-01",
+     "2026-02-03",
+     "active",
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     2031,
+     203,
+     "golden-2031",
+     "2026-02-01",
+     "2026-02-03",
+     "active",
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     3011,
+     301,
+     "golden-3011",
+     "2026-02-01",
+     "2026-02-03",
+     "active",
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     3021,
+     302,
+     "golden-3021",
+     "2026-02-01",
+     "2026-02-03",
+     "active",
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "reservation"
+  },
+  {
+   "columns": [
+    "id",
+    "reservation_id",
+    "created_at",
+    "updated_at"
+   ],
+   "rows": [
+    [
+     20111,
+     2011,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     20112,
+     2011,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     20211,
+     2021,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     20311,
+     2031,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     30111,
+     3011,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     30211,
+     3021,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "guest"
+  },
+  {
+   "columns": [
+    "id",
+    "apartment_id",
+    "level",
+    "kind",
+    "message",
+    "created_at"
+   ],
+   "rows": [
+    [
+     1,
+     201,
+     "warning",
+     "golden",
+     "m",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     2,
+     203,
+     "warning",
+     "golden",
+     "m",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     3,
+     null,
+     "info",
+     "golden",
+     "m",
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "alert"
+  },
+  {
+   "columns": [
+    "slug",
+    "apartment_id",
+    "is_current",
+    "created_at"
+   ],
+   "rows": [
+    [
+     "studio-aaa222",
+     201,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     "real-bbb333",
+     203,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "apartment_slug"
+  },
+  {
+   "columns": [
+    "id",
+    "apartment_id",
+    "url",
+    "created_at"
+   ],
+   "rows": [
+    [
+     1,
+     201,
+     "https://cal.example.test/1.ics",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     2,
+     203,
+     "https://cal.example.test/2.ics",
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "ical_feed"
+  },
+  {
+   "columns": [
+    "id",
+    "owner_user_id",
+    "apartment_id",
+    "reason",
+    "amount_czk",
+    "rail",
+    "expires_at",
+    "created_at",
+    "updated_at"
+   ],
+   "rows": [
+    [
+     1,
+     2,
+     201,
+     "cleaning",
+     100,
+     "qr",
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     2,
+     2,
+     203,
+     "cleaning",
+     100,
+     "qr",
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "payment_request"
+  },
+  {
+   "columns": [
+    "id",
+    "apartment_id",
+    "rate_czk",
+    "effective_from",
+    "created_at"
+   ],
+   "rows": [
+    [
+     1,
+     201,
+     50,
+     "2026-01-01",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     2,
+     203,
+     50,
+     "2026-01-01",
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "stay_fee_rate"
+  },
+  {
+   "columns": [
+    "id",
+    "reservation_id",
+    "apartment_id",
+    "lock_id",
+    "created_at",
+    "updated_at"
+   ],
+   "rows": [
+    [
+     1,
+     2011,
+     201,
+     "L1",
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     2,
+     2031,
+     203,
+     "L2",
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "door_code"
+  },
+  {
+   "columns": [
+    "id",
+    "apartment_id",
+    "scheduled_date",
+    "created_at",
+    "updated_at"
+   ],
+   "rows": [
+    [
+     1,
+     201,
+     "2026-02-03",
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     2,
+     203,
+     "2026-02-03",
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "cleaning_event"
+  },
+  {
+   "columns": [
+    "apartment_id",
+    "updated_at"
+   ],
+   "rows": [
+    [
+     201,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     203,
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "cleaning_property"
+  },
+  {
+   "columns": [
+    "id",
+    "apartment_id",
+    "created_at",
+    "updated_at"
+   ],
+   "rows": [
+    [
+     1,
+     201,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     2,
+     203,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "property_page"
+  },
+  {
+   "columns": [
+    "id",
+    "apartment_id",
+    "date_from",
+    "date_to",
+    "expires_at",
+    "created_at"
+   ],
+   "rows": [
+    [
+     1,
+     201,
+     "2026-03-01",
+     "2026-03-02",
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     2,
+     203,
+     "2026-03-01",
+     "2026-03-02",
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "booking_hold"
+  }
+ ],
+ "versions": {
+  "dpa": "1.8",
+  "privacy": "1.8",
+  "terms": "1.7"
+ }
+}

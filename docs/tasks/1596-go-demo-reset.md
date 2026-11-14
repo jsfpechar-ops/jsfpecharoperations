@@ -1,6 +1,6 @@
 # 1596: Go onboarding part 3: clear the demo dataset (POST /demo/reset)
 
-Status: todo
+Status: review
 Depends on: 1595 (its `onboardingPageStrings` catalog and test seed helpers; verified in the order 1595, 1596) | Base commit: current tip of the working branch | Branch: task/1596-go-demo-reset
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Tier: A (deletion; exact files; fresh Fable review of the full diff before ready)
