@@ -506,7 +506,8 @@
    "23": true,
    "24": true,
    "25": true,
-   "26": true
+   "26": true,
+   "27": true
   },
   "settings": {
    "property_setup:11": "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": false, \"steps\": {}, \"tested\": false}",
@@ -518,7 +519,8 @@
    "property_setup:20": "{\"celebrated\": false, \"finished\": true, \"hidden\": false, \"legacy\": false, \"steps\": {\"calendar\": \"done\", \"guest_link\": \"done\"}, \"tested\": false}",
    "property_setup:22": "{\"celebrated\": true, \"finished\": true, \"hidden\": false, \"legacy\": false, \"steps\": {\"calendar\": \"done\", \"guest_link\": \"done\"}, \"tested\": true}",
    "property_setup:23": "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": false, \"steps\": {\"calendar\": \"skipped\"}, \"tested\": false}",
-   "property_setup:24": "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": false, \"steps\": {}, \"tested\": false}"
+   "property_setup:24": "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": false, \"steps\": {}, \"tested\": false}",
+   "property_setup:27": "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": false, \"steps\": {\"calendar\": \"done\"}, \"tested\": false}"
   },
   "timing": [
    {
@@ -599,6 +601,11 @@
    {
     "automation_mode": "manual",
     "id": 26,
+    "submit_after_hours": 24
+   },
+   {
+    "automation_mode": "manual",
+    "id": 27,
     "submit_after_hours": 24
    }
   ]
@@ -1217,6 +1224,33 @@
      23,
      2,
      "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     27,
+     1,
+     "Pí",
+     31,
+     "Prague",
+     "Vinohradská",
+     "12",
+     "12000",
+     "Praha",
+     null,
+     null,
+     null,
+     null,
+     null,
+     "manual",
+     24,
+     "tok27",
+     "123456",
+     null,
+     1,
+     null,
+     null,
+     null,
+     2,
+     "2026-01-01T00:00:00+00:00"
     ]
    ],
    "secret": [
@@ -1319,6 +1353,12 @@
     [
      "slug-26",
      26,
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     "slug-27",
+     27,
      1,
      "2026-01-01T00:00:00+00:00"
     ]
@@ -1497,7 +1537,7 @@
      1,
      "Mustermann",
      "Erika",
-     "1980-01-01",
+     "01011980",
      "DEU",
      "C01X00T47",
      "Hauptstr. 1",
@@ -1557,6 +1597,10 @@
     [
      "property_setup:24",
      "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": false, \"steps\": {}, \"tested\": false}"
+    ],
+    [
+     "property_setup:27",
+     "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": false, \"steps\": {\"calendar\": \"done\"}, \"tested\": false}"
     ]
    ],
    "table": "settings"

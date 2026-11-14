@@ -21,11 +21,11 @@ Rules (AGENTS.md): 1 filing correctness is not touched (the pages read the polic
 
 | sha256 | file | action | lines |
 |---|---|---|---|
-| `9a5037a1bb7d65395c7c21e22a6f18ae1104e75c2aa7e526bda8de32c4f1a578` | `App/scripts/onboarding_wizard_golden.py` | create | 335 |
+| `8aeb52fc05ea53b491bc4d12f7ca5bbca6cfada83be35a7e6a2740138284da51` | `App/scripts/onboarding_wizard_golden.py` | create | 338 |
 | `a1e405c6847d62ee21b808a35a7b249a24b38e7bce88c96a78fb58c0b2ecdc3a` | `App/tests/test_go_onboarding_wizard.py` | create | 32 |
 | `dec594c3c35a64c1547b55ab758158d90535f50a6de7d6170664c316decfc9a1` | `go/cmd/ubyhost-web/register_web_onboarding_wizard.go` | create | 21 |
 | `767c3a25f2d48deb6b46ccc8e3cd01d1e57bf9bb105c6df316de59fb997ffe7e` | `go/cmd/ubyhost-web/register_web_onboarding_wizard_test.go` | create | 23 |
-| `bc09afb47830860d27b5ce1e3c2cac7ddcdf40de1849435ad25816c47681babd` | `go/internal/web/onboarding/testdata/wizard_golden_entry.json` | create | 1571 |
+| `20d68296704d2fa23871e5307d63d1ad8c0883a9d566ed53ca2a8a4f43de83bc` | `go/internal/web/onboarding/testdata/wizard_golden_entry.json` | create | 1615 |
 | `278a4cefd42745073767112202f648203daca1ca86d497b083a83338ddc6cc0f` | `go/internal/web/onboarding/wizard.go` | create | 181 |
 | `9811c14af3ac5907c61ef883ae8d623b28e952fdfa91c690c65d0fedc25505e2` | `go/internal/web/onboarding/wizard_data.go` | create | 568 |
 | `f48e9eb1e5149ffaae1a4d60dcc890073c1af087fa56e21ec4c4e1db3f287438` | `go/internal/web/onboarding/wizard_entry.go` | create | 59 |
@@ -89,6 +89,7 @@ No other file may change.
    - `grep -cF "def ensure(apartment) -> Optional[str]:" App/app/guest_slug.py | tail -1` prints `1`.
    - `grep -cE "^func (MayViewStep|Checklist|CelebrateOnce|WizardURL|Current|LegacyState|WizardUnresolved|Finish|NextApplicableStep|PrevApplicableStep)\(" go/internal/web/onboarding/setup.go | tail -1` prints `10`.
    - `grep -cE "^func (testPool|seedAccounts)\(" go/internal/web/onboarding/routes_test.go | tail -1` prints `2`.
+   - `grep -cE "^func (stamp|serverError)\(" go/internal/web/onboarding/routes.go | tail -1` prints `2`, and `grep -cE "^func (pyStrip|in|indexOf)\(" go/internal/web/onboarding/setup.go | tail -1` prints `3` (helpers of the parallel series that these files call).
    - `grep -cF "func MustParseFuncs(" go/internal/hostweb/layout/pagefuncs.go | tail -1` prints `1`.
    - `ls go/internal/web/onboarding/wizard.go 2>&1 | tail -1` says "No such file" (nothing of this brief exists yet).
    - `find docs/tasks/1599-files -name '*.txt' | wc -l | tail -1` prints `17`.
@@ -97,11 +98,11 @@ No other file may change.
 
    ```bash
    cd docs/tasks/1599-files && for f in $(find . -name '*.txt' | sed 's|^\./||; s|\.txt$||'); do mkdir -p "../../../$(dirname "$f")" && cp "$f.txt" "../../../$f"; done; cd ../../.. && sha256sum -c - <<'EOF' 2>&1 | tail -20
-   9a5037a1bb7d65395c7c21e22a6f18ae1104e75c2aa7e526bda8de32c4f1a578  App/scripts/onboarding_wizard_golden.py
+   8aeb52fc05ea53b491bc4d12f7ca5bbca6cfada83be35a7e6a2740138284da51  App/scripts/onboarding_wizard_golden.py
    a1e405c6847d62ee21b808a35a7b249a24b38e7bce88c96a78fb58c0b2ecdc3a  App/tests/test_go_onboarding_wizard.py
    dec594c3c35a64c1547b55ab758158d90535f50a6de7d6170664c316decfc9a1  go/cmd/ubyhost-web/register_web_onboarding_wizard.go
    767c3a25f2d48deb6b46ccc8e3cd01d1e57bf9bb105c6df316de59fb997ffe7e  go/cmd/ubyhost-web/register_web_onboarding_wizard_test.go
-   bc09afb47830860d27b5ce1e3c2cac7ddcdf40de1849435ad25816c47681babd  go/internal/web/onboarding/testdata/wizard_golden_entry.json
+   20d68296704d2fa23871e5307d63d1ad8c0883a9d566ed53ca2a8a4f43de83bc  go/internal/web/onboarding/testdata/wizard_golden_entry.json
    278a4cefd42745073767112202f648203daca1ca86d497b083a83338ddc6cc0f  go/internal/web/onboarding/wizard.go
    9811c14af3ac5907c61ef883ae8d623b28e952fdfa91c690c65d0fedc25505e2  go/internal/web/onboarding/wizard_data.go
    f48e9eb1e5149ffaae1a4d60dcc890073c1af087fa56e21ec4c4e1db3f287438  go/internal/web/onboarding/wizard_entry.go
