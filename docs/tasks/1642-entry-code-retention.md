@@ -6,7 +6,7 @@ Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier A (dele
 
 ## 1. Objective
 
-Add a retention step `entry_codes` right after `door_code_pins`: it sets `apartment.entry_code_enc` to NULL when `entry_code_until` is more than one day past, or when the apartment was archived more than one day ago. When `entry_code_until` is NULL and the apartment is active, the code stays until the host clears it. A deleted workspace deletes its apartment rows (Python `retention.py:388`, `DELETE FROM apartment WHERE owner_user_id = ?`), and the code goes with them. Hosts cannot delete a single apartment, only archive it (`POST /apartments/{id}/archive`); that is why archived apartments are wiped too.
+Add a retention step `entry_codes` right after `door_code_pins`: it sets `apartment.entry_code_enc` to NULL when `entry_code_until` is more than one day past, or when the apartment was archived more than one day ago. When `entry_code_until` is NULL and the apartment is active, the code stays until the host clears it. A deleted workspace deletes its apartment rows (Python `retention.py:388`, `DELETE FROM apartment WHERE owner_user_id = ?`), and the code goes with them. Hosts cannot delete a single apartment, only archive it (`POST /apartments/{id}/archive`); that is why archived apartments are wiped too (owner decision 2026-11-14; restoring an apartment means the host types the code again).
 
 ## 2. Context (verified on bdfaa4d4)
 
