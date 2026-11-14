@@ -1,7 +1,7 @@
 # 1522: Go port of the business save (POST /entities and POST /entities/{id})
 
 Status: todo
-Depends on: none | Base commit: current branch (One big PR mode) | Branch: current branch
+Depends on: 1521 (same catalog files, ordered chain) | Base commit: current branch (One big PR mode) | Branch: current branch
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B
 
 > **One big PR mode.** The owner wants one big pull request. You work on the current branch: commit `1522 step k` after each step that changes a file, never create a branch, never push, never open a PR. The orchestrator merges. Acceptance below does not depend on a base commit: it uses `git log --oneline --grep='^1522 step'` and `git show --stat` on those commits.
