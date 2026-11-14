@@ -1,6 +1,6 @@
 # 1521: Go port of "Sync now" (POST /sync)
 
-Status: todo
+Status: review
 Depends on: 1520 (both append to the same catalog files; the catalog sha256 below assumes this order) | Base commit: current branch (One big PR mode) | Branch: current branch
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B
 
