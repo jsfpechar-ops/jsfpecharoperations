@@ -1,6 +1,6 @@
 # 1584: Go stay fee adjustment add (POST /stay-fees/{apartment_id}/adjustment)
 
-Status: todo
+Status: review
 Depends on: 1240, 1242, 1330 | Base commit: current tip of the working branch | Branch: task/1584-go-stay-fee-adjustment-add
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B
 
