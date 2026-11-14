@@ -42,7 +42,7 @@ Details that are easy to get wrong and are tested: the checks run in Python's or
 
 **Anchors that must exist verbatim** (step 0): the Python function lines and the Go function lines listed there.
 
-**Verified by the brief writer:** (filled in after the check run)
+**Verified by the brief writer** (in a throwaway worktree of this branch, with the steps of briefs 1570 to 1571 applied exactly and in order, sidecars copied as step 1 does): `gofmt -l` printed nothing, `go build ./...` and `go vet ./internal/web/cleaning/... ./cmd/...` were silent, and `go test ./internal/web/cleaning/... ./cmd/ubyhost-web/... -count=1` passed on PostgreSQL 16, with the golden test of brief 1310 still green and the named tests PASS. The tests cover: create by form (redirect, `PRIVATE` headers, the stored row: property, day, `overridden` 1, revision 1, note encrypted and stripped, times kept when posted together), create as the calendar sends it (multipart body, token in the header, `201` JSON with `id` and `url`), every error as JSON and as a 422 page (bad format, year 1899, impossible day, one time, end before start, malformed time, a note of 5001 characters, text and empty property; foreign, archived and missing property are 404; signed out and a missing CSRF token write nothing), update (new day sets `overridden`, a booking-based cleaning keeps it 0, legacy times kept when not posted, times stored when posted, JSON `{"ok":true}`), and update errors (stale, missing and text revision, impossible day and text property are `409 changed`, the other keys `422`, a booking-based cleaning cannot change property, a foreign or missing event is 404, a foreign target property is 404, a dismissed cleaning is 409, no row changes on any error).
 
 ## 3. Files
 
