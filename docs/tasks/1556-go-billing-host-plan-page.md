@@ -1,6 +1,6 @@
 # 1556: Go subscription billing, part 2: the host's plan page GET /predplatne
 
-Status: todo
+Status: review
 Depends on: 1555 | Base commit: none (one big PR mode: the branch that is checked out) | Branch: the current one
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

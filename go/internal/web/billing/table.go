@@ -33,5 +33,6 @@ func newRoutes(d deps) []Route {
 		{"POST /predplatne/zrusit", d.hostCancel},
 		{"POST /predplatne/obnovit", d.hostResume},
 		{"GET /admin/fakturace/{file}", d.adminInvoicePDF},
+		{"GET /predplatne", d.hostPlanPage},
 	}
 }
