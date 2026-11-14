@@ -1,6 +1,6 @@
 # 1445: Go guest guide editor, part 6: the guide overview page
 
-Status: todo
+Status: review
 Depends on: 1440 | Base commit: 68c0e0985 | Branch: task/1445-go-guide-editor-index
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
