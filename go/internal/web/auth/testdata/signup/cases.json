@@ -1,0 +1,2438 @@
+{
+ "secret": "public-legal-golden-secret-not-real-0123",
+ "nonce": "signup-golden-csrf-nonce",
+ "now_ms": 1798761600000,
+ "cases": [
+  {
+   "name": "form-cs",
+   "method": "GET",
+   "path": "/signup",
+   "query": "",
+   "form": [],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {},
+   "expected": {
+    "status": 200,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [],
+    "template": "signup.html",
+    "context": {
+     "attr": {},
+     "selection": {},
+     "consent_boxes": [],
+     "lang_next": "/signup?lang=cs"
+    },
+    "register": null
+   }
+  },
+  {
+   "name": "form-en",
+   "method": "GET",
+   "path": "/signup",
+   "query": "lang=en",
+   "form": [],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {},
+   "expected": {
+    "status": 200,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [
+     {
+      "name": "ubyhost_lang",
+      "value": "en",
+      "path": "/",
+      "max_age": "15552000",
+      "samesite": "lax",
+      "secure": true,
+      "httponly": false
+     }
+    ],
+    "template": "signup.html",
+    "context": {
+     "attr": {},
+     "selection": {},
+     "consent_boxes": [],
+     "lang_next": "/signup?lang=en"
+    },
+    "register": null
+   }
+  },
+  {
+   "name": "form-cookie-vi",
+   "method": "GET",
+   "path": "/signup",
+   "query": "",
+   "form": [],
+   "cookies": {
+    "ubyhost_lang": "vi"
+   },
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {},
+   "expected": {
+    "status": 200,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [],
+    "template": "signup.html",
+    "context": {
+     "attr": {},
+     "selection": {},
+     "consent_boxes": [],
+     "lang_next": "/signup?lang=vi"
+    },
+    "register": null
+   }
+  },
+  {
+   "name": "form-query-cs-cookie-en",
+   "method": "GET",
+   "path": "/signup",
+   "query": "lang=cs",
+   "form": [],
+   "cookies": {
+    "ubyhost_lang": "en"
+   },
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {},
+   "expected": {
+    "status": 200,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [
+     {
+      "name": "ubyhost_lang",
+      "value": "cs",
+      "path": "/",
+      "max_age": "15552000",
+      "samesite": "lax",
+      "secure": true,
+      "httponly": false
+     }
+    ],
+    "template": "signup.html",
+    "context": {
+     "attr": {},
+     "selection": {},
+     "consent_boxes": [],
+     "lang_next": "/signup?lang=cs"
+    },
+    "register": null
+   }
+  },
+  {
+   "name": "form-off",
+   "method": "GET",
+   "path": "/signup",
+   "query": "",
+   "form": [],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "0",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {},
+   "expected": {
+    "status": 404,
+    "content_type": "application/json",
+    "location": "",
+    "set_cookies": [],
+    "template": "",
+    "context": null,
+    "register": null,
+    "body": "{\"detail\":\"Not Found\"}"
+   }
+  },
+  {
+   "name": "form-signed-in",
+   "method": "GET",
+   "path": "/signup",
+   "query": "",
+   "form": [],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": true,
+   "patch": {},
+   "expected": {
+    "status": 303,
+    "content_type": "",
+    "location": "/",
+    "set_cookies": [],
+    "template": "",
+    "context": null,
+    "register": null,
+    "body": ""
+   }
+  },
+  {
+   "name": "form-turnstile",
+   "method": "GET",
+   "path": "/signup",
+   "query": "lang=en",
+   "form": [],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "golden-turnstile-secret",
+    "TURNSTILE_HOSTNAMES": "ubyhost.example"
+   },
+   "signed_in": false,
+   "patch": {},
+   "expected": {
+    "status": 200,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [
+     {
+      "name": "ubyhost_lang",
+      "value": "en",
+      "path": "/",
+      "max_age": "15552000",
+      "samesite": "lax",
+      "secure": true,
+      "httponly": false
+     }
+    ],
+    "template": "signup.html",
+    "context": {
+     "attr": {},
+     "selection": {},
+     "consent_boxes": [],
+     "lang_next": "/signup?lang=en"
+    },
+    "register": null
+   }
+  },
+  {
+   "name": "form-production",
+   "method": "GET",
+   "path": "/signup",
+   "query": "",
+   "form": [],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "production",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {},
+   "expected": {
+    "status": 200,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [],
+    "template": "signup.html",
+    "context": {
+     "attr": {},
+     "selection": {},
+     "consent_boxes": [],
+     "lang_next": "/signup?lang=cs"
+    },
+    "register": null
+   }
+  },
+  {
+   "name": "form-live-ubyport",
+   "method": "GET",
+   "path": "/signup",
+   "query": "",
+   "form": [],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "production",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {},
+   "expected": {
+    "status": 200,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [],
+    "template": "signup.html",
+    "context": {
+     "attr": {},
+     "selection": {},
+     "consent_boxes": [],
+     "lang_next": "/signup?lang=cs"
+    },
+    "register": null
+   }
+  },
+  {
+   "name": "form-notice",
+   "method": "GET",
+   "path": "/signup",
+   "query": "notice=logged_out&lang=en",
+   "form": [],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {},
+   "expected": {
+    "status": 200,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [
+     {
+      "name": "ubyhost_lang",
+      "value": "en",
+      "path": "/",
+      "max_age": "15552000",
+      "samesite": "lax",
+      "secure": true,
+      "httponly": false
+     }
+    ],
+    "template": "signup.html",
+    "context": {
+     "attr": {},
+     "selection": {},
+     "consent_boxes": [],
+     "lang_next": "/signup?lang=en"
+    },
+    "register": null
+   }
+  },
+  {
+   "name": "form-utm-selection",
+   "method": "GET",
+   "path": "/signup",
+   "query": "lang=en&utm_source=google&utm_medium=cpc+ads&utm_campaign=spring_2027&plan=max&interval=year&apts=3&ttlock=1&x=1&utm_source=bad%3Cvalue",
+   "form": [],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {},
+   "expected": {
+    "status": 200,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [
+     {
+      "name": "ubyhost_lang",
+      "value": "en",
+      "path": "/",
+      "max_age": "15552000",
+      "samesite": "lax",
+      "secure": true,
+      "httponly": false
+     }
+    ],
+    "template": "signup.html",
+    "context": {
+     "attr": {
+      "utm_medium": "cpc ads",
+      "utm_campaign": "spring_2027"
+     },
+     "selection": {
+      "plan": "max",
+      "interval": "year",
+      "ttlock": "1",
+      "apartments": "3"
+     },
+     "consent_boxes": [],
+     "lang_next": "/signup?lang=en&utm_medium=cpc+ads&utm_campaign=spring_2027&plan=max&interval=year&ttlock=1&apartments=3"
+    },
+    "register": null
+   }
+  },
+  {
+   "name": "form-gclid-mint",
+   "method": "GET",
+   "path": "/signup",
+   "query": "gclid=Cj0KCQ-golden_gclid&utm_source=google",
+   "form": [],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {},
+   "expected": {
+    "status": 200,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [],
+    "template": "signup.html",
+    "context": {
+     "attr": {
+      "utm_source": "google",
+      "click": "eyJpIjp7ImdjbGlkIjoiQ2owS0NRLWdvbGRlbl9nY2xpZCJ9LCJ0IjoxNzk4NzYxNjAwMDAwfQ.Sb_FOnXW5XwXjkMiV8nHPOGwnb0"
+     },
+     "selection": {},
+     "consent_boxes": [
+      {
+       "platform": "google",
+       "field": "ads_consent",
+       "checked": false,
+       "text": "Nepovinné: Souhlasím, aby UbyHost zaznamenal, že jsem přišel z reklamy Google, a předal tento identifikátor kliknutí společnosti Google (samostatnému správci) k měření úspěšnosti našich reklam. Bez personalizované reklamy. Souhlas můžete kdykoli odvolat v Nastavení.",
+       "link_label": "Jak Google používá data",
+       "link_url": "https://business.safety.google/privacy/"
+      }
+     ],
+     "lang_next": "/signup?lang=cs&utm_source=google&click=eyJpIjp7ImdjbGlkIjoiQ2owS0NRLWdvbGRlbl9nY2xpZCJ9LCJ0IjoxNzk4NzYxNjAwMDAwfQ.Sb_FOnXW5XwXjkMiV8nHPOGwnb0"
+    },
+    "register": null
+   }
+  },
+  {
+   "name": "form-gclid-fbclid-meta",
+   "method": "GET",
+   "path": "/signup",
+   "query": "lang=en&gclid=Cj0KCQ-golden_gclid&fbclid=IwAR-golden_fbclid",
+   "form": [],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "123456",
+    "UBYHOST_META_ACCESS_TOKEN": "golden-token",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {},
+   "expected": {
+    "status": 200,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [
+     {
+      "name": "ubyhost_lang",
+      "value": "en",
+      "path": "/",
+      "max_age": "15552000",
+      "samesite": "lax",
+      "secure": true,
+      "httponly": false
+     }
+    ],
+    "template": "signup.html",
+    "context": {
+     "attr": {
+      "click": ".eJyrVspUsqpWSk_OyUxRslJyzjLwdg7UTc_PSUnNi4eI6iilJUGlPcsdg2CSUMFaHaUSJStDc0sLczNDMwMQqAUAj5oaKg.uG2-bpWntwPjVG48-yJQzZ0E2m0"
+     },
+     "selection": {},
+     "consent_boxes": [
+      {
+       "platform": "google",
+       "field": "ads_consent",
+       "checked": false,
+       "text": "Optional: I agree that UbyHost may record that I came from a Google ad and share that click identifier with Google (an independent controller) to measure our ad campaigns. No personalised ads. You can withdraw anytime in Settings.",
+       "link_label": "How Google uses data",
+       "link_url": "https://business.safety.google/privacy/"
+      },
+      {
+       "platform": "meta",
+       "field": "meta_consent",
+       "checked": false,
+       "text": "Optional: I agree that UbyHost may record that I came from Facebook or Instagram and send that click identifier and my browser type string, with the fact and time of my sign-up, to Meta Platforms Ireland Ltd. to measure our campaigns. Meta receives it as a joint controller and then uses it as its own controller. You can withdraw anytime in Settings.",
+       "link_label": "How Meta uses data",
+       "link_url": "https://www.facebook.com/privacy/policy/"
+      }
+     ],
+     "lang_next": "/signup?lang=en&click=.eJyrVspUsqpWSk_OyUxRslJyzjLwdg7UTc_PSUnNi4eI6iilJUGlPcsdg2CSUMFaHaUSJStDc0sLczNDMwMQqAUAj5oaKg.uG2-bpWntwPjVG48-yJQzZ0E2m0"
+    },
+    "register": null
+   }
+  },
+  {
+   "name": "form-fbclid-no-meta",
+   "method": "GET",
+   "path": "/signup",
+   "query": "fbclid=IwAR-golden_fbclid",
+   "form": [],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {},
+   "expected": {
+    "status": 200,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [],
+    "template": "signup.html",
+    "context": {
+     "attr": {
+      "click": "eyJpIjp7ImZiY2xpZCI6Ikl3QVItZ29sZGVuX2ZiY2xpZCJ9LCJ0IjoxNzk4NzYxNjAwMDAwfQ.Fe-_hUvO7fWc8WSk12uv28KW9Wc"
+     },
+     "selection": {},
+     "consent_boxes": [],
+     "lang_next": "/signup?lang=cs&click=eyJpIjp7ImZiY2xpZCI6Ikl3QVItZ29sZGVuX2ZiY2xpZCJ9LCJ0IjoxNzk4NzYxNjAwMDAwfQ.Fe-_hUvO7fWc8WSk12uv28KW9Wc"
+    },
+    "register": null
+   }
+  },
+  {
+   "name": "form-click-kept",
+   "method": "GET",
+   "path": "/signup",
+   "query": "click=eyJpIjp7ImdjbGlkIjoiQ2owS0NRLWdvbGRlbl9nY2xpZCJ9LCJ0IjoxNzk4NzYxNTQwMDAwfQ.AmXLBYxXpFxenYI9p0b0IN3NdVQ&apartments=12",
+   "form": [],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {},
+   "expected": {
+    "status": 200,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [],
+    "template": "signup.html",
+    "context": {
+     "attr": {
+      "click": "eyJpIjp7ImdjbGlkIjoiQ2owS0NRLWdvbGRlbl9nY2xpZCJ9LCJ0IjoxNzk4NzYxNTQwMDAwfQ.AmXLBYxXpFxenYI9p0b0IN3NdVQ"
+     },
+     "selection": {
+      "apartments": "12"
+     },
+     "consent_boxes": [
+      {
+       "platform": "google",
+       "field": "ads_consent",
+       "checked": false,
+       "text": "Nepovinné: Souhlasím, aby UbyHost zaznamenal, že jsem přišel z reklamy Google, a předal tento identifikátor kliknutí společnosti Google (samostatnému správci) k měření úspěšnosti našich reklam. Bez personalizované reklamy. Souhlas můžete kdykoli odvolat v Nastavení.",
+       "link_label": "Jak Google používá data",
+       "link_url": "https://business.safety.google/privacy/"
+      }
+     ],
+     "lang_next": "/signup?lang=cs&click=eyJpIjp7ImdjbGlkIjoiQ2owS0NRLWdvbGRlbl9nY2xpZCJ9LCJ0IjoxNzk4NzYxNTQwMDAwfQ.AmXLBYxXpFxenYI9p0b0IN3NdVQ&apartments=12"
+    },
+    "register": null
+   }
+  },
+  {
+   "name": "form-click-bad",
+   "method": "GET",
+   "path": "/signup",
+   "query": "click=forged.value&apartments=51",
+   "form": [],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {},
+   "expected": {
+    "status": 200,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [],
+    "template": "signup.html",
+    "context": {
+     "attr": {},
+     "selection": {},
+     "consent_boxes": [],
+     "lang_next": "/signup?lang=cs"
+    },
+    "register": null
+   }
+  },
+  {
+   "name": "submit-ok",
+   "method": "POST",
+   "path": "/signup",
+   "query": "",
+   "form": [
+    [
+     "email",
+     " Anna.Nova+airbnb@Example.CZ "
+    ],
+    [
+     "accept",
+     "1"
+    ],
+    [
+     "workspace",
+     "  Chata   u lesa "
+    ]
+   ],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {
+    "register": true
+   },
+   "expected": {
+    "status": 200,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [],
+    "template": "signup_sent.html",
+    "context": {
+     "email": "anna.nova+airbnb@example.cz"
+    },
+    "register": {
+     "email": "anna.nova+airbnb@example.cz",
+     "workspace": "Chata u lesa",
+     "selection": {},
+     "attr": {},
+     "consents": {},
+     "onboarding_opt_out": true,
+     "lang": "cs"
+    }
+   }
+  },
+  {
+   "name": "submit-ok-derived-workspace",
+   "method": "POST",
+   "path": "/signup",
+   "query": "lang=en",
+   "form": [
+    [
+     "email",
+     " Anna.Nova+airbnb@Example.CZ "
+    ],
+    [
+     "accept",
+     "1"
+    ],
+    [
+     "marketing_opt_in",
+     "1"
+    ],
+    [
+     "utm_source",
+     "google"
+    ],
+    [
+     "plan",
+     "standard"
+    ],
+    [
+     "apts",
+     "4"
+    ]
+   ],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {
+    "register": true
+   },
+   "expected": {
+    "status": 200,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [
+     {
+      "name": "ubyhost_lang",
+      "value": "en",
+      "path": "/",
+      "max_age": "15552000",
+      "samesite": "lax",
+      "secure": true,
+      "httponly": false
+     }
+    ],
+    "template": "signup_sent.html",
+    "context": {
+     "email": "anna.nova+airbnb@example.cz"
+    },
+    "register": {
+     "email": "anna.nova+airbnb@example.cz",
+     "workspace": "anna nova",
+     "selection": {
+      "plan": "standard",
+      "apartments": "4"
+     },
+     "attr": {
+      "utm_source": "google"
+     },
+     "consents": {},
+     "onboarding_opt_out": false,
+     "lang": "en"
+    }
+   }
+  },
+  {
+   "name": "submit-ok-consents",
+   "method": "POST",
+   "path": "/signup",
+   "query": "",
+   "form": [
+    [
+     "email",
+     " Anna.Nova+airbnb@Example.CZ "
+    ],
+    [
+     "accept",
+     "1"
+    ],
+    [
+     "click",
+     ".eJyrVspUsqpWSk_OyUxRslJyzjLwdg7UTc_PSUnNi4eI6iilJUGlPcsdg2CSUMFaHaUSJStDc0sLczNDUxMDIKgFAI-rGi0.t5BzGSRaLzFR4biV9ZDrNIJeD1c"
+    ],
+    [
+     "ads_consent",
+     "1"
+    ],
+    [
+     "meta_consent",
+     "0"
+    ],
+    [
+     "interval",
+     "month"
+    ]
+   ],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "123456",
+    "UBYHOST_META_ACCESS_TOKEN": "golden-token",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {
+    "register": true
+   },
+   "expected": {
+    "status": 200,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [],
+    "template": "signup_sent.html",
+    "context": {
+     "email": "anna.nova+airbnb@example.cz"
+    },
+    "register": {
+     "email": "anna.nova+airbnb@example.cz",
+     "workspace": "anna nova",
+     "selection": {
+      "interval": "month"
+     },
+     "attr": {
+      "click": ".eJyrVspUsqpWSk_OyUxRslJyzjLwdg7UTc_PSUnNi4eI6iilJUGlPcsdg2CSUMFaHaUSJStDc0sLczNDUxMDIKgFAI-rGi0.t5BzGSRaLzFR4biV9ZDrNIJeD1c"
+     },
+     "consents": {
+      "google": true,
+      "meta": false
+     },
+     "onboarding_opt_out": true,
+     "lang": "cs"
+    }
+   }
+  },
+  {
+   "name": "submit-ok-cookie-vi",
+   "method": "POST",
+   "path": "/signup",
+   "query": "",
+   "form": [
+    [
+     "email",
+     "x@example.cz"
+    ],
+    [
+     "accept",
+     "1"
+    ]
+   ],
+   "cookies": {
+    "ubyhost_lang": "vi"
+   },
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {
+    "register": true
+   },
+   "expected": {
+    "status": 200,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [],
+    "template": "signup_sent.html",
+    "context": {
+     "email": "x@example.cz"
+    },
+    "register": {
+     "email": "x@example.cz",
+     "workspace": "x",
+     "selection": {},
+     "attr": {},
+     "consents": {},
+     "onboarding_opt_out": true,
+     "lang": "vi"
+    }
+   }
+  },
+  {
+   "name": "submit-turnstile",
+   "method": "POST",
+   "path": "/signup",
+   "query": "",
+   "form": [
+    [
+     "email",
+     " Anna.Nova+airbnb@Example.CZ "
+    ],
+    [
+     "accept",
+     "1"
+    ],
+    [
+     "workspace",
+     "Vila"
+    ]
+   ],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {
+    "turnstile": false
+   },
+   "expected": {
+    "status": 403,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [],
+    "template": "signup.html",
+    "context": {
+     "attr": {},
+     "selection": {},
+     "consent_boxes": [],
+     "lang_next": "/signup?lang=cs",
+     "error": "signup.error.turnstile",
+     "error_field": "",
+     "email": "Anna.Nova+airbnb@Example.CZ",
+     "workspace": "Vila",
+     "marketing_opt_in": false
+    },
+    "register": null
+   }
+  },
+  {
+   "name": "submit-rate-limited",
+   "method": "POST",
+   "path": "/signup",
+   "query": "",
+   "form": [
+    [
+     "email",
+     " Anna.Nova+airbnb@Example.CZ "
+    ],
+    [
+     "accept",
+     "1"
+    ]
+   ],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {
+    "rate_limited": true
+   },
+   "expected": {
+    "status": 429,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [],
+    "template": "signup.html",
+    "context": {
+     "attr": {},
+     "selection": {},
+     "consent_boxes": [],
+     "lang_next": "/signup?lang=cs",
+     "error": "signup.error.rate_limited",
+     "error_field": "",
+     "email": "Anna.Nova+airbnb@Example.CZ",
+     "workspace": "",
+     "marketing_opt_in": false
+    },
+    "register": null
+   }
+  },
+  {
+   "name": "submit-bad-email",
+   "method": "POST",
+   "path": "/signup",
+   "query": "",
+   "form": [
+    [
+     "email",
+     "not an <email>"
+    ],
+    [
+     "accept",
+     "1"
+    ]
+   ],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {},
+   "expected": {
+    "status": 400,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [],
+    "template": "signup.html",
+    "context": {
+     "attr": {},
+     "selection": {},
+     "consent_boxes": [],
+     "lang_next": "/signup?lang=cs",
+     "error": "signup.error.email",
+     "error_field": "email",
+     "email": "not an <email>",
+     "workspace": "",
+     "marketing_opt_in": false
+    },
+    "register": null
+   }
+  },
+  {
+   "name": "submit-long-email",
+   "method": "POST",
+   "path": "/signup",
+   "query": "",
+   "form": [
+    [
+     "email",
+     "žžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžž@example.cz"
+    ],
+    [
+     "accept",
+     "1"
+    ]
+   ],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {},
+   "expected": {
+    "status": 400,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [],
+    "template": "signup.html",
+    "context": {
+     "attr": {},
+     "selection": {},
+     "consent_boxes": [],
+     "lang_next": "/signup?lang=cs",
+     "error": "signup.error.email",
+     "error_field": "email",
+     "email": "žžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžžž@exa",
+     "workspace": "",
+     "marketing_opt_in": false
+    },
+    "register": null
+   }
+  },
+  {
+   "name": "submit-empty-email-en",
+   "method": "POST",
+   "path": "/signup",
+   "query": "lang=en",
+   "form": [
+    [
+     "accept",
+     "1"
+    ]
+   ],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {},
+   "expected": {
+    "status": 400,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [
+     {
+      "name": "ubyhost_lang",
+      "value": "en",
+      "path": "/",
+      "max_age": "15552000",
+      "samesite": "lax",
+      "secure": true,
+      "httponly": false
+     }
+    ],
+    "template": "signup.html",
+    "context": {
+     "attr": {},
+     "selection": {},
+     "consent_boxes": [],
+     "lang_next": "/signup?lang=en",
+     "error": "signup.error.email",
+     "error_field": "email",
+     "email": "",
+     "workspace": "",
+     "marketing_opt_in": false
+    },
+    "register": null
+   }
+  },
+  {
+   "name": "submit-long-workspace",
+   "method": "POST",
+   "path": "/signup",
+   "query": "",
+   "form": [
+    [
+     "email",
+     "a@example.cz"
+    ],
+    [
+     "workspace",
+     "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    ],
+    [
+     "accept",
+     "1"
+    ]
+   ],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {},
+   "expected": {
+    "status": 400,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [],
+    "template": "signup.html",
+    "context": {
+     "attr": {},
+     "selection": {},
+     "consent_boxes": [],
+     "lang_next": "/signup?lang=cs",
+     "error": "signup.error.workspace",
+     "error_field": "workspace",
+     "email": "a@example.cz",
+     "workspace": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "marketing_opt_in": false
+    },
+    "register": null
+   }
+  },
+  {
+   "name": "submit-no-accept",
+   "method": "POST",
+   "path": "/signup",
+   "query": "",
+   "form": [
+    [
+     "email",
+     "a@example.cz"
+    ],
+    [
+     "marketing_opt_in",
+     "1"
+    ],
+    [
+     "click",
+     "eyJpIjp7ImdjbGlkIjoiQ2owS0NRLWdvbGRlbl9nY2xpZCJ9LCJ0IjoxNzk4NzYxNTQwMDAwfQ.AmXLBYxXpFxenYI9p0b0IN3NdVQ"
+    ],
+    [
+     "ads_consent",
+     "1"
+    ],
+    [
+     "utm_campaign",
+     "jaro"
+    ],
+    [
+     "ttlock",
+     "0"
+    ]
+   ],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {},
+   "expected": {
+    "status": 422,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [],
+    "template": "signup.html",
+    "context": {
+     "attr": {
+      "utm_campaign": "jaro",
+      "click": "eyJpIjp7ImdjbGlkIjoiQ2owS0NRLWdvbGRlbl9nY2xpZCJ9LCJ0IjoxNzk4NzYxNTQwMDAwfQ.AmXLBYxXpFxenYI9p0b0IN3NdVQ"
+     },
+     "selection": {
+      "ttlock": "0"
+     },
+     "consent_boxes": [
+      {
+       "platform": "google",
+       "field": "ads_consent",
+       "checked": true,
+       "text": "Nepovinné: Souhlasím, aby UbyHost zaznamenal, že jsem přišel z reklamy Google, a předal tento identifikátor kliknutí společnosti Google (samostatnému správci) k měření úspěšnosti našich reklam. Bez personalizované reklamy. Souhlas můžete kdykoli odvolat v Nastavení.",
+       "link_label": "Jak Google používá data",
+       "link_url": "https://business.safety.google/privacy/"
+      }
+     ],
+     "lang_next": "/signup?lang=cs&utm_campaign=jaro&click=eyJpIjp7ImdjbGlkIjoiQ2owS0NRLWdvbGRlbl9nY2xpZCJ9LCJ0IjoxNzk4NzYxNTQwMDAwfQ.AmXLBYxXpFxenYI9p0b0IN3NdVQ&ttlock=0",
+     "error": "signup.error.accept",
+     "error_field": "accept",
+     "email": "a@example.cz",
+     "workspace": "a",
+     "marketing_opt_in": true
+    },
+    "register": null
+   }
+  },
+  {
+   "name": "submit-no-accept-en",
+   "method": "POST",
+   "path": "/signup",
+   "query": "lang=en",
+   "form": [
+    [
+     "email",
+     "b@example.cz"
+    ],
+    [
+     "accept",
+     "yes"
+    ],
+    [
+     "click",
+     ".eJyrVspUsqpWSk_OyUxRslJyzjLwdg7UTc_PSUnNi4eI6iilJUGlPcsdg2CSUMFaHaUSJStDc0sLczNDUxMDIKgFAI-rGi0.t5BzGSRaLzFR4biV9ZDrNIJeD1c"
+    ],
+    [
+     "meta_consent",
+     "1"
+    ]
+   ],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "123456",
+    "UBYHOST_META_ACCESS_TOKEN": "golden-token",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {},
+   "expected": {
+    "status": 422,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [
+     {
+      "name": "ubyhost_lang",
+      "value": "en",
+      "path": "/",
+      "max_age": "15552000",
+      "samesite": "lax",
+      "secure": true,
+      "httponly": false
+     }
+    ],
+    "template": "signup.html",
+    "context": {
+     "attr": {
+      "click": ".eJyrVspUsqpWSk_OyUxRslJyzjLwdg7UTc_PSUnNi4eI6iilJUGlPcsdg2CSUMFaHaUSJStDc0sLczNDUxMDIKgFAI-rGi0.t5BzGSRaLzFR4biV9ZDrNIJeD1c"
+     },
+     "selection": {},
+     "consent_boxes": [
+      {
+       "platform": "google",
+       "field": "ads_consent",
+       "checked": false,
+       "text": "Optional: I agree that UbyHost may record that I came from a Google ad and share that click identifier with Google (an independent controller) to measure our ad campaigns. No personalised ads. You can withdraw anytime in Settings.",
+       "link_label": "How Google uses data",
+       "link_url": "https://business.safety.google/privacy/"
+      },
+      {
+       "platform": "meta",
+       "field": "meta_consent",
+       "checked": true,
+       "text": "Optional: I agree that UbyHost may record that I came from Facebook or Instagram and send that click identifier and my browser type string, with the fact and time of my sign-up, to Meta Platforms Ireland Ltd. to measure our campaigns. Meta receives it as a joint controller and then uses it as its own controller. You can withdraw anytime in Settings.",
+       "link_label": "How Meta uses data",
+       "link_url": "https://www.facebook.com/privacy/policy/"
+      }
+     ],
+     "lang_next": "/signup?lang=en&click=.eJyrVspUsqpWSk_OyUxRslJyzjLwdg7UTc_PSUnNi4eI6iilJUGlPcsdg2CSUMFaHaUSJStDc0sLczNDUxMDIKgFAI-rGi0.t5BzGSRaLzFR4biV9ZDrNIJeD1c",
+     "error": "signup.error.accept",
+     "error_field": "accept",
+     "email": "b@example.cz",
+     "workspace": "b",
+     "marketing_opt_in": false
+    },
+    "register": null
+   }
+  },
+  {
+   "name": "submit-signed-in",
+   "method": "POST",
+   "path": "/signup",
+   "query": "",
+   "form": [
+    [
+     "email",
+     " Anna.Nova+airbnb@Example.CZ "
+    ],
+    [
+     "accept",
+     "1"
+    ]
+   ],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": true,
+   "patch": {
+    "register": true
+   },
+   "expected": {
+    "status": 200,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [],
+    "template": "signup_sent.html",
+    "context": {
+     "email": "anna.nova+airbnb@example.cz"
+    },
+    "register": {
+     "email": "anna.nova+airbnb@example.cz",
+     "workspace": "anna nova",
+     "selection": {},
+     "attr": {},
+     "consents": {},
+     "onboarding_opt_out": true,
+     "lang": "cs"
+    }
+   }
+  },
+  {
+   "name": "submit-off",
+   "method": "POST",
+   "path": "/signup",
+   "query": "",
+   "form": [
+    [
+     "email",
+     " Anna.Nova+airbnb@Example.CZ "
+    ],
+    [
+     "accept",
+     "1"
+    ]
+   ],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "0",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {},
+   "expected": {
+    "status": 404,
+    "content_type": "application/json",
+    "location": "",
+    "set_cookies": [],
+    "template": "",
+    "context": null,
+    "register": null,
+    "body": "{\"detail\":\"Not Found\"}"
+   }
+  },
+  {
+   "name": "verify-expired",
+   "method": "GET",
+   "path": "/signup/verify",
+   "query": "t=forged",
+   "form": [],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {},
+   "expected": {
+    "status": 410,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [],
+    "template": "signup_verify.html",
+    "context": {
+     "expired": true
+    },
+    "register": null
+   }
+  },
+  {
+   "name": "verify-expired-no-token-en",
+   "method": "GET",
+   "path": "/signup/verify",
+   "query": "lang=en",
+   "form": [],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {},
+   "expected": {
+    "status": 410,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [
+     {
+      "name": "ubyhost_lang",
+      "value": "en",
+      "path": "/",
+      "max_age": "15552000",
+      "samesite": "lax",
+      "secure": true,
+      "httponly": false
+     }
+    ],
+    "template": "signup_verify.html",
+    "context": {
+     "expired": true
+    },
+    "register": null
+   }
+  },
+  {
+   "name": "verify-form",
+   "method": "GET",
+   "path": "/signup/verify",
+   "query": "t=golden.Token-value_1",
+   "form": [],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {
+    "pending": true
+   },
+   "expected": {
+    "status": 200,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [],
+    "template": "signup_verify.html",
+    "context": {
+     "token": "golden.Token-value_1"
+    },
+    "register": null
+   }
+  },
+  {
+   "name": "verify-form-escape-vi",
+   "method": "GET",
+   "path": "/signup/verify",
+   "query": "t=a%22b%3Cc%26d%27e&lang=vi",
+   "form": [],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {
+    "pending": true
+   },
+   "expected": {
+    "status": 200,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [
+     {
+      "name": "ubyhost_lang",
+      "value": "vi",
+      "path": "/",
+      "max_age": "15552000",
+      "samesite": "lax",
+      "secure": true,
+      "httponly": false
+     }
+    ],
+    "template": "signup_verify.html",
+    "context": {
+     "token": "a\"b<c&d'e"
+    },
+    "register": null
+   }
+  },
+  {
+   "name": "verify-form-signed-in",
+   "method": "GET",
+   "path": "/signup/verify",
+   "query": "t=golden",
+   "form": [],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": true,
+   "patch": {
+    "pending": true
+   },
+   "expected": {
+    "status": 200,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [],
+    "template": "signup_verify.html",
+    "context": {
+     "token": "golden"
+    },
+    "register": null
+   }
+  },
+  {
+   "name": "verify-off",
+   "method": "GET",
+   "path": "/signup/verify",
+   "query": "t=x",
+   "form": [],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "0",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {},
+   "expected": {
+    "status": 404,
+    "content_type": "application/json",
+    "location": "",
+    "set_cookies": [],
+    "template": "",
+    "context": null,
+    "register": null,
+    "body": "{\"detail\":\"Not Found\"}"
+   }
+  },
+  {
+   "name": "verify-submit-expired",
+   "method": "POST",
+   "path": "/signup/verify",
+   "query": "",
+   "form": [
+    [
+     "t",
+     "forged"
+    ]
+   ],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {},
+   "expected": {
+    "status": 410,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [],
+    "template": "signup_verify.html",
+    "context": {
+     "expired": true
+    },
+    "register": null
+   }
+  },
+  {
+   "name": "verify-submit-locked",
+   "method": "POST",
+   "path": "/signup/verify",
+   "query": "lang=en",
+   "form": [
+    [
+     "t",
+     "golden"
+    ]
+   ],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {
+    "locked": true
+   },
+   "expected": {
+    "status": 429,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [
+     {
+      "name": "ubyhost_lang",
+      "value": "en",
+      "path": "/",
+      "max_age": "15552000",
+      "samesite": "lax",
+      "secure": true,
+      "httponly": false
+     }
+    ],
+    "template": "signup_verify.html",
+    "context": {
+     "token": "golden",
+     "error": "signup.verify.locked"
+    },
+    "register": null
+   }
+  },
+  {
+   "name": "verify-submit-race",
+   "method": "POST",
+   "path": "/signup/verify",
+   "query": "",
+   "form": [
+    [
+     "t",
+     "golden"
+    ]
+   ],
+   "cookies": {},
+   "env": {
+    "UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.example",
+    "UBYHOST_DEPLOYMENT": "local",
+    "UBYHOST_OPERATOR_NAME": "Demo Operator s.r.o.",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_DIC": "CZ12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Václavské náměstí 1, 110 00 Praha 1",
+    "UBYHOST_OPERATOR_EMAIL": "ops@ubyhost.example",
+    "UBYHOST_OPERATOR_REGISTRY_URL": "https://or.justice.cz/ias/ui/rejstrik-$firma?ico=12345678&jenPlatne=VSECHNY",
+    "UBYHOST_SIGNUP_ENABLED": "1",
+    "UBYHOST_META_DATASET_ID": "",
+    "UBYHOST_META_ACCESS_TOKEN": "",
+    "UBYHOST_WEB_PUSH": "1",
+    "POSTHOG_PROJECT_API_KEY": "",
+    "POSTHOG_HOST": "https://eu.i.posthog.com",
+    "POSTHOG_ASSETS_HOST": "https://eu-assets.i.posthog.com",
+    "UBYHOST_LEGAL_EFFECTIVE_DATE": "2026-10-05",
+    "UBYHOST_TERMS_VERSION": "1.7",
+    "UBYHOST_PRIVACY_VERSION": "1.8",
+    "UBYHOST_DPA_VERSION": "1.8",
+    "UBYHOST_SECRET_KEY": "public-legal-golden-secret-not-real-0123",
+    "UBYHOST_UBYPORT_ENV": "mock",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE0LDM2eoIjssN00",
+    "TURNSTILE_SECRET": "",
+    "TURNSTILE_HOSTNAMES": ""
+   },
+   "signed_in": false,
+   "patch": {
+    "pending": true,
+    "activate": false
+   },
+   "expected": {
+    "status": 410,
+    "content_type": "text/html; charset=utf-8",
+    "location": "",
+    "set_cookies": [],
+    "template": "signup_verify.html",
+    "context": {
+     "expired": true
+    },
+    "register": null
+   }
+  }
+ ]
+}
