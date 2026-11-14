@@ -1,6 +1,6 @@
 # 1503: Go auth, second login step (`POST /login/2fa`, dormant)
 
-Status: todo
+Status: review
 Depends on: 1501, 1502 | Base commit: 859d114d5 | Branch: go-wave3
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

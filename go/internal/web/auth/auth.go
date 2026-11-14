@@ -66,6 +66,7 @@ func Routes(pool *pgxpool.Pool, getenv func(string) string, now func() time.Time
 		{"POST /login", "/login", d.loginSubmit},
 		{"GET /login/link", "/login/link", d.loginLinkForm},
 		{"POST /login/link", "/login/link", d.loginLinkSubmit},
+		{"POST /login/2fa", "/login/2fa", d.twoFactorLogin},
 	}
 }
 
