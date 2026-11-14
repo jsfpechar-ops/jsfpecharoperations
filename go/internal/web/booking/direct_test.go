@@ -1,0 +1,170 @@
+package booking
+
+import (
+	"context"
+	"encoding/json"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+func stubQR(payload string) (string, error) { return "uri:" + payload, nil }
+
+func directFixture(t *testing.T, mail string) (Direct, *pgxpool.Pool, time.Time) {
+	t.Helper()
+	g := loadGolden(t)
+	pool := testPool(t)
+	seed(t, pool, g)
+	if _, err := pool.Exec(context.Background(), `UPDATE legal_entity SET contact_email = 'Host@Example.TEST' WHERE id = 1`); err != nil {
+		t.Fatal(err)
+	}
+	env := map[string]string{"UBYHOST_SECRET_KEY": g.Secret, "UBYHOST_STRIPE_MODE": "test", "UBYHOST_PUBLIC_BASE_URL": "https://book.example.test/",
+		"UBYHOST_MAIL_BACKEND": mail}
+	now := mustTime(t, g.Now)
+	return Direct{Pool: pool, Getenv: func(k string) string { return env[k] }, Now: func() time.Time { return now }, QR: stubQR}, pool, now
+}
+
+func directInput(t *testing.T, d Direct) DirectInput {
+	t.Helper()
+	q, err := GetQuote(context.Background(), d.Pool, 1, "2026-12-01", "2026-12-04", 2, d.Now())
+	if err != nil || q.Error != "" {
+		t.Fatalf("quote %v %q", err, q.Error)
+	}
+	return DirectInput{ApartmentID: 1, Q: q, Name: "Ada Lovelace", Email: "Ada@Example.test", Lang: "cs"}
+}
+
+func TestGuestRailsOrderAndNumbers(t *testing.T) {
+	d, pool, _ := directFixture(t, "")
+	rails, err := GuestRails(context.Background(), pool, 1, 7, 6500, stubQR)
+	if err != nil || len(rails) != 3 {
+		t.Fatalf("%v %v", err, rails)
+	}
+	iban := rails[0]
+	if iban.Key != "iban" || iban.IBAN != "CZ65 0800 0000 1920 0014 5399" || iban.VS != "7" || iban.Amount != 6500 ||
+		iban.QR != "uri:SPD*1.0*ACC:CZ6508000000192000145399*AM:6500.00*CC:CZK*X-VS:7*MSG:STAY 7" {
+		t.Errorf("iban rail: %+v", iban)
+	}
+	if rails[1].Key != "revolut" || rails[1].Link != "https://revolut.me/host1" || rails[2].Key != "cash" || rails[2].Note != "At the desk" {
+		t.Errorf("other rails: %+v %+v", rails[1], rails[2])
+	}
+	// The host's default rail goes first.
+	if _, err := pool.Exec(context.Background(), `UPDATE apartment SET stay_fee_guest_default_rail = 'cash' WHERE id = 1`); err != nil {
+		t.Fatal(err)
+	}
+	rails, _ = GuestRails(context.Background(), pool, 1, 7, 6500, stubQR)
+	if rails[0].Key != "cash" || rails[1].Key != "iban" || rails[2].Key != "revolut" {
+		t.Errorf("default first: %v", rails)
+	}
+	// A bank account number turns into an IBAN (apartment 2; 19-2000145399/0800
+	// is the account of CZ65 0800 0000 1920 0014 5399).
+	if _, err := pool.Exec(context.Background(), `UPDATE legal_entity SET bank_account = '19-2000145399/0800' WHERE id = 2`); err != nil {
+		t.Fatal(err)
+	}
+	r2, err := GuestRails(context.Background(), pool, 2, 9, 1500, stubQR)
+	if err != nil || len(r2) != 1 || r2[0].IBAN != "CZ65 0800 0000 1920 0014 5399" {
+		t.Errorf("account number: %v %v", err, r2)
+	}
+	_ = d
+	// An account number that fails its check digits is an error, as in Python.
+	if _, err := pool.Exec(context.Background(), `UPDATE legal_entity SET bank_account = '123456789/0800' WHERE id = 2`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := GuestRails(context.Background(), pool, 2, 9, 1500, stubQR); err == nil {
+		t.Error("an invalid account must be an error")
+	}
+}
+
+func TestDirectStart(t *testing.T) {
+	d, pool, _ := directFixture(t, "console")
+	in := directInput(t, d)
+	id, kind, err := d.Start(context.Background(), in)
+	if err != nil || kind != "" || id == 0 {
+		t.Fatalf("start: %d %q %v", id, kind, err)
+	}
+	var status, method, expires, name, email string
+	var hold int64
+	err = pool.QueryRow(context.Background(), `SELECT status, pay_method, request_expires_at, guest_name, guest_email, hold_id
+		FROM site_booking WHERE id = $1`, id).Scan(&status, &method, &expires, &name, &email, &hold)
+	if err != nil || status != "requested" || method != "direct" || expires != "2026-11-29T10:00:00Z" || name != "Ada Lovelace" || email != "Ada@Example.test" {
+		t.Errorf("row: %v %s %s %s %s %s", err, status, method, expires, name, email)
+	}
+	var holdExpires string
+	if err := pool.QueryRow(context.Background(), `SELECT expires_at FROM booking_hold WHERE id = $1`, hold).Scan(&holdExpires); err != nil || holdExpires != "2026-11-29T10:00:00Z" {
+		t.Errorf("the hold lasts 24 hours: %q %v", holdExpires, err)
+	}
+	if n := count(t, pool, `SELECT COUNT(*) FROM audit WHERE action = 'site_booking_requested' AND detail = $1`, "id="+itoa(id)); n != 1 {
+		t.Errorf("audit %d", n)
+	}
+	type mail struct{ Key, Kind, To, Subject, Payload string }
+	rows, err := pool.Query(context.Background(), `SELECT idempotency_key, kind, to_email, subject, payload FROM email_outbox ORDER BY id`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	var mails []mail
+	for rows.Next() {
+		var m mail
+		if err := rows.Scan(&m.Key, &m.Kind, &m.To, &m.Subject, &m.Payload); err != nil {
+			t.Fatal(err)
+		}
+		mails = append(mails, m)
+	}
+	if len(mails) != 2 || mails[0].Key != "site_booking:"+itoa(id)+":request_host" || mails[1].Key != "site_booking:"+itoa(id)+":request_guest" {
+		t.Fatalf("mails: %+v", mails)
+	}
+	if mails[0].To != "host@example.test" || mails[1].To != "ada@example.test" {
+		t.Errorf("recipients: %q %q", mails[0].To, mails[1].To)
+	}
+	type payload struct {
+		Text    string `json:"text"`
+		Lang    string `json:"lang"`
+		ReplyTo string `json:"reply_to"`
+	}
+	var host, guest payload
+	_ = json.Unmarshal([]byte(mails[0].Payload), &host)
+	_ = json.Unmarshal([]byte(mails[1].Payload), &guest)
+	if host.Lang != "cs" || !strings.Contains(host.Text, "6500 Kč") || !strings.Contains(host.Text, "https://book.example.test/apartments/1/booking-site") {
+		t.Errorf("host mail: %q", host.Text)
+	}
+	if guest.ReplyTo != "host@example.test" || !strings.Contains(guest.Text, "Bankovní převod: CZ65 0800 0000 1920 0014 5399, variabilní symbol "+itoa(id)+", 6500 Kč.") ||
+		!strings.Contains(guest.Text, "Revolut: https://revolut.me/host1") || !strings.Contains(guest.Text, "At the desk") ||
+		!strings.Contains(guest.Text, "https://book.example.test/p/old-town/b/"+itoa(id)+"/") {
+		t.Errorf("guest mail: %q", guest.Text)
+	}
+	if !strings.Contains(mails[1].Payload, `"reply_to": "host@example.test"`) || strings.Contains(mails[1].Payload, "ě") {
+		t.Errorf("payload must be Python json.dumps text: %s", mails[1].Payload)
+	}
+	// The same nights are held now.
+	if _, kind, _ := d.Start(context.Background(), in); kind != "taken" {
+		t.Errorf("second request: %q, want taken", kind)
+	}
+}
+
+func TestDirectStartMailOffAndRefusals(t *testing.T) {
+	d, pool, _ := directFixture(t, "")
+	in := directInput(t, d)
+	if _, kind, err := d.Start(context.Background(), in); kind != "" || err != nil {
+		t.Fatalf("start: %q %v", kind, err)
+	}
+	if n := count(t, pool, `SELECT COUNT(*) FROM email_outbox`); n != 0 {
+		t.Errorf("mail off queues %d rows", n)
+	}
+	// No ready rail: apartment 3 ("draft") has none.
+	in.ApartmentID = 3
+	if _, kind, _ := d.Start(context.Background(), in); kind != "unavailable" {
+		t.Errorf("no rail: %q", kind)
+	}
+	in.ApartmentID = 1
+	if _, err := pool.Exec(context.Background(), `UPDATE apartment SET internal_name = 'Karlín Loft (demo)' WHERE id = 1`); err != nil {
+		t.Fatal(err)
+	}
+	in.Q.DateFrom, in.Q.DateTo = "2026-12-24", "2026-12-27"
+	if _, kind, _ := d.Start(context.Background(), in); kind != "unavailable" {
+		t.Errorf("demo: %q", kind)
+	}
+	if n := count(t, pool, `SELECT COUNT(*) FROM booking_hold WHERE date_from = '2026-12-24'`); n != 0 {
+		t.Error("a refused request holds nothing")
+	}
+}
