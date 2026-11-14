@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-11-14.
+Updated: 2026-11-14 (later).
 
 ## Production
 - Magic-link 1–2 done; access log off. `/healthz` 1.1.0. Main 11-13: `84e966f` (#962).
@@ -14,6 +14,7 @@ Updated: 2026-11-14.
 - 11-13: security audit draft #966 (1200-1204). **Owner:** K-S11–K-S15. 0990-0992: deploy, `pg_schema.py apply`, CF, Grafana.
 
 ## Next
+- Entry code + external guide link on stay page/receipt: [plan](../plans/entry-code-external-guide.md), briefs 1631-1634 (docs-only PR first). **Owner:** go-first decision for Python-served paths (decisions.md 2026-11-14).
 - CI 1413-1415, README 1416.
 - Go move ([remaining](../plans/go-full-move-remaining.md), [SQLite](../plans/sqlite-retirement.md)): #1010 has 1263, 1470-1473, 1450-1452, 1440-1446, 1420-1427, 1430-1435, switched off. Left: 1448, 1436, 1437, review, green CI. Next: 1501, 152x-162x. Server 11-13: W1-W3 on Go, retention dry-run.
 - 1291 host CC is on main; 1630 stops the extra `guest_details_host` mail (only completion + CC).
