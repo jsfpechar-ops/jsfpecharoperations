@@ -1,0 +1,308 @@
+{{- /* Go twin of App/app/templates/stay_fee_detail.html (brief 1582). page_detail.go builds the
+     lines, the issues, the payment panel (with its QR) and the send panel. */ -}}
+{{define "stay_fee_detail.back_label"}}{{t "stay_fees.back"}}{{end}}
+{{define "stay_fee_detail.toolbar"}}{{template "stayfees.filter" .Filter}}{{end}}
+{{define "stayfees.decision"}}{{$line := .Line}}{{$root := .Root}}
+  <form method="post" action="/stay-fees/guest-decision" class="fee-decision">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <input type="hidden" name="guest_id" value="{{$line.GuestID}}">
+    <input type="hidden" name="apartment_id" value="{{$root.ApartmentID}}">
+    <input type="hidden" name="month" value="{{$root.MonthKey}}">
+    <select name="reason" aria-label="{{t "stay_fees.decision.reason_label"}}"{{if $line.Review}} required{{end}}>
+      <option value="">{{t "stay_fees.decision.reason_placeholder"}}</option>
+      {{range $code := $root.ExemptCats}}
+      <option value="{{$code}}" {{if eq $line.Reason $code}}selected{{end}}>{{t (printf "stay_fees.exempt.%s" $code)}}</option>
+      {{end}}
+    </select>
+    <input type="text" name="reason_reference" maxlength="200"
+           placeholder="{{t "stay_fees.decision.reference_placeholder"}}"
+           aria-label="{{t "stay_fees.decision.reference_label"}}">
+    <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit" name="decision" value="exempt">{{t "stay_fees.decision.exempt"}}</button>
+    <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit" name="decision" value="charge">{{t "stay_fees.decision.charge"}}</button>
+    {{if $line.HasDecision}}<button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit" name="decision" value="">{{t "stay_fees.decision.auto"}}</button>{{end}}
+  </form>
+{{end}}
+{{define "stay_fee_detail.primary"}}
+  {{if .Frozen}}
+    <span class="ui-badge ui-badge-done" data-tone="green">{{t "stay_fees.saved_version" "version" .Version}}</span>
+    <a data-turbo="false" class="ui-btn ui-btn-secondary" href="/stay-fees/{{.ApartmentID}}/csv?month={{.MonthKey}}" download>{{t "stay_fees.download_csv"}}</a>
+    <a data-turbo="false" class="ui-btn ui-btn-primary" href="/stay-fees/{{.ApartmentID}}/pdf?month={{.MonthKey}}" download>{{t "stay_fees.download_pdf"}}</a>
+    <a class="ui-btn ui-btn-secondary" href="/stay-fees/{{.ApartmentID}}?month={{.MonthKey}}&correct=1">{{t "stay_fees.correct"}}</a>
+  {{else if not .Issues}}
+    <form method="post" action="/stay-fees/{{.ApartmentID}}/finalize" class="inline-form">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <input type="hidden" name="month" value="{{.MonthKey}}">
+      {{if .Lines}}<input type="hidden" name="confirm_collected" value="1">{{end}}
+      {{range .Lines}}
+        <input type="hidden" name="collected_{{.GuestID}}" value="{{.Amount}}">
+      {{end}}
+      {{if .Correcting}}<input type="hidden" name="correct" value="1">{{end}}
+      <button class="ui-btn ui-btn-primary" type="submit">{{t "stay_fees.save_period"}}</button>
+    </form>
+  {{else}}
+    <button class="ui-btn ui-btn-secondary" type="button" disabled>{{t "stay_fees.save_period"}}</button>
+  {{end}}
+{{end}}
+{{define "stay_fee_detail"}}
+{{$root := .}}
+<div class="ui-section">
+  <div class="stay-metrics detail-hero">
+    <div class="detail-metric">
+      <div class="metric-label">{{t "stay_fees.metric.liable"}}</div>
+      <div class="metric-value">{{.Group.LiableNights}}</div>
+    </div>
+    <div class="detail-metric">
+      <div class="metric-label">{{t "stay_fees.metric.exempt"}}</div>
+      <div class="metric-value">{{.Group.ExemptNights}}</div>
+    </div>
+    <div class="detail-metric">
+      <div class="metric-label">{{t "stay_fees.metric.total"}}</div>
+      <div class="metric-value">{{.TotalDisplay}}</div>
+    </div>
+    <div class="detail-metric">
+      <div class="metric-label">{{t "stay_fees.metric.vs"}}</div>
+      <div class="metric-value small-value mono">{{if .VS}}{{.VS}}{{else}}—{{end}}</div>
+    </div>
+  </div>
+</div>
+
+{{if .Issues}}
+<section class="ui-section fee-blockers" id="fee-blockers" aria-labelledby="fee-blockers-title">
+  <h2 id="fee-blockers-title">{{t "stay_fees.blockers.title"}}</h2>
+<ul class="fee-issues">
+{{range .Issues}}
+  <li class="ui-sub warn-text">
+    {{t .}}
+    {{if or (eq . "stay_fees.issue.no_vs") (eq . "stay_fees.issue.no_authority")}}
+      <a href="{{$root.SettingsURL}}">{{t "host.fix_details"}}</a>
+    {{else if eq . "stay_fees.issue.no_payer"}}
+      <a href="{{$root.OperatorURL}}">{{t "nav.entities"}}</a>
+    {{end}}
+  </li>
+{{end}}
+</ul>
+
+{{if .ScopeRuling}}
+<form method="post" action="/stay-fees/{{.ApartmentID}}/scope-ruling" class="filters fee-scope-form">
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <input type="hidden" name="month" value="{{.MonthKey}}">
+  <div class="ui-field">
+    <label for="scope-rule">{{t "stay_fees.scope.rule"}}</label>
+    <select id="scope-rule" name="rule" required>
+      <option value="calendar_days">{{t "stay_fees.scope.calendar_days"}}</option>
+      <option value="nights">{{t "stay_fees.scope.nights"}}</option>
+    </select>
+  </div>
+  <div class="ui-field">
+    <label for="scope-reference">{{t "stay_fees.scope.reference"}}</label>
+    <input type="text" id="scope-reference" name="reference" maxlength="200" required
+           placeholder="{{t "stay_fees.scope.reference_placeholder"}}">
+  </div>
+  <button class="ui-btn ui-btn-secondary" type="submit">{{t "stay_fees.scope.save"}}</button>
+</form>
+{{end}}
+</section>
+{{end}}
+
+{{if and .Frozen .Send}}
+<section class="ui-section" id="fee-send">
+  <h2>{{t "stay_fees.send.title"}}</h2>
+  <p class="ui-sub">{{t "stay_fees.send.lede"}}</p>
+  <div class="ui-field">
+    <label>{{t "stay_fees.send.recipient"}}</label>
+    <div class="copyrow">
+      <input type="text" id="fee-send-recipient" readonly value="{{.Send.Recipient}}">
+      {{copy_button "fee-send-recipient"}}
+    </div>
+    {{if not .Send.Databox}}
+    <p class="ui-sub warn-text">{{t "stay_fees.send.missing_databox"}} <a href="{{.SettingsURL}}">{{t "stay_fees.send.add_databox"}}</a></p>
+    {{else}}
+    <div class="ui-field">
+      <label for="fee-send-databox">{{t "stay_fees.send.databox"}}</label>
+      <div class="copyrow">
+        <input type="text" id="fee-send-databox" readonly value="{{.Send.Databox}}">
+        {{copy_button "fee-send-databox"}}
+      </div>
+    </div>
+    {{end}}
+  </div>
+  <div class="ui-field">
+    <label for="fee-send-subject">{{t "stay_fees.send.subject"}}</label>
+    <div class="copyrow">
+      <input type="text" id="fee-send-subject" readonly value="{{.Send.SubjectCS}}">
+      {{copy_button "fee-send-subject"}}
+    </div>
+  </div>
+  <div class="ui-field">
+    <label for="fee-send-body">{{t "stay_fees.send.body"}}</label>
+    <div class="copyrow">
+      <textarea id="fee-send-body" readonly rows="4">{{.Send.BodyCS}}</textarea>
+      {{copy_button "fee-send-body"}}
+    </div>
+  </div>
+  <div class="action-group">
+    <a data-turbo="false" class="ui-btn ui-btn-secondary" href="/stay-fees/{{.ApartmentID}}/pdf?month={{.MonthKey}}" download>{{t "stay_fees.download_pdf"}}</a>
+  </div>
+  </div>
+</section>
+{{end}}
+
+<section class="ui-section" id="payment">
+  <div class="ui-section-h">
+    <h2>{{t "stay_fees.payment.title"}}</h2>
+    {{if and .Pay .PayQR}}
+      <span class="ui-badge ui-badge-done" data-tone="green">{{t "stay_fees.payment.ready"}}</span>
+    {{else}}
+      <span class="ui-badge ui-badge-action" data-tone="amber">{{t "stay_fees.payment.incomplete"}}</span>
+    {{end}}
+  </div>
+  <div class="ui-section">
+    {{if .Pay}}
+      <div class="ui-field">
+        <label for="fee-account">{{t "stay_fees.payment.account"}}</label>
+        <div class="copyrow">
+          <input type="text" id="fee-account" readonly value="{{.Pay.Account}}">
+          {{copy_button "fee-account"}}
+        </div>
+      </div>
+      <div class="ui-field">
+        <label for="fee-iban">{{t "stay_fees.payment.iban"}}</label>
+        <div class="copyrow">
+          <input type="text" id="fee-iban" readonly value="{{.Pay.IBAN}}">
+          {{copy_button "fee-iban"}}
+        </div>
+      </div>
+      <div class="ui-field">
+        {{field_label "fee-vs" (t "stay_fees.payment.vs") (t "stay_fees.payment.vs_hint")}}
+        <div class="copyrow">
+          <input type="text" id="fee-vs" readonly value="{{.Pay.VS}}" aria-describedby="fee-vs-help">
+          {{copy_button "fee-vs"}}
+        </div>
+      </div>
+      {{if .PayQR}}
+        <div class="fee-qr">
+          <img src="{{.PayQR}}" width="176" height="176" alt="{{t "stay_fees.payment.qr_alt"}}">
+          <div>
+            <strong>QR Platba</strong>
+            <p class="ui-sub fee-qr-help">{{t "stay_fees.payment.qr_help" "amount" .TotalDisplay}}</p>
+            <p class="ui-sub ui-mono mono">{{.Pay.SPAYD}}</p>
+          </div>
+        </div>
+      {{end}}
+    {{end}}
+  </div>
+  <p class="ui-sub">{{t "stay_fees.payment.footnote"}}</p>
+</section>
+{{if and .Frozen .FilingID}}
+<section class="ui-section" id="fee-records" aria-labelledby="fee-records-title">
+  <h2 id="fee-records-title">{{t "stay_fees.records.title"}}</h2>
+  <p class="ui-sub">{{t "stay_fees.records.lede"}}</p>
+  <div class="fee-records-actions action-group">
+    <form method="post" action="/stay-fees/{{.ApartmentID}}/filings/{{.FilingID}}/sent" class="inline-form">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <input type="hidden" name="month" value="{{.MonthKey}}">
+      <button class="ui-btn ui-btn-secondary" type="submit">{{t "stay_fees.records.mark_sent"}}</button>
+    </form>
+    <form method="post" action="/stay-fees/{{.ApartmentID}}/filings/{{.FilingID}}/paid" class="inline-form">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <input type="hidden" name="month" value="{{.MonthKey}}">
+      <button class="ui-btn ui-btn-secondary" type="submit">{{t "stay_fees.records.mark_paid"}}</button>
+    </form>
+  </div>
+</section>
+{{end}}
+
+<section class="ui-section" id="guests">
+  <div class="ui-section-h">
+    <h2>{{t "stay_fees.guests.title"}}</h2>
+  </div>
+  <div class="ui-section">
+    {{if .Lines}}
+      <ul class="fee-lines">
+        {{range .Lines}}
+        <li class="fee-line">
+          <div>
+            <a href="/reservations/{{.ReservationID}}">{{.Name}}</a>
+            <div class="ui-sub">{{.StayFrom}} – {{.StayTo}} · {{tp "stay_fees.nights" .Nights}}</div>
+            {{if .Facts}}<div class="ui-sub" data-fee-guest-facts>{{.Facts}}</div>{{end}}
+          </div>
+          <span class="ui-badge ui-badge-neutral" data-tone="grey">{{t .StatusKey}}</span>
+          <span class="fee-amount">{{.AmountDisplay}}</span>
+          {{if .LocalHint}}
+            <div class="ui-sub fee-hint">{{t "stay_fees.hint.local_resident"}}</div>
+          {{end}}
+          {{if .ObecResident}}
+            <div class="ui-sub">{{t "stay_fees.label.obec_resident"}} {{help_tip (printf "obec-%d" .ReservationID) (t "stay_fees.hint.obec_resident")}}</div>
+          {{end}}
+          {{if ne .Status "not_subject"}}
+            {{template "stayfees.decision" (kv "Line" . "Root" $root)}}
+          {{end}}
+        </li>
+        {{end}}
+      </ul>
+    {{else}}
+      <p class="ui-sub">{{t "stay_fees.guests.empty"}}</p>
+    {{end}}
+  </div>
+</section>
+{{if not .Frozen}}
+<section class="ui-section" id="fee-adjust">
+  <h2>{{t "stay_fees.adjust.title"}}</h2>
+  <p class="ui-sub">{{t "stay_fees.adjust.warning"}}</p>
+  <form method="post" action="/stay-fees/{{.ApartmentID}}/adjustment" class="fee-adjust-form">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <input type="hidden" name="month" value="{{.MonthKey}}">
+    {{if .Correcting}}<input type="hidden" name="correct" value="1">{{end}}
+    <div class="fee-adjust-grid">
+      <div class="ui-field">
+        <label for="adjust-direction">{{t "stay_fees.adjust.direction"}}</label>
+        <select id="adjust-direction" name="direction">
+          <option value="add">{{t "stay_fees.adjust.add"}}</option>
+          <option value="remove">{{t "stay_fees.adjust.remove"}}</option>
+        </select>
+      </div>
+      <div class="ui-field">
+        <label for="adjust-mode">{{t "stay_fees.adjust.mode"}}</label>
+        <select id="adjust-mode" name="mode">
+          <option value="people">{{t "stay_fees.adjust.people"}}</option>
+          <option value="bed_days">{{t "stay_fees.adjust.bed_days"}}</option>
+        </select>
+      </div>
+      <div class="ui-field" data-adjust-people>
+        <label for="adjust-people">{{t "stay_fees.adjust.count"}}</label>
+        <input id="adjust-people" name="people" type="number" min="1" max="99" value="1">
+      </div>
+      <div class="ui-field" data-adjust-people>
+        <label for="adjust-nights">{{t "stay_fees.adjust.nights"}}</label>
+        <input id="adjust-nights" name="nights" type="number" min="1" max="366" value="1">
+      </div>
+      <div class="ui-field" data-adjust-days hidden>
+        <label for="adjust-days">{{t "stay_fees.adjust.bed_days"}}</label>
+        <input id="adjust-days" name="bed_days" type="number" min="1" max="9999" value="1">
+      </div>
+      <div class="ui-field fee-adjust-reason">
+        <label for="adjust-reason">{{t "stay_fees.adjust.reason"}}</label>
+        <input id="adjust-reason" name="reason" required minlength="3" maxlength="200">
+      </div>
+    </div>
+    <div class="action-group"><button class="ui-btn ui-btn-secondary" type="submit">{{t "stay_fees.adjust.save"}}</button></div>
+  </form>
+  {{if .Adjustments}}
+  <ul class="fee-adjust-list">
+    {{range .Adjustments}}
+    <li>
+      <span>{{.Delta}} {{t "stay_fees.adjust.bed_days"}}{{if .Reason}} ({{.Reason}}){{end}}</span>
+      {{if not .Sealed}}
+      <form method="post" action="/stay-fees/{{$root.ApartmentID}}/adjustment/{{.ID}}/undo">
+        <input type="hidden" name="_csrf" value="{{csrf}}">
+        <input type="hidden" name="month" value="{{$root.MonthKey}}">
+        <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{t "stay_fees.adjust.undo"}}</button>
+      </form>
+      {{end}}
+    </li>
+    {{end}}
+  </ul>
+  {{end}}
+</section>
+{{end}}
+{{end}}
