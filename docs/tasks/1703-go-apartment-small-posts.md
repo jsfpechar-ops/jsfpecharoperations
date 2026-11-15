@@ -15,7 +15,7 @@ Port the small property POSTs not yet on Go: regenerate PIN and link, automation
 
 Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (no new personal-data field without a `retention.py` line, no new outbound request without a reason in the PR); 3 no secrets, no real data (fixtures use `@example.test`); 4 no new dependency without a decision line; 5 plain PostgreSQL through `pgxpool`, `$n` placeholders, a schema change is a new `App/migrations_pg/` file; 6 light mode, every form works without JavaScript (Go forms carry the `_csrf` input); 11 Go first.
 
-**Python source of truth:** `admin.py` 3046-3638.
+**Python source of truth:** `admin.py` 3046-3686.
 
 **Routes in scope (method path, Python function):**
 

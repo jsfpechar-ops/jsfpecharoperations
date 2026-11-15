@@ -25,7 +25,7 @@ Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (no new pers
 
 | Path | Action | What |
 |---|---|---|
-| `go/internal/scheduler/parity_test.go` | create | every kind has the same interval/cron as Python |
+| `go/internal/scheduler/parity_test.go` | edit | every kind has the same interval/cron as Python |
 | `deploy/lightsail/docker-compose.yml` | edit | `worker` removed in the second PR only |
 | `docs/plans/go-cutover-runbook.md` | edit | Block S steps |
 | `docs/tasks/1772-files/**` | keep | sidecars from the exact-diff pass (do not edit) |

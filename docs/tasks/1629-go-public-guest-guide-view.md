@@ -1,7 +1,7 @@
 # 1629: Go guest guide view (GET /l/{token}/{reservation_id}/guide, /g/{token} and their photos)
 
 Status: blocked — the page needs the guest shell, the link, PIN and claim gate, the guest catalog and the Leon routes of the thread "Port guest registration pages" (`guest.py`, `guest_leon.py`), which has not started; nothing in this brief can run before it
-Depends on: the "Port guest registration pages" thread (shell, gate, guest i18n, Leon) | Base commit: none | Branch: none
+Depends on: 1720, 1721, 1726 (the guest shell, gate, i18n and Leon ports; replaces the old "Port guest registration pages" thread) | Base commit: none | Branch: none
 Executor: Haiku 5.5 | Not runnable. Tier B (a host's guide shown to guests). The orchestrator re-splits this into briefs when the dependencies exist.
 
 ## 1. Objective

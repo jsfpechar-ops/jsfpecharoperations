@@ -10,11 +10,11 @@ The data already lives in PostgreSQL (live, WAL-G backups, schema v45, `UBYHOST_
 
 Each brief has the same sections as 1595: objective, context, files, steps, do-not-touch, commands, acceptance, stop-and-ask, report, plus a rollout wave and a rollback line. They are **scope briefs**: routes, source lines, files, acceptance checks, rollout and rollback are final, but they carry `Status: scoped`. Before Haiku can run one, its exact-diff pass must add the sha256 table, the sidecar code and the `grep -cF` anchors (the way 1595 has them). Writer per tier: **Opus for tier A, Sonnet for tier B and C, Haiku executes and checks, never Fable** (owner rules 11-14). Source line ranges are taken from `main` on 2026-11-15 and must be re-checked by the exact-diff pass.
 
-Numbers: 1474-1480 are the SQLite briefs reserved in the plan; 1700-1790 are new Go briefs. Replaced: 1526 by 1707, 1545 by 1713, 1546 by 1710, 1553 by 1712. 1525, 1527, 1550, 1554, 1429, 1597, 1629, 1665-1667 stay as they are and are named in the dependencies.
+Numbers: 1474-1480 are the SQLite briefs reserved in the plan; 1700-1790 are new Go briefs. Replaced: 1525 by 1704 (its `Status` line is set to replaced), 1526 by 1707, 1545 by 1713, 1546 by 1710, 1553 by 1712. 1527, 1550, 1554, 1429, 1597, 1629, 1665-1667 stay as they are and are named in the dependencies.
 
 ## 3. Ordering and dependencies
 
-Phase 0 (start now, no dependencies): 1790 (completeness gate, so every later brief shrinks a visible list), 1474 and 1475 (SQLite schema authority), 1750, 1775, 1780, 1781, 1773, 1706, 1700.
+Phase 0 (start now, no dependencies): 1790 (completeness gate, so every later brief shrinks a visible list), 1474 and 1475 (SQLite schema authority), 1750, 1775, 1780, 1781 (docs only; 1554 is a later step, not a precondition), 1706, 1700 (after 1520-1524 on the branch). 1773 belongs to Phase 4 (it waits for three dry-run mornings and wave 10 steps 1-3).
 Phase 1 (chains, each starts after the previous merges and main is green): 1700 -> 1701 -> 1702 -> 1703 -> 1704 -> 1705 (property settings); 1706 -> 1707; 1770; 1775 -> 1776 (needs 1429); 1760 -> 1761 (login; 1761 also needs 1501-1510 waves).
 Phase 2: 1730 -> 1731 -> 1732; 1733 -> 1734 -> 1735 -> 1737 (stays and host guest editing); 1751 dashboard after 1730; 1710, 1711 -> 1712 booking, then 1714 after 1713.
 Phase 3 (HIGH RISK, owner sign-off per switch): 1740 -> 1742 (one week soak) -> 1741. Only after F2 has soaked: guest registration 1720 -> 1721 -> 1722 -> 1723 -> 1724 -> 1725 -> 1726 -> 1728 (1720 can be built earlier because 1713 needs its language port, but its path stays off).
@@ -44,7 +44,7 @@ Already live: W1, W1b, W6, W7, W8 first set. Not yet: W2 exports (due one day af
 
 | # | Brief | Tier | Depends on |
 |---|---|---|---|
-| [1700](../tasks/1700-go-apartment-new-create.md) | Go property settings 1: new property form, RUIAN suggest, create | B | 1525 layout gaps (done), 1527 not required; 1520-1524 on the branch |
+| [1700](../tasks/1700-go-apartment-new-create.md) | Go property settings 1: new property form, RUIAN suggest, create | B | 1525 is replaced by 1704 (not a precondition), 1527 not required; 1520-1524 on the branch |
 | [1701](../tasks/1701-go-apartment-detail-page.md) | Go property settings 2: property detail page (GET /apartments/{id}) | B | 1700 |
 | [1702](../tasks/1702-go-apartment-update-door-codes.md) | Go property settings 3: update property and door-code settings (POST) | A | 1701 |
 | [1703](../tasks/1703-go-apartment-small-posts.md) | Go property settings 4: PIN, link, timing, archive, feeds, sync, police letter, codelists | B | 1702 |
@@ -58,9 +58,9 @@ Already live: W1, W1b, W6, W7, W8 first set. Not yet: W2 exports (due one day af
 | # | Brief | Tier | Depends on |
 |---|---|---|---|
 | [1710](../tasks/1710-go-property-page-host.md) | Go booking 1: property page review and booking-site host pages | B | 1540-1544 (done), 1704 |
-| [1711](../tasks/1711-go-stay-invoice-engine.md) | Go booking 2: stay-invoice engine (unblocks 1553) | A | 1544, 1220 |
-| [1712](../tasks/1712-go-booking-cancel-pdfs.md) | Go booking 3: guest cancel and invoice PDFs (unblocks 1553) | A | 1711, 1544 |
-| [1713](../tasks/1713-go-guest-pay-pages.md) | Go booking 4: guest /pay pages and payments consent (unblocks 1545) | B | 1720 (guest shell and language), 1540 |
+| [1711](../tasks/1711-go-stay-invoice-engine.md) | Go booking 2: stay-invoice engine (needed by 1712) | A | 1544, 1220 |
+| [1712](../tasks/1712-go-booking-cancel-pdfs.md) | Go booking 3: guest cancel and invoice PDFs (replaces 1553) | A | 1711, 1544 |
+| [1713](../tasks/1713-go-guest-pay-pages.md) | Go booking 4: guest /pay pages and payments consent (replaces 1545) | B | 1720 (guest shell and language), 1540 |
 | [1714](../tasks/1714-go-booking-rollout.md) | Go booking 5: completeness test, `/p/{slug}` collision, wave B (replaces 1550/1554 blocks) | A | 1710, 1712, 1713, 1541-1544 |
 
 ### Guest registration (G, moves last)
@@ -73,7 +73,7 @@ Already live: W1, W1b, W6, W7, W8 first set. Not yet: W2 exports (due one day af
 | [1723](../tasks/1723-go-guest-form-pages.md) | Go guest 4: guest form pages (new, edit, remove, language switch) | A | 1722 |
 | [1724](../tasks/1724-go-guest-form-save.md) | Go guest 5: guest form save (POST /save) | A | 1723, validation package, 1171 skip rule, encryption `secure` |
 | [1725](../tasks/1725-go-guest-draft-scan.md) | Go guest 6: draft autosave and document scan | A | 1724 |
-| [1726](../tasks/1726-go-guest-leon-questions.md) | Go guest 7: guest Leon chat and host question pages | B | 1720, 1436 (Go Leon), 1629 |
+| [1726](../tasks/1726-go-guest-leon-questions.md) | Go guest 7: guest Leon chat and host question pages | B | 1720, 1436 (Go Leon) |
 | [1728](../tasks/1728-go-guest-completeness-wave.md) | Go guest 8: completeness test and rollout wave G | A | 1720-1726, 1629, F2 (1741) signed off |
 
 ### Stays and host guest editing (H)
@@ -94,7 +94,7 @@ Already live: W1, W1b, W6, W7, W8 first set. Not yet: W2 exports (due one day af
 |---|---|---|---|
 | [1740](../tasks/1740-go-filing-f1-send-endpoint.md) | Go filing F1: Go endpoint 'send this stay now' (Python calls it) | A | go/internal/ubyport (client, collect, effects: done), 1171, 1159 watchdog; owner sign-off K-F03/K-F07 |
 | [1741](../tasks/1741-go-filing-f2-buttons.md) | Go filing F2: host send and re-file buttons on Go | A | 1740 soaked a week, 1732 |
-| [1742](../tasks/1742-go-filing-soak-check.md) | Go filing: soak check script and one-week comparison | B | 1740, 1741 |
+| [1742](../tasks/1742-go-filing-soak-check.md) | Go filing: soak check script and one-week comparison | B | 1740 |
 
 ### Dashboard and utility routes (D)
 
@@ -142,11 +142,11 @@ Josef asked for the recommended option on each. These are recorded here and in t
 
 | # | Decision | Chosen | Reason | Brief |
 |---|---|---|---|---|
-| 1 | SQLite rollback end date | **Rollback path ends 2026-12-15** (brief 1476 may merge on or after that day); offline copy deleted **2027-01-14** (1480). Condition: the four proofs of brief 1473 (decrypt test of one `.age` backup, `pg-restore.sh` into staging with matching row counts, Drive and S3 copies current, offline age copy) are recorded by **2026-12-01**; if not, the date moves later by one day per day of delay. | The plan says 30 days after the proofs. None are recorded yet, and the 11-15 backup check found the S3 read-back error and a failed cron log, so the proofs need a clean fortnight first. | 1476, 1480 |
-| 2 | Passkey library | **go-webauthn** on Go 1.25. Add the line `[decision] go-webauthn for passkeys (2026-11-15, owner)` to `docs/context/decisions.md` in the same PR as 1760. | The standard maintained Go library; writing WebAuthn by hand is the riskier choice. | 1760 |
+| 1 | SQLite rollback end date | **Rollback path ends 2026-12-15** (brief 1476 may merge on or after that day); server SQLite file and old snapshots deleted **2027-01-14** (1480, 30 days after 1476; slides with it); the offline age copy is deleted 30 days after 1479 (decision 5). Condition: the four proofs of brief 1473 (decrypt test of one `.age` backup, `pg-restore.sh` into staging with matching row counts, Drive and S3 copies current, offline age copy) are recorded by **2026-12-01**; if not, the date moves later by one day per day of delay. | The plan says 30 days after the proofs. None are recorded yet, and the 11-15 backup check found the S3 read-back error and a failed cron log, so the proofs need a clean fortnight first. | 1476, 1480 |
+| 2 | Passkey library | **go-webauthn** on Go 1.25. The library was already chosen on 2026-11-13 (`docs/context/decisions.md` [dep] 1390); the same PR as 1760 pins v0.18.0 and adds a one-line decision for the version. | The standard maintained Go library; writing WebAuthn by hand is the riskier choice. | 1760 |
 | 3 | `/dev/ui` | **Not ported; deleted with Python.** | Development page, no user. | 1750 |
 | 4 | Filing K-F03 / K-F07 | See section 7: neither is a legal question; port unchanged with conditions. | AI review, section 7. | 1740-1742 |
-| 5 | 30-day window before `App/` is deleted | **Yes.** Keep the last Python image tag and the offline SQLite copy 30 days after 1782 and 1479. | Cheap insurance. | 1479 |
+| 5 | Keep a fallback after `App/` is deleted | **Yes.** Keep the last Python image tag 30 days after 1782 and the offline SQLite copy 30 days after 1479. (The wait before 1479 itself is one quiet production week after 1782.) | Cheap insurance. | 1479 |
 
 ## 7. AI legal and risk review of K-F03 and K-F07 (2026-11-15)
 
@@ -156,7 +156,7 @@ Josef asked for the recommended option on each. These are recorded here and in t
 
 | Item | Conclusion | Why |
 |---|---|---|
-| K-F03 | **Safe to port unchanged, with conditions.** Do not "fix" it during the port. | The feed must return at least half of the stored future stays (`FEED_COMPLETENESS_THRESHOLD = 0.5`, `icalsync.py:115`). With one stored stay, a returned count of 0 marks the feed "suspect" and the code returns before the cancel loop (about `icalsync.py:1106-1135`); the host gets a `feed_incomplete` alert. It fails on the cautious side: nothing is cancelled. Auto-cancelling could lose a real booking with a filing deadline. |
+| K-F03 | **Already ported to Go (`go/internal/ical/syncfeed.go` ~541, job `ical` is live); keep it unchanged, with conditions.** Do not "fix" it. | The feed must return at least half of the stored future stays (`FEED_COMPLETENESS_THRESHOLD = 0.5`, `icalsync.py:115`). With one stored stay, a returned count of 0 marks the feed "suspect" and the code returns before the cancel loop (about `icalsync.py:1106-1135`); the host gets a `feed_incomplete` alert. It fails on the cautious side: nothing is cancelled. Auto-cancelling could lose a real booking with a filing deadline. |
 | K-F07 | **Safe to port.** A background send instead of sending inside the request is allowed. | Immediate mode calls `submit_stay_if_complete` in the request (`routes/guest.py` about 2732); failures raise a host alert; the sweep is the backstop. |
 
 **Conditions the Go port (briefs 1740, 1741, 1742, 1724, 1731) must keep:**
@@ -168,7 +168,7 @@ Josef asked for the recommended option on each. These are recorded here and in t
 6. Skip immediate sends while `ubyport_auth_failed` is open.
 7. Keep `signature_dates_stale` (skip instead of filing outside the booking dates; K-F18).
 
-**Open checks the review could not do (first job of brief 1740's exact-diff pass):** whether the sweep files guests who registered on a vanished "suspect" stay (police could then hear of a stay that never happened); whether the "suspect" branch stores the new digest (`**read`, about `icalsync.py:1111`) so the next poll no longer re-checks; line numbers have moved (the logic is at about `icalsync.py:1092-1182`, not 790-840).
+**Open checks, answered from the code in the PR review (1740's exact-diff pass confirms them):** the "suspect" branch does store the new digest (`**read`, `icalsync.py:892` and `:1111`), but `_trusted_for_skip` (`icalsync.py:164-171`; Go `syncfeed.go:42`) needs `last_status == "ok"`, so the next poll still reconciles. The sweep has no feed-status filter (`reporting.py`, `ubyport/collect.go`, `ubyport/sweep.go`), so guests already registered on a vanished "suspect" stay **are still filed**: "cautious" above means no automatic cancellation only. Whether that is acceptable is an owner decision for the soak check (1742). The logic is at `icalsync.py:1092-1182`, not 790-840. Conditions 1-3 apply to the live Go code in `go/internal/ical`, not to a port.
 
 Result: the F1/F2 switches stay owner sign-offs per switch, but the lawyer gate on K-F03 and K-F07 is removed. This does not replace the lawyer for the legal texts (K-L) or K-F18.
 
@@ -180,7 +180,7 @@ No secrets. Results as reported by the server session.
 - **Live pages:** `/jak-to-funguje`, `/cenik` and `/` answer 200; `/onboarding` answers 303. `/pruvodce` without a slug answers 404 by design (only `GET /pruvodce/{slug}` is routed); the slugs `hlaseni-cizincu-ubyport` and `online-ubytovaci-kniha` answer 200. `/login` answers 403 to the server: that is the Cloudflare bot challenge against the server's address, so server-side `curl` cannot test login, admin or billing paths. Those need browser checks.
 - **Paths audit:** the 13 `/apartments/*` entries all match the playbook (W7 setup; W8 guide, leon, photos). `/webhooks/stripe` is in the list although the runbook keeps it on Python: remove it (step R0 of [go-cutover-mega-prompt](go-cutover-mega-prompt.md), brief 1781).
 - **Backups:** the 03:00 cron `backup.sh` log redirect to `/var/log/ubyhost-backup.log` failed (root-owned directory); fixed by creating the file owned by `ubuntu`. The real nightly backups are `backup-s3.sh` (03:30, calls `backup.sh`) and `backup-gdrive.sh` (04:00): fresh encrypted snapshots on S3 and Drive each day, so expect two snapshots per night now. WAL-G runs separately at 04:30.
-- **S3 first-attempt 403 every night since early October:** cause is rclone's `HEAD ?versionId` read-back on a versioned bucket. The backup IAM user (`ubyhost-backup`, policy `UbyHostBackupS`) lacks `s3:GetObjectVersion`; uploads succeed. Fix: add that action in the IAM console (no delete rights). The backup user has no `s3:DeleteObject`, so pruning needs a bucket lifecycle rule (proposed: expire current versions after 60 days, noncurrent after 7, abort incomplete multipart uploads after 7). Test objects under `UbyHost-backups/_probe/` are waiting for the owner to delete them in the console.
+- **S3 first-attempt 403 every night since early October:** cause is rclone's `HEAD ?versionId` read-back on a versioned bucket. The backup IAM user (`ubyhost-backup`, policy `UbyHostBackupS`) lacks `s3:GetObjectVersion`; uploads succeed. Fix: add that action in the IAM console (no delete rights). Later on 11-15 the owner added it; step R2 of the mega prompt checks the log from 11-16. The backup user has no `s3:DeleteObject`, so pruning needs a bucket lifecycle rule (proposed: expire current versions after 60 days, noncurrent after 7, abort incomplete multipart uploads after 7). Test objects under `UbyHost-backups/_probe/` are waiting for the owner to delete them in the console.
 - **Pending on the server:** 34 apt updates (2 security) and a reboot; do these after a fresh backup.
 - **Still owner-only:** browser click-through of W1, W1b, W6, W7, W8; SES test M-P8; W3 and W4 browser checks.
 

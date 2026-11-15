@@ -15,7 +15,7 @@ Final switch: Caddy default upstream becomes `ubyhost-go`, `UBYHOST_GO_PATHS` is
 
 Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (no new personal-data field without a `retention.py` line, no new outbound request without a reason in the PR); 3 no secrets, no real data (fixtures use `@example.test`); 4 no new dependency without a decision line; 5 plain PostgreSQL through `pgxpool`, `$n` placeholders, a schema change is a new `App/migrations_pg/` file; 6 light mode, every form works without JavaScript (Go forms carry the `_csrf` input); 11 Go first.
 
-**Python source of truth:** `deploy/lightsail/Caddyfile`, `docker-compose.yml`, `deploy.sh`.
+**Python source of truth:** `deploy/lightsail/caddy/Caddyfile.cloudflare`, `deploy/lightsail/caddy/Caddyfile.acme`, `docker-compose.yml`, `deploy.sh`.
 
 **Risk:** Everything. Runs alone.
 
@@ -23,7 +23,8 @@ Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (no new pers
 
 | Path | Action | What |
 |---|---|---|
-| `deploy/lightsail/Caddyfile` | edit | default upstream Go |
+| `deploy/lightsail/caddy/Caddyfile.cloudflare` | edit | default upstream Go |
+| `deploy/lightsail/caddy/Caddyfile.acme` | edit | default upstream Go |
 | `deploy/lightsail/docker-compose.yml` | edit | remove `ubyhost`, `worker` |
 | `docs/LIGHTSAIL.md` | edit | services list |
 | `docs/tasks/1782-files/**` | keep | sidecars from the exact-diff pass (do not edit) |

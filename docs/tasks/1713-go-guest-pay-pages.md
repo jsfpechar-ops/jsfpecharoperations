@@ -1,4 +1,4 @@
-# 1713: Go booking 4: guest /pay pages and payments consent (unblocks 1545)
+# 1713: Go booking 4: guest /pay pages and payments consent (replaces 1545)
 
 Status: todo — scoped (final brief 2026-11-15). Executable only after its exact-diff pass: sidecars in `docs/tasks/1713-files/`, anchors and sha256 table (§2), written to the rules in [workflow](../context/workflow.md#writing-briefs-for-haiku). Until then the executor must not start it.
 Depends on: 1720 (guest shell and language), 1540 | Base commit: current tip of the working branch | Branch: task/1713-go-guest-pay-pages
@@ -9,7 +9,7 @@ Tier: B (Sonnet writes the exact-diff pass; orchestrator reads the diff of the r
 
 ## 1. Objective
 
-Register `guest_qr_page`, `guest_qr_png` (token-checked, the HMAC parity test of PR #1017 stays green) and `payments_consent_page/accept`. Marks 1545 replaced.
+Register `guest_qr_page`, `guest_qr_png` (token-checked, the HMAC parity test of PR #1017 stays green) and `payments_consent_page/accept`. 1545 is already marked replaced by 1713 (no edit here).
 
 ## 2. Context
 

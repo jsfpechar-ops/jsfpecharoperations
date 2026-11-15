@@ -1,4 +1,4 @@
-# 1712: Go booking 3: guest cancel and invoice PDFs (unblocks 1553)
+# 1712: Go booking 3: guest cancel and invoice PDFs (replaces 1553)
 
 Status: todo — scoped (final brief 2026-11-15). Executable only after its exact-diff pass: sidecars in `docs/tasks/1712-files/`, anchors and sha256 table (§2), written to the rules in [workflow](../context/workflow.md#writing-briefs-for-haiku). Until then the executor must not start it.
 Depends on: 1711, 1544 | Base commit: current tip of the working branch | Branch: task/1712-go-booking-cancel-pdfs
@@ -9,7 +9,7 @@ Tier: A (exact diffs only; Opus writes the exact-diff pass; fresh review of the 
 
 ## 1. Objective
 
-Register `booking_manage_cancel`, `booking_invoice_pdf`, `booking_correction_pdf` and `booking_manage_calendar`. Marks 1553 replaced.
+Register `booking_manage_cancel`, `booking_invoice_pdf`, `booking_correction_pdf` and `booking_manage_calendar`. 1553 is already marked replaced by 1712 (no edit here).
 
 ## 2. Context
 

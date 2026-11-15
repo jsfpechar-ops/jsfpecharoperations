@@ -9,7 +9,7 @@ Tier: A (exact diffs only; Opus writes the exact-diff pass; fresh review of the 
 
 ## 1. Objective
 
-Port the four smart-lock routes. Marks brief 1526 `Status: replaced by 1707` in the same commit.
+Port the four smart-lock routes. Brief 1526 is already marked `Status: replaced by 1707` (no edit here).
 
 ## 2. Context
 

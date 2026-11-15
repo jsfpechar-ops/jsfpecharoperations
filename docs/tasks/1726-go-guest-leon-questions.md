@@ -1,7 +1,7 @@
 # 1726: Go guest 7: guest Leon chat and host question pages
 
 Status: todo — scoped (final brief 2026-11-15). Executable only after its exact-diff pass: sidecars in `docs/tasks/1726-files/`, anchors and sha256 table (§2), written to the rules in [workflow](../context/workflow.md#writing-briefs-for-haiku). Until then the executor must not start it.
-Depends on: 1720, 1436 (Go Leon), 1629 | Base commit: current tip of the working branch | Branch: task/1726-go-guest-leon-questions
+Depends on: 1720, 1436 (Go Leon) | Base commit: current tip of the working branch | Branch: task/1726-go-guest-leon-questions
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (split in two briefs if the exact-diff pass finds more)
 Tier: B (Sonnet writes the exact-diff pass; orchestrator reads the diff of the risk-listed files)
 

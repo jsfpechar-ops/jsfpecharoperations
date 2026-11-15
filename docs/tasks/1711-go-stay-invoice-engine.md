@@ -1,4 +1,4 @@
-# 1711: Go booking 2: stay-invoice engine (unblocks 1553)
+# 1711: Go booking 2: stay-invoice engine (needed by 1712)
 
 Status: todo — scoped (final brief 2026-11-15). Executable only after its exact-diff pass: sidecars in `docs/tasks/1711-files/`, anchors and sha256 table (§2), written to the rules in [workflow](../context/workflow.md#writing-briefs-for-haiku). Until then the executor must not start it.
 Depends on: 1544, 1220 | Base commit: current tip of the working branch | Branch: task/1711-go-stay-invoice-engine

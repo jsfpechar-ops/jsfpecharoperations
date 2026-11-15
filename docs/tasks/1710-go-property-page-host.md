@@ -9,7 +9,7 @@ Tier: B (Sonnet writes the exact-diff pass; orchestrator reads the diff of the r
 
 ## 1. Objective
 
-Port the host side of the booking site: `property_page_review/save/photo-move/photo-delete`, `booking_sites`, `booking_site_setup/save/pay/confirm/decline/cancel`. Replaces the host part of blocked brief 1546 (mark it replaced).
+Port the host side of the booking site: `property_page_review/save/photo-move/photo-delete`, `booking_sites`, `booking_site_setup/save/pay/confirm/decline/cancel`. Replaces the host part of blocked brief 1546 (already marked replaced by 1710; no edit here).
 
 ## 2. Context
 

@@ -15,7 +15,7 @@ Port `dashboard` (about 170 lines plus the tile builders of the dashboard redesi
 
 Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (no new personal-data field without a `retention.py` line, no new outbound request without a reason in the PR); 3 no secrets, no real data (fixtures use `@example.test`); 4 no new dependency without a decision line; 5 plain PostgreSQL through `pgxpool`, `$n` placeholders, a schema change is a new `App/migrations_pg/` file; 6 light mode, every form works without JavaScript (Go forms carry the `_csrf` input); 11 Go first.
 
-**Python source of truth:** `admin.py` 469-645 and helpers; `dashboard_calendar` Go package; briefs 1132-1134.
+**Python source of truth:** `admin.py` 469-645 and helpers; `go/internal/calendar` package (check the exact helpers in the exact-diff pass); briefs 1132-1134.
 
 **Routes in scope (method path, Python function):**
 

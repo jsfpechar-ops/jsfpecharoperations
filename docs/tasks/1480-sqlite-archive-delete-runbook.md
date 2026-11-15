@@ -1,7 +1,7 @@
 # 1480: SQLite retirement S12: owner runbook to archive and delete the SQLite file
 
 Status: todo — scoped (final brief 2026-11-15). Executable only after its exact-diff pass: sidecars in `docs/tasks/1480-files/`, anchors and sha256 table (§2), written to the rules in [workflow](../context/workflow.md#writing-briefs-for-haiku). Until then the executor must not start it.
-Depends on: 1476 merged plus 30 days (decision 5); date fixed by the owner decision: 2027-01-14 | Base commit: current tip of the working branch | Branch: task/1480-sqlite-archive-delete-runbook
+Depends on: 1476 merged plus 30 days (sqlite-retirement decision 5); 2027-01-14 if 1476 merges on 2026-12-15 | Base commit: current tip of the working branch | Branch: task/1480-sqlite-archive-delete-runbook
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (split in two briefs if the exact-diff pass finds more)
 Tier: C (docs/shell only; Sonnet writes; orchestrator checks file list and tests)
 
