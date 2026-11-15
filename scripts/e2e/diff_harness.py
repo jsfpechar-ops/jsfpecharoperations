@@ -12,6 +12,7 @@ Hard failures: status, Location, content-type, auth/CSRF outcome, cookie flags.
 Soft: body text differences (listed, counted).
 """
 import argparse
+import hashlib
 import urllib.parse
 import json
 import os
@@ -31,10 +32,10 @@ import py_routes  # noqa: E402
 
 PG = os.environ.get("UBYHOST_E2E_PG", "postgresql://postgres@127.0.0.1:5433")
 PSQL = os.environ.get("UBYHOST_E2E_PSQL", "/usr/lib/postgresql/16/bin/psql")
-PY_PORT, GO_PORT = 8101, 8102
-BASE = {"py": f"http://127.0.0.1:{PY_PORT}", "go": f"http://127.0.0.1:{GO_PORT}"}
+PY_PORT, GO_PORT, PYG_PORT = 8101, 8102, 8103  # pyg: a second Python on the Go database, for steps that stay on Python in production
+BASE = {"py": f"http://127.0.0.1:{PY_PORT}", "go": f"http://127.0.0.1:{GO_PORT}", "pyg": f"http://127.0.0.1:{PYG_PORT}"}
 # WebAuthn needs a hostname (not an IP) as RP id, so the apps are configured with localhost and the browser Origin is localhost
-PUBLIC = {"py": f"http://localhost:{PY_PORT}", "go": f"http://localhost:{GO_PORT}"}
+PUBLIC = {"py": f"http://localhost:{PY_PORT}", "go": f"http://localhost:{GO_PORT}", "pyg": f"http://localhost:{PYG_PORT}"}
 ENV_COMMON = {
     "UBYHOST_SECRET_KEY": "e2e-secret-key-0123456789-abcdefghijkl",
     "UBYHOST_ENABLE_SCHEDULER": "0", "UBYHOST_BOOTSTRAP_ADMIN": "0",
@@ -42,6 +43,7 @@ ENV_COMMON = {
     "UBYHOST_DATA_DIR": "/var/tmp/e2e_data", "UBYHOST_GUEST_PIN": "0",
     "UBYHOST_ICAL_OPEN_SYNC_MINUTES": "0", "UBYHOST_SIGNUP_ENABLED": "1",
     "UBYHOST_BILLING_ENABLED": "1", "UBYHOST_BILLING_IBAN": "CZ6503000000000123456789", "UBYHOST_BILLING_BANK_ACCOUNT": "123456789/0300",
+    "UBYHOST_STAY_FEE_GUEST_PAY": os.environ.get("E2E_GUEST_PAY", "on"),
     "UBYHOST_STRIPE_MODE": "test", "UBYHOST_STRIPE_WEBHOOK_SECRET": "whsec_e2e_secret", "UBYHOST_STRIPE_SECRET_KEY": "sk_test_e2e",
 }
 HEADERS = ["content-type", "cache-control", "location", "x-frame-options", "referrer-policy",
@@ -77,12 +79,15 @@ def start_servers():
     procs.append(subprocess.Popen([sys.executable, "-m", "uvicorn", "app.main:app", "--port", str(PY_PORT),
                                    "--log-level", "warning"], cwd=os.path.join(ROOT, "App"), env=penv,
                                   stdout=open("/tmp/e2e_py.log", "w"), stderr=subprocess.STDOUT))
+    pgenv = dict(os.environ, **ENV_COMMON, UBYHOST_DATABASE_URL=PG + "/e2e_go", UBYHOST_PUBLIC_BASE_URL=PUBLIC["pyg"])
+    procs.append(subprocess.Popen([sys.executable, "-m", "uvicorn", "app.main:app", "--port", str(PYG_PORT), "--log-level", "warning"],
+                                  cwd=os.path.join(ROOT, "App"), env=pgenv, stdout=open("/tmp/e2e_pyg.log", "w"), stderr=subprocess.STDOUT))
     genv = dict(os.environ, **ENV_COMMON, UBYHOST_DATABASE_URL=PG + "/e2e_go",
                 UBYHOST_GO_ADDR=f"127.0.0.1:{GO_PORT}", UBYHOST_MIGRATIONS_DIR="App/migrations_pg",
                 UBYHOST_GO_JOB_KINDS="", UBYHOST_JOB_QUEUE_KINDS="", UBYHOST_PUBLIC_BASE_URL=PUBLIC["go"])
     procs.append(subprocess.Popen(["/var/tmp/ubyhost-web"], cwd=ROOT, env=genv,
                                   stdout=open("/tmp/e2e_go.log", "w"), stderr=subprocess.STDOUT))
-    for side in ("py", "go"):
+    for side in ("py", "go", "pyg"):
         for _ in range(120):
             try:
                 if httpx.get(BASE[side] + "/healthz", timeout=2).status_code in (200, 503):
@@ -198,7 +203,7 @@ def record(r):
     body = text if ("text" in ctype or "json" in ctype or "xml" in ctype) else f"<{len(r.content)} bytes>"
     kc = sorted(re.findall(r"\d[\d\u00a0 ]*(?:[.,]\d+)?\s*(?:Kč|CZK)", r.text)) if "text" in ctype else []
     nums = sorted(set(re.findall(r"UBY-\d{4}-\d{4}", r.text))) if "text" in ctype else []
-    return {"status": r.status_code, "not_ported": "x-ubyhost-not-ported" in r.headers, "sig": [sorted(re.sub(r"\s+", "", k) for k in kc), nums], "headers": hdr, "cookies": cookie_shape(r.headers.get_list("set-cookie")),
+    return {"status": r.status_code, "ctype": ctype, "sha": hashlib.sha256(r.content).hexdigest() if not ("text" in ctype or "json" in ctype) else "", "not_ported": "x-ubyhost-not-ported" in r.headers, "sig": [sorted(re.sub(r"\s+", "", k) for k in kc), nums], "headers": hdr, "cookies": cookie_shape(r.headers.get_list("set-cookie")),
             "body": norm_text(body), "raw": text[:60000] if ("text" in ctype or "json" in ctype) else ""}
 
 
@@ -545,12 +550,171 @@ def mixed_flows(seed, sides):
     return rows
 
 
+def fee_flows(seed, sides):
+    """Stay fees and host invoices with stays. Finalize stays on Python in production, so it runs on Python
+    against both databases (py on e2e_py, pyg on e2e_go); every Go-routed read is then compared py vs go."""
+    py, go, pyg = sides["py"], sides["go"], sides["pyg"]
+    fee, month = seed["fee"], seed["fee"]["month"]
+    A, B = fee["a"], fee["b"]
+    rows = []
+
+    def cmp_pair(label, who, method, path, **kw):
+        p = py.send(who, method, path, **kw)
+        g = go.send(who, method, path, **kw)
+        hard, soft = compare(p, g)
+        if p.get("sha") and g.get("sha") is not None and p["status"] == 200 and g["status"] == 200 and p["ctype"].startswith(("text/csv", "application/zip")) and p["sha"] != g["sha"]:
+            soft.append("binary body differs (csv/zip may embed timestamps)")
+        rows.append({"area": "stay-fees", "case": label, "hard": hard, "soft": soft, "py": p.get("status"), "go": g.get("status")})
+        return p, g
+
+    def twin(label, who, method, path, **kw):
+        """A step that stays on Python: run on both databases through Python, expect equal outcome."""
+        p, q = py.send(who, method, path, **kw), pyg.send(who, method, path, **kw)
+        hard, soft = compare(p, q)
+        rows.append({"area": "stay-fees", "case": label + " (Python on both databases)", "hard": hard, "soft": soft, "py": p.get("status"), "go": q.get("status")})
+        return p
+
+    M = f"?month={month}"
+    for who in ("h1", "alfa", None):
+        cmp_pair(f"GET /stay-fees list as {who}", who, "GET", "/stay-fees" + M)
+        cmp_pair(f"GET /stay-fees/A detail as {who}", who, "GET", f"/stay-fees/{A}" + M)
+        cmp_pair(f"GET /stay-fees/B (blocked: unsigned guest) as {who}", who, "GET", f"/stay-fees/{B}" + M)
+        cmp_pair(f"GET /stay-fees/A/pdf before finalize as {who}", who, "GET", f"/stay-fees/{A}/pdf" + M)
+        cmp_pair(f"GET /stay-fees/A/csv before finalize as {who}", who, "GET", f"/stay-fees/{A}/csv" + M)
+        cmp_pair(f"GET /stay-fees/pdfs.zip before finalize as {who}", who, "GET", "/stay-fees/pdfs.zip" + M)
+    # guest-pay-preview (W10 step 2): own, foreign, anonymous, no csrf, bad rate, valid and invalid account
+    for label, who, kw in (
+        ("own, valid account", "h1", {"csrf": True, "data": {"account": "19-2000781379/0800", "rate": "50"}}),
+        ("own, invalid account", "h1", {"csrf": True, "data": {"account": "12", "rate": "50"}}),
+        ("own, empty", "h1", {"csrf": True, "data": {}}),
+        ("own, rate not a number", "h1", {"csrf": True, "data": {"account": "19-2000781379/0800", "rate": "x"}}),
+        ("own, no csrf", "h1", {"data": {"account": "19-2000781379/0800"}}),
+        ("own, foreign origin", "h1", {"csrf": True, "data": {"account": "19-2000781379/0800"}, "origin": "https://evil.example"}),
+        ("other host", "alfa", {"csrf": True, "data": {"account": "19-2000781379/0800"}}),
+        ("anonymous", None, {"csrf": True, "data": {"account": "19-2000781379/0800"}}),
+    ):
+        cmp_pair(f"POST guest-pay-preview {label}", who, "POST", f"/stay-fees/{A}/guest-pay-preview", **kw)
+    cmp_pair("POST guest-pay-preview unknown apartment", "h1", "POST", "/stay-fees/99999/guest-pay-preview", csrf=True, data={"account": "19-2000781379/0800"})
+    # finalize on Python for both databases (blocked B first, then A)
+    twin("POST finalize B (blocked)", "h1", "POST", f"/stay-fees/{B}/finalize", csrf=True, data={"month": month, "rate_czk": "50"})
+    form = {"month": month, "rate_czk": "50", "confirm_collected": "1", f"collected_{fee['guests_a'][0]}": "200"}
+    twin("POST finalize A", "h1", "POST", f"/stay-fees/{A}/finalize", csrf=True, data=form)
+    # reads served by Go from rows Python wrote (encrypted PDF/CSV/payload decrypted in Go)
+    for who in ("h1", "alfa", None):
+        cmp_pair(f"GET /stay-fees list after finalize as {who}", who, "GET", "/stay-fees" + M)
+        cmp_pair(f"GET /stay-fees/A detail after finalize as {who}", who, "GET", f"/stay-fees/{A}" + M)
+        p, g = cmp_pair(f"GET /stay-fees/A/pdf after finalize as {who}", who, "GET", f"/stay-fees/{A}/pdf" + M)
+        cmp_pair(f"GET /stay-fees/A/csv after finalize as {who}", who, "GET", f"/stay-fees/{A}/csv" + M)
+        cmp_pair(f"GET /stay-fees/pdfs.zip after finalize as {who}", who, "GET", "/stay-fees/pdfs.zip" + M)
+        if who == "h1":
+            # the frozen PDF is the stored one: both servers must serve the bytes in their own database
+            def stored(dbn):
+                r = subprocess.run([sys.executable, "-I", "-c", STORED_SHA, dbn], capture_output=True, text=True, cwd=os.path.join(ROOT, "App"),
+                                   env=dict(os.environ, **ENV_COMMON, UBYHOST_DATABASE_URL=PG + "/" + dbn, PYTHONPATH=os.path.join(ROOT, "App")))
+                return r.stdout.strip()
+            for name, rec, dbn in (("py", p, "e2e_py"), ("go", g, "e2e_go")):
+                sha = stored(dbn)
+                ok = bool(sha) and rec.get("sha") == sha
+                rows.append({"area": "stay-fees", "case": f"{name} serves the stored (decrypted) report PDF byte for byte", "hard": [] if ok else [f"served {rec.get('sha')} stored {sha!r}"], "soft": [], "py": 1, "go": 1})
+    # host invoices with a real stay (W9: /invoices/new, /invoices/preview, POST /invoices)
+    s1, s2, s3 = seed["stays"]
+    for who in ("h1", "alfa", None):
+        cmp_pair(f"GET /invoices/new picker as {who}", who, "GET", "/invoices/new")
+        cmp_pair(f"GET /invoices/new?reservation_id={s1} as {who}", who, "GET", f"/invoices/new?reservation_id={s1}")
+    cmp_pair("GET /invoices/new unknown stay", "h1", "GET", "/invoices/new?reservation_id=99999")
+    base = {"buyer_name": "Demo Guest", "lang": "cs", "reservation_id": str(s1), "stay_price": "10000"}
+    for label, who, kw in (
+        ("preview ok", "h1", {"csrf": True, "data": base}),
+        ("preview no csrf", "h1", {"data": base}),
+        ("preview other host", "alfa", {"csrf": True, "data": base}),
+        ("preview anonymous", None, {"csrf": True, "data": base}),
+        ("preview no buyer", "h1", {"csrf": True, "data": dict(base, buyer_name="")}),
+        ("preview bad price", "h1", {"csrf": True, "data": dict(base, stay_price="abc")}),
+        ("preview foreign origin", "h1", {"csrf": True, "data": base, "origin": "https://evil.example"}),
+    ):
+        cmp_pair(f"POST /invoices/preview {label}", who, "POST", "/invoices/preview", **kw)
+    for label, who, kw in (
+        ("issue as other host", "alfa", {"csrf": True, "data": base}),
+        ("issue no csrf", "h1", {"data": base}),
+        ("issue foreign origin", "h1", {"csrf": True, "data": base, "origin": "https://evil.example"}),
+        ("issue no buyer (422)", "h1", {"csrf": True, "data": dict(base, buyer_name="")}),
+        ("issue price 0", "h1", {"csrf": True, "data": dict(base, stay_price="0")}),
+        ("issue ok", "h1", {"csrf": True, "data": base}),
+        ("issue same stay again (stay limit)", "h1", {"csrf": True, "data": base}),
+        ("issue second stay, already paid", "h1", {"csrf": True, "data": dict(base, reservation_id=str(s2), already_paid="1", stay_price="25050")}),
+        ("issue third stay, long note", "h1", {"csrf": True, "data": dict(base, reservation_id=str(s3), stay_price="9999", note="x" * 3000)}),
+    ):
+        cmp_pair(f"POST /invoices {label}", who, "POST", "/invoices", **kw)
+    cmp_pair("GET /invoices list after issuing", "h1", "GET", "/invoices")
+    return rows
+
+
+STORED_SHA = (
+    "import hashlib,sys\nsys.path.insert(0, '.')\n"
+    "from app import db, stay_fee_filing\n"
+    "a = int(db.query_one(\"SELECT id FROM apartment WHERE internal_name = 'Fee Flat A'\")['id'])\n"
+    "row = db.query_one('SELECT * FROM stay_fee_filing WHERE apartment_id = ? ORDER BY version DESC LIMIT 1', (a,))\n"
+    "print(hashlib.sha256(stay_fee_filing.pdf_bytes(row)).hexdigest() if row else '')\n"
+)
+
+
+def job_stay_fee_mail(seed):
+    """J2: the stay_fee_mail job run once in Python and once in Go on identical data (clean A sealed, blocked B mailed)."""
+    for dbn in ("e2e_py", "e2e_go"):
+        sql("", f"DROP DATABASE IF EXISTS {dbn}_j2")
+        sql("", f"CREATE DATABASE {dbn}_j2 TEMPLATE e2e_tpl")
+    env_py = dict(os.environ, **ENV_COMMON, UBYHOST_DATABASE_URL=PG + "/e2e_py_j2")
+    r = subprocess.run([sys.executable, "-I", "-c",
+                        "import sys\nsys.path.insert(0, '.')\nfrom datetime import date\nfrom app import stay_fee_auto\nprint(stay_fee_auto.run(date(2026, 11, 3)))"],
+                       cwd=os.path.join(ROOT, "App"), env=env_py, capture_output=True, text=True)
+    py_out = r.stdout.strip() or r.stderr.strip()[-300:]
+    out = "/tmp/e2e_jobrun.txt"
+    env_go = dict(os.environ, **ENV_COMMON, GO_JOBRUN_DB=PG + "/e2e_go_j2", GO_JOBRUN_NOW="2026-11-03T12:00:00Z", GO_JOBRUN_OUT=out)
+    g = subprocess.run(["go", "test", "./cmd/ubyhost-web", "-run", "TestJobRunProbe", "-count=1"], cwd=os.path.join(ROOT, "go"), env=env_go, capture_output=True, text=True)
+    go_out = open(out).read() if g.returncode == 0 and os.path.exists(out) else (g.stdout + g.stderr)[-400:]
+    rows = [{"area": "job-stay_fee_mail", "case": f"ran: python {py_out} / go {go_out}", "hard": [] if (r.returncode == 0 and g.returncode == 0) else ["a run failed"], "soft": [], "py": 0, "go": 0}]
+    dump = ("import json,sys\nsys.path.insert(0, '.')\nfrom app import db\n"
+            "def norm(v):\n    return v\n"
+            "out = {}\n"
+            "out['filings'] = [dict(r) for r in db.query('SELECT apartment_id, period_key, version, cadence, rate_czk, liable_days, exempt_days, total_due_czk, total_collected_czk, sent_at IS NOT NULL AS sent, pdf_enc IS NOT NULL AS has_pdf, csv_enc IS NOT NULL AS has_csv FROM stay_fee_filing ORDER BY apartment_id, version')]\n"
+            "out['mail'] = [dict(r) for r in db.query('SELECT kind, owner_user_id, apartment_id, to_email, cc_email, subject, state, attempts FROM email_outbox ORDER BY kind, apartment_id, to_email')]\n"
+            "out['audit'] = [dict(r) for r in db.query(\"SELECT action, owner_user_id FROM audit WHERE action LIKE 'stay_fee%' ORDER BY action, owner_user_id\")]\n"
+            "out['alerts'] = [dict(r) for r in db.query('SELECT kind, owner_user_id FROM alert ORDER BY kind, owner_user_id')]\n"
+            "def attach(r):\n    return r\n"
+            "print(json.dumps(out, sort_keys=True, default=str))\n")
+    dumps = {}
+    for name, dbn in (("py", "e2e_py_j2"), ("go", "e2e_go_j2")):
+        rr = subprocess.run([sys.executable, "-I", "-c", dump], cwd=os.path.join(ROOT, "App"),
+                            env=dict(os.environ, **ENV_COMMON, UBYHOST_DATABASE_URL=PG + "/" + dbn), capture_output=True, text=True)
+        try:
+            dumps[name] = json.loads(rr.stdout.strip().splitlines()[-1])
+        except Exception:
+            dumps[name] = {"error": rr.stderr[-300:]}
+    for key in ("filings", "mail", "audit", "alerts"):
+        a, b = dumps["py"].get(key), dumps["go"].get(key)
+        rows.append({"area": "job-stay_fee_mail", "case": f"{key}: py {len(a or [])} rows, go {len(b or [])} rows", "hard": [] if a == b and a is not None else [f"{key} differ: py={json.dumps(a)[:600]} go={json.dumps(b)[:600]}"], "soft": [], "py": len(a or []), "go": len(b or [])})
+    # a second run on the same day must change nothing (no double mail)
+    env_py2 = env_py
+    subprocess.run([sys.executable, "-I", "-c", "import sys\nsys.path.insert(0, '.')\nfrom datetime import date\nfrom app import stay_fee_auto\nstay_fee_auto.run(date(2026, 11, 3))"], cwd=os.path.join(ROOT, "App"), env=env_py2, capture_output=True, text=True)
+    subprocess.run(["go", "test", "./cmd/ubyhost-web", "-run", "TestJobRunProbe", "-count=1"], cwd=os.path.join(ROOT, "go"), env=env_go, capture_output=True, text=True)
+    again = {}
+    for name, dbn in (("py", "e2e_py_j2"), ("go", "e2e_go_j2")):
+        rr = subprocess.run([sys.executable, "-I", "-c", dump], cwd=os.path.join(ROOT, "App"),
+                            env=dict(os.environ, **ENV_COMMON, UBYHOST_DATABASE_URL=PG + "/" + dbn), capture_output=True, text=True)
+        again[name] = json.loads(rr.stdout.strip().splitlines()[-1])
+    for name in ("py", "go"):
+        same = again[name] == dumps[name]
+        rows.append({"area": "job-stay_fee_mail", "case": f"{name}: second run the same day changes nothing (no double mail)", "hard": [] if same else [f"{name} second run changed rows"], "soft": [], "py": 1, "go": 1})
+    return rows
+
+
+
 MIXED_USERS = "'user2', 'user4', 'host-three'"  # accounts the mixed Python<->Go flows log in (one side only)
 DB_QUERIES = {
     "invoice": "SELECT id, owner_user_id, kind, corrects_invoice_id, number, total_haler, paid_on IS NOT NULL AS paid, marked_paid_at IS NOT NULL AS marked, correction_reason FROM invoice ORDER BY id",
     "platform_invoice": "SELECT id, owner_user_id, kind, corrects_id, number, total_haler, voided, paid_on, paid_via FROM platform_invoice ORDER BY id",
     "billing_account": "SELECT owner_user_id, status, plan, billing_interval, apartments_billed, cancel_at_period_end, carry_czk FROM billing_account ORDER BY owner_user_id",
-    "audit": "SELECT action, CASE WHEN action IN ('guest_details_mail_on', 'guest_details_mail_off', 'stay_fee_emails_on', 'stay_fee_emails_off') THEN '*' ELSE actor END, owner_user_id, regexp_replace(detail, '[0-9]{4}-[0-9]{2}-[0-9]{2}[T ][0-9:.+Z-]*', 'TS', 'g') FROM audit WHERE NOT (action IN ('login', 'two_factor_login', 'two_factor_failed') AND (owner_user_id IN (SELECT id FROM user_account WHERE username IN ({mx})) OR actor IN ({mx}))) ORDER BY action, actor, owner_user_id, detail",
+    "audit": "SELECT action, CASE WHEN action IN ('guest_details_mail_on', 'guest_details_mail_off', 'stay_fee_emails_on', 'stay_fee_emails_off') THEN '*' ELSE actor END, owner_user_id, regexp_replace(detail, '[0-9]{4}-[0-9]{2}-[0-9]{2}[T ][0-9:.+Z-]*', 'TS', 'g') FROM audit WHERE NOT (action IN ('login', 'two_factor_login', 'two_factor_failed') AND (owner_user_id IN (SELECT id FROM user_account WHERE username IN ({mx})) OR actor IN ({mx}))) ORDER BY 1, 2, 3, 4",
     "login_token": "SELECT user_account_id, purpose, remember, used_at IS NOT NULL AS used FROM login_token WHERE user_account_id NOT IN (SELECT id FROM user_account WHERE username IN ({mx})) ORDER BY user_account_id, purpose, used",
     "user_account": "SELECT id, username, role, active, session_version FROM user_account ORDER BY id",
     "legal_acceptance": "SELECT user_account_id, document, version, method FROM legal_acceptance ORDER BY 1,2,3",
@@ -623,13 +787,14 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--report")
     ap.add_argument("--flows-only", action="store_true")
+    ap.add_argument("--no-job", action="store_true", help="skip the stay_fee_mail job comparison")
     ap.add_argument("--go-paths", help="only sweep routes Caddy would send to Go for this UBYHOST_GO_PATHS value")
     a = ap.parse_args()
     seed = setup_databases()
     procs = start_servers()
     rows = []
     try:
-        sides = {"py": Side("py", seed), "go": Side("go", seed)}
+        sides = {"py": Side("py", seed), "go": Side("go", seed), "pyg": Side("pyg", seed)}
         rows += mixed_flows(seed, sides)  # first: before the 2FA brute-force cases fill the IP rate limit; DB queries below skip its users
         if not a.flows_only:
             for name, who, m, path, kw in sweep_cases(a.go_paths.replace('"', "").split() if a.go_paths else None):
@@ -641,6 +806,7 @@ def main():
             for (label, p), (_, g) in zip(res["py"], res["go"]):
                 hard, soft = compare(p, g)
                 rows.append({"area": area, "case": label, "hard": hard, "soft": soft, "py": p.get("status"), "go": g.get("status")})
+        rows += fee_flows(seed, sides)
         rows += db_compare(seed)
     finally:
         stop(procs)
@@ -648,6 +814,8 @@ def main():
         if r["hard"] and all(any(k in x for k in KNOWN) for x in r["hard"]):
             r["soft"] = ["KNOWN: " + x for x in r["hard"]] + r["soft"]
             r["hard"] = []
+    if not a.no_job:
+        rows += job_stay_fee_mail(seed)
     bad = [r for r in rows if r["hard"]]
     print(f"{len(rows)} cases, {len(bad)} with hard differences, {sum(1 for r in rows if r['soft'] and not r['hard'])} with soft differences only")
     for r in bad:

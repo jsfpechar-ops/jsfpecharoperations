@@ -39,7 +39,7 @@ The seed data is the billing golden (12 users, about 70 platform invoices with a
 | Python and Go mixed (a cutover serves one user from both): Go session cookie on Python and the reverse, CSRF token and nonce from one side's form posted to the other, 2FA pending token from Go finished on Python | 7 | pass |
 | Table contents after the run (platform_invoice, invoice, billing_account, audit, login_token, user_account, legal_acceptance, email_outbox, stripe_webhook_event, passkey, and the row count of every other table) | 10+ | identical |
 
-Total 1,832 harness cases, 0 hard differences; 433 soft (373 body text such as whitespace, a 5-character difference on most pages; 127 content type on redirect bodies).
+Total 1,909 harness cases (with the stay and stay-fee fixtures), 0 hard differences; 471 soft (body text such as whitespace and, on a few stay-fee and invoice pages, up to about 2 to 3 percent of characters; the byte-equal goldens `test_go_stay_fee_actions_golden.py` and `test_go_invoices.py` pass). New in this run: stay-fees 70 cases (list, detail, blocked guest, guest-pay-preview, finalize on Python then every read on Go from the rows Python wrote, PDF byte for byte against the stored decrypted blob, CSV, ZIP), host invoices from a real stay 17 more cases (`/invoices/new`, `/invoices/preview`, `POST /invoices` issued, stay limit, already paid, long note), and J2 `stay_fee_mail` run once in each language on identical data (7 checks).
 
 ## Findings
 
@@ -62,7 +62,7 @@ An Opus reviewer read the first version of the harness and found 22 gaps. The on
 - No session fixation check, no remember-me (`Max-Age`) comparison, no impersonation flow, no rate limit shared across the two processes (the limiter is in the database, so it is shared in production; here each side has its own database).
 - No successful `POST /signup` (the form fields need the Turnstile bypass), no valid bank statement upload, no `/predplatne/zmena|zrusit` with a valid body, no VAT-payer invoice.
 - Jobs: only names and intervals are compared; the Go job unit tests and goldens pass, but no job ran on the same queue fixture in Python and Go and had its mail diffed.
-- Stay fees: no stay-fee fixture (apartment, reservation, guest pay), so `/stay-fees*` was checked for routes, auth, CSRF and ownership only.
+- Stay fees: finalize and the other POSTs that Go does not handle ran on Python on both sides; guest pay itself (a guest paying) was not run.
 - Havel and Leon: routes, auth and CSRF only; the AI calls were not made.
 - Browser-level behavior and real authenticators (Face ID, Windows Hello).
 
@@ -75,13 +75,17 @@ An Opus reviewer read the first version of the harness and found 22 gaps. The on
 | W5g passkeys (`/login/passkey /login/passkey/options /account/passkeys /account/passkeys/*`) | **Go once #1037 is merged and deployed** | 6 of 6 handlers present. A full register and login ceremony behaves the same on both servers, including replay, bad signature, bad origin, unknown credential and another host's passkey. A Go session works on Python and the reverse. `ubyhost-go` gets `UBYHOST_PUBLIC_BASE_URL` in compose (WebAuthn needs an https host there). Not tested: a real device. #1033 (button wording) is a separate, held PR. |
 | W8b Havel and Leon setup | **No-go until the two budget variables are set** | Routes, auth, CSRF and ownership match (8 of 8 handlers). The runbook stops on `UBYHOST_AI_MONTHLY_USD_HAVEL` and `_LEON` missing, and the AI answers themselves were not compared. The "Python ran a week" condition is Josef's call. |
 | W9 `/invoice/d/*`, `/invoices/*.pdf`, `/invoices/*/paid`, `/invoices/*/cancel` | **Go** (one path per run, Josef's rollback test after each) | Real host invoices: PDF 200 for the owner and a login redirect for others, public download token valid and garbage, paid and cancel make the same table rows, double cancel makes one storno, foreign host and missing CSRF change nothing. |
-| W9 `/invoices/preview`, `/invoices/new`, `/invoices` | **No-go until a stay fixture is added** | Issuing an invoice needs a finished stay; only empty-body requests were tested. These are last in the runbook order anyway. VAT-payer invoices were not tested. |
-| W10 step 2 `/stay-fees/*/guest-pay-preview` | **No-go** | Waits for Josef's `UBYHOST_STAY_FEE_GUEST_PAY` decision, and no stay-fee fixture ran. |
-| W10 step 3 `/stay-fees` | **No-go until a stay-fee fixture run** | Handlers present, golden tests pass, but no live comparison with data. A fixture (apartment, reservation, rates) is the next piece to add. |
-| J2 `stay_fee_mail` job | **No-go until W10 is done** | Kind and interval match, Go tests pass; no queue-fixture run in both languages. The runbook already requires W10 steps 1 to 3 first. |
+| W9 `/invoices/preview`, `/invoices/new`, `/invoices` | **Go** (one path per run, last in the runbook order, Josef's rollback test after each) | A real stay now exists: picker, preview, no buyer, bad price, price 0, foreign origin, other host, anonymous, no CSRF, issue, same stay twice, already paid and long note give the same status, same invoice rows and same numbers on both. Not tested: a VAT-payer invoice (`BILLING_VAT_STATUS` is `non_payer`). |
+| W10 step 2 `/stay-fees/*/guest-pay-preview` | **Go for the code, still waits for Josef's `UBYHOST_STAY_FEE_GUEST_PAY` decision** | Same status for valid, invalid, empty, non-numeric rate, no CSRF, foreign origin, other host, anonymous, unknown apartment (run with guest pay on). The response body is 140 characters shorter in Go (soft difference, not yet read line by line; look at it before the switch). |
+| W10 step 3 `/stay-fees` | **Go** | Handlers present, goldens pass, and every read (list, detail, blocked guest, PDF, CSV, ZIP) matches after Python finalized: Go decrypts what Python stored and serves the stored PDF byte for byte. Finalize and the other POSTs stay on Python. |
+| J2 `stay_fee_mail` job | **Not yet: the mail branch was not exercised** | Kind and interval match. On identical data both languages seal the clean period (1 filing, 1 audit row, same), and a second run the same day changes nothing. But the blocked apartment produced 0 mails on both, so the "mail the host" path is unproven. Needs a fixture where the job really mails (check why B counts as 0 blocked), then diff the mail rows. W10 steps 1 to 3 are in place. |
 | S scheduler | **Go once #1036 is deployed** | With #1036 Go has all 15 kinds with Python's intervals (without it only 13, and `UBYHOST_SCHEDULER=go` would log kinds=13). Scheduler and switch tests pass. Check `scheduler started owner=go kinds=15` after the switch; not tested: both schedulers enqueuing at once (the one-open-row index is the guard). |
 
 Money and login waves were reviewed by an independent Opus pass as asked; its remaining points are the list above.
+
+## Layout gate (`/admin/fakturace`, the template fix of F1)
+
+`test_layout_lint_browser.py`: 4 passed, 0 skipped. Screenshots at 390, 768 and 1280 px of the page with overdue invoices (the case that used to answer 500): the page renders, no horizontal overflow at any width (scroll width equals the viewport). At 390 the invoice table is wider than the screen and scrolls inside its box (the Due column is cut off until scrolled, as before the fix); at 768 and 1280 the table fills about half of the content width, which is how the page looked before the fix. Nothing in the fix changes columns or styling, only the number of cells in the watch row.
 
 ## Reading the soft differences
 

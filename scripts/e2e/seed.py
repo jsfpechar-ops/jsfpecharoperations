@@ -93,6 +93,35 @@ def main():
     hids = [invoices.issue(draft(t, l), actor_user_id=h1) for t, l in ((400000, "A"), (250000, "B"), (99900, "C"))]
     out["host_invoices"] = hids
     row = db.query_one("SELECT pdf_sha256 FROM invoice WHERE id = ?", (hids[2],))
+    # Stays: two ended yesterday (host invoices), and October stay-fee apartments (one clean, one with an unsigned guest).
+    import secrets as _sec
+    SIG = "data:image/png;base64,AAAA"
+    now = db.utcnow()
+
+    def apt(name, **kw):
+        return db.insert("apartment", dict({"internal_name": name, "owner_user_id": h1, "legal_entity_id": ent, "permalink_token": _sec.token_urlsafe(12),
+                                            "permalink_pin": auth.new_permalink_pin(), "automation_mode": "manual", "default_purpose": "10",
+                                            "active": 1, "created_at": now}, **kw))
+
+    def stay(apartment_id, d_from, d_to, uid):
+        return db.insert("reservation", {"apartment_id": apartment_id, "source": "manual", "uid": uid, "date_from": d_from, "date_to": d_to,
+                                         "status": "active", "created_at": now, "updated_at": now})
+
+    inv_apt = apt("Chata")
+    out["stays"] = [stay(inv_apt, (today - timedelta(days=4)).isoformat(), (today - timedelta(days=1)).isoformat(), f"e2e-inv-{k}") for k in range(3)]
+    fee = dict(addr_obec="Praha 3", stay_fee_rate_czk=50, stay_fee_cadence="monthly", stay_fee_vs="123456", stay_fee_authority_name="Mestsky urad",
+               stay_fee_council_account="19-2000781379/0800", stay_fee_council_iban="CZ3008000000192000781379")
+    fee_a, fee_b = apt("Fee Flat A", **fee), apt("Fee Flat B", **fee)
+    ra = stay(fee_a, "2026-10-10", "2026-10-14", "e2e-fee-a")
+    rb = stay(fee_b, "2026-10-12", "2026-10-15", "e2e-fee-b")
+
+    def guest(rid, first, birth, sig):
+        return db.insert("guest", {"reservation_id": rid, "first_name": first, "surname": "Demo", "birth_date": birth, "nationality": "DEU",
+                                   "signature_png": sig, "created_at": now, "updated_at": now})
+
+    ga = [guest(ra, "Ada", "01011990", SIG), guest(ra, "Bob", "01012016", SIG)]
+    guest(rb, "Cyd", "01011985", None)  # unsigned: blocks sealing
+    out["fee"] = {"a": fee_a, "b": fee_b, "month": "2026-10", "guests_a": ga}
     out["host_invoice_token"] = invoice_links.download_token(hids[2], row["pdf_sha256"])
     h3 = auth.create_account("h3@e2e.test", "Host Three", username="host-three")
     secret3 = auth.new_totp_secret()
