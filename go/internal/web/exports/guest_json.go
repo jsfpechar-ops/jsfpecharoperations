@@ -273,10 +273,6 @@ func GuestExportHandler(pool *pgxpool.Pool, getenv func(string) string, now func
 		if !ok {
 			return
 		}
-		if !sessionIsFresh(h, at) {
-			backErr(w, r, "/settings/security#settings-security", "auth.error.recent_login", nil)
-			return
-		}
 		ctx := r.Context()
 		guests, _, err := queryRows(ctx, pool, ownedGuestSQL, id, ownerID(h))
 		if err == nil && len(guests) > 0 {

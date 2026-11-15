@@ -3328,38 +3328,6 @@
    "body_b64": "ewogICJnZW5lcmF0ZWRfYXQiOiAiMjAyNi0xMS0xM1QxMjowMDowMCswMDowMCIsCiAgImd1ZXN0IjogewogICAgImlkIjogMTUsCiAgICAicmVzZXJ2YXRpb25faWQiOiA2LAogICAgInN1cm5hbWUiOiAiVGFiXHROYW1lIiwKICAgICJmaXJzdF9uYW1lIjogIlFcInVvdGUiLAogICAgImJpcnRoX2RhdGUiOiAiMTk5MCIsCiAgICAibmF0aW9uYWxpdHkiOiAiQVVUIiwKICAgICJkb2NfbnVtYmVyIjogbnVsbCwKICAgICJ2aXNhX251bWJlciI6IG51bGwsCiAgICAiZG9jX251bWJlcl9lbmMiOiBudWxsLAogICAgInZpc2FfbnVtYmVyX2VuYyI6IG51bGwsCiAgICAicmVzX3N0cmVldCI6IG51bGwsCiAgICAicmVzX2NpdHkiOiBudWxsLAogICAgInJlc19jb3VudHJ5IjogInh4eCIsCiAgICAicHVycG9zZSI6IG51bGwsCiAgICAibm90ZSI6IG51bGwsCiAgICAic3RheV9mcm9tIjogbnVsbCwKICAgICJzdGF5X3RvIjogIjIwMjYtMDYtMDIiLAogICAgImlzX2xlYWQiOiAwLAogICAgInJlc3RyaWN0ZWRfYXQiOiBudWxsLAogICAgInJlc3RyaWN0ZWRfcmVhc29uIjogbnVsbCwKICAgICJkb2NfdHlwZSI6IG51bGwsCiAgICAiZmVlX2hvc3RfZGVjaXNpb24iOiBudWxsLAogICAgImZlZV9ob3N0X3JlYXNvbiI6IG51bGwsCiAgICAic2lnbmVkX2F0IjogbnVsbCwKICAgICJub3RpY2VfdmVyc2lvbiI6IG51bGwsCiAgICAibm90aWNlX2xhbmciOiBudWxsLAogICAgIm5vdGljZV9hY2tfYXQiOiBudWxsLAogICAgImZpbGxlZF9hdCI6IG51bGwsCiAgICAiZmlsbGVkX2lwIjogbnVsbCwKICAgICJlbnRlcmVkX2J5IjogImd1ZXN0IiwKICAgICJzdWJtaXRfc3RhdGUiOiAiZXJyb3IiLAogICAgInN1Ym1pdHRlZF9hdCI6IG51bGwsCiAgICAic3VibWlzc2lvbl9pZCI6IG51bGwsCiAgICAibGFzdF9lcnJvcnMiOiBudWxsLAogICAgInN1Ym1pdF9hdHRlbXB0cyI6IDAsCiAgICAiY3JlYXRlZF9hdCI6ICIyMDI2LTAxLTAxVDAwOjAwOjAwKzAwOjAwIiwKICAgICJ1cGRhdGVkX2F0IjogIjIwMjYtMDEtMDFUMDA6MDA6MDArMDA6MDAiLAogICAgInJlY2VpcHRfc3VibWlzc2lvbl9pZCI6IG51bGwsCiAgICAiYXJjaGl2ZWRfYXQiOiBudWxsLAogICAgInBhc3Nwb3J0X3Bob3RvX2F0IjogbnVsbCwKICAgICJpZGVudGl0eV92ZXJpZmllZF9hdCI6IG51bGwsCiAgICAiaWRlbnRpdHlfdmVyaWZpZWRfYnkiOiBudWxsLAogICAgImZlZV9ob3N0X3JlYXNvbl9lbmMiOiBudWxsLAogICAgImZlZV9ob3N0X3JlYXNvbl9yZWZlcmVuY2UiOiBudWxsLAogICAgIm1hbnVhbF9maWxlZF9hdCI6IG51bGwsCiAgICAibWFudWFsX3JlZmVyZW5jZSI6IG51bGwsCiAgICAibWFudWFsX21hcmtlZF9hdCI6IG51bGwsCiAgICAibWFudWFsX3ByZXZfc3RhdGUiOiBudWxsLAogICAgImJpcnRoX2RhdGVfZW5jIjogbnVsbCwKICAgICJyZXNfc3RyZWV0X2VuYyI6IG51bGwsCiAgICAicmVzX2NpdHlfZW5jIjogbnVsbCwKICAgICJzaWduZWRfZm9yX2d1ZXN0X2lkIjogbnVsbCwKICAgICJzaWduZWRfZm9yX3JvbGUiOiBudWxsLAogICAgInNpZ25lZF9mb3JfYXQiOiBudWxsLAogICAgInNpZ25lZF9mb3Jfd29yZGluZyI6IG51bGwsCiAgICAic2lnbmF0dXJlX3ByZXNlbnQiOiB0cnVlLAogICAgInBhc3Nwb3J0X3Bob3RvX3ByZXNlbnQiOiBmYWxzZQogIH0sCiAgIm5vdGljZSI6IHsKICAgICJ2ZXJzaW9uIjogbnVsbCwKICAgICJsYW5nIjogbnVsbCwKICAgICJhY2tub3dsZWRnZWRfYXQiOiBudWxsCiAgfSwKICAicmVzZXJ2YXRpb24iOiB7CiAgICAiaWQiOiA2LAogICAgImRhdGVfZnJvbSI6ICIyMDI2LTA2LTAxIiwKICAgICJkYXRlX3RvIjogIjIwMjYtMDYtMDMiLAogICAgInNvdXJjZSI6ICJpY2FsIiwKICAgICJ1aWQiOiAidTYiCiAgfSwKICAic3VibWlzc2lvbnMiOiBbXSwKICAicmVjZWlwdF9zdWJtaXNzaW9uX2lkIjogbnVsbCwKICAiYXVkaXQiOiBbXQp9"
   },
   {
-   "name": "guest_json_stale",
-   "path": "/guests/11/export.json",
-   "session": {
-    "uid": 1,
-    "stale": 1
-   },
-   "lang": null,
-   "status": 303,
-   "headers": {
-    "location": "/settings/security?err=For%20your%20safety%2C%20log%20out%20and%20log%20in%20again%2C%20then%20repeat%20this%20within%2010%20minutes.#settings-security",
-    "cache-control": "no-store, private"
-   },
-   "audit": [],
-   "body_b64": ""
-  },
-  {
-   "name": "guest_json_stale_cs",
-   "path": "/guests/11/export.json",
-   "session": {
-    "uid": 1,
-    "stale": 1
-   },
-   "lang": "cs",
-   "status": 303,
-   "headers": {
-    "location": "/settings/security?err=Z%20bezpe%C4%8Dnostn%C3%ADch%20d%C5%AFvod%C5%AF%20se%20odhlaste%2C%20znovu%20p%C5%99ihlaste%20a%20do%2010%20minut%20to%20zopakujte.#settings-security",
-    "cache-control": "no-store, private"
-   },
-   "audit": [],
-   "body_b64": ""
-  },
-  {
    "name": "guest_json_other_owner",
    "path": "/guests/4/export.json",
    "session": {

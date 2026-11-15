@@ -82,18 +82,17 @@ def test_workspace_export_needs_a_recent_login(monkeypatch):
     assert _recent_login_redirect(response)
 
 
-def test_guest_export_json_needs_a_recent_login_and_passes_when_fresh(monkeypatch):
+def test_guest_export_json_needs_no_recent_login(monkeypatch):
+    """A signed-in owner is never sent to re-log-in for the guest data export."""
     username = _new_host()
     client = _signed_in(username)
 
     monkeypatch.setattr(auth, "FRESH_LOGIN_SECONDS", -1)
-    stale = client.get("/guests/999999/export.json", follow_redirects=False)
-    assert stale.status_code == 303
-    assert _recent_login_redirect(stale)
+    old = client.get("/guests/999999/export.json", follow_redirects=False)
+    assert old.status_code == 404
 
-    monkeypatch.setattr(auth, "FRESH_LOGIN_SECONDS", 600)
-    fresh = client.get("/guests/999999/export.json", follow_redirects=False)
-    assert fresh.status_code == 404
+    anon = TestClient(app).get("/guests/999999/export.json", follow_redirects=False)
+    assert anon.status_code == 303 and "/login" in anon.headers["location"]
 
 
 def test_invoice_bank_save_stays_off_security(monkeypatch):
