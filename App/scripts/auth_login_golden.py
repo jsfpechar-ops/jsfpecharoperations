@@ -270,6 +270,8 @@ def normalize(html):
     html = re.sub(r'(name="csrf-token" content=")[^"]*"', r'\1<csrf>"', html)
     html = PENDING.sub(r'name="pending" value="<pending>"', html)
     html = re.sub(r"(/login/link\?t=)[A-Za-z0-9_-]+", r"\1<token>", html)
+    # Brief 1762: Go names the passkey button by device; mask only that label.
+    html = re.sub(r"(data-passkey-login-button>)[^<]*", r"\1<login-button-label>", html)
     html = re.sub(r"[ \t\n\r\f\v]+", " ", html)
     return html.replace("> <", "><").strip()
 
