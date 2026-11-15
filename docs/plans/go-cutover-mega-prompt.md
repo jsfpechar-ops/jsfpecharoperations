@@ -4,6 +4,8 @@ Written 2026-11-15. For Josef to paste into the server operator AI (the one that
 
 **What this prompt can and cannot do.** The server cannot sign in, and Cloudflare answers server-side `curl` with a bot challenge (`403`) on `/login`, admin and billing paths, so those waves cannot be proven by `curl`. For them the AI applies the wave only when Josef's message says so, then waits for Josef's browser check. Waves that need a day of soak are done in later sessions: the state file says when each wave was applied, and the AI refuses to start the next wave before the wait is over.
 
+**2026-11-15 evening:** the steps after W5f (passkeys G1, invoices W9, stay fees W10-2 and W10-3, the scheduler check) are in [go-cutover-final-prompt](go-cutover-final-prompt.md); paste that one for the next session.
+
 Only routes that are already ported are in it. Property settings, booking guest side, guest registration, stays, filing, dashboard and the jobs `mail` and `door_codes` are not ported yet (briefs 1700-1790); this prompt must never add their paths.
 
 ## 1. Prompt to paste (copy everything in the box)
