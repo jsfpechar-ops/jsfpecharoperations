@@ -83,6 +83,15 @@ def test_the_page_lists_the_unpaid_invoice(setup):
     assert "Nahrát výpis" in page.text
 
 
+def test_the_watch_list_opens_with_an_overdue_invoice(setup):
+    """A late invoice makes a 3-column watch row; the row once had two columns and the page was a 500."""
+    db.execute("UPDATE platform_invoice SET due_date = ? WHERE id = ?",
+               ((TODAY - timedelta(days=5)).isoformat(), setup["invoice"]["id"]))
+    page = _admin(setup).get("/admin/fakturace?lang=en")
+    assert page.status_code == 200
+    assert 'data-billing-admin-watch=' in page.text
+
+
 def test_the_page_opens_on_unpaid_then_month_and_reports_stay_closed(setup):
     text = _admin(setup).get("/admin/fakturace?lang=en").text
     unpaid, month, reports = text.index("Unpaid invoices"), text.index("Invoices by month"), text.index('id="reports"')
