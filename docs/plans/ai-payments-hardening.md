@@ -1,8 +1,8 @@
-# Plan: Havel, Leon and guest payments: hardening and next capabilities
+# Plan: Havel, Leon, guest payments, mail and double-booking alarm: hardening and next capabilities
 
 Status 2026-11-15. Scope and plan only: **no briefs written** (owner 2026-11-15). Go only ([go-first](../context/go-first.md)).
 
-Source: three read-only reviews on 2026-11-15 (Havel, Leon, guest payments). No Critical or High finding in any of them. Payments coverage was partial; see [second pass](#p2-second-pass-not-yet-reviewed). File:line references are from those reviews and must be re-checked when a brief is written.
+Source: five read-only reviews on 2026-11-15 (Havel, Leon, guest payments, outgoing mail, double-booking alarm). No Critical or High finding in any of them. Payments coverage was partial; see [second pass](#p2-second-pass-not-yet-reviewed). File:line references are from those reviews and must be re-checked when a brief is written.
 
 Goal: Havel is the host support agent who can act with the host's tap; Leon is the guests' 24/7 concierge with enough context and an easy way in; both stay cheap and hard to abuse; guest payments are safe to switch from Stripe test to live.
 
@@ -11,6 +11,7 @@ Goal: Havel is the host support agent who can act with the host's tap; Leon is t
 - **One shared AI budget** for Havel and Leon stays. Abuse protection is built inside it ([budget](#shared-budget-and-abuse-protection)).
 - **Havel never changes:** IBAN or payout details, login or e-mail, team members, billing, UbyPort credentials, or anything that deletes. For these he only opens the right page.
 - **Lookups:** the model sees ids, dates and statuses only. Guest names appear only in the server-rendered card. No guest name goes to the AI provider through a lookup.
+- **Host mail goes out in the host's language** (reverses the English default at `App/app/mail_notify.py:44`).
 - **Proposed, owner to confirm:** Havel limits in [H0](#h0-limits-and-tokens).
 
 ## Order
@@ -21,6 +22,8 @@ Goal: Havel is the host support agent who can act with the host's tap; Leon is t
 4. H0-H3 (Havel).
 5. L2-L4 (Leon port, context, access).
 6. H4 and L5 (personalities).
+7. M1-M5 (mail). M2 ships with L4.
+8. D1-D6 (double-booking alarm). D1-D3 first.
 
 ## Payments (guests paying hosts, Stripe Connect direct charges, test mode)
 
@@ -124,3 +127,29 @@ Today: QR sticker (`/g/{token}`, print page at `/apartments/{id}/guide/qr`) and 
 ### L5 Personality
 
 Rewrite `leon_prompt.txt` as the 24/7 concierge: warm, brief, local; never guesses; passes the question to the host when the guide is silent.
+
+## Mail
+
+Sound (judged from HTML source, not rendered): one shared 600 px layout with logo, one button, footer and preheader (`App/app/mail_notify.py:484-542`); text part always sent; values escaped; guest mail in six languages with Reply-To set to the host; no open or click tracking; List-Unsubscribe on lifecycle mails. Mail is built in both Python and Go and kept equal by golden files (`App/tests/golden/mail/`), so every copy change lands in both until the Python builders retire.
+
+- **M1 Host language (owner decided).** `HOST_MAIL_LANGUAGE = "en"` (`mail_notify.py:44`), also hard-coded for door-code notices (`:1589`, `:1694`) and guest details (`:2035`); the double-booking mail is English only (`go/internal/mail/double_booking.go`). Send every host mail in the host's language; Czech copy mostly exists.
+- **M2 Guide and Leon links in guest mail** (same work as [L4](#l4-guest-access)): completion, pre-arrival reminder and door-code mails. Completion today says "nothing else to do" and nothing about arrival.
+- **M3 Bounces and complaints.** No code handles SES feedback ([SES](../SES.md)); stop mailing an address after a hard bounce or complaint and show the host that the guest's address failed. Later: move DMARC off `p=none`.
+- **M4 Subjects.** Stay dates in guest subjects (claim, completion, door code); a specific login-link subject; strip control characters from subjects at enqueue (`App/app/mail.py:325`).
+- **M5 Door-code notice batching.** 12 variants per stay event, no batching seen (`host_i18n.py:4985-5020`): one mail per stay per day.
+- **M6 Look check.** `App/scripts/mail_golden.py --out DIR` renders the goldens; take 390 px screenshots, check dark mode and blocked images (logo is remote, `mail_notify.py:36`).
+
+Not reviewed: bodies of claim, reminder, payment, invoice, site-booking, billing and lifecycle mails; de/es/fr/uk copy; reminder and deadline send frequency.
+
+## Double-booking alarm
+
+Go only: `go/internal/ical/doublebooking.go`. Runs at the end of each iCal feed sync (hourly job or "Sync now"). Per property, half-open interval (same-day turnover is fine), active stays only. One alert per stay pair plus one mail to the entity contact address; clears itself. Prevention exists only on the booking site (advisory lock and re-check at checkout, re-check and refund in the webhook).
+
+- **D1 Check on every stay write,** not only at sync: manual create and edit, site booking paid. Today a property with no working feed or a paused plan is never checked (`syncall.go:55-60`, `syncfeed.go:269-271`).
+- **D2 Booking.com closures.** `CLOSED - Not available` is imported as a stay (`parse.go:199-204`), so a booking mirrored from another portal looks like a clash (inferred, confirm with a real feed). Treat a closure with the same dates as another feed's stay as a mirror.
+- **D3 Blocks.** Host-blocked dates are skipped on import (`syncfeed.go:327-340`), so the booking site can sell them. Import them as blocked ranges that `DatesAvailable` honours.
+- **D4 Dismiss sticks.** The next sync re-raises a dismissed pair (`doublebooking.go:129-135`); respect `user_dismissed` per pair key.
+- **D5 Actionable alert.** Add `double_booking` to the alert actions (`alerts.go:54-70`), link both stays, show both date ranges and sources; mail in the host's language (M1); do not skip silently when the contact address is missing. One mail for a three-way overlap.
+- **D6 Shorter selling window.** Fetch the feeds fresh at checkout or webhook time; alarm when a feed has had no successful read for N hours. The exemption for a manual stay with identical dates (`doublebooking.go:37-38`) hides a real clash: narrow it.
+
+Not reviewed: production job and path flags, what the portals export and how often they poll, overlap checks on manual date edits (the manual-create warning is Python, `App/app/routes/admin.py:3889`), the cleaning calendar.

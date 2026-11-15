@@ -65,4 +65,4 @@ Append-only.
 - 2026-11-14 [access] Entry code: Go only, rules in [plan](../plans/entry-code-external-guide.md) | owner
 - 2026-11-15 [ux/auth] Login button named by device (Face ID etc.), not "passkey"; auto-open only on remembered devices | owner | 1762, 1763
 - 2026-11-15 [dep] go-webauthn v0.18.0 pinned | owner | 1760
-- 2026-11-15 [ai] Shared Havel/Leon budget with abuse caps; Havel no-go settings; lookups without names: [plan](../plans/ai-payments-hardening.md) | owner
+- 2026-11-15 [ai] Shared Havel/Leon budget with abuse caps; Havel no-go settings; lookups without names; host mail in host's language: [plan](../plans/ai-payments-hardening.md) | owner
