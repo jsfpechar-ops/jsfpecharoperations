@@ -194,3 +194,22 @@ def test_the_receipt_is_copied_to_the_host_and_no_separate_host_details_mail(mon
     assert "(host only)" in payload["text"]
     assert f"/reservations/{seed['stay']}" in payload["text"]
     assert _rows(seed["stay"], "guest_details_host") == []
+
+
+def test_completion_never_queues_guest_details_host_even_when_full_details_are_on(
+    monkeypatch,
+):
+    """1630: one completion mail only; the separate host-details kind stays unused."""
+    monkeypatch.setattr(guest_mail_pref, "full_details", lambda owner_user_id: True)
+    monkeypatch.setattr(
+        claim.reporting,
+        "reservation_progress",
+        lambda *a, **k: {"expected": 2, "filled": 2, "incomplete": []},
+    )
+    monkeypatch.setattr(door_codes, "completion_door_code", lambda *a, **k: ("none", None, None))
+    seed = _seed()
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (seed["apartment"],))
+    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (seed["stay"],))
+    claim.maybe_notify_completion(reservation, apartment)
+    assert len(_rows(seed["stay"], "completion")) == 1
+    assert _rows(seed["stay"], "guest_details_host") == []
