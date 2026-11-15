@@ -222,3 +222,5 @@ havel.paused
 havel.limit_burst
 havel.limit_week
 havel.limit_month
+security_prompt.device_login
+security_prompt.device_login_help
