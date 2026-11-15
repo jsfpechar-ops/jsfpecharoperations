@@ -10,7 +10,6 @@ Updated: 2026-11-15.
 - AI: `havel,leon,guide_import` (`guide_translate` off). Stripe test. Guest QR 404 without IBAN.
 - Later: remove Python deadlines job.
 - UX gate and Stripe onboarding live. Backups: daily pg_dump + WAL-G 7-day PITR (drill every 3 mo).
-- 11-13 merges, head-count H1, security audit #966: [archive](../plans/status-archive-2026-11.md).
 
 ## Next
 - Entry code + guide link (Go only): [plan](../plans/entry-code-external-guide.md). Runnable: 1660, 1663, 1668 (layout-lint harness; gates 1664-1667 screenshots); 1661→1662, 1664 after it; 1665-1667 wait on property-settings and guest-pages ports.
@@ -23,7 +22,7 @@ Updated: 2026-11-15.
 - TTLock 0008–0016: [plan](../plans/ttlock-door-codes.md) §11; live after §12 + lawyer (K-L).
 - File-retention: decided; lawyer Terms/DPA line.
 - Login wording: 1762 (Face ID / device labels), 1763 (auto-open on remembered devices), 1764 (Settings wording, blocked on 1704); after 1760, exact-diff pass first.
-- Login Face ID: 1762 PR; 1763, 1764.
+- Payments hardening ([plan](../plans/ai-payments-hardening.md)): run 1791 → 1792 → 1793 in order. 1794 (Leon emergency) waits on the owner (go-first exception).
 
 ## Blocked: needs owner, lawyer or council
 - Lawyer: legal texts (0005, K-L). Stale signed dates (K-F18). Filing K-F03, K-F07: AI-reviewed 11-15, not lawyer items (see go-sqlite-final §7); secrets K-S10.
