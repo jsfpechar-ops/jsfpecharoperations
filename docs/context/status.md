@@ -13,6 +13,7 @@ Updated: 2026-11-15.
 - 11-13 merges, head-count H1, security audit #966: [archive](../plans/status-archive-2026-11.md).
 
 ## Next
+- Homeserver vault (weekly restic) + local-ai compose: `deploy/homeserver/`
 - Entry code + guide link (Go only): [plan](../plans/entry-code-external-guide.md). Runnable: 1660, 1663, 1668 (layout-lint harness; gates 1664-1667 screenshots); 1661→1662, 1664 after it; 1665-1667 wait on property-settings and guest-pages ports.
 - CI 1413-1415, README 1416.
 - Go move ([remaining](../plans/go-full-move-remaining.md), [SQLite](../plans/sqlite-retirement.md)): #1010 merged 11-14 (1263, 1448, 1470-1473, 1450-1452, 1436-1446, 1420-1427, 1430-1435; switched off). PR #1021: 1501, 1514, 152x-157x, 1620-1624, 1580+. Server 11-15: W1, W1b, W6-W8 on Go; W3 rolled back; retention dry-run.

@@ -157,6 +157,59 @@ You can use **both** Drive and S3 (two cron lines). Pick one off-site copy if yo
 
 </details>
 
+## Weekly backup to the homeserver vault (restic over SFTP)
+
+A third off-site copy lands on the LAN homeserver: **restic** over SFTP into a
+chrooted, sftp-only `vault` user. Encrypted archives only — the script refuses
+a plaintext snapshot, same as S3. Keeps **8 weekly** snapshots
+(`restic forget --keep-weekly 8 --prune`).
+
+**One-time on the homeserver (as root):**
+
+```bash
+sudo bash deploy/homeserver/setup-vault.sh
+```
+
+Creates `vault` (no login shell, key-only), `/storage/backups/lightsail/restic`,
+and an sshd `Match User vault` block: `ChrootDirectory /storage/backups/lightsail`,
+`ForceCommand internal-sftp`, no forwarding. Nothing is installed on the
+homeserver; restic's default `sftp-server` command is served by `internal-sftp`.
+
+**One-time on this server:**
+
+```bash
+sudo apt-get install -y restic
+cd /opt/ubyhost/deploy/lightsail
+sudo UBYHOST_HS_HOST=<homeserver address> ./scripts/homeserver-vault-init.sh
+```
+
+`homeserver-vault-init.sh` generates `~/.ssh/homeserver-vault_ed25519`, adds a
+`Host homeserver-vault` entry to `~/.ssh/config`, installs the key for `vault`
+(through the existing root login — one password prompt), creates
+`~/.ubyhost-hs-restic-password` (mode 0600), and initializes the repo at
+`sftp:homeserver-vault:/restic` (on disk: `/storage/backups/lightsail/restic`).
+
+**Copy the restic password into the password manager now** — it is stored
+nowhere else and the repo is unreadable without it.
+
+**Test once:**
+
+```bash
+cd /opt/ubyhost/deploy/lightsail
+UBYHOST_HS_REPO=sftp:homeserver-vault:/restic ./scripts/backup-homeserver.sh
+```
+
+A good run ends with `Homeserver copy done:`. It runs `backup.sh` first (a fresh
+encrypted snapshot), so a failed backup also stops the upload.
+
+**Weekly cron (Sunday 03:30 UTC, after the 03:00 daily snapshot):**
+
+```bash
+(crontab -l 2>/dev/null; echo "30 3 * * 0 cd /opt/ubyhost/deploy/lightsail && UBYHOST_HS_REPO=sftp:homeserver-vault:/restic ./scripts/backup-homeserver.sh >> /var/log/ubyhost-homeserver.log 2>&1") | crontab -
+```
+
+Restore from the vault: [deploy/homeserver/README.md](../homeserver/README.md).
+
 ## Backups and recovery (Litestream retired 2026-11-07)
 
 Litestream is gone. The app runs on PostgreSQL, so recovery is the age-encrypted `backup.sh` pg_dump (daily and before each deploy), the daily Google Drive copy and the daily S3 copy. Restore with `./scripts/pg-restore.sh <stamp>`; `./scripts/restore.sh` remains only for old SQLite snapshots. The pre-cutover S3 replica stays untouched as an archive.

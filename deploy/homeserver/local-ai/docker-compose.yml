@@ -1,0 +1,36 @@
+# Local AI stack for the homeserver: Ollama (API) + Open WebUI (chat UI).
+# ollama_data is external: it reuses the models already downloaded by the
+# previous standalone ollama container (volume local-ai_ollama_data).
+# Deploy and verify: README.md in this directory.
+name: local-ai
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    ports:
+      # LOCAL_AI_BIND=127.0.0.1 keeps the API local-only; default: all interfaces (LAN).
+      - "${LOCAL_AI_BIND:-0.0.0.0}:11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    restart: unless-stopped
+    ports:
+      - "${LOCAL_AI_BIND:-0.0.0.0}:3000:8080"
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+    volumes:
+      - openwebui_data:/app/backend/data
+    depends_on:
+      - ollama
+
+volumes:
+  ollama_data:
+    name: local-ai_ollama_data
+    external: true
+  openwebui_data:
+    name: local-ai_openwebui_data

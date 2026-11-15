@@ -275,6 +275,14 @@ Daily off-site to S3 (03:30 UTC, after the 03:00 local backup) after `rclone con
 
 `backup-s3.sh` never deletes old copies: an S3 lifecycle rule on the `UbyHost-backups/` prefix expires them after 30 days (the off-site window in `docs/privacy/RETENTION.md`). Check a run with `tail -30 /var/log/ubyhost-s3.log`; a good run ends with `Uploaded to`.
 
+Weekly off-site to the LAN homeserver (Sunday 03:30 UTC): restic over SFTP into a chrooted, sftp-only vault user. Setup once: `sudo bash deploy/homeserver/setup-vault.sh` on the homeserver, then `sudo UBYHOST_HS_HOST=<homeserver> ./scripts/homeserver-vault-init.sh` here — full steps in [deploy/lightsail/README.md](../deploy/lightsail/README.md#weekly-backup-to-the-homeserver-vault-restic-over-sftp). `backup-homeserver.sh` runs `backup.sh` itself (a fresh encrypted snapshot, plaintext refused) and keeps 8 weekly snapshots (`restic forget --keep-weekly 8 --prune`):
+
+```bash
+(crontab -l 2>/dev/null; echo "30 3 * * 0 cd /opt/ubyhost/deploy/lightsail && UBYHOST_HS_REPO=sftp:homeserver-vault:/restic ./scripts/backup-homeserver.sh >> /var/log/ubyhost-homeserver.log 2>&1") | crontab -
+```
+
+Check a run with `tail -30 /var/log/ubyhost-homeserver.log`; a good run ends with `Homeserver copy done:`.
+
 In production `backup.sh` exits 1 and sends no ping when no PostgreSQL dump can be taken: with postgres stopped it takes and prunes no snapshot; with `UBYHOST_DATABASE_URL` unset it keeps the snapshot but still fails. A failed pre-deploy backup stops `deploy.sh`. Dead-man ping: `UBYHOST_BACKUP_PING_URL` in `.env` holds the ping URL of a healthchecks.io check (period 1 day, grace 2 hours); `backup.sh` calls it only after a complete backup, so a missed or failed night raises an alert.
 
 `backup.sh` runs `sqlite3 … '.backup'` **inside the running container**, so a concurrent write is snapshotted consistently (SQLite hot backup). A raw `cp ubyhost.db` while the app is up can capture a torn file — do not do that.
@@ -293,6 +301,7 @@ Passport photos are **not** in the DB backup. After restore, unverified uploads 
 | `backup.sh` on the volume | daily 03:00 UTC | `UBYHOST_BACKUP_RETENTION_DAYS` (set `7` in production `.env`) | quick restore on the same server |
 | `backup-s3.sh` | daily 03:30 UTC | 30 days (bucket lifecycle rule) | main off-site copy, including a new instance |
 | `backup-gdrive.sh` | daily 04:00 UTC | 30 days | second copy outside AWS |
+| `backup-homeserver.sh` (restic over SFTP) | weekly Sun 03:30 UTC | 8 weekly (restic `forget`) | third copy, independent of AWS and of Lightsail snapshots; lands on the homeserver vault (`deploy/homeserver/`) |
 | Lightsail automatic snapshots | daily | 7 | keep on: the only copy of the whole server (`.env`, origin certs, cron, photos) and the fastest full restore; billed per GB, so a 7-day local retention keeps them small |
 
 WAL-G point-in-time recovery (production only, after the rollout in [OPERATIONS](OPERATIONS.md#wal-g-continuous-archiving-and-point-in-time-recovery)): daily base backup 04:30 UTC and a check every 10 minutes. Create the log files first, or cron silently skips both commands: `sudo touch /var/log/ubyhost-walg-backup.log /var/log/ubyhost-walg-check.log && sudo chown ubuntu:ubuntu /var/log/ubyhost-walg-backup.log /var/log/ubyhost-walg-check.log`.

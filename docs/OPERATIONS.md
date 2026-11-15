@@ -645,6 +645,7 @@ tell you:
   `at`, `encrypted`, `bytes`, `retention_days`. Nothing in the app reads it yet
   (GDPR plan FE-3); monitor backups with `UBYHOST_BACKUP_PING_URL`.
 - **Litestream is retired (2026-11-07).** The database is PostgreSQL; recovery is the pg_dump in the age-encrypted snapshot (daily and before each deploy), the daily Drive copy and the daily S3 copy. The old SQLite replica in S3 is kept untouched as an archive until the owner deletes it.
+- **Weekly homeserver copy (restic over SFTP).** `backup-homeserver.sh` pushes the newest age-encrypted snapshot folder to a chrooted, sftp-only `vault` user on the LAN homeserver (`deploy/homeserver/`) and keeps 8 weekly snapshots (`restic forget --keep-weekly 8 --prune`). The restic password lives only in `~/.ubyhost-hs-restic-password` on Lightsail and in the owner's password manager. Setup and restore from the vault: [deploy/homeserver/README.md](../deploy/homeserver/README.md).
 
 - **PostgreSQL dump (0464).** `backup.sh` writes `ubyhost-pg.dump.age` (`pg_dump -Fc`, age-encrypted, never plaintext) into the newest snapshot folder when the `postgres` service runs. Restore with `pg-restore.sh <stamp>`; the rehearsal (`pg-cutover.sh rehearse`) dumps, restores into `ubyhost_restoretest` and verifies it against SQLite.
 
