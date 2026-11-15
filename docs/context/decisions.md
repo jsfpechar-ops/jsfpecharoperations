@@ -6,7 +6,7 @@ Append-only.
 - 2026-10-26 | Unpaid = read-only; filing never blocked | 0415
 - 2026-10-27 Grafana Cloud (EU free): ops logs/metrics subprocessor, no PII; profile "monitoring".
 - 2026-10-28 | [deps] `stripe` 16.0.1 pinned+hashed in requirements.lock (owner); calls via `App/app/stripe_connect.py`; shared monthly cap `UBYHOST_STRIPE_MONTHLY_API_CALLS` | 0428
-- 2026-10-28 | Property pages: Apify prefill, no AI, host reviews once (0431); photos re-hosted, max 10 (0432); no-JS widget (0434); English only | owner
+- 2026-10-28 | Property pages: Apify prefill, no AI, host reviews once (0431); photos re-hosted, max 10 (0432); no-JS widget (0434); English only
 - 2026-11-02 | OCR: Tesseract only, local, MRZ check digits, Max only; band crop; Paddle if ocr_readrate <90% | owner | test_doc_ocr
 - 2026-10-29 | Operator can extend trials 1-365 days | 0448
 - 2026-10-29 | Stripe Accounts v2, responsibilities immutable, companies via business_type (0437); Connect: full Dashboard + collectors, Express rejected (0439) | owner
@@ -63,7 +63,7 @@ Append-only.
 - 2026-11-13 [workflow/db] [Go first](go-first.md); [SQLite plan](../plans/sqlite-retirement.md) 1-6 approved | owner
 - 2026-11-14 [dep/infra] golang.org/x/image v0.45.0 (v0.46 needs Go 1.26); Go /data writable (was :ro) | owner | 1641, 1640
 - 2026-11-14 [access] Entry code: Go only, rules in [plan](../plans/entry-code-external-guide.md) | owner
-- 2026-11-15 [ux/auth] Login button named by device (Face ID etc.), not "passkey"; auto-open only on remembered devices | owner | 1762, 1763
+- 2026-11-15 [ux/auth] Login button named by device (Face ID etc.), not "passkey"; auto-open only on remembered devices | 1762, 1763
 - 2026-11-15 [dep] go-webauthn v0.18.0 pinned | owner | 1760
 - 2026-11-15 [ai] Havel and Leon on Mistral Small, 0.05 USD monthly caps | owner
 - 2026-11-15 [legal] Register lists Mistral AI and Anthropic (conditional); no "EU only"/"not stored" claim without ZDR or EU endpoint | 1792
