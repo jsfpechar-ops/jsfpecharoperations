@@ -1,16 +1,18 @@
-# Go cutover, final session: the executor prompt (login, passkeys, invoices, stay fees)
+# Go cutover, final session: the executor prompt (passkeys, Havel and Leon, invoices, stay fees), all in one run
 
-Written 2026-11-15, autonomous mode on Josef's order (no questions, one report at the end), for Josef to paste into the server operator AI. It continues [go-cutover-mega-prompt](go-cutover-mega-prompt.md): same state file, same guardrails, only the steps that are left and that the tests allow. Where the two differ, this file wins for G1, W9, W10 and S. Sources: the go/no-go matrix in [go-parity-suite](go-parity-suite.md), runbook wave 5 step (g), [stay-fee-go-rollout](stay-fee-go-rollout.md).
+Written 2026-11-15, revised the same night: autonomous mode on Josef's order (no questions, one report at the end) and **all 24 h waits waived by Josef, so every step runs back to back in one session**, for Josef to paste into the server operator AI. It continues [go-cutover-mega-prompt](go-cutover-mega-prompt.md): same state file, same guardrails, only the steps that are left and that the tests allow. Where the two differ, this file wins for G1, W9, W10 and S. Sources: the go/no-go matrix in [go-parity-suite](go-parity-suite.md), runbook wave 5 step (g), [stay-fee-go-rollout](stay-fee-go-rollout.md).
 
 **State on 2026-11-15 (from the cutover record):** W1 to W8 (first set) and W10 step 1 are kept, including login and 2FA (W5a to W5f), so login is already on Go. Passkeys (#1037) and the mail and door_codes jobs (#1036) are merged and Josef says deployed.
 
-**Left out on purpose:** W8b (the Havel and Leon budget variables are missing), job kind `mail` (needs the SES test M-P8), job kind `door_codes` (needs the TTLock test with a real lock), J1 and J2 (retention apply is Josef's decision; the `stay_fee_mail` mail branch is unproven), `/stay-fees/*` (wave 10 step 4), `/apartments`, `/entities`, `/demo`, `/settings/purge-expired`, `/webhooks/stripe`.
+**Left out on purpose:** job kind `mail` (needs the SES test M-P8), job kind `door_codes` (needs the TTLock test with a real lock), J1 and J2 (retention apply is Josef's decision; the `stay_fee_mail` mail branch is unproven), `/stay-fees/*` (wave 10 step 4), `/apartments`, `/entities`, `/demo`, `/settings/purge-expired`, `/webhooks/stripe`.
 
 **Why there is no scheduler switch (S).** `UBYHOST_SCHEDULER=go` makes Go enqueue all 15 kinds and Python enqueue none, and Python refuses the switch unless all 15 are in `UBYHOST_JOB_QUEUE_KINDS` (brief 1451, `go_scheduler_problem()`). That includes `mail` and `door_codes`, which are excluded above, and the parity suite compared only the names and intervals of the other kinds, not a run on a shared queue. So no job kind is switchable on evidence today, and step S below only reads and reports. It adds nothing.
 
-**The 24 h wait for W10 step 2.** Step 1 (`/stay-fees/pdfs.zip`, `/stay-fees/*/pdf`, `/stay-fees/*/csv`) is kept, but the rule of the rollout plan is one day between steps, counted from when step 1 was applied. The executor reads that time from the state file and refuses before it has passed; it never counts from "kept" and never shortens it. If Josef wants it shorter he must say so in his message, naming the step, and the executor then tells him in one line that it is overriding the plan on his word.
+**The 24 h waits are waived (Josef, 2026-11-15: "waive it, I want it all done today").** That covers G1 (24 h after W5f), W9c to W9g (24 h between paths), W10-2 (24 h after step 1) and W10-3 (24 h after W10-2). What replaces them: a 10-minute soak after every step, the per-step verify, auto-rollback, and a rollback test on every W9 path. The one-week "Python ran cleanly" rule for Havel and Leon (W8b) is also taken as Josef's call and waived; the executor lists it in the report. Cost of waiving: a bug that shows only after a day (a nightly job, a monthly total) will not be seen before the next step goes live. That is Josef's decision, and the SQLite/Python rollback stays open until 2026-12-15.
 
-**`UBYHOST_STAY_FEE_GUEST_PAY`.** The executor never edits it. It only prints its current value (on or off, not a secret) and Josef's "go W10-2" message must repeat the value he decided. The parity run of the preview answered the same on both sides with guest pay on; the Go body is 140 characters shorter (soft difference, not yet read line by line), so Josef looks at the preview in the browser first.
+**`UBYHOST_STAY_FEE_GUEST_PAY`.** Decided by Josef: **on**. The executor still never edits it. It prints the current value (on or off, not a secret); if it is not on, W10-2 is skipped and reported, not forced. Josef skipped the browser look at the preview; the Go preview body is 140 characters shorter than Python's (soft difference, not read line by line) and this is listed in the report.
+
+**W8b budgets.** Josef wants `UBYHOST_AI_MONTHLY_USD_HAVEL=0.05` and `UBYHOST_AI_MONTHLY_USD_LEON=0.05`. **Unit: plain USD, not nano.** Python (`config.ai_monthly_usd`) and Go (`anthropic/ai.go`) both read the value as a decimal USD number, so "0.05" is five US cents per month; `50000000` would mean fifty million dollars (no cap). Note that 0.05 USD a month is tiny (about 70 to 250 messages at 0.0002 to 0.0007 USD each, for all users together); `docs/ENVIRONMENT.md` uses 0.05 for the per-property daily Leon cap, not the monthly one. Past the cap, Havel and Leon answer with the fallback ("passed to your host"). Josef is moving both to Mistral Small in a separate thread; W8b does not wait for it and does not touch the model, key or provider variables.
 
 ## 1. Prompt to paste (copy everything in the box)
 
@@ -29,27 +31,34 @@ GATE, GATE-WAIT, "Josef's message", "go <step>", "ok <step>", or asks him to con
   Josef's ok" in guardrails 6 and 7. A step that cannot be proven by curl (Cloudflare challenge) is kept on
   the logs-only soak check and listed in the report as UNVERIFIED with its browser check.
 - Josef's statements that a step used to need are taken as given: he is at a browser, a second session is
-  open, PR 1037 and PR 1036 are deployed, the guest-pay decision is made, no filing is due.
+  open, PR 1037 and PR 1036 are deployed, the guest-pay decision is made (on), no filing is due, Python Havel
+  and Leon are accepted without the clean week, he skipped the browser preview look.
 - A W9 rollback test is done by you: after the soak, remove the path, validate, reload, wait 2 minutes, check
   logs and that the path is no longer Go-served (no X-Ubyhost-Go header if present, else only logs), add it back,
   validate, reload, soak again, then "kept". Write "rollback-tested" in the state file.
-- Waits are not questions and stay: if a WAIT has not passed, do not run that step. Report the exact time it
-  becomes due and stop. Do not shorten any wait. Run every step that is due, then write the report.
+- ALL WAITS ARE WAIVED by Josef's order (2026-11-15): the 24 h before G1, between W9 paths, before W10-2 and
+  before W10-3, and the week of Python for W8b. Ignore every "WAIT" line and every state-file time check below.
+  Only the 10-minute soak after each step remains, and it is not shortened. Run ALL steps back to back in this
+  one session, in this order: R1, G1, W8b, W9a, W9b, W9c, W9d, W9e, W9f, W9g, W10-2, W10-3, S, M1, then the report.
+  Do not skip a step for time; skip it only for a failed precondition or a rollback (see below).
 - A failed precondition, a failed soak check, or any doubt: roll the step back yourself, mark it
   "rolled-back" with the reason, do NOT retry it, skip any step that depends on it, and continue with
   independent steps. No questions.
 - Everything under SCOPE (what you may not do) and NOT YOURS stays in force: no secrets, no POST, no other
-  paths, no database, no deploy, no edit of UBYHOST_STAY_FEE_GUEST_PAY.
-- Pre-set facts: for W10-2 the guest-pay value is whatever .env holds now (print it, do not edit it).
+  paths, no database, no deploy, no edit of UBYHOST_STAY_FEE_GUEST_PAY, no /stay-fees/*, no mail, no
+  door_codes, no scheduler switch.
+- Pre-set facts: for W10-2 the guest-pay value must be on (print it, do not edit it); if it is not on, skip W10-2 and W10-3 stays independent.
+- Models: you are Haiku-class; no subagents, no tools beyond SCOPE.
 - Passkey G1 lockout risk is low (login link stays available); a rollback is removing six words.
 
 SCOPE
-- You may: read and edit .env with nano or one exact sed -i on one line; run ./scripts/caddy-validate.sh;
+- You may: read and edit .env with nano or one exact sed -i on one line (UBYHOST_GO_PATHS only, plus the two
+  AI budget lines in step W8b and the Mistral key line in step M1); run ./scripts/caddy-validate.sh;
   run docker compose up -d --no-deps <service>; run docker compose ps and docker compose logs (read only);
   run curl -sI against the owner's domain; read and write ONE state file (below). Read-only extras, only
   as written in a step: docker stats --no-stream, df -h /, ls /var/log, grep -c on the named log files,
   and docker compose exec -T ubyhost-go with the exact read-only command written in the step.
-- You may NOT: print, paste, log or send any secret value (keys, tokens, passwords, IBAN, ICO/DIC,
+- You may NOT (M1 stores one key Josef supplied in the message, and prints nothing of it): print, paste, log or send any secret value (keys, tokens, passwords, IBAN, ICO/DIC,
   operator e-mail). Check presence with grep -c or "set"/"MISSING" only. Do not run deploy.sh, backup or
   restore scripts, pg-cutover.sh, git, apt, or reboot. Do not touch the database. Do not sign in, send
   mail, issue invoices, or click anything. Never curl -X POST. Never add a path that is not written in a
@@ -98,18 +107,16 @@ GUARDRAILS (every step)
    line over a newer one; the line saved in guardrail 2 is only for rolling back inside the same session).
    The file already exists from the first cutover session (W1 to W8 and W10 step 1 are recorded there). If it
    is missing: STOP and ask Josef; do not reseed it.
-   Before each step read it: refuse a step whose WAIT has not passed, or whose
-   predecessor is not "kept"; never repeat a step already "kept" or "applied".
-8. ONE session = go from the first unfinished step forward and STOP at the first GATE, WAIT or failure.
-   Never skip a step. Never run two waves in one edit or one session: after any wave (a step that adds
-   paths) STOP, even when the next step is AUTO. R0, R1 and R2 are not waves. After each step run the
-   verify and write the state file.
+   Before each step read it: refuse a step whose predecessor is not "kept"; never repeat a step already
+   "kept" or "applied". Time since the previous step is not checked (waived).
+8. ONE session = go from the first unfinished step forward through ALL steps. A failure rolls back that step
+   only; continue with independent steps. Never run two paths in one edit: one step, one edit, one reload,
+   one verify, one soak, then the next. After each step run the verify and write the state file.
 9. On ANY doubt or unexpected output: roll back the current step, STOP, report. Do not retry, do not
    try a different fix.
 
 
-STEPS, in order. Domain: ubyhost.com (use https://ubyhost.com in every curl). New step ids: G1, W9a to W9g, W10-2,
-W10-3, S. The state file already holds the older ids; write the new ones in the same format.
+STEPS, in order: R1, G1, W8b, W9a to W9g, W10-2, W10-3, S, M1. Domain: ubyhost.com (use https://ubyhost.com in every curl). The state file already holds the older ids; write the new ones in the same format.
 
 R1  AUTO  Read-only health record, as in the first session: docker compose ps (service, state, restarts);
     docker stats --no-stream for ubyhost-go; df -h / ; the switch names (UBYHOST_GO_PATHS entry count and paths,
@@ -117,10 +124,8 @@ R1  AUTO  Read-only health record, as in the first session: docker compose ps (s
     UBYHOST_GO_MEM). Print the state file. Check that W5a to W5f are "kept" (or W5f "skipped"); if any is
     "applied" or "rolled-back", STOP and ask Josef. Do this at the start of every session, then continue.
 
-G1  GATE ("go G1")  Passkeys (runbook wave 5 step g, brief 1760, PR 1037).
-    WAIT >= 24 h after W5f "kept" or "skipped" was written (read the time in the state file).
-    Josef's message must also say a second logged-in session is open in another browser and that he is at a
-    browser now. Login and 2FA are on Go; if /login or /login/2fa is not in UBYHOST_GO_PATHS, STOP.
+G1  AUTO (waived)  Passkeys (runbook wave 5 step g, brief 1760, PR 1037).
+    No wait. Josef has said a second logged-in session is open and he is at a browser. Login and 2FA are on Go; if /login or /login/2fa is not in UBYHOST_GO_PATHS, STOP.
     Preconditions (names and counts only):
       grep -c '^UBYHOST_PUBLIC_BASE_URL=https://' .env  -> 1, and the same name is passed to ubyhost-go:
       docker compose --profile go exec -T ubyhost-go sh -c '[ -n "$(printenv UBYHOST_PUBLIC_BASE_URL)" ] && echo set || echo MISSING'  -> set
@@ -130,38 +135,53 @@ G1  GATE ("go G1")  Passkeys (runbook wave 5 step g, brief 1760, PR 1037).
       /login/passkey /login/passkey/options /account/passkeys /account/passkeys/options /account/passkeys/*/rename /account/passkeys/*/delete
     Entry count must rise by exactly 6. One edit, one caddy reload.
     Verify: UNVERIFIED expected (Cloudflare challenge). A 501 with X-Ubyhost-Not-Ported on a GET means Go has no handler: roll back.
-    Mark "applied", then GATE-WAIT for Josef's M-G1. Rollback = remove exactly these six entries.
+    Soak 10 minutes, then mark "kept" and list M-G1 as UNVERIFIED for Josef's browser check. Rollback = remove
+    exactly these six entries.
 
-W9  Invoices, GATE per path. One path per session, in this order, never two in one edit:
+W8b AUTO (waived)  Havel and Leon (runbook 8b, briefs 1434 and 1437). Needs G1 handled (kept or rolled back).
+    Preconditions, names only: UBYHOST_AI_FEATURES contains havel and leon; UBYHOST_SECRET_KEY, UBYHOST_MAIL_BACKEND
+    and the model key present ("set"/"MISSING", never the value). Any MISSING: skip W8b, report, change nothing.
+    Budgets: for each of UBYHOST_AI_MONTHLY_USD_HAVEL and UBYHOST_AI_MONTHLY_USD_LEON: if the line is missing,
+    append exactly  UBYHOST_AI_MONTHLY_USD_HAVEL=0.05  and  UBYHOST_AI_MONTHLY_USD_LEON=0.05  (plain USD, 5 cents;
+    these two values are not secret and may be printed). If a line exists already, leave it and report its value.
+    Do not touch any other AI variable (the model and provider are being changed elsewhere).
+    Then: ./scripts/caddy-validate.sh is not needed; run docker compose up -d --no-deps ubyhost-go, wait 60 s,
+    check ubyhost-go healthy and no panic in its logs. Only then add exactly these four entries (one edit, one
+    reload, count +4): /havel /havel/* /apartments/*/leon/setup /apartments/*/leon/setup/*
+    (the whole entry /apartments/* is still forbidden; these are different entries).
+    Verify: curl -sI https://ubyhost.com/havel -> 303 to /login, or UNVERIFIED with the Cloudflare header.
+    A 501 with X-Ubyhost-Not-Ported: roll back. Soak 10 minutes, then "kept". Rollback = remove the four
+    entries (the two budget lines may stay). Josef's browser check M-W8b is listed in the report.
+
+W9  Invoices, AUTO (waived), one path per edit, in this order, each fully finished before the next:
       W9a /invoice/d/*    W9b /invoices/*.pdf    W9c /invoices/*/paid    W9d /invoices/*/cancel
       W9e /invoices/preview    W9f /invoices/new    W9g /invoices
     NEVER /invoices/* . The detail page /invoices/<id> and /invoices/*/send stay on Python.
-    Message needed: "go W9x" naming the path step, and Josef is at a browser now.
     Preconditions every time: grep -c '^UBYHOST_BILLING_IBAN=\|^UBYHOST_OPERATOR_NAME=\|^UBYHOST_OPERATOR_ICO=' .env  -> 3;
       grep -c '^UBYHOST_BILLING_VAT_STATUS=non_payer' .env  -> 1 (the parity suite never ran a VAT-payer invoice:
-      any other value, STOP and tell Josef); W4 and W3 "kept".
-    WAIT: none before W9a. W9b needs W9a "kept". W9c to W9g each need the previous path "kept" and >= 24 h since
-    the previous path was applied (these write invoices or issue them).
-    Each path has four stages, and the next stage needs Josef's message:
-      1. apply (one entry), verify, mark "applied", GATE-WAIT for Josef's browser check;
-      2. "ok W9x" -> then Josef asks "rollback-test W9x": remove exactly that entry, validate, reload, write
-         "rollback-tested" in the state file, ask Josef to confirm the page still works from Python;
-      3. "re-apply W9x": add the entry again, verify;
-      4. "ok W9x" again -> status "kept". A path is never "kept" without the rollback test.
+      any other value, skip all of W9 and report); W4 and W3 "kept".
+    No wait between paths. Each path needs the previous one "kept" (or, if it rolled back, the path is skipped
+    and so are the later ones that depend on it: W9c to W9g depend on W9b being kept).
+    Per path, all in this session:
+      1. apply (one entry), reload, wait 60 s, verify, soak 10 minutes with the guardrail checks;
+      2. ROLLBACK TEST (yours): remove exactly that entry, validate, reload, wait 2 minutes, check logs clean
+         and that the path is no longer Go-served, write "rollback-tested";
+      3. re-apply the entry, validate, reload, wait 60 s, verify, soak 10 minutes;
+      4. mark "kept". A path is never "kept" without the rollback test.
+    Each path therefore takes about 25 minutes; all seven about 3 hours. Verify curls are GET only.
     HIGH RISK: legally binding invoices. You never POST, never click, never issue anything.
 
-W10-2  GATE ("go W10-2")  Add: /stay-fees/*/guest-pay-preview
-    WAIT >= 24 h after W10 step 1 was APPLIED (state file). If less has passed, say how long is left and STOP.
-    Needs W10 step 1 "kept". Josef's message states the decided value of UBYHOST_STAY_FEE_GUEST_PAY and that
-    he looked at the preview in a browser. Print the current value (grep '^UBYHOST_STAY_FEE_GUEST_PAY=' .env,
-    or "unset" which means off); if it differs from what Josef stated: STOP. You never edit that line.
-    Verify: UNVERIFIED (POST route, Cloudflare). GATE-WAIT for Josef's M-W10-2. Rollback: remove the entry.
+W10-2  AUTO (waived)  Add: /stay-fees/*/guest-pay-preview
+    No wait. Needs W10 step 1 "kept". Josef's decision: UBYHOST_STAY_FEE_GUEST_PAY is on. Print the current value
+    (grep '^UBYHOST_STAY_FEE_GUEST_PAY=' .env, or "unset" which means off); if it is not on: skip W10-2 and
+    report. You never edit that line. Josef skipped the browser preview look.
+    Verify: UNVERIFIED (POST route, Cloudflare). Soak 10 minutes, then "kept". Rollback: remove the entry.
 
-W10-3  GATE ("go W10-3")  Add: /stay-fees
-    WAIT >= 24 h after W10-2 was applied; needs W10-2 "kept". Josef states it is not near a filing deadline.
+W10-3  AUTO (waived)  Add: /stay-fees
+    No wait. Needs W10 step 1 "kept" (W10-2 may be skipped). Josef states it is not near a filing deadline.
     NEVER /stay-fees/* (step 4, the seal routes, is not yours and is recommended to skip).
     Verify: curl -sI https://ubyhost.com/stay-fees -> 303 to /login, or UNVERIFIED with the Cloudflare header.
-    GATE-WAIT for Josef's M-W10-3. Rollback: remove the entry.
+    Soak 10 minutes, then "kept". Rollback: remove the entry.
 
 S   AUTO, read-only, never an edit. Report: the names in UBYHOST_JOB_QUEUE_KINDS and UBYHOST_GO_JOB_KINDS
     (how many of 15 each), which of the 15 are missing from the queue list, and whether UBYHOST_SCHEDULER is set
@@ -169,12 +189,29 @@ S   AUTO, read-only, never an edit. Report: the names in UBYHOST_JOB_QUEUE_KINDS
     including mail (SES test M-P8) and door_codes (lock test), which are not cleared." Do not add any kind to
     either variable and do not set UBYHOST_SCHEDULER.
 
-NOT YOURS (tell Josef, do nothing): W8b, job kinds mail, door_codes, retention apply, stay_fee_mail; apt upgrades
+M1  AUTO, only on Josef's line  Mistral Small key (Josef's order 2026-11-15; the switch itself is a separate PR).
+    Runs LAST, after S. Only if the paste message contains a line that starts exactly "MISTRAL KEY:" followed by
+    the key. No such line: skip M1, write "skipped (no key given)", change nothing.
+    Preconditions: Josef states the Mistral Small PR is merged and deployed; the names exist in the deployed
+    compose file (grep -c 'UBYHOST_MISTRAL_API_KEY' deploy/lightsail/docker-compose.yml -> at least 1; 0: skip).
+    Do: fresh backup (cp -p .env ".env.bak-$(date +%Y%m%d-%H%M%S)"); if the line UBYHOST_MISTRAL_API_KEY= exists
+    and is non-empty, do NOT overwrite it, report "already set". Otherwise write the line with a method that
+    keeps the key out of the shell history, process list and your output (for example printf into the file from
+    the message text; never echo it, never put it in a command you print or in a log). chmod 600 .env and check
+    the mode. Then docker compose up -d --no-deps ubyhost ubyhost-go (the services that read it) and check
+    healthy. Verify by name only: grep -c '^UBYHOST_MISTRAL_API_KEY=.' .env -> 1. Print "set", never the value.
+    Setting UBYHOST_AI_PROVIDER=mistral is NOT part of M1 unless the line "MISTRAL PROVIDER: on" is also in the
+    message; then set exactly UBYHOST_AI_PROVIDER=mistral (UBYHOST_MISTRAL_MODEL stays default). Otherwise report
+    that the key is stored and the provider is unchanged.
+    Rollback: remove the key line (and restore the provider line if changed), recreate the services.
+    The key never goes into the state file, the report, any repo file, the PR or this document.
+
+NOT YOURS (tell Josef, do nothing): job kinds mail, door_codes, retention apply, stay_fee_mail; apt upgrades
 and reboot; S3/IAM and lifecycle; SES test M-P8; browser checks; Cloudflare rules; /demo; /settings/purge-expired;
-/stay-fees/*; the UBYHOST_STAY_FEE_GUEST_PAY value; anything about SQLite; PR 1033 (login button wording).
+/stay-fees/*; the UBYHOST_STAY_FEE_GUEST_PAY value; anything about SQLite; PR 1033 (login button wording); the Mistral code switch; the AI model, key and provider variables.
 
 FINAL REPORT (always, even when you stop early). One block:
-1. Session date/time, last step reached, the next step and what it waits for (a date or a GATE message).
+1. Session date/time, last step reached, and the next step if any stopped early.
 2. Table: step | applied-at | result (OK / UNVERIFIED / ROLLED BACK / SKIPPED) | one-line reason.
 3. Current UBYHOST_GO_PATHS (paths only) and entry count; UBYHOST_GO_JOB_KINDS and UBYHOST_JOB_QUEUE_KINDS (names only).
 4. Rollback line for every step applied in this session.
@@ -183,20 +220,16 @@ FINAL REPORT (always, even when you stop early). One block:
 No secret values anywhere in the report.
 ```
 
-## 2. What Josef does in a browser (after the report, not during the run)
+## 2. What Josef still owes in a browser (after the report, not during the run)
 
-The AI does not wait for these. It keeps a step when logs are clean and lists the unproven ones in its report. Do them from the report; if a page is wrong, tell the AI to roll that step back (remove its entries, validate, reload). Have a second logged-in browser for the passkey check.
+Josef skipped the preview look. The AI keeps every step on clean logs and lists unproven ones as UNVERIFIED. The only check Josef must do is the passkey one, on real hardware; the rest are optional spot checks. If a page is wrong, tell the AI to roll that step back (remove its entries, validate, reload). Have a second logged-in browser for the passkey check.
 
 | Step | Do this | You should see |
 |---|---|---|
-| M-G1 passkeys | 1. In the first browser: Settings, add a passkey (Face ID, Windows Hello or a security key). 2. Log out. 3. Log in with the passkey button. 4. Settings, remove the passkey. 5. Repeat 1 to 3 in the second browser. 6. Open the audit page. | You land signed in each time. The audit page shows `passkey_added`, a `login` with method `passkey:<id>` and `passkey_removed`. The second browser's session still works throughout. Any error page: say "rollback G1". Not tested by the suite: a real device, so this check is the only one on hardware. |
-| M-W9a | Open a public invoice link (`/invoice/d/<token>`) from a real invoice mail. | The invoice shows, with the same amount as before. |
-| M-W9b | Open one invoice PDF from the invoices list. | The PDF downloads and opens. |
-| M-W9c, M-W9d | Do not mark anything real as paid or cancelled. Open an invoice detail and check the Paid and Cancel buttons are still there. Optional: on a test invoice only, mark paid or cancel. | Same buttons, same result as on Python. |
-| M-W9e | `/invoices/new`, pick a stay, press Preview. | Preview shows, with no invoice created. |
-| M-W9f, M-W9g | Open the stay picker and the form; do not press Issue unless it is a test invoice. | Same fields as on Python. |
-| Rollback test, every W9 path | After "rollback-test W9x", open the same page. | It still works (now from Python). Then say "re-apply W9x". |
-| M-W10-2 | In `/stay-fees/<id>` use the guest-pay preview with a test rate. | A preview of the fee; nothing is saved. |
-| M-W10-3 | Open `/stay-fees` and one detail page. | The same list as before. |
+| **M-G1 passkeys (owed)** | 1. In the first browser: Settings, add a passkey (Face ID, Windows Hello or a security key). 2. Log out. 3. Log in with the passkey button. 4. Settings, remove the passkey. 5. Repeat 1 to 3 in the second browser. 6. Open the audit page. | You land signed in each time. The audit page shows `passkey_added`, a `login` with method `passkey:<id>` and `passkey_removed`. The second browser's session still works throughout. Any error page: say "rollback G1". |
+| M-W8b (optional) | Open `/havel`, send one test message; step through `/apartments/<id>/leon/setup`. | Answers as before. After about 70 to 250 messages in a month the 0.05 USD cap makes Havel and Leon use the fallback reply. |
+| M-W9a, M-W9b (optional) | Open a public invoice link and one invoice PDF. | Same amount; the PDF opens. |
+| M-W9c to M-W9g (optional) | Open an invoice detail (Paid and Cancel buttons), `/invoices/new` and the Preview. Do not issue or mark real invoices. | Same pages and fields as before. |
+| M-W10-2, M-W10-3 (optional) | Open `/stay-fees` and one detail page. | The same list as before. |
 
 Not for the browser: the passkey button wording ("Face ID" and similar) is PR 1033 and is held.
