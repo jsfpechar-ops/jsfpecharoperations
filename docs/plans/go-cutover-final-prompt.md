@@ -23,7 +23,7 @@ docker compose commands tied to those edits. You do nothing else. Today's date c
 AUTONOMOUS MODE (Josef's order, 2026-11-15: "do it all without asking, then give me a report").
 Josef pasting this prompt is his GO for every step below. This section wins over any later line that says
 GATE, GATE-WAIT, "Josef's message", "go <step>", "ok <step>", or asks him to confirm anything.
-- Never ask Josef a question and never wait for his permission. Decide with the rules below, act, report.
+- Never ask Josef a question and never wait for his permission (the single exception is step M1, where he types the key himself). Decide with the rules below, act, report.
 - Run every step whose WAIT has passed and whose predecessor is "kept", in order. After a step that adds paths,
   do its verify, then its soak check: wait 10 minutes, repeat the guardrail 5 triggers and a 1-hour error count
   of ubyhost-go (0 panics, at most 3 level=error lines). If all hold, write "kept" yourself and go on to the
@@ -52,12 +52,12 @@ GATE, GATE-WAIT, "Josef's message", "go <step>", "ok <step>", or asks him to con
 
 SCOPE
 - You may: read and edit .env with nano or one exact sed -i on one line (UBYHOST_GO_PATHS only, plus the two
-  AI budget lines in step W8b and the Mistral key line in step M1); run ./scripts/caddy-validate.sh;
+  AI budget lines in step W8b and the empty Mistral key line and, if asked, the provider line in step M1; Josef types the key); run ./scripts/caddy-validate.sh;
   run docker compose up -d --no-deps <service>; run docker compose ps and docker compose logs (read only);
   run curl -sI against the owner's domain; read and write ONE state file (below). Read-only extras, only
   as written in a step: docker stats --no-stream, df -h /, ls /var/log, grep -c on the named log files,
   and docker compose exec -T ubyhost-go with the exact read-only command written in the step.
-- You may NOT (M1 stores one key Josef supplied in the message, and prints nothing of it): print, paste, log or send any secret value (keys, tokens, passwords, IBAN, ICO/DIC,
+- You may NOT: print, paste, log or send any secret value (keys, tokens, passwords, IBAN, ICO/DIC,
   operator e-mail). Check presence with grep -c or "set"/"MISSING" only. Do not run deploy.sh, backup or
   restore scripts, pg-cutover.sh, git, apt, or reboot. Do not touch the database. Do not sign in, send
   mail, issue invoices, or click anything. Never curl -X POST. Never add a path that is not written in a
@@ -205,22 +205,37 @@ S   AUTO, read-only, never an edit. Report: the names in UBYHOST_JOB_QUEUE_KINDS
     and door_codes (lock test) is not cleared." Do not add any kind to
     either variable and do not set UBYHOST_SCHEDULER.
 
-M1  AUTO, only on Josef's line  Mistral Small key (Josef's order 2026-11-15; the switch itself is a separate PR).
-    Runs LAST, after S. Only if the paste message contains a line that starts exactly "MISTRAL KEY:" followed by
-    the key. No such line: skip M1, write "skipped (no key given)", change nothing.
-    Preconditions: Josef states the Mistral Small PR is merged and deployed; the names exist in the deployed
-    compose file (grep -c 'UBYHOST_MISTRAL_API_KEY' deploy/lightsail/docker-compose.yml -> at least 1; 0: skip).
-    Do: fresh backup (cp -p .env ".env.bak-$(date +%Y%m%d-%H%M%S)"); if the line UBYHOST_MISTRAL_API_KEY= exists
-    and is non-empty, do NOT overwrite it, report "already set". Otherwise write the line with a method that
-    keeps the key out of the shell history, process list and your output (for example printf into the file from
-    the message text; never echo it, never put it in a command you print or in a log). chmod 600 .env and check
-    the mode. Then docker compose up -d --no-deps ubyhost ubyhost-go (the services that read it) and check
-    healthy. Verify by name only: grep -c '^UBYHOST_MISTRAL_API_KEY=.' .env -> 1. Print "set", never the value.
-    Setting UBYHOST_AI_PROVIDER=mistral is NOT part of M1 unless the line "MISTRAL PROVIDER: on" is also in the
-    message; then set exactly UBYHOST_AI_PROVIDER=mistral (UBYHOST_MISTRAL_MODEL stays default). Otherwise report
-    that the key is stored and the provider is unchanged.
-    Rollback: remove the key line (and restore the provider line if changed), recreate the services.
-    The key never goes into the state file, the report, any repo file, the PR or this document.
+M1  Mistral Small key, Josef pastes it himself (Josef's order 2026-11-15). The only step that waits for him.
+    Runs LAST, after S. Only if the paste message contains the line "MISTRAL PR DEPLOYED" (Josef states PR 1042,
+    Mistral Small for Havel and Leon, is merged and deployed; it passes the missing env vars into the Go
+    container, so without it the key would do nothing). Without it: skip M1, write "skipped (PR 1042 not stated
+    deployed)" in the report.
+    The key is never in this prompt or in your context: you never ask for it, never read it, never print it.
+    Preconditions: grep -c 'UBYHOST_MISTRAL_API_KEY' docker-compose.yml -> at least 1 (0: skip,
+    report); the .env line UBYHOST_MISTRAL_API_KEY= is absent or empty (non-empty: report "already set", skip).
+    Prepare:
+      1. fresh backup: cp -p .env ".env.bak-$(date +%Y%m%d-%H%M%S)"; mode 600.
+      2. If the line is absent, append exactly  UBYHOST_MISTRAL_API_KEY=  (empty value, nothing after the =).
+         If the paste message also has "MISTRAL PROVIDER: on", set exactly UBYHOST_AI_PROVIDER=mistral
+         (add the line or change its value) and exactly UBYHOST_MISTRAL_MODEL=mistral-small-latest. Save the old
+         values of both lines for the rollback.
+      3. Confirm by count only: grep -c '^UBYHOST_MISTRAL_API_KEY=$' .env -> 1.
+      4. Tell Josef, in one block: "Everything is prepared. Open .env, find the line UBYHOST_MISTRAL_API_KEY=,
+         paste your key right after the =, save (Ctrl+O, Enter) and exit (Ctrl+X). Then write 'key saved'."
+         If you have an interactive terminal Josef can type into, run nano +<line> .env there (look the line
+         number up with grep -n '^UBYHOST_MISTRAL_API_KEY=' .env | cut -d: -f1). If not, give him the command
+         to run himself in his own SSH session: cd /opt/ubyhost/deploy/lightsail && nano .env
+      5. WAIT for "key saved". This is the one exception to "never wait for Josef". Do not touch .env meanwhile.
+    After "key saved":
+      - chmod 600 .env and check the mode; grep -c '^UBYHOST_MISTRAL_API_KEY=.' .env -> 1 (a non-empty value;
+        print only "set"); 0 means he has not saved: tell him once and wait again; never print the line.
+      - grep -c '^UBYHOST_GO_PATHS=' .env -> 1 and the entry count unchanged (a stray edit check).
+      - docker compose up -d --no-deps ubyhost ubyhost-go (the services that read it, names from docker
+        compose ps); wait 60 s; healthy, ubyhost-go logs since then 0 panics, at most 3 level=error lines, and
+        no line that mentions an authentication or key error. Soak 10 minutes with the same checks, then "kept".
+    Without "MISTRAL PROVIDER: on" the key is stored and the provider is unchanged; say so in the report.
+    Rollback: restore the key line to empty and the provider line to its old value (saved in step 2), recreate
+    the services. The key never goes into the state file, the report, any repo file or the PR.
 
 NOT YOURS (tell Josef, do nothing): job kind door_codes (lock test), retention apply, stay_fee_mail; apt upgrades
 and reboot; S3/IAM and lifecycle; browser checks; Cloudflare rules; /demo; /settings/purge-expired;
