@@ -69,11 +69,11 @@ Stop and write the report instead of continuing when: an anchor is not found ver
 
 ## Rollout wave and rollback
 
-- **Rollout:** Merge only after the owner has written the cutover date in the thread. The deploy runs the new `deploy.sh`; watch one deploy end to end.
+- **Rollout:** Owner decision (2026-11-15, recommended option): the rollback path ends **2026-12-15**; merge on or after that day, and only if the four proofs are recorded by 2026-12-01 (otherwise the date slides one day per day of delay). The deploy runs the new `deploy.sh`; watch one deploy end to end.
 - **Rollback:** Revert the PR; the archived SQLite file is still on the server until S12, so `pg-cutover.sh` can be restored from git. After S12 there is no rollback to SQLite, by decision.
 
 ## Owner steps
 
 1. Confirm the four proofs in the checklist from brief 1473 are ticked with dates.
-2. Write the cutover date in this thread (decision 3).
+2. The cutover date is decided: 2026-12-15 (see go-sqlite-final section 6).
 3. After merge, run one deploy and check `docker compose ps` shows everything healthy.

@@ -54,7 +54,7 @@ Before any wave with host pages, ask the orchestrator for the 390/768/1280 scree
 - `UBYHOST_STAY_FEE_GUEST_PAY` (with the lawyer). Retention apply: `UBYHOST_GO_RETENTION_APPLY=1` and `UBYHOST_RETENTION_AUTOPURGE=1` only after three nights of matching dry-run counts (personal-data deletion, lawyer relevant).
 - Waiting items (runbook section 5): `/settings/purge-expired` (three matching retention mornings and writable `/data`); jobs `retention` and `stay_fee_mail`; `/webhooks/stripe` (check the Go webhook yourself; Stripe is in test mode); `/demo` and `/demo/reset` stay on Python together.
 - Whether to run wave 9 at all, and wave 10 step (4).
-- Open owner items: security audit K-S11 to K-S15; 0990 to 0992 (deploy, `pg_schema.py apply`, Cloudflare, Grafana); Hetzner DR copy (#946, #948, #953, #957); lawyer items K-L, K-F03, K-F07, K-F18, K-S10. **UNVERIFIED:** the 11-13 server chat is not in the repository; paste it to the orchestrator if you want it folded in.
+- Open owner items: security audit K-S11 to K-S15; 0990 to 0992 (deploy, `pg_schema.py apply`, Cloudflare, Grafana); Hetzner DR copy (#946, #948, #953, #957); lawyer items K-L, K-F18, K-S10 (K-F03 and K-F07: AI-reviewed 11-15, see go-sqlite-final §7). **UNVERIFIED:** the 11-13 server chat is not in the repository; paste it to the orchestrator if you want it folded in.
 
 ## 6. Monitoring after every wave
 

@@ -1,7 +1,7 @@
 # 1741: Go filing F2: host send and re-file buttons on Go
 
 Status: todo — scoped (final brief 2026-11-15). Executable only after its exact-diff pass: sidecars in `docs/tasks/1741-files/`, anchors and sha256 table (§2), written to the rules in [workflow](../context/workflow.md#writing-briefs-for-haiku). Until then the executor must not start it.
-Depends on: 1740 soaked a week, 1732 | Base commit: current tip of the working branch | Branch: task/1741-go-filing-f2-buttons
+Depends on: 1740 soaked a week, 1732, 1742 | Base commit: current tip of the working branch | Branch: task/1741-go-filing-f2-buttons
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (split in two briefs if the exact-diff pass finds more)
 Tier: A (exact diffs only; Opus writes the exact-diff pass; fresh review of the full diff before ready)
 
@@ -25,6 +25,8 @@ Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (no new pers
 **Risk:** HIGH RISK. Filing.
 
 **Parity method (same as briefs 1595 and 1580):** a golden script `App/scripts/go_go_filing_f2_buttons_golden.py` seeds a throwaway database with made-up rows, renders the real FastAPI app, and writes `testdata/*_golden.json`; the Go test replays the same seed and must match byte for byte (go-first exception 1). Accepted differences are listed in the report, never silently.
+
+**AI legal review (2026-11-15, Opus-level, not a licensed lawyer; see [go-sqlite-final](../plans/go-sqlite-final.md) section 7):** K-F03 and K-F07 are not legal questions and do not block this brief. Port unchanged and keep the seven conditions listed there (never cancel a filed stay; keep the in-flight defer and the "suspect" early return; keep the deadline rule; send once and never inside a transaction; pause on UbyPort auth failure; keep `signature_dates_stale`). Remaining owner sign-off is per switch.
 
 ## 3. Files
 

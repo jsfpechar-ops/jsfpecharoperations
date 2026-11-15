@@ -1,7 +1,7 @@
 # 1760: Go login 1: passkeys (go-webauthn)
 
 Status: todo — scoped (final brief 2026-11-15). Executable only after its exact-diff pass: sidecars in `docs/tasks/1760-files/`, anchors and sha256 table (§2), written to the rules in [workflow](../context/workflow.md#writing-briefs-for-haiku). Until then the executor must not start it.
-Depends on: 1501, owner decision on library (go-webauthn v0.18.0 on Go 1.25, decision line in `docs/context/decisions.md`) | Base commit: current tip of the working branch | Branch: task/1760-go-passkeys
+Depends on: 1501, owner decision made 2026-11-15: go-webauthn (v0.18.0 on Go 1.25); this PR adds the decision line to `docs/context/decisions.md` | Base commit: current tip of the working branch | Branch: task/1760-go-passkeys
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (split in two briefs if the exact-diff pass finds more)
 Tier: A (exact diffs only; Opus writes the exact-diff pass; fresh review of the full diff before ready)
 
@@ -91,4 +91,4 @@ Stop and write the report instead of continuing when: an anchor is not found ver
 
 ## Owner steps
 
-Add the decision line `[decision] go-webauthn` in the thread first.
+Decided 2026-11-15; nothing to do.

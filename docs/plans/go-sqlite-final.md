@@ -1,6 +1,6 @@
 # Final briefs: finish the move to Go and retire SQLite
 
-Written 2026-11-15 for the owner (Josef). Docs only: nothing here touches a server or `UBYHOST_GO_PATHS`. Companion to [go-full-move-remaining](go-full-move-remaining.md), [sqlite-retirement](sqlite-retirement.md) and the [cutover runbook](go-cutover-runbook.md).
+Written 2026-11-15 for the owner (Josef). Docs only: nothing here touches a server or `UBYHOST_GO_PATHS`. Server executor prompt: [go-cutover-mega-prompt](go-cutover-mega-prompt.md). Companion to [go-full-move-remaining](go-full-move-remaining.md), [sqlite-retirement](sqlite-retirement.md) and the [cutover runbook](go-cutover-runbook.md).
 
 ## 1. What "SQLite migration" means here
 
@@ -24,7 +24,7 @@ Parallel limit: the owner lifted the 3-thread cap (11-13). Rule that stays: two 
 
 ## 4. Waves still to run on the server (owner; briefs exist, no new text needed)
 
-Already live: W1, W1b, W6, W7, W8 first set. Not yet: W2 exports (due one day after W1), W2b privacy (1615), W3 billing (rolled back on a Cloudflare 403 from the server, an infrastructure issue, not an app fault: the owner must fix the Cloudflare rule for `/admin/fakturace` before retrying), W4 customer admin (Cloudflare blocks admin curl: verify in a browser instead), W8b Havel and Leon (needs the AI budget variables for HAVEL and LEON), W9 invoices (1420-1427), W10 stay fees (1580-1589), wave 5 login (1761), then waves P, B, U, H, G of the new briefs. Also the open items from the memory notes: browser click-through of W1/W1b/W6/W7/W8, SES test M-P8, `/webhooks/stripe` out of the path list (1781), retention variables against P12.
+Already live: W1, W1b, W6, W7, W8 first set. Not yet: W2 exports (due one day after W1), W2b privacy (1615), W3 billing (rolled back on a Cloudflare 403 from the server, an infrastructure issue, not an app fault: the owner must fix the Cloudflare rule for `/admin/fakturace` before retrying), W4 customer admin (Cloudflare blocks admin curl: verify in a browser instead), W8b Havel and Leon (needs the AI budget variables for HAVEL and LEON), W9 invoices (1420-1427), W10 stay fees (1580-1589), wave 5 login (1761), then waves P, B, U, H, G of the new briefs. Also the open items from the memory notes: browser click-through of W1/W1b/W6/W7/W8, SES test M-P8, `/webhooks/stripe` out of the path list (1781 and the mega prompt), retention variables against P12.
 
 ## 5. All new briefs
 
@@ -136,14 +136,54 @@ Already live: W1, W1b, W6, W7, W8 first set. Not yet: W2 exports (due one day af
 | [1790](../tasks/1790-route-completeness-gate.md) | Go gate: CI test that every Python route has a Go handler | B | none (do this first) |
 
 
-## 6. Owner decisions these briefs need
+## 6. Owner decisions: answered 2026-11-15
 
-1. SQLite: the cutover date for ending the rollback path (decision 3 of the plan). Without it 1476 cannot merge.
-2. Passkey library: go-webauthn (needs a line in `docs/context/decisions.md`) for 1760.
-3. Filing: lawyer items K-F03 and K-F07 closed before 1740 goes live; sign-off for each of the F1 and F2 switches.
-4. `/dev/ui` is not ported (development page): confirm it may die with Python (1750).
-5. Whether the 30-day window before `App/` is deleted (1479) is acceptable; the plan says keep the last Python image and the offline SQLite copy for 30 days.
+Josef asked for the recommended option on each. These are recorded here and in the briefs they affect.
 
-## 7. Not verified
+| # | Decision | Chosen | Reason | Brief |
+|---|---|---|---|---|
+| 1 | SQLite rollback end date | **Rollback path ends 2026-12-15** (brief 1476 may merge on or after that day); offline copy deleted **2027-01-14** (1480). Condition: the four proofs of brief 1473 (decrypt test of one `.age` backup, `pg-restore.sh` into staging with matching row counts, Drive and S3 copies current, offline age copy) are recorded by **2026-12-01**; if not, the date moves back one day per day of delay. | The plan says 30 days after the proofs. None are recorded yet, and the 11-15 backup check found the S3 read-back error and a failed cron log, so the proofs need a clean fortnight first. | 1476, 1480 |
+| 2 | Passkey library | **go-webauthn** on Go 1.25. Add the line `[decision] go-webauthn for passkeys (2026-11-15, owner)` to `docs/context/decisions.md` in the same PR as 1760. | The standard maintained Go library; writing WebAuthn by hand is the riskier choice. | 1760 |
+| 3 | `/dev/ui` | **Not ported; deleted with Python.** | Development page, no user. | 1750 |
+| 4 | Filing K-F03 / K-F07 | See section 7: neither is a legal question; port unchanged with conditions. | AI review, section 7. | 1740-1742 |
+| 5 | 30-day window before `App/` is deleted | **Yes.** Keep the last Python image tag and the offline SQLite copy 30 days after 1782 and 1479. | Cheap insurance. | 1479 |
+
+## 7. AI legal and risk review of K-F03 and K-F07 (2026-11-15)
+
+**This is an AI review done at Opus level, not the opinion of a licensed lawyer.** It reads the code and the repo's own legal notes; it does not verify statutes. Where it names a law, the citation comes from the repo (`App/app/deadlines.py:3` quotes § 100(c) of Act 326/1999) and is unverified.
+
+**Finding that changes the premise:** neither item is a legal question. `docs/context/status.md` lists them under "Lawyer", but the known-issues table marks them HR, meaning *the owner decides*. K-F03 (`icalsync.py`, a lone vanished future booking stays "suspect") is an iCal reconciliation rule. K-F07 (guest save waits 60 s+ for UbyPort in immediate mode; the row lives in `docs/archive/known-issues-low-2026.md:7`) is speed. So filing is not blocked on a lawyer by these two. Open lawyer items that remain: K-L, K-F18, K-S10 (not touched here).
+
+| Item | Conclusion | Why |
+|---|---|---|
+| K-F03 | **Safe to port unchanged, with conditions.** Do not "fix" it during the port. | The feed must return at least half of the stored future stays (`FEED_COMPLETENESS_THRESHOLD = 0.5`, `icalsync.py:115`). With one stored stay, a returned count of 0 marks the feed "suspect" and the code returns before the cancel loop (about `icalsync.py:1106-1135`); the host gets a `feed_incomplete` alert. It fails on the cautious side: nothing is cancelled. Auto-cancelling could lose a real booking with a filing deadline. |
+| K-F07 | **Safe to port.** A background send instead of sending inside the request is allowed. | Immediate mode calls `submit_stay_if_complete` in the request (`routes/guest.py` about 2732); failures raise a host alert; the sweep is the backstop. |
+
+**Conditions the Go port (briefs 1740, 1741, 1742, 1724, 1731) must keep:**
+1. Never cancel a filed (SENT) stay automatically; alert and skip. Leave past stays alone.
+2. Keep the in-flight defer: no cancel while a send runs, and do not store the new digest or etag then.
+3. Keep the "suspect" early return and its alert. Any fix for the lone-stay case is a separate owner decision in its own PR.
+4. Keep the deadline rule (end of the third working day, check-in day counted when it is a working day; `deadlines.py:24-43`) and the send start at deadline minus 6 hours.
+5. Send once: the UbyPort call is never inside a database transaction (`UBYPORT_CORE.md`); keep the claim guard; never resend code 112 or refused records automatically.
+6. Skip immediate sends while `ubyport_auth_failed` is open.
+7. Keep `signature_dates_stale` (skip instead of filing outside the booking dates; K-F18).
+
+**Open checks the review could not do (first job of brief 1740's exact-diff pass):** whether the sweep files guests who registered on a vanished "suspect" stay (police could then hear of a stay that never happened); whether the "suspect" branch stores the new digest (`**read`, about `icalsync.py:1111`) so the next poll no longer re-checks; line numbers have moved (the logic is at about `icalsync.py:1092-1182`, not 790-840).
+
+Result: the F1/F2 switches stay owner sign-offs per switch, but the lawyer gate on K-F03 and K-F07 is removed. This does not replace the lawyer for the legal texts (K-L) or K-F18.
+
+## 8. Verification log: server checks, Sunday 2026-11-15 (morning)
+
+No secrets. Results as reported by the server session.
+
+- **Health:** 9 containers up, 0 restarts. `ubyhost-go` 38 MiB of its 768m limit. Disk 12%, 7% after the Docker build cache prune (7.9 GB freed). No real errors, panics or 5xx in 12 h of logs. Schema check OK (v45, 71 tables, goose 17). `caddy-validate` valid. `UBYHOST_GO_PATHS` has 55 entries.
+- **Live pages:** `/jak-to-funguje`, `/cenik` and `/` answer 200; `/onboarding` answers 303. `/pruvodce` without a slug answers 404 by design (only `GET /pruvodce/{slug}` is routed); the slugs `hlaseni-cizincu-ubyport` and `online-ubytovaci-kniha` answer 200. `/login` answers 403 to the server: that is the Cloudflare bot challenge against the server's address, so server-side `curl` cannot test login, admin or billing paths. Those need browser checks.
+- **Paths audit:** the 13 `/apartments/*` entries all match the playbook (W7 setup; W8 guide, leon, photos). `/webhooks/stripe` is in the list although the runbook keeps it on Python: remove it (step R0 of [go-cutover-mega-prompt](go-cutover-mega-prompt.md), brief 1781).
+- **Backups:** the 03:00 cron `backup.sh` log redirect to `/var/log/ubyhost-backup.log` failed (root-owned directory); fixed by creating the file owned by `ubuntu`. The real nightly backups are `backup-s3.sh` (03:30, calls `backup.sh`) and `backup-gdrive.sh` (04:00): fresh encrypted snapshots on S3 and Drive each day, so expect two snapshots per night now. WAL-G runs separately at 04:30.
+- **S3 first-attempt 403 every night since early October:** cause is rclone's `HEAD ?versionId` read-back on a versioned bucket. The backup IAM user (`ubyhost-backup`, policy `UbyHostBackupS`) lacks `s3:GetObjectVersion`; uploads succeed. Fix: add that action in the IAM console (no delete rights). The backup user has no `s3:DeleteObject`, so pruning needs a bucket lifecycle rule (proposed: expire current versions after 60 days, noncurrent after 7, abort incomplete multipart uploads after 7). Test objects under `UbyHost-backups/_probe/` are waiting for the owner to delete them in the console.
+- **Pending on the server:** 34 apt updates (2 security) and a reboot; do these after a fresh backup.
+- **Still owner-only:** browser click-through of W1, W1b, W6, W7, W8; SES test M-P8; W3 and W4 browser checks.
+
+## 9. Not verified
 
 Line ranges and function names come from reading `main` on 2026-11-15; the Go side of 1700-1704 (what 1300/1520-1524 already registered) was not diffed and is the first job of each exact-diff pass. The live value of `UBYHOST_GO_PATHS` is not in the repo (55 entries per the executor). Nothing was run: no tests, no builds.

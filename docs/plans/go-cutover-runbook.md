@@ -94,7 +94,7 @@ Add each block to the existing value, never replace it. One wave per sitting; wa
 Source: [go-full-move-remaining](go-full-move-remaining.md) (dated 11-13, before wave 3; waves 3 areas above are now done, the rest still stands).
 
 - **Guest registration and guest pages** (`/l/*`, `/g/*`, 19 + 4 + 5 routes in `guest.py`, `guest_leon.py`, `guest_questions.py`, and the guest guide view 1629). Not started. The Go port waits for the filing port (F2).
-- **Guest editing by the host** (`/guests/<id>*`, 11 routes) and **stays and filing** (`/reservations*`, 20 routes, `POST /reservations/<id>/submit`, `submit-ready`). F1 and F2 filing is HIGH RISK (K-F03, K-F07 need the lawyer) and "last" by your rule.
+- **Guest editing by the host** (`/guests/<id>*`, 11 routes) and **stays and filing** (`/reservations*`, 20 routes, `POST /reservations/<id>/submit`, `submit-ready`). F1 and F2 filing is HIGH RISK and "last" by your rule (K-F03 and K-F07 got an AI review on 11-15 and are not lawyer items: see [go-sqlite-final](go-sqlite-final.md) §7).
 - **Passkeys** (6 of 7 routes), the passkey library decision (go-webauthn v0.18.0 on Go 1.25) is still open.
 - **Properties and entities forms:** `/apartments/<id>`, `/apartments/new`, `POST /apartments`, `POST /entities`, `/settings*`, `/menu`, `/housebook` page, smart locks (1526, no Go TTLock client), the property page (1525 to 1527). Briefs 1525 to 1527 are blocked.
 - **Booking and payments guest side:** `/p/<slug>*` and booking pages (1546, 1550, 1553 blocked), guest `/pay/*` (1545 blocked), booking-site host pages.

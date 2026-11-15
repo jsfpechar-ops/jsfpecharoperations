@@ -30,6 +30,8 @@ Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (no new pers
 
 **Parity method (same as briefs 1595 and 1580):** a golden script `App/scripts/go_go_reservation_edit_posts_golden.py` seeds a throwaway database with made-up rows, renders the real FastAPI app, and writes `testdata/*_golden.json`; the Go test replays the same seed and must match byte for byte (go-first exception 1). Accepted differences are listed in the report, never silently.
 
+Keep the conditions of the AI review of K-F03/K-F07 ([go-sqlite-final](../plans/go-sqlite-final.md) section 7), in particular: never cancel a filed stay, send once, skip while `ubyport_auth_failed`.
+
 ## 3. Files
 
 | Path | Action | What |

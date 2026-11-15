@@ -9,7 +9,7 @@ Tier: B (Sonnet writes the exact-diff pass; orchestrator reads the diff of the r
 
 ## 1. Objective
 
-Port the small `main.py` routes. `/sample-airbnb.ics` is brief 1650; `/healthz` and `/metrics` stay as they are. `/dev/ui` is not ported: it is a development page deleted with Python (decision recorded in the report).
+Port the small `main.py` routes. `/sample-airbnb.ics` is brief 1650; `/healthz` and `/metrics` stay as they are. `/dev/ui` is not ported: owner decision 2026-11-15, it is deleted with Python.
 
 ## 2. Context
 

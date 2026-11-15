@@ -1,7 +1,7 @@
 # 1740: Go filing F1: Go endpoint 'send this stay now' (Python calls it)
 
 Status: todo — scoped (final brief 2026-11-15). Executable only after its exact-diff pass: sidecars in `docs/tasks/1740-files/`, anchors and sha256 table (§2), written to the rules in [workflow](../context/workflow.md#writing-briefs-for-haiku). Until then the executor must not start it.
-Depends on: go/internal/ubyport (client, collect, effects: done), 1171, 1159 watchdog; owner sign-off K-F03/K-F07 | Base commit: current tip of the working branch | Branch: task/1740-go-filing-f1-send-endpoint
+Depends on: go/internal/ubyport (client, collect, effects: done), 1171, 1159 watchdog; owner sign-off per switch (K-F03/K-F07 reviewed, see below) | Base commit: current tip of the working branch | Branch: task/1740-go-filing-f1-send-endpoint
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (split in two briefs if the exact-diff pass finds more)
 Tier: A (exact diffs only; Opus writes the exact-diff pass; fresh review of the full diff before ready)
 
@@ -24,6 +24,8 @@ Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (no new pers
 **Risk:** HIGH RISK. Police filing; wrong data is a legal problem.
 
 **Parity method (same as briefs 1595 and 1580):** a golden script `App/scripts/go_go_filing_f1_send_endpoint_golden.py` seeds a throwaway database with made-up rows, renders the real FastAPI app, and writes `testdata/*_golden.json`; the Go test replays the same seed and must match byte for byte (go-first exception 1). Accepted differences are listed in the report, never silently.
+
+**AI legal review (2026-11-15, Opus-level, not a licensed lawyer; see [go-sqlite-final](../plans/go-sqlite-final.md) section 7):** K-F03 and K-F07 are not legal questions and do not block this brief. Port unchanged and keep the seven conditions listed there (never cancel a filed stay; keep the in-flight defer and the "suspect" early return; keep the deadline rule; send once and never inside a transaction; pause on UbyPort auth failure; keep `signature_dates_stale`). Remaining owner sign-off is per switch.
 
 ## 3. Files
 
@@ -83,6 +85,6 @@ Stop and write the report instead of continuing when: an anchor is not found ver
 
 ## Owner steps
 
-1. Lawyer items K-F03 and K-F07 closed.
+1. K-F03 and K-F07 are reviewed (AI review, no lawyer needed).
 2. Flag on in staging; file three test stays; compare to the mock log.
 3. Flag on in production for one stay; watch the UbyPort answer; then leave it on.
