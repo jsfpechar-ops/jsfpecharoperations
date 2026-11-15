@@ -58,7 +58,7 @@ GUARDRAILS (every step)
 9. On ANY doubt or unexpected output: roll back the current step, STOP, report. Do not retry, do not
    try a different fix.
 
-STEPS, in order. Domain: <DOMAIN> (Josef gives it in the message that pastes this prompt).
+STEPS, in order. Domain: ubyhost.com (use https://ubyhost.com in every curl).
 
 R0  AUTO  Remove /webhooks/stripe from UBYHOST_GO_PATHS (the runbook keeps Stripe webhooks on Python).
     Edit: remove exactly the single entry /webhooks/stripe, nothing else; entry count must go from 55 to 54.
@@ -70,13 +70,19 @@ R1  AUTO  Read-only health record. Print: docker compose ps (service, state, res
     only (UBYHOST_GO_PATHS entry count, UBYHOST_GO_JOB_KINDS, UBYHOST_JOB_QUEUE_KINDS, UBYHOST_SCHEDULER,
     UBYHOST_SCHEMA_APPLY, COMPOSE_PROFILES, UBYHOST_GO_MEM). For the paths line print paths only.
 
+R2  AUTO  Read-only backup check. The owner has added s3:GetObjectVersion to the backup IAM policy (done 2026-11-15),
+    so the nightly S3 upload should no longer log a first-attempt 403. Count only, print no log lines:
+    grep -c -i '403' /var/log/ubyhost-backup.log  (and the backup-s3 log if you find it by `ls /var/log | grep -i backup`).
+    Report the counts and the date of the newest line. A 403 dated BEFORE 2026-11-15 15:00 Prague is expected history.
+    Any 403 after that: report it, do not change anything, and continue (it is not a Go-cutover failure).
+
 W2  AUTO, WAIT >= 24 h after W1. Add: /guests/*/form.pdf /housebook/pdfs.zip /settings/workspace-export /settings/archived
     NEVER add /settings/purge-expired.
-    Verify: curl -sI https://<DOMAIN>/settings/archived -> 200 or 303 to /login (or UNVERIFIED if cf challenge).
+    Verify: curl -sI https://ubyhost.com/settings/archived -> 200 or 303 to /login (or UNVERIFIED if cf challenge).
     Then GATE-WAIT for Josef's manual check M-W2 (download one registration form PDF, open the housebook zip).
 
 W2b AUTO, WAIT >= 24 h after W2 "kept". Add both together: /privacy-requests /privacy-requests/*
-    Verify: curl -sI https://<DOMAIN>/privacy-requests -> 303 to /login (or UNVERIFIED). Never POST.
+    Verify: curl -sI https://ubyhost.com/privacy-requests -> 303 to /login (or UNVERIFIED). Never POST.
     GATE-WAIT for M-W2b.
 
 W6b AUTO, after W6 is "kept" (W6 first set is already live; its second set is this step). Add exactly:
@@ -149,7 +155,7 @@ No secret values anywhere in the report.
 
 ## 2. Order at a glance
 
-R0 and R1 now. W2 from 2026-11-16 00:30 Prague (24 h after W1). W2b a day later. W6b any time after W2 is kept. Then the gated waves one at a time as Josef answers: W3, W4, W5a-f (a day apart), W8b, W9 (seven runs), W10 (three runs), J1, J2, S. Waves of the new Go briefs (P, B, U, H, G) are not in this prompt; each gets its own section when its briefs are merged and deployed.
+R0, R1 and R2 now. W2 from 2026-11-16 00:30 Prague (24 h after W1). W2b a day later. W6b any time after W2 is kept. Then the gated waves one at a time as Josef answers: W3, W4, W5a-f (a day apart), W8b, W9 (seven runs), W10 (three runs), J1, J2, S. Waves of the new Go briefs (P, B, U, H, G) are not in this prompt; each gets its own section when its briefs are merged and deployed.
 
 ## 3. Why it is built this way
 
