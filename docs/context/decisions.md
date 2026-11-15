@@ -66,3 +66,4 @@ Append-only.
 - 2026-11-15 [ux/auth] Login button named by device (Face ID etc.), not "passkey"; auto-open only on remembered devices | owner | 1762, 1763
 - 2026-11-15 [dep] go-webauthn v0.18.0 pinned | owner | 1760
 - 2026-11-15 [ai] Havel and Leon on Mistral Small, 0.05 USD monthly caps | owner
+- 2026-11-15 [legal] Register lists Mistral AI SAS and Anthropic as conditional AI subprocessors; texts say "our AI providers"; no "EU only" or "not stored" claim until ZDR/EU endpoint are in place | owner | 1792
