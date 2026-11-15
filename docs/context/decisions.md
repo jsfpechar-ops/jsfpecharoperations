@@ -3,8 +3,6 @@ Append-only.
 - 2026-10-19 | Design v2: MASTER.md is the only host design source; Lucide inline SVG; CI blocks raw colours, inline styles, page CSS | owner | [plan](../plans/design-v2.md)
 - 2026-10-19 Accessibility: WCAG 2.2 AA, `a11y_guard.js`; no statement page (owner).
 - 2026-10-24 | [deps] `anthropic` 2.3.0 pinned+hashed; model `claude-haiku-5-5`; calls via `App/app/ai.py` | 0310
-- 2026-10-25 | Invoice "Fill from register" also asks MFČR VAT register; DIČ digits only; 24 h cache | owner | 0394
-- 2026-10-26 | Billing phase 1: invoices only, no gateway yet | owner | 0411
 - 2026-10-26 | Unpaid = read-only, filing never blocked | owner | 0415
 - 2026-10-27 Grafana Cloud (EU free tier): subprocessor for ops logs/metrics (PII-free, OPS-3); compose profile "monitoring" (owner).
 - 2026-10-28 | [deps] `stripe` 16.0.1 pinned+hashed in requirements.lock (owner); calls via `App/app/stripe_connect.py`; shared monthly cap `UBYHOST_STRIPE_MONTHLY_API_CALLS` | 0428
@@ -65,3 +63,4 @@ Append-only.
 - 2026-11-13 [workflow/db] [Go first](go-first.md); [SQLite plan](../plans/sqlite-retirement.md) 1-6 approved | owner
 - 2026-11-14 [dep/infra] golang.org/x/image v0.45.0 (v0.46 needs Go 1.26); Go /data writable (was :ro) | owner | 1641, 1640
 - 2026-11-14 [access] Entry code: Go only, rules in [plan](../plans/entry-code-external-guide.md) | owner
+- 2026-11-15 [ux/auth] Login button named by device (Face ID etc.), not "passkey"; auto-open only on remembered devices | owner | 1762, 1763
