@@ -106,18 +106,17 @@ func (r *Reconciler) alertDelayed(ctx context.Context) (int, error) {
 				reason = "waiting"
 			}
 		}
-		// The Alert type has no detail column yet, so the reason travels in params (see the port notes).
 		if err := s.Alerts.Raise(ctx, Alert{
 			Level:         "warning",
 			Kind:          "door_code_delayed",
 			Message:       "Door code is taking too long",
+			Detail:        "reason=" + reason,
 			DedupeKey:     fmt.Sprintf("door_code_delayed:%d", row.ReservationID),
 			ApartmentID:   row.ApartmentID,
 			ReservationID: row.ReservationID,
 			Params: map[string]any{
 				"property": derefOr(row.InternalName, ""),
 				"date":     row.DateFrom,
-				"detail":   "reason=" + reason,
 			},
 		}); err != nil {
 			return 0, err

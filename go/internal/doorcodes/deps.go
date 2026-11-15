@@ -34,6 +34,8 @@ type Alert struct {
 	ApartmentID   int64 // 0 when none
 	ReservationID int64 // 0 when none
 	Params        map[string]any
+	Detail        string // raise_alert detail= (Python's English fallback copy); "" when none
+	OwnerUserID   int64  // raise_alert owner_user_id=; 0 lets the alert table derive it
 }
 
 // Alerts raises and resolves host alerts (App/app/alerts.py raise_alert and resolve).
@@ -104,9 +106,10 @@ type Confirmations interface {
 	MaybeNotifyCompletion(ctx context.Context, reservationID, apartmentID int64, force bool) error
 }
 
-// Push is the push.notify call. Lines 1-801 of door_codes.py never call it; later phases may.
+// Push is the push.notify call for kind door_code (ubyport.QueuePush). It returns how many
+// device rows were queued. push.door_code_missing is built on it (see wire.Delayed).
 type Push interface {
-	Notify(ctx context.Context, ownerUserID int64, title, body string) error
+	QueueDoorCode(ctx context.Context, ownerUserID int64, key, url string, params ubyport.AlertParams) (int, error)
 }
 
 // Settings are the config.py values the door-code flow reads.
@@ -153,8 +156,13 @@ func (a ubyportAlerts) Raise(ctx context.Context, in Alert) error {
 		v := in.ReservationID
 		reservationID = &v
 	}
-	return ubyport.RaiseAlert(ctx, a.pool, in.Level, in.Kind, in.Message, "", in.DedupeKey,
-		apartmentID, reservationID, nil, ubyport.AlertParams(in.Params))
+	var ownerID *int64
+	if in.OwnerUserID != 0 {
+		v := in.OwnerUserID
+		ownerID = &v
+	}
+	return ubyport.RaiseAlert(ctx, a.pool, in.Level, in.Kind, in.Message, in.Detail, in.DedupeKey,
+		apartmentID, reservationID, ownerID, ubyport.AlertParams(in.Params))
 }
 
 func (a ubyportAlerts) Resolve(ctx context.Context, dedupeKey string) error {

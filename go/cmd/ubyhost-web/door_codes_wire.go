@@ -1,30 +1,29 @@
 package main
 
-// The door-codes wiring: builds the doorcodes.Reconciler from the environment.
-//
-// TODO-blocked: Mailer (mail_notify build_door_code, guest_payload, door_code_notice, mail
-// enqueue and drain), Push (push.notify, door_code_missing), Plans (billing entitlements),
-// Billing (reporting progress, claim completion fee), Confirmations (claim.maybe_notify_completion)
-// and the phase-2 Lifecycle (lifecycle_revoke.go, lifecycle_cancel.go) are not ported yet. No
-// fake stands in for them. newDoorCodesReconciler therefore always returns errDoorCodesBlocked
-// after it has built the parts that do exist, so the job cannot run.
+// The door-codes wiring: builds the doorcodes.Reconciler and the cleaner-side queue from the
+// environment, as _job_door_codes in App/app/scheduler.py needs them. Everything here touches the
+// pool, so it runs on the first switched-on job run (see register_job_door_codes.go).
 
 import (
 	"errors"
+	"fmt"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/doorcodes"
+	doorcleaning "github.com/jsfpechar-ops/jsfpecharoperations/go/internal/doorcodes/cleaning"
+	doorwire "github.com/jsfpechar-ops/jsfpecharoperations/go/internal/doorcodes/wire"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/mail"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/mailnotify"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ttlock"
 )
 
-// errDoorCodesBlocked is the wiring error until the TODO-blocked parts exist.
-var errDoorCodesBlocked = errors.New("door_codes: wiring is blocked, the Mailer, Push, Plans, Billing, Confirmations and Lifecycle implementations are not ported yet")
-
-// doorCodesParts is what exists today: config, data keys, the TTLock client, the lock_account store
-// and the monthly budget guard.
+// doorCodesParts is the config, data keys, the TTLock client, the lock_account store and the
+// monthly budget guard.
 type doorCodesParts struct {
 	Config   ttlock.Config
 	Keys     *secure.MultiFernet
@@ -53,15 +52,120 @@ func newDoorCodesParts(pool *pgxpool.Pool) (doorCodesParts, error) {
 	return doorCodesParts{Config: cfg, Keys: keys, Client: client, Accounts: accounts, Budget: budget}, nil
 }
 
-// newDoorCodesReconciler is the 'newDoorCodesService' step. It builds the existing parts, then
-// returns errDoorCodesBlocked. When the TODO-blocked implementations land, this function builds
-// doorcodes.Service{Pool, Keys, Settings{Enabled: UBYHOST_DOOR_CODES, Live: UBYHOST_DOOR_CODES_LIVE,
-// BufferHours: 1}, TTLock: parts.Client, Accounts, Plans, Alerts: doorcodes.NewAlerts(pool), Mailer,
-// Billing, Confirm, Push, Clock} and a doorcodes.Reconciler with Lifecycle, Budget: parts.Budget,
-// BudgetLimit: parts.Config.MonthlyCalls, Locks: parts.Client and Delayed.
-func newDoorCodesReconciler(pool *pgxpool.Pool) (*doorcodes.Reconciler, error) {
-	if _, err := newDoorCodesParts(pool); err != nil {
+// systemClock is the real time for the door-code flow and the cleaner queue.
+type systemClock struct{}
+
+func (systemClock) Now() time.Time { return time.Now() }
+
+// doorCodesJob is the built job: the door-code reconciler and the cleaner-side collaborators.
+type doorCodesJob struct {
+	pool   *pgxpool.Pool
+	rec    *doorcodes.Reconciler
+	cleanQ doorcleaning.QueueDeps
+	clock  systemClock
+}
+
+// newDoorCodesJob is the 'newDoorCodesService' step. It builds doorcodes.Service with the real
+// Plans, Mailer, Billing, Confirmations, Push and Alerts, then the phase-2 Lifecycle, the delayed
+// notifier and the Reconciler, and the cleaner queue deps. The settings come from
+// UBYHOST_DOOR_CODES (on), UBYHOST_DOOR_CODES_LIVE (live) and DOOR_CODE_BUFFER_HOURS = 1 (config.py).
+func newDoorCodesJob(pool *pgxpool.Pool) (*doorCodesJob, error) {
+	parts, err := newDoorCodesParts(pool)
+	if err != nil {
 		return nil, err
 	}
-	return nil, errDoorCodesBlocked
+	mailCfg, err := mail.ConfigFromEnv(os.Getenv)
+	if err != nil {
+		return nil, fmt.Errorf("door_codes: mail config: %w", err)
+	}
+	clock := systemClock{}
+	mailer := &doorwire.Mailer{
+		Pool:       pool,
+		Env:        doorCodeMailEnv(os.Getenv),
+		Keys:       parts.Keys,
+		Getenv:     os.Getenv,
+		MailConfig: mailCfg,
+	}
+	billing := doorwire.LiveBilling{
+		Pool:     pool,
+		Getenv:   os.Getenv,
+		Keys:     parts.Keys,
+		GuestPay: strings.ToLower(strings.TrimSpace(os.Getenv("UBYHOST_STAY_FEE_GUEST_PAY"))) == "on",
+	}
+	push := doorwire.Push{Pool: pool, Getenv: os.Getenv}
+	svc := &doorcodes.Service{
+		Pool:     pool,
+		Keys:     parts.Keys,
+		Settings: doorCodesSettings(os.Getenv),
+		TTLock:   parts.Client,
+		Accounts: parts.Accounts,
+		Plans:    doorwire.Plans{Pool: pool, Getenv: os.Getenv},
+		Alerts:   doorcodes.NewAlerts(pool),
+		Mailer:   mailer,
+		Billing:  billing,
+		Push:     push,
+		Clock:    clock,
+	}
+	// Set after construction: the confirmation calls back into the door-code service.
+	svc.Confirm = doorwire.LiveConfirmations{Pool: pool, Mailer: mailer, Billing: billing, Doors: svc}
+
+	rec := &doorcodes.Reconciler{
+		Svc: svc,
+		Lifecycle: &doorcodes.Lifecycle{
+			Service: svc,
+			Notices: doorwire.HostNotices{Mailer: mailer},
+			Locks:   parts.Client,
+		},
+		Budget:      parts.Budget,
+		BudgetLimit: parts.Config.MonthlyCalls,
+		Locks:       parts.Client,
+		Delayed:     doorwire.Delayed{Pool: pool, Mailer: mailer, Push: push},
+	}
+	return &doorCodesJob{
+		pool:  pool,
+		rec:   rec,
+		clock: clock,
+		cleanQ: doorcleaning.QueueDeps{
+			TTLock:         parts.Client,
+			Cipher:         parts.Keys,
+			Clock:          clock,
+			StagingNoLogin: stagingNoLogin(os.Getenv),
+		},
+	}, nil
+}
+
+// doorCodesSettings reads the three switches the way config.py does.
+func doorCodesSettings(getenv func(string) string) doorcodes.Settings {
+	return doorcodes.Settings{
+		Enabled:     doorCodesOn(getenv("UBYHOST_DOOR_CODES")),
+		Live:        doorCodesOn(getenv("UBYHOST_DOOR_CODES_LIVE")),
+		BufferHours: 1,
+	}
+}
+
+// doorCodeMailEnv is mail_notify's config: app_base_url() (UBYHOST_APP_BASE_URL, else the public
+// base), PUBLIC_BASE_URL and SUPPORT_EMAIL.
+func doorCodeMailEnv(getenv func(string) string) mailnotify.DoorCodeMailEnv {
+	public := strings.TrimRight(strings.TrimSpace(getenv("UBYHOST_PUBLIC_BASE_URL")), "/")
+	if public == "" {
+		public = "http://127.0.0.1:8080"
+	}
+	app := strings.TrimRight(strings.TrimSpace(getenv("UBYHOST_APP_BASE_URL")), "/")
+	if app == "" {
+		app = public
+	}
+	return mailnotify.DoorCodeMailEnv{AppBaseURL: app, PublicBaseURL: public, SupportEmail: "support@ubyhost.com"}
+}
+
+// doorCodesStagingNoLogin is auth.staging_no_login: no queue work in that mode (the cleaner queue
+// reads it through QueueDeps.StagingNoLogin).
+func stagingNoLogin(getenv func(string) string) bool {
+	if strings.ToLower(getenv("UBYHOST_DEPLOYMENT")) != "staging" {
+		return false
+	}
+	switch strings.ToLower(strings.TrimSpace(getenv("UBYHOST_STAGING_NO_LOGIN"))) {
+	case "1", "true", "yes", "on":
+		return true
+	}
+	return false
 }

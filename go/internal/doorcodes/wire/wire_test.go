@@ -347,9 +347,6 @@ func TestPushQueueDoorCode(t *testing.T) {
 	if n, err := off.QueueDoorCode(ctx, 7, "502", "/x", nil); err != nil || n != 0 {
 		t.Fatalf("UBYHOST_WEB_PUSH=0 must queue nothing: n=%d err=%v", n, err)
 	}
-	if err := (Push{Pool: pool}).Notify(ctx, 7, "t", "b"); err != ErrNotPorted {
-		t.Fatalf("Notify must say it is not ported, got %v", err)
-	}
 }
 
 func TestDoorCodeNoticeEndToEnd(t *testing.T) {

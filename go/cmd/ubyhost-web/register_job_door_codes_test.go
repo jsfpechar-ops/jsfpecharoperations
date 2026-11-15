@@ -37,14 +37,11 @@ func TestDoorCodesJobOnWithoutPoolFails(t *testing.T) {
 	}
 }
 
-// The wiring stays blocked until the Mailer, Push, Plans, Billing, Confirmations and Lifecycle exist.
-func TestDoorCodesWiringIsBlocked(t *testing.T) {
-	rec, err := newDoorCodesReconciler(nil)
-	if rec != nil || err == nil {
-		t.Fatalf("wiring must not return a reconciler yet: %v %v", rec, err)
-	}
-	if _, err := newDoorCodesParts(nil); err == nil {
-		t.Fatal("parts need a pool")
+// The job builds nothing without a pool: the error says why, and nothing panics.
+func TestDoorCodesWiringNeedsPool(t *testing.T) {
+	job, err := newDoorCodesJob(nil)
+	if job != nil || err == nil || !strings.Contains(err.Error(), "no database pool") {
+		t.Fatalf("wiring without a pool: %v %v", job, err)
 	}
 }
 

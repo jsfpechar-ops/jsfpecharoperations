@@ -217,12 +217,12 @@ func (l *Lifecycle) alreadyGone(ctx context.Context, te *ttlock.TTLockError, row
 // tellHostReissued is _tell_host_reissued: one info card and one mail per replaced code. A failure
 // is logged and never stops the re-issue. The PIN is not carried.
 func (l *Lifecycle) tellHostReissued(ctx context.Context, rowID, ownerUserID int64) {
-	if err := l.hostReissuedNotice(ctx, rowID); err != nil {
+	if err := l.hostReissuedNotice(ctx, rowID, ownerUserID); err != nil {
 		l.log().Error(fmt.Sprintf("door code %d: host notice after a re-issue failed: %v", rowID, err))
 	}
 }
 
-func (l *Lifecycle) hostReissuedNotice(ctx context.Context, rowID int64) error {
+func (l *Lifecycle) hostReissuedNotice(ctx context.Context, rowID, ownerUserID int64) error {
 	var apartmentID, reservationID int64
 	var property, email *string
 	var dateFrom string
@@ -249,6 +249,7 @@ func (l *Lifecycle) hostReissuedNotice(ctx context.Context, rowID int64) error {
 		ApartmentID:   apartmentID,
 		ReservationID: reservationID,
 		Params:        map[string]any{"property": derefOr(property, ""), "date": dateFrom},
+		OwnerUserID:   ownerUserID,
 	}); err != nil {
 		return err
 	}

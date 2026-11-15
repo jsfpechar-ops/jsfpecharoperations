@@ -204,7 +204,7 @@ func TestAlertDelayedNotifiesHostOnce(t *testing.T) {
 		t.Fatalf("raised %d alerts", len(f.alerts.raised))
 	}
 	a := f.alerts.raised[0]
-	if a.Kind != "door_code_delayed" || a.DedupeKey != fmt.Sprintf("door_code_delayed:%d", f.res) || a.Params["detail"] != "reason=waiting" {
+	if a.Kind != "door_code_delayed" || a.DedupeKey != fmt.Sprintf("door_code_delayed:%d", f.res) || a.Detail != "reason=waiting" {
 		t.Fatalf("alert %+v", a)
 	}
 	if !reflect.DeepEqual(delayed.notices, []string{"waiting"}) || !reflect.DeepEqual(delayed.missing, []int64{f.res}) {

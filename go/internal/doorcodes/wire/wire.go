@@ -104,6 +104,12 @@ func (m *Mailer) GuestPayload(ctx context.Context, apartmentID int64, content do
 // DoorCodeNotice is mail_notify.door_code_notice(door_code_id, variant). The Python key
 // suffix is not part of the interface, so the key has no suffix.
 func (m *Mailer) DoorCodeNotice(ctx context.Context, doorCodeID int64, stage string) error {
+	return m.DoorCodeNoticeKeyed(ctx, doorCodeID, stage, "")
+}
+
+// DoorCodeNoticeKeyed is mail_notify.door_code_notice(door_code_id, variant, key_suffix). An
+// empty keySuffix is Python's None; a non-empty one makes the mail key unique for that suffix.
+func (m *Mailer) DoorCodeNoticeKeyed(ctx context.Context, doorCodeID int64, stage, keySuffix string) error {
 	var reservationID, apartmentID int64
 	var lastError, pinEnc *string
 	err := m.Pool.QueryRow(ctx,
@@ -135,6 +141,7 @@ func (m *Mailer) DoorCodeNotice(ctx context.Context, doorCodeID int64, stage str
 		DateFrom:      res.dateFrom,
 		LastError:     deref(lastError),
 	}
+	in.KeySuffix = keySuffix
 	if deref(pinEnc) != "" {
 		in.HasPin = true
 		in.Pin = m.decryptOrEmpty(deref(pinEnc))

@@ -70,11 +70,6 @@ type Push struct {
 
 var _ doorcodes.Push = Push{}
 
-// Notify does not map onto push.notify; see the type comment.
-func (p Push) Notify(ctx context.Context, ownerUserID int64, title, body string) error {
-	return ErrNotPorted
-}
-
 // QueueDoorCode is push.notify for kind door_code: one push_outbox row per device of the
 // owner, key door_code:<key>:<subscription id>. It returns how many rows were queued.
 func (p Push) QueueDoorCode(ctx context.Context, ownerUserID int64, key, url string, params ubyport.AlertParams) (int, error) {
