@@ -52,7 +52,7 @@ Detection rules (order matters): UA contains `iPhone`, `iPad`, `iPod` or `Macint
 
 ## 4. Steps
 
-0. Checks (repo root): `ls go/internal/web/auth/authpage/device.go` must fail (file absent); `grep -cF 'login.passkey' go/internal/web/auth/authpage/templates/login.html` prints 1; `git log --oneline origin/docs/final-go-sqlite-briefs -3` readable. Else STOP.
+0. Checks (repo root): `ls go/internal/web/auth/authpage/device.go` must fail (file absent); `grep -cF '{{t "login.passkey"}}' go/internal/web/auth/authpage/templates/login.html` prints 1; `git log --oneline origin/docs/final-go-sqlite-briefs -3` readable. Else STOP.
 1. Add keys to the two Python files and the two `i18n_keys.txt`; run the generator; `--check` exits 0.
 2. Add `device.go`, `device_test.go`, edit `authpage.go`.
 3. Edit `login.html` and `shell.html`; extend `authpage_test.go`; fix goldens only where the diff is exactly the new wording.

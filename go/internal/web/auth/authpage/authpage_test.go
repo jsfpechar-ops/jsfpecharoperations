@@ -1,6 +1,7 @@
 package authpage
 
 import (
+	"html"
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
@@ -124,5 +125,34 @@ func TestRenderCookiesAndHead(t *testing.T) {
 	if len(rec.Result().Cookies()) != 0 || strings.Contains(body, "canonical") || !strings.Contains(body, `name="next" value="/login"`) ||
 		!strings.Contains(body, `href="/login?lang=cs"`) || strings.Contains(body, "t=x") {
 		t.Errorf("link page: cookies %v", rec.Result().Cookies())
+	}
+}
+
+// TestLoginDeviceLabel: the passkey button reads by device, in every language.
+func TestLoginDeviceLabel(t *testing.T) {
+	env := Env{Getenv: testEnv(map[string]string{"UBYHOST_PUBLIC_BASE_URL": "https://ubyhost.test/"}), Now: time.Now()}
+	uas := map[string]string{
+		"apple":   "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1",
+		"android": "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36",
+		"windows": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+		"other":   "Mozilla/5.0 (X11; Linux x86_64; rv:126.0) Gecko/20100101 Firefox/126.0",
+	}
+	labels := map[string]map[string]string{
+		"en": {"apple": "Log in with Face ID or Touch ID", "android": "Log in with fingerprint or face", "windows": "Log in with Windows Hello", "other": "Log in with your device's screen lock"},
+		"cs": {"apple": "Přihlásit se přes Face ID nebo Touch ID", "android": "Přihlásit se otiskem prstu nebo obličejem", "windows": "Přihlásit se přes Windows Hello", "other": "Přihlásit se zámkem obrazovky zařízení"},
+		"vi": {"apple": "Đăng nhập bằng Face ID hoặc Touch ID", "android": "Đăng nhập bằng vân tay hoặc khuôn mặt", "windows": "Đăng nhập bằng Windows Hello", "other": "Đăng nhập bằng khóa màn hình của thiết bị"},
+	}
+	for lang, byKind := range labels {
+		for kind, ua := range uas {
+			rec := httptest.NewRecorder()
+			r := httptest.NewRequest("GET", "/login?lang="+lang, nil)
+			r.Header.Set("User-Agent", ua)
+			if err := Render(rec, r, env, nil, "login", LoginData{}, 0); err != nil {
+				t.Fatal(err)
+			}
+			if want := html.EscapeString(byKind[kind]); !strings.Contains(rec.Body.String(), want) {
+				t.Errorf("%s %s: page lacks %q", lang, kind, want)
+			}
+		}
 	}
 }

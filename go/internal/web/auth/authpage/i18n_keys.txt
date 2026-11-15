@@ -30,3 +30,7 @@ passkeys.error.login_failed
 pwa.login_hint
 # two_factor_login.html
 account.2fa.*
+login.device.apple
+login.device.android
+login.device.windows
+login.device.other

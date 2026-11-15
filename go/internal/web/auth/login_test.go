@@ -172,6 +172,9 @@ var pageTokens = []struct {
 	{regexp.MustCompile(`(name="csrf-token" content=")[^"]*"`), `${1}<csrf>"`},
 	{regexp.MustCompile(`name="pending" value="[^"]*"`), `name="pending" value="<pending>"`},
 	{regexp.MustCompile(`(/login/link\?t=)[A-Za-z0-9_-]+`), `${1}<token>`},
+	// Brief 1762: Go names the button by device, Python says "passkey".
+	// Only this one label is masked; the rest of the page must match.
+	{regexp.MustCompile(`(data-passkey-login-button>)[^<]*`), `${1}<login-button-label>`},
 	{regexp.MustCompile(`[ \t\n\r\f\v]+`), " "},
 }
 
