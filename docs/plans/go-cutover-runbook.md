@@ -95,7 +95,7 @@ Source: [go-full-move-remaining](go-full-move-remaining.md) (dated 11-13, before
 
 - **Guest registration and guest pages** (`/l/*`, `/g/*`, 19 + 4 + 5 routes in `guest.py`, `guest_leon.py`, `guest_questions.py`, and the guest guide view 1629). Not started. The Go port waits for the filing port (F2).
 - **Guest editing by the host** (`/guests/<id>*`, 11 routes) and **stays and filing** (`/reservations*`, 20 routes, `POST /reservations/<id>/submit`, `submit-ready`). F1 and F2 filing is HIGH RISK and "last" by your rule (K-F03 and K-F07 got an AI review on 11-15 and are not lawyer items: see [go-sqlite-final](go-sqlite-final.md) §7).
-- **Passkeys** (6 of 7 routes), the passkey library decision (go-webauthn v0.18.0 on Go 1.25) is still open.
+- **Passkeys** (6 of 7 routes), the passkey library is decided: go-webauthn v0.18.0 on Go 1.25 (owner, 2026-11-15, brief 1760); the port is not done.
 - **Properties and entities forms:** `/apartments/<id>`, `/apartments/new`, `POST /apartments`, `POST /entities`, `/settings*`, `/menu`, `/housebook` page, smart locks (1526, no Go TTLock client), the property page (1525 to 1527). Briefs 1525 to 1527 are blocked.
 - **Booking and payments guest side:** `/p/<slug>*` and booking pages (1546, 1550, 1553 blocked), guest `/pay/*` (1545 blocked), booking-site host pages.
 - **Cleaning pages:** 11 of 16 routes (the 11 missing; some may have landed in #1021, UNVERIFIED).
@@ -106,7 +106,7 @@ Source: [go-full-move-remaining](go-full-move-remaining.md) (dated 11-13, before
 ## 7. Database: Postgres and the SQLite rollback
 
 - **Postgres is already live** (status.md: "Postgres live ... SQLite rollback via pg-cutover only"). There is no further Postgres cutover to do. The open question is when to end the SQLite rollback path (decision 3 of [sqlite-retirement](sqlite-retirement.md), "confirm the cutover date (not found in the docs)").
-- **Recommendation, no date yet:** do not end rollback today. It is blocked by the four proofs in P4 (A, B, C, and the offline copy) and then by S11/S12 which need a 30-day window. A date has to come from you; a reasonable one is 30 days after P4 is recorded.
+- **Owner decision 2026-11-15:** the rollback path ends **2026-12-15** if the four proofs of P4 are recorded by 2026-12-01 (otherwise the date moves later by one day per day of delay); see [go-sqlite-final](go-sqlite-final.md) §6. Do not end it before that date. It is blocked by the four proofs in P4 (A, B, C, and the offline copy) and then by S11/S12 which need a 30-day window. A date has to come from you; a reasonable one is 30 days after P4 is recorded.
 - **Rollback while it still exists:** `pg-cutover.sh rollback` switches `.env` back to SQLite. It loses every write made on Postgres since the cutover. It is a disaster path, not a wave rollback; wave rollbacks are the `UBYHOST_GO_PATHS` lines.
 - **Schema authority:** after I1, Go applies goose files. Do not add SQLite migrations to `App/app/migrations/` (frozen at 0045).
 

@@ -50,7 +50,7 @@ Before any wave with host pages, ask the orchestrator for the 390/768/1280 scree
 
 ## 5. Decisions only you can make
 
-- #1025 and #1026: merge or not. Date for ending the SQLite rollback (decision 3 of [sqlite-retirement](sqlite-retirement.md)); suggested 30 days after P4 is recorded. Do not end it today.
+- #1025 and #1026: merge or not. The SQLite rollback ends 2026-12-15 (owner decision 2026-11-15, [go-sqlite-final](go-sqlite-final.md) §6), only if the P4 proofs are recorded by 2026-12-01. Do not end it earlier.
 - `UBYHOST_STAY_FEE_GUEST_PAY` (with the lawyer). Retention apply: `UBYHOST_GO_RETENTION_APPLY=1` and `UBYHOST_RETENTION_AUTOPURGE=1` only after three nights of matching dry-run counts (personal-data deletion, lawyer relevant).
 - Waiting items (runbook section 5): `/settings/purge-expired` (three matching retention mornings and writable `/data`); jobs `retention` and `stay_fee_mail`; `/webhooks/stripe` (check the Go webhook yourself; Stripe is in test mode); `/demo` and `/demo/reset` stay on Python together.
 - Whether to run wave 9 at all, and wave 10 step (4).
