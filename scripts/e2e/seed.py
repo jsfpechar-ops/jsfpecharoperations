@@ -77,7 +77,7 @@ def main():
     from app import invoice_links, invoices
 
     ent = db.insert("legal_entity", {"name": "E2E Penzion s.r.o.", "seat": "Praha", "ico": "04656679", "registry_entry": "ZR",
-                                     "vat_status": "non_payer", "invoice_due_days": 14, "owner_user_id": h1, "created_at": db.utcnow()})
+                                     "vat_status": "non_payer", "invoice_due_days": 14, "owner_user_id": h1, "contact_email": "desk@e2e.test", "created_at": db.utcnow()})
 
     def draft(total, label):
         return {"legal_entity_id": ent, "apartment_id": None, "reservation_id": None, "owner_user_id": h1, "kind": "invoice", "lang": "cs",
