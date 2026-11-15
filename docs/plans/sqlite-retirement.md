@@ -82,11 +82,11 @@ The production database holds real data (2026-11-13 check: about 117 guests, 28 
 
 ## 7. Owner decisions
 
-**All six approved as recommended by the owner, 2026-11-13.** Still open: the cutover date (decision 3).
+**All six approved as recommended by the owner, 2026-11-13.** The cutover date was set on 2026-11-15 (decision 3: 2026-12-15).
 
 1. Freeze `App/app/migrations/` at 0045 now, new schema changes goose-only? Recommend yes.
 2. Python's PostgreSQL apply switches to goose files only (S6)? Recommend yes.
-3. End the SQLite rollback path once the section 6 proofs exist? Recommend yes; please confirm the cutover date (not found in the docs).
+3. End the SQLite rollback path once the section 6 proofs exist? Recommend yes; cutover date decided 2026-11-15: 2026-12-15 (see [go-sqlite-final](go-sqlite-final.md) §6).
 4. Keep SQLite as the Python suite's test database until lane X3? Recommend yes.
 5. Keep one encrypted offline copy of the last SQLite file for 30 days after S11, then delete it? Recommend yes.
 6. Let Go `migrate` build an empty database with `--init` (S7)? Recommend yes.

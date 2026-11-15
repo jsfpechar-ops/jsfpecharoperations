@@ -1,6 +1,6 @@
 # 1526: Smart-locks POST routes (setup, refresh, remove)
 
-Status: blocked — no Go TTLock client exists; the three routes call the TTLock gateway
+Status: replaced by 1707 (final briefs 2026-11-15); the old text is kept for context
 Depends on: see §2 | Base commit: current branch (One big PR mode) | Branch: current branch
 Executor: none until unblocked | Tier B (A where §2 says)
 

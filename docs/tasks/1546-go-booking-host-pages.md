@@ -1,6 +1,6 @@
 # 1546: Go host pages of the booking site (not written)
 
-Status: blocked — not written yet: the host pages need a brief writer to read booking_setup.py, property_page publish/slug code and the photo pipeline (store_photo); nothing here is a rule blocker except the photo re-encode, which needs a decision on stdlib image/jpeg. Do not run.
+Status: replaced by 1710 (final briefs 2026-11-15); the old text is kept for context
 Depends on: 1540, 1544 | Base commit: none (one big PR) | Branch: the current branch
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Tier B (host pages, publishing a public page). Review: Opus orchestrator.

@@ -1,6 +1,6 @@
 # 1525: Property settings pages that wait for the host layout shell (alert stack in v2 pages, housebook CSV menu)
 
-Status: blocked — the read-only layout `go/internal/hostweb/layout` cannot render what these pages need
+Status: replaced by 1704 (final briefs 2026-11-15); the old text is kept for context. Was: blocked — the read-only layout `go/internal/hostweb/layout` cannot render what these pages need
 Depends on: see §2 | Base commit: current branch (One big PR mode) | Branch: current branch
 Executor: none until unblocked | Tier B (A where §2 says)
 
