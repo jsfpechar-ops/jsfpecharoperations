@@ -170,6 +170,15 @@ def test_qr_payload_rejects_card_rail(owner):
         payment_request.qr_payload(payment_request.get(rid))
 
 
+def test_guest_token_matches_go_guest_token(monkeypatch):
+    """Go guestToken and payment_request.guest_token must stay byte-identical (#1015)."""
+    from app import config
+
+    monkeypatch.setattr(config, "secret_key", lambda: "k" * 32)
+    row = {"id": 10, "variable_symbol": "2600000010"}
+    assert payment_request.guest_token(row) == "4e32f618faa135220ad4fe38d14f1805"
+
+
 def test_guest_token_is_stable_and_binds_variable_symbol(owner):
     """0763: the public /pay/… URL must change if the VS changes."""
     _entity(owner, iban="CZ6508000000001921239563")
