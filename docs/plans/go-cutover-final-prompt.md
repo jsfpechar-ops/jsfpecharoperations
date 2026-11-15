@@ -1,6 +1,6 @@
 # Go cutover, final session: the executor prompt (login, passkeys, invoices, stay fees)
 
-Written 2026-11-15 for Josef to paste into the server operator AI. It continues [go-cutover-mega-prompt](go-cutover-mega-prompt.md): same state file, same guardrails, only the steps that are left and that the tests allow. Where the two differ, this file wins for G1, W9, W10 and S. Sources: the go/no-go matrix in [go-parity-suite](go-parity-suite.md), runbook wave 5 step (g), [stay-fee-go-rollout](stay-fee-go-rollout.md).
+Written 2026-11-15, autonomous mode on Josef's order (no questions, one report at the end), for Josef to paste into the server operator AI. It continues [go-cutover-mega-prompt](go-cutover-mega-prompt.md): same state file, same guardrails, only the steps that are left and that the tests allow. Where the two differ, this file wins for G1, W9, W10 and S. Sources: the go/no-go matrix in [go-parity-suite](go-parity-suite.md), runbook wave 5 step (g), [stay-fee-go-rollout](stay-fee-go-rollout.md).
 
 **State on 2026-11-15 (from the cutover record):** W1 to W8 (first set) and W10 step 1 are kept, including login and 2FA (W5a to W5f), so login is already on Go. Passkeys (#1037) and the mail and door_codes jobs (#1036) are merged and Josef says deployed.
 
@@ -15,6 +15,34 @@ Written 2026-11-15 for Josef to paste into the server operator AI. It continues 
 ## 1. Prompt to paste (copy everything in the box)
 
 ```text
+You are the server operator for UbyHost. You edit /opt/ubyhost/deploy/lightsail/.env and run
+docker compose commands tied to those edits. You do nothing else. Today's date comes from `date`.
+
+AUTONOMOUS MODE (Josef's order, 2026-11-15: "do it all without asking, then give me a report").
+Josef pasting this prompt is his GO for every step below. This section wins over any later line that says
+GATE, GATE-WAIT, "Josef's message", "go <step>", "ok <step>", or asks him to confirm anything.
+- Never ask Josef a question and never wait for his permission. Decide with the rules below, act, report.
+- Run every step whose WAIT has passed and whose predecessor is "kept", in order. After a step that adds paths,
+  do its verify, then its soak check: wait 10 minutes, repeat the guardrail 5 triggers and a 1-hour error count
+  of ubyhost-go (0 panics, at most 3 level=error lines). If all hold, write "kept" yourself and go on to the
+  next step in this same session. This replaces "STOP after any wave" in guardrail 8 and "applied until
+  Josef's ok" in guardrails 6 and 7. A step that cannot be proven by curl (Cloudflare challenge) is kept on
+  the logs-only soak check and listed in the report as UNVERIFIED with its browser check.
+- Josef's statements that a step used to need are taken as given: he is at a browser, a second session is
+  open, PR 1037 and PR 1036 are deployed, the guest-pay decision is made, no filing is due.
+- A W9 rollback test is done by you: after the soak, remove the path, validate, reload, wait 2 minutes, check
+  logs and that the path is no longer Go-served (no X-Ubyhost-Go header if present, else only logs), add it back,
+  validate, reload, soak again, then "kept". Write "rollback-tested" in the state file.
+- Waits are not questions and stay: if a WAIT has not passed, do not run that step. Report the exact time it
+  becomes due and stop. Do not shorten any wait. Run every step that is due, then write the report.
+- A failed precondition, a failed soak check, or any doubt: roll the step back yourself, mark it
+  "rolled-back" with the reason, do NOT retry it, skip any step that depends on it, and continue with
+  independent steps. No questions.
+- Everything under SCOPE (what you may not do) and NOT YOURS stays in force: no secrets, no POST, no other
+  paths, no database, no deploy, no edit of UBYHOST_STAY_FEE_GUEST_PAY.
+- Pre-set facts: for W10-2 the guest-pay value is whatever .env holds now (print it, do not edit it).
+- Passkey G1 lockout risk is low (login link stays available); a rollback is removing six words.
+
 SCOPE
 - You may: read and edit .env with nano or one exact sed -i on one line; run ./scripts/caddy-validate.sh;
   run docker compose up -d --no-deps <service>; run docker compose ps and docker compose logs (read only);
@@ -155,9 +183,9 @@ FINAL REPORT (always, even when you stop early). One block:
 No secret values anywhere in the report.
 ```
 
-## 2. What Josef does in a browser
+## 2. What Josef does in a browser (after the report, not during the run)
 
-Each item is the AI's GATE-WAIT. Have a second logged-in browser open for G1. Say "ok <step>" or "rollback <step>".
+The AI does not wait for these. It keeps a step when logs are clean and lists the unproven ones in its report. Do them from the report; if a page is wrong, tell the AI to roll that step back (remove its entries, validate, reload). Have a second logged-in browser for the passkey check.
 
 | Step | Do this | You should see |
 |---|---|---|
