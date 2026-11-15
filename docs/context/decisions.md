@@ -65,3 +65,4 @@ Append-only.
 - 2026-11-14 [access] Entry code: Go only, rules in [plan](../plans/entry-code-external-guide.md) | owner
 - 2026-11-15 [ux/auth] Login button named by device (Face ID etc.), not "passkey"; auto-open only on remembered devices | owner | 1762, 1763
 - 2026-11-15 [dep] go-webauthn v0.18.0 pinned | owner | 1760
+- 2026-11-15 [ai/cost] Havel and Leon move to Mistral Small (`mistral-small-latest`), 0.05 USD monthly caps each; Anthropic stays as fallback by env only | owner | 1791
