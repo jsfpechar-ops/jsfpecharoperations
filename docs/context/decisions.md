@@ -59,9 +59,10 @@ Append-only.
 - 2026-11-13 [security] #966: 1200-1205; Go env in compose; K-S12 ok; 1206-1207 after merge (owner)
 - 2026-11-13 [mail] Completion CC to host again; PII stays in guest_details_host | owner | 1291
 - 2026-11-14 [mail] Only completion (guest TO, host CC) after stay complete; stop guest_details_host (supersedes 1291 keep-both) | owner | 1630
-- 2026-11-13 [workflow] No GitHub branch protection or required checks (owner): merges gated by scripts/merge-pr-on-green.sh, production by the green-CI deploy gate; CI speed-ups in [1413](../tasks/1413-ci-skip-heavy-jobs-for-brief-only-changes.md), [1414](../tasks/1414-ci-postgres-full-four-shards.md), [1415](../tasks/1415-ci-balance-shards-by-duration.md), 1416 (README)
+- 2026-11-13 [workflow] No GitHub branch protection or required checks (owner): merges gated by scripts/merge-pr-on-green.sh, production by the green-CI deploy gate; CI speed-ups: 1413-1415, 1416 (README)
 - 2026-11-13 [workflow/db] [Go first](go-first.md); [SQLite plan](../plans/sqlite-retirement.md) 1-6 approved | owner
 - 2026-11-14 [dep/infra] golang.org/x/image v0.45.0 (v0.46 needs Go 1.26); Go /data writable (was :ro) | owner | 1641, 1640
 - 2026-11-14 [access] Entry code: Go only, rules in [plan](../plans/entry-code-external-guide.md) | owner
 - 2026-11-15 [ux/auth] Login button named by device (Face ID etc.), not "passkey"; auto-open only on remembered devices | owner | 1762, 1763
 - 2026-11-15 [dep] go-webauthn v0.18.0 pinned | owner | 1760
+- 2026-11-15 [perf] One 1 vCPU / 2 GB server for 2,000 properties: [plan](../plans/optimization-wins.md) | owner
