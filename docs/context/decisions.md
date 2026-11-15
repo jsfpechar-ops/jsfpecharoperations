@@ -1,14 +1,14 @@
 # Decisions
 Append-only.
 - 2026-10-19 | Design v2: MASTER.md is the only host design source; Lucide inline SVG; CI blocks raw colours, inline styles, page CSS | owner | [plan](../plans/design-v2.md)
-- 2026-10-19 Accessibility: WCAG 2.2 AA, `a11y_guard.js`; no statement page (owner).
+- 2026-10-19 A11y: WCAG 2.2 AA, `a11y_guard.js`; no statement page.
 - 2026-10-24 | [deps] `anthropic` 2.3.0 pinned+hashed; model `claude-haiku-5-5`; calls via `App/app/ai.py` | 0310
-- 2026-10-26 | Unpaid = read-only, filing never blocked | owner | 0415
-- 2026-10-27 Grafana Cloud (EU free tier): subprocessor for ops logs/metrics (PII-free, OPS-3); compose profile "monitoring" (owner).
+- 2026-10-26 | Unpaid = read-only; filing never blocked | 0415
+- 2026-10-27 Grafana Cloud (EU free): ops logs/metrics subprocessor, no PII; profile "monitoring".
 - 2026-10-28 | [deps] `stripe` 16.0.1 pinned+hashed in requirements.lock (owner); calls via `App/app/stripe_connect.py`; shared monthly cap `UBYHOST_STRIPE_MONTHLY_API_CALLS` | 0428
 - 2026-10-28 | Property pages: Apify prefill, no AI, host reviews once (0431); no Airbnb assets; photos re-hosted, max 10, EXIF stripped, host confirms rights (0432); no-JS widget, Stripe on host account (0434); English only | owner
 - 2026-11-02 | OCR: Tesseract only, local, MRZ check digits, Max only; band crop; Paddle if ocr_readrate <90% | owner | test_doc_ocr
-- 2026-10-29 | Trials are extendable by the operator, 1-365 days | owner | 0448
+- 2026-10-29 | Operator can extend trials 1-365 days | 0448
 - 2026-10-29 | Stripe Accounts v2, responsibilities immutable, companies via business_type (0437); Connect: full Dashboard + collectors, Express rejected (0439) | owner
 - 2026-10-30 | [workflow/db/deps] PostgreSQL kit, psycopg3 + pgBackRest approved; manual cutover | 0455–0456
 - 2026-10-31 | Postgres (#592), then Go G1-G6, per-feature rollback, no load test. [workflow] Haiku implements | owner | [plan v4](../plans/postgresql/migration-plan-v4.md)
@@ -65,4 +65,5 @@ Append-only.
 - 2026-11-14 [access] Entry code: Go only, rules in [plan](../plans/entry-code-external-guide.md) | owner
 - 2026-11-15 [ux/auth] Login button named by device (Face ID etc.), not "passkey"; auto-open only on remembered devices | owner | 1762, 1763
 - 2026-11-15 [dep] go-webauthn v0.18.0 pinned | owner | 1760
+- 2026-11-15 [ai] Havel and Leon on Mistral Small, 0.05 USD monthly caps | owner
 - 2026-11-15 [ai] Shared Havel/Leon budget, abuse caps; Havel no-go settings; nameless lookups; host mail in host language: [plan](../plans/ai-payments-hardening.md) | owner
