@@ -1,0 +1,19 @@
+{
+  "rp_id": "ubyhost.example.test",
+  "origin": "https://ubyhost.example.test",
+  "credential_id": "8rKdW9i3bGs5zqQwIDofibHfZVHC1U_jrvXxU63KRG4",
+  "public_key": "pQECAyYgASFYILlufacoeV4tI1v0xenShBlMtwyHoocc23d-eowJ3j5VIlggLREWS1FfczUTwOMG8TE-29jygeJLgRnot5rYYw97m80",
+  "sign_count_before": 2,
+  "challenge": "ecA6mP5JYcj9UyhstM2cwXFRB2lm5F1Y48QfHu0AVIY",
+  "credential": {
+    "id": "8rKdW9i3bGs5zqQwIDofibHfZVHC1U_jrvXxU63KRG4",
+    "rawId": "8rKdW9i3bGs5zqQwIDofibHfZVHC1U_jrvXxU63KRG4",
+    "response": {
+      "authenticatorData": "29wcv8W0XTy794UzEJYYL9tVFuwSiZF7O6maekN1jGIFAAAABA",
+      "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiZWNBNm1QNUpZY2o5VXloc3RNMmN3WEZSQjJsbTVGMVk0OFFmSHUwQVZJWSIsIm9yaWdpbiI6Imh0dHBzOi8vdWJ5aG9zdC5leGFtcGxlLnRlc3QiLCJjcm9zc09yaWdpbiI6ZmFsc2V9",
+      "signature": "MEYCIQDV98r3MXPEa0pPPquLou-zOX29OPT07cQsCpoCAMhmeAIhAKGrzrONBbdz9IN2gbeYZjBuzHF5zTtUxWpsMcHXLEZk",
+      "userHandle": "bEpDRsNGOH_DqSK-8Dp74YK6Hli__9YUXVKkM9Kmtqe2wM6s5MDBm5ncS4nOU3QdbBKj-TCM4vp4lPi0iiLDCg"
+    },
+    "type": "public-key"
+  }
+}

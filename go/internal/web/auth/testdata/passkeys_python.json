@@ -1,0 +1,41 @@
+{
+  "rp_id": "ubyhost.example.test",
+  "origin": "https://ubyhost.example.test",
+  "user_handle": "Xok7gEFIzyMx49tHQsGiBsYIaUBWYzpfPsAm_WfhecPndFjRIYF0nY6Wl5aq8raIB-BvwnxvGo7_j9vUK_EHlA",
+  "credential_id": "EjF2N9ANB5bH2BR7BIT2bjZuIhjrGcacU16JkxB5Pjw",
+  "public_key": "pQECAyYgASFYIA3382eZZvl8NWS_X4sfuNQnH18h7hiBkLZAH__se47mIlggpFlpvo17Ot0qqLxTPnrnHvMvhNYaCT4UkhT7dNIXN7o",
+  "sign_count": 0,
+  "registration": {
+    "challenge": "nrxKH9MSmc3Nor2lTbvkfl_mnp9Perpp_uJbTRon5gg",
+    "credential": {
+      "id": "EjF2N9ANB5bH2BR7BIT2bjZuIhjrGcacU16JkxB5Pjw",
+      "rawId": "EjF2N9ANB5bH2BR7BIT2bjZuIhjrGcacU16JkxB5Pjw",
+      "type": "public-key",
+      "authenticatorAttachment": "platform",
+      "response": {
+        "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoibnJ4S0g5TVNtYzNOb3IybFRidmtmbF9tbnA5UGVycHBfdUpiVFJvbjVnZyIsIm9yaWdpbiI6Imh0dHBzOi8vdWJ5aG9zdC5leGFtcGxlLnRlc3QiLCJjcm9zc09yaWdpbiI6ZmFsc2V9",
+        "attestationObject": "o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVik29wcv8W0XTy794UzEJYYL9tVFuwSiZF7O6maekN1jGJFAAAAAAAAAAAAAAAAAAAAAAAAAAAAIBIxdjfQDQeWx9gUewSE9m42biIY6xnGnFNeiZMQeT48pQECAyYgASFYIA3382eZZvl8NWS_X4sfuNQnH18h7hiBkLZAH__se47mIlggpFlpvo17Ot0qqLxTPnrnHvMvhNYaCT4UkhT7dNIXN7o",
+        "transports": [
+          "internal"
+        ]
+      },
+      "clientExtensionResults": {}
+    }
+  },
+  "login": {
+    "challenge": "ccvOUI5fJRU2Xz9cpoRqptljyUmk6Drg-B4slfkAkZY",
+    "credential": {
+      "id": "EjF2N9ANB5bH2BR7BIT2bjZuIhjrGcacU16JkxB5Pjw",
+      "rawId": "EjF2N9ANB5bH2BR7BIT2bjZuIhjrGcacU16JkxB5Pjw",
+      "type": "public-key",
+      "authenticatorAttachment": "platform",
+      "response": {
+        "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiY2N2T1VJNWZKUlUyWHo5Y3BvUnFwdGxqeVVtazZEcmctQjRzbGZrQWtaWSIsIm9yaWdpbiI6Imh0dHBzOi8vdWJ5aG9zdC5leGFtcGxlLnRlc3QiLCJjcm9zc09yaWdpbiI6ZmFsc2V9",
+        "authenticatorData": "29wcv8W0XTy794UzEJYYL9tVFuwSiZF7O6maekN1jGIFAAAABw",
+        "signature": "MEUCIQDLVht42PyGKlcZM5ymWi0VJSt24EE_lglrIlx1BCkwJgIgNdBzV5IfmC-aENdautwTbD1pFFi6Lp1-RbOf5p_MFPM",
+        "userHandle": "Xok7gEFIzyMx49tHQsGiBsYIaUBWYzpfPsAm_WfhecPndFjRIYF0nY6Wl5aq8raIB-BvwnxvGo7_j9vUK_EHlA"
+      },
+      "clientExtensionResults": {}
+    }
+  }
+}
