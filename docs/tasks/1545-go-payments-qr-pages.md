@@ -1,6 +1,6 @@
 # 1545: Go QR pages: host preview and guest bank-transfer page (blocked)
 
-Status: blocked — the guest page /pay/{id}/{token} needs the guest-language catalog (App/app/i18n.py, language rule in routes/guest.py _language: ?lang, cookie, then Accept-Language) and no Go package has it; it belongs to the guest-registration thread. Written as a plan only; do not run.
+Status: replaced by 1713 (final briefs 2026-11-15); the old text is kept for context
 Depends on: 1540 and the guest-language port | Base commit: none (one big PR) | Branch: the current branch
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Tier B (guest-facing bank details). Review: Opus orchestrator.

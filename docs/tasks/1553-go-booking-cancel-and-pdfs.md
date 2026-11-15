@@ -1,6 +1,6 @@
 # 1553: Go guest cancel and invoice PDFs (blocked)
 
-Status: blocked — guest cancel needs a Go stay-invoice engine (booking_invoice.ensure, invoices.download_pdf, storno and correction invoices), Stripe refund with the intent key, and the cancellation mails; Go has no stay-invoice code (go/internal/pdf is a library, billingjob only issues subscription invoices). Do not run.
+Status: replaced by 1712 (final briefs 2026-11-15); the old text is kept for context
 Depends on: 1544 and the stay-invoice port | Base commit: none (one big PR) | Branch: the current branch
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Tier A candidate (money out: refunds, invoices). Review: Opus orchestrator.
