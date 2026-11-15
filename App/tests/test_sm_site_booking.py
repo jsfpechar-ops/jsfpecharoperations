@@ -62,6 +62,8 @@ PINNED_DEMO_NAME_MENTIONS = 1  # the "Clear demo" table list, a DELETE by apartm
 PINNED_GO_STATUS_FILES = frozenset({
     "go/internal/payments/booking_webhook.go",
     "go/internal/web/booking/checkout.go",
+    # mail job step expire_requests: requested -> expired only (same move as booking_site.set_status)
+    "go/internal/mailjob/holds.go",
 })
 PINNED_GO_STATUS_ANCHORS = [
     "UPDATE site_booking SET status = 'paid'",
