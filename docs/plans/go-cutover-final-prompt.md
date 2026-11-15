@@ -4,9 +4,9 @@ Written 2026-11-15, revised the same night: autonomous mode on Josef's order (no
 
 **State on 2026-11-15 (from the cutover record):** W1 to W8 (first set) and W10 step 1 are kept, including login and 2FA (W5a to W5f), so login is already on Go. Passkeys (#1037) and the mail and door_codes jobs (#1036) are merged and Josef says deployed.
 
-**Left out on purpose:** job kind `mail` (needs the SES test M-P8), job kind `door_codes` (needs the TTLock test with a real lock), J1 and J2 (retention apply is Josef's decision; the `stay_fee_mail` mail branch is unproven), `/stay-fees/*` (wave 10 step 4), `/apartments`, `/entities`, `/demo`, `/settings/purge-expired`, `/webhooks/stripe`.
+**Left out on purpose:** job kind `door_codes` (needs the TTLock test with a real lock), J1 and J2 (retention apply is Josef's decision; the `stay_fee_mail` mail branch is unproven), `/stay-fees/*` (wave 10 step 4), `/apartments`, `/entities`, `/demo`, `/settings/purge-expired`, `/webhooks/stripe`.
 
-**Why there is no scheduler switch (S).** `UBYHOST_SCHEDULER=go` makes Go enqueue all 15 kinds and Python enqueue none, and Python refuses the switch unless all 15 are in `UBYHOST_JOB_QUEUE_KINDS` (brief 1451, `go_scheduler_problem()`). That includes `mail` and `door_codes`, which are excluded above, and the parity suite compared only the names and intervals of the other kinds, not a run on a shared queue. So no job kind is switchable on evidence today, and step S below only reads and reports. It adds nothing.
+**Why there is no scheduler switch (S).** `UBYHOST_SCHEDULER=go` makes Go enqueue all 15 kinds and Python enqueue none, and Python refuses the switch unless all 15 are in `UBYHOST_JOB_QUEUE_KINDS` (brief 1451, `go_scheduler_problem()`). That includes `door_codes`, which stays off (it needs the real-lock test); `mail` is switched in the MAIL step after Josef's passed SES test. The parity suite compared only the names and intervals of the other kinds, not a run on a shared queue, so step S only reads and reports. It adds nothing.
 
 **The 24 h waits are waived (Josef, 2026-11-15: "waive it, I want it all done today").** That covers G1 (24 h after W5f), W9c to W9g (24 h between paths), W10-2 (24 h after step 1) and W10-3 (24 h after W10-2). What replaces them: a 10-minute soak after every step, the per-step verify, auto-rollback, and a rollback test on every W9 path. The one-week "Python ran cleanly" rule for Havel and Leon (W8b) is also taken as Josef's call and waived; the executor lists it in the report. Cost of waiving: a bug that shows only after a day (a nightly job, a monthly total) will not be seen before the next step goes live. That is Josef's decision, and the SQLite/Python rollback stays open until 2026-12-15.
 
@@ -39,14 +39,13 @@ GATE, GATE-WAIT, "Josef's message", "go <step>", "ok <step>", or asks him to con
 - ALL WAITS ARE WAIVED by Josef's order (2026-11-15): the 24 h before G1, between W9 paths, before W10-2 and
   before W10-3, and the week of Python for W8b. Ignore every "WAIT" line and every state-file time check below.
   Only the 10-minute soak after each step remains, and it is not shortened. Run ALL steps back to back in this
-  one session, in this order: R1, G1, W8b, W9a, W9b, W9c, W9d, W9e, W9f, W9g, W10-2, W10-3, S, M1, then the report.
+  one session, in this order: R1, G1, W8b, W9a, W9b, W9c, W9d, W9e, W9f, W9g, W10-2, W10-3, MAIL, S, M1, then the report.
   Do not skip a step for time; skip it only for a failed precondition or a rollback (see below).
 - A failed precondition, a failed soak check, or any doubt: roll the step back yourself, mark it
   "rolled-back" with the reason, do NOT retry it, skip any step that depends on it, and continue with
   independent steps. No questions.
 - Everything under SCOPE (what you may not do) and NOT YOURS stays in force: no secrets, no POST, no other
-  paths, no database, no deploy, no edit of UBYHOST_STAY_FEE_GUEST_PAY, no /stay-fees/*, no mail, no
-  door_codes, no scheduler switch.
+  paths, no database, no deploy, no edit of UBYHOST_STAY_FEE_GUEST_PAY, no /stay-fees/*, no door_codes, no scheduler switch.
 - Pre-set facts: for W10-2 the guest-pay value must be on (print it, do not edit it); if it is not on, skip W10-2 and W10-3 stays independent.
 - Models: you are Haiku-class; no subagents, no tools beyond SCOPE.
 - Passkey G1 lockout risk is low (login link stays available); a rollback is removing six words.
@@ -116,7 +115,7 @@ GUARDRAILS (every step)
    try a different fix.
 
 
-STEPS, in order: R1, G1, W8b, W9a to W9g, W10-2, W10-3, S, M1. Domain: ubyhost.com (use https://ubyhost.com in every curl). The state file already holds the older ids; write the new ones in the same format.
+STEPS, in order: R1, G1, W8b, W9a to W9g, W10-2, W10-3, MAIL, S, M1. Domain: ubyhost.com (use https://ubyhost.com in every curl). The state file already holds the older ids; write the new ones in the same format.
 
 R1  AUTO  Read-only health record, as in the first session: docker compose ps (service, state, restarts);
     docker stats --no-stream for ubyhost-go; df -h / ; the switch names (UBYHOST_GO_PATHS entry count and paths,
@@ -183,10 +182,27 @@ W10-3  AUTO (waived)  Add: /stay-fees
     Verify: curl -sI https://ubyhost.com/stay-fees -> 303 to /login, or UNVERIFIED with the Cloudflare header.
     Soak 10 minutes, then "kept". Rollback: remove the entry.
 
+MAIL AUTO (waived)  Job kind `mail` on Go (brief 1770, PR 1036). Josef reports the SES test M-P8 passed (the invite mail
+    arrived at once), so that gate is cleared; the brief's own rule is "add to both lists together after M-P8".
+    Preconditions (names only): UBYHOST_MAIL_BACKEND is ses ("ses"/other, print the word); `mail` is not yet in
+    either list; `submit` is in neither list (filing guard); ubyhost-go healthy.
+    Edit: add `mail` to UBYHOST_JOB_QUEUE_KINDS and to UBYHOST_GO_JOB_KINDS (comma lists, existing kinds kept,
+    never empty, never reordered; save both whole lines first with grep, no -n). Add `mail` to both in ONE edit,
+    never to only one (Go-only without the queue entry stops the worker). Do NOT add door_codes, submit or any
+    other kind. Then docker compose up -d --no-deps ubyhost-go worker (the services that read the lists; use the
+    names docker compose ps shows), wait 60 s.
+    Checks: both lists contain mail exactly once; no service restarting or unhealthy; ubyhost-go logs since the
+    edit have 0 panics and at most 3 level=error lines, and no line about a mail send failure or SES error;
+    the worker logs show no "unknown job id". Soak 10 minutes with the same checks, then "kept".
+    Honest limit: the brief asks to watch a day of outbox counts equal to Python's. That is waived; the
+    executor cannot read the database. List it in the report. Josef spot-checks that the next real mail
+    (invite, reminder) arrives once, not twice.
+    Rollback: remove `mail` from BOTH lists, recreate the same services; Python drains again.
+
 S   AUTO, read-only, never an edit. Report: the names in UBYHOST_JOB_QUEUE_KINDS and UBYHOST_GO_JOB_KINDS
-    (how many of 15 each), which of the 15 are missing from the queue list, and whether UBYHOST_SCHEDULER is set
+    (how many of 15 each), which of the 15 are missing from the queue list, and whether UBYHOST_SCHEDULER is set (mail is now queued if the MAIL step is kept; door_codes is the missing one)
     (grep -c '^UBYHOST_SCHEDULER=' .env). Then write exactly: "Scheduler switch not done: it needs all 15 kinds
-    including mail (SES test M-P8) and door_codes (lock test), which are not cleared." Do not add any kind to
+    and door_codes (lock test) is not cleared." Do not add any kind to
     either variable and do not set UBYHOST_SCHEDULER.
 
 M1  AUTO, only on Josef's line  Mistral Small key (Josef's order 2026-11-15; the switch itself is a separate PR).
@@ -206,8 +222,8 @@ M1  AUTO, only on Josef's line  Mistral Small key (Josef's order 2026-11-15; the
     Rollback: remove the key line (and restore the provider line if changed), recreate the services.
     The key never goes into the state file, the report, any repo file, the PR or this document.
 
-NOT YOURS (tell Josef, do nothing): job kinds mail, door_codes, retention apply, stay_fee_mail; apt upgrades
-and reboot; S3/IAM and lifecycle; SES test M-P8; browser checks; Cloudflare rules; /demo; /settings/purge-expired;
+NOT YOURS (tell Josef, do nothing): job kind door_codes (lock test), retention apply, stay_fee_mail; apt upgrades
+and reboot; S3/IAM and lifecycle; browser checks; Cloudflare rules; /demo; /settings/purge-expired;
 /stay-fees/*; the UBYHOST_STAY_FEE_GUEST_PAY value; anything about SQLite; PR 1033 (login button wording); the Mistral code switch; the AI model, key and provider variables.
 
 FINAL REPORT (always, even when you stop early). One block:
