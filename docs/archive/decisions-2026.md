@@ -85,3 +85,5 @@ Moved from docs/context/decisions.md during compaction.
 - 2026-11-11 [ux] 1101: wizard reuse
 - 2026-10-08/12 | Door codes (TTLock pilot): timed codes, test mode until live; one 1-min job, no polling; details 0037, 0067-69 | owner | [plan](../plans/ttlock-door-codes.md), [legal](../privacy/DOOR_CODES_LEGAL.md)
 - 2026-10-09 | [workflow] One brief per copy text; executors skip non-todo; lint warns on overlap; status `replaced` = newer brief took over | [workflow](workflow.md)
+- 2026-10-25 | Invoice "Fill from register" also asks MFČR VAT register; DIČ digits only; 24 h cache | owner | 0394
+- 2026-10-26 | Billing phase 1: invoices only, no gateway yet | owner | 0411
