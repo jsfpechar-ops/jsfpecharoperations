@@ -60,6 +60,7 @@ type Page struct {
 	Passkeys      bool   // passkeys_enabled()
 	OperatorEmail string // operator().email
 	SignedIn      bool   // current_user is set
+	DeviceKind    string // passkey button wording: apple, android, windows or other (from User-Agent; not stored)
 	Data          any    // the page's own values
 }
 
@@ -120,6 +121,7 @@ func Render(w http.ResponseWriter, r *http.Request, env Env, host *session.Host,
 		Lang: lang, CSRF: token, SiteKey: turnstile.PageSiteKey(env.Getenv),
 		Passkeys: PasskeysAvailable(env.Getenv), OperatorEmail: OperatorEmail(env.Getenv),
 		SignedIn: host != nil, Data: data,
+		DeviceKind: DeviceKind(r.Header.Get("User-Agent")),
 	}
 	out, err := execute(r, env.Getenv, lang, name, page)
 	if err != nil {
