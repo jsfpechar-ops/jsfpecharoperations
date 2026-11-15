@@ -1,6 +1,6 @@
 # Plan: optimization wins
 
-Status: owner approved the scope on 2026-11-15 ("do it all"). Briefs 1800-1823 are reserved and not written yet. Two items wait for an owner decision (section 9).
+Status: owner approved the scope on 2026-11-15 ("do it all"). Briefs 1800-1823 are reserved and not written yet. The owner decided D1-D3 on 2026-11-16 (section 9).
 Goal: the whole product runs well for 2,000 properties on one 1 vCPU / 2 GB RAM / 40 GB disk server, with no upgrade path.
 Depends on [go-full-move](go-full-move.md) and [SQLite retirement](sqlite-retirement.md) for lane A; every other lane can start now.
 
@@ -39,7 +39,7 @@ Scaled to 2,000 properties (upper bound, the 7 include owner testing): about 19 
 | Brief | Work | Done when |
 |---|---|---|
 | (existing) | Finish the Go move and SQLite retirement: removes `ubyhost`, `worker`, `litestream` | The three containers are gone from the compose file |
-| 1800 | Build images in CI, push to a registry, server only pulls. Needs decision D2 | `deploy.sh` runs no `docker build`; deploy peak RAM under 1 GB |
+| 1800 | Build images in CI, push to a registry, server only pulls. Registry: D2 | `deploy.sh` runs no `docker build`; deploy peak RAM under 1 GB |
 | 1801 | Monitoring in one container: Alloy's built-in unix and cadvisor exporters replace `node-exporter` and `cadvisor`; trim scrape list and interval | Two containers removed; the dashboards used in section 1 still fill |
 | 1802 | Memory limits from section 2, `GOMEMLIMIT` on `ubyhost-go`, 1 GB swap file step in [LIGHTSAIL](../LIGHTSAIL.md) | Compose defaults match section 2 |
 | 1803 | Owner check: `free -m; ps -eo rss,comm --sort=-rss \| head -15` idle and during a deploy, to explain the 800 MB outside containers | Cause written into [known-issues](../context/known-issues.md) |
@@ -50,7 +50,7 @@ Scaled to 2,000 properties (upper bound, the 7 include owner testing): about 19 
 |---|---|---|
 | 1804 | Caddy serves `/sw.js`, `/manifest.webmanifest` and `/static/*` from disk with cache headers and compression (service worker: short max-age plus ETag; fingerprinted assets: one year, immutable) | These paths show no requests in `ubyhost_requests_total` |
 | 1805 | Caddy answers scanner paths itself (`*.php`, `/wp-*`, `/.env`, `/.git/*`, `/cgi-bin/*` and the top unmatched paths from the metric) with 404 | Unmatched 404s at the app drop by 90% |
-| 1806 | Per-IP rate limit for anonymous routes. Caddy has no built-in limiter: do it in the Go middleware first; a Caddy plugin is decision D3 | A 50 requests/s burst from one IP gets 429 after the limit |
+| 1806 | Per-IP rate limit for anonymous routes. Caddy has no built-in limiter: do it in the Go middleware (D3) | A 50 requests/s burst from one IP gets 429 after the limit |
 | 1807 | Landing page and other public pages: rendered once, kept in memory, `ETag` and `304` | `/` costs no database query |
 | 1808 | Caddy request metrics into Alloy, so traffic is measured before the app | Grafana shows requests by status at Caddy |
 
@@ -79,7 +79,7 @@ Rule 1 applies: nothing here may change what is filed or the evidence of what wa
 
 | Brief | Work | Done when |
 |---|---|---|
-| 1818 | Signature: store a small black-and-white image as compressed bytes, then encrypt. Needs decision D1. Old rows are converted by a one-off job | New guest rows are 5 KB or less |
+| 1818 | Signature: store a small black-and-white image as compressed bytes, then encrypt. Format: D1. Old rows are converted by a one-off job | New guest rows are 5 KB or less |
 | 1819 | Submission XML: compress, then encrypt, in a binary column; old rows converted. The decrypted text is byte-identical | Round-trip test on every stored row; table shrinks about 10 times |
 | 1820 | PDFs (`stay_fee_filing`, `platform_invoice`): compress, then encrypt; subset fonts when generating. Never regenerate an issued invoice | Round-trip test; average PDF row 30 KB or less |
 | 1821 | Local backups: keep the last 3 in `/data/backups`; deploy takes a backup only when a migration is pending; the nightly dump streams to remote storage with no local file once the database passes 1 GB | Volume holds 3 folders |
@@ -91,16 +91,16 @@ Rule 1 applies: nothing here may change what is filed or the evidence of what wa
 1. Now, independent: 1803, 1805, 1804, 1816, 1821, 1822 (small, no decision needed).
 2. Next: 1801, 1802, 1812, 1815, 1808, 1809, 1810.
 3. After the routes are on Go: 1806, 1807, 1811, 1813, 1814, 1817.
-4. After the owner decisions: 1800 (D2), 1818 (D1); then 1819, 1820, 1823.
+4. Then: 1800, 1818, 1819, 1820, 1823.
 5. Last: measure for 7 days with the section 1 Grafana prompt, compare with section 2, then plan the server move.
 
-## 9. Owner decisions needed
+## 9. Owner decisions (2026-11-16)
 
-| ID | Question | Recommendation |
-|---|---|---|
-| D1 | May the guest signature be stored as a small black-and-white image instead of the full-colour one? It is evidence of consent, so ask the lawyer with the other legal texts | Yes, at a size where the signature is still clearly readable |
-| D2 | Where do CI-built images live? | GitHub Container Registry, private package; no new cost |
-| D3 | A Caddy rate-limit plugin is a new dependency | No: limit in the Go middleware |
+| ID | Decision |
+|---|---|
+| D1 | The guest signature is stored as a small black-and-white image, on the condition that it stays clearly readable. Brief 1818 includes a side-by-side check of old and new on real-size signatures |
+| D2 | CI-built images live in GitHub Container Registry as a private package |
+| D3 | Rate limiting is done in the Go middleware; no Caddy plugin |
 
 ## 10. Not in this plan
 

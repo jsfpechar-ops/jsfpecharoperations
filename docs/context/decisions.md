@@ -65,4 +65,4 @@ Append-only.
 - 2026-11-14 [access] Entry code: Go only, rules in [plan](../plans/entry-code-external-guide.md) | owner
 - 2026-11-15 [ux/auth] Login button named by device (Face ID etc.), not "passkey"; auto-open only on remembered devices | owner | 1762, 1763
 - 2026-11-15 [dep] go-webauthn v0.18.0 pinned | owner | 1760
-- 2026-11-15 [perf] One 1 vCPU / 2 GB server for 2,000 properties: [plan](../plans/optimization-wins.md) | owner
+- 2026-11-16 [perf] 1 vCPU / 2 GB for 2,000 properties; b/w signature if readable; GHCR images; Go rate limit: [plan](../plans/optimization-wins.md) | owner
