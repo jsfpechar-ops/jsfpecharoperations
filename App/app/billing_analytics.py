@@ -122,7 +122,7 @@ def watchlists(today: Optional[date] = None) -> Dict[str, List[Dict[str, Any]]]:
     overdue = [dict(r) for r in db.query(
         "SELECT i.id, i.number, i.total_haler, i.due_date, i.owner_user_id, u.display_name "
         "FROM platform_invoice i JOIN user_account u ON u.id = i.owner_user_id "
-        "WHERE i.voided = 0 AND i.paid_on IS NULL AND i.due_date < ? "
+        "WHERE i.kind IN ('invoice', 'supplementary') AND i.voided = 0 AND i.paid_on IS NULL AND i.due_date < ? "
         "ORDER BY i.due_date",
         (day.isoformat(),),
     )]
@@ -165,7 +165,7 @@ def aging(today: Optional[date] = None) -> Dict[str, int]:
     buckets = {"0-7": 0, "8-30": 0, "31-90": 0, "90+": 0}
     for r in db.query(
         "SELECT due_date, total_haler FROM platform_invoice "
-        "WHERE voided = 0 AND paid_on IS NULL AND due_date < ?",
+        "WHERE kind IN ('invoice', 'supplementary') AND voided = 0 AND paid_on IS NULL AND due_date < ?",
         (day.isoformat(),),
     ):
         late = (day - date.fromisoformat(r["due_date"][:10])).days
@@ -232,7 +232,7 @@ def forecast(today: Optional[date] = None) -> Dict[str, int]:
     horizon = date.fromordinal(day.toordinal() + 30).isoformat()
     row = db.query_one(
         "SELECT COALESCE(SUM(total_haler), 0) AS h FROM platform_invoice "
-        "WHERE voided = 0 AND paid_on IS NULL AND due_date >= ? AND due_date <= ?",
+        "WHERE kind IN ('invoice', 'supplementary') AND voided = 0 AND paid_on IS NULL AND due_date >= ? AND due_date <= ?",
         (day.isoformat(), horizon),
     )
     return {"next_30_days_czk": int(row["h"]) // 100}
