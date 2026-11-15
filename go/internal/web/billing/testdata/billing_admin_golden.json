@@ -3896,15 +3896,6 @@
       "total_haler": 126
      },
      {
-      "days_late": 38,
-      "display_name": "Čeněk Žluťoučký",
-      "due_date": "2026-10-06",
-      "id": 16,
-      "number": "UBY-2026-0012",
-      "owner_user_id": 4,
-      "total_haler": -44700
-     },
-     {
       "days_late": 31,
       "display_name": "Eta",
       "due_date": "2026-10-13",
@@ -4245,15 +4236,6 @@
       "total_haler": 126
      },
      {
-      "days_late": 85,
-      "display_name": "Čeněk Žluťoučký",
-      "due_date": "2026-10-06",
-      "id": 16,
-      "number": "UBY-2026-0012",
-      "owner_user_id": 4,
-      "total_haler": -44700
-     },
-     {
       "days_late": 78,
       "display_name": "Eta",
       "due_date": "2026-10-13",
@@ -4326,15 +4308,6 @@
       "total_haler": 14900
      },
      {
-      "days_late": 28,
-      "display_name": "Alfa s.r.o.",
-      "due_date": "2026-12-02",
-      "id": 57,
-      "number": "UBY-2026-0053",
-      "owner_user_id": 2,
-      "total_haler": -14901
-     },
-     {
       "days_late": 17,
       "display_name": "Kappa",
       "due_date": "2026-12-13",
@@ -4369,7 +4342,7 @@
    "fn": "aging",
    "result": {
     "0-7": 448,
-    "31-90": -421,
+    "31-90": 26,
     "8-30": 1054,
     "90+": 3000
    },
@@ -4380,8 +4353,8 @@
    "fn": "aging",
    "result": {
     "0-7": 0,
-    "31-90": 1352,
-    "8-30": -124,
+    "31-90": 1799,
+    "8-30": 26,
     "90+": 3026
    },
    "today": "2026-12-30"
@@ -4390,7 +4363,7 @@
    "args": {},
    "fn": "forecast",
    "result": {
-    "next_30_days_czk": 169
+    "next_30_days_czk": 318
    },
    "today": "2026-11-13"
   },
@@ -7114,7 +7087,7 @@
     },
     "aging": {
      "0-7": 448,
-     "31-90": -421,
+     "31-90": 26,
      "8-30": 1054,
      "90+": 3000
     },
@@ -7623,7 +7596,7 @@
      "net_total_czk": 30122
     },
     "forecast": {
-     "next_30_days_czk": 169
+     "next_30_days_czk": 318
     },
     "funnel_counts": {
      "converted": 9,
@@ -10741,15 +10714,6 @@
        "total_haler": 126
       },
       {
-       "days_late": 38,
-       "display_name": "Čeněk Žluťoučký",
-       "due_date": "2026-10-06",
-       "id": 16,
-       "number": "UBY-2026-0012",
-       "owner_user_id": 4,
-       "total_haler": -44700
-      },
-      {
        "days_late": 31,
        "display_name": "Eta",
        "due_date": "2026-10-13",
@@ -10837,8 +10801,8 @@
     },
     "aging": {
      "0-7": 0,
-     "31-90": 1352,
-     "8-30": -124,
+     "31-90": 1799,
+     "8-30": 26,
      "90+": 3026
     },
     "cockpit": {
@@ -14376,15 +14340,6 @@
        "total_haler": 126
       },
       {
-       "days_late": 85,
-       "display_name": "Čeněk Žluťoučký",
-       "due_date": "2026-10-06",
-       "id": 16,
-       "number": "UBY-2026-0012",
-       "owner_user_id": 4,
-       "total_haler": -44700
-      },
-      {
        "days_late": 78,
        "display_name": "Eta",
        "due_date": "2026-10-13",
@@ -14455,15 +14410,6 @@
        "number": "UBY-2026-0051",
        "owner_user_id": 6,
        "total_haler": 14900
-      },
-      {
-       "days_late": 28,
-       "display_name": "Alfa s.r.o.",
-       "due_date": "2026-12-02",
-       "id": 57,
-       "number": "UBY-2026-0053",
-       "owner_user_id": 2,
-       "total_haler": -14901
       },
       {
        "days_late": 17,
