@@ -22,7 +22,7 @@ Updated: 2026-11-14 (later).
 - Door codes 0037–0038 on main → owner staging steps.
 - TTLock 0008–0016: [plan](../plans/ttlock-door-codes.md) §11; live after §12 + lawyer (K-L).
 - File-retention: decided; lawyer Terms/DPA line.
-- Login wording: briefs 1762 (Face ID / device labels), 1763 (auto-open on remembered devices); after 1760, exact-diff pass first.
+- Login wording: briefs 1762 (Face ID / device labels), 1763 (auto-open on remembered devices), 1764 (Settings wording, blocked on 1704); after 1760, exact-diff pass first.
 
 ## Blocked: needs owner, lawyer or council
 - Lawyer: legal texts (0005, K-L). Stale signed dates (K-F18). Filing HIGH RISK: K-F03, K-F07; secrets K-S10.

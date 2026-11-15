@@ -9,7 +9,7 @@ Tier: B (Sonnet writes; wording and one small helper)
 
 ## 1. Objective
 
-Hosts do not know the word "passkey". On the Go login page the passkey button reads by device: iPhone, iPad, Mac "Log in with Face ID or Touch ID"; Android "Log in with fingerprint or face"; Windows "Log in with Windows Hello"; anything else "Log in with your device's screen lock". "Passkey" stays in Settings only. The one-time security prompt (`security_prompt`, shell dialog) loses the word "passkey" too.
+Hosts do not know the word "passkey". On the Go login page the passkey button reads by device: iPhone, iPad, Mac "Log in with Face ID or Touch ID"; Android "Log in with fingerprint or face"; Windows "Log in with Windows Hello"; anything else "Log in with your device's screen lock". Settings wording is brief 1764. The one-time security prompt (`security_prompt`, shell dialog) loses the word "passkey" too.
 
 ## 2. Context
 
