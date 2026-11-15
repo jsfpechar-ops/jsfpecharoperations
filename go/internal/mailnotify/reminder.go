@@ -1,0 +1,221 @@
+package mailnotify
+
+import "strings"
+
+// Host is the operating entity as a guest sees it in a footer (host_details in
+// Python). Fill it from the legal_entity row:
+//
+//	SELECT name, seat, contact_email, contact_phone FROM legal_entity WHERE id = $1
+//
+// Email must already be normalised the way mail.normalise_email does it; a nil
+// Host is what host_details returns for a missing or zero legal entity id.
+type Host struct {
+	Name  string `json:"name"`
+	Seat  string `json:"seat"`
+	Email string `json:"email"`
+	Phone string `json:"phone"`
+}
+
+// GuestFooterLines is _guest_footer_lines: the closing lines of a guest message.
+// It names the host and never UbyHost support.
+func GuestFooterLines(lang, propertyName string, host *Host) []any {
+	lines := []any{
+		GuestText(lang, "mail_guest_footer_about", nil),
+		GuestText(lang, "mail_guest_footer_why", Args{"property": propertyName}),
+	}
+	var h Host
+	if host != nil {
+		h = *host
+	}
+	if h.Name != "" {
+		lines = append(lines, GuestText(lang, "mail_guest_footer_host_label", nil)+": "+h.Name)
+	}
+	var contact []FooterLink
+	if h.Email != "" {
+		contact = append(contact, FooterLink{Label: h.Email, Href: "mailto:" + h.Email})
+	}
+	if h.Phone != "" {
+		contact = append(contact, FooterLink{Label: h.Phone, Href: "tel:" + strings.ReplaceAll(h.Phone, " ", "")})
+	}
+	if len(contact) > 0 {
+		lines = append(lines, contact)
+	}
+	if h.Email != "" {
+		lines = append(lines, GuestText(lang, "mail_guest_footer_help", nil))
+	}
+	return lines
+}
+
+// ReminderGuestInput is build_reminder_guest's keyword arguments. The JSON tags
+// are the golden file's keys.
+type ReminderGuestInput struct {
+	Lang         string `json:"lang"`
+	PropertyName string `json:"property_name"`
+	StayURL      string `json:"stay_url"`
+	Host         *Host  `json:"host"`
+	Filled       int    `json:"filled"`
+	Expected     *int   `json:"expected"`
+}
+
+// BuildReminderGuest is build_reminder_guest: the day-before reminder for a
+// guest whose forms are still incomplete. publicBaseURL is the logo's origin;
+// the guest copy follows in.Lang (see GuestLanguage). The html lang attribute
+// is the raw in.Lang, as in Python.
+func BuildReminderGuest(publicBaseURL string, in ReminderGuestInput) Content {
+	lang := in.Lang
+	var subject string
+	if in.Expected != nil {
+		subject = GuestText(lang, "mail_reminder_guest_subject", Args{
+			"property": in.PropertyName, "filled": in.Filled, "expected": optInt(in.Expected),
+		})
+	} else {
+		subject = GuestText(lang, "mail_reminder_guest_subject_no_count", Args{
+			"property": in.PropertyName, "filled": in.Filled, "expected": optInt(in.Expected),
+		})
+	}
+	var intro string
+	if in.Expected != nil {
+		missing := *in.Expected - in.Filled
+		if missing < 0 {
+			missing = 0
+		}
+		intro = GuestText(lang, "mail_reminder_guest_intro", Args{"missing": missing})
+	} else {
+		intro = GuestText(lang, "mail_reminder_guest_intro_no_count", Args{"property": in.PropertyName})
+	}
+	action := GuestText(lang, "mail_reminder_guest_action", nil)
+	noteLabel := GuestText(lang, "mail_reminder_guest_note_label", nil)
+	note := GuestText(lang, "mail_reminder_guest_note", nil)
+	device := GuestText(lang, "mail_reminder_guest_device", nil)
+	fallback := GuestText(lang, "mail_link_fallback", nil)
+	footerLines := GuestFooterLines(lang, in.PropertyName, in.Host)
+	oneReminder := noteLabel + " \u2014 " + note
+
+	blocks := GuestBlocks(
+		GuestText(lang, "mail_reminder_guest_heading", nil),
+		intro,
+		in.StayURL,
+		action,
+		[]string{
+			BlockParagraph(device, true),
+			BlockLink(in.StayURL, fallback),
+			BlockParagraph(oneReminder, true),
+		},
+	)
+	lines := []string{
+		intro,
+		"",
+		action + ": " + in.StayURL,
+		"",
+		device,
+		"",
+		oneReminder,
+		"",
+		"--",
+	}
+	lines = append(lines, FooterText(footerLines)...)
+	return Content{
+		Subject: subject,
+		Text:    strings.Join(lines, "\n"),
+		HTML: Shell(ShellParams{
+			PublicBaseURL: publicBaseURL,
+			Lang:          in.Lang,
+			Title:         in.PropertyName,
+			Preheader:     GuestText(lang, "mail_reminder_guest_preheader", nil),
+			Blocks:        blocks,
+			FooterLines:   footerLines,
+		}),
+	}
+}
+
+// ReminderHostInput is build_reminder_host's keyword arguments.
+type ReminderHostInput struct {
+	Lang         string `json:"lang"`
+	PropertyName string `json:"property_name"`
+	Date         string `json:"date"`
+	Assigned     string `json:"assigned"`
+	StayURL      string `json:"stay_url"`
+	Claimed      bool   `json:"claimed"`
+	Filled       int    `json:"filled"`
+	Expected     *int   `json:"expected"`
+	Tomorrow     bool   `json:"tomorrow"`
+}
+
+// BuildReminderHost is build_reminder_host: the check-in-day nudge for the host,
+// in the host's language (HostLanguage).
+func BuildReminderHost(publicBaseURL string, in ReminderHostInput) Content {
+	lang := HostLanguage(in.Lang)
+	var subjectKey string
+	switch {
+	case in.Tomorrow:
+		subjectKey = "mail.reminder_host.subject_tomorrow"
+	case in.Expected != nil:
+		subjectKey = "mail.reminder_host.subject"
+	default:
+		subjectKey = "mail.reminder_host.subject_unclaimed"
+	}
+	subject := HostText(lang, subjectKey, Args{
+		"property": in.PropertyName, "filled": in.Filled, "expected": optInt(in.Expected),
+	})
+	heading := HostText(lang, "mail.reminder_host.heading", nil)
+	when := ""
+	if in.Tomorrow {
+		when = "_tomorrow"
+	}
+	intro := HostText(lang, "mail.reminder_host.intro"+when, Args{
+		"property": in.PropertyName, "date": in.Date,
+	})
+	preheader := HostText(lang, "mail.reminder_host.preheader"+when, nil)
+	assignedLabel := HostText(lang, "mail.reminder_host.assigned_label", nil)
+	assignedValue := in.Assigned
+	if assignedValue == "" {
+		assignedValue = HostText(lang, "mail.reminder_host.assigned_unknown", nil)
+	}
+	nextLabel := HostText(lang, "mail.reminder_host.next_label", nil)
+	var nextKey string
+	switch {
+	case in.Tomorrow:
+		nextKey = "mail.reminder_host.next_steps_tomorrow"
+	case in.Claimed:
+		nextKey = "mail.reminder_host.next_steps_claimed"
+	default:
+		nextKey = "mail.reminder_host.next_steps_unclaimed"
+	}
+	nextSteps := HostText(lang, nextKey, Args{"filled": in.Filled, "expected": optInt(in.Expected)})
+	action := HostText(lang, "mail.reminder_host.action_stay", nil)
+	fallback := GuestText(lang, "mail_link_fallback", nil)
+	footer := HostText(lang, "mail.reminder_host.footer"+when, nil)
+
+	extra := []string{BlockLink(in.StayURL, fallback)}
+	if in.Claimed {
+		extra = append(extra, BlockFact(assignedLabel, assignedValue))
+	}
+	extra = append(extra, BlockSection(nextLabel, nextSteps))
+	blocks := GuestBlocks(heading, intro, in.StayURL, action, extra)
+
+	lines := []string{intro, ""}
+	if in.Claimed {
+		lines = append(lines, assignedLabel+": "+assignedValue, "")
+	}
+	lines = append(lines,
+		nextLabel+": "+nextSteps,
+		"",
+		action+": "+in.StayURL,
+		"",
+		"--",
+		"UbyHost",
+		footer,
+	)
+	return Content{
+		Subject: subject,
+		Text:    strings.Join(lines, "\n"),
+		HTML: Shell(ShellParams{
+			PublicBaseURL: publicBaseURL,
+			Lang:          lang,
+			Title:         in.PropertyName,
+			Preheader:     preheader,
+			Blocks:        blocks,
+			FooterLines:   []any{"UbyHost", footer},
+		}),
+	}
+}
