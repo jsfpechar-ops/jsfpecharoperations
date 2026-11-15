@@ -1,0 +1,44 @@
+{
+ "cs": {
+  "auth.error.recent_login": "Z bezpečnostních důvodů se odhlaste, znovu přihlaste a do 10 minut to zopakujte.",
+  "flash.passkeys.added": "Klíč je přidán. Příště se přihlaste jím.",
+  "flash.passkeys.not_found": "Tento klíč k vašemu účtu nepatří.",
+  "flash.passkeys.removed": "Klíč je odebrán.",
+  "flash.passkeys.renamed": "Klíč je přejmenován.",
+  "passkeys.default_name": "Přístupový klíč",
+  "passkeys.error.failed": "Klíč se neuložil. Zkuste to prosím znovu.",
+  "passkeys.error.login_failed": "Tímto klíčem se přihlásit nepodařilo. Zkuste to znovu, nebo si nechte poslat odkaz e-mailem.",
+  "passkeys.error.rate_limited": "Z tohoto připojení bylo příliš mnoho pokusů. Počkejte 15 minut, nebo použijte odkaz z e-mailu.",
+  "passkeys.error.signed_out": "Vaše přihlášení vypršelo. Přihlaste se znovu a pak klíč přidejte.",
+  "passkeys.error.too_many": "Účet už má 10 klíčů. Nejdřív jeden odeberte.",
+  "passkeys.error.unavailable": "V této instalaci přístupové klíče nejsou k dispozici."
+ },
+ "en": {
+  "auth.error.recent_login": "For your safety, log out and log in again, then repeat this within 10 minutes.",
+  "flash.passkeys.added": "Passkey added. Next time, log in with it.",
+  "flash.passkeys.not_found": "That passkey is not on your account.",
+  "flash.passkeys.removed": "Passkey removed.",
+  "flash.passkeys.renamed": "Passkey renamed.",
+  "passkeys.default_name": "Passkey",
+  "passkeys.error.failed": "The passkey was not saved. Please try again.",
+  "passkeys.error.login_failed": "That passkey did not log you in. Try again, or get a login link by e-mail.",
+  "passkeys.error.rate_limited": "Too many tries from this connection. Wait 15 minutes, or use the e-mail link.",
+  "passkeys.error.signed_out": "Your session ended. Log in again, then add the passkey.",
+  "passkeys.error.too_many": "This account already has 10 passkeys. Remove one first.",
+  "passkeys.error.unavailable": "Passkeys are not available on this installation."
+ },
+ "vi": {
+  "auth.error.recent_login": "Vì lý do an toàn, hãy đăng xuất rồi đăng nhập lại, sau đó thực hiện lại trong vòng 10 phút.",
+  "flash.passkeys.added": "Đã thêm passkey. Lần sau hãy đăng nhập bằng passkey.",
+  "flash.passkeys.not_found": "Passkey đó không thuộc tài khoản của bạn.",
+  "flash.passkeys.removed": "Đã xóa passkey.",
+  "flash.passkeys.renamed": "Đã đổi tên passkey.",
+  "passkeys.default_name": "Passkey",
+  "passkeys.error.failed": "Chưa lưu được passkey. Vui lòng thử lại.",
+  "passkeys.error.login_failed": "Passkey đó không đăng nhập được. Hãy thử lại, hoặc nhận liên kết đăng nhập qua e-mail.",
+  "passkeys.error.rate_limited": "Quá nhiều lần thử từ kết nối này. Hãy chờ 15 phút, hoặc dùng liên kết e-mail.",
+  "passkeys.error.signed_out": "Phiên của bạn đã kết thúc. Hãy đăng nhập lại rồi thêm passkey.",
+  "passkeys.error.too_many": "Tài khoản này đã có 10 passkey. Hãy xóa bớt một cái trước.",
+  "passkeys.error.unavailable": "Bản cài đặt này không hỗ trợ passkey."
+ }
+}

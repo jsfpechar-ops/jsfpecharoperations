@@ -275,6 +275,9 @@ def test_no_go_file_writes_door_code():
         for path in sorted((REPO / "go").rglob("*.go"))
         if pattern.search(path.read_text(encoding="utf-8"))
         and str(path.relative_to(REPO)) not in GO_DOOR_CODE_NON_STATE
+        # The Go port of door_codes.py (briefs 1771): the only Go package that may write door_code,
+        # and it follows the same TRANSITIONS table (go/internal/doorcodes tests pin each move).
+        and not path.relative_to(REPO).as_posix().startswith("go/internal/doorcodes/")
     ]
     assert hits == []
 

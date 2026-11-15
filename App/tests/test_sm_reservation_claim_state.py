@@ -221,10 +221,15 @@ def test_scanner_sees_claim_updates():
     assert _python_claim_update_count() > len(PINNED_WRITES)
 
 
+# Go may write the claim state in exactly one place: the mail job's expire_holds step
+# (provisional -> unclaimed, the same move as claim.expire_holds above).
+PINNED_GO_WRITES = [("go/internal/mailjob/holds.go", "ExpireHolds")]
+
+
 def test_go_writes_no_claim_state():
     found, seen = _go_writes()
     assert seen >= 1, "the Go scan found no reservation_claim write at all"
-    assert found == []
+    assert sorted((f, fn) for f, fn, _sql in found) == sorted(PINNED_GO_WRITES)
 
 
 def test_sql_migrations_write_no_claim_state():

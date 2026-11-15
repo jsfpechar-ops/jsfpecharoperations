@@ -1,0 +1,12 @@
+auth.error.recent_login
+flash.passkeys.added
+flash.passkeys.not_found
+flash.passkeys.removed
+flash.passkeys.renamed
+passkeys.default_name
+passkeys.error.failed
+passkeys.error.login_failed
+passkeys.error.rate_limited
+passkeys.error.signed_out
+passkeys.error.too_many
+passkeys.error.unavailable

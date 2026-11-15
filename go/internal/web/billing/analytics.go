@@ -209,7 +209,7 @@ func Watchlists(ctx context.Context, q DB, today time.Time) (Watch, error) {
 		return o, r.Scan(&o.ID, &o.Number, &o.TotalHaler, &o.DueDate, &o.OwnerUserID, &o.DisplayName)
 	}, `SELECT i.id, i.number, i.total_haler, i.due_date, i.owner_user_id, u.display_name
 		FROM platform_invoice i JOIN user_account u ON u.id = i.owner_user_id
-		WHERE i.voided = 0 AND i.paid_on IS NULL AND i.due_date < $1
+		WHERE i.kind IN ('invoice', 'supplementary') AND i.voided = 0 AND i.paid_on IS NULL AND i.due_date < $1
 		ORDER BY i.due_date, i.id`, isoDay(day))
 	if err != nil {
 		return Watch{}, err
@@ -290,7 +290,7 @@ func Aging(ctx context.Context, q DB, today time.Time) (map[string]int64, error)
 		var l late
 		return l, r.Scan(&l.due, &l.haler)
 	}, `SELECT due_date, total_haler FROM platform_invoice
-		WHERE voided = 0 AND paid_on IS NULL AND due_date < $1`, isoDay(day))
+		WHERE kind IN ('invoice', 'supplementary') AND voided = 0 AND paid_on IS NULL AND due_date < $1`, isoDay(day))
 	if err != nil {
 		return nil, err
 	}
@@ -325,7 +325,7 @@ func GetForecast(ctx context.Context, q DB, today time.Time) (Forecast, error) {
 	day := dayOf(today)
 	var h int64
 	err := q.QueryRow(ctx, `SELECT COALESCE(SUM(total_haler), 0)::bigint FROM platform_invoice
-		WHERE voided = 0 AND paid_on IS NULL AND due_date >= $1 AND due_date <= $2`,
+		WHERE kind IN ('invoice', 'supplementary') AND voided = 0 AND paid_on IS NULL AND due_date >= $1 AND due_date <= $2`,
 		isoDay(day), isoDay(day.AddDate(0, 0, 30))).Scan(&h)
 	return Forecast{Next30DaysCZK: floorDiv(h, 100)}, err
 }

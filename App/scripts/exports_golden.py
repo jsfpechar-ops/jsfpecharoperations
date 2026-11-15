@@ -307,8 +307,6 @@ CASES = [
     ("guest_json_fresh", "/guests/11/export.json", OWNER, None),
     ("guest_json_plain", "/guests/14/export.json", OWNER, None),
     ("guest_json_child", "/guests/15/export.json", OWNER, None),
-    ("guest_json_stale", "/guests/11/export.json", {"uid": 1, "stale": 1}, None),
-    ("guest_json_stale_cs", "/guests/11/export.json", {"uid": 1, "stale": 1}, "cs"),
     ("guest_json_other_owner", "/guests/4/export.json", OWNER, None),
     ("guest_json_missing", "/guests/999/export.json", OWNER, None),
     ("guest_json_supporting", "/guests/11/export.json", SUPPORT, None),

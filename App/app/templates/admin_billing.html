@@ -19,7 +19,7 @@
 {% call ui_section(t('billing.admin.watch.title'), id='watch') %}
 {% set ns = namespace(rows=[]) %}
 {% for tr in watch.trials_ending %}{% set ns.rows = ns.rows + [(t('billing.admin.watch.trial'), tr.display_name, tr.trial_ends_at[:10])] %}{% endfor %}
-{% for o in watch.overdue %}{% set ns.rows = ns.rows + [(t('billing.admin.watch.overdue'), o.display_name ~ ' · ' ~ o.number ~ ' · ' ~ kc(o.total_haler) ~ ' Kč · ' ~ o.days_late), o.due_date[:10]] %}{% endfor %}
+{% for o in watch.overdue %}{% set ns.rows = ns.rows + [(t('billing.admin.watch.overdue'), o.display_name ~ ' · ' ~ o.number ~ ' · ' ~ kc(o.total_haler) ~ ' Kč · ' ~ o.days_late, o.due_date[:10])] %}{% endfor %}
 {% for e in watch.ending %}{% set ns.rows = ns.rows + [(t('billing.admin.watch.ending'), e.display_name, (e.period_end or '')[:10])] %}{% endfor %}
 {% if ns.rows %}
 {{ ui_table_begin([(t('billing.admin.watch.kind'), ''), (t('billing.admin.watch.customer'), ''), (t('billing.admin.watch.date'), 'r')], label=t('billing.admin.watch.title')) }}

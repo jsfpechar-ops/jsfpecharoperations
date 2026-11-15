@@ -35,7 +35,13 @@ SOURCE = APP / "cleaning_codes.py"
 KNOWN = set(cleaning_codes.STATES)
 
 # Go host cleaning UI mirrors cleaning_codes.py writers (wave3 brief 1602).
-PINNED_GO_CLEANING_WRITERS = frozenset({"go/internal/web/cleaning/host_codes.go"})
+PINNED_GO_CLEANING_WRITERS = frozenset({
+    "go/internal/web/cleaning/host_codes.go",
+    # the Go port of cleaning_codes.py / cleaning.py for the door_codes job (briefs 1771)
+    "go/internal/doorcodes/cleaning/activate.go",
+    "go/internal/doorcodes/cleaning/queue.go",
+    "go/internal/doorcodes/cleaning/reconcile.go",
+})
 
 STATE_SET = re.compile(r"(?<![\w.])state = ")
 GUARD_EQ = re.compile(r"(?<![\w.])state = '(\w+)'")
