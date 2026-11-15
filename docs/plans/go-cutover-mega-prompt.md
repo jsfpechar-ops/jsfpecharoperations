@@ -144,6 +144,12 @@ W5d GATE, WAIT >= 24 h.                 Add: /account/email /account/email/confi
 W5e GATE, WAIT >= 24 h.                 Add: /admin/users/*/invite /admin/users/*/email /admin/users/*/schedule-deletion /admin/users/*/export   (NEVER bare /admin/users)
 W5f GATE, only if grep -c '^UBYHOST_SIGNUP_ENABLED=1' .env prints 1, else mark "skipped" in the state file.
     Add: /signup /signup/verify
+    Verify (parity, checked in code): /signup answers 200 to GET. /signup/verify with no token or a bad token
+    answers 410 to GET on BOTH Python and Go (the real link is a GET from the mail, then a POST from the form;
+    a 410 there is correct, not a fault). Only HEAD differs: Python's route is GET-only so HEAD gave 405, while
+    Go serves HEAD like GET and gives 410. So verify with `curl -s -o /dev/null -w '%{http_code}' https://<host>/signup/verify`
+    (GET) and expect 410 (or the Cloudflare challenge 403 with cf-mitigated = UNVERIFIED); never treat 410 as a
+    failure and never use HEAD for this path. Expect 404 if signup is disabled.
     Each W5 step needs Josef's message "go W5x" naming the step and confirming a second session is open.
 
 W8b GATE ("go W8b"), WAIT: Python Havel and Leon ran cleanly for a week (Josef states it). Preconditions by
