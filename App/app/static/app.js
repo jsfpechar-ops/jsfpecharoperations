@@ -2330,7 +2330,23 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     var timer = null;
     var lastPassword = "";
     var say = function (text) { status.textContent = text || ""; };
+    var dropWarnings = function () {
+      if (status.parentNode) status.parentNode.querySelectorAll("[data-letter-warning]").forEach(function (note) { note.remove(); });
+    };
+    var showWarnings = function (texts) {
+      dropWarnings();
+      var after = status;
+      (texts || []).forEach(function (text) {
+        var note = document.createElement("p");
+        note.className = "police-letter-note";
+        note.setAttribute("data-letter-warning", "");
+        note.textContent = text;
+        after.parentNode.insertBefore(note, after.nextSibling);
+        after = note;
+      });
+    };
     var failed = function () {
+      dropWarnings();
       say(status.getAttribute("data-read-failed"));
       if (readBtn) readBtn.hidden = false;
     };
@@ -2344,6 +2360,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
     };
     var apply = function (data) {
       if (!data || typeof data !== "object") { failed(); return; }
+      dropWarnings();
       if (data.status !== "ok") { say(data.message); return; }
       dropNotes();
       var fields = data.fields || {};
@@ -2376,6 +2393,7 @@ if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches 
         listed.dispatchEvent(new Event("change", { bubbles: true }));
       }
       say(data.message);
+      showWarnings(data.warnings);
     };
     var send = function () {
       if (controller) controller.abort();

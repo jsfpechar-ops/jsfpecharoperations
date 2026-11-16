@@ -1887,6 +1887,9 @@ def submit_batch(
             transport_params["variant"] = "auth"
         elif answered:
             transport_params["variant"] = "answered"
+        if cause == "fault":
+            # A4: the alert opens with the three fields to check against the letter.
+            transport_params["header"] = "fault"
         # Read before submission_transport is refreshed below. dial, setup and
         # redirect neither count nor reset; an answered batch resolves the alert.
         definite = cause in ("fault", "auth", "http4xx")
