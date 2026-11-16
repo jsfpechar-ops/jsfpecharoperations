@@ -5096,7 +5096,7 @@ async def guest_resend(guest_id: int, request: Request):
     if result.get("state") == "outcome_unknown":
         return _back(f"/guests/{guest_id}", err=_flash(request, "flash.error.ubyport_outcome_unknown"))
     if result.get("state") == "transport_error":
-        return _back(f"/guests/{guest_id}", err=_flash(request, "flash.error.ubyport_unreachable"))
+        return _back(f"/guests/{guest_id}", err=_transport_flash(request, result))
     if result.get("submitted"):
         return _back(f"/guests/{guest_id}", msg=_flash(request, "flash.guests.resent"))
     return _back(f"/guests/{guest_id}", err=_flash(request, "flash.error.resent_rejected"))
