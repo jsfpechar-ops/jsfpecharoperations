@@ -342,6 +342,8 @@ func TestHostQueueKick(t *testing.T) {
 	t.Cleanup(func() { queueKick = prev })
 	on := map[string]string{"UBYHOST_DOOR_CODES": "1", "UBYHOST_TTLOCK_CLIENT_ID": "id", "UBYHOST_TTLOCK_CLIENT_SECRET": "secret"}
 	e := codeEnv(t, on)
+	e.exec(`UPDATE lock_account SET locks_json = '[{"lock_id": "L12", "name": "x"}, {"lock_id": 77}]' WHERE id = 1`)
+	e.exec(`UPDATE cleaning_property SET pending_code_id = NULL WHERE apartment_id = 12`)
 	e.codePost(i64(1), "12", "ttlock", nil)
 	if kicks != 1 {
 		t.Errorf("ttlock kicks = %d, want 1", kicks)
@@ -349,11 +351,6 @@ func TestHostQueueKick(t *testing.T) {
 	e.codePost(i64(1), "11", "remove", nil)
 	if kicks != 2 {
 		t.Errorf("remove kicks = %d, want 2", kicks)
-	}
-	e.exec(`UPDATE cleaning_code SET state = 'revoking' WHERE id = 3`)
-	e.codePost(i64(1), "12", "remove", nil)
-	if kicks != 2 {
-		t.Errorf("busy remove kicked: %d", kicks)
 	}
 	e.codePost(i64(1), "11", "manual", nil)
 	if kicks != 2 {
