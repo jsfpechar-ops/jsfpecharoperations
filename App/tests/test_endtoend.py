@@ -835,11 +835,56 @@ def test_29_host_accounts_log_in_only_through_their_email_link(host):
         db.execute("DELETE FROM user_account WHERE id = ?", (user_id,))
 
 
+def ensure_flash_fixtures(host) -> None:
+    """Build the apartment and manual stay that tests 03 and 25 leave behind.
+
+    Does nothing when the file runs in order, so the full run is unchanged.
+    """
+    if MANUAL_STAY.get("id"):
+        return
+    if not db.query_one("SELECT id FROM apartment LIMIT 1"):
+        host.post("/entities", data={"name": "Josef Novák", "ico": "04656679", "seat": "Praha"})
+        entity = db.query_one("SELECT * FROM legal_entity WHERE name = ?", ("Josef Novák",))
+        response = host.post(
+            "/apartments",
+            data={
+                "internal_name": "Vinohrady 1",
+                "legal_entity_id": str(entity["id"]),
+                "uby_idub": "100227887600",
+                "uby_mark": "CZGFW",
+                "uby_name": "Apartment Vinohrady",
+                "uby_contact": "host@example.com",
+                "addr_okres": "Praha 2",
+                "addr_obec": "Praha",
+                "addr_obec_cast": "Vinohrady",
+                "addr_street": "Korunní",
+                "addr_house_no": "1234",
+                "addr_orient_no": "12a",
+                "addr_zip": "120 00",
+                "uby_ws_user": "UBY-WS12cdef",
+                "uby_ws_password": "police-secret",
+                "automation_mode": "manual",
+                "default_purpose": "10",
+                "permalink_window_days": "3",
+                "permalink_reachback_days": "30",
+                "guest_message": "Welcome — please complete the registration before arrival.",
+                "active": "on",
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 303, response.text
+    apartment = db.query_one("SELECT * FROM apartment ORDER BY id DESC LIMIT 1")
+    db.update("apartment", apartment["id"], {"automation_mode": "manual"})
+    MANUAL_STAY["id"] = create_manual_stay(host, claim.prague_today() - timedelta(days=1), 3, 1)
+
+
 def test_99_fault_flash_names_the_fault(host, monkeypatch):
     """A1: a SOAP fault is named in the flash, never shown as a failed connection."""
     import urllib.parse
 
     from app.ubyport.client import UbyportClient, UbyportTransportError
+
+    ensure_flash_fixtures(host)
 
     def answered_with_fault(*args, **kwargs):
         raise UbyportTransportError(
@@ -854,11 +899,12 @@ def test_99_fault_flash_names_the_fault(host, monkeypatch):
     location = urllib.parse.unquote_plus(response.headers["location"])
     assert "Chyba běhu programu" in location
     assert "couldn't be reached" not in location
+    assert HOST_STRINGS["cs"]["flash.error.ubyport_unreachable"] not in location
     alert = db.query_one(
         "SELECT * FROM alert WHERE kind = 'submission_transport' AND resolved_at IS NULL"
     )
     assert alert is not None
-    assert any("answered" in str(value) for value in alert)
+    assert json.loads(alert["params"])["variant"] == "answered"
 
 
 def test_99_outcome_unknown_flash_is_unchanged(host, monkeypatch):
@@ -866,6 +912,8 @@ def test_99_outcome_unknown_flash_is_unchanged(host, monkeypatch):
     import urllib.parse
 
     from app.ubyport.client import UbyportClient, UbyportOutcomeUnknownError
+
+    ensure_flash_fixtures(host)
 
     def ambiguous(*args, **kwargs):
         raise UbyportOutcomeUnknownError("timeout")

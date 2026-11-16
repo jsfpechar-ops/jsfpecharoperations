@@ -122,6 +122,13 @@ func TestPostDialFailureIsTransport(t *testing.T) {
 	if errors.Is(err, ErrOutcomeUnknown) {
 		t.Fatalf("dial failure reported as outcome unknown: %v", err)
 	}
+	var ue *Error
+	if !errors.As(err, &ue) {
+		t.Fatalf("want *Error, got %v", err)
+	}
+	if ue.Cause != "dial" {
+		t.Fatalf("cause %q, want %q", ue.Cause, "dial")
+	}
 }
 
 func TestPostHangAfterSendIsOutcomeUnknown(t *testing.T) {
@@ -282,8 +289,8 @@ func TestPostCausePerKind(t *testing.T) {
 		{"401 is auth", http.StatusUnauthorized, "", "auth", "", ErrAuth},
 		{"302 is redirect", http.StatusFound, "", "redirect", "HTTP 302", ErrTransport},
 		{"404 is http4xx and never keeps the body", http.StatusNotFound, "<html>Novak</html>", "http4xx", "HTTP 404", ErrTransport},
-		{"200 with fault is fault", http.StatusOK, testFault, "fault", "", ErrTransport},
-		{"500 with fault is fault", http.StatusInternalServerError, testFault, "fault", "", ErrTransport},
+		{"200 with fault is fault", http.StatusOK, testFault, "fault", "bad input", ErrTransport},
+		{"500 with fault is fault", http.StatusInternalServerError, testFault, "fault", "bad input", ErrTransport},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
