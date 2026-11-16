@@ -97,6 +97,9 @@ def test_every_code_has_text_in_every_language(lang):
         text = police_check.render(lang, finding)["text"]
         assert text and not text.startswith("police_check."), (lang, finding.code)
         assert "—" not in text
+        key = f"police_check.{finding.code}"
+        params = {"field": "x", "letter": "x", "form": "x", "mark": "x"}
+        assert host_i18n.translate(lang, key, **params) != key, (lang, key)
 
 
 from fastapi.testclient import TestClient  # noqa: F401  (client comes from the host fixture)
