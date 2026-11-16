@@ -36,3 +36,9 @@ After merge and deploy, run the three checks in brief §7 ("Done when").
 ## Follow-up
 
 Removed the unused `import json` from App/app/main.py (CI lint F401).
+
+## Backed out (2026-11-16)
+
+- Defects found in independent testing: Caddy 404s under /static got a one-year immutable Cache-Control, and static files came from the host checkout, so they could disagree with the running app during a deploy and after a rollback.
+- All 1804 code changes were removed from this PR.
+- Brief 1804 needs a redesign before it runs again: serve static from a copy that matches the running image, and never put success cache headers on a 404.

@@ -12,7 +12,7 @@ Grafana, 2026-10-16 to 2026-11-15, and three server commands on 2026-11-15. 7 ac
 |---|---|
 | Host RAM used (avg / p95 / max) | 1761 / 1896 / 2115 MB, no swap |
 | Containers, avg MB | ubyhost 467 (max 1263), postgres 116, alloy 107, worker 99, cadvisor 80, litestream 30, caddy 14, ubyhost-go 11, node-exporter 10, walg 6 |
-| RAM outside containers | about 800 MB avg, about 1.4 GB at the peak (cause not confirmed; image builds on the server suspected) |
+| RAM outside containers | about 800 MB avg, about 1.4 GB at the peak (cause not confirmed; normal deploys do not build on the server, so builds are unlikely; brief 1803 checks) |
 | CPU | all containers about 0.07 core avg; load1 max 4.69 |
 | Requests | 0.35/s avg, 1.73/s p95, 10.5/s peak minute; p95 latency 167 ms |
 | Request mix (30 days) | 180k 404s, 65k `/`, 28k `/sw.js`, 15k manifest, about 124k app pages |
@@ -39,7 +39,7 @@ Scaled to 2,000 properties (upper bound, the 7 include owner testing): about 19 
 | Brief | Work | Done when |
 |---|---|---|
 | (existing) | Finish the Go move and SQLite retirement: removes `ubyhost`, `worker`, `litestream` | The three containers are gone from the compose file |
-| 1800 | Build images in CI, push to a registry, server only pulls. Registry: D2 | `deploy.sh` runs no `docker build`; deploy peak RAM under 1 GB |
+| 1800 | Mostly exists already (found in testing, 2026-11-16): production deploys pull CI-built images; the server builds only on a manual deploy or when the pull fails. Remaining work: make the manual path pull too, registry per D2 | `deploy.sh` runs no `docker build` on any path |
 | 1801 | Monitoring in one container: Alloy's built-in unix and cadvisor exporters replace `node-exporter` and `cadvisor`; trim scrape list and interval | Two containers removed; the dashboards used in section 1 still fill |
 | 1802 | Memory limits from section 2, `GOMEMLIMIT` on `ubyhost-go`, 1 GB swap file step in [LIGHTSAIL](../LIGHTSAIL.md) | Compose defaults match section 2 |
 | 1803 | Owner check: `free -m; ps -eo rss,comm --sort=-rss \| head -15` idle and during a deploy, to explain the 800 MB outside containers | Cause written into [known-issues](../context/known-issues.md) |
@@ -48,7 +48,7 @@ Scaled to 2,000 properties (upper bound, the 7 include owner testing): about 19 
 
 | Brief | Work | Done when |
 |---|---|---|
-| 1804 | Caddy serves `/sw.js`, `/manifest.webmanifest` and `/static/*` from disk with cache headers and compression (service worker: short max-age plus ETag; fingerprinted assets: one year, immutable) | These paths show no requests in `ubyhost_requests_total` |
+| 1804 | Caddy serves `/sw.js`, `/manifest.webmanifest` and `/static/*`. First attempt backed out on 2026-11-16 ([report](../tasks/1804-report.md)): the files must come from a copy that matches the running app image, not the host checkout (deploy window and rollback served new files to old pages), and a 404 must never carry the success cache header. Needs a rewritten brief | These paths show no requests in `ubyhost_requests_total`; a missing file is not cached; after a rollback the files match the app |
 | 1805 | Caddy answers scanner paths itself (`*.php`, `/wp-*`, `/.env`, `/.git/*`, `/cgi-bin/*` and the top unmatched paths from the metric) with 404 | Unmatched 404s at the app drop by 90% |
 | 1806 | Per-IP rate limit for anonymous routes. Caddy has no built-in limiter: do it in the Go middleware (D3) | A 50 requests/s burst from one IP gets 429 after the limit |
 | 1807 | Landing page and other public pages: rendered once, kept in memory, `ETag` and `304` | `/` costs no database query |
