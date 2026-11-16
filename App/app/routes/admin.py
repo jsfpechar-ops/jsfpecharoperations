@@ -3989,12 +3989,7 @@ _TRANSPORT_FLASH = {
 
 def _transport_flash(request, result) -> str:
     key = _TRANSPORT_FLASH.get(result.get("cause") or "", "flash.error.ubyport_send_failed")
-    if key == "flash.error.ubyport_fault":
-        from ..ubyport import faults
-
-        detail = result.get("detail") or ""
-        return _flash(request, faults.host_copy_key("fault", detail), detail=faults.host_detail(detail))
-    if key == "flash.error.ubyport_http_error":
+    if key in ("flash.error.ubyport_fault", "flash.error.ubyport_http_error"):
         return _flash(request, key, detail=result.get("detail") or "")
     return _flash(request, key)
 
