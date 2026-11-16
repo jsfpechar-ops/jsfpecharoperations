@@ -6,7 +6,7 @@ Written 2026-11-15, revised the same night: autonomous mode on Josef's order (no
 
 **Left out on purpose:** J1 and J2 (retention apply is Josef's decision; the `stay_fee_mail` mail branch is unproven), `/stay-fees/*` (wave 10 step 4), `/apartments`, `/entities`, `/demo`, `/settings/purge-expired`, `/webhooks/stripe`.
 
-**Update 2026-11-16 (Josef's decisions).** (1) The cleaning door code works on a real lock; Josef takes `door_codes` as proven and adds step DOOR (the guest-code lifecycle was not tested, he accepts that; `UBYHOST_DOOR_CODES_LIVE` stays unset, so calendar stays get no codes). (2) MAIL runs (Josef, 2026-11-16: "lets do it, i already tried the mail link yesterday and it worked"): the step first removes `submit` from both job lists, so the filing precondition holds, then adds `mail` to both. Python files again for guests while `submit` is out (the worker runs it in-process); the saved lines restore it. There is no extra paste line. (3) S runs only if all 15 kinds are in `UBYHOST_JOB_QUEUE_KINDS`. With `submit` removed only 14 can be, so S will report `submit` missing and skip, unless a later session puts `submit` back on both lists.
+**Update 2026-11-16 (Josef's decisions).** (1) The cleaning door code works on a real lock; Josef takes `door_codes` as proven and adds step DOOR (the guest-code lifecycle was not tested, he accepts that; `UBYHOST_DOOR_CODES_LIVE` is already on in production; the step never edits it). (2) MAIL runs (Josef, 2026-11-16: "lets do it, i already tried the mail link yesterday and it worked"): the step first removes `submit` from both job lists, so the filing precondition holds, then adds `mail` to both. Python files again for guests while `submit` is out (the worker runs it in-process); the saved lines restore it. There is no extra paste line. (3) S runs only if all 15 kinds are in `UBYHOST_JOB_QUEUE_KINDS`. With `submit` removed only 14 can be, so S would report `submit` missing and skip. **Update 2026-11-16 later (Josef: finish the scheduler switch):** step Q below puts `submit` back and completes the queue list to 15, step DOOR no longer skips when `UBYHOST_DOOR_CODES_LIVE` is already on (Josef accepts that live guests are covered, the guest-code lifecycle untested), and S then runs. Why Q is safe: `UBYHOST_SCHEDULER=go` needs only all 15 kinds in `UBYHOST_JOB_QUEUE_KINDS`; a kind in the queue list but not in `UBYHOST_GO_JOB_KINDS` is still run by the Python worker, which drains its queued rows (brief 1451). All 15 kinds already have Go handlers (`go/cmd/ubyhost-web`), so no code work is open; only `door_codes` and `submit` move to Go lists as Josef asked.
 
 **Why the scheduler switch (S) is conditional.** `UBYHOST_SCHEDULER=go` makes Go enqueue all 15 kinds and Python enqueue none, and Python refuses the switch unless all 15 are in `UBYHOST_JOB_QUEUE_KINDS` (brief 1451, `go_scheduler_problem()`). That includes `door_codes` (step DOOR) and `mail` (step MAIL). The parity suite compared only the names and intervals of the other kinds, not a run on a shared queue, so step S changes only `UBYHOST_SCHEDULER`, only when all 15 are on, and rolls back by removing that one line.
 
@@ -47,7 +47,7 @@ GATE, GATE-WAIT, "Josef's message", "go <step>", "ok <step>", or asks him to con
   "rolled-back" with the reason, do NOT retry it, skip any step that depends on it, and continue with
   independent steps. No questions.
 - Everything under SCOPE (what you may not do) and NOT YOURS stays in force: no secrets, no POST, no other
-  paths, no database, no deploy, no edit of UBYHOST_STAY_FEE_GUEST_PAY, no /stay-fees/*, no UBYHOST_DOOR_CODES_LIVE, no kind in either job list except door_codes (step DOOR), mail and the removal of submit (step MAIL), UBYHOST_SCHEDULER only in step S.
+  paths, no database, no deploy, no edit of UBYHOST_STAY_FEE_GUEST_PAY, no /stay-fees/*, no UBYHOST_DOOR_CODES_LIVE, no kind in either job list except door_codes (step DOOR), mail and the removal of submit (step MAIL), and the kinds named in step Q, UBYHOST_SCHEDULER only in step S.
 - Pre-set facts: for W10-2 the guest-pay value must be on (print it, do not edit it); if it is not on, skip W10-2 and W10-3 stays independent.
 - Models: you are Haiku-class; no subagents, no tools beyond SCOPE.
 - Passkey G1 lockout risk is low (login link stays available); a rollback is removing six words.
@@ -186,11 +186,12 @@ W10-3  AUTO (waived)  Add: /stay-fees
 
 DOOR AUTO  Job kind `door_codes` on Go (PR 1036). Josef's real-lock test of the cleaning door code passed and he takes
     door_codes as proven. Honest limit: only the cleaning half was tested, not the guest-code lifecycle. Josef accepts
-    that; list it in the report. `UBYHOST_DOOR_CODES_LIVE` is never touched and stays unset.
+    that; list it in the report. `UBYHOST_DOOR_CODES_LIVE` is never edited (already on in production).
     Preconditions (names only): ubyhost-go, worker and ubyhost healthy; `door_codes` is in neither
     UBYHOST_GO_JOB_KINDS nor UBYHOST_JOB_QUEUE_KINDS; UBYHOST_DOOR_CODES is absent or 0 (if it is already 1, report
     its value and skip the line edit, continue with the lists only if `door_codes` is in neither); grep -c
-    '^UBYHOST_DOOR_CODES_LIVE=\(1\|true\|yes\)' .env -> 0 (otherwise skip DOOR and report). TTLock client id/secret
+    '^UBYHOST_DOOR_CODES_LIVE=\(1\|true\|yes\)' .env -> print the number only (Josef 2026-11-16: LIVE is already
+    on in production and he accepts it; 1 does NOT skip DOOR; never edit it). TTLock client id/secret
     present ("set"/"MISSING" only, never the value; MISSING: skip DOOR).
     Edit, ONE edit: save both whole list lines with grep (no -n) and the UBYHOST_DOOR_CODES line (or "absent"); set
     exactly UBYHOST_DOOR_CODES=1 (add or change the one line); add `door_codes` to UBYHOST_JOB_QUEUE_KINDS and to
@@ -223,6 +224,29 @@ MAIL AUTO (waived)  Job kind `mail` on Go (brief 1770, PR 1036), with `submit` t
     AUTO-ROLLBACK on any failed check: put both saved lines back (mail out of both, submit back as it was), recreate
     the same services, mark "rolled-back". Python drains mail again and Go files again.
 
+Q   AUTO  Complete the queue list (Josef 2026-11-16: finish the scheduler switch). Runs after DOOR and MAIL, before S.
+    Facts: S needs all 15 names in UBYHOST_JOB_QUEUE_KINDS: ical submit deadlines mail photo_sweep meta_capi
+    retention stay_fee_mail stripe_sweep billing billing_snapshot door_codes posthog push guide_import. A kind in the
+    queue list only (not in UBYHOST_GO_JOB_KINDS) is run by the Python worker from its queued rows, so nothing moves
+    to Go that Josef did not ask for. No Go code is missing for any of the 15.
+    Preconditions (names only): ubyhost-go, worker and ubyhost healthy; DOOR and MAIL are "kept" (a rolled-back or
+    skipped DOOR or MAIL: still do Q for the other kinds, then S reports what is missing); print which of the 15 names
+    are missing from the queue list. Nothing missing: skip Q ("nothing to do").
+    Edit, ONE edit: save both whole list lines with grep (no -n). In UBYHOST_JOB_QUEUE_KINDS add every missing name
+    of the 15 (expected: submit, photo_sweep, stay_fee_mail, billing, guide_import; comma list, existing kinds kept,
+    never reordered). In UBYHOST_GO_JOB_KINDS add ONLY `submit` (it was on Go before MAIL; it is added to both lists
+    together, never to the Go list alone). Do not add photo_sweep, stay_fee_mail, billing or guide_import to the Go
+    list: they stay on Python (stay_fee_mail's mail branch and the retention purge are Josef's decisions). Then docker
+    compose up -d --no-deps ubyhost-go worker (names from docker compose ps), wait 60 s.
+    Checks: the queue list has all 15 names exactly once (count with the grep -c -x -E line of runbook I2, must print
+    15); submit once in both lists; no service restarting or unhealthy; ubyhost-go logs since the edit have 0 panics,
+    at most 3 level=error lines, no ubyport/filing error line; worker logs show no "unknown job id" and no
+    "must also be in UBYHOST_JOB_QUEUE_KINDS". Soak 10 minutes with the same checks, then "kept".
+    Honest limit: submit and mail were never run on Go together; if the filing watchdog or a submit error line
+    appears, that is a failed check.
+    AUTO-ROLLBACK on any failed check: put both saved lines back, recreate the same services, mark "rolled-back";
+    S is then skipped (it would list the missing kinds).
+
 S   AUTO  Scheduler switch UBYHOST_SCHEDULER=go (brief 1451). Python refuses it, and Go too, unless all 15 job kinds are
     in UBYHOST_JOB_QUEUE_KINDS (the names are the keys of JOB_KINDS in App/app/scheduler.py; the Go and Python lists
     must agree; count them from the lists, do not trust a number).
@@ -232,7 +256,7 @@ S   AUTO  Scheduler switch UBYHOST_SCHEDULER=go (brief 1451). Python refuses it,
     only the numbers; 0 means skip). Also the state file lines for DOOR and MAIL.
     Step 2: if ANY kind is missing from the queue list, or DOOR or the soak of any earlier step is not "kept"/clean,
     or UBYHOST_SCHEDULER is already set: do NOT edit. Write "skipped (needs all 15 kinds; missing: <names>)" in the
-    state file and the report. Expected after MAIL: submit is missing (removed in MAIL), so S is skipped.
+    state file and the report. Expected after DOOR, MAIL and Q: all 15 are present and S runs. If Q was skipped or rolled back, S is skipped and lists the missing names.
     Step 3, only when all 15 are on and the logs are clean: save the UBYHOST_SCHEDULER line (or "absent"), add exactly
     UBYHOST_SCHEDULER=go, then docker compose up -d --no-deps worker, then docker compose up -d --no-deps ubyhost-go
     (worker first), wait 60 s. Checks: no panic, at most 3 level=error lines in ubyhost-go; worker logs do not say
