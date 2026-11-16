@@ -925,6 +925,21 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "flash.error.ubyport_unreachable": (
             "UbyPort couldn't be reached. Try again in a few minutes."
         ),
+        "flash.error.ubyport_login_refused": (
+            "UbyPort refused the web-service login for this property, so nothing was filed. "
+            "Enter the UBY-WS password again in the police settings, then test the connection."
+        ),
+        "flash.error.ubyport_fault": (
+            "UbyPort answered with an error, so nothing was filed: %(detail)s. "
+            "If it repeats, contact UbyPort support."
+        ),
+        "flash.error.ubyport_http_error": (
+            "UbyPort answered with %(detail)s, so nothing was filed. "
+            "If it repeats, contact UbyPort support."
+        ),
+        "flash.error.ubyport_send_failed": (
+            "Sending to UbyPort failed and nothing was filed. The alert for this property has the details."
+        ),
         "flash.error.ubyport_outcome_unknown": (
             "UbyPort's answer did not arrive, so it is not known whether the report "
             "was filed. Check UbyPort before sending again."
@@ -3089,6 +3104,21 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "flash.error.ubyport_unreachable": (
             "UbyPort se nepodařilo kontaktovat. Zkuste to za pár minut."
+        ),
+        "flash.error.ubyport_login_refused": (
+            "UbyPort odmítl přihlášení k webové službě pro toto ubytování, nic se nepodalo. "
+            "V nastavení pro policii zadejte znovu heslo UBY-WS a otestujte spojení."
+        ),
+        "flash.error.ubyport_fault": (
+            "UbyPort odpověděl chybou, nic se nepodalo: %(detail)s. "
+            "Pokud se to opakuje, kontaktujte podporu UbyPortu."
+        ),
+        "flash.error.ubyport_http_error": (
+            "UbyPort odpověděl %(detail)s, nic se nepodalo. "
+            "Pokud se to opakuje, kontaktujte podporu UbyPortu."
+        ),
+        "flash.error.ubyport_send_failed": (
+            "Odeslání do UbyPortu selhalo a nic se nepodalo. Podrobnosti jsou v upozornění u tohoto ubytování."
         ),
         "flash.error.ubyport_outcome_unknown": (
             "Odpověď UbyPortu nedorazila, takže není jisté, zda bylo hlášení podáno. "
