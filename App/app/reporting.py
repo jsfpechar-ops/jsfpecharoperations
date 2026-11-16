@@ -1890,12 +1890,14 @@ def submit_batch(
         # redirect neither count nor reset; an answered batch resolves the alert.
         definite = cause in ("fault", "auth", "http4xx")
         streak = 0
-        previous = alerts.open_alert(f"submission_transport:{apartment['id']}")
-        if previous:
-            try:
+        try:
+            previous = alerts.open_alert(f"submission_transport:{apartment['id']}")
+            if previous:
                 streak = max(0, int(alerts.stored_params(dict(previous)).get("streak") or 0))
-            except (TypeError, ValueError):
-                streak = 0
+        except Exception:
+            # A failed read must not leave the submission unrecorded: count from 0.
+            log.exception("submission_streak_read_failed apartment_id=%s", apartment["id"])
+            streak = 0
         if definite:
             streak += 1
         transport_params["streak"] = streak
