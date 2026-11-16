@@ -667,7 +667,7 @@ def build_submission_problem(
         intro = _text(lang, "mail.submission_problem.intro_unanswered", property=property_name)
         preheader = _text(lang, "mail.submission_problem.preheader_unanswered")
         next_steps = _text(lang, "mail.submission_problem.next_unanswered")
-    if cause == "fault":
+    if transport and cause == "fault":  # UbyPort answered only; door-code mail is unaffected
         from .ubyport import faults as uby_faults
 
         reason_text = _text(
