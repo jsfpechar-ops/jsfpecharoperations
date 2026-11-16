@@ -269,3 +269,57 @@ func TestSubmitUnreadableAnswerIsOutcomeUnknownWithRequest(t *testing.T) {
 		t.Fatalf("outcome-unknown error lacks the request XML: %v", err)
 	}
 }
+
+func TestPostCausePerKind(t *testing.T) {
+	cases := []struct {
+		name   string
+		status int
+		body   string
+		cause  string
+		detail string
+		kind   error
+	}{
+		{"401 is auth", http.StatusUnauthorized, "", "auth", "", ErrAuth},
+		{"302 is redirect", http.StatusFound, "", "redirect", "HTTP 302", ErrTransport},
+		{"404 is http4xx and never keeps the body", http.StatusNotFound, "<html>Novak</html>", "http4xx", "HTTP 404", ErrTransport},
+		{"200 with fault is fault", http.StatusOK, testFault, "fault", "", ErrTransport},
+		{"500 with fault is fault", http.StatusInternalServerError, testFault, "fault", "", ErrTransport},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			srv := fixedServer(t, tc.status, tc.body)
+			c := NewClient(srv.URL+"/", "", "", "", "X", false, true)
+			_, err := c.Post(context.Background(), "ZapisUbytovane", testEnvelope)
+			var ue *Error
+			if !errors.As(err, &ue) {
+				t.Fatalf("want *Error, got %v", err)
+			}
+			wantKind(t, err, tc.kind)
+			if ue.Cause != tc.cause {
+				t.Fatalf("cause %q, want %q", ue.Cause, tc.cause)
+			}
+			if tc.detail != "" && ue.Detail != tc.detail {
+				t.Fatalf("detail %q, want %q", ue.Detail, tc.detail)
+			}
+			if tc.cause == "fault" && (ue.Detail == "" || strings.Contains(ue.Detail, "<")) {
+				t.Fatalf("fault detail must be clean text, got %q", ue.Detail)
+			}
+			if strings.Contains(err.Error(), "Novak") {
+				t.Fatalf("4xx body leaked into the error: %v", err)
+			}
+		})
+	}
+}
+
+func TestPostFiveHundredPlainIsOutcomeUnknownWithoutCause(t *testing.T) {
+	srv := fixedServer(t, http.StatusInternalServerError, "busy")
+	c := NewClient(srv.URL+"/", "", "", "", "X", false, true)
+	_, err := c.Post(context.Background(), "ZapisUbytovane", testEnvelope)
+	if !errors.Is(err, ErrOutcomeUnknown) {
+		t.Fatalf("want ErrOutcomeUnknown, got %v", err)
+	}
+	var ue *Error
+	if errors.As(err, &ue) && ue.Cause != "" {
+		t.Fatalf("outcome unknown must have no cause, got %q", ue.Cause)
+	}
+}
