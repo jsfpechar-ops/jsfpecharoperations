@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
-from app import reporting
+from app import alerts, config, reporting
 from app.ubyport import faults
 
 UTC = timezone.utc
@@ -82,3 +82,92 @@ def test_fault_http_code_for():
     assert faults.code_for("redirect", "HTTP 302") == "http_302"
     assert faults.code_for("fault", "clean fault text") is None
     assert faults.code_for("dial", "") is None
+
+
+# --- checks on the real send path (SQLite test schema) -----------------------
+
+from app.ubyport.client import UbyportTransportError  # noqa: E402
+from tests.test_submission_retry_cap import _cleanup, _seed  # noqa: E402
+
+
+class _TransportDown:
+    """A register that cannot be reached: every send is a definite transport failure."""
+
+    def submit(self, _header, guests):
+        raise UbyportTransportError("connection refused", cause="dial")
+
+
+class _FaultDown:
+    """UbyPort answers with a fault: a definite failure, the kind the alert streak counts."""
+
+    def submit(self, _header, guests):
+        raise UbyportTransportError("fault", cause="fault", detail="")
+
+
+def _send(apartment, guest_id, monkeypatch, mode="auto", client=_TransportDown):
+    monkeypatch.setattr(reporting, "client_for", lambda *_a, **_k: client())
+    pairs = reporting.collect_sendable(apartment["id"], ignore_automation=True)
+    assert guest_id in [guest["id"] for guest, _ in pairs]
+    return reporting.submit_batch(apartment, pairs, mode=mode)
+
+
+def test_escalation_alert_and_mail_once_at_three(monkeypatch):
+    apartment, _res, guest_id = _seed("tok-a1b-escalate", auto=True)
+    mails = []
+    monkeypatch.setattr(
+        reporting.mail_notify, "submission_problem", lambda *_a, **kw: mails.append(kw)
+    )
+    try:
+        for _ in range(2):
+            _send(apartment, guest_id, monkeypatch, client=_FaultDown)
+        keyed = [kw for kw in mails if str(kw.get("idempotency_key") or "").startswith(
+            "submission_transport_repeated:")]
+        assert keyed == [], "no support copy before the third failure"
+        _send(apartment, guest_id, monkeypatch, client=_FaultDown)
+        keyed = [kw for kw in mails if str(kw.get("idempotency_key") or "").startswith(
+            "submission_transport_repeated:")]
+        assert len(keyed) == 1
+        assert keyed[0]["cc_email"] == config.SUPPORT_EMAIL
+        assert alerts.open_alert(f"submission_transport_repeated:{apartment['id']}")
+    finally:
+        _cleanup(apartment["id"])
+
+
+def test_manual_send_ignores_backoff(monkeypatch):
+    apartment, _res, guest_id = _seed("tok-a1b-manual", auto=True)
+    # The seeded stay has no UbyPort login; the setup check is not under test here.
+    monkeypatch.setattr(reporting.validation, "validate_apartment", lambda _ap: [])
+    monkeypatch.setattr(reporting.db, "decrypt_secret", lambda _enc: "pw")
+    monkeypatch.setattr(reporting, "client_for", lambda *_a, **_k: _TransportDown())
+    try:
+        for _ in range(3):
+            _send(apartment, guest_id, monkeypatch)
+        # Three failures in a row hold the automatic path back.
+        held = reporting.submit_for_apartment(apartment["id"])
+        assert held and held[0]["state"] == "backoff"
+        # A host's manual send is not held back.
+        sent = reporting.submit_for_apartment(apartment["id"], ignore_automation=True)
+        assert sent and all(result["state"] != "backoff" for result in sent)
+    finally:
+        _cleanup(apartment["id"])
+
+
+def test_cause_and_error_code_stored(monkeypatch):
+    # Where the schema has the A1b columns (PostgreSQL after goose 00018) the
+    # cause and the fault-table key are written; the SQLite schema has neither,
+    # so nothing is written there and the row still records transport_error.
+    monkeypatch.setattr(reporting, "_transport_columns_present", lambda: True)
+    assert reporting._transport_cause_fields("http4xx", "HTTP 404") == {
+        "cause": "http4xx", "error_code": "http_404"}
+    assert reporting._transport_cause_fields("dial", "") == {"cause": "dial", "error_code": None}
+    monkeypatch.setattr(reporting, "_transport_columns_present", lambda: False)
+    assert reporting._transport_cause_fields("dial", "") == {}
+
+
+def test_outcome_unknown_retry_schedule_unchanged():
+    assert tuple(reporting.UNKNOWN_RETRY_GAPS) == (
+        timedelta(minutes=30), timedelta(hours=2), timedelta(hours=6), timedelta(hours=12))
+    assert reporting.UNKNOWN_MAX_ATTEMPTS == 5
+    # An outcome_unknown row is never part of the transport chain.
+    row = {"state": "outcome_unknown", "cause": "", "mode": "auto", "finished_at": NOW.isoformat()}
+    assert reporting.transport_backoff_from_rows([row], NOW) is None

@@ -1909,8 +1909,7 @@ def submit_batch(
                 "state": "transport_error",
                 "finished_at": db.utcnow(),
                 "error_text": str(exc),
-                "cause": cause or None,
-                "error_code": faults.code_for(cause, detail),
+                **_transport_cause_fields(cause, detail),
             },
         )
         alerts.raise_alert(
@@ -2300,12 +2299,28 @@ def transport_backoff_from_rows(rows: List[Dict[str, Any]], now: datetime) -> Op
     return candidate
 
 
+def _transport_columns_present() -> bool:
+    """True when the schema has the A1b columns (PostgreSQL after goose 00018).
+
+    The SQLite test schema is frozen at 0045 and has no goose-only columns, so
+    the cause fields are written and read only where they exist.
+    """
+    return {"cause", "error_code"} <= set(db.column_names("submission"))
+
+
+def _transport_cause_fields(cause: str, detail: str) -> Dict[str, Any]:
+    if not _transport_columns_present():
+        return {}
+    return {"cause": cause or None, "error_code": faults.code_for(cause, detail)}
+
+
 def _transport_rows(apartment_id: int) -> List[Dict[str, Any]]:
     # 500 rows covers the daily cap and the chain length in practice.
+    cause_column = "cause" if _transport_columns_present() else "NULL AS cause"
     return [
         dict(row)
         for row in db.query(
-            "SELECT state, cause, mode, finished_at FROM submission WHERE apartment_id = ? "
+            f"SELECT state, {cause_column}, mode, finished_at FROM submission WHERE apartment_id = ? "
             "ORDER BY id DESC LIMIT 500",
             (apartment_id,),
         )
