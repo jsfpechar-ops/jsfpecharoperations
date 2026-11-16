@@ -137,6 +137,8 @@ HOST_KINDS = (
     # digest. Neither goes to a guest.
     "deadline_at_risk",
     "deadline_digest",
+    # A3: the daily unreported-guests mail to the host, and its operator copy
+    # (queued by the Go deadlines job). Neither goes to a guest.
     "filing_stalled",
     "filing_stalled_operator",
     "guest_question",
