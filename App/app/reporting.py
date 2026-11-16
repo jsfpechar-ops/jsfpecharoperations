@@ -1964,6 +1964,8 @@ def submit_batch(
     now = db.utcnow()
     plan = plan_outcome(pairs, result, submission_id, now, codebook, severities)
     state = plan["state"]
+    if state in ("ok", "ok_duplicate", "partial"):
+        alerts.resolve(f"submission_transport_repeated:{apartment['id']}")
     accepted_count = plan["accepted"]
     failed_count = plan["failed"]
     blocked_count = plan["blocked"]
