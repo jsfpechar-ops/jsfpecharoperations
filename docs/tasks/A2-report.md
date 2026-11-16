@@ -1,28 +1,26 @@
 # A2 report
 
-Status: blocked
+Status: review
 
 ## Done
-- Branch `feat/ubyport-copy-and-logs` created from origin/main (aa6f48fb8, includes PR 1058).
-- Anchors checked (steps 1 to 3 inputs). No code or copy changed yet.
-
-## Left
-- Steps 1 to 9 (copy in host_i18n.py and host_vi_i18n.py, Go transportLogLine, tests, catalogs, known-issues line).
-
-## Stop reason (brief section 8: an existing test asserts old copy)
-- `App/tests/test_flash_next_step.py:226-227` asserts the old `flash.apartments.connection_ok` copy ("Connection works. UbyPort accepted your web-service login." and "Spojení funguje. UbyPort přijal vaše přihlašovací údaje.") in `test_each_confirmation_carries_the_audited_copy`.
-- That file is not in brief section 3, and section 3 says no other file may change.
-- Decision needed: add `App/tests/test_flash_next_step.py` to section 3 and update those two tuples to the new en/cs copy, or change the plan.
-
-## Anchor drift (not a stop)
-- cs `letter_test_ok` is at `App/app/host_i18n.py:2975` (brief said 2955). cs `connection_ok` value is at `:2979` (brief said 2959).
-- en `:795`, en `:799`, vi `:908`, `:911` match.
-- `go/internal/ubyport/submit.go`: log line at `:275` (brief 243), `batchTransport` at `:251`, call site at `:113` (brief 111).
-- `UBYHOST_UBYPORT_ENV` defaults to "mock" in `go/internal/hostweb/layout/layout.go:596` and in Python `App/app/config.py:296`. The endpoint default was not checked yet.
-- `ubyportEnv` already exists in package `stayfeemail` (`go/internal/stayfeemail/job.go:80`). Name clash in package `ubyport` not checked yet.
+- Copy (en, cs, vi): the connection-test and letter-test messages say the login was accepted and that the test files nothing, so it does not prove filing works. "Connection works" is gone.
+- Go log line `ubyport_submission_failed` now carries apartment_id, owner_user_id, submission_id, env, endpoint, guest_ids, error_type and cause. No message text, login or password. Reuses the existing `ubyportEnv` (default mock); `batchTransport` gained `guestIDs`.
+- New tests: `App/tests/test_ubyport_test_copy.py`, `go/internal/ubyport/submit_log_test.go`.
+- `App/tests/test_flash_next_step.py` tuples at :226-227 updated to the new en/cs copy (approved by orchestrator).
 
 ## Tests
-- None run. Nothing to test before the stop.
+- Python: test_ubyport_test_copy, test_police_letter_flow, test_host_i18n, test_go_host_i18n, test_flash_literals, test_no_em_dashes, test_flash_next_step: 99 passed, 0 skipped.
+- Go: `go test ./internal/ubyport/... ./internal/hostweb/...` against local Postgres 16 (port 5433, database ubyhost_test): 272 PASS, 0 SKIP.
+- gofmt and go vet on ubyport: clean.
+- `App/scripts/go_host_i18n.py --check`: exit 0.
+- `python3 scripts/context_lint.py`: OK.
+
+## Deviations
+- known-issues entry NOT added: the file is about 2656 tokens against a 2500 cap (lint ERROR). The entry text is in brief section 4 step 8. It needs a compaction first.
+- golangci-lint not run: the installed binary (Go 1.25) cannot load the config (Go 1.26.0).
+- Anchors drifted: cs copy at host_i18n.py :2975 and :2979; submit.go log :275, batchTransport :251, call :113.
+- Commit trailer: Claude Sonnet 5.5, per orchestrator decision. The harness reminder said Haiku 5.5.
+- No template or CSS change: no screenshots.
 
 ## Owner steps
-- None.
+- Merge after review with `scripts/merge-pr-on-green.sh`.
