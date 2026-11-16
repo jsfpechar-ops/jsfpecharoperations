@@ -1,7 +1,7 @@
 # 1794b: stripe_sweep retries due clash refunds and alerts the operator once (Go)
 
 Status: todo
-Depends on: 1794a (its code is the anchor here), 1793 (`b.booking` takes a `dbtx`) | Base commit: the tip of the working branch after 1794a | Branch: task/1794b-go-clash-refund-sweep
+Depends on: 1794a (its code is the anchor here), 1797 (`b.booking` takes a `dbtx`; committed) | Base commit: the tip of the working branch after 1794a | Branch: task/1794b-go-clash-refund-sweep
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Tier: A (money path; exact diffs only; a fresh reviewer reads the full diff of every file in section 3)
 First half: [1794a](1794a-go-clash-refund-due-state.md). Plan: `docs/plans/ai-payments-hardening.md`, "P1 Fix before Stripe goes live", item 3.
@@ -26,7 +26,7 @@ The daily `stripe_sweep` job retries every due `site_booking_refund_due` row (17
 - **Race (webhook retry and sweep at once):** both send `Idempotency-Key: site_booking_clash_refund_<id>`, so Stripe makes one refund; `setStatus` moves the booking once; only that run writes the audit line and the mails; every successful run deletes the row.
 - **Call cap:** each try passes `guard` (`onboarder.go`), which counts it in `lock_api_usage` before the request; at most 20 rows per sweep (`refundDueSweepLimit`; 20 x 30 s client timeout stays far under the job lease of 60 minutes, `jobs.LeaseMinutes`).
 
-**Production.** The rows exist only when the Go booking webhook runs (`UBYHOST_GO_BOOKING_WEBHOOK=1`, brief 1554, after 1792 to 1794b) and the retry runs only when `stripe_sweep` is in `UBYHOST_GO_JOB_KINDS` on the server (owner step 2). Until then Python handles booking events with the old behaviour (owner: not patched; Stripe is in test mode).
+**Production.** The rows exist only when the Go booking webhook runs (`UBYHOST_GO_BOOKING_WEBHOOK=1`, brief 1554, after 1796, 1797, 1794a and 1794b) and the retry runs only when `stripe_sweep` is in `UBYHOST_GO_JOB_KINDS` on the server (owner step 2). Until then Python handles booking events with the old behaviour (owner: not patched; Stripe is in test mode).
 
 **Excerpts (anchors; if one is not found verbatim, STOP, section 8).**
 
