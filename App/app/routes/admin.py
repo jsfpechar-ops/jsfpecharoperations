@@ -4504,7 +4504,7 @@ async def reservation_submit(reservation_id: int, request: Request):
             "ubyport_send_failed",
             f"apartment={reservation['apartment_id']} error={first.get('error')}",
         )
-        return _back(return_to, err=_flash(request, "flash.error.ubyport_unreachable"))
+        return _back(return_to, err=_transport_flash(request, first))
     sent = sum(r.get("submitted", 0) for r in results)
     failed = sum(r.get("failed", 0) + r.get("blocked", 0) for r in results)
     if failed:
