@@ -897,7 +897,8 @@ def test_99_fault_flash_names_the_fault(host, monkeypatch):
     host_adds_guest(host, MANUAL_STAY["id"], surname="Flash", doc_number="P1100221")
     response = host.post(f"/reservations/{MANUAL_STAY['id']}/submit", follow_redirects=False)
     location = urllib.parse.unquote_plus(response.headers["location"])
-    assert "Chyba běhu programu" in location
+    assert "UbyPort hit an internal error" in location
+    assert "Chyba běhu" not in location
     assert "couldn't be reached" not in location
     assert HOST_STRINGS["cs"]["flash.error.ubyport_unreachable"] not in location
     alert = db.query_one(
