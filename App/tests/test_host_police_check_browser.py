@@ -50,12 +50,11 @@ def test_paste_with_javascript_names_the_printed_short_name(live, width):
     _seed()
     page = live.open(width)
     page.goto(live.url)
-    if page.locator("#police-letter-paste").get_attribute("open") is None:
-        page.locator("#police-letter-paste summary").click()
+    page.locator("details.police-letter-paste").evaluate("d => { d.open = true; }")
     page.fill("#letter_text", BRACKET_FULL_LETTER)
-    page.click(READ_BUTTON)
-    status = page.locator("[data-letter-status]")
-    status.wait_for()
-    page.wait_for_function("document.querySelector('[data-letter-status]').textContent.includes('A33')")
+    with page.expect_response(lambda r: r.url.endswith("/police-letter")) as reply:
+        page.dispatch_event("#letter_text", "paste")
+    assert reply.value.status == 200
+    page.wait_for_function("document.querySelector('[data-letter-status]').textContent.includes('A33')", timeout=5000)
     assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
     _shot(page, "police-check-paste", width)
