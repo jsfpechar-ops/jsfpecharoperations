@@ -789,3 +789,28 @@ def test_accepted_filing_resolves_the_repeated_alert(monkeypatch):
     result, _pairs = _submit(monkeypatch, apartment, client=_AcceptingClient())
     assert result["state"] == "ok"
     assert _alert_open(apartment, "submission_transport_repeated") is None
+
+
+class _CauseClient:
+    def __init__(self, cause):
+        self.cause = cause
+
+    def submit(self, _header, _guests):
+        raise UbyportTransportError("UbyPort answered with an error", cause=self.cause)
+
+
+@pytest.mark.parametrize("cause, token", [("auth", "mailnotifya1c5"), ("http4xx", "mailnotifya1c6")])
+def test_auth_and_http4xx_count_toward_the_repeated_alert(monkeypatch, cause, token):
+    apartment, _reservation, _guest_id = _seed(token)
+    for _ in range(3):
+        _submit(monkeypatch, apartment, client=_CauseClient(cause))
+    assert _alert_open(apartment, "submission_transport_repeated") is not None
+
+
+def test_redirect_neither_counts_nor_resets(monkeypatch):
+    apartment, _reservation, _guest_id = _seed("mailnotifya1c7")
+    for client in (_FaultClient(), _FaultClient(), _CauseClient("redirect")):
+        _submit(monkeypatch, apartment, client=client)
+    assert _alert_open(apartment, "submission_transport_repeated") is None
+    _submit(monkeypatch, apartment, client=_FaultClient())
+    assert _alert_open(apartment, "submission_transport_repeated") is not None
