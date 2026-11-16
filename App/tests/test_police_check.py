@@ -97,3 +97,60 @@ def test_every_code_has_text_in_every_language(lang):
         text = police_check.render(lang, finding)["text"]
         assert text and not text.startswith("police_check."), (lang, finding.code)
         assert "—" not in text
+
+
+from fastapi.testclient import TestClient  # noqa: F401  (client comes from the host fixture)
+from tests.test_police_letter_flow import (  # noqa: F401
+    SAVED_LOGIN, _apartment, _audit_text, _payload, _paste, _status_line, host, no_client,
+)
+
+JSON = {"accept": "application/json"}
+
+
+def _set(apartment_id, **values):
+    db.update("apartment", apartment_id, values)
+
+
+def test_paste_json_warns_about_a_printed_short_name_and_saves_nothing(host, no_client):
+    before = dict(_apartment())
+    response = host.post(
+        f"/apartments/{before['id']}/police-letter",
+        data={"letter_text": BRACKET_LETTER}, headers=JSON, follow_redirects=False,
+    )
+    body = response.json()
+    assert any("A33" in line and "DEMO1" in line for line in body["warnings"]), body["warnings"]
+    assert all(line in body["message"] for line in body["warnings"])
+    assert SAMPLE_WS_PASSWORD not in response.text.replace(body["fields"]["uby_ws_password"]["value"], "")
+    assert dict(_apartment()) == before
+    audit = _audit_text()
+    assert "A33" not in audit and SAMPLE_WS_USER not in audit
+
+
+def test_paste_html_shows_the_note_beside_the_short_name_box(host, no_client):
+    page = _paste(host, _apartment()["id"], BRACKET_LETTER).text
+    assert 'data-police-check-code="letter_mismatch"' in page
+    assert "A33" in page
+
+
+def test_saved_page_shows_heuristics_and_the_banner_until_a_filing_was_accepted(host):
+    row = _apartment()
+    _set(row["id"], uby_ws_user=SAMPLE_WS_USER, uby_mark="DEMO1", uby_idub=SAMPLE_IDUB, uby_name="Penzion Letter")
+    url = f"/apartments/{row['id']}?view=settings&section=reporting"
+    page = host.get(url).text
+    for code in ("mark_is_login_suffix", "name_address", "first_filing"):
+        assert f'data-police-check-code="{code}"' in page, code
+    db.insert("submission", {"apartment_id": row["id"], "created_at": db.utcnow(), "state": "ok"})
+    page = host.get(url).text
+    assert 'data-police-check-code="first_filing"' not in page
+    assert 'data-police-check-code="mark_is_login_suffix"' not in page
+    assert 'data-police-check-code="name_address"' in page
+
+
+def test_a_warning_never_blocks_the_save(host, no_client):
+    row = _apartment()
+    response = host.post(
+        f"/apartments/{row['id']}",
+        data=_payload(uby_ws_user="PORTAL_LOGIN", uby_mark="ABCDE"),
+        follow_redirects=False,
+    )
+    assert response.status_code in (303, 422), response.text[:200]
