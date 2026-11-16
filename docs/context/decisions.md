@@ -59,7 +59,7 @@ Append-only.
 - 2026-11-13 [security] #966: 1200-1205; Go env in compose; K-S12 ok; 1206-1207 after merge (owner)
 - 2026-11-13 [mail] Completion CC to host again; PII stays in guest_details_host | owner | 1291
 - 2026-11-14 [mail] Only completion (guest TO, host CC) after stay complete; stop guest_details_host (supersedes 1291 keep-both) | owner | 1630
-- 2026-11-13 [workflow] No GitHub branch protection or required checks (owner): merges gated by scripts/merge-pr-on-green.sh, production by the green-CI deploy gate; CI speed-ups in [1413](../tasks/1413-ci-skip-heavy-jobs-for-brief-only-changes.md), [1414](../tasks/1414-ci-postgres-full-four-shards.md), [1415](../tasks/1415-ci-balance-shards-by-duration.md), 1416 (README)
+- 2026-11-13 [workflow] No GitHub branch protection or required checks (owner): merges gated by scripts/merge-pr-on-green.sh, production by the green-CI deploy gate; CI speed-ups: tasks 1413-1415, 1416 (README)
 - 2026-11-13 [workflow/db] [Go first](go-first.md); [SQLite plan](../plans/sqlite-retirement.md) 1-6 approved | owner
 - 2026-11-14 [dep/infra] golang.org/x/image v0.45.0 (v0.46 needs Go 1.26); Go /data writable (was :ro) | owner | 1641, 1640
 - 2026-11-14 [access] Entry code: Go only, rules in [plan](../plans/entry-code-external-guide.md) | owner
@@ -67,3 +67,4 @@ Append-only.
 - 2026-11-15 [dep] go-webauthn v0.18.0 pinned | owner | 1760
 - 2026-11-15 [ai] Havel and Leon on Mistral Small, 0.05 USD monthly caps | owner
 - 2026-11-15 [legal] Register lists Mistral AI and Anthropic (conditional); no "EU only"/"not stored" claim without ZDR or EU endpoint | 1792
+- 2026-11-15 [ai] Shared Havel/Leon budget, abuse caps; Havel no-go settings; nameless lookups; host mail in host language: [plan](../plans/ai-payments-hardening.md) | owner

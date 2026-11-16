@@ -360,3 +360,77 @@ func TestBookingDatesAndToken(t *testing.T) {
 		t.Error("constructor returned nil")
 	}
 }
+
+// blockConfirmMail makes the outbox refuse the guest confirmation, so the
+// first delivery of a paid event fails inside its transaction.
+func blockConfirmMail(t *testing.T, pool *pgxpool.Pool) {
+	t.Helper()
+	ctx := context.Background()
+	if _, err := pool.Exec(ctx, `ALTER TABLE email_outbox ADD CONSTRAINT t_no_confirm CHECK (kind <> 'site_booking_confirmed')`); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_, _ = pool.Exec(context.Background(), `ALTER TABLE email_outbox DROP CONSTRAINT IF EXISTS t_no_confirm`)
+	})
+}
+
+// TestBookingMailEnqueueFailsLeavesNotPaid: when the confirmation mail cannot be
+// queued, "paid", the audit line, the stay and the mails all roll back together.
+func TestBookingMailEnqueueFailsLeavesNotPaid(t *testing.T) {
+	g := loadBookingGolden(t)
+	pool := testPool(t)
+	seedBookingGolden(t, pool, g)
+	blockConfirmMail(t, pool)
+	_, srv := newFakeStripe(t)
+	bw := goldenBookingWebhook(t, pool, g, srv.URL)
+	if err := bw.Process(context.Background(), bookingEvent(t, "evt_mail_fail", "checkout.session.completed", "cs_1", "pi_1"), "test"); err == nil {
+		t.Fatal("Process: want an error when the confirmation mail cannot be queued")
+	}
+	checks := map[string]string{
+		"pending": `SELECT COUNT(*) FROM site_booking WHERE id = 1 AND status = 'pending'`,
+		"stay":    `SELECT COUNT(*) FROM reservation WHERE uid = 'site-1'`,
+		"audit":   `SELECT COUNT(*) FROM audit WHERE action = 'site_booking_paid' AND detail LIKE 'id=1 %'`,
+		"mail":    `SELECT COUNT(*) FROM email_outbox WHERE idempotency_key LIKE 'site_booking:1:%'`,
+	}
+	want := map[string]int{"pending": 1, "stay": 0, "audit": 0, "mail": 0}
+	for name, q := range checks {
+		if n := count(t, pool, q); n != want[name] {
+			t.Errorf("%s: %d rows, want %d", name, n, want[name])
+		}
+	}
+}
+
+// TestBookingRetryAfterPartialFailureOneMail: after the failed delivery, the
+// retry of the same event pays the booking once and queues each mail once.
+func TestBookingRetryAfterPartialFailureOneMail(t *testing.T) {
+	g := loadBookingGolden(t)
+	pool := testPool(t)
+	seedBookingGolden(t, pool, g)
+	blockConfirmMail(t, pool)
+	_, srv := newFakeStripe(t)
+	bw := goldenBookingWebhook(t, pool, g, srv.URL)
+	ev := bookingEvent(t, "evt_retry", "checkout.session.completed", "cs_1", "pi_1")
+	if err := bw.Process(context.Background(), ev, "test"); err == nil {
+		t.Fatal("first delivery: want an error")
+	}
+	if _, err := pool.Exec(context.Background(), `ALTER TABLE email_outbox DROP CONSTRAINT t_no_confirm`); err != nil {
+		t.Fatal(err)
+	}
+	for i := 1; i <= 2; i++ {
+		if err := bw.Process(context.Background(), ev, "test"); err != nil {
+			t.Fatalf("delivery %d: %v", i, err)
+		}
+	}
+	checks := map[string]string{
+		"paid":  `SELECT COUNT(*) FROM site_booking WHERE id = 1 AND status = 'paid'`,
+		"stay":  `SELECT COUNT(*) FROM reservation WHERE uid = 'site-1'`,
+		"audit": `SELECT COUNT(*) FROM audit WHERE action = 'site_booking_paid' AND detail LIKE 'id=1 %'`,
+		"guest": `SELECT COUNT(*) FROM email_outbox WHERE idempotency_key = 'site_booking:1:confirmed'`,
+		"host":  `SELECT COUNT(*) FROM email_outbox WHERE idempotency_key = 'site_booking:1:host_new'`,
+	}
+	for name, q := range checks {
+		if n := count(t, pool, q); n != 1 {
+			t.Errorf("%s: %d rows, want 1", name, n)
+		}
+	}
+}
