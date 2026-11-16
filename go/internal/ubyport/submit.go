@@ -262,9 +262,11 @@ func batchTransport(ctx context.Context, d BatchDeps, ref ApartmentRef, subID in
 		summary = fmt.Sprintf("%s: UbyPort answered with an error; nothing was filed.", ref.InternalName)
 	}
 	definite := ue.Cause == "fault" || ue.Cause == "auth" || ue.Cause == "http4xx"
-	streak, err := transportStreak(ctx, d.Pool, ref.ID)
-	if err != nil {
-		return BatchResult{}, err
+	streak, serr := transportStreak(ctx, d.Pool, ref.ID)
+	if serr != nil {
+		// A failed read must not leave the submission unrecorded: count from 0.
+		log.Printf("submission_streak_read_failed apartment_id=%d err=%v", ref.ID, serr)
+		streak = 0
 	}
 	if definite {
 		streak++
