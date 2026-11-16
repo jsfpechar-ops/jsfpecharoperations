@@ -119,7 +119,8 @@ class UbyportClient:
             return None
         if HttpNtlmAuth is None:
             raise UbyportTransportError(
-                "requests_ntlm is not installed, so NTLM authentication is unavailable."
+                "requests_ntlm is not installed, so NTLM authentication is unavailable.",
+                cause="setup",
             )
         # The police authenticate web-service accounts against the EXRESORTMV
         # domain, so the login must be sent in DOMAIN\user form.
