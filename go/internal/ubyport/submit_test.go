@@ -271,3 +271,66 @@ func TestSubmitBatchAllDemoIsNoop(t *testing.T) {
 		t.Errorf("submission rows = %d, want 0", n)
 	}
 }
+
+func TestSubmitBatchThreeFaultsRaiseRepeated(t *testing.T) {
+	_, enc := storeTestCrypto(t)
+	pool, d, ref, pairs := batchSetup(t, enc)
+	ctx := context.Background()
+	key := fmt.Sprintf("submission_transport_repeated:%d", ref.ID)
+	sender := &batchFakeSender{err: &Error{Kind: ErrTransport, Msg: "fault", Cause: "fault"}}
+	for i := 1; i <= 3; i++ {
+		if _, err := SubmitBatch(ctx, d, sender, batchApartment, ref, pairs, "auto"); err != nil {
+			t.Fatal(err)
+		}
+		want := 0
+		if i == 3 {
+			want = 1
+		}
+		if n := batchOpenAlert(t, pool, key); n != want {
+			t.Fatalf("after %d faults repeated open = %d, want %d", i, n, want)
+		}
+	}
+}
+
+func TestSubmitBatchDialDoesNotCountOrReset(t *testing.T) {
+	_, enc := storeTestCrypto(t)
+	pool, d, ref, pairs := batchSetup(t, enc)
+	ctx := context.Background()
+	key := fmt.Sprintf("submission_transport_repeated:%d", ref.ID)
+	sender := &batchFakeSender{}
+	steps := []string{"fault", "fault", "dial", "fault"}
+	for i, cause := range steps {
+		sender.err = &Error{Kind: ErrTransport, Msg: cause, Cause: cause}
+		if _, err := SubmitBatch(ctx, d, sender, batchApartment, ref, pairs, "auto"); err != nil {
+			t.Fatal(err)
+		}
+		want := 0
+		if i == len(steps)-1 {
+			want = 1
+		}
+		if n := batchOpenAlert(t, pool, key); n != want {
+			t.Fatalf("after step %d (%s) repeated open = %d, want %d", i+1, cause, n, want)
+		}
+	}
+}
+
+func TestSubmitBatchAcceptedResolvesRepeated(t *testing.T) {
+	_, enc := storeTestCrypto(t)
+	pool, d, ref, pairs := batchSetup(t, enc)
+	ctx := context.Background()
+	key := fmt.Sprintf("submission_transport_repeated:%d", ref.ID)
+	if err := RaiseAlert(ctx, pool, "critical", "submission_transport_repeated", "m", "d", key, &ref.ID, nil, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	sender := &batchFakeSender{res: SubmitResult{RecordErrors: []string{""}, PseudoStamp: "STAMP-1", ReceiptPDF: "PDF"}}
+	got, err := SubmitBatch(ctx, d, sender, batchApartment, ref, pairs, "auto")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.State != "ok" {
+		t.Fatalf("result = %+v, want state ok", got)
+	}
+	if n := batchOpenAlert(t, pool, key); n != 0 {
+		t.Errorf("submission_transport_repeated still open: %d", n)
+	}
+}

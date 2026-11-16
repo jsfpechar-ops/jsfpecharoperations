@@ -153,3 +153,21 @@ func TestClassifyMatchesPythonOracle(t *testing.T) {
 		})
 	}
 }
+
+func TestCleanFaultTextCases(t *testing.T) {
+	long := ""
+	for i := 0; i < 250; i++ {
+		long += "x"
+	}
+	cases := []struct{ in, want string }{
+		{"Chyba / Odpověď", "Chyba / Odpověď"},
+		{"a<b>bold</b>  c\n d", "a bold c d"},
+		{long, long[:200] + "…"},
+		{"", ""},
+	}
+	for _, tc := range cases {
+		if got := CleanFaultText(tc.in); got != tc.want {
+			t.Errorf("CleanFaultText(%q) = %q, want %q", tc.in, got, tc.want)
+		}
+	}
+}

@@ -597,6 +597,7 @@ def build_submission_problem(
     state: str,
     reason: str,
     transport: bool,
+    cause: str = "",
     stays: List[Dict[str, Any]],
     submission_id: Optional[int],
     lang: str,
@@ -608,6 +609,9 @@ def build_submission_problem(
     cannot drift apart.
     """
     lang = host_i18n.normalise_language(lang)
+    # UbyPort answered (fault, HTTP 4xx, redirect, login refused): the
+    # connection worked, so the mail must not say it failed (A1).
+    answered = transport and cause in ("fault", "http4xx", "redirect", "auth")
     subject_key = (
         "mail.submission_problem.subject_transport"
         if transport
@@ -647,12 +651,23 @@ def build_submission_problem(
     footer = _text(lang, "mail.submission_problem.footer", property=property_name)
     footer_support = _text(lang, "mail.submission_problem.footer_support")
 
+    if answered:
+        subject = _text(lang, "mail.submission_problem.subject_answered", property=property_name)
+        intro = _text(lang, "mail.submission_problem.intro_answered", property=property_name)
+        preheader = _text(lang, "mail.submission_problem.preheader_answered")
+        reason_label = _text(lang, "mail.submission_problem.reason_label")
+        next_steps = _text(
+            lang,
+            "mail.submission_problem.next_steps_auth"
+            if cause == "auth"
+            else "mail.submission_problem.next_steps_answered",
+        )
     if state == "unanswered":  # brief 0909: UbyPort did not answer after 5 attempts
         subject = _text(lang, "mail.submission_problem.subject_unanswered", property=property_name)
         intro = _text(lang, "mail.submission_problem.intro_unanswered", property=property_name)
         preheader = _text(lang, "mail.submission_problem.preheader_unanswered")
         next_steps = _text(lang, "mail.submission_problem.next_unanswered")
-    reason_text = _reason_text(state, reason, transport, lang)
+    reason_text = _reason_text(state, reason, transport and not answered, lang)
     submission_url = _app(f"/submissions/{submission_id}") if submission_id else ""
     stay_urls = [
         (stay, _app(f"/reservations/{stay['id']}")) for stay in stays
@@ -836,6 +851,7 @@ def submission_problem(
     state: str,
     reason: str = "",
     transport: bool = False,
+    cause: str = "",
     lang: Optional[str] = None,
     cc_email: Optional[str] = None,
     idempotency_key: Optional[str] = None,
@@ -855,6 +871,7 @@ def submission_problem(
             state=state,
             reason=reason,
             transport=transport,
+            cause=cause,
             lang=lang,
             cc_email=cc_email,
             idempotency_key=idempotency_key,
@@ -875,6 +892,7 @@ def _submission_problem(
     state: str,
     reason: str,
     transport: bool,
+    cause: str = "",
     lang: Optional[str],
     cc_email: Optional[str] = None,
     idempotency_key: Optional[str] = None,
@@ -892,6 +910,7 @@ def _submission_problem(
         state=state,
         reason=reason,
         transport=transport,
+        cause=cause,
         stays=stays,
         submission_id=submission_id,
         lang=lang,

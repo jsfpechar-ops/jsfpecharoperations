@@ -313,7 +313,13 @@
     "99f4fa1664f6285ca349d312f9d85285423f6fd3240f5d87bf747f44ee225c23"
    ]
   },
-  "00018_job_autovacuum.sql": {
+  "00018_submission_cause.sql": {
+   "ok": [
+    "17799d28cf3cc64e1458cc0de05ce9293655cf667499a5cfd8d07634609801a5",
+    "82d9a7c75b287dd916f35f528a19acce1ffc9a3b5e6e1e6cbe94205dc34d1b7f"
+   ]
+  },
+  "00019_job_autovacuum.sql": {
    "ok": [
     "205e44c6e2209b4b9e83b73c55dddaa7a91c8efe41680cda8a03b0ed1a36535e",
     "a542d252b95ae0193f24683b14191c3d0339ea17e0e68cfd27a38ffbc3a9b0d4"

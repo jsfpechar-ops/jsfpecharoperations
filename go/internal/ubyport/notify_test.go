@@ -158,7 +158,7 @@ func TestNotifyMailRowPayloadAndIdempotency(t *testing.T) {
 	if err != nil || len(stays) != 1 || stays[0].ID != res {
 		t.Fatalf("stays: %+v err=%v", stays, err)
 	}
-	content, err := mail.BuildSubmissionProblem(appURL, pubURL, "en", apt.InternalName, base, "Bad postcode", false, stays, sub)
+	content, err := mail.BuildSubmissionProblem(appURL, pubURL, "en", apt.InternalName, base, "Bad postcode", false, stays, sub, "")
 	if err != nil {
 		t.Fatal(err)
 	}

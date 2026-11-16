@@ -4493,6 +4493,16 @@
     "name": "request_xml_enc",
     "not_null": false,
     "type": "text"
+   },
+   {
+    "name": "cause",
+    "not_null": false,
+    "type": "text"
+   },
+   {
+    "name": "error_code",
+    "not_null": false,
+    "type": "text"
    }
   ],
   "submission_claim": [

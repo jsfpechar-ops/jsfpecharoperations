@@ -58,7 +58,7 @@ All kinds are therefore purged with the same periods. No kind is excluded.
 | `go/internal/jobs/purge.go` | create | `Purge`, batched delete |
 | `go/internal/jobs/purge_test.go` | create | the new test |
 | `go/cmd/ubyhost-web/register_job_purge.go` | create | hourly background task |
-| `App/migrations_pg/00018_job_autovacuum.sql` | create | per-table autovacuum settings |
+| `App/migrations_pg/00019_job_autovacuum.sql` | create | per-table autovacuum settings |
 | `App/app/jobqueue.py` | edit | dead rows 30 days (step 3) |
 | `App/tests/test_job_queue.py` | edit | one test for step 3 |
 | `App/app/retention.py` | edit | comment line 37-38 only |
@@ -213,7 +213,7 @@ def purge() -> int:
 
 In `App/tests/test_job_queue.py` add after `test_purge_removes_only_rows_older_than_seven_days` one test `test_purge_keeps_dead_rows_for_thirty_days`: insert with `_insert` a row, then `db.execute("UPDATE job SET dead_at = ? WHERE id = (SELECT MAX(id) FROM job)", (stamp,))` for stamp 8 days old (kept) and a second row 31 days old (deleted); assert `jobqueue.purge() == 1` and one row left. (`_insert` has no `dead_at` argument; do not change it.) Edit `App/app/retention.py` comment lines 37-38 to: `# job.error: exception class and message (300 chars max), may name an address;` / `# purged with the row 7 days after done, 30 days after dead (jobqueue.purge, go/internal/jobs/purge.go).` Add to `docs/privacy/RETENTION.md` after the row "Mail rows ..." (the `| Mail rows` line) one row: `| Background job rows (kind, times, attempts; error text of a failed run, 300 characters at most, may name an address; no payload data) | \`job\` | done / failed | 7 days after done, 30 days after failed | \`jobqueue.purge\` (Python, hourly) and \`jobs.Purge\` (Go, hourly) | Minimisation |`. Commit `1816 step 3`.
 
-**Step 4: Migration.** Create `App/migrations_pg/00018_job_autovacuum.sql` (goose-only, no `schema_migrations` row, like `00017_goose_parity.sql`; additive; a storage parameter does not change any query, so the previous image keeps working):
+**Step 4: Migration.** Create `App/migrations_pg/00019_job_autovacuum.sql` (goose-only, no `schema_migrations` row, like `00017_goose_parity.sql`; additive; a storage parameter does not change any query, so the previous image keeps working):
 
 ```sql
 -- +goose Up

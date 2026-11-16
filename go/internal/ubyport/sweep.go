@@ -330,6 +330,12 @@ func SubmitForApartment(ctx context.Context, d SweepDeps, aptID int64, o Collect
 		built := p.Built
 		claimIn = append(claimIn, ClaimPair{GuestID: p.Outcome.ID, SubmitState: state, Payload: p, Built: &built})
 	}
+	// Transport backoff (A1b P1). Manual sends and auto_resend are not held.
+	if held, err := transportGateHolds(ctx, pool, aptID, mode, sweepNow(d)()); err != nil {
+		return nil, err
+	} else if held {
+		return []BatchResult{{State: "backoff"}}, nil
+	}
 	token, kept, err := ClaimSendable(ctx, pool, claimIn)
 	if err != nil {
 		return nil, err
@@ -685,7 +691,7 @@ func unknownFinalNotice(ctx context.Context, d SweepDeps, aptID int64, latest ch
 	bd := d.Batch
 	key := fmt.Sprintf("submission_unanswered:%d", latest.id)
 	if _, err := queueSubmissionProblem(ctx, pool, bd.Getenv, bd.AppBaseURL, bd.PublicBaseURL,
-		apt.Ref, latest.id, "unanswered", latest.errText, false, batchNow(bd), unknownSupportCC, key); err != nil {
+		apt.Ref, latest.id, "unanswered", latest.errText, false, batchNow(bd), unknownSupportCC, key, ""); err != nil {
 		return err
 	}
 	_, err = QueueUnansweredPush(ctx, pool, bd.Getenv, apt.Ref, latest.id)

@@ -9,6 +9,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"io"
+	"regexp"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -151,6 +152,21 @@ func ParseFault(xmlText []byte) *string {
 		s = strings.Join(parts, " / ")
 	}
 	return &s
+}
+
+// maxFaultChars and CleanFaultText are soap.clean_fault_text: no markup, one
+// line, at most 200 characters, so a fault never carries a page or guest data.
+const maxFaultChars = 200
+
+var faultTag = regexp.MustCompile(`<[^>]*>`)
+
+func CleanFaultText(text string) string {
+	plain := strings.Join(strings.Fields(faultTag.ReplaceAllString(text, " ")), " ")
+	r := []rune(plain)
+	if len(r) <= maxFaultChars {
+		return plain
+	}
+	return strings.TrimRightFunc(string(r[:maxFaultChars]), unicode.IsSpace) + "…"
 }
 
 // CleanPDFBase64 mirrors soap.clean_pdf_base64. It returns (base64, problem).

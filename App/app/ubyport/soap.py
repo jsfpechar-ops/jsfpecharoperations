@@ -187,6 +187,20 @@ def parse_fault(xml_text: str) -> Optional[str]:
     return " / ".join(parts) or "Unspecified SOAP fault"
 
 
+# What a host may read of a fault: no markup, one line, capped. A parser fault
+# can echo request values, so the cap also limits what could leak (A1).
+MAX_FAULT_CHARS = 200
+_FAULT_TAG = re.compile(r"<[^>]*>")
+_FAULT_SPACE = re.compile(r"\s+")
+
+
+def clean_fault_text(text: Optional[str]) -> str:
+    plain = _FAULT_SPACE.sub(" ", _FAULT_TAG.sub(" ", text or "")).strip()
+    if len(plain) <= MAX_FAULT_CHARS:
+        return plain
+    return plain[:MAX_FAULT_CHARS].rstrip() + "…"
+
+
 # A Dorucenka is a few kB to a few hundred kB. Anything far larger is not a
 # receipt we want in a TEXT column; it is dropped and logged instead.
 MAX_PDF_BYTES = 10 * 1024 * 1024
