@@ -35,3 +35,23 @@ Status: blocked
 ## Owner steps left
 
 None before CI. After merge: `SELECT count(*), min(created_at) FROM job` on the server (brief §2 open question).
+
+## Follow-up: dead rows 7 days
+
+Orchestrator decision: the Go purge deletes dead rows after 7 days, the same as done rows and the Python purge (`KEEP_DONE_DAYS=7`). The 30-day dead period is dropped.
+
+Files changed:
+
+- `go/internal/jobs/purge.go`: `KeepDeadDays` 30 to 7. The comment and log text already said no 30, so they are unchanged. Batch size, SKIP LOCKED delete and the open-row rule are unchanged.
+- `go/internal/jobs/purge_test.go`: dead row 8 days old is now deleted, dead row 6 days old is kept. Removed count stays 2. `gofmt -w` realigned the trailing comments.
+- `go/cmd/ubyhost-web/register_job_purge.go`: no "30" in it, so no change.
+
+Commands (run from `go/`):
+
+- `gofmt -l ./internal/jobs ./cmd/ubyhost-web | tail -5`: empty output after gofmt -w on purge_test.go.
+- `go build ./... 2>&1 | tail -5`: exit 0, no output.
+- `go vet ./internal/jobs/ ./cmd/ubyhost-web/ 2>&1 | tail -5`: exit 0, no output.
+- `go test ./internal/jobs/ -run Purge -count=1 -v 2>&1 | tail -10`: both tests `--- SKIP`, last line `ok  github.com/jsfpechar-ops/jsfpecharoperations/go/internal/jobs 0.005s`. `UBYHOST_TEST_DATABASE_URL is not set`. NOT RUN (skip is not a pass).
+- `go test ./cmd/ubyhost-web/ -run 'Purge|Background' -count=1 2>&1 | tail -5`: `ok  github.com/jsfpechar-ops/jsfpecharoperations/go/cmd/ubyhost-web 0.082s`.
+
+Still open: `docs/privacy/RETENTION.md`, `App/app/retention.py` and the Python purge are unchanged in this follow-up. The earlier 30-day dead-row text in lines 26 and 33 of this report is superseded by this section.
