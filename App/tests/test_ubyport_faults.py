@@ -75,3 +75,13 @@ def test_fault_table_python_go_same_rows():
     import ubyport_fault_golden
 
     assert ubyport_fault_golden.table() == expected
+
+
+def test_header_errors_shown_once_per_stay_in_words():
+    from app import alerts
+
+    params = {"property": "P", "count": 2, "failed": 1, "blocked": 1, "header_codes": "112", "header": "x"}
+    row = {"kind": "submission_rejected", "message": "m", "detail": "d", "params": json.dumps(params)}
+    shown = alerts._present_stored(row, "submission_rejected", "en")
+    words = host_i18n.STRINGS["en"]["ubyport.code.112.text"]
+    assert shown["display_detail"].count(words) == 1

@@ -66,3 +66,17 @@ func FaultHostDetail(detail string) string {
 	}
 	return detail
 }
+
+// FaultAlertParams mirrors faults.fault_alert_params: the host copy key for a
+// SOAP fault, and the capped text when no row matches. Empty for other causes.
+func FaultAlertParams(cause, detail string) AlertParams {
+	key := FaultHostKey(cause, detail)
+	if key == "" {
+		return AlertParams{}
+	}
+	params := AlertParams{"fault_text_key": key}
+	if key == FaultUnknownKey {
+		params["detail"] = FaultHostDetail(detail)
+	}
+	return params
+}

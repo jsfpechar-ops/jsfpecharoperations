@@ -54,3 +54,22 @@ def host_copy_key(cause: str, detail: str) -> Optional[str]:
 def host_detail(detail: str) -> str:
     """The cleaned fault text, capped for the host. Never an HTTP body."""
     return (detail or "")[:FAULT_DETAIL_CAP]
+
+
+def matched_text_key(cause: str, detail: str) -> Optional[str]:
+    """The host copy key of a matched fault row, else None (the A1 flash key stays)."""
+    if cause != "fault":
+        return None
+    row = fault_row(detail)
+    return row[2] if row else None
+
+
+def fault_alert_params(cause: str, detail: str) -> dict:
+    """Alert params that carry the host copy key for a SOAP fault (empty otherwise)."""
+    key = host_copy_key(cause, detail)
+    if key is None:
+        return {}
+    params = {"fault_text_key": key}
+    if key == FAULT_UNKNOWN_KEY:
+        params["detail"] = host_detail(detail)
+    return params

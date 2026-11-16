@@ -55,3 +55,15 @@ func TestFaultHostDetailCapped(t *testing.T) {
 		t.Fatalf("cap: %d", len([]rune(got)))
 	}
 }
+
+func TestFaultAlertParamsCarryTextKey(t *testing.T) {
+	if p := FaultAlertParams("fault", "Chyba běhu programu"); p["fault_text_key"] != "ubyport.fault.uby_runtime" {
+		t.Fatalf("row: %v", p)
+	}
+	if u := FaultAlertParams("fault", "other"); u["fault_text_key"] != FaultUnknownKey || u["detail"] != "other" {
+		t.Fatalf("unknown: %v", u)
+	}
+	if len(FaultAlertParams("dial", "x")) != 0 {
+		t.Fatal("dial must carry no fault key")
+	}
+}

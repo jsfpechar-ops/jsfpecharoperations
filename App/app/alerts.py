@@ -238,6 +238,13 @@ def _present_stored(row: Dict[str, Any], kind: str, lang: str) -> Dict[str, Any]
     sentence stays optional without a branch at the call site.
     """
     params = stored_params(row)
+    if params.get("header_codes"):
+        from .ubyport import errors as uby_errors
+
+        params = dict(params)
+        params["header"] = " ".join(
+            text for pair in uby_errors.host_lines(params["header_codes"], None, lang) for text in pair if text
+        )
     if kind == "mail_failed" and params.get("kind"):
         # The copy names the mail in words; the stored code is for the log.
         params = dict(params)
@@ -245,7 +252,9 @@ def _present_stored(row: Dict[str, Any], kind: str, lang: str) -> Dict[str, Any]
     row["display_title"] = _localised(
         lang, _title_key(kind, params, lang), row.get("message"), params
     )
-    detail = _localised(lang, f"notification.{kind}.detail", row.get("detail"), params)
+    detail = _localised(
+        lang, params.get("fault_text_key") or f"notification.{kind}.detail", row.get("detail"), params
+    )
     if params.get("header"):
         leading = _localised(lang, f"notification.{kind}.header", "", params)
         if leading:

@@ -1883,6 +1883,7 @@ def submit_batch(
         detail = getattr(exc, "detail", "")
         answered = cause in ("fault", "http4xx", "redirect", "auth")
         transport_params = {"property": apartment["internal_name"], "error": str(exc)}
+        transport_params.update(faults.fault_alert_params(cause, detail))
         if cause == "auth":
             transport_params["variant"] = "auth"
         elif answered:
@@ -2090,7 +2091,7 @@ def submit_batch(
                 "count": failed_count + blocked_count,
                 "failed": failed_count,
                 "blocked": blocked_count,
-                "header": header_errors,
+                "header": header_errors, "header_codes": result.header_errors or "",
             },
         )
         # Same event, same reasoning as the transport branch: an alert only
