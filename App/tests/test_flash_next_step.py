@@ -223,8 +223,8 @@ def _add_guest(client, reservation_id: int) -> int:
         ),
         (
             "flash.apartments.connection_ok",
-            "Connection works. UbyPort accepted your web-service login.",
-            "Spojení funguje. UbyPort přijal vaše přihlašovací údaje.",
+            "Login accepted: UbyPort accepted your web-service login. The test files no report, so it does not prove filing works.",
+            "Přihlášení přijato: UbyPort přijal vaše přihlašovací údaje k webové službě. Test nic nepodává, takže neověřuje, že podání funguje.",
         ),
         (
             "flash.reservations.claim_released",
