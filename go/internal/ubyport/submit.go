@@ -298,7 +298,7 @@ func batchTransport(ctx context.Context, d BatchDeps, ref ApartmentRef, subID in
 		if err := RaiseAlert(ctx, d.Pool, "critical", "submission_transport_repeated",
 			fmt.Sprintf("%s: UbyPort answered with an error %d times in a row.", name, streak), msg,
 			fmt.Sprintf("submission_transport_repeated:%d", ref.ID), &ref.ID, nil, nil,
-			AlertParams{"property": name, "count": streak, "error": msg, "next": transportNextTryText(ctx, d.Pool, ref.ID)},
+			repeatedTransportParams(ctx, d.Pool, name, streak, msg, ref.ID),
 		); err != nil {
 			return BatchResult{}, err
 		}

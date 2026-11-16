@@ -214,3 +214,46 @@ func TestManualModesBypassTheTransportGate(t *testing.T) {
 		}
 	}
 }
+
+func TestTransportCapAcrossDSTChanges(t *testing.T) {
+	cases := []struct{ now, want time.Time }{
+		{time.Date(2026, 10, 25, 12, 0, 0, 0, time.UTC), time.Date(2026, 10, 25, 23, 10, 0, 0, time.UTC)},
+		{time.Date(2026, 3, 29, 12, 0, 0, 0, time.UTC), time.Date(2026, 3, 29, 22, 10, 0, 0, time.UTC)},
+	}
+	for _, c := range cases {
+		var rows []TransportRow
+		for m := 1; m <= 24; m++ {
+			rows = append(rows, TransportRow{State: "transport_error", Cause: "dial", Mode: "auto",
+				FinishedAt: c.now.Add(-time.Duration(m) * time.Minute).Format(time.RFC3339)})
+		}
+		got, owed := TransportBackoffFromRows(rows, c.now)
+		if !owed || !got.Equal(c.want) {
+			t.Errorf("now %v: got %v owed=%v, want %v", c.now, got, owed, c.want)
+		}
+	}
+}
+
+func TestAutoResendIsNotHeldByTheBackoff(t *testing.T) {
+	pool := claimTestPool(t)
+	ctx := context.Background()
+	g1 := seedGuest(t, pool)
+	aptID := storeApartmentOf(t, pool, g1)
+	now := time.Now().UTC()
+	for i := 0; i < 3; i++ {
+		sub, err := InsertSubmission(ctx, pool, aptID, "auto", []int64{g1}, "ep", storeNow)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := RecordTransportError(ctx, pool, sub, "connection reset", now.Format(time.RFC3339), "dial", ""); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if held, err := transportGateHolds(ctx, pool, aptID, "auto", now); err != nil || !held {
+		t.Fatalf("auto: held=%v err=%v, want held", held, err)
+	}
+	for _, mode := range []string{autoResendMode, "manual", "manual_bulk"} {
+		if held, err := transportGateHolds(ctx, pool, aptID, mode, now); err != nil || held {
+			t.Errorf("%s: held=%v err=%v, want not held", mode, held, err)
+		}
+	}
+}

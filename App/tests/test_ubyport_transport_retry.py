@@ -156,11 +156,11 @@ def test_cause_and_error_code_stored(monkeypatch):
     # Where the schema has the A1b columns (PostgreSQL after goose 00018) the
     # cause and the fault-table key are written; the SQLite schema has neither,
     # so nothing is written there and the row still records transport_error.
-    monkeypatch.setattr(reporting, "_transport_columns_present", lambda: True)
+    monkeypatch.setattr(config, "DB_BACKEND", "postgresql")
     assert reporting._transport_cause_fields("http4xx", "HTTP 404") == {
         "cause": "http4xx", "error_code": "http_404"}
     assert reporting._transport_cause_fields("dial", "") == {"cause": "dial", "error_code": None}
-    monkeypatch.setattr(reporting, "_transport_columns_present", lambda: False)
+    monkeypatch.setattr(config, "DB_BACKEND", "sqlite")
     assert reporting._transport_cause_fields("dial", "") == {}
 
 
@@ -171,3 +171,35 @@ def test_outcome_unknown_retry_schedule_unchanged():
     # An outcome_unknown row is never part of the transport chain.
     row = {"state": "outcome_unknown", "cause": "", "mode": "auto", "finished_at": NOW.isoformat()}
     assert reporting.transport_backoff_from_rows([row], NOW) is None
+
+
+def test_prague_cap_next_day_across_dst_changes():
+    # 26 October 2026: Prague returns to CET, so 00:10 on 26 October is 23:10 UTC on 25 October.
+    # 30 March 2026: Prague is on CEST, so 00:10 on 30 March is 22:10 UTC on 29 March.
+    for day_now, expected in [
+        (datetime(2026, 10, 25, 12, 0, tzinfo=UTC), datetime(2026, 10, 25, 23, 10, tzinfo=UTC)),
+        (datetime(2026, 3, 29, 12, 0, tzinfo=UTC), datetime(2026, 3, 29, 22, 10, tzinfo=UTC)),
+    ]:
+        rows = [
+            {"state": "transport_error", "cause": "dial", "mode": "auto",
+             "finished_at": (day_now - timedelta(minutes=m)).isoformat()}
+            for m in range(1, 25)
+        ]
+        assert reporting.transport_backoff_from_rows(rows, day_now) == expected
+
+
+def test_auto_resend_is_not_held_back_by_backoff(monkeypatch):
+    apartment, _res, guest_id = _seed("tok-a1b-resend", auto=True)
+    monkeypatch.setattr(reporting.validation, "validate_apartment", lambda _ap: [])
+    monkeypatch.setattr(reporting.db, "decrypt_secret", lambda _enc: "pw")
+    try:
+        for _ in range(3):
+            _send(apartment, guest_id, monkeypatch, client=_FaultDown)
+        # The backoff is in force for an automatic send ...
+        assert reporting.submit_for_apartment(apartment["id"])[0]["state"] == "backoff"
+        # ... and an unknown-outcome resend still goes out.
+        monkeypatch.setattr(reporting, "client_for", lambda *_a, **_k: _TransportDown())
+        result = reporting.submit_for_apartment(apartment["id"], mode=reporting.AUTO_RESEND_MODE)
+        assert all(r["state"] != "backoff" for r in result)
+    finally:
+        _cleanup(apartment["id"])

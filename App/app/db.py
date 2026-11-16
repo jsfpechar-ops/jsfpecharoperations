@@ -1274,6 +1274,23 @@ def _expected_sqlite_columns() -> Dict[str, List[tuple[str, str, int, int]]]:
         conn.close()
 
 
+# Nullable columns that exist only in goose files (App/migrations_pg). SCHEMA and
+# ADDED_COLUMNS never change, so these are expected by the PostgreSQL status check
+# alone (brief A1b P1). Format: (table, column, SQL type).
+GOOSE_ONLY_COLUMNS = (
+    ("submission", "cause", "TEXT"),
+    ("submission", "error_code", "TEXT"),
+)
+
+
+def postgres_expected_columns() -> Dict[str, List[tuple[str, str, int, int]]]:
+    """Columns PostgreSQL must have: SCHEMA and ADDED_COLUMNS, plus the goose-only ones."""
+    expected = _expected_sqlite_columns()
+    for table, column, decl in GOOSE_ONLY_COLUMNS:
+        expected[table] = [*expected.get(table, []), (column, decl, 0, 0)]
+    return expected
+
+
 def postgres_schema_status(conn=None) -> Dict[str, Any]:
     """Read-only schema/version/type/index/trigger compatibility summary."""
     if getattr(config, "DB_BACKEND", "sqlite") != "postgresql":
@@ -1284,7 +1301,7 @@ def postgres_schema_status(conn=None) -> Dict[str, Any]:
         schema_row = conn.execute_native("SELECT current_schema() AS name").fetchone()
         if not schema_row or schema_row["name"] != "public":
             raise RuntimeError("PostgreSQL runtime requires the public schema search path.")
-        expected = _expected_sqlite_columns()
+        expected = postgres_expected_columns()
         expected["schema_migrations"] = [
             ("version", "INTEGER", 1, 1),
             ("name", "TEXT", 1, 0),

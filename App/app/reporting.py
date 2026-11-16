@@ -1945,7 +1945,8 @@ def submit_batch(
                 str(exc),
                 dedupe_key=f"submission_transport_repeated:{apartment['id']}",
                 apartment_id=apartment["id"],
-                params={"property": apartment["internal_name"], "count": streak, "error": str(exc), "next": next_text},
+                params={"property": apartment["internal_name"], "count": streak, "error": str(exc),
+                        **({"next": next_text, "header": next_text} if next_text else {})},
             )
         # Third failure in a row: one support copy, idempotent per submission.
         if transport_chain_length(apartment["id"]) == TRANSPORT_ESCALATE_AFTER:
@@ -2301,24 +2302,22 @@ def transport_backoff_from_rows(rows: List[Dict[str, Any]], now: datetime) -> Op
     return candidate
 
 
-def _transport_columns_present() -> bool:
-    """True when the schema has the A1b columns (PostgreSQL after goose 00018).
-
-    The SQLite test schema is frozen at 0045 and has no goose-only columns, so
-    the cause fields are written and read only where they exist.
-    """
-    return {"cause", "error_code"} <= set(db.column_names("submission"))
+def _transport_on_postgresql() -> bool:
+    # The A1b columns are goose-only (App/migrations_pg/00018). The SQLite test schema
+    # is frozen at 0045 and lacks them, so SQLite writes and reads no cause fields.
+    # A config check, not a catalogue query: this runs on every gate call.
+    return getattr(config, "DB_BACKEND", "sqlite") == "postgresql"
 
 
 def _transport_cause_fields(cause: str, detail: str) -> Dict[str, Any]:
-    if not _transport_columns_present():
+    if not _transport_on_postgresql():
         return {}
     return {"cause": cause or None, "error_code": faults.code_for(cause, detail)}
 
 
 def _transport_rows(apartment_id: int) -> List[Dict[str, Any]]:
     # 500 rows covers the daily cap and the chain length in practice.
-    cause_column = "cause" if _transport_columns_present() else "NULL AS cause"
+    cause_column = "cause" if _transport_on_postgresql() else "NULL AS cause"
     return [
         dict(row)
         for row in db.query(
@@ -2526,7 +2525,8 @@ def submit_for_apartment(
             params={"property": apartment["internal_name"]},
         )
         return [{"state": "not_configured", "error": validation.issues_to_text(setup_errors)}]
-    if not ignore_automation:
+    # auto_resend is exempt: it resends an unknown-outcome chain, which must not stall (A1b review).
+    if not ignore_automation and mode != AUTO_RESEND_MODE:
         now = _clock()
         until = transport_backoff_until(apartment_id, now)
         if until and now < until:

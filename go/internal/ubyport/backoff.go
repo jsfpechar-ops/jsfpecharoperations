@@ -150,3 +150,29 @@ func transportNextTryText(ctx context.Context, pool *pgxpool.Pool, aptID int64) 
 	}
 	return until.UTC().Format("2006-01-02 15:04 UTC")
 }
+
+// transportGateHolds reports whether the transport backoff holds a send in this mode.
+// Manual sends and auto_resend are never held (A1b review finding 2: an unknown-outcome
+// resend must not be dropped by a newer transport chain).
+func transportGateHolds(ctx context.Context, pool *pgxpool.Pool, aptID int64, mode string, now time.Time) (bool, error) {
+	if isManualMode(mode) || mode == autoResendMode {
+		return false, nil
+	}
+	until, owed, err := TransportBackoffUntil(ctx, pool, aptID, now)
+	if err != nil {
+		return false, err
+	}
+	return owed && now.Before(until), nil
+}
+
+// repeatedTransportParams are the params of submission_transport_repeated. next and header
+// are set only when a next automatic try is owed; without them the copy falls back to the
+// text without the next-try sentence.
+func repeatedTransportParams(ctx context.Context, pool *pgxpool.Pool, name string, count int, msg string, aptID int64) AlertParams {
+	p := AlertParams{"property": name, "count": count, "error": msg}
+	if next := transportNextTryText(ctx, pool, aptID); next != "" {
+		p["next"] = next
+		p["header"] = next
+	}
+	return p
+}
