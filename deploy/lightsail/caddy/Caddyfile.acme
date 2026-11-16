@@ -32,6 +32,61 @@
 	handle @scanners {
 		respond 404
 	}
+	# 1804: Caddy serves the service worker, the manifest and /static from disk
+	# (compose mounts App/app/static read-only at /srv/static) so these requests
+	# never reach the app. GET and HEAD only; any other method falls through to
+	# the app. A missing file is a Caddy 404, not an app call. These handles sit
+	# above the Go handles on purpose: Go serves none of these paths.
+	@sw_js {
+		path /sw.js
+		method GET HEAD
+	}
+	handle @sw_js {
+		root * /srv/static
+		# Revalidate on every visit (cheap 304 via ETag): a stale worker is never pinned.
+		header Cache-Control "no-cache"
+		header X-Content-Type-Options "nosniff"
+		file_server
+	}
+	@manifest {
+		path /manifest.webmanifest
+		method GET HEAD
+	}
+	handle @manifest {
+		root * /srv/static
+		header Content-Type "application/manifest+json"
+		header Cache-Control "public, max-age=3600"
+		header X-Content-Type-Options "nosniff"
+		header Content-Security-Policy "default-src 'none'; frame-ancestors 'none'"
+		file_server
+	}
+	@static_versioned {
+		path /static/*
+		method GET HEAD
+		query v=*
+	}
+	@static_plain {
+		path /static/*
+		method GET HEAD
+		not query v=*
+	}
+	handle @static_versioned {
+		uri strip_prefix /static
+		root * /srv/static
+		# File names are not fingerprinted; ?v= is a hand-kept key guarded by test_static_versions.py.
+		header Cache-Control "public, max-age=31536000, immutable"
+		header X-Content-Type-Options "nosniff"
+		header Content-Security-Policy "default-src 'none'; frame-ancestors 'none'"
+		file_server
+	}
+	handle @static_plain {
+		uri strip_prefix /static
+		root * /srv/static
+		header Cache-Control "public, max-age=86400"
+		header X-Content-Type-Options "nosniff"
+		header Content-Security-Policy "default-src 'none'; frame-ancestors 'none'"
+		file_server
+	}
 	# UBYHOST_GO_PATHS: space-separated paths for the Go service (ubyhost-go); unset = all traffic to Python (compose defaults it to /__go_off__; an empty value breaks Caddy).
 	# Unset or empty keeps every request on Python, so this changes nothing until the owner sets it.
 	@go path {$UBYHOST_GO_PATHS:/__go_off__}
