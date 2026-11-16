@@ -157,7 +157,8 @@ class UbyportClient:
         if response.status_code == 401:
             raise UbyportAuthError(
                 "UbyPort rejected the credentials (HTTP 401). Check that this is a web-service "
-                "login (UBY-WS...) and that it is registered for this IDUB."
+                "login (UBY-WS...) and that it is registered for this IDUB.",
+                cause="auth",
             )
         if 300 <= response.status_code < 400:
             raise UbyportTransportError(
