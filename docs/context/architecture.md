@@ -60,6 +60,6 @@
 - Migrations are `App/app/migrations/NNNN_*.sql`; `0001` is the frozen `db.SCHEMA`.
 - Run `python3 scripts/context_lint.py` to get the next free task and migration numbers.
 - The historic WP/patch series (WP01–WP33, patches 0001–0034) is done and lives in `docs/archive/UbyHost_workplan/`.
-**Cleaning:** `routes/cleaning.py` serves host CRUD/settings and separately token-authorized team views. `cleaning.py` reconciles persisted checkout events and preserves overrides/dismissals. `cleaning_codes.py` provisions permanent property codes in the existing serial door-code worker. Both layouts reuse `dashboard-calendar.js` and the server-rendered `_cleaning_list.html`; no cleaner identities, claims or completion state.
+**Cleaning:** Python `routes/cleaning.py` or Go `go/internal/web/cleaning/` (per `UBYHOST_GO_PATHS`); token team views. Checkout events and cleaner TTLock codes use the `door_codes` worker (`doorcleaning`); Go kicks one queue pass after a cleaning code save/remove when Go owns that job. See [ttlock](../integrations/ttlock.md). Shared `dashboard-calendar.js` / `_cleaning_list.html`; no cleaner accounts.
 
 **Operator customers:** `admin_customers.py` and `routes/admin_customers.py` provide a read-only, admin-only customer list and detail with fixed-size keyset pagination, filters and batched active-property counts. Existing account support and billing pages retain all mutations.
