@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
@@ -110,7 +111,7 @@ func SubmitBatch(ctx context.Context, d BatchDeps, s Sender, apt Apartment, ref 
 		if errors.Is(err, ErrOutcomeUnknown) {
 			return batchOutcomeUnknown(ctx, d, ref, subID, guestIDs, ue)
 		}
-		return batchTransport(ctx, d, ref, subID, ue)
+		return batchTransport(ctx, d, ref, subID, guestIDs, ue)
 	}
 
 	if err := ResolveAlert(ctx, d.Pool, fmt.Sprintf("submission_transport:%d", ref.ID)); err != nil {
@@ -247,8 +248,24 @@ func batchOutcomeUnknown(ctx context.Context, d BatchDeps, ref ApartmentRef, sub
 // transportRepeatAfter is reporting.TRANSPORT_REPEAT_ALERT_AFTER (A1c).
 const transportRepeatAfter = 3
 
+// transportLogLine is the Python ubyport_submission_failed line (reporting.py
+// 1864-1874) plus the A1 cause. Ids, env and endpoint only: never the login,
+// the password, the message text or guest data.
+func transportLogLine(ref ApartmentRef, subID int64, env, endpoint string, guestIDs []int64, ue *Error) string {
+	owner := "None"
+	if ref.OwnerUserID != nil {
+		owner = strconv.FormatInt(*ref.OwnerUserID, 10)
+	}
+	errorType := "UbyportTransportError"
+	if errors.Is(ue, ErrAuth) {
+		errorType = "UbyportAuthError"
+	}
+	return fmt.Sprintf("ubyport_submission_failed apartment_id=%d owner_user_id=%s submission_id=%d env=%s endpoint=%s guest_ids=%v error_type=%s cause=%s",
+		ref.ID, owner, subID, env, endpoint, guestIDs, errorType, ue.Cause)
+}
+
 // batchTransport is the transport branch (reporting.py 1613-1660). Guests stay pending.
-func batchTransport(ctx context.Context, d BatchDeps, ref ApartmentRef, subID int64, ue *Error) (BatchResult, error) {
+func batchTransport(ctx context.Context, d BatchDeps, ref ApartmentRef, subID int64, guestIDs []int64, ue *Error) (BatchResult, error) {
 	msg := ue.Error()
 	answered := ue.Cause == "fault" || ue.Cause == "http4xx" || ue.Cause == "redirect" || ue.Cause == "auth"
 	params := AlertParams{"property": ref.InternalName, "error": msg}
@@ -272,7 +289,7 @@ func batchTransport(ctx context.Context, d BatchDeps, ref ApartmentRef, subID in
 		streak++
 	}
 	params["streak"] = streak
-	log.Printf("ubyport_submission_failed apartment_id=%d submission_id=%d", ref.ID, subID)
+	log.Print(transportLogLine(ref, subID, ubyportEnv(d.Getenv), d.Endpoint, guestIDs, ue))
 	if err := RecordTransportError(ctx, d.Pool, subID, msg, UTCNow(), ue.Cause, FaultCodeFor(ue.Cause, ue.Detail)); err != nil {
 		return BatchResult{}, err
 	}
