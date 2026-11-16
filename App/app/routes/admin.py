@@ -3996,6 +3996,7 @@ async def reservations_submit_ready(request: Request):
     )
     sent_stays = 0
     sent_guests = 0
+    failed_result = None
     for reservation in reservations:
         apartment = access.apartment_for_reservation(reservation, access.owner_id(request))
         if not apartment:
@@ -4016,10 +4017,16 @@ async def reservations_submit_ready(request: Request):
         if not results:
             continue
         batch_sent = sum(r.get("submitted", 0) for r in results)
+        if failed_result is None:
+            failed_result = next(
+                (r for r in results if r.get("state") == "transport_error"), None
+            )
         if batch_sent:
             sent_stays += 1
             sent_guests += batch_sent
     if not sent_guests:
+        if failed_result is not None:
+            return _back(return_to, err=_transport_flash(request, failed_result))
         return _back(
             return_to,
             err=_flash(request, "flash.error.nothing_ready"),
