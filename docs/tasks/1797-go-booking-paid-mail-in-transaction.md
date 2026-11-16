@@ -1,7 +1,7 @@
-# 1793: Booking "paid" and its confirmation mail commit together (Go webhook)
+# 1797: Booking "paid" and its confirmation mail commit together (Go webhook)
 
 Status: todo
-Depends on: none | Base commit: a6c1990 | Branch: task/1793-go-booking-paid-mail-in-transaction
+Depends on: none | Base commit: a6c1990 | Branch: task/1797-go-booking-paid-mail-in-transaction
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Tier: A (money path; Opus or the owner reviews the diff)
 
@@ -54,7 +54,7 @@ Excerpts (anchors; if one is not found verbatim, STOP, §8).
 | `go/internal/ubyport/notify.go` | edit | `EnqueueMail` takes a `MailDB` interface instead of `*pgxpool.Pool` |
 | `go/internal/payments/booking_webhook.go` | edit | `confirm` writes audit and mails on `tx` before commit; helpers take a `dbtx`; `enqueue` returns its error |
 | `go/internal/payments/booking_webhook_test.go` | edit | add two test cases |
-| `docs/tasks/1793-report.md` | create | report (§9) |
+| `docs/tasks/1797-report.md` | create | report (§9) |
 
 No other file may change.
 
@@ -105,7 +105,7 @@ Stop, and write the report, if: an excerpt is not found; a test fails twice; you
 
 ## 9. Report
 
-Write `docs/tasks/1793-report.md` (600 tokens at most) and set `Status: review`: files changed (`git diff --stat`), each command with the last 5 lines of output, §7 ticked, deviations, questions, owner steps left.
+Write `docs/tasks/1797-report.md` (600 tokens at most) and set `Status: review`: files changed (`git diff --stat`), each command with the last 5 lines of output, §7 ticked, deviations, questions, owner steps left.
 
 ## Risk list (for the reviewer)
 
@@ -127,6 +127,6 @@ Write `docs/tasks/1793-report.md` (600 tokens at most) and set `Status: review`:
 ## Owner decisions (2026-11-16)
 
 - **Go only.** No Python change in this brief or as a follow-up.
-- **Go booking webhook goes live** (`UBYHOST_GO_BOOKING_WEBHOOK=1`) after 1792, 1793 and 1794 are merged and green; the owner flips it on staging first. Python keeps the bug until then and is not patched.
+- **Go booking webhook goes live** (`UBYHOST_GO_BOOKING_WEBHOOK=1`) after 1796, 1797 and 1798 are merged and green; the owner flips it on staging first. Python keeps the bug until then and is not patched.
 - **No backfill.** Stripe is in test mode, so no real guest is stuck at "paid" without a mail. The report states the count of `site_booking` rows that are paid with no confirmation mail in the outbox, if the executor can read it from the test database; nothing is re-sent.
 - **Test database.** CI sets `UBYHOST_TEST_DATABASE_URL` (`.github/workflows/ci.yml`). If the executor has none locally, the new tests skip there: the report must say so, and the PR is ready only when CI shows them run and pass, not skipped.

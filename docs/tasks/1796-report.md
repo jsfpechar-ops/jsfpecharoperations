@@ -1,4 +1,4 @@
-# 1792 report: Go Stripe key/mode guard and webhook livemode check
+# 1796 report: Go Stripe key/mode guard and webhook livemode check
 
 Status: review
 Worktree: /home/user/jsfpecharoperations/.claude/worktrees/agent-a8da8caf93391adfa (branch worktree-agent-a8da8caf93391adfa)
@@ -10,9 +10,9 @@ Brief: read from the main checkout copy (the brief is on branch claude/wonderful
 - go/internal/payments/onboarder_test.go: +35 (TestStripeOnboarderKeyModeMismatch)
 - go/internal/payments/webhook.go: +18 -3 (Livemode field, livemodeMatches, check after verifyEvent)
 - go/internal/payments/webhook_test.go: +52 (TestLivemodeMatches, TestWebhookLivemodeMismatch)
-- docs/tasks/1792-report.md: this file
+- docs/tasks/1796-report.md: this file
 
-Commits: 1792 step 1 (fe0ea58), step 2 (119c19b), step 3 (871edb5), step 4 (86baa20), report (see git log).
+Commits: 1796 step 1 (fe0ea58), step 2 (119c19b), step 3 (871edb5), step 4 (86baa20), report (see git log).
 
 ## 2. Commands (last lines)
 
@@ -47,4 +47,4 @@ Commits: 1792 step 1 (fe0ea58), step 2 (119c19b), step 3 (871edb5), step 4 (86ba
 ## 6. Owner steps left
 
 - Let CI run the DB tests. Confirm `TestStripeOnboarderKeyModeMismatch` and `TestWebhookLivemodeMismatch` PASS, not SKIP, before merge.
-- Branch placement: the brief names `task/1792-go-stripe-key-mode-guard`. This branch is `worktree-agent-a8da8caf93391adfa`. The orchestrator integrates the commits.
+- Branch placement: the brief names `task/1796-go-stripe-key-mode-guard`. This branch is `worktree-agent-a8da8caf93391adfa`. The orchestrator integrates the commits.

@@ -1,4 +1,4 @@
-# 1793 report
+# 1797 report
 
 Status: review
 
@@ -6,7 +6,7 @@ Status: review
 - go/internal/ubyport/notify.go: EnqueueMail takes `MailDB` (QueryRow only). 13 lines.
 - go/internal/payments/booking_webhook.go: steps 2 to 6. `confirm` writes audit, booking re-read and both mails on `tx` before Commit; `enqueue` returns error; `mailConfirmed` returns it; `mailClash` logs it.
 - go/internal/payments/booking_webhook_test.go: two tests added (+74, no deletions).
-- docs/tasks/1793-report.md (this file).
+- docs/tasks/1797-report.md (this file).
 
 ## Commands (last lines of output)
 - `go build ./...`: no output, exit 0 (also after each step).

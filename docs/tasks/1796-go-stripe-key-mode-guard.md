@@ -1,7 +1,7 @@
-# 1792: Go Stripe key/mode guard and webhook livemode check
+# 1796: Go Stripe key/mode guard and webhook livemode check
 
 Status: todo
-Depends on: none | Base commit: current tip of the working branch | Branch: task/1792-go-stripe-key-mode-guard
+Depends on: none | Base commit: current tip of the working branch | Branch: task/1796-go-stripe-key-mode-guard
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Tier: A (money path; the orchestrator reads the diff of every file in section 3)
 
@@ -61,7 +61,7 @@ The booking branch (booking_webhook.go `Process`, or `forwardToPython`) and `pro
 | `go/internal/payments/webhook.go` | edit | add `Livemode *bool` to `stripeEvent`; add `livemodeMatches`; check it after `verifyEvent` |
 | `go/internal/payments/onboarder_test.go` | edit | add `TestStripeOnboarderKeyModeMismatch` |
 | `go/internal/payments/webhook_test.go` | edit | add `TestLivemodeMatches` and `TestWebhookLivemodeMismatch` |
-| `docs/tasks/1792-report.md` | create | the report (section 9) |
+| `docs/tasks/1796-report.md` | create | the report (section 9) |
 
 No other file may change.
 
@@ -219,7 +219,7 @@ No other file may change.
    Check that `webhook_test.go` already imports `fmt` and `time` (`grep -nF '"fmt"' go/internal/payments/webhook_test.go`; it uses both today). Command: `cd go && go test ./internal/payments/ -run 'TestLivemodeMatches|TestWebhookLivemodeMismatch' -count=1 -v 2>&1 | tail -30` shows `PASS`, not `SKIP`.
 5. Run the section 6 commands; write the report.
 
-Commit after each step with the message `1792 step k` (one commit for step 0 is not needed).
+Commit after each step with the message `1796 step k` (one commit for step 0 is not needed).
 
 ## 5. Do not touch
 
@@ -262,7 +262,7 @@ Stop, and write the report, if:
 
 ## 9. Report
 
-Write `docs/tasks/1792-report.md` (600 tokens at most) and set `Status: review`. The report has:
+Write `docs/tasks/1796-report.md` (600 tokens at most) and set `Status: review`. The report has:
 
 1. The files changed (`git diff --stat`).
 2. Each command, with the last 5 lines of its output.
