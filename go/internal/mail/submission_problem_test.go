@@ -58,7 +58,7 @@ func TestSubmissionProblemMatchesPython(t *testing.T) {
 					Summary:      s.Summary,
 				})
 			}
-			got, err := BuildSubmissionProblem(goldenAppBase, goldenPublicBase, "en", c.PropertyName, c.State, c.Reason, c.Transport, stays, c.SubmissionID)
+			got, err := BuildSubmissionProblem(goldenAppBase, goldenPublicBase, "en", c.PropertyName, c.State, c.Reason, c.Transport, stays, c.SubmissionID, "")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -70,7 +70,7 @@ func TestSubmissionProblemMatchesPython(t *testing.T) {
 }
 
 func TestOtherLanguagesAreRefused(t *testing.T) {
-	_, err := BuildSubmissionProblem(goldenAppBase, goldenPublicBase, "cs", "Byt", "rejected", "", false, nil, 0)
+	_, err := BuildSubmissionProblem(goldenAppBase, goldenPublicBase, "cs", "Byt", "rejected", "", false, nil, 0, "")
 	if err != ErrLanguage {
 		t.Fatalf("lang cs: want ErrLanguage, got %v", err)
 	}
