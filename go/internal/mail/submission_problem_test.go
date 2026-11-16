@@ -30,6 +30,7 @@ type goldenCase struct {
 	State        string       `json:"state"`
 	Reason       string       `json:"reason"`
 	Transport    bool         `json:"transport"`
+	Cause        string       `json:"cause"`
 	Stays        []goldenStay `json:"stays"`
 	SubmissionID int64        `json:"submission_id"`
 }
@@ -43,8 +44,8 @@ func TestSubmissionProblemMatchesPython(t *testing.T) {
 	if err := json.Unmarshal(raw, &cases); err != nil {
 		t.Fatal(err)
 	}
-	if len(cases) != 6 {
-		t.Fatalf("want 6 golden cases, got %d", len(cases))
+	if len(cases) != 8 {
+		t.Fatalf("want 8 golden cases, got %d", len(cases))
 	}
 	for _, c := range cases {
 		t.Run(c.Name, func(t *testing.T) {
@@ -58,7 +59,7 @@ func TestSubmissionProblemMatchesPython(t *testing.T) {
 					Summary:      s.Summary,
 				})
 			}
-			got, err := BuildSubmissionProblem(goldenAppBase, goldenPublicBase, "en", c.PropertyName, c.State, c.Reason, c.Transport, stays, c.SubmissionID, "")
+			got, err := BuildSubmissionProblem(goldenAppBase, goldenPublicBase, "en", c.PropertyName, c.State, c.Reason, c.Transport, stays, c.SubmissionID, c.Cause)
 			if err != nil {
 				t.Fatal(err)
 			}
