@@ -41,6 +41,42 @@
     "submission_id": 8
   },
   {
+    "name": "transport_fault",
+    "property_name": "Byt Beta",
+    "state": "submitted",
+    "reason": "UbyPort returned a SOAP fault: Chyba běhu programu / Odpověď neobsahuje záznamy o chybách",
+    "transport": true,
+    "stays": [
+      {
+        "id": 201,
+        "property_name": "Byt Beta",
+        "date_from": "2026-05-01",
+        "date_to": "2026-05-03",
+        "summary": "Direct"
+      }
+    ],
+    "submission_id": 8,
+    "cause": "fault"
+  },
+  {
+    "name": "transport_auth",
+    "property_name": "Byt Beta",
+    "state": "submitted",
+    "reason": "UbyPort rejected the credentials (HTTP 401).",
+    "transport": true,
+    "stays": [
+      {
+        "id": 201,
+        "property_name": "Byt Beta",
+        "date_from": "2026-05-01",
+        "date_to": "2026-05-03",
+        "summary": "Direct"
+      }
+    ],
+    "submission_id": 8,
+    "cause": "auth"
+  },
+  {
     "name": "no_reason_no_stays",
     "property_name": "Byt Gamma",
     "state": "rejected",
