@@ -3962,6 +3962,24 @@ router.include_router(exports.router)
 router.include_router(privacy_requests.router)
 
 
+# A transport_error result names its cause (A1). The flash is chosen by that
+# field, never by matching the error text. outcome_unknown never comes here.
+_TRANSPORT_FLASH = {
+    "dial": "flash.error.ubyport_unreachable",
+    "auth": "flash.error.ubyport_login_refused",
+    "fault": "flash.error.ubyport_fault",
+    "http4xx": "flash.error.ubyport_http_error",
+    "redirect": "flash.error.ubyport_http_error",
+}
+
+
+def _transport_flash(request, result) -> str:
+    key = _TRANSPORT_FLASH.get(result.get("cause") or "", "flash.error.ubyport_send_failed")
+    if key in ("flash.error.ubyport_fault", "flash.error.ubyport_http_error"):
+        return _flash(request, key, detail=result.get("detail") or "")
+    return _flash(request, key)
+
+
 @router.post("/reservations/submit-ready")
 async def reservations_submit_ready(request: Request):
     """Send every stay that is ready and allowed to go out now."""
