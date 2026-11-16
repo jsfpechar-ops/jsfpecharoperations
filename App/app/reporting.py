@@ -1886,6 +1886,19 @@ def submit_batch(
             transport_params["variant"] = "auth"
         elif answered:
             transport_params["variant"] = "answered"
+        # Read before submission_transport is refreshed below. dial, setup and
+        # redirect neither count nor reset; an answered batch resolves the alert.
+        definite = cause in ("fault", "auth", "http4xx")
+        streak = 0
+        previous = alerts.open_alert(f"submission_transport:{apartment['id']}")
+        if previous:
+            try:
+                streak = max(0, int(alerts.stored_params(previous).get("streak") or 0))
+            except (TypeError, ValueError):
+                streak = 0
+        if definite:
+            streak += 1
+        transport_params["streak"] = streak
         db.update(
             "submission",
             submission_id,
