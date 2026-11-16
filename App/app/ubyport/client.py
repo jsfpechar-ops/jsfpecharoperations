@@ -162,7 +162,9 @@ class UbyportClient:
             )
         if 300 <= response.status_code < 400:
             raise UbyportTransportError(
-                f"UbyPort returned an unexpected redirect (HTTP {response.status_code})."
+                f"UbyPort returned an unexpected redirect (HTTP {response.status_code}).",
+                cause="redirect",
+                detail=f"HTTP {response.status_code}",
             )
         fault = soap.parse_fault(text)
         if fault:
