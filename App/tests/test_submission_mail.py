@@ -752,18 +752,18 @@ def _alert_open(apartment, kind):
 
 
 def test_three_faults_in_a_row_raise_the_repeated_alert(monkeypatch):
-    apartment, _reservation, _guest_id = _seed("a1c1")
+    apartment, _reservation, _guest_id = _seed("mailnotifya1c1")
     for _ in range(2):
         _submit(monkeypatch, apartment, client=_FaultClient())
     assert _alert_open(apartment, "submission_transport_repeated") is None
     _submit(monkeypatch, apartment, client=_FaultClient())
     row = _alert_open(apartment, "submission_transport_repeated")
     assert row is not None
-    assert reporting.alerts.stored_params(row)["count"] == 3
+    assert reporting.alerts.stored_params(dict(row))["count"] == 3
 
 
 def test_dial_neither_counts_nor_resets(monkeypatch):
-    apartment, _reservation, _guest_id = _seed("a1c2")
+    apartment, _reservation, _guest_id = _seed("mailnotifya1c2")
     for client in (_FaultClient(), _FaultClient(), _DialClient()):
         _submit(monkeypatch, apartment, client=client)
     assert _alert_open(apartment, "submission_transport_repeated") is None
@@ -772,17 +772,17 @@ def test_dial_neither_counts_nor_resets(monkeypatch):
 
 
 def test_outcome_unknown_does_not_count(monkeypatch):
-    apartment, _reservation, _guest_id = _seed("a1c3")
+    apartment, _reservation, _guest_id = _seed("mailnotifya1c3")
     for _ in range(2):
         _submit(monkeypatch, apartment, client=_FaultClient())
     _submit(monkeypatch, apartment, client=_UnknownClient())
     assert _alert_open(apartment, "submission_transport_repeated") is None
     row = _alert_open(apartment, "submission_transport")
-    assert reporting.alerts.stored_params(row)["streak"] == 2
+    assert reporting.alerts.stored_params(dict(row))["streak"] == 2
 
 
 def test_accepted_filing_resolves_the_repeated_alert(monkeypatch):
-    apartment, _reservation, _guest_id = _seed("a1c4")
+    apartment, _reservation, _guest_id = _seed("mailnotifya1c4")
     for _ in range(3):
         _submit(monkeypatch, apartment, client=_FaultClient())
     assert _alert_open(apartment, "submission_transport_repeated") is not None
