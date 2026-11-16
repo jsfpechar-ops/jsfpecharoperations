@@ -168,7 +168,10 @@ class UbyportClient:
             )
         fault = soap.parse_fault(text)
         if fault:
-            raise UbyportTransportError(f"UbyPort returned a SOAP fault: {fault}")
+            clean = soap.clean_fault_text(fault)
+            raise UbyportTransportError(
+                f"UbyPort returned a SOAP fault: {clean}", cause="fault", detail=clean
+            )
         if response.status_code >= 500:
             raise UbyportOutcomeUnknownError(
                 f"UbyPort returned HTTP {response.status_code} (outcome unknown): {text[:400]}"
