@@ -78,6 +78,9 @@ func runDeadlines(s deadlinesSteps) (DeadlinesSummary, error) {
 	}
 	// WP23: the watchdog runs even when the watch failed; its mails and its
 	// heartbeat reach the owner when the app itself is not being looked at.
+	// A failed deadline watch above does not stop this. A failed watchdog returns
+	// below, before the stalled check: no ping is sent, so the external monitor
+	// alerts on the missing ping, and the stalled alarm runs on the next pass.
 	w, err := s.watchdog()
 	if err != nil {
 		// No ping at all: the external monitor alerts on the missing ping.
@@ -115,6 +118,11 @@ func runDeadlines(s deadlinesSteps) (DeadlinesSummary, error) {
 	}
 	if watchErr != nil {
 		return sum, fmt.Errorf("deadline watch: %w", watchErr)
+	}
+	// The heartbeat is already failed above. Returning an error keeps the job
+	// queue from recording success, which would resolve job_failed:deadlines.
+	if stalledFailed {
+		return sum, fmt.Errorf("filing stalled check failed")
 	}
 	return sum, nil
 }

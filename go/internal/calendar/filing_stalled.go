@@ -225,7 +225,7 @@ func RunFilingStalled(ctx context.Context, pool *pgxpool.Pool, getenv func(strin
 		if p.Stalled > 0 && !(p.Cause == "setup" && p.SetupAlert) {
 			id := p.ApartmentID
 			// Titles are count-free; the count goes in the detail (Part 1 rule).
-			params := ubyport.AlertParams{"property": p.Property}
+			params := ubyport.AlertParams{"property": p.Property, "count": p.Stalled}
 			if p.Cause != "" {
 				params["variant"] = p.Cause
 			}

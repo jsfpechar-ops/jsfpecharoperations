@@ -147,3 +147,33 @@ func TestRunDeadlinesStalledFailsTheHeartbeat(t *testing.T) {
 		t.Fatalf("last call %q, want /fail ping", last)
 	}
 }
+
+// A failed stalled check fails the heartbeat, raises job_failed and returns an error.
+func TestRunDeadlinesStalledErrorFailsTheJob(t *testing.T) {
+	f := &deadlinesFake{url: "https://hb.example/f"}
+	s := f.steps()
+	s.stalled = func() (int, error) { return 0, errors.New("boom") }
+	if _, err := runDeadlines(s); err == nil {
+		t.Fatal("failed stalled check returned no error; job_failed would resolve")
+	}
+	if last := f.calls[len(f.calls)-1]; last != "ping https://hb.example/f/fail" {
+		t.Fatalf("last call %q, want /fail ping", last)
+	}
+	if f.calls[len(f.calls)-2] != "failed" {
+		t.Fatalf("calls %v: job_failed not raised before the ping", f.calls)
+	}
+}
+
+// Nothing stalled and no failure: plain ping, no error.
+func TestRunDeadlinesStalledZeroPingsPlain(t *testing.T) {
+	f := &deadlinesFake{url: "https://hb.example/f"}
+	s := f.steps()
+	s.stalled = func() (int, error) { return 0, nil }
+	sum, err := runDeadlines(s)
+	if err != nil || sum.Stalled != 0 {
+		t.Fatalf("summary %+v, err %v", sum, err)
+	}
+	if last := f.calls[len(f.calls)-1]; last != "ping https://hb.example/f" {
+		t.Fatalf("last call %q, want plain ping", last)
+	}
+}
