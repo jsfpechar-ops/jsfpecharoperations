@@ -332,3 +332,44 @@ func TestHostCodesStagingNoLogin(t *testing.T) {
 		t.Error("a code was written")
 	}
 }
+
+// TestHostQueueKick: a saved TTLock code or a removal kicks the queue once; a refused
+// removal (busy) does not. A manual save is never kicked (it is not in the kick branch).
+func TestHostQueueKick(t *testing.T) {
+	kicks := 0
+	prev := queueKick
+	queueKick = func() { kicks++ }
+	t.Cleanup(func() { queueKick = prev })
+	on := map[string]string{"UBYHOST_DOOR_CODES": "1", "UBYHOST_TTLOCK_CLIENT_ID": "id", "UBYHOST_TTLOCK_CLIENT_SECRET": "secret"}
+	e := codeEnv(t, on)
+	e.codePost(i64(1), "12", "ttlock", nil)
+	if kicks != 1 {
+		t.Errorf("ttlock kicks = %d, want 1", kicks)
+	}
+	e.codePost(i64(1), "11", "remove", nil)
+	if kicks != 2 {
+		t.Errorf("remove kicks = %d, want 2", kicks)
+	}
+	e.exec(`UPDATE cleaning_code SET state = 'revoking' WHERE id = 3`)
+	e.codePost(i64(1), "12", "remove", nil)
+	if kicks != 2 {
+		t.Errorf("busy remove kicked: %d", kicks)
+	}
+	e.codePost(i64(1), "11", "manual", nil)
+	if kicks != 2 {
+		t.Errorf("manual kicked: %d", kicks)
+	}
+}
+
+// TestHostDeleteCodeButton: the Delete code form shows for a property with a code or a
+// pending code, and not for a property with no code.
+func TestHostDeleteCodeButton(t *testing.T) {
+	e := newHostEnv(t)
+	body := e.get(i64(1), "/cleaning/properties/12", "").Body.String()
+	mustContain(t, "page", body, `action="/cleaning/properties/12/code/remove"`, `name="_csrf"`, `data-confirm-message=`)
+	e.codePost(i64(1), "11", "remove", nil)
+	body = e.get(i64(1), "/cleaning/properties/11", "").Body.String()
+	if strings.Contains(body, `action="/cleaning/properties/11/code/remove"`) {
+		t.Errorf("delete button shown for a property with no code")
+	}
+}
