@@ -26,8 +26,9 @@ const AcceptedMaxSeverity = 2
 
 // FallbackText mirrors errors.FALLBACK_TEXT.
 var FallbackText = map[string]string{
-	"en": "UbyPort error %(code)s — refresh code lists on the property page to see the explanation.",
-	"cs": "Chyba UbyPortu %(code)s — vysvětlení uvidíte po obnovení číselníků na stránce ubytování.",
+	"en": "UbyPort error %(code)s: refresh code lists on the property page to see the explanation.",
+	"cs": "Chyba UbyPortu %(code)s: vysvětlení uvidíte po obnovení číselníků na stránce ubytování.",
+	"vi": "Lỗi UbyPort %(code)s: làm mới danh mục trên trang chỗ ở để xem giải thích.",
 }
 
 // NormaliseCode mirrors errors.normalise_code: "ERR_CZE_112", "0112" and "112" give "112".

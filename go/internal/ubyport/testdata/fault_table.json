@@ -1,0 +1,12 @@
+[
+  {
+    "key": "uby_runtime_no_errors",
+    "match": "Odpověď neobsahuje záznamy o chybách",
+    "text_key": "ubyport.fault.uby_runtime_no_errors"
+  },
+  {
+    "key": "uby_runtime",
+    "match": "Chyba běhu programu",
+    "text_key": "ubyport.fault.uby_runtime"
+  }
+]

@@ -9,7 +9,7 @@
   },
   "codebook_empty_text_falls_back": {
    "messages": [
-    "217: UbyPort error 217 — refresh code lists on the property page to see the explanation."
+    "217: UbyPort error 217: refresh code lists on the property page to see the explanation."
    ],
    "record_is_duplicate": false,
    "state": "error"
@@ -70,14 +70,14 @@
   },
   "err_cze_prefix_112": {
    "messages": [
-    "ERR_CZE_112: UbyPort error ERR_CZE_112 — refresh code lists on the property page to see the explanation."
+    "ERR_CZE_112: UbyPort error ERR_CZE_112: refresh code lists on the property page to see the explanation."
    ],
    "record_is_duplicate": false,
    "state": "accepted"
   },
   "header_plus_record": {
    "messages": [
-    "5: UbyPort error 5 — refresh code lists on the property page to see the explanation.",
+    "5: UbyPort error 5: refresh code lists on the property page to see the explanation.",
     "106: Invalid value in a guest field",
     "112: Reported after the deadline - the record was accepted"
    ],
@@ -93,7 +93,7 @@
   },
   "negative_5": {
    "messages": [
-    "-5: UbyPort error -5 — refresh code lists on the property page to see the explanation."
+    "-5: UbyPort error -5: refresh code lists on the property page to see the explanation."
    ],
    "record_is_duplicate": false,
    "state": "error"
@@ -140,21 +140,21 @@
   },
   "unknown_999_cs": {
    "messages": [
-    "999: Chyba UbyPortu 999 — vysvětlení uvidíte po obnovení číselníků na stránce ubytování."
+    "999: Chyba UbyPortu 999: vysvětlení uvidíte po obnovení číselníků na stránce ubytování."
    ],
    "record_is_duplicate": false,
    "state": "error"
   },
   "unknown_999_en": {
    "messages": [
-    "999: UbyPort error 999 — refresh code lists on the property page to see the explanation."
+    "999: UbyPort error 999: refresh code lists on the property page to see the explanation."
    ],
    "record_is_duplicate": false,
    "state": "error"
   },
   "zero_padded_0112": {
    "messages": [
-    "0112: UbyPort error 0112 — refresh code lists on the property page to see the explanation."
+    "0112: UbyPort error 0112: refresh code lists on the property page to see the explanation."
    ],
    "record_is_duplicate": false,
    "state": "accepted"
@@ -439,8 +439,9 @@
  "tables": {
   "accepted_max_severity": 2,
   "fallback_text": {
-   "cs": "Chyba UbyPortu %(code)s — vysvětlení uvidíte po obnovení číselníků na stránce ubytování.",
-   "en": "UbyPort error %(code)s — refresh code lists on the property page to see the explanation."
+   "cs": "Chyba UbyPortu %(code)s: vysvětlení uvidíte po obnovení číselníků na stránce ubytování.",
+   "en": "UbyPort error %(code)s: refresh code lists on the property page to see the explanation.",
+   "vi": "Lỗi UbyPort %(code)s: làm mới danh mục trên trang chỗ ở để xem giải thích."
   },
   "known_codes": {
    "1": "Incorrect file extension",
