@@ -833,3 +833,47 @@ def test_29_host_accounts_log_in_only_through_their_email_link(host):
         db.execute("DELETE FROM audit WHERE owner_user_id = ?", (user_id,))
         db.execute("DELETE FROM alert WHERE owner_user_id = ?", (user_id,))
         db.execute("DELETE FROM user_account WHERE id = ?", (user_id,))
+
+
+def test_99_fault_flash_names_the_fault(host, monkeypatch):
+    """A1: a SOAP fault is named in the flash, never shown as a failed connection."""
+    import urllib.parse
+
+    from app.ubyport.client import UbyportClient, UbyportTransportError
+
+    def answered_with_fault(*args, **kwargs):
+        raise UbyportTransportError(
+            "UbyPort returned a SOAP fault: Chyba běhu programu",
+            cause="fault",
+            detail="Chyba běhu programu",
+        )
+
+    monkeypatch.setattr(UbyportClient, "submit", answered_with_fault)
+    host_adds_guest(host, MANUAL_STAY["id"], surname="Flash", doc_number="P1100221")
+    response = host.post(f"/reservations/{MANUAL_STAY['id']}/submit", follow_redirects=False)
+    location = urllib.parse.unquote_plus(response.headers["location"])
+    assert "Chyba běhu programu" in location
+    assert "couldn't be reached" not in location
+    alert = db.query_one(
+        "SELECT * FROM alert WHERE kind = 'submission_transport' AND resolved_at IS NULL"
+    )
+    assert alert is not None
+    assert any("answered" in str(value) for value in alert)
+
+
+def test_99_outcome_unknown_flash_is_unchanged(host, monkeypatch):
+    """A1: an ambiguous outcome keeps its own copy and its check-before-resend advice."""
+    import urllib.parse
+
+    from app.ubyport.client import UbyportClient, UbyportOutcomeUnknownError
+
+    def ambiguous(*args, **kwargs):
+        raise UbyportOutcomeUnknownError("timeout")
+
+    monkeypatch.setattr(UbyportClient, "submit", ambiguous)
+    host_adds_guest(host, MANUAL_STAY["id"], surname="Flash", doc_number="P1100221")
+    response = host.post(f"/reservations/{MANUAL_STAY['id']}/submit", follow_redirects=False)
+    location = urllib.parse.unquote_plus(response.headers["location"])
+    assert "Check UbyPort before sending again" in location
+    assert "Chyba" not in location
+    assert "nothing was filed" not in location
