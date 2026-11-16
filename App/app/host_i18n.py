@@ -792,11 +792,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "flash.apartments.settings_saved": "Saved settings for %(name)s.",
         "flash.apartments.archived": "“%(name)s” moved to Archived. Its history is kept.",
         "flash.apartments.restored": "Property restored from archive.",
-        "flash.apartments.letter_test_ok": "Saved. The login and password work.",
+        "flash.apartments.letter_test_ok": "Saved. UbyPort accepted the login. The test files no report, so it does not prove filing works.",
         "flash.apartments.letter_saved_untested": "Saved. Not tested yet, because no password was typed. Type it and test the connection.",
         "flash.apartments.letter_new_login_no_password": "Saved. Type the password to test the new login.",
         "flash.apartments.connection_ok": (
-            "Connection works. UbyPort accepted your web-service login."
+            "Login accepted: UbyPort accepted your web-service login. The test files no report, so it does not prove filing works."
         ),
         "flash.apartments.codelists_refreshed": "Code lists refreshed from UbyPort: %(countries)s countries, %(purposes)s purposes, %(errors)s error codes.",
         "flash.feeds.added": "Calendar added. %(count)s stays imported.",
@@ -2972,11 +2972,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "flash.apartments.settings_saved": "Nastavení pro %(name)s bylo uloženo.",
         "flash.apartments.archived": "„%(name)s“ přesunuto do archivu. Historie zůstává zachována.",
         "flash.apartments.restored": "Ubytování bylo obnoveno z archivu.",
-        "flash.apartments.letter_test_ok": "Uloženo. Přihlašovací jméno a heslo fungují.",
+        "flash.apartments.letter_test_ok": "Uloženo. UbyPort přihlášení přijal. Test nic nepodává, takže neověřuje, že podání funguje.",
         "flash.apartments.letter_saved_untested": "Uloženo. Zatím neotestováno, protože nebylo zadáno heslo. Napište ho a otestujte spojení.",
         "flash.apartments.letter_new_login_no_password": "Uloženo. Pro test nového přihlašovacího jména napište heslo.",
         "flash.apartments.connection_ok": (
-            "Spojení funguje. UbyPort přijal vaše přihlašovací údaje."
+            "Přihlášení přijato: UbyPort přijal vaše přihlašovací údaje k webové službě. Test nic nepodává, takže neověřuje, že podání funguje."
         ),
         "flash.apartments.codelists_refreshed": "Číselníky byly obnoveny z UbyPortu: %(countries)s zemí, %(purposes)s účelů, %(errors)s chybových kódů.",
         "flash.feeds.added": "Kalendář byl přidán. Importováno %(count)s pobytů.",
