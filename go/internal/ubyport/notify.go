@@ -320,12 +320,17 @@ type OutboxMail struct {
 	Payload string
 }
 
+// MailDB is the part of pgxpool.Pool and pgx.Tx that EnqueueMail uses.
+type MailDB interface {
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+}
+
 // EnqueueMail is mail.enqueue for one row. An existing idempotency key returns
 // its id; a unique-violation race returns the winner's id. Errors carry no
 // address, text or key.
-func EnqueueMail(ctx context.Context, pool *pgxpool.Pool, m OutboxMail) (int64, error) {
+func EnqueueMail(ctx context.Context, q MailDB, m OutboxMail) (int64, error) {
 	var existing int64
-	err := pool.QueryRow(ctx, `SELECT id FROM email_outbox WHERE idempotency_key = $1`, m.Key).Scan(&existing)
+	err := q.QueryRow(ctx, `SELECT id FROM email_outbox WHERE idempotency_key = $1`, m.Key).Scan(&existing)
 	if err == nil {
 		return existing, nil
 	}
@@ -339,7 +344,7 @@ func EnqueueMail(ctx context.Context, pool *pgxpool.Pool, m OutboxMail) (int64, 
 	}
 	ts := UTCNow()
 	var id int64
-	err = pool.QueryRow(ctx,
+	err = q.QueryRow(ctx,
 		`INSERT INTO email_outbox (idempotency_key, kind, reservation_id, apartment_id, owner_user_id,
 		   to_email, cc_email, subject, payload, state, attempts, next_attempt_at, created_at, updated_at)
 		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'queued', 0, $10, $10, $10)
@@ -353,7 +358,7 @@ func EnqueueMail(ctx context.Context, pool *pgxpool.Pool, m OutboxMail) (int64, 
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
 		// Lost a race with another worker: the row exists, return its id.
-		if err := pool.QueryRow(ctx, `SELECT id FROM email_outbox WHERE idempotency_key = $1`, m.Key).Scan(&id); err != nil {
+		if err := q.QueryRow(ctx, `SELECT id FROM email_outbox WHERE idempotency_key = $1`, m.Key).Scan(&id); err != nil {
 			return 0, errNotifyMail
 		}
 		return id, nil
