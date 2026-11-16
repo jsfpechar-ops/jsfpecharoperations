@@ -333,8 +333,8 @@ func TestHostCodesStagingNoLogin(t *testing.T) {
 	}
 }
 
-// TestHostQueueKick: a saved TTLock code or a removal kicks the queue once; a refused
-// removal (busy) does not. A manual save is never kicked (it is not in the kick branch).
+// TestHostQueueKick: a saved TTLock code kicks the queue once, and so does a
+// removal. A manual save is never kicked.
 func TestHostQueueKick(t *testing.T) {
 	kicks := 0
 	prev := queueKick

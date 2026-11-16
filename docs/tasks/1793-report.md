@@ -26,3 +26,11 @@ Status: blocked. Steps 2 to 4 are committed. Stopped because the DB-backed tests
 
 ## Owner steps
 - Set `UBYHOST_TEST_DATABASE_URL` to a test Postgres and rerun: `cd go && go test ./internal/web/cleaning/... ./cmd/ubyhost-web/... -count=1 -v | grep -- '--- SKIP' | tail -30`
+
+## Orchestrator review (2026-11-16)
+
+- Database tests run against a local Postgres 16: `go test ./internal/web/cleaning/... ./cmd/ubyhost-web/...` passes. The only skips are 3 old probe tests in `cmd/ubyhost-web`. The executor's first `TestHostQueueKick` used a property without a listed lock; fixed (locks_json set, pending code cleared).
+- Page checked on the Go-rendered `/cleaning/properties/12` (property with a saved code), served with the repo's CSS, no JavaScript. One screenshot each at 390, 768 and 1280 px in the project folder `ux-shots/cleaning-code/`. At all three widths the panel shows the PIN, the pending notice, the **Remove saved code** button (outlined, danger) on its own row above **Create permanent TTLock code**, then the lock link. No overflow, no wrapped or squeezed labels. The `?` help icons look odd only because JavaScript was off in the screenshots; they are unchanged by this PR.
+- `App/tests/layout_lint.js` (the lint behind `test_layout_lint_browser.py`) run on that page at 320, 360, 390, 768, 1024, 1280 and 1440 px: no findings. `test_layout_lint_browser.py` itself needs the Python app and does not cover the Go cleaning page, so it was not run.
+- Design-system checklist: the button reuses `ui-btn ui-btn-danger`; no new copy, no new colour.
+- Known limit: a kick that arrives while another pass is running is dropped; the 5-minute job picks that row up.
