@@ -1,7 +1,7 @@
 # 1793: Cleaning code made at once, with a visible delete button
 
-Status: todo — scoped 2026-11-16 from the owner's request (a click on "Create permanent TTLock code" waits up to 5 minutes for the `door_codes` job). Exact diffs still to be added by the exact-diff pass (anchors, sha256 table); the executor must not start before that.
-Depends on: 1771 registered the Go `door_codes` job (done in PR 1036), `door_codes` in both job lists | Base commit: current tip of the working branch | Branch: task/1793-cleaning-code-run-at-once
+Status: todo — exact-diff pass done 2026-11-16 (§10), ready for the executor. Owner approved building it on 2026-11-16 ("cleaning code works, lets continue").
+Depends on: the Go `door_codes` job (PR 1036, merged); the owner's real-lock cleaning test passed 2026-11-16 | Base commit: current tip of the working branch | Branch: task/1793-cleaning-code-run-at-once
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Tier: B (small, one behaviour; fresh review of the full diff before ready)
 
@@ -9,7 +9,7 @@ Tier: B (small, one behaviour; fresh review of the full diff before ready)
 
 Today a host who presses **Create permanent TTLock code** (or **Remove saved code**) on `/cleaning/properties/<id>` only queues a `cleaning_code` row. The Go `door_codes` job picks it up on its next run, up to 5 minutes later. After the row is saved, the Go web process should run one cleaner-queue pass at once in the background, so the code is on the lock within seconds. The 5-minute job stays as the fallback and the only retry path.
 
-**Visible delete button (owner, 2026-11-16).** Today the only way to remove a saved code is a collapsed "Remove saved code" section lower on the page (`cleaning_settings.tmpl`, the `<details class="cleaning-remove">` block), which the owner did not find. Add a visible **Delete code** button in the Door access code panel, next to the PIN, shown whenever the property has a code or a pending code. It posts to the existing `/cleaning/properties/<id>/code/remove` route, so a TTLock code is revoked through the same queue (and the kick above makes it immediate), and a manual code is hidden as today. No new route, no new state.
+**Visible delete button (owner, 2026-11-16; the label stays the existing "Remove saved code").** Today the only way to remove a saved code is a collapsed "Remove saved code" section lower on the page (`cleaning_settings.tmpl`, the `<details class="cleaning-remove">` block), which the owner did not find. Add a visible **Delete code** button in the Door access code panel, next to the PIN, shown whenever the property has a code or a pending code. It posts to the existing `/cleaning/properties/<id>/code/remove` route, so a TTLock code is revoked through the same queue (and the kick above makes it immediate), and a manual code is hidden as today. No new route, no new state.
 
 **Not in scope:** guest codes (timed codes keep their own flow), the Python cleaning route, the job interval, the call budget (one call per code, the same as today).
 
@@ -33,7 +33,7 @@ Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (the PIN is 
    - `init()` calls `cleaning.SetQueueKick(...)`.
    - The kick returns at once. It starts one goroutine that: returns if `UBYHOST_DOOR_CODES` is not on (use `doorCodesOn`); returns if `door_codes` is not in `UBYHOST_GO_JOB_KINDS` (so the Python worker and Go never both run the queue); takes a process-wide mutex with `TryLock` and returns if a pass is already running (the 5-minute job covers anything missed); builds the deps once with `sync.Once` (`newDoorCodesParts` plus `systemClock`, cipher `parts.Keys`, `StagingNoLogin: stagingNoLogin(os.Getenv)`); runs `doorcleaning.ProcessQueue` with a 60 second timeout context that does not depend on the request context.
    - A setup or pass error is logged with `slog.Warn` (no PIN, no row contents) and never shown to the host.
-4. Delete button: in `cleaning_settings.tmpl`, inside the code panel right after the PIN line and the pending/failed notices, add `{{if or .Code.Value .Code.Pending}}` a small form (`method="post"`, `action="/cleaning/properties/{{.Home.ID}}/code/remove"`, the `_csrf` input) with one `ui-btn ui-btn-quiet` submit button labelled by a new key `delete_code`. It carries `data-confirm` and `data-confirm-message` with the existing `remove_code_hint` text, and works without JavaScript (a plain POST). Keep the old collapsed section or remove it; the brief's choice: remove it, so one explanation lives in one place (rule 9), and keep the `remove_code_hint` key for the confirm text. Add `delete_code` to the cleaning catalog in all three languages (cs: "Smazat kód", en: "Delete code", vi: "Xóa mã").
+4. Delete button: in `cleaning_settings.tmpl`, inside the code panel right after the PIN line and the pending/failed notices, add `{{if or .Code.Value .Code.Pending}}` a small form (`method="post"`, `action="/cleaning/properties/{{.Home.ID}}/code/remove"`, the `_csrf` input) with one `ui-btn ui-btn-danger` submit button labelled by the existing key `remove_code`. It carries `data-confirm` and `data-confirm-message` with the existing `remove_code_hint` text, and works without JavaScript (a plain POST). Keep the old collapsed section or remove it; the brief's choice: remove it, so one explanation lives in one place (rule 9), and keep the `remove_code_hint` key for the confirm text.  No new i18n key: `i18n.json` is generated from Python (`App/scripts/go_cleaning_i18n.py`) and must not be edited.
 5. The notice text on the page is unchanged: "TTLock code is being prepared. The current code stays available." stays until the row is `active`. After the kick the host reloads and sees the PIN.
 
 ## 3. Files
@@ -44,8 +44,6 @@ Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (the PIN is 
 | `go/internal/web/cleaning/host_codes.go` | edit | call the kick after the `ttlock` and `remove` actions |
 | `go/internal/web/cleaning/host_codes_test.go` | edit | tests below |
 | `go/internal/web/cleaning/hosttemplates/cleaning_settings.tmpl` | edit | visible Delete code button |
-| `go/internal/web/cleaning/i18n.json` (and its key list if one exists) | edit | `delete_code` in cs, en, vi |
-| `go/internal/web/cleaning/testdata/cleaning_golden.json` | edit | only the expected page-body change (accepted difference, list it in the report) |
 | `go/cmd/ubyhost-web/cleaning_queue_kick.go` | create | the background pass |
 | `go/cmd/ubyhost-web/cleaning_queue_kick_test.go` | create | gating tests |
 | `docs/tasks/1793-report.md` | create | the report |
@@ -103,3 +101,142 @@ Stop and write the report instead of continuing when: an anchor is not found ver
 ## Owner steps
 
 After deploy: press **Create permanent TTLock code** on a pilot property, reload after 10 seconds, type the PIN with `#` on the keypad, press the new **Delete code** button next to the PIN and confirm, and check the code no longer opens the lock.
+
+## 10. Exact diffs
+
+All paths from the repo root. Each anchor is a `grep -cF` check that must print `1` before the edit. Anything else: STOP.
+
+**10.1 `go/internal/web/cleaning/host.go`** — anchor: `type hostServer struct {`. Insert this block directly above the line `// hostServer holds what the host handlers share.`:
+
+```go
+// queueKick is set by cmd/ubyhost-web (SetQueueKick). It runs one cleaner-queue pass in the
+// background after a TTLock code was queued or a code was removed. Nil means no kick.
+var queueKick func()
+
+// SetQueueKick sets the function that handlers call after a saved TTLock code request.
+func SetQueueKick(f func()) { queueKick = f }
+
+// kickQueue calls the kick, if one is set. It never blocks the request.
+func kickQueue() {
+	if queueKick != nil {
+		queueKick()
+	}
+}
+
+```
+
+**10.2 `go/internal/web/cleaning/host_codes.go`** — anchor: `redirect(w, "/cleaning/properties/"+strconv.FormatInt(id, 10)+"?notice=saved")` (exactly one line). Insert directly above it, inside `codeAction`, after the `if key != "" { ... return }` block:
+
+```go
+		if a := r.PathValue("action"); a == "ttlock" || a == "remove" {
+			kickQueue()
+		}
+```
+
+**10.3 `go/internal/web/cleaning/hosttemplates/cleaning_settings.tmpl`**
+- Anchor: the line that starts with `{{if or .Code.Value .Code.Pending}}<details class="cleaning-panel cleaning-remove">` (one line). Delete that whole line.
+- Anchor: the line that starts with `<form class="cleaning-actions" method="post" action="/cleaning/properties/{{.Home.ID}}/code/ttlock">`. Insert this one line directly above it (after the `.FailedRevoke` line):
+
+```
+{{if or .Code.Value .Code.Pending}}<form class="cleaning-actions" method="post" action="/cleaning/properties/{{.Home.ID}}/code/remove" data-confirm data-confirm-message="{{ct $.Lang "remove_code_hint"}}"><input type="hidden" name="_csrf" value="{{csrf}}"><button class="ui-btn ui-btn-danger" type="submit">{{ct $.Lang "remove_code"}}</button></form>{{end}}
+```
+
+**10.4 new `go/cmd/ubyhost-web/cleaning_queue_kick.go`** (package `main`; check first that no file declares `cleaningQueuePass`):
+
+```go
+package main
+
+// After a host saves or removes a cleaning TTLock code, run one cleaner-queue pass in the
+// background so the lock is updated in seconds. The 5-minute door_codes job stays as the
+// fallback and the retry path. The pass runs only when the Go job owns the queue.
+
+import (
+	"context"
+	"log/slog"
+	"net/http"
+	"os"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	doorcleaning "github.com/jsfpechar-ops/jsfpecharoperations/go/internal/doorcodes/cleaning"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/cleaning"
+)
+
+var (
+	cleaningKickMu   sync.Mutex
+	cleaningKickOnce sync.Once
+	cleaningKickDeps doorcleaning.QueueDeps
+	cleaningKickErr  error
+	// cleaningQueuePass is replaced in tests.
+	cleaningQueuePass = runCleaningQueuePass
+)
+
+func init() {
+	registerRoutes(func(_ *http.ServeMux, _ *metrics, pool *pgxpool.Pool) {
+		cleaning.SetQueueKick(func() { cleaningKick(pool) })
+	})
+}
+
+// goOwnsDoorCodes is true when door codes are on and door_codes is a Go job kind.
+func goOwnsDoorCodes(getenv func(string) string) bool {
+	if !doorCodesOn(getenv("UBYHOST_DOOR_CODES")) {
+		return false
+	}
+	for _, k := range strings.Split(getenv("UBYHOST_GO_JOB_KINDS"), ",") {
+		if strings.TrimSpace(k) == "door_codes" {
+			return true
+		}
+	}
+	return false
+}
+
+// cleaningKick returns at once. The pass runs in a goroutine; a pass already running makes
+// this a no-op (the 5-minute job covers anything missed).
+func cleaningKick(pool *pgxpool.Pool) {
+	if !goOwnsDoorCodes(os.Getenv) {
+		return
+	}
+	go func() {
+		if !cleaningKickMu.TryLock() {
+			return
+		}
+		defer cleaningKickMu.Unlock()
+		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+		defer cancel()
+		if err := cleaningQueuePass(ctx, pool); err != nil {
+			slog.Warn("cleaning queue kick failed", "err", err)
+		}
+	}()
+}
+
+// runCleaningQueuePass builds the deps once, then runs one ProcessQueue pass.
+func runCleaningQueuePass(ctx context.Context, pool *pgxpool.Pool) error {
+	cleaningKickOnce.Do(func() {
+		parts, err := newDoorCodesParts(pool)
+		if err != nil {
+			cleaningKickErr = err
+			return
+		}
+		cleaningKickDeps = doorcleaning.QueueDeps{
+			TTLock:         parts.Client,
+			Cipher:         parts.Keys,
+			Clock:          systemClock{},
+			StagingNoLogin: stagingNoLogin(os.Getenv),
+		}
+	})
+	if cleaningKickErr != nil {
+		return cleaningKickErr
+	}
+	_, err := doorcleaning.ProcessQueue(ctx, pool, cleaningKickDeps)
+	return err
+}
+```
+
+The pool comes from the `registerRoutes` callback (`registry.go`), as the other `register_web_*.go` files do. Tests set `cleaningQueuePass` to a fake with the same two-argument signature.
+
+**10.5 tests** (`host_codes_test.go` and new `cleaning_queue_kick_test.go`): follow the cases in the Tests list above. The kick test replaces `cleaningQueuePass`, sets `UBYHOST_DOOR_CODES` and `UBYHOST_GO_JOB_KINDS` with `t.Setenv`, and waits on a channel (never `time.Sleep` longer than 2 seconds). The page test reuses the existing fixture style in `host_codes_test.go` (see the test containing `TTLock code is being prepared.`).
+
+**10.6 golden:** `testdata/cleaning_golden.json` has 0 occurrences of `cleaning-remove` and shows no saved code, so it must not change. If `go test ./internal/web/cleaning/...` fails on a golden: STOP.
