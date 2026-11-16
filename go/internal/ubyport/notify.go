@@ -193,7 +193,7 @@ func QueueSubmissionProblemMail(ctx context.Context, pool *pgxpool.Pool, getenv 
 	appBaseURL, publicBaseURL string, apt ApartmentRef, submissionID int64,
 	state, reason string, transport bool, now time.Time) (int64, error) {
 	return queueSubmissionProblem(ctx, pool, getenv, appBaseURL, publicBaseURL, apt, submissionID,
-		state, reason, transport, now, "", "")
+		state, reason, transport, now, "", "", "")
 }
 
 // queueSubmissionProblem is QueueSubmissionProblemMail with two optional
@@ -201,7 +201,7 @@ func QueueSubmissionProblemMail(ctx context.Context, pool *pgxpool.Pool, getenv 
 // keeps submission_problem:<apartment>:<state>:<date>).
 func queueSubmissionProblem(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string,
 	appBaseURL, publicBaseURL string, apt ApartmentRef, submissionID int64,
-	state, reason string, transport bool, now time.Time, cc, key string) (int64, error) {
+	state, reason string, transport bool, now time.Time, cc, key, cause string) (int64, error) {
 	// mail.py mail_enabled: UBYHOST_MAIL_BACKEND is console or ses.
 	backend := strings.ToLower(strings.TrimSpace(getenv("UBYHOST_MAIL_BACKEND")))
 	if backend != "console" && backend != "ses" {
@@ -231,7 +231,7 @@ func queueSubmissionProblem(ctx context.Context, pool *pgxpool.Pool, getenv func
 		return 0, err
 	}
 	content, err := mail.BuildSubmissionProblem(appBaseURL, publicBaseURL, "en", apt.InternalName,
-		state, reason, transport, stays, submissionID)
+		state, reason, transport, stays, submissionID, cause)
 	if err != nil {
 		return 0, errNotifyBuild
 	}

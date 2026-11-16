@@ -41,6 +41,11 @@ class UbyportTransportError(UbyportError):
     rather than swallow it, and 10.2(e) requires that no data is lost.
     """
 
+    def __init__(self, message: str = "", *, cause: str = "", detail: str = "") -> None:
+        super().__init__(message)
+        self.cause = cause
+        self.detail = detail
+
 
 class UbyportOutcomeUnknownError(UbyportTransportError):
     """The request may have reached UbyPort, so whether it was filed is unknown.
@@ -114,7 +119,8 @@ class UbyportClient:
             return None
         if HttpNtlmAuth is None:
             raise UbyportTransportError(
-                "requests_ntlm is not installed, so NTLM authentication is unavailable."
+                "requests_ntlm is not installed, so NTLM authentication is unavailable.",
+                cause="setup",
             )
         # The police authenticate web-service accounts against the EXRESORTMV
         # domain, so the login must be sent in DOMAIN\user form.
@@ -140,7 +146,8 @@ class UbyportClient:
         except requests.RequestException as exc:
             if _definitely_not_sent(exc):
                 raise UbyportTransportError(
-                    f"Could not reach UbyPort at {self.endpoint}: {exc}"
+                    f"Could not reach UbyPort at {self.endpoint}: {exc}",
+                    cause="dial",
                 ) from exc
             raise UbyportOutcomeUnknownError(
                 f"UbyPort did not answer after the request was sent (outcome unknown): {exc}"
@@ -150,22 +157,31 @@ class UbyportClient:
         if response.status_code == 401:
             raise UbyportAuthError(
                 "UbyPort rejected the credentials (HTTP 401). Check that this is a web-service "
-                "login (UBY-WS...) and that it is registered for this IDUB."
+                "login (UBY-WS...) and that it is registered for this IDUB.",
+                cause="auth",
             )
         if 300 <= response.status_code < 400:
             raise UbyportTransportError(
-                f"UbyPort returned an unexpected redirect (HTTP {response.status_code})."
+                f"UbyPort returned an unexpected redirect (HTTP {response.status_code}).",
+                cause="redirect",
+                detail=f"HTTP {response.status_code}",
             )
         fault = soap.parse_fault(text)
         if fault:
-            raise UbyportTransportError(f"UbyPort returned a SOAP fault: {fault}")
+            clean = soap.clean_fault_text(fault)
+            raise UbyportTransportError(
+                f"UbyPort returned a SOAP fault: {clean}", cause="fault", detail=clean
+            )
         if response.status_code >= 500:
             raise UbyportOutcomeUnknownError(
                 f"UbyPort returned HTTP {response.status_code} (outcome unknown): {text[:400]}"
             )
         if response.status_code >= 400:
+            # The body can be an HTML page or echo request values: never keep it.
             raise UbyportTransportError(
-                f"UbyPort returned HTTP {response.status_code}: {text[:400]}"
+                f"UbyPort returned HTTP {response.status_code}.",
+                cause="http4xx",
+                detail=f"HTTP {response.status_code}",
             )
         return text
 

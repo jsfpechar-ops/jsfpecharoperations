@@ -126,11 +126,12 @@ func RecordOutcomeUnknown(ctx context.Context, pool *pgxpool.Pool, enc FieldEncr
 	})
 }
 
-// RecordTransportError stores the state transport_error. Guests are not touched.
-func RecordTransportError(ctx context.Context, pool *pgxpool.Pool, submissionID int64, errText, finished string) error {
+// RecordTransportError stores the state transport_error with its cause and
+// fault-table key (A1b P1). Empty cause or errorCode is stored as NULL. Guests are not touched.
+func RecordTransportError(ctx context.Context, pool *pgxpool.Pool, submissionID int64, errText, finished, cause, errorCode string) error {
 	_, err := pool.Exec(ctx,
-		`UPDATE submission SET state = 'transport_error', finished_at = $1, error_text = $2 WHERE id = $3`,
-		finished, errText, submissionID)
+		`UPDATE submission SET state = 'transport_error', finished_at = $1, error_text = $2, cause = $3, error_code = $4 WHERE id = $5`,
+		finished, errText, nullIfEmpty(cause), nullIfEmpty(errorCode), submissionID)
 	return err
 }
 

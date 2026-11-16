@@ -159,7 +159,7 @@ func TestStoreTransportError(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := RecordTransportError(ctx, pool, sub, "connection reset", storeLater); err != nil {
+	if err := RecordTransportError(ctx, pool, sub, "connection reset", storeLater, "", ""); err != nil {
 		t.Fatal(err)
 	}
 	row := storeRead(t, pool, "submission", sub, "state", "finished_at", "error_text")

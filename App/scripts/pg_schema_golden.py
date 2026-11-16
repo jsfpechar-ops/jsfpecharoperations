@@ -145,7 +145,7 @@ def _dump(obj) -> str:
 
 
 def expected_schema() -> dict:
-    columns = db._expected_sqlite_columns()
+    columns = db.postgres_expected_columns()
     columns["schema_migrations"] = [
         ("version", "INTEGER", 1, 1),
         ("name", "TEXT", 1, 0),

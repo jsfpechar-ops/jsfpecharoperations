@@ -14,6 +14,8 @@ counsel.
 | Render | Staging/demo hosting | [render.com/dpa](https://render.com/dpa), DPF-certified | Only used with synthetic data; never real Guest Data | TODO |
 | Google Drive | Optional off-site backup | **Workspace/Cloud only** — the Cloud Data Processing Addendum. A consumer account has no processor DPA | Retire unless it is a Workspace account (OPS-2) | TODO |
 | Hetzner Online GmbH | Conditional disaster-recovery host (replacement server, restore drills) | Hetzner data processing agreement (Art. 28 GDPR), concluded in the Hetzner console | EU: Germany or Finland; record the server location here | TODO |
+| Mistral AI SAS (France) | Conditional AI provider for Havel and Leon (`UBYHOST_AI_PROVIDER=mistral`) | Mistral DPA, legal.mistral.ai/terms/data-processing-addendum (SCCs for transfers outside the EEA); **not yet accepted for our account** | Global endpoint `api.mistral.ai` (no location promise); `api.eu.mistral.ai` available at +10%. ZDR **not activated** (request pending). See [mistral-ai draft](../privacy/drafts/mistral-ai.md) | TODO |
+| Anthropic, PBC (USA) | Conditional AI provider for Havel and Leon (`UBYHOST_AI_PROVIDER=anthropic`) | Anthropic DPA with SCCs (havel-ai draft A2, A3); no DPF | Global inference by default; no ZDR | TODO |
 | Support mailbox (`support@ubyhost.com`) | Support channel | Provider not yet identified | Identify it, sign its DPA, and add it to `/subprocessors` | TODO |
 
 The **Czech Police (UbyPort)** is a statutory recipient, not a subprocessor, and

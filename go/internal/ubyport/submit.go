@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
@@ -60,6 +61,8 @@ type BatchResult struct {
 	State        string
 	Error        string
 	Stamp        string
+	Cause        string
+	Detail       string
 }
 
 const batchDemoSource = "demo"
@@ -108,7 +111,7 @@ func SubmitBatch(ctx context.Context, d BatchDeps, s Sender, apt Apartment, ref 
 		if errors.Is(err, ErrOutcomeUnknown) {
 			return batchOutcomeUnknown(ctx, d, ref, subID, guestIDs, ue)
 		}
-		return batchTransport(ctx, d, ref, subID, ue)
+		return batchTransport(ctx, d, ref, subID, guestIDs, ue)
 	}
 
 	if err := ResolveAlert(ctx, d.Pool, fmt.Sprintf("submission_transport:%d", ref.ID)); err != nil {
@@ -123,6 +126,11 @@ func SubmitBatch(ctx context.Context, d BatchDeps, s Sender, apt Apartment, ref 
 	plan := PlanOutcome(outcomes, res, subID, now, d.Codebook, d.Severities, lookup)
 	if err := RecordOutcome(ctx, d.Pool, d.Enc, subID, plan, res, now); err != nil {
 		return BatchResult{}, err
+	}
+	if plan.State == "ok" || plan.State == "ok_duplicate" || plan.State == "partial" {
+		if err := ResolveAlert(ctx, d.Pool, fmt.Sprintf("submission_transport_repeated:%d", ref.ID)); err != nil {
+			return BatchResult{}, err
+		}
 	}
 
 	name := ref.InternalName
@@ -178,7 +186,7 @@ func SubmitBatch(ctx context.Context, d BatchDeps, s Sender, apt Apartment, ref 
 		); err != nil {
 			return BatchResult{}, err
 		}
-		batchMail(ctx, d, ref, subID, plan.State, detail, false)
+		batchMail(ctx, d, ref, subID, plan.State, detail, false, "")
 		if _, err := QueueFilingProblemPush(ctx, d.Pool, d.Getenv, ref, subID, batchNow(d)); err != nil {
 			log.Printf("filing_problem_push_failed submission_id=%d", subID)
 		}
@@ -237,18 +245,60 @@ func batchOutcomeUnknown(ctx context.Context, d BatchDeps, ref ApartmentRef, sub
 	return BatchResult{SubmissionID: subID, State: "outcome_unknown", Error: msg}, nil
 }
 
+// transportRepeatAfter is reporting.TRANSPORT_REPEAT_ALERT_AFTER (A1c).
+const transportRepeatAfter = 3
+
+// transportLogLine is the Python ubyport_submission_failed line (reporting.py
+// 1864-1874) plus the A1 cause. Ids, env and endpoint only: never the login,
+// the password, the message text or guest data.
+func transportLogLine(ref ApartmentRef, subID int64, env, endpoint string, guestIDs []int64, ue *Error) string {
+	owner := "None"
+	if ref.OwnerUserID != nil {
+		owner = strconv.FormatInt(*ref.OwnerUserID, 10)
+	}
+	errorType := "UbyportTransportError"
+	if errors.Is(ue, ErrAuth) {
+		errorType = "UbyportAuthError"
+	}
+	return fmt.Sprintf("ubyport_submission_failed apartment_id=%d owner_user_id=%s submission_id=%d env=%s endpoint=%s guest_ids=%v error_type=%s cause=%s",
+		ref.ID, owner, subID, env, endpoint, guestIDs, errorType, ue.Cause)
+}
+
 // batchTransport is the transport branch (reporting.py 1613-1660). Guests stay pending.
-func batchTransport(ctx context.Context, d BatchDeps, ref ApartmentRef, subID int64, ue *Error) (BatchResult, error) {
+func batchTransport(ctx context.Context, d BatchDeps, ref ApartmentRef, subID int64, guestIDs []int64, ue *Error) (BatchResult, error) {
 	msg := ue.Error()
-	log.Printf("ubyport_submission_failed apartment_id=%d submission_id=%d", ref.ID, subID)
-	if err := RecordTransportError(ctx, d.Pool, subID, msg, UTCNow()); err != nil {
+	answered := ue.Cause == "fault" || ue.Cause == "http4xx" || ue.Cause == "redirect" || ue.Cause == "auth"
+	params := AlertParams{"property": ref.InternalName, "error": msg}
+	summary := fmt.Sprintf("%s: could not deliver data to UbyPort.", ref.InternalName)
+	if ue.Cause == "auth" {
+		params["variant"] = "auth"
+	} else if answered {
+		params["variant"] = "answered"
+	}
+	if answered {
+		summary = fmt.Sprintf("%s: UbyPort answered with an error; nothing was filed.", ref.InternalName)
+	}
+	definite := ue.Cause == "fault" || ue.Cause == "auth" || ue.Cause == "http4xx"
+	streak, serr := transportStreak(ctx, d.Pool, ref.ID)
+	if serr != nil {
+		// A failed read must not leave the submission unrecorded: count from 0.
+		log.Printf("submission_streak_read_failed apartment_id=%d err=%v", ref.ID, serr)
+		streak = 0
+	}
+	if definite {
+		streak++
+	}
+	params["streak"] = streak
+	log.Print(transportLogLine(ref, subID, ubyportEnv(d.Getenv), d.Endpoint, guestIDs, ue))
+	if err := RecordTransportError(ctx, d.Pool, subID, msg, UTCNow(), ue.Cause, FaultCodeFor(ue.Cause, ue.Detail)); err != nil {
 		return BatchResult{}, err
 	}
+	escalateTransportChain(ctx, d, ref, subID, msg, ue.Cause)
 	name := ref.InternalName
 	if err := RaiseAlert(ctx, d.Pool, "critical", "submission_transport",
-		fmt.Sprintf("%s: could not deliver data to UbyPort.", name), msg,
+		summary, msg,
 		fmt.Sprintf("submission_transport:%d", ref.ID), &ref.ID, nil, nil,
-		AlertParams{"property": name, "error": msg},
+		params,
 	); err != nil {
 		return BatchResult{}, err
 	}
@@ -261,8 +311,17 @@ func batchTransport(ctx context.Context, d BatchDeps, ref ApartmentRef, subID in
 			return BatchResult{}, err
 		}
 	}
-	batchMail(ctx, d, ref, subID, "transport_error", msg, true)
-	return BatchResult{SubmissionID: subID, State: "transport_error", Error: msg}, nil
+	if definite && streak >= transportRepeatAfter {
+		if err := RaiseAlert(ctx, d.Pool, "critical", "submission_transport_repeated",
+			fmt.Sprintf("%s: UbyPort answered with an error %d times in a row.", name, streak), msg,
+			fmt.Sprintf("submission_transport_repeated:%d", ref.ID), &ref.ID, nil, nil,
+			repeatedTransportParams(ctx, d.Pool, name, streak, msg, ref.ID),
+		); err != nil {
+			return BatchResult{}, err
+		}
+	}
+	batchMail(ctx, d, ref, subID, "transport_error", msg, true, ue.Cause)
+	return BatchResult{SubmissionID: subID, State: "transport_error", Error: msg, Cause: ue.Cause, Detail: ue.Detail}, nil
 }
 
 // batchStuck raises one submission_stuck card per stay, in first-seen order
@@ -307,9 +366,9 @@ func batchGuestName(g Guest, id int64) string {
 
 // batchMail is mail_notify.submission_problem. Best-effort: the error is logged
 // without the address or the reason text.
-func batchMail(ctx context.Context, d BatchDeps, ref ApartmentRef, subID int64, state, reason string, transport bool) {
-	if _, err := QueueSubmissionProblemMail(ctx, d.Pool, d.Getenv, d.AppBaseURL, d.PublicBaseURL,
-		ref, subID, state, reason, transport, batchNow(d)); err != nil {
+func batchMail(ctx context.Context, d BatchDeps, ref ApartmentRef, subID int64, state, reason string, transport bool, cause string) {
+	if _, err := queueSubmissionProblem(ctx, d.Pool, d.Getenv, d.AppBaseURL, d.PublicBaseURL,
+		ref, subID, state, reason, transport, batchNow(d), "", "", cause); err != nil {
 		log.Printf("submission_problem_mail_failed submission_id=%d", subID)
 	}
 }

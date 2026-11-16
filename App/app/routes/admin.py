@@ -3962,6 +3962,24 @@ router.include_router(exports.router)
 router.include_router(privacy_requests.router)
 
 
+# A transport_error result names its cause (A1). The flash is chosen by that
+# field, never by matching the error text. outcome_unknown never comes here.
+_TRANSPORT_FLASH = {
+    "dial": "flash.error.ubyport_unreachable",
+    "auth": "flash.error.ubyport_login_refused",
+    "fault": "flash.error.ubyport_fault",
+    "http4xx": "flash.error.ubyport_http_error",
+    "redirect": "flash.error.ubyport_http_error",
+}
+
+
+def _transport_flash(request, result) -> str:
+    key = _TRANSPORT_FLASH.get(result.get("cause") or "", "flash.error.ubyport_send_failed")
+    if key in ("flash.error.ubyport_fault", "flash.error.ubyport_http_error"):
+        return _flash(request, key, detail=result.get("detail") or "")
+    return _flash(request, key)
+
+
 @router.post("/reservations/submit-ready")
 async def reservations_submit_ready(request: Request):
     """Send every stay that is ready and allowed to go out now."""
@@ -3978,6 +3996,7 @@ async def reservations_submit_ready(request: Request):
     )
     sent_stays = 0
     sent_guests = 0
+    failed_result = None
     for reservation in reservations:
         apartment = access.apartment_for_reservation(reservation, access.owner_id(request))
         if not apartment:
@@ -3998,10 +4017,16 @@ async def reservations_submit_ready(request: Request):
         if not results:
             continue
         batch_sent = sum(r.get("submitted", 0) for r in results)
+        if failed_result is None:
+            failed_result = next(
+                (r for r in results if r.get("state") == "transport_error"), None
+            )
         if batch_sent:
             sent_stays += 1
             sent_guests += batch_sent
     if not sent_guests:
+        if failed_result is not None:
+            return _back(return_to, err=_transport_flash(request, failed_result))
         return _back(
             return_to,
             err=_flash(request, "flash.error.nothing_ready"),
@@ -4486,7 +4511,7 @@ async def reservation_submit(reservation_id: int, request: Request):
             "ubyport_send_failed",
             f"apartment={reservation['apartment_id']} error={first.get('error')}",
         )
-        return _back(return_to, err=_flash(request, "flash.error.ubyport_unreachable"))
+        return _back(return_to, err=_transport_flash(request, first))
     sent = sum(r.get("submitted", 0) for r in results)
     failed = sum(r.get("failed", 0) + r.get("blocked", 0) for r in results)
     if failed:
@@ -5078,7 +5103,7 @@ async def guest_resend(guest_id: int, request: Request):
     if result.get("state") == "outcome_unknown":
         return _back(f"/guests/{guest_id}", err=_flash(request, "flash.error.ubyport_outcome_unknown"))
     if result.get("state") == "transport_error":
-        return _back(f"/guests/{guest_id}", err=_flash(request, "flash.error.ubyport_unreachable"))
+        return _back(f"/guests/{guest_id}", err=_transport_flash(request, result))
     if result.get("submitted"):
         return _back(f"/guests/{guest_id}", msg=_flash(request, "flash.guests.resent"))
     return _back(f"/guests/{guest_id}", err=_flash(request, "flash.error.resent_rejected"))
