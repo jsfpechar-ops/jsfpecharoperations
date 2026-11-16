@@ -342,15 +342,18 @@ func SubmitForApartment(ctx context.Context, d SweepDeps, aptID int64, o Collect
 		level := "warning"
 		msg := fmt.Sprintf("%s: UbyPort settings are incomplete, nothing can be reported.", name)
 		params := AlertParams{"property": name}
+		detail := text
 		if pending > 0 {
-			// A3: guests wait on an unfinished police setup: critical, with the count.
+			// A3: guests wait on an unfinished police setup: critical. The title
+			// carries no count; the detail says "Waiting: N".
 			level = "critical"
-			msg = fmt.Sprintf("%s: UbyPort settings are incomplete, %d guest(s) are waiting to be reported.", name, pending)
+			msg = fmt.Sprintf("%s: UbyPort settings are incomplete, guests are waiting to be reported.", name)
+			detail = fmt.Sprintf("Waiting: %d\n%s", pending, text)
 			params["variant"] = "pending"
 			params["count"] = pending
 		}
 		if err := RaiseAlert(ctx, pool, level, "apartment_setup", msg,
-			text, fmt.Sprintf("apartment_setup:%d", aptID), &aptID, nil, nil, params); err != nil {
+			detail, fmt.Sprintf("apartment_setup:%d", aptID), &aptID, nil, nil, params); err != nil {
 			return nil, err
 		}
 		return []BatchResult{{State: "not_configured", Error: text}}, nil

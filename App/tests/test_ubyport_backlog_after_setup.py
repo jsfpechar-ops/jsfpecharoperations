@@ -174,4 +174,32 @@ def test_pending_title_names_the_count():
     }
     for lang in ("en", "cs"):
         title = alerts.present(dict(row), lang)["display_title"]
-        assert "Loft" in title and "36" in title, lang
+        assert "Loft" in title and "36" not in title, lang  # the count is in the detail
+
+
+def test_alert_drops_back_to_warning_when_no_guest_waits(monkeypatch, tmp_path):
+    apartment_id = _property(monkeypatch, tmp_path, "drop")
+    ids = _backlog(apartment_id)
+    _settings(monkeypatch, MISSING_IDUB)
+    _client(monkeypatch)
+    reporting.sweep()
+    assert _setup_alert(apartment_id)["level"] == "critical"
+
+    for gid in ids:
+        db.update("guest", gid, {"submit_state": reporting.SENT})
+    reporting.sweep()
+
+    alert = _setup_alert(apartment_id)
+    assert alert["level"] == "warning"
+    assert "variant" not in json.loads(alert["params"])
+
+
+def test_pending_count_skips_sent_czech_and_not_required(monkeypatch, tmp_path):
+    apartment_id = _property(monkeypatch, tmp_path, "count")
+    res = _old_stay(apartment_id, 10, "a3-count")
+    _guest(res, 1)  # reportable and pending
+    db.update("guest", _guest(res, 2), {"submit_state": reporting.SENT})
+    _guest(res, 3, nationality="CZE")  # Czech: not reportable
+    db.update("guest", _guest(res, 4), {"submit_state": reporting.NOT_REQUIRED})
+
+    assert reporting.pending_reportable_count(apartment_id) == 1

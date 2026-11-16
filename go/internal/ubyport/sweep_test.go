@@ -727,3 +727,45 @@ func TestSweepSendsOldBacklogInOneRunOnceSetupIsValid(t *testing.T) {
 		t.Fatalf("batches %v after a second run, want nothing sent twice", s.sizes)
 	}
 }
+
+// guestWithState adds one guest with a nationality and submit_state on an ended stay.
+func guestWithState(t *testing.T, pool *pgxpool.Pool, aptID int64, nationality, state string) int64 {
+	return collectAddStay(t, pool, aptID,
+		map[string]any{"date_from": "2026-10-01", "date_to": "2026-10-04"},
+		map[string]any{"stay_from": "2026-10-01", "stay_to": "2026-10-04", "nationality": nationality, "submit_state": state})
+}
+
+func TestPendingReportableCountSkipsSentCzechAndNotRequired(t *testing.T) {
+	pool := claimTestPool(t)
+	ref := sweepFixtureApartment(t, pool, ptrString("host@example.test"))
+	guestWithState(t, pool, ref.ID, "GBR", "pending")
+	guestWithState(t, pool, ref.ID, "GBR", "sent")
+	guestWithState(t, pool, ref.ID, "CZE", "pending")
+	guestWithState(t, pool, ref.ID, "GBR", "not_required")
+	n, err := PendingReportableCount(context.Background(), pool, ref.ID)
+	if err != nil || n != 1 {
+		t.Fatalf("count %d err %v, want 1 (sent, Czech and not_required are not counted)", n, err)
+	}
+}
+
+func TestSweepSetupAlertDropsToWarningWhenNoGuestWaits(t *testing.T) {
+	ctx := context.Background()
+	pool := claimTestPool(t)
+	ref := sweepFixtureApartment(t, pool, ptrString("host@example.test"))
+	gid := oldStayGuest(t, pool, ref.ID)
+	if _, err := SubmitForApartment(ctx, sweepDeps(t, pool, "", &sweepSender{}), ref.ID, CollectOptions{}, "auto"); err != nil {
+		t.Fatal(err)
+	}
+	if level, _ := setupAlert(t, pool, ref.ID); level != "critical" {
+		t.Fatalf("level %q, want critical while a guest waits", level)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE guest SET submit_state = 'sent' WHERE id = $1`, gid); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := SubmitForApartment(ctx, sweepDeps(t, pool, "", &sweepSender{}), ref.ID, CollectOptions{}, "auto"); err != nil {
+		t.Fatal(err)
+	}
+	if level, params := setupAlert(t, pool, ref.ID); level != "warning" || strings.Contains(params, "variant") {
+		t.Fatalf("level %q params %q, want a plain warning once no guest waits", level, params)
+	}
+}

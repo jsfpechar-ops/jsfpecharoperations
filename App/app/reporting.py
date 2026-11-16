@@ -2542,8 +2542,9 @@ def submit_for_apartment(
     setup_errors = validation.errors_only(validation.validate_apartment(ap_dict))
     if setup_errors:
         # A3: guests waiting on an unfinished police setup is a filing failure,
-        # not a to-do: critical, with the count. The deadlines job (Go) mails
-        # host and operator once a day while it stays critical.
+        # not a to-do: critical. The title carries no count (plural forms differ
+        # per language); the detail says "Waiting: N". The daily host and operator
+        # mail comes with A3 part 2 (deadlines job); until then this alert is the signal.
         pending = (
             pending_reportable_count(apartment_id) if started_police_setup(apartment) else 0
         )
@@ -2554,12 +2555,11 @@ def submit_for_apartment(
             "critical" if pending else "warning",
             "apartment_setup",
             (
-                f"{apartment['internal_name']}: UbyPort settings are incomplete, "
-                f"{pending} guest(s) are waiting to be reported."
+                f"{apartment['internal_name']}: UbyPort settings are incomplete, guests are waiting to be reported."
                 if pending
                 else f"{apartment['internal_name']}: UbyPort settings are incomplete, nothing can be reported."
             ),
-            validation.issues_to_text(setup_errors),
+            (f"Waiting: {pending}\n" if pending else "") + validation.issues_to_text(setup_errors),
             dedupe_key=f"apartment_setup:{apartment_id}",
             apartment_id=apartment_id,
             params=setup_params,
