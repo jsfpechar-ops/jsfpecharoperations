@@ -39,6 +39,7 @@ from zoneinfo import ZoneInfo
 
 from . import access, alerts, codelists, config, db, deadlines, mail_notify, passport_photos, push, validation
 from .ubyport import errors as uby_errors
+from .ubyport import faults
 from .ubyport.client import SubmissionResult, UbyportAuthError, UbyportClient, UbyportError, UbyportOutcomeUnknownError, UbyportTransportError
 
 log = logging.getLogger("ubyhost.reporting")
@@ -1908,6 +1909,7 @@ def submit_batch(
                 "state": "transport_error",
                 "finished_at": db.utcnow(),
                 "error_text": str(exc),
+                **_transport_cause_fields(cause, detail),
             },
         )
         alerts.raise_alert(
@@ -1933,6 +1935,8 @@ def submit_batch(
                 apartment_id=apartment["id"],
                 params={"property": apartment["internal_name"]},
             )
+        next_try = transport_backoff_until(apartment["id"], _clock())
+        next_text = next_try.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M UTC") if next_try else ""
         if definite and streak >= TRANSPORT_REPEAT_ALERT_AFTER:
             alerts.raise_alert(
                 "critical",
@@ -1941,7 +1945,20 @@ def submit_batch(
                 str(exc),
                 dedupe_key=f"submission_transport_repeated:{apartment['id']}",
                 apartment_id=apartment["id"],
-                params={"property": apartment["internal_name"], "count": streak, "error": str(exc)},
+                params={"property": apartment["internal_name"], "count": streak, "error": str(exc),
+                        **({"next": next_text, "header": next_text} if next_text else {})},
+            )
+        # Third failure in a row: one support copy, idempotent per submission.
+        if transport_chain_length(apartment["id"]) == TRANSPORT_ESCALATE_AFTER:
+            mail_notify.submission_problem(
+                apartment,
+                submission_id,
+                state="transport_error",
+                reason=str(exc),
+                transport=True,
+                cause=cause,
+                cc_email=config.SUPPORT_EMAIL,
+                idempotency_key=f"submission_transport_repeated:{submission_id}",
             )
         # The host is not watching the screen when this fires -- the whole point
         # of the automatic send is that nobody is. Mail the same event to the
@@ -2235,6 +2252,96 @@ def _retry_outcome_unknown_batches(apartment_id: int) -> int:
     return retried
 
 
+# Definite transport failures (brief A1b P1). The gap after chain length n:
+# n=1 -> 10 min, n=2 -> 30 min, n>=3 -> 60 min. At most TRANSPORT_DAILY_CAP
+# attempts per apartment per Prague day; after that the next try is 00:10 Prague
+# the next day. Retrying never stops for good. auth is not part of this chain.
+TRANSPORT_ESCALATE_AFTER = 3
+TRANSPORT_DAILY_CAP = 24
+TRANSPORT_GAPS = (timedelta(minutes=10), timedelta(minutes=30))
+TRANSPORT_GAP_LONG = timedelta(minutes=60)
+
+
+def _prague_zone():
+    from zoneinfo import ZoneInfo
+
+    return ZoneInfo("Europe/Prague")
+
+
+def transport_backoff_from_rows(rows: List[Dict[str, Any]], now: datetime) -> Optional[datetime]:
+    """Earliest next automatic try for one apartment, or None when none is owed.
+
+    ``rows`` are the apartment's submissions, newest first, as dicts with
+    ``state``, ``cause`` and ``finished_at``. The chain is the leading run of
+    ``transport_error`` rows that are not ``auth``. Pure: no database.
+    """
+    chain: List[Dict[str, Any]] = []
+    for row in rows:
+        if row["state"] != "transport_error" or row["cause"] == "auth":
+            break
+        chain.append(row)
+    if not chain or not chain[0]["finished_at"]:
+        return None
+    n = len(chain)
+    gap = TRANSPORT_GAPS[n - 1] if n <= len(TRANSPORT_GAPS) else TRANSPORT_GAP_LONG
+    candidate = _unknown_stamp(chain[0]["finished_at"]) + gap
+    zone = _prague_zone()
+    today = now.astimezone(zone).date()
+    today_count = sum(
+        1
+        for row in chain
+        # Manual sends (mode manual, manual_bulk, manual_resend) never count toward the cap.
+        if not (row.get("mode") or "").startswith("manual")
+        and row["finished_at"] and _unknown_stamp(row["finished_at"]).astimezone(zone).date() == today
+    )
+    if today_count >= TRANSPORT_DAILY_CAP:
+        tomorrow = today + timedelta(days=1)
+        return datetime(tomorrow.year, tomorrow.month, tomorrow.day, 0, 10, tzinfo=zone).astimezone(
+            timezone.utc
+        )
+    return candidate
+
+
+def _transport_on_postgresql() -> bool:
+    # The A1b columns are goose-only (App/migrations_pg/00018). The SQLite test schema
+    # is frozen at 0045 and lacks them, so SQLite writes and reads no cause fields.
+    # A config check, not a catalogue query: this runs on every gate call.
+    return getattr(config, "DB_BACKEND", "sqlite") == "postgresql"
+
+
+def _transport_cause_fields(cause: str, detail: str) -> Dict[str, Any]:
+    if not _transport_on_postgresql():
+        return {}
+    return {"cause": cause or None, "error_code": faults.code_for(cause, detail)}
+
+
+def _transport_rows(apartment_id: int) -> List[Dict[str, Any]]:
+    # 500 rows covers the daily cap and the chain length in practice.
+    cause_column = "cause" if _transport_on_postgresql() else "NULL AS cause"
+    return [
+        dict(row)
+        for row in db.query(
+            f"SELECT state, {cause_column}, mode, finished_at FROM submission WHERE apartment_id = ? "
+            "ORDER BY id DESC LIMIT 500",
+            (apartment_id,),
+        )
+    ]
+
+
+def transport_chain_length(apartment_id: int) -> int:
+    """Consecutive transport failures since the last other state (auth excluded)."""
+    count = 0
+    for row in _transport_rows(apartment_id):
+        if row["state"] != "transport_error" or row["cause"] == "auth":
+            break
+        count += 1
+    return count
+
+
+def transport_backoff_until(apartment_id: int, now: datetime) -> Optional[datetime]:
+    return transport_backoff_from_rows(_transport_rows(apartment_id), now)
+
+
 UNKNOWN_RETRY_GAPS = (
     timedelta(minutes=30), timedelta(hours=2), timedelta(hours=6), timedelta(hours=12),
 )
@@ -2418,6 +2525,12 @@ def submit_for_apartment(
             params={"property": apartment["internal_name"]},
         )
         return [{"state": "not_configured", "error": validation.issues_to_text(setup_errors)}]
+    # auto_resend is exempt: it resends an unknown-outcome chain, which must not stall (A1b review).
+    if not ignore_automation and mode != AUTO_RESEND_MODE:
+        now = _clock()
+        until = transport_backoff_until(apartment_id, now)
+        if until and now < until:
+            return [{"state": "backoff", "next_try": until.isoformat()}]
     alerts.resolve(f"apartment_setup:{apartment_id}")
 
     pairs = collect_sendable(

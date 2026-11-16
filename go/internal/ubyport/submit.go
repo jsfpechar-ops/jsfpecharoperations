@@ -273,9 +273,10 @@ func batchTransport(ctx context.Context, d BatchDeps, ref ApartmentRef, subID in
 	}
 	params["streak"] = streak
 	log.Printf("ubyport_submission_failed apartment_id=%d submission_id=%d", ref.ID, subID)
-	if err := RecordTransportError(ctx, d.Pool, subID, msg, UTCNow()); err != nil {
+	if err := RecordTransportError(ctx, d.Pool, subID, msg, UTCNow(), ue.Cause, FaultCodeFor(ue.Cause, ue.Detail)); err != nil {
 		return BatchResult{}, err
 	}
+	escalateTransportChain(ctx, d, ref, subID, msg, ue.Cause)
 	name := ref.InternalName
 	if err := RaiseAlert(ctx, d.Pool, "critical", "submission_transport",
 		summary, msg,
@@ -297,7 +298,7 @@ func batchTransport(ctx context.Context, d BatchDeps, ref ApartmentRef, subID in
 		if err := RaiseAlert(ctx, d.Pool, "critical", "submission_transport_repeated",
 			fmt.Sprintf("%s: UbyPort answered with an error %d times in a row.", name, streak), msg,
 			fmt.Sprintf("submission_transport_repeated:%d", ref.ID), &ref.ID, nil, nil,
-			AlertParams{"property": name, "count": streak, "error": msg},
+			repeatedTransportParams(ctx, d.Pool, name, streak, msg, ref.ID),
 		); err != nil {
 			return BatchResult{}, err
 		}
