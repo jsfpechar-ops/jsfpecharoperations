@@ -117,9 +117,9 @@
     <tbody>
     {{range .Alerts}}
       <tr>
-        <td data-label="{{t "ops.col.kind"}}">{{if .KindLabel}}{{.KindLabel}} {{end}}<code class="ui-mono ui-sub">{{.Kind}}</code></td>
+        <td data-label="{{t "ops.col.kind"}}"><a href="/admin/operations/alerts?kind={{.Kind}}&amp;level={{.Level}}">{{if .KindLabel}}{{.KindLabel}} {{end}}<code class="ui-mono ui-sub">{{.Kind}}</code></a></td>
         <td data-label="{{t "ops.col.level"}}">{{.Level}}</td>
-        <td data-label="{{t "ops.col.count"}}">{{.Count}}</td>
+        <td data-label="{{t "ops.col.count"}}"><a href="/admin/operations/alerts?kind={{.Kind}}&amp;level={{.Level}}">{{.Count}}</a></td>
         <td data-label="{{t "ops.col.oldest"}}">{{.Age}}</td>
       </tr>
     {{end}}
