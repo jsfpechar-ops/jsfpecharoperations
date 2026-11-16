@@ -8,6 +8,8 @@ Written 2026-11-15, revised the same night: autonomous mode on Josef's order (no
 
 **Update 2026-11-16 (Josef's decisions).** (1) The cleaning door code works on a real lock; Josef takes `door_codes` as proven and adds step DOOR (the guest-code lifecycle was not tested, he accepts that; `UBYHOST_DOOR_CODES_LIVE` is already on in production; the step never edits it). (2) MAIL runs (Josef, 2026-11-16: "lets do it, i already tried the mail link yesterday and it worked"): the step first removes `submit` from both job lists, so the filing precondition holds, then adds `mail` to both. Python files again for guests while `submit` is out (the worker runs it in-process); the saved lines restore it. There is no extra paste line. (3) S runs only if all 15 kinds are in `UBYHOST_JOB_QUEUE_KINDS`. With `submit` removed only 14 can be, so S would report `submit` missing and skip. **Update 2026-11-16 later (Josef: finish the scheduler switch):** step Q below puts `submit` back and completes the queue list to 15, step DOOR no longer skips when `UBYHOST_DOOR_CODES_LIVE` is already on (Josef accepts that live guests are covered, the guest-code lifecycle untested), and S then runs. Why Q is safe: `UBYHOST_SCHEDULER=go` needs only all 15 kinds in `UBYHOST_JOB_QUEUE_KINDS`; a kind in the queue list but not in `UBYHOST_GO_JOB_KINDS` is still run by the Python worker, which drains its queued rows (brief 1451). All 15 kinds already have Go handlers (`go/cmd/ubyhost-web`), so no code work is open; only `door_codes` and `submit` move to Go lists as Josef asked.
 
+**Update 2026-11-16 evening (step Q auto-rolled back; Q2, S and D added).** Q ran and rolled itself back because `ubyport_submission_failed` for apartment 7 appeared after `submit` moved to Go. Josef and the coordinator then showed that the same UbyPort SOAP fault (`Chyba běhu programu / Odpověď neobsahuje záznamy o chybách`) also happens on **Python** sends for apartment 7, including before `submit` moved to Go, while apartment 6 files fine on Python (submissions 29 and 30). So the fault is not caused by Go. Its root cause is still **unknown** (a UbyPort support ticket is drafted). **What is NOT proven:** Go `submit` against the real UbyPort has never filed successfully. Every Go filing seen so far was a mock test or apartment 7's fault. Step Q2 below re-runs Q with a narrow tolerance for exactly that known fault, and still rolls back on anything new. Step D is a read-only decommission checklist. Nothing destructive is added.
+
 **Why the scheduler switch (S) is conditional.** `UBYHOST_SCHEDULER=go` makes Go enqueue all 15 kinds and Python enqueue none, and Python refuses the switch unless all 15 are in `UBYHOST_JOB_QUEUE_KINDS` (brief 1451, `go_scheduler_problem()`). That includes `door_codes` (step DOOR) and `mail` (step MAIL). The parity suite compared only the names and intervals of the other kinds, not a run on a shared queue, so step S changes only `UBYHOST_SCHEDULER`, only when all 15 are on, and rolls back by removing that one line.
 
 **The 24 h waits are waived (Josef, 2026-11-15: "waive it, I want it all done today").** That covers G1 (24 h after W5f), W9c to W9g (24 h between paths), W10-2 (24 h after step 1) and W10-3 (24 h after W10-2). What replaces them: a 10-minute soak after every step, the per-step verify, auto-rollback, and a rollback test on every W9 path. The one-week "Python ran cleanly" rule for Havel and Leon (W8b) is also taken as Josef's call and waived; the executor lists it in the report. Cost of waiving: a bug that shows only after a day (a nightly job, a monthly total) will not be seen before the next step goes live. That is Josef's decision, and the SQLite/Python rollback stays open until 2026-12-15.
@@ -41,13 +43,17 @@ GATE, GATE-WAIT, "Josef's message", "go <step>", "ok <step>", or asks him to con
 - ALL WAITS ARE WAIVED by Josef's order (2026-11-15): the 24 h before G1, between W9 paths, before W10-2 and
   before W10-3, and the week of Python for W8b. Ignore every "WAIT" line and every state-file time check below.
   Only the 10-minute soak after each step remains, and it is not shortened. Run ALL steps back to back in this
-  one session, in this order: R1, G1, W8b, W9a, W9b, W9c, W9d, W9e, W9f, W9g, W10-2, W10-3, DOOR, MAIL, S, M1, then the report.
+  one session, in this order: R1, G1, W8b, W9a, W9b, W9c, W9d, W9e, W9f, W9g, W10-2, W10-3, DOOR, MAIL, Q, Q2, S, D, M1, then the report.
   Do not skip a step for time; skip it only for a failed precondition or a rollback (see below).
+- RE-RUN MODE. If the paste message has the line "RERUN Q2" (Josef's order, 2026-11-16 evening), the earlier steps are
+  already recorded in the state file: do R1, skip every step whose state-file status is "kept" or "skipped"
+  (never repeat them), and run only Q2, S and D, then M1 if its own rule allows, then the report. "RERUN Q2" is
+  Josef's go to run Q again despite its "rolled-back" status; it gives no other step that permission.
 - A failed precondition, a failed soak check, or any doubt: roll the step back yourself, mark it
   "rolled-back" with the reason, do NOT retry it, skip any step that depends on it, and continue with
   independent steps. No questions.
 - Everything under SCOPE (what you may not do) and NOT YOURS stays in force: no secrets, no POST, no other
-  paths, no database, no deploy, no edit of UBYHOST_STAY_FEE_GUEST_PAY, no /stay-fees/*, no UBYHOST_DOOR_CODES_LIVE, no kind in either job list except door_codes (step DOOR), mail and the removal of submit (step MAIL), and the kinds named in step Q, UBYHOST_SCHEDULER only in step S.
+  paths, no database, no deploy, no edit of UBYHOST_STAY_FEE_GUEST_PAY, no /stay-fees/*, no UBYHOST_DOOR_CODES_LIVE, no kind in either job list except door_codes (step DOOR), mail and the removal of submit (step MAIL), and the kinds named in steps Q and Q2, UBYHOST_SCHEDULER only in step S, and step D is read-only.
 - Pre-set facts: for W10-2 the guest-pay value must be on (print it, do not edit it); if it is not on, skip W10-2 and W10-3 stays independent.
 - Models: you are Haiku-class; no subagents, no tools beyond SCOPE.
 - Passkey G1 lockout risk is low (login link stays available); a rollback is removing six words.
@@ -117,7 +123,7 @@ GUARDRAILS (every step)
    try a different fix.
 
 
-STEPS, in order: R1, G1, W8b, W9a to W9g, W10-2, W10-3, DOOR, MAIL, S, M1. Domain: ubyhost.com (use https://ubyhost.com in every curl). The state file already holds the older ids; write the new ones in the same format.
+STEPS, in order: R1, G1, W8b, W9a to W9g, W10-2, W10-3, DOOR, MAIL, Q, Q2, S, D, M1. Domain: ubyhost.com (use https://ubyhost.com in every curl). The state file already holds the older ids; write the new ones in the same format.
 
 R1  AUTO  Read-only health record, as in the first session: docker compose ps (service, state, restarts);
     docker stats --no-stream for ubyhost-go; df -h / ; the switch names (UBYHOST_GO_PATHS entry count and paths,
@@ -225,6 +231,8 @@ MAIL AUTO (waived)  Job kind `mail` on Go (brief 1770, PR 1036), with `submit` t
     the same services, mark "rolled-back". Python drains mail again and Go files again.
 
 Q   AUTO  Complete the queue list (Josef 2026-11-16: finish the scheduler switch). Runs after DOOR and MAIL, before S.
+    Q ROLLED BACK once on a known UbyPort fault for apartment 7 (see Q2). Q is not repeated in this form: any re-run
+    uses Q2 below, and only when the paste message has "RERUN Q2".
     Facts: S needs all 15 names in UBYHOST_JOB_QUEUE_KINDS: ical submit deadlines mail photo_sweep meta_capi
     retention stay_fee_mail stripe_sweep billing billing_snapshot door_codes posthog push guide_import. A kind in the
     queue list only (not in UBYHOST_GO_JOB_KINDS) is run by the Python worker from its queued rows, so nothing moves
@@ -247,6 +255,49 @@ Q   AUTO  Complete the queue list (Josef 2026-11-16: finish the scheduler switch
     AUTO-ROLLBACK on any failed check: put both saved lines back, recreate the same services, mark "rolled-back";
     S is then skipped (it would list the missing kinds).
 
+Q2  AUTO  Re-run of Q with a tolerance for ONE known UbyPort fault (Josef 2026-11-16 evening). Runs after Q, before S.
+    Runs only if (a) the paste message has the line "RERUN Q2" and (b) the state file shows Q as "rolled-back" or
+    absent. Q "kept": skip Q2 ("Q already kept"). No "RERUN Q2" line: skip Q2.
+    What is known: the UbyPort SOAP fault "Chyba běhu programu / Odpověď neobsahuje záznamy o chybách" happens for
+    apartment 7 on Python too (also before submit moved to Go). Root cause unknown, UbyPort ticket drafted.
+    What is NOT known and you must not pretend otherwise: Go submit has never filed successfully against the real
+    UbyPort. A Go filing for any other apartment may be its first real one.
+    Preconditions and the ONE edit: exactly as in Q (same lists, same additions: the missing names of the 15 to the
+    queue list, only `submit` to the Go list, never the Go list alone, saved whole lines, docker compose up -d
+    --no-deps ubyhost-go worker, wait 60 s). Do NOT send, trigger, POST or ask any apartment to file: apartment 6 or any other
+    apartment with a working filing is NOT asked to send. You only watch the sweep that runs by itself.
+    KNOWN FAULT (KF), the only tolerated line, exactly this shape in ubyhost-go logs:
+      ubyport_submission_failed apartment_id=7 submission_id=<number>
+    The log line carries no fault text, so you cannot prove it is the SOAP fault and not another transport error for
+    apartment 7. Say so in the report. Josef accepts this limit; the next-morning check below covers it.
+    Checks, after the edit, every one must hold at 60 s and again at the end of a 10-minute soak (use
+    docker compose logs --since "$T0" ubyhost-go and caddy):
+      1. Panics: 0.
+      2. 5xx: no 5xx line from caddy since T0, on any path.
+      3. level=error lines: at most 3, not counting KF lines.
+      4. Any ubyport_submission_failed line with an apartment_id other than 7: FAIL.
+      5. Any other ubyport_ line that is not KF and not the routine "ubyport sweep" info line (for example
+         ubyport_auth_failed, ubyport_submission_outcome_unknown, ubyport_stale_*): FAIL.
+      6. The "answer did not arrive" count (outcome_unknown): grep -c on ubyport_submission_outcome_unknown and on
+         "may or may not have received": must be 0. Any hit: FAIL. This is the dangerous case (possible double filing).
+      7. KF lines at most 6 in the whole soak (a retry storm is a new failure kind): more: FAIL.
+      8. In every "ubyport sweep ... failed=N" line, N is not larger than the number of KF lines in the same sweep: if it is, FAIL.
+      9. Services: nothing restarting or unhealthy; worker logs show no "unknown job id" and no
+         "must also be in UBYHOST_JOB_QUEUE_KINDS"; queue list has all 15 names (grep -c -x -E line of runbook I2 prints 15);
+         submit once in both lists.
+    Positive proof (read-only, no send): during the soak find the Go submit job's own finished line (the "ubyport sweep"
+    info line and the job-run line for kind submit; read the exact wording with
+    docker compose logs --since "$T0" ubyhost-go | grep -i submit | tail -20) and quote it in the report. It must show
+    outcome ok or noop (no-op: nothing due) and failed no larger than the KF count (check 8). If none appears in 10
+    minutes, wait up to 10 more once. Still none: leave Q2 "kept" but mark it UNVERIFIED, and skip S (S needs proof
+    that the Go submit job really runs).
+    AUTO-ROLLBACK on any FAIL: put both saved lines back, recreate the same services, mark "rolled-back" with the
+    failing check number and the one log line (no secrets), skip S. Python then files again. Do not retry.
+    The report must say in plain words: "Go submit has never filed successfully against the real UbyPort; this
+    soak proves only that it ran without a new failure kind", and list the KF count seen.
+    Josef's check the morning after (not yours): one real filing from Go for an apartment other than 7, then
+    the Alerts page for submission_outcome_unknown. A KF line or a rolled-back Q2 does not change this.
+
 S   AUTO  Scheduler switch UBYHOST_SCHEDULER=go (brief 1451). Python refuses it, and Go too, unless all 15 job kinds are
     in UBYHOST_JOB_QUEUE_KINDS (the names are the keys of JOB_KINDS in App/app/scheduler.py; the Go and Python lists
     must agree; count them from the lists, do not trust a number).
@@ -254,7 +305,7 @@ S   AUTO  Scheduler switch UBYHOST_SCHEDULER=go (brief 1451). Python refuses it,
     each), the kinds missing from the queue list, grep -c '^UBYHOST_SCHEDULER=' .env, and that
     UBYHOST_ICAL_POLL_MINUTES and UBYHOST_SUBMIT_SWEEP_MINUTES are above 0 or unset (unset uses the default; print
     only the numbers; 0 means skip). Also the state file lines for DOOR and MAIL.
-    Step 2: if ANY kind is missing from the queue list, or DOOR or the soak of any earlier step is not "kept"/clean,
+    Step 2: if ANY kind is missing from the queue list, or DOOR or the soak of any earlier step is not "kept"/clean, or Q2 ran and is not "kept" with its positive proof seen,
     or UBYHOST_SCHEDULER is already set: do NOT edit. Write "skipped (needs all 15 kinds; missing: <names>)" in the
     state file and the report. Expected after DOOR, MAIL and Q: all 15 are present and S runs. If Q was skipped or rolled back, S is skipped and lists the missing names.
     Step 3, only when all 15 are on and the logs are clean: save the UBYHOST_SCHEDULER line (or "absent"), add exactly
@@ -266,8 +317,26 @@ S   AUTO  Scheduler switch UBYHOST_SCHEDULER=go (brief 1451). Python refuses it,
     then ubyhost-go (both --no-deps), mark "rolled-back". Honest limit: the parity suite never ran Go and Python
     on one shared queue; list this in the report.
 
+D   READ-ONLY  Decommission checklist (Josef 2026-11-16 evening). Runs after S, before M1. Changes NOTHING: no .env edit,
+    no restart, no state-file line except one "D | <date -Is> | checked" line. Print the answers for the report.
+    Extra read-only commands allowed only for D: test -f /var/run/reboot-required && echo yes || echo no ; date.
+    D1  Python no longer enqueues: if S is "kept", worker logs since S show no line that enqueues a job (read the
+        wording from docker compose logs --since "$T0" worker | tail -30) and no "UBYHOST_SCHEDULER=go is ignored";
+        ubyhost-go logs show enqueued rows. If S is skipped or rolled back, write "Python still enqueues" (expected then).
+    D2  What is left on Python: print (a) the job kinds NOT in UBYHOST_GO_JOB_KINDS (the other of the 15; expected after Q2:
+        photo_sweep, stay_fee_mail, billing, guide_import, and submit if Q2 rolled back), (b) UBYHOST_GO_PATHS entries
+        count, and the paths of the "Left out on purpose" list near the top that are still absent, (c) retention: Go dry-run
+        only, purge is Josef's decision, (d) the Python worker and ubyhost containers that still run.
+    D3  SQLite rollback window ends 2026-12-15 (Josef's decision, PR 1029). Print today's date from date and the days
+        left. Never delete, move or touch any SQLite file or the rollback; that is after the window, by Josef.
+    D4  Host: pending apt updates and a reboot are NOT done here (apt and reboot are forbidden). Print only whether
+        /var/run/reboot-required exists. Write "needs a fresh backup first, then Josef decides" for the updates, the
+        reboot and the old docker image cleanup (week-old and dangling images only, later).
+    D5  Not destructive, ever, in this prompt: removing the Python worker, images, volumes, env variables, backups or SQLite.
+        Anything in the checklist that looks like a destructive step: list it as "Josef's decision", do nothing.
+
 M1  Mistral Small key, Josef pastes it himself (Josef's order 2026-11-15). The only step that waits for him.
-    Runs LAST, after S. Only if the paste message contains the line "MISTRAL PR DEPLOYED" (Josef states PR 1042,
+    Runs LAST, after S and D. Only if the paste message contains the line "MISTRAL PR DEPLOYED" (Josef states PR 1042,
     Mistral Small for Havel and Leon, is merged and deployed; it passes the missing env vars into the Go
     container, so without it the key would do nothing). Without it: skip M1, write "skipped (PR 1042 not stated
     deployed)" in the report.
@@ -309,6 +378,9 @@ FINAL REPORT (always, even when you stop early). One block:
 4. Rollback line for every step applied in this session.
 5. docker compose ps summary and the error/panic count of ubyhost-go for the last hour.
 6. For each UNVERIFIED step: the exact pages Josef must open and what he should see.
+7. Step Q2 (if run): the KF line count, the quoted Go submit job line with its outcome, the outcome_unknown count, and
+   the sentence "Go submit has never filed successfully against the real UbyPort" (true until a real filing is seen).
+8. Step D answers D1 to D4, in one short block.
 No secret values anywhere in the report.
 ```
 
@@ -324,6 +396,7 @@ Josef skipped the preview look. The AI keeps every step on clean logs and lists 
 | M-W9c to M-W9g (optional) | Open an invoice detail (Paid and Cancel buttons), `/invoices/new` and the Preview. Do not issue or mark real invoices. | Same pages and fields as before. |
 | M-W10-2, M-W10-3 (optional) | Open `/stay-fees` and one detail page. | The same list as before. |
 | M-MAIL (owed) | Invite your own e-mail address (or trigger one reminder). | Exactly ONE mail arrives, not two. Two: say "rollback MAIL". |
+| M-Q2 (owed, next morning) | Alerts page: any `submission_outcome_unknown`? For one apartment other than 7 with a guest due, check the filing in the app. Apartment 7: expect the same UbyPort fault as on Python until the ticket is answered. | No `submission_outcome_unknown`. Any: say "rollback Q2" and check the guests for a double filing. |
 | M-DOOR (optional) | Watch the next real cleaning door code. | One code arrives, not two. The guest-code lifecycle was not tested. |
 
 Not for the browser: the passkey button wording ("Face ID" and similar) is PR 1033 and is held.
