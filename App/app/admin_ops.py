@@ -295,6 +295,69 @@ def open_alerts(limit: int = ROW_LIMIT) -> Dict[str, Any]:
     return {"count": sum(item["count"] for item in items), "rows": items}
 
 
+ALERT_DETAIL_LIMIT = 200
+
+
+def open_alert_details(kind: str = "", level: str = "", now: Optional[datetime] = None) -> Dict[str, Any]:
+    """Open alerts of one kind and level, oldest first (brief 1800, Go twin: LoadAlertDetails).
+
+    An empty kind or level means no filter. Kind counts ignore both filters so
+    the filter row always shows every kind. Every value is a SQL parameter.
+    """
+    now = now or _now()
+    counts = {
+        row["kind"]: int(row["n"] or 0)
+        for row in db.query("SELECT kind, COUNT(*) AS n FROM alert WHERE resolved_at IS NULL GROUP BY kind")
+    }
+    kinds = sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+    where = "al.resolved_at IS NULL"
+    args: list = []
+    if kind:
+        where += " AND al.kind = ?"
+        args.append(kind)
+    if level:
+        where += " AND al.level = ?"
+        args.append(level)
+    total_row = db.query_one(f"SELECT COUNT(*) AS n FROM alert al WHERE {where}", tuple(args))
+    rows = db.query(
+        "SELECT al.kind, al.level, COALESCE(al.message, '') AS message, "
+        "COALESCE(fa.internal_name, ra.internal_name, '') AS property, "
+        "al.reservation_id, r.id AS stay_id, COALESCE(r.date_from, '') AS date_from, "
+        "COALESCE(r.date_to, '') AS date_to, "
+        "COALESCE((SELECT g.surname || ' ' || g.first_name FROM guest g "
+        "WHERE g.reservation_id = r.id AND g.is_lead = 1 ORDER BY g.id LIMIT 1), '') AS guest_name, "
+        "al.created_at "
+        "FROM alert al "
+        "LEFT JOIN apartment fa ON fa.id = al.apartment_id "
+        "LEFT JOIN reservation r ON r.id = al.reservation_id "
+        "LEFT JOIN apartment ra ON ra.id = r.apartment_id "
+        f"WHERE {where} ORDER BY al.created_at ASC, al.id ASC LIMIT ?",
+        (*args, ALERT_DETAIL_LIMIT),
+    )
+    items = [
+        {
+            "kind": row["kind"],
+            "level": row["level"],
+            "message": row["message"],
+            "property": row["property"],
+            "has_stay": row["reservation_id"] is not None,
+            "stay_removed": row["reservation_id"] is not None and row["stay_id"] is None,
+            "stay_id": row["reservation_id"],
+            "guest_name": row["guest_name"],
+            "date_from": row["date_from"],
+            "date_to": row["date_to"],
+            "age_minutes": age_minutes(row["created_at"], now),
+        }
+        for row in rows
+    ]
+    return {
+        "all_count": sum(counts.values()),
+        "kinds": [{"kind": name, "count": n} for name, n in kinds],
+        "total": int(total_row["n"] or 0) if total_row else 0,
+        "rows": items,
+    }
+
+
 def overview() -> Dict[str, Any]:
     """Everything the page shows, in the order it shows it."""
     from . import config, ttlock
