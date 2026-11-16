@@ -1,36 +1,36 @@
-# 1794b: stripe_sweep retries due clash refunds and alerts the operator once (Go)
+# 1798b: stripe_sweep retries due clash refunds and alerts the operator once (Go)
 
 Status: todo
-Depends on: 1794a (its code is the anchor here), 1797 (`b.booking` takes a `dbtx`; committed) | Base commit: the tip of the working branch after 1794a | Branch: task/1794b-go-clash-refund-sweep
+Depends on: 1798a (its code is the anchor here), 1797 (`b.booking` takes a `dbtx`; committed) | Base commit: the tip of the working branch after 1798a | Branch: task/1798b-go-clash-refund-sweep
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Tier: A (money path; exact diffs only; a fresh reviewer reads the full diff of every file in section 3)
-First half: [1794a](1794a-go-clash-refund-due-state.md). Plan: `docs/plans/ai-payments-hardening.md`, "P1 Fix before Stripe goes live", item 3.
+First half: [1798a](1798a-go-clash-refund-due-state.md). Plan: `docs/plans/ai-payments-hardening.md`, "P1 Fix before Stripe goes live", item 3.
 
 ## 1. Objective
 
-The daily `stripe_sweep` job retries every due `site_booking_refund_due` row (1794a) with the same Stripe idempotency key, removes rows whose booking was refunded or paid meanwhile, and raises one operator alert per booking after 5 failed tries or 24 hours. A guest who paid for nights someone else got is then either refunded or known to the operator, even after Stripe stops retrying the webhook.
+The daily `stripe_sweep` job retries every due `site_booking_refund_due` row (1798a) with the same Stripe idempotency key, removes rows whose booking was refunded or paid meanwhile, and raises one operator alert per booking after 5 failed tries or 24 hours. A guest who paid for nights someone else got is then either refunded or known to the operator, even after Stripe stops retrying the webhook.
 
 ## 2. Context
 
 **Rules that apply (pasted).**
 - AGENTS.md 2: privacy first. The alert text holds a booking id, a count, a Stripe error code and the payment intent id; never the guest's name or e-mail. Logs: same.
 - AGENTS.md 4: no new dependency. AGENTS.md 11 / go-first and owner decision 2026-11-16: Go only; no change under `App/app/`.
-- rules.md "State machines": no status value changes (see 1794a section 2).
+- rules.md "State machines": no status value changes (see 1798a section 2).
 
 **Design choices (verified against the code).**
 - **Job: extend `stripe_sweep`, no new kind.** A new kind needs the Go scheduler plan (`go/internal/scheduler/scheduler.go` `Plan`), its Python twin (`App/app/scheduler.py` `CRON_TIMES`, the worker fallback, `test_scheduler_go_switch`), `UBYHOST_JOB_QUEUE_KINDS`/`UBYHOST_GO_JOB_KINDS`, `jobNames` in `go/internal/jobs/queue.go` and the `notification.job_name.*` strings in `App/app/host_i18n.py`: Python changes the owner ruled out. `stripe_sweep` runs once a day at 04:15 Europe/Prague (`scheduler.go` line 125, `jobIntervals` 24*60 in `register_jobs.go`); a failed job run is retried by the queue with backoff and raises the existing `job_failed` "payment check" alert.
-- **Backoff:** the row's `next_attempt_at` after the n-th failed try is +1 h, 2 h, 4 h, 8 h, 16 h, then 24 h (`refundBackoff`, 1794a). Stripe drives the webhook retries (it ignores `next_attempt_at`); the sweep tries only rows that are due, so in practice once a day. A day apart also matters because Stripe replays a cached result for the same key for about 24 hours (Stripe docs; not verifiable offline).
+- **Backoff:** the row's `next_attempt_at` after the n-th failed try is +1 h, 2 h, 4 h, 8 h, 16 h, then 24 h (`refundBackoff`, 1798a). Stripe drives the webhook retries (it ignores `next_attempt_at`); the sweep tries only rows that are due, so in practice once a day. A day apart also matters because Stripe replays a cached result for the same key for about 24 hours (Stripe docs; not verifiable offline).
 - **Alert: N = 5 failed tries or X = 24 hours since the clash**, whichever comes first, once per booking. "Once" is an atomic `UPDATE ... SET alerted_at ... WHERE alerted_at IS NULL ... RETURNING`: only the run whose UPDATE returns a row raises it. A Stripe-closed run (off, or the call cap reached) is not a try, so only the 24 h rule can fire then.
 - **Alert path: `ubyport.RaiseAlert`** (`go/internal/ubyport/effects.go`), level `critical`, kind `site_booking_refund_stuck`, dedupe key `site_booking_refund_stuck:<id>`, no apartment, stay or owner (a system alert: the host does not see it; the admin Operations page lists every open alert by kind, `go/internal/web/auth/opspage/data.go` `loadAlerts`). Resolved with `ubyport.ResolveAlert` when the refund goes through. Not an operator mail: Go's only operator mail (`deadline_digest`, `go/internal/calendar/filing_watchdog_run.go`) is a filing digest, and a new mail kind must be listed in `App/app/mail.py` `KINDS`/`HOST_KINDS` (Python). See the open questions.
-- **Guest mail:** the existing `site_booking_refunded` guest mail and `site_booking_host` host mail (`mailClash`) already go out after a successful refund, now from the sweep too, once (the mail keys are `site_booking:<id>:clash_refund` and `:host_clash`; 1794a writes them only on the run that moves the booking). No new mail kind.
+- **Guest mail:** the existing `site_booking_refunded` guest mail and `site_booking_host` host mail (`mailClash`) already go out after a successful refund, now from the sweep too, once (the mail keys are `site_booking:<id>:clash_refund` and `:host_clash`; 1798a writes them only on the run that moves the booking). No new mail kind.
 - **Race (webhook retry and sweep at once):** both send `Idempotency-Key: site_booking_clash_refund_<id>`, so Stripe makes one refund; `setStatus` moves the booking once; only that run writes the audit line and the mails; every successful run deletes the row.
 - **Call cap:** each try passes `guard` (`onboarder.go`), which counts it in `lock_api_usage` before the request; at most 20 rows per sweep (`refundDueSweepLimit`; 20 x 30 s client timeout stays far under the job lease of 60 minutes, `jobs.LeaseMinutes`).
 
-**Production.** The rows exist only when the Go booking webhook runs (`UBYHOST_GO_BOOKING_WEBHOOK=1`, brief 1554, after 1796, 1797, 1794a and 1794b) and the retry runs only when `stripe_sweep` is in `UBYHOST_GO_JOB_KINDS` on the server (owner step 2). Until then Python handles booking events with the old behaviour (owner: not patched; Stripe is in test mode).
+**Production.** The rows exist only when the Go booking webhook runs (`UBYHOST_GO_BOOKING_WEBHOOK=1`, brief 1554, after 1796, 1797, 1798a and 1798b) and the retry runs only when `stripe_sweep` is in `UBYHOST_GO_JOB_KINDS` on the server (owner step 2). Until then Python handles booking events with the old behaviour (owner: not patched; Stripe is in test mode).
 
 **Excerpts (anchors; if one is not found verbatim, STOP, section 8).**
 
-A. `go/internal/payments/booking_refund_due.go` (from 1794a), end of the import block:
+A. `go/internal/payments/booking_refund_due.go` (from 1798a), end of the import block:
 ```go
 	"github.com/jackc/pgx/v5"
 )
@@ -59,7 +59,7 @@ D. `go/cmd/ubyhost-web/register_jobs.go`:
 ```
 E. `go/internal/payments/booking_webhook.go` (unchanged here, must exist): `func (b *BookingWebhook) booking(ctx context.Context, q dbtx, sql string, arg any) (*siteBooking, error) {`
 F. `go/internal/ubyport/effects.go` (unchanged here, must exist): `func RaiseAlert(ctx context.Context, pool *pgxpool.Pool, level, kind, message, detail, dedupeKey string,` and `func ResolveAlert(ctx context.Context, pool *pgxpool.Pool, dedupeKey string) error {`
-G. `go/internal/payments/booking_refund_due_test.go` (from 1794a) exists and ends with `func TestClashGoneClearsDue`.
+G. `go/internal/payments/booking_refund_due_test.go` (from 1798a) exists and ends with `func TestClashGoneClearsDue`.
 
 ## 3. Files
 
@@ -68,13 +68,13 @@ G. `go/internal/payments/booking_refund_due_test.go` (from 1794a) exists and end
 | `go/internal/payments/booking_refund_due.go` | edit | anchors A, B, C (steps 1 to 3) |
 | `go/cmd/ubyhost-web/register_jobs.go` | edit | anchor D (step 4) |
 | `go/internal/payments/booking_refund_due_test.go` | edit | append four tests (step 5) |
-| `docs/tasks/1794b-report.md` | create | report (section 9) |
+| `docs/tasks/1798b-report.md` | create | report (section 9) |
 
 No other file may change.
 
 ## 4. Steps
 
-First check anchors E, F and G: `grep -nF 'func (b *BookingWebhook) booking(ctx context.Context, q dbtx, sql string, arg any)' go/internal/payments/booking_webhook.go; grep -nF 'func ResolveAlert(ctx context.Context, pool *pgxpool.Pool, dedupeKey string) error {' go/internal/ubyport/effects.go; grep -n 'func TestClashGoneClearsDue' go/internal/payments/booking_refund_due_test.go`: three hits, else STOP. Run each step's command and the commit in one Bash call: `<command> 2>&1 | tail -30; git add -A && git commit -qm "1794b step k"`.
+First check anchors E, F and G: `grep -nF 'func (b *BookingWebhook) booking(ctx context.Context, q dbtx, sql string, arg any)' go/internal/payments/booking_webhook.go; grep -nF 'func ResolveAlert(ctx context.Context, pool *pgxpool.Pool, dedupeKey string) error {' go/internal/ubyport/effects.go; grep -n 'func TestClashGoneClearsDue' go/internal/payments/booking_refund_due_test.go`: three hits, else STOP. Run each step's command and the commit in one Bash call: `<command> 2>&1 | tail -30; git add -A && git commit -qm "1798b step k"`.
 
 1. `booking_refund_due.go`, anchor A. Replace it with
 ```go
@@ -108,7 +108,7 @@ func (b *BookingWebhook) refundDone(ctx context.Context, bookingID int64) error 
 	return ubyport.ResolveAlert(ctx, b.Pool, refundStuckAlertKey(bookingID))
 }
 
-// --- stripe_sweep retry and operator alert (brief 1794b) ----------------------
+// --- stripe_sweep retry and operator alert (brief 1798b) ----------------------
 
 const (
 	// The operator alert goes out once per booking, after refundDueAlertAttempts
@@ -247,7 +247,7 @@ func (b *BookingWebhook) RetryClashRefunds(ctx context.Context) (RefundSweep, er
 			if err != nil {
 				return expired + deleted, err
 			}
-			// 1794b: retry clash refunds that have not gone through; alert the operator once.
+			// 1798b: retry clash refunds that have not gone through; alert the operator once.
 			refunds, err := payments.NewBookingWebhook(pool, os.Getenv, time.Now).RetryClashRefunds(ctx)
 			if refunds != (payments.RefundSweep{}) {
 				slog.Info("clash refunds", "due", refunds.Due, "refunded", refunds.Refunded, "alerted", refunds.Alerted)
@@ -260,7 +260,7 @@ func (b *BookingWebhook) RetryClashRefunds(ctx context.Context) (RefundSweep, er
 5. Append exactly this to the end of `go/internal/payments/booking_refund_due_test.go` (for example `cat >> go/internal/payments/booking_refund_due_test.go <<'EOF'` ... `EOF`); no import changes are needed:
 ```go
 
-// --- 1794b: stripe_sweep retry and operator alert ---------------------------
+// --- 1798b: stripe_sweep retry and operator alert ---------------------------
 
 func alertCount(t *testing.T, pool *pgxpool.Pool) int {
 	t.Helper()
@@ -482,7 +482,7 @@ func TestClashRefundSweepRaceOneRefund(t *testing.T) {
 - `cd go && go build ./... 2>&1 | tail -30` : no output.
 - `cd go && go vet ./internal/payments/ ./cmd/ubyhost-web/ 2>&1 | tail -30` : no output.
 - `gofmt -l go/internal/payments/ go/cmd/ubyhost-web/ | head -50` : no output.
-- `cd go && go test ./internal/payments/ -count=1 2>&1 | tail -30` : `ok` (includes the golden test and all 1794a tests).
+- `cd go && go test ./internal/payments/ -count=1 2>&1 | tail -30` : `ok` (includes the golden test and all 1798a tests).
 - `cd go && go test ./internal/payments/ -count=1 -v 2>&1 | grep -c -- '--- SKIP'` : `0` with `UBYHOST_TEST_DATABASE_URL` set.
 - `cd go && go test ./cmd/ubyhost-web/ -count=1 2>&1 | tail -30` : `ok`.
 - `python3 scripts/context_lint.py 2>&1 | tail -3` : `context lint: OK`.
@@ -491,7 +491,7 @@ func TestClashRefundSweepRaceOneRefund(t *testing.T) {
 
 - [ ] `grep -c 'RetryClashRefunds(ctx)' go/cmd/ubyhost-web/register_jobs.go` prints `1`; `grep -c '"stripe_sweep"' go/cmd/ubyhost-web/register_jobs.go` still prints `2` (interval and handler).
 - [ ] `grep -c 'alertIfStuck(ctx, bookingID)' go/internal/payments/booking_refund_due.go` prints `1`; `grep -c 'ResolveAlert' go/internal/payments/booking_refund_due.go` prints `1`.
-- [ ] The four new tests and the five 1794a tests PASS, not SKIP, with a test database (in CI at least), also under `-race`.
+- [ ] The four new tests and the five 1798a tests PASS, not SKIP, with a test database (in CI at least), also under `-race`.
 - [ ] All section 6 commands as expected; `git diff --stat` lists only section 3 files.
 
 ## 8. Stop and ask
@@ -499,7 +499,7 @@ func TestClashRefundSweepRaceOneRefund(t *testing.T) {
 Stop, and write the report, if:
 
 - an excerpt (A to G) is not found verbatim;
-- `TestBookingWebhookMatchesPython` or a 1794a test fails;
+- `TestBookingWebhookMatchesPython` or a 1798a test fails;
 - a test fails twice;
 - you reach 25 tool calls or about 50k tokens (write the report as `blocked`, see executor.md);
 - a new dependency seems needed;
@@ -510,7 +510,7 @@ Stop, and write the report, if:
 
 ## 9. Report
 
-Write `docs/tasks/1794b-report.md` (600 tokens at most) and set `Status: review`. The report has:
+Write `docs/tasks/1798b-report.md` (600 tokens at most) and set `Status: review`. The report has:
 
 1. The files changed (`git diff --stat`).
 2. Each command, with the last 5 lines of its output.

@@ -1,14 +1,14 @@
-# 1794a: Clash refund that failed is recorded durably (Go booking webhook)
+# 1798a: Clash refund that failed is recorded durably (Go booking webhook)
 
 Status: todo
-Depends on: 1796, 1797 (both already committed on the working branch; anchors below were checked against 223ab1c) | Base commit: 223ab1c or the later tip of the working branch | Branch: task/1794a-go-clash-refund-due
+Depends on: 1796, 1797 (both already committed on the working branch; anchors below were checked against 223ab1c) | Base commit: 223ab1c or the later tip of the working branch | Branch: task/1798a-go-clash-refund-due
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Tier: A (money path and a migration; exact diffs only; a fresh reviewer reads the full diff of every file in section 3)
-Second half: [1794b](1794b-go-clash-refund-sweep-alert.md) (stripe_sweep retry and the operator alert). Plan: `docs/plans/ai-payments-hardening.md`, "P1 Fix before Stripe goes live", item 3.
+Second half: [1798b](1798b-go-clash-refund-sweep-alert.md) (stripe_sweep retry and the operator alert). Plan: `docs/plans/ai-payments-hardening.md`, "P1 Fix before Stripe goes live", item 3.
 
 ## 1. Objective
 
-When two guests pay for the same nights, the Go booking webhook refunds the second one; if that refund fails today, nothing durable remembers it, and once Stripe stops retrying the guest has paid with no booking and no refund. This brief writes a `site_booking_refund_due` row in the same transaction that decides the clash, counts each failed try on it (never a try blocked by the Stripe call cap), and deletes it when the refund goes through; 1794b adds the daily retry and the operator alert.
+When two guests pay for the same nights, the Go booking webhook refunds the second one; if that refund fails today, nothing durable remembers it, and once Stripe stops retrying the guest has paid with no booking and no refund. This brief writes a `site_booking_refund_due` row in the same transaction that decides the clash, counts each failed try on it (never a try blocked by the Stripe call cap), and deletes it when the refund goes through; 1798b adds the daily retry and the operator alert.
 
 ## 2. Context
 
@@ -16,15 +16,15 @@ When two guests pay for the same nights, the Go booking webhook refunds the seco
 - AGENTS.md 2: privacy first; a new personal-data field needs a line in `App/app/retention.py`. This brief stores none (ids, a count, stamps, a Stripe error code), so no retention line. Never log or store the guest's name or e-mail.
 - AGENTS.md 5 / rules.md "Database": schema changes are goose files only, `App/migrations_pg/NNNNN_name.sql`, next number = highest + 1 (today `00018_submission_cause.sql`, so **00019**); additive only, the previous image must keep working; after adding one, rerun `App/scripts/pg_schema_golden.py`.
 - rules.md "State machines": every stored state/status column has one TRANSITIONS table. This brief adds **no** status value: `site_booking.status` keeps its values (`go/internal/statemachine/tables.go` "site_booking.status", `bookingTransitions` in `booking_webhook.go`, Python `booking_site._TRANSITIONS`). "Refund due" is the existence of a row in a new table with no `*state`/`*status` column, so `App/tests/test_sm_registry.py` (regex `(^|_)(state|status)$`) needs no entry.
-- Owner decisions 2026-11-16 (recorded in 1797): **Go only**, no Python change now or as a follow-up; the Go booking webhook goes live (`UBYHOST_GO_BOOKING_WEBHOOK=1`) only after 1792, 1793 and 1794 are merged and green; no backfill (Stripe is in test mode).
+- Owner decisions 2026-11-16 (recorded in 1797): **Go only**, no Python change now or as a follow-up; the Go booking webhook goes live (`UBYHOST_GO_BOOKING_WEBHOOK=1`) only after 1792, 1793 and 1798 are merged and green; no backfill (Stripe is in test mode).
 
 **Why a new table and not a status value or new columns (verified).**
-- A goose-only `ADD COLUMN` on `site_booking` breaks Python's start-up check: `App/app/db.py` `postgres_schema_status` counts a column-count difference on any table of the frozen SQLite schema as `column_mismatches`, and `validate_postgres_schema_connection` then raises "PostgreSQL schema is absent, outdated, or incompatible." An extra table only raises `extra_tables`, which keeps `current` true (`App/tests/test_goose_migrations.py::test_a_table_outside_the_baseline_keeps_the_schema_current`; goose-only table precedent: `00003_job.sql`).
+- A goose-only `ADD COLUMN` on `site_booking` needs a Python edit: `App/app/db.py` `postgres_schema_status` counts a column-count difference on any table of the expected schema as `column_mismatches` (then `validate_postgres_schema_connection` raises "PostgreSQL schema is absent, outdated, or incompatible."), unless the column is listed in `db.GOOSE_ONLY_COLUMNS` (as `00018_submission_cause.sql` did), which is a change under `App/app/` the owner ruled out. An extra table only raises `extra_tables`, which keeps `current` true (`App/tests/test_goose_migrations.py::test_a_table_outside_the_baseline_keeps_the_schema_current`; goose-only table precedent: `00003_job.sql`).
 - A new `site_booking.status` value would need the Python `_TRANSITIONS` twin in the same PR (rules: a column written in both languages changes in both) and the previous image, on rollback, would fail `refund_due -> clash_refunded` as an illegal move.
 
 **Live path today.** `go/internal/payments/booking_webhook.go` runs only when `UBYHOST_GO_BOOKING_WEBHOOK=1`; otherwise Go forwards booking events to Python (`App/app/booking_webhook.py`), which keeps the bug (owner: not patched). `deploy/lightsail/docker-compose.yml` does not pass `UBYHOST_GO_BOOKING_WEBHOOK` to `ubyhost-go` and `docs/ENVIRONMENT.md` has no row for it (brief 1554 owns both). So this fix protects production only after the 1554 switch; Stripe is in test mode, so no real guest is exposed now.
 
-**Idempotency (already there, kept).** Every refund try sends `Idempotency-Key: site_booking_clash_refund_<booking id>`; Python sends the same key (`App/app/booking_webhook.py:115`), and the golden test pins it. Stripe returns the first result for a repeated key, so a webhook retry, the 1794b sweeper or a Python try can never refund twice. Note (Stripe docs, not verifiable offline): Stripe also replays a cached *error* for about 24 hours, so a retry with the same key inside 24 h usually repeats the first error; the daily 1794b retry is a real new try.
+**Idempotency (already there, kept).** Every refund try sends `Idempotency-Key: site_booking_clash_refund_<booking id>`; Python sends the same key (`App/app/booking_webhook.py:115`), and the golden test pins it. Stripe returns the first result for a repeated key, so a webhook retry, the 1798b sweeper or a Python try can never refund twice. Note (Stripe docs, not verifiable offline): Stripe also replays a cached *error* for about 24 hours, so a retry with the same key inside 24 h usually repeats the first error; the daily 1798b retry is a real new try.
 
 **Stripe call cap.** `guard` in `go/internal/payments/onboarder.go` returns `ErrStripeOff` when the mode is off, the key does not match the mode (1796), or this month's `lock_api_usage` count reached `UBYHOST_STRIPE_MONTHLY_API_CALLS` (default 50000); it counts the call before the HTTP request. A `guard` error is **not** a failed try here: nothing is counted, the row stays due.
 
@@ -74,18 +74,18 @@ Test helpers that already exist in package `payments` (do not redefine): `testPo
 | `go/internal/payments/booking_refund_due.go` | create | helpers (step 3) |
 | `go/internal/payments/booking_webhook.go` | edit | anchors A to E (steps 4 to 8) |
 | `go/internal/payments/booking_refund_due_test.go` | create | tests (step 9) |
-| `docs/tasks/1794a-report.md` | create | report (section 9) |
+| `docs/tasks/1798a-report.md` | create | report (section 9) |
 
 No other file may change. Nothing under `App/app/` changes (go-first: Go only).
 
 ## 4. Steps
 
-Run each step's command and the commit in one Bash call: `<command> 2>&1 | tail -30; git add -A && git commit -qm "1794a step k"`.
+Run each step's command and the commit in one Bash call: `<command> 2>&1 | tail -30; git add -A && git commit -qm "1798a step k"`.
 
 1. Create `App/migrations_pg/00019_site_booking_refund_due.sql` with exactly:
 ```sql
 -- +goose Up
--- Brief 1794a: a booking-site clash whose refund has not gone through yet.
+-- Brief 1798a: a booking-site clash whose refund has not gone through yet.
 -- Goose-only (App/app/migrations is frozen) and no schema_migrations row, like 00017 and 00018.
 -- A new table, so the schema check counts it as an extra table and stays current,
 -- and the previous image ignores it. No personal data: ids, a count, stamps and a
@@ -113,7 +113,7 @@ DROP TABLE IF EXISTS site_booking_refund_due;
 ```go
 package payments
 
-// Clash refunds that have not gone through yet (brief 1794a, plan
+// Clash refunds that have not gone through yet (brief 1798a, plan
 // ai-payments-hardening P1 item 3). confirm writes a site_booking_refund_due
 // row in the transaction that finds the clash; refundClash counts each failed
 // try on it and deletes it once the refund went through. Every try sends the
@@ -153,7 +153,7 @@ func refundIdempotencyKey(bookingID int64) string {
 }
 
 // refundError is a non-2xx answer of POST /v1/refunds. Error() is the text the
-// webhook returned before 1794; only the status and the code are stored.
+// webhook returned before 1798; only the status and the code are stored.
 type refundError struct {
 	status        int
 	message, code string
@@ -246,7 +246,7 @@ func (b *BookingWebhook) refundDone(ctx context.Context, bookingID int64) error 
 ```
    with
 ```go
-	// 1794a: the clash and its refund-due row commit together, so a refund that
+	// 1798a: the clash and its refund-due row commit together, so a refund that
 	// then fails is never forgotten.
 	if err := markRefundDue(ctx, tx, bk.id, intent, clash, stamp); err != nil {
 		return err
@@ -301,11 +301,11 @@ func (b *BookingWebhook) refundDone(ctx context.Context, bookingID int64) error 
 ```
    Command: `cd go && go build ./... && go vet ./internal/payments/` : no output.
 
-9. Create `go/internal/payments/booking_refund_due_test.go` with exactly (1794b appends to it):
+9. Create `go/internal/payments/booking_refund_due_test.go` with exactly (1798b appends to it):
 ```go
 package payments
 
-// Tests for clash refunds that have not gone through (brief 1794a). They use
+// Tests for clash refunds that have not gone through (brief 1798a). They use
 // the golden seed of booking_webhook_test.go: booking 4 is on apartment 11,
 // whose dates clash with the active stay 50; its host (user 1) has the
 // connected account acct_golden1; its hold is 204, its payment intent pi_4.
@@ -598,7 +598,7 @@ func TestClashGoneClearsDue(t *testing.T) {
 - `cd go && go test ./internal/payments/ -count=1 -v 2>&1 | grep -c -- '--- SKIP'` : `0` with `UBYHOST_TEST_DATABASE_URL` set.
 - `cd go && go test ./internal/schema/ -count=1 2>&1 | tail -30` : `ok`.
 - From `App/`: `.venv/bin/python -m pytest tests/test_go_schema_golden.py tests/test_goose_migrations.py tests/test_sm_registry.py tests/test_migrations.py tests/test_db_*.py -q --tb=short -x 2>&1 | tail -30` : passed (PostgreSQL-only tests may skip without `UBYHOST_TEST_DATABASE_URL`; list them in the report).
-- `python3 scripts/context_lint.py 2>&1 | tail -3` : `context lint: OK` (an overlap warning with 1797 or 1794b is expected).
+- `python3 scripts/context_lint.py 2>&1 | tail -3` : `context lint: OK` (an overlap warning with 1797 or 1798b is expected).
 
 ## 7. Acceptance
 
@@ -625,7 +625,7 @@ Stop, and write the report, if:
 
 ## 9. Report
 
-Write `docs/tasks/1794a-report.md` (600 tokens at most) and set `Status: review`. The report has:
+Write `docs/tasks/1798a-report.md` (600 tokens at most) and set `Status: review`. The report has:
 
 1. The files changed (`git diff --stat`).
 2. Each command, with the last 5 lines of its output.
@@ -643,7 +643,7 @@ Full diff of: `booking_webhook.go` (confirm, refundClash, refund), `booking_refu
 ## Owner steps
 
 1. Wait for the fresh Tier A review of the full diff, then merge with `scripts/merge-pr-on-green.sh` when CI is green (the new tests must show as run, not skipped).
-2. The deploy applies goose file 00019 like every goose file; nothing else to do. It has no effect in production until the Go booking webhook is switched on (brief 1554), which you do only after 1796, 1797, 1794a and 1794b are merged.
+2. The deploy applies goose file 00019 like every goose file; nothing else to do. It has no effect in production until the Go booking webhook is switched on (brief 1554), which you do only after 1796, 1797, 1798a and 1798b are merged.
 
 ## Plan differences
 
