@@ -68,4 +68,3 @@ Append-only.
 - 2026-11-15 [ai] Havel and Leon on Mistral Small, 0.05 USD monthly caps | owner
 - 2026-11-15 [legal] Register lists Mistral AI and Anthropic (conditional); no "EU only"/"not stored" claim without ZDR or EU endpoint | 1792
 - 2026-11-15 [ai] Shared Havel/Leon budget, abuse caps; Havel no-go settings; nameless lookups; host mail in host language: [plan](../plans/ai-payments-hardening.md) | owner
-- 2026-11-16 [ux] Hosts see job_failed only for submit, deadlines, ical, door_codes; other jobs (job queue, billing, retention, mail...) show only on admin Operations | owner
