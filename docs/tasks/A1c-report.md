@@ -1,21 +1,21 @@
 # A1c report: critical alert after 3 definite UbyPort failures
 
-Status: blocked
+Status: review
 
-Done (committed on feat/ubyport-three-failures-alert):
-- Steps 1 to 4: reporting.py constant, streak, submission_transport_repeated alert, resolve (commits A1c step 1 to 4).
-- Step 5: effects.go transportStreak, plus encoding/json import (A1c step 5).
-- Step 6: submit.go streak, repeated alert and resolve (A1c step 6). gofmt clean, go vet ./internal/ubyport/ clean.
-- Step 7: host_i18n.py (en, cs), host_vi_i18n.py, regenerated go/internal/hostweb/layout/i18n.json. go_host_i18n.py --check exits 0 (A1c step 7).
-- Step 9: four Python tests appended to App/tests/test_submission_mail.py (A1c step 9). Committed as a failing state, see below.
-
-Left:
-- Step 9 test `test_three_faults_in_a_row_raise_the_repeated_alert` fails: after 3 fault transport errors the repeated alert is not open (assert None is not None, line 761). Teardown also errors: sqlite3 FOREIGN KEY failure in _purge (test_submission_mail.py:70 via db.py:1962). Root cause not found. Suspects: the streak param not persisted on open-row refresh (alerts.raise_alert, alerts.py:470-485), or the teardown purge order with the new alert.
-- Step 10: Go tests (submit_test.go) not written. Go test run not done.
-- Section 6 commands not run in full. Step 8 registries: only hits are go/internal/calendar/testdata/filing_watchdog_golden.json:5736 and filing_watchdog_run_golden.json:3580 (not changed).
+Done (feat/ubyport-three-failures-alert, PR draft):
+- Steps 1 to 7: reporting.py streak, alert and resolve; effects.go transportStreak; submit.go streak, alert and resolve; i18n en, cs, vi; hostweb layout i18n.json regenerated (go_host_i18n.py --check exit 0).
+- Step 9: four Python tests pass (tests/test_submission_mail.py -k a1c).
+- Step 10: three Go tests pass (submit_test.go).
+- Section 6: pytest 110 passed (8 files); go test ./internal/ubyport/... ./internal/hostweb/... ok; gofmt and go vet clean; context_lint OK.
+- Postgres 5433 was down; started it. Tests run as role postgres (role pgtest does not exist).
 
 Deviations:
-- Branch name is feat/ubyport-three-failures-alert as the owner's instruction says, not task/a1c-three-failures-alert from the brief.
-- Commit messages follow the brief ("A1c step k").
+- Step 2 fix: stored_params on a sqlite Row returns {} (no .get), so the streak read uses dict(previous).
+- Step 9 fix: test seed tokens are mailnotifya1c1..4. The purge only removes permalink_token LIKE 'mailnotify%'; the a1c tokens left a legal_entity FK failure.
+- Branch name is the owner's feat/ubyport-three-failures-alert, not the brief's task/a1c-...
 
-Owner steps left: none yet. Merge only after the review is green, with scripts/merge-pr-on-green.sh.
+Left:
+- Step 8 registries: go/internal/calendar/testdata/filing_watchdog_golden.json:5736 and filing_watchdog_run_golden.json:3580 list submission_transport. No test named the new kind, so left unchanged.
+- Help and guide: the PR template asks for it when host behaviour changes. The brief does not name it, so it is not done.
+
+Owner steps: none until review. Merge with scripts/merge-pr-on-green.sh only after review.
