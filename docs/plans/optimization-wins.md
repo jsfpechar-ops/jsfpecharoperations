@@ -79,7 +79,7 @@ Rule 1 applies: nothing here may change what is filed or the evidence of what wa
 
 | Brief | Work | Done when |
 |---|---|---|
-| 1818 | Signature: store a small black-and-white image as compressed bytes, then encrypt. Format: D1. Old rows are converted by a one-off job | New guest rows are 5 KB or less |
+| 1818 | Signature: store a black-and-white image 480 px wide (owner chose 480 over 300 on 2026-11-16 from a sample) as compressed bytes, then encrypt. Format: D1. Old rows are converted by a one-off job | New guest rows are 5 KB or less; the PDF may tint the ink dark blue when drawing |
 | 1819 | Submission XML: compress, then encrypt, in a binary column; old rows converted. The decrypted text is byte-identical | Round-trip test on every stored row; table shrinks about 10 times |
 | 1820 | PDFs (`stay_fee_filing`, `platform_invoice`): compress, then encrypt; subset fonts when generating. Never regenerate an issued invoice | Round-trip test; average PDF row 30 KB or less |
 | 1821 | Local backups: keep the last 3 in `/data/backups`; deploy takes a backup only when a migration is pending; the nightly dump streams to remote storage with no local file once the database passes 1 GB | Volume holds 3 folders |
