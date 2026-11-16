@@ -45,7 +45,13 @@ var feedKinds = map[string]bool{"feed_incomplete": true, "feed_duplicate_uid": t
 var reasonKinds = map[string]bool{"deadline": true, "guest_incomplete_checkin": true, "headcount_mismatch": true}
 
 // systemAlertKinds is alerts.SYSTEM_ALERT_KINDS (shown to every workspace).
-const systemAlertKinds = `'job_failed', 'turnstile_unavailable', 'ttlock_budget'`
+const systemAlertKinds = `'turnstile_unavailable', 'ttlock_budget'`
+
+// hostJobFailedKeys are the only job_failed alerts a host sees: the jobs that
+// touch police filing, its deadlines, the calendar sync and door codes. Every
+// other job is the operator's business and stays on the admin Operations page
+// (alerts.HOST_JOB_FAILED_JOBS in Python).
+const hostJobFailedKeys = `'job_failed:submit', 'job_failed:deadlines', 'job_failed:ical', 'job_failed:door_codes'`
 
 // shellAlertLimit is alerts.SHELL_ALERT_LIMIT.
 const shellAlertLimit = 12
@@ -121,7 +127,8 @@ const openAlertsSQL = `SELECT al.id, al.level, al.kind, al.apartment_id, al.rese
   LEFT JOIN apartment fa ON fa.id = al.apartment_id
   LEFT JOIN reservation r ON r.id = al.reservation_id
   LEFT JOIN apartment ra ON ra.id = r.apartment_id
- WHERE al.resolved_at IS NULL AND (al.owner_user_id = $1 OR al.kind IN (` + systemAlertKinds + `))
+ WHERE al.resolved_at IS NULL AND (al.owner_user_id = $1 OR al.kind IN (` + systemAlertKinds + `)
+       OR (al.kind = 'job_failed' AND al.dedupe_key IN (` + hostJobFailedKeys + `)))
  ORDER BY al.created_at DESC, al.id DESC`
 
 // loadAlerts is alerts.open_alerts(owner): unresolved rows of the workspace
