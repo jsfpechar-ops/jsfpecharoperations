@@ -49,3 +49,13 @@ func TestBuildFilingStalledRejectsOtherLanguage(t *testing.T) {
 		t.Fatal("expected ErrLanguage for cs")
 	}
 }
+
+func TestBuildFilingStalledUnknownCause(t *testing.T) {
+	c, err := BuildFilingStalled("https://example.test", "en", "Byt 7", 3, "bogus", "https://x.test/", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(c.Text, strStalledCauseUnknown) {
+		t.Fatal("unknown cause does not read as the unknown cause")
+	}
+}

@@ -253,7 +253,7 @@ func RunFilingStalled(ctx context.Context, pool *pgxpool.Pool, getenv func(strin
 // filingStalledMail queues the host mail and the operator copy for p, each at
 // most once per property and Prague day (the idempotency key carries the
 // date). Failures are logged without the address. It reports whether the host
-// mail was queued.
+// mail was newly queued (a repeat on the same day reports false).
 func filingStalledMail(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string, p StalledProperty, at time.Time) bool {
 	if !watchdogMailEnabled(getenv) {
 		return false
@@ -269,7 +269,7 @@ func filingStalledMail(ctx context.Context, pool *pgxpool.Pool, getenv func(stri
 	if count == 0 {
 		count = p.Pending
 	}
-	hostQueued := false
+	newHost := false
 	to, unreadable, err := watchdogContactEmail(ctx, pool, p.LegalEntityID)
 	if err != nil {
 		slog.Error("filing_stalled host mail failed", "apartment_id", id)
@@ -278,18 +278,16 @@ func filingStalledMail(ctx context.Context, pool *pgxpool.Pool, getenv func(stri
 		slog.Error("filing_stalled host not mailed: contact address unreadable", "apartment_id", id)
 	}
 	if err == nil && to != "" {
-		content, err := mail.BuildFilingStalled(public, "en", p.Property, count, p.Cause, action, "")
-		if err == nil {
-			_, err = ubyport.EnqueueMail(ctx, pool, ubyport.OutboxMail{
+		content, berr := mail.BuildFilingStalled(public, "en", p.Property, count, p.Cause, action, "")
+		if berr == nil {
+			newHost, berr = enqueueStalled(ctx, pool, ubyport.OutboxMail{
 				Kind: "filing_stalled", Key: fmt.Sprintf("filing_stalled:%d:%s", id, day),
 				ApartmentID: &id, OwnerUserID: p.OwnerUserID, To: to,
 				Subject: content.Subject, Text: content.Text, HTML: content.HTML,
 			})
 		}
-		if err != nil {
+		if berr != nil {
 			slog.Error("filing_stalled host mail failed", "apartment_id", id)
-		} else {
-			hostQueued = true
 		}
 	}
 	operator := strings.TrimSpace(getenv("UBYHOST_OPERATOR_EMAIL"))
@@ -305,17 +303,29 @@ func filingStalledMail(ctx context.Context, pool *pgxpool.Pool, getenv func(stri
 		if workspace == "" {
 			workspace = "-"
 		}
-		content, err := mail.BuildFilingStalled(public, "en", p.Property, count, p.Cause, action, workspace)
-		if err == nil {
-			_, err = ubyport.EnqueueMail(ctx, pool, ubyport.OutboxMail{
+		content, berr := mail.BuildFilingStalled(public, "en", p.Property, count, p.Cause, action, workspace)
+		if berr == nil {
+			_, berr = enqueueStalled(ctx, pool, ubyport.OutboxMail{
 				Kind: "filing_stalled_operator", Key: fmt.Sprintf("filing_stalled_operator:%d:%s", id, day),
 				ApartmentID: &id, To: opTo,
 				Subject: content.Subject, Text: content.Text, HTML: content.HTML,
 			})
 		}
-		if err != nil {
+		if berr != nil {
 			slog.Error("filing_stalled operator mail failed", "apartment_id", id)
 		}
 	}
-	return hostQueued
+	return newHost
+}
+
+// enqueueStalled queues m and reports whether its key was not queued before.
+func enqueueStalled(ctx context.Context, pool *pgxpool.Pool, m ubyport.OutboxMail) (bool, error) {
+	var before int
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM email_outbox WHERE idempotency_key = $1`, m.Key).Scan(&before); err != nil {
+		return false, err
+	}
+	if _, err := ubyport.EnqueueMail(ctx, pool, m); err != nil {
+		return false, err
+	}
+	return before == 0, nil
 }
