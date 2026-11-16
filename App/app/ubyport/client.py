@@ -41,6 +41,11 @@ class UbyportTransportError(UbyportError):
     rather than swallow it, and 10.2(e) requires that no data is lost.
     """
 
+    def __init__(self, message: str = "", *, cause: str = "", detail: str = "") -> None:
+        super().__init__(message)
+        self.cause = cause
+        self.detail = detail
+
 
 class UbyportOutcomeUnknownError(UbyportTransportError):
     """The request may have reached UbyPort, so whether it was filed is unknown.
