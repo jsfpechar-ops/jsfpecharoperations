@@ -1,5 +1,4 @@
 Status: review
-Chunk: C3 done
-Done: C3 steps 1 to 2 (browser test, banner class change, paste flow). Lint 4 passed, geometry 84 passed, browser 6 passed, all 0 skipped. PR opened as draft.
-Deviations: banner uses police-letter-note (orchestrator decision); browser paste test follows existing paste() flow (JS paste event, Read button hidden with JS).
-Open: paste status merges all warnings in one paragraph and repeats the banner copy; paste textarea shows red border at 768 and 1280 px (cause not diagnosed).
+Chunk: C3 done (UX fixes)
+Done: paste status is one sentence; each mismatch is its own line (new [data-letter-warning] notes, JS, no CSS); banner once in saved place; focus ring explains the red textarea (blurred before the shot); gap status to warning measured at 12 px or more; browser 6 passed, lint 4 passed, geometry set 90 passed, all 0 skipped.
+Open: the layout lint does not cover the apartment settings page (no lint shot exists for it); the police-check shots of that page were opened instead.

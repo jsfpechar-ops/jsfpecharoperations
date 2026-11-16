@@ -3604,7 +3604,7 @@ async def police_letter_read(apartment_id: int, request: Request):
                 letter=police_check.letter_values(result, letter_text),
             )
             extra["police_findings"] = findings
-            warnings = [item["text"] for item in findings]
+            warnings = [item["text"] for item in findings if item["code"] in ("letter_mismatch", "letter_address")]
         else:
             status = result.status if result.status in ("empty", "too_long") else "failed"
             extra["letter_status"] = status
@@ -3625,7 +3625,7 @@ async def police_letter_read(apartment_id: int, request: Request):
         db.audit("police_letter_read", f"apartment={apartment_id} filled={','.join(filled)}")
     if wants_json:
         if status == "ok":
-            message = " ".join(part for part in [extra.get("letter_message", ""), *warnings] if part)
+            message = extra.get("letter_message", "")
         else:
             message = host_i18n.translate(lang, f"police_letter.{status}")
         response = JSONResponse(

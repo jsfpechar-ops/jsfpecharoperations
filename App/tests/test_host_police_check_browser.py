@@ -55,6 +55,13 @@ def test_paste_with_javascript_names_the_printed_short_name(live, width):
     with page.expect_response(lambda r: r.url.endswith("/police-letter")) as reply:
         page.dispatch_event("#letter_text", "paste")
     assert reply.value.status == 200
-    page.wait_for_function("document.querySelector('[data-letter-status]').textContent.includes('A33')", timeout=5000)
+    page.wait_for_function("document.querySelector('[data-letter-status]').textContent.includes('Filled from your letter')", timeout=5000)
+    page.wait_for_function("document.querySelectorAll('[data-letter-warning]').length === 1", timeout=5000)
+    assert "A33" in page.locator("[data-letter-warning]").inner_text()
+    assert "No report accepted yet" not in page.locator("[data-letter-status]").inner_text()
+    assert page.locator("body").inner_text().count("No report accepted yet") == 1
+    gap = page.evaluate("() => document.querySelector('[data-letter-warning]').getBoundingClientRect().top - document.querySelector('[data-letter-status]').getBoundingClientRect().bottom")
+    assert gap >= 12, f"status to warning gap {gap}px"
+    page.evaluate("() => { if (document.activeElement) document.activeElement.blur(); }")
     assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
     _shot(page, "police-check-paste", width)

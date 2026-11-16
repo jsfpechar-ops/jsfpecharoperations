@@ -119,7 +119,7 @@ def test_paste_json_warns_about_a_printed_short_name_and_saves_nothing(host, no_
     )
     body = response.json()
     assert any("A33" in line and "DEMO1" in line for line in body["warnings"]), body["warnings"]
-    assert all(line in body["message"] for line in body["warnings"])
+    assert body["message"] and not any(line in body["message"] for line in body["warnings"])
     assert SAMPLE_WS_PASSWORD not in response.text.replace(body["fields"]["uby_ws_password"]["value"], "")
     assert dict(_apartment()) == before
     audit = _audit_text()
