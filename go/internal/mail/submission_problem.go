@@ -114,6 +114,21 @@ const strHeading = "Your report was not accepted"
 // mail.submission_problem.action_stay
 const strActionStay = "Open the stay"
 
+// mail.submission_problem.subject_answered
+const strSubjectAnswered = "UbyPort answered with an error - %(property)s"
+
+// mail.submission_problem.intro_answered
+const strIntroAnswered = "UbyPort answered the guest report for %(property)s with an error. Nothing from this attempt was filed, so these guests are not declared yet."
+
+// mail.submission_problem.preheader_answered
+const strPreheaderAnswered = "UbyPort answered with an error. Nothing was filed."
+
+// mail.submission_problem.next_steps_answered
+const strNextStepsAnswered = "If automatic sending is on for this property, UbyHost sends the report again on its next run. If the same error comes back, contact UbyPort support with the property's IDUB and the time of this e-mail. Do not send them guest details."
+
+// mail.submission_problem.next_steps_auth
+const strNextStepsAuth = "Enter the UBY-WS password again in the property's police settings, then press Save and test connection. Automatic sending stays paused until then."
+
 // mail.submission_problem.subject_unanswered (state "unanswered": the final notice)
 const strSubjectUnanswered = "UbyPort has not answered your report - %(property)s"
 
@@ -405,7 +420,7 @@ func (m msg) html() string {
 // unset; publicBaseURL is UBYHOST_PUBLIC_BASE_URL. Both come without a trailing
 // slash. The logo uses publicBaseURL and the links use appBaseURL, as in Python.
 // submissionID 0 means no submission link, as in Python.
-func BuildSubmissionProblem(appBaseURL, publicBaseURL, lang, propertyName, state, reason string, transport bool, stays []Stay, submissionID int64) (Content, error) {
+func BuildSubmissionProblem(appBaseURL, publicBaseURL, lang, propertyName, state, reason string, transport bool, stays []Stay, submissionID int64, cause string) (Content, error) {
 	if normaliseLanguage(lang) != "en" {
 		return Content{}, ErrLanguage
 	}
@@ -414,6 +429,16 @@ func BuildSubmissionProblem(appBaseURL, publicBaseURL, lang, propertyName, state
 	if transport {
 		subject, intro, preheader = strSubjectTransport, strIntroTransport, strPreheaderTransport
 		reasonLabel, nextSteps = strReasonLabelTransport, strNextStepsTransport
+	}
+	// UbyPort answered (fault, HTTP 4xx, redirect, login refused): the
+	// connection worked, so the mail must not say it failed (A1).
+	answered := transport && (cause == "fault" || cause == "http4xx" || cause == "redirect" || cause == "auth")
+	if answered {
+		subject, intro, preheader = strSubjectAnswered, strIntroAnswered, strPreheaderAnswered
+		reasonLabel, nextSteps = strReasonLabel, strNextStepsAnswered
+		if cause == "auth" {
+			nextSteps = strNextStepsAuth
+		}
 	}
 	nextTransient := strNextTransient
 	if state == "unanswered" {
@@ -428,7 +453,7 @@ func BuildSubmissionProblem(appBaseURL, publicBaseURL, lang, propertyName, state
 		intro:         fill(intro, propertyName),
 		preheader:     preheader,
 		reasonLabel:   reasonLabel,
-		reasonText:    reasonLine(state, reason, transport),
+		reasonText:    reasonLine(state, reason, transport && !answered),
 		nextLabel:     strNextLabel,
 		nextSteps:     nextSteps,
 		nextTransient: nextTransient,

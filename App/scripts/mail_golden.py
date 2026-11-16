@@ -35,6 +35,7 @@ def render(case: dict) -> dict:
         state=case["state"],
         reason=case["reason"],
         transport=case["transport"],
+        cause=case.get("cause", ""),
         stays=case["stays"],
         submission_id=case["submission_id"],
         lang="en",

@@ -38,6 +38,10 @@ type Error struct {
 	Kind       error
 	Msg        string
 	RequestXML string
+	// Cause is "dial", "auth", "redirect", "fault" or "http4xx" for a plain
+	// transport error, "" otherwise. Detail is what a host may read (A1).
+	Cause  string
+	Detail string
 }
 
 func (e *Error) Error() string { return e.Msg }
@@ -168,7 +172,7 @@ func (c *Client) Post(ctx context.Context, method, envelope string) (string, err
 	errs := rec.recorded()
 	if err != nil {
 		if len(errs) > 0 && allDial(errs) {
-			return "", &Error{Kind: ErrTransport, Msg: fmt.Sprintf("Could not reach UbyPort at %s: %v", c.Endpoint, err)}
+			return "", &Error{Kind: ErrTransport, Cause: "dial", Msg: fmt.Sprintf("Could not reach UbyPort at %s: %v", c.Endpoint, err)}
 		}
 		return "", unknown(fmt.Sprintf("UbyPort did not answer after the request was sent (outcome unknown): %v", err))
 	}
@@ -185,20 +189,22 @@ func (c *Client) Post(ctx context.Context, method, envelope string) (string, err
 	text := string(body)
 	code := resp.StatusCode
 	if code == http.StatusUnauthorized {
-		return "", &Error{Kind: ErrAuth, Msg: "UbyPort rejected the credentials (HTTP 401). Check that this is a web-service " +
+		return "", &Error{Kind: ErrAuth, Cause: "auth", Msg: "UbyPort rejected the credentials (HTTP 401). Check that this is a web-service " +
 			"login (UBY-WS...) and that it is registered for this IDUB."}
 	}
 	if code >= 300 && code < 400 {
-		return "", &Error{Kind: ErrTransport, Msg: fmt.Sprintf("UbyPort returned an unexpected redirect (HTTP %d).", code)}
+		return "", &Error{Kind: ErrTransport, Cause: "redirect", Detail: fmt.Sprintf("HTTP %d", code), Msg: fmt.Sprintf("UbyPort returned an unexpected redirect (HTTP %d).", code)}
 	}
 	if fault := ParseFault(body); fault != nil {
-		return "", &Error{Kind: ErrTransport, Msg: "UbyPort returned a SOAP fault: " + *fault}
+		clean := CleanFaultText(*fault)
+		return "", &Error{Kind: ErrTransport, Msg: "UbyPort returned a SOAP fault: " + clean, Cause: "fault", Detail: clean}
 	}
 	if code >= 500 {
 		return "", unknown(fmt.Sprintf("UbyPort returned HTTP %d (outcome unknown): %s", code, truncRunes(text, 400)))
 	}
 	if code >= 400 {
-		return "", &Error{Kind: ErrTransport, Msg: fmt.Sprintf("UbyPort returned HTTP %d: %s", code, truncRunes(text, 400))}
+		// The body can be an HTML page or echo request values: never keep it.
+		return "", &Error{Kind: ErrTransport, Msg: fmt.Sprintf("UbyPort returned HTTP %d.", code), Cause: "http4xx", Detail: fmt.Sprintf("HTTP %d", code)}
 	}
 	return text, nil
 }

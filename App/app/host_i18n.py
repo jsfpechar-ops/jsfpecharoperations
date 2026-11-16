@@ -925,6 +925,21 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "flash.error.ubyport_unreachable": (
             "UbyPort couldn't be reached. Try again in a few minutes."
         ),
+        "flash.error.ubyport_login_refused": (
+            "UbyPort refused the web-service login for this property, so nothing was filed. "
+            "Enter the UBY-WS password again in the police settings, then test the connection."
+        ),
+        "flash.error.ubyport_fault": (
+            "UbyPort answered with an error, so nothing was filed: %(detail)s. "
+            "If it repeats, contact UbyPort support."
+        ),
+        "flash.error.ubyport_http_error": (
+            "UbyPort answered with %(detail)s, so nothing was filed. "
+            "If it repeats, contact UbyPort support."
+        ),
+        "flash.error.ubyport_send_failed": (
+            "Sending to UbyPort failed and nothing was filed. The alert for this property has the details."
+        ),
         "flash.error.ubyport_outcome_unknown": (
             "UbyPort's answer did not arrive, so it is not known whether the report "
             "was filed. Check UbyPort before sending again."
@@ -1059,6 +1074,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail.submission_problem.next_unanswered": "Check UbyPort. If the guests are missing there, file them by hand in UbyPort, or press the normal Send on the stay.",
         "mail.submission_problem.next_steps_transport": "Nothing to do now: UbyHost sends it again on the next run. If you get this e-mail again tomorrow, open the stay and send the report by hand.",
         "mail.submission_problem.next_transient": "An interrupted connection clears itself when the report is sent again. If the same record fails twice, check the data before sending again.",
+        "mail.submission_problem.subject_answered": "UbyPort answered with an error - %(property)s",
+        "mail.submission_problem.intro_answered": "UbyPort answered the guest report for %(property)s with an error. Nothing from this attempt was filed, so these guests are not declared yet.",
+        "mail.submission_problem.preheader_answered": "UbyPort answered with an error. Nothing was filed.",
+        "mail.submission_problem.next_steps_answered": "If automatic sending is on for this property, UbyHost sends the report again on its next run. If the same error comes back, contact UbyPort support with the property's IDUB and the time of this e-mail. Do not send them guest details.",
+        "mail.submission_problem.next_steps_auth": "Enter the UBY-WS password again in the property's police settings, then press Save and test connection. Automatic sending stays paused until then.",
         "mail.submission_problem.stays_label": "Stays in this report",
         "mail.submission_problem.action_stay": "Open the stay",
         "mail.submission_problem.action_dorucenka": "Open the report receipt (Doručenka)",
@@ -3085,6 +3105,21 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "flash.error.ubyport_unreachable": (
             "UbyPort se nepodařilo kontaktovat. Zkuste to za pár minut."
         ),
+        "flash.error.ubyport_login_refused": (
+            "UbyPort odmítl přihlášení k webové službě pro toto ubytování, nic se nepodalo. "
+            "V nastavení pro policii zadejte znovu heslo UBY-WS a otestujte spojení."
+        ),
+        "flash.error.ubyport_fault": (
+            "UbyPort odpověděl chybou, nic se nepodalo: %(detail)s. "
+            "Pokud se to opakuje, kontaktujte podporu UbyPortu."
+        ),
+        "flash.error.ubyport_http_error": (
+            "UbyPort odpověděl %(detail)s, nic se nepodalo. "
+            "Pokud se to opakuje, kontaktujte podporu UbyPortu."
+        ),
+        "flash.error.ubyport_send_failed": (
+            "Odeslání do UbyPortu selhalo a nic se nepodalo. Podrobnosti jsou v upozornění u tohoto ubytování."
+        ),
         "flash.error.ubyport_outcome_unknown": (
             "Odpověď UbyPortu nedorazila, takže není jisté, zda bylo hlášení podáno. "
             "Než odešlete znovu, ověřte to v UbyPortu."
@@ -3223,6 +3258,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail.submission_problem.next_unanswered": "Zkontrolujte UbyPort. Pokud tam hosté nejsou, nahlaste je v UbyPortu ručně, nebo na pobytu stiskněte běžné Odeslat.",
         "mail.submission_problem.next_steps_transport": "Teď nemusíte nic dělat: UbyHost hlášení při dalším běhu odešle znovu. Pokud vám tento e-mail přijde i zítra, otevřete pobyt a odešlete hlášení ručně.",
         "mail.submission_problem.next_transient": "Přerušené spojení se vyřeší dalším odesláním. Pokud stejný záznam selže dvakrát, zkontrolujte data, než jej odešlete znovu.",
+        "mail.submission_problem.subject_answered": "UbyPort odpověděl chybou - %(property)s",
+        "mail.submission_problem.intro_answered": "UbyPort odpověděl na hlášení hostů pro %(property)s chybou. Z tohoto pokusu se nic nepodalo, takže tito hosté zatím nejsou nahlášeni.",
+        "mail.submission_problem.preheader_answered": "UbyPort odpověděl chybou. Nic se nepodalo.",
+        "mail.submission_problem.next_steps_answered": "Pokud máte u tohoto ubytování zapnuté automatické odesílání, UbyHost hlášení odešle znovu při dalším běhu. Pokud se stejná chyba vrátí, kontaktujte podporu UbyPortu a uveďte IDUB ubytování a čas tohoto e-mailu. Údaje hostů jim neposílejte.",
+        "mail.submission_problem.next_steps_auth": "V nastavení ubytování pro policii zadejte znovu heslo UBY-WS a stiskněte Uložit a otestovat spojení. Do té doby je automatické odesílání pozastavené.",
         "mail.submission_problem.stays_label": "Pobyty v tomto hlášení",
         "mail.submission_problem.action_stay": "Otevřít pobyt",
         "mail.submission_problem.action_dorucenka": "Otevřít doručenku",
@@ -9191,7 +9231,9 @@ _PLAIN_FIXES_0239_STRINGS = {
         "notification.submission_immediate.title": "%(property)s: the police report could not be sent.",
         "notification.submission_immediate.detail": "The guests are registered, but the police do not have them yet. Open the stay and send it again. Error: %(error)s",
         "notification.submission_transport.title": "%(property)s: the police system could not be reached.",
-        "notification.submission_transport.detail": "Nothing was sent, so the police do not have these guests yet. Send it again from the stay a little later. Error: %(error)s",
+        "notification.submission_transport.title.answered": "%(property)s: UbyPort answered with an error and filed nothing.",
+        "notification.submission_transport.title.auth": "%(property)s: UbyPort refused the login and filed nothing.",
+        "notification.submission_transport.detail": "Nothing was filed, so the police do not have these guests yet. Send it again from the stay a little later. If the same error comes back, contact UbyPort support. Error: %(error)s",
         "notification.ubyport_auth_failed.title": "%(property)s: the police login (UBY-WS) was refused.",
         "notification.ubyport_auth_failed.detail": "Automatic reporting is paused so your police account does not get locked. Enter the UBY-WS password again, then press Save and test connection.",
         "notification.submission_outcome_unknown.title": "%(property)s: we don't know if the police got the report.",
@@ -9229,7 +9271,9 @@ _PLAIN_FIXES_0239_STRINGS = {
         "notification.submission_immediate.title": "%(property)s: hlášení policii se nepodařilo odeslat.",
         "notification.submission_immediate.detail": "Hosté jsou zaregistrovaní, ale policie je zatím nemá. Otevřete pobyt a odešlete znovu. Chyba: %(error)s",
         "notification.submission_transport.title": "%(property)s: policejní systém nebyl dostupný.",
-        "notification.submission_transport.detail": "Nic se neodeslalo, policie tyto hosty zatím nemá. Za chvíli odešlete znovu z pobytu. Chyba: %(error)s",
+        "notification.submission_transport.title.answered": "%(property)s: UbyPort odpověděl chybou a nic nepodal.",
+        "notification.submission_transport.title.auth": "%(property)s: UbyPort odmítl přihlášení a nic nepodal.",
+        "notification.submission_transport.detail": "Nic se nepodalo, policie tyto hosty zatím nemá. Za chvíli odešlete znovu z pobytu. Pokud se stejná chyba vrátí, kontaktujte podporu UbyPortu. Chyba: %(error)s",
         "notification.ubyport_auth_failed.title": "%(property)s: policie odmítla přihlášení (UBY-WS).",
         "notification.ubyport_auth_failed.detail": "Automatické hlášení je pozastavené, aby se váš policejní účet nezablokoval. Zadejte znovu heslo UBY-WS a stiskněte Uložit a otestovat spojení.",
         "notification.submission_outcome_unknown.title": "%(property)s: nevíme, jestli policie hlášení dostala.",

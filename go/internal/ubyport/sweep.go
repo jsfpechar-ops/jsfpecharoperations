@@ -685,7 +685,7 @@ func unknownFinalNotice(ctx context.Context, d SweepDeps, aptID int64, latest ch
 	bd := d.Batch
 	key := fmt.Sprintf("submission_unanswered:%d", latest.id)
 	if _, err := queueSubmissionProblem(ctx, pool, bd.Getenv, bd.AppBaseURL, bd.PublicBaseURL,
-		apt.Ref, latest.id, "unanswered", latest.errText, false, batchNow(bd), unknownSupportCC, key); err != nil {
+		apt.Ref, latest.id, "unanswered", latest.errText, false, batchNow(bd), unknownSupportCC, key, ""); err != nil {
 		return err
 	}
 	_, err = QueueUnansweredPush(ctx, pool, bd.Getenv, apt.Ref, latest.id)

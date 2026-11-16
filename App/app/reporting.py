@@ -1873,6 +1873,14 @@ def submit_batch(
             type(exc).__name__,
             exc_info=True,
         )
+        cause = getattr(exc, "cause", "")
+        detail = getattr(exc, "detail", "")
+        answered = cause in ("fault", "http4xx", "redirect", "auth")
+        transport_params = {"property": apartment["internal_name"], "error": str(exc)}
+        if cause == "auth":
+            transport_params["variant"] = "auth"
+        elif answered:
+            transport_params["variant"] = "answered"
         db.update(
             "submission",
             submission_id,
@@ -1885,11 +1893,15 @@ def submit_batch(
         alerts.raise_alert(
             "critical",
             "submission_transport",
-            f"{apartment['internal_name']}: could not deliver data to UbyPort.",
+            (
+                f"{apartment['internal_name']}: UbyPort answered with an error; nothing was filed."
+                if answered
+                else f"{apartment['internal_name']}: could not deliver data to UbyPort."
+            ),
             str(exc),
             dedupe_key=f"submission_transport:{apartment['id']}",
             apartment_id=apartment["id"],
-            params={"property": apartment["internal_name"], "error": str(exc)},
+            params=transport_params,
         )
         if isinstance(exc, UbyportAuthError):
             alerts.raise_alert(
@@ -1911,10 +1923,11 @@ def submit_batch(
             state="transport_error",
             reason=str(exc),
             transport=True,
+            cause=cause,
         )
         # Guests stay pending so the next sweep retries them.
         return {"submitted": 0, "submission_id": submission_id, "state": "transport_error",
-                "error": str(exc)}
+                "error": str(exc), "cause": cause, "detail": detail}
 
     alerts.resolve(f"submission_transport:{apartment['id']}")
 
