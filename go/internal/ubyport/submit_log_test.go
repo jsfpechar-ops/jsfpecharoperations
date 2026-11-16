@@ -28,3 +28,21 @@ func TestTransportLogLineHasParityFields(t *testing.T) {
 		}
 	}
 }
+
+func TestTransportAlertParamsNameTheThreeFieldsOnlyOnAFault(t *testing.T) {
+	fault := transportAlertParams("Flat", "fault text", "fault")
+	if fault["variant"] != "answered" || fault["header"] != "fault" {
+		t.Errorf("fault params = %v", fault)
+	}
+	for _, cause := range []string{"auth", "http4xx", "redirect", "dial", "setup"} {
+		if _, ok := transportAlertParams("Flat", "x", cause)["header"]; ok {
+			t.Errorf("%s must not set header", cause)
+		}
+	}
+	if transportAlertParams("Flat", "x", "auth")["variant"] != "auth" {
+		t.Error("auth variant lost")
+	}
+	if _, ok := transportAlertParams("Flat", "x", "dial")["variant"]; ok {
+		t.Error("dial must have no variant")
+	}
+}
