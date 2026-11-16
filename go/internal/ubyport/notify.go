@@ -230,7 +230,6 @@ func queueSubmissionProblem(ctx context.Context, pool *pgxpool.Pool, getenv func
 	if err != nil {
 		return 0, err
 	}
-	reason = FaultMailReason(cause, reason)
 	content, err := mail.BuildSubmissionProblem(appBaseURL, publicBaseURL, "en", apt.InternalName,
 		state, reason, transport, stays, submissionID, cause)
 	if err != nil {

@@ -424,6 +424,7 @@ func BuildSubmissionProblem(appBaseURL, publicBaseURL, lang, propertyName, state
 	if normaliseLanguage(lang) != "en" {
 		return Content{}, ErrLanguage
 	}
+	reason = faultReason(cause, reason)
 	subject, intro, preheader := strSubject, strIntro, strPreheader
 	reasonLabel, nextSteps := strReasonLabel, strNextSteps
 	if transport {

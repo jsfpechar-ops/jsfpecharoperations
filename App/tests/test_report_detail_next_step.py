@@ -37,11 +37,11 @@ CS = "?lang=cs"
 
 # The English the audit specifies for a code the code book does not cover.
 FALLBACK_EN = (
-    "UbyPort error %(code)s — refresh code lists on the property page to see "
+    "UbyPort error %(code)s: refresh code lists on the property page to see "
     "the explanation."
 )
 FALLBACK_CS = (
-    "Chyba UbyPortu %(code)s — vysvětlení uvidíte po obnovení číselníků na "
+    "Chyba UbyPortu %(code)s: vysvětlení uvidíte po obnovení číselníků na "
     "stránce ubytování."
 )
 

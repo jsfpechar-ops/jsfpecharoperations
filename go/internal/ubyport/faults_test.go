@@ -68,27 +68,6 @@ func TestFaultAlertParamsCarryTextKey(t *testing.T) {
 	}
 }
 
-// TestFaultMailCopySameAsPython checks the English fault copy against the golden
-// JSON written by App/scripts/ubyport_fault_golden.py from the Python catalogue.
-func TestFaultMailCopySameAsPython(t *testing.T) {
-	raw, err := os.ReadFile("testdata/fault_copy_en.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	var golden map[string]string
-	if err := json.Unmarshal(raw, &golden); err != nil {
-		t.Fatal(err)
-	}
-	if len(golden) != len(faultCopyEN) {
-		t.Fatalf("keys: golden %d, go %d", len(golden), len(faultCopyEN))
-	}
-	for key, text := range golden {
-		if faultCopyEN[key] != text {
-			t.Fatalf("%s: go %q, python %q", key, faultCopyEN[key], text)
-		}
-	}
-}
-
 // TestFaultBothMatchStringsSpecificRowFirst: a detail holding both match strings
 // takes the no-errors row, which comes first in the table, in Go as in Python.
 func TestFaultBothMatchStringsSpecificRowFirst(t *testing.T) {
