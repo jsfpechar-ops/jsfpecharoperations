@@ -130,7 +130,7 @@ func TestSubmitBatchRejected(t *testing.T) {
 	if n := batchOpenAlert(t, pool, key); n != 1 {
 		t.Fatalf("submission_rejected open = %d, want 1", n)
 	}
-	wantParams := fmt.Sprintf(`{"blocked": %d, "count": 1, "failed": %d, "header": "", "property": %q}`,
+	wantParams := fmt.Sprintf(`{"blocked": %d, "count": 1, "failed": %d, "header": "", "header_codes": "", "property": %q}`,
 		got.Blocked, got.Failed, ref.InternalName)
 	if p := effectsText(t, pool, `SELECT params FROM alert WHERE dedupe_key = $1 AND resolved_at IS NULL`, key); p != wantParams {
 		t.Errorf("params = %s, want %s", p, wantParams)

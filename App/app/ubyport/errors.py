@@ -74,8 +74,9 @@ _NON_CORRECTABLE_RE = re.compile(r"duplic|\bpozdě\b|\bpozdn\w*|\blate\b", re.IG
 # where the explanation comes from, because a rejected report has no Doručenka
 # to point at: the only PDF it produced is the error report.
 FALLBACK_TEXT: Dict[str, str] = {
-    "en": "UbyPort error %(code)s — refresh code lists on the property page to see the explanation.",
-    "cs": "Chyba UbyPortu %(code)s — vysvětlení uvidíte po obnovení číselníků na stránce ubytování.",
+    "en": "UbyPort error %(code)s: refresh code lists on the property page to see the explanation.",
+    "cs": "Chyba UbyPortu %(code)s: vysvětlení uvidíte po obnovení číselníků na stránce ubytování.",
+    "vi": "Lỗi UbyPort %(code)s: làm mới danh mục trên trang chỗ ở để xem giải thích.",
 }
 
 _ERR_PREFIX = re.compile(r"^ERR_CZE_", re.IGNORECASE)
@@ -232,3 +233,51 @@ def severities_from_rows(rows) -> Dict[str, int]:
         if code and raw.isdigit():
             out[code] = int(raw)
     return out
+
+
+SEED_CODES = ("1", "106", "112", "150")
+
+
+def _codebook_text(code: str, codebook: Optional[Dict[str, str]] = None) -> str:
+    padded = code.zfill(3)
+    for key in (code, padded, f"ERR_CZE_{padded}"):
+        if codebook and codebook.get(key):
+            return codebook[key]
+    return KNOWN_CODES.get(code, "")
+
+
+def host_lines(
+    header_errors: Optional[str],
+    record_error: Optional[str],
+    lang: str = "en",
+    codebook: Optional[Dict[str, str]] = None,
+    severities: Optional[Dict[str, int]] = None,
+) -> List[Tuple[str, str]]:
+    """(what happened, what to do) per police code, in the host's language (A1b P2).
+
+    Seed codes have their own words. Accepted codes (severity 0-2) say nothing is to
+    be done; duplicate codes (severity 4 or a duplicate marker) say not to send again;
+    any other code names the code and asks the host to check the details, with no
+    instruction to resend. The police text is quoted, never used as the host sentence.
+    """
+    from .. import host_i18n
+
+    table = host_i18n.STRINGS[host_i18n.normalise_language(lang)]
+    lines: List[Tuple[str, str]] = []
+    for raw in split_codes(header_errors) + split_codes(record_error):
+        code = normalise_code(raw)
+        if not code:
+            continue
+        if code in SEED_CODES:
+            lines.append((table[f"ubyport.code.{code}.text"], table[f"ubyport.code.{code}.action"]))
+            continue
+        police = _codebook_text(code, codebook) or table["ubyport.code.unknown_text"]
+        values = {"police_text": police, "code": code}
+        sev = severity(code, severities)
+        if sev is not None and sev <= ACCEPTED_MAX_SEVERITY:
+            lines.append((table["ubyport.code.accepted"] % values, ""))
+        elif sev == 4 or _NON_CORRECTABLE_RE.search(police):
+            lines.append((table["ubyport.code.duplicate"] % values, ""))
+        else:
+            lines.append((table["ubyport.code.fallback"] % values, ""))
+    return lines

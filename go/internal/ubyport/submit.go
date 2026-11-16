@@ -182,7 +182,7 @@ func SubmitBatch(ctx context.Context, d BatchDeps, s Sender, apt Apartment, ref 
 		if err := RaiseAlert(ctx, d.Pool, "critical", "submission_rejected",
 			fmt.Sprintf("%s: UbyPort did not accept %d guest record(s).", name, refused), detail,
 			fmt.Sprintf("submission_rejected:%d", ref.ID), &ref.ID, nil, nil,
-			AlertParams{"property": name, "count": refused, "failed": plan.Failed, "blocked": plan.Blocked, "header": headerText},
+			submissionRejectedParams(name, refused, plan.Failed, plan.Blocked, headerText, res.HeaderErrors),
 		); err != nil {
 			return BatchResult{}, err
 		}
@@ -286,6 +286,9 @@ func batchTransport(ctx context.Context, d BatchDeps, ref ApartmentRef, subID in
 	msg := ue.Error()
 	answered := ue.Cause == "fault" || ue.Cause == "http4xx" || ue.Cause == "redirect" || ue.Cause == "auth"
 	params := transportAlertParams(ref.InternalName, msg, ue.Cause)
+	for k, v := range FaultAlertParams(ue.Cause, ue.Detail) {
+		params[k] = v
+	}
 	summary := fmt.Sprintf("%s: could not deliver data to UbyPort.", ref.InternalName)
 	if answered {
 		summary = fmt.Sprintf("%s: UbyPort answered with an error; nothing was filed.", ref.InternalName)
@@ -324,10 +327,16 @@ func batchTransport(ctx context.Context, d BatchDeps, ref ApartmentRef, subID in
 		}
 	}
 	if definite && streak >= transportRepeatAfter {
+		repParams := repeatedTransportParams(ctx, d.Pool, name, streak, msg, ref.ID)
+		repDetail := msg
+		for k, v := range FaultAlertParams(ue.Cause, ue.Detail) {
+			repParams[k] = v
+			repDetail = ""
+		}
 		if err := RaiseAlert(ctx, d.Pool, "critical", "submission_transport_repeated",
-			fmt.Sprintf("%s: UbyPort answered with an error %d times in a row.", name, streak), msg,
+			fmt.Sprintf("%s: UbyPort answered with an error %d times in a row.", name, streak), repDetail,
 			fmt.Sprintf("submission_transport_repeated:%d", ref.ID), &ref.ID, nil, nil,
-			repeatedTransportParams(ctx, d.Pool, name, streak, msg, ref.ID),
+			repParams,
 		); err != nil {
 			return BatchResult{}, err
 		}

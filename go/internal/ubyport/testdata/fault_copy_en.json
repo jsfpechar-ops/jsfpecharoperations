@@ -1,0 +1,5 @@
+{
+  "ubyport.fault.uby_runtime_no_errors": "UbyPort hit an internal error and returned no result. Nothing was filed. If it keeps failing, contact UbyPort support with the property's IDUB and the time.",
+  "ubyport.fault.uby_runtime": "UbyPort hit an internal error. Nothing was filed. If it keeps failing, contact UbyPort support.",
+  "ubyport.fault.unknown": "UbyPort answered with an error: %(detail)s. Nothing was filed."
+}

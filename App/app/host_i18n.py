@@ -935,6 +935,21 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "UbyPort answered with an error, so nothing was filed: %(detail)s. "
             "If it repeats, contact UbyPort support."
         ),
+        "ubyport.fault.uby_runtime_no_errors": "UbyPort hit an internal error and returned no result. Nothing was filed. If it keeps failing, contact UbyPort support with the property's IDUB and the time.",
+        "ubyport.fault.uby_runtime": "UbyPort hit an internal error. Nothing was filed. If it keeps failing, contact UbyPort support.",
+        "ubyport.fault.unknown": "UbyPort answered with an error: %(detail)s. Nothing was filed.",
+        "ubyport.code.1.text": "UbyPort accepted the file, with a note about its format.",
+        "ubyport.code.1.action": "No action needed. Do not send it again.",
+        "ubyport.code.106.text": "A guest field has a value UbyPort does not accept.",
+        "ubyport.code.106.action": "Fix the marked field, then send again.",
+        "ubyport.code.112.text": "UbyPort accepted the record, but it arrived after the deadline.",
+        "ubyport.code.112.action": "Nothing to do. Do not send it again.",
+        "ubyport.code.150.text": "The police register already holds this record.",
+        "ubyport.code.150.action": "Nothing to do. It is already filed. Do not send it again.",
+        "ubyport.code.unknown_text": "UbyPort gave no explanation.",
+        "ubyport.code.fallback": "UbyPort gave code %(code)s: “%(police_text)s”. Check the details marked on the stay.",
+        "ubyport.code.duplicate": "The register already holds this record: “%(police_text)s” (police code %(code)s). Do not send it again.",
+        "ubyport.code.accepted": "UbyPort accepted this record with a note: “%(police_text)s” (police code %(code)s). Nothing to do.",
         "flash.error.ubyport_http_error": (
             "UbyPort answered with %(detail)s, so nothing was filed. "
             "If it repeats, contact UbyPort support."
@@ -3133,6 +3148,21 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "UbyPort odpověděl chybou, nic se nepodalo: %(detail)s. "
             "Pokud se to opakuje, kontaktujte podporu UbyPortu."
         ),
+        "ubyport.fault.uby_runtime_no_errors": "UbyPort narazil na interní chybu a nevrátil žádný výsledek. Nic nebylo nahlášeno. Pokud to bude selhávat dál, kontaktujte podporu UbyPortu a uveďte IDUB ubytování a čas.",
+        "ubyport.fault.uby_runtime": "UbyPort narazil na interní chybu. Nic nebylo nahlášeno. Pokud to bude selhávat dál, kontaktujte podporu UbyPortu.",
+        "ubyport.fault.unknown": "UbyPort odpověděl chybou: %(detail)s. Nic nebylo nahlášeno.",
+        "ubyport.code.1.text": "UbyPort hlášení přijal s poznámkou k formátu souboru.",
+        "ubyport.code.1.action": "Není třeba nic dělat. Neodesílejte znovu.",
+        "ubyport.code.106.text": "Některý údaj hosta má hodnotu, kterou UbyPort nepřijímá.",
+        "ubyport.code.106.action": "Opravte označené pole a odešlete znovu.",
+        "ubyport.code.112.text": "UbyPort hlášení přijal, ale dorazilo po termínu.",
+        "ubyport.code.112.action": "Není třeba nic dělat. Neodesílejte znovu.",
+        "ubyport.code.150.text": "Evidence policie už tento záznam obsahuje.",
+        "ubyport.code.150.action": "Není třeba nic dělat. Už je nahlášeno. Neodesílejte znovu.",
+        "ubyport.code.unknown_text": "UbyPort neuvedl vysvětlení.",
+        "ubyport.code.fallback": "UbyPort vrátil kód %(code)s: „%(police_text)s“. Zkontrolujte údaje označené na pobytu.",
+        "ubyport.code.duplicate": "Evidence policie tento záznam už obsahuje: „%(police_text)s“ (kód policie %(code)s). Neodesílejte znovu.",
+        "ubyport.code.accepted": "UbyPort záznam přijal s poznámkou: „%(police_text)s“ (kód policie %(code)s). Není třeba nic dělat.",
         "flash.error.ubyport_http_error": (
             "UbyPort odpověděl %(detail)s, nic se nepodalo. "
             "Pokud se to opakuje, kontaktujte podporu UbyPortu."

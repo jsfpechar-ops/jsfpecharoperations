@@ -1883,6 +1883,7 @@ def submit_batch(
         detail = getattr(exc, "detail", "")
         answered = cause in ("fault", "http4xx", "redirect", "auth")
         transport_params = {"property": apartment["internal_name"], "error": str(exc)}
+        transport_params.update(faults.fault_alert_params(cause, detail))
         if cause == "auth":
             transport_params["variant"] = "auth"
         elif answered:
@@ -1945,10 +1946,11 @@ def submit_batch(
                 "critical",
                 "submission_transport_repeated",
                 f"{apartment['internal_name']}: UbyPort answered with an error {streak} times in a row.",
-                str(exc),
+                "" if faults.fault_alert_params(cause, detail) else str(exc),
                 dedupe_key=f"submission_transport_repeated:{apartment['id']}",
                 apartment_id=apartment["id"],
                 params={"property": apartment["internal_name"], "count": streak, "error": str(exc),
+                        **faults.fault_alert_params(cause, detail),
                         **({"next": next_text, "header": next_text} if next_text else {})},
             )
         # Third failure in a row: one support copy, idempotent per submission.
@@ -2090,7 +2092,7 @@ def submit_batch(
                 "count": failed_count + blocked_count,
                 "failed": failed_count,
                 "blocked": blocked_count,
-                "header": header_errors,
+                "header": header_errors, "header_codes": result.header_errors or "",
             },
         )
         # Same event, same reasoning as the transport branch: an alert only

@@ -171,3 +171,16 @@ def test_outcome_unknown_resend_schedule_is_unchanged():
         timedelta(minutes=30), timedelta(hours=2), timedelta(hours=6), timedelta(hours=12),
     )
     assert reporting.UNKNOWN_MAX_ATTEMPTS == 5
+
+
+def test_fault_flash_uses_the_row_key_when_a_row_matches(monkeypatch):
+    monkeypatch.setattr(admin, "_flash", lambda request, key, **p: (key, p))
+    got_key, _ = admin._transport_flash(None, {"cause": "fault", "detail": "Chyba běhu programu"})
+    assert got_key == "ubyport.fault.uby_runtime"
+
+
+def test_fault_flash_keeps_the_old_key_when_no_row_matches(monkeypatch):
+    monkeypatch.setattr(admin, "_flash", lambda request, key, **p: (key, p))
+    got_key, params = admin._transport_flash(None, {"cause": "fault", "detail": "clean fault text"})
+    assert got_key == "flash.error.ubyport_fault"
+    assert params["detail"] == "clean fault text"

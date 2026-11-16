@@ -232,7 +232,7 @@
    [
     14,
     {
-     "last_errors": "5: UbyPort error 5 — refresh code lists on the property page to see the explanation.",
+     "last_errors": "5: UbyPort error 5: refresh code lists on the property page to see the explanation.",
      "submission_id": 900,
      "submit_attempts": 1,
      "submit_state": "error",
@@ -242,7 +242,7 @@
    [
     15,
     {
-     "last_errors": "5: UbyPort error 5 — refresh code lists on the property page to see the explanation.",
+     "last_errors": "5: UbyPort error 5: refresh code lists on the property page to see the explanation.",
      "submission_id": 900,
      "submit_attempts": 2,
      "submit_state": "error",
