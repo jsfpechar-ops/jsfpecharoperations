@@ -359,6 +359,7 @@ services:
     volumes:
       - ./caddy/Caddyfile.active:/etc/caddy/Caddyfile:ro
       - ./caddy/certs:/etc/caddy/certs:ro
+      - ../../App/app/static:/srv/static:ro
       - caddy-data:/data
       - caddy-config:/config
     mem_limit: ${UBYHOST_CADDY_MEM:-256m}

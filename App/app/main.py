@@ -510,35 +510,13 @@ def tdmrep():
 # Brief 0219: the installable app. The manifest and the service worker sit at
 # the root so the worker's scope covers the whole app. Both are public, like
 # robots.txt, and carry nothing about any account.
-_PWA_ICON_KEY = "20261021-0203"
-_MANIFEST = {
-    "id": "/",
-    "name": "UbyHost",
-    "short_name": "UbyHost",
-    "description": "Guest registration and police reports for short-term rentals.",
-    "lang": "en",
-    # /login sends a signed-in host straight to the dashboard and never shows
-    # the public landing page inside the app.
-    "start_url": "/login",
-    "scope": "/",
-    "display": "standalone",
-    "background_color": "#f7f7f5",
-    "theme_color": "#f7f7f5",
-    "icons": [
-        {"src": f"/static/icons/icon-192.png?v={_PWA_ICON_KEY}", "sizes": "192x192",
-         "type": "image/png", "purpose": "any"},
-        {"src": f"/static/icons/icon-512.png?v={_PWA_ICON_KEY}", "sizes": "512x512",
-         "type": "image/png", "purpose": "any"},
-        {"src": f"/static/icons/icon-maskable-512.png?v={_PWA_ICON_KEY}", "sizes": "512x512",
-         "type": "image/png", "purpose": "maskable"},
-    ],
-}
-
-
 @app.get("/manifest.webmanifest", include_in_schema=False)
 def web_manifest():
-    response = Response(json.dumps(_MANIFEST), media_type="application/manifest+json")
-    response.headers["Cache-Control"] = "public, max-age=86400"
+    # 1804: Caddy serves this file straight from disk; this route stays for
+    # hosts with no Caddy in front. Edit the file, never a copy of it.
+    body = (config.BASE_DIR / "static" / "manifest.webmanifest").read_text(encoding="utf-8")
+    response = Response(body, media_type="application/manifest+json")
+    response.headers["Cache-Control"] = "public, max-age=3600"
     return response
 
 
