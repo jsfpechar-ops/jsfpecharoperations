@@ -32,3 +32,7 @@ Status: blocked (tests and caddy validate NOT RUN here; no commits made by the e
 ## Owner steps left
 
 After merge and deploy, run the three checks in brief §7 ("Done when").
+
+## Follow-up
+
+Removed the unused `import json` from App/app/main.py (CI lint F401).
