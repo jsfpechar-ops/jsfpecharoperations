@@ -141,3 +141,12 @@ func escalateTransportChain(ctx context.Context, d BatchDeps, ref ApartmentRef, 
 		log.Printf("submission_transport_repeated_mail_failed apartment_id=%d submission_id=%d", ref.ID, subID)
 	}
 }
+
+// transportNextTryText is the "next" alert param: the next automatic try in UTC, or "" when none is owed.
+func transportNextTryText(ctx context.Context, pool *pgxpool.Pool, aptID int64) string {
+	until, owed, err := TransportBackoffUntil(ctx, pool, aptID, time.Now().UTC())
+	if err != nil || !owed {
+		return ""
+	}
+	return until.UTC().Format("2006-01-02 15:04 UTC")
+}

@@ -1935,6 +1935,8 @@ def submit_batch(
                 apartment_id=apartment["id"],
                 params={"property": apartment["internal_name"]},
             )
+        next_try = transport_backoff_until(apartment["id"], _clock())
+        next_text = next_try.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M UTC") if next_try else ""
         if definite and streak >= TRANSPORT_REPEAT_ALERT_AFTER:
             alerts.raise_alert(
                 "critical",
@@ -1943,7 +1945,7 @@ def submit_batch(
                 str(exc),
                 dedupe_key=f"submission_transport_repeated:{apartment['id']}",
                 apartment_id=apartment["id"],
-                params={"property": apartment["internal_name"], "count": streak, "error": str(exc)},
+                params={"property": apartment["internal_name"], "count": streak, "error": str(exc), "next": next_text},
             )
         # Third failure in a row: one support copy, idempotent per submission.
         if transport_chain_length(apartment["id"]) == TRANSPORT_ESCALATE_AFTER:

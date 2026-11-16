@@ -1,0 +1,481 @@
+{
+ "now": "2026-11-16T12:00:00+00:00",
+ "backoff": [
+  {
+   "name": "n1",
+   "rows": [
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 5
+    }
+   ],
+   "next_minutes": 5
+  },
+  {
+   "name": "n2",
+   "rows": [
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 5
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 40
+    }
+   ],
+   "next_minutes": 25
+  },
+  {
+   "name": "n3",
+   "rows": [
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 5
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 40
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 90
+    }
+   ],
+   "next_minutes": 55
+  },
+  {
+   "name": "n5",
+   "rows": [
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 5
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 40
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 90
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 150
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 200
+    }
+   ],
+   "next_minutes": 55
+  },
+  {
+   "name": "cap24",
+   "rows": [
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 1
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 2
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 3
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 4
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 5
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 6
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 7
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 8
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 9
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 10
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 11
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 12
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 13
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 14
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 15
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 16
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 17
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 18
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 19
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 20
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 21
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 22
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 23
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 24
+    }
+   ],
+   "next_utc": "2026-11-16T23:10:00+00:00"
+  },
+  {
+   "name": "manual_not_capped",
+   "rows": [
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "manual_bulk",
+     "minutes_ago": 1
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "manual_bulk",
+     "minutes_ago": 2
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "manual_bulk",
+     "minutes_ago": 3
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "manual_bulk",
+     "minutes_ago": 4
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "manual_bulk",
+     "minutes_ago": 5
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "manual_bulk",
+     "minutes_ago": 6
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "manual_bulk",
+     "minutes_ago": 7
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "manual_bulk",
+     "minutes_ago": 8
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "manual_bulk",
+     "minutes_ago": 9
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "manual_bulk",
+     "minutes_ago": 10
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "manual_bulk",
+     "minutes_ago": 11
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "manual_bulk",
+     "minutes_ago": 12
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "manual_bulk",
+     "minutes_ago": 13
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "manual_bulk",
+     "minutes_ago": 14
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "manual_bulk",
+     "minutes_ago": 15
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "manual_bulk",
+     "minutes_ago": 16
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "manual_bulk",
+     "minutes_ago": 17
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "manual_bulk",
+     "minutes_ago": 18
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "manual_bulk",
+     "minutes_ago": 19
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "manual_bulk",
+     "minutes_ago": 20
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "manual_bulk",
+     "minutes_ago": 21
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "manual_bulk",
+     "minutes_ago": 22
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "manual_bulk",
+     "minutes_ago": 23
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "manual_bulk",
+     "minutes_ago": 24
+    }
+   ],
+   "next_minutes": 59
+  },
+  {
+   "name": "ok_resets_chain",
+   "rows": [
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 5
+    },
+    {
+     "state": "ok",
+     "cause": "",
+     "mode": "auto",
+     "minutes_ago": 10
+    },
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 20
+    }
+   ],
+   "next_minutes": 5
+  },
+  {
+   "name": "auth_at_head",
+   "rows": [
+    {
+     "state": "transport_error",
+     "cause": "auth",
+     "mode": "auto",
+     "minutes_ago": 5
+    }
+   ]
+  },
+  {
+   "name": "auth_ends_chain",
+   "rows": [
+    {
+     "state": "transport_error",
+     "cause": "dial",
+     "mode": "auto",
+     "minutes_ago": 5
+    },
+    {
+     "state": "transport_error",
+     "cause": "auth",
+     "mode": "auto",
+     "minutes_ago": 10
+    }
+   ],
+   "next_minutes": 5
+  },
+  {
+   "name": "outcome_unknown_not_transport",
+   "rows": [
+    {
+     "state": "outcome_unknown",
+     "cause": "",
+     "mode": "auto",
+     "minutes_ago": 5
+    }
+   ]
+  }
+ ],
+ "faults": [
+  {
+   "cause": "http4xx",
+   "detail": "HTTP 404",
+   "code": "http_404"
+  },
+  {
+   "cause": "redirect",
+   "detail": "HTTP 302",
+   "code": "http_302"
+  },
+  {
+   "cause": "fault",
+   "detail": "clean fault text",
+   "code": null
+  },
+  {
+   "cause": "dial",
+   "detail": "",
+   "code": null
+  }
+ ]
+}
