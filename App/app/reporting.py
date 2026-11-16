@@ -1893,7 +1893,7 @@ def submit_batch(
         previous = alerts.open_alert(f"submission_transport:{apartment['id']}")
         if previous:
             try:
-                streak = max(0, int(alerts.stored_params(previous).get("streak") or 0))
+                streak = max(0, int(alerts.stored_params(dict(previous)).get("streak") or 0))
             except (TypeError, ValueError):
                 streak = 0
         if definite:
