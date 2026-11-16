@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -633,5 +634,96 @@ func TestSweepRecoveryStaysInsideTheRequestedWorkspace(t *testing.T) {
 
 	if st := storeRead(t, pool, "submission", sub, "state")["state"]; st != "running" {
 		t.Fatalf("state %q, want running for another workspace's sweep", st)
+	}
+}
+
+// setupAlert returns level and params of the open apartment_setup alert ("" when none).
+func setupAlert(t *testing.T, pool *pgxpool.Pool, aptID int64) (string, string) {
+	t.Helper()
+	var level, params string
+	err := pool.QueryRow(context.Background(),
+		`SELECT level, COALESCE(params, '') FROM alert WHERE dedupe_key = $1 AND resolved_at IS NULL`,
+		fmt.Sprintf("apartment_setup:%d", aptID)).Scan(&level, &params)
+	if err != nil {
+		return "", ""
+	}
+	return level, params
+}
+
+// oldStayGuest adds one guest on a stay that ended a month before the sweep clock.
+func oldStayGuest(t *testing.T, pool *pgxpool.Pool, aptID int64) int64 {
+	return collectAddStay(t, pool, aptID,
+		map[string]any{"date_from": "2026-10-01", "date_to": "2026-10-04"},
+		map[string]any{"stay_from": "2026-10-01", "stay_to": "2026-10-04"})
+}
+
+func TestSweepSetupAlertIsCriticalWhileGuestsWait(t *testing.T) {
+	pool := claimTestPool(t)
+	ref := sweepFixtureApartment(t, pool, ptrString("host@example.test"))
+	oldStayGuest(t, pool, ref.ID)
+	if _, err := SubmitForApartment(context.Background(), sweepDeps(t, pool, "", &sweepSender{}), ref.ID, CollectOptions{}, "auto"); err != nil {
+		t.Fatal(err)
+	}
+	level, params := setupAlert(t, pool, ref.ID)
+	if level != "critical" || !strings.Contains(params, `"variant": "pending"`) || !strings.Contains(params, `"count": 1`) {
+		t.Fatalf("level %q params %q, want critical with variant pending and count 1", level, params)
+	}
+}
+
+func TestSweepSetupAlertStaysWarningWithoutWaitingGuests(t *testing.T) {
+	pool := claimTestPool(t)
+	ref := sweepFixtureApartment(t, pool, ptrString("host@example.test"))
+	if _, err := SubmitForApartment(context.Background(), sweepDeps(t, pool, "", &sweepSender{}), ref.ID, CollectOptions{}, "auto"); err != nil {
+		t.Fatal(err)
+	}
+	if level, params := setupAlert(t, pool, ref.ID); level != "warning" || strings.Contains(params, "variant") {
+		t.Fatalf("level %q params %q, want a plain warning", level, params)
+	}
+}
+
+func TestSweepSetupAlertStaysWarningWithoutPoliceFields(t *testing.T) {
+	pool := claimTestPool(t)
+	ref := sweepFixtureApartment(t, pool, ptrString("host@example.test"))
+	collectSet(t, pool, "apartment", ref.ID, map[string]any{
+		"uby_idub": "", "uby_ws_user": "", "uby_ws_password_enc": "", "uby_mark": "",
+	})
+	oldStayGuest(t, pool, ref.ID)
+	if _, err := SubmitForApartment(context.Background(), sweepDeps(t, pool, "", &sweepSender{}), ref.ID, CollectOptions{}, "auto"); err != nil {
+		t.Fatal(err)
+	}
+	if level, _ := setupAlert(t, pool, ref.ID); level != "warning" {
+		t.Fatalf("level %q, want warning (1171: files elsewhere)", level)
+	}
+}
+
+func TestSweepSendsOldBacklogInOneRunOnceSetupIsValid(t *testing.T) {
+	ctx := context.Background()
+	pool := claimTestPool(t)
+	ref := sweepFixtureApartment(t, pool, ptrString("host@example.test"))
+	for i := 0; i < 36; i++ {
+		oldStayGuest(t, pool, ref.ID)
+	}
+	s := &sweepSender{}
+	res, err := SubmitForApartment(ctx, sweepDeps(t, pool, "", s), ref.ID, CollectOptions{}, "auto")
+	if err != nil || len(res) != 1 || res[0].State != "not_configured" || len(s.sizes) != 0 {
+		t.Fatalf("incomplete: err=%v res=%+v sent=%v", err, res, s.sizes)
+	}
+	if level, _ := setupAlert(t, pool, ref.ID); level != "critical" {
+		t.Fatalf("level %q, want critical", level)
+	}
+	if _, err := SubmitForApartment(ctx, sweepDeps(t, pool, "pw", s), ref.ID, CollectOptions{}, "auto"); err != nil {
+		t.Fatal(err)
+	}
+	if fmt.Sprint(s.sizes) != "[32 4]" {
+		t.Fatalf("batches %v, want [32 4] in one run", s.sizes)
+	}
+	if level, _ := setupAlert(t, pool, ref.ID); level != "" {
+		t.Fatalf("apartment_setup still open (%q) after a valid run", level)
+	}
+	if _, err := SubmitForApartment(ctx, sweepDeps(t, pool, "pw", s), ref.ID, CollectOptions{}, "auto"); err != nil {
+		t.Fatal(err)
+	}
+	if fmt.Sprint(s.sizes) != "[32 4]" {
+		t.Fatalf("batches %v after a second run, want nothing sent twice", s.sizes)
 	}
 }
