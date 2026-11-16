@@ -309,6 +309,32 @@ def test_a_turnstile_outage_is_shown_to_every_host(host):
         db.execute("DELETE FROM alert WHERE dedupe_key = ?", (key,))
 
 
+def test_a_host_never_sees_an_operator_only_job_failure(host):
+    """job_failed for the job queue is the operator's alert, not a host banner.
+
+    The jobs a host depends on (filing, deadlines, calendar sync, door codes)
+    still show; every other job shows only on the admin Operations page, which
+    reads ``open_alerts()`` with no owner.
+    """
+    owner_id = db.query_one(
+        "SELECT id FROM user_account WHERE username = ?", (USERNAME,)
+    )["id"]
+    keys = {job: f"job_failed:{job}" for job in ("job_queue", "billing", "mail", "submit", "ical")}
+    for key in keys.values():
+        db.execute("DELETE FROM alert WHERE dedupe_key = ?", (key,))
+        alerts.raise_alert("warning", "job_failed", "log", dedupe_key=key)
+    try:
+        shown = {row["dedupe_key"] for row in alerts.open_alerts(owner_user_id=owner_id)}
+        assert keys["submit"] in shown and keys["ical"] in shown
+        for job in ("job_queue", "billing", "mail"):
+            assert keys[job] not in shown
+        everything = {row["dedupe_key"] for row in alerts.open_alerts()}
+        assert set(keys.values()) <= everything
+    finally:
+        for key in keys.values():
+            db.execute("DELETE FROM alert WHERE dedupe_key = ?", (key,))
+
+
 def test_the_resign_card_cannot_be_dismissed(host):
     """AR-39/OD-6: this card is the filing gate, so dismiss must not clear it."""
     _alert("dates_changed_resign", "critical", 9501, "the dates moved")

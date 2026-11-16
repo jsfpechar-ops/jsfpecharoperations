@@ -553,6 +553,14 @@ def resolve_by_id(alert_id: int, user_dismissed: bool = False) -> None:
 # them: a host who is never told cannot act on it.
 SYSTEM_ALERT_KINDS = frozenset({"job_failed", "turnstile_unavailable", "ttlock_budget"})
 
+# A host sees a dead background job only when it touches something the host
+# does: police filing, the filing deadlines, the calendar sync and door codes.
+# Every other job (job queue, billing, retention, analytics, the e-mail queue,
+# ...) is the operator's business: its alert stays on the admin Operations
+# page and never becomes a banner on a host page. Keep equal to
+# hostJobFailedKeys in go/internal/hostweb/layout/alerts.go.
+HOST_JOB_FAILED_JOBS = ("submit", "deadlines", "ical", "door_codes")
+
 
 # 1072: the most alerts, besides the critical ones, a page other than the
 # dashboard turns into cards. The rest is only counted in the summary line.
@@ -576,10 +584,18 @@ def open_alerts(owner_user_id: Optional[int] = None) -> List:
             "SELECT * FROM alert WHERE resolved_at IS NULL ORDER BY created_at DESC"
         )
     else:
-        marks = ", ".join("?" for _ in SYSTEM_ALERT_KINDS)
+        host_kinds = sorted(SYSTEM_ALERT_KINDS - {"job_failed"})
+        marks = ", ".join("?" for _ in host_kinds)
+        job_marks = ", ".join("?" for _ in HOST_JOB_FAILED_JOBS)
         rows = db.query(
             "SELECT * FROM alert WHERE resolved_at IS NULL AND ("
-            f"owner_user_id = ? OR kind IN ({marks})) ORDER BY created_at DESC",
-            (owner_user_id, *SYSTEM_ALERT_KINDS),
+            f"owner_user_id = ? OR kind IN ({marks}) "
+            f"OR (kind = 'job_failed' AND dedupe_key IN ({job_marks}))) "
+            "ORDER BY created_at DESC",
+            (
+                owner_user_id,
+                *host_kinds,
+                *("job_failed:" + job for job in HOST_JOB_FAILED_JOBS),
+            ),
         )
     return sorted(rows, key=lambda r: LEVEL_ORDER.get(r["level"], 9))

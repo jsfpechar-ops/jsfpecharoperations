@@ -455,7 +455,8 @@ func TestShellQuery(t *testing.T) {
 			(3, 'critical', 'job_failed', NULL, NULL, NULL, 'job_failed:submit', 'log 3', '` + stamp(-2*time.Hour) + `', NULL),
 			(4, 'critical', 'deadline', 4, NULL, 1, 'x', 'other workspace', '` + stamp(-time.Hour) + `', NULL),
 			(5, 'critical', 'feed_error', 1, NULL, 2, 'y', 'resolved', '` + stamp(-time.Hour) + `', '` + stamp(0) + `'),
-			(6, 'warning', 'feed_incomplete', 2, NULL, 2, 'z', 'log 6', '` + stamp(-time.Minute) + `', NULL)`,
+			(6, 'warning', 'feed_incomplete', 2, NULL, 2, 'z', 'log 6', '` + stamp(-time.Minute) + `', NULL),
+			(7, 'warning', 'job_failed', NULL, NULL, NULL, 'job_failed:job_queue', 'operator only', '` + stamp(-time.Minute) + `', NULL)`,
 		fmt.Sprintf(`INSERT INTO rate_limit_event (scope, key, at) SELECT 'havel_week', '1', %f FROM generate_series(1, 8)`, nowF-60),
 		fmt.Sprintf(`INSERT INTO rate_limit_event (scope, key, at) SELECT 'havel_burst', '1', %f FROM generate_series(1, 9)`, nowF-7200),
 	} {

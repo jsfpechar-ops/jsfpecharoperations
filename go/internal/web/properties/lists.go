@@ -166,7 +166,7 @@ FROM legal_entity e WHERE e.owner_user_id IS NOT DISTINCT FROM $1 `
 const (
 	liveEntitiesSQL     = entityColumns + `AND e.archived_at IS NULL ORDER BY e.name`
 	archivedEntitiesSQL = entityColumns + `AND e.archived_at IS NOT NULL ORDER BY e.archived_at DESC`
-	openAlertsSQL       = `SELECT COUNT(*) FROM alert WHERE resolved_at IS NULL AND (owner_user_id = $1 OR kind IN ('job_failed', 'turnstile_unavailable', 'ttlock_budget'))`
+	openAlertsSQL       = `SELECT COUNT(*) FROM alert WHERE resolved_at IS NULL AND (owner_user_id = $1 OR kind IN ('turnstile_unavailable', 'ttlock_budget') OR (kind = 'job_failed' AND dedupe_key IN ('job_failed:submit', 'job_failed:deadlines', 'job_failed:ical', 'job_failed:door_codes')))`
 )
 
 func (s *Pages) entityRows(ctx context.Context, sql string, owner int64) ([]entityRow, error) {
