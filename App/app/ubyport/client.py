@@ -146,7 +146,8 @@ class UbyportClient:
         except requests.RequestException as exc:
             if _definitely_not_sent(exc):
                 raise UbyportTransportError(
-                    f"Could not reach UbyPort at {self.endpoint}: {exc}"
+                    f"Could not reach UbyPort at {self.endpoint}: {exc}",
+                    cause="dial",
                 ) from exc
             raise UbyportOutcomeUnknownError(
                 f"UbyPort did not answer after the request was sent (outcome unknown): {exc}"
