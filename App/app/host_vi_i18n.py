@@ -3929,7 +3929,7 @@ STRINGS.update({
     "notification.filing_stalled.title.auth": "%(property)s: khách chưa khai báo, UbyPort từ chối đăng nhập.",
     "notification.filing_stalled.title.manual": "%(property)s: khách chưa khai báo, gửi tự động đang tắt.",
     "notification.filing_stalled.title.failed": "%(property)s: khách chưa khai báo, gửi tới UbyPort lỗi.",
-    "notification.filing_stalled.detail": "Thời hạn khai báo với cảnh sát sắp đến hoặc đã qua. Hãy gửi ngay từ các lượt lưu trú, hoặc tự khai báo trong UbyPort rồi đánh dấu lượt lưu trú là đã khai báo thủ công. Cảnh báo này còn hiển thị cho đến khi mọi khách đã được khai báo.",
+    "notification.filing_stalled.detail": "Số khách đang chờ: %(count)s. Thời hạn khai báo với cảnh sát sắp đến hoặc đã qua. Hãy gửi ngay từ các lượt lưu trú, hoặc tự khai báo trong UbyPort rồi đánh dấu lượt lưu trú là đã khai báo thủ công. Cảnh báo này còn hiển thị cho đến khi mọi khách đã được khai báo.",
     "notification.sweep_failed.title": "%(property)s: khai báo tự động đã dừng do lỗi từ phía chúng tôi.",
     "notification.sweep_failed.detail": "Lần chạy gần nhất không gửi được gì. Chúng tôi thử lại sau vài phút. Nếu thông báo này vẫn còn, hãy gửi từ lượt lưu trú và viết cho support@ubyhost.com.",
     "notification.guest_pin_locked_out.title": "Liên kết cho khách bị khóa 24 giờ do nhập sai PIN.",
