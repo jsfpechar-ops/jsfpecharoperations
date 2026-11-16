@@ -159,3 +159,15 @@ def test_answered_mail_never_says_the_connection_failed():
     assert "The connection to UbyPort failed before the report was delivered." in dial_text
     assert "The connection to UbyPort failed before the report was delivered." not in fault_text
     assert "Chyba" in fault_text
+
+
+def test_outcome_unknown_resend_schedule_is_unchanged():
+    """Owner decision (A1 section 10): outcome_unknown keeps its resend schedule."""
+    from datetime import timedelta
+
+    from app import reporting
+
+    assert reporting.UNKNOWN_RETRY_GAPS == (
+        timedelta(minutes=30), timedelta(hours=2), timedelta(hours=6), timedelta(hours=12),
+    )
+    assert reporting.UNKNOWN_MAX_ATTEMPTS == 5
