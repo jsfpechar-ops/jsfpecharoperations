@@ -3917,6 +3917,7 @@ STRINGS.update({
     "notification.submission_transport.title.answered": "%(property)s: UbyPort trả lời bằng một lỗi và chưa nộp gì.",
     "notification.submission_transport.title.auth": "%(property)s: UbyPort từ chối đăng nhập và chưa nộp gì.",
     "notification.submission_transport.detail": "Chưa có gì được nộp, nên cảnh sát chưa có thông tin những khách này. Lát nữa hãy gửi lại từ lượt lưu trú. Nếu lỗi lặp lại, hãy liên hệ bộ phận hỗ trợ của UbyPort. Lỗi: %(error)s",
+    "notification.submission_transport.header": "Hãy đối chiếu tên đăng nhập, tên viết tắt và tên cơ sở với thư của cảnh sát.",
     "notification.submission_transport_repeated.header": "Lần thử tự động tiếp theo: %(next)s.",
     "notification.submission_transport_repeated.title": "%(property)s: UbyPort lỗi %(count)s lần liên tiếp. UbyHost vẫn tiếp tục thử.",
     "notification.submission_transport_repeated.detail": "Chưa có gì được nộp. Nếu sắp đến hạn, hãy khai báo khách thủ công trên UbyPort và liên hệ bộ phận hỗ trợ của UbyPort. Lỗi: %(error)s",

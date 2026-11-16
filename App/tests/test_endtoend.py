@@ -905,6 +905,10 @@ def test_99_fault_flash_names_the_fault(host, monkeypatch):
     )
     assert alert is not None
     assert json.loads(alert["params"])["variant"] == "answered"
+    assert json.loads(alert["params"])["header"] == "fault"
+    from app import alerts
+    shown = alerts.present(dict(alert), "en")
+    assert shown["display_detail"].startswith("Check the login, the short name and the facility name")
 
 
 def test_99_outcome_unknown_flash_is_unchanged(host, monkeypatch):
