@@ -53,6 +53,12 @@ def test_daily_cap_moves_next_try_to_next_day():
     )
 
 
+def test_manual_sends_do_not_count_toward_the_daily_cap():
+    manual = [dict(_row(m), mode="manual_bulk") for m in range(1, 25)]
+    # 24 manual rows: no cap, the gap for n=24 (60 min) applies from the newest row.
+    assert reporting.transport_backoff_from_rows(manual, NOW) == NOW + timedelta(minutes=59)
+
+
 def test_chain_resets_after_success():
     rows = [_row(5), _row(10, state="ok"), _row(20)]
     assert reporting.transport_backoff_from_rows(rows, NOW) == NOW + timedelta(minutes=5)

@@ -2288,7 +2288,9 @@ def transport_backoff_from_rows(rows: List[Dict[str, Any]], now: datetime) -> Op
     today_count = sum(
         1
         for row in chain
-        if row["finished_at"] and _unknown_stamp(row["finished_at"]).astimezone(zone).date() == today
+        # Manual sends (mode manual, manual_bulk, manual_resend) never count toward the cap.
+        if not (row.get("mode") or "").startswith("manual")
+        and row["finished_at"] and _unknown_stamp(row["finished_at"]).astimezone(zone).date() == today
     )
     if today_count >= TRANSPORT_DAILY_CAP:
         tomorrow = today + timedelta(days=1)
@@ -2303,7 +2305,7 @@ def _transport_rows(apartment_id: int) -> List[Dict[str, Any]]:
     return [
         dict(row)
         for row in db.query(
-            "SELECT state, cause, finished_at FROM submission WHERE apartment_id = ? "
+            "SELECT state, cause, mode, finished_at FROM submission WHERE apartment_id = ? "
             "ORDER BY id DESC LIMIT 500",
             (apartment_id,),
         )
