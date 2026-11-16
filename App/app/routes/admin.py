@@ -50,6 +50,7 @@ from .. import (
     passport_photos,
     payments,
     property_health,
+    police_check,
     police_letter,
     property_setup,
     rate_limit,
@@ -2214,6 +2215,9 @@ def _render_apartment_detail(
             ),
             "setup_finished": bool(setup_stored and setup_stored.get("finished")),
             "setup_hidden": bool(setup_progress and setup_progress.get("hidden")),
+            "police_findings": police_check.findings_for(
+                host_i18n.lang_from_request(request), apartment
+            ),
             **short_editor,
             **(extra or {}),
             **_property_view_state(request, extra, lock_available=door_code is not None),
@@ -3572,6 +3576,7 @@ async def police_letter_read(apartment_id: int, request: Request):
     boxes: Dict[str, Dict[str, str]] = {}
     filled: List[str] = []
     missing: List[str] = []
+    warnings: List[str] = []
     try:
         result = police_letter.parse_letter(letter_text)
         if result.status == "ok":
@@ -3592,6 +3597,14 @@ async def police_letter_read(apartment_id: int, request: Request):
             }
             extra["letter_message"] = _letter_message(lang, filled, missing)
             extra["letter_check"] = bool(filled)
+            findings = police_check.findings_for(
+                lang,
+                apartment,
+                prefill=prefill,
+                letter=police_check.letter_values(result, letter_text),
+            )
+            extra["police_findings"] = findings
+            warnings = [item["text"] for item in findings]
         else:
             status = result.status if result.status in ("empty", "too_long") else "failed"
             extra["letter_status"] = status
@@ -3601,7 +3614,7 @@ async def police_letter_read(apartment_id: int, request: Request):
     wizard = _form_str(form, "setup_step") == "police"
     del letter_text, form
     if failed_name:
-        status, boxes, filled, missing = "failed", {}, [], []
+        status, boxes, filled, missing, warnings = "failed", {}, [], [], []
         extra = {
             "property_view": "settings",
             "settings_section": "reporting",
@@ -3612,7 +3625,7 @@ async def police_letter_read(apartment_id: int, request: Request):
         db.audit("police_letter_read", f"apartment={apartment_id} filled={','.join(filled)}")
     if wants_json:
         if status == "ok":
-            message = extra.get("letter_message", "")
+            message = " ".join(part for part in [extra.get("letter_message", ""), *warnings] if part)
         else:
             message = host_i18n.translate(lang, f"police_letter.{status}")
         response = JSONResponse(
@@ -3622,6 +3635,7 @@ async def police_letter_read(apartment_id: int, request: Request):
                 "filled": filled,
                 "missing": missing,
                 "message": message,
+                "warnings": warnings,
             }
         )
     else:
