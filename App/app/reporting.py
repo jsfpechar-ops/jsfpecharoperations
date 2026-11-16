@@ -133,6 +133,11 @@ HOST_SIGNATURE_REQUIRED_MESSAGE = (
 # is never blocked by this.
 SUBMISSION_MAX_AUTO_ATTEMPTS = 1
 
+# A1c: definite UbyPort failures in a row (fault, refused login, HTTP 4xx) after
+# which a human is told; automatic retries continue. Counted in the open
+# submission_transport alert's "streak" param. Go: submit.go transportRepeatAfter.
+TRANSPORT_REPEAT_ALERT_AFTER = 3
+
 # submission.mode of the sweep's one automatic resend of an interrupted batch
 # (WP31, owner decision Q4). Set when the resend's row is inserted, so it holds
 # even if the resend itself is cut off by a crash. A batch with this mode is
