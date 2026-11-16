@@ -192,7 +192,7 @@ Staging is the Deploy staging workflow (`deploy-staging.yml`, manual, branch pic
 1. Actions, Deploy staging, pick branch `task/1830-deploy-two-copy-health`, run. On the server run `cd <deploy dir> && cat .go-slot && docker compose --profile go ps | tail -30`: one Go slot `healthy`, the other stopped.
 2. Run Deploy staging again. `.go-slot` flipped; during the run, in a second terminal, `while true; do curl -s -o /dev/null -w '%{http_code}\n' <staging url>/healthz; sleep 0.5; done` shows no run of non-200 longer than 2 seconds.
 3. Deploy a change that touches only Python. `docker inspect -f '{{.State.StartedAt}}' $(docker compose --profile go ps -q <live go service>)` must be unchanged. If it restarted, tell the orchestrator (open question 2).
-4. Break it on purpose: set `UBYHOST_GO_JOB_KINDS=nonsense` in staging `.env`... only if the new slot then fails to become healthy; expected: deploy stops, old copy keeps serving. Otherwise skip this check and say so.
+4. Break it on purpose, staging only: on a throwaway branch make the Go image fail its healthcheck (for example point the slot's healthcheck at port 9999 in compose), deploy staging. Expected: the deploy stops with "never became healthy" and the old copy keeps serving `/healthz`. If you cannot do this safely, skip and say so.
 Only then does the owner mark the PR ready.
 
 ## Rollback

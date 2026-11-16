@@ -49,7 +49,7 @@ No other file may change. Not `App/`, not `go/`, not any filing code.
    - After, always (also on failure, via `trap`): delete the smoke guest by calling the existing demo-delete path through the app container, never by raw SQL on guest tables. Which path exists for a non-`demo`-source stay is open question B.
    - Assertions, any failure exits 1 with the failing step name on one line: (1) processed within 60 s; (2) `submission` count for the demo apartment equals the count before; (3) `submission_claim` count equals the count before; (4) zero guest rows of the smoke stay in a reportable state (the exact state value comes from [submit_state](../OPERATIONS.md#the-submit_state-state-machine); open question D); (5) the guest rows are gone after delete.
    - Prints no guest data and no token. Logs only step names and counts.
-2. **deploy.sh.** After the `Public smoke` block add `./scripts/smoke-registration.sh || { echo "smoke registration failed" >&2; rollback; exit 1; }` hmm: do NOT add `rollback` here; brief 1832 owns rollback. In this brief the call is `./scripts/smoke-registration.sh` followed by `exit 1` on failure, nothing else. Add the same call directly after the `caddy reload` line.
+2. **deploy.sh.** After the `Public smoke` block add `./scripts/smoke-registration.sh || { echo "smoke registration failed" >&2; exit 1; }`. Do NOT add `rollback` here; brief 1832 owns rollback. Add the same call directly after the `caddy reload` line.
 3. **ENVIRONMENT.md.** Rows for `UBYHOST_SMOKE_GUEST_URL`, `UBYHOST_SMOKE_PIN`: unset by default; what they are; never commit values.
 
 ## 5. Do not touch
