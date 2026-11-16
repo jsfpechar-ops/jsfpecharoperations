@@ -67,3 +67,48 @@ func TestFaultAlertParamsCarryTextKey(t *testing.T) {
 		t.Fatal("dial must carry no fault key")
 	}
 }
+
+// TestFaultMailCopySameAsPython checks the English fault copy against the golden
+// JSON written by App/scripts/ubyport_fault_golden.py from the Python catalogue.
+func TestFaultMailCopySameAsPython(t *testing.T) {
+	raw, err := os.ReadFile("testdata/fault_copy_en.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var golden map[string]string
+	if err := json.Unmarshal(raw, &golden); err != nil {
+		t.Fatal(err)
+	}
+	if len(golden) != len(faultCopyEN) {
+		t.Fatalf("keys: golden %d, go %d", len(golden), len(faultCopyEN))
+	}
+	for key, text := range golden {
+		if faultCopyEN[key] != text {
+			t.Fatalf("%s: go %q, python %q", key, faultCopyEN[key], text)
+		}
+	}
+}
+
+// TestFaultBothMatchStringsSpecificRowFirst: a detail holding both match strings
+// takes the no-errors row, which comes first in the table, in Go as in Python.
+func TestFaultBothMatchStringsSpecificRowFirst(t *testing.T) {
+	detail := "Chyba běhu programu and Odpověď neobsahuje záznamy o chybách"
+	if got := FaultCodeFor("fault", detail); got != "uby_runtime_no_errors" {
+		t.Fatalf("code: %q", got)
+	}
+	if got := FaultHostKey("fault", detail); got != "ubyport.fault.uby_runtime_no_errors" {
+		t.Fatalf("key: %q", got)
+	}
+}
+
+// TestHeaderCodesOnceInSubmissionRejectedParams is the Go twin of the Python
+// header test: the codes travel once, in header_codes, for the presenter to word.
+func TestHeaderCodesOnceInSubmissionRejectedParams(t *testing.T) {
+	p := submissionRejectedParams("Flat", 2, 1, 1, "", "112;5")
+	if p["header_codes"] != "112;5" {
+		t.Fatalf("header_codes: %v", p["header_codes"])
+	}
+	if p["count"] != 2 || p["property"] != "Flat" {
+		t.Fatalf("params: %v", p)
+	}
+}

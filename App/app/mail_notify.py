@@ -667,7 +667,14 @@ def build_submission_problem(
         intro = _text(lang, "mail.submission_problem.intro_unanswered", property=property_name)
         preheader = _text(lang, "mail.submission_problem.preheader_unanswered")
         next_steps = _text(lang, "mail.submission_problem.next_unanswered")
-    reason_text = _reason_text(state, reason, transport and not answered, lang)
+    if cause == "fault":
+        from .ubyport import faults as uby_faults
+
+        reason_text = _text(
+            lang, uby_faults.host_copy_key(cause, reason), detail=uby_faults.host_detail(reason)
+        )
+    else:
+        reason_text = _reason_text(state, reason, transport and not answered, lang)
     submission_url = _app(f"/submissions/{submission_id}") if submission_id else ""
     stay_urls = [
         (stay, _app(f"/reservations/{stay['id']}")) for stay in stays

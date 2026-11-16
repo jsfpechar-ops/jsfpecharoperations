@@ -46,7 +46,7 @@ def test_unknown_code_quotes_police_text_with_code():
     lines = uby_errors.host_lines("", "ERR_CZE_555", "en", codebook)
     assert len(lines) == 1
     assert "Neznámá položka" in lines[0][0]
-    assert "(police code 555)" in lines[0][0]
+    assert "code 555" in lines[0][0]
     assert "“Neznámá položka”" in lines[0][0]
 
 
@@ -77,11 +77,46 @@ def test_fault_table_python_go_same_rows():
     assert ubyport_fault_golden.table() == expected
 
 
-def test_header_errors_shown_once_per_stay_in_words():
-    from app import alerts
+def test_header_errors_shown_once_per_stay_in_words(monkeypatch):
+    from app import alerts, codelists
+
+    monkeypatch.setattr(codelists, "error_codebook", lambda: {})
+    monkeypatch.setattr(codelists, "error_severities", lambda: {})
 
     params = {"property": "P", "count": 2, "failed": 1, "blocked": 1, "header_codes": "112", "header": "x"}
     row = {"kind": "submission_rejected", "message": "m", "detail": "d", "params": json.dumps(params)}
     shown = alerts._present_stored(row, "submission_rejected", "en")
     words = host_i18n.STRINGS["en"]["ubyport.code.112.text"]
     assert shown["display_detail"].count(words) == 1
+
+
+def test_accepted_and_duplicate_codes_never_say_send_again():
+    severities = {"7": 1, "8": 4}
+    accepted = uby_errors.host_lines("", "7", "en", None, severities)[0][0]
+    assert "send" not in accepted.lower() and "nothing to do" in accepted.lower()
+    duplicate = uby_errors.host_lines("", "8", "en", None, severities)[0][0]
+    assert "already" in duplicate.lower() and "do not send it again" in duplicate.lower()
+    unknown = uby_errors.host_lines("", "9", "en", None, {})[0][0]
+    assert "UbyPort gave code 9" in unknown and "send" not in unknown.lower()
+    for lang in ("cs", "vi"):
+        table = host_i18n.STRINGS[lang]
+        text = table["ubyport.code.accepted"] % {"police_text": "x", "code": "7"}
+        assert "odešl" not in text.lower() and "gửi lại" not in text.lower()
+
+
+def test_code_1_copy_is_accepted_not_rejected():
+    for lang in ("en", "cs", "vi"):
+        text = host_i18n.STRINGS[lang]["ubyport.code.1.text"]
+        assert "rejected" not in text.lower() and "odmítl" not in text.lower() and "từ chối" not in text.lower()
+
+
+def test_both_match_strings_specific_row_first():
+    detail = f"{ROW_RUNTIME} and {ROW_NO_ERRORS}"
+    assert faults.code_for("fault", detail) == "uby_runtime_no_errors"
+    assert faults.matched_text_key("fault", detail) == "ubyport.fault.uby_runtime_no_errors"
+
+
+def test_fault_copy_en_matches_go_golden():
+    golden = json.loads((REPO / "go" / "internal" / "ubyport" / "testdata" / "fault_copy_en.json").read_text(encoding="utf-8"))
+    assert golden == {k: host_i18n.STRINGS["en"][k] for k in golden}
+    assert len(golden) == 3

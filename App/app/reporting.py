@@ -1946,10 +1946,11 @@ def submit_batch(
                 "critical",
                 "submission_transport_repeated",
                 f"{apartment['internal_name']}: UbyPort answered with an error {streak} times in a row.",
-                str(exc),
+                "" if faults.fault_alert_params(cause, detail) else str(exc),
                 dedupe_key=f"submission_transport_repeated:{apartment['id']}",
                 apartment_id=apartment["id"],
                 params={"property": apartment["internal_name"], "count": streak, "error": str(exc),
+                        **faults.fault_alert_params(cause, detail),
                         **({"next": next_text, "header": next_text} if next_text else {})},
             )
         # Third failure in a row: one support copy, idempotent per submission.

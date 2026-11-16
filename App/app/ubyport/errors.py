@@ -251,12 +251,14 @@ def host_lines(
     record_error: Optional[str],
     lang: str = "en",
     codebook: Optional[Dict[str, str]] = None,
+    severities: Optional[Dict[str, int]] = None,
 ) -> List[Tuple[str, str]]:
     """(what happened, what to do) per police code, in the host's language (A1b P2).
 
-    The police codebook text is quoted inside the fallback sentence, never used as
-    the host sentence. Header codes come first; the caller shows header lines once
-    per stay. Callers pass the stored codes, never ``last_errors`` text.
+    Seed codes have their own words. Accepted codes (severity 0-2) say nothing is to
+    be done; duplicate codes (severity 4 or a duplicate marker) say not to send again;
+    any other code names the code and asks the host to check the details, with no
+    instruction to resend. The police text is quoted, never used as the host sentence.
     """
     from .. import host_i18n
 
@@ -270,5 +272,12 @@ def host_lines(
             lines.append((table[f"ubyport.code.{code}.text"], table[f"ubyport.code.{code}.action"]))
             continue
         police = _codebook_text(code, codebook) or table["ubyport.code.unknown_text"]
-        lines.append((table["ubyport.code.fallback"] % {"police_text": police, "code": code}, ""))
+        values = {"police_text": police, "code": code}
+        sev = severity(code, severities)
+        if sev is not None and sev <= ACCEPTED_MAX_SEVERITY:
+            lines.append((table["ubyport.code.accepted"] % values, ""))
+        elif sev == 4 or _NON_CORRECTABLE_RE.search(police):
+            lines.append((table["ubyport.code.duplicate"] % values, ""))
+        else:
+            lines.append((table["ubyport.code.fallback"] % values, ""))
     return lines

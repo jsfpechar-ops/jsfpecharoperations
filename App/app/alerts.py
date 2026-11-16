@@ -239,11 +239,17 @@ def _present_stored(row: Dict[str, Any], kind: str, lang: str) -> Dict[str, Any]
     """
     params = stored_params(row)
     if params.get("header_codes"):
+        from . import codelists
         from .ubyport import errors as uby_errors
 
         params = dict(params)
         params["header"] = " ".join(
-            text for pair in uby_errors.host_lines(params["header_codes"], None, lang) for text in pair if text
+            text
+            for pair in uby_errors.host_lines(
+                params["header_codes"], None, lang, codelists.error_codebook(), codelists.error_severities()
+            )
+            for text in pair
+            if text
         )
     if kind == "mail_failed" and params.get("kind"):
         # The copy names the mail in words; the stored code is for the log.

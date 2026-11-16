@@ -1,7 +1,7 @@
 UbyPort answered the guest report for Byt Beta with an error. Nothing from this attempt was filed, so these guests are not declared yet.
 
 What UbyPort reported:
-UbyPort returned a SOAP fault: Chyba běhu programu / Odpověď neobsahuje záznamy o chybách
+UbyPort hit an internal error and returned no result. Nothing was filed. If it keeps failing, contact UbyPort support with the property's IDUB and the time.
 
 What to do next:
 If automatic sending is on for this property, UbyHost sends the report again on its next run. If the same error comes back, contact UbyPort support with the property's IDUB and the time of this e-mail. Do not send them guest details.
