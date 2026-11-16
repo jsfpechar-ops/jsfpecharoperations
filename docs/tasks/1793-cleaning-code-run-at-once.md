@@ -1,4 +1,4 @@
-# 1793: Cleaning code made at once (run the cleaner queue right after the click)
+# 1793: Cleaning code made at once, with a visible delete button
 
 Status: todo — scoped 2026-11-16 from the owner's request (a click on "Create permanent TTLock code" waits up to 5 minutes for the `door_codes` job). Exact diffs still to be added by the exact-diff pass (anchors, sha256 table); the executor must not start before that.
 Depends on: 1771 registered the Go `door_codes` job (done in PR 1036), `door_codes` in both job lists | Base commit: current tip of the working branch | Branch: task/1793-cleaning-code-run-at-once
@@ -8,6 +8,8 @@ Tier: B (small, one behaviour; fresh review of the full diff before ready)
 ## 1. Objective
 
 Today a host who presses **Create permanent TTLock code** (or **Remove saved code**) on `/cleaning/properties/<id>` only queues a `cleaning_code` row. The Go `door_codes` job picks it up on its next run, up to 5 minutes later. After the row is saved, the Go web process should run one cleaner-queue pass at once in the background, so the code is on the lock within seconds. The 5-minute job stays as the fallback and the only retry path.
+
+**Visible delete button (owner, 2026-11-16).** Today the only way to remove a saved code is a collapsed "Remove saved code" section lower on the page (`cleaning_settings.tmpl`, the `<details class="cleaning-remove">` block), which the owner did not find. Add a visible **Delete code** button in the Door access code panel, next to the PIN, shown whenever the property has a code or a pending code. It posts to the existing `/cleaning/properties/<id>/code/remove` route, so a TTLock code is revoked through the same queue (and the kick above makes it immediate), and a manual code is hidden as today. No new route, no new state.
 
 **Not in scope:** guest codes (timed codes keep their own flow), the Python cleaning route, the job interval, the call budget (one call per code, the same as today).
 
@@ -31,7 +33,8 @@ Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (the PIN is 
    - `init()` calls `cleaning.SetQueueKick(...)`.
    - The kick returns at once. It starts one goroutine that: returns if `UBYHOST_DOOR_CODES` is not on (use `doorCodesOn`); returns if `door_codes` is not in `UBYHOST_GO_JOB_KINDS` (so the Python worker and Go never both run the queue); takes a process-wide mutex with `TryLock` and returns if a pass is already running (the 5-minute job covers anything missed); builds the deps once with `sync.Once` (`newDoorCodesParts` plus `systemClock`, cipher `parts.Keys`, `StagingNoLogin: stagingNoLogin(os.Getenv)`); runs `doorcleaning.ProcessQueue` with a 60 second timeout context that does not depend on the request context.
    - A setup or pass error is logged with `slog.Warn` (no PIN, no row contents) and never shown to the host.
-4. The notice text on the page is unchanged: "TTLock code is being prepared. The current code stays available." stays until the row is `active`. After the kick the host reloads and sees the PIN.
+4. Delete button: in `cleaning_settings.tmpl`, inside the code panel right after the PIN line and the pending/failed notices, add `{{if or .Code.Value .Code.Pending}}` a small form (`method="post"`, `action="/cleaning/properties/{{.Home.ID}}/code/remove"`, the `_csrf` input) with one `ui-btn ui-btn-quiet` submit button labelled by a new key `delete_code`. It carries `data-confirm` and `data-confirm-message` with the existing `remove_code_hint` text, and works without JavaScript (a plain POST). Keep the old collapsed section or remove it; the brief's choice: remove it, so one explanation lives in one place (rule 9), and keep the `remove_code_hint` key for the confirm text. Add `delete_code` to the cleaning catalog in all three languages (cs: "Smazat kód", en: "Delete code", vi: "Xóa mã").
+5. The notice text on the page is unchanged: "TTLock code is being prepared. The current code stays available." stays until the row is `active`. After the kick the host reloads and sees the PIN.
 
 ## 3. Files
 
@@ -40,6 +43,9 @@ Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (the PIN is 
 | `go/internal/web/cleaning/host.go` | edit | `SetQueueKick`, kick field |
 | `go/internal/web/cleaning/host_codes.go` | edit | call the kick after the `ttlock` and `remove` actions |
 | `go/internal/web/cleaning/host_codes_test.go` | edit | tests below |
+| `go/internal/web/cleaning/hosttemplates/cleaning_settings.tmpl` | edit | visible Delete code button |
+| `go/internal/web/cleaning/i18n.json` (and its key list if one exists) | edit | `delete_code` in cs, en, vi |
+| `go/internal/web/cleaning/testdata/cleaning_golden.json` | edit | only the expected page-body change (accepted difference, list it in the report) |
 | `go/cmd/ubyhost-web/cleaning_queue_kick.go` | create | the background pass |
 | `go/cmd/ubyhost-web/cleaning_queue_kick_test.go` | create | gating tests |
 | `docs/tasks/1793-report.md` | create | the report |
@@ -63,6 +69,7 @@ No other file may change.
 - Handler: with a kick set, `POST .../code/ttlock` and `.../code/remove` call it exactly once after a saved row; `manual` and a rejected request (lock setup missing, bad CSRF) never call it.
 - Kick: does nothing when `UBYHOST_DOOR_CODES` is off; does nothing when `door_codes` is not in `UBYHOST_GO_JOB_KINDS`; a second kick while a pass runs returns without a second pass (use a fake pass function injected through a package variable).
 - A failing pass logs and does not panic.
+- Page: a property with a saved code (manual or TTLock) or a pending code shows the **Delete code** form with action `/cleaning/properties/<id>/code/remove`, a `_csrf` input and the confirm message; a property with no code shows no delete button. Posting it removes a manual code and moves a TTLock code to `revoke_pending`.
 
 ## 6. Commands
 
@@ -70,11 +77,13 @@ No other file may change.
 - `cd go && go vet ./internal/web/cleaning/... ./cmd/... 2>&1 | tail -20` is silent
 - `cd go && go test ./internal/web/cleaning/... ./cmd/ubyhost-web/... -count=1 2>&1 | tail -30` passes, no test skipped
 - `python3 scripts/context_lint.py 2>&1 | tail -10` is clean
+- Host page (rules 7 and 10): `test_layout_lint_browser.py` green for `/cleaning/properties/<id>`, plus one 390, 768 and 1280 px screenshot in the report and one line per screenshot on what was seen.
 
 ## 7. Acceptance
 
 - Pressing the button returns at once, as before.
 - With `UBYHOST_DOOR_CODES=1` and `door_codes` in both job lists, the PIN shows on a reload within about 10 seconds, and exactly one "UH Cleaning …" code is on the lock.
+- A visible **Delete code** button sits next to the PIN; pressing it (after the confirm) removes the code, and a TTLock code is gone from the lock within seconds.
 - With `door_codes` not in the Go lists, behaviour is unchanged (Python worker, up to the Python interval).
 - `git diff --stat` lists only §4 paths.
 
@@ -89,8 +98,8 @@ Stop and write the report instead of continuing when: an anchor is not found ver
 ## Rollout and rollback
 
 - **Rollout:** deploy after the real-lock cleaning test of the TTLock plan section 12 has passed with the 5-minute job. Then repeat that test once and check the code appears within seconds.
-- **Rollback:** revert the PR. Nothing else changes; the 5-minute job still works.
+- **Rollback:** revert the PR. Nothing else changes; the 5-minute job still works, and the old collapsed remove section comes back with the template.
 
 ## Owner steps
 
-After deploy: press **Create permanent TTLock code** on a pilot property, reload after 10 seconds, type the PIN with `#` on the keypad, press **Remove saved code**, and check the code no longer opens the lock.
+After deploy: press **Create permanent TTLock code** on a pilot property, reload after 10 seconds, type the PIN with `#` on the keypad, press the new **Delete code** button next to the PIN and confirm, and check the code no longer opens the lock.
