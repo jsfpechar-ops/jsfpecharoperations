@@ -102,6 +102,10 @@ Rule 1 applies: nothing here may change what is filed or the evidence of what wa
 | D2 | CI-built images live in GitHub Container Registry as a private package |
 | D3 | Rate limiting is done in the Go middleware; no Caddy plugin |
 
+## 9a. Lane F: guest form isolation
+
+The guest registration form becomes its own program that app changes, app crashes and database outages cannot stop: [plan](guest-form-isolation.md), briefs 1830-1851.
+
 ## 10. Not in this plan
 
 - Moving the server. That is a separate plan after step 5.

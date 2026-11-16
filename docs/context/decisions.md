@@ -67,4 +67,4 @@ Append-only.
 - 2026-11-15 [dep] go-webauthn v0.18.0 pinned | owner | 1760
 - 2026-11-15 [ai] Havel and Leon on Mistral Small, 0.05 USD monthly caps | owner
 - 2026-11-15 [legal] Register lists Mistral AI and Anthropic (conditional); no "EU only"/"not stored" claim without ZDR or EU endpoint | 1792
-- 2026-11-16 [perf] 1 vCPU / 2 GB for 2,000 properties; b/w signature if readable; GHCR images; Go rate limit: [plan](../plans/optimization-wins.md) | owner
+- 2026-11-16 [perf] 1 vCPU / 2 GB for 2,000 properties; b/w signature; GHCR; Go rate limit; guest form own program: [plan](../plans/optimization-wins.md) | owner
