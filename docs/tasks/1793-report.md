@@ -1,27 +1,35 @@
 # 1793 report
 
-Status: blocked
+Status: review
 
-## Files changed
-- go/internal/ubyport/notify.go (step 1): MailDB interface added; EnqueueMail takes `q MailDB`.
-- go/internal/payments/booking_webhook.go (step 2): dbtx parameter added to booking, apartment, hostEmail, linkKey, manageURL, mailConfirmed, mailClash, enqueue; callers outside the transaction pass b.Pool.
+## Files changed (git diff --stat 5f411a9)
+- go/internal/ubyport/notify.go: EnqueueMail takes `MailDB` (QueryRow only). 13 lines.
+- go/internal/payments/booking_webhook.go: steps 2 to 6. `confirm` writes audit, booking re-read and both mails on `tx` before Commit; `enqueue` returns error; `mailConfirmed` returns it; `mailClash` logs it.
+- go/internal/payments/booking_webhook_test.go: two tests added (+74, no deletions).
+- docs/tasks/1793-report.md (this file).
 
-## Commands (last 5 lines of output)
-- `go build ./...` (step 1): no output, exit 0.
-- `go vet ./internal/ubyport/` (step 1): no output, exit 0.
-- `go build ./...` and `go vet ./internal/payments/` (step 2): no output, exit 0; gofmt -l clean.
-- Tests: not run yet (steps 3 to 7 not done). No test counts to report.
+## Commands (last lines of output)
+- `go build ./...`: no output, exit 0 (also after each step).
+- `gofmt -l internal/payments internal/ubyport`: no output.
+- `go vet ./internal/payments/ ./internal/ubyport/`: no output, exit 0.
+- `go test ./internal/payments/ -run 'Booking' -count=1 -v` with UBYHOST_TEST_DATABASE_URL set to a local Postgres 16 (not the CI service image, which is 17): 12 tests PASS, 0 SKIP, incl. TestBookingMailEnqueueFailsLeavesNotPaid, TestBookingRetryAfterPartialFailureOneMail, TestBookingWebhookMatchesPython, TestBookingSurvivesCancelAfterCommit, TestBookingConcurrentPaidEvents.
+- `go test ./internal/payments/ ./internal/ubyport/ ./internal/mailnotify/ -count=1`: ok, ok, ok (with DB env).
+- Without DB env the same tests skip (run earlier, 0 DB tests passed).
 
 ## Brief §7 ticked
-None. Steps 3 to 8 are not done.
+- [x] no `audit(ctx, b.Pool` for site_booking_paid (only the clash audit remains, line 373).
+- [x] audit, booking re-read, mailConfirmed and site_booking_paid above tx.Commit.
+- [x] both new tests pass; existing booking tests pass; no SKIP (with DB).
+- [x] git diff lists only §3 paths.
 
 ## Deviations
-- Done: steps 1 to 2. Left: steps 3 to 8 (enqueue returns error; mailClash and mailConfirmed wrap errors; confirm moves audit and mails into tx before Commit; two new tests; §6 test commands).
-- Reason: executor checkpoint reached (about 25 tool calls).
-- The brief file is not in this worktree. It was read from commit 831a708 (branch claude/wonderful-fermat-pk93rs). The brief's base commit a6c1990 is not an ancestor of HEAD 5f411a9; all step anchors matched anyway.
+- Step 4: mailClash keeps `q` (dbtx) instead of literal `b.Pool`; refundClash passes b.Pool, as the owner answer said. Same behaviour.
+- gofmt -w ran on booking_webhook_test.go (only my appended lines changed).
+- Row count of paid bookings without mail: not run (local test DB is empty; no production DB).
 
 ## Questions
-- Step 4 writes `b.enqueue(ctx, b.Pool, ...)` in mailClash, but step 2 says use `q`. Behaviour is identical (refundClash passes b.Pool). Step 2 used `q`; confirm which one step 4 should use.
+- None.
 
 ## Owner steps left
-- None yet. The brief's Owner decisions still apply after the code is merged.
+- Merge only after CI shows the new tests run (not skipped) on its Postgres 17 service.
+- Python twin (App/app/booking_webhook.py) keeps the bug until the owner decides (brief Owner steps 1 to 2).
