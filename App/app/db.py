@@ -1820,6 +1820,10 @@ def _postgres_schema_ddl(conn, *, record_history: bool, include_triggers: bool) 
                 "INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)",
                 (version, name, utcnow()),
             )
+    # Goose-only columns (App/migrations_pg) are not in the SQLite files. Add them here so a
+    # schema built in Python (the transfer bootstrap) matches goose. Idempotent.
+    for table, column, decl in GOOSE_ONLY_COLUMNS:
+        _execute_ddl(conn, f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {column} {decl}")
     db_postgres.install_pg_support(conn, include_triggers=include_triggers)
 
 
