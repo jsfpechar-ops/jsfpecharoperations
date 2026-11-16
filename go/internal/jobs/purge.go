@@ -11,7 +11,7 @@ import (
 const (
 	// KeepDoneDays and KeepDeadDays: how long a finished or a dead row stays.
 	KeepDoneDays = 7
-	KeepDeadDays = 30
+	KeepDeadDays = 7
 	// PurgeBatch rows per DELETE. Each batch is its own short transaction, so
 	// no lock is held across batches and a claim is never kept waiting.
 	PurgeBatch = 500

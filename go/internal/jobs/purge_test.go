@@ -23,11 +23,11 @@ func TestPurgeDeletesFinishedRowsByAge(t *testing.T) {
 		return id
 	}
 
-	a := insert("push", Now(-8*24*time.Hour), Now(-8*24*time.Hour), nil)   // done 8 days: deleted
-	b := insert("push", Now(-6*24*time.Hour), Now(-6*24*time.Hour), nil)   // done 6 days: kept
-	c := insert("mail", Now(-8*24*time.Hour), nil, Now(-8*24*time.Hour))   // dead 8 days: kept
-	d := insert("mail", Now(-31*24*time.Hour), nil, Now(-31*24*time.Hour)) // dead 31 days: deleted
-	e := insert("submit", Now(-40*24*time.Hour), nil, nil)                 // open 40 days: kept
+	a := insert("push", Now(-8*24*time.Hour), Now(-8*24*time.Hour), nil) // done 8 days: deleted
+	b := insert("push", Now(-6*24*time.Hour), Now(-6*24*time.Hour), nil) // done 6 days: kept
+	c := insert("mail", Now(-6*24*time.Hour), nil, Now(-6*24*time.Hour)) // dead 6 days: kept
+	d := insert("mail", Now(-8*24*time.Hour), nil, Now(-8*24*time.Hour)) // dead 8 days: deleted
+	e := insert("submit", Now(-40*24*time.Hour), nil, nil)               // open 40 days: kept
 
 	removed, err := Purge(ctx, pool)
 	if err != nil {
