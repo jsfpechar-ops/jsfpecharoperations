@@ -133,3 +133,17 @@ func TestRunDeadlinesJobOnDatabase(t *testing.T) {
 		t.Fatalf("alert %q %q, want critical and the English deadlines name", level, message)
 	}
 }
+
+// A3: a stalled property (or a failed check) fails the filing heartbeat.
+func TestRunDeadlinesStalledFailsTheHeartbeat(t *testing.T) {
+	f := &deadlinesFake{url: "https://hb.example/f"}
+	s := f.steps()
+	s.stalled = func() (int, error) { return 1, nil }
+	sum, err := runDeadlines(s)
+	if err != nil || sum.Stalled != 1 {
+		t.Fatalf("summary %+v, err %v", sum, err)
+	}
+	if last := f.calls[len(f.calls)-1]; last != "ping https://hb.example/f/fail" {
+		t.Fatalf("last call %q, want /fail ping", last)
+	}
+}
