@@ -1931,6 +1931,16 @@ def submit_batch(
                 apartment_id=apartment["id"],
                 params={"property": apartment["internal_name"]},
             )
+        if definite and streak >= TRANSPORT_REPEAT_ALERT_AFTER:
+            alerts.raise_alert(
+                "critical",
+                "submission_transport_repeated",
+                f"{apartment['internal_name']}: UbyPort answered with an error {streak} times in a row.",
+                str(exc),
+                dedupe_key=f"submission_transport_repeated:{apartment['id']}",
+                apartment_id=apartment["id"],
+                params={"property": apartment["internal_name"], "count": streak, "error": str(exc)},
+            )
         # The host is not watching the screen when this fires -- the whole point
         # of the automatic send is that nobody is. Mail the same event to the
         # address on the legal entity so a batch that never left is not only
