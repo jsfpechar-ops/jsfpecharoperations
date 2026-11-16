@@ -10,11 +10,13 @@ The worker (`App/app/scheduler.py`, `job_intervals()`) runs these jobs. The Oper
 | `mail` | 5 min | Drains the mail queue. |
 | `meta_capi` | 10 min | Conversion events; no user waits on them. |
 | `posthog` | 15 min | Analytics sync; no user waits on it. |
-| `door_codes` | 5 min | Reconciles door PINs with the lock gateway. A 5-minute lag is acceptable; the gateway is slow and rate-limited. |
+| `door_codes` | 5 min | Reconciles stay PINs with the lock gateway, reconciles cleaning checkout events, and drains the permanent cleaning-code queue. A 5-minute lag is acceptable for polling; the gateway is slow and rate-limited. |
 | `push` | 1 min | Drains `push_outbox`, the queue of alerts due now. It must stay at one minute so alerts arrive promptly. |
 | `guide_import` | 60 min | Processes queued guide imports. Imports are not time-critical, so hourly is enough. |
 | `photo_sweep` | 12 h | Cleans up passport photos on a schedule. |
 | `retention` | daily | Retention deletions run once a day. |
 | `stay_fee_mail`, `stripe_sweep`, `billing_snapshot` | daily | Billing jobs run once a day. |
+
+**Cleaning TTLock codes (Go only):** The interval above is the retry path for queued cleaning codes. When `door_codes` is in `UBYHOST_GO_JOB_KINDS` and `UBYHOST_DOOR_CODES` is on, the Go web process also runs one `ProcessQueue` pass in the background right after the host queues or removes a cleaning TTLock code on `/cleaning/properties/<id>`, so the lock usually updates within seconds (`go/cmd/ubyhost-web/cleaning_queue_kick.go`). Python-only `door_codes` has no kick; the host waits for the next job run.
 
 Change a value here and in `job_intervals()` together. `App/tests/test_scheduler.py` checks the three values set on 2026-10-31.
