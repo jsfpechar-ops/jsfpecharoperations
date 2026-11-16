@@ -177,8 +177,11 @@ class UbyportClient:
                 f"UbyPort returned HTTP {response.status_code} (outcome unknown): {text[:400]}"
             )
         if response.status_code >= 400:
+            # The body can be an HTML page or echo request values: never keep it.
             raise UbyportTransportError(
-                f"UbyPort returned HTTP {response.status_code}: {text[:400]}"
+                f"UbyPort returned HTTP {response.status_code}.",
+                cause="http4xx",
+                detail=f"HTTP {response.status_code}",
             )
         return text
 
