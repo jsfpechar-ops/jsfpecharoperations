@@ -19,6 +19,7 @@ type DeadlinesSummary struct {
 	Alerts      int
 	RequestsDue int
 	Watchdog    WatchdogResult
+	Stalled     int
 }
 
 // deadlinesSteps are the parts of one run; tests replace them.
@@ -26,6 +27,7 @@ type deadlinesSteps struct {
 	check       func() (int, error)
 	dsrDue      func() (int, error)
 	watchdog    func() (WatchdogResult, error)
+	stalled     func() (int, error) // nil in tests that do not need it
 	raiseFailed func() error
 	ping        func(url string)
 	getenv      func(string) string
@@ -46,6 +48,7 @@ func RunDeadlinesJob(ctx context.Context, pool *pgxpool.Pool, lookupEnv func(str
 		// Python's date.today() is the server's local date (TZ unset: UTC).
 		dsrDue:      func() (int, error) { return RaiseDSRDueAlerts(ctx, pool, at.Local()) },
 		watchdog:    func() (WatchdogResult, error) { return RunFilingWatchdog(ctx, pool, lookupEnv, at) },
+		stalled:     func() (int, error) { r, err := RunFilingStalled(ctx, pool, getenv, at); return r.Stalled, err },
 		raiseFailed: func() error { return jobs.RaiseFailed(ctx, pool, "deadlines") },
 		ping:        ping,
 		getenv:      getenv,
@@ -90,8 +93,24 @@ func runDeadlines(s deadlinesSteps) (DeadlinesSummary, error) {
 		slog.Info("filing watchdog", "at_risk", w.AtRisk, "not_sent", w.NotSent, "unknown_risk", w.UnknownRisk,
 			"awaiting_retry", w.AwaitingRetry, "host_mails", w.HostMails, "digest", w.Digest)
 	}
+	// A3: the catch-all alarm. A failure raises job_failed and fails the
+	// heartbeat, so the alarm can never go quiet by breaking.
+	stalledFailed := false
+	if s.stalled != nil {
+		n, err := s.stalled()
+		if err != nil {
+			slog.Error("filing stalled check failed", "error", fmt.Sprintf("%T", err))
+			deadlinesRaiseFailed(s)
+			stalledFailed = true
+		} else {
+			sum.Stalled = n
+			if n > 0 {
+				slog.Info("filing stalled", "properties", n)
+			}
+		}
+	}
 	// A failed deadline watch counts as a failure too: nobody is being told.
-	if url := FilingHeartbeatURL(s.getenv, w.AtRisk > 0 || watchErr != nil); url != "" {
+	if url := FilingHeartbeatURL(s.getenv, w.AtRisk > 0 || watchErr != nil || sum.Stalled > 0 || stalledFailed); url != "" {
 		s.ping(url)
 	}
 	if watchErr != nil {
