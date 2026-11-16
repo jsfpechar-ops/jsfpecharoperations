@@ -133,6 +133,11 @@ HOST_SIGNATURE_REQUIRED_MESSAGE = (
 # is never blocked by this.
 SUBMISSION_MAX_AUTO_ATTEMPTS = 1
 
+# A1c: definite UbyPort failures in a row (fault, refused login, HTTP 4xx) after
+# which a human is told; automatic retries continue. Counted in the open
+# submission_transport alert's "streak" param. Go: submit.go transportRepeatAfter.
+TRANSPORT_REPEAT_ALERT_AFTER = 3
+
 # submission.mode of the sweep's one automatic resend of an interrupted batch
 # (WP31, owner decision Q4). Set when the resend's row is inserted, so it holds
 # even if the resend itself is cut off by a crash. A batch with this mode is
@@ -1881,6 +1886,21 @@ def submit_batch(
             transport_params["variant"] = "auth"
         elif answered:
             transport_params["variant"] = "answered"
+        # Read before submission_transport is refreshed below. dial, setup and
+        # redirect neither count nor reset; an answered batch resolves the alert.
+        definite = cause in ("fault", "auth", "http4xx")
+        streak = 0
+        try:
+            previous = alerts.open_alert(f"submission_transport:{apartment['id']}")
+            if previous:
+                streak = max(0, int(alerts.stored_params(dict(previous)).get("streak") or 0))
+        except Exception:
+            # A failed read must not leave the submission unrecorded: count from 0.
+            log.exception("submission_streak_read_failed apartment_id=%s", apartment["id"])
+            streak = 0
+        if definite:
+            streak += 1
+        transport_params["streak"] = streak
         db.update(
             "submission",
             submission_id,
@@ -1913,6 +1933,16 @@ def submit_batch(
                 apartment_id=apartment["id"],
                 params={"property": apartment["internal_name"]},
             )
+        if definite and streak >= TRANSPORT_REPEAT_ALERT_AFTER:
+            alerts.raise_alert(
+                "critical",
+                "submission_transport_repeated",
+                f"{apartment['internal_name']}: UbyPort answered with an error {streak} times in a row.",
+                str(exc),
+                dedupe_key=f"submission_transport_repeated:{apartment['id']}",
+                apartment_id=apartment["id"],
+                params={"property": apartment["internal_name"], "count": streak, "error": str(exc)},
+            )
         # The host is not watching the screen when this fires -- the whole point
         # of the automatic send is that nobody is. Mail the same event to the
         # address on the legal entity so a batch that never left is not only
@@ -1936,6 +1966,8 @@ def submit_batch(
     now = db.utcnow()
     plan = plan_outcome(pairs, result, submission_id, now, codebook, severities)
     state = plan["state"]
+    if state in ("ok", "ok_duplicate", "partial"):
+        alerts.resolve(f"submission_transport_repeated:{apartment['id']}")
     accepted_count = plan["accepted"]
     failed_count = plan["failed"]
     blocked_count = plan["blocked"]

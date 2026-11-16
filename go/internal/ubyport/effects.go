@@ -6,6 +6,7 @@ package ubyport
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
@@ -150,6 +151,32 @@ func ResolveAlert(ctx context.Context, pool *pgxpool.Pool, dedupeKey string) err
 		`UPDATE alert SET resolved_at = $1 WHERE dedupe_key = $2 AND resolved_at IS NULL`,
 		UTCNow(), dedupeKey)
 	return err
+}
+
+// transportStreak is the "streak" param of the apartment's open
+// submission_transport alert (reporting.py transport branch, A1c); 0 if none.
+func transportStreak(ctx context.Context, pool *pgxpool.Pool, apartmentID int64) (int, error) {
+	var raw *string
+	err := pool.QueryRow(ctx,
+		`SELECT params FROM alert WHERE dedupe_key = $1 AND resolved_at IS NULL`,
+		fmt.Sprintf("submission_transport:%d", apartmentID)).Scan(&raw)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, err
+	}
+	if raw == nil {
+		return 0, nil
+	}
+	var p map[string]any
+	if json.Unmarshal([]byte(*raw), &p) != nil {
+		return 0, nil
+	}
+	if n, ok := p["streak"].(float64); ok && n > 0 {
+		return int(n), nil
+	}
+	return 0, nil
 }
 
 // Audit writes an audit row for a background action: no signed-in actor, so the

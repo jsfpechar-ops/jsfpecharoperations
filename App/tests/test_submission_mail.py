@@ -17,7 +17,7 @@ from datetime import date, timedelta
 import pytest
 
 from app import config, db, host_i18n, mail, mail_notify, reporting
-from app.ubyport.client import SubmissionResult, UbyportTransportError
+from app.ubyport.client import SubmissionResult, UbyportOutcomeUnknownError, UbyportTransportError
 
 RECIPIENT = "host@mailnotify.test"
 
@@ -716,3 +716,101 @@ def test_no_host_mail_language_literal_is_left_hard_coded():
         source = (app_dir / name).read_text(encoding="utf-8")
         assert '"lang": "en"' not in source, name
         assert '"lang": "cs"' not in source, name
+
+
+class _FaultClient:
+    def submit(self, _header, _guests):
+        raise UbyportTransportError(
+            "UbyPort returned a SOAP fault: Chyba běhu programu",
+            cause="fault",
+            detail="Chyba běhu programu",
+        )
+
+
+class _DialClient:
+    def submit(self, _header, _guests):
+        raise UbyportTransportError("could not connect", cause="dial")
+
+
+class _UnknownClient:
+    def submit(self, _header, _guests):
+        raise UbyportOutcomeUnknownError("timeout")
+
+
+class _AcceptingClient:
+    def submit(self, _header, guests):
+        return SubmissionResult(
+            endpoint="x",
+            request_xml="",
+            response_xml="",
+            record_errors=[""] * len(guests),
+        )
+
+
+def _alert_open(apartment, kind):
+    return reporting.alerts.open_alert(f"{kind}:{apartment['id']}")
+
+
+def test_three_faults_in_a_row_raise_the_repeated_alert(monkeypatch):
+    apartment, _reservation, _guest_id = _seed("mailnotifya1c1")
+    for _ in range(2):
+        _submit(monkeypatch, apartment, client=_FaultClient())
+    assert _alert_open(apartment, "submission_transport_repeated") is None
+    _submit(monkeypatch, apartment, client=_FaultClient())
+    row = _alert_open(apartment, "submission_transport_repeated")
+    assert row is not None
+    assert reporting.alerts.stored_params(dict(row))["count"] == 3
+
+
+def test_dial_neither_counts_nor_resets(monkeypatch):
+    apartment, _reservation, _guest_id = _seed("mailnotifya1c2")
+    for client in (_FaultClient(), _FaultClient(), _DialClient()):
+        _submit(monkeypatch, apartment, client=client)
+    assert _alert_open(apartment, "submission_transport_repeated") is None
+    _submit(monkeypatch, apartment, client=_FaultClient())
+    assert _alert_open(apartment, "submission_transport_repeated") is not None
+
+
+def test_outcome_unknown_does_not_count(monkeypatch):
+    apartment, _reservation, _guest_id = _seed("mailnotifya1c3")
+    for _ in range(2):
+        _submit(monkeypatch, apartment, client=_FaultClient())
+    _submit(monkeypatch, apartment, client=_UnknownClient())
+    assert _alert_open(apartment, "submission_transport_repeated") is None
+    row = _alert_open(apartment, "submission_transport")
+    assert reporting.alerts.stored_params(dict(row))["streak"] == 2
+
+
+def test_accepted_filing_resolves_the_repeated_alert(monkeypatch):
+    apartment, _reservation, _guest_id = _seed("mailnotifya1c4")
+    for _ in range(3):
+        _submit(monkeypatch, apartment, client=_FaultClient())
+    assert _alert_open(apartment, "submission_transport_repeated") is not None
+    result, _pairs = _submit(monkeypatch, apartment, client=_AcceptingClient())
+    assert result["state"] == "ok"
+    assert _alert_open(apartment, "submission_transport_repeated") is None
+
+
+class _CauseClient:
+    def __init__(self, cause):
+        self.cause = cause
+
+    def submit(self, _header, _guests):
+        raise UbyportTransportError("UbyPort answered with an error", cause=self.cause)
+
+
+@pytest.mark.parametrize("cause, token", [("auth", "mailnotifya1c5"), ("http4xx", "mailnotifya1c6")])
+def test_auth_and_http4xx_count_toward_the_repeated_alert(monkeypatch, cause, token):
+    apartment, _reservation, _guest_id = _seed(token)
+    for _ in range(3):
+        _submit(monkeypatch, apartment, client=_CauseClient(cause))
+    assert _alert_open(apartment, "submission_transport_repeated") is not None
+
+
+def test_redirect_neither_counts_nor_resets(monkeypatch):
+    apartment, _reservation, _guest_id = _seed("mailnotifya1c7")
+    for client in (_FaultClient(), _FaultClient(), _CauseClient("redirect")):
+        _submit(monkeypatch, apartment, client=client)
+    assert _alert_open(apartment, "submission_transport_repeated") is None
+    _submit(monkeypatch, apartment, client=_FaultClient())
+    assert _alert_open(apartment, "submission_transport_repeated") is not None
