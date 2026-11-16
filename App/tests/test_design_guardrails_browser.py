@@ -150,6 +150,8 @@ def test_admin_pages_pass_the_layout_guard(wide_host, wide_base):
         "admin-customer": f"/admin/customers/{wide_host['owner']}",
         "admin-users-manage": f"/admin/users?manage={wide_host['owner']}",
         "admin-operations": "/admin/operations",
+        "admin-operations-alerts": "/admin/operations/alerts",
+        "admin-operations-alerts-kind": "/admin/operations/alerts?kind=deadline_at_risk&level=critical",
         "admin-billing": "/admin/fakturace",
     }
     findings = []
