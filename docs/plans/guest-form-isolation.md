@@ -137,7 +137,7 @@ Go could serve HTTPS itself, but Caddy is what lets two programs share one addre
 | ID | Decision |
 |---|---|
 | D4 | Decided: inbox and spool payloads use the encryption of the existing `_enc` columns. Public-key sealing waits for a second server |
-| D5 | Proposed wording in section 4; the owner confirms the three sentences before brief 1840, translations follow the existing guest language set |
+| D5 | Decided: the confirmation wording in section 4 (heading, line, "Your stay information will appear here shortly."). Translations follow the existing guest language set |
 | D6 | Decided: a stored submission is never thrown back to the guest to retype. Outcomes and the filled-in correction link are in section 3 rule 4 |
 
 ## 12. Later: second server
