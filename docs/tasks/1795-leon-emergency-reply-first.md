@@ -74,4 +74,10 @@ None yet.
 
 ## Owner steps
 
-1. Answer the question above in the orchestrator chat in one line.
+1. None now. Owner answered 2026-11-16: Go only, no Python exception.
+
+## Owner decision (2026-11-16)
+
+- **Go only.** No go-first exception; `App/app/leon.py` is not changed.
+- This brief stays blocked until [1726](1726-go-guest-leon-questions.md) (Go guest Leon chat) is merged. Then the orchestrator rewrites it as a Go brief against the 1726 handler: keyword danger check before the paused, slow-down, busy, cap and budget checks; fixed 112 copy; host notified at most once per conversation per hour; extended keyword list; the tests listed above.
+- Until 1726 is live in production the gap stays open: a paused or rate-limited guest who writes a danger word gets no 112 reply.

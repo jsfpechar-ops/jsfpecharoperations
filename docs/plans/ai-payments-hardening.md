@@ -1,6 +1,6 @@
 # Plan: Havel, Leon, guest payments, mail and double-booking alarm: hardening and next capabilities
 
-Status 2026-11-15. Scope and plan only: **no briefs written** (owner 2026-11-15). Go only ([go-first](../context/go-first.md)).
+Status 2026-11-16. Briefs for group 1: 1792, 1793, 1794 (in writing), 1795 (blocked on 1726). Brief writer by tier ([workflow](../context/workflow.md)): Opus for Tier A, Sonnet for Tier B. Go only ([go-first](../context/go-first.md)).
 
 Source: five read-only reviews on 2026-11-15 (Havel, Leon, guest payments, outgoing mail, double-booking alarm). No Critical or High finding in any of them. Payments coverage was partial; see [second pass](#p2-second-pass-not-yet-reviewed). File:line references are from those reviews and must be re-checked when a brief is written.
 
@@ -98,7 +98,7 @@ Keep the proposed action JSON in the signed history (today prose only, `havel_en
 
 The live guest chat is Python (`App/app/leon.py`, `routes/guest_leon.py`); Go has only the host wizard. Sound: 192-bit rotatable QR token; cards loaded by the chat's own property; stay door behind permalink, PIN and device claim; answers must cite a card and every number must come from it; UI uses `textContent`; chats purged after 30 days.
 
-### L1 Emergency first (do before the port, go-first exception to be named in the brief)
+### L1 Emergency first (Go only, owner 2026-11-16: after the Go guest chat port, brief 1726; stub 1795)
 
 - The paused, slow-down and busy checks return before the danger check (`leon.py:526-537`): a guest writing "fire" while paused gets no 112 reply. Run the danger check first, answer with fixed copy, always notify the host.
 - Fallback keyword list misses "heart attack", "can't breathe", "choking", "overdose" (`leon.py:113-117`).

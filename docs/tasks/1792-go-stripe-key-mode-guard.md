@@ -286,3 +286,8 @@ Write `docs/tasks/1792-report.md` (600 tokens at most) and set `Status: review`.
 - The plan cites `onboarder.go:95-100`; the code is at lines 96-100 (same content). Plan lines for items 2 to 5 were not checked.
 - Python has no key-prefix or `livemode` guard, so there is nothing to mirror, and it is deliberately left unchanged.
 - The plan says "refuse on mismatch" for the webhook; this brief answers 200 `ignored` (reason in section 2) so Stripe does not retry.
+
+## Owner decisions (2026-11-16)
+
+- **Go only.** No Python change in this brief or as a follow-up.
+- **Test database.** CI sets `UBYHOST_TEST_DATABASE_URL` (`.github/workflows/ci.yml`). If the executor has none locally, the new tests skip there: the report must say so, and the PR is ready only when CI shows them run and pass, not skipped.
