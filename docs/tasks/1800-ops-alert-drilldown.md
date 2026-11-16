@@ -16,7 +16,19 @@ The "Open host alerts" table on /admin/operations shows only Kind, Level, Count,
 - Stay page URL is `/reservations/{id}`. Stay columns: `reservation.date_from`, `date_to`, `apartment_id`; lead guest = `guest.is_lead=1` for that `reservation_id`. Alert join pattern to copy: `openAlertsSQL` in `go/internal/hostweb/layout/alerts.go`.
 - Rules: Go first (docs/context/go-first.md), design-system checklist (docs/design/design-system.md), light mode, 3 languages for new strings (copy the language set of the existing `ops.*` keys), "one explanation in one place".
 
-## 3. Design (exact)
+## 3. Files
+
+| Path | Action | What |
+|---|---|---|
+| go/internal/web/auth/opspage/{data.go,alerts.go,alerts_test.go,templates/*.tmpl,i18n.json,testdata} | edit/new | Go drill-down loader, page, tests |
+| go/internal/web/auth/{auth.go,auth_test.go,operations.go} | edit | route and handler |
+| App/app/{admin_ops.py,host_i18n.py,host_vi_i18n.py,routes/admin_accounts.py} | edit | Python loader, route, strings |
+| App/app/templates/admin_operations*.html, App/app/static/app2.css | edit/new | page, summary links, 768 stack width |
+| App/tests/test_admin_operations.py, test_design_guardrails_browser.py | edit | tests |
+
+No other file may change.
+
+### Design (exact)
 
 New admin-only page `GET /admin/operations/alerts` with optional query `kind` and `level`. Same admin guard and same shell/tabs (System tab open) as `/admin/operations`. Page content:
 
