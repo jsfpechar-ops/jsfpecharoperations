@@ -28,6 +28,7 @@ STORED_KINDS = {
     "submission_rejected": {"property": "Loft", "count": 3, "failed": 2, "blocked": 1},
     "receipt_missing": {"property": "Loft", "submission": 4711, "count": 2},
     "apartment_setup": {"property": "Loft"},
+    "filing_stalled": {"property": "Loft", "count": 3, "variant": "setup"},
     "mail_failed": {"kind": "claim", "to": "g@example.test", "error": "boom"},
     "turnstile_unavailable": {},
     "guest_pin_rotated": {},
