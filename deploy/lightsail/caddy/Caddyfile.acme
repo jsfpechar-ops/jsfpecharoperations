@@ -24,6 +24,14 @@
 	}
 	encode zstd gzip
 	header Strict-Transport-Security "max-age=31536000"
+	# 1805: paths only scanners ask for get a 404 here and never reach the app.
+	# None of these prefixes is a real route (checked against the Python and Go
+	# route tables, brief 1805). Never widen a pattern without rerunning that
+	# check; /.well-known/ must stay reachable. No log directive (OPS-3).
+	@scanners path *.php *.asp *.aspx *.jsp /wp-* /wordpress* /xmlrpc* /.env* /.git /.git/* /.svn/* /.aws/* /.ds_store /.htaccess /.htpasswd /cgi-bin/* /vendor/* /phpmyadmin* /phpinfo* /server-status /actuator/* /boaform/*
+	handle @scanners {
+		respond 404
+	}
 	# UBYHOST_GO_PATHS: space-separated paths for the Go service (ubyhost-go); unset = all traffic to Python (compose defaults it to /__go_off__; an empty value breaks Caddy).
 	# Unset or empty keeps every request on Python, so this changes nothing until the owner sets it.
 	@go path {$UBYHOST_GO_PATHS:/__go_off__}

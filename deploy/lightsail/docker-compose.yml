@@ -55,7 +55,7 @@ services:
       driver: json-file
       options:
         max-size: "10m"
-        max-file: "5"
+        max-file: "3"
 
   # 1022: WAL-G sidecar, started only with COMPOSE_PROFILES containing walg
   # (production). Ships the WAL spool to S3 and runs the daily base backup
@@ -90,7 +90,7 @@ services:
       driver: json-file
       options:
         max-size: "10m"
-        max-file: "5"
+        max-file: "3"
 
   ubyhost:
     build:
@@ -137,7 +137,7 @@ services:
       driver: json-file
       options:
         max-size: "10m"
-        max-file: "5"
+        max-file: "3"
     networks:
       - web
 
@@ -183,7 +183,7 @@ services:
       driver: json-file
       options:
         max-size: "10m"
-        max-file: "5"
+        max-file: "3"
     # Built and migrated by the web service first; also creates the volume
     # with the app's ownership on a fresh server.
     depends_on:
@@ -307,7 +307,7 @@ services:
       driver: json-file
       options:
         max-size: "10m"
-        max-file: "5"
+        max-file: "3"
     # goose runs in the web service first; the Go service starts after it.
     depends_on:
       ubyhost:
@@ -339,7 +339,7 @@ services:
       driver: json-file
       options:
         max-size: "10m"
-        max-file: "5"
+        max-file: "3"
     networks:
       - web
 
@@ -374,7 +374,7 @@ services:
       driver: json-file
       options:
         max-size: "10m"
-        max-file: "5"
+        max-file: "3"
     depends_on:
       ubyhost:
         condition: service_healthy
@@ -407,7 +407,7 @@ services:
       driver: json-file
       options:
         max-size: "10m"
-        max-file: "5"
+        max-file: "3"
     networks:
       - web
       - monitoring
@@ -432,7 +432,7 @@ services:
       driver: json-file
       options:
         max-size: "10m"
-        max-file: "5"
+        max-file: "3"
     networks:
       - monitoring
 
@@ -459,7 +459,7 @@ services:
       driver: json-file
       options:
         max-size: "10m"
-        max-file: "5"
+        max-file: "3"
     networks:
       - monitoring
 
