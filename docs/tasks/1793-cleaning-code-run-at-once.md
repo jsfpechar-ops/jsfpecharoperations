@@ -23,7 +23,7 @@ Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (the PIN is 
 
 **Why a background pass and not a direct call in the handler:** the page must return at once, a slow or offline lock must not break the click, and the queue already holds the retry, find-by-name and revoke logic. The handler only nudges the queue.
 
-## 3. Design (exact)
+### Design (exact)
 
 1. In `go/internal/web/cleaning/host.go` add an optional field `Kick func()` to `hostServer`, set by a new exported function `SetQueueKick(f func())` (package-level, default nil). `RegisterHost` keeps its signature.
 2. In `codeAction`, after a successful `ttlock` or `remove` action that returned no error key, and only then, call the kick if it is not nil. Never call it for `manual`. Never before the transaction has committed (both helpers already commit before returning).
@@ -33,7 +33,7 @@ Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (the PIN is 
    - A setup or pass error is logged with `slog.Warn` (no PIN, no row contents) and never shown to the host.
 4. The notice text on the page is unchanged: "TTLock code is being prepared. The current code stays available." stays until the row is `active`. After the kick the host reloads and sees the PIN.
 
-## 4. Files
+## 3. Files
 
 | Path | Action | What |
 |---|---|---|
@@ -46,33 +46,45 @@ Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (the PIN is 
 
 No other file may change.
 
+## 4. Steps
+
+1. Checks (repo root): `grep -n 'func (s \*hostServer) codeAction' go/internal/web/cleaning/host_codes.go | tail -3` finds one line; `ls go/cmd/ubyhost-web/cleaning_queue_kick.go` must not exist. Anything else: STOP (§8).
+2. Add `SetQueueKick` and the kick field in `host.go`; call it from `codeAction` as in the Design above.
+3. Add `cleaning_queue_kick.go` with the gated background pass.
+4. Add the tests from the Tests list below.
+5. Run the commands in §6; write the report.
+
 ## 5. Do not touch
 
 `UBYHOST_GO_PATHS` or any server file; `register_job_door_codes.go`; the job interval; `App/`; guest-code packages; `go/internal/ttlock`; shared `i18n.json`.
 
-## 6. Tests
+### Tests
 
 - Handler: with a kick set, `POST .../code/ttlock` and `.../code/remove` call it exactly once after a saved row; `manual` and a rejected request (lock setup missing, bad CSRF) never call it.
 - Kick: does nothing when `UBYHOST_DOOR_CODES` is off; does nothing when `door_codes` is not in `UBYHOST_GO_JOB_KINDS`; a second kick while a pass runs returns without a second pass (use a fake pass function injected through a package variable).
 - A failing pass logs and does not panic.
 
-## 7. Commands
+## 6. Commands
 
 - `cd go && gofmt -l . | tail -5` prints nothing
 - `cd go && go vet ./internal/web/cleaning/... ./cmd/... 2>&1 | tail -20` is silent
 - `cd go && go test ./internal/web/cleaning/... ./cmd/ubyhost-web/... -count=1 2>&1 | tail -30` passes, no test skipped
 - `python3 scripts/context_lint.py 2>&1 | tail -10` is clean
 
-## 8. Acceptance
+## 7. Acceptance
 
 - Pressing the button returns at once, as before.
 - With `UBYHOST_DOOR_CODES=1` and `door_codes` in both job lists, the PIN shows on a reload within about 10 seconds, and exactly one "UH Cleaning …" code is on the lock.
 - With `door_codes` not in the Go lists, behaviour is unchanged (Python worker, up to the Python interval).
 - `git diff --stat` lists only §4 paths.
 
-## 9. Stop and ask
+## 8. Stop and ask
 
 Stop and write the report instead of continuing when: an anchor is not found verbatim; the kick would need the request context; a file outside §4 would have to change; a test needs a skip.
+
+## 9. Report
+
+`docs/tasks/1793-report.md`: commits, command outputs (last 30 lines), accepted differences, what was left undone.
 
 ## Rollout and rollback
 
