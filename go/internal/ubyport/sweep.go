@@ -330,6 +330,16 @@ func SubmitForApartment(ctx context.Context, d SweepDeps, aptID int64, o Collect
 		built := p.Built
 		claimIn = append(claimIn, ClaimPair{GuestID: p.Outcome.ID, SubmitState: state, Payload: p, Built: &built})
 	}
+	// Transport backoff (A1b P1): a manual send ignores it, as in Python ignore_automation.
+	if !isManualMode(mode) {
+		until, owed, err := TransportBackoffUntil(ctx, pool, aptID, sweepNow(d)())
+		if err != nil {
+			return nil, err
+		}
+		if owed && sweepNow(d)().Before(until) {
+			return []BatchResult{{State: "backoff"}}, nil
+		}
+	}
 	token, kept, err := ClaimSendable(ctx, pool, claimIn)
 	if err != nil {
 		return nil, err
