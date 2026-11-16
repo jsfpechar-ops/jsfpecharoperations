@@ -101,4 +101,3 @@
 - K-DC-REVIVE-CARD (1173c): card closed in revoke_pending, delete refused, stay revived: stays closed.
 - K-DC-EXTEND (1173c review): stay extended after its issued code expired gets no new code.
 - K-PG-FK: goose 00004/11/13 FKs not DEFERRABLE (1263).
-- K-A1C-STREAK (PR 1057 review): the repeated-failure count restarts when any answered batch resolves submission_transport or the host dismisses that card. An open submission_transport_repeated keeps its old count until the next failure refreshes it.
