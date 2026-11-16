@@ -297,3 +297,38 @@ func TestStripeOnboarderLinksAndReturn(t *testing.T) {
 		t.Errorf("400 error text: %q", err.Error())
 	}
 }
+
+func TestStripeOnboarderKeyModeMismatch(t *testing.T) {
+	pool := testPool(t)
+	onboardSeed(t, pool)
+	fake := newStripeFake(t)
+	cases := map[string]func(string) string{
+		"live key under test mode": onboardEnv("test", "sk_live_fake_0123", nil),
+		"test key under live mode": onboardEnv("live", onboardTestKey, nil),
+		"unknown prefix":           onboardEnv("test", "whsec_fake_0123", nil),
+	}
+	for name, env := range cases {
+		ob := newOnboarder(pool, env, fake)
+		if _, err := ob.OnboardingLink(context.Background(), 1, "https://ubyhost.example"); !errors.Is(err, ErrStripeOff) {
+			t.Errorf("%s: got %v, want ErrStripeOff", name, err)
+		}
+	}
+	if n := len(fake.requests()); n != 0 {
+		t.Errorf("requests = %d, want 0", n)
+	}
+	if n := onboardInt(t, pool, `SELECT COUNT(*) FROM lock_api_usage`); n != 0 {
+		t.Errorf("usage rows = %d, want 0", n)
+	}
+	for _, c := range []struct {
+		mode, key string
+		want      bool
+	}{
+		{"test", "sk_test_a", true}, {"test", "rk_test_a", true},
+		{"live", "sk_live_a", true}, {"live", "rk_live_a", true},
+		{"test", "sk_live_a", false}, {"live", "rk_test_a", false}, {"test", "sk_test", false},
+	} {
+		if got := keyMatchesMode(c.mode, c.key); got != c.want {
+			t.Errorf("keyMatchesMode(%q, %q) = %v, want %v", c.mode, c.key, got, c.want)
+		}
+	}
+}
