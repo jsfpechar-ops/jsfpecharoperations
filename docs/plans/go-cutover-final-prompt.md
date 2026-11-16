@@ -311,10 +311,20 @@ S   AUTO  Scheduler switch UBYHOST_SCHEDULER=go (brief 1451). Python refuses it,
     Step 3, only when all 15 are on and the logs are clean: save the UBYHOST_SCHEDULER line (or "absent"), add exactly
     UBYHOST_SCHEDULER=go, then docker compose up -d --no-deps worker, then docker compose up -d --no-deps ubyhost-go
     (worker first), wait 60 s. Checks: no panic, at most 3 level=error lines in ubyhost-go; worker logs do not say
-    "UBYHOST_SCHEDULER=go is ignored"; no "Go scheduler is not enqueuing" alert line; both containers healthy. Soak
-    10 minutes with the same checks, plus a second look that ubyhost-go logs show job rows enqueued. Then "kept".
+    "UBYHOST_SCHEDULER=go is ignored"; both containers healthy. The worker line "the Go scheduler is not enqueuing
+    <names>; this worker enqueues it" (grep 'not enqueuing' in worker logs since the edit) is judged by what <names> says:
+      - <names> is a list of kinds (for example billing, stay_fee_mail, guide_import): a one-time warm-up, because kinds
+        that only just joined the queue list have no job row yet and the worker enqueues them itself. It is NOT a
+        failure IF the worker logs also show "the Go scheduler enqueues every job again; alert resolved" after it
+        (usually within 2 minutes). Print both lines with their times.
+      - <names> is "any job", OR the "alert resolved" line is still missing after the 10-minute soak, OR the list
+        grows with new kinds during the soak: FAILED check (Go is not enqueuing).
+    Soak 10 minutes with the same checks, plus a second look that ubyhost-go logs show job rows enqueued. Then "kept".
     AUTO-ROLLBACK on any failed check: remove the UBYHOST_SCHEDULER line (or restore the saved value), recreate worker
-    then ubyhost-go (both --no-deps), mark "rolled-back". Honest limit: the parity suite never ran Go and Python
+    then ubyhost-go (both --no-deps), mark "rolled-back". A rollback restarts the worker without its watcher, so an
+    alert the watcher raised stays open: after any rollback print `docker compose logs --since "$T0" worker | grep -c
+    'not enqueuing'` and tell Josef in the report to check the admin Operations page for a leftover critical
+    "Background job 'job queue' failed" (you cannot resolve it; no database). Honest limit: the parity suite never ran Go and Python
     on one shared queue; list this in the report.
 
 D   READ-ONLY  Decommission checklist (Josef 2026-11-16 evening). Runs after S, before M1. Changes NOTHING: no .env edit,
