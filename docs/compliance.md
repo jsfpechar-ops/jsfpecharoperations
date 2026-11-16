@@ -43,7 +43,7 @@ and [docs/privacy/](privacy/) (not read in full in this pass; read before relyin
 - PostHog EU endpoints (`App/app/config.py:299-303`).
 - TTLock EU API (`App/app/config.py:169`).
 - Lightsail region: `⚠️ UNKNOWN — needs human input`: check the AWS console for the instance and the S3 bucket for Litestream/backups (name not in this pass).
-- Stripe, Anthropic, Mistral, Cloudflare: US or other locations are `⚠️ UNKNOWN`; confirm from vendor DPAs.
+- Stripe, Anthropic, Cloudflare: US or other locations are `⚠️ UNKNOWN`; confirm from vendor DPAs. Mistral AI (France): global endpoint gives no location promise, ZDR not activated; see [mistral-ai](privacy/drafts/mistral-ai.md).
 
 ## DPA and subprocessors
 - Subprocessor list is generated from `App/app/subprocessors_i18n.py` (named in code; contents not read in this pass). `docs/vendors/` holds vendor evidence (`docs/OPERATIONS.md` § Purging pre-OPS-1 plaintext backups references it).
