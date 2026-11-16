@@ -1887,6 +1887,9 @@ def submit_batch(
             transport_params["variant"] = "auth"
         elif answered:
             transport_params["variant"] = "answered"
+        if cause == "fault":
+            # A4: the alert opens with the three fields to check against the letter.
+            transport_params["header"] = "fault"
         # Read before submission_transport is refreshed below. dial, setup and
         # redirect neither count nor reset; an answered batch resolves the alert.
         definite = cause in ("fault", "auth", "http4xx")
@@ -2479,6 +2482,32 @@ def _resend_unknown_chain(apartment: Any, latest: Dict[str, Any]) -> bool:
     return True
 
 
+# A3 (owner 2026-11-16): a property where the host has entered any police
+# field means to file with UbyHost. One with none files elsewhere (1171) and
+# keeps the quiet warning. Owner decision D1 in brief A3.
+_POLICE_SETUP_FIELDS = ("uby_idub", "uby_ws_user", "uby_ws_password_enc", "uby_mark")
+
+
+def started_police_setup(apartment) -> bool:
+    return any((apartment[field] or "").strip() for field in _POLICE_SETUP_FIELDS)
+
+
+def pending_reportable_count(apartment_id: int) -> int:
+    """Reportable guests on live stays of this property not filed yet (A3).
+
+    Plain columns only (nationality, submit_state): nothing is decrypted.
+    """
+    rows = db.query(
+        "SELECT g.nationality FROM guest g JOIN reservation r ON r.id = g.reservation_id "
+        "WHERE r.apartment_id = ? AND r.status = 'active' AND r.archived_at IS NULL "
+        "AND COALESCE(r.source, '') != 'demo' AND g.archived_at IS NULL "
+        "AND g.submit_state NOT IN (?, ?) "
+        "AND g.nationality IS NOT NULL AND g.nationality != ''",
+        (apartment_id, SENT, NOT_REQUIRED),
+    )
+    return sum(1 for row in rows if validation.guest_is_reportable(row["nationality"]))
+
+
 def submit_for_apartment(
     apartment_id: int,
     only_guest_ids: Optional[List[int]] = None,
@@ -2515,14 +2544,28 @@ def submit_for_apartment(
     ap_dict["uby_ws_password"] = db.decrypt_secret(apartment["uby_ws_password_enc"])
     setup_errors = validation.errors_only(validation.validate_apartment(ap_dict))
     if setup_errors:
+        # A3: guests waiting on an unfinished police setup is a filing failure,
+        # not a to-do: critical. The title carries no count (plural forms differ
+        # per language); the detail says "Waiting: N". The daily host and operator
+        # mail comes with A3 part 2 (deadlines job); until then this alert is the signal.
+        pending = (
+            pending_reportable_count(apartment_id) if started_police_setup(apartment) else 0
+        )
+        setup_params = {"property": apartment["internal_name"]}
+        if pending:
+            setup_params.update({"variant": "pending", "count": pending})
         alerts.raise_alert(
-            "warning",
+            "critical" if pending else "warning",
             "apartment_setup",
-            f"{apartment['internal_name']}: UbyPort settings are incomplete, nothing can be reported.",
-            validation.issues_to_text(setup_errors),
+            (
+                f"{apartment['internal_name']}: UbyPort settings are incomplete, guests are waiting to be reported."
+                if pending
+                else f"{apartment['internal_name']}: UbyPort settings are incomplete, nothing can be reported."
+            ),
+            (f"Waiting: {pending}\n" if pending else "") + validation.issues_to_text(setup_errors),
             dedupe_key=f"apartment_setup:{apartment_id}",
             apartment_id=apartment_id,
-            params={"property": apartment["internal_name"]},
+            params=setup_params,
         )
         return [{"state": "not_configured", "error": validation.issues_to_text(setup_errors)}]
     # auto_resend is exempt: it resends an unknown-outcome chain, which must not stall (A1b review).

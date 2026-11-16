@@ -16,6 +16,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -89,6 +90,13 @@ func (s *StripeOnboarder) client() *http.Client {
 	return &http.Client{Timeout: stripeTimeout}
 }
 
+// keyMatchesMode reports whether the key prefix fits the mode: sk_ or rk_
+// followed by test_ in test mode, live_ in live mode. A key under the wrong
+// mode could charge real cards while rows are stored as test.
+func keyMatchesMode(mode, key string) bool {
+	return strings.HasPrefix(key, "sk_"+mode+"_") || strings.HasPrefix(key, "rk_"+mode+"_")
+}
+
 // guard is stripe_connect._api (lines 84-100): the mode and key check, the
 // monthly budget, then the count, all before any HTTP call. It returns the
 // secret key and the stamp of this call.
@@ -96,6 +104,10 @@ func (s *StripeOnboarder) guard(ctx context.Context) (string, string, error) {
 	mode := s.mode()
 	key := strings.TrimSpace(s.Getenv("UBYHOST_STRIPE_SECRET_KEY"))
 	if (mode != "test" && mode != "live") || key == "" {
+		return "", "", ErrStripeOff
+	}
+	if !keyMatchesMode(mode, key) {
+		log.Printf("stripe off: UBYHOST_STRIPE_SECRET_KEY prefix does not match UBYHOST_STRIPE_MODE=%s (test mode needs sk_test_ or rk_test_, live mode needs sk_live_ or rk_live_)", mode)
 		return "", "", ErrStripeOff
 	}
 	stamp := stampAt(s.Now())

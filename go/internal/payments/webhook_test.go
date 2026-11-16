@@ -305,3 +305,55 @@ func TestWebhookRateLimit(t *testing.T) {
 		t.Errorf("601st request: %d, want 429", got)
 	}
 }
+
+func TestLivemodeMatches(t *testing.T) {
+	yes, no := true, false
+	for _, c := range []struct {
+		mode string
+		live *bool
+		want bool
+	}{
+		{"test", &no, true}, {"test", &yes, false},
+		{"live", &yes, true}, {"live", &no, false},
+		{"test", nil, true}, {"live", nil, true},
+	} {
+		if got := livemodeMatches(stripeEvent{Livemode: c.live}, c.mode); got != c.want {
+			t.Errorf("livemodeMatches(mode=%s, live=%v) = %v, want %v", c.mode, c.live, got, c.want)
+		}
+	}
+}
+
+func TestWebhookLivemodeMismatch(t *testing.T) {
+	pool := testPool(t)
+	seedHost(t, pool)
+	body := func(id string, live bool) []byte {
+		return []byte(fmt.Sprintf(`{"id":%q,"type":"account.updated","livemode":%v,"data":{"object":{"id":"acct_1",`+
+			`"charges_enabled":true,"payouts_enabled":true,"requirements":{"currently_due":[]}}}}`, id, live))
+	}
+	for name, c := range map[string]struct {
+		mode string
+		live bool
+	}{
+		"live event under test mode": {"test", true},
+		"test event under live mode": {"live", false},
+	} {
+		h := WebhookHandler(pool, webhookEnv(c.mode, "whsec_test"), func() time.Time { return testNow })
+		if got := signedPost(t, h, body("evt_"+c.mode, c.live)); got != 200 {
+			t.Errorf("%s: status %d, want 200", name, got)
+		}
+	}
+	if n := count(t, pool, `SELECT COUNT(*) FROM stripe_webhook_event`); n != 0 {
+		t.Errorf("mismatched events wrote %d event rows", n)
+	}
+	if n := count(t, pool, `SELECT COUNT(*) FROM stripe_account WHERE onboarding_state = 'complete'`); n != 0 {
+		t.Errorf("mismatched event changed the account")
+	}
+	// A matching event is still processed.
+	h := WebhookHandler(pool, webhookEnv("test", "whsec_test"), func() time.Time { return testNow })
+	if got := signedPost(t, h, body("evt_ok", false)); got != 200 {
+		t.Fatalf("matching event: %d", got)
+	}
+	if n := count(t, pool, `SELECT COUNT(*) FROM stripe_webhook_event WHERE event_id = 'evt_ok'`); n != 1 {
+		t.Errorf("matching event rows: %d, want 1", n)
+	}
+}

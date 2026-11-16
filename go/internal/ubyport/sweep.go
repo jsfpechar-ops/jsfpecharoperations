@@ -270,6 +270,46 @@ func sweepNow(d SweepDeps) func() time.Time {
 	return func() time.Time { return batchNow(d.Batch) }
 }
 
+// policeSetupFields and startedPoliceSetup are reporting.started_police_setup
+// (A3): any police field entered means the host files with UbyHost.
+var policeSetupFields = []string{"uby_idub", "uby_ws_user", "uby_ws_password_enc", "uby_mark"}
+
+func startedPoliceSetup(fields map[string]string) bool {
+	for _, f := range policeSetupFields {
+		if strings.TrimSpace(fields[f]) != "" {
+			return true
+		}
+	}
+	return false
+}
+
+// pendingReportableSQL is the guest set of reporting.pending_reportable_count.
+const pendingReportableSQL = `SELECT g.nationality FROM guest g JOIN reservation r ON r.id = g.reservation_id
+	WHERE r.apartment_id = $1 AND r.status = 'active' AND r.archived_at IS NULL
+	AND COALESCE(r.source, '') != 'demo' AND g.archived_at IS NULL
+	AND g.submit_state NOT IN ('sent', 'not_required')
+	AND g.nationality IS NOT NULL AND g.nationality != ''`
+
+// PendingReportableCount is reporting.pending_reportable_count.
+func PendingReportableCount(ctx context.Context, pool *pgxpool.Pool, aptID int64) (int, error) {
+	rows, err := pool.Query(ctx, pendingReportableSQL, aptID)
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+	n := 0
+	for rows.Next() {
+		var nationality string
+		if err := rows.Scan(&nationality); err != nil {
+			return 0, err
+		}
+		if validation.GuestIsReportable(nationality) {
+			n++
+		}
+	}
+	return n, rows.Err()
+}
+
 // SubmitForApartment is reporting.submit_for_apartment: send everything sendable
 // for one apartment, in batches of MaxBatch. The claim is released on every path
 // after it is taken, including a batch error.
@@ -293,10 +333,27 @@ func SubmitForApartment(ctx context.Context, d SweepDeps, aptID int64, o Collect
 	name := apt.Ref.InternalName
 	if issues := validation.ErrorsOnly(validation.ValidateApartment(setupFields(apt, d.DecryptSecret))); len(issues) > 0 {
 		text := validation.IssuesToText(issues)
-		if err := RaiseAlert(ctx, pool, "warning", "apartment_setup",
-			fmt.Sprintf("%s: UbyPort settings are incomplete, nothing can be reported.", name),
-			text, fmt.Sprintf("apartment_setup:%d", aptID), &aptID, nil, nil,
-			AlertParams{"property": name}); err != nil {
+		pending := 0
+		if startedPoliceSetup(apt.Fields) {
+			if pending, err = PendingReportableCount(ctx, pool, aptID); err != nil {
+				return nil, err
+			}
+		}
+		level := "warning"
+		msg := fmt.Sprintf("%s: UbyPort settings are incomplete, nothing can be reported.", name)
+		params := AlertParams{"property": name}
+		detail := text
+		if pending > 0 {
+			// A3: guests wait on an unfinished police setup: critical. The title
+			// carries no count; the detail says "Waiting: N".
+			level = "critical"
+			msg = fmt.Sprintf("%s: UbyPort settings are incomplete, guests are waiting to be reported.", name)
+			detail = fmt.Sprintf("Waiting: %d\n%s", pending, text)
+			params["variant"] = "pending"
+			params["count"] = pending
+		}
+		if err := RaiseAlert(ctx, pool, level, "apartment_setup", msg,
+			detail, fmt.Sprintf("apartment_setup:%d", aptID), &aptID, nil, nil, params); err != nil {
 			return nil, err
 		}
 		return []BatchResult{{State: "not_configured", Error: text}}, nil

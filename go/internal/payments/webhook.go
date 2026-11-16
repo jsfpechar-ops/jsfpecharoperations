@@ -73,11 +73,18 @@ type dbtx interface {
 }
 
 type stripeEvent struct {
-	ID   string `json:"id"`
-	Type string `json:"type"`
-	Data struct {
+	ID       string `json:"id"`
+	Type     string `json:"type"`
+	Livemode *bool  `json:"livemode"`
+	Data     struct {
 		Object map[string]any `json:"object"`
 	} `json:"data"`
+}
+
+// livemodeMatches: an event that says livemode must say true in live mode and
+// false in test mode. An event without the field is not judged.
+func livemodeMatches(ev stripeEvent, mode string) bool {
+	return ev.Livemode == nil || *ev.Livemode == (mode == "live")
 }
 
 // WebhookHandler answers POST /webhooks/stripe. The mode and the secret are read
@@ -143,6 +150,11 @@ func WebhookHandler(pool *pgxpool.Pool, getenv func(string) string, now func() t
 		if err != nil {
 			log.Printf("stripe webhook signature rejected")
 			text(w, http.StatusBadRequest, "bad signature")
+			return
+		}
+		if !livemodeMatches(event, mode) {
+			log.Printf("stripe webhook ignored: event livemode does not match UBYHOST_STRIPE_MODE=%s (event %s)", mode, event.ID)
+			text(w, http.StatusOK, "ignored")
 			return
 		}
 		if isBookingEvent(event) {

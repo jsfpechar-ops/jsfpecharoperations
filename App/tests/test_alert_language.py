@@ -28,6 +28,7 @@ STORED_KINDS = {
     "submission_rejected": {"property": "Loft", "count": 3, "failed": 2, "blocked": 1},
     "receipt_missing": {"property": "Loft", "submission": 4711, "count": 2},
     "apartment_setup": {"property": "Loft"},
+    "filing_stalled": {"property": "Loft", "count": 3, "variant": "setup"},
     "mail_failed": {"kind": "claim", "to": "g@example.test", "error": "boom"},
     "turnstile_unavailable": {},
     "guest_pin_rotated": {},
@@ -483,3 +484,11 @@ def test_a_flash_message_follows_the_hosts_language(monkeypatch):
         "New PIN generated. Copy it from the guest link card and update your "
         "portal messages."
     )
+
+
+@pytest.mark.parametrize("lang", ["en", "cs", "vi"])
+def test_filing_stalled_detail_shows_the_count(lang):
+    """A3 review: the host must see the number of waiting guests in the detail."""
+    text = alerts._localised(lang, "notification.filing_stalled.detail", "stored", {"count": 3})
+    assert "3" in text
+    assert "%(" not in text

@@ -340,6 +340,7 @@ _ACTIONS = {
     "submission_stuck": ("notification.action.guests", "/reservations/{reservation}#guests"),
     "guest_question": ("notification.action.guest_questions", "/apartments/{apartment}/guide/questions"),
     "stay_fee_no_pay_way": ("notification.action.stay_fee_pay", "/apartments/{apartment}?view=settings&section=reporting#stay-fee-settings"),
+    "filing_stalled": ("notification.action.unreported_stays", "/apartments/{apartment}?view=bookings"),
 }
 
 

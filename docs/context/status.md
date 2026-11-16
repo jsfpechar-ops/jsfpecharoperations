@@ -7,7 +7,7 @@ Updated: 2026-11-15.
 - Postgres live. Billing ON. `COMPOSE_PROFILES=walg,monitoring,go`. SQLite rollback via pg-cutover only.
 - Go jobs = queue (billing_snapshot, stripe_sweep, ical, push, submit, posthog, meta_capi, deadlines). Python: mail, door_codes.
 - Go routes live: [ENVIRONMENT](../ENVIRONMENT.md). Rollback: trim `UBYHOST_GO_PATHS`, reload caddy.
-- AI: `havel,leon,guide_import` (`guide_translate` off). Stripe test. Guest QR 404 without IBAN.
+- AI: `havel,leon,guide_import` (`guide_translate` off). Stripe test. Guest QR 404 without IBAN. Review: [plan](../plans/ai-payments-hardening.md).
 - Later: remove Python deadlines job.
 - UX gate and Stripe onboarding live. Backups: daily pg_dump + WAL-G 7-day PITR (drill every 3 mo).
 - 11-13 merges, head-count H1, security audit #966: [archive](../plans/status-archive-2026-11.md).
@@ -24,7 +24,6 @@ Updated: 2026-11-15.
 - TTLock 0008–0016: [plan](../plans/ttlock-door-codes.md) §11; live after §12 + lawyer (K-L).
 - File-retention: decided; lawyer Terms/DPA line.
 - Login wording: 1762 (Face ID / device labels), 1763 (auto-open on remembered devices), 1764 (Settings wording, blocked on 1704); after 1760, exact-diff pass first.
-- Login Face ID: 1762 PR; 1763, 1764.
 
 ## Blocked: needs owner, lawyer or council
 - Lawyer: legal texts (0005, K-L). Stale signed dates (K-F18). Filing K-F03, K-F07: AI-reviewed 11-15, not lawyer items (see go-sqlite-final §7); secrets K-S10.

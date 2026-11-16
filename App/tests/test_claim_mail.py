@@ -1827,6 +1827,9 @@ def test_the_registered_mail_kinds_are_the_ones_the_app_can_send():
         "double_booking",
         "deadline_at_risk",
         "deadline_digest",
+        # A3: the unreported-guests mail to the host and its operator copy (Go deadlines job).
+        "filing_stalled",
+        "filing_stalled_operator",
         # WP12: the three lifecycle tips (lifecycle_mail.py, mail_notify.build_lifecycle).
         "lifecycle_no_property",
         "lifecycle_no_calendar",
@@ -1874,6 +1877,13 @@ def test_no_registered_mail_kind_is_dead():
         path.read_text(encoding="utf-8")
         for path in app_dir.rglob("*.py")
         if path.name != "mail.py"
+    ]
+    # A3: some kinds are queued only by the Go deadlines job, so Go sources count too.
+    go_dir = app_dir.parent.parent / "go"
+    sources += [
+        path.read_text(encoding="utf-8")
+        for path in go_dir.rglob("*.go")
+        if not path.name.endswith("_test.go")
     ]
     for kind in mail.KINDS:
         assert any(f'"{kind}"' in text or f"'{kind}'" in text for text in sources), kind

@@ -17,6 +17,7 @@
 {%- from "_components.html" import field_label, help_tip with context -%}
 {%- set letter_fill = letter_prefill or {} -%}
 {%- set letter_saved = letter_saved or {} -%}
+{%- set police_findings = police_findings or [] -%}
 {% macro police_box(name, label, value, help='', optional=false, maxlength=none, required=false) %}
   <div class="field">
     {{ field_label(name, label, help, optional, '', required) }}
@@ -25,6 +26,7 @@
            {%- if required %} aria-required="true"{% endif %}
            {%- if help %} aria-describedby="{{ name }}-help"{% endif %}>
     {% if letter_saved.get(name) %}<p class="police-letter-note">{{ t('police_letter.saved_now', value=letter_saved[name]) }}</p>{% endif %}
+    {% for finding in police_findings if finding.field == name %}<p class="police-letter-note" role="note" data-police-check-code="{{ finding.code }}">{{ finding.text }}</p>{% endfor %}
   </div>
 {% endmacro %}
       <div class="police-letter-helpers">
@@ -45,6 +47,7 @@
       </details>
       </div>
       <p class="police-letter-status small" id="police-letter-status" role="status" aria-live="polite" data-letter-status data-read-failed="{{ t('police_letter.read_failed') }}" data-saved-now="{{ t('police_letter.saved_now', value='%s') }}">{{ letter_message or '' }}</p>
+      {% for finding in police_findings if not finding.field %}<p class="police-letter-note" data-police-check data-police-check-code="{{ finding.code }}" role="note">{{ finding.text }}</p>{% endfor %}
       <input type="hidden" name="letter_fields" value="{{ letter_fields_value or '' }}" data-letter-fields data-letter-fields-initial="{{ letter_fields_value or '' }}">
       <div class="grid">
         {{ police_box('uby_idub', t('setup.label.idub'), letter_fill['uby_idub'] if 'uby_idub' in letter_fill else apartment.uby_idub, t('apartment.form.ubyport.idub_hint'), false, 14, required=true) }}

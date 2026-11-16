@@ -180,7 +180,7 @@ func (b *BookingWebhook) Process(ctx context.Context, ev stripeEvent, mode strin
 func (b *BookingWebhook) handle(ctx context.Context, ev stripeEvent) error {
 	obj := ev.Data.Object
 	session, _ := obj["id"].(string)
-	bk, err := b.booking(ctx, bookingBySessionSQL, session)
+	bk, err := b.booking(ctx, b.Pool, bookingBySessionSQL, session)
 	if err != nil {
 		return err
 	}
@@ -202,9 +202,9 @@ func (b *BookingWebhook) handle(ctx context.Context, ev stripeEvent) error {
 }
 
 // booking reads one row; nil when there is none.
-func (b *BookingWebhook) booking(ctx context.Context, sql string, arg any) (*siteBooking, error) {
+func (b *BookingWebhook) booking(ctx context.Context, q dbtx, sql string, arg any) (*siteBooking, error) {
 	var bk siteBooking
-	err := b.Pool.QueryRow(ctx, sql, arg).Scan(&bk.id, &bk.apartmentID, &bk.ownerUserID, &bk.holdID,
+	err := q.QueryRow(ctx, sql, arg).Scan(&bk.id, &bk.apartmentID, &bk.ownerUserID, &bk.holdID,
 		&bk.status, &bk.dateFrom, &bk.dateTo, &bk.guests, &bk.guestName, &bk.guestEmail, &bk.totalCZK,
 		&bk.lang, &bk.policy, &bk.payMethod)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -319,25 +319,30 @@ func (b *BookingWebhook) confirm(ctx context.Context, bk *siteBooking, intent st
 			return err
 		}
 	}
+	if !clash {
+		if err := audit(ctx, tx, stampAt(b.Now()), "site_booking_paid",
+			fmt.Sprintf("id=%d reservation=%d", bk.id, reservationID), bk.ownerUserID); err != nil {
+			return err
+		}
+		fresh, err := b.booking(ctx, tx, bookingByIDSQL, bk.id)
+		if err != nil {
+			return err
+		}
+		if fresh == nil {
+			fresh = bk
+		}
+		// booking_invoice.ensure is not ported (known gap, see the file comment).
+		if err := b.mailConfirmed(ctx, tx, fresh, reservationID, secret); err != nil {
+			return err
+		}
+	}
 	if err := tx.Commit(ctx); err != nil {
 		return err
 	}
 	if clash {
 		return b.refundClash(ctx, bk, intent)
 	}
-	if err := audit(ctx, b.Pool, stampAt(b.Now()), "site_booking_paid",
-		fmt.Sprintf("id=%d reservation=%d", bk.id, reservationID), bk.ownerUserID); err != nil {
-		return err
-	}
-	fresh, err := b.booking(ctx, bookingByIDSQL, bk.id)
-	if err != nil {
-		return err
-	}
-	if fresh == nil {
-		fresh = bk
-	}
-	// booking_invoice.ensure is not ported (known gap, see the file comment).
-	return b.mailConfirmed(ctx, fresh, reservationID, secret)
+	return nil
 }
 
 // refundClash is _refund_clash: a full refund on the host's connected account.
@@ -369,7 +374,7 @@ func (b *BookingWebhook) refundClash(ctx context.Context, bk *siteBooking, inten
 		fmt.Sprintf("id=%d amount=%d", bk.id, bk.totalCZK), bk.ownerUserID); err != nil {
 		return err
 	}
-	return b.mailClash(ctx, bk)
+	return b.mailClash(ctx, b.Pool, bk)
 }
 
 // refund posts /v1/refunds on the connected account with an idempotency key.
@@ -410,9 +415,9 @@ func (b *BookingWebhook) refund(ctx context.Context, key, account, idem string, 
 
 // --- mails -------------------------------------------------------------------
 
-func (b *BookingWebhook) apartment(ctx context.Context, id int64) (bookingApartment, error) {
+func (b *BookingWebhook) apartment(ctx context.Context, q dbtx, id int64) (bookingApartment, error) {
 	var a bookingApartment
-	err := b.Pool.QueryRow(ctx, bookingApartmentSQL, id).Scan(&a.internalName, &a.legalEntityID, &a.permalinkToken)
+	err := q.QueryRow(ctx, bookingApartmentSQL, id).Scan(&a.internalName, &a.legalEntityID, &a.permalinkToken)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return bookingApartment{}, nil
 	}
@@ -424,12 +429,12 @@ func (b *BookingWebhook) apartment(ctx context.Context, id int64) (bookingApartm
 }
 
 // hostEmail is _host_email via mail_notify._entity_contact_email.
-func (b *BookingWebhook) hostEmail(ctx context.Context, a bookingApartment) (string, error) {
+func (b *BookingWebhook) hostEmail(ctx context.Context, q dbtx, a bookingApartment) (string, error) {
 	if !a.found || a.legalEntityID == nil || *a.legalEntityID == 0 {
 		return "", nil
 	}
 	var contact *string
-	err := b.Pool.QueryRow(ctx, bookingEntityMailSQL, *a.legalEntityID).Scan(&contact)
+	err := q.QueryRow(ctx, bookingEntityMailSQL, *a.legalEntityID).Scan(&contact)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return "", nil
 	}
@@ -443,12 +448,12 @@ func (b *BookingWebhook) hostEmail(ctx context.Context, a bookingApartment) (str
 }
 
 // linkKey is guest_slug.link_key without the minting (known gap).
-func (b *BookingWebhook) linkKey(ctx context.Context, apartmentID int64, a bookingApartment) (string, error) {
+func (b *BookingWebhook) linkKey(ctx context.Context, q dbtx, apartmentID int64, a bookingApartment) (string, error) {
 	if !a.found || a.permalinkToken == nil || *a.permalinkToken == "" {
 		return "", nil
 	}
 	var slug string
-	err := b.Pool.QueryRow(ctx, bookingSlugSQL, apartmentID).Scan(&slug)
+	err := q.QueryRow(ctx, bookingSlugSQL, apartmentID).Scan(&slug)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return *a.permalinkToken, nil
 	}
@@ -471,10 +476,10 @@ func (b *BookingWebhook) baseURL() string {
 }
 
 // manageURL is booking_site.manage_url with manage_token.
-func (b *BookingWebhook) manageURL(ctx context.Context, bk *siteBooking, secret string) (string, error) {
+func (b *BookingWebhook) manageURL(ctx context.Context, q dbtx, bk *siteBooking, secret string) (string, error) {
 	slug := "x"
 	var s string
-	err := b.Pool.QueryRow(ctx, bookingPageSlugSQL, bk.apartmentID).Scan(&s)
+	err := q.QueryRow(ctx, bookingPageSlugSQL, bk.apartmentID).Scan(&s)
 	if err == nil {
 		slug = s
 	} else if !errors.Is(err, pgx.ErrNoRows) {
@@ -541,12 +546,12 @@ func bookingLang(bk *siteBooking) string {
 }
 
 // mailConfirmed is _mail_confirmed.
-func (b *BookingWebhook) mailConfirmed(ctx context.Context, bk *siteBooking, reservationID int64, secret string) error {
-	a, err := b.apartment(ctx, bk.apartmentID)
+func (b *BookingWebhook) mailConfirmed(ctx context.Context, q dbtx, bk *siteBooking, reservationID int64, secret string) error {
+	a, err := b.apartment(ctx, q, bk.apartmentID)
 	if err != nil {
 		return err
 	}
-	host, err := b.hostEmail(ctx, a)
+	host, err := b.hostEmail(ctx, q, a)
 	if err != nil {
 		return err
 	}
@@ -555,7 +560,7 @@ func (b *BookingWebhook) mailConfirmed(ctx context.Context, bk *siteBooking, res
 	if err != nil {
 		return err
 	}
-	key, err := b.linkKey(ctx, bk.apartmentID, a)
+	key, err := b.linkKey(ctx, q, bk.apartmentID, a)
 	if err != nil {
 		return err
 	}
@@ -569,37 +574,41 @@ func (b *BookingWebhook) mailConfirmed(ctx context.Context, bk *siteBooking, res
 		link := fmt.Sprintf("%s/l/%s/%d", b.baseURL(), key, reservationID)
 		body += "\n\n" + bookingStrings.T(lang, "site_booking.mail.guest_register", map[string]any{"link": link})
 	}
-	manage, err := b.manageURL(ctx, bk, secret)
+	manage, err := b.manageURL(ctx, q, bk, secret)
 	if err != nil {
 		return err
 	}
 	body += "\n\n" + bookingStrings.T(lang, manageKey, map[string]any{"link": manage})
 	if deref0(bk.guestEmail) != "" {
-		b.enqueue(ctx, "site_booking_confirmed", fmt.Sprintf("site_booking:%d:confirmed", bk.id), *bk.guestEmail,
+		if err := b.enqueue(ctx, q, "site_booking_confirmed", fmt.Sprintf("site_booking:%d:confirmed", bk.id), *bk.guestEmail,
 			bookingStrings.T(lang, "site_booking.mail.guest_subject", facts),
 			`{"text": `+ubyport.PyString(body)+`, "lang": `+ubyport.PyString(lang)+`, "reply_to": `+ubyport.PyString(host)+`}`,
-			host, true, &reservationID, bk)
+			host, true, &reservationID, bk); err != nil {
+			return err
+		}
 	}
 	if host != "" {
 		hostFacts, err := bookingFacts(bk, a, "cs")
 		if err != nil {
 			return err
 		}
-		b.enqueue(ctx, "site_booking_host", fmt.Sprintf("site_booking:%d:host_new", bk.id), host,
+		if err := b.enqueue(ctx, q, "site_booking_host", fmt.Sprintf("site_booking:%d:host_new", bk.id), host,
 			bookingStrings.T("cs", "site_booking.mail.host_subject", hostFacts),
 			`{"text": `+ubyport.PyString(bookingStrings.T("cs", hostKey, hostFacts))+`, "lang": "cs"}`,
-			"", false, &reservationID, bk)
+			"", false, &reservationID, bk); err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 // mailClash is _mail_clash.
-func (b *BookingWebhook) mailClash(ctx context.Context, bk *siteBooking) error {
-	a, err := b.apartment(ctx, bk.apartmentID)
+func (b *BookingWebhook) mailClash(ctx context.Context, q dbtx, bk *siteBooking) error {
+	a, err := b.apartment(ctx, q, bk.apartmentID)
 	if err != nil {
 		return err
 	}
-	host, err := b.hostEmail(ctx, a)
+	host, err := b.hostEmail(ctx, q, a)
 	if err != nil {
 		return err
 	}
@@ -609,43 +618,47 @@ func (b *BookingWebhook) mailClash(ctx context.Context, bk *siteBooking) error {
 		return err
 	}
 	if deref0(bk.guestEmail) != "" {
-		b.enqueue(ctx, "site_booking_refunded", fmt.Sprintf("site_booking:%d:clash_refund", bk.id), *bk.guestEmail,
+		if err := b.enqueue(ctx, q, "site_booking_refunded", fmt.Sprintf("site_booking:%d:clash_refund", bk.id), *bk.guestEmail,
 			bookingStrings.T(lang, "site_booking.mail.clash_subject", facts),
 			`{"text": `+ubyport.PyString(bookingStrings.T(lang, "site_booking.mail.clash_text", facts))+
 				`, "lang": `+ubyport.PyString(lang)+`, "reply_to": `+ubyport.PyString(host)+`}`,
-			host, true, nil, bk)
+			host, true, nil, bk); err != nil {
+			log.Printf("%v", err)
+		}
 	}
 	if host != "" {
 		hostFacts, err := bookingFacts(bk, a, "cs")
 		if err != nil {
 			return err
 		}
-		b.enqueue(ctx, "site_booking_host", fmt.Sprintf("site_booking:%d:host_clash", bk.id), host,
+		if err := b.enqueue(ctx, q, "site_booking_host", fmt.Sprintf("site_booking:%d:host_clash", bk.id), host,
 			bookingStrings.T("cs", "site_booking.mail.host_clash_subject", hostFacts),
 			`{"text": `+ubyport.PyString(bookingStrings.T("cs", "site_booking.mail.host_clash_text", hostFacts))+`, "lang": "cs"}`,
-			"", false, nil, bk)
+			"", false, nil, bk); err != nil {
+			log.Printf("%v", err)
+		}
 	}
 	return nil
 }
 
 // enqueue is mail.enqueue for these kinds. Mail off or an address that does not
 // normalise queue nothing. The demo-stay guard is not needed: the stay is
-// source 'site'. A failure is logged, not returned, as Python's enqueue does.
-func (b *BookingWebhook) enqueue(ctx context.Context, kind, key, to, subject, payload, replyTo string,
-	guestKind bool, reservationID *int64, bk *siteBooking) {
+// source 'site'. An outbox write error is returned, so the caller's transaction rolls back.
+func (b *BookingWebhook) enqueue(ctx context.Context, q dbtx, kind, key, to, subject, payload, replyTo string,
+	guestKind bool, reservationID *int64, bk *siteBooking) error {
 	if !mailOn(b.Getenv) {
 		log.Printf("mail disabled; skip enqueue kind=%s key=%s", kind, key)
-		return
+		return nil
 	}
 	to = ubyport.NormaliseEmail(to)
 	if to == "" {
-		return
+		return nil
 	}
 	if guestKind && ubyport.NormaliseEmail(replyTo) == "" {
 		log.Printf("guest mail has no reply_to kind=%s key=%s", kind, key)
 	}
 	apartment, owner := bk.apartmentID, bk.ownerUserID
-	if _, err := ubyport.EnqueueMail(ctx, b.Pool, ubyport.OutboxMail{
+	if _, err := ubyport.EnqueueMail(ctx, q, ubyport.OutboxMail{
 		Kind:          kind,
 		Key:           key,
 		ReservationID: reservationID,
@@ -655,6 +668,7 @@ func (b *BookingWebhook) enqueue(ctx context.Context, kind, key, to, subject, pa
 		Subject:       subject,
 		Payload:       payload,
 	}); err != nil {
-		log.Printf("mail enqueue failed kind=%s key=%s", kind, key)
+		return fmt.Errorf("enqueue %s: %w", kind, err)
 	}
+	return nil
 }

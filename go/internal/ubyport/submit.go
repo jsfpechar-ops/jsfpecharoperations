@@ -264,17 +264,29 @@ func transportLogLine(ref ApartmentRef, subID int64, env, endpoint string, guest
 		ref.ID, owner, subID, env, endpoint, guestIDs, errorType, ue.Cause)
 }
 
+// transportAlertParams are the submission_transport params before the streak
+// (reporting.py transport_params). A SOAP fault adds header "fault": the alert
+// then opens with the three fields to check against the police letter (A4).
+func transportAlertParams(property, msg, cause string) AlertParams {
+	params := AlertParams{"property": property, "error": msg}
+	switch cause {
+	case "auth":
+		params["variant"] = "auth"
+	case "fault":
+		params["variant"] = "answered"
+		params["header"] = "fault"
+	case "http4xx", "redirect":
+		params["variant"] = "answered"
+	}
+	return params
+}
+
 // batchTransport is the transport branch (reporting.py 1613-1660). Guests stay pending.
 func batchTransport(ctx context.Context, d BatchDeps, ref ApartmentRef, subID int64, guestIDs []int64, ue *Error) (BatchResult, error) {
 	msg := ue.Error()
 	answered := ue.Cause == "fault" || ue.Cause == "http4xx" || ue.Cause == "redirect" || ue.Cause == "auth"
-	params := AlertParams{"property": ref.InternalName, "error": msg}
+	params := transportAlertParams(ref.InternalName, msg, ue.Cause)
 	summary := fmt.Sprintf("%s: could not deliver data to UbyPort.", ref.InternalName)
-	if ue.Cause == "auth" {
-		params["variant"] = "auth"
-	} else if answered {
-		params["variant"] = "answered"
-	}
 	if answered {
 		summary = fmt.Sprintf("%s: UbyPort answered with an error; nothing was filed.", ref.InternalName)
 	}
