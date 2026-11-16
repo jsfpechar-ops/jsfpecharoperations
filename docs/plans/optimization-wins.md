@@ -70,7 +70,7 @@ Scaled to 2,000 properties (upper bound, the 7 include owner testing): about 19 
 | Brief | Work | Done when |
 |---|---|---|
 | 1815 | Settings: `shared_buffers` 256 MB, `work_mem` 4 MB, `maintenance_work_mem` 64 MB, `effective_cache_size` 1 GB, `random_page_cost` 1.1, `jit` off, `wal_compression` zstd, `max_wal_size` 512 MB, `default_toast_compression` lz4 | Compose `command:` updated; restore drill still passes |
-| 1816 | `job` table: Python already purges finished rows after 7 days (`jobqueue.purge`), and rows grow with job kinds, not properties (found while writing the brief; the 11,476 rows are one week of the every-minute push job). Go has no purge yet: add one in Go (done 7 days, dead 30 days, batches), plus per-table autovacuum settings. Claim already uses `FOR UPDATE SKIP LOCKED` | Go purges on its own; row count stays flat over a week |
+| 1816 | `job` table: Python already purges finished rows after 7 days (`jobqueue.purge`), and rows grow with job kinds, not properties (found while writing the brief; the 11,476 rows are one week of the every-minute push job). Go has no purge yet: add one in Go (done and dead rows after 7 days, as Python does; batches), plus per-table autovacuum settings. Claim already uses `FOR UPDATE SKIP LOCKED` | Go purges on its own; row count stays flat over a week |
 | 1817 | `audit` and `alert`: a retention period for each, written in `App/app/retention.py` and [RETENTION](../privacy/RETENTION.md) | Retention job deletes old rows |
 
 ## 7. Lane E: disk and data size
