@@ -30,6 +30,8 @@ Answers:
 6. Answer: yes, recommended (orchestrator, 2026-11-17).
 7. Answer: yes, recommended (orchestrator, 2026-11-17).
 
+State machine (from 1834-fix-2): this brief's first writer of `guest_inbox.status` must replace its `EXEMPT` line in `App/tests/test_sm_registry.py` with a Go TRANSITIONS table (new→done, new→held, held→new, held→done), a pin test and a parity entry; if that does not fit, 1837c does it.
+
 ## 1. Objective
 
 Add `go/internal/guestinbox`: the code that claims one `guest_inbox` row with `FOR UPDATE SKIP LOCKED`, decodes it, runs the shared checks again, decides `done` / `done` with host note / `held`, and in one transaction writes the guest row and marks the inbox row, with `signed_at`, `notice_ack_at`, `filled_at`, `created_at` and `updated_at` all taken from `received_at`. Nothing registers or runs the worker yet, and the old form path is unchanged, so nothing about what is filed, or when, changes in production.
