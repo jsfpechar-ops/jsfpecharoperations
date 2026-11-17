@@ -1,6 +1,6 @@
 # 1700: Go property settings 1: new property form, RUIAN suggest, create
 
-Status: todo — scoped (final brief 2026-11-15). Executable only after its exact-diff pass: sidecars in `docs/tasks/1700-files/`, anchors and sha256 table (§2), written to the rules in [workflow](../context/workflow.md#writing-briefs-for-haiku). Until then the executor must not start it.
+Status: replaced — split into 1700a (form), 1700b (create), 1700c (RUIAN suggest) on 2026-11-17; old text kept for scope.
 Depends on: 1525 is replaced by 1704 (not a precondition), 1527 not required; 1520-1524 on the branch | Base commit: current tip of the working branch | Branch: task/1700-go-apartment-new-create
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (split in two briefs if the exact-diff pass finds more)
 Tier: B (Sonnet writes the exact-diff pass; orchestrator reads the diff of the risk-listed files)

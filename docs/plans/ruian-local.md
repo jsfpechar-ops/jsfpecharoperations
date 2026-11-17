@@ -84,10 +84,10 @@ Suggest result mapping: `addr_street`=street, `addr_house_no`=house_no, `addr_or
 3. Merge 1700d. Route dormant until `/apartments/ruian-suggest` is in `UBYHOST_GO_PATHS` (exact path, before `/apartments/*` per the 1700 note), then reload caddy. Compare with the Python answers for 5 addresses.
 4. Rollback of the route: trim the path. Rollback of the data: remove `ruian_import` from the kind lists; the table is harmless and can stay or be dropped by a later migration. Python suggest keeps working against ČÚZK until its route is removed (a later cleanup brief, not part of 1700c/d).
 
-## 9. Open questions for the owner
+## 9. Owner questions (Q1, Q3 answered 2026-11-17; Q2, Q4, Q5 go to the exact-diff pass)
 
-- Q1 okres: the CSV has none. Options: (a) leave `addr_okres` blank and let the user type it (the field stays editable; the police report needs it, so this is a UX cost); (b) bundle a static obec-code to okres list (about 6,258 rows, generated once from ČÚZK/ČSÚ open data, refreshed by hand yearly, kept in the Go repo); (c) a second monthly import of per-obec UKSH files (heavy). Recommend (b); needs the data source confirmed before 1700c step "okres".
+- Q1 okres: the CSV has none. Options: (a) leave `addr_okres` blank and let the user type it (the field stays editable; the police report needs it, so this is a UX cost); (b) bundle a static obec-code to okres list (about 6,258 rows, generated once from ČÚZK/ČSÚ open data, refreshed by hand yearly, kept in the Go repo); (c) a second monthly import of per-obec UKSH files (heavy). **Owner 2026-11-17: (b) bundled list.** The exact-diff pass confirms the source.
 - Q2 Is `ubyhost_app` allowed `CREATE EXTENSION pg_trgm`? If not, the owner runs `CREATE EXTENSION pg_trgm;` once as the `ubyhost` superuser (give a one-line command) before the deploy.
-- Q3 Is about 1.2 GB (peak 2.5 GB) extra in Postgres, backups and WAL acceptable? Option to halve: import `č.p.` only and skip `č.ev.`.
+- Q3 Is about 1.2 GB (peak 2.5 GB) extra in Postgres, backups and WAL acceptable? **Owner 2026-11-17: yes, keep all rows including `č.ev.`.**
 - Q4 Confirm the licence text and whether an attribution line is required on a public page.
 - Q5 `č.ev.` rows: does Python put the evidence number into `addr_house_no`? Not checked; plan keeps them with `is_evid` and returns the number as `addr_house_no`.
