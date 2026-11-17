@@ -1,7 +1,7 @@
 # 1703: Go property settings 4: PIN, link, timing, archive, feeds, sync, police letter, codelists
 
 Status: todo — scoped (final brief 2026-11-15). Executable only after its exact-diff pass: sidecars in `docs/tasks/1703-files/`, anchors and sha256 table (§2), written to the rules in [workflow](../context/workflow.md#writing-briefs-for-haiku). Until then the executor must not start it.
-Depends on: 1702e | Base commit: current tip of the working branch | Branch: task/1703-go-apartment-small-posts
+Depends on: 1702e3 | Base commit: current tip of the working branch | Branch: task/1703-go-apartment-small-posts
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (split in two briefs if the exact-diff pass finds more)
 Tier: B (Sonnet writes the exact-diff pass; orchestrator reads the diff of the risk-listed files)
 

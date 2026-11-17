@@ -50,7 +50,7 @@ Already live: W1, W1b, W6, W7, W8 first set. Not yet: W2 exports (due one day af
 | [1702b](../tasks/1702b-go-apartment-update.md) | Go property settings 3b: error lines of a refused save (view, template, keys) | A | 1702 |
 | [1702c](../tasks/1702c-go-apartment-save.md) | Go property settings 3c: save settings (POST /apartments/{id}, no wizard step), golden | A | 1702b |
 | [1702d](../tasks/1702d-go-apartment-save-signature-letter.md) | Go property settings 3d: signature, fee return, police-letter test on save | A | 1702c |
-| [1702e](../tasks/1702e-go-apartment-save-wizard.md) | Go property settings 3e: setup-wizard saves (owner question first) | A | 1702d |
+| [1702e](../tasks/1702e-go-apartment-save-wizard.md) | Go property settings 3e: setup-wizard saves, split 1702e1 (refused step page), 1702e2 (step save), 1702e3 (after save); ported to Go (rule 11) | A | 1702d2 |
 | [1703](../tasks/1703-go-apartment-small-posts.md) | Go property settings 4: PIN, link, timing, archive, feeds, sync, police letter, codelists | B | 1702b |
 | [1704](../tasks/1704-go-settings-menu-pages.md) | Go property settings 5: settings, menu, guest links, guide and housebook pages | B | 1380/1381 host layout (done) |
 | [1705](../tasks/1705-go-property-settings-switch.md) | Go property settings 6: completeness test, path collisions, rollout wave P | B | 1700-1704 and 1525/1527 decisions |
