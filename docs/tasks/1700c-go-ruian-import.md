@@ -1,6 +1,6 @@
 # 1700c: Go RUIAN address table and monthly import
 
-Status: todo
+Status: review
 Depends on: none (1700d depends on this) | Base commit: current tip of the working branch | Branch: task/1700c-go-ruian-import
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (this brief needs about 12 calls)
 Tier: A (schema change and a new outbound download; the orchestrator reads the full diff)
