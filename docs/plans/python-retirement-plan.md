@@ -206,8 +206,9 @@ docker rmi ubyhost:python-final-<date>; rm /opt/ubyhost/archive/ubyhost-python-f
 | Disk full | `df` before saving the image; the image is a few hundred MB |
 | Double-running jobs | stage 1 only stops the worker; never edit scheduler variables in this plan |
 
-## 7. Decisions needed from Josef
+## 7. Decisions
 
-1. **`/webhooks/stripe`:** it stays on Python until brief 1554 and Stripe leaves test mode ([1781](../tasks/1781-stripe-webhook-path-decision.md)). Python retirement therefore cannot finish before 1554. Recommend: do 1554 before stage 3. If Stripe stays in test mode, stage 3 waits (the plan does not move it).
-2. **Retiring routes nobody ported:** when the 1790 allow-list is short, per route: port or drop. Needed at G5.
-3. Date for stage 5 is 30 days after the stage 3 deploy (decision 5, 11-15); confirm it stays "after the last retirement briefs".
+1. **`/webhooks/stripe`** (open): it stays on Python until brief 1554 and Stripe leaves test mode ([1781](../tasks/1781-stripe-webhook-path-decision.md)). Python retirement cannot finish before 1554. Recommend 1554 before stage 3; if Stripe stays in test mode, stage 3 waits.
+2. **Unported routes:** Josef 2026-11-17: decided later, at gate G5 when the 1790 allow-list shows the leftovers (port or drop per route).
+3. **Staging:** none exists (Josef 2026-11-17). Every "staging" check in this plan runs on production with test accounts and the read-only variants given in the steps.
+4. **Dates:** stage 5 is 30 days after the stage 3 deploy (decision 5, 11-15). The SQLite offline copy and server file both end 2027-01-14 ([SQLite plan](sqlite-retirement-plan.md)).
