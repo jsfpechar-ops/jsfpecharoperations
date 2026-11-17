@@ -1,6 +1,6 @@
 # 1702e1: Go property settings 3e1: the wizard step page a save draws again
 
-Status: todo (exact-diff pass 2026-11-17: sidecars applied to a clean worktree of 4ae689e, gofmt/build/vet clean, Go tests green on PostgreSQL 16, 0 skips; no Python file changes)
+Status: review (exact-diff pass 2026-11-17: sidecars applied to a clean worktree of 4ae689e, gofmt/build/vet clean, Go tests green on PostgreSQL 16, 0 skips; no Python file changes)
 Decision 2026-11-17 (owner/orchestrator, rule 11): option 1 of the old 1702e owner question: the wizard step saves are ported to Go. The wizard GET pages are already Go (briefs 1599-1602, `go/internal/web/onboarding/wizard*.go`), so no page port is needed; this brief adds only the extra context of a save that stays on its step.
 Depends on: nothing open (independent of 1702d2: no file in common) | Base commit: current tip of the working branch | Branch: task/1702e1-go-wizard-refused-step-page
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (this brief needs about 10)
