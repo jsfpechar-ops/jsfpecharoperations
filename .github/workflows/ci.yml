@@ -264,6 +264,8 @@ jobs:
           export UBYHOST_DATABASE_URL=postgresql://ubyhost_app:ubyhost@localhost:5432/ubyhost_test
           python scripts/pg_schema.py apply --expect-database ubyhost_test
           python scripts/pg_schema.py check --expect-database ubyhost_test
+          # 1834: the guest role script, after the contract tables exist
+          psql -h localhost -U postgres -d ubyhost_test -v ON_ERROR_STOP=1 -q -f ../deploy/lightsail/scripts/pg-guest-role.sql
 
       - name: No PostgreSQL module yet
         if: hashFiles('App/tests/test_db_postgres.py') == ''
