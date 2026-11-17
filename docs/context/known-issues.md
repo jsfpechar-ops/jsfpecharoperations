@@ -101,3 +101,4 @@
 - K-DC-REVIVE-CARD (1173c): card closed in revoke_pending, delete refused, stay revived: stays closed.
 - K-DC-EXTEND (1173c review): stay extended after its issued code expired gets no new code.
 - K-PG-FK: goose 00004/11/13 FKs not DEFERRABLE (1263).
+- K-HOUSEBOOK-HAND: housebook shows "Not yet sent" for a guest filed by hand (Python quirk kept in Go 1704a, pinned by a test).

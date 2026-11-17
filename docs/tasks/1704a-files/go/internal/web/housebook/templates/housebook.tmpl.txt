@@ -1,0 +1,237 @@
+{{/* Port of App/app/templates/housebook.html (brief 1704a). The shell comes
+     from hostweb/layout; the two macros housebook_csv_menu and date_range of
+     _components.html and _date_range.html are written out here because the
+     layout does not have them. Every form that posts carries _csrf, so it also
+     works without JavaScript. */}}
+{{define "housebook.title"}}{{end}}
+{{define "reported_pill"}}{{$r := .r}}{{if eq $r.Pill "ok"}}<span class="pill p-ok">{{t "status.reported"}}</span>{{if .date}}<small>{{date_cz $r.ReportedAt}}</small>{{end}}
+  {{else if eq $r.Pill "not_required"}}<span class="pill p-n">{{t "status.not_required"}}</span>
+  {{else if eq $r.Pill "final"}}<span class="pill p-bad">{{t "stay.detail.guests.rejected_final"}}</span>
+  {{else if eq $r.Pill "rejected"}}<span class="pill p-bad">{{t "submission.rejected"}}</span>
+  {{else}}<span class="pill p-n">{{t "housebook.not_sent"}}</span>{{end}}{{end}}
+{{define "housebook"}}
+<div class="housebook-page">
+<div class="head stays-head"><div class="head-title-row"><h1 class="big">{{t "housebook.title"}}</h1>
+<details class="ui-how stays-how" data-how="housebook">
+  <summary class="ui-how-toggle" aria-label="{{t "how.toggle"}}">{{icon "circle-help" 16}}</summary>
+  <div class="ui-how-body">
+    <p>{{t "housebook.archived_lede"}}</p>
+    <p>{{t "housebook.pdf_export_help"}}</p>
+    <ol class="ui-how-steps"><li>{{t "how.housebook.1"}}</li><li>{{t "how.housebook.2"}}</li><li>{{t "how.housebook.3"}}</li></ol>
+    <a class="ui-how-more" href="/guide#housebook">{{t "how.more"}}</a>
+  </div>
+</details></div>
+<div class="stays-head-actions"><div class="action-menu row-menu csv-in-filter">
+  <button class="btn row-menu-trigger small" type="button" aria-expanded="false" aria-haspopup="true">
+    {{t "housebook.export_menu"}}
+    <svg class="menu-caret" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path d="m5.5 7.5 4.5 4.5 4.5-4.5" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+  <div class="row-menu-panel" role="menu" hidden>
+    <button class="row-menu-item" type="button" role="menuitem"
+            data-csv-export="/housebook.csv" data-csv-params="{{.CSVParams}}"
+            data-csv-scope-label="{{.Label}}">{{t "csv.download"}}</button>
+    <button class="row-menu-item" type="button" role="menuitem" data-housebook-pdf-export>{{t "csv.download_pdfs"}}</button>
+  </div>
+</div><a class="btn ghost" href="/submissions">{{t "nav.reports"}}</a></div></div>
+
+<div class="filter-toolbar" data-filter-toolbar>
+  <button class="ui-btn ui-btn-secondary filter-toggle" type="button" data-filter-toggle aria-expanded="true" aria-controls="housebook-filter-panel" hidden>
+    {{t "host.filter.filters"}}
+  </button>
+  <p class="filter-applied-summary" data-filter-summary>
+    <span>{{.Label}}</span>
+    {{if or .From .To}}
+      <span aria-hidden="true"> · </span>
+      {{if and .From .To}}{{t "host.filter.range_between" (kv "start" (date_cz .From) "end" (date_cz .To))}}
+      {{else if .From}}{{t "host.filter.range_from" (kv "date" (date_cz .From))}}
+      {{else}}{{t "host.filter.range_until" (kv "date" (date_cz .To))}}{{end}}
+    {{end}}
+  </p>
+</div>
+<div class="housebook-presets" role="group" aria-label="{{t "housebook.preset.label"}}">
+  {{range .Presets}}<a class="btn ghost sm{{if .On}} is-on{{end}}" href="{{.Href}}"{{if .On}} aria-current="true"{{end}}>{{t .Key}}</a>
+  {{end}}
+</div>
+<form id="housebook-filter-panel" method="get" action="/housebook" class="filters ui-section host-filter-panel card" data-filter-panel data-filter-route="day-range">
+  <div class="filter-fields">
+    <div class="ui-field">
+      <label for="apartment">{{t "housebook.apartment"}}</label>
+      <select id="apartment" name="apartment">
+        <option value="">{{t "host.filter.all_properties"}}</option>
+        {{range .Apartments}}
+          <option value="{{.ID}}" {{if eq .ID $.ApartmentID}}selected{{end}}>
+            {{.Name}}</option>
+        {{end}}
+      </select>
+    </div>
+    <div class="field stay-date-range" data-date-range data-range-prefix="housebook">
+      <span class="field-label" id="housebook-range-label">{{t "host.filter.stay_dates"}}</span>
+      <button class="btn date-range-trigger" type="button" data-range-trigger hidden
+              data-all-dates="{{t "host.filter.all_dates"}}"
+              aria-labelledby="housebook-range-label housebook-range-caption"
+              aria-haspopup="dialog" aria-expanded="false">
+        <span data-range-caption id="housebook-range-caption">{{t "host.filter.all_dates"}}</span>
+        {{icon "chevron-down" 16}}
+      </button>
+      <div class="date-range-content" data-range-content>
+        <div class="date-range-fields">
+          <div class="field">
+            <label for="housebook-from">{{t "housebook.from"}}</label>
+            <input type="date" id="housebook-from" name="from" value="{{.From}}" data-range-from>
+          </div>
+          <div class="field">
+            <label for="housebook-until">{{t "housebook.until"}}</label>
+            <input type="date" id="housebook-until" name="to" value="{{.To}}" data-range-until>
+          </div>
+        </div>
+        <div class="date-range-popover" data-range-popover role="dialog" aria-labelledby="housebook-range-label" hidden>
+          <div class="range-draft-fields">
+            <div class="field"><label for="housebook-draft-from">{{t "housebook.from"}}</label><input type="date" id="housebook-draft-from" data-range-draft-from></div>
+            <div class="field"><label for="housebook-draft-until">{{t "housebook.until"}}</label><input type="date" id="housebook-draft-until" data-range-draft-until></div>
+          </div>
+          <div class="range-calendar-head">
+            <button class="btn range-step" type="button" data-range-prev aria-label="{{t "host.filter.prev_month"}}">{{icon "chevron-left" 16}}</button>
+            <strong data-range-month></strong>
+            <button class="btn range-step" type="button" data-range-next aria-label="{{t "host.filter.next_month"}}">{{icon "chevron-right" 16}}</button>
+          </div>
+          <div class="range-calendar-grid" data-range-grid role="grid" aria-label="{{t "host.filter.calendar"}}"></div>
+          <p class="small muted" data-range-error role="status" tabindex="-1" hidden>{{t "host.filter.reversed_dates"}}</p>
+          <div class="date-range-actions">
+            <button class="btn ghost" type="button" data-range-clear>{{t "host.filter.clear_dates"}}</button>
+            <button class="btn primary" type="button" data-range-apply>{{t "host.filter.apply_dates"}}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="filter-panel-actions">
+    <button class="ui-btn ui-btn-primary filter-apply" type="submit">{{t "host.filter.apply_filters"}}</button>
+    <button class="ui-btn ui-btn-quiet" type="button" data-filter-cancel hidden>{{t "confirm.cancel"}}</button>
+    <a class="ui-btn ui-btn-quiet" href="/housebook">{{t "host.filter.reset"}}</a>
+  </div>
+</form>
+
+{{if .Rows}}
+<div class="card stays-desk housebook-scroll scroll-x" tabindex="0" role="region" aria-label="{{t "housebook.title"}}">
+  <table class="housebook-table">
+    <thead>
+      <tr>
+        <th class="col-stay">{{t "housebook.stay"}}</th><th class="col-property">{{t "housebook.apartment"}}</th><th class="col-name">{{t "housebook.guest"}}</th>
+        <th class="col-reported">{{t "housebook.reported"}}</th><th class="col-more">{{t "housebook.details"}}</th><th><span class="sr-only">{{t "common.actions"}}</span></th>
+      </tr>
+    </thead>
+    <tbody>
+    {{range .Rows}}
+      <tr class="clickable-row" data-href="/guests/{{.GuestID}}?return_to=/housebook" tabindex="0" role="link">
+        <td class="nowrap small" data-label="{{t "housebook.stay"}}">{{date_cz .StayFrom}}<br>{{date_cz .StayTo}}</td>
+        <td class="small col-property" data-label="{{t "housebook.apartment"}}">{{property_identity .ApartmentID .Apartment true true}}</td>
+        <td class="col-guest" data-label="{{t "housebook.guest"}}"><strong>{{.Surname}}</strong><br>
+          <span class="small">{{.FirstName}}</span></td>
+        <td class="small col-reported" data-label="{{t "housebook.reported"}}">{{template "reported_pill" (kv "r" . "date" true)}}</td>
+        <td class="small col-more" data-label="{{t "housebook.details"}}">
+          <button class="ui-btn ui-btn-quiet ui-btn-compact" type="button" popovertarget="{{.FactsID}}" aria-label="{{t "housebook.details_for" (kv "name" .FullName)}}">{{t "housebook.details"}}</button>
+          <div id="{{.FactsID}}" class="card housebook-facts" popover>
+            <p><strong>{{.FullName}}</strong></p>
+            <p class="small housebook-fact"><span class="muted">{{t "housebook.born"}}:</span> {{date_cz .BirthDate}}</p>
+            <p class="small housebook-fact"><span class="muted">{{t "housebook.nationality"}}:</span> {{.NationalityText}}</p>
+            <p class="small housebook-fact"><span class="muted">{{t "housebook.document"}}:</span> <span class="mono">{{.DocNumber}}{{if .VisaNumber}}, {{t "housebook.visa" (kv "number" .VisaNumber)}}{{end}}</span></p>
+            <p class="small housebook-fact"><span class="muted">{{t "housebook.residence"}}:</span> {{.ResidenceText}}</p>
+            <p class="small housebook-fact"><span class="muted">{{t "housebook.purpose"}}:</span> {{.PurposeText}}</p>
+            <p class="small housebook-fact"><span class="muted">{{t "housebook.signed"}}:</span> {{if eq .Signed "yes"}}<span class="pill p-ok">{{t "customers.yes"}}</span>{{else if eq .Signed "by adult"}}<span class="pill p-ok">{{t "housebook.signed_by_adult"}}</span>{{else if eq .Signed "not required"}}<span class="pill p-ok">{{t "housebook.signed_not_required"}}</span>{{else}}<span class="pill p-warn">{{t "customers.no"}}</span>{{end}}</p>
+            <button class="ui-btn ui-btn-secondary ui-btn-compact" type="button" popovertarget="{{.FactsID}}" popovertargetaction="hide">{{t "common.close"}}</button>
+          </div>
+        </td>
+        <td class="nowrap row-actions" data-label="">{{row_open (printf "/guests/%d?return_to=/housebook" .GuestID)}}
+          {{row_menu_begin}}
+            <a class="row-menu-item" href="/guests/{{.GuestID}}?return_to=/housebook" role="menuitem">{{t "common.edit"}}</a>
+            <a data-turbo="false" class="row-menu-item" href="/guests/{{.GuestID}}/form.pdf" role="menuitem">{{t "housebook.pdf"}}</a>
+            <form method="post" action="/guests/{{.GuestID}}/archive" class="row-menu-form"
+                  data-confirm data-confirm-message="{{t "host.delete_to_archived.confirm"}}">
+              <input type="hidden" name="_csrf" value="{{csrf}}">
+              <input type="hidden" name="return_to" value="/housebook">
+              <button class="row-menu-item" type="submit" role="menuitem">{{t "host.delete"}}</button>
+            </form>
+          {{row_menu_end}}
+        </td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+</div>
+<div class="stays-phone">
+{{range .Rows}}
+  <a class="card stay" href="/guests/{{.GuestID}}?return_to=/housebook">
+    <span class="sav">{{.Initial}}</span>
+    <span class="in"><b>{{.Surname}} {{.FirstName}}</b>
+      <small>{{date_cz .StayFrom}} – {{date_cz .StayTo}} · {{.Apartment}}</small>
+      {{template "reported_pill" (kv "r" . "date" false)}}</span>
+    {{icon "chevron-right" 20 "chev"}}
+  </a>
+{{end}}
+</div>
+{{else}}
+  <div class="panel empty">{{t "housebook.empty"}}</div>
+{{end}}
+
+{{if .Archived}}
+<h2 class="ph-hide">{{t "housebook.archived_title"}}</h2>
+<div class="panel tight scroll-x ph-hide">
+  <table class="table-cards">
+    <thead>
+      <tr><th>{{t "housebook.stay"}}</th><th>{{t "housebook.apartment"}}</th><th>{{t "housebook.guest"}}</th><th>{{t "housebook.archived"}}</th><th></th></tr>
+    </thead>
+    <tbody>
+    {{range .Archived}}
+      <tr>
+        <td class="nowrap small" data-label="{{t "housebook.stay"}}">{{date_cz .StayFrom}}<br>{{date_cz .StayTo}}</td>
+        <td data-label="{{t "housebook.apartment"}}">{{property_identity .ApartmentID .Apartment true}}</td>
+        <td data-label="{{t "housebook.guest"}}"><strong>{{.Surname}}</strong> {{.FirstName}}</td>
+        <td class="small muted" data-label="{{t "housebook.archived"}}">{{date_cz .Archived}}</td>
+        <td class="nowrap" data-label="">
+          <form method="post" action="/guests/{{.GuestID}}/unarchive" class="inline">
+            <input type="hidden" name="_csrf" value="{{csrf}}">
+            <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{t "common.restore"}}</button>
+          </form>
+        </td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+</div>
+{{end}}
+
+<dialog id="housebook-pdf-dialog" class="csv-export-dialog">
+  <form id="housebook-pdf-form" method="get" action="/housebook/pdfs.zip">
+    <h2>{{t "housebook.pdf_export_title"}}</h2>
+    <p class="housebook-pdf-warn">{{t "housebook.pdf_hint" (kv "limit" .MaxPDFs)}}</p>
+    <div class="ui-field">
+      <label for="pdf_export_apartment">{{t "housebook.apartment"}}</label>
+      <select id="pdf_export_apartment" name="apartment">
+        <option value="">{{t "common.all"}}</option>
+        {{range .Apartments}}
+          <option value="{{.ID}}" {{if eq .ID $.ApartmentID}}selected{{end}}>
+            {{.Name}}</option>
+        {{end}}
+      </select>
+    </div>
+    <div class="ui-pair">
+      <div class="ui-field">
+        <label for="pdf_export_from">{{t "common.from"}}</label>
+        <input type="date" id="pdf_export_from" name="from" value="{{.From}}">
+      </div>
+      <div class="ui-field">
+        <label for="pdf_export_to">{{t "common.until"}}</label>
+        <input type="date" id="pdf_export_to" name="to" value="{{.To}}">
+      </div>
+    </div>
+    <div class="ui-form-actions">
+      <button class="ui-btn ui-btn-secondary" type="button" data-housebook-pdf-cancel>{{t "data.export_csv_cancel"}}</button>
+      <button class="ui-btn ui-btn-secondary" type="submit">{{t "data.export_csv_download"}}</button>
+    </div>
+  </form>
+</dialog>
+</div>
+{{end}}
