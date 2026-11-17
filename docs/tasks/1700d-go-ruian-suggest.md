@@ -1,6 +1,6 @@
 # 1700d: Go RUIAN suggest route on the local table
 
-Status: review
+Status: done
 Depends on: 1700c merged (table `ruian_address`, `ruian.Fold`, `ruian.SearchText`, `ruian.Attribution`; verified present at step 0), 1520 to 1524 (`ares.go` rate helpers, `lists.go` `queryLast`) | Base commit: current tip of the working branch | Branch: task/1700d-go-ruian-suggest
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (this brief needs about 14)
 Tier: B (Sonnet wrote the exact-diff pass; the orchestrator reads the diff of the risk-listed files, see the end)
