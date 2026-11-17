@@ -51,7 +51,7 @@
 | K-I09 | Med unverified | invoices.py:validate_for_issue | Buyer address unchecked; verify VAT invoice requirements | UI §3 |
 | K-U01 | High decision | product.html:49,113, landing.html:72,189 | CTAs dead-end at /login while sign-up is off | UX UX-9 |
 | K-U02 | Med unverified | routes/guest.py PIN gate | A wrong PIN loses the #c= claim secret | UX M-3 |
-| K-U03 | Med open | signature.js:515, settings.html:250 | Back skips validation; recovery-code field numeric-only on iOS | UX M-5, M-1 |
+| K-U03 | Med open | signature.js:515, settings.html:250 | Back skips validation; iOS recovery-code field numeric-only | UX M-5, M-1 |
 | K-U04 | Med unverified | mail_notify.py, signature.js, reservations | UX majors M-4 to M-9 | UX |
 | K-U05 | Med unverified | test_guest_browser_e2e.py | Local browser pass; CI pending | X |
 | K-U07 | Low decision | entities.html | Visible Delete/explanation; guard kept; CI | UI §4 |
@@ -74,7 +74,7 @@
 | K-U15 | Med review | Host forms/navigation | Owner review (0084) | [plan](../plans/host-ux-combined-staging.md) |
 | K-T01 | Low open | Tests | Order-dependent tests (also 3 in test_host_i18n.py) | 0080 |
 | K-U16 | Review | Host UI | #389 polish; CI pending | 0102 |
-| K-PG04 | Low open | scripts/reencrypt_data_key.py | Refuses on PG (no verified backup source); fix before first PG key rotation | 0462 |
+| K-PG04 | Low open | scripts/reencrypt_data_key.py | Refuses on PG (no verified backup source); fix before 1st PG key rotation | 0462 |
 | K-U17 | Low open | Property page | #sec-messages deep link lands on calendars after late layout shifts; re-scroll. | 0995 |
 
 - K-UI-CACHE: bump `?v=` on edits; 1y cache (0172).
@@ -90,13 +90,14 @@
 - K-GUEST-DATES: es/fr guest dates row wraps at 375, 360 px.
 - K-1091D: `test_1091_d` name no longer matches its test.
 - K-TAP43: local only (CI green): `test_design_guardrails_browser.py` guest-new 390 "Cancel" tap target 43 < 44.
-- K-H0: from tasks/1094-report.md: `checkin_hour` NULL can raise TypeError in door_codes.py (~179, 436); `/save` with a non-owned guest_id becomes a new person; `guest_form_saved` audit has no field names.
+- K-H0 (1094): NULL `checkin_hour` may TypeError in door_codes.py ~179/436; `/save` with a foreign guest_id makes a new person; `guest_form_saved` audit lacks field names.
 - K-SM2 (brief 1105): OPERATIONS.md submit_state section disagrees with the code in 9 places.
 - K-SM3 (brief 1111): rules.md lines 37, 44 still say production is SQLite, migrations frozen at 0033.
 - K-DC-RENAME (943): lookup by name `UH-<id>`; a code renamed in TTLock reads as gone.
-- K-FLAKY-VT: test_host_filter_panels_browser.py:695 ViewTransition abort once (#943), passed on re-run.
+- K-FLAKY-VT: test_host_filter_panels_browser.py:695 ViewTransition abort once (#943).
+- K-FLAKY-DC (#1081): CI door-code tests leave a row `pending` once; local runs pass. Suspect: two `now`s in `issue()`/`_issue_due`.
 - K-F24 (947 review): recovered batch in manual mode keeps retried_at NULL; going automatic resends it once.
-- K-DC-REMOVE (950): A-B-A-B move: no 2nd moved_failed mail.
+- K-DC-REMOVE (950): A-B-A-B move sends no 2nd moved_failed mail.
 - K-DC-REVIVE-CARD (1173c): card closed in revoke_pending, delete refused, stay revived: stays closed.
 - K-DC-EXTEND (1173c review): stay extended after its issued code expired gets no new code.
 - K-PG-FK: goose 00004/11/13 FKs not DEFERRABLE (1263).
