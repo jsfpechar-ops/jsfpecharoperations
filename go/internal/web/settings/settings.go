@@ -1,9 +1,9 @@
 // Package settings serves the Settings pages (brief 1704b): GET /settings, the
 // index of the six groups, and GET /settings/{account,data,technical,help},
 // the Go twin of routes/admin.py _settings_page and templates/settings.html.
-// The groups security and phone are brief 1704c; their extension points are
-// marked "1704c" below. Nothing routes here until the owner adds the paths to
-// UBYHOST_GO_PATHS (brief 1705).
+// The groups security and phone are brief 1704c (security.go, phone.go).
+// Nothing routes here until the owner adds the paths to UBYHOST_GO_PATHS
+// (brief 1705).
 package settings
 
 import (
@@ -32,7 +32,7 @@ var catalog = hostweb.Load(catalogJSON)
 
 // pages is parsed once; the layout clones it per request. settings.tmpl is the
 // shell and the groups account, data, technical and help; group_security.tmpl
-// and group_phone.tmpl define the two groups of brief 1704c (empty until then).
+// and group_phone.tmpl define the two groups of brief 1704c.
 var pages = layout.MustParseFuncs(catalog, nil, templateFiles, "templates/*.tmpl")
 
 // Groups is SETTINGS_GROUPS in Python's order.
@@ -56,8 +56,8 @@ type pageData struct {
 	Data      *dataData
 	Technical *technicalData
 	Help      *helpData
-	// 1704c: add the fields `Security *SecurityData` and `Phone *PhoneData`
-	// here (their types live in 1704c's own files).
+	Security  *SecurityData // security.go (brief 1704c; 1764 adds DeviceKind there)
+	Phone     *PhoneData    // phone.go (brief 1704c)
 }
 
 // loader fills the part of pageData that one group shows. It reads only rows
@@ -70,7 +70,8 @@ var loaders = map[string]loader{
 	"data":      loadData,
 	"technical": loadTechnical,
 	"help":      loadHelp,
-	// 1704c: add "security" and "phone" here (loadSecurity, loadPhone).
+	"security":  loadSecurity,
+	"phone":     loadPhone,
 }
 
 func serverError(w http.ResponseWriter, err error) {
