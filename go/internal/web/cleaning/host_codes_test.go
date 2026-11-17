@@ -374,7 +374,7 @@ func TestHostQueueKickSkipsRejected(t *testing.T) {
 	if rec := e.codePost(i64(1), "11", "manual", map[string]string{"code": "bad space"}); rec.Code != 422 || kicks != 0 {
 		t.Fatalf("manual reject: status=%d kicks=%d", rec.Code, kicks)
 	}
-	e.exec(`UPDATE cleaning_code SET state = 'revoking' WHERE id = 3`)
+	e.exec(`UPDATE cleaning_code SET state = 'revoking' WHERE id = 2`)
 	if rec := e.codePost(i64(1), "12", "remove", nil); rec.Code != 422 || kicks != 0 {
 		t.Fatalf("busy remove: status=%d kicks=%d", rec.Code, kicks)
 	}
