@@ -1,6 +1,6 @@
 # 1702d2: Go property settings 3d2: the police-letter connection test on save
 
-Status: ready (exact-diff pass 2026-11-17: sidecars applied to a clean worktree of cce51d3 plus the 1702d-files sidecars (the post-1702d1 state), gofmt/build/vet clean, Go tests green on PostgreSQL 16 incl. `./internal/ubyport/...`, 0 skips; catalog regenerated with a stubbed `fastapi` import (no App/.venv in the scratch worktree); no Python file changes)
+Status: review (exact-diff pass 2026-11-17: sidecars applied to a clean worktree of cce51d3 plus the 1702d-files sidecars (the post-1702d1 state), gofmt/build/vet clean, Go tests green on PostgreSQL 16 incl. `./internal/ubyport/...`, 0 skips; catalog regenerated with a stubbed `fastapi` import (no App/.venv in the scratch worktree); no Python file changes)
 Decision 2026-11-17 (orchestrator, rule 2): **new outbound request on Go.** The Go UbyPort login test calls the same host Python already calls (the police UbyPort endpoint of `ubyport.EndpointFor`, through `ubyport.ClientFor`); no new destination. The PR must state that reason.
 Depends on: 1702d1 (its step 7 committed) | Base commit: current tip of the working branch | Branch: task/1702d2-go-apartment-save-letter-test
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (this brief needs about 12)
