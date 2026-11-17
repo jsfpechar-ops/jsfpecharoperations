@@ -306,6 +306,8 @@ The `postgres` Compose service has no password and no network; it is reached ove
 
 Production sets the user in `UBYHOST_DATABASE_URL` to `ubyhost_app` (`postgresql://ubyhost_app@/ubyhost?host=/var/run/postgresql`) after the owner runs `scripts/pg-app-role.sh apply`; admin scripts keep the `ubyhost` superuser. No separate variable.
 
+`UBYHOST_GUEST_DATABASE_URL`: the guest program's database URL (plan guest-form-isolation; read from brief 1840 on, unused before). Production: `postgresql://ubyhost_guest@/ubyhost?host=/var/run/postgresql`, after the owner runs `scripts/pg-guest-role.sql` as the superuser. No password (socket trust, as above), so it holds no secret. The role reads `guest_form_snapshot` and inserts into `guest_inbox` only, with at most 3 connections and a 2 s statement timeout.
+
 ## Development and test only
 
 | Variable | Default | Notes |
