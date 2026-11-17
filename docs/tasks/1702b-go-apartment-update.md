@@ -1,6 +1,6 @@
 # 1702b: Go property settings 3b: the error lines of a refused save
 
-Status: review (exact-diff pass 2026-11-17: sidecars applied to a clean worktree of ed5d737, gofmt/build/vet clean, Go tests green on PostgreSQL 16, 0 skips)
+Status: done (Haiku executed 2026-11-17; orchestrator: sidecars == repo, Go tests green on PG16, 0 skips; UX gate in 1705)
 Depends on: 1702 (done) | Base commit: current tip of the working branch | Branch: task/1702b-go-apartment-update
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (this brief needs about 10)
 Tier: A (exact files only; fresh review of the full diff before merge, see the risk list at the end)
