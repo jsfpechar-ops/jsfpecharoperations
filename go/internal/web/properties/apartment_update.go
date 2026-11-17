@@ -10,8 +10,6 @@ package properties
 // anything is written:
 //   - a wizard post: setup_step, or a return_to under /apartments/{id}/setup/
 //     (brief 1702e);
-//   - police-letter fields with uby_ws_password typed in the same save: the
-//     read-only UbyPort connection test (brief 1702d2);
 //   - the guest-pay block and the data box (as POST /apartments);
 //   - a non-ASCII digit or a 64-bit overflow in a number, and a
 //     stay_fee_rate_from that is set but not YYYY-MM-DD (Python's int(),
@@ -30,6 +28,7 @@ package properties
 import (
 	"context"
 	_ "embed"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -46,6 +45,7 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/stayfee"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/stayfeemail"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/onboarding"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/privacy"
@@ -220,9 +220,6 @@ func apartmentUpdateNotPorted(r *http.Request, id int64) string {
 	wizard := fmt.Sprintf("/apartments/%d/setup/", id)
 	if strings.HasPrefix(formReturnTo(r, "", false), wizard) || strings.HasPrefix(formStr(r, "return_to"), wizard) {
 		return "a return_to inside the setup wizard (brief 1702e)"
-	}
-	if apartmentLetterListed(r) && formStr(r, "uby_ws_password") != "" {
-		return "the police-letter connection test (brief 1702d2)"
 	}
 	for _, key := range apartmentNotPortedFields {
 		if has(r, key) {
@@ -702,10 +699,31 @@ func (s *server) apartmentSaved(w http.ResponseWriter, r *http.Request, q *reque
 	} else {
 		path += "?saved=1"
 	}
-	// 1085: police-letter values saved without a typed password are not
-	// tested (with one, apartmentUpdateNotPorted already answered).
+	// 1085: values confirmed from the police letter. The read-only connection
+	// test runs once, and only when the password was typed in this same save:
+	// a new login with the old password could lock the police account.
 	if apartmentLetterListed(r) {
-		q.back(w, r, path+"#ubyport", updateFlash(q, "flash.apartments.letter_saved_untested", nil), hostweb.Flash{})
+		if formStr(r, "uby_ws_password") == "" {
+			q.back(w, r, path+"#ubyport", updateFlash(q, "flash.apartments.letter_saved_untested", nil), hostweb.Flash{})
+			return
+		}
+		outcome, err := s.apartmentConnectionTest(r.Context(), q, saved)
+		if err != nil {
+			fail(w, err)
+			return
+		}
+		switch outcome {
+		case "ok":
+			if err := onboarding.MarkTested(r.Context(), onboarding.PoolSettings(s.pool), id); err != nil {
+				fail(w, err)
+				return
+			}
+			q.back(w, r, path+"#ubyport", updateFlash(q, "flash.apartments.letter_test_ok", nil), hostweb.Flash{})
+		case "auth":
+			q.back(w, r, path+"#ubyport", hostweb.Flash{}, updateFlash(q, "flash.error.letter_test_failed", nil))
+		default:
+			q.back(w, r, path+"#ubyport", hostweb.Flash{}, updateFlash(q, "flash.error.letter_test_unreachable", nil))
+		}
 		return
 	}
 	if found {
@@ -755,4 +773,77 @@ func apartmentFeeReturn(a *detailApt, raw string) string {
 		return "/stay-fees?month=" + stayfee.MonthKey(day)
 	}
 	return "/stay-fees"
+}
+
+// apartmentVerifiedSQL is billing_trial.mark_verified, owner-scoped: a passed
+// test is the verified UbyPort connection that starts the trial (0414).
+const apartmentVerifiedSQL = `UPDATE apartment SET ubyport_verified_at = $1
+  WHERE id = $2 AND owner_user_id IS NOT DISTINCT FROM $3 AND ubyport_verified_at IS NULL`
+
+// apartmentConnectionTest is _run_connection_test (admin.py 3506-3549): "ok",
+// "auth" or "unreachable". It sends only TestDostupnosti,
+// MaximalniDelkaSeznamu and DejMiCiselnik, to the host of ubyport.ClientFor
+// (the one the filing path uses). a is the saved row, loaded owner-scoped.
+func (s *server) apartmentConnectionTest(ctx context.Context, q *request, a *detailApt) (string, error) {
+	keys, err := secure.LoadDataKeys(s.getenv)
+	if err != nil {
+		return "", err
+	}
+	decryptSecret := func(token string) string {
+		if token == "" {
+			return ""
+		}
+		plain, err := keys.Decrypt(token, 0, time.Now())
+		if err != nil {
+			return "" // db.decrypt_secret: a token that will not decrypt is empty
+		}
+		return string(plain)
+	}
+	client := ubyport.ClientFor(&ubyport.ApartmentRow{Fields: map[string]string{
+		"uby_ws_user": a.UbyWSUser, "uby_ws_password_enc": a.UbyWSPasswordEnc}}, decryptSecret, s.getenv)
+	available, err := client.TestAvailability(ctx)
+	var limit *int
+	if err == nil {
+		limit, err = client.MaxBatchSize(ctx)
+	}
+	if err != nil {
+		detail := fmt.Sprintf("apartment=%d endpoint=%s error=%s", a.ID, client.Endpoint, err)
+		if aerr := s.audit(ctx, q, "ubyport_connection_failed", detail); aerr != nil {
+			return "", aerr
+		}
+		if errors.Is(err, ubyport.ErrAuth) {
+			return "auth", nil
+		}
+		return "unreachable", nil
+	}
+	// Python's str() of a bool and of None, as the audit row reads there.
+	availableText, limitText := "False", "None"
+	if available {
+		availableText = "True"
+	}
+	if limit != nil {
+		limitText = strconv.Itoa(*limit)
+	}
+	if err := s.audit(ctx, q, "ubyport_connection_ok", fmt.Sprintf("apartment=%d endpoint=%s available=%s max_batch=%s",
+		a.ID, client.Endpoint, availableText, limitText)); err != nil {
+		return "", err
+	}
+	if _, err := s.pool.Exec(ctx, apartmentVerifiedSQL, stamp(q.at), a.ID, q.host.Workspace.ID); err != nil {
+		return "", err
+	}
+	if err := privacy.ResolveAlert(ctx, s.pool, fmt.Sprintf("ubyport_auth_failed:%d", a.ID), stamp(q.at)); err != nil {
+		return "", err
+	}
+	// The error code book carries the severity that decides accepted or not
+	// (police letter of 24 September 2026). Best effort: the test has passed.
+	rows, err := client.CodeList(ctx, ubyport.CodeListErrors)
+	if err == nil && len(rows) > 0 {
+		_, err = ubyport.StoreErrorCodelist(ctx, s.pool, rows, stamp(q.at))
+	}
+	if err != nil {
+		if aerr := s.audit(ctx, q, "ubyport_codebook_refresh_failed", fmt.Sprintf("apartment=%d error=%s", a.ID, err)); aerr != nil {
+			return "", aerr
+		}
+	}
+	return "ok", nil
 }

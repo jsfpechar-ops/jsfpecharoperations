@@ -5,3 +5,6 @@ flash.apartments.saved_ready
 flash.error.pin_six_digits
 flash.apartments.letter_saved_untested
 flash.stay_fees.saved
+flash.apartments.letter_test_ok
+flash.error.letter_test_failed
+flash.error.letter_test_unreachable
