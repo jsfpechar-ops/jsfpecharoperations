@@ -130,6 +130,29 @@ func (s *wizardServer) wizardContext(ctx context.Context, owner, id int64, step 
 			return nil, err
 		}
 	}
+	c, err := s.wizardBundle(ctx, apt, at)
+	if err != nil {
+		return nil, err
+	}
+	if c.LinkKey, err = s.wizardLinkKey(ctx, apt, at); err != nil {
+		return nil, err
+	}
+	if c.Entities, err = s.wizardEntities(ctx, owner); err != nil {
+		return nil, err
+	}
+	if step == "done" {
+		if c.Celebrate, err = CelebrateOnce(ctx, PoolSettings(s.pool), apt.ID); err != nil {
+			return nil, err
+		}
+	}
+	return c, nil
+}
+
+// wizardBundle is admin._setup_guide_bundle for a loaded property: the feed,
+// stay and guest facts, report_complete, lock_available, the stored state
+// (_setup_state, which finishes a legacy guide of a property that is set up)
+// and the current guide. wizardContext and AfterSave share it.
+func (s *wizardServer) wizardBundle(ctx context.Context, apt *wizardApt, at time.Time) (*wizardCtx, error) {
 	c := &wizardCtx{Apt: apt}
 	var feeds int
 	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM ical_feed WHERE apartment_id = $1`, apt.ID).Scan(&feeds); err != nil {
@@ -161,17 +184,6 @@ func (s *wizardServer) wizardContext(ctx context.Context, owner, id int64, step 
 	}
 	if c.State != nil && !c.State.Finished {
 		c.Guide = Current(apt.setup(), c.State, c.Facts, c.LockAvailable)
-	}
-	if c.LinkKey, err = s.wizardLinkKey(ctx, apt, at); err != nil {
-		return nil, err
-	}
-	if c.Entities, err = s.wizardEntities(ctx, owner); err != nil {
-		return nil, err
-	}
-	if step == "done" {
-		if c.Celebrate, err = CelebrateOnce(ctx, settings, apt.ID); err != nil {
-			return nil, err
-		}
 	}
 	return c, nil
 }

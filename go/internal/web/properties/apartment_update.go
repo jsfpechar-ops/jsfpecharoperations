@@ -9,10 +9,9 @@ package properties
 // Answered 501 with the Caddy fallback header (notPorted), always before
 // anything is written:
 //   - a setup_step other than property or police (calendar, guest_link or a
-//     value that is not a step), and a save without setup_step whose
-//     return_to is under /apartments/{id}/setup/ (brief 1702e3);
-//   - a property or police wizard save that passed every check and goes back
-//     into the wizard (_setup_after_save, brief 1702e3);
+//     value that is not a step: no wizard form posts them here), and a save
+//     without setup_step whose return_to is under /apartments/{id}/setup/
+//     (refuse_fee_save draws the retired stay_fee wizard page for it);
 //   - the guest-pay block and the data box (as POST /apartments);
 //   - a non-ASCII digit or a 64-bit overflow in a number, and a
 //     stay_fee_rate_from that is set but not YYYY-MM-DD (Python's int(),
@@ -24,7 +23,9 @@ package properties
 // refuse_fee_save, operator_refresh) is refuseApartmentSave (brief 1702c2).
 // The property and police wizard steps (setup_step) are
 // apartment_update_wizard.go (brief 1702e2); a retired step goes to
-// /apartments/{id}/setup/done before anything else (0884).
+// /apartments/{id}/setup/done before anything else (0884). A wizard save
+// whose return_to is in the wizard goes where _setup_after_save says
+// (onboarding.AfterSave, brief 1702e3).
 //
 // Python writes the row, then the dated rate; here both share one transaction.
 // The alert, the guest link, the audit rows and the pay-way alert follow in
@@ -224,9 +225,9 @@ func apartmentUpdateNotPorted(r *http.Request, id int64) string {
 	switch step := formStr(r, "setup_step"); {
 	case step == "property" || step == "police":
 	case step != "":
-		return "a setup_step other than property or police (brief 1702e3)"
+		return "a setup_step other than property or police"
 	case apartmentWizardReturn(r, id):
-		return "a return_to inside the setup wizard (brief 1702e3)"
+		return "a return_to inside the setup wizard without setup_step"
 	}
 	for _, key := range apartmentNotPortedFields {
 		if has(r, key) {
@@ -730,7 +731,11 @@ func (s *server) apartmentSaved(w http.ResponseWriter, r *http.Request, q *reque
 		q.back(w, r, back, updateFlash(q, "flash.stay_fees.saved", nil), hostweb.Flash{})
 		return
 	}
-	path, fragment, found := strings.Cut(formReturnTo(r, fmt.Sprintf("/apartments/%d", id), false), "#")
+	returnTo := formReturnTo(r, fmt.Sprintf("/apartments/%d", id), false)
+	if strings.HasPrefix(returnTo, fmt.Sprintf("/apartments/%d/setup/", id)) && s.apartmentAfterWizardSave(w, r, q, id, returnTo, msg, labels) {
+		return
+	}
+	path, fragment, found := strings.Cut(returnTo, "#")
 	if strings.Contains(path, "?") {
 		path += "&saved=1"
 	} else {

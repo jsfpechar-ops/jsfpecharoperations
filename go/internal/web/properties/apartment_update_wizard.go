@@ -6,14 +6,16 @@ package properties
 // (2627-2643) and refuse_setup_save (onboarding_wizard.py 237-281). A refusal
 // draws the step page again through onboarding.RenderSetupPage (brief 1702e1);
 // nothing is written. A save that passed every check and goes back into the
-// wizard (_setup_after_save) is answered notPorted before anything is written
-// (brief 1702e3). No wizard form edits the door lock, the PIN or the fee
+// wizard goes where _setup_after_save says (apartmentAfterWizardSave, brief
+// 1702e3). No wizard form edits the door lock, the PIN or the fee
 // (edits_lock, the PIN and apply_fee_account are skipped for a setup_step).
 
 import (
 	"net/http"
 	"slices"
+	"strings"
 
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validationi18n"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/onboarding"
@@ -255,10 +257,6 @@ func (s *server) apartmentWizardSave(w http.ResponseWriter, r *http.Request, q *
 		}
 		credentialsChanged = pay.password != "" || pay.text["uby_ws_user"] != a.UbyWSUser
 	}
-	if apartmentWizardReturn(r, a.ID) {
-		notPorted(w, "a wizard save that goes back into the setup wizard (brief 1702e3)")
-		return
-	}
 	if err := s.writeApartmentSave(ctx, q, a, cols, apartmentPayload{}, ""); err != nil {
 		fail(w, err)
 		return
@@ -274,4 +272,38 @@ func (s *server) apartmentWizardSave(w http.ResponseWriter, r *http.Request, q *
 		return
 	}
 	s.apartmentSaved(w, r, q, p, a.ID)
+}
+
+// apartmentAfterWizardSave is _setup_after_save (admin.py 2655-2737) after a
+// written save whose return_to is under /apartments/{id}/setup/: back to
+// return_to with the saved message msg, to the current guide step, to the
+// finish page with flash.setup.complete, or the step page again (200) with
+// flash.apartments.saved naming the missing police fields (labels, from
+// _missing_report_labels) or else the step. False is Python's None: the
+// caller goes on as a settings save.
+func (s *server) apartmentAfterWizardSave(w http.ResponseWriter, r *http.Request, q *request, id int64, returnTo string, msg hostweb.Flash, labels []string) bool {
+	step := formStr(r, "setup_step")
+	next, err := onboarding.AfterSave(r.Context(), s.pool, s.getenv, q.host.Workspace.ID, id, step, has(r, "automation_mode"), returnTo, q.lang, q.at)
+	if err != nil {
+		fail(w, err)
+		return true
+	}
+	switch next.Next {
+	case "back":
+		q.back(w, r, returnTo, msg, hostweb.Flash{})
+	case "guide":
+		q.back(w, r, next.URL, hostweb.Flash{}, hostweb.Flash{})
+	case "done":
+		q.back(w, r, next.URL, next.Flash, hostweb.Flash{})
+	case "notice":
+		fields := strings.Join(labels, ", ")
+		if fields == "" {
+			fields = next.StepLabel
+		}
+		notice := updateFlash(q, "flash.apartments.saved", map[string]any{"fields": fields})
+		s.refuseSetupSave(w, r, q, id, step, onboarding.SetupPage{Status: http.StatusOK, Notice: notice.Text})
+	default:
+		return false
+	}
+	return true
 }
