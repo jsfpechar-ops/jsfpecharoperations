@@ -10,7 +10,7 @@ Plan: [guest-form-isolation](../plans/guest-form-isolation.md) section 3 rule 1,
 
 ## Open questions (orchestrator answers before execute)
 
-Step 0 stops until each line below carries `Answer:`.
+Answer: all five below approved as recommended (orchestrator, 11-17).
 
 1. **What "registered guests" counts.** This brief sets `Stay.RegisteredGuests` to the stay's live guest rows (`guest.archived_at IS NULL`), the `len(guests)` behind `not_registered` in `reporting.reservation_progress`, not the "complete" guests (that needs decryption and the full validation). The guest program adds its own inbox and spool rows (plan section 4). Recommended answer: approve.
 2. **Which link keys get a row.** One row per key `_resolve_key` (`App/app/routes/guest.py`) accepts: `apartment.permalink_token` and every `apartment_slug.slug` of the property, current and earlier (slugs are stored lower case; `guest_slug.lookup` lower-cases the key). Brief 1840 must lower-case a slug-shaped key before `TokenHash`. Recommended answer: approve.
@@ -18,13 +18,6 @@ Step 0 stops until each line below carries `Answer:`.
 4. **Same environment for both programs.** `UBYHOST_GUEST_LANGS`, `UBYHOST_GUEST_NOTICE_VERSION` and `UBYHOST_PRIVACY_VERSION` must reach the Go web service and the Python app alike (`grep -n 'env_file' deploy/lightsail/docker-compose.yml`: `.env` at lines 102 and 154). Recommended answer: confirmed.
 5. **Split.** This brief ships the builder, the Python twin, the rebuild function and its alert, with no caller. Brief **1836b** (not written yet) wires `Refresh`/`refresh` into every write site (inventory in section 2) and registers the nightly background task in `go/cmd/ubyhost-web/`. Registering the nightly task before the wiring would raise the difference alert every night. Recommended answer: approve.
 
-Answers:
-
-1. Answer: approved, as recommended (orchestrator, 2026-11-17).
-2. Answer: approved, as recommended (orchestrator, 2026-11-17).
-3. Answer: approved, as recommended (orchestrator, 2026-11-17).
-4. Answer: approved, as recommended (orchestrator, 2026-11-17).
-5. Answer: approved, as recommended (orchestrator, 2026-11-17).
 
 ## 1. Objective
 
@@ -87,7 +80,7 @@ No other file may change.
 
 ## 4. Steps
 
-0. **Open questions and anchors.** If any line under "Open questions" lacks `Answer:`, or an answer is not the recommended one, STOP and write the report as `blocked`. Then verify every anchor in section 2 with `grep -nF`. Command: `grep -c 'Answer (' docs/tasks/1836-guest-snapshot-writer.md` (expect 5 or more).
+0. **Open questions and anchors.** If the "Open questions" heading is not followed by the approved line, STOP and write the report as `blocked`. Then verify every anchor in section 2 with `grep -nF`. Command: `grep -c 'Answer (' docs/tasks/1836-guest-snapshot-writer.md` (expect 5 or more).
 
 1. **Write the six files.** From the repo root run exactly:
 ```
