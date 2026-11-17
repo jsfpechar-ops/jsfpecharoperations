@@ -1,18 +1,15 @@
 package properties
 
-// Tests of GET /apartments/new (brief 1700a). The golden cases are what
-// App/scripts/go_apartment_new_form_golden.py wrote from the real Python page.
+// Tests of GET /apartments/new (brief 1700a). Every expected value is written
+// by hand from the Python page (apartment_form.html create branch); there is
+// no golden file and no Python script.
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"html"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"regexp"
-	"sort"
 	"strings"
 	"testing"
 
@@ -23,178 +20,17 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/session"
 )
 
-const apartmentNewSecret = "golden-secret-key-not-for-real-use"
+const apartmentNewSecret = "apartment-new-test-secret-key-0123456789"
 
-type apartmentNewSeedTable struct {
-	Table   string   `json:"table"`
-	Columns []string `json:"columns"`
-	Rows    [][]any  `json:"rows"`
-}
-
-type apartmentNewCase struct {
-	Name      string   `json:"name"`
-	User      int64    `json:"user"`
-	Workspace int64    `json:"workspace"`
-	Lang      string   `json:"lang"`
-	Query     string   `json:"query"`
-	Status    int      `json:"status"`
-	Location  *string  `json:"location"`
-	Title     string   `json:"title"`
-	Lines     []string `json:"lines"`
-}
-
-type apartmentNewGolden struct {
-	Seed  []apartmentNewSeedTable `json:"seed"`
-	Cases []apartmentNewCase      `json:"cases"`
-}
-
-func loadApartmentNewGolden(t *testing.T) apartmentNewGolden {
-	t.Helper()
-	raw, err := os.ReadFile("testdata/apartment_new_form_golden.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	dec := json.NewDecoder(strings.NewReader(string(raw)))
-	dec.UseNumber()
-	var g apartmentNewGolden
-	if err := dec.Decode(&g); err != nil {
-		t.Fatal(err)
-	}
-	if len(g.Cases) < 15 {
-		t.Fatal("apartment new form golden file is too small")
-	}
-	return g
-}
-
-// apartmentNewSeed writes the golden SEED to PostgreSQL.
-func apartmentNewSeed(t *testing.T, pool *pgxpool.Pool, g apartmentNewGolden) {
-	t.Helper()
-	for _, table := range g.Seed {
-		marks := make([]string, len(table.Columns))
-		for i := range marks {
-			marks[i] = fmt.Sprintf("$%d", i+1)
-		}
-		sql := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", table.Table, strings.Join(table.Columns, ", "), strings.Join(marks, ", "))
-		for _, row := range table.Rows {
-			args := make([]any, len(row))
-			for i, v := range row {
-				args[i] = sqlValue(v)
-			}
-			if _, err := pool.Exec(context.Background(), sql, args...); err != nil {
-				t.Fatalf("seed %s: %v", table.Table, err)
-			}
-		}
-	}
-}
-
-// apartmentNewVisibleLines is visible_lines in
-// App/scripts/go_apartment_new_form_golden.py; keep the two in step.
-var (
-	apartmentNewDrop = []*regexp.Regexp{regexp.MustCompile(`(?s)<!--.*?-->`), regexp.MustCompile(`(?is)<script\b.*?</script>`),
-		regexp.MustCompile(`(?is)<style\b.*?</style>`), regexp.MustCompile(`(?is)<svg\b.*?</svg>`)}
-	apartmentNewScript = regexp.MustCompile(`(?is)<script\b([^>]*\bsrc=[^>]*)>\s*</script>`)
-	apartmentNewToken  = regexp.MustCompile(`<[^>]*>|[^<]+`)
-	apartmentNewTag    = regexp.MustCompile(`^<[ \t\n\r\f\v]*(/?)([A-Za-z][A-Za-z0-9]*)`)
-	apartmentNewAttr   = regexp.MustCompile(`([^ \t\n\r\f\v=/>"']+)(?:[ \t\n\r\f\v]*=[ \t\n\r\f\v]*(?:"([^"]*)"|'([^']*)'|([^ \t\n\r\f\v>"']+)))?`)
-	apartmentNewSpace  = regexp.MustCompile(`[ \t\n\r\f\v]+`)
-	apartmentNewTitle  = regexp.MustCompile(`(?is)<title>(.*?)</title>`)
-	apartmentNewKept   = map[string]bool{"id": true, "href": true, "action": true, "method": true, "name": true, "value": true,
-		"type": true, "selected": true, "checked": true, "required": true, "for": true, "aria-current": true,
-		"class": true, "aria-label": true, "aria-controls": true, "aria-describedby": true, "aria-invalid": true,
-		"autofocus": true, "maxlength": true, "inputmode": true, "autocapitalize": true, "placeholder": true,
-		"open": true, "target": true, "src": true, "data-ruian-suggest": true, "data-ruian-loading": true,
-		"data-ruian-none": true}
+// Host A is 130001, host B 130002, admin 130003 (seedHosts).
+const (
+	anOpAlpha, anOpBeta, anOpGone, anOpOther = 130101, 130102, 130103, 130104
+	anLoft, anPlain, anOld, anForeign        = 130201, 130202, 130203, 130204
 )
 
-func apartmentNewTitleOf(page string) string {
-	m := apartmentNewTitle.FindStringSubmatch(page)
-	if m == nil {
-		return ""
-	}
-	return strings.Trim(apartmentNewSpace.ReplaceAllString(html.UnescapeString(m[1]), " "), " ")
-}
-
-func apartmentNewVisibleLines(page string) []string {
-	start := strings.Index(page, `<div class="ui-page"`)
-	if start < 0 {
-		return []string{}
-	}
-	page = page[start:]
-	if end := strings.Index(page, `<div class="page-skeleton"`); end >= 0 {
-		page = page[:end]
-	}
-	page = apartmentNewScript.ReplaceAllString(page, "<scriptsrc${1}>")
-	for _, re := range apartmentNewDrop {
-		page = re.ReplaceAllString(page, "")
-	}
-	out := []string{}
-	type attrVal struct {
-		has   bool
-		value string
-	}
-	for _, tok := range apartmentNewToken.FindAllString(page, -1) {
-		if !strings.HasPrefix(tok, "<") {
-			text := strings.Trim(apartmentNewSpace.ReplaceAllString(html.UnescapeString(tok), " "), " ")
-			if text != "" {
-				out = append(out, text)
-			}
-			continue
-		}
-		m := apartmentNewTag.FindStringSubmatchIndex(tok)
-		if m == nil || tok[m[2]:m[3]] == "/" {
-			continue
-		}
-		name := strings.ToLower(tok[m[4]:m[5]])
-		attrs := map[string]attrVal{}
-		for _, a := range apartmentNewAttr.FindAllStringSubmatch(tok[m[1]:], -1) {
-			key := strings.ToLower(a[1])
-			v := html.UnescapeString(a[2] + a[3] + a[4])
-			if key == "class" {
-				v = strings.Join(strings.Fields(v), " ")
-			}
-			attrs[key] = attrVal{strings.Contains(a[0], "="), v}
-		}
-		if attrs["name"].value == "_csrf" {
-			attrs["value"] = attrVal{true, "*"}
-		}
-		keys := make([]string, 0, len(attrs))
-		for k := range attrs {
-			if apartmentNewKept[k] {
-				keys = append(keys, k)
-			}
-		}
-		sort.Strings(keys)
-		parts := make([]string, len(keys))
-		for i, k := range keys {
-			parts[i] = k
-			if attrs[k].has {
-				parts[i] += "=" + attrs[k].value
-			}
-		}
-		if len(parts) > 0 {
-			out = append(out, "<"+name+" "+strings.Join(parts, " ")+">")
-		}
-	}
-	return out
-}
-
-func TestApartmentNewVisibleLines(t *testing.T) {
-	page := `<p>x</p><title> A  &amp; B </title><div class="ui-page"><!-- c --><a class=" a  b " href="/b?a=1&amp;b=2"><span>Back</span></a>` +
-		`<input type="hidden" name="_csrf" value="tok"><input required name=q data-ruian-suggest>` +
-		`<script src="/s.js?v=1" defer></script><script>var x = 1;</script><svg><path d="M0"/></svg></div>` +
-		`<div class="page-skeleton">skip</div>`
-	want := []string{"<div class=ui-page>", "<a class=a b href=/b?a=1&b=2>", "Back", "<input name=_csrf type=hidden value=*>",
-		"<input data-ruian-suggest name=q required>", "<scriptsrc src=/s.js?v=1>"}
-	if got := apartmentNewVisibleLines(page); strings.Join(got, "\n") != strings.Join(want, "\n") {
-		t.Fatalf("got %q", got)
-	}
-	if got := apartmentNewTitleOf(page); got != "A & B" {
-		t.Fatalf("title %q", got)
-	}
-}
-
 func apartmentNewGetenv(k string) string {
-	return map[string]string{"UBYHOST_SECRET_KEY": apartmentNewSecret}[k]
+	return map[string]string{"UBYHOST_SECRET_KEY": apartmentNewSecret, "UBYHOST_TERMS_VERSION": "t1",
+		"UBYHOST_PRIVACY_VERSION": "p1", "UBYHOST_DPA_VERSION": "d1"}[k]
 }
 
 func apartmentNewMux(pool *pgxpool.Pool) *http.ServeMux {
@@ -217,51 +53,184 @@ func apartmentNewSignIn(req *http.Request, user, workspace int64, lang string) {
 	}
 }
 
-// TestApartmentNewMatchesPython renders each golden case with the Go handler
-// and compares the title and the visible lines with the ones Python rendered.
-func TestApartmentNewMatchesPython(t *testing.T) {
-	g := loadApartmentNewGolden(t)
+// apartmentNewWorld seeds two hosts and an admin: host A has two live
+// operators, an archived one, a loft with copyable settings, a plain
+// property (blank stay fee text) and an archived property; host B has one
+// operator and one property.
+func apartmentNewWorld(t *testing.T, pool *pgxpool.Pool) {
+	t.Helper()
+	seedHosts(t, pool)
+	mustExec(t, pool, `INSERT INTO legal_entity (id, owner_user_id, name, seat, archived_at, created_at) VALUES
+		($1, 130001, 'Alpha Co', 'Praha', NULL, $5), ($2, 130001, 'Beta & Sons <s.r.o.>', 'Brno', NULL, $5),
+		($3, 130001, 'Gone Co', 'Brno', '2026-01-02', $5), ($4, 130002, 'Other Co', 'Brno', NULL, $5)`,
+		anOpAlpha, anOpBeta, anOpGone, anOpOther, stamp0)
+	mustExec(t, pool, `INSERT INTO apartment (id, owner_user_id, internal_name, legal_entity_id, data_controller_entity_id, automation_mode,
+		submit_after_hours, default_purpose, permalink_window_days, permalink_reachback_days, stay_fee_rate_czk, stay_fee_cadence,
+		stay_fee_payee, archived_at, created_at) VALUES
+		($1, 130001, 'Loft <A>', $5, $6, 'manual', 12, '20', 5, 30, 50, 'quarterly', 'City Hall', NULL, $8),
+		($2, 130001, 'Plain', $6, NULL, 'scheduled', 0, '10', 0, 0, 0, 'monthly', '  ', NULL, $8),
+		($3, 130001, 'Old archived', $5, NULL, 'scheduled', 0, '10', 0, 0, 0, 'monthly', NULL, '2026-01-03', $8),
+		($4, 130002, 'Other host', $7, NULL, 'scheduled', 0, '10', 0, 0, 0, 'monthly', NULL, NULL, $8)`,
+		anLoft, anPlain, anOld, anForeign, anOpAlpha, anOpBeta, anOpOther, stamp0)
+}
+
+func apartmentNewGet(mux http.Handler, query string, user, workspace int64, lang string) *httptest.ResponseRecorder {
+	req := httptest.NewRequest(http.MethodGet, "/apartments/new"+query, nil)
+	apartmentNewSignIn(req, user, workspace, lang)
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	return rec
+}
+
+// TestApartmentNewPage: status, redirect, owner scoping, the selected
+// operator, the hidden copy fields and the CSRF field, all as hand-written
+// fragments of the page.
+func TestApartmentNewPage(t *testing.T) {
 	pool := testPool(t)
-	apartmentNewSeed(t, pool, g)
+	apartmentNewWorld(t, pool)
 	mux := apartmentNewMux(pool)
-	for _, c := range g.Cases {
-		req := httptest.NewRequest(http.MethodGet, "/apartments/new"+c.Query, nil)
-		apartmentNewSignIn(req, c.User, c.Workspace, c.Lang)
-		rec := httptest.NewRecorder()
-		mux.ServeHTTP(rec, req)
-		if rec.Code != c.Status {
-			t.Errorf("%s: status %d, Python %d", c.Name, rec.Code, c.Status)
-			continue
-		}
-		if c.Location != nil && rec.Header().Get("Location") != *c.Location {
-			t.Errorf("%s: Location %q, Python %q", c.Name, rec.Header().Get("Location"), *c.Location)
-		}
-		if rec.Code == http.StatusNotFound && rec.Body.String() != "Not found." {
-			t.Errorf("%s: 404 body %q", c.Name, rec.Body.String())
-		}
-		if rec.Code != http.StatusOK {
-			continue
-		}
+	const createForm = `<form method="post" action="/apartments" class="property-create-form" id="property-create-form">`
+	chooseSelected := `<option value="" disabled selected>Choose operator</option>`
+	for _, c := range []struct {
+		name            string
+		user, workspace int64
+		lang, query     string
+		status          int
+		has, lacks      []string
+	}{
+		{"signed out", 0, 0, "en", "", 303, nil, nil},
+		{"host A default", 130001, 0, "en", "", 200, []string{
+			`<title>Add property</title>`, createForm, chooseSelected,
+			`<option value="130101">Alpha Co</option>`, `<option value="130102">Beta &amp; Sons &lt;s.r.o.&gt;</option>`,
+			`<dialog id="copy-settings" class="ui-dialog copy-settings-dialog" aria-labelledby="copy-settings-title">`,
+			`<h2 id="copy-settings-title">Copy settings from another property</h2>`,
+			`<form method="get" action="/apartments/new" class="copy-property-form">`,
+			`<option value="130201">Loft &lt;A&gt;</option>`, `<option value="130202">Plain</option>`,
+			`<input type="hidden" name="default_purpose" value="10">`,
+			`<a class="property-create-manage" href="/entities">`,
+			`<script src="/static/ruian_suggest.js?v=20261111-1103b" defer data-turbo-track="reload"></script>`,
+			`id="addr_street" name="addr_street"`, `data-ruian-suggest`, `maxlength="48"`, `placeholder="Vinohradsk`,
+		}, []string{`Gone Co`, `Other Co`, `Old archived`, `Other host`, `name="copy_from" value=`, `class="panel property-create-copied"`, `id="alternate-controller"`,
+			`copy-settings-dialog" aria-labelledby="copy-settings-title" open>`}},
+		{"operator chosen", 130001, 0, "en", "?legal_entity_id=130102", 200,
+			[]string{`<option value="130102" selected>Beta &amp; Sons &lt;s.r.o.&gt;</option>`}, []string{chooseSelected}},
+		{"operator padded and signed", 130001, 0, "vi", "?legal_entity_id=%20%2B130102%20", 200,
+			[]string{`<option value="130102" selected>Beta &amp; Sons &lt;s.r.o.&gt;</option>`}, []string{`value="" disabled selected>Choose`}},
+		{"operator of another host", 130001, 0, "en", "?legal_entity_id=130104", 200,
+			[]string{chooseSelected}, []string{`Other Co`, `130104`}},
+		{"archived operator", 130001, 0, "en", "?legal_entity_id=130103", 200, []string{chooseSelected}, []string{`Gone Co`}},
+		{"operator not a number", 130001, 0, "en", "?legal_entity_id=abc", 200, []string{chooseSelected}, nil},
+		{"copy dialog open", 130001, 0, "cs", "?copy=choose", 200,
+			[]string{`<dialog id="copy-settings" class="ui-dialog copy-settings-dialog" aria-labelledby="copy-settings-title" open>`}, nil},
+		{"copy with stay fee", 130001, 0, "en", "?copy_from=130201", 200, []string{
+			`<option value="130201" selected>Loft &lt;A&gt;</option>`,
+			`<p class="panel property-create-copied" role="status">Copied from Loft &lt;A&gt;. Check and save.`,
+			`<a href="/apartments/new">Start without copying</a>`,
+			`<input type="hidden" name="copy_from" value="130201">`,
+			`<input type="hidden" name="automation_mode" value="manual">`,
+			`<input type="hidden" name="submit_after_hours" value="12">`,
+			`<input type="hidden" name="default_purpose" value="20">`,
+			`<input type="hidden" name="permalink_window_days" value="5">`,
+			`<input type="hidden" name="permalink_reachback_days" value="30">`,
+			`<input type="hidden" name="stay_fee_rate_czk" value="50">`,
+			`<input type="hidden" name="stay_fee_cadence" value="quarterly">`,
+			`<input type="hidden" name="stay_fee_payee" value="City Hall">`,
+			`<option value="130101" selected>Alpha Co</option>`, `<option value="130102" selected>Beta &amp; Sons &lt;s.r.o.&gt;</option>`,
+			`<option value="">Same as operator</option>`, `id="alternate-controller"`,
+		}, []string{chooseSelected, `name="default_purpose" value="10"`, `name="stay_fee_authority_name"`}},
+		{"copy with underscore id", 130001, 0, "cs", "?copy_from=130_201", 200,
+			[]string{`<input type="hidden" name="copy_from" value="130201">`}, nil},
+		{"copy plain drops blank values", 130001, 0, "en", "?copy_from=130202", 200, []string{
+			`<input type="hidden" name="copy_from" value="130202">`, `<input type="hidden" name="automation_mode" value="scheduled">`,
+			`<input type="hidden" name="default_purpose" value="10">`, `<option value="130102" selected>Beta`,
+		}, []string{`name="stay_fee_payee"`, `name="stay_fee_rate_czk"`, `name="submit_after_hours"`, `name="permalink_window_days"`}},
+		{"copy from an archived property", 130001, 0, "en", "?copy_from=130203", 200,
+			[]string{`<input type="hidden" name="copy_from" value="130203">`, `Copied from Old archived.`}, nil},
+		{"copy with operator override", 130001, 0, "en", "?copy_from=130201&legal_entity_id=130102", 200,
+			[]string{`<option value="130102" selected>Beta &amp; Sons &lt;s.r.o.&gt;</option>`}, []string{`<option value="130101" selected>`}},
+		{"copy from another host", 130001, 0, "en", "?copy_from=130204", 404, []string{`Not found.`}, []string{`Other host`}},
+		{"copy from a missing id", 130001, 0, "en", "?copy_from=999999", 404, []string{`Not found.`}, nil},
+		{"copy id not a number", 130001, 0, "en", "?copy_from=abc", 200, nil, []string{`name="copy_from" value=`}},
+		{"copy id zero", 130001, 0, "en", "?copy_from=0", 200, nil, []string{`name="copy_from" value=`}},
+		{"copy id past 64 bits", 130001, 0, "en", "?copy_from=99999999999999999999", 501, nil, nil},
+		{"admin previews host A", 130003, 130001, "en", "?copy_from=130201", 200,
+			[]string{`<input type="hidden" name="copy_from" value="130201">`, `<option value="130101" selected>Alpha Co</option>`}, nil},
+		{"admin previews host B", 130003, 130002, "en", "?copy_from=130201", 404, []string{`Not found.`}, nil},
+		{"admin previews host B list", 130003, 130002, "en", "", 200,
+			[]string{`<option value="130104" selected>Other Co</option>`, `<option value="130204">Other host</option>`}, []string{`Alpha Co`, `Loft`}},
+		{"host B sees only its own", 130002, 0, "en", "", 200,
+			[]string{`<option value="130104" selected>Other Co</option>`}, []string{`Alpha Co`, `Loft`, `Plain`}},
+	} {
+		rec := apartmentNewGet(mux, c.query, c.user, c.workspace, c.lang)
 		body := rec.Body.String()
-		if got := apartmentNewTitleOf(body); got != c.Title {
-			t.Errorf("%s: title %q, Python %q", c.Name, got, c.Title)
+		if rec.Code != c.status {
+			t.Errorf("%s: status %d, want %d", c.name, rec.Code, c.status)
+			continue
 		}
-		got := apartmentNewVisibleLines(body)
-		if strings.Count(body, `name="_csrf"`) < 1 {
-			t.Errorf("%s: the create form has no _csrf field", c.Name)
+		for _, want := range c.has {
+			if !strings.Contains(body, want) {
+				t.Errorf("%s: page lacks %q", c.name, want)
+			}
 		}
-		for i := 0; i < len(got) || i < len(c.Lines); i++ {
-			var gl, wl string
-			if i < len(got) {
-				gl = got[i]
+		for _, bad := range c.lacks {
+			if strings.Contains(body, bad) {
+				t.Errorf("%s: page has %q", c.name, bad)
 			}
-			if i < len(c.Lines) {
-				wl = c.Lines[i]
+		}
+		switch c.status {
+		case 303:
+			if got := rec.Header().Get("Location"); !strings.HasPrefix(got, "/login") {
+				t.Errorf("%s: Location %q", c.name, got)
 			}
-			if gl != wl {
-				t.Errorf("%s: line %d is %q, Python %q", c.Name, i, gl, wl)
-				break
+		case 404:
+			if body != "Not found." {
+				t.Errorf("%s: 404 body %q", c.name, body)
 			}
+		case 501:
+			if rec.Header().Get("X-Ubyhost-Not-Ported") != "1" {
+				t.Errorf("%s: no X-Ubyhost-Not-Ported header", c.name)
+			}
+		case 200:
+			// the create form carries its own _csrf input right after the form tag
+			i := strings.Index(body, createForm)
+			if i < 0 || !strings.Contains(body[i:min(len(body), i+400)], `<input type="hidden" name="_csrf" value="`) {
+				t.Errorf("%s: the create form has no _csrf hidden field", c.name)
+			}
+		}
+	}
+	for lang, title := range map[string]string{"en": "Add property", "cs": "Přidat ubytování", "vi": "Thêm chỗ ở"} {
+		if body := apartmentNewGet(mux, "", 130001, 0, lang).Body.String(); !strings.Contains(body, "<title>"+title+"</title>") {
+			t.Errorf("%s: no title %q", lang, title)
+		}
+	}
+}
+
+// TestApartmentNewChoices: loadApartmentNewChoices (also used by 1700b) is
+// scoped to the workspace and leaves out archived rows.
+func TestApartmentNewChoices(t *testing.T) {
+	pool := testPool(t)
+	apartmentNewWorld(t, pool)
+	names := func(o []ApartmentNewOption) string {
+		var out []string
+		for _, x := range o {
+			out = append(out, x.Name)
+		}
+		return strings.Join(out, "|")
+	}
+	for _, c := range []struct {
+		workspace            int64
+		entities, apartments string
+	}{
+		{130001, "Alpha Co|Beta & Sons <s.r.o.>", "Loft <A>|Plain"},
+		{130002, "Other Co", "Other host"},
+		{999999, "", ""},
+	} {
+		e, a, err := loadApartmentNewChoices(context.Background(), pool, c.workspace)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if names(e) != c.entities || names(a) != c.apartments {
+			t.Errorf("workspace %d: entities %q, apartments %q", c.workspace, names(e), names(a))
 		}
 	}
 }
@@ -269,9 +238,8 @@ func TestApartmentNewMatchesPython(t *testing.T) {
 // TestApartmentNewRenderRefusal draws the form the way brief 1700b does for a
 // refused create: typed values, errors, copy fields and status 400.
 func TestApartmentNewRenderRefusal(t *testing.T) {
-	g := loadApartmentNewGolden(t)
 	pool := testPool(t)
-	apartmentNewSeed(t, pool, g)
+	apartmentNewWorld(t, pool)
 	render := func(form ApartmentNewForm) *httptest.ResponseRecorder {
 		h := func(w http.ResponseWriter, r *http.Request) {
 			host, err := hostweb.Login(w, r, pool, apartmentNewGetenv, testNow)
@@ -289,7 +257,7 @@ func TestApartmentNewRenderRefusal(t *testing.T) {
 			}
 		}
 		req := httptest.NewRequest(http.MethodPost, "/apartments", nil)
-		apartmentNewSignIn(req, 4, 0, "en")
+		apartmentNewSignIn(req, 130001, 0, "en")
 		rec := httptest.NewRecorder()
 		h(rec, req)
 		return rec
@@ -297,7 +265,7 @@ func TestApartmentNewRenderRefusal(t *testing.T) {
 	rec := render(ApartmentNewForm{
 		Status: http.StatusBadRequest, NameError: true,
 		Draft:         map[string]string{"internal_name": "Typed <x>", "city_en": "Praha", "addr_zip": "1200"},
-		DraftEntityID: 42, DraftControllerID: 41,
+		DraftEntityID: anOpBeta, DraftControllerID: anOpAlpha,
 		OperatorError: "flash.error.no_such_controller",
 		AddressErrors: map[string]string{"addr_zip": "Enter 5 digits."},
 	})
@@ -308,7 +276,7 @@ func TestApartmentNewRenderRefusal(t *testing.T) {
 	for _, want := range []string{
 		`value="Typed &lt;x&gt;"`, `aria-invalid="true" autofocus`, `id="internal_name-error"`, `id="city_en" name="city_en" value="Praha"`,
 		`id="addr_zip-error" role="alert">Enter 5 digits.</p>`, `aria-describedby="addr_zip-help addr_zip-error"`,
-		`<option value="42" selected>`, `id="controller-message"`, `<option value="41" selected>`, `name="_csrf"`,
+		`<option value="130102" selected>`, `id="controller-message"`, `<option value="130101" selected>`, `name="_csrf"`,
 	} {
 		if !strings.Contains(body, want) {
 			t.Errorf("refusal page lacks %q", want)
@@ -318,12 +286,12 @@ func TestApartmentNewRenderRefusal(t *testing.T) {
 		t.Error("a refusal without a copy source carries copy_from")
 	}
 	rec = render(ApartmentNewForm{
-		Status: http.StatusBadRequest, CopyFromID: 41, CopiedFromName: "Loft <A>",
+		Status: http.StatusBadRequest, CopyFromID: anLoft, CopiedFromName: "Loft <A>",
 		Prefill:       map[string]string{"automation_mode": "", "stay_fee_rate_czk": "0", "stay_fee_payee": "Me"},
 		OperatorError: "apartment.form.operator.choose",
 	})
 	body = rec.Body.String()
-	for _, want := range []string{`name="copy_from" value="41"`, `name="automation_mode" value=""`, `name="stay_fee_payee" value="Me"`,
+	for _, want := range []string{`name="copy_from" value="130201"`, `name="automation_mode" value=""`, `name="stay_fee_payee" value="Me"`,
 		`name="default_purpose" value="10"`, `aria-describedby="operator-message" aria-invalid="true"`, `id="operator-message" role="alert">`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("copy refusal page lacks %q", want)

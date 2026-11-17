@@ -1,6 +1,6 @@
 # 1704: Go property settings 5: settings, menu, guest links, guide and housebook pages
 
-Status: todo — scoped (final brief 2026-11-15). Executable only after its exact-diff pass: sidecars in `docs/tasks/1704-files/`, anchors and sha256 table (§2), written to the rules in [workflow](../context/workflow.md#writing-briefs-for-haiku). Until then the executor must not start it.
+Status: todo — index of 1704a/b/c (re-scoped 2026-11-17). Not run itself: each sub-brief is executable only after its own exact-diff pass (sidecars, anchors, sha256 table), written to the rules in [workflow](../context/workflow.md#writing-briefs-for-haiku).
 Depends on: 1380/1381 host layout (done) | Base commit: current tip of the working branch | Branch: task/1704-go-settings-menu-pages
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (split in two briefs if the exact-diff pass finds more)
 Tier: B (Sonnet writes the exact-diff pass; orchestrator reads the diff of the risk-listed files)
@@ -9,69 +9,69 @@ Tier: B (Sonnet writes the exact-diff pass; orchestrator reads the diff of the r
 
 ## 1. Objective
 
-Port the read pages: `/settings` and the six `/settings/<group>` pages (account, security, phone, data, technical, help), `/menu`, `/guest-links`, `/guide`, `/housebook`, and `POST /alerts/{id}/dismiss`.
+Port the two read-page areas Go does not have yet: `GET /housebook` and `GET /settings` with the six `GET /settings/<group>` pages (account, security, phone, data, technical, help). This brief is the **index and scope** of three runnable briefs (below). It is not run itself.
 
 ## 2. Context
 
-Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (no new personal-data field without a `retention.py` line, no new outbound request without a reason in the PR); 3 no secrets, no real data (fixtures use `@example.test`); 4 no new dependency without a decision line; 5 plain PostgreSQL through `pgxpool`, `$n` placeholders, a schema change is a new `App/migrations_pg/` file; 6 light mode, every form works without JavaScript (Go forms carry the `_csrf` input); 11 Go first.
+**Re-scope 2026-11-17 (Sonnet).** Checked against the tree: `POST /alerts/{id}/dismiss`, `GET /menu`, `GET /guest-links` and `GET /guide` are already in Go (briefs 1301 and 1520: `go/internal/web/properties/misc.go`, `pages.go`). They leave this brief. `GET /housebook` and every `/settings*` page have no Go handler (`grep -rn '"GET /housebook\|"GET /settings' go` is empty); the CSV and ZIP exports (`go/internal/web/exports/housebook*.go`) are already ported and stay unchanged.
 
-**Python source of truth:** `admin.py` 673-712 (guest-links), 645 (guide), 5181 (housebook), 5216 (alert dismiss), 5257 (menu), 5287 (settings) and the group loop in `admin.py`.
+**Tests (owner 2026-11-17, [go-first](../context/go-first.md)):** Go only, with hand-written expected output (a fixed seed in the Go test, assertions on exact strings and ids). No Python golden script, no `App/` file, no `testdata/*_golden.json` from Python. The old plan with `App/scripts/go_settings_menu_golden.py` is void.
 
-**Routes in scope (method path, Python function):**
+**Where the code goes:** `go/internal/web/hostweb` does not exist (`go/internal/hostweb` is the gate and layout). Put each page in its own new package next to its siblings: `go/internal/web/housebook/` (1704a) and `go/internal/web/settings/` (1704b, 1704c), the pattern of `go/internal/web/onboarding/` (handler through `hostweb.Login`, `layout.Render`, embedded `*.tmpl`, catalog from `i18n_keys.txt` written by `App/scripts/go_host_i18n.py`; this script is go-first exception 1 plumbing, no new Python file). Reuse, never copy: `hostweb.Login`, `hostweb.Back`, `session.Host.Workspace.ID` as the owner on every query (`owner_user_id IS NOT DISTINCT FROM $n`), the existing `exports` housebook SQL for rows, `safeLocalPath`, the `_csrf` hidden input (`{{csrf}}`) in every Go form so it works without JavaScript (rule 6).
 
-- GET /settings and GET /settings/{account,security,phone,data,technical,help}
-- GET /menu
-- GET /guest-links
-- GET /guide
-- GET /housebook
-- POST /alerts/{alert_id}/dismiss
+**Python source of truth:** `App/app/routes/admin.py` 5228-5260 (housebook_view), 5304-5440 (`_settings_page`, `_settings_group_view`), `App/app/housebook.py` 36-210 (`period_presets`, `HOUSEBOOK_COLUMNS`, `housebook_rows`, `housebook_archived_rows`), `App/app/templates/housebook.html` (216 lines), `settings.html` (514 lines; groups: account 40, security 105, phone 197, data 249 and privacy 303, technical 357, help 478).
 
-**Parity method (same as briefs 1595 and 1580):** a golden script `App/scripts/go_go_settings_menu_pages_golden.py` seeds a throwaway database with made-up rows, renders the real FastAPI app, and writes `testdata/*_golden.json`; the Go test replays the same seed and must match byte for byte (go-first exception 1). Accepted differences are listed in the report, never silently.
+### The split (each fits one Haiku session; each gets its own exact-diff pass and sidecars before it runs)
 
-## 3. Files
+| Brief | Scope | Depends on |
+|---|---|---|
+| 1704a | `GET /housebook` (filters apartment/from/to, rows, archived rows, period presets, retention note; links to the existing CSV and ZIP routes) | none |
+| 1704b | `GET /settings` and `/settings/{account,data,technical,help}`: the `settings_group` shell, tab strip, account, data and privacy, technical (destination, mail, codelists, UbyPort, audit with `?audit=support`), help (guide, legal, version); `SETTINGS_GROUPS` order as in Python | none; the shell is stable for 1704c |
+| 1704c | `/settings/security` and `/settings/phone`: logout-all row, passkeys list (read only; add and remove stay on the 1760 routes), 2FA state, PWA install row, push devices (read only) | 1704b |
+
+Order: 1704a and 1704b are independent; 1704c after 1704b. 1705 (switch) waits for all three.
+
+### What 1764 needs (blocked on 1704c) and must stay stable
+
+The passkey section in 1704c keeps the Python ids and keys exactly: `#settings-passkeys` inside `#settings-security`, the existing `passkeys.*` catalog keys, one page-data struct (`SecurityData`) built in one handler function so 1764 can add `DeviceKind string` there. 1764 edits the template section, not the handler routes. 1704c must not rename these; its report names the struct and file for 1764.
+
+### Overlaps with other open briefs
+
+`go/cmd/ubyhost-web/register_web_*.go` files are new per brief (no shared file). 1705 names all `/settings*` and `/housebook` paths in its collision test. 1764 edits the 1704c security template. The i18n catalogs are per new package (do not edit `go/internal/hostweb/i18n.json` or `properties/i18n.json`).
+
+## 3. Files (index; each sub-brief lists its own)
 
 | Path | Action | What |
 |---|---|---|
-| `go/internal/web/hostweb/settings_menu.go` | create | pages |
-| `go/internal/web/hostweb/settings_menu_test.go` | create | golden parity and route tests |
-| `go/internal/web/hostweb/testdata/settings_menu_golden.json` | create | golden written by the Python script |
-| `go/cmd/ubyhost-web/register_web_hostweb_settings_menu.go` | create | registers the routes |
-| `go/cmd/ubyhost-web/register_web_hostweb_settings_menu_test.go` | create | route registration test |
-| `App/scripts/go_settings_menu_golden.py` | create | golden generator (go-first exception 1) |
-| `App/tests/test_go_settings_menu_golden.py` | create | golden freshness test (go-first exception 1) |
-| `docs/tasks/1704-files/**` | keep | sidecars from the exact-diff pass (do not edit) |
-| `docs/tasks/1704-report.md` | create | the report (§9) |
+| `docs/tasks/1704a-*.md`, `1704b-*.md`, `1704c-*.md` | create (exact-diff pass) | the runnable briefs, sidecars in `docs/tasks/1704{a,b,c}-files/` |
 
-No other file may change. Two open briefs naming the same file in §3 run in the order of the dependency overview in [go-sqlite-final](../plans/go-sqlite-final.md).
+## 4. Steps (template for 1704a/b/c; each sub-brief writes them out as exact diffs)
 
-## 4. Steps
-
-0. Checks (repo root). Anything other than the stated result: STOP (§8). The exact-diff pass fills in the `grep -cF` anchor lines for every file this brief edits and the `ls` line proving the new files do not exist yet.
-1. Copy the sidecars to their repo paths and run `sha256sum -c` on the table in §2: all OK.
-2. Add the golden script and its freshness test; run the script and commit the golden.
-3. Add the handlers, templates and i18n keys (`App/scripts/go_host_i18n.py` writes the catalog); `gofmt -l` prints nothing.
-4. Register the routes in one new `go/cmd/ubyhost-web/register_web_*.go` file (`init()` through `registerRoutes`); the routes stay dormant: nothing is added to `UBYHOST_GO_PATHS`.
-5. Run the commands in §6; write the report.
+0. Checks (repo root): `grep -cF` anchor lines for every file edited, `ls` proving the new files do not exist.
+1. Copy the sidecars to their repo paths, `sha256sum -c` all OK, commit `1704x step 1`.
+2. `gofmt -l`, `go build ./...`, `go vet` on the touched packages: silent.
+3. Go tests with hand-written expected output (owner scoping: a second workspace's rows never appear; signed-out redirect to `/login?next=`; `_csrf` in every form; cs, en, vi titles). Database tests need `UBYHOST_TEST_DATABASE_URL` and are not skipped.
+4. Register the routes in one new `go/cmd/ubyhost-web/register_web_*.go` (`registerRoutes`); dormant, nothing is added to `UBYHOST_GO_PATHS`.
+5. UX gate (rule 10, [workflow](../context/workflow.md#ux-gate)): from `App/` with `UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/shots`, `.venv/bin/python -m pytest tests/test_layout_lint_browser.py -q -x 2>&1 | tail -30`, 0 skipped; open `/tmp/shots/layout-lint/<page>-{390,768,1280}.png` per touched page; write "390: ...; 768: ...; 1280: ..." per page in the report; tick the [design-system checklist](../design/design-system.md). Read the page add-on in `docs/design/pages/` first.
+6. Report.
 
 ## 5. Do not touch
 
-`UBYHOST_GO_PATHS` or any server file; `handlers.go` and shared `i18n.json` (add new catalog files instead); anything under `App/app/` except what §3 lists; filing code (`go/internal/ubyport`, `App/app/reporting.py`) unless §3 lists it.
+`UBYHOST_GO_PATHS` or any server file; `go/internal/hostweb/i18n.json`, `properties/i18n.json` (new packages carry their own catalogs); `App/` (no Python golden, no `App/app/` change); the Go exports, passkey, push and 1760 routes (read only here); filing code.
 
 ## 6. Commands
 
 - `cd go && gofmt -l . | tail -5` prints nothing
-- `cd go && go vet ./internal/web/... ./cmd/... 2>&1 | tail -20` is silent
-- `cd go && go test ./internal/web/... ./cmd/ubyhost-web/... -count=1 2>&1 | tail -30` passes, no test skipped
-- `cd App && .venv/bin/python -m pytest tests/test_go_go_settings_menu_pages_golden.py -q --tb=short -x 2>&1 | tail -30` passes
+- `cd go && go build ./... 2>&1 | tail -30` and `go vet ./internal/web/... ./cmd/... 2>&1 | tail -20` are silent
+- `cd go && go test ./internal/web/<package>/... ./cmd/ubyhost-web/... -count=1 2>&1 | tail -30` passes, none skipped
+- Test-map row "Host pages, templates, CSS": `test_host_*.py` and `test_host_geometry.py` (0 skipped) plus the UX gate above
 - `python3 scripts/context_lint.py 2>&1 | tail -10` is clean
-- Host pages: `test_layout_lint_browser.py` green plus one 390, 768 and 1280 px screenshot per page in the report (rule 10).
 
 ## 7. Acceptance
 
-- Golden parity in cs, en, vi for each page; the security page shows passkeys, phone and 2FA state exactly as Python (read only; changes stay on their own routes).
-- Screenshots at 390/768/1280 for each page.
-- Every route in the list answers on Go in a test with the same status, headers and body as the golden; a signed-out request gets the same redirect as Python.
-- `git log --oneline --grep='^1704 step'` shows one commit per step; `git diff --stat` lists only §3 paths.
+- Each route answers on Go in a test with the expected status, headers and body strings; a signed-out request redirects as Python does.
+- Screenshots at 390/768/1280 per page, described in the report.
+- `git log --oneline --grep='^1704'` shows one commit per step; `git diff --stat` lists only the sub-brief's section 3 paths.
 
 ## 8. Stop and ask
 
