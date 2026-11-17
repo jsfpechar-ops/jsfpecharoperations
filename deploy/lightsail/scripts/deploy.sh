@@ -256,6 +256,17 @@ else
   docker compose build --pull
 fi
 
+if docker compose --profile go config --services | grep -qx 'ubyhost-go'; then
+  # shellcheck disable=SC1091
+  source ./scripts/go-slot.sh
+  # A compose build tags slot-a, not :local. A CI pull already put the new
+  # image on :local; copying an old slot-a over it would roll the deploy back.
+  if [ "${GO_IMAGE_PULLED}" != "1" ]; then
+    go_alias_built_to_local
+  fi
+  go_ensure_slot_images
+fi
+
 if [ "${PG_MODE}" = "1" ]; then
   # PostgreSQL: apply pending goose files with the new image, before the stack
   # starts. A failure exits here, before `up` touches the running stack.
@@ -271,6 +282,8 @@ if [ "${PG_MODE}" = "1" ]; then
         echo "Go image build failed." >&2
         exit 1
       fi
+      go_alias_built_to_local
+      go_ensure_slot_images
     fi
     echo "==> Applying PostgreSQL goose migrations (new Go image)"
     if ! docker compose --profile go run --rm --no-deps -T ubyhost-go \
@@ -311,10 +324,17 @@ if [ "${GO_IMAGE_PULLED}" != "1" ] && [ "${SCHEMA_APPLY}" != "go" ] && docker co
     echo "Go image build failed." >&2
     exit 1
   fi
+  go_alias_built_to_local
+  go_ensure_slot_images
 fi
 
 echo "==> Starting stack"
 docker compose pull caddy
+if docker compose --profile go config --services | grep -qx 'ubyhost-go'; then
+  # shellcheck disable=SC1091
+  source ./scripts/go-slot.sh
+  go_ensure_slot_images
+fi
 docker compose up -d --remove-orphans
 
 # 1830: two-copy deploy of ubyhost-go. The idle slot gets the new image and
@@ -326,6 +346,10 @@ if docker compose --profile go config --services | grep -qx 'ubyhost-go' \
   source ./scripts/go-slot.sh
   LIVE_SLOT="$(go_live_slot)"
   NEW_SLOT="$(go_idle_slot)"
+  # compose up starts every go-profile service, including a stopped idle slot.
+  # Caddy lb_policy first prefers ubyhost-go (slot A), so a restarted A would
+  # take production traffic while B is live. Put the idle slot down first.
+  docker compose --profile go stop "$(go_svc "${NEW_SLOT}")" || true
   echo "==> Starting ubyhost-go slot ${NEW_SLOT} beside slot ${LIVE_SLOT}"
   docker tag ubyhost-go:local "ubyhost-go:slot-${NEW_SLOT}"
   docker compose --profile go up -d --no-build --no-deps --force-recreate "$(go_svc "${NEW_SLOT}")"
