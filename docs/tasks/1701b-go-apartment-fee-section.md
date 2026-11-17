@@ -1,6 +1,6 @@
 # 1701b: Go property page, Stay fee section
 
-Status: review (executor run 2026-11-17 on branch claude/beautiful-archimedes-lxhrit; see docs/tasks/1701b-report.md)
+Status: done — executed and reviewed 2026-11-17 (see 1701b-report.md)
 Depends on: 1701 (done; its files are at the hashes of step 0) | Part of [1701](1701-go-apartment-detail-page.md) | Base commit: current tip of the working branch | Branch: task/1701b-go-apartment-fee-section
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (this brief needs about 14)
 Tier: B (Sonnet wrote the exact-diff pass; the orchestrator reads the diff of the risk-listed files, see the end). **Run it before 1702 and 1703**: it replaces whole files of 1701 that those briefs also extend (step 0 stops on a changed hash; then the orchestrator re-bases the sidecars).
