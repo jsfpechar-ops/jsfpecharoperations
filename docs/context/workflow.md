@@ -74,7 +74,6 @@ Statuses: `todo → in-progress → review → done`, plus `blocked` (with the r
 - Paste the context into the brief. Quote exact code excerpts with the file path. Excerpts are anchors: if one isn't found verbatim, Haiku stops.
 - Give the full code or exact diffs, never "implement X". Name every file. Number every step. One step changes one place in one file.
 - Every step ends with its command, written out, and the expected result.
-- Go ports: parity against a Python golden only when the brief writes filing data; otherwise Go tests with hand-written expected output ([go-first](go-first.md)).
 - Acceptance must be checkable by a command or a visible fact. Tests come from the [test-map](test-map.md), never the full suite. UI work: the browser and geometry tests plus the screenshots.
 - Touch or Safari reports: iPad sizes (820, 1024, 1180) with touch, also in WebKit (`playwright install-deps webkit`, `install webkit`, then recreate the Chromium shim).
 - Haiku can't push to `main`, merge, set secrets, SSH or deploy, and its `gh` is often read-only. The brief says what to hand to the owner, with exact commands.
