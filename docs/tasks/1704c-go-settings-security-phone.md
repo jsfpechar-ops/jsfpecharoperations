@@ -1,6 +1,6 @@
 # 1704c: Go Settings security and phone pages (GET /settings/security, /settings/phone)
 
-Status: todo — exact-diff pass done 2026-11-17
+Status: review
 Depends on: 1704b (done, on this branch: `go/internal/web/settings/`, its stub templates and the `// 1704c:` markers; verified at 1318f4f), 1760 passkey and push routes (registered, read only here) | Base commit: current tip of the working branch | Branch: task/1704c-go-settings-security-phone
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (this brief needs about 16)
 Tier: B (Sonnet wrote the exact-diff pass; the orchestrator reads the diff of the risk-listed files, see the end). Part of [1704](1704-go-settings-menu-pages.md); brief 1764 builds on it.
