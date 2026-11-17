@@ -1,60 +1,62 @@
-# 1841: Back to Stays restores from the Turbo cache
+# 1841: Back to Stays restores from the Turbo cache (Go)
 
-Status: todo (blocked on 1840 merged and open question 1)
+Status: todo (depends on 1840 merged; 1840 depends on 1843, 1842)
 Depends on: 1840 | Base commit: tip after 1840 | Branch: task/1841-stays-turbo-back-cache
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (checkpoint at 60k)
 Tier: B (host UI behaviour; stale-data risk, orchestrator reads the diff)
+Order: 1842, 1843, 1840, 1841.
 
 > **One PR mode.** Commit each step as `1841 step k`. Never push, merge or deploy. Every command ends in `| tail -30`. Anchors quoted from the tip: if one is missing, STOP.
 
-## Open questions (orchestrator answers before `Status: ready`)
+## Open questions (ANSWERED by the owner 2026-11-17: "No python only go, do the recommended")
 
-1. **Go first.** Same as 1840 question 1 (page and base.html are Python-only). Recommended: same one-off exception. Answer: ____
-2. **Scope.** Recommended: Stays list only. A global change is allowed only if Step 1 finds no dependency on no-cache. Answer: ____
+1. **Go first.** ANSWERED: no Python exception; the change lands in the Go layout and the Go Stays template only.
+2. **Scope.** ANSWERED: the Stays list only, not global. Every other page keeps `no-cache`.
 
 ## 1. Objective
 
-Browser back, swipe and backspace to `/reservations` reload and re-render the whole page and lose the scroll position, because `base.html` line 44 sets `<meta name="turbo-cache-control" content="no-cache">` globally. Let Turbo restore Stays from its snapshot cache (instant, scroll kept) without showing stale state.
+Browser back, swipe and backspace to `/reservations` reload and re-render the whole page and lose the scroll position, because the host layout sets `<meta name="turbo-cache-control" content="no-cache">` globally. Let Turbo restore Stays from its snapshot cache (instant, scroll kept) without showing stale state.
 
 ## 2. Context
 
-`App/app/templates/base.html` line 44: Turbo 8.0.13 (`/static/vendor/turbo-8.0.13.js`), `turbo-cache-control` = `no-cache`, `view-transition same-origin`, `turbo-prefetch true`. Turbo sets `history.scrollRestoration = "manual"` and restores scroll only from a cached snapshot (vendor file line ~3713: `cacheControlValue != "no-cache"`). `App/app/static/skeleton.js:114` and `App/app/static/app.js:907` (healInert) and `:1972` have `pageshow` handlers that heal flash and inert state; `turbo:before-cache` / `turbo:load` are the Turbo equivalents. Meta changes made by a page override the layout default (Turbo reads the meta of the page being left).
+`go/internal/hostweb/layout/shell.html` line 46: Turbo 8.0.13 (`/static/vendor/turbo-8.0.13.js`), `turbo-cache-control` = `no-cache`, `view-transition same-origin`, `turbo-prefetch true`. Turbo sets `history.scrollRestoration = "manual"` and restores scroll only from a cached snapshot (vendor file ~line 3713: `cacheControlValue != "no-cache"`). `App/app/static/skeleton.js:114` and `App/app/static/host.js` (find with `grep -n 'pageshow\|healInert' App/app/static/host.js | tail -30`) have `pageshow` handlers that heal flash and inert state; `turbo:before-cache` and `turbo:load` are the Turbo equivalents. The Python `base.html` is not changed: Python no longer serves this page once 1843 is switched on, and every other page keeps its current behaviour.
 
-Risks to name in the PR: a cached snapshot can show flashes, a send-state badge, "Send all ready" count or a stay status that changed after leaving. Mitigation (Step 3): clear transient nodes on `turbo:before-cache` and revalidate in the background.
+Risks to name in the PR: a cached snapshot can show flashes, a send-state badge, the "Send all ready" count or a stay status that changed after leaving. Mitigation (Step 3): clear transient nodes on `turbo:before-cache` and revalidate in the background.
 
 ## 3. Files
 
-- `App/app/templates/base.html` line 44: make the `turbo-cache-control` meta overridable (Step 2).
-- `App/app/templates/reservations.html`: set the page value to `cache` (Step 3).
-- The Stays JS (`App/app/static/app.js`, with `skeleton.js` read-only for its `pageshow` handler): `turbo:before-cache`, `turbo:load` and `pageshow` handlers (Step 3).
-- `App/tests/test_1841_stays_back_cache_browser.py`: new browser test (Step 4).
-- Read-only: `App/app/static/vendor/turbo-8.0.13.js`, `App/tests/test_0766_phone_stays_browser.py` (test setup).
+- `go/internal/hostweb/layout/shell.html` line 46: add a field `TurboCache` on the layout page struct (find it with `grep -rn 'WrapClass' go/internal/hostweb/layout/*.go | head`), default empty meaning `no-cache` (Step 2).
+- `go/internal/web/stays/handlers.go` (from 1843): set `TurboCache: "cache"` on the Stays page (Step 3).
+- `App/app/static/host.js` (static asset loaded by the Go layout line 50): `turbo:before-cache`, `turbo:load`, `pageshow` handlers, scoped to a page that has `[data-stays-more]` or `body[data-page="stays"]` (Step 3). `skeleton.js` read-only.
+- `go/internal/hostweb/layout/testdata/*.html` goldens: must stay unchanged (default is `no-cache`).
+- New `go/internal/web/stays/cache_test.go` and `App/tests/test_1841_stays_back_cache_browser.py` (Step 4).
+- Read-only: `App/app/static/vendor/turbo-8.0.13.js`, `App/tests/test_0766_phone_stays_browser.py`.
 
 ## 4. Steps
 
-1. Dependency scan (read-only). `grep -rn 'turbo-cache-control\|no-cache\|data-turbo-cache\|turbo:before-cache\|turbo:load\|turbo:render\|pageshow' App/app/templates App/app/static/*.js 2>&1 | grep -v vendor | tail -30`. List in the PR every place that assumes a fresh page after Back (flash banners, `inert`, skeleton overlay, forms with CSRF tokens, `data-saved-views`, `initUnsavedDialog` at app.js ~2640). If any item cannot be healed in Step 3, STOP and report: do not change the cache.
-2. Make the meta overridable: in `base.html` line 44 keep `no-cache` as the default but wrap it so a page can set its own: `<meta name="turbo-cache-control" content="{{ turbo_cache_control | default('no-cache') }}">`. Do not touch other attributes of line 44.
-3. In `App/app/templates/reservations.html` pass the value by a `{% set turbo_cache_control = 'cache' %}` placed before `{% extends %}` output is rendered (use the same mechanism other templates use to set `show_nav`; `grep -n 'show_nav' App/app/templates/*.html | tail -30`). In the Stays JS add: on `turbo:before-cache` remove `[data-flash]`/flash banners and the skeleton overlay and reset `aria-busy`; on `turbo:load` and `pageshow` re-run the same heal as app.js:907 and, if the snapshot is older than 60 s (store `Date.now()` on `turbo:load` in a `data-loaded-at` attribute), call `Turbo.visit(location.href, {action:'replace'})` to refresh in the background.
-4. Browser test `App/tests/test_1841_stays_back_cache_browser.py` (setup from `test_0766_phone_stays_browser.py`, 390 px): open Stays, scroll down 600 px, click a stay, `page.go_back()`, assert scroll Y is within 50 px of 600 and no network request for `/reservations` full document was needed within 1 s (or the page has a `data-turbo-preview`-free restore); assert no flash banner and no inert nodes. Second case: change a stay status in another request, go back, wait 2 s, assert the new status shows.
+1. Dependency scan (read-only). `grep -rn 'turbo-cache-control\|data-turbo-cache\|turbo:before-cache\|turbo:load\|turbo:render\|pageshow' go/internal/hostweb App/app/static/*.js 2>&1 | grep -v vendor | tail -30`. List in the PR every place that assumes a fresh page after Back (flash banners, `inert`, skeleton overlay, forms with CSRF tokens, saved views, the unsaved-dialog init). If any item cannot be healed in Step 3, STOP and report: do not change the cache.
+2. In `shell.html` line 46 replace only the content value: `<meta name="turbo-cache-control" content="{{if .TurboCache}}{{.TurboCache}}{{else}}no-cache{{end}}">`. Do not touch other attributes of line 46. Run `cd go && go test ./internal/hostweb/... 2>&1 | tail -30`; goldens must pass unchanged.
+3. In `stays/handlers.go` set `TurboCache: "cache"`. In `host.js` add: on `turbo:before-cache` remove flash banners and the skeleton overlay and reset `aria-busy`; on `turbo:load` and `pageshow` re-run the same heal as the existing `healInert`, and if the snapshot is older than 60 s (store `Date.now()` on `turbo:load` in a `data-loaded-at` attribute) call `Turbo.visit(location.href, {action:'replace'})` to refresh in the background. Bump the `host.js` `?v=` as in 1840.
+4. Tests. `cache_test.go`: Stays HTML contains `content="cache"`; a second host page (e.g. customers) still contains `content="no-cache"`. Browser test `App/tests/test_1841_stays_back_cache_browser.py` (setup from `test_0766_phone_stays_browser.py`, 390 px): open Stays, scroll 600 px, click a stay, `page.go_back()`, assert scroll Y within 50 px of 600 and no flash banner and no inert nodes. Second case: change a stay status in another request, go back, wait 2 s, assert the new status shows.
 
 ## 5. Do not touch
 
-Other pages than Stays (`/reservations`); global Turbo behaviour outside the stated scope (every other page keeps `no-cache`); any new dependency; unrelated tests.
+Any `App/app/*.py` or `App/app/templates/*`; other pages (they keep `no-cache`); the vendor Turbo file; any new dependency; unrelated tests.
 
 ## 6. Commands (test-map rows; 0 skipped)
 
-From `App/`, `2>&1 | tail -30`: `.venv/bin/python -m pytest tests/test_1841_stays_back_cache_browser.py tests/test_0766_phone_stays_browser.py tests/test_0523_stays_list.py tests/test_1840_stays_more_browser.py -q --tb=short -x`; host pages row `tests/test_host_*.py tests/test_host_geometry.py`; `tests/test_design_guardrails_browser.py`; `tests/test_layout_lint_browser.py` green; static row `tests/test_static_versions.py tests/test_wp07_cache_heartbeats.py`. Root: `python3 scripts/context_lint.py 2>&1 | tail -30`.
+From `go/`: `go test ./internal/hostweb/... ./internal/web/stays/... 2>&1 | tail -30`. From `App/`: `.venv/bin/python -m pytest tests/test_1841_stays_back_cache_browser.py tests/test_0766_phone_stays_browser.py tests/test_1840_stays_more_browser.py tests/test_host_geometry.py tests/test_design_guardrails_browser.py tests/test_layout_lint_browser.py tests/test_static_versions.py tests/test_wp07_cache_heartbeats.py -q --tb=short -x 2>&1 | tail -30`. Root: `python3 scripts/context_lint.py 2>&1 | tail -30`.
 
 ## 7. Acceptance
 
-- Back to Stays keeps scroll and is instant; every other page still uses no-cache (grep shows only `reservations.html` sets `cache`).
-- No new copy (rule 9); if a string is unavoidable it is in `host_i18n.py` for en, cs, vi.
+- Back to Stays keeps scroll and is instant; every other page still uses no-cache (`grep -rn 'TurboCache' go | tail -30` shows only the layout and the Stays handler).
+- No new copy (rule 9).
 - PR body: Step 1 list, stale-data note, 390/768/1280 screenshots opened with one line per page (rule 10), design-system checklist ticked, test tails with 0 skipped.
-- Owner steps: none.
+- Owner steps: none beyond the 1843 switch.
 
 ## 8. Stop and ask
 
-Stop at 30 tool calls or 60k tokens, if a step needs a file not named in section 3, or if the open questions above are unanswered.
+Stop at 30 tool calls or 60k tokens, if a step needs a file not named in section 3, or if 1840 is not merged.
 
 ## 9. Report
 
