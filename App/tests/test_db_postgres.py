@@ -351,7 +351,7 @@ def test_pg_schema_cli_reports_and_applies_the_current_schema(pg_runtime, tmp_pa
         timeout=180,
     )
     assert apply.returncode == 0, apply.stderr[-1000:]
-    assert "version=45" in apply.stdout and "tables=71" in apply.stdout
+    assert "version=45" in apply.stdout and "tables=73" in apply.stdout
 
     wrong = subprocess.run(
         [*base, "check", "--expect-database", "definitely-not-this-database"],
