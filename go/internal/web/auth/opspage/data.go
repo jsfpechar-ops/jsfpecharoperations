@@ -455,6 +455,98 @@ func loadAlerts(ctx context.Context, pool *pgxpool.Pool, now time.Time, o *Overv
 	return rows.Err()
 }
 
+// AlertDetail is one open alert on the drill-down page.
+type AlertDetail struct {
+	ID                   int64
+	Kind, Level, Message string
+	Property             string
+	ReservationID        *int64
+	StayFound            bool
+	DateFrom, DateTo     string
+	GuestName            string
+	AgeMinutes           *int64
+}
+
+// AlertDetails is the result of LoadAlertDetails.
+type AlertDetails struct {
+	Rows       []AlertDetail
+	Total      int64            // open alerts matching the filter, before the cap
+	AllCount   int64            // open alerts of every kind
+	KindCounts map[string]int64 // open alerts per kind, for the filter row
+}
+
+// alertDetailLimit caps the drill-down table.
+const alertDetailLimit = 200
+
+// LoadAlertDetails lists open alerts of one kind and level, oldest first.
+// An empty kind or level means no filter. Every value is a SQL parameter.
+func LoadAlertDetails(ctx context.Context, pool *pgxpool.Pool, now time.Time, kind, level string) (AlertDetails, error) {
+	out := AlertDetails{KindCounts: map[string]int64{}}
+	if err := loadAlertKindCounts(ctx, pool, &out); err != nil {
+		return out, err
+	}
+	where := "al.resolved_at IS NULL"
+	var args []any
+	if kind != "" {
+		args = append(args, kind)
+		where += " AND al.kind = $" + strconv.Itoa(len(args))
+	}
+	if level != "" {
+		args = append(args, level)
+		where += " AND al.level = $" + strconv.Itoa(len(args))
+	}
+	if err := pool.QueryRow(ctx, `SELECT COUNT(*) FROM alert al WHERE `+where, args...).Scan(&out.Total); err != nil {
+		return out, err
+	}
+	list := append(append([]any{}, args...), alertDetailLimit)
+	rows, err := pool.Query(ctx, `SELECT al.id, al.kind, al.level, COALESCE(al.message, ''),
+       COALESCE(fa.internal_name, ra.internal_name, ''), al.reservation_id, r.id IS NOT NULL,
+       COALESCE(r.date_from, ''), COALESCE(r.date_to, ''),
+       COALESCE((SELECT g.surname || ' ' || g.first_name FROM guest g
+                 WHERE g.reservation_id = r.id AND g.is_lead = 1 ORDER BY g.id LIMIT 1), ''),
+       al.created_at
+  FROM alert al
+  LEFT JOIN apartment fa ON fa.id = al.apartment_id
+  LEFT JOIN reservation r ON r.id = al.reservation_id
+  LEFT JOIN apartment ra ON ra.id = r.apartment_id
+ WHERE `+where+`
+ ORDER BY al.created_at ASC, al.id ASC LIMIT $`+strconv.Itoa(len(list)), list...)
+	if err != nil {
+		return out, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var d AlertDetail
+		var created *string
+		if err := rows.Scan(&d.ID, &d.Kind, &d.Level, &d.Message, &d.Property, &d.ReservationID,
+			&d.StayFound, &d.DateFrom, &d.DateTo, &d.GuestName, &created); err != nil {
+			return out, err
+		}
+		d.AgeMinutes = ageMinutes(created, now)
+		out.Rows = append(out.Rows, d)
+	}
+	return out, rows.Err()
+}
+
+// loadAlertKindCounts fills out.KindCounts and out.AllCount.
+func loadAlertKindCounts(ctx context.Context, pool *pgxpool.Pool, out *AlertDetails) error {
+	rows, err := pool.Query(ctx, `SELECT kind, COUNT(*) FROM alert WHERE resolved_at IS NULL GROUP BY kind`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var k string
+		var n int64
+		if err := rows.Scan(&k, &n); err != nil {
+			return err
+		}
+		out.KindCounts[k] = n
+		out.AllCount += n
+	}
+	return rows.Err()
+}
+
 func loadTTLock(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string, now time.Time, o *Overview) error {
 	u := now.UTC()
 	t := TTLock{Limit: envInt(getenv, "UBYHOST_TTLOCK_MONTHLY_CALLS", defaultTTLockMonthly),

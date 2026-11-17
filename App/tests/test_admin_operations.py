@@ -247,3 +247,55 @@ def test_a_never_checked_feed_is_listed_before_stale_ones():
     })
     rows = admin_ops.feeds_needing_attention(limit=1)["rows"]
     assert [row["feed_id"] for row in rows] == [never]  # fails on PostgreSQL with the old ORDER BY
+
+
+ALERT_PREFIX = "B1800-"
+
+
+def _drill_alert(kind, level, message, created, reservation_id=None):
+    db.execute(
+        "INSERT INTO alert (level, kind, message, reservation_id, created_at) VALUES (?, ?, ?, ?, ?)",
+        (level, kind, ALERT_PREFIX + message, reservation_id, created),
+    )
+
+
+@pytest.fixture
+def _drill_rows():
+    db.execute("DELETE FROM alert WHERE message LIKE ?", (ALERT_PREFIX + "%",))
+    yield
+    db.execute("DELETE FROM alert WHERE message LIKE ?", (ALERT_PREFIX + "%",))
+
+
+def test_drill_down_lists_oldest_first_with_filters_and_removed_stay(_drill_rows):
+    _drill_alert("deadline_at_risk", "critical", "newer", "2026-11-02T10:00:00+00:00")
+    _drill_alert("deadline_at_risk", "critical", "older", "2026-11-01T10:00:00+00:00")
+    _drill_alert("feed_error", "warning", "other", "2026-11-01T09:00:00+00:00")
+    _drill_alert("deadline_at_risk", "critical", "gone", "2026-11-03T10:00:00+00:00", reservation_id=987654)
+    now = datetime(2026, 11, 16, 12, 0, tzinfo=timezone.utc)
+
+    got = admin_ops.open_alert_details(kind="deadline_at_risk", level="critical", now=now)
+    ours = [r for r in got["rows"] if r["message"].startswith(ALERT_PREFIX)]
+    assert [r["message"] for r in ours] == [ALERT_PREFIX + "older", ALERT_PREFIX + "newer", ALERT_PREFIX + "gone"]
+    assert not any(r["kind"] == "feed_error" for r in got["rows"])
+    older, gone = ours[0], ours[2]
+    assert older["has_stay"] is False and older["stay_removed"] is False
+    assert gone["has_stay"] is True and gone["stay_removed"] is True
+    assert older["age_minutes"] == 15 * 24 * 60 + 2 * 60  # 1 Nov 10:00 to 16 Nov 12:00
+
+    other = admin_ops.open_alert_details(level="warning", now=now)
+    assert any(r["message"] == ALERT_PREFIX + "other" for r in other["rows"])
+    assert not any(r["message"].startswith(ALERT_PREFIX + "newer") for r in other["rows"])
+    kinds = {item["kind"]: item["count"] for item in other["kinds"]}
+    assert kinds.get("deadline_at_risk", 0) >= 3
+
+
+def test_drill_down_is_admin_only(_drill_rows):
+    _account(PREFIX + "drill-host", "host")
+    host = _login(PREFIX + "drill-host")
+    assert host.get("/admin/operations/alerts").status_code == 403
+
+    _account(PREFIX + "drill-admin", "admin")
+    admin = _login(PREFIX + "drill-admin")
+    resp = admin.get("/admin/operations/alerts?kind=no_such_kind&level=critical")
+    assert resp.status_code == 200
+    assert "Nothing here." in resp.text or "Nic tu není." in resp.text

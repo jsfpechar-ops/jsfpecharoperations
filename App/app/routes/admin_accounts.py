@@ -926,6 +926,19 @@ def incidents_admin(request: Request):
     return RedirectResponse("/admin/operations#incidents", status_code=303)
 
 
+@router.get("/admin/operations/alerts")
+def operations_alerts_admin(request: Request, kind: str = "", level: str = ""):
+    """Drill-down of the open-alerts table on the Operations page (brief 1800)."""
+    _account, guard = _require_admin(request)
+    if guard:
+        return guard
+    return render(request, "admin_operations_alerts.html", {
+        "alerts": admin_ops.open_alert_details(kind=kind, level=level),
+        "kind": kind,
+        "level": level,
+    })
+
+
 @router.get("/admin/operations")
 def operations_admin(request: Request):
     """Read-only cross-workspace health: filings, calendars, jobs, mail (WP10).
