@@ -18,15 +18,14 @@ Settled from the code (nothing for the owner to decide):
 - `/legal` is rendered by Go (`go/internal/web/public/`, template `templates/legal.tmpl`, brief 1270). Python (`App/app/templates/legal.html`) still serves the same path in production until the path switch, so it gets the same panel; this is port plumbing ([go-first](../context/go-first.md) item 1: the parity test `App/tests/test_go_public_legal.py` regenerates the Go golden pages from the Python page and fails when the two differ). No owner switch is needed: the credit shows on both stacks.
 - The Go page is a `page` struct plus text/template. Every printed value must go through the escaping methods (`TestEveryActionEscapes`); the credit is printed with `{{.E .Attribution}}`. `Attribution` is set only for `/legal`, from the one constant `ruian.Attribution`.
 - The four legal golden pages (`legal-cs`, `legal-en`, `legal-posthog`, `legal-no-dic-email`) are normalized one-line HTML; each gets the same inserted panel by hand-written text (no Python golden script is run).
-- Python carries the credit as a literal in `legal.html`; `App/tests/test_ruian_attribution.py` pins it to the Go constant by reading `go/internal/ruian/attribution.go`, so the text cannot drift.
+- Python carries the credit as a literal in `legal.html`. No new Python test (Go-only tests for this brief): the text cannot drift because the existing parity test `App/tests/test_go_public_legal.py` compares the Go golden pages with the Python page, and the Go test `legal_attribution_test.go` pins `ruian.Attribution` in the goldens.
 - Privacy (rule 2): no personal data, no new request, no cookie. Dependency (rule 4): none (`ruian` is in the same Go module).
 
-Sidecars (two new test files), copied unchanged in step 1:
+Sidecar (one new Go test file), copied unchanged in step 1:
 
 | sha256 | file | action | lines |
 |---|---|---|---|
 | `2a2edd2a9dda7d992feeebe8d230dd56586acc5e7c23792cced0ac0e3f18ac46` | `go/internal/web/public/legal_attribution_test.go` | create | 34 |
-| `a44994e501f35bf623e508dacf5cc8b91a55bdfff1b59ca5f7cd993e356be1e2` | `App/tests/test_ruian_attribution.py` | create | 12 |
 
 (The hashes are of the sidecar files `docs/tasks/1700e-files/<repo path>.txt`; after step 1 the copies must have the same hashes.)
 
@@ -39,7 +38,6 @@ Sidecars (two new test files), copied unchanged in step 1:
 | `go/internal/web/public/testdata/legal-cs.html`, `legal-en.html`, `legal-posthog.html`, `legal-no-dic-email.html` | edit | the same panel, by `sed` |
 | `go/internal/web/public/legal_attribution_test.go` | create | credit once on `/legal`, none elsewhere |
 | `App/app/templates/legal.html` | edit | the same panel (Python still serves `/legal`) |
-| `App/tests/test_ruian_attribution.py` | create | Python text equals the Go constant |
 | `docs/tasks/1700e-files/**` | keep | sidecars (do not edit) |
 | `docs/tasks/1700e-report.md` | create | the report (§9) |
 
@@ -55,18 +53,17 @@ No other file may change.
    - `grep -cF "<h2 style=\"margin-top:0\">{{ t('legal.disclaimer_title') }}</h2>" App/app/templates/legal.html | tail -1` prints `1`.
    - `for f in cs en posthog no-dic-email; do grep -o '<div class="panel quiet"><h2 style="margin-top:0">' go/internal/web/public/testdata/legal-$f.html | wc -l; done | tr '\n' ' ' | tail -1` prints `1 1 1 1`.
    - `grep -c 'ČÚZK' go/internal/web/public/testdata/legal-cs.html App/app/templates/legal.html | tail -2` prints `0` for both.
-   - `find docs/tasks/1700e-files -name '*.txt' | wc -l | tail -1` prints `2`.
+   - `find docs/tasks/1700e-files -name '*.txt' | wc -l | tail -1` prints `1`.
 
-1. Copy the sidecars and check them (one call, repo root). Never retype or edit them:
+1. Copy the sidecar and check it (one call, repo root). Never retype or edit them:
 
    ```bash
    cd docs/tasks/1700e-files && for f in $(find . -name '*.txt' | sed 's|^\./||; s|\.txt$||'); do mkdir -p "../../../$(dirname "$f")" && cp "$f.txt" "../../../$f"; done; cd ../../.. && sha256sum -c - <<'EOF2' 2>&1 | tail -5
    2a2edd2a9dda7d992feeebe8d230dd56586acc5e7c23792cced0ac0e3f18ac46  go/internal/web/public/legal_attribution_test.go
-   a44994e501f35bf623e508dacf5cc8b91a55bdfff1b59ca5f7cd993e356be1e2  App/tests/test_ruian_attribution.py
    EOF2
    ```
 
-   Both lines must end with `: OK`. Do not commit yet (the Go test fails until step 2 to 4 are done).
+   The line must end with `: OK`. Do not commit yet (the Go test fails until step 2 to 4 are done).
 
 2. Go page data. In `go/internal/web/public/page.go` make three edits (use the Edit tool, each `old` text occurs once):
 
@@ -143,7 +140,7 @@ No other file may change.
    <div class="panel quiet">
      <h2 style="margin-top:0">{{ t('legal.disclaimer_title') }}</h2>
    ```
-   Commit: `git add App/app/templates/legal.html App/tests/test_ruian_attribution.py && git commit -m "1700e step 5" | tail -3`.
+   Commit: `git add App/app/templates/legal.html && git commit -m "1700e step 5" | tail -3`.
 
 6. Go tests, format, vet (one call, repo root; the commit of step 4 comes after this passes):
 
@@ -153,19 +150,19 @@ No other file may change.
 
    Expected: gofmt, build and vet print nothing; the last command prints only `ok  	github.com/.../go/internal/web/public` (no FAIL, no SKIP). The count line is informational (about 40).
 
-7. Python tests (from `App/`; needs `App/.venv`):
+7. Python tests (existing files only, no new test; they run in CI; locally only if `App/.venv` exists):
 
    ```bash
-   cd App && .venv/bin/python -m pytest tests/test_ruian_attribution.py tests/test_go_public_legal.py tests/test_legal_contents.py tests/test_legal_registry.py tests/test_public_chrome.py -q --tb=short -x 2>&1 | tail -30
+   cd App && .venv/bin/python -m pytest tests/test_go_public_legal.py tests/test_legal_contents.py tests/test_legal_registry.py tests/test_public_chrome.py -q --tb=short -x 2>&1 | tail -30
    ```
 
-   Expected: all pass. `test_go_public_legal.py` is the check that the hand-written golden edit equals what Python renders; if it names a stale file, STOP (§8). No `App/.venv`: write "CI only (no App/.venv)" in the report and still finish.
+   Expected: all pass. `test_go_public_legal.py` is the check that the hand-written golden edit equals what Python renders; if it names a stale file, STOP (§8). No `App/.venv`: write "Python: CI" in the report and still finish.
 
 8. Screenshot (rule 7), one 390 px page: in `go/`, run `PUBLIC_LEGAL_SHOTS_ADDR=127.0.0.1:18700 go test ./internal/web/public/ -run TestServeForScreenshots -count=1 > /dev/null 2>&1 &`, take a 390 px wide screenshot of `http://127.0.0.1:18700/legal?lang=cs` with the Playwright set-up of the repo (`App/.venv`), open it and check: the credit is one muted line in its own quiet panel between the DPA panel and the Disclaimer panel, nothing overflows sideways. Stop the server (`kill %1`). Put one sentence on what you saw in the report; no screenshot, no Playwright: say so in the report and finish (the owner item, §9).
 
 ## 5. Do not touch
 
-`go/internal/ruian/`, `go/internal/web/public/catalog.json` and the other testdata (generated by `App/scripts/public_legal_golden.py`; do not run it or edit the catalog), the other templates, `UBYHOST_GO_PATHS`, Caddy and compose files, every Python file except the two named, `go/internal/web/properties/` and `go/cmd/ubyhost-web/` (brief 1701 owns them), `ruian_suggest.js`.
+`go/internal/ruian/`, `go/internal/web/public/catalog.json` and the other testdata (generated by `App/scripts/public_legal_golden.py`; do not run it or edit the catalog), the other templates, `UBYHOST_GO_PATHS`, Caddy and compose files, every Python file except `App/app/templates/legal.html`, `go/internal/web/properties/` and `go/cmd/ubyhost-web/` (brief 1701 owns them), `ruian_suggest.js`.
 
 ## 6. Commands
 
@@ -173,9 +170,9 @@ Exactly the commands of §4 (steps 6, 7, 8). Test-map row "Public pages, legal, 
 
 ## 7. Acceptance
 
-- [ ] `sha256sum -c` of step 1 printed `: OK` for both files.
+- [ ] `sha256sum -c` of step 1 printed `: OK`.
 - [ ] `gofmt -l`, `go build ./...` and `go vet` of step 6 printed nothing; the Go test run printed `ok` only, 0 FAIL, 0 SKIP.
-- [ ] Step 7: pass lines, or "CI only (no App/.venv)" in the report.
+- [ ] Step 7: pass lines, or "Python: CI" in the report.
 - [ ] `grep -c 'Adresní data: ČÚZK, RÚIAN (CC BY 4.0)' go/internal/web/public/testdata/legal-cs.html App/app/templates/legal.html | tail -2` prints `1` for both, and the string appears in no other file under `go/internal/web/public/` except `legal_attribution_test.go` and the other three legal goldens.
 - [ ] `git log --oneline --grep='^1700e step' | tail -5` lists the step commits and `git show --stat --format=%s $(git log --format=%h --grep='^1700e step') | tail -30` lists only the paths of §3.
 - [ ] UI: public page changed; one 390 px screenshot described in the report (or "no browser, owner item"). The host-page UX gate (rule 10) does not apply: `/legal` is a public page.
@@ -197,7 +194,7 @@ Write `docs/tasks/1700e-report.md` (400 tokens at most) and set this brief's `St
 
 ## Risk list (for the reviewer)
 
-`legal.tmpl` and `page.go` (the credit is printed with `{{.E .Attribution}}`, set only for `/legal`, from `ruian.Attribution`); the Python panel is byte-identical in text to the Go constant (pinned by `test_ruian_attribution.py`). No query, no form, no owner scoping, no `_csrf` is involved. Copy: no heading, so no sentence repeats what the line says (rule 9).
+`legal.tmpl` and `page.go` (the credit is printed with `{{.E .Attribution}}`, set only for `/legal`, from `ruian.Attribution`); the Python panel text equals the Go constant (kept in line by `test_go_public_legal.py` and `legal_attribution_test.go`, no new Python test). No query, no form, no owner scoping, no `_csrf` is involved. Copy: no heading, so no sentence repeats what the line says (rule 9).
 
 ## Owner steps
 
