@@ -1,30 +1,154 @@
 # 1702e2: Go property settings 3e2: the wizard step save (setup_step) and its refusals
 
-Status: todo — scoped (split out of 1702e by its exact-diff pass, 2026-11-17). Needs its own exact-diff pass (sidecars in `docs/tasks/1702e2-files/`, step-0 hashes, sha256 table) **after 1702d2 is done**: it changes the same `apartment_update.go` / `apartment_update_test.go`.
-Decision 2026-11-17 (owner/orchestrator, rule 11): the wizard saves are ported to Go.
-Depends on: 1702d2 (its last step committed) and 1702e1 | Base commit: current tip of the working branch | Branch: task/1702e2-go-apartment-save-wizard-step
-Executor: Haiku 5.5 | Tier: A
+Status: ready (exact-diff pass 2026-11-17: sidecars applied to a clean worktree of 063229f (1702e1 done), gofmt/build/vet clean, Go tests green on PostgreSQL 16, 0 skips; wizard catalog regenerated with a stubbed `fastapi` import; no Python file changes)
+Decision 2026-11-17 (owner/orchestrator, rule 11): the wizard saves are ported to Go. Owner decision: Go-only tests with hand-written expected output, no new Python test file, no golden script change.
+Depends on: 1702d2 and 1702e1 (both done) | Base commit: current tip of the working branch | Branch: task/1702e2-go-apartment-save-wizard-step
+Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (this brief needs about 10)
+Tier: A (fresh review of the full diff before merge, see the risk list at the end)
 
-> **One big PR mode.** Commit each step as `1702e2 step k`; never branch, push or open a PR.
+> **One big PR mode.** Work on the current branch. After each step that changes a file, commit with the message `1702e2 step k` (`k` is the step number) and `git add` only the paths the step names (never `-A`, never `.`). Never create a branch, never push, never open a PR. Acceptance checks use `git log --oneline --grep='^1702e2 step'`.
 
 ## 1. Objective
 
-Replace the seam `"a wizard step (brief 1702e)"` in `apartmentUpdateNotPorted` (`go/internal/web/properties/apartment_update.go`, about line 217) with the `setup_step` branches of `_save_apartment_form` (`App/app/routes/admin.py` 2791-3046) as Python behaves today. Only `property` and `police` save anything: `automation`, `stay_fee`, `door_lock` and `try_it` are `RETIRED_STEPS` (0884) and answer `303` to `/apartments/{id}/setup/done` before anything else (admin.py 2801-2805); an unknown `setup_step` is an ordinary settings save (`_wizard_setup_step` 1685).
+Replace the seam `"a wizard step (brief 1702e)"` in `apartmentUpdateNotPorted` with the `setup_step` branches of `_save_apartment_form` (`App/app/routes/admin.py` 2791-3046) for the two steps whose forms post to `POST /apartments/{id}`: `property` and `police`. A retired step (`automation`, `stay_fee`, `door_lock`, `try_it`, 0884) answers `303` to `/apartments/{id}/setup/done` before anything else (admin.py 2801-2805). Refusals draw the step page again through `onboarding.RenderSetupPage` (1702e1). A save that passed every check and goes back into the wizard (`_setup_after_save`) stays `notPorted`, answered **before anything is written** (1702e3).
 
-## 2. Context (found by the 1702e exact-diff pass; not built yet)
+## 2. Context
 
-- Payload: `_wizard_step_payload` (admin.py 1690-1719): property: the `STEP_FIELDS["property"]` text fields, `normalise_zip`, `city_en = guest_city(addr_obec)`, `_form_int` for both entity ids, `default_purpose` in `PURPOSE_CODES` else `"10"`; police: the five police fields, `uby_mark.upper()`, plus `_automation_timing_values` when `automation_mode` is posted. Reuse the Go twins already in `properties` (grep `apartmentPayload`, `normaliseZip`, `GuestCity`, `PurposeCodes` in `go/` first) and `onboarding.StepFields`.
-- Hours (2817-2884): `owns_shared_hours` is true for `property`; `_property_hour_changes`; on the property step a blank posted select is `flash.error.times_required`; a bad hour `flash.error.door_code_hours`. The refusal is `onboarding.RenderSetupPage(..., "property", SetupPage{Status: 400, Notice: <flash text>, Draft: <_property_draft keys in form + posted hours>})` (1702e1). The `door_lock` branches (`_lock_section_refusal`, `edits_lock`) are unreachable for a wizard post (retired) and are not ported for `setup_step`.
-- Operator (2892-2913): property step: `_property_operator_error` -> `_refuse_apartment_save` (1702c2's `refuseApartmentSave`), whose Python version calls `refuse_setup_save` first (admin.py 2333) when `setup_step` is a step: so the Go refusal must route to `RenderSetupPage` with `OperatorError` and the `refuse_setup_save` draft (onboarding_wizard.py 237-271: owned text fields in form, `legal_entity_id` blank keeps the stored one, `default_purpose`, police `automation_mode`/`submit_after_hours`) instead of the settings page. Police step with a posted `legal_entity_id`: the probe and `refuse_setup_save(operator_error=...)` (2902-2913).
-- Address (2928-2936): property step: `_create_address_errors` on the merged row -> the same `refuseApartmentSave` route -> `RenderSetupPage` with `AddressErrors` (reuse `apartmentAddressErrors`, already in the host's language).
-- Police (2938-2958): `automation_choice_error` (Go: grep `AutomationChoiceError` / the 1602 timing check in `onboarding/wizard_post.go`) -> `OperatorError`; `_wizard_police_format_errors` (2627-2643: `validation.ValidateApartment` on the probe with the posted or stored decrypted password, only the four fields, only non-empty ones, first issue per field, Python dict order) -> `PoliceErrors` (messages through the same `validation_message` translation `apartmentAddressErrors` uses); a typed password is encrypted (`secure`, as 1702d1); `credentials_changed` (3006-3013) -> `privacy.ResolveAlert("ubyport_auth_failed:{id}")`. A typed password on the police step also triggers 1702d2's connection test (admin.py 3488/3614: `wizard = setup_step == "police"`): check how 1702d2 left `apartmentUpdateNotPorted` and keep its rule.
-- Skipped for `setup_step`: `active`, the permalink PIN, the fee account (`setup_step in ("", "stay_fee")`), the address-only pops (`not setup_step`).
-- Writes: one `UPDATE apartment` through the existing owner-scoped save of 1702c1, `apartment_updated` audit, `follow_name` on a changed name, `reconcile_no_pay_way_alert`: all already in Go; reuse.
-- After the write: 1702e3 (`_setup_after_save`). Until 1702e3, a successful wizard save answers the existing seam for a `return_to` inside the wizard (`"a return_to inside the setup wizard (brief 1702e)"`, rename to 1702e3).
-- CSRF: the handler is the existing `POST /apartments/{id}` behind `enter`; nothing new.
-- Tests: extend `TestApartmentUpdateMatchesPython` only if `App/scripts/go_apartment_update_golden.py` already records wizard cases; else Go-only cases with hand-written expected output in `apartment_update_test.go` (retired step -> done; times_required; bad hour; operator missing; address error; police format error; mark upper-cased and saved; foreign apartment). No new Python test file.
-- Size: likely one Haiku session; the exact-diff pass may split police (format errors, password, alert) from property.
+Rules (AGENTS.md): 1 filing correctness: the police step writes the police filing fields (`uby_*`, password) through the existing owner-scoped `writeApartmentSave`; no filing code changes; 2 privacy: no new field, no outbound request (a wizard save never runs the 1702d2 connection test, as Python: `letter_listed and not setup_step`); 4 no new dependency; 5 every read and write owner-scoped (`detailLoad`, `liveEntity`, `writeApartmentSave`, `wizardContext`); 6/9 no new copy: one existing key (`flash.error.no_such_controller`) added to the wizard catalog, generated by `App/scripts/go_host_i18n.py`; 7/10 UX gate: **pending until 1705** (route dormant, not in `UBYHOST_GO_PATHS`; with no operator error the property page is byte-identical, the 1702e1 tests check that); 8 dormant; 11 Go. CSRF: unchanged, the handler is the existing `POST /apartments/{id}` behind `enter`.
+
+**All code is pre-written, compiled and tested.** Sidecars: `docs/tasks/1702e2-files/<repo path>.txt`. Step 1 copies them; never retype or edit them. Five files are replaced (step 0 checks their current hashes, the state after 1702e1), three are created.
+
+| sha256 after | file | action | lines |
+|---|---|---|---|
+| `b6b4f55ec48e91eb55cf01df272cf9194e81acd4a73cc1350b377e0f4c9cc77d` | `go/internal/web/properties/apartment_update.go` | replace | 887 |
+| `b1713929dca66f69d4f764833e63fd84fb23dc0beeecaf920d0b3485a6c90e04` | `go/internal/web/properties/apartment_update_test.go` | replace | 583 |
+| `438c60a4ad1818ffa8b4cf4e5462b16aafcdc56cb9816b76e1c644019be1751c` | `go/internal/web/onboarding/wizardtemplates/property.tmpl` | replace | 116 |
+| `9165618182a5b3942e174410e37e67d5a206dae8e128b871e0be937dcbdd7e13` | `go/internal/web/onboarding/wizardtext/i18n.json` | replace | 1486 |
+| `b40c1c8e1be9ddb6a9e518da8473bf3be851e4d16d607998c5ccb6c2579484a0` | `go/internal/web/onboarding/wizardtext/i18n_keys.txt` | replace | 37 |
+| `89c1d9c3b852bac1877b515e200a2aa6bdb6aad37bd4f331c9aa83a8b08a4673` | `go/internal/web/properties/apartment_update_wizard.go` | create | 277 |
+| `0ad5ec0da6cda0e4fba14ec850a95417031ebdad6ff0475ab34a7e4ea59c62ee` | `go/internal/web/properties/apartment_update_wizard_test.go` | create | 188 |
+| `f866719f5888ecd8ec81176052edaa4d0db32a67406f7ed2ee219a0650568a1c` | `go/internal/web/onboarding/wizard_save_export.go` | create | 24 |
+
+**What changed (for the reviewer; the executor reads no Go file).**
+
+- `apartment_update.go`: `apartmentUpdateNotPorted` now passes `setup_step` `property`/`police`; any other non-empty `setup_step` (`calendar`, `guest_link`, a value that is not a step) and a save **without** `setup_step` whose `return_to` is in the wizard stay `notPorted` (renamed to 1702e3; the latter keeps `refuse_fee_save`'s stay_fee wizard page out of Go). New `apartmentWizardReturn` (the old prefix test). `apartmentUpdate`: a retired step answers `onboarding.WizardURL(id, "done")` right after the owner-scoped load (before `notPorted`, as Python); a step goes to `apartmentWizardSave` after `newApartmentPayload`. Two helpers extracted from the inline code, used by both saves (no behaviour change for the settings save, `TestApartmentUpdateMatchesPython` still green): `withPassword` (db.encrypt_secret) and `afterApartmentWrite` (alert resolve, `follow_name`, `apartment_updated` audit, `reconcile_no_pay_way_alert`). `apartmentSaved` skips the police-letter connection test when `setup_step` is posted (admin.py 2588).
+- `apartment_update_wizard.go` (new): `apartmentWizardSave` in Python's order: property: `_wizard_step_payload` columns picked from `newApartmentPayload` by `onboarding.StepFields` (normalised zip, `guest_city`, `_form_int` ids, purpose default), hours (`apartmentPropertyHours`: bad hour `flash.error.door_code_hours`, blank `flash.error.times_required` (0210), a stored TTLock lock with an empty time `door_code_hours`) refused with `Notice` and the `_property_draft` + posted hours draft; `operator_refresh`; `apartmentOperatorError` (reused); controller dropped/cleared as the settings save; `apartmentAddressErrors` (reused) on the merged address. Police: the five fields, automation columns when posted, operator probe when `legal_entity_id` is posted (blank keeps the stored operator; the stored controller), `applyPoliceDefaults` with no e-mail (the police payload has no operator), `onboarding.AutomationChoiceError`, `_wizard_police_format_errors` (`apartmentPoliceErrors`: `detailIssues` on a probe copy, four fields, non-empty only, first per field, `validationi18n.Localize`), password encrypted, `credentials_changed`. Every refusal: `RenderSetupPage` 400 with `refuse_setup_save`'s draft (`apartmentSetupDraft`). Then the 1702e3 seam, then `writeApartmentSave` (no fee: `apartmentPayload{}`), `afterApartmentWrite` (police: Python compares `""` with the stored name, so `follow_name` runs with the stored name), `apartmentSaved`.
+- `wizard_save_export.go` (new, onboarding): `AutomationChoiceError` (exports the existing `wizardAutomationChoiceError`, no copy) and `(*wizardView).PropertyOperatorError` (`op_error` of `_property_operator.html`: only `apartment.form.operator.*` keys).
+- `property.tmpl`: the `op_error` lines 1702e1 left out of the operator picker (`_property_operator.html` 6, 18-19, 27, 33-34): `aria-describedby`/`aria-invalid` on the select, `role="alert"` on the add-first line, `<p class="err-text" id="operator-message" role="alert">`. Without an operator error the output is unchanged.
+- `wizardtext/i18n_keys.txt` + `i18n.json`: `flash.error.no_such_controller` (cs/en/vi, existing copy), shown by `police.tmpl` for a refused controller.
+- `apartment_update_test.go`: `TestApartmentUpdateNotPorted`: the `setup_step=property` case becomes `calendar`, `guest_link`, `calendar_sync`, and a property/police save back into the wizard (gofmt realigned the map). New `apartment_update_wizard_test.go` `TestApartmentUpdateWizard` (hand-written, golden seed): four retired steps -> `/setup/done` with nothing written; foreign property -> `/apartments?err=`; property: blank hour, hour 24, TTLock with an empty stored time, operator refresh, no operator (stored operator stays selected), another host's controller (not shown on the property step), broken address; police: another host's operator, another host's controller, timing hours 49, format errors in Czech (draft escaped); police saved (mark upper-cased, password encrypted, alert resolved, automation kept, slug kept, no connection test, one audit row); property saved (only step columns, controller cleared, hours, purpose `zz` -> `10`, slug follows the name).
+- Accepted differences (put in the report): `calendar`/`guest_link` `setup_step` and a non-step `setup_step` stay `notPorted` (no wizard form posts them here); a non-ASCII digit or 64-bit overflow in an id or hour stays `notPorted` as for the settings save; until 1702e3 every real wizard post that passes the checks answers `notPorted` (all wizard forms post a wizard `return_to`), so only the refusals and a crafted non-wizard `return_to` reach Go behaviour.
 
 ## 3. Files
 
-Fixed by the exact-diff pass (expected: `go/internal/web/properties/apartment_update.go`, `apartment_update_test.go`, maybe `apartment_create.go` for a shared helper).
+| Path | Action |
+|---|---|
+| the eight files of the table above | replace (5) / create (3) |
+| `docs/tasks/1702e2-files/**` | keep (sidecars, committed with this brief; do not edit) |
+| `docs/tasks/1702e2-report.md` | create (§9) |
+
+No other file may change.
+
+## 4. Steps
+
+0. Checks (repo root). Anything else than the stated result: STOP (§8).
+   - `git branch --show-current | tail -1` prints the branch you were started on (not `main`).
+   - `git log --oneline --grep='^1702e1 step 7' | wc -l | tail -1` prints `1`.
+   - `find docs/tasks/1702e2-files -name '*.txt' | wc -l | tail -1` prints `8`.
+   - `ls go/internal/web/properties/apartment_update_wizard.go go/internal/web/properties/apartment_update_wizard_test.go go/internal/web/onboarding/wizard_save_export.go 2>&1 | grep -c 'No such file' | tail -1` prints `3`.
+   - The five replaced files are exactly the ones the sidecars were built on (one call):
+
+     ```bash
+     sha256sum -c - <<'EOF0' 2>&1 | tail -6
+     574c38c956d42edcfa7b3777e263134b618dfc78e95e26b238b036c0ddb5b597  go/internal/web/properties/apartment_update.go
+     aabbcfaf3f347877eeaf47992782c1f8742ae394dec382d2539869e312f173bf  go/internal/web/properties/apartment_update_test.go
+     08a54ac76dd5641f88f0e383449a3dcf10fab61082edadefecf8b3fdcceec7be  go/internal/web/onboarding/wizardtemplates/property.tmpl
+     e658d10ee04940707fbcc75fba380c1b1541f513bd5ba0ca23fd199fda40b243  go/internal/web/onboarding/wizardtext/i18n.json
+     4216aac0f8b1c6363c9047fa3f5eaf3d6e289fd4d4f8d2941df17ab84d8dc409  go/internal/web/onboarding/wizardtext/i18n_keys.txt
+     EOF0
+     ```
+
+     Five lines ending `: OK`. A `FAILED` line: STOP, the orchestrator re-bases the sidecars.
+
+1. Copy the sidecars and check them (one call, repo root). Never retype or edit them:
+
+   ```bash
+   cd docs/tasks/1702e2-files && for f in $(find . -name '*.txt' | sed 's|^\./||; s|\.txt$||'); do cp "$f.txt" "../../../$f"; done; cd ../../.. && sha256sum -c - <<'EOF1' 2>&1 | tail -9
+   b6b4f55ec48e91eb55cf01df272cf9194e81acd4a73cc1350b377e0f4c9cc77d  go/internal/web/properties/apartment_update.go
+   b1713929dca66f69d4f764833e63fd84fb23dc0beeecaf920d0b3485a6c90e04  go/internal/web/properties/apartment_update_test.go
+   438c60a4ad1818ffa8b4cf4e5462b16aafcdc56cb9816b76e1c644019be1751c  go/internal/web/onboarding/wizardtemplates/property.tmpl
+   9165618182a5b3942e174410e37e67d5a206dae8e128b871e0be937dcbdd7e13  go/internal/web/onboarding/wizardtext/i18n.json
+   b40c1c8e1be9ddb6a9e518da8473bf3be851e4d16d607998c5ccb6c2579484a0  go/internal/web/onboarding/wizardtext/i18n_keys.txt
+   89c1d9c3b852bac1877b515e200a2aa6bdb6aad37bd4f331c9aa83a8b08a4673  go/internal/web/properties/apartment_update_wizard.go
+   0ad5ec0da6cda0e4fba14ec850a95417031ebdad6ff0475ab34a7e4ea59c62ee  go/internal/web/properties/apartment_update_wizard_test.go
+   f866719f5888ecd8ec81176052edaa4d0db32a67406f7ed2ee219a0650568a1c  go/internal/web/onboarding/wizard_save_export.go
+   EOF1
+   ```
+
+   Eight lines ending `: OK`. Then commit (one call):
+
+   ```bash
+   git add go/internal/web/properties/apartment_update.go go/internal/web/properties/apartment_update_test.go go/internal/web/onboarding/wizardtemplates/property.tmpl go/internal/web/onboarding/wizardtext/i18n.json go/internal/web/onboarding/wizardtext/i18n_keys.txt go/internal/web/properties/apartment_update_wizard.go go/internal/web/properties/apartment_update_wizard_test.go go/internal/web/onboarding/wizard_save_export.go && git commit -m "1702e2 step 1" 2>&1 | tail -2
+   ```
+
+2. Format, build and vet (one call, repo root):
+
+   ```bash
+   cd go && gofmt -l internal/web/properties internal/web/onboarding cmd/ubyhost-web 2>&1 | tail -5; go build ./... 2>&1 | tail -30; go vet ./internal/web/properties/... ./internal/web/onboarding/... ./cmd/ubyhost-web/... 2>&1 | tail -30
+   ```
+
+   Expected: no output at all. Anything printed: STOP (§8).
+
+3. Python checks (repo root). No Python file changes; only the wizard catalog must be fresh. If `App/.venv/bin/python` does not exist, write "Python checks: CI only (no App/.venv)" in the report and go to step 4. Else (one call): `cd App && .venv/bin/python scripts/go_host_i18n.py --check 2>&1 | tail -3; echo "i18n exit $?"`. Expected: `i18n exit 0` and no file named. Anything else: STOP (§8).
+
+4. PostgreSQL. If `UBYHOST_TEST_DATABASE_URL` is already set to a server you may create databases on, use it and skip this step. Else start a throwaway one (as root; `pg_ctl` refuses root, so it runs as `postgres`; skip the start if `su postgres -c '/usr/lib/postgresql/16/bin/pg_ctl -D /var/tmp/pg55482/data status' | head -1` says `server is running`):
+
+   ```bash
+   mkdir -p /var/tmp/pg55482 && chown postgres /var/tmp/pg55482 && su postgres -c '/usr/lib/postgresql/16/bin/initdb -D /var/tmp/pg55482/data -A trust >/dev/null && /usr/lib/postgresql/16/bin/pg_ctl -D /var/tmp/pg55482/data -o "-p 55482 -k /var/tmp/pg55482" -l /var/tmp/pg55482/log start' 2>&1 | tail -3
+   ```
+
+   Expected: `server started`. No PostgreSQL 16 binaries at that path: write "CI only" in the report and STOP before step 5.
+
+5. Go tests on PostgreSQL (one call, repo root):
+
+   ```bash
+   cd go && export UBYHOST_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:55482/postgres && go test ./internal/web/properties/... ./internal/web/onboarding/... ./cmd/ubyhost-web/... -count=1 2>&1 | tail -30; go test ./internal/web/properties/ -count=1 -v -run '^TestApartmentUpdate(Wizard|NotPorted|MatchesPython|LetterTest)$' 2>&1 | grep -E '^(--- |ok|FAIL)' | tail -8; go test ./internal/web/properties/... ./internal/web/onboarding/... -count=1 -v 2>&1 | grep -c -- '--- SKIP' | tail -1
+   ```
+
+   Expected: three `ok` lines; then `--- PASS` for `TestApartmentUpdateLetterTest`, `TestApartmentUpdateMatchesPython`, `TestApartmentUpdateNotPorted`, `TestApartmentUpdateWizard`, and one `ok`; then `0`. A failure: run once more; a second failure: STOP (§8). Then stop the server if you started it: `su postgres -c '/usr/lib/postgresql/16/bin/pg_ctl -D /var/tmp/pg55482/data stop' 2>&1 | tail -2 && rm -rf /var/tmp/pg55482`.
+
+6. UX gate: **pending until 1705.** The route is dormant; without an operator error the property step page is unchanged (the 1702e1 tests in step 5 check it). Write in the report: "UX: the wizard refusal lines (notice, operator, police and address errors) only appear through the dormant POST /apartments/{id}; the 390/768/1280 screenshots of the refused property and police steps are taken in 1705". Nothing to commit.
+
+7. Write the report (§9), set `Status: review` in this file, and commit (one call): `git add docs/tasks/1702e2-report.md docs/tasks/1702e2-go-apartment-save-wizard-step.md && git commit -m "1702e2 step 7" 2>&1 | tail -2`.
+
+## 5. Do not touch
+
+`UBYHOST_GO_PATHS` or any server file; `App/`; every other file under `go/` (no other catalog, no filing code in `go/internal/ubyport`, no other wizard template); never regenerate a golden JSON.
+
+## 6. Commands
+
+Exactly the commands of §4 (steps 2, 3 and 5). Never the full suite, never `go test ./...`. From the repo root, last: `python3 scripts/context_lint.py 2>&1 | grep -v '^WARN' | tail -5` (no finding about this brief's files).
+
+## 7. Acceptance
+
+- [ ] Step 0: `1`, `8`, `3`, five `: OK`; step 1: eight `: OK`.
+- [ ] Step 2 printed nothing; step 3 `i18n exit 0` or "CI only".
+- [ ] Step 5: three `ok` lines, the four named tests `--- PASS`, SKIP count `0`.
+- [ ] `git log --oneline --grep='^1702e2 step' | tail -5` lists steps 1 and 7; `git show --stat --format=%s $(git log --format=%h --grep='^1702e2 step') | tail -20` lists only the paths of §3.
+- [ ] Nothing in `App/` or `UBYHOST_GO_PATHS` changed.
+
+## 8. Stop and ask
+
+An anchor, hash or count of steps 0-1 not as stated; a test fails twice (fix nothing in the sidecars: report); 25 tool calls or about 50k tokens (report as `blocked`); a file outside §3 needs a change; push, merge, secrets, SSH or deploy.
+
+## 9. Report
+
+`docs/tasks/1702e2-report.md` (500 tokens at most): the files (`git show --stat` as in §7); each command with its last 5 lines and the SKIP count; §7 ticked; deviations; the accepted differences of §2; "UX pending until 1705"; "1702e3 is next".
+
+## Risk list (Tier A review)
+
+- Write path and scoping: `apartment_update_wizard.go` 151-277 (`apartmentWizardSave`): the 1702e3 seam (258-261) must stay before `writeApartmentSave` (262, owner-scoped `AND owner_user_id`); refusals never write. Operator checks 186-220 reuse `apartmentOperatorError`/`liveEntity` (workspace-scoped); the police probe (200-213) keeps the stored operator for a blank post.
+- Columns: `apartment_update_wizard.go` 162-180 (`pickColumns` by `onboarding.StepFields`; a property post never writes `uby_*`, notes or the password, the test posts them and checks). Police format errors 124-148 (`detailIssues` on a copy, `detailDraftField` only for text columns).
+- Refactor of the settings save: `apartment_update.go` 223-253 (`apartmentUpdateNotPorted`, `apartmentWizardReturn`), 323-341 (retired redirect, dispatch), 526-563 (`withPassword`, `afterApartmentWrite`), 743 (no letter test for a wizard save).
+- Template: `property.tmpl` 74-93 (`op_error`; values through `html/template`, the key from Go only); `wizard_save_export.go` 14-24.
+- CSRF: no new form or route; `enter` checks it before the load.
