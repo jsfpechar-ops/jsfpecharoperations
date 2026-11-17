@@ -1,0 +1,4 @@
+{{- /* Brief 1704c replaces this file with the phone group of settings.html
+     (the PWA install row and the push devices). Until then the group draws
+     nothing and its route is not registered. */ -}}
+{{define "settings.group.phone"}}{{end}}
