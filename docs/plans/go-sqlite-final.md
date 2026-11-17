@@ -15,7 +15,7 @@ Numbers: 1474-1480 are the SQLite briefs reserved in the plan; 1700-1790 are new
 ## 3. Ordering and dependencies
 
 Phase 0 (start now, no dependencies): 1790 (completeness gate, so every later brief shrinks a visible list), 1474 and 1475 (SQLite schema authority), 1750, 1775, 1780, 1781 (docs only; 1554 is a later step, not a precondition), 1706, 1700 (after 1520-1524 on the branch). 1773 belongs to Phase 4 (it waits for three dry-run mornings and wave 10 steps 1-3).
-Phase 1 (chains, each starts after the previous merges and main is green): 1700 -> 1701 -> 1702 -> 1703 -> 1704 -> 1705 (property settings); 1706 -> 1707; 1770; 1775 -> 1776 (needs 1429); 1760 -> 1761 (login; 1761 also needs 1501-1510 waves).
+Phase 1 (chains, each starts after the previous merges and main is green): 1700 -> 1701 -> 1702 -> 1702b -> 1703 -> 1704 -> 1705 (property settings); 1706 -> 1707; 1770; 1775 -> 1776 (needs 1429); 1760 -> 1761 (login; 1761 also needs 1501-1510 waves).
 Phase 2: 1730 -> 1731 -> 1732; 1733 -> 1734 -> 1735 -> 1737 (stays and host guest editing); 1751 dashboard after 1730; 1710, 1711 -> 1712 booking, then 1714 after 1713.
 Phase 3 (HIGH RISK, owner sign-off per switch): 1740 -> 1742 (one week soak) -> 1741. Only after F2 has soaked: guest registration 1720 -> 1721 -> 1722 -> 1723 -> 1724 -> 1725 -> 1726 -> 1728 (1720 can be built earlier because 1713 needs its language port, but its path stays off).
 Phase 4: 1771 (after 1707 and the TTLock acceptance test), 1772 (Block S, after 1770, 1771, 1773), 1782 (everything to Go), then 1479 (delete `App/` and the SQLite runtime).
@@ -46,8 +46,9 @@ Already live: W1, W1b, W6, W7, W8 first set. Not yet: W2 exports (due one day af
 |---|---|---|---|
 | [1700](../tasks/1700-go-apartment-new-create.md) | Go property settings 1: new property form, RUIAN suggest, create | B | 1525 is replaced by 1704 (not a precondition), 1527 not required; 1520-1524 on the branch |
 | [1701](../tasks/1701-go-apartment-detail-page.md) | Go property settings 2: property detail page (GET /apartments/{id}) | B | 1700 |
-| [1702](../tasks/1702-go-apartment-update-door-codes.md) | Go property settings 3: update property and door-code settings (POST) | A | 1701 |
-| [1703](../tasks/1703-go-apartment-small-posts.md) | Go property settings 4: PIN, link, timing, archive, feeds, sync, police letter, codelists | B | 1702 |
+| [1702](../tasks/1702-go-apartment-update-door-codes.md) | Go property settings 3: door-code switch (POST) | A | 1701 |
+| [1702b](../tasks/1702b-go-apartment-update.md) | Go property settings 3b: update property (POST), fee error lines | A | 1702 |
+| [1703](../tasks/1703-go-apartment-small-posts.md) | Go property settings 4: PIN, link, timing, archive, feeds, sync, police letter, codelists | B | 1702b |
 | [1704](../tasks/1704-go-settings-menu-pages.md) | Go property settings 5: settings, menu, guest links, guide and housebook pages | B | 1380/1381 host layout (done) |
 | [1705](../tasks/1705-go-property-settings-switch.md) | Go property settings 6: completeness test, path collisions, rollout wave P | B | 1700-1704 and 1525/1527 decisions |
 | [1706](../tasks/1706-go-ttlock-client.md) | Go smart locks 1: TTLock client in Go | A | none (TTLock plan section 11/12 for live use) |
