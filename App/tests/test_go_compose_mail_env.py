@@ -41,3 +41,18 @@ def test_no_ses_value_in_compose():
     for ln in _go_env_block():
         if "AWS_" in ln or "MAIL_FROM" in ln or "SES_REGION" in ln:
             assert ln.rstrip().endswith(":"), "pass the key bare; never write a value in the repo"
+
+
+JOB_KEYS = (
+    "UBYHOST_STAY_FEE_GUEST_PAY",
+    "UBYHOST_APIFY_TOKEN",
+    "UBYHOST_APIFY_MONTHLY_RUNS",
+    "UBYHOST_APIFY_TIMEOUT",
+    "UBYHOST_AI_MONTHLY_USD_GUIDE_IMPORT",
+)
+
+
+def test_go_service_receives_stay_fee_and_guide_import_keys():
+    lines = _go_env_block()
+    for key in JOB_KEYS:
+        assert f"      {key}:" in lines, f"{key} must be a bare key under ubyhost-go"

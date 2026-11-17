@@ -132,9 +132,9 @@
     {% for row in ops.alerts.rows %}
       <tr>
         {% set kind_key = 'ops.alert_kind.' ~ row.kind %}{% set kind_label = t(kind_key) %}
-        <td data-label="{{ t('ops.col.kind') }}">{% if kind_label != kind_key %}{{ kind_label }} {% endif %}<code class="ui-mono ui-sub">{{ row.kind }}</code></td>
+        <td data-label="{{ t('ops.col.kind') }}"><a href="/admin/operations/alerts?kind={{ row.kind }}&amp;level={{ row.level }}">{% if kind_label != kind_key %}{{ kind_label }} {% endif %}<code class="ui-mono ui-sub">{{ row.kind }}</code></a></td>
         <td data-label="{{ t('ops.col.level') }}">{{ row.level }}</td>
-        <td data-label="{{ t('ops.col.count') }}">{{ row.count }}</td>
+        <td data-label="{{ t('ops.col.count') }}"><a href="/admin/operations/alerts?kind={{ row.kind }}&amp;level={{ row.level }}">{{ row.count }}</a></td>
         <td data-label="{{ t('ops.col.oldest') }}">{{ age(row.age_minutes) }}</td>
       </tr>
     {% endfor %}

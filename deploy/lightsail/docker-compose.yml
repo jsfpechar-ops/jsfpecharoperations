@@ -199,7 +199,7 @@ services:
     build:
       context: ../..
       dockerfile: go/Dockerfile
-    image: ubyhost-go:local
+    image: ubyhost-go:slot-a
     restart: unless-stopped
     stop_grace_period: 15s
     profiles: ["go"]
@@ -217,6 +217,7 @@ services:
       UBYHOST_AI_FEATURES:
       UBYHOST_AI_KEY_DAILY_USD_HAVEL:
       UBYHOST_AI_KEY_DAILY_USD_LEON:
+      UBYHOST_AI_MONTHLY_USD_GUIDE_IMPORT:
       UBYHOST_AI_MONTHLY_USD_HAVEL:
       UBYHOST_AI_MONTHLY_USD_LEON:
       UBYHOST_AI_PRICE_CACHE_READ:
@@ -226,6 +227,9 @@ services:
       UBYHOST_AI_PROVIDER:
       UBYHOST_AI_TEST_EMAILS:
       UBYHOST_ANTHROPIC_API_KEY:
+      UBYHOST_APIFY_MONTHLY_RUNS:
+      UBYHOST_APIFY_TIMEOUT:
+      UBYHOST_APIFY_TOKEN:
       UBYHOST_APP_BASE_URL:
       UBYHOST_AWS_ACCESS_KEY_ID:
       UBYHOST_AWS_SECRET_ACCESS_KEY:
@@ -271,6 +275,7 @@ services:
       UBYHOST_SIGNUP_ENABLED:
       UBYHOST_SIGNUP_NOTIFY_EMAIL:
       UBYHOST_SOAP_WSA_HEADER:
+      UBYHOST_STAY_FEE_GUEST_PAY:
       UBYHOST_STRIPE_MONTHLY_API_CALLS:
       UBYHOST_STRIPE_SECRET_KEY:
       UBYHOST_SUBMIT_SWEEP_MINUTES:
@@ -314,6 +319,14 @@ services:
         condition: service_healthy
     networks:
       - web
+
+  # 1830: second slot of ubyhost-go. deploy.sh starts the idle slot on the new
+  # image, waits for healthy, then stops the old one. Never built here.
+  ubyhost-go-b:
+    extends:
+      service: ubyhost-go
+    image: ubyhost-go:slot-b
+    profiles: ["go"]
 
   # Step 0: the mock UbyPort for the staging server only. Started only when
   # .env sets COMPOSE_PROFILES=staging; production never runs it. The image

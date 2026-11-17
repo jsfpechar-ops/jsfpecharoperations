@@ -41,13 +41,13 @@ Append-only.
 - 2026-11-10 [guest] Guest form: B now, then C (owner).
 - 2026-11-10 [guest] Under-15s skip the signature; an adult on the booking signs, ticks a role ("parent or guardian" / "adult responsible for the child on this stay"). A child with no adult is filed "no signature required" (owner).
 - 2026-11-10 [guest] Titles: cs "Registrace hosta", es "Ficha de huésped", fr "Fiche voyageur" (owner).
-- 2026-11-10 [head-count] Lower count with a stay fee: show new fee, "new bill e-mailed", confirm. Lead change: "Check your changes" confirm. Host digest: changed field names (not values), stay link; changes only. Small Go change allowed. Early door-code risk accepted (owner).
+- 2026-11-10 [head-count] Lower count with a stay fee: show new fee, "new bill e-mailed", confirm. Lead change: "Check your changes" confirm. Host digest: changed field names (not values), stay link; changes only. Small Go change ok. Early door-code risk accepted (owner).
 - 2026-11-10 [workflow] Plan: project file plans/head-count-change.md (not in repo); each complete plan gets a Fable review before building (owner).
 - 2026-11-11 [police] 1100: no tick, values in boxes; parser reads password+facility, never stored (owner; reverses 1097, 1085).
 - 2026-11-10 [demo] Demo seed covers current features; mock-only, cleared by Clear demo (owner, 1092)
 - 2026-11-12 [billing] 1137: trial_pending->paused only via operator_pause().
 - 2026-11-12 [filing] 1138: claim fails closed; no retry.
-- 2026-11-12 [workflow] Orchestrator model by brief risk tier (A Opus thread+brief, Fable reviews; B Opus thread, Sonnet brief; C Sonnet); Haiku executes; threads parallel, no shared files; unsure = higher | owner | [workflow](workflow.md#roles-and-models)
+- 2026-11-12 [workflow] Orchestrator model by brief risk tier (A Opus thread+brief, own review, no Fable 11-17; B Opus thread, Sonnet brief; C Sonnet); Haiku executes; threads parallel, no shared files; unsure = higher | owner | [workflow](workflow.md#roles-and-models)
 - 11-13 [workflow] 1199: state columns need TRANSITIONS+pin test or EXEMPT; test_sm_registry.py (owner)
 - 2026-11-12 [filing] 1148: cancel waits on `running` <30 min, else cancels + alert.
 - 2026-11-12 [filing] 1154: move waits on any `running` batch.
@@ -68,4 +68,4 @@ Append-only.
 - 2026-11-15 [ai] Havel and Leon on Mistral Small, 0.05 USD monthly caps | owner
 - 2026-11-15 [legal] Register lists Mistral AI and Anthropic (conditional); no "EU only"/"not stored" claim without ZDR or EU endpoint | 1792
 - 2026-11-15 [ai] Shared Havel/Leon budget, abuse caps; Havel no-go settings; nameless lookups; host mail in host language: [plan](../plans/ai-payments-hardening.md) | owner
-- 2026-11-17 [product] Hide Payments; autopilot files, host liable: [plan](../plans/autopilot-agentic.md) | owner
+- 2026-11-17 [product] Hide Payments; autopilot, host liable: [plan](../plans/autopilot-agentic.md) | owner

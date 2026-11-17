@@ -10,6 +10,8 @@ Written 2026-11-15, revised the same night: autonomous mode on Josef's order (no
 
 **Update 2026-11-16 evening (step Q auto-rolled back; Q2, S and D added).** Q ran and rolled itself back because `ubyport_submission_failed` for apartment 7 appeared after `submit` moved to Go. Josef and the coordinator then showed that the same UbyPort SOAP fault (`Chyba běhu programu / Odpověď neobsahuje záznamy o chybách`) also happens on **Python** sends for apartment 7, including before `submit` moved to Go, while apartment 6 files fine on Python (submissions 29 and 30). So the fault is not caused by Go. Its root cause is still **unknown** (a UbyPort support ticket is drafted). **What is NOT proven:** Go `submit` against the real UbyPort has never filed successfully. Every Go filing seen so far was a mock test or apartment 7's fault. Step Q2 below re-runs Q with a narrow tolerance for exactly that known fault, and still rolls back on anything new. Step D is a read-only decommission checklist. Nothing destructive is added.
 
+**Update 2026-11-17 (Josef: finish it, no more waiting; step Q3).** After S, the four kinds still on Python (`photo_sweep`, `stay_fee_mail`, `billing`, `guide_import`) move to Go in step Q3, one kind per edit. Josef's decision: `stay_fee_mail` and `billing` are no longer held back. What was checked in the repo: all four have a Go handler (`register_job_photo_sweep.go`, `register_job_stay_fee_mail.go`, `register_job_billing.go`, `register_job_guide_import.go`) with goldens against the Python output; the Python worker skips every kind in `UBYHOST_GO_JOB_KINDS` (`App/app/jobqueue.py`), so one kind never runs in both; billing and the stay-fee sealing are written to be run twice without a second invoice or filing. **Two gaps found:** `ubyhost-go` in `docker-compose.yml` did not pass `UBYHOST_STAY_FEE_GUEST_PAY`, `UBYHOST_APIFY_TOKEN`, `UBYHOST_APIFY_MONTHLY_RUNS`, `UBYHOST_APIFY_TIMEOUT` or `UBYHOST_AI_MONTHLY_USD_GUIDE_IMPORT`, so Go would see guest-pay as off and guide imports as off. The PR that adds those five bare keys must be deployed before Q3c and Q3d (the step checks the compose file; without it those two are skipped, the other two still run). **Honest limit:** `billing` runs daily at 06:00 and `stay_fee_mail` at 07:00 Prague time, so their first run on Go happens unattended hours after the step; the 10-minute soak cannot prove them. Both are marked UNVERIFIED with Josef's morning check.
+
 **Why the scheduler switch (S) is conditional.** `UBYHOST_SCHEDULER=go` makes Go enqueue all 15 kinds and Python enqueue none, and Python refuses the switch unless all 15 are in `UBYHOST_JOB_QUEUE_KINDS` (brief 1451, `go_scheduler_problem()`). That includes `door_codes` (step DOOR) and `mail` (step MAIL). The parity suite compared only the names and intervals of the other kinds, not a run on a shared queue, so step S changes only `UBYHOST_SCHEDULER`, only when all 15 are on, and rolls back by removing that one line.
 
 **The 24 h waits are waived (Josef, 2026-11-15: "waive it, I want it all done today").** That covers G1 (24 h after W5f), W9c to W9g (24 h between paths), W10-2 (24 h after step 1) and W10-3 (24 h after W10-2). What replaces them: a 10-minute soak after every step, the per-step verify, auto-rollback, and a rollback test on every W9 path. The one-week "Python ran cleanly" rule for Havel and Leon (W8b) is also taken as Josef's call and waived; the executor lists it in the report. Cost of waiving: a bug that shows only after a day (a nightly job, a monthly total) will not be seen before the next step goes live. That is Josef's decision, and the SQLite/Python rollback stays open until 2026-12-15.
@@ -123,7 +125,7 @@ GUARDRAILS (every step)
    try a different fix.
 
 
-STEPS, in order: R1, G1, W8b, W9a to W9g, W10-2, W10-3, DOOR, MAIL, Q, Q2, S, D, M1. Domain: ubyhost.com (use https://ubyhost.com in every curl). The state file already holds the older ids; write the new ones in the same format.
+STEPS, in order: R1, G1, W8b, W9a to W9g, W10-2, W10-3, DOOR, MAIL, Q, Q2, S, Q3 (Q3a photo_sweep, Q3b guide_import, Q3c billing, Q3d stay_fee_mail), D, M1. Domain: ubyhost.com (use https://ubyhost.com in every curl). The state file already holds the older ids; write the new ones in the same format.
 
 R1  AUTO  Read-only health record, as in the first session: docker compose ps (service, state, restarts);
     docker stats --no-stream for ubyhost-go; df -h / ; the switch names (UBYHOST_GO_PATHS entry count and paths,
@@ -244,7 +246,7 @@ Q   AUTO  Complete the queue list (Josef 2026-11-16: finish the scheduler switch
     of the 15 (expected: submit, photo_sweep, stay_fee_mail, billing, guide_import; comma list, existing kinds kept,
     never reordered). In UBYHOST_GO_JOB_KINDS add ONLY `submit` (it was on Go before MAIL; it is added to both lists
     together, never to the Go list alone). Do not add photo_sweep, stay_fee_mail, billing or guide_import to the Go
-    list: they stay on Python (stay_fee_mail's mail branch and the retention purge are Josef's decisions). Then docker
+    list in Q: they move later in step Q3 (the retention purge stays Josef's decision). Then docker
     compose up -d --no-deps ubyhost-go worker (names from docker compose ps), wait 60 s.
     Checks: the queue list has all 15 names exactly once (count with the grep -c -x -E line of runbook I2, must print
     15); submit once in both lists; no service restarting or unhealthy; ubyhost-go logs since the edit have 0 panics,
@@ -327,14 +329,50 @@ S   AUTO  Scheduler switch UBYHOST_SCHEDULER=go (brief 1451). Python refuses it,
     "Background job 'job queue' failed" (you cannot resolve it; no database). Honest limit: the parity suite never ran Go and Python
     on one shared queue; list this in the report.
 
+Q3  AUTO  Last four job kinds to Go (Josef 2026-11-17: "finish it"). Runs after S, before D. One kind per edit, in this order:
+    Q3a photo_sweep, Q3b guide_import, Q3c billing, Q3d stay_fee_mail.
+    Preconditions for all four (names only; any failure: skip all of Q3, write "skipped (<reason>)"):
+      - S is "kept" or "skipped"; Q or Q2 is "kept" and the queue list has all 15 names (grep -c -x -E line of runbook I2 prints 15);
+      - ubyhost-go, worker and ubyhost healthy, no service restarting;
+      - Prague time (date) is NOT between 03:00 and 07:30 (billing 06:00, stay_fee_mail 07:00 run then). Outside the window go on; inside it, stop and report "continue after 07:30";
+      - for each kind: it is in the queue list and not yet in UBYHOST_GO_JOB_KINDS (already there: "nothing to do", state "kept").
+    Why this is safe: the Python worker leaves every kind in UBYHOST_GO_JOB_KINDS to Go, so a kind never runs in both. During the edit
+    the worker is recreated FIRST (it stops running the kind), then ubyhost-go (it starts); the rollback is the reverse (ubyhost-go
+    first, then worker) so there is never a moment with both running it.
+    Common edit (ONE per kind): save the whole UBYHOST_GO_JOB_KINDS line with grep (no -n); append `,<kind>` at the end of the
+    comma list (existing kinds kept, never reordered; the kind appears once); then
+    docker compose up -d --no-deps worker, wait 30 s, docker compose up -d --no-deps ubyhost-go, wait 60 s. T0 is taken before the edit.
+    Common checks, at 60 s and at the end of a 10-minute soak: ubyhost-go and worker healthy and not restarting; ubyhost-go logs since T0 have 0 panics
+    and at most 3 level=error lines; worker logs have no "unknown job id" and no "must also be in UBYHOST_JOB_QUEUE_KINDS"; the Go list holds the
+    kind exactly once and the queue list still has 15; caddy shows no 5xx since T0. Then write the state line "Q3x | date -Is | kept | <kind>".
+    Common AUTO-ROLLBACK on any failed check: put the saved line back, recreate ubyhost-go FIRST, wait 30 s, then worker, mark "rolled-back",
+    print the failing check and one log line (no secrets), and CONTINUE with the next kind (kinds are independent).
+    Q3a photo_sweep. Needs nothing new. Extra read-only command allowed only here: docker compose exec -T ubyhost-go sh -c 'test -w /data && echo writable || echo NOT-writable'
+    (NOT-writable: skip Q3a). It deletes stale passport photos, orphan guide photos, old payloads and drafts, and unverified signups exactly as Python does every
+    12 h; deleted files do not come back on rollback. Restarting ubyhost-go makes the scheduler run photo_sweep about 20 s later, so positive proof is expected
+    in the soak: docker compose logs --since "$T0" ubyhost-go | grep -E 'job run|photo sweep' must show job=photo_sweep ok=1 (quote it). ok=0 or a photo sweep error line: FAIL. No line after 10 minutes: wait 10 more once, then UNVERIFIED.
+    Q3b guide_import. Precondition: grep -c '^      UBYHOST_APIFY_TOKEN:' docker-compose.yml is at least 1 (0: skip Q3b, report "compose PR not deployed").
+    Print only "set" or "unset" for UBYHOST_APIFY_TOKEN in .env (unset: imports are off on Python and Go alike; the move still goes ahead).
+    Runs hourly, so the first Go run may come after the soak: quote a job=guide_import line if one appears, else mark UNVERIFIED (first run within 60 min).
+    FAIL: any ok=0 line for guide_import, or a log line naming an authentication or key error.
+    Q3c billing. No compose change needed. Print UBYHOST_BILLING_ENABLED (on/off, not a secret). If it is off the Go job does nothing, as Python does.
+    First Go run is the next 06:00 Prague: mark "kept (UNVERIFIED until 06:00)". The soak can only prove that Go starts clean.
+    Q3d stay_fee_mail. Precondition: grep -c '^      UBYHOST_STAY_FEE_GUEST_PAY:' docker-compose.yml is at least 1 (0: skip Q3d, report "compose PR not deployed";
+    Go would read guest-pay as off). Print UBYHOST_STAY_FEE_GUEST_PAY (on or off; Josef decided on; never edit it). First Go run is the next 07:00 Prague:
+    mark "kept (UNVERIFIED until 07:00)". Sealing a period only happens 2 to 15 days after a period ends (next: about 2 December for November), so on most days the run mails
+    nothing except filing reports of the last 3 days.
+    Josef's morning check (not yours): after 07:10 Prague, run
+      docker compose logs --since 12h ubyhost-go | grep 'job run' | grep -E 'job=(billing|stay_fee_mail|photo_sweep|guide_import)'
+    Each of the four must show ok=1. Any ok=0: tell the AI "rollback Q3 <kind>" and it does the common rollback for that kind. Also open the Alerts page: no job_failed alert.
+    Q3 report lines: for each kind, state, the quoted job-run line (or UNVERIFIED and when it is due), and the Python-left list is then only retention's purge.
+
 D   READ-ONLY  Decommission checklist (Josef 2026-11-16 evening). Runs after S, before M1. Changes NOTHING: no .env edit,
     no restart, no state-file line except one "D | <date -Is> | checked" line. Print the answers for the report.
     Extra read-only commands allowed only for D: test -f /var/run/reboot-required && echo yes || echo no ; date.
     D1  Python no longer enqueues: if S is "kept", worker logs since S show no line that enqueues a job (read the
         wording from docker compose logs --since "$T0" worker | tail -30) and no "UBYHOST_SCHEDULER=go is ignored";
         ubyhost-go logs show enqueued rows. If S is skipped or rolled back, write "Python still enqueues" (expected then).
-    D2  What is left on Python: print (a) the job kinds NOT in UBYHOST_GO_JOB_KINDS (the other of the 15; expected after Q2:
-        photo_sweep, stay_fee_mail, billing, guide_import, and submit if Q2 rolled back), (b) UBYHOST_GO_PATHS entries
+    D2  What is left on Python: print (a) the job kinds NOT in UBYHOST_GO_JOB_KINDS (the other of the 15; expected after Q3: none, or the Q3 kinds that were skipped or rolled back, and submit if Q2 rolled back), (b) UBYHOST_GO_PATHS entries
         count, and the paths of the "Left out on purpose" list near the top that are still absent, (c) retention: Go dry-run
         only, purge is Josef's decision, (d) the Python worker and ubyhost containers that still run.
     D3  SQLite rollback window ends 2026-12-15 (Josef's decision, PR 1029). Print today's date from date and the days
@@ -377,7 +415,7 @@ M1  Mistral Small key, Josef pastes it himself (Josef's order 2026-11-15). The o
     Rollback: restore the key line to empty and the provider line to its old value (saved in step 2), recreate
     the services. The key never goes into the state file, the report, any repo file or the PR.
 
-NOT YOURS (tell Josef, do nothing): UBYHOST_DOOR_CODES_LIVE and guest-code lifecycle tests, retention apply, stay_fee_mail; apt upgrades
+NOT YOURS (tell Josef, do nothing): UBYHOST_DOOR_CODES_LIVE and guest-code lifecycle tests, retention apply; apt upgrades
 and reboot; S3/IAM and lifecycle; browser checks; Cloudflare rules; /demo; /settings/purge-expired;
 /stay-fees/*; the UBYHOST_STAY_FEE_GUEST_PAY value; anything about SQLite; PR 1033 (login button wording); the Mistral code switch; the AI model, key and provider variables.
 
@@ -407,6 +445,22 @@ Josef skipped the preview look. The AI keeps every step on clean logs and lists 
 | M-W10-2, M-W10-3 (optional) | Open `/stay-fees` and one detail page. | The same list as before. |
 | M-MAIL (owed) | Invite your own e-mail address (or trigger one reminder). | Exactly ONE mail arrives, not two. Two: say "rollback MAIL". |
 | M-Q2 (owed, next morning) | Alerts page: any `submission_outcome_unknown`? For one apartment other than 7 with a guest due, check the filing in the app. Apartment 7: expect the same UbyPort fault as on Python until the ticket is answered. | No `submission_outcome_unknown`. Any: say "rollback Q2" and check the guests for a double filing. |
+| M-Q3 (owed, next morning after 07:10 Prague) | On the server: `cd /opt/ubyhost/deploy/lightsail && docker compose logs --since 12h ubyhost-go \| grep 'job run' \| grep -E 'job=(billing\|stay_fee_mail\|photo_sweep\|guide_import)'`. Then the Alerts page. | Each of the four shows `ok=1`; no `job_failed` alert. Any `ok=0`: say "rollback Q3 <kind>". |
 | M-DOOR (optional) | Watch the next real cleaning door code. | One code arrives, not two. The guest-code lifecycle was not tested. |
 
 Not for the browser: the passkey button wording ("Face ID" and similar) is PR 1033 and is held.
+
+## 3. Q3 by hand (Josef's short form, if you do not want the AI to run it)
+
+Do the two compose-dependent kinds only after the PR that adds the five bare keys is merged and the server has it (`grep -c UBYHOST_APIFY_TOKEN docker-compose.yml` prints 1 or more). Not between 03:00 and 07:30 Prague. One kind at a time; replace `KIND` with `photo_sweep`, then `guide_import`, then `billing`, then `stay_fee_mail`:
+
+```bash
+cd /opt/ubyhost/deploy/lightsail
+cp -p .env ".env.bak-$(date +%Y%m%d-%H%M%S)"
+sed -i 's/^\(UBYHOST_GO_JOB_KINDS=.*\)$/\1,KIND/' .env
+grep '^UBYHOST_GO_JOB_KINDS=' .env          # KIND must be there once
+docker compose up -d --no-deps worker && sleep 30 && docker compose up -d --no-deps ubyhost-go
+sleep 60 && docker compose logs --since 3m ubyhost-go | grep -Ei 'panic|level=error|job run'
+```
+
+Rollback for one kind: restore the saved `.env.bak-...` line (or remove `,KIND` from the line), then `docker compose up -d --no-deps ubyhost-go && sleep 30 && docker compose up -d --no-deps worker` (ubyhost-go first, so the kind never runs in both).

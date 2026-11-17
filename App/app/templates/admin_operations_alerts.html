@@ -1,0 +1,42 @@
+{% extends "host_page.html" %}
+{# Python twin of go/internal/web/auth/opspage/templates/admin_operations_alerts.tmpl (brief 1800). admin_ops.open_alert_details builds the rows. #}
+{% set v2 = true %}
+{% block head_extra %}<link rel="stylesheet" href="/static/admin2.css?v=20261106-0893q"><link rel="stylesheet" href="/static/admin2-system.css?v=20261102-0894e">{% endblock %}
+{% from "_ui_layout.html" import ui_section_tabs with context %}
+{% set nav = 'operations' %}
+{% set body_kind = 'detail' %}
+{% block title %}{{ t('ops.alerts.page_title') }}{% endblock %}
+{% block tabs %}{{ ui_section_tabs() }}{% endblock %}
+{% block body %}
+{% macro age(minutes) -%}
+  {%- if minutes is none -%}{{ t('ops.age.never') }}
+  {%- elif minutes < 120 -%}{{ t('ops.age.minutes', n=minutes) }}
+  {%- elif minutes < 2880 -%}{{ t('ops.age.hours', n=minutes // 60) }}
+  {%- else -%}{{ t('ops.age.days', n=minutes // 1440) }}{%- endif -%}
+{%- endmacro %}
+<p><a href="/admin/operations#ops-alerts">{{ t('ops.alerts.back') }}</a></p>
+<p>
+  <a href="/admin/operations/alerts{% if level %}?level={{ level }}{% endif %}"{% if not kind %} aria-current="page"{% endif %}>{{ t('ops.alerts.all') }} <span class="ui-badge">{{ alerts.all_count }}</span></a>
+  {% for chip in alerts.kinds %}{% set kind_key = 'ops.alert_kind.' ~ chip.kind %}{% set kind_label = t(kind_key) %} <a href="/admin/operations/alerts?kind={{ chip.kind }}{% if level %}&amp;level={{ level }}{% endif %}"{% if chip.kind == kind %} aria-current="page"{% endif %}>{% if kind_label != kind_key %}{{ kind_label }} {% endif %}<code class="ui-mono ui-sub">{{ chip.kind }}</code> <span class="ui-badge">{{ chip.count }}</span></a>{% endfor %}
+</p>
+{% if alerts.rows %}
+{% if alerts.total > alerts.rows|length %}<p class="ui-sub">{{ t('ops.alerts.showing', n=alerts.rows|length, total=alerts.total) }}</p>{% endif %}
+<table class="ui-table ui-table-stack">
+  <thead><tr><th>{{ t('ops.col.level') }}</th><th>{{ t('ops.col.kind') }}</th><th>{{ t('ops.col.message') }}</th><th>{{ t('ops.col.property') }}</th><th>{{ t('ops.col.stay') }}</th><th>{{ t('ops.col.status') }}</th><th>{{ t('ops.col.oldest') }}</th></tr></thead>
+  <tbody>
+  {% for row in alerts.rows %}
+    {% set kind_key = 'ops.alert_kind.' ~ row.kind %}{% set kind_label = t(kind_key) %}
+    <tr>
+      <td data-label="{{ t('ops.col.level') }}">{{ row.level }}</td>
+      <td data-label="{{ t('ops.col.kind') }}">{% if kind_label != kind_key %}{{ kind_label }} {% endif %}<code class="ui-mono ui-sub">{{ row.kind }}</code></td>
+      <td data-label="{{ t('ops.col.message') }}">{{ row.message }}</td>
+      <td data-label="{{ t('ops.col.property') }}">{{ row.property }}</td>
+      <td data-label="{{ t('ops.col.stay') }}">{% if row.stay_removed %}{{ t('ops.alerts.stay_removed') }}{% elif row.has_stay %}<a href="/reservations/{{ row.stay_id }}">{{ row.guest_name }} {{ row.date_from }} – {{ row.date_to }}</a>{% else %}{{ t('ops.alerts.stay_none') }}{% endif %}</td>
+      <td data-label="{{ t('ops.col.status') }}">{{ t('ops.alerts.status_open') }}</td>
+      <td data-label="{{ t('ops.col.oldest') }}">{{ age(row.age_minutes) }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}<p class="ui-sub">{{ t('ops.none') }}</p>{% endif %}
+{% endblock %}

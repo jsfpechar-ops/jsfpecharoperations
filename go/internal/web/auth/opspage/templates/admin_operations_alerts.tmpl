@@ -1,0 +1,30 @@
+{{- /* Go twin of the drill-down of App/app/templates/admin_operations.html (brief 1800). alerts.go builds the rows. */ -}}
+{{define "admin_operations_alerts.head"}}<link rel="stylesheet" href="/static/admin2.css?v=20261106-0893q"><link rel="stylesheet" href="/static/admin2-system.css?v=20261102-0894e">{{end}}
+{{define "admin_operations_alerts.title"}}{{t "ops.alerts.page_title"}}{{end}}
+{{define "admin_operations_alerts.tabs"}}{{ui_tabs .Tabs}}{{end}}
+{{define "admin_operations_alerts"}}
+<p><a href="/admin/operations#ops-alerts">{{t "ops.alerts.back"}}</a></p>
+<p>
+  <a href="/admin/operations/alerts{{if .Level}}?level={{.Level}}{{end}}"{{if .AllActive}} aria-current="page"{{end}}>{{t "ops.alerts.all"}} <span class="ui-badge">{{.AllCount}}</span></a>
+  {{range .Kinds}} <a href="/admin/operations/alerts?kind={{.Kind}}{{if $.Level}}&amp;level={{$.Level}}{{end}}"{{if .Active}} aria-current="page"{{end}}>{{if .Label}}{{.Label}} {{end}}<code class="ui-mono ui-sub">{{.Kind}}</code> <span class="ui-badge">{{.Count}}</span></a>{{end}}
+</p>
+{{if .Rows}}
+{{if .ShowingLine}}<p class="ui-sub">{{.ShowingLine}}</p>{{end}}
+<table class="ui-table ui-table-stack">
+  <thead><tr><th>{{t "ops.col.level"}}</th><th>{{t "ops.col.kind"}}</th><th>{{t "ops.col.message"}}</th><th>{{t "ops.col.property"}}</th><th>{{t "ops.col.stay"}}</th><th>{{t "ops.col.status"}}</th><th>{{t "ops.col.oldest"}}</th></tr></thead>
+  <tbody>
+  {{range .Rows}}
+    <tr>
+      <td data-label="{{t "ops.col.level"}}">{{.Level}}</td>
+      <td data-label="{{t "ops.col.kind"}}">{{if .KindLabel}}{{.KindLabel}} {{end}}<code class="ui-mono ui-sub">{{.Kind}}</code></td>
+      <td data-label="{{t "ops.col.message"}}">{{.Message}}</td>
+      <td data-label="{{t "ops.col.property"}}">{{.Property}}</td>
+      <td data-label="{{t "ops.col.stay"}}">{{if .StayRemoved}}{{t "ops.alerts.stay_removed"}}{{else if .HasStay}}<a href="/reservations/{{.StayID}}">{{.GuestName}} {{.DateFrom}} – {{.DateTo}}</a>{{else}}{{t "ops.alerts.stay_none"}}{{end}}</td>
+      <td data-label="{{t "ops.col.status"}}">{{.Status}}</td>
+      <td data-label="{{t "ops.col.oldest"}}">{{.Age}}</td>
+    </tr>
+  {{end}}
+  </tbody>
+</table>
+{{else}}<p class="ui-sub">{{t "ops.none"}}</p>{{end}}
+{{end}}

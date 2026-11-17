@@ -20,3 +20,15 @@ func (d deps) operationsAdmin(w http.ResponseWriter, r *http.Request) {
 		serverError(w, err)
 	}
 }
+
+// operationsAlerts is the drill-down of /admin/operations: the same admin gate.
+func (d deps) operationsAlerts(w http.ResponseWriter, r *http.Request) {
+	at := d.now()
+	h, ok := d.admin(w, r)
+	if !ok {
+		return
+	}
+	if err := opspage.ServeAlerts(w, r, d.pool, d.getenv, at, h); err != nil {
+		serverError(w, err)
+	}
+}

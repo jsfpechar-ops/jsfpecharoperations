@@ -15,7 +15,7 @@ This file is the single source of truth for how work is done. When the process c
 
 | Tier | What | Orchestrator thread | Brief writer | Review before PR ready |
 |---|---|---|---|---|
-| A | filing/UbyPort, deadlines, migrations, auth, guest data, deletion, legal copy | claude-opus-5-5 | Opus subagent, exact diffs only | fresh claude-fable-5-2 subagent reads the full diff vs the brief |
+| A | filing/UbyPort, deadlines, migrations, auth, guest data, deletion, legal copy | claude-opus-5-5 | Opus subagent, exact diffs only | orchestrator reads full diff of risk-listed files |
 | B | jobs, mail, payments, privacy-relevant outbound, scripts | claude-opus-5-5 | Sonnet 5.5 subagent | orchestrator reads diff of risk-listed files |
 | C | docs, CSS, copy, small static pages | claude-sonnet-5-5 | Sonnet 5.5 subagent | orchestrator checks file list and tests |
 
