@@ -55,7 +55,8 @@
 {{define "apartmentdetail.addr"}}
   <div class="field">
     {{if .HintKey}}{{field_label .Name (t .LabelKey) (t .HintKey) .Optional "" .Required}}{{else}}{{field_label .Name (t .LabelKey) "" .Optional "" .Required}}{{end}}
-    <input type="text" id="{{.Name}}" name="{{.Name}}" autocomplete="off" value="{{.Value}}"{{if .MaxLength}} maxlength="{{.MaxLength}}"{{end}}{{if .InputMode}} inputmode="{{.InputMode}}"{{end}}{{if .Autocap}} autocapitalize="{{.Autocap}}"{{end}}{{if .Placeholder}} placeholder="{{.Placeholder}}"{{end}}{{if .Required}} required aria-required="true"{{end}}{{if .Described}} aria-describedby="{{.Described}}"{{end}}{{if .Suggest}} data-ruian-suggest data-ruian-loading="{{t "apartment.form.addr.suggest_loading"}}" data-ruian-none="{{t "apartment.form.addr.suggest_none"}}"{{end}}>
+    <input type="text" id="{{.Name}}" name="{{.Name}}" autocomplete="off" value="{{.Value}}"{{if .MaxLength}} maxlength="{{.MaxLength}}"{{end}}{{if .InputMode}} inputmode="{{.InputMode}}"{{end}}{{if .Autocap}} autocapitalize="{{.Autocap}}"{{end}}{{if .Placeholder}} placeholder="{{.Placeholder}}"{{end}}{{if .Required}} required aria-required="true"{{end}}{{if .Described}} aria-describedby="{{.Described}}"{{end}}{{if .Error}} aria-invalid="true"{{end}}{{if .Suggest}} data-ruian-suggest data-ruian-loading="{{t "apartment.form.addr.suggest_loading"}}" data-ruian-none="{{t "apartment.form.addr.suggest_none"}}"{{end}}>
+    {{if .Error}}<p class="err-text" id="{{.Name}}-error" role="alert">{{.Error}}</p>{{end}}
   </div>
 {{end}}
 
@@ -222,7 +223,7 @@ PIN: {{.Pin}}</textarea><button class="btn small" type="button" data-copy="overv
 <a href="#sec-lock"><span class="dot {{if and .Door (eq .Door.State "on")}}g{{else}}n{{end}}" aria-hidden="true"></span>{{t "property_page.sec.lock.title"}}</a>
 <a href="#sec-fee"><span class="dot {{if $a.StayFeeRateCZK}}g{{else}}n{{end}}" aria-hidden="true"></span>{{t "property_page.sec.fee.title"}}</a>
 </nav>
-<form method="post" action="{{.Base}}" enctype="multipart/form-data" class="property-settings-form" id="property-settings-form" data-property-settings-form data-unsaved-guard>
+<form method="post" action="{{.Base}}" enctype="multipart/form-data" class="property-settings-form" id="property-settings-form" data-property-settings-form data-unsaved-guard{{if .OperatorError}} data-dirty-start="1"{{end}}>
   <p class="required-legend">{{t "common.required_legend"}}</p>
   <p class="prop-fixline" data-prop-fixline hidden data-text-many="{{t "property_page.fix_fields"}}" data-text-one="{{t "property_page.fix_fields_one"}}"></p>
   <input type="hidden" name="return_to" value="{{if .FirstSetup}}{{.Base}}?view=settings{{else}}{{.Base}}?view=settings&amp;section={{.SettingsSection}}{{end}}" data-property-return>
@@ -246,7 +247,7 @@ PIN: {{.Pin}}</textarea><button class="btn small" type="button" data-copy="overv
       </div>
       <div class="field property-operator" id="operator-picker">
         <label for="legal_entity_id">{{t "apartment.form.entity.label"}}<span class="req-star" aria-hidden="true">*</span></label>
-        <select id="legal_entity_id" name="legal_entity_id" required{{if not .Entities}} aria-describedby="operator-message"{{end}}>
+        <select id="legal_entity_id" name="legal_entity_id" required{{if or .OpError (not .Entities)}} aria-describedby="operator-message"{{end}}{{if .OpError}} aria-invalid="true"{{end}}>
           {{if not .OperatorSelected}}<option value="" disabled selected>{{t "apartment.form.operator.choose"}}</option>{{end}}
           {{range .Entities}}
           <option value="{{.ID}}"{{if eq $.OperatorSelected .ID}} selected{{end}}>{{.Name}}</option>
@@ -254,29 +255,33 @@ PIN: {{.Pin}}</textarea><button class="btn small" type="button" data-copy="overv
         </select>
         {{if not .Entities}}
         <div class="property-operator-empty" id="operator-message">
-          <p class="err-text">{{t "apartment.form.operator.add_first"}}</p>
+          <p class="err-text"{{if .OpError}} role="alert"{{end}}>{{t "apartment.form.operator.add_first"}}</p>
           <div class="actions">
             <a class="btn small" href="/entities" target="_blank" rel="noopener">{{t "apartment.form.operator.add_business"}}</a>
             <button class="btn small ghost" type="submit" name="operator_refresh" value="1" formnovalidate>{{t "apartment.form.operator.check_again"}}</button>
           </div>
         </div>
+        {{else if .OpError}}
+        <p class="err-text" id="operator-message" role="alert">{{t .OpError}}</p>
         {{end}}
       </div>
       {{if .Entities}}<div class="hint property-operator-hint"><a href="{{if $a.LegalEntityID}}/entities?edit={{$a.LegalEntityID}}{{else}}/apartments/{{$a.ID}}?view=settings&amp;section=property#operator-picker{{end}}">{{t "host.business"}} </a> {{help_tip "legal_entity_id-help" (t "apartment.form.entity.hint")}}</div>{{end}}
       <div class="field" style="max-width:420px" id="alternate-controller">
         <label for="data_controller_entity_id">{{t "apartment.form.controller.alternate_label"}}</label>
-        <select id="data_controller_entity_id" name="data_controller_entity_id">
+        <select id="data_controller_entity_id" name="data_controller_entity_id"{{if .ControllerError}} aria-describedby="controller-message" aria-invalid="true"{{end}}>
           <option value="">{{t "apartment.form.controller.same_as_operator"}}</option>
           {{range .Entities}}
           <option value="{{.ID}}"{{if eq $a.DataControllerEntityID .ID}} selected{{end}}>{{.Name}}</option>
           {{end}}
         </select>
+        {{if .ControllerError}}<p class="err-text" id="controller-message" role="alert" data-field-error>{{t "flash.error.no_such_controller"}}</p>{{end}}
       </div>
     </section>
 
     <section class="panel property-section ui-section" id="arrival-departure">
       <h2 class="property-section-title">{{t "apartment.form.door_code.checkin"}} / {{t "apartment.form.door_code.checkout"}}</h2>
       <p class="ui-sub">{{t "why.times"}}</p>
+      {{if .SharedTimeError}}<p class="err-text" role="alert" data-field-error>{{t .SharedTimeError}}</p>{{end}}
       <div class="grid two">
         <div class="field"><label for="checkin_hour">{{t "apartment.form.door_code.checkin"}}</label>
           <select id="checkin_hour" name="checkin_hour" data-hour-twin="checkin_hour"><option value="">{{t "apartment.form.door_code.choose"}}</option>
@@ -515,7 +520,8 @@ PIN: {{.Pin}}</textarea><button class="btn small" type="button" data-copy="overv
 </details>
 {{template "apartmentdetail.lock" .}}
 </div>
-  {{if .EditorSaved}}{{if .FlashMsg}}<div class="banner ok section-notice save-summary" role="status" tabindex="-1" data-save-summary><span class="grow">{{.FlashMsg}}</span></div>{{end}}{{end}}
+  {{if .SaveErrors}}<div class="banner err section-notice save-summary" role="alert" tabindex="-1" data-save-summary data-first-error="{{(index .SaveErrors 0).Target}}"><span class="grow">{{.SaveFailed}}</span> <a href="#{{(index .SaveErrors 0).Target}}">{{t "property_page.save_failed_go"}}</a></div>
+  {{else if .EditorSaved}}{{if .FlashMsg}}<div class="banner ok section-notice save-summary" role="status" tabindex="-1" data-save-summary><span class="grow">{{.FlashMsg}}</span></div>{{end}}{{end}}
   <div class="savebar save-on-dirty" data-for="property-settings-form">
     <a class="btn ghost" href="{{.Base}}" data-unsaved-reset>{{t "common.cancel"}}</a>
     <button class="btn" type="submit" form="property-settings-form">{{t "common.save_changes"}}</button>
@@ -589,8 +595,9 @@ PIN: {{.Pin}}</textarea><button class="btn small" type="button" data-copy="overv
   <div class="field">
     {{field_label "stay_fee_council_account" (t "apartment.form.stay_fee.account_label") (t "apartment.form.stay_fee.account_help") false "" .Fee.Needed true}}
     <input type="text" id="stay_fee_council_account" name="stay_fee_council_account" autocomplete="off" spellcheck="false" maxlength="42" aria-required="{{if .Fee.Needed}}true{{else}}false{{end}}"
-           aria-describedby="stay_fee_council_account-help"
-           value="{{.Fee.AccountValue}}">
+           aria-describedby="stay_fee_council_account-help{{if .FeeAccountError}} stay-fee-account-error{{end}}"
+           value="{{.Fee.AccountValue}}"{{if .FeeAccountError}} aria-invalid="true"{{end}}>
+    {{if .FeeAccountError}}<p class="err-text small" id="stay-fee-account-error" role="alert" data-field-error>{{t "flash.stay_fees.account_invalid"}}</p>{{end}}
   </div>
 </div>
 <div class="fee-setup-section" id="stay-fee-council">
@@ -626,18 +633,19 @@ PIN: {{.Pin}}</textarea><button class="btn small" type="button" data-copy="overv
       <span>{{t "stay_fees.guest_pay.collect_label"}}{{help_tip "stay_fee_collect-help" (t "stay_fees.guest_pay.collect_hint") "" "" true}}</span>
     </label>
     <div class="gp-body">
-      <p class="err-text small gp-warning" id="stay-fee-rate-warning" role="alert" data-rate-warning hidden>{{t "stay_fees.guest_pay.rate_warning"}}</p>
+      <p class="err-text small gp-warning" id="stay-fee-rate-warning" role="alert" data-rate-warning{{if not .FeeRateError}} hidden{{else}} data-field-error{{end}}>{{t "stay_fees.guest_pay.rate_warning"}}</p>
       <fieldset class="gp-methods">
         <legend class="small">{{t "stay_fees.guest_pay.rails_label"}}</legend>
         <div class="gp-card">
           <label class="gp-check checkline"><input type="checkbox" name="stay_fee_guest_rails" value="iban"{{if (index $rails 0).On}} checked{{end}}> <span>{{t "stay_fees.guest_pay.rail.iban"}}</span></label>
           <div class="gp-detail gp-account" data-guest-pay-operator data-preview-url="/stay-fees/{{$a.ID}}/guest-pay-preview">
             <p class="ui-sub">{{t "stay_fees.guest_pay.operator_lede"}}</p>
+            {{if .FeeOperatorAccountError}}<p class="err-text small" id="stay-fee-guest-operator-error" role="alert" data-field-error>{{t "flash.stay_fees.operator_account_required"}}</p>{{end}}
             <div class="field">
               {{field_label "stay_fee_guest_operator_account" (t "stay_fees.guest_pay.operator_account_label") (t "stay_fees.guest_pay.operator_account_help") false "" false true}}
               <input type="text" id="stay_fee_guest_operator_account" name="stay_fee_guest_operator_account" autocomplete="off" spellcheck="false" maxlength="42"
-                     aria-describedby="stay_fee_guest_operator_account-help stay-fee-guest-preview-status"
-                     value="{{.Fee.OperatorValue}}">
+                     aria-describedby="stay_fee_guest_operator_account-help stay-fee-guest-preview-status{{if .FeeOperatorAccountError}} stay-fee-guest-operator-error{{end}}"
+                     value="{{.Fee.OperatorValue}}"{{if .FeeOperatorAccountError}} aria-invalid="true"{{end}}>
               <p class="muted small gp-note">{{t "stay_fees.guest_pay.operator_invoice_note"}}</p>
             </div>
             <p class="err-text small" id="stay-fee-guest-preview-status" role="status" aria-live="polite" data-preview-invalid hidden>{{t "flash.stay_fees.account_invalid"}}</p>
@@ -657,7 +665,8 @@ PIN: {{.Pin}}</textarea><button class="btn small" type="button" data-copy="overv
           <div class="gp-detail gp-revolut">
             <div class="field">
               {{field_label "stay_fee_guest_revolut_link" (t "stay_fees.guest_pay.revolut_label") (t "stay_fees.guest_pay.revolut_help") false "" false true}}
-              <input type="url" id="stay_fee_guest_revolut_link" name="stay_fee_guest_revolut_link" aria-describedby="stay_fee_guest_revolut_link-help" maxlength="200" inputmode="url" autocapitalize="off" spellcheck="false" placeholder="https://revolut.me/" value="{{$a.StayFeeGuestRevolutLink}}">
+              <input type="url" id="stay_fee_guest_revolut_link" name="stay_fee_guest_revolut_link" aria-describedby="stay_fee_guest_revolut_link-help{{if .FeeLinkError}} stay-fee-link-error{{end}}" maxlength="200" inputmode="url" autocapitalize="off" spellcheck="false" placeholder="https://revolut.me/" value="{{$a.StayFeeGuestRevolutLink}}"{{if .FeeLinkError}} aria-invalid="true"{{end}}>
+              {{if .FeeLinkError}}<p class="err-text small" id="stay-fee-link-error" role="alert" data-field-error>{{t "flash.stay_fees.link_invalid"}}</p>{{end}}
             </div>
           </div>
         </div>
@@ -859,14 +868,15 @@ PIN: {{.Pin}}</textarea><button class="btn small" type="button" data-copy="overv
     {{if and $d.Account $d.Locks}}
     <section class="panel property-section ui-section" id="door-code">
       <p class="ui-sub">{{t "why.times"}}</p>
-      {{if and (eq $d.State "off") (or (not $a.CheckinHour) (not $a.CheckoutHour))}}<p class="err-text" id="lock-times-required" role="note">{{t "smart_locks.times_required"}}</p>{{end}}
+      {{if .LockTimesError}}<p class="err-text" id="door-code-times-error" role="alert" data-field-error>{{t "why.times_missing"}}</p>{{end}}
+      {{if and (not .LockTimesError) (eq $d.State "off") (or (not $a.CheckinHour) (not $a.CheckoutHour))}}<p class="err-text" id="lock-times-required" role="note">{{t "smart_locks.times_required"}}</p>{{end}}
       <div class="grid two" data-lock-times>
         <div class="field"><label for="lock_checkin_hour">{{t "apartment.form.door_code.checkin"}}<span class="req-star" aria-hidden="true">*</span></label>
-          <select form="property-settings-form" id="lock_checkin_hour" name="lock_checkin_hour" data-hour-twin="checkin_hour"{{if $d.Enabled}} required{{end}}><option value="">{{t "apartment.form.door_code.choose"}}</option>
+          <select form="property-settings-form" id="lock_checkin_hour" name="lock_checkin_hour" data-hour-twin="checkin_hour"{{if $d.Enabled}} required{{end}}{{if .LockTimesError}} aria-invalid="true" aria-describedby="door-code-times-error"{{end}}><option value="">{{t "apartment.form.door_code.choose"}}</option>
             {{range $.Hours}}<option value="{{.}}"{{if $.HourSelected "checkin_hour" .}} selected{{end}}>{{printf "%02d:00" .}}</option>{{end}}
           </select></div>
         <div class="field"><label for="lock_checkout_hour">{{t "apartment.form.door_code.checkout"}}<span class="req-star" aria-hidden="true">*</span></label>
-          <select form="property-settings-form" id="lock_checkout_hour" name="lock_checkout_hour" data-hour-twin="checkout_hour"{{if $d.Enabled}} required{{end}}><option value="">{{t "apartment.form.door_code.choose"}}</option>
+          <select form="property-settings-form" id="lock_checkout_hour" name="lock_checkout_hour" data-hour-twin="checkout_hour"{{if $d.Enabled}} required{{end}}{{if .LockTimesError}} aria-invalid="true" aria-describedby="door-code-times-error"{{end}}><option value="">{{t "apartment.form.door_code.choose"}}</option>
             {{range $.Hours}}<option value="{{.}}"{{if $.HourSelected "checkout_hour" .}} selected{{end}}>{{printf "%02d:00" .}}</option>{{end}}
           </select></div>
       </div>

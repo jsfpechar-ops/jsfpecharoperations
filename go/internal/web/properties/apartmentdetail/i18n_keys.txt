@@ -295,3 +295,15 @@ stay_fees.setup.council
 stay_fees.setup.more_details
 stay_fees.setup.payment
 why.stay_fee
+# 1702b: the error lines of a refused save.
+apartment.form.operator.required
+flash.error.door_code_hours
+flash.error.no_such_controller
+flash.error.times_required
+flash.stay_fees.link_invalid
+flash.stay_fees.operator_account_required
+property_page.save_failed
+property_page.save_failed.few
+property_page.save_failed.one
+property_page.save_failed_go
+why.times_missing

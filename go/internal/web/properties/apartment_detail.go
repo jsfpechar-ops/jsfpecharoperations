@@ -156,7 +156,26 @@ type detailView struct {
 	PoliceState      string
 	CalendarsState   string
 	LockState        string
+
+	// A refused save (_refuse_apartment_save and refuse_fee_save, brief 1702b).
+	// The POST handler fills them; GET leaves them empty.
+	SaveErrors              []detailSaveError
+	SaveFailed              string            // tp('property_page.save_failed', save_errors|length)
+	AddressErrors           map[string]string // field -> message in the host's language
+	OperatorError           string            // operator_error: an i18n key or ""
+	OpError                 string            // _property_operator.html op_error
+	ControllerError         bool              // operator_error == 'flash.error.no_such_controller'
+	SharedTimeError         string            // shared_time_error: an i18n key or ""
+	LockTimesError          bool
+	FeeAccountError         bool
+	FeeLinkError            bool
+	FeeRateError            bool
+	FeeOperatorAccountError bool
 }
+
+// detailSaveError is _save_error: the settings section and the field id the
+// summary above the Save bar links to.
+type detailSaveError struct{ Section, Target string }
 
 // detailPlatform is one option of CALENDAR_PLATFORMS ("" name: the "other" text).
 type detailPlatform struct{ Key, Name string }
@@ -266,7 +285,13 @@ func (s *Pages) apartmentDetail(w http.ResponseWriter, r *http.Request) {
 		view.CopiedName = src.InternalName
 		detailApplyCopy(a, src)
 	}
-	if err := s.detailBuild(ctx, r, host, a, view, settings, now); err != nil {
+	s.detailRender(w, r, host, a, view, settings, now)
+}
+
+// detailRender builds and draws the page for a: GET /apartments/{id}, and the
+// refused save of brief 1702b, whose view carries the error lines and Status.
+func (s *Pages) detailRender(w http.ResponseWriter, r *http.Request, host *session.Host, a *detailApt, view *detailView, settings onboarding.Settings, now time.Time) {
+	if err := s.detailBuild(r.Context(), r, host, a, view, settings, now); err != nil {
 		fail(w, err)
 		return
 	}
@@ -506,7 +531,7 @@ func (v *detailView) derive(lang string) {
 	// _property_address_fields.html: the seven boxes with the stored values.
 	draft := map[string]string{"addr_street": a.AddrStreet, "addr_house_no": a.AddrHouseNo, "addr_orient_no": a.AddrOrientNo,
 		"addr_zip": a.AddrZip, "addr_obec": a.AddrObec, "addr_obec_cast": a.AddrObecCast, "addr_okres": a.AddrOkres}
-	boxes := ApartmentNewForm{Draft: draft}.view("")
+	boxes := ApartmentNewForm{Draft: draft, AddressErrors: v.AddressErrors}.view("")
 	v.AddrRow1, v.AddrRow2 = boxes.AddrRow1, boxes.AddrRow2
 	v.AutomationModes = []string{"manual", "scheduled", "immediate"}
 	v.AutomationShown = "manual"
@@ -562,7 +587,7 @@ func (v *detailView) derive(lang string) {
 			// _property_address_fields.html: the seven boxes with the stored values.
 			draft := map[string]string{"addr_street": a.AddrStreet, "addr_house_no": a.AddrHouseNo, "addr_orient_no": a.AddrOrientNo,
 				"addr_zip": a.AddrZip, "addr_obec": a.AddrObec, "addr_obec_cast": a.AddrObecCast, "addr_okres": a.AddrOkres}
-			boxes := ApartmentNewForm{Draft: draft}.view("")
+			boxes := ApartmentNewForm{Draft: draft, AddressErrors: v.AddressErrors}.view("")
 			v.AddrRow1, v.AddrRow2 = boxes.AddrRow1, boxes.AddrRow2
 			v.AutomationModes = []string{"manual", "scheduled", "immediate"}
 			v.AutomationShown = "manual"
@@ -600,10 +625,22 @@ func (v *detailView) derive(lang string) {
 			v.DoorPill = "bad"
 		}
 	}
+	if len(v.SaveErrors) > 0 {
+		v.SaveFailed = detailTP(lang, "property_page.save_failed", len(v.SaveErrors))
+	}
+	if strings.HasPrefix(v.OperatorError, "apartment.form.operator.") {
+		v.OpError = v.OperatorError
+	}
+	v.ControllerError = v.OperatorError == "flash.error.no_such_controller"
 	v.Open = map[string]bool{}
 	for _, id := range []string{"sec-basics", "sec-messages", "sec-police", "sec-fee", "sec-calendars", "sec-lock"} {
 		key := id[4:]
 		open := v.InlineFlashSection == key && (v.FlashError != "" || !(v.FirstSetup || v.ReadyCard))
+		for _, e := range v.SaveErrors {
+			if e.Section == key {
+				open = true
+			}
+		}
 		if v.SectionExplicit {
 			for _, e := range detailExplicit[v.SettingsSection] {
 				if e == id {
