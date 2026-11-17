@@ -1,6 +1,6 @@
 # 1700a: Go property settings 1a: the new-property form page (GET /apartments/new)
 
-Status: review — exact-diff pass redone 2026-11-17 (Go-only tests, no Python golden), ready for Haiku
+Status: done (reviewed 2026-11-17: tests green, files match §3)
 Depends on: 1520-1524 on the branch (verified: `go/internal/web/properties` has `lists.go`, `entities.go`, `entity_editor.go`); 1525 is replaced by 1704, 1527 not required | Base commit: current tip of the working branch | Branch: task/1700a-go-apartment-new-form
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (this brief needs about 16)
 Tier: B (Sonnet writes the exact-diff pass; the orchestrator reads the diff of the risk-listed files, see the end)
