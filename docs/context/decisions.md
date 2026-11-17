@@ -69,3 +69,4 @@ Append-only.
 - 2026-11-15 [legal] Register lists Mistral AI and Anthropic (conditional); no "EU only"/"not stored" claim without ZDR or EU endpoint | 1792
 - 2026-11-15 [ai] Shared Havel/Leon budget, abuse caps; Havel no-go settings; nameless lookups; host mail in host language: [plan](../plans/ai-payments-hardening.md) | owner
 - 2026-11-17 [dep] ČÚZK addresses: local unlogged table, pg_trgm (1700c). [workflow] Python golden: filing only ([go-first](go-first.md)) | owner
+- 2026-11-17 [go] 1702 split b-e; wizard save ported to Go (1702e, rule 11); Go UbyPort login in 1702d = same host as Python, reason in PR | orchestrator

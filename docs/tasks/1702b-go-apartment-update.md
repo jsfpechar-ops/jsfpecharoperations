@@ -1,61 +1,165 @@
-# 1702b: Go property settings 3b: update property settings (POST /apartments/{id})
+# 1702b: Go property settings 3b: the error lines of a refused save
 
-Status: todo — scoped (split out of 1702 by its exact-diff pass, 2026-11-17). Executable only after its own exact-diff pass: sidecars in `docs/tasks/1702b-files/`, anchors and sha256 table, written to the rules in [workflow](../context/workflow.md#writing-briefs-for-haiku). Until then the executor must not start it.
-Depends on: 1702 | Base commit: current tip of the working branch | Branch: task/1702b-go-apartment-update
-Executor: Haiku 5.5 | Fits one session only if split again: the exact-diff pass decides (likely 1702b plain save, 1702c wizard steps and police-letter test)
-Tier: A (exact files only; Opus writes the exact-diff pass; fresh review of the full diff before ready)
+Status: ready (exact-diff pass 2026-11-17: sidecars applied to a clean worktree of ed5d737, gofmt/build/vet clean, Go tests green on PostgreSQL 16, 0 skips)
+Depends on: 1702 (done) | Base commit: current tip of the working branch | Branch: task/1702b-go-apartment-update
+Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (this brief needs about 10)
+Tier: A (exact files only; fresh review of the full diff before merge, see the risk list at the end)
 
-> **One big PR mode.** Work on the current branch. After each step that changes a file, commit with the message `1702b step k`. Never create a branch, never push, never open a PR. Acceptance checks use `git log --oneline --grep='^1702b step'`.
+> **One big PR mode.** Work on the current branch. After each step that changes a file, commit with the message `1702b step k` (`k` is the step number) and `git add` only the paths the step names (never `-A`, never `.`). Never create a branch, never push, never open a PR. Acceptance checks use `git log --oneline --grep='^1702b step'`.
 
 ## 1. Objective
 
-Port `apartment_update` (`App/app/routes/admin.py` 2535-2601) with `_save_apartment_form` (2791-3046) and its helpers (`_property_hour_changes`, `_with_lock_tab_hours`, `_lock_section_refusal`, `_wizard_police_format_errors`, `_setup_after_save`, `_refuse_apartment_save`, `refuse_fee_save` 2404-2498), as Python behaves today. It writes police data: a wrong write becomes a wrong police submission (rule 1).
+Give the Go property page (`GET /apartments/{id}`, 1701/1701b) every error line that Python's refused save shows, so the POST of 1702c can re-render the page the way `_refuse_apartment_save` and `refuse_fee_save` (`App/app/routes/admin.py` 2303-2498) do. This brief adds no route and writes nothing to the database.
+
+**Split (exact-diff pass, 2026-11-17).** The scoped 1702b (all of `apartment_update`, about 750 Python lines) is several times the session cap. It is now, in order:
+
+| Brief | What | Status |
+|---|---|---|
+| 1702b (this) | the error lines of the re-render: view fields, template, catalog keys, `detailRender` | ready |
+| [1702c](1702c-go-apartment-save.md) | POST /apartments/{id}, settings save without `setup_step`: payload, hour rules, operator, address, police defaults, password, PIN, fee checks, lock edits, the write, audit, redirect; the 400 re-render with the draft; golden script | todo, scoped |
+| [1702d](1702d-go-apartment-save-signature-letter.md) | the signature save, `fee_return_to`, the police-letter branch with the UbyPort connection test | todo, scoped |
+| [1702e](1702e-go-apartment-save-wizard.md) | the wizard posts (`setup_step`): owner decision first | todo, scoped, blocked on an owner question |
 
 ## 2. Context
 
-What the exact-diff pass of 1702 found (2026-11-17):
+Rules (AGENTS.md): 1 filing correctness: nothing here writes; 2 privacy: no new field, no outbound request; 4 no new dependency; 6 light mode only, no JavaScript needed (every line is server-rendered); 7/10 template change: see step 6 (the Go page is dormant until 1705, so the browser gate runs then).
 
-- Inputs: every field of the settings form of 1701/1701b (`id="property-settings-form"`, multipart, `_csrf`), the lock tab hours (`lock_checkin_hour`, `door_code_section`, `door_codes`, `door_codes_fields`), the operator selector and `operator_refresh`, the fee fields and the signature (`fee_signature_section`, `signature_drawn`; `_signature_payload`), `setup_step` (wizard), `fee_return_to`, `return_to`, the police-letter ticks (`police_letter.confirmed_fields`).
-- Outputs: the `apartment` row, the operator's signature on `legal_entity`, audit rows, the redirect with `saved=1` or the flash naming missing report fields (`_missing_report_labels`), or a 400 re-render of the whole property page with the error lines. 1701b §8 (b) left the fee error lines (`fee_account_error`, `fee_operator_account_error`, `fee_rate_error`, `fee_link_error`, and `flash.stay_fees.operator_account_required`, `.link_invalid`) to this POST re-render.
-- Outbound: the police-letter branch runs `_run_connection_test` (UbyPort, read-only login) only when the password was typed in the same save. Porting it is a new outbound request on Go: give the reason in the PR, reuse `go/internal/ubyport`, never a new client.
-- Reuse, never copy: `validation.ValidateApartment` is the only validator; the address and RÚIAN checks of 1700b2/1700c (`apartmentAddressErrors`, `apartmentOperatorError`, `apartmentFormInt`), the stay fee helpers of `stayfees`, the 1701 page builder (`detailBuild`) for the re-render, `server.enter`, `server.audit`.
-- Parity method (owner decision: golden scripts are allowed here because it writes filing data): `App/scripts/go_apartment_update_golden.py` seeds a throwaway database, posts through the real FastAPI app and writes `testdata/apartment_update_golden.json` (rows, audit lines, Location, re-render fragments); the Go test replays the same seed and must match. Accepted differences are listed in the report, never silently.
-- 1701b readings kept: an undecryptable stored signature shows as none in Go (Python 500s); the inline `fee_return_to` copy of 1701 stays.
+**All code is pre-written, compiled and tested.** Sidecars: `docs/tasks/1702b-files/<repo path>.txt`. Step 1 copies them; never retype or edit them. Four files are replaced (their current hashes are checked in step 0), one is new.
+
+| sha256 after | file | action | lines |
+|---|---|---|---|
+| `d8b3e4756ace025bc231dee519669640ed427662bb4d84d084f002fae1f000ab` | `go/internal/web/properties/apartment_detail.go` | replace | 750 |
+| `3c49f0e1ced189dc0165dea8cf985cda2d585f77166b2da058d9795a2c5bdba3` | `go/internal/web/properties/apartmentdetail/apartment_detail.tmpl` | replace | 983 |
+| `14a4f3687bcedbb50f6b86feb00fbd15baeaa0f1111769cd2232a769817d35ab` | `go/internal/web/properties/apartmentdetail/i18n_keys.txt` | replace | 309 |
+| `41670064e7fe2d0ecb17d24bf9612b00635e422369200afed5b4b47b88e8d533` | `go/internal/web/properties/apartmentdetail/i18n.json` | replace | 1286 |
+| `f191e8467ac4fed51f9e5d24a5830d67a276f8a04b8546f5c1bcc414b21b7e74` | `go/internal/web/properties/apartment_detail_refused_test.go` | create | 118 |
+
+**What changed (for the reviewer; the executor reads no Go file).**
+
+- `apartment_detail.go`: `detailView` gets `SaveErrors []detailSaveError` (`_save_error`: section, target), `SaveFailed` (`tp('property_page.save_failed', n)`), `AddressErrors`, `OperatorError`, `OpError` (`_property_operator.html`: only keys starting `apartment.form.operator.`), `ControllerError` (`flash.error.no_such_controller`), `SharedTimeError`, `LockTimesError`, and the four fee flags of 1701b §8 (`FeeAccountError`, `FeeLinkError`, `FeeRateError`, `FeeOperatorAccountError`). `derive` opens every section named by a save error (the `sec_open` macro's first clause) and passes `AddressErrors` to the seven address boxes (the existing `ApartmentNewForm.view`, nothing copied). The tail of the GET handler moved into `detailRender(w, r, host, a, view, settings, now)`, which 1702c calls for the 400 re-render; GET output is unchanged (all 1701/1701b/1702 tests pass untouched).
+- Template: `data-dirty-start`, the operator select and its message, the controller select and message, the shared time line, the Door lock times line and select attributes, the save summary above the Save bar, the council account, guest operator account, Revolut link and rate warning lines, and `aria-invalid` plus the message of an address box. Each copies the Python line named in the test file's comments.
+- Catalog: 11 keys appended to `i18n_keys.txt`; `i18n.json` regenerated by `App/scripts/go_host_i18n.py`.
+- Not ported here (no Go page state yet; 1702c/1702d): `letter_check`/`letter_read` (the `data-dirty-start` and `sec-police` clauses of the letter), `door_switch_posted` (read by no template).
 
 ## 3. Files
 
-Fixed by the exact-diff pass. Expected: `go/internal/web/properties/apartment_update*.go` (+ tests, testdata), one `go/cmd/ubyhost-web/register_web_properties_apartment_update.go` (+ test), a catalog dir of its own for new keys, `App/scripts/go_apartment_update_golden.py` and `App/tests/test_go_apartment_update_golden.py` (go-first exception 1), `docs/tasks/1702b-files/**`, `docs/tasks/1702b-report.md`. Edits of 1701 files only as exact diffs with step-0 hashes.
+| Path | Action |
+|---|---|
+| the five files of the table above | replace / create |
+| `docs/tasks/1702b-files/**` | keep (sidecars, committed with this brief; do not edit) |
+| `docs/tasks/1702b-report.md` | create (§9) |
+
+No other file may change. No `App/` file.
 
 ## 4. Steps
 
-Written by the exact-diff pass (same shape as [1702](1702-go-apartment-update-door-codes.md)).
+0. Checks (repo root). Anything else than the stated result: STOP (§8).
+   - `git branch --show-current | tail -1` prints the branch you were started on (not `main`).
+   - `find docs/tasks/1702b-files -name '*.txt' | wc -l | tail -1` prints `5`.
+   - `ls go/internal/web/properties/apartment_detail_refused_test.go 2>&1 | tail -1` says "No such file".
+   - The four files to replace are exactly the ones the sidecars were built on (one call):
+
+     ```bash
+     sha256sum -c - <<'EOF0' 2>&1 | tail -5
+     75a85812ac53493a7bb82a7ebb697cc5cd3baba8e8cc8db7ff7fc7718419f3b0  go/internal/web/properties/apartment_detail.go
+     f7f59d2a0187c90888b12c1ce3da5b1612c574ea2743a1b49ca44bd337eebac1  go/internal/web/properties/apartmentdetail/apartment_detail.tmpl
+     b6dc4fbb1fde9a0b01c10a056dc88f54ee59485d301e457f1ce63e9997834cc4  go/internal/web/properties/apartmentdetail/i18n_keys.txt
+     a36b3db5c56e5197a96a969a040d627b7c1c5590ee14b850b10f34eb248c4a70  go/internal/web/properties/apartmentdetail/i18n.json
+     EOF0
+     ```
+
+     Four lines ending `: OK`. A `FAILED` line means another brief (1703?) changed the page first: STOP, the orchestrator re-bases the sidecars.
+
+1. Copy the sidecars and check them (one call, repo root). Never retype or edit them:
+
+   ```bash
+   cd docs/tasks/1702b-files && for f in $(find . -name '*.txt' | sed 's|^\./||; s|\.txt$||'); do mkdir -p "../../../$(dirname "$f")" && cp "$f.txt" "../../../$f"; done; cd ../../.. && sha256sum -c - <<'EOF1' 2>&1 | tail -10
+   d8b3e4756ace025bc231dee519669640ed427662bb4d84d084f002fae1f000ab  go/internal/web/properties/apartment_detail.go
+   3c49f0e1ced189dc0165dea8cf985cda2d585f77166b2da058d9795a2c5bdba3  go/internal/web/properties/apartmentdetail/apartment_detail.tmpl
+   14a4f3687bcedbb50f6b86feb00fbd15baeaa0f1111769cd2232a769817d35ab  go/internal/web/properties/apartmentdetail/i18n_keys.txt
+   41670064e7fe2d0ecb17d24bf9612b00635e422369200afed5b4b47b88e8d533  go/internal/web/properties/apartmentdetail/i18n.json
+   f191e8467ac4fed51f9e5d24a5830d67a276f8a04b8546f5c1bcc414b21b7e74  go/internal/web/properties/apartment_detail_refused_test.go
+   EOF1
+   ```
+
+   Every line must end with `: OK` (5 lines). Then commit (one call):
+
+   ```bash
+   git add go/internal/web/properties/apartment_detail.go go/internal/web/properties/apartmentdetail/apartment_detail.tmpl go/internal/web/properties/apartmentdetail/i18n_keys.txt go/internal/web/properties/apartmentdetail/i18n.json go/internal/web/properties/apartment_detail_refused_test.go && git commit -m "1702b step 1" 2>&1 | tail -2
+   ```
+
+2. Format, build and vet (one call, repo root):
+
+   ```bash
+   cd go && gofmt -l internal/web/properties cmd/ubyhost-web 2>&1 | tail -5; go build ./... 2>&1 | tail -30; go vet ./internal/web/properties/... ./cmd/ubyhost-web/... 2>&1 | tail -30
+   ```
+
+   Expected: no output at all. Anything printed: STOP (§8).
+
+3. Catalog check (repo root). If `App/.venv/bin/python` does not exist, write "Python checks: CI only (no App/.venv)" in the report and go to step 4. Else (one call):
+
+   ```bash
+   cd App && .venv/bin/python scripts/go_host_i18n.py --check 2>&1 | tail -5; echo "i18n rc=${PIPESTATUS[0]}"; .venv/bin/python -m pytest tests/test_go_host_i18n.py -q --tb=short -rs 2>&1 | tail -5
+   ```
+
+   Expected: `i18n rc=0` with nothing before it, and a `passed` line with no `skipped`.
+
+4. PostgreSQL. If `UBYHOST_TEST_DATABASE_URL` is already set to a server you may create databases on, use it and skip this step. Else start a throwaway one (skip the start if `su postgres -c '/usr/lib/postgresql/16/bin/pg_ctl -D /var/tmp/pg55473/data status' | head -1` says `server is running`):
+
+   ```bash
+   mkdir -p /var/tmp/pg55473 && chown postgres /var/tmp/pg55473 && su postgres -c '/usr/lib/postgresql/16/bin/initdb -D /var/tmp/pg55473/data -A trust >/dev/null && /usr/lib/postgresql/16/bin/pg_ctl -D /var/tmp/pg55473/data -o "-p 55473 -k /var/tmp/pg55473" -l /var/tmp/pg55473/log start' 2>&1 | tail -3
+   ```
+
+   Expected: `server started`. No PostgreSQL 16 binaries at that path: write "CI only" in the report and STOP before step 5.
+
+5. Go tests on PostgreSQL (one call, repo root):
+
+   ```bash
+   cd go && export UBYHOST_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:55473/postgres && go test ./internal/web/properties/... ./cmd/ubyhost-web/... -count=1 2>&1 | tail -30; go test ./internal/web/properties/ -count=1 -v -run '^TestApartmentDetail(RefusedBasics|RefusedFeeAndLock|Fee|Door)$' 2>&1 | grep -E '^(--- |ok|FAIL)' | tail -8; go test ./internal/web/properties/... -count=1 -v 2>&1 | grep -c -- '--- SKIP' | tail -1
+   ```
+
+   Expected: two `ok` lines; then `--- PASS` for `TestApartmentDetailRefusedBasics`, `TestApartmentDetailRefusedFeeAndLock`, `TestApartmentDetailFee`, `TestApartmentDetailDoor` and one `ok`; then `0`. A failure: run once more; a second failure: STOP (§8). Then stop the server if you started it: `su postgres -c '/usr/lib/postgresql/16/bin/pg_ctl -D /var/tmp/pg55473/data stop' 2>&1 | tail -2`.
+
+6. UX gate: **pending until 1705.** The Go page is dormant (not in `UBYHOST_GO_PATHS`), and `test_layout_lint_browser.py` drives the page Python serves, so CI cannot screenshot these lines yet. Write in the report: "UX: template change on dormant /apartments/{id}; screenshots 390/768/1280 and layout lint of the refused save move to 1705 (with 1702c's POST)". Nothing to commit.
+
+7. Write the report (§9), set `Status: review` in this file, and commit (one call): `git add docs/tasks/1702b-report.md docs/tasks/1702b-go-apartment-update.md && git commit -m "1702b step 7" 2>&1 | tail -2`.
 
 ## 5. Do not touch
 
-`UBYHOST_GO_PATHS` or any server file; anything under `App/app/`; filing code (`go/internal/ubyport`, `App/app/reporting.py`) beyond calling it.
+`UBYHOST_GO_PATHS` or any server file; `App/`; every other file under `go/` (no other `apartment_*.go`, no `properties.go`, no package `i18n.json`); filing code (`go/internal/ubyport`, `App/app/reporting.py`).
 
 ## 6. Commands
 
-From the exact-diff pass: `gofmt`, `go vet` and `go test` on `./internal/web/properties/... ./cmd/ubyhost-web/...` (PostgreSQL), the golden freshness test, `python3 scripts/context_lint.py`.
+Exactly the commands of §4 (steps 2, 3, 5). Never the full suite, never `go test ./...`. From the repo root, last: `python3 scripts/context_lint.py 2>&1 | grep -v '^WARN' | tail -5` (no finding about this brief's files).
 
 ## 7. Acceptance
 
-- Every changed field produces the same row and the same `audit` entry as Python for the golden seeds, also for invalid input (same error text, no partial write).
-- A property that is mid-filing (`submit_state` set) cannot lose a required police field: same refusal as Python.
-- `git log --oneline --grep='^1702b step'` shows one commit per step.
+- [ ] Step 0: 5 sidecars, the four pre-hashes `: OK`; step 1: five `: OK`.
+- [ ] Step 2 printed nothing.
+- [ ] Step 3: `i18n rc=0` and a `passed` line, or "CI only (no App/.venv)" in the report.
+- [ ] Step 5: two `ok` lines, the four named tests `--- PASS`, SKIP count `0`.
+- [ ] `git log --oneline --grep='^1702b step' | tail -5` lists steps 1 and 7; `git show --stat --format=%s $(git log --format=%h --grep='^1702b step') | tail -20` lists only the paths of §3.
+- [ ] No route was added, nothing in `App/` or `UBYHOST_GO_PATHS` changed.
 
 ## 8. Stop and ask
 
-An anchor not found verbatim; a golden differs and the difference is not on the accepted list; a file outside §3; a new column, retention line or outbound request beyond the connection test; a test skip.
+An anchor, hash or count of steps 0-1 not as stated; a test fails twice (fix nothing in the sidecars: report); 25 tool calls or about 50k tokens (report as `blocked`); a file outside §3 needs a change; push, merge, secrets, SSH or deploy.
 
 ## 9. Report
 
-`docs/tasks/1702b-report.md`: commits, command outputs (last 30 lines), accepted differences, screenshots of the re-render (host page, rule 10), what was left undone.
+`docs/tasks/1702b-report.md` (500 tokens at most): the files (`git show --stat` as in §7); each command with its last 5 lines and the SKIP count; §7 ticked; deviations; questions; "UX pending until 1705"; "1702c is next".
+
+## Risk list (for the reviewer)
+
+- `apartment_detail.go` 160-178 (the new fields), 628-646 in `derive` (`SaveFailed`, `OpError`, `ControllerError`, sections opened by a save error) and the two `ApartmentNewForm{..., AddressErrors: v.AddressErrors}` lines 534 and 590 (address boxes): a field the POST forgets to fill shows nothing, never a wrong error.
+- `detailRender` (line 293): the GET path is the same code moved; `view.Status` sets 400.
+- Template: `{{t .OpError}}` and `{{t .SharedTimeError}}` take a key from Go code, never from the form (1702c must keep it so).
+- Test `apartment_detail_refused_test.go`: expected lines written by hand from `_property_editor.html` 160-198, 464-473, 512, `_property_operator.html` 15-35, `_property_address_fields.html` 11-22, `_stay_fee_fields.html` 41-43, 78-122.
 
 ## Rollout wave and rollback
 
-- **Rollout:** Dormant; the switch is brief 1705.
-- **Rollback:** Revert the PR.
+- **Rollout:** Dormant; the switch is brief 1705, after 1702c-1702e and 1703.
+- **Rollback:** Revert the commits.
 
 ## Owner steps
 
