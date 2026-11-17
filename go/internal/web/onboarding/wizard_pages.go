@@ -12,6 +12,7 @@ import (
 	"html"
 	"html/template"
 	"strconv"
+	"strings"
 )
 
 // FacilityHelp is facility_help of _police_fields.html: the hint and the
@@ -145,15 +146,29 @@ func (v *wizardView) OperatorSelected() int64 {
 // wizardAddressInput is one address_input call of _property_address_fields.html.
 type wizardAddressInput struct {
 	Name, Label, Help, Value, InputMode, AutoCap, Placeholder string
+	Error                                                     string // address_errors[name], in the host's language
 	MaxLen                                                    int
 	Required, Suggest                                         bool
+}
+
+// Described is the macro's aria-describedby: name-help when there is a hint,
+// then name-error when the field was refused ("" leaves the attribute out).
+func (in wizardAddressInput) Described() string {
+	var ids []string
+	if in.Help != "" {
+		ids = append(ids, in.Name+"-help")
+	}
+	if in.Error != "" {
+		ids = append(ids, in.Name+"-error")
+	}
+	return strings.Join(ids, " ")
 }
 
 // AddressRows are the two grids of the address fields, in Python's order.
 func (v *wizardView) AddressRows() [][]wizardAddressInput {
 	t := func(k string) string { return wizardText.T(v.Lang, k, nil) }
 	a := v.Values
-	return [][]wizardAddressInput{{
+	rows := [][]wizardAddressInput{{
 		{Name: "addr_street", Label: t("apartment.form.addr.street"), Help: t("apartment.form.addr.street_hint"), Value: a.AddrStreet, MaxLen: 48, Required: true, Suggest: true, AutoCap: "words", Placeholder: "Vinohradská"},
 		{Name: "addr_house_no", Label: t("apartment.form.addr.house_no"), Help: t("apartment.form.addr.house_no_hint"), Value: a.AddrHouseNo, MaxLen: 5, Required: true, Placeholder: "12"},
 		{Name: "addr_orient_no", Label: t("apartment.form.addr.orient_no"), Help: t("apartment.form.addr.orient_no_hint"), Value: a.AddrOrient, MaxLen: 4, Placeholder: "5"},
@@ -163,4 +178,10 @@ func (v *wizardView) AddressRows() [][]wizardAddressInput {
 		{Name: "addr_obec_cast", Label: t("apartment.form.addr.obec_cast"), Value: a.AddrObecCast, MaxLen: 48, AutoCap: "words", Placeholder: "Vinohrady"},
 		{Name: "addr_okres", Label: t("apartment.form.addr.okres"), Help: t("apartment.form.addr.okres_hint"), Value: a.AddrOkres, MaxLen: 32, AutoCap: "words", Placeholder: "Praha"},
 	}}
+	for _, row := range rows {
+		for i := range row {
+			row[i].Error = v.AddressErrors[row[i].Name]
+		}
+	}
+	return rows
 }

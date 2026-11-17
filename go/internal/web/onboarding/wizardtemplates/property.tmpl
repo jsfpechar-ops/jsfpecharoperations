@@ -1,8 +1,8 @@
 {{/* Port of App/app/templates/setup_wizard/property.html with _workflow.html (workflow_strip(none)),
      _property_identity_fields.html, _door_code_window.html, _property_operator.html,
      _property_address_fields.html and _ruian_suggest.html. Brief 1600. The details form posts to the
-     Python route POST /apartments/{id}; its refusals (name_error, address_errors, operator_error,
-     draft) re-render there, so here the form always shows the stored row. */}}
+     Python route POST /apartments/{id}; its Go port (brief 1702e2) re-renders a refusal through
+     RenderSetupPage (brief 1702e1): Notice, AddressErrors and the draft in Values. */}}
 {{define "wizard_help"}}{{help_tip "wiz-why-property" (print (t "why.property") " " (t "why.times") " " (t "why.address"))}}{{end}}
 {{define "wizard_content"}}
 
@@ -99,7 +99,8 @@
     {{range .}}
     <div class="field">
       {{field_label .Name .Label .Help false "" .Required}}
-      <input type="text" id="{{.Name}}" name="{{.Name}}" autocomplete="off" value="{{.Value}}"{{if .MaxLen}} maxlength="{{.MaxLen}}"{{end}}{{if .InputMode}} inputmode="{{.InputMode}}"{{end}}{{if .AutoCap}} autocapitalize="{{.AutoCap}}"{{end}}{{if .Placeholder}} placeholder="{{.Placeholder}}"{{end}}{{if .Required}} required aria-required="true"{{end}}{{if .Help}} aria-describedby="{{.Name}}-help"{{end}}{{if .Suggest}} data-ruian-suggest data-ruian-loading="{{t "apartment.form.addr.suggest_loading"}}" data-ruian-none="{{t "apartment.form.addr.suggest_none"}}"{{end}}>
+      <input type="text" id="{{.Name}}" name="{{.Name}}" autocomplete="off" value="{{.Value}}"{{if .MaxLen}} maxlength="{{.MaxLen}}"{{end}}{{if .InputMode}} inputmode="{{.InputMode}}"{{end}}{{if .AutoCap}} autocapitalize="{{.AutoCap}}"{{end}}{{if .Placeholder}} placeholder="{{.Placeholder}}"{{end}}{{if .Required}} required aria-required="true"{{end}}{{with .Described}} aria-describedby="{{.}}"{{end}}{{if .Error}} aria-invalid="true"{{end}}{{if .Suggest}} data-ruian-suggest data-ruian-loading="{{t "apartment.form.addr.suggest_loading"}}" data-ruian-none="{{t "apartment.form.addr.suggest_none"}}"{{end}}>
+    {{if .Error}}<p class="err-text" id="{{.Name}}-error" role="alert">{{.Error}}</p>{{end}}
     </div>
     {{end}}
   </div>

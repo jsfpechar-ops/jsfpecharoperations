@@ -34,6 +34,7 @@
     </div>
     {{end}}
     {{if .Legend}}<p class="required-legend">{{t "common.required_legend"}}</p>{{end}}
+    {{if .Notice}}<p class="err-text" role="alert">{{.Notice}}</p>{{end}}
     {{block "wizard_content" .}}{{end}}
   </div>
   <footer class="setup-wizard-foot">
