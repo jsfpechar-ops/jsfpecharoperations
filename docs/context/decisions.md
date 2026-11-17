@@ -47,7 +47,7 @@ Append-only.
 - 2026-11-10 [demo] Demo seed covers current features; mock-only, cleared by Clear demo (owner, 1092)
 - 2026-11-12 [billing] 1137: trial_pending->paused only via operator_pause().
 - 2026-11-12 [filing] 1138: claim fails closed; no retry.
-- 2026-11-12 [workflow] Orchestrator model by brief risk tier (A Opus thread+brief, Fable reviews; B Opus thread, Sonnet brief; C Sonnet); Haiku executes; threads parallel, no shared files; unsure = higher | owner | [workflow](workflow.md#roles-and-models)
+- 2026-11-12 [workflow] Orchestrator model by brief risk tier (A Opus thread+brief, own review, no Fable 11-17; B Opus thread, Sonnet brief; C Sonnet); Haiku executes; threads parallel, no shared files; unsure = higher | owner | [workflow](workflow.md#roles-and-models)
 - 11-13 [workflow] 1199: state columns need TRANSITIONS+pin test or EXEMPT; test_sm_registry.py (owner)
 - 2026-11-12 [filing] 1148: cancel waits on `running` <30 min, else cancels + alert.
 - 2026-11-12 [filing] 1154: move waits on any `running` batch.
