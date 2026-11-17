@@ -6,6 +6,8 @@ import (
 	"strings"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ruian"
 )
 
 // operator is operator.details().
@@ -20,6 +22,7 @@ type page struct {
 	Controller            operator // privacy.html "controller": name, ico, address with placeholders
 	Sections              []string // the TOC and section ids of terms, privacy or dpa
 	Prefix                string   // "terms", "privacy" or "dpa"
+	Attribution           string   // /legal only: the ČÚZK credit line (brief 1700e)
 	SubprocessorIDs       []string
 	RecipientIDs          []string
 	Cookies               []cookieRow
@@ -49,6 +52,7 @@ func newPage(r *http.Request, path, lang string, cfg config) *page {
 	switch path {
 	case "/legal":
 		p.Prefix = "legal"
+		p.Attribution = ruian.Attribution
 	case "/terms":
 		p.Sections, p.Prefix = cat.TermsSections, "terms"
 	case "/privacy":
