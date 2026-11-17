@@ -68,5 +68,5 @@ Append-only.
 - 2026-11-15 [ai] Havel and Leon on Mistral Small, 0.05 USD monthly caps | owner
 - 2026-11-15 [legal] Register lists Mistral AI and Anthropic (conditional); no "EU only"/"not stored" claim without ZDR or EU endpoint | 1792
 - 2026-11-15 [ai] Shared Havel/Leon budget, abuse caps; Havel no-go settings; nameless lookups; host mail in host language: [plan](../plans/ai-payments-hardening.md) | owner
-- 2026-11-17 [go] RUIAN suggest ported to Go: new client for the same ČÚZK host Python calls (no new outbound host), same cache, 60/h limit and `UBYHOST_RUIAN_*` switches | owner | 1700c
+- 2026-11-17 [dep] Address suggest: local copy of ČÚZK address-point CSV in Postgres (monthly Go import job, new table, `pg_trgm`), queried locally; replaces the live ČÚZK map-search call. `CzechRepublic/ruian-api` rejected (abandoned, Dart 1.x, unnamed hosted operator) | owner | 1700c
 - 2026-11-17 [go] 1700 split: 1700a new-property form, 1700b POST /apartments create (filing-critical), 1700c RUIAN suggest | owner | 1700
