@@ -8,8 +8,11 @@ package properties
 //
 // Answered 501 with the Caddy fallback header (notPorted), always before
 // anything is written:
-//   - a wizard post: setup_step, or a return_to under /apartments/{id}/setup/
-//     (brief 1702e);
+//   - a setup_step other than property or police (calendar, guest_link or a
+//     value that is not a step), and a save without setup_step whose
+//     return_to is under /apartments/{id}/setup/ (brief 1702e3);
+//   - a property or police wizard save that passed every check and goes back
+//     into the wizard (_setup_after_save, brief 1702e3);
 //   - the guest-pay block and the data box (as POST /apartments);
 //   - a non-ASCII digit or a 64-bit overflow in a number, and a
 //     stay_fee_rate_from that is set but not YYYY-MM-DD (Python's int(),
@@ -19,6 +22,9 @@ package properties
 //
 // A refusal Python answers by drawing the page again (_refuse_apartment_save,
 // refuse_fee_save, operator_refresh) is refuseApartmentSave (brief 1702c2).
+// The property and police wizard steps (setup_step) are
+// apartment_update_wizard.go (brief 1702e2); a retired step goes to
+// /apartments/{id}/setup/done before anything else (0884).
 //
 // Python writes the row, then the dated rate; here both share one transaction.
 // The alert, the guest link, the audit rows and the pay-way alert follow in
@@ -33,6 +39,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -214,12 +221,12 @@ func detailDraftField(a *detailApt, name string) *string {
 // apartmentUpdateNotPorted names the first posted branch this port leaves to
 // Python, or "".
 func apartmentUpdateNotPorted(r *http.Request, id int64) string {
-	if formStr(r, "setup_step") != "" {
-		return "a wizard step (brief 1702e)"
-	}
-	wizard := fmt.Sprintf("/apartments/%d/setup/", id)
-	if strings.HasPrefix(formReturnTo(r, "", false), wizard) || strings.HasPrefix(formStr(r, "return_to"), wizard) {
-		return "a return_to inside the setup wizard (brief 1702e)"
+	switch step := formStr(r, "setup_step"); {
+	case step == "property" || step == "police":
+	case step != "":
+		return "a setup_step other than property or police (brief 1702e3)"
+	case apartmentWizardReturn(r, id):
+		return "a return_to inside the setup wizard (brief 1702e3)"
 	}
 	for _, key := range apartmentNotPortedFields {
 		if has(r, key) {
@@ -235,6 +242,13 @@ func apartmentUpdateNotPorted(r *http.Request, id int64) string {
 		return "a stay_fee_rate_from that is not YYYY-MM-DD"
 	}
 	return ""
+}
+
+// apartmentWizardReturn reports a return_to under /apartments/{id}/setup/
+// (wizard_setup_prefix), posted or quoted.
+func apartmentWizardReturn(r *http.Request, id int64) bool {
+	wizard := fmt.Sprintf("/apartments/%d/setup/", id)
+	return strings.HasPrefix(formReturnTo(r, "", false), wizard) || strings.HasPrefix(formStr(r, "return_to"), wizard)
 }
 
 // apartmentLockTabHours is _with_lock_tab_hours: a Door lock tab time the host
@@ -306,6 +320,11 @@ func (s *server) apartmentUpdate(w http.ResponseWriter, r *http.Request) {
 		q.back(w, r, "/apartments", hostweb.Flash{}, q.flash("flash.error.no_such_apartment", nil))
 		return
 	}
+	if slices.Contains(onboarding.RetiredSteps, formStr(r, "setup_step")) {
+		// 0884: a page left open from the old eight-step wizard saves nothing.
+		q.back(w, r, onboarding.WizardURL(a.ID, "done"), hostweb.Flash{}, hostweb.Flash{})
+		return
+	}
 	if what := apartmentUpdateNotPorted(r, a.ID); what != "" {
 		notPorted(w, what)
 		return
@@ -314,6 +333,10 @@ func (s *server) apartmentUpdate(w http.ResponseWriter, r *http.Request) {
 	pay, ok := newApartmentPayload(r)
 	if !ok {
 		notPorted(w, "a non-ASCII digit or an integer past 64 bits in the form")
+		return
+	}
+	if step := formStr(r, "setup_step"); step != "" {
+		s.apartmentWizardSave(w, r, q, p, a, step, pay)
 		return
 	}
 	// _property_hour_changes: only the hours this form posted; "" is NULL.
@@ -412,18 +435,9 @@ func (s *server) apartmentUpdate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	if pay.password != "" {
-		keys, err := secure.LoadDataKeys(s.getenv)
-		if err != nil {
-			fail(w, err)
-			return
-		}
-		enc, err := keys.EncryptString(pay.password)
-		if err != nil {
-			fail(w, err)
-			return
-		}
-		cols = setColumn(cols, "uby_ws_password_enc", enc)
+	if cols, err = s.withPassword(cols, pay.password); err != nil {
+		fail(w, err)
+		return
 	}
 	if pin := formStr(r, "permalink_pin"); pin != "" {
 		// auth.normalise_permalink_pin: six digits (non-ASCII ones were sent to Python above).
@@ -489,24 +503,8 @@ func (s *server) apartmentUpdate(w http.ResponseWriter, r *http.Request) {
 		fail(w, err)
 		return
 	}
-	if credentialsChanged {
-		if err := privacy.ResolveAlert(ctx, s.pool, fmt.Sprintf("ubyport_auth_failed:%d", a.ID), stamp(q.at)); err != nil {
-			fail(w, err)
-			return
-		}
-	}
-	if pay.text["internal_name"] != a.InternalName {
-		// 0096: the readable part of the guest link follows the name.
-		if err := palette.FollowGuestSlugName(ctx, s.pool, a.ID, a.PermalinkToken, pay.text["internal_name"]); err != nil {
-			fail(w, err)
-			return
-		}
-	}
-	if err := s.audit(ctx, q, "apartment_updated", fmt.Sprintf("id=%d", a.ID)); err != nil {
-		fail(w, err)
-		return
-	}
-	if err := stayfeemail.ReconcileNoPayWay(ctx, s.pool, s.getenv, a.ID); err != nil {
+	name := pay.text["internal_name"]
+	if err := s.afterApartmentWrite(ctx, q, a, credentialsChanged, name, name); err != nil {
 		fail(w, err)
 		return
 	}
@@ -521,6 +519,45 @@ func (s *server) apartmentUpdate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	s.apartmentSaved(w, r, q, p, a.ID)
+}
+
+// withPassword is db.encrypt_secret of a typed uby_ws_password into
+// uby_ws_password_enc; an empty password leaves cols as they are.
+func (s *server) withPassword(cols []column, password string) ([]column, error) {
+	if password == "" {
+		return cols, nil
+	}
+	keys, err := secure.LoadDataKeys(s.getenv)
+	if err != nil {
+		return nil, err
+	}
+	enc, err := keys.EncryptString(password)
+	if err != nil {
+		return nil, err
+	}
+	return setColumn(cols, "uby_ws_password_enc", enc), nil
+}
+
+// afterApartmentWrite is what _save_apartment_form does after db.update: AR-18
+// (only new credentials lift the refused-login pause), 0096 (the readable part
+// of the guest link follows the name when the payload's internal_name, "" when
+// it has none, differs from the stored one; name is the saved name), the
+// apartment_updated audit row and reconcile_no_pay_way_alert.
+func (s *server) afterApartmentWrite(ctx context.Context, q *request, a *detailApt, credentialsChanged bool, payloadName, name string) error {
+	if credentialsChanged {
+		if err := privacy.ResolveAlert(ctx, s.pool, fmt.Sprintf("ubyport_auth_failed:%d", a.ID), stamp(q.at)); err != nil {
+			return err
+		}
+	}
+	if payloadName != a.InternalName {
+		if err := palette.FollowGuestSlugName(ctx, s.pool, a.ID, a.PermalinkToken, name); err != nil {
+			return err
+		}
+	}
+	if err := s.audit(ctx, q, "apartment_updated", fmt.Sprintf("id=%d", a.ID)); err != nil {
+		return err
+	}
+	return stayfeemail.ReconcileNoPayWay(ctx, s.pool, s.getenv, a.ID)
 }
 
 // apartmentFeeAccount is the account half of stay_fees.fee_form_values and
@@ -701,8 +738,9 @@ func (s *server) apartmentSaved(w http.ResponseWriter, r *http.Request, q *reque
 	}
 	// 1085: values confirmed from the police letter. The read-only connection
 	// test runs once, and only when the password was typed in this same save:
-	// a new login with the old password could lock the police account.
-	if apartmentLetterListed(r) {
+	// a new login with the old password could lock the police account. A
+	// wizard save (setup_step) is never tested here.
+	if apartmentLetterListed(r) && formStr(r, "setup_step") == "" {
 		if formStr(r, "uby_ws_password") == "" {
 			q.back(w, r, path+"#ubyport", updateFlash(q, "flash.apartments.letter_saved_untested", nil), hostweb.Flash{})
 			return

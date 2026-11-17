@@ -33,3 +33,5 @@ flash.error.no_such_apartment
 flash.properties.timing_hours
 flash.properties.timing_invalid
 flash.setup.*
+# Brief 1702e2: the police step refusal of POST /apartments/{id} (operator_error).
+flash.error.no_such_controller

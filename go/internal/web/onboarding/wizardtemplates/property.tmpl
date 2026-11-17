@@ -2,7 +2,7 @@
      _property_identity_fields.html, _door_code_window.html, _property_operator.html,
      _property_address_fields.html and _ruian_suggest.html. Brief 1600. The details form posts to the
      Python route POST /apartments/{id}; its Go port (brief 1702e2) re-renders a refusal through
-     RenderSetupPage (brief 1702e1): Notice, AddressErrors and the draft in Values. */}}
+     RenderSetupPage (brief 1702e1): Notice, AddressErrors, the op_error of OperatorError (1702e2) and the draft in Values. */}}
 {{define "wizard_help"}}{{help_tip "wiz-why-property" (print (t "why.property") " " (t "why.times") " " (t "why.address"))}}{{end}}
 {{define "wizard_content"}}
 
@@ -71,10 +71,10 @@
     </div>
   </div>
   {{end}}{{end}}
-  {{$op := .OperatorSelected}}
+  {{$op := .OperatorSelected}}{{$opErr := .PropertyOperatorError}}
   <div class="field property-operator" id="operator-picker">
     <label for="legal_entity_id">{{t "apartment.form.entity.label"}}<span class="req-star" aria-hidden="true">*</span></label>
-    <select id="legal_entity_id" name="legal_entity_id" required{{if not .Entities}} aria-describedby="operator-message"{{end}}>
+    <select id="legal_entity_id" name="legal_entity_id" required{{if or $opErr (not .Entities)}} aria-describedby="operator-message"{{end}}{{if $opErr}} aria-invalid="true"{{end}}>
       {{if not $op}}<option value="" disabled selected>{{t "apartment.form.operator.choose"}}</option>{{end}}
       {{range .Entities}}
       <option value="{{.ID}}" {{if eq .ID $op}}selected{{end}}>{{.Name}}</option>
@@ -82,12 +82,14 @@
     </select>
     {{if not .Entities}}
     <div class="property-operator-empty" id="operator-message">
-      <p class="err-text">{{t "apartment.form.operator.add_first"}}</p>
+      <p class="err-text"{{if $opErr}} role="alert"{{end}}>{{t "apartment.form.operator.add_first"}}</p>
       <div class="actions">
         <a class="btn small" href="/entities" target="_blank" rel="noopener">{{t "apartment.form.operator.add_business"}}</a>
         <button class="btn small ghost" type="submit" name="operator_refresh" value="1" formnovalidate>{{t "apartment.form.operator.check_again"}}</button>
       </div>
     </div>
+    {{else if $opErr}}
+    <p class="err-text" id="operator-message" role="alert">{{t $opErr}}</p>
     {{end}}
   </div>
   {{if .Entities}}<div class="setup-wizard-instruction property-operator-hint"><a href="/entities{{with .Apt.LegalEntityID}}?edit={{.}}{{end}}">{{t "host.business"}} </a> {{help_tip "legal_entity_id-help" (t "apartment.form.entity.hint")}}</div>{{end}}

@@ -330,16 +330,19 @@ func TestApartmentUpdateNotPorted(t *testing.T) {
 	ctx := context.Background()
 	base := g.Cases[3].Form // the full save of property 201
 	for name, extra := range map[string]map[string]string{
-		"wizard step":          {"setup_step": "property"},
-		"retired wizard step":  {"setup_step": "calendar_sync"},
-		"wizard return_to":     {"return_to": "/apartments/201/setup/police"},
-		"quoted wizard return": {"return_to": "%2Fapartments%2F201%2Fsetup%2Fpolice"},
-		"guest pay block":      {"stay_fee_guest_form": "1"},
-		"data box":             {"stay_fee_authority_databox": "abcdefg"},
-		"full-width operator":  {"legal_entity_id": "２１"},
-		"Arabic-Indic PIN":     {"permalink_pin": "١٢٣٤٥٦"},
-		"superscript hour":     {"checkin_hour": "1²"},
-		"basic ISO rate day":   {"stay_fee_rate_from": "20261201"},
+		"calendar wizard step":     {"setup_step": "calendar"},
+		"guest link wizard step":   {"setup_step": "guest_link"},
+		"not a wizard step":        {"setup_step": "calendar_sync"},
+		"wizard return_to":         {"return_to": "/apartments/201/setup/police"},
+		"quoted wizard return":     {"return_to": "%2Fapartments%2F201%2Fsetup%2Fpolice"},
+		"property step, to wizard": {"setup_step": "property", "return_to": "/apartments/201/setup/police"},
+		"police step, to wizard":   {"setup_step": "police", "return_to": "/apartments/201/setup/police", "data_controller_entity_id": ""},
+		"guest pay block":          {"stay_fee_guest_form": "1"},
+		"data box":                 {"stay_fee_authority_databox": "abcdefg"},
+		"full-width operator":      {"legal_entity_id": "２１"},
+		"Arabic-Indic PIN":         {"permalink_pin": "١٢٣٤٥٦"},
+		"superscript hour":         {"checkin_hour": "1²"},
+		"basic ISO rate day":       {"stay_fee_rate_from": "20261201"},
 	} {
 		form := map[string]string{}
 		for k, v := range base {
