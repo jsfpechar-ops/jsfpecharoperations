@@ -1,0 +1,973 @@
+{{/* Port of App/app/templates/apartment_form.html (edit branch), _property_editor.html, partials/settings_back_header.html,
+     _copy_settings_dialog.html, _setup_ready_card.html, _section_notice.html, _door_code_window.html,
+     _property_identity_fields.html, _property_operator.html, _property_address_fields.html, _police_fields.html,
+     _police_letter_figure.html and _property_calendars.html. Brief 1701. Parts that come from POST re-renders in Python
+     (save_errors, letter_read, letter_status, letter_prefill, operator_error, shared_time_error, lock_times_error,
+     feed_draft, feed_errors, setup_guide, lock_times_error) are never set on a GET and are left out. The Stay fee section is
+     the define apartmentdetail.fee (brief 1701b: _stay_fee_fields.html, _fee_signature_fields.html, _entity_business_fields.html signature_fields). */}}
+{{define "apartmentdetail.title"}}{{end}}
+{{define "apartmentdetail.back_label"}}{{end}}
+
+{{define "apartmentdetail.notice"}}{{if eq .root.InlineFlashSection .section}}{{if .root.FlashError}}
+  <div class="banner err section-notice" role="alert" tabindex="-1" data-section-notice><span class="grow">{{.root.FlashError}}</span></div>
+  {{else if .root.FlashMsg}}
+  <div class="banner ok section-notice" role="status" tabindex="-1" data-section-notice><span class="grow">{{.root.FlashMsg}}</span></div>
+  {{end}}{{end}}{{end}}
+
+{{define "apartmentdetail.state"}}<small class="sec-state">{{.text}}{{if not (index .root.SectionDone .key)}} · {{t "setup.sec.minutes" "n" (index .root.SectionMinutes .key)}}{{end}}</small>{{end}}
+
+{{define "apartmentdetail.missing"}}{{if .items}}<div class="prop-sec-missing" data-missing="{{.key}}" role="note"><ul class="readiness-list">{{range .items}}<li class="readiness-item"><a href="#{{.Anchor}}" data-fix-label="{{t (print "apartment.form.readiness.item." .Key)}}">{{t "apartment.form.readiness.missing"}} {{t (print "apartment.form.readiness.item." .Key)}}</a>{{if .Message}}<span class="readiness-why">{{.Message}}</span>{{end}}</li>{{end}}</ul></div>{{end}}{{end}}
+
+{{define "apartmentdetail.copy"}}<a class="ui-btn ui-btn-secondary ui-btn-compact copy-settings-open" href="{{.Base}}?view=settings&amp;section={{.CopySection}}&amp;copy=choose" data-sheet-open="copy-settings">{{icon "copy" 16}}{{t "apartment.form.copy_from.open"}}</a>
+<dialog id="copy-settings" class="ui-dialog copy-settings-dialog" aria-labelledby="copy-settings-title"{{if .CopyOpen}} open{{end}}>
+  <div class="ui-sheet">
+    <span class="ui-sheet-handle" aria-hidden="true"></span>
+    <h2 id="copy-settings-title">{{t "apartment.form.copy_from.title"}}</h2>
+    <form method="get" action="{{.Base}}" class="copy-property-form">
+      <input type="hidden" name="view" value="settings">
+      <input type="hidden" name="section" value="{{.CopySection}}">
+      <div class="field">
+        <label for="copy_from">{{t "apartment.form.copy_from.source"}}</label>
+        <select id="copy_from" name="copy_from">
+          {{range .CopyPeers}}
+          <option value="{{.ID}}"{{if eq $.CopyFromID .ID}} selected{{end}}>{{.Name}}</option>
+          {{end}}
+        </select>
+      </div>
+      <h3>{{t "apartment.form.copy_from.copied_head"}}</h3>
+      <ul class="copy-settings-list">
+        <li>{{t "apartment.form.copy_from.item_operator"}}</li>
+        <li>{{t "apartment.form.copy_from.item_automation"}}</li>
+        <li>{{t "apartment.form.copy_from.item_link"}}</li>
+        <li>{{t "apartment.form.copy_from.item_fee"}}</li>
+      </ul>
+      <h3>{{t "apartment.form.copy_from.never_head"}}</h3>
+      <p class="copy-settings-never">{{t "apartment.form.copy_from.never_body"}}</p>
+      <p class="ui-sub">{{t "apartment.form.copy_from.empty_only"}}</p>
+      <div class="copy-settings-actions">
+        <button class="ui-btn ui-btn-primary" type="submit">{{t "apartment.form.copy_from.button"}}</button>
+        <button class="ui-btn ui-btn-secondary" type="submit" formmethod="dialog" formnovalidate data-sheet-close>{{t "confirm.cancel"}}</button>
+      </div>
+    </form>
+  </div>
+</dialog>{{end}}
+
+{{define "apartmentdetail.addr"}}
+  <div class="field">
+    {{if .HintKey}}{{field_label .Name (t .LabelKey) (t .HintKey) .Optional "" .Required}}{{else}}{{field_label .Name (t .LabelKey) "" .Optional "" .Required}}{{end}}
+    <input type="text" id="{{.Name}}" name="{{.Name}}" autocomplete="off" value="{{.Value}}"{{if .MaxLength}} maxlength="{{.MaxLength}}"{{end}}{{if .InputMode}} inputmode="{{.InputMode}}"{{end}}{{if .Autocap}} autocapitalize="{{.Autocap}}"{{end}}{{if .Placeholder}} placeholder="{{.Placeholder}}"{{end}}{{if .Required}} required aria-required="true"{{end}}{{if .Described}} aria-describedby="{{.Described}}"{{end}}{{if .Suggest}} data-ruian-suggest data-ruian-loading="{{t "apartment.form.addr.suggest_loading"}}" data-ruian-none="{{t "apartment.form.addr.suggest_none"}}"{{end}}>
+  </div>
+{{end}}
+
+{{define "apartmentdetail.doorwindow"}}<div data-door-code-window data-buffer="{{.Buffer}}"
+     data-checkin="{{.Checkin}}" data-checkout="{{.Checkout}}"
+     data-arrival="{{t "door_code.window.arrival"}}" data-departure="{{t "door_code.window.departure"}}"
+     data-previous="{{t "door_code.window.previous"}}" data-next="{{t "door_code.window.next"}}">
+  <p><strong>{{t "door_code.window.title"}}</strong><br>{{t "door_code.window.margin" "hours" .Buffer}}</p>
+  <div aria-live="polite" aria-atomic="true">
+    <dl class="ui-facts" data-window-values{{if not .Complete}} hidden{{end}}>
+      <div><dt>{{t "door_code.window.from"}}</dt>
+      <dd data-window-start>{{if .Complete}}{{printf "%02d:00" .StartHour}} · {{if .StartPrevious}}{{t "door_code.window.previous"}}{{else}}{{t "door_code.window.arrival"}}{{end}}{{end}}</dd></div>
+      <div><dt>{{t "door_code.window.until"}}</dt>
+      <dd data-window-end>{{if .Complete}}{{printf "%02d:00" .EndHour}} · {{if .EndNext}}{{t "door_code.window.next"}}{{else}}{{t "door_code.window.departure"}}{{end}}{{end}}</dd></div>
+    </dl>
+    <p data-window-missing{{if .Complete}} hidden{{end}}>{{t "door_code.window.missing"}}</p>
+  </div>
+</div>{{end}}
+
+{{define "apartmentdetail.policebox"}}
+  <div class="field">
+    {{field_label .name .label .help .optional "" .required}}
+    <input type="text" id="{{.name}}" name="{{.name}}" value="{{.value}}"{{if .max}} maxlength="{{.max}}"{{end}}{{if .required}} aria-required="true"{{end}}{{if .help}} aria-describedby="{{.name}}-help"{{end}}>
+    {{$name := .name}}{{range .findings}}{{if eq .Field $name}}<p class="police-letter-note" role="note" data-police-check-code="{{.Code}}">{{.Text}}</p>{{end}}{{end}}
+  </div>
+{{end}}
+
+{{define "apartmentdetail.letterfigure"}}
+<figure class="police-letter-figure">
+  <svg class="police-letter-svg" viewBox="0 0 320 200" role="img" aria-labelledby="pl-fig-t">
+    <title id="pl-fig-t">{{t "police_letter.figure_title"}}</title>
+    <rect class="pl-sheet" x="4" y="4" width="312" height="192" rx="6"/>
+    <rect class="pl-bar" x="20" y="16" width="90" height="6" rx="3"/>
+    <rect class="pl-bar" x="20" y="27" width="60" height="5" rx="2.5"/>
+    <rect class="pl-bar" x="230" y="16" width="70" height="5" rx="2.5"/>
+    <text class="pl-title" x="160" y="52" text-anchor="middle">Přihlašovací údaje pro robotické vkládání</text>
+    <text class="pl-title" x="160" y="64" text-anchor="middle">Ubyport Webová služba</text>
+    <circle class="pl-num" cx="30" cy="88" r="9"/><text class="pl-num-text" x="30" y="91.5" text-anchor="middle">1</text>
+    <text class="pl-label" x="46" y="91.5">Přihlašovací jméno:</text><text class="pl-value" x="160" y="91.5">UBY-WS_ABCDE</text>
+    <circle class="pl-num" cx="30" cy="114" r="9"/><text class="pl-num-text" x="30" y="117.5" text-anchor="middle">2</text>
+    <text class="pl-label" x="46" y="117.5">Přístupové heslo:</text><text class="pl-value" x="160" y="117.5">••••••••</text>
+    <circle class="pl-num" cx="30" cy="140" r="9"/><text class="pl-num-text" x="30" y="143.5" text-anchor="middle">3</text>
+    <text class="pl-label" x="46" y="143.5">IDUB:</text><text class="pl-value" x="160" y="143.5">000000000000</text>
+    <rect class="pl-bar" x="20" y="162" width="280" height="5" rx="2.5"/>
+    <rect class="pl-bar" x="20" y="173" width="250" height="5" rx="2.5"/>
+    <rect class="pl-bar" x="20" y="184" width="120" height="5" rx="2.5"/>
+  </svg>
+  <figcaption class="police-letter-legend">
+    <ol>
+      <li>{{t "automation.login"}}</li>
+      <li>{{t "automation.password"}}: {{t "police_letter.by_hand"}}</li>
+      <li>{{t "apartment.form.ubyport.idub_label"}}</li>
+    </ol>
+    <p class="police-letter-note">{{t "apartment.form.ubyport.mark_label"}}: {{t "police_letter.mark_note"}}</p>
+  </figcaption>
+</figure>
+{{end}}
+
+{{define "apartmentdetail"}}
+{{$a := .A}}
+<div class="airbnb-header">
+  <a class="airbnb-back" href="/apartments" aria-label="{{t "common.back"}}">{{icon "arrow-left" 20}}</a>
+  <div class="airbnb-title-row"><h1 class="airbnb-title">{{$a.InternalName}}</h1>{{page_help "property"}}</div>
+{{if .CopyPeers}}<div class="airbnb-actions">{{template "apartmentdetail.copy" .}}</div>{{end}}
+</div>
+{{if .AddressSub}}<div class="sub prop-phone-sub">{{.Address}}</div>{{end}}
+{{if .CopiedName}}
+<div class="copy-settings-bar">
+  <p class="ui-sub" role="status">{{t "apartment.form.copy_from.notice" "name" .CopiedName}}</p>
+</div>
+{{end}}
+<nav class="prop-strip" aria-label="{{t "property_page.strip.aria"}}">
+  <a class="sc" href="#sec-calendars" data-strip="calendars" data-state="{{.Cal.State}}"><i class="sd" aria-hidden="true"></i><b>{{t "property_page.sec.calendars.title"}}</b><small{{if .Cal.Problem}} class="is-problem"{{end}}>{{if .Cal.Problem}}{{t .Cal.TextKey}}{{else if .CalendarErrors}}{{t "apartment.form.feed.status.error"}}{{else}}{{tp "apartment.form.calendars_count" .FeedsCount}}{{end}}</small></a>
+  <div class="sc sc-link" data-strip="guest" data-state="{{.Guest.State}}"><a class="sc-main" href="#sec-messages"><i class="sd" aria-hidden="true"></i><b>{{t "property_page.guest_link.title"}}</b><small{{if .Guest.Problem}} class="is-problem"{{end}}>{{if .Guest.Problem}}{{t .Guest.TextKey}}{{else}}{{t "wizard.guest_link.ready"}}{{end}}</small>{{if .Pin}}<small class="sc-pin" data-guest-pin>PIN {{.Pin}}</small>{{end}}</a><div class="sc-actions">
+  {{- if .Pin}}<textarea class="sr-only" id="overview-guest-both" readonly rows="2" tabindex="-1" aria-hidden="true">{{.Permalink}}
+PIN: {{.Pin}}</textarea><button class="btn small" type="button" data-copy="overview-guest-both" data-copy-label="{{t "property_page.guest_link.copy_both"}}" data-copied-label="{{t "common.copied"}}" data-guest-copy-both>{{t "property_page.guest_link.copy_both"}}</button>{{end -}}
+  {{if .Pin}}<input class="sr-only" type="text" id="overview-guest-url" readonly value="{{.Permalink}}" tabindex="-1" aria-hidden="true"><button class="ui-btn ui-btn-quiet ui-btn-compact" type="button" data-copy="overview-guest-url" data-copy-label="{{t "wizard.guest_link.copy_link"}}" data-copied-label="{{t "common.copied"}}" data-guest-copy-link>{{t "wizard.guest_link.copy_link"}}</button>{{else}}{{copy_inline "overview-guest-url" .Permalink (t "wizard.guest_link.copy_link")}}{{end}}</div></div>
+  <a class="sc" href="#sec-police" data-strip="police" data-state="{{.Police.State}}"><i class="sd" aria-hidden="true"></i><b>{{t "property_page.sec.police.title"}}</b><small{{if .Police.Problem}} class="is-problem"{{end}}>{{if .Police.Problem}}{{t .Police.TextKey}}{{else}}{{t "property_nav.report_ready"}}{{end}}</small></a>
+  <a class="sc" href="#sec-basics" data-strip="business" data-state="{{.Biz.State}}"><i class="sd" aria-hidden="true"></i><b>{{t "health.business"}}</b><small{{if .Biz.Problem}} class="is-problem"{{end}}>{{if not $a.LegalEntityID}}{{t "property_page.strip.operator_missing"}}{{else if .Biz.Problem}}{{t .Biz.TextKey}}{{else if .Operator}}{{.Operator.Name}}{{else}}{{t "health.business.ok"}}{{end}}</small></a>
+  <a class="sc" href="#sec-fee" data-strip="fee" data-state="{{if $a.StayFeeRateCZK}}ok{{else}}off{{end}}"><i class="sd" aria-hidden="true"></i><b>{{t "property_page.sec.fee.title"}}</b><small>{{if $a.StayFeeRateCZK}}{{$a.StayFeeRateCZK}} Kč{{else}}{{t "apartments.chip_state.off"}}{{end}}</small></a>
+  <a class="sc" href="#sec-lock" data-strip="door" data-state="{{.DoorPill}}"><i class="sd" aria-hidden="true"></i><b>{{t "property_page.sec.lock.title"}}</b><small>{{if and .Door (eq .Door.State "on")}}{{t "property_nav.switch_enabled"}}{{else if and .Door (eq .Door.State "times")}}{{t "health.door.times"}}{{else if and .Door (eq .Door.State "offline")}}{{t "health.door.offline"}}{{else}}{{t "property_nav.switch_off"}}{{end}}</small></a>
+</nav>
+<div class="prop-after-strip">
+{{if and .Progress (not .Progress.Hidden)}}
+<section class="pv setup-continue-card" aria-label="{{t "wizard.continue_card_aria"}}">
+  <p>{{t "wizard.continue_card" "done" .Progress.Done "total" .Progress.Total}}
+    {{if .Progress.ReportingWaiting}}<span class="ui-badge ui-badge-action" data-tone="amber">{{t "setup_guide.reporting.waiting_item"}}</span>{{end}}
+  </p>
+  <div class="actions">
+    <a class="ui-btn ui-btn-primary" href="{{.Progress.ContinueURL}}">{{t "wizard.continue"}}</a>
+    <form method="post" action="/apartments/{{$a.ID}}/setup" class="inline">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <button class="ui-btn ui-btn-quiet" type="submit" name="action" value="hide" formnovalidate>{{t "setup_guide.hide"}}</button>
+    </form>
+  </div>
+</section>
+{{else if .SetupHidden}}
+<form method="post" action="/apartments/{{$a.ID}}/setup" class="property-setup-show">
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <button class="link-button" type="submit" name="action" value="show">{{t "setup_guide.show"}}</button>
+</form>
+{{end}}
+  {{if .LeonCard}}<div class="pv"><a class="r" href="{{.Base}}/leon{{if ne .LeonCard "on"}}/setup{{end}}" data-leon-card="{{.LeonCard}}"><span>{{t "leon_page.title"}} <small>{{t "leon_page.card.hint"}}</small></span>{{t (print "leon_page.card." .LeonCard)}}</a></div>{{end}}
+{{if not .WizardActive}}<div hidden>
+<section class="readiness">
+  <div class="readiness-group">
+    <h3 class="readiness-title">{{t "apartment.form.readiness.invite_title"}}</h3>
+    <ul class="readiness-list">
+      {{range .Readiness.Invite}}
+      <li class="readiness-line{{if .Done}} is-done{{end}}">
+        <span class="readiness-mark" aria-hidden="true">{{if .Done}}{{icon "check" 14}}{{else}}{{icon "x" 14}}{{end}}</span>
+        {{if .Done}}{{t (print "apartment.form.readiness.item." .Key)}}
+        {{else}}<a href="#{{.Anchor}}">{{t "apartment.form.readiness.missing"}} {{t (print "apartment.form.readiness.item." .Key)}}</a>{{end}}
+      </li>
+      {{end}}
+    </ul>
+    {{if .Readiness.InviteReady}}
+    <p class="readiness-ready">{{t "apartment.form.readiness.invite_ready"}}</p>
+    {{end}}
+  </div>
+  <div class="readiness-group">
+    <h3 class="readiness-title">{{t "apartment.form.readiness.report_title"}}</h3>
+    <ul class="readiness-list">
+      {{range .Readiness.Report}}
+      <li class="readiness-line{{if .Done}} is-done{{end}}">
+        <span class="readiness-mark" aria-hidden="true">{{if .Done}}{{icon "check" 14}}{{else}}{{icon "x" 14}}{{end}}</span>
+        {{if .Done}}{{t (print "apartment.form.readiness.item." .Key)}}
+        {{else}}<a href="#{{.Anchor}}">{{t "apartment.form.readiness.missing"}} {{t (print "apartment.form.readiness.item." .Key)}}</a>
+          {{if .Message}}<span class="readiness-why">{{.Message}}</span>{{end}}
+        {{end}}
+      </li>
+      {{end}}
+    </ul>
+  </div>
+</section>
+</div>{{end}}
+
+</div>
+{{if .ReadyCard}}
+<section class="ui-section-card ready-card" id="setup-ready" aria-labelledby="setup-ready-title" data-ready-card>
+  <h2 class="ui-section-h" id="setup-ready-title">{{t "setup.ready.title"}}</h2>
+  <p class="ui-sub">{{if .Pin}}{{t "setup.ready.text"}}{{else}}{{t "setup.ready.text_no_pin"}}{{end}}</p>
+  <div class="ready-card-body">
+    <img class="ready-card-qr" src="{{.ReadyQR}}" width="160" height="160" alt="{{t "setup.ready.qr_alt"}}">
+    <div class="ready-card-copy">
+      <p class="ready-card-row"><span class="muted">{{t "property_page.guest_link.title"}}</span> <code class="ready-card-link">{{.Permalink}}</code>
+        <input class="sr-only" type="text" id="ready-link" readonly value="{{.Permalink}}" tabindex="-1" aria-hidden="true">
+        <button class="ui-btn ui-btn-secondary" type="button" data-copy="ready-link" data-copy-label="{{t "common.copy_link"}}" data-copied-label="{{t "common.copied"}}">{{t "common.copy_link"}}</button></p>
+      {{if .Pin}}<p class="ready-card-row"><span class="muted">{{t "havel.card.pin"}}</span> <b class="ready-card-pin">{{.Pin}}</b>
+        <input class="sr-only" type="text" id="ready-pin" readonly value="{{.Pin}}" tabindex="-1" aria-hidden="true">
+        <button class="ui-btn ui-btn-secondary" type="button" data-copy="ready-pin" data-copy-label="{{t "property_page.guest_link.copy_pin"}}" data-copied-label="{{t "common.copied"}}">{{t "property_page.guest_link.copy_pin"}}</button></p>{{end}}
+    </div>
+  </div>
+</section>
+{{end}}
+<div class="form prop-form-single property-detail">
+<div class="form-main">
+<div class="prop-layout"{{if and .FirstSetup .SetupOpen (not .SectionExplicit)}} data-start-section="{{.SetupOpen}}"{{else if eq .SettingsSection "reporting"}} data-start-section="sec-fee"{{end}}>
+<nav class="prop-nav prop-wide-only" aria-label="{{t "nav.settings"}}">
+<a href="#sec-basics"><span class="dot {{if .Address}}g{{else}}r{{end}}" aria-hidden="true"></span>{{t "property_page.sec.basics.title"}}</a>
+<a href="#sec-police"><span class="dot {{if .PoliceOK}}g{{else}}r{{end}}" aria-hidden="true"></span>{{t "property_page.sec.police.title"}}</a>
+<a href="#sec-calendars"><span class="dot {{if .CalendarErrors}}r{{else if .FeedsCount}}g{{else}}n{{end}}" aria-hidden="true"></span>{{t "property_page.sec.calendars.title"}}</a>
+<a href="#sec-messages"><span class="dot n" aria-hidden="true"></span>{{t "property_page.sec.messages.title"}}</a>
+<a href="#sec-lock"><span class="dot {{if and .Door (eq .Door.State "on")}}g{{else}}n{{end}}" aria-hidden="true"></span>{{t "property_page.sec.lock.title"}}</a>
+<a href="#sec-fee"><span class="dot {{if $a.StayFeeRateCZK}}g{{else}}n{{end}}" aria-hidden="true"></span>{{t "property_page.sec.fee.title"}}</a>
+</nav>
+<form method="post" action="{{.Base}}" enctype="multipart/form-data" class="property-settings-form" id="property-settings-form" data-property-settings-form data-unsaved-guard>
+  <p class="required-legend">{{t "common.required_legend"}}</p>
+  <p class="prop-fixline" data-prop-fixline hidden data-text-many="{{t "property_page.fix_fields"}}" data-text-one="{{t "property_page.fix_fields_one"}}"></p>
+  <input type="hidden" name="return_to" value="{{if .FirstSetup}}{{.Base}}?view=settings{{else}}{{.Base}}?view=settings&amp;section={{.SettingsSection}}{{end}}" data-property-return>
+  {{if .FeeReturnTo}}<input type="hidden" name="fee_return_to" value="{{.FeeReturnTo}}">{{end}}
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <button type="submit" hidden tabindex="-1" aria-hidden="true"></button>
+
+<h2 class="sec prop-phone-only">{{t "nav.settings"}}</h2>
+<details class="prop-sec" id="sec-basics"{{if index .Open "sec-basics"}} open{{end}}><summary><span class="dot {{if .Address}}g{{else}}r{{end}}" aria-hidden="true"></span><div><b>{{t "property_page.sec.basics.title"}}</b></div>{{template "apartmentdetail.state" (kv "key" "basics" "root" $ "text" .BasicsState)}}</summary>
+  <div class="fields-wrap">
+  {{template "apartmentdetail.notice" (kv "root" $ "section" "basics")}}
+  {{template "apartmentdetail.missing" (kv "key" "basics" "items" .MissBasics)}}
+    <section class="panel property-section ui-section" id="basics">
+      <div class="grid two property-identity-fields">
+        <div class="field">
+          {{field_label "internal_name" (t "apartment.form.internal_name.label") (t "apartment.form.internal_name.hint") false "" true}}
+          <input type="text" id="internal_name" name="internal_name" value="{{$a.InternalName}}" required
+                 aria-describedby="internal_name-help">
+        </div>
+        <input type="hidden" id="city_en" name="city_en" value="{{$a.CityEN}}">
+      </div>
+      <div class="field property-operator" id="operator-picker">
+        <label for="legal_entity_id">{{t "apartment.form.entity.label"}}<span class="req-star" aria-hidden="true">*</span></label>
+        <select id="legal_entity_id" name="legal_entity_id" required{{if not .Entities}} aria-describedby="operator-message"{{end}}>
+          {{if not .OperatorSelected}}<option value="" disabled selected>{{t "apartment.form.operator.choose"}}</option>{{end}}
+          {{range .Entities}}
+          <option value="{{.ID}}"{{if eq $.OperatorSelected .ID}} selected{{end}}>{{.Name}}</option>
+          {{end}}
+        </select>
+        {{if not .Entities}}
+        <div class="property-operator-empty" id="operator-message">
+          <p class="err-text">{{t "apartment.form.operator.add_first"}}</p>
+          <div class="actions">
+            <a class="btn small" href="/entities" target="_blank" rel="noopener">{{t "apartment.form.operator.add_business"}}</a>
+            <button class="btn small ghost" type="submit" name="operator_refresh" value="1" formnovalidate>{{t "apartment.form.operator.check_again"}}</button>
+          </div>
+        </div>
+        {{end}}
+      </div>
+      {{if .Entities}}<div class="hint property-operator-hint"><a href="{{if $a.LegalEntityID}}/entities?edit={{$a.LegalEntityID}}{{else}}/apartments/{{$a.ID}}?view=settings&amp;section=property#operator-picker{{end}}">{{t "host.business"}} </a> {{help_tip "legal_entity_id-help" (t "apartment.form.entity.hint")}}</div>{{end}}
+      <div class="field" style="max-width:420px" id="alternate-controller">
+        <label for="data_controller_entity_id">{{t "apartment.form.controller.alternate_label"}}</label>
+        <select id="data_controller_entity_id" name="data_controller_entity_id">
+          <option value="">{{t "apartment.form.controller.same_as_operator"}}</option>
+          {{range .Entities}}
+          <option value="{{.ID}}"{{if eq $a.DataControllerEntityID .ID}} selected{{end}}>{{.Name}}</option>
+          {{end}}
+        </select>
+      </div>
+    </section>
+
+    <section class="panel property-section ui-section" id="arrival-departure">
+      <h2 class="property-section-title">{{t "apartment.form.door_code.checkin"}} / {{t "apartment.form.door_code.checkout"}}</h2>
+      <p class="ui-sub">{{t "why.times"}}</p>
+      <div class="grid two">
+        <div class="field"><label for="checkin_hour">{{t "apartment.form.door_code.checkin"}}</label>
+          <select id="checkin_hour" name="checkin_hour" data-hour-twin="checkin_hour"><option value="">{{t "apartment.form.door_code.choose"}}</option>
+            {{range $.Hours}}<option value="{{.}}"{{if $.HourSelected "checkin_hour" .}} selected{{end}}>{{printf "%02d:00" .}}</option>{{end}}
+          </select></div>
+        <div class="field"><label for="checkout_hour">{{t "apartment.form.door_code.checkout"}}</label>
+          <select id="checkout_hour" name="checkout_hour" data-hour-twin="checkout_hour"><option value="">{{t "apartment.form.door_code.choose"}}</option>
+            {{range $.Hours}}<option value="{{.}}"{{if $.HourSelected "checkout_hour" .}} selected{{end}}>{{printf "%02d:00" .}}</option>{{end}}
+          </select></div>
+      </div>
+      {{if .Door}}{{template "apartmentdetail.doorwindow" .Window}}{{end}}
+    </section>
+
+    <section class="panel property-section ui-section" id="address">
+      <h2 class="property-section-title">{{t "apartment.form.address.title"}}</h2>
+      <p class="ui-sub">{{t "why.address"}}</p>
+      <div class="grid property-address-grid">
+        {{range .AddrRow1}}{{template "apartmentdetail.addr" .}}{{end}}
+      </div>
+      <div class="grid property-address-grid">
+        {{range .AddrRow2}}{{template "apartmentdetail.addr" .}}{{end}}
+      </div>
+      <script src="/static/ruian_suggest.js?v=20261111-1103b" defer data-turbo-track="reload"></script>
+    </section>
+
+    <section class="panel property-section ui-section" id="notes-section">
+      <h2 class="property-section-title">{{t "apartment.form.notes.title"}}</h2>
+      <div class="field">
+        {{field_label "notes" (t "apartment.form.notes.label") (t "apartment.form.notes.hint")}}
+        <textarea id="notes" name="notes" aria-describedby="notes-help">{{$a.Notes}}</textarea>
+      </div>
+    </section>
+
+  </div>
+  </details>
+{{if or (not .FirstSetup) $a.ArchivedAt}}
+<div class="prop-archive-row" id="sec-archive">
+  {{template "apartmentdetail.notice" (kv "root" $ "section" "archive")}}
+  <div class="prop-archive-actions" id="archive">
+    {{if $a.ArchivedAt}}
+    <p class="prop-archive-note"><strong>{{t "apartments.archived.when"}} {{date_cz $a.ArchivedAt}}</strong> <span class="ui-sub">{{t "apartment.form.archived_help"}}</span></p>
+    <button class="ui-btn ui-btn-secondary" type="submit" formmethod="post" formnovalidate
+            formaction="{{.Base}}/unarchive">{{t "common.restore"}}</button>
+    {{else}}
+    <span class="prop-archive-action">
+    <button class="ui-btn ui-btn-secondary" type="submit" formmethod="post" formnovalidate
+            formaction="{{.Base}}/archive"
+            data-confirm data-confirm-message="{{t "host.delete_to_archived.confirm"}}">{{t "property_page.archive.button"}}</button>{{help_tip "archive-help" (t "apartment.form.archive_help")}}
+    </span>
+    {{end}}
+  </div>
+</div>
+{{end}}
+
+<details class="prop-sec" id="sec-messages"{{if index .Open "sec-messages"}} open{{end}}><summary><span class="dot n" aria-hidden="true"></span><div><b>{{t "property_page.sec.messages.title"}}</b></div>{{template "apartmentdetail.state" (kv "key" "messages" "root" $ "text" (t "setup.sec.optional"))}}</summary>
+  <div class="fields-wrap">
+  {{template "apartmentdetail.notice" (kv "root" $ "section" "messages")}}
+  {{if .Guest.Problem}}<div class="prop-sec-missing" data-missing="messages" role="note"><p>{{t .Guest.TextKey}}</p></div>{{end}}
+    <section class="panel property-section ui-section" id="communication">
+      <div class="field-label-row"><h2 class="property-section-title">{{t "nav.guest_links"}}{{help_tip "communication-help" (print (t "guest_links.lede") " " (t "apartment.form.guest_link.message_help")) "/guide#guests"}}</h2></div>
+      <p class="ui-sub">{{t "why.guest_link"}}</p>
+      <div class="guest-link-top">
+        <div class="field guest-link-url">
+          <label for="permalink">{{t "property_nav.guest_link"}}</label>
+          <div class="copyrow guest-copy-row">
+            <input type="text" id="permalink" readonly value="{{.Permalink}}">
+            {{copy_button "permalink"}}
+          </div>
+        </div>
+        <div class="field guest-link-pin">
+          {{field_label "permalink_pin" (t "guest_links.pin") (t "apartment.form.guest_link.pin_hint") false "" true}}
+          <div class="copyrow guest-copy-row pin-row">
+            <input type="text" id="permalink_pin" name="permalink_pin" value="{{.Pin}}" class="mono" aria-describedby="permalink_pin-help"
+                   inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="{{t "apartment.form.guest_link.pin_ph"}}" required>
+            {{copy_button "permalink_pin"}}
+          </div>
+        </div>
+        <div class="guest-link-actions">
+          <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/l/{{.LinkKey}}" target="_blank" rel="noopener">{{t "guest_links.preview"}}</a>
+          <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/apartments/{{$a.ID}}/guide">{{t "leon_page.guide_link"}}</a>
+          <span class="guest-link-action">
+            <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit" formmethod="post" formnovalidate
+                    formaction="{{.Base}}/regenerate-pin"
+                    data-confirm data-confirm-message="{{t "confirm.regenerate_pin"}}">{{t "guest_links.new_pin"}}</button>
+            {{help_tip "regenerate-pin-help" (t "apartment.form.guest_link.regenerate_pin_help")}}
+          </span>
+          <span class="guest-link-action">
+            <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit" formmethod="post" formnovalidate
+                    formaction="{{.Base}}/regenerate-link"
+                    data-confirm data-confirm-message="{{t "confirm.regenerate_link"}}">{{t "apartment.form.guest_link.regenerate_link"}}</button>
+            {{help_tip "regenerate-link-help" (t "apartment.form.guest_link.regenerate_link_help")}}
+          </span>
+        </div>
+      </div>
+      <div class="field">
+        {{field_label "guest_message" (t "apartment.form.guest_message.label") (t "apartment.form.guest_message.hint") true}}
+        <textarea id="guest_message" name="guest_message" maxlength="1000" aria-describedby="guest_message-help"
+                  placeholder="{{t "apartment.form.guest_message.placeholder"}}">{{$a.GuestMessage}}</textarea>
+      </div>
+      <div class="grid guest-link-windows">
+        <div class="field">
+          {{field_label "permalink_window_days" (t "apartment.form.guest_link.window_label") (t "apartment.form.guest_link.window_hint")}}
+          <input type="number" id="permalink_window_days" name="permalink_window_days" min="1" max="30" aria-describedby="permalink_window_days-help"
+                 value="{{$a.PermalinkWindowDays}}">
+          <p class="ui-sub link-window-note" data-link-window-note>{{if and .LinkNext.HasStay (eq .LinkNext.Window "now")}}{{t "workflow.link.next_stay_now" "stay" (date_cz .LinkNext.DateFrom)}}{{else if and .LinkNext.HasStay .LinkNext.Window}}{{t "workflow.link.next_stay" "stay" (date_cz .LinkNext.DateFrom) "date" (date_cz .LinkNext.Opens)}}{{else}}{{tp "workflow.link.no_stay" .LinkNext.Days}}{{end}}</p>
+        </div>
+        <div class="field">
+          {{field_label "permalink_reachback_days" (t "apartment.form.guest_link.reachback_label") (t "apartment.form.guest_link.reachback_hint")}}
+          <input type="number" id="permalink_reachback_days" name="permalink_reachback_days" min="1" max="3650" aria-describedby="permalink_reachback_days-help"
+                 value="{{.ReachbackDays}}">
+        </div>
+        <div class="field">
+          {{field_label "passport_photo_policy" (t "apartment.form.passport_policy.label") (t "apartment.form.passport_policy.hint")}}
+          <select id="passport_photo_policy" name="passport_photo_policy" aria-describedby="passport_photo_policy-help">
+            <option value="off"{{if ne $a.PassportPhotoPolicy "required_foreign"}} selected{{end}}>{{t "apartment.form.passport_policy.off"}}</option>
+            <option value="required_foreign"{{if eq $a.PassportPhotoPolicy "required_foreign"}} selected{{end}}>{{t "apartment.form.passport_policy.required"}}</option>
+          </select>
+        </div>
+        <div class="field passport-scan-row">
+          <label class="checkline" for="ocr_scan"><input type="checkbox" id="ocr_scan" name="ocr_scan" value="1"{{if $a.OcrScan}} checked{{end}} aria-describedby="ocr_scan-help">{{tip_label (t "apartment.form.ocr_scan.label") "ocr_scan-help" (t "apartment.form.ocr_scan.hint") "span"}}</label>
+        </div>
+      </div>
+    </section>
+
+  </div>
+  </details>
+
+{{/* The Reporting section starts here; the Stay fee section follows it (define apartmentdetail.fee). */}}
+<details class="prop-sec" id="sec-police"{{if index .Open "sec-police"}} open{{end}}><summary><span class="dot {{if .PoliceOK}}g{{else}}r{{end}}" aria-hidden="true"></span><div><b>{{t "property_page.sec.police.title"}}</b></div>{{template "apartmentdetail.state" (kv "key" "police" "root" $ "text" .PoliceState)}}</summary>
+  <div class="fields-wrap">
+  {{template "apartmentdetail.notice" (kv "root" $ "section" "police")}}
+  {{if and (not .PoliceOK) .HavelOn}}<p class="havel-ask-line"><a class="havel-ask-link" href="/havel?topic=reporting" data-sheet-open="havel-sheet" data-havel-launcher data-havel-topic="reporting">{{t "nav.ask_havel"}}</a></p>{{end}}
+  {{if not (and .FirstSetup (not (index .SectionDone "police")))}}{{template "apartmentdetail.missing" (kv "key" "police" "items" .MissPolice)}}{{end}}
+    <section class="panel property-section ui-section" id="ubyport">
+      <div class="field-label-row police-section-head"><h2 class="property-section-title">{{t "property_page.police.connection"}}{{help_tip "ubyport-help" (t "apartment.form.ubyport.credentials_help_heading") "/guide#ubyport-credentials"}}</h2>
+        <a class="ui-btn ui-btn-secondary ui-btn-compact police-sample-link" id="police-sample-link" href="/static/docs/ubyport-ws-credential-sample.pdf?v=20261004a" target="_blank" rel="noopener">{{t "apartment.form.ubyport.sample_link"}}</a></div>
+      <p class="ui-sub">{{t "why.police"}}</p>
+      <p class="ui-sub"><a href="{{.Base}}?view=settings&amp;section=automation#automation">{{t "automation.timing_title"}} </a></p>
+      <div class="police-letter-helpers">
+      <details class="police-letter-find"{{if .LetterFirst}} open{{end}}>
+        <summary>{{t "police_letter.find_title"}}</summary>
+        {{template "apartmentdetail.letterfigure" .}}
+      </details>
+      <details class="police-letter-paste" id="police-letter-paste"{{if .LetterFirst}} open{{end}}>
+        <summary>{{t "police_letter.paste_title"}}</summary>
+        <div class="field">
+          <div class="field-label-row"><label for="letter_text">{{t "police_letter.paste_label"}}{{help_tip "police-letter-help" (t "police_letter.paste_help")}}</label></div>
+          <textarea id="letter_text" name="letter_text" form="police-letter-form" rows="6" maxlength="20000" autocomplete="off" spellcheck="false" data-letter-paste></textarea>
+        </div>
+        <div class="actions">
+          <button class="ui-btn ui-btn-secondary" type="submit" form="police-letter-form" data-letter-read>{{t "police_letter.read_button"}}</button>
+        </div>
+      </details>
+      </div>
+      <p class="police-letter-status small" id="police-letter-status" role="status" aria-live="polite" data-letter-status data-read-failed="{{t "police_letter.read_failed"}}" data-saved-now="{{t "police_letter.saved_now" "value" "%s"}}"></p>
+      {{range .PoliceFindings}}{{if not .Field}}<p class="police-letter-note" data-police-check data-police-check-code="{{.Code}}" role="note">{{.Text}}</p>{{end}}{{end}}
+      <input type="hidden" name="letter_fields" value="" data-letter-fields data-letter-fields-initial="">
+      <div class="grid">
+        {{template "apartmentdetail.policebox" (kv "name" "uby_idub" "label" (t "setup.label.idub") "value" $a.UbyIDUB "help" (t "apartment.form.ubyport.idub_hint") "optional" false "max" 14 "required" true "findings" .PoliceFindings)}}
+      </div>
+      <div class="grid two">
+        {{template "apartmentdetail.policebox" (kv "name" "uby_ws_user" "label" (t "setup.label.login") "value" $a.UbyWSUser "help" (t "apartment.form.ubyport.login_hint") "optional" false "max" 0 "required" true "findings" .PoliceFindings)}}
+        <div class="field">
+          {{field_label "uby_ws_password" (t "setup.label.password") (t "apartment.form.ubyport.password_help") false "" (not .HasPassword)}}
+          <input type="text" id="uby_ws_password" name="uby_ws_password" autocomplete="off" autocapitalize="off" spellcheck="false"
+                 {{if .HasPassword}}placeholder="••••••••" {{end}}{{if not .HasPassword}}aria-required="true" {{end}}aria-describedby="uby_ws_password-help uby_ws_password-hint">
+          <div class="hint" id="uby_ws_password-hint">
+            {{if .HasPassword}}
+            {{t "apartment.form.ubyport.password_edit_hint"}}
+            {{else}}
+            {{t "apartment.form.ubyport.password_new_hint"}}
+            {{end}}
+          </div>
+        </div>
+      </div>
+      <p class="small muted police-no-credentials">{{t "apartment.form.ubyport.no_credentials"}}
+        <a href="https://policie.gov.cz/reditelstvi-sluzby-cizinecke-policie/jake-jsou-moznosti-zasilani-dat-aplikaci-ubyport" target="_blank" rel="noopener">{{t "apartment.form.ubyport.no_credentials_link"}}</a></p>
+      <div class="field-label-row"><h2 class="property-section-title">{{t "property_page.police.facility"}}</h2></div>
+      <div class="grid">
+        {{template "apartmentdetail.policebox" (kv "name" "uby_mark" "label" (t "setup.label.mark") "value" $a.UbyMark "help" (t "apartment.form.ubyport.mark_hint") "optional" false "max" 6 "required" true "findings" .PoliceFindings)}}
+      </div>
+      <div class="grid two">
+        {{template "apartmentdetail.policebox" (kv "name" "uby_name" "label" (t "setup.label.facility") "value" $a.UbyName "help" .FacilityHelp "optional" false "max" 35 "required" true "findings" .PoliceFindings)}}
+        {{template "apartmentdetail.policebox" (kv "name" "uby_contact" "label" (t "automation.contact") "value" $a.UbyContact "help" (t "apartment.form.ubyport.contact_hint") "optional" true "max" 50 "required" false "findings" .PoliceFindings)}}
+      </div>
+      <div class="actions">
+        <button class="ui-btn ui-btn-secondary" type="submit" formaction="{{.Base}}/test-connection"
+                formmethod="post" formnovalidate>{{t "apartment.form.test_connection"}}</button>
+      </div>
+    </section>
+
+    <section class="panel property-section ui-section" id="automation">
+      <div class="field-label-row"><h2 class="property-section-title">{{t "automation.timing_title"}}{{help_tip "automation-help" (t "automation.timing_help") "/guide#reporting"}}</h2></div>
+      <p class="ui-sub">{{t "why.automation"}}</p>
+      <div class="grid two">
+        <div class="field">
+          <label for="automation_mode">{{t "automation.timing_label"}}</label>
+          <select id="automation_mode" name="automation_mode" aria-describedby="automation_mode-hint"
+                  data-automation-mode data-hours-target="submit_after_hours">
+            {{range $.AutomationModes}}
+            <option value="{{.}}" data-hint="{{t (print "automation.mode_hint." .)}}"{{if eq $a.AutomationMode .}} selected{{end}}>
+              {{t (print "automation.mode_short." .)}}</option>
+            {{end}}
+          </select>
+          <p class="hint" id="automation_mode-hint" data-automation-hint>{{t (print "automation.mode_hint." .AutomationShown)}}</p>
+        </div>
+        <div class="field">
+          <label for="submit_after_hours">{{t "automation.hours_delay"}}</label>
+          <input type="number" id="submit_after_hours" name="submit_after_hours"
+                 min="0" max="48" value="{{$a.SubmitAfterHours}}">
+        </div>
+      </div>
+      <div class="field" style="max-width:320px">
+        <label for="default_purpose">{{t "automation.default_purpose"}}</label>
+        <select id="default_purpose" name="default_purpose">
+          {{range .Purposes}}
+            <option value="{{.Code}}"{{if eq $a.DefaultPurpose .Code}} selected{{end}}>{{.Label}}</option>
+          {{end}}
+        </select>
+      </div>
+    </section>
+  </div>
+  </details>
+{{template "apartmentdetail.fee" .}}
+
+</form>
+<form id="police-letter-form" method="post" action="{{.Base}}/police-letter" data-discard-warning="{{t "police_letter.discard_warning"}}">
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+</form>
+<details class="prop-sec" id="sec-calendars"{{if index .Open "sec-calendars"}} open{{end}}><summary><span class="dot {{if .CalendarErrors}}r{{else if .FeedsCount}}g{{else}}n{{end}}" aria-hidden="true"></span><div><b>{{t "property_page.sec.calendars.title"}}</b></div>{{template "apartmentdetail.state" (kv "key" "calendars" "root" $ "text" .CalendarsState)}}</summary>
+  <div class="fields-wrap">
+  {{template "apartmentdetail.notice" (kv "root" $ "section" "calendars")}}
+  {{template "apartmentdetail.missing" (kv "key" "calendars" "items" .MissCalendars)}}
+{{template "apartmentdetail.calendars" .}}
+  </div>
+</details>
+{{template "apartmentdetail.lock" .}}
+</div>
+  {{if .EditorSaved}}{{if .FlashMsg}}<div class="banner ok section-notice save-summary" role="status" tabindex="-1" data-save-summary><span class="grow">{{.FlashMsg}}</span></div>{{end}}{{end}}
+  <div class="savebar save-on-dirty" data-for="property-settings-form">
+    <a class="btn ghost" href="{{.Base}}" data-unsaved-reset>{{t "common.cancel"}}</a>
+    <button class="btn" type="submit" form="property-settings-form">{{t "common.save_changes"}}</button>
+  </div>
+</div>
+</div>
+{{end}}
+
+{{define "apartmentdetail.fee"}}{{$a := .A}}
+<details class="prop-sec" id="sec-fee"{{if index .Open "sec-fee"}} open{{end}}><summary><span class="dot {{if $a.StayFeeRateCZK}}g{{else}}n{{end}}" aria-hidden="true"></span><div><b>{{t "property_page.sec.fee.title"}}</b></div>{{template "apartmentdetail.state" (kv "key" "fee" "root" $ "text" (or (and $a.StayFeeRateCZK (print $a.StayFeeRateCZK " Kč")) (t "apartments.chip_state.off")))}}</summary>
+  <div class="fields-wrap">
+  {{template "apartmentdetail.notice" (kv "root" $ "section" "fee")}}
+    <section class="panel property-section ui-section" id="stay-fee-settings">
+      <p class="ui-sub">{{t "why.stay_fee"}}</p>
+      {{if .FeeReturnTo}}
+      <p class="small fee-return-note"><a href="{{.FeeReturnTo}}"> {{t "stay_fees.setup.back_to_report"}}</a></p>
+      {{end}}
+      {{if .Fee.Peers}}
+      <div class="field">
+        {{field_label "fee-copy-source" (t "apartment.form.stay_fee.copy_label") (t "apartment.form.stay_fee.copy_hint") false "" false true}}
+        <div class="copyrow">
+          <select id="fee-copy-source" aria-describedby="fee-copy-source-help">
+            {{range .Fee.Peers}}
+            <option value="{{.ID}}"
+                    data-rate="{{.Rate}}"
+                    data-cadence="{{.Cadence}}"
+                    data-vs="{{.VS}}"
+                    data-account="{{.Account}}"
+                    data-authority-name="{{.AuthorityName}}"
+                    data-authority-address="{{.AuthorityAddress}}"
+                    data-authority-contact="{{.AuthorityContact}}"
+                    data-payee="{{.Payee}}"
+                    data-instruction="{{.Instruction}}">{{.Name}}</option>
+            {{end}}
+          </select>
+          <button class="ui-btn ui-btn-secondary ui-btn-compact" type="button" id="fee-copy-apply">
+            {{t "apartment.form.stay_fee.copy_button"}}
+          </button>
+        </div>
+      </div>
+      {{end}}
+      <div class="fee-grid">
+<input type="hidden" name="_stay_fee_account_existing" value="{{.Fee.AccountValue}}">
+<div class="fee-setup-section">
+  <h3 class="property-subsection-title">1. {{t "stay_fees.setup.calculation"}}</h3>
+  <div class="grid two">
+    <div class="field">
+      {{field_label "stay_fee_rate_czk" (t "apartment.form.stay_fee.rate_label") (t "apartment.form.stay_fee.rate_help") false "" false true}}
+      <input type="number" id="stay_fee_rate_czk" name="stay_fee_rate_czk" aria-describedby="stay_fee_rate_czk-help" min="0" max="50" step="1"
+             value="{{$a.StayFeeRateCZK}}">
+    </div>
+    <div class="field">
+      {{field_label "stay_fee_cadence" (t "apartment.form.stay_fee.cadence_label") (t "apartment.form.stay_fee.cadence_help") false "" false true}}
+      <select id="stay_fee_cadence" name="stay_fee_cadence" aria-describedby="stay_fee_cadence-help">
+        <option value="monthly" {{if ne $a.StayFeeCadence "quarterly"}}selected{{end}}>{{t "apartment.form.stay_fee.cadence.monthly"}}</option>
+        <option value="quarterly" {{if eq $a.StayFeeCadence "quarterly"}}selected{{end}}>{{t "apartment.form.stay_fee.cadence.quarterly"}}</option>
+      </select>
+    </div>
+    {{if gt $a.StayFeeRateCZK 0}}<div class="field">
+      {{field_label "stay_fee_rate_from" (t "apartment.form.stay_fee.rate_from_label") (t "apartment.form.stay_fee.rate_from_help") false "" false true}}
+      <input type="date" id="stay_fee_rate_from" name="stay_fee_rate_from" aria-describedby="stay_fee_rate_from-help" min="{{.Fee.RateFromDefault}}" value="{{.Fee.RateFromDefault}}">
+    </div>{{end}}
+  </div>
+</div>
+<div class="fee-setup-section" id="stay-fee-payment">
+  <h3 class="property-subsection-title">2. {{t "stay_fees.setup.payment"}}</h3>
+  <div class="field">
+    {{field_label "stay_fee_vs" (t "apartment.form.stay_fee.vs_label") (t "apartment.form.stay_fee.vs_help") false "" .Fee.Needed true}}
+    <input type="text" id="stay_fee_vs" name="stay_fee_vs" aria-describedby="stay_fee_vs-help" inputmode="numeric" maxlength="10" aria-required="{{if .Fee.Needed}}true{{else}}false{{end}}" value="{{$a.StayFeeVS}}">
+  </div>
+  <div class="field">
+    {{field_label "stay_fee_council_account" (t "apartment.form.stay_fee.account_label") (t "apartment.form.stay_fee.account_help") false "" .Fee.Needed true}}
+    <input type="text" id="stay_fee_council_account" name="stay_fee_council_account" autocomplete="off" spellcheck="false" maxlength="42" aria-required="{{if .Fee.Needed}}true{{else}}false{{end}}"
+           aria-describedby="stay_fee_council_account-help"
+           value="{{.Fee.AccountValue}}">
+  </div>
+</div>
+<div class="fee-setup-section" id="stay-fee-council">
+  <h3 class="property-subsection-title">3. {{t "stay_fees.setup.council"}}</h3>
+  <div class="field">
+    {{field_label "stay_fee_authority_name" (t "apartment.form.stay_fee.authority_name_label") (t "apartment.form.stay_fee.authority_name_help") false "" .Fee.Needed true}}
+    <input type="text" id="stay_fee_authority_name" name="stay_fee_authority_name" aria-describedby="stay_fee_authority_name-help" maxlength="200" aria-required="{{if .Fee.Needed}}true{{else}}false{{end}}" value="{{$a.StayFeeAuthorityName}}">
+  </div>
+  <details class="fee-more ui-details-box"{{if .Fee.MoreOpen}} open{{end}}>
+    <summary><span>{{t "stay_fees.setup.more_details"}}</span>{{icon "chevron-down" 16 "fee-more-chev"}}</summary>
+    <div class="field">
+      {{field_label "stay_fee_authority_address" (t "apartment.form.stay_fee.authority_address_label") (t "apartment.form.stay_fee.authority_address_help") false "" false true}}
+      <input type="text" id="stay_fee_authority_address" name="stay_fee_authority_address" aria-describedby="stay_fee_authority_address-help" maxlength="200" value="{{$a.StayFeeAuthorityAddress}}">
+    </div>
+    <div class="field">
+      {{field_label "stay_fee_authority_contact" (t "apartment.form.stay_fee.authority_contact_label") (t "apartment.form.stay_fee.authority_contact_help") false "" false true}}
+      <input type="text" id="stay_fee_authority_contact" name="stay_fee_authority_contact" aria-describedby="stay_fee_authority_contact-help" maxlength="200" value="{{$a.StayFeeAuthorityContact}}">
+    </div>
+    <div class="field">
+      {{field_label "stay_fee_authority_databox" (t "apartment.form.stay_fee.authority_databox_label") (t "apartment.form.stay_fee.authority_databox_hint") false "" false true}}
+      <input type="text" id="stay_fee_authority_databox" name="stay_fee_authority_databox" maxlength="7" autocapitalize="off" spellcheck="false" aria-describedby="stay_fee_authority_databox-help" value="{{$a.StayFeeAuthorityDatabox}}">
+    </div>
+  </details>
+</div>
+{{if .Fee.GuestPay}}
+{{$rails := .Fee.Rails}}
+<div class="fee-setup-section" id="stay-fee-guest-pay">
+  <h3 class="property-subsection-title">4. {{t "stay_fees.guest_pay.title"}}</h3>
+  <input type="hidden" name="stay_fee_guest_form" value="1">
+  <div class="stay-fee-guest-fields gp">
+    <label class="gp-switch checkline" for="stay_fee_collect">
+      <input type="checkbox" id="stay_fee_collect" name="stay_fee_collect" value="1" {{if $a.StayFeeCollect}}checked{{end}} aria-describedby="stay_fee_collect-help">
+      <span>{{t "stay_fees.guest_pay.collect_label"}}{{help_tip "stay_fee_collect-help" (t "stay_fees.guest_pay.collect_hint") "" "" true}}</span>
+    </label>
+    <div class="gp-body">
+      <p class="err-text small gp-warning" id="stay-fee-rate-warning" role="alert" data-rate-warning hidden>{{t "stay_fees.guest_pay.rate_warning"}}</p>
+      <fieldset class="gp-methods">
+        <legend class="small">{{t "stay_fees.guest_pay.rails_label"}}</legend>
+        <div class="gp-card">
+          <label class="gp-check checkline"><input type="checkbox" name="stay_fee_guest_rails" value="iban"{{if (index $rails 0).On}} checked{{end}}> <span>{{t "stay_fees.guest_pay.rail.iban"}}</span></label>
+          <div class="gp-detail gp-account" data-guest-pay-operator data-preview-url="/stay-fees/{{$a.ID}}/guest-pay-preview">
+            <p class="ui-sub">{{t "stay_fees.guest_pay.operator_lede"}}</p>
+            <div class="field">
+              {{field_label "stay_fee_guest_operator_account" (t "stay_fees.guest_pay.operator_account_label") (t "stay_fees.guest_pay.operator_account_help") false "" false true}}
+              <input type="text" id="stay_fee_guest_operator_account" name="stay_fee_guest_operator_account" autocomplete="off" spellcheck="false" maxlength="42"
+                     aria-describedby="stay_fee_guest_operator_account-help stay-fee-guest-preview-status"
+                     value="{{.Fee.OperatorValue}}">
+              <p class="muted small gp-note">{{t "stay_fees.guest_pay.operator_invoice_note"}}</p>
+            </div>
+            <p class="err-text small" id="stay-fee-guest-preview-status" role="status" aria-live="polite" data-preview-invalid hidden>{{t "flash.stay_fees.account_invalid"}}</p>
+            <div class="gp-preview" id="stay-fee-guest-preview" data-preview-box{{if not .Fee.HasPreview}} hidden{{end}}>
+              <img src="{{.Fee.PreviewQR}}" width="176" height="176" alt="{{t "stay_fees.guest_pay.preview_qr_alt"}}" data-preview-qr>
+              <div class="gp-preview-text">
+                <p class="small"><strong>{{t "stay_fees.guest_pay.preview_title"}}</strong></p>
+                <p class="gp-account-number" data-preview-account>{{.Fee.AccountDisplay}}</p>
+                <p class="muted small">{{t "stay_fees.guest_pay.preview_sample_note"}}</p>
+              </div>
+            </div>
+            <p class="muted small gp-rail-note">{{t "stay_fees.guest_pay.qr_note"}}</p>
+          </div>
+        </div>
+        <div class="gp-card">
+          <label class="gp-check checkline"><input type="checkbox" name="stay_fee_guest_rails" value="revolut"{{if (index $rails 1).On}} checked{{end}}> <span>{{t "stay_fees.guest_pay.rail.revolut"}}</span></label>
+          <div class="gp-detail gp-revolut">
+            <div class="field">
+              {{field_label "stay_fee_guest_revolut_link" (t "stay_fees.guest_pay.revolut_label") (t "stay_fees.guest_pay.revolut_help") false "" false true}}
+              <input type="url" id="stay_fee_guest_revolut_link" name="stay_fee_guest_revolut_link" aria-describedby="stay_fee_guest_revolut_link-help" maxlength="200" inputmode="url" autocapitalize="off" spellcheck="false" placeholder="https://revolut.me/" value="{{$a.StayFeeGuestRevolutLink}}">
+            </div>
+          </div>
+        </div>
+        <div class="gp-card">
+          <label class="gp-check checkline"><input type="checkbox" name="stay_fee_guest_rails" value="cash"{{if (index $rails 2).On}} checked{{end}}> <span>{{t "stay_fees.guest_pay.rail.cash"}}</span></label>
+          <div class="gp-detail gp-cash">
+            <div class="field">
+              {{field_label "stay_fee_guest_cash_note" (t "stay_fees.guest_pay.cash_label") (t "stay_fees.guest_pay.cash_help") false "" false true}}
+              <textarea id="stay_fee_guest_cash_note" name="stay_fee_guest_cash_note" aria-describedby="stay_fee_guest_cash_note-help" maxlength="300" rows="2">{{$a.StayFeeGuestCashNote}}</textarea>
+            </div>
+          </div>
+        </div>
+      </fieldset>
+      <div class="field gp-default">
+        {{field_label "stay_fee_guest_default_rail" (t "stay_fees.guest_pay.default_label") (t "stay_fees.guest_pay.default_help") false "" false true}}
+        <select id="stay_fee_guest_default_rail" name="stay_fee_guest_default_rail" aria-describedby="stay_fee_guest_default_rail-help">
+          {{range $rails}}
+          <option value="{{.Code}}" data-rail="{{.Code}}"{{if .IsDefault}} selected{{end}}{{if not .On}} disabled hidden{{end}}>{{t (print "stay_fees.guest_pay.rail." .Code)}}</option>
+          {{end}}
+        </select>
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}
+{{with .Fee.Signature}}
+<input type="hidden" name="fee_signature_section" value="1">
+  <fieldset class="signature-block" data-host-signature>
+    <legend>{{t "entity.signature.heading"}} {{help_tip "fee_signature-help" (t "entity.signature.scope") "" "" true}}</legend>
+    <div class="signature-locked">
+      <img class="signature-locked-img" data-signature-preview alt="{{t "entity.signature.locked_alt"}}"{{if .Preview}} src="{{.Preview}}"{{else}} hidden{{end}}>
+      <span class="signature-locked-empty" data-signature-empty{{if .Preview}} hidden{{end}}>{{t "entity.signature.none"}}</span>
+    </div>
+    <div class="action-group">
+      <button class="ui-btn ui-btn-secondary" type="button" data-signature-open hidden>{{if .Preview}}{{t "entity.signature.edit"}}{{else}}{{t "entity.signature.add"}}{{end}}</button>
+      <span class="small" role="status" data-signature-status data-unsaved="{{t "entity.signature.unsaved"}}"></span>
+    </div>
+    <input type="hidden" id="fee_signature" name="signature_drawn" value="{{.Preview}}">
+    <dialog class="ui-dialog signature-dialog" data-signature-dialog aria-labelledby="fee_sig-title">
+      <div class="ui-sheet">
+        <span class="ui-sheet-handle" aria-hidden="true"></span>
+        <h2 id="fee_sig-title">{{t "entity.signature.dialog_title"}}</h2>
+        <div class="ui-tabs signature-modes" role="tablist">
+          <button class="ui-tab" type="button" role="tab" aria-selected="true" data-signature-mode="draw">{{t "entity.signature.mode_draw"}}</button>
+          <button class="ui-tab" type="button" role="tab" aria-selected="false" data-signature-mode="type">{{t "entity.signature.mode_type"}}</button>
+        </div>
+        <div data-signature-panel="draw">
+          <canvas id="fee_sig-canvas" class="signature-dialog-pad" role="img" aria-label="{{t "entity.signature.draw_hint"}}"></canvas>
+          <button class="ui-btn ui-btn-secondary ui-btn-compact" type="button" data-signature-clear>{{t "entity.signature.clear"}}</button>
+        </div>
+        <div data-signature-panel="type" hidden>
+          <div class="field">
+            <label for="fee_signature_name">{{t "entity.signature.type_label"}}</label>
+            <input type="text" id="fee_signature_name" name="signature_name" maxlength="80" autocomplete="name" autocapitalize="words" value="{{.Name}}" data-signature-typed>
+          </div>
+          <canvas class="signature-dialog-pad signature-typed-preview" data-signature-typed-canvas aria-hidden="true"></canvas>
+        </div>
+        <div class="action-group">
+          <label class="ui-btn ui-btn-secondary ui-btn-compact" for="fee_signature_file">{{t "entity.signature.upload"}}</label>
+          <input class="sr-only" type="file" id="fee_signature_file" name="signature_file" accept="image/png,image/jpeg" data-signature-file>
+          {{if .Preview}}<label class="check"><input type="checkbox" name="signature_remove" value="1"> {{t "entity.signature_remove"}}</label>{{end}}
+        </div>
+        <div class="action-group signature-dialog-actions">
+          <button class="ui-btn ui-btn-primary" type="button" data-signature-use>{{t "entity.signature.use"}}</button>
+          <button class="ui-btn ui-btn-secondary" type="button" data-signature-cancel>{{t "entity.signature.cancel"}}</button>
+        </div>
+      </div>
+    </dialog>
+  </fieldset>
+{{end}}
+<script src="/static/stay-fee-guest-pay.js?v=20261105-gp4" defer data-turbo-track="reload"></script></div>
+      {{if gt $a.StayFeeRateCZK 0}}
+        {{if .Fee.MissingWarn}}
+        <p class="small warn-text">{{t "apartment.form.stay_fee.missing_warn"}}</p>
+        {{end}}
+        <p class="ui-sub">
+          <a href="/stay-fees/{{$a.ID}}">{{t "apartment.form.stay_fee.open_overview"}} </a>
+        </p>
+      {{end}}
+    </section>
+  </div>
+  </details>
+{{end}}
+
+{{define "apartmentdetail.calendars"}}
+{{$a := .A}}
+{{$connectOpen := or (not .Feeds) .JustCreated .AddCalendar}}
+<div class="property-view-head">
+  <div class="field-label-row"><h2 id="calendars">{{t "apartments.table.calendars"}}</h2>{{help_tip "calendars-help" (t "apartment.form.calendars.lede")}}</div>
+  <div class="actions">
+    {{if .Feeds}}<a class="ui-btn ui-btn-secondary ui-btn-compact" href="{{.Base}}?view=bookings&amp;add_calendar=1#calendar-connect" data-calendar-add>{{t "property_nav.add_calendar"}}</a>{{end}}
+    {{if not .JustCreated}}<a class="ui-btn ui-btn-quiet ui-btn-compact" href="/reservations?new=1&amp;apartment={{$a.ID}}#add-stay-panel">{{t "property_create.created_manual"}}</a>{{end}}
+    {{if .Feeds}}{{sync_calendars_button (print .Base "?view=bookings")}}{{end}}
+  </div>
+</div>
+
+<div class="property-bookings{{if not $connectOpen}} is-list-only{{end}}">
+  <div class="property-feeds">
+    {{if .Feeds}}
+    <div class="panel tight scroll-x">
+      <table class="table-cards feed-table">
+        <thead><tr><th>{{t "apartment.form.feed.name"}}</th><th>{{t "apartment.form.feed.portal"}}</th><th>{{t "apartment.form.feed.last_sync"}}</th><th>{{t "apartment.form.feed.url"}}</th><th></th></tr></thead>
+        <tbody>
+        {{range .Feeds}}
+          <tr>
+            <td data-label="{{t "apartment.form.feed.name"}}"><strong>{{.DisplayName}}</strong></td>
+            <td data-label="{{t "apartment.form.feed.portal"}}">{{source_badge .PlatformKey .DisplayPortal}}</td>
+            <td class="nowrap" data-label="{{t "apartment.form.feed.last_sync"}}">
+              {{if eq .LastStatus "ok"}}<span class="ui-badge ui-badge-done" data-tone="green">{{t "apartment.form.feed.status.ok"}}</span>
+              {{else if eq .LastStatus "suspect"}}<span class="ui-badge ui-badge-action" data-tone="amber">{{t "apartment.form.feed.status.suspect"}}</span>
+              {{else if eq .LastStatus "error"}}<span class="ui-badge ui-badge-action" data-tone="red">{{t "apartment.form.feed.status.error"}}</span>
+              {{else}}<span class="ui-badge ui-badge-neutral" data-tone="grey">{{t "apartment.form.feed.status.never"}}</span>{{end}}
+              {{if .Checked}}<div class="ui-sub">{{datetime_local .Checked}}</div>{{end}}
+              {{if .LastError}}<div class="small err-text">{{.LastError}}</div>{{end}}
+            </td>
+            <td class="small feed-url" data-label="{{t "apartment.form.feed.url"}}">
+              <div class="feed-url-row"><span class="mono feed-url-value" id="feed-url-{{.ID}}" title="{{.URL}}">{{.URL}}</span>{{copy_button (print "feed-url-" .ID) (t "common.copy_link")}}</div>
+            </td>
+            <td class="row-actions" data-label="">
+              <form method="post" action="/feeds/{{.ID}}/delete" class="inline"
+                    data-confirm data-confirm-message="{{t "confirm.disconnect_feed"}}">
+                <input type="hidden" name="_csrf" value="{{csrf}}">
+                <button class="ui-btn ui-btn-danger ui-btn-compact" type="submit">{{t "common.remove"}}</button>
+              </form>
+            </td>
+          </tr>
+        {{end}}
+        </tbody>
+      </table>
+    </div>
+    {{else}}
+      <div class="panel empty">{{t "apartment.form.calendars.empty"}}</div>
+    {{end}}
+  </div>
+
+  <div class="calendar-connect{{if not $connectOpen}} is-collapsed{{end}}" id="calendar-connect" data-calendar-connect>
+  <form method="post" action="{{.Base}}/feeds" class="panel calendar-add-form" id="calendar-add">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <h2>{{t "apartment.form.calendars.connect_title"}}</h2>
+    <div class="field">
+      <label for="label">{{t "calendar.platform_label"}}<span class="req-star" aria-hidden="true">*</span></label>
+      <select id="label" name="label" required>
+        <option value="" disabled selected>{{t "calendar.choose_platform"}}</option>
+        {{range .Platforms}}
+        <option value="{{.Key}}">{{if .Name}}{{.Name}}{{else}}{{t "calendar.platform.other"}}{{end}}</option>
+        {{end}}
+      </select>
+    </div>
+    <div class="field calendar-other-platform">
+      <label for="label_other">{{t "calendar.other_label"}}</label>
+      <input type="text" id="label_other" name="label_other" maxlength="80" value="">
+    </div>
+    <div class="field">
+      {{field_label "url" (t "apartment.form.calendars.url_label") (t "apartment.form.calendars.url_hint") false "/guide#stays" true}}
+      <input type="url" id="url" name="url" required value=""
+             placeholder="{{t "apartment.form.calendars.url_ph"}}" aria-describedby="url-help">
+    </div>
+    <div class="field">
+      <label for="own_name">{{t "apartment.form.calendars.own_name_label"}} <span class="opt">{{t "common.optional"}}</span></label>
+      <input type="text" id="own_name" name="own_name" maxlength="100" value=""
+             placeholder="{{t "apartment.form.calendars.own_name_ph"}}">
+    </div>
+    <div class="actions"><button class="ui-btn ui-btn-primary" type="submit">{{t "property_nav.add_calendar"}}</button></div>
+  </form>
+  </div>
+</div>
+{{end}}
+
+{{define "apartmentdetail.lock"}}
+{{$a := .A}}{{$d := .Door}}
+<details class="prop-sec" id="sec-lock"{{if index .Open "sec-lock"}} open{{end}}><summary><span class="dot {{if and $d (eq $d.State "on")}}g{{else}}n{{end}}" aria-hidden="true"></span><div><b>{{t "property_page.sec.lock.title"}}</b></div>{{template "apartmentdetail.state" (kv "key" "lock" "root" $ "text" .LockState)}}</summary>
+  <div class="fields-wrap">
+  {{template "apartmentdetail.notice" (kv "root" $ "section" "lock")}}
+  {{if and $d (or (eq $d.State "offline") (eq $d.State "times"))}}<div class="prop-sec-missing" data-missing="lock" role="note"><p>{{if eq $d.State "offline"}}{{t "health.door.offline"}} {{t "smart_locks.offline_fix"}}{{else}}{{t "health.door.times"}}{{end}}</p></div>{{end}}
+    <p class="property-group-intro">{{t "why.door_lock"}}</p>
+    {{if and $d $d.Account $d.Locks}}
+    <div class="lock-state" id="lock-connected-off" data-state="{{$d.State}}" role="status">
+      <i class="sd" aria-hidden="true"></i>
+      <div class="lock-state-text"><b>{{t $d.StateKey}}</b>
+        {{if eq $d.State "on"}}<small>{{t "smart_locks.online"}}</small>
+        {{else if eq $d.State "offline"}}{{if ne $d.Account.Status "ok"}}<small>{{t "smart_locks.reauth"}}</small>{{end}}<small><a class="ui-btn ui-btn-quiet ui-btn-compact" href="/guide#door-codes">{{t "smart_locks.guide_link"}}</a></small>
+        {{else if eq $d.State "times"}}<small>{{t "smart_locks.times_required"}}</small>{{end}}</div>
+      <form method="post" action="/apartments/{{$a.ID}}/door-codes" class="lock-state-form">
+        <input type="hidden" name="_csrf" value="{{csrf}}">
+        <input type="hidden" name="return_to" value="/apartments/{{$a.ID}}?view=settings&amp;section=lock#sec-lock">
+        <input type="hidden" name="mode" value="{{if eq $d.State "off"}}on{{else}}off{{end}}">
+        <button class="ui-btn {{if eq $d.State "off"}}ui-btn-primary{{else}}ui-btn-secondary{{end}}" type="submit">{{if eq $d.State "off"}}{{t "smart_locks.turn_on"}}{{else}}{{t "smart_locks.turn_off"}}{{end}}</button>
+      </form>
+    </div>
+    {{else if $d}}
+    <div class="lock-state" id="lock-setup-state" data-state="{{$d.State}}" role="status">
+      <i class="sd" aria-hidden="true"></i>
+      <div class="lock-state-text"><b>{{t $d.StateKey}}</b>
+        <small>{{t "apartment.form.door_code.connect_first"}}</small>{{if eq $d.State "offline"}}<small><a class="ui-btn ui-btn-quiet ui-btn-compact" href="/guide#door-codes">{{t "smart_locks.guide_link"}}</a></small>{{end}}</div>
+    </div>
+    {{end}}
+    {{if $d}}
+    {{template "apartmentdetail.doorwindow" .Window}}
+    {{if and $d.Account $d.Locks}}
+    <section class="panel property-section ui-section" id="door-code">
+      <p class="ui-sub">{{t "why.times"}}</p>
+      {{if and (eq $d.State "off") (or (not $a.CheckinHour) (not $a.CheckoutHour))}}<p class="err-text" id="lock-times-required" role="note">{{t "smart_locks.times_required"}}</p>{{end}}
+      <div class="grid two" data-lock-times>
+        <div class="field"><label for="lock_checkin_hour">{{t "apartment.form.door_code.checkin"}}<span class="req-star" aria-hidden="true">*</span></label>
+          <select form="property-settings-form" id="lock_checkin_hour" name="lock_checkin_hour" data-hour-twin="checkin_hour"{{if $d.Enabled}} required{{end}}><option value="">{{t "apartment.form.door_code.choose"}}</option>
+            {{range $.Hours}}<option value="{{.}}"{{if $.HourSelected "checkin_hour" .}} selected{{end}}>{{printf "%02d:00" .}}</option>{{end}}
+          </select></div>
+        <div class="field"><label for="lock_checkout_hour">{{t "apartment.form.door_code.checkout"}}<span class="req-star" aria-hidden="true">*</span></label>
+          <select form="property-settings-form" id="lock_checkout_hour" name="lock_checkout_hour" data-hour-twin="checkout_hour"{{if $d.Enabled}} required{{end}}><option value="">{{t "apartment.form.door_code.choose"}}</option>
+            {{range $.Hours}}<option value="{{.}}"{{if $.HourSelected "checkout_hour" .}} selected{{end}}>{{printf "%02d:00" .}}</option>{{end}}
+          </select></div>
+      </div>
+      <div class="field-label-row"><h2 class="property-section-title">{{t "host.door_code"}}{{help_tip "door-code-help" (print (t "apartment.form.door_code.lede") " " (t "apartment.form.door_code.manual")) "/guide#door-codes"}}</h2></div>
+        {{if $d.TestMode}}<p class="ui-sub"><strong>{{t "apartment.form.door_code.test_mode"}}</strong></p>{{end}}
+        <div class="field" style="max-width:320px"><label for="lock_id">{{t "apartment.form.door_code.lock"}}</label>
+          <select form="property-settings-form" id="lock_id" name="lock_id"><option value="">{{t "apartment.form.door_code.choose"}}</option>
+            {{range $d.Locks}}<option value="{{.LockID}}"{{if and .UsedBy (ne .LockID $d.LockID)}} disabled{{end}}{{if or (eq .LockID $d.LockID) (and (not $d.LockID) (eq .LockID $d.DefaultLockID))}} selected{{end}}>{{.Alias}} ({{t "smart_locks.lock_id" "id" .LockID}}){{if .UsedBy}} · {{t "apartment.form.door_code.in_use" "property" .UsedBy}}{{end}}</option>{{end}}
+          </select>
+          {{if $d.TZWarning}}<div class="hint"><strong>{{t "smart_locks.timezone_warning"}}</strong></div>{{end}}
+        </div>
+
+        <p class="ui-sub">{{t "apartment.form.door_code.first_use"}}</p>
+        {{if $d.Overlap}}<p class="ui-sub"><strong>{{t "apartment.form.door_code.overlap"}}</strong></p>{{end}}
+    </section>
+    {{end}}
+    <input form="property-settings-form" type="hidden" name="door_code_section" value="1">
+    {{else}}
+    <p class="ui-sub">{{t "smart_locks.lede"}}</p>
+    <div class="lock-state" id="lock-unavailable" data-state="off" role="status">
+      <i class="sd" aria-hidden="true"></i>
+      <div class="lock-state-text"><b>{{t "smart_locks.state_off"}}</b><small>{{t "wizard.door_lock.unavailable"}}</small></div>
+    </div>
+    {{end}}
+    {{if $d}}
+  <section class="panel property-section ui-section" id="{{if and $d.Account $d.Locks}}smart-locks{{else}}door-code{{end}}">
+    {{if not (and $d.Account $d.Locks)}}
+    <h2 class="property-section-title sr-only">{{t "smart_locks.title"}}</h2>
+    <p class="ui-sub">{{t "smart_locks.lede"}}</p>
+    {{end}}
+    {{template "apartmentdetail.locks" .}}
+  </section>
+    {{end}}
+  </div>
+</details>
+{{end}}
+
+{{define "apartmentdetail.lockshare"}}
+  <h2>{{t "smart_locks.share_title"}}</h2>
+  <p><strong>{{t "smart_locks.name_label"}}</strong></p>
+  <p><code id="{{.id}}">{{.receiver}}</code> {{copy_button .id}}</p>
+  <h3 class="smart-locks-steps-title">{{t "smart_locks.steps_title"}}
+    {{help_tip (print "smart-locks-steps-help-" .section) (t "smart_locks.steps_help") "/guide#door-codes-share"}}</h3>
+  <ol class="guide-steps"><li>{{t "smart_locks.essential1"}}</li><li>{{t "smart_locks.essential2"}}</li><li>{{t "smart_locks.essential3"}}</li></ol>
+  <p class="ui-sub">{{t "smart_locks.warn_owner"}}</p>
+  <p class="ui-sub"><strong>{{t "smart_locks.warn_ekey"}}</strong></p>
+  <form method="post" action="/smart-locks/refresh"><input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="return_to" value="{{.return_to}}">
+    <input type="hidden" name="section" value="{{.section}}">
+    <div class="action-group"><button class="{{if .primary}}ui-btn ui-btn-primary{{else}}ui-btn ui-btn-secondary{{end}}" type="submit">{{t "smart_locks.check"}}</button></div></form>
+{{end}}
+
+{{define "apartmentdetail.locks"}}
+{{$d := .Door}}
+{{if $d.Reauth}}<p class="ui-sub"><strong>{{t "smart_locks.reauth"}}</strong></p>{{end}}
+{{if not $d.Account}}
+<section class="ui-section" id="smart-locks-how">
+  <h2>{{t "smart_locks.how_title"}}</h2>
+  <ol class="guide-steps"><li>{{t "smart_locks.how1"}}</li><li>{{t "smart_locks.how2"}}</li><li>{{t "smart_locks.how3"}}</li></ol>
+</section>
+<section class="ui-section" id="smart-locks-setup">
+  <h2 class="sr-only">{{t "smart_locks.setup_title"}}</h2>
+  <form method="post" action="/smart-locks/setup">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <input type="hidden" name="return_to" value="{{$d.PanelReturn}}">
+    <label class="checkline" for="terms"><input type="checkbox" id="terms" name="terms" value="1" required>
+      <span>{{t "smart_locks.terms"}} <a href="/guide#door-codes-terms">{{t "smart_locks.terms_link"}}</a></span></label>
+    <div class="action-group"><button class="ui-btn ui-btn-primary" type="submit">{{t "smart_locks.setup"}}</button></div>
+  </form>
+  <p class="ui-sub"><a href="/guide#door-codes">{{t "smart_locks.guide_link"}}</a></p>
+</section>
+{{else}}
+{{if not $d.Locks}}
+<section class="ui-section" id="smart-locks-share">
+  {{template "apartmentdetail.lockshare" (kv "id" "ttlock-receiver" "section" "share" "receiver" $d.Account.Username "return_to" $d.PanelReturn "primary" true)}}
+</section>
+{{else}}
+<details class="ui-section" id="smart-locks-add-more">
+  <summary>{{t "smart_locks.add_more"}}</summary>
+  {{template "apartmentdetail.lockshare" (kv "id" "ttlock-receiver-more" "section" "add-more" "receiver" $d.Account.Username "return_to" $d.PanelReturn "primary" false)}}
+</details>
+<section class="ui-section" id="smart-locks-list">
+  {{range $d.Locks}}
+  <div class="smart-lock-row ui-section ui-section-row">
+    <p><strong>{{.Alias}}</strong> · {{t "smart_locks.lock_id" "id" .LockID}}
+      {{if .Battery}} · {{t "smart_locks.battery" "percent" .Battery}}{{end}}</p>
+    <p class="ui-sub">{{icon "check" 14}} {{t "smart_locks.connected"}}</p>
+    <p class="ui-sub">{{if .Using}}{{join .Using ", "}}{{else}}{{t "smart_locks.unused"}}{{end}}</p>
+    {{if gt (len .Using) 1}}<p class="ui-sub"><strong>{{t "smart_locks.shared_warning"}}</strong></p>{{end}}
+    {{if .TZWrong}}
+    <p class="ui-sub"><strong>{{t "smart_locks.timezone_warning"}}</strong></p>
+    {{end}}
+  </div>
+  {{end}}
+  <div class="action-group">
+    <form method="post" action="/smart-locks/refresh" class="inline"><input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="return_to" value="{{$d.PanelReturn}}">
+      <input type="hidden" name="section" value="list">
+      <button class="ui-btn ui-btn-primary" type="submit">{{t "smart_locks.check"}}</button></form>
+    <form method="post" action="/smart-locks/remove" class="inline" data-confirm data-confirm-message="{{t "smart_locks.remove_confirm"}}"><input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="return_to" value="{{$d.PanelReturn}}">
+      <button class="ui-btn ui-btn-danger" type="submit">{{t "smart_locks.remove"}}</button></form>
+  </div>
+</section>
+{{end}}
+{{end}}
+{{end}}
