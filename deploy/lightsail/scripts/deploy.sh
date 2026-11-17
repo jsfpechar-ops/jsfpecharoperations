@@ -317,6 +317,30 @@ echo "==> Starting stack"
 docker compose pull caddy
 docker compose up -d --remove-orphans
 
+# 1830: two-copy deploy of ubyhost-go. The idle slot gets the new image and
+# must be healthy before the old slot stops. Migrations are add-only, so the
+# old copy keeps working on the new schema (docs/context/rules.md).
+if docker compose --profile go config --services | grep -qx 'ubyhost-go' \
+  && docker image inspect ubyhost-go:local >/dev/null 2>&1; then
+  # shellcheck disable=SC1091
+  source ./scripts/go-slot.sh
+  LIVE_SLOT="$(go_live_slot)"
+  NEW_SLOT="$(go_idle_slot)"
+  echo "==> Starting ubyhost-go slot ${NEW_SLOT} beside slot ${LIVE_SLOT}"
+  docker tag ubyhost-go:local "ubyhost-go:slot-${NEW_SLOT}"
+  docker compose --profile go up -d --no-build --no-deps --force-recreate "$(go_svc "${NEW_SLOT}")"
+  if ! go_wait_healthy "${NEW_SLOT}" 60; then
+    echo "New ubyhost-go copy (slot ${NEW_SLOT}) never became healthy; the old copy keeps serving." >&2
+    docker compose --profile go stop "$(go_svc "${NEW_SLOT}")" || true
+    rollback
+    exit 1
+  fi
+  echo "${NEW_SLOT}" > .go-slot
+  sleep 3 # one Caddy health interval, so Caddy sees the new copy before the old one stops
+  docker compose --profile go stop "$(go_svc "${LIVE_SLOT}")" || true
+  echo "ubyhost-go now runs on slot ${NEW_SLOT}."
+fi
+
 # Reload Caddy unconditionally, every deploy.
 #
 # The Caddyfile is bind-mounted into the container, and the compose service
