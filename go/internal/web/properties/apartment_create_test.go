@@ -119,6 +119,13 @@ func apartmentCreateSeed(t *testing.T, pool *pgxpool.Pool, g apartmentCreateGold
 func apartmentCreatePost(t *testing.T, h http.Handler, nonce string, user, workspace int64, lang string, csrf bool,
 	fields map[string]string) *httptest.ResponseRecorder {
 	t.Helper()
+	return apartmentFormPost(t, h, "/apartments", nonce, user, workspace, lang, csrf, fields)
+}
+
+// apartmentFormPost is apartmentCreatePost to any path (POST /apartments/{id} of brief 1702c1 too).
+func apartmentFormPost(t *testing.T, h http.Handler, path, nonce string, user, workspace int64, lang string, csrf bool,
+	fields map[string]string) *httptest.ResponseRecorder {
+	t.Helper()
 	form := url.Values{}
 	for k, v := range fields {
 		form.Set(k, v)
@@ -131,7 +138,7 @@ func apartmentCreatePost(t *testing.T, h http.Handler, nonce string, user, works
 		}
 		form.Set("_csrf", token)
 	}
-	req := httptest.NewRequest(http.MethodPost, "/apartments", strings.NewReader(form.Encode()))
+	req := httptest.NewRequest(http.MethodPost, path, strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.AddCookie(&http.Cookie{Name: "ubyhost_lang", Value: lang})
 	req.AddCookie(&http.Cookie{Name: "ubyhost_csrf", Value: nonce})

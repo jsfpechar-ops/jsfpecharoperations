@@ -417,11 +417,11 @@ func (s *server) apartmentCreate(w http.ResponseWriter, r *http.Request) {
 	q.back(w, r, fmt.Sprintf("/apartments/%d/setup/calendar", id), msg, hostweb.Flash{})
 }
 
-// insertApartment applies the police defaults and the create-only rules, then
-// writes the row and, when the fee was posted, its first dated rate.
-func (s *server) insertApartment(ctx context.Context, q *request, p apartmentPayload, operatorEmail string) (int64, error) {
+// applyPoliceDefaults is _apply_police_defaults: the abbreviation from the
+// login, the contact from the operator's e-mail. The create and the settings
+// save (brief 1702c) share it.
+func applyPoliceDefaults(p apartmentPayload, operatorEmail string) []column {
 	cols := p.cols
-	// _apply_police_defaults: the abbreviation from the login, the contact from the operator.
 	if pyStrip(p.text["uby_mark"]) == "" {
 		if mark := validation.MarkFromWSUser(p.text["uby_ws_user"]); mark != "" {
 			cols = setColumn(cols, "uby_mark", mark)
@@ -430,6 +430,13 @@ func (s *server) insertApartment(ctx context.Context, q *request, p apartmentPay
 	if pyStrip(p.text["uby_contact"]) == "" && operatorEmail != "" {
 		cols = setColumn(cols, "uby_contact", firstRunes(operatorEmail, 50))
 	}
+	return cols
+}
+
+// insertApartment applies the police defaults and the create-only rules, then
+// writes the row and, when the fee was posted, its first dated rate.
+func (s *server) insertApartment(ctx context.Context, q *request, p apartmentPayload, operatorEmail string) (int64, error) {
+	cols := applyPoliceDefaults(p, operatorEmail)
 	if pyStrip(p.text["guest_message"]) == "" {
 		cols = setColumn(cols, "guest_message", apartmentCreateStrings.T(q.lang, "apartment.form.guest_message.default", nil))
 	}
