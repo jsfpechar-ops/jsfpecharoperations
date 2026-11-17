@@ -9,7 +9,7 @@ Tier: B (Sonnet writes the exact-diff pass; orchestrator reads the diff of the r
 
 ## 1. Objective
 
-Add the route-completeness test for the property settings thread (every `admin.py` property route has a Go pattern for each method) and resolve the path collisions `/entities` (POST), `/apartments` (POST) so a prefix can move as a whole. Writes the wave P line for the runbook.
+Add a method-and-path completeness test for the property settings thread and write the wave P steps in the cutover runbook. `POST /entities` (1522) and `POST /apartments` (1700b2) are already registered. Check those handlers and their GET counterparts together before bringing the paths to Go.
 
 ## 2. Context
 
@@ -21,7 +21,9 @@ Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (no new pers
 
 - all routes of briefs 1700-1704 plus the existing 1300/1301/1302/1520-1524 routes
 
-**Parity method (same as briefs 1595 and 1580):** a golden script `App/scripts/go_go_property_settings_switch_golden.py` seeds a throwaway database with made-up rows, renders the real FastAPI app, and writes `testdata/*_golden.json`; the Go test replays the same seed and must match byte for byte (go-first exception 1). Accepted differences are listed in the report, never silently.
+Build the test inventory from the Python routes in this thread and match each method to the production Go mux. Reuse the handler-level parity tests in the preceding briefs for response behavior.
+
+Both `deploy/lightsail/caddy/Caddyfile.acme` and `deploy/lightsail/caddy/Caddyfile.cloudflare` select Go by path for every HTTP method. The Python fallback handles only GET and HEAD when Go returns the explicit route-not-ported 501. Include matches under `/apartments/*` from onboarding, bookings and guest-guide routes and matches under `/settings/*` from exports in the collision review. A broad match requires coverage of every Python method it captures. Use narrower selectors for wave P where coverage is incomplete.
 
 ## 3. Files
 
@@ -38,10 +40,9 @@ No other file may change. Two open briefs naming the same file in §3 run in the
 
 0. Checks (repo root). Anything other than the stated result: STOP (§8). The exact-diff pass fills in the `grep -cF` anchor lines for every file this brief edits and the `ls` line proving the new files do not exist yet.
 1. Copy the sidecars to their repo paths and run `sha256sum -c` on the table in §2: all OK.
-2. Add the golden script and its freshness test; run the script and commit the golden.
-3. Add the handlers, templates and i18n keys (`App/scripts/go_host_i18n.py` writes the catalog); `gofmt -l` prints nothing.
-4. Register the routes in one new `go/cmd/ubyhost-web/register_web_*.go` file (`init()` through `registerRoutes`); the routes stay dormant: nothing is added to `UBYHOST_GO_PATHS`.
-5. Run the commands in §6; write the report.
+2. Add the completeness test using the production route registrations. Check the method and the expected matched pattern for each request.
+3. Compare the proposed wave P selectors with every Python route they capture in both Caddy configurations. Record the verified selector groups and rollback in the runbook.
+4. Run the commands in §6 and record the results and browser evidence in the report.
 
 ## 5. Do not touch
 
@@ -52,15 +53,14 @@ No other file may change. Two open briefs naming the same file in §3 run in the
 - `cd go && gofmt -l . | tail -5` prints nothing
 - `cd go && go vet ./internal/web/properties/... ./cmd/... 2>&1 | tail -20` is silent
 - `cd go && go test ./internal/web/properties/... ./cmd/ubyhost-web/... -count=1 2>&1 | tail -30` passes, no test skipped
-- `cd App && .venv/bin/python -m pytest tests/test_go_go_property_settings_switch_golden.py -q --tb=short -x 2>&1 | tail -30` passes
 - `python3 scripts/context_lint.py 2>&1 | tail -10` is clean
 - Host pages: `test_layout_lint_browser.py` green plus one 390, 768 and 1280 px screenshot per page in the report (rule 10).
 
 ## 7. Acceptance
 
-- The test fails when any listed route is missing and passes when all exist.
-- `POST /entities` and `POST /apartments` have Go handlers (1522 and 1700) so `/entities` and `/apartments` can move whole.
-- Every route in the list answers on Go in a test with the same status, headers and body as the golden; a signed-out request gets the same redirect as Python.
+- The test fails if a listed method is missing or matches a different route.
+- `/entities`, `/apartments` and `/apartments/{id}` each have both a GET and a POST registration. The rollout moves the methods for each path together.
+- Every Python route caught by a wave P selector is accounted for by method in the runbook. Paths in other workstreams remain on Python until their Go handlers are ready.
 - `git log --oneline --grep='^1705 step'` shows one commit per step; `git diff --stat` lists only §3 paths.
 
 ## 8. Stop and ask
@@ -73,11 +73,11 @@ Stop and write the report instead of continuing when: an anchor is not found ver
 
 ## Rollout wave and rollback
 
-- **Rollout:** Wave P (owner, after the UX check of each page): add `/apartments /apartments/* /entities /entities/* /settings /settings/* /menu /guest-links /guide /housebook /feeds/* /sync /alerts/*` in two deploys (reads first, then POSTs). One day between.
-- **Rollback:** Trim `UBYHOST_GO_PATHS` back and `caddy reload`.
+- **Rollout.** After the Go UX check in a test environment, start with verified read-only paths. Wait one day before moving verified write and mixed-method paths. Each selector moves all its methods together. Add only the selectors verified in the runbook.
+- **Rollback.** Restore the saved `UBYHOST_GO_PATHS` line and reload Caddy using the runbook commands.
 
 ## Owner steps
 
-1. After merge and the layout-lint run, open each page on Go in staging.
-2. Add the first deploy line of wave P; wait a day.
-3. Add the POST line.
+1. After merge and the layout-lint run, open each page on Go in a test environment.
+2. Add the first verified selector group from the runbook and wait one day.
+3. Add the next verified selector group and exercise the corresponding forms.
