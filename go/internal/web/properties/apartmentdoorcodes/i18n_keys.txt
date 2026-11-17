@@ -1,0 +1,6 @@
+# Host strings of the Go door-code switch, POST /apartments/{id}/door-codes (brief 1702).
+# App/scripts/go_host_i18n.py writes the sibling i18n.json from App/app/host_i18n.py.
+flash.error.door_code_lock
+flash.error.door_code_lock_taken
+flash.error.smart_locks_unavailable
+why.times_missing
