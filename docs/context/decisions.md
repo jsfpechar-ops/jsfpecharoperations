@@ -12,7 +12,7 @@ Append-only.
 - 2026-10-29 Stripe Accounts v2, responsibilities immutable, companies via business_type (0437); Connect: full Dashboard + collectors, Express rejected (0439) | owner
 - 2026-10-30 [workflow/db/deps] PostgreSQL kit, psycopg3 + pgBackRest approved; manual cutover | 0455–0456
 - 2026-10-31 Postgres (#592), then Go G1-G6, per-feature rollback, no load test. [workflow] Haiku implements | owner | [plan v4](../plans/postgresql/migration-plan-v4.md)
-- 2026-10-31 Every change lean: no dead code or extras; dead code goes in its own small commit | owner | plan v4
+- 2026-10-31 Every change lean: no dead code or extras; dead code in its own commit | owner | plan v4
 - 2026-10-31 Postgres/Go migration gates waived; bar unchanged (backup, rehearsal, hashes, both DBs green, rollback); D1-D4 = 0463-0465. [workflow] Pre-merge diff vs brief Files | owner | 0463, #606
 - 2026-10-31 [workflow] `test-postgres-full` (app suite on PG 17) gates every merge; SQLite-file tests carry `sqlite_only` | orchestrator | 0462
 - 2026-11-01 Host redesign: vendored Hotwire Turbo (MIT) for page-body swaps; owner OKs mockups first | owner | #614
@@ -68,5 +68,4 @@ Append-only.
 - 2026-11-15 [ai] Havel and Leon on Mistral Small, 0.05 USD monthly caps | owner
 - 2026-11-15 [legal] Register lists Mistral AI and Anthropic (conditional); no "EU only"/"not stored" claim without ZDR or EU endpoint | 1792
 - 2026-11-15 [ai] Shared Havel/Leon budget, abuse caps; Havel no-go settings; nameless lookups; host mail in host language: [plan](../plans/ai-payments-hardening.md) | owner
-- 2026-11-17 [dep] ČÚZK addresses: local unlogged table, pg_trgm (1700c). [workflow] Python golden: filing only ([go-first](go-first.md)) | owner
-- 2026-11-17 [go] 1702 split b-e; wizard save ported to Go (1702e, rule 11); Go UbyPort login in 1702d = same host as Python, reason in PR | orchestrator
+- 2026-11-17 [dep] ČÚZK addresses: local unlogged table, pg_trgm (1700c). [workflow] Python golden: filing only ([go-first](go-first.md)) | owner. 1702d-e Go | orch

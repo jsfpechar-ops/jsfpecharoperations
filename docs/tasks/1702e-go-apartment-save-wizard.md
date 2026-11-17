@@ -1,6 +1,7 @@
 # 1702e: Go property settings 3e: the setup-wizard saves (POST /apartments/{id} with setup_step)
 
 Status: todo — scoped, **blocked on an owner question** (exact-diff pass of 1702b, 2026-11-17).
+Decision 2026-11-17 (orchestrator, rule 11): the wizard save is ported to Go here, not moved to a Python path.
 Depends on: 1702d | Base commit: current tip of the working branch | Branch: task/1702e-go-apartment-save-wizard
 Executor: Haiku 5.5 | Tier: A
 
