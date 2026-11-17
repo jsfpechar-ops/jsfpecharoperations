@@ -25,8 +25,8 @@ Answers:
 1. Answer: yes, recommended (orchestrator, 2026-11-17).
 2. Answer: yes, recommended (orchestrator, 2026-11-17).
 3. Answer: Prague date of `received_at` (orchestrator, 2026-11-17).
-4. Answer: OWNER (open: confirm the 2026-11-09 decision covers inbox submissions).
-5. Answer: OWNER (open: NULL recommended).
+4. Answer: yes, register and file (owner, 2026-11-17).
+5. Answer: NULL, as recommended (owner, 2026-11-17).
 6. Answer: yes, recommended (orchestrator, 2026-11-17).
 7. Answer: yes, recommended (orchestrator, 2026-11-17).
 
