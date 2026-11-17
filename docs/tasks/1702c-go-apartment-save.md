@@ -1,6 +1,6 @@
 # 1702c: Go property settings 3c: save the property settings (POST /apartments/{id}, no wizard step)
 
-Status: todo — scoped (split out of 1702b by its exact-diff pass, 2026-11-17). Executable only after its own exact-diff pass (sidecars in `docs/tasks/1702c-files/`, step-0 hashes, sha256 table, rules of [workflow](../context/workflow.md#writing-briefs-for-haiku)). The pass may split it again (likely: c1 payload and write with the golden, c2 the refusals and the draft re-render).
+Status: split (exact-diff pass 2026-11-17) into [1702c1](1702c1-go-apartment-save-core.md) (ready: the save, redirects, golden pair) and [1702c2](1702c2-go-apartment-save-refused-page.md) (todo, scoped: the refused page drawn again). Execute those, not this file.
 Depends on: 1702b | Base commit: current tip of the working branch | Branch: task/1702c-go-apartment-save
 Executor: Haiku 5.5 | Tier: A (Opus writes the exact-diff pass; fresh review of the full diff before ready)
 
