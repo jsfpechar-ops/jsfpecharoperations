@@ -1,0 +1,225 @@
+"""Write go/internal/web/properties/testdata/apartment_new_form_golden.json from the real Python page.
+
+Run from App/ (create the venv first if missing:
+python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt):
+
+    .venv/bin/python scripts/go_apartment_new_form_golden.py          write the file
+    .venv/bin/python scripts/go_apartment_new_form_golden.py --check  exit 1 when it is stale
+
+It seeds a throwaway SQLite database with the fixed rows in SEED, signs each
+case in with auth.issue_session and renders GET /apartments/new (with the query
+of the case) through the real FastAPI app (TestClient). A case keeps the
+<title> text and visible_lines() of the page area (div.ui-page): the visible
+text and the key attributes, not the bytes.
+go/internal/web/properties/apartment_new_test.go seeds PostgreSQL from the same
+SEED, renders the Go page and compares with the same normaliser.
+App/tests/test_go_apartment_new_form_golden.py fails when this file is stale.
+Brief 1700a.
+"""
+
+from __future__ import annotations
+
+import html
+import json
+import os
+import re
+import sys
+import tempfile
+import time
+from pathlib import Path
+
+APP = Path(__file__).resolve().parents[1]
+OUT = APP.parent / "go" / "internal" / "web" / "properties" / "testdata" / "apartment_new_form_golden.json"
+
+STAMP = "2026-01-01T00:00:00+00:00"
+VERSIONS = {"terms": "1.7", "privacy": "1.8", "dpa": "1.8"}
+USERS = (1, 2, 3, 4, 5)
+
+APARTMENT_COLUMNS = [
+    "id", "owner_user_id", "internal_name", "legal_entity_id", "data_controller_entity_id", "automation_mode",
+    "submit_after_hours", "default_purpose", "permalink_window_days", "permalink_reachback_days",
+    "stay_fee_rate_czk", "stay_fee_cadence", "stay_fee_authority_name", "stay_fee_authority_address",
+    "stay_fee_authority_contact", "stay_fee_payee", "stay_fee_instruction", "stay_fee_council_account",
+    "archived_at", "created_at",
+]
+
+
+def _apartment(aid, owner, name, entity, *, controller=None, mode="scheduled", after=24, purpose="10", window=2,
+               reach=365, rate=0, cadence="monthly", fee=(None, None, None, None, None, None), archived=None):
+    return [aid, owner, name, entity, controller, mode, after, purpose, window, reach, rate, cadence, *fee,
+            archived, STAMP]
+
+
+# Hosts: 1 admin (previews 4); 2 nothing; 3 one operator, no property; 4 two
+# operators (and an archived one), properties with copyable settings, one with
+# a stay fee, an archived property, one on the archived operator; 5 one
+# operator and one property (another host's copy source).
+SEED = [
+    {"table": "user_account", "columns": ["id", "username", "password_hash", "role", "created_at"],
+     "rows": [[uid, f"host{uid}@example.test", "x", "admin" if uid == 1 else "host", STAMP] for uid in USERS]},
+    {"table": "legal_acceptance", "columns": ["user_account_id", "document", "version", "accepted_at", "method"],
+     "rows": [[uid, doc, version, STAMP, "clickwrap"] for uid in USERS for doc, version in VERSIONS.items()]},
+    {"table": "legal_entity", "columns": ["id", "owner_user_id", "name", "seat", "ico", "contact_email", "archived_at", "created_at"],
+     "rows": [
+         [31, 3, "Solo Co", "Praha", "12345678", "e3@example.test", None, STAMP],
+         [41, 4, "Alpha Co", "Praha", "23456789", "e4a@example.test", None, STAMP],
+         [42, 4, "Beta & Sons <s.r.o.>", "Brno", "34567890", "e4b@example.test", None, STAMP],
+         [44, 4, "Gone Co", "Brno", "45678901", "e4c@example.test", "2026-01-02", STAMP],
+         [51, 5, "Other Co", "Brno", "56789012", "e5@example.test", None, STAMP],
+     ]},
+    {"table": "apartment", "columns": APARTMENT_COLUMNS,
+     "rows": [
+         _apartment(41, 4, "Loft <A>", 41, controller=42, mode="manual", after=12, purpose="20", window=5, reach=30,
+                    rate=50, cadence="quarterly",
+                    fee=("City Hall & Co", "Square 1, Praha", "fees@example.test", "City Hall", "Pay by transfer",
+                         "123456789/0100")),
+         _apartment(42, 4, "Plain", 42, fee=(None, None, None, "  ", None, None)),
+         _apartment(43, 4, "Old archived", 41, archived="2026-01-03"),
+         _apartment(45, 4, "On gone operator", 44, after=0),
+         _apartment(51, 5, "Other host", 51),
+     ]},
+]
+
+# name, user, previewed workspace (0: none), language, query string.
+CASES = [
+    ("signed out", 0, 0, "en", ""),
+    ("no operator", 2, 0, "en", ""),
+    ("one operator in Czech", 3, 0, "cs", ""),
+    ("two operators", 4, 0, "en", ""),
+    ("operator chosen", 4, 0, "en", "?legal_entity_id=42"),
+    ("operator padded and signed", 4, 0, "vi", "?legal_entity_id=%20%2B42%20"),
+    ("operator of another host", 4, 0, "en", "?legal_entity_id=51"),
+    ("operator not a number", 4, 0, "en", "?legal_entity_id=abc"),
+    ("copy dialog open", 4, 0, "cs", "?copy=choose"),
+    ("copy with stay fee", 4, 0, "en", "?copy_from=41"),
+    ("copy with underscore id", 4, 0, "cs", "?copy_from=4_1"),
+    ("copy plain in Vietnamese", 4, 0, "vi", "?copy_from=42"),
+    ("copy from an archived property", 4, 0, "en", "?copy_from=43"),
+    ("copy from a property on an archived operator", 4, 0, "en", "?copy_from=45"),
+    ("copy with operator override", 4, 0, "en", "?copy_from=41&legal_entity_id=42"),
+    ("copy from another host", 4, 0, "en", "?copy_from=51"),
+    ("copy from a missing id", 4, 0, "en", "?copy_from=999"),
+    ("copy id not a number", 4, 0, "en", "?copy_from=abc"),
+    ("copy id zero", 4, 0, "en", "?copy_from=0"),
+    ("admin previews the host", 1, 4, "en", "?copy_from=41"),
+    ("single property host", 5, 0, "vi", ""),
+]
+
+# visible_lines: keep in step with apartmentNewVisibleLines in apartment_new_test.go.
+DROP = [re.compile(p, re.S | re.I) for p in (
+    r"<!--.*?-->", r"<script\b.*?</script>", r"<style\b.*?</style>", r"<svg\b.*?</svg>")]
+TOKEN = re.compile(r"<[^>]*>|[^<]+")
+TAG = re.compile(r"^<[ \t\n\r\f\v]*(/?)([A-Za-z][A-Za-z0-9]*)")
+ATTR = re.compile(
+    r"""([^ \t\n\r\f\v=/>"']+)(?:[ \t\n\r\f\v]*=[ \t\n\r\f\v]*(?:"([^"]*)"|'([^']*)'|([^ \t\n\r\f\v>"']+)))?""")
+SPACE = re.compile(r"[ \t\n\r\f\v]+")
+TITLE = re.compile(r"<title>(.*?)</title>", re.S | re.I)
+KEPT = {"id", "href", "action", "method", "name", "value", "type", "selected", "checked", "required", "for",
+        "aria-current", "class", "aria-label", "aria-controls", "aria-describedby", "aria-invalid", "autofocus",
+        "maxlength", "inputmode", "autocapitalize", "placeholder", "open", "target", "src",
+        "data-ruian-suggest", "data-ruian-loading", "data-ruian-none"}
+
+
+def title_of(page: str) -> str:
+    m = TITLE.search(page)
+    return SPACE.sub(" ", html.unescape(m.group(1))).strip(" ") if m else ""
+
+
+def visible_lines(page: str) -> list[str]:
+    """The page area as lines: each text run, and each tag that has a KEPT attribute."""
+    start = page.find('<div class="ui-page"')
+    if start < 0:
+        return []
+    page = page[start:]
+    end = page.find('<div class="page-skeleton"')
+    if end >= 0:
+        page = page[:end]
+    # A script with a src is kept as a "scriptsrc" tag (DROP needs "script" followed by a word break).
+    page = re.sub(r"<script\b([^>]*\bsrc=[^>]*)>\s*</script>", r"<scriptsrc\1>", page, flags=re.S | re.I)
+    for pattern in DROP:
+        page = pattern.sub("", page)
+    out = []
+    for tok in TOKEN.findall(page):
+        if not tok.startswith("<"):
+            text = SPACE.sub(" ", html.unescape(tok)).strip(" ")
+            if text:
+                out.append(text)
+            continue
+        m = TAG.match(tok)
+        if not m or m.group(1) == "/":
+            continue
+        name = m.group(2).lower()
+        attrs = {}
+        for a in ATTR.finditer(tok[m.end():]):
+            key = a.group(1).lower()
+            has_value = "=" in a.group(0)
+            value = html.unescape((a.group(2) or "") + (a.group(3) or "") + (a.group(4) or ""))
+            if key == "class":
+                value = " ".join(value.split())
+            attrs[key] = (has_value, value)
+        if attrs.get("name", (False, ""))[1] == "_csrf":
+            attrs["value"] = (True, "*")
+        parts = [k + ("=" + v if has else "") for k, (has, v) in sorted(attrs.items()) if k in KEPT]
+        if parts:
+            out.append("<" + name + " " + " ".join(parts) + ">")
+    return out
+
+
+def _seed(db) -> None:
+    for table in SEED:
+        cols = ", ".join(table["columns"])
+        marks = ", ".join("?" for _ in table["columns"])
+        for row in table["rows"]:
+            db.execute(f"INSERT INTO {table['table']} ({cols}) VALUES ({marks})", row)
+
+
+def render() -> str:
+    from fastapi.testclient import TestClient
+
+    from app import auth, db
+    from app.main import app
+
+    db.init_db()
+    _seed(db)
+    client = TestClient(app)
+    cases = []
+    for name, user, workspace, lang, query in CASES:
+        client.cookies.clear()
+        cookies = {"ubyhost_lang": lang}
+        if user:
+            cookies[auth.SESSION_COOKIE] = auth.issue_session(
+                user, 1, workspace_user_id=workspace or None,
+                impersonation_started_at=int(time.time()) if workspace else None)
+        header = "; ".join(f"{k}={v}" for k, v in cookies.items())
+        response = client.get("/apartments/new" + query, headers={"Cookie": header}, follow_redirects=False)
+        ok = response.status_code == 200
+        cases.append({"name": name, "user": user, "workspace": workspace, "lang": lang, "query": query,
+                      "status": response.status_code, "location": response.headers.get("location"),
+                      "title": title_of(response.text) if ok else "",
+                      "lines": visible_lines(response.text) if ok else []})
+    golden = {"versions": VERSIONS, "seed": SEED, "cases": cases}
+    return json.dumps(golden, ensure_ascii=False, indent=1, sort_keys=True) + "\n"
+
+
+def main(argv: list[str]) -> int:
+    text = render()
+    if "--check" in argv:
+        if OUT.exists() and OUT.read_text(encoding="utf-8") == text:
+            return 0
+        print(f"stale: {OUT}; run scripts/go_apartment_new_form_golden.py")
+        return 1
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    OUT.write_text(text, encoding="utf-8")
+    print(f"wrote {OUT}")
+    return 0
+
+
+if __name__ == "__main__":
+    tmp = Path(tempfile.mkdtemp(prefix="ubyhost-golden-"))
+    os.environ.setdefault("UBYHOST_DATA_DIR", str(tmp))
+    os.environ.setdefault("UBYHOST_DB", str(tmp / "apartment_new_form_golden.sqlite3"))
+    os.environ.setdefault("UBYHOST_SECRET_KEY", "golden-secret-key-not-for-real-use")
+    os.environ.setdefault("UBYHOST_ENABLE_SCHEDULER", "0")
+    os.environ.setdefault("UBYHOST_BOOTSTRAP_ADMIN", "0")
+    sys.path.insert(0, str(APP))
+    sys.exit(main(sys.argv[1:]))
