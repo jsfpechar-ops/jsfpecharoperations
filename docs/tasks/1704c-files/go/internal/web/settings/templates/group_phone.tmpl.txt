@@ -1,0 +1,59 @@
+{{- /* Port of the `group == 'phone'` block of App/app/templates/settings.html
+     (brief 1704c): the PWA install row and the push row with the devices. The
+     buttons and badges are driven by static JS (the data-* hooks keep Python's
+     names). The device remove form posts to /account/push/devices/{id}/delete
+     and carries _csrf. */ -}}
+{{define "settings.group.phone"}}{{if eq .Group "phone"}}{{with .Phone -}}
+<section class="settings-group" id="settings-group-phone" aria-labelledby="settings-group-phone-title"><h2 class="settings-group-title sec" id="settings-group-phone-title">{{t "settings.group.phone"}}</h2><div class="card settings-card">
+    <div class="ui-section" id="settings-phone">
+      <div class="settings-action-list" id="settings-install" data-pwa-install-row>
+        <div class="settings-action-row">
+          <div>
+            {{tip_label (t "pwa.install.title") "settings-pwa-help" (safe (printf "%s<p class=\"ui-sub\" data-pwa-other>%s</p>" (html (t "pwa.install.help")) (html (t "pwa.install.other"))))}}
+          </div>
+          <button class="ui-btn ui-btn-secondary ui-btn-compact" type="button" data-pwa-install hidden>{{t "pwa.install.button"}}</button>
+          <span class="ui-badge ui-badge-done" data-tone="green" data-pwa-installed hidden>{{t "pwa.install.installed"}}</span>
+        </div>
+        <p class="ui-sub" data-pwa-ios hidden>{{t "pwa.install.ios"}}</p>
+        {{if .PasskeysAvailable}}<p class="ui-sub" data-pwa-ios hidden>{{t "pwa.install.ios_passkey"}}</p>{{end}}
+      </div>
+      {{if .PushAvailable -}}
+      <div class="settings-action-list" id="settings-alerts" data-push-row data-push-key="{{.PushKey}}">
+        <div class="settings-action-row">
+          <div>{{tip_label (t "push.title") "settings-push-help" (t "push.help")}}</div>
+          <div class="settings-row-actions">
+            <button class="ui-btn ui-btn-secondary ui-btn-compact" type="button" data-push-on hidden>{{t "push.on"}}</button>
+            <span class="ui-badge ui-badge-done" data-tone="green" data-push-state-on hidden>{{t "push.state_on"}}</span>
+            <span class="settings-row-actions" data-push-controls hidden>
+              <button class="ui-btn ui-btn-secondary ui-btn-compact" type="button" data-push-test>{{t "push.test"}}</button>
+              <button class="ui-btn ui-btn-secondary ui-btn-compact" type="button" data-push-off>{{t "push.off"}}</button>
+            </span>
+          </div>
+        </div>
+        <p class="ui-sub" data-push-unsupported>{{t "push.unsupported"}}</p>
+        <p class="ui-sub" data-push-ios-first hidden>{{t "push.ios_first"}}</p>
+        <p class="ui-sub" data-push-denied role="status" hidden>{{t "push.denied"}}</p>
+        <p class="ui-sub" data-push-status role="status" hidden></p>
+        <p class="ui-sub err-text" data-push-error data-generic="{{t "push.error.failed"}}" role="alert" hidden></p>
+        {{if .Devices -}}
+          <p class="ui-sub"><strong>{{t "push.devices"}}</strong></p>
+          {{range .Devices -}}
+            {{$name := .Device}}{{if not $name}}{{$name = t "push.device_unknown"}}{{end -}}
+            <div class="settings-action-row">
+              <div>
+                <strong>{{$name}}</strong>
+                <small>{{t "push.device_added" "date" (datetime_local .CreatedAt)}}</small>
+              </div>
+              <form method="post" action="/account/push/devices/{{.ID}}/delete"
+                    data-confirm data-confirm-message="{{t "push.device_remove_confirm" "name" $name}}">
+                <input type="hidden" name="_csrf" value="{{csrf}}">
+                <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{t "push.device_remove"}}</button>
+              </form>
+            </div>
+          {{end -}}
+        {{end -}}
+      </div>
+      {{- end}}
+    </div>
+</div></section>
+{{end}}{{end}}{{end}}
