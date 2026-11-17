@@ -1,6 +1,6 @@
 # 1702: Go property settings 3: door-code switch (POST /apartments/{id}/door-codes)
 
-Status: todo — ready (exact-diff pass 2026-11-17; Opus wrote, compiled and tested every sidecar on PostgreSQL 16)
+Status: review (exact-diff pass 2026-11-17; Opus wrote, compiled and tested every sidecar on PostgreSQL 16)
 Depends on: 1701, 1701b (both done) | Base commit: current tip of the working branch | Branch: task/1702-go-apartment-update-door-codes
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (this brief needs about 10)
 Tier: A (exact files only; fresh review of the full diff before merge, see the risk list at the end)
