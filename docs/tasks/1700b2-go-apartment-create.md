@@ -1,6 +1,6 @@
 # 1700b2: Go property create (POST /apartments): handler, golden, tests
 
-Status: todo
+Status: review
 Depends on: 1700a done, 1700b1 done (verified at e29a129: `go/internal/validationi18n.Localize`; step 0 checks it) | Base commit: current tip of the working branch | Branch: task/1700b2-go-apartment-create
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (this brief needs about 12)
 Tier: A (writes filing data: the brief writer wrote, compiled and tested every file, with a Python golden script and Go tests; the orchestrator reads the diff of the risk-listed files)
