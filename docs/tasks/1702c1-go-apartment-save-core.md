@@ -1,6 +1,6 @@
 # 1702c1: Go property settings 3c1: save the property settings (POST /apartments/{id}, no wizard step)
 
-Status: ready (exact-diff pass 2026-11-17: sidecars applied to a clean worktree of 6841c74 + the 1702b sidecars, gofmt/build/vet clean, Go tests green on PostgreSQL 16, Python golden test green, 0 skips)
+Status: review (exact-diff pass 2026-11-17: sidecars applied to a clean worktree of 6841c74 + the 1702b sidecars, gofmt/build/vet clean, Go tests green on PostgreSQL 16, Python golden test green, 0 skips)
 Depends on: 1702b (done) | Base commit: current tip of the working branch | Branch: task/1702c1-go-apartment-save-core
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (this brief needs about 12)
 Tier: A (writes police filing data, rule 1; fresh review of the full diff before merge, see the risk list at the end)
