@@ -1,28 +1,28 @@
 # Decisions
 Append-only.
-- 2026-10-19 | Design v2: MASTER.md is the only host design source; Lucide inline SVG; CI blocks raw colours, inline styles, page CSS | owner | [plan](../plans/design-v2.md)
+- 2026-10-19 Design v2: MASTER.md is the only host design source; Lucide inline SVG; CI blocks raw colours, inline styles, page CSS | owner | [plan](../plans/design-v2.md)
 - 2026-10-19 A11y: WCAG 2.2 AA, `a11y_guard.js`.
-- 2026-10-24 | [deps] `anthropic` 2.3.0 pinned+hashed; model `claude-haiku-5-5`; calls via `App/app/ai.py` | 0310
-- 2026-10-26 | Unpaid = read-only; filing never blocked | 0415
+- 2026-10-24 [deps] `anthropic` 2.3.0 pinned+hashed; model `claude-haiku-5-5`; calls via `App/app/ai.py` | 0310
+- 2026-10-26 Unpaid = read-only; filing never blocked | 0415
 - 2026-10-27 Grafana Cloud (EU free): ops logs/metrics, no PII.
-- 2026-10-28 | [deps] `stripe` 16.0.1 pinned+hashed in requirements.lock (owner); calls via `App/app/stripe_connect.py`; shared monthly cap `UBYHOST_STRIPE_MONTHLY_API_CALLS` | 0428
-- 2026-10-28 | Property pages: Apify prefill, no AI, host reviews once (0431); photos re-hosted, max 10 (0432); no-JS widget (0434); English only
-- 2026-11-02 | OCR: Tesseract only, local, MRZ check digits, Max only; band crop; Paddle if ocr_readrate <90% | test_doc_ocr
-- 2026-10-29 | Operator can extend trials 1-365 days | 0448
-- 2026-10-29 | Stripe Accounts v2, responsibilities immutable, companies via business_type (0437); Connect: full Dashboard + collectors, Express rejected (0439) | owner
-- 2026-10-30 | [workflow/db/deps] PostgreSQL kit, psycopg3 + pgBackRest approved; manual cutover | 0455–0456
-- 2026-10-31 | Postgres (#592), then Go G1-G6, per-feature rollback, no load test. [workflow] Haiku implements | owner | [plan v4](../plans/postgresql/migration-plan-v4.md)
-- 2026-10-31 | Every change lean: no dead code or extras; dead code goes in its own small commit | owner | plan v4
-- 2026-10-31 | Postgres/Go migration gates waived; bar unchanged (backup, rehearsal, hashes, both DBs green, rollback); D1-D4 = 0463-0465. [workflow] Pre-merge diff vs brief Files | owner | 0463, #606
-- 2026-10-31 | [workflow] `test-postgres-full` (app suite on PG 17) gates every merge; SQLite-file tests carry `sqlite_only` | orchestrator | 0462
-- 2026-11-01 | Host redesign: vendored Hotwire Turbo (MIT) for page-body swaps; owner OKs mockups first | owner | #614
-- 2026-11-01 | Go: module go/, stdlib, pgx v5, go-ntlmssp v0.1.1, go-qrcode (11-02) | owner (waiver) | 0474, 0481, 0684
-- 2026-11-02 | Signup box: unticked marketing opt-in; lawyer to confirm | owner | 0836
+- 2026-10-28 [deps] `stripe` 16.0.1 pinned+hashed in requirements.lock (owner); calls via `App/app/stripe_connect.py`; shared monthly cap `UBYHOST_STRIPE_MONTHLY_API_CALLS` | 0428
+- 2026-10-28 Property pages: Apify prefill, no AI, host reviews once (0431); photos re-hosted, max 10 (0432); no-JS widget (0434); English only
+- 2026-11-02 OCR: Tesseract only, local, MRZ check digits, Max only; band crop; Paddle if ocr_readrate <90% | test_doc_ocr
+- 2026-10-29 Operator can extend trials 1-365 days | 0448
+- 2026-10-29 Stripe Accounts v2, responsibilities immutable, companies via business_type (0437); Connect: full Dashboard + collectors, Express rejected (0439) | owner
+- 2026-10-30 [workflow/db/deps] PostgreSQL kit, psycopg3 + pgBackRest approved; manual cutover | 0455–0456
+- 2026-10-31 Postgres (#592), then Go G1-G6, per-feature rollback, no load test. [workflow] Haiku implements | owner | [plan v4](../plans/postgresql/migration-plan-v4.md)
+- 2026-10-31 Every change lean: no dead code or extras; dead code goes in its own small commit | owner | plan v4
+- 2026-10-31 Postgres/Go migration gates waived; bar unchanged (backup, rehearsal, hashes, both DBs green, rollback); D1-D4 = 0463-0465. [workflow] Pre-merge diff vs brief Files | owner | 0463, #606
+- 2026-10-31 [workflow] `test-postgres-full` (app suite on PG 17) gates every merge; SQLite-file tests carry `sqlite_only` | orchestrator | 0462
+- 2026-11-01 Host redesign: vendored Hotwire Turbo (MIT) for page-body swaps; owner OKs mockups first | owner | #614
+- 2026-11-01 Go: module go/, stdlib, pgx v5, go-ntlmssp v0.1.1, go-qrcode (11-02) | owner (waiver) | 0474, 0481, 0684
+- 2026-11-02 Signup box: unticked marketing opt-in; lawyer to confirm | owner | 0836
 - 2026-11-02/03 | RÚIAN address autofill, server-side; Try it rehearsal optional (Skip, Leave) | owner | 0884
-- 2026-11-02 | Booking site: CS/EN, one HMAC link per booking, cancel refunds per policy | owner | 0818-0821
-- 2026-11-03 | [workflow] UX gate: threads self-check UX (lint + screenshots) | owner | 0900
-- 2026-11-03 | Booking terms: own text (marketplace structure only), CS+EN, /terms/booking, versioned (0900); partial refund = credit note, full = storno (0901) | owner
-- 2026-11-04 | Go webhook forwards booking-site events to Python; booking logic not ported to Go yet | owner | 0910
+- 2026-11-02 Booking site: CS/EN, one HMAC link per booking, cancel refunds per policy | owner | 0818-0821
+- 2026-11-03 [workflow] UX gate: threads self-check UX (lint + screenshots) | owner | 0900
+- 2026-11-03 Booking terms: own text (marketplace structure only), CS+EN, /terms/booking, versioned (0900); partial refund = credit note, full = storno (0901) | owner
+- 2026-11-04 Go webhook forwards booking-site events to Python; booking logic not ported to Go yet | owner | 0910
 - [filing] 2026-11-04: unanswered filings retry 30m/2h/6h/12h, any answer stops; replaces OD-1, WP31 (0909).
 - [auth] 2026-11-04: 30-day sliding session, trusted-device cookie skips login Turnstile
 - [auth] 2026-11-04: log out is per device; "all devices" is separate (0947).
@@ -32,16 +32,16 @@ Append-only.
 - [ui] 2026-11-06 [owner]: property page keeps main's header and tile grid; the setup progress card sits full width below the grid (0986).
 - 2026-11-06 [owner] lock connected but codes off shows main's "Turn on" row; "Connect my lock" only for first-time setup (0987).
 - 2026-11-07 [owner] request-to-book: direct rails (IBAN/Revolut/cash) vs or beside Stripe; 24h hold; host confirms (0996-0998).
-- 2026-11-07 | [backup] Litestream retired; S3 replica kept | owner | [1021](../tasks/1021-remove-litestream.md)
-- 2026-11-07 | [backup] WAL-G: WAL archive + PITR to S3 | owner | [1022](../tasks/1022-walg-continuous-archiving.md)
+- 2026-11-07 [backup] Litestream retired; S3 replica kept | owner | [1021](../tasks/1021-remove-litestream.md)
+- 2026-11-07 [backup] WAL-G: WAL archive + PITR to S3 | owner | [1022](../tasks/1022-walg-continuous-archiving.md)
 - 2026-11-09 [stay-fee] 1031b: a bare Prague/Brno district ("Řepy") stays liable; guest writes the town (owner). Any Unicode dash folds like "-".
 - 2026-11-09 [guest] Guest edits/removes own added people until filed (SENT, incl. by hand); then locked, "Message host" (owner)
-- 2026-11-09 | [ux] Stay fees: current month default, pick navigates | owner | 1051
+- 2026-11-09 [ux] Stay fees: current month default, pick navigates | owner | 1051
 - 2026-11-09 [filing] Registered guests are filed by the deadline cap (deadline - 6 h) even when the stay is short or has no expected count; no 12 quiet hours past the cap; valid co-guests filed while another form is invalid; reverses the reporting.py:1093 rule; stays past their cap are filed by the first sweep (owner, K-F20) | 1070
 - 2026-11-10 [guest] Guest form: B now, then C (owner).
 - 2026-11-10 [guest] Under-15s skip the signature; any adult on the booking signs and ticks a role ("parent or guardian" / "adult responsible for the child on this stay"). A child with no adult link is filed "no signature required" (owner).
 - 2026-11-10 [guest] Titles: cs "Registrace hosta", es "Ficha de huésped", fr "Fiche voyageur" (owner).
-- 2026-11-10 [head-count] Lower count with a stay fee: show new fee and "new bill will be e-mailed", confirm. Every lead change: "Check your changes" confirm. Host digest mail lists changed field names (not values), links to the stay page; changes only, not first registrations. Small Go change allowed. Early door-code risk accepted (mail guard covers it) (owner).
+- 2026-11-10 [head-count] Lower count with stay fee: show new fee and "new bill will be e-mailed", confirm. Lead change: "Check your changes" confirm. Host digest: changed field names (no values), stay-page link, changes only. Small Go change OK. Early door-code risk accepted (mail guard) (owner).
 - 2026-11-10 [workflow] Plan: project file plans/head-count-change.md (not in repo); each complete plan gets a Fable review before building (owner).
 - 2026-11-11 [police] 1100: no tick, values in boxes; parser reads password+facility, never stored (owner; reverses 1097, 1085).
 - 2026-11-10 [demo] Demo seed covers current features; mock-only, cleared by Clear demo (owner, 1092)
@@ -68,5 +68,4 @@ Append-only.
 - 2026-11-15 [ai] Havel and Leon on Mistral Small, 0.05 USD monthly caps | owner
 - 2026-11-15 [legal] Register lists Mistral AI and Anthropic (conditional); no "EU only"/"not stored" claim without ZDR or EU endpoint | 1792
 - 2026-11-15 [ai] Shared Havel/Leon budget, abuse caps; Havel no-go settings; nameless lookups; host mail in host language: [plan](../plans/ai-payments-hardening.md) | owner
-- 2026-11-17 [dep] Address suggest: local copy of ČÚZK address-point CSV in Postgres (monthly Go import job, new table, `pg_trgm`), queried locally; replaces the live ČÚZK map-search call. `CzechRepublic/ruian-api` rejected (abandoned, Dart 1.x, unnamed hosted operator) | owner | 1700c
-- 2026-11-17 [go] 1700 split: 1700a new-property form, 1700b POST /apartments create (filing-critical), 1700c RUIAN suggest | owner | 1700
+- 2026-11-17 [dep] Address suggest: monthly ČÚZK CSV import to Postgres, `pg_trgm` | owner | 1700c
