@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/Azure/go-ntlmssp v0.1.1
-	github.com/fxamacker/cbor/v2 v2.9.3
+	github.com/fxamacker/cbor/v2 v2.10.0
 	github.com/go-webauthn/webauthn v0.18.0
 	github.com/jackc/pgx/v5 v5.12.0
 	github.com/signintech/gopdf v0.38.4
