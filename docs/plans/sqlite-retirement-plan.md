@@ -29,7 +29,7 @@ Written 2026-11-17 from `main` (`336acd2`). Docs only: nothing here was run. Com
 | Tue 11-17 | Q0: read-only check of what is on the server (below) | SSH AI | none |
 | by Fri 11-20 | Proof A (decrypt) and (d) offline copy | Josef | none |
 | by Wed 11-25 | Proof C (S3 and Drive current; fix IAM and lifecycle if open) | SSH AI | none |
-| by Fri 11-27 | Proof B (restore drill into a scratch database, counts match) | SSH AI | needs a staging server or the production scratch variant (below) |
+| by Fri 11-27 | Proof B (restore drill into a scratch database on production, counts match) | SSH AI | approved 11-17 |
 | **Tue 12-01** | all four proofs recorded in `docs/OPERATIONS.md` with dates (deadline) | orchestrator writes `Done` | P-gate |
 | 12-02 to 12-10 | 1476, 1477, 1478 exact-diff passes; PRs open as drafts | orchestrator, Haiku | none |
 | 12-08 to 12-11 | Re-run proofs A and B after the Python plan's stage A (if 1780 deployed) | Josef, SSH AI | P-gate again |
@@ -60,7 +60,6 @@ cd /opt/ubyhost/deploy/lightsail
 2. rclone lsf gdrive:UbyHost-backups | tail -n 7 ; (S3 bucket name from crontab, never print keys) rclone lsf s3:<bucket>/UbyHost-backups | tail -n 7
 3. docker compose exec -T ubyhost sh -c 'ls -1 /data/backups | sort | tail -3'   (Python chain today)
 4. ls -l the SQLite file(s): docker compose exec -T ubyhost sh -c 'ls -l /data/ubyhost.db* /data/pg-cutover 2>&1; ls /data | head -30'
-5. Is there a staging server? (ask: yes/no; if no, say "no staging")
 6. WAL-G: ./scripts/walg-check.sh 2>&1 | tail -5
 7. df -h / | tail -1
 Report in 20 lines. Write /opt/ubyhost/sqlite-q0-2026-11-17.md.
@@ -73,7 +72,7 @@ Report in 20 lines. Write /opt/ubyhost/sqlite-q0-2026-11-17.md.
 | (c) | Drive and S3 copies current, daily | SSH AI | newest folder today or yesterday on both; no 403 line in `/var/log/ubyhost-s3.log` | the known cause is the IAM policy lacking `s3:GetObjectVersion` (Josef adds it in the AWS console; no delete rights); S3 lifecycle rule and the `_probe/` objects are also Josef's console steps |
 | (d) | One age-encrypted offline copy of the last SQLite file and `secret_key`, on media not synced to any cloud | Josef | label with date; listing with `age --decrypt ... \| tar -t` shows `ubyhost.db` | redo from a fresh `backup-tar.age` snapshot while it still contains the file |
 
-**No staging server?** (status.md says staging is done; the cutover runbook marks it UNVERIFIED.) Then proof B uses a scratch database on production only: `createdb ubyhost_restoretest` on the production Postgres container, restore, compare counts, drop. It reads backups and writes only to the scratch database, which the app never uses. Josef confirms this variant in one line before the SSH AI runs it. The scratch database holds guest data for a few minutes and is dropped by the `CLEAN` step.
+**No staging server (confirmed by Josef 2026-11-17).** Proof B uses a scratch database on production only (approved): `createdb ubyhost_restoretest` on the production Postgres container, restore, compare counts, drop. It reads backups and writes only to the scratch database, which the app never uses. The scratch database holds guest data for a few minutes and is dropped by the `CLEAN` step.
 
 **One sentence to Josef for each proof when done:** write the letter, date and the last lines in the thread; the orchestrator writes `Done` in OPERATIONS.
 
@@ -137,8 +136,8 @@ Same PR as Python stage 5 ([1479](../tasks/1479-delete-sqlite-runtime.md)): `db.
 | Retention duty missed | firm end date 2027-01-14 |
 | `deploy.sh` edited by three PRs | one base: 1780 first, then 1476, then 1782b |
 
-## 7. Decisions needed from Josef
+## 7. Decisions (answered by Josef, 2026-11-17)
 
-1. **S12 and the offline copy share the same date in the decisions (2027-01-14).** Brief 1480 and plan decision 5 can be read as "delete the server file 30 days after S11, keep the offline copy 30 days longer". Recommend: keep what was decided on 11-15 (server file and offline copy both end 2027-01-14), because the proofs and nightly PostgreSQL backups cover it. Alternative: server file ends 01-14, offline copy ends 02-13.
-2. **Staging:** confirm whether a staging server exists. If not, approve the scratch-database variant of proof B on production (section 4).
-3. **Proof A on 11-20:** can Josef do the decrypt test this week? Without it every date after 12-01 slides.
+1. **Offline copy:** deleted on **2027-01-14 together with the server file** (S12). Nothing else keeps SQLite after that day; the PostgreSQL backups are the only copy.
+2. **No staging server exists.** Proof B runs into a scratch database on production, approved by Josef. Rules: it only reads the backup file and the live database is never written (no `pg_restore` target but `ubyhost_restoretest`, `--exit-on-error`, `--single-transaction`; counts are read with the read-only `pg-schema-dump.sh --counts`); the scratch database is dropped in the same session (`CLEAN` line) and the decrypted dump never touches disk unencrypted. Run it outside 03:00-07:30 Prague.
+3. **Unported routes:** decided later (Python plan, gate G5).
