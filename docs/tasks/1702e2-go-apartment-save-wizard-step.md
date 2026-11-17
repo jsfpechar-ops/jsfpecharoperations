@@ -1,6 +1,6 @@
 # 1702e2: Go property settings 3e2: the wizard step save (setup_step) and its refusals
 
-Status: ready (exact-diff pass 2026-11-17: sidecars applied to a clean worktree of 063229f (1702e1 done), gofmt/build/vet clean, Go tests green on PostgreSQL 16, 0 skips; wizard catalog regenerated with a stubbed `fastapi` import; no Python file changes)
+Status: review (exact-diff pass 2026-11-17: sidecars applied to a clean worktree of 063229f (1702e1 done), gofmt/build/vet clean, Go tests green on PostgreSQL 16, 0 skips; wizard catalog regenerated with a stubbed `fastapi` import; no Python file changes)
 Decision 2026-11-17 (owner/orchestrator, rule 11): the wizard saves are ported to Go. Owner decision: Go-only tests with hand-written expected output, no new Python test file, no golden script change.
 Depends on: 1702d2 and 1702e1 (both done) | Base commit: current tip of the working branch | Branch: task/1702e2-go-apartment-save-wizard-step
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (this brief needs about 10)
