@@ -92,4 +92,5 @@ Remove the two calls from `deploy.sh` (revert the PR). No data model change.
 A. Proof that a guest registered on a demo apartment is never collected for filing, in Python and in Go (Step 0 tries; if Go's collect query is not demo-aware, a Go brief must add it first and this brief waits).
 B. How the smoke obtains and drives the guest link: Turnstile test/bypass for the smoke client, and a Cloudflare skip rule (for example by a secret header the owner sets in Cloudflare) for `/l/*`. Also whether a stdlib-only shell and python script is acceptable for driving the multipart form, or a Playwright script (already in the test venv, not on the server) is wanted.
 C. Does a demo apartment exist on production, or must the owner create one with the `(demo)` name suffix?
+   Answer (owner, 2026-11-17): yes, the production property whose name ends in `(demo)` (the owner's demo listing); the smoke finds it by that suffix.
 D. The exact `claim` or `guest` column and value that means "queued for filing" (read `docs/OPERATIONS.md#the-submit_state-state-machine`).
