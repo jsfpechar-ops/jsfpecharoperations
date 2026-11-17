@@ -2,8 +2,11 @@ package guestcontract
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -122,4 +125,34 @@ func TestPayloadRefusals(t *testing.T) {
 	if _, err := DecodePayload(keys, tampered); err == nil {
 		t.Error("decoded a tampered payload")
 	}
+	decodedUnsupported := sample()
+	decodedUnsupported.ContractVersion = 2
+	plain, err := json.Marshal(decodedUnsupported)
+	if err != nil {
+		t.Fatal(err)
+	}
+	reenc, err := keys.Encrypt(gzipPlain(plain))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := DecodePayload(keys, []byte(reenc)); !errors.Is(err, ErrUnsupportedVersion) {
+		t.Errorf("decode version 2: err = %v, want ErrUnsupportedVersion", err)
+	}
+}
+
+func TestPayloadRejectsOversizedPlainJSON(t *testing.T) {
+	keys := testKeys(t, 1)
+	huge := sample()
+	huge.Guest.Signature = strings.Repeat("x", MaxPayloadBytes+1)
+	if _, err := EncodePayload(keys, huge); !errors.Is(err, ErrPayloadTooLarge) {
+		t.Fatalf("encode: err = %v, want ErrPayloadTooLarge", err)
+	}
+}
+
+func gzipPlain(plain []byte) []byte {
+	var buf bytes.Buffer
+	zw := gzip.NewWriter(&buf)
+	_, _ = zw.Write(plain)
+	_ = zw.Close()
+	return buf.Bytes()
 }
