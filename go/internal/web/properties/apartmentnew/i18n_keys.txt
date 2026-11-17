@@ -1,0 +1,18 @@
+# Host strings of the Go new-property form page, GET /apartments/new (brief 1700a).
+# App/scripts/go_host_i18n.py writes the sibling i18n.json from App/app/host_i18n.py.
+property_create.*
+apartment.form.copy_from.*
+apartment.form.operator.*
+apartment.form.addr.*
+apartment.form.internal_name.label
+apartment.form.internal_name.hint
+apartment.form.entity.label
+apartment.form.controller.alternate_label
+apartment.form.controller.same_as_operator
+common.required_legend
+common.optional
+confirm.cancel
+flash.error.name_required
+flash.error.no_such_controller
+host.door_code
+nav.properties
