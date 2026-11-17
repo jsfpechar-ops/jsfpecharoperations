@@ -4,6 +4,7 @@ Deep designs, one per feature. Open a plan only when you're working on that feat
 
 | Plan | State |
 |---|---|
+| [autopilot-agentic.md](autopilot-agentic.md) | Draft 2026-11-17 for owner review: zero-touch filing, exception list, trust ladder, action layer, API; hide Payments and Booking sites first; no briefs yet |
 | [design-v2.md](design-v2.md) | Host app design reset: 23 Haiku briefs 0124–0146 (tokens, lint, controls, host_page, shell, page migrations, legacy removals, cleanup); all todo |
 | [production-host-ux-corrections.md](production-host-ux-corrections.md) | Current owner requirements, source audit, 0087–0094 correction/property-navigation briefs, [Cursor prompt](production-host-ux-cursor-prompt.md), staging first |
 | [host-navigation-maintainability.md](host-navigation-maintainability.md) | Approved host navigation/editor ownership; [Cursor prompt](host-navigation-cursor-prompt.md), 0071–0074 replaced by current correction lane; remaining tasks release after reviewed corrections; staging-first and explicit production gate |
