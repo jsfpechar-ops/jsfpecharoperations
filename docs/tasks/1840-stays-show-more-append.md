@@ -21,13 +21,15 @@ On a 390 px phone the Stays "Show more" link replaces the list with page N+1 and
 
 Hard rules: 6 (no-JS must work), 7 (browser tests, 0 skipped, 390 px screenshot), 9 (copy), 10 (UX gate, design-system checklist). Read [design-system](../design/design-system.md) first, then `grep -n '^## ' docs/design/MASTER.md` for the list section only.
 
+## 3. Files
+
 Files (Python is the only server for this page; see question 1):
 - `App/app/templates/reservations.html` ~270-276: the `stays-pager ph-hide` nav and `<div class="list stays-more"><a class="link" href="{{ next_page_url }}" rel="next">`. The row loop sits above; find its container with `grep -n 'for item in rows' App/app/templates/reservations.html`.
 - `App/app/routes/admin.py` ~3852: `query_params = [... if key != "page"]` and `page_url(number)` -> `"/reservations?" + urlencode([*query_params, ("page", number)])`. `previous_page_url`, `next_page_url` are passed to the template.
 - Chips: `reservations.html` ~91-96 build hrefs `/reservations?range=X&status=<status>&apartment=<id>`; failed chip `?report=failed&status=..&apartment=..`; archive chip `range=archive`. Reset link ~102. Filter panel form ~108-135.
 - JS: `grep -n 'data-stays\|stays' App/app/static/app.js | head -20` to find the existing Stays script; add the handler there, not a new file.
 
-## 3. Steps
+## 4. Steps
 
 0. Anchors and size check. `grep -nF 'class="list stays-more"' App/app/templates/reservations.html | tail -30`; `grep -nF 'def page_url' App/app/routes/admin.py | tail -30`. Expect one hit each.
 1. Filter audit (read-only, write findings in the PR). Add `App/tests/test_1840_stays_filters.py` (file name from this brief) using the client fixtures of `App/tests/test_0523_stays_list.py` (copy its setup). With more than one page of stays (RESERVATION_PAGE_SIZE + 1 rows), assert on the rendered HTML:
@@ -42,16 +44,28 @@ Files (Python is the only server for this page; see question 1):
 3. Browser test in `App/tests/test_1840_stays_more_browser.py`: copy the Playwright setup from `test_0766_phone_stays_browser.py`; at 390 px seed PAGE_SIZE+1 stays, click Show more, assert row count = PAGE_SIZE+1, link gone, URL has `page=2`, no horizontal scroll; with JS disabled assert the click navigates to `?page=2` and shows Previous or a working back path. Assert the filters survive: start from `?apartment=<id>&range=upcoming`, click Show more, rows all belong to that apartment.
 4. Copy: no new strings. If one is unavoidable add it to `App/app/host_i18n.py` in en, cs and vi, run `test_*_i18n.py`.
 
-## 4. Tests (test-map rows; never the full suite)
+## 5. Do not touch
+
+Other pages than Stays (`/reservations`); global Turbo behaviour outside the stated scope; any new dependency; unrelated tests.
+
+## 6. Commands (test-map rows; never the full suite)
 
 From `App/`, each ending `2>&1 | tail -30`, 0 skipped:
 `.venv/bin/python -m pytest tests/test_1840_stays_filters.py tests/test_1840_stays_more_browser.py tests/test_0523_stays_list.py tests/test_0766_phone_stays_browser.py tests/test_1100_stays_in_house_first.py tests/test_archive_stays_on_page.py tests/test_design_stays.py -q --tb=short -x`
 Host pages row: `tests/test_host_*.py tests/test_host_geometry.py`. Any host template/JS row: `tests/test_design_guardrails_browser.py`. UX gate: `tests/test_layout_lint_browser.py` green. Copy row if strings changed. Static files row: `tests/test_static_versions.py tests/test_wp07_cache_heartbeats.py` (app.js changed).
 From repo root: `python3 scripts/context_lint.py 2>&1 | tail -30`.
 
-## 5. Acceptance
+## 7. Acceptance
 
 - Phone: Show more appends in place, URL becomes `?page=2` via replaceState, Back leaves Stays. No-JS: plain link works. Desktop pager unchanged.
 - Chip, failed-chip, archive-chip, reset and Show more keep `apartment`/`status`; chips drop `page`, `from`, `to`; active chip right on page 2.
 - PR body has: one 390 px screenshot per changed page, 390/768/1280 screenshots opened and one line per page on what you saw (rule 10), the design-system checklist ticked, decision line for question 1, test output tails with 0 skipped.
 - Owner steps: none (merge with `scripts/merge-pr-on-green.sh`; Python path deploys on green; a Go switch is not involved).
+
+## 8. Stop and ask
+
+Stop at 30 tool calls or 60k tokens, if a step needs a file not named in section 3, or if the open questions above are unanswered.
+
+## 9. Report
+
+What changed; the last 30 lines of each test output; 390, 768 and 1280 px screenshots for each touched page; the design-system checklist ticked.

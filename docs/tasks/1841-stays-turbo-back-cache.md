@@ -22,20 +22,40 @@ Browser back, swipe and backspace to `/reservations` reload and re-render the wh
 
 Risks to name in the PR: a cached snapshot can show flashes, a send-state badge, "Send all ready" count or a stay status that changed after leaving. Mitigation (Step 3): clear transient nodes on `turbo:before-cache` and revalidate in the background.
 
-## 3. Steps
+## 3. Files
+
+- `App/app/templates/base.html` line 44: make the `turbo-cache-control` meta overridable (Step 2).
+- `App/app/templates/reservations.html`: set the page value to `cache` (Step 3).
+- The Stays JS (`App/app/static/app.js`, with `skeleton.js` read-only for its `pageshow` handler): `turbo:before-cache`, `turbo:load` and `pageshow` handlers (Step 3).
+- `App/tests/test_1841_stays_back_cache_browser.py`: new browser test (Step 4).
+- Read-only: `App/app/static/vendor/turbo-8.0.13.js`, `App/tests/test_0766_phone_stays_browser.py` (test setup).
+
+## 4. Steps
 
 1. Dependency scan (read-only). `grep -rn 'turbo-cache-control\|no-cache\|data-turbo-cache\|turbo:before-cache\|turbo:load\|turbo:render\|pageshow' App/app/templates App/app/static/*.js 2>&1 | grep -v vendor | tail -30`. List in the PR every place that assumes a fresh page after Back (flash banners, `inert`, skeleton overlay, forms with CSRF tokens, `data-saved-views`, `initUnsavedDialog` at app.js ~2640). If any item cannot be healed in Step 3, STOP and report: do not change the cache.
 2. Make the meta overridable: in `base.html` line 44 keep `no-cache` as the default but wrap it so a page can set its own: `<meta name="turbo-cache-control" content="{{ turbo_cache_control | default('no-cache') }}">`. Do not touch other attributes of line 44.
 3. In `App/app/templates/reservations.html` pass the value by a `{% set turbo_cache_control = 'cache' %}` placed before `{% extends %}` output is rendered (use the same mechanism other templates use to set `show_nav`; `grep -n 'show_nav' App/app/templates/*.html | tail -30`). In the Stays JS add: on `turbo:before-cache` remove `[data-flash]`/flash banners and the skeleton overlay and reset `aria-busy`; on `turbo:load` and `pageshow` re-run the same heal as app.js:907 and, if the snapshot is older than 60 s (store `Date.now()` on `turbo:load` in a `data-loaded-at` attribute), call `Turbo.visit(location.href, {action:'replace'})` to refresh in the background.
 4. Browser test `App/tests/test_1841_stays_back_cache_browser.py` (setup from `test_0766_phone_stays_browser.py`, 390 px): open Stays, scroll down 600 px, click a stay, `page.go_back()`, assert scroll Y is within 50 px of 600 and no network request for `/reservations` full document was needed within 1 s (or the page has a `data-turbo-preview`-free restore); assert no flash banner and no inert nodes. Second case: change a stay status in another request, go back, wait 2 s, assert the new status shows.
 
-## 4. Tests (test-map rows; 0 skipped)
+## 5. Do not touch
+
+Other pages than Stays (`/reservations`); global Turbo behaviour outside the stated scope (every other page keeps `no-cache`); any new dependency; unrelated tests.
+
+## 6. Commands (test-map rows; 0 skipped)
 
 From `App/`, `2>&1 | tail -30`: `.venv/bin/python -m pytest tests/test_1841_stays_back_cache_browser.py tests/test_0766_phone_stays_browser.py tests/test_0523_stays_list.py tests/test_1840_stays_more_browser.py -q --tb=short -x`; host pages row `tests/test_host_*.py tests/test_host_geometry.py`; `tests/test_design_guardrails_browser.py`; `tests/test_layout_lint_browser.py` green; static row `tests/test_static_versions.py tests/test_wp07_cache_heartbeats.py`. Root: `python3 scripts/context_lint.py 2>&1 | tail -30`.
 
-## 5. Acceptance
+## 7. Acceptance
 
 - Back to Stays keeps scroll and is instant; every other page still uses no-cache (grep shows only `reservations.html` sets `cache`).
 - No new copy (rule 9); if a string is unavoidable it is in `host_i18n.py` for en, cs, vi.
 - PR body: Step 1 list, stale-data note, 390/768/1280 screenshots opened with one line per page (rule 10), design-system checklist ticked, test tails with 0 skipped.
 - Owner steps: none.
+
+## 8. Stop and ask
+
+Stop at 30 tool calls or 60k tokens, if a step needs a file not named in section 3, or if the open questions above are unanswered.
+
+## 9. Report
+
+What changed; the last 30 lines of each test output; 390, 768 and 1280 px screenshots for each touched page; the design-system checklist ticked.
