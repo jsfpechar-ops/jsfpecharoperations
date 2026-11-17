@@ -17,7 +17,7 @@ Updated: 2026-11-17.
 - Entry code + guide link (Go only): [plan](../plans/entry-code-external-guide.md). Runnable: 1660, 1663, 1668 (layout-lint harness; gates 1664-1667 screenshots); 1661→1662, 1664 after it; 1665-1667 wait on property-settings and guest-pages ports.
 - CI 1413-1415, README 1416.
 - Go move ([remaining](../plans/go-full-move-remaining.md), [SQLite](../plans/sqlite-retirement.md)): #1010 merged 11-14. PR #1021 open. Server 11-15: W1, W1b, W6-W8 on Go; W3 rolled back; retention dry-run.
-- [go-sqlite-final]: SQLite 1474-1480, Go 1700-1790 (#1081). Done: 1700a-d (owner pg_trgm step before merge), 1704a-c, 1701, 1701b, 1700e, 1702, 1702b. Ready: 1702c1. Then 1702c2, 1702d-e, 1703, 1705. 1527 replaced.
+- [go-sqlite-final]: SQLite 1474-1480, Go 1700-1790 (#1081). Done: 1700a-d (owner pg_trgm step before merge), 1704a-c, 1701, 1701b, 1700e, 1702, 1702b, 1702c1. Next: 1702c2, 1702d-e, 1703, 1705. 1527 replaced.
 - Go photo volume (owner 11-14): writable `/data` + x/image. Order: 1640 (compose), 1641 (x/image + imgproc), 1447 (guide photo upload), 1603 (demo stay delete); 1650-1652 (ports for 1597). 1597 waits for the guest claim and `normalise_guest` ports.
 - 1630: drop the extra `guest_details_host` mail (1291 on main).
 - Door codes 0037–0038 on main: owner staging.
