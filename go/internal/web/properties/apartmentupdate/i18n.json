@@ -1,17 +1,23 @@
 {
  "cs": {
+  "flash.apartments.letter_saved_untested": "Uloženo. Zatím neotestováno, protože nebylo zadáno heslo. Napište ho a otestujte spojení.",
   "flash.apartments.saved": "Uloženo. Pro hlášení policii ještě chybí: %(fields)s.",
   "flash.apartments.saved_ready": "Uloženo. Ubytování je připravené k hlášení.",
-  "flash.error.pin_six_digits": "PIN musí mít přesně 6 číslic."
+  "flash.error.pin_six_digits": "PIN musí mít přesně 6 číslic.",
+  "flash.stay_fees.saved": "Uloženo."
  },
  "en": {
+  "flash.apartments.letter_saved_untested": "Saved. Not tested yet, because no password was typed. Type it and test the connection.",
   "flash.apartments.saved": "Saved. Still missing for police reporting: %(fields)s.",
   "flash.apartments.saved_ready": "Saved. This property is ready to report.",
-  "flash.error.pin_six_digits": "The PIN must be exactly 6 digits."
+  "flash.error.pin_six_digits": "The PIN must be exactly 6 digits.",
+  "flash.stay_fees.saved": "Saved."
  },
  "vi": {
+  "flash.apartments.letter_saved_untested": "Đã lưu. Chưa kiểm tra vì chưa nhập mật khẩu. Hãy nhập mật khẩu và kiểm tra kết nối.",
   "flash.apartments.saved": "Đã lưu. Vẫn còn thiếu để khai báo cảnh sát: %(fields)s.",
   "flash.apartments.saved_ready": "Đã lưu. Chỗ ở này đã sẵn sàng khai báo.",
-  "flash.error.pin_six_digits": "Mã PIN phải gồm đúng 6 chữ số."
+  "flash.error.pin_six_digits": "Mã PIN phải gồm đúng 6 chữ số.",
+  "flash.stay_fees.saved": "Đã lưu."
  }
 }

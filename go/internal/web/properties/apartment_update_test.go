@@ -7,6 +7,7 @@ package properties
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -329,19 +330,17 @@ func TestApartmentUpdateNotPorted(t *testing.T) {
 	ctx := context.Background()
 	base := g.Cases[3].Form // the full save of property 201
 	for name, extra := range map[string]map[string]string{
-		"wizard step":           {"setup_step": "property"},
-		"retired wizard step":   {"setup_step": "calendar_sync"},
-		"wizard return_to":      {"return_to": "/apartments/201/setup/police"},
-		"quoted wizard return":  {"return_to": "%2Fapartments%2F201%2Fsetup%2Fpolice"},
-		"fee signature section": {"fee_signature_section": "1", "signature_name": "A. Host"},
-		"fee return":            {"fee_return_to": "/stay-fees?month=2026-10"},
-		"police-letter fields":  {"letter_fields": "uby_idub, uby_mark"},
-		"guest pay block":       {"stay_fee_guest_form": "1"},
-		"data box":              {"stay_fee_authority_databox": "abcdefg"},
-		"full-width operator":   {"legal_entity_id": "２１"},
-		"Arabic-Indic PIN":      {"permalink_pin": "١٢٣٤٥٦"},
-		"superscript hour":      {"checkin_hour": "1²"},
-		"basic ISO rate day":    {"stay_fee_rate_from": "20261201"},
+		"wizard step":            {"setup_step": "property"},
+		"retired wizard step":    {"setup_step": "calendar_sync"},
+		"wizard return_to":       {"return_to": "/apartments/201/setup/police"},
+		"quoted wizard return":   {"return_to": "%2Fapartments%2F201%2Fsetup%2Fpolice"},
+		"letter connection test": {"letter_fields": "uby_idub, uby_mark"}, // base types uby_ws_password
+		"guest pay block":        {"stay_fee_guest_form": "1"},
+		"data box":               {"stay_fee_authority_databox": "abcdefg"},
+		"full-width operator":    {"legal_entity_id": "２１"},
+		"Arabic-Indic PIN":       {"permalink_pin": "١٢٣٤٥٦"},
+		"superscript hour":       {"checkin_hour": "1²"},
+		"basic ISO rate day":     {"stay_fee_rate_from": "20261201"},
 	} {
 		form := map[string]string{}
 		for k, v := range base {
@@ -412,6 +411,142 @@ func TestApartmentUpdateRefusedDraft(t *testing.T) {
 	rec := apartmentFormPost(t, mux, "/apartments/201", g.CSRFNonce, 2, 0, "en", true, form)
 	if rec.Code != http.StatusNotImplemented || rec.Header().Get("X-Ubyhost-Not-Ported") != "1" {
 		t.Errorf("guest-pay draft: %d, want 501 with the fallback header", rec.Code)
+	}
+}
+
+// TestApartmentUpdateSignatureFeeLetter (brief 1702d1): the tail of
+// apartment_update (admin.py 2544-2601). Expected values are written by hand
+// from the Python code: the signature goes to the property's own operator
+// only, a refused signature keeps the saved row, a fee page gets the save
+// back, and police-letter values without a typed password are not tested.
+func TestApartmentUpdateSignatureFeeLetter(t *testing.T) {
+	g := loadApartmentUpdateGolden(t)
+	pool := testPool(t)
+	apartmentCreateSeed(t, pool, apartmentCreateGolden{Seed: g.Seed})
+	mux := http.NewServeMux()
+	RegisterApartmentUpdate(mux, noWrap, pool, apartmentUpdateGetenv, testClock)
+	ctx := context.Background()
+	post := func(extra map[string]string, drop ...string) (int, string) {
+		t.Helper()
+		form := map[string]string{}
+		for k, v := range g.Cases[3].Form {
+			form[k] = v
+		}
+		for k, v := range extra {
+			form[k] = v
+		}
+		for _, k := range drop {
+			delete(form, k)
+		}
+		rec := apartmentFormPost(t, mux, "/apartments/201", g.CSRFNonce, 2, 0, "en", true, form)
+		return rec.Code, rec.Header().Get("Location")
+	}
+	signature := func(id int64) (string, string) {
+		t.Helper()
+		var name, enc string
+		if err := pool.QueryRow(ctx, `SELECT COALESCE(signature_name, ''), COALESCE(signature_png_enc, '') FROM legal_entity WHERE id = $1`, id).Scan(&name, &enc); err != nil {
+			t.Fatal(err)
+		}
+		return name, enc
+	}
+	saved := "/apartments/201?view=settings&section=police&saved=1&msg=Saved.%20This%20property%20is%20ready%20to%20report.&toast_kind=success"
+
+	// 0209: the name and a drawn PNG go to operator 21, encrypted at rest.
+	png := "data:image/png;base64," + base64.StdEncoding.EncodeToString([]byte("\x89PNG\r\n\x1a\nsig"))
+	code, loc := post(map[string]string{"fee_signature_section": "1", "signature_name": "  A. Host  ", "signature_drawn": png})
+	if code != http.StatusSeeOther || loc != saved {
+		t.Errorf("signature: %d %q, want 303 %q", code, loc, saved)
+	}
+	if name, enc := signature(21); name != "A. Host" || enc == "" || strings.Contains(enc, "PNG") {
+		t.Errorf("signature of 21: name %q, enc %q", name, enc)
+	}
+	// Without fee_signature_section the signature fields are ignored.
+	if _, loc = post(map[string]string{"signature_name": "Other"}); loc != saved {
+		t.Errorf("no section: %q", loc)
+	}
+	if name, _ := signature(21); name != "A. Host" {
+		t.Errorf("no section: the signature name became %q", name)
+	}
+	// A drawn value that is not a PNG or JPEG: the row is already saved, the
+	// signature is not, and the host lands on the stay-fee settings.
+	if _, err := pool.Exec(ctx, `UPDATE apartment SET internal_name = 'Before' WHERE id = 201`); err != nil {
+		t.Fatal(err)
+	}
+	code, loc = post(map[string]string{"fee_signature_section": "1", "signature_name": "Bad", "signature_drawn": "data:text/plain;base64,QQ=="})
+	want := "/apartments/201?view=settings&section=reporting&err=The%20signature%20must%20be%20a%20PNG%20or%20JPEG%20image%20up%20to%20300%20KB.#stay-fee-settings"
+	if code != http.StatusSeeOther || loc != want {
+		t.Errorf("bad signature: %d %q, want 303 %q", code, loc, want)
+	}
+	var internal string
+	if err := pool.QueryRow(ctx, `SELECT internal_name FROM apartment WHERE id = 201`).Scan(&internal); err != nil || internal == "Before" {
+		t.Errorf("bad signature: the property was not saved (%q, %v)", internal, err)
+	}
+	if name, _ := signature(21); name != "A. Host" {
+		t.Errorf("bad signature: the name became %q", name)
+	}
+	// access.entity: another workspace's operator is never written.
+	if _, err := pool.Exec(ctx, `UPDATE apartment SET legal_entity_id = 31 WHERE id = 201`); err != nil {
+		t.Fatal(err)
+	}
+	post(map[string]string{"fee_signature_section": "1", "signature_name": "Intruder"}, "legal_entity_id")
+	var operator int64
+	if err := pool.QueryRow(ctx, `SELECT COALESCE(legal_entity_id, 0) FROM apartment WHERE id = 201`).Scan(&operator); err != nil || operator != 31 {
+		t.Fatalf("other operator: legal_entity_id %d (%v), want 31 kept for the check", operator, err)
+	}
+	if name, _ := signature(31); name != "" {
+		t.Errorf("other operator: entity 31 got the name %q", name)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE apartment SET legal_entity_id = 21 WHERE id = 201`); err != nil {
+		t.Fatal(err)
+	}
+
+	// fee_return_after_save: back to the fee page with "Saved.", no toast.
+	for raw, want := range map[string]string{
+		"/stay-fees?month=2026-10":     "/stay-fees?month=2026-10&msg=Saved.",
+		"/stay-fees/201?month=2026-10": "/stay-fees/201?month=2026-10&msg=Saved.",
+		"/stay-fees/202?month=2026-10": saved,
+		"https://evil.example/x":       saved,
+		"/apartments":                  saved,
+	} {
+		if code, loc := post(map[string]string{"fee_return_to": raw}); code != http.StatusSeeOther || loc != want {
+			t.Errorf("fee_return_to %q: %d %q, want %q", raw, code, loc, want)
+		}
+	}
+
+	// 1085: letter values saved without a typed password: not tested, #ubyport.
+	untested := "/apartments/201?view=settings&section=police&saved=1&msg=Saved.%20Not%20tested%20yet%2C%20because%20no%20password%20was%20typed.%20Type%20it%20and%20test%20the%20connection.#ubyport"
+	for letter, want := range map[string]string{" uby_mark ,x": untested, "uby_ws_user": untested, "uby_name, x": saved, ",": saved} {
+		if code, loc := post(map[string]string{"letter_fields": letter, "uby_ws_password": ""}); code != http.StatusSeeOther || loc != want {
+			t.Errorf("letter_fields %q: %d %q, want %q", letter, code, loc, want)
+		}
+	}
+	// A letter-page fee return wins over the letter message (Python order).
+	if _, loc := post(map[string]string{"letter_fields": "uby_mark", "uby_ws_password": "", "fee_return_to": "/stay-fees"}); loc != "/stay-fees?msg=Saved." {
+		t.Errorf("letter with fee return: %q", loc)
+	}
+}
+
+// TestApartmentUpdateFeeReturn: stay_fees.fee_return_after_save, by hand.
+func TestApartmentUpdateFeeReturn(t *testing.T) {
+	active, off := &detailApt{ID: 7, StayFeeRateCZK: 30}, &detailApt{ID: 7}
+	for _, c := range []struct {
+		a         *detailApt
+		raw, want string
+	}{
+		{active, "", ""},
+		{active, "/stay-fees/7?month=2026-10", "/stay-fees/7?month=2026-10"},
+		{active, "/stay-fees/8", ""},
+		{active, "//evil.example/stay-fees", ""},
+		{off, "/stay-fees?month=2026-10", "/stay-fees?month=2026-10"},
+		{off, "/stay-fees/7?month=2026-10", "/stay-fees?month=2026-10"},
+		{off, "/stay-fees/7?month=2026-10&month=", "/stay-fees?month=2026-10"},
+		{off, "/stay-fees/7?month=2026-13", "/stay-fees"},
+		{off, "/stay-fees/7?month=1999-12", "/stay-fees"},
+		{off, "/stay-fees/7", "/stay-fees"},
+	} {
+		if got := apartmentFeeReturn(c.a, c.raw); got != c.want {
+			t.Errorf("apartmentFeeReturn(rate %d, %q) = %q, want %q", c.a.StayFeeRateCZK, c.raw, got, c.want)
+		}
 	}
 }
 

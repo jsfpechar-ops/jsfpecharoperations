@@ -461,11 +461,7 @@ func (s *Pages) detailBuild(ctx context.Context, r *http.Request, host *session.
 		return err
 	}
 	v.HavelOn = ai.HavelAIOn(s.detailHavelEnv(), "havel", email)
-	if back := safeLocalPath(queryLast(r, "return_to"), ""); back != "" {
-		if path, _, _ := strings.Cut(back, "?"); path == "/stay-fees" || path == "/stay-fees/"+strconv.FormatInt(a.ID, 10) {
-			v.FeeReturnTo = back
-		}
-	}
+	v.FeeReturnTo = detailFeeReturnPath(queryLast(r, "return_to"), a.ID)
 	if v.PoliceFindings, err = s.detailPoliceFindings(ctx, lang, a); err != nil {
 		return err
 	}
@@ -754,4 +750,14 @@ func (v *detailView) Window() detailWindow {
 		w.EndHour, w.EndNext = end%24, end >= 24
 	}
 	return w
+}
+
+// detailFeeReturnPath is stay_fees.fee_return_path: a validated way back to
+// the fee list or this property's fee report, or "".
+func detailFeeReturnPath(raw string, id int64) string {
+	back := safeLocalPath(raw, "")
+	if path, _, _ := strings.Cut(back, "?"); back != "" && (path == "/stay-fees" || path == "/stay-fees/"+strconv.FormatInt(id, 10)) {
+		return back
+	}
+	return ""
 }

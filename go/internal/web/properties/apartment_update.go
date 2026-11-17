@@ -10,8 +10,8 @@ package properties
 // anything is written:
 //   - a wizard post: setup_step, or a return_to under /apartments/{id}/setup/
 //     (brief 1702e);
-//   - the fee signature section, fee_return_to and police-letter fields
-//     (brief 1702d);
+//   - police-letter fields with uby_ws_password typed in the same save: the
+//     read-only UbyPort connection test (brief 1702d2);
 //   - the guest-pay block and the data box (as POST /apartments);
 //   - a non-ASCII digit or a 64-bit overflow in a number, and a
 //     stay_fee_rate_from that is set but not YYYY-MM-DD (Python's int(),
@@ -32,6 +32,7 @@ import (
 	_ "embed"
 	"fmt"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -43,6 +44,7 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/palette"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/stayfee"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/stayfeemail"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/onboarding"
@@ -219,16 +221,8 @@ func apartmentUpdateNotPorted(r *http.Request, id int64) string {
 	if strings.HasPrefix(formReturnTo(r, "", false), wizard) || strings.HasPrefix(formStr(r, "return_to"), wizard) {
 		return "a return_to inside the setup wizard (brief 1702e)"
 	}
-	if formStr(r, "fee_signature_section") == "1" {
-		return "the fee signature section (brief 1702d)"
-	}
-	if formStr(r, "fee_return_to") != "" {
-		return "fee_return_to (brief 1702d)"
-	}
-	for _, part := range strings.Split(formStr(r, "letter_fields"), ",") {
-		if pyStrip(part) != "" {
-			return "police-letter fields (brief 1702d)"
-		}
+	if apartmentLetterListed(r) && formStr(r, "uby_ws_password") != "" {
+		return "the police-letter connection test (brief 1702d2)"
 	}
 	for _, key := range apartmentNotPortedFields {
 		if has(r, key) {
@@ -637,9 +631,11 @@ func recordRateChange(ctx context.Context, tx pgx.Tx, id int64, rate int, previo
 	return err
 }
 
-// apartmentSaved is the tail of apartment_update after a save: the
-// confirmation names the police fields still missing (_missing_report_labels)
-// and the page opens again with ?saved=1 (1024).
+// apartmentSaved is the tail of apartment_update after a save: the stay-fee
+// signature goes to the property's operator (0209), the confirmation names
+// the police fields still missing (_missing_report_labels), a save that came
+// from a fee page goes back there (fee_return_after_save), and the page opens
+// again with ?saved=1 (1024), at #ubyport after police-letter values (1085).
 func (s *server) apartmentSaved(w http.ResponseWriter, r *http.Request, q *request, p *Pages, id int64) {
 	saved, err := p.detailLoad(r.Context(), q.host.Workspace.ID, id)
 	if err != nil {
@@ -649,6 +645,33 @@ func (s *server) apartmentSaved(w http.ResponseWriter, r *http.Request, q *reque
 	if saved == nil {
 		q.back(w, r, "/apartments", hostweb.Flash{}, q.flash("flash.error.no_such_apartment", nil))
 		return
+	}
+	if formStr(r, "fee_signature_section") == "1" && saved.LegalEntityID != 0 {
+		// access.entity: only an operator of the signed-in workspace.
+		entity, err := s.loadEntity(r, saved.LegalEntityID, q.host.Workspace.ID)
+		if err != nil {
+			fail(w, err)
+			return
+		}
+		if entity != nil {
+			sig, ok, err := signaturePayload(r, func() (*secure.MultiFernet, error) { return secure.LoadDataKeys(s.getenv) })
+			if err != nil {
+				fail(w, err)
+				return
+			}
+			if !ok {
+				back := fmt.Sprintf("/apartments/%d?view=settings&section=reporting#stay-fee-settings", id)
+				q.back(w, r, back, hostweb.Flash{}, q.flash("flash.entities.signature_invalid", nil))
+				return
+			}
+			if len(sig) > 0 {
+				sql, args := updateSQL("legal_entity", sig, entity.ID)
+				if _, err := s.pool.Exec(r.Context(), sql, args...); err != nil {
+					fail(w, err)
+					return
+				}
+			}
+		}
 	}
 	issues, err := p.detailIssues(saved, q.at)
 	if err != nil {
@@ -669,14 +692,67 @@ func (s *server) apartmentSaved(w http.ResponseWriter, r *http.Request, q *reque
 	if len(labels) > 0 {
 		msg = updateFlash(q, "flash.apartments.saved", map[string]any{"fields": strings.Join(labels, ", ")})
 	}
+	if back := apartmentFeeReturn(saved, formStr(r, "fee_return_to")); back != "" {
+		q.back(w, r, back, updateFlash(q, "flash.stay_fees.saved", nil), hostweb.Flash{})
+		return
+	}
 	path, fragment, found := strings.Cut(formReturnTo(r, fmt.Sprintf("/apartments/%d", id), false), "#")
 	if strings.Contains(path, "?") {
 		path += "&saved=1"
 	} else {
 		path += "?saved=1"
 	}
+	// 1085: police-letter values saved without a typed password are not
+	// tested (with one, apartmentUpdateNotPorted already answered).
+	if apartmentLetterListed(r) {
+		q.back(w, r, path+"#ubyport", updateFlash(q, "flash.apartments.letter_saved_untested", nil), hostweb.Flash{})
+		return
+	}
 	if found {
 		path += "#" + fragment
 	}
 	q.back(w, r, path, msg, hostweb.Flash{})
+}
+
+// apartmentLetterFields is police_letter.FIELDS.
+var apartmentLetterFields = []string{"uby_idub", "uby_ws_user", "uby_mark"}
+
+// apartmentLetterListed is a non-empty police_letter.confirmed_fields(form)[0]:
+// a name of apartmentLetterFields in the comma list letter_fields.
+func apartmentLetterListed(r *http.Request) bool {
+	for _, part := range strings.Split(formStr(r, "letter_fields"), ",") {
+		for _, name := range apartmentLetterFields {
+			if pyStrip(part) == name {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// apartmentFeeReturn is stay_fees.fee_return_after_save: the validated way
+// back to a fee page, or "". A property whose rate is now 0 has no report,
+// so its report link falls back to the fee list of the same month.
+func apartmentFeeReturn(a *detailApt, raw string) string {
+	back := detailFeeReturnPath(raw, a.ID)
+	if back == "" {
+		return ""
+	}
+	path, query, _ := strings.Cut(back, "?")
+	if path == "/stay-fees" || a.StayFeeRateCZK > 0 {
+		return back
+	}
+	query, _, _ = strings.Cut(query, "#")
+	// dict(parse_qsl(query)): blank values are dropped, the last one wins.
+	values, _ := url.ParseQuery(query)
+	month := ""
+	for _, v := range values["month"] {
+		if v != "" {
+			month = v
+		}
+	}
+	if day, ok := stayfee.ParseMonth(month); ok {
+		return "/stay-fees?month=" + stayfee.MonthKey(day)
+	}
+	return "/stay-fees"
 }
