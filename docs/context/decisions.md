@@ -59,7 +59,7 @@ Append-only.
 - 2026-11-13 [security] #966: 1200-1205; Go env in compose; K-S12 ok; 1206-1207 after merge (owner)
 - 2026-11-13 [mail] Completion CC to host again; PII stays in guest_details_host | owner | 1291
 - 2026-11-14 [mail] Only completion (guest TO, host CC) after stay complete; stop guest_details_host (supersedes 1291 keep-both) | owner | 1630
-- 2026-11-13 [workflow] No GitHub branch protection or required checks (owner): merges gated by scripts/merge-pr-on-green.sh, production by the green-CI deploy gate; CI speed-ups: tasks 1413-1415, 1416 (README)
+- 2026-11-13 [workflow] No GitHub branch protection or required checks (owner); merge via merge-pr-on-green.sh, deploy on green CI; CI speed-ups 1413-1416
 - 2026-11-13 [workflow/db] [Go first](go-first.md); [SQLite plan](../plans/sqlite-retirement.md) 1-6 approved | owner
 - 2026-11-14 [dep/infra] golang.org/x/image v0.45.0 (v0.46 needs Go 1.26); Go /data writable (was :ro) | owner | 1641, 1640
 - 2026-11-14 [access] Entry code: Go only, rules in [plan](../plans/entry-code-external-guide.md) | owner
@@ -68,4 +68,4 @@ Append-only.
 - 2026-11-15 [ai] Havel and Leon on Mistral Small, 0.05 USD monthly caps | owner
 - 2026-11-15 [legal] Register lists Mistral AI and Anthropic (conditional); no "EU only"/"not stored" claim without ZDR or EU endpoint | 1792
 - 2026-11-15 [ai] Shared Havel/Leon budget, abuse caps; Havel no-go settings; nameless lookups; host mail in host language: [plan](../plans/ai-payments-hardening.md) | owner
-- 2026-11-17 [dep] Address suggest: monthly ČÚZK CSV into Postgres, `pg_trgm` | owner | 1700c
+- 2026-11-17 [dep] ČÚZK addresses: local unlogged table, pg_trgm (1700c). [workflow] Python golden: filing only ([go-first](go-first.md)) | owner

@@ -26,6 +26,8 @@ Owner decision 2026-11-17 ([decisions](../context/decisions.md), `[dep]` line): 
 
 ## 3. Table (migration `00021_ruian_address.sql`)
 
+**Owner 2026-11-17: no backup cost, no third party (Supabase rejected: typed addresses would leave the server).** `ruian_address` stays `UNLOGGED` (no WAL, so WAL-G skips it); `pg_dump` gets `--exclude-table-data=ruian_address`; after a crash the table is empty and the daily job re-imports when it finds 0 rows. Tests: Go only (no Python golden).
+
 ```
 ruian_address (
   code        BIGINT PRIMARY KEY,        -- Kód ADM

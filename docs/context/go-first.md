@@ -5,7 +5,7 @@ Owner, 2026-11-13. Python is being retired ([plan](../plans/go-full-move.md)). W
 - **New feature:** Go only. If its page or job is not in Go yet, the port brief comes first and the feature brief names it in `Depends on`.
 - **Bug fix:** fix it in Go. If the area is not in Go yet, port it first. If Python still serves that path or job in production (not in `UBYHOST_GO_PATHS` or `UBYHOST_GO_JOB_KINDS`), the brief's owner steps include the switch, so the fix reaches production.
 - **Python may change only for:**
-  1. Port plumbing a Go brief needs: reading a switch, golden scripts, parity tests, removal PRs.
+  1. Port plumbing a Go brief needs: reading a switch, parity tests, removal PRs. Python golden scripts only for filing-data briefs (owner 2026-11-17); other ports use Go-only tests with hand-written expected output.
   2. Dependency and security bumps.
   3. A filing, security or data-loss bug on a path Python still serves: the smallest fix goes into Python too, in the same brief as the Go fix.
 - A brief whose section 3 names a file under `App/app/` says which of the three applies. If none does, the reviewer rejects it.
