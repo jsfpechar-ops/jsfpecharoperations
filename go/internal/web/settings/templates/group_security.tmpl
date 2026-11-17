@@ -1,4 +1,109 @@
-{{- /* Brief 1704c replaces this file with the security group of settings.html
-     (the logout-all row, #settings-passkeys, 2FA state). Until then the group
-     draws nothing and its route is not registered. */ -}}
-{{define "settings.group.security"}}{{end}}
+{{- /* Port of the `group == 'security'` block of App/app/templates/settings.html
+     (brief 1704c). The passkeys list is its own template, "settings.passkeys",
+     so brief 1764 edits that one section. The forms post to the existing
+     routes (/account/logout-all, /account/passkeys/{id}/{rename,delete},
+     /account/2fa/{move,disable}) and carry _csrf; adding a passkey and the
+     remove confirm are the static JS of the page. */ -}}
+{{define "settings.group.security"}}{{if eq .Group "security"}}{{with .Security -}}
+<section class="settings-group" id="settings-group-security" aria-labelledby="settings-group-security-title"><h2 class="settings-group-title sec" id="settings-group-security-title">{{t "settings.group.security"}}</h2><div class="card settings-card">
+    <div class="ui-section" id="settings-security">
+      <div class="settings-action-list" id="settings-logout-all">
+        <div class="settings-action-row">
+          <div>{{tip_label (t "settings.security.devices") "settings-logout-all-help" (t "settings.security.logout_all_help")}}</div>
+          <form method="post" action="/account/logout-all">
+            <input type="hidden" name="_csrf" value="{{csrf}}">
+            <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{t "settings.security.logout_all"}}</button>
+          </form>
+        </div>
+      </div>
+      {{template "settings.passkeys" .}}
+      <div class="settings-action-list">
+        {{if .TOTPEnabled -}}
+        {{template "settings.value" (kv "label" (t "settings.account.2fa") "value" (t "settings.account.enabled"))}}
+        {{- else -}}
+        <div class="settings-action-row">
+          <div>{{tip_label (t "settings.account.2fa") "settings-2fa-help" (t "settings.account.2fa_off")}}</div>
+          <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/account/2fa/setup">{{t "settings.account.setup"}}</a>
+        </div>
+        {{- end}}
+        {{if .TOTPEnabled -}}
+          <details class="settings-move">
+            <summary>
+              <strong>{{t "settings.account.2fa_move"}}</strong>
+              <small>{{t "settings.account.2fa_move_help"}}</small>
+            </summary>
+            <form method="post" action="/account/2fa/move" class="settings-move-form">
+              <input type="hidden" name="_csrf" value="{{csrf}}">
+              <div class="ui-field">
+                <label for="move-code">{{t "settings.account.2fa_move_code"}}</label>
+                <input id="move-code" name="code" type="text" inputmode="numeric"
+                       autocomplete="one-time-code" aria-describedby="move-code-hint" required>
+                <p class="hint" id="move-code-hint">{{t "settings.account.2fa_move_code_hint"}}</p>
+              </div>
+              <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{t "settings.account.2fa_move_action"}}</button>
+            </form>
+          </details>
+          <details class="settings-move">
+            <summary>
+              <strong>{{t "settings.security.2fa_off"}}</strong>
+              <small>{{t "settings.security.2fa_off_help"}}</small>
+            </summary>
+            <form method="post" action="/account/2fa/disable" class="settings-move-form">
+              <input type="hidden" name="_csrf" value="{{csrf}}">
+              <div class="ui-field">
+                <label for="disable-code">{{t "settings.account.2fa_move_code"}}</label>
+                <input id="disable-code" name="code" type="text" inputmode="numeric"
+                       autocomplete="one-time-code" required>
+              </div>
+              <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{t "settings.security.2fa_off_action"}}</button>
+            </form>
+          </details>
+        {{- end}}
+      </div>
+    </div>
+</div></section>
+{{end}}{{end}}{{end}}
+
+{{- /* The passkeys section. Dot is *SecurityData. Keep id="settings-passkeys"
+     and the passkeys.* keys: brief 1764 edits this template only. */ -}}
+{{define "settings.passkeys"}}{{$help := t "passkeys.help"}}{{if not .PasskeysAvailable}}{{$help = printf "%s %s" $help (t "passkeys.unavailable")}}{{end -}}
+      <div class="settings-action-list" id="settings-passkeys">
+        <div class="settings-action-row">
+          <div>{{tip_label (t "passkeys.title") "settings-passkeys-help" $help}}</div>
+          {{if .PasskeysAvailable -}}
+            <button class="ui-btn ui-btn-primary ui-btn-compact" type="button" data-passkey-add data-passkey-supported hidden>{{t "passkeys.add"}}</button>
+          {{- end}}
+        </div>
+        {{if .PasskeysAvailable -}}
+          <p class="ui-sub" data-passkey-unsupported>{{t "passkeys.unsupported"}}</p>
+          <p class="ui-sub err-text" data-passkey-error data-generic="{{t "passkeys.error.failed"}}" role="alert" hidden></p>
+        {{- end}}
+        {{template "settings.value" (kv "label" (t "passkeys.count_label") "value" (len .Passkeys))}}
+        {{range .Passkeys -}}
+          <div class="settings-action-row passkey-row">
+            <div>
+              <strong>{{.Name}}</strong>
+              <small>{{t "passkeys.added_on" "date" (datetime_local .CreatedAt)}} ·
+                {{if .LastUsedAt}}{{t "passkeys.last_used" "date" (datetime_local .LastUsedAt)}}{{else}}{{t "passkeys.never_used"}}{{end}}</small>
+            </div>
+            <form method="post" action="/account/passkeys/{{.ID}}/delete"
+                  data-confirm data-confirm-message="{{t "passkeys.remove_confirm" "name" .Name}}">
+              <input type="hidden" name="_csrf" value="{{csrf}}">
+              <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{t "passkeys.remove"}}</button>
+            </form>
+          </div>
+          <details class="settings-move">
+            <summary><small>{{t "passkeys.rename"}}</small></summary>
+            <form method="post" action="/account/passkeys/{{.ID}}/rename" class="settings-move-form">
+              <input type="hidden" name="_csrf" value="{{csrf}}">
+              <div class="ui-field">
+                <label for="passkey-name-{{.ID}}">{{t "passkeys.name"}}</label>
+                <input id="passkey-name-{{.ID}}" name="name" type="text" maxlength="60"
+                       value="{{.Name}}" required>
+              </div>
+              <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{t "passkeys.rename_action"}}</button>
+            </form>
+          </details>
+        {{end -}}
+      </div>
+{{end}}
