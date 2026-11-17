@@ -1,0 +1,14 @@
+Kód ADM;Kód obce;Název obce;Kód MOMC;Název MOMC;Kód obvodu Prahy;Název obvodu Prahy;Kód èásti obce;Název èásti obce;Kód ulice;Název ulice;Typ SO;Èíslo domovní;Èíslo orientaèní;Znak èísla orientaèního;PSÈ;Souøadnice Y;Souøadnice X;Platí Od
+9000001;500020;Petrov nad Desnou;;;;;119792;Petrov nad Desnou;;;è.ev.;1;;;78814;557157.78;1074473.33;2013-12-03T00:00:00
+9000002;500020;Petrov nad Desnou;;;;;119792;Petrov nad Desnou;;;è.p.;12;;;78814;557100.10;1074400.20;2013-12-03T00:00:00
+9000003;500020;Petrov nad Desnou;;;;;119792;Petrov nad Desnou;;;è.p.;13;;;78814;557101.10;1074401.20;2013-12-03T00:00:00
+9000004;554782;Praha;500089;Praha 2;27;Praha 2;490229;Vinohrady;477371;Varšavská;è.p.;200;12;;12000;741683.52;1044935.48;2025-03-28T00:00:00
+9000005;554782;Praha;500089;Praha 2;27;Praha 2;490229;Vinohrady;477371;Varšavská;è.p.;201;12;a;12000;741690.00;1044940.00;2025-03-28T00:00:00
+9000006;554782;Praha;500054;Praha 1;19;Praha 1;490067;Nové Mìsto;477001;Václavské námìstí;è.p.;1306;3;;11000;740000.00;1043000.00;2020-01-01T00:00:00
+9000007;554782;Praha;500054;Praha 1;19;Praha 1;490067;Nové Mìsto;477002;Øeøichova;è.p.;17;;;11000;740010.00;1043010.00;2020-01-01T00:00:00
+9000008;554782;Praha;500054;Praha 1;19;Praha 1;490067;Nové Mìsto;477003;Žižkova;è.p.;18;;;11000;740020.00;1043020.00;2020-01-01T00:00:00
+9000009;554782;Praha;500054;Praha 1;19;Praha 1;490067;Nové Mìsto;477004;Èapkova;è.p.;19;;;11000;740030.00;1043030.00;2020-01-01T00:00:00
+9000010;500011;Želechovice nad Døevnicí;;;;;195901;Želechovice nad Døevnicí;796824;Pøílucká;è.p.;1;;;76311;515561.05;1166540.03;2014-02-12T00:00:00
+9000011;500011;Želechovice nad Døevnicí;;;;;195901;Želechovice nad Døevnicí;796824;Pøílucká;è.p.;2;;;76311;515542.01;1166548.76;2014-02-12T00:00:00
+9000012;500011;Želechovice nad Døevnicí;;;;;195901;Želechovice nad Døevnicí;796824;Pøílucká;è.p.;3;;;76311;515550.00;1166550.00;2014-02-12T00:00:00
+9000013;500011;Želechovice nad Døevnicí;;;;;195901;Želechovice nad Døevnicí;796824;Pøílucká;è.p.;;;;76311;515550.00;1166550.00;2014-02-12T00:00:00
