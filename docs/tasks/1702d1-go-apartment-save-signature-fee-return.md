@@ -1,6 +1,6 @@
 # 1702d1: Go property settings 3d1: signature, fee return and the untested police letter on save
 
-Status: review
+Status: done (orchestrator verified 2026-11-17: sidecars == repo, Go tests green on PG16, 0 skips;
 Depends on: 1702c2 (its step 7 committed) | Base commit: current tip of the working branch | Branch: task/1702d1-go-apartment-save-signature-fee-return
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (this brief needs about 12)
 Tier: A (fresh review of the full diff before merge, see the risk list at the end)
