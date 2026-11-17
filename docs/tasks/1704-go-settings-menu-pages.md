@@ -25,7 +25,7 @@ Port the two read-page areas Go does not have yet: `GET /housebook` and `GET /se
 
 | Brief | Scope | Depends on |
 |---|---|---|
-| 1704a | `GET /housebook` (filters apartment/from/to, rows, archived rows, period presets; links to the existing CSV and ZIP routes). **Exact-diff brief written: [1704a-go-housebook-page.md](1704a-go-housebook-page.md), Status: review** | none |
+| 1704a | `GET /housebook` (filters apartment/from/to, rows, archived rows, period presets; links to the existing CSV and ZIP routes). **Exact-diff brief written: [1704a-go-housebook-page.md](1704a-go-housebook-page.md), Status: done (Go UX gate pending until the switch)** | none |
 | 1704b | `GET /settings` and `/settings/{account,data,technical,help}`: the `settings_group` shell, tab strip, account, data and privacy, technical (destination, mail, codelists, UbyPort, audit with `?audit=support`), help (guide, legal, version); `SETTINGS_GROUPS` order as in Python | none; the shell is stable for 1704c |
 | 1704c | `/settings/security` and `/settings/phone`: logout-all row, passkeys list (read only; add and remove stay on the 1760 routes), 2FA state, PWA install row, push devices (read only) | 1704b |
 
