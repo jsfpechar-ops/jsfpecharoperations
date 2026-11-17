@@ -230,6 +230,7 @@ func TestApartmentDetailPage(t *testing.T) {
                  min="0" max="48" value="3"`,
 		`<form id="police-letter-form" method="post" action="/apartments/130201/police-letter"`,
 		// calendars
+		`<details class="prop-sec" id="sec-fee"`,
 		`<details class="prop-sec" id="sec-calendars"`,
 		`<td data-label="Name"><strong>Loft on Airbnb</strong></td>`, `<strong>Booking.com</strong>`, `<strong>`,
 		`<span class="ui-badge ui-badge-done" data-tone="green">`, `<span class="ui-badge ui-badge-action" data-tone="red">`,
@@ -240,7 +241,7 @@ func TestApartmentDetailPage(t *testing.T) {
 		`<option value="other">`,
 		`<div class="calendar-connect is-collapsed" id="calendar-connect"`,
 		`<div class="savebar save-on-dirty" data-for="property-settings-form">`,
-	}, []string{`Gone Co`, `Other Co`, `Other host`, `Foreign feed`, `foreign.ics`, `id="sec-fee"`, `class="ready-card"`, `data-leon-card`})
+	}, []string{`Gone Co`, `Other Co`, `Other host`, `Foreign feed`, `foreign.ics`, `class="ready-card"`, `data-leon-card`})
 	if bad := adPostFormsHaveCSRF(adPageBody(body)); len(bad) > 0 {
 		t.Errorf("post forms without _csrf: %q", bad)
 	}

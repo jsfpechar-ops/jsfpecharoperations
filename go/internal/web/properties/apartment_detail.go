@@ -10,8 +10,8 @@ package properties
 // page strings are their own catalog (apartmentdetail/i18n.json, written by
 // App/scripts/go_host_i18n.py).
 //
-// What the page leaves to a later brief is marked in the template by the
-// 1701b-fee anchor: the Stay fee section. The forms post to the Python routes as they do
+// The Stay fee section (brief 1701b, apartment_detail_fee.go) is the last part of
+// the Reporting settings. The forms post to the Python routes as they do
 // today (POST /apartments/{id}, .../feeds, .../archive, .../regenerate-pin).
 //
 // What this port answers 501 for, with the Caddy fallback header (notPorted),
@@ -140,6 +140,7 @@ type detailView struct {
 	HasPassword    bool
 	HavelOn        bool
 	FeeReturnTo    string
+	Fee            detailFee
 	Hours          []int
 	Platforms      []detailPlatform
 	PoliceFindings []detailFinding
@@ -434,6 +435,9 @@ func (s *Pages) detailBuild(ctx context.Context, r *http.Request, host *session.
 		}
 	}
 	if v.PoliceFindings, err = s.detailPoliceFindings(ctx, lang, a); err != nil {
+		return err
+	}
+	if v.Fee, err = s.detailFeeBuild(ctx, owner, a, now); err != nil {
 		return err
 	}
 	v.Lang = lang
