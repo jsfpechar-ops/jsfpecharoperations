@@ -1,6 +1,6 @@
 # 1700e: RÚIAN credit line on the legal page
 
-Status: review — executed 2026-11-17 (see 1700e-report.md)
+Status: done — executed and reviewed 2026-11-17 (390 px checked; margin fix in 1700e-fix-1)
 Depends on: 1700c (`go/internal/ruian/attribution.go` exists on this branch; verified at 5aa4d42) | Base commit: current tip of the working branch | Branch: task/1700e-ruian-attribution-line
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Tier: C (Sonnet wrote the exact-diff pass; the orchestrator reads the risk-listed files).
