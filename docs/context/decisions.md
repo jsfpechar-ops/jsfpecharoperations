@@ -41,7 +41,7 @@ Append-only.
 - 2026-11-10 [guest] Guest form: B now, then C (owner).
 - 2026-11-10 [guest] Under-15s skip the signature; any adult on the booking signs and ticks a role ("parent or guardian" / "adult responsible for the child on this stay"). A child with no adult link is filed "no signature required" (owner).
 - 2026-11-10 [guest] Titles: cs "Registrace hosta", es "Ficha de huésped", fr "Fiche voyageur" (owner).
-- 2026-11-10 [head-count] Lower count with stay fee: show new fee and "new bill will be e-mailed", confirm. Lead change: "Check your changes" confirm. Host digest: changed field names (no values), stay-page link, changes only. Small Go change OK. Early door-code risk accepted (mail guard) (owner).
+- 2026-11-10 [head-count] Lower count with stay fee: new fee + "new bill will be e-mailed", confirm. Lead change: "Check your changes" confirm. Host digest: changed field names (no values), stay-page link, changes only, not first registrations. Small Go change OK. Early door-code risk accepted (mail guard) (owner).
 - 2026-11-10 [workflow] Plan: project file plans/head-count-change.md (not in repo); each complete plan gets a Fable review before building (owner).
 - 2026-11-11 [police] 1100: no tick, values in boxes; parser reads password+facility, never stored (owner; reverses 1097, 1085).
 - 2026-11-10 [demo] Demo seed covers current features; mock-only, cleared by Clear demo (owner, 1092)
@@ -68,4 +68,4 @@ Append-only.
 - 2026-11-15 [ai] Havel and Leon on Mistral Small, 0.05 USD monthly caps | owner
 - 2026-11-15 [legal] Register lists Mistral AI and Anthropic (conditional); no "EU only"/"not stored" claim without ZDR or EU endpoint | 1792
 - 2026-11-15 [ai] Shared Havel/Leon budget, abuse caps; Havel no-go settings; nameless lookups; host mail in host language: [plan](../plans/ai-payments-hardening.md) | owner
-- 2026-11-17 [dep] Address suggest: monthly ČÚZK CSV import to Postgres, `pg_trgm` | owner | 1700c
+- 2026-11-17 [dep] Address suggest: monthly ČÚZK CSV into Postgres, `pg_trgm` | owner | 1700c
