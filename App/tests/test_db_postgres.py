@@ -257,8 +257,8 @@ def test_full_schema_apply_and_validate_on_postgres(pg_runtime):
     status = db.postgres_schema_status()
     assert status["current"] is True
     assert status["actual_version"] == db.expected_schema_version() == 45
-    assert status["expected_tables"] == 70 and status["actual_tables"] == 73  # + job (goose 00003), guest_form_snapshot and guest_inbox (goose 00020), PostgreSQL only
-    assert status["missing_tables"] == 0 and status["extra_tables"] == 3  # job, guest_form_snapshot, guest_inbox
+    assert status["expected_tables"] == 70 and status["actual_tables"] == 75  # + job (goose 00003), guest_form_snapshot and guest_inbox (goose 00020), ruian_address and ruian_import (goose 00021), PostgreSQL only
+    assert status["missing_tables"] == 0 and status["extra_tables"] == 5  # job, guest_form_snapshot, guest_inbox, ruian_address, ruian_import
     assert status["column_mismatches"] == 0
     assert status["missing_indexes"] == 0
     assert status["missing_triggers"] == status["extra_triggers"] == 0

@@ -54,7 +54,7 @@ if [ -n "${UBYHOST_DATABASE_URL:-}" ] && [ -n "$(docker compose ps -q --status r
     [ -n "${NEWEST}" ] || { echo "No snapshot folder to hold the PostgreSQL dump." >&2; exit 1; }
     docker compose exec -T ubyhost sh -c "rm -f /data/backups/${NEWEST}/ubyhost-pg.dump.age.tmp"
     # Written as .tmp and renamed only after the whole pipeline succeeded (pipefail), so no truncated .age is left.
-    docker compose exec -T postgres pg_dump -U ubyhost -Fc ubyhost \
+    docker compose exec -T postgres pg_dump -U ubyhost -Fc ubyhost --exclude-table-data=ruian_address \
       | age -r "${RECIPIENT}" \
       | docker compose exec -T ubyhost sh -c "cat > /data/backups/${NEWEST}/ubyhost-pg.dump.age.tmp && mv /data/backups/${NEWEST}/ubyhost-pg.dump.age.tmp /data/backups/${NEWEST}/ubyhost-pg.dump.age"
     echo "PostgreSQL dump bytes: $(docker compose exec -T ubyhost sh -c "wc -c < /data/backups/${NEWEST}/ubyhost-pg.dump.age" | tr -d '\r')"
