@@ -1,6 +1,6 @@
 # 1702e3: Go property settings 3e3: after a wizard save (_setup_after_save)
 
-Status: ready (exact-diff pass 2026-11-17: sidecars applied to a clean worktree of 1ee6306 (1702e2 step 1, i.e. the 1702e2 sidecars), gofmt/build/vet clean, Go tests green on PostgreSQL 16, 0 skips; no catalog, template or Python change)
+Status: review (exact-diff pass 2026-11-17: sidecars applied to a clean worktree of 1ee6306 (1702e2 step 1, i.e. the 1702e2 sidecars), gofmt/build/vet clean, Go tests green on PostgreSQL 16, 0 skips; no catalog, template or Python change)
 Decision 2026-11-17 (owner/orchestrator, rule 11): the wizard saves are ported to Go. Owner decision: Go-only tests with hand-written expected output, no new Python test file, no golden script change.
 Depends on: 1702e2 (step 1 applied; its step 7 report may still be open) | Base commit: current tip of the working branch | Branch: task/1702e3-go-apartment-save-wizard-after
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (this brief needs about 10)
