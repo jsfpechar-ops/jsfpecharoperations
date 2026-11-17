@@ -1,6 +1,6 @@
 # 1700b1: Go port of `validation_i18n.localize` (validation sentences in the host's language)
 
-Status: review
+Status: done (reviewed 2026-11-17: Go tests green, files match §3)
 Depends on: 1700a done (verified 2026-11-17) | Base commit: current tip of the working branch | Branch: task/1700b1-go-validation-localize
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (this brief needs about 8)
 Tier: A (the brief writer wrote, compiled and tested every file; the orchestrator reads the diff of the risk-listed files)
