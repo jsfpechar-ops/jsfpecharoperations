@@ -1,6 +1,6 @@
 # 1701: Go property settings 2: property detail page (GET /apartments/{id})
 
-Status: review — exact-diff pass done 2026-11-17
+Status: done (2026-11-17; reviewed, Go tests green; route stays off until 1701b-1703; Go UX gate at 1705)
 Depends on: 1700a, 1700b2, 1700d merged (`ApartmentNewForm`, `apartmentNewQueryInt`, `notPorted`, `slug.go`, the `properties` test helpers), 1599 (`onboarding` setup state), 1446 (`ai.LeonStore`); verified present at step 0 | Base commit: current tip of the working branch | Branch: task/1701-go-apartment-detail-page
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (this brief needs about 16)
 Tier: B (Sonnet wrote the exact-diff pass; the orchestrator reads the diff of the risk-listed files, see the end)
