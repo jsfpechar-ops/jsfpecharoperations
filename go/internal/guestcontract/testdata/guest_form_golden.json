@@ -1,0 +1,1550 @@
+{
+ "cases": [
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "01.02.1990",
+    "doc_number": "C01X00T47",
+    "first_name": "Jan",
+    "legal_ack": "1",
+    "nationality": "DEU",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAAAAADaLSBnAAAAF0lEQVR4nGP8z0AcYCJS3ajCUYXDXCEAcz4BJ+mggvQAAAAASUVORK5CYII=",
+    "surname": "Novák"
+   },
+   "issues": [],
+   "name": "valid adult",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": 2,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "01021990",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "10",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "surname": "NOVÁK",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "01.02.1990",
+    "doc_number": "C01X00T47",
+    "first_name": "  øyvind  ærø ",
+    "legal_ack": "1",
+    "nationality": "DEU",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAAAAADaLSBnAAAAF0lEQVR4nGP8z0AcYCJS3ajCUYXDXCEAcz4BJ+mggvQAAAAASUVORK5CYII=",
+    "surname": "nguyễn văn"
+   },
+   "issues": [],
+   "name": "diacritics fold",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": 2,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "01021990",
+    "doc_number": "C01X00T47",
+    "first_name": "OYVIND AERO",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "10",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "surname": "NGUYEN VĂN",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "01.02.1990",
+    "doc_number": "C01X00T47",
+    "first_name": "Jan",
+    "legal_ack": "1",
+    "nationality": "DEU",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAAAAADaLSBnAAAAF0lEQVR4nGP8z0AcYCJS3ajCUYXDXCEAcz4BJ+mggvQAAAAASUVORK5CYII=",
+    "surname": "straße"
+   },
+   "issues": [],
+   "name": "eszett upper",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": 2,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "01021990",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "10",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "surname": "STRASSE",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "01.02.1990",
+    "doc_number": "C01X00T47",
+    "first_name": "Jan",
+    "legal_ack": "1",
+    "nationality": "DEU",
+    "note": "a|b\r\nc",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAAAAADaLSBnAAAAF0lEQVR4nGP8z0AcYCJS3ajCUYXDXCEAcz4BJ+mggvQAAAAASUVORK5CYII=",
+    "surname": "Smith|Jones\nBrown"
+   },
+   "issues": [],
+   "name": "pipe and newline",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": 2,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "01021990",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "a b c",
+    "purpose": "10",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "surname": "SMITH JONES BROWN",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "01.02.1990",
+    "doc_number": "C01X00T47",
+    "first_name": "Jan",
+    "legal_ack": "1",
+    "nationality": "DEU",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAAAAADaLSBnAAAAF0lEQVR4nGP8z0AcYCJS3ajCUYXDXCEAcz4BJ+mggvQAAAAASUVORK5CYII=",
+    "surname": ""
+   },
+   "issues": [
+    {
+     "field": "surname",
+     "message": "Surname is required.",
+     "severity": "error"
+    }
+   ],
+   "name": "empty surname",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": 2,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "01021990",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "10",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "surname": "",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "01.02.1990",
+    "doc_number": "C01X00T47",
+    "first_name": "Jan",
+    "legal_ack": "1",
+    "nationality": "DEU",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAAAAADaLSBnAAAAF0lEQVR4nGP8z0AcYCJS3ajCUYXDXCEAcz4BJ+mggvQAAAAASUVORK5CYII=",
+    "surname": "Иванов"
+   },
+   "issues": [
+    {
+     "field": "surname",
+     "message": "Type this using Latin letters (A-Z), exactly as printed in the two machine-readable lines at the bottom of your passport.",
+     "severity": "error"
+    }
+   ],
+   "name": "cyrillic surname",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": 2,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "01021990",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "10",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "surname": "",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "01.02.1990",
+    "doc_number": "C01X00T47",
+    "first_name": "Jan",
+    "legal_ack": "1",
+    "nationality": "DEU",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAAAAADaLSBnAAAAF0lEQVR4nGP8z0AcYCJS3ajCUYXDXCEAcz4BJ+mggvQAAAAASUVORK5CYII=",
+    "surname": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+   },
+   "issues": [
+    {
+     "field": "surname",
+     "message": "Surname must be at most 50 characters.",
+     "severity": "error"
+    }
+   ],
+   "name": "surname too long",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": 2,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "01021990",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "10",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "surname": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "01.02.1990",
+    "doc_number": "C01X00T47",
+    "first_name": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+    "legal_ack": "1",
+    "nationality": "DEU",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAAAAADaLSBnAAAAF0lEQVR4nGP8z0AcYCJS3ajCUYXDXCEAcz4BJ+mggvQAAAAASUVORK5CYII=",
+    "surname": "Novák"
+   },
+   "issues": [
+    {
+     "field": "first_name",
+     "message": "Given name must be at most 24 characters.",
+     "severity": "error"
+    }
+   ],
+   "name": "first name too long",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": 2,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "01021990",
+    "doc_number": "C01X00T47",
+    "first_name": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "10",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "surname": "NOVÁK",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "01/02/90",
+    "doc_number": "C01X00T47",
+    "first_name": "Jan",
+    "legal_ack": "1",
+    "nationality": "DEU",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAAAAADaLSBnAAAAF0lEQVR4nGP8z0AcYCJS3ajCUYXDXCEAcz4BJ+mggvQAAAAASUVORK5CYII=",
+    "surname": "Novák"
+   },
+   "issues": [],
+   "name": "birth slashes two digit year",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": 2,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "01021990",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "10",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "surname": "NOVÁK",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "010224",
+    "doc_number": "C01X00T47",
+    "first_name": "Jan",
+    "legal_ack": "1",
+    "nationality": "DEU",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAAAAADaLSBnAAAAF0lEQVR4nGP8z0AcYCJS3ajCUYXDXCEAcz4BJ+mggvQAAAAASUVORK5CYII=",
+    "surname": "Novák"
+   },
+   "issues": [],
+   "name": "birth six digits",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": 2,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "01022024",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "10",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "surname": "NOVÁK",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "01021990",
+    "doc_number": "C01X00T47",
+    "first_name": "Jan",
+    "legal_ack": "1",
+    "nationality": "DEU",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAAAAADaLSBnAAAAF0lEQVR4nGP8z0AcYCJS3ajCUYXDXCEAcz4BJ+mggvQAAAAASUVORK5CYII=",
+    "surname": "Novák"
+   },
+   "issues": [],
+   "name": "birth eight digits",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": 2,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "01021990",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "10",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "surname": "NOVÁK",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "٠١٠٢١٩٩٠",
+    "doc_number": "C01X00T47",
+    "first_name": "Jan",
+    "legal_ack": "1",
+    "nationality": "DEU",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAAAAADaLSBnAAAAF0lEQVR4nGP8z0AcYCJS3ajCUYXDXCEAcz4BJ+mggvQAAAAASUVORK5CYII=",
+    "surname": "Novák"
+   },
+   "issues": [],
+   "name": "birth arabic indic digits",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": 2,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "01021990",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "10",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "surname": "NOVÁK",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "0.0.1990",
+    "doc_number": "C01X00T47",
+    "first_name": "Jan",
+    "legal_ack": "1",
+    "nationality": "DEU",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAAAAADaLSBnAAAAF0lEQVR4nGP8z0AcYCJS3ajCUYXDXCEAcz4BJ+mggvQAAAAASUVORK5CYII=",
+    "surname": "Novák"
+   },
+   "issues": [],
+   "name": "birth unknown day and month",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": 2,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "00001990",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "10",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "surname": "NOVÁK",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "123.4.1990",
+    "doc_number": "C01X00T47",
+    "first_name": "Jan",
+    "legal_ack": "1",
+    "nationality": "DEU",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAAAAADaLSBnAAAAF0lEQVR4nGP8z0AcYCJS3ajCUYXDXCEAcz4BJ+mggvQAAAAASUVORK5CYII=",
+    "surname": "Novák"
+   },
+   "issues": [
+    {
+     "field": "birth_date",
+     "message": "Enter the full date as DD.MM.YYYY.",
+     "severity": "error"
+    }
+   ],
+   "name": "birth long day",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": 2,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "123041990",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "10",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "surname": "NOVÁK",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "01.01.2030",
+    "doc_number": "C01X00T47",
+    "first_name": "Jan",
+    "legal_ack": "1",
+    "nationality": "DEU",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAAAAADaLSBnAAAAF0lEQVR4nGP8z0AcYCJS3ajCUYXDXCEAcz4BJ+mggvQAAAAASUVORK5CYII=",
+    "surname": "Novák"
+   },
+   "issues": [
+    {
+     "field": "birth_date",
+     "message": "Date of birth cannot be after your arrival date.",
+     "severity": "error"
+    }
+   ],
+   "name": "birth in future",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": 2,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "01012030",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "10",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "surname": "NOVÁK",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "",
+    "doc_number": "C01X00T47",
+    "first_name": "Jan",
+    "legal_ack": "1",
+    "nationality": "DEU",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAAAAADaLSBnAAAAF0lEQVR4nGP8z0AcYCJS3ajCUYXDXCEAcz4BJ+mggvQAAAAASUVORK5CYII=",
+    "surname": "Novák"
+   },
+   "issues": [
+    {
+     "field": "birth_date",
+     "message": "Date of birth is required.",
+     "severity": "error"
+    }
+   ],
+   "name": "birth missing",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": 2,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "10",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "surname": "NOVÁK",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "01.02.1990",
+    "doc_number": "ab 12 34 56",
+    "first_name": "Jan",
+    "legal_ack": "1",
+    "nationality": "DEU",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAAAAADaLSBnAAAAF0lEQVR4nGP8z0AcYCJS3ajCUYXDXCEAcz4BJ+mggvQAAAAASUVORK5CYII=",
+    "surname": "Novák"
+   },
+   "issues": [],
+   "name": "doc with spaces",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": 2,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "01021990",
+    "doc_number": "AB123456",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "10",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "surname": "NOVÁK",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "01.02.1990",
+    "doc_number": "AB1",
+    "first_name": "Jan",
+    "legal_ack": "1",
+    "nationality": "DEU",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAAAAADaLSBnAAAAF0lEQVR4nGP8z0AcYCJS3ajCUYXDXCEAcz4BJ+mggvQAAAAASUVORK5CYII=",
+    "surname": "Novák"
+   },
+   "issues": [
+    {
+     "field": "doc_number",
+     "message": "Document number must be at least 6 characters.",
+     "severity": "error"
+    }
+   ],
+   "name": "doc too short",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": 2,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "01021990",
+    "doc_number": "AB1",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "10",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "surname": "NOVÁK",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "01.01.2020",
+    "doc_number": "INPASS",
+    "first_name": "Jan",
+    "legal_ack": "1",
+    "nationality": "DEU",
+    "parent_doc_number": "c01 x00",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "signature": "",
+    "surname": "Novák"
+   },
+   "issues": [],
+   "name": "inpass child with parent doc",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": 2,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "01012020",
+    "doc_number": "INPASS",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "Dítě zapsané v pasu rodiče, číslo dokladu rodiče: C01X00",
+    "purpose": "10",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "surname": "NOVÁK",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "05.05.2015",
+    "doc_number": "C01X00T47",
+    "first_name": "Jan",
+    "legal_ack": "1",
+    "nationality": "DEU",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "signature": "",
+    "surname": "Novák"
+   },
+   "issues": [],
+   "name": "child under 15 no signature",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": 2,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "05052015",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "10",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "surname": "NOVÁK",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "01.02.1990",
+    "doc_number": "C01X00T47",
+    "first_name": "Jan",
+    "legal_ack": "1",
+    "nationality": "DEU",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "signature": "imported",
+    "surname": "Novák"
+   },
+   "issues": [
+    {
+     "field": "signature",
+     "message": "Please sign in the box before you continue.",
+     "severity": "error"
+    }
+   ],
+   "name": "signature imported",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": 2,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "01021990",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "10",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "surname": "NOVÁK",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "01.02.1990",
+    "doc_number": "C01X00T47",
+    "first_name": "Jan",
+    "legal_ack": "1",
+    "nationality": "DEU",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "signature": "",
+    "surname": "Novák"
+   },
+   "issues": [
+    {
+     "field": "signature",
+     "message": "Please sign in the box before you continue.",
+     "severity": "error"
+    }
+   ],
+   "name": "signature missing",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": 2,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "01021990",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "10",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "surname": "NOVÁK",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "01.02.1990",
+    "doc_number": "C01X00T47",
+    "first_name": "Jan",
+    "legal_ack": "1",
+    "nationality": "DEU",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "signature": "data:image/png;base64,AAAA",
+    "surname": "Novák"
+   },
+   "issues": [
+    {
+     "field": "signature",
+     "message": "That signature could not be saved. Sign again on the signature pad.",
+     "severity": "error"
+    }
+   ],
+   "name": "signature bad",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": 2,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "01021990",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "10",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "surname": "NOVÁK",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "01.02.1990",
+    "doc_number": "C01X00T47",
+    "first_name": "Jan",
+    "nationality": "DEU",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAAAAADaLSBnAAAAF0lEQVR4nGP8z0AcYCJS3ajCUYXDXCEAcz4BJ+mggvQAAAAASUVORK5CYII=",
+    "surname": "Novák"
+   },
+   "issues": [
+    {
+     "field": "legal_ack",
+     "message": "Please confirm that you have read the legal information.",
+     "severity": "error"
+    }
+   ],
+   "name": "legal ack missing",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": 2,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "01021990",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "10",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "surname": "NOVÁK",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "01.02.1990",
+    "doc_number": "C01X00T47",
+    "first_name": "Jan",
+    "legal_ack": "1",
+    "nationality": "DEU",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAAAAADaLSBnAAAAF0lEQVR4nGP8z0AcYCJS3ajCUYXDXCEAcz4BJ+mggvQAAAAASUVORK5CYII=",
+    "surname": "Novák"
+   },
+   "issues": [
+    {
+     "field": "party_size",
+     "message": "Please enter how many people are staying (1–60).",
+     "severity": "error"
+    }
+   ],
+   "name": "party size asked and missing",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": null,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "01021990",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "10",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "surname": "NOVÁK",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "01.02.1990",
+    "doc_number": "C01X00T47",
+    "first_name": "Jan",
+    "legal_ack": "1",
+    "nationality": "DEU",
+    "party_size": " 3 ",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAAAAADaLSBnAAAAF0lEQVR4nGP8z0AcYCJS3ajCUYXDXCEAcz4BJ+mggvQAAAAASUVORK5CYII=",
+    "surname": "Novák"
+   },
+   "issues": [],
+   "name": "party size asked and given",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": null,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "01021990",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "10",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "surname": "NOVÁK",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "01.02.1990",
+    "doc_number": "C01X00T47",
+    "first_name": "Jan",
+    "legal_ack": "1",
+    "nationality": "DEU",
+    "party_size": "61",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAAAAADaLSBnAAAAF0lEQVR4nGP8z0AcYCJS3ajCUYXDXCEAcz4BJ+mggvQAAAAASUVORK5CYII=",
+    "surname": "Novák"
+   },
+   "issues": [
+    {
+     "field": "party_size",
+     "message": "Please enter how many people are staying (1–60).",
+     "severity": "error"
+    }
+   ],
+   "name": "party size too big",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": null,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "01021990",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "10",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "surname": "NOVÁK",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "01.02.1990",
+    "doc_number": "C01X00T47",
+    "first_name": "Jan",
+    "legal_ack": "1",
+    "nationality": "DEU",
+    "party_size": "abc",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAAAAADaLSBnAAAAF0lEQVR4nGP8z0AcYCJS3ajCUYXDXCEAcz4BJ+mggvQAAAAASUVORK5CYII=",
+    "surname": "Novák"
+   },
+   "issues": [
+    {
+     "field": "party_size",
+     "message": "Please enter how many people are staying (1–60).",
+     "severity": "error"
+    }
+   ],
+   "name": "party size not a number",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": null,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "01021990",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "10",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "surname": "NOVÁK",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "01.02.1990",
+    "doc_number": "C01X00T47",
+    "first_name": "Jan",
+    "legal_ack": "1",
+    "nationality": "deu ",
+    "res_city": "Praha–Řepy",
+    "res_country": "cze",
+    "res_street": "Hauptstraße 5",
+    "signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAAAAADaLSBnAAAAF0lEQVR4nGP8z0AcYCJS3ajCUYXDXCEAcz4BJ+mggvQAAAAASUVORK5CYII=",
+    "surname": "Novák"
+   },
+   "issues": [],
+   "name": "residence dash",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": 2,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "01021990",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "10",
+    "res_city": "Praha-Řepy",
+    "res_country": "CZE",
+    "res_street": "Hauptstraße 5",
+    "surname": "NOVÁK",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "01.02.1990",
+    "doc_number": "",
+    "first_name": "Jan",
+    "legal_ack": "1",
+    "nationality": "CZE",
+    "res_city": "",
+    "res_country": "",
+    "res_street": "",
+    "signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAAAAADaLSBnAAAAF0lEQVR4nGP8z0AcYCJS3ajCUYXDXCEAcz4BJ+mggvQAAAAASUVORK5CYII=",
+    "surname": "Novák"
+   },
+   "issues": [
+    {
+     "field": "doc_number",
+     "message": "Travel document number is required.",
+     "severity": "error"
+    },
+    {
+     "field": "res_street",
+     "message": "Street and number are required.",
+     "severity": "error"
+    },
+    {
+     "field": "res_city",
+     "message": "City is required.",
+     "severity": "error"
+    },
+    {
+     "field": "res_country",
+     "message": "Country is required.",
+     "severity": "error"
+    }
+   ],
+   "name": "czech national",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": 2,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "01021990",
+    "doc_number": "",
+    "first_name": "JAN",
+    "nationality": "CZE",
+    "note": "",
+    "purpose": "10",
+    "res_city": "",
+    "res_country": "",
+    "res_street": "",
+    "surname": "NOVÁK",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "01.02.1990",
+    "doc_number": "C01X00T47",
+    "first_name": "Jan",
+    "legal_ack": "1",
+    "nationality": "DEU",
+    "purpose": "",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAAAAADaLSBnAAAAF0lEQVR4nGP8z0AcYCJS3ajCUYXDXCEAcz4BJ+mggvQAAAAASUVORK5CYII=",
+    "surname": "Novák"
+   },
+   "issues": [],
+   "name": "empty purpose takes default",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": 2,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "01021990",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "10",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "surname": "NOVÁK",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "",
+   "form": {
+    "birth_date": "01.02.1990",
+    "doc_number": "C01X00T47",
+    "first_name": "Jan",
+    "legal_ack": "1",
+    "nationality": "DEU",
+    "purpose": "",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAAAAADaLSBnAAAAF0lEQVR4nGP8z0AcYCJS3ajCUYXDXCEAcz4BJ+mggvQAAAAASUVORK5CYII=",
+    "surname": "Novák"
+   },
+   "issues": [],
+   "name": "empty purpose no default",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": 2,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "01021990",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "99",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "surname": "NOVÁK",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "01.02.1990",
+    "doc_number": "C01X00T47",
+    "first_name": "Jan",
+    "legal_ack": "1",
+    "nationality": "DEU",
+    "purpose": "01",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAAAAADaLSBnAAAAF0lEQVR4nGP8z0AcYCJS3ajCUYXDXCEAcz4BJ+mggvQAAAAASUVORK5CYII=",
+    "surname": "Novák"
+   },
+   "issues": [],
+   "name": "purpose given",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": 2,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "01021990",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "01",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "surname": "NOVÁK",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "01.02.1990",
+    "doc_number": "C01X00T47",
+    "first_name": "Jan",
+    "legal_ack": "1",
+    "nationality": "XXX",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAAAAADaLSBnAAAAF0lEQVR4nGP8z0AcYCJS3ajCUYXDXCEAcz4BJ+mggvQAAAAASUVORK5CYII=",
+    "surname": "Novák"
+   },
+   "issues": [],
+   "name": "unknown nationality",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": 2,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "01021990",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "XXX",
+    "note": "",
+    "purpose": "10",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "surname": "NOVÁK",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "01.02.1990",
+    "doc_number": "C01X00T47",
+    "first_name": "Jan",
+    "legal_ack": "1",
+    "nationality": "DEU",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAAAAADaLSBnAAAAF0lEQVR4nGP8z0AcYCJS3ajCUYXDXCEAcz4BJ+mggvQAAAAASUVORK5CYII=",
+    "surname": "Novák",
+    "visa_number": "v 123 456"
+   },
+   "issues": [],
+   "name": "visa given",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": 2,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "01021990",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "10",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "surname": "NOVÁK",
+    "visa_number": "V123456"
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "01.02.1990",
+    "doc_number": "C01X00T47",
+    "first_name": "Jan",
+    "legal_ack": "1",
+    "nationality": "DEU",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAAAAADaLSBnAAAAF0lEQVR4nGP8z0AcYCJS3ajCUYXDXCEAcz4BJ+mggvQAAAAASUVORK5CYII=",
+    "surname": "Novák"
+   },
+   "issues": [
+    {
+     "field": "stay_from",
+     "message": "The stay dates on this page are not readable. Reload the page and try again.",
+     "severity": "error"
+    }
+   ],
+   "name": "stay date unreadable",
+   "stay": {
+    "date_from": "2026-13-01",
+    "date_to": "2026-11-12",
+    "expected_guests": 2,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "01021990",
+    "doc_number": "C01X00T47",
+    "first_name": "JAN",
+    "nationality": "DEU",
+    "note": "",
+    "purpose": "10",
+    "res_city": "Berlin",
+    "res_country": "DEU",
+    "res_street": "Hauptstraße 5",
+    "surname": "NOVÁK",
+    "visa_number": ""
+   }
+  },
+  {
+   "default_purpose": "10",
+   "form": {
+    "birth_date": "",
+    "doc_number": "",
+    "first_name": "",
+    "legal_ack": "",
+    "nationality": "",
+    "res_city": "",
+    "res_country": "",
+    "res_street": "",
+    "signature": "",
+    "surname": ""
+   },
+   "issues": [
+    {
+     "field": "surname",
+     "message": "Surname is required.",
+     "severity": "error"
+    },
+    {
+     "field": "first_name",
+     "message": "Given name looks missing - please check the passport.",
+     "severity": "warning"
+    },
+    {
+     "field": "birth_date",
+     "message": "Date of birth is required.",
+     "severity": "error"
+    },
+    {
+     "field": "nationality",
+     "message": "Nationality is required.",
+     "severity": "error"
+    },
+    {
+     "field": "doc_number",
+     "message": "Travel document number is required.",
+     "severity": "error"
+    },
+    {
+     "field": "res_street",
+     "message": "Street and number are required.",
+     "severity": "error"
+    },
+    {
+     "field": "res_city",
+     "message": "City is required.",
+     "severity": "error"
+    },
+    {
+     "field": "res_country",
+     "message": "Country is required.",
+     "severity": "error"
+    },
+    {
+     "field": "signature",
+     "message": "Please sign in the box before you continue.",
+     "severity": "error"
+    },
+    {
+     "field": "legal_ack",
+     "message": "Please confirm that you have read the legal information.",
+     "severity": "error"
+    }
+   ],
+   "name": "everything empty",
+   "stay": {
+    "date_from": "2026-11-10",
+    "date_to": "2026-11-12",
+    "expected_guests": 2,
+    "registered_guests": 0,
+    "reservation_id": 1
+   },
+   "values": {
+    "birth_date": "",
+    "doc_number": "",
+    "first_name": "",
+    "nationality": "",
+    "note": "",
+    "purpose": "10",
+    "res_city": "",
+    "res_country": "",
+    "res_street": "",
+    "surname": "",
+    "visa_number": ""
+   }
+  }
+ ],
+ "today": "2026-11-01"
+}

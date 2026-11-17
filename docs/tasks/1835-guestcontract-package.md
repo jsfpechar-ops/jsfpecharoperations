@@ -1,6 +1,6 @@
 # 1835: `guestcontract` package: contract version, form config and payload types, payload encoding, shared guest checks
 
-Status: todo
+Status: review
 Depends on: 1834 (table and column names) | Base commit: current tip of the working branch | Branch: task/1835-guestcontract-package
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Tier: A (the guest checks decide what a guest may submit for UbyPort filing; exact diffs only; orchestrator reads the full diff before ready)
