@@ -36,6 +36,7 @@ Status: review
 - The PostgreSQL tests (59) were not run against a database. The brief expects this locally; CI covers them. The role script and migration are not yet applied to a real PostgreSQL instance, so the PASS proofs have not run.
 - Step 0 answers were checked: both `Answer:` lines match the recommended answers. All section 2 anchors were found.
 - 1834-fix-1: line 354 of test_db_postgres.py also needed 71 -> 73 (CI test-postgres).
+- 1834-fix-2: guest_inbox.status EXEMPT line until 1837 (CI test_sm_registry).
 
 ## 5. Questions
 

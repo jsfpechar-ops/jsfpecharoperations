@@ -29,6 +29,7 @@ EXEMPT = {
     "cleaning_event.state": "CHECK of 3 values, written by the calendar sync only.",
     "data_subject_request.status": "CHECK of 5 values, one writer (dsr).",
     "guest.manual_prev_state": "Stores the submit_state an undo restores; the machine is guest.submit_state.",
+    "guest_inbox.status": "CHECK of 3 values, no writer yet (1834); brief 1837 replaces this with a Go TRANSITIONS table and pin test.",
     "guest_question.status": "CHECK of 3 values, one writer.",
     "guide_item.state": "CHECK, one writer (guide facts).",
     "ical_feed.last_status": "Result of the last fetch, overwritten every poll; no transitions.",
