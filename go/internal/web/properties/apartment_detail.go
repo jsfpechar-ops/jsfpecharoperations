@@ -315,6 +315,13 @@ func (s *Pages) detailBuild(ctx context.Context, r *http.Request, host *session.
 	v.JustCreated = queryLast(r, "created") == "1"
 	// _property_view_state.
 	view, section := queryLast(r, "view"), queryLast(r, "section")
+	// A refused save (brief 1702c2) sets both, as extra does; the query fills the rest.
+	if v.PropertyView != "" {
+		view = v.PropertyView
+	}
+	if v.SettingsSection != "" {
+		section = v.SettingsSection
+	}
 	if !detailSections[section] {
 		section = ""
 	}

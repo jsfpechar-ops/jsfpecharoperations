@@ -16,9 +16,11 @@ package properties
 //   - a non-ASCII digit or a 64-bit overflow in a number, and a
 //     stay_fee_rate_from that is set but not YYYY-MM-DD (Python's int(),
 //     str.isdigit() and date.fromisoformat() read more than this port does);
-//   - until brief 1702c2, every refusal Python answers by drawing the page
-//     again (_refuse_apartment_save, refuse_fee_save, operator_refresh): see
-//     refuseApartmentSave.
+//   - a refused council account posted with stay_fee_guest_operator_account
+//     (the guest-pay draft of refuse_fee_save).
+//
+// A refusal Python answers by drawing the page again (_refuse_apartment_save,
+// refuse_fee_save, operator_refresh) is refuseApartmentSave (brief 1702c2).
 //
 // Python writes the row, then the dated rate; here both share one transaction.
 // The alert, the guest link, the audit rows and the pay-way alert follow in
@@ -43,6 +45,7 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/stayfeemail"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/onboarding"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/privacy"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/stayfees"
 )
@@ -74,19 +77,136 @@ func RegisterApartmentUpdate(mux *http.ServeMux, wrap Wrap, pool *pgxpool.Pool, 
 }
 
 // apartmentRefusal is what _refuse_apartment_save and refuse_fee_save are
-// called with; brief 1702c2 draws the page from it.
+// called with; refuseApartmentSave draws the page from it.
 type apartmentRefusal struct {
 	operatorError   string            // an i18n key from apartmentOperatorError, never from the form
-	addressErrors   map[string]string // apartmentAddressErrors
+	addressErrors   map[string]string // apartmentAddressErrorList
+	addressOrder    []string          // its key order
 	sharedTimeError string            // an i18n key set by this file, never from the form
 	lockTimesError  bool
 	feeAccountError bool // refuse_fee_save: the council account did not normalise
 }
 
-// refuseApartmentSave is the page Python draws again for a refused save.
-// Brief 1702c1 leaves it to Python; nothing has been written.
-func (s *server) refuseApartmentSave(w http.ResponseWriter, _ *http.Request, _ *request, _ *detailApt, _ apartmentRefusal) {
-	notPorted(w, "a refused settings save that draws the page again (brief 1702c2)")
+// refuseApartmentSave is _refuse_apartment_save (admin.py 2303-2385) and, for
+// feeAccountError, the property-page branch of refuse_fee_save (2404-2498):
+// the page drawn again by Pages.detailRender over a copy of the loaded
+// property with the host's unsaved values. Nothing is written. The error keys
+// come from this file only; the posted values reach the page only through
+// html/template. 400, or 200 for operator_refresh (an empty refusal).
+func (s *server) refuseApartmentSave(w http.ResponseWriter, r *http.Request, q *request, a *detailApt, ref apartmentRefusal) {
+	ctx := r.Context()
+	p := &Pages{pool: s.pool, getenv: s.getenv, now: s.now}
+	draft := *a
+	view := &detailView{Base: "/apartments/" + strconv.FormatInt(a.ID, 10), CopyOpen: queryLast(r, "copy") == "choose",
+		PropertyView: "settings", SettingsSection: "property"}
+	// _property_draft: the posted text fields, as typed.
+	for _, field := range apartmentTextFields {
+		if has(r, field) {
+			*detailDraftField(&draft, field) = formStr(r, field)
+		}
+	}
+	legal, _ := apartmentFormInt(r, "legal_entity_id") // read once already: never refused here
+	controller, _ := apartmentFormInt(r, "data_controller_entity_id")
+	if ref.feeAccountError {
+		if has(r, "stay_fee_guest_operator_account") {
+			notPorted(w, "a refused council account with the guest-pay operator account (refuse_fee_save draft_account)")
+			return
+		}
+		// refuse_fee_save: the operator and controller only when posted, then fee_form_values.
+		if has(r, "legal_entity_id") {
+			draft.LegalEntityID = int64Of(legal)
+		}
+		if has(r, "data_controller_entity_id") {
+			draft.DataControllerEntityID = int64Of(controller)
+		}
+		pay, _ := newApartmentPayload(r) // read once already: never refused here
+		for _, c := range pay.cols {
+			text, _ := c.value.(string)
+			switch c.name {
+			case "stay_fee_rate_czk":
+				draft.StayFeeRateCZK = int64(c.value.(int))
+			case "stay_fee_vs":
+				draft.StayFeeVS = text
+			case "stay_fee_cadence":
+				draft.StayFeeCadence = text
+			case "stay_fee_authority_name":
+				draft.StayFeeAuthorityName = text
+			case "stay_fee_authority_address":
+				draft.StayFeeAuthorityAddress = text
+			case "stay_fee_authority_contact":
+				draft.StayFeeAuthorityContact = text
+			case "stay_fee_payee":
+				draft.StayFeePayee = text
+			case "stay_fee_instruction":
+				draft.StayFeeInstruction = text
+			}
+		}
+		if has(r, "stay_fee_council_account") {
+			draft.StayFeeCouncilAccount, draft.StayFeeCouncilIBAN = formStr(r, "stay_fee_council_account"), ""
+		}
+		view.Status, view.SettingsSection, view.FeeAccountError = http.StatusBadRequest, "reporting", true
+		view.SaveErrors = []detailSaveError{{"fee", "stay_fee_council_account"}}
+		// flash_error and fee_return_to of the extra win over the query, as
+		// data.setdefault does (a posted fee_return_to never reaches here).
+		r = r.Clone(ctx)
+		query := r.URL.Query()
+		query.Set("err", detailT(q.lang, "flash.stay_fees.account_invalid"))
+		query.Del("return_to")
+		r.URL.RawQuery = query.Encode()
+	} else {
+		draft.LegalEntityID = int64Of(legal)
+		if has(r, "data_controller_entity_id") {
+			draft.DataControllerEntityID = int64Of(controller)
+		}
+		for i, field := range []**int64{&draft.CheckinHour, &draft.CheckoutHour} {
+			if name := apartmentHourNames[i]; has(r, name) {
+				// _hour_or_none: 0..23 or none, never the posted text.
+				*field = nil
+				if v, ok := apartmentHour(formStr(r, name)); ok {
+					*field = &v
+				}
+			}
+		}
+		view.AddressErrors, view.OperatorError, view.SharedTimeError = ref.addressErrors, ref.operatorError, ref.sharedTimeError
+		for _, field := range ref.addressOrder {
+			view.SaveErrors = append(view.SaveErrors, detailSaveError{"basics", field})
+		}
+		if ref.operatorError == "flash.error.no_such_controller" {
+			view.SaveErrors = append(view.SaveErrors, detailSaveError{"basics", "data_controller_entity_id"})
+		} else if ref.operatorError != "" {
+			view.SaveErrors = append(view.SaveErrors, detailSaveError{"basics", "legal_entity_id"})
+		}
+		if ref.sharedTimeError != "" {
+			view.SaveErrors = append(view.SaveErrors, detailSaveError{"basics", "checkin_hour"})
+		}
+		if ref.lockTimesError {
+			// 0397: stay on the Door lock tab with the lock the host chose.
+			view.SaveErrors = append(view.SaveErrors, detailSaveError{"lock", "lock_checkin_hour"})
+			if lockID := formStr(r, "lock_id"); lockID != "" {
+				draft.LockID = lockID
+			}
+			view.SettingsSection, view.LockTimesError = "lock", true
+		}
+		if ref.operatorError != "" || len(ref.addressErrors) > 0 || ref.sharedTimeError != "" || ref.lockTimesError {
+			view.Status = http.StatusBadRequest
+		}
+	}
+	// Python passes copy_property_peers on every refused save (GET: first setup only).
+	var err error
+	if view.CopyPeers, err = p.detailPeers(ctx, q.host.Workspace.ID, a.ID); err != nil {
+		fail(w, err)
+		return
+	}
+	p.detailRender(w, r, q.host, &draft, view, onboarding.PoolSettings(s.pool), q.at)
+}
+
+// detailDraftField is the detailApt field of one apartmentTextFields name.
+func detailDraftField(a *detailApt, name string) *string {
+	return map[string]*string{"internal_name": &a.InternalName, "city_en": &a.CityEN, "addr_okres": &a.AddrOkres,
+		"addr_obec": &a.AddrObec, "addr_obec_cast": &a.AddrObecCast, "addr_street": &a.AddrStreet,
+		"addr_house_no": &a.AddrHouseNo, "addr_orient_no": &a.AddrOrientNo, "addr_zip": &a.AddrZip, "uby_idub": &a.UbyIDUB,
+		"uby_mark": &a.UbyMark, "uby_name": &a.UbyName, "uby_contact": &a.UbyContact, "uby_ws_user": &a.UbyWSUser,
+		"guest_message": &a.GuestMessage, "notes": &a.Notes}[name]
 }
 
 // apartmentUpdateNotPorted names the first posted branch this port leaves to
@@ -296,8 +416,8 @@ func (s *server) apartmentUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 	if addressPosted {
 		// The address stays complete once the property exists.
-		if errs := apartmentAddressErrors(merged, q.lang); len(errs) > 0 {
-			s.refuseApartmentSave(w, r, q, a, apartmentRefusal{addressErrors: errs})
+		if errs, order := apartmentAddressErrorList(merged, q.lang); len(errs) > 0 {
+			s.refuseApartmentSave(w, r, q, a, apartmentRefusal{addressErrors: errs, addressOrder: order})
 			return
 		}
 	}

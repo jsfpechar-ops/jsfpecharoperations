@@ -189,10 +189,73 @@ func apartmentUpdateAudit(t *testing.T, ctx context.Context, pool *pgxpool.Pool,
 	return out, last
 }
 
+// apartmentRefusedPages are lines of the page a refused save draws again
+// (brief 1702c2), per golden case: want, then lines that must be absent. Every
+// line is written by hand from apartment_form.html and its includes, as the
+// 1702b tests of apartment_detail_refused_test.go are.
+var apartmentRefusedPages = map[string][2][]string{
+	"hour that is not a number": {{
+		`data-property-settings-form data-unsaved-guard>`,
+		`<details class="prop-sec" id="sec-basics" open>`,
+		`<p class="err-text" role="alert" data-field-error>Choose the check-in and check-out hour.</p>`,
+		`data-first-error="checkin_hour"><span class="grow">Not saved: fix 1 field. Nothing was changed.</span>`,
+		`<textarea id="notes" name="notes" aria-describedby="notes-help">must not be saved</textarea>`,
+		`class="airbnb-actions"`,
+	}, {`<option value="15" selected>`, `data-dirty-start`}},
+	"hour 24": {{
+		`<details class="prop-sec" id="sec-basics" open>`,
+		`data-first-error="checkin_hour"><span class="grow">Not saved: fix 1 field. Nothing was changed.</span>`,
+		`<option value="15" selected>15:00`,
+	}, {`<option value="10" selected>`, `data-dirty-start`}},
+	"door codes need both times": {{
+		`<details class="prop-sec" id="sec-lock" open>`,
+		`<p class="err-text" id="door-code-times-error" role="alert" data-field-error>Check-in and check-out times are missing, so door codes cannot work yet. Set them first.</p>`,
+		`id="lock_checkin_hour" name="lock_checkin_hour" data-hour-twin="checkin_hour" aria-invalid="true" aria-describedby="door-code-times-error">`,
+		`data-first-error="lock_checkin_hour"><span class="grow">Not saved: fix 1 field. Nothing was changed.</span>`,
+		`value="L1" selected>`,
+	}, {`<details class="prop-sec" id="sec-basics" open>`, `data-dirty-start`}},
+	"operator refresh": {{
+		`data-property-settings-form data-unsaved-guard>`,
+		`<textarea id="notes" name="notes" aria-describedby="notes-help">must not be saved</textarea>`,
+	}, {`data-save-summary`, `aria-invalid="true"`, `data-field-error>`, `data-dirty-start`}},
+	"another host's operator": {{
+		`data-unsaved-guard data-dirty-start="1">`,
+		`<select id="legal_entity_id" name="legal_entity_id" required aria-describedby="operator-message" aria-invalid="true">`,
+		`<p class="err-text" id="operator-message" role="alert">Choose the operator for this property.</p>`,
+		`data-first-error="legal_entity_id"><span class="grow">Not saved: fix 1 field. Nothing was changed.</span>`,
+	}, {`<option value="21" selected>`, `<option value="31"`}},
+	"archived operator": {{
+		`data-unsaved-guard data-dirty-start="1">`,
+		`<p class="err-text" id="operator-message" role="alert">Choose the operator for this property.</p>`,
+		`data-first-error="legal_entity_id">`,
+	}, {`<option value="21" selected>`}},
+	"another host's controller": {{
+		`data-unsaved-guard data-dirty-start="1">`,
+		`<select id="data_controller_entity_id" name="data_controller_entity_id" aria-describedby="controller-message" aria-invalid="true">`,
+		`<p class="err-text" id="controller-message" role="alert" data-field-error>That data controller no longer exists.</p>`,
+		`data-first-error="data_controller_entity_id"><span class="grow">Not saved: fix 1 field. Nothing was changed.</span>`,
+		`<option value="21" selected>Alpha s.r.o.`,
+	}, {`id="operator-message" role="alert"`, `<option value="31"`}},
+	"broken address": {{
+		`data-property-settings-form data-unsaved-guard>`,
+		`<p class="err-text" id="addr_zip-error" role="alert">PSČ má přesně 5 číslic.</p>`,
+		`<p class="err-text" id="addr_street-error" role="alert">Vyplňte ulici.</p>`,
+		`data-first-error="addr_zip"><span class="grow">Neuloženo: opravte 2 pole. Nic se nezměnilo.</span> <a href="#addr_zip">`,
+	}, {`data-dirty-start`, `Sokolovská`}},
+	"council account that does not check": {{
+		`<details class="prop-sec" id="sec-fee" open>`,
+		`<div class="toast err" data-toast data-toast-kind="error" data-toast-sticky>
+            <span class="grow">This account number does not add up.`,
+		`value="19-2000145399/0800" aria-invalid="true">`,
+		`<p class="err-text small" id="stay-fee-account-error" role="alert" data-field-error>This account number does not add up.`,
+		`data-first-error="stay_fee_council_account"><span class="grow">Not saved: fix 1 field. Nothing was changed.</span>`,
+	}, {`<details class="prop-sec" id="sec-basics" open>`, `data-dirty-start`, `fee-return-note`}},
+}
+
 // TestApartmentUpdateMatchesPython sends the golden requests in order and
 // compares each answer and what it wrote. A refused save Python answers with
-// the page drawn again answers 501 here until brief 1702c2, and neither side
-// writes anything.
+// the page drawn again: the same status, the lines of apartmentRefusedPages,
+// and neither side writes anything.
 func TestApartmentUpdateMatchesPython(t *testing.T) {
 	g := loadApartmentUpdateGolden(t)
 	pool := testPool(t)
@@ -213,12 +276,17 @@ func TestApartmentUpdateMatchesPython(t *testing.T) {
 			if c.Changed {
 				t.Fatalf("%s: the golden file says Python wrote before drawing the page", c.Name)
 			}
-			if rec.Code != http.StatusNotImplemented || rec.Header().Get("X-Ubyhost-Not-Ported") != "1" {
-				t.Errorf("%s: %d, want 501 with the fallback header (Python %d)", c.Name, rec.Code, c.Status)
+			if rec.Code != c.Status || rec.Header().Get("Location") != "" {
+				t.Errorf("%s: %d %q, Python %d", c.Name, rec.Code, rec.Header().Get("Location"), c.Status)
 			}
 			if !reflect.DeepEqual(got, before) || len(audit) != 0 {
-				t.Errorf("%s: wrote something before leaving the page to Python", c.Name)
+				t.Errorf("%s: a refused save wrote something", c.Name)
 			}
+			lines, ok := apartmentRefusedPages[c.Name]
+			if !ok {
+				t.Errorf("%s: no expected lines", c.Name)
+			}
+			adCheck(t, c.Name, rec.Body.String(), lines[0], lines[1])
 			continue
 		}
 		want := ""
@@ -290,6 +358,60 @@ func TestApartmentUpdateNotPorted(t *testing.T) {
 		if after := apartmentUpdateRead(t, ctx, pool, g, 201); !reflect.DeepEqual(after, before) {
 			t.Errorf("%s: the property was written", name)
 		}
+	}
+}
+
+// TestApartmentUpdateRefusedDraft: what the host typed is escaped by
+// html/template, the error lines come from Go keys only, and fee_return_to
+// comes from the query on a refused save but not on a refused fee account
+// (refuse_fee_save's extra), as in Python.
+func TestApartmentUpdateRefusedDraft(t *testing.T) {
+	g := loadApartmentUpdateGolden(t)
+	pool := testPool(t)
+	apartmentCreateSeed(t, pool, apartmentCreateGolden{Seed: g.Seed})
+	mux := http.NewServeMux()
+	RegisterApartmentUpdate(mux, noWrap, pool, apartmentUpdateGetenv, testClock)
+	ctx := context.Background()
+	post := func(path string, extra map[string]string) string {
+		t.Helper()
+		form := map[string]string{}
+		for k, v := range g.Cases[3].Form {
+			form[k] = v
+		}
+		for k, v := range extra {
+			form[k] = v
+		}
+		before := apartmentUpdateRead(t, ctx, pool, g, 201)
+		rec := apartmentFormPost(t, mux, path, g.CSRFNonce, 2, 0, "en", true, form)
+		if rec.Code != http.StatusBadRequest {
+			t.Errorf("%s %v: %d, want 400", path, extra, rec.Code)
+		}
+		if after := apartmentUpdateRead(t, ctx, pool, g, 201); !reflect.DeepEqual(after, before) {
+			t.Errorf("%s %v: the property was written", path, extra)
+		}
+		return rec.Body.String()
+	}
+	body := post("/apartments/201", map[string]string{"checkin_hour": "x", "internal_name": `<b>"Loft"</b>`,
+		"notes": "</textarea><script>alert(1)</script>", "operator_error": "flash.apartments.saved_ready",
+		"shared_time_error": "flash.apartments.saved_ready", "address_errors": "x", "lock_times_error": "1"})
+	adCheck(t, "escaped", body, []string{
+		`<h1 class="airbnb-title">&lt;b&gt;&#34;Loft&#34;&lt;/b&gt;</h1>`,
+		`aria-describedby="notes-help">&lt;/textarea&gt;&lt;script&gt;alert(1)&lt;/script&gt;</textarea>`,
+		`data-first-error="checkin_hour"><span class="grow">Not saved: fix 1 field. Nothing was changed.</span>`,
+	}, []string{`<script>alert(1)`, `<b>"Loft"`, `This property is ready to report`, `data-dirty-start`, `door-code-times-error" role="alert"`})
+	body = post("/apartments/201?return_to=%2Fstay-fees%3Fmonth%3D2026-10", map[string]string{"checkout_hour": "24"})
+	adCheck(t, "return_to kept", body, []string{`<input type="hidden" name="fee_return_to" value="/stay-fees?month=2026-10">`}, nil)
+	body = post("/apartments/201?return_to=%2Fstay-fees%3Fmonth%3D2026-10", map[string]string{"account_number": "124", "account_prefix": ""})
+	adCheck(t, "return_to dropped", body, []string{`data-first-error="stay_fee_council_account"`}, []string{`name="fee_return_to"`, `fee-return-note`})
+	// The guest-pay draft of refuse_fee_save is not ported.
+	form := map[string]string{}
+	for k, v := range g.Cases[3].Form {
+		form[k] = v
+	}
+	form["account_number"], form["account_prefix"], form["stay_fee_guest_operator_account"] = "124", "", "19-2000145399/0800"
+	rec := apartmentFormPost(t, mux, "/apartments/201", g.CSRFNonce, 2, 0, "en", true, form)
+	if rec.Code != http.StatusNotImplemented || rec.Header().Get("X-Ubyhost-Not-Ported") != "1" {
+		t.Errorf("guest-pay draft: %d, want 501 with the fallback header", rec.Code)
 	}
 }
 

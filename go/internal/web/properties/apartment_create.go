@@ -306,19 +306,30 @@ func (s *server) apartmentOperatorError(ctx context.Context, r *http.Request, wo
 // apartmentAddressErrors is _create_address_errors, each message already in
 // the host's language (the template's validation_message filter).
 func apartmentAddressErrors(text map[string]string, lang string) map[string]string {
+	errs, _ := apartmentAddressErrorList(text, lang)
+	return errs
+}
+
+// apartmentAddressErrorList is apartmentAddressErrors plus the key order of
+// Python's dict (the order the fields were refused in), which the save
+// summary of a refused property save follows (brief 1702c2).
+func apartmentAddressErrorList(text map[string]string, lang string) (map[string]string, []string) {
 	errs := map[string]string{}
+	var order []string
 	for _, issue := range validation.ErrorsOnly(validation.ValidateApartment(text)) {
 		if _, seen := errs[issue.Field]; !seen && slices.Contains(apartmentAddressFields, issue.Field) {
 			errs[issue.Field] = issue.Message
+			order = append(order, issue.Field)
 		}
 	}
 	if _, seen := errs["addr_street"]; !seen && pyStrip(text["addr_street"]) == "" {
 		errs["addr_street"] = "Street is required."
+		order = append(order, "addr_street")
 	}
 	for field, msg := range errs {
 		errs[field] = validationi18n.Localize(msg, lang)
 	}
-	return errs
+	return errs, order
 }
 
 // refuseApartmentCreate is _refuse_apartment_create: the form again with what
