@@ -58,3 +58,50 @@ go_ensure_slot_images() {
     docker tag ubyhost-go:local ubyhost-go:slot-b
   fi
 }
+
+# Compose services that are not a Go slot. Generic `compose up` must use this
+# list: retagging slot-a to :local would otherwise recreate a live slot A, and
+# `up` of a stopped idle slot A would steal Caddy traffic (lb_policy first).
+go_non_slot_services() {
+  docker compose config --services 2>/dev/null | grep -vxE 'ubyhost-go|ubyhost-go-b' || true
+}
+
+# Point the live slot tag at the image that container is actually running, so
+# a later `compose up` cannot recreate it onto :local. No-op when the slot is
+# not running (first deploy).
+go_pin_live_slot_image() {
+  local live svc cid
+  live="$(go_live_slot)"
+  svc="$(go_svc "${live}")"
+  cid="$(docker compose --profile go ps -q "${svc}" 2>/dev/null || true)"
+  if [ -z "${cid}" ]; then
+    return 0
+  fi
+  docker tag "$(docker inspect -f '{{.Image}}' "${cid}")" "ubyhost-go:slot-${live}"
+}
+
+# Restore both slot tags to :previous and put the live slot on that image.
+# Idle stays stopped so Caddy cannot prefer a new copy of A. If the live
+# container is already on :previous, do not recreate it.
+go_rollback_slots() {
+  local live idle svc cid current prev
+  if ! docker image inspect ubyhost-go:previous >/dev/null 2>&1; then
+    return 0
+  fi
+  docker tag ubyhost-go:previous ubyhost-go:local
+  docker tag ubyhost-go:previous ubyhost-go:slot-a
+  docker tag ubyhost-go:previous ubyhost-go:slot-b
+  live="$(go_live_slot)"
+  idle="$(go_idle_slot)"
+  svc="$(go_svc "${live}")"
+  cid="$(docker compose --profile go ps -q "${svc}" 2>/dev/null || true)"
+  prev="$(docker image inspect -f '{{.Id}}' ubyhost-go:previous)"
+  current=""
+  if [ -n "${cid}" ]; then
+    current="$(docker inspect -f '{{.Image}}' "${cid}" 2>/dev/null || true)"
+  fi
+  if [ "${current}" != "${prev}" ]; then
+    docker compose --profile go up -d --no-build --no-deps --force-recreate "${svc}" || return 1
+  fi
+  docker compose --profile go stop "$(go_svc "${idle}")" || true
+}

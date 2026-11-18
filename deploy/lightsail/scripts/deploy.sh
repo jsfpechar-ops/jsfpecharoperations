@@ -76,7 +76,19 @@ rollback() {
   if docker image inspect ubyhost-go:previous >/dev/null 2>&1; then
     docker tag ubyhost-go:previous ubyhost-go:local
   fi
-  docker compose up -d --no-build --remove-orphans || true
+  # Slot tags, not :local, are what the Go services run. Restoring only :local
+  # would leave a failed two-copy on the new image (and Caddy preferring A).
+  if [ -f ./scripts/go-slot.sh ]; then
+    # shellcheck disable=SC1091
+    source ./scripts/go-slot.sh
+    go_rollback_slots || true
+  fi
+  if docker compose --profile go config --services 2>/dev/null | grep -qx 'ubyhost-go'; then
+    # shellcheck disable=SC2046
+    docker compose up -d --no-build --remove-orphans $(go_non_slot_services) || true
+  else
+    docker compose up -d --no-build --remove-orphans || true
+  fi
   docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile || true
   if public_ok; then
     echo "Rollback done: the public site answers again. The new release is NOT live." >&2
@@ -334,8 +346,15 @@ if docker compose --profile go config --services | grep -qx 'ubyhost-go'; then
   # shellcheck disable=SC1091
   source ./scripts/go-slot.sh
   go_ensure_slot_images
+  # goose apply retagged slot-a to :local. Put the live tag back on the
+  # running image, then `up` every service except the Go slots so the live
+  # copy is not recreated and a stopped idle A cannot take Caddy traffic.
+  go_pin_live_slot_image
+  # shellcheck disable=SC2046
+  docker compose up -d --remove-orphans $(go_non_slot_services)
+else
+  docker compose up -d --remove-orphans
 fi
-docker compose up -d --remove-orphans
 
 # 1830: two-copy deploy of ubyhost-go. The idle slot gets the new image and
 # must be healthy before the old slot stops. Migrations are add-only, so the
