@@ -2,6 +2,8 @@
 
 Status: review
 
+**Cloud agent (2026-11-18):** Brief steps 0-7 and §6 re-run on `cursor/1834-guest-contract-2385`. Implementation already on `main` (merged #1073). §6: 21 passed, 59 skipped (no local Postgres); `go test ./internal/schema/...` ok; `context_lint.py` OK.
+
 ## 1. Files changed (`git diff --stat 61a3b9c2 HEAD`)
 
 - `App/migrations_pg/00020_guest_contract.sql` (new, 50 lines): `guest_form_snapshot`, `guest_inbox`, indexes, Down.
