@@ -1215,9 +1215,9 @@ starlette==1.10.0 \
     # via
     #   -r requirements.txt
     #   fastapi
-stripe==16.1.0 \
-    --hash=sha256:21e72b6779b8cff337ca8d2b8d30138f2d68f6a8d739701076f06a418ad75b8c \
-    --hash=sha256:3798e07a0603c8923710414cd1942ae847ed43cebbf34c3258417c189711ea70
+stripe==17.0.0 \
+    --hash=sha256:5e1bdde6eac0311f6c3dea60457e3e49091789785db9c90d28d75a0398835589 \
+    --hash=sha256:955bd99082dadcaf41b0d2d5075c0da8e6e848df1dccbbfcf7c856d9ac003420
     # via -r requirements.txt
 truststore==0.10.5 \
     --hash=sha256:30d36967ccaded5cbb38d602c433f53600036c79d502f4533a49b60a03bbefcd \
