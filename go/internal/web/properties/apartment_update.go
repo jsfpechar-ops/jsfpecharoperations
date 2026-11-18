@@ -12,7 +12,7 @@ package properties
 //     value that is not a step: no wizard form posts them here), and a save
 //     without setup_step whose return_to is under /apartments/{id}/setup/
 //     (refuse_fee_save draws the retired stay_fee wizard page for it);
-//   - the guest-pay block and the data box (as POST /apartments);
+//   - the guest-pay block (as POST /apartments);
 //   - a non-ASCII digit or a 64-bit overflow in a number, and a
 //     stay_fee_rate_from that is set but not YYYY-MM-DD (Python's int(),
 //     str.isdigit() and date.fromisoformat() read more than this port does);
@@ -145,6 +145,8 @@ func (s *server) refuseApartmentSave(w http.ResponseWriter, r *http.Request, q *
 				draft.StayFeeAuthorityAddress = text
 			case "stay_fee_authority_contact":
 				draft.StayFeeAuthorityContact = text
+			case "stay_fee_authority_databox":
+				draft.StayFeeAuthorityDatabox = text
 			case "stay_fee_payee":
 				draft.StayFeePayee = text
 			case "stay_fee_instruction":

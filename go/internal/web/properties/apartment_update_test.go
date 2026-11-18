@@ -336,7 +336,6 @@ func TestApartmentUpdateNotPorted(t *testing.T) {
 		"wizard return_to":       {"return_to": "/apartments/201/setup/police"},
 		"quoted wizard return":   {"return_to": "%2Fapartments%2F201%2Fsetup%2Fpolice"},
 		"guest pay block":        {"stay_fee_guest_form": "1"},
-		"data box":               {"stay_fee_authority_databox": "abcdefg"},
 		"full-width operator":    {"legal_entity_id": "２１"},
 		"Arabic-Indic PIN":       {"permalink_pin": "١٢٣٤٥٦"},
 		"superscript hour":       {"checkin_hour": "1²"},
@@ -357,6 +356,55 @@ func TestApartmentUpdateNotPorted(t *testing.T) {
 		if after := apartmentUpdateRead(t, ctx, pool, g, 201); !reflect.DeepEqual(after, before) {
 			t.Errorf("%s: the property was written", name)
 		}
+	}
+}
+
+func TestApartmentUpdateStayFeeAuthorityDatabox(t *testing.T) {
+	g := loadApartmentUpdateGolden(t)
+	pool := testPool(t)
+	apartmentCreateSeed(t, pool, apartmentCreateGolden{Seed: g.Seed})
+	mux := http.NewServeMux()
+	RegisterApartmentUpdate(mux, noWrap, pool, apartmentUpdateGetenv, testClock)
+
+	const key = "stay_fee_authority_databox"
+	ctx := context.Background()
+	for _, tc := range []struct {
+		name  string
+		post  bool
+		value string
+		want  string
+	}{
+		{"normalized", true, " AbC1234 ", "abc1234"},
+		{"blank", true, " ", "<null>"},
+		{"invalid", true, "abc-123", "<null>"},
+		{"Unicode lowercase expansion", true, "İBC1234", "<null>"},
+		{"omitted", false, "", "old1234"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if _, err := pool.Exec(ctx, "UPDATE apartment SET stay_fee_authority_databox = $1 WHERE id = 201", "old1234"); err != nil {
+				t.Fatal(err)
+			}
+			form := map[string]string{}
+			for k, v := range g.Cases[3].Form {
+				form[k] = v
+			}
+			if tc.post {
+				form[key] = tc.value
+			} else {
+				delete(form, key)
+			}
+			rec := apartmentFormPost(t, mux, "/apartments/201", g.CSRFNonce, 2, 0, "en", true, form)
+			if rec.Code != http.StatusSeeOther {
+				t.Fatalf("save returned %d, want %d", rec.Code, http.StatusSeeOther)
+			}
+			var got string
+			if err := pool.QueryRow(ctx, "SELECT COALESCE(stay_fee_authority_databox, '<null>') FROM apartment WHERE id = 201").Scan(&got); err != nil {
+				t.Fatal(err)
+			}
+			if got != tc.want {
+				t.Errorf("authority databox = %q, want %q", got, tc.want)
+			}
+		})
 	}
 }
 
@@ -400,8 +448,10 @@ func TestApartmentUpdateRefusedDraft(t *testing.T) {
 	}, []string{`<script>alert(1)`, `<b>"Loft"`, `This property is ready to report`, `data-dirty-start`, `door-code-times-error" role="alert"`})
 	body = post("/apartments/201?return_to=%2Fstay-fees%3Fmonth%3D2026-10", map[string]string{"checkout_hour": "24"})
 	adCheck(t, "return_to kept", body, []string{`<input type="hidden" name="fee_return_to" value="/stay-fees?month=2026-10">`}, nil)
-	body = post("/apartments/201?return_to=%2Fstay-fees%3Fmonth%3D2026-10", map[string]string{"account_number": "124", "account_prefix": ""})
-	adCheck(t, "return_to dropped", body, []string{`data-first-error="stay_fee_council_account"`}, []string{`name="fee_return_to"`, `fee-return-note`})
+	body = post("/apartments/201?return_to=%2Fstay-fees%3Fmonth%3D2026-10", map[string]string{
+		"account_number": "124", "account_prefix": "", "stay_fee_authority_databox": " AbC1234 ",
+	})
+	adCheck(t, "refused fee draft", body, []string{`data-first-error="stay_fee_council_account"`, `value="abc1234"`}, []string{`name="fee_return_to"`, `fee-return-note`})
 	// The guest-pay draft of refuse_fee_save is not ported.
 	form := map[string]string{}
 	for k, v := range g.Cases[3].Form {

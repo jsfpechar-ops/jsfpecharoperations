@@ -7,11 +7,8 @@ package properties
 // row Python writes (App/scripts/go_apartment_create_golden.py records it) and
 // redirects to the calendar step of the guided setup.
 //
-// Branches answered 501 with the Caddy fallback header (notPorted), none of
-// which the create form posts: the guest-pay block (stay_fee_guest_form) and
-// the data-box field; a number or digit outside ASCII, or an integer past 64
-// bits, in an id, the rate, the postcode or the variable symbol (Python's
-// int() and str.isdigit() read more than this port does).
+// The guest-pay block (stay_fee_guest_form) and unsupported numbers in an ID,
+// the rate, the postcode or the variable symbol receive a 501.
 //
 // Python writes the row, the rate, the guest link, the audit row and the
 // setup state one after another; here the row and its rate share one
@@ -24,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -32,6 +30,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb/layout"
@@ -71,8 +71,83 @@ var apartmentFeeTexts = []struct {
 }{{"stay_fee_authority_name", 200}, {"stay_fee_authority_address", 200}, {"stay_fee_authority_contact", 200},
 	{"stay_fee_payee", 60}, {"stay_fee_instruction", 500}}
 
+var apartmentDataboxRE = regexp.MustCompile(`^[a-z0-9]{7}package properties
+
+// POST /apartments (brief 1700b2): routes/admin.py apartment_create, with
+// _apartment_payload, _property_operator_error, _create_address_errors,
+// _refuse_apartment_create and _apply_police_defaults. A refusal draws the
+// 1700a form again through RenderApartmentNew; a create writes the apartment
+// row Python writes (App/scripts/go_apartment_create_golden.py records it) and
+// redirects to the calendar step of the guided setup.
+//
+// The guest-pay block (stay_fee_guest_form) and unsupported numbers in an ID,
+// the rate, the postcode or the variable symbol receive a 501.
+//
+// Python writes the row, the rate, the guest link, the audit row and the
+// setup state one after another; here the row and its rate share one
+// transaction, the rest follows in Python's order. Nothing routes here until
+// the owner adds the path to UBYHOST_GO_PATHS.
+
+import (
+	"context"
+	_ "embed"
+	"errors"
+	"fmt"
+	"net/http"
+	"regexp"
+	"slices"
+	"strconv"
+	"strings"
+	"time"
+	"unicode"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb/layout"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/stayfee"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validationi18n"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/onboarding"
+)
+
+//go:embed apartmentcreate/i18n.json
+var apartmentCreateJSON []byte
+
+// apartmentCreateStrings is this route's catalog (apartmentcreate/i18n_keys.txt,
+// written by App/scripts/go_host_i18n.py).
+var apartmentCreateStrings = hostweb.Load(apartmentCreateJSON)
+
+// apartmentTextFields is admin.APARTMENT_TEXT_FIELDS.
+var apartmentTextFields = []string{"internal_name", "city_en", "addr_okres", "addr_obec", "addr_obec_cast", "addr_street",
+	"addr_house_no", "addr_orient_no", "addr_zip", "uby_idub", "uby_mark", "uby_name", "uby_contact", "uby_ws_user",
+	"guest_message", "notes"}
+
+// apartmentCopyKeys is admin._COPY_PROPERTY_KEYS without the two entity ids.
+var apartmentCopyKeys = []string{"automation_mode", "submit_after_hours", "default_purpose", "permalink_window_days",
+	"permalink_reachback_days", "stay_fee_rate_czk", "stay_fee_cadence", "stay_fee_authority_name",
+	"stay_fee_authority_address", "stay_fee_authority_contact", "stay_fee_payee", "stay_fee_instruction",
+	"stay_fee_council_account"}
+
+// apartmentAddressFields is admin._ADDRESS_ONLY_FIELDS.
+var apartmentAddressFields = []string{"addr_okres", "addr_obec", "addr_obec_cast", "addr_street", "addr_house_no",
+	"addr_orient_no", "addr_zip"}
+
+// apartmentFeeTexts are the optional fee texts of stay_fees.fee_form_values and their cut.
+var apartmentFeeTexts = []struct {
+	key   string
+	limit int
+}{{"stay_fee_authority_name", 200}, {"stay_fee_authority_address", 200}, {"stay_fee_authority_contact", 200},
+	{"stay_fee_payee", 60}, {"stay_fee_instruction", 500}}
+
+)
+
 // apartmentNotPortedFields are form keys whose branch this port does not take.
-var apartmentNotPortedFields = []string{"stay_fee_guest_form", "stay_fee_authority_databox"}
+var apartmentNotPortedFields = []string{"stay_fee_guest_form"}
 
 // stayFeeRateEpoch is stay_fee_rate.EPOCH: a first rate applies from the beginning.
 const stayFeeRateEpoch = "2000-01-01"
@@ -242,6 +317,13 @@ func newApartmentPayload(r *http.Request) (p apartmentPayload, ok bool) {
 			if has(r, f.key) {
 				p.cols = append(p.cols, column{f.key, orNil(pyStrip(firstRunes(formStr(r, f.key), f.limit)))})
 			}
+		}
+		if has(r, "stay_fee_authority_databox") {
+			databox := cases.Lower(language.Und).String(formStr(r, "stay_fee_authority_databox"))
+			if !apartmentDataboxRE.MatchString(databox) {
+				databox = ""
+			}
+			p.cols = append(p.cols, column{"stay_fee_authority_databox", orNil(databox)})
 		}
 		// The council account (stay_fee_council_account or the account_* fields)
 		// is read raw and dropped on create, as apartment_create pops it.

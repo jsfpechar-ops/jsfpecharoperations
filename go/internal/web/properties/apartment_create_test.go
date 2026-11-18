@@ -349,7 +349,6 @@ func TestApartmentCreateNotPorted(t *testing.T) {
 		"addr_zip": "12000", "addr_obec": "Brno"}
 	for name, extra := range map[string]map[string]string{
 		"guest pay block":      {"stay_fee_guest_form": "1"},
-		"data box":             {"stay_fee_authority_databox": "abcdefg"},
 		"full-width id":        {"legal_entity_id": "２１"},
 		"id past 64 bits":      {"copy_from": "99999999999999999999"},
 		"superscript postcode": {"addr_zip": "12000²"},
