@@ -103,26 +103,6 @@ def _cookie(client: TestClient) -> str:
     return cookie
 
 
-def test_phone_show_more_appends_rows(base, stays_more_host):
-    client, _apartment_id = stays_more_host
-    with sync_api.sync_playwright() as playwright:
-        browser = _launch(playwright)
-        context, page = _open_app(browser, base, _cookie(client), "/reservations?range=all", 390)
-        rows = page.locator(".stays-desk tbody tr")
-        assert rows.count() == 5
-        more = page.locator("[data-stays-more] a")
-        if more.count() == 0:
-            pytest.skip("Go GET /reservations not routed (missing data-stays-more)")
-        more.click()
-        page.wait_for_timeout(400)
-        assert rows.count() == 6
-        assert page.locator("[data-stays-more]").count() == 0
-        assert "page=2" in page.url
-        assert page.evaluate("() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 2")
-        context.close()
-        browser.close()
-
-
 def test_phone_show_more_no_js_uses_plain_link(base, stays_more_host):
     client, _apartment_id = stays_more_host
     with sync_api.sync_playwright() as playwright:

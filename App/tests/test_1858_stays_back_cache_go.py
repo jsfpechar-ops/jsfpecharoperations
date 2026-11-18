@@ -1,4 +1,4 @@
-"""1858: browser back to Stays restores scroll from Turbo cache."""
+"""1858 Go-only: Turbo back restores scroll (run with UBYHOST_GO_PATHS=/reservations)."""
 from __future__ import annotations
 
 from datetime import timedelta
@@ -14,8 +14,12 @@ from tests.go_stack import go_paths_enabled, seed_go_host_gate
 from tests.test_host_quiet_dashboard_browser import (  # noqa: F401
     _launch,
     base,
-    dashboard_host,
     sync_api,
+)
+
+pytestmark = pytest.mark.skipif(
+    not go_paths_enabled(),
+    reason="UBYHOST_GO_PATHS must include /reservations",
 )
 
 USERNAME = "stays-cache-1858"
@@ -24,18 +28,20 @@ USERNAME = "stays-cache-1858"
 def _cleanup() -> None:
     for row in db.query("SELECT id FROM user_account WHERE username = ?", (USERNAME,)):
         uid = row["id"]
-        db.execute("DELETE FROM guest WHERE reservation_id IN (SELECT id FROM reservation WHERE apartment_id IN (SELECT id FROM apartment WHERE owner_user_id = ?))", (uid,))
-        db.execute("DELETE FROM reservation WHERE apartment_id IN (SELECT id FROM apartment WHERE owner_user_id = ?)", (uid,))
+        db.execute(
+            "DELETE FROM guest WHERE reservation_id IN (SELECT id FROM reservation WHERE apartment_id IN (SELECT id FROM apartment WHERE owner_user_id = ?))",
+            (uid,),
+        )
+        db.execute(
+            "DELETE FROM reservation WHERE apartment_id IN (SELECT id FROM apartment WHERE owner_user_id = ?)",
+            (uid,),
+        )
         db.execute("DELETE FROM apartment WHERE owner_user_id = ?", (uid,))
         db.execute("DELETE FROM legal_entity WHERE owner_user_id = ?", (uid,))
         db.execute("DELETE FROM alert WHERE owner_user_id = ?", (uid,))
         db.execute("DELETE FROM audit WHERE owner_user_id = ?", (uid,))
         db.execute("DELETE FROM legal_acceptance WHERE user_account_id = ?", (uid,))
         db.execute("DELETE FROM user_account WHERE id = ?", (uid,))
-
-
-def _owner_id() -> int:
-    return db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,))["id"]
 
 
 @pytest.fixture
@@ -49,8 +55,14 @@ def stays_cache_host():
         seed_go_host_gate(owner_id)
     entity = db.insert(
         "legal_entity",
-        {"name": "Cache s.r.o.", "seat": "Praha", "ico": "18580001", "contact_email": "c@example.test",
-         "owner_user_id": owner_id, "created_at": db.utcnow()},
+        {
+            "name": "Cache s.r.o.",
+            "seat": "Praha",
+            "ico": "18580001",
+            "contact_email": "c@example.test",
+            "owner_user_id": owner_id,
+            "created_at": db.utcnow(),
+        },
     )
     apartment_id = db.insert(
         "apartment",
@@ -108,9 +120,8 @@ def test_back_to_stays_restores_scroll(base, stays_cache_host):
         browser = _launch(playwright)
         context, page = _open_app(browser, base, _cookie(client), "/reservations?range=all", 390)
         html = page.content()
-        if "data-stays-more" not in html:
-            pytest.skip("Go GET /reservations not routed (missing data-stays-more)")
-        assert 'content="cache"' in html, html[html.find("turbo-cache"): html.find("turbo-cache") + 120]
+        assert "data-stays-more" in html, "expected Go GET /reservations"
+        assert 'content="cache"' in html, html[html.find("turbo-cache") : html.find("turbo-cache") + 120]
         y_before = page.evaluate(
             "() => { window.scrollTo(0, 9999); return window.scrollY; }"
         )
