@@ -49,6 +49,8 @@ func spPost(t *testing.T, mux http.Handler, path string, form url.Values, user i
 			t.Fatal(err)
 		}
 		form.Set("_csrf", token)
+	} else {
+		form.Del("_csrf")
 	}
 	req := httptest.NewRequest(http.MethodPost, path, strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -78,15 +80,15 @@ func TestApartmentAutomationTiming(t *testing.T) {
 	mux := spMux(t, pool, nil, "")
 	base := "/apartments/130201/automation-timing"
 	form := url.Values{"return_to": {propertySummaries}, "automation_mode": {"scheduled"}, "submit_after_hours": {"12"}}
-	spExpect303(t, "ok", spPost(t, mux, base, form, 130001, "en", true, ""), propertySummaries+"?msg=Reporting%20timing%20saved.")
+	spExpect303(t, "ok", spPost(t, mux, base, form, 130001, "en", true, ""), "/apartments?msg=Reporting%20timing%20saved.#property-summaries")
 	if mode, hours := mustTiming(t, pool, adLoft); mode != "scheduled" || hours != 12 {
 		t.Errorf("db: %q %d", mode, hours)
 	}
 	form.Set("automation_mode", "nope")
-	spExpect303(t, "invalid", spPost(t, mux, base, form, 130001, "en", true, ""), propertySummaries+"?err=Choose%20when%20to%20send%20to%20UbyPort.%20Nothing%20was%20saved.")
+	spExpect303(t, "invalid", spPost(t, mux, base, form, 130001, "en", true, ""), "/apartments?err=Choose%20when%20to%20send%20to%20UbyPort.%20Nothing%20was%20saved.#property-summaries")
 	form.Set("automation_mode", "scheduled")
 	form.Set("submit_after_hours", "0")
-	spExpect303(t, "hours", spPost(t, mux, base, form, 130001, "en", true, ""), propertySummaries+"?err=Enter%20the%20delay%20in%20whole%20hours%2C%20from%201%20to%2048.%20Nothing%20was%20saved.")
+	spExpect303(t, "hours", spPost(t, mux, base, form, 130001, "en", true, ""), "/apartments?err=Enter%20the%20delay%20in%20whole%20hours%2C%20from%201%20to%2048.%20Nothing%20was%20saved.#property-summaries")
 	rec := spPost(t, mux, base, form, 130001, "en", true, "application/json")
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("json refuse: %d", rec.Code)
