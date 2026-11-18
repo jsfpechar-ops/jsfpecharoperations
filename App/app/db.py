@@ -1100,6 +1100,11 @@ ADDED_COLUMNS = (
     ("guest", "res_street_enc", "TEXT"),
     ("guest", "res_city_enc", "TEXT"),
     ("submission", "request_xml_enc", "TEXT"),
+    # 1661 / goose 00022: SQLite twin so retention and sqlite_to_postgres stay aligned.
+    ("apartment", "entry_code_enc", "TEXT"),
+    ("apartment", "entry_code_label", "TEXT"),
+    ("apartment", "entry_code_until", "TEXT"),
+    ("apartment", "guide_external_url", "TEXT"),
 )
 
 # The reverted 26 Sep 2026 stay-fee build (AR-55) used some of the same column
@@ -1141,10 +1146,7 @@ def _add_missing_columns(conn: sqlite3.Connection) -> None:
     ``init_db``.
     """
     columns: Dict[str, set] = {}
-    specs: List[Tuple[str, str, str]] = list(ADDED_COLUMNS)
-    if getattr(config, "DB_BACKEND", "sqlite") != "postgresql":
-        specs.extend(goose_only_columns())
-    for table, column, decl in specs:
+    for table, column, decl in ADDED_COLUMNS:
         if table not in columns:
             columns[table] = _table_columns(conn, table)
         if columns[table] and column not in columns[table]:
@@ -1340,6 +1342,8 @@ def postgres_expected_columns() -> Dict[str, List[tuple[str, str, int, int]]]:
     """Columns PostgreSQL must have: SCHEMA and ADDED_COLUMNS, plus the goose-only ones."""
     expected = _expected_sqlite_columns()
     for table, column, decl, notnull, _pg in _goose_only_add_column_specs():
+        if column in {c[0] for c in expected.get(table, [])}:
+            continue
         expected[table] = [*expected.get(table, []), (column, decl, notnull, 0)]
     return expected
 
