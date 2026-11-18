@@ -264,7 +264,7 @@ def reconcile(source: sqlite3.Connection, target, tables: list[str]) -> dict[str
             ).fetchall()]
             # Goose-only columns (A1b) exist on PostgreSQL but not in the SQLite source;
             # the transfer copies source columns only, so compare and digest without them.
-            goose_only = {(name_table, name) for name_table, name, _decl in db.GOOSE_ONLY_COLUMNS}
+            goose_only = {(name_table, name) for name_table, name, _decl in db.goose_only_columns()}
             target_columns = [name for name in target_columns if (table, name) not in goose_only]
             if sorted(columns) != sorted(target_columns):
                 raise ValueError(f"column mismatch at {table}")
