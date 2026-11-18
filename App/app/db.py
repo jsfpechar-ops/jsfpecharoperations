@@ -16,7 +16,8 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Sequence
+from functools import lru_cache
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from cryptography.fernet import Fernet, InvalidToken, MultiFernet
 
@@ -1153,6 +1154,18 @@ def _add_missing_columns(conn: sqlite3.Connection) -> None:
             columns[table].add(column)
 
 
+
+def _apply_sqlite_runtime_columns(conn: sqlite3.Connection) -> None:
+    """Goose-only columns live after numbered SQLite migrations (same order as goose on PG)."""
+    columns: Dict[str, set] = {}
+    for table, column, decl in goose_only_columns():
+        if table not in columns:
+            columns[table] = _table_columns(conn, table)
+        if columns[table] and column not in columns[table]:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {decl}")
+            columns[table].add(column)
+
+
 def _table_columns(conn, table: str) -> set[str]:
     """Column names from the selected backend; table names are trusted source."""
     if getattr(config, "DB_BACKEND", "sqlite") == "postgresql":
@@ -1260,6 +1273,10 @@ def _expected_sqlite_columns() -> Dict[str, List[tuple[str, str, int, int]]]:
         conn.executescript(_MIGRATIONS_TABLE)
         for _version, _name, path in migration_files():
             conn.executescript(path.read_text(encoding="utf-8"))
+        for table, column, decl in goose_only_columns():
+            names = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
+            if column not in names:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {decl}")
         result: Dict[str, List[tuple[str, str, int, int]]] = {}
         names = [row["name"] for row in conn.execute(
             "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'"
@@ -1274,20 +1291,71 @@ def _expected_sqlite_columns() -> Dict[str, List[tuple[str, str, int, int]]]:
         conn.close()
 
 
-# Nullable columns that exist only in goose files (App/migrations_pg). SCHEMA and
-# ADDED_COLUMNS never change, so these are expected by the PostgreSQL status check
-# alone (brief A1b P1). Format: (table, column, SQL type).
-GOOSE_ONLY_COLUMNS = (
-    ("submission", "cause", "TEXT"),
-    ("submission", "error_code", "TEXT"),
+_GOOSE_ADD_COLUMN = re.compile(
+    r"^ALTER\s+TABLE\s+([A-Za-z_][A-Za-z_0-9]*)\s+ADD\s+COLUMN\s+"
+    r"(?:IF\s+NOT\s+EXISTS\s+)?([A-Za-z_][A-Za-z_0-9]*)\s+(.+)$",
+    re.IGNORECASE,
 )
+_PG_DECL_TO_SQLITE = {
+    "bigint": "INTEGER",
+    "integer": "INTEGER",
+    "smallint": "INTEGER",
+    "int": "INTEGER",
+    "text": "TEXT",
+    "bytea": "BLOB",
+    "double": "REAL",
+    "real": "REAL",
+    "boolean": "INTEGER",
+    "jsonb": "TEXT",
+    "timestamptz": "TEXT",
+    "timestamp": "TEXT",
+}
+
+
+def _goose_file_records_schema_migration(text: str) -> bool:
+    return bool(re.search(r"\bINSERT\s+INTO\s+schema_migrations\b", text, re.IGNORECASE))
+
+
+def _sqlite_type_from_pg_decl(type_clause: str) -> str:
+    head = type_clause.strip().rstrip(";").split()[0].lower()
+    for prefix, sqlite in _PG_DECL_TO_SQLITE.items():
+        if head == prefix or head.startswith(prefix):
+            return sqlite
+    return head.upper()
+
+
+@lru_cache(maxsize=1)
+def _goose_only_add_column_specs() -> Tuple[Tuple[str, str, str, int, str], ...]:
+    """(table, column, sqlite_decl, notnull, pg_type_clause) from goose-only files."""
+    specs: List[Tuple[str, str, str, int, str]] = []
+    for version, _name, path in goose_files():
+        if version <= 17:
+            continue
+        text = path.read_text(encoding="utf-8")
+        if _goose_file_records_schema_migration(text):
+            continue
+        for statement in _goose_up_statements(text):
+            match = _GOOSE_ADD_COLUMN.match(_without_sql_comments(statement).strip())
+            if not match:
+                continue
+            table, column, type_clause = match.group(1), match.group(2), match.group(3).strip().rstrip(";")
+            notnull = 1 if re.search(r"\bNOT\s+NULL\b", type_clause, re.IGNORECASE) else 0
+            specs.append((table, column, _sqlite_type_from_pg_decl(type_clause), notnull, type_clause))
+    return tuple(specs)
+
+
+def goose_only_columns() -> Tuple[Tuple[str, str, str], ...]:
+    """Columns added only in goose files after 17 (no schema_migrations twin row)."""
+    return tuple((table, column, decl) for table, column, decl, _notnull, _pg in _goose_only_add_column_specs())
 
 
 def postgres_expected_columns() -> Dict[str, List[tuple[str, str, int, int]]]:
     """Columns PostgreSQL must have: SCHEMA and ADDED_COLUMNS, plus the goose-only ones."""
     expected = _expected_sqlite_columns()
-    for table, column, decl in GOOSE_ONLY_COLUMNS:
-        expected[table] = [*expected.get(table, []), (column, decl, 0, 0)]
+    for table, column, decl, notnull, _pg in _goose_only_add_column_specs():
+        if column in {c[0] for c in expected.get(table, [])}:
+            continue
+        expected[table] = [*expected.get(table, []), (column, decl, notnull, 0)]
     return expected
 
 
@@ -1778,6 +1846,7 @@ def _init_db_locked() -> None:
         from . import guest_slug
 
         guest_slug.backfill(conn)
+        _apply_sqlite_runtime_columns(conn)
     finally:
         conn.close()
 
@@ -1822,8 +1891,8 @@ def _postgres_schema_ddl(conn, *, record_history: bool, include_triggers: bool) 
             )
     # Goose-only columns (App/migrations_pg) are not in the SQLite files. Add them here so a
     # schema built in Python (the transfer bootstrap) matches goose. Idempotent.
-    for table, column, decl in GOOSE_ONLY_COLUMNS:
-        _execute_ddl(conn, f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {column} {decl}")
+    for table, column, _decl, _notnull, pg_type in _goose_only_add_column_specs():
+        _execute_ddl(conn, f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {column} {pg_type}")
     db_postgres.install_pg_support(conn, include_triggers=include_triggers)
 
 

@@ -189,3 +189,8 @@ INSERT INTO legal_acceptance (id, user_account_id, document, version, accepted_a
  (3, 7, 'terms', 'v1', '2017-01-01T00:00:00+00:00', 'clickwrap');
 
 INSERT INTO settings (key, value) VALUES ('retention_last_run', 'old');
+
+UPDATE apartment SET entry_code_enc = 'gAAAA-fixture-expired', entry_code_until = '2020-01-01' WHERE id = 10;
+UPDATE apartment SET entry_code_enc = 'gAAAA-fixture-open', entry_code_until = NULL WHERE id = 20;
+INSERT INTO apartment (id, internal_name, created_at, owner_user_id, archived_at, entry_code_enc) VALUES
+ (30, 'Flat C archived', '2017-01-01T00:00:00+00:00', 1, '2020-01-01T00:00:00+00:00', 'gAAAA-fixture-archived');

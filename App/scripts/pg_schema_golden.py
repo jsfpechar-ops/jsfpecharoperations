@@ -145,6 +145,7 @@ def _dump(obj) -> str:
 
 
 def expected_schema() -> dict:
+    # Goose-only ADD COLUMN entries come from db.postgres_expected_columns().
     columns = db.postgres_expected_columns()
     columns["schema_migrations"] = [
         ("version", "INTEGER", 1, 1),

@@ -414,6 +414,25 @@ func stepDoorCodePins(ctx context.Context, r *runner) (int, error) {
 	return n, err
 }
 
+// stepEntryCodes wipes a building entry code a day after entry_code_until or a
+// day after the apartment was archived. A code with no end date stays until the
+// host clears it; the apartment row itself goes with its workspace.
+func stepEntryCodes(ctx context.Context, r *runner) (int, error) {
+	if r.owner != nil {
+		return 0, nil
+	}
+	cutoff := r.daysAgoISO(1)
+	where := `entry_code_enc IS NOT NULL AND (
+		(COALESCE(entry_code_until, '') <> '' AND entry_code_until < $1)
+		OR (COALESCE(archived_at, '') <> '' AND archived_at < $1))`
+	n, err := r.scalar(ctx, `SELECT COUNT(*) FROM apartment WHERE `+where, cutoff)
+	if err != nil || r.dry || n == 0 {
+		return n, err
+	}
+	_, err = r.exec(ctx, `UPDATE apartment SET entry_code_enc = NULL WHERE `+where, cutoff)
+	return n, err
+}
+
 // stepCleaning is cleaning.purge: outside a dry run both statements run even
 // when the counts are zero.
 func stepCleaning(ctx context.Context, r *runner) (int, error) {

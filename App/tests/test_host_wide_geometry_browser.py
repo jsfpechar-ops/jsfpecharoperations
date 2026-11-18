@@ -25,6 +25,8 @@ from app import alerts, auth, claim, db
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs, settle_motion
 from tests.conftest import login_as, mark_security_prompt_seen
+from tests.go_stack import go_paths_enabled, seed_go_host_gate
+from tests.go_stack import browser_app
 
 WIDE_WIDTHS = (1024, 1280, 1440, 1680, 1920, 2048)
 MOBILE_WIDTHS = (360, 390, 760)
@@ -83,6 +85,8 @@ def wide_host():
     owner_id = mark_security_prompt_seen(auth.create_account(
         f"{username}@example.test", "Wide Geometry Fixture", role="host", username=username
     ))
+    if go_paths_enabled():
+        seed_go_host_gate(owner_id)
     now = db.utcnow()
     entity_id = db.insert("legal_entity", {
         "name": "Wide Geometry Fixture s.r.o.", "seat": "Praha", "ico": "12345678",
@@ -169,13 +173,16 @@ def wide_host():
     db.execute("DELETE FROM reservation WHERE apartment_id IN (?, ?)", tuple(apartment_ids))
     db.execute("DELETE FROM apartment WHERE id IN (?, ?)", tuple(apartment_ids))
     db.execute("DELETE FROM legal_entity WHERE id = ?", (entity_id,))
+    db.execute("DELETE FROM legal_acceptance WHERE user_account_id = ?", (owner_id,))
     db.execute("DELETE FROM user_account WHERE id = ?", (owner_id,))
 
 
 @pytest.fixture(scope="module")
 def wide_base(wide_host):
     port = _free_port()
-    server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, log_level="error"))
+    base_url = f"http://127.0.0.1:{port}"
+    serve_app = browser_app(app, base_url)
+    server = uvicorn.Server(uvicorn.Config(serve_app, host="127.0.0.1", port=port, log_level="error"))
     thread = threading.Thread(target=server.run, daemon=True)
     thread.start()
     deadline = time.time() + 15
@@ -197,7 +204,7 @@ def wide_base(wide_host):
     alert_probe = probe.get("/reservations?lang=en")
     assert alert_probe.status_code == 200
     assert 'data-host-alerts' in alert_probe.text or ' v2"' in alert_probe.text, "signed-in host UI must render the alert stack or the v2 shell"
-    yield f"http://127.0.0.1:{port}"
+    yield base_url
     server.should_exit = True
     thread.join(timeout=5)
 
