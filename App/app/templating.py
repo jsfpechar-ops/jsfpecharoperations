@@ -593,6 +593,15 @@ templates.env.globals["door_codes_enabled"] = _template_door_codes_enabled
 templates.env.globals["billing_banner"] = _template_billing_banner
 
 
+def _template_payments_hidden() -> bool:
+    from . import config
+
+    return config.PAYMENTS_HIDDEN
+
+
+templates.env.globals["payments_hidden"] = _template_payments_hidden
+
+
 def _template_billing_on() -> bool:
     """0416: whether UbyHost's own billing is switched on (the /predplatne link)."""
     from . import billing
