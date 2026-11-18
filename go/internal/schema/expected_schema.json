@@ -602,6 +602,26 @@
     "name": "stay_fee_guest_default_rail",
     "not_null": true,
     "type": "text"
+   },
+   {
+    "name": "entry_code_enc",
+    "not_null": false,
+    "type": "text"
+   },
+   {
+    "name": "entry_code_label",
+    "not_null": false,
+    "type": "text"
+   },
+   {
+    "name": "entry_code_until",
+    "not_null": false,
+    "type": "text"
+   },
+   {
+    "name": "guide_external_url",
+    "not_null": false,
+    "type": "text"
    }
   ],
   "apartment_slug": [

@@ -47,6 +47,7 @@ func TestStepsOrderMatchesPython(t *testing.T) {
 	want := []string{"guests", "invoices", "platform_invoices", "claim_emails", "reservation_contacts",
 		"submitter_ips", "empty_reservations", "stay_fee_records", "audit_rows", "alerts",
 		"rate_limit_events", "havel_gap", "login_tokens", "webauthn_challenges", "door_code_pins",
+		"entry_codes",
 		"cleaning", "push", "guide_imports", "guest_chats", "legal_acceptance", "workspaces"}
 	if len(steps) != len(want) {
 		t.Fatalf("%d steps, want %d", len(steps), len(want))

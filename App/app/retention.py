@@ -512,6 +512,26 @@ def _door_code_pin_step(today: date, dry_run: bool, owner_user_id: Optional[int]
     return count
 
 
+def _entry_code_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
+    """Wipe apartment.entry_code_enc a day after entry_code_until or after archiving."""
+    if owner_user_id is not None:
+        return 0
+    cutoff = _days_ago_iso(1)
+    where = (
+        "entry_code_enc IS NOT NULL AND ("
+        "(COALESCE(entry_code_until, '') <> '' AND entry_code_until < ?) "
+        "OR (COALESCE(archived_at, '') <> '' AND archived_at < ?))"
+    )
+    params = (cutoff, cutoff)
+    count = _scalar(f"SELECT COUNT(*) AS n FROM apartment WHERE {where}", params)
+    if not dry_run and count:
+        db.execute(
+            "UPDATE apartment SET entry_code_enc = NULL WHERE " + where,
+            params,
+        )
+    return count
+
+
 def _cleaning_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
     """Notes: event + 30 days. Shares: expiry + 30 days. Permanent PINs remain
     while configured; the cleaning-code worker wipes revoked PINs. Property
@@ -556,6 +576,7 @@ STEPS: List[tuple] = [
     ("login_tokens", _login_token_step),
     ("webauthn_challenges", _webauthn_challenge_step),
     ("door_code_pins", _door_code_pin_step),
+    ("entry_codes", _entry_code_step),
     ("cleaning", _cleaning_step),
     ("push", _push_step),
     ("guide_imports", _guide_import_step),
@@ -587,6 +608,7 @@ def _cutoffs(today: date) -> Dict[str, str]:
         "login_tokens": "expired more than 1 day ago",
         "webauthn_challenges": "expired more than 1 day ago",
         "door_code_pins": "valid_to more than 1 day ago",
+        "entry_codes": "entry_code_until or archived more than 1 day ago",
         "cleaning": f"event or link expiry before {(today - timedelta(days=30)).isoformat()}",
         "push": "alert queued over 30 days ago, or device unseen for 180 days",
         "guide_imports": f"listing text fetched before {(today - timedelta(days=7)).isoformat()}, failed request rows before {(today - timedelta(days=60)).isoformat()}",
