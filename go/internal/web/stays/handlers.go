@@ -55,6 +55,7 @@ type listPage struct {
 	PrevURL          string
 	NextURL          string
 	Groups           map[string][]Row
+	Banner           Banner
 }
 
 // ListHandler serves GET /reservations (admin.py reservations_list).
@@ -94,6 +95,11 @@ func ListHandler(pool *pgxpool.Pool, getenv func(string) string, now func() time
 			}
 		}
 		groups := groupRows(v.Rows, at)
+		banner, err := onboardingBanner(ctx, pool, owner, returnTo(r))
+		if err != nil {
+			serverError(w, err)
+			return
+		}
 		data := listPage{
 			View: v, Apartments: apts, Status: p.Status, Report: p.Report,
 			ApartmentID: p.ApartmentID, DateFrom: p.DateFrom, DateTo: p.DateTo,
@@ -102,7 +108,7 @@ func ListHandler(pool *pgxpool.Pool, getenv func(string) string, now func() time
 			CSVExportParams: "apartment=" + strconv.FormatInt(p.ApartmentID, 10),
 			StayProperty: propLabel, PaymentsHidden: paymentsHidden(getenv),
 			PublicBase: publicBaseURL(getenv), Today: pragueToday(at), PageSize: PageSize,
-			PrevURL: v.PrevURL, NextURL: v.NextURL, Groups: groups,
+			PrevURL: v.PrevURL, NextURL: v.NextURL, Groups: groups, Banner: banner,
 		}
 		page := layout.Page{
 			Title: catalog.T(hostweb.Lang(r), "stays.title", nil),

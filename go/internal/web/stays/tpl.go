@@ -1,6 +1,7 @@
 package stays
 
 import (
+	"net/url"
 	"strings"
 	"time"
 
@@ -27,6 +28,30 @@ var tplFuncs = map[string]any{
 	"is_demo":         isDemo,
 	"slug_or":         slugOr,
 	"not_registered":  notRegistered,
+	"in_house":        inHouse,
+	"initial_rune":    initialRune,
+	"encode_return":   encodeReturn,
+	"day_of_month":    dayOfMonth,
+	"is_nil_int":      isNilInt,
+}
+
+func inHouse(checkIn time.Time, hasCheckIn bool, dateTo string, today time.Time) bool {
+	if !hasCheckIn {
+		return false
+	}
+	checkOut, ok := validation.ParseISODate(dateTo)
+	if !ok {
+		return false
+	}
+	now := pragueToday(today)
+	return !checkIn.After(now) && !checkOut.Before(now)
+}
+
+func initialRune(s string) string {
+	if s == "" {
+		return ""
+	}
+	return strings.ToUpper(s[:1])
 }
 
 var prague = func() *time.Location {
@@ -196,5 +221,20 @@ func notRegistered(p Progress) int {
 	return *p.NotRegistered
 }
 
+func encodeReturn(s string) string {
+	return url.QueryEscape(s)
+}
+
+func dayOfMonth(iso string) int {
+	t, ok := validation.ParseISODate(iso)
+	if !ok {
+		return 0
+	}
+	return t.Day()
+}
+
+func isNilInt(p *int) bool {
+	return p == nil
+}
 
 var pages = layout.MustParseFuncs(catalog, tplFuncs, templateFS, "templates/*.tmpl")
