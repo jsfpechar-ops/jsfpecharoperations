@@ -14,7 +14,11 @@ func TestRegisterRoutesGET(t *testing.T) {
 		func(_ string, h http.HandlerFunc) http.Handler { return h })
 	req := httptest.NewRequest(http.MethodGet, "/reservations", nil)
 	if h, p := mux.Handler(req); h == nil || p == "" {
-		t.Fatalf("no handler pattern=%q", p)
+		t.Fatalf("no GET handler pattern=%q", p)
+	}
+	req = httptest.NewRequest(http.MethodPost, "/reservations", nil)
+	if h, p := mux.Handler(req); h == nil || p == "" {
+		t.Fatalf("no POST handler pattern=%q", p)
 	}
 }
 

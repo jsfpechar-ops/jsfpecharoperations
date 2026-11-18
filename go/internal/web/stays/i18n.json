@@ -183,7 +183,13 @@
     "tabs.stays.register": "Domovní kniha",
     "tabs.stays.reports": "Hlášení policii",
     "host.missing.one": "Chybí 1 host",
-    "host.missing.few": "Chybí %(count)s hosté"
+    "host.missing.few": "Chybí %(count)s hosté",
+    "flash.reservations.created": "Pobyt vytvořen. Teď zkopírujte odkaz pro hosty, nebo hosty zadejte sami.",
+    "flash.error.stay_dates_required": "Vyberte ubytování a oba termíny.",
+    "flash.error.dates_order": "Odjezd musí být po příjezdu.",
+    "flash.error.no_such_apartment": "Toto ubytování už neexistuje.",
+    "calendar.guests_error": "Zadejte 1 až 60 hostů, nebo pole nechte prázdné.",
+    "calendar.overlap": "V tomto ubytování už je během vybraných nocí jiný pobyt."
   },
   "en": {
     "calendar.arrival": "Check-in",
@@ -369,7 +375,13 @@
     "tabs.stays.register": "Guest register",
     "tabs.stays.reports": "Police reports",
     "host.missing.one": "1 guest missing",
-    "host.missing.few": "%(count)s guests missing"
+    "host.missing.few": "%(count)s guests missing",
+    "flash.reservations.created": "Stay created. Next, copy the guest link or add guests yourself.",
+    "flash.error.stay_dates_required": "Pick a property and both dates.",
+    "flash.error.dates_order": "Departure must be after arrival.",
+    "flash.error.no_such_apartment": "This property no longer exists.",
+    "calendar.guests_error": "Enter between 1 and 60 guests, or leave this blank.",
+    "calendar.overlap": "This property already has a stay during these nights."
   },
   "vi": {
     "calendar.arrival": "Nhận phòng",
@@ -554,6 +566,12 @@
     "tabs.stays.register": "Sổ khách",
     "tabs.stays.reports": "Khai báo cảnh sát",
     "host.missing.one": "Thiếu 1 khách",
-    "host.missing.few": "Thiếu %(count)s khách"
+    "host.missing.few": "Thiếu %(count)s khách",
+    "flash.reservations.created": "Đã tạo lượt lưu trú. Tiếp theo hãy sao chép liên kết khách hoặc tự thêm khách.",
+    "flash.error.stay_dates_required": "Chọn chỗ ở và cả hai ngày.",
+    "flash.error.dates_order": "Ngày trả phòng phải sau ngày nhận phòng.",
+    "flash.error.no_such_apartment": "Chỗ ở này không còn tồn tại.",
+    "calendar.guests_error": "Nhập từ 1 đến 60 khách, hoặc để trống.",
+    "calendar.overlap": "Chỗ ở này đã có lượt lưu trú trong những đêm này."
   }
 }

@@ -153,11 +153,15 @@ func listDeadlineCell(s listStay, p listProg, guests []progGuest, at time.Time) 
 		due = &d
 		checkInPtr = &checkIn
 	}
+	// reservations.html only calls deadline_cell when check_in is truthy.
+	if !hasCheckIn {
+		return layout.DeadlineCell{}, false
+	}
 	if p.status == "not_required" {
 		return layout.DeadlineCell{State: "none", Level: "none", CheckIn: checkInPtr}, true
 	}
 	if p.status != "reported" {
-		return layout.DeadlineCell{State: "countdown", Level: level, CheckIn: checkInPtr}, hasCheckIn
+		return layout.DeadlineCell{State: "countdown", Level: level, CheckIn: checkInPtr}, true
 	}
 	latest, byHand := listFiling(p.reportable)
 	if latest == nil {

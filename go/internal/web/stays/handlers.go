@@ -184,7 +184,8 @@ func serverError(w http.ResponseWriter, err error) {
 	http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 }
 
-// Register adds GET /reservations to mux.
+// Register adds GET and POST /reservations to mux.
 func Register(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler) {
 	mux.Handle("GET /reservations", wrap("/reservations", ListHandler(pool, getenv, now)))
+	mux.Handle("POST /reservations", wrap("/reservations", CreateHandler(pool, getenv, now)))
 }
