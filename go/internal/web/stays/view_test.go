@@ -18,7 +18,7 @@ func TestChipsAndPagerURLs(t *testing.T) {
 	}
 	p := ParseParams(q, today)
 	p.Page = 1
-	v := BuildView(p, nil, 0, 1, 2)
+	v := BuildView(p, nil, 0, 1, 2, 0, false)
 	for _, chip := range v.Chips {
 		if strings.Contains(chip.Href, "page=") || strings.Contains(chip.Href, "from=") || strings.Contains(chip.Href, "to=") {
 			t.Fatalf("chip %q href must drop page/from/to: %s", chip.Key, chip.Href)
@@ -59,7 +59,7 @@ func TestChipsAndPagerURLs(t *testing.T) {
 	}
 	p2 := p
 	p2.Page = 2
-	v2 := BuildView(p2, nil, 12, 2, 2)
+	v2 := BuildView(p2, nil, 12, 2, 2, 0, false)
 	if v2.PrevURL == "" {
 		t.Fatal("expected prev url on page 2")
 	}

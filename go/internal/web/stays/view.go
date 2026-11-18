@@ -23,10 +23,12 @@ type View struct {
 	ResetHref        string
 	PrevURL, NextURL string
 	Params           Params
+	ReadySendCount   int
+	ManualSend       bool
 }
 
 // BuildView fills chips, pager URLs and filter metadata on top of a list query.
-func BuildView(p Params, rows []Row, total, page, pageCount int) View {
+func BuildView(p Params, rows []Row, total, page, pageCount, readySend int, manualSend bool) View {
 	v := View{
 		Rows:          rows,
 		Total:         total,
@@ -35,7 +37,9 @@ func BuildView(p Params, rows []Row, total, page, pageCount int) View {
 		Params:        p,
 		Chips:         buildChips(p),
 		ResetHref:     resetHref(p),
-		FilterSummary: filterSummary(p),
+		FilterSummary:  filterSummary(p),
+		ReadySendCount: readySend,
+		ManualSend:     manualSend,
 	}
 	if page > 1 {
 		v.PrevURL = pageURL(p, page-1)

@@ -2,20 +2,21 @@ package stays
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/calendar"
 )
 
 // Row is one line of the stays table (reservation + progress metadata).
 type Row struct {
 	Reservation     Reservation
-	Progress        calendar.AlertProgress
-	Controls        map[string]any
+	Progress        Progress
+	Controls        Controls
 	ApartmentActive bool
 }
 
@@ -25,11 +26,15 @@ type Reservation struct {
 	ApartmentID      int64
 	DateFrom, DateTo string
 	Status, Source   string
+	Summary          string
 	InternalName     string
 	PermalinkToken   string
 	AutomationMode   string
 	SubmitAfterHours *int64
 	PermalinkSlug    *string
+	Declared         *int64
+	Override         *int64
+	Reduced          *int64
 }
 
 // List runs the reservations_list query and builds the view model.
@@ -63,7 +68,6 @@ func List(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string, a
 		return View{}, err
 	}
 	defer rows.Close()
-	var alertStays []calendar.AlertStay
 	type scanned struct {
 		res    Reservation
 		active int
@@ -74,35 +78,37 @@ func List(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string, a
 		var active int
 		if err := rows.Scan(
 			&r.ID, &r.ApartmentID, &r.DateFrom, &r.DateTo, &r.Status, &r.Source,
+			&r.Summary, &r.Declared, &r.Override, &r.Reduced,
 			&r.InternalName, &r.PermalinkToken, &r.AutomationMode, &r.SubmitAfterHours, &r.PermalinkSlug, &active,
 		); err != nil {
 			return View{}, err
 		}
 		scannedRows = append(scannedRows, scanned{res: r, active: active})
-		alertStays = append(alertStays, calendar.AlertStay{ID: r.ID, DateFrom: r.DateFrom, DateTo: r.DateTo})
 	}
 	if err := rows.Err(); err != nil {
 		return View{}, err
 	}
-	progs, err := calendar.AlertProgresses(ctx, pool, getenv, alertStays, at)
-	if err != nil {
-		return View{}, err
-	}
 	out := make([]Row, 0, len(scannedRows))
 	for _, s := range scannedRows {
-		prog := progs[s.res.ID]
 		out = append(out, Row{
 			Reservation:     s.res,
-			Progress:        prog,
-			Controls:        map[string]any{},
 			ApartmentActive: s.active != 0,
 		})
 	}
-	return BuildView(p, out, total, page, pageCount), nil
+	out, readySend, err := enrichRows(ctx, pool, getenv, out, at)
+	if err != nil {
+		return View{}, err
+	}
+	manualSend, err := hasManualSend(ctx, pool, accountID)
+	if err != nil {
+		return View{}, err
+	}
+	return BuildView(p, out, total, page, pageCount, readySend, manualSend), nil
 }
 
 func listSQL(owner int64, p Params, today string, overdueIDs []int64) (string, []any) {
 	sql := `SELECT r.id, r.apartment_id, r.date_from, r.date_to, r.status, COALESCE(r.source, ''),
+	COALESCE(r.summary, ''), r.declared_guests, r.expected_guests_override, r.lead_reduced_guests,
 	a.internal_name, COALESCE(a.permalink_token, ''), COALESCE(a.automation_mode, ''), a.submit_after_hours,
 	(SELECT s.slug FROM apartment_slug s WHERE s.apartment_id = a.id AND s.is_current = 1) AS permalink_slug,
 	a.active
@@ -185,4 +191,18 @@ func listOrder(base string, args []any, today string, overdueIDs []int64, offset
  CASE WHEN %s = 2 THEN r.date_to END DESC,
  r.date_from ASC, r.id ASC LIMIT $%d OFFSET $%d`, overdueFirst, g, g, g, g, limit, offsetArg)
 	return sql, out
+}
+
+func hasManualSend(ctx context.Context, pool *pgxpool.Pool, owner int64) (bool, error) {
+	var x int
+	err := pool.QueryRow(ctx,
+		`SELECT 1 FROM apartment WHERE owner_user_id IS NOT DISTINCT FROM $1 AND automation_mode = 'manual' LIMIT 1`,
+		owner).Scan(&x)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
