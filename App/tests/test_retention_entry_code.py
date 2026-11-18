@@ -37,6 +37,9 @@ _counter = 0
 
 
 def _ensure_entry_code_columns() -> None:
+    """SQLite-only shim; PostgreSQL gets 00022 / runtime columns from init_db."""
+    if getattr(db.config, "DB_BACKEND", "sqlite") == "postgresql":
+        return
     for col, decl in (
         ("entry_code_enc", "TEXT"),
         ("entry_code_label", "TEXT"),
@@ -44,10 +47,7 @@ def _ensure_entry_code_columns() -> None:
         ("guide_external_url", "TEXT"),
     ):
         try:
-            if getattr(db.config, "DB_BACKEND", "sqlite") == "postgresql":
-                db.execute_native(f"ALTER TABLE apartment ADD COLUMN IF NOT EXISTS {col} {decl}")
-            else:
-                db.execute(f"ALTER TABLE apartment ADD COLUMN {col} {decl}")
+            db.execute(f"ALTER TABLE apartment ADD COLUMN {col} {decl}")
         except sqlite3.OperationalError:
             pass
 
