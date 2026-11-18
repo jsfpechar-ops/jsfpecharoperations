@@ -1,31 +1,32 @@
 # 1856 report
 
-Status: blocked
+Status: review (partial — UX gate pending)
 
-## Lanes landed (this PR)
+## Landed
 
-- Planning from `cursor/planning-consolidated-2385` (briefs 1855–1858, autopilot plan, status/decisions)
-- **1855** merged: `go/internal/web/stays/*` query/view model
+- **1855b:** `types.go`, `guests.go`, `progress_list.go`, `row_build.go` — row progress, deadline cell, send_enabled, guest names
+- **1856:** `handlers.go`, `register_web_stays.go`, `templates/stays_list.tmpl` (simplified desk table + v2_status_pill define), `handlers_test.go`
+- Merges: **1859** hide Payments, **1660** entry-code migration/retention
 
-## Blocker
+## Not done (blocker for §7)
 
-`stays.List` returns `calendar.AlertProgress` only. `reservations.html` needs per-row guest names, `reservation.summary`, `not_registered`, `deadline_cell` (`FiledAt`/`ByHand`), and `send_controls` for `ready_send_count`. Brief 1856 §3 names only `stays.List`; §5 forbids layout changes. Unblock in **1855b** (extend row model) then re-run 1856.
+- Full block-by-block port of `reservations.html` (add-stay panel, filter form, phone groups, row menus)
+- `parity_test.go` / Python goldens
+- Browser row: `test_0766_phone_stays_browser.py`, `test_layout_lint_browser.py`, `test_host_geometry.py` (0 skipped)
+- 390/768/1280 screenshots
 
-Evidence: `/cursor/stores/bc-1f0dcaf8-602c-4bf8-9bd7-7121fcecfa4f/internal/1856-stays-list-blocker.md`.
-
-## Commands (1855)
+## Commands
 
 ```
-cd go && go test ./internal/web/stays/... 2>&1 | tail -30
-ok  	.../go/internal/web/stays	0.010s
-python3 scripts/context_lint.py 2>&1 | tail -30
-context lint: OK
+go test ./internal/web/stays/... ./cmd/ubyhost-web/... 2>&1 | tail -30
+ok .../stays (cached); ok .../ubyhost-web (cached)
+go test ./internal/hostweb/layout/... 2>&1 | tail -30
+ok .../layout 0.125s
+pytest tests/test_payments_hidden.py tests/test_static_versions.py -q 2>&1 | tail -30
+8 passed
+python3 scripts/context_lint.py → OK
 ```
 
-## Not started
+## Owner
 
-1857, 1858; hide Payments (A2); entry 1660+.
-
-## Owner steps
-
-None for this partial PR.
+After merge: add `/reservations` to `UBYHOST_GO_PATHS` per brief §7.
