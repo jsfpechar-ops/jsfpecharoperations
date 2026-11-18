@@ -95,16 +95,17 @@ func sourceLabel(source string) string {
 	return "stays.source.other"
 }
 
-func journeyStep(status string) string {
+// journeyStep matches App/app/workflow.py step_number (status → step 2–5).
+func journeyStep(status string) int {
 	switch status {
 	case "awaiting_guest", "incomplete":
-		return "guest"
-	case "ready", "awaiting_verification":
-		return "send"
-	case "failed":
-		return "fix"
+		return 2
+	case "ready", "awaiting_verification", "failed":
+		return 4
+	case "reported":
+		return 5
 	}
-	return ""
+	return 0
 }
 
 func leadName(guests []Guest) string {

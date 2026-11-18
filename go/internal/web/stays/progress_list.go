@@ -186,7 +186,9 @@ func buildProgress(s listStay, guests []progGuest, at time.Time) Progress {
 	}
 	if p.expected != nil {
 		n := max(0, *p.expected-len(guests))
-		out.NotRegistered = &n
+		if n > 0 {
+			out.NotRegistered = &n
+		}
 	}
 	cell, hasCell := listDeadlineCell(s, p, guests, at)
 	out.Cell, out.HasCell = cell, hasCell
