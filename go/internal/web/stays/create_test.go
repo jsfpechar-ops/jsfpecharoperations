@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/session"
 )
@@ -19,10 +21,34 @@ import (
 const createTestSecret = "stays-create-test-secret-32chars!"
 
 func createGetenv(k string) string {
-	if k == "UBYHOST_SECRET_KEY" {
+	switch k {
+	case "UBYHOST_SECRET_KEY":
 		return createTestSecret
+	case "UBYHOST_TERMS_VERSION":
+		return "t1"
+	case "UBYHOST_PRIVACY_VERSION":
+		return "p1"
+	case "UBYHOST_DPA_VERSION":
+		return "d1"
+	default:
+		return ""
 	}
-	return ""
+}
+
+// seedLegalAcceptance matches properties_test: Login sends hosts without
+// accepted terms to /account/accept (env versions t1, p1, d1).
+func seedLegalAcceptance(t *testing.T, pool *pgxpool.Pool, userID int64, at time.Time) {
+	t.Helper()
+	ctx := context.Background()
+	stamp := isoStamp(at)
+	for j, doc := range []struct{ name, version string }{
+		{"terms", "t1"}, {"privacy", "p1"}, {"dpa", "d1"},
+	} {
+		if _, err := pool.Exec(ctx, `INSERT INTO legal_acceptance (id, user_account_id, document, version, accepted_at, method)
+			VALUES ($1, $2, $3, $4, $5, 'clickwrap')`, userID*10+int64(j), userID, doc.name, doc.version, stamp); err != nil {
+			t.Fatal(err)
+		}
+	}
 }
 
 func createCSRFPost(t *testing.T, h http.Handler, at time.Time, nonce string, ownerID int64, fields map[string]string) *httptest.ResponseRecorder {
@@ -70,6 +96,7 @@ func TestReservationCreateMissingFieldsRedirects(t *testing.T) {
 		VALUES ('stays-create-miss', 'x', 'host', 1, 1, $1) RETURNING id`, stamp).Scan(&ownerID); err != nil {
 		t.Fatal(err)
 	}
+	seedLegalAcceptance(t, pool, ownerID, now)
 	mux := http.NewServeMux()
 	Register(mux, pool, createGetenv, func() time.Time { return now },
 		func(_ string, h http.HandlerFunc) http.Handler { return h })
@@ -93,6 +120,7 @@ func TestReservationCreateInsertsRow(t *testing.T) {
 		VALUES ('create-host', 'x', 'host', 1, 1, $1) RETURNING id`, stamp).Scan(&ownerID); err != nil {
 		t.Fatal(err)
 	}
+	seedLegalAcceptance(t, pool, ownerID, now)
 	var entityID int64
 	if err := pool.QueryRow(ctx, `INSERT INTO legal_entity (owner_user_id, name, created_at)
 		VALUES ($1, 'Entity', $2) RETURNING id`, ownerID, stamp).Scan(&entityID); err != nil {
