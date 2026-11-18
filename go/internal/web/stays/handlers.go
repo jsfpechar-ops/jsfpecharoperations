@@ -106,7 +106,8 @@ func ListHandler(pool *pgxpool.Pool, getenv func(string) string, now func() time
 		}
 		page := layout.Page{
 			Title: catalog.T(hostweb.Lang(r), "stays.title", nil),
-			Nav:   "reservations", BodyKind: "list", V2: true, HowKey: "stays", BodyAlerts: true,
+			Nav: "reservations", BodyKind: "list", V2: true, HowKey: "stays", BodyAlerts: true,
+			TurboCache: "cache",
 		}
 		if err := layout.Render(w, r, layout.Env{Pool: pool, Getenv: getenv, Now: at}, host, page, pages, "stays_list", data); err != nil {
 			serverError(w, err)

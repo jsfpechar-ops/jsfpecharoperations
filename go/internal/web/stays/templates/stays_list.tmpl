@@ -19,6 +19,6 @@
 <td>{{if $prog.HasCell}}{{template "v2_status_pill" .}}{{else}}{{progress_pill $prog.Status $res.AutomationMode}}{{end}}</td>
 <td></td></tr>{{end}}</tbody></table></div>
 {{if gt .View.PageCount 1}}{{if .PrevURL}}<nav class="stays-pager ph-hide"><a href="{{.PrevURL}}" rel="prev">{{t "stays.pagination.prev"}}</a></nav>{{end}}
-{{if .NextURL}}<div class="list stays-more"><a class="link" href="{{.NextURL}}" rel="next"><span>{{t "stays.more"}}</span>{{icon "chevron-right" 16}}</a></div>{{end}}
+{{if .NextURL}}<div class="list stays-more" data-stays-more><a class="link" href="{{.NextURL}}" rel="next"><span>{{t "stays.more"}}</span>{{icon "chevron-right" 16}}</a></div>{{end}}
 {{end}}{{else}}{{empty_state "" (t "stays.empty.no_apartments") "/apartments/new" (t "stays.empty.add_first") true}}{{end}}
 {{end}}

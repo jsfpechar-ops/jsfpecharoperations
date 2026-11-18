@@ -382,3 +382,58 @@
   });
   onPage(updateDoorCodeWindows);
 })();
+
+  // 1857: phone "Show more" on Stays appends the next page in place.
+  document.addEventListener('click', function (event) {
+    var link = event.target.closest('[data-stays-more] a.link');
+    if (!link || !window.matchMedia('(max-width: 640px)').matches) return;
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  event.preventDefault();
+    var wrap = link.closest('[data-stays-more]');
+    var href = link.getAttribute('href');
+    wrap && wrap.setAttribute('aria-busy', 'true');
+    fetch(href, { headers: { 'X-Requested-With': 'fetch' }, credentials: 'same-origin' })
+      .then(function (res) {
+        if (!res.ok) throw new Error('status');
+        return res.text();
+      })
+      .then(function (html) {
+        var doc = new DOMParser().parseFromString(html, 'text/html');
+        var live = document.querySelector('.stays-list');
+        var fetched = doc.querySelector('.stays-list');
+        if (!live || !fetched) throw new Error('rows');
+        fetched.querySelectorAll('tr').forEach(function (row) { live.appendChild(row); });
+        var liveMore = document.querySelector('[data-stays-more]');
+        var nextMore = doc.querySelector('[data-stays-more]');
+        if (liveMore) {
+          if (nextMore) liveMore.replaceWith(nextMore); else liveMore.remove();
+        }
+        var sum = doc.querySelector('[data-filter-summary]');
+        var liveSum = document.querySelector('[data-filter-summary]');
+        if (sum && liveSum) liveSum.textContent = sum.textContent;
+        history.replaceState(history.state, '', href);
+      })
+      .catch(function () { window.location.href = href; })
+      .finally(function () { wrap && wrap.removeAttribute('aria-busy'); });
+  });
+
+  // 1858: Stays Turbo cache heal and stale refresh.
+  function staysPage() {
+    return document.querySelector('[data-stays-more]') || document.body.getAttribute('data-page') === 'stays';
+  }
+  function healStaysUI() {
+    document.querySelectorAll('.flash, .flash-error, [data-skeleton]').forEach(function (n) { n.remove(); });
+    document.querySelectorAll('[inert]').forEach(function (n) { n.inert = false; });
+  }
+  document.addEventListener('turbo:before-cache', function () {
+    if (!staysPage()) return;
+    healStaysUI();
+  });
+  document.addEventListener('turbo:load', function () {
+    if (!staysPage()) return;
+    document.body.setAttribute('data-loaded-at', String(Date.now()));
+    healStaysUI();
+    var at = Number(document.body.getAttribute('data-loaded-at') || '0');
+    if (at && Date.now() - at > 60000 && window.Turbo) window.Turbo.visit(location.href, { action: 'replace' });
+  });
+  window.addEventListener('pageshow', function () { if (staysPage()) healStaysUI(); });

@@ -108,6 +108,8 @@ type Page struct {
 	SentGuestCount       int    // sent_guest_count for celebration.body
 
 	// Added in 1608.
+	TurboCache string // stays list: "cache" enables Turbo snapshot; "" is no-cache
+
 	BodyAlerts bool // the page body includes _host_alerts.html itself ({{host_alerts}}), as v2 pages such as settings_archived.html do
 }
 
@@ -516,7 +518,7 @@ type alternate struct{ Code, Href string }
 type view struct {
 	Lang, CSRF, Title, Path      string
 	V2, ShowNav, AdminWorkspace  bool
-	Nav, BodyKind, WrapClass     string
+	Nav, BodyKind, WrapClass, TurboCache string
 	HowKey, BackURL              string
 	Canonical, MetaDescription   string
 	Alternates                   []alternate
@@ -581,6 +583,7 @@ func buildView(r *http.Request, env Env, sh shell, c *reqCtx, p Page) view {
 	}
 	if bodyKind == "form" || bodyKind == "settings" {
 		v.WrapClass = "ui-lane-narrow"
+	v.TurboCache = p.TurboCache
 	}
 	if indexablePaths[r.URL.Path] {
 		base := hostweb.PublicBase(getenv) + r.URL.Path
