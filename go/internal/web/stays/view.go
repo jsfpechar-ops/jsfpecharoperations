@@ -2,6 +2,7 @@ package stays
 
 import (
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -133,12 +134,16 @@ func pageURL(p Params, n int) string {
 // encodeQuery keeps every filter key except page, then appends page=n
 // (reservations_list page_url).
 func encodeQuery(raw url.Values, page int) string {
-	var parts []string
-	for key, vals := range raw {
-		if key == "page" {
-			continue
+	keys := make([]string, 0, len(raw))
+	for key := range raw {
+		if key != "page" {
+			keys = append(keys, key)
 		}
-		for _, v := range vals {
+	}
+	sort.Strings(keys)
+	var parts []string
+	for _, key := range keys {
+		for _, v := range raw[key] {
 			parts = append(parts, url.QueryEscape(key)+"="+url.QueryEscape(v))
 		}
 	}

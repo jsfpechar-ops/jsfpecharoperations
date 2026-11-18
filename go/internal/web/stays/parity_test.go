@@ -21,7 +21,7 @@ func renderStaysHTML(t *testing.T, data listPage) string {
 	r := httptest.NewRequest(http.MethodGet, "/reservations?lang=en", nil)
 	page := layout.Page{Title: "Stays", Nav: "reservations", BodyKind: "list", V2: true, HowKey: "stays", BodyAlerts: false}
 	env := layout.Env{Getenv: func(string) string { return "golden-secret-key-not-for-real-use" }, Now: fixedToday()}
-	if err := layout.Render(w, r, env, nil, page, pages, "stays_list", data); err != nil {
+	if err := layout.RenderPinnedCSRF(w, r, env, nil, page, pages, "stays_list", data); err != nil {
 		t.Fatal(err)
 	}
 	return w.Body.String()

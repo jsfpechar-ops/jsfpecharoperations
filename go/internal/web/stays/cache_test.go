@@ -26,7 +26,7 @@ func TestStaysListHTMLHasTurboCache(t *testing.T) {
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/reservations?lang=en", nil)
 	env := layout.Env{Getenv: func(string) string { return "golden-secret-key-not-for-real-use" }, Now: fixedToday()}
-	if err := layout.Render(w, r, env, nil, page, pages, "stays_list", data); err != nil {
+	if err := layout.RenderPinnedCSRF(w, r, env, nil, page, pages, "stays_list", data); err != nil {
 		t.Fatal(err)
 	}
 	html := w.Body.String()
