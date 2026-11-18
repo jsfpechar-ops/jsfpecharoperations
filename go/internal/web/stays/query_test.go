@@ -158,9 +158,9 @@ func TestListPaginationAndOrder(t *testing.T) {
 	}
 	today := "2026-06-15"
 	type row struct {
-		id                           int64
-		from, to                     string
-		rank                         int
+		id       int64
+		from, to string
+		rank     int
 	}
 	rows := make([]row, len(ids))
 	for i := range ids {
