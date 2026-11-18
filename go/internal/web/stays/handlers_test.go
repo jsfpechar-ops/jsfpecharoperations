@@ -22,6 +22,27 @@ func TestRegisterRoutesGET(t *testing.T) {
 	}
 }
 
+func TestStaysListRendersPortalSourceLabels(t *testing.T) {
+	rows := parityRows(fixedToday())
+	rows[0].Reservation.Source = "airbnb"
+	rows[1].Reservation.Source = "booking"
+	data := parityFixture(fixedToday(), 1, "")
+	data.View.Rows = rows[:2]
+	data.Groups = groupRows(data.View.Rows, data.Today)
+	data.Lang = "en"
+	html := renderStaysHTML(t, data)
+	for _, label := range []string{"Airbnb", "Booking.com"} {
+		if !strings.Contains(html, label) {
+			t.Fatalf("html missing portal label %q", label)
+		}
+	}
+	for _, raw := range []string{"stays.source.airbnb", "stays.source.booking"} {
+		if strings.Contains(html, raw) {
+			t.Fatalf("html contains raw i18n key %q", raw)
+		}
+	}
+}
+
 func TestStaysListTemplateRenderMarkers(t *testing.T) {
 	data := parityFixture(fixedToday(), 1, "")
 	html := renderStaysHTML(t, data)

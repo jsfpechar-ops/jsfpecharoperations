@@ -156,6 +156,12 @@ func TestReservationCreateInsertsRow(t *testing.T) {
 	if !strings.HasPrefix(loc, "/reservations/") || !strings.Contains(loc, "msg=") {
 		t.Fatalf("location %q", loc)
 	}
+	if strings.Contains(loc, "flash.reservations.created") {
+		t.Fatalf("flash key leaked in redirect: %q", loc)
+	}
+	if !strings.Contains(loc, "Stay+created") && !strings.Contains(loc, "Stay%20created") {
+		t.Fatalf("expected translated create flash in %q", loc)
+	}
 	var count int
 	if err := pool.QueryRow(ctx, `SELECT COUNT(*) FROM reservation WHERE apartment_id = $1 AND date_from = '2026-08-01'`, aptID).Scan(&count); err != nil {
 		t.Fatal(err)

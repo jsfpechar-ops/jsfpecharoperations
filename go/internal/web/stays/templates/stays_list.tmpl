@@ -47,7 +47,7 @@
     {{if $shown}}<a class="stay-identity-link" href="{{$href}}">{{$shown}}</a>
     {{else}}<a class="stay-identity-link stay-noname" href="{{$href}}">{{t "stays.row.no_name"}}</a>
     {{if eq $res.Status "active"}}<a class="stay-noname-action" href="/reservations/{{$res.ID}}/guests/new">{{t "stays.row.add_guest"}}</a>{{end}}{{end}}
-    <small>{{if or (not (is_nil_int $prog.Expected)) $prog.Guests}}{{guest_count (layout_progress $prog)}} &middot; {{else}}<span class="sr-only">{{t "common.guests_unknown"}}</span>{{end}}{{source_badge $res.Source (t (source_label $res.Source))}}</small>
+    <small>{{if or (not (is_nil_int $prog.Expected)) $prog.Guests}}{{guest_count (layout_progress $prog)}} &middot; {{else}}<span class="sr-only">{{t "common.guests_unknown"}}</span>{{end}}{{source_badge $res.Source (source_label $root.Lang $res.Source)}}</small>
   </td>
   <td data-card="meta" data-label="{{t "stays.table.property"}}">{{$res.InternalName}}</td>
   <td class="nowrap" data-card="secondary" data-label="{{t "stays.table.arrival"}}">{{date_cz $res.DateFrom}}</td>
