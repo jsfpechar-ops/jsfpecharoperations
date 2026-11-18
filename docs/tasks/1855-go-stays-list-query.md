@@ -1,18 +1,10 @@
 # 1855: Port GET /reservations to Go, part 1: query and view model
 
-<<<<<<< HEAD
-Status: todo
-Depends on: none | Base commit: tip of main | Branch: task/1855-go-stays-list-query
-Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (checkpoint at 60k; hand over per [workflow](../context/workflow.md#when-haiku-reaches-the-cap))
-Tier: B (read-only page, no data change)
-Pairs with 1856 (template, route, parity). 1855 goes first, then 1856, then 1857, then 1858.
-=======
 Status: review
 Depends on: none | Base commit: tip of main | Branch: task/1855-go-stays-list-query
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (checkpoint at 60k; hand over per [workflow](../context/workflow.md#when-haiku-reaches-the-cap))
 Tier: B (read-only page, no data change)
-Pairs with 1843 (template, route, parity). 1855 goes first, then 1843, then 1840, then 1841.
->>>>>>> origin/cursor/1855-go-stays-list-2385
+Pairs with 1856 (template, route, parity). 1855 goes first, then 1856, then 1857, then 1858.
 
 > **One PR mode.** Commit each step as `1855 step k`. Never push, merge or deploy. Every command ends in `| tail -30`. Anchors are quoted from the tip: if one is not found verbatim, STOP and report.
 
@@ -22,11 +14,7 @@ None. Owner decision 2026-11-17 ("No python only go"): the Stays fixes ship in G
 
 ## 1. Objective
 
-<<<<<<< HEAD
 Create the Go package `go/internal/web/stays` with the read-only data side of `GET /reservations`: parse the query, run the same SQL as Python, and build a view model (rows, chips, filter state, pager URLs). No template, no route registration (1856). Result must equal Python for the same data.
-=======
-Create the Go package `go/internal/web/stays` with the read-only data side of `GET /reservations`: parse the query, run the same SQL as Python, and build a view model (rows, chips, filter state, pager URLs). No template, no route registration (1843). Result must equal Python for the same data.
->>>>>>> origin/cursor/1855-go-stays-list-2385
 
 ## 2. Context
 
@@ -52,11 +40,7 @@ Python is NOT changed (this brief only reads it; go-first exception 1, port plum
 
 ## 5. Do not touch
 
-<<<<<<< HEAD
 Any file under `App/`; `go/cmd/`; Caddy; `UBYHOST_GO_PATHS`; templates (1856); other Go packages.
-=======
-Any file under `App/`; `go/cmd/`; Caddy; `UBYHOST_GO_PATHS`; templates (1843); other Go packages.
->>>>>>> origin/cursor/1855-go-stays-list-2385
 
 ## 6. Commands
 
