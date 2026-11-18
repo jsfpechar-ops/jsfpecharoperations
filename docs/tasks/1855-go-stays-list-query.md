@@ -1,6 +1,6 @@
 # 1855: Port GET /reservations to Go, part 1: query and view model
 
-Status: todo
+Status: review
 Depends on: none | Base commit: tip of main | Branch: task/1855-go-stays-list-query
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (checkpoint at 60k; hand over per [workflow](../context/workflow.md#when-haiku-reaches-the-cap))
 Tier: B (read-only page, no data change)
