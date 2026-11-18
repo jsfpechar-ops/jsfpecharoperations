@@ -286,3 +286,13 @@ func schemeOf(raw string) string {
 	}
 	return u.Scheme
 }
+
+// ValidateCalendarURL is feed_url.validate_calendar_url: the guarded URL check
+// before a feed is stored. It returns the trimmed URL or a *FeedURLError.
+func ValidateCalendarURL(ctx context.Context, rawURL string, r Resolver, allowPrivate bool) (string, error) {
+	t, err := ResolveTarget(ctx, rawURL, r, allowPrivate)
+	if err != nil {
+		return "", err
+	}
+	return t.URL, nil
+}
