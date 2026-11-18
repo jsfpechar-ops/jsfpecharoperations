@@ -294,6 +294,18 @@ func Render(w http.ResponseWriter, r *http.Request, env Env, host *session.Host,
 	return render(w, r, env, sh, token, p, tpl, name, data)
 }
 
+// RenderPinnedCSRF is Render with a fixed CSRF token so page goldens stay stable (see layout_test).
+func RenderPinnedCSRF(w http.ResponseWriter, r *http.Request, env Env, host *session.Host, p Page, tpl *Templates, name string, data any) error {
+	if tpl.master.Lookup(name) == nil {
+		return fmt.Errorf("layout: no template %q", name)
+	}
+	sh, err := loadShell(r.Context(), r, env, host)
+	if err != nil {
+		return err
+	}
+	return render(w, r, env, sh, "GOLDEN-CSRF", p, tpl, name, data)
+}
+
 // render is Render after the reads: everything it needs is given, so the
 // golden test runs it without a database.
 func render(w http.ResponseWriter, r *http.Request, env Env, sh shell, token string, p Page, tpl *Templates, name string, data any) error {

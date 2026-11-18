@@ -6,6 +6,15 @@ import (
 	"testing"
 )
 
+func TestEncodeQueryStable(t *testing.T) {
+	raw := url.Values{"range": {"all"}, "report": {"failed"}}
+	a := encodeQuery(raw, 2)
+	b := encodeQuery(raw, 2)
+	if a != b || a != "range=all&report=failed&page=2" {
+		t.Fatalf("encodeQuery: %q", a)
+	}
+}
+
 func TestChipsAndPagerURLs(t *testing.T) {
 	today := fixedToday()
 	q := url.Values{
@@ -49,6 +58,9 @@ func TestChipsAndPagerURLs(t *testing.T) {
 		t.Fatalf("reset href=%q", v.ResetHref)
 	}
 	next := pageURL(p, 2)
+	if want := "/reservations?apartment=12&from=2026-07-01&range=custom&status=cancelled&to=2026-07-10&page=2"; next != want {
+		t.Fatalf("next url order:\n got %q\nwant %q", next, want)
+	}
 	for _, part := range []string{"range=custom", "status=cancelled", "apartment=12", "from=2026-07-01", "to=2026-07-10", "page=2"} {
 		if !strings.Contains(next, part) {
 			t.Fatalf("next url missing %q: %s", part, next)
