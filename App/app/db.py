@@ -1100,11 +1100,6 @@ ADDED_COLUMNS = (
     ("guest", "res_street_enc", "TEXT"),
     ("guest", "res_city_enc", "TEXT"),
     ("submission", "request_xml_enc", "TEXT"),
-    # 1661 / goose 00022: SQLite twin so retention and sqlite_to_postgres stay aligned.
-    ("apartment", "entry_code_enc", "TEXT"),
-    ("apartment", "entry_code_label", "TEXT"),
-    ("apartment", "entry_code_until", "TEXT"),
-    ("apartment", "guide_external_url", "TEXT"),
 )
 
 # The reverted 26 Sep 2026 stay-fee build (AR-55) used some of the same column
@@ -1156,6 +1151,18 @@ def _add_missing_columns(conn: sqlite3.Connection) -> None:
 
                 statement = db_postgres.render_ddl(statement)
             conn.execute(statement)
+            columns[table].add(column)
+
+
+
+def _apply_sqlite_runtime_columns(conn: sqlite3.Connection) -> None:
+    """Goose-only columns live after numbered SQLite migrations (same order as goose on PG)."""
+    columns: Dict[str, set] = {}
+    for table, column, decl in goose_only_columns():
+        if table not in columns:
+            columns[table] = _table_columns(conn, table)
+        if columns[table] and column not in columns[table]:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {decl}")
             columns[table].add(column)
 
 
@@ -1266,6 +1273,10 @@ def _expected_sqlite_columns() -> Dict[str, List[tuple[str, str, int, int]]]:
         conn.executescript(_MIGRATIONS_TABLE)
         for _version, _name, path in migration_files():
             conn.executescript(path.read_text(encoding="utf-8"))
+        for table, column, decl in goose_only_columns():
+            names = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
+            if column not in names:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {decl}")
         result: Dict[str, List[tuple[str, str, int, int]]] = {}
         names = [row["name"] for row in conn.execute(
             "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'"
@@ -1835,6 +1846,7 @@ def _init_db_locked() -> None:
         from . import guest_slug
 
         guest_slug.backfill(conn)
+        _apply_sqlite_runtime_columns(conn)
     finally:
         conn.close()
 
