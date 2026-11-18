@@ -74,7 +74,7 @@
       {{ row_menu_begin() }}
         {% if reservation.permalink_token and not stay_inactive %}<button class="row-menu-item ph-only" type="button" role="menuitem" data-copy="stay-link" data-copied-label="{{ t('stay.detail.link_copied') }}">{{ t('host.copy_guest_form_link') }}</button>{% endif %}
         {% if claim_resend.enabled %}<form method="post" action="/reservations/{{ reservation.id }}/resend-claim" class="row-menu-form ph-only"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="row-menu-item" type="submit" role="menuitem">{{ t('stay.claim.resend') }}</button></form>{% endif %}
-        {% if not stay_inactive %}<a class="row-menu-item ph-only" href="/payments?reservation_id={{ reservation.id }}#new-request" role="menuitem">{{ t('stays.row.request_payment') }}</a>{% endif %}
+        {% if not stay_inactive and not payments_hidden() %}<a class="row-menu-item ph-only" href="/payments?reservation_id={{ reservation.id }}#new-request" role="menuitem">{{ t('stays.row.request_payment') }}</a>{% endif %}
         <a class="row-menu-item" href="/reservations/{{ reservation.id }}/guests/new" role="menuitem">{{ t('stay.detail.cta.add_guest') }}</a>
         {% if stay_invoice %}<a class="row-menu-item" href="/invoices/{{ stay_invoice.id }}" role="menuitem">{{ t('invoice.stay.open', number=stay_invoice.number) }}</a>{% else %}<a class="row-menu-item" href="/invoices/new?reservation_id={{ reservation.id }}" role="menuitem">{{ t('invoice.new') }}</a>{% endif %}
         {% if reservation.permalink_token %}
@@ -366,7 +366,7 @@
   {% else %}<p id="door-code-line">{% if door_code.state == 'failed' %}{{ t('stay.detail.door_code.failed') }}{% elif door_code.state == 'delayed' %}{{ t('stay.detail.door_code.delayed') }}{% elif door_code.state == 'preparing' %}{{ t('stay.detail.door_code.preparing') }}{% else %}{{ t('stay.detail.door_code.waiting') }}{% endif %}</p>{% endif %}
 </div>
 </div></section>{% endif %}
-{% if not stay_inactive %}<div class="list ph-hide"><a class="link" href="/payments?reservation_id={{ reservation.id }}#new-request">{{ t('stays.row.request_payment') }}{{ icon('chevron-right', 20) }}</a></div>{% endif %}
+{% if not stay_inactive and not payments_hidden() %}<div class="list ph-hide"><a class="link" href="/payments?reservation_id={{ reservation.id }}#new-request">{{ t('stays.row.request_payment') }}{{ icon('chevron-right', 20) }}</a></div>{% endif %}
 <details class="card stay-settings ph-hide" id="stay-quick-edit">
   <summary><b>{{ t('stay.detail.settings.title') }}</b></summary>
   <p class="ui-sub">{{ t('stay.detail.settings.lede') }} <a href="/apartments/{{ reservation.apartment_id }}?view=settings&amp;section=guests#communication">{{ t('stay.detail.settings.guest_links') }}</a>.</p>

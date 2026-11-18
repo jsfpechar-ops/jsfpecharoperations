@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI, Request, Response
 from fastapi.exception_handlers import http_exception_handler, request_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse, PlainTextResponse, RedirectResponse
+from fastapi.responses import JSONResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -323,6 +323,12 @@ async def cloudflare_connecting_ip(request: Request, call_next):
     # A fresh counter per request (WP13). The route runs in a copy of this
     # context, which shares the object, so its queries land here.
     stats = db.start_request_stats()
+    if config.payments_host_path_blocked(request.url.path):
+        if _wants_html(request):
+            return templating.render(
+                request, "error.html", {"error_kind": "not_found"}, status_code=404
+            )
+        return Response(status_code=404)
     redirect_to = ""
     if request.method in {"GET", "HEAD"}:
         redirect_to = site_urls.login_redirect_url(

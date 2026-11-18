@@ -240,9 +240,12 @@ def _job_mail() -> None:
     started = time.perf_counter()
     failed = False
     items: dict = {}
-    for name, step in (
+    mail_steps = (
         ("expire_holds", claim.expire_holds),
-        ("expire_requests", booking_checkout.expire_requests),
+    )
+    if not config.PAYMENTS_HIDDEN:
+        mail_steps += (("expire_requests", booking_checkout.expire_requests),)
+    for name, step in mail_steps + (
         ("drain", mail.drain),
         ("reminders", claim.sweep_reminders),
         ("fee_updates", fee_update.sweep_fee_updates),
@@ -436,6 +439,8 @@ def _job_billing_snapshot() -> None:
 
 def _job_stripe_sweep() -> None:
     """Expire stale payment requests and prune webhook dedupe rows (0437)."""
+    if config.PAYMENTS_HIDDEN:
+        return
     import datetime
 
     from . import payment_request, stripe_connect
@@ -792,10 +797,11 @@ def start() -> bool:
         _target("stay_fee_mail"), "cron", hour=7, minute=0, id="stay_fee_mail",
         max_instances=1, coalesce=True,
     )
-    _scheduler.add_job(
-        _target("stripe_sweep"), "cron", hour=4, minute=15, id="stripe_sweep",
-        max_instances=1, coalesce=True,
-    )
+    if not config.PAYMENTS_HIDDEN:
+        _scheduler.add_job(
+            _target("stripe_sweep"), "cron", hour=4, minute=15, id="stripe_sweep",
+            max_instances=1, coalesce=True,
+        )
     _scheduler.add_job(
         _target("billing"), "cron", hour=6, minute=0, id="billing",
         max_instances=1, coalesce=True,

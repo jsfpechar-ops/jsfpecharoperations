@@ -345,6 +345,30 @@ STRIPE_SECRET_KEY = os.environ.get("UBYHOST_STRIPE_SECRET_KEY", "").strip()
 STRIPE_WEBHOOK_SECRET = os.environ.get("UBYHOST_STRIPE_WEBHOOK_SECRET", "").strip()
 STRIPE_MONTHLY_API_CALLS = int(os.environ.get("UBYHOST_STRIPE_MONTHLY_API_CALLS", "50000"))
 
+# Host payments UI and booking-site setup (brief 1859, autopilot A2). Off unless
+# set to 1. While on, host nav and routes for /payments* and booking-site setup
+# answer 404; mail expire_requests and stripe_sweep stop. Data and
+# POST /webhooks/stripe are unchanged.
+PAYMENTS_HIDDEN = os.environ.get("UBYHOST_PAYMENTS_HIDDEN", "0").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+)
+
+
+def payments_host_path_blocked(path: str) -> bool:
+    """True when PAYMENTS_HIDDEN and path is a host payments or booking-site URL."""
+    if not PAYMENTS_HIDDEN:
+        return False
+    if path == "/booking-sites":
+        return True
+    if path.startswith("/payments"):
+        return True
+    if path.startswith("/apartments/") and "/booking-site" in path:
+        return True
+    return False
+
+
 # Stay-fee guest payment (brief 0897). Off unless set to "on". While off the
 # host fee controls are disabled and saves cannot turn them on.
 STAY_FEE_GUEST_PAY = os.environ.get("UBYHOST_STAY_FEE_GUEST_PAY", "off").strip().lower() == "on"
