@@ -7,6 +7,8 @@ host.copy_guest_form_link
 host.delete
 host.delete_to_archived.confirm
 host.missing
+host.missing.one
+host.missing.few
 common.*
 confirm.cancel
 status.*

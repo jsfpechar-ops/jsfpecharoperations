@@ -19,6 +19,11 @@ var finished = map[string]bool{"reported": true, "not_required": true}
 // parseDates mirrors dashboard_calendar.parse_dates: stay dates describe
 // occupied nights, so checkout is exclusive. Dates must be YYYY-MM-DD, within
 // 1900..2101, and the end must be after the start.
+// ParseDates is dashboard_calendar.parse_dates (checkout exclusive).
+func ParseDates(start, end string) (time.Time, time.Time, error) {
+	return parseDates(start, end)
+}
+
 func parseDates(start, end string) (time.Time, time.Time, error) {
 	first, ok := isoDate(start)
 	if !ok {

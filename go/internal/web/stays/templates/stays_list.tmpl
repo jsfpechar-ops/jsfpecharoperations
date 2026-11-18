@@ -2,15 +2,15 @@
 {{define "v2_status_pill"}}{{ $row := . }}{{ $cell := $row.Progress.Cell }}{{ $progress := $row.Progress }}{{ $res := $row.Reservation }}
 {{if eq $cell.Level "overdue"}}<span class="pill p-bad">{{deadline_badge $cell}}</span>
 {{else if eq $progress.Status "failed"}}<span class="pill p-bad">{{progress_pill $progress.Status $res.AutomationMode}}</span>
-{{else if $progress.NotRegistered}}<span class="pill p-warn"><span class="ui-badge ui-badge-action" data-tone="amber">{{tp "host.missing" (not_registered $progress)}}</span></span>
+{{else if and $progress.NotRegistered (gt (not_registered $progress) 0)}}<span class="pill p-warn"><span class="ui-badge ui-badge-action" data-tone="amber">{{tp "host.missing" (not_registered $progress)}}</span></span>
 {{else if eq $cell.State "filed_on_time"}}<span class="pill p-ok">{{deadline_badge $cell}}</span>
 {{else if eq $cell.State "filed_late"}}<span class="pill p-warn">{{deadline_badge $cell}}</span>
 {{else if and (or (eq $progress.Status "awaiting_guest") (eq $progress.Status "incomplete")) (eq $res.AutomationMode "immediate")}}<span class="pill p-warn">{{t "status.waiting_guest"}}</span>
 {{else if or (eq $progress.Status "reported") (eq $progress.Status "not_required")}}<span class="pill p-ok">{{t "status.reported"}}</span>
 {{else}}{{ $demo := is_demo $res.InternalName $res.Source }}
 {{if and $demo (or (eq $progress.Status "ready") (eq $progress.Status "awaiting_verification"))}}<span class="pill p-n">{{progress_pill $progress.Status $res.AutomationMode (kv "is_demo" true)}}</span>
-{{else if or (eq $progress.Status "ready") (eq $progress.Status "awaiting_verification") (eq $progress.Status "awaiting_guest") (eq $progress.Status "incomplete")}}<span class="pill p-warn">{{progress_pill $progress.Status $res.AutomationMode (kv "is_demo" $demo "step" (journey_step $progress.Status))}}</span>
-{{else}}<span class="pill p-n">{{progress_pill $progress.Status $res.AutomationMode (kv "is_demo" $demo "step" (journey_step $progress.Status))}}</span>{{end}}{{end}}
+{{else if or (eq $progress.Status "ready") (eq $progress.Status "awaiting_verification") (eq $progress.Status "awaiting_guest") (eq $progress.Status "incomplete")}}<span class="pill p-warn">{{progress_pill $progress.Status $res.AutomationMode (kv "is_demo" $demo)}}</span>
+{{else}}<span class="pill p-n">{{progress_pill $progress.Status $res.AutomationMode (kv "is_demo" $demo)}}</span>{{end}}{{end}}
 {{end}}
 {{define "stays_onboarding_banner"}}{{if .Banner.Show}}<aside class="onboarding-banner onboarding-banner-setup" aria-label="{{t "setup.banner.aria"}}">
   <a class="onboarding-banner-setup-link" href="{{.Banner.URL}}">{{t "setup.banner.line"}}</a>
@@ -34,7 +34,7 @@
   {{else}}<b>{{stay_range $res.DateFrom $res.DateTo}}</b><small>{{$res.InternalName}}</small>{{end}}
   {{if ne $res.Status "active"}}<span class="pill p-n">{{t (printf "stays.filter.state.%s" $res.Status)}}</span>
   {{else if $prog.HasCell}}{{template "v2_status_pill" $row}}
-  {{else}}{{progress_pill $prog.Status $res.AutomationMode (kv "is_demo" (is_demo $res.InternalName $res.Source) "step" (journey_step $prog.Status))}}{{end}}
+  {{else}}{{progress_pill $prog.Status $res.AutomationMode}}{{end}}
   </span>{{icon "chevron-right" 20 "chev"}}
 </a>{{end}}
 {{define "stays_desk_row"}}{{ $root := .Root }}{{ $row := .Row }}{{ $res := $row.Reservation }}{{ $prog := $row.Progress }}
