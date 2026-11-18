@@ -1,13 +1,11 @@
 """Caddy-like Go routing for browser tests (UBYHOST_GO_PATHS in the test process)."""
 from __future__ import annotations
 
-import fnmatch
 import os
 import re
 import shutil
 import socket
 import subprocess
-import sys
 import threading
 import time
 from pathlib import Path

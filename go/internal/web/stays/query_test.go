@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -86,24 +88,23 @@ func dbPool(t *testing.T) *pgxpool.Pool {
 
 func migratePool(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
-	// Minimal tables for the list query (not full goose migrate).
 	ctx := context.Background()
-	stmts := []string{
-		`CREATE TABLE user_account (id BIGSERIAL PRIMARY KEY, username TEXT)`,
-		`CREATE TABLE legal_entity (id BIGSERIAL PRIMARY KEY, owner_user_id BIGINT)`,
-		`CREATE TABLE apartment (id BIGSERIAL PRIMARY KEY, owner_user_id BIGINT, legal_entity_id BIGINT,
-			internal_name TEXT, permalink_token TEXT, automation_mode TEXT, submit_after_hours INT,
-			active INT, archived_at TIMESTAMPTZ)`,
-		`CREATE TABLE apartment_slug (id BIGSERIAL PRIMARY KEY, apartment_id BIGINT, slug TEXT, is_current INT)`,
-		`CREATE TABLE reservation (id BIGSERIAL PRIMARY KEY, apartment_id BIGINT, uid TEXT,
-			date_from TEXT, date_to TEXT, status TEXT, source TEXT, archived_at TIMESTAMPTZ,
-			created_at TIMESTAMPTZ, updated_at TIMESTAMPTZ)`,
-		`CREATE TABLE guest (id BIGSERIAL PRIMARY KEY, reservation_id BIGINT, submit_state TEXT,
-			created_at TIMESTAMPTZ, updated_at TIMESTAMPTZ)`,
+	files, err := filepath.Glob("../../../../App/migrations_pg/*.sql")
+	if err != nil || len(files) == 0 {
+		t.Fatal("no migrations found")
 	}
-	for _, s := range stmts {
-		if _, err := pool.Exec(ctx, s); err != nil {
+	sort.Strings(files)
+	for _, f := range files {
+		raw, err := os.ReadFile(f)
+		if err != nil {
 			t.Fatal(err)
+		}
+		up := string(raw)
+		if i := strings.Index(up, "-- +goose Down"); i >= 0 {
+			up = up[:i]
+		}
+		if _, err := pool.Exec(ctx, up); err != nil {
+			t.Fatalf("migration %s: %v", f, err)
 		}
 	}
 }
@@ -114,16 +115,18 @@ func TestListPaginationAndOrder(t *testing.T) {
 	now := time.Date(2026, 6, 15, 10, 0, 0, 0, time.UTC)
 	stamp := now
 	var ownerID int64
-	if err := pool.QueryRow(ctx, `INSERT INTO user_account (username) VALUES ('stays-host') RETURNING id`).Scan(&ownerID); err != nil {
+	if err := pool.QueryRow(ctx, `INSERT INTO user_account (username, password_hash, role, active, session_version, created_at)
+		VALUES ('stays-host', 'x', 'host', 1, 1, $1) RETURNING id`, stamp).Scan(&ownerID); err != nil {
 		t.Fatal(err)
 	}
 	var entityID int64
-	if err := pool.QueryRow(ctx, `INSERT INTO legal_entity (owner_user_id) VALUES ($1) RETURNING id`, ownerID).Scan(&entityID); err != nil {
+	if err := pool.QueryRow(ctx, `INSERT INTO legal_entity (owner_user_id, name, created_at)
+		VALUES ($1, 'Stay Entity', $2) RETURNING id`, ownerID, stamp).Scan(&entityID); err != nil {
 		t.Fatal(err)
 	}
 	var aptID int64
-	if err := pool.QueryRow(ctx, `INSERT INTO apartment (owner_user_id, legal_entity_id, internal_name, permalink_token, automation_mode, submit_after_hours, active)
-		VALUES ($1,$2,'Flat','tok','manual',24,1) RETURNING id`, ownerID, entityID).Scan(&aptID); err != nil {
+	if err := pool.QueryRow(ctx, `INSERT INTO apartment (owner_user_id, legal_entity_id, internal_name, permalink_token, automation_mode, submit_after_hours, active, created_at)
+		VALUES ($1,$2,'Flat','tok','manual',24,1,$3) RETURNING id`, ownerID, entityID, stamp).Scan(&aptID); err != nil {
 		t.Fatal(err)
 	}
 	dates := []struct{ from, to string }{
@@ -153,14 +156,43 @@ func TestListPaginationAndOrder(t *testing.T) {
 	if len(v.Rows) != 5 || v.Total != 6 || v.Page != 1 || v.PageCount != 2 {
 		t.Fatalf("page1: rows=%d total=%d page=%d pageCount=%d", len(v.Rows), v.Total, v.Page, v.PageCount)
 	}
-	wantOrder := append([]int64(nil), ids...)
-	sort.SliceStable(wantOrder, func(i, j int) bool {
-		gi, gj := groupRank(dates[i].from, dates[i].to, "2026-06-15"), groupRank(dates[j].from, dates[j].to, "2026-06-15")
-		if gi != gj {
-			return gi < gj
+	today := "2026-06-15"
+	type row struct {
+		id                           int64
+		from, to                     string
+		rank                         int
+	}
+	rows := make([]row, len(ids))
+	for i := range ids {
+		rows[i] = row{id: ids[i], from: dates[i].from, to: dates[i].to, rank: groupRank(dates[i].from, dates[i].to, today)}
+	}
+	sort.SliceStable(rows, func(i, j int) bool {
+		if rows[i].rank != rows[j].rank {
+			return rows[i].rank < rows[j].rank
 		}
-		return dates[i].from < dates[j].from || (dates[i].from == dates[j].from && ids[i] < ids[j])
+		switch rows[i].rank {
+		case 0:
+			if rows[i].to != rows[j].to {
+				return rows[i].to < rows[j].to
+			}
+		case 1:
+			if rows[i].from != rows[j].from {
+				return rows[i].from < rows[j].from
+			}
+		case 2:
+			if rows[i].to != rows[j].to {
+				return rows[i].to > rows[j].to
+			}
+		}
+		if rows[i].from != rows[j].from {
+			return rows[i].from < rows[j].from
+		}
+		return rows[i].id < rows[j].id
 	})
+	wantOrder := make([]int64, len(rows))
+	for i := range rows {
+		wantOrder[i] = rows[i].id
+	}
 	for i := range v.Rows {
 		if v.Rows[i].Reservation.ID != wantOrder[i] {
 			t.Fatalf("row %d id=%d want=%d", i, v.Rows[i].Reservation.ID, wantOrder[i])
