@@ -9,7 +9,6 @@ from fastapi.testclient import TestClient
 from app import auth, claim, db
 from app.main import app
 from tests.conftest import login_as, mark_security_prompt_seen
-from tests.test_0710_v2_mockup_match_browser import _open_app
 from tests.go_stack import go_paths_enabled, seed_go_host_gate
 from tests.test_host_quiet_dashboard_browser import (  # noqa: F401
     _launch,
