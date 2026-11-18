@@ -226,7 +226,7 @@ func TestRuianSuggestPureHelpers(t *testing.T) {
 		t.Errorf("sql %q args %v", sql, args)
 	}
 	for _, v := range []string{"", "1", "yes", "on", "garbage"} {
-		if !ruianEnabled(func(string) string { return v }) {
+		if !ruian.Enabled(func(string) string { return v }) {
 			t.Errorf("%q must leave the lookup on", v)
 		}
 	}

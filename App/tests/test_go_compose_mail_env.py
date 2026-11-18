@@ -56,3 +56,9 @@ def test_go_service_receives_stay_fee_and_guide_import_keys():
     lines = _go_env_block()
     for key in JOB_KEYS:
         assert f"      {key}:" in lines, f"{key} must be a bare key under ubyhost-go"
+
+
+def test_go_service_receives_ruian_flags_as_bare_keys():
+    lines = _go_env_block()
+    for key in ("UBYHOST_RUIAN_ENABLED", "UBYHOST_RUIAN_IMPORT"):
+        assert f"      {key}:" in lines, f"{key} must be a bare key under ubyhost-go"

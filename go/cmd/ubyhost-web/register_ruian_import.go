@@ -2,7 +2,7 @@ package main
 
 // Brief 1700c: the monthly ČÚZK address import (go/internal/ruian). A background
 // task, not a job-queue kind, so the Python-locked scheduler plan stays as it is.
-// It is dormant until UBYHOST_RUIAN_IMPORT=1 (and UBYHOST_RUIAN_ENABLED is not 0).
+// Import requires UBYHOST_RUIAN_IMPORT=1 and the RUIAN feature enabled.
 // Five minutes after start and then every six hours it asks Run, which returns
 // at once when the newest published month is already loaded and the table is
 // not empty (one HEAD request and one query). A failed run is logged and tried
@@ -26,7 +26,7 @@ func init() { registerBackground("ruian_import", ruianImportTask) }
 // ruianImportEnabled reads the two switches.
 func ruianImportEnabled(getenv func(string) string) bool {
 	return strings.TrimSpace(getenv("UBYHOST_RUIAN_IMPORT")) == "1" &&
-		strings.TrimSpace(getenv("UBYHOST_RUIAN_ENABLED")) != "0" && !killSwitch(getenv)
+		ruian.Enabled(getenv) && !killSwitch(getenv)
 }
 
 func ruianImportTask(pool *pgxpool.Pool) (func(context.Context), error) {

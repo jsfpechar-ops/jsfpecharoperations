@@ -68,15 +68,6 @@ func RegisterRuianSuggest(mux *http.ServeMux, wrap Wrap, pool *pgxpool.Pool, get
 	mux.Handle("GET /apartments/ruian-suggest", wrap("/apartments/ruian-suggest", s.ruianSuggest))
 }
 
-// ruianEnabled is ruian.enabled: on unless UBYHOST_RUIAN_ENABLED is 0, false, no or off.
-func ruianEnabled(getenv func(string) string) bool {
-	switch strings.ToLower(strings.TrimSpace(getenv("UBYHOST_RUIAN_ENABLED"))) {
-	case "0", "false", "no", "off":
-		return false
-	}
-	return true
-}
-
 // ruianUsableQuery is ruian.usable_query: white space collapsed, at least
 // three characters, else "".
 func ruianUsableQuery(q string) string {
@@ -205,7 +196,7 @@ func (s *Pages) ruianSuggest(w http.ResponseWriter, r *http.Request) {
 		writeRuian(w, http.StatusUnauthorized, nil)
 		return
 	}
-	if !ruianEnabled(s.getenv) {
+	if !ruian.Enabled(s.getenv) {
 		writeRuian(w, http.StatusOK, nil)
 		return
 	}

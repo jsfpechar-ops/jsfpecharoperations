@@ -10,7 +10,10 @@ func TestRuianImportSwitches(t *testing.T) {
 	}{
 		"unset is dormant":      {map[string]string{}, false},
 		"opt in":                {map[string]string{"UBYHOST_RUIAN_IMPORT": "1"}, true},
-		"opt in, feature off":   {map[string]string{"UBYHOST_RUIAN_IMPORT": "1", "UBYHOST_RUIAN_ENABLED": "0"}, false},
+		"opt in, feature false": {map[string]string{"UBYHOST_RUIAN_IMPORT": "1", "UBYHOST_RUIAN_ENABLED": "false"}, false},
+		"opt in, feature no":    {map[string]string{"UBYHOST_RUIAN_IMPORT": "1", "UBYHOST_RUIAN_ENABLED": "no"}, false},
+		"opt in, feature off":   {map[string]string{"UBYHOST_RUIAN_IMPORT": "1", "UBYHOST_RUIAN_ENABLED": " OFF "}, false},
+		"opt in, feature zero":  {map[string]string{"UBYHOST_RUIAN_IMPORT": "1", "UBYHOST_RUIAN_ENABLED": "0"}, false},
 		"opt in, scheduler off": {map[string]string{"UBYHOST_RUIAN_IMPORT": "1", "UBYHOST_ENABLE_SCHEDULER": "0"}, false},
 		"other value":           {map[string]string{"UBYHOST_RUIAN_IMPORT": "yes"}, false},
 	} {
