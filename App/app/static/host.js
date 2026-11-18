@@ -419,7 +419,13 @@
 
   // 1858: Stays Turbo cache heal and stale refresh.
   function restoreStaysScroll() {
-    restoreStaysScroll();
+    try {
+      var raw = sessionStorage.getItem('stays-scroll-y');
+      if (raw == null) return;
+      var y = Number(raw);
+      if (!Number.isFinite(y)) return;
+      window.scrollTo(0, y);
+    } catch (e) {}
   }
   function staysPage() {
     return /\/reservations(?:\?|$)/.test(location.pathname + (location.search || ''));
@@ -435,11 +441,13 @@
   });
   document.addEventListener('turbo:load', function () {
     if (!staysPage()) return;
+    var prevLoaded = Number(document.body.getAttribute('data-loaded-at') || '0');
     document.body.setAttribute('data-loaded-at', String(Date.now()));
     healStaysUI();
     restoreStaysScroll();
-    var at = Number(document.body.getAttribute('data-loaded-at') || '0');
-    if (at && Date.now() - at > 60000 && window.Turbo) window.Turbo.visit(location.href, { action: 'replace' });
+    if (prevLoaded && Date.now() - prevLoaded > 60000 && window.Turbo) {
+      window.Turbo.visit(location.href, { action: 'replace' });
+    }
   });
   window.addEventListener('pageshow', function (ev) {
     if (!staysPage()) return;

@@ -1141,7 +1141,10 @@ def _add_missing_columns(conn: sqlite3.Connection) -> None:
     ``init_db``.
     """
     columns: Dict[str, set] = {}
-    for table, column, decl in ADDED_COLUMNS:
+    specs: List[Tuple[str, str, str]] = list(ADDED_COLUMNS)
+    if getattr(config, "DB_BACKEND", "sqlite") != "postgresql":
+        specs.extend(goose_only_columns())
+    for table, column, decl in specs:
         if table not in columns:
             columns[table] = _table_columns(conn, table)
         if columns[table] and column not in columns[table]:

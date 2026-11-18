@@ -44,7 +44,10 @@ def _ensure_entry_code_columns() -> None:
         ("guide_external_url", "TEXT"),
     ):
         try:
-            db.execute(f"ALTER TABLE apartment ADD COLUMN {col} {decl}")
+            if getattr(db.config, "DB_BACKEND", "sqlite") == "postgresql":
+                db.execute_native(f"ALTER TABLE apartment ADD COLUMN IF NOT EXISTS {col} {decl}")
+            else:
+                db.execute(f"ALTER TABLE apartment ADD COLUMN {col} {decl}")
         except sqlite3.OperationalError:
             pass
 
