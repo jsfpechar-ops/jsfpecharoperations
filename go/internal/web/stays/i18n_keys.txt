@@ -1,0 +1,23 @@
+# Stays list page (brief 1856); generated i18n.json via App/scripts/go_host_i18n.py.
+stays.*
+send.all_ready
+send.all_ready_hint
+host.filter.*
+host.copy_guest_form_link
+host.delete
+host.delete_to_archived.confirm
+host.missing
+common.*
+confirm.cancel
+status.*
+hint.*
+tabs.stays.*
+csv.export_stays
+demo.load
+demo.load_detail
+how.stays.*
+how.toggle
+dashboard.empty.connect_calendar
+nav.stays
+calendar.arrival
+calendar.departure

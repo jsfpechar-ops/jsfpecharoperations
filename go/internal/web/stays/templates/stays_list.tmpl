@@ -1,0 +1,24 @@
+{{define "stays_list.title"}}{{end}}
+{{define "v2_status_pill"}}{{ $row := . }}{{ $cell := $row.Progress.Cell }}{{ $progress := $row.Progress }}{{ $res := $row.Reservation }}
+{{if eq $cell.Level "overdue"}}<span class="pill p-bad">{{deadline_badge $cell}}</span>
+{{else if eq $progress.Status "failed"}}<span class="pill p-bad">{{progress_pill $progress.Status $res.AutomationMode}}</span>
+{{else if $progress.NotRegistered}}<span class="pill p-warn"><span class="ui-badge ui-badge-action" data-tone="amber">{{tp "host.missing" $progress.NotRegistered}}</span></span>
+{{else if eq $cell.State "filed_on_time"}}<span class="pill p-ok">{{deadline_badge $cell}}</span>
+{{else if eq $cell.State "filed_late"}}<span class="pill p-warn">{{deadline_badge $cell}}</span>
+{{else if and (or (eq $progress.Status "awaiting_guest") (eq $progress.Status "incomplete")) (eq $res.AutomationMode "immediate")}}<span class="pill p-warn">{{t "status.waiting_guest"}}</span>
+{{else if or (eq $progress.Status "reported") (eq $progress.Status "not_required")}}<span class="pill p-ok">{{t "status.reported"}}</span>
+{{else}}{{ $demo := is_demo $res.InternalName $res.Source }}<span class="pill p-warn">{{progress_pill $progress.Status $res.AutomationMode "compact" $demo (journey_step $progress.Status)}}</span>{{end}}
+{{end}}
+{{define "stays_list"}}
+<div class="stays-pills">{{range .View.Chips}}<a class="pill{{if .Current}} on{{end}}" href="{{.Href}}">{{t .Label}}</a>{{end}}</div>
+{{if .View.Rows}}<div class="card stays-desk"><table><tbody class="stays-list">
+{{range .View.Rows}}{{$res := .Reservation}}{{$prog := .Progress}}
+<tr class="clickable-row" data-href="/reservations/{{$res.ID}}">
+<td>{{if shown_name $res $prog.Guests}}{{shown_name $res $prog.Guests}}{{else}}{{t "stays.row.no_name"}}{{end}}</td>
+<td>{{$res.InternalName}}</td><td>{{date_cz $res.DateFrom}}</td><td>{{date_cz $res.DateTo}}</td>
+<td>{{if $prog.HasCell}}{{template "v2_status_pill" .}}{{else}}{{progress_pill $prog.Status $res.AutomationMode}}{{end}}</td>
+<td></td></tr>{{end}}</tbody></table></div>
+{{if gt .View.PageCount 1}}{{if .PrevURL}}<nav class="stays-pager ph-hide"><a href="{{.PrevURL}}" rel="prev">{{t "stays.pagination.prev"}}</a></nav>{{end}}
+{{if .NextURL}}<div class="list stays-more"><a class="link" href="{{.NextURL}}" rel="next"><span>{{t "stays.more"}}</span>{{icon "chevron-right" 16}}</a></div>{{end}}
+{{end}}{{else}}{{empty_state "" (t "stays.empty.no_apartments") "/apartments/new" (t "stays.empty.add_first") true}}{{end}}
+{{end}}
