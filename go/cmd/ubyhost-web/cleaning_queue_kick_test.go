@@ -65,6 +65,35 @@ func TestCleaningKickWhileRunning(t *testing.T) {
 	}
 }
 
+func TestGoOwnsDoorCodes(t *testing.T) {
+	getenv := func(k string) string {
+		switch k {
+		case "UBYHOST_DOOR_CODES":
+			return "1"
+		case "UBYHOST_GO_JOB_KINDS":
+			return " mail , door_codes "
+		default:
+			return ""
+		}
+	}
+	if !goOwnsDoorCodes(getenv) {
+		t.Fatal("trimmed door_codes in a comma list should own the queue")
+	}
+	getenv = func(k string) string {
+		switch k {
+		case "UBYHOST_DOOR_CODES":
+			return "1"
+		case "UBYHOST_GO_JOB_KINDS":
+			return "door_code"
+		default:
+			return ""
+		}
+	}
+	if goOwnsDoorCodes(getenv) {
+		t.Fatal("door_code without the s must not match door_codes")
+	}
+}
+
 func TestCleaningKickFailingPass(t *testing.T) {
 	t.Setenv("UBYHOST_DOOR_CODES", "1")
 	t.Setenv("UBYHOST_GO_JOB_KINDS", "door_codes")

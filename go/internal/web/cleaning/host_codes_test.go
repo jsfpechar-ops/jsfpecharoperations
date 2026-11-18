@@ -352,9 +352,34 @@ func TestHostQueueKick(t *testing.T) {
 	if kicks != 2 {
 		t.Errorf("remove kicks = %d, want 2", kicks)
 	}
-	e.codePost(i64(1), "11", "manual", nil)
+	e.codePost(i64(1), "14", "manual", map[string]string{"code": "1234"})
 	if kicks != 2 {
-		t.Errorf("manual kicked: %d", kicks)
+		t.Errorf("successful manual kicked: %d", kicks)
+	}
+}
+
+// TestHostQueueKickSkipsRejected: validation, lock setup, busy lock and CSRF never nudge the queue.
+func TestHostQueueKickSkipsRejected(t *testing.T) {
+	kicks := 0
+	prev := queueKick
+	queueKick = func() { kicks++ }
+	t.Cleanup(func() { queueKick = prev })
+	on := map[string]string{"UBYHOST_DOOR_CODES": "1", "UBYHOST_TTLOCK_CLIENT_ID": "id", "UBYHOST_TTLOCK_CLIENT_SECRET": "secret"}
+	e := codeEnv(t, on)
+	e.exec(`UPDATE lock_account SET locks_json = '[{"lock_id": "L12"}]' WHERE id = 1`)
+	e.exec(`UPDATE cleaning_property SET pending_code_id = NULL WHERE apartment_id = 12`)
+	if rec := e.codePost(i64(1), "11", "ttlock", nil); rec.Code != 422 || kicks != 0 {
+		t.Fatalf("lock_setup: status=%d kicks=%d", rec.Code, kicks)
+	}
+	if rec := e.codePost(i64(1), "11", "manual", map[string]string{"code": "bad space"}); rec.Code != 422 || kicks != 0 {
+		t.Fatalf("manual reject: status=%d kicks=%d", rec.Code, kicks)
+	}
+	e.exec(`UPDATE cleaning_code SET state = 'revoking' WHERE id = 2`)
+	if rec := e.codePost(i64(1), "12", "remove", nil); rec.Code != 422 || kicks != 0 {
+		t.Fatalf("busy remove: status=%d kicks=%d", rec.Code, kicks)
+	}
+	if rec := e.call(goldenCase{Method: http.MethodPost, Path: "/cleaning/properties/11/code/remove", User: i64(1)}); rec.Code != 303 || kicks != 0 {
+		t.Fatalf("no CSRF: status=%d kicks=%d", rec.Code, kicks)
 	}
 }
 
@@ -364,6 +389,9 @@ func TestHostDeleteCodeButton(t *testing.T) {
 	e := newHostEnv(t)
 	body := e.get(i64(1), "/cleaning/properties/12", "").Body.String()
 	mustContain(t, "page", body, `action="/cleaning/properties/12/code/remove"`, `name="_csrf"`, `data-confirm-message=`)
+	e.exec(`UPDATE cleaning_property SET code_id = NULL WHERE apartment_id = 12`)
+	body = e.get(i64(1), "/cleaning/properties/12", "").Body.String()
+	mustContain(t, "pending only", body, `action="/cleaning/properties/12/code/remove"`)
 	e.codePost(i64(1), "11", "remove", nil)
 	body = e.get(i64(1), "/cleaning/properties/11", "").Body.String()
 	if strings.Contains(body, `action="/cleaning/properties/11/code/remove"`) {
