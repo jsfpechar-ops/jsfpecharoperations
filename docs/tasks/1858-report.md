@@ -1,21 +1,17 @@
 # 1858 report
 
-Status: review (Turbo cache browser proof pending Go route)
+Status: review (Go route switch pending)
 
 ## Landed
 
-- `TurboCache: "cache"` on stays handler; conditional meta in Go shell (prior commits)
-- `host.js` scoped heal handlers (prior commits)
-- `cache_test.go` structural checks
-- `App/tests/test_1858_stays_back_cache_browser.py` (skipped without `content="cache"`)
+- `TurboCache` on Stays handler; `shell.html` conditional meta
+- `host.js` turbo:before-cache / turbo:load heal scoped to stays
+- `cache_test.go`
+- `App/tests/test_1858_stays_back_cache_browser.py` (skips without Go HTML + `content="cache"`)
 
-## Tests (tails)
+## Tests
 
 ```
-pytest tests/test_1858_stays_back_cache_browser.py -q 2>&1 | tail -30
-(skipped — Turbo cache meta only on Go-served Stays)
+go test ./internal/hostweb/layout/... ./internal/web/stays/... 2>&1 | tail -30 → ok
+pytest tests/test_1858_stays_back_cache_browser.py -q 2>&1 | tail -30 → 1 skipped
 ```
-
-## Blocker
-
-Back/scroll case needs Go-served `/reservations` with `turbo-cache-control` = `cache`. Switch `UBYHOST_GO_PATHS`, then run brief §6 browser row.

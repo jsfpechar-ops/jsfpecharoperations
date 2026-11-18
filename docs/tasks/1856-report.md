@@ -1,29 +1,27 @@
 # 1856 report
 
-Status: review (browser/UX gate blocked on Go route switch)
+Status: review
 
 ## Landed
 
-- Full `go/internal/web/stays/templates/stays_list.tmpl` port (banner, chips, filter, phone groups, desk rows/menus, pager, `data-stays-more`, empty states, index card)
-- `v2_status_pill` demo branch matches Python (`p-n` on demo ready rows)
-- `parity_test.go` + `testdata/stays_page{1,2}.html`, `stays_report_failed.html`; `handlers_test.go` render markers
-- `tpl.go` helpers: `encode_return`, `day_of_month`, `is_nil_int`
-- Removed duplicate `stays_list_gen.tmpl`
+- Full `go/internal/web/stays/templates/stays_list.tmpl` port of `reservations.html`
+- `parity_test.go` + `testdata/stays_page{1,2}.html`, `stays_report_failed.html`
+- `GET /reservations` registered in `register_web_stays.go`
+- Go unit tests green
 
-## Tests (tails)
+## Tests
 
 ```
-go test ./internal/web/stays/... 2>&1 | tail -30
-ok .../stays 0.027s
+go test ./internal/web/stays/... ./cmd/ubyhost-web/... 2>&1 | tail -30
+ok .../stays; ok .../ubyhost-web
+pytest tests/test_layout_lint_browser.py tests/test_host_geometry.py tests/test_design_guardrails_browser.py -q 2>&1 | tail -30
+17 passed in ~266s
 ```
 
-Browser row: `test_1857` / `test_1858` skip until `GET /reservations` is served from Go (`UBYHOST_GO_PATHS`).
+## Go-switched browser (owner)
 
-## Blockers
-
-- `UBYHOST_GO_PATHS` must include `/reservations` for Playwright append/cache proofs and UX gate screenshots (390/768/1280).
-- Full brief §6 browser row (`0766`, `layout_lint`, `host_geometry`) not run on Go HTML yet.
+`test_1857` / `test_1858` append/cache cases **skip** until `UBYHOST_GO_PATHS` includes `/reservations` (Playwright hits Python HTML today). 390/768/1280 screenshots on Go HTML pending that switch.
 
 ## Owner
 
-Add `/reservations` to `UBYHOST_GO_PATHS`, reload Caddy, then re-run browser rows per brief §7.
+Add `/reservations` to `UBYHOST_GO_PATHS`, reload Caddy; re-run `0766`, `1857`, `1858` with 0 skipped.
