@@ -39,9 +39,9 @@ Append-only.
 - 2026-11-09 [ux] Stay fees: current month default, pick navigates | owner | 1051
 - 2026-11-09 [filing] Registered guests are filed by the deadline cap (deadline - 6 h) even when the stay is short or has no expected count; no 12 quiet hours past the cap; valid co-guests filed while another form is invalid; reverses the reporting.py:1093 rule; stays past their cap are filed by the first sweep (owner, K-F20) | 1070
 - 2026-11-10 [guest] Guest form: B now, then C (owner).
-- 2026-11-10 [guest] Under-15s skip the signature; any adult on the booking signs and ticks a role ("parent or guardian" / "adult responsible for the child on this stay"). A child with no adult link is filed "no signature required" (owner).
+- 2026-11-10 [guest] Under-15s skip the signature; an adult on the booking signs, ticks a role ("parent or guardian" / "adult responsible for the child on this stay"). A child with no adult is filed "no signature required" (owner).
 - 2026-11-10 [guest] Titles: cs "Registrace hosta", es "Ficha de huésped", fr "Fiche voyageur" (owner).
-- 2026-11-10 [head-count] Lower count with stay fee: new fee + "new bill will be e-mailed", confirm. Lead change: "Check your changes" confirm. Host digest: changed field names (no values), stay-page link, changes only, not first registrations. Small Go change OK. Early door-code risk accepted (mail guard) (owner).
+- 2026-11-10 [head-count] Lower count with stay fee: new fee, "new bill e-mailed", confirm. Lead: "Check your changes". Host digest: field names only, stay link; changes only. Small Go change OK. Early door-code risk accepted (owner).
 - 2026-11-10 [workflow] Plan: project file plans/head-count-change.md (not in repo); each complete plan gets a Fable review before building (owner).
 - 2026-11-11 [police] 1100: no tick, values in boxes; parser reads password+facility, never stored (owner; reverses 1097, 1085).
 - 2026-11-10 [demo] Demo seed covers current features; mock-only, cleared by Clear demo (owner, 1092)
@@ -66,6 +66,8 @@ Append-only.
 - 2026-11-15 [ux/auth] Login button named by device (Face ID etc.), not "passkey"; auto-open only on remembered devices | 1762, 1763
 - 2026-11-15 [dep] go-webauthn v0.18.0 pinned | owner | 1760
 - 2026-11-15 [ai] Havel and Leon on Mistral Small, 0.05 USD monthly caps | owner
-- 2026-11-15 [legal] Register lists Mistral AI and Anthropic (conditional); no "EU only"/"not stored" claim without ZDR or EU endpoint | 1792
-- 2026-11-15 [ai] Shared Havel/Leon budget, abuse caps; Havel no-go settings; nameless lookups; host mail in host language: [plan](../plans/ai-payments-hardening.md) | owner
-- 2026-11-17 [dep] ČÚZK addresses: local unlogged table, pg_trgm (1700c). [workflow] Python golden: filing only ([go-first](go-first.md)) | owner. 1702d-e Go | orch
+- 2026-11-15 [legal] Register lists Mistral AI and Anthropic (conditional); no "EU only"/"not stored" without ZDR or EU endpoint | 1792
+- 2026-11-15 [ai] Shared Havel/Leon budget, abuse caps; Havel no-go; nameless lookups; host mail in host language | owner
+- 2026-11-17 [dep] ČÚZK: local unlogged table, pg_trgm (1700c). Python golden filing only ([go-first](go-first.md)) | owner. 1702d-e Go | orch
+- 2026-11-17 [product] Hide Payments; autopilot, host liable | owner
+- 2026-11-17 [workflow] Stays Go-only, show-more append, Stays Turbo cache only|owner
