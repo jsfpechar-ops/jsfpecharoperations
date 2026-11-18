@@ -234,7 +234,7 @@
         <td class="row-actions" data-card="actions" data-label="">
           {{ row_menu_begin() }}
             <a class="row-menu-item" href="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}" role="menuitem">{{ t('common.open') }}</a>
-            {% if not show_archive and reservation.status == 'active' %}<a class="row-menu-item" href="/payments?reservation_id={{ reservation.id }}#new-request" role="menuitem">{{ t('stays.row.request_payment') }}</a>{% endif %}
+            {% if not show_archive and reservation.status == 'active' and not payments_hidden() %}<a class="row-menu-item" href="/payments?reservation_id={{ reservation.id }}#new-request" role="menuitem">{{ t('stays.row.request_payment') }}</a>{% endif %}
             {% if reservation.permalink_token %}
             {{ copy_inline('stay-link-' ~ reservation.id,
                 public_base_url ~ '/l/' ~ (reservation.permalink_slug or reservation.permalink_token) ~ '/' ~ reservation.id,
