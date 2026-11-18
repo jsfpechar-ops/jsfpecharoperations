@@ -1,6 +1,6 @@
 # 1527: Property pages (list with properties, new, create, detail, update and the small property POSTs)
 
-Status: blocked — the property page is one large view built on the setup guide, filing readiness and the lock; it needs a plan and a layout check first
+Status: replaced by 1700a-1705 (owner 2026-11-17: 1701 ports the detail page as it is)
 Depends on: see §2 | Base commit: current branch (One big PR mode) | Branch: current branch
 Executor: none until unblocked | Tier B (A where §2 says)
 

@@ -1,0 +1,404 @@
+{{- /* Port of App/app/templates/settings.html (brief 1704b): the shell, the
+     index and the groups account, data, technical and help. The jinja macros
+     settings_group, settings_heading and the partials settings_back_header,
+     settings_index_row, settings_toggle_row, settings_value_card and
+     settings_pills are written out as their markup. The groups security and
+     phone (brief 1704c) are the templates "settings.group.security" and
+     "settings.group.phone" in group_security.tmpl and group_phone.tmpl. Every
+     form posts to the existing Python route and carries _csrf. */ -}}
+{{define "settings.title"}}{{end}}
+
+{{define "settings.row"}}<a class="airbnb-index-row" href="{{.href}}">
+  <span class="airbnb-icon">{{icon .icon 24}}</span>
+  <span class="airbnb-label">{{.label}}</span>
+  <span class="airbnb-chevron" aria-hidden="true">{{icon "chevron-right" 20}}</span>
+</a>{{end}}
+
+{{define "settings.toggle"}}<div class="settings-toggle-row">
+  <span class="settings-toggle-label">{{.label}}{{help_tip .help_id .help_text "" .label}}</span>
+  <span class="settings-toggle-control"><input type="checkbox" name="enabled" value="1" data-toggle-submit aria-label="{{.label}}"{{if .on}} checked{{end}}></span>
+</div>{{end}}
+
+{{define "settings.value"}}<div class="settings-value-card">
+  <span class="settings-value-label">{{.label}}</span>
+  <strong class="settings-value">{{.value}}</strong>
+</div>{{end}}
+
+{{define "settings"}}
+{{host_alerts}}
+{{if .Group -}}
+<div class="airbnb-header">
+  <a class="airbnb-back" href="/settings" aria-label="{{t "common.back"}}">{{icon "arrow-left" 20}}</a>
+  <h1 class="airbnb-title">{{t (printf "settings.group.%s" .Group)}}</h1>
+</div>
+{{- else -}}
+<div class="airbnb-header">
+  <a class="airbnb-back" href="/" aria-label="{{t "common.back"}}">{{icon "arrow-left" 20}}</a>
+  <h1 class="airbnb-title">{{t "nav.settings"}}</h1>
+</div>
+{{- end}}
+<div class="settings-lane">
+
+{{if not .Group -}}
+<nav class="airbnb-index" aria-label="{{t "nav.settings"}}">
+  {{template "settings.row" (kv "href" "/settings/account" "label" (t "settings.group.account") "icon" "users")}}
+  {{template "settings.row" (kv "href" "/settings/security" "label" (t "settings.group.security") "icon" "shield")}}
+  {{template "settings.row" (kv "href" "/settings/phone" "label" (t "settings.group.phone") "icon" "sliders-horizontal")}}
+  {{template "settings.row" (kv "href" "/settings/data" "label" (t "settings.group.data") "icon" "file-lock")}}
+  <div class="airbnb-divider" aria-hidden="true"></div>
+  {{template "settings.row" (kv "href" "/entities" "label" (t "settings.index.business") "icon" "receipt")}}
+  {{template "settings.row" (kv "href" "/privacy-requests" "label" (t "nav.privacy_requests") "icon" "mail")}}
+  {{template "settings.row" (kv "href" "/settings/archived" "label" (t "settings.nav.archive") "icon" "archive")}}
+  <div class="airbnb-divider" aria-hidden="true"></div>
+  {{template "settings.row" (kv "href" "/settings/technical" "label" (t "settings.group.technical") "icon" "settings")}}
+  {{template "settings.row" (kv "href" "/settings/help" "label" (t "settings.group.help") "icon" "circle-help")}}
+</nav>
+{{end -}}
+<div class="settings-groups">
+
+{{template "settings.group.account" .}}
+{{template "settings.group.security" .}}
+{{template "settings.group.phone" .}}
+{{template "settings.group.data" .}}
+{{template "settings.group.privacy" .}}
+{{template "settings.group.technical" .}}
+{{template "settings.group.help" .}}
+</div>
+</div>
+{{end}}
+
+{{define "settings.group.account"}}{{if eq .Group "account"}}{{with .Account -}}
+<section class="settings-group" id="settings-group-account" aria-labelledby="settings-group-account-title"><h2 class="settings-group-title sec" id="settings-group-account-title">{{t "settings.group.account"}}</h2><div class="card settings-card">
+    <div class="ui-section" id="settings-account">
+      {{if billing_on}}<a class="set-row" href="/predplatne"><span>{{t "billing.plan.title"}}</span><span class="set-row-v">{{t "common.open"}}</span></a>{{end}}
+      <div class="account-identity">
+        <strong>{{.Identity}}</strong>
+      </div>
+      <div class="settings-action-list">
+        <div class="settings-action-row settings-email-row" id="settings-login-email">
+          <div>
+            <strong>{{t "settings.account.email"}}</strong>
+            <small>{{if .Email}}{{.Email}}{{else}}{{t "users.status.no_email"}}{{end}}</small>
+          </div>
+        </div>
+        <form method="post" action="/account/email" class="settings-move-form settings-email-form">
+          <input type="hidden" name="_csrf" value="{{csrf}}">
+          <div class="ui-field">
+            <div class="field-label-row"><label for="account-new-email">{{t "settings.account.email_new"}}{{help_tip "account-new-email-help" (t "settings.account.email_hint") "" (t "settings.account.email_new")}}</label></div>
+            <input id="account-new-email" name="email" type="email" required maxlength="254"
+                   autocomplete="email" autocapitalize="none" spellcheck="false"
+                   aria-describedby="account-new-email-help">
+          </div>
+          <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{t "settings.account.email_action"}}</button>
+        </form>
+        <div class="settings-action-row" id="settings-business">
+          <div>
+            {{tip_label (t "settings.business.title") "settings-business-help" (t "settings.business.help")}}
+          </div>
+          <a class="ui-btn ui-btn-secondary ui-btn-compact" href="{{.BusinessHref}}">{{t "settings.business.action"}}</a>
+        </div>
+        {{if .Onboarding.Shown}}
+          <form method="post" action="/account/onboarding-emails" class="settings-toggle-form" id="settings-onboarding-emails">
+            <input type="hidden" name="_csrf" value="{{csrf}}">
+            {{template "settings.toggle" (kv "label" (t "settings.account.onboarding_emails") "help_id" "settings-onboarding-emails-help" "help_text" (t "settings.account.onboarding_emails_help") "on" .Onboarding.On)}}
+            <noscript><button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{t "settings.account.onboarding_emails_save"}}</button></noscript>
+          </form>
+        {{end}}
+        {{if .StayFee.Shown}}
+          <form method="post" action="/account/stay-fee-emails" class="settings-toggle-form" id="settings-stay-fee-emails">
+            <input type="hidden" name="_csrf" value="{{csrf}}">
+            {{template "settings.toggle" (kv "label" (t "settings.account.stay_fee_emails") "help_id" "settings-stay-fee-emails-help" "help_text" (t "settings.account.stay_fee_emails_help") "on" .StayFee.On)}}
+            <noscript><button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{t "settings.account.stay_fee_emails_save"}}</button></noscript>
+          </form>
+        {{end}}
+        {{if .GuestDetails.Shown}}
+          <form method="post" action="/account/guest-details-mail" class="settings-toggle-form" id="settings-guest-details-mail">
+            <input type="hidden" name="_csrf" value="{{csrf}}">
+            {{template "settings.toggle" (kv "label" (t "settings.account.guest_details_mail") "help_id" "settings-guest-details-mail-help" "help_text" (t "settings.account.guest_details_mail_help") "on" .GuestDetails.On)}}
+            <noscript><button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{t "settings.account.guest_details_mail_save"}}</button></noscript>
+          </form>
+        {{end}}
+        {{if .IsAdmin}}
+          <div class="settings-action-row">
+            <div>{{tip_label (t "settings.account.users") "settings-users-help" (t "settings.account.users_help")}}</div>
+            <a data-turbo="false" class="ui-btn ui-btn-secondary ui-btn-compact" href="/admin/customers">{{t "settings.account.users_action"}}</a>
+          </div>
+          <div class="settings-action-row">
+            <div>{{tip_label (t "users.incidents_link") "settings-incidents-help" (t "settings.account.incidents_help")}}</div>
+            <a data-turbo="false" class="ui-btn ui-btn-secondary ui-btn-compact" href="/admin/incidents">{{t "settings.account.incidents_action"}}</a>
+          </div>
+        {{end}}
+      </div>
+    </div>
+</div></section>
+{{end}}{{end}}{{end}}
+
+{{define "settings.group.data"}}{{if eq .Group "data"}}{{with .Data -}}
+<section class="settings-group" id="settings-group-data" aria-labelledby="settings-group-data-title"><h2 class="settings-group-title sec" id="settings-group-data-title">{{t "settings.group.data"}}</h2><div class="card settings-card">
+    <div class="ui-section" id="settings-archive">
+      {{settings_heading "archive" (t "settings.nav.archive") (t "settings.archive_hint_extended")}}
+      <a class="ui-btn ui-btn-secondary" href="/settings/archived">{{t "settings.archive_link"}}</a>
+    </div>
+
+    <div class="ui-section" id="settings-retention">
+      {{settings_heading "retention" (t "settings.nav.retention") (t "settings.retention.help")}}
+      {{template "settings.value" (kv "label" (t "settings.retention.period") "value" (t "settings.retention.years" "count" .RetentionYears))}}
+      {{template "settings.value" (kv "label" (t "settings.retention.cutoff") "value" .Cutoff)}}
+      {{template "settings.value" (kv "label" (t "settings.retention.expired") "value" .Expired)}}
+      {{if .Expired}}
+      <form method="post" action="/settings/purge-expired"
+            data-confirm data-confirm-message="{{t "confirm.purge_expired"}}">
+        <input type="hidden" name="_csrf" value="{{csrf}}">
+        <button class="ui-btn ui-btn-danger" type="submit">
+          {{tp "settings.retention.delete" .Expired}}
+        </button>
+        {{help_tip "settings-purge-expired-help" (t "settings.retention.delete_help")}}
+      </form>
+      {{end}}
+
+      <div class="ui-section" id="settings-data">
+        <h3>{{t "settings.data.title"}}</h3>
+        <dl class="kv">
+          <dt>{{t "settings.data.retention_last"}}</dt>
+          <dd>
+            {{if .LastRun}}
+              {{.LastRun.At}},
+              {{if .LastRun.DryRun}}{{t "settings.data.dry_run"}}{{else}}{{t "settings.data.live"}}{{end}}
+              {{if and .LastRun.Counts .IsAdmin}}
+                <span class="ui-sub">
+                  {{.LastRun.Counts}}
+                </span>
+              {{end}}
+            {{else}}{{t "settings.data.never"}}{{end}}
+          </dd>
+          <dt>{{t "settings.data.due"}}</dt>
+          <dd><a href="/housebook">{{t "settings.data.due_count" "count" .Due}}</a></dd>
+          <dt>{{t "settings.data.dsr"}}</dt>
+          <dd><a href="/privacy-requests">{{t "settings.data.dsr_count" "count" .DSR}}</a></dd>
+          {{if .Backup}}
+            <dt>{{t "settings.data.backup"}}</dt>
+            <dd>
+              {{.Backup.At}},
+              {{if .Backup.Encrypted}}{{t "settings.data.encrypted"}}{{else}}{{t "settings.data.not_encrypted"}}{{end}}
+              <span class="ui-sub">{{t "settings.data.retention_days" "days" .Backup.RetentionDays}}</span>
+            </dd>
+          {{end}}
+        </dl>
+      </div>
+    </div>
+</div></section>
+{{end}}{{end}}{{end}}
+
+{{define "settings.group.privacy"}}{{if eq .Group "data"}}{{with .Data -}}
+<section class="settings-group" id="settings-group-privacy" aria-labelledby="settings-group-privacy-title"><h2 class="settings-group-title sec" id="settings-group-privacy-title">{{t "settings.group.privacy"}}</h2><div class="card settings-card">
+      {{if or .NoEntity .NoContact}}
+        <div class="ui-banner ui-banner-attention">
+          <div class="grow">
+            <strong>{{t "settings.privacy_incomplete"}}</strong>
+            {{if .NoEntity}}
+              <small>{{t "settings.privacy.no_entity_prefix"}}
+                {{range $i, $a := .NoEntity}}
+                  <a href="/apartments/{{$a.ID}}">{{$a.Name}}</a>{{if lt (add $i 1) (len $.Data.NoEntity)}}, {{end}}
+                {{end}}
+                {{t "settings.privacy.no_entity_suffix"}}</small>
+            {{end}}
+            {{if .NoContact}}
+              <small>{{t "settings.privacy.no_contact_prefix"}}
+                {{range $i, $n := .NoContact}}{{$n}}{{if lt (add $i 1) (len $.Data.NoContact)}}, {{end}}{{end}}.
+                <a href="/entities">{{t "settings.privacy.add_contact"}}</a>{{t "settings.privacy.no_contact_suffix"}}</small>
+            {{end}}
+          </div>
+        </div>
+      {{end}}
+
+    {{if .Consents}}
+    <div class="ui-section" id="settings-privacy">
+      {{settings_heading "privacy" (t "settings.privacy.title") (t "settings.privacy.help")}}
+      <div class="settings-action-list">
+        {{range .Consents}}
+        <div class="settings-action-row">
+          <div>
+            <strong>{{t (printf "settings.privacy.ad_consent.%s" .Platform)}}</strong>
+            {{if .Withdrawn}}
+              <small>{{t "settings.privacy.withdrawn" "date" (datetime_local .At)}}</small>
+            {{else}}
+              <small>{{t "settings.privacy.given" "date" (datetime_local .At)}}</small>
+            {{end}}
+          </div>
+          {{if .Withdrawn}}
+            <span class="ui-badge ui-badge-neutral" data-tone="grey">{{t "settings.privacy.off"}}</span>
+          {{else}}
+            <form method="post" action="/settings/privacy/ad-consent">
+              <input type="hidden" name="_csrf" value="{{csrf}}">
+              <input type="hidden" name="platform" value="{{.Platform}}">
+              <label class="checkline">
+                <input type="checkbox" name="enabled" value="1" checked>
+                <span>{{t "settings.privacy.on"}}</span>
+              </label>
+              <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{t "settings.privacy.save"}}</button>
+            </form>
+          {{end}}
+        </div>
+        {{end}}
+      </div>
+    </div>
+    {{end}}
+</div></section>
+{{end}}{{end}}{{end}}
+
+{{define "settings.group.technical"}}{{if eq .Group "technical"}}{{with .Technical -}}
+<section class="settings-group" id="settings-group-technical" aria-labelledby="settings-group-technical-title"><h2 class="settings-group-title sec" id="settings-group-technical-title">{{t "settings.group.technical"}}</h2><div class="card settings-card">
+    <details class="ui-section technical" open id="settings-technical">
+      <summary>{{t "settings.technical.title"}}</summary>
+
+      {{if .IsAdmin}}
+      <h2 id="settings-overview">{{t "settings.destination.title"}}{{help_tip "settings-destination-help" (t "settings.destination.help") "" (t "settings.destination.title")}}</h2>
+      <dl class="kv">
+        <dt>{{t "settings.destination.deployment"}}</dt><dd>{{.Deployment}}</dd>
+        <dt>{{t "settings.destination.target"}}</dt><dd>{{if .Target}}{{.Target}}{{else}}{{t "settings.destination.production"}}{{end}}</dd>
+        <dt>{{t "settings.destination.endpoint"}}</dt><dd class="ui-mono ui-sub">{{.Endpoint}}</dd>
+        <dt>{{t "settings.destination.polling"}}</dt><dd>{{t "settings.destination.every_minutes" "count" .PollMinutes}}</dd>
+        <dt>{{t "settings.destination.sweep"}}</dt><dd>{{t "settings.destination.every_minutes" "count" .SweepMinutes}}</dd>
+        <dt>{{t "settings.destination.public_url"}}</dt><dd class="ui-mono ui-sub">{{.PublicURL}}</dd>
+      </dl>
+      {{if .Mock}}
+        <div class="ui-banner ui-banner-attention">
+          <div class="grow">
+            <strong>{{t "env.mock_title"}}</strong>
+            <small>{{t "settings.destination.mock_help"}}
+              <span class="ui-mono">UBYHOST_UBYPORT_ENV=test</span> or <span class="ui-mono">prod</span>
+              {{t "settings.destination.restart"}}</small>
+          </div>
+        </div>
+      {{end}}
+
+      {{end}}
+      {{if .ShowMail}}
+      <h2 id="settings-mail">{{t "settings.mail.title"}}{{help_tip "settings-mail-help" (t "settings.mail.help") "" (t "settings.mail.title")}}</h2>
+      <p class="ui-sub" id="settings-mail-status" data-mail-backend="{{.MailBackend}}">{{t .MailStatusKey}}</p>
+      {{if .IsAdmin}}
+      <dl class="kv">
+        <dt>{{t "settings.mail.backend"}}</dt>
+        <dd class="ui-mono">{{.MailBackend}}</dd>
+      </dl>
+      {{end}}
+      {{if and (eq .MailBackend "console") .Console}}
+        <table class="ui-table">
+          <thead>
+            <tr>
+              <th>{{t "settings.mail.to"}}</th>
+              <th>{{t "settings.mail.subject"}}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{range .Console}}
+              <tr>
+                <td class="ui-sub">{{.ToEmail}}</td>
+                <td class="ui-sub">{{.Subject}}</td>
+              </tr>
+              <tr>
+                <td colspan="2"><pre class="ui-sub ui-prewrap">{{.BodyText}}</pre></td>
+              </tr>
+              {{if .BodyHTML}}
+                <tr>
+                  <td colspan="2">
+                    <details>
+                      <summary class="ui-sub">{{t "settings.mail.preview"}}</summary>
+                      {{- /* Rendered in a sandboxed frame with no allowances so the
+                         stored markup cannot run script or reach the app. The
+                         value is escaped, which is what srcdoc wants. */ -}}
+                      <iframe srcdoc="{{.BodyHTML}}" sandbox=""
+                              title="{{t "settings.mail.preview"}}"
+                              class="settings-mail-preview"></iframe>
+                    </details>
+                  </td>
+                </tr>
+              {{end}}
+            {{end}}
+          </tbody>
+        </table>
+      {{end}}
+
+      {{end}}
+      {{if .IsAdmin}}
+      <h2 id="settings-codelists">{{t "settings.codelists.title"}}{{help_tip "settings-codelists-help" (t "settings.codelists.help") "" (t "settings.codelists.title")}}</h2>
+      <dl class="kv">
+        <dt>{{t "settings.codelists.countries"}}</dt><dd>{{if .Countries}}{{datetime_local .Countries true}}{{else}}{{t "settings.codelists.bundled"}}{{end}}</dd>
+        <dt>{{t "settings.codelists.purposes"}}</dt><dd>{{if .Purposes}}{{datetime_local .Purposes true}}{{else}}{{t "settings.codelists.bundled"}}{{end}}</dd>
+        <dt>{{t "settings.codelists.errors"}}</dt><dd>{{if .Errors}}{{datetime_local .Errors true}}{{else}}{{t "settings.codelists.not_fetched"}}{{end}}</dd>
+      </dl>
+      {{end}}
+          </details>
+
+    <div class="ui-section" id="settings-ubyport">
+      {{settings_heading "access" (t "settings.access.title") (t "settings.access.help")}}
+      <dl class="kv">
+        <dt>{{t "settings.access.pin"}}</dt>
+        <dd>{{if .PINRequired}}{{t "settings.access.required"}}{{else}}{{t "settings.access.off"}}{{end}}</dd>
+      </dl>
+    </div>
+
+    <details class="ui-section technical" open id="settings-audit">
+      <summary>{{t "settings.nav.audit"}}</summary>
+            <h2>{{tp "settings.audit.recent" .AuditCount}}</h2>
+      <nav class="settings-pills" aria-label="{{t "settings.audit.filter_label"}}">
+        <a class="settings-pill{{if not .AuditSupport}} is-current{{end}}" href="/settings/technical#settings-audit"{{if not .AuditSupport}} aria-current="page"{{end}}>{{t "settings.audit.filter_all"}}</a>
+        <a class="settings-pill{{if .AuditSupport}} is-current{{end}}" href="/settings/technical?audit=support#settings-audit"{{if .AuditSupport}} aria-current="page"{{end}}>{{t "settings.audit.filter_support"}}</a>
+      </nav>
+      <div class="scroll-x">
+        <table class="ui-table ui-table-stack">
+          <thead><tr><th>{{t "settings.audit.when"}}</th><th>{{t "settings.audit.who"}}</th><th>{{t "settings.audit.action"}}</th><th>{{t "settings.audit.detail"}}</th></tr></thead>
+          <tbody>
+          {{range .Audit}}
+            <tr>
+              <td class="ui-sub nowrap" data-label="{{t "settings.audit.when"}}">{{datetime_local .At true}}</td>
+              <td class="ui-sub" data-label="{{t "settings.audit.who"}}">{{.Actor}}{{if .Impersonator}} <span class="ui-sub">({{t "settings.audit.as_admin" "name" .Impersonator}})</span>{{end}}</td>
+              <td class="ui-sub" data-label="{{t "settings.audit.action"}}">{{.Action}}</td>
+              <td class="ui-sub" data-label="{{t "settings.audit.detail"}}">{{.Detail}}</td>
+            </tr>
+          {{else}}
+            <tr><td colspan="4" class="ui-sub">{{t "settings.audit.empty"}}</td></tr>
+          {{end}}
+          </tbody>
+        </table>
+      </div>
+    </details>
+</div></section>
+{{end}}{{end}}{{end}}
+
+{{define "settings.group.help"}}{{if eq .Group "help"}}{{with .Help -}}
+<section class="settings-group" id="settings-group-help" aria-labelledby="settings-group-help-title"><h2 class="settings-group-title sec" id="settings-group-help-title">{{t "settings.group.help"}}</h2><div class="card settings-card">
+    <div class="ui-section" id="settings-guide">
+      <div class="settings-action-list">
+        <div class="settings-action-row">
+          <div>
+            {{tip_label (t "settings.help.guide_label") "settings-guide-help" (t "settings.help.guide_help")}}
+          </div>
+          <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/guide">{{t "settings.help.guide_action"}}</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="ui-section" id="settings-legal">
+      <h2>{{tip_label (t "legal.settings_title") "settings-legal-help" (printf "%s %s" (t "legal.settings_body" "name" .Operator.Name "ico" .Operator.ICO) (t "legal.support_help")) "span"}}</h2>
+      <dl class="kv ui-sub">
+        <dt>{{t "legal.operator_address"}}</dt><dd>{{.Operator.Address}}</dd>
+        {{if .Operator.Email}}
+          <dt>{{t "legal.support_label"}}</dt><dd><a href="mailto:{{.Operator.Email}}">{{.Operator.Email}}</a></dd>
+        {{else}}
+          <dt>{{t "legal.support_label"}}</dt><dd class="ui-sub">{{t "legal.settings_contact_missing"}}</dd>
+        {{end}}
+      </dl>
+      <nav class="document-links" aria-label="{{t "legal.settings_title"}}">
+        <a href="/legal"><span>{{t "legal.footer_link"}}</span></a>
+        <a href="/terms"><span>{{t "terms.footer_link"}}</span></a>
+        <a href="/privacy"><span>{{t "privacy.footer_link"}}</span></a>
+        <a href="/dpa"><span>{{t "dpa.footer_link"}}</span></a>
+      </nav>
+    </div>
+
+    <div class="ui-section" id="settings-version">
+      {{template "settings.value" (kv "label" (t "settings.nav.version") "value" .Version)}}
+    </div>
+</div></section>
+{{end}}{{end}}{{end}}

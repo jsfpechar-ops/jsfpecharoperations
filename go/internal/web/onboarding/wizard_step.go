@@ -87,7 +87,10 @@ type wizardView struct {
 	DoorBuffer    int // door_code.buffer (config.DOOR_CODE_BUFFER_HOURS); LockAvailable says door_code exists
 	Facts         Facts
 	Platforms     []wizardPlatform
-	OperatorError string // operator_error, an i18n key ("" is None)
+	OperatorError string            // operator_error, an i18n key ("" is None)
+	Notice        string            // setup_notice, text in the host's language (brief 1702e1)
+	PoliceErrors  []FieldError      // police_errors, in Python's dict order (brief 1702e1)
+	AddressErrors map[string]string // address_errors: field -> message in the host's language (brief 1702e1)
 	Checklist     []ChecklistRow
 	Celebrate     bool
 	Ready         bool // wizard_ready

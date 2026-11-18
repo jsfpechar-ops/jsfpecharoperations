@@ -1,15 +1,15 @@
 # 1703: Go property settings 4: PIN, link, timing, archive, feeds, sync, police letter, codelists
 
 Status: todo — scoped (final brief 2026-11-15). Executable only after its exact-diff pass: sidecars in `docs/tasks/1703-files/`, anchors and sha256 table (§2), written to the rules in [workflow](../context/workflow.md#writing-briefs-for-haiku). Until then the executor must not start it.
-Depends on: 1702 | Base commit: current tip of the working branch | Branch: task/1703-go-apartment-small-posts
+Depends on: 1702e3 | Base commit: current tip of the working branch | Branch: task/1703-go-apartment-small-posts
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (split in two briefs if the exact-diff pass finds more)
-Tier: B (Sonnet writes the exact-diff pass; orchestrator reads the diff of the risk-listed files)
+Tier: A for filing timing, police connection, police-letter credentials and codelists. The exact-diff pass lists the risk files for review.
 
 > **One big PR mode.** Work on the current branch. After each step that changes a file, commit with the message `1703 step k`. Never create a branch, never push, never open a PR. Acceptance checks use `git log --oneline --grep='^1703 step'`.
 
 ## 1. Objective
 
-Port the small property POSTs not yet on Go: regenerate PIN and link, automation timing, archive/unarchive, add/delete feed, sync now, test connection, police-letter read, refresh codelists. Some may already exist from 1300/1520-1521; the exact-diff pass diffs against `go/internal/web/properties` first and drops duplicates.
+Port the five remaining property POSTs for automation timing, adding a calendar feed, testing the police connection, reading a police letter and refreshing police codelists. Keep the changes dormant until 1705.
 
 ## 2. Context
 
@@ -19,27 +19,28 @@ Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (no new pers
 
 **Routes in scope (method path, Python function):**
 
-- POST /apartments/{apartment_id}/regenerate-pin
-- POST /apartments/{apartment_id}/automation-timing
-- POST /apartments/{apartment_id}/regenerate-link
-- POST /apartments/{apartment_id}/archive and /unarchive
-- POST /apartments/{apartment_id}/feeds, POST /feeds/{feed_id}/delete
-- POST /sync, POST /apartments/{apartment_id}/test-connection
-- POST /apartments/{apartment_id}/police-letter, POST /apartments/{apartment_id}/refresh-codelists
+| POST path | Behavior to pin in Go tests |
+|---|---|
+| `/apartments/{id}/automation-timing` | Update only the timing fields. Exercise JSON and form responses, scheduled hour bounds and wizard refusals. |
+| `/apartments/{id}/feeds` | Use the Go iCal URL validator and guarded fetch. Exercise duplicate URLs, draft and errors on the property and wizard forms, and the saved-feed outcome when sync fails. |
+| `/apartments/{id}/test-connection` | Preserve ownership and form validation, the new-login/old-password lockout guard, the read-only calls and successful verification side effects. Reuse the read-only client used by 1702d2. |
+| `/apartments/{id}/police-letter` | Keep the input transient. Pin the JSON and HTML responses and `Cache-Control: no-store`, including invalid input. Use fictional credentials in tests. |
+| `/apartments/{id}/refresh-codelists` | Use the existing read-only UbyPort client. Verify persisted code lists and counts on success, plus the failure redirect. |
 
-**Parity method (same as briefs 1595 and 1580):** a golden script `App/scripts/go_go_apartment_small_posts_golden.py` seeds a throwaway database with made-up rows, renders the real FastAPI app, and writes `testdata/*_golden.json`; the Go test replays the same seed and must match byte for byte (go-first exception 1). Accepted differences are listed in the report, never silently.
+Existing Go handlers to keep in the 1705 inventory
+- `properties.Register` mounts regenerate PIN and link, archive and unarchive, and feed deletion.
+- `properties.RegisterSync` mounts `POST /sync`.
+
+Use Go tests with hand-written expectations for the request, response and database state. The [Go-first policy](../context/go-first.md) allows a new Python golden generator only where the exact-diff pass establishes a filing-data need. Record any accepted parity differences in the report.
 
 ## 3. Files
 
 | Path | Action | What |
 |---|---|---|
 | `go/internal/web/properties/apartment_small_posts.go` | create | the POSTs not yet on Go |
-| `go/internal/web/properties/apartment_small_posts_test.go` | create | golden parity and route tests |
-| `go/internal/web/properties/testdata/apartment_small_posts_golden.json` | create | golden written by the Python script |
-| `go/cmd/ubyhost-web/register_web_properties_apartment_small_posts.go` | create | registers the routes |
+| `go/internal/web/properties/apartment_small_posts_test.go` | create | handlers, parity and database tests |
+| `go/cmd/ubyhost-web/register_web_properties_apartment_small_posts.go` | create | registers the five routes |
 | `go/cmd/ubyhost-web/register_web_properties_apartment_small_posts_test.go` | create | route registration test |
-| `App/scripts/go_apartment_small_posts_golden.py` | create | golden generator (go-first exception 1) |
-| `App/tests/test_go_apartment_small_posts_golden.py` | create | golden freshness test (go-first exception 1) |
 | `docs/tasks/1703-files/**` | keep | sidecars from the exact-diff pass (do not edit) |
 | `docs/tasks/1703-report.md` | create | the report (§9) |
 
@@ -49,10 +50,9 @@ No other file may change. Two open briefs naming the same file in §3 run in the
 
 0. Checks (repo root). Anything other than the stated result: STOP (§8). The exact-diff pass fills in the `grep -cF` anchor lines for every file this brief edits and the `ls` line proving the new files do not exist yet.
 1. Copy the sidecars to their repo paths and run `sha256sum -c` on the table in §2: all OK.
-2. Add the golden script and its freshness test; run the script and commit the golden.
-3. Add the handlers, templates and i18n keys (`App/scripts/go_host_i18n.py` writes the catalog); `gofmt -l` prints nothing.
-4. Register the routes in one new `go/cmd/ubyhost-web/register_web_*.go` file (`init()` through `registerRoutes`); the routes stay dormant: nothing is added to `UBYHOST_GO_PATHS`.
-5. Run the commands in §6; write the report.
+2. Add the handlers and their parity tests from the sidecars. The exact-diff pass records any reused view fields and catalog entries in §3. `gofmt -l` prints nothing.
+3. Register the five method-and-path patterns in one new `go/cmd/ubyhost-web/register_web_*.go` file using `init()` and `registerRoutes`. Keep the routes dormant.
+4. Run the commands in §6 and write the report.
 
 ## 5. Do not touch
 
@@ -63,15 +63,14 @@ No other file may change. Two open briefs naming the same file in §3 run in the
 - `cd go && gofmt -l . | tail -5` prints nothing
 - `cd go && go vet ./internal/web/... ./cmd/... 2>&1 | tail -20` is silent
 - `cd go && go test ./internal/web/... ./cmd/ubyhost-web/... -count=1 2>&1 | tail -30` passes, no test skipped
-- `cd App && .venv/bin/python -m pytest tests/test_go_go_apartment_small_posts_golden.py -q --tb=short -x 2>&1 | tail -30` passes
 - `python3 scripts/context_lint.py 2>&1 | tail -10` is clean
 - Host pages: `test_layout_lint_browser.py` green plus one 390, 768 and 1280 px screenshot per page in the report (rule 10).
 
 ## 7. Acceptance
 
-- Each POST has a golden for success and one refusal; the iCal fetch uses the existing Go `ical` package and its SSRF guard.
-- The list of routes already on Go is printed in the report so nothing is ported twice.
-- Every route in the list answers on Go in a test with the same status, headers and body as the golden; a signed-out request gets the same redirect as Python.
+- Go tests cover each row in §2, including a success, at least one refusal and a signed-out request with the Python redirect.
+- Request tests pin status, headers, response body and any expected database writes. The iCal fetch uses the existing Go `ical` package and its SSRF guard.
+- The registration test covers the five new POST patterns and verifies that all five receive requests through the normal mux.
 - `git log --oneline --grep='^1703 step'` shows one commit per step; `git diff --stat` lists only §3 paths.
 
 ## 8. Stop and ask

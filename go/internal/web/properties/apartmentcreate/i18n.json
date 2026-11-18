@@ -1,0 +1,13 @@
+{
+ "cs": {
+  "apartment.form.guest_message.default": "Vítejte! Před pobytem prosím vyplňte registrační formulář hostů. Pokud máte jakékoli dotazy, obraťte se na svého hostitele. Děkujeme!",
+  "flash.apartments.created": "Ubytování bylo vytvořeno."
+ },
+ "en": {
+  "apartment.form.guest_message.default": "Welcome! Please complete the guest registration form before your stay. If you have any questions, please contact your host. Thank you!",
+  "flash.apartments.created": "Property created."
+ },
+ "vi": {
+  "flash.apartments.created": "Đã tạo chỗ ở."
+ }
+}

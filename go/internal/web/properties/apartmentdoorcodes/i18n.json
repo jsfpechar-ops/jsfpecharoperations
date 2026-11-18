@@ -1,0 +1,20 @@
+{
+ "cs": {
+  "flash.error.door_code_lock": "Vyberte zámek ze seznamu.",
+  "flash.error.door_code_lock_taken": "Tento zámek už posílá kódy pro jiné ubytování. Zámek slouží jednomu ubytování: vyberte jiný zámek, nebo ho nejdřív vypněte u druhého ubytování.",
+  "flash.error.smart_locks_unavailable": "Chytré zámky nejsou zapnuté.",
+  "why.times_missing": "Chybí čas příjezdu a odjezdu, takže kódy ke dveřím zatím nemohou fungovat. Nejdřív je nastavte."
+ },
+ "en": {
+  "flash.error.door_code_lock": "Choose a lock from the list.",
+  "flash.error.door_code_lock_taken": "This lock already sends codes for another property. A lock serves one property: choose another lock, or switch it off on the other property first.",
+  "flash.error.smart_locks_unavailable": "Smart locks are not switched on.",
+  "why.times_missing": "Check-in and check-out times are missing, so door codes cannot work yet. Set them first."
+ },
+ "vi": {
+  "flash.error.door_code_lock": "Chọn một khóa trong danh sách.",
+  "flash.error.door_code_lock_taken": "Khóa này đã gửi mã cho một chỗ ở khác. Mỗi khóa chỉ phục vụ một chỗ ở: hãy chọn khóa khác, hoặc tắt khóa ở chỗ ở kia trước.",
+  "flash.error.smart_locks_unavailable": "Khóa thông minh chưa được bật.",
+  "why.times_missing": "Thiếu giờ nhận phòng và trả phòng, nên mã cửa chưa thể hoạt động. Hãy đặt chúng trước."
+ }
+}

@@ -1,0 +1,7 @@
+# Host strings of the Go property settings save, POST /apartments/{id} (brief 1702c1).
+# App/scripts/go_host_i18n.py writes the sibling i18n.json from App/app/host_i18n.py.
+flash.apartments.saved
+flash.apartments.saved_ready
+flash.error.pin_six_digits
+flash.apartments.letter_saved_untested
+flash.stay_fees.saved

@@ -1,0 +1,31 @@
+# Host strings of the Go house book page (brief 1704a).
+# App/scripts/go_host_i18n.py writes the sibling i18n.json from App/app/host_i18n.py.
+housebook.*
+host.filter.*
+how.toggle
+how.more
+how.housebook.1
+how.housebook.2
+how.housebook.3
+nav.reports
+nav.housebook
+status.reported
+status.not_required
+stay.detail.guests.rejected_final
+submission.rejected
+common.actions
+common.edit
+common.close
+common.restore
+common.all
+common.from
+common.until
+confirm.cancel
+customers.yes
+customers.no
+host.delete
+host.delete_to_archived.confirm
+csv.download
+csv.download_pdfs
+data.export_csv_cancel
+data.export_csv_download

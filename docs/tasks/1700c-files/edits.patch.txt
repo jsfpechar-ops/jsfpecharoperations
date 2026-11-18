@@ -1,0 +1,60 @@
+diff --git a/App/tests/test_db_postgres.py b/App/tests/test_db_postgres.py
+index 19c4c10..9d814aa 100644
+--- a/App/tests/test_db_postgres.py
++++ b/App/tests/test_db_postgres.py
+@@ -257,8 +257,8 @@ def test_full_schema_apply_and_validate_on_postgres(pg_runtime):
+     status = db.postgres_schema_status()
+     assert status["current"] is True
+     assert status["actual_version"] == db.expected_schema_version() == 45
+-    assert status["expected_tables"] == 70 and status["actual_tables"] == 73  # + job (goose 00003), guest_form_snapshot and guest_inbox (goose 00020), PostgreSQL only
+-    assert status["missing_tables"] == 0 and status["extra_tables"] == 3  # job, guest_form_snapshot, guest_inbox
++    assert status["expected_tables"] == 70 and status["actual_tables"] == 75  # + job (goose 00003), guest_form_snapshot and guest_inbox (goose 00020), ruian_address and ruian_import (goose 00021), PostgreSQL only
++    assert status["missing_tables"] == 0 and status["extra_tables"] == 5  # job, guest_form_snapshot, guest_inbox, ruian_address, ruian_import
+     assert status["column_mismatches"] == 0
+     assert status["missing_indexes"] == 0
+     assert status["missing_triggers"] == status["extra_triggers"] == 0
+diff --git a/deploy/lightsail/scripts/backup.sh b/deploy/lightsail/scripts/backup.sh
+index 136de1e..d58654b 100755
+--- a/deploy/lightsail/scripts/backup.sh
++++ b/deploy/lightsail/scripts/backup.sh
+@@ -54,7 +54,7 @@ if [ -n "${UBYHOST_DATABASE_URL:-}" ] && [ -n "$(docker compose ps -q --status r
+     [ -n "${NEWEST}" ] || { echo "No snapshot folder to hold the PostgreSQL dump." >&2; exit 1; }
+     docker compose exec -T ubyhost sh -c "rm -f /data/backups/${NEWEST}/ubyhost-pg.dump.age.tmp"
+     # Written as .tmp and renamed only after the whole pipeline succeeded (pipefail), so no truncated .age is left.
+-    docker compose exec -T postgres pg_dump -U ubyhost -Fc ubyhost \
++    docker compose exec -T postgres pg_dump -U ubyhost -Fc ubyhost --exclude-table-data=ruian_address \
+       | age -r "${RECIPIENT}" \
+       | docker compose exec -T ubyhost sh -c "cat > /data/backups/${NEWEST}/ubyhost-pg.dump.age.tmp && mv /data/backups/${NEWEST}/ubyhost-pg.dump.age.tmp /data/backups/${NEWEST}/ubyhost-pg.dump.age"
+     echo "PostgreSQL dump bytes: $(docker compose exec -T ubyhost sh -c "wc -c < /data/backups/${NEWEST}/ubyhost-pg.dump.age" | tr -d '\r')"
+diff --git a/docs/ENVIRONMENT.md b/docs/ENVIRONMENT.md
+index 58bd467..140d40a 100644
+--- a/docs/ENVIRONMENT.md
++++ b/docs/ENVIRONMENT.md
+@@ -25,6 +25,7 @@ Optional host subdomain: [deployment, exact values and rollback](APP_SUBDOMAIN.m
+ | --- | --- | --- |
+ | `UBYHOST_RUIAN_ENABLED` | `1` | Set `0` to turn off the RÚIAN address suggestions on the property form (only the typed text goes to ČÚZK; nothing is stored). |
+ | `UBYHOST_RUIAN_URL` | built-in | Override the ČÚZK RÚIAN geocoder URL (unverified default; see `app/ruian.py`). |
++| `UBYHOST_RUIAN_IMPORT` | unset | Set `1` to run the monthly ČÚZK address import (Go, table `ruian_address`; the `pg_trgm` step in brief 1700c comes first). Needs `vdp.cuzk.gov.cz`. Off unless exactly `1`; `UBYHOST_RUIAN_ENABLED=0` also stops it. |
+ | `UBYHOST_DATA_DIR` | `App/data` | Database, secret key, passport photos. Created at import time with mode `0700`. |
+ | `UBYHOST_DB` | `$UBYHOST_DATA_DIR/ubyhost.db` | Full path override for the SQLite file. `App/scripts/backup_data.sh` honours it too, so if you set one you must set it for the backup script as well. |
+ | `UBYHOST_SECRET_KEY` | generated once into `$UBYHOST_DATA_DIR/secret_key` | Minimum 32 characters; the process refuses to start if shorter. Signs session/PIN/claim cookies and CSRF tokens, and, while `UBYHOST_DATA_KEY_LEGACY` is on, derives the legacy Fernet key for data at rest. See [OPERATIONS.md](OPERATIONS.md#if-the-secret-key-is-lost-or-rotated). |
+diff --git a/go/internal/schema/testdata/goose_statements_golden.json b/go/internal/schema/testdata/goose_statements_golden.json
+index 1025c44..bd7a455 100644
+--- a/go/internal/schema/testdata/goose_statements_golden.json
++++ b/go/internal/schema/testdata/goose_statements_golden.json
+@@ -335,6 +335,15 @@
+     "071090f87f95981628ef492570349ecd8953064ed0a9829c10731d249f3e1a30",
+     "9e77c04ae0f395c4b0c8bf5cfa1b04e091c8bff3d7884c4ef323663fdb08ec52"
+    ]
++  },
++  "00021_ruian_address.sql": {
++   "ok": [
++    "d9a7dd302ebc44c12e43c8d75fb0b8817b8767b8254ce594014cdfc60806933d",
++    "dfea58bb7d61c31be6b4cf790004f451451d10fc5db990897ee01c54f534d9f3",
++    "2e0744fcdb65f149a7d1d88ea37ea6292e78be234ce2accb383bc2491287e2a9",
++    "3caab1052d15da3e3f934e6b0b3ffe357d3b229c1326b95ace6409309f07c91f",
++    "9c8c24ff23fcb556ceacdc4c40e042f9bf36197f4f8125b4e34d137cc6d72837"
++   ]
+   }
+  },
+  "goose": [

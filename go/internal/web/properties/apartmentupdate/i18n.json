@@ -1,0 +1,32 @@
+{
+ "cs": {
+  "flash.apartments.letter_saved_untested": "Uloženo. Zatím neotestováno, protože nebylo zadáno heslo. Napište ho a otestujte spojení.",
+  "flash.apartments.letter_test_ok": "Uloženo. UbyPort přihlášení přijal. Test nic nepodává, takže neověřuje, že podání funguje.",
+  "flash.apartments.saved": "Uloženo. Pro hlášení policii ještě chybí: %(fields)s.",
+  "flash.apartments.saved_ready": "Uloženo. Ubytování je připravené k hlášení.",
+  "flash.error.letter_test_failed": "Uloženo, ale policie přihlášení odmítla. Zkontrolujte jméno a heslo a otestujte znovu.",
+  "flash.error.letter_test_unreachable": "Uloženo. Policejní služba teď není dostupná, přihlášení se neověřilo. Otestujte později.",
+  "flash.error.pin_six_digits": "PIN musí mít přesně 6 číslic.",
+  "flash.stay_fees.saved": "Uloženo."
+ },
+ "en": {
+  "flash.apartments.letter_saved_untested": "Saved. Not tested yet, because no password was typed. Type it and test the connection.",
+  "flash.apartments.letter_test_ok": "Saved. UbyPort accepted the login. The test files no report, so it does not prove filing works.",
+  "flash.apartments.saved": "Saved. Still missing for police reporting: %(fields)s.",
+  "flash.apartments.saved_ready": "Saved. This property is ready to report.",
+  "flash.error.letter_test_failed": "Saved, but the police refused the login. Check the login and the password, then test again.",
+  "flash.error.letter_test_unreachable": "Saved. The police service could not be reached just now, so the login was not checked. Test again later.",
+  "flash.error.pin_six_digits": "The PIN must be exactly 6 digits.",
+  "flash.stay_fees.saved": "Saved."
+ },
+ "vi": {
+  "flash.apartments.letter_saved_untested": "Đã lưu. Chưa kiểm tra vì chưa nhập mật khẩu. Hãy nhập mật khẩu và kiểm tra kết nối.",
+  "flash.apartments.letter_test_ok": "Đã lưu. UbyPort đã chấp nhận đăng nhập. Bài kiểm tra không nộp khai báo nên không chứng minh việc nộp hoạt động.",
+  "flash.apartments.saved": "Đã lưu. Vẫn còn thiếu để khai báo cảnh sát: %(fields)s.",
+  "flash.apartments.saved_ready": "Đã lưu. Chỗ ở này đã sẵn sàng khai báo.",
+  "flash.error.letter_test_failed": "Đã lưu, nhưng cảnh sát từ chối đăng nhập. Hãy kiểm tra tên đăng nhập và mật khẩu rồi kiểm tra lại.",
+  "flash.error.letter_test_unreachable": "Đã lưu. Hiện không kết nối được dịch vụ của cảnh sát nên chưa kiểm tra đăng nhập. Hãy kiểm tra lại sau.",
+  "flash.error.pin_six_digits": "Mã PIN phải gồm đúng 6 chữ số.",
+  "flash.stay_fees.saved": "Đã lưu."
+ }
+}

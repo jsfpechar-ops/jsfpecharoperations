@@ -1,0 +1,1781 @@
+{
+ "apartments": [
+  201,
+  301,
+  302,
+  303,
+  304,
+  305,
+  306
+ ],
+ "cases": [
+  {
+   "csrf": true,
+   "form": {
+    "addr_house_no": "12",
+    "addr_obec": "Praha 2",
+    "addr_street": "Vinohradská",
+    "addr_zip": "120 00",
+    "internal_name": "Studio Žižkov",
+    "legal_entity_id": "21"
+   },
+   "lang": "en",
+   "location": "/login?next=/apartments",
+   "name": "signed out",
+   "status": 303,
+   "user": 0,
+   "workspace": 0
+  },
+  {
+   "csrf": false,
+   "form": {
+    "addr_house_no": "12",
+    "addr_obec": "Praha 2",
+    "addr_street": "Vinohradská",
+    "addr_zip": "120 00",
+    "internal_name": "Studio Žižkov",
+    "legal_entity_id": "21"
+   },
+   "lang": "en",
+   "location": "/login?notice=form_expired",
+   "name": "no CSRF token",
+   "status": 303,
+   "user": 2,
+   "workspace": 0
+  },
+  {
+   "created": {
+    "audit": {
+     "action": "apartment_created",
+     "actor": "create2@example.test",
+     "actor_user_id": 2,
+     "detail": "id=302",
+     "impersonator_user_id": null,
+     "owner_user_id": 2
+    },
+    "password": "golden-ws-pass",
+    "pin": true,
+    "rates": [],
+    "row": {
+     "active": "1",
+     "addr_house_no": "12",
+     "addr_obec": "Praha 2",
+     "addr_obec_cast": "",
+     "addr_okres": "",
+     "addr_orient_no": "",
+     "addr_street": "Vinohradská",
+     "addr_zip": "12000",
+     "archived_at": null,
+     "automation_mode": "manual",
+     "city_en": "Prague",
+     "data_controller_entity_id": null,
+     "default_purpose": "99",
+     "guest_message": "Welcome! Please complete the guest registration form before your stay. If you have any questions, please contact your host. Thank you!",
+     "internal_name": "Studio Žižkov",
+     "legal_entity_id": "21",
+     "notes": "",
+     "ocr_scan": "0",
+     "owner_user_id": "2",
+     "passport_photo_policy": "off",
+     "permalink_reachback_days": "365",
+     "permalink_window_days": "1",
+     "stay_fee_authority_address": null,
+     "stay_fee_authority_contact": null,
+     "stay_fee_authority_name": null,
+     "stay_fee_cadence": "monthly",
+     "stay_fee_council_account": null,
+     "stay_fee_council_iban": null,
+     "stay_fee_instruction": null,
+     "stay_fee_payee": null,
+     "stay_fee_rate_czk": "0",
+     "stay_fee_vs": null,
+     "submit_after_hours": "24",
+     "uby_contact": "provoz.alpha.s.r.o.dlouhy.kontakt@example.test",
+     "uby_idub": "",
+     "uby_mark": "MLJNO",
+     "uby_name": "",
+     "uby_ws_user": "UBY-WS_MLJNO"
+    },
+    "setup": "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": false, \"steps\": {}, \"tested\": false}",
+    "slug_code_length": 6,
+    "slug_readable": "studio-zizkov",
+    "token_length": 20
+   },
+   "csrf": true,
+   "form": {
+    "addr_house_no": "12",
+    "addr_obec": "Praha 2",
+    "addr_street": "Vinohradská",
+    "addr_zip": "120 00",
+    "internal_name": "Studio Žižkov",
+    "legal_entity_id": "21",
+    "uby_ws_password": "  golden-ws-pass  ",
+    "uby_ws_user": "UBY-WS_MLJNO"
+   },
+   "lang": "en",
+   "location": "/apartments/302/setup/calendar?msg=Property%20created.&toast_kind=success",
+   "name": "valid minimal with police defaults",
+   "status": 303,
+   "user": 2,
+   "workspace": 0
+  },
+  {
+   "created": {
+    "audit": {
+     "action": "apartment_created",
+     "actor": "create2@example.test",
+     "actor_user_id": 2,
+     "detail": "id=303",
+     "impersonator_user_id": null,
+     "owner_user_id": 2
+    },
+    "password": null,
+    "pin": true,
+    "rates": [
+     [
+      50,
+      "2000-01-01"
+     ]
+    ],
+    "row": {
+     "active": "1",
+     "addr_house_no": "12",
+     "addr_obec": "Plzeň",
+     "addr_obec_cast": "Jižní Předměstí",
+     "addr_okres": "Plzeň-město",
+     "addr_orient_no": "5a",
+     "addr_street": "Vinohradská",
+     "addr_zip": "12000",
+     "archived_at": null,
+     "automation_mode": "scheduled",
+     "city_en": "Pilsen",
+     "data_controller_entity_id": "22",
+     "default_purpose": "01",
+     "guest_message": "Hello",
+     "internal_name": "Plzeň flat",
+     "legal_entity_id": "21",
+     "notes": "a note",
+     "ocr_scan": "1",
+     "owner_user_id": "2",
+     "passport_photo_policy": "required_foreign",
+     "permalink_reachback_days": "3650",
+     "permalink_window_days": "3",
+     "stay_fee_authority_address": null,
+     "stay_fee_authority_contact": "poplatky@example.test",
+     "stay_fee_authority_name": "Městský úřad Plzeň",
+     "stay_fee_cadence": "quarterly",
+     "stay_fee_council_account": null,
+     "stay_fee_council_iban": null,
+     "stay_fee_instruction": "Pay by the 15th.",
+     "stay_fee_payee": "PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP",
+     "stay_fee_rate_czk": "50",
+     "stay_fee_vs": "1234567890",
+     "submit_after_hours": "48",
+     "uby_contact": "me@example.test",
+     "uby_idub": "ABC123456789",
+     "uby_mark": "AAKLI",
+     "uby_name": "Penzion Plzeň",
+     "uby_ws_user": "uby-tws_test"
+    },
+    "setup": "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": false, \"steps\": {}, \"tested\": false}",
+    "slug_code_length": 6,
+    "slug_readable": "plzen-flat",
+    "token_length": 20
+   },
+   "csrf": true,
+   "form": {
+    "account_bank": "",
+    "account_number": "",
+    "account_prefix": "",
+    "addr_house_no": "12",
+    "addr_obec": "Plzeň",
+    "addr_obec_cast": "Jižní Předměstí",
+    "addr_okres": "Plzeň-město",
+    "addr_orient_no": "5a",
+    "addr_street": "Vinohradská",
+    "addr_zip": "120 00",
+    "automation_mode": "scheduled",
+    "copy_from": "201",
+    "data_controller_entity_id": "22",
+    "default_purpose": "01",
+    "guest_message": "  Hello  ",
+    "internal_name": " Plzeň flat ",
+    "legal_entity_id": "21",
+    "notes": " a note ",
+    "ocr_scan": "1",
+    "passport_photo_policy": "required_foreign",
+    "permalink_reachback_days": "9999",
+    "permalink_window_days": "3",
+    "stay_fee_authority_address": "",
+    "stay_fee_authority_contact": "poplatky@example.test",
+    "stay_fee_authority_name": "  Městský úřad Plzeň  ",
+    "stay_fee_cadence": "quarterly",
+    "stay_fee_council_account": "19-2000145399/0800",
+    "stay_fee_instruction": "Pay by the 15th.",
+    "stay_fee_payee": "PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP",
+    "stay_fee_rate_czk": "50",
+    "stay_fee_vs": "12/34-5678901234",
+    "submit_after_hours": "60",
+    "uby_contact": "me@example.test",
+    "uby_idub": "ABC123456789",
+    "uby_mark": "aakli",
+    "uby_name": "Penzion Plzeň",
+    "uby_ws_user": "uby-tws_test"
+   },
+   "lang": "cs",
+   "location": "/apartments/303/setup/calendar?msg=Ubytov%C3%A1n%C3%AD%20bylo%20vytvo%C5%99eno.&toast_kind=success",
+   "name": "copy with stay fee and council account",
+   "status": 303,
+   "user": 2,
+   "workspace": 0
+  },
+  {
+   "created": {
+    "audit": {
+     "action": "apartment_created",
+     "actor": "create2@example.test",
+     "actor_user_id": 2,
+     "detail": "id=304",
+     "impersonator_user_id": null,
+     "owner_user_id": 2
+    },
+    "password": null,
+    "pin": true,
+    "rates": [],
+    "row": {
+     "active": "1",
+     "addr_house_no": "12",
+     "addr_obec": "Brno   město",
+     "addr_obec_cast": "",
+     "addr_okres": "",
+     "addr_orient_no": "",
+     "addr_street": "Vinohradská",
+     "addr_zip": "12000",
+     "archived_at": null,
+     "automation_mode": "manual",
+     "city_en": "Brno město",
+     "data_controller_entity_id": null,
+     "default_purpose": "99",
+     "guest_message": "Vítejte! Před pobytem prosím vyplňte registrační formulář hostů. Pokud máte jakékoli dotazy, obraťte se na svého hostitele. Děkujeme!",
+     "internal_name": "Studio Žižkov",
+     "legal_entity_id": "21",
+     "notes": "",
+     "ocr_scan": "0",
+     "owner_user_id": "2",
+     "passport_photo_policy": "off",
+     "permalink_reachback_days": "365",
+     "permalink_window_days": "1",
+     "stay_fee_authority_address": null,
+     "stay_fee_authority_contact": null,
+     "stay_fee_authority_name": null,
+     "stay_fee_cadence": "monthly",
+     "stay_fee_council_account": null,
+     "stay_fee_council_iban": null,
+     "stay_fee_instruction": null,
+     "stay_fee_payee": null,
+     "stay_fee_rate_czk": "0",
+     "stay_fee_vs": null,
+     "submit_after_hours": "-5",
+     "uby_contact": "provoz.alpha.s.r.o.dlouhy.kontakt@example.test",
+     "uby_idub": "",
+     "uby_mark": "",
+     "uby_name": "",
+     "uby_ws_user": ""
+    },
+    "setup": "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": false, \"steps\": {}, \"tested\": false}",
+    "slug_code_length": 6,
+    "slug_readable": "studio-zizkov",
+    "token_length": 20
+   },
+   "csrf": true,
+   "form": {
+    "addr_house_no": "12",
+    "addr_obec": "  Brno   město ",
+    "addr_street": "Vinohradská",
+    "addr_zip": "120 00",
+    "automation_mode": "nonsense",
+    "data_controller_entity_id": "21",
+    "default_purpose": "",
+    "internal_name": "Studio Žižkov",
+    "legal_entity_id": "21",
+    "passport_photo_policy": "always",
+    "permalink_reachback_days": "-1",
+    "permalink_window_days": "0",
+    "stay_fee_rate_czk": "0",
+    "submit_after_hours": "-5"
+   },
+   "lang": "cs",
+   "location": "/apartments/304/setup/calendar?msg=Ubytov%C3%A1n%C3%AD%20bylo%20vytvo%C5%99eno.&toast_kind=success",
+   "name": "controller equal to operator, blank message in Czech",
+   "status": 303,
+   "user": 2,
+   "workspace": 0
+  },
+  {
+   "created": {
+    "audit": {
+     "action": "apartment_created",
+     "actor": "create2@example.test",
+     "actor_user_id": 2,
+     "detail": "id=305",
+     "impersonator_user_id": null,
+     "owner_user_id": 2
+    },
+    "password": null,
+    "pin": true,
+    "rates": [],
+    "row": {
+     "active": "1",
+     "addr_house_no": "E12",
+     "addr_obec": "Praha 2",
+     "addr_obec_cast": "",
+     "addr_okres": "",
+     "addr_orient_no": "",
+     "addr_street": "Vinohradská",
+     "addr_zip": "12000",
+     "archived_at": null,
+     "automation_mode": "manual",
+     "city_en": "Prague",
+     "data_controller_entity_id": null,
+     "default_purpose": "10",
+     "guest_message": "Welcome! Please complete the guest registration form before your stay. If you have any questions, please contact your host. Thank you!",
+     "internal_name": "Chata",
+     "legal_entity_id": "21",
+     "notes": "",
+     "ocr_scan": "0",
+     "owner_user_id": "2",
+     "passport_photo_policy": "off",
+     "permalink_reachback_days": "365",
+     "permalink_window_days": "1",
+     "stay_fee_authority_address": null,
+     "stay_fee_authority_contact": null,
+     "stay_fee_authority_name": null,
+     "stay_fee_cadence": "monthly",
+     "stay_fee_council_account": null,
+     "stay_fee_council_iban": null,
+     "stay_fee_instruction": null,
+     "stay_fee_payee": null,
+     "stay_fee_rate_czk": "0",
+     "stay_fee_vs": null,
+     "submit_after_hours": "24",
+     "uby_contact": "provoz.alpha.s.r.o.dlouhy.kontakt@example.test",
+     "uby_idub": "",
+     "uby_mark": "",
+     "uby_name": "",
+     "uby_ws_user": ""
+    },
+    "setup": "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": false, \"steps\": {}, \"tested\": false}",
+    "slug_code_length": 6,
+    "slug_readable": "chata",
+    "token_length": 20
+   },
+   "csrf": true,
+   "form": {
+    "addr_house_no": "E12",
+    "addr_obec": "Praha 2",
+    "addr_street": "Vinohradská",
+    "addr_zip": "120 00",
+    "automation_mode": "",
+    "default_purpose": "  ",
+    "internal_name": "Chata",
+    "legal_entity_id": "21",
+    "stay_fee_cadence": "",
+    "stay_fee_payee": "",
+    "stay_fee_rate_czk": "abc"
+   },
+   "lang": "en",
+   "location": "/apartments/305/setup/calendar?msg=Property%20created.&toast_kind=success",
+   "name": "evidence number E12",
+   "status": 303,
+   "user": 2,
+   "workspace": 0
+  },
+  {
+   "csrf": true,
+   "form": {
+    "addr_house_no": "č.ev. 12",
+    "addr_obec": "Praha 2",
+    "addr_street": "Vinohradská",
+    "addr_zip": "120 00",
+    "internal_name": "Studio Žižkov",
+    "legal_entity_id": "21"
+   },
+   "fragments": [
+    [
+     "addr_house_no-error",
+     "House number is up to 4 digits, optionally with E for an evidence number."
+    ],
+    [
+     "21",
+     "selected"
+    ],
+    [
+     "default_purpose",
+     "10"
+    ],
+    [
+     "history",
+     ""
+    ],
+    [
+     "history_sig",
+     ""
+    ],
+    [
+     "page",
+     "apartments"
+    ],
+    [
+     "device",
+     "computer"
+    ],
+    [
+     "topic",
+     ""
+    ],
+    [
+     "q",
+     ""
+    ],
+    [
+     "return_to",
+     "/apartments"
+    ],
+    [
+     "next",
+     "/apartments"
+    ]
+   ],
+   "lang": "en",
+   "location": null,
+   "name": "č.ev. 12 typed in the house number",
+   "status": 400,
+   "user": 2,
+   "workspace": 0
+  },
+  {
+   "csrf": true,
+   "form": {
+    "addr_house_no": "12",
+    "addr_obec": "Praha 2",
+    "addr_street": "Vinohradská",
+    "addr_zip": "120 00",
+    "internal_name": "Studio Žižkov",
+    "legal_entity_id": "31"
+   },
+   "fragments": [
+    [
+     "operator-message",
+     "Choose the operator for this property."
+    ],
+    [
+     "default_purpose",
+     "10"
+    ],
+    [
+     "history",
+     ""
+    ],
+    [
+     "history_sig",
+     ""
+    ],
+    [
+     "page",
+     "apartments"
+    ],
+    [
+     "device",
+     "computer"
+    ],
+    [
+     "topic",
+     ""
+    ],
+    [
+     "q",
+     ""
+    ],
+    [
+     "return_to",
+     "/apartments"
+    ],
+    [
+     "next",
+     "/apartments"
+    ]
+   ],
+   "lang": "en",
+   "location": null,
+   "name": "foreign operator",
+   "status": 400,
+   "user": 2,
+   "workspace": 0
+  },
+  {
+   "csrf": true,
+   "form": {
+    "addr_house_no": "12",
+    "addr_obec": "Praha 2",
+    "addr_street": "Vinohradská",
+    "addr_zip": "120 00",
+    "data_controller_entity_id": "31",
+    "internal_name": "Studio Žižkov",
+    "legal_entity_id": "21"
+   },
+   "fragments": [
+    [
+     "controller-message",
+     "That data controller no longer exists."
+    ],
+    [
+     "21",
+     "selected"
+    ],
+    [
+     "default_purpose",
+     "10"
+    ],
+    [
+     "history",
+     ""
+    ],
+    [
+     "history_sig",
+     ""
+    ],
+    [
+     "page",
+     "apartments"
+    ],
+    [
+     "device",
+     "computer"
+    ],
+    [
+     "topic",
+     ""
+    ],
+    [
+     "q",
+     ""
+    ],
+    [
+     "return_to",
+     "/apartments"
+    ],
+    [
+     "next",
+     "/apartments"
+    ]
+   ],
+   "lang": "en",
+   "location": null,
+   "name": "foreign controller",
+   "status": 400,
+   "user": 2,
+   "workspace": 0
+  },
+  {
+   "csrf": true,
+   "form": {
+    "addr_house_no": "12",
+    "addr_obec": "Praha 2",
+    "addr_street": "Vinohradská",
+    "addr_zip": "120 00",
+    "data_controller_entity_id": "x",
+    "internal_name": "Studio Žižkov",
+    "legal_entity_id": "21"
+   },
+   "fragments": [
+    [
+     "21",
+     "selected"
+    ],
+    [
+     "default_purpose",
+     "10"
+    ],
+    [
+     "history",
+     ""
+    ],
+    [
+     "history_sig",
+     ""
+    ],
+    [
+     "page",
+     "apartments"
+    ],
+    [
+     "device",
+     "computer"
+    ],
+    [
+     "topic",
+     ""
+    ],
+    [
+     "q",
+     ""
+    ],
+    [
+     "return_to",
+     "/apartments"
+    ],
+    [
+     "next",
+     "/apartments"
+    ]
+   ],
+   "lang": "en",
+   "location": null,
+   "name": "malformed controller",
+   "status": 400,
+   "user": 2,
+   "workspace": 0
+  },
+  {
+   "csrf": true,
+   "form": {
+    "addr_house_no": "12",
+    "addr_obec": "Praha 2",
+    "addr_street": "Vinohradská",
+    "addr_zip": "120 00",
+    "internal_name": "Studio Žižkov",
+    "legal_entity_id": "23"
+   },
+   "fragments": [
+    [
+     "operator-message",
+     "Choose the operator for this property."
+    ],
+    [
+     "default_purpose",
+     "10"
+    ],
+    [
+     "history",
+     ""
+    ],
+    [
+     "history_sig",
+     ""
+    ],
+    [
+     "page",
+     "apartments"
+    ],
+    [
+     "device",
+     "computer"
+    ],
+    [
+     "topic",
+     ""
+    ],
+    [
+     "q",
+     ""
+    ],
+    [
+     "return_to",
+     "/apartments"
+    ],
+    [
+     "next",
+     "/apartments"
+    ]
+   ],
+   "lang": "en",
+   "location": null,
+   "name": "archived operator",
+   "status": 400,
+   "user": 2,
+   "workspace": 0
+  },
+  {
+   "csrf": true,
+   "form": {
+    "addr_house_no": "12",
+    "addr_obec": "Praha 2",
+    "addr_street": "Vinohradská",
+    "addr_zip": "120 00",
+    "internal_name": "Studio Žižkov",
+    "legal_entity_id": ""
+   },
+   "fragments": [
+    [
+     "operator-message",
+     "Choose the operator for this property."
+    ],
+    [
+     "default_purpose",
+     "10"
+    ],
+    [
+     "history",
+     ""
+    ],
+    [
+     "history_sig",
+     ""
+    ],
+    [
+     "page",
+     "apartments"
+    ],
+    [
+     "device",
+     "computer"
+    ],
+    [
+     "topic",
+     ""
+    ],
+    [
+     "q",
+     ""
+    ],
+    [
+     "return_to",
+     "/apartments"
+    ],
+    [
+     "next",
+     "/apartments"
+    ]
+   ],
+   "lang": "en",
+   "location": null,
+   "name": "no operator chosen",
+   "status": 400,
+   "user": 2,
+   "workspace": 0
+  },
+  {
+   "csrf": true,
+   "form": {
+    "addr_house_no": "12",
+    "addr_obec": "Praha 2",
+    "addr_street": "Vinohradská",
+    "addr_zip": "120 00",
+    "internal_name": "Studio Žižkov",
+    "legal_entity_id": ""
+   },
+   "fragments": [
+    [
+     "operator-message",
+     ""
+    ],
+    [
+     "default_purpose",
+     "10"
+    ],
+    [
+     "history",
+     ""
+    ],
+    [
+     "history_sig",
+     ""
+    ],
+    [
+     "page",
+     "apartments"
+    ],
+    [
+     "device",
+     "computer"
+    ],
+    [
+     "topic",
+     ""
+    ],
+    [
+     "q",
+     ""
+    ],
+    [
+     "return_to",
+     "/apartments"
+    ],
+    [
+     "next",
+     "/apartments"
+    ]
+   ],
+   "lang": "en",
+   "location": null,
+   "name": "no operator at all",
+   "status": 400,
+   "user": 4,
+   "workspace": 0
+  },
+  {
+   "csrf": true,
+   "form": {
+    "addr_house_no": "12",
+    "addr_obec": "Praha 2",
+    "addr_street": "Vinohradská",
+    "addr_zip": "120 00",
+    "automation_mode": "scheduled",
+    "copy_from": "201",
+    "data_controller_entity_id": "22",
+    "default_purpose": "01",
+    "internal_name": "   ",
+    "legal_entity_id": "21",
+    "permalink_reachback_days": "9999",
+    "permalink_window_days": "3",
+    "stay_fee_authority_address": "",
+    "stay_fee_authority_contact": "poplatky@example.test",
+    "stay_fee_authority_name": "  Městský úřad Plzeň  ",
+    "stay_fee_cadence": "quarterly",
+    "stay_fee_council_account": "19-2000145399/0800",
+    "stay_fee_instruction": "Pay by the 15th.",
+    "stay_fee_payee": "PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP",
+    "stay_fee_rate_czk": "50",
+    "submit_after_hours": "60"
+   },
+   "fragments": [
+    [
+     "internal_name-error",
+     "Please enter a name."
+    ],
+    [
+     "copy_from",
+     "201"
+    ],
+    [
+     "201",
+     "selected"
+    ],
+    [
+     "21",
+     "selected"
+    ],
+    [
+     "22",
+     "selected"
+    ],
+    [
+     "default_purpose",
+     "01"
+    ],
+    [
+     "copy_from",
+     "201"
+    ],
+    [
+     "automation_mode",
+     "scheduled"
+    ],
+    [
+     "submit_after_hours",
+     "60"
+    ],
+    [
+     "permalink_window_days",
+     "3"
+    ],
+    [
+     "permalink_reachback_days",
+     "9999"
+    ],
+    [
+     "stay_fee_rate_czk",
+     "50"
+    ],
+    [
+     "stay_fee_cadence",
+     "quarterly"
+    ],
+    [
+     "stay_fee_authority_name",
+     "Městský úřad Plzeň"
+    ],
+    [
+     "stay_fee_authority_address",
+     ""
+    ],
+    [
+     "stay_fee_authority_contact",
+     "poplatky@example.test"
+    ],
+    [
+     "stay_fee_payee",
+     "PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP"
+    ],
+    [
+     "stay_fee_instruction",
+     "Pay by the 15th."
+    ],
+    [
+     "stay_fee_council_account",
+     "19-2000145399/0800"
+    ],
+    [
+     "history",
+     ""
+    ],
+    [
+     "history_sig",
+     ""
+    ],
+    [
+     "page",
+     "apartments"
+    ],
+    [
+     "device",
+     "computer"
+    ],
+    [
+     "topic",
+     ""
+    ],
+    [
+     "q",
+     ""
+    ],
+    [
+     "return_to",
+     "/apartments"
+    ],
+    [
+     "next",
+     "/apartments"
+    ]
+   ],
+   "lang": "en",
+   "location": null,
+   "name": "blank name keeps the copy",
+   "status": 400,
+   "user": 2,
+   "workspace": 0
+  },
+  {
+   "csrf": true,
+   "form": {
+    "addr_house_no": "12",
+    "addr_obec": "Praha 2",
+    "addr_street": "Vinohradská",
+    "addr_zip": "120 00",
+    "copy_from": "301",
+    "internal_name": "",
+    "legal_entity_id": "21"
+   },
+   "fragments": [
+    [
+     "internal_name-error",
+     "Please enter a name."
+    ],
+    [
+     "21",
+     "selected"
+    ],
+    [
+     "default_purpose",
+     "10"
+    ],
+    [
+     "history",
+     ""
+    ],
+    [
+     "history_sig",
+     ""
+    ],
+    [
+     "page",
+     "apartments"
+    ],
+    [
+     "device",
+     "computer"
+    ],
+    [
+     "topic",
+     ""
+    ],
+    [
+     "q",
+     ""
+    ],
+    [
+     "return_to",
+     "/apartments"
+    ],
+    [
+     "next",
+     "/apartments"
+    ]
+   ],
+   "lang": "en",
+   "location": null,
+   "name": "blank name, foreign copy source",
+   "status": 400,
+   "user": 2,
+   "workspace": 0
+  },
+  {
+   "csrf": true,
+   "form": {
+    "addr_house_no": "",
+    "addr_obec": "",
+    "addr_street": "",
+    "addr_zip": "",
+    "internal_name": "Studio Žižkov",
+    "legal_entity_id": "21"
+   },
+   "fragments": [
+    [
+     "addr_street-error",
+     "Street is required."
+    ],
+    [
+     "addr_house_no-error",
+     "House number is required."
+    ],
+    [
+     "addr_zip-error",
+     "Postcode is required."
+    ],
+    [
+     "addr_obec-error",
+     "Municipality is required."
+    ],
+    [
+     "21",
+     "selected"
+    ],
+    [
+     "default_purpose",
+     "10"
+    ],
+    [
+     "history",
+     ""
+    ],
+    [
+     "history_sig",
+     ""
+    ],
+    [
+     "page",
+     "apartments"
+    ],
+    [
+     "device",
+     "computer"
+    ],
+    [
+     "topic",
+     ""
+    ],
+    [
+     "q",
+     ""
+    ],
+    [
+     "return_to",
+     "/apartments"
+    ],
+    [
+     "next",
+     "/apartments"
+    ]
+   ],
+   "lang": "en",
+   "location": null,
+   "name": "every address field missing",
+   "status": 400,
+   "user": 2,
+   "workspace": 0
+  },
+  {
+   "csrf": true,
+   "form": {
+    "addr_house_no": "12",
+    "addr_obec": "Praha 2",
+    "addr_okres": "OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO",
+    "addr_orient_no": "12345",
+    "addr_street": " ",
+    "addr_zip": "1200",
+    "internal_name": "Studio Žižkov",
+    "legal_entity_id": "21"
+   },
+   "fragments": [
+    [
+     "addr_street-error",
+     "Vyplňte ulici."
+    ],
+    [
+     "addr_orient_no-error",
+     "Orientační číslo má nejvýše 3 číslice a jedno volitelné písmeno."
+    ],
+    [
+     "addr_zip-error",
+     "PSČ má přesně 5 číslic."
+    ],
+    [
+     "addr_okres-error",
+     "Nejvýše 32 znaků."
+    ],
+    [
+     "21",
+     "selected"
+    ],
+    [
+     "default_purpose",
+     "10"
+    ],
+    [
+     "history",
+     ""
+    ],
+    [
+     "history_sig",
+     ""
+    ],
+    [
+     "page",
+     "apartments"
+    ],
+    [
+     "device",
+     "computer"
+    ],
+    [
+     "topic",
+     ""
+    ],
+    [
+     "q",
+     ""
+    ],
+    [
+     "return_to",
+     "/apartments"
+    ],
+    [
+     "next",
+     "/apartments"
+    ]
+   ],
+   "lang": "cs",
+   "location": null,
+   "name": "address errors in Czech",
+   "status": 400,
+   "user": 2,
+   "workspace": 0
+  },
+  {
+   "csrf": true,
+   "form": {
+    "addr_house_no": "12345",
+    "addr_obec": "Praha 2",
+    "addr_street": "Vinohradská",
+    "addr_zip": "12",
+    "internal_name": "Studio Žižkov",
+    "legal_entity_id": "21"
+   },
+   "fragments": [
+    [
+     "addr_house_no-error",
+     "Số nhà tối đa 4 chữ số, có thể kèm chữ E nếu là số đăng ký tạm (evidenční číslo)."
+    ],
+    [
+     "addr_zip-error",
+     "Mã bưu chính phải có đúng 5 chữ số."
+    ],
+    [
+     "21",
+     "selected"
+    ],
+    [
+     "default_purpose",
+     "10"
+    ],
+    [
+     "history",
+     ""
+    ],
+    [
+     "history_sig",
+     ""
+    ],
+    [
+     "page",
+     "apartments"
+    ],
+    [
+     "device",
+     "computer"
+    ],
+    [
+     "topic",
+     ""
+    ],
+    [
+     "q",
+     ""
+    ],
+    [
+     "return_to",
+     "/apartments"
+    ],
+    [
+     "next",
+     "/apartments"
+    ]
+   ],
+   "lang": "vi",
+   "location": null,
+   "name": "address errors in Vietnamese",
+   "status": 400,
+   "user": 2,
+   "workspace": 0
+  },
+  {
+   "csrf": true,
+   "form": {
+    "addr_house_no": "12",
+    "addr_obec": "Praha 2",
+    "addr_street": "Vinohradská",
+    "addr_zip": "120 00",
+    "automation_mode": "scheduled",
+    "copy_from": "201",
+    "default_purpose": "01",
+    "internal_name": "",
+    "legal_entity_id": "21",
+    "operator_refresh": "1",
+    "permalink_reachback_days": "9999",
+    "permalink_window_days": "3",
+    "stay_fee_authority_address": "",
+    "stay_fee_authority_contact": "poplatky@example.test",
+    "stay_fee_authority_name": "  Městský úřad Plzeň  ",
+    "stay_fee_cadence": "quarterly",
+    "stay_fee_council_account": "19-2000145399/0800",
+    "stay_fee_instruction": "Pay by the 15th.",
+    "stay_fee_payee": "PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP",
+    "stay_fee_rate_czk": "50",
+    "submit_after_hours": "60"
+   },
+   "fragments": [
+    [
+     "copy_from",
+     "201"
+    ],
+    [
+     "201",
+     "selected"
+    ],
+    [
+     "21",
+     "selected"
+    ],
+    [
+     "default_purpose",
+     "01"
+    ],
+    [
+     "copy_from",
+     "201"
+    ],
+    [
+     "automation_mode",
+     "scheduled"
+    ],
+    [
+     "submit_after_hours",
+     "60"
+    ],
+    [
+     "permalink_window_days",
+     "3"
+    ],
+    [
+     "permalink_reachback_days",
+     "9999"
+    ],
+    [
+     "stay_fee_rate_czk",
+     "50"
+    ],
+    [
+     "stay_fee_cadence",
+     "quarterly"
+    ],
+    [
+     "stay_fee_authority_name",
+     "Městský úřad Plzeň"
+    ],
+    [
+     "stay_fee_authority_address",
+     ""
+    ],
+    [
+     "stay_fee_authority_contact",
+     "poplatky@example.test"
+    ],
+    [
+     "stay_fee_payee",
+     "PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP"
+    ],
+    [
+     "stay_fee_instruction",
+     "Pay by the 15th."
+    ],
+    [
+     "stay_fee_council_account",
+     "19-2000145399/0800"
+    ],
+    [
+     "history",
+     ""
+    ],
+    [
+     "history_sig",
+     ""
+    ],
+    [
+     "page",
+     "apartments"
+    ],
+    [
+     "device",
+     "computer"
+    ],
+    [
+     "topic",
+     ""
+    ],
+    [
+     "q",
+     ""
+    ],
+    [
+     "return_to",
+     "/apartments"
+    ],
+    [
+     "next",
+     "/apartments"
+    ]
+   ],
+   "lang": "en",
+   "location": null,
+   "name": "operator refresh writes nothing",
+   "status": 200,
+   "user": 2,
+   "workspace": 0
+  },
+  {
+   "created": {
+    "audit": {
+     "action": "apartment_created",
+     "actor": "create1@example.test",
+     "actor_user_id": 1,
+     "detail": "id=306",
+     "impersonator_user_id": 1,
+     "owner_user_id": 3
+    },
+    "password": "golden-ws-pass",
+    "pin": true,
+    "rates": [],
+    "row": {
+     "active": "1",
+     "addr_house_no": "12",
+     "addr_obec": "Praha 2",
+     "addr_obec_cast": "",
+     "addr_okres": "",
+     "addr_orient_no": "",
+     "addr_street": "Vinohradská",
+     "addr_zip": "12000",
+     "archived_at": null,
+     "automation_mode": "immediate",
+     "city_en": "Prague",
+     "data_controller_entity_id": null,
+     "default_purpose": "93",
+     "guest_message": "Welcome! Please complete the guest registration form before your stay. If you have any questions, please contact your host. Thank you!",
+     "internal_name": "Studio Žižkov",
+     "legal_entity_id": "31",
+     "notes": "",
+     "ocr_scan": "0",
+     "owner_user_id": "3",
+     "passport_photo_policy": "off",
+     "permalink_reachback_days": "365",
+     "permalink_window_days": "1",
+     "stay_fee_authority_address": null,
+     "stay_fee_authority_contact": null,
+     "stay_fee_authority_name": null,
+     "stay_fee_cadence": "monthly",
+     "stay_fee_council_account": null,
+     "stay_fee_council_iban": null,
+     "stay_fee_instruction": null,
+     "stay_fee_payee": null,
+     "stay_fee_rate_czk": "0",
+     "stay_fee_vs": null,
+     "submit_after_hours": "10",
+     "uby_contact": "gamma@example.test",
+     "uby_idub": "",
+     "uby_mark": "MLJNO",
+     "uby_name": "",
+     "uby_ws_user": "UBY-WS_MLJNO"
+    },
+    "setup": "{\"celebrated\": false, \"finished\": false, \"hidden\": false, \"legacy\": false, \"steps\": {}, \"tested\": false}",
+    "slug_code_length": 6,
+    "slug_readable": "studio-zizkov",
+    "token_length": 20
+   },
+   "csrf": true,
+   "form": {
+    "addr_house_no": "12",
+    "addr_obec": "Praha 2",
+    "addr_street": "Vinohradská",
+    "addr_zip": "120 00",
+    "automation_mode": "immediate",
+    "default_purpose": "93",
+    "internal_name": "Studio Žižkov",
+    "legal_entity_id": "31",
+    "submit_after_hours": "1_0",
+    "uby_ws_password": "  golden-ws-pass  ",
+    "uby_ws_user": "UBY-WS_MLJNO"
+   },
+   "lang": "en",
+   "location": "/apartments/306/setup/calendar?msg=Property%20created.&toast_kind=success",
+   "name": "admin preview creates for the previewed host",
+   "status": 303,
+   "user": 1,
+   "workspace": 3
+  },
+  {
+   "csrf": true,
+   "form": {
+    "addr_house_no": "12",
+    "addr_obec": "Praha 2",
+    "addr_street": "Vinohradská",
+    "addr_zip": "120 00",
+    "internal_name": "Studio Žižkov",
+    "legal_entity_id": "21"
+   },
+   "fragments": [
+    [
+     "operator-message",
+     "Choose the operator for this property."
+    ],
+    [
+     "31",
+     "selected"
+    ],
+    [
+     "default_purpose",
+     "10"
+    ],
+    [
+     "history",
+     ""
+    ],
+    [
+     "history_sig",
+     ""
+    ],
+    [
+     "page",
+     "apartments"
+    ],
+    [
+     "device",
+     "computer"
+    ],
+    [
+     "topic",
+     ""
+    ],
+    [
+     "q",
+     ""
+    ],
+    [
+     "return_to",
+     "/apartments"
+    ],
+    [
+     "next",
+     "/apartments"
+    ]
+   ],
+   "lang": "en",
+   "location": null,
+   "name": "admin preview cannot use another host's operator",
+   "status": 400,
+   "user": 1,
+   "workspace": 3
+  }
+ ],
+ "columns": [
+  "owner_user_id",
+  "internal_name",
+  "city_en",
+  "addr_okres",
+  "addr_obec",
+  "addr_obec_cast",
+  "addr_street",
+  "addr_house_no",
+  "addr_orient_no",
+  "addr_zip",
+  "uby_idub",
+  "uby_mark",
+  "uby_name",
+  "uby_contact",
+  "uby_ws_user",
+  "guest_message",
+  "notes",
+  "legal_entity_id",
+  "data_controller_entity_id",
+  "automation_mode",
+  "submit_after_hours",
+  "permalink_window_days",
+  "permalink_reachback_days",
+  "passport_photo_policy",
+  "ocr_scan",
+  "default_purpose",
+  "active",
+  "archived_at",
+  "stay_fee_rate_czk",
+  "stay_fee_vs",
+  "stay_fee_cadence",
+  "stay_fee_authority_name",
+  "stay_fee_authority_address",
+  "stay_fee_authority_contact",
+  "stay_fee_payee",
+  "stay_fee_instruction",
+  "stay_fee_council_account",
+  "stay_fee_council_iban"
+ ],
+ "csrf_nonce": "golden-apartment-create-csrf-nonce-0123",
+ "fragments": [
+  "id=\"([a-z_]+-error)\"[^>]*>([^<]*)<",
+  "id=\"((?:operator|controller)-message)\"[^>]*>([^<]*)<",
+  "name=\"(copy_from)\" value=\"([^\"]*)\"",
+  "<option value=\"([0-9]+)\" (selected)>",
+  "<input type=\"hidden\" name=\"([a-z_]+)\" value=\"([^\"]*)\""
+ ],
+ "seed": [
+  {
+   "columns": [
+    "id",
+    "username",
+    "password_hash",
+    "role",
+    "created_at"
+   ],
+   "rows": [
+    [
+     1,
+     "create1@example.test",
+     "x",
+     "admin",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     2,
+     "create2@example.test",
+     "x",
+     "host",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     3,
+     "create3@example.test",
+     "x",
+     "host",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     4,
+     "create4@example.test",
+     "x",
+     "host",
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "user_account"
+  },
+  {
+   "columns": [
+    "user_account_id",
+    "document",
+    "version",
+    "accepted_at",
+    "method"
+   ],
+   "rows": [
+    [
+     1,
+     "terms",
+     "1.7",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     1,
+     "privacy",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     1,
+     "dpa",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     2,
+     "terms",
+     "1.7",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     2,
+     "privacy",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     2,
+     "dpa",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     3,
+     "terms",
+     "1.7",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     3,
+     "privacy",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     3,
+     "dpa",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     4,
+     "terms",
+     "1.7",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     4,
+     "privacy",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ],
+    [
+     4,
+     "dpa",
+     "1.8",
+     "2026-01-01T00:00:00+00:00",
+     "clickwrap"
+    ]
+   ],
+   "table": "legal_acceptance"
+  },
+  {
+   "columns": [
+    "id",
+    "owner_user_id",
+    "name",
+    "contact_email",
+    "archived_at",
+    "created_at"
+   ],
+   "rows": [
+    [
+     21,
+     2,
+     "Alpha s.r.o.",
+     "  provoz.alpha.s.r.o.dlouhy.kontakt@example.test  ",
+     null,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     22,
+     2,
+     "Beta Správa",
+     null,
+     null,
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     23,
+     2,
+     "Gone Co",
+     "gone@example.test",
+     "2026-01-02",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     31,
+     3,
+     "Gamma Host",
+     "gamma@example.test",
+     null,
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "legal_entity"
+  },
+  {
+   "columns": [
+    "id",
+    "owner_user_id",
+    "internal_name",
+    "legal_entity_id",
+    "stay_fee_rate_czk",
+    "stay_fee_council_account",
+    "created_at"
+   ],
+   "rows": [
+    [
+     201,
+     2,
+     "Loft Karlín",
+     21,
+     50,
+     "19-2000145399/0800",
+     "2026-01-01T00:00:00+00:00"
+    ],
+    [
+     301,
+     3,
+     "Other host flat",
+     31,
+     0,
+     null,
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ],
+   "table": "apartment"
+  }
+ ]
+}

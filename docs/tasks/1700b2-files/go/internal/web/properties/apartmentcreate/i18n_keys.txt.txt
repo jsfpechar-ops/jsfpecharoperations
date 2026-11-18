@@ -1,0 +1,4 @@
+# Host strings of the Go property create, POST /apartments (brief 1700b2).
+# App/scripts/go_host_i18n.py writes the sibling i18n.json from App/app/host_i18n.py.
+flash.apartments.created
+apartment.form.guest_message.default

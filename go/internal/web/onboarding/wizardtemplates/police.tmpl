@@ -1,8 +1,9 @@
 {{/* Port of App/app/templates/setup_wizard/police.html with _police_fields.html (police_in_wizard true)
      and _police_letter_figure.html. Brief 1600. police_errors, letter_prefill, letter_saved, letter_message
      and letter_status come only from the Python POSTs (/apartments/{id}, /test-connection, /police-letter),
-     so here the letter helpers are open (letter_first) and no box carries a read value. The one Go refusal
-     (POST /setup, wait with a bad hour, brief 1602) sets OperatorError and the draft in Values. */}}
+     so here the letter helpers are open (letter_first) and no box carries a read value. The Go refusals
+     (POST /setup, wait with a bad hour, brief 1602; RenderSetupPage, brief 1702e1) set OperatorError,
+     PoliceErrors and the draft in Values. */}}
 {{define "wizard_help"}}{{help_tip "wiz-why-police" (print (t "why.police") " " (t "why.police_wait"))}}{{end}}
 {{define "wizard_police_box"}}
   <div class="field">
@@ -12,6 +13,9 @@
 {{end}}
 {{define "wizard_content"}}
 {{if .OperatorError}}<p class="err-text" role="alert">{{t .OperatorError}}</p>{{end}}
+{{range .PoliceErrors}}
+<p class="err-text" id="{{.Field}}-error" role="alert">{{.Message}}</p>
+{{end}}
 
 <form method="post" action="/apartments/{{.Apt.ID}}" class="setup-wizard-form" id="police-form">
   <button class="sr-only" type="submit" tabindex="-1" aria-hidden="true" formaction="/apartments/{{.Apt.ID}}/test-connection" formmethod="post" formnovalidate></button>

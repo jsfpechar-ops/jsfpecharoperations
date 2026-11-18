@@ -1,0 +1,145 @@
+{{/* Port of App/app/templates/apartment_form.html (create branch), _property_create.html, _copy_settings_dialog.html, _property_identity_fields.html, _property_operator.html and _property_address_fields.html. Brief 1700a. */}}
+{{define "apartmentnew.title"}}{{end}}
+{{define "apartmentnew.back_label"}}{{t "nav.properties"}}{{end}}
+
+{{define "apartmentnew.copy"}}<a class="ui-btn ui-btn-secondary ui-btn-compact copy-settings-open" href="/apartments/new?copy=choose" data-sheet-open="copy-settings">{{icon "copy" 16}}{{t "apartment.form.copy_from.open"}}</a>
+<dialog id="copy-settings" class="ui-dialog copy-settings-dialog" aria-labelledby="copy-settings-title"{{if .CopyOpen}} open{{end}}>
+  <div class="ui-sheet">
+    <span class="ui-sheet-handle" aria-hidden="true"></span>
+    <h2 id="copy-settings-title">{{t "apartment.form.copy_from.title"}}</h2>
+    <form method="get" action="/apartments/new" class="copy-property-form">
+      <div class="field">
+        <label for="copy_from">{{t "apartment.form.copy_from.source"}}</label>
+        <select id="copy_from" name="copy_from">
+          {{range .Peers}}
+          <option value="{{.ID}}"{{if eq $.CopyFromID .ID}} selected{{end}}>{{.Name}}</option>
+          {{end}}
+        </select>
+      </div>
+      <h3>{{t "apartment.form.copy_from.copied_head"}}</h3>
+      <ul class="copy-settings-list">
+        <li>{{t "apartment.form.copy_from.item_operator"}}</li>
+        <li>{{t "apartment.form.copy_from.item_automation"}}</li>
+        <li>{{t "apartment.form.copy_from.item_link"}}</li>
+        <li>{{t "apartment.form.copy_from.item_fee"}}</li>
+      </ul>
+      <h3>{{t "apartment.form.copy_from.never_head"}}</h3>
+      <p class="copy-settings-never">{{t "apartment.form.copy_from.never_body"}}</p>
+      <div class="copy-settings-actions">
+        <button class="ui-btn ui-btn-primary" type="submit">{{t "apartment.form.copy_from.button"}}</button>
+        <button class="ui-btn ui-btn-secondary" type="submit" formmethod="dialog" formnovalidate data-sheet-close>{{t "confirm.cancel"}}</button>
+      </div>
+    </form>
+  </div>
+</dialog>{{end}}
+
+{{define "apartmentnew.addr"}}
+  <div class="field">
+    {{if .HintKey}}{{field_label .Name (t .LabelKey) (t .HintKey) .Optional "" .Required}}{{else}}{{field_label .Name (t .LabelKey) "" .Optional "" .Required}}{{end}}
+    <input type="text" id="{{.Name}}" name="{{.Name}}" autocomplete="off" value="{{.Value}}"{{if .MaxLength}} maxlength="{{.MaxLength}}"{{end}}{{if .InputMode}} inputmode="{{.InputMode}}"{{end}}{{if .Autocap}} autocapitalize="{{.Autocap}}"{{end}}{{if .Placeholder}} placeholder="{{.Placeholder}}"{{end}}{{if .Required}} required aria-required="true"{{end}}{{if .Described}} aria-describedby="{{.Described}}"{{end}}{{if .Error}} aria-invalid="true"{{end}}{{if .Suggest}} data-ruian-suggest data-ruian-loading="{{t "apartment.form.addr.suggest_loading"}}" data-ruian-none="{{t "apartment.form.addr.suggest_none"}}"{{end}}>
+    {{if .Error}}<p class="err-text" id="{{.Name}}-error" role="alert">{{.Error}}</p>{{end}}
+  </div>
+{{end}}
+
+{{define "apartmentnew"}}
+<div class="head prop-new-head prop-new"><div><div class="heading-with-tip prop-name-tip"><h1 class="big">{{if .TitleHead}}{{.TitleHead}} {{end}}<span class="nowrap">{{.TitleLast}}{{help_tip "property-create-lede-help" (printf "%s %s" (t "property_create.lede") (t "common.required_legend"))}}</span></h1></div></div><div class="airbnb-actions">{{if .Peers}}{{template "apartmentnew.copy" .}}{{end}}</div></div>
+<div class="property-create-lane prop-new"><div class="property-create">
+  <div class="property-create-main">
+    {{if .CopiedFromName}}
+    <p class="panel property-create-copied" role="status">{{t "apartment.form.copy_from.notice" "name" .CopiedFromName}}
+      <a href="/apartments/new">{{t "property_create.copy_clear"}}</a>
+      {{if index .Prefill "stay_fee_rate_czk"}}<br><span class="ui-sub">{{t "apartment.form.copy_from.vs_hint"}}</span>{{end}}</p>
+    {{end}}
+    <form method="post" action="/apartments" class="property-create-form" id="property-create-form">
+      <button type="submit" hidden tabindex="-1" aria-hidden="true"></button>
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <input type="hidden" name="default_purpose" value="{{.DefaultPurpose}}">
+      {{if .CopiedFromName}}
+      <input type="hidden" name="copy_from" value="{{.CopyFromID}}">
+      {{range .Hidden}}
+      <input type="hidden" name="{{.Name}}" value="{{.Value}}">
+      {{end}}
+      {{end}}
+
+      <section class="panel property-create-card" id="basics" aria-labelledby="property-create-details">
+        <header class="property-create-head">{{icon "house" 20}}<h2 id="property-create-details">{{t "property_create.details"}}</h2></header>
+        <div class="grid two property-identity-fields">
+          <div class="field">
+            {{field_label "internal_name" (t "apartment.form.internal_name.label") (t "apartment.form.internal_name.hint") false "" true}}
+            <input type="text" id="internal_name" name="internal_name" value="{{index .Draft "internal_name"}}" required
+                   aria-describedby="internal_name-help{{if .NameError}} internal_name-error{{end}}"{{if .NameError}} aria-invalid="true" autofocus{{end}}>
+            {{if .NameError}}<p class="err-text" id="internal_name-error" role="alert">{{t "flash.error.name_required"}}</p>{{end}}
+          </div>
+          <input type="hidden" id="city_en" name="city_en" value="{{index .Draft "city_en"}}">
+        </div>
+      </section>
+
+      <section class="panel property-create-card" aria-labelledby="property-create-operator">
+        <header class="property-create-head">{{icon "receipt" 20}}<h2 id="property-create-operator">{{t "property_create.managed_by"}}</h2></header>
+        <div class="property-create-operator-row">
+          <div class="field property-operator" id="operator-picker">
+            <label for="legal_entity_id">{{t "apartment.form.entity.label"}}<span class="req-star" aria-hidden="true">*</span></label>
+            <select id="legal_entity_id" name="legal_entity_id" required{{if or .OperatorErr (not .Entities)}} aria-describedby="operator-message"{{end}}{{if .OperatorErr}} aria-invalid="true"{{end}}>
+              {{if not .OperatorSelected}}<option value="" disabled selected>{{t "apartment.form.operator.choose"}}</option>{{end}}
+              {{range .Entities}}
+              <option value="{{.ID}}"{{if eq $.OperatorSelected .ID}} selected{{end}}>{{.Name}}</option>
+              {{end}}
+            </select>
+            {{if not .Entities}}
+            <div class="property-operator-empty" id="operator-message">
+              <p class="err-text"{{if .OperatorErr}} role="alert"{{end}}>{{t "apartment.form.operator.add_first"}}</p>
+              <div class="actions">
+                <a class="btn small" href="/entities" target="_blank" rel="noopener">{{t "apartment.form.operator.add_business"}}</a>
+                <button class="btn small ghost" type="submit" name="operator_refresh" value="1" formnovalidate>{{t "apartment.form.operator.check_again"}}</button>
+              </div>
+            </div>
+            {{else if .OperatorErr}}
+            <p class="err-text" id="operator-message" role="alert">{{t .OperatorErr}}</p>
+            {{end}}
+          </div>
+          {{if .Entities}}<a class="property-create-manage" href="/entities">{{t "property_create.manage_business"}} </a>{{end}}
+        </div>
+        {{if .ControllerCurrent}}
+        <div class="field" id="alternate-controller">
+          <label for="data_controller_entity_id">{{t "apartment.form.controller.alternate_label"}}</label>
+          <select id="data_controller_entity_id" name="data_controller_entity_id"{{if .ControllerErr}} aria-describedby="controller-message" aria-invalid="true"{{end}}>
+            <option value="">{{t "apartment.form.controller.same_as_operator"}}</option>
+            {{range .Entities}}
+            <option value="{{.ID}}"{{if eq $.ControllerCurrent .ID}} selected{{end}}>{{.Name}}</option>
+            {{end}}
+          </select>
+          {{if .ControllerErr}}<p class="err-text" id="controller-message" role="alert">{{t "flash.error.no_such_controller"}}</p>{{end}}
+        </div>
+        {{end}}
+      </section>
+
+      <section class="panel property-create-card" id="address" aria-labelledby="property-create-address">
+        <header class="property-create-head">{{icon "send" 20}}<div><div class="heading-with-tip"><h2 id="property-create-address">{{t "property_create.address"}}</h2>
+          {{help_tip "property-create-address-help" (t "property_create.address_lede")}}</div></div></header>
+        <div class="grid property-address-grid">
+          {{range .AddrRow1}}{{template "apartmentnew.addr" .}}{{end}}
+        </div>
+        <div class="grid property-address-grid">
+          {{range .AddrRow2}}{{template "apartmentnew.addr" .}}{{end}}
+        </div>
+        <script src="/static/ruian_suggest.js?v=20261111-1103b" defer data-turbo-track="reload"></script>
+      </section>
+
+      <div class="actions property-create-actions">
+        <a class="ui-btn ui-btn-secondary" href="/apartments">{{t "property_create.cancel"}}</a>
+        <button class="ui-btn ui-btn-primary" type="submit">{{t "property_create.submit"}}</button>
+      </div>
+    </form>
+  </div>
+
+  <aside class="panel property-create-next" aria-labelledby="property-create-next-title">
+    <h2 id="property-create-next-title">{{t "property_create.next_title"}}</h2>
+    <ul class="property-create-next-list">
+      <li>{{icon "calendar-days" 20}}<div><strong><span>{{t "property_create.next_calendar"}}</span>{{help_tip "property-create-next-calendar-help" (t "property_create.next_calendar_body")}}</strong></div></li>
+      <li>{{icon "external-link" 20}}<div><strong><span>{{t "property_create.next_guests"}}</span>{{help_tip "property-create-next-guests-help" (t "property_create.next_guests_body")}}</strong></div></li>
+      <li>{{icon "send" 20}}<div><strong><span>{{t "property_create.next_reporting"}}</span>{{help_tip "property-create-next-reporting-help" (t "property_create.next_reporting_body")}}</strong></div></li>
+      <li>{{icon "key-round" 20}}<div><strong>{{t "host.door_code"}} <span class="opt">{{t "common.optional"}}</span>{{help_tip "property-create-next-lock-help" (t "property_create.next_lock_body") "/guide#door-codes"}}</strong></div></li>
+    </ul>
+  </aside>
+</div></div>
+{{end}}
