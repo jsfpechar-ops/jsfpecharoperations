@@ -418,22 +418,33 @@
   });
 
   // 1858: Stays Turbo cache heal and stale refresh.
+  function restoreStaysScroll() {
+    restoreStaysScroll();
+  }
   function staysPage() {
-    return document.querySelector('[data-stays-more]') || document.body.getAttribute('data-page') === 'stays';
+    return /\/reservations(?:\?|$)/.test(location.pathname + (location.search || ''));
   }
   function healStaysUI() {
     document.querySelectorAll('.flash, .flash-error, [data-skeleton]').forEach(function (n) { n.remove(); });
-    document.querySelectorAll('[inert]').forEach(function (n) { n.inert = false; });
+    document.querySelectorAll('[inert]').forEach(function (n) { n.inert = false; n.removeAttribute('inert'); });
   }
   document.addEventListener('turbo:before-cache', function () {
     if (!staysPage()) return;
     healStaysUI();
+    try { sessionStorage.setItem('stays-scroll-y', String(window.scrollY)); } catch (e) {}
   });
   document.addEventListener('turbo:load', function () {
     if (!staysPage()) return;
     document.body.setAttribute('data-loaded-at', String(Date.now()));
     healStaysUI();
+    restoreStaysScroll();
     var at = Number(document.body.getAttribute('data-loaded-at') || '0');
     if (at && Date.now() - at > 60000 && window.Turbo) window.Turbo.visit(location.href, { action: 'replace' });
   });
-  window.addEventListener('pageshow', function () { if (staysPage()) healStaysUI(); });
+  window.addEventListener('pageshow', function (ev) {
+    if (!staysPage()) return;
+    healStaysUI();
+    if (!ev.persisted) return;
+    restoreStaysScroll();
+  });
+  if (staysPage()) restoreStaysScroll();

@@ -32,30 +32,30 @@ type apartmentItem struct {
 }
 
 type listPage struct {
-	View             View
-	Apartments       []apartmentItem
-	Status           string
-	Report           string
-	ApartmentID      int64
-	DateFrom         string
-	DateTo           string
-	DateRange        string
-	ShowArchive      bool
-	ReturnTo         string
-	HasAny           int
-	FeedCount        int
-	DemoAvailable    bool
-	CSVExportParams  string
-	StayProperty     string
+	View              View
+	Apartments        []apartmentItem
+	Status            string
+	Report            string
+	ApartmentID       int64
+	DateFrom          string
+	DateTo            string
+	DateRange         string
+	ShowArchive       bool
+	ReturnTo          string
+	HasAny            int
+	FeedCount         int
+	DemoAvailable     bool
+	CSVExportParams   string
+	StayProperty      string
 	FilterSummaryHTML string
-	PaymentsHidden   bool
-	PublicBase       string
-	Today            time.Time
-	PageSize         int
-	PrevURL          string
-	NextURL          string
-	Groups           map[string][]Row
-	Banner           Banner
+	PaymentsHidden    bool
+	PublicBase        string
+	Today             time.Time
+	PageSize          int
+	PrevURL           string
+	NextURL           string
+	Groups            map[string][]Row
+	Banner            Banner
 }
 
 // ListHandler serves GET /reservations (admin.py reservations_list).
@@ -106,13 +106,13 @@ func ListHandler(pool *pgxpool.Pool, getenv func(string) string, now func() time
 			DateRange: p.DateRange, ShowArchive: p.ShowArchive,
 			ReturnTo: returnTo(r), HasAny: hasAny, FeedCount: feedCount, DemoAvailable: demoAvail,
 			CSVExportParams: "apartment=" + strconv.FormatInt(p.ApartmentID, 10),
-			StayProperty: propLabel, PaymentsHidden: paymentsHidden(getenv),
+			StayProperty:    propLabel, PaymentsHidden: paymentsHidden(getenv),
 			PublicBase: publicBaseURL(getenv), Today: pragueToday(at), PageSize: PageSize,
 			PrevURL: v.PrevURL, NextURL: v.NextURL, Groups: groups, Banner: banner,
 		}
 		page := layout.Page{
 			Title: catalog.T(hostweb.Lang(r), "stays.title", nil),
-			Nav: "reservations", BodyKind: "list", V2: true, HowKey: "stays", BodyAlerts: true,
+			Nav:   "reservations", BodyKind: "list", V2: true, HowKey: "stays", BodyAlerts: true,
 			TurboCache: "cache",
 		}
 		if err := layout.Render(w, r, layout.Env{Pool: pool, Getenv: getenv, Now: at}, host, page, pages, "stays_list", data); err != nil {

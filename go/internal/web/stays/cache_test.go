@@ -1,6 +1,8 @@
 package stays
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -18,12 +20,17 @@ func TestStaysPageSetsTurboCache(t *testing.T) {
 	}
 }
 
-func TestShellMetaTemplateUsesTurboCache(t *testing.T) {
-	b, err := templateFS.ReadFile("templates/stays_list.tmpl")
-	if err != nil {
+func TestStaysListHTMLHasTurboCache(t *testing.T) {
+	data := parityFixture(fixedToday(), 1, "")
+	page := layout.Page{Title: "Stays", Nav: "reservations", BodyKind: "list", V2: true, HowKey: "stays", BodyAlerts: false, TurboCache: "cache"}
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/reservations?lang=en", nil)
+	env := layout.Env{Getenv: func(string) string { return "golden-secret-key-not-for-real-use" }, Now: fixedToday()}
+	if err := layout.Render(w, r, env, nil, page, pages, "stays_list", data); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(b), "stays-more") {
-		t.Fatal("missing stays-more")
+	html := w.Body.String()
+	if !strings.Contains(html, `content="cache"`) {
+		t.Fatalf("stays list missing turbo cache meta")
 	}
 }

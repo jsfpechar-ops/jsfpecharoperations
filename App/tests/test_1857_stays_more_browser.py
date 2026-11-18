@@ -10,6 +10,7 @@ from app import auth, claim, db
 from app.main import app
 from tests.conftest import login_as, mark_security_prompt_seen
 from tests.test_0710_v2_mockup_match_browser import _open_app
+from tests.go_stack import go_paths_enabled, seed_go_host_gate
 from tests.test_host_quiet_dashboard_browser import (  # noqa: F401
     _launch,
     base,
@@ -29,6 +30,7 @@ def _cleanup() -> None:
         db.execute("DELETE FROM legal_entity WHERE owner_user_id = ?", (uid,))
         db.execute("DELETE FROM alert WHERE owner_user_id = ?", (uid,))
         db.execute("DELETE FROM audit WHERE owner_user_id = ?", (uid,))
+        db.execute("DELETE FROM legal_acceptance WHERE user_account_id = ?", (uid,))
         db.execute("DELETE FROM user_account WHERE id = ?", (uid,))
 
 
@@ -60,17 +62,21 @@ def _seed_six_stays(apartment_id: int) -> None:
 def stays_more_host():
     db.init_db()
     _cleanup()
-    mark_security_prompt_seen(auth.create_account(f"{USERNAME}@example.test", "Stays More", username=USERNAME))
+    owner_id = mark_security_prompt_seen(
+        auth.create_account(f"{USERNAME}@example.test", "Stays More", username=USERNAME)
+    )
+    if go_paths_enabled():
+        seed_go_host_gate(owner_id)
     entity = db.insert(
         "legal_entity",
         {"name": "More s.r.o.", "seat": "Praha", "ico": "18570001", "contact_email": "m@example.test",
-         "owner_user_id": _owner_id(), "created_at": db.utcnow()},
+         "owner_user_id": owner_id, "created_at": db.utcnow()},
     )
     apartment_id = db.insert(
         "apartment",
         {
             "legal_entity_id": entity,
-            "owner_user_id": _owner_id(),
+            "owner_user_id": owner_id,
             "internal_name": "More Flat",
             "addr_obec": "Praha",
             "addr_house_no": "1",

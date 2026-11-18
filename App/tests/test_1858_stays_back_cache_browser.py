@@ -10,6 +10,7 @@ from app import auth, claim, db
 from app.main import app
 from tests.conftest import login_as, mark_security_prompt_seen
 from tests.test_0710_v2_mockup_match_browser import _open_app
+from tests.go_stack import go_paths_enabled, seed_go_host_gate
 from tests.test_host_quiet_dashboard_browser import (  # noqa: F401
     _launch,
     base,
@@ -29,6 +30,7 @@ def _cleanup() -> None:
         db.execute("DELETE FROM legal_entity WHERE owner_user_id = ?", (uid,))
         db.execute("DELETE FROM alert WHERE owner_user_id = ?", (uid,))
         db.execute("DELETE FROM audit WHERE owner_user_id = ?", (uid,))
+        db.execute("DELETE FROM legal_acceptance WHERE user_account_id = ?", (uid,))
         db.execute("DELETE FROM user_account WHERE id = ?", (uid,))
 
 
@@ -40,17 +42,21 @@ def _owner_id() -> int:
 def stays_cache_host():
     db.init_db()
     _cleanup()
-    mark_security_prompt_seen(auth.create_account(f"{USERNAME}@example.test", "Stays Cache", username=USERNAME))
+    owner_id = mark_security_prompt_seen(
+        auth.create_account(f"{USERNAME}@example.test", "Stays Cache", username=USERNAME)
+    )
+    if go_paths_enabled():
+        seed_go_host_gate(owner_id)
     entity = db.insert(
         "legal_entity",
         {"name": "Cache s.r.o.", "seat": "Praha", "ico": "18580001", "contact_email": "c@example.test",
-         "owner_user_id": _owner_id(), "created_at": db.utcnow()},
+         "owner_user_id": owner_id, "created_at": db.utcnow()},
     )
     apartment_id = db.insert(
         "apartment",
         {
             "legal_entity_id": entity,
-            "owner_user_id": _owner_id(),
+            "owner_user_id": owner_id,
             "internal_name": "Cache Flat",
             "addr_obec": "Praha",
             "addr_house_no": "2",
@@ -101,15 +107,26 @@ def test_back_to_stays_restores_scroll(base, stays_cache_host):
     with sync_api.sync_playwright() as playwright:
         browser = _launch(playwright)
         context, page = _open_app(browser, base, _cookie(client), "/reservations?range=all", 390)
-        if 'content="cache"' not in page.content():
-            pytest.skip("Turbo cache=stays needs Go GET /reservations")
-        page.evaluate("() => window.scrollTo(0, 600)")
+        html = page.content()
+        assert "data-stays-more" in html, "expected Go GET /reservations"
+        assert 'content="cache"' in html, html[html.find("turbo-cache"): html.find("turbo-cache") + 120]
+        y_before = page.evaluate(
+            "() => { window.scrollTo(0, 9999); return window.scrollY; }"
+        )
         page.wait_for_timeout(100)
-        y_before = page.evaluate("() => window.scrollY")
         page.locator(f'a.card.stay[href*="/reservations/{first_stay}"]').first.click()
         page.wait_for_url("**/reservations/*")
         page.go_back()
         page.wait_for_url("**/reservations*")
+        page.wait_for_load_state("networkidle")
+        page.wait_for_function(
+            f"() => Math.abs(window.scrollY - {y_before}) <= 50",
+            timeout=5000,
+        )
+        page.wait_for_function(
+            "() => document.querySelectorAll('[inert]').length === 0",
+            timeout=2000,
+        )
         y_after = page.evaluate("() => window.scrollY")
         assert abs(y_after - y_before) <= 50, (y_before, y_after)
         assert page.locator(".flash-banner").count() == 0

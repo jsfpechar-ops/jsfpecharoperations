@@ -10,20 +10,20 @@ import (
 )
 
 var tplFuncs = map[string]any{
-	"date_cz":       dateCZ,
-	"stay_range":    stayRange,
-	"nights":        nights,
-	"source_label":  sourceLabel,
-	"journey_step":  journeyStep,
-	"lead_name":     leadName,
-	"shown_name":    shownName,
-	"stay_label":    stayLabel,
-	"stay_group":    stayGroup,
-	"payments_hide": paymentsHidden,
-	"public_base":   publicBaseURL,
-	"min_int":       minInt,
-	"page_from":     pageFrom,
-	"page_to":       pageTo,
+	"date_cz":         dateCZ,
+	"stay_range":      stayRange,
+	"nights":          nights,
+	"source_label":    sourceLabel,
+	"journey_step":    journeyStep,
+	"lead_name":       leadName,
+	"shown_name":      shownName,
+	"stay_label":      stayLabel,
+	"stay_group":      stayGroup,
+	"payments_hide":   paymentsHidden,
+	"public_base":     publicBaseURL,
+	"min_int":         minInt,
+	"page_from":       pageFrom,
+	"page_to":         pageTo,
 	"layout_progress": layoutProgress,
 	"is_demo":         isDemo,
 	"slug_or":         slugOr,
@@ -196,8 +196,6 @@ func pageTo(page, pageSize, total int) int {
 	}
 	return n
 }
-
-
 
 func layoutProgress(p Progress) layout.Progress {
 	return layout.Progress{Expected: p.Expected, Filled: p.Filled, Guests: len(p.Guests)}

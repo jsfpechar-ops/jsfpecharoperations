@@ -10,7 +10,9 @@ Tier: B
 
 ## Open questions (orchestrator answers before execute)
 
-Owner approved A2 2026-11-18. No open questions.
+Owner approved A2 2026-11-18.
+
+4. **Production preflight before hiding Payments.** Count open payment requests and direct bookings on production. Answer (owner, 2026-11-18): none; Payments was never used; safe to set `UBYHOST_PAYMENTS_HIDDEN=1`.
 
 ## 1. Objective
 

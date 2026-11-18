@@ -69,6 +69,7 @@ Tier is the brief risk tier from [workflow](../context/workflow.md#roles-and-mod
 | A6 | After Python is retired: delete payment and booking code, tests, templates, i18n keys, tables (new goose migration), env vars | No reference left; retention lines removed |
 
 Before A2: count open payment requests and direct bookings on production (owner runs one query from the brief). Expected zero because Stripe is in test mode. If not zero, those hosts are told first.
+Answer (owner, 2026-11-18, project Q4): none on production; Payments was never used; safe to hide via `UBYHOST_PAYMENTS_HIDDEN`.
 Rollback of A2: one flag, `UBYHOST_PAYMENTS_HIDDEN=0`.
 
 ### B. Measure (tier B)

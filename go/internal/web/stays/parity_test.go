@@ -89,8 +89,8 @@ func parityRows(today time.Time) []Row {
 	base := today
 	type spec struct {
 		from, to, status, source, name string
-		failed                           bool
-		archived                         bool
+		failed                         bool
+		archived                       bool
 	}
 	specs := []spec{
 		{"2026-06-10", "2026-06-12", "active", "manual", "Sofia Costa", false, false},

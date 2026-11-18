@@ -516,49 +516,49 @@ type alternate struct{ Code, Href string }
 
 // view is the context the shell templates read.
 type view struct {
-	Lang, CSRF, Title, Path      string
-	V2, ShowNav, AdminWorkspace  bool
+	Lang, CSRF, Title, Path              string
+	V2, ShowNav, AdminWorkspace          bool
 	Nav, BodyKind, WrapClass, TurboCache string
-	HowKey, BackURL              string
-	Canonical, MetaDescription   string
-	Alternates                   []alternate
-	SignedIn, IsAdmin            bool
-	Impersonating                bool
-	WorkspaceName, WorkspaceUser string
-	Initial                      string
-	PropertyCount                int
-	DeletionDue                  string
-	UbyportEnv                   string
-	MockProduction               bool
-	OperatorEmail                string
-	Passkeys                     bool
-	HavelOn                      bool // havel_on (launcher links)
-	HavelPanel                   bool // _havel_panel.html is included
-	HavelFab                     bool // nav != "havel": the FAB and the dialog
-	HavelState                   string
-	HavelSrc                     template.URL
-	HavelPage, ReturnPath        string
-	HavelTopics                  []havelTopic
-	AccountID                    int64
-	Alerts                       alertStack
-	Billing                      *billingLine
-	SecurityPrompt               bool // the dialog is shown
-	SecurityPasskeys             bool // and offers a passkey
-	Celebration                  string
-	SentGuestCount               int
-	Flash, FlashError, FlashKind string
-	ShowFlash, ShowError, Sticky bool
-	FixHref, FixKey              string
-	UndoStay, UndoReturn         string
-	MinutesText                  string
-	MinutesLeft                  *int
-	StaysNav, PropertiesNav      bool
-	MoreNav, MenuNav             bool
-	NavBadge, NavCount           string
-	SideNav                      []navLink
-	Body, H1, Meta, Primary      template.HTML
-	Secondary, Tabs, Toolbar     template.HTML
-	Head, BackLabel              template.HTML
+	HowKey, BackURL                      string
+	Canonical, MetaDescription           string
+	Alternates                           []alternate
+	SignedIn, IsAdmin                    bool
+	Impersonating                        bool
+	WorkspaceName, WorkspaceUser         string
+	Initial                              string
+	PropertyCount                        int
+	DeletionDue                          string
+	UbyportEnv                           string
+	MockProduction                       bool
+	OperatorEmail                        string
+	Passkeys                             bool
+	HavelOn                              bool // havel_on (launcher links)
+	HavelPanel                           bool // _havel_panel.html is included
+	HavelFab                             bool // nav != "havel": the FAB and the dialog
+	HavelState                           string
+	HavelSrc                             template.URL
+	HavelPage, ReturnPath                string
+	HavelTopics                          []havelTopic
+	AccountID                            int64
+	Alerts                               alertStack
+	Billing                              *billingLine
+	SecurityPrompt                       bool // the dialog is shown
+	SecurityPasskeys                     bool // and offers a passkey
+	Celebration                          string
+	SentGuestCount                       int
+	Flash, FlashError, FlashKind         string
+	ShowFlash, ShowError, Sticky         bool
+	FixHref, FixKey                      string
+	UndoStay, UndoReturn                 string
+	MinutesText                          string
+	MinutesLeft                          *int
+	StaysNav, PropertiesNav              bool
+	MoreNav, MenuNav                     bool
+	NavBadge, NavCount                   string
+	SideNav                              []navLink
+	Body, H1, Meta, Primary              template.HTML
+	Secondary, Tabs, Toolbar             template.HTML
+	Head, BackLabel                      template.HTML
 }
 
 func buildView(r *http.Request, env Env, sh shell, c *reqCtx, p Page) view {
@@ -583,8 +583,8 @@ func buildView(r *http.Request, env Env, sh shell, c *reqCtx, p Page) view {
 	}
 	if bodyKind == "form" || bodyKind == "settings" {
 		v.WrapClass = "ui-lane-narrow"
-	v.TurboCache = p.TurboCache
 	}
+	v.TurboCache = p.TurboCache
 	if indexablePaths[r.URL.Path] {
 		base := hostweb.PublicBase(getenv) + r.URL.Path
 		v.Canonical = base

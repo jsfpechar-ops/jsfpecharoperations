@@ -23,6 +23,7 @@ from app import auth, claim, cleaning, db, demo, onboarding
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
 from tests.conftest import login_as, mark_security_prompt_seen
+from tests.go_stack import browser_app
 
 
 @pytest.fixture(scope="module")
@@ -154,7 +155,9 @@ def base(dashboard_host):
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))
         port = sock.getsockname()[1]
-    server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, log_level="error"))
+    base_url = f"http://127.0.0.1:{port}"
+    serve_app = browser_app(app, base_url)
+    server = uvicorn.Server(uvicorn.Config(serve_app, host="127.0.0.1", port=port, log_level="error"))
     thread = threading.Thread(target=server.run, daemon=True)
     thread.start()
     deadline = time.time() + 15
@@ -162,7 +165,7 @@ def base(dashboard_host):
         time.sleep(0.05)
     if not server.started:
         pytest.fail("the dashboard test server did not start")
-    yield f"http://127.0.0.1:{port}"
+    yield base_url
     server.should_exit = True
     thread.join(timeout=5)
 

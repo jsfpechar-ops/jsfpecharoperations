@@ -30,13 +30,13 @@ type View struct {
 // BuildView fills chips, pager URLs and filter metadata on top of a list query.
 func BuildView(p Params, rows []Row, total, page, pageCount, readySend int, manualSend bool) View {
 	v := View{
-		Rows:          rows,
-		Total:         total,
-		Page:          page,
-		PageCount:     pageCount,
-		Params:        p,
-		Chips:         buildChips(p),
-		ResetHref:     resetHref(p),
+		Rows:           rows,
+		Total:          total,
+		Page:           page,
+		PageCount:      pageCount,
+		Params:         p,
+		Chips:          buildChips(p),
+		ResetHref:      resetHref(p),
 		FilterSummary:  filterSummary(p),
 		ReadySendCount: readySend,
 		ManualSend:     manualSend,
