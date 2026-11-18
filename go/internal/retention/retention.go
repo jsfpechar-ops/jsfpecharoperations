@@ -147,6 +147,7 @@ var steps = []step{
 	{"login_tokens", stepLoginTokens},
 	{"webauthn_challenges", stepWebauthnChallenges},
 	{"door_code_pins", stepDoorCodePins},
+	{"entry_codes", stepEntryCodes},
 	{"cleaning", stepCleaning},
 	{"push", stepPush},
 	{"guide_imports", stepGuideImports},
@@ -276,6 +277,7 @@ func (r *runner) cutoffs() map[string]string {
 		"login_tokens":         "expired more than 1 day ago",
 		"webauthn_challenges":  "expired more than 1 day ago",
 		"door_code_pins":       "valid_to more than 1 day ago",
+		"entry_codes":          "entry_code_until or archived more than 1 day ago",
 		"cleaning":             "event or link expiry before " + isoDate(r.daysAgo(cleaningDays)),
 		"push":                 "alert queued over 30 days ago, or device unseen for 180 days",
 		"guide_imports": "listing text fetched before " + isoDate(r.daysAgo(guideRawDays)) +
