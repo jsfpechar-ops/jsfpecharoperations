@@ -18,6 +18,7 @@ import (
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/headcount"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ical"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
 )
 
@@ -123,7 +124,7 @@ func UpdateHandler(pool *pgxpool.Pool, getenv func(string) string, now func() ti
 		}
 		switch status {
 		case "cancelled", "ignored":
-			if err := saveExpireOnCancel(ctx, pool, id, stamp); err != nil {
+			if err := ical.ExpireOnCancel(ctx, pool, id); err != nil {
 				saveServerError(w, err)
 				return
 			}

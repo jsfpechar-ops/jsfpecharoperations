@@ -328,7 +328,7 @@ func TestSaveEnqueueFailureRaisesAlert(t *testing.T) {
 	enqueueJob = func(context.Context, *pgxpool.Pool, string) (bool, error) { return false, errors.New("queue down") }
 	t.Cleanup(func() { enqueueJob = saved })
 	saveWant303(t, savePost(t, pool, f.owner, f.res, saveActive), fmt.Sprintf("/reservations/%d?msg=", f.res))
-	open, err := saveOpenAlert(context.Background(), pool, fmt.Sprintf("submission_immediate:%d", f.apt))
+	open, err := ubyport.OpenAlert(context.Background(), pool, fmt.Sprintf("submission_immediate:%d", f.apt))
 	if err != nil || !open {
 		t.Fatalf("submission_immediate alert open=%v err=%v", open, err)
 	}
@@ -378,7 +378,7 @@ func TestSaveActiveResolvesCancelledAlert(t *testing.T) {
 		t.Fatal(err)
 	}
 	saveWant303(t, savePost(t, pool, f.owner, f.res, saveActive), fmt.Sprintf("/reservations/%d?msg=", f.res))
-	if open, err := saveOpenAlert(ctx, pool, key); err != nil || open {
+	if open, err := ubyport.OpenAlert(ctx, pool, key); err != nil || open {
 		t.Errorf("cancelled_with_guests still open=%v err=%v", open, err)
 	}
 }
