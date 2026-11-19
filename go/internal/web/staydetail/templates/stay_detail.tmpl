@@ -259,23 +259,9 @@
     {{if and (not $inactive) (ne $cell.State "none")}}
     <span class="police-deadline-row"><small class="police-deadline">{{t "stay.detail.metric.deadline"}} {{deadline_badge $cell}}</small>{{if .Deadline}}{{help_tip "police-deadline-help" (t "stay.detail.metric.deadline_note" "when" (format_time_iso .Deadline "02.01.2006 15:04"))}}{{end}}</span>
     {{end}}
-  </div>
-  {{if .HandFiling.Count}}
-  <div class="card stay-filing ph-hide" id="filed-by-hand">
-    <p><strong>{{t "stay.hand_filing.done" "when" (format_time_iso .HandFiling.FiledAt "02.01.2006 15:04")}}</strong></p>
-    {{if .HandFiling.Reference}}<p class="ui-sub">{{t "stay.hand_filing.done_reference" "reference" .HandFiling.Reference}}</p>{{end}}
-    {{if .HandFiling.CanUndo}}
-    <form method="post" action="/reservations/{{$id}}/filed-by-hand/undo" class="inline"
-          data-confirm data-confirm-message="{{t "stay.hand_filing.undo_confirm"}}">
-      <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{t "stay.hand_filing.undo"}}</button>
-      <span class="ui-sub">{{t "stay.hand_filing.undo_until" "when" (format_time_iso .HandFiling.UndoUntil "02.01. 15:04")}}</span>
-    </form>
-    {{end}}
-  </div>
-  {{end}}
   {{if and .HandFiling.Candidates (not $inactive)}}
   <details class="card stay-filing ph-hide" id="file-by-hand">
-    <summary>{{t "stay.hand_filing.open"}}</summary>
+    <summary><span class="stay-row-ic" aria-hidden="true">{{icon "check" 18}}</span><span class="stay-row-t"><b>{{t "stay.hand_filing.open"}}</b></span></summary>
     <p class="ui-sub">{{t "stay.hand_filing.lede"}} <a href="/guide#manual-filing">{{t "guide.reporting.manual_filing_title"}}</a></p>
     <form method="post" action="/reservations/{{$id}}/filed-by-hand" class="settings-grid">
       <div class="ui-field">
@@ -290,6 +276,20 @@
       <div class="ui-form-actions"><button class="ui-btn ui-btn-secondary" type="submit">{{t "stay.hand_filing.confirm"}}</button></div>
     </form>
   </details>
+  {{end}}
+  </div>
+  {{if .HandFiling.Count}}
+  <div class="card stay-filing ph-hide" id="filed-by-hand">
+    <p><strong>{{t "stay.hand_filing.done" "when" (format_time_iso .HandFiling.FiledAt "02.01.2006 15:04")}}</strong></p>
+    {{if .HandFiling.Reference}}<p class="ui-sub">{{t "stay.hand_filing.done_reference" "reference" .HandFiling.Reference}}</p>{{end}}
+    {{if .HandFiling.CanUndo}}
+    <form method="post" action="/reservations/{{$id}}/filed-by-hand/undo" class="inline"
+          data-confirm data-confirm-message="{{t "stay.hand_filing.undo_confirm"}}">
+      <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{t "stay.hand_filing.undo"}}</button>
+      <span class="ui-sub">{{t "stay.hand_filing.undo_until" "when" (format_time_iso .HandFiling.UndoUntil "02.01. 15:04")}}</span>
+    </form>
+    {{end}}
+  </div>
   {{end}}
   {{if .Submissions}}
   <div class="card ph-hide"><div class="panel tight scroll-x">
@@ -325,9 +325,12 @@
   {{else}}<p id="door-code-line">{{if eq .State "failed"}}{{t "stay.detail.door_code.failed"}}{{else if eq .State "delayed"}}{{t "stay.detail.door_code.delayed"}}{{else if eq .State "preparing"}}{{t "stay.detail.door_code.preparing"}}{{else}}{{t "stay.detail.door_code.waiting"}}{{end}}</p>{{end}}
 </div>
 </div></section>{{end}}
-{{if and (not $inactive) (not $.PaymentsHidden)}}<div class="list ph-hide"><a class="link" href="/payments?reservation_id={{$id}}#new-request">{{t "stays.row.request_payment"}}{{icon "chevron-right" 20}}</a></div>{{end}}
+<section class="stay-rows-group ph-hide">
+<h2 class="sec">{{t "stays.table.stay"}}</h2>
+<div class="card stay-rows">
+{{if and (not $inactive) (not $.PaymentsHidden)}}<a class="link" href="/payments?reservation_id={{$id}}#new-request"><span class="stay-row-ic" aria-hidden="true">{{icon "credit-card" 18}}</span><span class="stay-row-t"><b>{{t "stays.row.request_payment"}}</b></span>{{icon "chevron-right" 20}}</a>{{end}}
 <details class="card stay-settings ph-hide" id="stay-quick-edit">
-  <summary><b>{{t "stay.detail.settings.title"}}</b></summary>
+  <summary><span class="stay-row-ic" aria-hidden="true">{{icon "pencil" 18}}</span><span class="stay-row-t"><b>{{t "stay.detail.settings.title"}}</b></span></summary>
   <p class="ui-sub">{{t "stay.detail.settings.lede"}} <a href="/apartments/{{.Reservation.ApartmentID}}?view=settings&amp;section=guests#communication">{{t "stay.detail.settings.guest_links"}}</a>.</p>
   <h3 class="inline-edit-title">{{t "stay.detail.inline.title"}}</h3>
   <form method="post" action="/reservations/{{$id}}" class="settings-grid">
@@ -361,6 +364,8 @@
     <div class="ui-form-actions"><button class="ui-btn ui-btn-secondary" type="submit">{{t "common.save"}}</button></div>
   </form>
 </details>
+</div>
+</section>
 </div>
 
 {{end}}
