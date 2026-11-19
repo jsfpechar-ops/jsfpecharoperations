@@ -47,7 +47,7 @@
 {{- $guestTotal := len .Progress.Guests}}{{if .Progress.Expected}}{{$guestTotal = deref_int .Progress.Expected}}{{end}}
 <div class="airbnb-header">
   <a class="airbnb-back" href="{{.ReturnTo}}" aria-label="{{t "common.back"}}">{{icon "arrow-left" 20}}</a>
-  <h1 class="airbnb-title">{{$title}}</h1>
+  <h1 class="airbnb-title"><span class="ph-only">{{$title}}</span><span class="ph-hide">{{displayName $title}}</span></h1>
 {{page_help "stay"}}
 
 </div>
@@ -59,7 +59,7 @@
   <div class="tot">{{tp "stay.detail.facts.guests" $guestTotal}} · {{tp "stays.table.nights" (nights .Reservation.DateFrom .Reservation.DateTo)}}</div>
 </div>
 <div class="head" id="now"><div>
-  <div class="crumb"><a href="{{.ReturnTo}}">{{t "stays.title"}}</a> {{icon "chevron-right" 14}} {{$title}}</div>
+  <div class="crumb"><a href="{{.ReturnTo}}">{{t "stays.title"}}</a> {{icon "chevron-right" 14}} {{displayName $title}}</div>
   
   <p class="sub">{{template "staydetail.state_pill" .}}<span class="stay-sep"><a href="/apartments/{{.Reservation.ApartmentID}}">{{.Reservation.InternalName}}</a> · {{date_cz .Reservation.DateFrom}} – {{date_cz .Reservation.DateTo}}</span></p>
 </div>
@@ -86,6 +86,7 @@
     {{end}}
   {{end}}
   {{if and .Reservation.PermalinkToken (not $inactive)}}<button class="btn ph-hide{{if $hasCta}} ghost{{end}}" type="button" data-copy="stay-link" data-copied-label="{{t "stay.detail.link_copied"}}" data-stay-header-copy>{{t "host.copy_guest_form_link"}}</button>{{end}}</div>
+  {{if .Reservation.ArchivedAt}}<form method="post" action="/reservations/{{$id}}/unarchive" class="inline ph-hide stay-restore"><input type="hidden" name="_csrf" value="{{csrf}}"><button class="btn" type="submit">{{t "stay.detail.menu.restore"}}</button></form>{{end}}
   {{if .ClaimResend}}<form method="post" action="/reservations/{{$id}}/resend-claim" class="inline ph-hide"><input type="hidden" name="_csrf" value="{{csrf}}"><button class="btn ghost" type="submit" data-resend-claim title="{{t "stay.claim.resend_help"}}">{{t "stay.claim.resend"}}</button></form>{{end}}
       {{row_menu_begin}}
         {{if and .Reservation.PermalinkToken (not $inactive)}}<button class="row-menu-item ph-only" type="button" role="menuitem" data-copy="stay-link" data-copied-label="{{t "stay.detail.link_copied"}}">{{t "host.copy_guest_form_link"}}</button>{{end}}
@@ -109,6 +110,7 @@
             <button class="row-menu-item" type="submit" role="menuitem">{{t "host.delete"}}</button>
           </form>
         {{end}}
+        <a class="row-menu-item ph-hide" href="/guide#guests" role="menuitem">{{t "how.toggle"}}</a>
         <a class="row-menu-item" href="/apartments/{{.Reservation.ApartmentID}}?view=settings&amp;section=guests#communication" role="menuitem">{{t "stay.detail.menu.guest_links"}}</a>
         {{if and .SendControls.SendEnabled (eq .Progress.Status "failed")}}
           <form method="post" action="/reservations/{{$id}}/submit" class="row-menu-form">
@@ -135,7 +137,7 @@
 </div>
 {{end}}
 {{if .Reservation.ArchivedAt}}
-<div class="ui-banner ui-banner-attention">
+<div class="ui-banner ui-banner-attention stay-archived-banner">
   <div class="grow">{{t "stay.detail.banner.archived"}}</div>
 </div>
 {{end}}
