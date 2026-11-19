@@ -3,13 +3,19 @@ package staydetail
 import (
 	"embed"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/countries"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb/layout"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/session"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/stayfee"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validationi18n"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/stays"
 )
 
@@ -28,37 +34,22 @@ var tplFuncs = map[string]any{
 	"nights":             nights,
 	"source_label":       sourceLabel,
 	"deadline_cell":      deadlineCell,
-	"link_window":        linkWindow,
 	"identity_visible":   identityVisible,
+	"guest_line":         newGuestLine,
 	"display_birth_date": displayBirthDate,
 	"country_name":       countryName,
 	"entered_by_label":   enteredByLabel,
 	"validation_message": validationMessage,
-	"payments_hidden":    paymentsHidden,
-	"havel_on":           havelOn,
 	"urlencode":          urlencode,
 	"leadName":           leadName,
 	"is_demo":            isDemo,
-	"is_nil_int":         isNilInt,
 	"format_time_iso":    formatTimeISO,
 	"seq_range":          seqRange,
-	"append":             appendSlice,
-	"join":               joinStrings,
 	"max":                maxInt,
-	"first":              firstWhere,
-	"where":              filterWhere,
-	"in":                 inSlice,
-	"list":               makeList,
 	"deref_int":          derefInt,
 	"py_int":             pyInt,
 	"fix_href":           fixHref,
 	"any_receipt":        anyReceipt,
-}
-
-var weekdays = map[string][7]string{
-	"en": {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"},
-	"cs": {"po", "út", "st", "čt", "pá", "so", "ne"},
-	"vi": {"T2", "T3", "T4", "T5", "T6", "T7", "CN"},
 }
 
 var prague = func() *time.Location {
@@ -74,22 +65,30 @@ func pragueToday(at time.Time) time.Time {
 	return time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
 }
 
+// weekdayAbbr is strftime("%a") in the server's C locale.
+var weekdayAbbr = [7]string{"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}
+
+// weekday is the weekday filter (templating._weekday).
 func weekday(v string) string {
-	if t, ok := validation.ParseISODate(v); ok {
-		lang := "en"
-		if ws, ok := weekdays[lang]; ok {
-			idx := (int(t.Weekday()) + 6) % 7
-			return ws[idx]
-		}
+	t, ok := validation.ParseISODate(v)
+	if !ok {
+		return ""
 	}
-	return v
+	return weekdayAbbr[(int(t.Weekday())+6)%7]
 }
 
-func dateShort(v string) string {
-	if t, ok := validation.ParseISODate(v); ok {
-		return fmt.Sprintf("%d.%d.", t.Day(), t.Month())
+// dateShort is validation.fmt_date_short: "d. m." and the year when it is not
+// the server's current year (date.today(), UTC on the server).
+func dateShort(v string, at time.Time) string {
+	t, ok := validation.ParseISODate(v)
+	if !ok {
+		return v
 	}
-	return v
+	short := fmt.Sprintf("%d. %d.", t.Day(), int(t.Month()))
+	if t.Year() == at.UTC().Year() {
+		return short
+	}
+	return short + " " + strconv.Itoa(t.Year())
 }
 
 func dateCZ(v string) string {
@@ -99,13 +98,15 @@ func dateCZ(v string) string {
 	return v
 }
 
+// nights is templating._nights: days from check-in to check-out, 0 when a
+// date is missing.
 func nights(from, to string) int {
 	a, ok1 := validation.ParseISODate(from)
 	b, ok2 := validation.ParseISODate(to)
-	if !ok1 || !ok2 || !b.After(a) {
+	if !ok1 || !ok2 {
 		return 0
 	}
-	return int(b.Sub(a).Hours() / 24)
+	return int(b.Sub(a) / (24 * time.Hour))
 }
 
 var portalSourceLabels = map[string]string{
@@ -120,22 +121,26 @@ var staySourceI18nKeys = map[string]string{
 	"demo":   "stays.source.demo",
 }
 
+// sourceLabel is templating._source_label: a portal's own name, UbyHost's
+// sources in the host's language, else the slug as str.capitalize shows it.
 func sourceLabel(lang, source string) string {
-	source = strings.TrimSpace(strings.ToLower(source))
+	source = strings.TrimSpace(source)
 	if label, ok := portalSourceLabels[source]; ok {
 		return label
 	}
 	if key, ok := staySourceI18nKeys[source]; ok {
 		return catalog.T(lang, key, nil)
 	}
-	if source == "" {
+	return pyCapitalize(strings.ReplaceAll(source, "_", " "))
+}
+
+// pyCapitalize is str.capitalize: the first character title case, the rest lower.
+func pyCapitalize(s string) string {
+	r, size := utf8.DecodeRuneInString(s)
+	if size == 0 {
 		return ""
 	}
-	s := strings.ReplaceAll(source, "_", " ")
-	if s == "" {
-		return ""
-	}
-	return strings.ToUpper(s[:1]) + s[1:]
+	return string(unicode.ToTitle(r)) + strings.ToLower(s[size:])
 }
 
 func deadlineCell(p stays.Progress, checkIn *time.Time) layout.DeadlineCell {
@@ -145,59 +150,126 @@ func deadlineCell(p stays.Progress, checkIn *time.Time) layout.DeadlineCell {
 	return layout.DeadlineCell{State: "none"}
 }
 
+// linkWindowView is workflow.link_window's result: State "now" while the stay
+// is listed on the property's guest link, "from" before; Opens is ISO.
 type linkWindowView struct {
 	State string
 	Opens string
 }
 
-func linkWindow(res Stay) *linkWindowView {
-	return nil
+// linkWindow is workflow.link_window: nil for a past, inactive, archived or
+// demo stay. windowDays is workflow._window_days, read only after those checks.
+func linkWindow(res Stay, today time.Time, windowDays func() (int, error)) (*linkWindowView, error) {
+	if res.Status != "active" || res.ArchivedAt != "" || res.Source == "demo" {
+		return nil, nil
+	}
+	start, ok := validation.ParseISODate(res.DateFrom)
+	if !ok || start.Before(today) {
+		return nil, nil
+	}
+	days, err := windowDays()
+	if err != nil {
+		return nil, err
+	}
+	opens := start.AddDate(0, 0, -days)
+	if !opens.After(today) {
+		return &linkWindowView{State: "now", Opens: today.Format(time.DateOnly)}, nil
+	}
+	return &linkWindowView{State: "from", Opens: opens.Format(time.DateOnly)}, nil
 }
 
-func identityVisible(guestID int64) bool {
+// identityAccess is what access.identity_visible reads from the request: an
+// admin, or a host in their own workspace, sees every guest in full; an
+// impersonating admin only the guests revealed in the session ("rv").
+type identityAccess struct {
+	All      bool
+	Revealed []int64
+}
+
+func newIdentityAccess(h *session.Host) identityAccess {
+	if h.Account.Role == "admin" || !h.Impersonating {
+		return identityAccess{All: true}
+	}
+	var a identityAccess
+	list, _ := h.Payload["rv"].([]any)
+	for _, v := range list {
+		switch n := v.(type) {
+		case int64:
+			a.Revealed = append(a.Revealed, n)
+		case float64:
+			a.Revealed = append(a.Revealed, int64(n))
+		case int:
+			a.Revealed = append(a.Revealed, int64(n))
+		}
+	}
+	return a
+}
+
+// identityVisible is access.identity_visible(request, guest_id).
+func identityVisible(a identityAccess, guestID int64) bool {
+	if a.All {
+		return true
+	}
+	for _, id := range a.Revealed {
+		if id == guestID {
+			return true
+		}
+	}
 	return false
 }
 
+// guestLine is a guest row with the request's identity access, the data of
+// the staydetail.id_line template.
+type guestLine struct {
+	GuestRow
+	Access identityAccess
+}
+
+func newGuestLine(row GuestRow, a identityAccess) guestLine {
+	return guestLine{GuestRow: row, Access: a}
+}
+
+// displayBirthDate is validation.display_birth_date: DD.MM.YYYY when the value
+// normalises to eight digits, else the value as typed.
 func displayBirthDate(v string) string {
-	if t, ok := validation.ParseISODate(v); ok {
-		return t.Format("02.01.2006")
+	n := stayfee.NormaliseBirthDate(v)
+	if len(n) == 8 && strings.Trim(n, "0123456789") == "" {
+		return n[:2] + "." + n[2:4] + "." + n[4:]
 	}
-	return v
+	return strings.TrimSpace(v)
 }
 
 func countryName(nationality, lang string) string {
 	return countries.Name(nationality, lang)
 }
 
-func enteredByLabel(value string) string {
-	value = strings.TrimSpace(value)
-	switch value {
-	case "host":
-		return "Host"
-	case "guest":
-		return "Guest"
-	case "api_mobile":
-		return "Mobile API"
+var enteredByKeys = map[string]string{
+	"guest":  "stay.detail.guests.entered_by.guest",
+	"host":   "stay.detail.guests.entered_by.host",
+	"import": "stay.detail.guests.entered_by.import",
+}
+
+// enteredByLabel is templating._entered_by_label: who typed a guest record, as
+// a word rather than the stored slug.
+func enteredByLabel(lang, value string) string {
+	if key, ok := enteredByKeys[strings.TrimSpace(value)]; ok {
+		return catalog.T(lang, key, nil)
 	}
 	return value
 }
 
-func validationMessage(message string) string {
-	if strings.HasPrefix(message, "validation.") {
-		return message
-	}
-	return message
+// validationMessage is the validation_message global: a validation.py
+// sentence in the host's language.
+func validationMessage(message, lang string) string {
+	return validationi18n.Localize(message, lang)
 }
 
+// paymentsHidden is config.PAYMENTS_HIDDEN.
 func paymentsHidden(getenv func(string) string) bool {
-	switch strings.ToLower(getenv("UBYHOST_PAYMENTS_HIDDEN")) {
+	switch strings.ToLower(strings.TrimSpace(getenv("UBYHOST_PAYMENTS_HIDDEN"))) {
 	case "1", "true", "yes":
 		return true
 	}
-	return false
-}
-
-func havelOn() bool {
 	return false
 }
 
@@ -287,39 +359,11 @@ func seqRange(from, to int) []int {
 	return result
 }
 
-func appendSlice(slice []string, item string) []string {
-	return append(slice, item)
-}
-
-func joinStrings(items []string, sep string) string {
-	return strings.Join(items, sep)
-}
-
 func maxInt(a, b int) int {
 	if a > b {
 		return a
 	}
 	return b
-}
-
-func isNilInt(p *int) bool {
-	return p == nil
-}
-
-func firstWhere(items interface{}, key string, values interface{}) interface{} {
-	return nil
-}
-
-func filterWhere(items interface{}, key string, values interface{}) interface{} {
-	return items
-}
-
-func inSlice(item interface{}, slice interface{}) bool {
-	return false
-}
-
-func makeList(items ...interface{}) []interface{} {
-	return items
 }
 
 var pages = layout.MustParseFuncs(catalog, tplFuncs, templateFS, "templates/*.tmpl")

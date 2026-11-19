@@ -1,6 +1,7 @@
 package staydetail
 
 import (
+	"context"
 	"errors"
 	"log"
 	"net/http"
@@ -12,13 +13,19 @@ import (
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb/layout"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/ai"
 )
 
-// pageData is the template context: the View plus payments_hidden(), a
-// Jinja global the View does not carry.
+// pageData is the template context: the View plus what the Jinja template
+// reads from the request and its globals (payments_hidden(), havel_on,
+// link_window(reservation), identity_visible, date.today()).
 type pageData struct {
 	View
 	PaymentsHidden bool
+	HavelOn        bool
+	LinkWindow     *linkWindowView
+	Access         identityAccess
+	Now            time.Time
 }
 
 // detailHandler serves GET /reservations/{reservation_id}
@@ -56,7 +63,22 @@ func detailHandler(deps Deps, now func() time.Time) http.HandlerFunc {
 			HowKey:     "stay",
 			BodyAlerts: true,
 		}
-		data := pageData{View: v, PaymentsHidden: paymentsHidden(deps.Getenv)}
+		data := pageData{View: v, PaymentsHidden: paymentsHidden(deps.Getenv), Access: newIdentityAccess(host), Now: at}
+		if v.Progress.Status == "failed" {
+			if data.HavelOn, err = havelOn(r.Context(), deps, host.Account.ID); err != nil {
+				serverError(w, err)
+				return
+			}
+		}
+		if v.Progress.Status == "awaiting_guest" || v.Progress.Status == "incomplete" {
+			data.LinkWindow, err = linkWindow(v.Reservation, pragueToday(at), func() (int, error) {
+				return windowDays(r.Context(), deps.Pool, v.Reservation.ApartmentID)
+			})
+			if err != nil {
+				serverError(w, err)
+				return
+			}
+		}
 		if err := layout.Render(w, r, layout.Env{Pool: deps.Pool, Getenv: deps.Getenv, Now: at}, host, page, pages, "stay_detail", data); err != nil {
 			serverError(w, err)
 		}
@@ -71,6 +93,29 @@ func Register(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string
 		deps.DoorCodes = doorCodes[0]
 	}
 	mux.Handle("GET /reservations/{reservation_id}", wrap("/reservations/{reservation_id}", detailHandler(deps, now)))
+}
+
+// havelOn is templating._havel_on: Havel is on for the signed-in account.
+func havelOn(ctx context.Context, deps Deps, accountID int64) (bool, error) {
+	var email string
+	if err := deps.Pool.QueryRow(ctx, `SELECT COALESCE(email, '') FROM user_account WHERE id = $1`, accountID).Scan(&email); err != nil {
+		return false, err
+	}
+	env := ai.HavelEnv(func(k string) (string, bool) { v := deps.Getenv(k); return v, v != "" })
+	return ai.HavelAIOn(env, "havel", email), nil
+}
+
+// windowDays is workflow._window_days: the property's guest-link window, 1
+// when unset.
+func windowDays(ctx context.Context, pool *pgxpool.Pool, apartmentID int64) (int, error) {
+	var days *int
+	if err := pool.QueryRow(ctx, `SELECT permalink_window_days FROM apartment WHERE id = $1`, apartmentID).Scan(&days); err != nil {
+		return 0, err
+	}
+	if days == nil || *days == 0 {
+		return 1, nil
+	}
+	return *days, nil
 }
 
 func serverError(w http.ResponseWriter, err error) {

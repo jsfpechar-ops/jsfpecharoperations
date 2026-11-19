@@ -31,7 +31,7 @@
 {{- else if not .Complete}}{{t "stay.detail.guests.incomplete"}}
 {{- else}}{{t "stay.detail.guests.ready"}}
 {{- end}}{{end}}
-{{define "staydetail.id_line"}}{{$born := ""}}{{if and .Guest.Row.BirthDate (identity_visible .Guest.ID)}}{{$born = printf "%s %s" (t "stay.detail.guests.born") (display_birth_date .Guest.Row.BirthDate)}}{{end}}
+{{define "staydetail.id_line"}}{{$born := ""}}{{if and .Guest.Row.BirthDate (identity_visible .Access .Guest.ID)}}{{$born = printf "%s %s" (t "stay.detail.guests.born") (display_birth_date .Guest.Row.BirthDate)}}{{end}}
 {{- $nat := ""}}{{if .Guest.Row.Nationality}}{{$nat = or (country_name .Guest.Row.Nationality lang) .Guest.Row.Nationality}}{{end}}
 {{- if or $born $nat}}<small class="guest-id-line" data-guest-id-line>{{$born}}{{if and $born $nat}} · {{end}}{{$nat}}</small>{{end}}{{end}}
 {{define "stay_detail"}}{{host_alerts}}
@@ -54,8 +54,8 @@
 <div class="sub sub-phone">{{.Reservation.InternalName}} · {{source_label lang .Reservation.Source}}</div>
 <div class="sub-phone stay-pill-line ph-hide">{{template "staydetail.state_pill" .}}</div>
 <div class="card facts stay-dates">
-  <div><small>{{t "stays.table.arrival"}}</small><b><span class="wd">{{weekday .Reservation.DateFrom}}</span> {{date_short .Reservation.DateFrom}}</b></div>
-  <div><small>{{t "stays.table.departure"}}</small><b><span class="wd">{{weekday .Reservation.DateTo}}</span> {{date_short .Reservation.DateTo}}</b></div>
+  <div><small>{{t "stays.table.arrival"}}</small><b><span class="wd">{{weekday .Reservation.DateFrom}}</span> {{date_short .Reservation.DateFrom $.Now}}</b></div>
+  <div><small>{{t "stays.table.departure"}}</small><b><span class="wd">{{weekday .Reservation.DateTo}}</span> {{date_short .Reservation.DateTo $.Now}}</b></div>
   <div class="tot">{{tp "stay.detail.facts.guests" $guestTotal}} · {{tp "stays.table.nights" (nights .Reservation.DateFrom .Reservation.DateTo)}}</div>
 </div>
 <div class="head" id="now"><div>
@@ -153,7 +153,7 @@
 <div class="stay-guests-h"><h2 class="sec">{{t "stay.detail.guests.title"}}<span class="sub ph-hide">{{if .Progress.Expected}}{{.Progress.Filled}} / {{deref_int .Progress.Expected}}{{else if .Progress.Guests}}{{len .Progress.Guests}}{{else}}–{{end}}</span></h2>
   <div class="stay-guests-actions ph-hide"><a class="btn ghost" href="#stay-quick-edit" data-open-details>{{t "host.edit_count"}}</a><a class="btn ghost" href="/reservations/{{$id}}/guests/new">+ {{t "stay.detail.cta.add_guest"}}</a></div>
 </div>
-{{if or (eq .Progress.Status "awaiting_guest") (eq .Progress.Status "incomplete")}}{{with link_window .Reservation}}<p class="sub link-window-line ph-hide" data-link-window="{{.State}}"><span class="link-window{{if eq .State "from"}} is-later{{end}}">{{if eq .State "now"}}{{t "workflow.link.now"}}{{else}}{{t "workflow.link.from" "date" (date_cz .Opens)}}{{end}}</span>{{if eq .State "from"}}{{help_tip "link-window-help" (t "workflow.link.why")}} <button class="btn ghost" type="button" data-copy="stay-link" data-copy-label="{{t "workflow.link.copy_own"}}" data-copied-label="{{t "stay.detail.link_copied"}}" data-copy-own-link>{{t "workflow.link.copy_own"}}</button>{{end}}</p>{{end}}{{end}}
+{{with .LinkWindow}}<p class="sub link-window-line ph-hide" data-link-window="{{.State}}"><span class="link-window{{if eq .State "from"}} is-later{{end}}">{{if eq .State "now"}}{{t "workflow.link.now"}}{{else}}{{t "workflow.link.from" "date" (date_cz .Opens)}}{{end}}</span>{{if eq .State "from"}}{{help_tip "link-window-help" (t "workflow.link.why")}} <button class="btn ghost" type="button" data-copy="stay-link" data-copy-label="{{t "workflow.link.copy_own"}}" data-copied-label="{{t "stay.detail.link_copied"}}" data-copy-own-link>{{t "workflow.link.copy_own"}}</button>{{end}}</p>{{end}}
 
 {{if and .StayClaim.State (or (ne .StayClaim.State "unclaimed") .StayClaim.GuestAccessLockedAt)}}
 <div class="card stay-claim-line ph-hide" data-stay-claim>
@@ -189,11 +189,11 @@
     <tr>
       <td>
         <b><a class="guest-name-link" href="/guests/{{.Guest.ID}}?return_to=/reservations/{{$id}}">{{.Guest.Row.FirstName}} {{or .Guest.Row.Surname "—"}}</a></b>{{if .Guest.IsLead}} <span class="pill">{{t "stay.detail.guests.lead"}}</span>{{end}}
-        {{template "staydetail.id_line" .}}
+        {{template "staydetail.id_line" (guest_line . $.Access)}}
         {{if .Guest.Row.Note}}<small>{{t "stay.detail.guests.note" "text" .Guest.Row.Note}}</small>{{end}}
-        {{if .Guest.EnteredBy}}<small>{{t "stay.detail.guests.entered_by"}}: <span>{{entered_by_label .Guest.EnteredBy}}</span></small>{{end}}
+        {{if .Guest.EnteredBy}}<small>{{t "stay.detail.guests.entered_by"}}: <span>{{entered_by_label lang .Guest.EnteredBy}}</span></small>{{end}}
         {{range .Issues}}
-          <small class="{{if eq .Severity "error"}}err-text{{else}}warn-text{{end}}">{{validation_message .Message}}</small>
+          <small class="{{if eq .Severity "error"}}err-text{{else}}warn-text{{end}}">{{validation_message .Message lang}}</small>
         {{end}}
         {{if .Guest.LastErrors}}
           <small class="err-text">{{if eq .Guest.SubmitState "blocked"}}{{t "stay.detail.guest_blocked" "reason" .Guest.LastErrors}}{{else if eq .Guest.SubmitState "error"}}{{t "stay.detail.guest_refused" "reason" .Guest.LastErrors}}{{else}}{{.Guest.LastErrors}}{{end}}</small>
@@ -230,7 +230,7 @@
     {{- $ok := or (eq .Guest.SubmitState "sent") (eq .Guest.SubmitState "not_required") (and .Complete (ne .Guest.SubmitState "error") (ne .Guest.SubmitState "blocked"))}}
     <a class="row" href="/guests/{{.Guest.ID}}?return_to=/reservations/{{$id}}">
       <div class="ic {{if $ok}}ok{{else}}warn{{end}}">{{if $ok}}{{icon "check" 22}}{{else}}?{{end}}</div>
-      <div class="t"><b>{{.Guest.Row.FirstName}} {{or .Guest.Row.Surname "—"}}</b>{{template "staydetail.id_line" .}}<small>{{if .Guest.DocType}}{{t (printf "guest.doc_type.%s" .Guest.DocType)}} · {{end}}{{template "staydetail.guest_state_text" .}}</small></div>
+      <div class="t"><b>{{.Guest.Row.FirstName}} {{or .Guest.Row.Surname "—"}}</b>{{template "staydetail.id_line" (guest_line . $.Access)}}<small>{{if .Guest.DocType}}{{t (printf "guest.doc_type.%s" .Guest.DocType)}} · {{end}}{{template "staydetail.guest_state_text" .}}</small></div>
     </a>
   {{end}}
   {{range seq_range (add (len .Progress.Guests) 1) (add (deref_int .Progress.Expected) 1)}}
@@ -253,7 +253,7 @@
   <h2 class="sec">{{t "host.reporting"}}</h2>
   <div id="police-card" class="card police-card{{if eq .Progress.Status "failed"}} police-failed{{end}}">
     <b>{{if eq .Progress.Status "failed"}}{{t "hint.failed"}}{{else if .SendControls.SendEnabled}}{{tp "stay.detail.ready_count" .SendControls.PendingCount}}{{else if ne (deref_int .Progress.NotRegistered) 0}}{{tp "host.missing" (deref_int .Progress.NotRegistered)}}{{else}}{{t .SendControls.SendHintKey "filled" .Progress.Filled "expected" (py_int .Progress.Expected)}}{{end}}</b>
-    {{if and (eq .Progress.Status "failed") havel_on}}<p class="havel-ask-line"><a class="havel-ask-link" href="/havel?topic=reporting" data-sheet-open="havel-sheet" data-havel-launcher data-havel-topic="reporting">{{t "nav.ask_havel"}}</a></p>{{end}}
+    {{if and (eq .Progress.Status "failed") $.HavelOn}}<p class="havel-ask-line"><a class="havel-ask-link" href="/havel?topic=reporting" data-sheet-open="havel-sheet" data-havel-launcher data-havel-topic="reporting">{{t "nav.ask_havel"}}</a></p>{{end}}
     {{if and (not $inactive) (ne $cell.State "none")}}
     <span class="police-deadline-row"><small class="police-deadline">{{t "stay.detail.metric.deadline"}} {{deadline_badge $cell}}</small>{{if .Deadline}}{{help_tip "police-deadline-help" (t "stay.detail.metric.deadline_note" "when" (format_time_iso .Deadline "02.01.2006 15:04"))}}{{end}}</span>
     {{end}}
