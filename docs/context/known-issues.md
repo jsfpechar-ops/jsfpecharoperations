@@ -86,7 +86,6 @@
 - K-PICK: guest-enhancements.js:207 blur timer not cleared on refocus (1079).
 
 - K-HOUSEBOOK: house book Details popover unreachable at 390/768 (zero-size trigger).
-- K-FLAKY-DC: flaky `test_door_codes_safeguards` move test (test-postgres-full); OK on rerun.
 - K-GUEST-DATES: es/fr guest dates row wraps at 375, 360 px.
 - K-1091D: `test_1091_d` name no longer matches its test.
 - K-TAP43: local only (CI green): `test_design_guardrails_browser.py` guest-new 390 "Cancel" tap target 43 < 44.
@@ -95,11 +94,11 @@
 - K-SM3 (brief 1111): rules.md lines 37, 44 still say production is SQLite, migrations frozen at 0033.
 - K-DC-RENAME (943): lookup by name `UH-<id>`; a code renamed in TTLock reads as gone.
 - K-FLAKY-VT: test_host_filter_panels_browser.py:695 ViewTransition abort once (#943).
-- K-FLAKY-DC (#1081): CI door-code tests leave a row `pending` once; local runs pass. Suspect: two `now`s in `issue()`/`_issue_due`.
+- K-FLAKY-DC (#1081): CI door-code tests (`test_door_codes_safeguards`) leave a row `pending` once; local OK. Suspect: two `now`s in `issue()`/`_issue_due`.
 - K-F24 (947 review): recovered batch in manual mode keeps retried_at NULL; going automatic resends it once.
 - K-DC-REMOVE (950): A-B-A-B move sends no 2nd moved_failed mail.
 - K-DC-REVIVE-CARD (1173c): card closed in revoke_pending, delete refused, stay revived: stays closed.
 - K-DC-EXTEND (1173c review): stay extended after its issued code expired gets no new code.
 - K-PG-FK: goose 00004/11/13 FKs not DEFERRABLE (1263).
 - K-HB-HAND: housebook says "Not yet sent" for a hand-filed guest (Python quirk; 1704a test).
-- K-SEND-CTL: Go `stays.sendControls` counts all live guests, Python complete only; failed stay + incomplete signed foreign guest shows Send in Go (1860 risks).
+- K-SEND-CTL: Go `sendControls` counts all live guests; Python only complete (1860).
