@@ -125,3 +125,5 @@ workflow.link.copy_own
 workflow.link.from
 workflow.link.now
 workflow.link.why
+stays.table.stay
+how.toggle
