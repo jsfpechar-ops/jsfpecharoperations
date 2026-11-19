@@ -21,7 +21,12 @@ from fastapi.testclient import TestClient
 from app import auth, config, db, host_i18n, property_setup, reporting
 from app.main import app
 from tests.conftest import login_as, mark_security_prompt_seen
-from tests.go_stack import ensure_go_running, go_paths_enabled, path_routed_to_go, seed_go_host_gate
+from tests.go_stack import (
+    ensure_go_running,
+    go_paths_enabled,
+    path_routed_to_go,
+    seed_go_host_gate,
+)
 from tests.test_0710_v2_mockup_match_browser import _open_app
 from tests.test_host_quiet_dashboard_browser import (  # noqa: F401
     _launch,
@@ -46,7 +51,7 @@ GUESTS = {
     "e": (("JAN", "HORAK"),),
     "f": (("PETR", "KRAL"),),
 }
-NAMES = re.compile("|".join(name for pair in GUESTS.values() for guest in pair for name in guest), re.I)
+NAMES = re.compile("|".join(name for pair in GUESTS.values() for guest in pair for name in guest), re.IGNORECASE)
 # What the Python page must show for each stay, so a seed that stops reaching
 # its branch fails here instead of comparing two empty pages.
 BRANCH = {
@@ -227,7 +232,7 @@ def _detail(page: str) -> str:
 
 
 def _title(page: str) -> str:
-    match = re.search(r"<title>(.*?)</title>", page, re.S)
+    match = re.search(r"<title>(.*?)</title>", page, re.DOTALL)
     assert match, "page has no <title>"
     return match.group(1)
 
