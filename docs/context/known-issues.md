@@ -82,7 +82,7 @@
 - K-PK0290: passkey fix open.
 - K-CF01: mid-session challenge: see CLOUDFLARE Rule 3.
 - K-PG-ORDER: goose tests fail after icalsync locally; CI OK.
-- 0897 guest pay gaps: Slovak QR, PG migration 00007 unrun, no mark-as-paid, no e-mail link, copy, legal sign-off.
+- 0897 guest pay gaps: Slovak QR, PG 00007 unrun, no mark-as-paid, e-mail link, copy, legal sign-off.
 - K-PICK: guest-enhancements.js:207 blur timer not cleared on refocus (1079).
 
 - K-HOUSEBOOK: house book Details popover unreachable at 390/768 (zero-size trigger).
@@ -90,15 +90,16 @@
 - K-GUEST-DATES: es/fr guest dates row wraps at 375, 360 px.
 - K-1091D: `test_1091_d` name no longer matches its test.
 - K-TAP43: local only (CI green): `test_design_guardrails_browser.py` guest-new 390 "Cancel" tap target 43 < 44.
-- K-H0 (1094): NULL `checkin_hour` may TypeError in door_codes.py ~179/436; `/save` with a foreign guest_id makes a new person; `guest_form_saved` audit lacks field names.
+- K-H0 (1094): NULL checkin_hour TypeError door_codes ~179/436; foreign guest_id on /save; guest_form_saved audit lacks fields.
 - K-SM2 (brief 1105): OPERATIONS.md submit_state section disagrees with the code in 9 places.
 - K-SM3 (brief 1111): rules.md lines 37, 44 still say production is SQLite, migrations frozen at 0033.
 - K-DC-RENAME (943): lookup by name `UH-<id>`; a code renamed in TTLock reads as gone.
 - K-FLAKY-VT: test_host_filter_panels_browser.py:695 ViewTransition abort once (#943).
-- K-FLAKY-DC (#1081): CI door-code tests leave a row `pending` once; local runs pass. Suspect: two `now`s in `issue()`/`_issue_due`.
+- K-FLAKY-DC (#1081): CI door-code tests leave pending once; local OK; suspect two nows in issue/_issue_due.
 - K-F24 (947 review): recovered batch in manual mode keeps retried_at NULL; going automatic resends it once.
 - K-DC-REMOVE (950): A-B-A-B move sends no 2nd moved_failed mail.
 - K-DC-REVIVE-CARD (1173c): card closed in revoke_pending, delete refused, stay revived: stays closed.
 - K-DC-EXTEND (1173c review): stay extended after its issued code expired gets no new code.
 - K-PG-FK: goose 00004/11/13 FKs not DEFERRABLE (1263).
 - K-HB-HAND: housebook says "Not yet sent" for a hand-filed guest (Python quirk; 1704a test).
+- K-BLOCKED-PAGE (1859b): BlockedPage inline main styles; app.css later.

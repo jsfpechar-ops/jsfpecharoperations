@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/appconfig"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb/layout"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
 )
@@ -232,11 +233,7 @@ func stayGroup(res Reservation, today time.Time) string {
 }
 
 func paymentsHidden(getenv func(string) string) bool {
-	switch strings.ToLower(getenv("UBYHOST_PAYMENTS_HIDDEN")) {
-	case "1", "true", "yes":
-		return true
-	}
-	return false
+	return appconfig.PaymentsHidden(getenv)
 }
 
 func publicBaseURL(getenv func(string) string) string {
