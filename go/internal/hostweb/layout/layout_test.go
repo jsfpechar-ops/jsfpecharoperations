@@ -532,3 +532,28 @@ func TestShellQuery(t *testing.T) {
 		t.Fatal("unknown page template accepted")
 	}
 }
+
+func TestSideNavPaymentsHidden(t *testing.T) {
+	tpl := goldenTemplates(t)
+	hiddenEnv := func(k string) string {
+		if k == "UBYHOST_PAYMENTS_HIDDEN" {
+			return "1"
+		}
+		return getenv(k)
+	}
+	sh := goldenShell(goldenCase{SignedIn: true, DisplayName: "Host", Username: "host"})
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/?lang=en", nil)
+	env := Env{Getenv: hiddenEnv, Now: time.Date(2026, 11, 13, 9, 0, 0, 0, time.UTC)}
+	p := Page{Title: "Overview", Nav: "dashboard"}
+	if err := render(w, r, env, sh, "GOLDEN-CSRF", p, tpl, "golden", map[string]any{"Value": "v"}); err != nil {
+		t.Fatal(err)
+	}
+	body := w.Body.String()
+	if strings.Contains(body, `href="/payments"`) {
+		t.Fatal("shell must not link to /payments when UBYHOST_PAYMENTS_HIDDEN=1")
+	}
+	if strings.Contains(body, `href="/booking-sites"`) {
+		t.Fatal("shell must not link to /booking-sites when UBYHOST_PAYMENTS_HIDDEN=1")
+	}
+}
