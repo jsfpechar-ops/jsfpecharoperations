@@ -102,4 +102,4 @@
 - K-DC-EXTEND (1173c review): stay extended after its issued code expired gets no new code.
 - K-PG-FK: goose 00004/11/13 FKs not DEFERRABLE (1263).
 - K-HB-HAND: housebook says "Not yet sent" for a hand-filed guest (Python quirk; 1704a test).
-- 2026-11-19 `go/internal/web/stays/progress_list.go` `sendControls` counts every live guest; Python counts complete guests only. Failed stay + incomplete signed foreign guest: Go list shows Send, Python does not. Needs a filing-tier fix brief (owner decision). Noted in 1860 risks.
+- K-SEND-CTL: Go `stays.sendControls` counts all live guests, Python complete only; failed stay + incomplete signed foreign guest shows Send in Go (1860 risks).
