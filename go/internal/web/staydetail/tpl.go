@@ -50,6 +50,7 @@ var tplFuncs = map[string]any{
 	"py_int":             pyInt,
 	"fix_href":           fixHref,
 	"any_receipt":        anyReceipt,
+	"displayName":        displayName,
 }
 
 var prague = func() *time.Location {
