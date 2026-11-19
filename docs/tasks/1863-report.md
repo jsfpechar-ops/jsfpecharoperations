@@ -29,7 +29,13 @@ context lint: (with step 7)
 
 ## Accepted differences (§2)
 
-Send starts within the job poll (~30 s), not in the request; submission labelled `auto`, not `completion_immediate`.
+- Python files during the request; Go enqueues `submit`, run by the owner of that job kind within its poll (~30 s). If a sweep row is already open, the next scheduled sweep (`UBYHOST_SUBMIT_SWEEP_MINUTES`, 10) files it.
+- The sweep checks every automatic apartment; it sends only guests that are due anyway.
+- Submission `mode` is `auto`, not `completion_immediate`. A failed sweep raises `sweep_failed:{apartment}`; Go raises `submission_immediate:{apartment}` only when the enqueue fails.
+- Non-integer id: Go 404, Python 422; neither saves. `POST /reservations/submit-ready` gets 404 in Go before any check.
+- Integer spellings no browser sends (`1_0`, non-ASCII digits): Python reads a number, Go none.
+
+Re-run by a second executor (local PostgreSQL 16, `ubyhost_test`): `TestSave*` 10 PASS, both wrapper tests PASS, 0 skipped; parity with 1861: 14 passed, 0 skipped; `/reservations/1`: 0 missing.
 
 ## Deviations
 
