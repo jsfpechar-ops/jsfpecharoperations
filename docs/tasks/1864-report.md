@@ -32,7 +32,7 @@ None.
 
 ## Questions
 
-None.
+Before merge: 1862's geometry finding (the stay page served by Go through `/reservations/*[0-9]` fails `test_host_wide_lanes_align` on `pageHeader.right`): see `docs/tasks/1862-report.md`. Re-run by a second executor: Go caddy tests PASS, `test_1864_caddy_match.py` 34 passed, parity 14 passed (0 skipped), route check 2 pairs 0 missing, preflight 0 failing.
 
 ## Owner steps
 
