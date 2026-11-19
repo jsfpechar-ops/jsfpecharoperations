@@ -2,30 +2,34 @@
 <body><div class="app"><!--SIDE:stays-->
 <main class="main">
   <div class="crumb"><a href="#">Stays</a> › Josef Pechar</div>
-  <div class="head">
-    <div>
-      <h1>Josef Pechar</h1>
-      <p class="desc"><span class="pill">Archived</span>&nbsp; Downtown Comfort (demo) · 19.11.2026 – 20.11.2026 · 1 night</p>
+  <div class="title-row">
+    <h1>Josef Pechar</h1>
+    <div class="acts">
+      <button class="btn primary">Restore</button>
+      <button class="btn icon">⋯</button>
     </div>
-    <div style="display:flex;gap:8px"><button class="btn">⋯</button><button class="btn primary">Restore</button></div>
   </div>
+  <div class="meta"><span class="pill">Archived</span>Downtown Comfort in a Spacious Apartment (demo) · 19.11.2026 – 20.11.2026</div>
 
-  <section class="blk">
-    <div class="blk-h"><h2>Guests <span style="color:var(--ink2);font-weight:500">1 of 1</span></h2></div>
-    <table>
-      <thead><tr><th>Guest</th><th class="hide-sm">Document</th><th>Reporting</th><th></th></tr></thead>
-      <tbody><tr class="row"><td>Josef Pechar <span class="pill">Main guest</span><span class="sub">Born 19.01.2001 · Germany · entered by the guest</span></td><td class="hide-sm">—</td><td><span class="pill">Not sent</span></td><td class="more">⋯</td></tr></tbody>
-    </table>
+  <section class="sec">
+    <div class="sec-h"><h2>Guests <span>1 / 1</span></h2><div class="acts"><button class="btn">Edit count</button><button class="btn">+ Add a guest</button></div></div>
+    <div class="card"><table>
+      <thead><tr><th>Guest</th><th>Document</th><th>Reporting</th><th></th></tr></thead>
+      <tbody><tr class="row"><td><b>Josef Pechar</b> <span class="pill">Main guest</span><span class="sub">Date of birth 19.01.2001 · Germany · Entered by the guest</span></td><td>—</td><td><span class="pill ok">Ready</span></td><td class="more">⋯</td></tr></tbody>
+    </table></div>
   </section>
 
-  <section class="blk">
-    <div class="blk-h"><h2>Stay details</h2></div>
-    <dl class="kv">
-      <div><dt>Property</dt><dd>Downtown Comfort (demo)</dd></div>
-      <div><dt>Arrival</dt><dd>19.11.2026</dd></div>
-      <div><dt>Departure</dt><dd>20.11.2026</dd></div>
-    </dl>
+  <section class="sec">
+    <div class="sec-h"><h2>Stay</h2></div>
+    <div class="card rows">
+      <div class="r"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg><div class="l"><b>Stay settings</b><span>Expected guests, stay state, private note</span></div><span class="c">›</span></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="sec-h"><h2>Police reporting</h2></div>
+    <div class="card rows"><div class="status-line"><b>Ready to report: 1 guest.</b></div></div>
   </section>
 </main></div>
-<div class="toast"><span>Stay archived.</span><button class="btn">Undo</button><span class="x">✕</span></div>
+<div class="toast"><span>Moved to Archived.</span><button class="btn">Undo</button><span class="x">✕</span></div>
 </body></html>

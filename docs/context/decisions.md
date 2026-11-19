@@ -71,4 +71,4 @@ Append-only.
 - 2026-11-17 [dep] ČÚZK: local unlogged table, pg_trgm (1700c). Python golden filing only ([go-first](go-first.md)) | owner. 1702d-e Go | orch
 - 2026-11-17/18 [product] Autopilot A2 hide Payments; preflight Q4: zero open payment requests or direct bookings, never used; `UBYHOST_PAYMENTS_HIDDEN=1` OK | owner
 - 2026-11-17 [workflow] Stays Go-only, show-more append, Stays Turbo cache only|owner
-- 2026-11-19 [design] Host and guest pages: white background, "keep it simple" (one main button, one search + Add filter, one notice, at most one ?), Go only; mockups in `docs/design/mockups/simple-white/` | owner
+- 2026-11-19 [design] Stay page only, small fixes: white page, tinted sidebar, desktop and tablet (1024+) only; never touch the phone host app (guest phone form OK); Go only; mockups `docs/design/mockups/simple-white/` | owner
