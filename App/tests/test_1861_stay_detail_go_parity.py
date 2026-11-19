@@ -116,7 +116,7 @@ def _guest(reservation_id: int, first: str, surname: str, *, complete: bool = Tr
         row.update({
             "birth_date": "01011990",
             "nationality": "VNM",
-            "doc_type": "P",
+            "doc_type": "pas",
             "doc_number": "P9988771",
             "res_street": "Le Loi 5",
             "res_city": "Hanoi",
