@@ -28,7 +28,7 @@ context lint: OK
 
 ## Deviations
 
-None.
+Owner review (PR #1104): decision line for stay-detail header-edge geometry skip at ≥1024 (`docs/context/decisions.md`); owner step 10 and PR filing copy use ~10 minutes queued submit sweep, not ~30 seconds.
 
 ## Questions
 
