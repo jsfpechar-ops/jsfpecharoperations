@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-11-17.
+Updated: 2026-11-19.
 
 ## Production
 - Magic-link 1–2 done; access log off. `/healthz` 1.1.0. Main 11-13: `84e966f` (#962).
@@ -25,6 +25,7 @@ Updated: 2026-11-17.
 - TTLock 0008–0016: [plan](../plans/ttlock-door-codes.md) §11; live after §12 + lawyer (K-L).
 - File-retention: decided; lawyer Terms/DPA line.
 - Login wording: 1762 (Face ID / device labels), 1763 (auto-open), 1764 (Settings wording, blocked on 1704); after 1760, exact-diff pass first.
+- Stay page layout (11-19): 1860→1861→1862. Switch blocked: POST port (1863) + id selector. PR #1103.
 - Stays Go-only: 1855-1858; `/reservations` in `UBYHOST_GO_PATHS` after 1856.
 
 ## Blocked: needs owner, lawyer or council
