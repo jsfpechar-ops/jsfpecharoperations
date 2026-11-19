@@ -18,6 +18,8 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/appconfig"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/jobs"
 )
 
@@ -57,6 +59,10 @@ var hardenHeaders = [][2]string{
 
 func (m *metrics) wrap(route string, h http.HandlerFunc) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if appconfig.PaymentsHostPathBlocked(r.URL.Path, os.Getenv) {
+			hostweb.BlockedPage(w, r)
+			return
+		}
 		for _, hv := range hardenHeaders {
 			w.Header().Set(hv[0], hv[1])
 		}
