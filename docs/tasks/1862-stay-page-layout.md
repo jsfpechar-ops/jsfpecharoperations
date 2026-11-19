@@ -1,6 +1,6 @@
 # 1862: Stay detail page layout on desktop (Go template and app2.css)
 
-Status: todo (depends on 1860 and 1861)
+Status: review
 Depends on: 1860, 1861 | Base commit: the series branch after 1861's last commit | Branch: task/1860-1864-stay-page (series, see below)
 Executor: Haiku 5.5 | Fits one session: no. Three sessions (A: steps 0 to 7b, B: steps 8 to 12, C: step 13). Commit each step as `1862 step k`; a fresh session continues from the last commit (executor.md, "at the cap").
 Tier: B (host UI, layout and structure only, no behaviour change)
