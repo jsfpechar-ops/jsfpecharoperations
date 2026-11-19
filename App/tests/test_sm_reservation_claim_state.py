@@ -223,7 +223,11 @@ def test_scanner_sees_claim_updates():
 
 # Go may write the claim state in exactly one place: the mail job's expire_holds step
 # (provisional -> unclaimed, the same move as claim.expire_holds above).
-PINNED_GO_WRITES = [("go/internal/mailjob/holds.go", "ExpireHolds")]
+# ensureClaimRow mirrors Python claim.ensure_row on GET stay detail (unclaimed INSERT).
+PINNED_GO_WRITES = [
+    ("go/internal/mailjob/holds.go", "ExpireHolds"),
+    ("go/internal/web/staydetail/panels.go", "ensureClaimRow"),
+]
 
 
 def test_go_writes_no_claim_state():

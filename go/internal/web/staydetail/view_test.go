@@ -80,13 +80,16 @@ func insertOwnerStay(t *testing.T, pool *pgxpool.Pool, ownerID int64, archived b
 	t.Helper()
 	ctx := context.Background()
 	now := time.Date(2026, 6, 15, 10, 0, 0, 0, time.UTC)
+	suffix := fmt.Sprintf("%s-%d", strings.ReplaceAll(t.Name(), "/", "_"), time.Now().UnixNano())
+	token := "tok-" + suffix
+	uid := "uid-" + suffix
 	var entityID int64
 	if err := pool.QueryRow(ctx, `INSERT INTO legal_entity (owner_user_id, name, created_at)
 		VALUES ($1, 'Entity', $2) RETURNING id`, ownerID, now).Scan(&entityID); err != nil {
 		t.Fatal(err)
 	}
 	if err := pool.QueryRow(ctx, `INSERT INTO apartment (owner_user_id, legal_entity_id, internal_name, permalink_token, automation_mode, submit_after_hours, active, created_at)
-		VALUES ($1,$2,'Flat','tok','manual',24,1,$3) RETURNING id`, ownerID, entityID, now).Scan(&aptID); err != nil {
+		VALUES ($1,$2,'Flat',$3,'manual',24,1,$4) RETURNING id`, ownerID, entityID, token, now).Scan(&aptID); err != nil {
 		t.Fatal(err)
 	}
 	var arch any
@@ -96,7 +99,7 @@ func insertOwnerStay(t *testing.T, pool *pgxpool.Pool, ownerID int64, archived b
 		arch = nil
 	}
 	if err := pool.QueryRow(ctx, `INSERT INTO reservation (apartment_id, uid, date_from, date_to, status, source, archived_at, created_at, updated_at)
-		VALUES ($1,'uid-detail','2026-06-10','2026-06-12','active','manual',$2,$3,$3) RETURNING id`, aptID, arch, now).Scan(&resID); err != nil {
+		VALUES ($1,$2,'2026-06-10','2026-06-12','active','manual',$3,$4,$4) RETURNING id`, aptID, uid, arch, now).Scan(&resID); err != nil {
 		t.Fatal(err)
 	}
 	return aptID, resID
@@ -148,9 +151,10 @@ func TestBuildSubmissionsUnion(t *testing.T) {
 	}
 	aptID, resID := insertOwnerStay(t, pool, ownerID, false)
 
+	otherToken := "tok-other-" + fmt.Sprintf("%d", time.Now().UnixNano())
 	var otherApt int64
 	if err := pool.QueryRow(ctx, `INSERT INTO apartment (owner_user_id, legal_entity_id, internal_name, permalink_token, active, created_at)
-		SELECT owner_user_id, legal_entity_id, 'Other', 'tok2', 1, $1 FROM apartment WHERE id = $2 RETURNING id`, now, aptID).Scan(&otherApt); err != nil {
+		SELECT owner_user_id, legal_entity_id, 'Other', $1, 1, $2 FROM apartment WHERE id = $3 RETURNING id`, otherToken, now, aptID).Scan(&otherApt); err != nil {
 		t.Fatal(err)
 	}
 
