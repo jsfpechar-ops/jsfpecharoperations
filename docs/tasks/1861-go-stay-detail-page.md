@@ -1,6 +1,6 @@
 # 1861: Port GET /reservations/{id} to Go, part 2: template, route, parity
 
-Status: todo (depends on 1860)
+Status: review
 Depends on: 1860 | Base commit: the series branch after 1860's last commit | Branch: task/1860-1864-stay-page (series, see below)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (checkpoint at 60k)
 Tier: A (guest data and filing status shown; the switch is 1864's owner steps)
