@@ -53,8 +53,12 @@ func seedLegalAcceptance(t *testing.T, pool *pgxpool.Pool, userID int64, at time
 
 func createCSRFPost(t *testing.T, h http.Handler, at time.Time, nonce string, ownerID int64, fields map[string]string) *httptest.ResponseRecorder {
 	t.Helper()
+	accept := fields["-accept"]
 	form := url.Values{}
 	for k, v := range fields {
+		if k == "-accept" {
+			continue
+		}
 		form.Set(k, v)
 	}
 	sum := sha256.Sum256([]byte(nonce))
@@ -65,6 +69,9 @@ func createCSRFPost(t *testing.T, h http.Handler, at time.Time, nonce string, ow
 	form.Set("_csrf", token)
 	req := httptest.NewRequest(http.MethodPost, "/reservations", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	if accept != "" {
+		req.Header.Set("Accept", accept)
+	}
 	req.AddCookie(&http.Cookie{Name: "ubyhost_csrf", Value: nonce})
 	if ownerID != 0 {
 		req.AddCookie(&http.Cookie{Name: session.CookieName, Value: session.Sign(createTestSecret, map[string]any{
