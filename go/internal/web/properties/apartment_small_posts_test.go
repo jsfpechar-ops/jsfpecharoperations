@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ical"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/policyletter"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/session"
@@ -190,5 +192,128 @@ func TestApartmentRefreshCodelists(t *testing.T) {
 	loc := rec.Header().Get("Location")
 	if rec.Code != http.StatusSeeOther || !strings.Contains(loc, "msg=") {
 		t.Errorf("refresh ok: %d %q", rec.Code, loc)
+	}
+}
+
+func TestCalendarPlatformValues(t *testing.T) {
+	if _, _, errs := calendarPlatformValues("", "", ""); errs["label"] != "calendar.error.platform_required" {
+		t.Fatalf("missing platform: %v", errs)
+	}
+	label, own, errs := calendarPlatformValues("airbnb", "", "")
+	if len(errs) != 0 || label != "Airbnb" || own != "Airbnb" {
+		t.Fatalf("airbnb: label=%q own=%q errs=%v", label, own, errs)
+	}
+	label, _, errs = calendarPlatformValues("other", "My OTA", "")
+	if len(errs) != 0 || label != "My OTA" {
+		t.Fatalf("other custom: label=%q errs=%v", label, errs)
+	}
+	if _, _, errs = calendarPlatformValues("other", "", ""); errs["label_other"] != "calendar.error.other_required" {
+		t.Fatalf("other blank: %v", errs)
+	}
+	long := strings.Repeat("x", platformOtherMax+1)
+	if _, _, errs = calendarPlatformValues("other", long, ""); errs["label_other"] != "calendar.error.other_invalid" {
+		t.Fatalf("other long: %v", errs)
+	}
+	if _, _, errs = calendarPlatformValues("airbnb", "", "\x00bad"); errs["own_name"] != "calendar.error.name_invalid" {
+		t.Fatalf("control char own_name: %v", errs)
+	}
+}
+
+// Brief 1703: blocked calendar URLs must fail before any ical_feed row is written.
+func TestApartmentAddFeedRefusesInternalURL(t *testing.T) {
+	pool := testPool(t)
+	adWorld(t, pool)
+	mux := spMux(t, pool, nil, "")
+	before := oneInt(t, pool, `SELECT COUNT(*) FROM ical_feed WHERE apartment_id = $1`, adLoft)
+	form := url.Values{
+		"return_to": {"/apartments/130201?view=bookings#calendars"},
+		"label":     {"airbnb"},
+		"url":       {"http://127.0.0.1/calendar.ics"},
+	}
+	rec := spPost(t, mux, "/apartments/130201/feeds", form, 130001, "en", true, "")
+	if rec.Code != http.StatusNotImplemented {
+		t.Errorf("status %d want 501", rec.Code)
+	}
+	if rec.Header().Get("X-Ubyhost-Not-Ported") != "1" {
+		t.Error("missing not-ported header")
+	}
+	if after := oneInt(t, pool, `SELECT COUNT(*) FROM ical_feed WHERE apartment_id = $1`, adLoft); after != before {
+		t.Errorf("feed count %d -> %d", before, after)
+	}
+}
+
+func TestApartmentAddFeedDuplicateURL(t *testing.T) {
+	pool := testPool(t)
+	adWorld(t, pool)
+	mux := spMux(t, pool, nil, "")
+	form := url.Values{
+		"return_to": {"/apartments/130201?view=bookings#calendars"},
+		"label":     {"airbnb"},
+		"url":       {"https://www.airbnb.com/calendar/ical/1.ics"},
+	}
+	rec := spPost(t, mux, "/apartments/130201/feeds", form, 130001, "en", true, "")
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("status %d", rec.Code)
+	}
+	if loc := rec.Header().Get("Location"); !strings.Contains(loc, "err=") {
+		t.Errorf("duplicate flash: %q", loc)
+	}
+}
+
+func TestApartmentAddFeedInsertsAndSyncs(t *testing.T) {
+	pool := testPool(t)
+	adWorld(t, pool)
+	mustExec(t, pool, `SELECT setval(pg_get_serial_sequence('ical_feed', 'id'), (SELECT max(id) FROM ical_feed))`)
+	mustExec(t, pool, `UPDATE ical_feed SET active = 0 WHERE apartment_id = $1`, adLoft)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/calendar")
+		_, _ = io.WriteString(w, "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:sp-feed-1\r\nDTSTART;VALUE=DATE:20261210\r\nDTEND;VALUE=DATE:20261212\r\nSUMMARY:Reserved\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n")
+	}))
+	defer srv.Close()
+	mux := http.NewServeMux()
+	RegisterApartmentSmallPosts(mux, noWrap, pool, adEnv(nil), testClock, &ical.FetchOptions{
+		Resolver: net.DefaultResolver, AllowPrivate: true,
+	})
+	before := oneInt(t, pool, `SELECT COUNT(*) FROM ical_feed WHERE apartment_id = $1 AND url = $2`, adLoft, srv.URL)
+	form := url.Values{
+		"return_to": {"/apartments/130201?view=bookings#calendars"},
+		"label":     {"airbnb"},
+		"url":       {srv.URL},
+	}
+	rec := spPost(t, mux, "/apartments/130201/feeds", form, 130001, "en", true, "")
+	if rec.Code != http.StatusSeeOther || !strings.Contains(rec.Header().Get("Location"), "msg=") {
+		t.Fatalf("add feed: %d %q", rec.Code, rec.Header().Get("Location"))
+	}
+	if after := oneInt(t, pool, `SELECT COUNT(*) FROM ical_feed WHERE apartment_id = $1 AND url = $2`, adLoft, srv.URL); after != before+1 {
+		t.Errorf("feed rows %d want %d", after, before+1)
+	}
+}
+
+// Changing only the letter-picked login without a password must not run the live UbyPort test.
+func TestApartmentTestConnectionNewLoginNeedsPassword(t *testing.T) {
+	pool := testPool(t)
+	adWorld(t, pool)
+	hits := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits++
+	}))
+	defer srv.Close()
+	mux := spMux(t, pool, nil, srv.URL)
+	mustExec(t, pool, `UPDATE apartment SET uby_ws_user = 'UBY-WS_OLD', uby_idub = '209988776655' WHERE id = $1`, adLoft)
+	form := url.Values{
+		"return_to":     {"/apartments/130201?view=settings&section=police"},
+		"uby_idub":      {"209988776655"},
+		"uby_ws_user":   {"UBY-WS_NEW"},
+		"letter_fields": {"uby_ws_user"},
+	}
+	rec := spPost(t, mux, "/apartments/130201/test-connection", form, 130001, "en", true, "")
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("status %d", rec.Code)
+	}
+	if loc := rec.Header().Get("Location"); !strings.Contains(loc, "Type%20the%20password") {
+		t.Errorf("flash: %q", loc)
+	}
+	if hits != 0 {
+		t.Errorf("UbyPort mock hit %d times", hits)
 	}
 }
