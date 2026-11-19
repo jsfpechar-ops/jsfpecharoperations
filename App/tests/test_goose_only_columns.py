@@ -3,6 +3,7 @@ from __future__ import annotations
 import textwrap
 
 import test_db_postgres as pgt
+
 from app import db
 
 PG_ONLY = pgt.pytestmark
