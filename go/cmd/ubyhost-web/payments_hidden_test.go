@@ -3,22 +3,12 @@ package main
 import (
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
 )
 
-func withPaymentsHidden(on bool) {
-	if on {
-		os.Setenv("UBYHOST_PAYMENTS_HIDDEN", "1")
-	} else {
-		os.Unsetenv("UBYHOST_PAYMENTS_HIDDEN")
-	}
-}
-
 func TestPaymentsHiddenRoutesBlocked(t *testing.T) {
-	withPaymentsHidden(true)
-	t.Cleanup(func() { withPaymentsHidden(false) })
+	t.Setenv("UBYHOST_PAYMENTS_HIDDEN", "1")
 
 	m := &metrics{counts: map[key]int64{}}
 	mux := newMux(m, nil)
@@ -59,8 +49,7 @@ func TestPaymentsHiddenRoutesBlocked(t *testing.T) {
 }
 
 func TestPaymentsHiddenOffDoesNotGate(t *testing.T) {
-	withPaymentsHidden(false)
-	t.Cleanup(func() { withPaymentsHidden(false) })
+	t.Setenv("UBYHOST_PAYMENTS_HIDDEN", "0")
 	m := &metrics{counts: map[key]int64{}}
 	h := m.wrap("/payments", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusTeapot)

@@ -41,8 +41,21 @@ def client(monkeypatch):
 
 
 def test_hidden_routes_404_when_signed_in(client):
-    for path in ("/payments", "/booking-sites", "/payments/new", "/payments/consent"):
+    for path in (
+        "/payments",
+        "/booking-sites",
+        "/payments/new",
+        "/payments/consent",
+        "/payments/qr/42.png",
+    ):
         assert client.get(path, follow_redirects=False).status_code == 404
+
+
+def test_payments_host_path_blocked_includes_qr_png(monkeypatch):
+    monkeypatch.setattr(config, "PAYMENTS_HIDDEN", False)
+    assert config.payments_host_path_blocked("/payments/qr/42.png") is False
+    monkeypatch.setattr(config, "PAYMENTS_HIDDEN", True)
+    assert config.payments_host_path_blocked("/payments/qr/42.png") is True
 
 
 def test_webhook_still_200_when_hidden(client):

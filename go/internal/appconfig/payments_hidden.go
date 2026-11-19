@@ -16,20 +16,14 @@ func PaymentsHidden(getenv func(string) string) bool {
 }
 
 // PaymentsHostPathBlocked is config.payments_host_path_blocked. While hidden, host
-// payments and booking-site URLs answer 404. Guest pay links, webhooks, guest
-// booking /p/*, and payment QR PNGs stay reachable on Go.
+// payments and booking-site URLs answer 404. Guest pay links, webhooks, and guest
+// booking /p/* stay reachable on Go.
 func PaymentsHostPathBlocked(path string, getenv func(string) string) bool {
 	if !PaymentsHidden(getenv) {
 		return false
 	}
 	if path == "/booking-sites" {
 		return true
-	}
-	if strings.HasPrefix(path, "/pay/") {
-		return false
-	}
-	if strings.HasPrefix(path, "/payments/qr/") && strings.HasSuffix(path, ".png") {
-		return false
 	}
 	if strings.HasPrefix(path, "/payments") {
 		return true

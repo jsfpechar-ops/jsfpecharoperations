@@ -41,8 +41,8 @@ func TestPaymentsHostPathBlockedHiddenOff(t *testing.T) {
 func TestPaymentsHostPathBlockedHiddenOn(t *testing.T) {
 	blocked := []string{
 		"/payments", "/payments/new", "/payments/consent", "/booking-sites",
-		"/payments/connect/start", "/apartments/12/booking-site",
-		"/apartments/12/booking-site/edit",
+		"/payments/connect/start", "/payments/qr/42.png",
+		"/apartments/12/booking-site", "/apartments/12/booking-site/edit",
 	}
 	for _, path := range blocked {
 		if !PaymentsHostPathBlocked(path, getenvOn) {
@@ -51,7 +51,7 @@ func TestPaymentsHostPathBlockedHiddenOn(t *testing.T) {
 	}
 	open := []string{
 		"/webhooks/stripe", "/p/slug", "/p/slug/book", "/pay/9/abc.png",
-		"/payments/qr/42.png", "/reservations", "/guide",
+		"/reservations", "/guide",
 	}
 	for _, path := range open {
 		if PaymentsHostPathBlocked(path, getenvOn) {

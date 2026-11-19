@@ -2,7 +2,7 @@
 
 ## Summary
 
-Go web `metrics.wrap` checks `appconfig.PaymentsHostPathBlocked` on every request so `/payments*` (except QR PNG), `/booking-sites`, and `/apartments/*/booking-site*` return 404 while `UBYHOST_PAYMENTS_HIDDEN=1`. Webhooks, guest booking, pay links, and `/payments/qr/{id}.png` are not gated.
+Go web `metrics.wrap` checks `appconfig.PaymentsHostPathBlocked` on every request so `/payments*` (including `/payments/qr/*.png`), `/booking-sites`, and `/apartments/*/booking-site*` return 404 while `UBYHOST_PAYMENTS_HIDDEN=1`. Webhooks, guest booking `/p/*`, and guest `/pay/{id}/*` are not gated.
 
 ## Tests
 
@@ -10,6 +10,7 @@ Go web `metrics.wrap` checks `appconfig.PaymentsHostPathBlocked` on every reques
 go/cmd/ubyhost-web: TestPaymentsHiddenRoutesBlocked, TestPaymentsHiddenOffDoesNotGate
 go/internal/appconfig: PaymentsHidden + path matrix
 go/internal/hostweb: WantsHTML, BlockedPage
+App: test_payments_hidden.py
 ```
 
 ## Owner
