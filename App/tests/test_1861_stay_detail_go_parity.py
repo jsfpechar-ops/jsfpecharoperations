@@ -218,10 +218,12 @@ def _fetch(url: str, cookie: str, lang: str) -> httpx.Response:
 
 _DIV = re.compile(r"<div\b|</div>")
 _DETAIL = '<div class="host-stay-detail">'
+_ROOT_1862 = re.compile(r'class="host-stay-detail(?: stay-layout)?(?: stay-archived)?"', re.S)
 
 
 def _detail(page: str) -> str:
     """The inner HTML of the stay page's host-stay-detail div."""
+    page = _ROOT_1862.sub('class="host-stay-detail"', page, count=1)
     start = page.index(_DETAIL) + len(_DETAIL)
     depth = 1
     for match in _DIV.finditer(page, start):
@@ -247,6 +249,46 @@ def _norm(html: str) -> str:
     html = re.sub(r'(name="_csrf" value=")[^"]*"', r'\1X"', html)
     html = re.sub(r"\s+", " ", html).strip()
     return re.sub(r"> <", "><", html)
+
+
+def neutralise_1862(html: str) -> str:
+    """Brief 1862 step 7b: hide only the desktop-layout markup 1862 adds to the Go page.
+
+    Runs on both sides after ``_norm``; everything else stays compared.
+    """
+    html = _ROOT_1862.sub('class="host-stay-detail"', html)
+    html = re.sub(
+        r'<h1 class="airbnb-title">(?:<span class="ph-only">(.*?)</span><span class="ph-hide">.*?</span>|(.*?))</h1>',
+        lambda m: '<h1 class="airbnb-title">' + (m.group(1) or m.group(2)) + "</h1>",
+        html,
+        flags=re.S,
+    )
+    html = re.sub(r'<div class="crumb">.*?</div>', lambda m: m.group(0).lower(), html, flags=re.S)
+    html = re.sub(r"<form[^>]*stay-restore[^>]*>.*?</form>", "", html, flags=re.S)
+    html = re.sub(r'<a class="row-menu-item ph-hide" href="/guide#guests"[^>]*>.*?</a>', "", html, flags=re.S)
+    html = html.replace(" stay-archived-banner", "")
+    html = re.sub(
+        r'(?:<div class="list ph-hide">)?<a class="link" href="/payments\?reservation_id=[^"]*">.*?</a>(?:</div>)?',
+        "",
+        html,
+        flags=re.S,
+    )
+    html = re.sub(
+        r'<section class="stay-rows-group ph-hide"><h2 class="sec">[^<]*</h2><div class="card stay-rows">',
+        "",
+        html,
+        flags=re.S,
+    )
+    quick = html.find('id="stay-quick-edit"')
+    close = html.find("</details></div></section>", quick) if quick >= 0 else -1
+    if close >= 0:
+        html = html[:close] + "</details>" + html[close + len("</details></div></section>"):]
+    for anchor in ('id="stay-quick-edit"', 'id="file-by-hand"'):
+        html = re.sub("(" + re.escape(anchor) + r"[^>]*>)<summary>.*?</summary>", r"\1", html, count=1, flags=re.S)
+    hand = re.search(r'<details[^>]*id="file-by-hand"[^>]*>.*?</details>', html, flags=re.S)
+    if hand:
+        html = html[:hand.start()] + html[hand.end():] + hand.group(0)
+    return html
 
 
 def _first_diff(py: str, go: str) -> str:
@@ -286,7 +328,7 @@ def test_go_stay_page_matches_python(base, stay_pages, monkeypatch, lang):
 
         if _norm(_title(py.text)) != _norm(_title(go.text)):
             failures.append(f"stay ({key}) {lang} <title>: " + _first_diff(_norm(_title(py.text)), _norm(_title(go.text))))
-        py_detail, go_detail = _norm(_detail(py.text)), _norm(_detail(go.text))
+        py_detail, go_detail = neutralise_1862(_norm(_detail(py.text))), neutralise_1862(_norm(_detail(go.text)))
         if py_detail != go_detail:
             failures.append(f"stay ({key}) {lang}: " + _first_diff(py_detail, go_detail))
     assert not failures, "\n".join(failures)
