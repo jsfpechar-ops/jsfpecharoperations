@@ -1,0 +1,10 @@
+{{define "stay_detail.title"}}{{.Reservation.InternalName}} · {{date_cz .Reservation.DateFrom}}{{end}}
+{{define "stay_detail"}}
+<div class="host-stay-detail">
+<div id="now"><h2>{{ or (leadName .GuestRows) .Reservation.InternalName }}</h2></div>
+<section class="stay-guests" id="guests"></section>
+<section class="stay-reports" id="reports"></section>
+<details class="card stay-settings ph-hide" id="stay-quick-edit"><summary>Settings</summary></details>
+<input class="sr-only" type="text" id="stay-link" readonly value="{{ .GuestLink }}" tabindex="-1" aria-hidden="true">
+</div>
+{{end}}
