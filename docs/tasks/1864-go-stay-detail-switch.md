@@ -1,6 +1,6 @@
 # 1864: Stay page switch: the UBYHOST_GO_PATHS selector, tooling that understands it, the one PR
 
-Status: todo (depends on 1860, 1861, 1862, 1863; last brief of the series)
+Status: review
 Depends on: 1863 | Base commit: the series branch after 1863's last commit | Branch: task/1860-1864-stay-page (series, see below)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (checkpoint at 60k)
 Tier: A (the selector decides whether the filing POSTs `/reservations/{id}/submit` and `/reservations/submit-ready` stay on Python; rule 1)
