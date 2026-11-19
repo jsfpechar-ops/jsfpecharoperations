@@ -1,0 +1,122 @@
+package staydetail
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"log"
+	"time"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/scheduler"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
+)
+
+// enqueueJob adds a due job row unless one of that kind is open; tests replace it.
+var enqueueJob = scheduler.Enqueue
+
+// submitStayIfComplete is reporting.submit_stay_if_complete (reporting.py
+// 1151-1196) up to the send. Python then files inside the request; Go enqueues
+// the existing "submit" job (the INSERT of jobqueue.enqueue), whose sweep files
+// the stay: DueForAutomaticSend is true at once for an immediate apartment with
+// a completion stamp. Filing stays in the sweep, the one Go filing path. It
+// returns true when the job row was requested.
+func submitStayIfComplete(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, apartmentID, reservationID int64) (bool, error) {
+	var mode, name string
+	err := pool.QueryRow(ctx,
+		`SELECT COALESCE(automation_mode, ''), COALESCE(internal_name, '') FROM apartment WHERE id = $1`,
+		apartmentID).Scan(&mode, &name)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	completed, err := ubyport.RefreshRegistrationCompletedAt(ctx, pool, reservationID, saveDecrypter(getenv), now)
+	if err != nil {
+		return false, err
+	}
+	if completed == nil || mode != "immediate" {
+		return false, nil
+	}
+	// Same pause as the sweep: retrying a refused login on every save risks
+	// locking the police account.
+	paused, err := saveOpenAlert(ctx, pool, fmt.Sprintf("ubyport_auth_failed:%d", apartmentID))
+	if err != nil || paused {
+		return false, err
+	}
+	var status string
+	err = pool.QueryRow(ctx, `SELECT COALESCE(status, '') FROM reservation WHERE id = $1`, reservationID).Scan(&status)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	if status != "active" {
+		return false, nil
+	}
+	if _, err := enqueueJob(ctx, pool, "submit"); err != nil {
+		log.Printf("stay save: submit enqueue apartment_id=%d: %v", apartmentID, err)
+		return false, ubyport.RaiseAlert(ctx, pool, "warning", "submission_immediate",
+			name+": automatic send failed after registration completed.", err.Error(),
+			fmt.Sprintf("submission_immediate:%d", apartmentID), &apartmentID, nil, nil,
+			ubyport.AlertParams{"property": name, "error": err.Error()})
+	}
+	return true, nil
+}
+
+// saveDecrypter opens stored guest fields with the data keys, loaded on first use.
+func saveDecrypter(getenv func(string) string) ubyport.FieldDecrypter {
+	var keys *secure.MultiFernet
+	return func(token string) (string, error) {
+		if keys == nil {
+			k, err := secure.LoadDataKeys(getenv)
+			if err != nil {
+				return "", err
+			}
+			keys = k
+		}
+		b, err := keys.Decrypt(token, 0, time.Now())
+		return string(b), err
+	}
+}
+
+// saveOpenAlert is alerts.open_alert: an unresolved alert with this dedupe key exists.
+func saveOpenAlert(ctx context.Context, pool *pgxpool.Pool, key string) (bool, error) {
+	var one int
+	err := pool.QueryRow(ctx,
+		`SELECT 1 FROM alert WHERE dedupe_key = $1 AND resolved_at IS NULL LIMIT 1`, key).Scan(&one)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	return err == nil, err
+}
+
+// saveExpireOnCancel is claim.expire_on_cancel (claim.py 810-825): nothing
+// happens when the stay has no claim row.
+func saveExpireOnCancel(ctx context.Context, pool *pgxpool.Pool, reservationID int64, stamp string) error {
+	var one int
+	err := pool.QueryRow(ctx,
+		`SELECT 1 FROM reservation_claim WHERE reservation_id = $1 LIMIT 1`, reservationID).Scan(&one)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if _, err := pool.Exec(ctx,
+		`UPDATE reservation_claim SET token_hash = NULL, guest_access_locked_at = $1,
+		   guest_access_reopened_at = NULL, updated_at = $1 WHERE reservation_id = $2`,
+		stamp, reservationID); err != nil {
+		return err
+	}
+	_, err = pool.Exec(ctx,
+		`UPDATE email_outbox SET state = 'failed', updated_at = $1
+		  WHERE reservation_id = $2 AND state = 'queued'`,
+		stamp, reservationID)
+	return err
+}
