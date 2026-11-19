@@ -3552,3 +3552,13 @@ body.v2 .ruian-status{margin:4px 0 12px}
   body.v2 .host-stay-detail.stay-layout.stay-archived .stay-head-cta .btn{background:#efefeb;color:var(--ink)}
   body.v2 .host-stay-detail.stay-layout .stay-archived-banner{display:none}
 }
+
+@media (min-width:1024px){
+  body.v2 .host-stay-detail.stay-layout>section{margin:0}
+  body.v2 .host-stay-detail.stay-layout .stay-guests-h{margin:32px 0 12px}
+  body.v2 .host-stay-detail.stay-layout .stay-guests-h>h2.sec{margin:0}
+  body.v2 .host-stay-detail.stay-layout>.stay-reports>h2.sec,body.v2 .host-stay-detail.stay-layout>#door-code>h2.sec,body.v2 .host-stay-detail.stay-layout>.stay-rows-group>h2.sec{margin:32px 0 12px}
+  body.v2 .host-stay-detail.stay-layout>section>:last-child{margin-bottom:0}
+  body.v2 .host-stay-detail.stay-layout>.stay-rows-group{order:1}
+  body.v2 .host-stay-detail.stay-layout>.stay-reports{order:2}
+}
