@@ -1,16 +1,16 @@
 # 1860: Port GET /reservations/{id} to Go, part 1: data and view model
 
 Status: todo
-Depends on: none | Base commit: 1387c0cf4 (origin/main) | Branch: task/1860-go-stay-detail-data
+Depends on: none | Base commit: origin/main (written at 1387c0cf4) | Branch: task/1860-1864-stay-page (series, see below)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (checkpoint at 60k; hand over per [workflow](../context/workflow.md#when-haiku-reaches-the-cap))
 Tier: A (guest data and filing status shown; one write on GET, see step 6)
-Pairs with 1861 (template, route, parity). 1860, then 1861, then 1862 (layout change, edits `stay_detail.tmpl` only).
+Pairs with 1861 (template, route, parity). 1860, then 1861, then 1862 (layout change, edits `stay_detail.tmpl` only), then 1863 (POST save), then 1864 (switch tooling, the one PR).
 
-> **One PR mode.** Commit each step as `1860 step k`. Never push, merge or deploy. Every command ends in `2>&1 | tail -30`. Anchors are quoted from the tip: if one is not found verbatim, STOP and report.
+> **Series mode (owner 2026-11-19).** One executor runs 1860, 1861, 1862, 1863, 1864 in that order on one branch with no owner check in between, and 1864 opens the one PR. Step 0 of the series, before step 0 below: `git fetch origin main && git checkout -b task/1860-1864-stay-page origin/main 2>&1 | tail -30`. If `docs/tasks/1863-go-stay-detail-post.md` is not on that base, copy the series briefs from the branch that holds them: `git fetch origin cursor/simple-white-mockups-8575 && git checkout origin/cursor/simple-white-mockups-8575 -- 'docs/tasks/186*' docs/design/mockups/simple-white 2>&1 | tail -30`, and commit them as `1860 step 0` (they then show in every `git diff --stat origin/main`; that is expected). Commit each step as `1860 step k`, write `docs/tasks/1860-report.md`, set `Status: review`, then start 1861. Never push to `main`, merge or deploy. Every command ends in `2>&1 | tail -30`. Anchors are quoted from the tip: if one is not found verbatim, STOP and report. At the cap: commit, write the report as `blocked` with `Done: steps 0 to k. Left: ...`; a fresh session continues on the same branch.
 
 ## Open questions
 
-See 1861 "Open questions" (POST and the Caddy selector). Nothing in this brief depends on them: 1860 adds Go code that no route calls yet.
+None. The POST save is [1863](1863-go-stay-detail-post.md) and the Caddy selector is [1864](1864-go-stay-detail-switch.md). Nothing in this brief depends on them: 1860 adds Go code that no route calls yet.
 
 ## 1. Objective
 

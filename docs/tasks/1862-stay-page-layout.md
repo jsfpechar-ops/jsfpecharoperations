@@ -1,11 +1,11 @@
 # 1862: Stay detail page layout on desktop (Go template and app2.css)
 
 Status: todo (depends on 1860 and 1861)
-Depends on: 1860, 1861 | Base commit: tip after 1861 is merged (1860 first) | Branch: task/1862-stay-page-layout
+Depends on: 1860, 1861 | Base commit: the series branch after 1861's last commit | Branch: task/1860-1864-stay-page (series, see below)
 Executor: Haiku 5.5 | Fits one session: no. Three sessions (A: steps 0 to 7b, B: steps 8 to 12, C: step 13). Commit each step as `1862 step k`; a fresh session continues from the last commit (executor.md, "at the cap").
 Tier: B (host UI, layout and structure only, no behaviour change)
 
-> **One PR mode.** Never push, merge or deploy. Every command ends in `| tail -30`. Anchors are quoted from the Python template and CSS today; the Go template (1861, data from 1860) copies the Python HTML 1:1, so the same class names and ids must exist there. If an anchor is missing, STOP (section 8).
+> **Series mode (owner 2026-11-19).** One executor runs 1860, 1861, 1862, 1863, 1864 in that order on one branch, `task/1860-1864-stay-page`, with no owner check in between; a fresh session continues on the same branch. Write `docs/tasks/1862-report.md`, set `Status: review`, then start 1863. Open no PR here (1864 opens the one PR and copies this report's PR body into it). `git diff --stat origin/main` also lists the other series files: check that nothing outside the series' §3 tables changed. Never push to `main`, merge or deploy. Every command ends in `| tail -30`. Anchors are quoted from the Python template and CSS today; the Go template (1861, data from 1860) copies the Python HTML 1:1, so the same class names and ids must exist there. If an anchor is missing, STOP (section 8).
 
 ## Open questions (orchestrator, none block the executor)
 
@@ -15,7 +15,7 @@ Tier: B (host UI, layout and structure only, no behaviour change)
 4. `app2.css` is shared, and `test_static_versions.py` forces a new `?v=` key when it changes. Step 12 therefore edits `base.html`, the Go layout `shell.html` and its golden files, and `tests/static_versions.json`, all outside the three files the owner named. It is a mechanical key bump. Another open brief that also bumps the `app2.css` key will conflict on those lines: the orchestrator says which goes first.
 5. The deadline "?" next to "Reporting deadline N days left" stays. Its text (`stay.detail.metric.deadline_note`: "The three working days from check-in end %(when)s.") does not duplicate the page help (`how.stay.1` to `3`), so it stays (design-system rule 7 removes a "?" only when its text duplicates the page help).
 6. Parity: 1861's live Python-vs-Go test (`App/tests/test_1861_stay_detail_go_parity.py`) fails on any markup this brief adds. Step 7b narrows its normaliser for exactly the listed changes (the rest is still compared). That file is outside the three the owner named. If the orchestrator prefers that 1861 ships the normaliser hook first, say so and drop step 7b.
-7. The Go switch for this path is blocked by 1861's own open questions (POST `/reservations/{id}` and the Caddy selector); this brief does not depend on them. The test harness here uses exact paths, never `/reservations/*` (1861 forbids that selector for Caddy).
+7. Resolved: the POST save is [1863](1863-go-stay-detail-post.md) and the Caddy selector is `/reservations/*[0-9]` ([1864](1864-go-stay-detail-switch.md)); this brief does not depend on them. The test harness here uses exact paths, never `/reservations/*` (1861 forbids that selector for Caddy).
 
 ## 1. Objective
 
@@ -355,7 +355,7 @@ Every line must end with `None` (or an empty bbox). A different bbox: open both 
 
 A test that fails twice, or fails because of an old desktop expectation: STOP and name the test (do not edit tests that are not in section 3).
 
-13e. Write the PR body into the report: per page `390: ...; 768: ...; 1024: ...; 1280: ...` for `stay-detail` and for `stay-archived`, plus the 390/768 comparison result and the design-system checklist (section 7) ticked. Open one PR as a draft. Set `Status: review`.
+13e. Write the PR body into the report: per page `390: ...; 768: ...; 1024: ...; 1280: ...` for `stay-detail` and for `stay-archived`, plus the 390/768 comparison result and the design-system checklist (section 7) ticked. Open no PR (1864 opens the one PR of the series). Set `Status: review`.
 
 ## 5. Do not touch
 
@@ -387,10 +387,10 @@ Go: `cd go && go test ./internal/web/staydetail/... 2>&1 | tail -30`. Browser an
 - [ ] Spacing: 32 px above every section heading, 12 px between heading row and card; Edit count and + Add a guest right-aligned with 12 px above the table card (measured on the screenshots).
 - [ ] Order: Guests, (Payments, never rendered today), door code if present, "Stay" group with Request payment and Stay settings, Police reporting last with the hand-filing row inside the police card. Rows: min-height 56, padding 10px 16px, icon left, bold label, chevron right, hover `var(--side2)`. No hint line (open question 1). Opened content unchanged.
 - [ ] The deadline "?" is kept (text differs from the page help).
-- [ ] `test_layout_lint_browser.py` green with 0 skipped; screenshots at 390, 768, 1024, 1280 opened, and the PR says per page what was seen.
+- [ ] `test_layout_lint_browser.py` green with 0 skipped; screenshots at 390, 768, 1024, 1280 opened, and the report's PR body says per page what was seen.
 - [ ] Go tests and the Python rows of 13d green; `python3 scripts/context_lint.py` green.
 - [ ] `git status --short` shows `App/tests/test_layout_lint_browser.py` unchanged; no file outside section 3 changed.
-- [ ] Design-system checklist (`docs/design/design-system.md` section 5), pasted in the PR and ticked honestly: page extends the shell with no own `<style>`, `style=""` or raw colour (the one `#efefeb` repeats `.btn.ghost`); header has one aligned action row (one primary, one secondary, rest in the menu; on phone unchanged); each form keeps its one Save; no fine print and the remaining "?" are inline after their label; nothing closer than 12 px to a neighbour and no truncated label; 390, 768 and 1280 px checked; lint green with 0 skipped; CS and EN keys added together (no new keys, or the key and why); CI watched to the end.
+- [ ] Design-system checklist (`docs/design/design-system.md` section 5), pasted in the report's PR body and ticked honestly: page extends the shell with no own `<style>`, `style=""` or raw colour (the one `#efefeb` repeats `.btn.ghost`); header has one aligned action row (one primary, one secondary, rest in the menu; on phone unchanged); each form keeps its one Save; no fine print and the remaining "?" are inline after their label; nothing closer than 12 px to a neighbour and no truncated label; 390, 768 and 1280 px checked; lint green with 0 skipped; CS and EN keys added together (no new keys, or the key and why); CI watched to the end.
 
 ## 8. Stop and ask
 
@@ -419,6 +419,6 @@ Write `docs/tasks/1862-report.md` (600 tokens at most) and set `Status: review`:
 
 ## Owner steps
 
-1. Merge the PR when CI is green, using `scripts/merge-pr-on-green.sh`.
-2. The new layout shows only when `GET /reservations/{id}` is served by Go (the `UBYHOST_GO_PATHS` switch from 1860/1861). Until that switch is on, the old Python page stays exactly as it is.
-3. After the Go switch, open one stay on a laptop and one on a phone. Laptop: breadcrumb above the name, the three actions next to the name, Police reporting at the bottom. Phone: identical to before. If the laptop page looks wrong, remove `/reservations/*` from `UBYHOST_GO_PATHS` and reload caddy as in [LIGHTSAIL](../LIGHTSAIL.md).
+1. Merge the series PR (opened by 1864) when CI is green, using `scripts/merge-pr-on-green.sh`.
+2. The new layout shows only when `GET /reservations/{id}` is served by Go (the `UBYHOST_GO_PATHS` switch in 1864's owner steps). Until that switch is on, the old Python page stays exactly as it is.
+3. After the Go switch, open one stay on a laptop and one on a phone. Laptop: breadcrumb above the name, the three actions next to the name, Police reporting at the bottom. Phone: identical to before. If the laptop page looks wrong, do 1864's rollback (remove `/reservations/*[0-9]` from `UBYHOST_GO_PATHS`, validate and reload caddy).

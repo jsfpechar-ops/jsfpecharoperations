@@ -1,17 +1,19 @@
 # 1861: Port GET /reservations/{id} to Go, part 2: template, route, parity
 
 Status: todo (depends on 1860)
-Depends on: 1860 | Base commit: tip after 1860 merged (1860 started from 1387c0cf4) | Branch: task/1861-go-stay-detail-page
+Depends on: 1860 | Base commit: the series branch after 1860's last commit | Branch: task/1860-1864-stay-page (series, see below)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (checkpoint at 60k)
-Tier: A (guest data and filing status shown; the switch is an owner step and is blocked, see Open questions)
+Tier: A (guest data and filing status shown; the switch is 1864's owner steps)
 1862 (owner's layout change) edits only `go/internal/web/staydetail/templates/stay_detail.tmpl` and waits for this brief.
 
-> **One PR mode.** Commit each step as `1861 step k`. Never push, merge or deploy. Every command ends in `2>&1 | tail -30`. Anchors are quoted from the tip: if one is missing, STOP.
+> **Series mode (owner 2026-11-19).** One executor runs 1860, 1861, 1862, 1863, 1864 in that order on one branch, `task/1860-1864-stay-page` (created in 1860's series step 0), with no owner check in between. Commit each step as `1861 step k`, write `docs/tasks/1861-report.md`, set `Status: review`, then start 1862. Open no PR here (1864 opens the one PR). Never push to `main`, merge or deploy. Every command ends in `2>&1 | tail -30`. Anchors are quoted from the tip: if one is missing, STOP. At the cap: commit, write the report as `blocked`; a fresh session continues on the same branch. `git diff --stat origin/main` also lists the earlier series files: check that nothing outside the series' §3 tables changed.
 
 ## Open questions (orchestrator and owner; the executor does not decide these)
 
-1. **POST /reservations/{id} (stay settings save) must be served by Go before the owner switch.** Decision, from the precedents: 1856 shipped `GET /reservations` with `POST /reservations` (`stays.CreateHandler`), and `GET /apartments/{id}` moved with `POST /apartments/{id}`. [ENVIRONMENT](../ENVIRONMENT.md) `UBYHOST_GO_PATHS`: Caddy sends every method of a listed path to Go and retries only GET/HEAD on 501, so a POST Go lacks answers 404 where Python would save; `scripts/go_parity_check.py` fails on it. Python `reservation_update` (`admin.py` ~4176-4223) ends with `reporting.submit_stay_if_complete(...)` (a filing trigger), `claim.expire_on_cancel(row)` and `alerts.resolve(...)`. No Go web equivalent of `submit_stay_if_complete` was found at the base commit (`go/internal/ubyport/sweep.go` has `SubmitForApartment`, the sweep job). That port is filing code (rule 1) and needs its own tier-A brief after a writer has read `reporting.submit_stay_if_complete`. **No number is free under this task's constraints (1860, 1861 used, 1862 reserved): the orchestrator assigns one (suggested 1863).** This brief registers GET only, which is safe while the path is off the list.
-2. **Caddy selector for "numeric id only".** Never `/reservations/*`: it is a prefix match and would send `POST /reservations/{id}/submit` and `POST /reservations/submit-ready` (filing) to Go. Caddy's `path` matcher uses Go `path.Match` for a pattern whose `*` is not at the end, so `/reservations/*[0-9]` would catch `/reservations/123` only (one segment ending in a digit). But the repo's tooling does not support `[...]`: `scripts/go_parity_check.py` and `App/tests/go_stack.py` (`caddy_match`: `re.escape(e).replace(r"\*", "[^/]*")`) treat it as literal text, and the runbook (wave P5) says "there is no Caddy token for numeric id only". Before the switch the owner must decide, and one tooling brief must teach both `caddy_match` functions character classes (verified against `caddy` itself). Until then the owner steps below are not run.
+Questions 1 and 2 are resolved: kept below for the record. Only question 3 is open, and it does not block (step 6 already compares with live Python).
+
+1. **Resolved by [1863](1863-go-stay-detail-post.md)** (Go serves the POST save; this brief still registers GET only). Original text: **POST /reservations/{id} (stay settings save) must be served by Go before the owner switch.** Decision, from the precedents: 1856 shipped `GET /reservations` with `POST /reservations` (`stays.CreateHandler`), and `GET /apartments/{id}` moved with `POST /apartments/{id}`. [ENVIRONMENT](../ENVIRONMENT.md) `UBYHOST_GO_PATHS`: Caddy sends every method of a listed path to Go and retries only GET/HEAD on 501, so a POST Go lacks answers 404 where Python would save; `scripts/go_parity_check.py` fails on it. Python `reservation_update` (`admin.py` ~4176-4223) ends with `reporting.submit_stay_if_complete(...)` (a filing trigger), `claim.expire_on_cancel(row)` and `alerts.resolve(...)`. No Go web equivalent of `submit_stay_if_complete` was found at the base commit (`go/internal/ubyport/sweep.go` has `SubmitForApartment`, the sweep job). That port is filing code (rule 1) and needs its own tier-A brief after a writer has read `reporting.submit_stay_if_complete`. **No number is free under this task's constraints (1860, 1861 used, 1862 reserved): the orchestrator assigns one (suggested 1863).** This brief registers GET only, which is safe while the path is off the list.
+2. **Resolved by [1864](1864-go-stay-detail-switch.md)**: selector `/reservations/*[0-9]`; 1864 teaches both `caddy_match` functions Caddy's rule, tested against Go `path.Match`. Original text: **Caddy selector for "numeric id only".** Never `/reservations/*`: it is a prefix match and would send `POST /reservations/{id}/submit` and `POST /reservations/submit-ready` (filing) to Go. Caddy's `path` matcher uses Go `path.Match` for a pattern whose `*` is not at the end, so `/reservations/*[0-9]` would catch `/reservations/123` only (one segment ending in a digit). But the repo's tooling does not support `[...]`: `scripts/go_parity_check.py` and `App/tests/go_stack.py` (`caddy_match`: `re.escape(e).replace(r"\*", "[^/]*")`) treat it as literal text, and the runbook (wave P5) says "there is no Caddy token for numeric id only". Before the switch the owner must decide, and one tooling brief must teach both `caddy_match` functions character classes (verified against `caddy` itself). Until then the owner steps below are not run.
 3. **Python goldens.** go-first allows Python golden output only for filing-data briefs. This page shows filing state, so this brief treats it as filing data and compares Go with live Python HTML (step 6). Confirm.
 
 ## 1. Objective
@@ -44,14 +46,14 @@ func init() {
 | `go/cmd/ubyhost-web/register_web_staydetail.go` | new | code in step 4 |
 | `App/tests/test_1861_stay_detail_go_parity.py` | new | live Python-vs-Go HTML parity and screenshots. go-first exception 1 (parity test); no file under `App/app/` changes |
 
-No other file may change. `docs/ENVIRONMENT.md` is not edited: the path is not switchable yet (Open questions 1 and 2).
+No other file may change. `docs/ENVIRONMENT.md` is not edited here (1864 documents the selector).
 
 ## 4. Steps
 
 0. Anchors (one call): `ls go/internal/web/staydetail | tail -30` (expect the 1860 files, no `templates/`); `grep -rn 'web/staydetail\|"GET /reservations/{' go/cmd go/internal 2>&1 | tail -30` (expect none); `grep -n 'stay_detail\|stays' docs/context/test-map.md | tail -30` (the test-map rows used in §6); `grep -c 'settings_back_header\|v2_status_pill\|deadline_cell\|link_window\|row_menu_begin\|submission_pill\|help_tip\|field_label\|source_badge\|deadline_badge\|row_open\|page_help' go/internal/hostweb/layout/*.go go/internal/web/stays/tpl.go 2>&1 | tail -30`. Write in the report which §2 names `layout` or `stays` already provide.
 1. Template: port the Python file block by block into `stay_detail.tmpl`, in the same order: phone back header and `sub-phone` lines, `card facts stay-dates`, `stay_cta` (exclusive branches, `data-fix-rejection`, `/submit` form with `_csrf` and `return_to`), `head`/`stay-head-actions`/row menu, status banners, demo banner, guests (desktop `guest-table` and phone `list guests guest-list`, placeholder rows), payments (renders nothing: `money_panels` is always empty), police card, `filed-by-hand`, `file-by-hand`, submissions table, door code, payment link, `stay-quick-edit` form posting to `/reservations/{{id}}`. Keep every class, id, `data-*` attribute, form action, hidden input and `ph-hide`/`ph-only`/`sub-phone` byte for byte; whitespace may differ. A `_components.html` macro or filter that `layout` lacks: port it verbatim into `tpl.go` or a `{{define "staydetail.*"}}` in the template. Command: `cd go && go vet ./internal/web/staydetail/... 2>&1 | tail -30`.
 2. i18n: list the keys with `grep -o "t('[^']*'\|tp('[^']*'" App/app/templates/reservation_detail.html | sort -u | tail -80`, plus the dynamic ones (`stays.filter.state.<status>`, `guest.doc_type.<doc_type>`, `stay.detail.settings.state.<status>`, `send_controls.send_hint_key` values, `validation_message` keys). Copy en/cs/vi from `App/app/host_i18n.py`. `i18n_test.go` like `stays/i18n_test.go`. Command: `cd go && go test ./internal/web/staydetail/... 2>&1 | tail -30`.
-3. `handlers.go`: copy the login guard, account lookup and `layout.Render` call from `stays.ListHandler`; Nav `reservations`, V2 on, title as §2. Parse `{reservation_id}` with `strconv.ParseInt`; bad or unknown id: 404 (Python `HTTPException(404)`). Call `staydetail.Build` (1860). Register only `mux.Handle("GET /reservations/{reservation_id}", wrap("/reservations/{reservation_id}", ...))`. Never register POST here (Open question 1).
+3. `handlers.go`: copy the login guard, account lookup and `layout.Render` call from `stays.ListHandler`; Nav `reservations`, V2 on, title as §2. Parse `{reservation_id}` with `strconv.ParseInt`; bad or unknown id: 404 (Python `HTTPException(404)`). Call `staydetail.Build` (1860). Register only `mux.Handle("GET /reservations/{reservation_id}", wrap("/reservations/{reservation_id}", ...))`. Never register POST here (1863 adds it).
 4. `go/cmd/ubyhost-web/register_web_staydetail.go`, whole file:
 
 ```go
@@ -84,7 +86,7 @@ func init() {
 7. Screenshots, in the same test file: for stay (a) and (b) at widths 390, 768, 1024 and 1280, save Python and Go shots to `$UBYHOST_SHOTS_DIR/stay-detail/{py,go}-<stay>-<w>.png`. Open each Go shot once next to its Python shot; they must look the same (below 1024 px above all).
 8. UX gate and test-map rows (§6), 0 skipped.
 
-Hand-over point if capped: steps 0 to 5 are the Go side; 6 to 8 may continue in `1861-cont-1.md`.
+Hand-over point if capped: steps 0 to 5 are the Go side; 6 to 8 may continue in a fresh session on the same branch.
 
 ## 5. Do not touch
 
@@ -94,15 +96,15 @@ Every file under `App/app/` (templates included); every POST route, above all `P
 
 From `go/`: `go vet ./internal/web/staydetail/... ./cmd/ubyhost-web/... 2>&1 | tail -30`; `go test ./internal/web/staydetail/... ./cmd/ubyhost-web/... 2>&1 | tail -30`; `gofmt -l internal/web/staydetail cmd/ubyhost-web 2>&1 | tail -30` (empty).
 From `App/`: step 6 command; the stay-detail and host-UI rows of the test-map found in step 0, at least `.venv/bin/python -m pytest tests/test_0525_stay_detail.py tests/test_0912_stay_detail.py tests/test_design_stay_detail.py -q --tb=short -x 2>&1 | tail -30` and `UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/shots .venv/bin/python -m pytest tests/test_host_stay_detail_layout_browser.py tests/test_host_geometry.py tests/test_layout_lint_browser.py -q --tb=short -x -rs 2>&1 | tail -30` (0 skipped).
-Root: `python3 scripts/go_parity_check.py --paths "/reservations/1" 2>&1 | tail -30` (expected to FAIL on `POST /reservations/{reservation_id}`: copy the line into the report; it is the proof of Open question 1). `python3 scripts/context_lint.py 2>&1 | tail -30`.
+Root: `python3 scripts/go_parity_check.py --paths "/reservations/1" 2>&1 | tail -30` (expected to FAIL on `POST /reservations/{reservation_id}` until 1863: copy the line into the report). `python3 scripts/context_lint.py 2>&1 | tail -30`.
 
 ## 7. Acceptance
 
 - [ ] Go vet, test and gofmt clean.
 - [ ] Parity test: all six stays equal, 0 skipped.
-- [ ] Python and Go screenshots of stays (a) and (b) at 390, 768, 1024, 1280 look the same; the PR body says per width what you saw (rule 10) and ticks the [design-system checklist](../design/design-system.md).
+- [ ] Python and Go screenshots of stays (a) and (b) at 390, 768, 1024, 1280 look the same; the report says per width what you saw (rule 10; 1864 copies it into the PR body) and ticks the [design-system checklist](../design/design-system.md).
 - [ ] Browser rows: 0 skipped; layout lint: zero findings.
-- [ ] `go_parity_check.py` output shows GET served and POST missing (expected until the POST brief).
+- [ ] `go_parity_check.py` output shows GET served and POST missing (expected until 1863).
 - [ ] `git diff --stat origin/main` shows only §3 files, this brief's status line and the report.
 
 ## 8. Stop and ask
@@ -119,12 +121,4 @@ As [TEMPLATE](TEMPLATE.md) §8, plus: a `_components.html` macro needs a change 
 
 ## Owner steps
 
-Do not run these until the POST brief (Open question 1) and the selector decision (Open question 2) are merged and deployed. Then:
-
-1. On the server, open `.env` and copy the current `UBYHOST_GO_PATHS=` line into a note (rollback).
-2. Before changing anything, run `curl -s -o /dev/null -w '%{http_code}\n' -X POST https://<your-host>/reservations/1/submit` and `curl -s -o /dev/null -w '%{http_code}\n' -X POST https://<your-host>/reservations/submit-ready`. Note both numbers.
-3. Add the agreed selector (proposal: `/reservations/*[0-9]`, never `/reservations/*`) inside the quotes of `UBYHOST_GO_PATHS`, separated by a space.
-4. Run `scripts/caddy-validate.sh`, then `docker compose up -d caddy` as in [LIGHTSAIL](../LIGHTSAIL.md).
-5. Run the two `curl` lines from step 2 again. Both numbers must be the same as before. If either changed, do the rollback now.
-6. Open one stay on your phone and on a laptop; change its note in Stay settings and save. It must look and behave as before.
-7. Rollback: put back the line from step 1, run `scripts/caddy-validate.sh` and `docker compose up -d caddy`.
+None for this brief. The switch (with the before/after `curl` checks and the rollback that were here) is the owner steps of [1864](1864-go-stay-detail-switch.md), run once after the series PR is merged and deployed.

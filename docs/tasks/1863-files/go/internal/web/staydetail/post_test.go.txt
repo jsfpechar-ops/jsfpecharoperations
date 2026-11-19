@@ -1,0 +1,439 @@
+package staydetail
+
+import (
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"errors"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/session"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
+)
+
+const saveTestSecret = "staydetail-save-test-secret-32ch!"
+
+func saveTestNow() time.Time { return time.Date(2026, 11, 1, 12, 0, 0, 0, time.UTC) }
+
+func saveGetenv(k string) string {
+	switch k {
+	case "UBYHOST_SECRET_KEY":
+		return saveTestSecret
+	case "UBYHOST_TERMS_VERSION":
+		return "t1"
+	case "UBYHOST_PRIVACY_VERSION":
+		return "p1"
+	case "UBYHOST_DPA_VERSION":
+		return "d1"
+	default:
+		return ""
+	}
+}
+
+func saveMux(pool *pgxpool.Pool) *http.ServeMux {
+	mux := http.NewServeMux()
+	Register(mux, pool, saveGetenv, saveTestNow, func(_ string, h http.HandlerFunc) http.Handler { return h })
+	return mux
+}
+
+func TestSaveRoutes(t *testing.T) {
+	mux := saveMux(nil)
+	cases := []struct{ method, path, pattern string }{
+		{http.MethodGet, "/reservations/7", "GET /reservations/{reservation_id}"},
+		{http.MethodPost, "/reservations/7", "POST /reservations/{reservation_id}"},
+		{http.MethodPost, "/reservations/7/submit", ""},
+		{http.MethodPost, "/reservations/7/remove-empty-slot", ""},
+	}
+	for _, c := range cases {
+		_, pattern := mux.Handler(httptest.NewRequest(c.method, c.path, nil))
+		if pattern != c.pattern {
+			t.Errorf("%s %s: pattern %q, want %q", c.method, c.path, pattern, c.pattern)
+		}
+	}
+}
+
+func TestSaveNonNumericIDIsNotFound(t *testing.T) {
+	for _, path := range []string{"/reservations/submit-ready", "/reservations/abc1"} {
+		rec := httptest.NewRecorder()
+		saveMux(nil).ServeHTTP(rec, httptest.NewRequest(http.MethodPost, path, strings.NewReader("status=active")))
+		if rec.Code != http.StatusNotFound {
+			t.Errorf("POST %s: code %d, want 404", path, rec.Code)
+		}
+	}
+}
+
+func TestSaveHelpers(t *testing.T) {
+	long := strings.Repeat("é", 170)
+	if got := saveTruncate(long, 160); got != strings.Repeat("é", 160) {
+		t.Errorf("saveTruncate kept %d runes, want 160", len([]rune(got)))
+	}
+	one, two := int64(1), int64(2)
+	for _, c := range []struct {
+		a, b *int64
+		want bool
+	}{{nil, nil, true}, {&one, nil, false}, {nil, &one, false}, {&one, &one, true}, {&one, &two, false}} {
+		if got := saveSameCount(c.a, c.b); got != c.want {
+			t.Errorf("saveSameCount(%v, %v) = %v", c.a, c.b, got)
+		}
+	}
+	for raw, want := range map[string]string{"": "nil", "abc": "nil", "5": "5", "+5": "5", "99999999999999999999": "9223372036854775807"} {
+		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(url.Values{"n": {raw}}.Encode()))
+		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		_ = r.ParseForm()
+		got := "nil"
+		if v := saveFormInt(r, "n"); v != nil {
+			got = fmt.Sprint(*v)
+		}
+		if got != want {
+			t.Errorf("saveFormInt(%q) = %s, want %s", raw, got, want)
+		}
+	}
+}
+
+// The submit sweep that the save enqueues files a completed stay of an
+// immediate apartment at once; a scheduled one waits submit_after_hours.
+func TestImmediateCompletionIsDueAtOnce(t *testing.T) {
+	now := saveTestNow()
+	stamp := "2026-11-01T12:00:00+00:00"
+	if !ubyport.DueForAutomaticSend("immediate", 24, stamp, nil, now) {
+		t.Error("immediate apartment: a stay completed now is not due now")
+	}
+	if ubyport.DueForAutomaticSend("scheduled", 24, stamp, nil, now) {
+		t.Error("scheduled apartment: a stay completed now is due before submit_after_hours")
+	}
+}
+
+// saveDBPool is dbPool of go/internal/web/stays/query_test.go: a fresh
+// database with every migration, skipped without UBYHOST_TEST_DATABASE_URL.
+func saveDBPool(t *testing.T) *pgxpool.Pool {
+	t.Helper()
+	base := os.Getenv("UBYHOST_TEST_DATABASE_URL")
+	if base == "" {
+		t.Skip("UBYHOST_TEST_DATABASE_URL is not set")
+	}
+	ctx := context.Background()
+	name := fmt.Sprintf("ubyhost_go_staysave_%d", time.Now().UnixNano())
+	admin, err := pgx.Connect(ctx, base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := admin.Exec(ctx, "CREATE DATABASE "+name); err != nil {
+		admin.Close(ctx)
+		t.Fatal(err)
+	}
+	admin.Close(ctx)
+	t.Cleanup(func() {
+		c, err := pgx.Connect(context.Background(), base)
+		if err != nil {
+			return
+		}
+		defer c.Close(context.Background())
+		_, _ = c.Exec(context.Background(), "DROP DATABASE IF EXISTS "+name+" WITH (FORCE)")
+	})
+	cfg, err := pgxpool.ParseConfig(base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg.ConnConfig.Database = name
+	pool, err := pgxpool.NewWithConfig(ctx, cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(pool.Close)
+	files, err := filepath.Glob("../../../../App/migrations_pg/*.sql")
+	if err != nil || len(files) == 0 {
+		t.Fatal("no migrations found")
+	}
+	sort.Strings(files)
+	for _, f := range files {
+		raw, err := os.ReadFile(f)
+		if err != nil {
+			t.Fatal(err)
+		}
+		up := string(raw)
+		if i := strings.Index(up, "-- +goose Down"); i >= 0 {
+			up = up[:i]
+		}
+		if _, err := pool.Exec(ctx, up); err != nil {
+			t.Fatalf("migration %s: %v", f, err)
+		}
+	}
+	return pool
+}
+
+type saveFixture struct{ owner, apt, res int64 }
+
+// saveSeed adds a host who accepted the terms, one apartment in mode and one
+// active stay with expected guests (nil for none), filed guests filed by hand
+// and blank guests with nothing entered.
+func saveSeed(t *testing.T, pool *pgxpool.Pool, mode string, expected any, filed, blank int) saveFixture {
+	t.Helper()
+	ctx := context.Background()
+	const ts = "2026-10-01T00:00:00+00:00"
+	tag := fmt.Sprintf("save-%d", time.Now().UnixNano())
+	var f saveFixture
+	if err := pool.QueryRow(ctx, `INSERT INTO user_account (username, password_hash, role, active, session_version, created_at)
+		VALUES ($1, 'x', 'host', 1, 1, $2) RETURNING id`, tag, ts).Scan(&f.owner); err != nil {
+		t.Fatal(err)
+	}
+	for j, doc := range []struct{ name, version string }{{"terms", "t1"}, {"privacy", "p1"}, {"dpa", "d1"}} {
+		if _, err := pool.Exec(ctx, `INSERT INTO legal_acceptance (id, user_account_id, document, version, accepted_at, method)
+			VALUES ($1, $2, $3, $4, $5, 'clickwrap')`, f.owner*10+int64(j), f.owner, doc.name, doc.version, ts); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := pool.QueryRow(ctx, `INSERT INTO apartment (owner_user_id, internal_name, permalink_token, automation_mode, submit_after_hours, active, created_at)
+		VALUES ($1, 'Flat', $2, $3, 24, 1, $4) RETURNING id`, f.owner, tag, mode, ts).Scan(&f.apt); err != nil {
+		t.Fatal(err)
+	}
+	if err := pool.QueryRow(ctx, `INSERT INTO reservation (apartment_id, source, uid, date_from, date_to, expected_guests_override, status, created_at, updated_at)
+		VALUES ($1, 'manual', $2, '2026-12-01', '2026-12-03', $3, 'active', $4, $4) RETURNING id`, f.apt, tag, expected, ts).Scan(&f.res); err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < filed; i++ {
+		if _, err := pool.Exec(ctx, `INSERT INTO guest (reservation_id, submit_state, manual_filed_at, created_at, updated_at)
+			VALUES ($1, 'sent', $2, $2, $2)`, f.res, ts); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for i := 0; i < blank; i++ {
+		if _, err := pool.Exec(ctx, `INSERT INTO guest (reservation_id, created_at, updated_at) VALUES ($1, $2, $2)`, f.res, ts); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return f
+}
+
+// savePost is createCSRFPost of go/internal/web/stays/create_test.go for any path.
+func savePost(t *testing.T, pool *pgxpool.Pool, ownerID, id int64, fields map[string]string) *httptest.ResponseRecorder {
+	t.Helper()
+	at := saveTestNow()
+	nonce := fmt.Sprintf("nonce-%d", time.Now().UnixNano())
+	form := url.Values{}
+	for k, v := range fields {
+		form.Set(k, v)
+	}
+	sum := sha256.Sum256([]byte(nonce))
+	token, err := secure.NewTimedSerializer(saveTestSecret, "ubyhost-csrf").Dumps(map[string]any{"nonce": hex.EncodeToString(sum[:])}, at)
+	if err != nil {
+		t.Fatal(err)
+	}
+	form.Set("_csrf", token)
+	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/reservations/%d", id), strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.AddCookie(&http.Cookie{Name: "ubyhost_csrf", Value: nonce})
+	req.AddCookie(&http.Cookie{Name: session.CookieName, Value: session.Sign(saveTestSecret, map[string]any{"uid": ownerID, "sv": 1}, at)})
+	rec := httptest.NewRecorder()
+	saveMux(pool).ServeHTTP(rec, req)
+	return rec
+}
+
+func saveOpenSubmitJobs(t *testing.T, pool *pgxpool.Pool) int {
+	t.Helper()
+	var n int
+	if err := pool.QueryRow(context.Background(),
+		`SELECT count(*) FROM job WHERE kind = 'submit' AND done_at IS NULL AND dead_at IS NULL`).Scan(&n); err != nil {
+		t.Fatal(err)
+	}
+	return n
+}
+
+func saveCompleted(t *testing.T, pool *pgxpool.Pool, res int64) bool {
+	t.Helper()
+	var done bool
+	if err := pool.QueryRow(context.Background(),
+		`SELECT registration_completed_at IS NOT NULL FROM reservation WHERE id = $1`, res).Scan(&done); err != nil {
+		t.Fatal(err)
+	}
+	return done
+}
+
+func saveWant303(t *testing.T, rec *httptest.ResponseRecorder, prefix string) {
+	t.Helper()
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("code %d, want 303; body %q", rec.Code, rec.Body.String())
+	}
+	if loc := rec.Header().Get("Location"); !strings.HasPrefix(loc, prefix) {
+		t.Fatalf("Location %q, want prefix %q", loc, prefix)
+	}
+}
+
+var saveActive = map[string]string{"guest_email": "", "host_note": "", "status": "active"}
+
+// The Python save calls submit_for_apartment here; Go asks for the submit sweep.
+func TestSaveCompleteImmediateStayEnqueuesSubmit(t *testing.T) {
+	pool := saveDBPool(t)
+	f := saveSeed(t, pool, "immediate", 1, 1, 0)
+	saveWant303(t, savePost(t, pool, f.owner, f.res, saveActive), fmt.Sprintf("/reservations/%d?msg=", f.res))
+	if !saveCompleted(t, pool, f.res) {
+		t.Error("registration_completed_at not stamped")
+	}
+	if n := saveOpenSubmitJobs(t, pool); n != 1 {
+		t.Errorf("open submit jobs %d, want 1", n)
+	}
+}
+
+func TestSaveDoesNotEnqueueSubmit(t *testing.T) {
+	cases := []struct {
+		name          string
+		mode          string
+		expected      any
+		filed, blank  int
+		authFailed    bool
+		wantCompleted bool
+	}{
+		{"incomplete stay", "immediate", 2, 1, 1, false, false},
+		{"scheduled apartment", "scheduled", 1, 1, 0, false, true},
+		{"manual apartment", "manual", 1, 1, 0, false, true},
+		{"police login refused", "immediate", 1, 1, 0, true, true},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			pool := saveDBPool(t)
+			f := saveSeed(t, pool, c.mode, c.expected, c.filed, c.blank)
+			if c.authFailed {
+				if err := ubyport.RaiseAlert(context.Background(), pool, "critical", "ubyport_auth_failed", "refused", "",
+					fmt.Sprintf("ubyport_auth_failed:%d", f.apt), &f.apt, nil, nil, nil); err != nil {
+					t.Fatal(err)
+				}
+			}
+			saveWant303(t, savePost(t, pool, f.owner, f.res, saveActive), fmt.Sprintf("/reservations/%d?msg=", f.res))
+			if got := saveCompleted(t, pool, f.res); got != c.wantCompleted {
+				t.Errorf("completed %v, want %v", got, c.wantCompleted)
+			}
+			if n := saveOpenSubmitJobs(t, pool); n != 0 {
+				t.Errorf("open submit jobs %d, want 0", n)
+			}
+		})
+	}
+}
+
+func TestSaveEnqueueFailureRaisesAlert(t *testing.T) {
+	pool := saveDBPool(t)
+	f := saveSeed(t, pool, "immediate", 1, 1, 0)
+	saved := enqueueJob
+	enqueueJob = func(context.Context, *pgxpool.Pool, string) (bool, error) { return false, errors.New("queue down") }
+	t.Cleanup(func() { enqueueJob = saved })
+	saveWant303(t, savePost(t, pool, f.owner, f.res, saveActive), fmt.Sprintf("/reservations/%d?msg=", f.res))
+	open, err := saveOpenAlert(context.Background(), pool, fmt.Sprintf("submission_immediate:%d", f.apt))
+	if err != nil || !open {
+		t.Fatalf("submission_immediate alert open=%v err=%v", open, err)
+	}
+}
+
+func TestSaveCancelExpiresClaim(t *testing.T) {
+	pool := saveDBPool(t)
+	ctx := context.Background()
+	f := saveSeed(t, pool, "immediate", 1, 1, 0)
+	const ts = "2026-10-01T00:00:00+00:00"
+	if _, err := pool.Exec(ctx, `INSERT INTO reservation_claim (reservation_id, state, token_hash, created_at, updated_at)
+		VALUES ($1, 'claimed', 'hash', $2, $2)`, f.res, ts); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO email_outbox (idempotency_key, kind, reservation_id, state, created_at, updated_at)
+		VALUES ('save-test', 'claim', $1, 'queued', $2, $2)`, f.res, ts); err != nil {
+		t.Fatal(err)
+	}
+	form := map[string]string{"guest_email": "", "host_note": "", "status": "cancelled"}
+	saveWant303(t, savePost(t, pool, f.owner, f.res, form), fmt.Sprintf("/reservations/%d?msg=", f.res))
+	var cleared, locked bool
+	var outbox, status string
+	if err := pool.QueryRow(ctx, `SELECT token_hash IS NULL, guest_access_locked_at IS NOT NULL FROM reservation_claim WHERE reservation_id = $1`,
+		f.res).Scan(&cleared, &locked); err != nil {
+		t.Fatal(err)
+	}
+	if err := pool.QueryRow(ctx, `SELECT state FROM email_outbox WHERE reservation_id = $1`, f.res).Scan(&outbox); err != nil {
+		t.Fatal(err)
+	}
+	if err := pool.QueryRow(ctx, `SELECT status FROM reservation WHERE id = $1`, f.res).Scan(&status); err != nil {
+		t.Fatal(err)
+	}
+	if !cleared || !locked || outbox != "failed" || status != "cancelled" {
+		t.Errorf("token cleared %v, locked %v, outbox %q, status %q", cleared, locked, outbox, status)
+	}
+	if n := saveOpenSubmitJobs(t, pool); n != 0 {
+		t.Errorf("open submit jobs %d, want 0", n)
+	}
+}
+
+func TestSaveActiveResolvesCancelledAlert(t *testing.T) {
+	pool := saveDBPool(t)
+	ctx := context.Background()
+	f := saveSeed(t, pool, "manual", nil, 0, 0)
+	key := fmt.Sprintf("cancelled_with_guests:%d", f.res)
+	if err := ubyport.RaiseAlert(ctx, pool, "warning", "cancelled_with_guests", "cancelled", "", key, &f.apt, &f.res, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	saveWant303(t, savePost(t, pool, f.owner, f.res, saveActive), fmt.Sprintf("/reservations/%d?msg=", f.res))
+	if open, err := saveOpenAlert(ctx, pool, key); err != nil || open {
+		t.Errorf("cancelled_with_guests still open=%v err=%v", open, err)
+	}
+}
+
+func TestSaveFieldsAndRefusals(t *testing.T) {
+	pool := saveDBPool(t)
+	ctx := context.Background()
+	f := saveSeed(t, pool, "manual", nil, 0, 0)
+	form := map[string]string{"guest_email": "  ", "host_note": " Late ", "summary": strings.Repeat("é", 170), "status": "bogus"}
+	saveWant303(t, savePost(t, pool, f.owner, f.res, form), fmt.Sprintf("/reservations/%d?msg=", f.res))
+	var email, note, summary, status string
+	if err := pool.QueryRow(ctx, `SELECT guest_email, host_note, summary, status FROM reservation WHERE id = $1`, f.res).
+		Scan(&email, &note, &summary, &status); err != nil {
+		t.Fatal(err)
+	}
+	if email != "" || note != "Late" || len([]rune(summary)) != 160 || status != "active" {
+		t.Errorf("email %q note %q summary runes %d status %q", email, note, len([]rune(summary)), status)
+	}
+
+	rec := savePost(t, pool, f.owner, f.res, map[string]string{"host_note": "changed", "expected_guests_override": "61"})
+	if rec.Code != http.StatusUnprocessableEntity || rec.Body.String() != `{"ok":false}` {
+		t.Errorf("count 61: code %d body %q, want 422 {\"ok\":false}", rec.Code, rec.Body.String())
+	}
+	if err := pool.QueryRow(ctx, `SELECT host_note FROM reservation WHERE id = $1`, f.res).Scan(&note); err != nil || note != "Late" {
+		t.Errorf("422 wrote host_note %q (err %v)", note, err)
+	}
+
+	other := saveSeed(t, pool, "manual", nil, 0, 0)
+	saveWant303(t, savePost(t, pool, other.owner, f.res, map[string]string{"host_note": "foreign"}), "/reservations?err=")
+	if err := pool.QueryRow(ctx, `SELECT host_note FROM reservation WHERE id = $1`, f.res).Scan(&note); err != nil || note != "Late" {
+		t.Errorf("another host's save wrote host_note %q (err %v)", note, err)
+	}
+}
+
+func TestSaveLeadReduction(t *testing.T) {
+	pool := saveDBPool(t)
+	ctx := context.Background()
+	f := saveSeed(t, pool, "manual", nil, 0, 0)
+	if _, err := pool.Exec(ctx, `UPDATE reservation SET declared_guests = 3, lead_reduced_guests = 2, lead_reduced_from = 3,
+		lead_reduced_at = '2026-10-02T00:00:00+00:00' WHERE id = $1`, f.res); err != nil {
+		t.Fatal(err)
+	}
+	read := func() (override, lead *int64) {
+		if err := pool.QueryRow(ctx, `SELECT expected_guests_override, lead_reduced_guests FROM reservation WHERE id = $1`, f.res).
+			Scan(&override, &lead); err != nil {
+			t.Fatal(err)
+		}
+		return override, lead
+	}
+	saveWant303(t, savePost(t, pool, f.owner, f.res, map[string]string{"expected_guests_override": "2"}), fmt.Sprintf("/reservations/%d?msg=", f.res))
+	if override, lead := read(); override != nil || lead == nil || *lead != 2 {
+		t.Errorf("same number: override %v lead %v, want nil and 2", override, lead)
+	}
+	saveWant303(t, savePost(t, pool, f.owner, f.res, map[string]string{"expected_guests_override": "3"}), fmt.Sprintf("/reservations/%d?msg=", f.res))
+	if override, lead := read(); override == nil || *override != 3 || lead != nil {
+		t.Errorf("new number: override %v lead %v, want 3 and nil", override, lead)
+	}
+}
