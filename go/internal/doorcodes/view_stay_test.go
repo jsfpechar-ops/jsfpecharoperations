@@ -11,7 +11,8 @@ import (
 func TestViewForStay(t *testing.T) {
 	pool := testPool(t)
 	ctx := context.Background()
-	s := &Service{Pool: pool, Settings: Settings{Enabled: true, Live: true}}
+	now := time.Date(2026, 11, 19, 12, 0, 0, 0, time.UTC)
+	s := &Service{Pool: pool, Settings: Settings{Enabled: true, Live: true}, Clock: &fakeClock{t: now}}
 
 	got, err := s.ViewForStay(ctx, 999999, 999999)
 	if err != nil {
@@ -21,7 +22,6 @@ func TestViewForStay(t *testing.T) {
 		t.Fatalf("missing rows: got %v", got)
 	}
 
-	now := time.Date(2026, 11, 19, 12, 0, 0, 0, time.UTC)
 	stamp := now.Format("2006-01-02T15:04:05")
 	var ownerID int64
 	if err := pool.QueryRow(ctx,
