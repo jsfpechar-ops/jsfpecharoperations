@@ -82,6 +82,7 @@ func parityFixture(today time.Time, page int, report string) listPage {
 		ReturnTo: "/reservations?range=all", HasAny: 1, FeedCount: 1,
 		CSVExportParams: "apartment=", PaymentsHidden: false, PublicBase: "https://guest.example",
 		Today: pragueToday(today), PageSize: PageSize, Groups: groupRows(view.Rows, today),
+		Lang: "en",
 	}
 }
 

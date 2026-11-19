@@ -19,10 +19,30 @@
 {{define "stays_chips"}}<nav class="settings-pills" aria-label="{{t "stays.title"}}" data-wrap-on-phone>{{range .View.Chips}}<a class="settings-pill{{if .Current}} is-current{{end}}" href="{{.Href}}"{{if .Current}} aria-current="page"{{end}}>{{t .Label}}</a>{{end}}</nav>{{end}}
 {{define "stays_date_range"}}<div class="field stay-date-range" data-date-range data-range-prefix="stays">
   <span class="field-label" id="stays-range-label">{{t "host.filter.stay_dates"}}</span>
+  <button class="btn date-range-trigger" type="button" data-range-trigger hidden data-all-dates="{{t "host.filter.all_dates"}}" aria-labelledby="stays-range-label stays-range-caption" aria-haspopup="dialog" aria-expanded="false">
+    <span data-range-caption id="stays-range-caption">{{t "host.filter.all_dates"}}</span>{{icon "chevron-down" 16}}
+  </button>
   <div class="date-range-content" data-range-content>
     <div class="date-range-fields">
       <div class="field"><label for="stays-from">{{t "stays.filter.from"}}</label><input type="date" id="stays-from" name="from" value="{{.DateFrom}}" data-range-from></div>
       <div class="field"><label for="stays-to">{{t "stays.filter.to"}}</label><input type="date" id="stays-to" name="to" value="{{.DateTo}}" data-range-until></div>
+    </div>
+    <div class="date-range-popover" data-range-popover role="dialog" aria-labelledby="stays-range-label" hidden>
+      <div class="range-draft-fields">
+        <div class="field"><label for="stays-draft-from">{{t "stays.filter.from"}}</label><input type="date" id="stays-draft-from" data-range-draft-from></div>
+        <div class="field"><label for="stays-draft-until">{{t "stays.filter.to"}}</label><input type="date" id="stays-draft-until" data-range-draft-until></div>
+      </div>
+      <div class="range-calendar-head">
+        <button class="btn range-step" type="button" data-range-prev aria-label="{{t "host.filter.prev_month"}}">{{icon "chevron-left" 16}}</button>
+        <strong data-range-month></strong>
+        <button class="btn range-step" type="button" data-range-next aria-label="{{t "host.filter.next_month"}}">{{icon "chevron-right" 16}}</button>
+      </div>
+      <div class="range-calendar-grid" data-range-grid role="grid" aria-label="{{t "host.filter.calendar"}}"></div>
+      <p class="small muted" data-range-error role="status" tabindex="-1" hidden>{{t "host.filter.reversed_dates"}}</p>
+      <div class="date-range-actions">
+        <button class="btn ghost" type="button" data-range-clear>{{t "host.filter.clear_dates"}}</button>
+        <button class="btn primary" type="button" data-range-apply>{{t "host.filter.apply_dates"}}</button>
+      </div>
     </div>
   </div></div>{{end}}
 {{define "stays_phone_card"}}{{ $root := .Root }}{{ $row := .Row }}{{ $res := $row.Reservation }}{{ $prog := $row.Progress }}
@@ -30,8 +50,8 @@
 {{ $href := printf "/reservations/%d?return_to=%s" $res.ID (encode_return $root.ReturnTo) }}
 <a class="card stay" href="{{$href}}">
   <span class="sav">{{if $who}}{{initial_rune $who}}{{else}}{{printf "%d" (day_of_month $res.DateFrom)}}{{end}}</span>
-  <span class="in">{{if $who}}<b>{{$who}}</b><small>{{stay_range $res.DateFrom $res.DateTo}} &middot; {{$res.InternalName}}</small>
-  {{else}}<b>{{stay_range $res.DateFrom $res.DateTo}}</b><small>{{$res.InternalName}}</small>{{end}}
+  <span class="in">{{if $who}}<b>{{$who}}</b><small>{{stay_range $root.Lang $res.DateFrom $res.DateTo}} &middot; {{$res.InternalName}}</small>
+  {{else}}<b>{{stay_range $root.Lang $res.DateFrom $res.DateTo}}</b><small>{{$res.InternalName}}</small>{{end}}
   {{if ne $res.Status "active"}}<span class="pill p-n">{{t (printf "stays.filter.state.%s" $res.Status)}}</span>
   {{else if $prog.HasCell}}{{template "v2_status_pill" $row}}
   {{else}}{{progress_pill $prog.Status $res.AutomationMode}}{{end}}
@@ -47,7 +67,7 @@
     {{if $shown}}<a class="stay-identity-link" href="{{$href}}">{{$shown}}</a>
     {{else}}<a class="stay-identity-link stay-noname" href="{{$href}}">{{t "stays.row.no_name"}}</a>
     {{if eq $res.Status "active"}}<a class="stay-noname-action" href="/reservations/{{$res.ID}}/guests/new">{{t "stays.row.add_guest"}}</a>{{end}}{{end}}
-    <small>{{if or (not (is_nil_int $prog.Expected)) $prog.Guests}}{{guest_count (layout_progress $prog)}} &middot; {{else}}<span class="sr-only">{{t "common.guests_unknown"}}</span>{{end}}{{source_badge $res.Source (t (source_label $res.Source))}}</small>
+    <small>{{if or (not (is_nil_int $prog.Expected)) $prog.Guests}}{{guest_count (layout_progress $prog)}} &middot; {{else}}<span class="sr-only">{{t "common.guests_unknown"}}</span>{{end}}{{source_badge $res.Source (source_label $root.Lang $res.Source)}}</small>
   </td>
   <td data-card="meta" data-label="{{t "stays.table.property"}}">{{$res.InternalName}}</td>
   <td class="nowrap" data-card="secondary" data-label="{{t "stays.table.arrival"}}">{{date_cz $res.DateFrom}}</td>
