@@ -3532,3 +3532,53 @@ body.v2 :is(.prop-new,.wiz-page) button.help-tip-btn{background:radial-gradient(
 @media (max-width:1023px){body.v2 :is(.prop-new,.wiz-page) button.help-tip-btn{background:radial-gradient(circle at 9px 50%,transparent 7.5px,var(--line) 8px,var(--line) 9px,transparent 9.5px)}}
 body.v2 .ruian-status{margin:4px 0 12px}
 
+/* 1862: stay page header, desktop only. Scoped to .stay-layout, which only the Go template sets. */
+@media (min-width:1024px){
+  body.v2 .host-stay-detail.stay-layout{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:16px;align-items:center}
+  body.v2 .host-stay-detail.stay-layout>*{grid-column:1/-1}
+  body.v2 .host-stay-detail.stay-layout>.airbnb-header,body.v2 .host-stay-detail.stay-layout>.head,body.v2 .host-stay-detail.stay-layout>.head>div:first-child{display:contents}
+  body.v2 .host-stay-detail.stay-layout .airbnb-header>.airbnb-back,body.v2 .host-stay-detail.stay-layout .airbnb-header>.page-help-wrap{display:none}
+  body.v2 .host-stay-detail.stay-layout .head .crumb{grid-column:1/-1;grid-row:1;margin:0 0 8px}
+  body.v2 .host-stay-detail.stay-layout h1.airbnb-title{grid-column:1;grid-row:2;width:auto;min-width:0;margin:0;justify-self:start}
+  body.v2 .host-stay-detail.stay-layout #now .sub{grid-column:1/-1;grid-row:3;margin:8px 0 0}
+  body.v2 .host-stay-detail.stay-layout .stay-head-actions{grid-column:2;grid-row:2;justify-content:flex-end;gap:12px}
+}
+
+@media (min-width:1024px){
+  body.v2 .host-stay-detail.stay-layout .stay-head-actions>form.inline:not(.stay-restore){order:-1}
+  body.v2 .host-stay-detail.stay-layout .stay-head-actions>.stay-restore{order:1}
+  body.v2 .host-stay-detail.stay-layout .stay-head-actions>.row-menu{order:2}
+  body.v2 .host-stay-detail.stay-layout .stay-head-cta [data-stay-header-copy]{order:-1}
+  body.v2 .host-stay-detail.stay-layout.stay-archived .stay-head-cta .btn{background:#efefeb;color:var(--ink)}
+  body.v2 .host-stay-detail.stay-layout .stay-archived-banner{display:none}
+}
+
+@media (min-width:1024px){
+  body.v2 .host-stay-detail.stay-layout>section{margin:0}
+  body.v2 .host-stay-detail.stay-layout .stay-guests-h{margin:32px 0 12px}
+  body.v2 .host-stay-detail.stay-layout .stay-guests-h>h2.sec{margin:0}
+  body.v2 .host-stay-detail.stay-layout>.stay-reports>h2.sec,body.v2 .host-stay-detail.stay-layout>#door-code>h2.sec,body.v2 .host-stay-detail.stay-layout>.stay-rows-group>h2.sec{margin:32px 0 12px}
+  body.v2 .host-stay-detail.stay-layout>section>:last-child{margin-bottom:0}
+  body.v2 .host-stay-detail.stay-layout>.stay-rows-group{order:1}
+  body.v2 .host-stay-detail.stay-layout>.stay-reports{order:2}
+}
+
+@media (min-width:1024px){
+  body.v2 .host-stay-detail.stay-layout .stay-rows{padding:0}
+  body.v2 .host-stay-detail.stay-layout .stay-rows>details{margin:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none}
+  body.v2 .host-stay-detail.stay-layout .stay-rows>*+*:is(a,details){border-top:1px solid var(--line)}
+  body.v2 .host-stay-detail.stay-layout .stay-rows>:first-child{border-top-left-radius:11px;border-top-right-radius:11px}
+  body.v2 .host-stay-detail.stay-layout .stay-rows>:last-child{border-bottom-left-radius:11px;border-bottom-right-radius:11px}
+  body.v2 .host-stay-detail.stay-layout .stay-rows>a.link,body.v2 .host-stay-detail.stay-layout .stay-rows>details>summary,body.v2 .host-stay-detail.stay-layout .police-card>details>summary{display:flex;align-items:center;gap:12px;min-height:56px;padding:10px 16px;box-sizing:border-box;color:var(--ink);text-decoration:none}
+  body.v2 .host-stay-detail.stay-layout .stay-row-ic{display:grid;place-items:center;flex:none;width:24px;color:var(--ink2)}
+  body.v2 .host-stay-detail.stay-layout .stay-row-t{flex:1 1 auto;min-width:0}
+  body.v2 .host-stay-detail.stay-layout .stay-row-t b{display:block}
+  body.v2 .host-stay-detail.stay-layout .stay-rows>a.link:hover,body.v2 .host-stay-detail.stay-layout .stay-rows>details:not([open]):hover,body.v2 .host-stay-detail.stay-layout .police-card>details:not([open]):hover{background:var(--side2)}
+  body.v2 .host-stay-detail.stay-layout .stay-rows>details>summary:after,body.v2 .host-stay-detail.stay-layout .police-card>details>summary:after{transform:rotate(-90deg)}
+  body.v2 .host-stay-detail.stay-layout .stay-rows>details[open]>summary:after,body.v2 .host-stay-detail.stay-layout .police-card>details[open]>summary:after{transform:none}
+  body.v2 .host-stay-detail.stay-layout .stay-rows>details>:not(summary){margin-left:16px;margin-right:16px}
+  body.v2 .host-stay-detail.stay-layout .stay-rows>details>:not(summary):last-child{margin-bottom:16px}
+  body.v2 .host-stay-detail.stay-layout .police-card>details{margin:12px -20px -16px;padding:0;border:0;border-top:1px solid var(--line);border-radius:0 0 11px 11px;background:none;box-shadow:none}
+  body.v2 .host-stay-detail.stay-layout .police-card>details>:not(summary){margin-left:20px;margin-right:20px}
+  body.v2 .host-stay-detail.stay-layout .police-card>details>:not(summary):last-child{margin-bottom:16px}
+}

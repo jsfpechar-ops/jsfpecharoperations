@@ -1,6 +1,8 @@
 """Caddy-like Go routing for browser tests (UBYHOST_GO_PATHS in the test process)."""
 from __future__ import annotations
 
+import functools
+import importlib.util
 import os
 import re
 import shutil
@@ -41,15 +43,20 @@ def go_path_entries() -> list[str]:
     return [p for part in raw.replace('"', "").split() for p in [part.strip()] if p]
 
 
+@functools.lru_cache(maxsize=None)
+def _parity_check():
+    """scripts/go_parity_check.py, loaded once by path (it is not a package)."""
+    spec = importlib.util.spec_from_file_location(
+        "go_parity_check", REPO_ROOT / "scripts" / "go_parity_check.py"
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def caddy_match(entry: str, sample: str) -> bool:
-    """Same rules as scripts/go_parity_check.py and Caddy path matchers."""
-    e, s = entry.lower(), sample.lower()
-    if "*" not in e:
-        return e == s
-    if e.endswith("*") and "*" not in e[:-1]:
-        return s.startswith(e[:-1])
-    pat = re.escape(e).replace(r"\*", "[^/]*")
-    return re.fullmatch(pat, s) is not None
+    """caddy_match of scripts/go_parity_check.py, so the two can never differ."""
+    return _parity_check().caddy_match(entry, sample)
 
 
 def path_routed_to_go(path: str) -> bool:
