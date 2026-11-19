@@ -1,8 +1,8 @@
 package main
 
-// Brief 1861: the stay page (GET /reservations/{id}). It stays off until the
-// owner adds a selector to UBYHOST_GO_PATHS; POST /reservations/{id} must be
-// served by Go first (see docs/tasks/1861-go-stay-detail-page.md).
+// Briefs 1861 and 1863: the stay page and its settings save (GET and POST
+// /reservations/{id}). They stay off until the owner adds the selector of
+// docs/tasks/1864-go-stay-detail-switch.md to UBYHOST_GO_PATHS.
 
 import (
 	"net/http"

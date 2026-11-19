@@ -127,3 +127,5 @@ workflow.link.now
 workflow.link.why
 stays.table.stay
 how.toggle
+flash.error.no_such_stay
+flash.reservations.saved

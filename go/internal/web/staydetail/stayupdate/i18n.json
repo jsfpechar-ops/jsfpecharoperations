@@ -1,0 +1,14 @@
+{
+ "cs": {
+  "flash.error.no_such_stay": "Tento pobyt už neexistuje.",
+  "flash.reservations.saved": "Pobyt uložen."
+ },
+ "en": {
+  "flash.error.no_such_stay": "This stay no longer exists.",
+  "flash.reservations.saved": "Stay saved."
+ },
+ "vi": {
+  "flash.error.no_such_stay": "Lượt lưu trú này không còn tồn tại.",
+  "flash.reservations.saved": "Đã lưu lượt lưu trú."
+ }
+}

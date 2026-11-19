@@ -85,14 +85,14 @@ func detailHandler(deps Deps, now func() time.Time) http.HandlerFunc {
 	}
 }
 
-// Register mounts GET /reservations/{reservation_id} only; doorCodes[0], when
-// given, is the door-code service the page reads (nil hides the panel).
+// Register adds GET and POST /reservations/{reservation_id} to mux.
 func Register(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler, doorCodes ...DoorCodeViewer) {
 	deps := Deps{Pool: pool, Getenv: getenv}
 	if len(doorCodes) > 0 {
 		deps.DoorCodes = doorCodes[0]
 	}
 	mux.Handle("GET /reservations/{reservation_id}", wrap("/reservations/{reservation_id}", detailHandler(deps, now)))
+	mux.Handle("POST /reservations/{reservation_id}", wrap("/reservations/{reservation_id}", UpdateHandler(pool, getenv, now)))
 }
 
 // havelOn is templating._havel_on: Havel is on for the signed-in account.

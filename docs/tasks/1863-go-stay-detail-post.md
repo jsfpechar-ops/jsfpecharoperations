@@ -1,6 +1,6 @@
 # 1863: Port POST /reservations/{id} (stay settings save) to Go
 
-Status: todo (depends on 1860, 1861; 1862 runs before it in the series)
+Status: review
 Depends on: 1860, 1861 | Base commit: the series branch after 1862's last commit | Branch: task/1860-1864-stay-page (series, see below)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (checkpoint at 60k)
 Tier: A (the save can start police filing; rule 1)
