@@ -396,7 +396,9 @@ func (s *server) apartmentTestConnection(w http.ResponseWriter, r *http.Request)
 		q.back(w, r, "/apartments", hostweb.Flash{}, q.flash("flash.error.no_such_apartment", nil))
 		return
 	}
-	letterListed, _ := policyletter.ConfirmedFields(r.PostForm)
+	letterListed, _ := policyletter.ConfirmedFields(map[string]string{
+		"letter_fields": formStr(r, "letter_fields"),
+	})
 	if savedNow && slices.Contains(letterListed, "uby_ws_user") && formStr(r, "uby_ws_password") == "" &&
 		strings.ToLower(formStr(r, "uby_ws_user")) != loginBefore {
 		q.back(w, r, returnTo, smallPostsFlash(q, "flash.apartments.letter_new_login_no_password", nil), hostweb.Flash{})

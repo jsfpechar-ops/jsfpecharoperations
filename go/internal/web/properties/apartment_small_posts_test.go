@@ -263,6 +263,7 @@ func TestApartmentAddFeedDuplicateURL(t *testing.T) {
 func TestApartmentAddFeedInsertsAndSyncs(t *testing.T) {
 	pool := testPool(t)
 	adWorld(t, pool)
+	mustExec(t, pool, `SELECT setval(pg_get_serial_sequence('ical_feed', 'id'), (SELECT max(id) FROM ical_feed))`)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/calendar")
 		_, _ = io.WriteString(w, "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:sp-feed-1\r\nDTSTART;VALUE=DATE:20261210\r\nDTEND;VALUE=DATE:20261212\r\nSUMMARY:Reserved\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n")
