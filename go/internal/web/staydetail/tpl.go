@@ -3,7 +3,6 @@ package staydetail
 import (
 	"embed"
 	"fmt"
-	"net/url"
 	"strings"
 	"time"
 
@@ -50,6 +49,10 @@ var tplFuncs = map[string]any{
 	"where":              filterWhere,
 	"in":                 inSlice,
 	"list":               makeList,
+	"deref_int":          derefInt,
+	"py_int":             pyInt,
+	"fix_href":           fixHref,
+	"any_receipt":        anyReceipt,
 }
 
 var weekdays = map[string][7]string{
@@ -139,7 +142,7 @@ func deadlineCell(p stays.Progress, checkIn *time.Time) layout.DeadlineCell {
 	if p.HasCell {
 		return p.Cell
 	}
-	return layout.DeadlineCell{}
+	return layout.DeadlineCell{State: "none"}
 }
 
 type linkWindowView struct {
@@ -198,8 +201,56 @@ func havelOn() bool {
 	return false
 }
 
+// urlencode is Jinja's urlencode filter for a string: urllib quote with "/"
+// kept, so a return_to path stays readable.
 func urlencode(s string) string {
-	return url.QueryEscape(s)
+	const hex = "0123456789ABCDEF"
+	var b strings.Builder
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if 'A' <= c && c <= 'Z' || 'a' <= c && c <= 'z' || '0' <= c && c <= '9' || strings.IndexByte("_.-~/", c) >= 0 {
+			b.WriteByte(c)
+			continue
+		}
+		b.WriteByte('%')
+		b.WriteByte(hex[c>>4])
+		b.WriteByte(hex[c&15])
+	}
+	return b.String()
+}
+
+func derefInt(p *int) int {
+	if p == nil {
+		return 0
+	}
+	return *p
+}
+
+// pyInt is an optional count as Python's str.format shows it.
+func pyInt(p *int) any {
+	if p == nil {
+		return "None"
+	}
+	return *p
+}
+
+// fixHref is stay_cta's fix_href: the first refused guest's page, else #guests.
+func fixHref(rows []GuestRow, reservationID int64) string {
+	for _, row := range rows {
+		if row.Guest.SubmitState == "error" || row.Guest.SubmitState == "blocked" {
+			return fmt.Sprintf("/guests/%d?return_to=/reservations/%d", row.Guest.ID, reservationID)
+		}
+	}
+	return "#guests"
+}
+
+func anyReceipt(subs []Submission) bool {
+	for _, s := range subs {
+		if s.HasReceipt {
+			return true
+		}
+	}
+	return false
 }
 
 func leadName(guestRows []GuestRow) string {

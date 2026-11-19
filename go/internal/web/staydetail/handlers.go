@@ -14,10 +14,19 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb/layout"
 )
 
-func detailHandler(pool *pgxpool.Pool, getenv func(string) string, now func() time.Time) http.HandlerFunc {
+// pageData is the template context: the View plus payments_hidden(), a
+// Jinja global the View does not carry.
+type pageData struct {
+	View
+	PaymentsHidden bool
+}
+
+// detailHandler serves GET /reservations/{reservation_id}
+// (admin.reservation_detail).
+func detailHandler(deps Deps, now func() time.Time) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		at := now()
-		host, err := hostweb.Login(w, r, pool, getenv, at)
+		host, err := hostweb.Login(w, r, deps.Pool, deps.Getenv, at)
 		if err != nil {
 			serverError(w, err)
 			return
@@ -25,25 +34,12 @@ func detailHandler(pool *pgxpool.Pool, getenv func(string) string, now func() ti
 		if host == nil {
 			return
 		}
-
-		idStr := r.PathValue("reservation_id")
-		id, err := strconv.ParseInt(idStr, 10, 64)
+		id, err := strconv.ParseInt(r.PathValue("reservation_id"), 10, 64)
 		if err != nil {
 			http.NotFound(w, r)
 			return
 		}
-
-		deps := Deps{
-			Pool:   pool,
-			Getenv: getenv,
-		}
-		if len(doorCodes) > 0 {
-			deps.DoorCodes = doorCodes[0]
-		}
-
-		ctx := r.Context()
-		returnTo := r.URL.Query().Get("return_to")
-		v, ok, err := Build(ctx, deps, host.Workspace.ID, id, returnTo, at)
+		v, ok, err := Build(r.Context(), deps, host.Workspace.ID, id, r.URL.Query().Get("return_to"), at)
 		if err != nil {
 			serverError(w, err)
 			return
@@ -52,28 +48,30 @@ func detailHandler(pool *pgxpool.Pool, getenv func(string) string, now func() ti
 			http.NotFound(w, r)
 			return
 		}
-
 		page := layout.Page{
-			Title:      v.Reservation.InternalName,
+			Title:      v.Reservation.InternalName + " · " + dateCZ(v.Reservation.DateFrom),
 			Nav:        "reservations",
 			BodyKind:   "detail",
 			V2:         true,
 			HowKey:     "stay",
 			BodyAlerts: true,
 		}
-
-		if err := layout.Render(w, r, layout.Env{Pool: pool, Getenv: getenv, Now: at}, host, page, pages, "stay_detail", v); err != nil {
+		data := pageData{View: v, PaymentsHidden: paymentsHidden(deps.Getenv)}
+		if err := layout.Render(w, r, layout.Env{Pool: deps.Pool, Getenv: deps.Getenv, Now: at}, host, page, pages, "stay_detail", data); err != nil {
 			serverError(w, err)
 		}
 	}
 }
 
-func Register(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler, doorCodeViewers ...DoorCodeViewer) {
-	doorCodes = doorCodeViewers
-	mux.Handle("GET /reservations/{reservation_id}", wrap("/reservations/{reservation_id}", detailHandler(pool, getenv, now)))
+// Register mounts GET /reservations/{reservation_id} only; doorCodes[0], when
+// given, is the door-code service the page reads (nil hides the panel).
+func Register(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler, doorCodes ...DoorCodeViewer) {
+	deps := Deps{Pool: pool, Getenv: getenv}
+	if len(doorCodes) > 0 {
+		deps.DoorCodes = doorCodes[0]
+	}
+	mux.Handle("GET /reservations/{reservation_id}", wrap("/reservations/{reservation_id}", detailHandler(deps, now)))
 }
-
-var doorCodes []DoorCodeViewer
 
 func serverError(w http.ResponseWriter, err error) {
 	code := http.StatusInternalServerError
