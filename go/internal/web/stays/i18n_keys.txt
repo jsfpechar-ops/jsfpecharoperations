@@ -23,3 +23,9 @@ dashboard.empty.connect_calendar
 nav.stays
 calendar.arrival
 calendar.departure
+calendar.guests_error
+calendar.overlap
+flash.error.*
+flash.reservations.created
+setup.banner.*
+onboarding.skip

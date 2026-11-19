@@ -1,6 +1,7 @@
 package stays
 
 import (
+	"fmt"
 	"net/url"
 	"strings"
 	"time"
@@ -74,8 +75,49 @@ func dateCZ(v string) string {
 	return v
 }
 
-func stayRange(from, to string) string {
-	return dateCZ(from) + " – " + dateCZ(to)
+// stayRange matches templating.stay_range (0766 phone cards).
+var passWeekdays = map[string][7]string{
+	"en": {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"},
+	"cs": {"po", "út", "st", "čt", "pá", "so", "ne"},
+	"vi": {"T2", "T3", "T4", "T5", "T6", "T7", "CN"},
+}
+
+var passMonths = map[string][12]string{
+	"en": {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"},
+	"cs": {"led", "úno", "bře", "dub", "kvě", "čvn", "čvc", "srp", "zář", "říj", "lis", "pro"},
+	"vi": {"thg 1", "thg 2", "thg 3", "thg 4", "thg 5", "thg 6", "thg 7", "thg 8", "thg 9", "thg 10", "thg 11", "thg 12"},
+}
+
+func stayRange(lang, from, to string) string {
+	start, ok1 := validation.ParseISODate(from)
+	end, ok2 := validation.ParseISODate(to)
+	if !ok1 || !ok2 {
+		return ""
+	}
+	if _, ok := passWeekdays[lang]; !ok {
+		lang = "en"
+	}
+	wd := passWeekdays[lang]
+	mo := passMonths[lang]
+	pyWd := func(t time.Time) string { return wd[(int(t.Weekday())+6)%7] }
+	if lang == "vi" {
+		return pyWd(start) + " " + fmtDayMonthVI(start) + " – " + pyWd(end) + " " + fmtDayMonthVI(end)
+	}
+	sameMonth := start.Year() == end.Year() && start.Month() == end.Month()
+	if lang == "cs" {
+		if sameMonth {
+			return fmt.Sprintf("%s %d. – %s %d. %d.", pyWd(start), start.Day(), pyWd(end), end.Day(), int(end.Month()))
+		}
+		return fmt.Sprintf("%s %d. %d. – %s %d. %d.", pyWd(start), start.Day(), int(start.Month()), pyWd(end), end.Day(), int(end.Month()))
+	}
+	if sameMonth {
+		return fmt.Sprintf("%s %d – %s %d %s", pyWd(start), start.Day(), pyWd(end), end.Day(), mo[end.Month()-1])
+	}
+	return fmt.Sprintf("%s %d %s – %s %d %s", pyWd(start), start.Day(), mo[start.Month()-1], pyWd(end), end.Day(), mo[end.Month()-1])
+}
+
+func fmtDayMonthVI(t time.Time) string {
+	return fmt.Sprintf("%d/%d", t.Day(), int(t.Month()))
 }
 
 func nights(from, to string) int {
@@ -87,12 +129,37 @@ func nights(from, to string) int {
 	return int(b.Sub(a).Hours() / 24)
 }
 
-func sourceLabel(source string) string {
-	switch source {
-	case "manual", "demo", "booking", "airbnb", "other":
-		return "stays.source." + source
+// portalSourceLabels matches App/app/templating.py _PORTAL_LABELS (proper nouns, not i18n).
+var portalSourceLabels = map[string]string{
+	"airbnb": "Airbnb", "booking": "Booking.com", "agoda": "Agoda",
+	"vrbo": "Vrbo", "expedia": "Expedia", "tripadvisor": "Tripadvisor",
+	"trip": "Trip.com", "google": "Google Calendar", "apple": "Apple Calendar",
+}
+
+var staySourceI18nKeys = map[string]string{
+	"manual": "stays.source.manual",
+	"ical":   "stays.source.ical",
+	"demo":   "stays.source.demo",
+}
+
+// sourceLabel matches templating._source_label: portal names as literals,
+// UbyHost-written sources via host_i18n, unknown slugs title-cased.
+func sourceLabel(lang, source string) string {
+	source = strings.TrimSpace(strings.ToLower(source))
+	if label, ok := portalSourceLabels[source]; ok {
+		return label
 	}
-	return "stays.source.other"
+	if key, ok := staySourceI18nKeys[source]; ok {
+		return catalog.T(lang, key, nil)
+	}
+	if source == "" {
+		return ""
+	}
+	s := strings.ReplaceAll(source, "_", " ")
+	if s == "" {
+		return ""
+	}
+	return strings.ToUpper(s[:1]) + s[1:]
 }
 
 // journeyStep matches App/app/workflow.py step_number (status → step 2–5).
