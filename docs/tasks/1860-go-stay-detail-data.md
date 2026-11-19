@@ -1,6 +1,6 @@
 # 1860: Port GET /reservations/{id} to Go, part 1: data and view model
 
-Status: todo
+Status: review
 Depends on: none | Base commit: a734a72f4 (origin/main; every Go name below was checked there with `git grep`) | Branch: task/1860-1864-stay-page (series, see below)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (checkpoint at 60k; hand over per [workflow](../context/workflow.md#when-haiku-reaches-the-cap))
 Tier: A (guest data and filing status shown; one write on GET, `ensureClaimRow`)
