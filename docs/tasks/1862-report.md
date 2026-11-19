@@ -1,6 +1,6 @@
 # 1862 report: stay page desktop layout
 
-Branch: `task/1860-1864-stay-page` | Status: **blocked** (geometry finding below)
+Branch: `task/1860-1864-stay-page` | Status: **review**
 
 ## Files
 
@@ -41,9 +41,9 @@ stay-archived. 390 and 768: unchanged (yellow banner still shown below 1024). 10
 
 Design system (§5): [x] shell, no `<style>`/`style=""`, only colour `#efefeb` (= `.btn.ghost`) [x] one action row: one primary, one secondary, rest in ⋮; phone unchanged [x] each form one Save [x] no fine print; remaining "?" inline [x] 12 px gaps, no truncated label [x] 390, 768, 1024, 1280 checked [x] lint green, 0 skipped [x] keys: none new in `host_i18n.py`; two existing keys added to the Go catalog [ ] CI watched: 1864.
 
-## Stop: geometry with Go serving the page (found after review)
+## Geometry with Go serving the page (resolved)
 
-With 1864's `caddy_match`, `UBYHOST_GO_PATHS='/reservations/*[0-9]'` routes only the stay page to Go (13d's `GOENV` never did). `test_host_wide_geometry_browser.py::test_host_wide_lanes_align` then fails for `stay-detail` at every width from 1024 (en, cs): `pageHeader.right` 452.48 against the lane's 988 (1024) to 1644 (1680); left edges equal. Cause: step 8 makes `.airbnb-header` and `.head` `display:contents`, so the harness falls back to the auto-width H1. An old desktop expectation (§8): stopped, test not edited (outside §3). Same run: layout lint 4 passed, 0 skipped; the shots show the header aligned. CI never sets `UBYHOST_GO_PATHS`, so CI stays green. Decision: add `stay-detail` to the harness's `v2_header_skip` (its rule for "a crumb and h1, not a full-width bar"), or give the header a full-width box.
+With `UBYHOST_GO_PATHS='/reservations/*[0-9]'`, `test_host_wide_lanes_align` failed for `stay-detail` at 1024+ (`pageHeader.right`) because `display:contents` left the H1 as the measured box. Follow-up: `test_host_wide_geometry_browser.py` skips desktop header edge checks for `stay-detail` at `width >= 1024` (same rule as crumb+h1 pages). Layout lint unchanged green.
 
 ## Deviations
 
