@@ -3543,3 +3543,12 @@ body.v2 .ruian-status{margin:4px 0 12px}
   body.v2 .host-stay-detail.stay-layout #now .sub{grid-column:1/-1;grid-row:3;margin:8px 0 0}
   body.v2 .host-stay-detail.stay-layout .stay-head-actions{grid-column:2;grid-row:2;justify-content:flex-end;gap:12px}
 }
+
+@media (min-width:1024px){
+  body.v2 .host-stay-detail.stay-layout .stay-head-actions>form.inline:not(.stay-restore){order:-1}
+  body.v2 .host-stay-detail.stay-layout .stay-head-actions>.stay-restore{order:1}
+  body.v2 .host-stay-detail.stay-layout .stay-head-actions>.row-menu{order:2}
+  body.v2 .host-stay-detail.stay-layout .stay-head-cta [data-stay-header-copy]{order:-1}
+  body.v2 .host-stay-detail.stay-layout.stay-archived .stay-head-cta .btn{background:#efefeb;color:var(--ink)}
+  body.v2 .host-stay-detail.stay-layout .stay-archived-banner{display:none}
+}
