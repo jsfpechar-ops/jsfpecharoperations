@@ -37,7 +37,7 @@
 {{define "stay_detail"}}{{host_alerts}}
 <input class="sr-only" type="text" id="stay-link" readonly value="{{.GuestLink}}" tabindex="-1" aria-hidden="true">
 
-<div class="host-stay-detail">
+<div class="host-stay-detail stay-layout{{if .Reservation.ArchivedAt}} stay-archived{{end}}">
 {{- $inactive := or (ne .Reservation.Status "active") (ne .Reservation.ArchivedAt "")}}
 {{- $cell := deadline_cell .Progress .CheckIn}}
 {{- $hasCta := or .SendControls.SendEnabled (eq .Progress.Status "failed") (and (eq .Progress.Status "reported") .Submissions)}}
