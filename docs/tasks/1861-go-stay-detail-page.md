@@ -41,7 +41,7 @@ func init() {
 | `go/internal/web/staydetail/templates/stay_detail.tmpl` | new | block-by-block port of `reservation_detail.html`; file name fixed (1862 edits it) |
 | `go/internal/web/staydetail/tpl.go` | new | parse with `layout.MustParse`, package-local funcs for any filter in §2 that `layout` lacks (ported verbatim from the Python filter) |
 | `go/internal/web/staydetail/i18n.json`, `i18n_keys.txt`, `i18n_test.go` | new | every `t`/`tp` key the template uses, en/cs/vi copied from `App/app/host_i18n.py`; no new copy |
-| `go/internal/web/staydetail/handlers.go` | new | `Register(mux, pool, getenv, now, wrap)` mounting only `GET /reservations/{reservation_id}` |
+| `go/internal/web/staydetail/handlers.go` | new | `func Register(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler, doorCodes ...DoorCodeViewer)` mounting only `GET /reservations/{reservation_id}` (1863 anchors on this signature's start and calls it with five arguments) |
 | `go/internal/web/staydetail/handlers_test.go` | new | Go-only: no session redirects like Python; unknown or foreign id 404; fixed `View` renders the anchors in step 5 |
 | `go/cmd/ubyhost-web/register_web_staydetail.go` | new | code in step 4 |
 | `App/tests/test_1861_stay_detail_go_parity.py` | new | live Python-vs-Go HTML parity and screenshots. go-first exception 1 (parity test); no file under `App/app/` changes |
@@ -50,10 +50,10 @@ No other file may change. `docs/ENVIRONMENT.md` is not edited here (1864 documen
 
 ## 4. Steps
 
-0. Anchors (one call): `ls go/internal/web/staydetail | tail -30` (expect the 1860 files, no `templates/`); `grep -rn 'web/staydetail\|"GET /reservations/{' go/cmd go/internal 2>&1 | tail -30` (expect none); `grep -n 'stay_detail\|stays' docs/context/test-map.md | tail -30` (the test-map rows used in §6); `grep -c 'settings_back_header\|v2_status_pill\|deadline_cell\|link_window\|row_menu_begin\|submission_pill\|help_tip\|field_label\|source_badge\|deadline_badge\|row_open\|page_help' go/internal/hostweb/layout/*.go go/internal/web/stays/tpl.go 2>&1 | tail -30`. Write in the report which §2 names `layout` or `stays` already provide.
+0. Anchors (one call): `ls go/internal/web/staydetail | tail -30` (expect the 1860 files, no `templates/`); `grep -nF 'func doorCodesSettings(getenv func(string) string) doorcodes.Settings' go/cmd/ubyhost-web/door_codes_wire.go; grep -nF 'func (systemClock) Now() time.Time' go/cmd/ubyhost-web/door_codes_wire.go; grep -nF 'type DoorCodeViewer interface' go/internal/web/staydetail/types.go` (one line each; the step 4 file needs them; the register file was vetted against a734a72f4 by the brief writer); `grep -rn 'web/staydetail\|"GET /reservations/{' go/cmd go/internal 2>&1 | tail -30` (expect none); `grep -n 'stay_detail\|stays' docs/context/test-map.md | tail -30` (the test-map rows used in §6); `grep -c 'settings_back_header\|v2_status_pill\|deadline_cell\|link_window\|row_menu_begin\|submission_pill\|help_tip\|field_label\|source_badge\|deadline_badge\|row_open\|page_help' go/internal/hostweb/layout/*.go go/internal/web/stays/tpl.go 2>&1 | tail -30`. Write in the report which §2 names `layout` or `stays` already provide.
 1. Template: port the Python file block by block into `stay_detail.tmpl`, in the same order: phone back header and `sub-phone` lines, `card facts stay-dates`, `stay_cta` (exclusive branches, `data-fix-rejection`, `/submit` form with `_csrf` and `return_to`), `head`/`stay-head-actions`/row menu, status banners, demo banner, guests (desktop `guest-table` and phone `list guests guest-list`, placeholder rows), payments (renders nothing: `money_panels` is always empty), police card, `filed-by-hand`, `file-by-hand`, submissions table, door code, payment link, `stay-quick-edit` form posting to `/reservations/{{id}}`. Keep every class, id, `data-*` attribute, form action, hidden input and `ph-hide`/`ph-only`/`sub-phone` byte for byte; whitespace may differ. A `_components.html` macro or filter that `layout` lacks: port it verbatim into `tpl.go` or a `{{define "staydetail.*"}}` in the template. Command: `cd go && go vet ./internal/web/staydetail/... 2>&1 | tail -30`.
 2. i18n: list the keys with `grep -o "t('[^']*'\|tp('[^']*'" App/app/templates/reservation_detail.html | sort -u | tail -80`, plus the dynamic ones (`stays.filter.state.<status>`, `guest.doc_type.<doc_type>`, `stay.detail.settings.state.<status>`, `send_controls.send_hint_key` values, `validation_message` keys). Copy en/cs/vi from `App/app/host_i18n.py`. `i18n_test.go` like `stays/i18n_test.go`. Command: `cd go && go test ./internal/web/staydetail/... 2>&1 | tail -30`.
-3. `handlers.go`: copy the login guard, account lookup and `layout.Render` call from `stays.ListHandler`; Nav `reservations`, V2 on, title as §2. Parse `{reservation_id}` with `strconv.ParseInt`; bad or unknown id: 404 (Python `HTTPException(404)`). Call `staydetail.Build` (1860). Register only `mux.Handle("GET /reservations/{reservation_id}", wrap("/reservations/{reservation_id}", ...))`. Never register POST here (1863 adds it).
+3. `handlers.go`: copy the login guard, account lookup and `layout.Render` call from `stays.ListHandler`; Nav `reservations`, V2 on, title as §2. Parse `{reservation_id}` with `strconv.ParseInt`; bad or unknown id: 404 (Python `HTTPException(404)`). Build `Deps{Pool: pool, Getenv: getenv}` once in `Register`, with `DoorCodes: doorCodes[0]` when `len(doorCodes) > 0`. In the handler call `Build(r.Context(), deps, <owner id as stays.ListHandler gets it>, id, r.URL.Query().Get("return_to"), now())` (1860, `view.go`); `ok == false` answers 404. Register only `mux.Handle("GET /reservations/{reservation_id}", wrap("/reservations/{reservation_id}", ...))`. Never register POST here (1863 adds it).
 4. `go/cmd/ubyhost-web/register_web_staydetail.go`, whole file:
 
 ```go
@@ -70,13 +70,25 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/doorcodes"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/staydetail"
 )
 
 func init() {
 	registerRoutes(func(mux *http.ServeMux, m *metrics, pool *pgxpool.Pool) {
-		staydetail.Register(mux, pool, os.Getenv, time.Now, m.wrap)
+		staydetail.Register(mux, pool, os.Getenv, time.Now, m.wrap, stayDoorCodes(pool))
 	})
+}
+
+// stayDoorCodes is the door-code service the stay page reads (door_codes.view),
+// built like the door-code job's (door_codes_wire.go). It does not use the pool here.
+func stayDoorCodes(pool *pgxpool.Pool) staydetail.DoorCodeViewer {
+	keys, err := secure.LoadDataKeys(os.Getenv)
+	if err != nil {
+		return nil
+	}
+	return &doorcodes.Service{Pool: pool, Keys: keys, Settings: doorCodesSettings(os.Getenv), Clock: systemClock{}}
 }
 ```
 

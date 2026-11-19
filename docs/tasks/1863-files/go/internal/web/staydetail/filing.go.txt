@@ -44,7 +44,7 @@ func submitStayIfComplete(ctx context.Context, pool *pgxpool.Pool, getenv func(s
 	}
 	// Same pause as the sweep: retrying a refused login on every save risks
 	// locking the police account.
-	paused, err := saveOpenAlert(ctx, pool, fmt.Sprintf("ubyport_auth_failed:%d", apartmentID))
+	paused, err := ubyport.OpenAlert(ctx, pool, fmt.Sprintf("ubyport_auth_failed:%d", apartmentID))
 	if err != nil || paused {
 		return false, err
 	}
@@ -83,40 +83,4 @@ func saveDecrypter(getenv func(string) string) ubyport.FieldDecrypter {
 		b, err := keys.Decrypt(token, 0, time.Now())
 		return string(b), err
 	}
-}
-
-// saveOpenAlert is alerts.open_alert: an unresolved alert with this dedupe key exists.
-func saveOpenAlert(ctx context.Context, pool *pgxpool.Pool, key string) (bool, error) {
-	var one int
-	err := pool.QueryRow(ctx,
-		`SELECT 1 FROM alert WHERE dedupe_key = $1 AND resolved_at IS NULL LIMIT 1`, key).Scan(&one)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return false, nil
-	}
-	return err == nil, err
-}
-
-// saveExpireOnCancel is claim.expire_on_cancel (claim.py 810-825): nothing
-// happens when the stay has no claim row.
-func saveExpireOnCancel(ctx context.Context, pool *pgxpool.Pool, reservationID int64, stamp string) error {
-	var one int
-	err := pool.QueryRow(ctx,
-		`SELECT 1 FROM reservation_claim WHERE reservation_id = $1 LIMIT 1`, reservationID).Scan(&one)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	if _, err := pool.Exec(ctx,
-		`UPDATE reservation_claim SET token_hash = NULL, guest_access_locked_at = $1,
-		   guest_access_reopened_at = NULL, updated_at = $1 WHERE reservation_id = $2`,
-		stamp, reservationID); err != nil {
-		return err
-	}
-	_, err = pool.Exec(ctx,
-		`UPDATE email_outbox SET state = 'failed', updated_at = $1
-		  WHERE reservation_id = $2 AND state = 'queued'`,
-		stamp, reservationID)
-	return err
 }
