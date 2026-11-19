@@ -3562,3 +3562,23 @@ body.v2 .ruian-status{margin:4px 0 12px}
   body.v2 .host-stay-detail.stay-layout>.stay-rows-group{order:1}
   body.v2 .host-stay-detail.stay-layout>.stay-reports{order:2}
 }
+
+@media (min-width:1024px){
+  body.v2 .host-stay-detail.stay-layout .stay-rows{padding:0}
+  body.v2 .host-stay-detail.stay-layout .stay-rows>details{margin:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none}
+  body.v2 .host-stay-detail.stay-layout .stay-rows>*+*:is(a,details){border-top:1px solid var(--line)}
+  body.v2 .host-stay-detail.stay-layout .stay-rows>:first-child{border-top-left-radius:11px;border-top-right-radius:11px}
+  body.v2 .host-stay-detail.stay-layout .stay-rows>:last-child{border-bottom-left-radius:11px;border-bottom-right-radius:11px}
+  body.v2 .host-stay-detail.stay-layout .stay-rows>a.link,body.v2 .host-stay-detail.stay-layout .stay-rows>details>summary,body.v2 .host-stay-detail.stay-layout .police-card>details>summary{display:flex;align-items:center;gap:12px;min-height:56px;padding:10px 16px;box-sizing:border-box;color:var(--ink);text-decoration:none}
+  body.v2 .host-stay-detail.stay-layout .stay-row-ic{display:grid;place-items:center;flex:none;width:24px;color:var(--ink2)}
+  body.v2 .host-stay-detail.stay-layout .stay-row-t{flex:1 1 auto;min-width:0}
+  body.v2 .host-stay-detail.stay-layout .stay-row-t b{display:block}
+  body.v2 .host-stay-detail.stay-layout .stay-rows>a.link:hover,body.v2 .host-stay-detail.stay-layout .stay-rows>details:not([open]):hover,body.v2 .host-stay-detail.stay-layout .police-card>details:not([open]):hover{background:var(--side2)}
+  body.v2 .host-stay-detail.stay-layout .stay-rows>details>summary:after,body.v2 .host-stay-detail.stay-layout .police-card>details>summary:after{transform:rotate(-90deg)}
+  body.v2 .host-stay-detail.stay-layout .stay-rows>details[open]>summary:after,body.v2 .host-stay-detail.stay-layout .police-card>details[open]>summary:after{transform:none}
+  body.v2 .host-stay-detail.stay-layout .stay-rows>details>:not(summary){margin-left:16px;margin-right:16px}
+  body.v2 .host-stay-detail.stay-layout .stay-rows>details>:not(summary):last-child{margin-bottom:16px}
+  body.v2 .host-stay-detail.stay-layout .police-card>details{margin:12px -20px -16px;padding:0;border:0;border-top:1px solid var(--line);border-radius:0 0 11px 11px;background:none;box-shadow:none}
+  body.v2 .host-stay-detail.stay-layout .police-card>details>:not(summary){margin-left:20px;margin-right:20px}
+  body.v2 .host-stay-detail.stay-layout .police-card>details>:not(summary):last-child{margin-bottom:16px}
+}
