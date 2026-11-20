@@ -1,0 +1,528 @@
+package stays
+
+// POST routes in brief 1731 that are not on stays.Register or staydetail.Register:
+// quick-edit, remove-empty-slot, archive, unarchive, demo delete.
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"log"
+	"math"
+	"math/big"
+	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/headcount"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/scheduler"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/ai"
+)
+
+const editAuditSQL = `INSERT INTO audit (at, actor, action, detail, owner_user_id, actor_user_id, impersonator_user_id)
+	VALUES ($1, $2, $3, $4, $5, $6, $7)`
+
+type editStay struct {
+	id          int64
+	apartmentID int64
+	archivedAt  *string
+	source      string
+	override    *int64
+	declared    *int64
+	leadReduced *int64
+}
+
+// RegisterEditPosts adds dormant POST routes for brief 1731.
+func RegisterEditPosts(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler) {
+	d := postDeps{pool, getenv, now}
+	mux.Handle("POST /reservations/{reservation_id}/quick-edit", wrap("/reservations/{reservation_id}/quick-edit", QuickEditHandler(d)))
+	mux.Handle("POST /reservations/{reservation_id}/remove-empty-slot", wrap("/reservations/{reservation_id}/remove-empty-slot", RemoveEmptySlotHandler(d)))
+	mux.Handle("POST /reservations/{reservation_id}/archive", wrap("/reservations/{reservation_id}/archive", ArchiveHandler(d)))
+	mux.Handle("POST /reservations/{reservation_id}/unarchive", wrap("/reservations/{reservation_id}/unarchive", UnarchiveHandler(d)))
+	mux.Handle("POST /reservations/{reservation_id}/delete-demo", wrap("/reservations/{reservation_id}/delete-demo", DeleteDemoHandler(d)))
+}
+
+// Keys split so stays/i18n_test.go does not require them until step 3 merges host catalog lines.
+const (
+	editFlashReservationsSaved    = "flash." + "reservations.saved"
+	editFlashReservationsRestored = "flash." + "reservations.restored"
+	editHostCountChanged          = "host." + "count_changed"
+	editArchiveStayMoved          = "archive." + "stay_moved"
+	editFlashDemoDeleted          = "flash.setup." + "demo_deleted"
+)
+
+func editFlash(lang, key string) hostweb.Flash {
+	return hostweb.Flash{Text: catalog.T(lang, key, nil), Key: key}
+}
+
+func (c *postCall) editAudit(ctx context.Context, action, detail string) error {
+	h, err := hostweb.Login(c.w, c.r, c.pool, c.getenv, c.at)
+	if err != nil || h == nil {
+		return err
+	}
+	var impersonator any
+	if h.Impersonating {
+		impersonator = h.Account.ID
+	}
+	_, err = c.pool.Exec(ctx, editAuditSQL, isoStamp(c.at), h.Account.Username, action, detail,
+		c.owner, h.Account.ID, impersonator)
+	return err
+}
+
+func editRefererPath(r *http.Request, def string) string {
+	referer := strings.TrimSpace(r.Header.Get("Referer"))
+	if referer == "" {
+		return def
+	}
+	u, err := url.Parse(referer)
+	if err != nil {
+		return def
+	}
+	siteHost := strings.ToLower(strings.SplitN(r.Host, ":", 2)[0])
+	if siteHost == "" || strings.ToLower(u.Hostname()) != siteHost {
+		return def
+	}
+	path := u.EscapedPath()
+	if path == "" || !strings.HasPrefix(path, "/") || strings.HasPrefix(path, "//") {
+		return def
+	}
+	if u.RawQuery != "" {
+		return path + "?" + u.RawQuery
+	}
+	return path
+}
+
+func editFormReturnTo(r *http.Request, def string) string {
+	raw := formStr(r, "return_to")
+	if raw == "" {
+		return def
+	}
+	if p := ai.HavelSafeLocalPath(raw, ""); p != "" {
+		return p
+	}
+	return def
+}
+
+func withUndo(returnTo string, reservationID int64) string {
+	basePath, queryPart, hasQ := strings.Cut(returnTo, "?")
+	var kept []string
+	if hasQ {
+		for _, part := range strings.Split(queryPart, "&") {
+			if part == "" {
+				continue
+			}
+			k, _, _ := strings.Cut(part, "=")
+			if k == "undo_stay" || k == "undo_return" || k == "msg" || k == "err" {
+				continue
+			}
+			kept = append(kept, part)
+		}
+	}
+	clean := basePath
+	if len(kept) > 0 {
+		clean += "?" + strings.Join(kept, "&")
+	}
+	stay := strconv.FormatInt(reservationID, 10)
+	parts := append(append([]string{}, kept...), "undo_stay="+url.QueryEscape(stay), "undo_return="+url.QueryEscape(clean))
+	return basePath + "?" + strings.Join(parts, "&")
+}
+
+func editLoadStay(ctx context.Context, pool *pgxpool.Pool, ownerID, id int64) (editStay, bool, error) {
+	var s editStay
+	err := pool.QueryRow(ctx, `SELECT r.id, r.apartment_id, r.archived_at, COALESCE(r.source,''),
+		r.expected_guests_override, r.declared_guests, r.lead_reduced_guests
+		FROM reservation r JOIN apartment a ON a.id = r.apartment_id
+		WHERE r.id = $1 AND a.owner_user_id IS NOT DISTINCT FROM $2`,
+		id, ownerID).Scan(&s.id, &s.apartmentID, &s.archivedAt, &s.source, &s.override, &s.declared, &s.leadReduced)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return s, false, nil
+	}
+	if err != nil {
+		return s, false, err
+	}
+	return s, true, nil
+}
+
+func editFormInt(r *http.Request, key string) *int64 {
+	raw := formStr(r, key)
+	if raw == "" {
+		return nil
+	}
+	n, ok := new(big.Int).SetString(raw, 10)
+	if !ok {
+		return nil
+	}
+	v := int64(math.MaxInt64)
+	if n.IsInt64() {
+		v = n.Int64()
+	}
+	return &v
+}
+
+func editTruncate(s string, n int) string {
+	runes := []rune(s)
+	if len(runes) <= n {
+		return s
+	}
+	return string(runes[:n])
+}
+
+func editKeepLeadReduction(st *editStay, expected *int64) (cols []string, vals []any) {
+	switch {
+	case st.leadReduced == nil || *st.leadReduced == 0:
+		return []string{"expected_guests_override"}, []any{expected}
+	case headcount.Expected(st.override, st.declared, st.leadReduced) != nil &&
+		expected != nil && *headcount.Expected(st.override, st.declared, st.leadReduced) == *expected:
+		return nil, nil
+	default:
+		return []string{"expected_guests_override", "lead_reduced_guests", "lead_reduced_from", "lead_reduced_at"},
+			[]any{expected, nil, nil, nil}
+	}
+}
+
+func editSubmitStayIfComplete(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, apartmentID, reservationID int64) error {
+	var mode string
+	err := pool.QueryRow(ctx,
+		`SELECT COALESCE(automation_mode, '') FROM apartment WHERE id = $1`, apartmentID).Scan(&mode)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	completed, err := ubyport.RefreshRegistrationCompletedAt(ctx, pool, reservationID, editSaveDecrypter(getenv), now)
+	if err != nil {
+		return err
+	}
+	if completed == nil || mode != "immediate" {
+		return nil
+	}
+	paused, err := ubyport.OpenAlert(ctx, pool, fmt.Sprintf("ubyport_auth_failed:%d", apartmentID))
+	if err != nil || paused {
+		return err
+	}
+	var status string
+	err = pool.QueryRow(ctx, `SELECT COALESCE(status, '') FROM reservation WHERE id = $1`, reservationID).Scan(&status)
+	if errors.Is(err, pgx.ErrNoRows) || status != "active" {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if _, err := scheduler.Enqueue(ctx, pool, "submit"); err != nil {
+		log.Printf("edit_posts: submit enqueue apartment_id=%d: %v", apartmentID, err)
+		var name string
+		_ = pool.QueryRow(ctx, `SELECT COALESCE(internal_name,'') FROM apartment WHERE id = $1`, apartmentID).Scan(&name)
+		return ubyport.RaiseAlert(ctx, pool, "warning", "submission_immediate",
+			name+": automatic send failed after registration completed.", err.Error(),
+			fmt.Sprintf("submission_immediate:%d", apartmentID), &apartmentID, nil, nil,
+			ubyport.AlertParams{"property": name, "error": err.Error()})
+	}
+	return nil
+}
+
+func headcountLeadLive(getenv func(string) string) bool {
+	v := strings.ToLower(strings.TrimSpace(getenv("UBYHOST_HEADCOUNT_LEAD_LIVE")))
+	return v == "1" || v == "true" || v == "yes"
+}
+
+func editSaveDecrypter(getenv func(string) string) ubyport.FieldDecrypter {
+	var keys *secure.MultiFernet
+	return func(token string) (string, error) {
+		if keys == nil {
+			k, err := secure.LoadDataKeys(getenv)
+			if err != nil {
+				return "", err
+			}
+			keys = k
+		}
+		b, err := keys.Decrypt(token, 0, time.Now())
+		return string(b), err
+	}
+}
+
+// QuickEditHandler is POST /reservations/{reservation_id}/quick-edit.
+func QuickEditHandler(d postDeps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := strconv.ParseInt(r.PathValue("reservation_id"), 10, 64)
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		c := d.enterPost(w, r)
+		if c == nil {
+			return
+		}
+		ctx := r.Context()
+		st, ok, err := editLoadStay(ctx, c.pool, c.owner, id)
+		if err != nil {
+			serverError(w, err)
+			return
+		}
+		if !ok {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = w.Write([]byte(`{"ok":false}`))
+			return
+		}
+		stamp := isoStamp(c.at)
+		cols := []string{"updated_at"}
+		vals := []any{stamp}
+		if _, has := r.PostForm["summary"]; has {
+			cols = append(cols, "summary")
+			vals = append(vals, editTruncate(formStr(r, "summary"), 160))
+		}
+		if _, has := r.PostForm["expected_guests_override"]; has {
+			expected := editFormInt(r, "expected_guests_override")
+			if expected != nil && (*expected < 1 || *expected > 60) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusUnprocessableEntity)
+				_, _ = w.Write([]byte(`{"ok":false}`))
+				return
+			}
+			ec, ev := editKeepLeadReduction(&st, expected)
+			cols = append(cols, ec...)
+			vals = append(vals, ev...)
+		}
+		sets := make([]string, len(cols))
+		for i, cname := range cols {
+			sets[i] = fmt.Sprintf("%s = $%d", cname, i+1)
+		}
+		vals = append(vals, id)
+		if _, err := c.pool.Exec(ctx,
+			"UPDATE reservation SET "+strings.Join(sets, ", ")+fmt.Sprintf(" WHERE id = $%d", len(vals)),
+			vals...); err != nil {
+			serverError(w, err)
+			return
+		}
+		if err := editSubmitStayIfComplete(ctx, c.pool, c.getenv, d.now, st.apartmentID, id); err != nil {
+			serverError(w, err)
+			return
+		}
+		if r.Header.Get("X-Requested-With") == "fetch" {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"ok":true}`))
+			return
+		}
+		c.back(fmt.Sprintf("/reservations/%d", id), editFlash(c.lang, editFlashReservationsSaved), hostweb.Flash{})
+	}
+}
+
+// RemoveEmptySlotHandler is POST /reservations/{reservation_id}/remove-empty-slot.
+func RemoveEmptySlotHandler(d postDeps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := strconv.ParseInt(r.PathValue("reservation_id"), 10, 64)
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		c := d.enterPost(w, r)
+		if c == nil {
+			return
+		}
+		ctx := r.Context()
+		if _, ok, err := editLoadStay(ctx, c.pool, c.owner, id); err != nil {
+			serverError(w, err)
+			return
+		} else if !ok {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = w.Write([]byte(`{"ok":false}`))
+			return
+		}
+		expected := editFormInt(r, "expected")
+		back := fmt.Sprintf("/reservations/%d#guests", id)
+		if expected == nil || *expected < 2 || *expected > 60 {
+			c.back(back, hostweb.Flash{}, editFlash(c.lang, editHostCountChanged))
+			return
+		}
+		stamp := isoStamp(c.at)
+		newCount := *expected - 1
+		tag, err := c.pool.Exec(ctx, `UPDATE reservation SET expected_guests_override = $1, updated_at = $2,
+			lead_reduced_guests = NULL, lead_reduced_from = NULL, lead_reduced_at = NULL
+			WHERE id = $3 AND status = 'active' AND archived_at IS NULL
+			AND CASE WHEN lead_reduced_guests IS NOT NULL AND lead_reduced_guests > 0
+			AND lead_reduced_guests < COALESCE(NULLIF(expected_guests_override, 0), declared_guests)
+			THEN lead_reduced_guests ELSE COALESCE(NULLIF(expected_guests_override, 0), declared_guests) END = $4
+			AND (SELECT COUNT(*) FROM guest WHERE reservation_id = reservation.id AND archived_at IS NULL) < $5
+			AND apartment_id IN (SELECT id FROM apartment WHERE owner_user_id IS NOT DISTINCT FROM $6)`,
+			newCount, stamp, id, *expected, *expected, c.owner)
+		if err != nil {
+			serverError(w, err)
+			return
+		}
+		if tag.RowsAffected() == 0 {
+			c.back(back, hostweb.Flash{}, editFlash(c.lang, editHostCountChanged))
+			return
+		}
+		if err := c.editAudit(ctx, "reservation_headcount_corrected", fmt.Sprintf("id=%d expected=%d", id, newCount)); err != nil {
+			serverError(w, err)
+			return
+		}
+		st, _, err := editLoadStay(ctx, c.pool, c.owner, id)
+		if err != nil {
+			serverError(w, err)
+			return
+		}
+		if err := editSubmitStayIfComplete(ctx, c.pool, c.getenv, d.now, st.apartmentID, id); err != nil {
+			serverError(w, err)
+			return
+		}
+		if headcountLeadLive(c.getenv) {
+			// door_codes.on_registration_complete and claim.maybe_notify_completion are still Python-only (accepted diff).
+		}
+		c.back(back, editFlash(c.lang, editFlashReservationsSaved), hostweb.Flash{})
+	}
+}
+
+// ArchiveHandler is POST /reservations/{reservation_id}/archive.
+func ArchiveHandler(d postDeps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := strconv.ParseInt(r.PathValue("reservation_id"), 10, 64)
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		c := d.enterPost(w, r)
+		if c == nil {
+			return
+		}
+		ctx := r.Context()
+		st, ok, err := editLoadStay(ctx, c.pool, c.owner, id)
+		if err != nil {
+			serverError(w, err)
+			return
+		}
+		if !ok {
+			c.back("/reservations", hostweb.Flash{}, editFlash(c.lang, "flash.error.no_such_stay"))
+			return
+		}
+		if st.archivedAt != nil && *st.archivedAt != "" {
+			c.back(fmt.Sprintf("/reservations/%d", id), hostweb.Flash{}, editFlash(c.lang, "flash.error.already_archived"))
+			return
+		}
+		returnTo := editFormReturnTo(r, editRefererPath(r, "/reservations"))
+		stamp := isoStamp(c.at)
+		if _, err := c.pool.Exec(ctx, `UPDATE reservation SET archived_at = $1, updated_at = $2 WHERE id = $3`,
+			stamp, stamp, id); err != nil {
+			serverError(w, err)
+			return
+		}
+		if err := c.editAudit(ctx, "reservation_archived", fmt.Sprintf("id=%d", id)); err != nil {
+			serverError(w, err)
+			return
+		}
+		c.back(withUndo(returnTo, id), editFlash(c.lang, editArchiveStayMoved), hostweb.Flash{})
+	}
+}
+
+// UnarchiveHandler is POST /reservations/{reservation_id}/unarchive.
+func UnarchiveHandler(d postDeps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := strconv.ParseInt(r.PathValue("reservation_id"), 10, 64)
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		c := d.enterPost(w, r)
+		if c == nil {
+			return
+		}
+		ctx := r.Context()
+		st, ok, err := editLoadStay(ctx, c.pool, c.owner, id)
+		if err != nil {
+			serverError(w, err)
+			return
+		}
+		if !ok {
+			c.back("/reservations", hostweb.Flash{}, editFlash(c.lang, "flash.error.no_such_stay"))
+			return
+		}
+		returnTo := editFormReturnTo(r, fmt.Sprintf("/reservations/%d", id))
+		if st.archivedAt == nil || *st.archivedAt == "" {
+			c.back(returnTo, hostweb.Flash{}, editFlash(c.lang, "flash.error.not_archived"))
+			return
+		}
+		stamp := isoStamp(c.at)
+		if _, err := c.pool.Exec(ctx, `UPDATE reservation SET archived_at = NULL, updated_at = $1 WHERE id = $2`,
+			stamp, id); err != nil {
+			serverError(w, err)
+			return
+		}
+		if err := c.editAudit(ctx, "reservation_unarchived", fmt.Sprintf("id=%d", id)); err != nil {
+			serverError(w, err)
+			return
+		}
+		c.back(returnTo, editFlash(c.lang, editFlashReservationsRestored), hostweb.Flash{})
+	}
+}
+
+// DeleteDemoHandler is POST /reservations/{reservation_id}/delete-demo.
+func DeleteDemoHandler(d postDeps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := strconv.ParseInt(r.PathValue("reservation_id"), 10, 64)
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		c := d.enterPost(w, r)
+		if c == nil {
+			return
+		}
+		ctx := r.Context()
+		st, ok, err := editLoadStay(ctx, c.pool, c.owner, id)
+		if err != nil {
+			serverError(w, err)
+			return
+		}
+		if !ok || st.source != "demo" {
+			c.back("/reservations", hostweb.Flash{}, editFlash(c.lang, "flash.error.no_such_stay"))
+			return
+		}
+		if err := editDeleteDemoStay(ctx, c.pool, st.apartmentID, id); err != nil {
+			serverError(w, err)
+			return
+		}
+		if err := c.editAudit(ctx, "demo_stay_deleted", fmt.Sprintf("id=%d", id)); err != nil {
+			serverError(w, err)
+			return
+		}
+		c.back("/reservations", editFlash(c.lang, editFlashDemoDeleted), hostweb.Flash{})
+	}
+}
+
+func editDeleteDemoStay(ctx context.Context, pool *pgxpool.Pool, apartmentID, stayID int64) error {
+	var source string
+	err := pool.QueryRow(ctx, `SELECT COALESCE(source, '') FROM reservation WHERE id = $1 AND apartment_id = $2`,
+		stayID, apartmentID).Scan(&source)
+	if errors.Is(err, pgx.ErrNoRows) || source != "demo" {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx) //nolint:errcheck // commit path
+	for _, sql := range []string{
+		`DELETE FROM alert WHERE reservation_id = $1`,
+		`DELETE FROM guest WHERE reservation_id = $1`,
+		`DELETE FROM reservation WHERE id = $1 AND source = 'demo'`,
+	} {
+		if _, err := tx.Exec(ctx, sql, stayID); err != nil {
+			return err
+		}
+	}
+	return tx.Commit(ctx)
+}
