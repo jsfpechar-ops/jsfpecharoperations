@@ -35,5 +35,10 @@ Status: review
 ## Questions
 - None.
 
+## CI round 2 (after first PR run went red)
+- Root causes: (a) the `app2.css` key bump made `go/internal/hostweb/layout/testdata/*` golden files stale and required the Go port in `go/internal/hostweb/layout/shell.html:25`; (b) the branch was based on 216a0877 while main moved to 698b4721, whose stays/i18n/claim changes fixed `test_go_host_i18n`, `test_sm_reservation_claim_state` and Go `TestMarkFiledByHandUnit`.
+- Fixes: rebased onto origin/main; bumped the key in `shell.html`; ran `App/scripts/go_layout_golden.py` (regenerated `v2_cs_impersonating.html`, `v2_alerts_hidden.html` — one-line key diff each).
+- Re-verified locally after rebase: `test_go_layout_golden.py test_go_host_i18n.py test_sm_reservation_claim_state.py test_static_versions.py` → 16 passed; `test_0414_billing_banner_browser.py` → 1 passed (Chromium); `go test ./internal/hostweb/layout/...` and `go test ./internal/web/stays -run TestMarkFiledByHandUnit` → ok.
+
 ## Owner steps
 - Watch CI on the PR; merge with `scripts/merge-pr-on-green.sh` when green; spot-check staging admin preview at 1280/390.
