@@ -52,6 +52,10 @@ PINNED = [
      "mark_filed_by_hand"),
     ("App/app/reporting.py", "sql", "cas", {SENT}, {PENDING, ERROR, BLOCKED}, "cas",
      "undo_filed_by_hand: back to manual_prev_state, else pending"),
+    ("go/internal/web/stays/claim_ops.go", "sql", "cas", {PENDING, ERROR, BLOCKED}, {SENT}, "cas",
+     "mark_filed_by_hand"),
+    ("go/internal/web/stays/claim_ops.go", "sql", "cas", {SENT}, {PENDING, ERROR, BLOCKED}, "cas",
+     "undo_filed_by_hand: back to manual_prev_state, else pending"),
     ("App/app/routes/admin.py", "dict", "(", {NEW}, {PENDING, NOT_REQUIRED}, "insert",
      "guest_create"),
     ("App/app/routes/admin.py", "subscript", "reporting.NOT_REQUIRED",
@@ -71,6 +75,12 @@ PINNED = [
      "PlanOutcome: refused, or duplicate = sent (applied by updateGuest in store.go)"),
     ("go/internal/ubyport/collect.go", "sql", "none", {PENDING, ERROR, BLOCKED}, {NOT_REQUIRED}, "none",
      "collect: guest not reportable"),
+    ("go/internal/web/stays/guest_edit.go", "subscript", "state",
+     {PENDING, ERROR, BLOCKED, NOT_REQUIRED}, {NOT_REQUIRED}, "cas",
+     "guest_update: nationality not reportable (sent is kept)"),
+    ("go/internal/web/stays/guest_edit.go", "subscript", "state",
+     {ERROR, BLOCKED, NOT_REQUIRED}, {PENDING}, "cas",
+     "guest_update: rule 10.4(5)"),
 ]
 
 # "submit_state": <value>, but not the update_if guard {"submit_state": guest["submit_state"]}

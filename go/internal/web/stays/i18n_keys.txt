@@ -26,6 +26,11 @@ calendar.departure
 calendar.guests_error
 calendar.overlap
 flash.error.*
+flash.guest.restricted
+flash.guest.unrestricted
+flash.guests.identity_verified
+flash.guests.id_check_recorded
+flash.identity.revealed
 flash.reservations.created
 flash.reservations.access_reopened
 flash.reservations.claim_released
