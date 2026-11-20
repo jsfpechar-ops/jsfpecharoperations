@@ -1,0 +1,8 @@
+grep -cF 'booking := NewBookingWebhook(pool, getenv, now)' go/internal/payments/webhook.go | tail -1
+grep -cF 'forwardToPython' go/internal/payments/webhook.go | tail -1
+grep -cF 'BookingSwitchEnv' go/internal/payments/booking_webhook.go | tail -1
+grep -cF 'func fwdPost(h http.HandlerFunc' go/internal/payments/webhook_test.go | tail -1
+grep -cF 'func TestBookingWebhookHandlesInGo(t *testing.T)' go/internal/payments/booking_webhook_test.go | tail -1
+grep -cF 'UBYHOST_PY_WEBHOOK_URL' deploy/lightsail/docker-compose.yml | tail -1
+grep -cF 'UBYHOST_PY_WEBHOOK_URL' docs/ENVIRONMENT.md | tail -1
+find docs/tasks/1781-files -name '*.txt' ! -name 'ANCHORS.txt' | wc -l | tail -1

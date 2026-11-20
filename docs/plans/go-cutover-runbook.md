@@ -87,7 +87,7 @@ Add each block to the existing value, never replace it. One wave per sitting; wa
 |---|---|
 | `/settings/purge-expired` (1609) | P10 writable `/data` and three mornings where the retention dry-run counts of Go and Python match. A real purge deletes data permanently. |
 | `retention` and `stay_fee_mail` job kinds | `retention`: dry-run counts matched three mornings (status.md 11-13 notes a retention dry-run, outcome UNVERIFIED), then add to `UBYHOST_GO_JOB_KINDS` (it is in the queue list already). `stay_fee_mail`: add to `UBYHOST_JOB_QUEUE_KINDS` and `UBYHOST_GO_JOB_KINDS` together, only after wave 10 steps 1 to 3 and one dry week of sealed periods matching Python. |
-| `/webhooks/stripe` | Add only after you have checked the Go webhook; booking-site events are forwarded to Python by `UBYHOST_PY_WEBHOOK_URL`. Stripe is in test mode (status.md). |
+| `/webhooks/stripe` | Add after the Go payment webhook tests are green (`go test ./internal/payments/ -run Webhook`). Go handles booking-site events (`site_booking_id`) itself; there is no Python forward. Stripe is in test mode (status.md). |
 | `/demo` and `/demo/reset` | Brief 1597 (demo seed) is blocked; 1596 says both move together. Keep both on Python. |
 | `/stay-fees/*` seal routes | See wave 10. |
 
