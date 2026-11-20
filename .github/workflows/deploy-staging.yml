@@ -12,10 +12,17 @@ name: Deploy staging
 # police, with the property's own test web-service credentials). "prod" is
 # never possible here.
 #
-# MANUAL ONLY: Actions → Deploy staging → Run workflow, pick the branch in
-# "Use workflow from" (or type another branch below). Secrets come from the
-# GitHub environment "staging": LIGHTSAIL_HOST, LIGHTSAIL_SSH_PRIVATE_KEY,
-# LIGHTSAIL_KNOWN_HOSTS, and the variable LIGHTSAIL_HEALTH_URL.
+# TWO WAYS IN (1865):
+#
+#   * automatically: a green CI run on main deploys exactly that head commit,
+#     with ubyport_env=mock. Staging is the first place a change runs, so
+#     production only ever sees what has been clicked through here.
+#   * by hand: Actions → Deploy staging → Run workflow, pick any branch in
+#     "Use workflow from" (or type another branch below), mock or test.
+#
+# Secrets come from the GitHub environment "staging": LIGHTSAIL_HOST,
+# LIGHTSAIL_SSH_PRIVATE_KEY, LIGHTSAIL_KNOWN_HOSTS, and the variable
+# LIGHTSAIL_HEALTH_URL.
 
 on:
   workflow_dispatch:
@@ -38,6 +45,10 @@ on:
         required: false
         type: boolean
         default: false
+  workflow_run: # zizmor: ignore[dangerous-triggers] runs only for CI on main pushes; the job checks conclusion == success, head_branch == main, event != pull_request, and deploys that run's head_sha
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
 
 permissions:
   contents: read
@@ -50,6 +61,14 @@ concurrency:
 
 jobs:
   lightsail:
+    # 1865: a run triggered by CI on main deploys that run's head commit; a
+    # manual run deploys the branch picked in the UI (or typed in `branch`).
+    if: >-
+      github.event_name == 'workflow_dispatch'
+      || (github.event_name == 'workflow_run'
+      && github.event.workflow_run.conclusion == 'success'
+      && github.event.workflow_run.head_branch == 'main'
+      && github.event.workflow_run.event != 'pull_request')
     # 0422: deploy-lightsail.yml pushes the image to GHCR. Granted here, not
     # at workflow level, so the other job keeps read-only permissions.
     permissions:
@@ -59,7 +78,7 @@ jobs:
     uses: ./.github/workflows/deploy-lightsail.yml
     with:
       environment: staging
-      ref: ${{ inputs.branch || github.ref_name }}
-      require_green_ci: ${{ !inputs.skip_ci_check }}
+      ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || inputs.branch || github.ref_name }}
+      require_green_ci: ${{ github.event_name == 'workflow_run' || !inputs.skip_ci_check }}
       ubyport_env: ${{ inputs.ubyport_env || 'mock' }}
     secrets: inherit
