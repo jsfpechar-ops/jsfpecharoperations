@@ -12,14 +12,14 @@ Status: review
 ## Commands
 
 1. `pytest tests/test_go_page_parity_screenshots.py -q -x`: `2 passed, 1 skipped` (login smoke skipped: no `UBYHOST_TEST_DATABASE_URL` here).
-2. `python3 scripts/context_lint.py`: pass after report added; workflow/test-map kept under cap with short §6 pointer to brief 1820.
+2. `python3 scripts/context_lint.py`: OK (workflow/test-map at token cap; §6 lives in brief 1820 + executor.md pointer).
 
 ## §7
 
 - [x] Script + report outputs at 390/768/1280.
 - [x] `--fail-on-visible` exits 1 on visible diffs.
 - [x] Pytest smoke.
-- [x] Brief holds full §6 snippet for page ports; workflow links brief 1820.
+- [x] Brief holds full §6 snippet; executor.md points to it.
 
 ## Deviations
 
