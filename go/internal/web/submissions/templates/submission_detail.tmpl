@@ -68,7 +68,7 @@
     </div>
     <div class="detail-metric">
       <div class="metric-label">{{t "reports.detail.finished"}}</div>
-      <div class="metric-value small-value">{{if $s.FinishedAt}}{{datetime_local $s.FinishedAt "seconds"}}{{else}}—{{end}}</div>
+      <div class="metric-value small-value">{{if $s.FinishedAt}}{{datetime_local $s.FinishedAt true}}{{else}}—{{end}}</div>
     </div>
     <div class="detail-metric">
       <div class="metric-label">{{t "reports.detail.guests"}}</div>
