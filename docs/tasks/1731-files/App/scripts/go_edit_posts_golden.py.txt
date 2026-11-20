@@ -87,14 +87,26 @@ def _seed():
 
 
 def _client(owner_id: int):
-    from app import login_link
+    import re
+
+    from app import db, login_link
+    from app.main import app
     from fastapi.testclient import TestClient
 
-    from main import app
-
-    token = login_link.sign_session({"uid": owner_id, "sv": 1})
     client = TestClient(app)
-    client.cookies.set("ubyhost_session", token)
+
+    def page_csrf() -> str:
+        page = client.get("/l/does-not-exist").text
+        return re.search(r'<meta name="csrf-token" content="([^"]*)"', page).group(1)
+
+    account = db.query_one("SELECT * FROM user_account WHERE id = ?", (owner_id,))
+    resp = client.post(
+        "/login/link",
+        data={"t": login_link.issue(account), "_csrf": page_csrf()},
+        follow_redirects=False,
+    )
+    if resp.status_code != 303:
+        raise RuntimeError(f"login failed: {resp.status_code}")
     return client
 
 
@@ -144,8 +156,13 @@ def _write_cases(owner_id: int):
 
 
 def main() -> int:
+    sys.path.insert(0, str(APP))
     db_path = tempfile.mkdtemp()
-    os.environ["UBYHOST_DATABASE"] = str(Path(db_path) / "golden.sqlite3")
+    os.environ.setdefault("UBYHOST_SECRET_KEY", "golden-secret-key-not-for-real-use")
+    os.environ.setdefault("UBYHOST_TERMS_VERSION", "t1")
+    os.environ.setdefault("UBYHOST_PRIVACY_VERSION", "p1")
+    os.environ.setdefault("UBYHOST_DPA_VERSION", "d1")
+    os.environ["UBYHOST_DB"] = str(Path(db_path) / "golden.sqlite3")
     _seed()
     data = _write_cases(OWNER_ID)
     OUT.parent.mkdir(parents=True, exist_ok=True)
