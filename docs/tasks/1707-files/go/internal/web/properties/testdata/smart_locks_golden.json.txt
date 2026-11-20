@@ -1,0 +1,35 @@
+{
+  "now": "2026-08-01T12:00:00+00:00",
+  "cases": [
+    {
+      "name": "signed_out_setup",
+      "method": "POST",
+      "path": "/smart-locks/setup",
+      "status": 303,
+      "location": "/login",
+      "flash_key": "",
+      "body": "_csrf=x",
+      "user": 0
+    },
+    {
+      "name": "signed_out_refresh",
+      "method": "POST",
+      "path": "/smart-locks/refresh",
+      "status": 303,
+      "location": "/login",
+      "flash_key": "",
+      "body": "_csrf=x",
+      "user": 0
+    },
+    {
+      "name": "signed_out_remove",
+      "method": "POST",
+      "path": "/smart-locks/remove",
+      "status": 303,
+      "location": "/login",
+      "flash_key": "",
+      "body": "_csrf=x",
+      "user": 0
+    }
+  ]
+}

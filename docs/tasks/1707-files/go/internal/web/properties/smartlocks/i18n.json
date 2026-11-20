@@ -1,0 +1,53 @@
+{
+  "cs": {
+    "flash.error.smart_locks_budget": "Měsíční limit TTLock je téměř vyčerpán. Zkuste to příští měsíc.",
+    "flash.error.smart_locks_failed": "TTLock neodpověděl. Zkuste to za pár minut.",
+    "flash.error.smart_locks_missing_account": "Nejdřív nastavte chytré zámky.",
+    "flash.error.smart_locks_plain_key": "UbyHost dostal klíč, ale ne správcovský. V aplikaci TTLock ten klíč smažte a přidejte UbyHost přes Autorizovaný správce a Vytvořit správce.",
+    "flash.error.smart_locks_rate_limited": "Příliš mnoho pokusů. Zkuste to za hodinu.",
+    "flash.error.smart_locks_reauth": "TTLock už toto připojení nepřijímá. Odeberte ho a nastavte znovu.",
+    "flash.error.smart_locks_terms": "Pro pokračování přijměte podmínky pro kódy ke dveřím.",
+    "flash.error.smart_locks_unavailable": "Chytré zámky nejsou zapnuté.",
+    "flash.ok.smart_locks_found": "Nalezeno %(count)s zámků.",
+    "flash.ok.smart_locks_found.few": "Nalezeny %(count)s zámky.",
+    "flash.ok.smart_locks_found.one": "Nalezen %(count)s zámek.",
+    "flash.ok.smart_locks_none_yet": "Zatím nebyl nalezen žádný zámek. V aplikaci TTLock přidejte UbyHost jako Autorizovaného správce (kroky 2 až 7 výše) a zkontrolujte znovu.",
+    "flash.ok.smart_locks_ready": "Nastaveno. Teď sdílejte své zámky.",
+    "flash.ok.smart_locks_removed": "Připojení TTLock odebráno.",
+    "flash.ok.smart_locks_removed_local": "Odpojeno v UbyHost. TTLock neodpověděl, proto UbyHost odeberte i ze seznamu Autorizovaný správce v aplikaci TTLock."
+  },
+  "en": {
+    "flash.error.smart_locks_budget": "The monthly TTLock limit is nearly used. Try again next month.",
+    "flash.error.smart_locks_failed": "TTLock did not answer. Try again in a few minutes.",
+    "flash.error.smart_locks_missing_account": "Set up smart locks first.",
+    "flash.error.smart_locks_plain_key": "UbyHost received a key, but not an admin key. In the TTLock app delete that key, then add UbyHost with Authorized Admin, then Create Admin.",
+    "flash.error.smart_locks_rate_limited": "Too many attempts. Try again in an hour.",
+    "flash.error.smart_locks_reauth": "TTLock no longer accepts this connection. Remove it and set it up again.",
+    "flash.error.smart_locks_terms": "Accept the door code terms to continue.",
+    "flash.error.smart_locks_unavailable": "Smart locks are not switched on.",
+    "flash.ok.smart_locks_found": "%(count)s locks found.",
+    "flash.ok.smart_locks_found.few": "%(count)s locks found.",
+    "flash.ok.smart_locks_found.one": "%(count)s lock found.",
+    "flash.ok.smart_locks_none_yet": "No lock found yet. In the TTLock app, add UbyHost as Authorized Admin (steps 2 to 7 above), then check again.",
+    "flash.ok.smart_locks_ready": "Set up. Now share your locks.",
+    "flash.ok.smart_locks_removed": "TTLock connection removed.",
+    "flash.ok.smart_locks_removed_local": "Disconnected in UbyHost. TTLock did not answer, so also remove UbyHost from Authorized Admin in the TTLock app."
+  },
+  "vi": {
+    "flash.error.smart_locks_budget": "Hạn mức TTLock hằng tháng sắp hết. Hãy thử lại vào tháng sau.",
+    "flash.error.smart_locks_failed": "TTLock không phản hồi. Hãy thử lại sau vài phút.",
+    "flash.error.smart_locks_missing_account": "Hãy thiết lập khóa thông minh trước.",
+    "flash.error.smart_locks_plain_key": "UbyHost nhận được một khóa điện tử nhưng không phải khóa quản trị. Trong ứng dụng TTLock, hãy xóa khóa đó, rồi thêm UbyHost qua Authorized Admin, sau đó Create Admin.",
+    "flash.error.smart_locks_rate_limited": "Thử quá nhiều lần. Hãy thử lại sau một giờ.",
+    "flash.error.smart_locks_reauth": "TTLock không còn chấp nhận kết nối này. Hãy gỡ rồi thiết lập lại.",
+    "flash.error.smart_locks_terms": "Chấp nhận điều khoản về mã cửa để tiếp tục.",
+    "flash.error.smart_locks_unavailable": "Khóa thông minh chưa được bật.",
+    "flash.ok.smart_locks_found": "Tìm thấy %(count)s khóa.",
+    "flash.ok.smart_locks_found.few": "Tìm thấy %(count)s khóa.",
+    "flash.ok.smart_locks_found.one": "Tìm thấy %(count)s khóa.",
+    "flash.ok.smart_locks_none_yet": "Chưa tìm thấy khóa nào. Trong ứng dụng TTLock, hãy thêm UbyHost làm Authorized Admin (bước 2 đến 7 ở trên), rồi kiểm tra lại.",
+    "flash.ok.smart_locks_ready": "Đã thiết lập. Giờ hãy chia sẻ khóa của bạn.",
+    "flash.ok.smart_locks_removed": "Đã gỡ kết nối TTLock.",
+    "flash.ok.smart_locks_removed_local": "Đã ngắt kết nối trong UbyHost. TTLock không phản hồi, nên hãy gỡ thêm UbyHost khỏi Authorized Admin trong ứng dụng TTLock."
+  }
+}

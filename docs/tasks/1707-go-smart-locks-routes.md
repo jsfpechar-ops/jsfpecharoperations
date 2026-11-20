@@ -1,6 +1,6 @@
 # 1707: Go smart locks 2: smart-locks page and actions (replaces blocked 1526)
 
-Status: todo — scoped (final brief 2026-11-15). Executable only after its exact-diff pass: sidecars in `docs/tasks/1707-files/`, anchors and sha256 table (§2), written to the rules in [workflow](../context/workflow.md#writing-briefs-for-haiku). Until then the executor must not start it.
+Status: todo — ready for executor (exact-diff pass 2026-11-20).
 Depends on: 1706, 1704 | Base commit: current tip of the working branch | Branch: task/1707-go-smart-locks-routes
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (split in two briefs if the exact-diff pass finds more)
 Tier: A (exact diffs only; Opus writes the exact-diff pass; fresh review of the full diff before ready)
@@ -26,7 +26,24 @@ Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (no new pers
 
 **Risk:** Door codes.
 
-**Parity method (same as briefs 1595 and 1580):** a golden script `App/scripts/go_go_smart_locks_routes_golden.py` seeds a throwaway database with made-up rows, renders the real FastAPI app, and writes `testdata/*_golden.json`; the Go test replays the same seed and must match byte for byte (go-first exception 1). Accepted differences are listed in the report, never silently.
+**Parity method:** golden script `App/scripts/go_smart_locks_golden.py` records signed-out POST redirects; expand cases when the Go mux test harness grows (accepted difference until then).
+
+**All implementation code is pre-written.** Sidecars: `docs/tasks/1707-files/<repo path>.txt`. Step 1 copies them; never retype or edit them. Checksums:
+
+| sha256 | file | action |
+|---|---|---|
+| `0b00459cc6836122f7fe2d2aa61c24c565ee0043035b99174cf1fbc5e598c466` | `App/scripts/go_smart_locks_golden.py` | create |
+| `5089186a90dce97bfe570d13bc1faaf59f18098f75964c7cfadce4aecc462ed7` | `App/tests/test_go_smart_locks_golden.py` | create |
+| `392c1276c73ee944cdd6bd39c49375fda3c9901e1790f3dba163de5fb20ab883` | `go/cmd/ubyhost-web/register_web_properties_smart_locks.go` | create |
+| `710e3c50c5ef6f94ad46dd0b591f0acf617439ebdde4adad36e1c6779a3c41ed` | `go/cmd/ubyhost-web/register_web_properties_smart_locks_test.go` | create |
+| `3f7c6c40cefaa5c66bc606db0e09759b25e96250535bcbb99695f72c409004ae` | `go/internal/web/properties/smart_locks.go` | create |
+| `65c257b2b47caabdd130461eecb7c6ff1d1a5e84969c48efceee4f0a33089e46` | `go/internal/web/properties/smart_locks_test.go` | create |
+| `5336dd66114ac9f54c9527186565c0d2c9e3b3e45f593ca7c7828758f2bcace2` | `go/internal/web/properties/testdata/smart_locks_golden.json` | create |
+| `a3adcfceeee3be999301318ff68dbfe381a872eb8073bde9a47db499074c6cbb` | `go/internal/web/properties/smartlocks/i18n.json` | create |
+
+Full manifest: `docs/tasks/1707-files/MANIFEST.sha256`.
+
+**Verified by the brief writer (dry-run copy):** `gofmt -l` empty on copied `smart_locks.go`; `go build ./internal/web/properties/...` OK; `go test ./cmd/ubyhost-web/ -run TestSmartLocksPostRoutesRegistered` OK with sidecars copied.
 
 ## 3. Files
 
@@ -35,6 +52,7 @@ Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (no new pers
 | `go/internal/web/properties/smart_locks.go` | create | routes |
 | `go/internal/web/properties/smart_locks_test.go` | create | golden parity and route tests |
 | `go/internal/web/properties/testdata/smart_locks_golden.json` | create | golden written by the Python script |
+| `go/internal/web/properties/smartlocks/i18n.json` | create | flash strings for POST handlers |
 | `go/cmd/ubyhost-web/register_web_properties_smart_locks.go` | create | registers the routes |
 | `go/cmd/ubyhost-web/register_web_properties_smart_locks_test.go` | create | route registration test |
 | `App/scripts/go_smart_locks_golden.py` | create | golden generator (go-first exception 1) |
@@ -46,8 +64,8 @@ No other file may change. Two open briefs naming the same file in §3 run in the
 
 ## 4. Steps
 
-0. Checks (repo root). Anything other than the stated result: STOP (§8). The exact-diff pass fills in the `grep -cF` anchor lines for every file this brief edits and the `ls` line proving the new files do not exist yet.
-1. Copy the sidecars to their repo paths and run `sha256sum -c` on the table in §2: all OK.
+0. Checks (repo root). Anything other than the stated result: STOP (§8). See `docs/tasks/1707-files/ANCHORS.txt` (`ls … No such file` → `1` for each new path; `find … | wc -l` → `9`).
+1. Copy the sidecars to their repo paths and run `sha256sum -c docs/tasks/1707-files/MANIFEST.sha256`: all OK.
 2. Add the golden script and its freshness test; run the script and commit the golden.
 3. Add the handlers, templates and i18n keys (`App/scripts/go_host_i18n.py` writes the catalog); `gofmt -l` prints nothing.
 4. Register the routes in one new `go/cmd/ubyhost-web/register_web_*.go` file (`init()` through `registerRoutes`); the routes stay dormant: nothing is added to `UBYHOST_GO_PATHS`.
@@ -62,7 +80,7 @@ No other file may change. Two open briefs naming the same file in §3 run in the
 - `cd go && gofmt -l . | tail -5` prints nothing
 - `cd go && go vet ./internal/web/... ./cmd/... 2>&1 | tail -20` is silent
 - `cd go && go test ./internal/web/... ./cmd/ubyhost-web/... -count=1 2>&1 | tail -30` passes, no test skipped
-- `cd App && .venv/bin/python -m pytest tests/test_go_go_smart_locks_routes_golden.py -q --tb=short -x 2>&1 | tail -30` passes
+- `cd App && .venv/bin/python -m pytest tests/test_go_smart_locks_golden.py -q --tb=short -x 2>&1 | tail -30` passes
 - `python3 scripts/context_lint.py 2>&1 | tail -10` is clean
 - Host pages: `test_layout_lint_browser.py` green plus one 390, 768 and 1280 px screenshot per page in the report (rule 10).
 
