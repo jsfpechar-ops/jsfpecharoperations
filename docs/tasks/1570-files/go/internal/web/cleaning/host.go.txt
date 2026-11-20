@@ -55,6 +55,20 @@ const suffix = " · UbyHost"
 // Wrap is the metrics wrapper of cmd/ubyhost-web (metrics.wrap).
 type Wrap func(route string, h http.HandlerFunc) http.Handler
 
+// queueKick is set by cmd/ubyhost-web (SetQueueKick). It runs one cleaner-queue pass in the
+// background after a TTLock code was queued or a code was removed. Nil means no kick.
+var queueKick func()
+
+// SetQueueKick sets the function that handlers call after a saved TTLock code request.
+func SetQueueKick(f func()) { queueKick = f }
+
+// kickQueue calls the kick, if one is set. It never blocks the request.
+func kickQueue() {
+	if queueKick != nil {
+		queueKick()
+	}
+}
+
 // hostServer holds what the host handlers share.
 type hostServer struct {
 	pool   *pgxpool.Pool

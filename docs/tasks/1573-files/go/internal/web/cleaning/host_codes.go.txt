@@ -90,6 +90,9 @@ func (s *hostServer) codeAction() http.HandlerFunc {
 			s.renderSettings(w, r, h, at, id, key, http.StatusUnprocessableEntity, nil)
 			return
 		}
+		if a := r.PathValue("action"); a == "ttlock" || a == "remove" {
+			kickQueue()
+		}
 		redirect(w, "/cleaning/properties/"+strconv.FormatInt(id, 10)+"?notice=saved")
 	}
 }
