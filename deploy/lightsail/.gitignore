@@ -7,3 +7,5 @@ caddy/Caddyfile.active
 caddy/Caddyfile.previous
 .deployed-sha
 .restored-box
+# Local, per-box compose overrides (e.g. a temporary healthcheck patch).
+docker-compose.override.yml

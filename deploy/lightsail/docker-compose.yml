@@ -341,6 +341,22 @@ services:
     pull_policy: never
     restart: unless-stopped
     entrypoint: ["python", "-m", "mock_ubyport.server"]
+    # The image's own HEALTHCHECK probes :8080/healthz, the web app's port.
+    # This container runs the mock instead and serves on :8081, so inheriting
+    # that probe marked a perfectly working mock "unhealthy" on every staging
+    # box; the probe below asks the port the mock really answers on.
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8081/healthz', timeout=3)",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     environment:
       MOCK_UBYPORT_HOST: 0.0.0.0
       MOCK_UBYPORT_PORT: "8081"
