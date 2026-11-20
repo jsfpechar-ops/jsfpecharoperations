@@ -1,0 +1,38 @@
+package guest
+
+import (
+	"net/http"
+	"strings"
+
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
+)
+
+// GuestLanguage is guest._language: ?lang=, cookie ubyhost_guest_lang, then Accept-Language.
+func GuestLanguage(r *http.Request) string {
+	if v := r.URL.Query().Get("lang"); isGuestLang(v) {
+		return v
+	}
+	if v := hostweb.Cookie(r, "ubyhost_guest_lang"); isGuestLang(v) {
+		return v
+	}
+	al := r.Header.Get("Accept-Language")
+	for _, part := range strings.Split(al, ",") {
+		code := strings.ToLower(strings.TrimSpace(strings.SplitN(part, ";", 2)[0]))
+		if i := strings.Index(code, "-"); i > 0 {
+			code = code[:i]
+		}
+		if isGuestLang(code) {
+			return code
+		}
+	}
+	return "en"
+}
+
+func isGuestLang(v string) bool {
+	switch v {
+	case "en", "cs", "de", "es", "fr", "uk", "vi":
+		return true
+	default:
+		return false
+	}
+}
