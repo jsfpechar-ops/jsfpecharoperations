@@ -1,0 +1,26 @@
+package guest
+
+// Brief 1723: guest_form_new/edit/remove/relang. Full port lands with brief
+// 1720–1722 (shared guest shell). This file registers dormant routes.
+
+import (
+	"net/http"
+	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+// RegisterFormPages mounts the five form routes from guest.py 2081–2362.
+func RegisterFormPages(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler) {
+	_ = pool
+	_ = getenv
+	_ = now
+	stub := func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, "guest form pages: pending 1720 shell", http.StatusNotImplemented)
+	}
+	mux.Handle("GET /l/{token}/{reservation_id}/new", wrap("guest_form_new", stub))
+	mux.Handle("GET /l/{token}/{reservation_id}/edit/{guest_id}", wrap("guest_form_edit", stub))
+	mux.Handle("GET /l/{token}/{reservation_id}/remove/{guest_id}", wrap("guest_remove_confirm", stub))
+	mux.Handle("POST /l/{token}/{reservation_id}/remove/{guest_id}", wrap("guest_remove", stub))
+	mux.Handle("POST /l/{token}/{reservation_id}/relang", wrap("guest_form_relang", stub))
+}

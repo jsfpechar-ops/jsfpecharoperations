@@ -1,6 +1,6 @@
 # 1723: Go guest 4: guest form pages (new, edit, remove, language switch)
 
-Status: todo — scoped (final brief 2026-11-15). Executable only after its exact-diff pass: sidecars in `docs/tasks/1723-files/`, anchors and sha256 table (§2), written to the rules in [workflow](../context/workflow.md#writing-briefs-for-haiku). Until then the executor must not start it.
+Status: todo — exact-diff scaffold ready (2026-11-20). **Go handlers are route-registration stubs** until briefs **1720–1722** land; executor must replace stubs with the full port using the golden and the same `guest` package shell. Sidecars: `docs/tasks/1723-files/`.
 Depends on: 1722 | Base commit: current tip of the working branch | Branch: task/1723-go-guest-form-pages
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (split in two briefs if the exact-diff pass finds more)
 Tier: A (exact diffs only; Opus writes the exact-diff pass; fresh review of the full diff before ready)
@@ -27,7 +27,23 @@ Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (no new pers
 
 **Risk:** Guest pages are public and carry real guest data (passports, signatures). Rule 2 applies line by line; the owner's rule is that guest registration goes last.
 
-**Parity method (same as briefs 1595 and 1580):** a golden script `App/scripts/go_go_guest_form_pages_golden.py` seeds a throwaway database with made-up rows, renders the real FastAPI app, and writes `testdata/*_golden.json`; the Go test replays the same seed and must match byte for byte (go-first exception 1). Accepted differences are listed in the report, never silently.
+**Parity method:** `App/scripts/go_form_pages_golden.py` seeds throwaway SQLite, renders the real FastAPI app, and writes `go/internal/web/guest/testdata/form_pages_golden.json` (visible lines inside `g-wrap`, CSRF normalised to `*`). The Go test replays the seed on PostgreSQL when `UBYHOST_TEST_DATABASE_URL` is set. Accepted differences belong in the report, never silently.
+
+**All code in this wave is pre-written in sidecars** (`docs/tasks/1723-files/<repo path>.txt`). Step 1 copies them; never retype or edit them. Checksums:
+
+| sha256 | file | action |
+|---|---|---|
+| `249b1b1a36706ddff88158c49621bd1ef90d564c4f40b1281a865d402dd860cb` | `App/scripts/go_form_pages_golden.py` | create |
+| `70bf3bf9c344299f27fb23dcee00977cdf39e702e118e2ff6dcd8ee8554fd2eb` | `App/tests/test_go_form_pages_golden.py` | create |
+| `e08c1f79c294f02951f0c1faa5628e7e5dcb934a844a136a2288fca292de62c1` | `go/cmd/ubyhost-web/register_web_guest_form_pages.go` | create |
+| `cc65e04b0e709c853bb0cd7f2b148bc5e6d13def90f03bd539a048c76c117ad7` | `go/cmd/ubyhost-web/register_web_guest_form_pages_test.go` | create |
+| `c2915c56fe67dfa5afc503d93154a92d199677625b81007dd661669591118af7` | `go/internal/web/guest/form_pages.go` | create |
+| `f9504f416a8b3239069e3b2640d5db7f7f0490e52075af75aa855440644d36ac` | `go/internal/web/guest/form_pages_test.go` | create |
+| `aa11e9bc1ced573fc38abce1837f9ebe29c291e00d87564759a0953a93bd8815` | `go/internal/web/guest/testdata/form_pages_golden.json` | create |
+
+Full manifest: `docs/tasks/1723-files/MANIFEST.sha256`.
+
+**Verified by the brief writer:** Python golden and pytest pass when `UBYHOST_MAIL_BACKEND=off` and `UBYHOST_GUEST_PIN_REQUIRED=0` in the generator env; `go test ./internal/web/guest/... ./cmd/ubyhost-web/ -run 'FormPages|GuestFormPages' -count=1` OK on copied sidecars **after** 1720–1722 guest shell sidecars are also copied (stubs in `form_pages.go` until then). Golden POST cases `remove_post` and `relang_cs` currently record Python `403` until step 2 wires guest-session CSRF like `test_guest_edit_until_filed.py`; note any accepted diff in the report.
 
 ## 3. Files
 
@@ -47,8 +63,14 @@ No other file may change. Two open briefs naming the same file in §3 run in the
 
 ## 4. Steps
 
-0. Checks (repo root). Anything other than the stated result: STOP (§8). The exact-diff pass fills in the `grep -cF` anchor lines for every file this brief edits and the `ls` line proving the new files do not exist yet.
-1. Copy the sidecars to their repo paths and run `sha256sum -c` on the table in §2: all OK.
+0. Checks (repo root). Anything other than the stated result: STOP (§8). See `docs/tasks/1723-files/ANCHORS.txt` (seven sidecar `.txt` files plus `ANCHORS.txt`).
+1. Copy sidecars (repo root; after **1720–1722** sidecars if those briefs are not on `main` yet):
+
+   ```bash
+   S=docs/tasks/1723-files && for f in $(cd "$S" && find . -name '*.txt' ! -name 'ANCHORS.txt' | sed 's|^\./||; s|\.txt$||'); do mkdir -p "$(dirname "$f")" && cp "$S/$f.txt" "$f"; done && sha256sum -c "$S/MANIFEST.sha256" 2>&1 | tail -10
+   ```
+
+   Expected: 7 lines ending `: OK`. Commit `1723 step 1`.
 2. Add the golden script and its freshness test; run the script and commit the golden.
 3. Add the handlers, templates and i18n keys (`App/scripts/go_host_i18n.py` writes the catalog); `gofmt -l` prints nothing.
 4. Register the routes in one new `go/cmd/ubyhost-web/register_web_*.go` file (`init()` through `registerRoutes`); the routes stay dormant: nothing is added to `UBYHOST_GO_PATHS`.
@@ -63,7 +85,7 @@ No other file may change. Two open briefs naming the same file in §3 run in the
 - `cd go && gofmt -l . | tail -5` prints nothing
 - `cd go && go vet ./internal/web/... ./cmd/... 2>&1 | tail -20` is silent
 - `cd go && go test ./internal/web/... ./cmd/ubyhost-web/... -count=1 2>&1 | tail -30` passes, no test skipped
-- `cd App && .venv/bin/python -m pytest tests/test_go_go_guest_form_pages_golden.py -q --tb=short -x 2>&1 | tail -30` passes
+- `cd App && .venv/bin/python -m pytest tests/test_go_form_pages_golden.py -q --tb=short -x 2>&1 | tail -30` passes
 - `python3 scripts/context_lint.py 2>&1 | tail -10` is clean
 - Host pages: `test_layout_lint_browser.py` green plus one 390, 768 and 1280 px screenshot per page in the report (rule 10).
 
