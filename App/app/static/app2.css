@@ -2961,6 +2961,83 @@ body.v2 .toast-stack .toast[data-toast-kind] > a.ui-btn{margin-right:8px}
 body.v2 .toast-stack .toast .toast-pill { min-height: 44px; padding: 8px 18px; border: 0; border-radius: 999px; background: var(--s); color: var(--ink); font-size: 14px; font-weight: 700; text-decoration: none; }
 body.v2 .toast-stack .toast .toast-pill:hover { color: var(--ink); }
 body.v2 .toast-stack .toast .toast-pill:focus-visible { outline: 2px solid #d0452d; outline-offset: 2px; }
+/* 1863: v2 info/warning/partial feedback toasts (undo_stay, app.js feedback-card-icon) match success card layout. */
+body.v2 .toast-stack .toast[data-toast-kind="info"],
+body.v2 .toast-stack .toast[data-toast-kind="warning"],
+body.v2 .toast-stack .toast[data-toast-kind="partial"] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  margin: 0 0 var(--space-4, 16px);
+  padding: 4px 4px 4px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+body.v2 .toast-stack .toast[data-toast-kind="info"] { border-color: #c5d4e8; border-left: 4px solid #426b9a; }
+body.v2 .toast-stack .toast[data-toast-kind="warning"],
+body.v2 .toast-stack .toast[data-toast-kind="partial"] { border-color: #e8d4a8; border-left: 4px solid #a15c00; background: #fffaf0; }
+body.v2 .toast-stack .toast[data-toast-kind="info"] .feedback-card-icon {
+  flex: 0 0 24px;
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  border-radius: 50%;
+  background: #edf3fa;
+  color: #315b8a;
+  font-size: 14px;
+  font-weight: 800;
+}
+body.v2 .toast-stack .toast[data-toast-kind="warning"] .feedback-card-icon,
+body.v2 .toast-stack .toast[data-toast-kind="partial"] .feedback-card-icon {
+  flex: 0 0 24px;
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  border-radius: 50%;
+  background: #fff0d6;
+  color: #8b4c00;
+  font-size: 14px;
+  font-weight: 800;
+}
+body.v2 .toast-stack .toast[data-toast-kind="info"] :is(.grow, .feedback-card-body),
+body.v2 .toast-stack .toast[data-toast-kind="warning"] :is(.grow, .feedback-card-body),
+body.v2 .toast-stack .toast[data-toast-kind="partial"] :is(.grow, .feedback-card-body) { flex: 1 1 160px; min-width: 0; }
+body.v2 .toast-stack .toast[data-toast-kind="info"] form { margin: 0; flex: none; display: contents; }
+body.v2 .toast-stack .toast[data-toast-kind="info"] .toast-undo {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin: 0;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--brand-ink, var(--ink));
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+body.v2 .toast-stack .toast[data-toast-kind="info"] .toast-undo:hover { background: var(--surface-hover, #f1f0ec); color: var(--ink); text-decoration: underline; }
+body.v2 .toast-stack .toast[data-toast-kind="info"] .toast-undo:focus-visible { outline: 2px solid #d0452d; outline-offset: 2px; }
 /* 0897: the property Save bar floats as a pill over the content, always within reach. */
 body.v2 .savebar[data-for="property-settings-form"]{bottom:var(--space-4);padding:10px 16px;border:1px solid var(--line);border-radius:20px;box-shadow:0 8px 24px rgba(20,20,20,.14)}
 @media (max-width:1023px){body.v2 .savebar[data-for="property-settings-form"]{bottom:calc(var(--tabbar-h) + var(--tabbar-safe) + var(--space-2));padding-bottom:10px}}
