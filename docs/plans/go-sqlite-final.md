@@ -84,7 +84,7 @@ Already live: W1, W1b, W6, W7, W8 first set. Not yet: W2 exports (due one day af
 
 | # | Brief | Tier | Depends on |
 |---|---|---|---|
-| [1730](../tasks/1730-go-submissions-reservations-read.md) | Go stays 1: submissions list/detail and stays list/detail | B | 1380/1381, 1720 not needed |
+| [1730](../tasks/1730-go-submissions-reservations-read.md) | Go stays 1 (shrunk): submissions list/detail; stay detail parity only (list 1855–1858, detail 1860–1861 on main) | B | 1380/1381, 1861 on main |
 | [1731](../tasks/1731-go-reservation-edit-posts.md) | Go stays 2: create, update, quick-edit, remove slot, archive, demo delete | A | 1730 |
 | [1732](../tasks/1732-go-claim-filed-by-hand.md) | Go stays 3: claim operations and 'filed by hand' | A | 1731, 1721 |
 | [1733](../tasks/1733-go-host-guest-edit.md) | Go stays 4: host adds and edits guests | A | 1731, 1724 (shared field model) |

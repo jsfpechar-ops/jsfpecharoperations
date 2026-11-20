@@ -1,0 +1,17 @@
+# Go submissions list and detail (brief 1730).
+# App/scripts/go_host_i18n.py writes the sibling i18n.json from App/app/host_i18n.py.
+reports.*
+submission.*
+how.reports.*
+how.toggle
+how.more
+how.housebook.*
+nav.housebook
+nav.reports
+guest.restricted_badge
+stay.detail.guests.rejected_final
+common.actions
+common.edit
+common.back
+host.filter.*
+country.name.*

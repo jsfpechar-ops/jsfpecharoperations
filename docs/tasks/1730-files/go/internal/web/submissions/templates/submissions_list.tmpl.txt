@@ -1,0 +1,63 @@
+{{/* Port of App/app/templates/submissions.html (brief 1730). */}}
+{{define "submissions_list.title"}}{{end}}
+{{define "submissions_list"}}
+<div class="head stays-head"><div class="head-title-row"><h1 class="big">{{t "reports.title"}}</h1>
+<details class="ui-how stays-how" data-how="reports">
+  <summary class="ui-how-toggle" aria-label="{{t "how.toggle"}}">{{icon "circle-help" 16}}</summary>
+  <div class="ui-how-body">
+    <p>{{t "reports.lede"}}</p>
+    {{if .ReceiptCount}}<p>{{t "reports.download_receipts_hint"}}</p>{{end}}
+    <ol class="ui-how-steps">{{range (seq 1 3)}}<li>{{t (printf "how.reports.%d" .)}}</li>{{end}}</ol>
+    <a class="ui-how-more" href="/guide#reports">{{t "how.more"}}</a>
+  </div>
+</details>
+</div><div class="stays-head-actions"><a class="btn ghost" href="/housebook">{{t "nav.housebook"}}</a>{{if .ReceiptCount}}<a class="btn ghost" href="/submissions/receipts.zip">{{icon "download" 16}}<span>{{t "reports.download_receipts"}}</span></a>{{end}}</div></div>
+
+{{if .Rows}}
+<div class="stays-phone">
+  {{range .Rows}}
+  <a class="card stay" href="/submissions/{{.ID}}">
+    <span class="sav">{{.PropertyInitial}}</span>
+    <span class="in"><b>{{.InternalName}}</b>
+      <small>{{datetime_local .CreatedAt}} &middot; {{report_mode_label $.Lang .Mode}}</small>
+      <span class="pill {{outcome_tone .State}}">{{outcome_label $.Lang .State}}</span>
+    </span>
+    {{icon "chevron-right" 20 "chev"}}
+  </a>
+  {{end}}
+</div>
+<div class="card stays-desk">
+<table aria-label="{{t "reports.title"}}">
+  <thead>
+    <tr><th>{{t "reports.when"}}</th><th>{{t "reports.property"}}</th><th>{{t "reports.mode"}}</th><th class="ui-cell-r">{{t "reports.guests"}}</th><th>{{t "reports.outcome"}}</th>
+      <th>{{t "reports.stamp"}}</th><th><span class="sr-only">{{t "common.actions"}}</span></th></tr>
+  </thead>
+  <tbody>
+  {{range .Rows}}
+    <tr class="clickable-row" data-href="/submissions/{{.ID}}" tabindex="0" role="link"
+        aria-label="{{tp "reports.open" (kv "id" .ID)}}">
+      <td class="nowrap">{{datetime_local .CreatedAt}}</td>
+      <td>{{property_identity .ApartmentID .InternalName true}}</td>
+      <td>{{report_mode_label $.Lang .Mode}}</td>
+      <td class="ui-cell-r">{{.GuestCount}}</td>
+      <td><span class="pill {{outcome_tone .State}}">{{outcome_label $.Lang .State}}</span></td>
+      <td class="ui-mono stamp-cell" title="{{.PseudoStamp}}">{{stamp_or_dash .PseudoStamp}}</td>
+      <td class="row-actions">{{row_open (printf "/submissions/%d" .ID)}}
+        {{row_menu_begin}}
+          <a class="row-menu-item" href="/submissions/{{.ID}}" role="menuitem">{{t "reports.details"}}</a>
+          {{if .HasReceipt}}
+            <a data-turbo="false" class="row-menu-item" href="/submissions/{{.ID}}/receipt.pdf" role="menuitem">{{t "reports.receipt"}}</a>
+          {{end}}
+        {{row_menu_end}}
+      </td>
+    </tr>
+  {{end}}
+  </tbody>
+</table>
+</div>
+{{else}}
+<div class="submissions-page">
+  {{empty_state (t "reports.empty_title") (t "reports.empty_body") "/reservations" (t "reports.empty_action")}}
+</div>
+{{end}}
+{{end}}
