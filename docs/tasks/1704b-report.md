@@ -1,51 +1,41 @@
 # 1704b report
 
-Status: review
-Branch: claude/beautiful-archimedes-lxhrit (not the brief's task/1704b-go-settings-pages). Step 1 commit: b7a8c45.
+Status: review  
+Branch: `cursor/1704b-go-settings-pages-dff7`  
+Go implementation on `main` (#1081 `cc0c7c4ff`); this branch adds executor step 7 docs only.
 
-## 1. Files changed (step 1, sidecars copied and hash-checked)
+## 1. Files changed (§3)
 
-- go/internal/retention/settings_view.go (new)
-- go/internal/mail/console_view.go (new)
-- go/internal/web/public/operator.go (new)
-- go/internal/web/settings/ (settings.go, data.go, templates/settings.tmpl, templates/group_security.tmpl, templates/group_phone.tmpl, i18n_keys.txt, i18n.json, settings_test.go)
-- go/cmd/ubyhost-web/register_web_settings.go (new)
-- go/cmd/ubyhost-web/register_web_settings_test.go (new)
-- docs/tasks/1704b-go-settings-pages.md and docs/tasks/1704-go-settings-menu-pages.md (Status only)
+On `main` already: `go/internal/retention/settings_view.go`, `go/internal/mail/console_view.go`, `go/internal/web/public/operator.go`, `go/internal/web/settings/**` (shell + four groups), `go/cmd/ubyhost-web/register_web_settings*.go`, sidecars under `docs/tasks/1704b-files/`. Step 7: `docs/tasks/1704b-report.md`, `docs/tasks/1704b-go-settings-pages.md`, `docs/tasks/1704-go-settings-menu-pages.md`.
 
-## 2. Commands
+## 2. Commands (last lines)
 
-- Step 0 checks: all 14 anchors matched, 4 new paths absent, 13 sidecars present.
-- Step 1 sha256sum -c: 13 of 13 `: OK`.
-- Step 2 gofmt, go build, go vet: no output.
-- Step 3 i18n check: CI only (no App/.venv).
-- Step 4 PostgreSQL 16: existing cluster reused (`initdb` skipped, the data dir was not empty), started on port 55704, stopped at the end.
-- Step 5 `go test` on the 5 packages: 5 of 5 `ok`.
-- Step 5 named tests: 13 `--- PASS` in web/settings and 1 in cmd/ubyhost-web (`TestSettingsPageRoutesRegistered`), 14 of 14 named tests in total. SKIP count: 0.
-- Context lint: `context lint: OK`.
+- Step 2 gofmt/build/vet: no output.
+- Step 3 `go_host_i18n.py --check`: `i18n rc=0`; `2 passed`.
+- Step 4 PostgreSQL 16: **CI only** (no `postgres` user / binaries in this environment).
+- Step 5 Go tests: **not run here** (§8 STOP before step 5 without PG); prior report had 5× `ok`, 14 PASS, SKIP 0 on port 55704.
+- Step 6 Jinja baseline: `4 passed in 231.22s`. Go screenshots / layout lint on Go paths: **pending** until 1705.
+- `python3 scripts/context_lint.py`: `context lint: OK`.
 
 ## 3. Acceptance (§7)
 
-- [x] sha256 13 of 13 OK
-- [x] format, build and vet silent
-- [ ] Step 3 i18n: CI only (no App/.venv)
-- [x] Step 5: 5 `ok`, 14 PASS, SKIP 0
-- [x] Only the §3 paths were committed; no push, no `main`, no `UBYHOST_GO_PATHS`, no Caddy, compose, env or Python change
-- [ ] UI gate: pending (see 6)
+- [x] Sidecars in repo; sha256 on main matches 8/13 1704b-only files (5 differ after 1704c on `settings.go`, stub templates, i18n — expected on integrated `main`).
+- [x] format, build, vet silent
+- [x] Step 3 i18n rc=0 and pytest passed
+- [ ] Step 5 in this env: CI only (PostgreSQL)
+- [x] No `UBYHOST_GO_PATHS`, Caddy, compose, env, or Python route change on this branch
+- [ ] UI gate on Go: pending until 1705 (Jinja baseline green)
 
 ## 4. Deviations
 
-- Branch as above.
-- Step 6 UX gate: no Python baseline (no App/.venv), no screenshots, no browser run. design-system section 5 is NOT ticked: its visual items cannot be checked without a browser.
-- Done: steps 1 to 7. Left: none in code.
+- Step 0 failed as written (files and routes already exist on `main`); step 1 not re-run (would revert 1704c).
+- design-system §5: template parity / `_csrf` only; visual checklist items for Go service not ticked (dormant routes).
 
 ## 5. Questions
 
-- Coordinator: add the Go test row (`go test ./internal/web/settings/... ./internal/retention/... ./internal/mail/...` on PostgreSQL) to test-map.
+None.
 
 ## 6. Owner steps left
 
-- Screenshots at 390, 768 and 1280 of the five Go pages, with `test_layout_lint_browser.py` green on Go. Pending until brief 1705 switches the paths.
-- known-issues (for the orchestrator to append):
-  - "Settings > Data shows the time and dry/live state of the last retention run of any host (`retention_last_run` is one global setting row; Python the same; the counts are admin only)."
-  - "`appVersion` in `go/internal/web/settings/data.go` mirrors `App/app/__init__.py`; the Go test breaks when Python's version is bumped alone."
+- Go UX gate at 390/768/1280 after 1705 path switch.
+- known-issues: retention last-run global row (same as Python); `appVersion` tied to `App/app/__init__.py`.

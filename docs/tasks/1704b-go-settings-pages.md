@@ -1,6 +1,6 @@
 # 1704b: Go Settings pages (GET /settings and /settings/{account,data,technical,help})
 
-Status: done (2026-11-17; reviewed, Go tests green; Go UX gate pending at 1705)
+Status: review (Go on main #1081; Go UX gate pending at 1705)
 Depends on: none (brief 1608 exports, 1609 purge route, 1380/1381 host layout, 1704a are on this branch; verified at ed12cdc) | Base commit: current tip of the working branch | Branch: task/1704b-go-settings-pages
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (this brief needs about 14)
 Tier: B (Sonnet wrote the exact-diff pass; the orchestrator reads the diff of the risk-listed files). Part of [1704](1704-go-settings-menu-pages.md); 1704c (security, phone) plugs into it.
