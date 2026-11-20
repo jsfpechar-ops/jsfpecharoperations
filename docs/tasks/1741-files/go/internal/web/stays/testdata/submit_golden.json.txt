@@ -1,0 +1,46 @@
+{
+  "now": "2026-06-15T12:00:00+00:00",
+  "seed": [],
+  "cases": [
+    {
+      "name": "signed_out_submit_ready",
+      "method": "POST",
+      "path": "/reservations/submit-ready",
+      "body": "_csrf=golden&return_to=%2Freservations",
+      "user": 0,
+      "status": 303,
+      "location": "/login",
+      "flash_key": ""
+    },
+    {
+      "name": "signed_out_submit_one",
+      "method": "POST",
+      "path": "/reservations/101/submit",
+      "body": "_csrf=golden",
+      "user": 0,
+      "status": 303,
+      "location": "/login",
+      "flash_key": ""
+    },
+    {
+      "name": "no_such_stay",
+      "method": "POST",
+      "path": "/reservations/99999/submit",
+      "body": "_csrf=golden",
+      "user": 1,
+      "status": 303,
+      "location": "/reservations",
+      "flash_key": "flash.error.no_such_stay"
+    },
+    {
+      "name": "confirm_duplicate_resend",
+      "method": "POST",
+      "path": "/reservations/101/submit",
+      "body": "_csrf=golden&allow_resend=1",
+      "user": 1,
+      "status": 303,
+      "location": "/reservations/101",
+      "flash_key": "flash.error.confirm_duplicate_resend"
+    }
+  ]
+}

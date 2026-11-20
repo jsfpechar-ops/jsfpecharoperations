@@ -1,0 +1,9 @@
+# Brief 1741 step-0 anchors (repo root). Each grep -cF must return 1; each ls line must return 1 before copying sidecars.
+grep -cF '@router.post("/reservations/submit-ready")' App/app/routes/admin.py
+grep -cF '@router.post("/reservations/{reservation_id}/submit")' App/app/routes/admin.py
+grep -cF 'func RegisterEditPosts(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler)' go/internal/web/stays/edit_posts.go
+grep -cF 'func SubmitForApartment(ctx context.Context, d SweepDeps, aptID int64, o CollectOptions, mode string) ([]BatchResult, error)' go/internal/ubyport/sweep.go
+ls go/internal/web/stays/submit.go 2>&1 | grep -cF 'No such file'
+ls App/scripts/go_submit_golden.py 2>&1 | grep -cF 'No such file'
+ls go/cmd/ubyhost-web/register_web_stays_submit.go 2>&1 | grep -cF 'No such file'
+find docs/tasks/1741-files -name '*.txt' ! -name 'ANCHORS.txt' | wc -l

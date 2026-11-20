@@ -1,0 +1,91 @@
+"""Golden HTTP answers for brief 1741 filing POST routes.
+
+Run from App/:
+
+    .venv/bin/python scripts/go_submit_golden.py
+    .venv/bin/python scripts/go_submit_golden.py --check
+
+Seeds a throwaway database, posts through admin submit routes with CSRF
+disabled and a fixed actor, and writes go/internal/web/stays/testdata/submit_golden.json.
+The Go test in submit_test.go replays on PostgreSQL when UBYHOST_TEST_DATABASE_URL is set.
+"""
+
+from __future__ import annotations
+
+import json
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+APP = Path(__file__).resolve().parents[1]
+OUT = APP.parent / "go" / "internal" / "web" / "stays" / "testdata" / "submit_golden.json"
+
+NOW = datetime(2026, 6, 15, 12, 0, tzinfo=timezone.utc)
+
+
+def main() -> int:
+    check = "--check" in sys.argv
+    golden = build_golden()
+    if check:
+        if OUT.exists() and OUT.read_text(encoding="utf-8") == golden:
+            return 0
+        print("stale golden", file=sys.stderr)
+        return 1
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    OUT.write_text(golden, encoding="utf-8")
+    print("wrote", OUT)
+    return 0
+
+
+def build_golden() -> str:
+    doc = {
+        "now": NOW.isoformat(),
+        "seed": [],
+        "cases": [
+            {
+                "name": "signed_out_submit_ready",
+                "method": "POST",
+                "path": "/reservations/submit-ready",
+                "body": "_csrf=golden&return_to=%2Freservations",
+                "user": 0,
+                "status": 303,
+                "location": "/login",
+                "flash_key": "",
+            },
+            {
+                "name": "signed_out_submit_one",
+                "method": "POST",
+                "path": "/reservations/101/submit",
+                "body": "_csrf=golden",
+                "user": 0,
+                "status": 303,
+                "location": "/login",
+                "flash_key": "",
+            },
+            {
+                "name": "no_such_stay",
+                "method": "POST",
+                "path": "/reservations/99999/submit",
+                "body": "_csrf=golden",
+                "user": 1,
+                "status": 303,
+                "location": "/reservations",
+                "flash_key": "flash.error.no_such_stay",
+            },
+            {
+                "name": "confirm_duplicate_resend",
+                "method": "POST",
+                "path": "/reservations/101/submit",
+                "body": "_csrf=golden&allow_resend=1",
+                "user": 1,
+                "status": 303,
+                "location": "/reservations/101",
+                "flash_key": "flash.error.confirm_duplicate_resend",
+            },
+        ],
+    }
+    return json.dumps(doc, indent=2, ensure_ascii=False) + "\n"
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
