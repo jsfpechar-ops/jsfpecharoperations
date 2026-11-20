@@ -27,5 +27,10 @@ calendar.guests_error
 calendar.overlap
 flash.error.*
 flash.reservations.created
+flash.reservations.access_reopened
+flash.reservations.claim_released
+flash.reservations.claim_resent
+flash.hand_filing.marked
+flash.hand_filing.undone
 setup.banner.*
 onboarding.skip
