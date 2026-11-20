@@ -15,4 +15,4 @@ App: test_payments_hidden.py
 
 ## Owner
 
-After merge: `UBYHOST_PAYMENTS_HIDDEN=1` only — no GO_PATHS surgery.
+After merge: `UBYHOST_PAYMENTS_HIDDEN=1` only — no GO_PATHS surgery. Production Go nav/404 need `UBYHOST_PAYMENTS_HIDDEN: ${UBYHOST_PAYMENTS_HIDDEN:-}` on the `ubyhost-go` service in Lightsail compose (allowlist); without it Go never sees the flag.
