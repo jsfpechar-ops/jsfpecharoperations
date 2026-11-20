@@ -87,3 +87,13 @@ Moved from docs/context/decisions.md during compaction.
 - 2026-10-09 | [workflow] One brief per copy text; executors skip non-todo; lint warns on overlap; status `replaced` = newer brief took over | [workflow](workflow.md)
 - 2026-10-25 | Invoice "Fill from register" also asks MFČR VAT register; DIČ digits only; 24 h cache | owner | 0394
 - 2026-10-26 | Billing phase 1: invoices only, no gateway yet | owner | 0411
+- 2026-10-19 Design v2: MASTER.md is the only host design source; Lucide inline SVG; CI blocks raw colours, inline styles, page CSS | owner | [plan](../plans/design-v2.md)
+- 2026-10-19 A11y: WCAG 2.2 AA, `a11y_guard.js`.
+- 2026-10-24 [deps] `anthropic` 2.3.0 pinned+hashed; model `claude-haiku-5-5`; calls via `App/app/ai.py` | 0310
+- 2026-10-26 Unpaid = read-only; filing never blocked | 0415
+- 2026-10-27 Grafana Cloud (EU free): ops logs/metrics, no PII.
+- 2026-10-28 [deps] `stripe` 16.0.1 pinned+hashed in requirements.lock (owner); calls via `App/app/stripe_connect.py`; shared monthly cap `UBYHOST_STRIPE_MONTHLY_API_CALLS` | 0428
+- 2026-10-28 Property pages: Apify prefill, no AI, host reviews once (0431); photos re-hosted, max 10 (0432); no-JS widget (0434); English only
+- 2026-11-02 OCR: Tesseract only, local, MRZ check digits, Max only; band crop; Paddle if ocr_readrate <90% | test_doc_ocr
+- 2026-10-29 Operator can extend trials 1-365 days | 0448
+- 2026-10-29 Stripe Accounts v2, responsibilities immutable, companies via business_type (0437); Connect: full Dashboard + collectors, Express rejected (0439) | owner

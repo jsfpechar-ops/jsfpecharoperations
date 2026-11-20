@@ -4,9 +4,9 @@ Status: review
 
 ## Commits
 
-- Implementation already on `main` (`ff535973a`, matches exact-diff sidecars).
-- **Step 1:** `sha256sum -c docs/tasks/1770-files/MANIFEST.sha256` already OK on `main`; no copy, no `1770 step 1` commit.
-- **This PR:** `1770 step 5` — brief Status `review` + refreshed report.
+- Implementation on `main` (`ff535973a`, matches exact-diff sidecars); executor PR **#1121** merged 2026-11-20.
+- **Step 1:** sidecars already match `main`; no copy commit.
+- **Step 2 (2026-11-20, `cursor/1770-go-mail-job-dff7`):** §6 commands re-run on `origin/main`; report refreshed only (§3).
 
 ## Files (§3)
 
@@ -16,7 +16,7 @@ Status: review
 | `go/cmd/ubyhost-web/register_job_mail_test.go` | `TestMailJobIsRegistered`, `TestMailJobRunsAgainstDatabase` |
 | `docs/tasks/1770-report.md` | this file |
 
-No `UBYHOST_GO_PATHS` or server wiring changes.
+No `UBYHOST_GO_PATHS` or server wiring changes. **Dormant:** `registerJob("mail", 5, …)` is compiled in; the kind runs only when `mail` is listed in `UBYHOST_GO_JOB_KINDS` / `UBYHOST_JOB_QUEUE_KINDS` (Python `_job_mail` drains until M-P8 rollout).
 
 ## Commands (last lines)
 
@@ -38,8 +38,8 @@ cd go && go vet ./internal/mail/... ./cmd/ubyhost-web/... ./cmd/...
 
 ```
 cd go && go test ./internal/mail/... ./cmd/ubyhost-web/... ./cmd/ubyhost-web/... -count=1
-ok  	github.com/jsfpechar-ops/jsfpecharoperations/go/internal/mail	0.251s
-ok  	github.com/jsfpechar-ops/jsfpecharoperations/go/cmd/ubyhost-web	1.697s
+ok  	github.com/jsfpechar-ops/jsfpecharoperations/go/internal/mail	0.041s
+ok  	github.com/jsfpechar-ops/jsfpecharoperations/go/cmd/ubyhost-web	1.718s
 ```
 
 ```

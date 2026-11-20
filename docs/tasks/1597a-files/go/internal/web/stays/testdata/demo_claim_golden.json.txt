@@ -1,0 +1,29 @@
+{
+  "cases": [
+    {
+      "declared_guests": 2,
+      "email": "guest@example.test",
+      "locked": false,
+      "name": "provisional",
+      "outbox_kind": "claim",
+      "state": "provisional"
+    },
+    {
+      "declared_guests": null,
+      "email": "guest@example.test",
+      "locked": false,
+      "name": "claimed",
+      "outbox_kind": "",
+      "state": "claimed"
+    },
+    {
+      "declared_guests": null,
+      "email": "guest@example.test",
+      "locked": true,
+      "name": "locked",
+      "outbox_kind": "",
+      "state": "claimed"
+    }
+  ],
+  "now": "2026-06-15T14:00:00+00:00"
+}

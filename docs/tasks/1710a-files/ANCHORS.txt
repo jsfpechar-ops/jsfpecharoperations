@@ -1,0 +1,10 @@
+grep -cF 'def property_page_review(request: Request, apartment_id: int):' App/app/routes/payments.py
+grep -cF 'async def property_page_photo_delete(request: Request, apartment_id: int):' App/app/routes/payments.py
+grep -cF 'func PublishPage(ctx context.Context, db DB, apartmentID int64, published bool, now time.Time) error {' go/internal/web/booking/publish.go
+grep -cF 'func PhotosDir(getenv func(string) string) string {' go/internal/web/booking/handlers.go
+grep -cF 'func registerRoutes(fn func(*http.ServeMux, *metrics, *pgxpool.Pool)) {' go/cmd/ubyhost-web/registry.go
+grep -rcF '"GET /apartments/{apartment_id}/page"' go/cmd/ubyhost-web | grep -v ':0$'
+ls go/internal/web/booking/property_page_host.go 2>&1 | grep -cF 'No such file'
+ls App/scripts/go_property_page_host_golden.py 2>&1 | grep -cF 'No such file'
+ls go/cmd/ubyhost-web/register_web_booking_host_property_page.go 2>&1 | grep -cF 'No such file'
+find docs/tasks/1710a-files -name '*.txt' ! -name 'ANCHORS.txt' | wc -l

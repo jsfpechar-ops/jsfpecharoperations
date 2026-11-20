@@ -1,0 +1,89 @@
+"""Golden form fields for brief 1711 site-booking invoices.
+
+Run from App/:
+
+    .venv/bin/python scripts/go_stay_invoice_golden.py
+    .venv/bin/python scripts/go_stay_invoice_golden.py --check
+
+When App/.venv exists, the script can be extended in executor step 2 to call
+booking_invoice._form for every case. Until then it refreshes the committed
+JSON that matches invoices.BookingIssueForm in Go.
+"""
+
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+APP = Path(__file__).resolve().parents[1]
+OUT = APP.parent / "go" / "internal" / "booking" / "testdata" / "stay_invoice_golden.json"
+
+
+def _form(total, cleaning, name, email, lang):
+    if lang not in ("cs", "en"):
+        lang = "cs"
+    paid = "Kartou přes Stripe" if lang == "cs" else "Card via Stripe"
+    note = ""
+    if cleaning:
+        note = (
+            f"V ceně je úklid {cleaning} Kč."
+            if lang == "cs"
+            else f"The price includes the cleaning fee of {cleaning} CZK."
+        )
+    return {
+        "already_paid": "1",
+        "buyer_email": email,
+        "buyer_name": name,
+        "lang": lang,
+        "note": note,
+        "paid_via": "custom",
+        "paid_via_custom": paid,
+        "stay_price": str(int(total)),
+        "stay_vat_rate": "12",
+    }
+
+
+CASES = [
+    ("cs_paid_stripe", 6500, 500, "Jan Novák", "jan@example.test", "cs"),
+    ("en_no_cleaning", 3200, 0, "John Doe", "john@example.test", "en"),
+    ("cs_default_lang", 1000, 100, "A", "", "de"),
+    ("minimal_buyer", 4500, 0, "", "guest@example.test", "cs"),
+    ("large_total", 999999, 1500, "Test Host", "big@example.test", "en"),
+    ("whitespace_name", 2100, 200, "  Eva  ", "eva@example.test", "cs"),
+    ("cancel_after_payment_shape", 8000, 400, "Cancel Guest", "cancel@example.test", "cs"),
+    ("partial_refund_context", 12000, 600, "Partial Guest", "part@example.test", "en"),
+]
+
+
+def build_golden() -> str:
+    cases = []
+    for name, total, cleaning, guest, email, lang in CASES:
+        use_lang = lang if lang in ("cs", "en") else "cs"
+        booking = {
+            "total_czk": total,
+            "cleaning_fee_czk": cleaning,
+            "guest_name": guest,
+            "guest_email": email,
+            "lang": lang,
+        }
+        cases.append({"name": name, "booking": booking, "form": _form(total, cleaning, guest, email, use_lang)})
+    return json.dumps({"cases": cases}, ensure_ascii=False, indent=2) + "\n"
+
+
+def main() -> int:
+    check = "--check" in sys.argv
+    golden = build_golden()
+    if check:
+        if OUT.exists() and OUT.read_text(encoding="utf-8") == golden:
+            return 0
+        print("stale golden", file=sys.stderr)
+        return 1
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    OUT.write_text(golden, encoding="utf-8")
+    print("wrote", OUT)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -272,6 +272,25 @@ func crc(b []byte) uint32 {
 	return ^c
 }
 
+func TestReencodeKeepsResolution(t *testing.T) {
+	src := halves(40, 20)
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, src); err != nil {
+		t.Fatal(err)
+	}
+	out, err := Reencode(buf.Bytes())
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := jpeg.DecodeConfig(bytes.NewReader(out))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Width != 40 || cfg.Height != 20 {
+		t.Fatalf("reencode size %dx%d, want 40x20", cfg.Width, cfg.Height)
+	}
+}
+
 func TestJPEGOrientationJunk(t *testing.T) {
 	for name, b := range map[string][]byte{
 		"short":   {0xFF, 0xD8, 0xFF},

@@ -1,0 +1,9 @@
+# Brief 1711 step-0 anchors (repo root). Each grep -cF must return 1; each ls line must return 1 before copying sidecars.
+grep -cF 'def ensure(booking_id: int) -> Optional[int]:' App/app/booking_invoice.py
+grep -cF 'def booking_invoice_pdf(request: Request, slug: str, booking_id: int, token: str):' App/app/routes/property_page.py
+grep -cF 'def correct_partial(invoice_id: int, refund_czk: int, reason: str, actor_user_id: Optional[int], *, today: date) -> int:' App/app/invoices.py
+grep -cF 'func buildDraft(e entity, form url.Values, today time.Time, st *stay) draft {' go/internal/web/invoices/draft.go
+ls go/internal/booking/stayinvoice.go 2>&1 | grep -cF 'No such file'
+ls go/internal/web/invoices/site_booking.go 2>&1 | grep -cF 'No such file'
+ls App/scripts/go_stay_invoice_golden.py 2>&1 | grep -cF 'No such file'
+find docs/tasks/1711-files -name '*.txt' ! -name 'ANCHORS.txt' | wc -l

@@ -230,6 +230,8 @@ PINNED_GO_WRITES = [
     ("go/internal/web/stays/claim_ops.go", "ensureClaimRow"),
     ("go/internal/web/stays/claim_ops.go", "releaseClaimHandler"),
     ("go/internal/web/stays/claim_ops.go", "startClaimResend"),
+    ("go/internal/web/stays/claim_seed.go", "ConfirmClaim"),
+    ("go/internal/web/stays/claim_seed.go", "startClaimSeed"),
 ]
 
 

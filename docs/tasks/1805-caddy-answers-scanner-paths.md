@@ -1,11 +1,22 @@
 # 1805: Caddy answers scanner paths with 404, no upstream call
 
-Status: todo
+Status: review — exact-diff sidecars ready (2026-11-20).
 Depends on: none (edits the same two Caddyfiles as 1804: run them one after the other, never in parallel) | Base commit: current tip of the working branch | Branch: task/1805-caddy-scanner-404
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Tier: B (deploy config only; the risk is shadowing a real route, which §2 and §6 check)
 
-> Plan: [optimization-wins](../plans/optimization-wins.md) section 4, lane B. After each step that changes a file, commit with the message `1805 step k`. Never push, never merge.
+> Plan: [optimization-wins](../plans/optimization-wins.md) section 4, lane B. After each step that changes a file, commit with the message `1805 step k`. Cloud agent: branch `cursor/1805-exact-diff-dff7`, push, draft PR.
+
+**All Caddy patches are pre-written** in `docs/tasks/1805-files/<repo path>.txt`. Step 1 copies them; run `sha256sum -c docs/tasks/1805-files/MANIFEST.sha256` after copy.
+
+| sha256 | file | action |
+|---|---|---|
+| `c7e19d79e7c1cb3237bf3893b30c4786184288496a5e646bd7a770a35bf84649` | `deploy/lightsail/caddy/Caddyfile.cloudflare` | edit |
+| `dffd2b848a1798c3a526fec1374446bff5aaff46853ff5f872a16e7d9ae56efd` | `deploy/lightsail/caddy/Caddyfile.acme` | edit |
+
+Full manifest: `docs/tasks/1805-files/MANIFEST.sha256`.
+
+**Verified by the brief writer:** sidecars from current `main`; `sha256sum -c docs/tasks/1805-files/MANIFEST.sha256` OK against live repo paths; step-1 route greps empty; `caddy-validate.sh` not run here (no Docker).
 
 ## 1. Objective
 
@@ -40,38 +51,34 @@ The new block goes directly above that comment line, and therefore above the `@g
 |---|---|---|
 | `deploy/lightsail/caddy/Caddyfile.cloudflare` | edit | new scanner matcher and handle |
 | `deploy/lightsail/caddy/Caddyfile.acme` | edit | the same block |
+| `docs/tasks/1805-files/**` | keep | sidecars from the exact-diff pass (do not edit) |
 | `docs/tasks/1805-report.md` | create | the report (§9) |
 
 No other file may change.
 
 ## 4. Steps
 
-1. **Check the matcher list against the routes (no file change).** From the repo root run these and keep the last lines for the report:
+0. Checks (repo root). Anything other than the stated result: STOP (§8). Each `grep -cF` prints `1`; `find … | wc -l` → `2` (see `docs/tasks/1805-files/ANCHORS.txt`). Before copy, `@scanners` lines may already be on `main` (count `1`); after copy they must match the manifest.
+
+1. Copy sidecars (repo root). Never retype or edit them:
+
+   ```bash
+   S=docs/tasks/1805-files && for f in $(cd "$S" && find . -name '*.txt' ! -name 'ANCHORS.txt' | sed 's|^\./||; s|\.txt$||'); do mkdir -p "$(dirname "$f")" && cp "$S/$f.txt" "$f"; done && sha256sum -c "$S/MANIFEST.sha256" 2>&1 | tail -20
+   ```
+
+   Expected: 2 lines ending `: OK`. Commit `1805 step 3` when copy changes bytes. If files already match, log that and skip the commit.
+
+2. **Check the matcher list against the routes (no file change).** From the repo root run these and keep the last lines for the report:
    - `grep -rhoE '@(app|router)\.(get|post|put|delete|api_route)\("/[^"/{]*' App/app | sed -E 's/.*\("//' | sort -u | grep -E '^/(wp-|wordpress|\.env|\.git|\.svn|\.aws|\.ds_store|\.htaccess|\.htpasswd|cgi-bin|vendor|xmlrpc|phpmyadmin|phpinfo|server-status|actuator|boaform|hudson|shell)|\.(php|asp|aspx|jsp)$' | tail -30` must print nothing.
    - `grep -rnE '"/(wp-|wordpress|\.env|\.git|\.svn|\.aws|cgi-bin|vendor|xmlrpc|phpmyadmin|phpinfo|actuator)|\.(php|asp|aspx|jsp)"' go/cmd go/internal --include=*.go | grep -v _test | tail -30` must print nothing.
    - `grep -rnE '(include_router|app\.mount|Mount)\(.*(wp-|vendor|cgi-bin)' App/app go --include=*.py --include=*.go | tail -10` must print nothing.
    If any of the three prints a line, STOP (§8) and put the line in the report: that pattern would shadow a real route.
 
-2. **Anchors.** `grep -cF '# UBYHOST_GO_PATHS: space-separated paths for the Go service' deploy/lightsail/caddy/Caddyfile.cloudflare deploy/lightsail/caddy/Caddyfile.acme | tail -5` gives 1 for each file, otherwise STOP.
-
-3. **Caddyfiles.** In both files insert this block (tab-indented one level) directly above the `# UBYHOST_GO_PATHS: ...` comment line. The text is identical in both files; add nothing to it:
-
-   ```
-   	# 1805: paths only scanners ask for get a 404 here and never reach the app.
-   	# None of these prefixes is a real route (checked against the Python and Go
-   	# route tables, brief 1805). Never widen a pattern without rerunning that
-   	# check; /.well-known/ must stay reachable. No log directive (OPS-3).
-   	@scanners path *.php *.asp *.aspx *.jsp /wp-* /wordpress* /xmlrpc* /.env* /.git /.git/* /.svn/* /.aws/* /.ds_store /.htaccess /.htpasswd /cgi-bin/* /vendor/* /phpmyadmin* /phpinfo* /server-status /actuator/* /boaform/*
-   	handle @scanners {
-   		respond 404
-   	}
-   ```
-
-   Commit `1805 step 3` (both files).
+3. **Anchors.** `grep -cF '# UBYHOST_GO_PATHS: space-separated paths for the Go service' deploy/lightsail/caddy/Caddyfile.cloudflare deploy/lightsail/caddy/Caddyfile.acme | tail -5` gives 1 for each file, otherwise STOP.
 
 4. **Validate** (needs Docker). From `deploy/lightsail`: `cp caddy/Caddyfile.acme caddy/Caddyfile.active && bash scripts/caddy-validate.sh 2>&1 | tail -20`; then for the Cloudflare file create the throw-away certs exactly as CI does (`.github/workflows/ci.yml` lines 660-672: openssl self-signed `origin.pem` and `origin-key.pem` in `caddy/certs/`), `cp caddy/Caddyfile.cloudflare caddy/Caddyfile.active`, validate again. Afterwards delete `caddy/Caddyfile.active` and the throw-away certs; they must not be committed (`git status --short | tail -10` shows only the two Caddyfiles). If Docker is not available, say so in the report: the CI job `caddy` (`.github/workflows/ci.yml`, line 650) validates both Caddyfiles in both modes and is the gate.
 
-5. Write the report (§9) and open one PR as draft.
+5. Write the report (§9) and open one draft PR (`cursor/1805-exact-diff-dff7`).
 
 ## 5. Do not touch
 

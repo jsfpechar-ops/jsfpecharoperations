@@ -1,0 +1,9 @@
+# Brief 1726 step-0 anchors (repo root). Each grep -cF must return 1 before copy; ls lines must return 1.
+grep -cF '@router.get("/l/{token}/{reservation_id}/guide/leon")' App/app/routes/guest_leon.py
+grep -cF '@router.get("/apartments/{apartment_id}/guide/questions")' App/app/routes/guest_questions.py
+grep -cF 'def reply(chat: Dict[str, Any], text: str' App/app/leon.py
+grep -cF 'MAX_ANSWER_CHARS = 1000' App/app/guest_handoff.py
+ls go/internal/web/guest/leon_questions.go 2>&1 | grep -cF 'No such file'
+ls App/scripts/go_leon_questions_golden.py 2>&1 | grep -cF 'No such file'
+ls go/cmd/ubyhost-web/register_web_guest_leon_questions.go 2>&1 | grep -cF 'No such file'
+find docs/tasks/1726-files -name '*.txt' ! -name 'ANCHORS.txt' | wc -l

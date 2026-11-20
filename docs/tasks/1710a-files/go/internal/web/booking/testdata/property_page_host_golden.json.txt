@@ -1,0 +1,40 @@
+{
+ "cases": [
+  {
+   "location": "/login",
+   "method": "GET",
+   "name": "signed_out_get",
+   "path": "/apartments/11/page",
+   "status": 303,
+   "user": 0
+  },
+  {
+   "body": "_csrf=golden&description=test",
+   "flash_key": "payments.page.saved",
+   "location": "/apartments/11/page",
+   "method": "POST",
+   "name": "save_redirect",
+   "path": "/apartments/11/page",
+   "status": 303,
+   "user": 1
+  },
+  {
+   "body": "_csrf=golden&path=%2Fphotos%2Fproperty%2Fabcd.jpg&dir=up",
+   "location": "/apartments/11/page",
+   "method": "POST",
+   "name": "photo_move",
+   "path": "/apartments/11/page/photo-move",
+   "status": 303,
+   "user": 1
+  },
+  {
+   "method": "GET",
+   "name": "foreign_apartment",
+   "path": "/apartments/99/page",
+   "status": 404,
+   "user": 1
+  }
+ ],
+ "now": "2026-06-15T12:00:00+00:00",
+ "seed": []
+}

@@ -1,0 +1,6 @@
+# Host strings of the property page review screen (brief 1710a).
+# property_page_host_i18n.json is written from App/app/host_i18n.py (go_host_i18n rules).
+bsite.title
+common.save
+payments.page.*
+pp.rules

@@ -1,0 +1,7 @@
+bsite.title
+bsite.max_only
+bsite.max_cta
+bsite.list.live
+bsite.list.off
+bsite.list.open
+bsite.list.empty

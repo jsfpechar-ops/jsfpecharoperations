@@ -1,0 +1,6 @@
+# Brief 1805 step-0 anchors (repo root). Each grep -cF must return 1; sidecar count must be 2.
+grep -cF '# UBYHOST_GO_PATHS: space-separated paths for the Go service' deploy/lightsail/caddy/Caddyfile.cloudflare
+grep -cF '# UBYHOST_GO_PATHS: space-separated paths for the Go service' deploy/lightsail/caddy/Caddyfile.acme
+grep -cF '@scanners path *.php *.asp *.aspx *.jsp /wp-*' deploy/lightsail/caddy/Caddyfile.cloudflare
+grep -cF '@scanners path *.php *.asp *.aspx *.jsp /wp-*' deploy/lightsail/caddy/Caddyfile.acme
+find docs/tasks/1805-files -name '*.txt' ! -name 'ANCHORS.txt' | wc -l

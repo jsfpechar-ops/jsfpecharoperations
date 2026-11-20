@@ -12,7 +12,7 @@ guest data, and files the reports through the UbyPort web service.
 
 - **Stack:** Python 3.12, FastAPI + Jinja2, SQLite (WAL), APScheduler, reportlab. Full list: [Tech stack](#tech-stack).
 - **Production:** AWS Lightsail, Docker Compose, Caddy, Cloudflare in front, `ubyhost.com` ([`docs/LIGHTSAIL.md`](docs/LIGHTSAIL.md)).
-- **Staging:** Render `ubyhost-staging`, mock UbyPort, ephemeral disk ([`render.yaml`](render.yaml), [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)).
+- **Staging:** AWS Lightsail `Ubyhost-test-env` (staging.ubyhost.com), mock/test UbyPort, auto-deployed on green `main`; any branch by hand via Actions → Deploy staging ([`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)).
 - **Version:** `/healthz` reports `1.1.0` per [`docs/context/status.md`](docs/context/status.md); the code version source is `⚠️ UNKNOWN` (no version constant located in this pass).
 - **Migration status:** the database is still SQLite. A Postgres move is planned and explicitly deferred (commit `84763c6b`, "defer production migration"). No Go code exists in the repo.
 

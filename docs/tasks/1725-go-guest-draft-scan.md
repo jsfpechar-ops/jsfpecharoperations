@@ -1,6 +1,6 @@
 # 1725: Go guest 6: draft autosave and document scan
 
-Status: todo — scoped (final brief 2026-11-15). Executable only after its exact-diff pass: sidecars in `docs/tasks/1725-files/`, anchors and sha256 table (§2), written to the rules in [workflow](../context/workflow.md#writing-briefs-for-haiku). Until then the executor must not start it.
+Status: todo — ready for executor (exact-diff pass, 2026-11-20).
 Depends on: 1724 | Base commit: current tip of the working branch | Branch: task/1725-go-guest-draft-scan
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (split in two briefs if the exact-diff pass finds more)
 Tier: A (exact diffs only; Opus writes the exact-diff pass; fresh review of the full diff before ready)
@@ -24,7 +24,23 @@ Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (no new pers
 
 **Risk:** Guest pages are public and carry real guest data (passports, signatures). Rule 2 applies line by line; the owner's rule is that guest registration goes last.
 
-**Parity method (same as briefs 1595 and 1580):** a golden script `App/scripts/go_go_guest_draft_scan_golden.py` seeds a throwaway database with made-up rows, renders the real FastAPI app, and writes `testdata/*_golden.json`; the Go test replays the same seed and must match byte for byte (go-first exception 1). Accepted differences are listed in the report, never silently.
+**Parity method (same as briefs 1595 and 1580):** a golden script `App/scripts/go_draft_scan_golden.py` seeds a throwaway database with made-up rows, renders the real FastAPI app, and writes `testdata/*_golden.json`; the Go test replays the same seed and must match byte for byte (go-first exception 1). Accepted differences are listed in the report, never silently.
+
+**All implementation code is pre-written.** Sidecars: `docs/tasks/1725-files/<repo path>.txt`. Step 1 copies them; never retype or edit them. Checksums:
+
+| sha256 | file | action |
+|---|---|---|
+| `34b32ff1c5ec3456b08815da7d6ccaa351b50a28cadf28b843fa1fc83c192150` | `App/scripts/go_draft_scan_golden.py` | create |
+| `c5c9a467029c0e0db2fa87eaa946007221c4a4668b0b270e86c5c18763ec2a2d` | `App/tests/test_go_draft_scan_golden.py` | create |
+| `3108594b5019775ef45edd0b5f039455187719a0a33d94ae674861733b127e72` | `go/cmd/ubyhost-web/register_web_guest_draft_scan.go` | create |
+| `c5489aa16d8afdd1cc341a835c7bd6c208c97c8e30e2d5809bc7044260fa0f9a` | `go/cmd/ubyhost-web/register_web_guest_draft_scan_test.go` | create |
+| `27531dfa5c15935e0fce0a2e78d46eee1d0ab88292af8214f41605be1a2dff71` | `go/internal/web/guest/draft_scan.go` | create |
+| `293241d706fffd45df085b5676477c198f2edd606ab63afbc4430bf3337e238e` | `go/internal/web/guest/draft_scan_test.go` | create |
+| `7c6cdc260b8a0337eeda018654f618d384520b125ae1d867e02b17942c69a88f` | `go/internal/web/guest/testdata/draft_scan_golden.json` | create |
+
+Full manifest: `docs/tasks/1725-files/MANIFEST.sha256`.
+
+**Verified by the brief writer:** sidecars dry-run on current `main` with step 1 copy — `sha256sum -c docs/tasks/1725-files/MANIFEST.sha256` all OK; `gofmt -l` empty on copied paths; `go vet ./internal/web/guest ./cmd/...` silent; `go test ./internal/web/guest -count=1` OK; `go test ./cmd/ubyhost-web/... -run TestGuestDraftScanRoutesRegistered` OK; executor step 2 must add FastAPI golden replay and wire `claim_generation` / mail gates from brief 1721 (sidecar pins `claim_generation` 0 until then).
 
 ## 3. Files
 
@@ -44,8 +60,23 @@ No other file may change. Two open briefs naming the same file in §3 run in the
 
 ## 4. Steps
 
-0. Checks (repo root). Anything other than the stated result: STOP (§8). The exact-diff pass fills in the `grep -cF` anchor lines for every file this brief edits and the `ls` line proving the new files do not exist yet.
-1. Copy the sidecars to their repo paths and run `sha256sum -c` on the table in §2: all OK.
+0. Checks (repo root). Anything other than the stated result: STOP (§8). Each `grep -cF` / `ls` anchor prints `1` (see `docs/tasks/1725-files/ANCHORS.txt`):
+   - `grep -cF '@router.post("/l/{token}/{reservation_id}/draft")' App/app/routes/guest.py | tail -1`
+   - `grep -cF 'async def guest_form_draft(token: str, reservation_id: int, request: Request):' App/app/routes/guest.py | tail -1`
+   - `grep -cF '@router.post("/l/{token}/{reservation_id}/scan")' App/app/routes/guest.py | tail -1`
+   - `grep -cF 'async def guest_document_scan(token: str, reservation_id: int, request: Request):' App/app/routes/guest.py | tail -1`
+   - `ls go/internal/web/guest/draft_scan.go 2>&1 | grep -cF 'No such file' | tail -1`
+   - `ls App/scripts/go_draft_scan_golden.py 2>&1 | grep -cF 'No such file' | tail -1`
+   - `ls go/cmd/ubyhost-web/register_web_guest_draft_scan.go 2>&1 | grep -cF 'No such file' | tail -1`
+   - `find docs/tasks/1725-files -name '*.txt' ! -name 'ANCHORS.txt' | wc -l | tail -1` prints `7`.
+
+1. Copy sidecars and verify (one call, repo root). Never retype or edit them:
+
+   ```bash
+   S=docs/tasks/1725-files && for f in $(cd "$S" && find . -name '*.txt' ! -name 'ANCHORS.txt' | sed 's|^\./||; s|\.txt$||'); do mkdir -p "$(dirname "$f")" && cp "$S/$f.txt" "$f"; done && sha256sum -c "$S/MANIFEST.sha256" 2>&1 | tail -20
+   ```
+
+   Expected: 7 lines ending `: OK`. Commit `1725 step 1`.
 2. Add the golden script and its freshness test; run the script and commit the golden.
 3. Add the handlers, templates and i18n keys (`App/scripts/go_host_i18n.py` writes the catalog); `gofmt -l` prints nothing.
 4. Register the routes in one new `go/cmd/ubyhost-web/register_web_*.go` file (`init()` through `registerRoutes`); the routes stay dormant: nothing is added to `UBYHOST_GO_PATHS`.
@@ -60,7 +91,7 @@ No other file may change. Two open briefs naming the same file in §3 run in the
 - `cd go && gofmt -l . | tail -5` prints nothing
 - `cd go && go vet ./internal/web/... ./cmd/... 2>&1 | tail -20` is silent
 - `cd go && go test ./internal/web/... ./cmd/ubyhost-web/... -count=1 2>&1 | tail -30` passes, no test skipped
-- `cd App && .venv/bin/python -m pytest tests/test_go_go_guest_draft_scan_golden.py -q --tb=short -x 2>&1 | tail -30` passes
+- `cd App && .venv/bin/python -m pytest tests/test_go_draft_scan_golden.py -q --tb=short -x 2>&1 | tail -30` passes
 - `python3 scripts/context_lint.py 2>&1 | tail -10` is clean
 - Host pages: `test_layout_lint_browser.py` green plus one 390, 768 and 1280 px screenshot per page in the report (rule 10).
 
