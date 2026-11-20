@@ -112,9 +112,6 @@ type Page struct {
 	TurboCache string // stays list: "cache" enables Turbo snapshot; "" is no-cache
 
 	BodyAlerts bool // the page body includes _host_alerts.html itself ({{host_alerts}}), as v2 pages such as settings_archived.html do
-
-	// Added in 1863: archived stay detail already shows restore; skip redundant undo_stay toast.
-	SuppressUndoStay bool
 }
 
 // Templates is a page package's parsed templates and catalog. The master set
@@ -638,7 +635,7 @@ func buildView(r *http.Request, env Env, sh shell, c *reqCtx, p Page) view {
 	if fix, ok := fixTargets[q("fix")]; ok {
 		v.FixHref, v.FixKey = fix[0], fix[1]
 	}
-	if stay := q("undo_stay"); isDigits(stay) && !p.SuppressUndoStay {
+	if stay := q("undo_stay"); isDigits(stay) {
 		v.UndoStay = stay
 	}
 	if ret, ok := lastQueryOK(r, "undo_return"); ok {
