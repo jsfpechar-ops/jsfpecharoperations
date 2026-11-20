@@ -119,7 +119,10 @@ PINNED_GO_EXEC = {
     "transitionSQL": {"go/internal/payments/webhook.go": 1},
     "expireSQL": {"go/internal/payments/sweep.go": 1},
 }
-PINNED_GO_SETSTATUS = {"go/internal/payments/webhook.go": 2}
+PINNED_GO_SETSTATUS = {
+    "go/internal/payments/webhook.go": 2,
+    "go/internal/payments/booking_webhook_host.go": 2,
+}
 
 UPDATE_RE = re.compile(r"UPDATE\s+payment_request\s+SET\b(.*?)\bWHERE\b", re.S | re.I)
 STATUS_RE = re.compile(r"(?<![\w])status\s*=")
