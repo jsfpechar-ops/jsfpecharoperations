@@ -1,0 +1,25 @@
+{
+  "now": "2026-06-15T12:00:00+00:00",
+  "secret": "golden-test-secret",
+  "seed": [],
+  "cases": [
+    {
+      "name": "wrong_pin_html",
+      "method": "POST",
+      "path": "/l/golden-token/pin?lang=en",
+      "body": "_csrf=golden&pin=000000&return_to=/l/golden-token",
+      "status": 200,
+      "cookie_pin": false,
+      "body_has": "pin-error"
+    },
+    {
+      "name": "good_pin_redirect",
+      "method": "POST",
+      "path": "/l/golden-token/pin?lang=en",
+      "body": "_csrf=golden&pin=123456&return_to=/l/golden-token",
+      "status": 303,
+      "location": "/l/golden-token",
+      "cookie_pin": true
+    }
+  ]
+}

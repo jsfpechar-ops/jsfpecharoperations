@@ -492,10 +492,11 @@ type shellDeps struct {
 	now    func() time.Time
 }
 
-// RegisterShell wires the guest /l package (dormant: no page routes until 1720b–d).
+// RegisterShell wires the guest /l package. Routes stay dormant until brief 1728
+// adds paths to UBYHOST_GO_PATHS.
 func RegisterShell(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler) {
-	_ = shellDeps{pool: pool, getenv: getenv, now: now}
-	// Brief 1720b: POST /l/{token}/pin
+	d := shellDeps{pool: pool, getenv: getenv, now: now}
+	mux.Handle("POST /l/{token}/pin", wrap("/l/{token}/pin", d.verifyPin))
 	// Brief 1720c: GET /l/{token}
 	// Brief 1720d: GET /l/{token}/privacy, GET /l/{token}/ruian-suggest
 }
