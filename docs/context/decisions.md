@@ -70,5 +70,6 @@ Append-only.
 - 2026-11-15 [ai] Shared Havel/Leon budget, abuse caps; Havel no-go; nameless lookups; host mail in host language | owner
 - 2026-11-17 [dep] ČÚZK: local unlogged table, pg_trgm (1700c). Python golden filing only ([go-first](go-first.md)) | owner. 1702d-e Go | orch
 - 2026-11-17/18 [product] Autopilot A2 hide Payments; preflight Q4: zero open payment requests or direct bookings, never used; `UBYHOST_PAYMENTS_HIDDEN=1` OK | owner
+- 2026-11-20 [product] Payments and Booking site removed from all host nav unconditionally (dormant product); `UBYHOST_PAYMENTS_HIDDEN` only gates routes, row actions, jobs | owner
 - 2026-11-17 [workflow] Stays Go-only, show-more append, Stays Turbo cache only|owner
 - 2026-11-19 [ui] Wide geometry skips pageHeader left/right edge on stay-detail at ≥1024 (crumb+H1, same as 0789). Brief 1862.

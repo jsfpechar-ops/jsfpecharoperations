@@ -70,6 +70,22 @@ def test_nav_omits_payments_and_booking_sites(client):
     assert 'href="/booking-sites"' not in html
 
 
+def test_nav_omits_payments_when_hidden_off(monkeypatch):
+    """Nav never shows Payments or Booking site (product dormant); flag only gates routes and row actions."""
+    monkeypatch.setattr(config, "PAYMENTS_HIDDEN", False)
+    db.init_db()
+    _cleanup()
+    auth.create_account("payshown@example.test", "Shown Pay", username="payshown")
+    client = TestClient(app)
+    assert login_as(client, "payshown", url="/login?lang=en", follow_redirects=False).status_code == 303
+    try:
+        html = client.get("/?lang=en").text
+        assert 'href="/payments"' not in html
+        assert 'href="/booking-sites"' not in html
+    finally:
+        _cleanup()
+
+
 def test_guide_still_lists_payments_section(client):
     html = client.get("/guide?lang=en").text
     assert "Payments" in html

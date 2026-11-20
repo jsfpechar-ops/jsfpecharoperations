@@ -301,7 +301,6 @@
     <a class="nav{{if .StaysNav}} on{{end}}" href="/reservations" {{if .StaysNav}}aria-current="page"{{end}}>{{icon "users" 18}}{{t "nav.stays"}}</a>
     <a class="nav{{if .PropertiesNav}} on{{end}}" href="/apartments" {{if .PropertiesNav}}aria-current="page"{{end}}><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 7h6M9 11h6M9 15h3"/></svg>{{t "nav.properties"}}</a>
     <a class="nav{{if eq .Nav "cleaning"}} on{{end}}" href="/cleaning" {{if eq .Nav "cleaning"}}aria-current="page"{{end}}>{{icon "sparkles" 18}}{{t "nav.cleaning"}}</a>
-    {{if not .PaymentsHidden}}<a class="nav{{if eq .Nav "payments"}} on{{end}}" href="/payments" {{if eq .Nav "payments"}}aria-current="page"{{end}}>{{icon "credit-card" 18}}{{t "nav.payments"}}</a>{{end}}
     <a class="nav{{if eq .Nav "stay_fees"}} on{{end}}" href="/stay-fees" {{if eq .Nav "stay_fees"}}aria-current="page"{{end}}>{{icon "receipt-text" 18}}{{t "nav.stay_fees"}}</a>
   </nav>
   {{if .SignedIn}}
@@ -405,8 +404,6 @@
     <nav class="ui-menu-panel ui-sheet-list" aria-label="{{t "nav.more"}}">
       <button class="ui-menu-item" type="button" data-command-open>{{icon "search" 16}}{{t "host.search"}}</button>
       <a class="ui-menu-item" href="/stay-fees">{{icon "receipt-text" 16}}{{t "nav.stay_fees"}}</a>
-      {{if not .PaymentsHidden}}<a class="ui-menu-item" href="/payments">{{icon "credit-card" 16}}{{t "nav.payments"}}</a>
-      <a class="ui-menu-item" href="/booking-sites">{{icon "external-link" 16}}{{t "nav.booking_sites"}}</a>{{end}}
       <a class="ui-menu-item" href="/settings">{{icon "settings" 16}}{{t "nav.settings"}}</a>
       {{if .HavelOn}}<a class="ui-menu-item" href="/havel" data-havel-more>{{icon "message-circle-question" 16}}{{t "nav.ask_havel"}}</a>{{end}}
       <a class="ui-menu-item" href="/guide">{{icon "book-open" 16}}{{t "nav.guide"}}</a>

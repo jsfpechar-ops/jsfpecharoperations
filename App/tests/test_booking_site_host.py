@@ -68,13 +68,12 @@ def _row(html, href):
     return html[html.rfind("<a ", 0, start):html.index("</a>", start)]
 
 
-def test_list_shows_properties_and_active_sidebar_row():
+def test_list_shows_properties():
     client, _, ids = _host("AB")
     response = client.get("/booking-sites?lang=en")
     assert response.status_code == 200
     for aid in ids:
         assert f"/apartments/{aid}/booking-site" in response.text
-    assert 'aria-current="page"' in _row(response.text, "/booking-sites")
 
 
 def test_single_property_redirects_to_setup():
@@ -111,25 +110,22 @@ def test_logged_out_redirects_to_login():
     assert "/login" in response.headers["location"]
 
 
-def test_phone_tabbar_links_booking_sites():
+def test_phone_tabbar_omits_booking_sites_nav():
     client, _, _ids = _host("A")
     html = client.get("/apartments?lang=en").text
-    assert 'href="/booking-sites"' in html
-    assert 'ui-menu-item' in html and "/booking-sites" in html
+    assert 'class="ui-menu-item" href="/booking-sites"' not in html
 
 
-def test_setup_page_highlights_booking_site_row():
+def test_setup_page_renders():
     client, _, ids = _host("A")
     response = client.get(f"/apartments/{ids[0]}/booking-site?lang=en")
     assert response.status_code == 200
-    assert 'aria-current="page"' in _row(response.text, "/booking-sites")
-    assert 'aria-current="page"' not in _row(response.text, "/apartments")
 
 
-def test_phone_more_menu_links_booking_sites():
+def test_phone_more_menu_omits_booking_sites_nav():
     client, _, _ = _host("A")
     html = client.get("/?lang=en").text
-    assert 'class="ui-menu-item" href="/booking-sites"' in html
+    assert 'class="ui-menu-item" href="/booking-sites"' not in html
 
 
 def test_publish_needs_photo_and_description():

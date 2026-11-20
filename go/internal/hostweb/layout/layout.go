@@ -686,18 +686,10 @@ func buildView(r *http.Request, env Env, sh shell, c *reqCtx, p Page) view {
 	switch p.Nav {
 	case "invoices", "stay_fees", "settings", "admin", "guide":
 		v.MoreNav = true
-	case "payments", "booking_sites":
-		if !v.PaymentsHidden {
-			v.MoreNav = true
-		}
 	}
 	switch p.Nav {
 	case "menu", "cleaning", "stay_fees", "settings", "entities", "privacy_requests":
 		v.MenuNav = true
-	case "payments":
-		if !v.PaymentsHidden {
-			v.MenuNav = true
-		}
 	}
 	if p.NavActionCount != 0 {
 		v.NavCount = fmt.Sprint(p.NavActionCount)
@@ -714,12 +706,7 @@ func buildView(r *http.Request, env Env, sh shell, c *reqCtx, p Page) view {
 		{"/apartments", "house", "nav.properties", v.PropertiesNav},
 		{"/stay-fees", "receipt-text", "nav.stay_fees", p.Nav == "stay_fees"},
 		{"/cleaning", "sparkles", "nav.cleaning", p.Nav == "cleaning"},
-		{"/payments", "credit-card", "nav.payments", p.Nav == "payments"},
-		{"/booking-sites", "external-link", "nav.booking_sites", p.Nav == "booking_sites"},
 	} {
-		if v.PaymentsHidden && (l.href == "/payments" || l.href == "/booking-sites") {
-			continue
-		}
 		link := navLink{Href: l.href, Label: c.t(l.key), Icon: template.HTML(mustIcon(l.icon, 20)), Active: l.active}
 		if l.href == "/" {
 			link.Count = v.NavCount

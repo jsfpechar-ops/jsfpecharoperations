@@ -19,7 +19,7 @@ def test_signed_in_pages_carry_the_v2_shell_and_not_the_drawer(host_with_propert
         assert f'class="ui-menu-item" href="{href}"' in page, href
     home = host_with_property.get("/?lang=en").text
     home_sidebar = re.search(r'<aside class="side" id="app-sidebar".*?</aside>', home, re.S).group(0)
-    for href in ("/", "/reservations", "/apartments", "/stay-fees", "/cleaning", "/payments", "/settings"):
+    for href in ("/", "/reservations", "/apartments", "/stay-fees", "/cleaning", "/settings"):
         assert f'href="{href}"' in home_sidebar, href
 
 
