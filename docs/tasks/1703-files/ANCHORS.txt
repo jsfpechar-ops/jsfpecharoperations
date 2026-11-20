@@ -1,0 +1,12 @@
+# Brief 1703 step-0 anchors (repo root). Each grep -cF must return 1 before copying sidecars on a worktree without 1703; see brief §4 for post-merge verification.
+grep -cF '// refused save of brief 1702b, whose view carries the error lines and Status.' go/internal/web/properties/apartment_detail.go
+grep -cF 'func (*Client).TestAvailability(ctx context.Context)' go/internal/ubyport/readonly.go
+grep -cF 'async def automation_timing_save(apartment_id: int, request: Request):' App/app/routes/admin.py
+grep -cF 'async def refresh_codelists(apartment_id: int, request: Request):' App/app/routes/admin.py
+grep -cF '// Package ical ports the iCal feed download from the Python app' go/internal/ical/feedurl.go
+ls go/internal/web/properties/apartment_small_posts.go 2>&1 | grep -cF 'No such file'
+ls go/internal/ical/syncapartment.go 2>&1 | grep -cF 'No such file'
+ls go/internal/ubyport/codelists.go 2>&1 | grep -cF 'No such file'
+ls go/internal/policyletter/parse.go 2>&1 | grep -cF 'No such file'
+ls go/cmd/ubyhost-web/register_web_properties_apartment_small_posts.go 2>&1 | grep -cF 'No such file'
+ls go/internal/web/properties/apartmentsmallposts/i18n_keys.txt 2>&1 | grep -cF 'No such file'
