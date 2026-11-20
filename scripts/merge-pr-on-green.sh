@@ -55,6 +55,14 @@ head_sha() {
   gh pr view "${PR}" --json headRefOid --jq '.headRefOid'
 }
 
+# Owner policy: auto-merge PRs when green, but never while main's go job is red.
+main_go_red() {
+  local conclusion
+  conclusion="$(gh api repos/jsfpechar-ops/jsfpecharoperations/commits/main/check-runs \
+    --jq '.check_runs[]|select(.name=="go")|.conclusion' 2>/dev/null | head -1)"
+  [ "${conclusion}" = "failure" ]
+}
+
 pinned="$(head_sha)"
 echo "guarding PR #${PR} at ${pinned}"
 deadline=$(( $(date +%s) + TIMEOUT ))
@@ -85,6 +93,11 @@ while :; do
     # Re-read right before merging: a force-push during the poll must restart it.
     if [ "$(head_sha)" != "${pinned}" ]; then
       echo "head changed during the final check; re-evaluating"
+      continue
+    fi
+    if main_go_red; then
+      echo "main go job is red; pausing merge for PR #${PR} until main is green"
+      sleep 30
       continue
     fi
     echo "all ${total} check(s) green for ${pinned} (required: ${REQUIRED_CHECKS}); merging (${METHOD})"
