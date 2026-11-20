@@ -92,109 +92,7 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  ubyhost:
-    build:
-      context: ../..
-      dockerfile: Dockerfile
-    image: ubyhost:local
-    restart: unless-stopped
-    stop_grace_period: 90s
-    env_file: .env
-    environment:
-      UBYHOST_DATA_DIR: /data
-      PORT: "8080"
-      # WP06: uvicorn workers that only serve HTTP; jobs run in `worker`.
-      # WP32: the number comes from UBYHOST_WEB_WORKERS in .env (image default
-      # 2; 4 on the 8 GB / 2 vCPU server, see docs/LIGHTSAIL.md).
-      UBYHOST_ROLE: web
-    volumes:
-      - ubyhost-data:/data
-      - ubyhost-pgsock:/var/run/postgresql
-    expose:
-      - "8080"
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "python",
-          "-c",
-          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=3)",
-        ]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 25s
-    # WP32: sized for the 8 GB / 2 vCPU production server. Web 2g + worker 1g
-    # + caddy 256m leaves over 4 GB for the OS, Docker and
-    # the page cache that serves SQLite reads. Each limit is a cap, not a
-    # reservation; a smaller server (staging) sets lower values in .env.
-    mem_limit: ${UBYHOST_WEB_MEM:-2g}
-    cap_drop: [ALL]
-    security_opt: ["no-new-privileges:true"]
-    # OPS-3: bound container logs so they cannot grow without limit. Rotated
-    # lines are gone for good; capture anything needed during an incident.
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    networks:
-      - web
-
-  # WP06: the background scheduler (iCal sync, UbyPort sweep, deadline watch,
-  # mail outbox, photo sweep, retention) in its own process. Same image, env
-  # and volume as the web app; it holds DATA_DIR/scheduler.lock, so a second
-  # scheduler anywhere on this volume refuses to start.
-  worker:
-    image: ubyhost:local
-    pull_policy: never
-    restart: unless-stopped
-    # A UbyPort batch already on the wire must record its answer.
-    stop_grace_period: 90s
-    env_file: .env
-    environment:
-      UBYHOST_DATA_DIR: /data
-      UBYHOST_ROLE: worker
-      # J7: "go" makes this worker enqueue nothing (the Go service does) and
-      # watch that Go keeps enqueuing; unset, it enqueues every job.
-      UBYHOST_SCHEDULER: ${UBYHOST_SCHEDULER:-}
-    command: ["python", "-m", "app.worker"]
-    volumes:
-      - ubyhost-data:/data
-      - ubyhost-pgsock:/var/run/postgresql
-    # No HTTP server: the worker touches /data/worker.alive every 30 s while
-    # its scheduler runs.
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "python",
-          "-c",
-          "import os, sys, time; sys.exit(0 if time.time() - os.path.getmtime('/data/worker.alive') < 120 else 1)",
-        ]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
-    mem_limit: ${UBYHOST_WORKER_MEM:-1g}
-    cap_drop: [ALL]
-    security_opt: ["no-new-privileges:true"]
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    # Built and migrated by the web service first; also creates the volume
-    # with the app's ownership on a fresh server.
-    depends_on:
-      ubyhost:
-        condition: service_healthy
-    networks:
-      - web
-
-  # Go port of the web app (plan v4 G1b). Runs the background jobs whose kinds
-  # are listed in UBYHOST_GO_JOB_KINDS. HTTP only for paths in UBYHOST_GO_PATHS.
-  # Off unless COMPOSE_PROFILES contains "go" (needs PostgreSQL).
+  # 1782: sole app process after cutover; Python ubyhost/worker removed.
   ubyhost-go:
     build:
       context: ../..
@@ -316,9 +214,6 @@ services:
         max-size: "10m"
         max-file: "3"
     # goose runs in the web service first; the Go service starts after it.
-    depends_on:
-      ubyhost:
-        condition: service_healthy
     networks:
       - web
 
@@ -385,7 +280,6 @@ services:
       UBYHOST_DOMAIN: ${UBYHOST_DOMAIN}
       UBYHOST_APP_DOMAIN: ${UBYHOST_APP_DOMAIN:-}
       ACME_EMAIL: ${ACME_EMAIL}
-      UBYHOST_GO_PATHS: ${UBYHOST_GO_PATHS:-/__go_off__}
       UBYHOST_AOP_MODE: ${UBYHOST_AOP_MODE:-off}
     volumes:
       - ./caddy/Caddyfile.active:/etc/caddy/Caddyfile:ro
@@ -406,9 +300,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    depends_on:
-      ubyhost:
-        condition: service_healthy
     networks:
       - web
 
