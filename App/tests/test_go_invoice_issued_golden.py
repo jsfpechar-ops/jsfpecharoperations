@@ -5,13 +5,13 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
-APP = ROOT / "App"
+APP = Path(__file__).resolve().parents[1]
 
 
 def test_invoice_issued_golden_is_fresh():
+    script = APP / "scripts" / "go_invoice_issued_golden.py"
     proc = subprocess.run(
-        [str(APP / ".venv/bin/python"), "scripts/go_invoice_issued_golden.py", "--check"],
+        [sys.executable, str(script), "--check"],
         cwd=APP,
         capture_output=True,
         text=True,
