@@ -451,6 +451,11 @@ plaintext numbers remain:
     .venv/bin/python scripts/migrate_encrypt_doc_fields.py
     .venv/bin/python scripts/migrate_encrypt_doc_fields.py --check
 
+On PostgreSQL the same flags are available on Go (brief 1780, tranche A; deploy
+still calls Python until the switch): from the `go/` tree with
+`UBYHOST_DATABASE_URL` set, `ubyhost-web migrate-encrypt-doc-fields` with the
+same `--dry-run`, `--check`, or `--rollback` options.
+
 It is idempotent and safe to re-run, and it blanks the plaintext column as it
 goes. Until it has run, the numbers are still in the clear in that database;
 the app keeps reading the plaintext column as a fallback so nothing breaks in
