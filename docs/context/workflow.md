@@ -88,10 +88,6 @@ Owner decision 2026-11-03: the thread that changes UX checks it with Chromium.
 3. A new check goes in `tests/layout_lint.js` plus a line in `test_the_lint_catches_the_known_regressions`.
 4. PR body: per page "390: ...; 768: ...; 1280: ...". CI links the screenshots in the job summary.
 
-## Page port parity (§6 snippet)
-
-Host page ports: paste the §6 block from [brief 1820](../tasks/1820-go-page-screenshot-parity-tool.md). `go_page_parity_screenshots.py --fail-on-visible` must pass before merge guard (owner 2026-11-20).
-
 ## Update triggers
 
 | When this changes | Update |
