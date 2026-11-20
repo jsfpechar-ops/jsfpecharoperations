@@ -35,6 +35,13 @@ PINNED_WRITES = [
     ("go/internal/ubyport/store.go", "RecordTransportError", ANY, "transport_error", "running"),
     ("go/internal/ubyport/store.go", "RecordOutcome", ANY, "<param>", "running"),
     ("go/internal/ubyport/recover.go", "RecoverStaleSubmissions", ("running",), "outcome_unknown", "running"),
+    (
+        "App/scripts/go_go_submissions_reservations_read_golden.py",
+        "_seed",
+        INSERT,
+        "<state>",
+        None,
+    ),
 ]
 
 # States that may have no move out without being in TERMINAL_SUBMISSION_STATES.

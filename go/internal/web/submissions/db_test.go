@@ -82,7 +82,27 @@ func testGetenv(k string) string {
 	switch k {
 	case "UBYHOST_SECRET_KEY":
 		return testSecret
+	case "UBYHOST_TERMS_VERSION":
+		return "t1"
+	case "UBYHOST_PRIVACY_VERSION":
+		return "p1"
+	case "UBYHOST_DPA_VERSION":
+		return "d1"
 	default:
 		return ""
+	}
+}
+
+func seedLegalAcceptance(t *testing.T, pool *pgxpool.Pool, userID int64, at time.Time) {
+	t.Helper()
+	ctx := context.Background()
+	stamp := at.UTC().Format(time.RFC3339)
+	for j, doc := range []struct{ name, version string }{
+		{"terms", "t1"}, {"privacy", "p1"}, {"dpa", "d1"},
+	} {
+		if _, err := pool.Exec(ctx, `INSERT INTO legal_acceptance (id, user_account_id, document, version, accepted_at, method)
+			VALUES ($1, $2, $3, $4, $5, 'clickwrap')`, userID*10+int64(j), userID, doc.name, doc.version, stamp); err != nil {
+			t.Fatal(err)
+		}
 	}
 }

@@ -47,6 +47,7 @@ func seedParityWorld(t *testing.T, pool *pgxpool.Pool, now time.Time) (ownerID, 
 		VALUES ('reports-parity', 'x', 'host', 1, 1, $1, 'reports-parity@example.test') RETURNING id`, stamp).Scan(&ownerID); err != nil {
 		t.Fatal(err)
 	}
+	seedLegalAcceptance(t, pool, ownerID, now)
 	var entityID int64
 	if err := pool.QueryRow(ctx, `INSERT INTO legal_entity (owner_user_id, name, created_at) VALUES ($1,'Entity',$2) RETURNING id`,
 		ownerID, stamp).Scan(&entityID); err != nil {
