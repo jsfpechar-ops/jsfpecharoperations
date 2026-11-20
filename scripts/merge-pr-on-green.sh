@@ -36,7 +36,8 @@ required_checks_ok() {
   local name state
   for name in ${REQUIRED_CHECKS}; do
     state="$(printf '%s\n' "${output}" | awk -F'\t' -v n="${name}" '$1==n{print $2; exit}')"
-    if [ "${state}" != "pass" ]; then
+    # Path-filtered PRs legitimately skip `go` when no Go paths changed; treat as satisfied.
+    if [ "${state}" != "pass" ] && [ "${state}" != "skipping" ]; then
       echo "required check ${name} not pass (state=${state:-missing})" >&2
       return 1
     fi
