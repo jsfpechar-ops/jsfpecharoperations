@@ -22,13 +22,15 @@ Rules (AGENTS.md): 1 filing correctness is not touched (cleaning pages only); 2 
 |---|---|---|---|
 | `251a5eced8ba6df29594b18f35ba1c10f4b3a33de41607b1918e9d519a002797` | `go/cmd/ubyhost-web/register_web_cleaning_host.go` | create | 21 |
 | `9cdfaab4cc44007b12c57c39fb072803e1a21422918160ca3f66e1fdd8953b14` | `go/cmd/ubyhost-web/register_web_cleaning_host_test.go` | create | 24 |
-| `a2c07de76c267ac7be92905393d216831f2156cf02a962dc76a31c15b24b7f33` | `go/internal/web/cleaning/host.go` | create | 347 |
+| `5592462fec30f4166f0ea2ce460ce52ccd4e1613a119cad95bce21f564c0af26` | `go/internal/web/cleaning/host.go` | create | 361 |
 | `a14d9b93fcdd8fb15a0ee31362ab2e0afcb1cc78179420358bcab8abea22c3cb` | `go/internal/web/cleaning/host_data.go` | create | 46 |
 | `8e247056d3a490fa5a55e4ea34f6111234f607f4a5eeecd6a4c697992c08bd7e` | `go/internal/web/cleaning/host_test.go` | create | 292 |
 | `46019efc2f28f964239a2edf72c5e27592b2372323bdb0012b8cdaf789ba5b79` | `go/internal/web/cleaning/hosttemplates/_calendar.tmpl` | create | 91 |
 | `b2401a6ac181f465713c28f735fcde8057e3c6209406bc2b8527e5116763bbbd` | `go/internal/web/cleaning/hosttemplates/cleaning.tmpl` | create | 17 |
 | `d460b2ec2eaa5f50a6fe27d8cb746f7b1e8dd0de3e06d4395f1a41394b5cfcc1` | `go/internal/web/cleaning/hosttemplates/cleaning_edit.tmpl` | create | 21 |
 | `a534cb736a4b0889fcd9eb8b3bef33b0441ac8c86371696b2d9bbe950c793e8f` | `go/internal/web/cleaning/hosttemplates/cleaning_properties.tmpl` | create | 8 |
+
+Full manifest: `docs/tasks/1570-files/MANIFEST.sha256` (exact-diff backfill 2026-11-20 from `main`; `host.go` hash updated after later route work).
 
 **How the code is built (for the reviewer; the executor reads no Go file, it only copies and runs).** The earlier cleaning brief (1310) ported the five routes that need no host layout (`go/internal/web/cleaning/handler.go`, `model.go`, `render.go`, registered in `register_web_cleaning.go`); those files are not changed. The host pages are new files of the same package. `host.go` has a route table (`hostAdd` called from an `init()` in each file, so the later briefs add routes without editing this file), `RegisterHost`, the login and CSRF helpers in FastAPI's order (CSRF dependency, then the integer path parameter, then `require_login`) and the page renderer, which wraps `hostweb/layout.Render` (nav `cleaning`, `V2`, the page templates in `hosttemplates/`, the page catalog is the calendar and status texts of `i18n.json` "host"). The schedule page reuses the existing `buildPayload` (it also gives the HTML of the cleaning table) and a host variant of the dashboard calendar (`_calendar.tmpl`, copied from the read-only one of the shared page with the host differences of `_dashboard_calendar.html`: `data-readonly="false"`, the add-type buttons, the stay form posting to `/reservations` with a CSRF token, the hint text). `go/cmd/ubyhost-web/register_web_cleaning_host.go` hands the table to `registerRoutes`. The existing test `register_web_cleaning_test.go` asserted that `GET /cleaning`, `GET /cleaning/shares` and `POST /cleaning/events` fall to the catch-all; step 2 removes those three rows (the new registration tests of this and the next briefs assert the new patterns).
 
@@ -93,7 +95,7 @@ No other file may change.
    cd docs/tasks/1570-files && for f in $(find . -name '*.txt' | sed 's|^\./||; s|\.txt$||'); do mkdir -p "../../../$(dirname "$f")" && cp "$f.txt" "../../../$f"; done; cd ../../.. && sha256sum -c - <<'EOF' 2>&1 | tail -12
    251a5eced8ba6df29594b18f35ba1c10f4b3a33de41607b1918e9d519a002797  go/cmd/ubyhost-web/register_web_cleaning_host.go
    9cdfaab4cc44007b12c57c39fb072803e1a21422918160ca3f66e1fdd8953b14  go/cmd/ubyhost-web/register_web_cleaning_host_test.go
-   a2c07de76c267ac7be92905393d216831f2156cf02a962dc76a31c15b24b7f33  go/internal/web/cleaning/host.go
+   5592462fec30f4166f0ea2ce460ce52ccd4e1613a119cad95bce21f564c0af26  go/internal/web/cleaning/host.go
    a14d9b93fcdd8fb15a0ee31362ab2e0afcb1cc78179420358bcab8abea22c3cb  go/internal/web/cleaning/host_data.go
    8e247056d3a490fa5a55e4ea34f6111234f607f4a5eeecd6a4c697992c08bd7e  go/internal/web/cleaning/host_test.go
    46019efc2f28f964239a2edf72c5e27592b2372323bdb0012b8cdaf789ba5b79  go/internal/web/cleaning/hosttemplates/_calendar.tmpl

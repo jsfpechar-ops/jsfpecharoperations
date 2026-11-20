@@ -21,8 +21,10 @@ Rules (AGENTS.md): 1 filing correctness is not touched (cleaning pages only); 2 
 | sha256 | file | action | lines |
 |---|---|---|---|
 | `1edecb4d8b23faaabeb628aab375ebe4bedac50082083ee4343adbf18f8238ba` | `go/cmd/ubyhost-web/register_web_cleaning_host_codes_test.go` | create | 39 |
-| `7147639b78d91f9ae6db65d9fd3014a0df301d5b41508336ffabd6ab4fe10f47` | `go/internal/web/cleaning/host_codes.go` | create | 408 |
-| `bf6aedee09700d06fcdeb083f9d3ea22fed0062e48bbdb5e20247a20b2865482` | `go/internal/web/cleaning/host_codes_test.go` | create | 334 |
+| `ca05f1677e514f0f8beab25430c3cc48050cab52ad22844daa3b65d5f5100dc6` | `go/internal/web/cleaning/host_codes.go` | create | 411 |
+| `a1538880a719a8440c74994ae1042dfffe686bd34e3f569daac06e256f76bfa2` | `go/internal/web/cleaning/host_codes_test.go` | create | 400 |
+
+Full manifest: `docs/tasks/1573-files/MANIFEST.sha256` (exact-diff backfill 2026-11-20 from `main`).
 
 **How the code is built.** `host_codes.go` is one handler with three actions, each a transaction under the same advisory lock key as Python. `activate` is `_activate` without its lock-provider branch: a manual code never takes that branch, and the TTLock activation stays in the Python worker. Errors come back as the key Python raises as `ValueError` and re-render the settings page of brief 1572 with status 422.
 
@@ -79,8 +81,8 @@ No other file may change.
    ```bash
    cd docs/tasks/1573-files && for f in $(find . -name '*.txt' | sed 's|^\./||; s|\.txt$||'); do mkdir -p "../../../$(dirname "$f")" && cp "$f.txt" "../../../$f"; done; cd ../../.. && sha256sum -c - <<'EOF' 2>&1 | tail -6
    1edecb4d8b23faaabeb628aab375ebe4bedac50082083ee4343adbf18f8238ba  go/cmd/ubyhost-web/register_web_cleaning_host_codes_test.go
-   7147639b78d91f9ae6db65d9fd3014a0df301d5b41508336ffabd6ab4fe10f47  go/internal/web/cleaning/host_codes.go
-   bf6aedee09700d06fcdeb083f9d3ea22fed0062e48bbdb5e20247a20b2865482  go/internal/web/cleaning/host_codes_test.go
+   ca05f1677e514f0f8beab25430c3cc48050cab52ad22844daa3b65d5f5100dc6  go/internal/web/cleaning/host_codes.go
+   a1538880a719a8440c74994ae1042dfffe686bd34e3f569daac06e256f76bfa2  go/internal/web/cleaning/host_codes_test.go
    EOF
    ```
 
