@@ -1,54 +1,47 @@
 # 1704a report: Go house book page (GET /housebook)
 
-Status: review (no PR opened: run rules forbid it; the owner or coordinator opens it). Dormant: `UBYHOST_GO_PATHS` not changed.
+Status: review. Dormant: `UBYHOST_GO_PATHS` unchanged. Go code on `main` since #1081 (`cc0c7c4`); this PR is executor verification + report refresh.
 
 ## 1. Files changed
 
-Commit `571ff5f 1704a step 1` (sidecars copied and checksum-verified, then committed):
-- `go/internal/web/exports/housebook_view.go`, `go/internal/web/exports/housebook_view_test.go`
-- `go/internal/web/housebook/housebook.go`, `housebook_test.go`, `templates/housebook.tmpl`, `i18n_keys.txt`, `i18n.json`
-- `go/cmd/ubyhost-web/register_web_housebook.go`, `register_web_housebook_test.go`
+On `main` (already merged #1081): the nine §3 Go paths + sidecars under `docs/tasks/1704a-files/`.
 
-Step 7 (this commit): `docs/tasks/1704a-report.md` (new), `docs/tasks/1704a-go-housebook-page.md` (Status: review), `docs/tasks/1704-go-settings-menu-pages.md` (index row Status: review).
+This PR: `docs/tasks/1704a-report.md`, `docs/tasks/1704a-go-housebook-page.md` (Status: review), `docs/tasks/1704-go-settings-menu-pages.md` (1704a row → review).
 
 ## 2. Commands (last lines of output)
 
-- Step 0 anchors: all 15 checks as stated (9 greps print 1, the route grep prints nothing, the two `ls` say "No such file", 9 sidecars).
-- Step 1 sha256: 9 lines, all `: OK`.
-- Step 2 gofmt, build, vet: no output.
-- Step 3 `go_host_i18n.py --check`: `i18n rc=0`; pytest `2 passed in 0.58s`, no skip.
-- Step 4: skipped, `UBYHOST_TEST_DATABASE_URL` already set (PostgreSQL 16 on 55700).
-- Step 5: `ok .../go/internal/web/housebook`, `ok .../go/internal/web/exports`, `ok .../go/cmd/ubyhost-web`. The 11 named tests: all `--- PASS`. SKIP count: `0`.
-- Step 6 Python baseline: `ModuleNotFoundError: No module named 'playwright'` at collection of `tests/test_layout_lint_browser.py`. Not run.
-- Context lint: `context lint: OK`, rc=0.
+- Step 0: branch `cursor/1704a-go-housebook-dff7`; anchors 1–11 OK; **route and tree checks fail** (files and `GET /housebook` already on `main`). Sidecar manifest: 9× `: OK`.
+- Step 1: skipped (bytes already on disk; sha256 manifest matches).
+- Step 2 gofmt/build/vet: no output.
+- Step 3: `i18n rc=0`; `2 passed in 0.58s`, no skip.
+- Step 4–5 PostgreSQL: **CI only** (no `/usr/lib/postgresql/16/bin/pg_ctl`, no `postgres` user).
+- Step 6: read `docs/design/pages/stays.md` §Guest register; design-system §5 **not ticked** (Go page not served; pending path switch / 1705). UX baseline: not run (playwright not in venv; rule 4).
+- Context lint: `context lint: OK`.
 
 ## 3. Brief section 7
 
-- [x] sha256 `: OK` for all 9 files
+- [x] sha256 `: OK` for all 9 files (manifest on disk)
 - [x] format, build and vet printed nothing
-- [x] Step 3: `i18n rc=0` and a `passed` line
-- [x] Step 5: three `ok` lines, 11 tests PASS, SKIP 0
-- [x] Commit list: `571ff5f 1704a step 1` (the only step commit with changes)
+- [x] Step 3: `i18n rc=0` and passed line
+- [ ] Step 5: three `ok` lines, 11 PASS, SKIP 0 — **CI only here**
 - [x] No `UBYHOST_GO_PATHS`, Caddy, compose, env or Python change
-- [ ] UI gate: pending (see Owner steps)
+- [ ] UI gate pending until Go path switch
 
-Design-system section 5 checklist: not ticked. Every item needs a rendered page, and the Go page cannot be rendered yet. Items already true for the template (same classes and markup as Python) are unverified until the screenshots exist.
+Design-system §5: unchecked (screenshots/layout-lint on Go pending).
 
 ## 4. Deviations
 
-- Step 1 used explicit `git add <paths>` for the 9 files, not `git add go`.
-- Step 4 skipped: the existing PostgreSQL server was used.
-- Step 6 Python baseline did not run: `App/.venv` has no `playwright`. Installing it is a new dependency (rule 4), so I did not install it. The Go screenshots at 390, 768 and 1280 are pending the path switch, as the brief says.
-- Step 7 edited two files outside brief §3 (the brief's own status line and the 1704 index row), because step 7 names both edits.
-- Step 7 status is `review` without a PR, because the run rules forbid opening one.
-- Known-issues item (for the coordinator): the house book shows a guest filed by hand as "Not yet sent" (Python quirk, `housebook.html` `reported_pill` tests only the exact `yes`). Kept on purpose; a test pins it.
+- Steps 0–1: implementation pre-landed on `main` (#1081); no `1704a step 1` commit on this branch.
+- Step 5 not run locally (no PG 16).
+- Step 6 Python layout-lint: CI only (no playwright).
+- Known quirk kept: hand-filed guest shows "Not yet sent" (exact `yes` pill rule); Go test pins it.
 
 ## 5. Questions
 
-- Should `playwright` be added to `App/.venv` for the local UX baseline, or does the UX baseline run only in CI? This needs an owner decision (rule 4).
+- None.
 
 ## 6. Owner steps left
 
-1. Open the PR for `claude/beautiful-archimedes-lxhrit` (not `main`) and let the UX gate run.
-2. UX gate on Go: screenshots of `/housebook` at 390, 768 and 1280 px, layout lint on Go, then tick design-system section 5.
-3. Path switch only after step 2 (brief section "Owner steps"): add `/housebook` to `UBYHOST_GO_PATHS`, run `scripts/caddy-validate.sh`, then `docker compose up -d caddy`.
+1. CI: confirm step 5 Go tests green on PostgreSQL.
+2. UX gate on Go after 1705 switch: layout-lint + 390/768/1280 screenshots; tick design-system §5 in PR.
+3. Add `/housebook` to `UBYHOST_GO_PATHS` only after (2).
