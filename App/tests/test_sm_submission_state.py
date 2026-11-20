@@ -35,12 +35,13 @@ PINNED_WRITES = [
     ("go/internal/ubyport/store.go", "RecordTransportError", ANY, "transport_error", "running"),
     ("go/internal/ubyport/store.go", "RecordOutcome", ANY, "<param>", "running"),
     ("go/internal/ubyport/recover.go", "RecoverStaleSubmissions", ("running",), "outcome_unknown", "running"),
+    ("App/scripts/go_go_submissions_reservations_read_golden.py", "_seed", INSERT, "running", None),
     (
         "App/scripts/go_go_submissions_reservations_read_golden.py",
         "_seed",
-        INSERT,
+        ANY,
         "<state>",
-        None,
+        "running",
     ),
 ]
 
