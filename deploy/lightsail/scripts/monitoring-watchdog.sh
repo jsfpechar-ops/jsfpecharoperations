@@ -42,16 +42,31 @@ done
 # 2. Fresh data in Grafana Cloud Prometheus? (up query, must have results <5 min old)
 if [ -n "${GRAFANA_PROM_URL:-}" ] && [ -n "${GRAFANA_PROM_USER:-}" ] && [ -n "${GRAFANA_PROM_TOKEN:-}" ]; then
   query_url="${GRAFANA_PROM_URL%/push}/api/v1/query"
-  result="$(curl -sS -m 15 -u "${GRAFANA_PROM_USER}:${GRAFANA_PROM_TOKEN}" \
-    --data-urlencode 'query=up' "${query_url}" 2>/dev/null || echo '')"
+  prom_query() {
+    curl -sS -m 15 -u "${GRAFANA_PROM_USER}:${GRAFANA_PROM_TOKEN}" \
+      --data-urlencode "query=$1" "${query_url}" 2>/dev/null || echo ''
+  }
+  result="$(prom_query 'up')"
   if echo "${result}" | grep -q '"status":"success"'; then
-    if echo "${result}" | grep -q '"job":"node"' && echo "${result}" | grep -q '"job":"cadvisor"'; then
-      ok "Grafana Cloud Prometheus has node and cadvisor series"
+    if echo "${result}" | grep -q '"job":"node"' && echo "${result}" | grep -q '"job":"cadvisor"' && echo "${result}" | grep -q '"job":"ubyhost"'; then
+      ok "Grafana Cloud Prometheus has node, cadvisor and ubyhost series"
     else
-      fail "Grafana Cloud Prometheus query worked but node/cadvisor series missing (remote-write broken?)"
+      fail "Grafana Cloud Prometheus query worked but node/cadvisor/ubyhost series missing (remote-write broken?)"
     fi
   else
     fail "Grafana Cloud Prometheus query failed (auth, URL, or network)"
+  fi
+  # 2b. Go slots: only when the "go" profile is on must a slot be up; with the
+  # profile off there are no series at all and that is fine.
+  go_result="$(prom_query 'up{job="ubyhost-go"}')"
+  if echo "${go_result}" | grep -q '"job":"ubyhost-go"'; then
+    if echo "${go_result}" | grep -q ',"1"]'; then
+      ok "at least one ubyhost-go slot is up"
+    else
+      fail "ubyhost-go series present but all down (go profile on, both slots dead?)"
+    fi
+  else
+    ok "no ubyhost-go series (go profile off)"
   fi
 else
   fail "GRAFANA_PROM_URL / GRAFANA_PROM_USER / GRAFANA_PROM_TOKEN not set in .env"
