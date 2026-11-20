@@ -89,11 +89,17 @@ func seedParityWorld(t *testing.T, pool *pgxpool.Pool, now time.Time) (ownerID, 
 			receipt = &rc
 		}
 		var id int64
-		err := pool.QueryRow(ctx, `INSERT INTO submission (apartment_id, created_at, mode, guest_ids, state, pseudo_stamp, header_errors, record_errors, finished_at, error_text, receipt_pdf)
-			VALUES ($1,$2,'manual',$3,$4,$5,$6,$7::jsonb,$2,$8,$9) RETURNING id`,
-			aptID, stamp, guestJSON, state, pseudo, header, rec, errText, receipt).Scan(&id)
-		if err != nil {
+		if err := pool.QueryRow(ctx, `INSERT INTO submission (apartment_id, created_at, mode, guest_ids, state)
+			VALUES ($1,$2,'manual',$3,'running') RETURNING id`,
+			aptID, stamp, guestJSON).Scan(&id); err != nil {
 			t.Fatal(err)
+		}
+		if state != "running" {
+			if _, err := pool.Exec(ctx, `UPDATE submission SET state=$1, pseudo_stamp=$2, header_errors=$3, record_errors=$4::jsonb,
+				finished_at=$5, error_text=$6, receipt_pdf=$7 WHERE id=$8`,
+				state, pseudo, header, rec, stamp, errText, receipt, id); err != nil {
+				t.Fatal(err)
+			}
 		}
 		if i == 0 {
 			okID = id

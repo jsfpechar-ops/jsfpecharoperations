@@ -52,12 +52,10 @@ func LoadList(ctx context.Context, pool *pgxpool.Pool, owner int64) (*ListPage, 
 	p := &ListPage{}
 	for rows.Next() {
 		var r ListRow
-		var has int
 		if err := rows.Scan(&r.ID, &r.CreatedAt, &r.ApartmentID, &r.Mode, &r.GuestIDs, &r.State,
-			&r.PseudoStamp, &has, &r.InternalName); err != nil {
+			&r.PseudoStamp, &r.HasReceipt, &r.InternalName); err != nil {
 			return nil, err
 		}
-		r.HasReceipt = has != 0
 		r.GuestCount = guestCountJSON(r.GuestIDs)
 		name := r.InternalName
 		if strings.TrimSpace(name) == "" {
