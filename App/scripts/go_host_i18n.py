@@ -52,10 +52,25 @@ def render(keys: list[str]) -> str:
     return json.dumps(catalog, sort_keys=True, ensure_ascii=False, indent=1) + "\n"
 
 
+def guest_catalog_keys(path: Path) -> bool:
+    """Keys listed for App/app/i18n.py are maintained beside the Go package, not host_i18n."""
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line.startswith("#"):
+            if "App/app/i18n.py" in line:
+                return True
+            continue
+        if line:
+            break
+    return False
+
+
 def main(argv: list[str]) -> int:
     check = "--check" in argv
     stale = []
     for keys_file in sorted(GO_INTERNAL.glob("**/i18n_keys.txt")):
+        if guest_catalog_keys(keys_file):
+            continue
         out = keys_file.with_name("i18n.json")
         text = render(read_keys(keys_file))
         current = out.read_text(encoding="utf-8") if out.exists() else None
