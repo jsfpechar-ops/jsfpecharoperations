@@ -1,0 +1,80 @@
+{
+  "en": {
+    "title": "Guest registration",
+    "skip_to_form": "Skip to the form",
+    "language_label": "Language",
+    "loading": "Loading…",
+    "privacy": "Used only for your host's legal reporting to the Czech Police, and kept for six years.",
+    "privacy_first_line": "UbyHost collects only what Czech law and your registration need, and does not use tracking cookies.",
+    "privacy_link": "How your data is handled",
+    "host_details": "Your host",
+    "guide_qr_contact": "To reach your host directly, write to them where you booked, for example in your Booking.com or Airbnb messages.",
+    "host_details_help": "Questions? Contact your host.",
+    "host_details_missing": "Use the phone or e-mail in the message that contained this link."
+  },
+  "cs": {
+    "title": "Registrace hosta",
+    "skip_to_form": "Přejít na formulář",
+    "language_label": "Jazyk",
+    "loading": "Načítá se…",
+    "privacy": "Údaje slouží jen k zákonnému hlášení ubytovatele Policii ČR a uchovávají se 6 let.",
+    "privacy_first_line": "UbyHost shromažďuje jen to, co vyžaduje český zákon a vaše registrace, a nepoužívá sledovací cookies.",
+    "privacy_link": "Jak nakládáme s vašimi údaji",
+    "host_details": "Váš hostitel",
+    "guide_qr_contact": "Hostiteli napíšete přímo tam, kde jste rezervovali, například ve zprávách na Booking.com nebo Airbnb.",
+    "host_details_help": "Máte dotaz? Kontaktujte hostitele.",
+    "host_details_missing": "Použijte telefon nebo e-mail ze zprávy, ve které byl tento odkaz."
+  },
+  "de": {
+    "title": "Gästeregistrierung",
+    "skip_to_form": "Zum Formular springen",
+    "language_label": "Sprache",
+    "loading": "Wird geladen…",
+    "privacy": "Ausschließlich für die gesetzliche Meldung Ihres Gastgebers an die tschechische Polizei verwendet und sechs Jahre lang aufbewahrt.",
+    "privacy_first_line": "UbyHost erhebt nur, was das tschechische Recht und Ihre Anmeldung erfordern, und verwendet keine Tracking-Cookies.",
+    "privacy_link": "Umgang mit Ihren Daten",
+    "host_details": "Ihr Gastgeber",
+    "guide_qr_contact": "Ihren Gastgeber erreichen Sie direkt dort, wo Sie gebucht haben, zum Beispiel in Ihren Nachrichten bei Booking.com oder Airbnb.",
+    "host_details_help": "Fragen? Wenden Sie sich an Ihren Gastgeber.",
+    "host_details_missing": "Nutzen Sie die Telefonnummer oder E-Mail aus der Nachricht, die diesen Link enthielt."
+  },
+  "es": {
+    "title": "Ficha de huésped",
+    "skip_to_form": "Ir al formulario",
+    "language_label": "Idioma",
+    "loading": "Cargando…",
+    "privacy": "Se utilizan únicamente para la comunicación legal de su anfitrión a la Policía checa y se conservan durante seis años.",
+    "privacy_first_line": "UbyHost solo recoge lo que exigen la ley checa y su registro, y no utiliza cookies de seguimiento.",
+    "privacy_link": "Cómo se tratan sus datos",
+    "host_details": "Su anfitrión",
+    "guide_qr_contact": "Para contactar directamente con su anfitrión, escríbale donde hizo la reserva, por ejemplo en sus mensajes de Booking.com o Airbnb.",
+    "host_details_help": "¿Tiene preguntas? Contacte con su anfitrión.",
+    "host_details_missing": "Utilice el teléfono o el e-mail del mensaje que contenía este enlace."
+  },
+  "fr": {
+    "title": "Fiche voyageur",
+    "skip_to_form": "Aller au formulaire",
+    "language_label": "Langue",
+    "loading": "Chargement…",
+    "privacy": "Utilisées uniquement pour la déclaration légale de votre hôte à la police tchèque, et conservées pendant six ans.",
+    "privacy_first_line": "UbyHost ne collecte que ce qu'exigent la loi tchèque et votre enregistrement, et n'utilise pas de cookies de suivi.",
+    "privacy_link": "Traitement de vos données",
+    "host_details": "Votre hôte",
+    "guide_qr_contact": "Pour joindre directement votre hôte, écrivez-lui là où vous avez réservé, par exemple dans vos messages Booking.com ou Airbnb.",
+    "host_details_help": "Des questions ? Contactez votre hôte.",
+    "host_details_missing": "Utilisez le téléphone ou l'e-mail indiqué dans le message contenant ce lien."
+  },
+  "uk": {
+    "title": "Реєстрація гостей",
+    "skip_to_form": "Перейти до форми",
+    "language_label": "Мова",
+    "loading": "Завантаження…",
+    "privacy": "Використовується лише для передбаченого законом повідомлення господарем чеської поліції та зберігається шість років.",
+    "privacy_first_line": "UbyHost збирає лише те, чого вимагають чеський закон і ваша реєстрація, і не використовує файлів cookie для відстеження.",
+    "privacy_link": "Як обробляються ваші дані",
+    "host_details": "Ваш господар",
+    "guide_qr_contact": "Щоб зв'язатися з господарем напряму, напишіть йому там, де ви бронювали, наприклад у повідомленнях Booking.com або Airbnb.",
+    "host_details_help": "Маєте запитання? Зверніться до господаря.",
+    "host_details_missing": "Скористайтеся телефоном або e-mail із повідомлення, в якому було це посилання."
+  }
+}

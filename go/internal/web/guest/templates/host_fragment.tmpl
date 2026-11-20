@@ -1,0 +1,18 @@
+{{define "host.fragment"}}
+<div class="g-card" id="host-contact">
+  <h2>{{.T "host_details"}}</h2>
+  {{if eq .Door "qr"}}
+    {{if .Host.Name}}<p>{{.Host.Name}}</p>{{end}}
+    <p class="g-intro" style="margin-bottom:0" data-qr-contact>{{.T "guide_qr_contact"}}</p>
+  {{else}}
+  <p class="g-intro">{{.T "host_details_help"}}</p>
+  {{if or .Host.Name .Host.Email .Host.Phone}}
+    {{if .Host.Name}}<p>{{.Host.Name}}</p>{{end}}
+    {{if .Host.Phone}}<p><a href="tel:{{phoneTel .Host.Phone}}">{{.Host.Phone}}</a></p>{{end}}
+    {{if .Host.Email}}<p><a href="mailto:{{.Host.Email}}">{{.Host.Email}}</a></p>{{end}}
+  {{else}}
+    <p class="hint">{{.T "host_details_missing"}}</p>
+  {{end}}
+  {{end}}
+</div>
+{{end}}
