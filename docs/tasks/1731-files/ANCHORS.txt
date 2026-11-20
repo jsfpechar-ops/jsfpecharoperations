@@ -1,0 +1,11 @@
+# Brief 1731 step-0 anchors (repo root). Each grep -cF must return 1; each ls line must return 1 before copying sidecars.
+grep -cF 'async def reservation_quick_edit(reservation_id: int, request: Request):' App/app/routes/admin.py
+grep -cF 'async def reservation_remove_empty_slot(reservation_id: int, request: Request):' App/app/routes/admin.py
+grep -cF 'async def reservation_archive(reservation_id: int, request: Request):' App/app/routes/admin.py
+grep -cF 'async def reservation_unarchive(reservation_id: int, request: Request):' App/app/routes/admin.py
+grep -cF 'async def reservation_delete_demo(reservation_id: int, request: Request):' App/app/routes/admin.py
+grep -cF '// CreateHandler is POST /reservations (admin.py reservation_create).' go/internal/web/stays/post.go
+grep -cF '// UpdateHandler is POST /reservations/{reservation_id} (admin.py reservation_update).' go/internal/web/staydetail/post.go
+ls go/internal/web/stays/edit_posts.go 2>&1 | grep -cF 'No such file'
+ls App/scripts/go_edit_posts_golden.py 2>&1 | grep -cF 'No such file'
+ls go/cmd/ubyhost-web/register_web_stays_edit_posts.go 2>&1 | grep -cF 'No such file'

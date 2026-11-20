@@ -1,6 +1,6 @@
 # 1731: Go stays 2: create, update, quick-edit, remove slot, archive, demo delete
 
-Status: todo — scoped (final brief 2026-11-15). Executable only after its exact-diff pass: sidecars in `docs/tasks/1731-files/`, anchors and sha256 table (§2), written to the rules in [workflow](../context/workflow.md#writing-briefs-for-haiku). Until then the executor must not start it.
+Status: todo — ready for executor (exact-diff pass, 2026-11-20).
 Depends on: 1730 | Base commit: current tip of the working branch | Branch: task/1731-go-reservation-edit-posts
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (split in two briefs if the exact-diff pass finds more)
 Tier: A (exact diffs only; Opus writes the exact-diff pass; fresh review of the full diff before ready)
@@ -15,7 +15,27 @@ Port `reservation_create`, `reservation_update`, `reservation_quick_edit`, `rese
 
 Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (no new personal-data field without a `retention.py` line, no new outbound request without a reason in the PR); 3 no secrets, no real data (fixtures use `@example.test`); 4 no new dependency without a decision line; 5 plain PostgreSQL through `pgxpool`, `$n` placeholders, a schema change is a new `App/migrations_pg/` file; 6 light mode, every form works without JavaScript (Go forms carry the `_csrf` input); 11 Go first.
 
-**Python source of truth:** `admin.py` 3865-3965, 4129-4305.
+**Python source of truth:** `App/app/routes/admin.py` 3865-3965, 4129-4305.
+
+**Already on `main` (not re-ported here):** `POST /reservations` → `go/internal/web/stays/post.go` `CreateHandler`; `POST /reservations/{reservation_id}` → `go/internal/web/staydetail/post.go` `UpdateHandler` (brief 1863). This brief ports the remaining POSTs in `go/internal/web/stays/edit_posts.go`.
+
+**All implementation code is pre-written.** Sidecars: `docs/tasks/1731-files/<repo path>.txt`. Step 1 copies them; never retype or edit them. Checksums:
+
+| sha256 | file | action |
+|---|---|---|
+| `1cd6f31e42d5714c2d191c9253404e2e4a0e3863d966aad8d34f6c9cbeef0637` | `App/scripts/go_edit_posts_golden.py` | create |
+| `520f6e31c27292698d8208495708b641850d369eeb43b21144ecf78dbff8a650` | `App/tests/test_go_edit_posts_golden.py` | create |
+| `8f30062b35914a922b0982bf5a7061998f9cb6f0b333d4e2210f1f5193ca66b9` | `go/cmd/ubyhost-web/register_web_stays_edit_posts.go` | create |
+| `c7b563d924565674868afad8a72960867bb9b905864bb48d60189dc6c6677a9d` | `go/cmd/ubyhost-web/register_web_stays_edit_posts_test.go` | create |
+| `301882bb191fcb0c8352b9416771c133602aeef508fe60ec7d0c73329a82b29a` | `go/internal/web/stays/edit_posts.go` | create |
+| `34bbf14788659fee890f974e36e886039104066a06ca35bd435c04e29444635f` | `go/internal/web/stays/edit_posts_test.go` | create |
+| `aa06045fc25b82445feda3fa1d018cb64aed45e8b1dd4631de7cf1e0058e0ae4` | `go/internal/web/stays/testdata/edit_posts_golden.json` | create |
+
+Full manifest: `docs/tasks/1731-files/MANIFEST.sha256`.
+
+**Verified by the brief writer (dry-run on `main`, copy sidecars only):** `sha256sum -c docs/tasks/1731-files/MANIFEST.sha256` all OK; `gofmt -l` empty; `go vet ./internal/web/stays/...` silent; `go test ./internal/web/stays/... -count=1` OK; `go test ./cmd/ubyhost-web/...` fails until `register_web_staydetail_test.go` expects the new patterns (brief 1737 wave or a one-line test fix in step 4 — see accepted differences). Golden script needs `App/.venv`.
+
+**Accepted differences (report + PR):** Filing after save uses `scheduler.Enqueue("submit")` like 1863, not in-request filing. With `UBYHOST_HEADCOUNT_LEAD_LIVE` on, Python calls `door_codes.on_registration_complete` and `claim.maybe_notify_completion` after remove-empty-slot; Go skips those until wired (default flag off). Step 3 adds split flash keys to `go/internal/web/stays/i18n_keys.txt` and regenerates `i18n.json` (`go_host_i18n.py`). Copying `register_web_stays_edit_posts.go` registers routes on the dev mux before the production path wave — update `TestStayDetailRoutesRegistered` expectations when enabling the wave.
 
 **Routes in scope (method path, Python function):**
 
@@ -28,7 +48,7 @@ Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (no new pers
 
 **Risk:** Stay dates drive door codes, cleaning and filing deadlines.
 
-**Parity method (same as briefs 1595 and 1580):** a golden script `App/scripts/go_go_reservation_edit_posts_golden.py` seeds a throwaway database with made-up rows, renders the real FastAPI app, and writes `testdata/*_golden.json`; the Go test replays the same seed and must match byte for byte (go-first exception 1). Accepted differences are listed in the report, never silently.
+**Parity method (same as briefs 1595 and 1580):** `App/scripts/go_edit_posts_golden.py` seeds a throwaway database with made-up rows, renders the real FastAPI app, and writes `testdata/edit_posts_golden.json`; the Go test replays the same seed (go-first exception 1). Accepted differences are listed in the report, never silently.
 
 Keep the conditions of the AI review of K-F03/K-F07 ([go-sqlite-final](../plans/go-sqlite-final.md) section 7), in particular: never cancel a filed stay, send once, skip while `ubyport_auth_failed`.
 
@@ -50,7 +70,18 @@ No other file may change. Two open briefs naming the same file in §3 run in the
 
 ## 4. Steps
 
-0. Checks (repo root). Anything other than the stated result: STOP (§8). The exact-diff pass fills in the `grep -cF` anchor lines for every file this brief edits and the `ls` line proving the new files do not exist yet.
+0. Checks (repo root). Anything other than the stated result: STOP (§8). Each `grep -cF` / `ls` anchor prints `1` (see `docs/tasks/1731-files/ANCHORS.txt`):
+   - `grep -cF 'async def reservation_quick_edit(reservation_id: int, request: Request):' App/app/routes/admin.py | tail -1`
+   - `grep -cF 'async def reservation_remove_empty_slot(reservation_id: int, request: Request):' App/app/routes/admin.py | tail -1`
+   - `grep -cF 'async def reservation_archive(reservation_id: int, request: Request):' App/app/routes/admin.py | tail -1`
+   - `grep -cF 'async def reservation_unarchive(reservation_id: int, request: Request):' App/app/routes/admin.py | tail -1`
+   - `grep -cF 'async def reservation_delete_demo(reservation_id: int, request: Request):' App/app/routes/admin.py | tail -1`
+   - `grep -cF '// CreateHandler is POST /reservations (admin.py reservation_create).' go/internal/web/stays/post.go | tail -1`
+   - `grep -cF '// UpdateHandler is POST /reservations/{reservation_id} (admin.py reservation_update).' go/internal/web/staydetail/post.go | tail -1`
+   - `ls go/internal/web/stays/edit_posts.go 2>&1 | grep -cF 'No such file' | tail -1`
+   - `ls App/scripts/go_edit_posts_golden.py 2>&1 | grep -cF 'No such file' | tail -1`
+   - `ls go/cmd/ubyhost-web/register_web_stays_edit_posts.go 2>&1 | grep -cF 'No such file' | tail -1`
+   - `find docs/tasks/1731-files -name '*.txt' ! -name 'ANCHORS.txt' | wc -l | tail -1` prints `7`.
 1. Copy the sidecars to their repo paths and run `sha256sum -c` on the table in §2: all OK.
 2. Add the golden script and its freshness test; run the script and commit the golden.
 3. Add the handlers, templates and i18n keys (`App/scripts/go_host_i18n.py` writes the catalog); `gofmt -l` prints nothing.
@@ -66,7 +97,7 @@ No other file may change. Two open briefs naming the same file in §3 run in the
 - `cd go && gofmt -l . | tail -5` prints nothing
 - `cd go && go vet ./internal/web/... ./cmd/... 2>&1 | tail -20` is silent
 - `cd go && go test ./internal/web/... ./cmd/ubyhost-web/... -count=1 2>&1 | tail -30` passes, no test skipped
-- `cd App && .venv/bin/python -m pytest tests/test_go_go_reservation_edit_posts_golden.py -q --tb=short -x 2>&1 | tail -30` passes
+- `cd App && .venv/bin/python -m pytest tests/test_go_edit_posts_golden.py -q --tb=short -x 2>&1 | tail -30` passes
 - `python3 scripts/context_lint.py 2>&1 | tail -10` is clean
 - Host pages: `test_layout_lint_browser.py` green plus one 390, 768 and 1280 px screenshot per page in the report (rule 10).
 
