@@ -59,9 +59,12 @@ def test_the_first_refusal_retries_in_a_minute_without_mail(monkeypatch):
 def test_the_second_refusal_hands_over_to_host_and_support(monkeypatch):
     _refuse(monkeypatch, [])
     _, apartment, stay = _stay(registered_minutes_ago=1)
-    door_codes.reconcile()
+    row_id = door_codes.ensure_row(stay)
+    # Issue directly: reconcile() in postgres-full shares one DB and BATCH order is flaky.
+    assert door_codes.issue(row_id) is False
+    assert _row(stay)["state"] == door_codes.RETRYING
     _due_now(stay)
-    door_codes.reconcile()
+    assert door_codes.issue(row_id) is False
     assert _row(stay)["state"] == door_codes.FAILED
     notices = _notices(stay)
     assert len(notices) == 1
