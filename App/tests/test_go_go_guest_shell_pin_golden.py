@@ -1,16 +1,18 @@
 """Freshness for go_go_guest_shell_pin_golden.py (brief 1720b)."""
 
-from pathlib import Path
+from __future__ import annotations
+
 import subprocess
 import sys
+from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
-APP = ROOT / "App"
+APP = Path(__file__).resolve().parents[1]
 
 
 def test_shell_pin_golden_fresh():
+    script = APP / "scripts" / "go_go_guest_shell_pin_golden.py"
     proc = subprocess.run(
-        [str(APP / ".venv/bin/python"), "scripts/go_go_guest_shell_pin_golden.py", "--check"],
+        [sys.executable, str(script), "--check"],
         cwd=APP,
         capture_output=True,
         text=True,
