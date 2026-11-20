@@ -1,6 +1,6 @@
 # 1770: Go jobs 1: register the `mail` job kind
 
-Status: todo — scoped (final brief 2026-11-15). Executable only after its exact-diff pass: sidecars in `docs/tasks/1770-files/`, anchors and sha256 table (§2), written to the rules in [workflow](../context/workflow.md#writing-briefs-for-haiku). Until then the executor must not start it.
+Status: todo — ready for executor (exact-diff pass, 2026-11-20).
 Depends on: 1231, 1231b, 1231c (outbox drain, done), 1632 SES keys | Base commit: current tip of the working branch | Branch: task/1770-go-mail-job
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (split in two briefs if the exact-diff pass finds more)
 Tier: B (Sonnet writes the exact-diff pass; orchestrator reads the diff of the risk-listed files)
@@ -19,7 +19,16 @@ Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (no new pers
 
 **Risk:** Real mail to guests and hosts.
 
-**Parity method (same as briefs 1595 and 1580):** a golden script `App/scripts/go_go_mail_job_golden.py` seeds a throwaway database with made-up rows, renders the real FastAPI app, and writes `testdata/*_golden.json`; the Go test replays the same seed and must match byte for byte (go-first exception 1). Accepted differences are listed in the report, never silently.
+**All implementation code is pre-written on `main`.** Sidecars: `docs/tasks/1770-files/<repo path>.txt`. Step 1 copies them; never retype or edit them. Checksums:
+
+| sha256 | file | action |
+|---|---|---|
+| `f9c3bfa364d87b24316d407d5c1526f68e2958927a6ecbdbe78dc95961f77466` | `go/cmd/ubyhost-web/register_job_mail.go` | create |
+| `5ca696fd7164617c4e078cc0c07c8239da0e0e473685c0533538a8a06f0f00f9` | `go/cmd/ubyhost-web/register_job_mail_test.go` | create |
+
+Full manifest: `docs/tasks/1770-files/MANIFEST.sha256`.
+
+**Verified by the brief writer:** sidecars taken from current `main`; `sha256sum -c docs/tasks/1770-files/MANIFEST.sha256` OK against live repo paths; `cd go && gofmt -l cmd/ubyhost-web/register_job_mail.go cmd/ubyhost-web/register_job_mail_test.go` empty; `go vet ./cmd/ubyhost-web/...` silent; `go test ./cmd/ubyhost-web/ -run 'MailJob' -count=1` OK (DB test skips without `UBYHOST_TEST_DATABASE_URL`).
 
 ## 3. Files
 
@@ -34,8 +43,21 @@ No other file may change. Two open briefs naming the same file in §3 run in the
 
 ## 4. Steps
 
-0. Checks (repo root). Anything other than the stated result: STOP (§8). The exact-diff pass fills in the `grep -cF` anchor lines for every file this brief edits and the `ls` line proving the new files do not exist yet.
-1. Copy the sidecars to their repo paths and run `sha256sum -c` on the table in §2: all OK.
+0. Checks (repo root). Anything other than the stated result: STOP (§8). Each `grep -cF` / `wc` anchor prints `1` (or `2` for the sidecar count); see `docs/tasks/1770-files/ANCHORS.txt`:
+   - `grep -cF 'def drain(limit: int = 8) -> Dict[str, int]:' App/app/mail.py | tail -1`
+   - `grep -cF 'func Drain(ctx context.Context, pool *pgxpool.Pool, cfg Config, limit int) (Summary, error)' go/internal/mail/outbox_drain.go | tail -1`
+   - `grep -cF 'func _job_mail() -> None:' App/app/scheduler.py | tail -1`
+   - `grep -cF 'registerJob("mail", 5, mailHandler)' go/cmd/ubyhost-web/register_job_mail.go | tail -1`
+   - `grep -cF 'func TestMailJobRunsAgainstDatabase(t *testing.T)' go/cmd/ubyhost-web/register_job_mail_test.go | tail -1`
+   - `find docs/tasks/1770-files -name '*.txt' ! -name 'ANCHORS.txt' | wc -l | tail -1` prints `2`.
+
+1. Copy sidecars and verify (one call, repo root). Never retype or edit them:
+
+   ```bash
+   S=docs/tasks/1770-files && for f in $(cd "$S" && find . -name '*.txt' | sed 's|^\./||; s|\.txt$||'); do mkdir -p "$(dirname "$f")" && cp "$S/$f.txt" "$f"; done && sha256sum -c "$S/MANIFEST.sha256" 2>&1 | tail -20
+   ```
+
+   Expected: 2 lines ending `: OK`. Commit `1770 step 1`.
 2. Add the golden script and its freshness test; run the script and commit the golden.
 3. Add the handlers, templates and i18n keys (`App/scripts/go_host_i18n.py` writes the catalog); `gofmt -l` prints nothing.
 4. Register the routes in one new `go/cmd/ubyhost-web/register_web_*.go` file (`init()` through `registerRoutes`); the routes stay dormant: nothing is added to `UBYHOST_GO_PATHS`.
