@@ -43,6 +43,18 @@ def test_the_billing_line_shows_and_fits_a_phone(calendar_workspace, calendar_or
                 assert line.is_visible(), width
                 assert "Zkušební doba končí" in line.inner_text(), width
                 assert line.locator('a[href="/predplatne"]').count() == 1, width
+                bb = line.bounding_box()
+                btnb = line.locator('a[href="/predplatne"]').bounding_box()
+                assert bb and btnb, width
+                assert btnb["x"] >= bb["x"] - 1 and btnb["y"] >= bb["y"] - 1, width
+                assert btnb["x"] + btnb["width"] <= bb["x"] + bb["width"] + 1, width
+                assert btnb["y"] + btnb["height"] <= bb["y"] + bb["height"] + 1, width
+                cs = page.evaluate(
+                    "() => { const c = getComputedStyle(document.querySelector('[data-billing-banner]'));"
+                    " return {display: c.display, bg: c.backgroundColor}; }"
+                )
+                assert cs["display"] == "flex", width
+                assert cs["bg"] not in ("rgba(0, 0, 0, 0)", "transparent"), width
                 assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1"), width
                 if capture and width == 390:
                     EVIDENCE.mkdir(parents=True, exist_ok=True)
