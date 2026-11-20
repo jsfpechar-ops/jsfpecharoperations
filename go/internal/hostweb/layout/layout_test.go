@@ -551,3 +551,25 @@ func TestSideNavPaymentsHidden(t *testing.T) {
 		t.Fatal("shell must not link to /booking-sites in host nav (Payments product dormant)")
 	}
 }
+
+func TestFlashFixPaymentsHidden(t *testing.T) {
+	tpl := goldenTemplates(t)
+	hiddenEnv := func(k string) string {
+		if k == "UBYHOST_PAYMENTS_HIDDEN" {
+			return "1"
+		}
+		return getenv(k)
+	}
+	sh := goldenShell(goldenCase{SignedIn: true, DisplayName: "Host", Username: "host"})
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/?lang=en&err=x&fix=stripe", nil)
+	env := Env{Getenv: hiddenEnv, Now: time.Date(2026, 11, 13, 9, 0, 0, 0, time.UTC)}
+	p := Page{Title: "Overview", Nav: "dashboard"}
+	if err := render(w, r, env, sh, "GOLDEN-CSRF", p, tpl, "golden", map[string]any{"Value": "v"}); err != nil {
+		t.Fatal(err)
+	}
+	body := w.Body.String()
+	if strings.Contains(body, `href="/payments`) {
+		t.Fatal("flash fix must not link under /payments when UBYHOST_PAYMENTS_HIDDEN=1")
+	}
+}

@@ -634,6 +634,9 @@ func buildView(r *http.Request, env Env, sh shell, c *reqCtx, p Page) view {
 	v.Sticky = sh.SignedIn && flash != "" && q("toast_sticky") == "1"
 	if fix, ok := fixTargets[q("fix")]; ok {
 		v.FixHref, v.FixKey = fix[0], fix[1]
+		if appconfig.PaymentsHostPathBlocked(v.FixHref, getenv) {
+			v.FixHref, v.FixKey = "", ""
+		}
 	}
 	if stay := q("undo_stay"); isDigits(stay) {
 		v.UndoStay = stay
