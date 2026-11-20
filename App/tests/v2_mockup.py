@@ -61,6 +61,7 @@ SELECTOR_OVERRIDES = {
 }
 # Overrides that apply only from 768 px up (the phone mockup is still compared at 768; phones below 768 keep the mockup values).
 WIDE_OVERRIDES = {
+    "overview:.side": {"background-color": "rgb(252, 248, 245)"},
     # owner decision 2026-11-08 (Josef's laptop screenshots): section titles need an inset; 16 px like the fields, title 16px/700
     "property:.prop-sec > summary": {"padding-top": "14px", "padding-right": "16px", "padding-bottom": "14px", "padding-left": "16px",
                                      # owner decision 2026-11-08 (brief 1030, 6 pills as switcher): the wide card header has a light divider
