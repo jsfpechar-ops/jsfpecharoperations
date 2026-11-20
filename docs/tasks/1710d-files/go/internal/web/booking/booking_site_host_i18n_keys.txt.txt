@@ -1,0 +1,12 @@
+bsite.err.not_max
+payments.page.saved
+bsite.err.pay_none
+bsite.err.pay_revolut
+bsite.err.pay_iban
+bsite.err.direct_taken
+bsite.err.not_cancellable
+bsite.flash.direct_confirm
+bsite.flash.direct_decline
+bsite.err.cancel_failed
+bsite.flash.cancelled_direct
+bsite.flash.cancelled

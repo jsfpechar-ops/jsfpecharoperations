@@ -1,0 +1,30 @@
+{
+  "cs": {
+    "bsite.err.not_max": "Rezervační web vyžaduje tarif Max.",
+    "payments.page.saved": "Uloženo.",
+    "bsite.err.pay_none": "Zapněte aspoň jeden způsob platby.",
+    "bsite.err.pay_revolut": "Zadejte platný odkaz na revolut.me nebo revolut.com.",
+    "bsite.err.pay_iban": "Nejprve doplňte bankovní účet v údajích pro faktury.",
+    "bsite.err.direct_taken": "Termín už není volný, poptávku nelze potvrdit.",
+    "bsite.err.not_cancellable": "Tuto rezervaci už nejde zrušit.",
+    "bsite.flash.direct_confirm": "Rezervace potvrzena. Host dostal e-mail.",
+    "bsite.flash.direct_decline": "Poptávka zamítnuta. Termín je znovu volný.",
+    "bsite.err.cancel_failed": "Vrácení platby neproběhlo. Nic se neztratilo, zkuste to za chvíli.",
+    "bsite.flash.cancelled_direct": "Rezervace je zrušená. Host vám platil přímo: případné vrácení pošlete sami.",
+    "bsite.flash.cancelled": "Rezervace je zrušená a host má platbu zpět."
+  },
+  "en": {
+    "bsite.err.not_max": "The booking site needs the Max plan.",
+    "payments.page.saved": "Saved.",
+    "bsite.err.pay_none": "Turn on at least one way to pay.",
+    "bsite.err.pay_revolut": "Enter a valid revolut.me or revolut.com link.",
+    "bsite.err.pay_iban": "Add a bank account to your invoice details first.",
+    "bsite.err.direct_taken": "These dates are no longer free, so the request cannot be confirmed.",
+    "bsite.err.not_cancellable": "This booking can no longer be cancelled.",
+    "bsite.flash.direct_confirm": "Booking confirmed. The guest has an e-mail.",
+    "bsite.flash.direct_decline": "Request declined. The dates are free again.",
+    "bsite.err.cancel_failed": "The refund did not go through. Nothing was lost; try again in a moment.",
+    "bsite.flash.cancelled_direct": "The booking is cancelled. The guest paid you directly: send any refund yourself.",
+    "bsite.flash.cancelled": "The booking is cancelled and the guest is refunded."
+  }
+}
