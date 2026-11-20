@@ -1,0 +1,45 @@
+package booking
+
+// Stay-invoice engine for paid site bookings (brief 1711). Thin facade over
+// the invoices package; guest PDF routes use this in brief 1712.
+
+import (
+	"context"
+	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/invoices"
+)
+
+// Form is booking_invoice._form.
+func Form(totalCZK, cleaningCZK int, guestName, guestEmail, lang string) map[string]string {
+	v := invoices.BookingIssueForm(totalCZK, cleaningCZK, guestName, guestEmail, lang)
+	out := make(map[string]string, len(v))
+	for k, vals := range v {
+		if len(vals) > 0 {
+			out[k] = vals[0]
+		}
+	}
+	return out
+}
+
+// Ensure issues or returns the stay invoice for a site booking.
+func Ensure(ctx context.Context, pool *pgxpool.Pool, bookingID int64, now time.Time) (int64, error) {
+	id, ok, err := invoices.EnsureSiteBooking(ctx, pool, bookingID, now)
+	if err != nil || !ok {
+		return 0, err
+	}
+	return id, nil
+}
+
+// StornoAfterRefund is a full storno when the guest receives a full refund.
+func StornoAfterRefund(ctx context.Context, pool *pgxpool.Pool, invoiceID int64, now time.Time) (int64, error) {
+	return invoices.StornoSiteBooking(ctx, pool, invoiceID, invoices.SiteBookingCancelReason("cs"), now)
+}
+
+// CorrectPartialAfterRefund is a partial credit note.
+func CorrectPartialAfterRefund(ctx context.Context, pool *pgxpool.Pool, invoiceID int64, refundCZK int, now time.Time) (int64, error) {
+	reason := invoices.SiteBookingCancelReason("cs")
+	return invoices.CorrectSiteBookingPartial(ctx, pool, invoiceID, refundCZK, reason, now)
+}

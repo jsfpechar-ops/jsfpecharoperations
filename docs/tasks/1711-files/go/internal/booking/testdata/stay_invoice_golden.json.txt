@@ -1,0 +1,172 @@
+{
+  "cases": [
+    {
+      "name": "cs_paid_stripe",
+      "booking": {
+        "total_czk": 6500,
+        "cleaning_fee_czk": 500,
+        "guest_name": "Jan Novák",
+        "guest_email": "jan@example.test",
+        "lang": "cs"
+      },
+      "form": {
+        "already_paid": "1",
+        "buyer_email": "jan@example.test",
+        "buyer_name": "Jan Novák",
+        "lang": "cs",
+        "note": "V ceně je úklid 500 Kč.",
+        "paid_via": "custom",
+        "paid_via_custom": "Kartou přes Stripe",
+        "stay_price": "6500",
+        "stay_vat_rate": "12"
+      }
+    },
+    {
+      "name": "en_no_cleaning",
+      "booking": {
+        "total_czk": 3200,
+        "cleaning_fee_czk": 0,
+        "guest_name": "John Doe",
+        "guest_email": "john@example.test",
+        "lang": "en"
+      },
+      "form": {
+        "already_paid": "1",
+        "buyer_email": "john@example.test",
+        "buyer_name": "John Doe",
+        "lang": "en",
+        "note": "",
+        "paid_via": "custom",
+        "paid_via_custom": "Card via Stripe",
+        "stay_price": "3200",
+        "stay_vat_rate": "12"
+      }
+    },
+    {
+      "name": "cs_default_lang",
+      "booking": {
+        "total_czk": 1000,
+        "cleaning_fee_czk": 100,
+        "guest_name": "A",
+        "guest_email": "",
+        "lang": "de"
+      },
+      "form": {
+        "already_paid": "1",
+        "buyer_email": "",
+        "buyer_name": "A",
+        "lang": "cs",
+        "note": "V ceně je úklid 100 Kč.",
+        "paid_via": "custom",
+        "paid_via_custom": "Kartou přes Stripe",
+        "stay_price": "1000",
+        "stay_vat_rate": "12"
+      }
+    },
+    {
+      "name": "minimal_buyer",
+      "booking": {
+        "total_czk": 4500,
+        "cleaning_fee_czk": 0,
+        "guest_name": "",
+        "guest_email": "guest@example.test",
+        "lang": "cs"
+      },
+      "form": {
+        "already_paid": "1",
+        "buyer_email": "guest@example.test",
+        "buyer_name": "",
+        "lang": "cs",
+        "note": "",
+        "paid_via": "custom",
+        "paid_via_custom": "Kartou přes Stripe",
+        "stay_price": "4500",
+        "stay_vat_rate": "12"
+      }
+    },
+    {
+      "name": "large_total",
+      "booking": {
+        "total_czk": 999999,
+        "cleaning_fee_czk": 1500,
+        "guest_name": "Test Host",
+        "guest_email": "big@example.test",
+        "lang": "en"
+      },
+      "form": {
+        "already_paid": "1",
+        "buyer_email": "big@example.test",
+        "buyer_name": "Test Host",
+        "lang": "en",
+        "note": "The price includes the cleaning fee of 1500 CZK.",
+        "paid_via": "custom",
+        "paid_via_custom": "Card via Stripe",
+        "stay_price": "999999",
+        "stay_vat_rate": "12"
+      }
+    },
+    {
+      "name": "whitespace_name",
+      "booking": {
+        "total_czk": 2100,
+        "cleaning_fee_czk": 200,
+        "guest_name": "  Eva  ",
+        "guest_email": "eva@example.test",
+        "lang": "cs"
+      },
+      "form": {
+        "already_paid": "1",
+        "buyer_email": "eva@example.test",
+        "buyer_name": "  Eva  ",
+        "lang": "cs",
+        "note": "V ceně je úklid 200 Kč.",
+        "paid_via": "custom",
+        "paid_via_custom": "Kartou přes Stripe",
+        "stay_price": "2100",
+        "stay_vat_rate": "12"
+      }
+    },
+    {
+      "name": "cancel_after_payment_shape",
+      "booking": {
+        "total_czk": 8000,
+        "cleaning_fee_czk": 400,
+        "guest_name": "Cancel Guest",
+        "guest_email": "cancel@example.test",
+        "lang": "cs"
+      },
+      "form": {
+        "already_paid": "1",
+        "buyer_email": "cancel@example.test",
+        "buyer_name": "Cancel Guest",
+        "lang": "cs",
+        "note": "V ceně je úklid 400 Kč.",
+        "paid_via": "custom",
+        "paid_via_custom": "Kartou přes Stripe",
+        "stay_price": "8000",
+        "stay_vat_rate": "12"
+      }
+    },
+    {
+      "name": "partial_refund_context",
+      "booking": {
+        "total_czk": 12000,
+        "cleaning_fee_czk": 600,
+        "guest_name": "Partial Guest",
+        "guest_email": "part@example.test",
+        "lang": "en"
+      },
+      "form": {
+        "already_paid": "1",
+        "buyer_email": "part@example.test",
+        "buyer_name": "Partial Guest",
+        "lang": "en",
+        "note": "The price includes the cleaning fee of 600 CZK.",
+        "paid_via": "custom",
+        "paid_via_custom": "Card via Stripe",
+        "stay_price": "12000",
+        "stay_vat_rate": "12"
+      }
+    }
+  ]
+}
