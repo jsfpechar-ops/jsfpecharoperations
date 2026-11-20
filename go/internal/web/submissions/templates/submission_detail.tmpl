@@ -1,0 +1,147 @@
+{{/* Port of App/app/templates/submission_detail.html (brief 1730). */}}
+{{define "submission_detail.title"}}{{end}}
+{{define "submission_detail"}}
+{{ $s := .Submission }}{{ $lang := .Lang }}
+<div class="e-page">
+<div class="airbnb-header">
+  <a class="airbnb-back" href="/submissions" aria-label="{{t "common.back"}}">{{icon "arrow-left" 20}}</a>
+  <h1 class="airbnb-title">{{tp "reports.detail.title" (kv "id" $s.ID)}}</h1>
+</div>
+
+<section class="panel stay-command-panel outcome-{{outcome_level $s.State}}" id="now">
+  <div class="stay-command-main">
+    <div>
+      <div class="settings-value-card">
+        <span class="settings-value-label">{{t "reports.outcome"}}{{help_tip "submission-outcome-help" (outcome_note $lang $s.State) "" (t "reports.outcome")}}</span>
+        <strong class="settings-value">{{outcome_label $lang $s.State}}</strong>
+      </div>
+      {{if and (accepted_states $s.State) (not (has_pdf $s.ReceiptPDF))}}
+        <span class="report-receipt-missing" data-receipt-missing>{{help_tip "report-receipt-help" (t "reports.detail.receipt_missing")}}</span>
+      {{end}}
+    </div>
+    <div class="stay-command-actions">
+      <div class="ui-form-actions">
+        {{if and (or (eq $s.State "error") (eq $s.State "failed")) .FixReservation}}
+          <a class="ui-btn ui-btn-primary" href="/reservations/{{.FixReservation}}#guests">{{t "reports.detail.fix_stay"}}</a>
+        {{end}}
+        {{if has_pdf $s.ReceiptPDF}}
+          <a data-turbo="false" class="ui-btn ui-btn-primary" href="/submissions/{{$s.ID}}/receipt.pdf">{{t "reports.detail.download_receipt"}}</a>
+        {{end}}
+        {{if has_pdf $s.ErrorPDF}}
+          <a data-turbo="false" class="ui-btn ui-btn-secondary" href="/submissions/{{$s.ID}}/errors.pdf">{{t "reports.detail.download_errors"}}</a>
+        {{end}}
+      </div>
+    </div>
+  </div>
+
+  {{if $s.ErrorText}}
+    <div class="ui-banner ui-banner-attention">
+      <div class="grow"><strong>{{t "reports.detail.transport_error"}}</strong> <small>{{$s.ErrorText}}</small></div>
+    </div>
+  {{end}}
+
+  {{if .HeaderMessages}}
+    <div class="report-header-problems">
+      <h3>{{t "reports.detail.header_problems"}}</h3>
+      <ul class="ui-sub">
+        {{range .HeaderMessages}}<li>{{.}}</li>{{end}}
+      </ul>
+      <p class="ui-sub">{{help_tip "report-header-help" (t "reports.detail.header_help")}}
+        <a href="/apartments/{{$s.ApartmentID}}?view=settings&amp;section=reporting#ubyport">{{t "reports.detail.header_help_link"}}</a>
+      </p>
+    </div>
+  {{end}}
+
+  <div class="stay-metrics detail-hero report-metrics">
+    <div class="detail-metric">
+      <div class="metric-label">{{t "reports.outcome"}}</div>
+      <div class="metric-value small-value">{{submission_pill $s.State}}</div>
+    </div>
+    <div class="detail-metric">
+      <div class="metric-label">{{t "reports.stamp"}}</div>
+      <div class="metric-value small-value report-stamp-value">
+        {{if $s.PseudoStamp}}
+          <span class="ui-mono report-stamp" id="report-stamp">{{$s.PseudoStamp}}</span>
+          {{copy_button "report-stamp"}}
+        {{else}}&mdash;{{end}}
+      </div>
+    </div>
+    <div class="detail-metric">
+      <div class="metric-label">{{t "reports.detail.finished"}}</div>
+      <div class="metric-value small-value">{{if $s.FinishedAt}}{{datetime_local $s.FinishedAt "seconds"}}{{else}}—{{end}}</div>
+    </div>
+    <div class="detail-metric">
+      <div class="metric-label">{{t "reports.detail.guests"}}</div>
+      <div class="metric-value small-value">{{len .Guests}}</div>
+    </div>
+  </div>
+</section>
+
+<section class="ui-section">
+<div class="ui-section-h"><h2>{{t "reports.detail.guests"}}</h2></div>
+  <table class="ui-table ui-table-stack" aria-label="{{t "reports.detail.guests"}}">
+    <thead><tr><th>#</th><th>{{t "reports.detail.guest"}}</th><th>{{t "reports.detail.result"}}</th><th></th></tr></thead>
+    <tbody>
+    {{range .Guests}}
+      <tr class="ui-row clickable-row" data-href="/guests/{{.ID}}?return_to=/submissions/{{$s.ID}}" tabindex="0" role="link">
+        <td class="ui-num" data-card="hide" data-label="#">{{.Index}}</td>
+        <td class="ui-cell-first" data-card="primary" data-label="{{t "reports.detail.guest"}}">
+          <strong>{{.Surname}} {{.FirstName}}</strong>
+          {{if .RestrictedAt}}<span class="ui-badge ui-badge-action" data-tone="amber">{{t "guest.restricted_badge"}}</span>{{end}}
+          <div class="ui-sub">{{country_line $lang .Nationality}} &middot; {{guest_doc_line .DocVisible .DocNumber}}</div>
+        </td>
+        <td data-card="badge" data-label="{{t "reports.detail.result"}}">
+          {{if eq .Result "duplicate"}}
+            <span class="ui-badge ui-badge-action" data-tone="amber">{{t "submission.duplicate"}}</span>
+            {{if .ReceiptSubmissionID}}
+              <div class="ui-sub">{{t "reports.detail.receipt_elsewhere"}}
+                <a href="/submissions/{{.ReceiptSubmissionID}}">{{tp "reports.detail.title" (kv "id" .ReceiptSubmissionID)}}</a>
+              </div>
+            {{else}}
+              <div class="ui-sub">{{t "reports.detail.receipt_none"}}</div>
+            {{end}}
+          {{else if eq .Result "accepted"}}<span class="ui-badge ui-badge-done" data-tone="green">{{t "submission.accepted"}}</span>
+          {{else if eq .Result "rejected_final"}}<span class="ui-badge ui-badge-action" data-tone="red">{{t "stay.detail.guests.rejected_final"}}</span>
+          {{else if eq .Result "rejected"}}<span class="ui-badge ui-badge-action" data-tone="red">{{t "submission.rejected"}}</span>
+          {{else}}<span class="ui-badge ui-badge-neutral" data-tone="grey">{{.Result}}</span>{{end}}
+          {{if .Errors}}<div class="ui-sub err-text">{{.Errors}}</div>{{end}}
+        </td>
+        <td class="ui-cell-acts row-actions" data-card="actions" data-label="">{{row_open (printf "/guests/%d?return_to=/submissions/%d" .ID $s.ID)}}
+          {{row_menu_begin}}
+            <a class="row-menu-item" href="/guests/{{.ID}}?return_to=/submissions/{{$s.ID}}" role="menuitem">{{t "common.edit"}}</a>
+          {{row_menu_end}}
+        </td>
+      </tr>
+    {{else}}
+      <tr><td colspan="4" data-card="primary">{{t "reports.detail.guests_empty"}}</td></tr>
+    {{end}}
+    </tbody>
+  </table>
+</section>
+
+<details class="panel technical">
+  <summary><span>{{t "reports.detail.technical"}} {{help_tip "report-technical-help" (t "reports.detail.technical_help")}}</span></summary>
+  <dl class="kv">
+    <dt>{{t "reports.detail.endpoint"}}</dt>
+    <dd class="ui-mono">{{if $s.Endpoint}}{{$s.Endpoint}}{{else}}—{{end}}</dd>
+  </dl>
+  <h3>{{t "reports.detail.messages"}}</h3>
+  <div class="technical-downloads">
+    <span class="technical-download">
+      <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/submissions/{{$s.ID}}/request.xml">{{t "reports.detail.request"}}</a>
+      <span class="help-dot" tabindex="0" title="{{t "reports.detail.request_help"}}" aria-label="{{t "reports.detail.request_about"}}">?</span>
+    </span>
+    <span class="technical-download">
+      <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/submissions/{{$s.ID}}/response.xml">{{t "reports.detail.response"}}</a>
+      <span class="help-dot" tabindex="0" title="{{t "reports.detail.response_help"}}" aria-label="{{t "reports.detail.response_about"}}">?</span>
+    </span>
+  </div>
+  {{if .RecordErrors}}
+    <h3>{{t "reports.detail.error_codes"}}
+      <span class="help-dot" title="{{t "reports.detail.error_codes_help"}}" aria-label="{{t "reports.detail.error_codes_about"}}">?</span>
+    </h3>
+    <pre class="ui-mono code-block">{{record_errors_join .RecordErrors "\n"}}</pre>
+  {{end}}
+</details>
+</div>
+{{end}}
