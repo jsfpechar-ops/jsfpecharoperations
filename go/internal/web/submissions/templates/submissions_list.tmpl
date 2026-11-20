@@ -35,7 +35,7 @@
   <tbody>
   {{range .Rows}}
     <tr class="clickable-row" data-href="/submissions/{{.ID}}" tabindex="0" role="link"
-        aria-label="{{tp "reports.open" (kv "id" .ID)}}">
+        aria-label="{{t "reports.open" (kv "id" .ID)}}">
       <td class="nowrap">{{datetime_local .CreatedAt}}</td>
       <td>{{property_identity .ApartmentID .InternalName true}}</td>
       <td>{{report_mode_label $.Lang .Mode}}</td>
