@@ -3,6 +3,6 @@
 06007ea08b3c98e8250062e71b787d9f145bfd63e4eebc1fcf3c85790a5549cb  go/internal/web/guest/i18n.json
 f51bbc83208d9bccecb8e2c82ba3e8ad92735fde63870632f3a1c2bdf1972cff  go/internal/web/guest/i18n_keys.txt
 e40fdfc003f7b806c4d53d1b10f32bb35700036d1dc7300171b2941e46305044  go/internal/web/guest/shell.go
-3cc493f79aa5a65f6ad269d26dcfa264e9cc128f83ae1ba3b26b852ff910a219  go/internal/web/guest/shell_test.go
+da0e20d9dfd4a63f49b8e234cbabcd9bcea59bf5fdaeb70110d5675be8bc9d77  go/internal/web/guest/shell_test.go
 aaad5d214a80599f0b30617527ed3216417de02cb4efa5c669fa03187eae13d1  go/internal/web/guest/templates/base.tmpl
 650c4ede3247ab5c10e1587901e5ffc7da0a429fe9c682677f79bbe628abd61a  go/internal/web/guest/templates/host_fragment.tmpl

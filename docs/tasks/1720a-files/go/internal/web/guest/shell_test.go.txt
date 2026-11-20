@@ -77,10 +77,10 @@ func TestResolveKeyToken(t *testing.T) {
 	}
 	ctx := context.Background()
 	stamp := "2026-01-01T00:00:00Z"
-	_, _ = pool.Exec(ctx, `INSERT INTO user_account (id, username, password_hash, role, active, created_at)
-		VALUES (1720, 'g1720@example.test', 'x', 'host', 1, $1) ON CONFLICT DO NOTHING`, stamp)
-	_, _ = pool.Exec(ctx, `INSERT INTO apartment (id, owner_user_id, internal_name, city_en, active, permalink_token, permalink_pin, created_at)
-		VALUES (1720, 1720, 'Flat 1720', 'Prague', 1, 'perm1720abcxyz', '1234', $1) ON CONFLICT DO NOTHING`, stamp)
+	mustExecGuest(t, ctx, pool, `INSERT INTO user_account (id, username, password_hash, role, active, created_at)
+		VALUES (9020172001, 'g17201720a1@example.test', 'x', 'host', 1, $1) ON CONFLICT DO NOTHING`, stamp)
+	mustExecGuest(t, ctx, pool, `INSERT INTO apartment (id, owner_user_id, internal_name, city_en, active, permalink_token, permalink_pin, created_at)
+		VALUES (9020172001, 9020172001, 'Flat 1720', 'Prague', 1, 'perm1720abcxyz', '1234', $1) ON CONFLICT DO NOTHING`, stamp)
 	apt, link, moved, ok := ResolveKey(ctx, pool, "perm1720abcxyz")
 	if !ok || apt == nil || link != "perm1720abcxyz" || moved {
 		t.Fatalf("resolve token ok=%v link=%q moved=%v", ok, link, moved)
@@ -94,14 +94,14 @@ func TestOpenLinkSlugRedirect(t *testing.T) {
 	}
 	ctx := context.Background()
 	stamp := "2026-01-01T00:00:00Z"
-	_, _ = pool.Exec(ctx, `INSERT INTO user_account (id, username, password_hash, role, active, created_at)
-		VALUES (1721, 'g1721@example.test', 'x', 'host', 1, $1) ON CONFLICT DO NOTHING`, stamp)
-	_, _ = pool.Exec(ctx, `INSERT INTO apartment (id, owner_user_id, internal_name, city_en, active, permalink_token, permalink_pin, created_at)
-		VALUES (1721, 1721, 'Flat 1721', 'Prague', 1, 'perm1721abcxyz', '1234', $1) ON CONFLICT DO NOTHING`, stamp)
-	_, _ = pool.Exec(ctx, `INSERT INTO apartment_slug (slug, apartment_id, is_current, created_at)
-		VALUES ('flat-1721-abc234', 1721, 1, $1)`, stamp)
-	_, _ = pool.Exec(ctx, `INSERT INTO apartment_slug (slug, apartment_id, is_current, created_at)
-		VALUES ('old-flat-abc235', 1721, 0, $1)`, stamp)
+	mustExecGuest(t, ctx, pool, `INSERT INTO user_account (id, username, password_hash, role, active, created_at)
+		VALUES (9020172002, 'g17201720a2@example.test', 'x', 'host', 1, $1) ON CONFLICT DO NOTHING`, stamp)
+	mustExecGuest(t, ctx, pool, `INSERT INTO apartment (id, owner_user_id, internal_name, city_en, active, permalink_token, permalink_pin, created_at)
+		VALUES (9020172002, 9020172002, 'Flat 1721', 'Prague', 1, 'perm1721abcxyz', '1234', $1) ON CONFLICT DO NOTHING`, stamp)
+	mustExecGuest(t, ctx, pool, `INSERT INTO apartment_slug (slug, apartment_id, is_current, created_at)
+		VALUES ('flat-1721-abc234', 9020172002, 1, $1)`, stamp)
+	mustExecGuest(t, ctx, pool, `INSERT INTO apartment_slug (slug, apartment_id, is_current, created_at)
+		VALUES ('old-flat-abc235', 9020172002, 0, $1)`, stamp)
 	r := httptest.NewRequest(http.MethodGet, "/l/old-flat-abc235", nil)
 	_, link, early := OpenLink(r, pool, "old-flat-abc235", "en")
 	if early == nil {
@@ -143,4 +143,11 @@ func testPoolOptional(t *testing.T) *pgxpool.Pool {
 		t.Fatalf("pool: %v", err)
 	}
 	return pool
+}
+
+func mustExecGuest(t *testing.T, ctx context.Context, pool *pgxpool.Pool, sql string, args ...any) {
+	t.Helper()
+	if _, err := pool.Exec(ctx, sql, args...); err != nil {
+		t.Fatalf("exec: %v", err)
+	}
 }
