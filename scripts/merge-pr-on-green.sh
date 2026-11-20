@@ -31,13 +31,29 @@ REQUIRED_CHECKS="${MERGE_GUARD_REQUIRED:-go}"
 
 command -v gh >/dev/null 2>&1 || { echo "gh is not installed" >&2; exit 2; }
 
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=scripts/merge-guard-lib.sh
+source "${ROOT}/scripts/merge-guard-lib.sh"
+
+pr_docs_tasks_only() {
+  local files
+  files="$(gh pr diff "${PR}" --name-only 2>/dev/null || true)"
+  if [ -z "${files}" ]; then
+    return 1
+  fi
+  printf '%s\n' "${files}" | merge_guard_docs_tasks_only
+}
+
 required_checks_ok() {
   local output="$1"
-  local name state
+  local name state docs_only=0
+  if pr_docs_tasks_only; then
+    docs_only=1
+  fi
   for name in ${REQUIRED_CHECKS}; do
     state="$(printf '%s\n' "${output}" | awk -F'\t' -v n="${name}" '$1==n{print $2; exit}')"
-    if [ "${state}" != "pass" ]; then
-      echo "required check ${name} not pass (state=${state:-missing})" >&2
+    if ! merge_guard_required_state_ok "${name}" "${state}" "${docs_only}"; then
+      echo "required check ${name} not pass (state=${state:-missing}; docs_tasks_only=${docs_only})" >&2
       return 1
     fi
   done
