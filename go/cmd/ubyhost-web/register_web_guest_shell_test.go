@@ -25,8 +25,8 @@ func TestGuestShellRoutesRegistered(t *testing.T) {
 			t.Fatalf("%s %s route %q want %q", c[0], c[1], pattern, want[i])
 		}
 	}
-	req = httptest.NewRequest(http.MethodGet, "/l/example-token", nil)
-	_, pattern = mux.Handler(req)
+	req := httptest.NewRequest(http.MethodGet, "/l/example-token", nil)
+	_, pattern := mux.Handler(req)
 	if pattern != "GET /l/{token}" {
 		t.Fatalf("pick route %q", pattern)
 	}
