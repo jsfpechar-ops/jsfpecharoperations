@@ -2888,7 +2888,7 @@ body.v2 .feed-url-value{margin-top:var(--space-2);padding:var(--space-3);border:
   body.v2 form.stays-filter .filter-panel-actions{flex:none;margin:0}
 }
 /* 0971: one compact success pattern (v2 pages load app2.css only): success_notice macro, inline section notice, cleaning notice, success toast. */
-body.v2 :is(.success-notice, .section-notice.ok, p.cleaning-notice, .toast-stack .toast[data-toast-kind="success"]) {
+body.v2 :is(.success-notice, .section-notice.ok, p.cleaning-notice, .toast-stack .toast[data-toast-kind="success"], .toast-stack .toast[data-toast-kind="info"]) {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -2909,6 +2909,7 @@ body.v2 :is(.success-notice, .section-notice.ok, p.cleaning-notice, .toast-stack
   line-height: 1.4;
   overflow-wrap: anywhere;
 }
+body.v2 .toast-stack .toast[data-toast-kind="info"] { border-color: #c5d4e8; border-left: 4px solid #426b9a; background: #fff; }
 body.v2 :is(.success-notice, .section-notice.ok, p.cleaning-notice)::before,
 body.v2 .toast-stack .toast[data-toast-kind="success"] .feedback-card-icon {
   flex: 0 0 24px;
@@ -2923,9 +2924,11 @@ body.v2 .toast-stack .toast[data-toast-kind="success"] .feedback-card-icon {
   font-size: 14px;
   font-weight: 800;
 }
-body.v2 :is(.success-notice, .section-notice.ok, p.cleaning-notice, .toast-stack .toast[data-toast-kind="success"]) :is(.success-notice-text, .grow, .feedback-card-body) { flex: 1 1 160px; min-width: 0; }
+body.v2 .toast-stack .toast[data-toast-kind="info"] .feedback-card-icon { flex: 0 0 24px; display: inline-grid; place-items: center; width: 24px; height: 24px; margin: 0; border-radius: 50%; background: #edf3fa; color: #315b8a; font-size: 14px; font-weight: 800; }
+body.v2 :is(.success-notice, .section-notice.ok, p.cleaning-notice, .toast-stack .toast[data-toast-kind="success"], .toast-stack .toast[data-toast-kind="info"]) :is(.success-notice-text, .grow, .feedback-card-body) { flex: 1 1 160px; min-width: 0; }
 body.v2 :is(.success-notice, .section-notice.ok, p.cleaning-notice)::before { content: "\2713"; }
-body.v2 .success-notice-next {
+body.v2 .toast-stack .toast[data-toast-kind="info"] form { margin: 0; }
+body.v2 :is(.success-notice-next, .toast-stack .toast[data-toast-kind="info"] .toast-undo) {
   flex: none;
   display: inline-flex;
   align-items: center;
@@ -2933,6 +2936,7 @@ body.v2 .success-notice-next {
   padding: 0 8px;
   font-weight: 600;
 }
+body.v2 .toast-stack .toast[data-toast-kind="info"] .toast-undo { border: 0; background: transparent; font: inherit; font-size: 14px; font-weight: 700; color: var(--brand-ink, var(--ink)); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
 body.v2 :is(.success-notice-close, .toast-stack .toast[data-toast-kind="success"] > [data-toast-close]) {
   flex: 0 0 44px;
   display: inline-grid;

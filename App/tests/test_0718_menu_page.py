@@ -7,7 +7,7 @@ from app import auth, db
 from app.main import app
 from tests.test_stay_fee_detail import login_as
 
-MENU_LINKS = ('href="/cleaning"', 'href="/stay-fees"', 'href="/payments"',
+MENU_LINKS = ('href="/cleaning"', 'href="/stay-fees"',
               'href="/settings"', 'href="/guide"', 'action="/logout"')
 
 
