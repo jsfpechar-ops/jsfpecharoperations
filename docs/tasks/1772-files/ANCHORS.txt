@@ -1,0 +1,6 @@
+# Brief 1772 step-0 anchors (repo root).
+grep -cF 'func TestPlanMatchesPythonAddJobCalls(t *testing.T)' go/internal/scheduler/parity_test.go
+grep -cF '  worker:' deploy/lightsail/docker-compose.yml
+grep -cF 'Block S — drop Python worker' docs/plans/go-cutover-runbook.md
+ls docs/tasks/1772-files/deploy/lightsail/docker-compose.yml.worker-removal.patch.txt 2>&1 | grep -cF 'No such file'
+find docs/tasks/1772-files -name '*.txt' ! -name 'ANCHORS.txt' | wc -l

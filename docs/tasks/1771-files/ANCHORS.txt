@@ -1,0 +1,8 @@
+# Brief 1771 step-0 anchors (repo root).
+grep -cF 'def _job_door_codes() -> None:' App/app/scheduler.py
+grep -cF 'registerJob("door_codes", 5, doorCodesHandler)' go/cmd/ubyhost-web/register_job_door_codes.go
+grep -cF 'func TestDoorCodesJobIsRegistered(t *testing.T)' go/cmd/ubyhost-web/register_job_door_codes_test.go
+grep -cF 'type Reconciler struct' go/internal/doorcodes/reconcile.go
+ls go/cmd/ubyhost-web/register_job_door_codes.go 2>&1 | grep -cF 'No such file'
+ls App/scripts/go_door_codes_golden.py 2>&1 | grep -cF 'No such file'
+find docs/tasks/1771-files -name '*.txt' ! -name 'ANCHORS.txt' | wc -l

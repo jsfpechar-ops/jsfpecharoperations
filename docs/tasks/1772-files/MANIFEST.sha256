@@ -1,0 +1,3 @@
+76429c993f5e6e5d4e1a0a9fe59fc7a860b7144e2754dd7ed6adbae4de9cbc08  deploy/lightsail/docker-compose.yml.worker-removal.patch
+4e95e8f5a393bbc0e888eeed114bd9032d9ca9f580af7b5cc5be8ff2b00fade3  docs/plans/go-cutover-runbook.md.block-s.patch
+07c88a72850b2a7f9b4931ec82e50fd547c4447ef0375d1699b4e500a381addc  go/internal/scheduler/parity_test.go
