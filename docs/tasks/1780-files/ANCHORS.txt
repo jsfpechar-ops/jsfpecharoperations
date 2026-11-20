@@ -1,0 +1,8 @@
+# Brief 1780 step-0 anchors (repo root). Sidecar count must match implemented tranche (13 files).
+grep -cF 'func RunDocFields(ctx context.Context, pool *pgxpool.Pool, mf *secure.MultiFernet' go/internal/ops/docfields.go
+grep -cF 'func RunLegalBackfill(ctx context.Context, pool *pgxpool.Pool, w io.Writer)' go/internal/ops/legal.go
+grep -cF 'def migrate(dry_run: bool = False) -> Dict[str, int]:' App/scripts/migrate_encrypt_doc_fields.py
+grep -cF 'def backfill_from_audit() -> int:' App/app/acceptance.py
+grep -cF 'migrate-encrypt-doc-fields' go/cmd/ubyhost-web/ops_migrate_doc_fields.go
+find docs/tasks/1780-files -name '*.txt' ! -name 'ANCHORS.txt' | wc -l
+ls go/cmd/ubyhost-web/ops_reencrypt.go 2>&1 | grep -cF 'No such file'
