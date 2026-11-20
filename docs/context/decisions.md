@@ -1,15 +1,5 @@
 # Decisions
 Append-only.
-- 2026-10-19 Design v2: MASTER.md is the only host design source; Lucide inline SVG; CI blocks raw colours, inline styles, page CSS | owner | [plan](../plans/design-v2.md)
-- 2026-10-19 A11y: WCAG 2.2 AA, `a11y_guard.js`.
-- 2026-10-24 [deps] `anthropic` 2.3.0 pinned+hashed; model `claude-haiku-5-5`; calls via `App/app/ai.py` | 0310
-- 2026-10-26 Unpaid = read-only; filing never blocked | 0415
-- 2026-10-27 Grafana Cloud (EU free): ops logs/metrics, no PII.
-- 2026-10-28 [deps] `stripe` 16.0.1 pinned+hashed in requirements.lock (owner); calls via `App/app/stripe_connect.py`; shared monthly cap `UBYHOST_STRIPE_MONTHLY_API_CALLS` | 0428
-- 2026-10-28 Property pages: Apify prefill, no AI, host reviews once (0431); photos re-hosted, max 10 (0432); no-JS widget (0434); English only
-- 2026-11-02 OCR: Tesseract only, local, MRZ check digits, Max only; band crop; Paddle if ocr_readrate <90% | test_doc_ocr
-- 2026-10-29 Operator can extend trials 1-365 days | 0448
-- 2026-10-29 Stripe Accounts v2, responsibilities immutable, companies via business_type (0437); Connect: full Dashboard + collectors, Express rejected (0439) | owner
 - 2026-10-30 [workflow/db/deps] PostgreSQL kit, psycopg3 + pgBackRest approved; manual cutover | 0455–0456
 - 2026-10-31 Postgres (#592), then Go G1-G6, per-feature rollback, no load test. [workflow] Haiku implements | owner | [plan v4](../plans/postgresql/migration-plan-v4.md)
 - 2026-10-31 Every change lean: no dead code or extras; dead code in its own commit | owner | plan v4
@@ -73,3 +63,5 @@ Append-only.
 - 2026-11-20 [product] Payments and Booking site removed from all host nav unconditionally (dormant product); `UBYHOST_PAYMENTS_HIDDEN` only gates routes, row actions, jobs | owner
 - 2026-11-17 [workflow] Stays Go-only, show-more append, Stays Turbo cache only|owner
 - 2026-11-19 [ui] Wide geometry skips pageHeader left/right edge on stay-detail at ≥1024 (crumb+H1, same as 0789). Brief 1862.
+- 2026-11-20 [workflow] Deploys route staging-first: green CI on main auto-deploys to the Lightsail staging box (environment `staging`, Ubyhost-test-env, staging.ubyhost.com); production only via manual Deploy production with force_confirm=DEPLOY after owner click-through on staging. Brief 1865 | owner
+- 2026-11-20 [workflow] Enterprise CI/GitHub hardening: job timeouts on deploy workflows, full-history gitleaks on main, PR security\/deploy checklist, GitHub settings runbook; branch protection + environment reviewers are owner steps. Brief 1866 | owner
