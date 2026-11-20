@@ -1,6 +1,6 @@
 # 1865: White host workspace and warm sidebar
 
-Status: todo
+Status: review
 Depends on: none | Base commit: 7637273d9be268df6f1dd5cf9f498b3c37430065 or newer green main with the same anchors | Branch: task/1865-host-workspace-palette
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
