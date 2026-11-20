@@ -24,6 +24,8 @@ Rules (AGENTS.md): 1 filing correctness is not touched (cleaning pages only); 2 
 | `1ddfb4faef56fc490680c16136f6c3935b6b1e5695500100ac9078adeb613244` | `go/internal/web/cleaning/host_events.go` | create | 339 |
 | `a3ae7019612639918a8dd8362deee8d8ed1f3c6113c2079821c7974aa75ac1c2` | `go/internal/web/cleaning/host_events_test.go` | create | 326 |
 
+Full manifest: `docs/tasks/1571-files/MANIFEST.sha256` (exact-diff backfill 2026-11-20 from `main`).
+
 **How the code is built.** `host_events.go` adds `parseHostForm` (url-encoded or multipart, with the body caps), `saveEvent` (the port of `cleaning.save_event`; it returns an error key instead of Python's ValueError text) and the two handlers. The editor page of brief 1570 is reused for the 422 and 409 answers (`(*hostServer).editor`).
 
 **Parity notes (Python `App/app/routes/cleaning.py` unless named):**
