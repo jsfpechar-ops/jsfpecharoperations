@@ -216,9 +216,12 @@ def test_go_callers_match_the_pins():
     found = {}
     for path in _payments_go_files():
         rel = _rel(path)
-        # booking_webhook.setStatus writes site_booking, not payment_request (brief 1350).
-        if rel == "go/internal/payments/booking_webhook.go":
-            continue
+            # booking_webhook*.setStatus writes site_booking, not payment_request (brief 1350/1710d).
+            if rel in {
+                "go/internal/payments/booking_webhook.go",
+                "go/internal/payments/booking_webhook_host.go",
+            }:
+                continue
         n = len(re.findall(r"\bsetStatus\(ctx, ", path.read_text(encoding="utf-8")))
         if n:
             found[rel] = n

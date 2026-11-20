@@ -2,16 +2,16 @@
 from __future__ import annotations
 
 import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-APP = ROOT / "App"
 
 
 def test_invoice_issued_golden_is_fresh():
     proc = subprocess.run(
-        [str(APP / ".venv/bin/python"), "scripts/go_invoice_issued_golden.py", "--check"],
-        cwd=APP,
+        [sys.executable, str(ROOT / "App" / "scripts" / "go_invoice_issued_golden.py"), "--check"],
+        cwd=ROOT / "App",
         capture_output=True,
         text=True,
     )
