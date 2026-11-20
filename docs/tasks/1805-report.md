@@ -1,31 +1,33 @@
 # 1805 report
 
-Status: review (local Caddy validation not run; CI job `caddy` is the gate)
+Status: review (exact-diff 2026-11-20; local Caddy validation not run; CI job `caddy` is the gate)
 
 ## Files changed
-- `deploy/lightsail/caddy/Caddyfile.cloudflare`: +8 lines (`@scanners` matcher and `handle @scanners { respond 404 }`), inserted above the `UBYHOST_GO_PATHS` comment (line 77 before the edit).
-- `deploy/lightsail/caddy/Caddyfile.acme`: the same 8 lines, above the `UBYHOST_GO_PATHS` comment (line 27 before the edit).
+- `deploy/lightsail/caddy/Caddyfile.cloudflare` and `Caddyfile.acme`: `@scanners` matcher and `handle @scanners { respond 404 }` above `# UBYHOST_GO_PATHS` (already on `main`; step 1 copy verified OK, no byte change).
+- `docs/tasks/1805-files/**`: exact-diff sidecars and `MANIFEST.sha256`.
 - `docs/tasks/1805-report.md`: this report.
 
-Added lines are byte-identical in both files (checked with diff). `git diff --stat`: 2 files, 16 insertions. No commit made (orchestrator commits).
+Added scanner block is byte-identical in both Caddyfiles. No `1805 step 3` commit (copy was a no-op on `main`).
 
 ## Step 1 greps (all printed nothing)
 - Python route table grep: empty.
 - Go route grep over `go/cmd go/internal`: empty.
 - Mount/include grep over `App/app go`: empty.
 
-## Step 2 anchors
-- `Caddyfile.cloudflare`: count 1 (line 77). `Caddyfile.acme`: count 1 (line 27).
+## Step 0 anchors
+- `UBYHOST_GO_PATHS` comment: count 1 in each file.
+- `@scanners` matcher: count 1 in each file.
+- Sidecar `.txt` count: 2.
 
 ## Validation
-- `caddy` binary not installed here. Docker binary present but the daemon is not running. Nothing was validated locally.
-- CI gate: `.github/workflows/ci.yml` job `caddy` (line 650) runs `./scripts/caddy-validate.sh` for both Caddyfiles, both TLS modes (`UBYHOST_APP_DOMAIN` empty and `app.ubyhost.example`), after writing throw-away certs to `caddy/certs/`.
+- Docker daemon not running here. CI gate: `.github/workflows/ci.yml` job `caddy` (line 650) runs `./scripts/caddy-validate.sh` for both Caddyfiles and TLS modes.
 
 ## Deviations
-- None to the block text. Anchor lines use one leading tab, and the inserted block does too.
+- Brief updated for exact-diff copy step (orchestrator pass 2026-11-20).
+- Scanner block landed earlier in WIP commit `e4d544483` on `main`; this PR adds sidecars and a formal executor path only.
 
 ## Open questions
-- None new. Brief §2 open question (top unmatched paths from Grafana) stays with the owner.
+- Brief §2 open question (top unmatched paths from Grafana) stays with the owner.
 
 ## Owner steps
 - Merge when CI is green (auto-deploys).
