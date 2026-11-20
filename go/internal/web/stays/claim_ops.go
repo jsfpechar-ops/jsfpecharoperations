@@ -494,19 +494,32 @@ func markFiledByHand(ctx context.Context, pool *pgxpool.Pool, reservationID int6
 	if err != nil {
 		return out, err
 	}
-	defer grows.Close()
+	type guestHandRow struct {
+		id          int64
+		state       string
+		nationality string
+	}
+	var handGuests []guestHandRow
 	for grows.Next() {
-		var gid int64
-		var state, nationality string
-		if err := grows.Scan(&gid, &state, &nationality); err != nil {
+		var row guestHandRow
+		if err := grows.Scan(&row.id, &row.state, &row.nationality); err != nil {
+			grows.Close()
 			return out, err
 		}
-		if !handFilableStates[state] || !validation.GuestIsReportable(nationality) {
+		if !handFilableStates[row.state] || !validation.GuestIsReportable(row.nationality) {
 			continue
 		}
+		handGuests = append(handGuests, row)
+	}
+	if err := grows.Err(); err != nil {
+		grows.Close()
+		return out, err
+	}
+	grows.Close()
+	for _, row := range handGuests {
 		var busy int
 		if err := tx.QueryRow(ctx, `SELECT 1 FROM submission_claim WHERE guest_id = $1 AND claimed_at >= $2`,
-			gid, float64(liveAfter)).Scan(&busy); err == nil {
+			row.id, float64(liveAfter)).Scan(&busy); err == nil {
 			out.Busy++
 			continue
 		} else if !errors.Is(err, pgx.ErrNoRows) {
@@ -518,7 +531,7 @@ func markFiledByHand(ctx context.Context, pool *pgxpool.Pool, reservationID int6
 		}
 		tag, err := tx.Exec(ctx, `UPDATE guest SET submit_state = 'sent', manual_filed_at = $1, manual_reference = $2,
 			manual_marked_at = $3, manual_prev_state = $4
-			WHERE id = $5 AND submit_state = $6`, filedAt, ref, markedAt, state, gid, state)
+			WHERE id = $5 AND submit_state = $6`, filedAt, ref, markedAt, row.state, row.id, row.state)
 		if err != nil {
 			return out, err
 		}

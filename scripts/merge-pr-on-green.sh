@@ -14,6 +14,9 @@
 #   scripts/merge-pr-on-green.sh <pr-number> [--merge|--squash|--rebase]
 #
 # Env: MERGE_GUARD_TIMEOUT (seconds, default 1800).
+# Env: MERGE_GUARD_MIN_CHECKS (default 12) — refuse to merge while gh shows
+#      fewer checks (stale partial list after force-push; see #1144).
+# Env: MERGE_GUARD_REQUIRED — space-separated required check names (default: go).
 set -euo pipefail
 
 PR="${1:?usage: merge-pr-on-green.sh <pr-number> [--merge|--squash|--rebase]}"
@@ -23,8 +26,23 @@ case "${METHOD}" in
   *) echo "unknown merge method: ${METHOD}" >&2; exit 2 ;;
 esac
 TIMEOUT="${MERGE_GUARD_TIMEOUT:-1800}"
+MIN_CHECKS="${MERGE_GUARD_MIN_CHECKS:-12}"
+REQUIRED_CHECKS="${MERGE_GUARD_REQUIRED:-go}"
 
 command -v gh >/dev/null 2>&1 || { echo "gh is not installed" >&2; exit 2; }
+
+required_checks_ok() {
+  local output="$1"
+  local name state
+  for name in ${REQUIRED_CHECKS}; do
+    state="$(printf '%s\n' "${output}" | awk -F'\t' -v n="${name}" '$1==n{print $2; exit}')"
+    if [ "${state}" != "pass" ]; then
+      echo "required check ${name} not pass (state=${state:-missing})" >&2
+      return 1
+    fi
+  done
+  return 0
+}
 
 # `gh pr checks` prints tab-separated lines: name<TAB>state<TAB>elapsed<TAB>url
 # state is one of pass, fail, pending, skipping, cancel.
@@ -53,20 +71,29 @@ while :; do
   pending="$(printf '%s\n' "${output}" | awk -F'\t' '$2=="pending"{c++} END{print c+0}')"
   failed="$(printf '%s\n' "${output}" | awk -F'\t' '($2=="fail"||$2=="cancel"){printf "%s ", $1}')"
 
-  if [ "${total}" -gt 0 ] && [ "${pending}" -eq 0 ]; then
+  if [ "${total}" -ge "${MIN_CHECKS}" ] && [ "${pending}" -eq 0 ]; then
     if [ -n "${failed}" ]; then
       echo "refusing to merge: checks failed for ${pinned}: ${failed}" >&2
       printf '%s\n' "${output}" >&2
       exit 1
+    fi
+    if ! required_checks_ok "${output}"; then
+      printf '%s\n' "${output}" >&2
+      sleep 10
+      continue
     fi
     # Re-read right before merging: a force-push during the poll must restart it.
     if [ "$(head_sha)" != "${pinned}" ]; then
       echo "head changed during the final check; re-evaluating"
       continue
     fi
-    echo "all ${total} check(s) green for ${pinned}; merging (${METHOD})"
+    echo "all ${total} check(s) green for ${pinned} (required: ${REQUIRED_CHECKS}); merging (${METHOD})"
     gh pr merge "${PR}" "${METHOD}" --delete-branch
     exit 0
+  fi
+
+  if [ "${total}" -gt 0 ] && [ "${total}" -lt "${MIN_CHECKS}" ] && [ "${pending}" -eq 0 ]; then
+  echo "only ${total} check(s) visible (need ${MIN_CHECKS}); waiting for full CI list for ${pinned}"
   fi
 
   if [ "$(date +%s)" -ge "${deadline}" ]; then
