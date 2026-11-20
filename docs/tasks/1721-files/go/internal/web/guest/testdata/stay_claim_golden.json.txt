@@ -1,0 +1,42 @@
+{
+  "now": "2026-06-15T12:00:00+00:00",
+  "seed": [],
+  "cases": [
+    {
+      "name": "unknown_token",
+      "method": "GET",
+      "path": "/l/nosuch/9",
+      "body": "",
+      "status": 404,
+      "location": "",
+      "body_has": "guest-unavailable"
+    },
+    {
+      "name": "claim_landing_missing",
+      "method": "GET",
+      "path": "/l/nosuch/9/claim",
+      "body": "",
+      "status": 404,
+      "location": "",
+      "body_has": "guest-unavailable"
+    },
+    {
+      "name": "confirm_bad_secret",
+      "method": "POST",
+      "path": "/l/nosuch/9/claim/confirm",
+      "body": "secret=bad",
+      "status": 404,
+      "location": "",
+      "body_has": ""
+    },
+    {
+      "name": "demo_unknown",
+      "method": "GET",
+      "path": "/l/nosuch/9/demo/9",
+      "body": "",
+      "status": 404,
+      "location": "",
+      "body_has": "guest-unavailable"
+    }
+  ]
+}
