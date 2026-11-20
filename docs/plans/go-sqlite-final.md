@@ -61,11 +61,12 @@ Already live: W1, W1b, W6, W7, W8 first set. Not yet: W2 exports (due one day af
 
 | # | Brief | Tier | Depends on |
 |---|---|---|---|
-| [1710](../tasks/1710-go-property-page-host.md) | Go booking 1: property page review and booking-site host pages | B | 1540-1544 (done), 1704 |
+| [1710a](../tasks/1710a-go-property-page-review.md) | Go booking 1a: property page review (4 host routes) | B | 1540-1544 (done), 1704 |
+| 1710b–d | Go booking 1b–d: booking-site host pages (split from 1710) | B | 1710a, 1540-1544 |
 | [1711](../tasks/1711-go-stay-invoice-engine.md) | Go booking 2: stay-invoice engine (needed by 1712) | A | 1544, 1220 |
 | [1712](../tasks/1712-go-booking-cancel-pdfs.md) | Go booking 3: guest cancel and invoice PDFs (replaces 1553) | A | 1711, 1544 |
 | [1713](../tasks/1713-go-guest-pay-pages.md) | Go booking 4: guest /pay pages and payments consent (replaces 1545) | B | 1720 (guest shell and language), 1540 |
-| [1714](../tasks/1714-go-booking-rollout.md) | Go booking 5: completeness test, `/p/{slug}` collision, wave B (replaces 1550/1554 blocks) | A | 1710, 1712, 1713, 1541-1544 |
+| [1714](../tasks/1714-go-booking-rollout.md) | Go booking 5: completeness test, `/p/{slug}` collision, wave B (replaces 1550/1554 blocks) | A | 1710a–d, 1712, 1713, 1541-1544 |
 
 ### Guest registration (G, moves last)
 

@@ -1,6 +1,6 @@
 # 1710: Go booking 1: property page review and booking-site host pages
 
-Status: todo — scoped (final brief 2026-11-15). Executable only after its exact-diff pass: sidecars in `docs/tasks/1710-files/`, anchors and sha256 table (§2), written to the rules in [workflow](../context/workflow.md#writing-briefs-for-haiku). Until then the executor must not start it.
+Status: blocked (superseded by split briefs [1710a](1710a-go-property-page-review.md), 1710b–d, optional 1710e — store `internal/go-porting/1710-split-briefs.md`, 2026-11-20). Do not run this monolith; executors use 1710a→d only.
 Depends on: 1540-1544 (done), 1704 | Base commit: current tip of the working branch | Branch: task/1710-go-property-page-host
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (split in two briefs if the exact-diff pass finds more)
 Tier: B (Sonnet writes the exact-diff pass; orchestrator reads the diff of the risk-listed files)
