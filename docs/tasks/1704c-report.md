@@ -40,7 +40,9 @@ Design checklist (design-system.md §5), not ticked: the screenshot items wait f
 ## 4. Deviations
 
 - The sidecars under docs/tasks/1704c-files were copied to their repo paths but not re-committed: they were already tracked and unchanged.
-- Step 7 Python baseline and step 4 i18n check could not run (no App/.venv).
+- Step 0 (1704b stub hashes and `// 1704c:` anchors) was not re-run: the §3 tree already matched manifest on `main` via #1081 (`cc0c7c4ff`); no `1704c step` commits in history.
+- **Re-verify 2026-11-20** (`cursor/1704c-go-settings-security-dff7`): all ten manifest hashes `: OK`; step 3 silent; step 4 `i18n rc=0`, 2 passed; step 6 two `ok`, 15 named `--- PASS`, SKIP 0 (PostgreSQL 16 on 55706).
+- Step 7 UX baseline and Go screenshots still pending until 1705 (dormant routes).
 
 ## 5. Questions
 
