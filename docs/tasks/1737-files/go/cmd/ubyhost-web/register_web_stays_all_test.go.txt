@@ -1,0 +1,63 @@
+package main
+
+import (
+	"net/http"
+	"net/http/httptest"
+	"testing"
+)
+
+// TestStaysAllRoutesRegistered lists every stays and host-guest route of briefs
+// 1730-1735 (excluding brief 1741 submit POSTs). Each must reach its Go pattern on newMux.
+func TestStaysAllRoutesRegistered(t *testing.T) {
+	mux := newMux(&metrics{counts: map[key]int64{}}, nil)
+	const resID = "173701"
+	const guestID = "173702"
+	const subID = "173703"
+	cases := []struct{ method, path, want string }{
+		// 1855-1858 list/create (pre-1730; stays completeness still checks them)
+		{http.MethodGet, "/reservations", "GET /reservations"},
+		{http.MethodPost, "/reservations", "POST /reservations"},
+		// 1730 submissions read + 1860 detail read
+		{http.MethodGet, "/submissions", "GET /submissions"},
+		{http.MethodGet, "/submissions/" + subID, "GET /submissions/{submission_id}"},
+		{http.MethodGet, "/reservations/" + resID, "GET /reservations/{reservation_id}"},
+		// 1863 update + 1731 edit posts
+		{http.MethodPost, "/reservations/" + resID, "POST /reservations/{reservation_id}"},
+		{http.MethodPost, "/reservations/" + resID + "/quick-edit", "POST /reservations/{reservation_id}/quick-edit"},
+		{http.MethodPost, "/reservations/" + resID + "/remove-empty-slot", "POST /reservations/{reservation_id}/remove-empty-slot"},
+		{http.MethodPost, "/reservations/" + resID + "/archive", "POST /reservations/{reservation_id}/archive"},
+		{http.MethodPost, "/reservations/" + resID + "/unarchive", "POST /reservations/{reservation_id}/unarchive"},
+		{http.MethodPost, "/reservations/" + resID + "/delete-demo", "POST /reservations/{reservation_id}/delete-demo"},
+		// 1732 claim ops
+		{http.MethodPost, "/reservations/" + resID + "/reopen-guest", "POST /reservations/{reservation_id}/reopen-guest"},
+		{http.MethodPost, "/reservations/" + resID + "/resend-claim", "POST /reservations/{reservation_id}/resend-claim"},
+		{http.MethodPost, "/reservations/" + resID + "/release-claim", "POST /reservations/{reservation_id}/release-claim"},
+		{http.MethodPost, "/reservations/" + resID + "/filed-by-hand", "POST /reservations/{reservation_id}/filed-by-hand"},
+		{http.MethodPost, "/reservations/" + resID + "/filed-by-hand/undo", "POST /reservations/{reservation_id}/filed-by-hand/undo"},
+		// 1733 guest edit
+		{http.MethodGet, "/reservations/" + resID + "/guests/new", "GET /reservations/{reservation_id}/guests/new"},
+		{http.MethodPost, "/reservations/" + resID + "/guests", "POST /reservations/{reservation_id}/guests"},
+		{http.MethodGet, "/guests/" + guestID, "GET /guests/{guest_id}"},
+		{http.MethodPost, "/guests/" + guestID, "POST /guests/{guest_id}"},
+		// 1734 privacy
+		{http.MethodPost, "/guests/" + guestID + "/restrict", "POST /guests/{guest_id}/restrict"},
+		{http.MethodPost, "/guests/" + guestID + "/unrestrict", "POST /guests/{guest_id}/unrestrict"},
+		{http.MethodPost, "/guests/" + guestID + "/verify-identity", "POST /guests/{guest_id}/verify-identity"},
+		{http.MethodGet, "/guests/" + guestID + "/passport-photo", "GET /guests/{guest_id}/passport-photo"},
+		{http.MethodPost, "/guests/" + guestID + "/reveal-identity", "POST /guests/{guest_id}/reveal-identity"},
+		// 1735 lifecycle
+		{http.MethodPost, "/guests/" + guestID + "/archive", "POST /guests/{guest_id}/archive"},
+		{http.MethodPost, "/guests/" + guestID + "/unarchive", "POST /guests/{guest_id}/unarchive"},
+		{http.MethodPost, "/guests/" + guestID + "/delete", "POST /guests/{guest_id}/delete"},
+		{http.MethodPost, "/guests/" + guestID + "/resend", "POST /guests/{guest_id}/resend"},
+	}
+	if len(cases) != 29 {
+		t.Fatalf("%d cases, want 29 stays+guest routes (excludes 1741 submit POSTs)", len(cases))
+	}
+	for _, c := range cases {
+		_, pattern := mux.Handler(httptest.NewRequest(c.method, c.path, nil))
+		if pattern != c.want {
+			t.Errorf("%s %s: pattern %q, want %q", c.method, c.path, pattern, c.want)
+		}
+	}
+}

@@ -1,0 +1,6 @@
+# Brief 1737 step-0 anchors (repo root). Each grep -cF must return 1; ls lines return 1 until files exist.
+grep -cF 'Host guest editing' docs/plans/go-full-move-remaining.md
+grep -cF 'func TestStaysAllRoutesRegistered' go/cmd/ubyhost-web/register_web_stays_all_test.go
+ls go/cmd/ubyhost-web/register_web_stays_all_test.go 2>&1 | grep -cF 'No such file'
+grep -cF '| H Stays and guest editing |' docs/plans/go-cutover-runbook.md
+find docs/tasks/1737-files -name '*.txt' ! -name 'ANCHORS.txt' | wc -l
