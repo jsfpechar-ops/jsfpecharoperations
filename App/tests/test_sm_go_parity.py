@@ -49,6 +49,26 @@ PYTHON_TABLES = {
 }
 
 MACHINE_RE = re.compile(r'^\t"([a-z_]+\.[a-z_]+)": \{$')
+
+# Moves the Python table lists although no runtime code makes them, so the Go
+# twin must not carry them either. reporting.SUBMISSION_TRANSITIONS includes
+# the states its golden-seed fixture writes straight into a fresh row
+# (App/scripts/go_go_submissions_reservations_read_golden._seed inserts
+# finished submissions, see the comment there), while the Go runtime refuses
+# them: go/internal/statemachine/tables_test.go pins
+# {"submission.state", NoRow, "ok", false}. Subtract them before comparing, or
+# this test asks Go to accept a move its own test forbids.
+FIXTURE_ONLY = {
+    "submission.state": {NO_ROW: {"ok", "ok_duplicate", "partial", "error"}},
+}
+
+
+def without_fixture_only(machine: str, rows: dict) -> dict:
+    """rows with the fixture-only targets of `machine` removed."""
+    drop = FIXTURE_ONLY.get(machine, {})
+    return {source: targets - drop.get(source, set()) for source, targets in rows.items()}
+
+
 ROW_RE = re.compile(r'^\t\t"([^"]+)":\s+\{(.*)\},$')
 CLOSE = "\t},"
 STATE_RE = re.compile(r'"([^"]*)"')
@@ -97,7 +117,7 @@ def test_go_has_exactly_the_python_machines():
 def test_machine_matches_go(machine):
     go = parse_go_tables().get(machine)
     assert go is not None, f"{machine}: not in tables.go"
-    py = python_rows(PYTHON_TABLES[machine])
+    py = without_fixture_only(machine, python_rows(PYTHON_TABLES[machine]))
     py_pairs = {(a, b) for a, targets in py.items() for b in targets}
     go_pairs = {(a, b) for a, targets in go.items() for b in targets}
     missing_in_go = sorted(py_pairs - go_pairs)
