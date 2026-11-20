@@ -1,6 +1,6 @@
 # 1723: Go guest 4: guest form pages (new, edit, remove, language switch)
 
-Status: todo — exact-diff scaffold ready (2026-11-20). **Go handlers are route-registration stubs** until briefs **1720–1722** land; executor must replace stubs with the full port using the golden and the same `guest` package shell. Sidecars: `docs/tasks/1723-files/`.
+Status: **exact-diff complete — executor blocked until 1720–1722 on main** (2026-11-20). Sidecars in `docs/tasks/1723-files/` are the full handler pass (not PR #1178 stubs). Do **not** start the Haiku executor until **1720a–1722** shell, claim, and party sidecars are on `main` and golden POST CSRF parity is wired (see §2).
 Depends on: 1722 | Base commit: current tip of the working branch | Branch: task/1723-go-guest-form-pages
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (split in two briefs if the exact-diff pass finds more)
 Tier: A (exact diffs only; Opus writes the exact-diff pass; fresh review of the full diff before ready)
@@ -37,13 +37,15 @@ Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (no new pers
 | `70bf3bf9c344299f27fb23dcee00977cdf39e702e118e2ff6dcd8ee8554fd2eb` | `App/tests/test_go_form_pages_golden.py` | create |
 | `e08c1f79c294f02951f0c1faa5628e7e5dcb934a844a136a2288fca292de62c1` | `go/cmd/ubyhost-web/register_web_guest_form_pages.go` | create |
 | `cc65e04b0e709c853bb0cd7f2b148bc5e6d13def90f03bd539a048c76c117ad7` | `go/cmd/ubyhost-web/register_web_guest_form_pages_test.go` | create |
-| `c2915c56fe67dfa5afc503d93154a92d199677625b81007dd661669591118af7` | `go/internal/web/guest/form_pages.go` | create |
-| `f9504f416a8b3239069e3b2640d5db7f7f0490e52075af75aa855440644d36ac` | `go/internal/web/guest/form_pages_test.go` | create |
+| `0ac865681708ee40295e245fc59330bf14c38214eb71bea0a04779e8be1db2a0` | `go/internal/web/guest/form_pages.go` | create |
+| `b06c4709d2b56c503bbc228305f6fa03dabc14988ae2a0f1339800b4423bfee5` | `go/internal/web/guest/form_pages_test.go` | create |
+| `3a40f71e4f220b57816bf7e95ba15cb1af042b575a3a38f035147bdd9d3e93ec` | `go/internal/web/guest/templates/form_content.tmpl` | create |
+| `2162fe6b6189215b2db96a5d6f3fc6b8a950774f4abce276774a2139468cf6a9` | `go/internal/web/guest/templates/remove_content.tmpl` | create |
 | `aa11e9bc1ced573fc38abce1837f9ebe29c291e00d87564759a0953a93bd8815` | `go/internal/web/guest/testdata/form_pages_golden.json` | create |
 
 Full manifest: `docs/tasks/1723-files/MANIFEST.sha256`.
 
-**Verified by the brief writer:** Python golden and pytest pass when `UBYHOST_MAIL_BACKEND=off` and `UBYHOST_GUEST_PIN_REQUIRED=0` in the generator env; `go test ./internal/web/guest/... ./cmd/ubyhost-web/ -run 'FormPages|GuestFormPages' -count=1` OK on copied sidecars **after** 1720–1722 guest shell sidecars are also copied (stubs in `form_pages.go` until then). Golden POST cases `remove_post` and `relang_cs` currently record Python `403` until step 2 wires guest-session CSRF like `test_guest_edit_until_filed.py`; note any accepted diff in the report.
+**Verified by the exact-diff pass:** Python golden unchanged (`pytest tests/test_go_form_pages_golden.py` when `App/.venv` exists). Dry-run Go check: copy **1720a** shell sidecars first, then 1723 sidecars (`docs/tasks/1723-files/MANIFEST.sha256` — nine paths), then `cd go && go test ./internal/web/guest/ -run FormPages -count=1` — OK (2026-11-20). `form_pages.go` uses `OpenLink`, `GuestLanguage`, `GuestLink`, `LangQuery`, `WritePage` from **1720a** `shell.go`; portal hooks (`formPagesRequireClaim`, owned cookie, CSRF) stay stubs until **1720b–1722** land. `templates/form_content.tmpl` is a structural shell; executor step 3 expands to full `guest/form.html` parity before browser gate. Golden POST cases `remove_post` and `relang_cs` still record Python `403` until guest-session CSRF is wired.
 
 ## 3. Files
 
@@ -63,14 +65,14 @@ No other file may change. Two open briefs naming the same file in §3 run in the
 
 ## 4. Steps
 
-0. Checks (repo root). Anything other than the stated result: STOP (§8). See `docs/tasks/1723-files/ANCHORS.txt` (seven sidecar `.txt` files plus `ANCHORS.txt`).
+0. Checks (repo root). Anything other than the stated result: STOP (§8). See `docs/tasks/1723-files/ANCHORS.txt` (nine sidecar `.txt` files plus `ANCHORS.txt`).
 1. Copy sidecars (repo root; after **1720–1722** sidecars if those briefs are not on `main` yet):
 
    ```bash
    S=docs/tasks/1723-files && for f in $(cd "$S" && find . -name '*.txt' ! -name 'ANCHORS.txt' | sed 's|^\./||; s|\.txt$||'); do mkdir -p "$(dirname "$f")" && cp "$S/$f.txt" "$f"; done && sha256sum -c "$S/MANIFEST.sha256" 2>&1 | tail -10
    ```
 
-   Expected: 7 lines ending `: OK`. Commit `1723 step 1`.
+   Expected: 9 lines ending `: OK`. Commit `1723 step 1`.
 2. Add the golden script and its freshness test; run the script and commit the golden.
 3. Add the handlers, templates and i18n keys (`App/scripts/go_host_i18n.py` writes the catalog); `gofmt -l` prints nothing.
 4. Register the routes in one new `go/cmd/ubyhost-web/register_web_*.go` file (`init()` through `registerRoutes`); the routes stay dormant: nothing is added to `UBYHOST_GO_PATHS`.

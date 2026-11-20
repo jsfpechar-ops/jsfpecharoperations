@@ -1,0 +1,38 @@
+{{define "content"}}
+{{if .DupWarnings}}
+<div class="g-host-note" role="note" data-dup-warning style="margin:16px 0">
+  <strong>{{.T "dup_warning_title"}}</strong>
+  {{range .DupWarnings}}
+  <p style="margin:6px 0 0">{{.Name}}: {{$.T "dup_warning_body" "what" .What}}</p>
+  {{end}}
+</div>
+{{end}}
+<aside class="g-checkin-rail" aria-label="{{.T "stay_label"}}">
+  <div class="g-checkin-stay">
+    {{if .Facility}}<span class="g-property-mark property-tone-{{.FacilityTone}}" aria-hidden="true">{{facilityMark .Facility}}</span>{{end}}
+    <div class="g-checkin-stay-body">
+      <strong>{{.Facility}}</strong>
+      <span>{{.StayFromLabel}} &ndash; {{.StayToLabel}}</span>
+      <span>{{.NightsLabel}}{{if and .PersonNumber .ExpectedPeople}} &middot; {{.T "person_progress" "current" .PersonNumber "total" .ExpectedPeople}}{{end}}</span>
+    </div>
+  </div>
+  {{if .DatesLink}}<a class="g-dates-link" href="{{.DatesLink}}">{{.T "wrong_dates"}}</a>{{end}}
+  <h2 class="g-checkin-steps-title">{{.T "steps_label"}}</h2>
+  <ol class="g-checkin-steps" data-checkin-steps data-done-label="{{.T "step_done"}}" data-edit-label="{{.T "review_edit"}}"></ol>
+</aside>
+<div class="g-checkin-main">
+{{if and .BackURL (not .HideBack)}}<a class="g-back" href="{{.BackURL}}">{{.T "back"}}</a>{{end}}
+<form id="guest-form" method="post" action="/l/{{.Token}}/{{.ReservationID}}/save?lang={{.Lang}}" enctype="multipart/form-data" data-guest-wizard{{if .DraftURL}} data-draft-url="{{.DraftURL}}" data-draft-fields="{{.DraftFields}}" data-draft-owned="{{.DraftOwned}}"{{end}} data-start-step="{{.StartStep}}" data-lang-warning="{{.T "lang_draft_warning"}}" data-next-label="{{.T "next_step"}}" data-back-label="{{.T "previous_step"}}">
+  <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
+  <input type="hidden" id="form-step" name="_step" value="">
+  {{if .GuestID}}<input type="hidden" name="guest_id" value="{{.GuestID}}">{{end}}
+  <input type="hidden" name="stay_from" value="{{.StayFromValue}}">
+  <input type="hidden" name="stay_to" value="{{.StayToValue}}">
+  <noscript><p class="g-err g-nojs-note" role="alert">{{.T "nojs_needed"}}</p></noscript>
+  {{if .DraftRestored}}<p class="g-ok" id="draft-welcome" role="status">{{.T "draft_welcome"}}</p>{{end}}
+  <p class="g-form-line">
+    <button class="g-btn g-btn-primary" type="submit" name="submit" value="1">{{.SaveActionLabel}}</button>
+  </p>
+</form>
+</div>
+{{end}}
