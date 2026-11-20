@@ -5,7 +5,7 @@
 <div class="e-page">
 <div class="airbnb-header">
   <a class="airbnb-back" href="/submissions" aria-label="{{t "common.back"}}">{{icon "arrow-left" 20}}</a>
-  <h1 class="airbnb-title">{{tp "reports.detail.title" (kv "id" $s.ID)}}</h1>
+  <h1 class="airbnb-title">{{t "reports.detail.title" (kv "id" $s.ID)}}</h1>
 </div>
 
 <section class="panel stay-command-panel outcome-{{outcome_level $s.State}}" id="now">
@@ -68,7 +68,7 @@
     </div>
     <div class="detail-metric">
       <div class="metric-label">{{t "reports.detail.finished"}}</div>
-      <div class="metric-value small-value">{{if $s.FinishedAt}}{{datetime_local $s.FinishedAt "seconds"}}{{else}}—{{end}}</div>
+      <div class="metric-value small-value">{{if $s.FinishedAt}}{{datetime_local $s.FinishedAt true}}{{else}}—{{end}}</div>
     </div>
     <div class="detail-metric">
       <div class="metric-label">{{t "reports.detail.guests"}}</div>
@@ -95,7 +95,7 @@
             <span class="ui-badge ui-badge-action" data-tone="amber">{{t "submission.duplicate"}}</span>
             {{if .ReceiptSubmissionID}}
               <div class="ui-sub">{{t "reports.detail.receipt_elsewhere"}}
-                <a href="/submissions/{{.ReceiptSubmissionID}}">{{tp "reports.detail.title" (kv "id" .ReceiptSubmissionID)}}</a>
+                <a href="/submissions/{{.ReceiptSubmissionID}}">{{t "reports.detail.title" (kv "id" .ReceiptSubmissionID)}}</a>
               </div>
             {{else}}
               <div class="ui-sub">{{t "reports.detail.receipt_none"}}</div>
