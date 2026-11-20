@@ -14,9 +14,16 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
 )
 
+// listSQL: has_receipt is a CASE, not the bare boolean expression it looks
+// like. On PostgreSQL that expression is a real boolean (OID 16, binary
+// format) and LoadList scans it into `var has int`, so the page failed with
+// "cannot scan bool (OID 16) in binary format into *int" and /submissions
+// answered 500. CASE ... THEN 1 ELSE 0 END is a plain int4 there and still an
+// integer 0/1 on the SQLite-backed paths, so the int scan stays correct.
 const listSQL = `SELECT s.id, s.created_at, s.apartment_id, s.mode, s.guest_ids, s.state,
        s.pseudo_stamp,
-       (s.receipt_pdf IS NOT NULL AND TRIM(s.receipt_pdf) != '') AS has_receipt,
+       CASE WHEN s.receipt_pdf IS NOT NULL AND TRIM(s.receipt_pdf) != ''
+            THEN 1 ELSE 0 END AS has_receipt,
        a.internal_name
   FROM submission s JOIN apartment a ON a.id = s.apartment_id
   WHERE a.owner_user_id IS NOT DISTINCT FROM $1
