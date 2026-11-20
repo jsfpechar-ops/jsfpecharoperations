@@ -56,6 +56,9 @@ def main(argv: list[str]) -> int:
     check = "--check" in argv
     stale = []
     for keys_file in sorted(GO_INTERNAL.glob("**/i18n_keys.txt")):
+        # Guest /l catalogs come from App/app/i18n.py (brief 1720a), not host_i18n.
+        if "web/guest" in keys_file.as_posix():
+            continue
         out = keys_file.with_name("i18n.json")
         text = render(read_keys(keys_file))
         current = out.read_text(encoding="utf-8") if out.exists() else None
