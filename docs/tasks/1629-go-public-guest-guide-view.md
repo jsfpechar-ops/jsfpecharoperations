@@ -1,69 +1,140 @@
 # 1629: Go guest guide view (GET /l/{token}/{reservation_id}/guide, /g/{token} and their photos)
 
-Status: blocked — the page needs the guest shell, the link, PIN and claim gate, the guest catalog and the Leon routes of the thread "Port guest registration pages" (`guest.py`, `guest_leon.py`), which has not started; nothing in this brief can run before it
-Depends on: 1720, 1721, 1726 (the guest shell, gate, i18n and Leon ports; replaces the old "Port guest registration pages" thread) | Base commit: none | Branch: none
-Executor: Haiku 5.5 | Not runnable. Tier B (a host's guide shown to guests). The orchestrator re-splits this into briefs when the dependencies exist.
+Status: todo — ready for executor after briefs 1720–1721 merge (exact-diff pass, 2026-11-20).
+Depends on: 1720, 1721, 1726 (guest shell, gate, i18n, Leon; executor runs after those PRs) | Base commit: current tip of the working branch | Branch: task/1629-go-public-guest-guide-view
+Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (split in two briefs if the exact-diff pass finds more)
+Tier: B (Sonnet writes the exact-diff pass; orchestrator reads the diff of the risk-listed files)
+
+> **One big PR mode.** Work on the current branch. After each step that changes a file, commit with the message `1629 step k`. Never create a branch, never push, never open a PR. Acceptance checks use `git log --oneline --grep='^1629 step'`.
 
 ## 1. Objective
 
-Port the four routes of `App/app/routes/guest_guide_view.py`: `stay_guide` (`GET /l/{token}/{reservation_id}/guide`), `stay_guide_photo` (`.../guide/photos/{item_id}/{photo_id}`), `qr_guide` (`GET /g/{token}`) and `qr_guide_photo` (`/g/{token}/photos/{item_id}/{photo_id}`) to Go, showing exactly the cards, host name and photos the Python page shows for the same token and nothing else from the host's data. This file records why it cannot be written yet, what is already known, and how to cut it once it can.
+Port the four routes of `App/app/routes/guest_guide_view.py`: `stay_guide`, `stay_guide_photo`, `qr_guide` and `qr_guide_photo` to Go, showing exactly the cards, host name and photos the Python page shows for the same token and nothing else from the host's data.
 
 ## 2. Context
 
-What Python does (read once, so the later writer need not):
+Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (QR door: host name only, no phone or e-mail; no privacy link with a stay token); 3 fixtures `@example.test`; 4 no new dependency; 5 PostgreSQL through `pgxpool`; 6 light mode; 11 Go first.
 
-- Both doors render only `guest_guide.for_guest(apartment_id, level)`: cards with state `done`, visibility allowed for the level (`booked` from the day before check-in to the checkout day, else `everyone`; the QR door is always `everyone`), nothing until `guest_guide.progress(...)["live"]`. A photo is served only when its card is in that list and the file exists; else the guest 404 page. The QR door shows the host's name only (never phone or e-mail, owner decision 2026-10-24) and no privacy link with a stay token. Every response carries `Cache-Control: no-store`, `X-Robots-Tag: noindex, nofollow`, `Referrer-Policy: no-referrer` (photos: `private, max-age=3600`, `noindex`). The QR door counts page views per address (`guide_qr`, 120 per window, photos not counted) and answers 429 through the guest 404 page.
-- Card text is in the host's language; the page language comes from `guest._language` (`?lang=`, cookie, then `Accept-Language`). `guide_translate.apply` swaps in cached AI translations and `fill` translates the missing cards after the response with a model call (budget, validation of numbers and links, `guide_translation` rows).
+**Python source of truth:** `App/app/routes/guest_guide_view.py`; `guest_guide` / `guide_facts` / `guide_photos` / `guide_token` / `guide_translate`; guest templates `guest/guide.html` via `render_guest`.
 
-Why it is blocked (each point is a file the reviewer can open):
+**Routes in scope:**
 
-1. **Gate (tier A).** `stay_guide` runs `guest._open_link`, `_require_pin`, `_reservation_for_guest`, `claim.ensure_row`, `claim.guest_access_open`, `claim.is_claimed` and `_device_holds_claim`, and redirects to the stay page while the claim step is open. That logic lives in `guest.py` (3062 lines) and belongs to the thread "Port guest registration pages" (waits for filing). Copying it here would fork the PIN and claim rules.
-2. **Shell.** Both doors render `guest/guide.html` through `render_guest` (`guest/base.html`, `_host.html`, `_shared`: facility, controller, host contact, language switcher with the guest catalog `app/i18n.py`). The 404 and 429 answers use `guest/unavailable.html`. No Go guest shell exists; building one here would duplicate the one the guest thread needs.
-3. **Leon.** With AI on and Leon switched on for the property the page carries the chat (`guest/_leon.html`, `guest-leon.js`); its routes `GET/POST /g/{token}/leon` and `.../guide/leon` are `guest_leon.py` (the guest thread). Caddy routes by path prefix only, so `/g/{token}` cannot move to Go while `/g/{token}/leon` stays on Python, and a Go page without the chat would silently drop a feature.
-4. **Translation fill.** The Go guide editor (1440 to 1447) has the guide data but not `guide_translate`. Skipping `fill` would stop translations for ever; porting it adds an outbound model call that needs its own PR text and budget tests.
-5. **Path collision.** `/l/{token}/...` carries 19 further Python routes (`guest.py`) and 4 Leon routes, `/g/{token}/...` one more. Neither prefix can be switched to Go before all of them are ported.
+| Method | Path |
+|---|---|
+| GET | `/l/{token}/{reservation_id}/guide` |
+| GET | `/l/{token}/{reservation_id}/guide/photos/{item_id}/{photo_id}` |
+| GET | `/g/{token}` |
+| GET | `/g/{token}/photos/{item_id}/{photo_id}` |
 
-What is not blocked and could be written now if the owner wants a head start: the pure data layer in a new file of `go/internal/web/ai/` or its own package (cards, groups, `booked_level`, steps split, video-URL rule, photo path lookup), tested against a Python golden. It would have no caller until the shell exists; the orchestrator decides.
+**Risk:** Gate checks (link, PIN, claim) on the stay door; no host field beyond the QR door's host name; photos only for cards `for_guest` returns. Rule 2.
+
+**Parity method:** `App/scripts/go_guest_guide_view_golden.py` seeds booked-level cases and route list; `guide_view_test.go` covers `BookedLevel`; browser parity uses `tests/test_guest_guide_view.py` after wave G (brief 1728).
+
+**All implementation code is pre-written.** Sidecars: `docs/tasks/1629-files/<repo path>.txt`. Step 1 copies them; never retype or edit them. Checksums:
+
+| sha256 | file | action |
+|---|---|---|
+| `5010d5b5055b9ae4399dfca06dbf0e999f4339cb3a9170e0a5175fc43a61171d` | `App/scripts/go_guest_guide_view_golden.py` | create |
+| `bd48e86d0bc912765a2bbe99d36ead83027aa2f5ee0d28f88202398cd6b98576` | `App/tests/test_go_guest_guide_view_golden.py` | create |
+| `c7d62bebd0e978b6f296efdf7453ade8263d1bb5ea5835cda2412b9b19719800` | `go/cmd/ubyhost-web/register_web_guest_guide_view.go` | create |
+| `19ade6f258a0136bc5d19423cd8e390147bacbe12a28579ae2fce5077a4c476a` | `go/cmd/ubyhost-web/register_web_guest_guide_view_test.go` | create |
+| `c7cff2e65947c959631e6c344140900658ddf45a0305bf294570d60d4fd319aa` | `go/internal/web/guest/guide_gate_stub.go` | create |
+| `1de75d1f4497321f86a099aeaf80d4c071eec4ba1d8b522557ac5c8c5762a3ae` | `go/internal/web/guest/guide_page.go` | create |
+| `2bbda950ded49517ea76df471b9867acf433a7336379bafc6f3c3e5ebea943be` | `go/internal/web/guest/guide_photo.go` | create |
+| `b2b5e960eaefaadc72dd40ab7ea734bc9c9998b41b6bf2a907ed448099a7fd4a` | `go/internal/web/guest/guide_view.go` | create |
+| `424351476f651c3b90cc0ba5b449d7a182785b46de0f23fde5e0bb96a06bced4` | `go/internal/web/guest/guide_view_test.go` | create |
+| `b565be64db1820c26931777093568fc518329c1ec06c2354548a9841726e8aee` | `go/internal/web/guest/lang.go` | create |
+| `c8a4b10f33bd148a63c808ee337789222e6e9897d72f504eae986ad94dc8e0f0` | `go/internal/web/guest/prague_today.go` | create |
+| `ef7eaccbce18bc6c4c32a0da82d716989d7207df32ef60a06fd73e8a339ece8d` | `go/internal/web/guest/rate.go` | create |
+| `0ffac733993cd9fcc4bb8692f681c0b870c337904eafe0529756cc010be2d4fa` | `go/internal/web/guest/testdata/guest_guide_view_golden.json` | create |
+| `0f1f8061e1ea9d1076c141e318fee8e8639636f7b0158f81a605533052470143` | `go/internal/web/guest/types.go` | create |
+| `49b9e8912de3a631e71e19b42383c7b240117ecdc26718f81a2002609f83a51c` | `go/internal/web/guest/unavailable.go` | create |
+
+Full manifest: `docs/tasks/1629-files/MANIFEST.sha256`.
+
+**Verified by the brief writer:** sidecars dry-run on current `main` with step 1 copy — `sha256sum -c docs/tasks/1629-files/MANIFEST.sha256` all OK; `gofmt -l` empty on copied paths; `go build ./...` OK after copy; `go test ./internal/web/guest/... -count=1 -run BookedLevel` OK; `pytest tests/test_go_guest_guide_view_golden.py` OK when `App/.venv` exists. Executor must replace `guide_gate_stub.go` with brief 1721 claim gate before cutover.
 
 ## 3. Files
 
-None. The files will be named when the brief is cut.
+| Path | Action | What |
+|---|---|---|
+| `go/internal/web/guest/guide_view.go` | create | four routes, `BookedLevel`, register helper |
+| `go/internal/web/guest/guide_gate_stub.go` | create | stay gate stub until 1721 lands |
+| `go/internal/web/guest/guide_page.go` | create | page render and card grouping |
+| `go/internal/web/guest/guide_photo.go` | create | JPEG serve and headers |
+| `go/internal/web/guest/lang.go` | create | guest language |
+| `go/internal/web/guest/rate.go` | create | QR view rate limit |
+| `go/internal/web/guest/prague_today.go` | create | booked window |
+| `go/internal/web/guest/types.go` | create | row types |
+| `go/internal/web/guest/unavailable.go` | create | 404/429 guest page stub until 1720 shell |
+| `go/internal/web/guest/guide_view_test.go` | create | `BookedLevel` parity |
+| `go/internal/web/guest/testdata/guest_guide_view_golden.json` | create | golden from Python script |
+| `go/cmd/ubyhost-web/register_web_guest_guide_view.go` | create | dormant registration |
+| `go/cmd/ubyhost-web/register_web_guest_guide_view_test.go` | create | route patterns |
+| `App/scripts/go_guest_guide_view_golden.py` | create | golden generator (go-first exception 1) |
+| `App/tests/test_go_guest_guide_view_golden.py` | create | golden freshness test |
+| `docs/tasks/1629-files/**` | keep | sidecars from the exact-diff pass (do not edit) |
+| `docs/tasks/1629-report.md` | create | the report (§9) |
+
+No other file may change. Run only after briefs **1720** and **1721** executors finish (shared `go/internal/web/guest/` package).
 
 ## 4. Steps
 
-None. Proposed cut, once the guest thread has merged its shell, gate and catalog (tier B each; one Haiku session each):
+0. Checks (repo root). Anything other than the stated result: STOP (§8). Each line in `docs/tasks/1629-files/ANCHORS.txt` must print `1` before copy; `find docs/tasks/1629-files -name '*.txt' ! -name 'ANCHORS.txt' | wc -l` prints `15`.
 
-1. Golden script for both doors: made-up apartment with a live guide, one card per kind, a `booked` and an `everyone` card, a photo, a QR token; cases for each language, each level date window, 404, 429, not-ready, empty guide; rows read, none written.
-2. Go data layer: `for_guest`, `_cards`, `_groups`, `booked_level`, photo file lookup (read-only).
-3. QR door and its photo route (uses the guest shell); register `GET /g/{token}` and `GET /g/{token}/photos/...`.
-4. Stay door and its photo route (uses the guest gate); register the two `/l/...` patterns.
-5. Translation: port `guide_translate.apply` (read) and `fill` (model call through `go/internal/anthropic`), or decide with the owner to leave `fill` on Python's worker.
-6. The switch: `/g/*` and the guide paths of `/l/*` in `UBYHOST_GO_PATHS` only when the guest thread's routes are also on Go (point 5 above).
+1. Copy sidecars (one call, repo root). Never retype or edit them:
+
+   ```bash
+   S=docs/tasks/1629-files && for f in $(cd "$S" && find . -name '*.txt' ! -name 'ANCHORS.txt' | sed 's|^\./||; s|\.txt$||'); do mkdir -p "$(dirname "$f")" && cp "$S/$f.txt" "$f"; done && sha256sum -c "$S/MANIFEST.sha256" 2>&1 | tail -20
+   ```
+
+   Commit `1629 step 1`.
+
+2. `cd go && gofmt -l internal/web/guest cmd/ubyhost-web/register_web_guest_guide_view.go` empty; `go build ./...` and `go test ./internal/web/guest/... -count=1` pass. Commit `1629 step 2` if gofmt changed anything.
+
+3. From `App/`: `.venv/bin/python scripts/go_guest_guide_view_golden.py --check`; `pytest tests/test_go_guest_guide_view_golden.py -q`. Commit `1629 step 3`.
+
+4. Wire full guest shell from 1720, replace `unavailable.go` stub and `guide_gate_stub.go` with 1721 gate; port `guide_translate.apply`/`fill` or document owner decision to leave `fill` on Python worker.
+
+5. Run §6; write report. Routes stay dormant until wave G (brief 1728).
 
 ## 5. Do not touch
 
-Everything. Do not run this brief.
+`UBYHOST_GO_PATHS` until 1728; anything under `App/app/` except §3; filing code.
 
 ## 6. Commands
 
-None.
+- `cd go && gofmt -l internal/web/guest | tail -5` empty
+- `cd go && go test ./internal/web/guest/... -count=1 2>&1 | tail -30` passes
+- `cd App && .venv/bin/python -m pytest tests/test_go_guest_guide_view_golden.py tests/test_guest_guide_view.py -q --tb=short -x 2>&1 | tail -30` passes when executor runs with DB
+- `python3 scripts/context_lint.py 2>&1 | tail -10` clean
+- Guest pages: 390/768/1280 screenshots per rule 10 after shell merge
 
 ## 7. Acceptance
 
-- [ ] Not applicable until the brief is cut.
+- Headers: `Cache-Control: no-store`, `X-Robots-Tag: noindex, nofollow`, `Referrer-Policy: no-referrer` on HTML; photos `private, max-age=3600`.
+- QR rate limit 120 per window; 429 through guest 404.
+- `BookedLevel` matches Python golden edges.
+- Stay door uses the same gate as the stay page after 1721.
+- `git log --oneline --grep='^1629 step'` one commit per step; only §3 paths change.
 
 ## 8. Stop and ask
 
-Stop at once: the brief is blocked.
+Stop when: anchor missing; golden stale without regen; file outside §3 needed; 1720/1721 not merged.
 
 ## 9. Report
+
+`docs/tasks/1629-report.md`: commits, command tails, accepted differences, screenshots, `guide_translate.fill` decision.
+
+## Rollout wave and rollback
+
+- **Rollout:** Dormant until brief 1728 adds `/g/*` and guide paths under `/l/*` to `UBYHOST_GO_PATHS` with the rest of the guest thread.
+- **Rollback:** Revert the PR.
+
+## Owner steps
 
 None.
 
 ## Risk list (for the reviewer)
 
-None yet. When cut: the gate checks (link, PIN, claim), that no host field beyond the QR door's host name reaches the page, and that a photo is served only for a card `for_guest` returns.
-
-## Owner steps
-
-None.
+Gate checks (link, PIN, claim); no host field beyond QR host name; photo only when card is in `for_guest` list; `guide_translate.fill` outbound model call disclosed in PR when ported.
