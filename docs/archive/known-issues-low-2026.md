@@ -23,3 +23,15 @@ Moved from [known-issues](../context/known-issues.md) on 2026-11-11 (compaction)
 | K-I03 | Low open | invoices.py cancel | Concurrent cancel returns 500 | P A10 |
 | K-I04 | Low open | invoices.py | Unvalidated duzp/due/correction dates give 500 | P A11 |
 | K-U06 | Low open | apartment_form.html | Pills aligned; CI/staging pending | UI §3 |
+- K-SM2 (brief 1105): OPERATIONS.md submit_state section disagrees with the code in 9 places.
+- K-SM3 (brief 1111): rules.md lines 37, 44 still say production is SQLite, migrations frozen at 0033.
+- K-DC-RENAME (943): lookup by name `UH-<id>`; a code renamed in TTLock reads as gone.
+- K-FLAKY-VT: test_host_filter_panels_browser.py:695 ViewTransition abort once (#943).
+- K-FLAKY-DC (#1081): CI door-code tests leave pending once; local OK; suspect two nows in issue/_issue_due.
+- K-F24 (947 review): recovered batch in manual mode keeps retried_at NULL; going automatic resends it once.
+- K-DC-REMOVE (950): A-B-A-B move sends no 2nd moved_failed mail.
+- K-DC-REVIVE-CARD (1173c): card closed in revoke_pending, delete refused, stay revived: stays closed.
+- K-DC-EXTEND (1173c review): stay extended after its issued code expired gets no new code.
+- K-PG-FK: goose 00004/11/13 FKs not DEFERRABLE (1263).
+- K-HB-HAND: housebook says "Not yet sent" for a hand-filed guest (Python quirk; 1704a test).
+- K-BLOCKED-PAGE (1859b): BlockedPage inline main styles; app.css later.
