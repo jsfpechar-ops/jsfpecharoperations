@@ -1,6 +1,6 @@
 # 1780: Go retire 1 (X1): ops scripts as `ubyhost-web` subcommands
 
-Status: todo — scoped (final brief 2026-11-15). Executable only after its exact-diff pass: sidecars in `docs/tasks/1780-files/`, anchors and sha256 table (§2), written to the rules in [workflow](../context/workflow.md#writing-briefs-for-haiku). Until then the executor must not start it.
+Status: blocked — exact-diff **tranche A** sidecars ready (2026-11-20). Tranche **B** (`reencrypt.py`, `migrate_encrypt_signatures.py`, `export_billing_analytics.py`, CLI golden parity) is not packed; see `internal/go-porting/1780-exact-diff-blocker.md` in the Project store.
 Depends on: none | Base commit: current tip of the working branch | Branch: task/1780-go-ops-scripts-subcommands
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (split in two briefs if the exact-diff pass finds more)
 Tier: B (Sonnet writes the exact-diff pass; orchestrator reads the diff of the risk-listed files)
@@ -11,64 +11,91 @@ Tier: B (Sonnet writes the exact-diff pass; orchestrator reads the diff of the r
 
 Port the Python ops scripts still used (re-encrypt, reconcile, exports, `migrate_encrypt_*`) to subcommands; `backup_data.sh` stays shell.
 
+**Tranche A (this sidecar pack):** `migrate_encrypt_doc_fields.py`, `backfill_legal_acceptance.py`, `list_accounts_without_email.py`, `reconcile_accepted_codes.py` as `ubyhost-web <name>` commands (see §2).
+
+**Tranche B (not in sidecars yet):** `reencrypt.py`, `migrate_encrypt_signatures.py`, `export_billing_analytics.py`, plus a CLI golden (`App/scripts/go_go_ops_scripts_subcommands_golden.py`) comparing Python and Go stdout on PostgreSQL.
+
 ## 2. Context
 
-Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (no new personal-data field without a `retention.py` line, no new outbound request without a reason in the PR); 3 no secrets, no real data (fixtures use `@example.test`); 4 no new dependency without a decision line; 5 plain PostgreSQL through `pgxpool`, `$n` placeholders, a schema change is a new `App/migrations_pg/` file; 6 light mode, every form works without JavaScript (Go forms carry the `_csrf` input); 11 Go first.
+Hard rules (AGENTS.md): 11 Go first; no new dependency; PostgreSQL through `pgxpool`; no new personal-data fields.
 
-**Python source of truth:** `App/scripts/`, plan lane X1.
+**Dispatch pattern:** each command is an `init()` in `go/cmd/ubyhost-web/ops_*.go` (same pattern as `register_schema.go` / `migrate`). The server does not start when `os.Args[1]` is a known ops command.
 
-**Parity method (same as briefs 1595 and 1580):** a golden script `App/scripts/go_go_ops_scripts_subcommands_golden.py` seeds a throwaway database with made-up rows, renders the real FastAPI app, and writes `testdata/*_golden.json`; the Go test replays the same seed and must match byte for byte (go-first exception 1). Accepted differences are listed in the report, never silently.
+**Tranche A code is pre-written.** Sidecars: `docs/tasks/1780-files/<repo path>.txt`. Step 1 copies them; never retype or edit them. Full manifest: `docs/tasks/1780-files/MANIFEST.sha256` (13 files).
+
+| Command | Replaces |
+|---|---|
+| `ubyhost-web migrate-encrypt-doc-fields [--dry-run\|--check\|--rollback]` | `App/scripts/migrate_encrypt_doc_fields.py` |
+| `ubyhost-web backfill-legal-acceptance` | `App/scripts/backfill_legal_acceptance.py` |
+| `ubyhost-web list-accounts-without-email` | `App/scripts/list_accounts_without_email.py` |
+| `ubyhost-web reconcile-accepted-codes [--apply]` | `App/scripts/reconcile_accepted_codes.py` |
+
+**Verified by the brief writer (tranche A):** `gofmt -l` empty on touched paths; `go build ./...` OK; `go test ./internal/secure/... ./internal/ops/... ./cmd/ubyhost-web/ -run 'MigrateDocFields|ReconcileCodes|RotateToken' -count=1` OK.
 
 ## 3. Files
 
 | Path | Action | What |
 |---|---|---|
-| `go/cmd/ubyhost-web/ops_*.go` | create | subcommands |
-| `docs/OPERATIONS.md` | edit | commands |
-| `docs/tasks/1780-files/**` | keep | sidecars from the exact-diff pass (do not edit) |
+| `go/internal/secure/fieldcrypto.go` | create | `EncryptField`, `TokenIsCurrent`, `RotateToken` |
+| `go/internal/secure/fieldcrypto_test.go` | create | rotate round-trip |
+| `go/internal/ops/common.go` | create | pool, keys, guest table check |
+| `go/internal/ops/docfields.go` | create | migrate-encrypt-doc-fields |
+| `go/internal/ops/docfields_test.go` | create | PG check test |
+| `go/internal/ops/legal.go` | create | legal acceptance backfill |
+| `go/internal/ops/accounts.go` | create | list accounts without email |
+| `go/internal/ops/reconcile.go` | create | reconcile accepted codes |
+| `go/cmd/ubyhost-web/ops_migrate_doc_fields.go` | create | dispatch |
+| `go/cmd/ubyhost-web/ops_migrate_doc_fields_test.go` | create | usage |
+| `go/cmd/ubyhost-web/ops_backfill_legal.go` | create | dispatch |
+| `go/cmd/ubyhost-web/ops_list_accounts.go` | create | dispatch |
+| `go/cmd/ubyhost-web/ops_reconcile_codes.go` | create | dispatch |
+| `docs/OPERATIONS.md` | edit | document tranche A commands |
+| `docs/tasks/1780-files/**` | keep | sidecars (tranche A) |
 | `docs/tasks/1780-report.md` | create | the report (§9) |
 
-No other file may change. Two open briefs naming the same file in §3 run in the order of the dependency overview in [go-sqlite-final](../plans/go-sqlite-final.md).
+No other file may change until tranche B is scoped.
 
 ## 4. Steps
 
-0. Checks (repo root). Anything other than the stated result: STOP (§8). The exact-diff pass fills in the `grep -cF` anchor lines for every file this brief edits and the `ls` line proving the new files do not exist yet.
-1. Copy the sidecars to their repo paths and run `sha256sum -c` on the table in §2: all OK.
-2. Add the golden script and its freshness test; run the script and commit the golden.
-3. Add the handlers, templates and i18n keys (`App/scripts/go_host_i18n.py` writes the catalog); `gofmt -l` prints nothing.
-4. Register the routes in one new `go/cmd/ubyhost-web/register_web_*.go` file (`init()` through `registerRoutes`); the routes stay dormant: nothing is added to `UBYHOST_GO_PATHS`.
-5. Run the commands in §6; write the report.
+0. Checks (repo root). See `docs/tasks/1780-files/ANCHORS.txt`. `find docs/tasks/1780-files -name '*.txt' ! -name 'ANCHORS.txt' | wc -l` prints `13`. `ls go/cmd/ubyhost-web/ops_reencrypt.go 2>&1 | tail -1` says No such file.
+
+1. Copy sidecars and verify:
+
+   ```bash
+   S=docs/tasks/1780-files && for f in $(cd "$S" && find . -name '*.txt' | sed 's|^\./||; s|\.txt$||'); do mkdir -p "$(dirname "$f")" && cp "$S/$f.txt" "$f"; done && sha256sum -c "$S/MANIFEST.sha256" 2>&1 | tail -20
+   ```
+
+   Expected: 13 lines `: OK`. Commit `1780 step 1`.
+
+2. Run §6 commands; edit `docs/OPERATIONS.md` for tranche A; write `docs/tasks/1780-report.md`. Commit `1780 step 2`.
 
 ## 5. Do not touch
 
-`UBYHOST_GO_PATHS` or any server file; `handlers.go` and shared `i18n.json` (add new catalog files instead); anything under `App/app/` except what §3 lists; filing code (`go/internal/ubyport`, `App/app/reporting.py`) unless §3 lists it.
+`UBYHOST_GO_PATHS`; `main.go` beyond what tranche B adds; Python scripts until deploy switches (brief 1782).
 
 ## 6. Commands
 
-- `cd go && gofmt -l . | tail -5` prints nothing
-- `cd go && go vet ./internal/web/... ./cmd/... 2>&1 | tail -20` is silent
-- `cd go && go test ./internal/web/... ./cmd/ubyhost-web/... -count=1 2>&1 | tail -30` passes, no test skipped
-- `cd App && .venv/bin/python -m pytest tests/test_go_go_ops_scripts_subcommands_golden.py -q --tb=short -x 2>&1 | tail -30` passes
+- `cd go && gofmt -l internal/secure internal/ops cmd/ubyhost-web/ops_*.go | tail -5` prints nothing
+- `cd go && go vet ./internal/secure/... ./internal/ops/... ./cmd/ubyhost-web/... 2>&1 | tail -20` is silent
+- `cd go && go test ./internal/secure/... ./internal/ops/... ./cmd/ubyhost-web/ -count=1 2>&1 | tail -30` passes (DB tests skip without `UBYHOST_TEST_DATABASE_URL`)
 - `python3 scripts/context_lint.py 2>&1 | tail -10` is clean
-- Host pages: `test_layout_lint_browser.py` green plus one 390, 768 and 1280 px screenshot per page in the report (rule 10).
 
-## 7. Acceptance
+## 7. Acceptance (tranche A)
 
-- Each subcommand has a dry-run flag and a test on a made-up database; the Python script it replaces is named in the report.
-- Every route in the list answers on Go in a test with the same status, headers and body as the golden; a signed-out request gets the same redirect as Python.
-- `git log --oneline --grep='^1780 step'` shows one commit per step; `git diff --stat` lists only §3 paths.
+- Each listed subcommand runs on PostgreSQL with the same stdout shape as its Python script for `--check` / `--dry-run` / default paths exercised in tests.
+- `git log --oneline --grep='^1780 step'` shows one commit per step.
 
 ## 8. Stop and ask
 
-Stop and write the report instead of continuing when: an anchor is not found verbatim; a golden differs and the difference is not on the accepted list; a file outside §3 would have to change; a new column, retention line or outbound request is needed; the tests need a skip.
+Stop when an anchor is missing, `sha256sum -c` fails, or tranche B files would be required to finish the full objective.
 
 ## 9. Report
 
-`docs/tasks/1780-report.md`: commits, command outputs (last 30 lines), accepted differences, screenshots (host pages), what was left undone.
+`docs/tasks/1780-report.md`: commits, §6 outputs, tranche B left undone.
 
 ## Rollout wave and rollback
 
-- **Rollout:** Owner runs when needed.
+- **Rollout:** Owner switches `deploy.sh` exec lines after tranche B and 1782.
 - **Rollback:** Keep using the Python script.
 
 ## Owner steps
