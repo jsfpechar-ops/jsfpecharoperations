@@ -1202,3 +1202,9 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .host-workspace .ui-section>*+:is(.ui-btn,form){margin-top:var(--space-3)}
 .host-workspace :is(.account-parts,.fee-adjust-grid){gap:var(--space-3)}
 .host-workspace .page-help-btn::before{display:none}
+@media (min-width:768px) {
+  body.host-workspace:not(.v2):not(.admin-workspace) .ui-sidebar {
+    --host-sidebar-background:#fcf8f5;
+    background-color:var(--host-sidebar-background);
+  }
+}

@@ -2,6 +2,12 @@
 :root{--bg:#f6f6f4;--s:#fff;--ink:#1c1c1a;--ink2:#55554f;--ink3:#6b6b65;--line:#ebebe7;--side:#fff;--side2:#f1f1ee;--acc:#d0452d;--acc-text:#b83d28;--accs:#fdece8;--ok:#167044;--oks:#e6f5ec;--warn:#8a5200;--warns:#fff4d6;--bad:#b42318;--bads:#fdecea;--info:#eaf3fb;
 font-family:var(--font-sans);color:var(--ink);font-size:14px}
 *{box-sizing:border-box}body{margin:0;background:var(--bg)}
+@media (min-width:768px) {
+  body.v2.host-workspace:not(.admin-workspace) {
+    --side:#fcf8f5;
+    background-color:var(--s);
+  }
+}
 body.v2 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 /* v2 form controls (shared, generic) */
 :where(body.v2 label){display:block;font-size:13px;color:var(--ink2)}
