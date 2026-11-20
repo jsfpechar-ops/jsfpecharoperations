@@ -1,0 +1,9 @@
+# Brief 1707 step-0 anchors (repo root).
+grep -cF '@router.post("/smart-locks/setup")' App/app/routes/admin.py
+grep -cF 'async def smart_locks_refresh(request: Request):' App/app/routes/admin.py
+grep -cF 'async def smart_locks_remove(request: Request):' App/app/routes/admin.py
+grep -cF '// The POST /smart-locks/* routes call the TTLock gateway and are not here.' go/internal/web/properties/misc.go
+ls go/internal/web/properties/smart_locks.go 2>&1 | grep -cF 'No such file'
+ls App/scripts/go_smart_locks_golden.py 2>&1 | grep -cF 'No such file'
+ls go/cmd/ubyhost-web/register_web_properties_smart_locks.go 2>&1 | grep -cF 'No such file'
+find docs/tasks/1707-files -name '*.txt' ! -name 'ANCHORS.txt' | wc -l
