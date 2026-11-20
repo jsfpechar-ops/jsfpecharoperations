@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestRunDocFieldsCheckSkipsWithoutDB(t *testing.T) {
+func TestRunDocFieldsCheckOnPostgres(t *testing.T) {
 	if os.Getenv("UBYHOST_TEST_DATABASE_URL") == "" {
 		t.Skip("needs UBYHOST_TEST_DATABASE_URL")
 	}
@@ -24,6 +24,9 @@ func TestRunDocFieldsCheckSkipsWithoutDB(t *testing.T) {
 	var out strings.Builder
 	code, err := RunDocFields(ctx, pool, nil, DocFieldsConfig{Check: true}, os.Getenv, &out)
 	if err != nil {
+		if strings.Contains(err.Error(), "guest table") {
+			t.Skip("needs migrated Postgres schema")
+		}
 		t.Fatal(err)
 	}
 	if code != 0 && code != 1 {
