@@ -13,6 +13,7 @@ Updated: 2026-11-17.
 - 11-13 merges, head-count H1, security audit #966: [archive](../plans/status-archive-2026-11.md).
 
 ## Next
+- Go executor queue ([plan](../plans/go-cutover-executor-queue.md)): runnable **1793**, **0852**; **1730** / **1770** blocked until exact-diff sidecars.
 - [Autopilot](../plans/autopilot-agentic.md): hide Payments first.
 - Guest isolation ([plan](../plans/guest-form-isolation.md)): 1834-1839 (#1070); drafts #1072-1073 (1830, 1834); 1835 (#1071) after 1834. Owner: 1837 Q4-5.
 - Entry code + guide (Go): [plan](../plans/entry-code-external-guide.md). Runnable 1660, 1663, 1668; 1661→1662, 1664; 1665-1667 wait on property-settings and guest-pages ports.
