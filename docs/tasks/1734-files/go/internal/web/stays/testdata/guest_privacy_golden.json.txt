@@ -1,0 +1,76 @@
+{
+ "cases": [
+  {
+   "body": "_csrf=golden",
+   "flash_key": "",
+   "location": "/login",
+   "method": "POST",
+   "name": "signed_out_restrict",
+   "path": "/guests/101/restrict",
+   "status": 303,
+   "user": 0
+  },
+  {
+   "body": "_csrf=golden&reason=note",
+   "flash_key": "flash.guest.restricted",
+   "location": "/reservations/10",
+   "method": "POST",
+   "name": "restrict_ok",
+   "path": "/guests/101/restrict",
+   "status": 303,
+   "user": 1
+  },
+  {
+   "body": "_csrf=golden",
+   "flash_key": "flash.guest.unrestricted",
+   "location": "/reservations/10",
+   "method": "POST",
+   "name": "unrestrict_ok",
+   "path": "/guests/101/unrestrict",
+   "status": 303,
+   "user": 1
+  },
+  {
+   "body": "_csrf=golden",
+   "flash_key": "flash.error.czech_no_verification",
+   "location": "/guests/102",
+   "method": "POST",
+   "name": "verify_czech_refused",
+   "path": "/guests/102/verify-identity",
+   "status": 303,
+   "user": 1
+  },
+  {
+   "body": "_csrf=golden",
+   "flash_key": "flash.guests.id_check_recorded",
+   "location": "/guests/103",
+   "method": "POST",
+   "name": "verify_ok",
+   "path": "/guests/103/verify-identity",
+   "status": 303,
+   "user": 1
+  },
+  {
+   "body": "",
+   "flash_key": "",
+   "location": "",
+   "method": "GET",
+   "name": "passport_hidden",
+   "path": "/guests/104/passport-photo",
+   "status": 403,
+   "user": 1
+  },
+  {
+   "body": "_csrf=golden&reason=support",
+   "flash_key": "",
+   "location": "/guests/105",
+   "method": "POST",
+   "name": "reveal_not_impersonating",
+   "path": "/guests/105/reveal-identity",
+   "status": 303,
+   "user": 1
+  }
+ ],
+ "now": "2026-06-15T12:00:00+00:00",
+ "seed": []
+}
