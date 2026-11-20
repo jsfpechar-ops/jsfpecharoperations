@@ -1,0 +1,66 @@
+{
+  "now": "2026-07-01T12:00:00+00:00",
+  "cases": [
+    {
+      "name": "quick-edit fetch",
+      "method": "POST",
+      "path": "/reservations/801/quick-edit",
+      "fields": {
+        "summary": "Weekend"
+      },
+      "headers": {
+        "X-Requested-With": "fetch"
+      },
+      "owner_id": 9001,
+      "status": 200,
+      "location_prefix": "",
+      "body": "{\"ok\":true}"
+    },
+    {
+      "name": "archive stay",
+      "method": "POST",
+      "path": "/reservations/801/archive",
+      "fields": {},
+      "headers": null,
+      "owner_id": 9001,
+      "status": 303,
+      "location_prefix": "/reservations",
+      "body": ""
+    },
+    {
+      "name": "unarchive stay",
+      "method": "POST",
+      "path": "/reservations/801/unarchive",
+      "fields": {},
+      "headers": null,
+      "owner_id": 9001,
+      "status": 303,
+      "location_prefix": "/reservations/801",
+      "body": ""
+    },
+    {
+      "name": "delete demo",
+      "method": "POST",
+      "path": "/reservations/802/delete-demo",
+      "fields": {},
+      "headers": null,
+      "owner_id": 9001,
+      "status": 303,
+      "location_prefix": "/reservations",
+      "body": ""
+    },
+    {
+      "name": "remove slot bad count",
+      "method": "POST",
+      "path": "/reservations/801/remove-empty-slot",
+      "fields": {
+        "expected": "1"
+      },
+      "headers": null,
+      "owner_id": 9001,
+      "status": 303,
+      "location_prefix": "/reservations/801",
+      "body": ""
+    }
+  ]
+}
