@@ -1,0 +1,7 @@
+# Brief 1720c step-0 anchors (repo root). Each grep -cF must return 1 before copying sidecars.
+grep -cF 'def pick_stay(token: str, request: Request):' App/app/routes/guest.py
+grep -cF 'mux.Handle("GET /l/{token}", wrap("/l/{token}", d.pickStay))' go/internal/web/guest/shell.go
+grep -cF 'func (d shellDeps) pickStay(w http.ResponseWriter, r *http.Request)' go/internal/web/guest/pick.go
+ls go/internal/web/guest/pick.go 2>&1 | grep -cF 'No such file'
+ls App/scripts/go_go_guest_shell_pick_golden.py 2>&1 | grep -cF 'No such file'
+find docs/tasks/1720c-files -name '*.txt' ! -name 'ANCHORS.txt' | wc -l

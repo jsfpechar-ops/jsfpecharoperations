@@ -497,6 +497,6 @@ type shellDeps struct {
 func RegisterShell(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler) {
 	d := shellDeps{pool: pool, getenv: getenv, now: now}
 	mux.Handle("POST /l/{token}/pin", wrap("/l/{token}/pin", d.verifyPin))
-	// Brief 1720c: GET /l/{token}
+	mux.Handle("GET /l/{token}", wrap("/l/{token}", d.pickStay))
 	// Brief 1720d: GET /l/{token}/privacy, GET /l/{token}/ruian-suggest
 }

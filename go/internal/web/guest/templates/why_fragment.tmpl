@@ -1,0 +1,13 @@
+{{define "why_fragment"}}
+<details class="g-card g-why">
+  <summary class="g-why-summary">{{.T "why_title"}}</summary>
+  <p class="g-intro">{{.T "legal_intro"}}</p>
+  <div class="g-details">
+    <p>{{.T "why_point_accuracy"}}</p>
+    <p class="g-law">{{.T "why_law"}}</p>
+    {{if .PrivacyURL}}
+      <p style="margin-bottom:0"><a href="{{.PrivacyURL}}">{{.T "privacy_link"}} </a></p>
+    {{end}}
+  </div>
+</details>
+{{end}}
