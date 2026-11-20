@@ -28,8 +28,8 @@
     "v": "20261116-2000a4"
   },
   "app2.css": {
-    "sha256": "b5df96946524f026e0821d46026b3af97494749a3f01692d5a9dd52e580cc064",
-    "v": "20261120-host-palette-1865"
+    "sha256": "cdd7f32b15bac62e5ec8d3094d3ccd21535bd94c2cce5f8c85764f80656bb1f8",
+    "v": "20261120-host-palette-1865b"
   },
   "apple-touch-icon.png": {
     "sha256": "8b487f53a3a7522a9620ed5c26ab1fd77ee6a08cae12fcd087cb9f7a0c03c250",
@@ -120,8 +120,8 @@
     "v": "20261118-1858d"
   },
   "host2.css": {
-    "sha256": "8381968a9c4b2160766159bd78eb272373bb8b7c992f7776aa806a01c182802f",
-    "v": "20261120-host-palette-1865"
+    "sha256": "0a1cecf1a2214cb2cccef1bc67956b2124de6123a9650c64c2d2ec8c69c5aa7c",
+    "v": "20261120-host-palette-1865b"
   },
   "landing.css": {
     "sha256": "685f758bdce94c6412c12ac893e27728df7dbde2aebb9b7f9aec38deffa9716b",
@@ -176,8 +176,8 @@
     "v": "20261105-gp4"
   },
   "tokens.css": {
-    "sha256": "bada752f7935a7fc7bf01c8fd07d48a9893c472decafd3a4974efc0d1c3220ea",
-    "v": "20261103-0920"
+    "sha256": "c31e70ad6cf1ccaa99cf515616728a20189cc4b88858dcc6ae76ba7e7b052a88",
+    "v": "20261120-host-palette-1865bb"
   },
   "ubyhost-logo-stacked.png": {
     "sha256": "3f4a4fa5aae52cb2ea45c076ff4ecd26f86c76915852cff2664317d3f7fb50fa",
