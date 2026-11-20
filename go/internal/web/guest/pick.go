@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
 )
@@ -152,7 +151,7 @@ func (d shellDeps) pickStay(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	alertControllerMissing(r.Context(), d.pool, papt)
-	if guard := requirePin(w, r, d, link, lang, apt, now); guard {
+	if requirePin(w, r, d, link, lang, apt) {
 		return
 	}
 	reservations, err := visibleReservations(r.Context(), d.pool, papt, now)
@@ -220,23 +219,4 @@ func (d shellDeps) pickStay(w http.ResponseWriter, r *http.Request) {
 		Rows:         rows,
 	}
 	writePickPage(w, r, http.StatusOK, view, map[string]string{"Cache-Control": "no-store"}, d.getenv, view.Lang)
-}
-
-func requirePin(w http.ResponseWriter, r *http.Request, d shellDeps, token, lang string, apt *Apartment, now time.Time) bool {
-	if !guestPinRequired(d.getenv) {
-		return false
-	}
-	expected := strings.TrimSpace(apt.PermalinkPIN)
-	lockToken := apt.PermalinkToken
-	if PinSessionValid(r, d.getenv, lockToken, expected, now) {
-		return false
-	}
-	view, csrfCookie, err := sharedPinPage(r, d.pool, d.getenv, token, lang, apt, now)
-	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return true
-	}
-	view.ReturnTo = GuestLink(token, 0, "") + LangQuery(view.Lang, "")
-	writePinPage(w, r, http.StatusOK, view, map[string]string{}, csrfCookie, view.Lang)
-	return true
 }
