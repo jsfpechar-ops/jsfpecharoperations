@@ -71,6 +71,12 @@ PINNED = [
      "PlanOutcome: refused, or duplicate = sent (applied by updateGuest in store.go)"),
     ("go/internal/ubyport/collect.go", "sql", "none", {PENDING, ERROR, BLOCKED}, {NOT_REQUIRED}, "none",
      "collect: guest not reportable"),
+    ("go/internal/web/stays/guest_edit.go", "subscript", "state",
+     {PENDING, ERROR, BLOCKED, NOT_REQUIRED}, {NOT_REQUIRED}, "cas",
+     "guest_update: nationality not reportable (sent is kept)"),
+    ("go/internal/web/stays/guest_edit.go", "subscript", "state",
+     {ERROR, BLOCKED, NOT_REQUIRED}, {PENDING}, "cas",
+     "guest_update: rule 10.4(5)"),
 ]
 
 # "submit_state": <value>, but not the update_if guard {"submit_state": guest["submit_state"]}
