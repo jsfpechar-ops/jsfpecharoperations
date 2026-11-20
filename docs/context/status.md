@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-11-17.
+Updated: 2026-11-20.
 
 ## Production
 - Magic-link 1–2 done; access log off. `/healthz` 1.1.0. Main 11-13: `84e966f` (#962).
@@ -13,6 +13,7 @@ Updated: 2026-11-17.
 - 11-13 merges, head-count H1, security audit #966: [archive](../plans/status-archive-2026-11.md).
 
 ## Next
+- Brief 1865: green main auto-deploys to Lightsail staging (Ubyhost-test-env, staging.ubyhost.com, live 11-20, mock); production manual-only via Deploy production force_confirm=DEPLOY.
 - Go executor queue ([plan](../plans/go-cutover-executor-queue.md)): runnable **1793**, **0852**; **1730** / **1770** blocked until exact-diff sidecars.
 - [Autopilot](../plans/autopilot-agentic.md): hide Payments first.
 - Guest isolation ([plan](../plans/guest-form-isolation.md)): 1834-1839 (#1070); drafts #1072-1073 (1830, 1834); 1835 (#1071) after 1834. Owner: 1837 Q4-5.

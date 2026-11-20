@@ -103,3 +103,6 @@
 - K-PG-FK: goose 00004/11/13 FKs not DEFERRABLE (1263).
 - K-HB-HAND: housebook says "Not yet sent" for a hand-filed guest (Python quirk; 1704a test).
 - K-BLOCKED-PAGE (1859b): BlockedPage inline main styles; app.css later.
+- K-MOCK-HC (1865): `mock-ubyport` in deploy/lightsail/docker-compose.yml inherits the app image HEALTHCHECK (Dockerfile:32 probes 127.0.0.1:8080/healthz) but listens on 8081 → shows unhealthy while serving. Server-side workaround on Ubyhost-test-env: untracked docker-compose.override.yml re-pointing the probe. Upstream fix: add a healthcheck block to the mock-ubyport service.
+- K-STG-WAF (1865): staging.ubyhost.com inherits the ubyhost.com zone WAF → `/login` answers `cf-mitigated: challenge`; browsers pass, curl/CI logins cannot. Fix options: WAF skip rule scoped to the staging host, or a separate zone/domain for staging.
+- K-SEC-TOKEN (1865): a Cloudflare API token was pasted into a chat session on 2026-11-20 → owner revokes it (Cloudflare → My Profile → API Tokens). Never paste tokens/keys into chat.

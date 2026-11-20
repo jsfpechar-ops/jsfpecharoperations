@@ -73,3 +73,4 @@ Append-only.
 - 2026-11-20 [product] Payments and Booking site removed from all host nav unconditionally (dormant product); `UBYHOST_PAYMENTS_HIDDEN` only gates routes, row actions, jobs | owner
 - 2026-11-17 [workflow] Stays Go-only, show-more append, Stays Turbo cache only|owner
 - 2026-11-19 [ui] Wide geometry skips pageHeader left/right edge on stay-detail at ≥1024 (crumb+H1, same as 0789). Brief 1862.
+- 2026-11-20 [workflow] Deploys route staging-first: green CI on main auto-deploys to the Lightsail staging box (environment `staging`, Ubyhost-test-env, staging.ubyhost.com); production only via manual Deploy production with force_confirm=DEPLOY after owner click-through on staging. Brief 1865 | owner
