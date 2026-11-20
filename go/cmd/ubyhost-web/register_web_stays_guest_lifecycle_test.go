@@ -21,4 +21,3 @@ func TestGuestLifecycleRoutesRegistered(t *testing.T) {
 		}
 	}
 }
-

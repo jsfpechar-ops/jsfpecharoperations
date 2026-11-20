@@ -17,4 +17,3 @@ func init() {
 		stays.RegisterGuestLifecycle(mux, pool, os.Getenv, time.Now, m.wrap)
 	})
 }
-

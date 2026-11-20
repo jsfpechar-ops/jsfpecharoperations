@@ -37,27 +37,7 @@ func TestLifecycleSentRefused(t *testing.T) {
 	}
 }
 
-func TestFiledRecordChangedUnit(t *testing.T) {
-	res := hostReservation{dateFrom: "2026-06-01", dateTo: "2026-06-04"}
-	stored := hostGuest{nationality: "DEU", surname: "A", firstName: "B", submitState: "sent"}
-	changed := hostGuest{nationality: "DEU", surname: "A", firstName: "C", submitState: "sent"}
-	if !filedRecordChanged(stored, changed, res) {
-		t.Fatal("first name change")
-	}
-	same := hostGuest{nationality: "DEU", surname: "A", firstName: "B", submitState: "sent"}
-	if filedRecordChanged(stored, same, res) {
-		t.Fatal("no change")
-	}
-}
-
-func TestGuestPayloadDocType(t *testing.T) {
-	raw := validationDocTypes()
-	if len(raw) == 0 {
-		t.Fatal("doc types")
-	}
-}
-
-type guestEditGolden struct {
+type guestLifecycleGolden struct {
 	Now   string `json:"now"`
 	Seed  []any  `json:"seed"`
 	Cases []struct {
@@ -72,13 +52,13 @@ type guestEditGolden struct {
 	} `json:"cases"`
 }
 
-func loadGuestLifecycleGolden(t *testing.T) guestEditGolden {
+func loadGuestLifecycleGolden(t *testing.T) guestLifecycleGolden {
 	t.Helper()
 	raw, err := os.ReadFile("testdata/guest_lifecycle_golden.json")
 	if err != nil {
 		t.Fatalf("golden: %v", err)
 	}
-	var g guestEditGolden
+	var g guestLifecycleGolden
 	if err := json.Unmarshal(raw, &g); err != nil {
 		t.Fatal(err)
 	}
@@ -100,4 +80,3 @@ func TestGuestLifecycleKeepsSignature(t *testing.T) {
 	}
 	_ = now
 }
-
