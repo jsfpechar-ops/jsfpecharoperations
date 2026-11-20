@@ -1,6 +1,6 @@
 # Brief 1782 exact-diff pass (checklist-only, 2026-11-20)
 
-Full Caddy default-upstream flip and compose service removal are **not** pre-written as sidecar bytes. This pass unblocks orchestrator planning and anchors only. Haiku must **not** start brief 1782 until a follow-up pass adds checked-in sidecars for the four §3 paths (or the owner approves executor-authored edits under Tier A review).
+Deploy sidecars for the four §3 paths and `MANIFEST.sha256` are checked in (exact-diff deploy pass 2026-11-20). Haiku must still wait on the preconditions below and owner sign-off before step 0.
 
 ## Preconditions (executor step 0)
 
