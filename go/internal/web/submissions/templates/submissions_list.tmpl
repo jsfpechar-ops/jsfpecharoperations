@@ -7,7 +7,7 @@
   <div class="ui-how-body">
     <p>{{t "reports.lede"}}</p>
     {{if .ReceiptCount}}<p>{{t "reports.download_receipts_hint"}}</p>{{end}}
-    <ol class="ui-how-steps">{{range (seq 1 3)}}<li>{{t (printf "how.reports.%d" .)}}</li>{{end}}</ol>
+    <ol class="ui-how-steps">{{range (seq 1 4)}}<li>{{t (printf "how.reports.%d" .)}}</li>{{end}}</ol>
     <a class="ui-how-more" href="/guide#reports">{{t "how.more"}}</a>
   </div>
 </details>
