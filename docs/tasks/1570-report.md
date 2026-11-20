@@ -1,30 +1,30 @@
 # 1570 report: Go cleaning host pages, part 1
 
-Status: review. One big PR mode: commits on the local branch (worktree-agent-a73c92cb05d43c52a, reset to go-wave3). Nothing pushed, no PR opened.
-
 ## 1. Files changed
 
-- Created (9, copied from sidecars, sha256 all OK): `go/cmd/ubyhost-web/register_web_cleaning_host.go`, `go/cmd/ubyhost-web/register_web_cleaning_host_test.go`, `go/internal/web/cleaning/host.go`, `go/internal/web/cleaning/host_data.go`, `go/internal/web/cleaning/host_test.go`, `go/internal/web/cleaning/hosttemplates/_calendar.tmpl`, `cleaning.tmpl`, `cleaning_edit.tmpl`, `cleaning_properties.tmpl`.
-- Edited: `go/cmd/ubyhost-web/register_web_cleaning_test.go` (3 deletions).
-- This report and the brief status line.
+No new file edits this run: brief 1570 is already on `main` (merge `078f5c853`). Sidecars live at `docs/tasks/1570-files/` (9× `.txt`; no `MANIFEST.sha256`). Existing paths per §3 remain the live tree (`host.go` and later briefs extend the same package).
 
-## 2. Commands
+## 2. Commands (last lines)
 
-- Step 0 anchors: all as stated (12 greps = 1; `host.go` absent; 9 sidecars).
-- Step 1 sha256sum: all 9 `: OK`.
-- Step 3 gofmt, build, vet: no output.
-- Step 5 tests on PostgreSQL 16, port 5634: `ok ... internal/web/cleaning 10.512s`, `ok ... cmd/ubyhost-web 0.134s`.
-- Named tests: 9 of 9 `--- PASS`. SKIP lines: 0 (also 0 across both packages with `-v`).
-- `context_lint.py`: FAIL, only because `1570-report.md` did not exist when the brief status was set to review (now written; rerun needed).
+- Step 0: `host.go` present (expected absent in a greenfield run); Go/Python anchors else OK; 9 sidecars.
+- Step 3 (`gofmt`, `go build ./...`, `go vet`): silent.
+- Step 5: `ok github.com/.../go/internal/web/cleaning 9.919s`; `ok github.com/.../go/cmd/ubyhost-web 2.518s`.
+- Named tests: 9× `--- PASS`; no `SKIP`/`FAIL`.
+- `python3 scripts/context_lint.py`: `context lint: OK`.
 
-## 3. Acceptance
+## 3. Acceptance (§7)
 
-All ticked except the UI item, which is not applicable (dormant pages, rule 10 runs on staging per the brief).
+- [x] Sidecar hashes verified on prior merge; not re-copied (would regress later briefs).
+- [x] `register_web_cleaning_test.go` already has the three rows removed.
+- [x] Format, build, vet silent.
+- [x] Both packages `ok`; nine named tests `PASS` on PostgreSQL 16, port 55570.
+- [x] Step commits on history: `1570 step 1`, `2`, `6`.
+- [x] No `UBYHOST_GO_PATHS`, Caddy, compose, or `App/` change.
+- [x] UI: N/A (dormant routes; rule 10 on staging before path switch).
 
 ## 4. Deviations
 
-- PostgreSQL used port 5634 and `/var/tmp/pg5634` (task message), not the brief's 55570. Stopped after tests; directory left for cleanup.
-- Branch name differs from the brief's `Branch:` line (one big PR mode).
+- Implementation pre-merged on `main`; steps 1–2 skipped after verification. PostgreSQL installed in this agent VM for step 5 (brief’s throwaway `55570`).
 
 ## 5. Questions
 
@@ -32,4 +32,4 @@ None.
 
 ## 6. Owner steps left
 
-None in this brief. Brief 1573 holds the path switch.
+None (path switch waits on brief 1573).
