@@ -34,7 +34,6 @@ func softwareOperator(getenv func(string) string) SoftwareOperator {
 	}
 }
 
-
 func noticeVersion(getenv func(string) string) string {
 	v := strings.TrimSpace(getenv("UBYHOST_GUEST_NOTICE_VERSION"))
 	if v == "" {

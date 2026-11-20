@@ -34,15 +34,6 @@ func softwareOperator(getenv func(string) string) SoftwareOperator {
 	}
 }
 
-func guestPinRequired(getenv func(string) string) bool {
-	switch strings.ToLower(strings.TrimSpace(getenv("UBYHOST_GUEST_PIN"))) {
-	case "0", "false", "no", "off":
-		return false
-	default:
-		return true
-	}
-}
-
 func noticeVersion(getenv func(string) string) string {
 	v := strings.TrimSpace(getenv("UBYHOST_GUEST_NOTICE_VERSION"))
 	if v == "" {

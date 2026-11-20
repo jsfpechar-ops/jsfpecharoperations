@@ -25,12 +25,12 @@ func TestPickNightsLabelCzech(t *testing.T) {
 }
 
 func TestGuestPinRequiredEnv(t *testing.T) {
- getenv := func(k string) string {
-  if k == "UBYHOST_GUEST_PIN" {
-   return "no"
-  }
-  return ""
- }
+	getenv := func(k string) string {
+		if k == "UBYHOST_GUEST_PIN" {
+			return "no"
+		}
+		return ""
+	}
 	if guestPinRequired(getenv) {
 		t.Fatal("expected off")
 	}
