@@ -24,8 +24,10 @@ Rules (AGENTS.md): 1 filing correctness is not touched (cleaning pages only); 2 
 | `1046a4f716815efe8d949286f8ce7986e9e30ca3e53ea03b649e10571827b88b` | `go/internal/web/cleaning/host_settings.go` | create | 162 |
 | `009d9fd0ee0abcab96181c953060b48aace10a2782eaa6b1fc6d485d1408c2cc` | `go/internal/web/cleaning/host_settings_test.go` | create | 232 |
 | `783968952548047468c3d2f06d998c0db83676beb3cc0a2fdbbe1868c0f2081b` | `go/internal/web/cleaning/host_shares.go` | create | 189 |
-| `96f2858b2059292ab35123d8049e7b9850025e400ed8b6cdadafd3d5c242a7c7` | `go/internal/web/cleaning/hosttemplates/cleaning_settings.tmpl` | create | 29 |
+| `cf1932d7812c91f7593686ad29dd469e17ae733c06f8e706b86d09b9ef594593` | `go/internal/web/cleaning/hosttemplates/cleaning_settings.tmpl` | create | 29 |
 | `601ef073d5e38c9f20d0fb25f15354bb8ecfed0c446d55d556922e692adda393` | `go/internal/web/cleaning/hosttemplates/cleaning_shares.tmpl` | create | 13 |
+
+Full manifest: `docs/tasks/1572-files/MANIFEST.sha256` (exact-diff backfill 2026-11-20 from `main`; `cleaning_settings.tmpl` hash matches post-1793 template).
 
 **How the code is built.** `host_settings.go` holds `renderSettings`, which brief 1573 reuses for its error answers, and `ensureProperty` (the `execer` interface accepts a pool and a transaction). `host_shares.go` holds the share page and `newShare`. The settings page shows door-code state through the existing read-only `code()` of `model.go`; no lock call is made.
 
@@ -88,7 +90,7 @@ No other file may change.
    1046a4f716815efe8d949286f8ce7986e9e30ca3e53ea03b649e10571827b88b  go/internal/web/cleaning/host_settings.go
    009d9fd0ee0abcab96181c953060b48aace10a2782eaa6b1fc6d485d1408c2cc  go/internal/web/cleaning/host_settings_test.go
    783968952548047468c3d2f06d998c0db83676beb3cc0a2fdbbe1868c0f2081b  go/internal/web/cleaning/host_shares.go
-   96f2858b2059292ab35123d8049e7b9850025e400ed8b6cdadafd3d5c242a7c7  go/internal/web/cleaning/hosttemplates/cleaning_settings.tmpl
+   cf1932d7812c91f7593686ad29dd469e17ae733c06f8e706b86d09b9ef594593  go/internal/web/cleaning/hosttemplates/cleaning_settings.tmpl
    601ef073d5e38c9f20d0fb25f15354bb8ecfed0c446d55d556922e692adda393  go/internal/web/cleaning/hosttemplates/cleaning_shares.tmpl
    EOF
    ```
