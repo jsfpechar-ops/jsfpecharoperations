@@ -1,0 +1,11 @@
+# Brief 1750 step-0 anchors (repo root). Each grep -cF must return 1; each ls line must return 1 before copying sidecars.
+grep -cF 'def robots(request: Request):' App/app/main.py
+grep -cF 'TDMREP_JSON = ' App/app/seo.py
+grep -cF '@app.get("/manifest.webmanifest"' App/app/main.py
+grep -cF 'def service_worker():' App/app/main.py
+grep -cF 'def offline_page(request: Request):' App/app/main.py
+grep -cF 'async def set_language(request: Request):' App/app/main.py
+ls go/internal/web/public/utility.go 2>&1 | grep -cF 'No such file'
+ls App/scripts/go_go_main_utility_routes_golden.py 2>&1 | grep -cF 'No such file'
+ls go/cmd/ubyhost-web/register_web_public_utility.go 2>&1 | grep -cF 'No such file'
+find docs/tasks/1750-files -name '*.txt' ! -name 'ANCHORS.txt' | wc -l

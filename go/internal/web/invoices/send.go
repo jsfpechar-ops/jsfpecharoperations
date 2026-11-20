@@ -90,7 +90,7 @@ func (d deps) sendInvoice(w http.ResponseWriter, r *http.Request) {
 		c.fail(err)
 		return
 	}
-	payload += `, ` + fmt.Sprintf(`"%s": %s`, mail.ClaimSecretPayloadKey, ubyport.PyString(enc))
+	payload = strings.TrimSuffix(payload, "}") + fmt.Sprintf(`, "%s": %s}`, mail.ClaimSecretPayloadKey, ubyport.PyString(enc))
 	var sentBefore int
 	if err := d.pool.QueryRow(ctx,
 		`SELECT COUNT(*) FROM email_outbox WHERE idempotency_key LIKE $1`,

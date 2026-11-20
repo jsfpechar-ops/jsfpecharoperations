@@ -14,7 +14,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -82,15 +81,6 @@ func (s *pageHostServer) flash(lang, key string) hostweb.Flash {
 	return hostweb.Flash{Text: text, Key: key}
 }
 
-func parseApartmentID(w http.ResponseWriter, r *http.Request) (int64, bool) {
-	id, err := strconv.ParseInt(r.PathValue("apartment_id"), 10, 64)
-	if err != nil {
-		http.NotFound(w, r)
-		return 0, false
-	}
-	return id, true
-}
-
 func (s *pageHostServer) login(w http.ResponseWriter, r *http.Request, at time.Time) (*session.Host, bool) {
 	h, err := hostweb.Login(w, r, s.pool, s.getenv, at)
 	if err != nil {
@@ -113,13 +103,6 @@ func (s *pageHostServer) ownApartment(ctx context.Context, ownerID, apartmentID 
 		return "", false, nil
 	}
 	return name, err == nil, err
-}
-
-func ensurePageRow(ctx context.Context, db DB, apartmentID int64, now time.Time) error {
-	stamp := StampAt(now)
-	_, err := db.Exec(ctx, `INSERT INTO property_page (apartment_id, created_at, updated_at) VALUES ($1, $2, $2)
-		ON CONFLICT (apartment_id) DO NOTHING`, apartmentID, stamp)
-	return err
 }
 
 func loadReviewPage(ctx context.Context, db DB, apartmentID int64, now time.Time) (*reviewPageRow, error) {

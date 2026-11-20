@@ -29,8 +29,13 @@ func TestParseRailsFormRevolutBad(t *testing.T) {
 
 func seedRailApartment(t *testing.T, pool *pgxpool.Pool, id int64) {
 	t.Helper()
-	_, err := pool.Exec(context.Background(), `INSERT INTO apartment (id, owner_user_id, internal_name, created_at, stay_fee_guest_rails)
-		VALUES ($1, 1, 'Test', '2026-01-01T00:00:00+00:00', 'iban') ON CONFLICT (id) DO NOTHING`, id)
+	_, err := pool.Exec(context.Background(), `INSERT INTO user_account (id, username, password_hash, role, active, created_at)
+		VALUES (1, 'host1', 'x', 'host', 1, '2026-01-01T00:00:00+00:00') ON CONFLICT (id) DO NOTHING`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = pool.Exec(context.Background(), `INSERT INTO apartment (id, owner_user_id, internal_name, created_at, stay_fee_guest_rails, active)
+		VALUES ($1, 1, 'Test', '2026-01-01T00:00:00+00:00', 'iban', 1) ON CONFLICT (id) DO NOTHING`, id)
 	if err != nil {
 		t.Fatal(err)
 	}
