@@ -1,0 +1,10 @@
+# Brief 1720d step-0 anchors (repo root). Each grep -cF must return 1; each ls line must return 1 before copying sidecars.
+grep -cF '@router.get("/l/{token}/privacy")' App/app/routes/guest.py
+grep -cF 'def ruian_suggest(token: str, request: Request, q: str = "")' App/app/routes/guest.py
+grep -cF 'mux.Handle("POST /l/{token}/pin"' go/internal/web/guest/shell.go
+grep -cF 'Brief 1720c: GET /l/{token}' go/internal/web/guest/shell.go
+ls go/internal/web/guest/privacy.go 2>&1 | grep -cF 'No such file'
+ls go/internal/web/guest/ruian_suggest.go 2>&1 | grep -cF 'No such file'
+ls App/scripts/go_go_guest_shell_gate_golden.py 2>&1 | grep -cF 'No such file'
+ls App/tests/test_go_go_guest_shell_gate_golden.py 2>&1 | grep -cF 'No such file'
+find docs/tasks/1720d-files -name '*.txt' ! -name 'ANCHORS.txt' | wc -l

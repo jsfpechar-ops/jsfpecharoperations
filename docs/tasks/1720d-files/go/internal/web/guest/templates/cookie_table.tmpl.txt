@@ -1,0 +1,25 @@
+{{define "guest.cookie_table"}}
+<p class="small muted">{{.T "privacy.cookies.table_intro"}}</p>
+<div class="scroll-x">
+  <table class="table-cards">
+    <thead>
+      <tr>
+        <th>{{.T "cookies.table.name"}}</th>
+        <th>{{.T "cookies.table.party"}}</th>
+        <th>{{.T "cookies.table.purpose"}}</th>
+        <th>{{.T "cookies.table.lifetime"}}</th>
+      </tr>
+    </thead>
+    <tbody>
+    {{range .CookieInventory}}
+      <tr>
+        <td data-label="{{$.T "cookies.table.name"}}"><code>{{.Name}}</code></td>
+        <td data-label="{{$.T "cookies.table.party"}}">{{cookiePartyLabel $ .Party}}</td>
+        <td data-label="{{$.T "cookies.table.purpose"}}">{{cookieText $.Lang .Purpose}}</td>
+        <td data-label="{{$.T "cookies.table.lifetime"}}">{{cookieText $.Lang .Lifetime}}</td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+</div>
+{{end}}
