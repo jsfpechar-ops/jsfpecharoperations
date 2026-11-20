@@ -1,0 +1,43 @@
+{
+ "now": "2026-11-28T10:00:00+00:00",
+ "seed": [],
+ "cases": [
+  {
+   "name": "bad_token_cancel",
+   "method": "POST",
+   "path": "/p/old-town/b/501/{bad}/cancel",
+   "status": 404
+  },
+  {
+   "name": "bad_token_invoice",
+   "method": "GET",
+   "path": "/p/old-town/b/501/{bad}/invoice.pdf",
+   "status": 404
+  },
+  {
+   "name": "cancel_not_visible",
+   "method": "POST",
+   "path": "/p/old-town/b/503/{good}/cancel",
+   "status": 404
+  },
+  {
+   "name": "invoice_no_row",
+   "method": "GET",
+   "path": "/p/old-town/b/501/{good}/invoice.pdf",
+   "status": 404
+  },
+  {
+   "name": "correction_no_row",
+   "method": "GET",
+   "path": "/p/old-town/b/501/{good}/correction.pdf",
+   "status": 404
+  },
+  {
+   "name": "calendar_paid",
+   "method": "GET",
+   "path": "/p/old-town/b/501/{good}/calendar.ics",
+   "status": 200,
+   "content_type": "text/calendar; charset=utf-8"
+  }
+ ]
+}
