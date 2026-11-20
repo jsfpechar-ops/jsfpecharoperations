@@ -112,24 +112,27 @@ func editFormReturnTo(r *http.Request, def string) string {
 }
 
 func withUndo(returnTo string, reservationID int64) string {
-	u, err := url.Parse(returnTo)
-	if err != nil || u.Path == "" {
-		u = &url.URL{Path: strings.SplitN(returnTo, "?", 2)[0]}
+	basePath, queryPart, hasQ := strings.Cut(returnTo, "?")
+	var kept []string
+	if hasQ {
+		for _, part := range strings.Split(queryPart, "&") {
+			if part == "" {
+				continue
+			}
+			k, _, _ := strings.Cut(part, "=")
+			if k == "undo_stay" || k == "undo_return" || k == "msg" || k == "err" {
+				continue
+			}
+			kept = append(kept, part)
+		}
 	}
-	q, _ := url.ParseQuery(u.RawQuery)
-	for _, k := range []string{"undo_stay", "undo_return", "msg", "err"} {
-		q.Del(k)
+	clean := basePath
+	if len(kept) > 0 {
+		clean += "?" + strings.Join(kept, "&")
 	}
-	clean := u.Path
-	if enc := q.Encode(); enc != "" {
-		clean += "?" + enc
-	}
-	out := url.URL{Path: u.Path, RawQuery: q.Encode()}
-	outQ := out.Query()
-	outQ.Set("undo_stay", strconv.FormatInt(reservationID, 10))
-	outQ.Set("undo_return", clean)
-	out.RawQuery = outQ.Encode()
-	return out.String()
+	stay := strconv.FormatInt(reservationID, 10)
+	parts := append(append([]string{}, kept...), "undo_stay="+url.QueryEscape(stay), "undo_return="+url.QueryEscape(clean))
+	return basePath + "?" + strings.Join(parts, "&")
 }
 
 func editLoadStay(ctx context.Context, pool *pgxpool.Pool, ownerID, id int64) (editStay, bool, error) {
