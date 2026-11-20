@@ -1,0 +1,18 @@
+package booking
+
+import (
+	"testing"
+)
+
+func TestFormDelegates(t *testing.T) {
+	got := Form(6500, 500, "Jan Novák", "jan@example.test", "cs")
+	if got["stay_price"] != "6500" || got["already_paid"] != "1" || got["buyer_email"] != "jan@example.test" {
+		t.Fatalf("unexpected form: %#v", got)
+	}
+	if got["note"] == "" {
+		t.Fatal("expected cleaning note")
+	}
+	if Form(100, 0, "A", "", "en")["note"] != "" {
+		t.Fatal("empty cleaning should omit note")
+	}
+}
