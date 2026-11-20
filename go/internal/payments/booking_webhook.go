@@ -9,9 +9,6 @@ package payments
 // rows, audit lines and outbox mails as Python (golden test:
 // booking_webhook_test.go, fixture from App/scripts/booking_webhook_golden.py).
 //
-// It runs only when UBYHOST_GO_BOOKING_WEBHOOK=1. Otherwise webhook.go
-// forwards booking events to Python exactly as before.
-//
 // Known gaps, deliberately not ported:
 //   - booking_invoice.ensure (best effort in Python after the mails; needs the
 //     invoice PDF code Go does not have). The invoice is then issued when the
@@ -58,10 +55,8 @@ var bookingJSON []byte
 var bookingStrings = hostweb.Load(bookingJSON)
 
 const (
-	// BookingSwitchEnv turns the Go handler on with the value "1".
-	BookingSwitchEnv = "UBYHOST_GO_BOOKING_WEBHOOK"
-	bookingLockName  = "booking_site_dates" // db.lock_key name, shared with Python
-	bookingBaseURL   = "http://127.0.0.1:8080"
+	bookingLockName = "booking_site_dates" // db.lock_key name, shared with Python
+	bookingBaseURL  = "http://127.0.0.1:8080"
 	// bookingProcessTimeout bounds one event; it is longer than the 30 s
 	// Stripe client timeout so the refund call can time out on its own.
 	bookingProcessTimeout = 2 * stripeTimeout
@@ -131,11 +126,6 @@ type BookingWebhook struct {
 	Getenv func(string) string
 	Now    func() time.Time
 	Stripe *StripeOnboarder
-}
-
-// bookingSwitchOn is UBYHOST_GO_BOOKING_WEBHOOK == "1" (trimmed).
-func bookingSwitchOn(getenv func(string) string) bool {
-	return strings.TrimSpace(getenv(BookingSwitchEnv)) == "1"
 }
 
 // NewBookingWebhook returns the production handler. It does not use the pool.

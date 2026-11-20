@@ -1,6 +1,7 @@
 package payments
 
 import (
+	"bytes"
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
@@ -126,6 +127,30 @@ func post(t *testing.T, h http.HandlerFunc, body []byte, sig string) int {
 
 func signedPost(t *testing.T, h http.HandlerFunc, body []byte) int {
 	return post(t, h, body, fmt.Sprintf("t=%d,v1=%s", testNow.Unix(), signFor("whsec_test", testNow.Unix(), body)))
+}
+
+var fwdSeq int
+
+// fwdPost sends a POST with a unique peer address (the rate limit keys on it)
+// and returns the status and body Go answered.
+func fwdPost(h http.HandlerFunc, body []byte, sig, cip string) (int, string) {
+	fwdSeq++
+	req := httptest.NewRequest(http.MethodPost, "/webhooks/stripe", bytes.NewReader(body))
+	req.RemoteAddr = fmt.Sprintf("10.20.%d.%d:1234", fwdSeq/250, fwdSeq%250+1)
+	req.Header.Set("Content-Type", "application/json")
+	if sig != "" {
+		req.Header.Set("Stripe-Signature", sig)
+	}
+	if cip != "" {
+		req.Header.Set("CF-Connecting-IP", cip)
+	}
+	rec := httptest.NewRecorder()
+	h(rec, req)
+	return rec.Code, rec.Body.String()
+}
+
+func fwdSigned(body []byte) string {
+	return fmt.Sprintf("t=%d,v1=%s", testNow.Unix(), signFor("whsec_test", testNow.Unix(), body))
 }
 
 func count(t *testing.T, pool *pgxpool.Pool, q string, args ...any) int {

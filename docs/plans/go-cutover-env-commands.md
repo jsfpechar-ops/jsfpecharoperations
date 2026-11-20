@@ -179,7 +179,7 @@ A `501` with `X-Ubyhost-Not-Ported: 1` on a GET means Go has no handler and Cadd
 | W9 Invoices | one path per run, in this order: `/invoice/d/*`, `/invoices/*.pdf`, `/invoices/*/paid`, `/invoices/*/cancel`, `/invoices/preview`, `/invoices/new`, `/invoices`. **Never `/invoices/*`** | none by curl | optional; Block E done, Josef says go for each | M-W9 |
 | W10 Stay fees | per [stay-fee-go-rollout](stay-fee-go-rollout.md), one step per run: (1) `/stay-fees/pdfs.zip /stay-fees/*/pdf /stay-fees/*/csv`, (2) `/stay-fees/*/guest-pay-preview`, (3) `/stay-fees`. Step (4) `/stay-fees/*` is **not** in this document: recommended to skip | none by curl | all checks of the rollout plan done, Josef says go | M-W10 |
 
-Not for this AI at all (the runbook keeps them on Python or behind a decision): `/settings/purge-expired`, `/demo`, `/demo/reset`, `/webhooks/stripe`, passkey paths, `/stay-fees/*`.
+Not for this AI at all (the runbook keeps them on Python or behind a decision): `/settings/purge-expired`, `/demo`, `/demo/reset`, passkey paths, `/stay-fees/*`.
 
 ### Block S. Scheduler switch (I2) **needs Josef's go, and brief 1451 steps in his hands**
 

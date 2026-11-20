@@ -287,35 +287,13 @@ func bookingPost(t *testing.T, pool *pgxpool.Pool, g bookingGolden, extra map[st
 	return fwdPost(h, body, fwdSigned(body), "")
 }
 
-func TestBookingSwitchOffForwards(t *testing.T) {
+func TestBookingWebhookHandlesInGo(t *testing.T) {
 	g := loadBookingGolden(t)
 	pool := testPool(t)
 	seedBookingGolden(t, pool, g)
-	body := []byte(`{"id":"evt_sw_off","type":"checkout.session.completed","data":{"object":{"id":"cs_1","payment_status":"paid","payment_intent":"pi_1","metadata":{"site_booking_id":"1"}}}}`)
-	for _, v := range []string{"", "0", "true", "yes", "on"} {
-		py, srv := newFakePy(t, http.StatusOK, "ok")
-		code, out := bookingPost(t, pool, g, map[string]string{BookingSwitchEnv: v, "UBYHOST_PY_WEBHOOK_URL": srv.URL}, body)
-		if code != 200 || out != "ok" || py.callCount() != 1 {
-			t.Errorf("switch %q: got %d %q with %d python calls, want forwarded", v, code, out, py.callCount())
-		}
-	}
-	if n := count(t, pool, `SELECT COUNT(*) FROM site_booking WHERE id = 1 AND status = 'pending'`); n != 1 {
-		t.Errorf("switch off changed the booking")
-	}
-	if n := count(t, pool, `SELECT COUNT(*) FROM stripe_webhook_event`); n != 0 {
-		t.Errorf("switch off recorded %d events", n)
-	}
-}
-
-func TestBookingSwitchOnHandlesInGo(t *testing.T) {
-	g := loadBookingGolden(t)
-	pool := testPool(t)
-	seedBookingGolden(t, pool, g)
-	py, srv := newFakePy(t, http.StatusOK, "ok")
-	on := map[string]string{BookingSwitchEnv: " 1 ", "UBYHOST_PY_WEBHOOK_URL": srv.URL}
 
 	paid := []byte(`{"id":"evt_sw_on","type":"checkout.session.completed","data":{"object":{"id":"cs_1","payment_status":"paid","payment_intent":"pi_1","metadata":{"site_booking_id":"1"}}}}`)
-	if code, out := bookingPost(t, pool, g, on, paid); code != 200 || out != "ok" {
+	if code, out := bookingPost(t, pool, g, nil, paid); code != 200 || out != "ok" {
 		t.Fatalf("paid: got %d %q, want 200 ok", code, out)
 	}
 	if n := count(t, pool, `SELECT COUNT(*) FROM site_booking WHERE id = 1 AND status = 'paid' AND reservation_id IS NOT NULL`); n != 1 {
@@ -325,7 +303,7 @@ func TestBookingSwitchOnHandlesInGo(t *testing.T) {
 		t.Errorf("event recorded %d times, want 1", n)
 	}
 	// The replay is a no-op that answers ok.
-	if code, out := bookingPost(t, pool, g, on, paid); code != 200 || out != "ok" {
+	if code, out := bookingPost(t, pool, g, nil, paid); code != 200 || out != "ok" {
 		t.Errorf("replay: got %d %q", code, out)
 	}
 	if n := count(t, pool, `SELECT COUNT(*) FROM reservation WHERE uid = 'site-1'`); n != 1 {
@@ -334,14 +312,11 @@ func TestBookingSwitchOnHandlesInGo(t *testing.T) {
 
 	// Booking 5 clashes and its host has no Stripe account: 500, not recorded.
 	clash := []byte(`{"id":"evt_sw_err","type":"checkout.session.completed","data":{"object":{"id":"cs_5","payment_status":"paid","payment_intent":"pi_5","metadata":{"site_booking_id":"5"}}}}`)
-	if code, _ := bookingPost(t, pool, g, on, clash); code != http.StatusInternalServerError {
+	if code, _ := bookingPost(t, pool, g, nil, clash); code != http.StatusInternalServerError {
 		t.Errorf("refund impossible: got %d, want 500", code)
 	}
 	if n := count(t, pool, `SELECT COUNT(*) FROM stripe_webhook_event WHERE event_id = 'evt_sw_err'`); n != 0 {
 		t.Errorf("failed event was recorded")
-	}
-	if py.callCount() != 0 {
-		t.Errorf("switch on forwarded %d events to Python", py.callCount())
 	}
 }
 
