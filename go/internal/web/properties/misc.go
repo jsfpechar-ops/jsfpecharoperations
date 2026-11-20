@@ -18,6 +18,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/appconfig"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb/layout"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
@@ -247,6 +248,7 @@ type menuData struct {
 	Initial        string
 	Guests, Police int64
 	IsAdmin        bool
+	PaymentsHidden bool
 }
 
 // pragueDay is claim.prague_today().
@@ -278,7 +280,7 @@ func (p *Pages) menu(w http.ResponseWriter, r *http.Request) {
 	today := pragueDay(now)
 	start := time.Date(today.Year(), today.Month(), 1, 0, 0, 0, 0, time.UTC)
 	end := start.AddDate(0, 1, 0)
-	d := menuData{IsAdmin: host.Account.Role == "admin"}
+	d := menuData{IsAdmin: host.Account.Role == "admin", PaymentsHidden: appconfig.PaymentsHidden(p.getenv)}
 	if err := p.pool.QueryRow(ctx, monthSQL, host.Workspace.ID, end.Format("2006-01-02"), start.Format("2006-01-02")).Scan(&d.Guests, &d.Police); err != nil {
 		fail(w, err)
 		return

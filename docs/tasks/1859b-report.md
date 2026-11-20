@@ -2,7 +2,7 @@
 
 ## Summary
 
-Go web `metrics.wrap` checks `appconfig.PaymentsHostPathBlocked` on every request so `/payments*` (including `/payments/qr/*.png`), `/booking-sites`, and `/apartments/*/booking-site*` return 404 while `UBYHOST_PAYMENTS_HIDDEN=1`. Webhooks, guest booking `/p/*`, and guest `/pay/{id}/*` are not gated.
+Go web `metrics.wrap` checks `appconfig.PaymentsHostPathBlocked` on every request so `/payments*` (including `/payments/qr/*.png`), `/booking-sites`, and `/apartments/*/booking-site*` return 404 while `UBYHOST_PAYMENTS_HIDDEN=1`. Webhooks, guest booking `/p/*`, and guest `/pay/{id}/*` are not gated. Go `hostweb/layout` sidebar, v2 nav, More sheet, and `/menu` omit payments links when hidden (parity with Python #1106).
 
 ## Tests
 

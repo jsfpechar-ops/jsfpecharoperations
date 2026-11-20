@@ -50,6 +50,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/appconfig"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/calendar"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
@@ -566,6 +567,7 @@ type view struct {
 	MinutesLeft                          *int
 	StaysNav, PropertiesNav              bool
 	MoreNav, MenuNav                     bool
+	PaymentsHidden                       bool
 	NavBadge, NavCount                   string
 	SideNav                              []navLink
 	Body, H1, Meta, Primary              template.HTML
@@ -673,6 +675,7 @@ func buildView(r *http.Request, env Env, sh shell, c *reqCtx, p Page) view {
 		}
 	}
 	v.Celebration, v.SentGuestCount = p.CelebrationMilestone, p.SentGuestCount
+	v.PaymentsHidden = appconfig.PaymentsHidden(getenv)
 	// Navigation state (_shell_*.html).
 	switch p.Nav {
 	case "reservations", "submissions", "housebook":
@@ -681,12 +684,20 @@ func buildView(r *http.Request, env Env, sh shell, c *reqCtx, p Page) view {
 		v.PropertiesNav = true
 	}
 	switch p.Nav {
-	case "invoices", "payments", "stay_fees", "booking_sites", "settings", "admin", "guide":
+	case "invoices", "stay_fees", "settings", "admin", "guide":
 		v.MoreNav = true
+	case "payments", "booking_sites":
+		if !v.PaymentsHidden {
+			v.MoreNav = true
+		}
 	}
 	switch p.Nav {
-	case "menu", "cleaning", "stay_fees", "payments", "settings", "entities", "privacy_requests":
+	case "menu", "cleaning", "stay_fees", "settings", "entities", "privacy_requests":
 		v.MenuNav = true
+	case "payments":
+		if !v.PaymentsHidden {
+			v.MenuNav = true
+		}
 	}
 	if p.NavActionCount != 0 {
 		v.NavCount = fmt.Sprint(p.NavActionCount)
@@ -706,6 +717,9 @@ func buildView(r *http.Request, env Env, sh shell, c *reqCtx, p Page) view {
 		{"/payments", "credit-card", "nav.payments", p.Nav == "payments"},
 		{"/booking-sites", "external-link", "nav.booking_sites", p.Nav == "booking_sites"},
 	} {
+		if v.PaymentsHidden && (l.href == "/payments" || l.href == "/booking-sites") {
+			continue
+		}
 		link := navLink{Href: l.href, Label: c.t(l.key), Icon: template.HTML(mustIcon(l.icon, 20)), Active: l.active}
 		if l.href == "/" {
 			link.Count = v.NavCount
