@@ -14,17 +14,18 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
 )
 
-// listSQL and detailSQL wrap every nullable text column in COALESCE, and
-// has_receipt is a CASE rather than the bare boolean expression it looks like.
+// listSQL and detailSQL normalise every nullable column, and has_receipt is a
+// CASE rather than the bare boolean expression it looks like.
 //
 // Both queries scan into plain strings (and one int), but submission.mode,
 // guest_ids, pseudo_stamp, record_errors, finished_at, error_text, endpoint,
-// receipt_pdf and error_pdf are nullable, and `receipt_pdf IS NOT NULL AND
-// TRIM(...) != ''` is a real boolean (OID 16) on PostgreSQL. SQLite is
-// forgiving about NULL and returns 0/1, so only the PostgreSQL job ever saw it,
-// as a 500 from "cannot scan NULL into *string" / "cannot scan bool (OID 16) in
-// binary format into *int". COALESCE gives '' where Python sees None and
-// CASE ... THEN 1 ELSE 0 END gives an int4 the `int` target accepts.
+// receipt_pdf and error_pdf are nullable, and the receipt_pdf emptiness test is
+// a real boolean (OID 16) on PostgreSQL. SQLite is forgiving about NULL and
+// returns 0/1, so only the PostgreSQL job saw it, as a 500 from
+// "cannot scan NULL into *string" / "cannot scan bool (OID 16) in binary
+// format into *int". COALESCE maps NULL to the empty string the templates and
+// the Python side already expect, and CASE ... THEN 1 ELSE 0 END gives an int4
+// that the int scan accepts.
 const listSQL = `SELECT s.id, s.created_at, s.apartment_id, COALESCE(s.mode, ''),
        COALESCE(s.guest_ids, ''), s.state, COALESCE(s.pseudo_stamp, ''),
        CASE WHEN s.receipt_pdf IS NOT NULL AND TRIM(s.receipt_pdf) != ''
