@@ -1,6 +1,6 @@
 # 1770: Go jobs 1: register the `mail` job kind
 
-Status: review — executor pass complete (2026-11-20).
+Status: review — exact-diff sidecars ready (2026-11-20).
 Depends on: 1231, 1231b, 1231c (outbox drain, done), 1632 SES keys | Base commit: current tip of the working branch | Branch: task/1770-go-mail-job
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (split in two briefs if the exact-diff pass finds more)
 Tier: B (Sonnet writes the exact-diff pass; orchestrator reads the diff of the risk-listed files)
@@ -57,11 +57,8 @@ No other file may change. Two open briefs naming the same file in §3 run in the
    S=docs/tasks/1770-files && for f in $(cd "$S" && find . -name '*.txt' | sed 's|^\./||; s|\.txt$||'); do mkdir -p "$(dirname "$f")" && cp "$S/$f.txt" "$f"; done && sha256sum -c "$S/MANIFEST.sha256" 2>&1 | tail -20
    ```
 
-   Expected: 2 lines ending `: OK`. Commit `1770 step 1`.
-2. Add the golden script and its freshness test; run the script and commit the golden.
-3. Add the handlers, templates and i18n keys (`App/scripts/go_host_i18n.py` writes the catalog); `gofmt -l` prints nothing.
-4. Register the routes in one new `go/cmd/ubyhost-web/register_web_*.go` file (`init()` through `registerRoutes`); the routes stay dormant: nothing is added to `UBYHOST_GO_PATHS`.
-5. Run the commands in §6; write the report.
+   Expected: 2 lines ending `: OK`. Commit `1770 step 1`. If files already match `main`, log that and skip the commit.
+2. Run the commands in §6; write the report (§9).
 
 ## 5. Do not touch
 
@@ -72,14 +69,11 @@ No other file may change. Two open briefs naming the same file in §3 run in the
 - `cd go && gofmt -l . | tail -5` prints nothing
 - `cd go && go vet ./internal/mail/... ./cmd/ubyhost-web/... ./cmd/... 2>&1 | tail -20` is silent
 - `cd go && go test ./internal/mail/... ./cmd/ubyhost-web/... ./cmd/ubyhost-web/... -count=1 2>&1 | tail -30` passes, no test skipped
-- `cd App && .venv/bin/python -m pytest tests/test_go_go_mail_job_golden.py -q --tb=short -x 2>&1 | tail -30` passes
+- Mail route golden (`test_go_mail_parity.py`, plan go-mail-job) is **out of scope**; needs brief **1770-fix-1**.
 - `python3 scripts/context_lint.py 2>&1 | tail -10` is clean
-- Host pages: `test_layout_lint_browser.py` green plus one 390, 768 and 1280 px screenshot per page in the report (rule 10).
-
 ## 7. Acceptance
 
 - Test: a queued row is claimed, sent through a fake SES, marked sent once; two workers never send one row twice (`FOR UPDATE SKIP LOCKED`).
-- Every route in the list answers on Go in a test with the same status, headers and body as the golden; a signed-out request gets the same redirect as Python.
 - `git log --oneline --grep='^1770 step'` shows one commit per step; `git diff --stat` lists only §3 paths.
 
 ## 8. Stop and ask
@@ -88,7 +82,7 @@ Stop and write the report instead of continuing when: an anchor is not found ver
 
 ## 9. Report
 
-`docs/tasks/1770-report.md`: commits, command outputs (last 30 lines), accepted differences, screenshots (host pages), what was left undone.
+`docs/tasks/1770-report.md`: commits, command outputs (last 30 lines), accepted differences, what was left undone (1770-fix-1 goldens).
 
 ## Rollout wave and rollback
 
