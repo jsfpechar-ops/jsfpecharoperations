@@ -10,14 +10,19 @@ One Haiku brief at a time on current `main`; read [executor](../context/executor
 
 | Brief | Why runnable |
 |---|---|
-| **[1793](../tasks/1793-cleaning-code-run-at-once.md)** | Cleaning TTLock immediate queue kick + visible delete (owner approved 2026-11-16). No exact-diff gate. |
+| **[1730](../tasks/1730-go-submissions-reservations-read.md)** | Shrunk submissions/reservations **read** (list scope superseded by 1855–1858). Exact-diff sidecar on main: `docs/tasks/1730-files/`. |
 | **[0852](../tasks/0852-fix-725-regressions.md)** | PR #725 regressions and v2 mockup baselines — start only if still open on main. |
+
+**Shipped — rerun brief only to chase a regression** (do not treat as greenfield port work):
+
+| Brief | Note |
+|---|---|
+| **[1793](../tasks/1793-cleaning-code-run-at-once.md)** | Merged **PR #1047**; re-execute the Haiku brief only if TTLock immediate kick or visible delete regresses. |
 
 **Blocked until exact-diff sidecars exist** (`docs/tasks/NNNN-files/`, sha256 table, anchors per [workflow](../context/workflow.md#writing-briefs-for-haiku)):
 
 | Brief | Sidecar dir (missing on main) |
 |---|---|
-| **[1730](../tasks/1730-go-submissions-reservations-read.md)** | `docs/tasks/1730-files/` |
 | **[1770](../tasks/1770-go-mail-job.md)** | `docs/tasks/1770-files/` |
 
 Same rule for most other **17xx** briefs marked “Executable only after its exact-diff pass”. Prefer this section over ad-hoc picks.
@@ -63,7 +68,7 @@ One Haiku brief at a time; respect [go-sqlite-final](../plans/go-sqlite-final.md
 
 ### Stays / submissions (Phase 2 — **1730 overlap**)
 
-**Overlap:** [1730](../tasks/1730-go-submissions-reservations-read.md) lists **GET `/reservations`** and list parity — **superseded by 1855–1858**. After 1860–1864, run 1730 **only for** `GET /submissions`, `GET /submissions/{id}`, **`GET /reservations/{id}`** (or split briefs). Exact-diff pass must drop duplicate list scope. **Do not start** until `docs/tasks/1730-files/` exists.
+**Overlap:** [1730](../tasks/1730-go-submissions-reservations-read.md) lists **GET `/reservations`** and list parity — **superseded by 1855–1858**. After 1860–1864, run 1730 **only for** `GET /submissions`, `GET /submissions/{id}`, **`GET /reservations/{id}`** (or split briefs). Exact-diff pass must drop duplicate list scope. Sidecar **`docs/tasks/1730-files/`** is on main — **runnable** (see top section).
 
 | Chain | Briefs |
 |---|---|
@@ -77,7 +82,7 @@ Go has schedule/share (1310) and host shell (1570 review); **11 routes** still m
 
 | Order | Briefs |
 |---|---|
-| 1 | **[1793](../tasks/1793-cleaning-code-run-at-once.md)** — TTLock code kick + visible delete (ready) |
+| 1 | **[1793](../tasks/1793-cleaning-code-run-at-once.md)** — shipped **#1047**; brief **rerun-only** for regression |
 | 2 | **1570** → **[1571](../tasks/1571-go-cleaning-event-save.md)** → **[1572](../tasks/1572-go-cleaning-settings-shares.md)** → **[1573](../tasks/1573-go-cleaning-door-codes.md)** |
 | 3 | Owner **cleaning** path wave after 1573 + completeness test (mirror 1737 pattern) |
 
