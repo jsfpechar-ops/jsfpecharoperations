@@ -1,6 +1,6 @@
 # 1732: Go stays 3: claim operations and 'filed by hand'
 
-Status: todo — scoped (final brief 2026-11-15). Executable only after its exact-diff pass: sidecars in `docs/tasks/1732-files/`, anchors and sha256 table (§2), written to the rules in [workflow](../context/workflow.md#writing-briefs-for-haiku). Until then the executor must not start it.
+Status: todo — ready for executor (exact-diff pass, 2026-11-20).
 Depends on: 1731, 1721 | Base commit: current tip of the working branch | Branch: task/1732-go-claim-filed-by-hand
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (split in two briefs if the exact-diff pass finds more)
 Tier: A (exact diffs only; Opus writes the exact-diff pass; fresh review of the full diff before ready)
@@ -27,7 +27,23 @@ Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (no new pers
 
 **Risk:** Filing state (rule 1).
 
-**Parity method (same as briefs 1595 and 1580):** a golden script `App/scripts/go_go_claim_filed_by_hand_golden.py` seeds a throwaway database with made-up rows, renders the real FastAPI app, and writes `testdata/*_golden.json`; the Go test replays the same seed and must match byte for byte (go-first exception 1). Accepted differences are listed in the report, never silently.
+**Parity method (same as briefs 1595 and 1580):** `App/scripts/go_claim_ops_golden.py` seeds a throwaway database, renders the real FastAPI app, and writes `go/internal/web/stays/testdata/claim_ops_golden.json`; `claim_ops_test.go` replays the seed on PostgreSQL when `UBYHOST_TEST_DATABASE_URL` is set (go-first exception 1). Accepted differences belong in the report, never silently.
+
+**All implementation code is pre-written.** Sidecars: `docs/tasks/1732-files/<repo path>.txt`. Step 1 copies them; never retype or edit them. Checksums:
+
+| sha256 | file | action |
+|---|---|---|
+| `be8122afa62dec7017177f641c2b2f3a7a21c66a7307dad18f41518eb7ed8fd4` | `App/scripts/go_claim_ops_golden.py` | create |
+| `71cbf68a4a80817bb6adca4ac65f234976db05989f8931aa9b0c94185bd67756` | `App/tests/test_go_claim_ops_golden.py` | create |
+| `cecd31087ff863dddcf8a832fd23793f895093c5d71293cd188bf772db0885dc` | `go/cmd/ubyhost-web/register_web_stays_claim_ops.go` | create |
+| `2f000ec717f79102d10ba7c01b8ef1b1c05013baf37696206aa5d77a13082222` | `go/cmd/ubyhost-web/register_web_stays_claim_ops_test.go` | create |
+| `43f3ade8a0715d3e4539aac4de7781f121a8ad4dc1a516ad028e703ae60c1f1c` | `go/internal/web/stays/claim_ops.go` | create |
+| `7bd970058703724a43a2329a37139665df5d678f27ed01fc439a3e0a61c2120e` | `go/internal/web/stays/claim_ops_test.go` | create |
+| `01417c31b6c5ac2f3d6f25a9eb0e4b510b827a0b5fac717b155b1a957dcec6d5` | `go/internal/web/stays/testdata/claim_ops_golden.json` | create |
+
+Full manifest: `docs/tasks/1732-files/MANIFEST.sha256`.
+
+**Verified by the brief writer:** sidecars dry-run on current `main` with step 1 copy — `sha256sum -c docs/tasks/1732-files/MANIFEST.sha256` all OK; `gofmt -l` empty on copied paths; `go vet ./internal/web/stays/... ./cmd/ubyhost-web/register_web_stays_claim_ops.go` silent; `go test ./internal/web/stays/... -count=1 -run 'ClaimOps|ParseManual'` OK; `go test ./cmd/ubyhost-web/... -run TestClaimOpsRoutesRegistered` OK; `pytest tests/test_go_claim_ops_golden.py` OK when `App/.venv` exists.
 
 ## 3. Files
 
@@ -47,8 +63,23 @@ No other file may change. Two open briefs naming the same file in §3 run in the
 
 ## 4. Steps
 
-0. Checks (repo root). Anything other than the stated result: STOP (§8). The exact-diff pass fills in the `grep -cF` anchor lines for every file this brief edits and the `ls` line proving the new files do not exist yet.
-1. Copy the sidecars to their repo paths and run `sha256sum -c` on the table in §2: all OK.
+0. Checks (repo root). Anything other than the stated result: STOP (§8). Each `grep -cF` / `ls` anchor prints `1` (see `docs/tasks/1732-files/ANCHORS.txt`):
+   - `grep -cF '@router.post("/reservations/{reservation_id}/reopen-guest")' App/app/routes/admin.py | tail -1`
+   - `grep -cF 'def resend_to_verified_email(reservation, apartment)' App/app/claim.py | tail -1`
+   - `grep -cF 'def mark_filed_by_hand(' App/app/reporting.py | tail -1`
+   - `grep -cF 'func Register(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler)' go/internal/web/stays/handlers.go | tail -1`
+   - `ls go/internal/web/stays/claim_ops.go 2>&1 | grep -cF 'No such file' | tail -1`
+   - `ls App/scripts/go_claim_ops_golden.py 2>&1 | grep -cF 'No such file' | tail -1`
+   - `ls go/cmd/ubyhost-web/register_web_stays_claim_ops.go 2>&1 | grep -cF 'No such file' | tail -1`
+   - `find docs/tasks/1732-files -name '*.txt' ! -name 'ANCHORS.txt' | wc -l | tail -1` prints `7`.
+
+1. Copy sidecars and verify (one call, repo root). Never retype or edit them:
+
+   ```bash
+   S=docs/tasks/1732-files && for f in $(cd "$S" && find . -name '*.txt' ! -name 'ANCHORS.txt' | sed 's|^\./||; s|\.txt$||'); do mkdir -p "$(dirname "$f")" && cp "$S/$f.txt" "$f"; done && sha256sum -c "$S/MANIFEST.sha256" 2>&1 | tail -20
+   ```
+
+   Expected: 7 lines ending `: OK`. Commit `1732 step 1`.
 2. Add the golden script and its freshness test; run the script and commit the golden.
 3. Add the handlers, templates and i18n keys (`App/scripts/go_host_i18n.py` writes the catalog); `gofmt -l` prints nothing.
 4. Register the routes in one new `go/cmd/ubyhost-web/register_web_*.go` file (`init()` through `registerRoutes`); the routes stay dormant: nothing is added to `UBYHOST_GO_PATHS`.
@@ -63,7 +94,7 @@ No other file may change. Two open briefs naming the same file in §3 run in the
 - `cd go && gofmt -l . | tail -5` prints nothing
 - `cd go && go vet ./internal/web/... ./cmd/... 2>&1 | tail -20` is silent
 - `cd go && go test ./internal/web/... ./cmd/ubyhost-web/... -count=1 2>&1 | tail -30` passes, no test skipped
-- `cd App && .venv/bin/python -m pytest tests/test_go_go_claim_filed_by_hand_golden.py -q --tb=short -x 2>&1 | tail -30` passes
+- `cd App && .venv/bin/python -m pytest tests/test_go_claim_ops_golden.py -q --tb=short -x 2>&1 | tail -30` passes
 - `python3 scripts/context_lint.py 2>&1 | tail -10` is clean
 - Host pages: `test_layout_lint_browser.py` green plus one 390, 768 and 1280 px screenshot per page in the report (rule 10).
 

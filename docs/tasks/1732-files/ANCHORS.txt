@@ -1,0 +1,8 @@
+# Brief 1732 step-0 anchors (repo root). Each grep -cF must return 1; each ls line must return 1 before copying sidecars.
+grep -cF '@router.post("/reservations/{reservation_id}/reopen-guest")' App/app/routes/admin.py
+grep -cF 'def resend_to_verified_email(reservation, apartment)' App/app/claim.py
+grep -cF 'def mark_filed_by_hand(' App/app/reporting.py
+grep -cF 'func Register(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler)' go/internal/web/stays/handlers.go
+ls go/internal/web/stays/claim_ops.go 2>&1 | grep -cF 'No such file'
+ls App/scripts/go_claim_ops_golden.py 2>&1 | grep -cF 'No such file'
+ls go/cmd/ubyhost-web/register_web_stays_claim_ops.go 2>&1 | grep -cF 'No such file'
