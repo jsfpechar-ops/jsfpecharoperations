@@ -2,12 +2,17 @@ package guest
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -71,10 +76,7 @@ func TestLanguageRequest(t *testing.T) {
 }
 
 func TestResolveKeyToken(t *testing.T) {
-	pool := testPoolOptional(t)
-	if pool == nil {
-		return
-	}
+	pool := testPool(t)
 	ctx := context.Background()
 	stamp := "2026-01-01T00:00:00Z"
 	mustExecGuest(t, ctx, pool, `INSERT INTO user_account (id, username, password_hash, role, active, created_at)
@@ -88,10 +90,7 @@ func TestResolveKeyToken(t *testing.T) {
 }
 
 func TestOpenLinkSlugRedirect(t *testing.T) {
-	pool := testPoolOptional(t)
-	if pool == nil {
-		return
-	}
+	pool := testPool(t)
 	ctx := context.Background()
 	stamp := "2026-01-01T00:00:00Z"
 	mustExecGuest(t, ctx, pool, `INSERT INTO user_account (id, username, password_hash, role, active, created_at)
