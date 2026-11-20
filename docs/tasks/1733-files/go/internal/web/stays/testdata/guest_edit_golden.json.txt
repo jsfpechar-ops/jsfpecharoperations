@@ -1,0 +1,76 @@
+{
+ "cases": [
+  {
+   "body": "",
+   "flash_key": "",
+   "location": "/login",
+   "method": "GET",
+   "name": "signed_out_new",
+   "path": "/reservations/101/guests/new",
+   "status": 303,
+   "user": 0
+  },
+  {
+   "body": "",
+   "flash_key": "",
+   "location": "",
+   "method": "GET",
+   "name": "new_form_ok",
+   "path": "/reservations/101/guests/new",
+   "status": 200,
+   "user": 1
+  },
+  {
+   "body": "_csrf=golden&surname=&first_name=",
+   "flash_key": "",
+   "location": "",
+   "method": "POST",
+   "name": "create_validation",
+   "path": "/reservations/101/guests",
+   "status": 200,
+   "user": 1
+  },
+  {
+   "body": "_csrf=golden&surname=Novak&first_name=Jan&nationality=CZE&birth_date=01011990&res_country=CZE&purpose=10&legal_ack=1&signature=data:image/png;base64,AAAA",
+   "flash_key": "flash.guests.added",
+   "location": "/reservations/101",
+   "method": "POST",
+   "name": "create_ok",
+   "path": "/reservations/101/guests",
+   "status": 303,
+   "user": 1
+  },
+  {
+   "body": "",
+   "flash_key": "",
+   "location": "",
+   "method": "GET",
+   "name": "edit_not_found",
+   "path": "/guests/99999",
+   "status": 404,
+   "user": 1
+  },
+  {
+   "body": "_csrf=golden",
+   "flash_key": "flash.error.guest_restricted",
+   "location": "/reservations/101",
+   "method": "POST",
+   "name": "update_restricted",
+   "path": "/guests/102",
+   "status": 303,
+   "user": 1
+  },
+  {
+   "body": "_csrf=golden&surname=Changed&first_name=Guest&nationality=DEU",
+   "flash_key": "flash.error.guest_filed_locked",
+   "location": "/guests/103",
+   "method": "POST",
+   "name": "update_filed_locked",
+   "path": "/guests/103",
+   "status": 303,
+   "user": 1
+  }
+ ],
+ "now": "2026-06-15T12:00:00+00:00",
+ "seed": []
+}
