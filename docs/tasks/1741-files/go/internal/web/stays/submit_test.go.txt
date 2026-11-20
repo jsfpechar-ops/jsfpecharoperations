@@ -58,10 +58,13 @@ func TestSubmitGoldenHTTP(t *testing.T) {
 	}
 	for _, c := range g.Cases {
 		if c.Status != http.StatusSeeOther {
-			t.Errorf("%s: want 303", c.Name)
+			t.Errorf("%s: want %d, got %d", c.Name, http.StatusSeeOther, c.Status)
 		}
 		if !strings.HasPrefix(c.Location, "/") {
 			t.Errorf("%s: location %q", c.Name, c.Location)
+		}
+		if c.FlashKey != "" && !strings.HasPrefix(c.FlashKey, "flash.") {
+			t.Errorf("%s: flash_key %q", c.Name, c.FlashKey)
 		}
 	}
 }

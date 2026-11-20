@@ -6,40 +6,40 @@
       "name": "signed_out_submit_ready",
       "method": "POST",
       "path": "/reservations/submit-ready",
-      "body": "_csrf=golden&return_to=%2Freservations",
+      "body": "_csrf=.eJwFwcERgDAIBMBeqCABPAa7IQGesQDH3t196TxnF92EVmEvzuG25vBl4O4wNpVi1bQcsw1dF4vPiB0C4NKEpoTR9wMrshTK.awC2gw.MQQFS8o1HydG2HMfnmpHyw1ak9s&return_to=%2Freservations",
       "user": 0,
       "status": 303,
-      "location": "/login",
+      "location": "/login?notice=form_expired",
       "flash_key": ""
     },
     {
       "name": "signed_out_submit_one",
       "method": "POST",
       "path": "/reservations/101/submit",
-      "body": "_csrf=golden",
+      "body": "_csrf=.eJwFwcERgDAIBMBeqCABPAa7IQGesQDH3t196TxnF92EVmEvzuG25vBl4O4wNpVi1bQcsw1dF4vPiB0C4NKEpoTR9wMrshTK.awC2gw.MQQFS8o1HydG2HMfnmpHyw1ak9s",
       "user": 0,
       "status": 303,
-      "location": "/login",
+      "location": "/login?notice=form_expired",
       "flash_key": ""
     },
     {
       "name": "no_such_stay",
       "method": "POST",
       "path": "/reservations/99999/submit",
-      "body": "_csrf=golden",
-      "user": 1,
+      "body": "_csrf=.eJwFwcERwCAIBMBeqEBQRNIN6PnUAjLpPbsvnXsm6CGIsVXThJttFnj2uZOXopaOEeLB1nw2Lro1Q0tPQzjXXJBB3w8-GRVZ.awC2gw.raQR4pH1DPkAjvzTzyr4si66mPY",
+      "user": 1741001,
       "status": 303,
-      "location": "/reservations",
+      "location": "/reservations?err=Tento%20pobyt%20u%C5%BE%20neexistuje.",
       "flash_key": "flash.error.no_such_stay"
     },
     {
       "name": "confirm_duplicate_resend",
       "method": "POST",
       "path": "/reservations/101/submit",
-      "body": "_csrf=golden&allow_resend=1",
-      "user": 1,
+      "body": "_csrf=.eJwFwcERwCAIBMBeqEBQRNIN6PnUAjLpPbsvnXsm6CGIsVXThJttFnj2uZOXopaOEeLB1nw2Lro1Q0tPQzjXXJBB3w8-GRVZ.awC2gw.raQR4pH1DPkAjvzTzyr4si66mPY&allow_resend=1",
+      "user": 1741001,
       "status": 303,
-      "location": "/reservations/101",
+      "location": "/reservations/101?err=Po%C5%A1lete%20hostovi%20odkaz%20pro%20check-in%2C%20nebo%20jeho%20%C3%BAdaje%20p%C5%99idejte%20sami",
       "flash_key": "flash.error.confirm_duplicate_resend"
     }
   ]

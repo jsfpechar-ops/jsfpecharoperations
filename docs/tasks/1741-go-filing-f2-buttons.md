@@ -30,13 +30,13 @@ Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (no new pers
 
 | sha256 | file | action |
 |---|---|---|
-| `eb1aaf3bac44a03a5089418ef59f25f58922dbdf2067d3815fce9b5813e0a077` | `App/scripts/go_submit_golden.py` | create |
+| `c428616db9b286d5a118acbdff47b157d144f44629c171e94db8bfc8a2d7df0f` | `App/scripts/go_submit_golden.py` | create |
 | `1dcc8e7206b6f69536c887413ad8707d8fbc5ec6b6407ad9e62a3ab614721c42` | `App/tests/test_go_submit_golden.py` | create |
 | `ac6fe852b8b52ed4fc81ac4579ac0211a0fd9cf9e9367a95a668f888bb7b2142` | `go/cmd/ubyhost-web/register_web_stays_submit.go` | create |
 | `625d7c564752cb0fa70a6c1fe46f7a09da38b4454ec7c85994dd9d3874cc9cf9` | `go/cmd/ubyhost-web/register_web_stays_submit_test.go` | create |
 | `28f75b51f6d2497c2d8c5ae459578cf5af31c55f0bf6b5ca8733a1f07e1cc103` | `go/internal/web/stays/submit.go` | create |
-| `07c6c4e779a91efdddb78b4da07aaf819a20a2515eebb48253076305b7e03d74` | `go/internal/web/stays/submit_test.go` | create |
-| `ace0b70fea655a6f3a60987032dc5883665e4c57af304c98561bf8f57c906a8c` | `go/internal/web/stays/testdata/submit_golden.json` | create |
+| `14e5e0c6b478be97609beba8c1279b56a5d7ef74140279a4a3739080ca44e7d5` | `go/internal/web/stays/submit_test.go` | create |
+| `199fd899bf9f8b5fc1bffa9c883b4366d120fd35c81e9f0ff767b7cbab79cea4` | `go/internal/web/stays/testdata/submit_golden.json` | create |
 
 Full manifest: `docs/tasks/1741-files/MANIFEST.sha256`.
 
