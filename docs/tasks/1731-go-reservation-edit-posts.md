@@ -1,6 +1,6 @@
 # 1731: Go stays 2: create, update, quick-edit, remove slot, archive, demo delete
 
-Status: todo — ready for executor (exact-diff pass, 2026-11-20).
+Status: review
 Depends on: 1730 | Base commit: current tip of the working branch | Branch: task/1731-go-reservation-edit-posts
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (split in two briefs if the exact-diff pass finds more)
 Tier: A (exact diffs only; Opus writes the exact-diff pass; fresh review of the full diff before ready)
