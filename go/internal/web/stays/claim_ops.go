@@ -633,7 +633,8 @@ func resendToVerifiedEmail(ctx context.Context, d claimOpsDeps, st *claimStay, a
 	if lang == "" {
 		lang = "cs"
 	}
-	return startClaimResend(ctx, d, st, apt, row, addr, party, lang, at)
+	ok, code, _, err := startClaimResend(ctx, d, st, apt, row, addr, party, lang, at)
+	return ok, code, err
 }
 
 type claimRow struct {
@@ -740,18 +741,18 @@ func rateRecord(ctx context.Context, pool *pgxpool.Pool, scope, key string, now 
 	return err
 }
 
-func startClaimResend(ctx context.Context, d claimOpsDeps, st *claimStay, apt *claimApt, row *claimRow, addr string, party int, lang string, at time.Time) (bool, string, error) {
+func startClaimResend(ctx context.Context, d claimOpsDeps, st *claimStay, apt *claimApt, row *claimRow, addr string, party int, lang string, at time.Time) (bool, string, string, error) {
 	if resendTooSoon(row.UpdatedAt, at) {
-		return false, "cooldown", nil
+		return false, "cooldown", "", nil
 	}
 	if code, err := claimMailBlocked(ctx, d.pool, st.id, addr, at); err != nil {
-		return false, "", err
+		return false, "", "", err
 	} else if code != "" {
-		return false, code, nil
+		return false, code, "", nil
 	}
 	secret, err := newClaimSecret()
 	if err != nil {
-		return false, "", err
+		return false, "", "", err
 	}
 	stamp := isoStamp(at)
 	version := row.TokenVersion + 1
@@ -761,13 +762,13 @@ func startClaimResend(ctx context.Context, d claimOpsDeps, st *claimStay, apt *c
 		claimStateClaimed, addr, mail.MaskEmail(addr), lang, claimTokenHash(secret), version, stamp,
 		st.id, row.State, row.TokenVersion)
 	if err != nil {
-		return false, "", err
+		return false, "", "", err
 	}
 	if tag.RowsAffected() != 1 {
-		return false, "held", nil
+		return false, "held", "", nil
 	}
 	if err := enqueueClaimResend(ctx, d, st, apt, addr, lang, secret, version, party, stamp); err != nil {
-		return false, "", err
+		return false, "", "", err
 	}
 	recKey := "claim_to:" + hex.EncodeToString(sha256Sum([]byte(addr)))
 	_ = rateRecord(ctx, d.pool, "claim_mail_recipient", recKey, at)
@@ -776,7 +777,7 @@ func startClaimResend(ctx context.Context, d claimOpsDeps, st *claimStay, apt *c
 	if drainErr == nil {
 		_, _ = mail.Drain(ctx, d.pool, cfg, 4)
 	}
-	return true, "", nil
+	return true, "", secret, nil
 }
 
 func enqueueClaimResend(ctx context.Context, d claimOpsDeps, st *claimStay, apt *claimApt, addr, lang, secret string, version int64, party int, stamp string) error {

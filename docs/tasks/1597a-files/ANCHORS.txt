@@ -1,0 +1,12 @@
+grep -cF 'def start_claim(' App/app/claim.py
+1
+grep -cF 'def confirm(reservation, secret: str)' App/app/claim.py
+1
+grep -cF 'def lock_guest_access(reservation_id: int)' App/app/claim.py
+1
+grep -cF 'def _claim_provisional(apartment, reservation' App/app/demo.py
+1
+ls go/internal/web/stays/claim_seed.go 2>&1 | grep -cF 'No such file'
+1
+find docs/tasks/1597a-files -name '*.txt' ! -name 'ANCHORS.txt' | wc -l
+6
