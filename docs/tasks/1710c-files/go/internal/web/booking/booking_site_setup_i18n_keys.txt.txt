@@ -1,0 +1,9 @@
+# Host booking-site setup page (brief 1710c).
+# booking_site_setup_i18n.json is written from App/app/host_i18n.py (go_host_i18n rules).
+bsite.*
+payments.page.live
+payments.page.title
+payments.czk
+pp.book.policy_name.*
+stay_fees.guest_pay.*
+common.save
