@@ -1,0 +1,16 @@
+{{/* Go twin of App/app/templates/booking_sites.html (brief 1710b). */}}
+{{define "booking_sites.title"}}{{end}}
+{{define "booking_sites"}}
+{{if not .Allowed}}{{ui_banner "attention" (t "bsite.max_only") (t "bsite.max_cta") "/predplatne"}}{{end}}
+{{if .Rows}}
+{{range .Rows}}
+<section class="ui-section"><div class="ui-section-h"><h2>{{.InternalName}}</h2></div>
+<div class="ui-btn-group">
+{{if .Published}}{{ui_badge "done" (t "bsite.list.live")}}{{else}}{{ui_badge "neutral" (t "bsite.list.off")}}{{end}}
+{{ui_button (t "bsite.list.open") "secondary" (kv "href" (printf "/apartments/%d/booking-site" .ID) "size" "compact")}}
+</div></section>
+{{end}}
+{{else}}
+<p>{{t "bsite.list.empty"}}</p>
+{{end}}
+{{end}}

@@ -1,0 +1,7 @@
+grep -cF 'def booking_sites(request: Request):' App/app/routes/payments.py
+grep -cF 'func RegisterBookingSitesList(mux *http.ServeMux' go/internal/web/booking/booking_sites_list.go
+grep -cF 'func SiteAllowed(ctx context.Context, db DB' go/internal/web/booking/pagectx.go
+ls go/internal/web/booking/booking_sites_list.go 2>&1 | grep -cF 'No such file'
+ls App/scripts/go_booking_sites_list_golden.py 2>&1 | grep -cF 'No such file'
+ls go/cmd/ubyhost-web/register_web_booking_host_booking_sites.go 2>&1 | grep -cF 'No such file'
+find docs/tasks/1710b-files -name '*.txt' ! -name 'ANCHORS.txt' | wc -l

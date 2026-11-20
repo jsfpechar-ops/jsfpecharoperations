@@ -1,0 +1,20 @@
+{
+ "cs": {
+  "bsite.list.empty": "Nejdřív přidejte ubytování.",
+  "bsite.list.live": "Zveřejněno",
+  "bsite.list.off": "Nezveřejněno",
+  "bsite.list.open": "Nastavit",
+  "bsite.max_cta": "Zobrazit tarify",
+  "bsite.max_only": "Rezervační web patří do tarifu Max.",
+  "bsite.title": "Rezervační web"
+ },
+ "en": {
+  "bsite.list.empty": "Add a property first.",
+  "bsite.list.live": "Live",
+  "bsite.list.off": "Not published",
+  "bsite.list.open": "Set up",
+  "bsite.max_cta": "See plans",
+  "bsite.max_only": "The booking site is part of the Max plan.",
+  "bsite.title": "Booking site"
+ }
+}
