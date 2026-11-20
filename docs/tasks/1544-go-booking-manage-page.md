@@ -1,6 +1,6 @@
 # 1544: Go guest booking page: manage and payment-details views (switched off)
 
-Status: review
+Status: review — implementation on `main`; exact-diff sidecars (2026-11-20)
 Depends on: 1543 | Base commit: none (one big PR) | Branch: the current branch
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Tier B (guest-facing, amounts, refund text, bank details). Review: Opus orchestrator reads the risk-listed files.
@@ -12,6 +12,22 @@ Tier B (guest-facing, amounts, refund text, bank details). Review: Opus orchestr
 Port `GET /p/{slug}/b/{booking_id}/{token}`: the guest's private booking page (status, dates, amounts, refund deadline, links) and, for a direct request that is waiting or expired, the page with the host's payment details and QR code. Together with 1351's calendar route this serves every GET under `/p/{slug}/b/...` except the two PDFs. The cancel POST and the PDFs are brief 1553 (blocked).
 
 ## 2. Context
+
+**All implementation code is pre-written.** Sidecars: `docs/tasks/1544-files/<repo path>.txt`. Step 1 copies them; never retype or edit them.
+
+| sha256 | file | action | lines |
+|---|---|---|---|
+| `8cdeb09f2ecda73e5c51d65e0878edefd24128cef9f84cdc237f7f0669378a33` | `go/cmd/ubyhost-web/register_web_booking_manage.go` | create | 23 |
+| `6407d591863c666a92f4a193fe62357d2cc73174ad30d6c5d6ab6109ee78c892` | `go/internal/web/booking/manage.go` | create | 287 |
+| `bb021bbc3bd3c8db407703be680a77b60d21c5a25fb7485282a0a8f1a641d70d` | `go/internal/web/booking/manage_test.go` | create | 169 |
+| `c26d93533884bd13fc8e5af78b8d6cbd6302b6a74c12871bcac432dc96009f6f` | `go/internal/web/booking/templates/manage.tmpl` | create | 51 |
+| `d79d449d0a8f342f5b429fef5b95f12cc3210669286b4679da628d05c2bbbce3` | `go/internal/web/booking/templates/requested.tmpl` | create | 24 |
+
+Full manifest: `docs/tasks/1544-files/MANIFEST.sha256` (exact-diff backfill 2026-11-20 from `main`; sidecars byte-match the merged Go paths).
+
+**Verified by the brief writer:** `sha256sum -c docs/tasks/1544-files/MANIFEST.sha256` all OK; `diff -q` each sidecar against its Go path prints nothing; `cd go && go test -count=1 ./internal/web/booking/ ./cmd/ubyhost-web/ -run 'Manage|BookingManage'` passes on PostgreSQL when `UBYHOST_TEST_DATABASE_URL` is set.
+
+**Anchors that must exist verbatim** (step 0): see `docs/tasks/1544-files/ANCHORS.txt`.
 
 Python mirrored (read-only, open only if a step fails): `App/app/routes/property_page.py` `_booking_or_none` 475-485, `_manage_lang` 488-492, `_manage_throttle` 495-500, `booking_manage_page` 503-533; `App/app/booking_manage.py` `mask_email` 12-14, `day_label` 17-19, `deadline_label` 22-34, `view` 37-74, `VISIBLE` 9; `App/app/booking_cancel.py` `refund_now` 22-25, `started` 28-30; `App/app/booking_site.py` `check_in_moment` 219-221, `refund_czk` 224-244 (the Go `RefundCZK` of 1351 is golden-tested against it); templates `booking_manage.html`, `property_page_requested.html`.
 
@@ -47,39 +63,46 @@ No outbound request, no new personal data, no schema change.
 | `go/internal/web/booking/manage_test.go` | create (169 lines) | new file, copied from the sidecar |
 | `go/internal/web/booking/templates/manage.tmpl` | create (51 lines) | new file, copied from the sidecar |
 | `go/internal/web/booking/templates/requested.tmpl` | create (24 lines) | new file, copied from the sidecar |
+| `docs/tasks/1544-files/**` | keep | sidecars from the exact-diff pass (do not edit) |
+| `docs/tasks/1544-report.md` | create | the report (§9) |
 
 No other file may change.
 
 ## 4. Steps
 
-### Step 1: copy the files
+### Step 0: checks (repo root)
 
-From the repo root:
+Anything other than the stated result: STOP (§8). Each `grep -cF` prints `1`; `find` prints `5` (see `docs/tasks/1544-files/ANCHORS.txt`):
 
 ```bash
-mkdir -p go/cmd/ubyhost-web && cp docs/tasks/1544-files/go/cmd/ubyhost-web/register_web_booking_manage.go.txt go/cmd/ubyhost-web/register_web_booking_manage.go
-mkdir -p go/internal/web/booking && cp docs/tasks/1544-files/go/internal/web/booking/manage.go.txt go/internal/web/booking/manage.go
-mkdir -p go/internal/web/booking && cp docs/tasks/1544-files/go/internal/web/booking/manage_test.go.txt go/internal/web/booking/manage_test.go
-mkdir -p go/internal/web/booking/templates && cp docs/tasks/1544-files/go/internal/web/booking/templates/manage.tmpl.txt go/internal/web/booking/templates/manage.tmpl
-mkdir -p go/internal/web/booking/templates && cp docs/tasks/1544-files/go/internal/web/booking/templates/requested.tmpl.txt go/internal/web/booking/templates/requested.tmpl
+grep -cF 'def _booking_or_none(booking_id: int, token: str, open_requests: bool = False):' App/app/routes/property_page.py | tail -1
+grep -cF 'def booking_manage_page(request: Request, slug: str, booking_id: int, token: str):' App/app/routes/property_page.py | tail -1
+grep -cF 'def mask_email(email: str) -> str:' App/app/booking_manage.py | tail -1
+grep -cF 'def deadline_label(booking: Dict[str, Any], checkin_hour: int, lang: str) -> str:' App/app/booking_manage.py | tail -1
+grep -cF 'def view(booking: Dict[str, Any], lang: str) -> Dict[str, Any]:' App/app/booking_manage.py | tail -1
+grep -cF 'def started(booking: Dict[str, Any], now: Optional[datetime] = None) -> bool:' App/app/booking_cancel.py | tail -1
+grep -cF 'func RefundCZK(b RefundBooking, checkinHour int, now time.Time, byHost bool) (int, error)' go/internal/web/booking/site.go | tail -1
+grep -cF 'func LoadSettings(ctx context.Context, db DB, apartmentID int64) (Settings, error)' go/internal/web/booking/site.go | tail -1
+find docs/tasks/1544-files -name '*.txt' ! -name 'ANCHORS.txt' | wc -l | tail -1
 ```
 
-Expected: no output. Commit `1544 step 1`.
+### Step 1: copy the sidecars and verify (one call, repo root)
 
-### Step 2: check the files and the string catalog
+Never retype or edit them:
 
 ```bash
-sha256sum -c <<'EOT' 2>&1 | tail -10
-8cdeb09f2ecda73e5c51d65e0878edefd24128cef9f84cdc237f7f0669378a33  go/cmd/ubyhost-web/register_web_booking_manage.go
-6407d591863c666a92f4a193fe62357d2cc73174ad30d6c5d6ab6109ee78c892  go/internal/web/booking/manage.go
-bb021bbc3bd3c8db407703be680a77b60d21c5a25fb7485282a0a8f1a641d70d  go/internal/web/booking/manage_test.go
-c26d93533884bd13fc8e5af78b8d6cbd6302b6a74c12871bcac432dc96009f6f  go/internal/web/booking/templates/manage.tmpl
-d79d449d0a8f342f5b429fef5b95f12cc3210669286b4679da628d05c2bbbce3  go/internal/web/booking/templates/requested.tmpl
-EOT
+S=docs/tasks/1544-files && for f in $(cd "$S" && find . -name '*.txt' ! -name 'ANCHORS.txt' | sed 's|^\./||; s|\.txt$||'); do mkdir -p "$(dirname "$f")" && cp "$S/$f.txt" "$f"; done && sha256sum -c "$S/MANIFEST.sha256" 2>&1 | tail -10
+```
+
+Expected: five lines ending with `: OK`. Commit `1544 step 1`.
+
+### Step 2: check the string catalog
+
+```bash
 cd App && .venv/bin/python scripts/go_host_i18n.py --check 2>&1 | tail -3
 ```
 
-Expected: every line `OK`; the catalog check prints nothing (1540 lists `bk.*` and `stay_fees.guest_pay.rail.*`). Stale catalog: STOP.
+Expected: no output (1540 lists `bk.*` and `stay_fees.guest_pay.rail.*`). Stale catalog: STOP.
 
 ### Step 3: build, vet, format
 
