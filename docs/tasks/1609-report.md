@@ -44,6 +44,7 @@ Nine named tests: all `--- PASS`, no SKIP/FAIL.
 ## 4. Deviations
 
 - Step 3: host had no PostgreSQL 16; installed `postgresql-16` via apt to run step 4 (user assignment: skip no test). Used `sudo` for `/var/tmp/pg1609` and `postgres` user.
+- Re-verify `cursor/1609-exact-diff-dff7` (2026-11-20): step 0 pre-hash check N/A (1609 already on `main`); `retention.go` differs from `1609-files` sidecar hash only because later merge added `entry_codes` (`RunAs` unchanged). Eight other sidecar hashes OK. Steps 2 and 4 green; Python 5 passed; `context lint: OK`.
 
 ## 5. Questions
 
