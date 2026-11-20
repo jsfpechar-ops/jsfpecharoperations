@@ -1,6 +1,6 @@
 # 1782: Go retire 3 (X2): Caddy sends everything to Go; `ubyhost` and `worker` leave compose
 
-Status: todo — scoped (final brief 2026-11-15). Exact-diff **checklist pass** 2026-11-20: `docs/tasks/1782-files/CHECKLIST.md` and `ANCHORS.txt` only — no `MANIFEST.sha256` until Caddy/compose sidecars are written. Executor must not start until follow-up pass or owner override.
+Status: todo — ready for executor (exact-diff deploy pass 2026-11-20). Preconditions in `docs/tasks/1782-files/CHECKLIST.md` still apply.
 Depends on: every wave done, 1772, one quiet week | Base commit: current tip of the working branch | Branch: task/1782-go-caddy-everything-to-go
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (split in two briefs if the exact-diff pass finds more)
 Tier: A (exact diffs only; Opus writes the exact-diff pass; fresh review of the full diff before ready)
@@ -19,7 +19,18 @@ Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (no new pers
 
 **Risk:** Everything. Runs alone.
 
-**Exact-diff pass (2026-11-20):** Checklist-only — see `docs/tasks/1782-files/CHECKLIST.md`. No pre-written file sidecars yet; sha256 table will be added when Caddy/compose/LIGHTSAIL patches are checked in.
+**All deploy patches are pre-written** in `docs/tasks/1782-files/<repo path>.txt`. Step 1 copies them; run `sha256sum -c docs/tasks/1782-files/MANIFEST.sha256` after copy. Owner must still clear CHECKLIST preconditions before step 0.
+
+| sha256 | file | action |
+|---|---|---|
+| `c40ede18830d389ee7b973c9ed65c8d6cf22d9bf4cc8166ba47e6f5ba33368a8` | `deploy/lightsail/caddy/Caddyfile.cloudflare` | edit |
+| `fdb630a7449daef0e4d258991acb2e78d960d39e39fc8459df70b17d04410079` | `deploy/lightsail/caddy/Caddyfile.acme` | edit |
+| `e1d0b77466d24344e340f3f42e59a925c44fc3d55b7f25accd73d9b197c0c1b2` | `deploy/lightsail/docker-compose.yml` | edit |
+| `639f672a134b726b149642f92197b8316e338d81e9cadeda4e2af043c753b343` | `docs/LIGHTSAIL.md` | edit |
+
+Full manifest: `docs/tasks/1782-files/MANIFEST.sha256`. Rollback sidecars are the pre-1782 files on `main`.
+
+**Verified by the brief writer:** sidecar bytes copied locally; `caddy-validate.sh` not run here (no Docker in this environment).
 
 ## 3. Files
 
@@ -36,8 +47,8 @@ No other file may change. Two open briefs naming the same file in §3 run in the
 
 ## 4. Steps
 
-0. Checks (repo root): for every file in §3 the exact-diff pass writes a `grep -cF` anchor line and its expected count; anything else: STOP (§8).
-1. Apply the change to the files of §3, one step and one commit per file group.
+0. Checks (repo root): CHECKLIST preconditions and `docs/tasks/1782-files/ANCHORS.txt` (`grep -cF` counts `1` on current `main`; `find … | wc -l` → `4` sidecars).
+1. Copy sidecars to repo paths (or patch byte-identical to §2 table); `sha256sum -c docs/tasks/1782-files/MANIFEST.sha256`: all OK. One commit per file group.
 2. Run the commands of §6; fix only what the brief names.
 3. Write the report (§9).
 

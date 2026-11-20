@@ -1,0 +1,396 @@
+# UbyHost on AWS Lightsail — production stack.
+# Run from this directory after copying .env.example → .env.
+#
+#   ./scripts/deploy.sh
+#
+# Requires: Docker Engine 24+ and Compose v2.
+name: ubyhost
+
+services:
+  # 0463: PostgreSQL 16 for the cutover. No password: the server never listens on
+  # a network (network_mode none, listen_addresses empty), so only containers that
+  # mount the ubyhost-pgsock volume can reach it, the same trust boundary as the
+  # SQLite file. pg-cutover.sh runs the rehearsal and the cutover against it.
+  postgres:
+    image: postgres:16-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ubyhost
+      POSTGRES_DB: ubyhost
+      POSTGRES_HOST_AUTH_METHOD: trust
+    network_mode: none
+    command:
+      - postgres
+      - -c
+      - listen_addresses=
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - max_connections=50
+      - -c
+      - log_min_duration_statement=1000
+      # 1022: WAL archiving, on only when .env sets UBYHOST_PG_ARCHIVE=on
+      # (production). No network here: archive_command only copies each WAL file
+      # durably into the spool (tmp, sync, rename, sync dir; identical re-copy is
+      # ok, a different file fails); the walg service ships it to S3.
+      # archive_timeout=300: a segment at least every 5 minutes when there is
+      # activity (about USD 0.05 a month in PUT requests).
+      - -c
+      - archive_mode=${UBYHOST_PG_ARCHIVE:-off}
+      - -c
+      - archive_timeout=300
+      - -c
+      - 'archive_command=if [ -f /walspool/%f ]; then cmp -s %p /walspool/%f; else cp %p /walspool/%f.tmp && sync /walspool/%f.tmp && mv /walspool/%f.tmp /walspool/%f && sync /walspool; fi'
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "ubyhost", "-d", "ubyhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ubyhost-pgdata:/var/lib/postgresql/data
+      - ubyhost-pgsock:/var/run/postgresql
+      - ubyhost-walspool:/walspool
+    mem_limit: 1g
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # 1022: WAL-G sidecar, started only with COMPOSE_PROFILES containing walg
+  # (production). Ships the WAL spool to S3 and runs the daily base backup
+  # (1023). Default project network (not web), no port. Reaches Postgres only
+  # through the socket volume (trust auth, like the app) and a read-only data
+  # mount, as uid 70 = postgres in the Alpine image. Keys come from .env.walg
+  # (root-only on the server, never in git); without it the shipper only logs
+  # errors and the WAL waits in the spool.
+  walg:
+    profiles: ["walg"]
+    build:
+      context: ./walg
+    image: ubyhost-walg:local
+    restart: unless-stopped
+    init: true
+    user: "70:70"
+    env_file:
+      - path: .env.walg
+        required: false
+    command: ["/usr/local/bin/walg-ship.sh"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ubyhost-pgdata:/var/lib/postgresql/data:ro
+      - ubyhost-pgsock:/var/run/postgresql
+      - ubyhost-walspool:/walspool
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 512m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # 1782: sole app process after cutover; Python ubyhost/worker removed.
+  ubyhost-go:
+    build:
+      context: ../..
+      dockerfile: go/Dockerfile
+    image: ubyhost-go:slot-a
+    restart: unless-stopped
+    stop_grace_period: 15s
+    profiles: ["go"]
+    # Only the variables the Go code reads are passed in, not the whole .env
+    # (no Grafana or backup secrets; the four SES keys only so mail.SendNow can send). A bare key is passed
+    # through from .env (auto-loaded beside this file) only when it is set there;
+    # do not write NAME: ${NAME:-}, an empty string is not the same as unset.
+    # A new variable read in go/ must be added here.
+    environment:
+      UBYHOST_DATABASE_URL: ${UBYHOST_DATABASE_URL:-}
+      UBYHOST_GO_JOB_KINDS: ${UBYHOST_GO_JOB_KINDS:-}
+      UBYHOST_STRIPE_MODE: ${UBYHOST_STRIPE_MODE:-off}
+      UBYHOST_STRIPE_WEBHOOK_SECRET: ${UBYHOST_STRIPE_WEBHOOK_SECRET:-}
+      UBYHOST_DATA_DIR: /data
+      UBYHOST_AI_FEATURES:
+      UBYHOST_AI_KEY_DAILY_USD_HAVEL:
+      UBYHOST_AI_KEY_DAILY_USD_LEON:
+      UBYHOST_AI_MONTHLY_USD_GUIDE_IMPORT:
+      UBYHOST_AI_MONTHLY_USD_HAVEL:
+      UBYHOST_AI_MONTHLY_USD_LEON:
+      UBYHOST_AI_PRICE_CACHE_READ:
+      UBYHOST_AI_PRICE_CACHE_WRITE:
+      UBYHOST_AI_PRICE_INPUT:
+      UBYHOST_AI_PRICE_OUTPUT:
+      UBYHOST_AI_PROVIDER:
+      UBYHOST_AI_TEST_EMAILS:
+      UBYHOST_ANTHROPIC_API_KEY:
+      UBYHOST_APIFY_MONTHLY_RUNS:
+      UBYHOST_APIFY_TIMEOUT:
+      UBYHOST_APIFY_TOKEN:
+      UBYHOST_APP_BASE_URL:
+      UBYHOST_AWS_ACCESS_KEY_ID:
+      UBYHOST_AWS_SECRET_ACCESS_KEY:
+      UBYHOST_BILLING_BANK_ACCOUNT:
+      UBYHOST_BILLING_ENABLED:
+      UBYHOST_BILLING_IBAN:
+      UBYHOST_BILLING_VAT_STATUS:
+      UBYHOST_DATA_KEYS:
+      UBYHOST_DATA_KEY_LEGACY:
+      UBYHOST_DEPLOYMENT:
+      UBYHOST_DOOR_CODES:
+      UBYHOST_DOOR_CODES_LIVE:
+      UBYHOST_DPA_VERSION:
+      UBYHOST_ENABLE_SCHEDULER:
+      UBYHOST_HEARTBEAT_FILING_URL:
+      UBYHOST_HEARTBEAT_ICAL_URL:
+      UBYHOST_HEARTBEAT_URL:
+      UBYHOST_ICAL_ALLOW_PRIVATE:
+      UBYHOST_ICAL_POLL_MINUTES:
+      UBYHOST_IMPERSONATION_MAX_HOURS:
+      UBYHOST_JOB_QUEUE_KINDS:
+      UBYHOST_MAIL_BACKEND:
+      UBYHOST_MAIL_FROM:
+      UBYHOST_MAX_BATCH:
+      UBYHOST_META_ACCESS_TOKEN:
+      UBYHOST_META_DATASET_ID:
+      UBYHOST_META_GRAPH_VERSION:
+      UBYHOST_META_TEST_EVENT_CODE:
+      UBYHOST_MISTRAL_API_KEY:
+      UBYHOST_MISTRAL_MODEL:
+      UBYHOST_MOCK_URL:
+      UBYHOST_OPERATOR_ADDRESS:
+      UBYHOST_OPERATOR_DIC:
+      UBYHOST_OPERATOR_EMAIL:
+      UBYHOST_OPERATOR_ICO:
+      UBYHOST_OPERATOR_NAME:
+      UBYHOST_PAYMENTS_HIDDEN: ${UBYHOST_PAYMENTS_HIDDEN:-}
+      UBYHOST_PRIVACY_VERSION:
+      UBYHOST_PUBLIC_BASE_URL:
+      UBYHOST_PY_WEBHOOK_URL:
+      UBYHOST_RUIAN_ENABLED:
+      UBYHOST_RUIAN_IMPORT:
+      UBYHOST_SCHEDULER:
+      UBYHOST_SECRET_KEY:
+      UBYHOST_SES_REGION:
+      UBYHOST_SIGNUP_ENABLED:
+      UBYHOST_SIGNUP_NOTIFY_EMAIL:
+      UBYHOST_SOAP_WSA_HEADER:
+      UBYHOST_STAY_FEE_GUEST_PAY:
+      UBYHOST_STRIPE_MONTHLY_API_CALLS:
+      UBYHOST_STRIPE_SECRET_KEY:
+      UBYHOST_SUBMIT_SWEEP_MINUTES:
+      UBYHOST_TERMS_VERSION:
+      UBYHOST_TRUSTED_PROXY_CIDRS:
+      UBYHOST_TTLOCK_CLIENT_ID:
+      UBYHOST_TTLOCK_CLIENT_SECRET:
+      UBYHOST_TTLOCK_MONTHLY_CALLS:
+      UBYHOST_UBYPORT_DOMAIN:
+      UBYHOST_UBYPORT_ENV:
+      UBYHOST_UBYPORT_TIMEOUT:
+      UBYHOST_WEB_PUSH:
+      POSTHOG_ASSETS_HOST:
+      POSTHOG_HOST:
+      POSTHOG_PROJECT_API_KEY:
+      TURNSTILE_HOSTNAMES:
+      TURNSTILE_SECRET:
+      TURNSTILE_SITE_KEY:
+    volumes:
+      - ubyhost-pgsock:/var/run/postgresql
+      - ubyhost-data:/data
+    expose:
+      - "8081"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8081/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    mem_limit: ${UBYHOST_GO_MEM:-128m}
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    # goose runs in the web service first; the Go service starts after it.
+    networks:
+      - web
+
+  # 1830: second slot of ubyhost-go. deploy.sh starts the idle slot on the new
+  # image, waits for healthy, then stops the old one. Never built here.
+  ubyhost-go-b:
+    extends:
+      service: ubyhost-go
+    image: ubyhost-go:slot-b
+    profiles: ["go"]
+
+  # Step 0: the mock UbyPort for the staging server only. Started only when
+  # .env sets COMPOSE_PROFILES=staging; production never runs it. The image
+  # leaves mock_ubyport out (.dockerignore), so the code is mounted from the
+  # checkout. Staging .env points the app at it with
+  # UBYHOST_MOCK_URL=http://mock-ubyport:8081/ws_uby/ws_uby.svc.
+  mock-ubyport:
+    profiles: ["staging"]
+    image: ubyhost:local
+    pull_policy: never
+    restart: unless-stopped
+    entrypoint: ["python", "-m", "mock_ubyport.server"]
+    environment:
+      MOCK_UBYPORT_HOST: 0.0.0.0
+      MOCK_UBYPORT_PORT: "8081"
+      MOCK_UBYPORT_STATE: /tmp/mock_state.json
+    volumes:
+      - ../../App/mock_ubyport:/app/mock_ubyport:ro
+    expose:
+      - "8081"
+    mem_limit: 128m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - web
+
+  caddy:
+    image: caddy:2-alpine@sha256:6aeddd44c3078b0f9a35206472a11420648a79c184603ef95957d0a20044cb2b
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      UBYHOST_DOMAIN: ${UBYHOST_DOMAIN}
+      UBYHOST_APP_DOMAIN: ${UBYHOST_APP_DOMAIN:-}
+      ACME_EMAIL: ${ACME_EMAIL}
+      UBYHOST_AOP_MODE: ${UBYHOST_AOP_MODE:-off}
+    volumes:
+      - ./caddy/Caddyfile.active:/etc/caddy/Caddyfile:ro
+      - ./caddy/certs:/etc/caddy/certs:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    mem_limit: ${UBYHOST_CADDY_MEM:-256m}
+    # Root image: it only needs to bind 80/443. Everything else is dropped.
+    # DAC_READ_SEARCH: root without DAC caps cannot read the 0600 origin key
+    # when another uid owns it (CI writes it as the runner user). Read-only bypass.
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE, DAC_READ_SEARCH]
+    security_opt: ["no-new-privileges:true"]
+    # OPS-3: bound Caddy's container logs too. Caddy access logging itself stays
+    # off (see caddy/Caddyfile.cloudflare), so this only bounds lifecycle noise.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - web
+
+  # OBS-1 (brief 0425): observability stack, started only with
+  # COMPOSE_PROFILES=monitoring.
+  # Ships container logs to Grafana Cloud Loki and host/container metrics to
+  # Prometheus — see docs/OBSERVABILITY.md.
+  alloy:
+    profiles: ["monitoring"]
+    # Pinned by digest (repo convention, like caddy).
+    image: grafana/alloy:v1.10.1@sha256:582f5a5169cd67a2bdbf98777c1a6f596203f573cdef5c021749fd3279605768
+    restart: unless-stopped
+    command: ["run", "/etc/alloy/config.alloy", "--server.http.listen-addr=0.0.0.0:12345"]
+    # Only the variables this service needs are passed in, not the whole .env.
+    environment:
+      GRAFANA_PROM_URL: ${GRAFANA_PROM_URL:-}
+      GRAFANA_PROM_USER: ${GRAFANA_PROM_USER:-}
+      GRAFANA_PROM_TOKEN: ${GRAFANA_PROM_TOKEN:-}
+      GRAFANA_LOKI_URL: ${GRAFANA_LOKI_URL:-}
+      GRAFANA_LOKI_USER: ${GRAFANA_LOKI_USER:-}
+      GRAFANA_LOKI_TOKEN: ${GRAFANA_LOKI_TOKEN:-}
+    volumes:
+      - ./monitoring/config.alloy:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    mem_limit: ${UBYHOST_ALLOY_MEM:-512m}
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - web
+      - monitoring
+
+  node-exporter:
+    profiles: ["monitoring"]
+    # Pinned by digest.
+    image: prom/node-exporter:v1.9.1@sha256:d00a542e409ee618a4edc67da14dd48c5da66726bbd5537ab2af9c1dfc442c8a
+    restart: unless-stopped
+    pid: host
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --path.rootfs=/rootfs
+      - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+)($|/)
+    mem_limit: 128m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - monitoring
+
+  cadvisor:
+    profiles: ["monitoring"]
+    # Pinned by digest.
+    image: gcr.io/cadvisor/cadvisor:v0.55.1@sha256:3de2bd5203120b866d74a9b283b2ffb8ec382fbf9dc321814700c6ea6f44ec57
+    restart: unless-stopped
+    privileged: true
+    devices:
+      - /dev/kmsg:/dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    command:
+      - --docker_only=true
+      - --housekeeping_interval=30s
+      - --store_container_labels=false
+    mem_limit: 256m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - monitoring
+
+volumes:
+  ubyhost-data:
+    name: ubyhost-data
+  ubyhost-pgdata:
+    name: ubyhost-pgdata
+  ubyhost-pgsock:
+    name: ubyhost-pgsock
+  ubyhost-walspool:
+    name: ubyhost-walspool
+  caddy-data:
+    name: ubyhost-caddy-data
+  caddy-config:
+    name: ubyhost-caddy-config
+
+networks:
+  web:
+    name: ubyhost-web
+  # 1201: scrape side of the monitoring stack. internal = no route to the
+  # internet and no published ports; the app containers are not on it.
+  # Only alloy joins it besides web (alloy still needs web to reach ubyhost
+  # and Grafana Cloud).
+  monitoring:
+    name: ubyhost-monitoring
+    internal: true
