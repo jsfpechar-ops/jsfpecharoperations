@@ -1,0 +1,87 @@
+{{define "content"}}
+<a class="g-back" href="{{.BackURL}}">{{.T "back"}}</a>
+
+<div class="g-card">
+  <h2>{{.T "privacy_title"}}</h2>
+  <p class="g-intro" style="margin-bottom:0">{{.T "privacy_intro"}}</p>
+  <p class="g-law">{{.T "notice_version" "version" .NoticeVersion}}</p>
+</div>
+
+<div class="g-card g-legal">
+  <h3>{{.T "privacy_controller"}}</h3>
+  <p>{{.T "privacy_controller_body"}}</p>
+  {{if .Controller.Name}}
+    <p class="controller">
+      <strong>{{.Controller.Name}}</strong>
+      {{if .Controller.Seat}}<br>{{.Controller.Seat}}{{end}}
+      {{if .Controller.ICO}}<br>IČO {{.Controller.ICO}}{{end}}
+    </p>
+    {{if or .Controller.Email .Controller.Phone}}
+      <p><strong>{{.T "privacy_contact"}}:</strong>
+        {{if .Controller.Email}}<a href="mailto:{{.Controller.Email}}">{{.Controller.Email}}</a>{{end}}
+        {{if and .Controller.Email .Controller.Phone}} &middot; {{end}}
+        {{if .Controller.Phone}}{{ .Controller.Phone }}{{end}}
+      </p>
+    {{end}}
+  {{else}}
+    <p>{{.T "privacy_controller_missing"}}</p>
+  {{end}}
+
+  <h3>{{.T "privacy_stay_contact"}}</h3>
+  <p>{{.T "privacy_stay_contact_body"}}</p>
+  {{if .Host.Name}}
+    <p class="controller">
+      <strong>{{.Host.Name}}</strong>
+      {{if .Host.Email}}<br><a href="mailto:{{.Host.Email}}">{{.Host.Email}}</a>{{end}}
+      {{if .Host.Phone}}<br><a href="tel:{{.Host.Phone}}">{{.Host.Phone}}</a>{{end}}
+    </p>
+  {{end}}
+
+  <h3>{{.T "privacy_purpose"}}</h3>
+  <p>{{.T "privacy_purpose_body"}}</p>
+
+  <h3>{{.T "privacy_basis"}}</h3>
+  <p>{{.T "privacy_basis_body"}}</p>
+  <p>{{.T "privacy_required"}}</p>
+
+  <h3>{{.T "privacy_data"}}</h3>
+  {{if .MailEnabled}}<p>{{.T "privacy_data_body"}}</p>{{else}}<p>{{.T "privacy_data_body_no_email"}}</p>{{end}}
+
+  {{if .MailEnabled}}
+  <h3>{{.T "privacy_email_title"}}</h3>
+  <p>{{.T "privacy_email_body"}}</p>
+  {{end}}
+
+  <h3>{{.T "privacy_cookies_title"}}</h3>
+  <p>{{.T "privacy_cookies_body"}}</p>
+  {{template "guest.cookie_table" .}}
+
+  {{if .ShowPassportPhoto}}
+  <h3>{{.T "privacy_passport_photo_title"}}</h3>
+  <p>{{.T "privacy_passport_photo_body"}}</p>
+  {{end}}
+
+  {{if .DoorCodes}}
+  <h3>{{.T "privacy_door_code_title"}}</h3>
+  <p>{{.T "privacy_door_code_body"}}</p>
+  {{end}}
+
+  <h3>{{.T "privacy_recipients"}}</h3>
+  {{if .MailEnabled}}<p>{{.T "privacy_recipients_body"}}</p>{{else}}<p>{{.T "privacy_recipients_body_no_email"}}</p>{{end}}
+
+  <h3>{{.T "privacy_bot_protection_title"}}</h3>
+  <p>{{.T "privacy_bot_protection_body"}}</p>
+
+  <h3>{{.T "privacy_processor"}}</h3>
+  <p>{{.T "privacy_processor_body" "name" .SoftwareOperator.Name "ico" .SoftwareOperator.ICO "address" .SoftwareOperator.Address "email" .SoftwareOperator.Email}}</p>
+
+  <h3>{{.T "privacy_retention"}}</h3>
+  {{if .MailEnabled}}<p>{{.T "privacy_retention_body"}}</p>{{else}}<p>{{.T "privacy_retention_body_no_email"}}</p>{{end}}
+
+  <h3>{{.T "privacy_rights"}}</h3>
+  <p>{{.T "privacy_rights_body"}}</p>
+  <p>{{.T "privacy_complaint"}}</p>
+</div>
+
+<a class="g-btn ghost" href="{{.BackURL}}">{{.T "back"}}</a>
+{{end}}

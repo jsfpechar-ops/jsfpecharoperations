@@ -1,0 +1,494 @@
+package guest
+
+// Brief 1720a: guest /l package foundation — token/slug resolution, guest language,
+// link helpers, and the guest base template. PIN, pick, privacy and ruian routes
+// land in briefs 1720b–d.
+
+import (
+	"bytes"
+	"context"
+	"embed"
+	"html/template"
+	"io"
+	"log"
+	"net/http"
+	"net/url"
+	"regexp"
+	"sort"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
+)
+
+const (
+	// LangCookie is routes/guest.py LANG_COOKIE.
+	LangCookie      = "ubyhost_guest_lang"
+	langCookieAge   = 60 * 60 * 24 * 60
+	defaultLang     = "en"
+	slugReadableMax = 40
+	slugCodeLength  = 6
+)
+
+var guestCatalog = []string{"en", "cs", "de", "es", "fr", "uk"}
+var alwaysOnGuest = map[string]bool{"en": true, "cs": true}
+var acceptAliases = map[string]string{"sk": "cs"}
+
+// GuestEndonyms is i18n.ENDONYMS for the language switcher.
+var GuestEndonyms = map[string]string{
+	"en": "English", "cs": "Čeština", "de": "Deutsch",
+	"es": "Español", "fr": "Français", "uk": "Українська",
+}
+
+//go:embed templates
+var templateFS embed.FS
+
+//go:embed i18n.json
+var catalogJSON []byte
+
+var stringsCatalog = hostweb.Load(catalogJSON)
+
+// guestEnabled is i18n.enabled_languages() from UBYHOST_GUEST_LANGS.
+var guestEnabled = enabledGuest("en,cs")
+
+// SetGuestLanguages applies UBYHOST_GUEST_LANGS (comma-separated). Call once at startup.
+func SetGuestLanguages(raw string) {
+	guestEnabled = enabledGuest(raw)
+}
+
+func enabledGuest(raw string) map[string]bool {
+	wanted := map[string]bool{}
+	for _, part := range strings.Split(raw, ",") {
+		if c := strings.ToLower(strings.TrimSpace(part)); c != "" {
+			wanted[c] = true
+		}
+	}
+	out := map[string]bool{}
+	for _, code := range guestCatalog {
+		if alwaysOnGuest[code] || wanted[code] {
+			out[code] = true
+		}
+	}
+	return out
+}
+
+// GuestLanguage is i18n.normalise_language for guest pages.
+func GuestLanguage(value string) string {
+	if code := SupportedLanguage(value); code != "" {
+		return code
+	}
+	return defaultLang
+}
+
+// SupportedLanguage is i18n.supported_language.
+func SupportedLanguage(value string) string {
+	code := strings.ToLower(strings.TrimSpace(value))
+	code = strings.ReplaceAll(code, "_", "-")
+	if i := strings.Index(code, "-"); i >= 0 {
+		code = code[:i]
+	}
+	if alt, ok := acceptAliases[code]; ok {
+		code = alt
+	}
+	if code != "" && guestEnabled[code] {
+		return code
+	}
+	return ""
+}
+
+// AcceptLanguage is i18n.accept_language_match.
+func AcceptLanguage(header string) string {
+	type tag struct {
+		negQ float64
+		pos  int
+		raw  string
+	}
+	var ranked []tag
+	for pos, part := range strings.Split(header, ",") {
+		pieces := strings.FieldsFunc(part, func(r rune) bool { return r == ';' })
+		if len(pieces) == 0 {
+			continue
+		}
+		raw := strings.ToLower(strings.TrimSpace(pieces[0]))
+		if raw == "" || raw == "*" {
+			continue
+		}
+		q := 1.0
+		for _, param := range pieces[1:] {
+			name, val, _ := strings.Cut(param, "=")
+			if strings.TrimSpace(strings.ToLower(name)) == "q" {
+				if f, err := strconv.ParseFloat(strings.TrimSpace(val), 64); err == nil {
+					q = f
+				} else {
+					q = 0
+				}
+			}
+		}
+		if q <= 0 {
+			continue
+		}
+		ranked = append(ranked, tag{-q, pos, raw})
+	}
+	sort.Slice(ranked, func(i, j int) bool {
+		if ranked[i].negQ != ranked[j].negQ {
+			return ranked[i].negQ < ranked[j].negQ
+		}
+		return ranked[i].pos < ranked[j].pos
+	})
+	for _, t := range ranked {
+		if code := SupportedLanguage(t.raw); code != "" {
+			return code
+		}
+	}
+	return ""
+}
+
+// Language is guest.py _language: ?lang=, guest cookie, then Accept-Language.
+func Language(r *http.Request) string {
+	for _, v := range []string{r.URL.Query().Get("lang"), hostweb.Cookie(r, LangCookie)} {
+		if code := SupportedLanguage(v); code != "" {
+			return code
+		}
+	}
+	if code := AcceptLanguage(r.Header.Get("Accept-Language")); code != "" {
+		return code
+	}
+	return defaultLang
+}
+
+// GuestLink is _guest_link.
+func GuestLink(token string, reservationID int64, suffix string) string {
+	base := "/l/" + url.PathEscape(token)
+	if reservationID > 0 {
+		base += "/" + strconv.FormatInt(reservationID, 10)
+	}
+	return base + suffix
+}
+
+// LangQuery is _lang_q.
+func LangQuery(lang, extra string) string {
+	q := "?lang=" + url.QueryEscape(lang)
+	if extra != "" {
+		return q + extra
+	}
+	return q
+}
+
+// LangURLs is _lang_urls: same path in every enabled guest language.
+func LangURLs(r *http.Request, path string) map[string]string {
+	if path == "" {
+		path = r.URL.Path
+	}
+	q := r.URL.Query()
+	keep := make([][2]string, 0, len(q))
+	for k, vals := range q {
+		if k == "lang" {
+			continue
+		}
+		for _, v := range vals {
+			keep = append(keep, [2]string{k, v})
+		}
+	}
+	out := map[string]string{}
+	for code := range guestEnabled {
+		var b strings.Builder
+		b.WriteString(path)
+		b.WriteByte('?')
+		b.WriteString("lang=")
+		b.WriteString(url.QueryEscape(code))
+		for _, pair := range keep {
+			b.WriteByte('&')
+			b.WriteString(url.QueryEscape(pair[0]))
+			b.WriteByte('=')
+			b.WriteString(url.QueryEscape(pair[1]))
+		}
+		out[code] = b.String()
+	}
+	return out
+}
+
+// WithLang sets the guest language cookie on the response (guest.py _with_lang).
+func WithLang(w http.ResponseWriter, getenv func(string) string, lang string) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     LangCookie,
+		Value:    lang,
+		Path:     "/",
+		MaxAge:   langCookieAge,
+		SameSite: http.SameSiteLaxMode,
+		Secure:   hostweb.SecureCookies(getenv),
+	})
+}
+
+// Apartment is the live apartment row a /l/{key} route needs.
+type Apartment struct {
+	ID                     int64
+	InternalName           string
+	UbyName                string
+	CityEn                 string
+	PermalinkToken         string
+	PermalinkPIN           string
+	PassportPhotoPolicy    string
+	LockProvider           string
+	OwnerUserID            int64
+	LegalEntityID          int64
+	DataControllerEntityID *int64
+}
+
+var slugShape = regexp.MustCompile(`^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$`)
+
+func looksLikeSlug(key string) bool {
+	if key == "" || len(key) > slugReadableMax+1+slugCodeLength || !strings.Contains(key, "-") {
+		return false
+	}
+	if !slugShape.MatchString(key) {
+		return false
+	}
+	parts := strings.Split(key, "-")
+	return len(parts[len(parts)-1]) == slugCodeLength
+}
+
+// ResolveKey is guest.py _resolve_key.
+func ResolveKey(ctx context.Context, pool *pgxpool.Pool, key string) (apt *Apartment, link string, moved bool, ok bool) {
+	if apt, ok := loadApartmentByToken(ctx, pool, key); ok {
+		return apt, key, false, true
+	}
+	row, ok := lookupSlug(ctx, pool, key)
+	if !ok {
+		return nil, key, false, false
+	}
+	apt, ok = loadApartmentByID(ctx, pool, row.apartmentID)
+	if !ok || apt == nil || apt.PermalinkToken == "" {
+		return nil, key, false, false
+	}
+	if row.isCurrent {
+		link = row.slug
+	} else if cur, err := currentSlug(ctx, pool, apt.ID); err == nil && cur != "" {
+		link = cur
+	} else {
+		link = apt.PermalinkToken
+	}
+	return apt, link, link != key, true
+}
+
+// LockToken is guest.py _lock_token.
+func LockToken(ctx context.Context, pool *pgxpool.Pool, key string) string {
+	apt, _, _, ok := ResolveKey(ctx, pool, key)
+	if !ok || apt == nil {
+		return key
+	}
+	return apt.PermalinkToken
+}
+
+// OpenLink is guest.py _open_link. early is non-nil when the handler must return it immediately.
+func OpenLink(r *http.Request, pool *pgxpool.Pool, key, lang string) (apt *Apartment, link string, early http.Handler) {
+	apt, link, moved, ok := ResolveKey(r.Context(), pool, key)
+	if !ok {
+		return nil, key, unavailableHandler(pool, key, lang, "bad_link", http.StatusNotFound)
+	}
+	if moved && (r.Method == http.MethodGet || r.Method == http.MethodHead) {
+		prefix := "/l/" + key
+		path := r.URL.Path
+		rest := ""
+		if strings.HasPrefix(path, prefix) {
+			rest = path[len(prefix):]
+		}
+		target := "/l/" + link + rest
+		if r.URL.RawQuery != "" {
+			target += "?" + r.URL.RawQuery
+		}
+		return apt, link, http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			w.Header().Set("Cache-Control", "no-store")
+			http.Redirect(w, req, target, http.StatusMovedPermanently)
+		})
+	}
+	return apt, link, nil
+}
+
+type slugRow struct {
+	slug        string
+	apartmentID int64
+	isCurrent   bool
+}
+
+func lookupSlug(ctx context.Context, pool *pgxpool.Pool, key string) (slugRow, bool) {
+	key = strings.ToLower(strings.TrimSpace(key))
+	if !looksLikeSlug(key) {
+		return slugRow{}, false
+	}
+	var row slugRow
+	var cur int
+	err := pool.QueryRow(ctx,
+		`SELECT slug, apartment_id, is_current FROM apartment_slug WHERE slug = $1`, key).
+		Scan(&row.slug, &row.apartmentID, &cur)
+	if err == pgx.ErrNoRows {
+		return slugRow{}, false
+	}
+	if err != nil {
+		return slugRow{}, false
+	}
+	row.isCurrent = cur != 0
+	return row, true
+}
+
+func currentSlug(ctx context.Context, pool *pgxpool.Pool, apartmentID int64) (string, error) {
+	var slug string
+	err := pool.QueryRow(ctx,
+		`SELECT slug FROM apartment_slug WHERE apartment_id = $1 AND is_current = 1`, apartmentID).
+		Scan(&slug)
+	if err == pgx.ErrNoRows {
+		return "", nil
+	}
+	return slug, err
+}
+
+func loadApartmentByToken(ctx context.Context, pool *pgxpool.Pool, token string) (*Apartment, bool) {
+	return loadApartment(ctx, pool, "permalink_token", token)
+}
+
+func loadApartmentByID(ctx context.Context, pool *pgxpool.Pool, id int64) (*Apartment, bool) {
+	return loadApartment(ctx, pool, "id", strconv.FormatInt(id, 10))
+}
+
+func loadApartment(ctx context.Context, pool *pgxpool.Pool, column, value string) (*Apartment, bool) {
+	return loadApartmentDetail(ctx, pool, column, value)
+}
+
+// DisplayName is guest.py _display_name.
+func DisplayName(a *Apartment) string {
+	if a == nil {
+		return ""
+	}
+	if n := strings.TrimSpace(a.InternalName); n != "" {
+		return n
+	}
+	return strings.TrimSpace(a.UbyName)
+}
+
+// Facility is guest.py _facility.
+func Facility(a *Apartment) string {
+	if a == nil {
+		return ""
+	}
+	name := DisplayName(a)
+	city := strings.TrimSpace(a.CityEn)
+	if name == "" {
+		return city
+	}
+	if city == "" {
+		return name
+	}
+	return name + ", " + city
+}
+
+// HostContact is the host block on guest pages.
+type HostContact struct {
+	Name, Email, Phone string
+}
+
+// Page is the data guest/base.tmpl reads.
+type Page struct {
+	Lang            string
+	Token           string
+	Facility        string
+	FacilityTone    int
+	LangURLs        map[string]string
+	LangRelangURL   string
+	PrivacyURL      string
+	Flash           string
+	FlashError      string
+	LoadSignatureJS bool
+	LeonURL         string
+	CSRFToken       string
+	Door            string
+	Host            HostContact
+	GuestEndonyms   map[string]string
+}
+
+// T is i18n.translator(lang) for template rendering.
+func (p Page) T(key string, kv ...any) string {
+	params := map[string]any{}
+	for i := 0; i+1 < len(kv); i += 2 {
+		if name, ok := kv[i].(string); ok {
+			params[name] = kv[i+1]
+		}
+	}
+	return stringsCatalog.T(p.Lang, key, params)
+}
+
+var tplFuncs = template.FuncMap{
+	"facilityMark": func(s string) string {
+		for _, r := range s {
+			return string(r)
+		}
+		return ""
+	},
+	"phoneTel": func(s string) string { return strings.ReplaceAll(s, " ", "") },
+	"upper":    strings.ToUpper,
+}
+
+var baseSet = func() *template.Template {
+	t := template.Must(template.New("guest.base").Funcs(tplFuncs).ParseFS(templateFS, "templates/base.tmpl", "templates/host_fragment.tmpl"))
+	return t
+}()
+
+// WritePage renders guest/base into w with status. extra sets response headers after Content-Type.
+func WritePage(w http.ResponseWriter, r *http.Request, status int, p Page, extra map[string]string) {
+	if p.GuestEndonyms == nil {
+		p.GuestEndonyms = GuestEndonyms
+	}
+	var buf bytes.Buffer
+	if err := baseSet.ExecuteTemplate(&buf, "guest.base", p); err != nil {
+		log.Printf("guest shell page: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	h := w.Header()
+	h.Set("Content-Type", "text/html; charset=utf-8")
+	for k, v := range extra {
+		h.Set(k, v)
+	}
+	w.WriteHeader(status)
+	if r.Method != http.MethodHead {
+		_, _ = io.Copy(w, &buf)
+	}
+}
+
+func unavailableHandler(pool *pgxpool.Pool, token, lang, reason string, code int) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		p := Page{
+			Lang:          GuestLanguage(lang),
+			Token:         token,
+			LangURLs:      LangURLs(r, ""),
+			GuestEndonyms: GuestEndonyms,
+		}
+		if pool != nil && token != "" {
+			if apt, _, _, ok := ResolveKey(r.Context(), pool, token); ok && apt != nil {
+				p.Facility = Facility(apt)
+				p.FacilityTone = int(apt.ID % 10)
+				p.PrivacyURL = GuestLink(token, 0, "/privacy") + LangQuery(p.Lang, "")
+			}
+		}
+		_ = reason
+		WritePage(w, r, code, p, nil)
+	})
+}
+
+type shellDeps struct {
+	pool   *pgxpool.Pool
+	getenv func(string) string
+	now    func() time.Time
+}
+
+// RegisterShell wires the guest /l package. Routes stay dormant until brief 1728
+// adds paths to UBYHOST_GO_PATHS.
+func RegisterShell(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler) {
+	d := shellDeps{pool: pool, getenv: getenv, now: now}
+	mux.Handle("POST /l/{token}/pin", wrap("/l/{token}/pin", d.verifyPin))
+	// Brief 1720c: GET /l/{token}
+	mux.Handle("GET /l/{token}/privacy", wrap("/l/{token}/privacy", d.privacyNotice))
+	mux.Handle("GET /l/{token}/ruian-suggest", wrap("/l/{token}/ruian-suggest", d.ruianSuggest))
+}
