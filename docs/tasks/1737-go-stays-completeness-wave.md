@@ -1,6 +1,6 @@
 # 1737: Go stays 7: completeness test and rollout wave H (stays and host guest editing)
 
-Status: todo — scoped (final brief 2026-11-15). Executable only after its exact-diff pass: sidecars in `docs/tasks/1737-files/`, anchors and sha256 table (§2), written to the rules in [workflow](../context/workflow.md#writing-briefs-for-haiku). Until then the executor must not start it.
+Status: todo — ready for executor (exact-diff pass, 2026-11-20).
 Depends on: 1730-1735; submit routes belong to 1741 | Base commit: current tip of the working branch | Branch: task/1737-go-stays-completeness-wave
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (split in two briefs if the exact-diff pass finds more)
 Tier: A (exact diffs only; Opus writes the exact-diff pass; fresh review of the full diff before ready)
@@ -23,7 +23,18 @@ Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (no new pers
 
 **Risk:** Filing state.
 
-**Parity method (same as briefs 1595 and 1580):** a golden script `App/scripts/go_go_stays_completeness_wave_golden.py` seeds a throwaway database with made-up rows, renders the real FastAPI app, and writes `testdata/*_golden.json`; the Go test replays the same seed and must match byte for byte (go-first exception 1). Accepted differences are listed in the report, never silently.
+**Parity method (same as briefs 1595 and 1580):** a golden script `App/scripts/go_stays_completeness_wave_golden.py` seeds a throwaway database with made-up rows, renders the real FastAPI app, and writes `testdata/*_golden.json`; the Go test replays the same seed and must match byte for byte (go-first exception 1). Accepted differences are listed in the report, never silently.
+
+**All implementation code is pre-written.** Sidecars: `docs/tasks/1737-files/<repo path>.txt`. Apply `docs/tasks/1737-files/docs/plans/go-cutover-runbook.md.patch.txt` for wave H. Checksums:
+
+| sha256 | file | action |
+|---|---|---|
+| `71310e09e2e99baf5ee945e949c3da7fed100fbe31aa51a20e0a9471957c6d35` | `docs/plans/go-cutover-runbook.md.patch` | create |
+| `7c626cb7dfe27d22a7507383759df5b32dbe83a934b024b852b2848fdf76e63a` | `go/cmd/ubyhost-web/register_web_stays_all_test.go` | create |
+
+Full manifest: `docs/tasks/1737-files/MANIFEST.sha256`.
+
+**Verified by the brief writer:** copy sidecars; apply runbook patch; `go test ./cmd/ubyhost-web/... -run TestStaysAllRoutesRegistered` after 1730-1735 registers are merged.
 
 ## 3. Files
 
@@ -54,7 +65,7 @@ No other file may change. Two open briefs naming the same file in §3 run in the
 - `cd go && gofmt -l . | tail -5` prints nothing
 - `cd go && go vet ./internal/web/stays/... ./cmd/... 2>&1 | tail -20` is silent
 - `cd go && go test ./internal/web/stays/... ./cmd/ubyhost-web/... -count=1 2>&1 | tail -30` passes, no test skipped
-- `cd App && .venv/bin/python -m pytest tests/test_go_go_stays_completeness_wave_golden.py -q --tb=short -x 2>&1 | tail -30` passes
+- `cd App && .venv/bin/python -m pytest tests/test_go_stays_completeness_wave_golden.py -q --tb=short -x 2>&1 | tail -30` passes
 - `python3 scripts/context_lint.py 2>&1 | tail -10` is clean
 - Host pages: `test_layout_lint_browser.py` green plus one 390, 768 and 1280 px screenshot per page in the report (rule 10).
 

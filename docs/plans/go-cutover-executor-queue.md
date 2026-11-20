@@ -73,7 +73,7 @@ One Haiku brief at a time; respect [go-sqlite-final](../plans/go-sqlite-final.md
 | Chain | Briefs |
 |---|---|
 | Stays read + writes | **1730** (shrunk) → **[1731](../tasks/1731-go-reservation-edit-posts.md)** → **[1732](../tasks/1732-go-claim-filed-by-hand.md)** |
-| Host guest edit | **1733** → **1734** → **1735** → **[1737](../tasks/1737-go-stays-completeness-wave.md)** (wave H; **submit** routes wait for **1741**) |
+| Host guest edit | **1733** on main; **1734** / **1735** / **1737** exact-diff sidecars ready 2026-11-20 → **[1737](../tasks/1737-go-stays-completeness-wave.md)** (wave H; **submit** routes wait for **1741**) |
 | Dashboard | **[1751](../tasks/1751-go-dashboard.md)** after shrunk 1730 |
 
 ### Cleaning gaps
