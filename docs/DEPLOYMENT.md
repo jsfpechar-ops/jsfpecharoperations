@@ -49,18 +49,26 @@ deployments. **This project’s production is Lightsail** — suspend or remove 
 ```
 GitHub (main)
     │
-    ├── CI (pytest + smoke) on every PR
+    ├── CI (pytest + smoke + security) on every PR, and on every push to main
     │
-    ├── Render (render.yaml)
-    │       └── ubyhost-staging   mock, manual deploy — staging only
+    ├── green CI on main ──► Deploy staging (automatic, environment `staging`)
+    │        └── AWS Lightsail Ubyhost-test-env — staging.ubyhost.com, mock UbyPort
     │
-    └── AWS Lightsail (/opt/ubyhost/deploy/lightsail)
-            └── ubyhost + Caddy   production, deploy after green CI on main
+    └── Deploy production (manual only, force_confirm=DEPLOY, environment `production`)
+             └── AWS Lightsail — ubyhost.com, real UbyPort
 ```
 
-Production promotes when **CI** on `main` finishes green (automatic **Deploy
-production**). You can still run **Actions → Deploy production** by hand with
-`force_confirm=DEPLOY`.
+**Staging is the automatic step (1865).** A green **CI** run on `main` starts
+**Deploy staging** for exactly that commit: the Lightsail staging server
+(`UBYHOST_DEPLOYMENT=staging`, mock UbyPort, `https://staging.ubyhost.com`).
+Any branch can also be deployed by hand with **Actions → Deploy staging**
+(`ubyport_env` mock or test). Render `ubyhost-staging` is suspended — the
+Lightsail box replaces it; it stays optional for a quick UI smoke test and no
+deploy hook triggers it any more.
+
+**Production is manual only.** **Actions → Deploy production** with
+`force_confirm=DEPLOY`, after the change has been clicked through on staging.
+Nothing reaches production because CI went green.
 
 ## First-time setup on Render (staging)
 
