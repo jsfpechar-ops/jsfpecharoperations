@@ -1,0 +1,39 @@
+{{define "content"}}
+<section class="g-arrival-hero" aria-labelledby="arrival-welcome">
+  <h2 id="arrival-welcome">{{.PropertyName}}</h2>
+  {{if .Apartment.CityEn}}<p class="g-arrival-location">{{.Apartment.CityEn}}</p>{{end}}
+  {{if .Apartment.GuestMessage}}
+    <section class="g-arrival-message" aria-labelledby="host-message-title">
+      <h3 id="host-message-title">{{.T "message_from_host"}}</h3>
+      <p>{{.Apartment.GuestMessage}}</p>
+    </section>
+  {{end}}
+</section>
+
+<section class="g-arrival-choice" aria-labelledby="arrival-question">
+  <h2 class="g-section" id="arrival-question">{{.T "arrival_question"}}</h2>
+  <div class="g-arrival-lanes">
+  {{range .Rows}}
+    <a class="g-stay g-arrival-lane {{if .Yours}}yours{{end}}" style="--lane-index: {{.LaneIndex}}"
+       href="/l/{{$.Token}}/{{.Reservation.ID}}?lang={{$.Lang}}">
+      <span class="g-range-cue" aria-hidden="true"><i></i></span>
+      <span class="dates">
+        <strong>{{date_cz .Reservation.DateFrom}} – {{date_cz .Reservation.DateTo}}</strong>
+        <span>{{nights_label $.Lang .Reservation.DateFrom .Reservation.DateTo}}</span>
+        {{if .Yours}}
+          <span class="g-lane-status">{{$.T "your_stay_badge"}}</span>
+        {{else if .ArrivingToday}}
+          <span class="g-lane-status quiet">{{$.T "stay_arriving_today"}}</span>
+        {{else if .Ongoing}}
+          <span class="g-lane-status quiet">{{$.T "stay_ongoing"}}</span>
+        {{else}}
+          <span class="g-lane-status quiet">{{$.T "stay_not_started"}}</span>
+        {{end}}
+      </span>
+      <span class="g-lane-action">{{$.T "arrival_cta"}}</span>
+    </a>
+  {{end}}
+  </div>
+</section>
+{{template "why_fragment" .}}
+{{end}}

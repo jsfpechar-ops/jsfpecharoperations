@@ -13,4 +13,9 @@ func TestGuestShellRoutesRegistered(t *testing.T) {
 	if pattern != "POST /l/{token}/pin" {
 		t.Fatalf("pin route %q", pattern)
 	}
+	req = httptest.NewRequest(http.MethodGet, "/l/example-token", nil)
+	_, pattern = mux.Handler(req)
+	if pattern != "GET /l/{token}" {
+		t.Fatalf("pick route %q", pattern)
+	}
 }

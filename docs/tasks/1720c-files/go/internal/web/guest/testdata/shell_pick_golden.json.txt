@@ -1,0 +1,22 @@
+{
+  "now": "2026-06-15T12:00:00+00:00",
+  "secret": "golden-test-secret",
+  "seed": [],
+  "cases": [
+    {
+      "name": "pick_requires_pin",
+      "method": "GET",
+      "path": "/l/golden-token?lang=en",
+      "status": 200,
+      "body_has": "pin_title"
+    },
+    {
+      "name": "pick_stay_lanes",
+      "method": "GET",
+      "path": "/l/golden-token?lang=en",
+      "cookie_pin": true,
+      "status": 200,
+      "body_has": "arrival-question"
+    }
+  ]
+}

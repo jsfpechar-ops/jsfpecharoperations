@@ -1,0 +1,15 @@
+d15d19581bd251e7c498f1c3bb491dc2bcc58e1ecf6e7c4082dfe583b9499109  ../../../App/scripts/go_go_guest_shell_pick_golden.py
+db473ff49231e82b383fc4b418f7e4ba2f3352c701cf5d3ce0d271a6d03374b6  ../../../App/tests/test_go_go_guest_shell_pick_golden.py
+e6c100d56525583325dcaa089907623f6e8f2f77c9cddd007446cde2cf5058ab  ../../../go/cmd/ubyhost-web/register_web_guest_shell_test.go
+9afa17555c8f725acb7bd9cd2c1a1575793cafb84c82c34e35b7d7405d40b9af  ../../../go/internal/web/guest/i18n.json
+d7f9a14ded284e9765aabb998f187b21359055563e3219688c0451059ac86a12  ../../../go/internal/web/guest/i18n_keys.txt
+977fbc8902300c796fb5f8a6853aa3811787f6833a69b119e6e25b8d5833e1ce  ../../../go/internal/web/guest/pick_alert.go
+481247458ba4c7e68d1ca4a585039e5931ecf6d07156b8dc96393ae2fa0fec91  ../../../go/internal/web/guest/pick_cookies.go
+d7531d12856abd4e727d91b7354e1ddf6bbd65964f27116fadefefb19be311d1  ../../../go/internal/web/guest/pick_data.go
+821c22062ac34dcfb05501f0eac72abfb7ebf831a46298afd96cf508f70d3d47  ../../../go/internal/web/guest/pick.go
+30f019c4b803568efdc03304c14170d33a43cdfc31c25267d79f7e43e8029ee5  ../../../go/internal/web/guest/pick_test.go
+443af54788c055fb2631ce7ad99b4614e91d2a15ea5445eb9279ef8c7f972cd2  ../../../go/internal/web/guest/shell.go
+d781135cc8a3e5b4dc6e643135e327908f177b659d45e8bb7ff21d6a5b45a2fb  ../../../go/internal/web/guest/templates/pick.tmpl
+d4e66f313a0a18e3058689a3b7feb0d3acfabb36b959e68f96bb1a4a14045db5  ../../../go/internal/web/guest/templates/unavailable.tmpl
+923fcba65134807b7b122dc73d4ccf69026a9e16d96bd44f1f8d8d9c63f3da9a  ../../../go/internal/web/guest/templates/why_fragment.tmpl
+94c6728acdddb2129c6b7037413f89e8521ab7ff627a46185ba2ee64bf39ca16  ../../../go/internal/web/guest/testdata/shell_pick_golden.json
