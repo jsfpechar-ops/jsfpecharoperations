@@ -1,0 +1,8 @@
+# Brief 1735 step-0 anchors (repo root). Each grep -cF must return 1; each ls line must return 1 before copying sidecars.
+grep -cF '@router.post("/guests/{guest_id}/archive")' App/app/routes/admin.py
+grep -cF 'async def guest_resend(guest_id: int, request: Request):' App/app/routes/admin.py
+grep -cF 'func RegisterGuestPrivacy(mux *http.ServeMux' go/internal/web/stays/guest_privacy.go
+ls go/internal/web/stays/guest_lifecycle.go 2>&1 | grep -cF 'No such file'
+ls App/scripts/go_guest_lifecycle_golden.py 2>&1 | grep -cF 'No such file'
+ls go/cmd/ubyhost-web/register_web_stays_guest_lifecycle.go 2>&1 | grep -cF 'No such file'
+find docs/tasks/1735-files -name '*.txt' ! -name 'ANCHORS.txt' | wc -l

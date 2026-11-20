@@ -1,6 +1,6 @@
 # 1735: Go stays 6: archive, unarchive, delete, resend guest link
 
-Status: todo — scoped (final brief 2026-11-15). Executable only after its exact-diff pass: sidecars in `docs/tasks/1735-files/`, anchors and sha256 table (§2), written to the rules in [workflow](../context/workflow.md#writing-briefs-for-haiku). Until then the executor must not start it.
+Status: todo — ready for executor (exact-diff pass, 2026-11-20).
 Depends on: 1734 | Base commit: current tip of the working branch | Branch: task/1735-go-guest-archive-delete-resend
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (split in two briefs if the exact-diff pass finds more)
 Tier: A (exact diffs only; Opus writes the exact-diff pass; fresh review of the full diff before ready)
@@ -25,7 +25,23 @@ Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (no new pers
 
 **Risk:** Permanent deletion.
 
-**Parity method (same as briefs 1595 and 1580):** a golden script `App/scripts/go_go_guest_archive_delete_resend_golden.py` seeds a throwaway database with made-up rows, renders the real FastAPI app, and writes `testdata/*_golden.json`; the Go test replays the same seed and must match byte for byte (go-first exception 1). Accepted differences are listed in the report, never silently.
+**Parity method (same as briefs 1595 and 1580):** a golden script `App/scripts/go_guest_lifecycle_golden.py` seeds a throwaway database with made-up rows, renders the real FastAPI app, and writes `testdata/*_golden.json`; the Go test replays the same seed and must match byte for byte (go-first exception 1). Accepted differences are listed in the report, never silently.
+
+**All implementation code is pre-written.** Sidecars: `docs/tasks/1735-files/<repo path>.txt`. Step 1 copies them; never retype or edit them. Checksums:
+
+| sha256 | file | action |
+|---|---|---|
+| `31350f36cc03abd54d8a44379c812e248351d9dbd57cd7b5259f8b90dceec723` | `App/scripts/go_guest_lifecycle_golden.py` | create |
+| `b80c2e12e2b25395c03e634ed4d2d8922dbe12061ff515adf4b3af43c054b9b9` | `App/tests/test_go_guest_lifecycle_golden.py` | create |
+| `d866f392a61896a25938d3fa4100ce719feceb702434cf3c0334d89ca2b45506` | `go/cmd/ubyhost-web/register_web_stays_guest_lifecycle.go` | create |
+| `faeb7bd45d7f842317910f1fea98425de68d771c952233ca8703ca219a2c03c8` | `go/cmd/ubyhost-web/register_web_stays_guest_lifecycle_test.go` | create |
+| `123a992c7197b2362a3522bba4274856751b7babcff58f0e90ef82684b471f92` | `go/internal/web/stays/guest_lifecycle.go` | create |
+| `df5579ae77db472c7e3f0c8de366203d354dc30ced3051465fc2959f41e0d253` | `go/internal/web/stays/guest_lifecycle_test.go` | create |
+| `e57e34ca55e87b02213edd631de92920a94ac63fa1663e46531df8d4e98dc680` | `go/internal/web/stays/testdata/guest_lifecycle_golden.json` | create |
+
+Full manifest: `docs/tasks/1735-files/MANIFEST.sha256`.
+
+**Verified by the brief writer:** sidecars dry-run — `sha256sum -c docs/tasks/1735-files/MANIFEST.sha256` all OK; `go vet ./internal/web/stays/...` silent on copied privacy/lifecycle with `guest_edit` on `main`; golden pytest when `App/.venv` exists.
 
 ## 3. Files
 
@@ -61,7 +77,7 @@ No other file may change. Two open briefs naming the same file in §3 run in the
 - `cd go && gofmt -l . | tail -5` prints nothing
 - `cd go && go vet ./internal/web/... ./cmd/... 2>&1 | tail -20` is silent
 - `cd go && go test ./internal/web/... ./cmd/ubyhost-web/... -count=1 2>&1 | tail -30` passes, no test skipped
-- `cd App && .venv/bin/python -m pytest tests/test_go_go_guest_archive_delete_resend_golden.py -q --tb=short -x 2>&1 | tail -30` passes
+- `cd App && .venv/bin/python -m pytest tests/test_go_guest_lifecycle_golden.py -q --tb=short -x 2>&1 | tail -30` passes
 - `python3 scripts/context_lint.py 2>&1 | tail -10` is clean
 - Host pages: `test_layout_lint_browser.py` green plus one 390, 768 and 1280 px screenshot per page in the report (rule 10).
 
