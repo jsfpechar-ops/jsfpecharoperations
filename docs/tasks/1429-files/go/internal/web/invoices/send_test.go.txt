@@ -1,0 +1,23 @@
+package invoices
+
+import (
+	"strings"
+	"testing"
+)
+
+func TestSendRouteIsRegistered(t *testing.T) {
+	seen := false
+	for _, r := range Routes(nil, testEnv(), testNow) {
+		if r.Pattern == "POST /invoices/{id}/send" {
+			seen = true
+		}
+	}
+	if !seen {
+		t.Fatal("POST /invoices/{id}/send missing")
+	}
+}
+
+func TestSendRouteListedInRegisterWebInvoices(t *testing.T) {
+	// Filled in when register_web_invoices_test.go picks up the send pattern (step 3).
+	_ = strings.Contains
+}

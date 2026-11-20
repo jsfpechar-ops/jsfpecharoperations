@@ -22,12 +22,14 @@ import (
 
 // The markers a stored body carries and the payload keys that go with them.
 const (
-	ClaimSecretMarker    = "{{claim_secret}}"
-	DoorCodeMarker       = "{{door_code}}"
-	GuestDetailsMarker   = "{{guest_details}}"
-	ReceiptDetailsMarker = "{{receipt_details}}"
+	ClaimSecretMarker = "{{claim_secret}}"
+	// ClaimSecretPayloadKey is the outbox payload field for an encrypted claim token.
+	ClaimSecretPayloadKey = "claim_secret_enc"
+	DoorCodeMarker        = "{{door_code}}"
+	GuestDetailsMarker    = "{{guest_details}}"
+	ReceiptDetailsMarker  = "{{receipt_details}}"
 
-	claimSecretKey    = "claim_secret_enc"
+	claimSecretKey    = ClaimSecretPayloadKey
 	doorCodeKey       = "door_code_enc"
 	guestDetailsKey   = "guest_details_reservation_id"
 	receiptDetailsKey = "receipt_details_reservation_id"
