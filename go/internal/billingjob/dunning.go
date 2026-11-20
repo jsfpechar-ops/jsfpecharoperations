@@ -8,7 +8,7 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/mail"
 )
 
-type dunningCounts struct{ overdue, reminded, paused int }
+type dunningCounts struct{ overdue, reminded, paused, settled int }
 
 // overdueInvoice is one row of _unpaid_overdue: an unpaid invoice past its due
 // date, with its account's status as it was when the list was read.
@@ -23,6 +23,7 @@ func (r *Runner) unpaidOverdue(ctx context.Context, today time.Time) ([]overdueI
 		`SELECT i.id, i.owner_user_id, i.number, i.total_haler, i.due_date, b.status
 		 FROM platform_invoice i JOIN billing_account b ON b.owner_user_id = i.owner_user_id
 		 WHERE i.kind IN ('invoice', 'supplementary') AND i.voided = 0 AND i.paid_on IS NULL
+		   AND i.total_haler > 0 // 1867: a zero-amount invoice (100% discount, 0 apartments) is not collectible
 		   AND i.due_date < $1 AND ($2::bigint = 0 OR i.owner_user_id = $2)
 		 ORDER BY i.id`, today.Format(isoDate), r.Owner)
 	if err != nil {
@@ -93,6 +94,43 @@ func (r *Runner) dunning(ctx context.Context, today time.Time) (dunningCounts, e
 		}
 		if sent {
 			c.reminded++
+		}
+	}
+	// 1867: accounts stuck "overdue" with only zero-amount invoices left (e.g. a 100%
+	// discount applied after the invoice) settle back to active on this run.
+	positive := make(map[int64]bool, len(list))
+	for _, inv := range list {
+		positive[inv.owner] = true
+	}
+	rows, err := r.Pool.Query(ctx,
+		`SELECT owner_user_id FROM billing_account WHERE status = 'overdue' AND plan IS NOT NULL
+		   AND ($1::bigint = 0 OR owner_user_id = $1)`, r.Owner)
+	if err != nil {
+		return c, err
+	}
+	var owners []int64
+	for rows.Next() {
+		var o int64
+		if err := rows.Scan(&o); err != nil {
+			rows.Close()
+			return c, err
+		}
+		owners = append(owners, o)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return c, err
+	}
+	for _, o := range owners {
+		if positive[o] {
+			continue
+		}
+		changed, err := setStatus(ctx, r.Pool, o, "active", "system")
+		if err != nil {
+			return c, err
+		}
+		if changed {
+			c.settled++
 		}
 	}
 	return c, nil

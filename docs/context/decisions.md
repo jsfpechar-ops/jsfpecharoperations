@@ -36,6 +36,7 @@ Append-only.
 - 2026-11-11 [police] 1100: no tick, values in boxes; parser reads password+facility, never stored (owner; reverses 1097, 1085).
 - 2026-11-10 [demo] Demo seed covers current features; mock-only, cleared by Clear demo (owner, 1092)
 - 2026-11-12 [billing] 1137: trial_pending->paused only via operator_pause().
+- 2026-11-20 [billing] zero-amount invoices (100% discount, 0 apartments) are never dunned and never mark the account overdue; the daily run settles accounts whose overdue invoices are all zero | owner | 1867
 - 2026-11-12 [filing] 1138: claim fails closed; no retry.
 - 2026-11-12 [workflow] Orchestrator tiers A/B/C; Haiku executes; parallel threads | owner | [workflow](workflow.md#roles-and-models)
 - 11-13 [workflow] 1199: state columns need TRANSITIONS+pin test or EXEMPT; test_sm_registry.py (owner)
