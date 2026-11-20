@@ -20,8 +20,7 @@ func TestInvoiceRoutesRegistered(t *testing.T) {
 		{http.MethodPost, "/invoices/12/paid", "POST /invoices/{id}/paid"},
 		{http.MethodPost, "/invoices/12/cancel", "POST /invoices/{id}/cancel"},
 		{http.MethodGet, "/invoice/d/sometoken", "GET /invoice/d/{token}"},
-		// Still Python: the send route waits for brief 1429.
-		{http.MethodPost, "/invoices/12/send", "/"},
+		{http.MethodPost, "/invoices/12/send", "POST /invoices/{id}/send"},
 	} {
 		_, pattern := mux.Handler(httptest.NewRequest(c.method, c.path, nil))
 		if pattern != c.pattern {
