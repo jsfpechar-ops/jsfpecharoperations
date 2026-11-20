@@ -1,6 +1,6 @@
 # 1770: Go jobs 1: register the `mail` job kind
 
-Status: todo — ready for executor (exact-diff pass, 2026-11-20).
+Status: review — executor pass complete (2026-11-20).
 Depends on: 1231, 1231b, 1231c (outbox drain, done), 1632 SES keys | Base commit: current tip of the working branch | Branch: task/1770-go-mail-job
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (split in two briefs if the exact-diff pass finds more)
 Tier: B (Sonnet writes the exact-diff pass; orchestrator reads the diff of the risk-listed files)
