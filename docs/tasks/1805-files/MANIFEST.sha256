@@ -1,0 +1,2 @@
+c7e19d79e7c1cb3237bf3893b30c4786184288496a5e646bd7a770a35bf84649  deploy/lightsail/caddy/Caddyfile.cloudflare
+dffd2b848a1798c3a526fec1374446bff5aaff46853ff5f872a16e7d9ae56efd  deploy/lightsail/caddy/Caddyfile.acme
