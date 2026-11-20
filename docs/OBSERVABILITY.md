@@ -9,6 +9,9 @@ profile "monitoring"): alloy, node-exporter, cadvisor.
 | node-exporter | host CPU, memory, disk | Grafana Cloud Prometheus |
 | cadvisor | per-container CPU, memory | Grafana Cloud Prometheus |
 | ubyhost (app) | request counters + duration histogram per route *template* (`/metrics`, compose-internal only; caddy answers 404 to the world) | Grafana Cloud Prometheus, job `ubyhost` |
+| ubyhost-go (Go app, profile `go`) | `ubyhost_go_up` + request counter per route template and status code (`/metrics` on :8081) | Grafana Cloud Prometheus, job `ubyhost-go` |
+
+Both Go slots (`ubyhost-go`, `ubyhost-go-b`) are scraped under job `ubyhost-go`; the idle slot is stopped, so `up == 0` for it is normal. While `COMPOSE_PROFILES` has no `go`, both Go targets are down and caddy logs a failed active health check for `ubyhost-go:8081` every 2 s — expected noise, all traffic still goes to `ubyhost` (Python).
 
 ## Privacy boundary
 
