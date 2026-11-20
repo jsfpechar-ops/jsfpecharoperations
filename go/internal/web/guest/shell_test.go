@@ -99,9 +99,9 @@ func TestOpenLinkSlugRedirect(t *testing.T) {
 	mustExecGuest(t, ctx, pool, `INSERT INTO apartment (id, owner_user_id, internal_name, city_en, active, permalink_token, permalink_pin, created_at)
 		VALUES (9020172002, 9020172002, 'Flat 1721', 'Prague', 1, 'perm1721abcxyz', '1234', $1) ON CONFLICT DO NOTHING`, stamp)
 	mustExecGuest(t, ctx, pool, `INSERT INTO apartment_slug (slug, apartment_id, is_current, created_at)
-		VALUES ('flat-1721-abc234', 9020172002, 1, $1)`, stamp)
+		VALUES ('flat-1721-abc234', 9020172002, 1, $1) ON CONFLICT (slug) DO NOTHING`, stamp)
 	mustExecGuest(t, ctx, pool, `INSERT INTO apartment_slug (slug, apartment_id, is_current, created_at)
-		VALUES ('old-flat-abc235', 9020172002, 0, $1)`, stamp)
+		VALUES ('old-flat-abc235', 9020172002, 0, $1) ON CONFLICT (slug) DO NOTHING`, stamp)
 	r := httptest.NewRequest(http.MethodGet, "/l/old-flat-abc235", nil)
 	_, link, early := OpenLink(r, pool, "old-flat-abc235", "en")
 	if early == nil {
