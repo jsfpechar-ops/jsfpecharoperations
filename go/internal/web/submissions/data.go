@@ -14,14 +14,19 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
 )
 
-// listSQL: has_receipt is a CASE, not the bare boolean expression it looks
-// like. On PostgreSQL that expression is a real boolean (OID 16, binary
-// format) and LoadList scans it into `var has int`, so the page failed with
-// "cannot scan bool (OID 16) in binary format into *int" and /submissions
-// answered 500. CASE ... THEN 1 ELSE 0 END is a plain int4 there and still an
-// integer 0/1 on the SQLite-backed paths, so the int scan stays correct.
-const listSQL = `SELECT s.id, s.created_at, s.apartment_id, s.mode, s.guest_ids, s.state,
-       s.pseudo_stamp,
+// listSQL and detailSQL wrap every nullable text column in COALESCE, and
+// has_receipt is a CASE rather than the bare boolean expression it looks like.
+//
+// Both queries scan into plain strings (and one int), but submission.mode,
+// guest_ids, pseudo_stamp, record_errors, finished_at, error_text, endpoint,
+// receipt_pdf and error_pdf are nullable, and `receipt_pdf IS NOT NULL AND
+// TRIM(...) != ''` is a real boolean (OID 16) on PostgreSQL. SQLite is
+// forgiving about NULL and returns 0/1, so only the PostgreSQL job ever saw it,
+// as a 500 from "cannot scan NULL into *string" / "cannot scan bool (OID 16) in
+// binary format into *int". COALESCE gives '' where Python sees None and
+// CASE ... THEN 1 ELSE 0 END gives an int4 the `int` target accepts.
+const listSQL = `SELECT s.id, s.created_at, s.apartment_id, COALESCE(s.mode, ''),
+       COALESCE(s.guest_ids, ''), s.state, COALESCE(s.pseudo_stamp, ''),
        CASE WHEN s.receipt_pdf IS NOT NULL AND TRIM(s.receipt_pdf) != ''
             THEN 1 ELSE 0 END AS has_receipt,
        a.internal_name
@@ -79,9 +84,11 @@ func LoadList(ctx context.Context, pool *pgxpool.Pool, owner int64) (*ListPage, 
 	return p, rows.Err()
 }
 
-const detailSQL = `SELECT s.id, s.apartment_id, s.created_at, s.mode, s.state, s.guest_ids,
-       s.header_errors, s.record_errors, s.pseudo_stamp, s.finished_at, s.error_text,
-       s.endpoint, s.receipt_pdf, s.error_pdf, a.internal_name
+const detailSQL = `SELECT s.id, s.apartment_id, s.created_at, COALESCE(s.mode, ''), s.state,
+       COALESCE(s.guest_ids, ''), s.header_errors, COALESCE(s.record_errors, ''),
+       COALESCE(s.pseudo_stamp, ''), COALESCE(s.finished_at, ''), COALESCE(s.error_text, ''),
+       COALESCE(s.endpoint, ''), COALESCE(s.receipt_pdf, ''), COALESCE(s.error_pdf, ''),
+       a.internal_name
   FROM submission s JOIN apartment a ON a.id = s.apartment_id
   WHERE s.id = $1 AND a.owner_user_id IS NOT DISTINCT FROM $2`
 
