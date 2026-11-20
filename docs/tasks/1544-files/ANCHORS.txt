@@ -1,0 +1,10 @@
+# Brief 1544 step-0 anchors (repo root). Each grep -cF must return 1; find must return 5.
+grep -cF 'def _booking_or_none(booking_id: int, token: str, open_requests: bool = False):' App/app/routes/property_page.py
+grep -cF 'def booking_manage_page(request: Request, slug: str, booking_id: int, token: str):' App/app/routes/property_page.py
+grep -cF 'def mask_email(email: str) -> str:' App/app/booking_manage.py
+grep -cF 'def deadline_label(booking: Dict[str, Any], checkin_hour: int, lang: str) -> str:' App/app/booking_manage.py
+grep -cF 'def view(booking: Dict[str, Any], lang: str) -> Dict[str, Any]:' App/app/booking_manage.py
+grep -cF 'def started(booking: Dict[str, Any], now: Optional[datetime] = None) -> bool:' App/app/booking_cancel.py
+grep -cF 'func RefundCZK(b RefundBooking, checkinHour int, now time.Time, byHost bool) (int, error)' go/internal/web/booking/site.go
+grep -cF 'func LoadSettings(ctx context.Context, db DB, apartmentID int64) (Settings, error)' go/internal/web/booking/site.go
+find docs/tasks/1544-files -name '*.txt' ! -name 'ANCHORS.txt' | wc -l
