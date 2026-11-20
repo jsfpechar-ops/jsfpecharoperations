@@ -7,13 +7,14 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/mail"
 )
 
 func TestSendRouteIsRegistered(t *testing.T) {
 	seen := false
-	for _, r := range Routes(nil, testEnv(), testNow) {
+	for _, r := range Routes(nil, testEnv(), func() time.Time { return testNow }) {
 		if r.Pattern == "POST /invoices/{id}/send" {
 			seen = true
 		}
