@@ -131,16 +131,61 @@ func TestWritePageBase(t *testing.T) {
 	}
 }
 
-func testPoolOptional(t *testing.T) *pgxpool.Pool {
+func testPool(t *testing.T) *pgxpool.Pool {
 	t.Helper()
-	url := strings.TrimSpace(os.Getenv("UBYHOST_TEST_DATABASE_URL"))
-	if url == "" {
-		t.Skip("UBYHOST_TEST_DATABASE_URL not set")
-		return nil
+	base := os.Getenv("UBYHOST_TEST_DATABASE_URL")
+	if base == "" {
+		t.Skip("UBYHOST_TEST_DATABASE_URL is not set")
 	}
-	pool, err := pgxpool.New(context.Background(), url)
+	ctx := context.Background()
+	name := fmt.Sprintf("ubyhost_go_guest_%d", time.Now().UnixNano())
+	admin, err := pgx.Connect(ctx, base)
 	if err != nil {
-		t.Fatalf("pool: %v", err)
+		t.Fatal("admin connect failed")
+	}
+	if _, err := admin.Exec(ctx, "CREATE DATABASE "+name); err != nil {
+		admin.Close(ctx)
+		t.Fatal(err)
+	}
+	admin.Close(ctx)
+	t.Cleanup(func() {
+		c, err := pgx.Connect(context.Background(), base)
+		if err != nil {
+			t.Errorf("admin connect for cleanup failed")
+			return
+		}
+		defer c.Close(context.Background())
+		if _, err := c.Exec(context.Background(), "DROP DATABASE IF EXISTS "+name+" WITH (FORCE)"); err != nil {
+			t.Errorf("drop test database: %v", err)
+		}
+	})
+	cfg, err := pgxpool.ParseConfig(base)
+	if err != nil {
+		t.Fatal("bad UBYHOST_TEST_DATABASE_URL")
+	}
+	cfg.ConnConfig.Database = name
+	pool, err := pgxpool.NewWithConfig(ctx, cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(pool.Close)
+	files, err := filepath.Glob("../../../../App/migrations_pg/*.sql")
+	if err != nil || len(files) == 0 {
+		t.Fatal("no migrations found")
+	}
+	sort.Strings(files)
+	for _, f := range files {
+		raw, err := os.ReadFile(f)
+		if err != nil {
+			t.Fatal(err)
+		}
+		up := string(raw)
+		if i := strings.Index(up, "-- +goose Down"); i >= 0 {
+			up = up[:i]
+		}
+		if _, err := pool.Exec(ctx, up); err != nil {
+			t.Fatalf("migration %s: %v", f, err)
+		}
 	}
 	return pool
 }
