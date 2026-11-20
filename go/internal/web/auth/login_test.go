@@ -224,7 +224,7 @@ func loginParseCookie(t *testing.T, secret, line string, now time.Time) loginCoo
 	switch c.Name {
 	case session.DeviceCookieName:
 		var payload map[string]any
-		if err := secure.NewTimedSerializer(secret, "ubyhost-device").Loads(value, 31*24*time.Hour, time.Now().Add(time.Second), &payload); err != nil {
+		if err := secure.NewTimedSerializer(secret, "ubyhost-device").Loads(value, 31*24*time.Hour, now.Add(time.Second), &payload); err != nil {
 			t.Fatalf("device cookie does not verify: %v", err)
 		}
 		if did, ok := payload["did"].(string); ok {
@@ -248,8 +248,10 @@ func TestLoginGoldenDatabase(t *testing.T) {
 	}
 	pool := testPool(t)
 	ctx := context.Background()
+	fixed := authGoldenFixed(t)
+	clock := authGoldenClock(fixed)
 	sum := sha256.Sum256([]byte(g.Nonce))
-	csrfToken, err := secure.NewTimedSerializer(g.Secret, "ubyhost-csrf").Dumps(map[string]any{"nonce": hex.EncodeToString(sum[:])}, time.Now())
+	csrfToken, err := secure.NewTimedSerializer(g.Secret, "ubyhost-csrf").Dumps(map[string]any{"nonce": hex.EncodeToString(sum[:])}, fixed)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -267,7 +269,7 @@ func TestLoginGoldenDatabase(t *testing.T) {
 	seen := map[string]bool{}
 	for _, c := range g.Cases {
 		t.Run(c.Name, func(t *testing.T) {
-			now := time.Now()
+			now := fixed
 			loginSeed(t, ctx, pool, append(append([][2]any{}, g.Seed...), c.Seed...), now)
 			dir := t.TempDir()
 			adminFile := filepath.Join(dir, "initial_admin_login")
@@ -285,7 +287,7 @@ func TestLoginGoldenDatabase(t *testing.T) {
 			}
 			getenv := func(k string) string { return env[k] }
 			mux := http.NewServeMux()
-			for _, r := range Routes(pool, getenv, time.Now) {
+			for _, r := range Routes(pool, getenv, clock) {
 				h := r.Handler
 				// main.go's metrics.wrap sets hardenHeaders first.
 				mux.Handle(r.Pattern, http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -376,13 +378,13 @@ func TestLoginGoldenDatabase(t *testing.T) {
 			}
 			if m := csrfRE.FindStringSubmatch(body); m != nil {
 				var payload map[string]any
-				if err := secure.NewTimedSerializer(g.Secret, "ubyhost-csrf").Loads(m[1], time.Hour, time.Now(), &payload); err != nil {
+				if err := secure.NewTimedSerializer(g.Secret, "ubyhost-csrf").Loads(m[1], time.Hour, now, &payload); err != nil {
 					t.Errorf("page csrf token does not verify: %v", err)
 				}
 			}
 			var pending map[string]any
 			if m := pendingRE.FindStringSubmatch(body); m != nil {
-				p, ok := session.ReadTwoFactorPending(g.Secret, m[1], time.Now())
+				p, ok := session.ReadTwoFactorPending(g.Secret, m[1], now)
 				if !ok {
 					t.Fatal("pending token does not verify")
 				}
