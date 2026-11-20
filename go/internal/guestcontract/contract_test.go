@@ -82,8 +82,18 @@ func TestPayloadRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if bytes.Contains(enc, []byte("Nov")) {
-		t.Fatal("payload is not encrypted")
+	// Encryption must be randomized: the same payload encodes to a different
+	// token every time (fresh IV). This used to be a `bytes.Contains(enc,
+	// []byte("Nov"))` check, which raised a false alarm roughly once in 1300
+	// runs because base64url of random ciphertext can legitimately contain any
+	// short ASCII run; TestPayloadRefusals already pins the ciphertext itself
+	// (wrong key and tampering both refuse to decode).
+	again, err := EncodePayload(keys, sample())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bytes.Equal(enc, again) {
+		t.Fatal("payload is not encrypted: two encodes are byte-identical")
 	}
 	compressed, err := keys.Decrypt(string(enc), 0, time.Now())
 	if err != nil {
