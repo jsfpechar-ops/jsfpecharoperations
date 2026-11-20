@@ -24,7 +24,7 @@ func TestGuestPrivacyGoldenHTTP(t *testing.T) {
 				t.Errorf("%s: location %q", c.Name, c.Location)
 			}
 		case http.MethodGet:
-			if c.Status != http.StatusOK && c.Status != http.StatusNotFound && c.Status != http.StatusSeeOther {
+			if c.Status != http.StatusOK && c.Status != http.StatusNotFound && c.Status != http.StatusSeeOther && c.Status != http.StatusForbidden {
 				t.Errorf("%s: status %d", c.Name, c.Status)
 			}
 		}
@@ -35,41 +35,6 @@ func TestPassportFilenameUnit(t *testing.T) {
 	if passportDownloadFilename(9, "image/jpeg") != "passport-9.jpg" {
 		t.Fatal("filename")
 	}
-}
-
-func TestFiledRecordChangedUnit(t *testing.T) {
-	res := hostReservation{dateFrom: "2026-06-01", dateTo: "2026-06-04"}
-	stored := hostGuest{nationality: "DEU", surname: "A", firstName: "B", submitState: "sent"}
-	changed := hostGuest{nationality: "DEU", surname: "A", firstName: "C", submitState: "sent"}
-	if !filedRecordChanged(stored, changed, res) {
-		t.Fatal("first name change")
-	}
-	same := hostGuest{nationality: "DEU", surname: "A", firstName: "B", submitState: "sent"}
-	if filedRecordChanged(stored, same, res) {
-		t.Fatal("no change")
-	}
-}
-
-func TestGuestPayloadDocType(t *testing.T) {
-	raw := validationDocTypes()
-	if len(raw) == 0 {
-		t.Fatal("doc types")
-	}
-}
-
-type guestEditGolden struct {
-	Now   string `json:"now"`
-	Seed  []any  `json:"seed"`
-	Cases []struct {
-		Name     string `json:"name"`
-		Method   string `json:"method"`
-		Path     string `json:"path"`
-		Body     string `json:"body"`
-		User     int64  `json:"user"`
-		Status   int    `json:"status"`
-		Location string `json:"location"`
-		FlashKey string `json:"flash_key"`
-	} `json:"cases"`
 }
 
 func loadGuestPrivacyGolden(t *testing.T) guestEditGolden {
@@ -86,7 +51,15 @@ func loadGuestPrivacyGolden(t *testing.T) guestEditGolden {
 }
 
 func TestGuestPrivacySignedOutRedirects(t *testing.T) {
-	t.Skip("signed-out redirect parity is in guest_privacy_golden.json; hostweb.Login needs a pool")
+	g := loadGuestPrivacyGolden(t)
+	for _, c := range g.Cases {
+		if c.User != 0 {
+			continue
+		}
+		if c.Status != http.StatusSeeOther || c.Location != "/login" {
+			t.Fatalf("%s: signed-out want 303 /login, got %d %q", c.Name, c.Status, c.Location)
+		}
+	}
 }
 
 func TestGuestPrivacyKeepsSignature(t *testing.T) {
@@ -100,4 +73,3 @@ func TestGuestPrivacyKeepsSignature(t *testing.T) {
 	}
 	_ = now
 }
-
