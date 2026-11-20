@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	formSubmitSent    = "sent"
+	formSubmitSent     = "sent"
 	ownedCookie        = "ubyhost_guest_owned"
 	formPagesHardening = "no-store"
 )
@@ -97,30 +97,30 @@ type formGuestRow struct {
 
 type formView struct {
 	Page
-	WrapClass        string
-	ReservationID    int64
-	GuestID          int64
-	PersonName       string
-	BackURL          string
-	DatesLink        string
-	HideBack         bool
-	DupWarnings      []dupWarning
-	PersonNumber     int
-	ExpectedPeople   int
-	StayFromLabel    string
-	StayToLabel      string
-	NightsLabel      string
-	StayFromValue    string
-	StayToValue      string
-	SaveActionLabel  string
-	LangRelangURL    string
-	DraftURL         string
-	DraftFields      string
-	DraftOwned       string
-	DraftRestored    bool
-	StartStep        int
-	LoadSignatureJS  bool
-	Values           map[string]string
+	WrapClass       string
+	ReservationID   int64
+	GuestID         int64
+	PersonName      string
+	BackURL         string
+	DatesLink       string
+	HideBack        bool
+	DupWarnings     []dupWarning
+	PersonNumber    int
+	ExpectedPeople  int
+	StayFromLabel   string
+	StayToLabel     string
+	NightsLabel     string
+	StayFromValue   string
+	StayToValue     string
+	SaveActionLabel string
+	LangRelangURL   string
+	DraftURL        string
+	DraftFields     string
+	DraftOwned      string
+	DraftRestored   bool
+	StartStep       int
+	LoadSignatureJS bool
+	Values          map[string]string
 }
 
 type dupWarning struct {
@@ -240,14 +240,14 @@ func handleRemoveConfirm(ctx context.Context, d formPageDeps, w http.ResponseWri
 	name := strings.TrimSpace(guest.firstName + " " + guest.surname)
 	view := formView{
 		Page: Page{
-			Lang:            lang,
-			Token:           link,
-			Facility:        Facility(apt),
-			FacilityTone:    int(apt.ID % 10),
-			LangURLs:        LangURLs(r, ""),
-			CSRFToken:       formPagesCSRF(r),
-			GuestEndonyms:   GuestEndonyms,
-			Host:            formPagesHost(ctx, d.pool, apt.ID),
+			Lang:          lang,
+			Token:         link,
+			Facility:      Facility(apt),
+			FacilityTone:  int(apt.ID % 10),
+			LangURLs:      LangURLs(r, ""),
+			CSRFToken:     formPagesCSRF(r),
+			GuestEndonyms: GuestEndonyms,
+			Host:          formPagesHost(ctx, d.pool, apt.ID),
 		},
 		ReservationID: res.id,
 		GuestID:       guest.id,
@@ -386,7 +386,7 @@ func handleRelang(ctx context.Context, d formPageDeps, w http.ResponseWriter, r 
 	vals := map[string]string{
 		"stay_from": stayFrom, "stay_to": stayTo,
 		"party_size": strings.TrimSpace(form["party_size"]),
-		"signature": "", "legal_ack": "",
+		"signature":  "", "legal_ack": "",
 	}
 	for _, f := range []string{"surname", "first_name", "doc_number", "visa_number", "res_street", "res_city"} {
 		vals[f] = raw[f]
@@ -529,18 +529,18 @@ func buildFormView(ctx context.Context, d formPageDeps, r *http.Request, apt *Ap
 			Host:          formPagesHost(ctx, d.pool, apt.ID),
 			GuestEndonyms: GuestEndonyms,
 		},
-		ReservationID:   res.id,
-		BackURL:         back,
-		DatesLink:       formPagesDatesLink(back, editing, formPagesCanPick(apt)),
-		HideBack:        formPagesCanPick(apt) && !editing,
-		PersonNumber:    prog.filled + 1,
-		StayFromLabel:   formPagesDateLabel(stayFrom, lang),
-		StayToLabel:     formPagesDateLabel(stayTo, lang),
-		NightsLabel:     formPagesNights(stayFrom, stayTo, lang),
-		StayFromValue:   stayFrom,
-		StayToValue:     stayTo,
-		
-		StartStep:       0,
+		ReservationID: res.id,
+		BackURL:       back,
+		DatesLink:     formPagesDatesLink(back, editing, formPagesCanPick(apt)),
+		HideBack:      formPagesCanPick(apt) && !editing,
+		PersonNumber:  prog.filled + 1,
+		StayFromLabel: formPagesDateLabel(stayFrom, lang),
+		StayToLabel:   formPagesDateLabel(stayTo, lang),
+		NightsLabel:   formPagesNights(stayFrom, stayTo, lang),
+		StayFromValue: stayFrom,
+		StayToValue:   stayTo,
+
+		StartStep: 0,
 	}
 	if guest != nil {
 		view.GuestID = guest.id
@@ -689,7 +689,9 @@ func formPagesCSRF(r *http.Request) string { return formPagesCSRFToken() }
 
 func formPagesCSRFToken() string { return "*" }
 
-func formPagesHost(ctx context.Context, pool *pgxpool.Pool, aptID int64) HostContact { return HostContact{} }
+func formPagesHost(ctx context.Context, pool *pgxpool.Pool, aptID int64) HostContact {
+	return HostContact{}
+}
 
 func formPagesStartStep(raw string) int {
 	raw = strings.TrimSpace(raw)

@@ -25,18 +25,17 @@ import (
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/clientip"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
-
 )
 
 const (
-	draftCookieName       = "ubyhost_draft"
-	draftCookieMaxAge     = 7 * 24 * 3600
-	guestDraftMaxWrites   = 120
-	draftMaxFieldLen      = 60
-	draftMaxPerStay       = 20
-	draftMaxBodyBytes     = 16384
-	maxImageBytes         = 5 * 1024 * 1024
-	maxPDFBytes           = 15 * 1024 * 1024
+	draftCookieName     = "ubyhost_draft"
+	draftCookieMaxAge   = 7 * 24 * 3600
+	guestDraftMaxWrites = 120
+	draftMaxFieldLen    = 60
+	draftMaxPerStay     = 20
+	draftMaxBodyBytes   = 16384
+	maxImageBytes       = 5 * 1024 * 1024
+	maxPDFBytes         = 15 * 1024 * 1024
 )
 
 var (
@@ -347,10 +346,10 @@ func draftPostHandler(d draftScanDeps) http.HandlerFunc {
 }
 
 var scanMessages = map[string]string{
-	"ocr_no_file":       "Choose a photo of your document first.",
-	"ocr_bad_file":      "Use a JPEG, PNG or WebP photo of the document (not a PDF).",
-	"ocr_failed":        "The photo could not be read. Fill the fields by hand.",
-	"ocr_nothing_read":  "We could not read the photo clearly. Fill the fields by hand.",
+	"ocr_no_file":      "Choose a photo of your document first.",
+	"ocr_bad_file":     "Use a JPEG, PNG or WebP photo of the document (not a PDF).",
+	"ocr_failed":       "The photo could not be read. Fill the fields by hand.",
+	"ocr_nothing_read": "We could not read the photo clearly. Fill the fields by hand.",
 }
 
 func scanJSON(w http.ResponseWriter, status int, body map[string]any) {

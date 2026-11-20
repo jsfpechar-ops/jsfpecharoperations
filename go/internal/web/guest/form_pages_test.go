@@ -10,15 +10,15 @@ import (
 )
 
 type formPagesGolden struct {
-	Now        string `json:"now"`
-	Token      string `json:"token"`
-	PinToken   string `json:"pin_token"`
-	StayID     int64  `json:"stay_id"`
-	StayPinID  int64  `json:"stay_pin_id"`
-	AdultID    int64  `json:"adult_id"`
-	MinorID    int64  `json:"minor_id"`
-	ForeignID  int64  `json:"foreign_id"`
-	Cases      []formPagesGoldenCase `json:"cases"`
+	Now       string                `json:"now"`
+	Token     string                `json:"token"`
+	PinToken  string                `json:"pin_token"`
+	StayID    int64                 `json:"stay_id"`
+	StayPinID int64                 `json:"stay_pin_id"`
+	AdultID   int64                 `json:"adult_id"`
+	MinorID   int64                 `json:"minor_id"`
+	ForeignID int64                 `json:"foreign_id"`
+	Cases     []formPagesGoldenCase `json:"cases"`
 }
 
 type formPagesGoldenCase struct {
