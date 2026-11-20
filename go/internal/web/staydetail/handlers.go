@@ -55,13 +55,18 @@ func detailHandler(deps Deps, now func() time.Time) http.HandlerFunc {
 			http.NotFound(w, r)
 			return
 		}
+		suppressUndo := v.Reservation.ArchivedAt != ""
+		if suppressUndo {
+			suppressUndo = r.URL.Query().Get("undo_stay") == strconv.FormatInt(id, 10)
+		}
 		page := layout.Page{
-			Title:      v.Reservation.InternalName + " · " + dateCZ(v.Reservation.DateFrom),
-			Nav:        "reservations",
-			BodyKind:   "detail",
-			V2:         true,
-			HowKey:     "stay",
-			BodyAlerts: true,
+			Title:            v.Reservation.InternalName + " · " + dateCZ(v.Reservation.DateFrom),
+			Nav:              "reservations",
+			BodyKind:         "detail",
+			V2:               true,
+			HowKey:           "stay",
+			BodyAlerts:       true,
+			SuppressUndoStay: suppressUndo,
 		}
 		data := pageData{View: v, PaymentsHidden: paymentsHidden(deps.Getenv), Access: newIdentityAccess(host), Now: at}
 		if v.Progress.Status == "failed" {
