@@ -83,10 +83,7 @@ func TestClaimOpsGoldenHTTP(t *testing.T) {
 }
 
 func TestMarkFiledByHandUnit(t *testing.T) {
-	pool := testPoolOptional(t)
-	if pool == nil {
-		return
-	}
+	pool := dbPool(t)
 	ctx := context.Background()
 	now := time.Date(2026, 6, 15, 12, 0, 0, 0, time.UTC)
 	stamp := "2026-01-01T00:00:00+00:00"
