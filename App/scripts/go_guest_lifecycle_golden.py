@@ -34,7 +34,6 @@ def main() -> int:
 
 
 def build_golden() -> str:
-    doc = 
     doc = {
         "now": NOW.isoformat(),
         "seed": [],
