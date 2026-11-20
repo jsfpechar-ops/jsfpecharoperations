@@ -1,0 +1,66 @@
+{
+ "cases": [
+  {
+   "body": "_csrf=golden",
+   "flash_key": "flash.error.reported_kept",
+   "location": "/guests/201",
+   "method": "POST",
+   "name": "archive_sent_refused",
+   "path": "/guests/201/archive",
+   "status": 303,
+   "user": 1
+  },
+  {
+   "body": "_csrf=golden",
+   "flash_key": "flash.housebook.archived",
+   "location": "/housebook",
+   "method": "POST",
+   "name": "archive_ok",
+   "path": "/guests/202/archive",
+   "status": 303,
+   "user": 1
+  },
+  {
+   "body": "_csrf=golden",
+   "flash_key": "flash.housebook.restored",
+   "location": "/housebook",
+   "method": "POST",
+   "name": "unarchive_ok",
+   "path": "/guests/203/unarchive",
+   "status": 303,
+   "user": 1
+  },
+  {
+   "body": "_csrf=golden",
+   "flash_key": "flash.error.reported_kept",
+   "location": "/guests/204",
+   "method": "POST",
+   "name": "delete_sent_refused",
+   "path": "/guests/204/delete",
+   "status": 303,
+   "user": 1
+  },
+  {
+   "body": "_csrf=golden",
+   "flash_key": "flash.guests.removed",
+   "location": "/reservations/20",
+   "method": "POST",
+   "name": "delete_ok",
+   "path": "/guests/205/delete",
+   "status": 303,
+   "user": 1
+  },
+  {
+   "body": "_csrf=golden",
+   "flash_key": "flash.error.confirm_duplicate",
+   "location": "/guests/206",
+   "method": "POST",
+   "name": "resend_no_confirm",
+   "path": "/guests/206/resend",
+   "status": 303,
+   "user": 1
+  }
+ ],
+ "now": "2026-06-15T12:00:00+00:00",
+ "seed": []
+}

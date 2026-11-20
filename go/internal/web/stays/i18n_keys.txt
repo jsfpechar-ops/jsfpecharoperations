@@ -29,6 +29,10 @@ flash.error.*
 flash.guest.restricted
 flash.guest.unrestricted
 flash.guests.identity_verified
+flash.guests.removed
+flash.guests.resent
+flash.housebook.archived
+flash.housebook.restored
 flash.guests.id_check_recorded
 flash.identity.revealed
 flash.reservations.created
