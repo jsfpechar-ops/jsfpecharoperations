@@ -2,11 +2,13 @@ package guest
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -77,12 +79,18 @@ func TestResolveKeyToken(t *testing.T) {
 	}
 	ctx := context.Background()
 	stamp := "2026-01-01T00:00:00Z"
+	aptID := time.Now().UnixNano() % 9000000000
+	if aptID < 1000000 {
+		aptID += 1000000
+	}
+	userID := aptID
+	tok := fmt.Sprintf("perm%dtok", aptID)
 	mustExecGuest(t, ctx, pool, `INSERT INTO user_account (id, username, password_hash, role, active, created_at)
-		VALUES (9020172001, 'g1720@example.test', 'x', 'host', 1, $1) ON CONFLICT DO NOTHING`, stamp)
+		VALUES ($1, $2, 'x', 'host', 1, $3) ON CONFLICT DO NOTHING`, userID, fmt.Sprintf("g%d@example.test", aptID), stamp)
 	mustExecGuest(t, ctx, pool, `INSERT INTO apartment (id, owner_user_id, internal_name, city_en, active, permalink_token, permalink_pin, created_at)
-		VALUES (9020172001, 9020172001, 'Flat 1720', 'Prague', 1, 'perm9020172001tok', '1234', $1) ON CONFLICT DO NOTHING`, stamp)
-	apt, link, moved, ok := ResolveKey(ctx, pool, "perm9020172001tok")
-	if !ok || apt == nil || link != "perm9020172001tok" || moved {
+		VALUES ($1, $2, 'Flat', 'Prague', 1, $3, '1234', $4)`, aptID, userID, tok, stamp)
+	apt, link, moved, ok := ResolveKey(ctx, pool, tok)
+	if !ok || apt == nil || link != tok || moved {
 		t.Fatalf("resolve token ok=%v link=%q moved=%v", ok, link, moved)
 	}
 }
@@ -94,16 +102,21 @@ func TestOpenLinkSlugRedirect(t *testing.T) {
 	}
 	ctx := context.Background()
 	stamp := "2026-01-01T00:00:00Z"
+	aptID := time.Now().UnixNano()%9000000000 + 1000000
+	userID := aptID
+	curSlug := fmt.Sprintf("flat-%06d-abc234", aptID%1000000)
+	oldSlug := fmt.Sprintf("old-%06d-abc235", aptID%1000000)
+	tok := fmt.Sprintf("perm%dtok", aptID)
 	mustExecGuest(t, ctx, pool, `INSERT INTO user_account (id, username, password_hash, role, active, created_at)
-		VALUES (9020172002, 'g1721@example.test', 'x', 'host', 1, $1) ON CONFLICT DO NOTHING`, stamp)
+		VALUES ($1, $2, 'x', 'host', 1, $3) ON CONFLICT DO NOTHING`, userID, fmt.Sprintf("g%d@example.test", aptID), stamp)
 	mustExecGuest(t, ctx, pool, `INSERT INTO apartment (id, owner_user_id, internal_name, city_en, active, permalink_token, permalink_pin, created_at)
-		VALUES (9020172002, 9020172002, 'Flat 1721', 'Prague', 1, 'perm9020172002tok', '1234', $1) ON CONFLICT DO NOTHING`, stamp)
+		VALUES ($1, $2, 'Flat', 'Prague', 1, $3, '1234', $4)`, aptID, userID, tok, stamp)
 	mustExecGuest(t, ctx, pool, `INSERT INTO apartment_slug (slug, apartment_id, is_current, created_at)
-		VALUES ('flat-9020172002cur', 9020172002, 1, $1) ON CONFLICT (slug) DO NOTHING`, stamp)
+		VALUES ($1, $2, 1, $3)`, curSlug, aptID, stamp)
 	mustExecGuest(t, ctx, pool, `INSERT INTO apartment_slug (slug, apartment_id, is_current, created_at)
-		VALUES ('old-flat-9020172002', 9020172002, 0, $1) ON CONFLICT (slug) DO NOTHING`, stamp)
-	r := httptest.NewRequest(http.MethodGet, "/l/old-flat-9020172002", nil)
-	_, link, early := OpenLink(r, pool, "old-flat-9020172002", "en")
+		VALUES ($1, $2, 0, $3)`, oldSlug, aptID, stamp)
+	r := httptest.NewRequest(http.MethodGet, "/l/"+oldSlug, nil)
+	_, link, early := OpenLink(r, pool, oldSlug, "en")
 	if early == nil {
 		t.Fatal("want 301")
 	}
@@ -113,7 +126,7 @@ func TestOpenLinkSlugRedirect(t *testing.T) {
 		t.Fatalf("status %d", rr.Code)
 	}
 	loc := rr.Header().Get("Location")
-	if !strings.Contains(loc, "flat-9020172002cur") {
+	if !strings.Contains(loc, curSlug) {
 		t.Fatalf("location %q link %q", loc, link)
 	}
 }

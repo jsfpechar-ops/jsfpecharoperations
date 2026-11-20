@@ -148,10 +148,13 @@ func loadApartmentDetail(ctx context.Context, pool *pgxpool.Pool, column, value 
 		legal_entity_id, data_controller_entity_id
 		FROM apartment WHERE %s = $1 AND active = 1 AND archived_at IS NULL`, column)
 	var a Apartment
-	var ctrl *int64
+	var legal, ctrl *int64
 	err := pool.QueryRow(ctx, q, value).Scan(
 		&a.ID, &a.InternalName, &a.UbyName, &a.CityEn, &a.PermalinkToken, &a.PermalinkPIN,
-		&a.PassportPhotoPolicy, &a.LockProvider, &a.OwnerUserID, &a.LegalEntityID, &ctrl)
+		&a.PassportPhotoPolicy, &a.LockProvider, &a.OwnerUserID, &legal, &ctrl)
+	if legal != nil {
+		a.LegalEntityID = *legal
+	}
 	if err == pgx.ErrNoRows {
 		return nil, false
 	}
