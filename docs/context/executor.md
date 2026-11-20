@@ -33,6 +33,8 @@ Read this with AGENTS.md and your brief. Open nothing else. You have no subagent
 
 One per changed page, at 390 px wide. Add 360 and 1280 only if the layout changed. Look at each once; do not retake.
 
+Go **page** ports: run the §6 block in `docs/tasks/1820-go-page-screenshot-parity-tool.md` (`go_page_parity_screenshots.py`, 390/768/1280, report before merge guard).
+
 ## Report
 
 `docs/tasks/NNNN-report.md`, 600 tokens at most: files changed, each command with its last 5 lines, §7 ticked, Deviations, Questions, owner steps left. Then set `Status: review` (or `blocked`) and open one PR.
