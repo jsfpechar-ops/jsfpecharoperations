@@ -1,6 +1,6 @@
 # 1705: Go property settings 6: completeness test, path collisions, rollout wave P
 
-Status: todo — scoped (final brief 2026-11-15). Executable only after its exact-diff pass: sidecars in `docs/tasks/1705-files/`, anchors and sha256 table (§2), written to the rules in [workflow](../context/workflow.md#writing-briefs-for-haiku). Until then the executor must not start it.
+Status: review (exact-diff backfill 2026-11-20: sidecars in `docs/tasks/1705-files/`; Go implementation and runbook wave P already on `main` — executor verifies `MANIFEST.sha256` and reapplies only on a clean worktree).
 Depends on: 1700-1704 and 1525/1527 decisions | Base commit: current tip of the working branch | Branch: task/1705-go-property-settings-switch
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (split in two briefs if the exact-diff pass finds more)
 Tier: B (Sonnet writes the exact-diff pass; orchestrator reads the diff of the risk-listed files)
@@ -24,6 +24,15 @@ Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (no new pers
 Build the test inventory from the Python routes in this thread and match each method to the production Go mux. Reuse the handler-level parity tests in the preceding briefs for response behavior.
 
 Both `deploy/lightsail/caddy/Caddyfile.acme` and `deploy/lightsail/caddy/Caddyfile.cloudflare` select Go by path for every HTTP method. The Python fallback handles only GET and HEAD when Go returns the explicit route-not-ported 501. Include matches under `/apartments/*` from onboarding, bookings and guest-guide routes and matches under `/settings/*` from exports in the collision review. A broad match requires coverage of every Python method it captures. Use narrower selectors for wave P where coverage is incomplete.
+
+**All implementation code is pre-written on `main`.** Sidecars: `docs/tasks/1705-files/<repo path>.txt` (the runbook change is `docs/plans/go-cutover-runbook.md.patch.txt`; apply with `patch -p1` from the repo root). Step 1 copies the test file and applies the patch; never retype or edit them.
+
+| sha256 | file | action |
+|---|---|---|
+| `93a987c04d360ec5fb4cc44e5d25c77c908427ac4066dac24d9ceadffb9daec7` | `go/cmd/ubyhost-web/register_web_properties_all_test.go` | create |
+| `f0a0a8ee9f5567260c72d048a88e550317b46edf977f13500328777a7c472d76` | `docs/plans/go-cutover-runbook.md` | edit (via `.patch`) |
+
+Full manifest: `docs/tasks/1705-files/MANIFEST.sha256`.
 
 ## 3. Files
 
