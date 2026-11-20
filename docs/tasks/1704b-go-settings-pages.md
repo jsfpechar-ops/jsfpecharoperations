@@ -33,6 +33,8 @@ Rules (AGENTS.md): 1 filing correctness is not touched (read-only page); 2 priva
 | `2efe43f2c479df816e6ee82bc194cc169a8883c4bc272c7fbf02074a573527c0` | `go/cmd/ubyhost-web/register_web_settings.go` | create | 30 |
 | `2a18c382eafd91fb15c0e9eaf535db36748f35f85b85dc9d628e60b51e62fa93` | `go/cmd/ubyhost-web/register_web_settings_test.go` | create | 29 |
 
+Full manifest: `docs/tasks/1704b-files/MANIFEST.sha256` (exact-diff backfill 2026-11-20 from commit `b7a8c45dd` / `1704b step 1`, before 1704c template replacements).
+
 **How the code is built (for the reviewer; the executor reads no Go file, it only copies and runs).**
 
 - `settings/settings.go`: `Handler(pool, getenv, now, group)` is `require_login` (`hostweb.Login`, `Cache-Control: no-store, private`), then one loader per group, then `layout.Render` with nav `settings`, body kind `settings`, `V2`, `BodyAlerts` (the page draws the alert stack itself, as `_host_alerts.html` does in settings.html). `group == ""` is the index. A group without a loader answers 404 (so `Handler(..., "security")` is a 404 until 1704c). `Groups` is `SETTINGS_GROUPS` in Python's order (a test pins it). Unlike Python, which builds every value for every group, each loader reads only what its group shows.

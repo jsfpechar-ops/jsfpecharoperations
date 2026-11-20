@@ -29,6 +29,8 @@ Rules (AGENTS.md): 1 filing correctness is not touched (a read-only register; th
 | `6a8cbae383bebfdfc678b8c82268fb6aa7b10b2d21f36a39da2e1c2e6b2d8042` | `go/cmd/ubyhost-web/register_web_housebook.go` | create | 24 |
 | `e4929c2a2564786aefd5007b2b1cb8c195878f233c1f5d12a965533d70f7e844` | `go/cmd/ubyhost-web/register_web_housebook_test.go` | create | 23 |
 
+Full manifest: `docs/tasks/1704a-files/MANIFEST.sha256` (exact-diff backfill 2026-11-20 from `main`).
+
 **How the code is built (for the reviewer; the executor reads no Go file, it only copies and runs).**
 
 - `exports/housebook_view.go`: a new file in the existing `exports` package that only adds exported readers on top of the unexported CSV ones: `LoadHousebookPage` (reads `?apartment=`, `?from=`, `?to=` with the package's own `queryInt` and `queryDate`, then `housebookGuests` for the rows, `housebookRow` for the 17 CSV texts, `archivedHousebookSQL` for the archived guests, one new apartment list query), plus `DateCZ` and `PurposeLabelCS`, thin wrappers of the existing `dateCZ` and `purposeLabel`. No existing line of the package changes. The owner is `ownerID(h)` (`session.Host.Workspace.ID`); a missing owner is an error, never Python's "`? IS NULL OR`" that would read every host (same rule as `requireOwner` in the CSV route). Every query is scoped: guests and archived guests by `a.owner_user_id = $1`, apartments by `owner_user_id IS NOT DISTINCT FROM $1`. Doc and visa numbers go through `maskIdentifier` (`access.mask_identifier`) unless `identityVisible(h, &guestID)` (`access.identity_visible`).

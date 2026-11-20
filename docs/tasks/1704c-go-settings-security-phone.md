@@ -30,6 +30,8 @@ Rules (AGENTS.md): 1 filing correctness is not touched; 2 privacy: no new person
 | `2c62902933af8d601e85679e538b6615aa62d38cd4e2d6b88d7f7341368a41a5` | `go/cmd/ubyhost-web/register_web_settings_security_test.go` | create | 26 |
 | `5bbd6f718143cf1ad606ec32eeaed17ce75bad2295cef439983ef4a4cd7e6c02` | `go/internal/web/settings/settings.go` | edit (step 2; hash after the edits) | 123 |
 
+Full manifest: `docs/tasks/1704c-files/MANIFEST.sha256` (exact-diff backfill 2026-11-20 from `main` final tree).
+
 **How the code is built (for the reviewer; the executor reads no Go file, it only copies and runs).**
 
 - `security.go`: `SecurityData` (fields `TOTPEnabled`, `PasskeysAvailable`, `Passkeys []Passkey`) is the one page-data struct of the security page and `loadSecurity` the one function that builds it. **For brief 1764:** add `DeviceKind string` to `SecurityData` in `go/internal/web/settings/security.go` and set it in `loadSecurity`; edit the template `settings.passkeys` in `group_security.tmpl` (keeps `id="settings-passkeys"` inside `id="settings-security"` and the `passkeys.*` keys); do not touch the routes. Both queries are keyed by `h.Account.ID` (Python reads `auth.current_user`, so an admin previewing a host still sees the admin's own passkeys and two-factor state; a test pins it), like 1704b's account row. `authpage.PasskeysAvailable(getenv)` is the existing port of `passkeys.available()`.

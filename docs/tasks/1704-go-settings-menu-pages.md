@@ -1,6 +1,6 @@
 # 1704: Go property settings 5: settings, menu, guest links, guide and housebook pages
 
-Status: todo — index of 1704a/b/c (re-scoped 2026-11-17). Not run itself: each sub-brief is executable only after its own exact-diff pass (sidecars, anchors, sha256 table), written to the rules in [workflow](../context/workflow.md#writing-briefs-for-haiku).
+Status: review — index of 1704a/b/c (re-scoped 2026-11-17). Exact-diff sidecars for 1704a/b/c landed 2026-11-20 (`docs/tasks/1704{a,b,c}-files/`); wave P switch remains brief 1705.
 Depends on: 1380/1381 host layout (done) | Base commit: current tip of the working branch | Branch: task/1704-go-settings-menu-pages
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (split in two briefs if the exact-diff pass finds more)
 Tier: B (Sonnet writes the exact-diff pass; orchestrator reads the diff of the risk-listed files)
