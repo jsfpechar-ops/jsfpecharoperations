@@ -1198,13 +1198,13 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 /* 0903: phone and tablet layout pass for the pages still on the host.css family. */
 .host-workspace fieldset>legend{float:left;width:100%;padding:0;margin:0 0 var(--space-3);box-sizing:border-box}
 .host-workspace fieldset>legend+*{clear:both}
-.host-workspace .ui-form-actions{gap:var(--space-3)}
+.host-workspace .ui-form-actions{gap:var(--space-3);}
 .host-workspace .ui-section>*+:is(.ui-btn,form){margin-top:var(--space-3)}
-.host-workspace :is(.account-parts,.fee-adjust-grid){gap:var(--space-3)}
+.host-workspace :is(.account-parts,.fee-adjust-grid){gap:var(--space-3);}
 .host-workspace .page-help-btn::before{display:none}
 @media (min-width:768px) {
   body.host-workspace:not(.v2):not(.admin-workspace) .ui-sidebar {
-    --host-sidebar-background:#fcf8f5;
+    --host-sidebar-background:var(--host-workspace-rail);
     background-color:var(--host-sidebar-background);
   }
 }

@@ -4,7 +4,7 @@ font-family:var(--font-sans);color:var(--ink);font-size:14px}
 *{box-sizing:border-box}body{margin:0;background:var(--bg)}
 @media (min-width:768px) {
   body.v2.host-workspace:not(.admin-workspace) {
-    --side:#fcf8f5;
+    --side:var(--host-workspace-rail);
     background-color:var(--s);
   }
 }
