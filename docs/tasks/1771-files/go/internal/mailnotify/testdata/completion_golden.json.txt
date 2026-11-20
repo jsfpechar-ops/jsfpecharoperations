@@ -1,0 +1,262 @@
+{
+ "cases": [
+  {
+   "input": {
+    "checkin": "16.11.2026 14:00",
+    "checkout": "18.11.2026 10:00",
+    "dates": "16.11.2026 – 18.11.2026",
+    "door_code": null,
+    "expected": 2,
+    "fee": null,
+    "filled": 2,
+    "host": {
+     "email": "desk@example.test",
+     "name": "Pension Lípa s.r.o.",
+     "phone": "+420 601 234 567",
+     "seat": "Hlavní 1, Praha"
+    },
+    "host_url": "https://app.example.test/reservations/501",
+    "lang": "cs",
+    "property_name": "Byt Vinohrady, Praha",
+    "sent_details": true
+   },
+   "name": "completion_cs_plain",
+   "output": {
+    "html": "<!doctype html>\n<html lang=\"cs\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<meta name=\"color-scheme\" content=\"light only\">\n<title>Byt Vinohrady, Praha</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f7f7f5;\">\n<div style=\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\">Všichni na tomto pobytu jsou zaregistrovaní – nic dalšího není potřeba. ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f7f7f5;border-collapse:collapse;\">\n<tr><td align=\"center\" style=\"padding:28px 12px;\">\n<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\">\n<tr><td style=\"padding:28px 24px 0 24px;\">\n<img src=\"https://app.example.test/static/ubyhost-logo.jpg\" width=\"180\" alt=\"UbyHost\" style=\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\">\n</td></tr>\n<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">Hotovo</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Všichni hosté pro Byt Vinohrady, Praha jsou zaregistrovaní. Nic dalšího dělat nemusíte.</p></td></tr><tr><td style=\"padding:24px 24px 0 24px;\"><div style=\"background:#f7f7f5;border:1px solid #e4e4e1;border-radius:12px;padding:18px 20px;\"><div style=\"font:600 15px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 10px 0;\">Váš pobyt</div><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\"><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Registrovaní hosté</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">2 z 2</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Příjezd</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">16.11.2026 14:00</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Odjezd</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">18.11.2026 10:00</td></tr></table></div></td></tr>{{receipt_details}}<tr><td style=\"padding:14px 24px 0 24px;\"><div style=\"font:400 14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\"><a href=\"https://app.example.test/reservations/501\" style=\"color:#ad4942;text-decoration:underline;\">Zobrazit stránku pobytu (jen pro hostitele)</a></div></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 14px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">Úřední hlášení vyřizuje váš hostitel. Tento e-mail je potvrzení pro vás, nikoli úřední doklad.</p></td></tr>\n<tr><td style=\"padding:28px 24px 28px 24px;\">\n<div style=\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">\n<div>UbyHost je služba pro registraci hostů, kterou váš hostitel používá.</div><div style=\"padding:4px 0 0 0;\">Tento e-mail dostáváte, protože jste touto adresou potvrdili pobyt: Byt Vinohrady, Praha.</div><div style=\"padding:4px 0 0 0;\">Váš hostitel: Pension Lípa s.r.o.</div><div style=\"padding:4px 0 0 0;\"><a href=\"mailto:desk@example.test\" style=\"color:#50504c;text-decoration:underline;\">desk@example.test</a> · <a href=\"tel:+420601234567\" style=\"color:#50504c;text-decoration:underline;\">+420 601 234 567</a></div><div style=\"padding:4px 0 0 0;\">Odpovězte na tento e-mail a spojíte se s hostitelem.</div>\n</div>\n</td></tr>\n</table>\n</td></tr>\n</table>\n</body>\n</html>\n",
+    "qr_spayd": "",
+    "subject": "Registrace hotová – Byt Vinohrady, Praha. Nic dalšího nemusíte dělat",
+    "text": "Všichni hosté pro Byt Vinohrady, Praha jsou zaregistrovaní. Nic dalšího dělat nemusíte.\n\nRegistrovaní hosté: 2 z 2\nPříjezd: 16.11.2026 14:00\nOdjezd: 18.11.2026 10:00\n\n{{receipt_details}}\n\nZobrazit stránku pobytu (jen pro hostitele): https://app.example.test/reservations/501\n\nÚřední hlášení vyřizuje váš hostitel. Tento e-mail je potvrzení pro vás, nikoli úřední doklad.\n\n--\nUbyHost je služba pro registraci hostů, kterou váš hostitel používá.\nTento e-mail dostáváte, protože jste touto adresou potvrdili pobyt: Byt Vinohrady, Praha.\nVáš hostitel: Pension Lípa s.r.o.\ndesk@example.test · +420 601 234 567\nOdpovězte na tento e-mail a spojíte se s hostitelem."
+   }
+  },
+  {
+   "input": {
+    "checkin": "16.11.2026 14:00",
+    "checkout": "18.11.2026 10:00",
+    "dates": "16.11.2026 – 18.11.2026",
+    "door_code": {
+     "checkin": "16.11.2026 14:00",
+     "checkout": "18.11.2026 10:00",
+     "first_use_by": "16.11.2026 10:00"
+    },
+    "expected": 3,
+    "fee": {
+     "lines": [
+      [
+       2,
+       1700
+      ],
+      [
+       1,
+       1700
+      ]
+     ],
+     "rate": 850,
+     "total": 3400,
+     "vs": "2026111601",
+     "ways": [
+      {
+       "account": "CZ6508000000192000145399",
+       "key": "iban",
+       "payee": "Pension Lípa s.r.o.",
+       "spayd": "SPD*1.0*ACC:CZ6508000000192000145399*AM:3400.00*CC:CZ*X-VS:2026111601"
+      }
+     ]
+    },
+    "filled": 3,
+    "host": {
+     "email": "",
+     "name": "Olaf Example",
+     "phone": "",
+     "seat": ""
+    },
+    "host_url": "https://app.example.test/reservations/502",
+    "lang": "en",
+    "property_name": "Garden Flat",
+    "sent_details": true
+   },
+   "name": "completion_en_door_code_fee_iban",
+   "output": {
+    "html": "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<meta name=\"color-scheme\" content=\"light only\">\n<title>Garden Flat</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f7f7f5;\">\n<div style=\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\">Everyone on this stay is registered. How to pay the stay fee is inside. ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f7f7f5;border-collapse:collapse;\">\n<tr><td align=\"center\" style=\"padding:28px 12px;\">\n<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\">\n<tr><td style=\"padding:28px 24px 0 24px;\">\n<img src=\"https://app.example.test/static/ubyhost-logo.jpg\" width=\"180\" alt=\"UbyHost\" style=\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\">\n</td></tr>\n<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">One thing left: the stay fee</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Everyone for Garden Flat is registered. Only the local stay fee below is left.</p></td></tr><tr><td style=\"padding:24px 24px 0 24px;\"><div style=\"background:#f7f7f5;border:1px solid #e4e4e1;border-radius:12px;padding:18px 20px;\"><div style=\"font:600 15px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 10px 0;\">Your stay</div><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\"><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Guests registered</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">3 of 3</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Check-in</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">16.11.2026 14:00</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Check-out</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">18.11.2026 10:00</td></tr></table></div></td></tr>{{receipt_details}}<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">Local stay fee</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">3400 CZK to pay for your group. It is paid once, to your host.</p></td></tr><tr><td style=\"padding:24px 24px 0 24px;\"><div style=\"background:#f7f7f5;border:1px solid #e4e4e1;border-radius:12px;padding:18px 20px;\"><div style=\"font:600 15px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 10px 0;\">How it is calculated</div><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\"><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Guest 1</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">2 nights × 850 CZK = 1700 CZK</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Guest 2</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">1 nights × 850 CZK = 1700 CZK</td></tr></table></div></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Choose one way to pay:</p></td></tr><tr><td style=\"padding:24px 24px 0 24px;\"><div style=\"background:#f7f7f5;border:1px solid #e4e4e1;border-radius:12px;padding:18px 20px;\"><div style=\"font:600 15px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 10px 0;\">Bank transfer</div><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\"><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Recipient</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">Pension Lípa s.r.o.</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Account (IBAN)</td><td style=\"padding:0 0 8px 0;text-align:right;font:400 14px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;color:#20201e;word-break:break-all;vertical-align:top;\">CZ6508000000192000145399</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Amount</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">3400 CZK</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Variable symbol</td><td style=\"padding:0 0 8px 0;text-align:right;font:400 14px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;color:#20201e;word-break:break-all;vertical-align:top;\">2026111601</td></tr></table></div></td></tr><tr><td style=\"padding:8px 24px 0 24px;\"><img src=\"cid:stayfeeqr\" width=\"200\" height=\"200\" alt=\"Payment QR code for your banking app\" style=\"display:block;border:0;width:200px;height:200px;\"></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Already paid? Then there is nothing more to do.</p></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">Your door code</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 22px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">{{door_code}}</p></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">The code is active from check-in at 16.11.2026 14:00 until check-out by 18.11.2026 10:00.</p></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">You must enter it on the lock for the first time within 24 hours of check-in, by 16.11.2026 10:00, or it expires. Contact your host and they will issue a new code.</p></td></tr><tr><td style=\"padding:14px 24px 0 24px;\"><div style=\"font:400 14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\"><a href=\"https://app.example.test/reservations/502\" style=\"color:#ad4942;text-decoration:underline;\">See your stay page (host only)</a></div></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 14px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">Your host takes care of the official registration with the authorities. This e-mail is your receipt, not an official confirmation.</p></td></tr>\n<tr><td style=\"padding:28px 24px 28px 24px;\">\n<div style=\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">\n<div>UbyHost is the guest-registration service your host uses.</div><div style=\"padding:4px 0 0 0;\">You received this e-mail because your stay at Garden Flat is registered with this address.</div><div style=\"padding:4px 0 0 0;\">Your host: Olaf Example</div>\n</div>\n</td></tr>\n</table>\n</td></tr>\n</table>\n</body>\n</html>\n",
+    "qr_spayd": "SPD*1.0*ACC:CZ6508000000192000145399*AM:3400.00*CC:CZ*X-VS:2026111601",
+    "subject": "Everyone is registered for Garden Flat. Stay fee to pay: 3400 CZK",
+    "text": "Everyone for Garden Flat is registered. Only the local stay fee below is left.\n\nGuests registered: 3 of 3\nCheck-in: 16.11.2026 14:00\nCheck-out: 18.11.2026 10:00\n\n{{receipt_details}}\n\nLocal stay fee\n3400 CZK to pay for your group. It is paid once, to your host.\n\nHow it is calculated\nGuest 1: 2 nights × 850 CZK = 1700 CZK\nGuest 2: 1 nights × 850 CZK = 1700 CZK\n\nChoose one way to pay:\n\nBank transfer\nRecipient: Pension Lípa s.r.o.\nAccount (IBAN): CZ6508000000192000145399\nAmount: 3400 CZK\nVariable symbol: 2026111601\n\nAlready paid? Then there is nothing more to do.\n\nYour door code\n{{door_code}}\nThe code is active from check-in at 16.11.2026 14:00 until check-out by 18.11.2026 10:00.\nYou must enter it on the lock for the first time within 24 hours of check-in, by 16.11.2026 10:00, or it expires. Contact your host and they will issue a new code.\n\nSee your stay page (host only): https://app.example.test/reservations/502\n\nYour host takes care of the official registration with the authorities. This e-mail is your receipt, not an official confirmation.\n\n--\nUbyHost is the guest-registration service your host uses.\nYou received this e-mail because your stay at Garden Flat is registered with this address.\nYour host: Olaf Example"
+   }
+  },
+  {
+   "input": {
+    "checkin": "",
+    "checkout": "",
+    "dates": "16.11.2026",
+    "door_code": null,
+    "expected": null,
+    "fee": null,
+    "filled": 0,
+    "host": null,
+    "host_url": "",
+    "lang": "de",
+    "property_name": "Ferienwohnung Nord",
+    "sent_details": false
+   },
+   "name": "completion_de_no_expected_no_host",
+   "output": {
+    "html": "<!doctype html>\n<html lang=\"de\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<meta name=\"color-scheme\" content=\"light only\">\n<title>Ferienwohnung Nord</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f7f7f5;\">\n<div style=\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\">Alle Gäste dieses Aufenthalts sind registriert. Nichts weiter zu tun. ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f7f7f5;border-collapse:collapse;\">\n<tr><td align=\"center\" style=\"padding:28px 12px;\">\n<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\">\n<tr><td style=\"padding:28px 24px 0 24px;\">\n<img src=\"https://app.example.test/static/ubyhost-logo.jpg\" width=\"180\" alt=\"UbyHost\" style=\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\">\n</td></tr>\n<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">Alles erledigt</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Alle Gäste für Ferienwohnung Nord sind registriert. Sie müssen nichts weiter tun.</p></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 14px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">Ihr Gastgeber kümmert sich um die offizielle Meldung bei den Behörden. Diese E-Mail ist Ihre Quittung, keine amtliche Bestätigung.</p></td></tr>\n<tr><td style=\"padding:28px 24px 28px 24px;\">\n<div style=\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">\n<div>UbyHost ist der Gästeregistrierungsdienst, den Ihr Gastgeber nutzt.</div><div style=\"padding:4px 0 0 0;\">Sie erhalten diese E-Mail, weil Ihr Aufenthalt in Ferienwohnung Nord mit dieser Adresse registriert ist.</div>\n</div>\n</td></tr>\n</table>\n</td></tr>\n</table>\n</body>\n</html>\n",
+    "qr_spayd": "",
+    "subject": "Sie sind für Ferienwohnung Nord registriert: nichts weiter zu tun",
+    "text": "Alle Gäste für Ferienwohnung Nord sind registriert. Sie müssen nichts weiter tun.\n\nIhr Gastgeber kümmert sich um die offizielle Meldung bei den Behörden. Diese E-Mail ist Ihre Quittung, keine amtliche Bestätigung.\n\n--\nUbyHost ist der Gästeregistrierungsdienst, den Ihr Gastgeber nutzt.\nSie erhalten diese E-Mail, weil Ihr Aufenthalt in Ferienwohnung Nord mit dieser Adresse registriert ist."
+   }
+  },
+  {
+   "input": {
+    "checkin": "",
+    "checkout": "17.11.2026 10:00",
+    "dates": "16.11.2026 – 17.11.2026",
+    "door_code": {
+     "checkin": "16.11.2026 14:00",
+     "checkout": "17.11.2026 10:00",
+     "first_use_by": ""
+    },
+    "expected": 1,
+    "fee": {
+     "lines": [
+      [
+       2,
+       1700
+      ]
+     ],
+     "rate": 850,
+     "total": 1700,
+     "vs": "77",
+     "ways": [
+      {
+       "key": "revolut",
+       "link": "https://revolut.example.test/pay/abc"
+      },
+      {
+       "key": "cash",
+       "note": "Pay at the desk"
+      }
+     ]
+    },
+    "filled": 1,
+    "host": {
+     "email": "desk@example.test",
+     "name": "Pension Lípa s.r.o.",
+     "phone": "+420 601 234 567",
+     "seat": "Hlavní 1, Praha"
+    },
+    "host_url": "https://app.example.test/reservations/504",
+    "lang": "uk",
+    "property_name": "Bar & \"Grill\" <Sur>",
+    "sent_details": true
+   },
+   "name": "completion_uk_fee_revolut_cash_escapes",
+   "output": {
+    "html": "<!doctype html>\n<html lang=\"uk\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<meta name=\"color-scheme\" content=\"light only\">\n<title>Bar &amp; &quot;Grill&quot; &lt;Sur&gt;</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f7f7f5;\">\n<div style=\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\">Усіх гостей цього проживання зареєстровано. Як сплатити збір за проживання, дивіться в листі. ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f7f7f5;border-collapse:collapse;\">\n<tr><td align=\"center\" style=\"padding:28px 12px;\">\n<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\">\n<tr><td style=\"padding:28px 24px 0 24px;\">\n<img src=\"https://app.example.test/static/ubyhost-logo.jpg\" width=\"180\" alt=\"UbyHost\" style=\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\">\n</td></tr>\n<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">Залишилося одне: збір за проживання</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Усіх гостей проживання в Bar &amp; &quot;Grill&quot; &lt;Sur&gt; зареєстровано. Залишився лише місцевий збір за проживання нижче.</p></td></tr><tr><td style=\"padding:24px 24px 0 24px;\"><div style=\"background:#f7f7f5;border:1px solid #e4e4e1;border-radius:12px;padding:18px 20px;\"><div style=\"font:600 15px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 10px 0;\">Ваше проживання</div><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\"><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Зареєстровано гостей</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">1 з 1</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Виселення</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">17.11.2026 10:00</td></tr></table></div></td></tr>{{receipt_details}}<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">Місцевий збір за проживання</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">До сплати за вашу групу: 1700 CZK. Сплачується один раз господарю.</p></td></tr><tr><td style=\"padding:24px 24px 0 24px;\"><div style=\"background:#f7f7f5;border:1px solid #e4e4e1;border-radius:12px;padding:18px 20px;\"><div style=\"font:600 15px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 10px 0;\">Як це рахується</div><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\"><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Гість 1</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">2 ноч. × 850 CZK = 1700 CZK</td></tr></table></div></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Оберіть один спосіб оплати:</p></td></tr><tr><td style=\"padding:8px 24px 0 24px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:separate;margin:0 0 8px 0;\"><tr><td style=\"background:#ad4942;border-radius:8px;padding:14px 24px;\"><a href=\"https://revolut.example.test/pay/abc\" style=\"display:block;padding:0;font:600 16px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#ffffff;text-decoration:none;\">Сплатити 1700 CZK через Revolut</a></td></tr></table></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Готівка: Pay at the desk</p></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Уже сплатили? Тоді більше нічого робити не потрібно.</p></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">Ваш код від дверей</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 22px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">{{door_code}}</p></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Код діє від заїзду о 16.11.2026 14:00 до виїзду о 17.11.2026 10:00.</p></td></tr><tr><td style=\"padding:14px 24px 0 24px;\"><div style=\"font:400 14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\"><a href=\"https://app.example.test/reservations/504\" style=\"color:#ad4942;text-decoration:underline;\">Переглянути сторінку проживання (лише для господаря)</a></div></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 14px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">Офіційну реєстрацію в органах влади здійснює господар. Цей лист – ваше підтвердження, а не офіційний документ.</p></td></tr>\n<tr><td style=\"padding:28px 24px 28px 24px;\">\n<div style=\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">\n<div>UbyHost – сервіс реєстрації гостей, яким користується ваш господар.</div><div style=\"padding:4px 0 0 0;\">Ви отримали цей лист, бо ваше проживання в Bar &amp; &quot;Grill&quot; &lt;Sur&gt; зареєстровано на цю адресу.</div><div style=\"padding:4px 0 0 0;\">Ваш господар: Pension Lípa s.r.o.</div><div style=\"padding:4px 0 0 0;\"><a href=\"mailto:desk@example.test\" style=\"color:#50504c;text-decoration:underline;\">desk@example.test</a> · <a href=\"tel:+420601234567\" style=\"color:#50504c;text-decoration:underline;\">+420 601 234 567</a></div><div style=\"padding:4px 0 0 0;\">Щоб зв’язатися з господарем, дайте відповідь на цей лист.</div>\n</div>\n</td></tr>\n</table>\n</td></tr>\n</table>\n</body>\n</html>\n",
+    "qr_spayd": "",
+    "subject": "Усіх зареєстровано в Bar & \"Grill\" <Sur>. Збір за проживання до сплати: 1700 CZK",
+    "text": "Усіх гостей проживання в Bar & \"Grill\" <Sur> зареєстровано. Залишився лише місцевий збір за проживання нижче.\n\nЗареєстровано гостей: 1 з 1\nВиселення: 17.11.2026 10:00\n\n{{receipt_details}}\n\nМісцевий збір за проживання\nДо сплати за вашу групу: 1700 CZK. Сплачується один раз господарю.\n\nЯк це рахується\nГість 1: 2 ноч. × 850 CZK = 1700 CZK\n\nОберіть один спосіб оплати:\n\nСплатити 1700 CZK через Revolut: https://revolut.example.test/pay/abc\n\nГотівка: Pay at the desk\n\nУже сплатили? Тоді більше нічого робити не потрібно.\n\nВаш код від дверей\n{{door_code}}\nКод діє від заїзду о 16.11.2026 14:00 до виїзду о 17.11.2026 10:00.\n\nПереглянути сторінку проживання (лише для господаря): https://app.example.test/reservations/504\n\nОфіційну реєстрацію в органах влади здійснює господар. Цей лист – ваше підтвердження, а не офіційний документ.\n\n--\nUbyHost – сервіс реєстрації гостей, яким користується ваш господар.\nВи отримали цей лист, бо ваше проживання в Bar & \"Grill\" <Sur> зареєстровано на цю адресу.\nВаш господар: Pension Lípa s.r.o.\ndesk@example.test · +420 601 234 567\nЩоб зв’язатися з господарем, дайте відповідь на цей лист."
+   }
+  },
+  {
+   "input": {
+    "checkin": "16.11.2026 15:00",
+    "checkout": "",
+    "dates": "16.11.2026 – 17.11.2026",
+    "door_code": null,
+    "expected": 1,
+    "fee": {
+     "lines": [
+      [
+       1,
+       850
+      ]
+     ],
+     "rate": 850,
+     "total": 850,
+     "vs": "5",
+     "ways": [
+      {
+       "key": "cash"
+      }
+     ]
+    },
+    "filled": 1,
+    "host": {
+     "email": "",
+     "name": "Olaf Example",
+     "phone": "",
+     "seat": ""
+    },
+    "host_url": "",
+    "lang": "es",
+    "property_name": "Apartamento Sur",
+    "sent_details": false
+   },
+   "name": "completion_es_fee_cash_default",
+   "output": {
+    "html": "<!doctype html>\n<html lang=\"es\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<meta name=\"color-scheme\" content=\"light only\">\n<title>Apartamento Sur</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f7f7f5;\">\n<div style=\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\">Todos los huéspedes de esta estancia están registrados. En este correo verá cómo pagar la tasa de estancia. ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f7f7f5;border-collapse:collapse;\">\n<tr><td align=\"center\" style=\"padding:28px 12px;\">\n<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\">\n<tr><td style=\"padding:28px 24px 0 24px;\">\n<img src=\"https://app.example.test/static/ubyhost-logo.jpg\" width=\"180\" alt=\"UbyHost\" style=\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\">\n</td></tr>\n<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">Solo queda una cosa: la tasa de estancia</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Todos los huéspedes de Apartamento Sur están registrados. Solo queda la tasa local de estancia que figura abajo.</p></td></tr><tr><td style=\"padding:24px 24px 0 24px;\"><div style=\"background:#f7f7f5;border:1px solid #e4e4e1;border-radius:12px;padding:18px 20px;\"><div style=\"font:600 15px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 10px 0;\">Su estancia</div><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\"><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Huéspedes registrados</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">1 de 1</td></tr><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Llegada</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">16.11.2026 15:00</td></tr></table></div></td></tr><tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">Tasa local de estancia</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">850 CZK a pagar por su grupo. Se paga una vez, a su anfitrión.</p></td></tr><tr><td style=\"padding:24px 24px 0 24px;\"><div style=\"background:#f7f7f5;border:1px solid #e4e4e1;border-radius:12px;padding:18px 20px;\"><div style=\"font:600 15px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 10px 0;\">Cómo se calcula</div><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\"><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Huésped 1</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">1 noches × 850 CZK = 850 CZK</td></tr></table></div></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Elija una forma de pago:</p></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Efectivo: Pague en efectivo al llegar. Pregunte a su anfitrión dónde y cuándo.</p></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">¿Ya ha pagado? Entonces no tiene que hacer nada más.</p></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 14px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">Su anfitrión se encarga del registro oficial ante las autoridades. Este e-mail es su justificante, no una confirmación oficial.</p></td></tr>\n<tr><td style=\"padding:28px 24px 28px 24px;\">\n<div style=\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">\n<div>UbyHost es el servicio de registro de huéspedes que utiliza su anfitrión.</div><div style=\"padding:4px 0 0 0;\">Ha recibido este e-mail porque su estancia en Apartamento Sur está registrada con esta dirección.</div><div style=\"padding:4px 0 0 0;\">Su anfitrión: Olaf Example</div>\n</div>\n</td></tr>\n</table>\n</td></tr>\n</table>\n</body>\n</html>\n",
+    "qr_spayd": "",
+    "subject": "Todos están registrados para Apartamento Sur. Tasa de estancia a pagar: 850 CZK",
+    "text": "Todos los huéspedes de Apartamento Sur están registrados. Solo queda la tasa local de estancia que figura abajo.\n\nHuéspedes registrados: 1 de 1\nLlegada: 16.11.2026 15:00\n\nTasa local de estancia\n850 CZK a pagar por su grupo. Se paga una vez, a su anfitrión.\n\nCómo se calcula\nHuésped 1: 1 noches × 850 CZK = 850 CZK\n\nElija una forma de pago:\n\nEfectivo: Pague en efectivo al llegar. Pregunte a su anfitrión dónde y cuándo.\n\n¿Ya ha pagado? Entonces no tiene que hacer nada más.\n\nSu anfitrión se encarga del registro oficial ante las autoridades. Este e-mail es su justificante, no una confirmación oficial.\n\n--\nUbyHost es el servicio de registro de huéspedes que utiliza su anfitrión.\nHa recibido este e-mail porque su estancia en Apartamento Sur está registrada con esta dirección.\nSu anfitrión: Olaf Example"
+   }
+  },
+  {
+   "input": {
+    "checkin": "",
+    "checkout": "",
+    "dates": "16.11.2026 – 17.11.2026",
+    "door_code": null,
+    "expected": 0,
+    "fee": {
+     "lines": [
+      [
+       1,
+       850
+      ]
+     ],
+     "rate": 850,
+     "total": 850,
+     "vs": "9",
+     "ways": []
+    },
+    "filled": 0,
+    "host": null,
+    "host_url": "",
+    "lang": "fr",
+    "property_name": "Appartement Centre",
+    "sent_details": true
+   },
+   "name": "completion_fr_fee_no_rails_zero_expected",
+   "output": {
+    "html": "<!doctype html>\n<html lang=\"fr\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<meta name=\"color-scheme\" content=\"light only\">\n<title>Appartement Centre</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f7f7f5;\">\n<div style=\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\">Tous les voyageurs de ce séjour sont enregistrés. Vous trouverez dans cet e-mail comment payer la taxe de séjour. ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f7f7f5;border-collapse:collapse;\">\n<tr><td align=\"center\" style=\"padding:28px 12px;\">\n<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\">\n<tr><td style=\"padding:28px 24px 0 24px;\">\n<img src=\"https://app.example.test/static/ubyhost-logo.jpg\" width=\"180\" alt=\"UbyHost\" style=\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\">\n</td></tr>\n<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">Une dernière chose : la taxe de séjour</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Tous les voyageurs pour Appartement Centre sont enregistrés. Il ne reste que la taxe de séjour locale ci-dessous.</p></td></tr>{{receipt_details}}<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">Taxe de séjour locale</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">850 CZK à payer pour votre groupe. Il se paie une fois, à votre hôte.</p></td></tr><tr><td style=\"padding:24px 24px 0 24px;\"><div style=\"background:#f7f7f5;border:1px solid #e4e4e1;border-radius:12px;padding:18px 20px;\"><div style=\"font:600 15px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 10px 0;\">Mode de calcul</div><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\"><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Invité 1</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">1 nuits × 850 CZK = 850 CZK</td></tr></table></div></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Votre hôte n&#x27;a pas encore configuré le paiement. Contactez-le.</p></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Déjà payé ? Alors vous n&#x27;avez plus rien à faire.</p></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 14px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">Votre hôte se charge de la déclaration officielle auprès des autorités. Cet e-mail est votre récapitulatif, et non une confirmation officielle.</p></td></tr>\n<tr><td style=\"padding:28px 24px 28px 24px;\">\n<div style=\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">\n<div>UbyHost est le service d&#x27;enregistrement des voyageurs utilisé par votre hôte.</div><div style=\"padding:4px 0 0 0;\">Vous recevez cet e-mail car votre séjour à Appartement Centre est enregistré avec cette adresse.</div>\n</div>\n</td></tr>\n</table>\n</td></tr>\n</table>\n</body>\n</html>\n",
+    "qr_spayd": "",
+    "subject": "Tout le monde est enregistré pour Appartement Centre. Taxe de séjour à payer : 850 CZK",
+    "text": "Tous les voyageurs pour Appartement Centre sont enregistrés. Il ne reste que la taxe de séjour locale ci-dessous.\n\n{{receipt_details}}\n\nTaxe de séjour locale\n850 CZK à payer pour votre groupe. Il se paie une fois, à votre hôte.\n\nMode de calcul\nInvité 1: 1 nuits × 850 CZK = 850 CZK\n\nVotre hôte n'a pas encore configuré le paiement. Contactez-le.\n\nDéjà payé ? Alors vous n'avez plus rien à faire.\n\nVotre hôte se charge de la déclaration officielle auprès des autorités. Cet e-mail est votre récapitulatif, et non une confirmation officielle.\n\n--\nUbyHost est le service d'enregistrement des voyageurs utilisé par votre hôte.\nVous recevez cet e-mail car votre séjour à Appartement Centre est enregistré avec cette adresse."
+   }
+  },
+  {
+   "input": {
+    "checkin": "",
+    "checkout": "",
+    "dates": "16.11.2026 – 17.11.2026",
+    "door_code": null,
+    "expected": 2,
+    "fee": null,
+    "filled": 2,
+    "host": null,
+    "host_url": "",
+    "lang": "vi",
+    "property_name": "Phòng Hà Nội",
+    "sent_details": false
+   },
+   "name": "completion_vi_lang_falls_back",
+   "output": {
+    "html": "<!doctype html>\n<html lang=\"vi\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<meta name=\"color-scheme\" content=\"light only\">\n<title>Phòng Hà Nội</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f7f7f5;\">\n<div style=\"display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;\">Everyone on this stay is registered. Nothing else to do. ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏ ﻿͏</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f7f7f5;border-collapse:collapse;\">\n<tr><td align=\"center\" style=\"padding:28px 12px;\">\n<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e4e1;border-radius:14px;border-collapse:separate;\">\n<tr><td style=\"padding:28px 24px 0 24px;\">\n<img src=\"https://app.example.test/static/ubyhost-logo.jpg\" width=\"180\" alt=\"UbyHost\" style=\"display:block;border:0;outline:none;text-decoration:none;width:180px;max-width:100%;height:auto;\">\n</td></tr>\n<tr><td style=\"padding:20px 24px 0 24px;\"><h1 style=\"margin:0;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;\">You&#x27;re all set</h1></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#50504c;\">Everyone for Phòng Hà Nội is registered. There is nothing else you need to do.</p></td></tr><tr><td style=\"padding:24px 24px 0 24px;\"><div style=\"background:#f7f7f5;border:1px solid #e4e4e1;border-radius:12px;padding:18px 20px;\"><div style=\"font:600 15px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;padding:0 0 10px 0;\">Your stay</div><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\"><tr><td style=\"padding:0 12px 8px 0;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;vertical-align:top;white-space:nowrap;\">Guests registered</td><td style=\"padding:0 0 8px 0;text-align:right;font:600 15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#20201e;vertical-align:top;\">2 of 2</td></tr></table></div></td></tr><tr><td style=\"padding:12px 24px 0 24px;\"><p style=\"margin:0;font:400 14px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">Your host takes care of the official registration with the authorities. This e-mail is your receipt, not an official confirmation.</p></td></tr>\n<tr><td style=\"padding:28px 24px 28px 24px;\">\n<div style=\"border-top:1px solid #e4e4e1;padding:16px 0 0 0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#73736e;\">\n<div>UbyHost is the guest-registration service your host uses.</div><div style=\"padding:4px 0 0 0;\">You received this e-mail because your stay at Phòng Hà Nội is registered with this address.</div>\n</div>\n</td></tr>\n</table>\n</td></tr>\n</table>\n</body>\n</html>\n",
+    "qr_spayd": "",
+    "subject": "You're registered for Phòng Hà Nội: nothing else to do",
+    "text": "Everyone for Phòng Hà Nội is registered. There is nothing else you need to do.\n\nGuests registered: 2 of 2\n\nYour host takes care of the official registration with the authorities. This e-mail is your receipt, not an official confirmation.\n\n--\nUbyHost is the guest-registration service your host uses.\nYou received this e-mail because your stay at Phòng Hà Nội is registered with this address."
+   }
+  }
+ ],
+ "public_base_url": "https://app.example.test"
+}

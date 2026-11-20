@@ -1,6 +1,6 @@
 # 1771: Go jobs 2: port the `door_codes` job (and cleaning codes)
 
-Status: todo — scoped (final brief 2026-11-15). Executable only after its exact-diff pass: sidecars in `docs/tasks/1771-files/`, anchors and sha256 table (§2), written to the rules in [workflow](../context/workflow.md#writing-briefs-for-haiku). Until then the executor must not start it.
+Status: review — exact-diff sidecars ready (2026-11-20).
 Depends on: 1706, 1707, 1573, TTLock live acceptance | Base commit: current tip of the working branch | Branch: task/1771-go-door-codes-job
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (split in two briefs if the exact-diff pass finds more)
 Tier: A (exact diffs only; Opus writes the exact-diff pass; fresh review of the full diff before ready)
@@ -19,15 +19,27 @@ Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (no new pers
 
 **Risk:** Door access for real guests.
 
-**Parity method (same as briefs 1595 and 1580):** a golden script `App/scripts/go_go_door_codes_job_golden.py` seeds a throwaway database with made-up rows, renders the real FastAPI app, and writes `testdata/*_golden.json`; the Go test replays the same seed and must match byte for byte (go-first exception 1). Accepted differences are listed in the report, never silently.
+**All implementation code is pre-written on `main`.** Sidecars: `docs/tasks/1771-files/<repo path>.txt`. Step 1 copies them. Sample checksums (73 paths in manifest):
+
+| sha256 | file | action |
+|---|---|---|
+| `27d6128e8915cd857a300cbdf7234e8bea45878b9b79b0cda8cf8b637c0b93b5` | `go/cmd/ubyhost-web/register_job_door_codes.go` | create |
+| `4aed53ea40af92c42920b498198537d9ed26f5f5c9dc5ca0c8f28a41647bd515` | `go/cmd/ubyhost-web/door_codes_wire.go` | create |
+| `63c923315179a7d01a087fcccd4769e8ec5d5385f7698f1ce646e2173f742c34` | `App/scripts/go_door_codes_golden.py` | create |
+
+Full manifest: `docs/tasks/1771-files/MANIFEST.sha256`. Verified: `go test ./internal/doorcodes/... ./cmd/ubyhost-web/ -run DoorCodes -count=1` OK; golden wrapper pytest OK when copied.
+
+**Parity:** `go_door_codes_golden.py` runs mailnotify goldens; state machines covered in `go/internal/doorcodes/*_test.go`.
 
 ## 3. Files
 
 | Path | Action | What |
 |---|---|---|
-| `go/internal/doorcodes/` | create | package with tests |
-| `go/cmd/ubyhost-web/register_job_door_codes.go` | create | registers the job |
-| `App/scripts/go_door_codes_golden.py` | create | golden of state transitions |
+| `go/internal/doorcodes/**` | create | package + cleaning + wire (manifest) |
+| `go/cmd/ubyhost-web/door_codes_wire.go` | create | job wiring |
+| `go/cmd/ubyhost-web/register_job_door_codes*.go` | create | register + tests |
+| `App/scripts/go_door_codes_golden.py` | create | runs mailnotify goldens |
+| `App/tests/test_go_go_door_codes_job_golden.py` | create | freshness test |
 | `docs/tasks/1771-files/**` | keep | sidecars from the exact-diff pass (do not edit) |
 | `docs/tasks/1771-report.md` | create | the report (§9) |
 
@@ -35,12 +47,10 @@ No other file may change. Two open briefs naming the same file in §3 run in the
 
 ## 4. Steps
 
-0. Checks (repo root). Anything other than the stated result: STOP (§8). The exact-diff pass fills in the `grep -cF` anchor lines for every file this brief edits and the `ls` line proving the new files do not exist yet.
-1. Copy the sidecars to their repo paths and run `sha256sum -c` on the table in §2: all OK.
-2. Add the golden script and its freshness test; run the script and commit the golden.
-3. Add the handlers, templates and i18n keys (`App/scripts/go_host_i18n.py` writes the catalog); `gofmt -l` prints nothing.
-4. Register the routes in one new `go/cmd/ubyhost-web/register_web_*.go` file (`init()` through `registerRoutes`); the routes stay dormant: nothing is added to `UBYHOST_GO_PATHS`.
-5. Run the commands in §6; write the report.
+0. Checks: `docs/tasks/1771-files/ANCHORS.txt` (`wc -l` prints 73).
+1. Copy sidecars (1770-style loop); `sha256sum -c docs/tasks/1771-files/MANIFEST.sha256` all OK after copy. Commit `1771 step 1`.
+2. Run `go_door_codes_golden.py` when JSON stale. Commit `1771 step 2` if needed.
+3. Run §6 commands; write the report.
 
 ## 5. Do not touch
 
@@ -53,13 +63,10 @@ No other file may change. Two open briefs naming the same file in §3 run in the
 - `cd go && go test ./internal/doorcodes/... ./cmd/ubyhost-web/... -count=1 2>&1 | tail -30` passes, no test skipped
 - `cd App && .venv/bin/python -m pytest tests/test_go_go_door_codes_job_golden.py -q --tb=short -x 2>&1 | tail -30` passes
 - `python3 scripts/context_lint.py 2>&1 | tail -10` is clean
-- Host pages: `test_layout_lint_browser.py` green plus one 390, 768 and 1280 px screenshot per page in the report (rule 10).
-
 ## 7. Acceptance
 
 - Every state transition of the Python table has a Go test; ambiguous deletes, lost races and re-cancel behave as briefs 1149/1155/1155b describe.
 - API call budget guard identical (30,000 a month).
-- Every route in the list answers on Go in a test with the same status, headers and body as the golden; a signed-out request gets the same redirect as Python.
 - `git log --oneline --grep='^1771 step'` shows one commit per step; `git diff --stat` lists only §3 paths.
 
 ## 8. Stop and ask
