@@ -1,0 +1,10 @@
+grep -cF 'async def booking_site_pay(request: Request, apartment_id: int):' App/app/routes/payments.py
+grep -cF 'async def booking_site_cancel(request: Request, apartment_id: int):' App/app/routes/payments.py
+grep -cF 'def parse_form(form, apartment_id: int)' App/app/booking_rails.py
+grep -cF 'func (b *BookingWebhook) HostConfirmDirect' go/internal/payments/booking_webhook_host.go
+grep -cF 'func RegisterBookingSiteActions' go/internal/web/booking/booking_site_actions.go
+grep -rcF '"POST /apartments/{apartment_id}/booking-site/pay"' go/cmd/ubyhost-web | grep -v ':0$'
+ls go/internal/web/booking/booking_site_actions.go 2>&1 | grep -cF 'No such file'
+ls App/scripts/go_booking_site_actions_golden.py 2>&1 | grep -cF 'No such file'
+ls go/cmd/ubyhost-web/register_web_booking_host_actions.go 2>&1 | grep -cF 'No such file'
+find docs/tasks/1710d-files -name '*.txt' ! -name 'ANCHORS.txt' | wc -l

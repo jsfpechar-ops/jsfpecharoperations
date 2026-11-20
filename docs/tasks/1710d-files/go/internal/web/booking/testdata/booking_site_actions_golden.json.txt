@@ -1,0 +1,15 @@
+{
+  "flash_keys": [
+    "payments.page.saved",
+    "bsite.err.direct_taken",
+    "bsite.flash.direct_confirm",
+    "bsite.flash.cancelled_direct"
+  ],
+  "now": "2026-06-15T12:00:00+00:00",
+  "routes": [
+    "POST /apartments/{apartment_id}/booking-site/pay",
+    "POST /apartments/{apartment_id}/booking-site/confirm",
+    "POST /apartments/{apartment_id}/booking-site/decline",
+    "POST /apartments/{apartment_id}/booking-site/cancel"
+  ]
+}
