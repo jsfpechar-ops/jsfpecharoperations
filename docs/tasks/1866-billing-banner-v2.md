@@ -1,6 +1,6 @@
 # 1866: billing banner unstyled on v2 host pages (big red block under the text)
 
-Status: todo
+Status: review
 Depends on: none | Base commit: 216a087779fceb0839db64440fd338c5dfbd72b6 | Branch: task/1866-billing-banner-v2
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
