@@ -1,6 +1,6 @@
 # 1723: Go guest 4: guest form pages (new, edit, remove, language switch)
 
-Status: **exact-diff complete — executor blocked until 1720–1722 on main** (2026-11-20). Sidecars in `docs/tasks/1723-files/` are the full handler pass (not PR #1178 stubs). Do **not** start the Haiku executor until **1720a–1722** shell, claim, and party sidecars are on `main` and golden POST CSRF parity is wired (see §2).
+Status: blocked — exact-diff complete (2026-11-20). Executor blocked until 1720–1722 on main. Sidecars in `docs/tasks/1723-files/` are the full handler pass (not PR #1178 stubs). Do not start the Haiku executor until 1720a–1722 shell, claim, and party sidecars are on `main` and golden POST CSRF parity is wired (see §2).
 Depends on: 1722 | Base commit: current tip of the working branch | Branch: task/1723-go-guest-form-pages
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (split in two briefs if the exact-diff pass finds more)
 Tier: A (exact diffs only; Opus writes the exact-diff pass; fresh review of the full diff before ready)
