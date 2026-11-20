@@ -8,9 +8,9 @@ import (
 
 func TestGuestShellRoutesRegistered(t *testing.T) {
 	mux := newMux(&metrics{counts: map[key]int64{}}, nil)
-	// Foundation brief 1720a registers no /l handlers yet; ensure the mux still builds.
-	req := httptest.NewRequest(http.MethodGet, "/health", nil)
-	if _, pattern := mux.Handler(req); pattern == "" {
-		t.Fatal("mux has no handler")
+	req := httptest.NewRequest(http.MethodPost, "/l/example-token/pin", nil)
+	_, pattern := mux.Handler(req)
+	if pattern != "POST /l/{token}/pin" {
+		t.Fatalf("pin route %q", pattern)
 	}
 }

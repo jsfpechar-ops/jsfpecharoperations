@@ -10,3 +10,12 @@ host_details
 guide_qr_contact
 host_details_help
 host_details_missing
+pin_title
+pin_help
+pin_label
+pin_submit
+pin_wrong
+pin_recovery
+pin_rate_limited
+pin_locked_out
+security_check_failed
