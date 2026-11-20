@@ -1,0 +1,30 @@
+{
+  "now": "2026-06-15T12:00:00+00:00",
+  "seed": [],
+  "cases": [
+    {
+      "name": "signed_out",
+      "method": "GET",
+      "path": "/booking-sites",
+      "user": 0,
+      "status": 303,
+      "location": "/login"
+    },
+    {
+      "name": "single_apartment",
+      "method": "GET",
+      "path": "/booking-sites",
+      "user": 1,
+      "status": 303,
+      "location": "/apartments/11/booking-site"
+    },
+    {
+      "name": "list_two",
+      "method": "GET",
+      "path": "/booking-sites",
+      "user": 2,
+      "status": 200,
+      "location": ""
+    }
+  ]
+}
