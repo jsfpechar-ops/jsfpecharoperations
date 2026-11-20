@@ -14,7 +14,7 @@ Companion: [SQLite retirement plan](sqlite-retirement-plan.md) (same dates, same
 | Runs every backup: `backup.sh` calls `backup_data.sh` inside the `ubyhost` container (age-encrypts the snapshot and the `secret_key`); `backup-s3.sh` and `backup-gdrive.sh` list `/data/backups` with `docker compose exec ubyhost` | `deploy/lightsail/scripts/backup*.sh` | brief 1780 (ops scripts as Go subcommands) **plus** a shell backup of `secret_key` that does not need Python |
 | Runs deploy checks: `deploy.sh` execs `ubyhost` for counts, secret-key check, `migrate_encrypt_doc_fields.py`, `backfill_legal_acceptance.py`, and waits for `worker.alive` | `deploy.sh` lines 130-470 | 1780 plus a `deploy.sh` without those calls (part of 1782) |
 | Restores backups: `pg-restore.sh` stops and starts `worker ubyhost` and runs a one-off `ubyhost` container | `pg-restore.sh` 72-95 | 1780 / 1782 (same PR) |
-| Receives Stripe booking events forwarded by Go (`UBYHOST_PY_WEBHOOK_URL`) and keeps `/webhooks/stripe` | compose `ubyhost-go` env, [1781](../tasks/1781-stripe-webhook-path-decision.md) | brief 1554 (booking events on Go) and Stripe out of test mode |
+| Handles booking-site Stripe events when `/webhooks/stripe` is on `UBYHOST_GO_PATHS` (1781 merged; no Python forward) | [1781](../tasks/1781-stripe-webhook-path-decision.md), `go/internal/payments/booking_webhook.go` | owner adds path on cutover; blockers **1796–1798** (paid-mail txn, clash refund) and `booking_invoice.ensure` gap before real money |
 | Serves every route not yet on Go, by Caddy default upstream | `Caddyfile.cloudflare` line 113 and 136 | the 1790 allow-list is empty, or each remaining line is a decision "drop" signed by Josef |
 | Is scraped by monitoring (`ubyhost:8080`) | `monitoring/config.alloy:65` | 1782 removes the target |
 | Holds the SQLite rollback (`pg-cutover.sh` starts Python on SQLite) | plan S11 | **Python stays until the SQLite rollback ends on 2026-12-15** |
@@ -78,7 +78,7 @@ Purpose: replace the **UNVERIFIED** items above with facts. Paste:
 You are the server operator for UbyHost. READ ONLY today: change nothing, restart nothing.
 Report in 25 lines, no secrets, no values of variables (names and yes/no only).
 1. cd /opt/ubyhost/deploy/lightsail; docker compose ps; cat .go-slot; grep -c . /opt/ubyhost/retirement-state.md 2>/dev/null
-2. Names only of: UBYHOST_GO_PATHS (count of words), UBYHOST_GO_JOB_KINDS, UBYHOST_JOB_QUEUE_KINDS, UBYHOST_SCHEDULER, UBYHOST_SCHEMA_APPLY, UBYHOST_PY_WEBHOOK_URL (set yes/no), UBYHOST_ENABLE_SCHEDULER, COMPOSE_PROFILES.
+2. Names only of: UBYHOST_GO_PATHS (count of words; includes `/webhooks/stripe` yes/no), UBYHOST_GO_JOB_KINDS, UBYHOST_JOB_QUEUE_KINDS, UBYHOST_SCHEDULER, UBYHOST_SCHEMA_APPLY, UBYHOST_ENABLE_SCHEDULER, COMPOSE_PROFILES. (`UBYHOST_PY_WEBHOOK_URL` removed in 1781 — do not report.)
 3. Python web container: how many requests did it serve in the last 24 h and last 7 days (docker compose logs --since 24h ubyhost | grep -c ' HTTP/' ), top 15 paths with counts, and how many are real users versus /healthz and monitoring.
 4. Caddy fallbacks: count of responses with X-Ubyhost-Not-Ported in the last 24 h, per path (Caddy log if on; else say "log off").
 5. Python worker: docker compose logs --since 24h worker | tail -20 (job lines only). Is it doing anything while UBYHOST_SCHEDULER=go?

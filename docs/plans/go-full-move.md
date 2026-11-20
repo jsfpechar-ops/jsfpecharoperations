@@ -14,7 +14,7 @@ Go today is one service (`ubyhost-go`) that runs 8 of 15 queued job kinds and ab
 | Web routes | ~17: command palette, calendar, payments QR/connect/requests, Stripe webhook, push, pay PNGs, healthz, metrics | ~320 routes in 31 files under `App/app/routes/` plus 146 templates: login and sessions, passkeys, signup, onboarding, host dashboard and stays, guest registration, guest guide, cleaning, invoices and PDFs, stay fees, billing, exports, admin, legal pages, Havel and Leon AI, booking-site checkout |
 | Filing (UbyPort) | the timed sweep (`submit`) | the immediate send when a guest finishes the last form, and the host "send" button: `reporting.submit_stay_if_complete` (14 call sites) and `routes/admin.py` |
 | Schema | goose SQL files in `App/migrations_pg/` | applied only by `App/scripts/pg_schema.py` (Python); the app refuses to start while one is pending |
-| Webhook | Go receives `/webhooks/stripe` | booking-site events are forwarded to Python (`UBYHOST_PY_WEBHOOK_URL`) |
+| Webhook | Go handles booking-site events when path is on `UBYHOST_GO_PATHS` (1781; Python forward removed) | other Stripe events were already Go-native; production still off-path until owner cutover |
 | Compose | `ubyhost-go` | `ubyhost` (web) and `worker` (scheduler) both run the Python image |
 | Scripts | none | `App/scripts/` ops scripts (backup, reencrypt, encrypt migrations, reconcile, exports) and the golden scripts used as parity fixtures |
 
