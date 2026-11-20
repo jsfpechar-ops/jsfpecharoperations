@@ -1,6 +1,6 @@
 # 1782: Go retire 3 (X2): Caddy sends everything to Go; `ubyhost` and `worker` leave compose
 
-Status: todo — scoped (final brief 2026-11-15). Executable only after its exact-diff pass: sidecars in `docs/tasks/1782-files/`, anchors and sha256 table (§2), written to the rules in [workflow](../context/workflow.md#writing-briefs-for-haiku). Until then the executor must not start it.
+Status: todo — scoped (final brief 2026-11-15). Exact-diff **checklist pass** 2026-11-20: `docs/tasks/1782-files/CHECKLIST.md` and `ANCHORS.txt` only — no `MANIFEST.sha256` until Caddy/compose sidecars are written. Executor must not start until follow-up pass or owner override.
 Depends on: every wave done, 1772, one quiet week | Base commit: current tip of the working branch | Branch: task/1782-go-caddy-everything-to-go
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (split in two briefs if the exact-diff pass finds more)
 Tier: A (exact diffs only; Opus writes the exact-diff pass; fresh review of the full diff before ready)
@@ -18,6 +18,8 @@ Hard rules (AGENTS.md): 1 filing correctness first; 2 privacy first (no new pers
 **Python source of truth:** `deploy/lightsail/caddy/Caddyfile.cloudflare`, `deploy/lightsail/caddy/Caddyfile.acme`, `docker-compose.yml`, `deploy.sh`.
 
 **Risk:** Everything. Runs alone.
+
+**Exact-diff pass (2026-11-20):** Checklist-only — see `docs/tasks/1782-files/CHECKLIST.md`. No pre-written file sidecars yet; sha256 table will be added when Caddy/compose/LIGHTSAIL patches are checked in.
 
 ## 3. Files
 
