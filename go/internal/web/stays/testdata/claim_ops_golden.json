@@ -1,0 +1,56 @@
+{
+ "cases": [
+  {
+   "body": "_csrf=golden",
+   "flash_key": "",
+   "location": "/login",
+   "method": "POST",
+   "name": "signed_out_reopen",
+   "path": "/reservations/101/reopen-guest",
+   "status": 303,
+   "user": 0
+  },
+  {
+   "body": "_csrf=golden",
+   "flash_key": "flash.reservations.access_reopened",
+   "location": "/reservations/101",
+   "method": "POST",
+   "name": "reopen_ok",
+   "path": "/reservations/101/reopen-guest",
+   "status": 303,
+   "user": 1
+  },
+  {
+   "body": "_csrf=golden&filed_at=2026-06-14T10%3A00",
+   "flash_key": "flash.hand_filing.marked",
+   "location": "/reservations/101#reports",
+   "method": "POST",
+   "name": "filed_by_hand_ok",
+   "path": "/reservations/101/filed-by-hand",
+   "status": 303,
+   "user": 1
+  },
+  {
+   "body": "_csrf=golden",
+   "flash_key": "flash.hand_filing.undone",
+   "location": "/reservations/101#reports",
+   "method": "POST",
+   "name": "undo_ok",
+   "path": "/reservations/101/filed-by-hand/undo",
+   "status": 303,
+   "user": 1
+  },
+  {
+   "body": "_csrf=golden",
+   "flash_key": "flash.error.claim_resend_locked",
+   "location": "/reservations/102",
+   "method": "POST",
+   "name": "resend_locked",
+   "path": "/reservations/102/resend-claim",
+   "status": 303,
+   "user": 1
+  }
+ ],
+ "now": "2026-06-15T12:00:00+00:00",
+ "seed": []
+}

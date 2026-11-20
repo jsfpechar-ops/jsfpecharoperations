@@ -17,7 +17,6 @@ func TestStayDetailRoutesRegistered(t *testing.T) {
 		{http.MethodGet, "/reservations/7", "GET /reservations/{reservation_id}"},
 		{http.MethodPost, "/reservations/7", "POST /reservations/{reservation_id}"},
 		{http.MethodPost, "/reservations/7/submit", "/"},
-		{http.MethodPost, "/reservations/7/filed-by-hand", "/"},
 	}
 	for _, c := range cases {
 		_, pattern := mux.Handler(httptest.NewRequest(c.method, c.path, nil))
