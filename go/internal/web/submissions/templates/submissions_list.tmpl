@@ -7,7 +7,7 @@
   <div class="ui-how-body">
     <p>{{t "reports.lede"}}</p>
     {{if .ReceiptCount}}<p>{{t "reports.download_receipts_hint"}}</p>{{end}}
-    <ol class="ui-how-steps">{{range (seq 1 3)}}<li>{{t (printf "how.reports.%d" .)}}</li>{{end}}</ol>
+    <ol class="ui-how-steps">{{range (seq 1 4)}}<li>{{t (printf "how.reports.%d" .)}}</li>{{end}}</ol>
     <a class="ui-how-more" href="/guide#reports">{{t "how.more"}}</a>
   </div>
 </details>
@@ -35,7 +35,7 @@
   <tbody>
   {{range .Rows}}
     <tr class="clickable-row" data-href="/submissions/{{.ID}}" tabindex="0" role="link"
-        aria-label="{{tp "reports.open" (kv "id" .ID)}}">
+        aria-label="{{t "reports.open" (kv "id" .ID)}}">
       <td class="nowrap">{{datetime_local .CreatedAt}}</td>
       <td>{{property_identity .ApartmentID .InternalName true}}</td>
       <td>{{report_mode_label $.Lang .Mode}}</td>

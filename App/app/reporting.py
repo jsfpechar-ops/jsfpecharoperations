@@ -3065,14 +3065,7 @@ TERMINAL_SUBMISSION_STATES = ("ok", "ok_duplicate", "partial", "error", "transpo
 # path holds.
 SUBMISSION_TRANSITIONS = {
     # submit_batch; go store.go InsertSubmission
-    None: (
-        "running",
-        # scripts/go_go_submissions_reservations_read_golden._seed (fixture only)
-        "ok",
-        "ok_duplicate",
-        "partial",
-        "error",
-    ),
+    None: ("running",),
     "running": (
         # submit_batch (state from plan_outcome); go store.go RecordOutcome (plan.State)
         "ok",

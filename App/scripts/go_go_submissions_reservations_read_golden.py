@@ -202,6 +202,16 @@ def _seed():
                 "created_at": stamp,
                 "mode": "manual",
                 "guest_ids": json.dumps([guest_id]),
+                "state": "running",
+            },
+        )
+        if state == "running":
+            submission_ids.append(sid)
+            continue
+        db.update(
+            "submission",
+            sid,
+            {
                 "state": state,
                 "pseudo_stamp": f"ST{i:02d}" if state in ("ok", "ok_duplicate", "partial") else None,
                 "header_errors": None if state != "error" else "112;",

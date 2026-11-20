@@ -70,8 +70,10 @@ func TestLogin2FAGoldenDatabase(t *testing.T) {
 	}
 	pool := testPool(t)
 	ctx := context.Background()
+	fixed := authGoldenFixed(t)
+	clock := authGoldenClock(fixed)
 	sum := sha256.Sum256([]byte(g.Nonce))
-	csrfToken, err := secure.NewTimedSerializer(g.Secret, "ubyhost-csrf").Dumps(map[string]any{"nonce": hex.EncodeToString(sum[:])}, time.Now())
+	csrfToken, err := secure.NewTimedSerializer(g.Secret, "ubyhost-csrf").Dumps(map[string]any{"nonce": hex.EncodeToString(sum[:])}, fixed)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,7 +103,7 @@ func TestLogin2FAGoldenDatabase(t *testing.T) {
 	}
 	for _, c := range g.Cases {
 		t.Run(c.Name, func(t *testing.T) {
-			now := time.Now()
+			now := fixed
 			loadSeed(t, ctx, pool, append(append([][2]any{}, g.Seed...), c.Seed...), now)
 			env := map[string]string{}
 			for k, v := range g.Env {
@@ -112,7 +114,7 @@ func TestLogin2FAGoldenDatabase(t *testing.T) {
 			}
 			getenv := func(k string) string { return env[k] }
 			mux := http.NewServeMux()
-			for _, r := range Routes(pool, getenv, time.Now) {
+			for _, r := range Routes(pool, getenv, clock) {
 				h := r.Handler
 				// main.go's metrics.wrap sets hardenHeaders first; this is its Cache-Control.
 				mux.Handle(r.Pattern, http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {

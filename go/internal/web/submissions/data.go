@@ -52,12 +52,14 @@ func LoadList(ctx context.Context, pool *pgxpool.Pool, owner int64) (*ListPage, 
 	p := &ListPage{}
 	for rows.Next() {
 		var r ListRow
-		var has int
+		var pseudo *string
 		if err := rows.Scan(&r.ID, &r.CreatedAt, &r.ApartmentID, &r.Mode, &r.GuestIDs, &r.State,
-			&r.PseudoStamp, &has, &r.InternalName); err != nil {
+			&pseudo, &r.HasReceipt, &r.InternalName); err != nil {
 			return nil, err
 		}
-		r.HasReceipt = has != 0
+		if pseudo != nil {
+			r.PseudoStamp = *pseudo
+		}
 		r.GuestCount = guestCountJSON(r.GuestIDs)
 		name := r.InternalName
 		if strings.TrimSpace(name) == "" {
@@ -122,13 +124,20 @@ type DetailPage struct {
 	FixReservation *int64
 }
 
+func strPtr(p *string) string {
+	if p == nil {
+		return ""
+	}
+	return *p
+}
+
 func LoadDetail(ctx context.Context, pool *pgxpool.Pool, owner, submissionID int64, lang string) (*DetailPage, bool, error) {
 	var s SubmissionDetail
-	var header *string
+	var header, pseudo, finished, errText, endpoint, receipt, errPDF *string
 	err := pool.QueryRow(ctx, detailSQL, submissionID, owner).Scan(
 		&s.ID, &s.ApartmentID, &s.CreatedAt, &s.Mode, &s.State, &s.GuestIDs,
-		&header, &s.RecordErrors, &s.PseudoStamp, &s.FinishedAt, &s.ErrorText,
-		&s.Endpoint, &s.ReceiptPDF, &s.ErrorPDF, &s.InternalName,
+		&header, &s.RecordErrors, &pseudo, &finished, &errText,
+		&endpoint, &receipt, &errPDF, &s.InternalName,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, false, nil
@@ -137,6 +146,12 @@ func LoadDetail(ctx context.Context, pool *pgxpool.Pool, owner, submissionID int
 		return nil, false, err
 	}
 	s.HeaderErrors = header
+	s.PseudoStamp = strPtr(pseudo)
+	s.FinishedAt = strPtr(finished)
+	s.ErrorText = strPtr(errText)
+	s.Endpoint = strPtr(endpoint)
+	s.ReceiptPDF = strPtr(receipt)
+	s.ErrorPDF = strPtr(errPDF)
 	codebook, severities, err := ubyport.LoadCodebook(ctx, pool)
 	if err != nil {
 		return nil, false, err
