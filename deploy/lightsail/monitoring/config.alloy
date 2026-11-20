@@ -1,6 +1,7 @@
 // UbyHost observability pipeline (brief 0425).
 // Logs: every compose container's stdout/stderr → Grafana Cloud Loki.
-// Metrics: node-exporter (host) + cAdvisor (containers) → Prometheus.
+// Metrics: node-exporter (host) + cAdvisor (containers) + the app /metrics
+// endpoints (ubyhost, ubyhost-go) → Prometheus.
 // Credentials arrive as env from compose (deploy/lightsail/.env), never here.
 
 discovery.docker "containers" {
@@ -63,6 +64,19 @@ prometheus.scrape "cadvisor" {
 
 prometheus.scrape "ubyhost" {
   targets         = [{ "__address__" = "ubyhost:8080", "job" = "ubyhost" }]
+  scrape_interval = "30s"
+  forward_to      = [prometheus.remote_write.grafanacloud.receiver]
+}
+
+// 1830: both Go slots are scraped under one job; the idle slot is stopped, so
+// up{instance="ubyhost-go-b:8081"} == 0 is normal (and both are 0 while the
+// "go" profile is off). The live slot serves ubyhost_go_up and
+// ubyhost_go_http_requests_total{route,code}.
+prometheus.scrape "ubyhost-go" {
+  targets = [
+    { "__address__" = "ubyhost-go:8081",   "job" = "ubyhost-go" },
+    { "__address__" = "ubyhost-go-b:8081", "job" = "ubyhost-go" },
+  ]
   scrape_interval = "30s"
   forward_to      = [prometheus.remote_write.grafanacloud.receiver]
 }
