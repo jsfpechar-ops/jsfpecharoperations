@@ -1,0 +1,7 @@
+# Brief 1706 step-0 anchors (repo root). Each grep -cF must return 1 unless noted.
+grep -cF 'def create_account(' App/app/ttlock.py
+grep -cF 'func (c *Client) CreateAccount(ctx context.Context, ownerUserID int64)' go/internal/ttlock/api.go
+grep -cF 'func (c *Client) CheckLocks(ctx context.Context, accountID int64)' go/internal/ttlock/api.go
+grep -cF 'func NewPGBudget(pool *pgxpool.Pool, limit int64, now func() time.Time) *PGBudget' go/internal/ttlock/budget.go
+ls go/internal/ttlock/testdata 2>&1 | grep -cF 'No such file'
+find docs/tasks/1706-files -name '*.txt' ! -name 'ANCHORS.txt' | wc -l
