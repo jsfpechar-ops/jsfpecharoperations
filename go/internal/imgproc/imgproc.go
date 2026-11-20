@@ -28,6 +28,8 @@ const (
 	MaxSide = 1600
 	// Quality is guide_photos.JPEG_QUALITY, the quality of the stored file.
 	Quality = 82
+	// PassportQuality is passport_photos.JPEG_QUALITY (brief 1597b).
+	PassportQuality = 90
 )
 
 var (
@@ -46,6 +48,16 @@ var slot = make(chan struct{}, 1)
 // JPEG of quality Quality, EXIF-free, upright, at most MaxSide on its longest
 // side (a smaller picture is never enlarged).
 func Clean(content []byte) ([]byte, error) {
+	return encodePipeline(content, Quality, true)
+}
+
+// Reencode is passport_photos.reencode_image: a clean JPEG at PassportQuality
+// with EXIF orientation applied and no resize (brief 1597b, demo seed).
+func Reencode(content []byte) ([]byte, error) {
+	return encodePipeline(content, PassportQuality, false)
+}
+
+func encodePipeline(content []byte, quality int, doShrink bool) ([]byte, error) {
 	if !isJPEG(content) && !isPNG(content) && !isWebP(content) {
 		return nil, ErrNotImage // GIF, BMP, PDF and the rest are refused, as in Python
 	}
@@ -65,12 +77,14 @@ func Clean(content []byte) ([]byte, error) {
 	}
 	flat := flatten(src)
 	src = nil
-	flat = shrink(flat)
+	if doShrink {
+		flat = shrink(flat)
+	}
 	if isJPEG(content) {
 		flat = orient(flat, jpegOrientation(content))
 	}
 	var out bytes.Buffer
-	if err := jpeg.Encode(&out, flat, &jpeg.Options{Quality: Quality}); err != nil {
+	if err := jpeg.Encode(&out, flat, &jpeg.Options{Quality: quality}); err != nil {
 		return nil, err
 	}
 	return out.Bytes(), nil
