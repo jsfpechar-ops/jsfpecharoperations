@@ -1,0 +1,56 @@
+{
+ "cases": [
+  {
+   "body": "",
+   "flash_key": "",
+   "location": "/login",
+   "method": "GET",
+   "name": "signed_out_questions",
+   "path": "/apartments/901/guide/questions",
+   "status": 303,
+   "user": 0
+  },
+  {
+   "body": "",
+   "flash_key": "",
+   "location": "",
+   "method": "GET",
+   "name": "questions_index_ok",
+   "path": "/apartments/901/guide/questions",
+   "status": 200,
+   "user": 1
+  },
+  {
+   "body": "_csrf=golden",
+   "flash_key": "flash.guest_question.sent",
+   "location": "/apartments/901/guide/questions/11",
+   "method": "POST",
+   "name": "question_answer_ok",
+   "path": "/apartments/901/guide/questions/11",
+   "status": 303,
+   "user": 1
+  },
+  {
+   "body": "",
+   "flash_key": "",
+   "location": "",
+   "method": "GET",
+   "name": "leon_stay_not_live",
+   "path": "/l/stay-example/501/guide/leon",
+   "status": 404,
+   "user": 0
+  },
+  {
+   "body": "",
+   "flash_key": "",
+   "location": "",
+   "method": "GET",
+   "name": "leon_qr_not_live",
+   "path": "/g/qr-example/leon",
+   "status": 404,
+   "user": 0
+  }
+ ],
+ "now": "2026-06-15T12:00:00+00:00",
+ "seed": []
+}
