@@ -31,7 +31,7 @@ func TestGuestFormFieldNamesMatchPythonTemplate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	pyNames, err := formTemplateFieldNames("../../../App/app/templates/guest/form.html")
+	pyNames, err := formTemplateFieldNames("../../../../App/app/templates/guest/form.html")
 	if err != nil {
 		t.Fatal(err)
 	}
