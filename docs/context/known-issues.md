@@ -58,6 +58,7 @@
 | K-U11 | Med open | host.css | Geometry checked locally; CI/staging pending | 0040 |
 | K-U12 | Med open | reservations.html, dashboard.html | 1280px overflow; mobile menu closes | 0041 |
 | K-U13 | Med review | browser tests | CI import 0042; UI fails | 0042 |
+| K-U14 | Med open | needs_you.py, dashboard.html | "What needs you" lists Police overdue/not sent for properties with no UbyPort login (contradicts 1171) → 17 lines on unfinished setups | 1867 |
 | K-O01 | High open | server crontab | Backup and off-site crons are not in the repo; verify on server | AR-04 |
 | K-O02 | Med open | docker-compose.yml:14 | Floating image tag; check rollback on real deploy | AR-03 |
 | K-O03 | Med open | reporting.py:702 dashboard_rows | N+1 queries and double decrypts | P A50-51 |
