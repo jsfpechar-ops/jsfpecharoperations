@@ -94,14 +94,14 @@
     "owner_user_id": 132001,
     "name": "Alfa s.r.o.",
     "created_at": "2026-01-01T00:00:00+00:00",
-    "seat": "Dlouhá 5, Praha 1",
+    "seat": "Dlouh\u00e1 5, Praha 1",
     "ico": "12345678",
     "contact_email": "alfa@example.test"
    },
    {
     "id": 132102,
     "owner_user_id": 132001,
-    "name": "Čapek a syn",
+    "name": "\u010capek a syn",
     "created_at": "2026-01-01T00:00:00+00:00",
     "seat": ""
    },
@@ -116,7 +116,7 @@
    {
     "id": 132104,
     "owner_user_id": 132001,
-    "name": "Stará firma",
+    "name": "Star\u00e1 firma",
     "created_at": "2026-01-01T00:00:00+00:00",
     "ico": "87654321",
     "archived_at": "2026-03-05T10:00:00+00:00"
@@ -124,7 +124,7 @@
    {
     "id": 132105,
     "owner_user_id": 132001,
-    "name": "Zrušená",
+    "name": "Zru\u0161en\u00e1",
     "created_at": "2026-01-01T00:00:00+00:00",
     "archived_at": "2026-02-01T08:00:00+00:00"
    },
@@ -138,7 +138,7 @@
    {
     "id": 132107,
     "owner_user_id": 132003,
-    "name": "Céčko",
+    "name": "C\u00e9\u010dko",
     "created_at": "2026-01-01T00:00:00+00:00",
     "seat": "Brno"
    },
@@ -147,7 +147,7 @@
     "owner_user_id": 132005,
     "name": "Delta",
     "created_at": "2026-01-01T00:00:00+00:00",
-    "seat": "Plzeň"
+    "seat": "Plze\u0148"
    },
    {
     "id": 132109,
@@ -173,7 +173,7 @@
     "permalink_token": "seed-token-132201",
     "permalink_pin": "s32201",
     "legal_entity_id": 132101,
-    "addr_street": "Dlouhá",
+    "addr_street": "Dlouh\u00e1",
     "addr_house_no": "5",
     "addr_zip": "110 00",
     "addr_obec": "Praha"
@@ -181,7 +181,7 @@
    {
     "id": 132202,
     "owner_user_id": 132001,
-    "internal_name": "Byt staré",
+    "internal_name": "Byt star\u00e9",
     "created_at": "2026-01-01T00:00:00+00:00",
     "active": 0,
     "permalink_token": "seed-token-132202",
@@ -209,7 +209,7 @@
     "permalink_token": "seed-token-132204",
     "permalink_pin": "s32204",
     "legal_entity_id": 132108,
-    "addr_street": "Dlouhá",
+    "addr_street": "Dlouh\u00e1",
     "addr_house_no": "5",
     "addr_zip": "110 00",
     "addr_obec": "Praha"
@@ -223,7 +223,7 @@
     "permalink_token": "seed-token-132205",
     "permalink_pin": "s32205",
     "legal_entity_id": 132109,
-    "addr_street": "Dlouhá",
+    "addr_street": "Dlouh\u00e1",
     "addr_house_no": "5",
     "addr_zip": "110 00",
     "addr_obec": "Praha"
@@ -381,8 +381,7 @@
    "name": "apartments_rows_not_ported",
    "path": "/apartments",
    "user": 132001,
-   "lang": "en",
-   "go": 501
+   "lang": "en"
   },
   {
    "name": "apartments_signed_out",

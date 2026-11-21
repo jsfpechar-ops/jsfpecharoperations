@@ -185,3 +185,14 @@ func rotateSlug(ctx context.Context, pool *pgxpool.Pool, apartmentID int64, at t
 	}
 	return errors.New("could not find a free guest link code")
 }
+
+// guestSlugCurrent is guest_slug.current: the apartment's current slug, never
+// created on read (apartments_list ~1370).
+func guestSlugCurrent(ctx context.Context, pool *pgxpool.Pool, apartmentID int64) (string, error) {
+	var slug string
+	err := pool.QueryRow(ctx, slugCurrentSQL, apartmentID).Scan(&slug)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", nil
+	}
+	return slug, err
+}

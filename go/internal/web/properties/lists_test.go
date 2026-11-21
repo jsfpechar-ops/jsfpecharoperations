@@ -57,8 +57,14 @@ func TestListsMatchPython(t *testing.T) {
 	}
 	seedWorld(t, pool, &c)
 	seedExtra(t, pool, c.Seed)
+	listEnv := func(k string) string {
+		if k == "UBYHOST_PUBLIC_BASE_URL" {
+			return "http://127.0.0.1:8080" // Python golden default (config.py)
+		}
+		return testEnv(k)
+	}
 	mux := http.NewServeMux()
-	RegisterLists(mux, func(_ string, h http.HandlerFunc) http.Handler { return h }, pool, testEnv, testClock)
+	RegisterLists(mux, func(_ string, h http.HandlerFunc) http.Handler { return h }, pool, listEnv, testClock)
 	notPortedSeen := 0
 	for i, tc := range raw.Cases {
 		req := httptest.NewRequest(http.MethodGet, tc.Path, nil)
@@ -108,8 +114,8 @@ func TestListsMatchPython(t *testing.T) {
 				got.Items[lo:min(len(got.Items), n+4)], want.Items[lo:min(len(want.Items), n+4)])
 		}
 	}
-	if notPortedSeen != 1 {
-		t.Errorf("%d not-ported cases, want 1", notPortedSeen)
+	if notPortedSeen != 0 {
+		t.Errorf("%d not-ported cases, want 0", notPortedSeen)
 	}
 }
 

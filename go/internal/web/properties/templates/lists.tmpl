@@ -94,6 +94,58 @@
 {{define "apartments.title"}}{{end}}
 {{define "apartments"}}
 {{template "lists.onboarding_banner" .Banner}}
+{{if .Rows}}
+<div class="head props-head"><div class="props-title-row"><h1>{{t "apartments.title"}}</h1>{{page_help "properties"}}</div><a class="btn" href="/apartments/new">{{t "apartments.add"}}</a><a class="round props-add ph-only" href="/apartments/new" aria-label="{{t "apartments.add"}}">{{icon "plus" 22}}</a></div>
+<div class="card props-card"><table>
+  <thead>
+    <tr><th>{{t "apartments.table.property"}}</th><th>{{t "apartments.table.address"}}</th><th>{{t "apartments.table.setup"}}</th>
+      <th><span class="sr-only">{{t "common.copy_link"}}</span></th><th><span class="sr-only">{{t "common.actions"}}</span></th></tr>
+  </thead>
+  <tbody>
+  {{range .Rows}}
+    <tr class="clickable-row" data-href="{{.Base}}" tabindex="0" role="link" aria-label="{{.Apt.InternalName}}">
+      <td data-label="{{t "apartments.table.property"}}">
+        <a class="row-primary-link" href="{{.Base}}">{{property_identity .Apt.ID .Apt.InternalName}}</a>
+        {{if not .Apt.Active}}<small>{{t "apartments.inactive"}}</small>{{end}}
+      </td>
+      <td data-label="{{t "apartments.table.address"}}">{{.Address}}</td>
+      <td data-label="{{t "apartments.table.setup"}}">
+        <div class="setup">
+        {{range .Chips}}
+          <a class="st {{.Tone}}" data-setup-chip="{{.Key}}" data-state="{{.State}}" href="{{.Href}}">{{t (printf "apartments.chip.%s" .Key)}}<span class="sr-only">: {{t (printf "apartments.chip_state.%s" .State)}}</span></a>
+        {{end}}
+        </div>
+      </td>
+      <td class="nowrap" data-label="{{t "common.copy_link"}}">{{if .LinkURL}}<input class="sr-only" type="text" id="guest-url-{{.Apt.ID}}" readonly value="{{.LinkURL}}" tabindex="-1" aria-hidden="true">{{copy_button (printf "guest-url-%d" .Apt.ID) (t "common.copy_link")}}{{end}}</td>
+      <td class="nowrap row-actions dots" data-label="">
+        {{row_menu_begin}}
+          <a class="row-menu-item" href="{{.Base}}" role="menuitem">{{t "common.open"}}</a>
+          {{if .Apt.LegalEntityID}}<a class="row-menu-item" href="/entities?edit={{.Apt.LegalEntityID}}&amp;next=/apartments" role="menuitem">{{t "host.business"}}</a>{{end}}
+          <a class="row-menu-item" href="{{.Base}}?view=settings&amp;section=property#basics" role="menuitem">{{t "apartments.row.edit"}}</a>
+          <a class="row-menu-item" href="{{.Base}}?view=settings&amp;section=guests#communication" role="menuitem">{{t "nav.guest_links"}}</a>
+          <a class="row-menu-item" href="{{.Base}}?view=settings&amp;section=automation#automation" role="menuitem">{{t "nav.automation"}}</a>
+          <form method="post" action="/apartments/{{.Apt.ID}}/archive" class="row-menu-form" data-confirm data-confirm-message="{{t "host.delete_to_archived.confirm"}}">
+            <input type="hidden" name="return_to" value="/apartments">
+            <button class="row-menu-item" type="submit" role="menuitem">{{t "host.delete"}}</button>
+          </form>
+        {{row_menu_end}}
+      </td>
+    </tr>
+  {{end}}
+  </tbody>
+</table></div>
+<div class="props-phone">
+{{range .Rows}}
+  <a class="card prop" href="{{.Base}}">
+    <span class="cover {{.PhoneCoverClass}}"><span class="ini">{{.PhoneInitials}}</span></span>
+    <span class="in"><b>{{.Apt.InternalName}}</b>{{if .Address}}<small>{{.Address}}</small>{{end}}
+      {{if .PhoneReady}}<span class="st g">{{t "apartments.phone.ready"}}</span>{{else}}<span class="st r">{{t "apartments.phone.missing" (kv "items" .PhoneMissing)}}</span>{{end}}</span>
+    {{icon "chevron-right" 20 "chev"}}
+  </a>
+{{end}}
+</div>
+{{else}}
 <div class="head props-head"><div class="props-title-row"><h1>{{t "apartments.title"}}</h1>{{page_help "properties"}}</div></div>
 {{if .HasOperator}}{{empty_state "" (t "apartments.empty.lede_ready") "/apartments/new" (t "apartments.empty.add")}}{{else}}{{empty_state "" (t "apartments.empty.lede") "/entities" (t "apartments.empty.entity")}}{{end}}
+{{end}}
 {{end}}
