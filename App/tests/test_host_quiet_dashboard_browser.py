@@ -84,6 +84,9 @@ def dashboard_rich_host():
         "internal_name": "Review Flat", "permalink_token": f"review{secrets.token_hex(4)}",
         "permalink_pin": "123456", "automation_mode": "manual",
         "submit_after_hours": 24, "active": 1, "created_at": now,
+        "uby_idub": "123456789012",
+        "uby_ws_user": "uby-ws1a2b3c",
+        "uby_ws_password_enc": db.encrypt_secret("ws-secret"),
     })
     # Exercise the dashboard's real calendar-sync and clear-demo actions in
     # screenshots without calling either action or using a live feed.

@@ -9,7 +9,7 @@ from app import needs_you
 TODAY = date(2026, 10, 22)
 
 
-def _row(stay_id, status, *, days=0, urgency="future", mode="manual", source="airbnb"):
+def _row(stay_id, status, *, days=0, urgency="future", mode="manual", source="airbnb", files=True):
     start = TODAY + timedelta(days=days)
     return {
         "reservation": {
@@ -19,6 +19,7 @@ def _row(stay_id, status, *, days=0, urgency="future", mode="manual", source="ai
         },
         "progress": {"status": status},
         "urgency": urgency,
+        "files_with_ubyhost": files,
     }
 
 
@@ -93,3 +94,26 @@ def test_a_stay_that_ends_today_no_longer_asks_guests_to_register():
     assert _build([_row(5, "awaiting_guest", days=-2)])["lines"] == []  # date_to == TODAY
     lines = _build([_row(6, "awaiting_guest", days=-1)])["lines"]  # date_to == TODAY + 1
     assert [line["stay_id"] for line in lines] == [6]
+
+
+def test_overdue_stay_without_ubyport_login_gets_no_police_line():
+    """2000: UbyHost files nothing for this property, so no police nag."""
+    rows = [
+        _row(1, "ready", days=-18, urgency="overdue", files=False),
+        _row(2, "failed", days=-18, files=False),
+        _row(3, "ready", days=2, files=False),
+    ]
+    built = _build(rows)
+    assert built["lines"] == []
+    assert built["on_track"] == 3
+
+
+def test_overdue_stay_with_ubyport_login_still_gets_the_red_line():
+    lines = _build([_row(1, "ready", days=-18, urgency="overdue", files=True)])["lines"]
+    assert lines[0]["tone"] == "red" and lines[0]["text"] == "Police overdue"
+    assert lines[0]["action"] == "Review and send"
+
+
+def test_stay_without_ubyport_login_still_asks_unregistered_guests():
+    lines = _build([_row(1, "awaiting_guest", days=1, files=False)])["lines"]
+    assert [line["text"] for line in lines] == ["Guests not registered"]

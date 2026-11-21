@@ -12,7 +12,7 @@ Updated: 2026-11-21.
 - UX gate and Stripe onboarding live. Backups: daily pg_dump + WAL-G 7-day PITR (drill every 3 mo).
 
 ## Next
-- 1867: no police nags on Overview without UbyPort login.
+- 2000: no police nags on Overview without UbyPort login.
 - Briefs 1865 (green main auto-deploys to Lightsail staging; production manual-only) + 1866 (CI/GitHub hardening).
 - Go executor queue ([plan](../plans/go-cutover-executor-queue.md)): runnable **1793**, **0852**; **1730** / **1770** blocked until exact-diff sidecars.
 - [Autopilot](../plans/autopilot-agentic.md): hide Payments first.

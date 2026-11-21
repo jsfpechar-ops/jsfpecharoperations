@@ -1002,6 +1002,7 @@ def dashboard_rows(
                 "progress": progress,
                 "controls": controls,
                 "urgency": level,
+                "files_with_ubyhost": _apartment_files_with_ubyhost(apartment),
                 "check_in": check_in,
                 "deadline": deadlines.reporting_deadline(check_in) if check_in else None,
                 "deadline_cell": cell,
@@ -2896,6 +2897,19 @@ FILES_WITH_UBYHOST_SQL = (
     "AND COALESCE(TRIM(a.uby_ws_user), '') != '' "
     "AND COALESCE(TRIM(a.uby_ws_password_enc), '') != '')"
 )
+
+
+def _apartment_files_with_ubyhost(apartment: Any) -> bool:
+    """Python copy of FILES_WITH_UBYHOST_SQL for one apartment row (2000).
+
+    An unknown apartment counts as filing, so callers keep their old behaviour.
+    """
+    if not apartment:
+        return True
+    return all(
+        str(apartment[column] or "").strip()
+        for column in ("uby_idub", "uby_ws_user", "uby_ws_password_enc")
+    )
 
 
 def check_deadlines(

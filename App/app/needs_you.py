@@ -71,15 +71,19 @@ def stay_line(row: Dict[str, Any], lang: str, today: date) -> Optional[Dict[str,
     stay_id = reservation["id"]
     subject = _stay_name(reservation)
     base = f"/reservations/{stay_id}?return_to=/"
-    if status == "failed":
+    # 2000: no UbyPort login, so UbyHost files nothing here; setup is the call to action.
+    files = bool(row.get("files_with_ubyhost", True))
+    if files and status == "failed":
         return _line("stay", "red", subject, t("needs_you.short.failed"), t("needs_you.action.fix"), base + "#guests", stay_id=stay_id)
-    if row.get("urgency") == "overdue":
+    if files and row.get("urgency") == "overdue":
         if status in _SEND:
             return _line("stay", "red", subject, t("needs_you.short.overdue"), t("needs_you.action.send"), base + "#now", stay_id=stay_id)
         return _line("stay", "red", subject, t("needs_you.short.overdue"), t("needs_you.action.open"), base, stay_id=stay_id)
     if demo.is_demo_stay(reservation):
         return None
     if status in _SEND:
+        if not files:
+            return None
         # Automatic and scheduled reporting send by themselves: on track.
         if _get(reservation, "automation_mode", "manual") != "manual":
             return None
