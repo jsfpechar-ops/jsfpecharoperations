@@ -293,34 +293,15 @@ fi
 # changed, so the old containers keep running. Without it (a manual deploy on
 # the server) the images are built here as before.
 GO_IMAGE_PULLED=0
-if [ -n "${UBYHOST_IMAGE:-}" ] || [ -n "${UBYHOST_GO_IMAGE:-}" ]; then
-  if [ -n "${UBYHOST_IMAGE:-}" ]; then
-  if docker compose config --services 2>/dev/null | grep -qx ubyhost; then
-    if ! docker pull "${UBYHOST_IMAGE}"; then
-      echo "ERROR: could not pull ${UBYHOST_IMAGE}. Nothing was changed; the old containers keep running. Check that the GHCR package is public (docs/LIGHTSAIL.md, Deploy from GitHub Actions)." >&2
-      exit 1
-    fi
-  else
-    echo "==> Go-only compose: pull Python image for backup_data one-offs only"
-    if ! docker pull "${UBYHOST_IMAGE}"; then
-      echo "ERROR: could not pull ${UBYHOST_IMAGE} for backups." >&2
-      exit 1
-    fi
+if [ -n "${UBYHOST_GO_IMAGE:-}" ]; then
+  if ! docker pull "${UBYHOST_GO_IMAGE}"; then
+    echo "ERROR: could not pull ${UBYHOST_GO_IMAGE}. Nothing was changed; the old containers keep running. Check that the GHCR package is public (docs/LIGHTSAIL.md, Deploy from GitHub Actions)." >&2
+    exit 1
   fi
-  echo "==> Using CI-built image ${UBYHOST_IMAGE}"
-  docker tag "${UBYHOST_IMAGE}" ubyhost:local
-  docker image rm "${UBYHOST_IMAGE}" >/dev/null
-  fi
-  if [ -n "${UBYHOST_GO_IMAGE:-}" ] && docker compose config --services | grep -qx 'ubyhost-go'; then
-    if ! docker pull "${UBYHOST_GO_IMAGE}"; then
-      echo "ERROR: could not pull ${UBYHOST_GO_IMAGE}. Nothing was changed; the old containers keep running. Check that the GHCR package is public (docs/LIGHTSAIL.md, Deploy from GitHub Actions)." >&2
-      exit 1
-    fi
-    GO_IMAGE_PULLED=1
-    echo "==> Using CI-built Go image ${UBYHOST_GO_IMAGE}"
-    docker tag "${UBYHOST_GO_IMAGE}" ubyhost-go:local
-    docker image rm "${UBYHOST_GO_IMAGE}" >/dev/null
-  fi
+  GO_IMAGE_PULLED=1
+  echo "==> Using CI-built Go image ${UBYHOST_GO_IMAGE}"
+  docker tag "${UBYHOST_GO_IMAGE}" ubyhost-go:local
+  docker image rm "${UBYHOST_GO_IMAGE}" >/dev/null
 else
   echo "==> Building Go image"
   docker compose --profile go build --pull ubyhost-go
