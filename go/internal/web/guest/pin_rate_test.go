@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 	"time"
-
 )
 
 func TestRateCountWindowed(t *testing.T) {
