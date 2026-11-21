@@ -11,7 +11,8 @@ FROM alpine:3.24@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c03
 RUN adduser -D -u 10001 ubyhost
 COPY --from=builder /out/ubyhost-web /usr/local/bin/ubyhost-web
 COPY App/migrations_pg/ /app/migrations_pg/
-ENV UBYHOST_GO_ADDR=0.0.0.0:8081 UBYHOST_MIGRATIONS_DIR=/app/migrations_pg
+COPY App/app/static/ /app/static/
+ENV UBYHOST_GO_ADDR=0.0.0.0:8081 UBYHOST_MIGRATIONS_DIR=/app/migrations_pg UBYHOST_APP_ROOT=/app
 USER ubyhost
 EXPOSE 8081
 ENTRYPOINT ["/usr/local/bin/ubyhost-web"]
