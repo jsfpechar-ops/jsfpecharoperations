@@ -394,7 +394,7 @@ func reservationForGuest(ctx context.Context, pool *pgxpool.Pool, apt *Apartment
 	var res guestResMeta
 	var purpose string
 	err := pool.QueryRow(ctx, `SELECT r.apartment_id, a.owner_user_id, r.date_from::text, r.date_to::text,
-		r.declared_guests, r.override_guests, r.reduced_guests, COALESCE(a.default_purpose,'')
+		r.declared_guests, r.expected_guests_override, r.lead_reduced_guests, COALESCE(a.default_purpose,'')
 		FROM reservation r JOIN apartment a ON a.id = r.apartment_id
 		WHERE r.id = $1 AND r.apartment_id = $2 AND r.status = 'active' AND r.archived_at IS NULL
 		  AND COALESCE(r.source,'') <> 'demo' AND a.permalink_token = $3`,

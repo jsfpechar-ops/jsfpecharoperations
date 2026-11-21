@@ -663,7 +663,7 @@ func formPagesThrottlePost(w http.ResponseWriter, r *http.Request, d formPageDep
 func formPagesReservation(ctx context.Context, pool *pgxpool.Pool, apt *Apartment, resID int64, r *http.Request) (formResRow, bool) {
 	var row formResRow
 	err := pool.QueryRow(ctx, `SELECT r.id, r.apartment_id, a.owner_user_id, r.date_from::text, r.date_to::text,
-		r.declared_guests, r.override_guests, r.reduced_guests
+		r.declared_guests, r.expected_guests_override, r.lead_reduced_guests
 		FROM reservation r JOIN apartment a ON a.id = r.apartment_id
 		WHERE r.id = $1 AND r.apartment_id = $2 AND r.status = 'active' AND r.archived_at IS NULL
 		  AND COALESCE(r.source,'') <> 'demo' AND a.permalink_token = $3`,
