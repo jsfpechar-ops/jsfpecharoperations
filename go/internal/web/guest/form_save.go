@@ -40,6 +40,10 @@ type saveDeps struct {
 	now    func() time.Time
 }
 
+func (d saveDeps) shell() shellDeps {
+	return shellDeps{pool: d.pool, getenv: d.getenv, now: d.now}
+}
+
 type guestSaveRow struct {
 	id           int64
 	submitState  string
@@ -87,26 +91,28 @@ func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter,
 		http.NotFound(w, r)
 		return nil
 	}
-	lang := guestLanguage(r)
-	if openGuestLink(ctx, d.pool, token, lang, w, r) {
+	lang := formRequestLanguage(r)
+	apt, token, early := OpenLink(r, d.pool, token, lang)
+	if early != nil {
+		early.ServeHTTP(w, r)
 		return nil
 	}
-	if requireGuestPin(w, r, token, lang) || throttleGuestPost(w, r, token, "guest_save", lang) {
+	if requirePin(w, r, d.shell(), token, lang, apt) {
 		return nil
 	}
-	cfg, res, ok := reservationForGuest(ctx, d.pool, token, resID, r)
+	cfg, res, ok := reservationForGuest(ctx, d.pool, apt, resID, d.getenv)
 	if !ok {
 		guestUnavailable(w, r, lang, "stay_gone", http.StatusNotFound, token, resID)
 		return nil
 	}
-	if requireClaimSession(w, r, res, token, lang) {
+	if throttleGuestPost(w, r, d, token, "guest_save", lang) {
 		return nil
 	}
 	form := postForm(r)
-	guestID := ownedGuestID(r, form)
+	guestID := ownedGuestID(r, d.getenv, form)
 	var existing *guestSaveRow
 	if guestID > 0 {
-		existing, err = loadGuestSaveRow(ctx, d.pool, guestID, resID)
+		existing, err = loadGuestSaveRow(ctx, d.pool, d.getenv, d.now, guestID, resID)
 		if err != nil {
 			return err
 		}
@@ -115,7 +121,7 @@ func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter,
 			return nil
 		}
 		if existing != nil && existing.restrictedAt != "" {
-			http.Redirect(w, r, guestLink(token, resID, lang), http.StatusSeeOther)
+			http.Redirect(w, r, GuestLink(token, resID, LangQuery(lang, "")), http.StatusSeeOther)
 			return nil
 		}
 		if existing != nil && guestFormLocked(existing) {
@@ -160,7 +166,7 @@ func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter,
 		}
 		if savedID == 0 {
 			_ = guestFormSubmitStayIfComplete(ctx, d.pool, d.getenv, d.now, res.apartmentID, resID)
-			http.Redirect(w, r, guestLink(token, resID, lang), http.StatusSeeOther)
+			http.Redirect(w, r, GuestLink(token, resID, LangQuery(lang, "")), http.StatusSeeOther)
 			return nil
 		}
 	}
@@ -168,11 +174,12 @@ func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter,
 		return err
 	}
 	_ = guestFormSubmitStayIfComplete(ctx, d.pool, d.getenv, d.now, res.apartmentID, resID)
-	if existing != nil {
-		http.Redirect(w, r, guestLink(token, resID, lang), http.StatusSeeOther)
-	} else {
-		http.Redirect(w, r, guestLink(token, resID, lang)+"/new", http.StatusSeeOther)
+	rememberOwnedGuestIDs(w, d.getenv, append(ownedGuestIDs(r, d.getenv), savedID))
+	loc := GuestLink(token, resID, LangQuery(lang, ""))
+	if existing == nil {
+		loc = GuestLink(token, resID, "/new"+LangQuery(lang, ""))
 	}
+	http.Redirect(w, r, loc, http.StatusSeeOther)
 	return nil
 }
 
@@ -221,19 +228,40 @@ func buildSavePayload(v validation.GuestRow, stayFrom, stayTo, sig string, child
 	return p
 }
 
-func loadGuestSaveRow(ctx context.Context, pool *pgxpool.Pool, id, resID int64) (*guestSaveRow, error) {
+func loadGuestSaveRow(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, id, resID int64) (*guestSaveRow, error) {
 	var g guestSaveRow
+	var sigEnc string
 	err := pool.QueryRow(ctx, `SELECT id, submit_state, COALESCE(restricted_at::text,''), COALESCE(signature_png,''),
-		COALESCE(last_errors,''), COALESCE(stay_from,''), COALESCE(stay_to,'')
+		COALESCE(signature_png_enc,''), COALESCE(last_errors,''), COALESCE(stay_from,''), COALESCE(stay_to,'')
 		FROM guest WHERE id = $1 AND reservation_id = $2`, id, resID).
-		Scan(&g.id, &g.submitState, &g.restrictedAt, &g.signaturePNG, &g.lastErrors, &g.stayFrom, &g.stayTo)
+		Scan(&g.id, &g.submitState, &g.restrictedAt, &g.signaturePNG, &sigEnc, &g.lastErrors, &g.stayFrom, &g.stayTo)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
+	plain, err := decryptGuestField(getenv, now, sigEnc, g.signaturePNG)
+	if err != nil {
+		return nil, err
+	}
+	g.signaturePNG = plain
 	return &g, nil
+}
+
+func decryptGuestField(getenv func(string) string, now func() time.Time, token, plain string) (string, error) {
+	if token == "" {
+		return plain, nil
+	}
+	keys, err := secure.LoadDataKeys(getenv)
+	if err != nil {
+		return "", err
+	}
+	when := time.Now()
+	if now != nil {
+		when = now()
+	}
+	return keys.DecryptField(token, when)
 }
 
 func updateGuestSaveRow(ctx context.Context, d saveDeps, existing *guestSaveRow, payload map[string]any) (bool, error) {
@@ -292,14 +320,9 @@ func insertGuestSaveRow(ctx context.Context, d saveDeps, payload map[string]any,
 		return 0, err
 	}
 	var id int64
-	err = tx.QueryRow(ctx, `INSERT INTO guest (reservation_id, is_lead, surname, first_name, nationality,
-		res_country, purpose, note, stay_from, stay_to, notice_version, notice_lang, notice_ack_at,
-		filled_at, entered_by, submit_state, created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18) RETURNING id`,
-		enc["reservation_id"], enc["is_lead"], enc["surname"], enc["first_name"], enc["nationality"],
-		enc["res_country"], enc["purpose"], enc["note"], enc["stay_from"], enc["stay_to"],
-		enc["notice_version"], enc["notice_lang"], enc["notice_ack_at"], enc["filled_at"], enc["entered_by"],
-		enc["submit_state"], enc["created_at"], enc["updated_at"]).Scan(&id)
+	err = tx.QueryRow(ctx, `INSERT INTO guest (`+strings.Join(guestSaveInsertCols, ", ")+`)
+		VALUES (`+guestSaveInsertPlaceholders()+`) RETURNING id`,
+		guestSaveInsertArgs(enc)...).Scan(&id)
 	if err != nil {
 		return 0, err
 	}
@@ -323,6 +346,8 @@ func encryptSaveFields(getenv func(string) string, payload map[string]any) (map[
 				out[k+"_enc"] = tok
 				continue
 			}
+			out[k+"_enc"] = nil
+			continue
 		}
 		out[k] = v
 	}
@@ -353,31 +378,93 @@ func utcStamp(now func() time.Time) string {
 }
 
 // Portal hooks (briefs 1720–1723 replace these stubs in shell.go / form_pages.go).
-func guestLanguage(r *http.Request) string { return "cs" }
-
-func openGuestLink(ctx context.Context, pool *pgxpool.Pool, token, lang string, w http.ResponseWriter, r *http.Request) bool {
+func throttleGuestPost(w http.ResponseWriter, r *http.Request, d saveDeps, token, kind, lang string) bool {
+	if guestPostLimited(r.Context(), d.pool, d.getenv, r, token, kind, d.now()) {
+		guestUnavailable(w, r, lang, "rate_limited", http.StatusTooManyRequests, token, 0)
+		return true
+	}
 	return false
 }
 
-func requireGuestPin(w http.ResponseWriter, r *http.Request, token, lang string) bool { return false }
-
-func throttleGuestPost(w http.ResponseWriter, r *http.Request, token, kind, lang string) bool {
-	return false
+func reservationForGuest(ctx context.Context, pool *pgxpool.Pool, apt *Apartment, resID int64, getenv func(string) string) (guestFormCfg, guestResMeta, bool) {
+	if pool == nil || apt == nil || resID <= 0 {
+		return guestFormCfg{}, guestResMeta{}, false
+	}
+	var cfg guestFormCfg
+	var res guestResMeta
+	var purpose string
+	err := pool.QueryRow(ctx, `SELECT r.apartment_id, a.owner_user_id, r.date_from::text, r.date_to::text,
+		r.declared_guests, r.override_guests, r.reduced_guests, COALESCE(a.default_purpose,'')
+		FROM reservation r JOIN apartment a ON a.id = r.apartment_id
+		WHERE r.id = $1 AND r.apartment_id = $2 AND r.status = 'active' AND r.archived_at IS NULL
+		  AND COALESCE(r.source,'') <> 'demo' AND a.permalink_token = $3`,
+		resID, apt.ID, apt.PermalinkToken).Scan(
+		&res.apartmentID, &cfg.ownerUserID, &res.dateFrom, &res.dateTo,
+		&res.declaredGuests, &res.overrideGuests, &res.reducedGuests, &purpose)
+	if err != nil {
+		return guestFormCfg{}, guestResMeta{}, false
+	}
+	cfg.defaultPurpose = purpose
+	if getenv != nil {
+		cfg.noticeVersion = noticeVersion(getenv)
+	}
+	return cfg, res, true
 }
 
-func reservationForGuest(ctx context.Context, pool *pgxpool.Pool, token string, resID int64, r *http.Request) (guestFormCfg, guestResMeta, bool) {
-	return guestFormCfg{}, guestResMeta{}, false
+func guestLink(token string, resID int64, lang string) string {
+	_ = lang
+	return GuestLink(token, resID, "")
 }
 
 func guestUnavailable(w http.ResponseWriter, r *http.Request, lang, code string, status int, token string, resID int64) {
-	http.Error(w, code, status)
+	extra := map[string]string{}
+	if resID > 0 {
+		extra["reservation_id"] = strconv.FormatInt(resID, 10)
+	}
+	WriteUnavailable(w, r, lang, code, status, token, extra)
 }
 
-func requireClaimSession(w http.ResponseWriter, r *http.Request, res guestResMeta, token, lang string) bool {
-	return false
+func ownedGuestID(r *http.Request, getenv func(string) string, form map[string]string) int64 {
+	raw := strings.TrimSpace(form["guest_id"])
+	id, err := strconv.ParseInt(raw, 10, 64)
+	if err != nil || id <= 0 {
+		return 0
+	}
+	for _, owned := range ownedGuestIDs(r, getenv) {
+		if owned == id {
+			return id
+		}
+	}
+	return 0
 }
 
-func ownedGuestID(r *http.Request, form map[string]string) int64 { return 0 }
+// guestSaveInsertCols is the guest-row write list. Encrypted PII must use the
+// *_enc columns; omitting them silently dropped birth date, document and signature.
+var guestSaveInsertCols = []string{
+	"reservation_id", "is_lead", "surname", "first_name", "nationality",
+	"res_country", "purpose", "note", "stay_from", "stay_to",
+	"notice_version", "notice_lang", "notice_ack_at", "filled_at", "entered_by",
+	"submit_state", "created_at", "updated_at",
+	"birth_date_enc", "doc_number_enc", "visa_number_enc",
+	"res_street_enc", "res_city_enc", "signature_png_enc",
+	"signed_at", "last_errors",
+}
+
+func guestSaveInsertPlaceholders() string {
+	parts := make([]string, len(guestSaveInsertCols))
+	for i := range guestSaveInsertCols {
+		parts[i] = "$" + strconv.Itoa(i+1)
+	}
+	return strings.Join(parts, ",")
+}
+
+func guestSaveInsertArgs(enc map[string]any) []any {
+	args := make([]any, len(guestSaveInsertCols))
+	for i, col := range guestSaveInsertCols {
+		args[i] = enc[col]
+	}
+	return args
+}
 
 func lockedStayDates(res guestResMeta, existing *guestSaveRow) (string, string) {
 	if existing != nil && existing.stayFrom != "" {
@@ -398,10 +485,6 @@ func guestFormLocked(row *guestSaveRow) bool { return false }
 func renderGuestForm422(w http.ResponseWriter, r *http.Request, lang string, existing *guestSaveRow, values validation.GuestRow, issues []validation.Issue) {
 	w.WriteHeader(http.StatusUnprocessableEntity)
 	_, _ = w.Write([]byte("validation"))
-}
-
-func guestLink(token string, resID int64, lang string) string {
-	return fmt.Sprintf("/l/%s/%d", token, resID)
 }
 
 func parseDatePtr(s string) *time.Time {

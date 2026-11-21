@@ -134,6 +134,35 @@ func TestFormPagesVisibleLinesHelper(t *testing.T) {
 	}
 }
 
+func TestFormPagesDefaultPurpose(t *testing.T) {
+	if got := formPagesDefaultPurpose(nil); got != "99" {
+		t.Fatalf("nil apt: %q", got)
+	}
+	if got := formPagesDefaultPurpose(&Apartment{}); got != "99" {
+		t.Fatalf("empty: %q", got)
+	}
+	if got := formPagesDefaultPurpose(&Apartment{DefaultPurpose: "10"}); got != "10" {
+		t.Fatalf("apartment default: %q", got)
+	}
+}
+
+func TestFormPagesOwnedIDsFromCookie(t *testing.T) {
+	r := httptest.NewRequest(http.MethodGet, "/l/tok/9/edit/42", nil)
+	if formPagesOwnedIDs(r, testGuestEnv)[42] {
+		t.Fatal("no cookie must not own 42")
+	}
+	w := httptest.NewRecorder()
+	formPagesSetOwnedCookie(w, testGuestEnv, []int64{42})
+	res := w.Result()
+	defer res.Body.Close()
+	for _, c := range res.Cookies() {
+		r.AddCookie(c)
+	}
+	if !formPagesOwnedIDs(r, testGuestEnv)[42] {
+		t.Fatal("cookie should own 42")
+	}
+}
+
 func TestFormPagesRegisterNilPool(t *testing.T) {
 	mux := http.NewServeMux()
 	RegisterFormPages(mux, nil, func(string) string { return "" }, nil, func(_ string, h http.HandlerFunc) http.Handler { return h })

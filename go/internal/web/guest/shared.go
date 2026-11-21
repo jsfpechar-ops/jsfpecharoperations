@@ -143,14 +143,14 @@ func requirePin(w http.ResponseWriter, r *http.Request, d shellDeps, token, lang
 func loadApartmentDetail(ctx context.Context, pool *pgxpool.Pool, column, value string) (*Apartment, bool) {
 	q := fmt.Sprintf(`SELECT id, COALESCE(internal_name,''), COALESCE(uby_name,''), COALESCE(city_en,''),
 		COALESCE(permalink_token,''), COALESCE(permalink_pin,''),
-		COALESCE(passport_photo_policy,''), COALESCE(lock_provider,''), owner_user_id,
+		COALESCE(passport_photo_policy,''), COALESCE(lock_provider,''), COALESCE(default_purpose,''), owner_user_id,
 		legal_entity_id, data_controller_entity_id
 		FROM apartment WHERE %s = $1 AND active = 1 AND archived_at IS NULL`, column)
 	var a Apartment
 	var legal, ctrl *int64
 	err := pool.QueryRow(ctx, q, value).Scan(
 		&a.ID, &a.InternalName, &a.UbyName, &a.CityEn, &a.PermalinkToken, &a.PermalinkPIN,
-		&a.PassportPhotoPolicy, &a.LockProvider, &a.OwnerUserID, &legal, &ctrl)
+		&a.PassportPhotoPolicy, &a.LockProvider, &a.DefaultPurpose, &a.OwnerUserID, &legal, &ctrl)
 	if legal != nil {
 		a.LegalEntityID = *legal
 	}
