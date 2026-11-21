@@ -17,6 +17,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -316,13 +317,36 @@ func (d stayClaimDeps) pinRedirect(w http.ResponseWriter, r *http.Request, token
 	if !guestPinRequired(d.getenv) {
 		return false
 	}
-	// Signed-in host previewing own property skips the PIN gate (guest.py _require_pin).
 	apt, err := scLoadApartment(r.Context(), d.pool, token)
-	if err == nil && apt != nil && hostOwnsStay(r, apt.ownerID) {
+	if err != nil || apt == nil {
 		return false
 	}
-	// Brief 1720 serves pin.html; redirect to the link hub with return path in query.
-	target := "/l/" + token + langQuery(lang)
+	// Signed-in host previewing own property skips the PIN gate (guest.py _require_pin).
+	if hostOwnsStay(r, apt.ownerID) {
+		return false
+	}
+	expected := strings.TrimSpace(apt.pin)
+	lockToken := apt.token
+	if lockToken == "" {
+		lockToken = token
+	}
+	if PinSessionValid(r, d.getenv, lockToken, expected, d.now()) {
+		return false
+	}
+	returnTo := r.URL.Path
+	if r.URL.RawQuery != "" {
+		returnTo += "?" + r.URL.RawQuery
+	}
+	if safe := safeReturnTo(returnTo, token, lang); safe != "" {
+		returnTo = safe
+	}
+	// Hub PIN page honours return_to after verifyPin.
+	target := "/l/" + url.PathEscape(token)
+	if lang == "" || lang == "cs" {
+		target += "?return_to=" + url.QueryEscape(returnTo)
+	} else {
+		target += langQueryAmp(lang, "return_to="+url.QueryEscape(returnTo))
+	}
 	http.Redirect(w, r, target, http.StatusSeeOther)
 	return true
 }
