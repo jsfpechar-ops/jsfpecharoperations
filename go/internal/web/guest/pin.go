@@ -123,11 +123,11 @@ func sharedPinPage(r *http.Request, pool *pgxpool.Pool, getenv func(string) stri
 	return p, csrfCookie, nil
 }
 
-func writePinPage(w http.ResponseWriter, r *http.Request, status int, p PinView, extra map[string]string, csrfCookie *http.Cookie, lang string) {
+func writePinPage(w http.ResponseWriter, r *http.Request, status int, p PinView, extra map[string]string, csrfCookie *http.Cookie, lang string, getenv func(string) string) {
 	if csrfCookie != nil {
 		http.SetCookie(w, &http.Cookie{
 			Name: LangCookie, Value: lang, Path: "/", MaxAge: langCookieAge,
-			SameSite: http.SameSiteLaxMode, Secure: hostweb.SecureCookies(nil),
+			SameSite: http.SameSiteLaxMode, Secure: hostweb.SecureCookies(getenv),
 		})
 		http.SetCookie(w, csrfCookie)
 	}
@@ -174,7 +174,7 @@ func (d shellDeps) verifyPin(w http.ResponseWriter, r *http.Request) {
 		}
 		view.PinError = view.T(msgKey)
 		view.ReturnTo = returnTo
-		writePinPage(w, r, http.StatusOK, view, map[string]string{}, csrfCookie, view.Lang)
+		writePinPage(w, r, http.StatusOK, view, map[string]string{}, csrfCookie, view.Lang, d.getenv)
 	}
 	entered := strings.TrimSpace(r.PostFormValue("pin"))
 	expected := strings.TrimSpace(apt.PermalinkPIN)

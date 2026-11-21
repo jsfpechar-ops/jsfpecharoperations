@@ -354,7 +354,7 @@ func (p *Pages) renderEntities(w http.ResponseWriter, r *http.Request, host *ses
 	} else {
 		d.TitleLast = title
 	}
-	page := layout.Page{Title: title, Nav: "entities", BodyKind: "list", V2: true}
+	page := layout.Page{Title: title, Nav: "entities", BodyKind: "list", V2: true, BodyAlerts: true}
 	if len(status) > 0 {
 		page.Status = status[0]
 	}

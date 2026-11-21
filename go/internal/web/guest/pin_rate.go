@@ -26,12 +26,11 @@ func ratePrune(ctx context.Context, pool *pgxpool.Pool, scope, key string, windo
 }
 
 func rateCount(ctx context.Context, pool *pgxpool.Pool, scope, key string, window int, now time.Time) (int, error) {
-	if err := ratePrune(ctx, pool, scope, key, window, now); err != nil {
-		return 0, err
-	}
+	cutoff := rateEpoch(now) - float64(window)
 	var n int64
 	err := pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM rate_limit_event WHERE scope = $1 AND key = $2`, scope, key).Scan(&n)
+		`SELECT COUNT(*) FROM rate_limit_event WHERE scope = $1 AND key = $2 AND at >= $3`,
+		scope, key, cutoff).Scan(&n)
 	return int(n), err
 }
 

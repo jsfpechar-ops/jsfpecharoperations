@@ -8,8 +8,7 @@ package properties
 //
 // What is not ported answers 501 instead of showing a different page:
 //   - /entities?edit=N: the business editor with Invoice details (billing);
-//   - /entities when the workspace has an open alert: _host_alerts.html is
-//     inside the page body and is ported with brief 1381;
+//   - /entities with open alerts: host layout renders alert stack (brief 1381).
 //   - /apartments with a live property: the setup chips read filing state
 //     (validation issues, ubyport_auth_failed alerts), calendars, the lock
 //     and the guest link.
@@ -166,7 +165,6 @@ FROM legal_entity e WHERE e.owner_user_id IS NOT DISTINCT FROM $1 `
 const (
 	liveEntitiesSQL     = entityColumns + `AND e.archived_at IS NULL ORDER BY e.name`
 	archivedEntitiesSQL = entityColumns + `AND e.archived_at IS NOT NULL ORDER BY e.archived_at DESC`
-	openAlertsSQL       = `SELECT COUNT(*) FROM alert WHERE resolved_at IS NULL AND (owner_user_id = $1 OR kind IN ('turnstile_unavailable', 'ttlock_budget') OR (kind = 'job_failed' AND dedupe_key IN ('job_failed:submit', 'job_failed:deadlines', 'job_failed:ical', 'job_failed:door_codes')))`
 )
 
 func (s *Pages) entityRows(ctx context.Context, sql string, owner int64) ([]entityRow, error) {
@@ -223,15 +221,6 @@ func (s *Pages) entities(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx := r.Context()
 	ws := host.Workspace.ID
-	var alerts int64
-	if err := s.pool.QueryRow(ctx, openAlertsSQL, ws).Scan(&alerts); err != nil {
-		fail(w, err)
-		return
-	}
-	if alerts > 0 {
-		notPorted(w, "host alerts on this page")
-		return
-	}
 	d := &entitiesData{NextPath: safeLocalPath(queryLast(r, "next"), "")}
 	// account_email: the signed-in account (the admin inside a workspace).
 	if err := s.pool.QueryRow(ctx, accountEmailSQL, host.Account.ID).Scan(&d.AccountEmail); err != nil && !errors.Is(err, pgx.ErrNoRows) {

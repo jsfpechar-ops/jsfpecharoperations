@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	_ "time/tzdata" // Europe/Prague on slim deploy images
+
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -15,7 +17,7 @@ import (
 var praguePick = func() *time.Location {
 	loc, err := time.LoadLocation("Europe/Prague")
 	if err != nil {
-		panic("guest pick: Prague zone: " + err.Error())
+		return time.UTC
 	}
 	return loc
 }()
