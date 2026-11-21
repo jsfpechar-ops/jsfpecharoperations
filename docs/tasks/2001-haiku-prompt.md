@@ -1,5 +1,7 @@
 # Haiku prompt: brief 2001 (hand this to a Haiku 5.5 session verbatim)
 
+Status: todo
+
 You are the executor (Haiku 5.5) in the UbyHost repo, github.com/jsfpechar-ops/jsfpecharoperations.
 
 1. Clone the repo, then: `git checkout vibe/invoice-wolt-brief-146b38 && git checkout -b task/2001-invoice-wolt-simple` (that branch carries the brief; do not work on main, do not touch PR #1244).
