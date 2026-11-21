@@ -76,8 +76,8 @@ def visible_lines(page: str) -> list[str]:
 SEED = [
     {"table": "user_account", "columns": ["id", "username", "password_hash", "role", "session_version", "created_at"],
      "rows": [
-         [880001, "empty-host", "x", "host", 1, STAMP],
-         [880002, "stay-host", "x", "host", 1, STAMP],
+         [880001, "dash-empty-880001", "x", "host", 1, STAMP],
+         [880002, "dash-stay-880002", "x", "host", 1, STAMP],
      ]},
     {"table": "legal_acceptance", "columns": ["user_account_id", "document", "version", "accepted_at", "method"],
      "rows": [[uid, doc, ver, STAMP, "clickwrap"] for uid in (880001, 880002) for doc, ver in VERSIONS.items()]},
@@ -85,7 +85,7 @@ SEED = [
      "rows": [[880010, 880002, "Entity", STAMP]]},
     {"table": "apartment",
      "columns": ["id", "owner_user_id", "internal_name", "legal_entity_id", "permalink_token", "active", "created_at"],
-     "rows": [[880100, 880002, "Chrome Flat", 880010, "tokdash", 1, STAMP]]},
+     "rows": [[880100, 880002, "Chrome Flat", 880010, "tokdash880100", 1, STAMP]]},
     {"table": "reservation",
      "columns": ["id", "apartment_id", "uid", "date_from", "date_to", "status", "source", "created_at", "updated_at"],
      "rows": [[8801001, 880100, "golden-1001", "2026-06-15", "2026-06-17", "active", "manual", STAMP, STAMP]]},

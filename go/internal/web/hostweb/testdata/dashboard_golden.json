@@ -17,16 +17,16 @@
    ],
    "rows": [
     [
-     1,
-     "empty-host",
+     880001,
+     "dash-empty-880001",
      "x",
      "host",
      1,
      "2026-06-15T12:00:00+00:00"
     ],
     [
-     2,
-     "stay-host",
+     880002,
+     "dash-stay-880002",
      "x",
      "host",
      1,
@@ -45,42 +45,42 @@
    ],
    "rows": [
     [
-     1,
+     880001,
      "terms",
      "1.7",
      "2026-06-15T12:00:00+00:00",
      "clickwrap"
     ],
     [
-     1,
+     880001,
      "privacy",
      "1.8",
      "2026-06-15T12:00:00+00:00",
      "clickwrap"
     ],
     [
-     1,
+     880001,
      "dpa",
      "1.8",
      "2026-06-15T12:00:00+00:00",
      "clickwrap"
     ],
     [
-     2,
+     880002,
      "terms",
      "1.7",
      "2026-06-15T12:00:00+00:00",
      "clickwrap"
     ],
     [
-     2,
+     880002,
      "privacy",
      "1.8",
      "2026-06-15T12:00:00+00:00",
      "clickwrap"
     ],
     [
-     2,
+     880002,
      "dpa",
      "1.8",
      "2026-06-15T12:00:00+00:00",
@@ -98,8 +98,8 @@
    ],
    "rows": [
     [
-     10,
-     2,
+     880010,
+     880002,
      "Entity",
      "2026-06-15T12:00:00+00:00"
     ]
@@ -118,11 +118,11 @@
    ],
    "rows": [
     [
-     100,
-     2,
+     880100,
+     880002,
      "Chrome Flat",
-     10,
-     "tokdash",
+     880010,
+     "tokdash880100",
      1,
      "2026-06-15T12:00:00+00:00"
     ]
@@ -143,8 +143,8 @@
    ],
    "rows": [
     [
-     1001,
-     100,
+     8801001,
+     880100,
      "golden-1001",
      "2026-06-15",
      "2026-06-17",
@@ -377,7 +377,7 @@
   {
    "name": "signed_in_empty",
    "path": "/",
-   "user": 1,
+   "user": 880001,
    "lang": "en",
    "headers": {
     "Host": "ubyhost.example"
@@ -447,7 +447,7 @@
   {
    "name": "signed_in_with_stay",
    "path": "/",
-   "user": 2,
+   "user": 880002,
    "lang": "en",
    "headers": {
     "Host": "ubyhost.example"
@@ -490,7 +490,7 @@
     "Add stay",
     "<div class=ph-hide>",
     "<aside aria-label=First-flat setup class=onboarding-banner onboarding-banner-setup>",
-    "<a class=onboarding-banner-setup-link href=/apartments/100?view=settings&section=property#address>",
+    "<a class=onboarding-banner-setup-link href=/apartments/880100?view=settings&section=property#address>",
     "Continue setup",
     "<form action=/onboarding/dismiss method=post>",
     "<input name=return_to type=hidden value=/>",
@@ -507,7 +507,7 @@
     "Police overdue",
     "Chrome Flat · 15.06.2026 – 17.06.2026",
     "<div class=needs-you-actions>",
-    "<a class=btn sm href=/reservations/1001?return_to=/>",
+    "<a class=btn sm href=/reservations/8801001?return_to=/>",
     "Open the stay",
     "<div class=quiet ov-month ph-hide>",
     "This month",
