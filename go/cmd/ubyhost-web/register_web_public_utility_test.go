@@ -20,6 +20,7 @@ func TestUtilityRoutesRegistered(t *testing.T) {
 		{http.MethodPost, "/language", "POST /language"},
 		{http.MethodGet, "/favicon.ico", "GET /favicon.ico"},
 		{http.MethodGet, "/sample-airbnb.ics", "GET /sample-airbnb.ics"},
+		{http.MethodGet, "/dev/ui", "GET /dev/ui"},
 	}
 	for _, c := range cases {
 		_, pattern := mux.Handler(httptest.NewRequest(c.method, c.path, nil))

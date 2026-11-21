@@ -1,0 +1,20 @@
+{
+  "en": {
+    "dashboard.title": "Overview",
+    "needs_you.calm": "All clear for now.",
+    "needs_you.title": "What needs you",
+    "dashboard.empty.no_feed": "Connect a calendar to see stays here.",
+    "dashboard.empty.connect_calendar": "Connect a calendar",
+    "onboarding.welcome_title": "Set up your workspace",
+    "stays.add_stay": "Add stay"
+  },
+  "cs": {
+    "dashboard.title": "Přehled",
+    "needs_you.calm": "Zatím je vše v pořádku.",
+    "needs_you.title": "Co potřebuje vás",
+    "dashboard.empty.no_feed": "Připojte kalendář a uvidíte zde pobyty.",
+    "dashboard.empty.connect_calendar": "Připojit kalendář",
+    "onboarding.welcome_title": "Nastavte si pracovní prostor",
+    "stays.add_stay": "Přidat pobyt"
+  }
+}
