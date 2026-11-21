@@ -20,7 +20,9 @@ import (
 //go:embed countries.json
 var countriesJSON []byte
 
-type countryOption struct{ Code, Label string }
+type CountryOption struct{ Code, Label string }
+
+type countryOption = CountryOption
 
 const minCachedCountries = 150
 
@@ -51,6 +53,11 @@ func bundled() (map[string]map[string]string, []map[string]string, error) {
 		byCode[c["code"]] = c
 	}
 	return byCode, list, nil
+}
+
+// CountryOptions is codelists.nationality_options(lang) (_all_countries).
+func CountryOptions(ctx context.Context, pool *pgxpool.Pool, lang string) ([]CountryOption, error) {
+	return countryOptions(ctx, pool, lang)
 }
 
 // countryOptions is codelists.nationality_options(lang) (_all_countries).

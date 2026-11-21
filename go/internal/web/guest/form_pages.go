@@ -98,32 +98,73 @@ type formGuestRow struct {
 	nationality  string
 }
 
+type formCountryOption struct {
+	Code  string
+	Label string
+}
+
+type formCountryGroup struct {
+	Key     string
+	Options []formCountryOption
+}
+
+type formPurposeOption struct {
+	Code  string
+	Label string
+}
+
 type formView struct {
 	Page
-	WrapClass       string
-	ReservationID   int64
-	GuestID         int64
-	PersonName      string
-	BackURL         string
-	DatesLink       string
-	HideBack        bool
-	DupWarnings     []dupWarning
-	PersonNumber    int
-	ExpectedPeople  int
-	StayFromLabel   string
-	StayToLabel     string
-	NightsLabel     string
-	StayFromValue   string
-	StayToValue     string
-	SaveActionLabel string
-	LangRelangURL   string
-	DraftURL        string
-	DraftFields     string
-	DraftOwned      string
-	DraftRestored   bool
-	StartStep       int
-	LoadSignatureJS bool
-	Values          map[string]string
+	WrapClass                string
+	ReservationID            int64
+	GuestID                  int64
+	PersonName               string
+	BackURL                  string
+	DatesLink                string
+	HideBack                 bool
+	DupWarnings              []dupWarning
+	PersonNumber             int
+	ExpectedPeople           int
+	StayFromLabel            string
+	StayToLabel              string
+	NightsLabel              string
+	StayFromValue            string
+	StayToValue              string
+	SaveActionLabel          string
+	LangRelangURL            string
+	DraftURL                 string
+	DraftFields              string
+	DraftOwned               string
+	DraftRestored            bool
+	StartStep                int
+	LoadSignatureJS          bool
+	Values                   map[string]string
+	GuestFields              map[string]string
+	Issues                   []validation.Issue
+	CountryGroups            []formCountryGroup
+	Purposes                 []formPurposeOption
+	SelectedPurpose          string
+	Inpass                   string
+	AskPartySize             bool
+	JustSaved                bool
+	OCRAvailable             bool
+	RequirePassport          bool
+	HasExistingPassportPhoto bool
+	RuianSuggestURL          string
+	Under15                  bool
+	AdultSigner              bool
+	PendingChildren          []formChildEntry
+	PendingChildrenNames     string
+	SelectedSignForRole      string
+	ChildSigners             []formChildEntry
+	SelectedSigner           int64
+	SelectedChildRole        string
+	SignatureValue           string
+	ResidenceCopiedFrom      string
+	FeeNotice                bool
+	FeeEstimate              bool
+	FeePanel                 bool
+	NoticeVersion            string
 }
 
 type dupWarning struct {
@@ -560,7 +601,28 @@ func buildFormView(ctx context.Context, d formPageDeps, r *http.Request, apt *Ap
 		dups, _ := formPagesDupWarnings(ctx, d.pool, res.id, formPagesOwnedIDs(r, d.getenv), lang)
 		view.DupWarnings = dups
 	}
-	_ = r
+	view.Values = map[string]string{"stay_from": stayFrom, "stay_to": stayTo}
+	view.Inpass = "INPASS"
+	view.NoticeVersion = formNoticeVersion(d.getenv)
+	view.AskPartySize = prog.expected == nil && guest == nil
+	view.RequirePassport = strings.EqualFold(strings.TrimSpace(apt.PassportPhotoPolicy), "required_foreign")
+	groups, err := formCountryGroups(ctx, d.pool, lang)
+	if err != nil {
+		return view, err
+	}
+	view.CountryGroups = groups
+	purposes, err := formPurposeOptions(ctx, d.pool, lang)
+	if err != nil {
+		return view, err
+	}
+	view.Purposes = purposes
+	view.SelectedPurpose = formPagesDefaultPurpose(apt)
+	if guest != nil {
+		view.GuestFields = formGuestFieldMap(guest)
+		view.SignatureValue = guest.signaturePNG
+	}
+	formPagesFillU15(ctx, d, &view, res, guest, r)
+	view.SaveActionLabel = view.T(saveKey)
 	return view, nil
 }
 

@@ -1,38 +1,366 @@
 {{define "content"}}
+{{$ := .}}
 {{if .DupWarnings}}
-<div class="g-host-note" role="note" data-dup-warning style="margin:16px 0">
-  <strong>{{.T "dup_warning_title"}}</strong>
-  {{range .DupWarnings}}
-  <p style="margin:6px 0 0">{{.Name}}: {{$.T "dup_warning_body" "what" .What}}</p>
-  {{end}}
-</div>
+  <div class="g-host-note" role="note" data-dup-warning style="margin:16px 0">
+    <strong>{{.T "dup_warning_title"}}</strong>
+    {{range .DupWarnings}}
+      <p style="margin:6px 0 0">{{.Name}}: {{$.T "dup_warning_body" "what" .What}}</p>
+    {{end}}
+  </div>
 {{end}}
+
+
+
 <aside class="g-checkin-rail" aria-label="{{.T "stay_label"}}">
   <div class="g-checkin-stay">
-    {{if .Facility}}<span class="g-property-mark property-tone-{{.FacilityTone}}" aria-hidden="true">{{facilityMark .Facility}}</span>{{end}}
+    {{if $.Facility}}<span class="g-property-mark property-tone-{{$.FacilityTone}}" aria-hidden="true">{{facilityMark $.Facility}}</span>{{end}}
     <div class="g-checkin-stay-body">
-      <strong>{{.Facility}}</strong>
+      <strong>{{$.Facility}}</strong>
       <span>{{.StayFromLabel}} &ndash; {{.StayToLabel}}</span>
-      <span>{{.NightsLabel}}{{if and .PersonNumber .ExpectedPeople}} &middot; {{.T "person_progress" "current" .PersonNumber "total" .ExpectedPeople}}{{end}}</span>
+      <span>{{.NightsLabel}}{{if and .PersonNumber .ExpectedPeople}} &middot; {{$.T "person_progress" "current" $.PersonNumber "total" $.ExpectedPeople}}{{end}}</span>
     </div>
   </div>
   {{if .DatesLink}}<a class="g-dates-link" href="{{.DatesLink}}">{{.T "wrong_dates"}}</a>{{end}}
   <h2 class="g-checkin-steps-title">{{.T "steps_label"}}</h2>
-  <ol class="g-checkin-steps" data-checkin-steps data-done-label="{{.T "step_done"}}" data-edit-label="{{.T "review_edit"}}"></ol>
+  <ol class="g-checkin-steps" data-checkin-steps
+      data-done-label="{{.T "step_done"}}" data-edit-label="{{.T "review_edit"}}"></ol>
 </aside>
+
 <div class="g-checkin-main">
-{{if and .BackURL (not .HideBack)}}<a class="g-back" href="{{.BackURL}}">{{.T "back"}}</a>{{end}}
-<form id="guest-form" method="post" action="/l/{{.Token}}/{{.ReservationID}}/save?lang={{.Lang}}" enctype="multipart/form-data" data-guest-wizard{{if .DraftURL}} data-draft-url="{{.DraftURL}}" data-draft-fields="{{.DraftFields}}" data-draft-owned="{{.DraftOwned}}"{{end}} data-start-step="{{.StartStep}}" data-lang-warning="{{.T "lang_draft_warning"}}" data-next-label="{{.T "next_step"}}" data-back-label="{{.T "previous_step"}}">
+{{if and .BackURL (not .HideBack)}}
+  <a class="g-back" href="{{.BackURL}}">{{.T "back"}}</a>
+{{end}}
+
+{{if .HasErrors}}
+  <div class="g-err">
+    <strong>{{.T "fix_errors"}}</strong>
+    <ul>
+      
+      {{range .ErrorIssues}}<li><a href="#{{.Field}}">{{.Message}}</a></li>{{end}}
+    </ul>
+  </div>
+{{end}}
+
+<form id="guest-form" method="post" action="/l/{{.Token}}/{{.ReservationID}}/save?lang={{.Lang}}"
+      enctype="multipart/form-data" data-guest-wizard{{if .DraftURL}} data-draft-url="{{.DraftURL}}" data-draft-fields="{{.DraftFields}}" data-draft-owned="{{.DraftOwned}}"{{end}}
+      data-start-step="{{.StartStep}}"
+      data-lang-warning="{{.T "lang_draft_warning"}}"
+      data-next-label="{{.T "next_step"}}" data-back-label="{{.T "previous_step"}}"
+      data-progress-label="{{.T "form_step_progress" "current" "__CURRENT__" "total" "__TOTAL__"}}"
+      data-progress-title="{{.T "form_step_progress_title" "progress" "__PROGRESS__" "title" "__TITLE__"}}">
   <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
   <input type="hidden" id="form-step" name="_step" value="">
   {{if .GuestID}}<input type="hidden" name="guest_id" value="{{.GuestID}}">{{end}}
-  <input type="hidden" name="stay_from" value="{{.StayFromValue}}">
-  <input type="hidden" name="stay_to" value="{{.StayToValue}}">
+  <input type="hidden" name="stay_from"
+         value="{{.StayFromValue}}">
+  <input type="hidden" name="stay_to"
+         value="{{.StayToValue}}">
+
+  
   <noscript><p class="g-err g-nojs-note" role="alert">{{.T "nojs_needed"}}</p></noscript>
   {{if .DraftRestored}}<p class="g-ok" id="draft-welcome" role="status">{{.T "draft_welcome"}}</p>{{end}}
   <p class="g-form-line">
-    <button class="g-btn g-btn-primary" type="submit" name="submit" value="1">{{.SaveActionLabel}}</button>
+    <span>{{.StayFromLabel}} &ndash; {{.StayToLabel}}</span>
+    <span>{{.NightsLabel}}</span>
+    {{if and .PersonNumber .ExpectedPeople}}
+      <span>{{$.T "person_progress" "current" $.PersonNumber "total" $.ExpectedPeople}}</span>
+    {{end}}
   </p>
+  {{if .DatesLink}}<a class="g-dates-link" href="{{.DatesLink}}">{{.T "wrong_dates"}}</a>{{end}}
+  {{if .JustSaved}}
+  <p class="hint g-saved-strip" role="status">{{.T "person_saved"}}</p>
+  {{end}}
+  <div class="g-wizard-progress" data-wizard-progress aria-live="polite" hidden>
+    <span data-wizard-label></span><span class="g-bar"><i data-wizard-bar></i></span>
+  </div>
+
+  <div class="g-card" data-guest-step data-step-title="{{.T "your_details"}}">
+    {{if .OCRAvailable}}<div class="g-field" id="ocr-scan">
+  <label class="g-btn" for="ocr-scan-file">{{.T "ocr_scan_button"}}</label>
+  <input type="file" id="ocr-scan-file" accept="image/jpeg,image/png,image/webp"
+         style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;clip:rect(0 0 0 0)">
+  <p class="hint" id="ocr-scan-hint" style="margin-top:12px">{{.T "ocr_scan_hint"}}</p>
+  <p class="hint" id="ocr-scan-status" role="status" aria-live="polite" hidden></p>
+</div>
+
+{{end}}
+    <div class="g-step-head">
+      <h2>{{.T "your_details"}}{{if gt .PersonNumber 1}} <span class="g-chip">{{.T "person"}} {{$.PersonNumber}}</span>{{end}}</h2><details class="g-head-help" data-purpose-help="identity">
+        <summary aria-label="{{.T "identity_purpose_help_label"}}"><span class="g-help-dot" aria-hidden="true">?</span></summary>
+        <p class="g-intro">{{.T "identity_purpose_help"}}</p>
+      </details>
+    </div>
+
+    {{if .AskPartySize}}
+      <div class="g-field" data-guest-stepper data-less-label="{{.T "tw_fewer"}}" data-more-label="{{.T "tw_more"}}">
+        <label for="party_size">{{.T "party_question"}}</label>
+        <input type="number" id="party_size" name="party_size" min="1" max="60" required
+               inputmode="numeric" autocomplete="off"
+               value="{{or (index $.Values "party_size") "1"}}">
+        <div class="hint">{{.T "party_help"}}</div>
+        <details class="g-why" data-purpose-help="guest-count">
+          <summary class="g-why-summary">{{.T "guest_count_purpose_help_label"}}</summary>
+          <p class="g-intro">{{.T "guest_count_purpose_help"}}</p>
+        </details>
+        {{$.ErrHTML "party_size"}}
+      </div>
+    {{end}}
+
+    <div class="g-row">
+      <div class="g-field">
+        <label for="first_name">{{.T "first_name"}}</label>
+        <input class="{{$.FieldClass "first_name"}}" {{if $.FieldIsInvalid "first_name"}}aria-invalid="true" aria-describedby="first_name"-error{{end}} type="text" id="first_name" name="first_name" maxlength="24"
+               autocomplete="given-name" autocapitalize="words" required value="{{$.Val "first_name"}}">
+        {{$.ErrHTML "first_name"}}
+      </div>
+      <div class="g-field">
+        <label for="surname">{{.T "surname"}}</label>
+        <input class="{{$.FieldClass "surname"}}" {{if $.FieldIsInvalid "surname"}}aria-invalid="true" aria-describedby="surname"-error{{end}} type="text" id="surname" name="surname" maxlength="50" required
+               autocomplete="family-name" autocapitalize="words" value="{{$.Val "surname"}}">
+        {{$.ErrHTML "surname"}}
+      </div>
+    </div>
+
+    <div class="g-row">
+      <div class="g-field">
+        <label for="birth_date">{{.T "birth_date"}}</label>
+        <input class="{{$.FieldClass "birth_date"}}" {{if $.FieldIsInvalid "birth_date"}}aria-invalid="true" aria-describedby="birth_date"-error{{end}} type="text" id="birth_date" name="birth_date"
+               inputmode="numeric" placeholder="{{.T "date_placeholder"}}" maxlength="10" required
+               autocomplete="bday" value="{{$.DisplayBirth ($.Val "birth_date")}}">
+        
+        <div class="hint" id="birth-date-readback" aria-live="polite"
+             data-template="{{.T "birth_date_readback"}}" data-locale="{{$.Lang}}"></div>
+        {{$.ErrHTML "birth_date"}}
+      </div>
+      <div class="g-field">
+        <label for="nationality">{{.T "nationality"}}</label>
+        <select class="{{$.FieldClass "nationality"}}" {{if $.FieldIsInvalid "nationality"}}aria-invalid="true" aria-describedby="nationality"-error{{end}} id="nationality" name="nationality"
+                data-guest-placeholder="{{.T "tw_country_search"}}" data-guest-none="{{.T "tw_country_none"}}"
+                data-guest-required="{{.T "tw_country_required"}}" autocomplete="off" required>
+          <option value="">—</option>
+          {{range $.CountryGroups}}
+            <optgroup label="{{$.T .Key}}">
+              {{range .Options}}
+                <option value="{{.Code}}" {{if eq ($.Val "nationality") .Code}}selected{{end}}>
+                  {{.Label}}</option>
+              {{end}}
+            </optgroup>
+          {{end}}
+        </select>
+        {{$.ErrHTML "nationality"}}
+      </div>
+    </div>
+
+    <div class="g-field" id="doc-wrap">
+      <label for="doc_number">{{.T "doc_number"}}</label>
+      <input class="{{$.FieldClass "doc_number"}}" {{if $.FieldIsInvalid "doc_number"}}aria-invalid="true" aria-describedby="doc_number"-error{{end}} type="text" id="doc_number" name="doc_number" maxlength="30"
+             autocapitalize="characters" autocomplete="off" spellcheck="false" autocorrect="off"
+             value="{{$.Val "doc_number"}}">
+      <div class="hint">{{.T "doc_number_help"}}</div>
+      {{$.ErrHTML "doc_number"}}
+    </div>
+
+    <div class="g-field">
+      <label for="visa_number">{{.T "visa_number"}} <span class="opt">({{.T "optional"}})</span></label>
+      <input class="{{$.FieldClass "visa_number"}}" {{if $.FieldIsInvalid "visa_number"}}aria-invalid="true" aria-describedby="visa_number"-error{{end}} type="text" id="visa_number" name="visa_number" maxlength="15"
+             autocapitalize="characters" autocomplete="off" spellcheck="false" autocorrect="off" value="{{$.Val "visa_number"}}">
+      <div class="hint">{{.T "visa_help"}}</div>
+      {{$.ErrHTML "visa_number"}}
+    </div>
+
+    <div class="g-field">
+      <label for="purpose">{{.T "purpose"}}</label>
+      <select id="purpose" name="purpose" autocomplete="off">
+        {{range $.Purposes}}
+          <option value="{{.Code}}"
+            {{if eq $.SelectedPurpose .Code}}selected{{end}}>
+            {{.Label}}</option>
+        {{end}}
+      </select>
+    </div>
+  </div>
+
+  <div class="g-card" data-guest-step data-step-title="{{.T "residence_title"}}">
+    <div class="g-step-head">
+      <h2>{{.T "residence_title"}}</h2><details class="g-head-help" data-purpose-help="address-stay">
+        <summary aria-label="{{.T "address_purpose_help_label"}}"><span class="g-help-dot" aria-hidden="true">?</span></summary>
+        <p class="g-intro">{{.T "address_purpose_help"}}</p>
+      </details>
+    </div>
+    <p class="g-intro">{{.T "residence_help"}}</p>
+    {{if .ResidenceCopiedFrom}}
+      <p class="hint" role="status">{{.T "residence_copied"}}</p>
+    {{end}}
+    <div class="g-field">
+      <label for="res_country">{{.T "res_country"}}</label>
+      
+      <select class="{{$.FieldClass "res_country"}}" {{if $.FieldIsInvalid "res_country"}}aria-invalid="true" aria-describedby="res_country"-error{{end}} id="res_country" name="res_country"
+              data-guest-placeholder="{{.T "tw_country_search"}}" data-guest-none="{{.T "tw_country_none"}}"
+              data-guest-required="{{.T "tw_country_required"}}" autocomplete="country" required>
+        <option value="">—</option>
+        {{range $.CountryGroups}}
+          <optgroup label="{{$.T .Key}}">
+            {{range .Options}}
+              <option value="{{.Code}}" {{if eq ($.ResCountrySel) .Code}}selected{{end}}>
+                {{.Label}}</option>
+            {{end}}
+          </optgroup>
+        {{end}}
+      </select>
+      {{$.ErrHTML "res_country"}}
+    </div>
+    <div class="g-field">
+      <label for="res_city">{{.T "res_city"}}</label>
+      <input class="{{$.FieldClass "res_city"}}" {{if $.FieldIsInvalid "res_city"}}aria-invalid="true" aria-describedby="res_city"-error{{end}} type="text" id="res_city" name="res_city" maxlength="42"
+             autocomplete="address-level2" autocapitalize="words" required value="{{$.Val "res_city"}}">
+      {{$.ErrHTML "res_city"}}
+    </div>
+    <div class="g-field">
+      <label for="res_street">{{.T "res_street"}}</label>
+      <input class="{{$.FieldClass "res_street"}}" {{if $.FieldIsInvalid "res_street"}}aria-invalid="true" aria-describedby="res_street"-error{{end}} type="text" id="res_street" name="res_street" maxlength="42"
+             autocomplete="address-line1" autocapitalize="words" required value="{{$.Val "res_street"}}">
+      {{$.ErrHTML "res_street"}}
+    </div>
+    {{if .RuianSuggestURL}}
+    <div id="ruian-suggest" hidden>
+      <p class="hint" id="ruian-suggest-hint">{{.T "ruian_suggest_hint"}}</p>
+      <ul id="ruian-suggest-list" aria-label="{{.T "ruian_suggest_label"}}"></ul>
+      <p class="hint" id="ruian-suggest-none" hidden>{{.T "ruian_suggest_none"}}</p>
+    </div>
+    {{end}}
+  </div>
+
+  {{if .RequirePassport}}
+  <div class="g-card" id="passport-photo-card" data-guest-step data-step-title="{{.T "passport_photo_title"}}"
+       data-guest-step-skip-when="CZE"
+       data-has-existing="{{if $.HasExistingPassportPhoto}}1{{else}}0{{end}}">
+    <div class="g-step-head">
+      <h2>{{.T "passport_photo_title"}}</h2><details class="g-head-help" data-purpose-help="passport-photo">
+        <summary aria-label="{{.T "passport_photo_purpose_help_label"}}"><span class="g-help-dot" aria-hidden="true">?</span></summary>
+        <p class="g-intro">{{.T "passport_photo_purpose_help"}}</p>
+      </details>
+    </div>
+    <p class="g-intro">{{.T "passport_photo_help"}}</p>
+    <p class="hint" id="passport-photo-pending" hidden>{{.T "passport_photo_pending_nat"}}</p>
+    <p class="hint" id="passport-photo-czech" hidden>{{.T "passport_photo_not_required"}}</p>
+    <div class="g-field" id="passport-photo-upload">
+      <span class="g-label" id="passport_photo_label">{{.T "passport_photo_label"}}</span>
+      <div class="passport-upload-actions">
+        <button class="g-btn secondary" type="button" id="passport-take-btn">
+          {{.T "passport_photo_take"}}
+        </button>
+        <button class="g-btn secondary" type="button" id="passport-choose-btn"
+                data-retake-label="{{.T "passport_photo_retake"}}">
+          {{.T "passport_photo_choose"}}
+        </button>
+      </div>
+      <input class="{{$.FieldClass "passport_photo"}}" {{if $.FieldIsInvalid "passport_photo"}}aria-invalid="true" aria-describedby="passport_photo"-error{{end}} type="file" id="passport_photo" name="passport_photo" hidden>
+      <p class="passport-file-name" id="passport-file-name" hidden></p>
+      <p class="passport-file-err err" id="passport-file-err" role="alert" hidden
+         data-missing="{{.T "passport_photo_missing"}}"></p>
+      <div class="hint">{{.T "passport_photo_hint"}}</div>
+      {{$.ErrHTML "passport_photo"}}
+    </div>
+  </div>
+  {{end}}
+
+  <div class="g-card" data-guest-step data-step-title="{{.T "signature"}}">
+    <div class="g-step-head">
+      <h2>{{.T "signature"}}</h2><details class="g-head-help" data-purpose-help="signature">
+        <summary aria-label="{{.T "signature_purpose_help_label"}}"><span class="g-help-dot" aria-hidden="true">?</span></summary>
+        <p class="g-intro">{{.T "signature_purpose_help"}}</p>
+      </details>
+    </div>
+    
+    <div id="sig-block"{{if $.Under15}} hidden{{end}}>
+    <p class="g-intro" id="sig-help">{{$.T "signature_help"}}</p>
+    <div class="g-sign">
+      <canvas id="sig-canvas" tabindex="0" role="img" aria-label="{{$.T "signature"}}"
+              aria-describedby="sig-help sig-status"></canvas>
+      <div class="bar">
+        <span id="sig-status" class="err" role="alert" aria-live="polite"
+              data-missing="{{$.T "signature_missing"}}"
+              data-kept="{{$.T "signature_kept"}}"></span>
+        <button type="button" id="sig-clear">{{$.T "signature_clear"}}</button>
+      </div>
+    </div>
+    <input type="hidden" id="signature" name="signature" value="{{$.SignatureValue}}">
+    {{$.ErrHTML "signature"}}
+    {{if $.PendingChildren}}
+    <div class="g-field" id="sign-for-children" role="radiogroup" aria-labelledby="sign-for-children-text"{{if not $.AdultSigner}} hidden{{end}}>
+      <p class="g-intro" id="sign-for-children-text">{{$.T "sign_for_child" "names" $.PendingChildrenNames}}</p>
+      {{range $.PendingChildren}}<input type="hidden" name="sign_for_ids" value="{{.ID}}">{{end}}
+      <label class="checkline">
+        <input type="radio" name="sign_for_role" value="parent"{{if eq $.SelectedSignForRole "parent"}} checked{{end}}>
+        <span>{{$.T "sign_role_parent"}}</span>
+      </label>
+      <label class="checkline">
+        <input type="radio" name="sign_for_role" value="responsible_adult"{{if eq $.SelectedSignForRole "responsible_adult"}} checked{{end}}>
+        <span>{{$.T "sign_role_responsible"}}</span>
+      </label>
+    </div>
+    {{end}}
+    </div>
+    <div id="u15-block"{{if not $.Under15}} hidden{{end}}>
+      <p class="g-intro" id="u15-note">{{$.T "u15_note"}}</p>
+    </div>
+
+    <div class="g-review" data-wizard-review data-edit-label="{{$.T "review_edit"}}" hidden>
+      <h2>{{$.T "review_title"}}</h2>
+      <p class="g-intro">{{$.T "review_help"}}</p>
+      <dl class="g-summary-list g-review-list"></dl>
+    </div>
+
+    <div class="g-card g-legal-notice" id="legal-notice">
+      <details class="g-legal-text">
+        <summary>{{$.T "legal_notice_title"}}</summary>
+        <p class="g-law">{{$.T "notice_version" "version" $.NoticeVersion}}</p>
+        <h3>{{$.T "legal_notice_duty_title"}}</h3>
+        <p>{{$.T "legal_notice_duty_body"}}</p>
+        <h3>{{$.T "legal_notice_accuracy_title"}}</h3>
+        <p>{{$.T "legal_notice_accuracy_body"}}</p>
+        {{if $.RequirePassport}}
+        <h3 id="legal-passport-section">{{$.T "legal_notice_passport_title"}}</h3>
+        <p class="legal-passport-text">{{$.T "legal_notice_passport_body"}}</p>
+        {{end}}
+        {{if $.FeeNotice}}
+        <h3 id="legal-fee-section">{{$.T "legal_notice_fee_title"}}</h3>
+        <p class="legal-fee-text">{{$.T "legal_notice_fee_body"}}</p>
+        <p class="legal-fee-link"><a href="https://www.e-sbirka.cz/sb/1990/565" rel="noopener" target="_blank">{{$.T "legal_notice_fee_link"}}</a></p>
+        {{end}}
+        <h3>{{$.T "legal_notice_reporting_title"}}</h3>
+        <p>{{$.T "legal_notice_reporting_body"}}</p>
+        <h3>{{$.T "legal_notice_retention_title"}}</h3>
+        <p>{{$.T "legal_notice_retention_body"}}</p>
+        <h3>{{$.T "legal_notice_refusal_title"}}</h3>
+        <p>{{$.T "legal_notice_refusal_body"}}</p>
+        <p class="g-law">{{$.T "why_law"}}</p>
+        {{if $.PrivacyURL}}<p class="legal-privacy-link"><a href="{{$.PrivacyURL}}">{{$.T "privacy_link"}}</a></p>{{end}}
+      </details>
+      <div class="g-field legal-ack">
+        <label class="checkline" for="legal_ack">
+          <input type="checkbox" id="legal_ack" name="legal_ack" value="1" required{{if index $.Values "legal_ack"}} checked{{end}}>
+          <span>{{$.T "legal_ack_label"}}</span>
+        </label>
+        {{$.ErrHTML "legal_ack"}}
+      </div>
+    </div>
+
+    {{if and $.PersonNumber $.ExpectedPeople}}
+      <p class="g-save-note">{{$.T "person_progress" "current" $.PersonNumber "total" $.ExpectedPeople}}</p>
+    {{end}}
+    <p class="g-err" id="save-net-error" role="alert" hidden>{{$.T "save_network_error"}}</p>
+    <button class="g-btn" type="submit" data-guest-save>{{$.SaveActionLabel}}</button>
+  </div>
 </form>
+<details class="g-card g-why">
+  <summary class="g-why-summary">{{$.T "why_title"}}</summary>
+  <p class="g-intro">{{$.T "legal_intro"}}</p>
+  <div class="g-details">
+    <p>{{$.T "why_point_accuracy"}}</p>
+    <p class="g-law">{{$.T "why_law"}}</p>
+    {{if $.PrivacyURL}}<p style="margin-bottom:0"><a href="{{$.PrivacyURL}}">{{$.T "privacy_link"}}</a></p>{{end}}
+  </div>
+</details>
 </div>
 {{end}}
