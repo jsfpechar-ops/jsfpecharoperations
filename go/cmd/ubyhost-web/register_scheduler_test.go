@@ -29,6 +29,7 @@ func TestSchedulerTaskSetup(t *testing.T) {
 		t.Fatalf("off: %v %v", run != nil, err)
 	}
 	t.Setenv("UBYHOST_SCHEDULER", "go")
+	t.Setenv("UBYHOST_ENABLE_SCHEDULER", "1")
 	t.Setenv("UBYHOST_JOB_QUEUE_KINDS", strings.Replace(allQueued, ",push", "", 1))
 	if run, err := schedulerTask(nil); run != nil || err == nil || !strings.Contains(err.Error(), "missing: push") {
 		t.Fatalf("missing kind: %v %v", run != nil, err)
