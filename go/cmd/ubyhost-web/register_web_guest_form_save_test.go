@@ -1,0 +1,16 @@
+package main
+
+import (
+	"net/http/httptest"
+	"testing"
+)
+
+func TestGuestFormSaveRouteRegistered(t *testing.T) {
+	mux := newMux(&metrics{counts: map[key]int64{}}, nil)
+	method, path := "POST", "/l/golden-token/7/save"
+	_, pattern := mux.Handler(httptest.NewRequest(method, path, nil))
+	want := "POST /l/{token}/{reservation_id}/save"
+	if pattern != want {
+		t.Fatalf("pattern %q want %q", pattern, want)
+	}
+}
