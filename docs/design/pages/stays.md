@@ -20,7 +20,7 @@ Master version: 2.0.0. Adds only.
 ## Stay detail
 - nav: `reservations`; body_kind: `detail`; title: stay label; meta: dates, nights, property link; back link: `stay.detail.back` -> return_to
 - primary action: the one next step (Send report | Fix guests | Download receipt | View reports), from `send_controls`; nothing else coral on the page
-- secondary actions: Edit stay (`pencil`), menu: Copy guest form link, Open guest form, Invoice, Delete
+- secondary actions: Edit stay (`pencil`), Invoice in the header action row next to the copy-link button (`invoice.stay.open` when the stay has one, else `invoice.new`; visible on phone too, `ghost` when a primary shares the row), menu: Copy guest form link, Open guest form, Delete (no Invoice in the menu)
 - side column (facts): property, dates, guests n of m, source, automation mode, guest form link with copy_button
 - main sections: Now (banner for cancelled / ignored / archived / demo, then one sentence state); Guests (one card per saved guest with facts in 2 columns, missing slots as neutral rows with "Share invitation" secondary, "Edit count" quiet); Police reporting (badge per filing row, receipt download, "File by hand" as a `details` section); Stay settings (small form, primary Save is NOT used here: this section's Save is `secondary`, the page primary stays the next step)
 - badges: as the list; filing rows add `neutral` "Sent" until UbyPort answers
