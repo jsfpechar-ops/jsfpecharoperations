@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"context"
 	"embed"
-	"fmt"
 	"html/template"
 	"io"
 	"log"
@@ -226,12 +225,17 @@ func WithLang(w http.ResponseWriter, getenv func(string) string, lang string) {
 
 // Apartment is the live apartment row a /l/{key} route needs.
 type Apartment struct {
-	ID             int64
-	InternalName   string
-	UbyName        string
-	CityEn         string
-	PermalinkToken string
-	PermalinkPIN   string
+	ID                     int64
+	InternalName           string
+	UbyName                string
+	CityEn                 string
+	PermalinkToken         string
+	PermalinkPIN           string
+	PassportPhotoPolicy    string
+	LockProvider           string
+	OwnerUserID            int64
+	LegalEntityID          int64
+	DataControllerEntityID *int64
 }
 
 var slugShape = regexp.MustCompile(`^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$`)
@@ -350,20 +354,7 @@ func loadApartmentByID(ctx context.Context, pool *pgxpool.Pool, id int64) (*Apar
 }
 
 func loadApartment(ctx context.Context, pool *pgxpool.Pool, column, value string) (*Apartment, bool) {
-	// Column is always a fixed identifier from callers above.
-	q := fmt.Sprintf(`SELECT id, COALESCE(internal_name,''), COALESCE(uby_name,''), COALESCE(city_en,''),
-		COALESCE(permalink_token,''), COALESCE(permalink_pin,'')
-		FROM apartment WHERE %s = $1 AND active = 1 AND archived_at IS NULL`, column)
-	var a Apartment
-	err := pool.QueryRow(ctx, q, value).Scan(
-		&a.ID, &a.InternalName, &a.UbyName, &a.CityEn, &a.PermalinkToken, &a.PermalinkPIN)
-	if err == pgx.ErrNoRows {
-		return nil, false
-	}
-	if err != nil {
-		return nil, false
-	}
-	return &a, true
+	return loadApartmentDetail(ctx, pool, column, value)
 }
 
 // DisplayName is guest.py _display_name.
@@ -492,10 +483,12 @@ type shellDeps struct {
 	now    func() time.Time
 }
 
-// RegisterShell wires the guest /l package (dormant: no page routes until 1720b–d).
+// RegisterShell wires the guest /l package. Routes stay dormant until brief 1728
+// adds paths to UBYHOST_GO_PATHS.
 func RegisterShell(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler) {
-	_ = shellDeps{pool: pool, getenv: getenv, now: now}
-	// Brief 1720b: POST /l/{token}/pin
-	// Brief 1720c: GET /l/{token}
-	// Brief 1720d: GET /l/{token}/privacy, GET /l/{token}/ruian-suggest
+	d := shellDeps{pool: pool, getenv: getenv, now: now}
+	mux.Handle("POST /l/{token}/pin", wrap("/l/{token}/pin", d.verifyPin))
+	mux.Handle("GET /l/{token}", wrap("/l/{token}", d.pickStay))
+	mux.Handle("GET /l/{token}/privacy", wrap("/l/{token}/privacy", d.privacyNotice))
+	mux.Handle("GET /l/{token}/ruian-suggest", wrap("/l/{token}/ruian-suggest", d.ruianSuggest))
 }

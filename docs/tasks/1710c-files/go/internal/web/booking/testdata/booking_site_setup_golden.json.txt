@@ -1,0 +1,31 @@
+{
+ "cases": [
+  {
+   "location": "/login",
+   "method": "GET",
+   "name": "signed_out_get",
+   "path": "/apartments/11/booking-site",
+   "status": 303,
+   "user": 0
+  },
+  {
+   "body": "_csrf=golden&nightly_price_czk=3000&min_nights=1&notice=1&cancellation_policy=non_refundable",
+   "flash_key": "bsite.flash.saved",
+   "location": "/apartments/11/booking-site",
+   "method": "POST",
+   "name": "save_settings",
+   "path": "/apartments/11/booking-site",
+   "status": 303,
+   "user": 1
+  },
+  {
+   "method": "GET",
+   "name": "foreign_apartment",
+   "path": "/apartments/99/booking-site",
+   "status": 404,
+   "user": 1
+  }
+ ],
+ "now": "2026-06-15T12:00:00+00:00",
+ "seed": []
+}

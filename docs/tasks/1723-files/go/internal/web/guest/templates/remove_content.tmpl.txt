@@ -1,0 +1,11 @@
+{{define "content"}}
+<div class="g-card">
+  <h2>{{.T "remove_title" "name" .PersonName}}</h2>
+  <p class="g-intro">{{.T "remove_help"}}</p>
+  <form method="post" action="/l/{{.Token}}/{{.ReservationID}}/remove/{{.GuestID}}?lang={{.Lang}}">
+    <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
+    <button class="g-btn" type="submit" data-confirm-remove>{{.T "remove_yes"}}</button>
+  </form>
+  <p class="g-quiet-action-row"><a class="g-quiet-action" href="{{.BackURL}}">{{.T "remove_keep"}}</a></p>
+</div>
+{{end}}

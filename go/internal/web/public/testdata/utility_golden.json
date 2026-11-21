@@ -1,0 +1,253 @@
+{
+ "public_base_url": "https://golden.example.test",
+ "seed": [
+  {
+   "table": "user_account",
+   "columns": [
+    "id",
+    "username",
+    "password_hash",
+    "role",
+    "created_at"
+   ],
+   "rows": [
+    [
+     1,
+     "host@example.test",
+     "x",
+     "host",
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ]
+  },
+  {
+   "table": "apartment",
+   "columns": [
+    "id",
+    "owner_user_id",
+    "internal_name",
+    "active",
+    "created_at"
+   ],
+   "rows": [
+    [
+     101,
+     1,
+     "Golden flat",
+     1,
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ]
+  },
+  {
+   "table": "property_page",
+   "columns": [
+    "apartment_id",
+    "published",
+    "published_at",
+    "hide_from_search",
+    "created_at",
+    "updated_at"
+   ],
+   "rows": [
+    [
+     101,
+     1,
+     "2026-01-15",
+     0,
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ]
+  },
+  {
+   "table": "property_slug",
+   "columns": [
+    "apartment_id",
+    "slug",
+    "published",
+    "published_at",
+    "created_at",
+    "updated_at"
+   ],
+   "rows": [
+    [
+     101,
+     "garden-loft-abc123",
+     1,
+     "2026-01-15",
+     "2026-01-01T00:00:00+00:00",
+     "2026-01-01T00:00:00+00:00"
+    ]
+   ]
+  }
+ ],
+ "cases": [
+  {
+   "name": "robots",
+   "method": "GET",
+   "path": "/robots.txt",
+   "status": 200,
+   "headers": {
+    "content-type": "text/plain; charset=utf-8",
+    "cache-control": "public, max-age=0, s-maxage=300"
+   },
+   "set_cookies": [],
+   "body": "# Text and data mining, AI training and automated scraping of this site\n# are not permitted. Rights reserved under Art. 4(3) of Directive (EU)\n# 2019/790 and the Czech Copyright Act (No. 121/2000 Coll.).\n# Terms: /terms#s11\n\nUser-agent: GPTBot\nUser-agent: ClaudeBot\nUser-agent: Claude-Web\nUser-agent: anthropic-ai\nUser-agent: Google-Extended\nUser-agent: Google-CloudVertexBot\nUser-agent: Applebot-Extended\nUser-agent: CCBot\nUser-agent: Bytespider\nUser-agent: TikTokSpider\nUser-agent: Amazonbot\nUser-agent: meta-externalagent\nUser-agent: meta-externalfetcher\nUser-agent: FacebookBot\nUser-agent: cohere-ai\nUser-agent: cohere-training-data-crawler\nUser-agent: AI2Bot\nUser-agent: Ai2Bot-Dolma\nUser-agent: Diffbot\nUser-agent: ImagesiftBot\nUser-agent: Omgilibot\nUser-agent: Omgili\nUser-agent: Webzio-Extended\nUser-agent: Timpibot\nUser-agent: PanguBot\nUser-agent: img2dataset\nUser-agent: Scrapy\nUser-agent: AhrefsBot\nUser-agent: SemrushBot\nUser-agent: MJ12bot\nUser-agent: DotBot\nUser-agent: DataForSeoBot\nUser-agent: BLEXBot\nDisallow: /\n\nUser-agent: *\nContent-Signal: search=yes, ai-input=yes, ai-train=no\nDisallow: /l/\nDisallow: /account/\nDisallow: /admin/\nDisallow: /alerts\nDisallow: /api/\nDisallow: /apartments\nDisallow: /celebrations\nDisallow: /cleaning\nDisallow: /dashboard\nDisallow: /demo\nDisallow: /dev\nDisallow: /entities\nDisallow: /feeds\nDisallow: /guest-links\nDisallow: /guests\nDisallow: /guide\nDisallow: /housebook\nDisallow: /invoice\nDisallow: /mail\nDisallow: /onboarding\nDisallow: /privacy-requests\nDisallow: /reservations\nDisallow: /settings\nDisallow: /smart-locks\nDisallow: /stay-fees\nDisallow: /submissions\nDisallow: /sync\n\nSitemap: https://golden.example.test/sitemap.xml\n"
+  },
+  {
+   "name": "tdmrep",
+   "method": "GET",
+   "path": "/.well-known/tdmrep.json",
+   "status": 200,
+   "headers": {
+    "content-type": "application/json",
+    "cache-control": "no-store, private"
+   },
+   "set_cookies": [],
+   "body": "[{\"location\": \"/*\", \"tdm-reservation\": 1}]\n"
+  },
+  {
+   "name": "manifest",
+   "method": "GET",
+   "path": "/manifest.webmanifest",
+   "status": 200,
+   "headers": {
+    "content-type": "application/manifest+json",
+    "cache-control": "public, max-age=86400"
+   },
+   "set_cookies": [],
+   "body": "{\"id\": \"/\", \"name\": \"UbyHost\", \"short_name\": \"UbyHost\", \"description\": \"Guest registration and police reports for short-term rentals.\", \"lang\": \"en\", \"start_url\": \"/login\", \"scope\": \"/\", \"display\": \"standalone\", \"background_color\": \"#f7f7f5\", \"theme_color\": \"#f7f7f5\", \"icons\": [{\"src\": \"/static/icons/icon-192.png?v=20261021-0203\", \"sizes\": \"192x192\", \"type\": \"image/png\", \"purpose\": \"any\"}, {\"src\": \"/static/icons/icon-512.png?v=20261021-0203\", \"sizes\": \"512x512\", \"type\": \"image/png\", \"purpose\": \"any\"}, {\"src\": \"/static/icons/icon-maskable-512.png?v=20261021-0203\", \"sizes\": \"512x512\", \"type\": \"image/png\", \"purpose\": \"maskable\"}]}"
+  },
+  {
+   "name": "sw",
+   "method": "GET",
+   "path": "/sw.js",
+   "status": 200,
+   "headers": {
+    "content-type": "text/javascript; charset=utf-8",
+    "cache-control": "no-cache"
+   },
+   "set_cookies": [],
+   "body": "/* UbyHost service worker (brief 0219). Served from /sw.js so its scope is the\n   whole app.\n\n   It stores exactly one response: the offline page, in the host's language.\n   App pages are never stored (they are no-store and carry guest data), and\n   /static files are never stored either: they are versioned with ?v= and the\n   browser caches them already, so a deploy can never hide behind an old copy\n   here. Bump VERSION whenever this file changes. */\n\"use strict\";\n\nvar VERSION = \"20261021-0203\";\nvar CACHE = \"ubyhost-offline-\" + VERSION;\nvar OFFLINE_URL = \"/offline\";\nvar LANGS = [\"en\", \"cs\", \"vi\"];\nvar ICON = \"/static/icons/icon-192.png?v=20261021-0203\";\nvar BADGE = \"/static/icons/badge-96.png?v=20261021-0203\";\n\nfunction storeOffline(lang) {\n  var url = LANGS.indexOf(lang) >= 0 ? OFFLINE_URL + \"?lang=\" + lang : OFFLINE_URL;\n  return fetch(url, { cache: \"reload\", credentials: \"same-origin\" }).then(function (response) {\n    if (!response.ok) return undefined;\n    return caches.open(CACHE).then(function (cache) {\n      return cache.put(OFFLINE_URL, response);\n    });\n  });\n}\n\nself.addEventListener(\"install\", function (event) {\n  event.waitUntil(storeOffline(\"\").then(function () {\n    return self.skipWaiting();\n  }));\n});\n\nself.addEventListener(\"activate\", function (event) {\n  event.waitUntil(caches.keys().then(function (keys) {\n    return Promise.all(keys.filter(function (key) {\n      return key.indexOf(\"ubyhost-\") === 0 && key !== CACHE;\n    }).map(function (key) {\n      return caches.delete(key);\n    }));\n  }).then(function () {\n    if (self.registration.navigationPreload) {\n      return self.registration.navigationPreload.enable();\n    }\n    return undefined;\n  }).then(function () {\n    return self.clients.claim();\n  }));\n});\n\n// Page loads go to the network as always; only a failed one gets the offline page.\nself.addEventListener(\"fetch\", function (event) {\n  var req = event.request;\n  if (req.mode !== \"navigate\" || req.method !== \"GET\") return;\n  var url = new URL(req.url);\n  // Guest links (/l/...) belong to the guest, never to the host's app.\n  if (url.origin !== self.location.origin || /^\\/l(\\/|$)/.test(url.pathname)) return;\n  event.respondWith(Promise.resolve(event.preloadResponse).then(function (preloaded) {\n    return preloaded || fetch(req);\n  }).catch(function () {\n    return caches.open(CACHE).then(function (cache) {\n      return cache.match(OFFLINE_URL);\n    }).then(function (offline) {\n      return offline || Response.error();\n    });\n  }));\n});\n\n// pwa.js tells the worker the page language, so the offline page matches it.\nself.addEventListener(\"message\", function (event) {\n  var data = event.data || {};\n  if (data.type !== \"lang\" || LANGS.indexOf(data.lang) < 0) return;\n  event.waitUntil(caches.open(CACHE).then(function (cache) {\n    return cache.match(OFFLINE_URL);\n  }).then(function (stored) {\n    if (stored && stored.headers.get(\"Content-Language\") === data.lang) return undefined;\n    return storeOffline(data.lang);\n  }));\n});\n\n// Urgent alerts (0225-0227). Every push shows a notification: Safari stops\n// delivering to a site that pushes silently. A rotated subscription needs no\n// pushsubscriptionchange handler: pwa.js sends the current one on every visit.\nself.addEventListener(\"push\", function (event) {\n  var data = {};\n  try {\n    data = event.data ? event.data.json() : {};\n  } catch (error) {\n    data = {};\n  }\n  event.waitUntil(self.registration.showNotification(data.title || \"UbyHost\", {\n    body: data.body || \"\",\n    tag: data.tag || \"\",\n    renotify: !!data.tag,\n    lang: data.lang || \"\",\n    icon: ICON,\n    badge: BADGE,\n    data: { url: data.url || \"/\" }\n  }));\n});\n\nself.addEventListener(\"notificationclick\", function (event) {\n  event.notification.close();\n  var target = new URL((event.notification.data && event.notification.data.url) || \"/\", self.location.origin);\n  // Only ever open this app's own pages.\n  if (target.origin !== self.location.origin) target = new URL(\"/\", self.location.origin);\n  event.waitUntil(self.clients.matchAll({ type: \"window\", includeUncontrolled: true }).then(function (windows) {\n    for (var i = 0; i < windows.length; i++) {\n      var client = windows[i];\n      if (client.url.indexOf(self.location.origin) === 0 && \"navigate\" in client) {\n        return client.focus().then(function (focused) {\n          return (focused || client).navigate(target.href);\n        }).catch(function () {\n          return self.clients.openWindow(target.href);\n        });\n      }\n    }\n    return self.clients.openWindow(target.href);\n  }));\n});\n"
+  },
+  {
+   "name": "sitemap",
+   "method": "GET",
+   "path": "/sitemap.xml",
+   "status": 200,
+   "headers": {
+    "content-type": "application/xml",
+    "cache-control": "public, max-age=0, s-maxage=300"
+   },
+   "set_cookies": [],
+   "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\" xmlns:xhtml=\"http://www.w3.org/1999/xhtml\">\n  <url>\n    <loc>https://golden.example.test/?lang=en</loc>\n    <xhtml:link rel=\"alternate\" hreflang=\"en\" href=\"https://golden.example.test/?lang=en\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"cs\" href=\"https://golden.example.test/?lang=cs\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"https://golden.example.test/\"/>\n  </url>\n  <url>\n    <loc>https://golden.example.test/?lang=cs</loc>\n    <xhtml:link rel=\"alternate\" hreflang=\"en\" href=\"https://golden.example.test/?lang=en\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"cs\" href=\"https://golden.example.test/?lang=cs\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"https://golden.example.test/\"/>\n  </url>\n  <url>\n    <loc>https://golden.example.test/login?lang=en</loc>\n    <xhtml:link rel=\"alternate\" hreflang=\"en\" href=\"https://golden.example.test/login?lang=en\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"cs\" href=\"https://golden.example.test/login?lang=cs\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"https://golden.example.test/login\"/>\n  </url>\n  <url>\n    <loc>https://golden.example.test/login?lang=cs</loc>\n    <xhtml:link rel=\"alternate\" hreflang=\"en\" href=\"https://golden.example.test/login?lang=en\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"cs\" href=\"https://golden.example.test/login?lang=cs\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"https://golden.example.test/login\"/>\n  </url>\n  <url>\n    <loc>https://golden.example.test/legal?lang=en</loc>\n    <xhtml:link rel=\"alternate\" hreflang=\"en\" href=\"https://golden.example.test/legal?lang=en\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"cs\" href=\"https://golden.example.test/legal?lang=cs\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"https://golden.example.test/legal\"/>\n  </url>\n  <url>\n    <loc>https://golden.example.test/legal?lang=cs</loc>\n    <xhtml:link rel=\"alternate\" hreflang=\"en\" href=\"https://golden.example.test/legal?lang=en\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"cs\" href=\"https://golden.example.test/legal?lang=cs\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"https://golden.example.test/legal\"/>\n  </url>\n  <url>\n    <loc>https://golden.example.test/terms?lang=en</loc>\n    <xhtml:link rel=\"alternate\" hreflang=\"en\" href=\"https://golden.example.test/terms?lang=en\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"cs\" href=\"https://golden.example.test/terms?lang=cs\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"https://golden.example.test/terms\"/>\n  </url>\n  <url>\n    <loc>https://golden.example.test/terms?lang=cs</loc>\n    <xhtml:link rel=\"alternate\" hreflang=\"en\" href=\"https://golden.example.test/terms?lang=en\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"cs\" href=\"https://golden.example.test/terms?lang=cs\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"https://golden.example.test/terms\"/>\n  </url>\n  <url>\n    <loc>https://golden.example.test/privacy?lang=en</loc>\n    <xhtml:link rel=\"alternate\" hreflang=\"en\" href=\"https://golden.example.test/privacy?lang=en\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"cs\" href=\"https://golden.example.test/privacy?lang=cs\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"https://golden.example.test/privacy\"/>\n  </url>\n  <url>\n    <loc>https://golden.example.test/privacy?lang=cs</loc>\n    <xhtml:link rel=\"alternate\" hreflang=\"en\" href=\"https://golden.example.test/privacy?lang=en\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"cs\" href=\"https://golden.example.test/privacy?lang=cs\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"https://golden.example.test/privacy\"/>\n  </url>\n  <url>\n    <loc>https://golden.example.test/dpa?lang=en</loc>\n    <xhtml:link rel=\"alternate\" hreflang=\"en\" href=\"https://golden.example.test/dpa?lang=en\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"cs\" href=\"https://golden.example.test/dpa?lang=cs\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"https://golden.example.test/dpa\"/>\n  </url>\n  <url>\n    <loc>https://golden.example.test/dpa?lang=cs</loc>\n    <xhtml:link rel=\"alternate\" hreflang=\"en\" href=\"https://golden.example.test/dpa?lang=en\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"cs\" href=\"https://golden.example.test/dpa?lang=cs\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"https://golden.example.test/dpa\"/>\n  </url>\n  <url>\n    <loc>https://golden.example.test/subprocessors?lang=en</loc>\n    <xhtml:link rel=\"alternate\" hreflang=\"en\" href=\"https://golden.example.test/subprocessors?lang=en\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"cs\" href=\"https://golden.example.test/subprocessors?lang=cs\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"https://golden.example.test/subprocessors\"/>\n  </url>\n  <url>\n    <loc>https://golden.example.test/subprocessors?lang=cs</loc>\n    <xhtml:link rel=\"alternate\" hreflang=\"en\" href=\"https://golden.example.test/subprocessors?lang=en\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"cs\" href=\"https://golden.example.test/subprocessors?lang=cs\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"https://golden.example.test/subprocessors\"/>\n  </url>\n  <url>\n    <loc>https://golden.example.test/jak-to-funguje?lang=en</loc>\n    <xhtml:link rel=\"alternate\" hreflang=\"en\" href=\"https://golden.example.test/jak-to-funguje?lang=en\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"cs\" href=\"https://golden.example.test/jak-to-funguje?lang=cs\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"https://golden.example.test/jak-to-funguje\"/>\n  </url>\n  <url>\n    <loc>https://golden.example.test/jak-to-funguje?lang=cs</loc>\n    <xhtml:link rel=\"alternate\" hreflang=\"en\" href=\"https://golden.example.test/jak-to-funguje?lang=en\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"cs\" href=\"https://golden.example.test/jak-to-funguje?lang=cs\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"https://golden.example.test/jak-to-funguje\"/>\n  </url>\n  <url>\n    <loc>https://golden.example.test/cenik?lang=en</loc>\n    <xhtml:link rel=\"alternate\" hreflang=\"en\" href=\"https://golden.example.test/cenik?lang=en\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"cs\" href=\"https://golden.example.test/cenik?lang=cs\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"https://golden.example.test/cenik\"/>\n  </url>\n  <url>\n    <loc>https://golden.example.test/cenik?lang=cs</loc>\n    <xhtml:link rel=\"alternate\" hreflang=\"en\" href=\"https://golden.example.test/cenik?lang=en\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"cs\" href=\"https://golden.example.test/cenik?lang=cs\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"https://golden.example.test/cenik\"/>\n  </url>\n  <url>\n    <loc>https://golden.example.test/pruvodce/hlaseni-cizincu-ubyport?lang=en</loc>\n    <xhtml:link rel=\"alternate\" hreflang=\"en\" href=\"https://golden.example.test/pruvodce/hlaseni-cizincu-ubyport?lang=en\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"cs\" href=\"https://golden.example.test/pruvodce/hlaseni-cizincu-ubyport?lang=cs\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"https://golden.example.test/pruvodce/hlaseni-cizincu-ubyport\"/>\n  </url>\n  <url>\n    <loc>https://golden.example.test/pruvodce/hlaseni-cizincu-ubyport?lang=cs</loc>\n    <xhtml:link rel=\"alternate\" hreflang=\"en\" href=\"https://golden.example.test/pruvodce/hlaseni-cizincu-ubyport?lang=en\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"cs\" href=\"https://golden.example.test/pruvodce/hlaseni-cizincu-ubyport?lang=cs\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"https://golden.example.test/pruvodce/hlaseni-cizincu-ubyport\"/>\n  </url>\n  <url>\n    <loc>https://golden.example.test/pruvodce/online-ubytovaci-kniha?lang=en</loc>\n    <xhtml:link rel=\"alternate\" hreflang=\"en\" href=\"https://golden.example.test/pruvodce/online-ubytovaci-kniha?lang=en\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"cs\" href=\"https://golden.example.test/pruvodce/online-ubytovaci-kniha?lang=cs\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"https://golden.example.test/pruvodce/online-ubytovaci-kniha\"/>\n  </url>\n  <url>\n    <loc>https://golden.example.test/pruvodce/online-ubytovaci-kniha?lang=cs</loc>\n    <xhtml:link rel=\"alternate\" hreflang=\"en\" href=\"https://golden.example.test/pruvodce/online-ubytovaci-kniha?lang=en\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"cs\" href=\"https://golden.example.test/pruvodce/online-ubytovaci-kniha?lang=cs\"/>\n    <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"https://golden.example.test/pruvodce/online-ubytovaci-kniha\"/>\n  </url>\n  <url>\n    <loc>https://golden.example.test/p/garden-loft-abc123</loc>\n    <lastmod>2026-01-15</lastmod>\n  </url>\n</urlset>\n"
+  },
+  {
+   "name": "favicon",
+   "method": "GET",
+   "path": "/favicon.ico",
+   "status": 307,
+   "headers": {
+    "cache-control": "no-store, private",
+    "location": "/static/favicon.png"
+   },
+   "set_cookies": [],
+   "body": ""
+  },
+  {
+   "name": "offline-en",
+   "method": "GET",
+   "path": "/offline?lang=en",
+   "status": 200,
+   "headers": {
+    "content-type": "text/html; charset=utf-8",
+    "cache-control": "no-store, private",
+    "content-language": "en",
+    "x-robots-tag": "noindex"
+   },
+   "set_cookies": [
+    {
+     "name": "ubyhost_lang",
+     "value": "en",
+     "path": "/",
+     "max_age": "15552000",
+     "samesite": "lax",
+     "secure": true,
+     "httponly": false
+    }
+   ],
+   "body": "<!doctype html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">\n  <meta name=\"theme-color\" content=\"#f7f7f5\">\n  <meta name=\"robots\" content=\"noindex\">\n  <title>You are offline · UbyHost</title>\n  \n  <style>\n    html { background: #f7f7f5; color: #20201e; font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif; }\n    body { margin: 0; min-height: 100vh; display: grid; place-items: center; box-sizing: border-box; padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom)); }\n    main { max-width: 26rem; text-align: center; }\n    h1 { font-size: 1.375rem; line-height: 1.3; margin: 0 0 12px; }\n    p { margin: 0 0 24px; line-height: 1.5; color: #50504c; }\n    a { display: inline-block; min-height: 44px; box-sizing: border-box; padding: 11px 20px; border-radius: 8px; background: #ad4942; color: #ffffff; font-weight: 600; text-decoration: none; }\n    a:focus-visible { outline: 3px solid #20201e; outline-offset: 2px; }\n  </style>\n</head>\n<body>\n  <main>\n    <h1>You are offline</h1>\n    <p>UbyHost needs an internet connection. Check Wi-Fi or mobile data, then try again.</p>\n    \n    <a href=\"\">Try again</a>\n  </main>\n</body>\n</html>"
+  },
+  {
+   "name": "offline-cs",
+   "method": "GET",
+   "path": "/offline?lang=cs",
+   "status": 200,
+   "headers": {
+    "content-type": "text/html; charset=utf-8",
+    "cache-control": "no-store, private",
+    "content-language": "cs",
+    "x-robots-tag": "noindex"
+   },
+   "set_cookies": [
+    {
+     "name": "ubyhost_lang",
+     "value": "cs",
+     "path": "/",
+     "max_age": "15552000",
+     "samesite": "lax",
+     "secure": true,
+     "httponly": false
+    }
+   ],
+   "body": "<!doctype html>\n<html lang=\"cs\">\n<head>\n  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">\n  <meta name=\"theme-color\" content=\"#f7f7f5\">\n  <meta name=\"robots\" content=\"noindex\">\n  <title>Jste offline · UbyHost</title>\n  \n  <style>\n    html { background: #f7f7f5; color: #20201e; font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif; }\n    body { margin: 0; min-height: 100vh; display: grid; place-items: center; box-sizing: border-box; padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom)); }\n    main { max-width: 26rem; text-align: center; }\n    h1 { font-size: 1.375rem; line-height: 1.3; margin: 0 0 12px; }\n    p { margin: 0 0 24px; line-height: 1.5; color: #50504c; }\n    a { display: inline-block; min-height: 44px; box-sizing: border-box; padding: 11px 20px; border-radius: 8px; background: #ad4942; color: #ffffff; font-weight: 600; text-decoration: none; }\n    a:focus-visible { outline: 3px solid #20201e; outline-offset: 2px; }\n  </style>\n</head>\n<body>\n  <main>\n    <h1>Jste offline</h1>\n    <p>UbyHost potřebuje připojení k internetu. Zkontrolujte Wi-Fi nebo mobilní data a zkuste to znovu.</p>\n    \n    <a href=\"\">Zkusit znovu</a>\n  </main>\n</body>\n</html>"
+  },
+  {
+   "name": "offline-vi",
+   "method": "GET",
+   "path": "/offline?lang=vi",
+   "status": 200,
+   "headers": {
+    "content-type": "text/html; charset=utf-8",
+    "cache-control": "no-store, private",
+    "content-language": "vi",
+    "x-robots-tag": "noindex"
+   },
+   "set_cookies": [
+    {
+     "name": "ubyhost_lang",
+     "value": "vi",
+     "path": "/",
+     "max_age": "15552000",
+     "samesite": "lax",
+     "secure": true,
+     "httponly": false
+    }
+   ],
+   "body": "<!doctype html>\n<html lang=\"vi\">\n<head>\n  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">\n  <meta name=\"theme-color\" content=\"#f7f7f5\">\n  <meta name=\"robots\" content=\"noindex\">\n  <title>Bạn đang ngoại tuyến · UbyHost</title>\n  \n  <style>\n    html { background: #f7f7f5; color: #20201e; font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif; }\n    body { margin: 0; min-height: 100vh; display: grid; place-items: center; box-sizing: border-box; padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom)); }\n    main { max-width: 26rem; text-align: center; }\n    h1 { font-size: 1.375rem; line-height: 1.3; margin: 0 0 12px; }\n    p { margin: 0 0 24px; line-height: 1.5; color: #50504c; }\n    a { display: inline-block; min-height: 44px; box-sizing: border-box; padding: 11px 20px; border-radius: 8px; background: #ad4942; color: #ffffff; font-weight: 600; text-decoration: none; }\n    a:focus-visible { outline: 3px solid #20201e; outline-offset: 2px; }\n  </style>\n</head>\n<body>\n  <main>\n    <h1>Bạn đang ngoại tuyến</h1>\n    <p>UbyHost cần kết nối Internet. Hãy kiểm tra Wi-Fi hoặc dữ liệu di động, rồi thử lại.</p>\n    \n    <a href=\"\">Thử lại</a>\n  </main>\n</body>\n</html>"
+  },
+  {
+   "name": "post-language-cs",
+   "method": "POST",
+   "path": "/language",
+   "status": 303,
+   "headers": {
+    "cache-control": "no-store, private",
+    "location": "/login?lang=en"
+   },
+   "set_cookies": [
+    {
+     "name": "ubyhost_lang",
+     "value": "cs",
+     "path": "/",
+     "max_age": "15552000",
+     "samesite": "lax",
+     "secure": true,
+     "httponly": false
+    }
+   ],
+   "body": ""
+  }
+ ]
+}

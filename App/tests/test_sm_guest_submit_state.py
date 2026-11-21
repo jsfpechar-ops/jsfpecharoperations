@@ -56,6 +56,8 @@ PINNED = [
      "mark_filed_by_hand"),
     ("go/internal/web/stays/claim_ops.go", "sql", "cas", {SENT}, {PENDING, ERROR, BLOCKED}, "cas",
      "undo_filed_by_hand: back to manual_prev_state, else pending"),
+    ("go/internal/ops/reconcile.go", "sql", "cas", {ERROR, BLOCKED}, {SENT}, "cas",
+     "reconcile_accepted_codes: align guest with accepted UbyPort receipt"),
     ("App/app/routes/admin.py", "dict", "(", {NEW}, {PENDING, NOT_REQUIRED}, "insert",
      "guest_create"),
     ("App/app/routes/admin.py", "subscript", "reporting.NOT_REQUIRED",

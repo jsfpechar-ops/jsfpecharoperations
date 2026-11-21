@@ -1,0 +1,10 @@
+grep -cF 'def booking_site_setup(request: Request, apartment_id: int):' App/app/routes/payments.py
+grep -cF 'async def booking_site_save(request: Request, apartment_id: int):' App/app/routes/payments.py
+grep -cF 'func RegisterBookingSiteSetup(mux *http.ServeMux' go/internal/web/booking/booking_site_setup.go
+grep -cF 'func SaveSettings(ctx context.Context, db DB, apartmentID int64' go/internal/web/booking/setup_save.go
+grep -cF 'func registerRoutes(fn func(*http.ServeMux, *metrics, *pgxpool.Pool)) {' go/cmd/ubyhost-web/registry.go
+grep -rcF '"GET /apartments/{apartment_id}/booking-site"' go/cmd/ubyhost-web | grep -v ':0$'
+ls go/internal/web/booking/booking_site_setup.go 2>&1 | grep -cF 'No such file'
+ls App/scripts/go_booking_site_setup_golden.py 2>&1 | grep -cF 'No such file'
+ls go/cmd/ubyhost-web/register_web_booking_host_site_setup.go 2>&1 | grep -cF 'No such file'
+find docs/tasks/1710c-files -name '*.txt' ! -name 'ANCHORS.txt' | wc -l

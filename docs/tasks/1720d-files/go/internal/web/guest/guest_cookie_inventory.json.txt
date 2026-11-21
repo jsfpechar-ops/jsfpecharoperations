@@ -1,0 +1,362 @@
+[
+  {
+    "name": "ubyhost_session",
+    "party": "first",
+    "purpose": {
+      "en": "Keeps you signed in",
+      "cs": "Udržuje přihlášení",
+      "de": "Hält Sie angemeldet",
+      "es": "Mantiene su sesión iniciada",
+      "fr": "Maintient votre connexion",
+      "uk": "Зберігає ваш вхід у систему"
+    },
+    "lifetime": {
+      "en": "30 days without use, 90 days at most after you sign in, until you log out",
+      "cs": "30 dní bez použití, nejdéle 90 dní od přihlášení, dokud se neodhlásíte",
+      "de": "12 Stunden oder 30 Tage mit „Angemeldet bleiben“",
+      "es": "12 horas, o 30 días con «recordarme»",
+      "fr": "12 heures, ou 30 jours avec « se souvenir de moi »",
+      "uk": "30 днів без використання, щонайбільше 90 днів після входу, доки ви не вийдете"
+    }
+  },
+  {
+    "name": "ubyhost_device",
+    "party": "first",
+    "purpose": {
+      "en": "Recognises this device so login needs no security check",
+      "cs": "Pozná toto zařízení, aby přihlášení nevyžadovalo bezpečnostní kontrolu",
+      "de": "Erkennt dieses Gerät, damit die Anmeldung keine Sicherheitsprüfung braucht",
+      "es": "Reconoce este dispositivo para que el inicio de sesión no requiera verificación",
+      "fr": "Reconnaît cet appareil pour que la connexion ne demande pas de vérification",
+      "uk": "Розпізнає цей пристрій, тож вхід не потребує перевірки безпеки"
+    },
+    "lifetime": {
+      "en": "30 days, renewed each time you sign in",
+      "cs": "30 dní, obnoví se při každém přihlášení",
+      "de": "30 Tage, bei jeder Anmeldung erneuert",
+      "es": "30 días, renovados en cada inicio de sesión",
+      "fr": "30 jours, renouvelés à chaque connexion",
+      "uk": "30 днів, оновлюється при кожному вході"
+    }
+  },
+  {
+    "name": "ubyhost_csrf",
+    "party": "first",
+    "purpose": {
+      "en": "Protects forms against cross-site requests",
+      "cs": "Chrání formuláře před požadavky z jiných stránek",
+      "de": "Schützt Formulare vor Cross-Site-Anfragen",
+      "es": "Protege los formularios contra solicitudes entre sitios",
+      "fr": "Protège les formulaires contre les requêtes intersites",
+      "uk": "Захищає форми від міжсайтових запитів"
+    },
+    "lifetime": {
+      "en": "Matches the session, up to 30 days",
+      "cs": "Shodné s relací, až 30 dní",
+      "de": "Wie die Sitzung, bis zu 30 Tage",
+      "es": "Igual que la sesión, hasta 30 días",
+      "fr": "Liée à la session, jusqu'à 30 jours",
+      "uk": "Як у сесії, до 30 днів"
+    }
+  },
+  {
+    "name": "ubyhost_lang",
+    "party": "first",
+    "purpose": {
+      "en": "Remembers your language",
+      "cs": "Pamatuje si váš jazyk",
+      "de": "Speichert Ihre Sprache",
+      "es": "Recuerda su idioma",
+      "fr": "Mémorise votre langue",
+      "uk": "Запам’ятовує вашу мову"
+    },
+    "lifetime": {
+      "en": "180 days",
+      "cs": "180 dní",
+      "de": "180 Tage",
+      "es": "180 días",
+      "fr": "180 jours",
+      "uk": "180 днів"
+    }
+  },
+  {
+    "name": "ubyhost_pin",
+    "party": "first",
+    "purpose": {
+      "en": "Keeps your guest stay access on this device",
+      "cs": "Udržuje přístup k pobytu na tomto zařízení",
+      "de": "Speichert Ihren Gastzugang zum Aufenthalt auf diesem Gerät",
+      "es": "Mantiene su acceso a la estancia en este dispositivo",
+      "fr": "Conserve votre accès voyageur au séjour sur cet appareil",
+      "uk": "Зберігає ваш гостьовий доступ до проживання на цьому пристрої"
+    },
+    "lifetime": {
+      "en": "7 days",
+      "cs": "7 dní",
+      "de": "7 Tage",
+      "es": "7 días",
+      "fr": "7 jours",
+      "uk": "7 днів"
+    }
+  },
+  {
+    "name": "ubyhost_owned",
+    "party": "first",
+    "purpose": {
+      "en": "Remembers which forms this device submitted",
+      "cs": "Pamatuje si, které formuláře toto zařízení odeslalo",
+      "de": "Speichert, welche Formulare dieses Gerät gesendet hat",
+      "es": "Recuerda qué formularios envió este dispositivo",
+      "fr": "Mémorise les formulaires envoyés depuis cet appareil",
+      "uk": "Запам’ятовує, які форми надіслано з цього пристрою"
+    },
+    "lifetime": {
+      "en": "60 days",
+      "cs": "60 dní",
+      "de": "60 Tage",
+      "es": "60 días",
+      "fr": "60 jours",
+      "uk": "60 днів"
+    }
+  },
+  {
+    "name": "ubyhost_claim",
+    "party": "first",
+    "purpose": {
+      "en": "Keeps a claimed reservation on this device",
+      "cs": "Udržuje převzatou rezervaci na tomto zařízení",
+      "de": "Speichert eine beanspruchte Reservierung auf diesem Gerät",
+      "es": "Mantiene una reserva reclamada en este dispositivo",
+      "fr": "Conserve une réservation revendiquée sur cet appareil",
+      "uk": "Зберігає закріплене бронювання на цьому пристрої"
+    },
+    "lifetime": {
+      "en": "60 days",
+      "cs": "60 dní",
+      "de": "60 Tage",
+      "es": "60 días",
+      "fr": "60 jours",
+      "uk": "60 днів"
+    }
+  },
+  {
+    "name": "ubyhost_draft",
+    "party": "first",
+    "purpose": {
+      "en": "Keeps your unfinished form on this device so you can continue it",
+      "cs": "Uchová rozpracovaný formulář na tomto zařízení, abyste mohli pokračovat",
+      "de": "Bewahrt Ihr nicht fertiges Formular auf diesem Gerät auf, damit Sie weitermachen können",
+      "es": "Guarda su formulario sin terminar en este dispositivo para que pueda continuarlo",
+      "fr": "Conserve votre formulaire inachevé sur cet appareil pour que vous puissiez le reprendre",
+      "uk": "Зберігає незавершену форму на цьому пристрої, щоб ви могли продовжити"
+    },
+    "lifetime": {
+      "en": "7 days",
+      "cs": "7 dní",
+      "de": "7 Tage",
+      "es": "7 días",
+      "fr": "7 jours",
+      "uk": "7 днів"
+    }
+  },
+  {
+    "name": "ubyhost_guest_lang",
+    "party": "first",
+    "purpose": {
+      "en": "Remembers the guest's language",
+      "cs": "Pamatuje si jazyk hosta",
+      "de": "Speichert die Sprache des Gastes",
+      "es": "Recuerda el idioma del huésped",
+      "fr": "Mémorise la langue du voyageur",
+      "uk": "Запам’ятовує мову гостя"
+    },
+    "lifetime": {
+      "en": "60 days",
+      "cs": "60 dní",
+      "de": "60 Tage",
+      "es": "60 días",
+      "fr": "60 jours",
+      "uk": "60 днів"
+    }
+  },
+  {
+    "name": "ubyhost_leon",
+    "party": "first",
+    "purpose": {
+      "en": "Keeps your conversation with Leon (AI) on this property's guide page; a random number, nothing about you",
+      "cs": "Udržuje vaši konverzaci s Leonem (AI) na stránce průvodce; náhodné číslo, nic o vás",
+      "de": "Hält Ihr Gespräch mit Leon (KI) auf der Seite dieser Unterkunft; eine Zufallszahl, nichts über Sie",
+      "es": "Mantiene su conversación con Leon (IA) en la página de este alojamiento; un número aleatorio, nada sobre usted",
+      "fr": "Garde votre conversation avec Leon (IA) sur la page de ce logement ; un nombre aléatoire, rien sur vous",
+      "uk": "Зберігає вашу розмову з Leon (ШІ) на сторінці цього помешкання; випадкове число, нічого про вас"
+    },
+    "lifetime": {
+      "en": "30 days",
+      "cs": "30 dní",
+      "de": "30 Tage",
+      "es": "30 días",
+      "fr": "30 jours",
+      "uk": "30 днів"
+    }
+  },
+  {
+    "name": "ubyhost-sidebar-collapsed",
+    "party": "first",
+    "purpose": {
+      "en": "Remembers the sidebar state",
+      "cs": "Pamatuje si stav postranního panelu",
+      "de": "Speichert den Zustand der Seitenleiste",
+      "es": "Recuerda el estado de la barra lateral",
+      "fr": "Mémorise l'état de la barre latérale",
+      "uk": "Запам’ятовує стан бічної панелі"
+    },
+    "lifetime": {
+      "en": "Until you clear it",
+      "cs": "Dokud jej nevymažete",
+      "de": "Bis Sie es löschen",
+      "es": "Hasta que la borre",
+      "fr": "Jusqu'à ce que vous l'effaciez",
+      "uk": "Доки ви його не видалите"
+    }
+  },
+  {
+    "name": "ubyhost-command-recents",
+    "party": "first",
+    "purpose": {
+      "en": "Recent command-palette items",
+      "cs": "Nedávné položky palety příkazů",
+      "de": "Zuletzt verwendete Einträge der Befehlspalette",
+      "es": "Elementos recientes de la paleta de comandos",
+      "fr": "Éléments récents de la palette de commandes",
+      "uk": "Нещодавні елементи палітри команд"
+    },
+    "lifetime": {
+      "en": "Until you clear it",
+      "cs": "Dokud jej nevymažete",
+      "de": "Bis Sie es löschen",
+      "es": "Hasta que la borre",
+      "fr": "Jusqu'à ce que vous l'effaciez",
+      "uk": "Доки ви їх не видалите"
+    }
+  },
+  {
+    "name": "ubyhost.calendar.display.v1",
+    "party": "first",
+    "purpose": {
+      "en": "Remembers calendar view and display settings; contains no booking or guest data",
+      "cs": "Pamatuje si zobrazení kalendáře; neobsahuje údaje o rezervacích ani hostech",
+      "de": "Speichert Kalenderansicht und Anzeigeoptionen, keine Buchungs- oder Gästedaten",
+      "es": "Recuerda la vista y las opciones del calendario, sin datos de reservas ni huéspedes",
+      "fr": "Mémorise la vue et les options du calendrier, sans données de réservation ni de voyageur",
+      "uk": "Запам’ятовує вигляд і налаштування календаря; не містить даних про бронювання чи гостей"
+    },
+    "lifetime": {
+      "en": "Until you clear it",
+      "cs": "Dokud jej nevymažete",
+      "de": "Bis Sie es löschen",
+      "es": "Hasta que lo borre",
+      "fr": "Jusqu'à ce que vous l'effaciez",
+      "uk": "Доки ви їх не видалите"
+    }
+  },
+  {
+    "name": "ubyhost.cleaning.display.v1",
+    "party": "first",
+    "purpose": {
+      "en": "Remembers cleaning calendar display settings; no codes or schedule data",
+      "cs": "Pamatuje si zobrazení kalendáře úklidů; bez kódů a údajů rozpisu",
+      "de": "Speichert die Ansicht des Reinigungskalenders, keine Codes oder Termindaten",
+      "es": "Recuerda la vista del calendario de limpieza, sin códigos ni datos del horario",
+      "fr": "Mémorise l’affichage du calendrier de ménage, sans codes ni données du planning",
+      "uk": "Запам’ятовує налаштування календаря прибирання; без кодів і даних розкладу"
+    },
+    "lifetime": {
+      "en": "Until you clear it",
+      "cs": "Dokud jej nevymažete",
+      "de": "Bis Sie es löschen",
+      "es": "Hasta que lo borre",
+      "fr": "Jusqu’à ce que vous l’effaciez",
+      "uk": "Доки ви їх не видалите"
+    }
+  },
+  {
+    "name": "ubyhost-saved-stay-views",
+    "party": "first",
+    "purpose": {
+      "en": "Saved stay-list views",
+      "cs": "Uložené pohledy na seznam pobytů",
+      "de": "Gespeicherte Ansichten der Aufenthaltsliste",
+      "es": "Vistas guardadas de la lista de estancias",
+      "fr": "Vues enregistrées de la liste des séjours",
+      "uk": "Збережені вигляди списку проживань"
+    },
+    "lifetime": {
+      "en": "Until you clear it",
+      "cs": "Dokud jej nevymažete",
+      "de": "Bis Sie es löschen",
+      "es": "Hasta que la borre",
+      "fr": "Jusqu'à ce que vous l'effaciez",
+      "uk": "Доки ви їх не видалите"
+    }
+  },
+  {
+    "name": "ubyhost.analytics.disabled",
+    "party": "first",
+    "purpose": {
+      "en": "Cookieless analytics (PostHog): no cookies are set. This optional key is stored only after you turn measurement off on the Privacy Policy page",
+      "cs": "Měření návštěvnosti bez cookies (PostHog): žádné cookies se nenastavují. Tento nepovinný klíč se uloží jen poté, co měření vypnete na stránce Zásad ochrany osobních údajů",
+      "de": "Cookielose Analyse (PostHog): Es werden keine Cookies gesetzt. Dieser optionale Schlüssel wird nur gespeichert, nachdem Sie die Messung auf der Seite zur Datenschutzerklärung deaktiviert haben",
+      "es": "Analítica sin cookies (PostHog): no se establecen cookies. Esta clave opcional solo se guarda después de que desactive la medición en la página de la Política de privacidad",
+      "fr": "Mesure d'audience sans cookies (PostHog) : aucun cookie n'est défini. Cette clé facultative n'est enregistrée qu'après la désactivation de la mesure sur la page Politique de confidentialité",
+      "uk": "Аналітика без файлів cookie (PostHog): файли cookie не встановлюються. Цей необов’язковий ключ зберігається лише після того, як ви вимкнете вимірювання на сторінці політики конфіденційності"
+    },
+    "lifetime": {
+      "en": "Until you turn measurement back on or clear it",
+      "cs": "Dokud měření znovu nezapnete nebo klíč nevymažete",
+      "de": "Bis Sie die Messung wieder aktivieren oder ihn löschen",
+      "es": "Hasta que vuelva a activar la medición o la borre",
+      "fr": "Jusqu'à la réactivation de la mesure ou son effacement",
+      "uk": "Доки ви знову не ввімкнете вимірювання або не видалите його"
+    }
+  },
+  {
+    "name": "__cf_bm",
+    "party": "Cloudflare",
+    "purpose": {
+      "en": "Cloudflare bot management, set only when the edge challenges the request",
+      "cs": "Správa botů Cloudflare, nastaví se jen při výzvě na hraně",
+      "de": "Cloudflare-Bot-Management, nur gesetzt, wenn der Edge-Server die Anfrage prüft",
+      "es": "Gestión de bots de Cloudflare; solo se establece cuando el servidor perimetral pone a prueba la solicitud",
+      "fr": "Gestion des bots Cloudflare, définie uniquement lorsque le réseau périphérique soumet la requête à un contrôle",
+      "uk": "Захист Cloudflare від ботів, встановлюється лише тоді, коли сервер перевіряє запит"
+    },
+    "lifetime": {
+      "en": "About 30 minutes",
+      "cs": "Přibližně 30 minut",
+      "de": "Etwa 30 Minuten",
+      "es": "Unos 30 minutos",
+      "fr": "Environ 30 minutes",
+      "uk": "Близько 30 хвилин"
+    }
+  },
+  {
+    "name": "cf_clearance",
+    "party": "Cloudflare",
+    "purpose": {
+      "en": "Cloudflare challenge clearance, set only after a challenge is passed",
+      "cs": "Potvrzení výzvy Cloudflare, nastaví se po jejím projití",
+      "de": "Cloudflare-Freigabe nach bestandener Prüfung, nur danach gesetzt",
+      "es": "Autorización tras el desafío de Cloudflare; solo se establece después de superarlo",
+      "fr": "Autorisation après contrôle Cloudflare, définie uniquement après la réussite d'un contrôle",
+      "uk": "Дозвіл Cloudflare після перевірки, встановлюється лише після її успішного проходження"
+    },
+    "lifetime": {
+      "en": "Up to 1 year",
+      "cs": "Až 1 rok",
+      "de": "Bis zu 1 Jahr",
+      "es": "Hasta 1 año",
+      "fr": "Jusqu'à 1 an",
+      "uk": "До 1 року"
+    }
+  }
+]

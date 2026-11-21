@@ -19,6 +19,7 @@ var testNow = time.Date(2026, 11, 13, 10, 0, 0, 0, time.UTC)
 func testEnv() func(string) string {
 	env := map[string]string{
 		"UBYHOST_SECRET_KEY":      testSecret,
+		"UBYHOST_PUBLIC_BASE_URL": "https://app.example.test",
 		"UBYHOST_TERMS_VERSION":   acceptedVersion,
 		"UBYHOST_PRIVACY_VERSION": acceptedVersion,
 		"UBYHOST_DPA_VERSION":     acceptedVersion,

@@ -76,33 +76,50 @@ func TestLanguageRequest(t *testing.T) {
 }
 
 func TestResolveKeyToken(t *testing.T) {
-	pool := testPool(t)
+	pool := testPoolOptional(t)
+	if pool == nil {
+		return
+	}
 	ctx := context.Background()
 	stamp := "2026-01-01T00:00:00Z"
+	aptID := time.Now().UnixNano() % 9000000000
+	if aptID < 1000000 {
+		aptID += 1000000
+	}
+	userID := aptID
+	tok := fmt.Sprintf("perm%dtok", aptID)
 	mustExecGuest(t, ctx, pool, `INSERT INTO user_account (id, username, password_hash, role, active, created_at)
-		VALUES (9020172001, 'g17201720a1@example.test', 'x', 'host', 1, $1) ON CONFLICT DO NOTHING`, stamp)
+		VALUES ($1, $2, 'x', 'host', 1, $3) ON CONFLICT DO NOTHING`, userID, fmt.Sprintf("g%d@example.test", aptID), stamp)
 	mustExecGuest(t, ctx, pool, `INSERT INTO apartment (id, owner_user_id, internal_name, city_en, active, permalink_token, permalink_pin, created_at)
-		VALUES (9020172001, 9020172001, 'Flat 1720', 'Prague', 1, 'perm1720abcxyz', '1234', $1) ON CONFLICT DO NOTHING`, stamp)
-	apt, link, moved, ok := ResolveKey(ctx, pool, "perm1720abcxyz")
-	if !ok || apt == nil || link != "perm1720abcxyz" || moved {
+		VALUES ($1, $2, 'Flat', 'Prague', 1, $3, '1234', $4)`, aptID, userID, tok, stamp)
+	apt, link, moved, ok := ResolveKey(ctx, pool, tok)
+	if !ok || apt == nil || link != tok || moved {
 		t.Fatalf("resolve token ok=%v link=%q moved=%v", ok, link, moved)
 	}
 }
 
 func TestOpenLinkSlugRedirect(t *testing.T) {
-	pool := testPool(t)
+	pool := testPoolOptional(t)
+	if pool == nil {
+		return
+	}
 	ctx := context.Background()
 	stamp := "2026-01-01T00:00:00Z"
+	aptID := time.Now().UnixNano()%9000000000 + 1000000
+	userID := aptID
+	curSlug := fmt.Sprintf("flat-%06d-abc234", aptID%1000000)
+	oldSlug := fmt.Sprintf("old-%06d-abc235", aptID%1000000)
+	tok := fmt.Sprintf("perm%dtok", aptID)
 	mustExecGuest(t, ctx, pool, `INSERT INTO user_account (id, username, password_hash, role, active, created_at)
-		VALUES (9020172002, 'g17201720a2@example.test', 'x', 'host', 1, $1) ON CONFLICT DO NOTHING`, stamp)
+		VALUES ($1, $2, 'x', 'host', 1, $3) ON CONFLICT DO NOTHING`, userID, fmt.Sprintf("g%d@example.test", aptID), stamp)
 	mustExecGuest(t, ctx, pool, `INSERT INTO apartment (id, owner_user_id, internal_name, city_en, active, permalink_token, permalink_pin, created_at)
-		VALUES (9020172002, 9020172002, 'Flat 1721', 'Prague', 1, 'perm1721abcxyz', '1234', $1) ON CONFLICT DO NOTHING`, stamp)
+		VALUES ($1, $2, 'Flat', 'Prague', 1, $3, '1234', $4)`, aptID, userID, tok, stamp)
 	mustExecGuest(t, ctx, pool, `INSERT INTO apartment_slug (slug, apartment_id, is_current, created_at)
-		VALUES ('flat-1721-abc234', 9020172002, 1, $1) ON CONFLICT (slug) DO NOTHING`, stamp)
+		VALUES ($1, $2, 1, $3)`, curSlug, aptID, stamp)
 	mustExecGuest(t, ctx, pool, `INSERT INTO apartment_slug (slug, apartment_id, is_current, created_at)
-		VALUES ('old-flat-abc235', 9020172002, 0, $1) ON CONFLICT (slug) DO NOTHING`, stamp)
-	r := httptest.NewRequest(http.MethodGet, "/l/old-flat-abc235", nil)
-	_, link, early := OpenLink(r, pool, "old-flat-abc235", "en")
+		VALUES ($1, $2, 0, $3)`, oldSlug, aptID, stamp)
+	r := httptest.NewRequest(http.MethodGet, "/l/"+oldSlug, nil)
+	_, link, early := OpenLink(r, pool, oldSlug, "en")
 	if early == nil {
 		t.Fatal("want 301")
 	}
@@ -112,7 +129,7 @@ func TestOpenLinkSlugRedirect(t *testing.T) {
 		t.Fatalf("status %d", rr.Code)
 	}
 	loc := rr.Header().Get("Location")
-	if !strings.Contains(loc, "flat-1721-abc234") {
+	if !strings.Contains(loc, curSlug) {
 		t.Fatalf("location %q link %q", loc, link)
 	}
 }
@@ -130,17 +147,18 @@ func TestWritePageBase(t *testing.T) {
 	}
 }
 
-func testPool(t *testing.T) *pgxpool.Pool {
+func testPoolOptional(t *testing.T) *pgxpool.Pool {
 	t.Helper()
-	base := os.Getenv("UBYHOST_TEST_DATABASE_URL")
+	base := strings.TrimSpace(os.Getenv("UBYHOST_TEST_DATABASE_URL"))
 	if base == "" {
-		t.Skip("UBYHOST_TEST_DATABASE_URL is not set")
+		t.Skip("UBYHOST_TEST_DATABASE_URL not set")
+		return nil
 	}
 	ctx := context.Background()
 	name := fmt.Sprintf("ubyhost_go_guest_%d", time.Now().UnixNano())
 	admin, err := pgx.Connect(ctx, base)
 	if err != nil {
-		t.Fatal("admin connect failed")
+		t.Fatal(err)
 	}
 	if _, err := admin.Exec(ctx, "CREATE DATABASE "+name); err != nil {
 		admin.Close(ctx)
@@ -150,17 +168,14 @@ func testPool(t *testing.T) *pgxpool.Pool {
 	t.Cleanup(func() {
 		c, err := pgx.Connect(context.Background(), base)
 		if err != nil {
-			t.Errorf("admin connect for cleanup failed")
 			return
 		}
 		defer c.Close(context.Background())
-		if _, err := c.Exec(context.Background(), "DROP DATABASE IF EXISTS "+name+" WITH (FORCE)"); err != nil {
-			t.Errorf("drop test database: %v", err)
-		}
+		_, _ = c.Exec(context.Background(), "DROP DATABASE IF EXISTS "+name+" WITH (FORCE)")
 	})
 	cfg, err := pgxpool.ParseConfig(base)
 	if err != nil {
-		t.Fatal("bad UBYHOST_TEST_DATABASE_URL")
+		t.Fatal(err)
 	}
 	cfg.ConnConfig.Database = name
 	pool, err := pgxpool.NewWithConfig(ctx, cfg)
@@ -168,6 +183,13 @@ func testPool(t *testing.T) *pgxpool.Pool {
 		t.Fatal(err)
 	}
 	t.Cleanup(pool.Close)
+	migrateGuestPool(t, pool)
+	return pool
+}
+
+func migrateGuestPool(t *testing.T, pool *pgxpool.Pool) {
+	t.Helper()
+	ctx := context.Background()
 	files, err := filepath.Glob("../../../../App/migrations_pg/*.sql")
 	if err != nil || len(files) == 0 {
 		t.Fatal("no migrations found")
@@ -186,12 +208,11 @@ func testPool(t *testing.T) *pgxpool.Pool {
 			t.Fatalf("migration %s: %v", f, err)
 		}
 	}
-	return pool
 }
 
-func mustExecGuest(t *testing.T, ctx context.Context, pool *pgxpool.Pool, sql string, args ...any) {
+func mustExecGuest(t *testing.T, ctx context.Context, pool *pgxpool.Pool, q string, args ...any) {
 	t.Helper()
-	if _, err := pool.Exec(ctx, sql, args...); err != nil {
+	if _, err := pool.Exec(ctx, q, args...); err != nil {
 		t.Fatalf("exec: %v", err)
 	}
 }

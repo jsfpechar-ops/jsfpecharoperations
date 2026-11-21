@@ -1,0 +1,27 @@
+{{define "content"}}
+<div class="g-card">
+  <h2>{{.T "pin_title"}}</h2>
+  <p class="g-intro">{{.T "pin_help"}}</p>
+  {{if .PinError}}<div class="g-err" id="pin-error">{{.PinError}}</div>{{end}}
+  <form method="post" action="/l/{{.Token}}/pin{{$.LangQuery}}">
+    <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
+    <input type="hidden" name="return_to" value="{{.ReturnTo}}">
+    <div class="g-field">
+      <label for="pin">{{.T "pin_label"}}</label>
+      <input type="text" id="pin" name="pin" inputmode="numeric" pattern="[0-9]{6}"
+             maxlength="6" autocomplete="one-time-code" required autofocus class="g-pin-input"
+             {{if .PinError}}aria-invalid="true" aria-describedby="pin-error"{{end}}>
+    </div>
+    {{if .RequireTurnstile}}
+    {{if .TurnstileSiteKey}}
+      <div class="cf-turnstile" data-sitekey="{{.TurnstileSiteKey}}" data-action="guest_pin"></div>
+    {{end}}
+    {{end}}
+    <button class="g-btn" type="submit">{{.T "pin_submit"}}</button>
+    <p class="g-pin-recovery">{{.T "pin_recovery"}}</p>
+  </form>
+</div>
+{{if .RequireTurnstile}}{{if .TurnstileSiteKey}}
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+{{end}}{{end}}
+{{end}}

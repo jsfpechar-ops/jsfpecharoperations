@@ -1,0 +1,107 @@
+{{define "booking_site_setup"}}
+{{if not .Allowed}}
+<div class="ui-banner ui-banner-attention" data-tone="attention">
+  <p>{{t "bsite.max_only"}}</p>
+  <p><a class="ui-btn ui-btn-primary" href="/predplatne">{{t "bsite.max_cta"}}</a></p>
+</div>
+{{else}}
+<div class="ui-section">
+  <h2>{{.StepsTitle}}</h2>
+  <dl class="ui-facts">
+    {{range .Steps}}
+    <div>
+      <dt>{{t (print "bsite.step." .Key)}}</dt>
+      <dd>
+        {{if .Done}}<span class="ui-badge ui-badge-done">{{t "bsite.badge.done"}}</span>
+        {{else if .Current}}<span class="ui-badge ui-badge-action">{{t "bsite.badge.next"}}</span>
+        {{else}}<span class="ui-badge ui-badge-neutral">{{t "bsite.badge.wait"}}</span>{{end}}
+      </dd>
+    </div>
+    {{end}}
+  </dl>
+</div>
+<div class="ui-section" id="pay">
+  <h2>{{t "bsite.step.pay"}}</h2>
+  <p class="ui-sub">{{t "bsite.pay.lead"}} {{t "bsite.pay.shared"}}</p>
+  <form method="post" action="/apartments/{{.ApartmentID}}/booking-site/pay">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    {{if not .Pay.IBANOK}}<p class="ui-sub">{{t "bsite.pay.no_account"}}</p>{{end}}
+    <p class="ui-sub">{{t "stay_fees.guest_pay.rail.iban"}}</p>
+    <p class="ui-sub">{{t "stay_fees.guest_pay.rail.revolut"}}</p>
+    <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/payments">{{t "bsite.act.stripe"}}</a>
+  </form>
+</div>
+<div class="ui-section" id="rules">
+  <h2>{{t "bsite.rules.title"}}</h2>
+  <form method="post" action="/apartments/{{.ApartmentID}}/booking-site">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <label class="ui-field"><span>{{t "bsite.f.price"}}</span>
+      <input class="ui-input" name="nightly_price_czk" type="number" min="1" required value="{{.Settings.NightlyPriceCZK}}"></label>
+    <label class="ui-field"><span>{{t "bsite.f.cleaning"}}</span>
+      <input class="ui-input" name="cleaning_fee_czk" type="number" min="0" value="{{.Settings.CleaningFeeCZK}}"></label>
+    <label class="ui-field"><span>{{t "bsite.f.min_nights"}}</span>
+      <input class="ui-input" name="min_nights" type="number" min="1" max="30" value="{{.Settings.MinNights}}"></label>
+    <label class="ui-field"><span>{{t "bsite.f.max_guests"}}</span>
+      <input class="ui-input" name="max_guests" type="number" min="0" max="60" value="{{.Settings.MaxGuests}}"></label>
+    <label class="ui-field"><span>{{t "bsite.f.notice"}}</span>
+      <select class="ui-input" name="notice">
+        {{range .NoticeOpts}}<option value="{{.Value}}"{{if eq $.NoticeValue .Value}} selected{{end}}>{{.Label}}</option>{{end}}
+      </select></label>
+    <p class="ui-label">{{t "bsite.f.policy"}}</p>
+    {{$s := .Settings}}
+    <div class="ui-choice-cards">
+      {{range $p := $.Policies}}
+      <label class="ui-choice-card">
+        <input type="radio" name="cancellation_policy" value="{{$p}}"{{if eq $s.CancellationPolicy $p}} checked{{end}}>
+        <span>{{t (print "pp.book.policy_name." $p)}}</span>
+        <span class="ui-sub">{{t (print "bsite.policy_detail." $p)}}</span>
+      </label>
+      {{end}}
+    </div>
+    <button class="ui-btn ui-btn-primary" type="submit">{{t "common.save"}}</button>
+  </form>
+</div>
+<div class="ui-section" id="ical">
+  <h2>{{t "bsite.ical.title"}}</h2>
+  <p class="ui-sub">{{t "bsite.ical.help"}}</p>
+  <input class="ui-input ui-mono" type="text" readonly value="{{.ICalURL}}">
+  <form method="post" action="/apartments/{{.ApartmentID}}/booking-site">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <input type="hidden" name="ical_done" value="1">
+    <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{t "bsite.ical.done_btn"}}</button>
+  </form>
+</div>
+<div class="ui-section">
+  <h2>{{t "bsite.url.title"}}</h2>
+  <p><a href="{{.PageURL}}">{{.PageURL}}</a></p>
+  {{if .QR}}<img src="{{.QR}}" alt="{{t "bsite.url.qr_alt"}}" width="160" height="160">{{end}}
+</div>
+<div class="ui-section">
+  <h2>{{t "bsite.step.publish"}}</h2>
+  <form method="post" action="/apartments/{{.ApartmentID}}/booking-site">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    {{if .Published}}
+    <span class="ui-badge ui-badge-done">{{t "payments.page.live"}}</span>
+    <button class="ui-btn ui-btn-secondary" type="submit" name="unpublish" value="1">{{t "bsite.unpublish.btn"}}</button>
+    {{else}}
+    <button class="ui-btn ui-btn-primary" type="submit" name="publish" value="1"{{if not .CanPublish}} disabled{{end}}>{{t "bsite.publish.btn"}}</button>
+    {{end}}
+  </form>
+</div>
+<div class="ui-section">
+  <h2>{{t "bsite.bookings.title"}}</h2>
+  {{if .Bookings}}
+  <dl class="ui-facts bsite-bookings">
+    {{range .Bookings}}
+    <div>
+      <dt>{{.Name}} · {{.Dates}} · {{.Total}} {{t "payments.czk"}}</dt>
+      <dd><span class="ui-badge ui-badge-neutral">{{t (print "bsite.bookings.status." .StatusKey)}}</span></dd>
+    </div>
+    {{end}}
+  </dl>
+  {{else}}
+  <p class="ui-sub">{{t "bsite.bookings.empty"}}</p>
+  {{end}}
+</div>
+{{end}}
+{{end}}
