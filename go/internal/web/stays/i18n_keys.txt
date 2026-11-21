@@ -45,5 +45,10 @@ flash.reservations.sent
 flash.reservations.sent.stays
 flash.reservations.accepted
 flash.reservations.reported
+flash.reservations.saved
+flash.reservations.restored
+flash.setup.demo_deleted
+host.count_changed
+archive.stay_moved
 setup.banner.*
 onboarding.skip
