@@ -106,6 +106,32 @@ def sql_row(stmt, db):
     return subprocess.run([PSQL, f"{PG}/{db}", "-tAc", stmt], capture_output=True, text=True, check=True).stdout.strip()
 
 
+def py_persona_sessions(seed):
+    """Fresh Python session cookies against parity_run (Playwright needs tokens after DB clone)."""
+    import json
+    out = {}
+    db_url = f"{PG}/parity_run"
+    for key in ("h1", "admin"):
+        uid = seed[key]["id"]
+        sv = sql_row(f"SELECT session_version FROM user_account WHERE id={uid}", "parity_run")
+        r = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                "import os, sys, json; os.chdir(%r); sys.path.insert(0, %r); "
+                "os.environ.update(json.loads(%r)); os.environ['UBYHOST_DATABASE_URL'] = %r; "
+                "from app import auth; print(auth.issue_session(int(%r), int(%r)))"
+                % (str(APP), str(APP), json.dumps({**ENV, "UBYHOST_DATABASE_URL": db_url}), db_url, uid, sv),
+            ],
+            env={**os.environ, **ENV, "UBYHOST_DATABASE_URL": db_url},
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        out[key] = r.stdout.strip()
+    return {"host": out["h1"], "admin": out["admin"]}
+
+
 def go_persona_sessions(seed):
     """Go cookies for Playwright (Go Load rejects some Python-issued tokens in edge timing)."""
     import json as _json
@@ -323,7 +349,7 @@ def main():
     py_srv, py_base = start_py(py_port, db_url, public)
     go_proc, go_base = start_go(go_port, db_url, public)
     STORE_MEDIA.mkdir(parents=True, exist_ok=True)
-    py_persons = {"anon": None, "host": seed["h1"]["session"], "admin": seed["admin"]["session"]}
+    py_persons = {"anon": None, **py_persona_sessions(seed)}
     go_sess = go_persona_sessions(seed)
     go_persons = {"anon": None, "host": go_sess["h1"], "admin": go_sess["admin"]}
     paths = []
