@@ -86,13 +86,28 @@ check "/privacy" 200
 
 # BE-11: after the deploy backfill, no plaintext document numbers may remain.
 # Only runs where the container is reachable (i.e. on the server).
-if command -v docker >/dev/null 2>&1 \
-   && [ -n "$(docker compose ps -q ubyhost 2>/dev/null)" ]; then
-  if docker compose exec -T ubyhost python scripts/migrate_encrypt_doc_fields.py --check; then
-    echo "OK   document numbers encrypted (no plaintext remains)"
-  else
-    echo "FAIL plaintext document numbers remain after the backfill" >&2
-    fail=1
+if command -v docker >/dev/null 2>&1; then
+  svc=""
+  if docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .; then
+    svc=ubyhost-go
+  elif docker compose --profile go ps -q --status running ubyhost-go-b 2>/dev/null | grep -q .; then
+    svc=ubyhost-go-b
+  fi
+  if [ -n "${svc}" ]; then
+    if docker compose --profile go exec -T "${svc}" ubyhost-web migrate-encrypt-doc-fields --check; then
+      echo "OK   document numbers encrypted (no plaintext remains)"
+    else
+      echo "FAIL plaintext document numbers remain after the backfill" >&2
+      fail=1
+    fi
+  elif [ -n "$(docker compose config --services 2>/dev/null | grep -x ubyhost || true)" ] \
+       && [ -n "$(docker compose ps -q --status running ubyhost 2>/dev/null)" ]; then
+    if docker compose exec -T ubyhost python scripts/migrate_encrypt_doc_fields.py --check; then
+      echo "OK   document numbers encrypted (no plaintext remains)"
+    else
+      echo "FAIL plaintext document numbers remain after the backfill" >&2
+      fail=1
+    fi
   fi
 fi
 

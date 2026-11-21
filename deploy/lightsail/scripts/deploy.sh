@@ -59,7 +59,7 @@ case "${SCHEMA_APPLY}" in
     ;;
 esac
 
-go_stack() {
+compose_has_go_service() {
   docker compose --profile go config --services 2>/dev/null | grep -qx ubyhost-go
 }
 
@@ -69,21 +69,24 @@ go_stack() {
 # `go_exec` probe (the health wait, the scheduler check, the internal health
 # print) talks to a stopped container and fails a deploy that is fine.
 go_exec() {
-  local svc=ubyhost-go
-  if ! docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .; then
-    if docker compose --profile go ps -q --status running ubyhost-go-b 2>/dev/null | grep -q .; then
-      svc=ubyhost-go-b
-    fi
+  local svc=""
+  if docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .; then
+    svc=ubyhost-go
+  elif docker compose --profile go ps -q --status running ubyhost-go-b 2>/dev/null | grep -q .; then
+    svc=ubyhost-go-b
+  else
+    echo "ERROR: ubyhost-go is not running (checked ubyhost-go and ubyhost-go-b)." >&2
+    return 1
   fi
   docker compose --profile go exec -T "${svc}" "$@"
 }
 
 running_python_app() {
-  docker compose ps --status running --services 2>/dev/null | grep -qx ubyhost
+  docker compose config --services 2>/dev/null | grep -qx ubyhost     && docker compose ps -q --status running ubyhost 2>/dev/null | grep -q .
 }
 
 app_data_exec() {
-  if go_stack && docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .; then
+  if compose_has_go_service && docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .; then
     docker compose --profile go exec -T ubyhost-go sh -c "$1"
   elif docker compose config --services 2>/dev/null | grep -qx ubyhost     && docker compose ps -q --status running ubyhost 2>/dev/null | grep -q .; then
     docker compose exec -T ubyhost sh -c "$1"
@@ -192,7 +195,7 @@ if ! bash ./scripts/caddy-validate.sh; then
 fi
 
 if [ -z "${UBYHOST_SECRET_KEY:-}" ] && { \
-    { go_stack \
+    { compose_has_go_service \
         && docker compose --profile go run --rm --no-deps -T --entrypoint sh ubyhost-go \
           -c 'test -s /data/secret_key' >/dev/null 2>&1; } \
     || { docker compose config --services 2>/dev/null | grep -qx ubyhost \
@@ -223,7 +226,7 @@ chmod +x scripts/*.sh
 # without one would be locked out by this release, so refuse to deploy until
 # every active account has one (admin > Users shows them).
 # UBYHOST_ALLOW_MISSING_EMAIL=1 deploys anyway.
-if go_stack && docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .; then
+if compose_has_go_service && docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .; then
   MISSING_EMAIL="$(docker compose --profile go exec -T ubyhost-go ubyhost-web list-accounts-without-email 2>/dev/null \
     | awk -F': ' '/active accounts without a login e-mail:/{print $2; exit}' || true)"
   [ -n "${MISSING_EMAIL}" ] || MISSING_EMAIL="?"
@@ -240,13 +243,13 @@ fi
 BACKUP_STAMP=""
 TABLES=(user_account legal_entity apartment reservation guest submission)
 declare -A BEFORE_COUNTS
-if [ "${UBYHOST_DEPLOYMENT:-}" = "production" ] && go_stack; then
+if [ "${UBYHOST_DEPLOYMENT:-}" = "production" ] && compose_has_go_service; then
   if ! docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .; then
     echo "Refusing deploy: ubyhost-go must be running for mandatory pre-deploy backup on the Go-only stack." >&2
     exit 1
   fi
 fi
-if (go_stack && docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .)   || (docker compose config --services 2>/dev/null | grep -qx ubyhost     && docker compose ps -q --status running ubyhost 2>/dev/null | grep -q .); then
+if (compose_has_go_service && docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .)   || (docker compose config --services 2>/dev/null | grep -qx ubyhost     && docker compose ps -q --status running ubyhost 2>/dev/null | grep -q .); then
   echo "==> Mandatory pre-deploy backup"
   ./scripts/backup.sh
   BACKUP_STAMP="$(app_data_exec 'ls -1 /data/backups 2>/dev/null | sort -r | sed -n "1p"')"
@@ -468,7 +471,7 @@ fi
 echo "==> Waiting for health check"
 HEALTHY=0
 for _ in $(seq 1 30); do
-  if go_stack && go_exec wget -qO- --timeout=3 http://127.0.0.1:8081/healthz >/dev/null 2>&1; then
+  if compose_has_go_service && go_exec wget -qO- --timeout=3 http://127.0.0.1:8081/healthz >/dev/null 2>&1; then
     HEALTHY=1
     break
   elif running_python_app && docker compose exec -T ubyhost python -c \
@@ -493,7 +496,7 @@ if ! public_ok; then
 fi
 
 echo "==> Scheduler and job queue (ubyhost-go; UBYHOST_SCHEDULER=go)"
-if ! go_stack; then
+if ! compose_has_go_service; then
   echo "ERROR: ubyhost-go is not in compose; this deploy expects the Go-only stack." >&2
   rollback
   exit 1
@@ -503,11 +506,14 @@ echo ""
 docker compose ps
 echo ""
 echo "Health (internal):"
-if go_stack; then
+if compose_has_go_service; then
   go_exec wget -qO- http://127.0.0.1:8081/healthz
-else
+elif running_python_app; then
   docker compose exec -T ubyhost python -c \
     "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8080/healthz').read().decode())"
+else
+  echo "ERROR: no running app container (expected ubyhost-go on the Go-only stack)." >&2
+  exit 1
 fi
 
 echo "==> Backfilling legal acceptance evidence"
