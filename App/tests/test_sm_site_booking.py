@@ -63,9 +63,15 @@ PINNED_GO_STATUS_FILES = frozenset({
     "go/internal/payments/booking_webhook.go",
     "go/internal/payments/booking_webhook_host.go",
     "go/internal/web/booking/checkout.go",
+    "go/internal/web/booking/cancel_pdfs.go",
     # mail job step expire_requests: requested -> expired only (same move as booking_site.set_status)
     "go/internal/mailjob/holds.go",
 })
+PINNED_GO_CANCEL_ANCHORS = [
+    'sql := "UPDATE site_booking SET status = $1, updated_at = $2"',
+    'setBookingStatus(ctx, db, bookingID, "cancelled"',
+    'setBookingStatus(ctx, db, bookingID, "refunded"',
+]
 PINNED_GO_STATUS_ANCHORS = [
     "UPDATE site_booking SET status = 'paid'",
     "UPDATE site_booking SET status = $1",
@@ -222,6 +228,12 @@ def test_go_booking_webhook_status_pins_are_present():
 def test_go_booking_checkout_status_pins_are_present():
     text = (REPO / "go/internal/web/booking/checkout.go").read_text(encoding="utf-8")
     for anchor in PINNED_GO_CHECKOUT_ANCHORS:
+        assert anchor in text, anchor
+
+
+def test_go_booking_cancel_status_pins_are_present():
+    text = (REPO / "go/internal/web/booking/cancel_pdfs.go").read_text(encoding="utf-8")
+    for anchor in PINNED_GO_CANCEL_ANCHORS:
         assert anchor in text, anchor
 
 
