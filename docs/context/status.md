@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-11-20.
+Updated: 2026-11-21.
 
 ## Production
 - Magic-link 1–2 done; access log off. `/healthz` 1.1.0. Main 11-13: `84e966f` (#962).
@@ -12,6 +12,7 @@ Updated: 2026-11-20.
 - UX gate and Stripe onboarding live. Backups: daily pg_dump + WAL-G 7-day PITR (drill every 3 mo).
 
 ## Next
+- 1867: no police nags on Overview without UbyPort login.
 - Briefs 1865 (green main auto-deploys to Lightsail staging; production manual-only) + 1866 (CI/GitHub hardening).
 - Go executor queue ([plan](../plans/go-cutover-executor-queue.md)): runnable **1793**, **0852**; **1730** / **1770** blocked until exact-diff sidecars.
 - [Autopilot](../plans/autopilot-agentic.md): hide Payments first.
@@ -25,7 +26,7 @@ Updated: 2026-11-20.
 - Door codes 0037–0038 on main: owner staging.
 - TTLock 0008–0016: [plan](../plans/ttlock-door-codes.md) §11; live after §12 + lawyer (K-L).
 - File-retention: decided; lawyer Terms/DPA line.
-- Login wording: 1762 (Face ID / device labels), 1763 (auto-open), 1764 (Settings wording, blocked on 1704); after 1760, exact-diff pass first.
+- Login wording: 1762, 1763, 1764 (blocked on 1704); after 1760, exact-diff pass first.
 - Stays Go-only: 1855-1858; `/reservations` in `UBYHOST_GO_PATHS` after 1856.
 
 ## Blocked: needs owner, lawyer or council
