@@ -201,6 +201,7 @@ def main() -> int:
     os.environ.setdefault("UBYHOST_TERMS_VERSION", "t1")
     os.environ.setdefault("UBYHOST_PRIVACY_VERSION", "p1")
     os.environ.setdefault("UBYHOST_DPA_VERSION", "d1")
+    os.environ.pop("UBYHOST_DATABASE_URL", None)
     os.environ["UBYHOST_DB"] = str(Path(db_path) / "golden.sqlite3")
     from app import db
 
