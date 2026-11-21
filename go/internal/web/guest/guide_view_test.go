@@ -24,6 +24,14 @@ func TestBookedLevelWindow(t *testing.T) {
 	}
 }
 
+func TestStayHubRedirectURL(t *testing.T) {
+	got := stayHubURL("hub-token", 77, "cs")
+	want := "/l/hub-token/77?lang=cs"
+	if got != want {
+		t.Fatalf("got %q want %q", got, want)
+	}
+}
+
 func mustDate(s string) time.Time {
 	t, err := time.Parse("2006-01-02", s)
 	if err != nil {
