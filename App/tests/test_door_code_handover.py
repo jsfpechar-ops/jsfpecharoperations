@@ -40,6 +40,21 @@ def _due_now(stay):
     db.execute("UPDATE door_code SET next_attempt_at = NULL WHERE reservation_id = ?", (stay,))
 
 
+def _ensure_attempted(stay):
+    """Full CI postgres may leave our stay out of one reconcile batch (see test_door_codes_safeguards._env)."""
+    for _ in range(16):
+        door_codes.reconcile()
+        row = _row(stay)
+        if row is None:
+            continue
+        if row["state"] != door_codes.PENDING:
+            return row
+        door_codes.issue(int(row["id"]), allow_gateway=True)
+    row = _row(stay)
+    assert row is not None and row["state"] != door_codes.PENDING, "door code never issued"
+    return row
+
+
 def _parse(value):
     when = datetime.fromisoformat(value)
     return when if when.tzinfo else when.replace(tzinfo=timezone.utc)
@@ -48,12 +63,7 @@ def _parse(value):
 def test_the_first_refusal_retries_in_a_minute_without_mail(monkeypatch):
     _refuse(monkeypatch, [])
     _, apartment, stay = _stay(registered_minutes_ago=1)
-    door_codes.reconcile()
-    row = _row(stay)
-    if row["state"] == door_codes.PENDING:
-        # Full-suite PostgreSQL can leave many due rows; reconcile may not reach this stay in one tick.
-        assert door_codes.issue(int(row["id"]), allow_gateway=True), "door code never issued"
-        row = _row(stay)
+    row = _ensure_attempted(stay)
     assert row["state"] == door_codes.RETRYING
     wait = _parse(row["next_attempt_at"]) - datetime.now(timezone.utc)
     assert timedelta(0) < wait <= timedelta(minutes=1, seconds=5)
@@ -63,11 +73,7 @@ def test_the_first_refusal_retries_in_a_minute_without_mail(monkeypatch):
 def test_the_second_refusal_hands_over_to_host_and_support(monkeypatch):
     _refuse(monkeypatch, [])
     _, apartment, stay = _stay(registered_minutes_ago=1)
-    door_codes.reconcile()
-    row = _row(stay)
-    if row["state"] == door_codes.PENDING:
-        assert door_codes.issue(int(row["id"]), allow_gateway=True), "door code never issued"
-        row = _row(stay)
+    row = _ensure_attempted(stay)
     row_id = int(row["id"])
     _due_now(stay)
     assert door_codes.issue(row_id) is False
@@ -86,10 +92,7 @@ def test_after_the_hand_over_ttlock_is_not_asked_again(monkeypatch):
     calls = []
     _refuse(monkeypatch, calls)
     _, apartment, stay = _stay(registered_minutes_ago=1)
-    door_codes.reconcile()
-    row = _row(stay)
-    if row["state"] == door_codes.PENDING:
-        assert door_codes.issue(int(row["id"]), allow_gateway=True), "door code never issued"
+    _ensure_attempted(stay)
     _due_now(stay)
     door_codes.reconcile()
     assert len(calls) == 2
@@ -102,10 +105,7 @@ def test_every_problem_is_one_greppable_log_line(monkeypatch):
     lines = _log_lines(monkeypatch)
     _refuse(monkeypatch, [])
     _, apartment, stay = _stay(registered_minutes_ago=1)
-    door_codes.reconcile()
-    row = _row(stay)
-    if row["state"] == door_codes.PENDING:
-        assert door_codes.issue(int(row["id"]), allow_gateway=True), "door code never issued"
+    _ensure_attempted(stay)
     assert any(l.startswith("DOOR_CODE_PROBLEM stage=attempt_failed") for l in lines), lines
     _due_now(stay)
     door_codes.reconcile()
@@ -129,10 +129,8 @@ def test_the_guest_waiting_text_says_only_that_the_code_comes_by_e_mail():
 def test_an_issued_code_names_the_real_first_use_deadline(monkeypatch):
     monkeypatch.setattr(ttlock, "create_period_code", lambda *a, **k: ("4821937", "99"))
     _, apartment, stay = _stay(registered_minutes_ago=1)
-    door_codes.reconcile()
-    row = _row(stay)
+    row = _ensure_attempted(stay)
     if not row["valid_from"]:
-        # Full-suite PostgreSQL can leave many due rows; reconcile may not reach this stay in one tick.
         assert door_codes.issue(int(row["id"]), allow_gateway=True), "door code never issued"
         row = _row(stay)
     shown = _view(stay, apartment)
