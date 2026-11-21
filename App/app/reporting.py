@@ -2900,7 +2900,7 @@ FILES_WITH_UBYHOST_SQL = (
 
 
 def _apartment_files_with_ubyhost(apartment: Any) -> bool:
-    """Python copy of FILES_WITH_UBYHOST_SQL for one apartment row (1867).
+    """Python copy of FILES_WITH_UBYHOST_SQL for one apartment row (2000).
 
     An unknown apartment counts as filing, so callers keep their old behaviour.
     """

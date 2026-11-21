@@ -16,6 +16,15 @@ set -a
 source .env
 set +a
 
+case "${UBYHOST_SCHEDULER:-}" in
+  go|Go|GO) ;;
+  *)
+    echo "ERROR: UBYHOST_SCHEDULER must be go before deploy (got '${UBYHOST_SCHEDULER:-unset}')." >&2
+    echo "Set UBYHOST_SCHEDULER=go in deploy/lightsail/.env; the Python worker is gone after this release." >&2
+    exit 1
+    ;;
+esac
+
 # PostgreSQL mode: the same test scripts/backup.sh uses.
 PG_MODE=0
 if [ -n "${UBYHOST_DATABASE_URL:-}" ]; then
@@ -29,7 +38,13 @@ fi
 # functions or triggers Python re-creates on every apply differ from the app's,
 # Go fails closed and the deploy stops; deploy once with python, then go again.
 # Checked here, before anything touches the stack.
-SCHEMA_APPLY="${UBYHOST_SCHEMA_APPLY:-python}"
+SCHEMA_APPLY="${UBYHOST_SCHEMA_APPLY:-go}"
+# go-only compose cannot apply schema with Python.
+if [ "${SCHEMA_APPLY}" = "python" ] && ! docker compose config --services 2>/dev/null | grep -qx ubyhost; then
+  echo "ERROR: UBYHOST_SCHEMA_APPLY=python with no ubyhost service in compose (Go-only stack)." >&2
+  exit 1
+fi
+
 case "${SCHEMA_APPLY}" in
   python) ;;
   go)
@@ -43,6 +58,43 @@ case "${SCHEMA_APPLY}" in
     exit 1
     ;;
 esac
+
+go_stack() {
+  docker compose --profile go config --services 2>/dev/null | grep -qx ubyhost-go
+}
+
+# The two-copy deploy starts the *idle* slot and then stops the old one, so the
+# running Go container is not always `ubyhost-go` (slot a): after a deploy it is
+# `ubyhost-go-b`. Exec into whichever slot is actually up — otherwise every
+# `go_exec` probe (the health wait, the scheduler check, the internal health
+# print) talks to a stopped container and fails a deploy that is fine.
+go_exec() {
+  local svc=ubyhost-go
+  if ! docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .; then
+    if docker compose --profile go ps -q --status running ubyhost-go-b 2>/dev/null | grep -q .; then
+      svc=ubyhost-go-b
+    fi
+  fi
+  docker compose --profile go exec -T "${svc}" "$@"
+}
+
+running_python_app() {
+  docker compose ps --status running --services 2>/dev/null | grep -qx ubyhost
+}
+
+app_data_exec() {
+  if go_stack && docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .; then
+    docker compose --profile go exec -T ubyhost-go sh -c "$1"
+  elif docker compose config --services 2>/dev/null | grep -qx ubyhost     && docker compose ps -q --status running ubyhost 2>/dev/null | grep -q .; then
+    docker compose exec -T ubyhost sh -c "$1"
+  else
+    return 1
+  fi
+}
+
+pg_count() {
+  docker compose exec -T postgres psql -U ubyhost -d ubyhost -tAc "SELECT COUNT(*) FROM $1" | tr -d '[:space:]'
+}
 
 # 0710: rollback target. .deployed-sha is written only when a deploy finished;
 # before the first one, ORIG_HEAD is the commit the workflow reset away from.
@@ -139,8 +191,14 @@ if ! bash ./scripts/caddy-validate.sh; then
   exit 1
 fi
 
-if [ -z "${UBYHOST_SECRET_KEY:-}" ] && docker compose run --rm --no-deps -T --entrypoint sh ubyhost \
-     -c 'test -s /data/secret_key' >/dev/null 2>&1; then
+if [ -z "${UBYHOST_SECRET_KEY:-}" ] && { \
+    { go_stack \
+        && docker compose --profile go run --rm --no-deps -T --entrypoint sh ubyhost-go \
+          -c 'test -s /data/secret_key' >/dev/null 2>&1; } \
+    || { docker compose config --services 2>/dev/null | grep -qx ubyhost \
+        && docker compose run --rm --no-deps -T --entrypoint sh ubyhost \
+          -c 'test -s /data/secret_key' >/dev/null 2>&1; }; \
+  }; then
   # The volume already holds the key the data was encrypted with, and the app
   # reads it when the variable is empty. Minting a new one here would make
   # every encrypted field (TOTP, UbyPort passwords, document numbers) unreadable.
@@ -165,7 +223,11 @@ chmod +x scripts/*.sh
 # without one would be locked out by this release, so refuse to deploy until
 # every active account has one (admin > Users shows them).
 # UBYHOST_ALLOW_MISSING_EMAIL=1 deploys anyway.
-if docker compose ps --status running --services 2>/dev/null | grep -qx ubyhost; then
+if go_stack && docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .; then
+  MISSING_EMAIL="$(docker compose --profile go exec -T ubyhost-go ubyhost-web list-accounts-without-email 2>/dev/null \
+    | awk -F': ' '/active accounts without a login e-mail:/{print $2; exit}' || true)"
+  [ -n "${MISSING_EMAIL}" ] || MISSING_EMAIL="?"
+elif running_python_app; then
   MISSING_EMAIL="$(docker compose exec -T ubyhost python -c \
     "from app import db; print(db.query_one(\"SELECT COUNT(*) AS n FROM user_account WHERE active = 1 AND (email IS NULL OR email = '')\")['n'])" \
     2>/dev/null || echo "?")"
@@ -178,11 +240,16 @@ fi
 BACKUP_STAMP=""
 TABLES=(user_account legal_entity apartment reservation guest submission)
 declare -A BEFORE_COUNTS
-if docker compose ps --status running --services 2>/dev/null | grep -qx ubyhost; then
+if [ "${UBYHOST_DEPLOYMENT:-}" = "production" ] && go_stack; then
+  if ! docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .; then
+    echo "Refusing deploy: ubyhost-go must be running for mandatory pre-deploy backup on the Go-only stack." >&2
+    exit 1
+  fi
+fi
+if (go_stack && docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .)   || (docker compose config --services 2>/dev/null | grep -qx ubyhost     && docker compose ps -q --status running ubyhost 2>/dev/null | grep -q .); then
   echo "==> Mandatory pre-deploy backup"
   ./scripts/backup.sh
-  BACKUP_STAMP="$(docker compose exec -T ubyhost sh -c \
-    'ls -1 /data/backups 2>/dev/null | sort -r | sed -n "1p"')"
+  BACKUP_STAMP="$(app_data_exec 'ls -1 /data/backups 2>/dev/null | sort -r | sed -n "1p"')"
   if [ -z "${BACKUP_STAMP}" ]; then
     echo "No backup stamp found after backup — refusing deployment." >&2
     exit 1
@@ -195,15 +262,13 @@ if docker compose ps --status running --services 2>/dev/null | grep -qx ubyhost;
     # PostgreSQL: backup.sh writes an age-encrypted pg_dump. The SQLite copy
     # and integrity check below do not apply to it.
     PG_DUMP="/data/backups/${BACKUP_STAMP}/ubyhost-pg.dump.age"
-    if ! docker compose exec -T ubyhost sh -c \
-      "[ -s '${PG_DUMP}' ] && head -c 21 '${PG_DUMP}' | grep -q 'age-encryption.org/v1'"; then
+    if ! app_data_exec "[ -s '${PG_DUMP}' ] && head -c 21 '${PG_DUMP}' | grep -q 'age-encryption.org/v1'"; then
       echo "PostgreSQL backup ${BACKUP_STAMP} is missing, empty or not an age file - refusing deployment." >&2
       exit 1
     fi
     echo "PostgreSQL backup ${BACKUP_STAMP} is valid."
   else
-    if ! docker compose exec -T ubyhost sh -c \
-      "f=/data/backups/${BACKUP_STAMP}/ubyhost-backup.tar.age; p=/data/backups/${BACKUP_STAMP}/ubyhost.db; if [ -s \"\$f\" ]; then head -c 21 \"\$f\" | grep -q 'age-encryption.org/v1'; else [ -s \"\$p\" ]; fi"; then
+    if ! app_data_exec "f=/data/backups/${BACKUP_STAMP}/ubyhost-backup.tar.age; p=/data/backups/${BACKUP_STAMP}/ubyhost.db; if [ -s \"\$f\" ]; then head -c 21 \"\$f\" | grep -q 'age-encryption.org/v1'; else [ -s \"\$p\" ]; fi"; then
       echo "Backup ${BACKUP_STAMP} is missing, empty or not an age file - refusing deployment." >&2
       exit 1
     fi
@@ -218,8 +283,12 @@ if docker compose ps --status running --services 2>/dev/null | grep -qx ubyhost;
     fi
   fi
   for table in "${TABLES[@]}"; do
-    BEFORE_COUNTS["${table}"]="$(docker compose exec -T ubyhost python -c \
-      "from app import db; print(db.query_one('SELECT COUNT(*) AS n FROM ${table}')['n'])")"
+    if [ "${PG_MODE}" = "1" ]; then
+      BEFORE_COUNTS["${table}"]="$(pg_count "${table}")"
+    else
+      BEFORE_COUNTS["${table}"]="$(docker compose exec -T ubyhost python -c \
+        "from app import db; print(db.query_one('SELECT COUNT(*) AS n FROM ${table}')['n'])")"
+    fi
   done
   echo "Backup ${BACKUP_STAMP} is valid; live row counts recorded."
 fi
@@ -241,31 +310,18 @@ fi
 # changed, so the old containers keep running. Without it (a manual deploy on
 # the server) the images are built here as before.
 GO_IMAGE_PULLED=0
-if [ -n "${UBYHOST_IMAGE:-}" ]; then
-  # Pull everything first. Nothing is tagged or removed until both pulls succeed.
-  if ! docker pull "${UBYHOST_IMAGE}"; then
-    echo "ERROR: could not pull ${UBYHOST_IMAGE}. Nothing was changed; the old containers keep running. Check that the GHCR package is public (docs/LIGHTSAIL.md, Deploy from GitHub Actions)." >&2
+if [ -n "${UBYHOST_GO_IMAGE:-}" ]; then
+  if ! docker pull "${UBYHOST_GO_IMAGE}"; then
+    echo "ERROR: could not pull ${UBYHOST_GO_IMAGE}. Nothing was changed; the old containers keep running. Check that the GHCR package is public (docs/LIGHTSAIL.md, Deploy from GitHub Actions)." >&2
     exit 1
   fi
-  if [ -n "${UBYHOST_GO_IMAGE:-}" ] && docker compose config --services | grep -qx 'ubyhost-go'; then
-    if ! docker pull "${UBYHOST_GO_IMAGE}"; then
-      echo "ERROR: could not pull ${UBYHOST_GO_IMAGE}. Nothing was changed; the old containers keep running. Check that the GHCR package is public (docs/LIGHTSAIL.md, Deploy from GitHub Actions)." >&2
-      exit 1
-    fi
-    GO_IMAGE_PULLED=1
-  fi
-  echo "==> Using CI-built image ${UBYHOST_IMAGE}"
-  docker tag "${UBYHOST_IMAGE}" ubyhost:local
-  # Drop the extra tag so old commit images do not pile up on the disk.
-  docker image rm "${UBYHOST_IMAGE}" >/dev/null
-  if [ "${GO_IMAGE_PULLED}" = "1" ]; then
-    echo "==> Using CI-built Go image ${UBYHOST_GO_IMAGE}"
-    docker tag "${UBYHOST_GO_IMAGE}" ubyhost-go:local
-    docker image rm "${UBYHOST_GO_IMAGE}" >/dev/null
-  fi
+  GO_IMAGE_PULLED=1
+  echo "==> Using CI-built Go image ${UBYHOST_GO_IMAGE}"
+  docker tag "${UBYHOST_GO_IMAGE}" ubyhost-go:local
+  docker image rm "${UBYHOST_GO_IMAGE}" >/dev/null
 else
-  echo "==> Building image"
-  docker compose build --pull
+  echo "==> Building Go image"
+  docker compose --profile go build --pull ubyhost-go
 fi
 
 if docker compose --profile go config --services | grep -qx 'ubyhost-go'; then
@@ -303,7 +359,7 @@ if [ "${PG_MODE}" = "1" ]; then
       echo "Goose apply failed." >&2
       exit 1
     fi
-  else
+  elif docker compose config --services 2>/dev/null | grep -qx ubyhost; then
     echo "==> Applying PostgreSQL goose migrations (new image)"
     if ! docker compose run --rm --no-deps -T --entrypoint python ubyhost \
       scripts/pg_schema.py apply --expect-database ubyhost; then
@@ -412,7 +468,10 @@ fi
 echo "==> Waiting for health check"
 HEALTHY=0
 for _ in $(seq 1 30); do
-  if docker compose exec -T ubyhost python -c \
+  if go_stack && go_exec wget -qO- --timeout=3 http://127.0.0.1:8081/healthz >/dev/null 2>&1; then
+    HEALTHY=1
+    break
+  elif running_python_app && docker compose exec -T ubyhost python -c \
     "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=3)" \
     >/dev/null 2>&1; then
     HEALTHY=1
@@ -433,51 +492,26 @@ if ! public_ok; then
   exit 1
 fi
 
-# WP06: the scheduler runs only in the worker container. Wait until it reports
-# alive (it touches /data/worker.alive while its scheduler runs) and confirm
-# the web container did not start one.
-echo "==> Waiting for the background worker"
-WORKER_ALIVE=0
-for _ in $(seq 1 30); do
-  if docker compose exec -T worker python -c \
-    "import os, sys, time; sys.exit(0 if time.time() - os.path.getmtime('/data/worker.alive') < 120 else 1)" \
-    >/dev/null 2>&1; then
-    WORKER_ALIVE=1
-    break
-  fi
-  sleep 2
-done
-if [ "${WORKER_ALIVE}" != "1" ]; then
-  echo "The worker never started its scheduler. Logs:" >&2
-  docker compose logs --tail=50 worker >&2 || true
+echo "==> Scheduler and job queue (ubyhost-go; UBYHOST_SCHEDULER=go)"
+if ! go_stack; then
+  echo "ERROR: ubyhost-go is not in compose; this deploy expects the Go-only stack." >&2
+  rollback
   exit 1
 fi
-if docker compose logs ubyhost 2>/dev/null | grep -q "scheduler started"; then
-  echo "The web container started a scheduler; it must run only in the worker (UBYHOST_ROLE)." >&2
-  exit 1
-fi
-echo "Worker is running the scheduler (exactly one: the scheduler lock is held)."
 
 echo ""
 docker compose ps
 echo ""
 echo "Health (internal):"
-docker compose exec -T ubyhost python -c \
-  "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8080/healthz').read().decode())"
-
-# Go port (G1b): report only. This block never exits non-zero.
-if docker compose ps --status running --services | grep -qx ubyhost-go; then
-  echo "Go service (internal, no traffic yet):"
-  docker compose exec -T ubyhost-go wget -qO- http://127.0.0.1:8081/healthz || echo "not healthy (does not affect the app)"
+if go_stack; then
+  go_exec wget -qO- http://127.0.0.1:8081/healthz
 else
-  echo "Go service: not enabled (COMPOSE_PROFILES has no go)"
+  docker compose exec -T ubyhost python -c \
+    "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8080/healthz').read().decode())"
 fi
 
-# BE-1: turn legacy login acceptance lines into legal_acceptance rows. The
-# script is idempotent and prints a count only. A failure aborts the deploy
-# loudly rather than leaving acceptance evidence half-migrated.
 echo "==> Backfilling legal acceptance evidence"
-if ! docker compose exec -T ubyhost python scripts/backfill_legal_acceptance.py; then
+if ! go_exec ubyhost-web backfill-legal-acceptance; then
   echo "Legal acceptance backfill failed." >&2
   exit 1
 fi
@@ -486,12 +520,12 @@ fi
 # columns. Idempotent; logs a count only. The --check before it is
 # informational, the one after it is the assertion the deploy must pass.
 echo "==> Document-number backfill (counts only)"
-docker compose exec -T ubyhost python scripts/migrate_encrypt_doc_fields.py --check || true
-if ! docker compose exec -T ubyhost python scripts/migrate_encrypt_doc_fields.py; then
+go_exec ubyhost-web migrate-encrypt-doc-fields --check || true
+if ! go_exec ubyhost-web migrate-encrypt-doc-fields; then
   echo "Document-number backfill failed." >&2
   exit 1
 fi
-if ! docker compose exec -T ubyhost python scripts/migrate_encrypt_doc_fields.py --check; then
+if ! go_exec ubyhost-web migrate-encrypt-doc-fields --check; then
   echo "Plaintext document numbers remain after the backfill." >&2
   exit 1
 fi
@@ -506,8 +540,12 @@ if [ -n "${BACKUP_STAMP}" ]; then
     fi
   fi
   for table in "${TABLES[@]}"; do
-    after="$(docker compose exec -T ubyhost python -c \
-      "from app import db; print(db.query_one('SELECT COUNT(*) AS n FROM ${table}')['n'])")"
+    if [ "${PG_MODE}" = "1" ]; then
+      after="$(pg_count "${table}")"
+    else
+      after="$(docker compose exec -T ubyhost python -c \
+        "from app import db; print(db.query_one('SELECT COUNT(*) AS n FROM ${table}')['n'])")"
+    fi
     if [ "${after}" -lt "${BEFORE_COUNTS[${table}]}" ]; then
       echo "${table} row count fell from ${BEFORE_COUNTS[${table}]} to ${after}." >&2
       exit 1

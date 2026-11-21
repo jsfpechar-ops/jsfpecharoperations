@@ -71,7 +71,7 @@ def stay_line(row: Dict[str, Any], lang: str, today: date) -> Optional[Dict[str,
     stay_id = reservation["id"]
     subject = _stay_name(reservation)
     base = f"/reservations/{stay_id}?return_to=/"
-    # 1867: no UbyPort login, so UbyHost files nothing here; setup is the call to action.
+    # 2000: no UbyPort login, so UbyHost files nothing here; setup is the call to action.
     files = bool(row.get("files_with_ubyhost", True))
     if files and status == "failed":
         return _line("stay", "red", subject, t("needs_you.short.failed"), t("needs_you.action.fix"), base + "#guests", stay_id=stay_id)

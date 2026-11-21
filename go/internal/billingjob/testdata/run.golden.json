@@ -1167,6 +1167,12 @@
    "owner_user_id": 44
   },
   {
+   "action": "billing_status",
+   "actor": "system",
+   "detail": "overdue->active",
+   "owner_user_id": 16
+  },
+  {
    "action": "billing_run_failed",
    "actor": "system",
    "detail": "",
@@ -1429,6 +1435,12 @@
    "actor": "system",
    "detail": "overdue->paused",
    "owner_user_id": 13
+  },
+  {
+   "action": "billing_status",
+   "actor": "system",
+   "detail": "active->overdue",
+   "owner_user_id": 16
   },
   {
    "action": "billing_status",
@@ -2851,6 +2863,7 @@
     "dunning_overdue": 8,
     "dunning_paused": 5,
     "dunning_reminded": 9,
+    "dunning_settled": 1,
     "errors": 2,
     "invoiced": 4,
     "rolled": 3,
@@ -2867,6 +2880,7 @@
     "dunning_overdue": 0,
     "dunning_paused": 0,
     "dunning_reminded": 9,
+    "dunning_settled": 0,
     "errors": 1,
     "invoiced": 0,
     "rolled": 0,
@@ -2892,6 +2906,7 @@
     "dunning_overdue": 0,
     "dunning_paused": 1,
     "dunning_reminded": 0,
+    "dunning_settled": 0,
     "errors": 1,
     "invoiced": 1,
     "rolled": 1,
@@ -2905,9 +2920,10 @@
   {
    "counts": {
     "apartments": 0,
-    "dunning_overdue": 5,
+    "dunning_overdue": 6,
     "dunning_paused": 9,
     "dunning_reminded": 18,
+    "dunning_settled": 0,
     "errors": 1,
     "invoiced": 9,
     "rolled": 11,

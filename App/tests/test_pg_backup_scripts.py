@@ -22,8 +22,16 @@ case "$*" in
   *"compose stop"*) [ "${STOP_FAILS:-0}" = 1 ] && exit 1 ;;
   *"ps -q --status running postgres"*) [ "${PG_RUNNING:-0}" = 1 ] && echo pgid ;;
   *"ps -aq ubyhost"*) echo ubyhostid ;;
-  *"config --services"*) echo ubyhost; echo worker; [ "${GO_PROFILE:-0}" = 1 ] && echo ubyhost-go ;;
-  *"pg_dump"*) echo DUMP ;;
+  *"config --services"*)
+    if [ "${GO_ONLY:-0}" = 1 ]; then
+      echo ubyhost-go; echo postgres; echo caddy
+    else
+      echo ubyhost; echo worker; [ "${GO_PROFILE:-0}" = 1 ] && echo ubyhost-go
+    fi ;;
+  *"ps -q --status running ubyhost-go"*) [ "${GO_ONLY:-0}" = 1 ] && [ "${GO_NOT_RUNNING:-0}" != 1 ] && echo goid ;;
+  *"ps -q --status running ubyhost"*) [ "${GO_ONLY:-0}" != 1 ] && echo ubyid ;;
+  *"test -e"*) exit 1 ;;
+    *"pg_dump"*) echo DUMP ;;
   *"pg_restore"*) cat >/dev/null ;;
   *"cat >"*) cat >/dev/null ;;
   *"ls -1 /data/backups"*) echo 20260101T000000Z ;;
@@ -44,7 +52,7 @@ def make_tree(tmp_path, env_text):
     """Copy the scripts into a throwaway tree with its own .env and stub binaries."""
     root = tmp_path / "deploy" / "lightsail"
     (root / "scripts").mkdir(parents=True)
-    for name in ("backup.sh", "pg-restore.sh", "filing-guard.sh"):
+    for name in ("backup.sh", "backup_snapshot.sh", "pg-restore.sh", "filing-guard.sh"):
         shutil.copy(SCRIPTS / name, root / "scripts" / name)
     (root / ".env").write_text(env_text)
     bindir = tmp_path / "bin"
@@ -487,6 +495,40 @@ def test_backup_fails_in_production_without_database_url_but_keeps_snapshot(tmp_
     assert "backup_data.sh" in recorded
     assert "pg_dump" not in recorded
     assert "curl" not in recorded
+
+
+
+def test_go_only_stack_uses_backup_snapshot_not_python_backup_data(tmp_path):
+    root, bindir, log = make_tree(tmp_path, PROD_ENV + PG_ENV)
+    add_curl_stub(bindir)
+    result = run_script(
+        "backup.sh",
+        root,
+        bindir,
+        log,
+        extra_env={"PG_RUNNING": "1", "GO_ONLY": "1"},
+    )
+    assert result.returncode == 0, result.stderr
+    recorded = calls(log)
+    assert "backup_data.sh" not in recorded
+    assert "ubyhost-go" in recorded
+    assert "pg_dump" in recorded
+
+
+def test_go_only_backup_refuses_without_ubyhost_go(tmp_path):
+    root, bindir, log = make_tree(tmp_path, PROD_ENV + PG_ENV)
+    add_curl_stub(bindir)
+    result = run_script(
+        "backup.sh",
+        root,
+        bindir,
+        log,
+        extra_env={"PG_RUNNING": "1", "GO_ONLY": "1", "GO_NOT_RUNNING": "1"},
+    )
+    assert result.returncode != 0
+    assert "ubyhost-go must be running" in result.stderr
+    recorded = calls(log)
+    assert "exec -T ubyhost sh" not in "\n".join(recorded)
 
 
 def test_backup_fails_in_production_when_postgres_not_running_before_any_snapshot(tmp_path):

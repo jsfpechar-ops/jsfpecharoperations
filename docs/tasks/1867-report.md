@@ -1,73 +1,34 @@
-# 1867: Report
+# 1867 report
 
 Status: review
 
-## Files changed
+## Files changed (`git diff --stat`)
+- `App/app/billing_jobs.py` — `_unpaid_overdue` and `settle` now require `total_haler > 0`; `dunning` counts gain `settled` and, after the mail loop, settle accounts stuck `overdue` (plan set) that have no collectible invoice left.
+- `go/internal/billingjob/dunning.go` — same: `unpaidOverdue` filters `total_haler > 0`; `dunningCounts.settled`; post-loop settle of overdue accounts not present in the positive-overdue list.
+- `go/internal/billingjob/run.go` — `Counts.DunningSettled`, `Map["dunning_settled"]`, `Total`, assignment.
+- `go/internal/web/billing/payer.go` — `settle` still-query filters `total_haler > 0`.
+- `App/tests/test_billing_jobs.py` — new `test_zero_amount_invoice_is_never_dunned_and_a_stuck_overdue_settles`.
+- `go/internal/billingjob/run_test.go` — Counts test covers `dunning_settled`.
+- `docs/context/decisions.md` — decision line appended.
 
-```
- App/app/needs_you.py             |  8 ++++++--
- App/app/reporting.py             | 14 ++++++++++++++
- App/tests/test_needs_you_0240.py | 26 +++++++++++++++++++++++++-
- 3 files changed, 45 insertions(+), 3 deletions(-)
-```
+## Commands (last lines)
+- Root cause repro before the fix: discount 100 → invoice `total_haler=0, paid_on=NULL` → dunning → `overdue:1`, status `overdue`, banner `{'kind': 'overdue', 'warning': True}`.
+- `pytest tests/test_billing_*.py -q` → **184 passed** (incl. new test: zero invoice never duned, no mail, stuck-overdue settles to active, `settle()` clears zero-only overdue).
+- `pytest tests/test_0414_billing_banner_browser.py -q` (Chromium) → 1 passed.
+- `go build ./...` ok; `go vet ./internal/billingjob/ ./internal/web/billing/` ok; `go test ./internal/billingjob/... ./internal/web/billing/...` → ok (DB-gated tests skip locally, run in CI postgres shards).
+- `python3 scripts/context_lint.py` → OK.
 
-## Commands
-
-### Tests (from App/)
-
-```
-.venv/bin/python -m pytest tests/test_needs_you_0240.py tests/test_needs_you_dashboard_0241.py tests/test_0375_needs_you_and_open.py -q --tb=short -x 2>&1 | tail -5
-```
-
-Last 5 lines:
-```
-...............                                                          [100%]
-15 passed in 1.38s
-```
-
-### Context lint (from repo root)
-
-```
-python3 scripts/context_lint.py 2>&1 | tail -5
-```
-
-Last 5 lines:
-```
-WARN  test_0705_v2_shell_browser.py::test_non_v2_dashboard_still_loads_the_old_stylesheets_and_sidebar is named by open briefs 0784-settings-area-v2-old-shell-tests.md, 0851-fix-725-ci-and-savebar.md; say which goes first
-WARN  test_signed_in_chrome.py::test_the_support_line_is_not_part_of_the_legal_link_row is named by open briefs 0784-settings-area-v2-old-shell-tests.md, 0851-fix-725-ci-and-savebar.md; say which goes first
-WARN  2 commit(s) touched App/ after the last status.md update. Orchestrator: update docs/context/status.md at review.
-next free: task 2000 | goose migration 00023 (App/app/migrations/ is frozen)
-context lint: OK
-```
-
-## Acceptance (§7)
-
-- [x] `grep -nF '"files_with_ubyhost": _apartment_files_with_ubyhost(apartment),' App/app/reporting.py` finds one line.
-- [x] `grep -nF 'row.get("files_with_ubyhost", True)' App/app/needs_you.py` finds one line.
-- [x] The three new tests exist and the §6 pytest command passes (15 passed).
-- [x] `git diff --stat` lists only the three files of §3 (plus the report).
-- [x] No template, CSS or `go/` file changed (rule 7/10 gate not applicable).
+## Acceptance
+- [x] Zero-amount invoices never dunned, never flip the account overdue; stuck-overdue accounts self-settle on the next daily run.
+- [x] Python+Go parity kept; no schema change; `issue()` untouched so `apply_discount` reissue-if-unpaid still works.
+- [x] Banner follows status, so the "Pay the invoice" line disappears once the status settles (next 06:00 run, or immediately by re-saving the discount / marking the 0 Kč invoice paid in admin).
 
 ## Deviations
-
-None.
+- None. (Deliberately no issue-time auto-pay: it would block reissue when a 100% discount is later removed.)
 
 ## Questions
-
-None.
+- None.
 
 ## Owner steps
-
-1. Open the pull request when this report says `review`.
-2. After the merge and deploy, open the dashboard of a host whose setup is unfinished: the card should say "Nothing needs you today." while the setup banner shows, with no "Police overdue" lines.
-3. Open a property that has all three UbyPort login fields and an overdue stay: the red "Police overdue" line should still show.
-
-## Git log (last 5 commits)
-
-```
-4aaa16c2b 1867 step 7
-66382d29e 1867 step 3
-36a13526d Brief 1867: no police nags in What needs you without UbyPort login
-faa13a1fb Merge pull request #1184 from jsfpechar-ops/cursor/1999-python-retire-brief-dff7
-a5cc69fc3 1999: align brief with template sections for context lint
-```
+1. Merge the PR via `scripts/merge-pr-on-green.sh` when green.
+2. Affected zero-cost workspaces self-heal on the next 06:00 billing run; for an instant clear, re-save the discount in `/admin/customers` or mark the 0 Kč invoice paid.

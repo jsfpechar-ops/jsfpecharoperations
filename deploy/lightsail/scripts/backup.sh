@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Snapshot SQLite + secrets inside the running container (age-encrypted, time-based retention; see App/scripts/backup_data.sh).
+# Snapshot secrets (+ SQLite when not on PostgreSQL) and optional pg_dump into /data/backups.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -15,19 +15,38 @@ set -a
 source .env
 set +a
 
+data_sh() {
+  if docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .; then
+    docker compose --profile go exec -T ubyhost-go sh -c "$1"
+  elif docker compose config --services 2>/dev/null | grep -qx ubyhost \
+    && docker compose ps -q --status running ubyhost 2>/dev/null | grep -q .; then
+    docker compose exec -T ubyhost sh -c "$1"
+  else
+    echo "Refusing backup: ubyhost-go must be running (Go-only stack has no ubyhost container)." >&2
+    return 1
+  fi
+}
+
+run_backup_snapshot() {
+  if docker compose config --services 2>/dev/null | grep -qx ubyhost; then
+    docker compose exec -T ubyhost bash /app/scripts/backup_data.sh
+    return
+  fi
+  # shellcheck source=scripts/backup_snapshot.sh
+  # shellcheck disable=SC1091
+  source "${ROOT}/scripts/backup_snapshot.sh"
+}
+
 # Brief 1020: in production on PostgreSQL, never take or prune a snapshot while postgres is down.
-# A run without the dump would age out the last good dumps. Exits before backup_data.sh and before the ping.
 if [ "${UBYHOST_DEPLOYMENT:-}" = "production" ] && [ -n "${UBYHOST_DATABASE_URL:-}" ] \
   && [ -z "$(docker compose ps -q --status running postgres 2>/dev/null)" ]; then
   echo "Refusing to finish: the postgres container is not running in production, so no PostgreSQL dump can be taken." >&2
   exit 1
 fi
 
-docker compose exec -T ubyhost bash /app/scripts/backup_data.sh
+run_backup_snapshot
 
 # PostgreSQL dump (brief 0464): into the newest snapshot folder, age-encrypted, never plaintext.
-# Runs only once the app runs on PostgreSQL (UBYHOST_DATABASE_URL set), not before the cutover.
-# Brief 1020: production must never finish without a PostgreSQL dump. The snapshot above is kept; no ping is sent.
 if [ "${UBYHOST_DEPLOYMENT:-}" = "production" ]; then
   if [ -z "${UBYHOST_DATABASE_URL:-}" ]; then
     echo "Refusing to finish: UBYHOST_DATABASE_URL is unset in production, so no PostgreSQL dump was taken." >&2
@@ -50,19 +69,16 @@ if [ -n "${UBYHOST_DATABASE_URL:-}" ] && [ -n "$(docker compose ps -q --status r
     echo "WARNING: no UBYHOST_BACKUP_AGE_RECIPIENT, PostgreSQL dump skipped" >&2
   else
     command -v age >/dev/null 2>&1 || { echo "The 'age' binary is missing on the host." >&2; exit 1; }
-    NEWEST="$(docker compose exec -T ubyhost sh -c 'ls -1 /data/backups | sort | tail -1')"
+    NEWEST="$(data_sh 'ls -1 /data/backups | sort | tail -1')"
     [ -n "${NEWEST}" ] || { echo "No snapshot folder to hold the PostgreSQL dump." >&2; exit 1; }
-    docker compose exec -T ubyhost sh -c "rm -f /data/backups/${NEWEST}/ubyhost-pg.dump.age.tmp"
-    # Written as .tmp and renamed only after the whole pipeline succeeded (pipefail), so no truncated .age is left.
+    data_sh "rm -f /data/backups/${NEWEST}/ubyhost-pg.dump.age.tmp"
     docker compose exec -T postgres pg_dump -U ubyhost -Fc ubyhost --exclude-table-data=ruian_address \
       | age -r "${RECIPIENT}" \
-      | docker compose exec -T ubyhost sh -c "cat > /data/backups/${NEWEST}/ubyhost-pg.dump.age.tmp && mv /data/backups/${NEWEST}/ubyhost-pg.dump.age.tmp /data/backups/${NEWEST}/ubyhost-pg.dump.age"
-    echo "PostgreSQL dump bytes: $(docker compose exec -T ubyhost sh -c "wc -c < /data/backups/${NEWEST}/ubyhost-pg.dump.age" | tr -d '\r')"
+      | data_sh "cat > /data/backups/${NEWEST}/ubyhost-pg.dump.age.tmp && mv /data/backups/${NEWEST}/ubyhost-pg.dump.age.tmp /data/backups/${NEWEST}/ubyhost-pg.dump.age"
+    echo "PostgreSQL dump bytes: $(data_sh "wc -c < /data/backups/${NEWEST}/ubyhost-pg.dump.age" | tr -d '\r')"
   fi
 fi
 
-# Optional dead-man switch (e.g. healthchecks.io). Only reached on success,
-# because set -e stops the script on any failure above.
 if [ -n "${UBYHOST_BACKUP_PING_URL:-}" ]; then
   curl -fsS -m 10 --retry 3 "${UBYHOST_BACKUP_PING_URL}" >/dev/null || \
     echo "WARNING: backup succeeded but the ping to UBYHOST_BACKUP_PING_URL failed" >&2

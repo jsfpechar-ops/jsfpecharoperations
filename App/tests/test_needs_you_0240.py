@@ -97,7 +97,7 @@ def test_a_stay_that_ends_today_no_longer_asks_guests_to_register():
 
 
 def test_overdue_stay_without_ubyport_login_gets_no_police_line():
-    """1867: UbyHost files nothing for this property, so no police nag."""
+    """2000: UbyHost files nothing for this property, so no police nag."""
     rows = [
         _row(1, "ready", days=-18, urgency="overdue", files=False),
         _row(2, "failed", days=-18, files=False),

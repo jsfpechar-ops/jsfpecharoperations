@@ -117,8 +117,8 @@ func TestBillingEnabledAndCounts(t *testing.T) {
 			t.Errorf("BillingEnabled(%q) = %v", value, !want)
 		}
 	}
-	c := Counts{Rolled: 1, Invoiced: 2, Apartments: 3, Errors: 9, TrialStarted: 1, DunningPaused: 1}
-	if c.Total() != 8 || c.Map()["errors"] != 9 || c.Map()["dunning_paused"] != 1 {
+	c := Counts{Rolled: 1, Invoiced: 2, Apartments: 3, Errors: 9, TrialStarted: 1, DunningPaused: 1, DunningSettled: 1}
+	if c.Total() != 9 || c.Map()["errors"] != 9 || c.Map()["dunning_paused"] != 1 || c.Map()["dunning_settled"] != 1 {
 		t.Errorf("Counts %+v", c)
 	}
 	if Today(time.Date(2026, 11, 13, 23, 59, 0, 0, time.FixedZone("x", 7200))) != isoDay(t, "2026-11-13") {

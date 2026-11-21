@@ -1,7 +1,7 @@
-# 1867: "What needs you" stays quiet about police filing when the property has no UbyPort login
+# 2000: "What needs you" stays quiet about police filing when the property has no UbyPort login
 
 Status: todo
-Depends on: none | Base commit: faa13a1fb | Branch: task/1867-needs-you-no-ubyport-quiet
+Depends on: none | Base commit: faa13a1fb | Branch: task/2000-needs-you-no-ubyport-quiet
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
@@ -117,7 +117,7 @@ No other file may change. Go-first: exception 3, Python only (see §2).
 
 ```python
 def _apartment_files_with_ubyhost(apartment: Any) -> bool:
-    """Python copy of FILES_WITH_UBYHOST_SQL for one apartment row (1867).
+    """Python copy of FILES_WITH_UBYHOST_SQL for one apartment row (2000).
 
     An unknown apartment counts as filing, so callers keep their old behaviour.
     """
@@ -131,7 +131,7 @@ def _apartment_files_with_ubyhost(apartment: Any) -> bool:
 
    `Any` is already imported in reporting.py (it is used in `Dict[int, Any]`). Check: `grep -nF "from typing import" App/app/reporting.py | tail -30`. If `Any` is absent, STOP (§8).
 
-3. Command: `cd App && .venv/bin/python -c "import app.reporting" 2>&1 | tail -30` (no output expected). Commit `1867 step 3`.
+3. Command: `cd App && .venv/bin/python -c "import app.reporting" 2>&1 | tail -30` (no output expected). Commit `2000 step 3`.
 
 4. Anchor: `grep -nF 'if status == "failed":' App/app/needs_you.py` (must be inside `stay_line`). Replace exactly this:
 
@@ -146,7 +146,7 @@ def _apartment_files_with_ubyhost(apartment: Any) -> bool:
 
 ```python
     base = f"/reservations/{stay_id}?return_to=/"
-    # 1867: no UbyPort login, so UbyHost files nothing here; setup is the call to action.
+    # 2000: no UbyPort login, so UbyHost files nothing here; setup is the call to action.
     files = bool(row.get("files_with_ubyhost", True))
     if files and status == "failed":
         return _line("stay", "red", subject, t("needs_you.short.failed"), t("needs_you.action.fix"), base + "#guests", stay_id=stay_id)
@@ -204,7 +204,7 @@ def _row(stay_id, status, *, days=0, urgency="future", mode="manual", source="ai
 
 ```python
 def test_overdue_stay_without_ubyport_login_gets_no_police_line():
-    """1867: UbyHost files nothing for this property, so no police nag."""
+    """2000: UbyHost files nothing for this property, so no police nag."""
     rows = [
         _row(1, "ready", days=-18, urgency="overdue", files=False),
         _row(2, "failed", days=-18, files=False),
@@ -226,7 +226,7 @@ def test_stay_without_ubyport_login_still_asks_unregistered_guests():
     assert [line["text"] for line in lines] == ["Guests not registered"]
 ```
 
-7. Run the §6 command. Commit `1867 step 7`.
+7. Run the §6 command. Commit `2000 step 7`.
 
 ## 5. Do not touch
 
@@ -270,7 +270,7 @@ Stop, and write the report, if:
 
 ## 9. Report
 
-Write `docs/tasks/1867-report.md` (600 tokens at most) and set `Status: review`. The report has:
+Write `docs/tasks/2000-report.md` (600 tokens at most) and set `Status: review`. The report has:
 
 1. The files changed (`git diff --stat`).
 2. Each command, with the last 5 lines of its output.

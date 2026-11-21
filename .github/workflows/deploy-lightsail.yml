@@ -123,25 +123,22 @@ jobs:
           # and let the server pull it, so a deploy does not build on the
           # production CPU. deploy.sh stops (old containers keep running) if a pull fails.
           IMAGE_REPO="ghcr.io/$(printf '%s' "${REPO_SLUG}" | tr '[:upper:]' '[:lower:]')"
-          IMAGE="${IMAGE_REPO}:${DEPLOY_SHA}"
           GO_IMAGE="${IMAGE_REPO}-go:${DEPLOY_SHA}"
           SRC="$(mktemp -d)"
           git -C "${SRC}" init -q
           git -C "${SRC}" fetch -q --depth 1 "https://x-access-token:${GH_DEPLOY_TOKEN}@github.com/${REPO_SLUG}.git" "${DEPLOY_SHA}"
           git -C "${SRC}" checkout -q FETCH_HEAD
           printf '%s' "${GH_DEPLOY_TOKEN}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
-          docker build --pull -t "${IMAGE}" "${SRC}"
-          docker build --pull -f "${SRC}/go/Dockerfile" -t "${GO_IMAGE}" "${SRC}"
-          docker push "${IMAGE}"
+          docker build --pull -f "${SRC}/go/Dockerfile" \
+            --build-arg "GIT_SHA=${DEPLOY_SHA}" \
+            -t "${GO_IMAGE}" "${SRC}"
           docker push "${GO_IMAGE}"
           # Moving tags (production or staging) for humans; deploys always use the commit tag.
-          docker tag "${IMAGE}" "${IMAGE_REPO}:${TARGET}"
           docker tag "${GO_IMAGE}" "${IMAGE_REPO}-go:${TARGET}"
-          docker push "${IMAGE_REPO}:${TARGET}"
           docker push "${IMAGE_REPO}-go:${TARGET}"
           docker logout ghcr.io
           rm -rf "${SRC}"
-          echo "Pushed ${IMAGE} and ${GO_IMAGE}"
+          echo "Pushed ${GO_IMAGE}"
           install -m 700 -d ~/.ssh
           printf '%s\n' "${LIGHTSAIL_SSH_PRIVATE_KEY}" > ~/.ssh/lightsail_deploy.pem
           chmod 600 ~/.ssh/lightsail_deploy.pem
@@ -155,7 +152,6 @@ jobs:
           # shellcheck disable=SC2087
           ssh -o StrictHostKeyChecking=yes -i ~/.ssh/lightsail_deploy.pem "ubuntu@${LIGHTSAIL_HOST}" bash -s <<REMOTE
           DEPLOY_SHA="${DEPLOY_SHA}"
-          UBYHOST_IMAGE="${IMAGE}"
           UBYHOST_GO_IMAGE="${GO_IMAGE}"
           TARGET="${TARGET}"
           UBYPORT_TARGET="${UBYPORT_TARGET}"
@@ -207,7 +203,7 @@ jobs:
           git reset --hard "\${DEPLOY_SHA}"
           cd deploy/lightsail
           chmod +x scripts/*.sh
-          UBYHOST_IMAGE="\${UBYHOST_IMAGE}" UBYHOST_GO_IMAGE="\${UBYHOST_GO_IMAGE}" ./scripts/deploy.sh
+          UBYHOST_GO_IMAGE="\${UBYHOST_GO_IMAGE}" ./scripts/deploy.sh
           REMOTE
           rm -f ~/.ssh/lightsail_deploy.pem
           if [ -n "${HEALTH_URL}" ]; then

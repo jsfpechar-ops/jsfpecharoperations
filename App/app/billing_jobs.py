@@ -100,7 +100,8 @@ def _unpaid_overdue(today: date, owner_user_id: Optional[int] = None) -> list:
         "SELECT i.*, b.status AS account_status FROM platform_invoice i "
         "JOIN billing_account b ON b.owner_user_id = i.owner_user_id "
         "WHERE i.kind IN ('invoice', 'supplementary') AND i.voided = 0 AND i.paid_on IS NULL "
-        "AND i.due_date < ? AND (? IS NULL OR i.owner_user_id = ?) ORDER BY i.id",
+        "AND i.total_haler > 0 AND i.due_date < ? AND (? IS NULL OR i.owner_user_id = ?) ORDER BY i.id",
+        # 1867: a zero-amount invoice (100% discount, 0 apartments) is not collectible.
         (today.isoformat(), owner_user_id, owner_user_id),
     )]
 
@@ -109,7 +110,7 @@ def dunning(today: date, owner_user_id: Optional[int] = None) -> Dict[str, int]:
     """Reminders 7 and 14 days after the due date, then monthly; read-only after 14."""
     from . import mail_notify
 
-    counts = {"overdue": 0, "reminded": 0, "paused": 0}
+    counts = {"overdue": 0, "reminded": 0, "paused": 0, "settled": 0}
     for inv in _unpaid_overdue(today, owner_user_id):
         owner = int(inv["owner_user_id"])
         late = (today - date.fromisoformat(inv["due_date"][:10])).days
@@ -135,6 +136,15 @@ def dunning(today: date, owner_user_id: Optional[int] = None) -> Dict[str, int]:
                 today=today.isoformat(),
             ):
             counts["reminded"] += 1
+    # 1867: accounts stuck 'overdue' with only zero-amount invoices left (e.g. a 100%
+    # discount applied after the invoice) settle back to active on this run.
+    for row in db.query(
+        "SELECT owner_user_id FROM billing_account WHERE status = 'overdue' AND plan IS NOT NULL "
+        "AND (? IS NULL OR owner_user_id = ?)",
+        (owner_user_id, owner_user_id),
+    ):
+        if settle(int(row["owner_user_id"]), today=today):
+            counts["settled"] += 1
     return counts
 
 
@@ -146,7 +156,7 @@ def settle(owner_user_id: int, *, today: Optional[date] = None) -> bool:
     day = today or date.today()
     still = db.query_one(
         "SELECT 1 AS n FROM platform_invoice WHERE owner_user_id = ? AND kind IN ('invoice', 'supplementary') "
-        "AND voided = 0 AND paid_on IS NULL AND due_date < ?",
+        "AND voided = 0 AND paid_on IS NULL AND total_haler > 0 AND due_date < ?",
         (owner_user_id, day.isoformat()),
     )
     if still:

@@ -29,6 +29,7 @@ type Counts struct {
 	Rolled, Invoiced, Apartments, Errors                  int
 	TrialStarted, TrialReminded, TrialActive, TrialPaused int
 	DunningOverdue, DunningReminded, DunningPaused        int
+	DunningSettled                                        int
 }
 
 // Map is the dict Python returns.
@@ -38,14 +39,15 @@ func (c Counts) Map() map[string]int {
 		"trial_started": c.TrialStarted, "trial_reminded": c.TrialReminded,
 		"trial_active": c.TrialActive, "trial_paused": c.TrialPaused,
 		"dunning_overdue": c.DunningOverdue, "dunning_reminded": c.DunningReminded,
-		"dunning_paused": c.DunningPaused,
+		"dunning_paused": c.DunningPaused, "dunning_settled": c.DunningSettled,
 	}
 }
 
 // Total is the number the job queue records: every count except errors.
 func (c Counts) Total() int {
 	return c.Rolled + c.Invoiced + c.Apartments + c.TrialStarted + c.TrialReminded +
-		c.TrialActive + c.TrialPaused + c.DunningOverdue + c.DunningReminded + c.DunningPaused
+		c.TrialActive + c.TrialPaused + c.DunningOverdue + c.DunningReminded + c.DunningPaused +
+		c.DunningSettled
 }
 
 // Runner is the daily billing run. Owner, when not zero, limits the account
@@ -109,6 +111,7 @@ func (r *Runner) Run(ctx context.Context, today time.Time) (Counts, error) {
 	}
 	d, err := r.dunning(ctx, day)
 	c.DunningOverdue, c.DunningReminded, c.DunningPaused = d.overdue, d.reminded, d.paused
+	c.DunningSettled = d.settled
 	if err != nil {
 		return c, fmt.Errorf("billing dunning: %w", err)
 	}
