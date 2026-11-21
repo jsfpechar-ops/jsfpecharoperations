@@ -78,11 +78,15 @@ func sample() Submission {
 
 func TestPayloadRoundTrip(t *testing.T) {
 	keys := testKeys(t, 1)
+	plainJSON, err := json.Marshal(sample())
+	if err != nil {
+		t.Fatal(err)
+	}
 	enc, err := EncodePayload(keys, sample())
 	if err != nil {
 		t.Fatal(err)
 	}
-	if bytes.Contains(enc, []byte("Nov")) {
+	if bytes.Equal(enc, plainJSON) || bytes.Contains(enc, []byte(`"surname"`)) {
 		t.Fatal("payload is not encrypted")
 	}
 	compressed, err := keys.Decrypt(string(enc), 0, time.Now())
