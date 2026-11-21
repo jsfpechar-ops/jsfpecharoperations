@@ -26,6 +26,7 @@ OUT = APP.parent / "go" / "internal" / "web" / "stays" / "testdata" / "submit_go
 NOW = datetime(2026, 6, 15, 12, 0, tzinfo=timezone.utc)
 OWNER_ID = 1741001
 STAMP = NOW.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+GOLDEN_CSRF = "golden-submit-csrf-not-for-production"
 
 
 def _seed():
@@ -184,6 +185,14 @@ def _signed_in_cases(owner_id: int):
     return cases
 
 
+def _pin_csrf():
+    from app import security, templating
+
+    security.csrf_token = lambda request: GOLDEN_CSRF  # noqa: ARG005
+    security.csrf_token_valid = lambda request, token: token == GOLDEN_CSRF  # noqa: ARG005
+    templating.security.csrf_token = security.csrf_token
+
+
 def main() -> int:
     check = "--check" in sys.argv
     sys.path.insert(0, str(APP))
@@ -195,6 +204,7 @@ def main() -> int:
     os.environ["UBYHOST_DB"] = str(Path(db_path) / "golden.sqlite3")
     from app import db
 
+    _pin_csrf()
     db.init_db()
     cases = _signed_out_cases()
     owner_id = _seed()
