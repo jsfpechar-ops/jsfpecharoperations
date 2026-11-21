@@ -23,8 +23,7 @@ func (r *Runner) unpaidOverdue(ctx context.Context, today time.Time) ([]overdueI
 		`SELECT i.id, i.owner_user_id, i.number, i.total_haler, i.due_date, b.status
 		 FROM platform_invoice i JOIN billing_account b ON b.owner_user_id = i.owner_user_id
 		 WHERE i.kind IN ('invoice', 'supplementary') AND i.voided = 0 AND i.paid_on IS NULL
-		   AND i.total_haler > 0 // 1867: a zero-amount invoice (100% discount, 0 apartments) is not collectible
-		   AND i.due_date < $1 AND ($2::bigint = 0 OR i.owner_user_id = $2)
+		   AND i.total_haler > 0 AND i.due_date < $1 AND ($2::bigint = 0 OR i.owner_user_id = $2)
 		 ORDER BY i.id`, today.Format(isoDate), r.Owner)
 	if err != nil {
 		return nil, err
