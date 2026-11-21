@@ -32,60 +32,17 @@
 	handle @scanners {
 		respond 404
 	}
-	# UBYHOST_GO_PATHS: space-separated paths for the Go service (ubyhost-go); unset = all traffic to Python (compose defaults it to /__go_off__; an empty value breaks Caddy).
-	# Unset or empty keeps every request on Python, so this changes nothing until the owner sets it.
-	@go path {$UBYHOST_GO_PATHS:/__go_off__}
-	# 1630: a Go page that is not ported yet answers 501 plus X-Ubyhost-Not-Ported.
-	# For GET and HEAD (no body, safe to send again) Caddy then asks Python for the
-	# same URL. Other methods and every other 501 are passed through unchanged.
-	@go_read {
-		path {$UBYHOST_GO_PATHS:/__go_off__}
-		method GET HEAD
-	}
-	handle @go_read {
-		reverse_proxy ubyhost-go:8081 ubyhost-go-b:8081 {
-			# 1830: two slots. "first" sends traffic to slot A while it is healthy,
-			# else slot B. The active check marks a stopped slot down within 2 s;
-			# a request that hits a stopping slot is retried on the other for up to 5 s.
-			lb_policy first
-			lb_try_duration 5s
-			lb_try_interval 250ms
-			health_uri /healthz
-			health_interval 2s
-			health_timeout 2s
-			health_status 200
-			header_up CF-Connecting-IP {remote_host}
-			@not_ported {
-				status 501
-				header X-Ubyhost-Not-Ported 1
-			}
-			handle_response @not_ported {
-				reverse_proxy ubyhost:8080 {
-					# No Cloudflare in front: the TCP peer is the client.
-					header_up CF-Connecting-IP {remote_host}
-				}
-			}
-		}
-	}
-	handle @go {
-		reverse_proxy ubyhost-go:8081 ubyhost-go-b:8081 {
-			# 1830: two slots. "first" sends traffic to slot A while it is healthy,
-			# else slot B. The active check marks a stopped slot down within 2 s;
-			# a request that hits a stopping slot is retried on the other for up to 5 s.
-			lb_policy first
-			lb_try_duration 5s
-			lb_try_interval 250ms
-			health_uri /healthz
-			health_interval 2s
-			health_timeout 2s
-			health_status 200
-			header_up CF-Connecting-IP {remote_host}
-		}
-	}
+	# 1782: every request goes to Go; Python web and worker services are retired.
 	handle {
-		reverse_proxy ubyhost:8080 {
-			# No Cloudflare in front: the TCP peer is the client.
-			header_up CF-Connecting-IP {remote_host}
+		reverse_proxy ubyhost-go:8081 ubyhost-go-b:8081 {
+			lb_policy first
+			lb_try_duration 5s
+			lb_try_interval 250ms
+			health_uri /healthz
+			health_interval 2s
+			health_timeout 2s
+			health_status 200
+			header_up CF-Connecting-IP {client_ip}
 		}
 	}
 }

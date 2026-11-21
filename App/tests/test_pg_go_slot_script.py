@@ -148,8 +148,7 @@ def _fake_docker_slots(
     present: set[str],
     *,
     services: tuple[str, ...] = (
-        "ubyhost",
-        "worker",
+        "postgres",
         "caddy",
         "ubyhost-go",
         "ubyhost-go-b",
@@ -222,7 +221,7 @@ def test_non_slot_services_drop_go_slots(tmp_path):
     fake_bin = _fake_docker_slots(tmp_path, set())
     result = _run_slot(tmp_path, fake_bin, "go_non_slot_services")
     assert result.returncode == 0, result.stderr
-    assert result.stdout.split() == ["ubyhost", "worker", "caddy"]
+    assert result.stdout.split() == ["postgres", "caddy"]
 
 
 def test_pin_live_slot_is_noop_when_not_running(tmp_path):

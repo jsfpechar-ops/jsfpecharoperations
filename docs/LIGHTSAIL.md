@@ -8,6 +8,9 @@ on a Frankfurt VM.
 
 ## Production instance (ubyhost.com)
 
+**1782 final cutover:** `ubyhost` and `worker` leave compose; keep the last `ubyhost:local` image tag on the server 30 days for rollback.
+
+
 Live production (October 2026) runs on a **General purpose** bundle. It replaced the
 previous **Micro (1 GB RAM)** host, which was **decommissioned in October 2026**
 after cutover to a new instance created from a snapshot (`Ubuntu-2`).
@@ -47,7 +50,7 @@ origin TLS, and `CLOUDFLARE_PROXY=1` in `.env`.
 ## Architecture
 
 ```
-Internet → :443 Caddy (auto TLS) → ubyhost:8080 (FastAPI)
+Internet → :443 Caddy (auto TLS) → ubyhost-go:8081 (Go web; Python web and worker retired per brief 1782)
                                       ↓
                               volume: ubyhost-data
                               (ubyhost.db, photos, backups)
@@ -180,7 +183,7 @@ GitHub Actions (optional)
          → docker compose up -d
          → internal /healthz
          → smoke-remote.sh (public; warnings only if DNS/TLS fail)
-Caddy :443 → ubyhost:8080
+Caddy :443 → ubyhost-go:8081
 ```
 
 | Failure | What you see | Fix |
