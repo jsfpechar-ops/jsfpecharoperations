@@ -70,13 +70,15 @@
 <div class="stay-head-actions">
   <div class="stay-head-cta">{{ stay_cta() }}
   {% if reservation.permalink_token and not stay_inactive %}<button class="btn ph-hide{{ ' ghost' if has_cta }}" type="button" data-copy="stay-link" data-copied-label="{{ t('stay.detail.link_copied') }}" data-stay-header-copy>{{ t('host.copy_guest_form_link') }}</button>{% endif %}
-  {% if stay_invoice %}<a class="btn{{ ' ghost' if has_cta }}" href="/invoices/{{ stay_invoice.id }}">{{ t('invoice.stay.open', number=stay_invoice.number) }}</a>{% else %}<a class="btn{{ ' ghost' if has_cta }}" href="/invoices/new?reservation_id={{ reservation.id }}">{{ t('invoice.new') }}</a>{% endif %}</div>
+  </div>
+  {% if stay_invoice %}<a class="btn ghost ph-hide" href="/invoices/{{ stay_invoice.id }}">{{ t('invoice.stay.open', number=stay_invoice.number) }}</a>{% else %}<a class="btn ghost ph-hide" href="/invoices/new?reservation_id={{ reservation.id }}">{{ t('invoice.new') }}</a>{% endif %}
   {% if claim_resend.enabled %}<form method="post" action="/reservations/{{ reservation.id }}/resend-claim" class="inline ph-hide"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="btn ghost" type="submit" data-resend-claim title="{{ t('stay.claim.resend_help') }}">{{ t('stay.claim.resend') }}</button></form>{% endif %}
       {{ row_menu_begin() }}
         {% if reservation.permalink_token and not stay_inactive %}<button class="row-menu-item ph-only" type="button" role="menuitem" data-copy="stay-link" data-copied-label="{{ t('stay.detail.link_copied') }}">{{ t('host.copy_guest_form_link') }}</button>{% endif %}
         {% if claim_resend.enabled %}<form method="post" action="/reservations/{{ reservation.id }}/resend-claim" class="row-menu-form ph-only"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="row-menu-item" type="submit" role="menuitem">{{ t('stay.claim.resend') }}</button></form>{% endif %}
         {% if not stay_inactive and not payments_hidden() %}<a class="row-menu-item ph-only" href="/payments?reservation_id={{ reservation.id }}#new-request" role="menuitem">{{ t('stays.row.request_payment') }}</a>{% endif %}
         <a class="row-menu-item" href="/reservations/{{ reservation.id }}/guests/new" role="menuitem">{{ t('stay.detail.cta.add_guest') }}</a>
+        {% if stay_invoice %}<a class="row-menu-item ph-only" href="/invoices/{{ stay_invoice.id }}" role="menuitem">{{ t('invoice.stay.open', number=stay_invoice.number) }}</a>{% else %}<a class="row-menu-item ph-only" href="/invoices/new?reservation_id={{ reservation.id }}" role="menuitem">{{ t('invoice.new') }}</a>{% endif %}
         {% if reservation.permalink_token %}
         <a class="row-menu-item" href="{{ guest_link }}" target="_blank" rel="noopener" role="menuitem">{{ t('stay.detail.menu.open_guest_form') }}</a>
         {% endif %}

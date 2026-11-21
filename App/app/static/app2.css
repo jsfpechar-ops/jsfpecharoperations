@@ -2057,7 +2057,8 @@ body.v2 .invoice-paid-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:
 body.v2 .invoice-lookup-row,body.v2 .invoice-supplier-meta{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
 body.v2 .invoice-lookup-row > *{min-width:0}
 /* 2001: the builder is one lane of flat cards (.ui-page-narrow > .ui-section); no card in a card */
-body.v2 .invoice-supplier,body.v2 .invoice-customer{border:0;border-radius:0;padding:0;margin:0}
+/* 2001: supplier and customer keep the standard section card (border + 16 px padding) like items
+   and payment: flattening them to the lane edge put their text 0 px from the edge (guardrail) */
 body.v2 .invoice-customer .ui-toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start}
 body.v2 .invoice-customer .ui-choice-card{display:flex;flex-wrap:wrap;align-items:center;column-gap:12px;row-gap:4px;padding:16px}
 body.v2 .invoice-customer .ui-choice-card-label{display:flex;align-items:center;gap:12px;margin:0}
@@ -2137,9 +2138,11 @@ body.v2 details.ui-details-box.invoice-more > summary{color:var(--brand-ink)}
 /* 2001: one action row closes the form; plain top rule, no floating card */
 body.v2 .invoice-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:none;border:0;border-top:1px solid var(--line);border-radius:0;padding:16px 0 0;margin-top:16px;box-shadow:none;position:static;bottom:auto;z-index:1}
 @media (min-width:1024px){body.v2 .invoice-actions > [data-next-number]{margin-left:auto}}
-body.v2 .wrap.with-sidebar .invoice-workspace{max-width:720px;margin-left:auto;margin-right:auto}
 @media (max-width:767px){
   body.v2 .invoice-lookup-row input{max-width:none}
+  /* 2001: .ui-page-narrow only draws section cards from 768 px up; on a phone the lane keeps the same
+     cards (16 px inset) so no label sits at the section edge */
+  body.v2 .invoice-document > .ui-section{padding:16px;border:1px solid var(--line);border-radius:12px;margin:0 0 16px;box-sizing:border-box}
   body.v2 .invoice-supplier{grid-template-columns:minmax(0,1fr)}
   body.v2 .invoice-supplier-edit{grid-column:1;grid-row:3}
 }
@@ -2151,12 +2154,13 @@ body.v2 .wrap.with-sidebar .invoice-workspace{max-width:720px;margin-left:auto;m
   body.v2 .invoice-f-half{grid-column:span 1}
 }
 @media (min-width:1024px){
-  body.v2 .invoice-buyer-fields{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:var(--space-4)}
+  /* 2001: field_pair, two columns in the 720 px lane (six crammed every label into two lines) */
+  body.v2 .invoice-buyer-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
   body.v2 .invoice-buyer-fields > .ui-field{grid-column:auto}
-  body.v2 .invoice-f-full{grid-column:span 6}
-  body.v2 .invoice-f-zip{grid-column:span 2}
-  body.v2 .invoice-f-city{grid-column:span 4}
-  body.v2 .invoice-f-half{grid-column:span 3}
+  body.v2 .invoice-f-full{grid-column:span 2}
+  body.v2 .invoice-f-zip{grid-column:span 1}
+  body.v2 .invoice-f-city{grid-column:span 1}
+  body.v2 .invoice-f-half{grid-column:span 1}
 }
 @media (min-width:768px){
   body.v2 .invoice-items-grid{grid-template-columns:minmax(0,3fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)}
@@ -2248,10 +2252,21 @@ body.v2 .invoice-items-grid select { box-sizing: border-box; width: 100%; min-wi
 body.v2 .invoice-items-grid .row-actions [data-remove-item] { height: 44px; min-height: 44px; box-sizing: border-box; }
 body.v2 .invoice-items-grid .input-price { max-width: 130px; } /* app.css: stay and extra price share one width */
 @media (min-width:1024px) {
+  /* 2001: one grid for header and body (display:contents), so each label sits over its own column.
+     The description keeps the remaining width; the numeric cluster follows at a small fixed width
+     (inside the existing input-qty/unit/vat/price max-widths) and Remove closes the row. The lane is
+     720 px, so auto tracks crushed the description to 38 px and pushed Remove out of the card. */
+  body.v2 #item-rows.invoice-items-grid { display: grid; grid-template-columns: minmax(0, 1fr) 72px 88px 110px 76px 82px; column-gap: var(--space-3); row-gap: var(--space-2); align-items: start; }
+  /* a non-payer has no VAT cell at all, so the row is one track shorter */
+  body.v2 #item-rows.invoice-items-grid:has([data-vat-col][hidden]) { grid-template-columns: minmax(0, 1fr) 72px 88px 110px 82px; }
+  body.v2 .invoice-items-grid thead,
+  body.v2 .invoice-items-grid tbody,
   body.v2 .invoice-items-grid thead tr,
-  body.v2 .invoice-items-grid tbody tr { grid-template-columns: minmax(0, 1fr) repeat(4, minmax(0, auto)) auto; column-gap: var(--space-3); }
+  body.v2 .invoice-items-grid tbody tr { display: contents; }
+  body.v2 .invoice-items-grid thead th { background: var(--surface-2); }
   body.v2 .invoice-items-grid .row-actions [data-remove-item] { height: 39px; min-height: 39px; }
-  body.v2 .invoice-items-grid [data-vat-col][hidden] { display: block !important; visibility: hidden; }
+  /* 2001: the hidden VAT column must not leave a dead 76 px track or an empty cell in the flow */
+  body.v2 .invoice-items-grid [data-vat-col][hidden] { display: none !important; }
 }
 @media (max-width:1023.98px) {
   body.v2 .invoice-items-grid thead { display: none; }
@@ -2270,7 +2285,8 @@ body.v2 .invoice-items-grid .input-price { max-width: 130px; } /* app.css: stay 
   body.v2 .invoice-items-grid td.row-actions::before { display: none; }
   body.v2 .invoice-items-grid [data-vat-col][hidden] { display: none !important; }
 }
-@media (max-width:767.98px) {
+@media (max-width:479.98px) {
+  /* 2001: only on a phone is Remove too wide for the controls line */
   body.v2 .invoice-items-grid tbody tr { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   body.v2 .invoice-items-grid td.row-actions, body.v2 .invoice-items-grid tbody tr > td:last-child { grid-column: 1 / -1; text-align: left; }
 }
