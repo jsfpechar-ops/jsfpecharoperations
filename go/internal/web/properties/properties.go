@@ -95,7 +95,7 @@ func parseID(raw string) (int64, bool) {
 	}
 	id, err := strconv.ParseInt(strings.ReplaceAll(m[1], "_", ""), 10, 64)
 	if err != nil {
-		return 0, true
+		return 0, false
 	}
 	return id, true
 }
