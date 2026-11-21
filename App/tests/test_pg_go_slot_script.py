@@ -47,6 +47,15 @@ def test_deploy_production_go_stack_requires_ubyhost_go_before_mandatory_backup(
     )
 
 
+def test_deploy_internal_health_never_execs_python_without_ubyhost_service():
+    text = DEPLOY.read_text(encoding="utf-8")
+    assert "compose_has_go_service()" in text
+    assert "ERROR: no running app container (expected ubyhost-go on the Go-only stack)." in text
+    health = text.split('echo "Health (internal):"', 1)[1].split("echo \"==> Backfilling", 1)[0]
+    assert "elif running_python_app;" in health
+    assert health.index("elif running_python_app;") < health.index("docker compose exec -T ubyhost")
+
+
 def test_deploy_seeds_slot_tags_before_schema_apply_and_up():
     text = DEPLOY.read_text(encoding="utf-8")
     assert "go_ensure_slot_images" in text
