@@ -24,7 +24,7 @@ LIGHTSAIL_DOC = REPO_ROOT / "docs" / "LIGHTSAIL.md"
 
 EXPECTED_MEM = {
     "ubyhost": "${UBYHOST_WEB_MEM:-2g}",
-    "worker": "${UBYHOST_WORKER_MEM:-1g}",
+    "ubyhost-go": "${UBYHOST_GO_MEM:-128m}",
     "caddy": "${UBYHOST_CADDY_MEM:-256m}",
 }
 
@@ -42,7 +42,7 @@ def _expand(value: str, env: dict[str, str]) -> str:
 
 def test_compose_file_is_valid_yaml_with_the_expected_services():
     services = _compose()["services"]
-    for name in ("ubyhost", "worker", "caddy", "mock-ubyport"):
+    for name in ("ubyhost", "ubyhost-go", "caddy", "mock-ubyport"):
         assert name in services
 
 
@@ -57,18 +57,18 @@ def test_memory_defaults_expand_and_can_be_lowered_from_env():
     defaults = {n: _expand(services[n]["mem_limit"], {}) for n in EXPECTED_MEM}
     assert defaults == {
         "ubyhost": "2g",
-        "worker": "1g",
+        "ubyhost-go": "128m",
         "caddy": "256m",
     }
     staging = {
         "UBYHOST_WEB_MEM": "896m",
-        "UBYHOST_WORKER_MEM": "448m",
+        "UBYHOST_GO_MEM": "448m",
         "UBYHOST_CADDY_MEM": "128m",
     }
     lowered = {n: _expand(services[n]["mem_limit"], staging) for n in EXPECTED_MEM}
     assert lowered == {
         "ubyhost": "896m",
-        "worker": "448m",
+        "ubyhost-go": "448m",
         "caddy": "128m",
     }
 
