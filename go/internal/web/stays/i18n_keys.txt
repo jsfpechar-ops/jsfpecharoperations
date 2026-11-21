@@ -50,3 +50,5 @@ flash.reservations.restored
 flash.setup.demo_deleted
 host.count_changed
 archive.stay_moved
+setup.banner.*
+onboarding.skip
