@@ -86,13 +86,19 @@ check "/privacy" 200
 
 # BE-11: after the deploy backfill, no plaintext document numbers may remain.
 # Only runs where the container is reachable (i.e. on the server).
-if command -v docker >/dev/null 2>&1 \
-   && [ -n "$(docker compose ps -q ubyhost 2>/dev/null)" ]; then
-  if docker compose exec -T ubyhost python scripts/migrate_encrypt_doc_fields.py --check; then
-    echo "OK   document numbers encrypted (no plaintext remains)"
-  else
-    echo "FAIL plaintext document numbers remain after the backfill" >&2
-    fail=1
+# 1999: the check is a Python script, so it only runs where the Python app
+# exists; a Go-only stack has nothing to run it in (the same backfill ships as
+# `ubyhost-web ops migrate-doc-fields`).
+if command -v docker >/dev/null 2>&1 && [ -f ./scripts/lib-docker.sh ]; then
+  # shellcheck disable=SC1091
+  source ./scripts/lib-docker.sh
+  if app_is_python && [ -n "$(docker compose ps -q ubyhost 2>/dev/null)" ]; then
+    if docker compose exec -T ubyhost python scripts/migrate_encrypt_doc_fields.py --check; then
+      echo "OK   document numbers encrypted (no plaintext remains)"
+    else
+      echo "FAIL plaintext document numbers remain after the backfill" >&2
+      fail=1
+    fi
   fi
 fi
 

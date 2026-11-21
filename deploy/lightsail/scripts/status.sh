@@ -1,30 +1,48 @@
 #!/usr/bin/env bash
-# Quick production health check.
+# Quick health check: containers, the internal runtime labels, the public site.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "${ROOT}"
 
+# shellcheck disable=SC1091
+source ./scripts/lib-docker.sh
+
 docker compose ps
 
 echo ""
 echo "Internal runtime (not exposed on public /healthz in production):"
-if docker compose exec -T ubyhost python -c \
-  "from app import config; print('deployment=', config.DEPLOYMENT); print('ubyport_env=', config.UBYPORT_ENV); print('endpoint=', config.endpoint_for()); print('scheduler=', config.ENABLE_SCHEDULER); print('role=', config.ROLE); print('guest_pin=', config.GUEST_PIN_REQUIRED); print('public_base_url=', config.PUBLIC_BASE_URL); print('data_dir=', config.DATA_DIR)" \
-  2>/dev/null; then
-  :
+APP_SVC="$(app_running_service)"
+if [ -z "${APP_SVC}" ]; then
+  echo "(no app container running — start with ./scripts/deploy.sh)"
+elif app_is_python; then
+  docker compose exec -T "${APP_SVC}" python -c \
+    "from app import config; print('deployment=', config.DEPLOYMENT); print('ubyport_env=', config.UBYPORT_ENV); print('endpoint=', config.endpoint_for()); print('scheduler=', config.ENABLE_SCHEDULER); print('role=', config.ROLE); print('guest_pin=', config.GUEST_PIN_REQUIRED); print('public_base_url=', config.PUBLIC_BASE_URL); print('data_dir=', config.DATA_DIR)" \
+    2>/dev/null || echo "(ubyhost not answering — ./scripts/logs.sh)"
 else
-  echo "(ubyhost not running — start with ./scripts/deploy.sh)"
+  # 1999: the Go service is the app in a Go-only stack. It prints the same
+  # labels, plus the build it runs, from its own /healthz and /version.
+  # Its /healthz is {status, version, data_dir_writable, database_ok}: the
+  # deployment/ubyport_env labels are a Python-app detail that production hides
+  # anyway, so staging is checked against the deployed commit instead.
+  docker compose exec -T "${APP_SVC}" wget -qO- http://127.0.0.1:8081/healthz || \
+    echo "(ubyhost-go not answering — ./scripts/logs.sh)"
+  echo ""
+  echo "deployed_sha=$(cat .deployed-sha 2>/dev/null || echo unknown)"
+  echo "go_slot=$(cat .go-slot 2>/dev/null || echo a)"
 fi
 
-echo ""
-echo "Background worker (WP06):"
-if docker compose exec -T worker python -c \
-  "import os, time; print('worker.alive age (s)=', int(time.time() - os.path.getmtime('/data/worker.alive')))" \
-  2>/dev/null; then
-  :
-else
-  echo "(worker not running or not alive — ./scripts/logs.sh worker)"
+# 1999: only a checkout with the Python services has the separate worker.
+if docker compose config --services 2>/dev/null | grep -qx 'worker'; then
+  echo ""
+  echo "Background worker (WP06):"
+  if docker compose exec -T worker python -c \
+    "import os, time; print('worker.alive age (s)=', int(time.time() - os.path.getmtime('/data/worker.alive')))" \
+    2>/dev/null; then
+    :
+  else
+    echo "(worker not running or not alive — ./scripts/logs.sh worker)"
+  fi
 fi
 
 if [ -f .env ]; then

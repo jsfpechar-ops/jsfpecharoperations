@@ -16,6 +16,29 @@ set -a
 source .env
 set +a
 
+# shellcheck disable=SC1091
+source ./scripts/lib-docker.sh
+
+# 1999: 1782 deleted the Python services (`ubyhost`, `worker`) from this compose
+# file, so a Go-only stack has neither. Every Python-only step below (the SQL
+# checks, the worker wait, the two backfills, the one-off `run ubyhost`) is
+# gated on the compose file actually defining them, and the Go service takes
+# over the steps that only needed a container with /data.
+APP_PYTHON=0
+WORKER_PYTHON=0
+if app_is_python; then APP_PYTHON=1; fi
+if docker compose config --services 2>/dev/null | grep -qx 'worker'; then WORKER_PYTHON=1; fi
+GO_ENABLED=0
+if docker compose --profile go config --services 2>/dev/null | grep -qx 'ubyhost-go'; then
+  GO_ENABLED=1
+fi
+if [ "${APP_PYTHON}" = "1" ]; then
+  APP_PORT=8080
+else
+  APP_PORT=8081
+fi
+app_running() { [ -n "$(app_running_service)" ]; }
+
 # PostgreSQL mode: the same test scripts/backup.sh uses.
 PG_MODE=0
 if [ -n "${UBYHOST_DATABASE_URL:-}" ]; then
@@ -29,9 +52,23 @@ fi
 # functions or triggers Python re-creates on every apply differ from the app's,
 # Go fails closed and the deploy stops; deploy once with python, then go again.
 # Checked here, before anything touches the stack.
-SCHEMA_APPLY="${UBYHOST_SCHEMA_APPLY:-python}"
+# 1999: the default follows the checkout. A Go-only stack has no Python image,
+# so `python` is no longer a possible default there; a checkout that still has
+# the Python service keeps the old default.
+if [ "${APP_PYTHON}" = "1" ]; then
+  DEFAULT_SCHEMA_APPLY=python
+else
+  DEFAULT_SCHEMA_APPLY=go
+fi
+SCHEMA_APPLY="${UBYHOST_SCHEMA_APPLY:-${DEFAULT_SCHEMA_APPLY}}"
 case "${SCHEMA_APPLY}" in
-  python) ;;
+  python)
+    if [ "${APP_PYTHON}" != "1" ]; then
+      echo "UBYHOST_SCHEMA_APPLY=python, but this compose file has no ubyhost (Python) service." >&2
+      echo "Set UBYHOST_SCHEMA_APPLY=go (the Go binary runs the same goose files)." >&2
+      exit 1
+    fi
+    ;;
   go)
     if [ "${PG_MODE}" != "1" ]; then
       echo "UBYHOST_SCHEMA_APPLY=go needs PostgreSQL (UBYHOST_DATABASE_URL); refusing deployment." >&2
@@ -139,12 +176,27 @@ if ! bash ./scripts/caddy-validate.sh; then
   exit 1
 fi
 
-if [ -z "${UBYHOST_SECRET_KEY:-}" ] && docker compose run --rm --no-deps -T --entrypoint sh ubyhost \
-     -c 'test -s /data/secret_key' >/dev/null 2>&1; then
+# 1999: `app_run` targets the Python service, or the Go one in a Go-only stack.
+# In a Go-only stack nothing may mint a key: /data/secret_key is the only copy,
+# and a second key there would make every encrypted column unreadable. So an
+# unprobeable volume fails closed instead of generating one.
+SECRET_KEY_PROBED=0
+if [ -z "${UBYHOST_SECRET_KEY:-}" ]; then
+  if app_run --entrypoint sh -c 'test -s /data/secret_key' >/dev/null 2>&1; then
+    SECRET_KEY_PROBED=1
+  fi
+fi
+if [ -z "${UBYHOST_SECRET_KEY:-}" ] && [ "${SECRET_KEY_PROBED}" = "1" ]; then
   # The volume already holds the key the data was encrypted with, and the app
   # reads it when the variable is empty. Minting a new one here would make
   # every encrypted field (TOTP, UbyPort passwords, document numbers) unreadable.
   echo "==> Using the existing /data/secret_key (UBYHOST_SECRET_KEY is empty in .env)."
+elif [ -z "${UBYHOST_SECRET_KEY:-}" ] && [ "${APP_PYTHON}" != "1" ]; then
+  echo "UBYHOST_SECRET_KEY is empty in .env and /data/secret_key could not be confirmed" >&2
+  echo "(the Go-only stack has no Python image to probe it with)." >&2
+  echo "Set UBYHOST_SECRET_KEY in .env to the value stored in /data/secret_key (it is" >&2
+  echo "the only copy that decrypts the data), then run this deploy again." >&2
+  exit 1
 elif [ -z "${UBYHOST_SECRET_KEY:-}" ]; then
   echo "Generating UBYHOST_SECRET_KEY in .env"
   KEY="$(python3 -c "import secrets; print(secrets.token_urlsafe(48))")"
@@ -165,7 +217,9 @@ chmod +x scripts/*.sh
 # without one would be locked out by this release, so refuse to deploy until
 # every active account has one (admin > Users shows them).
 # UBYHOST_ALLOW_MISSING_EMAIL=1 deploys anyway.
-if docker compose ps --status running --services 2>/dev/null | grep -qx ubyhost; then
+# 1999: the query runs through the Python app, so it is skipped in a Go-only
+# stack (no Python image to import app.db from).
+if [ "${APP_PYTHON}" = "1" ] && docker compose ps --status running --services 2>/dev/null | grep -qx ubyhost; then
   MISSING_EMAIL="$(docker compose exec -T ubyhost python -c \
     "from app import db; print(db.query_one(\"SELECT COUNT(*) AS n FROM user_account WHERE active = 1 AND (email IS NULL OR email = '')\")['n'])" \
     2>/dev/null || echo "?")"
@@ -178,11 +232,14 @@ fi
 BACKUP_STAMP=""
 TABLES=(user_account legal_entity apartment reservation guest submission)
 declare -A BEFORE_COUNTS
-if docker compose ps --status running --services 2>/dev/null | grep -qx ubyhost; then
+if app_running; then
+  # 1999: whichever app service runs (Python or Go) owns /data, so the checks
+  # below ask for the running one instead of naming `ubyhost`.
+  APP_EXEC="$(app_running_service)"
   echo "==> Mandatory pre-deploy backup"
   ./scripts/backup.sh
-  BACKUP_STAMP="$(docker compose exec -T ubyhost sh -c \
-    'ls -1 /data/backups 2>/dev/null | sort -r | sed -n "1p"')"
+  BACKUP_STAMP="$(docker compose exec -T "${APP_EXEC}" sh -c \
+    'ls -1 /data/backups 2>/dev/null | sort -r | sed -n "1p"' | tr -d '\r')"
   if [ -z "${BACKUP_STAMP}" ]; then
     echo "No backup stamp found after backup — refusing deployment." >&2
     exit 1
@@ -195,12 +252,16 @@ if docker compose ps --status running --services 2>/dev/null | grep -qx ubyhost;
     # PostgreSQL: backup.sh writes an age-encrypted pg_dump. The SQLite copy
     # and integrity check below do not apply to it.
     PG_DUMP="/data/backups/${BACKUP_STAMP}/ubyhost-pg.dump.age"
-    if ! docker compose exec -T ubyhost sh -c \
+    if ! docker compose exec -T "${APP_EXEC}" sh -c \
       "[ -s '${PG_DUMP}' ] && head -c 21 '${PG_DUMP}' | grep -q 'age-encryption.org/v1'"; then
       echo "PostgreSQL backup ${BACKUP_STAMP} is missing, empty or not an age file - refusing deployment." >&2
       exit 1
     fi
     echo "PostgreSQL backup ${BACKUP_STAMP} is valid."
+  elif [ "${APP_PYTHON}" != "1" ]; then
+    # 1999: a Go-only stack is PostgreSQL-only, so the SQLite checks below have
+    # nothing to look at. UBYHOST_DATABASE_URL is what selects them.
+    echo "Backup ${BACKUP_STAMP} is valid (PostgreSQL-only stack)."
   else
     if ! docker compose exec -T ubyhost sh -c \
       "f=/data/backups/${BACKUP_STAMP}/ubyhost-backup.tar.age; p=/data/backups/${BACKUP_STAMP}/ubyhost.db; if [ -s \"\$f\" ]; then head -c 21 \"\$f\" | grep -q 'age-encryption.org/v1'; else [ -s \"\$p\" ]; fi"; then
@@ -217,11 +278,18 @@ if docker compose ps --status running --services 2>/dev/null | grep -qx ubyhost;
       exit 1
     fi
   fi
-  for table in "${TABLES[@]}"; do
-    BEFORE_COUNTS["${table}"]="$(docker compose exec -T ubyhost python -c \
-      "from app import db; print(db.query_one('SELECT COUNT(*) AS n FROM ${table}')['n'])")"
-  done
-  echo "Backup ${BACKUP_STAMP} is valid; live row counts recorded."
+  # 1999: the row counts compare before/after with the Python app's db helper.
+  # A Go-only stack has no Python image, so the comparison is skipped there
+  # instead of failing a deploy after the site is already up.
+  if [ "${APP_PYTHON}" = "1" ]; then
+    for table in "${TABLES[@]}"; do
+      BEFORE_COUNTS["${table}"]="$(docker compose exec -T ubyhost python -c \
+        "from app import db; print(db.query_one('SELECT COUNT(*) AS n FROM ${table}')['n'])")"
+    done
+    echo "Backup ${BACKUP_STAMP} is valid; live row counts recorded."
+  else
+    echo "Backup ${BACKUP_STAMP} is valid (row counts are Python-only; skipped)."
+  fi
 fi
 
 if docker image inspect ubyhost:local >/dev/null 2>&1; then
@@ -312,7 +380,7 @@ if [ "${PG_MODE}" = "1" ]; then
     fi
   fi
   echo "Goose migrations applied."
-elif [ -n "${BACKUP_STAMP}" ]; then
+elif [ -n "${BACKUP_STAMP}" ] && [ "${APP_PYTHON}" = "1" ]; then
   echo "==> Dry-running database migration against a copy of the live database"
   if ! docker compose run --rm --no-deps \
     -e "UBYHOST_DB=${PREFLIGHT_DB}" \
@@ -411,12 +479,22 @@ fi
 
 echo "==> Waiting for health check"
 HEALTHY=0
+# 1999: the Python app answers on 8080 and is probed with python3 (its image
+# has no wget); the Go image is alpine with wget and answers on 8081.
+HEALTH_SVC="$(app_running_service)"
+if [ -z "${HEALTH_SVC}" ]; then
+  # Nothing of the old stack is up yet on a first Go deploy: probe the service
+  # name the compose file defines.
+  HEALTH_SVC="$(app_service)"
+fi
 for _ in $(seq 1 30); do
-  if docker compose exec -T ubyhost python -c \
-    "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=3)" \
-    >/dev/null 2>&1; then
-    HEALTHY=1
-    break
+  if [ "${APP_PYTHON}" = "1" ]; then
+    docker compose exec -T "${HEALTH_SVC}" python -c \
+      "import urllib.request; urllib.request.urlopen('http://127.0.0.1:${APP_PORT}/healthz', timeout=3)" \
+      >/dev/null 2>&1 && HEALTHY=1 && break
+  else
+    docker compose exec -T "${HEALTH_SVC}" wget -qO- "http://127.0.0.1:${APP_PORT}/healthz" \
+      >/dev/null 2>&1 && HEALTHY=1 && break
   fi
   sleep 2
 done
@@ -436,6 +514,9 @@ fi
 # WP06: the scheduler runs only in the worker container. Wait until it reports
 # alive (it touches /data/worker.alive while its scheduler runs) and confirm
 # the web container did not start one.
+# 1999: a Go-only stack has no `worker`; the Go service runs the scheduler in
+# process (UBYHOST_ENABLE_SCHEDULER), so this wait is Python-only.
+if [ "${WORKER_PYTHON}" = "1" ]; then
 echo "==> Waiting for the background worker"
 WORKER_ALIVE=0
 for _ in $(seq 1 30); do
@@ -457,25 +538,43 @@ if docker compose logs ubyhost 2>/dev/null | grep -q "scheduler started"; then
   exit 1
 fi
 echo "Worker is running the scheduler (exactly one: the scheduler lock is held)."
+else
+  echo "==> No Python worker in this stack; the Go service runs the scheduler"
+fi
 
 echo ""
 docker compose ps
 echo ""
 echo "Health (internal):"
-docker compose exec -T ubyhost python -c \
-  "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8080/healthz').read().decode())"
+if [ "${APP_PYTHON}" = "1" ]; then
+  docker compose exec -T "$(app_running_service)" python -c \
+    "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:${APP_PORT}/healthz').read().decode())"
+else
+  docker compose exec -T "${HEALTH_SVC}" wget -qO- "http://127.0.0.1:${APP_PORT}/healthz" || \
+    echo "not healthy (check docker compose logs --tail=50 ${HEALTH_SVC})"
+fi
 
 # Go port (G1b): report only. This block never exits non-zero.
-if docker compose ps --status running --services | grep -qx ubyhost-go; then
+# 1999: in a Go-only stack the Go service above already IS the app.
+if [ "${APP_PYTHON}" = "1" ] && docker compose ps --status running --services | grep -qx ubyhost-go; then
   echo "Go service (internal, no traffic yet):"
   docker compose exec -T ubyhost-go wget -qO- http://127.0.0.1:8081/healthz || echo "not healthy (does not affect the app)"
-else
+elif [ "${APP_PYTHON}" = "1" ]; then
   echo "Go service: not enabled (COMPOSE_PROFILES has no go)"
+fi
+
+# 1999: both backfills below are Python scripts (App/scripts) that only exist in
+# a checkout which still has the `ubyhost` service. They are skipped in a
+# Go-only stack; the Go app reads the same rows and does not need them.
+if [ "${APP_PYTHON}" != "1" ]; then
+  echo "==> Skipping the Python backfills (legal acceptance, document numbers):"
+  echo "    this stack has no ubyhost service. Run them once from a checkout that has it."
 fi
 
 # BE-1: turn legacy login acceptance lines into legal_acceptance rows. The
 # script is idempotent and prints a count only. A failure aborts the deploy
 # loudly rather than leaving acceptance evidence half-migrated.
+if [ "${APP_PYTHON}" = "1" ]; then
 echo "==> Backfilling legal acceptance evidence"
 if ! docker compose exec -T ubyhost python scripts/backfill_legal_acceptance.py; then
   echo "Legal acceptance backfill failed." >&2
@@ -495,9 +594,12 @@ if ! docker compose exec -T ubyhost python scripts/migrate_encrypt_doc_fields.py
   echo "Plaintext document numbers remain after the backfill." >&2
   exit 1
 fi
+fi
 if [ -n "${BACKUP_STAMP}" ]; then
   echo ""
   echo "Post-deploy database integrity and row-count checks:"
+  # 1999: Python-only (sqlite integrity_check and the db helper). The Go stack
+  # is PostgreSQL-only and its health is asserted above.
   if [ "${PG_MODE}" != "1" ]; then
     LIVE_OK="$(docker compose exec -T ubyhost sqlite3 /data/ubyhost.db "PRAGMA integrity_check;")"
     if [ "${LIVE_OK}" != "ok" ]; then
@@ -506,6 +608,7 @@ if [ -n "${BACKUP_STAMP}" ]; then
     fi
   fi
   for table in "${TABLES[@]}"; do
+    [ "${APP_PYTHON}" = "1" ] || break
     after="$(docker compose exec -T ubyhost python -c \
       "from app import db; print(db.query_one('SELECT COUNT(*) AS n FROM ${table}')['n'])")"
     if [ "${after}" -lt "${BEFORE_COUNTS[${table}]}" ]; then
