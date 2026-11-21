@@ -187,6 +187,10 @@ jobs:
               printf '\nUBYHOST_UBYPORT_ENV=%s\n' "\${UBYPORT_TARGET}" >> "\${ENVF}"
             fi
             echo "==> staging: UBYHOST_UBYPORT_ENV=\${UBYPORT_TARGET}"
+            if ! grep -qE '^UBYHOST_STAGING_NO_LOGIN=' "\${ENVF}"; then
+              printf '\nUBYHOST_STAGING_NO_LOGIN=1\n' >> "\${ENVF}"
+              echo "==> staging: UBYHOST_STAGING_NO_LOGIN=1 (agent smoke default)"
+            fi
           fi
           REPO="https://x-access-token:${GH_DEPLOY_TOKEN}@github.com/${REPO_SLUG}.git"
           if [ ! -d "\${INSTALL}/.git" ]; then

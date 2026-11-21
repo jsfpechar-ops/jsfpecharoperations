@@ -45,6 +45,31 @@ func loadGolden(t *testing.T) golden {
 	return g
 }
 
+func TestStagingNoLoginFlag(t *testing.T) {
+	getenv := func(k string) string {
+		switch k {
+		case "UBYHOST_DEPLOYMENT":
+			return "staging"
+		case "UBYHOST_STAGING_NO_LOGIN":
+			return "1"
+		default:
+			return ""
+		}
+	}
+	if !stagingNoLogin(getenv) {
+		t.Fatal("expected staging no login")
+	}
+	getenv = func(k string) string {
+		if k == "UBYHOST_DEPLOYMENT" {
+			return "production"
+		}
+		return "1"
+	}
+	if stagingNoLogin(getenv) {
+		t.Fatal("must not apply on production")
+	}
+}
+
 func firstDiff(a, b string) int {
 	for i := 0; i < len(a) && i < len(b); i++ {
 		if a[i] != b[i] {
