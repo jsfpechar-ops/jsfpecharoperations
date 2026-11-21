@@ -171,6 +171,12 @@ jobs:
             echo "ERROR: this server's .env has UBYHOST_DEPLOYMENT=\${SERVER_DEPLOYMENT:-unset}, not \${TARGET}. Wrong host in the \${TARGET} environment secrets?" >&2
             exit 1
           fi
+          if [ "\${TARGET}" = "production" ]; then
+            if grep -qE '^UBYHOST_STAGING_NO_LOGIN=' "\${ENVF}"; then
+              sed -i -E '/^UBYHOST_STAGING_NO_LOGIN=/d' "\${ENVF}"
+              echo "==> production: removed UBYHOST_STAGING_NO_LOGIN (forbidden on production)"
+            fi
+          fi
           if [ "\${TARGET}" = "staging" ]; then
             case "\${SERVER_UBYPORT}" in
               mock|test|"") ;;

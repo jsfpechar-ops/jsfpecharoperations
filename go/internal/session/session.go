@@ -16,6 +16,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/envguard"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
 )
 
@@ -182,14 +183,14 @@ func Load(ctx context.Context, db *pgxpool.Pool, token string, now time.Time, ge
 	}
 	payload, ok := Verify(secret, token, now)
 	if !ok {
-		if stagingNoLogin(getenv) {
+		if envguard.StagingNoLoginActive(getenv) {
 			return loadStagingNoLoginAdmin(ctx, db, now)
 		}
 		return nil, nil
 	}
 	uid, ok := intOf(payload["uid"])
 	if !ok || uid == 0 {
-		if stagingNoLogin(getenv) {
+		if envguard.StagingNoLoginActive(getenv) {
 			return loadStagingNoLoginAdmin(ctx, db, now)
 		}
 		return nil, nil
@@ -200,7 +201,7 @@ func Load(ctx context.Context, db *pgxpool.Pool, token string, now time.Time, ge
 		return nil, err
 	}
 	if !found {
-		if stagingNoLogin(getenv) {
+		if envguard.StagingNoLoginActive(getenv) {
 			return loadStagingNoLoginAdmin(ctx, db, now)
 		}
 		return nil, nil
@@ -215,7 +216,7 @@ func Load(ctx context.Context, db *pgxpool.Pool, token string, now time.Time, ge
 		sv = v
 	}
 	if account.SessionVersion != sv {
-		if stagingNoLogin(getenv) {
+		if envguard.StagingNoLoginActive(getenv) {
 			return loadStagingNoLoginAdmin(ctx, db, now)
 		}
 		return nil, nil
@@ -339,19 +340,6 @@ func queryAccount(ctx context.Context, db *pgxpool.Pool, query string, id int64)
 		return Account{}, false, err
 	}
 	return a, true, nil
-}
-
-// stagingNoLogin is auth.staging_no_login (App/app/auth.py).
-func stagingNoLogin(getenv func(string) string) bool {
-	if strings.ToLower(strings.TrimSpace(getenv("UBYHOST_DEPLOYMENT"))) != "staging" {
-		return false
-	}
-	switch strings.ToLower(strings.TrimSpace(getenv("UBYHOST_STAGING_NO_LOGIN"))) {
-	case "1", "true", "yes":
-		return true
-	default:
-		return false
-	}
 }
 
 // loadStagingNoLoginAdmin is _staging_no_login_account: the first active admin
