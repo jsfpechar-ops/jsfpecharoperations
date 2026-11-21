@@ -118,15 +118,15 @@ func (d stayClaimDeps) demoPreview(w http.ResponseWriter, r *http.Request) {
 	}
 	apt, stay, code := d.loadGuestStay(r.Context(), token, resID, false, true)
 	if code != 0 {
-		writeUnavailable(w, r, lang, token, code)
+		scWriteUnavailable(w, r, lang, token, code)
 		return
 	}
 	if !hostOwnsStay(r, apt.ownerID) {
-		writeUnavailable(w, r, lang, token, http.StatusNotFound)
+		scWriteUnavailable(w, r, lang, token, http.StatusNotFound)
 		return
 	}
 	if stay.source != "demo" {
-		writeUnavailable(w, r, lang, token, http.StatusNotFound)
+		scWriteUnavailable(w, r, lang, token, http.StatusNotFound)
 		return
 	}
 	// Brief 1720 owns the full PIN page; until then redirect through the hub path the tests expect.
@@ -147,7 +147,7 @@ func (d stayClaimDeps) stayOverview(w http.ResponseWriter, r *http.Request) {
 	}
 	apt, stay, code := d.loadGuestStay(r.Context(), token, resID, true, false)
 	if code != 0 {
-		writeUnavailable(w, r, lang, token, code)
+		scWriteUnavailable(w, r, lang, token, code)
 		return
 	}
 	row, err := ensureClaimRow(r.Context(), d.pool, resID, isoNow(d.now()))
@@ -156,7 +156,7 @@ func (d stayClaimDeps) stayOverview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !guestAccessOpen(stay.status, row.guestAccessLock) {
-		writeUnavailable(w, r, lang, token, http.StatusNotFound)
+		scWriteUnavailable(w, r, lang, token, http.StatusNotFound)
 		return
 	}
 	if billingjob.MailEnabled() && !hostOwnsStay(r, apt.ownerID) {
@@ -182,7 +182,7 @@ func (d stayClaimDeps) claimLanding(w http.ResponseWriter, r *http.Request) {
 	}
 	apt, stay, code := d.loadClaimable(r.Context(), token, resID)
 	if code != 0 {
-		writeUnavailable(w, r, lang, token, code)
+		scWriteUnavailable(w, r, lang, token, code)
 		return
 	}
 	row, err := ensureClaimRow(r.Context(), d.pool, resID, isoNow(d.now()))
@@ -214,16 +214,16 @@ func (d stayClaimDeps) claimConfirm(w http.ResponseWriter, r *http.Request) {
 	secret := strings.TrimSpace(r.FormValue("secret"))
 	apt, stay, code := d.loadClaimable(r.Context(), token, resID)
 	if code != 0 || stay == nil || apt == nil {
-		writeUnavailable(w, r, lang, token, code)
+		scWriteUnavailable(w, r, lang, token, code)
 		return
 	}
 	key := clientip.Key(r, d.getenv, "claim:"+apt.token)
 	at := d.now()
-	if blocked, err := rateBlocked(r.Context(), d.pool, "claim_confirm", key, claimConfirmRateMax, time.Hour, at); err != nil {
+	if blocked, err := rateBlocked(r.Context(), d.pool, "claim_confirm", key, claimConfirmRateMax, int(time.Hour/time.Second), at); err != nil {
 		scError(w, err)
 		return
 	} else if blocked {
-		writeUnavailable(w, r, lang, token, http.StatusTooManyRequests)
+		scWriteUnavailable(w, r, lang, token, http.StatusTooManyRequests)
 		return
 	}
 	_ = rateRecord(r.Context(), d.pool, "claim_confirm", key, at)
@@ -269,7 +269,7 @@ func renderGuestPage(w http.ResponseWriter, name, lang string, data claimPage) {
 	}{Lang: lang, Data: data})
 }
 
-func writeUnavailable(w http.ResponseWriter, r *http.Request, lang, token string, status int) {
+func scWriteUnavailable(w http.ResponseWriter, r *http.Request, lang, token string, status int) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
 	_ = guestTemplates.ExecuteTemplate(w, "unavailable", struct{ Lang string }{Lang: lang})
@@ -281,7 +281,7 @@ func scError(w http.ResponseWriter, err error) {
 }
 
 func (d stayClaimDeps) loadGuestStay(ctx context.Context, token string, resID int64, pinOk, demoOnly bool) (*scApt, *scStay, int) {
-	apt, err := loadApartment(ctx, d.pool, token)
+	apt, err := scLoadApartment(ctx, d.pool, token)
 	if err != nil || apt == nil {
 		return nil, nil, http.StatusNotFound
 	}
@@ -317,7 +317,7 @@ func (d stayClaimDeps) pinRedirect(w http.ResponseWriter, r *http.Request, token
 		return false
 	}
 	// Signed-in host previewing own property skips the PIN gate (guest.py _require_pin).
-	apt, err := loadApartment(r.Context(), d.pool, token)
+	apt, err := scLoadApartment(r.Context(), d.pool, token)
 	if err == nil && apt != nil && hostOwnsStay(r, apt.ownerID) {
 		return false
 	}
@@ -327,15 +327,7 @@ func (d stayClaimDeps) pinRedirect(w http.ResponseWriter, r *http.Request, token
 	return true
 }
 
-func guestPinRequired(getenv func(string) string) bool {
-	v := strings.ToLower(strings.TrimSpace(getenv("UBYHOST_GUEST_PIN_REQUIRED")))
-	if v == "" {
-		v = strings.ToLower(strings.TrimSpace(getenv("GUEST_PIN_REQUIRED")))
-	}
-	return v == "1" || v == "true" || v == "yes"
-}
-
-func loadApartment(ctx context.Context, pool *pgxpool.Pool, token string) (*scApt, error) {
+func scLoadApartment(ctx context.Context, pool *pgxpool.Pool, token string) (*scApt, error) {
 	if pool == nil {
 		return nil, nil
 	}
@@ -486,23 +478,6 @@ func guestSaveDecrypter(getenv func(string) string) ubyport.FieldDecrypter {
 		b, err := keys.Decrypt(token, 0, time.Now())
 		return string(b), err
 	}
-}
-
-func rateBlocked(ctx context.Context, pool *pgxpool.Pool, scope, key string, max int, window time.Duration, now time.Time) (bool, error) {
-	cutoff := float64(now.UTC().Add(-window).Unix())
-	if _, err := pool.Exec(ctx, `DELETE FROM rate_limit_event WHERE scope = $1 AND key = $2 AND at < $3`, scope, key, cutoff); err != nil {
-		return false, err
-	}
-	var n int64
-	if err := pool.QueryRow(ctx, `SELECT COUNT(*) FROM rate_limit_event WHERE scope = $1 AND key = $2`, scope, key).Scan(&n); err != nil {
-		return false, err
-	}
-	return n >= int64(max), nil
-}
-
-func rateRecord(ctx context.Context, pool *pgxpool.Pool, scope, key string, now time.Time) error {
-	_, err := pool.Exec(ctx, `INSERT INTO rate_limit_event (scope, key, at) VALUES ($1, $2, $3)`, scope, key, float64(now.UTC().Unix()))
-	return err
 }
 
 func langFromRequest(r *http.Request) string {
