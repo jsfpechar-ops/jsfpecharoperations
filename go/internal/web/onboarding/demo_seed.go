@@ -18,7 +18,8 @@ import (
 // DemoSeedHandler serves POST /demo.
 func DemoSeedHandler(pool *pgxpool.Pool, getenv func(string) string, now func() time.Time) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if _, ok := guard(w, r, pool, getenv, now); !ok {
+		h, ok := guard(w, r, pool, getenv, now)
+		if !ok {
 			return
 		}
 		env := strings.TrimSpace(getenv("UBYHOST_UBYPORT_ENV"))
@@ -29,7 +30,15 @@ func DemoSeedHandler(pool *pgxpool.Pool, getenv func(string) string, now func() 
 			hostweb.Back(w, r, "/", hostweb.Flash{}, demoFlash(r, "flash.error.demo_staging_only"))
 			return
 		}
-		// mock: demo.seed is not ported yet (brief 1597).
-		hostweb.Back(w, r, "/", hostweb.Flash{}, demoFlash(r, "flash.error.demo_staging_only"))
+		aptID, err := mockDemoSeed(r.Context(), getenv, h.Workspace.ID, h.Account.Username)
+		if err != nil {
+			serverError(w, err)
+			return
+		}
+		if aptID == 0 {
+			hostweb.Back(w, r, "/", hostweb.Flash{}, demoFlash(r, "flash.error.demo_staging_only"))
+			return
+		}
+		hostweb.Back(w, r, "/", demoFlash(r, "flash.demo.loaded"), hostweb.Flash{})
 	}
 }

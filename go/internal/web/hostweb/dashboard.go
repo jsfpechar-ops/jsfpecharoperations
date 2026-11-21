@@ -15,6 +15,8 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/session"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/auth"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/public"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/stays"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/welcomeback"
 )
 
 //go:embed i18n.json
@@ -57,6 +59,11 @@ func DashboardHandler(pool *pgxpool.Pool, getenv func(string) string, lookupEnv 
 			return
 		}
 		if host == nil {
+			return
+		}
+		today := stays.PragueToday(at)
+		if err := welcomeback.Check(r.Context(), pool, host.Account.ID, host.Workspace.ID, today); err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
 		calView := r.URL.Query().Get("cal_view") != "" || strings.HasPrefix(r.URL.RawQuery, "cal_")

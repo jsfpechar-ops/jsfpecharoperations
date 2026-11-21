@@ -488,7 +488,7 @@ type shellDeps struct {
 // adds paths to UBYHOST_GO_PATHS.
 func RegisterShell(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler) {
 	d := shellDeps{pool: pool, getenv: getenv, now: now}
-	mux.Handle("POST /l/{token}/pin", wrap("/l/{token}/pin", d.verifyPin))
+	mux.Handle("POST /l/{token}/pin", wrap("/l/{token}/pin", WithPOSTCSRF(getenv, now, d.verifyPin)))
 	mux.Handle("GET /l/{token}", wrap("/l/{token}", d.pickStay))
 	mux.Handle("GET /l/{token}/privacy", wrap("/l/{token}/privacy", d.privacyNotice))
 	mux.Handle("GET /l/{token}/ruian-suggest", wrap("/l/{token}/ruian-suggest", d.ruianSuggest))

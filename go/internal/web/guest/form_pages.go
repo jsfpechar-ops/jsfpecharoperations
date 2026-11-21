@@ -61,8 +61,8 @@ func RegisterFormPages(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(strin
 	mux.Handle("GET /l/{token}/{reservation_id}/new", wrap("guest_form_new", formPageHandler(d, "new")))
 	mux.Handle("GET /l/{token}/{reservation_id}/edit/{guest_id}", wrap("guest_form_edit", formPageHandler(d, "edit")))
 	mux.Handle("GET /l/{token}/{reservation_id}/remove/{guest_id}", wrap("guest_remove_confirm", removeConfirmHandler(d)))
-	mux.Handle("POST /l/{token}/{reservation_id}/remove/{guest_id}", wrap("guest_remove", removePostHandler(d)))
-	mux.Handle("POST /l/{token}/{reservation_id}/relang", wrap("guest_form_relang", relangHandler(d)))
+	mux.Handle("POST /l/{token}/{reservation_id}/remove/{guest_id}", wrap("guest_remove", WithPOSTCSRF(getenv, now, removePostHandler(d))))
+	mux.Handle("POST /l/{token}/{reservation_id}/relang", wrap("guest_form_relang", WithPOSTCSRF(getenv, now, relangHandler(d))))
 }
 
 type formPageDeps struct {

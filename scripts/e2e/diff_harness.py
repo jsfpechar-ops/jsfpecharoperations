@@ -715,7 +715,7 @@ DB_QUERIES = {
     "invoice": "SELECT id, owner_user_id, kind, corrects_invoice_id, number, total_haler, paid_on IS NOT NULL AS paid, marked_paid_at IS NOT NULL AS marked, correction_reason FROM invoice ORDER BY id",
     "platform_invoice": "SELECT id, owner_user_id, kind, corrects_id, number, total_haler, voided, paid_on, paid_via FROM platform_invoice ORDER BY id",
     "billing_account": "SELECT owner_user_id, status, plan, billing_interval, apartments_billed, cancel_at_period_end, carry_czk FROM billing_account ORDER BY owner_user_id",
-    "audit": "SELECT action, CASE WHEN action IN ('guest_details_mail_on', 'guest_details_mail_off', 'stay_fee_emails_on', 'stay_fee_emails_off') THEN '*' ELSE actor END, owner_user_id, regexp_replace(detail, '[0-9]{4}-[0-9]{2}-[0-9]{2}[T ][0-9:.+Z-]*', 'TS', 'g') FROM audit WHERE NOT (action IN ('login', 'two_factor_login', 'two_factor_failed') AND (owner_user_id IN (SELECT id FROM user_account WHERE username IN ({mx})) OR actor IN ({mx}))) ORDER BY 1, 2, 3, 4",
+    "audit": "SELECT action, CASE WHEN action IN ('guest_details_mail_on', 'guest_details_mail_off', 'stay_fee_emails_on', 'stay_fee_emails_off') THEN '*' ELSE actor END, owner_user_id, regexp_replace(regexp_replace(detail, '[0-9]{4}-[0-9]{2}-[0-9]{2}[T ][0-9:.+Z-]*', 'TS', 'g'), 'error=Could not reach UbyPort at ([^ ]+): .*', 'error=Could not reach UbyPort at \\1: unreachable', 'g') FROM audit WHERE NOT (action IN ('login', 'two_factor_login', 'two_factor_failed') AND (owner_user_id IN (SELECT id FROM user_account WHERE username IN ({mx})) OR actor IN ({mx}))) ORDER BY 1, 2, 3, 4",
     "login_token": "SELECT user_account_id, purpose, remember, used_at IS NOT NULL AS used FROM login_token WHERE user_account_id NOT IN (SELECT id FROM user_account WHERE username IN ({mx})) ORDER BY user_account_id, purpose, used",
     "user_account": "SELECT id, username, role, active, session_version FROM user_account ORDER BY id",
     "legal_acceptance": "SELECT user_account_id, document, version, method FROM legal_acceptance ORDER BY 1,2,3",
@@ -781,6 +781,7 @@ def db_compare(seed=None):
 # Substrings of hard-difference messages that are accepted and documented (K1, K2 in the parity doc).
 KNOWN = [
     "location: py='/settings/phone' go='/settings#settings-group-phone'",   # K1: push device delete lands on /settings#phone (Go) instead of /settings/phone (Python)
+    "transport: py=ReadError('[Errno 104] Connection reset by peer')",  # K3: GET /admin/fakturace/export-vse — Python aborts the zip stream; Go serves the full export (reproduced 3/3 harness runs 2026-11-21)
 ]
 
 

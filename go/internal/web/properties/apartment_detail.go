@@ -254,7 +254,8 @@ func (s *Pages) apartmentDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if a == nil {
-		notPorted(w, "a property that is not in the workspace")
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = w.Write([]byte("Not found."))
 		return
 	}
 	view := &detailView{Base: "/apartments/" + strconv.FormatInt(a.ID, 10), CopyFromID: copyID, CopyOpen: queryLast(r, "copy") == "choose"}

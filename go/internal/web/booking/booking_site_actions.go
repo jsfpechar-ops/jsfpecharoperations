@@ -126,7 +126,7 @@ func (s *siteActionsServer) requireMax(ctx context.Context, w http.ResponseWrite
 		return false
 	}
 	if !ok {
-		bsiteBack(w, r, aptID, s.flash(lang, "bsite.err.not_max"))
+		hostweb.Back(w, r, fmt.Sprintf("/apartments/%d/booking-site", aptID), hostweb.Flash{}, s.flash(lang, "bsite.err.not_max"))
 		return false
 	}
 	return true

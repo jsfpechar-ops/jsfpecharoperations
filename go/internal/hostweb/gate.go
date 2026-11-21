@@ -152,22 +152,31 @@ func endExpired(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool, gete
 	return nil
 }
 
-// CSRF is _require_csrf(guest=False) (security.py 62-95, 114-208). It returns
-// false after writing the response.
-func CSRF(w http.ResponseWriter, r *http.Request, getenv func(string) string, at time.Time) bool {
+// PostCSRF reports whether a POST carries valid CSRF (guest and host).
+func PostCSRF(w http.ResponseWriter, r *http.Request, getenv func(string) string, at time.Time) (ok bool, crossSite bool) {
 	secret, err := secure.LoadSecret(getenv)
 	if err != nil {
 		fail(w, err)
-		return false
+		return false, false
 	}
 	token := r.Header.Get(csrfHeader)
 	if token == "" {
 		token = formToken(w, r)
 	}
 	if csrfValid(secret, token, Cookie(r, csrfCookie), at) {
+		return true, false
+	}
+	return false, !sameSite(r, getenv)
+}
+
+// CSRF is _require_csrf(guest=False) (security.py 62-95, 114-208). It returns
+// false after writing the response.
+func CSRF(w http.ResponseWriter, r *http.Request, getenv func(string) string, at time.Time) bool {
+	ok, crossSite := PostCSRF(w, r, getenv, at)
+	if ok {
 		return true
 	}
-	if !sameSite(r, getenv) {
+	if crossSite {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusForbidden)
 		_, _ = w.Write([]byte(`{"detail":"Cross-site request rejected."}`))
