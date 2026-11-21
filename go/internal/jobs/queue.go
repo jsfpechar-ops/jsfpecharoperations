@@ -18,7 +18,7 @@ const (
 	LeaseMinutes = 60
 	MaxAttempts  = 5
 	drainLimit   = 50
-	pollEvery    = 30 * time.Second
+	pollEvery    = 15 * time.Second
 	defaultCap   = 60
 )
 
