@@ -1,0 +1,56 @@
+{
+  "now": "2026-06-15T12:00:00+00:00",
+  "seed": [],
+  "cases": [
+    {
+      "name": "party_bad_size",
+      "method": "POST",
+      "path": "/l/tok1722/1722/party",
+      "body": "party_size=0&_csrf=golden",
+      "user": 0,
+      "status": 303,
+      "location": "/l/tok1722/1722?party_error=1",
+      "flash_key": ""
+    },
+    {
+      "name": "party_saved",
+      "method": "POST",
+      "path": "/l/tok1722/1722/party",
+      "body": "party_size=2&_csrf=golden",
+      "user": 0,
+      "status": 303,
+      "location": "/l/tok1722/1722",
+      "flash_key": ""
+    },
+    {
+      "name": "count_feature_off",
+      "method": "POST",
+      "path": "/l/tok1722/1722/count",
+      "body": "count=2&shown=2&_csrf=golden",
+      "user": 0,
+      "status": 404,
+      "location": "",
+      "flash_key": ""
+    },
+    {
+      "name": "another_ok",
+      "method": "POST",
+      "path": "/l/tok1722/1722/another",
+      "body": "_csrf=golden",
+      "user": 0,
+      "status": 303,
+      "location": "/l/tok1722/1722/new",
+      "flash_key": ""
+    },
+    {
+      "name": "another_unknown_stay",
+      "method": "POST",
+      "path": "/l/tok1722/99999/another",
+      "body": "_csrf=golden",
+      "user": 0,
+      "status": 404,
+      "location": "",
+      "flash_key": ""
+    }
+  ]
+}
