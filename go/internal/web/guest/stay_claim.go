@@ -39,6 +39,9 @@ const (
 
 	claimConfirmRateMax = 20
 	claimTokenBytes     = 24
+
+	// stayClaimDeviceGate tracks formPagesRequireClaim until claim UI lands (brief 1721).
+	stayClaimDeviceGate = false
 )
 
 type stayClaimDeps struct {
@@ -160,7 +163,8 @@ func (d stayClaimDeps) stayOverview(w http.ResponseWriter, r *http.Request) {
 		scWriteUnavailable(w, r, lang, token, http.StatusNotFound)
 		return
 	}
-	if billingjob.MailEnabled() && !hostOwnsStay(r, apt.ownerID) {
+	// Device claim UI is stubbed; formPagesRequireClaim is still false (brief 1721/1723).
+	if stayClaimDeviceGate && billingjob.MailEnabled() && !hostOwnsStay(r, apt.ownerID) {
 		if row.state != claimStateClaimed {
 			renderGuestPage(w, "claim", lang, claimPage{Token: token, ResID: resID, Claim: row})
 			return
@@ -169,6 +173,16 @@ func (d stayClaimDeps) stayOverview(w http.ResponseWriter, r *http.Request) {
 			renderGuestPage(w, "assigned", lang, claimPage{Token: token, ResID: resID, Claim: row})
 			return
 		}
+	}
+	var guestCount int
+	if err := d.pool.QueryRow(r.Context(), `SELECT COUNT(*) FROM guest WHERE reservation_id = $1 AND archived_at IS NULL`, resID).Scan(&guestCount); err != nil {
+		scError(w, err)
+		return
+	}
+	if guestCount == 0 {
+		target := guestPath(token, resID) + "/new" + langQuery(lang)
+		http.Redirect(w, r, target, http.StatusSeeOther)
+		return
 	}
 	renderGuestPage(w, "stay", lang, claimPage{Token: token, ResID: resID, Stay: stay, Claim: row})
 }
@@ -351,14 +365,18 @@ func (d stayClaimDeps) pinRedirect(w http.ResponseWriter, r *http.Request, token
 	return true
 }
 
-func scLoadApartment(ctx context.Context, pool *pgxpool.Pool, token string) (*scApt, error) {
+func scLoadApartment(ctx context.Context, pool *pgxpool.Pool, key string) (*scApt, error) {
 	if pool == nil {
+		return nil, nil
+	}
+	apt, _, _, ok := ResolveKey(ctx, pool, key)
+	if !ok || apt == nil {
 		return nil, nil
 	}
 	var a scApt
 	err := pool.QueryRow(ctx, `SELECT id, owner_user_id, COALESCE(permalink_token,''), COALESCE(permalink_pin,''),
-		COALESCE(permalink_reachback_days,0) FROM apartment WHERE permalink_token = $1 AND active = 1 AND archived_at IS NULL`,
-		token).Scan(&a.id, &a.ownerID, &a.token, &a.pin, &a.reachback)
+		COALESCE(permalink_reachback_days,0) FROM apartment WHERE id = $1 AND active = 1 AND archived_at IS NULL`,
+		apt.ID).Scan(&a.id, &a.ownerID, &a.token, &a.pin, &a.reachback)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
