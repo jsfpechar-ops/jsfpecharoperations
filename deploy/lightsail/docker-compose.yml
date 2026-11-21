@@ -97,6 +97,8 @@ services:
     build:
       context: ../..
       dockerfile: go/Dockerfile
+      args:
+        GIT_SHA: ${GIT_SHA:-dev}
     image: ubyhost-go:slot-a
     restart: unless-stopped
     stop_grace_period: 15s
