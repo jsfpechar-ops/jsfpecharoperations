@@ -38,12 +38,6 @@ ENV = {
     "UBYHOST_BILLING_IBAN": "CZ6503000000000123456789",
 }
 
-# Go never registers these GET handlers (production stays on Python). Evidence in register_web_*.go comments.
-NOT_REGISTERED_GO_GET = (
-    re.compile(r"^/payments/qr"),
-    re.compile(r"^/pay/"),
-)
-
 DOM_NORM_PATTERNS = (
     r"\d{4}-\d\d-\d\d(?:[T ][0-9:.+-Z]*)?",
     r"nonce-[A-Za-z0-9_-]+",
@@ -110,6 +104,32 @@ def seed_db():
 
 def sql_row(stmt, db):
     return subprocess.run([PSQL, f"{PG}/{db}", "-tAc", stmt], capture_output=True, text=True, check=True).stdout.strip()
+
+
+def go_persona_sessions(seed):
+    """Go cookies for Playwright (Go Load rejects some Python-issued tokens in edge timing)."""
+    import json as _json
+
+    out = {}
+    for key, uid in (("h1", seed["h1"]["id"]), ("admin", seed["admin"]["id"])):
+        row = subprocess.run(
+            [PSQL, PG + "/parity_run", "-tAc", f"SELECT session_version FROM user_account WHERE id={uid}"],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+        env = {**os.environ, **ENV, "UID": str(uid), "SV": row}
+        r = subprocess.run(
+            ["go", "run", "./scripts/e2e/go_issue_session/main.go"],
+            cwd=ROOT,
+            env=env,
+            capture_output=True,
+            text=True,
+        )
+        if r.returncode:
+            raise RuntimeError(r.stderr[-800:])
+        out[key] = _json.loads(r.stdout)["session"]
+    return out
 
 
 def concretize(path, refs):
@@ -208,26 +228,15 @@ class Row:
 
 
 def accepted_difference(route: str, persona: str, py_status: int, go_status: int, go_headers: dict, dp: str, dg: str) -> tuple[str, str] | None:
-    """Return (verdict, cause) when this row is an allowed harness difference."""
-    gl = {k.lower(): v for k, v in go_headers.items()}
-    if gl.get("x-ubyhost-not-ported") == "1" or go_status == 501:
-        return "accepted-not-ported", "Go 501/X-Ubyhost-Not-Ported (Caddy Python fallback in prod; brief 1630)"
-    for pat in NOT_REGISTERED_GO_GET:
-        if pat.search(route):
-            return "accepted-go-unregistered", "GET not on Go mux (register_web_payments_pages.go; stays on Python)"
+    """Only intentional, documented harness differences — not unported Go pages."""
     if route == "/admin/fakturace/export-vse" and py_status == 0:
         return "accepted-harness-k3", "Python ReadError flake (diff_harness KNOWN K3)"
     if py_status == go_status and py_status in (404, 410):
         return "accepted-status", f"both {py_status}"
-    if py_status == go_status and py_status in (403, 401):
-        return "pass", "status+auth match"
-    if route.startswith("/admin") and persona == "host" and py_status == go_status == 403:
-        return "pass", "host denied admin"
-    if route.startswith("/admin") and persona == "host" and py_status in (200, 403) and go_status == 403:
-        if persona == "host":
-            return "pass", "host denied admin (Go strict)"
     if py_status == go_status == 303:
         return "pass", "redirect"
+    if py_status == go_status and py_status in (403, 401):
+        return "pass", "status+auth match"
     return None
 
 
@@ -268,6 +277,16 @@ def capture(browser, base, path, cookie, slug, persona, side):
 
 
 def score_row(route, persona, ps, gs, ph, gh, gh_meta) -> Row:
+    if gs == 501 or str(gh_meta.get("x-ubyhost-not-ported", "")).strip() == "1":
+        return Row(
+            route,
+            persona,
+            ps,
+            gs,
+            "fail-status",
+            f"py={ps} go={gs} (Go not ported)",
+            "go-gap-501",
+        )
     acc = accepted_difference(route, persona, ps, gs, gh_meta, "", "")
     dp, dg = norm_dom(ph), norm_dom(gh)
     if acc:
@@ -303,7 +322,9 @@ def main():
     py_srv, py_base = start_py(py_port, db_url, public)
     go_proc, go_base = start_go(go_port, db_url, public)
     STORE_MEDIA.mkdir(parents=True, exist_ok=True)
-    persons = {"anon": None, "host": seed["h1"]["session"], "admin": seed["admin"]["session"]}
+    py_persons = {"anon": None, "host": seed["h1"]["session"], "admin": seed["admin"]["session"]}
+    go_sess = go_persona_sessions(seed)
+    go_persons = {"anon": None, "host": go_sess["h1"], "admin": go_sess["admin"]}
     paths = []
     for method, path in py_routes.routes():
         if method != "GET" or path in {"/openapi.json", "/docs", "/redoc"}:
@@ -320,9 +341,9 @@ def main():
         br = p.chromium.launch(headless=True)
         for path in paths:
             slug = re.sub(r"[^a-z0-9]+", "-", path.strip("/").lower())[:55] or "root"
-            for persona, cookie in persons.items():
-                ps, ph, pmeta, pc, pf = capture(br, py_base, path, cookie, slug, persona, "py")
-                gs, gh, gmeta, gc, gf = capture(br, go_base, path, cookie, slug, persona, "go")
+            for persona in py_persons:
+                ps, ph, pmeta, pc, pf = capture(br, py_base, path, py_persons[persona], slug, persona, "py")
+                gs, gh, gmeta, gc, gf = capture(br, go_base, path, go_persons[persona], slug, persona, "go")
                 row = score_row(path, persona, ps, gs, ph, gh, gmeta)
                 row.console_py, row.console_go = pc, gc
                 row.failed_py, row.failed_go = pf, gf
@@ -340,9 +361,9 @@ def main():
         causes[key] = causes.get(key, 0) + 1
     meta = {
         "paths": len(paths),
-        "personas": len(persons),
+        "personas": len(py_persons),
         "rows": len(rows),
-        "screenshots": len(paths) * len(persons) * 2 * len(WIDTHS),
+        "screenshots": len(paths) * len(py_persons) * 2 * len(WIDTHS),
         "pass": pn,
         "pass_soft": sn,
         "accepted": an,
