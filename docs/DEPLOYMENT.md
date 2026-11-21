@@ -176,21 +176,24 @@ Use this whenever you ship a change that affects hosts or guests.
    (`deploy/lightsail/README.md` "Staging server"). Record the tested commit
    and obtain explicit product-owner approval using the checklist above.
 3. **Merge the approved PR to `main`.** GitHub Actions runs **CI** on the merge
-   commit. When that run finishes green on `main`, **Deploy production** starts
-   automatically (Lightsail + optional Render staging hook). PR CI alone does not
-   deploy production.
-4. **Production (Lightsail).** Default: wait for the automatic deploy after green
-   **CI** on `main`. Override: **Actions → Deploy production → Run workflow**,
-   enter `DEPLOY` in `force_confirm` (same `main` head, same CI gate). After
-   deploy the workflow checks `https://ubyhost.com/healthz`. Deploys are
-   serialised by `concurrency: deploy-production`. SSH fallback:
+   commit. When that run finishes green on `main`, **Deploy staging** starts
+   automatically (`deploy-staging.yml`, GitHub environment `staging`, secrets
+   `LIGHTSAIL_HOST` / SSH keys — the staging Lightsail static IP, not production).
+   Click through on `https://staging.ubyhost.com` before touching production.
+4. **Production (Lightsail).** **Manual only:** **Actions → Deploy production → Run workflow**,
+   enter `DEPLOY` in `force_confirm` (deploys `main` at its current head, same CI gate).
+   Uses GitHub environment `production` and the production `LIGHTSAIL_*` secrets
+   (prod box `63.177.209.225`, `https://ubyhost.com`). After deploy the workflow
+   checks `https://ubyhost.com/healthz`. Deploys are serialised by
+   `concurrency: deploy-production`. SSH fallback:
    ```bash
    cd /opt/ubyhost && git pull origin main
    cd deploy/lightsail && ./scripts/deploy.sh
    ```
-   CI-triggered deploys after green `main` when SSH secrets are set. If a merge
-   lands without a green CI run on that commit, run **Actions → CI → Run workflow**
-   on branch `main`; when it passes, production deploy runs automatically.
+   Green CI on `main` alone does **not** deploy production (brief 1865). If a merge
+   lands without green CI on that commit, run **Actions → CI → Run workflow** on
+   `main`; when it passes, staging deploy runs automatically — then promote by
+   hand when staging is approved.
    `deploy.sh` refuses to replace a running release unless it can create and
    integrity-check a SQLite backup first. It then dry-runs the new schema
    migration against a copy of that backup and compares critical live table
