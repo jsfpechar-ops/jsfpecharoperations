@@ -33,7 +33,5 @@ func registerWeb(mux *http.ServeMux, m *metrics, pool *pgxpool.Pool) {
 	mux.Handle("GET /dashboard/calendar", m.wrap("/dashboard/calendar", calendar.Handler(pool, os.Getenv, time.Now)))
 	mux.Handle("POST /payments/requests/new", m.wrap("/payments/requests/new", payments.RequestNewHandler(pool, os.Getenv, time.Now)))
 	mux.Handle("POST /payments/requests/{id}/send", m.wrap("/payments/requests/{id}/send", payments.RequestSendHandler(pool, os.Getenv, time.Now, onboarder)))
-	mux.Handle("GET /payments/qr/{file}", m.wrap("/payments/qr/{file}", payments.QRPNGHandler(pool, os.Getenv, time.Now)))
 	mux.Handle("POST /payments/requests/{id}/link", m.wrap("/payments/requests/{id}/link", payments.RequestLinkHandler(pool, os.Getenv, time.Now, onboarder)))
-	mux.Handle("GET /pay/{id}/{file}", m.wrap("/pay/{id}/{file}", payments.GuestQRPNGHandler(pool, os.Getenv)))
 }

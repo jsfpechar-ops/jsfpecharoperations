@@ -3,10 +3,10 @@ package payments
 // Go port of three more Python payment routes from App/app/routes/payments.py:
 // payment_request_link (POST /payments/requests/{id}/link, 218-238) and
 // guest_qr_png (GET /pay/{id}/{token}.png, 614-622) with the guest token from
-// payment_request.guest_token. The HTML pages GET /payments/requests/{id}/share
-// and GET /pay/{id}/{token} stay on Python; Caddy decides which paths reach Go.
+// payment_request.guest_token. GET /pay/{id}/{token} HTML is in payments/pages.
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
@@ -51,6 +51,31 @@ func guestPayURL(getenv func(string) string, id int64, vs string) (string, error
 	return fmt.Sprintf("%s/pay/%d/%s", base, id, guestToken(secret, id, vs)), nil
 }
 
+// GuestQRRequest validates the guest token and loads a qr payment_request row.
+// ok is false for every refusal that should answer 404; err is for server errors.
+func GuestQRRequest(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string, id int64, token string) (owner, amount int64, vs *string, status string, ok bool, err error) {
+	var rail string
+	err = pool.QueryRow(ctx, guestQRSQL, id).Scan(&owner, &rail, &status, &amount, &vs)
+	if errors.Is(err, pgx.ErrNoRows) || (err == nil && (rail != "qr" || status == "cancelled")) {
+		return 0, 0, nil, "", false, nil
+	}
+	if err != nil {
+		return 0, 0, nil, "", false, err
+	}
+	secret, err := secure.LoadSecret(getenv)
+	if err != nil {
+		return 0, 0, nil, "", false, err
+	}
+	vsText := ""
+	if vs != nil {
+		vsText = *vs
+	}
+	if !hmac.Equal([]byte(guestToken(secret, id, vsText)), []byte(token)) {
+		return 0, 0, nil, "", false, nil
+	}
+	return owner, amount, vs, status, true, nil
+}
+
 // GuestQRPNGHandler serves GET /pay/{id}/{file} for <token>.png: no login, the
 // token is the proof. Anything else is a 404, as in Python.
 func GuestQRPNGHandler(pool *pgxpool.Pool, getenv func(string) string) http.HandlerFunc {
@@ -61,36 +86,17 @@ func GuestQRPNGHandler(pool *pgxpool.Pool, getenv func(string) string) http.Hand
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
-		var (
-			owner        int64
-			rail, status string
-			amount       int64
-			vs           *string
-		)
-		err = pool.QueryRow(r.Context(), guestQRSQL, id).Scan(&owner, &rail, &status, &amount, &vs)
-		if errors.Is(err, pgx.ErrNoRows) || (err == nil && (rail != "qr" || status == "cancelled")) {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
+		owner, amount, vs, _, rowOK, err := GuestQRRequest(r.Context(), pool, getenv, id, token)
 		if err != nil {
 			requestFail(w, err)
 			return
 		}
-		secret, err := secure.LoadSecret(getenv)
-		if err != nil {
-			requestFail(w, err)
-			return
-		}
-		vsText := ""
-		if vs != nil {
-			vsText = *vs
-		}
-		if !hmac.Equal([]byte(guestToken(secret, id, vsText)), []byte(token)) {
+		if !rowOK {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
-		payload, err := qrPayload(r.Context(), pool, owner, amount, vs)
-		if errors.Is(err, errQRAccount) {
+		payload, err := QRPayload(r.Context(), pool, owner, amount, vs)
+		if errors.Is(err, ErrQRAccount) {
 			qrNoAccount(w)
 			return
 		}

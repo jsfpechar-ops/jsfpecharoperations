@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="{{.Lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{.Title}}</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #f7f7f5; margin: 0; color: #1a1a1a; }
+  .ui-section { max-width: 480px; margin: 2rem auto; padding: 1.5rem; background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  h1 { font-size: 1.35rem; margin: 0 0 1rem; }
+  .ui-badge-done { display: inline-block; padding: .15rem .5rem; border-radius: 4px; background: #e8f5e9; color: #2e7d32; font-size: .85rem; }
+  .ui-mono { font-family: ui-monospace, monospace; }
+  .ui-sub { font-size: .85rem; color: #555; margin-top: 1rem; }
+  img { display: block; margin: 1rem auto; }
+</style>
+</head>
+<body>
+<div class="ui-section">
+  <h1>{{.Heading}}</h1>
+  {{if .Paid}}<p><span class="ui-badge-done">{{.PaidLabel}}</span></p>{{end}}
+  {{if .NoAccountText}}<p>{{.NoAccountText}}</p>{{else}}
+  <p>{{.AmountLabel}}: <strong>{{.Amount}} {{.CZK}}</strong></p>
+  <p>{{.VSLabel}}: <strong class="ui-mono">{{.VS}}</strong></p>
+  <img src="{{.PNGURL}}" alt="{{.Alt}}" width="260" height="260">
+  <p class="ui-sub">{{.Disclosure}}</p>
+  {{end}}
+</div>
+</body>
+</html>
