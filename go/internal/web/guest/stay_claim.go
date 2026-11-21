@@ -389,7 +389,7 @@ func scLoadApartment(ctx context.Context, pool *pgxpool.Pool, key string) (*scAp
 func loadReservation(ctx context.Context, pool *pgxpool.Pool, resID, aptID int64) (*scStay, error) {
 	var s scStay
 	err := pool.QueryRow(ctx, `SELECT id, apartment_id, status, COALESCE(source,''), COALESCE(date_to,''),
-		guest_count_override, guest_count_declared, guest_count_lead_reduced
+		expected_guests_override, declared_guests, lead_reduced_guests
 		FROM reservation WHERE id = $1 AND apartment_id = $2 AND archived_at IS NULL`,
 		resID, aptID).Scan(&s.id, &s.apartmentID, &s.status, &s.source, &s.dateTo, &s.override, &s.declared, &s.leadReduced)
 	if errors.Is(err, pgx.ErrNoRows) {
