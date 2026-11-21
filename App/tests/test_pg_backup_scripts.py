@@ -28,7 +28,8 @@ case "$*" in
     else
       echo ubyhost; echo worker; [ "${GO_PROFILE:-0}" = 1 ] && echo ubyhost-go
     fi ;;
-  *"ps -q --status running ubyhost-go"*) [ "${GO_ONLY:-0}" = 1 ] && echo goid ;;
+  *"ps -q --status running ubyhost-go"*) [ "${GO_ONLY:-0}" = 1 ] && [ "${GO_NOT_RUNNING:-0}" != 1 ] && echo goid ;;
+  *"ps -q --status running ubyhost"*) [ "${GO_ONLY:-0}" != 1 ] && echo ubyid ;;
   *"test -e"*) exit 1 ;;
     *"pg_dump"*) echo DUMP ;;
   *"pg_restore"*) cat >/dev/null ;;
@@ -512,6 +513,22 @@ def test_go_only_stack_uses_backup_snapshot_not_python_backup_data(tmp_path):
     assert "backup_data.sh" not in recorded
     assert "ubyhost-go" in recorded
     assert "pg_dump" in recorded
+
+
+def test_go_only_backup_refuses_without_ubyhost_go(tmp_path):
+    root, bindir, log = make_tree(tmp_path, PROD_ENV + PG_ENV)
+    add_curl_stub(bindir)
+    result = run_script(
+        "backup.sh",
+        root,
+        bindir,
+        log,
+        extra_env={"PG_RUNNING": "1", "GO_ONLY": "1", "GO_NOT_RUNNING": "1"},
+    )
+    assert result.returncode != 0
+    assert "ubyhost-go must be running" in result.stderr
+    recorded = calls(log)
+    assert "exec -T ubyhost sh" not in "\n".join(recorded)
 
 
 def test_backup_fails_in_production_when_postgres_not_running_before_any_snapshot(tmp_path):

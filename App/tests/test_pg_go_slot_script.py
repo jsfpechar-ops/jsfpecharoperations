@@ -39,6 +39,14 @@ def test_deploy_requires_go_scheduler_and_go_health():
     assert 'http://127.0.0.1:8081/healthz' in text
 
 
+def test_deploy_production_go_stack_requires_ubyhost_go_before_mandatory_backup():
+    text = DEPLOY.read_text(encoding="utf-8")
+    assert (
+        "Refusing deploy: ubyhost-go must be running for mandatory pre-deploy backup"
+        in text
+    )
+
+
 def test_deploy_seeds_slot_tags_before_schema_apply_and_up():
     text = DEPLOY.read_text(encoding="utf-8")
     assert "go_ensure_slot_images" in text
