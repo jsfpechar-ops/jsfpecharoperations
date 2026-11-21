@@ -234,7 +234,7 @@ func (p payer) settle(ctx context.Context, owner int64) (bool, error) {
 	day := isoDay(p.today)
 	var one int
 	err = p.pool.QueryRow(ctx, `SELECT 1 FROM platform_invoice WHERE owner_user_id = $1 AND kind IN ('invoice', 'supplementary')
-		AND voided = 0 AND paid_on IS NULL AND due_date < $2 LIMIT 1`, owner, day).Scan(&one)
+		AND voided = 0 AND paid_on IS NULL AND total_haler > 0 AND due_date < $2 LIMIT 1`, owner, day).Scan(&one)
 	if err == nil {
 		return false, nil // still something overdue
 	}

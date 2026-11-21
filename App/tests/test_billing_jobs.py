@@ -152,6 +152,36 @@ def test_dunning_reminds_then_pauses_and_payment_reopens(owner):
     assert billing.account(owner)["status"] == "active"
 
 
+def test_zero_amount_invoice_is_never_dunned_and_a_stuck_overdue_settles(owner):
+    """1867: a 100% discount makes 0 Kč invoices; they are not collectible, never duned,
+    and an account stuck 'overdue' only because of them settles on the next run."""
+    db.execute(
+        "UPDATE billing_account SET discount_percent = 100, discount_reason = 'free pilot' "
+        "WHERE owner_user_id = ?",
+        (owner,),
+    )
+    _period(owner, TODAY - timedelta(days=20), TODAY + timedelta(days=9))
+    invoice_id = billing_invoices.issue_for_period(
+        owner, (TODAY - timedelta(days=20)).isoformat(), (TODAY + timedelta(days=9)).isoformat(),
+        today=TODAY - timedelta(days=20))
+    inv = [i for i in _invoices(owner) if i["id"] == invoice_id][0]
+    assert inv["total_haler"] == 0 and inv["paid_on"] is None
+    db.execute("UPDATE platform_invoice SET due_date = ? WHERE id = ?",
+               ((TODAY - timedelta(days=20)).isoformat(), invoice_id))
+    counts = billing_jobs.dunning(TODAY, owner)
+    assert counts == {"overdue": 0, "reminded": 0, "paused": 0, "settled": 0}
+    assert billing.account(owner)["status"] == "active"
+    assert _kinds(owner).count("billing_overdue") == 0
+    # Legacy state: 'overdue' with only the zero invoice -> the next run settles it.
+    db.execute("UPDATE billing_account SET status = 'overdue' WHERE owner_user_id = ?", (owner,))
+    counts = billing_jobs.dunning(TODAY, owner)
+    assert counts["settled"] == 1
+    assert billing.account(owner)["status"] == "active"
+    # settle() ignores zero invoices too: a zero-only overdue account clears.
+    db.execute("UPDATE billing_account SET status = 'overdue' WHERE owner_user_id = ?", (owner,))
+    assert billing_jobs.settle(owner, today=TODAY) is True
+
+
 def test_payment_mail_reaches_both_addresses(owner):
     """0437: buyer e-mail differs from the account e-mail, both get one mail."""
     db.execute("UPDATE user_account SET email = ? WHERE id = ?",
