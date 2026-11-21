@@ -8,8 +8,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func TestPartyGoldenHTTP(t *testing.T) {
@@ -105,18 +103,4 @@ func TestApplyDeclaredUnit(t *testing.T) {
 	if code != codeSaved {
 		t.Fatalf("code %q", code)
 	}
-}
-
-func testPoolOptional(t *testing.T) *pgxpool.Pool {
-	t.Helper()
-	url := os.Getenv("UBYHOST_TEST_DATABASE_URL")
-	if url == "" {
-		t.Skip("UBYHOST_TEST_DATABASE_URL unset")
-		return nil
-	}
-	pool, err := pgxpool.New(context.Background(), url)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return pool
 }

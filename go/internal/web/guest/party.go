@@ -69,7 +69,7 @@ func headcountLeadLive(getenv func(string) string) bool {
 	return v == "1" || v == "true" || v == "yes" || v == "on"
 }
 
-func mailEnabled(getenv func(string) string) bool {
+func partyMailEnabled(getenv func(string) string) bool {
 	v := strings.TrimSpace(strings.ToLower(getenv("UBYHOST_MAIL_ENABLED")))
 	if v == "0" || v == "false" || v == "no" || v == "off" {
 		return false
@@ -399,7 +399,7 @@ func partySizeHandler(d partyDeps) http.HandlerFunc {
 		if err != nil {
 			count = 0
 		}
-		if !mailEnabled(d.getenv) {
+		if !partyMailEnabled(d.getenv) {
 			if count < 1 || count > maxGuests {
 				redirectGuest(w, r, guestLink(token, resID)+langQuery(lang, "?party_error=1"))
 				return
@@ -432,7 +432,7 @@ func leadCountHandler(d partyDeps) http.HandlerFunc {
 			return
 		}
 		lang := r.URL.Query().Get("lang")
-		if !mailEnabled(d.getenv) {
+		if !partyMailEnabled(d.getenv) {
 			http.NotFound(w, r)
 			return
 		}
