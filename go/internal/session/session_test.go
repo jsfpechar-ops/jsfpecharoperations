@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/envguard"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
 )
 
@@ -43,6 +44,22 @@ func loadGolden(t *testing.T) golden {
 		t.Fatal("no golden cases")
 	}
 	return g
+}
+
+func TestStagingNoLoginUsesEnvguard(t *testing.T) {
+	getenv := func(k string) string {
+		switch k {
+		case "UBYHOST_DEPLOYMENT":
+			return "production"
+		case "UBYHOST_STAGING_NO_LOGIN":
+			return "1"
+		default:
+			return ""
+		}
+	}
+	if envguard.StagingNoLoginActive(getenv) {
+		t.Fatal("must not apply on production")
+	}
 }
 
 func firstDiff(a, b string) int {

@@ -19,6 +19,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/appconfig"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/envguard"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/jobs"
 )
@@ -159,6 +160,10 @@ func run() int {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	if err := envguard.ValidateStagingNoLogin(os.Getenv); err != nil {
+		slog.Error(err.Error())
+		return 1
+	}
 	if err := checkSchema(ctx, dbURL, migrations, redact); err != nil {
 		return 1
 	}

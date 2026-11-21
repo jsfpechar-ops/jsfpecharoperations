@@ -16,6 +16,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/envguard"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
 )
 
@@ -182,16 +183,28 @@ func Load(ctx context.Context, db *pgxpool.Pool, token string, now time.Time, ge
 	}
 	payload, ok := Verify(secret, token, now)
 	if !ok {
+		if envguard.StagingNoLoginActive(getenv) {
+			return loadStagingNoLoginAdmin(ctx, db, now)
+		}
 		return nil, nil
 	}
 	uid, ok := intOf(payload["uid"])
 	if !ok || uid == 0 {
+		if envguard.StagingNoLoginActive(getenv) {
+			return loadStagingNoLoginAdmin(ctx, db, now)
+		}
 		return nil, nil
 	}
 	account, found, err := queryAccount(ctx, db,
 		`SELECT id, username, role, session_version FROM user_account WHERE id = $1 AND active = 1`, uid)
-	if err != nil || !found {
+	if err != nil {
 		return nil, err
+	}
+	if !found {
+		if envguard.StagingNoLoginActive(getenv) {
+			return loadStagingNoLoginAdmin(ctx, db, now)
+		}
+		return nil, nil
 	}
 	// Missing "sv" counts as 0, as payload.get("sv", 0) does (auth.py line 326).
 	var sv int64
@@ -203,6 +216,9 @@ func Load(ctx context.Context, db *pgxpool.Pool, token string, now time.Time, ge
 		sv = v
 	}
 	if account.SessionVersion != sv {
+		if envguard.StagingNoLoginActive(getenv) {
+			return loadStagingNoLoginAdmin(ctx, db, now)
+		}
 		return nil, nil
 	}
 	h := &Host{Account: account, Workspace: account, Payload: payload}
@@ -324,4 +340,25 @@ func queryAccount(ctx context.Context, db *pgxpool.Pool, query string, id int64)
 		return Account{}, false, err
 	}
 	return a, true, nil
+}
+
+// loadStagingNoLoginAdmin is _staging_no_login_account: the first active admin
+// for every visitor when staging has no login.
+func loadStagingNoLoginAdmin(ctx context.Context, db *pgxpool.Pool, now time.Time) (*Host, error) {
+	var a Account
+	err := db.QueryRow(ctx,
+		`SELECT id, username, role, session_version FROM user_account
+		 WHERE role = 'admin' AND active = 1 ORDER BY id LIMIT 1`).
+		Scan(&a.ID, &a.Username, &a.Role, &a.SessionVersion)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &Host{
+		Account:   a,
+		Workspace: a,
+		Payload:   map[string]any{"iat": now.Unix()},
+	}, nil
 }
