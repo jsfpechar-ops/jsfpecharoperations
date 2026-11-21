@@ -1,0 +1,59 @@
+{
+ "host": [],
+ "report_only_public": [
+  {
+   "route": "public-login",
+   "width": 390,
+   "finding": [
+    "tight-side",
+    "button \"CS\"",
+    "only 3px beside \"EN\""
+   ]
+  },
+  {
+   "route": "public-login",
+   "width": 390,
+   "finding": [
+    "tight-side",
+    "button \"VI\"",
+    "only 3px beside \"CS\""
+   ]
+  },
+  {
+   "route": "public-login",
+   "width": 390,
+   "finding": [
+    "tight-row",
+    "button.is-active \"EN\"",
+    "less than 12 px from button \"CS\""
+   ]
+  },
+  {
+   "route": "public-login",
+   "width": 390,
+   "finding": [
+    "tight-row",
+    "button \"CS\"",
+    "less than 12 px from button \"VI\""
+   ]
+  },
+  {
+   "route": "public-login",
+   "width": 1280,
+   "finding": [
+    "tight-row",
+    "button.is-active \"EN\"",
+    "less than 12 px from button \"CS\""
+   ]
+  },
+  {
+   "route": "public-login",
+   "width": 1280,
+   "finding": [
+    "tight-row",
+    "button \"CS\"",
+    "less than 12 px from button \"VI\""
+   ]
+  }
+ ]
+}
