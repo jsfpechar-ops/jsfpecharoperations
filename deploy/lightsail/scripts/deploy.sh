@@ -63,8 +63,19 @@ go_stack() {
   docker compose --profile go config --services 2>/dev/null | grep -qx ubyhost-go
 }
 
+# The two-copy deploy starts the *idle* slot and then stops the old one, so the
+# running Go container is not always `ubyhost-go` (slot a): after a deploy it is
+# `ubyhost-go-b`. Exec into whichever slot is actually up — otherwise every
+# `go_exec` probe (the health wait, the scheduler check, the internal health
+# print) talks to a stopped container and fails a deploy that is fine.
 go_exec() {
-  docker compose --profile go exec -T ubyhost-go "$@"
+  local svc=ubyhost-go
+  if ! docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .; then
+    if docker compose --profile go ps -q --status running ubyhost-go-b 2>/dev/null | grep -q .; then
+      svc=ubyhost-go-b
+    fi
+  fi
+  docker compose --profile go exec -T "${svc}" "$@"
 }
 
 running_python_app() {
