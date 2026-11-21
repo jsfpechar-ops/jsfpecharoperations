@@ -3,8 +3,7 @@ package payments
 // Go port of App/app/routes/payments.py payment_request_qr_png (222-236) with
 // payment_request.get and qr_payload (App/app/payment_request.py), and the
 // SPAYD helpers from App/app/payments.py: normalise_account, ascii_upper,
-// spayd and qr_png_bytes. The Python HTML page /payments/qr/{request_id} stays
-// on Python; Caddy decides which paths reach Go.
+// spayd and qr_png_bytes. The host HTML page is in payments/pages.
 
 import (
 	"context"
@@ -41,9 +40,9 @@ const (
 	qrEntitySQL  = `SELECT iban, bank_account FROM legal_entity WHERE owner_user_id = $1`
 )
 
-// errQRAccount marks input that payment_request.qr_payload turns into a
+// ErrQRAccount marks input that payment_request.qr_payload turns into a
 // ValueError (the route answers 404 for it).
-var errQRAccount = errors.New("qr account")
+var ErrQRAccount = errors.New("qr account")
 
 func qrMod11OK(digits string) bool {
 	padded := strings.Repeat("0", max(0, 10-len(digits))) + digits
@@ -82,17 +81,17 @@ func qrNormaliseAccount(raw string) (string, string, error) {
 	text = strings.ToUpper(text)
 	if qrIBANRE.MatchString(text) {
 		if !qrIBANOK(text) {
-			return "", "", errQRAccount
+			return "", "", ErrQRAccount
 		}
 		return text, text, nil
 	}
 	m := qrAccountRE.FindStringSubmatch(text)
 	if m == nil {
-		return "", "", errQRAccount
+		return "", "", ErrQRAccount
 	}
 	prefix, number, bank := m[1], m[2], m[3]
 	if (prefix != "" && !qrMod11OK(prefix)) || !qrMod11OK(number) {
-		return "", "", errQRAccount
+		return "", "", ErrQRAccount
 	}
 	padPrefix := strings.Repeat("0", max(0, 6-len(prefix))) + prefix
 	padNumber := strings.Repeat("0", max(0, 10-len(number))) + number
@@ -172,13 +171,13 @@ func qrSPAYD(iban string, amountCZK int64, vs string, message string) string {
 	return strings.Join(parts, "*")
 }
 
-// qrPayload is payment_request.qr_payload for a qr-rail request: the SPAYD
-// string, or errQRAccount when the host has no usable bank account.
-func qrPayload(ctx context.Context, pool *pgxpool.Pool, owner int64, amount int64, vs *string) (string, error) {
+// QRPayload is payment_request.qr_payload for a qr-rail request: the SPAYD
+// string, or ErrQRAccount when the host has no usable bank account.
+func QRPayload(ctx context.Context, pool *pgxpool.Pool, owner int64, amount int64, vs *string) (string, error) {
 	var iban, bank *string
 	err := pool.QueryRow(ctx, qrEntitySQL, owner).Scan(&iban, &bank)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return "", errQRAccount
+		return "", ErrQRAccount
 	}
 	if err != nil {
 		return "", err
@@ -192,7 +191,7 @@ func qrPayload(ctx context.Context, pool *pgxpool.Pool, owner int64, amount int6
 		bankVal = *bank
 	}
 	if ibanVal == "" && bankVal == "" {
-		return "", errQRAccount
+		return "", ErrQRAccount
 	}
 	account := ibanVal
 	if account == "" {
@@ -300,8 +299,8 @@ func QRPNGHandler(pool *pgxpool.Pool, getenv func(string) string, now func() tim
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
-		payload, err := qrPayload(ctx, pool, rowOwner, amount, vs)
-		if errors.Is(err, errQRAccount) {
+		payload, err := QRPayload(ctx, pool, rowOwner, amount, vs)
+		if errors.Is(err, ErrQRAccount) {
 			qrNoAccount(w)
 			return
 		}

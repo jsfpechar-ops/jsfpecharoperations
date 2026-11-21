@@ -1,11 +1,9 @@
 // Package pages is the Go port of the host payments pages in
 // App/app/routes/payments.py (brief 1353): GET /payments, GET /payments/new,
 // POST /payments/services, POST /payments/services/{id}/delete,
-// GET /payments/requests/{id}/share and GET and POST /payments/consent. The
-// QR preview page and the guest /pay/{id}/{token} page extend base.html
-// without the host page frame, which the Go layout (1380) does not offer yet;
-// they stay on Python. Nothing here is live until the owner adds the paths to
-// UBYHOST_GO_PATHS.
+// GET /payments/requests/{id}/share, GET and POST /payments/consent, plus the
+// standalone QR HTML pages GET /payments/qr/{id} and GET /pay/{id}/{token}.
+// Nothing here is live until the owner adds the paths to UBYHOST_GO_PATHS.
 package pages
 
 import (

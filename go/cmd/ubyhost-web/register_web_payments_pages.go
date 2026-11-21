@@ -1,9 +1,9 @@
 package main
 
 // Brief 1353: the host payments pages. Off until the owner adds the paths to
-// UBYHOST_GO_PATHS. The QR preview page /payments/qr/{id} and the guest page
-// /pay/{id}/{token} stay on Python: their patterns are the PNG routes in
-// register_web.go, and they need the base.html frame the Go layout lacks.
+// UBYHOST_GO_PATHS. GET /payments/qr/{id} and GET /pay/{id}/{token} share the
+// ServeMux patterns with the PNG handlers; dispatchers route *.png to payments
+// and everything else to the standalone HTML pages in pages.
 
 import (
 	"net/http"
@@ -27,4 +27,12 @@ func registerPaymentsPages(mux *http.ServeMux, m *metrics, pool *pgxpool.Pool) {
 	mux.Handle("GET /payments/requests/{id}/share", m.wrap("/payments/requests/{id}/share", pages.ShareHandler(pool, os.Getenv, time.Now, links)))
 	mux.Handle("GET /payments/consent", m.wrap("/payments/consent", pages.ConsentHandler(pool, os.Getenv, time.Now)))
 	mux.Handle("POST /payments/consent", m.wrap("/payments/consent", pages.ConsentAcceptHandler(pool, os.Getenv, time.Now)))
+
+	hostQRPNG := payments.QRPNGHandler(pool, os.Getenv, time.Now)
+	hostQRPage := pages.HostQRPageHandler(pool, os.Getenv, time.Now)
+	mux.Handle("GET /payments/qr/{file}", m.wrap("/payments/qr/{file}", pages.HostQRDispatch(hostQRPNG, hostQRPage)))
+
+	guestQRPNG := payments.GuestQRPNGHandler(pool, os.Getenv)
+	guestQRPage := pages.GuestQRPageHandler(pool, os.Getenv)
+	mux.Handle("GET /pay/{id}/{file}", m.wrap("/pay/{id}/{file}", pages.GuestPayDispatch(guestQRPNG, guestQRPage)))
 }
