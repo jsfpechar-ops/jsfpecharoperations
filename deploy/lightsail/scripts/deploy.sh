@@ -39,6 +39,12 @@ fi
 # Go fails closed and the deploy stops; deploy once with python, then go again.
 # Checked here, before anything touches the stack.
 SCHEMA_APPLY="${UBYHOST_SCHEMA_APPLY:-go}"
+# go-only compose cannot apply schema with Python.
+if [ "${SCHEMA_APPLY}" = "python" ] && ! docker compose config --services 2>/dev/null | grep -qx ubyhost; then
+  echo "ERROR: UBYHOST_SCHEMA_APPLY=python with no ubyhost service in compose (Go-only stack)." >&2
+  exit 1
+fi
+
 case "${SCHEMA_APPLY}" in
   python) ;;
   go)
@@ -226,8 +232,7 @@ declare -A BEFORE_COUNTS
 if (go_stack && docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .) || running_python_app; then
   echo "==> Mandatory pre-deploy backup"
   ./scripts/backup.sh
-  BACKUP_STAMP="$(docker compose exec -T ubyhost sh -c \
-    'ls -1 /data/backups 2>/dev/null | sort -r | sed -n "1p"')"
+  BACKUP_STAMP="$(app_data_exec 'ls -1 /data/backups 2>/dev/null | sort -r | sed -n "1p"')"
   if [ -z "${BACKUP_STAMP}" ]; then
     echo "No backup stamp found after backup — refusing deployment." >&2
     exit 1
@@ -261,8 +266,12 @@ if (go_stack && docker compose --profile go ps -q --status running ubyhost-go 2>
     fi
   fi
   for table in "${TABLES[@]}"; do
-    BEFORE_COUNTS["${table}"]="$(docker compose exec -T ubyhost python -c \
-      "from app import db; print(db.query_one('SELECT COUNT(*) AS n FROM ${table}')['n'])")"
+    if [ "${PG_MODE}" = "1" ]; then
+      BEFORE_COUNTS["${table}"]="$(pg_count "${table}")"
+    else
+      BEFORE_COUNTS["${table}"]="$(docker compose exec -T ubyhost python -c \
+        "from app import db; print(db.query_one('SELECT COUNT(*) AS n FROM ${table}')['n'])")"
+    fi
   done
   echo "Backup ${BACKUP_STAMP} is valid; live row counts recorded."
 fi
@@ -464,7 +473,9 @@ for _ in $(seq 1 30); do
   if go_stack && go_exec wget -qO- --timeout=3 http://127.0.0.1:8081/healthz >/dev/null 2>&1; then
     HEALTHY=1
     break
-  elif running_python_app && docker compose exec -T ubyhost python -c     "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=3)"     >/dev/null 2>&1; then
+  elif running_python_app && docker compose exec -T ubyhost python -c \
+    "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=3)" \
+    >/dev/null 2>&1; then
     HEALTHY=1
     break
   fi
