@@ -135,7 +135,14 @@ def test_can_publish_without_stripe(owner):
     assert booking_setup.can_publish(rows) is False
 
 
-def test_pay_route(owner, client):
+def test_pay_route(owner, client, monkeypatch):
+    from app import billing
+
+    monkeypatch.setattr(
+        billing,
+        "entitlements",
+        lambda oid: billing.Entitlements(status="active", plan="max"),
+    )
     aid = _apartment(owner)
     path = f"/apartments/{aid}/booking-site/pay"
     before = db.query_one("SELECT stay_fee_guest_rails FROM apartment WHERE id = ?", (aid,))
