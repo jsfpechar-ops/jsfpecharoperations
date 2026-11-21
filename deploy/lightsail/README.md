@@ -163,6 +163,9 @@ Litestream is gone. The app runs on PostgreSQL, so recovery is the age-encrypted
 
 ## Staging server (Step 0)
 
+Full setup prompt for an SSH executor agent (small bundle, monthly local backups
+only): [STAGING-SETUP-PROMPT.md](STAGING-SETUP-PROMPT.md).
+
 A second Lightsail instance runs this same stack with
 `UBYHOST_DEPLOYMENT=staging`, and either the mock UbyPort (default) or the real
 UbyPort test environment. It never holds real guest data. Every HIGH RISK change is deployed here and clicked through before it is
