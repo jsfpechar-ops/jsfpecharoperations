@@ -196,10 +196,10 @@ def start_py(port, db_url, public):
 
     os.chdir(APP)
     sys.path.insert(0, str(APP))
+    os.environ.update({**ENV, "UBYHOST_DATABASE_URL": db_url, "UBYHOST_PUBLIC_BASE_URL": public})
     from app import db
     from app.main import app
 
-    os.environ.update({**ENV, "UBYHOST_DATABASE_URL": db_url, "UBYHOST_PUBLIC_BASE_URL": public})
     db.init_db()
     srv = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, log_level="error"))
     threading.Thread(target=srv.run, daemon=True).start()
