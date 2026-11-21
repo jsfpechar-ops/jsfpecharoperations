@@ -1,10 +1,11 @@
 # Build context is the repository root (see deploy/lightsail/docker-compose.yml).
 FROM golang:1.26-alpine@sha256:30b1e546a9c7fa3b747c2bdba3a0c7bdf3a02ebb4c5b8405d2f948d7e8aac4ec AS builder
+ARG GIT_SHA=dev
 WORKDIR /src
 COPY go/go.mod go/go.sum ./
 RUN go mod download
 COPY go/ ./
-RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/ubyhost-web ./cmd/ubyhost-web
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X main.version=${GIT_SHA}" -o /out/ubyhost-web ./cmd/ubyhost-web
 
 FROM alpine:3.24@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a
 RUN adduser -D -u 10001 ubyhost

@@ -131,7 +131,7 @@ jobs:
           git -C "${SRC}" checkout -q FETCH_HEAD
           printf '%s' "${GH_DEPLOY_TOKEN}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
           docker build --pull -t "${IMAGE}" "${SRC}"
-          docker build --pull -f "${SRC}/go/Dockerfile" -t "${GO_IMAGE}" "${SRC}"
+          docker build --pull --build-arg "GIT_SHA=${DEPLOY_SHA}" -f "${SRC}/go/Dockerfile" -t "${GO_IMAGE}" "${SRC}"
           docker push "${IMAGE}"
           docker push "${GO_IMAGE}"
           # Moving tags (production or staging) for humans; deploys always use the commit tag.

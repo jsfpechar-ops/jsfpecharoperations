@@ -23,7 +23,7 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/jobs"
 )
 
-const version = "go-dev"
+var version = "dev"
 
 type key struct {
 	route string
