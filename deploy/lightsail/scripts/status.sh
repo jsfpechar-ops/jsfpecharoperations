@@ -5,8 +5,19 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "${ROOT}"
 
-# shellcheck disable=SC1091
-source ./scripts/lib-docker.sh
+# 1999: lib-docker.sh tells these scripts whether the checkout still has the
+# Python app (before 1782) or only the Go service. Sourced when present; without
+# it (a trimmed fixture tree) the old Python layout is assumed, exactly as
+# before, so nothing here is a new hard dependency.
+if [ -f ./scripts/lib-docker.sh ]; then
+  # shellcheck disable=SC1091
+  source ./scripts/lib-docker.sh
+else
+  app_is_python() { return 0; }
+  app_service() { printf 'ubyhost\n'; }
+  app_running_service() { printf 'ubyhost\n'; }
+  app_run() { docker compose run --rm --no-deps -T ubyhost "$@"; }
+fi
 
 docker compose ps
 

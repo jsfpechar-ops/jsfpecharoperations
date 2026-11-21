@@ -7,8 +7,12 @@
 # exec into `ubyhost` asks these helpers instead, so a checkout that still has
 # the Python services keeps working unchanged. All callers cd to
 # deploy/lightsail first, so `docker compose config` reads that .env.
+# Read from the compose file itself, not `docker compose config`: that works in
+# the trimmed fixture trees the shell tests build (no docker, no daemon) and
+# costs nothing. With no compose file present, assume the old Python layout.
 app_is_python() {
-  docker compose config --services 2>/dev/null | grep -qx 'ubyhost'
+  [ -f docker-compose.yml ] || return 0
+  grep -qE '^  ubyhost:[[:space:]]*$' docker-compose.yml
 }
 
 # The app service name as written in the compose file (may not be running).

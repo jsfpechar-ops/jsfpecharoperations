@@ -16,8 +16,19 @@ set -a
 source .env
 set +a
 
-# shellcheck disable=SC1091
-source ./scripts/lib-docker.sh
+# 1999: lib-docker.sh tells these scripts whether the checkout still has the
+# Python app (before 1782) or only the Go service. Sourced when present; without
+# it (a trimmed fixture tree) the old Python layout is assumed, exactly as
+# before, so nothing here is a new hard dependency.
+if [ -f ./scripts/lib-docker.sh ]; then
+  # shellcheck disable=SC1091
+  source ./scripts/lib-docker.sh
+else
+  app_is_python() { return 0; }
+  app_service() { printf 'ubyhost\n'; }
+  app_running_service() { printf 'ubyhost\n'; }
+  app_run() { docker compose run --rm --no-deps -T ubyhost "$@"; }
+fi
 
 # 1999: 1782 deleted the Python services (`ubyhost`, `worker`) from this compose
 # file, so a Go-only stack has neither. Every Python-only step below (the SQL
