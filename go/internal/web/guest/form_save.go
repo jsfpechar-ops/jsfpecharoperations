@@ -31,7 +31,7 @@ const (
 // RegisterFormSave wires POST /l/{token}/{reservation_id}/save (dormant until UBYHOST_GO_PATHS).
 func RegisterFormSave(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler) {
 	d := saveDeps{pool: pool, getenv: getenv, now: now}
-	mux.Handle("POST /l/{token}/{reservation_id}/save", wrap("POST /l/{token}/{reservation_id}/save", guestFormSaveHandler(d)))
+	mux.Handle("POST /l/{token}/{reservation_id}/save", wrap("POST /l/{token}/{reservation_id}/save", WithPOSTCSRF(getenv, now, guestFormSaveHandler(d))))
 }
 
 type saveDeps struct {

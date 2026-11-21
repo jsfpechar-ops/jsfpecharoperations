@@ -117,7 +117,7 @@ func (s *server) apartmentAutomationTiming(w http.ResponseWriter, r *http.Reques
 		q.back(w, r, propertySummaries, hostweb.Flash{}, msg)
 	}
 	if a == nil {
-		refuse("flash.error.no_such_apartment", http.StatusNotFound)
+		q.back(w, r, propertySummaries, hostweb.Flash{}, q.flash("flash.error.no_such_apartment", nil))
 		return
 	}
 	mode := formStr(r, "automation_mode")

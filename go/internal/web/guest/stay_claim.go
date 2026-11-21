@@ -76,7 +76,7 @@ type scClaim struct {
 // RegisterStayClaim wires brief 1721 routes (dormant until UBYHOST_GO_PATHS).
 func RegisterStayClaim(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler) {
 	d := stayClaimDeps{pool: pool, getenv: getenv, now: now}
-	mux.Handle("POST /l/{token}/{reservation_id}/claim/confirm", wrap("POST /l/{token}/{reservation_id}/claim/confirm", d.claimConfirm))
+	mux.Handle("POST /l/{token}/{reservation_id}/claim/confirm", wrap("POST /l/{token}/{reservation_id}/claim/confirm", WithPOSTCSRF(getenv, now, d.claimConfirm)))
 	mux.Handle("GET /l/{token}/{rest...}", wrap("GET /l/{token}/{rest...}", d.dispatchGET))
 }
 

@@ -105,7 +105,8 @@
   "submission.outcome_unknown": "Výsledek neznámý",
   "submission.partial": "Částečně přijato",
   "submission.rejected": "Odmítnuto",
-  "submission.setup_incomplete": "Nedokončené nastavení"
+  "submission.setup_incomplete": "Nedokončené nastavení",
+  "flash.error.no_such_submission": "Toto podání už neexistuje."
  },
  "en": {
   "common.actions": "Actions",
@@ -213,7 +214,8 @@
   "submission.outcome_unknown": "Outcome unknown",
   "submission.partial": "Partly accepted",
   "submission.rejected": "Rejected",
-  "submission.setup_incomplete": "Setup incomplete"
+  "submission.setup_incomplete": "Setup incomplete",
+  "flash.error.no_such_submission": "That submission no longer exists."
  },
  "vi": {
   "common.actions": "Thao tác",
@@ -321,6 +323,7 @@
   "submission.outcome_unknown": "Không rõ kết quả",
   "submission.partial": "Chấp nhận một phần",
   "submission.rejected": "Bị từ chối",
-  "submission.setup_incomplete": "Thiết lập chưa đầy đủ"
+  "submission.setup_incomplete": "Thiết lập chưa đầy đủ",
+  "flash.error.no_such_submission": "Lần gửi này không còn tồn tại."
  }
 }

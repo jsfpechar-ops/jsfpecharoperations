@@ -48,9 +48,9 @@ type partyDeps struct {
 // RegisterParty wires the three guest POST routes (dormant until UBYHOST_GO_PATHS).
 func RegisterParty(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler) {
 	d := partyDeps{pool: pool, getenv: getenv, now: now}
-	mux.Handle("POST /l/{token}/{reservation_id}/party", wrap("POST /l/{token}/{reservation_id}/party", partySizeHandler(d)))
-	mux.Handle("POST /l/{token}/{reservation_id}/count", wrap("POST /l/{token}/{reservation_id}/count", leadCountHandler(d)))
-	mux.Handle("POST /l/{token}/{reservation_id}/another", wrap("POST /l/{token}/{reservation_id}/another", addAnotherHandler(d)))
+	mux.Handle("POST /l/{token}/{reservation_id}/party", wrap("POST /l/{token}/{reservation_id}/party", WithPOSTCSRF(getenv, now, partySizeHandler(d))))
+	mux.Handle("POST /l/{token}/{reservation_id}/count", wrap("POST /l/{token}/{reservation_id}/count", WithPOSTCSRF(getenv, now, leadCountHandler(d))))
+	mux.Handle("POST /l/{token}/{reservation_id}/another", wrap("POST /l/{token}/{reservation_id}/another", WithPOSTCSRF(getenv, now, addAnotherHandler(d))))
 }
 
 func parsePartyPath(w http.ResponseWriter, r *http.Request) (token string, resID int64, ok bool) {
@@ -96,7 +96,7 @@ type partyStay struct {
 func (d partyDeps) loadPartyStay(ctx context.Context, token string, resID int64) (*partyStay, bool, error) {
 	var s partyStay
 	err := d.pool.QueryRow(ctx, `SELECT r.id, r.apartment_id, a.owner_user_id,
-		COALESCE(r.status,''), COALESCE(r.archived_at,''),
+		COALESCE(r.status,''), COALESCE(r.archived_at::text,''),
 		r.expected_guests_override, r.declared_guests, r.lead_reduced_guests,
 		COALESCE(r.date_from::text,''), COALESCE(a.checkin_hour::text,''),
 		COALESCE(r.lead_reduced_changes,0), r.lead_reduced_from
@@ -137,7 +137,7 @@ func (d partyDeps) applyDeclared(ctx context.Context, resID int64, count int) (s
 	defer tx.Rollback(ctx)
 	var s partyStay
 	err = tx.QueryRow(ctx, `SELECT r.id, r.apartment_id, a.owner_user_id,
-		COALESCE(r.status,''), COALESCE(r.archived_at,''),
+		COALESCE(r.status,''), COALESCE(r.archived_at::text,''),
 		r.expected_guests_override, r.declared_guests, r.lead_reduced_guests,
 		COALESCE(r.date_from::text,''), COALESCE(a.checkin_hour::text,''),
 		COALESCE(r.lead_reduced_changes,0), r.lead_reduced_from
@@ -255,7 +255,7 @@ func (d partyDeps) changeByLead(ctx context.Context, resID int64, count, shown i
 	defer tx.Rollback(ctx)
 	var s partyStay
 	err = tx.QueryRow(ctx, `SELECT r.id, r.apartment_id, a.owner_user_id,
-		COALESCE(r.status,''), COALESCE(r.archived_at,''),
+		COALESCE(r.status,''), COALESCE(r.archived_at::text,''),
 		r.expected_guests_override, r.declared_guests, r.lead_reduced_guests,
 		COALESCE(r.date_from::text,''), COALESCE(a.checkin_hour::text,''),
 		COALESCE(r.lead_reduced_changes,0), r.lead_reduced_from

@@ -172,7 +172,11 @@ func RegisterLeonQuestions(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(s
 	}
 	for _, rt := range routes {
 		pattern := rt.method + " " + rt.path
-		mux.Handle(pattern, wrap(rt.label, rt.h))
+		h := rt.h
+		if rt.method == http.MethodPost && (strings.HasPrefix(rt.path, "/l/") || strings.HasPrefix(rt.path, "/g/")) {
+			h = WithPOSTCSRF(s.getenv, s.now, rt.h)
+		}
+		mux.Handle(pattern, wrap(rt.label, h))
 	}
 }
 
@@ -307,6 +311,14 @@ func (s *lqServer) questionAnswer(w http.ResponseWriter, r *http.Request) {
 func (s *lqServer) questionDismiss(w http.ResponseWriter, r *http.Request) {
 	q, ok := s.hostEnter(w, r)
 	if !ok {
+		return
+	}
+	if _, err := s.handoffGet(r.Context(), q.apt, q.qid); err != nil {
+		if errors.Is(err, errHandoffGone) {
+			http.NotFound(w, r)
+			return
+		}
+		lqFail(w, err)
 		return
 	}
 	if err := s.handoffDismiss(r.Context(), q.apt, q.qid, s.now()); err != nil && !errors.Is(err, errHandoffGone) {

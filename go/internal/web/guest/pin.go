@@ -153,9 +153,6 @@ func (d shellDeps) verifyPin(w http.ResponseWriter, r *http.Request) {
 	lang := Language(r)
 	key := r.PathValue("token")
 	now := d.now()
-	if !hostweb.CSRF(w, r, d.getenv, now) {
-		return
-	}
 	apt, _, early := OpenLink(r, d.pool, key, lang)
 	if early != nil {
 		early.ServeHTTP(w, r)

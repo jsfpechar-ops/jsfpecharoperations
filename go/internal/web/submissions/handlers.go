@@ -77,7 +77,9 @@ func detailHandler(pool *pgxpool.Pool, getenv func(string) string, now func() ti
 			return
 		}
 		if !ok {
-			http.Redirect(w, r, "/submissions", http.StatusSeeOther)
+			lang := hostweb.Lang(r)
+			errFlash := hostweb.Flash{Text: catalog.T(lang, "flash.error.no_such_submission", nil), Key: "flash.error.no_such_submission"}
+			hostweb.Back(w, r, "/submissions", hostweb.Flash{}, errFlash)
 			return
 		}
 		page := layout.Page{

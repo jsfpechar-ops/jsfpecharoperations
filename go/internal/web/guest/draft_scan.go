@@ -58,8 +58,8 @@ type draftScanDeps struct {
 // RegisterDraftScan wires draft and scan POST routes (dormant until UBYHOST_GO_PATHS).
 func RegisterDraftScan(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler) {
 	d := draftScanDeps{pool: pool, getenv: getenv, now: now}
-	mux.Handle("POST /l/{token}/{reservation_id}/draft", wrap("POST /l/{token}/{reservation_id}/draft", draftPostHandler(d)))
-	mux.Handle("POST /l/{token}/{reservation_id}/scan", wrap("POST /l/{token}/{reservation_id}/scan", scanPostHandler(d)))
+	mux.Handle("POST /l/{token}/{reservation_id}/draft", wrap("POST /l/{token}/{reservation_id}/draft", WithPOSTCSRF(getenv, now, draftPostHandler(d))))
+	mux.Handle("POST /l/{token}/{reservation_id}/scan", wrap("POST /l/{token}/{reservation_id}/scan", WithPOSTCSRF(getenv, now, scanPostHandler(d))))
 }
 
 func draftKey(r *http.Request) string {
