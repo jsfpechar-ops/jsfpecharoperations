@@ -81,6 +81,10 @@ func TestConfirmClaimRace(t *testing.T) {
 		t.Skip("UBYHOST_TEST_DATABASE_URL")
 	}
 	ctx := context.Background()
+	var schemaOK int
+	if err := pool.QueryRow(ctx, `SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'apartment'`).Scan(&schemaOK); err != nil || schemaOK == 0 {
+		t.Skip("needs migrated Postgres schema")
+	}
 	secret, err := newClaimSecret()
 	if err != nil {
 		t.Fatal(err)
