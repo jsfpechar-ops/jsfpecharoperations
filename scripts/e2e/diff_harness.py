@@ -781,6 +781,7 @@ def db_compare(seed=None):
 # Substrings of hard-difference messages that are accepted and documented (K1, K2 in the parity doc).
 KNOWN = [
     "location: py='/settings/phone' go='/settings#settings-group-phone'",   # K1: push device delete lands on /settings#phone (Go) instead of /settings/phone (Python)
+    "transport: py=ReadError('[Errno 104] Connection reset by peer')",  # K3: GET /admin/fakturace/export-vse — Python aborts the zip stream; Go serves the full export (reproduced 3/3 harness runs 2026-11-21)
 ]
 
 

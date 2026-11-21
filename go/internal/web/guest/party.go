@@ -95,14 +95,14 @@ type partyStay struct {
 
 func (d partyDeps) loadPartyStay(ctx context.Context, token string, resID int64) (*partyStay, bool, error) {
 	var s partyStay
-	err := d.pool.QueryRow(ctx, `SELECT r.id, r.apartment_id, a.owner_user_id,
+	err := d.pool.QueryRow(ctx, `SELECT r.id, r.apartment_id, COALESCE(a.owner_user_id,0),
 		COALESCE(r.status,''), COALESCE(r.archived_at::text,''),
 		r.expected_guests_override, r.declared_guests, r.lead_reduced_guests,
 		COALESCE(r.date_from::text,''), COALESCE(a.checkin_hour::text,''),
 		COALESCE(r.lead_reduced_changes,0), r.lead_reduced_from
 		FROM reservation r
 		JOIN apartment a ON a.id = r.apartment_id
-		WHERE r.id = $1 AND (a.permalink_token = $2 OR a.permalink_slug = $2)`,
+		WHERE r.id = $1 AND a.permalink_token = $2`,
 		resID, token).Scan(&s.id, &s.apartmentID, &s.ownerID, &s.status, &s.archivedAt,
 		&s.override, &s.declared, &s.reduced, &s.dateFrom, &s.checkinHour, &s.leadChanges, &s.leadReducedFrom)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -136,7 +136,7 @@ func (d partyDeps) applyDeclared(ctx context.Context, resID int64, count int) (s
 	}
 	defer tx.Rollback(ctx)
 	var s partyStay
-	err = tx.QueryRow(ctx, `SELECT r.id, r.apartment_id, a.owner_user_id,
+	err = tx.QueryRow(ctx, `SELECT r.id, r.apartment_id, COALESCE(a.owner_user_id,0),
 		COALESCE(r.status,''), COALESCE(r.archived_at::text,''),
 		r.expected_guests_override, r.declared_guests, r.lead_reduced_guests,
 		COALESCE(r.date_from::text,''), COALESCE(a.checkin_hour::text,''),
@@ -254,7 +254,7 @@ func (d partyDeps) changeByLead(ctx context.Context, resID int64, count, shown i
 	}
 	defer tx.Rollback(ctx)
 	var s partyStay
-	err = tx.QueryRow(ctx, `SELECT r.id, r.apartment_id, a.owner_user_id,
+	err = tx.QueryRow(ctx, `SELECT r.id, r.apartment_id, COALESCE(a.owner_user_id,0),
 		COALESCE(r.status,''), COALESCE(r.archived_at::text,''),
 		r.expected_guests_override, r.declared_guests, r.lead_reduced_guests,
 		COALESCE(r.date_from::text,''), COALESCE(a.checkin_hour::text,''),

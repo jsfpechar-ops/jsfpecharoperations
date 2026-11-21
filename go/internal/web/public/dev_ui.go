@@ -29,6 +29,6 @@ func DevUIHandler(pool *pgxpool.Pool, getenv func(string) string, now func() tim
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(`<!DOCTYPE html><html><head><title>UI catalog</title></head><body><h1>UI catalog</h1></body></html>`))
+		_, _ = w.Write([]byte(`<!DOCTYPE html><html><head><title>UI catalog</title></head><body><h1>UI catalog</h1><p><span class="ui-num">12 345 Kč</span></p></body></html>`))
 	}
 }
