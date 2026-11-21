@@ -1,0 +1,39 @@
+package guest
+
+import (
+	"context"
+	"net/http"
+	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+// StayGate is guest_guide_view._stay_gate. Brief 1721 replaces this with full claim checks.
+func StayGate(r *http.Request, w http.ResponseWriter, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, token string, resID int64) (lang string, apt *GuideApartment, res *GuideReservation, done bool) {
+	lang = Language(r)
+	apt, res, err := lookupStayForGuide(r.Context(), pool, token, resID)
+	if err != nil || apt == nil || res == nil {
+		WriteUnavailable(w, r, lang, "bad_link", http.StatusNotFound, token, hardenedHeaders)
+		return lang, nil, nil, true
+	}
+	_ = getenv
+	_ = now
+	return lang, apt, res, false
+}
+
+func lookupStayForGuide(ctx context.Context, pool *pgxpool.Pool, token string, resID int64) (*GuideApartment, *GuideReservation, error) {
+	var apt GuideApartment
+	err := pool.QueryRow(ctx, `SELECT a.id, a.owner_user_id, a.internal_name
+		FROM apartment a JOIN reservation r ON r.apartment_id = a.id
+		WHERE a.permalink_token = $1 AND r.id = $2 AND r.status = 'active'`, token, resID).
+		Scan(&apt.ID, &apt.OwnerUserID, &apt.Name)
+	if err != nil {
+		return nil, nil, err
+	}
+	var res GuideReservation
+	err = pool.QueryRow(ctx, `SELECT id, date_from::text, date_to::text FROM reservation WHERE id = $1`, resID).Scan(&res.ID, &res.DateFrom, &res.DateTo)
+	if err != nil {
+		return nil, nil, err
+	}
+	return &apt, &res, nil
+}
