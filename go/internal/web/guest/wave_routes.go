@@ -21,17 +21,6 @@ func waveStub(_ string) http.HandlerFunc {
 	}
 }
 
-// RegisterParty wires party size POST routes (brief 1722).
-func RegisterParty(mux *http.ServeMux, _ *pgxpool.Pool, _ func(string) string, _ func() time.Time, wrap func(string, http.HandlerFunc) http.Handler) {
-	for _, label := range []string{
-		"POST /l/{token}/{reservation_id}/party",
-		"POST /l/{token}/{reservation_id}/count",
-		"POST /l/{token}/{reservation_id}/another",
-	} {
-		mux.Handle(label, wrap(label, waveStub("party")))
-	}
-}
-
 // RegisterGuideView wires QR and stay guide GET routes (brief 1629).
 func RegisterGuideView(mux *http.ServeMux, _ *pgxpool.Pool, _ func(string) string, _ func() time.Time, wrap func(string, http.HandlerFunc) http.Handler) {
 	for _, label := range []string{
