@@ -8,17 +8,10 @@ package properties
 //
 // What is not ported answers 501 instead of showing a different page:
 //   - /entities?edit=N: the business editor with Invoice details (billing);
-<<<<<<< HEAD
-//   - /entities with open alerts: host layout renders alert stack (brief 1381).
-//   - /apartments with a live property: the setup chips read filing state
-//     (validation issues, ubyport_auth_failed alerts), calendars, the lock
-//     and the guest link.
-=======
 //   - /entities when the workspace has an open alert: _host_alerts.html is
 //     inside the page body and is ported with brief 1381;
 //   - /apartments with a live property: ported in apartments_list_data.go
 //     (setup chips, guest link, phone cards).
->>>>>>> 99fcac734 (Port GET /apartments property list for workspaces with live properties.)
 
 import (
 	"context"

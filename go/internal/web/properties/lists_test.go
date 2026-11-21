@@ -114,8 +114,8 @@ func TestListsMatchPython(t *testing.T) {
 				got.Items[lo:min(len(got.Items), n+4)], want.Items[lo:min(len(want.Items), n+4)])
 		}
 	}
-	if notPortedSeen != 1 {
-		t.Errorf("%d not-ported cases, want 1", notPortedSeen)
+	if notPortedSeen != 0 {
+		t.Errorf("%d not-ported cases, want 0", notPortedSeen)
 	}
 }
 
