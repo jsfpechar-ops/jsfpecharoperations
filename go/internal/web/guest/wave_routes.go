@@ -21,13 +21,6 @@ func waveStub(_ string) http.HandlerFunc {
 	}
 }
 
-// RegisterStayClaim wires stay overview, claim, and demo paths (brief 1721).
-func RegisterStayClaim(mux *http.ServeMux, _ *pgxpool.Pool, _ func(string) string, _ func() time.Time, wrap func(string, http.HandlerFunc) http.Handler) {
-	const label = "POST /l/{token}/{reservation_id}/claim/confirm"
-	mux.Handle(label, wrap(label, waveStub("stay_claim")))
-	mux.Handle("GET /l/{token}/{rest...}", wrap("GET /l/{token}/{rest...}", waveStub("stay_claim")))
-}
-
 // RegisterParty wires party size POST routes (brief 1722).
 func RegisterParty(mux *http.ServeMux, _ *pgxpool.Pool, _ func(string) string, _ func() time.Time, wrap func(string, http.HandlerFunc) http.Handler) {
 	for _, label := range []string{
