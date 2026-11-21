@@ -1,6 +1,6 @@
 package guest
 
-// Route wiring for briefs 1721–1726 and 1629 on main before full handler ports land.
+// Route wiring for briefs 1721–1725 and 1629 on main before full handler ports land.
 // Handlers answer 501 with X-Ubyhost-Not-Ported so Caddy can fall back to Python.
 
 import (
@@ -54,22 +54,5 @@ func RegisterGuideView(mux *http.ServeMux, _ *pgxpool.Pool, _ func(string) strin
 		"GET /l/{token}/{reservation_id}/guide/photos/{item_id}/{photo_id}",
 	} {
 		mux.Handle(label, wrap(label, waveStub("guide_view")))
-	}
-}
-
-// RegisterLeonQuestions wires Leon JSON and host question pages (brief 1726).
-func RegisterLeonQuestions(mux *http.ServeMux, _ *pgxpool.Pool, _ func(string) string, _ func(string) (string, bool), _ func() time.Time, wrap func(string, http.HandlerFunc) http.Handler) {
-	for _, label := range []string{
-		"GET /l/{token}/{reservation_id}/guide/leon",
-		"POST /l/{token}/{reservation_id}/guide/leon",
-		"GET /g/{token}/leon",
-		"POST /g/{token}/leon",
-		"GET /apartments/{apartment_id}/guide/questions",
-		"GET /apartments/{apartment_id}/guide/questions/{question_id}",
-		"POST /apartments/{apartment_id}/guide/questions/{question_id}",
-		"POST /apartments/{apartment_id}/guide/questions/{question_id}/dismiss",
-		"POST /apartments/{apartment_id}/guide/questions/{question_id}/card",
-	} {
-		mux.Handle(label, wrap(label, waveStub("leon_questions")))
 	}
 }
