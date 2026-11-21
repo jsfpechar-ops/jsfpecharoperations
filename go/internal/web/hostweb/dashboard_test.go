@@ -78,6 +78,9 @@ func TestDashboardGolden(t *testing.T) {
 	}
 	defer pool.Close()
 	if err := seedGolden(ctx, pool, g.Seed); err != nil {
+		if strings.Contains(err.Error(), "does not exist") {
+			t.Skip("dashboard golden needs migrated test schema: ", err)
+		}
 		t.Fatal(err)
 	}
 	getenv := func(k string) string {
