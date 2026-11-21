@@ -1,0 +1,127 @@
+{
+  "now": "2026-06-15T12:00:00+00:00",
+  "seed": [],
+  "cases": [
+    {
+      "name": "pin_required",
+      "method": "POST",
+      "path": "/l/golden/7/save",
+      "body": "",
+      "status": 303,
+      "location": "/l/golden/7/save"
+    },
+    {
+      "name": "validation_surname",
+      "method": "POST",
+      "path": "/l/golden/7/save",
+      "body": "_csrf=golden&surname=",
+      "status": 422,
+      "location": ""
+    },
+    {
+      "name": "valid_new",
+      "method": "POST",
+      "path": "/l/golden/7/save",
+      "body": "_csrf=golden",
+      "status": 303,
+      "location": "/l/golden/7/new"
+    },
+    {
+      "name": "repeat_save",
+      "method": "POST",
+      "path": "/l/golden/7/save",
+      "body": "_csrf=golden&guest_id=11",
+      "status": 303,
+      "location": "/l/golden/7"
+    },
+    {
+      "name": "filed_refused",
+      "method": "POST",
+      "path": "/l/golden/7/save",
+      "body": "_csrf=golden&guest_id=12",
+      "status": 403,
+      "location": ""
+    },
+    {
+      "name": "minor_new",
+      "method": "POST",
+      "path": "/l/golden/7/save",
+      "body": "_csrf=golden",
+      "status": 303,
+      "location": "/l/golden/7/new"
+    },
+    {
+      "name": "foreigner",
+      "method": "POST",
+      "path": "/l/golden/7/save",
+      "body": "_csrf=golden",
+      "status": 303,
+      "location": "/l/golden/7/new"
+    },
+    {
+      "name": "party_over",
+      "method": "POST",
+      "path": "/l/golden/7/save",
+      "body": "_csrf=golden",
+      "status": 303,
+      "location": "/l/golden/7"
+    },
+    {
+      "name": "throttle",
+      "method": "POST",
+      "path": "/l/golden/7/save",
+      "body": "_csrf=golden",
+      "status": 429,
+      "location": ""
+    },
+    {
+      "name": "claim_required",
+      "method": "POST",
+      "path": "/l/golden/7/save",
+      "body": "_csrf=golden",
+      "status": 303,
+      "location": "/l/golden/7/save"
+    },
+    {
+      "name": "restricted_redirect",
+      "method": "POST",
+      "path": "/l/golden/7/save",
+      "body": "_csrf=golden&guest_id=13",
+      "status": 303,
+      "location": "/l/golden/7"
+    },
+    {
+      "name": "locked_form",
+      "method": "POST",
+      "path": "/l/golden/7/save",
+      "body": "_csrf=golden&guest_id=14",
+      "status": 403,
+      "location": ""
+    },
+    {
+      "name": "signed_out",
+      "method": "POST",
+      "path": "/l/bad/7/save",
+      "body": "_csrf=golden",
+      "status": 404,
+      "location": ""
+    },
+    {
+      "name": "stay_gone",
+      "method": "POST",
+      "path": "/l/golden/99999/save",
+      "body": "_csrf=golden",
+      "status": 404,
+      "location": ""
+    },
+    {
+      "name": "validation_signature",
+      "method": "POST",
+      "path": "/l/golden/7/save",
+      "body": "_csrf=golden&surname=Novak",
+      "status": 422,
+      "location": ""
+    }
+  ],
+  "db_checks": []
+}
