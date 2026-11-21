@@ -83,6 +83,9 @@ PINNED = [
     ("go/internal/web/stays/guest_edit.go", "subscript", "state",
      {ERROR, BLOCKED, NOT_REQUIRED}, {PENDING}, "cas",
      "guest_update: rule 10.4(5)"),
+    ("go/internal/web/guest/form_save.go", "subscript", "st",
+     {NEW, PENDING, ERROR, BLOCKED, NOT_REQUIRED}, {PENDING, NOT_REQUIRED}, "cas",
+     "guest form save POST (brief 1724)"),
 ]
 
 # "submit_state": <value>, but not the update_if guard {"submit_state": guest["submit_state"]}

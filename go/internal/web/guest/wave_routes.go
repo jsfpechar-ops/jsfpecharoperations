@@ -39,12 +39,6 @@ func RegisterParty(mux *http.ServeMux, _ *pgxpool.Pool, _ func(string) string, _
 	}
 }
 
-// RegisterFormSave wires the registration save POST (brief 1724).
-func RegisterFormSave(mux *http.ServeMux, _ *pgxpool.Pool, _ func(string) string, _ func() time.Time, wrap func(string, http.HandlerFunc) http.Handler) {
-	const label = "POST /l/{token}/{reservation_id}/save"
-	mux.Handle(label, wrap(label, waveStub("form_save")))
-}
-
 // RegisterGuideView wires QR and stay guide GET routes (brief 1629).
 func RegisterGuideView(mux *http.ServeMux, _ *pgxpool.Pool, _ func(string) string, _ func() time.Time, wrap func(string, http.HandlerFunc) http.Handler) {
 	for _, label := range []string{
