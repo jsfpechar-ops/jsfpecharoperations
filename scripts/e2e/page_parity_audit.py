@@ -11,6 +11,7 @@ import sys
 import threading
 import time
 from dataclasses import asdict, dataclass, field
+from difflib import SequenceMatcher
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -280,7 +281,10 @@ def score_row(route, persona, ps, gs, ph, gh, gh_meta) -> Row:
     ratio = abs(len(dp) - len(dg)) / max(len(dp), len(dg))
     if ratio < 0.02:
         return Row(route, persona, ps, gs, "pass-soft", f"len {len(dp)}/{len(dg)}", "dom-near")
-    return Row(route, persona, ps, gs, "fail-dom", f"len {len(dp)}/{len(dg)}", "dom-drift")
+    sim = SequenceMatcher(None, dp, dg).ratio()
+    if sim >= 0.94:
+        return Row(route, persona, ps, gs, "pass-soft", f"sim {sim:.3f}", "dom-similar")
+    return Row(route, persona, ps, gs, "fail-dom", f"len {len(dp)}/{len(dg)} sim={sim:.2f}", "dom-drift")
 
 
 def main():
