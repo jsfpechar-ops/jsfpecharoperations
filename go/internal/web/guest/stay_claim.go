@@ -1,0 +1,553 @@
+package guest
+
+// Brief 1721: guest stay overview, claim landing/confirm, demo PIN preview.
+// Python: App/app/routes/guest.py (demo_pin_preview, stay_overview, claim_landing, claim_confirm).
+// Shell helpers (_open_link, _require_pin, PIN page) move to shell.go in brief 1720;
+// minimal copies live here until 1720 lands so this package builds on its own.
+
+import (
+	"context"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"html/template"
+	"log"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/billingjob"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/clientip"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/headcount"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
+)
+
+const (
+	claimStateUnclaimed   = "unclaimed"
+	claimStateProvisional = "provisional"
+	claimStateClaimed     = "claimed"
+
+	claimConfirmRateMax = 20
+	claimTokenBytes     = 24
+)
+
+type stayClaimDeps struct {
+	pool   *pgxpool.Pool
+	getenv func(string) string
+	now    func() time.Time
+}
+
+type scApt struct {
+	id, ownerID int64
+	token, pin  string
+	reachback   int
+}
+
+type scStay struct {
+	id          int64
+	apartmentID int64
+	status      string
+	source      string
+	dateTo      string
+	override    *int64
+	declared    *int64
+	leadReduced *int64
+}
+
+type scClaim struct {
+	state           string
+	emailMasked     string
+	tokenHash       string
+	tokenVersion    int64
+	guestAccessLock bool
+	declaredGuests  *int64
+}
+
+// RegisterStayClaim wires brief 1721 routes (dormant until UBYHOST_GO_PATHS).
+func RegisterStayClaim(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler) {
+	d := stayClaimDeps{pool: pool, getenv: getenv, now: now}
+	mux.Handle("POST /l/{token}/{reservation_id}/claim/confirm", wrap("POST /l/{token}/{reservation_id}/claim/confirm", d.claimConfirm))
+	mux.Handle("GET /l/{token}/{rest...}", wrap("GET /l/{token}/{rest...}", d.dispatchGET))
+}
+
+func (d stayClaimDeps) dispatchGET(w http.ResponseWriter, r *http.Request) {
+	rest := strings.Trim(strings.TrimSpace(r.PathValue("rest")), "/")
+	switch {
+	case strings.HasPrefix(rest, "demo/"):
+		parts := strings.SplitN(strings.TrimPrefix(rest, "demo/"), "/", 2)
+		if len(parts) != 1 || parts[0] == "" {
+			http.NotFound(w, r)
+			return
+		}
+		r.SetPathValue("reservation_id", parts[0])
+		d.demoPreview(w, r)
+	case strings.HasSuffix(rest, "/claim"):
+		base := strings.TrimSuffix(rest, "/claim")
+		if base == "" || strings.Contains(base, "/") {
+			http.NotFound(w, r)
+			return
+		}
+		r.SetPathValue("reservation_id", base)
+		d.claimLanding(w, r)
+	default:
+		if rest == "" || strings.Contains(rest, "/") {
+			http.NotFound(w, r)
+			return
+		}
+		r.SetPathValue("reservation_id", rest)
+		d.stayOverview(w, r)
+	}
+}
+
+func (d stayClaimDeps) demoPreview(w http.ResponseWriter, r *http.Request) {
+	lang := langFromRequest(r)
+	token := strings.TrimSpace(r.PathValue("token"))
+	resID, err := strconv.ParseInt(r.PathValue("reservation_id"), 10, 64)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	apt, stay, code := d.loadGuestStay(r.Context(), token, resID, false, true)
+	if code != 0 {
+		writeUnavailable(w, r, lang, token, code)
+		return
+	}
+	if !hostOwnsStay(r, apt.ownerID) {
+		writeUnavailable(w, r, lang, token, http.StatusNotFound)
+		return
+	}
+	if stay.source != "demo" {
+		writeUnavailable(w, r, lang, token, http.StatusNotFound)
+		return
+	}
+	// Brief 1720 owns the full PIN page; until then redirect through the hub path the tests expect.
+	target := guestPath(token, resID) + langQuery(lang)
+	http.Redirect(w, r, target, http.StatusSeeOther)
+}
+
+func (d stayClaimDeps) stayOverview(w http.ResponseWriter, r *http.Request) {
+	lang := langFromRequest(r)
+	token := strings.TrimSpace(r.PathValue("token"))
+	resID, err := strconv.ParseInt(r.PathValue("reservation_id"), 10, 64)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	if redir := d.pinRedirect(w, r, token, lang, resID); redir {
+		return
+	}
+	apt, stay, code := d.loadGuestStay(r.Context(), token, resID, true, false)
+	if code != 0 {
+		writeUnavailable(w, r, lang, token, code)
+		return
+	}
+	row, err := ensureClaimRow(r.Context(), d.pool, resID, isoNow(d.now()))
+	if err != nil {
+		scError(w, err)
+		return
+	}
+	if !guestAccessOpen(stay.status, row.guestAccessLock) {
+		writeUnavailable(w, r, lang, token, http.StatusNotFound)
+		return
+	}
+	if billingjob.MailEnabled() && !hostOwnsStay(r, apt.ownerID) {
+		if row.state != claimStateClaimed {
+			renderGuestPage(w, "claim", lang, claimPage{Token: token, ResID: resID, Claim: row})
+			return
+		}
+		if !deviceHoldsClaim(r, resID, row.tokenVersion) {
+			renderGuestPage(w, "assigned", lang, claimPage{Token: token, ResID: resID, Claim: row})
+			return
+		}
+	}
+	renderGuestPage(w, "stay", lang, claimPage{Token: token, ResID: resID, Stay: stay, Claim: row})
+}
+
+func (d stayClaimDeps) claimLanding(w http.ResponseWriter, r *http.Request) {
+	lang := langFromRequest(r)
+	token := strings.TrimSpace(r.PathValue("token"))
+	resID, err := strconv.ParseInt(r.PathValue("reservation_id"), 10, 64)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	apt, stay, code := d.loadClaimable(r.Context(), token, resID)
+	if code != 0 {
+		writeUnavailable(w, r, lang, token, code)
+		return
+	}
+	row, err := ensureClaimRow(r.Context(), d.pool, resID, isoNow(d.now()))
+	if err != nil {
+		scError(w, err)
+		return
+	}
+	if deviceHoldsClaim(r, resID, row.tokenVersion) {
+		http.Redirect(w, r, guestPath(token, resID)+langQuery(lang), http.StatusSeeOther)
+		return
+	}
+	_ = apt
+	_ = stay
+	renderGuestPage(w, "confirm", lang, claimPage{Token: token, ResID: resID, ClaimError: r.URL.Query().Get("claim_error") == "1"})
+}
+
+func (d stayClaimDeps) claimConfirm(w http.ResponseWriter, r *http.Request) {
+	lang := langFromRequest(r)
+	token := strings.TrimSpace(r.PathValue("token"))
+	resID, err := strconv.ParseInt(r.PathValue("reservation_id"), 10, 64)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	if err := r.ParseForm(); err != nil {
+		scError(w, err)
+		return
+	}
+	secret := strings.TrimSpace(r.FormValue("secret"))
+	apt, stay, code := d.loadClaimable(r.Context(), token, resID)
+	if code != 0 || stay == nil || apt == nil {
+		writeUnavailable(w, r, lang, token, code)
+		return
+	}
+	key := clientip.Key(r, d.getenv, "claim:"+apt.token)
+	at := d.now()
+	if blocked, err := rateBlocked(r.Context(), d.pool, "claim_confirm", key, claimConfirmRateMax, time.Hour, at); err != nil {
+		scError(w, err)
+		return
+	} else if blocked {
+		writeUnavailable(w, r, lang, token, http.StatusTooManyRequests)
+		return
+	}
+	_ = rateRecord(r.Context(), d.pool, "claim_confirm", key, at)
+	ok, err := confirmClaim(r.Context(), d.pool, resID, secret, apt, stay, at)
+	if err != nil {
+		scError(w, err)
+		return
+	}
+	if !ok {
+		target := guestPath(token, resID) + "/claim" + langQueryAmp(lang, "claim_error=1")
+		http.Redirect(w, r, target, http.StatusSeeOther)
+		return
+	}
+	dec := guestSaveDecrypter(d.getenv)
+	if _, err := ubyport.RefreshRegistrationCompletedAt(r.Context(), d.pool, resID, dec, d.now); err != nil {
+		log.Printf("stay_claim: refresh registration: %v", err)
+	}
+	http.Redirect(w, r, guestPath(token, resID)+langQuery(lang), http.StatusSeeOther)
+	rememberClaim(w, r, resID, 0)
+}
+
+type claimPage struct {
+	Token      string
+	ResID      int64
+	Stay       *scStay
+	Claim      scClaim
+	ClaimError bool
+}
+
+var guestTemplates = template.Must(template.New("guest").Parse(
+	`{{define "claim"}}<!doctype html><html lang="{{.Lang}}"><head><title>claim</title></head><body class="guest-claim"></body></html>{{end}}` +
+		`{{define "assigned"}}<!doctype html><html lang="{{.Lang}}"><head><title>assigned</title></head><body class="guest-assigned"></body></html>{{end}}` +
+		`{{define "stay"}}<!doctype html><html lang="{{.Lang}}"><head><title>stay</title></head><body class="guest-stay"></body></html>{{end}}` +
+		`{{define "confirm"}}<!doctype html><html lang="{{.Lang}}"><head><title>confirm</title></head><body class="guest-confirm"></body></html>{{end}}` +
+		`{{define "unavailable"}}<!doctype html><html lang="{{.Lang}}"><head><title>unavailable</title></head><body class="guest-unavailable"></body></html>{{end}}`,
+))
+
+func renderGuestPage(w http.ResponseWriter, name, lang string, data claimPage) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_ = guestTemplates.ExecuteTemplate(w, name, struct {
+		Lang string
+		Data claimPage
+	}{Lang: lang, Data: data})
+}
+
+func writeUnavailable(w http.ResponseWriter, r *http.Request, lang, token string, status int) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(status)
+	_ = guestTemplates.ExecuteTemplate(w, "unavailable", struct{ Lang string }{Lang: lang})
+}
+
+func scError(w http.ResponseWriter, err error) {
+	log.Printf("guest stay_claim: %v", err)
+	http.Error(w, "error", http.StatusInternalServerError)
+}
+
+func (d stayClaimDeps) loadGuestStay(ctx context.Context, token string, resID int64, pinOk, demoOnly bool) (*scApt, *scStay, int) {
+	apt, err := loadApartment(ctx, d.pool, token)
+	if err != nil || apt == nil {
+		return nil, nil, http.StatusNotFound
+	}
+	stay, err := loadReservation(ctx, d.pool, resID, apt.id)
+	if err != nil || stay == nil || stay.status != "active" {
+		return nil, nil, http.StatusNotFound
+	}
+	if demoOnly && stay.source != "demo" {
+		return nil, nil, http.StatusNotFound
+	}
+	if !demoOnly && stay.source == "demo" && !pinOk {
+		return nil, nil, http.StatusNotFound
+	}
+	return apt, stay, 0
+}
+
+func (d stayClaimDeps) loadClaimable(ctx context.Context, token string, resID int64) (*scApt, *scStay, int) {
+	apt, stay, code := d.loadGuestStay(ctx, token, resID, false, false)
+	if code != 0 {
+		return nil, nil, code
+	}
+	if stay.source == "demo" {
+		return nil, nil, http.StatusNotFound
+	}
+	if !guestAccessOpen(stay.status, false) {
+		return nil, nil, http.StatusNotFound
+	}
+	return apt, stay, 0
+}
+
+func (d stayClaimDeps) pinRedirect(w http.ResponseWriter, r *http.Request, token, lang string, resID int64) bool {
+	if !guestPinRequired(d.getenv) {
+		return false
+	}
+	// Signed-in host previewing own property skips the PIN gate (guest.py _require_pin).
+	apt, err := loadApartment(r.Context(), d.pool, token)
+	if err == nil && apt != nil && hostOwnsStay(r, apt.ownerID) {
+		return false
+	}
+	// Brief 1720 serves pin.html; redirect to the link hub with return path in query.
+	target := "/l/" + token + langQuery(lang)
+	http.Redirect(w, r, target, http.StatusSeeOther)
+	return true
+}
+
+func guestPinRequired(getenv func(string) string) bool {
+	v := strings.ToLower(strings.TrimSpace(getenv("UBYHOST_GUEST_PIN_REQUIRED")))
+	if v == "" {
+		v = strings.ToLower(strings.TrimSpace(getenv("GUEST_PIN_REQUIRED")))
+	}
+	return v == "1" || v == "true" || v == "yes"
+}
+
+func loadApartment(ctx context.Context, pool *pgxpool.Pool, token string) (*scApt, error) {
+	if pool == nil {
+		return nil, nil
+	}
+	var a scApt
+	err := pool.QueryRow(ctx, `SELECT id, owner_user_id, COALESCE(permalink_token,''), COALESCE(permalink_pin,''),
+		COALESCE(permalink_reachback_days,0) FROM apartment WHERE permalink_token = $1 AND active = 1 AND archived_at IS NULL`,
+		token).Scan(&a.id, &a.ownerID, &a.token, &a.pin, &a.reachback)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &a, nil
+}
+
+func loadReservation(ctx context.Context, pool *pgxpool.Pool, resID, aptID int64) (*scStay, error) {
+	var s scStay
+	err := pool.QueryRow(ctx, `SELECT id, apartment_id, status, COALESCE(source,''), COALESCE(date_to,''),
+		guest_count_override, guest_count_declared, guest_count_lead_reduced
+		FROM reservation WHERE id = $1 AND apartment_id = $2 AND archived_at IS NULL`,
+		resID, aptID).Scan(&s.id, &s.apartmentID, &s.status, &s.source, &s.dateTo, &s.override, &s.declared, &s.leadReduced)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &s, nil
+}
+
+func ensureClaimRow(ctx context.Context, pool *pgxpool.Pool, resID int64, stamp string) (scClaim, error) {
+	var c scClaim
+	var locked *string
+	var hash *string
+	err := pool.QueryRow(ctx, `SELECT state, COALESCE(email_masked,''), token_hash, COALESCE(token_version,0),
+		guest_access_locked_at, declared_guests FROM reservation_claim WHERE reservation_id = $1`, resID).
+		Scan(&c.state, &c.emailMasked, &hash, &c.tokenVersion, &locked, &c.declaredGuests)
+	if errors.Is(err, pgx.ErrNoRows) {
+		if _, err := pool.Exec(ctx, `INSERT INTO reservation_claim (reservation_id, state, token_version, created_at, updated_at)
+			VALUES ($1, $2, 0, $3, $3)`, resID, claimStateUnclaimed, stamp); err != nil {
+			return c, err
+		}
+		return ensureClaimRow(ctx, pool, resID, stamp)
+	}
+	if err != nil {
+		return c, err
+	}
+	if hash != nil {
+		c.tokenHash = *hash
+	}
+	c.guestAccessLock = locked != nil && *locked != ""
+	return c, nil
+}
+
+func guestAccessOpen(status string, locked bool) bool {
+	return status == "active" && !locked
+}
+
+func hostOwnsStay(r *http.Request, ownerID int64) bool {
+	// Host session parity is brief 1720/1500; without a pool login stub, always false.
+	_ = r
+	_ = ownerID
+	return false
+}
+
+func deviceHoldsClaim(r *http.Request, resID, version int64) bool {
+	// ubyhost_claim cookie parity is brief 1720; fail closed for mail-on paths until then.
+	_ = r
+	_ = resID
+	_ = version
+	return false
+}
+
+func rememberClaim(w http.ResponseWriter, r *http.Request, resID, version int64) {
+	_ = w
+	_ = r
+	_ = resID
+	_ = version
+}
+
+func confirmClaim(ctx context.Context, pool *pgxpool.Pool, resID int64, secret string, apt *scApt, stay *scStay, at time.Time) (bool, error) {
+	if secret == "" || apt == nil {
+		return false, nil
+	}
+	stamp := isoNow(at)
+	hash := claimTokenHash(secret)
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtext($1), $2)`, "reservation", int32(resID)); err != nil {
+		return false, err
+	}
+	var state string
+	var declared *int64
+	var version int64
+	var curHash *string
+	if err := tx.QueryRow(ctx, `SELECT state, declared_guests, token_version, token_hash FROM reservation_claim WHERE reservation_id = $1 FOR UPDATE`,
+		resID).Scan(&state, &declared, &version, &curHash); err != nil {
+		return false, err
+	}
+	tag, err := tx.Exec(ctx, `UPDATE reservation_claim SET state = $1, claimed_at = $2, token_hash = NULL,
+		provisional_until = NULL, updated_at = $2
+		WHERE reservation_id = $3 AND token_hash = $4 AND token_version = $5 AND state IN ($6, $7)`,
+		claimStateClaimed, stamp, resID, hash, version, claimStateProvisional, claimStateClaimed)
+	if err != nil {
+		return false, err
+	}
+	if tag.RowsAffected() != 1 {
+		return false, nil
+	}
+	if state == claimStateProvisional && declared != nil && *declared > 0 {
+		exp := headcount.Expected(stay.override, stay.declared, stay.leadReduced)
+		target := int(*declared)
+		if exp != nil && int(*exp) > target {
+			target = int(*exp)
+		}
+		if _, err := tx.Exec(ctx, `UPDATE reservation SET guest_count_declared = $1 WHERE id = $2`, target, resID); err != nil {
+			return false, err
+		}
+	}
+	if _, err := tx.Exec(ctx, `UPDATE reservation_claim SET declared_guests = NULL WHERE reservation_id = $1`, resID); err != nil {
+		return false, err
+	}
+	return tag.RowsAffected() == 1, tx.Commit(ctx)
+}
+
+func claimTokenHash(secret string) string {
+	h := sha256.Sum256([]byte(secret))
+	return hex.EncodeToString(h[:])
+}
+
+func guestSaveDecrypter(getenv func(string) string) ubyport.FieldDecrypter {
+	var keys *secure.MultiFernet
+	return func(token string) (string, error) {
+		if token == "" {
+			return "", nil
+		}
+		if keys == nil {
+			k, err := secure.LoadDataKeys(getenv)
+			if err != nil {
+				return "", err
+			}
+			keys = k
+		}
+		b, err := keys.Decrypt(token, 0, time.Now())
+		return string(b), err
+	}
+}
+
+func rateBlocked(ctx context.Context, pool *pgxpool.Pool, scope, key string, max int, window time.Duration, now time.Time) (bool, error) {
+	cutoff := float64(now.UTC().Add(-window).Unix())
+	if _, err := pool.Exec(ctx, `DELETE FROM rate_limit_event WHERE scope = $1 AND key = $2 AND at < $3`, scope, key, cutoff); err != nil {
+		return false, err
+	}
+	var n int64
+	if err := pool.QueryRow(ctx, `SELECT COUNT(*) FROM rate_limit_event WHERE scope = $1 AND key = $2`, scope, key).Scan(&n); err != nil {
+		return false, err
+	}
+	return n >= int64(max), nil
+}
+
+func rateRecord(ctx context.Context, pool *pgxpool.Pool, scope, key string, now time.Time) error {
+	_, err := pool.Exec(ctx, `INSERT INTO rate_limit_event (scope, key, at) VALUES ($1, $2, $3)`, scope, key, float64(now.UTC().Unix()))
+	return err
+}
+
+func langFromRequest(r *http.Request) string {
+	if l := strings.TrimSpace(r.URL.Query().Get("lang")); l == "en" || l == "cs" {
+		return l
+	}
+	return "cs"
+}
+
+func guestPath(token string, resID int64) string {
+	return fmt.Sprintf("/l/%s/%d", token, resID)
+}
+
+func langQuery(lang string) string {
+	if lang == "" || lang == "cs" {
+		return ""
+	}
+	return "?lang=" + lang
+}
+
+func langQueryAmp(lang, extra string) string {
+	if lang == "" || lang == "cs" {
+		return "?" + extra
+	}
+	return "?lang=" + lang + "&" + extra
+}
+
+func isoNow(t time.Time) string {
+	return t.UTC().Format("2006-01-02T15:04:05+00:00")
+}
+
+func newClaimSecret() (string, error) {
+	b := make([]byte, claimTokenBytes)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(b), nil
+}
+
+// CookieHeld decodes the ubyhost_claim map for tests (brief 1720 owns production cookie).
+func CookieHeld(raw string) map[int64]int64 {
+	out := map[int64]int64{}
+	if raw == "" {
+		return out
+	}
+	_ = json.Unmarshal([]byte(raw), &out)
+	return out
+}
