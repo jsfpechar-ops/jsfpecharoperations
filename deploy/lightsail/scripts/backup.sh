@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Snapshot SQLite + secrets inside the running container (age-encrypted, time-based retention; see App/scripts/backup_data.sh).
+# Snapshot secrets (+ SQLite when not on PostgreSQL) and optional pg_dump into /data/backups.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -15,28 +15,22 @@ set -a
 source .env
 set +a
 
-run_backup_data() {
-  if docker compose config --services 2>/dev/null | grep -qx ubyhost; then
-    docker compose exec -T ubyhost bash /app/scripts/backup_data.sh
-    return
-  fi
-  local img="ubyhost:local"
-  if ! docker image inspect "${img}" >/dev/null 2>&1; then
-    echo "Refusing backup: need ${img} (CI deploy tags the pulled image, or tag it locally)." >&2
-    exit 1
-  fi
-  docker run --rm --env-file .env \
-    -e UBYHOST_DATA_DIR=/data \
-    -v ubyhost-data:/data \
-    "${img}" bash /app/scripts/backup_data.sh
-}
-
 data_sh() {
   if docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .; then
     docker compose --profile go exec -T ubyhost-go sh -c "$1"
   else
     docker compose exec -T ubyhost sh -c "$1"
   fi
+}
+
+run_backup_snapshot() {
+  if docker compose config --services 2>/dev/null | grep -qx ubyhost; then
+    docker compose exec -T ubyhost bash /app/scripts/backup_data.sh
+    return
+  fi
+  # shellcheck source=scripts/backup_snapshot.sh
+  # shellcheck disable=SC1091
+  source "${ROOT}/scripts/backup_snapshot.sh"
 }
 
 # Brief 1020: in production on PostgreSQL, never take or prune a snapshot while postgres is down.
@@ -46,7 +40,7 @@ if [ "${UBYHOST_DEPLOYMENT:-}" = "production" ] && [ -n "${UBYHOST_DATABASE_URL:
   exit 1
 fi
 
-run_backup_data
+run_backup_snapshot
 
 # PostgreSQL dump (brief 0464): into the newest snapshot folder, age-encrypted, never plaintext.
 if [ "${UBYHOST_DEPLOYMENT:-}" = "production" ]; then
