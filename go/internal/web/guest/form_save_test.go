@@ -10,6 +10,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
 )
 
 type formSaveGolden struct {
@@ -172,5 +174,45 @@ func TestDecryptGuestFieldEmptyUsesPlain(t *testing.T) {
 	plain, err := decryptGuestField(testDataEnv, time.Now, tok, "")
 	if err != nil || plain != "data:image/png;base64,AAAA" {
 		t.Fatalf("round-trip %q err %v", plain, err)
+	}
+}
+
+func TestGuestSaveValidateIssuesLegalAckOnEdit(t *testing.T) {
+	cfg := guestFormCfg{defaultPurpose: "tourism"}
+	res := guestResMeta{dateFrom: "2026-06-01", dateTo: "2026-06-05"}
+	form := map[string]string{
+		"surname": "Doe", "first_name": "Jan", "birth_date": "1990-01-01",
+		"nationality": "CZE", "doc_number": "123", "purpose": "tourism",
+		"stay_from": "2026-06-01", "stay_to": "2026-06-05", "signature": "data:image/png;base64,AAAA",
+	}
+	raw := validation.GuestFormRaw(form, cfg.defaultPurpose)
+	values := validation.NormaliseGuest(raw, time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC))
+	existing := &guestSaveRow{id: 1}
+	issues := guestSaveValidateIssues(form, cfg, res, values, raw, "2026-06-01", "2026-06-05", form["signature"], false, existing, time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC))
+	if len(validation.ErrorsOnly(issues)) == 0 {
+		t.Fatal("edit save must require legal_ack")
+	}
+}
+
+func TestGuestSaveValidateIssuesPartySizeOnNew(t *testing.T) {
+	cfg := guestFormCfg{defaultPurpose: "tourism"}
+	res := guestResMeta{dateFrom: "2026-06-01", dateTo: "2026-06-05"}
+	form := map[string]string{
+		"surname": "Doe", "first_name": "Jan", "birth_date": "1990-01-01",
+		"nationality": "CZE", "doc_number": "123", "purpose": "tourism",
+		"stay_from": "2026-06-01", "stay_to": "2026-06-05", "signature": "data:image/png;base64,AAAA",
+		"legal_ack": "1",
+	}
+	raw := validation.GuestFormRaw(form, cfg.defaultPurpose)
+	values := validation.NormaliseGuest(raw, time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC))
+	issues := guestSaveValidateIssues(form, cfg, res, values, raw, "2026-06-01", "2026-06-05", form["signature"], false, nil, time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC))
+	found := false
+	for _, i := range issues {
+		if i.Field == "party_size" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal("first guest save must require party_size when undeclared")
 	}
 }
