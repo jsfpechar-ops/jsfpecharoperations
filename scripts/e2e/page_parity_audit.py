@@ -266,7 +266,8 @@ def capture(browser, base, path, cookie, slug, persona, side):
         resp = page.goto(base + path, wait_until="domcontentloaded", timeout=SHOT_MS)
         status = resp.status if resp else 0
         headers = resp.headers if resp else {}
-        html = page.content()
+        loc = page.locator("div.ui-page").first
+        html = loc.evaluate("el => el.outerHTML") if loc.count() else page.content()
     except Exception as e:
         status, html = 0, str(e)
     for w in WIDTHS:
