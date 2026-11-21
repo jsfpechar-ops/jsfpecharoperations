@@ -22,10 +22,10 @@ func TestClaimTokenHash(t *testing.T) {
 }
 
 func TestGuestAccessOpen(t *testing.T) {
-	if !guestAccessOpen("active", false) {
+	if !GuestAccessOpen("active", false) {
 		t.Fatal("active open")
 	}
-	if guestAccessOpen("active", true) || guestAccessOpen("cancelled", false) {
+	if GuestAccessOpen("active", true) || GuestAccessOpen("cancelled", false) {
 		t.Fatal("locked/cancelled closed")
 	}
 }

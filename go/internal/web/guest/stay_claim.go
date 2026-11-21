@@ -125,7 +125,7 @@ func (d stayClaimDeps) demoPreview(w http.ResponseWriter, r *http.Request) {
 		scWriteUnavailable(w, r, lang, token, code)
 		return
 	}
-	if !hostOwnsStay(r, apt.ownerID) {
+	if !HostOwnsStay(r, apt.ownerID) {
 		scWriteUnavailable(w, r, lang, token, http.StatusNotFound)
 		return
 	}
@@ -154,22 +154,21 @@ func (d stayClaimDeps) stayOverview(w http.ResponseWriter, r *http.Request) {
 		scWriteUnavailable(w, r, lang, token, code)
 		return
 	}
-	row, err := ensureClaimRow(r.Context(), d.pool, resID, isoNow(d.now()))
+	row, err := EnsureClaimRow(r.Context(), d.pool, resID, isoNow(d.now()))
 	if err != nil {
 		scError(w, err)
 		return
 	}
-	if !guestAccessOpen(stay.status, row.guestAccessLock) {
+	if !GuestAccessOpen(stay.status, row.guestAccessLock) {
 		scWriteUnavailable(w, r, lang, token, http.StatusNotFound)
 		return
 	}
-	// Device claim UI is stubbed; formPagesRequireClaim is still false (brief 1721/1723).
-	if stayClaimDeviceGate && billingjob.MailEnabled() && !hostOwnsStay(r, apt.ownerID) {
+	if billingjob.MailEnabled() && !HostOwnsStay(r, apt.ownerID) {
 		if row.state != claimStateClaimed {
 			renderGuestPage(w, "claim", lang, claimPage{Token: token, ResID: resID, Claim: row})
 			return
 		}
-		if !deviceHoldsClaim(r, resID, row.tokenVersion) {
+		if !DeviceHoldsClaim(r, resID, row.tokenVersion) {
 			renderGuestPage(w, "assigned", lang, claimPage{Token: token, ResID: resID, Claim: row})
 			return
 		}
@@ -200,12 +199,12 @@ func (d stayClaimDeps) claimLanding(w http.ResponseWriter, r *http.Request) {
 		scWriteUnavailable(w, r, lang, token, code)
 		return
 	}
-	row, err := ensureClaimRow(r.Context(), d.pool, resID, isoNow(d.now()))
+	row, err := EnsureClaimRow(r.Context(), d.pool, resID, isoNow(d.now()))
 	if err != nil {
 		scError(w, err)
 		return
 	}
-	if deviceHoldsClaim(r, resID, row.tokenVersion) {
+	if DeviceHoldsClaim(r, resID, row.tokenVersion) {
 		http.Redirect(w, r, guestPath(token, resID)+langQuery(lang), http.StatusSeeOther)
 		return
 	}
@@ -296,11 +295,16 @@ func scError(w http.ResponseWriter, err error) {
 }
 
 func (d stayClaimDeps) loadGuestStay(ctx context.Context, token string, resID int64, pinOk, demoOnly bool) (*scApt, *scStay, int) {
-	apt, err := scLoadApartment(ctx, d.pool, token)
+	return LoadGuestStay(ctx, d.pool, token, resID, pinOk, demoOnly)
+}
+
+// LoadGuestStay is guest.py stay resolution for permalink routes (demo/pin gates).
+func LoadGuestStay(ctx context.Context, pool *pgxpool.Pool, token string, resID int64, pinOk, demoOnly bool) (*scApt, *scStay, int) {
+	apt, err := scLoadApartment(ctx, pool, token)
 	if err != nil || apt == nil {
 		return nil, nil, http.StatusNotFound
 	}
-	stay, err := loadReservation(ctx, d.pool, resID, apt.id)
+	stay, err := loadReservation(ctx, pool, resID, apt.id)
 	if err != nil || stay == nil || stay.status != "active" {
 		return nil, nil, http.StatusNotFound
 	}
@@ -321,7 +325,7 @@ func (d stayClaimDeps) loadClaimable(ctx context.Context, token string, resID in
 	if stay.source == "demo" {
 		return nil, nil, http.StatusNotFound
 	}
-	if !guestAccessOpen(stay.status, false) {
+	if !GuestAccessOpen(stay.status, false) {
 		return nil, nil, http.StatusNotFound
 	}
 	return apt, stay, 0
@@ -335,8 +339,7 @@ func (d stayClaimDeps) pinRedirect(w http.ResponseWriter, r *http.Request, token
 	if err != nil || apt == nil {
 		return false
 	}
-	// Signed-in host previewing own property skips the PIN gate (guest.py _require_pin).
-	if hostOwnsStay(r, apt.ownerID) {
+	if HostOwnsStay(r, apt.ownerID) {
 		return false
 	}
 	expected := strings.TrimSpace(apt.pin)
@@ -401,7 +404,8 @@ func loadReservation(ctx context.Context, pool *pgxpool.Pool, resID, aptID int64
 	return &s, nil
 }
 
-func ensureClaimRow(ctx context.Context, pool *pgxpool.Pool, resID int64, stamp string) (scClaim, error) {
+// EnsureClaimRow is claim.ensure_row.
+func EnsureClaimRow(ctx context.Context, pool *pgxpool.Pool, resID int64, stamp string) (scClaim, error) {
 	var c scClaim
 	var locked *string
 	var hash *string
@@ -413,7 +417,7 @@ func ensureClaimRow(ctx context.Context, pool *pgxpool.Pool, resID int64, stamp 
 			VALUES ($1, $2, 0, $3, $3)`, resID, claimStateUnclaimed, stamp); err != nil {
 			return c, err
 		}
-		return ensureClaimRow(ctx, pool, resID, stamp)
+		return EnsureClaimRow(ctx, pool, resID, stamp)
 	}
 	if err != nil {
 		return c, err
@@ -425,18 +429,21 @@ func ensureClaimRow(ctx context.Context, pool *pgxpool.Pool, resID int64, stamp 
 	return c, nil
 }
 
-func guestAccessOpen(status string, locked bool) bool {
+// GuestAccessOpen is claim.guest_access_open.
+func GuestAccessOpen(status string, locked bool) bool {
 	return status == "active" && !locked
 }
 
-func hostOwnsStay(r *http.Request, ownerID int64) bool {
+// HostOwnsStay is guest.py _host_owns_apartment.
+func HostOwnsStay(r *http.Request, ownerID int64) bool {
 	// Host session parity is brief 1720/1500; without a pool login stub, always false.
 	_ = r
 	_ = ownerID
 	return false
 }
 
-func deviceHoldsClaim(r *http.Request, resID, version int64) bool {
+// DeviceHoldsClaim is guest.py _device_holds_claim.
+func DeviceHoldsClaim(r *http.Request, resID, version int64) bool {
 	// ubyhost_claim cookie parity is brief 1720; fail closed for mail-on paths until then.
 	_ = r
 	_ = resID

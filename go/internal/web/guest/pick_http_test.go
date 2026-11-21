@@ -105,6 +105,7 @@ func TestStayOverviewBySlugRedirectsToNew(t *testing.T) {
 	secret := strings.Repeat("z", 32)
 	t.Setenv("UBYHOST_SECRET_KEY", secret)
 	t.Setenv("UBYHOST_GUEST_PIN", "0")
+	t.Setenv("UBYHOST_MAIL_BACKEND", "disabled")
 	getenv := func(k string) string {
 		if v := os.Getenv(k); v != "" {
 			return v
