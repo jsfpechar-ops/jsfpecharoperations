@@ -129,6 +129,9 @@ def _seed() -> dict:
             "automation_mode": "manual",
             "active": 1,
             "created_at": now,
+            "uby_idub": "123456789012",
+            "uby_ws_user": "uby-ws1a2b3c",
+            "uby_ws_password_enc": db.encrypt_secret("ws-secret"),
         },
     )
     ids = {
