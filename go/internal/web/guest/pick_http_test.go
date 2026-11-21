@@ -79,8 +79,8 @@ func TestPinRedirectHonoursSession(t *testing.T) {
 		VALUES ($1, $2, 'x', 'host', 1, $3) ON CONFLICT DO NOTHING`, userID, fmt.Sprintf("r%d@example.test", aptID), stamp)
 	mustExecGuest(t, ctx, pool, `INSERT INTO apartment (id, owner_user_id, internal_name, city_en, active, permalink_token, permalink_pin, created_at)
 		VALUES ($1, $2, 'Flat', 'Prague', 1, $3, '123456', $4)`, aptID, userID, tok, stamp)
-	mustExecGuest(t, ctx, pool, `INSERT INTO reservation (id, apartment_id, status, source, date_from, date_to, created_at)
-		VALUES ($1, $2, 'active', 'manual', $3, $4, $5)`, resID, aptID, "2026-06-10", "2026-06-12", stamp)
+	mustExecGuest(t, ctx, pool, `INSERT INTO reservation (id, apartment_id, uid, status, source, date_from, date_to, created_at, updated_at)
+		VALUES ($1, $2, $3, 'active', 'manual', $4, $5, $6, $6)`, resID, aptID, fmt.Sprintf("stay-%d", resID), "2026-06-10", "2026-06-12", stamp)
 
 	d := stayClaimDeps{pool: pool, getenv: getenv, now: now}
 	pinRec := httptest.NewRecorder()
