@@ -96,3 +96,49 @@ func TestPinRedirectHonoursSession(t *testing.T) {
 		t.Fatalf("expected no hub redirect with pin session, got Location %q", stayRec.Header().Get("Location"))
 	}
 }
+
+func TestStayOverviewBySlugRedirectsToNew(t *testing.T) {
+	pool := testPoolOptional(t)
+	if pool == nil {
+		return
+	}
+	secret := strings.Repeat("z", 32)
+	t.Setenv("UBYHOST_SECRET_KEY", secret)
+	t.Setenv("UBYHOST_GUEST_PIN", "0")
+	getenv := func(k string) string {
+		if v := os.Getenv(k); v != "" {
+			return v
+		}
+		return ""
+	}
+	now := func() time.Time { return time.Date(2026, 6, 15, 12, 0, 0, 0, time.UTC) }
+	ctx := t.Context()
+	stamp := "2026-01-01T00:00:00Z"
+	aptID := time.Now().UnixNano()%9000000000 + 4000000
+	userID := aptID
+	tok := fmt.Sprintf("permalink%dtok", aptID)
+	slug := fmt.Sprintf("flat-%06d-abc234", aptID%1000000)
+	resID := aptID + 10
+	mustExecGuest(t, ctx, pool, `INSERT INTO user_account (id, username, password_hash, role, active, created_at)
+		VALUES ($1, $2, 'x', 'host', 1, $3) ON CONFLICT DO NOTHING`, userID, fmt.Sprintf("s%d@example.test", aptID), stamp)
+	mustExecGuest(t, ctx, pool, `INSERT INTO apartment (id, owner_user_id, internal_name, city_en, active, permalink_token, permalink_pin, created_at)
+		VALUES ($1, $2, 'Flat', 'Prague', 1, $3, '123456', $4)`, aptID, userID, tok, stamp)
+	mustExecGuest(t, ctx, pool, `INSERT INTO apartment_slug (slug, apartment_id, is_current, created_at)
+		VALUES ($1, $2, 1, $3)`, slug, aptID, stamp)
+	mustExecGuest(t, ctx, pool, `INSERT INTO reservation (id, apartment_id, uid, status, source, date_from, date_to, created_at, updated_at)
+		VALUES ($1, $2, $3, 'active', 'manual', $4, $5, $6, $6)`, resID, aptID, fmt.Sprintf("stay-%d", resID), "2026-06-10", "2026-06-12", stamp)
+
+	mux := http.NewServeMux()
+	RegisterStayClaim(mux, pool, getenv, now, func(_ string, h http.HandlerFunc) http.Handler { return h })
+
+	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/l/%s/%d?lang=en", slug, resID), nil)
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("status %d want 303 body %q", rec.Code, rec.Body.String()[:min(120, rec.Body.Len())])
+	}
+	loc := rec.Header().Get("Location")
+	if !strings.Contains(loc, "/new") || !strings.Contains(loc, slug) {
+		t.Fatalf("location %q", loc)
+	}
+}
