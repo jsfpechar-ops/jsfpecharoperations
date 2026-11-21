@@ -98,6 +98,5 @@ def test_cases_cover_the_brief():
         mine = [c for c in CASES["cases"] if c["path"].split("?")[0] == page]
         assert {c["lang"] for c in mine} == {"en", "cs", "vi"}
         assert any(c.get("as") for c in mine) and any(not c["user"] for c in mine)
-    assert sorted(n for n, c in names.items() if c.get("go")) == [
-        "apartments_rows_not_ported",
-    ]
+    # Live /apartments list is Go-ported (brief 1527); no golden case uses "go": 501.
+    assert sorted(n for n, c in names.items() if c.get("go")) == []
