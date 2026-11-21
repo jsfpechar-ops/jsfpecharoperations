@@ -233,6 +233,7 @@ type Apartment struct {
 	PermalinkPIN           string
 	PassportPhotoPolicy    string
 	LockProvider           string
+	DefaultPurpose         string
 	OwnerUserID            int64
 	LegalEntityID          int64
 	DataControllerEntityID *int64

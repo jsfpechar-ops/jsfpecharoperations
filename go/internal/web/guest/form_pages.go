@@ -29,7 +29,6 @@ import (
 
 const (
 	formSubmitSent     = "sent"
-	ownedCookie        = "ubyhost_guest_owned"
 	formPagesHardening = "no-store"
 )
 
@@ -70,6 +69,10 @@ type formPageDeps struct {
 	pool   *pgxpool.Pool
 	getenv func(string) string
 	now    func() time.Time
+}
+
+func (d formPageDeps) shell() shellDeps {
+	return shellDeps{pool: d.pool, getenv: d.getenv, now: d.now}
 }
 
 type formResRow struct {
@@ -157,7 +160,7 @@ func handleFormPage(ctx context.Context, d formPageDeps, w http.ResponseWriter, 
 		formWriteUnavailable(w, r, lang, "controller_missing", http.StatusServiceUnavailable, link, nil)
 		return nil
 	}
-	if formPagesRequirePin(w, r, link, lang, d.getenv) {
+	if requirePin(w, r, d.shell(), link, lang, apt) {
 		return nil
 	}
 	res, ok := formPagesReservation(ctx, d.pool, apt, resID, r)
@@ -175,7 +178,7 @@ func handleFormPage(ctx context.Context, d formPageDeps, w http.ResponseWriter, 
 			http.NotFound(w, r)
 			return nil
 		}
-		owned := formPagesOwnedIDs(r)
+		owned := formPagesOwnedIDs(r, d.getenv)
 		if !owned[gid] {
 			formWriteUnavailable(w, r, lang, "not_yours", http.StatusForbidden, link, map[string]string{"reservation_id": strconv.FormatInt(resID, 10)})
 			return nil
@@ -304,7 +307,7 @@ func handleRemovePost(ctx context.Context, d formPageDeps, w http.ResponseWriter
 	_, _ = d.pool.Exec(ctx, `INSERT INTO audit (at, actor, action, detail, owner_user_id) VALUES ($1,$2,$3,$4,$5)`,
 		d.now().UTC(), "guest", "guest_removed_by_guest", fmt.Sprintf("guest=%d reservation=%d", guestID, resID), apt.ID)
 	_ = formPagesSubmitStayIfComplete(ctx, d.pool, d.getenv, d.now, apt.ID, resID)
-	owned := formPagesOwnedIDs(r)
+	owned := formPagesOwnedIDs(r, d.getenv)
 	delete(owned, guestID)
 	ids := make([]int64, 0, len(owned))
 	for id := range owned {
@@ -343,7 +346,7 @@ func handleRelang(ctx context.Context, d formPageDeps, w http.ResponseWriter, r 
 		early.ServeHTTP(w, r)
 		return nil
 	}
-	if formPagesRequirePin(w, r, link, lang, d.getenv) {
+	if requirePin(w, r, d.shell(), link, lang, apt) {
 		return nil
 	}
 	res, ok := formPagesReservation(ctx, d.pool, apt, resID, r)
@@ -351,7 +354,7 @@ func handleRelang(ctx context.Context, d formPageDeps, w http.ResponseWriter, r 
 		formWriteUnavailable(w, r, lang, "stay_gone", http.StatusNotFound, link, nil)
 		return nil
 	}
-	if formPagesThrottlePost(w, r, link, "guest_relang", lang) {
+	if formPagesThrottlePost(w, r, d, link, "guest_relang", lang) {
 		return nil
 	}
 	if formPagesRequireClaim(w, r, res, link, lang) {
@@ -361,7 +364,7 @@ func handleRelang(ctx context.Context, d formPageDeps, w http.ResponseWriter, r 
 	var guest *formGuestRow
 	if raw := strings.TrimSpace(form["guest_id"]); raw != "" {
 		if gid, err := strconv.ParseInt(raw, 10, 64); err == nil {
-			owned := formPagesOwnedIDs(r)
+			owned := formPagesOwnedIDs(r, d.getenv)
 			if owned[gid] {
 				guest, err = loadFormGuest(ctx, d.pool, gid, resID, d.getenv, d.now)
 				if err != nil {
@@ -423,9 +426,10 @@ func removalGuard(ctx context.Context, d formPageDeps, r *http.Request, post boo
 	if early != nil {
 		return nil, link, formResRow{}, nil, func(w http.ResponseWriter, r *http.Request) { early.ServeHTTP(w, r) }, nil
 	}
-	discard := httptest.NewRecorder()
-	if formPagesRequirePin(discard, r, link, lang, d.getenv) {
-		return nil, link, formResRow{}, nil, func(w http.ResponseWriter, _ *http.Request) {}, nil
+	if requirePin(httptest.NewRecorder(), r, d.shell(), link, lang, apt) {
+		return nil, link, formResRow{}, nil, func(w http.ResponseWriter, r *http.Request) {
+			requirePin(w, r, d.shell(), link, lang, apt)
+		}, nil
 	}
 	res, ok := formPagesReservation(ctx, d.pool, apt, resID, r)
 	if !ok {
@@ -433,13 +437,15 @@ func removalGuard(ctx context.Context, d formPageDeps, r *http.Request, post boo
 			formWriteUnavailable(w, r, lang, "stay_gone", http.StatusNotFound, link, nil)
 		}, nil
 	}
-	if post && formPagesThrottlePost(discard, r, link, "guest_remove", lang) {
+	if post && guestPostLimited(ctx, d.pool, d.getenv, r, link, "guest_remove", d.now()) {
+		return nil, link, formResRow{}, nil, func(w http.ResponseWriter, r *http.Request) {
+			formWriteUnavailable(w, r, lang, "rate_limited", http.StatusTooManyRequests, link, nil)
+		}, nil
+	}
+	if formPagesRequireClaim(httptest.NewRecorder(), r, res, link, lang) {
 		return nil, link, formResRow{}, nil, func(w http.ResponseWriter, _ *http.Request) {}, nil
 	}
-	if formPagesRequireClaim(discard, r, res, link, lang) {
-		return nil, link, formResRow{}, nil, func(w http.ResponseWriter, _ *http.Request) {}, nil
-	}
-	owned := formPagesOwnedIDs(r)
+	owned := formPagesOwnedIDs(r, d.getenv)
 	if !owned[guestID] {
 		return nil, link, formResRow{}, nil, func(w http.ResponseWriter, r *http.Request) {
 			formWriteUnavailable(w, r, lang, "not_yours", http.StatusForbidden, link, map[string]string{"reservation_id": strconv.FormatInt(resID, 10)})
@@ -551,7 +557,7 @@ func buildFormView(ctx context.Context, d formPageDeps, r *http.Request, apt *Ap
 	p := Page{Lang: lang}
 	view.SaveActionLabel = p.T(saveKey)
 	if mode == "new" {
-		dups, _ := formPagesDupWarnings(ctx, d.pool, res.id, formPagesOwnedIDs(r), lang)
+		dups, _ := formPagesDupWarnings(ctx, d.pool, res.id, formPagesOwnedIDs(r, d.getenv), lang)
 		view.DupWarnings = dups
 	}
 	_ = r
@@ -597,15 +603,15 @@ func writeRemovePage(w http.ResponseWriter, r *http.Request, v formView) {
 
 func loadFormGuest(ctx context.Context, pool *pgxpool.Pool, id, resID int64, getenv func(string) string, now func() time.Time) (*formGuestRow, error) {
 	var g formGuestRow
-	var birthEnc, docEnc, visaEnc, streetEnc, cityEnc string
+	var birthEnc, docEnc, visaEnc, streetEnc, cityEnc, sigEnc string
 	err := pool.QueryRow(ctx, `SELECT id, COALESCE(submit_state,''), COALESCE(restricted_at::text,''),
 		COALESCE(stay_from,''), COALESCE(stay_to,''), COALESCE(first_name,''), COALESCE(surname,''),
-		COALESCE(signature_png,''), COALESCE(nationality,''),
+		COALESCE(signature_png,''), COALESCE(signature_png_enc,''), COALESCE(nationality,''),
 		COALESCE(birth_date_enc,''), COALESCE(doc_number_enc,''), COALESCE(visa_number_enc,''),
 		COALESCE(res_street_enc,''), COALESCE(res_city_enc,'')
 		FROM guest WHERE id = $1 AND reservation_id = $2 AND archived_at IS NULL`, id, resID).
 		Scan(&g.id, &g.submitState, &g.restrictedAt, &g.stayFrom, &g.stayTo, &g.firstName, &g.surname,
-			&g.signaturePNG, &g.nationality, &birthEnc, &docEnc, &visaEnc, &streetEnc, &cityEnc)
+			&g.signaturePNG, &sigEnc, &g.nationality, &birthEnc, &docEnc, &visaEnc, &streetEnc, &cityEnc)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
@@ -613,6 +619,15 @@ func loadFormGuest(ctx context.Context, pool *pgxpool.Pool, id, resID int64, get
 		return nil, err
 	}
 	_ = birthEnc
+	_ = docEnc
+	_ = visaEnc
+	_ = streetEnc
+	_ = cityEnc
+	plain, err := decryptGuestField(getenv, now, sigEnc, g.signaturePNG)
+	if err != nil {
+		return nil, err
+	}
+	g.signaturePNG = plain
 	return &g, nil
 }
 
@@ -637,11 +652,11 @@ func postFormFields(r *http.Request) map[string]string {
 
 func formPagesAlertControllerMissing(apt *Apartment) bool { return false }
 
-func formPagesRequirePin(w http.ResponseWriter, r *http.Request, token, lang string, getenv func(string) string) bool {
-	return false
-}
-
-func formPagesThrottlePost(w http.ResponseWriter, r *http.Request, token, kind, lang string) bool {
+func formPagesThrottlePost(w http.ResponseWriter, r *http.Request, d formPageDeps, token, kind, lang string) bool {
+	if guestPostLimited(r.Context(), d.pool, d.getenv, r, token, kind, d.now()) {
+		formWriteUnavailable(w, r, lang, "rate_limited", http.StatusTooManyRequests, token, nil)
+		return true
+	}
 	return false
 }
 
@@ -650,7 +665,8 @@ func formPagesReservation(ctx context.Context, pool *pgxpool.Pool, apt *Apartmen
 	err := pool.QueryRow(ctx, `SELECT r.id, r.apartment_id, a.owner_user_id, r.date_from::text, r.date_to::text,
 		r.declared_guests, r.override_guests, r.reduced_guests
 		FROM reservation r JOIN apartment a ON a.id = r.apartment_id
-		WHERE r.id = $1 AND r.apartment_id = $2 AND r.status = 'active' AND a.permalink_token = $3`,
+		WHERE r.id = $1 AND r.apartment_id = $2 AND r.status = 'active' AND r.archived_at IS NULL
+		  AND COALESCE(r.source,'') <> 'demo' AND a.permalink_token = $3`,
 		resID, apt.ID, apt.PermalinkToken).Scan(&row.id, &row.apartmentID, &row.ownerUserID, &row.dateFrom, &row.dateTo,
 		&row.declaredGuests, &row.overrideGuests, &row.reducedGuests)
 	if err != nil {
@@ -663,7 +679,13 @@ func formPagesRequireClaim(w http.ResponseWriter, r *http.Request, res formResRo
 	return false
 }
 
-func formPagesOwnedIDs(r *http.Request) map[int64]bool { return map[int64]bool{} }
+func formPagesOwnedIDs(r *http.Request, getenv func(string) string) map[int64]bool {
+	out := map[int64]bool{}
+	for _, id := range ownedGuestIDs(r, getenv) {
+		out[id] = true
+	}
+	return out
+}
 
 func formPagesGuestLocked(g *formGuestRow, res formResRow) bool { return false }
 
@@ -683,7 +705,12 @@ func formPagesDatesLink(back string, editing, canPick bool) string {
 
 func formPagesCanPick(apt *Apartment) bool { return false }
 
-func formPagesDefaultPurpose(apt *Apartment) string { return "10" }
+func formPagesDefaultPurpose(apt *Apartment) string {
+	if apt != nil && strings.TrimSpace(apt.DefaultPurpose) != "" {
+		return apt.DefaultPurpose
+	}
+	return "99"
+}
 
 func formPagesCSRF(r *http.Request) string { return formPagesCSRFToken() }
 
@@ -724,7 +751,9 @@ func legalTodayForm(now func() time.Time) time.Time {
 	return time.Date(at.Year(), at.Month(), at.Day(), 0, 0, 0, 0, time.UTC)
 }
 
-func formPagesSetOwnedCookie(w http.ResponseWriter, getenv func(string) string, ids []int64) {}
+func formPagesSetOwnedCookie(w http.ResponseWriter, getenv func(string) string, ids []int64) {
+	rememberOwnedGuestIDs(w, getenv, ids)
+}
 
 // formWriteUnavailable is brief 1720a unavailable page with extra reservation_id hint.
 func formWriteUnavailable(w http.ResponseWriter, r *http.Request, lang, code string, status int, token string, extra map[string]string) {

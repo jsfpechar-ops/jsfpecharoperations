@@ -1,12 +1,15 @@
 package guest
 
 import (
+	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
+	"time"
 )
 
 type formSaveGolden struct {
@@ -67,4 +70,107 @@ func mustRequest(method, target string) *http.Request {
 	r.SetPathValue("token", "tok")
 	r.SetPathValue("reservation_id", "9")
 	return r
+}
+
+func TestGuestSaveInsertColsIncludeEncryptedPII(t *testing.T) {
+	joined := strings.Join(guestSaveInsertCols, ",")
+	for _, col := range []string{"birth_date_enc", "doc_number_enc", "visa_number_enc", "res_street_enc", "res_city_enc", "signature_png_enc"} {
+		if !strings.Contains(joined, col) {
+			t.Errorf("insert omits %s — guest identity would be dropped", col)
+		}
+	}
+	for _, col := range []string{"birth_date", "doc_number", "signature_png"} {
+		if strings.Contains(","+joined+",", ","+col+",") {
+			t.Errorf("insert writes plaintext %s", col)
+		}
+	}
+}
+
+func testGuestEnv(k string) string {
+	if k == "UBYHOST_SECRET_KEY" {
+		return "guest-form-save-test-secret-key-32ch"
+	}
+	return ""
+}
+
+func TestOwnedGuestIDRequiresCookie(t *testing.T) {
+	form := map[string]string{"guest_id": "42"}
+	r := httptest.NewRequest(http.MethodPost, "/l/tok/9/save", nil)
+	if got := ownedGuestID(r, testGuestEnv, form); got != 0 {
+		t.Fatalf("unsigned guest_id: got %d want 0", got)
+	}
+	w := httptest.NewRecorder()
+	rememberOwnedGuestIDs(w, testGuestEnv, []int64{42, 7})
+	res := w.Result()
+	defer res.Body.Close()
+	var cookie *http.Cookie
+	for _, c := range res.Cookies() {
+		if c.Name == ownedCookieName {
+			cookie = c
+		}
+	}
+	if cookie == nil {
+		t.Fatal("owned cookie not set")
+	}
+	r.AddCookie(cookie)
+	if got := ownedGuestID(r, testGuestEnv, form); got != 42 {
+		t.Fatalf("owned guest_id: got %d want 42", got)
+	}
+	if got := ownedGuestID(r, testGuestEnv, map[string]string{"guest_id": "99"}); got != 0 {
+		t.Fatalf("foreign guest_id: got %d want 0", got)
+	}
+}
+
+func TestReservationForGuestNilPool(t *testing.T) {
+	cfg, res, ok := reservationForGuest(t.Context(), nil, &Apartment{ID: 1, PermalinkToken: "tok"}, 9, testGuestEnv)
+	if ok || cfg.ownerUserID != 0 || res.apartmentID != 0 {
+		t.Fatalf("nil pool must fail closed, got ok=%v cfg=%v res=%v", ok, cfg, res)
+	}
+}
+
+func testDataEnv(k string) string {
+	if k == "UBYHOST_DATA_KEYS" {
+		return base64.URLEncoding.EncodeToString(bytes.Repeat([]byte{7}, 32))
+	}
+	if k == "UBYHOST_DATA_KEY_LEGACY" {
+		return "0"
+	}
+	return testGuestEnv(k)
+}
+
+func TestEncryptSaveFieldsWritesEncColumns(t *testing.T) {
+	out, err := encryptSaveFields(testDataEnv, map[string]any{
+		"birth_date": "1990-01-01", "surname": "Novak", "signature_png": "",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := out["birth_date"]; ok {
+		t.Fatal("plaintext birth_date must not be written")
+	}
+	if tok, _ := out["birth_date_enc"].(string); tok == "" {
+		t.Fatal("birth_date_enc missing")
+	}
+	if out["signature_png_enc"] != nil {
+		t.Fatal("empty signature must store nil enc, not wipe later reads")
+	}
+	if out["surname"] != "Novak" {
+		t.Fatalf("surname: %v", out["surname"])
+	}
+}
+
+func TestDecryptGuestFieldEmptyUsesPlain(t *testing.T) {
+	got, err := decryptGuestField(testDataEnv, time.Now, "", "kept-sig")
+	if err != nil || got != "kept-sig" {
+		t.Fatalf("got %q err %v", got, err)
+	}
+	out, err := encryptSaveFields(testDataEnv, map[string]any{"signature_png": "data:image/png;base64,AAAA"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	tok, _ := out["signature_png_enc"].(string)
+	plain, err := decryptGuestField(testDataEnv, time.Now, tok, "")
+	if err != nil || plain != "data:image/png;base64,AAAA" {
+		t.Fatalf("round-trip %q err %v", plain, err)
+	}
 }

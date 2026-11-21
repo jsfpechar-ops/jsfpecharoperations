@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/clientip"
 )
 
 func epoch(t time.Time) float64 { return float64(t.UnixNano()) / 1e9 }
@@ -46,4 +48,21 @@ func RateBlocked(ctx context.Context, pool *pgxpool.Pool, scope, key string, lim
 func RateRecord(ctx context.Context, pool *pgxpool.Pool, scope, key string, now time.Time) error {
 	_, err := pool.Exec(ctx, `INSERT INTO rate_limit_event (scope, key, at) VALUES ($1, $2, $3)`, scope, key, epoch(now))
 	return err
+}
+
+// guestPostMaxAttempts is GUEST_POST_MAX_ATTEMPTS in guest.py.
+const guestPostMaxAttempts = 30
+
+// guestPostLimited is _throttle_guest_post: true when this IP+link has used up
+// the write budget for scope (guest_save, guest_remove, guest_relang, …).
+func guestPostLimited(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string, r *http.Request, token, scope string, now time.Time) bool {
+	if pool == nil {
+		return false
+	}
+	key := clientip.Key(r, getenv, "guest:"+token)
+	if RateBlocked(ctx, pool, scope, key, guestPostMaxAttempts, now) {
+		return true
+	}
+	_ = RateRecord(ctx, pool, scope, key, now)
+	return false
 }

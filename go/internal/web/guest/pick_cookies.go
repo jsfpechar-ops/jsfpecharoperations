@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -144,4 +145,50 @@ func urlSafeSign(secret, salt, message string) string {
 	mac := hmac.New(sha1.New, derived[:])
 	mac.Write([]byte(message))
 	return base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
+}
+
+func urlSafeDumps(secret, salt string, v any) (string, error) {
+	raw, err := json.Marshal(v)
+	if err != nil {
+		return "", err
+	}
+	value := base64.RawURLEncoding.EncodeToString(raw)
+	return value + "." + urlSafeSign(secret, salt, value), nil
+}
+
+// rememberOwnedGuestIDs is guest.py _remember_owned.
+func rememberOwnedGuestIDs(w http.ResponseWriter, getenv func(string) string, ids []int64) {
+	if w == nil || getenv == nil {
+		return
+	}
+	secret, err := secure.LoadSecret(getenv)
+	if err != nil {
+		return
+	}
+	seen := map[int64]bool{}
+	uniq := make([]int64, 0, len(ids))
+	for _, id := range ids {
+		if id <= 0 || seen[id] {
+			continue
+		}
+		seen[id] = true
+		uniq = append(uniq, id)
+	}
+	sort.Slice(uniq, func(i, j int) bool { return uniq[i] < uniq[j] })
+	if len(uniq) > 40 {
+		uniq = uniq[len(uniq)-40:]
+	}
+	tok, err := urlSafeDumps(secret, ownedCookieSalt, uniq)
+	if err != nil {
+		return
+	}
+	http.SetCookie(w, &http.Cookie{
+		Name:     ownedCookieName,
+		Value:    tok,
+		Path:     "/",
+		MaxAge:   60 * 60 * 24 * 60,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		Secure:   hostweb.SecureCookies(getenv),
+	})
 }
