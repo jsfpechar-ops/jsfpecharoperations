@@ -18,8 +18,12 @@ set +a
 data_sh() {
   if docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .; then
     docker compose --profile go exec -T ubyhost-go sh -c "$1"
-  else
+  elif docker compose config --services 2>/dev/null | grep -qx ubyhost \
+    && docker compose ps -q --status running ubyhost 2>/dev/null | grep -q .; then
     docker compose exec -T ubyhost sh -c "$1"
+  else
+    echo "Refusing backup: ubyhost-go must be running (Go-only stack has no ubyhost container)." >&2
+    return 1
   fi
 }
 

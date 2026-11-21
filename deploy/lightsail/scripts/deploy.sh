@@ -74,7 +74,7 @@ running_python_app() {
 app_data_exec() {
   if go_stack && docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .; then
     docker compose --profile go exec -T ubyhost-go sh -c "$1"
-  elif running_python_app; then
+  elif docker compose config --services 2>/dev/null | grep -qx ubyhost     && docker compose ps -q --status running ubyhost 2>/dev/null | grep -q .; then
     docker compose exec -T ubyhost sh -c "$1"
   else
     return 1
@@ -229,7 +229,13 @@ fi
 BACKUP_STAMP=""
 TABLES=(user_account legal_entity apartment reservation guest submission)
 declare -A BEFORE_COUNTS
-if (go_stack && docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .) || running_python_app; then
+if [ "${UBYHOST_DEPLOYMENT:-}" = "production" ] && go_stack; then
+  if ! docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .; then
+    echo "Refusing deploy: ubyhost-go must be running for mandatory pre-deploy backup on the Go-only stack." >&2
+    exit 1
+  fi
+fi
+if (go_stack && docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .)   || (docker compose config --services 2>/dev/null | grep -qx ubyhost     && docker compose ps -q --status running ubyhost 2>/dev/null | grep -q .); then
   echo "==> Mandatory pre-deploy backup"
   ./scripts/backup.sh
   BACKUP_STAMP="$(app_data_exec 'ls -1 /data/backups 2>/dev/null | sort -r | sed -n "1p"')"
