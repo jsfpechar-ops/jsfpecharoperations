@@ -188,6 +188,7 @@ var pagePrints = map[string]bool{
 	"LangIf": true, "OGLocale": true, "OfficialLink": true, "FAQJSON": true, "ArticleJSON": true,
 	"Lang": true, "SwitchPath": true, "Code": true, "Href": true, "PHKeyJS": true, "PHHostJS": true, "PHAssetsJS": true,
 	"CTA": true, "RatesJSON": true, "WebPageJSON": true, "PricingFAQJSON": true,
+	"SignupHref": true, "Weekdays": true,
 	"StdMonth": true, "MaxMonth": true, "StdYear": true, "MaxYear": true, "TTLockMonth": true, "Band": true, "Tick": true,
 }
 

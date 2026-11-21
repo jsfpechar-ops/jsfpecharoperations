@@ -1,0 +1,30 @@
+{{define "dashboard.title"}}{{t "dashboard.title"}}{{end}}
+{{define "dashboard"}}
+{{- $d := . -}}
+{{if not $d.Apartments}}
+<div class="head"><div><h1>{{t "dashboard.title"}}</h1><p class="sub">{{$d.TodayLong}}</p></div></div>
+<section class="onboarding-welcome" data-layout="v2">
+  <header class="onboarding-intro"><div><h1>{{t "onboarding.welcome_title"}}</h1></div></header>
+</section>
+{{else}}
+<div class="head ov-head"><div>
+  <h1 class="hl"><span class="ph-hide">{{t "dashboard.title"}}</span></h1>
+  <p class="sub ph-hide">{{$d.TodayLong}}</p>
+</div>
+<a class="btn ph-hide" href="/reservations?new=1">{{t "stays.add_stay"}}</a></div>
+{{if not $d.Rows}}{{if $d.FeedCount}}{{else}}
+  <p class="ui-empty">{{t "dashboard.empty.no_feed"}} <a href="/apartments/{{(index $d.Apartments 0).ID}}?view=bookings#calendars">{{t "dashboard.empty.connect_calendar"}}</a></p>
+{{end}}{{end}}
+<section id="needs-action" aria-labelledby="needs-you-title">
+  <h2 id="needs-you-title" class="sec ph-hide">{{t "needs_you.title"}}</h2>
+  <div class="todo ov-section">
+    <div class="card needs-you-calm allgood ph-hide"><p><strong>{{t "needs_you.calm"}}</strong></p></div>
+  </div>
+</section>
+{{range $d.Rows}}
+<div class="dashboard-stay" data-stay-id="{{.Reservation.ID}}">
+  <a href="/reservations/{{.Reservation.ID}}?return_to=/">{{if .Reservation.Summary}}{{.Reservation.Summary}}{{else}}{{.Reservation.InternalName}}{{end}}</a>
+</div>
+{{end}}
+{{end}}
+{{end}}

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="{{.Lang}}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f7f5">
+  <title>{{.T "landing.page_title"}}</title>
+  <meta name="description" content="{{.T "landing.meta_description"}}">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="{{.Canonical}}">
+  {{range .Alternates}}<link rel="alternate" hreflang="{{.Code}}" href="{{.Href}}">{{end}}
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="UbyHost">
+  <meta property="og:title" content="{{.T "landing.page_title"}}">
+  <meta property="og:description" content="{{.T "landing.meta_description"}}">
+  <meta property="og:url" content="{{.PublicBase}}/">
+  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
+  <link rel="stylesheet" href="/static/tokens.css?v=20261022-0284">
+  <link rel="stylesheet" href="/static/landing.css?v=20261109-1063a">
+  {{template "pposthog" .}}
+</head>
+<body>
+{{$p := .}}{{template "pheader" .}}
+  <main id="content">
+    <section class="landing-hero" aria-labelledby="landing-title">
+      <p class="landing-eyebrow">{{.T "landing.eyebrow"}}</p>
+      <h1 id="landing-title">{{.T "landing.title"}}</h1>
+      <p class="landing-lede">{{.T "landing.lede"}}</p>
+      <div class="landing-hero-actions">
+        {{if .SignupHref}}<a class="landing-button primary" href="{{.SignupHref}}" data-analytics-event="signup_start">{{.T "landing.cta"}}</a>{{else}}<a class="landing-button primary" href="/login?lang={{.Lang}}" data-analytics-event="login_click">{{.T "landing.cta"}}</a>{{end}}
+        <a class="landing-button secondary" href="/jak-to-funguje?lang={{.Lang}}">{{.T "landing.contact"}} </a>
+      </div>
+      <p class="landing-trust">{{.T "landing.independent"}}</p>
+    </section>
+    <section class="landing-section benefits" aria-labelledby="benefits-title">
+      <div class="landing-section-head">
+        <p class="landing-eyebrow">{{.T "landing.benefits.eyebrow"}}</p>
+        <h2 id="benefits-title">{{.T "landing.benefits.title"}}</h2>
+      </div>
+      <ol class="benefit-list">
+        <li><span>01</span><div><h3>{{.T "landing.benefit.calendar.title"}}</h3><p>{{.T "landing.benefit.calendar.body"}}</p></div></li>
+        <li><span>02</span><div><h3>{{.T "landing.benefit.guest.title"}}</h3><p>{{.T "landing.benefit.guest.body"}}</p></div></li>
+        <li><span>03</span><div><h3>{{.T "landing.benefit.ubyport.title"}}</h3><p>{{.T "landing.benefit.ubyport.body"}}</p></div></li>
+      </ol>
+    </section>
+    <section class="landing-section quick-steps" aria-labelledby="steps-title">
+      <h2 id="steps-title">{{.T "landing.steps.title"}}</h2>
+      <ol>
+        <li><span>01</span><strong>{{.T "landing.steps.1"}}</strong></li>
+        <li><span>02</span><strong>{{.T "landing.steps.2"}}</strong></li>
+        <li><span>03</span><strong>{{.T "landing.steps.3"}}</strong></li>
+      </ol>
+      <a href="/jak-to-funguje?lang={{.Lang}}">{{.T "landing.details.link"}} </a>
+    </section>
+    <section class="landing-final">
+      <div><h2>{{.T "landing.final.title"}}</h2><p>{{.T "landing.final.body"}}</p></div>
+      {{if .SignupHref}}<a class="landing-button primary" href="{{.SignupHref}}">{{.T "landing.cta"}}</a>{{else}}<a class="landing-button primary" href="/login?lang={{.Lang}}">{{.T "landing.cta"}}</a>{{end}}
+    </section>
+  </main>
+{{template "pfooter" .}}
+</body>
+</html>
