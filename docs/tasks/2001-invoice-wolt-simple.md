@@ -1,6 +1,6 @@
 # 2001: Invoice builder Wolt-simple; Generate invoice on the stay page; items-row geometry fix
 
-Status: todo
+Status: review
 Depends on: none | Base commit: fa85ae1a | Branch: task/2001-invoice-wolt-simple
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
