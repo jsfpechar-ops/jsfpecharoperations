@@ -9,6 +9,7 @@
 
 {{define "entities.title"}}{{end}}
 {{define "entities"}}
+{{host_alerts}}
 <div class="airbnb-header">
   <a class="airbnb-back" href="/settings" aria-label="{{t "common.back"}}">{{icon "arrow-left" 20}}</a>
   <h1 class="airbnb-title">{{if .TitleHead}}{{.TitleHead}} {{end}}<span class="tip-nowrap">{{.TitleLast}}{{help_tip "entities-lede-help" (t "entities.lede")}}</span></h1>

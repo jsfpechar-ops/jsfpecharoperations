@@ -2,6 +2,7 @@ package guest
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -22,10 +23,15 @@ func alertControllerMissing(ctx context.Context, pool *pgxpool.Pool, apt pickApa
 		owner = *apt.OwnerUserID
 	}
 	aptID := apt.ID
-	_ = ubyport.RaiseAlert(ctx, pool, "critical", "controller_missing",
-		"The guest form cannot name who controls the guest's data.",
-		"Add the data controller's name, address or IČO and contact e-mail.",
-		"controller_missing:"+apt.PermalinkToken, &aptID, nil, &owner, nil)
+	tok := apt.PermalinkToken
+	go func() {
+		bg, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		_ = ubyport.RaiseAlert(bg, pool, "critical", "controller_missing",
+			"The guest form cannot name who controls the guest's data.",
+			"Add the data controller's name, address or IČO and contact e-mail.",
+			"controller_missing:"+tok, &aptID, nil, &owner, nil)
+	}()
 }
 
 func controllerComplete(ctx context.Context, pool *pgxpool.Pool, apt pickApartment) (bool, error) {

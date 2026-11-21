@@ -341,11 +341,10 @@
    "lang": "en"
   },
   {
-   "name": "entities_alert_not_ported",
+   "name": "entities_alert_list",
    "path": "/entities",
    "user": 132006,
-   "lang": "en",
-   "go": 501
+   "lang": "en"
   },
   {
    "name": "entities_signed_out",

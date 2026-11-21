@@ -136,7 +136,7 @@ func requirePin(w http.ResponseWriter, r *http.Request, d shellDeps, token, lang
 		pv.ReturnTo += "?" + r.URL.RawQuery
 	}
 	WithLang(w, d.getenv, GuestLanguage(lang))
-	writePinPage(w, r, http.StatusOK, pv, nil, csrfCookie, GuestLanguage(lang))
+	writePinPage(w, r, http.StatusOK, pv, nil, csrfCookie, GuestLanguage(lang), d.getenv)
 	return true
 }
 
