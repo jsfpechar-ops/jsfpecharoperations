@@ -13,10 +13,10 @@ import (
 	hw "github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb/layout"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/session"
-	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/stays"
-	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/welcomeback"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/auth"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/public"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/stays"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/welcomeback"
 )
 
 //go:embed i18n.json
