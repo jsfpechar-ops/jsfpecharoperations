@@ -303,6 +303,35 @@
     </div>
     <div id="u15-block"{{if not $.Under15}} hidden{{end}}>
       <p class="g-intro" id="u15-note">{{$.T "u15_note"}}</p>
+      {{if $.ChildSigners}}
+      <div class="g-field" id="sign-for-child">
+        <p class="g-intro" id="sign-for-child-text" data-template="{{$.T "sign_for_child"}}">{{$.T "sign_for_child" "names" (print ($.Val "first_name") " " ($.Val "surname"))}}</p>
+        {{if gt (len $.ChildSigners) 1}}
+        <div id="sign-for-who" role="radiogroup" aria-labelledby="sign-for-who-text" {{if $.FieldIsInvalid "signed_by"}}aria-invalid="true" aria-describedby="signed_by-error" {{end}}>
+          <p class="g-intro" id="sign-for-who-text">{{$.T "sign_for_who"}}</p>
+          {{range $.ChildSigners}}
+          <label class="checkline">
+            <input type="radio" name="signed_by" value="{{.ID}}"{{if eq $.SelectedSigner .ID}} checked{{end}}>
+            <span>{{.Name}}</span>
+          </label>
+          {{end}}
+          {{$.ErrHTML "signed_by"}}
+        </div>
+        {{else}}
+        <input type="hidden" name="signed_by" value="{{(index $.ChildSigners 0).ID}}">
+        {{end}}
+        <div id="sign-for-role" role="radiogroup" aria-labelledby="sign-for-child-text">
+          <label class="checkline">
+            <input type="radio" name="child_sign_role" value="parent"{{if eq $.SelectedChildRole "parent"}} checked{{end}}>
+            <span>{{$.T "sign_role_parent"}}</span>
+          </label>
+          <label class="checkline">
+            <input type="radio" name="child_sign_role" value="responsible_adult"{{if eq $.SelectedChildRole "responsible_adult"}} checked{{end}}>
+            <span>{{$.T "sign_role_responsible"}}</span>
+          </label>
+        </div>
+      </div>
+      {{end}}
     </div>
 
     <div class="g-review" data-wizard-review data-edit-label="{{$.T "review_edit"}}" hidden>
