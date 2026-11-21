@@ -85,12 +85,21 @@ jobs:
           # A manual dispatch runs from whatever branch it was started on, and
           # github.sha would be that branch's HEAD. Resolve the requested branch
           # to its current head commit instead, and deploy exactly that.
-          DEPLOY_SHA="$(git ls-remote \
-            "https://x-access-token:${GH_DEPLOY_TOKEN}@github.com/${REPO_SLUG}.git" \
-            "refs/heads/${DEPLOY_REF}" | cut -f1)"
-          if ! printf '%s' "${DEPLOY_SHA}" | grep -Eq '^[0-9a-f]{40}$'; then
-            echo "Branch '${DEPLOY_REF}' was not found (got '${DEPLOY_SHA}')." >&2
-            exit 1
+          # 1865: the automatic staging path passes the head commit of the CI run
+          # that went green (a 40-character SHA), and a SHA has no refs/heads/
+          # entry — `git ls-remote` would return nothing and the deploy failed
+          # with "Branch '<sha>' was not found". Take a full SHA as it is; only
+          # resolve something that is not one.
+          if printf '%s' "${DEPLOY_REF}" | grep -Eq '^[0-9a-f]{40}$'; then
+            DEPLOY_SHA="${DEPLOY_REF}"
+          else
+            DEPLOY_SHA="$(git ls-remote \
+              "https://x-access-token:${GH_DEPLOY_TOKEN}@github.com/${REPO_SLUG}.git" \
+              "refs/heads/${DEPLOY_REF}" | cut -f1)"
+            if ! printf '%s' "${DEPLOY_SHA}" | grep -Eq '^[0-9a-f]{40}$'; then
+              echo "Branch '${DEPLOY_REF}' was not found (got '${DEPLOY_SHA}')." >&2
+              exit 1
+            fi
           fi
           echo "Deploying ${DEPLOY_REF} at ${DEPLOY_SHA} to ${TARGET}${UBYPORT_TARGET:+ (UbyPort ${UBYPORT_TARGET})}"
           if [ "${REQUIRE_CI}" = "true" ]; then
