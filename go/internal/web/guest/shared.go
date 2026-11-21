@@ -131,9 +131,14 @@ func requirePin(w http.ResponseWriter, r *http.Request, d shellDeps, token, lang
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return true
 	}
-	pv.ReturnTo = r.URL.Path
-	if r.URL.RawQuery != "" {
-		pv.ReturnTo += "?" + r.URL.RawQuery
+	if rt := strings.TrimSpace(r.URL.Query().Get("return_to")); rt != "" {
+		pv.ReturnTo = safeReturnTo(rt, token, lang)
+	}
+	if pv.ReturnTo == "" {
+		pv.ReturnTo = r.URL.Path
+		if r.URL.RawQuery != "" {
+			pv.ReturnTo += "?" + r.URL.RawQuery
+		}
 	}
 	WithLang(w, d.getenv, GuestLanguage(lang))
 	writePinPage(w, r, http.StatusOK, pv, nil, csrfCookie, GuestLanguage(lang), d.getenv)

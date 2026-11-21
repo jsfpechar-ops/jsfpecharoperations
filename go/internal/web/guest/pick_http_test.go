@@ -53,3 +53,46 @@ func TestPickStayPinPageHTTP(t *testing.T) {
 		t.Fatalf("expected PIN form, got snippet %q", body[:min(300, len(body))])
 	}
 }
+
+func TestPinRedirectHonoursSession(t *testing.T) {
+	pool := testPoolOptional(t)
+	if pool == nil {
+		return
+	}
+	secret := strings.Repeat("y", 32)
+	t.Setenv("UBYHOST_SECRET_KEY", secret)
+	t.Setenv("UBYHOST_GUEST_PIN", "1")
+	getenv := func(k string) string {
+		if v := os.Getenv(k); v != "" {
+			return v
+		}
+		return ""
+	}
+	now := func() time.Time { return time.Date(2026, 6, 15, 12, 0, 0, 0, time.UTC) }
+	ctx := t.Context()
+	stamp := "2026-01-01T00:00:00Z"
+	aptID := time.Now().UnixNano()%9000000000 + 3000000
+	userID := aptID
+	tok := fmt.Sprintf("pinredir%d", aptID)
+	resID := aptID + 1
+	mustExecGuest(t, ctx, pool, `INSERT INTO user_account (id, username, password_hash, role, active, created_at)
+		VALUES ($1, $2, 'x', 'host', 1, $3) ON CONFLICT DO NOTHING`, userID, fmt.Sprintf("r%d@example.test", aptID), stamp)
+	mustExecGuest(t, ctx, pool, `INSERT INTO apartment (id, owner_user_id, internal_name, city_en, active, permalink_token, permalink_pin, created_at)
+		VALUES ($1, $2, 'Flat', 'Prague', 1, $3, '123456', $4)`, aptID, userID, tok, stamp)
+	mustExecGuest(t, ctx, pool, `INSERT INTO reservation (id, apartment_id, status, source, date_from, date_to, created_at)
+		VALUES ($1, $2, 'active', 'manual', $3, $4, $5)`, resID, aptID, "2026-06-10", "2026-06-12", stamp)
+
+	d := stayClaimDeps{pool: pool, getenv: getenv, now: now}
+	pinRec := httptest.NewRecorder()
+	if err := attachPinSession(pinRec, secret, tok, "123456", getenv, now()); err != nil {
+		t.Fatal(err)
+	}
+	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/l/%s/%d?lang=en", tok, resID), nil)
+	for _, c := range pinRec.Result().Cookies() {
+		req.AddCookie(c)
+	}
+	stayRec := httptest.NewRecorder()
+	if redir := d.pinRedirect(stayRec, req, tok, "en", resID); redir {
+		t.Fatalf("expected no hub redirect with pin session, got Location %q", stayRec.Header().Get("Location"))
+	}
+}
