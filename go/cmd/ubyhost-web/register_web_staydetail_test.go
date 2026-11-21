@@ -6,9 +6,8 @@ import (
 	"testing"
 )
 
-// The stay page and its settings save are Go routes; every other
-// /reservations/{id}/... path (filing above all) falls to the catch-all and
-// stays on Python, which only the 1864 selector keeps away from Go.
+// Stay detail GET/POST and manual submit (brief 1741) register on Go; other
+// /reservations/{id}/... filing posts still fall through until ported.
 func TestStayDetailRoutesRegistered(t *testing.T) {
 	mux := newMux(&metrics{counts: map[key]int64{}}, nil)
 	cases := []struct {
@@ -16,7 +15,7 @@ func TestStayDetailRoutesRegistered(t *testing.T) {
 	}{
 		{http.MethodGet, "/reservations/7", "GET /reservations/{reservation_id}"},
 		{http.MethodPost, "/reservations/7", "POST /reservations/{reservation_id}"},
-		{http.MethodPost, "/reservations/7/submit", "/"},
+		{http.MethodPost, "/reservations/7/submit", "POST /reservations/{reservation_id}/submit"},
 	}
 	for _, c := range cases {
 		_, pattern := mux.Handler(httptest.NewRequest(c.method, c.path, nil))

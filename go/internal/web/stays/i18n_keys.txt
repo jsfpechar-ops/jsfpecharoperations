@@ -41,5 +41,9 @@ flash.reservations.claim_released
 flash.reservations.claim_resent
 flash.hand_filing.marked
 flash.hand_filing.undone
+flash.reservations.sent
+flash.reservations.sent.stays
+flash.reservations.accepted
+flash.reservations.reported
 setup.banner.*
 onboarding.skip
