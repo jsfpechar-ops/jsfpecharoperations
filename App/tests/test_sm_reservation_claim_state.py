@@ -227,7 +227,7 @@ def test_scanner_sees_claim_updates():
 PINNED_GO_WRITES = [
     ("go/internal/mailjob/holds.go", "ExpireHolds"),
     ("go/internal/web/guest/stay_claim.go", "confirmClaim"),
-    ("go/internal/web/guest/stay_claim.go", "ensureClaimRow"),
+    ("go/internal/web/guest/stay_claim.go", "EnsureClaimRow"),
     ("go/internal/web/staydetail/panels.go", "ensureClaimRow"),
     ("go/internal/web/stays/claim_ops.go", "ensureClaimRow"),
     ("go/internal/web/stays/claim_ops.go", "releaseClaimHandler"),
