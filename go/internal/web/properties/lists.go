@@ -8,10 +8,17 @@ package properties
 //
 // What is not ported answers 501 instead of showing a different page:
 //   - /entities?edit=N: the business editor with Invoice details (billing);
+<<<<<<< HEAD
 //   - /entities with open alerts: host layout renders alert stack (brief 1381).
 //   - /apartments with a live property: the setup chips read filing state
 //     (validation issues, ubyport_auth_failed alerts), calendars, the lock
 //     and the guest link.
+=======
+//   - /entities when the workspace has an open alert: _host_alerts.html is
+//     inside the page body and is ported with brief 1381;
+//   - /apartments with a live property: ported in apartments_list_data.go
+//     (setup chips, guest link, phone cards).
+>>>>>>> 99fcac734 (Port GET /apartments property list for workspaces with live properties.)
 
 import (
 	"context"
@@ -246,6 +253,7 @@ const (
 type apartmentsData struct {
 	Banner      Banner
 	HasOperator bool
+	Rows        []apartmentListRow
 }
 
 func (s *Pages) apartments(w http.ResponseWriter, r *http.Request) {
@@ -265,10 +273,6 @@ func (s *Pages) apartments(w http.ResponseWriter, r *http.Request) {
 		fail(w, err)
 		return
 	}
-	if live > 0 {
-		notPorted(w, "the property list")
-		return
-	}
 	if err := s.pool.QueryRow(ctx, liveEntitySQL, ws).Scan(&operators); err != nil {
 		fail(w, err)
 		return
@@ -277,6 +281,12 @@ func (s *Pages) apartments(w http.ResponseWriter, r *http.Request) {
 	if d.Banner, err = s.onboardingBanner(ctx, ws, "/apartments"); err != nil {
 		fail(w, err)
 		return
+	}
+	if live > 0 {
+		if d.Rows, err = s.apartmentListRows(ctx, ws, hostweb.Lang(r), now); err != nil {
+			fail(w, err)
+			return
+		}
 	}
 	page := layout.Page{Title: catalog.T(hostweb.Lang(r), "apartments.title", nil), Nav: "apartments", BodyKind: "list", V2: true, HowKey: "properties"}
 	if err := layout.Render(w, r, layout.Env{Pool: s.pool, Getenv: s.getenv, Now: now}, host, page, pages, "apartments", d); err != nil {
