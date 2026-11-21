@@ -120,8 +120,8 @@ def go_persona_sessions(seed):
         ).stdout.strip()
         env = {**os.environ, **ENV, "UID": str(uid), "SV": row}
         r = subprocess.run(
-            ["go", "run", "./scripts/e2e/go_issue_session/main.go"],
-            cwd=ROOT,
+            ["go", "run", "./cmd/e2e-issue-session"],
+            cwd=str(GO_DIR),
             env=env,
             capture_output=True,
             text=True,
