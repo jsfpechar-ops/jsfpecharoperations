@@ -1,6 +1,6 @@
 # 1999: Retire Python web and worker after full Go parity
 
-Status: **checklist** — **1782** merged on `main` (2026-11-21, PR #1153); `go_parity_check.py --all` is 342/342. Full executor steps stay blocked until §2 preconditions (notably **1772** quiet week) are ticked.
+Status: review — **1782** merged on `main` (2026-11-21, PR #1153); `go_parity_check.py --all` is 342/342. Full executor steps stay blocked until §2 preconditions (notably **1772** quiet week) are ticked.
 Depends on: **1782**, **1772**, **1780**, all §1A route briefs merged dormant; waves in [go-cutover-runbook](../plans/go-cutover-runbook.md) | Branch: task/1999-go-retire-python-runtime
 Executor: **Composer 2.5** (Josef override) | Tier: A (deploy + delete; Josef sign-off)
 
