@@ -10,7 +10,9 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/deadlines"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ical"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/ai"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/auth/authpage"
 )
@@ -60,6 +62,24 @@ func RegisterUtility(mux *http.ServeMux, d DepsUtility, wrap func(string, http.H
 	mux.Handle("GET /sitemap.xml", wrap("/sitemap.xml", sitemapHandler(d)))
 	mux.Handle("POST /language", wrap("/language", languageHandler(d)))
 	mux.Handle("GET /favicon.ico", wrap("/favicon.ico", faviconHandler(d)))
+	mux.Handle("GET /sample-airbnb.ics", wrap("/sample-airbnb.ics", sampleAirbnbHandler(d)))
+}
+
+func sampleAirbnbHandler(d DepsUtility) http.HandlerFunc {
+	now := d.Now
+	if now == nil {
+		now = time.Now
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		body := ical.SampleAirbnbICS(deadlines.LocalNow(now()))
+		h := w.Header()
+		h.Set("Content-Type", "text/calendar; charset=utf-8")
+		h.Set("Content-Disposition", `inline; filename="sample-airbnb.ics"`)
+		w.WriteHeader(http.StatusOK)
+		if r.Method != http.MethodHead {
+			_, _ = w.Write([]byte(body))
+		}
+	}
 }
 
 func robotsHandler(d DepsUtility) http.HandlerFunc {
