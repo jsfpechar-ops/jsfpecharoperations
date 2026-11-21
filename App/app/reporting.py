@@ -2898,6 +2898,7 @@ FILES_WITH_UBYHOST_SQL = (
     "AND COALESCE(TRIM(a.uby_ws_password_enc), '') != '')"
 )
 
+
 def _apartment_files_with_ubyhost(apartment: Any) -> bool:
     """Python copy of FILES_WITH_UBYHOST_SQL for one apartment row (1867).
 
@@ -2909,7 +2910,6 @@ def _apartment_files_with_ubyhost(apartment: Any) -> bool:
         str(apartment[column] or "").strip()
         for column in ("uby_idub", "uby_ws_user", "uby_ws_password_enc")
     )
-
 
 
 def check_deadlines(
