@@ -13,7 +13,7 @@ func TestOnboardingDemoRouteRegistered(t *testing.T) {
 	mux := newMux(&metrics{counts: map[key]int64{}}, nil)
 	for _, c := range []struct{ method, path, pattern string }{
 		{http.MethodPost, "/demo/reset", "POST /demo/reset"},
-		{http.MethodPost, "/demo", "/"},
+		{http.MethodPost, "/demo", "POST /demo"},
 	} {
 		_, pattern := mux.Handler(httptest.NewRequest(c.method, c.path, nil))
 		if pattern != c.pattern {

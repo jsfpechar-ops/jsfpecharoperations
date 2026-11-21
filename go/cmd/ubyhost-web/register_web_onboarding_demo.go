@@ -21,5 +21,6 @@ func init() {
 // registerWebOnboardingDemo mounts routes/onboarding.py reset_demo. It must
 // not use the pool while it builds.
 func registerWebOnboardingDemo(mux *http.ServeMux, m *metrics, pool *pgxpool.Pool) {
+	mux.Handle("POST /demo", m.wrap("/demo", onboarding.DemoSeedHandler(pool, os.Getenv, time.Now)))
 	mux.Handle("POST /demo/reset", m.wrap("/demo/reset", onboarding.DemoResetHandler(pool, os.Getenv, time.Now)))
 }

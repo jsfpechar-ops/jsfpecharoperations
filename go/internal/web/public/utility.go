@@ -63,6 +63,7 @@ func RegisterUtility(mux *http.ServeMux, d DepsUtility, wrap func(string, http.H
 	mux.Handle("POST /language", wrap("/language", languageHandler(d)))
 	mux.Handle("GET /favicon.ico", wrap("/favicon.ico", faviconHandler(d)))
 	mux.Handle("GET /sample-airbnb.ics", wrap("/sample-airbnb.ics", sampleAirbnbHandler(d)))
+	mux.Handle("GET /dev/ui", wrap("/dev/ui", DevUIHandler()))
 }
 
 func sampleAirbnbHandler(d DepsUtility) http.HandlerFunc {
