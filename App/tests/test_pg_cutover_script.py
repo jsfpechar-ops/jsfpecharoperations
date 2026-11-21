@@ -97,6 +97,6 @@ def test_compose_postgres_is_private_and_limited():
     assert "ports" not in pg
     assert pg["mem_limit"] == "1g"
     assert pg["image"].startswith("postgres:16-alpine@sha256:")
-    for name in ("ubyhost", "worker"):
+    for name in ("ubyhost", "ubyhost-go"):
         assert "ubyhost-pgsock:/var/run/postgresql" in services[name]["volumes"]
     assert {"ubyhost-pgdata", "ubyhost-pgsock"} <= set(data["volumes"])
