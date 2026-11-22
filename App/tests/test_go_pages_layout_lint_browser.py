@@ -159,10 +159,15 @@ def test_go_access_page_states_pass_the_layout_lint(go_web, go_cookie):
         "access-other": ("?edit=1", [(1, "other", long_label, "9999", None)]),
         "access-expired": ("", [(1, "gate", None, "1234", "2020-01-01")]),
         "access-error": ("?add=1", []),
-        "access-replaced": ("", [(1, "gate", None, "1234", None)]),
+        "access-replaced": ("?edit=1", [(1, "gate", None, "1234", None)]),
         "access-preview-lock": ("", [(1, "gate", None, "4321", None)]),
         "access-preview-nolock": ("", [(1, "bike_room", None, "5555", None)]),
     }
+    def _access_replace(page) -> None:
+        page.locator('form#access-form input[name="code"]').fill("5678")
+        page.locator('form#access-form button[type="submit"]').click()
+
+    after = {"access-replaced": _access_replace}
     all_findings: list[dict] = []
     with psycopg.connect(go_web["database_url"]) as conn, conn.cursor() as cur:
         for name, (suffix, rows) in setups.items():
@@ -178,7 +183,9 @@ def test_go_access_page_states_pass_the_layout_lint(go_web, go_cookie):
                 _access_seed(cur, apt, rows)
             conn.commit()
             paths = {name: base_path + suffix}
-            all_findings.extend(lint_go_paths(go_web, paths, go_cookie, shot_labels={name: name}))
+            all_findings.extend(
+                lint_go_paths(go_web, paths, go_cookie, shot_labels={name: name}, after=after)
+            )
     assert_no_layout_findings(all_findings)
 
     base = go_web["base_url"]

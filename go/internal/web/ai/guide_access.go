@@ -47,11 +47,11 @@ type accessPreviewLine struct {
 }
 
 type accessForm struct {
-	Open                                 bool
-	Position                             int
-	CodeType, CustomLabel, ValidUntil    string
-	Errors                               map[string]string
-	IsNew                                bool
+	Open                              bool
+	Position                          int
+	CodeType, CustomLabel, ValidUntil string
+	Errors                            map[string]string
+	IsNew                             bool
 }
 
 type accessData struct {
@@ -217,7 +217,7 @@ func (s *guideServer) accessPage(w http.ResponseWriter, r *http.Request) {
 	data.Form = accessOpenForm(r, data.Codes)
 	t := func(key string) string { return guideCatalog.T(q.lang, key, nil) }
 	page := layout.Page{
-		Title: t("access_page.title") + " · " + a.InternalName + " · UbyHost",
+		Title:    t("access_page.title") + " · " + a.InternalName + " · UbyHost",
 		BodyKind: "settings", V2: true, BackURL: "/apartments/" + strconv.FormatInt(a.ID, 10),
 	}
 	s.render(w, q, "access", page, http.StatusOK, data)

@@ -39,20 +39,21 @@ ok  	github.com/jsfpechar-ops/jsfpecharoperations/go/cmd/ubyhost-web	0.218s
 
 ## Screenshots (paths under `/opt/cursor/artifacts/2036/`)
 
-- **empty** — 390: narrow column, empty-state copy and Add code; 768: same, three cards area absent; 1280: 720px column, police mock banner only noise.
+- **empty** — 390: Access & guide title with help, Entry codes empty state and Add code visible (security prompt suppressed via `two_factor_prompted_at` on harness user); 768/1280: same structure in narrow column.
 - **one** — 390: one stacked row, masked code, Replace/Clear; 768: wider gutters; 1280: Replace/Clear inline right.
 - **three** — 390: three rows, no Add; 768: preview heading starts below fold; 1280: guest preview lists Gate, Building, Garage masked.
 - **other** — 390: edit form open; 768: long Other label wraps; 1280: replace form + preview with 60-char label and notion.so Change link.
 - **expired** — 390/768/1280: amber expired row notice with date.
 - **error** — 390/768/1280: add form with Other selected (open form state for validation).
-- **replaced** — 390/768/1280: single gate row (flash not re-captured in lint loop).
+- **replaced** — 390: neutral banner with full replaced notice after POST Replace; masked row shows `••••8`; 1280: same banner above Entry codes card, form closed, row updated.
 - **preview-lock** — 390/768/1280: preview shows apartment door line + code; card 3 door status present.
 - **preview-nolock** — 390/768/1280: bike room line only, no door card.
 
 ## Deviations
 
 - `App/app/havel.py` and `go/internal/web/ai/havel_data.go`: `entry-codes` anchor for `test_guide_coverage.py` (test header names these with guide edits).
-- `access-replaced` state: screenshot is post-save row without replaced flash (harness seeds DB only).
+- Regenerated `go/internal/web/ai/testdata/havel_golden.json` via `App/scripts/havel_golden.py` after `entry-codes` anchor.
+- `go_web_harness._seed`: sets `two_factor_prompted_at` so security prompt does not cover lint shots.
 
 ## Questions
 
