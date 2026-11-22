@@ -453,6 +453,17 @@ jobs:
     env:
       PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
     timeout-minutes: 40
+    # The Go layout lint (go_web_harness.py) builds ubyhost-web and needs its own database.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: ubyhost
+          POSTGRES_DB: ubyhost_test
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-retries 10
     strategy:
       fail-fast: false
       matrix:
@@ -508,6 +519,17 @@ jobs:
                   browser.close()
           PY
 
+      - name: Install Go (checksum pinned, version from go/go.mod)
+        env:
+          GO_VERSION: "1.26.0"
+          GO_SHA256: aac1b08a0fb0c4e0a7c1555beb7b59180b05dfc5a3d62e40e9de90cd42f88235
+        run: |
+          grep -qx "go ${GO_VERSION}" ../go/go.mod || { echo "go/go.mod no longer says go ${GO_VERSION}: update GO_VERSION and GO_SHA256"; exit 1; }
+          python3 -c 'import urllib.request,sys; urllib.request.urlretrieve(sys.argv[1], sys.argv[2])' "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" /tmp/go.tgz
+          echo "${GO_SHA256}  /tmp/go.tgz" | sha256sum -c -
+          tar -C /usr/local -xzf /tmp/go.tgz
+          echo "/usr/local/go/bin" >> "$GITHUB_PATH"
+
       - name: Pick this shard's files
         id: files
         run: |
@@ -529,6 +551,7 @@ jobs:
           UBYHOST_WIDE_GEOMETRY_DIR: ${{ runner.temp }}/browser-shots/wide
           UBYHOST_CAPTURE_FILTERS: "1"
           UBYHOST_PASSKEY_SHOTS: ${{ runner.temp }}/browser-shots/passkey
+          UBYHOST_TEST_DATABASE_URL: postgresql://postgres:ubyhost@postgres:5432/ubyhost_test
         # REQUIRE_BROWSER turns "Chromium is missing" from a skip into a failure.
         run: python -m pytest ${{ steps.files.outputs.files }} -q -rs --junitxml=/tmp/ubyhost-tests.xml
 
