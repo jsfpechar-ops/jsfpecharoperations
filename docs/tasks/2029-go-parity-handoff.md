@@ -1,0 +1,100 @@
+# 2029: Go↔Python parity — the state on 2026-11-22, for the cloud session
+
+Status: done
+Depends on: 2028 | Base commit: main after #1258 | Branch: visual-parity
+Executor: next orchestrator (cloud) | Fits one session: read this, then follow §4
+
+## 1. Objective
+
+Record where page parity stands, what is merged, what is still open, and the exact
+commands, so a session that never saw this laptop can carry on without re-deriving it.
+
+## 2. Context
+
+Two audits exist and they answer different questions.
+
+- `scripts/e2e/page_parity_audit.py` — DOM text and markup, every GET route, three
+  personas (anon, host, admin), the PIN pass (`UBYHOST_GUEST_PIN=1` in a subprocess), and
+  since #1258 six language passes (`?lang=cs`, `de`, `es`, `fr`, `uk`, `vi`). Verdicts:
+  `pass`, `pass-soft`, `accepted` (both-404 / both-410 and harness K3 only), `fail`.
+- `scripts/e2e/page_parity_visual.py` — pixels, eleven signed-in pages, 390/768/1280 px,
+  each stack on the cookie it signed. Verdicts: `identical`, `invisible`, `visible`.
+
+Both run from a checkout with `App/.venv` symlinked to an existing one, a Postgres at
+`$UBYHOST_E2E_PG` (the seed drops/creates `parity_tpl` and `parity_run`), Playwright with
+Chromium, and the Go toolchain. They start their own servers (Python uvicorn in-process,
+`ubyhost-web` built to `/var/tmp/ubyhost-web-parity`), so nothing has to be running first.
+
+## 3. Files
+
+| Path | Action | What |
+|---|---|---|
+| `docs/tasks/2010-go-parity-fix-index.md` | read | the index: §10 series, §11 PIN/validation, §12 the language pass |
+| `docs/tasks/2028-go-parity-visual-diff.md`, `2028-report.md` | read | the visual pass and its two fixes |
+| `scripts/e2e/page_parity_audit.py` | run | language passes frozen; `LANG_PASSES`, `LANG_EXACT`, `LANG_PREFIXES` |
+| `scripts/e2e/page_parity_visual.py` | run | `PARITY_ONLY=`, `PARITY_WIDTHS=`, `PARITY_OUT=` |
+| `docs/context/status.md` | read | one line per pass, with the numbers |
+
+## 4. Steps
+
+1. Fresh clone, then `cp` the `App/.venv` symlink or reinstall; `git log --oneline -5`.
+2. Gates, in this order:
+   ```
+   source <env with UBYHOST_E2E_PG + UBYHOST_E2E_PSQL/PATH>
+   cd App && .venv/bin/python ../scripts/e2e/page_parity_audit.py 2>&1 | tail -3
+   .venv/bin/python ../scripts/e2e/page_parity_visual.py 2>&1 | tail -3
+   cd .. && App/.venv/bin/python scripts/go_parity_check.py --all
+   App/.venv/bin/python scripts/e2e/diff_harness.py 2>&1 | tail -2
+   App/.venv/bin/python scripts/context_lint.py 2>&1 | tail -2
+   ```
+   Expected on main: audit `843 rows, fail 0`; visual `33 rows, identical 33`; parity
+   check `342/342`; harness `0 hard differences`; lint `OK`.
+3. Follow-ups are list-shaped, not urgent: §7.
+
+## 5. Do not touch
+
+`App/app/**` (Python is the reference and the thing being retired, not fixed), the frozen
+guest SQLite migrations, and `deploy/`.
+
+## 6. Commands
+
+See §4. Individual pages: `PARITY_ONLY=link-stay-host PARITY_WIDTHS=390 .venv/bin/python
+../scripts/e2e/page_parity_visual.py`; the audit has no per-path filter, so a one-off probe
+is a script that calls `start_py`, `start_go` and `py_persona_sessions` from it.
+
+## 7. Acceptance — where parity stands
+
+Merged and green on `main`: the 2011-2018 series (#1252), PIN pass + validation i18n +
+purpose labels + bad-link (#1255), the scripts and tooling (#1254), briefs 2021-2027
+(#1253), the six-language audit and its three fixes (#1258), the visual pass (#1259, this
+branch: per-stack cookies, the guest form's grid, the landing check mark).
+
+Left, in the order that pays:
+
+1. `stay.html` has **no Go template** — the stay hub answers from a stub for a guest
+   (a host is 303'd to `/new`). 2016 deferred it. This is the biggest remaining surface.
+2. The visual probe compares no guest mid-claim, no guide and no PIN page: the audit seed
+   issues no guest persona. Adding one to `scripts/e2e/seed.py` unlocks all three.
+3. `K3 /admin/fakturace/export-vse`: Python aborts, Go streams the zip. Owner decision,
+   recorded, do not "fix".
+4. Go tests red on `main` before this work and still red: `photosweep` (2, macOS case),
+   `session TestAuthGoldenTwoFactorPending`, `web/auth TestSignupPagesMatchPython`,
+   `web/guest TestConfirmClaimRace` (the last one only against a seeded DB — it inserts a
+   reservation without `uid`).
+5. The PIN page is rendered inline by Python (`_pin_page`, 200) but Go's guard 303s to the
+   hub with `return_to`. Not caught by the audit because the PIN pass runs with the flag on
+   and both then answer the PIN page — worth one probe with a session cookie and the flag off.
+
+## 8. Stop and ask
+
+Any change to a status code, an access rule or a gate is the owner's call, not an
+executor's: the guest link's 200 for anon on `/l/.../edit|remove` (claim ask, not auth) and
+the claim device gate are recorded decisions — quote them, do not re-decide them.
+
+## 9. Report
+
+`docs/tasks/2029-report.md` when the next session closes an item above.
+
+Generated by Mistral Vibe.
+
+Co-Authored-By: Mistral Vibe <vibe@mistral.ai>
