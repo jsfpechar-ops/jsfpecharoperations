@@ -389,7 +389,6 @@ func TestApartmentUpdateNotPorted(t *testing.T) {
 	}
 }
 
-
 func TestApartmentUpdateStayFeeAuthorityDatabox(t *testing.T) {
 	g := loadApartmentUpdateGolden(t)
 	pool := testPool(t)
