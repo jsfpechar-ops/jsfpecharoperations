@@ -18,7 +18,7 @@ Updated: 2026-11-22.
 - Go executor queue ([plan](../plans/go-cutover-executor-queue.md)): runnable **1793**, **0852**; **1730** / **1770** blocked until exact-diff sidecars.
 - [Autopilot](../plans/autopilot-agentic.md): hide Payments first.
 - Guest isolation ([plan](../plans/guest-form-isolation.md)): 1834-1839 (#1070); drafts #1072-1073; 1835 (#1071) after 1834; owner 1837 Q4-5.
-- Entry code + guide (Go): [plan](../plans/entry-code-external-guide.md); runnable 1660, 1663, 1668, 1661→1662, 1664; 1665-1667 wait on property-settings + guest-pages ports.
+- Entry code + guide (Go): [plan](../plans/entry-code-external-guide.md) (11-22: 3 typed codes, Notion import); runnable 2032, 2035, 1668, 1664.
 - CI 1413-1415, README 1416.
 - Go move ([remaining](../plans/go-full-move-remaining.md), [SQLite](../plans/sqlite-retirement.md)): #1010 merged; PR #1021 open; W1, W1b, W6-W8 on Go, W3 rolled back.
 - [go-sqlite-final]: SQLite 1474-1480, Go 1700-1790 (#1081); done through 1702e1-3, next 1703, 1705.

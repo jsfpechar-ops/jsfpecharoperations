@@ -1,6 +1,6 @@
 # 1663: Go mail — `{{entry_code}}` send-time marker
 
-Status: todo
+Status: blocked — do not run. Owner D1 (2026-11-22) allows up to 3 entry codes, so the single `{{entry_code}}` marker below must be rewritten as indexed markers `{{entry_code_1}}`–`{{entry_code_3}}` (payload keys per position, see 1667 §2) before an executor takes it.
 Depends on: none | Base commit: bdfaa4d4 | Branch: task/1663-go-mail-entry-code-marker
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B (mail secret)
 

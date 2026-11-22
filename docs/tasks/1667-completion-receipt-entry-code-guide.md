@@ -1,19 +1,19 @@
-# 1667: Go completion receipt — entry code line + guide block
+# 1667: Go completion receipt — entry code lines (up to 3) + guide block
 
 Status: blocked — the receipt is built and queued only by Python `claim.maybe_notify_completion` (`App/app/claim.py:828`) and `mail_notify.build_completion` (`App/app/mail_notify.py:1724`) "until guest registration is on Go (W3)" (`docs/plans/go-mail-job.md` §5 item 5); the thread "Port guest registration pages" has not started
-Depends on: 1661, 1663, 1664; the "Port guest registration pages" thread (it ports the completion step); the Go `mail` job live (thread "Plan and port mail job", J4: `mail` in `UBYHOST_GO_JOB_KINDS`), because only Go fills `{{entry_code}}` (1663) | Base commit: none | Branch: none
+Depends on: 1661, 2032, 1663, 1664; the "Port guest registration pages" thread (it ports the completion step); the Go `mail` job live (thread "Plan and port mail job", J4: `mail` in `UBYHOST_GO_JOB_KINDS`), because only Go fills `{{entry_code}}` (1663) | Base commit: none | Branch: none
 Executor: Haiku 5.5 | Not runnable. Tier B (mail with a secret). The orchestrator cuts this when the Go completion builder exists.
 
 ## 1. Objective
 
-The completion receipt gains an entry-code line next to the door code and a guide block (internal guide button + external link) after it. Receipt order: stay panel → what you sent → fee → entry code + door code → guide → host link → note.
+The completion receipt gains one line per extra entry code (up to 3, owner 2026-11-22 D1, D2) after the TTLock door code, each as `<Type label>: <code>` in the host's `position` order, and a guide block (internal guide button + external link) after it. Receipt order: stay panel → what you sent → fee → door code, then entry codes → guide → host link → note.
 
 ## 2. Context
 
 Known design, verified on bdfaa4d4, kept for the later cut:
 
-- **Window (owner 2026-11-14, decision 2):** the receipt carries the entry code whenever the receipt is sent, limited only by `entry_code_until` (omit it when today > `entry_code_until`). No `booked_level` window here: the receipt usually goes out weeks before check-in. Already-sent mail cannot be retracted; the stay page (1666) is the source of truth.
-- Secret path: the body holds `{{entry_code}}` (`EntryCodeMarker`, 1663), the outbox payload holds `entry_code_enc` ciphertext only; filled at send; marker without key fails the send. When no code or outside `entry_code_until`, neither marker nor key.
+- **Window (owner 2026-11-14, decision 2):** the receipt carries the entry code whenever the receipt is sent, limited only by each row's `valid_until` in `apartment_entry_code` (omit a row when today > its `valid_until`). No `booked_level` window here: the receipt usually goes out weeks before check-in. Already-sent mail cannot be retracted; the stay page (1666) is the source of truth.
+- Secret path (D1 change: 1663 is not merged yet, `grep -rn entry_code go/internal/mail/` finds nothing on main, so 1663 must be amended before this brief is cut to cover three codes): the body holds indexed markers `{{entry_code_1}}` to `{{entry_code_3}}`, one per row that is in its window; the outbox payload holds the matching `code_enc` ciphertexts only (one key per position); filled at send; marker without key fails the send. A row with no code or outside its `valid_until` gets neither marker nor key. Type labels are plain catalog text (not secret); a custom `other` label is host free text, so it is never logged or put in audit values.
 - Never in the late-PIN door-code notice (Python `build_door_code`, `mail_notify.py:1507`, and its Go twin), QR guide, logs, audit values, analytics, exports, Leon.
 - The plain-text fallback (Python `claim._guest_fallback_text`, `claim.py:630`) gets the guide links (not secret) but not the entry code, same as the door code today.
 - Python anchors the Go twin replaces: door-code block in `build_completion` `mail_notify.py:1806` `    if door_code:`; payload key `claim.py:860` `        payload[mail.DOOR_CODE_KEY] = code_row["pin_enc"]`. Internal guide URL absolute, built like the stay link.
@@ -50,7 +50,7 @@ None.
 
 ## Risk list (for the reviewer)
 
-When cut: no clear-text code in the outbox, `entry_code_until` honoured, door-code notice untouched, mail goldens.
+When cut: no clear-text code in the outbox, each row's `valid_until` honoured, door-code notice untouched, mail goldens.
 
 ## Owner steps
 

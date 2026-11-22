@@ -13,19 +13,30 @@ Goal: a host-typed building/gate entry code and an optional external (e.g. Notio
 - Secret handling copies the door code: encrypted at rest, ciphertext in the outbox payload, `{{entry_code}}` filled at send, missing secret fails the send. Not behind the TTLock gate: every host sees the field.
 - External guide URL: https only, no userinfo, no port, domain shown.
 
+## Decisions (owner, 2026-11-22)
+
+- D1: up to 3 extra entry codes per apartment, besides the TTLock door code (table `apartment_entry_code`, 2032).
+- D2: each code has a type (building_entrance, gate, garage, bike_room, other; `other` needs a label of 60 characters at most); guests see the door code first, then `<Type label>: <code>`; secrecy rules unchanged.
+- D3: the post-submit guest screen gets one "Your guide" block (our guide first, else the host's link, no codes); blocked on the guest port (2033). Submit redirects to the stay page with `saved=1` (`guest.py:2770`), so the block lives there; 2033 and 1666 must share one guide block, not two.
+- D4: guide import gains a public-URL source (Notion first) with a code filter before and after the model; drafts only; host sees a count (2034, 2035).
+
 ## Briefs
 
 | # | Title | Status | Depends on | Tier |
 |---|---|---|---|---|
-| [1660](../tasks/1660-schema-check-goose-only-columns.md) | Schema checks accept goose-only columns | todo (owner approved exception 1, 2026-11-14) | none | A |
-| [1661](../tasks/1661-entry-code-schema.md) | Goose 00018 columns + export guard | blocked on 1660 | 1660 | A |
-| [1662](../tasks/1662-entry-code-retention.md) | Retention step `entry_codes` (Go + Python twin for the golden) | todo after 1661 | 1661 | A |
-| [1663](../tasks/1663-go-mail-entry-code-marker.md) | Go mail `{{entry_code}}` marker | **todo, runnable now** | none | B |
+| [1660](../tasks/1660-schema-check-goose-only-columns.md) | Schema checks accept goose-only columns | done (#1094) | none | A |
+| [1661](../tasks/1661-entry-code-schema.md) | Goose 00022 columns + export guard | done (#1095) | 1660 | A |
+| [1662](../tasks/1662-entry-code-retention.md) | Retention step `entry_codes` (Go + Python twin for the golden) | done (#1095) | 1661 | A |
+| [1663](../tasks/1663-go-mail-entry-code-marker.md) | Go mail entry-code markers | on hold: rewrite for indexed markers (D1) | none | B |
 | [1668](../tasks/1668-go-pages-layout-lint-harness.md) | Browser harness: layout lint + 390/768/1280 screenshots on Go pages (local Go binary, no staging) | **todo, runnable now** | none | B |
 | [1664](../tasks/1664-go-guide-external-url.md) | Go guide editor: external link field | todo after 1661 and 1668 | 1661, 1668 | B |
-| [1665](../tasks/1665-host-ui-entry-code-field.md) | Go apartment settings: entry code section | blocked | 1661, 1668, property settings port (no brief yet) | B |
-| [1666](../tasks/1666-stay-page-access-guide-blocks.md) | Go stay page blocks | blocked | 1661, 1664, 1668 (guest paths), guest registration port | B |
-| [1667](../tasks/1667-completion-receipt-entry-code-guide.md) | Go completion receipt | blocked | 1661, 1663, 1664, guest registration port, Go `mail` job live | B |
+| [1665](../tasks/1665-host-ui-entry-code-field.md) | Go apartment settings: entry codes section (up to 3) | blocked | 1661, 2032, 1668, property settings port (no brief yet) | B |
+| [1666](../tasks/1666-stay-page-access-guide-blocks.md) | Go stay page blocks | blocked | 1661, 2032, 1664, 1668 (guest paths), guest registration port | B |
+| [1667](../tasks/1667-completion-receipt-entry-code-guide.md) | Go completion receipt | blocked | 1661, 2032, 1663, 1664, guest registration port, Go `mail` job live | B |
+| [2032](../tasks/2032-entry-codes-multi-schema.md) | Goose 00023 `apartment_entry_code` (3 codes), retention, guard | **todo, runnable now** | 1661, 1662 | A |
+| [2033](../tasks/2033-guest-finish-guide-block.md) | Guest post-submit "Your guide" block | blocked | 1664, 1668, guest registration port | B |
+| [2035](../tasks/2035-guide-import-code-filter.md) | Code filter for imported guide text | **todo, runnable now** | none | B |
+| [2034](../tasks/2034-guide-import-public-url.md) | Guide import from a public URL (Notion), drafts, codes left out | todo after 2035 | 2035, 1668 | B |
 
 ## Proof it looks good (owner 2026-11-14)
 
