@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-11-21.
+Updated: 2026-11-22.
 
 ## Production
 - Magic-link 1–2 done; access log off. `/healthz` 1.1.0. Main 11-13: `84e966f` (#962).
@@ -12,11 +12,10 @@ Updated: 2026-11-21.
 - UX gate and Stripe onboarding live. Backups: daily pg_dump + WAL-G 7-day PITR.
 
 ## Next
-- 2001: invoice page Wolt-simple + Generate invoice on stay header ([brief](../tasks/2001-invoice-wolt-simple.md)).
+- Parity 2011-2018 draft #1252: Gate A fail 0; UX gate 5 FAIL → 2021-2028, 2022 needs owner.
 - Go page parity: **fail 0**, 447 rows incl. PIN pass (#1252, #1255).
 - 2000: no police nags on Overview without UbyPort login.
-- Briefs 1865 (green main → staging; prod manual) + 1866 (CI hardening).
-- Go executor queue ([plan](../plans/go-cutover-executor-queue.md)): runnable **1793**, **0852**; **1730**/**1770** blocked on exact-diff sidecars.
+- Go executor queue ([plan](../plans/go-cutover-executor-queue.md)): runnable **1793**, **0852**; **1730** / **1770** blocked until exact-diff sidecars.
 - [Autopilot](../plans/autopilot-agentic.md): hide Payments first.
 - Guest isolation ([plan](../plans/guest-form-isolation.md)): 1834-1839 (#1070); drafts #1072-1073; 1835 (#1071) after 1834; owner 1837 Q4-5.
 - Entry code + guide (Go): [plan](../plans/entry-code-external-guide.md); runnable 1660, 1663, 1668, 1661→1662, 1664; 1665-1667 wait on property-settings + guest-pages ports.
