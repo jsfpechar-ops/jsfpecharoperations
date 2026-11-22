@@ -1,6 +1,6 @@
 # 2037: Leon never knows entry codes; one fixed pointer line, plus a test that no code reaches the prompt
 
-Status: todo (runnable now; prompt change only, no UI)
+Status: review (Go prompt/tests done; Python twin + golden parity blocked)
 Depends on: 2035 (for `guideimport.AsksForCode`; the test seeds codes through 2032's table when it is on main; until then it seeds `apartment.entry_code_enc`, which 1661 added) | Base commit: fill from `git rev-parse --short HEAD` | Branch: task/2037-leon-entry-code-pointer
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B (guest-facing AI prompt; the byte-pinned prompt is shared with Python)
 
