@@ -12,6 +12,12 @@ The tool writes per width: ``<name>-<w>-py.png``, ``<name>-<w>-go.png``,
 Python renders through a local uvicorn of ``app.main:app`` (no Go proxy).
 Go uses ``--go-base`` or starts ``ubyhost-web`` when ``UBYHOST_TEST_DATABASE_URL``
 (or ``UBYHOST_DATABASE_URL``) is set. Brief 1820.
+
+A logged-in page needs ``--py-cookie-value`` and ``--go-cookie-value``: the two
+stacks sign their own sessions, so one token only ever works on the stack that
+issued it, and comparing a signed-in page with one token compares a signed-in
+page with an anonymous one. ``--cookie-value`` still sets both, for a bare
+``/login`` comparison.
 """
 
 from __future__ import annotations
@@ -233,6 +239,8 @@ def run_case(
     widths: Iterable[int] = WIDTHS_DEFAULT,
     cookie_name: str | None = None,
     cookie_value: str | None = None,
+    py_cookie_value: str | None = None,
+    go_cookie_value: str | None = None,
     pre_sql: Iterable[str] = (),
 ) -> list[WidthResult]:
     import playwright.sync_api as sync_api
@@ -249,12 +257,12 @@ def run_case(
             _run_pre_sql(pre_sql)
             capture_png(
                 playwright, py_base, path, width, py_png,
-                cookie_name=cookie_name, cookie_value=cookie_value,
+                cookie_name=cookie_name, cookie_value=py_cookie_value or cookie_value,
             )
             _run_pre_sql(pre_sql)
             capture_png(
                 playwright, go_base, path, width, go_png,
-                cookie_name=cookie_name, cookie_value=cookie_value,
+                cookie_name=cookie_name, cookie_value=go_cookie_value or cookie_value,
             )
             write_side_by_side(py_png, go_png, side_png)
             write_diff_image(py_png, go_png, diff_png)
@@ -326,6 +334,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--go-base", help="Go origin (default: start ubyhost-web when DB URL set)")
     parser.add_argument("--cookie-name", default=os.environ.get("UBYHOST_SESSION_COOKIE", "ubyhost_session"))
     parser.add_argument("--cookie-value", default=os.environ.get("GO_PAGE_PARITY_COOKIE", ""))
+    parser.add_argument(
+        "--py-cookie-value",
+        default=os.environ.get("GO_PAGE_PARITY_PY_COOKIE", ""),
+        help="session token for the Python stack only; the two sign their own "
+        "sessions, so a logged-in page needs one value per stack",
+    )
+    parser.add_argument(
+        "--go-cookie-value",
+        default=os.environ.get("GO_PAGE_PARITY_GO_COOKIE", ""),
+        help="session token for the Go stack only",
+    )
     parser.add_argument("--widths", default=",".join(str(w) for w in WIDTHS_DEFAULT))
     parser.add_argument("--fail-on-visible", action="store_true", help="exit 1 when any width is visible")
     parser.add_argument(
@@ -354,7 +373,9 @@ def main(argv: list[str] | None = None) -> int:
             )
             return 2
 
-        cookie_val = args.cookie_value or None
+        py_val = (args.py_cookie_value or args.cookie_value) or None
+        go_val = (args.go_cookie_value or args.cookie_value) or None
+        cookie_val = py_val or go_val
         cookie_name = args.cookie_name if cookie_val else None
         results = run_case(
             name=args.name,
@@ -365,6 +386,8 @@ def main(argv: list[str] | None = None) -> int:
             widths=widths,
             cookie_name=cookie_name,
             cookie_value=cookie_val,
+            py_cookie_value=py_val,
+            go_cookie_value=go_val,
             pre_sql=args.pre_sql,
         )
     finally:
