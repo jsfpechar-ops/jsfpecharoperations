@@ -117,6 +117,13 @@ func requirePin(w http.ResponseWriter, r *http.Request, d shellDeps, token, lang
 	if apt == nil {
 		return false
 	}
+	// guest.py _require_pin: a signed-in host filling in their own property's
+	// form never sees the PIN page. Without this the owner was locked out of a
+	// link they had just created for themselves.
+	access := guestAccess{pool: d.pool, getenv: d.getenv, now: d.now}
+	if access.hostOwns(r.Context(), r, apt.OwnerUserID) {
+		return false
+	}
 	expected := strings.TrimSpace(apt.PermalinkPIN)
 	lockToken := apt.PermalinkToken
 	if lockToken == "" {

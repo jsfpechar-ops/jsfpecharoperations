@@ -3,7 +3,6 @@ package guest
 // Brief 1720c: GET /l/{token} — pick_stay parity (visible window, PIN guard, device rows).
 
 import (
-	"bytes"
 	"html/template"
 	"io"
 	"log"
@@ -71,12 +70,6 @@ var pickSet = func() *template.Template {
 	return t
 }()
 
-var unavailableSet = func() *template.Template {
-	t := template.Must(template.New("guest.base").Funcs(tplFuncs).ParseFS(templateFS,
-		"templates/base.tmpl", "templates/host_fragment.tmpl", "templates/unavailable.tmpl"))
-	return t
-}()
-
 func mergeTplFuncs(a, b template.FuncMap) template.FuncMap {
 	out := template.FuncMap{}
 	for k, v := range a {
@@ -87,16 +80,6 @@ func mergeTplFuncs(a, b template.FuncMap) template.FuncMap {
 	}
 	return out
 }
-
-type unavailableView struct {
-	Page
-	TitleKey   string
-	BodyKey    string
-	RestartURL string
-	HostNote   string
-}
-
-func (u unavailableView) T(key string, kv ...any) string { return u.Page.T(key, kv...) }
 
 func writePickPage(w http.ResponseWriter, r *http.Request, status int, p PickView, extra map[string]string, getenv func(string) string, lang string) {
 	WithLang(w, getenv, lang)
@@ -114,21 +97,6 @@ func writePickPage(w http.ResponseWriter, r *http.Request, status int, p PickVie
 	w.WriteHeader(status)
 	if r.Method != http.MethodHead {
 		_, _ = io.WriteString(w, buf.String())
-	}
-}
-
-func writeUnavailable(w http.ResponseWriter, r *http.Request, status int, u unavailableView, getenv func(string) string, lang string) {
-	WithLang(w, getenv, lang)
-	var buf bytes.Buffer
-	if err := unavailableSet.ExecuteTemplate(&buf, "guest.base", u); err != nil {
-		log.Printf("guest unavailable: %v", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(status)
-	if r.Method != http.MethodHead {
-		_, _ = buf.WriteTo(w)
 	}
 }
 
@@ -175,18 +143,8 @@ func (d shellDeps) pickStay(w http.ResponseWriter, r *http.Request) {
 		visible[extra.ID] = struct{}{}
 	}
 	if len(reservations) == 0 {
-		u := unavailableView{
-			Page: Page{
-				Lang: GuestLanguage(lang), Token: link, LangURLs: LangURLs(r, ""),
-				PrivacyURL:    GuestLink(link, 0, "/privacy") + LangQuery(GuestLanguage(lang), ""),
-				GuestEndonyms: GuestEndonyms,
-				Facility:      Facility(apt), FacilityTone: int(apt.ID % 10),
-			},
-			TitleKey:   "no_stays",
-			BodyKey:    "no_stays_help",
-			RestartURL: GuestLink(link, 0, "") + LangQuery(GuestLanguage(lang), ""),
-		}
-		writeUnavailable(w, r, http.StatusOK, u, d.getenv, u.Lang)
+		note := d.access().hostLinkNote(r.Context(), r, apt)
+		d.access().unavailableNote(w, r, lang, "no_stays", http.StatusOK, link, 0, note, map[string]string{"Cache-Control": "no-store"})
 		return
 	}
 	ownedList := ownedGuestIDs(r, d.getenv)

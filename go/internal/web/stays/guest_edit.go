@@ -7,7 +7,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
 	"strconv"
@@ -95,6 +94,10 @@ type hostGuest struct {
 	identityVerifiedAt string
 	identityVerifiedBy *int64
 	isLead             bool
+	signedAt           string
+	submittedAt        string
+	manualFiledAt      string
+	passportPhotoAt    string
 }
 
 type guestRevealAccess struct {
@@ -223,28 +226,59 @@ func (c *guestEditCall) loadReservation(ctx context.Context, id int64, extraCols
 }
 
 func (d guestEditDeps) loadGuest(ctx context.Context, owner, guestID int64) (*hostGuest, bool, error) {
+	// The identity columns have an encrypted copy (data keys); the guest form
+	// reads what Python's reporting.guest_dict reads, so both are fetched and
+	// the plain value wins when there is no token.
 	q := `SELECT g.id, g.reservation_id, COALESCE(g.submit_state,''), COALESCE(g.restricted_at,''),
-		COALESCE(g.surname,''), COALESCE(g.first_name,''), COALESCE(g.birth_date,''),
-		COALESCE(g.nationality,''), COALESCE(g.doc_number,''), COALESCE(g.visa_number,''),
-		COALESCE(g.res_street,''), COALESCE(g.res_city,''), COALESCE(g.res_country,''),
+		COALESCE(g.surname,''), COALESCE(g.first_name,''),
+		COALESCE(g.nationality,''), COALESCE(g.doc_number,''), COALESCE(g.doc_number_enc,''),
+		COALESCE(g.visa_number,''), COALESCE(g.visa_number_enc,''),
+		COALESCE(g.res_country,''),
 		COALESCE(g.purpose,''), COALESCE(g.note,''), COALESCE(g.stay_from,''), COALESCE(g.stay_to,''),
-		COALESCE(g.signature_png,''), COALESCE(g.doc_type,''), COALESCE(g.entered_by,''),
+		COALESCE(g.doc_type,''), COALESCE(g.entered_by,''),
 		COALESCE(g.last_errors,''), COALESCE(g.submit_attempts,0),
-		COALESCE(g.identity_verified_at,''), g.identity_verified_by, COALESCE(g.is_lead,0) != 0
+		COALESCE(g.identity_verified_at,''), g.identity_verified_by, COALESCE(g.is_lead,0) != 0,
+		COALESCE(g.signed_at,''), COALESCE(g.submitted_at,''), COALESCE(g.manual_filed_at,''),
+		COALESCE(g.passport_photo_at,''),
+		COALESCE(g.birth_date,''), COALESCE(g.birth_date_enc,''),
+		COALESCE(g.res_street,''), COALESCE(g.res_street_enc,''),
+		COALESCE(g.res_city,''), COALESCE(g.res_city_enc,''),
+		COALESCE(g.signature_png,''), COALESCE(g.signature_png_enc,'')
 		FROM guest g JOIN reservation r ON r.id = g.reservation_id
 		JOIN apartment a ON a.id = r.apartment_id
 		WHERE g.id = $1 AND a.owner_user_id IS NOT DISTINCT FROM $2`
 	var g hostGuest
+	var birthP, birthE, docP, docE, visaP, visaE, streetP, streetE, cityP, cityE, sigP, sigE string
 	err := d.pool.QueryRow(ctx, q, guestID, owner).Scan(
 		&g.id, &g.reservationID, &g.submitState, &g.restrictedAt,
-		&g.surname, &g.firstName, &g.birthDate, &g.nationality, &g.docNumber, &g.visaNum,
-		&g.resStreet, &g.resCity, &g.resCountry, &g.purpose, &g.note, &g.stayFrom, &g.stayTo,
-		&g.signaturePNG, &g.docType, &g.enteredBy, &g.lastErrors, &g.submitAttempts,
-		&g.identityVerifiedAt, &g.identityVerifiedBy, &g.isLead)
+		&g.surname, &g.firstName, &g.nationality, &docP, &docE, &visaP, &visaE,
+		&g.resCountry, &g.purpose, &g.note, &g.stayFrom, &g.stayTo,
+		&g.docType, &g.enteredBy, &g.lastErrors, &g.submitAttempts,
+		&g.identityVerifiedAt, &g.identityVerifiedBy, &g.isLead,
+		&g.signedAt, &g.submittedAt, &g.manualFiledAt, &g.passportPhotoAt,
+		&birthP, &birthE, &streetP, &streetE, &cityP, &cityE, &sigP, &sigE)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, false, nil
 	}
-	return &g, err == nil, err
+	if err != nil {
+		return nil, false, err
+	}
+	fields := &guestFields{getenv: d.getenv}
+	for _, pair := range []struct {
+		plain, token string
+		dst          *string
+	}{
+		{docP, docE, &g.docNumber}, {visaP, visaE, &g.visaNum},
+		{birthP, birthE, &g.birthDate}, {streetP, streetE, &g.resStreet},
+		{cityP, cityE, &g.resCity}, {sigP, sigE, &g.signaturePNG},
+	} {
+		value, verr := fields.value(pair.plain, pair.token)
+		if verr != nil {
+			return nil, false, verr
+		}
+		*pair.dst = value
+	}
+	return &g, true, nil
 }
 
 func guestRowFromHost(g hostGuest) validation.GuestRow {
@@ -364,7 +398,7 @@ func guestNewHandler(d guestEditDeps) http.HandlerFunc {
 			return
 		}
 		access := guestRevealFromHost(c.host)
-		writeHostGuestForm(w, guestFormView{
+		c.writeHostGuestForm(w, guestFormView{
 			Reservation: *res, Editing: false, Lang: c.lang, CSRF: guestFormCSRF(c.r),
 			Access: access,
 		})
@@ -398,7 +432,7 @@ func guestCreateHandler(d guestEditDeps) http.HandlerFunc {
 		row := guestRowFromHost(preview)
 		issues := validation.GuestIssues(row, res.dateFrom, res.dateTo, c.at.UTC())
 		if len(validation.ErrorsOnly(issues)) > 0 {
-			writeHostGuestForm(w, guestFormView{
+			c.writeHostGuestForm(w, guestFormView{
 				Reservation: *res, Guest: &preview, Issues: issues, Editing: false,
 				Lang: c.lang, CSRF: guestFormCSRF(c.r), Access: guestRevealFromHost(c.host),
 			})
@@ -450,7 +484,7 @@ func guestEditGetHandler(d guestEditDeps) http.HandlerFunc {
 		row := guestRowFromHost(*guest)
 		issues := validation.GuestIssues(row, res.dateFrom, res.dateTo, c.at.UTC())
 		access := guestRevealFromHost(c.host)
-		writeHostGuestForm(w, guestFormView{
+		c.writeHostGuestForm(w, guestFormView{
 			Reservation: *res, Guest: guest, Issues: issues, Editing: true,
 			Lang: c.lang, CSRF: guestFormCSRF(c.r), Access: access,
 			IdentityHidden: !guestIdentityVisible(access, guestID),
@@ -550,7 +584,7 @@ func guestUpdateHandler(d guestEditDeps) http.HandlerFunc {
 		preview.enteredBy = "host"
 		issues := validation.GuestIssues(guestRowFromHost(preview), res.dateFrom, res.dateTo, c.at.UTC())
 		if len(validation.ErrorsOnly(issues)) > 0 && !guestIsFiled(*guest) {
-			writeHostGuestForm(w, guestFormView{
+			c.writeHostGuestForm(w, guestFormView{
 				Reservation: *res, Guest: &preview, Issues: issues, Editing: true,
 				Lang: c.lang, CSRF: guestFormCSRF(c.r), Access: access,
 			})
@@ -739,88 +773,4 @@ func guestFormCSRF(r *http.Request) string {
 		return c.Value
 	}
 	return ""
-}
-
-type guestFormView struct {
-	Reservation    hostReservation
-	Guest          *hostGuest
-	Issues         []validation.Issue
-	Editing        bool
-	Lang           string
-	CSRF           string
-	Access         guestRevealAccess
-	IdentityHidden bool
-}
-
-func (v guestFormView) tplGuestID() int64 {
-	if v.Guest != nil {
-		return v.Guest.id
-	}
-	return 0
-}
-
-func (v guestFormView) tplSurname() string {
-	if v.Guest != nil {
-		return v.Guest.surname
-	}
-	return ""
-}
-
-func (v guestFormView) tplFirstName() string {
-	if v.Guest != nil {
-		return v.Guest.firstName
-	}
-	return ""
-}
-
-func (v guestFormView) tplNationality() string {
-	if v.Guest != nil {
-		return v.Guest.nationality
-	}
-	return ""
-}
-
-func (v guestFormView) tplBirthDate() string {
-	if v.Guest != nil {
-		return v.Guest.birthDate
-	}
-	return ""
-}
-
-func (v guestFormView) tplDocNumber() string {
-	if v.Guest != nil {
-		return v.Guest.docNumber
-	}
-	return ""
-}
-
-var guestFormPage = template.Must(template.New("guest_form_admin").Funcs(template.FuncMap{
-	"tplGuestID":     func(v guestFormView) int64 { return v.tplGuestID() },
-	"tplSurname":     func(v guestFormView) string { return v.tplSurname() },
-	"tplFirstName":   func(v guestFormView) string { return v.tplFirstName() },
-	"tplNationality": func(v guestFormView) string { return v.tplNationality() },
-	"tplBirthDate":   func(v guestFormView) string { return v.tplBirthDate() },
-	"tplDocNumber":   func(v guestFormView) string { return v.tplDocNumber() },
-}).Parse(`<!DOCTYPE html>
-<html lang="{{.Lang}}"><head><meta charset="utf-8"><title>{{if .Editing}}Edit guest{{else}}Add guest{{end}}</title></head>
-<body class="host-page-v2">
-<form method="post" action="{{if .Editing}}/guests/{{tplGuestID .}}{{else}}/reservations/{{.Reservation.id}}/guests{{end}}">
-<input type="hidden" name="_csrf" value="{{.CSRF}}">
-<label>Surname <input name="surname" value="{{tplSurname .}}"></label>
-<label>First name <input name="first_name" value="{{tplFirstName .}}"></label>
-<label>Nationality <input name="nationality" value="{{tplNationality .}}"></label>
-<label>Birth date <input name="birth_date" value="{{tplBirthDate .}}"></label>
-{{if not .IdentityHidden}}
-<label>Doc number <input name="doc_number" value="{{tplDocNumber .}}"></label>
-{{end}}
-<input type="hidden" name="signature" id="signature" value="">
-<button type="submit" class="ui-btn ui-btn-primary">Save</button>
-</form>
-</body></html>`))
-
-func writeHostGuestForm(w http.ResponseWriter, v guestFormView) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := guestFormPage.Execute(w, v); err != nil {
-		guestEditServerError(w, err)
-	}
 }

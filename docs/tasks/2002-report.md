@@ -54,3 +54,7 @@ A concurrent execution of this brief landed as `db9987149`. This pass keeps it a
 3. **`gofmt` was red on `slash_test.go`** (struct field alignment); formatted. CI's Go job would have failed on it.
 
 Re-verified after the pass: `gofmt -l` empty, `go vet` empty, `go test -count=1` green on `internal/hostweb/...`, `internal/web/staydetail/...`, `cmd/ubyhost-web/...`, `go build ./...` clean, `context_lint` OK.
+
+## Merge with main (brief 2012, PR #1254)
+
+`main` gained `authpage.ErrorPage` (brief 2012) as the server-level handler; it rewrites only a 500 for an HTML request. Composed as `hostweb.CanonicalSlash(mux, authpage.ErrorPage(..., mux))`: the 307 sees the mux's route table first, then the error page and the mux answer. Tests and build green after the merge.

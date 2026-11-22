@@ -1,0 +1,56 @@
+{{define "title"}}{{.T "guide_title"}}{{end}}
+{{define "heading"}}{{.T "guide_title"}}{{end}}
+{{define "foot"}}{{if eq .Door "qr"}}<p>{{.T "guide_qr_foot"}}</p>{{else}}<p>{{.T "privacy"}}</p>
+    <p>{{.T "privacy_first_line"}}</p>
+    {{if .PrivacyURL}}<p><a href="{{.PrivacyURL}}">{{.T "privacy_link"}}</a></p>{{end}}{{end}}{{end}}
+{{define "content"}}
+{{if .BackURL}}
+  <a class="g-back" href="{{.BackURL}}">{{.T "guide_back_to_stay"}}</a>
+{{end}}
+
+{{if .NotReady}}
+  <div class="g-card" data-guide-not-ready>
+    <h2>{{.T "guide_not_ready_title"}}</h2>
+    <p class="g-intro" style="margin-bottom:0">{{.T "guide_not_ready_help"}}</p>
+  </div>
+{{else}}
+  {{if and (eq .Door "stay") (eq .Level "everyone")}}
+    <p class="g-intro" data-guide-window-note>{{.T "guide_more_from_arrival"}}</p>
+  {{end}}
+  {{if .LeonURL}}<a class="g-leon-jump" href="#leon" data-leon-jump hidden>{{.T "leon_ask"}}</a>{{end}}
+  {{if .Translating}}<p class="g-intro" data-guide-translating>{{.T "guide_translating"}}</p>{{end}}
+  {{if not .Groups}}
+    <div class="g-card" data-guide-empty>
+      <p class="g-intro" style="margin-bottom:0">{{.T "guide_empty"}}</p>
+    </div>
+  {{end}}
+  {{range .Groups}}
+    {{if .Title}}<p class="g-question-kicker" data-guide-topic>{{.Title}}</p>{{end}}
+    {{range .Cards}}
+      <div class="g-card g-guide-card" data-guide-card="{{.ID}}" id="card-{{.ID}}" data-guide-kind="{{.Kind}}">
+        <h2>{{.Title}}</h2>
+        {{if .Facts}}<p>{{.Facts}}</p>{{end}}
+        {{if .Location}}<p class="g-guide-where"><span>{{$.T "guide_where"}}</span> {{.Location}}</p>{{end}}
+        {{if .Steps}}
+          <ol class="g-guide-steps">
+            {{range .Steps}}<li>{{.}}</li>{{end}}
+          </ol>
+        {{end}}
+        {{if .WatchOut}}
+          <div class="g-guide-warn" role="note"><strong>{{$.T "guide_watch_out"}}</strong> {{.WatchOut}}</div>
+        {{end}}
+        {{if .Photos}}
+          <div class="g-guide-photos">
+            {{range $i, $url := .Photos}}
+              <a href="{{$url}}"><img src="{{$url}}" alt="{{$.T "guide_photo_alt" "n" $i}}" loading="lazy"></a>
+            {{end}}
+          </div>
+        {{end}}
+        {{if .VideoURL}}
+          <p class="g-guide-video"><a href="{{.VideoURL}}" rel="noopener noreferrer" target="_blank">{{$.T "guide_video"}}</a></p>
+        {{end}}
+      </div>
+    {{end}}
+  {{end}}
+{{end}}
+{{end}}

@@ -37,6 +37,12 @@ ENV = {
     "UBYHOST_BILLING_ENABLED": "1",
     "UBYHOST_BILLING_IBAN": "CZ6503000000000123456789",
 }
+# The guest-link pages behave differently with the property PIN on: a stranger gets the
+# PIN page instead of the hub. Both settings are audited, so the same path is compared
+# twice. The PIN pass runs in its own servers because config.GUEST_PIN_REQUIRED is read
+# once at Python import.
+PIN_ENV = {**ENV, "UBYHOST_GUEST_PIN": "1"}
+PIN_PREFIX = "/l/"
 
 DOM_NORM_PATTERNS = (
     r"\d{4}-\d\d-\d\d(?:[T ][0-9:.+-Z]*)?",
@@ -191,12 +197,12 @@ def norm_dom(html):
     return t.strip()
 
 
-def start_py(port, db_url, public):
+def start_py(port, db_url, public, env=ENV):
     import uvicorn
 
     os.chdir(APP)
     sys.path.insert(0, str(APP))
-    os.environ.update({**ENV, "UBYHOST_DATABASE_URL": db_url, "UBYHOST_PUBLIC_BASE_URL": public})
+    os.environ.update({**env, "UBYHOST_DATABASE_URL": db_url, "UBYHOST_PUBLIC_BASE_URL": public})
     from app import db
     from app.main import app
 
@@ -210,12 +216,12 @@ def start_py(port, db_url, public):
     raise RuntimeError("py")
 
 
-def start_go(port, db_url, public):
+def start_go(port, db_url, public, env=ENV):
     bin = Path("/var/tmp/ubyhost-web-parity")
     subprocess.run(["go", "build", "-o", str(bin), "./cmd/ubyhost-web"], cwd=GO_DIR, check=True)
-    env = {
+    run_env = {
         **os.environ,
-        **ENV,
+        **env,
         "UBYHOST_DATABASE_URL": db_url,
         "UBYHOST_GO_ADDR": f"127.0.0.1:{port}",
         "UBYHOST_MIGRATIONS_DIR": str(APP / "migrations_pg"),
@@ -224,7 +230,7 @@ def start_go(port, db_url, public):
         "UBYHOST_PUBLIC_BASE_URL": public,
         "UBYHOST_APP_ROOT": str(APP),
     }
-    proc = subprocess.Popen([str(bin)], cwd=ROOT, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    proc = subprocess.Popen([str(bin)], cwd=ROOT, env=run_env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     import httpx
 
     base = f"http://127.0.0.1:{port}"
@@ -236,6 +242,32 @@ def start_go(port, db_url, public):
             time.sleep(0.25)
     proc.kill()
     raise RuntimeError("go")
+
+
+def start_py_process(port, db_url, public, env=ENV):
+    """A second Python app in its own interpreter.
+
+    The PIN flag is read when app.config is imported, so the in-process server above
+    cannot be reconfigured: this one imports the app fresh with UBYHOST_GUEST_PIN=1.
+    """
+    import httpx
+
+    proc = subprocess.Popen(
+        [sys.executable, "-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", str(port), "--log-level", "error"],
+        cwd=str(APP),
+        env={**os.environ, **env, "UBYHOST_DATABASE_URL": db_url, "UBYHOST_PUBLIC_BASE_URL": public},
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    base = f"http://127.0.0.1:{port}"
+    for _ in range(120):
+        try:
+            if httpx.get(base + "/healthz", timeout=1).status_code in (200, 503):
+                return proc, base
+        except Exception:
+            time.sleep(0.25)
+    proc.kill()
+    raise RuntimeError("py-pin")
 
 
 @dataclass
@@ -361,20 +393,38 @@ def main():
         cp = concretize(path, refs)
         if cp not in paths:
             paths.append(cp)
-    rows: list[Row] = []
     import playwright.sync_api as pw
+
+    def run_pass(br, pbase, gbase, p_sess, g_sess, sweep, suffix):
+        out: list[Row] = []
+        for path in sweep:
+            slug = (re.sub(r"[^a-z0-9]+", "-", path.strip("/").lower())[:55] or "root") + suffix.replace("+", "--")
+            for persona in p_sess:
+                label = persona + suffix
+                ps, ph, pmeta, pc, pf = capture(br, pbase, path, p_sess[persona], slug, label, "py")
+                gs, gh, gmeta, gc, gf = capture(br, gbase, path, g_sess[persona], slug, label, "go")
+                row = score_row(path, label, ps, gs, ph, gh, gmeta)
+                row.console_py, row.console_go = pc, gc
+                row.failed_py, row.failed_go = pf, gf
+                out.append(row)
+        return out
 
     with pw.sync_playwright() as p:
         br = p.chromium.launch(headless=True)
-        for path in paths:
-            slug = re.sub(r"[^a-z0-9]+", "-", path.strip("/").lower())[:55] or "root"
-            for persona in py_persons:
-                ps, ph, pmeta, pc, pf = capture(br, py_base, path, py_persons[persona], slug, persona, "py")
-                gs, gh, gmeta, gc, gf = capture(br, go_base, path, go_persons[persona], slug, persona, "go")
-                row = score_row(path, persona, ps, gs, ph, gh, gmeta)
-                row.console_py, row.console_go = pc, gc
-                row.failed_py, row.failed_go = pf, gf
-                rows.append(row)
+        rows = run_pass(br, py_base, go_base, py_persons, go_persons, paths, "")
+        pin_paths = [x for x in paths if x.startswith(PIN_PREFIX)]
+        if pin_paths:
+            # The same guest-link pages with the PIN on: the stranger must get the PIN
+            # page, the host must still get through. Same seed database, no reseed.
+            pin_pport, pin_gport = free_port(), free_port()
+            pin_public = f"http://127.0.0.1:{pin_pport}"
+            pin_py, pin_py_base = start_py_process(pin_pport, db_url, pin_public, PIN_ENV)
+            pin_go, pin_go_base = start_go(pin_gport, db_url, pin_public, PIN_ENV)
+            try:
+                rows += run_pass(br, pin_py_base, pin_go_base, py_persons, go_persons, pin_paths, "+pin")
+            finally:
+                pin_py.terminate()
+                pin_go.terminate()
         br.close()
     py_srv.should_exit = True
     go_proc.terminate()
@@ -395,6 +445,7 @@ def main():
         "pass_soft": sn,
         "accepted": an,
         "fail": len(fails),
+        "pin_paths": len([x for x in paths if x.startswith(PIN_PREFIX)]),
         "causes": causes,
         "refs": refs,
     }
