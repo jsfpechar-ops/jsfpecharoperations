@@ -22,7 +22,7 @@ context lint: OK
 - [x] No migration, no secrets
 
 ## Deviations
-ROPA/RETENTION had no prior Stripe/booking-site table rows on this branch; added rows with dormant note (brief asked to mark existing promises). No `terms_vi` / `_booking_terms_vi.html`: `/terms/booking` is en/cs only (`go/internal/web/booking/pages_test.go` — `?lang=vi` falls back to cs).
+ROPA/RETENTION had no prior Stripe/booking-site table rows on this branch; added rows with dormant note (brief asked to mark existing promises). No `terms_vi` / `_booking_terms_vi.html`: `/terms/booking` is en/cs only (`go/internal/web/booking/pages_test.go` — `?lang=vi` falls back to cs). CI shard 3: updated `test_booking_terms.py` (PR-caused; policy-name asserts replaced with unavailable note).
 
 ## Questions
 None.
