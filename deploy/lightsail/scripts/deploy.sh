@@ -418,12 +418,31 @@ fi
 # 1830: two-copy deploy of ubyhost-go. The idle slot gets the new image and
 # must be healthy before the old slot stops. Migrations are add-only, so the
 # old copy keeps working on the new schema (docs/context/rules.md).
+#
+# UBYHOST_GO_SLOTS=1 runs a single Go copy instead: the live slot is recreated in
+# place, so a deploy has a few seconds of downtime but never holds two copies in
+# memory. That is the setting for a 1 GB staging box; production keeps the
+# default 2 (no downtime at all).
 if docker compose --profile go config --services | grep -qx 'ubyhost-go' \
   && docker image inspect ubyhost-go:local >/dev/null 2>&1; then
   # shellcheck disable=SC1091
   source ./scripts/go-slot.sh
   LIVE_SLOT="$(go_live_slot)"
   NEW_SLOT="$(go_idle_slot)"
+
+  if [ "${UBYHOST_GO_SLOTS:-2}" = "1" ]; then
+    echo "==> Recreating ubyhost-go slot ${LIVE_SLOT} in place (UBYHOST_GO_SLOTS=1)"
+    docker compose --profile go stop "$(go_svc "${NEW_SLOT}")" || true
+    docker tag ubyhost-go:local "ubyhost-go:slot-${LIVE_SLOT}"
+    docker compose --profile go up -d --no-build --no-deps --force-recreate \
+      "$(go_svc "${LIVE_SLOT}")"
+    if ! go_wait_healthy "${LIVE_SLOT}" 60; then
+      echo "The recreated ubyhost-go copy never became healthy." >&2
+      rollback
+      exit 1
+    fi
+    echo "ubyhost-go runs on slot ${LIVE_SLOT} (single-slot mode: a deploy restarts it in place)."
+  else
   # compose up starts every go-profile service, including a stopped idle slot.
   # Caddy lb_policy first prefers ubyhost-go (slot A), so a restarted A would
   # take production traffic while B is live. Put the idle slot down first.
@@ -441,6 +460,7 @@ if docker compose --profile go config --services | grep -qx 'ubyhost-go' \
   sleep 3 # one Caddy health interval, so Caddy sees the new copy before the old one stops
   docker compose --profile go stop "$(go_svc "${LIVE_SLOT}")" || true
   echo "ubyhost-go now runs on slot ${NEW_SLOT}."
+  fi
 fi
 
 # Reload Caddy unconditionally, every deploy.
