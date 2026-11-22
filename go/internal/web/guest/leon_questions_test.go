@@ -66,7 +66,3 @@ func TestLeonQuestionsSignedOutGolden(t *testing.T) {
 		t.Fatal("missing signed_out_questions case")
 	}
 }
-
-func TestLeonGoneWithoutLiveGuide(t *testing.T) {
-	t.Skip("JSON gate parity is exercised when UBYHOST_TEST_DATABASE_URL is set in executor step 5")
-}
