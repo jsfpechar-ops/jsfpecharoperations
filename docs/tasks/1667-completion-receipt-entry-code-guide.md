@@ -6,7 +6,7 @@ Executor: Haiku 5.5 | Not runnable. Tier B (mail with a secret). The orchestrato
 
 ## 1. Objective
 
-The completion receipt gains one line per extra entry code (up to 3, owner 2026-11-22 D1, D2) after the TTLock door code, each as `<Type label>: <code>` in the host's `position` order, and a guide block (internal guide button + external link) after it. Receipt order: stay panel → what you sent → fee → door code, then entry codes → guide → host link → note.
+The completion receipt gains one line per extra entry code (up to 3, owner 2026-11-22 D1, D2) next to the TTLock door code, each as `<Type label>: <code>`, in arrival order (owner 2026-11-22, D5, replaces the D2 order): `gate`, then `building_entrance`, then the TTLock apartment door code, then `garage`, `bike_room`, `other`; two codes of the same type keep the host's `position` order. Sort in one Go helper `entryCodeGuestOrder` (in the 2032 package, table test) used by every guest surface and the host preview, and a guide block (internal guide button + external link) after it. Receipt order: stay panel → what you sent → fee → codes in D5 arrival order → guide → host link → note.
 
 ## 2. Context
 
@@ -32,7 +32,7 @@ None. Do not run this brief.
 
 Components: the existing receipt layout (table-based, inline styles, no images required). After the door code, one row per entry code: the type label (small, grey) above the code, which is monospace, 24 px, letter-spaced, `white-space: nowrap` for codes of 12 characters or fewer (longer codes may wrap). Then, under the codes, one small line (G4): "Codes can change. Your stay page always has the current ones." / "Kódy se mohou změnit. Aktuální najdete vždy na stránce pobytu." (guest catalog, every guest language like 1666; shown only when at least one entry code is in the mail). Then the guide block: the "Open the guide" button (`min-height` 44 px, full width at 390) and, when `guide_external_url` is set, the domain as a text link; copy as in 2033 §Design.
 
-Plain-text part: one line per code as `Garage: 4821#` (type label, colon, code; for type Other the host's label as written), the door code first, then the changes line, then the guide links (no code in the fallback text, as in §2).
+Plain-text part: one line per code as `Garage: 4821#` (type label, colon, code; for type Other the host's label as written), in D5 arrival order, then the changes line, then the guide links (no code in the fallback text, as in §2).
 
 States (golden HTML, rendered with `page.set_content` at 390 and 1280, file `receipt-<state>-<width>.png`): `door-only`, `door-3codes`, `nolock-codes`, `guide-ours`, `guide-external`, `guide-both`, `none`. Checks as in §2 (no horizontal scroll, buttons at least 44 px, long codes and domains wrap, marker replaced by a fixture value so the image shows a real code). The PR describes each image per width. Light mode only; no images needed (nothing is loaded from outside).
 

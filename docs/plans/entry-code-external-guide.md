@@ -16,8 +16,9 @@ Goal: a host-typed building/gate entry code and an optional external (e.g. Notio
 ## Decisions (owner, 2026-11-22)
 
 - D1: up to 3 extra entry codes per apartment, besides the TTLock door code (table `apartment_entry_code`, 2032).
-- D2: each code has a type (building_entrance, gate, garage, bike_room, other; `other` needs a label of 60 characters at most); guests see the door code first, then `<Type label>: <code>`; secrecy rules unchanged.
+- D2: each code has a type (building_entrance, gate, garage, bike_room, other; `other` needs a label of 60 characters at most); guests see `<Type label>: <code>`; secrecy rules unchanged.
 - D3: the post-submit guest screen gets one "Your guide" block (our guide first, else the host's link, no codes); blocked on the guest port (2033). Submit redirects to the stay page with `saved=1` (`guest.py:2770`), so the block lives there; 2033 and 1666 must share one guide block, not two.
+- D5 (later 22nd): guest order = arrival order: gate, building entrance, apartment door, garage, bike room, other. Leon: code questions go to the host (`ask_host`), guest sees a fixed text pointing to the confirmation email and stay page (2037). No automatic re-send on code change.
 - D4: guide import gains a public-URL source (Notion first) with a code filter before and after the model; drafts only; host sees a count (2034, 2035).
 
 ## Briefs
@@ -38,7 +39,7 @@ Goal: a host-typed building/gate entry code and an optional external (e.g. Notio
 | [2035](../tasks/2035-guide-import-code-filter.md) | Code filter for imported guide text | **todo, runnable now** | none | B |
 | [2034](../tasks/2034-guide-import-public-url.md) | Guide import from a public URL (Notion), drafts, codes left out | todo after 2035 | 2035, 1668 | B |
 | [2036](../tasks/2036-go-apartment-access-page.md) | Go page `/apartments/{id}/access`: entry codes, guest preview, door-code status | todo after 2032, 1668 | 2032, 1668 | B |
-| [2037](../tasks/2037-leon-entry-code-pointer.md) | Leon pointer line + test: no code in the prompt | **todo, runnable now** | none | B |
+| [2037](../tasks/2037-leon-entry-code-pointer.md) | Leon: code questions go to host, fixed email/stay-page text, no code in prompt | todo after 2035 | 2035 | B |
 
 ## Proof it looks good (owner 2026-11-14)
 

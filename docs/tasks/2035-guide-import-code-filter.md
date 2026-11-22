@@ -45,6 +45,10 @@ No other file may change.
    - `FilterCardFields`: a card with codes in `steps` and `watch_out` returns the sum and leaves `kind` and `topic` untouched.
 7. Run §6, commit per step.
 
+## 4b. Shared keywords
+
+Export the keyword list as `CodeKeywords` and a helper `AsksForCode(text string) bool` (same CZ/EN/DE table tests) so Leon (2037) reuses it.
+
 ## 5. Do not touch
 
 `job.go`, `merge.go`, `trim.go`, the web package, any template, any Python file, `go.mod`.

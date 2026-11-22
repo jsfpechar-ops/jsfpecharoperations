@@ -1,12 +1,12 @@
 # 2037: Leon never knows entry codes; one fixed pointer line, plus a test that no code reaches the prompt
 
 Status: todo (runnable now; prompt change only, no UI)
-Depends on: none (the test seeds codes through 2032's table when it is on main; until then it seeds `apartment.entry_code_enc`, which 1661 added) | Base commit: fill from `git rev-parse --short HEAD` | Branch: task/2037-leon-entry-code-pointer
+Depends on: 2035 (for `guideimport.AsksForCode`; the test seeds codes through 2032's table when it is on main; until then it seeds `apartment.entry_code_enc`, which 1661 added) | Base commit: fill from `git rev-parse --short HEAD` | Branch: task/2037-leon-entry-code-pointer
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B (guest-facing AI prompt; the byte-pinned prompt is shared with Python)
 
 ## 1. Objective
 
-Guests will ask Leon "what is the gate code?". Leon must never know a code. Add one fixed instruction to Leon's character prompt: for door, gate, garage or building entry codes he answers "Your entry codes are on your stay page." (in the guest's language) and gives no digits. Add a test that seeds entry codes, builds Leon's real system blocks and asserts no code value is in them.
+Guests will ask Leon "what is the gate code?". Leon must never know a code, and this is a sensitive request (owner 2026-11-22), so it always goes to the host: the model answers kind `ask_host` with `host_summary` "Guest asked for an entry code" (no digits). Because the question matches the entry-code keywords of 2035 (`guideimport.CodeKeywords`, exported there), the verdict gets `Reason: "entry_code"` and the guest sees a fixed text instead of the generic ask-host text: en "For your safety I don't share entry codes. You'll find them in your registration confirmation email and on your stay page. If you can't find them, your host has your question and will reply." cs "Z bezpečnostních důvodů vstupní kódy nesděluji. Najdete je v potvrzovacím e-mailu z registrace a na stránce pobytu. Pokud je nenajdete, hostitel vaši otázku dostal a odpoví vám." (every guest language through the guest catalog). A `kind: answer` without a guide source already falls back to `ask_host` (`leon_core.go` `no_source`), so no schema change is needed. Add a test that seeds entry codes, builds Leon's real system blocks and asserts no code value is in them, and a test that a code question yields `Reason: "entry_code"`. If the guest chat page that renders the fixed text is still Python (`guest_leon.py`), the text change there waits for the guest Leon port unless go-first names an exception: STOP and ask.
 
 ## 2. Context (verified on main)
 
@@ -32,10 +32,9 @@ No other file may change. If `leon_try_golden.py --check` (or the test that comp
 
 ```
 ACCESS CODES
-You never know any door, gate, garage, bike room or building entry code, and no code is ever in the guide. When a guest asks for one, answer in the guest's language: "Your entry codes are on your stay page." Give no digits, do not guess, and never ask the guest to type a code here. This does not change what a guide card says, for example the Wi-Fi.
+You never know any door, gate, garage, bike room or building entry code, and no code is ever in the guide. When a guest asks for one, use kind "ask_host" with host_summary "Guest asked for an entry code". Give no digits, do not guess, and never ask the guest to type a code here. This does not change what a guide card says, for example the Wi-Fi.
 ```
-
-   In the JSON answer that is kind `answer` with `sources` as the schema requires; if the schema forces at least one card id, use kind `ask_host`'s fixed text instead: STOP and report (the orchestrator decides), do not change the schema.
+   The page, not the model, shows the fixed entry-code text (reason `entry_code`).
 2. Run the Python golden writer in check mode if it has one (`cd App && .venv/bin/python scripts/leon_try_golden.py --help 2>&1 | tail -5`); otherwise rewrite the Go file from Python with `.venv/bin/python scripts/leon_try_golden.py 2>&1 | tail -5` and confirm only `leon_prompt.txt` changed (`git status --short | tail -5`).
 3. Go test `TestLeonPromptNeverHoldsEntryCodes` (DB test like `leon_facts_test.go`; read its fixtures first): seed an apartment with guide cards and codes `7741#`, `5502`, `GARAGE-93` (ciphertext or, for a unit test with no key, the plain value in the seed row; the point is that the value is unique and searched for); load cards through the real path used by the guest Leon handler, call `LeonSystemBlocks` and `LeonUserTurn`, and assert none of the three values (and none of their ciphertexts) occurs in any block; assert the character contains `Your entry codes are on your stay page.` exactly once. Add a case where a host card text contains `7741#`: the test documents that this is the host's own card text and only asserts the system prompt constant is unchanged by seeding the table.
 4. Python test: same assertions on `leon.system_blocks(cards, "Flat")` and `leon.CHARACTER`, plus a test that `leon.CHARACTER` equals the content of `go/internal/web/ai/leon_prompt.txt` (read the file by relative path from the repo root).

@@ -101,6 +101,10 @@ DROP TABLE IF EXISTS apartment_entry_code;
 8. `docs/privacy/RETENTION.md`: one line next to the entry-code line (`grep -n "entry_code\|Entry code\|entry code" docs/privacy/RETENTION.md | head -3`): "Extra entry codes (`apartment_entry_code`): encrypted; deleted 1 day after valid-until or after the apartment is archived; with no end date until the host clears them." If no entry-code line exists, add it to the table in the same style.
 9. Run §6, commit per step.
 
+## 4b. Guest order helper (owner D5)
+
+Add `entryCodeGuestOrder(rows, hasLock)` next to the table's Go access code: returns rows plus a door-code slot sorted gate, building_entrance, DOOR, garage, bike_room, other; same type keeps `position` order. Table test with all six kinds, two of one type, and no lock.
+
 ## 5. Do not touch
 
 `apartment.entry_code_*` columns (no `DROP`), `App/app/db.py`, `go/internal/schema/*.go` (only the regenerated golden files change), any reader or writer of the codes, Leon, guides, exports other than the guard test.
