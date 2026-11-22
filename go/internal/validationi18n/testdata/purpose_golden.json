@@ -1,0 +1,622 @@
+{
+ "options": {
+  "cs": [
+   {
+    "code": "00",
+    "label": "Zdravotní"
+   },
+   {
+    "code": "01",
+    "label": "Obchodní"
+   },
+   {
+    "code": "02",
+    "label": "Kulturní"
+   },
+   {
+    "code": "03",
+    "label": "Návštěva rodiny nebo přátel"
+   },
+   {
+    "code": "04",
+    "label": "Pozvání"
+   },
+   {
+    "code": "05",
+    "label": "Oficiální (politický)"
+   },
+   {
+    "code": "06",
+    "label": "Podnikání (OSVČ)"
+   },
+   {
+    "code": "07",
+    "label": "Sportovní"
+   },
+   {
+    "code": "10",
+    "label": "Turistika"
+   },
+   {
+    "code": "11",
+    "label": "Studium (školení, stáž)"
+   },
+   {
+    "code": "12",
+    "label": "Tranzit (průjezd)"
+   },
+   {
+    "code": "13",
+    "label": "Letištní tranzit"
+   },
+   {
+    "code": "27",
+    "label": "Zaměstnání"
+   },
+   {
+    "code": "93",
+    "label": "Vízum ADS (občané Číny)"
+   },
+   {
+    "code": "99",
+    "label": "Ostatní"
+   }
+  ],
+  "en": [
+   {
+    "code": "00",
+    "label": "Medical"
+   },
+   {
+    "code": "01",
+    "label": "Business"
+   },
+   {
+    "code": "02",
+    "label": "Cultural"
+   },
+   {
+    "code": "03",
+    "label": "Visiting family or friends"
+   },
+   {
+    "code": "04",
+    "label": "Invitation"
+   },
+   {
+    "code": "05",
+    "label": "Official (political)"
+   },
+   {
+    "code": "06",
+    "label": "Self-employment"
+   },
+   {
+    "code": "07",
+    "label": "Sport"
+   },
+   {
+    "code": "10",
+    "label": "Tourism"
+   },
+   {
+    "code": "11",
+    "label": "Study (training, internship)"
+   },
+   {
+    "code": "12",
+    "label": "Transit"
+   },
+   {
+    "code": "13",
+    "label": "Airport transit"
+   },
+   {
+    "code": "27",
+    "label": "Employment"
+   },
+   {
+    "code": "93",
+    "label": "ADS visa (Chinese nationals)"
+   },
+   {
+    "code": "99",
+    "label": "Other"
+   }
+  ],
+  "de": [
+   {
+    "code": "00",
+    "label": "Medizinisch"
+   },
+   {
+    "code": "01",
+    "label": "Geschäftlich"
+   },
+   {
+    "code": "02",
+    "label": "Kulturell"
+   },
+   {
+    "code": "03",
+    "label": "Besuch von Familie oder Freunden"
+   },
+   {
+    "code": "04",
+    "label": "Einladung"
+   },
+   {
+    "code": "05",
+    "label": "Dienstlich (politisch)"
+   },
+   {
+    "code": "06",
+    "label": "Selbstständige Tätigkeit"
+   },
+   {
+    "code": "07",
+    "label": "Sport"
+   },
+   {
+    "code": "10",
+    "label": "Tourismus"
+   },
+   {
+    "code": "11",
+    "label": "Studium (Ausbildung, Praktikum)"
+   },
+   {
+    "code": "12",
+    "label": "Transit"
+   },
+   {
+    "code": "13",
+    "label": "Flughafentransit"
+   },
+   {
+    "code": "27",
+    "label": "Beschäftigung"
+   },
+   {
+    "code": "93",
+    "label": "ADS-Visum (chinesische Staatsangehörige)"
+   },
+   {
+    "code": "99",
+    "label": "Sonstiges"
+   }
+  ],
+  "es": [
+   {
+    "code": "00",
+    "label": "Médico"
+   },
+   {
+    "code": "01",
+    "label": "Negocios"
+   },
+   {
+    "code": "02",
+    "label": "Cultural"
+   },
+   {
+    "code": "03",
+    "label": "Visita a familiares o amigos"
+   },
+   {
+    "code": "04",
+    "label": "Invitación"
+   },
+   {
+    "code": "05",
+    "label": "Oficial (político)"
+   },
+   {
+    "code": "06",
+    "label": "Trabajo por cuenta propia"
+   },
+   {
+    "code": "07",
+    "label": "Deporte"
+   },
+   {
+    "code": "10",
+    "label": "Turismo"
+   },
+   {
+    "code": "11",
+    "label": "Estudios (formación, prácticas)"
+   },
+   {
+    "code": "12",
+    "label": "Tránsito"
+   },
+   {
+    "code": "13",
+    "label": "Tránsito aeroportuario"
+   },
+   {
+    "code": "27",
+    "label": "Empleo"
+   },
+   {
+    "code": "93",
+    "label": "Visado ADS (ciudadanos chinos)"
+   },
+   {
+    "code": "99",
+    "label": "Otro"
+   }
+  ],
+  "fr": [
+   {
+    "code": "00",
+    "label": "Médical"
+   },
+   {
+    "code": "01",
+    "label": "Affaires"
+   },
+   {
+    "code": "02",
+    "label": "Culture"
+   },
+   {
+    "code": "03",
+    "label": "Visite familiale ou amicale"
+   },
+   {
+    "code": "04",
+    "label": "Invitation"
+   },
+   {
+    "code": "05",
+    "label": "Officiel (politique)"
+   },
+   {
+    "code": "06",
+    "label": "Activité indépendante"
+   },
+   {
+    "code": "07",
+    "label": "Sport"
+   },
+   {
+    "code": "10",
+    "label": "Tourisme"
+   },
+   {
+    "code": "11",
+    "label": "Études (formation, stage)"
+   },
+   {
+    "code": "12",
+    "label": "Transit"
+   },
+   {
+    "code": "13",
+    "label": "Transit aéroportuaire"
+   },
+   {
+    "code": "27",
+    "label": "Emploi"
+   },
+   {
+    "code": "93",
+    "label": "Visa ADS (ressortissants chinois)"
+   },
+   {
+    "code": "99",
+    "label": "Autre"
+   }
+  ],
+  "uk": [
+   {
+    "code": "00",
+    "label": "Лікування"
+   },
+   {
+    "code": "01",
+    "label": "Ділова поїздка"
+   },
+   {
+    "code": "02",
+    "label": "Культура"
+   },
+   {
+    "code": "03",
+    "label": "Відвідування родини чи друзів"
+   },
+   {
+    "code": "04",
+    "label": "Запрошення"
+   },
+   {
+    "code": "05",
+    "label": "Офіційна (політична)"
+   },
+   {
+    "code": "06",
+    "label": "Підприємницька діяльність (ФОП)"
+   },
+   {
+    "code": "07",
+    "label": "Спорт"
+   },
+   {
+    "code": "10",
+    "label": "Туризм"
+   },
+   {
+    "code": "11",
+    "label": "Навчання (курси, стажування)"
+   },
+   {
+    "code": "12",
+    "label": "Транзит"
+   },
+   {
+    "code": "13",
+    "label": "Транзит через аеропорт"
+   },
+   {
+    "code": "27",
+    "label": "Працевлаштування"
+   },
+   {
+    "code": "93",
+    "label": "Віза ADS (громадяни Китаю)"
+   },
+   {
+    "code": "99",
+    "label": "Інше"
+   }
+  ],
+  "vi": [
+   {
+    "code": "00",
+    "label": "Chữa bệnh"
+   },
+   {
+    "code": "01",
+    "label": "Kinh doanh"
+   },
+   {
+    "code": "02",
+    "label": "Văn hóa"
+   },
+   {
+    "code": "03",
+    "label": "Thăm gia đình hoặc bạn bè"
+   },
+   {
+    "code": "04",
+    "label": "Theo lời mời"
+   },
+   {
+    "code": "05",
+    "label": "Công vụ (chính trị)"
+   },
+   {
+    "code": "06",
+    "label": "Tự kinh doanh"
+   },
+   {
+    "code": "07",
+    "label": "Thể thao"
+   },
+   {
+    "code": "10",
+    "label": "Du lịch"
+   },
+   {
+    "code": "11",
+    "label": "Học tập (đào tạo, thực tập)"
+   },
+   {
+    "code": "12",
+    "label": "Quá cảnh"
+   },
+   {
+    "code": "13",
+    "label": "Quá cảnh sân bay"
+   },
+   {
+    "code": "27",
+    "label": "Làm việc"
+   },
+   {
+    "code": "93",
+    "label": "Thị thực ADS (công dân Trung Quốc)"
+   },
+   {
+    "code": "99",
+    "label": "Khác"
+   }
+  ],
+  "": [
+   {
+    "code": "00",
+    "label": "Medical"
+   },
+   {
+    "code": "01",
+    "label": "Business"
+   },
+   {
+    "code": "02",
+    "label": "Cultural"
+   },
+   {
+    "code": "03",
+    "label": "Visiting family or friends"
+   },
+   {
+    "code": "04",
+    "label": "Invitation"
+   },
+   {
+    "code": "05",
+    "label": "Official (political)"
+   },
+   {
+    "code": "06",
+    "label": "Self-employment"
+   },
+   {
+    "code": "07",
+    "label": "Sport"
+   },
+   {
+    "code": "10",
+    "label": "Tourism"
+   },
+   {
+    "code": "11",
+    "label": "Study (training, internship)"
+   },
+   {
+    "code": "12",
+    "label": "Transit"
+   },
+   {
+    "code": "13",
+    "label": "Airport transit"
+   },
+   {
+    "code": "27",
+    "label": "Employment"
+   },
+   {
+    "code": "93",
+    "label": "ADS visa (Chinese nationals)"
+   },
+   {
+    "code": "99",
+    "label": "Other"
+   }
+  ]
+ },
+ "unknown": [
+  [
+   "cs",
+   "",
+   ""
+  ],
+  [
+   "cs",
+   "ZZ",
+   "ZZ"
+  ],
+  [
+   "cs",
+   "0",
+   "0"
+  ],
+  [
+   "en",
+   "",
+   ""
+  ],
+  [
+   "en",
+   "ZZ",
+   "ZZ"
+  ],
+  [
+   "en",
+   "0",
+   "0"
+  ],
+  [
+   "de",
+   "",
+   ""
+  ],
+  [
+   "de",
+   "ZZ",
+   "ZZ"
+  ],
+  [
+   "de",
+   "0",
+   "0"
+  ],
+  [
+   "es",
+   "",
+   ""
+  ],
+  [
+   "es",
+   "ZZ",
+   "ZZ"
+  ],
+  [
+   "es",
+   "0",
+   "0"
+  ],
+  [
+   "fr",
+   "",
+   ""
+  ],
+  [
+   "fr",
+   "ZZ",
+   "ZZ"
+  ],
+  [
+   "fr",
+   "0",
+   "0"
+  ],
+  [
+   "uk",
+   "",
+   ""
+  ],
+  [
+   "uk",
+   "ZZ",
+   "ZZ"
+  ],
+  [
+   "uk",
+   "0",
+   "0"
+  ],
+  [
+   "vi",
+   "",
+   ""
+  ],
+  [
+   "vi",
+   "ZZ",
+   "ZZ"
+  ],
+  [
+   "vi",
+   "0",
+   "0"
+  ],
+  [
+   "",
+   "",
+   ""
+  ],
+  [
+   "",
+   "ZZ",
+   "ZZ"
+  ],
+  [
+   "",
+   "0",
+   "0"
+  ]
+ ]
+}

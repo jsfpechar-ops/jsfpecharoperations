@@ -24,9 +24,11 @@ TABLES = GO_DIR / "messages.json"
 GOLDEN = GO_DIR / "testdata" / "localize_golden.json"
 GUEST_TABLES = GO_DIR / "guest_messages.json"
 GUEST_GOLDEN = GO_DIR / "testdata" / "guest_localize_golden.json"
+PURPOSE_TABLES = GO_DIR / "purpose_labels.json"
+PURPOSE_GOLDEN = GO_DIR / "testdata" / "purpose_golden.json"
 sys.path.insert(0, str(APP_DIR))
 
-from app import host_vi_i18n, validation_i18n  # noqa: E402
+from app import host_vi_i18n, validation, validation_i18n  # noqa: E402
 
 LANGS = ("cs", "vi", "en", "")
 EXTRA = (
@@ -98,6 +100,32 @@ def render_guest_golden() -> str:
     return _dump(cases)
 
 
+PURPOSE_LANGS = ("cs", "en", "de", "es", "fr", "uk", "vi", "")
+
+
+def purpose_codes() -> list:
+    return [code for code, _cs, _en in validation.PURPOSES]
+
+
+def render_purpose_tables() -> str:
+    """validation.purpose_label's labels, language by language."""
+    data = {
+        lang: {code: validation.purpose_label(code, lang) for code in purpose_codes()}
+        for lang in PURPOSE_LANGS
+    }
+    return _dump(data)
+
+
+def render_purpose_golden() -> str:
+    """codelists.purpose_options on the bundled path, plus the unknown-code tail."""
+    options = {
+        lang: [{"code": code, "label": validation.purpose_label(code, lang)} for code in purpose_codes()]
+        for lang in PURPOSE_LANGS
+    }
+    unknown = [[lang, code, validation.purpose_label(code, lang)] for lang in PURPOSE_LANGS for code in ("", "ZZ", "0")]
+    return _dump({"options": options, "unknown": unknown})
+
+
 def main(argv: list) -> int:
     stale = 0
     pairs = (
@@ -105,6 +133,8 @@ def main(argv: list) -> int:
         (GOLDEN, render_golden()),
         (GUEST_TABLES, render_guest_tables()),
         (GUEST_GOLDEN, render_guest_golden()),
+        (PURPOSE_TABLES, render_purpose_tables()),
+        (PURPOSE_GOLDEN, render_purpose_golden()),
     )
     for path, text in pairs:
         current = path.read_text(encoding="utf-8") if path.exists() else None

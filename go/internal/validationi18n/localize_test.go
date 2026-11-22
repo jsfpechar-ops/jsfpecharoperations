@@ -3,6 +3,7 @@ package validationi18n
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -77,5 +78,58 @@ func TestGuestLocalizeTablesLoaded(t *testing.T) {
 	// Czech has no guest entry either, so the host table answers.
 	if got := GuestLocalize("Must be at most 42 characters.", "cs"); got != "Nejvýše 42 znaků." {
 		t.Fatalf("cs fallthrough to Localize: %q", got)
+	}
+}
+
+// TestPurposeGolden replays App/app/validation.purpose_label through the guest form's
+// select, language by language, including the codes the bundle does not carry.
+func TestPurposeGolden(t *testing.T) {
+	raw, err := os.ReadFile(filepath.Join("testdata", "purpose_golden.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var golden struct {
+		Options map[string][]struct {
+			Code  string `json:"code"`
+			Label string `json:"label"`
+		} `json:"options"`
+		Unknown [][3]string `json:"unknown"`
+	}
+	if err := json.Unmarshal(raw, &golden); err != nil {
+		t.Fatal(err)
+	}
+	if len(golden.Options) < 8 {
+		t.Fatalf("golden has %d languages, want at least 8", len(golden.Options))
+	}
+	for lang, want := range golden.Options {
+		got := PurposeOptions(lang, nil)
+		if len(got) != len(want) {
+			t.Fatalf("%q: %d options, want %d", lang, len(got), len(want))
+		}
+		for i := range want {
+			if got[i].Code != want[i].Code || got[i].Label != want[i].Label {
+				t.Fatalf("%q option %d = %v, want %v", lang, i, got[i], want[i])
+			}
+		}
+	}
+	for _, c := range golden.Unknown {
+		if got := PurposeLabel(c[1], c[0]); got != c[2] {
+			t.Errorf("PurposeLabel(%q, %q) = %q, want %q", c[1], c[0], got, c[2])
+		}
+	}
+	// The fetched codelist rows label a code the bundle does not carry from the
+	// police text, and Czech never borrows the English label.
+	rows := []PurposeRow{
+		{Code: "ZZ", Extra: "77", TextCS: "Nový účel", TextEN: "New purpose"},
+		{Code: "10", TextCS: "x", TextEN: "y"},
+	}
+	if got := PurposeOptions("cs", rows); got[1].Code != "77" || got[1].Label != "Nový účel" || got[0].Label != "Turistika" {
+		t.Fatalf("cs rows: %v", got)
+	}
+	if got := PurposeOptions("de", rows); got[1].Label != "Neuer Zweck" && got[1].Label != "New purpose" {
+		t.Fatalf("de rows: %v", got)
+	}
+	if got := PurposeOptions("de", rows); got[0].Label != "Tourismus" {
+		t.Fatalf("de bundled label: %v", got[0])
 	}
 }
