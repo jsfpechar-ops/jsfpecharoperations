@@ -2050,13 +2050,15 @@ body.v2 .code-block{white-space:pre-wrap;overflow-wrap:anywhere;margin:12px 0 0;
 body.v2 .invoice-items-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-items:end}
 body.v2 .invoice-items-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
 body.v2 .invoice-items-heading h2{margin:0}
-body.v2 .invoice-total{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:16px 0 0}
+body.v2 .invoice-total{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0}
 body.v2 .invoice-total-label{font-size:16px;font-weight:600}
 body.v2 .invoice-total-value{font-size:24px;font-weight:700}
 body.v2 .invoice-paid-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
 body.v2 .invoice-lookup-row,body.v2 .invoice-supplier-meta{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
 body.v2 .invoice-lookup-row > *{min-width:0}
-body.v2 .invoice-supplier,body.v2 .invoice-customer{border:1px solid var(--line,#e5e5e5);border-radius:12px;padding:16px;margin:12px 0 0}
+/* 2001: the builder is one lane of flat cards (.ui-page-narrow > .ui-section); no card in a card */
+/* 2001: supplier and customer keep the standard section card (border + 16 px padding) like items
+   and payment: flattening them to the lane edge put their text 0 px from the edge (guardrail) */
 body.v2 .invoice-customer .ui-toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start}
 body.v2 .invoice-customer .ui-choice-card{display:flex;flex-wrap:wrap;align-items:center;column-gap:12px;row-gap:4px;padding:16px}
 body.v2 .invoice-customer .ui-choice-card-label{display:flex;align-items:center;gap:12px;margin:0}
@@ -2086,7 +2088,7 @@ body.v2 .ui-banner .banner-list{margin:6px 0 0;padding-left:20px}
 body.v2 .input-qty{max-width:90px}
 body.v2 .input-unit{max-width:120px}
 body.v2 .input-vat{max-width:110px}
-body.v2 .invoice-supplier{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--space-2) var(--space-4);align-items:start}
+body.v2 .ui-page-narrow > .ui-section.invoice-supplier{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--space-2) var(--space-4);align-items:start}
 body.v2 .invoice-supplier-edit{grid-column:2;grid-row:1;font-size:var(--size-14)}
 body.v2 .invoice-supplier-picker{grid-column:1;grid-row:1;max-width:22rem;margin:0;min-width:0}
 body.v2 .invoice-supplier-meta{grid-column:1 / -1;min-width:0;display:flex;flex-direction:column;gap:3px;padding:0 0 2px}
@@ -2133,10 +2135,14 @@ body.v2 details.invoice-more .field-label-row .tip-tail{display:inline;white-spa
 body.v2 details.invoice-more .field-label-row .help-tip{display:block;margin-left:0}
 /* 1075 CI: the fold summary on the entity form must reach 4.5:1; brand-ink keeps the link tone */
 body.v2 details.ui-details-box.invoice-more > summary{color:var(--brand-ink)}
-body.v2 .invoice-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 18px;margin-top:18px;box-shadow:0 1px 2px rgba(32,32,30,.06);position:static;bottom:auto;z-index:1}
-body.v2 .wrap.with-sidebar .invoice-workspace{max-width:1050px;margin-left:auto;margin-right:auto}
+/* 2001: one action row closes the form; plain top rule, no floating card */
+body.v2 .invoice-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:none;border:0;border-top:1px solid var(--line);border-radius:0;padding:16px 0 0;margin-top:16px;box-shadow:none;position:static;bottom:auto;z-index:1}
+@media (min-width:1024px){body.v2 .invoice-actions > [data-next-number]{margin-left:auto}}
 @media (max-width:767px){
   body.v2 .invoice-lookup-row input{max-width:none}
+  /* 2001: .ui-page-narrow only draws section cards from 768 px up; on a phone the lane keeps the same
+     cards (16 px inset) so no label sits at the section edge */
+  body.v2 .invoice-document > .ui-section{padding:16px;border:1px solid var(--line);border-radius:12px;margin:0 0 16px;box-sizing:border-box}
   body.v2 .invoice-supplier{grid-template-columns:minmax(0,1fr)}
   body.v2 .invoice-supplier-edit{grid-column:1;grid-row:3}
 }
@@ -2148,12 +2154,13 @@ body.v2 .wrap.with-sidebar .invoice-workspace{max-width:1050px;margin-left:auto;
   body.v2 .invoice-f-half{grid-column:span 1}
 }
 @media (min-width:1024px){
-  body.v2 .invoice-buyer-fields{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:var(--space-4)}
+  /* 2001: field_pair, two columns in the 720 px lane (six crammed every label into two lines) */
+  body.v2 .invoice-buyer-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
   body.v2 .invoice-buyer-fields > .ui-field{grid-column:auto}
-  body.v2 .invoice-f-full{grid-column:span 6}
-  body.v2 .invoice-f-zip{grid-column:span 2}
-  body.v2 .invoice-f-city{grid-column:span 4}
-  body.v2 .invoice-f-half{grid-column:span 3}
+  body.v2 .invoice-f-full{grid-column:span 2}
+  body.v2 .invoice-f-zip{grid-column:span 1}
+  body.v2 .invoice-f-city{grid-column:span 1}
+  body.v2 .invoice-f-half{grid-column:span 1}
 }
 @media (min-width:768px){
   body.v2 .invoice-items-grid{grid-template-columns:minmax(0,3fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)}
@@ -2226,52 +2233,64 @@ body.v2 .ov-head p.sub{margin-bottom:12px}
 body.v2 .ov-head .ov-links{margin-bottom:12px}
 /* 0831G page help (end) */
 /* 0831H details+cleanup (start) */
-/* 0831H: invoice items ported from host2.css 0253/0295 (v2 pages do not load host2.css): grid rows, card stack under the 850 px and 420 px container queries */
-body.v2 #item-rows.invoice-items-grid { display: block; width: 100%; table-layout: fixed; container-type: inline-size; }
-body.v2 .invoice-items-grid thead,
+/* 2001: items rows stack as cards at every width — description on its own line, then the numeric
+   cluster (qty, unit, price, VAT for a payer) with Remove at the card's right edge. The table
+   header stays display:none; each cell draws its own label from data-label, so the row needs no
+   header row and the description keeps the full width (no trailing gap before the cluster). */
+body.v2 #item-rows.invoice-items-grid { display: block; width: 100%; }
+body.v2 .invoice-items-grid thead { display: none; }
 body.v2 .invoice-items-grid tbody { display: block; width: 100%; }
-body.v2 .invoice-items-grid thead tr,
-body.v2 .invoice-items-grid tbody tr { display: grid; grid-template-columns: minmax(220px, 1fr) 84px 124px 148px 78px 126px; align-items: start; }
-body.v2 .invoice-items-grid thead tr { align-items: stretch; background: var(--surface-2); }
-body.v2 .invoice-items-grid thead th { display: flex; align-items: center; background: transparent; }
-body.v2 .invoice-items-grid th,
-body.v2 .invoice-items-grid td { box-sizing: border-box; min-width: 0; }
-body.v2 .invoice-items-grid td { vertical-align: top; }
+body.v2 .invoice-items-grid tbody tr {
+  display: grid;
+  grid-template-columns: 84px 96px 120px minmax(0, 1fr);
+  column-gap: var(--space-3);
+  row-gap: var(--space-2);
+  align-items: start;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--line);
+  box-sizing: border-box;
+}
+/* a payer has one more cell (VAT); without it the trailing track is simply the Remove slot */
+body.v2 .invoice-workspace.is-payer .invoice-items-grid tbody tr {
+  grid-template-columns: 84px 96px 120px 84px minmax(0, 1fr);
+}
+body.v2 .invoice-items-grid tbody tr:last-child { border-bottom: 0; }
+body.v2 .invoice-items-grid tbody tr > td:first-child { grid-column: 1 / -1; }
+body.v2 .invoice-items-grid td { display: block; min-width: 0; padding: 0; border: 0; vertical-align: top; }
+body.v2 .invoice-items-grid td.row-actions,
+body.v2 .invoice-items-grid tbody tr > td:last-child { grid-column: -2 / -1; text-align: right; }
+body.v2 .invoice-items-grid td.row-actions .ui-btn { margin: 0; }
+body.v2 .invoice-items-grid th, body.v2 .invoice-items-grid td { box-sizing: border-box; }
 body.v2 .invoice-items-grid input:not([type=hidden]),
 body.v2 .invoice-items-grid select { box-sizing: border-box; width: 100%; min-width: 0; }
-/* Remove matches the v2 inputs: 44 px up to 1023 px, 39 px above */
-body.v2 .invoice-items-grid .row-actions [data-remove-item] { height: 44px; min-height: 44px; box-sizing: border-box; }
-@media (min-width:1024px){ body.v2 .invoice-items-grid .row-actions [data-remove-item] { height: 39px; min-height: 39px; } }
-body.v2 .invoice-items-grid [data-vat-col][hidden] { display: block !important; visibility: hidden; }
-@container (max-width: 850px) {
-  body.v2 .invoice-items-grid thead { display: none; }
-  body.v2 .invoice-items-grid tbody tr { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3) var(--space-4); padding: var(--space-4); border-bottom: 1px solid var(--line); }
-  body.v2 .invoice-items-grid tbody tr:last-child { border-bottom: 0; }
-  body.v2 .invoice-items-grid td { display: block; padding: 0; border: 0; }
-  body.v2 .invoice-items-grid td:first-child,
-  body.v2 .invoice-items-grid td.row-actions { grid-column: 1 / -1; }
-  body.v2 .invoice-items-grid td.row-actions { text-align: left; }
-  body.v2 .invoice-items-grid td.row-actions .ui-btn { margin: 0; }
-  body.v2 .invoice-items-grid td::before { content: attr(data-label); display: block; margin-bottom: var(--space-1); color: var(--ink-3); font-size: var(--size-11); font-weight: 650; letter-spacing: .05em; text-transform: uppercase; }
-  body.v2 .invoice-items-grid td:first-child::before,
-  body.v2 .invoice-items-grid td.row-actions::before { display: none; }
-  body.v2 .invoice-items-grid [data-vat-col][hidden] { display: none !important; }
-}
-@container (max-width: 850px) {
-  body.v2 .invoice-items-grid tbody tr { grid-template-columns: repeat(3, minmax(0, 1fr)) auto; gap: var(--space-2) var(--space-3); padding: var(--space-3) 0; align-items: end; }
-  body.v2 .invoice-items-grid tbody tr[data-stay-row] { align-items: start; }
-  body.v2 .invoice-items-grid tbody tr > td:first-child { grid-column: 1 / -1; }
-  body.v2 .invoice-items-grid td.row-actions,
-  body.v2 .invoice-items-grid tbody tr > td:last-child { grid-column: -2 / -1; text-align: right; }
-  body.v2 .invoice-workspace.is-payer .invoice-items-grid tbody tr { grid-template-columns: repeat(4, minmax(0, 1fr)) auto; }
-  body.v2 .invoice-items-grid tbody tr > td:last-child:empty { display: none; }
-}
-@container (max-width: 420px) {
-  body.v2 .invoice-items-grid tbody tr { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  body.v2 .invoice-items-grid td.row-actions, body.v2 .invoice-items-grid tbody tr > td:last-child { grid-column: 1 / -1; text-align: left; }
-}
 body.v2 .invoice-items-grid .input-price { max-width: 130px; } /* app.css: stay and extra price share one width */
-body.v2 #item-rows.invoice-items-grid { max-width: 850px; } /* form lane: rows always stack as cards (0295) */
+body.v2 .invoice-items-grid td::before {
+  content: attr(data-label);
+  display: block;
+  margin-bottom: var(--space-1);
+  color: var(--ink-3);
+  font-size: var(--size-11);
+  font-weight: 650;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+body.v2 .invoice-items-grid td:first-child::before { display: none; }
+/* Remove carries no label; bottom-aligning its cell puts it on the controls' line. */
+body.v2 .invoice-items-grid td.row-actions { align-self: end; }
+body.v2 .invoice-items-grid [data-vat-col][hidden] { display: none !important; }
+body.v2 .invoice-items-grid tbody tr > td:last-child:empty { display: none; }
+/* Remove matches the v2 inputs: 44 px up to 1023 px, 39 px above */
+body.v2 .invoice-items-grid .row-actions [data-remove-item] { height: 39px; min-height: 39px; box-sizing: border-box; }
+@media (max-width:1023.98px) {
+  body.v2 .invoice-items-grid .row-actions [data-remove-item] { height: 44px; min-height: 44px; }
+}
+@media (max-width:479.98px) {
+  /* 2001: only on a phone is Remove too wide for the controls line */
+  body.v2 .invoice-items-grid tbody tr { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  body.v2 .invoice-items-grid td.row-actions,
+  body.v2 .invoice-items-grid tbody tr > td:last-child { grid-column: 1 / -1; text-align: left; }
+}
 /* 0831H: the overview/stays header action buttons share the v2 mockup .btn height (37 px) */
 body.v2 .stays-head-actions .btn{height:37px;min-height:37px;box-sizing:border-box}
 @media (max-width:600px){body.v2 .stays-head-actions .btn{height:auto;min-height:44px}}
@@ -2616,6 +2635,10 @@ body.v2 .stay-settings .settings-grid{display:grid;gap:12px}
 body.v2 .stay-settings .ui-field label{display:block;margin-bottom:4px}
 @media (min-width:1024px){
 body.v2 .host-stay-detail .stay-head-actions{flex-wrap:nowrap;justify-content:flex-end;gap:12px}
+/* 2001: the header now carries a third action (Invoice). Between 1024 and 1199 px the title and the
+   action row still share one line, so let the row wrap instead of pushing the page sideways
+   (test_host_wide_geometry_browser: stay-detail/cs/1024 had scrollWidth 1117 > 1024). */
+@media (min-width:1024px) and (max-width:1199px){body.v2 .host-stay-detail .stay-head-actions{flex-wrap:wrap}}
 body.v2 .host-stay-detail .stay-head-cta{flex-wrap:nowrap;gap:12px}
 }
 body.v2 #stay-fee-settings :is(input, select, textarea){max-width:100%;box-sizing:border-box}
@@ -3600,3 +3623,15 @@ body.v2 .ruian-status{margin:4px 0 12px}
   body.v2 .host-stay-detail.stay-layout .police-card>details>:not(summary){margin-left:20px;margin-right:20px}
   body.v2 .host-stay-detail.stay-layout .police-card>details>:not(summary):last-child{margin-bottom:16px}
 }
+
+/* 2001: the builder's page heading shares the narrow form lane with .invoice-workspace, so the
+   title's left/right edges line up with the document card below (test_invoice_builder_heading_
+   matches_narrow_form_lane). Only the invoice builder carries .invoice-form. */
+body.v2 .ui-page:has(.invoice-form) > .ui-ph{max-width:720px;width:100%;margin-left:auto;margin-right:auto;box-sizing:border-box}
+
+/* The grey tint for .soft at >=1024 px lives in dashboard-calendar.css, and the calendar partial
+   injects that sheet from inside the body. On Cleaning — which renders the partial — the soft
+   buttons therefore read as two filled primaries for as long as the sheet is in flight; that is
+   the intermittent "double-primary" the layout lint reported on cleaning@1024/1440/1920. Same
+   selector and declaration as the calendar sheet, so nothing changes once it lands. */
+@media (min-width:1024px){body.v2 .cleaning-head .btn.soft{background:#f2f2f0;color:var(--ink)}}
