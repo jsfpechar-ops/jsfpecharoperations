@@ -38,6 +38,19 @@ type field struct {
 type object []field
 
 // MarshalJSON writes the keys in order, each value encoded without HTML escaping.
+
+// czDate is api.py's _cz: a stay label shows 18.11.2026, not 2026-11-18.
+func czDate(d string) string {
+	s := d
+	if len(s) > 10 {
+		s = s[:10]
+	}
+	if len(s) != 10 || s[4] != '-' || s[7] != '-' {
+		return d
+	}
+	return s[8:10] + "." + s[5:7] + "." + s[:4]
+}
+
 func (o object) MarshalJSON() ([]byte, error) {
 	var b bytes.Buffer
 	b.WriteByte('{')
@@ -227,7 +240,7 @@ func Items(ctx context.Context, pool pgxPool, h *session.Host, lang string, gete
 			meta = s.summary
 		}
 		items = append(items, object{
-			{"label", s.internalName + " · " + s.dateFrom + " – " + s.dateTo},
+			{"label", s.internalName + " · " + czDate(s.dateFrom) + " – " + czDate(s.dateTo)},
 			{"meta", meta},
 			{"group", t("nav.stays")},
 			{"url", fmt.Sprintf("/reservations/%d", s.id)},
