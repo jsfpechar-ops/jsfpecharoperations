@@ -45,6 +45,7 @@ func adMux(pool *pgxpool.Pool, extra map[string]string) *http.ServeMux {
 
 func adGet(mux http.Handler, path string, user, workspace int64, lang string) *httptest.ResponseRecorder {
 	req := httptest.NewRequest(http.MethodGet, path, nil)
+	req.Header.Set("Accept", "text/html")
 	apartmentNewSignIn(req, user, workspace, lang)
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)

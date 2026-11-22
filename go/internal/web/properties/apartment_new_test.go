@@ -76,6 +76,7 @@ func apartmentNewWorld(t *testing.T, pool *pgxpool.Pool) {
 
 func apartmentNewGet(mux http.Handler, query string, user, workspace int64, lang string) *httptest.ResponseRecorder {
 	req := httptest.NewRequest(http.MethodGet, "/apartments/new"+query, nil)
+	req.Header.Set("Accept", "text/html")
 	apartmentNewSignIn(req, user, workspace, lang)
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)

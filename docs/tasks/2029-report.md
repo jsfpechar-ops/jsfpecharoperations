@@ -69,7 +69,7 @@ python3 scripts/context_lint.py  → (run at commit)
 
 ## Deviations
 
-None.
+- CI `go_host_i18n.py --check`: added `flash.error.not_saved_here` to `App/app/host_i18n.py`, `host_vi_i18n.py`, `i18n_keys.txt`; regenerated catalogs (`stays/i18n.json` picks up `flash.error.*`). Tests send `Accept: text/html` for branded 404 assertions.
 
 ## Questions
 

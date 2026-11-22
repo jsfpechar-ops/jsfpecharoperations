@@ -139,6 +139,7 @@ func apartmentFormPost(t *testing.T, h http.Handler, path, nonce string, user, w
 		form.Set("_csrf", token)
 	}
 	req := httptest.NewRequest(http.MethodPost, path, strings.NewReader(form.Encode()))
+	req.Header.Set("Accept", "text/html")
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.AddCookie(&http.Cookie{Name: "ubyhost_lang", Value: lang})
 	req.AddCookie(&http.Cookie{Name: "ubyhost_csrf", Value: nonce})
