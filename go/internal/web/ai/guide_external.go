@@ -1,7 +1,6 @@
 package ai
 
 import (
-	"context"
 	"net"
 	"net/http"
 	"net/url"
