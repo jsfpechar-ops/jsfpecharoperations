@@ -24,6 +24,7 @@ import (
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/billingjob"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/headcount"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ruian"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
 )
@@ -563,7 +564,7 @@ func buildFormView(ctx context.Context, d formPageDeps, r *http.Request, apt *Ap
 		formPath = GuestLink(link, res.id, "/edit/"+strconv.FormatInt(guest.id, 10))
 		editing = true
 	}
-	back := formPagesBackURL(link, apt, res.id, lang, editing)
+	back := d.formPagesBackURL(ctx, link, apt, res.id, lang, editing)
 	saveKey := "guest_save_details"
 	if guest != nil {
 		saveKey = "guest_save_changes"
@@ -617,6 +618,9 @@ func buildFormView(ctx context.Context, d formPageDeps, r *http.Request, apt *Ap
 	view.Values = map[string]string{"stay_from": stayFrom, "stay_to": stayTo}
 	view.Inpass = "INPASS"
 	view.NoticeVersion = formNoticeVersion(d.getenv)
+	if ruian.Enabled(d.getenv) {
+		view.RuianSuggestURL = GuestLink(link, 0, "/ruian-suggest")
+	}
 	view.AskPartySize = prog.expected == nil && guest == nil
 	view.RequirePassport = strings.EqualFold(strings.TrimSpace(apt.PassportPhotoPolicy), "required_foreign")
 	groups, err := formCountryGroups(ctx, d.pool, lang)
@@ -790,11 +794,25 @@ func formPagesOwnedIDs(r *http.Request, getenv func(string) string) map[int64]bo
 
 func formPagesGuestLocked(g *formGuestRow, res formResRow) bool { return false }
 
-func formPagesBackURL(token string, apt *Apartment, resID int64, lang string, editing bool) string {
-	if editing {
+// formPagesBackURL is guest.py _form_back_url: the stay hub once the stay has a
+// form, else the picker, and nothing at all while the picker is empty.
+func (d formPageDeps) formPagesBackURL(ctx context.Context, token string, apt *Apartment, resID int64, lang string, editing bool) string {
+	if editing || d.formPagesHasGuests(ctx, resID) {
 		return GuestLink(token, resID, LangQuery(lang, ""))
 	}
-	return GuestLink(token, 0, LangQuery(lang, ""))
+	if canPickOtherStays(ctx, d.pool, apt, d.now) {
+		return GuestLink(token, 0, LangQuery(lang, ""))
+	}
+	return ""
+}
+
+// formPagesHasGuests is the form's own "someone already saved here" check.
+func (d formPageDeps) formPagesHasGuests(ctx context.Context, resID int64) bool {
+	var hit int
+	if err := d.pool.QueryRow(ctx, `SELECT 1 FROM guest WHERE reservation_id = $1 LIMIT 1`, resID).Scan(&hit); err != nil {
+		return false
+	}
+	return hit == 1
 }
 
 func formPagesDatesLink(back string, editing, canPick bool) string {
@@ -817,8 +835,14 @@ func formPagesCSRF(r *http.Request) string { return formPagesCSRFToken() }
 
 func formPagesCSRFToken() string { return "*" }
 
+// formPagesHost is guest.py _host_contact: the operating entity guests see.
 func formPagesHost(ctx context.Context, pool *pgxpool.Pool, aptID int64) HostContact {
-	return HostContact{}
+	apt, ok := loadApartmentByID(ctx, pool, aptID)
+	if !ok || apt == nil {
+		return HostContact{}
+	}
+	host := hostContact(ctx, pool, apt)
+	return HostContact{Name: host.Name, Email: host.Email, Phone: host.Phone}
 }
 
 func formPagesStartStep(raw string) int {
@@ -833,9 +857,16 @@ func formPagesStartStep(raw string) int {
 	return n
 }
 
-func formPagesDateLabel(iso, lang string) string { return iso }
+// formPagesDateLabel is the date_cz filter the form prints.
+func formPagesDateLabel(iso, lang string) string {
+	if t, ok := validation.ParseISODate(iso); ok {
+		return t.Format("02.01.2006")
+	}
+	return iso
+}
 
-func formPagesNights(from, to, lang string) string { return "" }
+// formPagesNights is nights_label.
+func formPagesNights(from, to, lang string) string { return pickNightsLabel(lang, from, to) }
 
 func formPagesDupWarnings(ctx context.Context, pool *pgxpool.Pool, resID int64, owned map[int64]bool, lang string) ([]dupWarning, error) {
 	return nil, nil

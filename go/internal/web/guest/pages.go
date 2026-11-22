@@ -26,6 +26,7 @@ var (
 	claimSet   = pageSet("templates/claim.tmpl")
 	confirmSet = pageSet("templates/confirm.tmpl")
 	unavailSet = pageSet("templates/unavailable.tmpl")
+	guideSet   = pageSet("templates/guide.tmpl")
 )
 
 // unavailableTitles is guest.py _unavailable's titles table.
