@@ -1,7 +1,7 @@
 # 1667: Go completion receipt — entry code lines (up to 3) + guide block
 
 Status: blocked — the receipt is built and queued only by Python `claim.maybe_notify_completion` (`App/app/claim.py:828`) and `mail_notify.build_completion` (`App/app/mail_notify.py:1724`) "until guest registration is on Go (W3)" (`docs/plans/go-mail-job.md` §5 item 5); the thread "Port guest registration pages" has not started
-Depends on: 1661, 2032, 1663, 1664; the "Port guest registration pages" thread (it ports the completion step); the Go `mail` job live (thread "Plan and port mail job", J4: `mail` in `UBYHOST_GO_JOB_KINDS`), because only Go fills `{{entry_code}}` (1663) | Base commit: none | Branch: none
+Depends on: 1661, 2032, 2036, 1663, 1664; the "Port guest registration pages" thread (it ports the completion step); the Go `mail` job live (thread "Plan and port mail job", J4: `mail` in `UBYHOST_GO_JOB_KINDS`), because only Go fills `{{entry_code}}` (1663) | Base commit: none | Branch: none
 Executor: Haiku 5.5 | Not runnable. Tier B (mail with a secret). The orchestrator cuts this when the Go completion builder exists.
 
 ## 1. Objective
@@ -27,6 +27,14 @@ None. The files are named when the brief is cut.
 ## 4. Steps
 
 None. Do not run this brief.
+
+## Design (email)
+
+Components: the existing receipt layout (table-based, inline styles, no images required). After the door code, one row per entry code: the type label (small, grey) above the code, which is monospace, 24 px, letter-spaced, `white-space: nowrap` for codes of 12 characters or fewer (longer codes may wrap). Then, under the codes, one small line (G4): "Codes can change. Your stay page always has the current ones." / "Kódy se mohou změnit. Aktuální najdete vždy na stránce pobytu." (guest catalog, every guest language like 1666; shown only when at least one entry code is in the mail). Then the guide block: the "Open the guide" button (`min-height` 44 px, full width at 390) and, when `guide_external_url` is set, the domain as a text link; copy as in 2033 §Design.
+
+Plain-text part: one line per code as `Garage: 4821#` (type label, colon, code; for type Other the host's label as written), the door code first, then the changes line, then the guide links (no code in the fallback text, as in §2).
+
+States (golden HTML, rendered with `page.set_content` at 390 and 1280, file `receipt-<state>-<width>.png`): `door-only`, `door-3codes`, `nolock-codes`, `guide-ours`, `guide-external`, `guide-both`, `none`. Checks as in §2 (no horizontal scroll, buttons at least 44 px, long codes and domains wrap, marker replaced by a fixture value so the image shows a real code). The PR describes each image per width. Light mode only; no images needed (nothing is loaded from outside).
 
 ## 5. Do not touch
 

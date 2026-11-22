@@ -24,6 +24,20 @@ None. Named when the brief is cut (Go page handler and template in `go/internal/
 
 None. Do not run this brief. Requirements for the cut: Go test for the three branches (our guide only; external only; both) and the empty case; a test that the response body for each branch contains no `entry_code`, no `{{`, and none of the decrypted code values of a seeded apartment that has door and entry codes; guest browser and geometry tests with 0 skipped (`docs/context/test-map.md` row "Guest pages, guest templates": `test_guest_*.py` and `test_guest_browser_e2e.py`, extended to the Go page via 1668's guest paths); one 390 px screenshot per branch (plus 768 and 1280), each described per width in the PR; buttons at least 44 px, the long domain wraps without horizontal scroll.
 
+## Design
+
+Components: one `g-card` "Your guide" / "Váš průvodce" with a primary button and, in the "both" case, a secondary text link below it. No codes, no door code, no empty frame when there is nothing to show. The block is the same component as the guide block of 1666 (one explanation in one place).
+
+Copy (en / cs; guest catalog, every guest language as in 1666): title "Your guide" / "Váš průvodce"; our guide button "Open the guide" / "Otevřít průvodce"; host link button "Open the host's guide" / "Otevřít průvodce hostitele" with the domain on a second line (for example `notion.so`); both: secondary text link "Also: the host's own guide ({domain})" / "Také: vlastní průvodce hostitele ({domain})". Leon is part of our guide, so no separate sentence about him. The external link is `target="_blank" rel="noopener noreferrer"`.
+
+Code display (guest, `App/app/static/guest.css:1357` `.g-door-code`, today 700 34px monospace, `letter-spacing: .14em`, `font-variant-numeric: tabular-nums`, `overflow-wrap: anywhere`): every entry code uses the same style; codes up to 12 characters stay at 34 px on one line (no wrap inside a code); a longer code steps down to 22 px (class `g-code-long`); `overflow-wrap: anywhere` stays only as the last resort so a 32-character code never scrolls the page sideways. The text is selectable (`user-select: all`, so one tap selects the code). No copy button in this brief (a clipboard script would be a new script on a guest page; the page works without JavaScript either way). Light mode only. Links and buttons at least 44 px tall. Bump the `?v=` cache key of every CSS file changed in `App/app/templates/guest/base.html` (rules.md §Guest pages).
+
+Behaviour by size (guest arrival lane, `docs/DESIGN.md` "Guest registration: arrival lane"; read only that section): 390 px single column with a 16 px gutter, each code in its own `g-card`; 768 px the same column centred; 1280 px the same centred column (no side-by-side codes). Order is owner D2: apartment door code first, then entry codes by `position`. Open question for the owner, not decided and not built: show codes in physical arrival order (gate, building, apartment) instead.
+
+Design-system checklist: tick the items of `docs/design/design-system.md` §5 that apply and write "n/a guest page" for the host-shell items in the PR; the guest rules are rules.md §Guest pages and `docs/DESIGN.md#guest-registration-arrival-lane-active`.
+
+States (each at 390, 768, 1280; file `finish-<state>-<width>.png`): `guide-ours`, `guide-external`, `guide-both`, `guide-none` (block hidden). Open every image; the PR writes per state "390: ...; 768: ...; 1280: ...".
+
 ## 5. Do not touch
 
 Python guest routes and templates, Leon, the QR guide `/g/{token}`, the stay page's code blocks (1666).

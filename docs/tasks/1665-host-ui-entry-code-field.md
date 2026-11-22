@@ -1,6 +1,6 @@
 # 1665: Go apartment settings — "Entry codes" section (up to 3 codes) for every host
 
-Status: blocked — `GET/POST /apartments/{id}` (apartment_detail, apartment_update) and `POST /apartments/{id}/door-codes` are not in Go (`docs/plans/go-full-move-remaining.md` §2 "Property settings pages", §3 "only the list, guide, archive and regenerate routes exist"); no port brief exists yet
+Status: replaced — by 2036 (a new Go-only page `/apartments/{id}/access`; no property-settings port needed). Kept for history; do not run. The old settings-page text below no longer applies.
 Depends on: 1661, 2032, 1668; the "Port property settings pages" thread (`go/internal/web/properties/`), whose `/apartments/{id}` settings-page brief must be written first | Base commit: none | Branch: none
 Executor: Haiku 5.5 | Not runnable. Tier B (a secret on a host page). The orchestrator cuts this once the Go settings page exists.
 
