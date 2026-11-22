@@ -82,7 +82,7 @@ GUIDE_STRINGS = {
         "guide.door_codes.terms_title": 'Door code terms',
         "guide.door_codes.terms_version": 'Version %(version)s',
         "guide.nav.entry_codes": "Entry codes",
-        "guide.entry_codes.lede": "List up to three codes for the building, gate or garage on each property under Access & guide; guests see them on their stay page and in the confirmation email.",
+        "guide.entry_codes.lede": "Under Access & guide, list up to three codes for the building, gate or garage on each property. Guests see them on their stay page and in the confirmation email.",
                 "guide.nav.door_codes": 'Digital door lock (TTLock)',
         "guide.nav.faster": "Faster work",
         "guide.nav.faq": "Common questions",
