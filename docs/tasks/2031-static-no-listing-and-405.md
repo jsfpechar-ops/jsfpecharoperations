@@ -35,11 +35,19 @@ No other file may change.
 
 Routes, Caddy, templates. POST routes that exist must keep working; the 405 probe must never call a handler.
 
-## 6. Acceptance
+## 6. Commands
+
+From `go/`: `go test ./internal/web/staticfiles/... ./cmd/ubyhost-web/... 2>&1 | tail -30`. Root: `python3 scripts/context_lint.py 2>&1 | tail -30`.
+
+## 7. Acceptance
 
 - [ ] Tests in §3 pass.
 - [ ] `/static/favicon.png?v=1` still 200 with the same cache headers.
 
-## 7. Stop and ask
+## 8. Stop and ask
 
 As 2030 §8. Also stop if the 405 probe changes any existing route test.
+
+## 9. Report
+
+`docs/tasks/2031-report.md`, 600 tokens at most.
