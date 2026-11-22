@@ -122,6 +122,14 @@ counterpart in Go, so a guest read English issue sentences on a Czech form. Port
 Python), used by both the host guest form and the guest form, which now re-renders the real
 form with the reader's language and the typed values instead of the stub body `"validation"`.
 
+The purpose-of-stay select, found by probing the guest form with `?lang=cs`: Python's
+`codelists.purpose_options(lang)` localises it, Go carried the English labels only, so a
+Czech, German or Ukrainian guest read "Medical, Business, Cultural…". The labels now come
+from `go/internal/validationi18n` (`validation.purpose_label`, goldens generated from
+Python), the fetched police rows still only behind them; the host app asks Python for the
+English list, so the stays form is unchanged. `?lang=cs` on
+`/l/{tok}/{res}/new` is 10407/10407 for the host and 1438/1438 for anon.
+
 Bad links and dead routes, found while probing: an unknown key rendered the bare shell,
 and a path no route claims gave Go's plain `404 page not found`. `guest.py` answers both
 with `guest/unavailable.html` — `bad_link` with no key when `_open_link` rejects it, and
