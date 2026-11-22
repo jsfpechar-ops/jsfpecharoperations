@@ -1,30 +1,150 @@
-{{define "dashboard.title"}}{{t "dashboard.title"}}{{end}}
+{{define "dashboard.title"}}{{end}}
 {{define "dashboard"}}
 {{- $d := . -}}
 {{if not $d.Apartments}}
-<div class="head"><div><h1>{{t "dashboard.title"}}</h1><p class="sub">{{$d.TodayLong}}</p></div></div>
-<section class="onboarding-welcome" data-layout="v2">
-  <header class="onboarding-intro"><div><h1>{{t "onboarding.welcome_title"}}</h1></div></header>
-</section>
+{{template "dash.empty" $d}}
 {{else}}
+{{- $ny := $d.NyLines -}}
+<div class="ph-top ph-only">
+  <nav class="seg" aria-label="{{t "dashboard.title"}}"><a class="on" href="/" aria-current="page">{{t "nav.today"}}</a><a href="/reservations">{{t "dashboard.ph.upcoming"}}</a></nav>
+</div>
 <div class="head ov-head"><div>
-  <h1 class="hl"><span class="ph-hide">{{t "dashboard.title"}}</span></h1>
-  <p class="sub ph-hide">{{$d.TodayLong}}</p>
-</div>
-<a class="btn ph-hide" href="/reservations?new=1">{{t "stays.add_stay"}}</a></div>
-{{if not $d.Rows}}{{if $d.FeedCount}}{{else}}
-  <p class="ui-empty">{{t "dashboard.empty.no_feed"}} <a href="/apartments/{{(index $d.Apartments 0).ID}}?view=bookings#calendars">{{t "dashboard.empty.connect_calendar"}}</a></p>
-{{end}}{{end}}
-<section id="needs-action" aria-labelledby="needs-you-title">
-  <h2 id="needs-you-title" class="sec ph-hide">{{t "needs_you.title"}}</h2>
-  <div class="todo ov-section">
-    <div class="card needs-you-calm allgood ph-hide"><p><strong>{{t "needs_you.calm"}}</strong></p></div>
+  <div class="ov-title-row">
+    {{- if $d.CalView}}<h1 class="hl{{if not $ny}} done{{end}}"><span>{{t "nav.calendar"}}</span></h1>
+    {{- else}}<h1 class="hl{{if not $ny}} done{{end}}"><span class="ph-hide">{{t "dashboard.title"}}</span><span class="ph-only" aria-hidden="true">{{if $ny}}{{tp "dashboard.ph.need" (len $ny)}}{{else}}{{t "dashboard.ph.done"}}{{end}}</span></h1><span class="ph-hide">{{page_help "dashboard"}}</span>{{end}}
   </div>
-</section>
-{{range $d.Rows}}
-<div class="dashboard-stay" data-stay-id="{{.Reservation.ID}}">
-  <a href="/reservations/{{.Reservation.ID}}?return_to=/">{{if .Reservation.Summary}}{{.Reservation.Summary}}{{else}}{{.Reservation.InternalName}}{{end}}</a>
+  <p class="sub ph-hide">{{$d.TodayLong}}</p>
+  <div class="ov-quiet ph-hide">
+    <p class="ov-links ph-hide">
+      {{- if $d.DemoLoaded}}<form method="post" action="/demo/reset" class="inline ov-inline ph-hide" data-confirm data-confirm-message="{{t "confirm.clear_demo"}}"><button class="btn quiet small" type="submit">{{t "demo.clear"}}</button></form>{{end}}
+    </p>
+  </div>
 </div>
+<a class="btn" href="/reservations?new=1" data-calendar-add data-cal-create-type="stay">{{t "stays.add_stay"}}</a></div>
+
+<div class="ph-hide">{{template "dash.setup_banner" $d}}</div>
+{{if $d.NyLines}}{{else if not $d.Rows}}{{if $d.FeedCount}}<p class="ui-empty">{{t "dashboard.empty.no_stays"}}</p>
+{{else}}<p class="ui-empty">{{t "dashboard.empty.no_feed"}} <a href="/apartments/{{(index $d.Apartments 0).ID}}?view=bookings#calendars">{{t "dashboard.empty.connect_calendar"}}</a></p>
+{{end}}{{end}}
+<section id="needs-action" data-needs-you-card data-dashboard-refresh="stats" aria-labelledby="needs-you-title">
+  <h2 id="needs-you-title" class="sec ph-hide">{{t "needs_you.title"}}{{if $d.NyLines}} <span class="ui-badge ui-badge-action">{{len $d.NyLines}}</span>{{end}}</h2>
+  {{- if $d.NyLines}}
+  <ul class="needs-you-list">
+    {{- range $i, $line := $d.NyLines}}{{if lt $i 5}}{{template "dash.ny_row" (kv "line" $line "first" (eq $i 0))}}{{end}}{{end}}
+  </ul>
+  {{- if gt (len $d.NyLines) 5}}
+  <details class="needs-you-more ov-section"><summary>{{tp "needs_you.more" (add (len $d.NyLines) -5)}}</summary>
+    <ul class="needs-you-list">{{range $i, $line := $d.NyLines}}{{if ge $i 5}}{{template "dash.ny_row" (kv "line" $line "first" false)}}{{end}}{{end}}</ul>
+  </details>
+  {{- end}}
+  {{- else}}
+  <div class="todo ov-section">
+    <div class="card needs-you-calm allgood ph-hide"><p>{{icon "check" 20}} <strong>{{t "needs_you.calm"}}</strong></p></div>
+  </div>
+  {{- end}}
+</section>
+
+<div class="quiet ov-month ph-hide" data-dashboard-month><span>{{t "dashboard.month.label"}}</span> <span class="ov-mi"><b>{{$d.MonthGuests}}</b> {{tp "dashboard.month.guests" $d.MonthGuests}}</span><i aria-hidden="true">·</i><span class="ov-mi"><b>{{$d.MonthNights}}</b> {{tp "dashboard.month.nights" $d.MonthNights}}</span><i aria-hidden="true">·</i><span class="ov-mi"><b>{{$d.MonthReported}}</b> {{tp "dashboard.month.reported" $d.MonthReported}}</span></div>
+
+<h2 class="ov-cal-block">{{t "calendar.calendar"}}</h2>
+<div class="scroll-x ov-cal-block">
+<div class="card cal ov-section">
+  <div class="cgrid"><div></div>{{range $d.CalDays}}<div class="cd{{if .Today}} today{{end}}">{{index $d.Weekdays .Weekday}} {{.Day}}{{if .ShowDate}}<small>{{.Day}}.{{.Month}}.</small>{{end}}</div>{{end}}</div>
+  {{- range $d.CalRows}}
+  <div class="cgrid crow"><div class="cn" title="{{.Name}}">{{.Name}}</div>{{range .Bars}}<a class="bar {{.CSS}}" data-c1="{{.ColStart}}" data-c2="{{.ColEnd}}" data-row="{{.Row}}" title="{{.Title}}" aria-label="{{.Title}}"{{if .Overdue}} data-overdue{{end}} href="{{.URL}}"><span class="bar-label">{{.Label}}</span></a>{{end}}</div>
+  {{- end}}
+</div>
+</div>
+<p class="ov-cal-more ov-cal-block"><a href="/?cal_view=calendar" class="ov-cal-link">{{t "dashboard.calendar.full"}}</a></p>
+
+<h2 class="sec{{if or $d.CalView (not $d.KeyRows)}} ph-hide{{end}}"><span class="ph-hide">{{t "dashboard.today.title"}}</span><span class="ph-only">{{t "dashboard.ph.window"}}</span></h2>
+<div class="hs ph-only{{if or $d.CalView (not (or $d.KeyRows $d.NextArrival))}} ph-hide{{end}}">
+{{- range $d.KeyRows}}
+  {{- $label := dash_label .Row.Reservation}}
+  <a class="card" href="/reservations/{{.Row.Reservation.ID}}?return_to=/" data-stay-id="{{.Row.Reservation.ID}}">
+    <span class="kind{{if eq .Kind "leaves"}} out{{else}} in{{end}}">{{if eq .Kind "tomorrow"}}{{t "dashboard.ph.kind.tomorrow"}}{{else if eq .Kind "leaves"}}{{t "calendar.departure"}}{{else if eq .Kind "today"}}{{t "calendar.arrival"}}{{else}}{{t "dashboard.ph.kind.arrived"}}{{end}}</span>
+    <div class="who"><div class="av">{{dash_first $label}}</div><div><div class="nm">{{$label}}</div><div class="meta">{{dash_range .Row.Reservation.DateFrom .Row.Reservation.DateTo}} · {{tp "dashboard.today.nights" .Nights}} · {{tp "dashboard.today.guests" (dash_guests .Row.Progress)}}</div></div></div>
+    {{template "dash.pill" .Row}}
+  </a>
+{{- else}}
+  {{- with $d.NextArrival}}{{$label := .Label}}
+  <a class="card" href="/reservations/{{.Row.Reservation.ID}}?return_to=/" data-stay-id="{{.Row.Reservation.ID}}"><span class="kind in">{{t "dashboard.ph.kind.next"}}</span><div class="who"><div class="av">{{dash_first $label}}</div><div><div class="nm">{{$label}}</div><div class="meta">{{dash_range .Row.Reservation.DateFrom .Row.Reservation.DateTo}}</div></div></div>{{template "dash.pill" .Row}}</a>
+  {{- end}}
+{{- end}}
+</div>
+<div class="card ov-table ph-hide" data-dashboard-refresh="work"><table><thead><tr><th>{{t "archive.col.guest"}}</th><th>{{t "stay_fees.col.property"}}</th><th>{{t "host.stay_dates"}}</th><th>{{t "filter.status"}}</th><th></th></tr></thead><tbody>
+{{- range $d.TodayRows}}
+  <tr class="dashboard-row clickable-row{{if eq .Row.Progress.Cell.Level "overdue"}} is-overdue{{end}}" data-stay-id="{{.Row.Reservation.ID}}" data-href="/reservations/{{.Row.Reservation.ID}}?return_to=/" tabindex="0" role="link">
+    <td class="dashboard-row-copy"><a class="dashboard-row-property" href="/reservations/{{.Row.Reservation.ID}}?return_to=/">{{dash_label .Row.Reservation}}</a>
+      <small>{{tp "dashboard.today.guests" (dash_guests .Row.Progress)}}</small></td>
+    <td>{{property_identity .Row.Reservation.ApartmentID (dash_label .Row.Reservation) true}}</td>
+    <td>{{if .Arriving}}{{t "calendar.arrival"}} · {{tp "dashboard.today.nights" .Nights}}{{else}}{{t "calendar.departure"}}{{end}}</td>
+    <td class="dashboard-row-task">{{template "dash.pill" .Row}}</td>
+    <td class="dots dashboard-row-actions"></td>
+  </tr>
+{{- else}}
+  <tr><td colspan="5">{{t "dashboard.today.empty"}}</td></tr>
+{{- end}}
+</tbody></table></div>
 {{end}}
 {{end}}
-{{end}}
+
+{{define "dash.setup_banner"}}{{if .SetupBanner}}<aside class="onboarding-banner onboarding-banner-setup" aria-label="{{t "setup.banner.aria"}}">
+  <a class="onboarding-banner-setup-link" href="{{.SetupURL}}">{{t "setup.banner.line"}}</a>
+  <form method="post" action="/onboarding/dismiss"><input type="hidden" name="return_to" value="/"><button class="onboarding-skip-link" type="submit">{{t "onboarding.skip"}}</button></form>
+</aside>{{end}}{{end}}
+
+{{define "dash.ny_row"}}{{$line := .line}}{{$first := .first}}<li class="card needs-you-item need" data-tone="{{$line.Tone}}" data-needs-you="{{$line.Kind}}"{{if $line.StayID}} data-needs-you-stay="{{$line.StayID}}"{{end}}{{if $line.DismissID}} data-notification{{end}}>
+  <div class="needs-you-copy"><strong>{{if $line.Text}}{{$line.Text}}{{else}}{{$line.Subject}}{{end}}</strong>{{if $line.Text}}<span>{{$line.Subject}}</span>{{end}}</div>
+  {{- if or $line.Href $line.DismissID}}
+  <div class="needs-you-actions">
+    {{- if $line.Href}}<a class="btn sm{{if not $first}} ghost line{{end}}" href="{{$line.Href}}" data-needs-you-go>{{$line.Action}}</a>{{end}}
+    {{- if $line.DismissID}}<form method="post" action="/alerts/{{$line.DismissID}}/dismiss" class="needs-you-dismiss" data-notification-dismiss><button type="submit" class="link-btn" aria-label="{{t "a11y.dismiss_notification"}}">×</button></form>{{end}}
+  </div>
+  {{- end}}
+</li>{{end}}
+
+{{define "dash.pill"}}{{$row := .}}{{$cell := $row.Progress.Cell}}{{$p := $row.Progress}}{{$res := $row.Reservation}}
+{{- if eq $cell.Level "overdue"}}<span class="pill p-bad">{{deadline_badge $cell}}</span>
+{{- else if eq $p.Status "failed"}}<span class="pill p-bad">{{progress_pill $p.Status $res.AutomationMode}}</span>
+{{- else if dash_not_registered $p}}<span class="pill p-warn"><span class="ui-badge ui-badge-action" data-tone="amber">{{tp "host.missing" (dash_not_registered $p)}}</span></span>
+{{- else if eq $cell.State "filed_on_time"}}<span class="pill p-ok">{{deadline_badge $cell}}</span>
+{{- else if eq $cell.State "filed_late"}}<span class="pill p-warn">{{deadline_badge $cell}}</span>
+{{- else if and (or (eq $p.Status "awaiting_guest") (eq $p.Status "incomplete")) (eq $res.AutomationMode "immediate")}}<span class="pill p-warn">{{t "status.waiting_guest"}}</span>
+{{- else if or (eq $p.Status "reported") (eq $p.Status "not_required")}}<span class="pill p-ok">{{t "status.reported"}}</span>
+{{- else}}{{$demo := dash_is_demo $res.InternalName $res.Source}}{{if and $demo (or (eq $p.Status "ready") (eq $p.Status "awaiting_verification"))}}<span class="pill p-n">{{progress_pill $p.Status $res.AutomationMode (kv "is_demo" true)}}</span>
+{{- else if or (eq $p.Status "ready") (eq $p.Status "awaiting_verification") (eq $p.Status "awaiting_guest") (eq $p.Status "incomplete")}}<span class="pill p-warn">{{progress_pill $p.Status $res.AutomationMode (kv "is_demo" $demo)}}</span>
+{{- else}}<span class="pill p-n">{{progress_pill $p.Status $res.AutomationMode (kv "is_demo" $demo)}}</span>{{end}}{{end}}{{end}}
+
+{{define "dash.empty"}}{{$d := .}}
+<div class="head"><div><h1>{{t "dashboard.title"}}</h1><p class="sub">{{$d.TodayLong}}</p></div></div>
+{{- if not $d.Onboarding.Dismissed}}{{template "dash.welcome" $d}}
+{{- else}}<p class="ui-empty">{{t "onboarding.skipped_title"}} {{t "onboarding.skipped_body"}} <a class="btn secondary" href="/apartments/new">{{t "apartments.add"}}</a> <a class="btn secondary" href="/onboarding">{{t "onboarding.open_checklist"}}</a></p>{{end}}{{end}}
+
+{{define "dash.welcome"}}{{$d := .}}{{$ob := $d.Onboarding}}
+<section class="onboarding-welcome" data-layout="v2">
+  <header class="onboarding-intro"><div><h2>{{t "onboarding.welcome_title"}}</h2><p class="sub">{{t "onboarding.progress" (kv "done" $ob.Completed "total" $ob.Total)}}</p></div></header>
+  <p class="onboarding-finish-line">{{if $ob.Finished}}{{t "onboarding.finish_line_done"}}{{else}}{{t "onboarding.finish_line"}}{{end}}</p>
+  <div class="onboarding-steps" aria-label="{{t "onboarding.welcome_title"}}">
+    {{- range $i, $step := $ob.Steps}}
+    {{- $isCurrent := and $ob.Current (eq $step.ID $ob.Current.ID) (not $step.Done)}}
+    <article class="onboarding-step{{if $step.Done}} is-done{{end}}{{if and $ob.Current (eq $step.ID $ob.Current.ID)}} is-current{{end}}">
+      <div class="onboarding-step-index" aria-hidden="true">{{if $step.Done}}{{icon "check" 16}}{{else}}{{add $i 1}}{{end}}</div>
+      <div class="onboarding-step-copy"><h3>{{t (printf "onboarding.%s.title" $step.ID)}}</h3></div>
+      {{- if $step.Done}}<span class="pill green">{{t "onboarding.step_done"}}</span>
+      {{- else if $isCurrent}}<span class="onboarding-current-dot" aria-hidden="true"></span><a class="btn primary small onboarding-step-action" href="{{$ob.Current.URL}}">{{t (printf "onboarding.%s.action" $step.ID)}}</a>{{if $step.ManualURL}}<a class="small onboarding-step-manual" href="{{$step.ManualURL}}">{{t (printf "onboarding.%s.manual" $step.ID)}}</a>{{end}}{{end}}
+    </article>
+    {{- end}}
+  </div>
+  {{- if $d.DemoAvailable}}
+  <div class="onboarding-bottom single"><div class="onboarding-demo"><div><strong>{{t "onboarding.demo_title"}}{{help_tip "onboarding-demo-help" (printf "%s %s" (t "onboarding.demo_body") (t "onboarding.demo_hint"))}}</strong></div>
+    <form method="post" action="/demo"><button class="btn" type="submit">{{t "demo.load"}}</button></form></div></div>
+  {{- end}}
+  <div class="onboarding-foot">
+    {{- if $ob.Dismissed}}
+    <form method="post" action="/onboarding/resume"><input type="hidden" name="return_to" value="/"><button class="onboarding-skip-link" type="submit">{{t "onboarding.resume"}}</button></form>
+    {{- else}}
+    <form method="post" action="/onboarding/dismiss"><input type="hidden" name="return_to" value="/"><button class="onboarding-skip-link" type="submit">{{t "onboarding.skip"}}</button></form>
+    {{- end}}
+  </div>
+</section>{{end}}

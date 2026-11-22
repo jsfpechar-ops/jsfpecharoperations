@@ -74,12 +74,12 @@ func (h *GuideHandlers) qrGuide(w http.ResponseWriter, r *http.Request) {
 	lang := Language(r)
 	key := RateClientKey(r, "guide_qr")
 	if RateBlocked(r.Context(), h.pool, "guide_qr", key, QRMaxViews, h.now()) {
-		WriteUnavailable(w, r, lang, "bad_link", http.StatusTooManyRequests, "", hardenedHeaders)
+		guestAccess{pool: h.pool, getenv: h.getenv, now: h.now}.unavailable(w, r, lang, "bad_link", http.StatusTooManyRequests, "", 0, hardenedHeaders)
 		return
 	}
 	apt, err := h.apartmentByGuideToken(r.Context(), token)
 	if err != nil || apt == nil {
-		WriteUnavailable(w, r, lang, "bad_link", http.StatusNotFound, "", hardenedHeaders)
+		guestAccess{pool: h.pool, getenv: h.getenv, now: h.now}.unavailable(w, r, lang, "bad_link", http.StatusNotFound, "", 0, hardenedHeaders)
 		return
 	}
 	RateRecord(r.Context(), h.pool, "guide_qr", key, h.now())
@@ -91,22 +91,22 @@ func (h *GuideHandlers) qrGuidePhoto(w http.ResponseWriter, r *http.Request) {
 	itemID, ok1 := pathInt(r, "item_id")
 	photoID, ok2 := pathInt(r, "photo_id")
 	if !ok1 || !ok2 {
-		WriteUnavailable(w, r, Language(r), "bad_link", http.StatusNotFound, "", hardenedHeaders)
+		guestAccess{pool: h.pool, getenv: h.getenv, now: h.now}.unavailable(w, r, Language(r), "bad_link", http.StatusNotFound, "", 0, hardenedHeaders)
 		return
 	}
 	lang := Language(r)
 	key := RateClientKey(r, "guide_qr")
 	if RateBlocked(r.Context(), h.pool, "guide_qr", key, QRMaxViews, h.now()) {
-		WriteUnavailable(w, r, lang, "bad_link", http.StatusTooManyRequests, "", hardenedHeaders)
+		guestAccess{pool: h.pool, getenv: h.getenv, now: h.now}.unavailable(w, r, lang, "bad_link", http.StatusTooManyRequests, "", 0, hardenedHeaders)
 		return
 	}
 	apt, err := h.apartmentByGuideToken(r.Context(), token)
 	if err != nil || apt == nil {
-		WriteUnavailable(w, r, lang, "bad_link", http.StatusNotFound, "", hardenedHeaders)
+		guestAccess{pool: h.pool, getenv: h.getenv, now: h.now}.unavailable(w, r, lang, "bad_link", http.StatusNotFound, "", 0, hardenedHeaders)
 		return
 	}
 	if !h.serveGuidePhoto(w, r, apt.ID, "everyone", itemID, photoID) {
-		WriteUnavailable(w, r, lang, "bad_link", http.StatusNotFound, "", hardenedHeaders)
+		guestAccess{pool: h.pool, getenv: h.getenv, now: h.now}.unavailable(w, r, lang, "bad_link", http.StatusNotFound, "", 0, hardenedHeaders)
 	}
 }
 
@@ -114,7 +114,7 @@ func (h *GuideHandlers) stayGuide(w http.ResponseWriter, r *http.Request) {
 	token := r.PathValue("token")
 	resID, ok := pathInt(r, "reservation_id")
 	if !ok {
-		WriteUnavailable(w, r, Language(r), "bad_link", http.StatusNotFound, token, hardenedHeaders)
+		guestAccess{pool: h.pool, getenv: h.getenv, now: h.now}.unavailable(w, r, Language(r), "bad_link", http.StatusNotFound, token, 0, hardenedHeaders)
 		return
 	}
 	lang, apt, res, done := StayGate(r, w, h.pool, h.getenv, h.now, token, resID)
@@ -132,7 +132,7 @@ func (h *GuideHandlers) stayGuidePhoto(w http.ResponseWriter, r *http.Request) {
 	itemID, ok1 := pathInt(r, "item_id")
 	photoID, ok2 := pathInt(r, "photo_id")
 	if !ok || !ok1 || !ok2 {
-		WriteUnavailable(w, r, Language(r), "bad_link", http.StatusNotFound, token, hardenedHeaders)
+		guestAccess{pool: h.pool, getenv: h.getenv, now: h.now}.unavailable(w, r, Language(r), "bad_link", http.StatusNotFound, token, 0, hardenedHeaders)
 		return
 	}
 	lang, apt, res, done := StayGate(r, w, h.pool, h.getenv, h.now, token, resID)
@@ -141,7 +141,8 @@ func (h *GuideHandlers) stayGuidePhoto(w http.ResponseWriter, r *http.Request) {
 	}
 	level := BookedLevel(res.DateFrom, res.DateTo, PragueToday(h.now))
 	if !h.serveGuidePhoto(w, r, apt.ID, level, itemID, photoID) {
-		WriteUnavailable(w, r, lang, "bad_link", http.StatusNotFound, token, hardenedHeaders)
+		// guest_guide_view._not_found passes no token: the page is the bare 404.
+		guestAccess{pool: h.pool, getenv: h.getenv, now: h.now}.unavailable(w, r, lang, "bad_link", http.StatusNotFound, "", 0, hardenedHeaders)
 	}
 }
 

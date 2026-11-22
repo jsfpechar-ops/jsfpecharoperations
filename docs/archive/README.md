@@ -19,6 +19,7 @@ These files are historical and are not read by default. Their open findings were
 | `plans/THREE_PLAN_GITHUB_DELIVERY.md` | October 1 three-branch rollout (done) | - |
 | `UbyHost_workplan/series/`, `UbyHost_workplan/notes/` | Patches 0001–0034 / WP01–WP33 and their notes (all merged, PR #237) | git history |
 | `UbyHost_workplan/0*.md`, `MERGE_SEQUENCE.md`, `OWNER_*.md`, `STAGING_ON_RENDER_STEP_BY_STEP.md`, `UbyHost_architecture_review.md`, `skills/` | Workplan guides, checklists, council verdicts, owner how-tos | status, workflow |
+| `UX_GATE_2011-2018_2026-11-22.md` | UX gate (rule 10) evidence for the Go parity briefs 2011-2018: 26 page labels at 390/768/1280, 5 FAIL pages described | `docs/tasks/2019-report.md` |
 | `SKILL.md`, `LOGO_PROMPT.md`, `NEXT_MAIL_RELEASE.md` | Review-council skill, old logo brief, mail release record | - |
 
 Still live in `docs/UbyHost_workplan/`: `04_legal_positions.md` (legal decisions), `03_when_triggered.md` (later items: S3 blobs, Postgres, Stripe) and `compliance/`.

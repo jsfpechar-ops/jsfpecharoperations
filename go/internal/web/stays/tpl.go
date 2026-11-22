@@ -35,6 +35,9 @@ var tplFuncs = map[string]any{
 	"encode_return":   encodeReturn,
 	"day_of_month":    dayOfMonth,
 	"is_nil_int":      isNilInt,
+	"bad":             guestBad,
+	"errFor":          guestErrFor,
+	"guestVal":        guestVal,
 }
 
 func inHouse(checkIn time.Time, hasCheckIn bool, dateTo string, today time.Time) bool {

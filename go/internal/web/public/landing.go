@@ -3,6 +3,7 @@ package public
 import (
 	"bytes"
 	"net/http"
+	"strconv"
 	"strings"
 	"text/template"
 )
@@ -14,6 +15,7 @@ type landingData struct {
 	*pg
 	SignupHref string
 	Weekdays   []string
+	DemoDays   []string // 1..21, the demo calendar's day numbers
 }
 
 // ServeLanding renders the public landing page (landing.html) at GET /.
@@ -35,6 +37,9 @@ func ServeLanding(w http.ResponseWriter, r *http.Request, d Deps) {
 		data.SignupHref = "/signup?lang=" + lang
 	}
 	data.Weekdays = strings.Split(pcat.Strings.T(lang, "landing.demo.weekdays", nil), ",")
+	for day := 1; day <= 21; day++ {
+		data.DemoDays = append(data.DemoDays, strconv.Itoa(day))
+	}
 	var buf bytes.Buffer
 	if err := landingTmpl.ExecuteTemplate(&buf, "landing.tmpl", data); err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)

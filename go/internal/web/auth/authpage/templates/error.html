@@ -1,0 +1,8 @@
+{{/* App/app/templates/error.html (error_kind = server): the page main.py's
+     exception handler renders for a failed HTML request. */}}
+{{define "error.title"}}{{t "error.server.title"}} · UbyHost{{end}}
+{{define "error"}}
+<h1>{{t "error.server.title"}}</h1>
+<p class="lede">{{t "error.server.body"}}</p>
+<p><a class="btn primary" href="/">{{t "error.home"}}</a></p>
+{{end}}

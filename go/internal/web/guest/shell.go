@@ -23,6 +23,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
 )
 
 const (
@@ -288,7 +289,7 @@ func LockToken(ctx context.Context, pool *pgxpool.Pool, key string) string {
 func OpenLink(r *http.Request, pool *pgxpool.Pool, key, lang string) (apt *Apartment, link string, early http.Handler) {
 	apt, link, moved, ok := ResolveKey(r.Context(), pool, key)
 	if !ok {
-		return nil, key, unavailableHandler(pool, key, lang, "bad_link", http.StatusNotFound)
+		return nil, key, unavailableHandler(lang, "bad_link", http.StatusNotFound)
 	}
 	if moved && (r.Method == http.MethodGet || r.Method == http.MethodHead) {
 		prefix := "/l/" + key
@@ -427,8 +428,16 @@ var tplFuncs = template.FuncMap{
 		}
 		return ""
 	},
-	"phoneTel": func(s string) string { return strings.ReplaceAll(s, " ", "") },
-	"upper":    strings.ToUpper,
+	"phoneTel":  func(s string) string { return strings.ReplaceAll(s, " ", "") },
+	"langOrder": langOrder,
+	"date_cz": func(v string) string {
+		if t, ok := validation.ParseISODate(v); ok {
+			return t.Format("02.01.2006")
+		}
+		return v
+	},
+	"nights_label": func(lang, from, to string) string { return pickNightsLabel(lang, from, to) },
+	"upper":        strings.ToUpper,
 }
 
 var baseSet = func() *template.Template {
@@ -458,23 +467,32 @@ func WritePage(w http.ResponseWriter, r *http.Request, status int, p Page, extra
 	}
 }
 
-func unavailableHandler(pool *pgxpool.Pool, token, lang, reason string, code int) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		p := Page{
+func unavailableHandler(lang, reason string, code int) http.Handler {
+	keys, known := unavailableTitles[reason]
+	if !known {
+		keys = unavailableTitles["bad_link"]
+	}
+	view := unavailableView{
+		Page: Page{
 			Lang:          GuestLanguage(lang),
-			Token:         token,
-			LangURLs:      LangURLs(r, ""),
 			GuestEndonyms: GuestEndonyms,
+		},
+		TitleKey: keys[0],
+		BodyKey:  keys[1],
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		view.Page.LangURLs = LangURLs(r, "")
+		var buf bytes.Buffer
+		if err := unavailSet.ExecuteTemplate(&buf, "guest.base", view); err != nil {
+			log.Printf("guest bad link: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
 		}
-		if pool != nil && token != "" {
-			if apt, _, _, ok := ResolveKey(r.Context(), pool, token); ok && apt != nil {
-				p.Facility = Facility(apt)
-				p.FacilityTone = int(apt.ID % 10)
-				p.PrivacyURL = GuestLink(token, 0, "/privacy") + LangQuery(p.Lang, "")
-			}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(code)
+		if r.Method != http.MethodHead {
+			_, _ = buf.WriteTo(w)
 		}
-		_ = reason
-		WritePage(w, r, code, p, nil)
 	})
 }
 
@@ -482,6 +500,10 @@ type shellDeps struct {
 	pool   *pgxpool.Pool
 	getenv func(string) string
 	now    func() time.Time
+}
+
+func (d shellDeps) access() guestAccess {
+	return guestAccess{pool: d.pool, getenv: d.getenv, now: d.now}
 }
 
 // RegisterShell wires the guest /l package. Routes stay dormant until brief 1728
@@ -492,4 +514,12 @@ func RegisterShell(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) s
 	mux.Handle("GET /l/{token}", wrap("/l/{token}", d.pickStay))
 	mux.Handle("GET /l/{token}/privacy", wrap("/l/{token}/privacy", d.privacyNotice))
 	mux.Handle("GET /l/{token}/ruian-suggest", wrap("/l/{token}/ruian-suggest", d.ruianSuggest))
+	// guest.py error_page: a path under /l/ that no route claims is the guest's
+	// bad_link page (404) carrying the key from the path, not the host's 404.
+	// Specific patterns win, so this only sees the shapes Python has no route for.
+	mux.Handle("/l/{rest...}", wrap("/l/{rest...}", func(w http.ResponseWriter, r *http.Request) {
+		token := strings.SplitN(strings.Trim(strings.TrimSpace(r.PathValue("rest")), "/"), "/", 2)[0]
+		g := guestAccess{pool: pool, getenv: getenv, now: now}
+		g.unavailable(w, r, langFromRequest(r), "bad_link", http.StatusNotFound, token, 0, nil)
+	}))
 }

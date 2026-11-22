@@ -22,7 +22,7 @@ Master version: 2.0.0. Adds only.
 - sections: Items (`table`, 5 columns), Payment (facts + Record payment secondary), History (neutral rows)
 
 ## Invoice builder
-- body_kind: `form`; lane narrow; steps indicator "Step n of 4" (seller, customer, items, review); primary `Continue` then `Issue invoice` on review; items as repeating `field_pair` rows with a quiet "Add item"; preview labelled "Preview" in a neutral banner
+- body_kind: `form`; one narrow lane (`ui-page-narrow`, 720 px) of flat section cards in reading order (supplier, customer, items, payment, language folded); `field_pair` from 768 px only; item rows stack as labelled cards at every width: the description takes its own line, then QTY, UNIT, UNIT PRICE and VAT (payers only) on the next, with Remove at the card's right edge and no trailing gap; the `thead` stays `display:none` and each cell prints its label from `data-label`; the form closes with the one action row: live total, next number, Preview (`secondary`), `Issue invoice` (`primary`); no steps indicator, no Save per section, no floating bar
 
 ## Empty state
 - `invoices.empty.title` ("No invoices yet"), body one sentence, `invoice.new` -> `/invoices/new`

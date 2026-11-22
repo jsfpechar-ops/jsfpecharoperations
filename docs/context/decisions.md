@@ -1,10 +1,10 @@
 # Decisions
 Append-only.
 - 2026-10-30 [workflow/db/deps] PostgreSQL kit, psycopg3 + pgBackRest approved; manual cutover | 0455–0456
-- 2026-10-31 Postgres (#592), then Go G1-G6, per-feature rollback, no load test. [workflow] Haiku implements | owner | [plan v4](../plans/postgresql/migration-plan-v4.md)
+- 2026-10-31 Postgres (#592), then Go G1-G6, per-feature rollback, no load test; Haiku implements | owner | [plan v4](../plans/postgresql/migration-plan-v4.md)
 - 2026-10-31 Every change lean: no dead code or extras; dead code in its own commit | owner | plan v4
 - 2026-10-31 Postgres/Go migration gates waived; bar unchanged (backup, rehearsal, hashes, both DBs green, rollback); D1-D4 = 0463-0465. [workflow] Pre-merge diff vs brief Files | owner | 0463, #606
-- 2026-10-31 [workflow] `test-postgres-full` (app suite on PG 17) gates every merge; SQLite-file tests carry `sqlite_only` | orchestrator | 0462
+- 2026-10-31 [workflow] `test-postgres-full` (app suite on PG 17) gates every merge; SQLite-file tests carry `sqlite_only` | orch | 0462
 - 2026-11-01 Host redesign: vendored Hotwire Turbo (MIT) for page-body swaps; owner OKs mockups first | owner | #614
 - 2026-11-01 Go: module go/, stdlib, pgx v5, go-ntlmssp v0.1.1, go-qrcode (11-02) | owner (waiver) | 0474, 0481, 0684
 - 2026-11-02 Signup box: unticked marketing opt-in; lawyer to confirm | owner | 0836
@@ -16,7 +16,7 @@ Append-only.
 - [filing] 2026-11-04: unanswered filings retry 30m/2h/6h/12h, any answer stops; replaces OD-1, WP31 (0909).
 - [auth] 2026-11-04: 30-day sliding session, trusted-device cookie skips login Turnstile
 - [auth] 2026-11-04: log out is per device; "all devices" is separate (0947).
-- 2026-11-04 [dashboard] no per-property "No guest has used the link" card; "You are ready" only with one property (0949); six-card status strip replaces aside cards, guest copy button in the strip (0948) | owner
+- 2026-11-04 [dashboard] no per-property "No guest has used the link" card; "You are ready" only with one property (0949); six-card status strip, guest copy in the strip (0948) | owner
 - 2026-11-04/05 [ui] Smart lock: one accordion #sec-lock (0952); door_code.state drives the status block (0954). Save row sticks; Preview sticks >=1024 (0957). #786: no stay times, 4 wizard steps (0950-fix-1)
 - [wizard] 2026-11-04: wizard shows the old look on the current 4-step flow; red star marks mandatory fields; operator e-mail has no purpose text. Source: brief 0953.
 - [ui] 2026-11-06 [owner]: property page keeps main's header and tile grid; the setup progress card sits full width below the grid (0986).
@@ -64,7 +64,8 @@ Append-only.
 - 2026-11-20 [product] Payments and Booking site removed from all host nav unconditionally (dormant product); `UBYHOST_PAYMENTS_HIDDEN` only gates routes, row actions, jobs | owner
 - 2026-11-17 [workflow] Stays Go-only, show-more append, Stays Turbo cache only|owner
 - 2026-11-19 [ui] Wide geometry skips pageHeader left/right edge on stay-detail at ≥1024 (crumb+H1, same as 0789). Brief 1862.
-- 2026-11-20 [workflow] Deploys route staging-first: green CI on main auto-deploys to staging (Ubyhost-test-env); production only via manual Deploy production with force_confirm=DEPLOY after owner click-through on staging. Brief 1865 | owner
-- 2026-11-20 [workflow] CI/GitHub hardening: job timeouts on deploy workflows, full-history gitleaks on main, PR security\/deploy checklist, settings runbook; branch protection + environment reviewers are owner steps. Brief 1866 | owner
+- 2026-11-20 [workflow] Deploys staging-first: green main → staging; production manual (force_confirm=DEPLOY). Brief 1865 | owner
+- 2026-11-20 [workflow] CI hardening: deploy timeouts, gitleaks, PR checklist, runbook; protection/reviewers = owner. Brief 1866 | owner
 - 2026-11-21 [ui] Dashboard "What needs you": no police line (failed, overdue, not sent) without UbyPort login; the setup line or onboarding banner is the call to action. Python under go-first exception 3; the Go port carries the rule and collapses overdue lines into one summary. Brief 2000.
 - 2026-11-22 [parity/ux] DOM parity is not UX approval; a UX fix stays Go-only + owner switches `UBYHOST_GO_PATHS`. 2021-2028 | orch
+- 2026-11-21 [ux] Invoice builder Wolt-simple (narrow lane, flat cards, stacked item rows); Generate invoice moves from stay ⋮ menu to stay header, phone too. Brief 2001 | owner

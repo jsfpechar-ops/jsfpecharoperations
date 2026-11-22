@@ -1,0 +1,61 @@
+{{define "content"}}
+{{if .CanPickOther}}
+  <a class="g-back" href="{{.BackURL}}">{{.T "back_to_stays"}}</a>
+{{end}}
+
+{{template "why_fragment" .}}
+
+<div class="g-card g-stay-summary">
+  <strong>{{date_cz .StayFrom}} &ndash; {{date_cz .StayTo}}</strong>
+  <span>{{nights_label .Lang .StayFrom .StayTo}}</span>
+</div>
+
+{{if .ClaimSent}}
+  <div class="g-card g-saved">
+    <h2>{{.T "claim_sent_title"}}</h2>
+    <p class="g-intro">{{.T "claim_sent_body" "email" .ClaimEmailMasked}}</p>
+  </div>
+{{end}}
+{{if .ClaimErrorText}}
+  <div class="g-err">{{.ClaimErrorText}}</div>
+{{end}}
+
+{{if .ClaimSent}}<details class="g-card g-fold"><summary>{{.T "claim_sent_retry"}}</summary>{{else}}<div class="g-card g-question-card">{{end}}
+  {{if not .ClaimSent}}
+    <h2>{{.T "claim_title"}}</h2>
+    <p class="g-intro">{{.T "claim_help"}}</p>
+  {{end}}
+  <form method="post" action="{{.ActionURL}}">
+    <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
+    <div class="g-field" data-guest-stepper data-less-label="{{.T "tw_fewer"}}" data-more-label="{{.T "tw_more"}}">
+      <label for="party_size">{{.T "party_question"}}</label>
+      <input type="number" id="party_size" name="party_size" min="1" max="60"
+             required inputmode="numeric" autocomplete="off"
+             value="{{.DeclaredGuests}}">
+      <div class="hint">{{.T "party_help"}}</div>
+      <details class="g-why" data-purpose-help="guest-count">
+        <summary class="g-why-summary">{{.T "guest_count_purpose_help_label"}}</summary>
+        <p class="g-intro">{{.T "guest_count_purpose_help"}}</p>
+      </details>
+    </div>
+    <div class="g-field">
+      <label for="guest_email">{{.T "claim_email"}}</label>
+      <input type="email" id="guest_email" name="guest_email" required autocomplete="email"
+             autocapitalize="none" autocorrect="off" spellcheck="false" inputmode="email"
+             maxlength="254">
+      <div class="hint">{{.T "claim_email_why"}}</div>
+      <details class="g-claim-help">
+        <summary aria-label="{{.T "email_help_label"}}">?</summary>
+        <div class="hint">{{.T "claim_email_help"}}</div>
+        <div class="hint">{{.T "claim_cookie_help"}}
+          {{if .PrivacyURL}}<a href="{{.PrivacyURL}}">{{.T "privacy_link"}}</a>{{end}}
+        </div>
+      </details>
+    </div>
+    {{if .RequireTurnstile}}{{if .TurnstileSiteKey}}
+      <div class="cf-turnstile" data-sitekey="{{.TurnstileSiteKey}}" data-action="guest_claim"></div>
+    {{end}}{{end}}
+    <button class="g-btn" type="submit">{{.T "claim_submit"}}</button>
+  </form>
+{{if .ClaimSent}}</details>{{else}}</div>{{end}}
+{{end}}

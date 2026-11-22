@@ -88,6 +88,10 @@ const (
 const (
 	nonLatinMessage = "Type this using Latin letters (A-Z), exactly as printed in the two " +
 		"machine-readable lines at the bottom of your passport."
+	// NON_LATIN_MESSAGE is validation.NON_LATIN_MESSAGE, exported for the guest
+	// form, which replaces it with a sentence naming the offending field
+	// (routes/guest.py _name_latin_issues compares the two by value).
+	NON_LATIN_MESSAGE = nonLatinMessage
 	inpassNoteMessage = "For a child recorded in a parent's passport the note must contain " +
 		"the parent's document number."
 	forbiddenCharMessage       = "Remove the | character and any line breaks."
