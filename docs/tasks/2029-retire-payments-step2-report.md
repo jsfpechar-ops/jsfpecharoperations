@@ -4,7 +4,9 @@ Status: review
 
 ## Files changed
 - `go/cmd/ubyhost-web/register_jobs.go` — skip `stripe_sweep` handler when `PaymentsRetired`; log `job skipped: payments retired`
-- `go/cmd/ubyhost-web/register_scheduler_test.go` — `TestJobsStripeSweepSkipsWhenPaymentsRetired`
+- `go/internal/scheduler/scheduler.go` — omit `stripe_sweep` from `Plan` when `PaymentsHidden` (includes retired)
+- `go/cmd/ubyhost-web/register_job_mail.go` — omit `expire_requests` mail step when hidden/retired (Python parity)
+- `go/cmd/ubyhost-web/register_scheduler_test.go` — `TestSchedulerOmitsStripeSweepWhenPaymentsRetired`, `TestJobsStripeSweepSkipsWhenPaymentsRetired`
 - `App/app/scheduler.py` — `_job_stripe_sweep` logs and returns when `PAYMENTS_RETIRED` (schedule still gated by `PAYMENTS_HIDDEN` from step 1)
 - `docs/context/job-ownership.md` — `stripe_sweep` row notes retired skip; `billing_snapshot` unchanged
 
@@ -18,7 +20,10 @@ Go: `ok github.com/.../go/cmd/ubyhost-web 0.090s`
 - [x] No `config.py` edit in this step
 
 ## Deviations
-Go `expire_requests` mail step (`register_job_mail.go`) not edited — not in step 2 file list; still runs when only Go serves mail and RETIRED=1. Go scheduler still enqueues `stripe_sweep` cron rows; handler no-ops with log (brief “do not schedule” would need `scheduler.go` or `register_scheduler.go`, not listed).
+None after follow-up: scheduler `Plan` and mail `expire_requests` gated.
+
+## PR
+https://github.com/jsfpechar-ops/jsfpecharoperations/pull/1271 (draft, base `cursor/retire-payments-step1-47ba`). Not #1267 (that is step 3).
 
 ## Questions
 None.

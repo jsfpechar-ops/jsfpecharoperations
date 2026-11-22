@@ -49,6 +49,23 @@ func TestSchedulerTaskSetup(t *testing.T) {
 // Every kind the Go service runs (UBYHOST_GO_JOB_KINDS) is one the Go
 // scheduler enqueues, and each has a backoff interval equal to its schedule
 // interval (cron kinds: one day).
+func TestSchedulerOmitsStripeSweepWhenPaymentsRetired(t *testing.T) {
+	plan, err := scheduler.Plan(func(k string) (string, bool) {
+		if k == "UBYHOST_PAYMENTS_RETIRED" {
+			return "1", true
+		}
+		return "", false
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tr := range plan {
+		if tr.Kind == "stripe_sweep" {
+			t.Fatal("stripe_sweep must not be scheduled when payments retired")
+		}
+	}
+}
+
 func TestJobsStripeSweepSkipsWhenPaymentsRetired(t *testing.T) {
 	t.Setenv("UBYHOST_PAYMENTS_RETIRED", "1")
 	h := jobHandlers(nil)["stripe_sweep"]
