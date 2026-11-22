@@ -1,0 +1,14 @@
+{
+ "cs": {
+  "workflow.link.host_note": "Tuto poznámku vidíte jen vy. Váš další pobyt (%(stay)s) se tu objeví od %(date)s. Potřebujete to dřív? Pošlete hostovi jeho vlastní odkaz ze stránky pobytu.",
+  "workflow.link.host_note_none": "Tuto poznámku vidíte jen vy. Zatím tu není žádný nadcházející pobyt. Pobyty se tu objeví krátce před příjezdem."
+ },
+ "en": {
+  "workflow.link.host_note": "Only you see this note. Your next stay, %(stay)s, appears here from %(date)s. Need it sooner? Send that guest their own link from the stay page.",
+  "workflow.link.host_note_none": "Only you see this note. No upcoming stay yet. Stays appear here shortly before check-in."
+ },
+ "vi": {
+  "workflow.link.host_note": "Chỉ bạn thấy ghi chú này. Lượt lưu trú tiếp theo (%(stay)s) sẽ hiện ở đây từ %(date)s. Cần sớm hơn? Hãy gửi cho khách liên kết riêng từ trang lượt lưu trú.",
+  "workflow.link.host_note_none": "Chỉ bạn thấy ghi chú này. Chưa có lượt lưu trú sắp tới. Lượt lưu trú sẽ hiện ở đây ngay trước ngày nhận phòng."
+ }
+}

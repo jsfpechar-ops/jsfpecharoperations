@@ -53,6 +53,14 @@ var catalogJSON []byte
 
 var stringsCatalog = hostweb.Load(catalogJSON)
 
+//go:embed hostnote_i18n.json
+var hostNoteJSON []byte
+
+// hostNoteCatalog is host_i18n copy a guest page shows the owner
+// (_host_link_note). Its languages are the host's — cs, en, vi — where the guest
+// catalog has no vi at all and would print English to a Vietnamese host.
+var hostNoteCatalog = hostweb.Load(hostNoteJSON)
+
 // guestEnabled is i18n.enabled_languages() from UBYHOST_GUEST_LANGS.
 var guestEnabled = enabledGuest("en,cs")
 

@@ -110,14 +110,14 @@ func (g guestAccess) hostLinkNote(ctx context.Context, r *http.Request, apt *Apa
 		   AND COALESCE(source,'') != 'demo' AND date_from >= $2
 		 ORDER BY date_from LIMIT 1`, apt.ID, PragueToday(g.now).Format("2006-01-02")).Scan(&from)
 	if err != nil || from == "" {
-		return stringsCatalog.T(lang, "workflow.link.host_note_none", nil)
+		return hostNoteCatalog.T(lang, "workflow.link.host_note_none", nil)
 	}
 	start, ok := validation.ParseISODate(from)
 	if !ok {
-		return stringsCatalog.T(lang, "workflow.link.host_note_none", nil)
+		return hostNoteCatalog.T(lang, "workflow.link.host_note_none", nil)
 	}
 	opens := start.AddDate(0, 0, -int(days))
-	return stringsCatalog.T(lang, "workflow.link.host_note", map[string]any{
+	return hostNoteCatalog.T(lang, "workflow.link.host_note", map[string]any{
 		"stay": start.Format("02.01.2006"),
 		"date": opens.Format("02.01.2006"),
 	})

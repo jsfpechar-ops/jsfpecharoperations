@@ -253,8 +253,8 @@ func handleFormPage(ctx context.Context, d formPageDeps, w http.ResponseWriter, 
 		if prog.remaining != nil && *prog.remaining <= 0 {
 			loc := GuestLink(link, resID, LangQuery(lang, ""))
 			w.Header().Set("Cache-Control", formPagesHardening)
-			http.Redirect(w, r, loc, http.StatusSeeOther)
 			WithLang(w, d.getenv, lang)
+			http.Redirect(w, r, loc, http.StatusSeeOther)
 			return nil
 		}
 	}
@@ -364,8 +364,8 @@ func handleRemovePost(ctx context.Context, d formPageDeps, w http.ResponseWriter
 	formPagesSetOwnedCookie(w, d.getenv, ids)
 	loc := GuestLink(link, resID, LangQuery(lang, "&removed=1"))
 	w.Header().Set("Cache-Control", formPagesHardening)
-	http.Redirect(w, r, loc, http.StatusSeeOther)
 	WithLang(w, d.getenv, lang)
+	http.Redirect(w, r, loc, http.StatusSeeOther)
 	return nil
 }
 

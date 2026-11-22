@@ -76,7 +76,12 @@ func partyMailEnabled(getenv func(string) string) bool {
 	return getenv("UBYHOST_SMTP_HOST") != "" || getenv("AWS_SES_REGION") != ""
 }
 
-func redirectGuest(w http.ResponseWriter, r *http.Request, loc string) {
+// redirectGuest is guest.py _with_lang(RedirectResponse(...)): the language
+// rides in the URL and is remembered in the cookie.
+func redirectGuest(w http.ResponseWriter, r *http.Request, loc, lang string) {
+	if lang != "" {
+		WithLang(w, getenvOr(nil), lang)
+	}
 	http.Redirect(w, r, loc, http.StatusSeeOther)
 }
 
@@ -385,7 +390,7 @@ func partySizeHandler(d partyDeps) http.HandlerFunc {
 		}
 		if !partyMailEnabled(d.getenv) {
 			if count < 1 || count > maxGuests {
-				redirectGuest(w, r, guestLink(token, resID, lang)+langQueryAmp(lang, "party_error=1"))
+				redirectGuest(w, r, guestLink(token, resID, lang)+langQueryAmp(lang, "party_error=1"), lang)
 				return
 			}
 			code, err := d.applyDeclared(r.Context(), resID, count)
@@ -399,11 +404,11 @@ func partySizeHandler(d partyDeps) http.HandlerFunc {
 			} else {
 				loc += langQuery(lang)
 			}
-			redirectGuest(w, r, loc)
+			redirectGuest(w, r, loc, lang)
 			return
 		}
 		// Claim path stays on stay_claim.go (brief 1721); without mail we only set declared.
-		redirectGuest(w, r, guestLink(token, resID, lang)+langQuery(lang))
+		redirectGuest(w, r, guestLink(token, resID, lang)+langQuery(lang), lang)
 	}
 }
 
@@ -442,7 +447,7 @@ func leadCountHandler(d partyDeps) http.HandlerFunc {
 			http.Error(w, "server error", http.StatusInternalServerError)
 			return
 		}
-		redirectGuest(w, r, guestLink(token, resID, lang)+langQueryAmp(lang, "count="+url.QueryEscape(code)))
+		redirectGuest(w, r, guestLink(token, resID, lang)+langQueryAmp(lang, "count="+url.QueryEscape(code)), lang)
 	}
 }
 
@@ -463,7 +468,7 @@ func addAnotherHandler(d partyDeps) http.HandlerFunc {
 			return
 		}
 		if stay.override != nil && *stay.override != 0 {
-			redirectGuest(w, r, guestLink(token, resID, lang)+langQuery(lang))
+			redirectGuest(w, r, guestLink(token, resID, lang)+langQuery(lang), lang)
 			return
 		}
 		filled, expected, err := d.reservationExpected(r.Context(), resID)
@@ -483,6 +488,6 @@ func addAnotherHandler(d partyDeps) http.HandlerFunc {
 			next = maxGuests
 		}
 		_, _ = d.applyDeclared(r.Context(), resID, next)
-		redirectGuest(w, r, guestLink(token, resID, lang)+"/new"+langQuery(lang))
+		redirectGuest(w, r, guestLink(token, resID, lang)+"/new"+langQuery(lang), lang)
 	}
 }
