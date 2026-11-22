@@ -258,7 +258,7 @@ func handleFormPage(ctx context.Context, d formPageDeps, w http.ResponseWriter, 
 			return nil
 		}
 	}
-	view, err := buildFormView(ctx, d, r, apt, link, res, guest, lang, mode)
+	view, err := buildFormView(ctx, d, w, r, apt, link, res, guest, lang, mode)
 	if err != nil {
 		return err
 	}
@@ -289,6 +289,10 @@ func handleRemoveConfirm(ctx context.Context, d formPageDeps, w http.ResponseWri
 	}
 	lang := formRequestLanguage(r)
 	name := strings.TrimSpace(guest.firstName + " " + guest.surname)
+	csrf, err := mintGuestPageCSRF(w, r, d.getenv, d.now())
+	if err != nil {
+		return err
+	}
 	view := formView{
 		Page: Page{
 			Lang:          lang,
@@ -296,7 +300,7 @@ func handleRemoveConfirm(ctx context.Context, d formPageDeps, w http.ResponseWri
 			Facility:      Facility(apt),
 			FacilityTone:  int(apt.ID % 10),
 			LangURLs:      LangURLs(r, ""),
-			CSRFToken:     formPagesCSRF(r),
+			CSRFToken:     csrf,
 			GuestEndonyms: GuestEndonyms,
 			Host:          formPagesHost(ctx, d.pool, apt.ID),
 		},
@@ -446,7 +450,7 @@ func handleRelang(ctx context.Context, d formPageDeps, w http.ResponseWriter, r 
 	if guest != nil {
 		mode = "edit"
 	}
-	view, err := buildFormView(ctx, d, r, apt, link, res, guest, lang, mode)
+	view, err := buildFormView(ctx, d, w, r, apt, link, res, guest, lang, mode)
 	if err != nil {
 		return err
 	}
@@ -556,7 +560,11 @@ func liveFormGuests(ctx context.Context, pool *pgxpool.Pool, resID int64) (int, 
 	return n, err
 }
 
-func buildFormView(ctx context.Context, d formPageDeps, r *http.Request, apt *Apartment, link string, res formResRow, guest *formGuestRow, lang, mode string) (formView, error) {
+func buildFormView(ctx context.Context, d formPageDeps, w http.ResponseWriter, r *http.Request, apt *Apartment, link string, res formResRow, guest *formGuestRow, lang, mode string) (formView, error) {
+	csrf, err := mintGuestPageCSRF(w, r, d.getenv, d.now())
+	if err != nil {
+		return formView{}, err
+	}
 	prog := formPagesProgress(ctx, d.pool, res)
 	formPath := GuestLink(link, res.id, "/new")
 	editing := false
@@ -586,7 +594,7 @@ func buildFormView(ctx context.Context, d formPageDeps, r *http.Request, apt *Ap
 			LangURLs:      LangURLs(r, formPath),
 			LangRelangURL: GuestLink(link, res.id, "/relang"),
 			PrivacyURL:    privacy,
-			CSRFToken:     formPagesCSRF(r),
+			CSRFToken:     csrf,
 			Host:          formPagesHost(ctx, d.pool, apt.ID),
 			GuestEndonyms: GuestEndonyms,
 		},
@@ -836,10 +844,6 @@ func formPagesDefaultPurpose(apt *Apartment) string {
 	}
 	return "99"
 }
-
-func formPagesCSRF(r *http.Request) string { return formPagesCSRFToken() }
-
-func formPagesCSRFToken() string { return "*" }
 
 // formPagesHost is guest.py _host_contact: the operating entity guests see.
 func formPagesHost(ctx context.Context, pool *pgxpool.Pool, aptID int64) HostContact {

@@ -245,12 +245,17 @@ func (d stayClaimDeps) claimLanding(w http.ResponseWriter, r *http.Request) {
 	_ = apt
 	aptRow, _, _, _ := ResolveKey(r.Context(), d.pool, token)
 	page := d.access().page(r.Context(), r, token, lang, aptRow)
+	csrf, err := mintGuestPageCSRF(w, r, d.getenv, d.now())
+	if err != nil {
+		scError(w, err)
+		return
+	}
 	view := confirmView{
 		Page:       page,
 		StayFrom:   stay.dateFrom,
 		StayTo:     stay.dateTo,
 		ClaimError: r.URL.Query().Get("claim_error") == "1",
-		CSRFToken:  formPagesCSRFToken(),
+		CSRFToken:  csrf,
 		ActionURL:  guestPath(token, resID) + "/claim/confirm" + langQuery(lang),
 	}
 	d.access().renderPage(w, r, confirmSet, view, nil)
@@ -344,6 +349,11 @@ func (d stayClaimDeps) renderClaimPage(w http.ResponseWriter, r *http.Request, t
 	if row.declaredGuests != nil && *row.declaredGuests > 0 {
 		declared = *row.declaredGuests
 	}
+	csrf, err := mintGuestPageCSRF(w, r, d.getenv, d.now())
+	if err != nil {
+		scError(w, err)
+		return
+	}
 	view := claimView{
 		Page:             page,
 		StayFrom:         stay.dateFrom,
@@ -354,7 +364,7 @@ func (d stayClaimDeps) renderClaimPage(w http.ResponseWriter, r *http.Request, t
 		ClaimErrorText:   claimErrorText(page.Lang, r.URL.Query().Get("claim_error")),
 		ClaimEmailMasked: row.emailMasked,
 		DeclaredGuests:   declared,
-		CSRFToken:        formPagesCSRFToken(),
+		CSRFToken:        csrf,
 		ActionURL:        guestPath(token, stay.id) + "/party" + langQuery(page.Lang),
 	}
 	d.access().renderPage(w, r, claimSet, view, map[string]string{"Cache-Control": "no-store"})
