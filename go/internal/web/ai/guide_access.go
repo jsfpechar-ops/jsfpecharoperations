@@ -43,7 +43,7 @@ type accessCode struct {
 
 type accessPreviewLine struct {
 	Label, Masked string
-	Door          bool
+	Door, Other   bool
 }
 
 type accessForm struct {
@@ -157,7 +157,7 @@ FROM apartment_entry_code WHERE apartment_id = $1 ORDER BY position`, apt)
 			continue
 		}
 		c := byPos[slot.Row.Position]
-		preview = append(preview, accessPreviewLine{Label: accessTypeLabel(t, c.Type, c.Label), Masked: c.Masked})
+		preview = append(preview, accessPreviewLine{Label: accessTypeLabel(t, c.Type, c.Label), Masked: c.Masked, Other: c.Type == "other"})
 	}
 	extHost := ""
 	if extURL != "" {
@@ -218,7 +218,7 @@ func (s *guideServer) accessPage(w http.ResponseWriter, r *http.Request) {
 	t := func(key string) string { return guideCatalog.T(q.lang, key, nil) }
 	page := layout.Page{
 		Title:    t("access_page.title") + " · " + a.InternalName + " · UbyHost",
-		BodyKind: "settings", V2: true, BackURL: "/apartments/" + strconv.FormatInt(a.ID, 10),
+		BodyKind: "form", V2: true, BackURL: "/apartments/" + strconv.FormatInt(a.ID, 10),
 	}
 	s.render(w, q, "access", page, http.StatusOK, data)
 }

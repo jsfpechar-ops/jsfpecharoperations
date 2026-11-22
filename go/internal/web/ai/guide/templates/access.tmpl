@@ -2,11 +2,8 @@
 {{define "access.title"}}{{end}}
 {{define "access.back_label"}}{{.Apartment.InternalName}}{{end}}
 {{define "access"}}
-<div class="settings-lane ui-page-narrow">
-<div class="airbnb-header">
-  <a class="airbnb-back" href="/apartments/{{.Apartment.ID}}" aria-label="{{t "common.back"}}">{{icon "arrow-left" 20}}</a>
-  <div class="heading-with-tip"><h1 class="airbnb-title">{{t "access_page.title"}}{{help_tip "access-page-help" (t "access_page.help")}}</h1></div>
-</div>
+<div class="guide-page guide-form-page">
+<div class="head guide-hd"><div><a class="guide-back" href="/apartments/{{.Apartment.ID}}">{{.Apartment.InternalName}}</a><div class="heading-with-tip"><h1 class="big">{{t "access_page.title"}}{{help_tip "access-page-help" (t "access_page.help")}}</h1></div></div></div>
 
 {{guide_section_open "entry-codes" (t "access_page.codes.title") (help_tip "access-codes-help" (t "access_page.codes.help"))}}
 {{if not .Codes}}
@@ -16,45 +13,49 @@
 <input type="hidden" name="action" value="save">
 {{ui_select "access-type" (t "access_page.field.type") .TypeOptions (kv "name" "code_type" "selected" .Form.CodeType)}}
 {{ui_field "access-name" (t "access_page.field.name") (kv "name" "custom_label" "value" .Form.CustomLabel "help" (t "access_page.field.name_help") "attrs" (safe `maxlength="60" id="access-custom-label"`))}}
-{{ui_field "access-code" (t "access_page.field.code") (kv "name" "code" "type" "text" "attrs" (safe `maxlength="32" autocomplete="off" required inputmode="text" class="ui-monospace"`))}}
-{{ui_field "access-until" (t "access_page.field.valid_until") (kv "name" "valid_until" "type" "date" "value" .Form.ValidUntil "attrs" (safe ``))}}
+{{ui_field "access-code" (t "access_page.field.code") (kv "name" "code" "type" "text" "attrs" (safe `maxlength="32" autocomplete="off" required inputmode="text" class="ui-mono"`))}}
+{{ui_field "access-until" (t "access_page.field.valid_until") (kv "name" "valid_until" "type" "date" "value" .Form.ValidUntil)}}
 <div class="ui-form-actions">{{ui_button (t "access_page.save") "secondary" (kv "type" "submit")}}{{ui_button (t "access_page.cancel") "quiet" (kv "href" .Base)}}</div>
 </form>
 {{else}}
 <p class="ui-sub">{{t "access_page.empty.title"}}</p>
-<div class="ui-form-actions">{{ui_button (t "access_page.add") "secondary" (kv "href" (printf "%s?add=1" .Base))}}</div>
+<div class="ui-form-actions">{{ui_button (t "access_page.add") "secondary" (kv "href" (printf "%s?add=1#entry-codes" .Base))}}</div>
 {{end}}
 {{else}}
 {{range .Codes}}
-<div class="access-code-row ui-section-card" data-position="{{.Position}}">
-  <div class="ui-kv">
-    <div class="ui-kv-row"><span>{{t "access_page.field.type"}}</span><span style="overflow-wrap:anywhere;min-width:0">{{if eq .Type "other"}}{{.Label}}{{else}}{{t (printf "access_page.type.%s" .Type)}}{{end}}</span></div>
-    <div class="ui-kv-row"><span>{{t "access_page.field.code"}}</span><span class="ui-monospace" style="white-space:nowrap">{{.Masked}}</span></div>
-    {{if .Until}}<div class="ui-kv-row"><span>{{t "access_page.valid_until_label"}}</span><span>{{.Until}}</span></div>{{end}}
-  </div>
-  {{if .Expired}}{{ui_banner "attention" (t "access_page.expired" "date" .Until)}}{{end}}
-  {{if and $.Form $.Form.Open (eq $.Form.Position .Position)}}
-  <form method="post" action="{{$.Base}}" id="access-form">
-  <input type="hidden" name="_csrf" value="{{csrf}}">
-  <input type="hidden" name="action" value="save">
-  <input type="hidden" name="position" value="{{.Position}}">
-  {{ui_select "access-type" (t "access_page.field.type") $.TypeOptions (kv "name" "code_type" "selected" $.Form.CodeType)}}
-  {{ui_field "access-name" (t "access_page.field.name") (kv "name" "custom_label" "value" $.Form.CustomLabel "help" (t "access_page.field.name_help") "attrs" (safe `maxlength="60" id="access-custom-label"`))}}
-  {{ui_field "access-code" (t "access_page.field.code") (kv "name" "code" "type" "text" "attrs" (safe `maxlength="32" autocomplete="off" required inputmode="text" class="ui-monospace"`))}}
-  {{ui_field "access-until" (t "access_page.field.valid_until") (kv "name" "valid_until" "type" "date" "value" $.Form.ValidUntil "attrs" (safe ``))}}
-  <div class="ui-form-actions">{{ui_button (t "access_page.save") "secondary" (kv "type" "submit")}}{{ui_button (t "access_page.cancel") "quiet" (kv "href" $.Base)}}</div>
-  </form>
-  {{else}}
-  <div class="ui-form-actions access-code-actions">
-    {{ui_button (t "access_page.replace") "secondary" (kv "href" (printf "%s?edit=%d#entry-codes" $.Base .Position))}}
-    <form method="post" action="{{$.Base}}" class="access-inline-form">
-    <input type="hidden" name="_csrf" value="{{csrf}}">
-    <input type="hidden" name="action" value="clear">
-    <input type="hidden" name="position" value="{{.Position}}">
-    {{ui_button (t "access_page.clear") "quiet" (kv "type" "submit")}}
-    </form>
-  </div>
-  {{end}}
+<div class="guide-form-card">
+{{if and $.Form $.Form.Open (eq $.Form.Position .Position)}}
+{{else}}
+<dl class="ui-facts">
+<div><dt>{{t "access_page.field.type"}}</dt><dd>{{if eq .Type "other"}}{{t "access_page.type.other"}}{{else}}{{t (printf "access_page.type.%s" .Type)}}{{end}}</dd></div>
+{{if eq .Type "other"}}<div><dt>{{t "access_page.field.name"}}</dt><dd>{{.Label}}</dd></div>{{end}}
+<div><dt>{{t "access_page.field.code"}}</dt><dd class="ui-mono">{{.Masked}}</dd></div>
+{{if .Until}}<div><dt>{{t "access_page.valid_until_label"}}</dt><dd>{{.Until}}</dd></div>{{end}}
+</dl>
+{{if .Expired}}{{ui_banner "attention" (t "access_page.expired" "date" .Until)}}{{end}}
+{{end}}
+{{if and $.Form $.Form.Open (eq $.Form.Position .Position)}}
+<form method="post" action="{{$.Base}}" id="access-form">
+<input type="hidden" name="_csrf" value="{{csrf}}">
+<input type="hidden" name="action" value="save">
+<input type="hidden" name="position" value="{{.Position}}">
+{{ui_select "access-type" (t "access_page.field.type") $.TypeOptions (kv "name" "code_type" "selected" $.Form.CodeType)}}
+{{ui_field "access-name" (t "access_page.field.name") (kv "name" "custom_label" "value" $.Form.CustomLabel "help" (t "access_page.field.name_help") "attrs" (safe `maxlength="60" id="access-custom-label"`))}}
+{{ui_field "access-code" (t "access_page.field.code") (kv "name" "code" "type" "text" "attrs" (safe `maxlength="32" autocomplete="off" required inputmode="text" class="ui-mono"`))}}
+{{ui_field "access-until" (t "access_page.field.valid_until") (kv "name" "valid_until" "type" "date" "value" $.Form.ValidUntil)}}
+<div class="ui-form-actions">{{ui_button (t "access_page.save") "secondary" (kv "type" "submit")}}{{ui_button (t "access_page.cancel") "quiet" (kv "href" $.Base)}}</div>
+</form>
+{{else}}
+<div class="ui-form-actions">
+{{ui_button (t "access_page.replace") "secondary" (kv "href" (printf "%s?edit=%d#entry-codes" $.Base .Position))}}
+<form method="post" action="{{$.Base}}" class="access-inline-form">
+<input type="hidden" name="_csrf" value="{{csrf}}">
+<input type="hidden" name="action" value="clear">
+<input type="hidden" name="position" value="{{.Position}}">
+{{ui_button (t "access_page.clear") "quiet" (kv "type" "submit")}}
+</form>
+</div>
+{{end}}
 </div>
 {{end}}
 {{if and .Form .Form.Open .Form.IsNew}}
@@ -63,8 +64,8 @@
 <input type="hidden" name="action" value="save">
 {{ui_select "access-type" (t "access_page.field.type") .TypeOptions (kv "name" "code_type" "selected" .Form.CodeType)}}
 {{ui_field "access-name" (t "access_page.field.name") (kv "name" "custom_label" "value" .Form.CustomLabel "help" (t "access_page.field.name_help") "attrs" (safe `maxlength="60" id="access-custom-label"`))}}
-{{ui_field "access-code" (t "access_page.field.code") (kv "name" "code" "type" "text" "attrs" (safe `maxlength="32" autocomplete="off" required inputmode="text" class="ui-monospace"`))}}
-{{ui_field "access-until" (t "access_page.field.valid_until") (kv "name" "valid_until" "type" "date" "value" .Form.ValidUntil "attrs" (safe ``))}}
+{{ui_field "access-code" (t "access_page.field.code") (kv "name" "code" "type" "text" "attrs" (safe `maxlength="32" autocomplete="off" required inputmode="text" class="ui-mono"`))}}
+{{ui_field "access-until" (t "access_page.field.valid_until") (kv "name" "valid_until" "type" "date" "value" .Form.ValidUntil)}}
 <div class="ui-form-actions">{{ui_button (t "access_page.save") "secondary" (kv "type" "submit")}}{{ui_button (t "access_page.cancel") "quiet" (kv "href" .Base)}}</div>
 </form>
 {{end}}
@@ -76,16 +77,17 @@
 {{if .PreviewEmpty}}<p class="ui-sub">{{t "access_page.preview.empty"}}</p>{{else}}
 <dl class="ui-facts">
 {{range .Preview}}
-<div>
-  <dt style="overflow-wrap:anywhere;min-width:0">{{.Label}}</dt>
-  <dd>{{if .Door}}{{t "access_page.preview.door_value"}}{{else}}<span class="ui-monospace" style="white-space:nowrap">{{.Masked}}</span>{{end}}</dd>
-</div>
+{{if .Door}}
+<div><dt>{{.Label}}</dt><dd>{{t "access_page.preview.door_value"}}</dd></div>
+{{else if .Other}}
+<div><dt>{{t "access_page.type.other"}}</dt><dd><span class="ui-mono">{{.Masked}}</span></dd></div>
+{{if and .Label (not (gt (len .Label) 36))}}<div><dt>{{t "access_page.field.name"}}</dt><dd>{{.Label}}</dd></div>{{end}}
+{{else}}
+<div><dt>{{.Label}}</dt><dd><span class="ui-mono">{{.Masked}}</span></dd></div>
+{{end}}
 {{end}}
 {{if .PreviewExternalHost}}
-<div>
-  <dt>{{t "access_page.preview.external_prefix"}}</dt>
-  <dd>{{.PreviewExternalHost}} <a href="{{.GuideBase}}#external">{{t "access_page.preview.change"}}</a></dd>
-</div>
+<div><dt>{{t "access_page.preview.external_prefix"}}</dt><dd>{{.PreviewExternalHost}} <a href="{{.GuideBase}}#external">{{t "access_page.preview.change"}}</a></dd></div>
 {{end}}
 </dl>
 {{end}}
