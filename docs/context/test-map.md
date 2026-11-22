@@ -36,14 +36,14 @@ Run your row from `App/`: `-q --tb=short -x 2>&1 | tail -30`. Full suite: CI unl
 | Any host template, CSS or JS | test_design_guardrails_browser.py (0 skipped; MASTER 11.0) |
 | Public/app domain config | `test_app_domain.py test_env_guard.py test_passkeys.py test_pwa.py`, login, security, mail rows; Caddy in both TLS modes |
 | Operator customer dashboard | `test_admin_customers.py test_host_*.py test_design_guardrails_browser.py` |
-| Stripe Connect, payments dashboard | `test_payments_dashboard.py test_payment_request_model.py test_stripe_connect.py test_payment_links.py test_payment_qr.py test_payment_services.py` |
+| Payments dashboard (d) | `test_payments_dashboard.py test_payment_request_model.py test_stripe_connect.py test_payment_links.py test_payment_qr.py test_payment_services.py` |
 | Public property pages | `test_property_slug.py test_property_page.py test_property_page_photos.py test_property_page_meta.py test_property_page_rules.py` |
 | v2 pages (`{% set v2 = true %}`) | `tests/test_0710_v2_mockup_match_browser.py` (browser, 0 skipped; geometry 320-1440 px) |
-| Page booking widget | `test_booking_widget.py test_property_page.py test_stripe_connect.py test_payment_request_model.py` |
-| Booking site (rules, checkout, webhook, iCal) | `test_booking_site.py test_property_page.py test_stripe_connect.py` |
-| Direct booking pay | `test_booking_direct_*.py test_booking_site.py test_host_i18n.py` |
+| Booking widget (d) | `test_booking_widget.py test_property_page.py test_stripe_connect.py test_payment_request_model.py` |
+| Booking site (d) | `test_booking_site.py test_property_page.py test_stripe_connect.py` |
+| Direct booking pay (d) | `test_booking_direct_*.py test_booking_site.py test_host_i18n.py` |
 | Deploy scripts, Caddyfile, compose | `shellcheck -S error deploy/lightsail/scripts/*.sh`; CI job `caddy` checks both Caddyfiles; `test_pg_*script*.py` |
 | A module with no row | `tests/test_<module name>*.py`; none exists: `-k <module name>` |
 | Read guard hook (`scripts/hooks/`, `.claude/settings.json`) | `test_read_guard_hook.py` |
 
-Missing row: orchestrator fixes in the same brief.
+(d) dormant; run only when reviving. Missing row: orchestrator fixes in the same brief.
