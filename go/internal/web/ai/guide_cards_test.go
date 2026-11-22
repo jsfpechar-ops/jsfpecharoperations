@@ -200,3 +200,40 @@ func TestGuideCardAddSkipDiscardDelete(t *testing.T) {
 		t.Errorf("the photo file is still there: %v", err)
 	}
 }
+
+func guideCardMainForm(body string) string {
+	i := strings.Index(body, `class="guide-form-card"`)
+	if i < 0 {
+		return ""
+	}
+	rest := body[i:]
+	j := strings.Index(rest, "</form>")
+	if j < 0 {
+		return ""
+	}
+	return rest[:j]
+}
+
+func TestGuideCardFormSaveButtons(t *testing.T) {
+	w := newGuideCardWorld(t)
+	body := guideTestDo(t, w.mux, "GET", w.path("/", intString(w.checkin)), w.host, nil).Body.String()
+	form := guideCardMainForm(body)
+	if strings.Count(form, `type="submit"`) != 1 {
+		t.Fatalf("card with another open card: want 1 submit in main form, form = %q", form)
+	}
+	if !strings.Contains(form, `name="then" value="next"`) {
+		t.Error("card with next open wants Save and next submit")
+	}
+	guideTestExec(t, w.s.pool, `UPDATE guide_item SET state = 'done' WHERE apartment_id = $1 AND id != $2`, w.apt, w.checkin)
+	body = guideTestDo(t, w.mux, "GET", w.path("/", intString(w.checkin)), w.host, nil).Body.String()
+	form = guideCardMainForm(body)
+	if strings.Count(form, `type="submit"`) != 1 {
+		t.Fatalf("last open card: want 1 submit in main form, form = %q", form)
+	}
+	if strings.Contains(form, `name="then"`) {
+		t.Error("last open card must not show then=next submit")
+	}
+	if !strings.Contains(form, "Save") {
+		t.Error("last open card wants Save label")
+	}
+}
