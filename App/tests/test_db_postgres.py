@@ -257,8 +257,8 @@ def test_full_schema_apply_and_validate_on_postgres(pg_runtime):
     status = db.postgres_schema_status()
     assert status["current"] is True
     assert status["actual_version"] == db.expected_schema_version() == 45
-    assert status["expected_tables"] == 70 and status["actual_tables"] == 75  # + job (goose 00003), guest_form_snapshot and guest_inbox (goose 00020), ruian_address and ruian_import (goose 00021), PostgreSQL only
-    assert status["missing_tables"] == 0 and status["extra_tables"] == 5  # job, guest_form_snapshot, guest_inbox, ruian_address, ruian_import
+    assert status["expected_tables"] == 70 and status["actual_tables"] == 76  # + job (goose 00003), guest_form_snapshot and guest_inbox (goose 00020), ruian_address and ruian_import (goose 00021), apartment_entry_code (goose 00023), PostgreSQL only
+    assert status["missing_tables"] == 0 and status["extra_tables"] == 6  # job, guest_form_snapshot, guest_inbox, ruian_address, ruian_import, apartment_entry_code
     assert status["column_mismatches"] == 0
     assert status["missing_indexes"] == 0
     assert status["missing_triggers"] == status["extra_triggers"] == 0
@@ -351,7 +351,7 @@ def test_pg_schema_cli_reports_and_applies_the_current_schema(pg_runtime, tmp_pa
         timeout=180,
     )
     assert apply.returncode == 0, apply.stderr[-1000:]
-    assert "version=45" in apply.stdout and "tables=75" in apply.stdout  # + ruian_address, ruian_import (goose 00021)
+    assert "version=45" in apply.stdout and "tables=76" in apply.stdout  # + ruian_address, ruian_import (goose 00021), apartment_entry_code (goose 00023)
 
     wrong = subprocess.run(
         [*base, "check", "--expect-database", "definitely-not-this-database"],
