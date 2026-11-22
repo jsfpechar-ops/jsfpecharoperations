@@ -420,7 +420,10 @@ func (s *server) validateGuestPaySave(ctx context.Context, r *http.Request, q *r
 		return cols, guestPaySaveError(err), nil
 	}
 	if err := s.applyGuestOperatorAccount(ctx, r, q, a, cols, values); err != nil {
-		return cols, guestPaySaveError(err), err
+		if ref := guestPaySaveError(err); ref != nil {
+			return cols, ref, nil
+		}
+		return cols, nil, err
 	}
 	stripGuestPayInternals(values)
 	return cols, nil, nil
