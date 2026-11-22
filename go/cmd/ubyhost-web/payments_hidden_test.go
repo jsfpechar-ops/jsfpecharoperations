@@ -96,6 +96,26 @@ func TestPaymentsRetiredDoesNotBlockOpenPaths(t *testing.T) {
 	}
 }
 
+func TestPaymentsRetiredStripeWebhookNeutral(t *testing.T) {
+	t.Setenv("UBYHOST_PAYMENTS_RETIRED", "1")
+
+	m := &metrics{counts: map[key]int64{}}
+	mux := newMux(m, nil)
+
+	body := `{"id":"evt_retired_neutral","type":"payment_intent.succeeded"}`
+	req := httptest.NewRequest(http.MethodPost, "/webhooks/stripe", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("stripe-signature", "t=0,v1=invalid")
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status %d, want 200", rec.Code)
+	}
+	if rec.Body.Len() != 0 {
+		t.Fatalf("body should be empty, got %q", rec.Body.String())
+	}
+}
+
 func TestPaymentsHiddenOffDoesNotGate(t *testing.T) {
 	t.Setenv("UBYHOST_PAYMENTS_HIDDEN", "0")
 	m := &metrics{counts: map[key]int64{}}
