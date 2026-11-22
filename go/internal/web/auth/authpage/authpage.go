@@ -365,3 +365,11 @@ func csrfToken(r *http.Request, secret string, getenv func(string) string, now t
 	}
 	return token, cookie, nil
 }
+
+// RenderServerError writes Python's error.html with error_kind = "server"
+// (main.py's exception handler): 500, the auth shell, the message and the
+// link home. It returns the error when the page itself cannot be written, so
+// a caller can fall back to a bare status.
+func RenderServerError(w http.ResponseWriter, r *http.Request, env Env, host *session.Host) error {
+	return Render(w, r, env, host, "error", nil, http.StatusInternalServerError)
+}
