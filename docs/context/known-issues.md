@@ -92,6 +92,7 @@
 - K-1091D: `test_1091_d` name no longer matches its test.
 - K-TAP43: local only (CI green): `test_design_guardrails_browser.py` guest-new 390 "Cancel" tap target 43 < 44.
 - K-H0 (1094): NULL checkin_hour TypeError door_codes ~179/436; foreign guest_id on /save; guest_form_saved audit lacks fields.
-- K-MOCK-HC (1865): `mock-ubyport` in deploy/lightsail/docker-compose.yml inherits the app image HEALTHCHECK (Dockerfile:32 probes 127.0.0.1:8080/healthz) but listens on 8081 → shows unhealthy while serving. Server-side workaround on Ubyhost-test-env: untracked docker-compose.override.yml re-pointing the probe. Upstream fix: add a healthcheck block to the mock-ubyport service.
+- K-MOCK-HC (1865): `mock-ubyport` in deploy/lightsail/docker-compose.yml inherits the app image HEALTHCHECK (probes 127.0.0.1:8080/healthz) but listens on 8081 → unhealthy while serving. Workaround on Ubyhost-test-env: untracked docker-compose.override.yml re-pointing the probe. Fix: healthcheck block on the mock-ubyport service.
 - K-STG-WAF (1865): staging.ubyhost.com inherits the ubyhost.com zone WAF → `/login` answers `cf-mitigated: challenge`; browsers pass, curl/CI logins cannot. Fix options: WAF skip rule scoped to the staging host, or a separate zone/domain for staging.
 - K-SEC-TOKEN (1865): a Cloudflare API token was pasted into a chat session on 2026-11-20 → owner revokes it (Cloudflare → My Profile → API Tokens). Never paste tokens/keys into chat.
+- K-INV-UI: invoice builder cluttered, item rows right-pinned with whitespace gap, invoice only in stay ⋮. Fix: 2001.
