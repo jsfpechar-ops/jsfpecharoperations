@@ -123,7 +123,14 @@ func healthz(pool *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
+// notFound is the catch-all 404: the branded host page, as Python's error.html
+// (error_kind=not_found), not net/http's bare text. A guest link keeps the plain
+// 404 until the Go guest lane gets the guest lane's own error page.
 func notFound(w http.ResponseWriter, r *http.Request) {
+	if hostweb.GuestPath(r) {
+		http.NotFound(w, r)
+		return
+	}
 	hostweb.NotFoundPage(w, r)
 }
 

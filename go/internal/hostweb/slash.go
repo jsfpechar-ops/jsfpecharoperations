@@ -10,10 +10,11 @@ type Router interface {
 	Handler(r *http.Request) (http.Handler, string)
 }
 
-// CanonicalSlash answers <path>/ with a 307 to <path> when a registered
-// route serves <path>, as Starlette's redirect_slashes does for the Python
-// app (305-style 307, method and body preserved, main.go:193). Routes registered as a
-// subtree ("/static/") and unknown paths are left to the mux.
+// CanonicalSlash answers "<path>/" with a 307 to "<path>" when a registered
+// route serves "<path>", as Starlette's redirect_slashes does for the Python
+// app (307, so the method and the body are kept). Routes registered as a
+// subtree ("/static/") and unknown paths are left to the mux: the mux already
+// redirects the other way, so redirecting here too would bounce forever.
 func CanonicalSlash(router Router, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		p := r.URL.Path

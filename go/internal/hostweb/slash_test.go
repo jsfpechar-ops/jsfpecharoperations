@@ -31,13 +31,13 @@ func TestCanonicalSlash(t *testing.T) {
 	wrapped := CanonicalSlash(mux, mux)
 
 	tests := []struct {
-		name           string
-		method         string
-		path           string
-		query          string
-		accept         string
-		wantCode       int
-		wantRedirect   string
+		name         string
+		method       string
+		path         string
+		query        string
+		accept       string
+		wantCode     int
+		wantRedirect string
 	}{
 		{
 			name:         "redirect trailing slash to detail route",

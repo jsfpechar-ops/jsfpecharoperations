@@ -44,3 +44,13 @@ go/internal/web/staydetail/handlers_test.go | 40 +++++++++++
 The trailing-slash redirect does **not** cover the `#now` anchor link from the stay email (`https://app.ubyhost.com/reservations/252#now`).
 
 **Why not:** The anchor (`#now`) is stripped by the browser before the HTTP request is sent to the server. The request reaches the server as `GET /reservations/252/` with no `#now` fragment. After the `307` redirect, the browser makes a fresh request to `/reservations/252?` and re-applies the anchor if it was stored client-side, but HTTP does not carry anchors over redirects. The URL in the email must include the anchor after the path without slash: `https://app.ubyhost.com/reservations/252#now`, and the host must not enforce trailing slashes on that path (which it now doesn't, via `CanonicalSlash`).
+
+## Review pass (owner asked for the code, not only the brief)
+
+A concurrent execution of this brief landed as `db9987149`. This pass keeps it and adds what it missed:
+
+1. **Guest lane is untouched.** `hostweb.GuestPath` (`/l`, `/l/...`) plus a guard in the mux catch-all: Python gives those paths the guest lane's own 404 page (`App/app/main.py:255-258`), which Go has no equivalent for, so they keep `http.NotFound` instead of borrowing host styling. `TestGuestPath` covers the three shapes.
+2. **Comment fixes.** `slash.go` said "305-style 307" and pointed at a line number; `notfound.go` pointed at "main.go:229, staydetail.go". Both now state the rule instead of a stale location.
+3. **`gofmt` was red on `slash_test.go`** (struct field alignment); formatted. CI's Go job would have failed on it.
+
+Re-verified after the pass: `gofmt -l` empty, `go vet` empty, `go test -count=1` green on `internal/hostweb/...`, `internal/web/staydetail/...`, `cmd/ubyhost-web/...`, `go build ./...` clean, `context_lint` OK.

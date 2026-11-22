@@ -55,3 +55,14 @@ func TestNotFoundPageEmpty(t *testing.T) {
 		t.Fatalf("got %d len %d", rec.Code, rec.Body.Len())
 	}
 }
+
+func TestGuestPath(t *testing.T) {
+	for _, c := range []struct {
+		path string
+		want bool
+	}{{"/l", true}, {"/l/key/7", true}, {"/login", false}, {"/lorem", false}} {
+		if got := GuestPath(httptest.NewRequest(http.MethodGet, c.path, nil)); got != c.want {
+			t.Fatalf("%s: got %v want %v", c.path, got, c.want)
+		}
+	}
+}
