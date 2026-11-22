@@ -22,8 +22,10 @@ cd App && UBYHOST_E2E_PG=postgresql://postgres@127.0.0.1:5433 .venv/bin/python .
 {"paths": 137, "rows": 411, "pass": 252, "pass_soft": 12, "accepted": 101, "fail": 46}
 ```
 
-Before: `fail 48` with `host /offline` and `admin /offline` at `len 133/145 sim=0.57`.
-After: both rows pass; no `/offline` row in the fail set.
+Before: `fail 48`, with `host /offline` and `admin /offline` at `len 133/145 sim=0.57`.
+After (verified, 2026-11-22 10:41): `{"paths": 137, "rows": 411, "pass": 260,
+"pass_soft": 10, "accepted": 101, "fail": 40}` — `/offline` is `pass DOM match` for
+anon, host and admin.
 
 ## The other ten rows are not auth pages
 
@@ -68,3 +70,14 @@ Anon renders are already at parity (login 7441/7433 bytes, signup 6993/6922, lin
 1. (2012) Python's dashboard headline is the phone text "All done. Nothing needs you today."
    while Go prints `needs_you.calm` ("All clear for now.") — which string is canonical for the
    desktop heading? Both exist in the Python i18n table; the audit compares the rendered text.
+
+## Also closed in this branch (verified in the same run)
+
+| Path | Rows | Change |
+|---|---|---|
+| `/p/{slug}/thanks` | 3 | booking shell carries the command palette + shortcuts dialogs (base.html renders them on every page) |
+| `/booking-sites` | 2 | `booking_sites.title` defined (Python's block title is the h1) |
+| `/apartments/{id}/booking-site` | 1 | back label `payments.page.title`, apartment name as the meta line |
+| `/apartments/{id}/guide/questions` | 1 | one `Guest questions` header, no "nothing waiting" line when there are no questions, `Guest guide` action |
+
+Running total: 48 -> 40 fail rows, pass 250 -> 260.
