@@ -48,6 +48,54 @@ func TestPaymentsHiddenRoutesBlocked(t *testing.T) {
 	}
 }
 
+func TestPaymentsRetiredRoutesBlocked(t *testing.T) {
+	t.Setenv("UBYHOST_PAYMENTS_RETIRED", "1")
+
+	m := &metrics{counts: map[key]int64{}}
+	mux := newMux(m, nil)
+
+	cases := []struct {
+		method, path string
+		wantHTML     bool
+	}{
+		{http.MethodGet, "/p/slug/book", true},
+		{http.MethodPost, "/p/slug/book", false},
+		{http.MethodPost, "/p/slug/checkout", false},
+		{http.MethodGet, "/p/slug/thanks", true},
+		{http.MethodGet, "/p/slug/b/1/tok", true},
+		{http.MethodGet, "/pay/1/abcd.png", true},
+	}
+	for _, c := range cases {
+		t.Run(c.method+" "+c.path, func(t *testing.T) {
+			req := httptest.NewRequest(c.method, c.path, nil)
+			if c.wantHTML {
+				req.Header.Set("Accept", "text/html")
+			}
+			rec := httptest.NewRecorder()
+			mux.ServeHTTP(rec, req)
+			if rec.Code != http.StatusNotFound {
+				t.Fatalf("status %d, want 404", rec.Code)
+			}
+		})
+	}
+}
+
+func TestPaymentsRetiredDoesNotBlockOpenPaths(t *testing.T) {
+	t.Setenv("UBYHOST_PAYMENTS_RETIRED", "1")
+	m := &metrics{counts: map[key]int64{}}
+	for _, path := range []string{"/p/slug", "/p/slug/feed.ics", "/guide"} {
+		h := m.wrap(path, func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusTeapot)
+		})
+		req := httptest.NewRequest(http.MethodGet, path, nil)
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, req)
+		if rec.Code != http.StatusTeapot {
+			t.Fatalf("%s status %d, want handler to run", path, rec.Code)
+		}
+	}
+}
+
 func TestPaymentsHiddenOffDoesNotGate(t *testing.T) {
 	t.Setenv("UBYHOST_PAYMENTS_HIDDEN", "0")
 	m := &metrics{counts: map[key]int64{}}
