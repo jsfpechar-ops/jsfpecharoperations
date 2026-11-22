@@ -43,6 +43,15 @@ ENV = {
 # once at Python import.
 PIN_ENV = {**ENV, "UBYHOST_GUEST_PIN": "1"}
 PIN_PREFIX = "/l/"
+# The language pass: every page here renders Czech from the shared catalogs, so a
+# string that was never translated shows up as English on one side only. `?lang=` is
+# the signal both stacks read first (guest.py _chosen_language, host_i18n.resolve_language).
+LANG_PASSES = {"cs": "+cs"}
+# Czech over every guest page plus the host pages whose copy is densest. The whole
+# route table in every language would multiply the run; this is the set where a
+# missing key actually shows.
+LANG_EXACT = {"/", "/reservations", "/booking-sites", "/admin", "/login"}
+LANG_PREFIXES = ("/l/", "/guests/", "/reservations/")
 
 DOM_NORM_PATTERNS = (
     r"\d{4}-\d\d-\d\d(?:[T ][0-9:.+-Z]*)?",
@@ -365,6 +374,12 @@ def score_row(route, persona, ps, gs, ph, gh, gh_meta) -> Row:
     return Row(route, persona, ps, gs, "fail-dom", f"len {len(dp)}/{len(dg)} sim={sim:.2f}", "dom-drift")
 
 
+def lang_query(path: str, lang: str) -> str:
+    """The same page, asked for in one language: both stacks read ?lang= first."""
+    sep = "&" if "?" in path else "?"
+    return f"{path}{sep}lang={lang}"
+
+
 def main():
     sys.path.insert(0, str(ROOT / "scripts"))
     import py_routes
@@ -412,6 +427,15 @@ def main():
     with pw.sync_playwright() as p:
         br = p.chromium.launch(headless=True)
         rows = run_pass(br, py_base, go_base, py_persons, go_persons, paths, "")
+        lang_rows = 0
+        for lang, suffix in LANG_PASSES.items():
+            lang_paths = [
+                lang_query(p, lang)
+                for p in paths
+                if p in LANG_EXACT or any(p.startswith(x) for x in LANG_PREFIXES)
+            ]
+            lang_rows += len(lang_paths) * len(py_persons)
+            rows += run_pass(br, py_base, go_base, py_persons, go_persons, lang_paths, suffix)
         pin_paths = [x for x in paths if x.startswith(PIN_PREFIX)]
         if pin_paths:
             # The same guest-link pages with the PIN on: the stranger must get the PIN
@@ -446,6 +470,7 @@ def main():
         "accepted": an,
         "fail": len(fails),
         "pin_paths": len([x for x in paths if x.startswith(PIN_PREFIX)]),
+        "lang_rows": lang_rows,
         "causes": causes,
         "refs": refs,
     }
