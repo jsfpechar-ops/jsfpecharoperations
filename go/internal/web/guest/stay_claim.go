@@ -147,7 +147,7 @@ func (d stayClaimDeps) demoPreview(w http.ResponseWriter, r *http.Request) {
 	}
 	// Brief 1720 owns the full PIN page; until then redirect through the hub path the tests expect.
 	target := guestPath(token, resID) + langQuery(lang)
-	http.Redirect(w, r, target, http.StatusSeeOther)
+	d.redirectLang(w, r, target, lang)
 }
 
 func (d stayClaimDeps) stayOverview(w http.ResponseWriter, r *http.Request) {
@@ -203,7 +203,7 @@ func (d stayClaimDeps) stayOverview(w http.ResponseWriter, r *http.Request) {
 	}
 	if guestCount == 0 {
 		target := guestPath(token, resID) + "/new" + langQuery(lang)
-		http.Redirect(w, r, target, http.StatusSeeOther)
+		d.redirectLang(w, r, target, lang)
 		return
 	}
 	renderGuestPage(w, "stay", lang, claimPage{Token: token, ResID: resID, Stay: stay, Claim: row})
@@ -239,7 +239,7 @@ func (d stayClaimDeps) claimLanding(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if DeviceHoldsClaim(r, resID, row.tokenVersion) {
-		http.Redirect(w, r, guestPath(token, resID)+langQuery(lang), http.StatusSeeOther)
+		d.redirectLang(w, r, guestPath(token, resID)+langQuery(lang), lang)
 		return
 	}
 	_ = apt
@@ -297,14 +297,14 @@ func (d stayClaimDeps) claimConfirm(w http.ResponseWriter, r *http.Request) {
 	}
 	if !ok {
 		target := guestPath(token, resID) + "/claim" + langQueryAmp(lang, "claim_error=1")
-		http.Redirect(w, r, target, http.StatusSeeOther)
+		d.redirectLang(w, r, target, lang)
 		return
 	}
 	dec := guestSaveDecrypter(d.getenv)
 	if _, err := ubyport.RefreshRegistrationCompletedAt(r.Context(), d.pool, resID, dec, d.now); err != nil {
 		log.Printf("stay_claim: refresh registration: %v", err)
 	}
-	http.Redirect(w, r, guestPath(token, resID)+langQuery(lang), http.StatusSeeOther)
+	d.redirectLang(w, r, guestPath(token, resID)+langQuery(lang), lang)
 	rememberClaim(w, r, resID, 0)
 }
 
@@ -452,13 +452,9 @@ func (d stayClaimDeps) pinRedirect(w http.ResponseWriter, r *http.Request, token
 		returnTo = safe
 	}
 	// Hub PIN page honours return_to after verifyPin.
-	target := "/l/" + url.PathEscape(token)
-	if lang == "" || lang == "cs" {
-		target += "?return_to=" + url.QueryEscape(returnTo)
-	} else {
-		target += langQueryAmp(lang, "return_to="+url.QueryEscape(returnTo))
-	}
-	http.Redirect(w, r, target, http.StatusSeeOther)
+	target := "/l/" + url.PathEscape(token) +
+		langQueryAmp(lang, "return_to="+url.QueryEscape(returnTo))
+	d.redirectLang(w, r, target, lang)
 	return true
 }
 
@@ -629,18 +625,38 @@ func guestPath(token string, resID int64) string {
 	return fmt.Sprintf("/l/%s/%d", token, resID)
 }
 
+// langQuery is guest.py _lang_q: the language always rides along, Czech too.
+// Dropping it for "cs" lost the guest's choice on every redirect and link,
+// because a bare URL falls back to the cookie and then Accept-Language.
+// redirectLang is guest.py _with_lang(RedirectResponse(...)): the choice is
+// remembered on the response and carried in the URL, so neither the cookie nor
+// a later bare link can drop the guest back into English.
+func (d stayClaimDeps) redirectLang(w http.ResponseWriter, r *http.Request, loc, lang string) {
+	if lang != "" {
+		WithLang(w, getenvOr(d.getenv), lang)
+	}
+	http.Redirect(w, r, loc, http.StatusSeeOther)
+}
+
+func getenvOr(getenv func(string) string) func(string) string {
+	if getenv != nil {
+		return getenv
+	}
+	return func(string) string { return "" }
+}
+
 func langQuery(lang string) string {
-	if lang == "" || lang == "cs" {
+	if lang == "" {
 		return ""
 	}
-	return "?lang=" + lang
+	return LangQuery(lang, "")
 }
 
 func langQueryAmp(lang, extra string) string {
-	if lang == "" || lang == "cs" {
+	if lang == "" {
 		return "?" + extra
 	}
-	return "?lang=" + lang + "&" + extra
+	return LangQuery(lang, "&"+extra)
 }
 
 func isoNow(t time.Time) string {

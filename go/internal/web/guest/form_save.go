@@ -122,6 +122,7 @@ func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter,
 			return nil
 		}
 		if existing != nil && existing.restrictedAt != "" {
+			WithLang(w, d.getenv, lang)
 			http.Redirect(w, r, GuestLink(token, resID, LangQuery(lang, "")), http.StatusSeeOther)
 			return nil
 		}
@@ -171,6 +172,7 @@ func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter,
 		}
 		if savedID == 0 {
 			_ = guestFormSubmitStayIfComplete(ctx, d.pool, d.getenv, d.now, res.apartmentID, resID)
+			WithLang(w, d.getenv, lang)
 			http.Redirect(w, r, GuestLink(token, resID, LangQuery(lang, "")), http.StatusSeeOther)
 			return nil
 		}
@@ -184,6 +186,7 @@ func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter,
 	if existing == nil {
 		loc = GuestLink(token, resID, "/new"+LangQuery(lang, ""))
 	}
+	WithLang(w, d.getenv, lang)
 	http.Redirect(w, r, loc, http.StatusSeeOther)
 	return nil
 }

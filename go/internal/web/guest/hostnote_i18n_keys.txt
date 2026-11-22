@@ -1,0 +1,6 @@
+# Host copy on a guest link page (guest.py _host_link_note, brief 0231). This is
+# host_i18n copy in the *host's* language, so it is generated from
+# App/app/host_i18n.py — cs, en and vi — not from the guest catalog above, whose
+# languages (cs, de, en, es, fr, uk) are the guest's own.
+workflow.link.host_note
+workflow.link.host_note_none
