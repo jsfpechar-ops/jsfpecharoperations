@@ -222,16 +222,16 @@ type guideGroup struct {
 
 // guideIndexData is the context of guide_index.tmpl.
 type guideIndexData struct {
-	Apartment     *guideApartment
-	Base          string
-	Groups        []guideGroup
-	TopicOptions  [][]string
-	Progress      guideProgress
-	NextID        int64
-	QuickNext     string
-	LeonOffer     bool
-	LeonState     string
-	ImportOn      bool
+	Apartment        *guideApartment
+	Base             string
+	Groups           []guideGroup
+	TopicOptions     [][]string
+	Progress         guideProgress
+	NextID           int64
+	QuickNext        string
+	LeonOffer        bool
+	LeonState        string
+	ImportOn         bool
 	ImportLeft       int
 	ImportBusy       bool
 	ImportFirst      bool
@@ -243,9 +243,9 @@ type guideIndexData struct {
 	CodesLeftOutHTML template.HTML
 	GoAccessPage     bool
 	Imports          []guideImportRow
-	QuestionsOpen int64
-	Usage         guideUsage
-	UsageLangs    string
+	QuestionsOpen    int64
+	Usage            guideUsage
+	UsageLangs       string
 }
 
 // index is GET /apartments/{id}/guide.

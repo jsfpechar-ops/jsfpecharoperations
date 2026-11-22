@@ -8,11 +8,11 @@ import (
 
 func TestGuidePublicURLRefusals(t *testing.T) {
 	cases := map[string]string{
-		"http://www.example.test/p":        guidePublicURLErr,
-		"https://h.cz:8443/x":              guidePublicURLErr,
-		"https://u:p@h.cz/p":               guidePublicURLErr,
-		"https://192.168.1.1/p":            guidePublicURLErr,
-		"https://h.cz/p\u00e9":             guidePublicURLErr,
+		"http://www.example.test/p":                 guidePublicURLErr,
+		"https://h.cz:8443/x":                       guidePublicURLErr,
+		"https://u:p@h.cz/p":                        guidePublicURLErr,
+		"https://192.168.1.1/p":                     guidePublicURLErr,
+		"https://h.cz/p\u00e9":                      guidePublicURLErr,
 		"https://h.cz/" + strings.Repeat("a", 2040): guidePublicURLErr,
 	}
 	for raw, want := range cases {

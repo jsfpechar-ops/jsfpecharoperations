@@ -5,7 +5,7 @@ import os
 
 os.environ.setdefault("UBYHOST_APIFY_TOKEN", "harness-apify-token")
 
-import psycop
+import psycopg
 import pytest
 
 pytest_plugins = ("tests.go_web_harness",)

@@ -66,9 +66,9 @@ func TestGuideImportRoute(t *testing.T) {
 
 	// nothing, one bad link, two links of one source: nothing is queued
 	for name, form := range map[string]url.Values{
-		"empty":       {},
-		"blank":       {"booking_url": {"  "}},
-		"bad link":    {"booking_url": {"https://evil.example/x"}},
+		"empty":          {},
+		"blank":          {"booking_url": {"  "}},
+		"bad link":       {"booking_url": {"https://evil.example/x"}},
 		"bad public url": {"public_url": {"https://h.cz:8443/x"}},
 	} {
 		loc := post(owner, form)
