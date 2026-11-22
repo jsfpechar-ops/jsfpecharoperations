@@ -65,11 +65,17 @@ func TestGuestFormCSRFRoundTrip(t *testing.T) {
 
 	type claimState string
 	states := []struct {
-		name  string
-		state claimState
+		name    string
+		state   claimState
+		getPath func(tok string, resID int64) string
 	}{
-		{"unclaimed", claimStateUnclaimed},
-		{"claimed", claimStateClaimed},
+		{"unclaimed", claimStateUnclaimed, func(tok string, resID int64) string {
+			return fmt.Sprintf("/l/%s/%d?lang=en", tok, resID)
+		}},
+		{"claimed", claimStateClaimed, func(tok string, resID int64) string {
+			// Claimed stays no longer show the party form on overview; claim confirm still mints CSRF.
+			return fmt.Sprintf("/l/%s/%d/claim?lang=en", tok, resID)
+		}},
 	}
 
 	for _, st := range states {
@@ -87,7 +93,7 @@ func TestGuestFormCSRFRoundTrip(t *testing.T) {
 			mustExecGuest(t, ctx, pool, `INSERT INTO reservation_claim (reservation_id, state, token_hash, token_version, created_at, updated_at)
 				VALUES ($1, $2, '', 1, $3, $3) ON CONFLICT (reservation_id) DO UPDATE SET state = EXCLUDED.state`, resID, string(st.state), stamp)
 
-			getPath := fmt.Sprintf("/l/%s/%d?lang=en", tok, resID)
+			getPath := st.getPath(tok, resID)
 			getReq := httptest.NewRequest(http.MethodGet, getPath, nil)
 			getRec := httptest.NewRecorder()
 			mux.ServeHTTP(getRec, getReq)
