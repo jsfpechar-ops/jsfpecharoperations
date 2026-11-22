@@ -36,11 +36,11 @@ func (s LeonStore) answers(ctx context.Context, apartmentID int64) (map[string]s
 	return out, rows.Err()
 }
 
-// GuestCards is guide_facts.for_guest(apartment_id, "booked", "en"): what a
-// booked guest may read, empty until the guide is live. A built-in card the host
+// GuestCards is guide_facts.for_guest(apartment_id, level, "en"): what a
+// guest at that door may read, empty until the guide is live. A built-in card the host
 // has not written yet reaches guests with its quick-answer lines only (a draft
 // is never shown).
-func (s LeonStore) GuestCards(ctx context.Context, apartmentID int64) ([]LeonCard, error) {
+func (s LeonStore) GuestCards(ctx context.Context, apartmentID int64, level string) ([]LeonCard, error) {
 	items, err := s.Items(ctx, apartmentID)
 	if err != nil || !LeonProgressOf(items).Live {
 		return nil, err
@@ -52,7 +52,11 @@ func (s LeonStore) GuestCards(ctx context.Context, apartmentID int64) ([]LeonCar
 	lines := LeonFactLines(answers)
 	var out []LeonCard
 	for _, it := range items {
-		if it.Visibility != "everyone" && it.Visibility != "booked" {
+		if level == "booked" {
+			if it.Visibility != "everyone" && it.Visibility != "booked" {
+				continue
+			}
+		} else if it.Visibility != "everyone" {
 			continue
 		}
 		var mine []string
@@ -132,7 +136,7 @@ func (s LeonStore) TryReply(ctx context.Context, model HavelModel, a LeonApartme
 		return out("cap", "", false)
 	}
 	redacted := LeonRedact(text)
-	cards, err := s.GuestCards(ctx, a.ID)
+	cards, err := s.GuestCards(ctx, a.ID, "booked")
 	if err != nil {
 		return LeonTryResult{}, err
 	}

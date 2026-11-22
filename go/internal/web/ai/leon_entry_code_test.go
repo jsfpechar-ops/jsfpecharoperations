@@ -39,7 +39,7 @@ func TestLeonPromptNeverHoldsEntryCodes(t *testing.T) {
 			`UPDATE apartment SET entry_code_enc = '`+leonTestCode1+`', entry_code_label = 'gate' WHERE id = 11`,
 		)
 		store := LeonStore{HavelStore{Pool: pool, Env: havelMapEnv(nil)}}
-		cards, err := store.GuestCards(context.Background(), 11)
+		cards, err := store.GuestCards(context.Background(), 11, "booked")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -73,14 +73,14 @@ func TestLeonPromptNeverHoldsEntryCodes(t *testing.T) {
 			`UPDATE apartment SET entry_code_enc = '`+leonTestCode2+`' WHERE id = 11`,
 		)
 		store := LeonStore{HavelStore{Pool: pool, Env: havelMapEnv(nil)}}
-		cards, err := store.GuestCards(context.Background(), 11)
+		cards, err := store.GuestCards(context.Background(), 11, "booked")
 		if err != nil {
 			t.Fatal(err)
 		}
-		before := leonCharacter
+		before := leonCharacterLive()
 		blocks := LeonSystemBlocks(cards, "Flat")
 		if blocks[0] != before {
-			t.Fatal("seeding codes or cards must not change the embedded character prompt")
+			t.Fatal("seeding codes or cards must not change the live character prompt")
 		}
 		if !strings.Contains(blocks[1], leonTestCode1) {
 			t.Fatal("host-written card text may still contain a code the host chose to publish")
