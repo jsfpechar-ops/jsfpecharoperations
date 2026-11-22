@@ -52,7 +52,7 @@ func Schema() json.RawMessage {
 	return b
 }
 
-var platform = map[string]string{"booking": "Booking.com", "airbnb": "Airbnb"}
+var platform = map[string]string{"booking": "Booking.com", "airbnb": "Airbnb", "url": "public page"}
 
 var langLine = map[string]string{"cs": "Write the cards in Czech.", "en": "Write the cards in English."}
 
@@ -60,6 +60,7 @@ var langLine = map[string]string{"cs": "Write the cards in Czech.", "en": "Write
 var fieldOrder = []string{
 	"name", "title", "propertyType", "roomType", "address", "checkIn", "checkOut",
 	"description", "subDescription", "houseRules", "amenities", "highlights", "locationDescriptions",
+	"text",
 }
 
 // Python's \s, \w and \d are Unicode aware; RE2's are ASCII. These classes

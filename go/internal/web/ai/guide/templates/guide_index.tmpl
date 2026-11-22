@@ -11,6 +11,8 @@
 <input type="hidden" name="_csrf" value="{{csrf}}">
 {{if .WantBooking}}{{ui_field "guide-import-booking" (t "guest_guide.import.booking_url") (kv "name" "booking_url" "type" "url" "placeholder" "https://www.booking.com/hotel/cz/..." "attrs" (safe `maxlength="2048" inputmode="url" autocomplete="off"`))}}{{end}}
 {{if .WantAirbnb}}{{ui_field "guide-import-airbnb" (t "guest_guide.import.airbnb_url") (kv "name" "airbnb_url" "type" "url" "placeholder" "https://www.airbnb.com/rooms/..." "attrs" (safe `maxlength="2048" inputmode="url" autocomplete="off"`))}}{{end}}
+{{if .WantPublicURL}}{{ui_field "guide-import-public" (t "guest_guide.import.public_label") (kv "name" "public_url" "type" "url" "help" (t "guest_guide.import.public_help") "placeholder" "https://..." "attrs" (safe `maxlength="2048" inputmode="url" autocomplete="off"`))}}{{end}}
+{{if .CodesLeftOutHTML}}{{ui_banner "attention" .CodesLeftOutHTML}}{{end}}
 <div class="ui-form-actions">{{ui_button (t "guest_guide.import.button") "secondary" (kv "type" "submit" "icon_name" "download")}}</div>
 </form>
 {{end}}
