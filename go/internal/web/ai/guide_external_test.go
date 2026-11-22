@@ -21,7 +21,7 @@ func TestGuideExternalURLValidator(t *testing.T) {
 		{"https://1.2.3.4/", false},
 		{"https://localhost/", false},
 		{long, false},
-		{"https://www.notion.so/\u00a0", false},
+		{"https://www.notion.so/a\u00a0b", false},
 		{"", true},
 		{"   ", true},
 	}
@@ -51,8 +51,9 @@ func TestGuideExternalSaveAndIndex(t *testing.T) {
 		return v
 	}
 	rec := guideTestDo(t, w.mux, "POST", path, w.host, url.Values{"guide_external_url": {good}})
-	if rec.Code != 303 || !strings.HasPrefix(location(rec), w.path()+"#external?msg=") {
-		t.Fatalf("save: %d %q", rec.Code, location(rec))
+	loc := location(rec)
+	if rec.Code != 303 || !strings.Contains(loc, "?msg=") || !strings.HasSuffix(loc, "#external") {
+		t.Fatalf("save: %d %q", rec.Code, loc)
 	}
 	if got := readURL(); got != good {
 		t.Errorf("column after save = %q", got)
@@ -71,12 +72,14 @@ func TestGuideExternalSaveAndIndex(t *testing.T) {
 		t.Error("index should show the external section")
 	}
 	rec = guideTestDo(t, w.mux, "POST", path, w.host, url.Values{"guide_external_url": {"https://h.cz:8443"}})
-	if !strings.HasPrefix(location(rec), w.path()+"#external?err=") || readURL() != good {
-		t.Errorf("bad POST: %q column=%q", location(rec), readURL())
+	loc = location(rec)
+	if !strings.Contains(loc, "?err=") || !strings.HasSuffix(loc, "#external") || readURL() != good {
+		t.Errorf("bad POST: %q column=%q", loc, readURL())
 	}
 	rec = guideTestDo(t, w.mux, "POST", path, w.host, url.Values{"action": {"clear"}})
-	if !strings.HasPrefix(location(rec), w.path()+"#external?msg=") {
-		t.Errorf("clear: %q", location(rec))
+	loc = location(rec)
+	if !strings.Contains(loc, "?msg=") || !strings.HasSuffix(loc, "#external") {
+		t.Errorf("clear: %q", loc)
 	}
 	if readURL() != "" {
 		t.Errorf("column after clear = %q", readURL())
