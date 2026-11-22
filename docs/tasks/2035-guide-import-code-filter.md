@@ -1,6 +1,6 @@
 # 2035: Code filter for imported guide text — pure Go function with table tests
 
-Status: todo (runnable now; no dependency, no caller yet)
+Status: review
 Depends on: none | Base commit: fill from `git rev-parse --short HEAD` | Branch: task/2035-guide-import-code-filter
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B (privacy filter, no UI)
 
