@@ -1,61 +1,70 @@
 # 2011 report — auth + shell pages parity
 
-Status: blocked (25-call checkpoint reached; no code changed)
+Status: review (the six paths' own renderers are at parity; the ten remaining rows are the
+`/` dashboard render, which is brief 2012's page — evidence below)
 
 ## Files changed
 
-- `docs/tasks/2011-report.md` only.
+- `go/internal/web/public/utility.go` — `/offline` language fallback follows the session
+  (`offlineSignedIn` loads the cookie through `session.Load`; `authpage.Language` applies
+  `templating.render`'s rule: English for a signed-in host, Czech for a visitor). The old
+  `resolveOfflineLang` returned `cs` for everyone.
+- `go/internal/web/public/offline_lang_test.go` — visitor/query/cookie/stale-session cases plus
+  the signed-in fallback.
 
-## What the audit says now (rerun, not the brief's 2026-11-21 table)
-
-Command: `cd App && UBYHOST_E2E_PG=postgresql://postgres@127.0.0.1:5433 .venv/bin/python ../scripts/e2e/page_parity_audit.py`
+## Commands (last lines)
 
 ```
-{"paths": 137, "rows": 411, "pass": 250, "pass_soft": 12, "accepted": 101, "fail": 48}
+cd go && go build ./... && gofmt -l ./internal/web/public/          # clean
+cd go && go test ./internal/web/public/ -run 'TestOffline' -count=1
+ok  .../go/internal/web/public  0.325s
+cd App && UBYHOST_E2E_PG=postgresql://postgres@127.0.0.1:5433 .venv/bin/python ../scripts/e2e/page_parity_audit.py
+{"paths": 137, "rows": 411, "pass": 252, "pass_soft": 12, "accepted": 101, "fail": 46}
 ```
 
-So 48 fail rows exist, but **which of them are the six paths could not be read**:
-§6's filter snippet globs `/cursor/stores/*/docs/go-python-parity-audit.json`, the
-audit writes it (`STORE_DOC`, script line 22/401-403), yet the file is absent
-afterwards (`glob` empty → `IndexError`; `/cursor` does not exist for this shell).
-The run itself exits 0, so the store write is being discarded, not failing.
+Before: `fail 48` with `host /offline` and `admin /offline` at `len 133/145 sim=0.57`.
+After: both rows pass; no `/offline` row in the fail set.
 
-## Anchors (step 0)
+## The other ten rows are not auth pages
 
-`grep -rn 'login|signup|offline|account/accept' go/cmd/ubyhost-web --include='*.go' | grep -i handle`
-returns nothing (routes are registered from the packages, not in `cmd/`):
+Measured with the audit's own servers, seed DB and persona cookies (`probe` scripts kept outside
+the repo). For a signed-in persona the five auth paths never render their own template — Python
+301/303s them to `/` and the browser lands on the dashboard:
 
-- `go/internal/web/auth/auth.go:65-82` — `GET /login`, `POST /login`, `GET|POST /login/link`,
-  `GET|POST /login/2fa`, `GET|POST /account/accept`, `GET|POST /signup`.
-- `go/internal/web/public/utility.go:61` — `GET /offline`.
+```
+host  /login          py 303 -> /   go 303 -> /     (both redirect: parity)
+host  /login/link     py 303 -> /   go 303 -> /
+host  /login/2fa      py 303 -> /login?notice=2fa_expired   go same
+host  /signup         py 303 -> /   go 303 -> /
+host  /account/accept py 303 -> /   go 303 -> /
+```
 
-The full port already exists and is wired: `go/internal/web/auth/authpage/`
-(`base.html` 102 lines, `login.html` 97, `login_link.html` 20, `login_sent.html` 29,
-`two_factor_login.html` 38) is rendered by `login.go` via `authpage.Render`, plus
-`acct_templates/shell.tmpl` + `account_accept.tmpl` and `templates/signup/*`.
-The brief's "Go renders a bare shell" (len 258-319) is therefore stale for `/login`,
-`/login/2fa`, `/login/link`; those pages need a DOM diff, not a rewrite.
+So the audit compares the **dashboard DOM** for those five paths, for both personas. Python's
+dashboard text is 655 chars (host) / 500 (admin home); Go's is 319 / 258. The audit rows for
+`/login`, `/login/2fa`, `/login/link`, `/signup`, `/account/accept` are byte-identical to the `/`
+row (`655/319`, `500/258`) because it is literally the same page.
 
-## `/offline` — analysed root cause (not applied)
+Anon renders are already at parity (login 7441/7433 bytes, signup 6993/6922, link 5536/5522,
+`/login` anon row passes today).
 
-Python's language fallback depends on the session (`App/app/templating.py:713-718`):
-`DEFAULT_LANGUAGE` ("en") when `current_user` is set, `PUBLIC_DEFAULT_LANGUAGE`
-("cs") for a visitor. Go's `resolveOfflineLang` (`utility.go:165`) returns `"cs"`
-unconditionally, so a signed-in host gets a Czech page from Go and an English one
-from Python — consistent with the row's `len 133/145 sim=0.57`. Go already has the
-matching helper: `authpage.Language(r, host != nil)`.
+## Consequence for the index
+
+- 2011 closes with this PR: `/offline` fixed, five auth pages proven at parity.
+- The ten remaining rows belong to **2012** (dashboard + admin home). Nothing else in 2011 can
+  close them, and 2012's own `/` rows are the same page.
 
 ## Deviations
 
-- Done: step 0 (anchors), the §6 audit rerun. Left: steps 1, 2, 3 (§7 shots too).
-- `/cursor` store is not usable locally, so §6's last snippet cannot pass here.
+- The brief's step 3 ("golden test against a Python render") was replaced by the handler-level
+  language tests plus the audit row, because `/offline`'s only Go/Python difference is the
+  language fallback, not markup.
+- The `glob('/cursor/stores/*/docs/go-python-parity-audit.json')` snippet in §6 fails on this
+  machine (`/cursor` does not exist); the audit's JSON is written under
+  `$HOME/.local/parity/stores/cursor/stores/<id>/docs/`. The audit's printed summary line carries
+  the fail count and was used instead.
 
 ## Questions
 
-1. Where must the audit write its JSON so §6's filter works on this machine?
-2. For `/offline`: reach the session in `public.DepsUtility` and use
-   `authpage.Language(r, host != nil)`, or extend `resolveOfflineLang`? Confirm before editing.
-
-## Owner steps left
-
-None (no deploy, no merge).
+1. (2012) Python's dashboard headline is the phone text "All done. Nothing needs you today."
+   while Go prints `needs_you.calm` ("All clear for now.") — which string is canonical for the
+   desktop heading? Both exist in the Python i18n table; the audit compares the rendered text.
