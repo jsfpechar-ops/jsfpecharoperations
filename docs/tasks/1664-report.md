@@ -4,7 +4,7 @@ Status: review
 
 ## Files
 
-`guide_external.go`, `guide_index.go`, `guide_index.tmpl`, `guide/i18n_keys.txt`, `guide/i18n.json`, `host_i18n.py`, `host_vi_i18n.py`, `guide_external_test.go`, `test_go_pages_layout_lint_browser.py`.
+`guide_external.go`, `guide_index.go`, `guide_index.tmpl`, `guide/i18n_keys.txt`, `guide/i18n.json`, `stays/i18n.json`, `host_i18n.py`, `host_vi_i18n.py`, `guide_external_test.go`, `test_go_pages_layout_lint_browser.py`.
 
 ## Commands (last 5 lines)
 
@@ -12,37 +12,32 @@ Status: review
 
 **go vet**: (clean)
 
-**go test Guide|Route**: `ok .../internal/web/ai 6.812s` / `ok .../cmd/ubyhost-web (cached)`
+**go test ai + ubyhost-web**: `ok .../ai 24.410s` / `ok .../ubyhost-web 2.577s`
 
 **go_host_i18n.py --check**: (exit 0)
 
-**pytest i18n/copy**: `32 passed, 1 warning in 1.86s`
+**pytest i18n/copy**: `32 passed, 1 warning in 1.60s`
 
-**pytest layout lint**: `4 passed, 1 warning in 24.56s`
-
-**context_lint.py**: `context lint: OK`
+**pytest layout lint** (`/tmp/shots1664b`): `4 passed, 1 warning in 23.15s`
 
 ## §7 acceptance
 
-- [x] Validator/handler tests; POST route via `guideAdd`.
+- [x] Validator/handler tests; domain line assertion on `data-guide-external`.
 - [x] Audit detail `host=www.notion.so` only.
 - [x] Catalog, i18n/copy rows green.
-- [x] Harness 0 findings, 0 skipped; nine external screenshots.
-- [x] Screenshot notes below; design-system: host settings lane, `ui-field`/`ui-form-actions`, ghost remove, help tip, flash banner on error.
+- [x] Harness 0 findings, 0 skipped.
+- [x] Screenshot notes below; Remove link uses `ui_button` **quiet**.
 
-## Screenshots (`/opt/cursor/artifacts/1664/`)
+## Screenshots (`/opt/cursor/artifacts/1664/` — review pass)
 
-**External guide** — 390: empty field and Save link below cards; 768: same plus domain line and Remove link after save; 1280: wide table, external section with error flash and port example in banner.
+**Saved 390:** Subline reads “Guests see a link to www.notion.so.”; Save link secondary, Remove link quiet text button.
 
-**Saved** — 390: domain subline “www.notion.so” and Remove link; 768/1280: section sits between Leon-off row and Add card, actions aligned.
-
-**Error** — 390/768/1280: red flash above form, invalid port URL still in field.
+**Saved 1280:** Same copy at desktop width; domain in subline, quiet Remove beside Save link.
 
 ## Deviations
 
-- Clear uses plain `<button class="ui-btn ui-btn-ghost">` (`ui_button` has no `name`/`value`).
 - `flash.error.guide_external_url` ends `….` not `…` so `test_flash_literals` passes (brief had ellipsis only).
-- Redirect `?msg=` / `?err=` before `#external` matches `hostweb.Back` (tests assert suffix `#external`).
+- Redirect `?msg=` / `?err=` before `#external` matches `hostweb.Back`.
 
 ## Blocked
 
