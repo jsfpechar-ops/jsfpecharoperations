@@ -1,6 +1,6 @@
 # 2038: Go guide pages — fix the two 1668 layout-lint findings
 
-Status: todo
+Status: review
 Depends on: 1668 (same branch) | Base commit: branch `cursor/1668-go-layout-lint-harness-992e` | Branch: same
 Executor: one session | Tier B (host UI, Go only)
 
