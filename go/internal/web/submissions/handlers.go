@@ -67,7 +67,7 @@ func detailHandler(pool *pgxpool.Pool, getenv func(string) string, now func() ti
 		}
 		id, err := strconv.ParseInt(r.PathValue("submission_id"), 10, 64)
 		if err != nil {
-			http.NotFound(w, r)
+			hostweb.NotFoundPage(w, r)
 			return
 		}
 		lang := hostweb.Lang(r)

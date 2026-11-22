@@ -100,7 +100,7 @@ func Handler(pool *pgxpool.Pool, getenv func(string) string, now func() time.Tim
 			return
 		}
 		if !known {
-			http.NotFound(w, r)
+			hostweb.NotFoundPage(w, r)
 			return
 		}
 		data := &pageData{Group: group}

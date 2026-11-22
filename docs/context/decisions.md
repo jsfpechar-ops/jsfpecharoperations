@@ -1,11 +1,5 @@
 # Decisions
 Append-only.
-- 2026-10-30 [workflow/db/deps] PostgreSQL kit, psycopg3 + pgBackRest approved; manual cutover | 0455–0456
-- 2026-10-31 Postgres (#592), then Go G1-G6, per-feature rollback, no load test; Haiku implements | owner | [plan v4](../plans/postgresql/migration-plan-v4.md)
-- 2026-10-31 Every change lean: no dead code or extras; dead code in its own commit | owner | plan v4
-- 2026-10-31 Postgres/Go migration gates waived; bar unchanged (backup, rehearsal, hashes, both DBs green, rollback); D1-D4 = 0463-0465. [workflow] Pre-merge diff vs brief Files | owner | 0463, #606
-- 2026-10-31 [workflow] `test-postgres-full` (app suite on PG 17) gates every merge; SQLite-file tests carry `sqlite_only` | orch | 0462
-- 2026-11-01 Host redesign: vendored Hotwire Turbo (MIT) for page-body swaps; owner OKs mockups first | owner | #614
 - 2026-11-01 Go: module go/, stdlib, pgx v5, go-ntlmssp v0.1.1, go-qrcode (11-02) | owner (waiver) | 0474, 0481, 0684
 - 2026-11-02 Signup box: unticked marketing opt-in; lawyer to confirm | owner | 0836
 - 2026-11-02/03 | RÚIAN address autofill, server-side; Try it rehearsal optional (Skip, Leave) | owner | 0884
@@ -68,3 +62,4 @@ Append-only.
 - 2026-11-20 [workflow] CI/GitHub hardening: deploy job timeouts, full-history gitleaks, PR security/deploy checklist, settings runbook; branch protection = owner step. Brief 1866 | owner
 - 2026-11-21 [ui] Dashboard "What needs you": no police line for a property without UbyPort login; setup line/onboarding banner is the CTA. Python fix under go-first exception 3; Go port carries the rule + collapses many overdue lines into one. Brief 2000.
 - 2026-11-21 [ux] Invoice builder Wolt-simple (narrow lane, flat cards, stacked item rows); Generate invoice moves from stay ⋮ menu to stay header, phone too. Brief 2001 | owner
+- 2026-11-22 [go] Host HTML 404s use `hostweb.NotFoundPage` (branded when Accept HTML); bare `http.NotFound` / plain `Not found.` only for JSON APIs, guest, booking, static, and intentional plain bodies (e.g. alert). Trailing slash: mux-wide `CanonicalSlash` (2002). Pin in 2003. | orch

@@ -254,7 +254,7 @@ func QuickEditHandler(d postDeps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := strconv.ParseInt(r.PathValue("reservation_id"), 10, 64)
 		if err != nil {
-			http.NotFound(w, r)
+			hostweb.NotFoundPage(w, r)
 			return
 		}
 		c := d.enterPost(w, r)
@@ -322,7 +322,7 @@ func RemoveEmptySlotHandler(d postDeps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := strconv.ParseInt(r.PathValue("reservation_id"), 10, 64)
 		if err != nil {
-			http.NotFound(w, r)
+			hostweb.NotFoundPage(w, r)
 			return
 		}
 		c := d.enterPost(w, r)
@@ -389,7 +389,7 @@ func ArchiveHandler(d postDeps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := strconv.ParseInt(r.PathValue("reservation_id"), 10, 64)
 		if err != nil {
-			http.NotFound(w, r)
+			hostweb.NotFoundPage(w, r)
 			return
 		}
 		c := d.enterPost(w, r)
@@ -430,7 +430,7 @@ func UnarchiveHandler(d postDeps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := strconv.ParseInt(r.PathValue("reservation_id"), 10, 64)
 		if err != nil {
-			http.NotFound(w, r)
+			hostweb.NotFoundPage(w, r)
 			return
 		}
 		c := d.enterPost(w, r)
@@ -471,7 +471,7 @@ func DeleteDemoHandler(d postDeps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := strconv.ParseInt(r.PathValue("reservation_id"), 10, 64)
 		if err != nil {
-			http.NotFound(w, r)
+			hostweb.NotFoundPage(w, r)
 			return
 		}
 		c := d.enterPost(w, r)

@@ -45,7 +45,7 @@ func UpdateHandler(pool *pgxpool.Pool, getenv func(string) string, now func() ti
 		// /reservations/submit-ready matches this pattern in Go and must never save.
 		id, err := strconv.ParseInt(r.PathValue("reservation_id"), 10, 64)
 		if err != nil {
-			http.NotFound(w, r)
+			hostweb.NotFoundPage(w, r)
 			return
 		}
 		at := now()

@@ -198,7 +198,7 @@ func guestEditServerError(w http.ResponseWriter, err error) {
 func parseResGuestID(w http.ResponseWriter, r *http.Request, key string) (int64, bool) {
 	id, err := strconv.ParseInt(r.PathValue(key), 10, 64)
 	if err != nil {
-		http.NotFound(w, r)
+		hostweb.NotFoundPage(w, r)
 		return 0, false
 	}
 	return id, true
@@ -439,7 +439,7 @@ func guestEditGetHandler(d guestEditDeps) http.HandlerFunc {
 			return
 		}
 		if !found {
-			http.NotFound(w, r)
+			hostweb.NotFoundPage(w, r)
 			return
 		}
 		res, found, err := c.loadReservation(r.Context(), guest.reservationID, true)

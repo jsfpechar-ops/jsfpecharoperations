@@ -35,3 +35,14 @@ Moved from [known-issues](../context/known-issues.md) on 2026-11-11 (compaction)
 - K-PG-FK: goose 00004/11/13 FKs not DEFERRABLE (1263).
 - K-HB-HAND: housebook says "Not yet sent" for a hand-filed guest (Python quirk; 1704a test).
 - K-BLOCKED-PAGE (1859b): BlockedPage inline main styles; app.css later.
+
+# Compacted 2026-11-22 (2003 brief session)
+| K-S12 | Low accepted | routes/admin.py update_entity | Bank edit allowed on a stale session | owner 11-13 |
+| K-S13 | Low accepted | payments.py, paylink_routes.go | Pay link live after expiry/paid | owner 11-13 |
+| K-I08 | Low open | stay_fee.py _day_liability | "Charge" files a minor with a blank reason | P A08 |
+| K-O04 | Low open | requirements.txt, Caddyfile | dev deps use >=; no HSTS includeSubDomains | P A59, A61 |
+| K-ML02 | Low open | App/app/host_i18n.py | Unused `login.password*` i18n keys | magic-link HANDOFF |
+| K-ML03 | Low open | UbyHost_workplan/compliance/01, 03 | Compliance docs partly updated; lawyer review due | task 0005 |
+| K-ML04 | Low open | login limit | Address 3/15 min budget exhaustible; account-only limits leak accounts | 0006 |
+| K-D02 | Low open | door_codes `_handle_moves` | Move replace: gateway retried every 15 min, uncapped; guest keeps old PIN | 0037 |
+| K-T01 | Low open | Tests | Order-dependent tests (also 3 in test_host_i18n.py) | 0080 |

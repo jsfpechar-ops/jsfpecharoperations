@@ -97,3 +97,11 @@ Moved from docs/context/decisions.md during compaction.
 - 2026-11-02 OCR: Tesseract only, local, MRZ check digits, Max only; band crop; Paddle if ocr_readrate <90% | test_doc_ocr
 - 2026-10-29 Operator can extend trials 1-365 days | 0448
 - 2026-10-29 Stripe Accounts v2, responsibilities immutable, companies via business_type (0437); Connect: full Dashboard + collectors, Express rejected (0439) | owner
+
+# Compacted 2026-11-22 (2003 brief session)
+- 2026-10-30 [workflow/db/deps] PostgreSQL kit, psycopg3 + pgBackRest approved; manual cutover | 0455–0456
+- 2026-10-31 Postgres (#592), then Go G1-G6, per-feature rollback, no load test; Haiku implements | owner | [plan v4](../plans/postgresql/migration-plan-v4.md)
+- 2026-10-31 Every change lean: no dead code or extras; dead code in its own commit | owner | plan v4
+- 2026-10-31 Postgres/Go migration gates waived; bar unchanged (backup, rehearsal, hashes, both DBs green, rollback); D1-D4 = 0463-0465. [workflow] Pre-merge diff vs brief Files | owner | 0463, #606
+- 2026-10-31 [workflow] `test-postgres-full` (app suite on PG 17) gates every merge; SQLite-file tests carry `sqlite_only` | orch | 0462
+- 2026-11-01 Host redesign: vendored Hotwire Turbo (MIT) for page-body swaps; owner OKs mockups first | owner | #614

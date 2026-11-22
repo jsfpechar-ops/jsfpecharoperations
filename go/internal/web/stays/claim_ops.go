@@ -182,7 +182,7 @@ func RegisterClaimOps(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string
 func parseClaimID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	id, err := strconv.ParseInt(r.PathValue("reservation_id"), 10, 64)
 	if err != nil {
-		http.NotFound(w, r)
+		hostweb.NotFoundPage(w, r)
 		return 0, false
 	}
 	return id, true

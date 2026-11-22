@@ -224,7 +224,7 @@ func pathID(w http.ResponseWriter, r *http.Request, name string) (int64, bool) {
 	raw := r.PathValue(name)
 	n, err := strconv.ParseInt(raw, 10, 64)
 	if err != nil || raw == "" || raw[0] == '+' {
-		http.NotFound(w, r)
+		hostweb.NotFoundPage(w, r)
 		return 0, false
 	}
 	return n, true

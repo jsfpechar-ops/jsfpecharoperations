@@ -24,7 +24,7 @@ func DevUIHandler(pool *pgxpool.Pool, getenv func(string) string, now func() tim
 			return
 		}
 		if h.Account.Role != "admin" {
-			http.NotFound(w, r)
+			hostweb.NotFoundPage(w, r)
 			return
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")

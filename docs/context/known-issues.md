@@ -43,11 +43,8 @@
 | K-S05 | Med unverified | admin console | Admin console shows working guest claim links | F W2.4 |
 | K-S10 | High decision | server .env | Owner: confirm UBYHOST_SECRET_KEY rotated after history leak | AR-01 |
 | K-S11 | Med owner step | server .env | Run pg-app-role.sh, then set ubyhost_app in the DSN; remove row when done | 1206 |
-| K-S12 | Low accepted | routes/admin.py update_entity | Bank edit allowed on a stale session | owner 11-13 |
-| K-S13 | Low accepted | payments.py, paylink_routes.go | Pay link live after expiry/paid | owner 11-13 |
 | K-S14 | Med owner | Caddyfile.cloudflare | Any Cloudflare account reaches origin | 1208 zone AOP; owner sets enforce |
 | K-S15 | Med owner | GitHub environments | Confirm `production` deploys only from `main` | #966 |
-| K-I08 | Low open | stay_fee.py _day_liability | "Charge" files a minor with a blank reason | P A08 |
 | K-I09 | Med unverified | invoices.py:validate_for_issue | Buyer address unchecked; verify VAT invoice requirements | UI §3 |
 | K-U01 | High decision | product.html:49,113, landing.html:72,189 | CTAs dead-end at /login while sign-up is off | UX UX-9 |
 | K-U02 | Med unverified | routes/guest.py PIN gate | A wrong PIN loses the #c= claim secret | UX M-3 |
@@ -62,18 +59,14 @@
 | K-O01 | High open | server crontab | Backup and off-site crons are not in the repo; verify on server | AR-04 |
 | K-O02 | Med open | docker-compose.yml:14 | Floating image tag; check rollback on real deploy | AR-03 |
 | K-O03 | Med open | reporting.py:702 dashboard_rows | N+1 queries and double decrypts | P A50-51 |
-| K-O04 | Low open | requirements.txt, Caddyfile | dev deps use >=; no HSTS includeSubDomains | P A59, A61 |
 | K-O05 | Med open | db.py periodic scans | Scans cover all stays ever; cost grows with retention | AR-43 |
 | K-O06 | Med open | requirements.lock | Lock behind requirements.txt (~10 pkgs); brief 1207 | #966 |
+| K-O07 | Med fix | go host web | Trailing slash on Go exact routes → bare 404 (no Caddy fallback); 2002 adds CanonicalSlash + branded catch-all | #1256 |
+| K-O08 | Med open | go/internal/web host HTML | Many host pages still call `http.NotFound` / plain `Not found.` → bare text; sweep → 2003 | 2003 |
 | K-W01 | Med decision | GitHub repo | ~30 stale PRs; owner task 0001 step 12 APPLY=1; keep #278 #279 | 0001 |
-| K-ML02 | Low open | App/app/host_i18n.py | Unused `login.password*` i18n keys | magic-link HANDOFF |
-| K-ML03 | Low open | UbyHost_workplan/compliance/01, 03 | Compliance docs partly updated; lawyer review due | task 0005 |
-| K-ML04 | Low open | login limit | Address 3/15 min budget exhaustible; account-only limits leak accounts | 0006 |
-| K-D02 | Low open | door_codes `_handle_moves` | Move replace: gateway retried every 15 min, uncapped; guest keeps old PIN | 0037 |
 | K-D03 | Med decision | door_codes `_handle_moves` | Move permission/reauth/config/disabled: no retry once access fixed (0037) | 0037 |
 | K-D04 | High open | door_codes `issue`, `_handle_moves` | Same-hours rebooking can get cancelled PIN via `get` | 0069 |
 | K-U15 | Med review | Host forms/navigation | Owner review (0084) | [plan](../plans/host-ux-combined-staging.md) |
-| K-T01 | Low open | Tests | Order-dependent tests (also 3 in test_host_i18n.py) | 0080 |
 | K-U16 | Review | Host UI | #389 polish; CI pending | 0102 |
 | K-PG04 | Low open | scripts/reencrypt_data_key.py | Refuses on PG (no verified backup source); fix before 1st PG key rotation | 0462 |
 | K-U17 | Low open | Property page | #sec-messages deep link lands on calendars after late layout shifts; re-scroll. | 0995 |

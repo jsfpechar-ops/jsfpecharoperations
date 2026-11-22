@@ -341,8 +341,7 @@ func (s *Pages) apartmentNew(w http.ResponseWriter, r *http.Request) {
 		}
 		if !found {
 			// Python: Response("Not found.", status_code=404).
-			w.WriteHeader(http.StatusNotFound)
-			_, _ = w.Write([]byte("Not found."))
+			hostweb.NotFoundPage(w, r)
 			return
 		}
 	}
