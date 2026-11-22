@@ -254,8 +254,7 @@ func (s *Pages) apartmentDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if a == nil {
-		w.WriteHeader(http.StatusNotFound)
-		_, _ = w.Write([]byte("Not found."))
+		hostweb.NotFoundPage(w, r)
 		return
 	}
 	view := &detailView{Base: "/apartments/" + strconv.FormatInt(a.ID, 10), CopyFromID: copyID, CopyOpen: queryLast(r, "copy") == "choose"}
@@ -279,8 +278,7 @@ func (s *Pages) apartmentDetail(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if src == nil {
-			w.WriteHeader(http.StatusNotFound) // Response("Not found.", status_code=404)
-			_, _ = w.Write([]byte("Not found."))
+			hostweb.NotFoundPage(w, r)
 			return
 		}
 		view.CopiedName = src.InternalName
