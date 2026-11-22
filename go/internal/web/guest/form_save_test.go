@@ -128,6 +128,24 @@ func TestReservationForGuestNilPool(t *testing.T) {
 	}
 }
 
+func TestReservationForGuestLookupExcludesArchivedAndDemo(t *testing.T) {
+	raw, err := os.ReadFile("form_save.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := string(raw)
+	for _, needle := range []string{
+		`r.archived_at IS NULL`,
+		`<> 'demo'`,
+		`r.status = 'active'`,
+		`a.permalink_token = $3`,
+	} {
+		if !strings.Contains(body, needle) {
+			t.Fatalf("reservationForGuest SQL missing %q — save could accept wrong stay", needle)
+		}
+	}
+}
+
 func testDataEnv(k string) string {
 	if k == "UBYHOST_DATA_KEYS" {
 		return base64.URLEncoding.EncodeToString(bytes.Repeat([]byte{7}, 32))
