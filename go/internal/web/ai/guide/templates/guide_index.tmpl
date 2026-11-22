@@ -64,7 +64,7 @@
 <form method="post" action="{{.Base}}/external">
 <input type="hidden" name="_csrf" value="{{csrf}}">
 {{ui_field "guide-external-url" (t "guest_guide.external.label") (kv "name" "guide_external_url" "type" "url" "value" .ExternalURL "placeholder" "https://" "attrs" (safe `maxlength="2048" inputmode="url"`))}}
-<div class="ui-form-actions">{{ui_button (t "guest_guide.external.save") "secondary" (kv "type" "submit")}}{{if .ExternalHost}}<button class="ui-btn ui-btn-ghost" type="submit" name="action" value="clear">{{t "guest_guide.external.clear"}}</button>{{end}}</div>
+<div class="ui-form-actions">{{ui_button (t "guest_guide.external.save") "secondary" (kv "type" "submit")}}{{if .ExternalHost}}{{ui_button (t "guest_guide.external.clear") "quiet" (kv "type" "submit" "attrs" (safe `name="action" value="clear"`))}}{{end}}</div>
 </form>
 {{guide_section_close}}
 {{if not .ImportFirst}}{{template "guide.import_section" .}}{{end}}

@@ -65,8 +65,23 @@ func TestGuideExternalSaveAndIndex(t *testing.T) {
 		t.Error("audit must not carry the URL path")
 	}
 	body := guideTestDo(t, w.mux, "GET", w.path(), w.host, nil).Body.String()
-	if !strings.Contains(body, `data-guide-external`) || !strings.Contains(body, "www.notion.so") {
-		t.Error("index should show the saved domain")
+	const mark = `data-guide-external`
+	i := strings.Index(body, mark)
+	if i < 0 {
+		t.Fatal("index lacks data-guide-external line")
+	}
+	end := strings.Index(body[i:], "</p>")
+	if end < 0 {
+		t.Fatal("data-guide-external line not closed")
+	}
+	line := body[i : i+end]
+	if !strings.Contains(line, "www.notion.so") {
+		t.Errorf("domain line = %q", line)
+	}
+	for _, bad := range []string{"{host}", "%(host)s"} {
+		if strings.Contains(line, bad) {
+			t.Errorf("unexpanded placeholder %q in %q", bad, line)
+		}
 	}
 	if !strings.Contains(body, `id="external"`) || !strings.Contains(body, `name="guide_external_url"`) {
 		t.Error("index should show the external section")

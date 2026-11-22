@@ -218,7 +218,7 @@ STRINGS: Dict[str, str] = {
     "guest_guide.external.title": "Hướng dẫn bên ngoài",
     "guest_guide.external.help": "Liên kết tới trang hướng dẫn riêng của bạn, ví dụ trên Notion. Khách thấy liên kết này cạnh hướng dẫn sau khi đăng ký.",
     "guest_guide.external.label": "Liên kết (https)",
-    "guest_guide.external.current": "Khách thấy liên kết tới {host}.",
+    "guest_guide.external.current": "Khách thấy liên kết tới %(host)s.",
     "guest_guide.external.save": "Lưu liên kết",
     "guest_guide.external.clear": "Gỡ liên kết",
     "flash.guest_guide.external_saved": "Đã lưu liên kết.",
