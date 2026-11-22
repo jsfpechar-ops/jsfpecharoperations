@@ -43,13 +43,14 @@ ENV = {
 # once at Python import.
 PIN_ENV = {**ENV, "UBYHOST_GUEST_PIN": "1"}
 PIN_PREFIX = "/l/"
-# The language pass: every page here renders Czech from the shared catalogs, so a
-# string that was never translated shows up as English on one side only. `?lang=` is
-# the signal both stacks read first (guest.py _chosen_language, host_i18n.resolve_language).
-LANG_PASSES = {"cs": "+cs"}
-# Czech over every guest page plus the host pages whose copy is densest. The whole
-# route table in every language would multiply the run; this is the set where a
-# missing key actually shows.
+# The language pass: a page that answers in the wrong language, or keeps only the
+# English half of a catalog, looks perfect in an English-only sweep. `?lang=` is the
+# signal both stacks read first (guest.py _chosen_language, host_i18n.resolve_language),
+# so every pass asks for one language and the guest languages are all covered.
+LANG_PASSES = {"cs": "+cs", "de": "+de", "es": "+es", "fr": "+fr", "uk": "+uk", "vi": "+vi"}
+# The guest pages (dense copy, six catalogues, several of them machine-translated)
+# plus the host pages whose copy is densest. The whole route table in every language
+# would multiply the run; this is the set where a missing key actually shows.
 LANG_EXACT = {"/", "/reservations", "/booking-sites", "/admin", "/login"}
 LANG_PREFIXES = ("/l/", "/guests/", "/reservations/")
 
