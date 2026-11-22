@@ -8,13 +8,11 @@ Updated: 2026-11-21.
 - Go jobs = queue (billing_snapshot, stripe_sweep, ical, push, submit, posthog, meta_capi, deadlines). Python: mail, door_codes.
 - Go routes live: [ENVIRONMENT](../ENVIRONMENT.md). Rollback: trim `UBYHOST_GO_PATHS`, reload caddy.
 - AI: `havel,leon,guide_import` (`guide_translate` off). Stripe test. Guest QR 404 without IBAN. Review: [plan](../plans/ai-payments-hardening.md).
-- Later: remove Python deadlines job.
 - UX gate and Stripe onboarding live. Backups: daily pg_dump + WAL-G 7-day PITR.
 
 ## Next
 - 2001: invoice page Wolt-simple + Generate invoice on stay header ([brief](../tasks/2001-invoice-wolt-simple.md)).
-- Go page parity: **fail 0**, 447 rows incl. PIN pass (#1252, #1255).
-- 2000: no police nags on Overview without UbyPort login.
+- Go parity: **fail 0** — 843 rows, 6 languages (#1258); 447 incl. PIN (#1252, #1255); visual 33/33 (#1259). 2000: no police nags on Overview without UbyPort login.
 - Briefs 1865 (green main → staging; prod manual) + 1866 (CI hardening).
 - Go executor queue ([plan](../plans/go-cutover-executor-queue.md)): runnable **1793**, **0852**; **1730**/**1770** blocked on exact-diff sidecars.
 - [Autopilot](../plans/autopilot-agentic.md): hide Payments first.
