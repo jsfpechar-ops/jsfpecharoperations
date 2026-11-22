@@ -127,7 +127,8 @@ def go_web(tmp_path_factory):
     data_dir.mkdir()
 
     build = subprocess.run(
-        ["go", "build", "-o", str(binary), "./cmd/ubyhost-web"],
+        # CI containers check out the repo as another user, so git refuses VCS stamping.
+        ["go", "build", "-buildvcs=false", "-o", str(binary), "./cmd/ubyhost-web"],
         cwd=GO_DIR,
         capture_output=True,
         text=True,
