@@ -2,6 +2,8 @@
 
 Status: review
 
+CI: `CI / go` green; `CI / test` and postgres shards fail on `test_go_compose_env_parity` (missing `UBYHOST_PAYMENTS_RETIRED` in compose — outside brief §3, landed with 2029 on main).
+
 ## Files
 
 - `go/internal/web/properties/stay_fee_guest_pay.go` (new)
