@@ -1,6 +1,6 @@
 # 2036: Go host page "Access & guide" — entry codes (up to 3), guest preview, door-code status
 
-Status: todo after 2032 and 1668 (runnable then; no port needed: a brand-new Go-only page)
+Status: review
 Depends on: 2032, 1668 (1664 for the external-link line, see §2) | Base commit: fill from `git rev-parse --short HEAD` | Branch: task/2036-go-apartment-access-page
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (split in two PRs if you reach 25 calls before §4 step 8: PR 1 = steps 1-5, PR 2 = the rest) | Tier B (a secret on a host page)
 

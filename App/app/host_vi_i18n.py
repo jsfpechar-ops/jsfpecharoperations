@@ -2639,6 +2639,8 @@ STRINGS: Dict[str, str] = {
     "guide.door_codes.steps_title": "Thiết lập",
     "guide.door_codes.terms_title": "Điều khoản về mã cửa",
     "guide.door_codes.terms_version": "Phiên bản %(version)s",
+    "guide.nav.entry_codes": "Mã vào cửa",
+    "guide.entry_codes.lede": "Thêm tối đa ba mã cho tòa nhà, cổng hoặc garage trong mục Lối vào & hướng dẫn. Khách thấy trên trang lưu trú và trong email xác nhận.",
     "guide.nav.door_codes": "Khóa cửa điện tử (TTLock)",
     "guide.nav.faster": "Làm việc nhanh hơn",
     "guide.nav.faq": "Câu hỏi thường gặp",
