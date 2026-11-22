@@ -79,9 +79,6 @@
 {{range .Preview}}
 {{if .Door}}
 <div><dt>{{.Label}}</dt><dd>{{t "access_page.preview.door_value"}}</dd></div>
-{{else if .Other}}
-<div><dt>{{t "access_page.type.other"}}</dt><dd><span class="ui-mono">{{.Masked}}</span></dd></div>
-{{if and .Label (not (gt (len .Label) 36))}}<div><dt>{{t "access_page.field.name"}}</dt><dd>{{.Label}}</dd></div>{{end}}
 {{else}}
 <div><dt>{{.Label}}</dt><dd><span class="ui-mono">{{.Masked}}</span></dd></div>
 {{end}}

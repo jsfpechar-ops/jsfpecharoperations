@@ -75,7 +75,8 @@ func guideSectionOpen(id, title string, tip template.HTML) template.HTML {
 		if i := strings.LastIndex(title, " "); i >= 0 {
 			head, last = title[:i]+" ", title[i+1:]
 		}
-		b.WriteString(`<h2>` + html.EscapeString(head) + `<span class="tip-nowrap">` + html.EscapeString(last) + `</span>` + string(tip) + `</h2>`)
+		head = strings.TrimRight(head, " ")
+		b.WriteString(`<h2>` + html.EscapeString(head) + `&#160;<span class="tip-nowrap">` + html.EscapeString(last) + `</span>` + string(tip) + `</h2>`)
 	} else {
 		b.WriteString(`<h2>` + html.EscapeString(title) + `</h2>`)
 	}

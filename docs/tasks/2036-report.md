@@ -9,7 +9,9 @@ Status: review
 ## Design fix (guide-page shell @390)
 
 - `guide-page` + `guide_section_open/close` and `guide-form-card` (not `settings-lane`).
-- KV: `dl.ui-facts`; facts hidden while editing a row; Other preview uses `Other` + optional short name row.
+- KV: `dl.ui-facts`; facts hidden while editing a row; preview uses custom label as `dt` for every type (guest parity).
+- `guideSectionOpen`: `&#160;` before `tip-nowrap` so flex h2 keeps “Entry codes” spaced (was “Entrycodes”).
+- `app2.css`: `dt` wrap in guide `ui-facts`; `#guest-preview` facts stack at all widths (long labels).
 - `BodyKind` `form`; help tips inline in h1/section titles like guide index.
 
 ## Commands (tails)
@@ -17,15 +19,15 @@ Status: review
 **Go** (`go test -count=1 ./internal/web/ai/ ./cmd/ubyhost-web/ ./internal/apartmententrycode/`):
 
 ```
-ok  	github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/ai	25.806s
+ok  	github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/ai	24.722s
 ok  	github.com/jsfpechar-ops/jsfpecharoperations/go/cmd/ubyhost-web	2.495s
 ok  	github.com/jsfpechar-ops/jsfpecharoperations/go/internal/apartmententrycode	0.002s
 ```
 
-**Browser** (`UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/shots2036c`):
+**Browser** (`UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/shots2036d`):
 
 ```
-5 passed, 1 warning in 28.91s
+5 passed, 1 warning in 27.61s
 ```
 
 **go_host_i18n --check**: exit 0
@@ -37,21 +39,20 @@ ok  	github.com/jsfpechar-ops/jsfpecharoperations/go/internal/apartmententrycode
 - [x] Go access tests; no plaintext in responses/audit (covered in `TestAccessSaveTypesAndSecrecy`)
 - [x] Name input always rendered; no-JS POST proves server refuses Other without name
 - [x] Help section Entry codes (en, cs, vi); `test_guide_coverage.py` green
-- [x] Harness: 0 findings, 27 shots (`/opt/cursor/artifacts/2036c/`), 0 skipped
+- [x] Harness: 0 findings, 27 shots (`/opt/cursor/artifacts/2036d/`), 0 skipped
 - [x] Guide index link gated on `UBYHOST_GO_ACCESS_PAGE=1`
 
-## Screenshots (`/opt/cursor/artifacts/2036c/` — reviewed)
+## Screenshots (`/opt/cursor/artifacts/2036d/` — reviewed)
 
-- **access-three-390** — Grey page background; white section cards for Entry codes and guest preview. Each code in a nested `guide-form-card`; Type above Code with design gap; small `?` beside title/section headings; Replace/Clear pill actions.
-- **access-three-1280** — Same content in guide-page column: three bordered code cards with Replace/Clear on the right; preview section two-column `ui-facts` (Gate / Building / Garage masked).
-- **access-other-390** — Edit form only inside white Entry codes card (facts hidden while editing); Type Other, long Name in field; preview shows Other + masked code (long name suppressed in preview for lint); Notion Change link below fold.
-- **access-expired-390** — Stacked facts with valid-until `01.01.2020` (dd.mm.yyyy); attention banner “Expired on 01.01.2020…”; Add code in section footer.
-- **access-preview-lock-390** — Preview lists Gate masked + “Apartment door / from the lock at check-in”; third section card for door status copy.
+- **access-three-390** — White cards; section title reads “Entry codes” with inline `?`; three code cards with stacked Type/Code; guest preview lists Gate, Building entrance, Garage with masked codes.
+- **access-other-390** — “Entry codes” heading spaced correctly; edit form (Other, long Name, empty Code); preview card shows full custom label wrapping above `••••9`; Host’s guide + notion Change line below.
+- **access-other-1280** — Form in left column; preview stacks long custom label (A… B…) over masked code; external host line unchanged.
 
-(Full harness still captures empty/one/error/replaced/preview-nolock at 390/768/1280 under `/tmp/shots2036c/layout-lint/`.)
+(Full harness under `/tmp/shots2036d/layout-lint/`.)
 
 ## Deviations
 
+- `go/internal/web/ai/guide_common.go` + `App/app/static/app2.css`: section title nbsp and preview `ui-facts` wrap (orchestrator review; brief listed neither).
 - `App/app/havel.py` and `go/internal/web/ai/havel_data.go`: `entry-codes` anchor for `test_guide_coverage.py` (test header names these with guide edits).
 - Regenerated `go/internal/web/ai/testdata/havel_golden.json` via `App/scripts/havel_golden.py` after `entry-codes` anchor.
 - `go_web_harness._seed`: sets `two_factor_prompted_at` so security prompt does not cover lint shots.

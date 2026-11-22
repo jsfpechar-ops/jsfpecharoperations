@@ -43,7 +43,7 @@ type accessCode struct {
 
 type accessPreviewLine struct {
 	Label, Masked string
-	Door, Other   bool
+	Door          bool
 }
 
 type accessForm struct {
@@ -157,7 +157,7 @@ FROM apartment_entry_code WHERE apartment_id = $1 ORDER BY position`, apt)
 			continue
 		}
 		c := byPos[slot.Row.Position]
-		preview = append(preview, accessPreviewLine{Label: accessTypeLabel(t, c.Type, c.Label), Masked: c.Masked, Other: c.Type == "other"})
+		preview = append(preview, accessPreviewLine{Label: accessTypeLabel(t, c.Type, c.Label), Masked: c.Masked})
 	}
 	extHost := ""
 	if extURL != "" {
