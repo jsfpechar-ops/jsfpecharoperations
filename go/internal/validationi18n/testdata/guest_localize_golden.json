@@ -1,0 +1,2522 @@
+[
+ [
+  "cs",
+  "Accommodation facility name is required.",
+  "Vyplňte název ubytovacího zařízení."
+ ],
+ [
+  "cs",
+  "City cannot consist of digits only.",
+  "Město nemůže obsahovat jen číslice."
+ ],
+ [
+  "cs",
+  "City is required.",
+  "Město je povinné."
+ ],
+ [
+  "cs",
+  "City must be at most 42 characters.",
+  "Město může mít nejvýše 42 znaků."
+ ],
+ [
+  "cs",
+  "Country is required.",
+  "Vyberte stát trvalého bydliště."
+ ],
+ [
+  "cs",
+  "Date of birth cannot be after your arrival date.",
+  "Datum narození nemůže být po datu příjezdu."
+ ],
+ [
+  "cs",
+  "Date of birth cannot be in the future.",
+  "Datum narození nemůže být v budoucnosti."
+ ],
+ [
+  "cs",
+  "Date of birth is required.",
+  "Datum narození je povinné."
+ ],
+ [
+  "cs",
+  "Day must be between 01 and 31.",
+  "Datum narození: den musí být mezi 01 a 31."
+ ],
+ [
+  "cs",
+  "Departure date must be later than the arrival date.",
+  "Datum odjezdu musí být po datu příjezdu."
+ ],
+ [
+  "cs",
+  "Document number must be at least 6 characters.",
+  "Číslo dokladu musí mít alespoň 6 znaků."
+ ],
+ [
+  "cs",
+  "Document number must be at most 30 characters.",
+  "Číslo dokladu může mít nejvýše 30 znaků."
+ ],
+ [
+  "cs",
+  "Enter the full date as DD.MM.YYYY.",
+  "Datum narození: zadejte celé datum ve formátu DD.MM.RRRR, například 14.03.1961."
+ ],
+ [
+  "cs",
+  "Facility name must be at most 35 characters.",
+  "Název zařízení může mít nejvýše 35 znaků."
+ ],
+ [
+  "cs",
+  "For a child recorded in a parent's passport the note must contain the parent's document number.",
+  "U dítěte zapsaného v pasu rodiče musí poznámka obsahovat číslo dokladu rodiče."
+ ],
+ [
+  "cs",
+  "Given name looks missing - please check the passport.",
+  "Křestní jméno zřejmě chybí – zkontrolujte pas."
+ ],
+ [
+  "cs",
+  "Given name must be at most 24 characters.",
+  "Jméno může mít nejvýše 24 znaků. Uveďte, prosím, jen první jména z pasu."
+ ],
+ [
+  "cs",
+  "Home address is too long.",
+  "Adresa bydliště je příliš dlouhá."
+ ],
+ [
+  "cs",
+  "House number is required.",
+  "Vyplňte číslo popisné."
+ ],
+ [
+  "cs",
+  "House number is up to 4 digits, optionally with E for an evidence number.",
+  "Číslo popisné má nejvýše 4 číslice, případně s E pro číslo evidenční."
+ ],
+ [
+  "cs",
+  "IDUB is required before anything can be reported.",
+  "Bez IDUB nelze nic nahlásit."
+ ],
+ [
+  "cs",
+  "IDUB must be 12-14 letters or digits.",
+  "IDUB má 12–14 písmen nebo číslic."
+ ],
+ [
+  "cs",
+  "Month must be between 01 and 12.",
+  "Datum narození: měsíc musí být mezi 01 a 12."
+ ],
+ [
+  "cs",
+  "Municipality is required.",
+  "Vyplňte obec."
+ ],
+ [
+  "cs",
+  "Nationality is required.",
+  "Vyberte státní občanství."
+ ],
+ [
+  "cs",
+  "No property manager is attached, so guests have no named contact for questions about their stay.",
+  "Není přiřazen správce ubytování, takže hosté nemají uvedený kontakt pro dotazy k pobytu."
+ ],
+ [
+  "cs",
+  "No property manager is attached, so guests have no named contact for questions about their stay. The privacy notice also cannot name who controls their data.",
+  "Není přiřazen správce ubytování, takže hosté nemají uvedený kontakt pro dotazy k pobytu. Ani v zásadách ochrany osobních údajů nelze uvést, kdo jejich údaje zpracovává."
+ ],
+ [
+  "cs",
+  "Note must be at most 255 characters.",
+  "Poznámka může mít nejvýše 255 znaků."
+ ],
+ [
+  "cs",
+  "Orientation number is up to 3 digits plus one optional letter.",
+  "Orientační číslo má nejvýše 3 číslice a jedno volitelné písmeno."
+ ],
+ [
+  "cs",
+  "Postcode is required.",
+  "Vyplňte PSČ."
+ ],
+ [
+  "cs",
+  "Postcode must be exactly 5 digits.",
+  "PSČ má přesně 5 číslic."
+ ],
+ [
+  "cs",
+  "Purpose of stay is required.",
+  "Účel pobytu je povinný."
+ ],
+ [
+  "cs",
+  "Remove the | character and any line breaks.",
+  "Odstraňte znak | a všechny konce řádků."
+ ],
+ [
+  "cs",
+  "Street and number are required.",
+  "Ulice a číslo jsou povinné."
+ ],
+ [
+  "cs",
+  "Street cannot consist of digits only.",
+  "Ulice nemůže obsahovat jen číslice."
+ ],
+ [
+  "cs",
+  "Street is required.",
+  "Vyplňte ulici."
+ ],
+ [
+  "cs",
+  "Street must be at most 42 characters.",
+  "Ulice může mít nejvýše 42 znaků."
+ ],
+ [
+  "cs",
+  "Surname is required.",
+  "Příjmení je povinné."
+ ],
+ [
+  "cs",
+  "Surname must be at most 50 characters.",
+  "Příjmení může mít nejvýše 50 znaků. Zkraťte ho, prosím, podle pasu."
+ ],
+ [
+  "cs",
+  "That date does not exist - please check day and month.",
+  "Datum narození: takové datum neexistuje. Zkontrolujte den a měsíc."
+ ],
+ [
+  "cs",
+  "That signature could not be saved. Sign again on the signature pad.",
+  "Tento podpis se nepodařilo uložit. Podepište se znovu do podpisového pole."
+ ],
+ [
+  "cs",
+  "The abbreviation is the 5 or 6 letters or digits the police assigned, e.g. AAKLI.",
+  "Zkratka má 5 nebo 6 písmen či číslic přidělených policií, např. AAKLI."
+ ],
+ [
+  "cs",
+  "The facility abbreviation (zkratka) is required.",
+  "Vyplňte zkratku zařízení."
+ ],
+ [
+  "cs",
+  "The stay dates on this page are not readable. Reload the page and try again.",
+  "Termíny pobytu na této stránce nejsou čitelné. Načtěte stránku znovu."
+ ],
+ [
+  "cs",
+  "These dates do not match your booking. Reload this page, or ask your host.",
+  "Tyto termíny neodpovídají vaší rezervaci. Načtěte stránku znovu nebo se obraťte na hostitele."
+ ],
+ [
+  "cs",
+  "Travel document number is required.",
+  "Číslo cestovního dokladu je povinné."
+ ],
+ [
+  "cs",
+  "Type this using Latin letters (A-Z), exactly as printed in the two machine-readable lines at the bottom of your passport.",
+  "Zapište latinkou (A–Z) přesně tak, jak je to vytištěno ve dvou strojově čitelných řádcích na konci vašeho pasu."
+ ],
+ [
+  "cs",
+  "UbyPort web-service login is required for automatic reporting.",
+  "Pro automatické hlášení je potřeba přihlašovací jméno k webové službě UbyPort."
+ ],
+ [
+  "cs",
+  "UbyPort web-service password is required.",
+  "Pro automatické hlášení je potřeba heslo k webové službě UbyPort."
+ ],
+ [
+  "cs",
+  "Unknown country code.",
+  "Neznámý kód země."
+ ],
+ [
+  "cs",
+  "Unknown purpose-of-stay code.",
+  "Neznámý účel pobytu."
+ ],
+ [
+  "cs",
+  "Visa number must be at most 15 characters.",
+  "Číslo víza může mít nejvýše 15 znaků."
+ ],
+ [
+  "cs",
+  "Web-service logins look like UBY-WS123abc (production) or uby-tws1ab45 (test). The ub1234567 login is for the web form and will not work here.",
+  "Přihlašovací jméno k webové službě vypadá jako UBY-WS123abc (ostrý provoz) nebo uby-tws1ab45 (test). Přihlášení ub1234567 je pro webový formulář a tady fungovat nebude."
+ ],
+ [
+  "cs",
+  "Year must be 1900 or later.",
+  "Datum narození: rok musí být 1900 nebo pozdější."
+ ],
+ [
+  "cs",
+  "",
+  ""
+ ],
+ [
+  "cs",
+  "Unknown sentence.",
+  "Unknown sentence."
+ ],
+ [
+  "cs",
+  "'XX' is not a valid three-letter country code.",
+  "„XX“ není platný třímístný kód země (např. GBR, USA, DEU)."
+ ],
+ [
+  "cs",
+  "'' is not a valid three-letter country code.",
+  "„“ není platný třímístný kód země (např. GBR, USA, DEU)."
+ ],
+ [
+  "cs",
+  "'a\nb' is not a valid three-letter country code.",
+  "'a\nb' is not a valid three-letter country code."
+ ],
+ [
+  "cs",
+  "Must be at most 42 characters.",
+  "Nejvýše 42 znaků."
+ ],
+ [
+  "cs",
+  "Must be at most 42 characters.\n",
+  "Nejvýše 42 znaků."
+ ],
+ [
+  "cs",
+  "Must be at most ٤٢ characters.",
+  "Nejvýše ٤٢ znaků."
+ ],
+ [
+  "cs",
+  "Must be at most characters.",
+  "Must be at most characters."
+ ],
+ [
+  "en",
+  "Accommodation facility name is required.",
+  "Accommodation facility name is required."
+ ],
+ [
+  "en",
+  "City cannot consist of digits only.",
+  "City cannot consist of digits only."
+ ],
+ [
+  "en",
+  "City is required.",
+  "City is required."
+ ],
+ [
+  "en",
+  "City must be at most 42 characters.",
+  "City must be at most 42 characters."
+ ],
+ [
+  "en",
+  "Country is required.",
+  "Choose the country of your home address."
+ ],
+ [
+  "en",
+  "Date of birth cannot be after your arrival date.",
+  "Date of birth cannot be after your arrival date."
+ ],
+ [
+  "en",
+  "Date of birth cannot be in the future.",
+  "Date of birth cannot be in the future."
+ ],
+ [
+  "en",
+  "Date of birth is required.",
+  "Date of birth is required."
+ ],
+ [
+  "en",
+  "Day must be between 01 and 31.",
+  "Date of birth: day must be between 01 and 31."
+ ],
+ [
+  "en",
+  "Departure date must be later than the arrival date.",
+  "Departure date must be later than the arrival date."
+ ],
+ [
+  "en",
+  "Document number must be at least 6 characters.",
+  "Document number must be at least 6 characters."
+ ],
+ [
+  "en",
+  "Document number must be at most 30 characters.",
+  "Document number must be at most 30 characters."
+ ],
+ [
+  "en",
+  "Enter the full date as DD.MM.YYYY.",
+  "Date of birth: enter the full date as DD.MM.YYYY, for example 14.03.1961."
+ ],
+ [
+  "en",
+  "Facility name must be at most 35 characters.",
+  "Facility name must be at most 35 characters."
+ ],
+ [
+  "en",
+  "For a child recorded in a parent's passport the note must contain the parent's document number.",
+  "For a child recorded in a parent's passport the note must contain the parent's document number."
+ ],
+ [
+  "en",
+  "Given name looks missing - please check the passport.",
+  "Given name looks missing - please check the passport."
+ ],
+ [
+  "en",
+  "Given name must be at most 24 characters.",
+  "Given name must be at most 24 characters."
+ ],
+ [
+  "en",
+  "Home address is too long.",
+  "Home address is too long."
+ ],
+ [
+  "en",
+  "House number is required.",
+  "House number is required."
+ ],
+ [
+  "en",
+  "House number is up to 4 digits, optionally with E for an evidence number.",
+  "House number is up to 4 digits, optionally with E for an evidence number."
+ ],
+ [
+  "en",
+  "IDUB is required before anything can be reported.",
+  "IDUB is required before anything can be reported."
+ ],
+ [
+  "en",
+  "IDUB must be 12-14 letters or digits.",
+  "IDUB must be 12-14 letters or digits."
+ ],
+ [
+  "en",
+  "Month must be between 01 and 12.",
+  "Date of birth: month must be between 01 and 12."
+ ],
+ [
+  "en",
+  "Municipality is required.",
+  "Municipality is required."
+ ],
+ [
+  "en",
+  "Nationality is required.",
+  "Choose your nationality."
+ ],
+ [
+  "en",
+  "No property manager is attached, so guests have no named contact for questions about their stay.",
+  "No property manager is attached, so guests have no named contact for questions about their stay."
+ ],
+ [
+  "en",
+  "No property manager is attached, so guests have no named contact for questions about their stay. The privacy notice also cannot name who controls their data.",
+  "No property manager is attached, so guests have no named contact for questions about their stay. The privacy notice also cannot name who controls their data."
+ ],
+ [
+  "en",
+  "Note must be at most 255 characters.",
+  "Note must be at most 255 characters."
+ ],
+ [
+  "en",
+  "Orientation number is up to 3 digits plus one optional letter.",
+  "Orientation number is up to 3 digits plus one optional letter."
+ ],
+ [
+  "en",
+  "Postcode is required.",
+  "Postcode is required."
+ ],
+ [
+  "en",
+  "Postcode must be exactly 5 digits.",
+  "Postcode must be exactly 5 digits."
+ ],
+ [
+  "en",
+  "Purpose of stay is required.",
+  "Purpose of stay is required."
+ ],
+ [
+  "en",
+  "Remove the | character and any line breaks.",
+  "Remove the | character and any line breaks."
+ ],
+ [
+  "en",
+  "Street and number are required.",
+  "Street and number are required."
+ ],
+ [
+  "en",
+  "Street cannot consist of digits only.",
+  "Street cannot consist of digits only."
+ ],
+ [
+  "en",
+  "Street is required.",
+  "Street is required."
+ ],
+ [
+  "en",
+  "Street must be at most 42 characters.",
+  "Street must be at most 42 characters."
+ ],
+ [
+  "en",
+  "Surname is required.",
+  "Surname is required."
+ ],
+ [
+  "en",
+  "Surname must be at most 50 characters.",
+  "Surname must be at most 50 characters."
+ ],
+ [
+  "en",
+  "That date does not exist - please check day and month.",
+  "Date of birth: that date does not exist. Check the day and month."
+ ],
+ [
+  "en",
+  "That signature could not be saved. Sign again on the signature pad.",
+  "That signature could not be saved. Sign again on the signature pad."
+ ],
+ [
+  "en",
+  "The abbreviation is the 5 or 6 letters or digits the police assigned, e.g. AAKLI.",
+  "The abbreviation is the 5 or 6 letters or digits the police assigned, e.g. AAKLI."
+ ],
+ [
+  "en",
+  "The facility abbreviation (zkratka) is required.",
+  "The facility abbreviation (zkratka) is required."
+ ],
+ [
+  "en",
+  "The stay dates on this page are not readable. Reload the page and try again.",
+  "The stay dates on this page are not readable. Reload the page and try again."
+ ],
+ [
+  "en",
+  "These dates do not match your booking. Reload this page, or ask your host.",
+  "These dates do not match your booking. Reload this page, or ask your host."
+ ],
+ [
+  "en",
+  "Travel document number is required.",
+  "Travel document number is required."
+ ],
+ [
+  "en",
+  "Type this using Latin letters (A-Z), exactly as printed in the two machine-readable lines at the bottom of your passport.",
+  "Type this using Latin letters (A-Z), exactly as printed in the two machine-readable lines at the bottom of your passport."
+ ],
+ [
+  "en",
+  "UbyPort web-service login is required for automatic reporting.",
+  "UbyPort web-service login is required for automatic reporting."
+ ],
+ [
+  "en",
+  "UbyPort web-service password is required.",
+  "UbyPort web-service password is required."
+ ],
+ [
+  "en",
+  "Unknown country code.",
+  "Unknown country code."
+ ],
+ [
+  "en",
+  "Unknown purpose-of-stay code.",
+  "Unknown purpose-of-stay code."
+ ],
+ [
+  "en",
+  "Visa number must be at most 15 characters.",
+  "Visa number must be at most 15 characters."
+ ],
+ [
+  "en",
+  "Web-service logins look like UBY-WS123abc (production) or uby-tws1ab45 (test). The ub1234567 login is for the web form and will not work here.",
+  "Web-service logins look like UBY-WS123abc (production) or uby-tws1ab45 (test). The ub1234567 login is for the web form and will not work here."
+ ],
+ [
+  "en",
+  "Year must be 1900 or later.",
+  "Date of birth: year must be 1900 or later."
+ ],
+ [
+  "en",
+  "",
+  ""
+ ],
+ [
+  "en",
+  "Unknown sentence.",
+  "Unknown sentence."
+ ],
+ [
+  "en",
+  "'XX' is not a valid three-letter country code.",
+  "'XX' is not a valid three-letter country code."
+ ],
+ [
+  "en",
+  "'' is not a valid three-letter country code.",
+  "'' is not a valid three-letter country code."
+ ],
+ [
+  "en",
+  "'a\nb' is not a valid three-letter country code.",
+  "'a\nb' is not a valid three-letter country code."
+ ],
+ [
+  "en",
+  "Must be at most 42 characters.",
+  "Must be at most 42 characters."
+ ],
+ [
+  "en",
+  "Must be at most 42 characters.\n",
+  "Must be at most 42 characters.\n"
+ ],
+ [
+  "en",
+  "Must be at most ٤٢ characters.",
+  "Must be at most ٤٢ characters."
+ ],
+ [
+  "en",
+  "Must be at most characters.",
+  "Must be at most characters."
+ ],
+ [
+  "de",
+  "Accommodation facility name is required.",
+  "Accommodation facility name is required."
+ ],
+ [
+  "de",
+  "City cannot consist of digits only.",
+  "Der Ort darf nicht nur aus Ziffern bestehen."
+ ],
+ [
+  "de",
+  "City is required.",
+  "Der Ort ist erforderlich."
+ ],
+ [
+  "de",
+  "City must be at most 42 characters.",
+  "Der Ort darf höchstens 42 Zeichen lang sein."
+ ],
+ [
+  "de",
+  "Country is required.",
+  "Wählen Sie das Land Ihrer Wohnanschrift."
+ ],
+ [
+  "de",
+  "Date of birth cannot be after your arrival date.",
+  "Das Geburtsdatum darf nicht nach Ihrem Anreisedatum liegen."
+ ],
+ [
+  "de",
+  "Date of birth cannot be in the future.",
+  "Das Geburtsdatum darf nicht in der Zukunft liegen."
+ ],
+ [
+  "de",
+  "Date of birth is required.",
+  "Das Geburtsdatum ist erforderlich."
+ ],
+ [
+  "de",
+  "Day must be between 01 and 31.",
+  "Geburtsdatum: Der Tag muss zwischen 01 und 31 liegen."
+ ],
+ [
+  "de",
+  "Departure date must be later than the arrival date.",
+  "Das Abreisedatum muss nach dem Anreisedatum liegen."
+ ],
+ [
+  "de",
+  "Document number must be at least 6 characters.",
+  "Die Dokumentnummer muss mindestens 6 Zeichen lang sein."
+ ],
+ [
+  "de",
+  "Document number must be at most 30 characters.",
+  "Die Dokumentnummer darf höchstens 30 Zeichen lang sein."
+ ],
+ [
+  "de",
+  "Enter the full date as DD.MM.YYYY.",
+  "Geburtsdatum: Geben Sie das vollständige Datum als TT.MM.JJJJ ein, zum Beispiel 14.03.1961."
+ ],
+ [
+  "de",
+  "Facility name must be at most 35 characters.",
+  "Facility name must be at most 35 characters."
+ ],
+ [
+  "de",
+  "For a child recorded in a parent's passport the note must contain the parent's document number.",
+  "Bei einem Kind, das im Reisepass eines Elternteils eingetragen ist, muss die Anmerkung die Dokumentnummer des Elternteils enthalten."
+ ],
+ [
+  "de",
+  "Given name looks missing - please check the passport.",
+  "Der Vorname scheint zu fehlen - bitte prüfen Sie den Reisepass."
+ ],
+ [
+  "de",
+  "Given name must be at most 24 characters.",
+  "Der Vorname darf höchstens 24 Zeichen lang sein."
+ ],
+ [
+  "de",
+  "Home address is too long.",
+  "Die Wohnanschrift ist zu lang."
+ ],
+ [
+  "de",
+  "House number is required.",
+  "House number is required."
+ ],
+ [
+  "de",
+  "House number is up to 4 digits, optionally with E for an evidence number.",
+  "House number is up to 4 digits, optionally with E for an evidence number."
+ ],
+ [
+  "de",
+  "IDUB is required before anything can be reported.",
+  "IDUB is required before anything can be reported."
+ ],
+ [
+  "de",
+  "IDUB must be 12-14 letters or digits.",
+  "IDUB must be 12-14 letters or digits."
+ ],
+ [
+  "de",
+  "Month must be between 01 and 12.",
+  "Geburtsdatum: Der Monat muss zwischen 01 und 12 liegen."
+ ],
+ [
+  "de",
+  "Municipality is required.",
+  "Municipality is required."
+ ],
+ [
+  "de",
+  "Nationality is required.",
+  "Wählen Sie Ihre Staatsangehörigkeit."
+ ],
+ [
+  "de",
+  "No property manager is attached, so guests have no named contact for questions about their stay.",
+  "No property manager is attached, so guests have no named contact for questions about their stay."
+ ],
+ [
+  "de",
+  "No property manager is attached, so guests have no named contact for questions about their stay. The privacy notice also cannot name who controls their data.",
+  "No property manager is attached, so guests have no named contact for questions about their stay. The privacy notice also cannot name who controls their data."
+ ],
+ [
+  "de",
+  "Note must be at most 255 characters.",
+  "Die Anmerkung darf höchstens 255 Zeichen lang sein."
+ ],
+ [
+  "de",
+  "Orientation number is up to 3 digits plus one optional letter.",
+  "Orientation number is up to 3 digits plus one optional letter."
+ ],
+ [
+  "de",
+  "Postcode is required.",
+  "Postcode is required."
+ ],
+ [
+  "de",
+  "Postcode must be exactly 5 digits.",
+  "Postcode must be exactly 5 digits."
+ ],
+ [
+  "de",
+  "Purpose of stay is required.",
+  "Der Aufenthaltszweck ist erforderlich."
+ ],
+ [
+  "de",
+  "Remove the | character and any line breaks.",
+  "Entfernen Sie das Zeichen | und alle Zeilenumbrüche."
+ ],
+ [
+  "de",
+  "Street and number are required.",
+  "Straße und Hausnummer sind erforderlich."
+ ],
+ [
+  "de",
+  "Street cannot consist of digits only.",
+  "Die Straße darf nicht nur aus Ziffern bestehen."
+ ],
+ [
+  "de",
+  "Street is required.",
+  "Street is required."
+ ],
+ [
+  "de",
+  "Street must be at most 42 characters.",
+  "Die Straße darf höchstens 42 Zeichen lang sein."
+ ],
+ [
+  "de",
+  "Surname is required.",
+  "Der Nachname ist erforderlich."
+ ],
+ [
+  "de",
+  "Surname must be at most 50 characters.",
+  "Der Nachname darf höchstens 50 Zeichen lang sein."
+ ],
+ [
+  "de",
+  "That date does not exist - please check day and month.",
+  "Geburtsdatum: Dieses Datum existiert nicht. Prüfen Sie Tag und Monat."
+ ],
+ [
+  "de",
+  "That signature could not be saved. Sign again on the signature pad.",
+  "Die Unterschrift konnte nicht gespeichert werden. Unterschreiben Sie erneut im Unterschriftsfeld."
+ ],
+ [
+  "de",
+  "The abbreviation is the 5 or 6 letters or digits the police assigned, e.g. AAKLI.",
+  "The abbreviation is the 5 or 6 letters or digits the police assigned, e.g. AAKLI."
+ ],
+ [
+  "de",
+  "The facility abbreviation (zkratka) is required.",
+  "The facility abbreviation (zkratka) is required."
+ ],
+ [
+  "de",
+  "The stay dates on this page are not readable. Reload the page and try again.",
+  "Die Aufenthaltsdaten auf dieser Seite sind nicht lesbar. Laden Sie die Seite neu und versuchen Sie es erneut."
+ ],
+ [
+  "de",
+  "These dates do not match your booking. Reload this page, or ask your host.",
+  "Diese Daten stimmen nicht mit Ihrer Buchung überein. Laden Sie die Seite neu oder fragen Sie Ihren Gastgeber."
+ ],
+ [
+  "de",
+  "Travel document number is required.",
+  "Die Nummer des Reisedokuments ist erforderlich."
+ ],
+ [
+  "de",
+  "Type this using Latin letters (A-Z), exactly as printed in the two machine-readable lines at the bottom of your passport.",
+  "Verwenden Sie lateinische Buchstaben (A-Z), genau wie in den beiden maschinenlesbaren Zeilen unten in Ihrem Reisepass."
+ ],
+ [
+  "de",
+  "UbyPort web-service login is required for automatic reporting.",
+  "UbyPort web-service login is required for automatic reporting."
+ ],
+ [
+  "de",
+  "UbyPort web-service password is required.",
+  "UbyPort web-service password is required."
+ ],
+ [
+  "de",
+  "Unknown country code.",
+  "Unbekannter Ländercode."
+ ],
+ [
+  "de",
+  "Unknown purpose-of-stay code.",
+  "Unbekannter Code für den Aufenthaltszweck."
+ ],
+ [
+  "de",
+  "Visa number must be at most 15 characters.",
+  "Die Visumnummer darf höchstens 15 Zeichen lang sein."
+ ],
+ [
+  "de",
+  "Web-service logins look like UBY-WS123abc (production) or uby-tws1ab45 (test). The ub1234567 login is for the web form and will not work here.",
+  "Web-service logins look like UBY-WS123abc (production) or uby-tws1ab45 (test). The ub1234567 login is for the web form and will not work here."
+ ],
+ [
+  "de",
+  "Year must be 1900 or later.",
+  "Geburtsdatum: Das Jahr muss 1900 oder später sein."
+ ],
+ [
+  "de",
+  "",
+  ""
+ ],
+ [
+  "de",
+  "Unknown sentence.",
+  "Unknown sentence."
+ ],
+ [
+  "de",
+  "'XX' is not a valid three-letter country code.",
+  "'XX' is not a valid three-letter country code."
+ ],
+ [
+  "de",
+  "'' is not a valid three-letter country code.",
+  "'' is not a valid three-letter country code."
+ ],
+ [
+  "de",
+  "'a\nb' is not a valid three-letter country code.",
+  "'a\nb' is not a valid three-letter country code."
+ ],
+ [
+  "de",
+  "Must be at most 42 characters.",
+  "Must be at most 42 characters."
+ ],
+ [
+  "de",
+  "Must be at most 42 characters.\n",
+  "Must be at most 42 characters.\n"
+ ],
+ [
+  "de",
+  "Must be at most ٤٢ characters.",
+  "Must be at most ٤٢ characters."
+ ],
+ [
+  "de",
+  "Must be at most characters.",
+  "Must be at most characters."
+ ],
+ [
+  "es",
+  "Accommodation facility name is required.",
+  "Accommodation facility name is required."
+ ],
+ [
+  "es",
+  "City cannot consist of digits only.",
+  "La ciudad no puede contener solo números."
+ ],
+ [
+  "es",
+  "City is required.",
+  "La ciudad es obligatoria."
+ ],
+ [
+  "es",
+  "City must be at most 42 characters.",
+  "La ciudad puede tener como máximo 42 caracteres."
+ ],
+ [
+  "es",
+  "Country is required.",
+  "Elija el país de su domicilio."
+ ],
+ [
+  "es",
+  "Date of birth cannot be after your arrival date.",
+  "La fecha de nacimiento no puede ser posterior a su fecha de llegada."
+ ],
+ [
+  "es",
+  "Date of birth cannot be in the future.",
+  "La fecha de nacimiento no puede ser futura."
+ ],
+ [
+  "es",
+  "Date of birth is required.",
+  "La fecha de nacimiento es obligatoria."
+ ],
+ [
+  "es",
+  "Day must be between 01 and 31.",
+  "Fecha de nacimiento: el día debe estar entre 01 y 31."
+ ],
+ [
+  "es",
+  "Departure date must be later than the arrival date.",
+  "La fecha de salida debe ser posterior a la de llegada."
+ ],
+ [
+  "es",
+  "Document number must be at least 6 characters.",
+  "El número de documento debe tener al menos 6 caracteres."
+ ],
+ [
+  "es",
+  "Document number must be at most 30 characters.",
+  "El número de documento puede tener como máximo 30 caracteres."
+ ],
+ [
+  "es",
+  "Enter the full date as DD.MM.YYYY.",
+  "Fecha de nacimiento: introduzca la fecha completa como DD.MM.AAAA, por ejemplo 14.03.1961."
+ ],
+ [
+  "es",
+  "Facility name must be at most 35 characters.",
+  "Facility name must be at most 35 characters."
+ ],
+ [
+  "es",
+  "For a child recorded in a parent's passport the note must contain the parent's document number.",
+  "Para un menor inscrito en el pasaporte de un progenitor, la nota debe contener el número de documento del progenitor."
+ ],
+ [
+  "es",
+  "Given name looks missing - please check the passport.",
+  "Parece que falta el nombre - revise el pasaporte."
+ ],
+ [
+  "es",
+  "Given name must be at most 24 characters.",
+  "El nombre puede tener como máximo 24 caracteres."
+ ],
+ [
+  "es",
+  "Home address is too long.",
+  "El domicilio es demasiado largo."
+ ],
+ [
+  "es",
+  "House number is required.",
+  "House number is required."
+ ],
+ [
+  "es",
+  "House number is up to 4 digits, optionally with E for an evidence number.",
+  "House number is up to 4 digits, optionally with E for an evidence number."
+ ],
+ [
+  "es",
+  "IDUB is required before anything can be reported.",
+  "IDUB is required before anything can be reported."
+ ],
+ [
+  "es",
+  "IDUB must be 12-14 letters or digits.",
+  "IDUB must be 12-14 letters or digits."
+ ],
+ [
+  "es",
+  "Month must be between 01 and 12.",
+  "Fecha de nacimiento: el mes debe estar entre 01 y 12."
+ ],
+ [
+  "es",
+  "Municipality is required.",
+  "Municipality is required."
+ ],
+ [
+  "es",
+  "Nationality is required.",
+  "Elija su nacionalidad."
+ ],
+ [
+  "es",
+  "No property manager is attached, so guests have no named contact for questions about their stay.",
+  "No property manager is attached, so guests have no named contact for questions about their stay."
+ ],
+ [
+  "es",
+  "No property manager is attached, so guests have no named contact for questions about their stay. The privacy notice also cannot name who controls their data.",
+  "No property manager is attached, so guests have no named contact for questions about their stay. The privacy notice also cannot name who controls their data."
+ ],
+ [
+  "es",
+  "Note must be at most 255 characters.",
+  "La nota puede tener como máximo 255 caracteres."
+ ],
+ [
+  "es",
+  "Orientation number is up to 3 digits plus one optional letter.",
+  "Orientation number is up to 3 digits plus one optional letter."
+ ],
+ [
+  "es",
+  "Postcode is required.",
+  "Postcode is required."
+ ],
+ [
+  "es",
+  "Postcode must be exactly 5 digits.",
+  "Postcode must be exactly 5 digits."
+ ],
+ [
+  "es",
+  "Purpose of stay is required.",
+  "El motivo de la estancia es obligatorio."
+ ],
+ [
+  "es",
+  "Remove the | character and any line breaks.",
+  "Elimine el carácter | y cualquier salto de línea."
+ ],
+ [
+  "es",
+  "Street and number are required.",
+  "La calle y el número son obligatorios."
+ ],
+ [
+  "es",
+  "Street cannot consist of digits only.",
+  "La calle no puede contener solo números."
+ ],
+ [
+  "es",
+  "Street is required.",
+  "Street is required."
+ ],
+ [
+  "es",
+  "Street must be at most 42 characters.",
+  "La calle puede tener como máximo 42 caracteres."
+ ],
+ [
+  "es",
+  "Surname is required.",
+  "Los apellidos son obligatorios."
+ ],
+ [
+  "es",
+  "Surname must be at most 50 characters.",
+  "Los apellidos pueden tener como máximo 50 caracteres."
+ ],
+ [
+  "es",
+  "That date does not exist - please check day and month.",
+  "Fecha de nacimiento: esa fecha no existe. Revise el día y el mes."
+ ],
+ [
+  "es",
+  "That signature could not be saved. Sign again on the signature pad.",
+  "No se ha podido guardar la firma. Vuelva a firmar en el recuadro de firma."
+ ],
+ [
+  "es",
+  "The abbreviation is the 5 or 6 letters or digits the police assigned, e.g. AAKLI.",
+  "The abbreviation is the 5 or 6 letters or digits the police assigned, e.g. AAKLI."
+ ],
+ [
+  "es",
+  "The facility abbreviation (zkratka) is required.",
+  "The facility abbreviation (zkratka) is required."
+ ],
+ [
+  "es",
+  "The stay dates on this page are not readable. Reload the page and try again.",
+  "No se pueden leer las fechas de la estancia en esta página. Recárguela e inténtelo de nuevo."
+ ],
+ [
+  "es",
+  "These dates do not match your booking. Reload this page, or ask your host.",
+  "Estas fechas no coinciden con su reserva. Recargue la página o consulte a su anfitrión."
+ ],
+ [
+  "es",
+  "Travel document number is required.",
+  "El número del documento de viaje es obligatorio."
+ ],
+ [
+  "es",
+  "Type this using Latin letters (A-Z), exactly as printed in the two machine-readable lines at the bottom of your passport.",
+  "Escríbalo con letras latinas (A-Z), exactamente como aparece en las dos líneas de lectura mecánica de la parte inferior de su pasaporte."
+ ],
+ [
+  "es",
+  "UbyPort web-service login is required for automatic reporting.",
+  "UbyPort web-service login is required for automatic reporting."
+ ],
+ [
+  "es",
+  "UbyPort web-service password is required.",
+  "UbyPort web-service password is required."
+ ],
+ [
+  "es",
+  "Unknown country code.",
+  "Código de país desconocido."
+ ],
+ [
+  "es",
+  "Unknown purpose-of-stay code.",
+  "Código de motivo de la estancia desconocido."
+ ],
+ [
+  "es",
+  "Visa number must be at most 15 characters.",
+  "El número de visado puede tener como máximo 15 caracteres."
+ ],
+ [
+  "es",
+  "Web-service logins look like UBY-WS123abc (production) or uby-tws1ab45 (test). The ub1234567 login is for the web form and will not work here.",
+  "Web-service logins look like UBY-WS123abc (production) or uby-tws1ab45 (test). The ub1234567 login is for the web form and will not work here."
+ ],
+ [
+  "es",
+  "Year must be 1900 or later.",
+  "Fecha de nacimiento: el año debe ser 1900 o posterior."
+ ],
+ [
+  "es",
+  "",
+  ""
+ ],
+ [
+  "es",
+  "Unknown sentence.",
+  "Unknown sentence."
+ ],
+ [
+  "es",
+  "'XX' is not a valid three-letter country code.",
+  "'XX' is not a valid three-letter country code."
+ ],
+ [
+  "es",
+  "'' is not a valid three-letter country code.",
+  "'' is not a valid three-letter country code."
+ ],
+ [
+  "es",
+  "'a\nb' is not a valid three-letter country code.",
+  "'a\nb' is not a valid three-letter country code."
+ ],
+ [
+  "es",
+  "Must be at most 42 characters.",
+  "Must be at most 42 characters."
+ ],
+ [
+  "es",
+  "Must be at most 42 characters.\n",
+  "Must be at most 42 characters.\n"
+ ],
+ [
+  "es",
+  "Must be at most ٤٢ characters.",
+  "Must be at most ٤٢ characters."
+ ],
+ [
+  "es",
+  "Must be at most characters.",
+  "Must be at most characters."
+ ],
+ [
+  "fr",
+  "Accommodation facility name is required.",
+  "Accommodation facility name is required."
+ ],
+ [
+  "fr",
+  "City cannot consist of digits only.",
+  "La ville ne peut pas comporter uniquement des chiffres."
+ ],
+ [
+  "fr",
+  "City is required.",
+  "La ville est obligatoire."
+ ],
+ [
+  "fr",
+  "City must be at most 42 characters.",
+  "La ville ne doit pas dépasser 42 caractères."
+ ],
+ [
+  "fr",
+  "Country is required.",
+  "Choisissez le pays de votre domicile."
+ ],
+ [
+  "fr",
+  "Date of birth cannot be after your arrival date.",
+  "La date de naissance ne peut pas être postérieure à votre date d'arrivée."
+ ],
+ [
+  "fr",
+  "Date of birth cannot be in the future.",
+  "La date de naissance ne peut pas être dans le futur."
+ ],
+ [
+  "fr",
+  "Date of birth is required.",
+  "La date de naissance est obligatoire."
+ ],
+ [
+  "fr",
+  "Day must be between 01 and 31.",
+  "Date de naissance : le jour doit être compris entre 01 et 31."
+ ],
+ [
+  "fr",
+  "Departure date must be later than the arrival date.",
+  "La date de départ doit être postérieure à la date d'arrivée."
+ ],
+ [
+  "fr",
+  "Document number must be at least 6 characters.",
+  "Le numéro de document doit comporter au moins 6 caractères."
+ ],
+ [
+  "fr",
+  "Document number must be at most 30 characters.",
+  "Le numéro de document ne doit pas dépasser 30 caractères."
+ ],
+ [
+  "fr",
+  "Enter the full date as DD.MM.YYYY.",
+  "Date de naissance : saisissez la date complète au format JJ.MM.AAAA, par exemple 14.03.1961."
+ ],
+ [
+  "fr",
+  "Facility name must be at most 35 characters.",
+  "Facility name must be at most 35 characters."
+ ],
+ [
+  "fr",
+  "For a child recorded in a parent's passport the note must contain the parent's document number.",
+  "Pour un enfant inscrit sur le passeport d'un parent, la remarque doit contenir le numéro de document du parent."
+ ],
+ [
+  "fr",
+  "Given name looks missing - please check the passport.",
+  "Le prénom semble manquer - veuillez vérifier le passeport."
+ ],
+ [
+  "fr",
+  "Given name must be at most 24 characters.",
+  "Le prénom ne doit pas dépasser 24 caractères."
+ ],
+ [
+  "fr",
+  "Home address is too long.",
+  "L'adresse de domicile est trop longue."
+ ],
+ [
+  "fr",
+  "House number is required.",
+  "House number is required."
+ ],
+ [
+  "fr",
+  "House number is up to 4 digits, optionally with E for an evidence number.",
+  "House number is up to 4 digits, optionally with E for an evidence number."
+ ],
+ [
+  "fr",
+  "IDUB is required before anything can be reported.",
+  "IDUB is required before anything can be reported."
+ ],
+ [
+  "fr",
+  "IDUB must be 12-14 letters or digits.",
+  "IDUB must be 12-14 letters or digits."
+ ],
+ [
+  "fr",
+  "Month must be between 01 and 12.",
+  "Date de naissance : le mois doit être compris entre 01 et 12."
+ ],
+ [
+  "fr",
+  "Municipality is required.",
+  "Municipality is required."
+ ],
+ [
+  "fr",
+  "Nationality is required.",
+  "Choisissez votre nationalité."
+ ],
+ [
+  "fr",
+  "No property manager is attached, so guests have no named contact for questions about their stay.",
+  "No property manager is attached, so guests have no named contact for questions about their stay."
+ ],
+ [
+  "fr",
+  "No property manager is attached, so guests have no named contact for questions about their stay. The privacy notice also cannot name who controls their data.",
+  "No property manager is attached, so guests have no named contact for questions about their stay. The privacy notice also cannot name who controls their data."
+ ],
+ [
+  "fr",
+  "Note must be at most 255 characters.",
+  "La remarque ne doit pas dépasser 255 caractères."
+ ],
+ [
+  "fr",
+  "Orientation number is up to 3 digits plus one optional letter.",
+  "Orientation number is up to 3 digits plus one optional letter."
+ ],
+ [
+  "fr",
+  "Postcode is required.",
+  "Postcode is required."
+ ],
+ [
+  "fr",
+  "Postcode must be exactly 5 digits.",
+  "Postcode must be exactly 5 digits."
+ ],
+ [
+  "fr",
+  "Purpose of stay is required.",
+  "Le motif du séjour est obligatoire."
+ ],
+ [
+  "fr",
+  "Remove the | character and any line breaks.",
+  "Supprimez le caractère | et tout saut de ligne."
+ ],
+ [
+  "fr",
+  "Street and number are required.",
+  "La rue et le numéro sont obligatoires."
+ ],
+ [
+  "fr",
+  "Street cannot consist of digits only.",
+  "La rue ne peut pas comporter uniquement des chiffres."
+ ],
+ [
+  "fr",
+  "Street is required.",
+  "Street is required."
+ ],
+ [
+  "fr",
+  "Street must be at most 42 characters.",
+  "La rue ne doit pas dépasser 42 caractères."
+ ],
+ [
+  "fr",
+  "Surname is required.",
+  "Le nom est obligatoire."
+ ],
+ [
+  "fr",
+  "Surname must be at most 50 characters.",
+  "Le nom ne doit pas dépasser 50 caractères."
+ ],
+ [
+  "fr",
+  "That date does not exist - please check day and month.",
+  "Date de naissance : cette date n'existe pas. Vérifiez le jour et le mois."
+ ],
+ [
+  "fr",
+  "That signature could not be saved. Sign again on the signature pad.",
+  "La signature n'a pas pu être enregistrée. Signez à nouveau dans le cadre de signature."
+ ],
+ [
+  "fr",
+  "The abbreviation is the 5 or 6 letters or digits the police assigned, e.g. AAKLI.",
+  "The abbreviation is the 5 or 6 letters or digits the police assigned, e.g. AAKLI."
+ ],
+ [
+  "fr",
+  "The facility abbreviation (zkratka) is required.",
+  "The facility abbreviation (zkratka) is required."
+ ],
+ [
+  "fr",
+  "The stay dates on this page are not readable. Reload the page and try again.",
+  "Les dates de séjour de cette page sont illisibles. Rechargez la page et réessayez."
+ ],
+ [
+  "fr",
+  "These dates do not match your booking. Reload this page, or ask your host.",
+  "Ces dates ne correspondent pas à votre réservation. Rechargez la page ou demandez à votre hôte."
+ ],
+ [
+  "fr",
+  "Travel document number is required.",
+  "Le numéro du document de voyage est obligatoire."
+ ],
+ [
+  "fr",
+  "Type this using Latin letters (A-Z), exactly as printed in the two machine-readable lines at the bottom of your passport.",
+  "Saisissez-le en lettres latines (A-Z), exactement comme dans les deux lignes lisibles par machine en bas de votre passeport."
+ ],
+ [
+  "fr",
+  "UbyPort web-service login is required for automatic reporting.",
+  "UbyPort web-service login is required for automatic reporting."
+ ],
+ [
+  "fr",
+  "UbyPort web-service password is required.",
+  "UbyPort web-service password is required."
+ ],
+ [
+  "fr",
+  "Unknown country code.",
+  "Code pays inconnu."
+ ],
+ [
+  "fr",
+  "Unknown purpose-of-stay code.",
+  "Code de motif du séjour inconnu."
+ ],
+ [
+  "fr",
+  "Visa number must be at most 15 characters.",
+  "Le numéro de visa ne doit pas dépasser 15 caractères."
+ ],
+ [
+  "fr",
+  "Web-service logins look like UBY-WS123abc (production) or uby-tws1ab45 (test). The ub1234567 login is for the web form and will not work here.",
+  "Web-service logins look like UBY-WS123abc (production) or uby-tws1ab45 (test). The ub1234567 login is for the web form and will not work here."
+ ],
+ [
+  "fr",
+  "Year must be 1900 or later.",
+  "Date de naissance : l'année doit être 1900 ou postérieure."
+ ],
+ [
+  "fr",
+  "",
+  ""
+ ],
+ [
+  "fr",
+  "Unknown sentence.",
+  "Unknown sentence."
+ ],
+ [
+  "fr",
+  "'XX' is not a valid three-letter country code.",
+  "'XX' is not a valid three-letter country code."
+ ],
+ [
+  "fr",
+  "'' is not a valid three-letter country code.",
+  "'' is not a valid three-letter country code."
+ ],
+ [
+  "fr",
+  "'a\nb' is not a valid three-letter country code.",
+  "'a\nb' is not a valid three-letter country code."
+ ],
+ [
+  "fr",
+  "Must be at most 42 characters.",
+  "Must be at most 42 characters."
+ ],
+ [
+  "fr",
+  "Must be at most 42 characters.\n",
+  "Must be at most 42 characters.\n"
+ ],
+ [
+  "fr",
+  "Must be at most ٤٢ characters.",
+  "Must be at most ٤٢ characters."
+ ],
+ [
+  "fr",
+  "Must be at most characters.",
+  "Must be at most characters."
+ ],
+ [
+  "uk",
+  "Accommodation facility name is required.",
+  "Accommodation facility name is required."
+ ],
+ [
+  "uk",
+  "City cannot consist of digits only.",
+  "Назва міста не може складатися лише з цифр."
+ ],
+ [
+  "uk",
+  "City is required.",
+  "Місто обов’язкове."
+ ],
+ [
+  "uk",
+  "City must be at most 42 characters.",
+  "Назва міста може містити не більше 42 символів."
+ ],
+ [
+  "uk",
+  "Country is required.",
+  "Оберіть країну постійного проживання."
+ ],
+ [
+  "uk",
+  "Date of birth cannot be after your arrival date.",
+  "Дата народження не може бути пізнішою за дату заїзду."
+ ],
+ [
+  "uk",
+  "Date of birth cannot be in the future.",
+  "Дата народження не може бути в майбутньому."
+ ],
+ [
+  "uk",
+  "Date of birth is required.",
+  "Дата народження обов’язкова."
+ ],
+ [
+  "uk",
+  "Day must be between 01 and 31.",
+  "Дата народження: день має бути від 01 до 31."
+ ],
+ [
+  "uk",
+  "Departure date must be later than the arrival date.",
+  "Дата виїзду має бути пізнішою за дату заїзду."
+ ],
+ [
+  "uk",
+  "Document number must be at least 6 characters.",
+  "Номер документа має містити щонайменше 6 символів."
+ ],
+ [
+  "uk",
+  "Document number must be at most 30 characters.",
+  "Номер документа може містити не більше 30 символів."
+ ],
+ [
+  "uk",
+  "Enter the full date as DD.MM.YYYY.",
+  "Дата народження: введіть повну дату у форматі ДД.ММ.РРРР, наприклад 14.03.1961."
+ ],
+ [
+  "uk",
+  "Facility name must be at most 35 characters.",
+  "Facility name must be at most 35 characters."
+ ],
+ [
+  "uk",
+  "For a child recorded in a parent's passport the note must contain the parent's document number.",
+  "Для дитини, вписаної в паспорт одного з батьків, потрібно вказати номер документа цього з батьків."
+ ],
+ [
+  "uk",
+  "Given name looks missing - please check the passport.",
+  "Схоже, бракує імені. Перевірте паспорт."
+ ],
+ [
+  "uk",
+  "Given name must be at most 24 characters.",
+  "Ім’я може містити не більше 24 символів."
+ ],
+ [
+  "uk",
+  "Home address is too long.",
+  "Адреса постійного проживання задовга."
+ ],
+ [
+  "uk",
+  "House number is required.",
+  "House number is required."
+ ],
+ [
+  "uk",
+  "House number is up to 4 digits, optionally with E for an evidence number.",
+  "House number is up to 4 digits, optionally with E for an evidence number."
+ ],
+ [
+  "uk",
+  "IDUB is required before anything can be reported.",
+  "IDUB is required before anything can be reported."
+ ],
+ [
+  "uk",
+  "IDUB must be 12-14 letters or digits.",
+  "IDUB must be 12-14 letters or digits."
+ ],
+ [
+  "uk",
+  "Month must be between 01 and 12.",
+  "Дата народження: місяць має бути від 01 до 12."
+ ],
+ [
+  "uk",
+  "Municipality is required.",
+  "Municipality is required."
+ ],
+ [
+  "uk",
+  "Nationality is required.",
+  "Оберіть громадянство."
+ ],
+ [
+  "uk",
+  "No property manager is attached, so guests have no named contact for questions about their stay.",
+  "No property manager is attached, so guests have no named contact for questions about their stay."
+ ],
+ [
+  "uk",
+  "No property manager is attached, so guests have no named contact for questions about their stay. The privacy notice also cannot name who controls their data.",
+  "No property manager is attached, so guests have no named contact for questions about their stay. The privacy notice also cannot name who controls their data."
+ ],
+ [
+  "uk",
+  "Note must be at most 255 characters.",
+  "Примітка може містити не більше 255 символів."
+ ],
+ [
+  "uk",
+  "Orientation number is up to 3 digits plus one optional letter.",
+  "Orientation number is up to 3 digits plus one optional letter."
+ ],
+ [
+  "uk",
+  "Postcode is required.",
+  "Postcode is required."
+ ],
+ [
+  "uk",
+  "Postcode must be exactly 5 digits.",
+  "Postcode must be exactly 5 digits."
+ ],
+ [
+  "uk",
+  "Purpose of stay is required.",
+  "Мета перебування обов’язкова."
+ ],
+ [
+  "uk",
+  "Remove the | character and any line breaks.",
+  "Видаліть символ | і всі розриви рядків."
+ ],
+ [
+  "uk",
+  "Street and number are required.",
+  "Вулиця та номер будинку обов’язкові."
+ ],
+ [
+  "uk",
+  "Street cannot consist of digits only.",
+  "Назва вулиці не може складатися лише з цифр."
+ ],
+ [
+  "uk",
+  "Street is required.",
+  "Street is required."
+ ],
+ [
+  "uk",
+  "Street must be at most 42 characters.",
+  "Назва вулиці може містити не більше 42 символів."
+ ],
+ [
+  "uk",
+  "Surname is required.",
+  "Прізвище обов’язкове."
+ ],
+ [
+  "uk",
+  "Surname must be at most 50 characters.",
+  "Прізвище може містити не більше 50 символів."
+ ],
+ [
+  "uk",
+  "That date does not exist - please check day and month.",
+  "Дата народження: такої дати не існує. Перевірте день і місяць."
+ ],
+ [
+  "uk",
+  "That signature could not be saved. Sign again on the signature pad.",
+  "Не вдалося зберегти підпис. Розпишіться ще раз у полі для підпису."
+ ],
+ [
+  "uk",
+  "The abbreviation is the 5 or 6 letters or digits the police assigned, e.g. AAKLI.",
+  "The abbreviation is the 5 or 6 letters or digits the police assigned, e.g. AAKLI."
+ ],
+ [
+  "uk",
+  "The facility abbreviation (zkratka) is required.",
+  "The facility abbreviation (zkratka) is required."
+ ],
+ [
+  "uk",
+  "The stay dates on this page are not readable. Reload the page and try again.",
+  "Не вдалося прочитати дати проживання на цій сторінці. Оновіть сторінку та спробуйте ще раз."
+ ],
+ [
+  "uk",
+  "These dates do not match your booking. Reload this page, or ask your host.",
+  "Ці дати не збігаються з вашим бронюванням. Оновіть сторінку або зверніться до господаря."
+ ],
+ [
+  "uk",
+  "Travel document number is required.",
+  "Номер проїзного документа обов’язковий."
+ ],
+ [
+  "uk",
+  "Type this using Latin letters (A-Z), exactly as printed in the two machine-readable lines at the bottom of your passport.",
+  "Пишіть латинськими літерами (A-Z), точно як у двох машинозчитуваних рядках унизу сторінки паспорта."
+ ],
+ [
+  "uk",
+  "UbyPort web-service login is required for automatic reporting.",
+  "UbyPort web-service login is required for automatic reporting."
+ ],
+ [
+  "uk",
+  "UbyPort web-service password is required.",
+  "UbyPort web-service password is required."
+ ],
+ [
+  "uk",
+  "Unknown country code.",
+  "Невідомий код країни."
+ ],
+ [
+  "uk",
+  "Unknown purpose-of-stay code.",
+  "Невідомий код мети перебування."
+ ],
+ [
+  "uk",
+  "Visa number must be at most 15 characters.",
+  "Номер візи може містити не більше 15 символів."
+ ],
+ [
+  "uk",
+  "Web-service logins look like UBY-WS123abc (production) or uby-tws1ab45 (test). The ub1234567 login is for the web form and will not work here.",
+  "Web-service logins look like UBY-WS123abc (production) or uby-tws1ab45 (test). The ub1234567 login is for the web form and will not work here."
+ ],
+ [
+  "uk",
+  "Year must be 1900 or later.",
+  "Дата народження: рік має бути 1900 або пізніший."
+ ],
+ [
+  "uk",
+  "",
+  ""
+ ],
+ [
+  "uk",
+  "Unknown sentence.",
+  "Unknown sentence."
+ ],
+ [
+  "uk",
+  "'XX' is not a valid three-letter country code.",
+  "'XX' is not a valid three-letter country code."
+ ],
+ [
+  "uk",
+  "'' is not a valid three-letter country code.",
+  "'' is not a valid three-letter country code."
+ ],
+ [
+  "uk",
+  "'a\nb' is not a valid three-letter country code.",
+  "'a\nb' is not a valid three-letter country code."
+ ],
+ [
+  "uk",
+  "Must be at most 42 characters.",
+  "Must be at most 42 characters."
+ ],
+ [
+  "uk",
+  "Must be at most 42 characters.\n",
+  "Must be at most 42 characters.\n"
+ ],
+ [
+  "uk",
+  "Must be at most ٤٢ characters.",
+  "Must be at most ٤٢ characters."
+ ],
+ [
+  "uk",
+  "Must be at most characters.",
+  "Must be at most characters."
+ ],
+ [
+  "vi",
+  "Accommodation facility name is required.",
+  "Tên cơ sở lưu trú là bắt buộc."
+ ],
+ [
+  "vi",
+  "City cannot consist of digits only.",
+  "Tên thành phố không thể chỉ gồm chữ số."
+ ],
+ [
+  "vi",
+  "City is required.",
+  "Thành phố là bắt buộc."
+ ],
+ [
+  "vi",
+  "City must be at most 42 characters.",
+  "Tên thành phố tối đa 42 ký tự."
+ ],
+ [
+  "vi",
+  "Country is required.",
+  "Choose the country of your home address."
+ ],
+ [
+  "vi",
+  "Date of birth cannot be after your arrival date.",
+  "Ngày sinh không thể sau ngày đến."
+ ],
+ [
+  "vi",
+  "Date of birth cannot be in the future.",
+  "Ngày sinh không thể ở tương lai."
+ ],
+ [
+  "vi",
+  "Date of birth is required.",
+  "Ngày sinh là bắt buộc."
+ ],
+ [
+  "vi",
+  "Day must be between 01 and 31.",
+  "Date of birth: day must be between 01 and 31."
+ ],
+ [
+  "vi",
+  "Departure date must be later than the arrival date.",
+  "Ngày đi phải sau ngày đến."
+ ],
+ [
+  "vi",
+  "Document number must be at least 6 characters.",
+  "Số giấy tờ phải có ít nhất 6 ký tự."
+ ],
+ [
+  "vi",
+  "Document number must be at most 30 characters.",
+  "Số giấy tờ tối đa 30 ký tự."
+ ],
+ [
+  "vi",
+  "Enter the full date as DD.MM.YYYY.",
+  "Date of birth: enter the full date as DD.MM.YYYY, for example 14.03.1961."
+ ],
+ [
+  "vi",
+  "Facility name must be at most 35 characters.",
+  "Tên cơ sở tối đa 35 ký tự."
+ ],
+ [
+  "vi",
+  "For a child recorded in a parent's passport the note must contain the parent's document number.",
+  "Với trẻ em có tên trong hộ chiếu của cha hoặc mẹ, ghi chú phải có số giấy tờ của cha hoặc mẹ."
+ ],
+ [
+  "vi",
+  "Given name looks missing - please check the passport.",
+  "Có vẻ thiếu tên, hãy kiểm tra hộ chiếu."
+ ],
+ [
+  "vi",
+  "Given name must be at most 24 characters.",
+  "Tên tối đa 24 ký tự."
+ ],
+ [
+  "vi",
+  "Home address is too long.",
+  "Địa chỉ thường trú quá dài."
+ ],
+ [
+  "vi",
+  "House number is required.",
+  "Số nhà là bắt buộc."
+ ],
+ [
+  "vi",
+  "House number is up to 4 digits, optionally with E for an evidence number.",
+  "Số nhà tối đa 4 chữ số, có thể kèm chữ E nếu là số đăng ký tạm (evidenční číslo)."
+ ],
+ [
+  "vi",
+  "IDUB is required before anything can be reported.",
+  "Cần có IDUB trước khi khai báo bất cứ điều gì."
+ ],
+ [
+  "vi",
+  "IDUB must be 12-14 letters or digits.",
+  "IDUB phải gồm 12-14 chữ cái hoặc chữ số."
+ ],
+ [
+  "vi",
+  "Month must be between 01 and 12.",
+  "Date of birth: month must be between 01 and 12."
+ ],
+ [
+  "vi",
+  "Municipality is required.",
+  "Xã/phường là bắt buộc."
+ ],
+ [
+  "vi",
+  "Nationality is required.",
+  "Choose your nationality."
+ ],
+ [
+  "vi",
+  "No property manager is attached, so guests have no named contact for questions about their stay.",
+  "Chưa gắn người quản lý chỗ ở, nên khách không có người liên hệ cụ thể khi có câu hỏi về lượt lưu trú."
+ ],
+ [
+  "vi",
+  "No property manager is attached, so guests have no named contact for questions about their stay. The privacy notice also cannot name who controls their data.",
+  "Chưa gắn người quản lý chỗ ở, nên khách không có người liên hệ cụ thể khi có câu hỏi về lượt lưu trú. Thông báo quyền riêng tư cũng không thể nêu tên bên kiểm soát dữ liệu của họ."
+ ],
+ [
+  "vi",
+  "Note must be at most 255 characters.",
+  "Ghi chú tối đa 255 ký tự."
+ ],
+ [
+  "vi",
+  "Orientation number is up to 3 digits plus one optional letter.",
+  "Số định hướng (číslo orientační) tối đa 3 chữ số, có thể kèm một chữ cái."
+ ],
+ [
+  "vi",
+  "Postcode is required.",
+  "Mã bưu chính là bắt buộc."
+ ],
+ [
+  "vi",
+  "Postcode must be exactly 5 digits.",
+  "Mã bưu chính phải có đúng 5 chữ số."
+ ],
+ [
+  "vi",
+  "Purpose of stay is required.",
+  "Mục đích lưu trú là bắt buộc."
+ ],
+ [
+  "vi",
+  "Remove the | character and any line breaks.",
+  "Xóa ký tự | và mọi dấu xuống dòng."
+ ],
+ [
+  "vi",
+  "Street and number are required.",
+  "Đường và số nhà là bắt buộc."
+ ],
+ [
+  "vi",
+  "Street cannot consist of digits only.",
+  "Tên đường không thể chỉ gồm chữ số."
+ ],
+ [
+  "vi",
+  "Street is required.",
+  "Tên đường là bắt buộc."
+ ],
+ [
+  "vi",
+  "Street must be at most 42 characters.",
+  "Tên đường tối đa 42 ký tự."
+ ],
+ [
+  "vi",
+  "Surname is required.",
+  "Họ là bắt buộc."
+ ],
+ [
+  "vi",
+  "Surname must be at most 50 characters.",
+  "Họ tối đa 50 ký tự."
+ ],
+ [
+  "vi",
+  "That date does not exist - please check day and month.",
+  "Date of birth: that date does not exist. Check the day and month."
+ ],
+ [
+  "vi",
+  "That signature could not be saved. Sign again on the signature pad.",
+  "Không lưu được chữ ký. Hãy ký lại trên khung chữ ký."
+ ],
+ [
+  "vi",
+  "The abbreviation is the 5 or 6 letters or digits the police assigned, e.g. AAKLI.",
+  "Tên viết tắt gồm 5 hoặc 6 chữ cái hoặc chữ số do cảnh sát cấp, ví dụ AAKLI."
+ ],
+ [
+  "vi",
+  "The facility abbreviation (zkratka) is required.",
+  "Tên viết tắt của cơ sở (zkratka) là bắt buộc."
+ ],
+ [
+  "vi",
+  "The stay dates on this page are not readable. Reload the page and try again.",
+  "Không đọc được ngày lưu trú trên trang này. Hãy tải lại trang và thử lại."
+ ],
+ [
+  "vi",
+  "These dates do not match your booking. Reload this page, or ask your host.",
+  "Các ngày này không khớp với đặt phòng. Hãy tải lại trang, hoặc hỏi chủ nhà."
+ ],
+ [
+  "vi",
+  "Travel document number is required.",
+  "Số giấy tờ đi lại là bắt buộc."
+ ],
+ [
+  "vi",
+  "Type this using Latin letters (A-Z), exactly as printed in the two machine-readable lines at the bottom of your passport.",
+  "Nhập bằng chữ Latinh (A-Z), đúng như in trên hai dòng máy đọc ở cuối trang hộ chiếu."
+ ],
+ [
+  "vi",
+  "UbyPort web-service login is required for automatic reporting.",
+  "Cần tên đăng nhập web-service UbyPort để khai báo tự động."
+ ],
+ [
+  "vi",
+  "UbyPort web-service password is required.",
+  "Mật khẩu web-service UbyPort là bắt buộc."
+ ],
+ [
+  "vi",
+  "Unknown country code.",
+  "Mã quốc gia không xác định."
+ ],
+ [
+  "vi",
+  "Unknown purpose-of-stay code.",
+  "Mã mục đích lưu trú không xác định."
+ ],
+ [
+  "vi",
+  "Visa number must be at most 15 characters.",
+  "Số thị thực tối đa 15 ký tự."
+ ],
+ [
+  "vi",
+  "Web-service logins look like UBY-WS123abc (production) or uby-tws1ab45 (test). The ub1234567 login is for the web form and will not work here.",
+  "Tên đăng nhập web-service có dạng UBY-WS123abc (chính thức) hoặc uby-tws1ab45 (thử nghiệm). Tên đăng nhập ub1234567 dành cho biểu mẫu web và không dùng được ở đây."
+ ],
+ [
+  "vi",
+  "Year must be 1900 or later.",
+  "Date of birth: year must be 1900 or later."
+ ],
+ [
+  "vi",
+  "",
+  ""
+ ],
+ [
+  "vi",
+  "Unknown sentence.",
+  "Unknown sentence."
+ ],
+ [
+  "vi",
+  "'XX' is not a valid three-letter country code.",
+  "“XX” không phải mã quốc gia ba chữ cái hợp lệ (ví dụ GBR, USA, DEU)."
+ ],
+ [
+  "vi",
+  "'' is not a valid three-letter country code.",
+  "“” không phải mã quốc gia ba chữ cái hợp lệ (ví dụ GBR, USA, DEU)."
+ ],
+ [
+  "vi",
+  "'a\nb' is not a valid three-letter country code.",
+  "'a\nb' is not a valid three-letter country code."
+ ],
+ [
+  "vi",
+  "Must be at most 42 characters.",
+  "Tối đa 42 ký tự."
+ ],
+ [
+  "vi",
+  "Must be at most 42 characters.\n",
+  "Tối đa 42 ký tự."
+ ],
+ [
+  "vi",
+  "Must be at most ٤٢ characters.",
+  "Tối đa ٤٢ ký tự."
+ ],
+ [
+  "vi",
+  "Must be at most characters.",
+  "Must be at most characters."
+ ],
+ [
+  "",
+  "Accommodation facility name is required.",
+  "Accommodation facility name is required."
+ ],
+ [
+  "",
+  "City cannot consist of digits only.",
+  "City cannot consist of digits only."
+ ],
+ [
+  "",
+  "City is required.",
+  "City is required."
+ ],
+ [
+  "",
+  "City must be at most 42 characters.",
+  "City must be at most 42 characters."
+ ],
+ [
+  "",
+  "Country is required.",
+  "Choose the country of your home address."
+ ],
+ [
+  "",
+  "Date of birth cannot be after your arrival date.",
+  "Date of birth cannot be after your arrival date."
+ ],
+ [
+  "",
+  "Date of birth cannot be in the future.",
+  "Date of birth cannot be in the future."
+ ],
+ [
+  "",
+  "Date of birth is required.",
+  "Date of birth is required."
+ ],
+ [
+  "",
+  "Day must be between 01 and 31.",
+  "Date of birth: day must be between 01 and 31."
+ ],
+ [
+  "",
+  "Departure date must be later than the arrival date.",
+  "Departure date must be later than the arrival date."
+ ],
+ [
+  "",
+  "Document number must be at least 6 characters.",
+  "Document number must be at least 6 characters."
+ ],
+ [
+  "",
+  "Document number must be at most 30 characters.",
+  "Document number must be at most 30 characters."
+ ],
+ [
+  "",
+  "Enter the full date as DD.MM.YYYY.",
+  "Date of birth: enter the full date as DD.MM.YYYY, for example 14.03.1961."
+ ],
+ [
+  "",
+  "Facility name must be at most 35 characters.",
+  "Facility name must be at most 35 characters."
+ ],
+ [
+  "",
+  "For a child recorded in a parent's passport the note must contain the parent's document number.",
+  "For a child recorded in a parent's passport the note must contain the parent's document number."
+ ],
+ [
+  "",
+  "Given name looks missing - please check the passport.",
+  "Given name looks missing - please check the passport."
+ ],
+ [
+  "",
+  "Given name must be at most 24 characters.",
+  "Given name must be at most 24 characters."
+ ],
+ [
+  "",
+  "Home address is too long.",
+  "Home address is too long."
+ ],
+ [
+  "",
+  "House number is required.",
+  "House number is required."
+ ],
+ [
+  "",
+  "House number is up to 4 digits, optionally with E for an evidence number.",
+  "House number is up to 4 digits, optionally with E for an evidence number."
+ ],
+ [
+  "",
+  "IDUB is required before anything can be reported.",
+  "IDUB is required before anything can be reported."
+ ],
+ [
+  "",
+  "IDUB must be 12-14 letters or digits.",
+  "IDUB must be 12-14 letters or digits."
+ ],
+ [
+  "",
+  "Month must be between 01 and 12.",
+  "Date of birth: month must be between 01 and 12."
+ ],
+ [
+  "",
+  "Municipality is required.",
+  "Municipality is required."
+ ],
+ [
+  "",
+  "Nationality is required.",
+  "Choose your nationality."
+ ],
+ [
+  "",
+  "No property manager is attached, so guests have no named contact for questions about their stay.",
+  "No property manager is attached, so guests have no named contact for questions about their stay."
+ ],
+ [
+  "",
+  "No property manager is attached, so guests have no named contact for questions about their stay. The privacy notice also cannot name who controls their data.",
+  "No property manager is attached, so guests have no named contact for questions about their stay. The privacy notice also cannot name who controls their data."
+ ],
+ [
+  "",
+  "Note must be at most 255 characters.",
+  "Note must be at most 255 characters."
+ ],
+ [
+  "",
+  "Orientation number is up to 3 digits plus one optional letter.",
+  "Orientation number is up to 3 digits plus one optional letter."
+ ],
+ [
+  "",
+  "Postcode is required.",
+  "Postcode is required."
+ ],
+ [
+  "",
+  "Postcode must be exactly 5 digits.",
+  "Postcode must be exactly 5 digits."
+ ],
+ [
+  "",
+  "Purpose of stay is required.",
+  "Purpose of stay is required."
+ ],
+ [
+  "",
+  "Remove the | character and any line breaks.",
+  "Remove the | character and any line breaks."
+ ],
+ [
+  "",
+  "Street and number are required.",
+  "Street and number are required."
+ ],
+ [
+  "",
+  "Street cannot consist of digits only.",
+  "Street cannot consist of digits only."
+ ],
+ [
+  "",
+  "Street is required.",
+  "Street is required."
+ ],
+ [
+  "",
+  "Street must be at most 42 characters.",
+  "Street must be at most 42 characters."
+ ],
+ [
+  "",
+  "Surname is required.",
+  "Surname is required."
+ ],
+ [
+  "",
+  "Surname must be at most 50 characters.",
+  "Surname must be at most 50 characters."
+ ],
+ [
+  "",
+  "That date does not exist - please check day and month.",
+  "Date of birth: that date does not exist. Check the day and month."
+ ],
+ [
+  "",
+  "That signature could not be saved. Sign again on the signature pad.",
+  "That signature could not be saved. Sign again on the signature pad."
+ ],
+ [
+  "",
+  "The abbreviation is the 5 or 6 letters or digits the police assigned, e.g. AAKLI.",
+  "The abbreviation is the 5 or 6 letters or digits the police assigned, e.g. AAKLI."
+ ],
+ [
+  "",
+  "The facility abbreviation (zkratka) is required.",
+  "The facility abbreviation (zkratka) is required."
+ ],
+ [
+  "",
+  "The stay dates on this page are not readable. Reload the page and try again.",
+  "The stay dates on this page are not readable. Reload the page and try again."
+ ],
+ [
+  "",
+  "These dates do not match your booking. Reload this page, or ask your host.",
+  "These dates do not match your booking. Reload this page, or ask your host."
+ ],
+ [
+  "",
+  "Travel document number is required.",
+  "Travel document number is required."
+ ],
+ [
+  "",
+  "Type this using Latin letters (A-Z), exactly as printed in the two machine-readable lines at the bottom of your passport.",
+  "Type this using Latin letters (A-Z), exactly as printed in the two machine-readable lines at the bottom of your passport."
+ ],
+ [
+  "",
+  "UbyPort web-service login is required for automatic reporting.",
+  "UbyPort web-service login is required for automatic reporting."
+ ],
+ [
+  "",
+  "UbyPort web-service password is required.",
+  "UbyPort web-service password is required."
+ ],
+ [
+  "",
+  "Unknown country code.",
+  "Unknown country code."
+ ],
+ [
+  "",
+  "Unknown purpose-of-stay code.",
+  "Unknown purpose-of-stay code."
+ ],
+ [
+  "",
+  "Visa number must be at most 15 characters.",
+  "Visa number must be at most 15 characters."
+ ],
+ [
+  "",
+  "Web-service logins look like UBY-WS123abc (production) or uby-tws1ab45 (test). The ub1234567 login is for the web form and will not work here.",
+  "Web-service logins look like UBY-WS123abc (production) or uby-tws1ab45 (test). The ub1234567 login is for the web form and will not work here."
+ ],
+ [
+  "",
+  "Year must be 1900 or later.",
+  "Date of birth: year must be 1900 or later."
+ ],
+ [
+  "",
+  "",
+  ""
+ ],
+ [
+  "",
+  "Unknown sentence.",
+  "Unknown sentence."
+ ],
+ [
+  "",
+  "'XX' is not a valid three-letter country code.",
+  "'XX' is not a valid three-letter country code."
+ ],
+ [
+  "",
+  "'' is not a valid three-letter country code.",
+  "'' is not a valid three-letter country code."
+ ],
+ [
+  "",
+  "'a\nb' is not a valid three-letter country code.",
+  "'a\nb' is not a valid three-letter country code."
+ ],
+ [
+  "",
+  "Must be at most 42 characters.",
+  "Must be at most 42 characters."
+ ],
+ [
+  "",
+  "Must be at most 42 characters.\n",
+  "Must be at most 42 characters.\n"
+ ],
+ [
+  "",
+  "Must be at most ٤٢ characters.",
+  "Must be at most ٤٢ characters."
+ ],
+ [
+  "",
+  "Must be at most characters.",
+  "Must be at most characters."
+ ]
+]

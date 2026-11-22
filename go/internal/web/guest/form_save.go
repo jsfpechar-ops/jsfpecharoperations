@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -142,8 +143,12 @@ func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter,
 	if si := validation.GuestFormSignatureIssue(sig, child); si != nil {
 		issues = append(issues, *si)
 	}
+	// guest.py:2518 — name the field that holds another alphabet, then word every
+	// sentence for the guest. Both passes run before the refusal is tested, so a
+	// translated sentence is what the page shows and what the log counts.
+	issues = localizeIssues(nameLatinIssues(issues, lang), lang)
 	if len(validation.ErrorsOnly(issues)) > 0 {
-		renderGuestForm422(w, r, lang, existing, values, issues)
+		renderGuestForm422(w, r, d, apt, token, lang, resID, existing, raw, values, stayFrom, stayTo, issues)
 		return nil
 	}
 	nowS := utcStamp(d.now)
@@ -482,9 +487,73 @@ func keptGuestSignature(posted, stored string) string {
 
 func guestFormLocked(row *guestSaveRow) bool { return false }
 
-func renderGuestForm422(w http.ResponseWriter, r *http.Request, lang string, existing *guestSaveRow, values validation.GuestRow, issues []validation.Issue) {
-	w.WriteHeader(http.StatusUnprocessableEntity)
-	_, _ = w.Write([]byte("validation"))
+// renderGuestForm422 redraws the form the guest just submitted, with what they
+// typed and the sentences saying what to fix — Python's 422 (guest.py:2530
+// renders the form context again with values and issues), not a bare status.
+func renderGuestForm422(w http.ResponseWriter, r *http.Request, d saveDeps, apt *Apartment, token, lang string, resID int64, existing *guestSaveRow, raw map[string]string, values validation.GuestRow, stayFrom, stayTo string, issues []validation.Issue) {
+	fd := formPageDeps{pool: d.pool, getenv: d.getenv, now: d.now}
+	ctx := r.Context()
+	res, ok := formPagesReservation(ctx, fd.pool, apt, resID, r)
+	if !ok {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		_, _ = w.Write([]byte("validation"))
+		return
+	}
+	var guest *formGuestRow
+	if existing != nil {
+		guest, _ = loadFormGuest(ctx, d.pool, existing.id, resID, d.getenv, d.now)
+	}
+	mode := "new"
+	if guest != nil {
+		mode = "edit"
+	}
+	view, err := buildFormView(ctx, fd, r, apt, token, res, guest, lang, mode)
+	if err != nil {
+		log.Printf("guest form 422: %v", err)
+		http.Error(w, "server error", http.StatusInternalServerError)
+		return
+	}
+	view.Values = guestTypedValues(values, raw, stayFrom, stayTo)
+	view.Issues = issues
+	view.LoadSignatureJS = true
+	view.WrapClass = "g-checkin-page"
+	writeFormPageStatus(w, r, view, http.StatusUnprocessableEntity)
+}
+
+// guestTypedValues is the form's own values after a refused submit: what
+// validation.py cleaned, plus guest._keep_unreadable_text — a name or address in
+// another alphabet cleans to nothing, and the guest must still see what they
+// typed so they can correct it.
+func guestTypedValues(values validation.GuestRow, raw map[string]string, stayFrom, stayTo string) map[string]string {
+	out := map[string]string{
+		"surname":     values.Surname,
+		"first_name":  values.FirstName,
+		"birth_date":  values.BirthDate,
+		"nationality": values.Nationality,
+		"doc_number":  values.DocNumber,
+		"visa_number": values.VisaNumber,
+		"res_street":  values.ResStreet,
+		"res_city":    values.ResCity,
+		"res_country": values.ResCountry,
+		"purpose":     values.Purpose,
+		"note":        values.Note,
+		"stay_from":   stayFrom,
+		"stay_to":     stayTo,
+	}
+	for _, field := range []string{"surname", "first_name", "res_street", "res_city"} {
+		if out[field] != "" {
+			continue
+		}
+		typed := strings.TrimSpace(raw[field])
+		if typed == "" {
+			continue
+		}
+		if runes := []rune(typed); len(runes) > 100 {
+			typed = string(runes[:100])
+		}
+		out[field] = typed
+	}
+	return out
 }
 
 func parseDatePtr(s string) *time.Time {

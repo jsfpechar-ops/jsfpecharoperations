@@ -22,6 +22,8 @@ APP_DIR = Path(__file__).resolve().parents[1]
 GO_DIR = APP_DIR.parent / "go" / "internal" / "validationi18n"
 TABLES = GO_DIR / "messages.json"
 GOLDEN = GO_DIR / "testdata" / "localize_golden.json"
+GUEST_TABLES = GO_DIR / "guest_messages.json"
+GUEST_GOLDEN = GO_DIR / "testdata" / "guest_localize_golden.json"
 sys.path.insert(0, str(APP_DIR))
 
 from app import host_vi_i18n, validation_i18n  # noqa: E402
@@ -65,9 +67,46 @@ def render_golden() -> str:
     return _dump(cases)
 
 
+GUEST_LANGS = ("cs", "en", "de", "es", "fr", "uk", "vi", "")
+
+
+def render_guest_tables() -> str:
+    """validation_i18n.guest_localize's tables: the guest catalogs, then en/cs."""
+    data = {
+        "guest": {
+            lang: {k: v for k, v in sorted(table.items()) if v}
+            for lang, table in sorted(validation_i18n.GUEST_MESSAGES.items())
+        },
+        "en": {k: v for k, v in sorted(validation_i18n.GUEST_EN_MESSAGES.items()) if v},
+        "cs": {k: v for k, v in sorted(validation_i18n.GUEST_CS_MESSAGES.items()) if v},
+    }
+    return _dump(data)
+
+
+def render_guest_golden() -> str:
+    messages = sorted(
+        set(validation_i18n.GUEST_EN_MESSAGES)
+        | set(validation_i18n.GUEST_CS_MESSAGES)
+        | {m for table in validation_i18n.GUEST_MESSAGES.values() for m in table}
+        | set(validation_i18n.CS_MESSAGES)
+        | set(host_vi_i18n.VALIDATION)
+    )
+    messages += list(EXTRA)
+    cases = [
+        [lang, m, validation_i18n.guest_localize(m, lang)] for lang in GUEST_LANGS for m in messages
+    ]
+    return _dump(cases)
+
+
 def main(argv: list) -> int:
     stale = 0
-    for path, text in ((TABLES, render_tables()), (GOLDEN, render_golden())):
+    pairs = (
+        (TABLES, render_tables()),
+        (GOLDEN, render_golden()),
+        (GUEST_TABLES, render_guest_tables()),
+        (GUEST_GOLDEN, render_guest_golden()),
+    )
+    for path, text in pairs:
         current = path.read_text(encoding="utf-8") if path.exists() else None
         if "--check" in argv:
             if current != text:

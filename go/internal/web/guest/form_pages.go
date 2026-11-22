@@ -644,6 +644,12 @@ func buildFormView(ctx context.Context, d formPageDeps, r *http.Request, apt *Ap
 }
 
 func writeFormPage(w http.ResponseWriter, r *http.Request, v formView) {
+	writeFormPageStatus(w, r, v, http.StatusOK)
+}
+
+// writeFormPageStatus is writeFormPage with the status the caller needs: a
+// refused submit answers 422, every page that renders fine answers 200.
+func writeFormPageStatus(w http.ResponseWriter, r *http.Request, v formView, status int) {
 	v.Page.GuestEndonyms = GuestEndonyms
 	if v.SaveActionLabel == "" {
 		v.SaveActionLabel = v.T("guest_save_details")
@@ -657,7 +663,7 @@ func writeFormPage(w http.ResponseWriter, r *http.Request, v formView) {
 	h := w.Header()
 	h.Set("Content-Type", "text/html; charset=utf-8")
 	h.Set("Cache-Control", formPagesHardening)
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(status)
 	if r.Method != http.MethodHead {
 		_, _ = io.Copy(w, strings.NewReader(buf.String()))
 	}

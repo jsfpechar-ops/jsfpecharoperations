@@ -17,6 +17,7 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb/layout"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/stayfee"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validationi18n"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/invoices"
 )
 
@@ -65,6 +66,7 @@ type guestFormData struct {
 	Reservation       guestFormRes
 	Guest             *guestFormValues
 	Issues            []validation.Issue
+	Lang              string
 	Editing           bool
 	IdentityHidden    bool
 	Filed             bool
@@ -131,8 +133,11 @@ func guestBad(issues []validation.Issue, field string) string {
 	return ""
 }
 
-// guestErrFor is err_for(field): one div per issue of that field.
-func guestErrFor(issues []validation.Issue, field string) template.HTML {
+// guestErrFor is err_for(field): one div per issue of that field, each message
+// in the host's language. validation.py writes its sentences in English and the
+// harness's validation_message filter translates them at display time; this is
+// that filter (validation_i18n.localize).
+func guestErrFor(lang string, issues []validation.Issue, field string) template.HTML {
 	var b strings.Builder
 	for _, i := range issues {
 		if i.Field != field {
@@ -142,7 +147,7 @@ func guestErrFor(issues []validation.Issue, field string) template.HTML {
 		if i.Severity == "error" {
 			class = "ui-error"
 		}
-		b.WriteString(`<div class="` + class + `">` + template.HTMLEscapeString(i.Message) + `</div>`)
+		b.WriteString(`<div class="` + class + `">` + template.HTMLEscapeString(validationi18n.Localize(i.Message, lang)) + `</div>`)
 	}
 	return template.HTML(b.String())
 }
@@ -429,6 +434,7 @@ func (c *guestEditCall) guestFormData(v guestFormView) (guestFormData, error) {
 			DateTo:       v.Reservation.dateTo,
 		},
 		Issues:          v.Issues,
+		Lang:            v.Lang,
 		Editing:         v.Editing,
 		IdentityHidden:  v.IdentityHidden,
 		Filed:           v.Editing && v.Guest != nil && v.Guest.submitState == submitStateSent,
