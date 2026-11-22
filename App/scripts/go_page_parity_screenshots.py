@@ -30,6 +30,10 @@ from typing import Any, Iterable
 
 APP = Path(__file__).resolve().parents[1]
 REPO = APP.parent
+# Running this as ``scripts/<name>.py`` puts ``App/scripts`` on sys.path, not ``App/``, so
+# ``from app import db`` failed. Make the documented invocation work without PYTHONPATH.
+if str(APP) not in sys.path:
+    sys.path.insert(0, str(APP))
 WIDTHS_DEFAULT = (390, 768, 1280)
 # Sub-pixel antialiasing and font hinting stay under this per RGB channel.
 INVISIBLE_MAX_DELTA = 2
@@ -92,7 +96,8 @@ def _go_base_from_env() -> str | None:
     try:
         from go_stack import ensure_go_running  # type: ignore
 
-        return ensure_go_running(public_base="http://127.0.0.1:1")
+        # The helper takes the public base positionally and returns the URL it actually serves on.
+        return ensure_go_running("http://127.0.0.1:1")
     finally:
         sys.path.pop(0)
 
@@ -196,6 +201,28 @@ def capture_png(
         browser.close()
 
 
+def _run_pre_sql(statements: Iterable[str]) -> None:
+    """Neutralise one-shot state before each stack's capture.
+
+    Python and Go share one database here, so anything that fires once and then
+    marks itself done is consumed by whichever stack rendered first, and the
+    second capture differs for a reason that is not the page. The known case is
+    ``user_account.two_factor_prompted_at``: the "Add a second way in?" dialog
+    (task 0004) shows on the first app page after login and ``app.js`` clears it
+    on open, so ``/reservations`` read ``visible`` at 390 px against an identical
+    page until this ran. Pass the neutraliser once per statement:
+
+        --pre-sql "UPDATE user_account SET two_factor_prompted_at = NULL"
+    """
+    pending = [s for s in statements if s.strip()]
+    if not pending:
+        return
+    from app import db
+
+    for statement in pending:
+        db.execute(statement)
+
+
 def run_case(
     *,
     name: str,
@@ -206,6 +233,7 @@ def run_case(
     widths: Iterable[int] = WIDTHS_DEFAULT,
     cookie_name: str | None = None,
     cookie_value: str | None = None,
+    pre_sql: Iterable[str] = (),
 ) -> list[WidthResult]:
     import playwright.sync_api as sync_api
 
@@ -218,10 +246,12 @@ def run_case(
             go_png = out_dir / f"{slug}-{width}-go.png"
             side_png = out_dir / f"{slug}-{width}-side.png"
             diff_png = out_dir / f"{slug}-{width}-diff.png"
+            _run_pre_sql(pre_sql)
             capture_png(
                 playwright, py_base, path, width, py_png,
                 cookie_name=cookie_name, cookie_value=cookie_value,
             )
+            _run_pre_sql(pre_sql)
             capture_png(
                 playwright, go_base, path, width, go_png,
                 cookie_name=cookie_name, cookie_value=cookie_value,
@@ -298,6 +328,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--cookie-value", default=os.environ.get("GO_PAGE_PARITY_COOKIE", ""))
     parser.add_argument("--widths", default=",".join(str(w) for w in WIDTHS_DEFAULT))
     parser.add_argument("--fail-on-visible", action="store_true", help="exit 1 when any width is visible")
+    parser.add_argument(
+        "--pre-sql",
+        action="append",
+        default=[],
+        help="statement run before each stack renders, to neutralise one-shot state "
+        "(e.g. \"UPDATE user_account SET two_factor_prompted_at = NULL\"); repeatable",
+    )
     args = parser.parse_args(argv)
 
     widths = tuple(int(w.strip()) for w in args.widths.split(",") if w.strip())
@@ -328,6 +365,7 @@ def main(argv: list[str] | None = None) -> int:
             widths=widths,
             cookie_name=cookie_name,
             cookie_value=cookie_val,
+            pre_sql=args.pre_sql,
         )
     finally:
         if py_server is not None:
