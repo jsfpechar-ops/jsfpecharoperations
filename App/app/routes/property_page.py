@@ -62,7 +62,7 @@ def _render_page(request: Request, slug: str, apartment_id: int, params, book_er
     lang = _page_lang(request)
     if str(params.get("lang") or "") in ("cs", "en"):
         lang = str(params.get("lang"))
-    page["bookable"] = property_page.widget_ready(apartment_id)
+    page["bookable"] = property_page.widget_ready(apartment_id) and not config.PAYMENTS_RETIRED
     page["book_error"] = book_error or params.get("book", "")
     if page["book_error"] not in BOOK_ERRORS:
         page["book_error"] = ""
