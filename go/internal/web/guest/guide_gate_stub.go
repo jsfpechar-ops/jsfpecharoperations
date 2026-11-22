@@ -37,7 +37,7 @@ func StayGate(r *http.Request, w http.ResponseWriter, pool *pgxpool.Pool, getenv
 		return lang, nil, nil, true
 	}
 	if billingjob.MailEnabled() && !(guestAccess{pool: pool, getenv: getenv, now: now}).hostOwns(r.Context(), r, aptRow.OwnerUserID) {
-		if row.state != claimStateClaimed || !DeviceHoldsClaim(r, resID, row.tokenVersion) {
+		if row.state != claimStateClaimed || !DeviceHoldsClaim(r, getenv, resID, row.tokenVersion) {
 			http.Redirect(w, r, stayHubURL(link, resID, lang), http.StatusSeeOther)
 			return lang, nil, nil, true
 		}

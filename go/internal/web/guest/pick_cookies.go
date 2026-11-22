@@ -57,29 +57,55 @@ func ownedGuestIDs(r *http.Request, getenv func(string) string) []int64 {
 	return out
 }
 
-// claimedReservationIDs is guest.py _claimed_reservation_ids (ids only).
-func claimedReservationIDs(r *http.Request, getenv func(string) string) []int64 {
+// claimedClaims is guest.py _claimed_claims: reservation id → token_version.
+func claimedClaims(r *http.Request, getenv func(string) string) map[int64]int64 {
+	out := map[int64]int64{}
+	if r == nil || getenv == nil {
+		return out
+	}
 	secret, err := secure.LoadSecret(getenv)
 	if err != nil {
-		return nil
+		return out
 	}
 	raw := hostweb.Cookie(r, claimCookieName)
 	if raw == "" {
-		return nil
+		return out
 	}
 	doc, ok := urlSafeJSON(secret, claimCookieSalt, raw)
 	if !ok {
-		return nil
+		return out
 	}
 	m, ok := doc.(map[string]any)
 	if !ok {
-		return nil
+		return out
 	}
-	out := make([]int64, 0, len(m))
-	for k := range m {
-		if id, err := strconv.ParseInt(k, 10, 64); err == nil {
-			out = append(out, id)
+	for k, v := range m {
+		id, err := strconv.ParseInt(k, 10, 64)
+		if err != nil {
+			continue
 		}
+		var gen int64
+		switch n := v.(type) {
+		case int64:
+			gen = n
+		case float64:
+			gen = int64(n)
+		case int:
+			gen = int64(n)
+		default:
+			continue
+		}
+		out[id] = gen
+	}
+	return out
+}
+
+// claimedReservationIDs is guest.py _claimed_reservation_ids (ids only).
+func claimedReservationIDs(r *http.Request, getenv func(string) string) []int64 {
+	held := claimedClaims(r, getenv)
+	out := make([]int64, 0, len(held))
+	for id := range held {
+		out = append(out, id)
 	}
 	return out
 }
