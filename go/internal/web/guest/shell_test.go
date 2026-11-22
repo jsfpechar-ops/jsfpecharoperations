@@ -216,3 +216,27 @@ func mustExecGuest(t *testing.T, ctx context.Context, pool *pgxpool.Pool, q stri
 		t.Fatalf("exec: %v", err)
 	}
 }
+
+// TestBadLinkPageIsTheGuestPage pins guest.py _open_link's early answer: an
+// unknown key renders guest/unavailable.html with no key, so the page carries
+// neither "start again" nor the privacy link. It used to be WritePage, which
+// printed the shell with no wording at all.
+func TestBadLinkPageIsTheGuestPage(t *testing.T) {
+	rec := httptest.NewRecorder()
+	unavailableHandler("en", "bad_link", http.StatusNotFound).
+		ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/l/deadbeef", nil))
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("status = %d, want 404", rec.Code)
+	}
+	body := rec.Body.String()
+	for _, want := range []string{"This guest link is not valid", "may have been replaced", "Please ask your host"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("bad link page is missing %q:\n%s", want, body)
+		}
+	}
+	for _, unwanted := range []string{"Start again", "How your data is handled"} {
+		if strings.Contains(body, unwanted) {
+			t.Fatalf("bad link page shows %q, which needs a key:\n%s", unwanted, body)
+		}
+	}
+}

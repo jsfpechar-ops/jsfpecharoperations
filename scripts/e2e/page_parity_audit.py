@@ -418,7 +418,7 @@ def main():
             # page, the host must still get through. Same seed database, no reseed.
             pin_pport, pin_gport = free_port(), free_port()
             pin_public = f"http://127.0.0.1:{pin_pport}"
-            pin_py, pin_py_base = start_py_process(pin_pport, db_url, pin_public)
+            pin_py, pin_py_base = start_py_process(pin_pport, db_url, pin_public, PIN_ENV)
             pin_go, pin_go_base = start_go(pin_gport, db_url, pin_public, PIN_ENV)
             try:
                 rows += run_pass(br, pin_py_base, pin_go_base, py_persons, go_persons, pin_paths, "+pin")

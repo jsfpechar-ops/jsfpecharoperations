@@ -85,12 +85,17 @@ func RegisterStayClaim(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(strin
 }
 
 func (d stayClaimDeps) dispatchGET(w http.ResponseWriter, r *http.Request) {
+	// guest.py error_page runs before any resolver: a shape Python has no route
+	// for is bad_link carrying the key from the path, even for an unknown key.
+	// Recognised shapes resolve through _open_link inside their own handler.
+	lang := langFromRequest(r)
+	token := strings.TrimSpace(r.PathValue("token"))
 	rest := strings.Trim(strings.TrimSpace(r.PathValue("rest")), "/")
 	switch {
 	case strings.HasPrefix(rest, "demo/"):
 		parts := strings.SplitN(strings.TrimPrefix(rest, "demo/"), "/", 2)
 		if len(parts) != 1 || parts[0] == "" {
-			http.NotFound(w, r)
+			d.badLink(w, r, lang, token)
 			return
 		}
 		r.SetPathValue("reservation_id", parts[0])
@@ -98,14 +103,14 @@ func (d stayClaimDeps) dispatchGET(w http.ResponseWriter, r *http.Request) {
 	case strings.HasSuffix(rest, "/claim"):
 		base := strings.TrimSuffix(rest, "/claim")
 		if base == "" || strings.Contains(base, "/") {
-			http.NotFound(w, r)
+			d.badLink(w, r, lang, token)
 			return
 		}
 		r.SetPathValue("reservation_id", base)
 		d.claimLanding(w, r)
 	default:
 		if rest == "" || strings.Contains(rest, "/") {
-			http.NotFound(w, r)
+			d.badLink(w, r, lang, token)
 			return
 		}
 		r.SetPathValue("reservation_id", rest)
@@ -118,8 +123,14 @@ func (d stayClaimDeps) demoPreview(w http.ResponseWriter, r *http.Request) {
 	token := strings.TrimSpace(r.PathValue("token"))
 	resID, err := strconv.ParseInt(r.PathValue("reservation_id"), 10, 64)
 	if err != nil {
-		http.NotFound(w, r)
+		d.badLink(w, r, lang, token)
 		return
+	}
+	if _, link, early := OpenLink(r, d.pool, token, lang); early != nil {
+		early.ServeHTTP(w, r)
+		return
+	} else if link != "" {
+		token = link
 	}
 	apt, stay, code := d.loadGuestStay(r.Context(), token, resID, false, true)
 	if code != 0 {
@@ -144,8 +155,14 @@ func (d stayClaimDeps) stayOverview(w http.ResponseWriter, r *http.Request) {
 	token := strings.TrimSpace(r.PathValue("token"))
 	resID, err := strconv.ParseInt(r.PathValue("reservation_id"), 10, 64)
 	if err != nil {
-		http.NotFound(w, r)
+		d.badLink(w, r, lang, token)
 		return
+	}
+	if _, link, early := OpenLink(r, d.pool, token, lang); early != nil {
+		early.ServeHTTP(w, r)
+		return
+	} else if link != "" {
+		token = link
 	}
 	if redir := d.pinRedirect(w, r, token, lang, resID); redir {
 		return
@@ -197,7 +214,18 @@ func (d stayClaimDeps) claimLanding(w http.ResponseWriter, r *http.Request) {
 	token := strings.TrimSpace(r.PathValue("token"))
 	resID, err := strconv.ParseInt(r.PathValue("reservation_id"), 10, 64)
 	if err != nil {
-		http.NotFound(w, r)
+		d.badLink(w, r, lang, token)
+		return
+	}
+	// guest.py claim_landing: the PIN comes before the claim, so a link handed
+	// to the wrong person cannot be claimed without it.
+	if _, link, early := OpenLink(r, d.pool, token, lang); early != nil {
+		early.ServeHTTP(w, r)
+		return
+	} else if link != "" {
+		token = link
+	}
+	if redir := d.pinRedirect(w, r, token, lang, resID); redir {
 		return
 	}
 	apt, stay, code := d.loadClaimable(r.Context(), token, resID)
@@ -233,7 +261,13 @@ func (d stayClaimDeps) claimConfirm(w http.ResponseWriter, r *http.Request) {
 	token := strings.TrimSpace(r.PathValue("token"))
 	resID, err := strconv.ParseInt(r.PathValue("reservation_id"), 10, 64)
 	if err != nil {
-		http.NotFound(w, r)
+		d.badLink(w, r, lang, token)
+		return
+	}
+	// guest.py _open_link: a POST on an earlier slug is served in place, and an
+	// unknown key is the bad_link page, both before the form is read.
+	if _, _, early := OpenLink(r, d.pool, token, lang); early != nil {
+		early.ServeHTTP(w, r)
 		return
 	}
 	if err := r.ParseForm(); err != nil {
@@ -324,6 +358,12 @@ func (d stayClaimDeps) renderClaimPage(w http.ResponseWriter, r *http.Request, t
 		ActionURL:        guestPath(token, stay.id) + "/party" + langQuery(page.Lang),
 	}
 	d.access().renderPage(w, r, claimSet, view, map[string]string{"Cache-Control": "no-store"})
+}
+
+// badLink is guest.py error_page: a path under /l/ no route matches gets the
+// bad_link page with the key from the path, so it still offers "start again".
+func (d stayClaimDeps) badLink(w http.ResponseWriter, r *http.Request, lang, token string) {
+	d.access().unavailable(w, r, lang, "bad_link", http.StatusNotFound, token, 0, nil)
 }
 
 // scWriteUnavailable is guest.py _unavailable, chosen by the status the guard returned.
