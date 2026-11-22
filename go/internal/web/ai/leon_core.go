@@ -19,6 +19,7 @@ import (
 
 	"golang.org/x/text/cases"
 
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/guideimport"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 )
 
@@ -358,7 +359,11 @@ func LeonValidate(data map[string]any, cards []LeonCard, guestText string) LeonV
 		return LeonVerdict{Kind: kind, Summary: summary, Upset: true, Reason: "model"}
 	case "answer":
 	default:
-		return LeonVerdict{Kind: "ask_host", Summary: summary, Upset: upset, Reason: "model"}
+		reason := "model"
+		if guideimport.AsksForCode(guestText) && strings.EqualFold(strings.TrimSpace(summary), "Guest asked for an entry code") {
+			reason = "entry_code"
+		}
+		return LeonVerdict{Kind: "ask_host", Summary: summary, Upset: upset, Reason: reason}
 	}
 	known := map[int64]bool{}
 	for _, c := range cards {
