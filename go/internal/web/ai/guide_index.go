@@ -223,6 +223,7 @@ type guideIndexData struct {
 	QuestionsOpen int64
 	Usage         guideUsage
 	UsageLangs    string
+	AccessLink    bool
 }
 
 // index is GET /apartments/{id}/guide.
@@ -302,6 +303,7 @@ func (s *guideServer) buildIndex(w http.ResponseWriter, r *http.Request, q *guid
 		return err
 	}
 	d.UsageLangs = strings.ToUpper(strings.Join(d.Usage.Languages, ", "))
+	d.AccessLink = guideTruthy(s.getenv("UBYHOST_GO_ACCESS_PAGE"))
 	page := layout.Page{
 		Title:    guideCatalog.T(q.lang, "guest_guide.title", nil) + " · " + a.InternalName + " · UbyHost",
 		BodyKind: "list", V2: true, BackURL: "/apartments/" + strconv.FormatInt(a.ID, 10),
