@@ -94,11 +94,11 @@ func TestLeonValidateEntryCodeReason(t *testing.T) {
 		t.Fatal("fixture question must match guideimport.AsksForCode")
 	}
 	data := map[string]any{
-		"kind":          "ask_host",
-		"host_summary":  "Guest asked for an entry code",
-		"reply":         "",
-		"sources":       []any{},
-		"upset":         false,
+		"kind":         "ask_host",
+		"host_summary": "Guest asked for an entry code",
+		"reply":        "",
+		"sources":      []any{},
+		"upset":        false,
 	}
 	v := LeonValidate(data, nil, guest)
 	if v.Kind != "ask_host" || v.Reason != "entry_code" {
