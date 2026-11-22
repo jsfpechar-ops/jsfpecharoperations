@@ -15,9 +15,10 @@ func WantsHTML(r *http.Request) bool {
 	return strings.Contains(r.Header.Get("Accept"), "text/html")
 }
 
-// BlockedPage writes a 404 for payments-hidden middleware: branded HTML when
-// WantsHTML, else an empty body like Python's Response(status_code=404).
-func BlockedPage(w http.ResponseWriter, r *http.Request) {
+// NotFoundPage serves branded 404 for host-page not-founds: HTML when
+// WantsHTML (see main.go:229, staydetail.go), else empty body like Python's Response(status_code=404).
+// BlockedPage (payments-hidden middleware, App/app/main.py:261-289) calls this same implementation.
+func NotFoundPage(w http.ResponseWriter, r *http.Request) {
 	if !WantsHTML(r) {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -29,6 +30,10 @@ func BlockedPage(w http.ResponseWriter, r *http.Request) {
 	_, _ = io.WriteString(w, fmt.Sprintf(`<!doctype html><html lang="%s"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>%s · UbyHost</title><link rel="stylesheet" href="/static/tokens.css"><link rel="stylesheet" href="/static/app.css"></head><body class="layout-host"><main class="ui-body ui-body-detail" style="max-width:560px;margin:2rem auto;padding:0 1rem"><h1 class="big">%s</h1><p>%s</p><p><a class="ui-btn ui-btn-primary" href="/">%s</a></p></main></body></html>`,
 		lang, title, title, body, home))
 }
+
+// BlockedPage is the payments-hidden middleware's 404; NotFoundPage serves
+// every other host-page 404. One implementation, two names.
+func BlockedPage(w http.ResponseWriter, r *http.Request) { NotFoundPage(w, r) }
 
 func notFoundCopy(lang string) (title, body, home string) {
 	switch lang {

@@ -96,3 +96,43 @@ func TestStayDetailTemplateAddsNoScript(t *testing.T) {
 		t.Error("stay_detail.tmpl adds a <script>; only layout may")
 	}
 }
+
+func TestStayNotFound(t *testing.T) {
+	tests := []struct {
+		name       string
+		accept     string
+		wantBody   string
+		maxBodyLen int
+	}{
+		{
+			name:       "HTML renders branded page",
+			accept:     "text/html",
+			wantBody:   "Page not found",
+			maxBodyLen: 1,
+		},
+		{
+			name:       "non-HTML returns empty body",
+			accept:     "application/json",
+			maxBodyLen: 0,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodGet, "/reservations/999", nil)
+			if tt.accept != "" {
+				r.Header.Set("Accept", tt.accept)
+			}
+			stayNotFound(rec, r, 999, 42)
+			if rec.Code != http.StatusNotFound {
+				t.Errorf("code = %d, want %d", rec.Code, http.StatusNotFound)
+			}
+			if tt.wantBody != "" && !strings.Contains(rec.Body.String(), tt.wantBody) {
+				t.Errorf("body missing %q in %q", tt.wantBody, rec.Body.String())
+			}
+			if tt.maxBodyLen == 0 && rec.Body.Len() > 0 {
+				t.Errorf("body length = %d, want 0", rec.Body.Len())
+			}
+		})
+	}
+}

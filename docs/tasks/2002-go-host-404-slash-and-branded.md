@@ -1,6 +1,6 @@
 # 2002: Go host web answers a trailing-slash stay URL with a bare 404
 
-Status: todo
+Status: review
 Depends on: none | Base commit: 6d8c1c4 | Branch: task/2002-go-host-404-slash-and-branded
 Executor: Haiku 5.5 | Fits one session: 25 tool calls, 50k tokens
 

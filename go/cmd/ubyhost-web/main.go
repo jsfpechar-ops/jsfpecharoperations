@@ -123,8 +123,8 @@ func healthz(pool *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-func notFound(w http.ResponseWriter, _ *http.Request) {
-	http.NotFound(w, nil)
+func notFound(w http.ResponseWriter, r *http.Request) {
+	hostweb.NotFoundPage(w, r)
 }
 
 func getenv(name, def string) string {
@@ -190,7 +190,7 @@ func run() int {
 	m := &metrics{counts: map[key]int64{}}
 	mux := newMux(m, pool)
 
-	srv := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}
+	srv := &http.Server{Addr: addr, Handler: hostweb.CanonicalSlash(mux, mux), ReadHeaderTimeout: 5 * time.Second}
 	errCh := make(chan error, 1)
 	go func() { errCh <- srv.ListenAndServe() }()
 	slog.Info("listening", "addr", addr)

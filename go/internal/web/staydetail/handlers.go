@@ -43,7 +43,7 @@ func detailHandler(deps Deps, now func() time.Time) http.HandlerFunc {
 		}
 		id, err := strconv.ParseInt(r.PathValue("reservation_id"), 10, 64)
 		if err != nil {
-			http.NotFound(w, r)
+			stayNotFound(w, r, 0, host.Workspace.ID)
 			return
 		}
 		v, ok, err := Build(r.Context(), deps, host.Workspace.ID, id, r.URL.Query().Get("return_to"), at)
@@ -52,7 +52,7 @@ func detailHandler(deps Deps, now func() time.Time) http.HandlerFunc {
 			return
 		}
 		if !ok {
-			http.NotFound(w, r)
+			stayNotFound(w, r, id, host.Workspace.ID)
 			return
 		}
 		page := layout.Page{
@@ -125,4 +125,12 @@ func serverError(w http.ResponseWriter, err error) {
 	}
 	log.Printf("stay detail: %v", err)
 	http.Error(w, http.StatusText(code), code)
+}
+
+// stayNotFound writes the branded host 404 and leaves one line for the next
+// production report: a stay that exists but is not the workspace's is a 404
+// by design (access.reservation parity), an unexplained one is not.
+func stayNotFound(w http.ResponseWriter, r *http.Request, id, workspaceID int64) {
+	log.Printf("stay detail: not found method=%s id=%d workspace=%d", r.Method, id, workspaceID)
+	hostweb.NotFoundPage(w, r)
 }
