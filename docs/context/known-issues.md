@@ -78,20 +78,6 @@
 | K-PG04 | Low open | scripts/reencrypt_data_key.py | Refuses on PG (no verified backup source); fix before 1st PG key rotation | 0462 |
 | K-U17 | Low open | Property page | #sec-messages deep link lands on calendars after late layout shifts; re-scroll. | 0995 |
 
-- K-UI-CACHE: bump `?v=` on edits; 1y cache (0172).
-- K-NAV-418: 3 host_i18n tests fail. K-CHECKIN #435, K-MORE #436 undeployed.
-- K-PK0290: passkey fix open.
-- K-CF01: mid-session challenge: see CLOUDFLARE Rule 3.
-- K-PG-ORDER: goose tests fail after icalsync locally; CI OK.
-- 0897 guest pay gaps: Slovak QR, PG 00007 unrun, no mark-as-paid, e-mail link, copy, legal sign-off.
-- K-PICK: guest-enhancements.js:207 blur timer not cleared on refocus (1079).
 
-- K-HOUSEBOOK: house book Details popover unreachable at 390/768 (zero-size trigger).
-- K-FLAKY-DC: flaky `test_door_codes_safeguards` move test (test-postgres-full); OK on rerun.
-- K-GUEST-DATES: es/fr guest dates row wraps at 375, 360 px.
-- K-1091D: `test_1091_d` name no longer matches its test.
-- K-TAP43: local only (CI green): `test_design_guardrails_browser.py` guest-new 390 "Cancel" tap target 43 < 44.
-- K-H0 (1094): NULL checkin_hour TypeError door_codes ~179/436; foreign guest_id on /save; guest_form_saved audit lacks fields.
-- K-MOCK-HC (1865): `mock-ubyport` in deploy/lightsail/docker-compose.yml inherits the app image HEALTHCHECK (Dockerfile:32 probes 127.0.0.1:8080/healthz) but listens on 8081 → shows unhealthy while serving. Server-side workaround on Ubyhost-test-env: untracked docker-compose.override.yml re-pointing the probe. Upstream fix: add a healthcheck block to the mock-ubyport service.
-- K-STG-WAF (1865): staging.ubyhost.com inherits the ubyhost.com zone WAF → `/login` answers `cf-mitigated: challenge`; browsers pass, curl/CI logins cannot. Fix options: WAF skip rule scoped to the staging host, or a separate zone/domain for staging.
-- K-SEC-TOKEN (1865): a Cloudflare API token was pasted into a chat session on 2026-11-20 → owner revokes it (Cloudflare → My Profile → API Tokens). Never paste tokens/keys into chat.
+Entries added after 2026-10-30, and every subsequent one, are in
+[known-issues-recent](known-issues-recent.md) — grep both files for an ID.

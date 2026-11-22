@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-11-21.
+Updated: 2026-11-22.
 
 ## Production
 - Magic-link 1–2 done; access log off. `/healthz` 1.1.0. Main 11-13: `84e966f` (#962).
@@ -12,8 +12,8 @@ Updated: 2026-11-21.
 - UX gate and Stripe onboarding live. Backups: daily pg_dump + WAL-G 7-day PITR (drill every 3 mo).
 
 ## Next
+- Parity 2011-2018 draft #1252: Gate A fail 0; UX gate 5 FAIL → 2021-2028, 2022 needs owner.
 - 2000: no police nags on Overview without UbyPort login.
-- Briefs 1865 (green main auto-deploys to Lightsail staging; production manual-only) + 1866 (CI/GitHub hardening).
 - Go executor queue ([plan](../plans/go-cutover-executor-queue.md)): runnable **1793**, **0852**; **1730** / **1770** blocked until exact-diff sidecars.
 - [Autopilot](../plans/autopilot-agentic.md): hide Payments first.
 - Guest isolation ([plan](../plans/guest-form-isolation.md)): 1834-1839 (#1070); drafts #1072-1073 (1830, 1834); 1835 (#1071) after 1834. Owner: 1837 Q4-5.
