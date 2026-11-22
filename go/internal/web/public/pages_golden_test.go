@@ -184,7 +184,7 @@ func TestPyJSON(t *testing.T) {
 
 // pagePrints are the only things a marketing template may print.
 var pagePrints = map[string]bool{
-	"T": true, "TP": true, "E": true, "Icon": true, "Canonical": true, "PublicBase": true, "URL": true,
+	"T": true, "TP": true, "E": true, "Icon": true, "IconSized": true, "Canonical": true, "PublicBase": true, "URL": true,
 	"LangIf": true, "OGLocale": true, "OfficialLink": true, "FAQJSON": true, "ArticleJSON": true,
 	"Lang": true, "SwitchPath": true, "Code": true, "Href": true, "PHKeyJS": true, "PHHostJS": true, "PHAssetsJS": true,
 	"CTA": true, "RatesJSON": true, "WebPageJSON": true, "PricingFAQJSON": true,
