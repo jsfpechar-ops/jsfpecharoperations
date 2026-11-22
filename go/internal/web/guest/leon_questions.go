@@ -75,6 +75,7 @@ var lqI18n = []byte(`{
     "guest_questions.none_open": "Nothing is waiting for you",
     "guest_questions.empty.title": "No questions yet",
     "guest_questions.empty.body": "Your reply appears on the guest guide.",
+    "guest_guide.title": "Guest guide",
     "guest_questions.col.question": "Question",
     "guest_questions.col.state": "State",
     "guest_questions.door.qr": "QR page",
@@ -107,6 +108,7 @@ var lqI18n = []byte(`{
     "guest_questions.none_open": "Nic na vás nečeká",
     "guest_questions.empty.title": "Zatím žádné dotazy",
     "guest_questions.empty.body": "Odpověď se hostovi zobrazí v průvodci.",
+    "guest_guide.title": "Průvodce pro hosty",
     "guest_questions.col.question": "Dotaz",
     "guest_questions.col.state": "Stav",
     "guest_questions.door.qr": "QR stránka",
@@ -135,7 +137,7 @@ var lqI18n = []byte(`{
   }
 }`)
 
-var lqTmpl = []byte(`{{define "guest_questions.html"}}<div class="ui-page" data-body-kind="list"><div class="ui-body ui-body-list"><div class="head"><div><a class="guide-back" href="/apartments/{{.ApartmentID}}">{{.ApartmentName}}</a><h1 class="big">{{lqT .Lang "guest_questions.title"}}</h1>{{if gt .OpenCount 0}}<p class="sub">{{lqT .Lang "guest_questions.open" "n" .OpenCount}}</p>{{else}}<p class="sub">{{lqT .Lang "guest_questions.none_open"}}</p>{{end}}</div></div>{{if not .Questions}}<p class="empty-hd">{{lqT .Lang "guest_questions.empty.title"}}</p><p>{{lqT .Lang "guest_questions.empty.body"}}</p>{{else}}<table class="ui-table"><thead><tr><th>{{lqT .Lang "guest_questions.col.question"}}</th><th>{{lqT .Lang "guest_questions.col.state"}}</th></tr></thead><tbody>{{range .Questions}}<tr><td><a href="{{$.Base}}/{{.ID}}">{{if .Summary}}{{.Summary}}{{else}}{{.Question}}{{end}}</a></td><td>{{if eq .Door "qr"}}{{lqT $.Lang "guest_questions.door.qr"}}{{else}}{{lqT $.Lang "guest_questions.door.stay"}}{{end}} · {{lqT $.Lang (printf "guest_questions.state.%s" .Status)}}</td></tr>{{end}}</tbody></table>{{end}}</div></div>{{end}}
+var lqTmpl = []byte(`{{define "guest_questions.html"}}<div class="ui-page" data-body-kind="list"><div class="ui-body ui-body-list"><div class="head"><div><h1 class="big"><a class="guide-back" href="/apartments/{{.ApartmentID}}">{{lqT .Lang "guest_questions.title"}}</a></h1>{{if gt .OpenCount 0}}<p class="sub">{{lqT .Lang "guest_questions.open" "n" .OpenCount}}</p>{{else if .Questions}}<p class="sub">{{lqT .Lang "guest_questions.none_open"}}</p>{{end}}</div></div>{{if not .Questions}}<p class="empty-hd">{{lqT .Lang "guest_questions.empty.title"}}</p><p>{{lqT .Lang "guest_questions.empty.body"}}</p><p><a class="btn" href="{{.Base}}">{{lqT .Lang "guest_guide.title"}}</a></p>{{else}}<table class="ui-table"><thead><tr><th>{{lqT .Lang "guest_questions.col.question"}}</th><th>{{lqT .Lang "guest_questions.col.state"}}</th></tr></thead><tbody>{{range .Questions}}<tr><td><a href="{{$.Base}}/{{.ID}}">{{if .Summary}}{{.Summary}}{{else}}{{.Question}}{{end}}</a></td><td>{{if eq .Door "qr"}}{{lqT $.Lang "guest_questions.door.qr"}}{{else}}{{lqT $.Lang "guest_questions.door.stay"}}{{end}} · {{lqT $.Lang (printf "guest_questions.state.%s" .Status)}}</td></tr>{{end}}</tbody></table>{{end}}</div></div>{{end}}
 {{define "guest_question.html"}}<div class="ui-page" data-body-kind="detail"><div class="ui-body ui-body-detail"><div class="head"><div><a class="guide-back" href="{{.Base}}">{{lqT .Lang "guest_questions.title"}}</a><h1 class="big">{{lqT .Lang "guest_question.title"}}</h1></div></div>{{if .Error}}<p class="form-error">{{lqT .Lang .Error}}</p>{{end}}<p class="sub">{{lqT .Lang "guest_question.asked"}}</p><blockquote class="guest-q">{{.QuestionText}}</blockquote>{{if .Summary}}<p><strong>{{lqT .Lang "guest_question.summary"}}</strong> {{.Summary}}</p>{{end}}<form method="post" action="{{.Base}}/{{.QuestionID}}" class="stack"><input type="hidden" name="_csrf" value="{{csrf}}"><label for="answer">{{lqT .Lang "guest_question.your_answer"}}</label><textarea class="ui-input" id="answer" name="answer" rows="6" maxlength="{{.MaxChars}}" placeholder="{{lqT .Lang "guest_question.answer_placeholder"}}">{{.AnswerDraft}}</textarea><div class="form-acts"><button class="btn" type="submit">{{lqT .Lang "guest_question.send"}}</button><button class="btn secondary" formaction="{{.Base}}/{{.QuestionID}}/dismiss" formmethod="post">{{lqT .Lang "guest_question.dismiss"}}</button></div></form>{{if .Answered}}<form method="post" action="{{.Base}}/{{.QuestionID}}/card" class="stack"><input type="hidden" name="_csrf" value="{{csrf}}"><label for="topic">{{lqT .Lang "guest_question.topic"}}</label><select id="topic" name="topic">{{range .Topics}}<option value="{{.}}">{{.}}</option>{{end}}</select><button class="btn secondary" type="submit">{{lqT .Lang "guest_question.add_to_guide"}}</button></form>{{end}}</div></div>{{end}}
 `)
 
