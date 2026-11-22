@@ -2,6 +2,9 @@
 
 Status: review
 
+## PR
+https://github.com/jsfpechar-ops/jsfpecharoperations/pull/1268 (draft; base `cursor/retire-payments-step1-47ba`)
+
 ## Files changed
 - `go/internal/web/booking/templates/terms_en.html`, `terms_cs.html` — short unavailable note
 - `App/app/templates/_booking_terms_en.html`, `_booking_terms_cs.html` — mirror
@@ -19,7 +22,7 @@ context lint: OK
 - [x] No migration, no secrets
 
 ## Deviations
-ROPA/RETENTION had no prior Stripe/booking-site table rows on this branch; added rows with dormant note (brief asked to mark existing promises).
+ROPA/RETENTION had no prior Stripe/booking-site table rows on this branch; added rows with dormant note (brief asked to mark existing promises). No `terms_vi` / `_booking_terms_vi.html`: `/terms/booking` is en/cs only (`go/internal/web/booking/pages_test.go` — `?lang=vi` falls back to cs).
 
 ## Questions
 None.
