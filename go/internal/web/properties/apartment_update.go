@@ -8,10 +8,7 @@ package properties
 //
 // Answered 501 with the Caddy fallback header (notPorted), always before
 // anything is written:
-//   - a setup_step other than property or police (calendar, guest_link or a
-//     value that is not a step: no wizard form posts them here), and a save
-//     without setup_step whose return_to is under /apartments/{id}/setup/
-//     (refuse_fee_save draws the retired stay_fee wizard page for it);
+//   - stay_fee and door_lock wizard saves that refuse and re-render (2031);
 //   - the guest-pay block (as POST /apartments);
 //   - a non-ASCII digit or a 64-bit overflow in a number, and a
 //     stay_fee_rate_from that is set but not YYYY-MM-DD (Python's int(),
@@ -226,11 +223,8 @@ func detailDraftField(a *detailApt, name string) *string {
 // Python, or "".
 func apartmentUpdateNotPorted(r *http.Request, id int64) string {
 	switch step := formStr(r, "setup_step"); {
-	case step == "property" || step == "police":
-	case step != "":
-		return "a setup_step other than property or police"
-	case apartmentWizardReturn(r, id):
-		return "a return_to inside the setup wizard without setup_step"
+	case step == "stay_fee", step == "door_lock":
+		return "a setup_step that re-renders on refusal"
 	}
 	for _, key := range apartmentNotPortedFields {
 		if has(r, key) {
@@ -340,8 +334,12 @@ func (s *server) apartmentUpdate(w http.ResponseWriter, r *http.Request) {
 		hostweb.NotFoundPage(w, r)
 		return
 	}
-	if step := formStr(r, "setup_step"); step != "" {
+	switch step := wizardSetupStep(r); step {
+	case "property", "police":
 		s.apartmentWizardSave(w, r, q, p, a, step, pay)
+		return
+	case "calendar", "guest_link":
+		s.apartmentWizardStepSave(w, r, q, p, a, step, pay)
 		return
 	}
 	// _property_hour_changes: only the hours this form posted; "" is NULL.

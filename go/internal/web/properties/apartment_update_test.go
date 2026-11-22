@@ -329,11 +329,8 @@ func TestApartmentUpdateNotPorted(t *testing.T) {
 	ctx := context.Background()
 	base := g.Cases[3].Form
 	redirectCases := map[string]map[string]string{
-		"calendar wizard step":   {"setup_step": "calendar"},
-		"guest link wizard step": {"setup_step": "guest_link"},
-		"not a wizard step":      {"setup_step": "calendar_sync"},
-		"wizard return_to":       {"return_to": "/apartments/201/setup/police"},
-		"quoted wizard return":   {"return_to": "%2Fapartments%2F201%2Fsetup%2Fpolice"},
+		"stay fee wizard step":   {"setup_step": "stay_fee"},
+		"door lock wizard step":  {"setup_step": "door_lock"},
 		"guest pay block":        {"stay_fee_guest_form": "1"},
 		"Arabic-Indic PIN":       {"permalink_pin": "١٢٣٤٥٦"},
 		"superscript hour":       {"checkin_hour": "1²"},

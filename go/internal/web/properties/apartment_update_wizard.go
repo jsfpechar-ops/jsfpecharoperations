@@ -148,7 +148,7 @@ func (s *server) apartmentPoliceErrors(q *request, p *Pages, a *detailApt, cols 
 }
 
 // apartmentWizardSave is _save_apartment_form for setup_step "property" or
-// "police" (the caller sends every other step elsewhere). a is the property
+// "police" (calendar and guest_link are apartmentWizardStepSave). a is the property
 // loaded owner-scoped; pay is the parsed form.
 func (s *server) apartmentWizardSave(w http.ResponseWriter, r *http.Request, q *request, p *Pages, a *detailApt, step string, pay apartmentPayload) {
 	ctx, ws := r.Context(), q.host.Workspace.ID
@@ -175,7 +175,7 @@ func (s *server) apartmentWizardSave(w http.ResponseWriter, r *http.Request, q *
 				cols = setColumn(cols, name, orNull(v))
 			}
 		}
-	} else {
+	} else if step == "police" {
 		cols = pickColumns(pay.cols, onboarding.StepFields["police"]...)
 		if has(r, "automation_mode") {
 			// 0884: the automation choice cards live on the police step.
