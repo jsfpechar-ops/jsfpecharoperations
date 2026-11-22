@@ -8,7 +8,7 @@ Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 Add the `UBYHOST_*` variables that `go/` reads but `deploy/lightsail/docker-compose.yml` does not pass to `ubyhost-go`, and add a test that fails when the two drift apart again. Today editing `.env` for these has no effect: the guest PIN cannot be turned off, lifecycle mail never sends, the mail heartbeat never fires, retention auto-purge cannot be enabled.
 
-Source: AUD-06 in `docs/reports/go-cutover-parity-audit.md` (branch `origin/docs/go-cutover-parity-audit`, commit `15f92f28a`, PR #1260; not on main yet). Verified on current main by the orchestrator: the claim still holds (115 distinct `"UBYHOST_*"` literals in non-test `go/`, 83 in the `ubyhost-go` env block, 42 differ; after the exclusions below, 34 remain to add).
+Source: AUD-06 in `docs/reports/go-cutover-parity-audit.md` (branch `origin/docs/go-cutover-parity-audit`, commit `15f92f28a`, PR #1260; not on main yet). Verified on current main by the orchestrator: the claim still holds (115 distinct `"UBYHOST_*"` literals in non-test `go/`, 83 in the `ubyhost-go` env block, 38 differ; after the exclusions below, 31 remain to add).
 
 ## 2. Context
 
@@ -16,7 +16,7 @@ Compose rule, pasted from the comment above the block: "A bare key is passed thr
 
 Existing pattern to copy: `App/tests/test_go_compose_mail_env.py` has `_go_env_block()` (slices from `"\n  ubyhost-go:\n"` to `"\n  mock-ubyport:"`, then `environment:` to `volumes:`). Reuse that approach in a new test file.
 
-Add these 34 bare keys under `environment:` of `ubyhost-go`, in the existing alphabetical-ish order (insert, do not reorder others):
+Add these 31 bare keys under `environment:` of `ubyhost-go`, in the existing alphabetical-ish order (insert, do not reorder others):
 
 ```
 UBYHOST_ADMIN_EMAIL
@@ -51,7 +51,7 @@ UBYHOST_SMTP_HOST
 UBYHOST_STAGING_LOGIN_PASSWORD
 UBYHOST_TTLOCK_API_BASE
 ```
-That is 31 lines; before editing, re-run step 1 and add any other key it lists that is not in the exclusion list below (expected total 34; stop and ask if the count differs by more than 3).
+Before editing, re-run step 1; it must list exactly these 31 plus the excluded names. Stop and ask if it differs.
 
 Do NOT pass (the test allowlists these with a reason):
 - `UBYHOST_GO_ADDR`, `UBYHOST_MIGRATIONS_DIR`, `UBYHOST_APP_ROOT`: set by `ENV` in `go/Dockerfile:15`.
@@ -110,7 +110,7 @@ Test-map row: "Deploy scripts, Caddyfile, compose" (`shellcheck -S error deploy/
 
 ## 8. Stop and ask
 
-Stop, and write the report, if: the gap differs from 34 by more than 3; a key in the list is no longer read in `go/`; a test fails twice; a file outside §3 needs a change; 25 tool calls or about 50k tokens are reached; you need push, merge, secrets or deploy.
+Stop, and write the report, if: the gap differs from these 31; a key in the list is no longer read in `go/`; a test fails twice; a file outside §3 needs a change; 25 tool calls or about 50k tokens are reached; you need push, merge, secrets or deploy.
 
 ## 9. Report
 
