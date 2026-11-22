@@ -137,6 +137,13 @@ with `guest/unavailable.html` — `bad_link` with no key when `_open_link` rejec
 only the second offers "start again" and the privacy link. Go now does both, and
 `_open_link` runs inside each route so a shape Python has no route for still answers first.
 
+One CI trap fixed on the way: `App/scripts/go_dashboard_golden.py` generated the
+dashboard golden from the real clock while `dashboard_test.go` renders at
+`2026-06-15T12:00:00Z`, so the artifact went stale overnight and reddened `test` on
+`main` (it showed "Saturday 21 November" where the test expects June). The generator now
+freezes `deadlines.local_now` — the one clock the dashboard reads for "today" — and the
+golden is regenerated at that instant.
+
 Deliberately kept different (owner decision, unchanged): `K3`
 `/admin/fakturace/export-vse` aborts in Python and streams the zip in Go; and the four Go
 test packages red on `main` are not this branch's (see the PR notes).
