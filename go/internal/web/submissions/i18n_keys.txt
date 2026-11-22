@@ -15,3 +15,4 @@ common.edit
 common.back
 host.filter.*
 country.name.*
+flash.error.no_such_submission

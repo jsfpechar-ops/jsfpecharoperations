@@ -782,6 +782,7 @@ def db_compare(seed=None):
 KNOWN = [
     "location: py='/settings/phone' go='/settings#settings-group-phone'",   # K1: push device delete lands on /settings#phone (Go) instead of /settings/phone (Python)
     "transport: py=ReadError('[Errno 104] Connection reset by peer')",  # K3: GET /admin/fakturace/export-vse — Python aborts the zip stream; Go serves the full export (reproduced 3/3 harness runs 2026-11-21)
+    "transport: py=ReadError('[Errno 54] Connection reset by peer')",  # K3 on macOS: ECONNRESET is errno 81/104 on Linux and 54 on Darwin, so the same abort read as an undocumented hard failure here
 ]
 
 
