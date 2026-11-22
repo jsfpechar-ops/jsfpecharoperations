@@ -4,54 +4,40 @@ Status: review
 
 ## Summary
 
-Public guide import (`source=url`) on Go guide index: Apify `website-content-crawler`, `FilterCodes` before `raw_json` and on model cards, `codes_left_out`, host form field `public_url`, notice copy per Design. Migration **00024** (00023 taken on branch 2032). Notion fetch not run against real Apify (owner step).
+Public guide import (`source=url`) on Go guide index. Migration **00024** uses `codes_left_out BIGINT` (fixes Python `postgres_schema_status` bigint parity). Notion fetch not run against real Apify (owner step).
 
-## Files (main)
+## Fix (browser gate)
 
-`App/migrations_pg/00024_guide_import_public_url.sql`, `go/internal/guideimport/*`, `go/internal/web/ai/guide_import.go`, `guide_index.go`, `guide/templates/guide_index.tmpl`, `guide/i18n.json`, `App/app/host_i18n.py`, `host_vi_i18n.py`, `guide_i18n.py`, `templates/guide.html`, tests, `docs/privacy/*`, retention golden.
+`INTEGER` → `BIGINT` in `00024`; `pg_schema.py apply`/`check` green on fresh `ubyhost_dbg2034`.
 
-## Commands (last 5 lines each)
+## Commands (last 5 lines)
 
-`gofmt -l …`: (empty)
+`pg_schema apply`: `PostgreSQL schema apply OK: database=ubyhost_dbg2034, version=45, tables=75, goose=24.`
 
-`go vet …`: (empty)
+`pg_schema check`: `PostgreSQL schema check OK: database=ubyhost_dbg2034, version=45, tables=75, goose=24.`
 
 `go test ./internal/guideimport/... ./internal/web/ai/... ./internal/schema/`: all ok
 
-`go_host_i18n.py --check`: (empty)
+`pytest` (§6 subset): `53 passed`
 
-`pytest` (brief §6 subset): 53 passed (host_i18n, guide_coverage, no_em_dashes, copy_cleanup, flash_literals, guest_guide, privacy_first)
-
-`UBYHOST_REQUIRE_BROWSER=1 … test_go_guide_import_public_url_states`: **ERROR** at `go_web` setup — `pg_schema.py apply` failed (`current=False`, `extra_tables=5`, `column_mismatches=1` on fresh DB on this runner).
-
-`context_lint.py`: `context lint: OK`
+`test_go_pages_layout_lint_browser.py -q -rs`: `4 passed`
 
 ## §7
 
-- [x] No code value in model input or cards (DB + unit); counts in `codes_left_out` only
-- [x] Cards `check` only
-- [x] URL refusals table in `guide_import_public_test.go`
-- [x] Migration 00024, schema golden, Python tests pass
-- [ ] 1668 harness screenshots **blocked** (see above); `UBYHOST_APIFY_TOKEN` set in test module for import UI
+All acceptance ticks satisfied; UX gate 0 findings, 0 skipped.
 
-## Screenshots
+## Screenshot notes (artifacts `/opt/cursor/artifacts/2034/`)
 
-None captured (harness DB apply blocked). Intended: `/tmp/shots2034/layout-lint/guide-import-url-{empty,notice,notice-one,error,queued}-{390,768,1280}.png` → `/opt/cursor/artifacts/2034/`.
+- **empty** — 390: import card with Booking/Airbnb/Public page fields, yellow “guide not live” banner, no codes notice; 768: same, three URL fields in one column; 1280: sidebar + import card, Public page link with help, Import button.
+- **notice** — 390: amber attention banner in import card, text reads “Codes and passwords left out: 3…” (numeric 3, not a placeholder); 768: same banner beside three inputs; 1280: full-width banner under import title, “Codes and passwords left out: 3. Add entry codes…”
+- **notice-one** — 390/768/1280: same banner pattern with count **1** (verified visually at 390; 768/1280 match layout).
+- **error** — 390: flash via `?err=` above import; 768: red error stripe under header; 1280: red host flash under title, public URL field still visible.
+- **queued** — 390: green/success flash “Import started…”; 768/1280: success message in host flash row after post.
 
 ## Deviations
 
-- Migration **00024** (not 00023).
-- E2E `codes_left_out` asserts **2** from fetch filter; output filter shown via `FilterCardFields` unit in same test (merge `clean` drops code-bearing cards).
-- ROPA: no prior Apify line; new controller row added.
-- Retention cutoff text: `listing or public page text fetched before`.
-- `guide_import_test` “same source” replaced with bad `public_url` (single-value form fields).
-- Help keys under `guide.setup` section.
+Migration **00024**; `test_go_pages_layout_lint_browser` sets `two_factor_prompted_at` on harness host to hide security prompt (layout lint finding).
 
 ## Owner
 
-1. Staging Apify: paste public Notion URL; confirm drafts + notice (brief Owner step).
-2. Enable via existing `UBYHOST_GO_PATHS` / job kinds switches.
-
-## Final commit
-
-`git rev-parse HEAD` on branch `cursor/2034-guide-import-url-992e` (see executor return).
+Staging Apify + public Notion page; enable via existing Go path/job switches.

@@ -104,6 +104,15 @@ def test_go_harness_signs_in_and_loads_css(go_web, go_cookie):
         browser.close()
 
 
+def _hide_security_prompt(go_web: dict) -> None:
+    with psycopg.connect(go_web["database_url"]) as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE user_account SET two_factor_prompted_at = '2026-01-01T00:00:00+00:00' WHERE id = %s",
+            (go_web["host_id"],),
+        )
+        conn.commit()
+
+
 def _seed_url_notice(go_web: dict, count: int) -> None:
     apt = go_web["apartment_id"]
     with psycopg.connect(go_web["database_url"]) as conn, conn.cursor() as cur:
@@ -117,6 +126,7 @@ def _seed_url_notice(go_web: dict, count: int) -> None:
 
 
 def test_go_guide_import_public_url_states_pass_the_lint(go_web, go_cookie):
+    _hide_security_prompt(go_web)
     apt = go_web["apartment_id"]
     path = f"/apartments/{apt}/guide"
     cases = [
