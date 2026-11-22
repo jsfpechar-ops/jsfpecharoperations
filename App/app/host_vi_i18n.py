@@ -223,7 +223,7 @@ STRINGS: Dict[str, str] = {
     "guest_guide.external.clear": "Gỡ liên kết",
     "flash.guest_guide.external_saved": "Đã lưu liên kết.",
     "flash.guest_guide.external_cleared": "Đã gỡ liên kết.",
-    "flash.error.guide_external_url": "Dùng liên kết https:// đầy đủ, không có cổng hay đăng nhập, ví dụ https://www.notion.so/…",
+    "flash.error.guide_external_url": "Dùng liên kết https:// đầy đủ, không có cổng hay đăng nhập, ví dụ https://www.notion.so/….",
     "leon_setup.title": "Thiết lập Leon cho %(name)s",
     "leon_setup.count": "Bước %(n)s / %(total)s: %(step)s",
     "leon_setup.step.switch_on": "Bật",
