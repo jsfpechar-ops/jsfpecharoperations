@@ -521,15 +521,36 @@ func TestApartmentUpdateRefusedDraft(t *testing.T) {
 		"account_number": "124", "account_prefix": "", "stay_fee_authority_databox": " AbC1234 ",
 	})
 	adCheck(t, "refused fee draft", body, []string{`data-first-error="stay_fee_council_account"`, `value="abc1234"`}, []string{`name="fee_return_to"`, `fee-return-note`})
-	form := map[string]string{}
-	for k, v := range g.Cases[3].Form {
-		form[k] = v
+	muxGP := http.NewServeMux()
+	RegisterApartmentUpdate(muxGP, noWrap, pool, func(k string) string {
+		if k == "UBYHOST_STAY_FEE_GUEST_PAY" {
+			return "on"
+		}
+		return apartmentUpdateGetenv(k)
+	}, testClock)
+	postGP := func(extra map[string]string) string {
+		t.Helper()
+		form := map[string]string{}
+		for k, v := range g.Cases[3].Form {
+			form[k] = v
+		}
+		for k, v := range extra {
+			form[k] = v
+		}
+		before := apartmentUpdateRead(t, ctx, pool, g, 201)
+		rec := apartmentFormPost(t, muxGP, "/apartments/201", g.CSRFNonce, 2, 0, "en", true, form)
+		if rec.Code != http.StatusBadRequest {
+			t.Errorf("guest-pay draft: %d, want 400", rec.Code)
+		}
+		if after := apartmentUpdateRead(t, ctx, pool, g, 201); !reflect.DeepEqual(after, before) {
+			t.Errorf("guest-pay draft: the property was written")
+		}
+		return rec.Body.String()
 	}
-	form["stay_fee_guest_form"] = "1"
-	form["stay_fee_guest_rails"] = "iban"
-	form["stay_fee_collect"] = "1"
-	form["stay_fee_guest_operator_account"] = "not-a-account"
-	body = post("/apartments/201", form)
+	body = postGP(map[string]string{
+		"stay_fee_guest_form": "1", "stay_fee_guest_rails": "iban", "stay_fee_collect": "1",
+		"stay_fee_guest_operator_account": "not-a-account",
+	})
 	adCheck(t, "guest-pay draft", body, []string{`data-first-error="stay_fee_guest_operator_account"`}, nil)
 }
 
