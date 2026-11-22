@@ -242,6 +242,8 @@ guide.nav.cleaning
 guide.nav.demo
 guide.nav.door-codes
 guide.nav.door_codes
+guide.nav.entry_codes
+guide.entry_codes.lede
 guide.nav.faq
 guide.nav.faster
 guide.nav.filters
