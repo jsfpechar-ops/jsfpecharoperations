@@ -62,21 +62,18 @@
 | K-O01 | High open | server crontab | Backup and off-site crons are not in the repo; verify on server | AR-04 |
 | K-O02 | Med open | docker-compose.yml:14 | Floating image tag; check rollback on real deploy | AR-03 |
 | K-O03 | Med open | reporting.py:702 dashboard_rows | N+1 queries and double decrypts | P A50-51 |
-| K-O04 | Low open | requirements.txt, Caddyfile | dev deps use >=; no HSTS includeSubDomains | P A59, A61 |
 | K-O05 | Med open | db.py periodic scans | Scans cover all stays ever; cost grows with retention | AR-43 |
 | K-O06 | Med open | requirements.lock | Lock behind requirements.txt (~10 pkgs); brief 1207 | #966 |
+| K-O07 | High open | UBYHOST_GO_PATHS | `/reservations/*[0-9]` → bare Go 404 on host stay links (mail → `/reservations/252`). Off 2026-11-22; exact `/reservations` only until staging OK. No Python fallback on Go 404. | owner |
 | K-W01 | Med decision | GitHub repo | ~30 stale PRs; owner task 0001 step 12 APPLY=1; keep #278 #279 | 0001 |
-| K-ML02 | Low open | App/app/host_i18n.py | Unused `login.password*` i18n keys | magic-link HANDOFF |
 | K-ML03 | Low open | UbyHost_workplan/compliance/01, 03 | Compliance docs partly updated; lawyer review due | task 0005 |
 | K-ML04 | Low open | login limit | Address 3/15 min budget exhaustible; account-only limits leak accounts | 0006 |
 | K-D02 | Low open | door_codes `_handle_moves` | Move replace: gateway retried every 15 min, uncapped; guest keeps old PIN | 0037 |
 | K-D03 | Med decision | door_codes `_handle_moves` | Move permission/reauth/config/disabled: no retry once access fixed (0037) | 0037 |
 | K-D04 | High open | door_codes `issue`, `_handle_moves` | Same-hours rebooking can get cancelled PIN via `get` | 0069 |
 | K-U15 | Med review | Host forms/navigation | Owner review (0084) | [plan](../plans/host-ux-combined-staging.md) |
-| K-T01 | Low open | Tests | Order-dependent tests (also 3 in test_host_i18n.py) | 0080 |
 | K-U16 | Review | Host UI | #389 polish; CI pending | 0102 |
 | K-PG04 | Low open | scripts/reencrypt_data_key.py | Refuses on PG (no verified backup source); fix before 1st PG key rotation | 0462 |
-| K-U17 | Low open | Property page | #sec-messages deep link lands on calendars after late layout shifts; re-scroll. | 0995 |
 
 - K-UI-CACHE: bump `?v=` on edits; 1y cache (0172).
 - K-NAV-418: 3 host_i18n tests fail. K-CHECKIN #435, K-MORE #436 undeployed.

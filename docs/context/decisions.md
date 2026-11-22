@@ -68,3 +68,4 @@ Append-only.
 - 2026-11-20 [workflow] CI/GitHub hardening: deploy job timeouts, full-history gitleaks, PR security/deploy checklist, settings runbook; branch protection = owner step. Brief 1866 | owner
 - 2026-11-21 [ui] Dashboard "What needs you": no police line for a property without UbyPort login; setup line/onboarding banner is the CTA. Python fix under go-first exception 3; Go port carries the rule + collapses many overdue lines into one. Brief 2000.
 - 2026-11-21 [ux] Invoice builder Wolt-simple (narrow lane, flat cards, stacked item rows); Generate invoice moves from stay ⋮ menu to stay header, phone too. Brief 2001 | owner
+- 2026-11-22 [ops] Stay detail on Python: drop `/reservations/*[0-9]` from prod GO_PATHS (K-O07 bare Go 404). Re-add after staging. | owner
