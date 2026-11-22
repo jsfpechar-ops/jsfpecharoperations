@@ -123,8 +123,14 @@ func healthz(pool *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
+// notFound is the "/" catch-all for a path Go does not serve yet. It answers
+// 501 plus X-Ubyhost-Not-Ported so Caddy (pre-1782 GO_PATHS mode) can re-send
+// GET/HEAD to Python. A bare 404 here (the old behaviour) skipped that
+// fallback and broke host stay links when /reservations/*[0-9] was listed but
+// the running image had no stay-detail handler (K-O07).
 func notFound(w http.ResponseWriter, _ *http.Request) {
-	http.NotFound(w, nil)
+	w.Header().Set("X-Ubyhost-Not-Ported", "1")
+	http.Error(w, "not served by Go yet", http.StatusNotImplemented)
 }
 
 func getenv(name, def string) string {

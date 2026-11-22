@@ -47,7 +47,6 @@
 | K-S13 | Low accepted | payments.py, paylink_routes.go | Pay link live after expiry/paid | owner 11-13 |
 | K-S14 | Med owner | Caddyfile.cloudflare | Any Cloudflare account reaches origin | 1208 zone AOP; owner sets enforce |
 | K-S15 | Med owner | GitHub environments | Confirm `production` deploys only from `main` | #966 |
-| K-I08 | Low open | stay_fee.py _day_liability | "Charge" files a minor with a blank reason | P A08 |
 | K-I09 | Med unverified | invoices.py:validate_for_issue | Buyer address unchecked; verify VAT invoice requirements | UI §3 |
 | K-U01 | High decision | product.html:49,113, landing.html:72,189 | CTAs dead-end at /login while sign-up is off | UX UX-9 |
 | K-U02 | Med unverified | routes/guest.py PIN gate | A wrong PIN loses the #c= claim secret | UX M-3 |
@@ -62,11 +61,10 @@
 | K-O01 | High open | server crontab | Backup and off-site crons are not in the repo; verify on server | AR-04 |
 | K-O02 | Med open | docker-compose.yml:14 | Floating image tag; check rollback on real deploy | AR-03 |
 | K-O03 | Med open | reporting.py:702 dashboard_rows | N+1 queries and double decrypts | P A50-51 |
-| K-O04 | Low open | requirements.txt, Caddyfile | dev deps use >=; no HSTS includeSubDomains | P A59, A61 |
 | K-O05 | Med open | db.py periodic scans | Scans cover all stays ever; cost grows with retention | AR-43 |
 | K-O06 | Med open | requirements.lock | Lock behind requirements.txt (~10 pkgs); brief 1207 | #966 |
+| K-O07 | High fixing | ubyhost-web `/` | Catch-all was bare 404; GO_PATHS stay pages skipped Python fallback. Fix: 501+Not-Ported; deploy Go before `/reservations/*[0-9]`. | owner 11-22 |
 | K-W01 | Med decision | GitHub repo | ~30 stale PRs; owner task 0001 step 12 APPLY=1; keep #278 #279 | 0001 |
-| K-ML02 | Low open | App/app/host_i18n.py | Unused `login.password*` i18n keys | magic-link HANDOFF |
 | K-ML03 | Low open | UbyHost_workplan/compliance/01, 03 | Compliance docs partly updated; lawyer review due | task 0005 |
 | K-ML04 | Low open | login limit | Address 3/15 min budget exhaustible; account-only limits leak accounts | 0006 |
 | K-D02 | Low open | door_codes `_handle_moves` | Move replace: gateway retried every 15 min, uncapped; guest keeps old PIN | 0037 |

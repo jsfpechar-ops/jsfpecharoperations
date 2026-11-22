@@ -35,3 +35,6 @@ Moved from [known-issues](../context/known-issues.md) on 2026-11-11 (compaction)
 - K-PG-FK: goose 00004/11/13 FKs not DEFERRABLE (1263).
 - K-HB-HAND: housebook says "Not yet sent" for a hand-filed guest (Python quirk; 1704a test).
 - K-BLOCKED-PAGE (1859b): BlockedPage inline main styles; app.css later.
+- K-O04: requirements/Caddy Low (dev deps >=; no HSTS includeSubDomains).
+- K-ML02: unused login.password* i18n keys.
+- K-I08: stay_fee minor blank reason charge.
