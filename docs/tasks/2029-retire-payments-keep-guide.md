@@ -1,6 +1,6 @@
 # 2029: Retire payments (OFF in production, kept in repo), keep the guide
 
-Status: todo (draft, needs owner decisions in the Decisions list before step 1)
+Status: todo (owner decisions D1-D4 settled 2026-11-22, see Decisions)
 Depends on: none | Base commit: b5127d006 | Branch: task/2029-retire-payments-<step>
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens. Each step in section 4 is its own session and its own draft PR.
 
@@ -40,10 +40,14 @@ Turn the payments area (Stripe Connect, host Payments pages, booking-site direct
 
 ## 4. Steps (one executor session each; do in order, one draft PR each)
 
-### Step 1: one flag blocks everything (Go + Python mirror of routing)
-Add `UBYHOST_PAYMENTS_RETIRED` (1/true/yes) in `appconfig`. When set, `PaymentsHidden` is also true, and `PaymentsHostPathBlocked` additionally 404s: `/apartments/*/page*`, `/p/*` (all methods), `/pay/*`, `/terms/booking`, `/booking-sites*`. Webhook is NOT blocked here (step 3). Keep `UBYHOST_PAYMENTS_HIDDEN` behaviour byte-identical when RETIRED is unset (existing tests must pass unchanged). Add table rows to `payments_hidden_test.go`: each new path 404 with RETIRED=1, 200/untouched with it unset; guide paths `/guide`, `/g/...` (guest guide view route, grep `register_web_guest_guide_view.go` for the real pattern) never blocked. Mirror in `App/app/config.py` `payments_host_path_blocked` (same list) while Python serves.
-Tests: `cd go && go test ./internal/appconfig/ ./internal/hostweb/... ./cmd/ubyhost-web/ -run 'Payments|Blocked|Layout' 2>&1 | tail -30`; Python: `.venv/bin/python -m pytest tests/test_payments_dashboard.py -q --tb=short -x 2>&1 | tail -30`.
-Stop if `/p/` or `/g/` prefixes collide with a non-payments route (grep first).
+### Step 1: one flag blocks the booking and payment routes (Go + Python mirror)
+Add `UBYHOST_PAYMENTS_RETIRED` (1/true/yes) in `appconfig`. When set, `PaymentsHidden` is also true, and `PaymentsHostPathBlocked` additionally 404s ONLY these: `/apartments/*/page*` is NOT blocked unless step 1b finds it is booking-only; blocked are `POST /p/{slug}/book`, `/p/{slug}/checkout`, `/p/{slug}/thanks`, `/p/{slug}/b/*` (manage page and its `calendar.ics`), `/pay/*`, `/booking-sites*`. KEPT (also `/terms/booking`, served as the unavailable note in step 5) reachable: `GET /p/{slug}` (property page without booking), `/p/{slug}/{file}` (iCal feed), `/guide` and the guest guide view. Because the helper only sees the path, not the method, block `/p/{slug}/book` by path (it is POST-only). Grep exact patterns in `register_web_booking*.go` first. Keep `UBYHOST_PAYMENTS_HIDDEN` behaviour byte-identical when RETIRED is unset. Add rows to `payments_hidden_test.go`: each blocked path 404 with RETIRED=1; `/p/x`, `/p/x/feed.ics`, `/guide` not blocked. Mirror in `App/app/config.py` `payments_host_path_blocked`.
+Files: `go/internal/appconfig/payments_hidden.go`, `payments_hidden_test.go`, `go/cmd/ubyhost-web/payments_hidden_test.go`, `App/app/config.py`.
+Tests: `cd go && go test ./internal/appconfig/ ./cmd/ubyhost-web/ -run 'Payments|Blocked' 2>&1 | tail -30`; Python: `.venv/bin/python -m pytest tests/test_payments_dashboard.py tests/test_property_page.py -q --tb=short -x 2>&1 | tail -30`.
+Stop if a blocked prefix collides with a non-booking route.
+
+### Step 1b: property page without the booking widget (Go + Python template)
+When retired, the property page renders with `Bookable` false so the `#book` section (`go/internal/web/booking/templates/property.tmpl:66`) and book/checkout CTA vanish; rest of the page (photos, rules, iCal link) unchanged. Set it in `go/internal/web/booking/property.go` (`PropertyPageHandler`) from `appconfig.PaymentsRetired(getenv)`. Python mirror: `App/app/routes/property_page.py` and `property_page.py` same condition. Files: `go/internal/web/booking/property.go`, its `_test.go`, `App/app/routes/property_page.py`, `App/app/property_page.py`. Tests: `go test ./internal/web/booking/ 2>&1 | tail -30`; Python `test_property_page.py test_property_page_meta.py`. UX: one 390 px screenshot of `/p/<slug>` (template change, so geometry and browser tests for that page, 0 skipped).
 
 ### Step 2: jobs off
 In `register_jobs.go` when `PaymentsRetired`: do not schedule `stripe_sweep`; leave `billing_snapshot` running (see D1). Grep `scheduler.py` and `register_scheduler.go` for booking/payment-request/expiry jobs (`rg -n 'stripe|payment_request|booking' go/cmd/ubyhost-web/register_job*.go App/app/scheduler.py`) and skip those too. Update `job-ownership.md` row. A skipped job must log one line `job skipped: payments retired`, never error. Tests: `go test ./cmd/ubyhost-web/ -run 'Scheduler|Jobs' 2>&1 | tail -30`; Python: `scheduler_golden` only if the test-map row names it.
@@ -55,7 +59,8 @@ When retired, `POST /webhooks/stripe` returns 200 with empty body before signatu
 Compose: add `UBYHOST_PAYMENTS_RETIRED: ${UBYHOST_PAYMENTS_RETIRED:-}` next to line 169. Keep Stripe vars passthrough (needed for revival) but document them as dormant in `.env.example` and `docs/ENVIRONMENT.md` (one section). Check `UBYHOST_GO_PATHS` docs: remove the "Add `/webhooks/stripe`" advice only when retired; do not edit the live `.env`. Caddy: no path matcher is payment-specific beyond `UBYHOST_GO_PATHS`; confirm with `rg -n 'pay|webhook|/p/' deploy/lightsail/caddy` (only a comment-level change expected). Tests: `shellcheck -S error deploy/lightsail/scripts/*.sh 2>&1 | tail -30`; CI job `caddy` checks both Caddyfiles.
 
 ### Step 5: legal and docs promises (drafts, lawyer pass)
-Edit terms templates to a short "booking is currently unavailable" note ONLY if the owner confirms D3; otherwise leave templates and mark them dormant in the PR. ROPA/RETENTION: add "dormant, off since <date>" to the Stripe/booking-site rows; do not delete retention lines (data is kept). Run `python3 scripts/context_lint.py | tail -30`. Version bump of legal texts is the lawyer's call, not the executor's.
+Decision D3: retire the booking terms by serving a short "Booking is currently unavailable" note at `/terms/booking` instead of 404 (old e-mailed links keep working). Edit `go/internal/web/booking/templates/terms_en.html`, `terms_cs.html` and Python `App/app/templates/_booking_terms_{en,cs}.html`: keep the old text out of the live page but do NOT delete it from git (it is in history; revival restores it). Short note must follow rule 9 (one explanation, no tracking-cookie wording). Because of this, step 1 must NOT block `/terms/booking`; remove it from the step 1 blocked list when the executor reaches step 5 order conflict: step 1 blocks only the others. (Brief rule: `/terms/booking` stays out of the block list.) ROPA/RETENTION: add "dormant, off since <date>" to the Stripe/booking-site rows; keep retention lines. Run `python3 scripts/context_lint.py | tail -30`. Legal version bump is the lawyer's call.
+Files: the four terms templates, `docs/privacy/ROPA.md`, `docs/privacy/RETENTION.md`.
 
 ### Step 6: docs and status
 test-map: mark the payments rows "dormant, run only when reviving". `status.md` (5 lines max): "Payments retired (flag), Stripe off". Append decision lines. `autopilot-agentic.md` A2: mark done. Do NOT mark A6 (code deletion) done.
@@ -74,25 +79,32 @@ Test commands are inside each step (test-map rows only, each ending `| tail -30`
 No migration. Tables kept: `payment_request`, `stripe_webhook_events`, `site_booking*`, `stripe_account` columns, billing tables. No data purge; retention windows keep running via `retention.py` (harmless on empty tables). Revival = unset the flag plus restore the Stripe env values; nothing to restore in the DB.
 
 ### Owner steps (plain words, never paste secrets into chat or PRs)
-1. On the server run one read-only count and send me only the numbers: open payment requests and direct bookings (expected 0; plan A2 says never used).
-2. In Stripe Dashboard (test mode is what production uses): Developers, Webhooks, open the UbyHost endpoint. Leave it enabled until step 3 is deployed (it then returns 200 and ignores events). After that you may disable the endpoint. Do NOT delete it or roll the signing secret if you want an easy revival.
-3. Connected accounts: Stripe Dashboard, Connect, note any test connected accounts. Nothing to do for production hosts (none).
-4. Keep `UBYHOST_STRIPE_SECRET_KEY` and `UBYHOST_STRIPE_WEBHOOK_SECRET` in `.env` as they are (dormant) or blank them; either way set `UBYHOST_STRIPE_MODE=off`. After the PR merges and auto-deploys, add `UBYHOST_PAYMENTS_RETIRED=1` to the server `.env`, then run the normal deploy/restart.
-5. Verify in a browser: `/payments` shows "Page not found", sidebar has no Payments or Booking sites, `/guide` works.
-6. Revive later: remove `UBYHOST_PAYMENTS_RETIRED`, set Stripe mode and secrets, re-enable the Stripe webhook.
+No production pre-check is needed (owner confirmed nothing open exists).
+1. Merge step 3 (webhook neutral) first and let it deploy. Then in Stripe Dashboard (test mode): Developers, Webhooks, open the UbyHost endpoint and disable it. Do not delete it and do not roll the signing secret, so revival is easy.
+2. Keep `UBYHOST_STRIPE_SECRET_KEY` and `UBYHOST_STRIPE_WEBHOOK_SECRET` in the server `.env` (dormant) or blank them; set `UBYHOST_STRIPE_MODE=off`.
+3. After steps 1-4 are merged and deployed, add `UBYHOST_PAYMENTS_RETIRED=1` to the server `.env` and run the normal deploy/restart.
+4. Check in a browser: `/payments` shows "Page not found", sidebar has no Payments or Booking sites, a property page has no booking box, its iCal link still works, `/guide` works.
+5. Revive later: remove `UBYHOST_PAYMENTS_RETIRED`, set Stripe mode and secrets, re-enable the Stripe webhook.
 
 ### Risks
-- `/p/*` blocking removes public property pages and iCal feeds (`/p/{slug}/{file}`) that hosts may have given to Airbnb/Booking. If any host syncs a calendar from UbyHost, they break. Owner must confirm D2.
+- Blocking by path inside `/p/*` must not catch the iCal feed `/p/{slug}/{file}` (test it with a real `.ics` name) or `/p/{slug}/b/.../calendar.ics` confusion: the latter is a booking stay calendar and is retired.
 - QR helper lives in `go/internal/payments`; do not gate package init.
 - Python is still alive for some routes; both stacks must read the flag or one stack leaks payment pages.
 - Legal text version bump re-triggers acceptance (A4); keep it separate and lawyer-led.
 - Stripe retries failed webhooks for days; step 3 must ship before the owner disables anything.
 
-### Decisions needed from the owner (before step 1)
-- D1: "Subscriptions / predplatne": keep host subscription billing and invoices ON (they do not use Stripe) or retire too? Default: keep ON.
-- D2: Retire the public property page and its iCal export (`/p/*`) too, or only the booking/payment parts? Default: retire all of `/p/*`.
-- D3: Replace booking terms with an "unavailable" note, or leave dormant text? Default: leave dormant, mark in docs.
-- D4: Keep the stay-fee guest-pay panel (not Stripe)? Default: keep.
+### Decisions (owner, 2026-11-22)
+- D1: host subscription billing and invoices stay ON (`billing_snapshot` keeps running).
+- D2: retire only the booking and payment parts of `/p/*`; the property page and iCal feeds stay.
+- D3: booking terms retired: `/terms/booking` serves a short unavailable note (old links keep working); old text stays in git history.
+- D4: stay-fee guest-pay panel stays.
+- No production count and no owner pre-check.
+
+### Step order and parallelism
+Order: 1, then 1b, 2, 3 (parallel after 1), then 4, 5, 6, 7.
+- Parallel after step 1 (disjoint files): 1b (booking handler/templates, property_page.py), 2 (`register_jobs.go`, `scheduler.py`, scheduler tests), 3 (`register_web.go`, webhook test). Step 2 also touches `App/app/config.py` only if it needs the flag: it must read the flag from step 1; do not edit `config.py` in step 2.
+- Parallel with the above (no overlap): 5 (terms templates, privacy docs) and 4 (compose, env docs, Caddy) once step 1 has landed.
+- Sequential last: 6 (docs/test-map/status, shared files) then 7 (proof, report only).
 
 ## 7. Acceptance
 - [ ] With `UBYHOST_PAYMENTS_RETIRED=1`: listed paths 404 in Go (tests green); `/guide` and UbyPort tests green.
