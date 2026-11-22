@@ -97,3 +97,53 @@ No §8 stop condition was hit as a decision: the 2016 `/l/.../edit|remove` 200s 
 ask (the PIN is off in the audit env), not a loosened ownership rule, and Go answers a
 non-owner exactly as before (403 `not_yours`). Open questions for the owner are listed in
 PR #1250.
+
+## 11. Follow-up: the PIN pass and guest-side validation (2026-11-22)
+
+The §10 result compared the guest link with `UBYHOST_GUEST_PIN` off, the only way the
+audit could start both servers. A second pass now starts Python per run in a subprocess
+with `UBYHOST_GUEST_PIN=1` (the flag is read when `app.config` is imported, so the
+in-process server cannot be flipped) and walks the `/l/` paths again with a `+pin`
+persona suffix.
+
+Audit, worktree branch, seeded DB: `{"paths": 137, "rows": 447, "pass": 331,
+"pass_soft": 7, "accepted": 109, "fail": 0}` — 36 of those rows are the PIN pass.
+
+| found by the PIN pass | Go before | Go now |
+|---|---|---|
+| host opening their own link with the PIN on | PIN page (owner locked out) | straight to the page (`_host_owns_apartment` bypass) |
+| PIN page footer | no host contact | the host's name, phone and e-mail, as `_shared` gives it |
+| `GET /l/{token}/{res}/claim` with the PIN on | the claim ask | the PIN page, as `claim_landing` does |
+| the PIN page's own `+pin` rows | 2 fail | identical text |
+
+Guest-side validation, the second item §10 left open: `validation_message(...)` has no
+counterpart in Go, so a guest read English issue sentences on a Czech form. Ported as
+`go/internal/validationi18n` (`GuestLocalize`, `GuestLocalizeIssues`, golden-tested against
+Python), used by both the host guest form and the guest form, which now re-renders the real
+form with the reader's language and the typed values instead of the stub body `"validation"`.
+
+The purpose-of-stay select, found by probing the guest form with `?lang=cs`: Python's
+`codelists.purpose_options(lang)` localises it, Go carried the English labels only, so a
+Czech, German or Ukrainian guest read "Medical, Business, Cultural…". The labels now come
+from `go/internal/validationi18n` (`validation.purpose_label`, goldens generated from
+Python), the fetched police rows still only behind them; the host app asks Python for the
+English list, so the stays form is unchanged. `?lang=cs` on
+`/l/{tok}/{res}/new` is 10407/10407 for the host and 1438/1438 for anon.
+
+Bad links and dead routes, found while probing: an unknown key rendered the bare shell,
+and a path no route claims gave Go's plain `404 page not found`. `guest.py` answers both
+with `guest/unavailable.html` — `bad_link` with no key when `_open_link` rejects it, and
+`bad_link` with the key from the path when no route matched (`error_page`), which is why
+only the second offers "start again" and the privacy link. Go now does both, and
+`_open_link` runs inside each route so a shape Python has no route for still answers first.
+
+One CI trap fixed on the way: `App/scripts/go_dashboard_golden.py` generated the
+dashboard golden from the real clock while `dashboard_test.go` renders at
+`2026-06-15T12:00:00Z`, so the artifact went stale overnight and reddened `test` on
+`main` (it showed "Saturday 21 November" where the test expects June). The generator now
+freezes `deadlines.local_now` — the one clock the dashboard reads for "today" — and the
+golden is regenerated at that instant.
+
+Deliberately kept different (owner decision, unchanged): `K3`
+`/admin/fakturace/export-vse` aborts in Python and streams the zip in Go; and the four Go
+test packages red on `main` are not this branch's (see the PR notes).

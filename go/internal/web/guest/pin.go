@@ -116,6 +116,11 @@ func sharedPinPage(r *http.Request, pool *pgxpool.Pool, getenv func(string) stri
 	if apt != nil {
 		p.Facility = Facility(apt)
 		p.FacilityTone = int(apt.ID % 10)
+		// guest.py _shared gives every guest page including this one the host's
+		// contact; without it the footer fell back to "the message that
+		// contained this link" on the PIN page alone.
+		host := hostContact(r.Context(), pool, apt)
+		p.Host = HostContact{Name: host.Name, Email: host.Email, Phone: host.Phone}
 	}
 	if r.URL.RawQuery != "" {
 		p.ReturnTo += "?" + r.URL.RawQuery

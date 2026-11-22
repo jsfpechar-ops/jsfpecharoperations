@@ -136,3 +136,4 @@ guide_photo_alt
 guide_translated
 workflow.link.host_note
 workflow.link.host_note_none
+latin_only_error
