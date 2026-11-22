@@ -39,6 +39,16 @@ def test_deploy_requires_go_scheduler_and_go_health():
     assert 'http://127.0.0.1:8081/healthz' in text
 
 
+def test_go_exec_targets_whichever_go_slot_is_running():
+    """#1221: after a slot swap the live container may be ubyhost-go-b, not ubyhost-go."""
+    text = DEPLOY.read_text(encoding="utf-8")
+    block = text.split("go_exec() {", 1)[1].split("\n}\n", 1)[0]
+    assert 'local svc=""' in block
+    assert "ps -q --status running ubyhost-go-b" in block
+    assert 'svc=ubyhost-go-b' in block
+    assert 'exec -T "${svc}"' in block
+
+
 def test_deploy_production_go_stack_requires_ubyhost_go_before_mandatory_backup():
     text = DEPLOY.read_text(encoding="utf-8")
     assert (
