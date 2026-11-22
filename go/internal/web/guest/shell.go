@@ -23,6 +23,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
 )
 
 const (
@@ -427,8 +428,16 @@ var tplFuncs = template.FuncMap{
 		}
 		return ""
 	},
-	"phoneTel": func(s string) string { return strings.ReplaceAll(s, " ", "") },
-	"upper":    strings.ToUpper,
+	"phoneTel":  func(s string) string { return strings.ReplaceAll(s, " ", "") },
+	"langOrder": langOrder,
+	"date_cz": func(v string) string {
+		if t, ok := validation.ParseISODate(v); ok {
+			return t.Format("02.01.2006")
+		}
+		return v
+	},
+	"nights_label": func(lang, from, to string) string { return pickNightsLabel(lang, from, to) },
+	"upper":        strings.ToUpper,
 }
 
 var baseSet = func() *template.Template {
@@ -482,6 +491,10 @@ type shellDeps struct {
 	pool   *pgxpool.Pool
 	getenv func(string) string
 	now    func() time.Time
+}
+
+func (d shellDeps) access() guestAccess {
+	return guestAccess{pool: d.pool, getenv: d.getenv, now: d.now}
 }
 
 // RegisterShell wires the guest /l package. Routes stay dormant until brief 1728

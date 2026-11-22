@@ -22,6 +22,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/billingjob"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/headcount"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
@@ -71,6 +72,10 @@ type formPageDeps struct {
 	now    func() time.Time
 }
 
+func (d formPageDeps) access() guestAccess {
+	return guestAccess{pool: d.pool, getenv: d.getenv, now: d.now}
+}
+
 func (d formPageDeps) shell() shellDeps {
 	return shellDeps{pool: d.pool, getenv: d.getenv, now: d.now}
 }
@@ -79,6 +84,7 @@ type formResRow struct {
 	id             int64
 	apartmentID    int64
 	ownerUserID    int64
+	status         string
 	dateFrom       string
 	dateTo         string
 	declaredGuests *int64
@@ -198,7 +204,7 @@ func handleFormPage(ctx context.Context, d formPageDeps, w http.ResponseWriter, 
 		return nil
 	}
 	if formPagesAlertControllerMissing(apt) {
-		formWriteUnavailable(w, r, lang, "controller_missing", http.StatusServiceUnavailable, link, nil)
+		d.formWriteUnavailable(w, r, lang, "controller_missing", http.StatusServiceUnavailable, link, nil)
 		return nil
 	}
 	if requirePin(w, r, d.shell(), link, lang, apt) {
@@ -206,10 +212,10 @@ func handleFormPage(ctx context.Context, d formPageDeps, w http.ResponseWriter, 
 	}
 	res, ok := formPagesReservation(ctx, d.pool, apt, resID, r)
 	if !ok {
-		formWriteUnavailable(w, r, lang, "stay_gone", http.StatusNotFound, link, nil)
+		d.formWriteUnavailable(w, r, lang, "stay_gone", http.StatusNotFound, link, nil)
 		return nil
 	}
-	if formPagesRequireClaim(w, r, res, link, lang) {
+	if d.formPagesRequireClaim(w, r, apt, res, link, lang) {
 		return nil
 	}
 	var guest *formGuestRow
@@ -221,7 +227,7 @@ func handleFormPage(ctx context.Context, d formPageDeps, w http.ResponseWriter, 
 		}
 		owned := formPagesOwnedIDs(r, d.getenv)
 		if !owned[gid] {
-			formWriteUnavailable(w, r, lang, "not_yours", http.StatusForbidden, link, map[string]string{"reservation_id": strconv.FormatInt(resID, 10)})
+			d.formWriteUnavailable(w, r, lang, "not_yours", http.StatusForbidden, link, map[string]string{"reservation_id": strconv.FormatInt(resID, 10)})
 			return nil
 		}
 		guest, err = loadFormGuest(ctx, d.pool, gid, resID, d.getenv, d.now)
@@ -229,15 +235,15 @@ func handleFormPage(ctx context.Context, d formPageDeps, w http.ResponseWriter, 
 			return err
 		}
 		if guest == nil {
-			formWriteUnavailable(w, r, lang, "stay_gone", http.StatusNotFound, link, nil)
+			d.formWriteUnavailable(w, r, lang, "stay_gone", http.StatusNotFound, link, nil)
 			return nil
 		}
 		if guest.submitState == formSubmitSent {
-			formWriteUnavailable(w, r, lang, "already_filed", http.StatusForbidden, link, map[string]string{"reservation_id": strconv.FormatInt(resID, 10)})
+			d.formWriteUnavailable(w, r, lang, "already_filed", http.StatusForbidden, link, map[string]string{"reservation_id": strconv.FormatInt(resID, 10)})
 			return nil
 		}
 		if formPagesGuestLocked(guest, res) {
-			formWriteUnavailable(w, r, lang, "form_locked", http.StatusForbidden, link, map[string]string{"reservation_id": strconv.FormatInt(resID, 10)})
+			d.formWriteUnavailable(w, r, lang, "form_locked", http.StatusForbidden, link, map[string]string{"reservation_id": strconv.FormatInt(resID, 10)})
 			return nil
 		}
 	}
@@ -336,7 +342,7 @@ func handleRemovePost(ctx context.Context, d formPageDeps, w http.ResponseWriter
 		return err
 	}
 	if tag.RowsAffected() == 0 {
-		formWriteUnavailable(w, r, lang, "already_filed", http.StatusForbidden, link, nil)
+		d.formWriteUnavailable(w, r, lang, "already_filed", http.StatusForbidden, link, nil)
 		return nil
 	}
 	_, _ = d.pool.Exec(ctx, `UPDATE guest SET signed_for_guest_id = NULL, signed_for_role = NULL,
@@ -392,13 +398,13 @@ func handleRelang(ctx context.Context, d formPageDeps, w http.ResponseWriter, r 
 	}
 	res, ok := formPagesReservation(ctx, d.pool, apt, resID, r)
 	if !ok {
-		formWriteUnavailable(w, r, lang, "stay_gone", http.StatusNotFound, link, nil)
+		d.formWriteUnavailable(w, r, lang, "stay_gone", http.StatusNotFound, link, nil)
 		return nil
 	}
 	if formPagesThrottlePost(w, r, d, link, "guest_relang", lang) {
 		return nil
 	}
-	if formPagesRequireClaim(w, r, res, link, lang) {
+	if d.formPagesRequireClaim(w, r, apt, res, link, lang) {
 		return nil
 	}
 	form := postFormFields(r)
@@ -416,11 +422,11 @@ func handleRelang(ctx context.Context, d formPageDeps, w http.ResponseWriter, r 
 	}
 	if guest != nil {
 		if guest.submitState == formSubmitSent {
-			formWriteUnavailable(w, r, lang, "already_filed", http.StatusForbidden, link, map[string]string{"reservation_id": strconv.FormatInt(resID, 10)})
+			d.formWriteUnavailable(w, r, lang, "already_filed", http.StatusForbidden, link, map[string]string{"reservation_id": strconv.FormatInt(resID, 10)})
 			return nil
 		}
 		if guest.restrictedAt != "" || formPagesGuestLocked(guest, res) {
-			formWriteUnavailable(w, r, lang, "form_locked", http.StatusForbidden, link, map[string]string{"reservation_id": strconv.FormatInt(resID, 10)})
+			d.formWriteUnavailable(w, r, lang, "form_locked", http.StatusForbidden, link, map[string]string{"reservation_id": strconv.FormatInt(resID, 10)})
 			return nil
 		}
 	}
@@ -475,21 +481,28 @@ func removalGuard(ctx context.Context, d formPageDeps, r *http.Request, post boo
 	res, ok := formPagesReservation(ctx, d.pool, apt, resID, r)
 	if !ok {
 		return nil, link, formResRow{}, nil, func(w http.ResponseWriter, r *http.Request) {
-			formWriteUnavailable(w, r, lang, "stay_gone", http.StatusNotFound, link, nil)
+			d.formWriteUnavailable(w, r, lang, "stay_gone", http.StatusNotFound, link, nil)
 		}, nil
 	}
 	if post && guestPostLimited(ctx, d.pool, d.getenv, r, link, "guest_remove", d.now()) {
 		return nil, link, formResRow{}, nil, func(w http.ResponseWriter, r *http.Request) {
-			formWriteUnavailable(w, r, lang, "rate_limited", http.StatusTooManyRequests, link, nil)
+			d.formWriteUnavailable(w, r, lang, "rate_limited", http.StatusTooManyRequests, link, nil)
 		}, nil
 	}
-	if formPagesRequireClaim(httptest.NewRecorder(), r, res, link, lang) {
-		return nil, link, formResRow{}, nil, func(w http.ResponseWriter, _ *http.Request) {}, nil
+	probe := httptest.NewRecorder()
+	if d.formPagesRequireClaim(probe, r, apt, res, link, lang) {
+		return nil, link, formResRow{}, nil, func(w http.ResponseWriter, _ *http.Request) {
+			for k, v := range probe.Header() {
+				w.Header()[k] = v
+			}
+			w.WriteHeader(probe.Code)
+			_, _ = w.Write(probe.Body.Bytes())
+		}, nil
 	}
 	owned := formPagesOwnedIDs(r, d.getenv)
 	if !owned[guestID] {
 		return nil, link, formResRow{}, nil, func(w http.ResponseWriter, r *http.Request) {
-			formWriteUnavailable(w, r, lang, "not_yours", http.StatusForbidden, link, map[string]string{"reservation_id": strconv.FormatInt(resID, 10)})
+			d.formWriteUnavailable(w, r, lang, "not_yours", http.StatusForbidden, link, nil)
 		}, nil
 	}
 	guest, err := loadFormGuest(ctx, d.pool, guestID, resID, d.getenv, d.now)
@@ -498,17 +511,17 @@ func removalGuard(ctx context.Context, d formPageDeps, r *http.Request, post boo
 	}
 	if guest == nil {
 		return nil, link, formResRow{}, nil, func(w http.ResponseWriter, r *http.Request) {
-			formWriteUnavailable(w, r, lang, "stay_gone", http.StatusNotFound, link, nil)
+			d.formWriteUnavailable(w, r, lang, "stay_gone", http.StatusNotFound, link, nil)
 		}, nil
 	}
 	if guest.submitState == formSubmitSent {
 		return nil, link, formResRow{}, nil, func(w http.ResponseWriter, r *http.Request) {
-			formWriteUnavailable(w, r, lang, "already_filed", http.StatusForbidden, link, map[string]string{"reservation_id": strconv.FormatInt(resID, 10)})
+			d.formWriteUnavailable(w, r, lang, "already_filed", http.StatusForbidden, link, map[string]string{"reservation_id": strconv.FormatInt(resID, 10)})
 		}, nil
 	}
 	if guest.restrictedAt != "" {
 		return nil, link, formResRow{}, nil, func(w http.ResponseWriter, r *http.Request) {
-			formWriteUnavailable(w, r, lang, "form_locked", http.StatusForbidden, link, map[string]string{"reservation_id": strconv.FormatInt(resID, 10)})
+			d.formWriteUnavailable(w, r, lang, "form_locked", http.StatusForbidden, link, map[string]string{"reservation_id": strconv.FormatInt(resID, 10)})
 		}, nil
 	}
 	return apt, link, res, guest, nil, nil
@@ -716,7 +729,7 @@ func formPagesAlertControllerMissing(apt *Apartment) bool { return false }
 
 func formPagesThrottlePost(w http.ResponseWriter, r *http.Request, d formPageDeps, token, kind, lang string) bool {
 	if guestPostLimited(r.Context(), d.pool, d.getenv, r, token, kind, d.now()) {
-		formWriteUnavailable(w, r, lang, "rate_limited", http.StatusTooManyRequests, token, nil)
+		d.formWriteUnavailable(w, r, lang, "rate_limited", http.StatusTooManyRequests, token, nil)
 		return true
 	}
 	return false
@@ -724,12 +737,12 @@ func formPagesThrottlePost(w http.ResponseWriter, r *http.Request, d formPageDep
 
 func formPagesReservation(ctx context.Context, pool *pgxpool.Pool, apt *Apartment, resID int64, r *http.Request) (formResRow, bool) {
 	var row formResRow
-	err := pool.QueryRow(ctx, `SELECT r.id, r.apartment_id, a.owner_user_id, r.date_from::text, r.date_to::text,
+	err := pool.QueryRow(ctx, `SELECT r.id, r.apartment_id, a.owner_user_id, r.status, r.date_from::text, r.date_to::text,
 		r.declared_guests, r.expected_guests_override, r.lead_reduced_guests
 		FROM reservation r JOIN apartment a ON a.id = r.apartment_id
 		WHERE r.id = $1 AND r.apartment_id = $2 AND r.status = 'active' AND r.archived_at IS NULL
 		  AND COALESCE(r.source,'') <> 'demo' AND a.permalink_token = $3`,
-		resID, apt.ID, apt.PermalinkToken).Scan(&row.id, &row.apartmentID, &row.ownerUserID, &row.dateFrom, &row.dateTo,
+		resID, apt.ID, apt.PermalinkToken).Scan(&row.id, &row.apartmentID, &row.ownerUserID, &row.status, &row.dateFrom, &row.dateTo,
 		&row.declaredGuests, &row.overrideGuests, &row.reducedGuests)
 	if err != nil {
 		return formResRow{}, false
@@ -737,7 +750,33 @@ func formPagesReservation(ctx context.Context, pool *pgxpool.Pool, apt *Apartmen
 	return row, true
 }
 
-func formPagesRequireClaim(w http.ResponseWriter, r *http.Request, res formResRow, token, lang string) bool {
+// formPagesRequireClaim is guest.py _require_claim_session: with mail on, a
+// stay is opened only by the host who owns it or by the device that confirmed
+// the claim. Anyone else is sent to the stay page, which shows the claim ask.
+func (d formPageDeps) formPagesRequireClaim(w http.ResponseWriter, r *http.Request, apt *Apartment, res formResRow, token, lang string) bool {
+	if !billingjob.MailEnabled() {
+		return false
+	}
+	if d.access().hostOwns(r.Context(), r, apt.OwnerUserID) {
+		return false
+	}
+	row, err := EnsureClaimRow(r.Context(), d.pool, res.id, isoNow(d.now()))
+	if err != nil {
+		log.Printf("guest claim session: %v", err)
+		http.Error(w, "server error", http.StatusInternalServerError)
+		return true
+	}
+	if !GuestAccessOpen(res.status, row.guestAccessLock) {
+		d.access().unavailable(w, r, lang, "stay_gone", http.StatusNotFound, token, 0, map[string]string{"Cache-Control": formPagesHardening})
+		return true
+	}
+	if !DeviceHoldsClaim(r, res.id, row.tokenVersion) {
+		target := GuestLink(token, res.id, LangQuery(lang, ""))
+		w.Header().Set("Cache-Control", formPagesHardening)
+		WithLang(w, d.getenv, lang)
+		http.Redirect(w, r, target, http.StatusSeeOther)
+		return true
+	}
 	return false
 }
 
@@ -817,19 +856,15 @@ func formPagesSetOwnedCookie(w http.ResponseWriter, getenv func(string) string, 
 	rememberOwnedGuestIDs(w, getenv, ids)
 }
 
-// formWriteUnavailable is brief 1720a unavailable page with extra reservation_id hint.
-func formWriteUnavailable(w http.ResponseWriter, r *http.Request, lang, code string, status int, token string, extra map[string]string) {
-	p := Page{
-		Lang:          GuestLanguage(lang),
-		Token:         token,
-		LangURLs:      LangURLs(r, ""),
-		GuestEndonyms: GuestEndonyms,
-		FlashError:    Page{Lang: lang}.T(code),
-	}
+// formWriteUnavailable is guest.py _unavailable for the form pages: the reason
+// picks the words, and reservation_id adds the "back to your stay" button where
+// Python shows it.
+func (d formPageDeps) formWriteUnavailable(w http.ResponseWriter, r *http.Request, lang, reason string, status int, token string, extra map[string]string) {
+	resID := int64(0)
 	if extra != nil {
-		if id := extra["reservation_id"]; id != "" {
-			p.FlashError = Page{Lang: lang}.T(code, "reservation_id", id)
+		if id, err := strconv.ParseInt(extra["reservation_id"], 10, 64); err == nil {
+			resID = id
 		}
 	}
-	WritePage(w, r, status, p, map[string]string{"Cache-Control": formPagesHardening})
+	d.access().unavailable(w, r, lang, reason, status, token, resID, map[string]string{"Cache-Control": formPagesHardening})
 }

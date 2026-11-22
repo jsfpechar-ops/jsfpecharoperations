@@ -1,0 +1,17 @@
+{{define "content"}}
+<div class="g-card g-stay-summary">
+  <strong>{{date_cz .StayFrom}} &ndash; {{date_cz .StayTo}}</strong>
+  <span>{{nights_label .Lang .StayFrom .StayTo}}</span>
+</div>
+{{if .ClaimError}}
+  <div class="g-err">{{.T "claim_confirm_failed"}}</div>
+{{end}}
+<div class="g-card">
+  <h2>{{.T "claim_confirm_title"}}</h2>
+  <form method="post" action="{{.ActionURL}}" id="claim-confirm-form">
+    <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
+    <input type="hidden" name="secret" id="claim-secret" value="">
+    <button class="g-btn" type="submit">{{.T "claim_confirm_button"}}</button>
+  </form>
+</div>
+{{end}}

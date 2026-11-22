@@ -11,7 +11,7 @@ import (
 func (h *GuideHandlers) renderGuidePage(w http.ResponseWriter, r *http.Request, lang string, apt *GuideApartment, res *GuideReservation, level, door, qrToken, backURL, leonURL string) {
 	items, err := h.store.Items(r.Context(), apt.ID)
 	if err != nil {
-		WriteUnavailable(w, r, lang, "bad_link", http.StatusNotFound, "", hardenedHeaders)
+		guestAccess{pool: h.pool, getenv: h.getenv, now: h.now}.unavailable(w, r, lang, "bad_link", http.StatusNotFound, "", 0, hardenedHeaders)
 		return
 	}
 	live := ai.LeonProgressOf(items).Live
@@ -19,7 +19,7 @@ func (h *GuideHandlers) renderGuidePage(w http.ResponseWriter, r *http.Request, 
 	if live {
 		cards, err := h.store.GuestCards(r.Context(), apt.ID)
 		if err != nil {
-			WriteUnavailable(w, r, lang, "bad_link", http.StatusNotFound, "", hardenedHeaders)
+			guestAccess{pool: h.pool, getenv: h.getenv, now: h.now}.unavailable(w, r, lang, "bad_link", http.StatusNotFound, "", 0, hardenedHeaders)
 			return
 		}
 		page.Groups = groupCards(cards, lang)
