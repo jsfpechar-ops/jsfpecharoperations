@@ -319,8 +319,7 @@ func TestApartmentUpdateMatchesPython(t *testing.T) {
 	}
 }
 
-// TestApartmentUpdateNotPorted: the branches left to Python (later briefs)
-// answer 501 with the fallback header and write nothing.
+// TestApartmentUpdateNotPorted: unported branches redirect with an interim flash or 404.
 func TestApartmentUpdateNotPorted(t *testing.T) {
 	g := loadApartmentUpdateGolden(t)
 	pool := testPool(t)
@@ -328,18 +327,43 @@ func TestApartmentUpdateNotPorted(t *testing.T) {
 	mux := http.NewServeMux()
 	RegisterApartmentUpdate(mux, noWrap, pool, apartmentUpdateGetenv, testClock)
 	ctx := context.Background()
-	base := g.Cases[3].Form // the full save of property 201
-	for name, extra := range map[string]map[string]string{
+	base := g.Cases[3].Form
+	redirectCases := map[string]map[string]string{
 		"calendar wizard step":   {"setup_step": "calendar"},
 		"guest link wizard step": {"setup_step": "guest_link"},
 		"not a wizard step":      {"setup_step": "calendar_sync"},
 		"wizard return_to":       {"return_to": "/apartments/201/setup/police"},
 		"quoted wizard return":   {"return_to": "%2Fapartments%2F201%2Fsetup%2Fpolice"},
 		"guest pay block":        {"stay_fee_guest_form": "1"},
-		"full-width operator":    {"legal_entity_id": "２１"},
 		"Arabic-Indic PIN":       {"permalink_pin": "١٢٣٤٥٦"},
 		"superscript hour":       {"checkin_hour": "1²"},
 		"basic ISO rate day":     {"stay_fee_rate_from": "20261201"},
+	}
+	for name, extra := range redirectCases {
+		form := map[string]string{}
+		for k, v := range base {
+			form[k] = v
+		}
+		for k, v := range extra {
+			form[k] = v
+		}
+		before := apartmentUpdateRead(t, ctx, pool, g, 201)
+		rec := apartmentFormPost(t, mux, "/apartments/201", g.CSRFNonce, 2, 0, "en", true, form)
+		if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") == "" {
+			t.Errorf("%s: %d, want 303 with Location", name, rec.Code)
+		}
+		if !strings.Contains(rec.Header().Get("Location"), "err=") {
+			t.Errorf("%s: Location %q missing err flash", name, rec.Header().Get("Location"))
+		}
+		if rec.Header().Get("X-Ubyhost-Not-Ported") == "1" {
+			t.Errorf("%s: fallback header set", name)
+		}
+		if after := apartmentUpdateRead(t, ctx, pool, g, 201); !reflect.DeepEqual(after, before) {
+			t.Errorf("%s: the property was written", name)
+		}
+	}
+	for name, extra := range map[string]map[string]string{
+		"full-width operator": {"legal_entity_id": "２１"},
 	} {
 		form := map[string]string{}
 		for k, v := range base {
@@ -350,8 +374,14 @@ func TestApartmentUpdateNotPorted(t *testing.T) {
 		}
 		before := apartmentUpdateRead(t, ctx, pool, g, 201)
 		rec := apartmentFormPost(t, mux, "/apartments/201", g.CSRFNonce, 2, 0, "en", true, form)
-		if rec.Code != http.StatusNotImplemented || rec.Header().Get("X-Ubyhost-Not-Ported") != "1" {
-			t.Errorf("%s: %d, want 501 with the fallback header", name, rec.Code)
+		if rec.Code != http.StatusNotFound {
+			t.Errorf("%s: %d, want 404", name, rec.Code)
+		}
+		if !strings.Contains(rec.Body.String(), "Page not found") {
+			t.Errorf("%s: body lacks branded 404", name)
+		}
+		if rec.Header().Get("X-Ubyhost-Not-Ported") == "1" {
+			t.Errorf("%s: fallback header set", name)
 		}
 		if after := apartmentUpdateRead(t, ctx, pool, g, 201); !reflect.DeepEqual(after, before) {
 			t.Errorf("%s: the property was written", name)
@@ -459,8 +489,11 @@ func TestApartmentUpdateRefusedDraft(t *testing.T) {
 	}
 	form["account_number"], form["account_prefix"], form["stay_fee_guest_operator_account"] = "124", "", "19-2000145399/0800"
 	rec := apartmentFormPost(t, mux, "/apartments/201", g.CSRFNonce, 2, 0, "en", true, form)
-	if rec.Code != http.StatusNotImplemented || rec.Header().Get("X-Ubyhost-Not-Ported") != "1" {
-		t.Errorf("guest-pay draft: %d, want 501 with the fallback header", rec.Code)
+	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") == "" {
+		t.Errorf("guest-pay draft: %d, want 303 with Location", rec.Code)
+	}
+	if !strings.Contains(rec.Header().Get("Location"), "err=") {
+		t.Errorf("guest-pay draft: Location %q missing err flash", rec.Header().Get("Location"))
 	}
 }
 

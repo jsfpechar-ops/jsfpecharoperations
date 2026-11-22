@@ -119,7 +119,8 @@ func (s *server) refuseApartmentSave(w http.ResponseWriter, r *http.Request, q *
 	controller, _ := apartmentFormInt(r, "data_controller_entity_id")
 	if ref.feeAccountError {
 		if has(r, "stay_fee_guest_operator_account") {
-			notPorted(w, "a refused council account with the guest-pay operator account (refuse_fee_save draft_account)")
+			returnTo := formReturnTo(r, fmt.Sprintf("/apartments/%d", a.ID), false)
+			q.back(w, r, returnTo, hostweb.Flash{}, smallPostsFlash(q, "flash.error.not_saved_here", nil))
 			return
 		}
 		// refuse_fee_save: the operator and controller only when posted, then fee_form_values.
@@ -329,13 +330,14 @@ func (s *server) apartmentUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if what := apartmentUpdateNotPorted(r, a.ID); what != "" {
-		notPorted(w, what)
+		returnTo := formReturnTo(r, fmt.Sprintf("/apartments/%d", a.ID), false)
+		q.back(w, r, returnTo, hostweb.Flash{}, smallPostsFlash(q, "flash.error.not_saved_here", nil))
 		return
 	}
 	apartmentLockTabHours(r, a)
 	pay, ok := newApartmentPayload(r)
 	if !ok {
-		notPorted(w, "a non-ASCII digit or an integer past 64 bits in the form")
+		hostweb.NotFoundPage(w, r)
 		return
 	}
 	if step := formStr(r, "setup_step"); step != "" {
