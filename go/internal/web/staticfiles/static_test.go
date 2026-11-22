@@ -35,6 +35,33 @@ func TestRegisterServesFileWithVersionedCache(t *testing.T) {
 	}
 }
 
+func TestRegisterDirectoryListing404(t *testing.T) {
+	root := t.TempDir()
+	staticDir := filepath.Join(root, "static")
+	platforms := filepath.Join(staticDir, "platforms")
+	if err := os.MkdirAll(platforms, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(staticDir, "tokens.css"), []byte("/* tok */"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("UBYHOST_APP_ROOT", root)
+	mux := http.NewServeMux()
+	Register(mux, os.Getenv, nil)
+	for _, path := range []string{"/static/", "/static/platforms/"} {
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		if rec.Code != http.StatusNotFound {
+			t.Fatalf("%s: status=%d body=%s", path, rec.Code, rec.Body.String())
+		}
+	}
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/static/tokens.css", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("tokens.css: status=%d", rec.Code)
+	}
+}
+
 func TestRegisterSkipsWhenNoTree(t *testing.T) {
 	t.Setenv("UBYHOST_APP_ROOT", "")
 	mux := http.NewServeMux()

@@ -128,12 +128,47 @@ func healthz(pool *pgxpool.Pool) http.HandlerFunc {
 // notFound is the catch-all 404: the branded host page, as Python's error.html
 // (error_kind=not_found), not net/http's bare text. A guest link keeps the plain
 // 404 until the Go guest lane gets the guest lane's own error page.
-func notFound(w http.ResponseWriter, r *http.Request) {
-	if hostweb.GuestPath(r) {
-		http.NotFound(w, r)
-		return
+func notFound(mux *http.ServeMux) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if allow := allowedMethods(mux, r); allow != "" {
+			w.Header().Set("Allow", allow)
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+		if hostweb.GuestPath(r) {
+			http.NotFound(w, r)
+			return
+		}
+		hostweb.NotFoundPage(w, r)
 	}
-	hostweb.NotFoundPage(w, r)
+}
+
+// allowedMethods lists GET/HEAD/POST that match a real route on this path when the
+// current request fell through to the "/" catch-all (Python 405 parity).
+func allowedMethods(mux *http.ServeMux, r *http.Request) string {
+	const catchAll = "/"
+	_, curPattern := mux.Handler(r)
+	if curPattern != catchAll {
+		return ""
+	}
+	seen := make(map[string]bool)
+	var methods []string
+	for _, method := range []string{http.MethodGet, http.MethodHead, http.MethodPost} {
+		req := &http.Request{Method: method, URL: r.URL, Host: r.Host}
+		_, pattern := mux.Handler(req)
+		if pattern == catchAll || pattern == "" {
+			continue
+		}
+		if seen[method] {
+			continue
+		}
+		seen[method] = true
+		methods = append(methods, method)
+	}
+	if len(methods) == 0 {
+		return ""
+	}
+	return strings.Join(methods, ", ")
 }
 
 func getenv(name, def string) string {
@@ -246,7 +281,7 @@ func newMux(m *metrics, pool *pgxpool.Pool) *http.ServeMux {
 	for _, fn := range routeFuncs {
 		fn(mux, m, pool)
 	}
-	mux.Handle("/", m.wrap("/", notFound))
+	mux.Handle("/", m.wrap("/", notFound(mux)))
 	return mux
 }
 
