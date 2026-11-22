@@ -8,7 +8,7 @@ Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 `notPorted` in `go/internal/web/properties/lists.go` answers 501 plus `X-Ubyhost-Not-Ported: 1` so Caddy re-sends the request to Python. The all-Go Caddyfiles no longer do that (verified on main: `reverse_proxy` goes only to `ubyhost-go`; the only `Not-Ported` string left in `go/` and `deploy/` outside tests is in `lists.go`). So every site is a live 501 text page. Worst case: `GET /apartments/abc` shows "not served by Go yet: a path id that is not a number"; Python answers the branded 404 (`App/app/main.py` `validation_error_handler`).
 
-## 2. Verification of the claim (current main, b5127d006)
+## 2. Context: verification of the claim (current main, b5127d006)
 
 Still holds. `git grep -n notPorted -- go` finds 16 call sites in `go/internal/web/properties/` (not 18; the "about 18" counted two helper paths, see group C). No other Go package has a Not-Ported header.
 
@@ -23,7 +23,7 @@ Still holds. `git grep -n notPorted -- go` finds 16 call sites in `go/internal/w
 | C | `apartment_small_posts.go:114` (automation timing save), `:262` and `:264` (iCal feed validation re-render, wizard calendar step and bookings view), `:547` and `:550` (police-letter read re-render) | HTML re-render with errors | DECISION D2 |
 | C | `entities.go:44` (`fillFromRegister` default, brief 1523 replaces it from an `init()`) | ARES lookup | leave, see D3 |
 
-## 3. Decisions the owner must make (the brief does group A only until answered)
+### Decisions the owner must make (the brief does group A only until answered)
 
 - **D1** (group B, unported form branches): (a) port each branch (each is a separate Python path, own brief), or (b) answer NotFoundPage now. Recommendation: (a) for `stay_fee_guest_form` and wizard `setup_step`s, because they are real user actions; NotFoundPage would silently lose a save.
 - **D2** (group C, re-renders): a 404 would be wrong, the user did a valid action and made a typo. Options: (a) port the re-render, (b) interim redirect back to `returnTo` with an error flash via the existing flash helper. Recommendation: (b) now, (a) later. Needs one brief per re-render.
@@ -31,7 +31,7 @@ Still holds. `git grep -n notPorted -- go` finds 16 call sites in `go/internal/w
 
 Executor: do group A only. Do not decide D1 to D3.
 
-## 4. Files
+## 3. Files
 
 | Path | Action | What |
 |---|---|---|
@@ -47,13 +47,17 @@ Executor: do group A only. Do not decide D1 to D3.
 
 No other file may change.
 
-## 5. Steps
+## 4. Steps
 
 1. `grep -nF 'notPorted(w, "a path id that is not a number")' go/internal/web/properties/apartment_detail.go`. Replace with `hostweb.NotFoundPage(w, r)` (package is already imported there). Repeat for each group A line in §2 (use `grep -nF` on the quoted reason text; `r` is in scope at each site, check once).
 2. Add one test per group A site in the existing `_test.go` files, in their style: request with `abc` id, non-ASCII digit, oversized number; assert status 404, no `X-Ubyhost-Not-Ported` header, body contains "Page not found" for `Accept: text/html`.
 3. Update the `notPorted` comment (lines 46 to 47 of `lists.go`) to: it answers a branch Go does not render yet with a plain 501; Caddy has no Python fallback, so every call is user-visible.
 4. Add the test-map row: `| Go host pages (properties) | in `go/`: `go test ./internal/web/properties/... ./internal/hostweb/... 2>&1 \| tail -30` |`.
 5. Run §6. Commit `2029 step k` after each step.
+
+## 5. Do not touch
+
+Group B, C and `entities.go` sites; templates, CSS, Caddyfiles, `App/`; no new dependency. Hard rules 3 and 8 of AGENTS.md apply.
 
 ## 6. Commands
 
