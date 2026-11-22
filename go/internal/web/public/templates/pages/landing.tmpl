@@ -32,6 +32,97 @@
       </div>
       <p class="landing-trust">{{.T "landing.independent"}}</p>
     </section>
+    <section class="demo-wrap" id="product" aria-labelledby="demo-title">
+      <div class="product-reel" data-product-reel>
+        <div class="reel-bar">
+          <span class="reel-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="reel-address">ubyhost.com</span>
+          <button type="button" class="reel-toggle" data-reel-toggle
+                  data-play="{{.T "landing.demo.play"}}"
+                  data-pause="{{.T "landing.demo.pause"}}"
+                  data-replay="{{.T "landing.demo.replay"}}"
+                  aria-label="{{.T "landing.demo.pause"}}">
+            <svg class="reel-icon reel-icon-pause" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+            <svg class="reel-icon reel-icon-play" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5l11 7-11 7z"/></svg>
+            <svg class="reel-icon reel-icon-replay" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5a7 7 0 1 1-6.9 8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 5v5h5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+          </button>
+        </div>
+        <div class="reel-screen">
+          <div class="reel-side" aria-hidden="true">
+            <img src="/static/ubyhost-mark.png?v=20261004a" alt="">
+            <i class="is-active"></i><i></i><i></i><i></i>
+          </div>
+          <div class="reel-scenes" role="img" aria-label="{{.T "landing.demo.label"}}">
+            <article class="reel-scene scene-calendar is-active" data-scene="0">
+              <p class="scene-kicker">01 · {{.T "landing.demo.scene.calendar"}}</p>
+              <div class="demo-calendar">
+                <header><strong>{{.T "landing.demo.calendar.month"}}</strong><span class="demo-cal-nav" aria-hidden="true"><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg><svg class="ui-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span></header>
+                <div class="calendar-days" aria-hidden="true">
+                  {{range .Weekdays}}<b>{{$p.E .}}</b>{{end}}
+                  {{range .DemoDays}}<i>{{$p.E .}}</i>{{end}}
+                  <span class="calendar-booking">{{.T "landing.demo.calendar.booking"}}</span>
+                </div>
+              </div>
+            </article>
+            <article class="reel-scene scene-form" data-scene="1">
+              <p class="scene-kicker">02 · {{.T "landing.demo.scene.form"}}</p>
+              <div class="demo-phone">
+                <div class="phone-speaker"></div>
+                <strong>{{.T "landing.demo.form.title"}}</strong>
+                <label><small>{{.T "landing.mock.guest_form"}}</small><span>{{.T "landing.demo.form.name"}}</span></label>
+                <label><small>{{.T "landing.demo.form.document"}}</small><span class="typed-line"></span></label>
+                <div class="signature"><svg viewBox="0 0 180 54" aria-hidden="true"><path d="M8 37c17-28 17 19 33-7s11 22 29 1 15 19 31 0 18 9 34-5 17 5 34-3"/></svg></div>
+                <div class="signed-pill">{{.Icon "check"}} {{.T "landing.demo.form.signed"}}</div>
+              </div>
+            </article>
+            <article class="reel-scene scene-queue" data-scene="2">
+              <p class="scene-kicker">03 · {{.T "landing.demo.scene.queue"}}</p>
+              <div class="demo-queue">
+                <header><div><small>{{.T "landing.mock.today"}}</small><strong>{{.T "landing.demo.queue.title"}}</strong></div><span>3</span></header>
+                <div class="queue-row">
+                  <i class="avatar teal">AK</i>
+                  <div><strong>Anna K.</strong><small>12–16/09</small></div>
+                  <span class="queue-state turn-ready">{{.T "landing.demo.queue.missing"}}</span>
+                </div>
+                <div class="queue-row">
+                  <i class="avatar pink">JM</i>
+                  <div><strong>Jan M.</strong><small>12–16/09</small></div>
+                  <span class="queue-state ">{{.T "landing.demo.queue.ready"}}</span>
+                </div>
+                <div class="queue-row">
+                  <i class="avatar indigo">LP</i>
+                  <div><strong>Lisa P.</strong><small>12–16/09</small></div>
+                  <span class="queue-state ">{{.T "landing.demo.queue.ready"}}</span>
+                </div>
+              </div>
+            </article>
+            <article class="reel-scene scene-receipt" data-scene="3">
+              <p class="scene-kicker">04 · {{.T "landing.demo.scene.receipt"}}</p>
+              <div class="receipt-card">
+                <div class="receipt-mark">{{.Icon "check"}}</div>
+                <small>UBYPORT · 2026-09-19</small>
+                <small class="receipt-example">{{.T "landing.demo.example"}}</small>
+                <strong>{{.T "landing.demo.receipt.accepted"}}</strong>
+                <p>{{.T "landing.demo.receipt.saved"}}</p>
+                <span class="receipt-code">DEMO-000000</span>
+              </div>
+              <div class="accepted-toast"><span>{{.Icon "check"}}</span>{{.T "landing.demo.receipt.accepted"}}</div>
+            </article>
+          </div>
+        </div>
+        <div class="reel-progress" aria-hidden="true">
+          <i class="is-active" data-progress="0"><span></span></i><i class="" data-progress="1"><span></span></i><i class="" data-progress="2"><span></span></i><i class="" data-progress="3"><span></span></i>
+        </div>
+        <p class="reel-caption" id="demo-title" data-reel-caption>{{.T "landing.demo.scene.calendar"}}</p>
+        <p class="sr-only" aria-live="polite" data-reel-announce></p>
+        <div hidden data-reel-labels
+             data-label-0="{{.T "landing.demo.scene.calendar"}}"
+             data-label-1="{{.T "landing.demo.scene.form"}}"
+             data-label-2="{{.T "landing.demo.scene.queue"}}"
+             data-label-3="{{.T "landing.demo.scene.receipt"}}"></div>
+      </div>
+    </section>
+
     <section class="landing-section benefits" aria-labelledby="benefits-title">
       <div class="landing-section-head">
         <p class="landing-eyebrow">{{.T "landing.benefits.eyebrow"}}</p>
@@ -52,11 +143,14 @@
       </ol>
       <a href="/jak-to-funguje?lang={{.Lang}}">{{.T "landing.details.link"}} </a>
     </section>
+    {{template "privacy_first" .}}
     <section class="landing-final">
+      <img src="/static/ubyhost-mark.png?v=20261004a" alt="">
       <div><h2>{{.T "landing.final.title"}}</h2><p>{{.T "landing.final.body"}}</p></div>
       {{if .SignupHref}}<a class="landing-button primary" href="{{.SignupHref}}">{{.T "landing.cta"}}</a>{{else}}<a class="landing-button primary" href="/login?lang={{.Lang}}">{{.T "landing.cta"}}</a>{{end}}
     </section>
   </main>
 {{template "pfooter" .}}
+  <script src="/static/landing.js?v=20260919a" defer></script>
 </body>
 </html>
