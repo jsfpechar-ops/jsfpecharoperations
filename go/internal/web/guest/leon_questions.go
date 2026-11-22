@@ -21,6 +21,7 @@ import (
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/anthropic"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/clientip"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/guesthandoff"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb/layout"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/session"
@@ -405,22 +406,7 @@ func (s *lqServer) handoffGet(ctx context.Context, apt, qid int64) (*handoffRow,
 }
 
 func (s *lqServer) handoffRefreshAlert(ctx context.Context, apt int64) error {
-	var n, urg int64
-	err := s.pool.QueryRow(ctx, `SELECT COUNT(*), COALESCE(SUM(urgent),0) FROM guest_question WHERE apartment_id = $1 AND status = 'open'`, apt).Scan(&n, &urg)
-	if err != nil {
-		return err
-	}
-	if n == 0 {
-		_, err = s.pool.Exec(ctx, `UPDATE alert SET status = 'resolved' WHERE dedupe_key = $1 AND status != 'resolved'`, fmt.Sprintf("guest_question:%d", apt))
-		return err
-	}
-	level := "warning"
-	if urg > 0 {
-		level = "critical"
-	}
-	_, err = s.pool.Exec(ctx, `INSERT INTO alert (level, kind, title, detail, dedupe_key, apartment_id, created_at, status)
-		VALUES ($1, 'guest_question', 'guest questions', '', $2, $3, $4, 'open')
-		ON CONFLICT (dedupe_key) DO UPDATE SET level = EXCLUDED.level, status = 'open'`, level, fmt.Sprintf("guest_question:%d", apt), apt, s.stamp(s.now()))
+	_, err := guesthandoff.RefreshAlert(ctx, s.pool, s.getenv, s.now, apt)
 	return err
 }
 

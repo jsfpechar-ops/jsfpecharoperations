@@ -15,6 +15,8 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/anthropic"
+
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/guesthandoff"
 )
 
 const (
@@ -85,7 +87,7 @@ func (s LeonStore) StayChat(ctx context.Context, apartmentID, resID int64, lang 
 	}
 	stamp := at.UTC().Truncate(time.Second).Format("2006-01-02T15:04:05") + "+00:00"
 	err = s.Pool.QueryRow(ctx, `INSERT INTO guest_chat (apartment_id, door, reservation_id, lang, created_at, last_message_at)
-		VALUES ($1, 'stay', $2, $3, $4, $4) RETURNING id, apartment_id, door, lang, model_messages, refusals, paused_until, busy_until`,
+		VALUES ($1, 'stay', $2, $3, $4, $4) RETURNING id, apartment_id, door, lang, model_messages, refusals, COALESCE(paused_until,''), COALESCE(busy_until,'')`,
 		apartmentID, resID, lang, stamp).Scan(&row.ID, &row.ApartmentID, &row.Door, &row.Lang, &row.ModelMessages, &row.Refusals, &row.PausedUntil, &row.BusyUntil)
 	return &row, err
 }
@@ -103,7 +105,7 @@ func (s LeonStore) QRChat(ctx context.Context, apartmentID int64, cookie, lang s
 	}
 	stamp := at.UTC().Truncate(time.Second).Format("2006-01-02T15:04:05") + "+00:00"
 	err = s.Pool.QueryRow(ctx, `INSERT INTO guest_chat (apartment_id, door, cookie_id, lang, created_at, last_message_at)
-		VALUES ($1, 'qr', $2, $3, $4, $4) RETURNING id, apartment_id, door, lang, model_messages, refusals, paused_until, busy_until`,
+		VALUES ($1, 'qr', $2, $3, $4, $4) RETURNING id, apartment_id, door, lang, model_messages, refusals, COALESCE(paused_until,''), COALESCE(busy_until,'')`,
 		apartmentID, cookie, lang, stamp).Scan(&row.ID, &row.ApartmentID, &row.Door, &row.Lang, &row.ModelMessages, &row.Refusals, &row.PausedUntil, &row.BusyUntil)
 	return &row, err
 }
@@ -521,7 +523,17 @@ func (s LeonStore) openLeonQuestion(ctx context.Context, chatID, aptID, msgID in
 	err := s.Pool.QueryRow(ctx, `INSERT INTO guest_question (chat_id, apartment_id, message_id, summary, status, answer, urgent, triaged, created_at)
 		VALUES ($1, $2, $3, $4, 'open', '', $5, $6, $7) RETURNING id`,
 		chatID, aptID, msgID, summary, u, t, stamp).Scan(&id)
+	if err == nil {
+		guesthandoff.OnNewQuestion(ctx, s.Pool, leonGetenv(s.Env), func() time.Time { return at }, id)
+	}
 	return id, err
+}
+
+func leonGetenv(env HavelEnv) func(string) string {
+	return func(k string) string {
+		v, _ := env(k)
+		return v
+	}
 }
 
 var leonDangerRE = regexp.MustCompile(`(?i)\b(fire|smoke|gas|flood\w*|blood|bleed\w*|unconscious|not breathing|hoří|požár|kouř|plyn|krev|krvác\w*|nedýchá|feuer|rauch|blut|bewusstlos|fuego|humo|sangre|incendie|fumée|sang|пожеж\w*|дим|газ|кров|112|150|155|158)\b`)
