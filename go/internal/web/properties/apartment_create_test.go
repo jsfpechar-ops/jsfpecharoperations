@@ -347,9 +347,7 @@ func TestApartmentCreateNotPorted(t *testing.T) {
 	RegisterApartmentCreate(mux, noWrap, pool, apartmentCreateGetenv, testClock)
 	base := map[string]string{"internal_name": "X", "legal_entity_id": "21", "addr_street": "A", "addr_house_no": "1",
 		"addr_zip": "12000", "addr_obec": "Brno"}
-	for name, extra := range map[string]map[string]string{
-		"guest pay block": {"stay_fee_guest_form": "1"},
-	} {
+	for name, extra := range map[string]map[string]string{} {
 		form := map[string]string{}
 		for k, v := range base {
 			form[k] = v
@@ -403,6 +401,40 @@ func TestApartmentCreateNotPorted(t *testing.T) {
 }
 
 // TestApartmentCreateHelpers: values written by hand from property_setup.guest_city and admin._form_int.
+
+func TestApartmentCreateGuestPayBlock(t *testing.T) {
+	g := loadApartmentCreateGolden(t)
+	pool := testPool(t)
+	apartmentCreateSeed(t, pool, g)
+	mux := http.NewServeMux()
+	getenv := func(k string) string {
+		if k == "UBYHOST_STAY_FEE_GUEST_PAY" {
+			return "on"
+		}
+		return apartmentCreateGetenv(k)
+	}
+	RegisterApartmentCreate(mux, noWrap, pool, getenv, testClock)
+	form := map[string]string{"internal_name": "Guest pay", "legal_entity_id": "21", "addr_street": "A",
+		"addr_house_no": "1", "addr_zip": "12000", "addr_obec": "Brno", "stay_fee_guest_form": "1",
+		"stay_fee_rate_czk": "50", "stay_fee_guest_rails": "cash", "stay_fee_guest_default_rail": "cash"}
+	before := apartmentCreateMaxID(t, pool)
+	rec := apartmentCreatePost(t, mux, g.CSRFNonce, 2, 0, "en", true, form)
+	if rec.Code != http.StatusSeeOther || !strings.Contains(rec.Header().Get("Location"), "/setup/calendar") {
+		t.Fatalf("create guest pay: %d %q", rec.Code, rec.Header().Get("Location"))
+	}
+	id := apartmentCreateMaxID(t, pool)
+	if id == before {
+		t.Fatal("nothing written")
+	}
+	var rails string
+	if err := pool.QueryRow(context.Background(), `SELECT COALESCE(stay_fee_guest_rails, '') FROM apartment WHERE id = $1`, id).Scan(&rails); err != nil {
+		t.Fatal(err)
+	}
+	if rails != "cash" {
+		t.Errorf("rails = %q, want cash", rails)
+	}
+}
+
 func TestApartmentCreateHelpers(t *testing.T) {
 	for in, want := range map[string]string{"Praha 10": "Prague", " PRAHA": "Prague", "plzeň": "Pilsen", " PLZEŇ ": "Pilsen",
 		"Brno \t  město": "Brno město", "": "", "Plzeň 3": "Plzeň 3"} {
