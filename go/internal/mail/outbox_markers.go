@@ -262,6 +262,9 @@ func (c Config) delivery(ctx context.Context, pool *pgxpool.Pool, stored string,
 	if v, err = c.withDoorCode(v, p); err != nil {
 		return "", err
 	}
+	if v, err = c.withEntryCodes(v, p, asHTML); err != nil {
+		return "", err
+	}
 	if v, err = c.withDetails(ctx, pool, v, GuestDetailsMarker, guestDetailsKey, p, asHTML, false); err != nil {
 		return "", err
 	}
