@@ -3,6 +3,7 @@
 package staticfiles
 
 import (
+	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -46,15 +47,42 @@ func dirOK(p string) (bool, error) {
 	return st.IsDir(), nil
 }
 
+// neuteredFS hides directories so http.FileServer cannot list them (Python parity).
+type neuteredFS struct {
+	root http.FileSystem
+}
+
+func (n neuteredFS) Open(name string) (http.File, error) {
+	f, err := n.root.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	st, err := f.Stat()
+	if err != nil {
+		_ = f.Close()
+		return nil, err
+	}
+	if st.IsDir() {
+		_ = f.Close()
+		return nil, fs.ErrNotExist
+	}
+	return f, nil
+}
+
 // Register mounts GET/HEAD /static/ when a static tree is present.
 func Register(mux *http.ServeMux, getenv func(string) string, wrap func(string, http.HandlerFunc) http.Handler) {
 	root := Root(getenv)
 	if root == "" {
 		return
 	}
-	inner := http.FileServer(http.Dir(root))
+	inner := http.FileServer(neuteredFS{root: http.Dir(root)})
 	serve := func(w http.ResponseWriter, r *http.Request) {
 		if !strings.HasPrefix(r.URL.Path, "/static/") {
+			http.NotFound(w, r)
+			return
+		}
+		rel := strings.TrimPrefix(r.URL.Path, "/static/")
+		if rel == "" || strings.HasSuffix(rel, "/") {
 			http.NotFound(w, r)
 			return
 		}
