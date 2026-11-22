@@ -26,6 +26,7 @@ while `catalog_pages.json` carried only the 14 px art.
 | Path | Action | What |
 |---|---|---|
 | `App/scripts/go_page_parity_screenshots.py` | edit | `--py-cookie-value`, `--go-cookie-value`, `run_case(py_cookie_value=, go_cookie_value=)` |
+| `scripts/e2e/page_parity_visual.py` | new | the eleven cases, both servers, the tally |
 | `go/internal/web/guest/templates/form_content.tmpl` | edit | `wrap_class` = `g-checkin-page` |
 | `go/internal/web/public/pages_data.go` | edit | `IconPaths` in the catalog type, `IconSized(name, size)` |
 | `go/internal/web/public/templates/pages/landing.tmpl` | edit | the receipt mark asks for 32 |
@@ -41,7 +42,8 @@ No other file may change.
 1. Add the two cookie flags and thread them through `run_case` to each `capture_png`.
 2. Start a Python and a Go server on `parity_run`, take each stack's own session token
    (`page_parity_audit.py_persona_sessions` / `go_persona_sessions`), and compare eleven
-   pages at 390, 768 and 1280 px.
+   pages at 390, 768 and 1280 px — `scripts/e2e/page_parity_visual.py`, which is that
+   probe in the repo, so the cloud session can re-run it.
 3. Fix what shows: the `wrap_class` block, the size-aware icon and its generated paths.
 4. Re-run the comparison; every case must be `identical`.
 
@@ -52,6 +54,7 @@ No other file may change.
 ## 6. Commands
 
 ```
+python3 scripts/e2e/page_parity_visual.py 2>&1 | tail -3
 cd App && .venv/bin/python -m pytest tests/test_go_page_parity_screenshots.py -q 2>&1 | tail -5
 cd go && go build ./... && go test ./internal/web/public/ ./internal/web/guest/ 2>&1 | tail -5
 cd App && .venv/bin/python scripts/public_pages_golden.py --check 2>&1 | tail -3

@@ -28,15 +28,17 @@ value only ever worked on the stack that issued it and the other side rendered a
 - `go/internal/web/public/pages_golden_test.go` — `pagePrints` allows `IconSized`, the way
   it allows `Icon`.
 
-## Cases compared (probe: one Python and one Go server on `parity_run`, their own cookies)
+## Cases compared (`scripts/e2e/page_parity_visual.py`: one Python and one Go server on
+`parity_run`, each stack on the cookie it signed)
 
 `/` anon and host, `/reservations`, `/guests/{id}`, `/reservations/{id}/guests/new`,
 `/booking-sites`, `/login?lang=en`, `/l/{token}` anon and host, `/l/{token}/{res}` host,
 `/admin` — at 390, 768 and 1280 px, `--pre-sql` clearing `two_factor_prompted_at`.
 
 ```
-22 rows: identical 22, invisible 0, visible 0     (390, 1280)
-11 rows: identical 11, invisible 0, visible 0     (768)
+python3 scripts/e2e/page_parity_visual.py; PARITY_WIDTHS=768 ...   (390 and 1280, then 768)
+{"rows": 22, "verdicts": {"identical": 22, "invisible": 0, "visible": 0}}
+{"rows": 11, "verdicts": {"identical": 11, "invisible": 0, "visible": 0}}
 ```
 
 Before this brief, with one cookie: `18 identical, 4 visible` — `home-anon` (the receipt
