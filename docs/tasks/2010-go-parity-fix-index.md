@@ -147,3 +147,23 @@ golden is regenerated at that instant.
 Deliberately kept different (owner decision, unchanged): `K3`
 `/admin/fakturace/export-vse` aborts in Python and streams the zip in Go; and the four Go
 test packages red on `main` are not this branch's (see the PR notes).
+
+## 12. Follow-up: the language pass (2026-11-22)
+
+Every pass above fetched English, so a page that answered in the wrong language — or
+kept only the English half of a catalogue — looked perfect. The audit now walks the guest
+pages (`/l/`, `/guests/`, `/reservations/`) and the five densest host pages once per guest
+language: `?lang=cs`, `de`, `es`, `fr`, `uk`, `vi`, each as its own `<persona>+<lang>` row.
+
+Audit, worktree branch, seeded DB: `{"paths": 137, "rows": 843, "pass": 649, "pass_soft":
+13, "accepted": 181, "fail": 0}` — 396 of those rows are the six language passes.
+
+| found by the language pass | Go before | Go now |
+|---|---|---|
+| `/l/{tok}/{res}` for a host with `?lang=cs` | 10065, English (the empty-stay 303 to `/new` dropped `?lang=cs`) | 10407, Czech: `langQuery`/`langQueryAmp` are `_lang_q` and always carry the code, and every guest 303 is `_with_lang` |
+| `Set-Cookie` of the language on the guest form | written after `WriteHeader`, so never sent | set before the redirect |
+| the host note on a host's own link, `?lang=vi` | English | Vietnamese: the note is `host_i18n` copy and reads `hostnote_i18n.json` (cs, en, vi), not the guest catalogue, which has no `vi` |
+
+The guest catalogue's languages (cs, de, en, es, fr, uk) and the host's (cs, en, vi) are
+different sets; `_host_link_note` mixes the two by design, because the note is the owner
+reading their own link, so it is host copy in the host's language on a guest page.
