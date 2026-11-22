@@ -318,7 +318,7 @@ func (s *Pages) apartmentNew(w http.ResponseWriter, r *http.Request) {
 	selected, ok1 := apartmentNewQueryInt(r, "legal_entity_id")
 	copyID, ok2 := apartmentNewQueryInt(r, "copy_from")
 	if !ok1 || !ok2 {
-		notPorted(w, "a non-ASCII or oversized number in the query")
+		hostweb.NotFoundPage(w, r)
 		return
 	}
 	ctx := r.Context()

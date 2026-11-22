@@ -152,7 +152,7 @@ func TestApartmentNewPage(t *testing.T) {
 		{"copy from a missing id", 130001, 0, "en", "?copy_from=999999", 404, []string{`Not found.`}, nil},
 		{"copy id not a number", 130001, 0, "en", "?copy_from=abc", 200, nil, []string{`name="copy_from" value=`}},
 		{"copy id zero", 130001, 0, "en", "?copy_from=0", 200, nil, []string{`name="copy_from" value=`}},
-		{"copy id past 64 bits", 130001, 0, "en", "?copy_from=99999999999999999999", 501, nil, nil},
+		{"copy id past 64 bits", 130001, 0, "en", "?copy_from=99999999999999999999", 404, []string{"Page not found"}, nil},
 		{"admin previews host A", 130003, 130001, "en", "?copy_from=130201", 200,
 			[]string{`<input type="hidden" name="copy_from" value="130201">`, `<option value="130101" selected>Alpha Co</option>`}, nil},
 		{"admin previews host B", 130003, 130002, "en", "?copy_from=130201", 404, []string{`Not found.`}, nil},
@@ -183,13 +183,10 @@ func TestApartmentNewPage(t *testing.T) {
 				t.Errorf("%s: Location %q", c.name, got)
 			}
 		case 404:
-			if body != "Not found." {
+			if len(c.has) == 0 && body != "Not found." {
 				t.Errorf("%s: 404 body %q", c.name, body)
 			}
-		case 501:
-			if rec.Header().Get("X-Ubyhost-Not-Ported") != "1" {
-				t.Errorf("%s: no X-Ubyhost-Not-Ported header", c.name)
-			}
+
 		case 200:
 			// the create form carries its own _csrf input right after the form tag
 			i := strings.Index(body, createForm)

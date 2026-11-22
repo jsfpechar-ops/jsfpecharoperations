@@ -337,8 +337,7 @@ func TestApartmentCreateMatchesPython(t *testing.T) {
 	}
 }
 
-// TestApartmentCreateNotPorted: the branches the create form never posts
-// answer 501 with the fallback header and write nothing.
+// TestApartmentCreateNotPorted: unported branches return 404 or an interim redirect.
 func TestApartmentCreateNotPorted(t *testing.T) {
 	g := loadApartmentCreateGolden(t)
 	pool := testPool(t)
@@ -348,7 +347,31 @@ func TestApartmentCreateNotPorted(t *testing.T) {
 	base := map[string]string{"internal_name": "X", "legal_entity_id": "21", "addr_street": "A", "addr_house_no": "1",
 		"addr_zip": "12000", "addr_obec": "Brno"}
 	for name, extra := range map[string]map[string]string{
-		"guest pay block":      {"stay_fee_guest_form": "1"},
+		"guest pay block": {"stay_fee_guest_form": "1"},
+	} {
+		form := map[string]string{}
+		for k, v := range base {
+			form[k] = v
+		}
+		for k, v := range extra {
+			form[k] = v
+		}
+		before := apartmentCreateMaxID(t, pool)
+		rec := apartmentCreatePost(t, mux, g.CSRFNonce, 2, 0, "en", true, form)
+		if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") == "" {
+			t.Errorf("%s: %d, want 303 with Location", name, rec.Code)
+		}
+		if loc := rec.Header().Get("Location"); !strings.Contains(loc, "err=") {
+			t.Errorf("%s: Location %q missing err flash", name, loc)
+		}
+		if rec.Header().Get("X-Ubyhost-Not-Ported") == "1" {
+			t.Errorf("%s: fallback header set", name)
+		}
+		if apartmentCreateMaxID(t, pool) != before {
+			t.Errorf("%s: a row was written", name)
+		}
+	}
+	for name, extra := range map[string]map[string]string{
 		"full-width id":        {"legal_entity_id": "２１"},
 		"id past 64 bits":      {"copy_from": "99999999999999999999"},
 		"superscript postcode": {"addr_zip": "12000²"},
@@ -363,8 +386,14 @@ func TestApartmentCreateNotPorted(t *testing.T) {
 		}
 		before := apartmentCreateMaxID(t, pool)
 		rec := apartmentCreatePost(t, mux, g.CSRFNonce, 2, 0, "en", true, form)
-		if rec.Code != http.StatusNotImplemented || rec.Header().Get("X-Ubyhost-Not-Ported") != "1" {
-			t.Errorf("%s: %d, want 501 with the fallback header", name, rec.Code)
+		if rec.Code != http.StatusNotFound {
+			t.Errorf("%s: %d, want 404", name, rec.Code)
+		}
+		if !strings.Contains(rec.Body.String(), "Page not found") {
+			t.Errorf("%s: body lacks branded 404", name)
+		}
+		if rec.Header().Get("X-Ubyhost-Not-Ported") == "1" {
+			t.Errorf("%s: fallback header set", name)
 		}
 		if apartmentCreateMaxID(t, pool) != before {
 			t.Errorf("%s: a row was written", name)

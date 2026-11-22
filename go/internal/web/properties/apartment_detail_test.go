@@ -150,15 +150,15 @@ func TestApartmentDetailAccess(t *testing.T) {
 		{"another host's property", "/apartments/130204", 130001, 0, 404, false, []string{`Not found.`}, nil},
 		{"host B asks for A", "/apartments/130201", 130002, 0, 404, false, []string{`Not found.`}, nil},
 		{"unknown id", "/apartments/999999", 130001, 0, 404, false, []string{`Not found.`}, nil},
-		{"id not a number", "/apartments/abc", 130001, 0, 501, true, nil, nil},
-		{"id past int64", "/apartments/99999999999999999999", 130001, 0, 501, true, nil, nil},
+		{"id not a number", "/apartments/abc", 130001, 0, 404, false, []string{"Page not found"}, nil},
+		{"id past int64", "/apartments/99999999999999999999", 130001, 0, 404, false, []string{"Page not found"}, nil},
 		{"id with sign and underscore", "/apartments/+130_201", 130001, 0, 200, false, []string{`Loft &lt;A&gt;`}, nil},
 		{"archived property", "/apartments/130203", 130001, 0, 200, false, []string{`Old archived`}, nil},
 		{"admin acting in host A", "/apartments/130201", 130003, 130001, 200, false, []string{`Loft &lt;A&gt;`}, []string{`Other host`}},
 		{"admin acting in host B asks for A", "/apartments/130201", 130003, 130002, 404, false, []string{`Not found.`}, nil},
 		{"copy_from of another host", "/apartments/130201?copy_from=130204", 130001, 0, 404, false, []string{`Not found.`}, nil},
 		{"copy_from unknown", "/apartments/130201?copy_from=999", 130001, 0, 404, false, []string{`Not found.`}, nil},
-		{"copy_from not ASCII", "/apartments/130201?copy_from=%D9%A1", 130001, 0, 501, true, nil, nil},
+		{"copy_from not ASCII", "/apartments/130201?copy_from=%D9%A1", 130001, 0, 404, false, []string{"Page not found"}, nil},
 	} {
 		rec := adGet(mux, c.path, c.user, c.workspace, "en")
 		if rec.Code != c.status {

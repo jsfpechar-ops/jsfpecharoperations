@@ -390,13 +390,14 @@ func (s *server) apartmentCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, key := range apartmentNotPortedFields {
 		if has(r, key) {
-			notPorted(w, "the form field "+key)
+			returnTo := formReturnTo(r, "/apartments/new", false)
+			q.back(w, r, returnTo, hostweb.Flash{}, smallPostsFlash(q, "flash.error.not_saved_here", nil))
 			return
 		}
 	}
 	p, ok := newApartmentPayload(r)
 	if !ok {
-		notPorted(w, "a non-ASCII digit or an integer past 64 bits in the form")
+		hostweb.NotFoundPage(w, r)
 		return
 	}
 	if has(r, "operator_refresh") {
