@@ -29,7 +29,7 @@ python3 scripts/context_lint.py → ok
 
 ## Deviations
 
-Known-issue edit in `known-issues-recent.md` (2029 wizard line lived there, not `known-issues.md`).
+Known-issue edit in `known-issues-recent.md` (2029 wizard line lived there, not `known-issues.md`). CI: `deploy/lightsail/docker-compose.yml` adds `UBYHOST_PAYMENTS_RETIRED` (2029 parity test on main).
 
 ## Questions
 
