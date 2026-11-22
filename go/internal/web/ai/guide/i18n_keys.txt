@@ -10,6 +10,7 @@ flash.error.guide_import_busy
 flash.error.guide_import_empty
 flash.error.guide_import_limit
 flash.error.guide_import_link
+flash.error.guide_external_url
 flash.error.guide_import_off
 flash.error.guide_import_same
 flash.error.guide_no_such_item
