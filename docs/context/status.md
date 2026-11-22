@@ -5,10 +5,11 @@ Updated: 2026-11-22.
 ## Production
 - Magic-link 1–2 done; access log off. `/healthz` 1.1.0. Main 11-13: `84e966f` (#962).
 - Postgres live. Billing ON. `COMPOSE_PROFILES=walg,monitoring,go`. SQLite rollback: pg-cutover.
-- Go jobs = queue (billing_snapshot, stripe_sweep, ical, push, submit, posthog, meta_capi, deadlines). Python: mail, door_codes.
+- Payments retired (`UBYHOST_PAYMENTS_RETIRED`); Stripe off; code and data kept. Billing on.
+- Go jobs = queue (billing_snapshot, ical, push, submit, posthog, meta_capi, deadlines). Python: mail, door_codes.
 - Go routes live: [ENVIRONMENT](../ENVIRONMENT.md). Rollback: trim `UBYHOST_GO_PATHS`, reload caddy.
-- AI: `havel,leon,guide_import` (`guide_translate` off). Stripe test. Guest QR 404 without IBAN. Review: [plan](../plans/ai-payments-hardening.md).
-- UX gate and Stripe onboarding live. Backups: daily pg_dump + WAL-G 7-day PITR.
+- AI: `havel,leon,guide_import` (`guide_translate` off). Guest QR 404 without IBAN.
+- Backups: daily pg_dump + WAL-G 7-day PITR.
 
 ## Next
 - 2001: invoice page Wolt-simple + Generate invoice on stay header ([brief](../tasks/2001-invoice-wolt-simple.md)).
@@ -16,7 +17,7 @@ Updated: 2026-11-22.
 - 2011-2018 merged (#1252); 2021, 2028 done; 2022 needs owner.
 - 2000: no police nags on Overview without UbyPort login.
 - Go executor queue ([plan](../plans/go-cutover-executor-queue.md)): runnable **1793**, **0852**; **1730** / **1770** blocked until exact-diff sidecars.
-- [Autopilot](../plans/autopilot-agentic.md): hide Payments first.
+- [Autopilot](../plans/autopilot-agentic.md): A2 done (2029); A6 waits on Python retirement.
 - Guest isolation ([plan](../plans/guest-form-isolation.md)): 1834-1839 (#1070); drafts #1072-1073; 1835 (#1071) after 1834; owner 1837 Q4-5.
 - Entry code + guide (Go): [plan](../plans/entry-code-external-guide.md); runnable 1660, 1663, 1668, 1661→1662, 1664; 1665-1667 wait on property-settings + guest-pages ports.
 - CI 1413-1415, README 1416.

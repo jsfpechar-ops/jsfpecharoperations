@@ -60,8 +60,8 @@ Append-only.
 - 2026-11-15 [legal] Register lists Mistral AI and Anthropic (conditional); no "EU only"/"not stored" without ZDR or EU endpoint | 1792
 - 2026-11-15 [ai] Shared Havel/Leon budget, abuse caps; Havel no-go; nameless lookups; host mail in host language | owner
 - 2026-11-17 [dep] ČÚZK: local unlogged table, pg_trgm (1700c). Python golden filing only ([go-first](go-first.md)) | owner. 1702d-e Go | orch
-- 2026-11-17/18 [product] Autopilot A2 hide Payments; preflight Q4: zero open payment requests or direct bookings, never used; `UBYHOST_PAYMENTS_HIDDEN=1` OK | owner
-- 2026-11-20 [product] Payments and Booking site removed from all host nav unconditionally (dormant product); `UBYHOST_PAYMENTS_HIDDEN` only gates routes, row actions, jobs | owner
+- 2026-11-17/18 [product] Autopilot A2 hide Payments; preflight Q4 zero open; `UBYHOST_PAYMENTS_HIDDEN=1` OK | owner
+- 2026-11-20 [product] Payments and Booking site off host nav; `UBYHOST_PAYMENTS_HIDDEN` gates routes, row actions, jobs | owner
 - 2026-11-17 [workflow] Stays Go-only, show-more append, Stays Turbo cache only|owner
 - 2026-11-19 [ui] Wide geometry skips pageHeader left/right edge on stay-detail at ≥1024 (crumb+H1, same as 0789). Brief 1862.
 - 2026-11-20 [workflow] Deploys staging-first: green main → staging; production manual (force_confirm=DEPLOY). Brief 1865 | owner
@@ -69,3 +69,4 @@ Append-only.
 - 2026-11-21 [ui] Dashboard "What needs you": no police line (failed, overdue, not sent) without UbyPort login; the setup line or onboarding banner is the call to action. Python under go-first exception 3; the Go port carries the rule and collapses overdue lines into one summary. Brief 2000.
 - 2026-11-22 [parity/ux] DOM parity is not UX approval; a UX fix stays Go-only + owner switches `UBYHOST_GO_PATHS`. 2021-2028 | orch
 - 2026-11-21 [ux] Invoice builder Wolt-simple (narrow lane, flat cards, stacked item rows); Generate invoice moves from stay ⋮ menu to stay header, phone too. Brief 2001 | owner
+- 2026-11-22 [product] 2029 `UBYHOST_PAYMENTS_RETIRED`; D1-D4 in brief; no delete (A6 later) | owner
