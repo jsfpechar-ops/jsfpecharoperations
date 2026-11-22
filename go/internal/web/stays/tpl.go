@@ -37,7 +37,6 @@ var tplFuncs = map[string]any{
 	"is_nil_int":      isNilInt,
 	"bad":             guestBad,
 	"errFor":          guestErrFor,
-	"lock":            guestLock,
 	"guestVal":        guestVal,
 }
 

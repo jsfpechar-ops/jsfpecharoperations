@@ -49,13 +49,13 @@
     <div class="ui-pair">
       <div class="ui-field">
         <label for="surname">{{t "guest.admin.surname"}}<span class="req-star" aria-hidden="true">*</span></label>
-        <input class="{{bad .Issues "surname"}}" type="text" id="surname" name="surname"{{lock .Filed}} maxlength="50" required
+        <input class="{{bad .Issues "surname"}}" type="text" id="surname" name="surname"{{if .Filed}} disabled aria-describedby="filed-lock-note"{{end}} maxlength="50" required
                value="{{guestVal $G "surname"}}">
         {{errFor .Issues "surname"}}
       </div>
       <div class="ui-field">
         <label for="first_name">{{t "guest.admin.given_names"}}</label>
-        <input class="{{bad .Issues "first_name"}}" type="text" id="first_name" name="first_name"{{lock .Filed}} maxlength="24"
+        <input class="{{bad .Issues "first_name"}}" type="text" id="first_name" name="first_name"{{if .Filed}} disabled aria-describedby="filed-lock-note"{{end}} maxlength="24"
                value="{{guestVal $G "first_name"}}">
         {{errFor .Issues "first_name"}}
       </div>
@@ -63,7 +63,7 @@
     <div class="grid">
       <div class="ui-field">
         <label for="birth_date">{{t "guest.admin.birth_date"}}</label>
-        <input class="{{bad .Issues "birth_date"}}" type="text" id="birth_date" name="birth_date"{{lock .Filed}}
+        <input class="{{bad .Issues "birth_date"}}" type="text" id="birth_date" name="birth_date"{{if .Filed}} disabled aria-describedby="filed-lock-note"{{end}}
                data-birth-date inputmode="numeric" placeholder="{{t "guest.admin.birth_date_ph"}}" maxlength="10"
                autocomplete="bday"
                value="{{if $G}}{{$G.BirthDate}}{{end}}">
@@ -72,7 +72,7 @@
       </div>
       <div class="ui-field">
         <label for="nationality">{{t "stay.detail.guests.nationality"}}<span class="req-star" aria-hidden="true">*</span></label>
-        <select class="{{bad .Issues "nationality"}}" id="nationality" name="nationality"{{lock .Filed}} required>
+        <select class="{{bad .Issues "nationality"}}" id="nationality" name="nationality"{{if .Filed}} disabled aria-describedby="filed-lock-note"{{end}} required>
           <option value="">{{t "common.select"}}</option>
           {{range .Countries}}<option value="{{.Code}}"
               {{if $G}}{{if eq $G.Nationality .Code}}selected{{end}}{{end}}>
@@ -95,7 +95,7 @@
         {{if .IdentityHidden}}
         <input type="text" id="doc_number" value="{{.DocNumberShown}}" readonly aria-describedby="identity-hidden-note">
         {{else}}
-        <input class="{{bad .Issues "doc_number"}}" type="text" id="doc_number" name="doc_number"{{lock .Filed}} maxlength="30"
+        <input class="{{bad .Issues "doc_number"}}" type="text" id="doc_number" name="doc_number"{{if .Filed}} disabled aria-describedby="filed-lock-note"{{end}} maxlength="30"
                value="{{guestVal $G "doc_number"}}">
         {{end}}
         <div class="ui-help">{{t "guest.admin.document_hint"}}</div>
@@ -106,7 +106,7 @@
         {{if .IdentityHidden}}
         <input type="text" id="visa_number" value="{{.VisaNumberShown}}" readonly aria-describedby="identity-hidden-note">
         {{else}}
-        <input class="{{bad .Issues "visa_number"}}" type="text" id="visa_number" name="visa_number"{{lock .Filed}} maxlength="15"
+        <input class="{{bad .Issues "visa_number"}}" type="text" id="visa_number" name="visa_number"{{if .Filed}} disabled aria-describedby="filed-lock-note"{{end}} maxlength="15"
                value="{{guestVal $G "visa_number"}}">
         {{end}}
         {{errFor .Issues "visa_number"}}
@@ -119,19 +119,19 @@
     <div class="grid">
       <div class="ui-field">
         <label for="res_street">{{t "guest.admin.res_street"}} <span class="ui-opt">{{t "common.optional"}}</span></label>
-        <input class="{{bad .Issues "res_street"}}" type="text" id="res_street" name="res_street"{{lock .Filed}} maxlength="42"
+        <input class="{{bad .Issues "res_street"}}" type="text" id="res_street" name="res_street"{{if .Filed}} disabled aria-describedby="filed-lock-note"{{end}} maxlength="42"
                value="{{guestVal $G "res_street"}}">
         {{errFor .Issues "res_street"}}
       </div>
       <div class="ui-field">
         <label for="res_city">{{t "guest.admin.res_city"}}</label>
-        <input class="{{bad .Issues "res_city"}}" type="text" id="res_city" name="res_city"{{lock .Filed}} maxlength="42"
+        <input class="{{bad .Issues "res_city"}}" type="text" id="res_city" name="res_city"{{if .Filed}} disabled aria-describedby="filed-lock-note"{{end}} maxlength="42"
                value="{{guestVal $G "res_city"}}">
         {{errFor .Issues "res_city"}}
       </div>
       <div class="ui-field">
         <label for="res_country">{{t "guest.admin.res_country"}}</label>
-        <select class="{{bad .Issues "res_country"}}" id="res_country" name="res_country"{{lock .Filed}}>
+        <select class="{{bad .Issues "res_country"}}" id="res_country" name="res_country"{{if .Filed}} disabled aria-describedby="filed-lock-note"{{end}}>
           <option value="">{{t "common.select"}}</option>
           {{range .Countries}}<option value="{{.Code}}"
               {{if $G}}{{if eq $G.ResCountry .Code}}selected{{end}}{{end}}>
@@ -147,18 +147,18 @@
     <div class="grid">
       <div class="ui-field">
         <label for="stay_from">{{t "guest.admin.stay_from"}}</label>
-        <input type="date" id="stay_from" name="stay_from"{{lock .Filed}}
+        <input type="date" id="stay_from" name="stay_from"{{if .Filed}} disabled aria-describedby="filed-lock-note"{{end}}
                value="{{.StayFrom}}">
       </div>
       <div class="ui-field">
         <label for="stay_to">{{t "guest.admin.stay_to"}}</label>
-        <input class="{{bad .Issues "stay_to"}}" type="date" id="stay_to" name="stay_to"{{lock .Filed}}
+        <input class="{{bad .Issues "stay_to"}}" type="date" id="stay_to" name="stay_to"{{if .Filed}} disabled aria-describedby="filed-lock-note"{{end}}
                value="{{.StayTo}}">
         {{errFor .Issues "stay_to"}}
       </div>
       <div class="ui-field">
         <label for="purpose">{{t "stay.detail.guests.purpose"}}</label>
-        <select id="purpose" name="purpose"{{lock .Filed}}>
+        <select id="purpose" name="purpose"{{if .Filed}} disabled aria-describedby="filed-lock-note"{{end}}>
           {{range .Purposes}}<option value="{{.Code}}"
               {{if .Selected}}selected{{end}}>
               {{.Label}}</option>{{end}}
@@ -167,7 +167,7 @@
     </div>
     <div class="ui-field">
       <label for="note">{{t "guest.admin.note"}} <span class="ui-opt">{{t "guest.admin.note_optional"}}</span></label>
-      <textarea class="{{bad .Issues "note"}}" id="note" name="note"{{lock .Filed}} maxlength="255">{{guestVal $G "note"}}</textarea>
+      <textarea class="{{bad .Issues "note"}}" id="note" name="note"{{if .Filed}} disabled aria-describedby="filed-lock-note"{{end}} maxlength="255">{{guestVal $G "note"}}</textarea>
       {{errFor .Issues "note"}}
     </div>
   </div>

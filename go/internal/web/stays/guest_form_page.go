@@ -147,14 +147,6 @@ func guestErrFor(issues []validation.Issue, field string) template.HTML {
 	return template.HTML(b.String())
 }
 
-// guestLock is lock(): a filed record renders its reported fields read-only.
-func guestLock(filed bool) template.HTML {
-	if !filed {
-		return ""
-	}
-	return template.HTML(` disabled aria-describedby="filed-lock-note"`)
-}
-
 // displayBirthDate is validation.display_birth_date: DD.MM.YYYY for a stored
 // DDMMYYYY, otherwise the value as typed.
 func displayBirthDate(value string) string {
@@ -450,8 +442,10 @@ func (c *guestEditCall) guestFormData(v guestFormView) (guestFormData, error) {
 		MetaText: v.Reservation.internalName + " · " + dateCZ(v.Reservation.dateFrom) +
 			" – " + dateCZ(v.Reservation.dateTo),
 	}
+	// A saved guest keeps its own purpose, even an empty one: only the blank
+	// form falls back to the property's default.
 	purpose := v.Reservation.defaultPurp
-	if v.Guest != nil && v.Guest.purpose != "" {
+	if v.Guest != nil {
 		purpose = v.Guest.purpose
 	}
 	for i := range purposes {
