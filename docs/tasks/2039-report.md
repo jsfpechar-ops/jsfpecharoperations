@@ -51,12 +51,7 @@ DB: `UBYHOST_TEST_DATABASE_URL=postgresql:///ubyhost_c9?host=/var/run/postgresql
 
 ## Owner steps (production)
 
-1. On the server, add these four entries to `UBYHOST_GO_PATHS` (same style as other guest ports):  
-   `/l/*/guide/leon`  
-   `/l/*/guide/leon/*`  
-   `/g/*/leon`  
-   `/g/*/leon/*`  
-   (Caddy prefix rules — match how guide view paths were added.)
+1. On the server, add these two entries to `UBYHOST_GO_PATHS`: `/l/*/*/guide/leon /g/*/leon` (checked with `caddy_match`: they match `/l/<token>/<id>/guide/leon` and `/g/<token>/leon` and nothing else).
 2. Redeploy Go web after merge; smoke one stay Leon POST and one QR Leon POST on staging.
 3. Run `scripts/go_switch_preflight.sh` with the new path fragment before enabling on production.
 
