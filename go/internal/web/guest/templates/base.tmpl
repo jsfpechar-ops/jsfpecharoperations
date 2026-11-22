@@ -33,7 +33,7 @@
     <details class="g-lang" data-lang-menu>
       <summary aria-label="{{.T "language_label"}}: {{index .GuestEndonyms .Lang}}"><span aria-hidden="true">{{upper .Lang}}</span></summary>
       <div class="g-lang-list" role="group" aria-label="{{.T "language_label"}}">
-        {{range $code, $url := .LangURLs}}
+        {{range $code := langOrder .LangURLs}}{{$url := index $.LangURLs $code}}
         {{if $.LangRelangURL}}
         <button type="submit" form="guest-form" formaction="{{$.LangRelangURL}}?lang={{$code}}" formnovalidate data-lang-draft class="{{if eq $.Lang $code}}on{{end}}"{{if eq $.Lang $code}} aria-current="true"{{end}} lang="{{$code}}">{{index $.GuestEndonyms $code}}</button>
         {{else}}

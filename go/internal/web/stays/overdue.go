@@ -8,7 +8,6 @@ import (
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/calendar"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/deadlines"
-	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
 )
 
 // overdueUnfinishedIDs is admin._overdue_unfinished_ids: stays the dashboard
@@ -62,16 +61,10 @@ func overdueUnfinishedIDs(ctx context.Context, pool *pgxpool.Pool, getenv func(s
 		if level != "overdue" {
 			continue
 		}
-		from, okFrom := validation.ParseISODate(s.DateFrom)
-		to, okTo := validation.ParseISODate(s.DateTo)
-		if okFrom && okTo {
-			if civilDate(from).After(today) {
-				continue
-			}
-			if civilDate(to).Before(today.AddDate(0, 0, -3)) && p.Status != "failed" {
-				continue
-			}
-		}
+		// Python keeps a stay here for as long as its police deadline is past
+		// and a guest is still unfiled, however long ago the guests left
+		// (reporting.dashboard_rows only ages out *finished* stays, and those
+		// were skipped above).
 		ids = append(ids, s.ID)
 	}
 	return ids, nil
