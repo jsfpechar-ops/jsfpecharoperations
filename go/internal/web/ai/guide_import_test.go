@@ -69,7 +69,7 @@ func TestGuideImportRoute(t *testing.T) {
 		"empty":       {},
 		"blank":       {"booking_url": {"  "}},
 		"bad link":    {"booking_url": {"https://evil.example/x"}},
-		"same source": {"booking_url": {booking}, "url": {"https://booking.com/hotel/de/b.html"}},
+		"bad public url": {"public_url": {"https://h.cz:8443/x"}},
 	} {
 		loc := post(owner, form)
 		if !strings.Contains(loc, "?err=") || count() != 0 {

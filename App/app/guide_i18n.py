@@ -231,6 +231,10 @@ GUIDE_STRINGS = {
         "guide.privacy_requests.how4": "When you have dealt with it, tick Identity checked if you checked who asked, write what you did in Outcome note, set the Status and tap or click Save.",
         "guide.privacy_requests.wrong1": "You do not know what the guest's data is: open the guest's stay, or the Guest register, to see what UbyHost holds.",
         # 0318: Properties and setup, Business details, Stay fees, Invoices (plan 16a.2).
+        "guide.guest_guide.import1": "On the guest guide page you can paste a public page link (for example Notion) next to your Booking.com and Airbnb links.",
+        "guide.guest_guide.import2": "Cards arrive as drafts to approve. Access codes and Wi-Fi passwords are left out; add them under Entry codes and in the Wi-Fi card.",
+        "guide.guest_guide.import1": "Na stránce průvodce pro hosty můžete vedle odkazů na Booking.com a Airbnb vložit i odkaz na veřejnou stránku (třeba Notion).",
+        "guide.guest_guide.import2": "Karty přijdou jako návrhy ke schválení. Vstupní kódy a hesla k Wi-Fi se vynechají; přidejte je v části Vstupní kódy a v kartě Wi-Fi.",
         "guide.setup.what": "A property is one flat or house you let. UbyHost needs its name, its address and who runs it. A guided setup then takes you through the rest.",
         "guide.setup.when": "Do it once for each property, before your first guests arrive.",
         "guide.setup.add_title": "Add a property",

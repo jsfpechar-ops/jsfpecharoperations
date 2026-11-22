@@ -2781,6 +2781,8 @@ STRINGS: Dict[str, str] = {
     "guide.privacy_requests.how3": "Yêu cầu xuất hiện trong danh sách cùng với hạn xử lý.",
     "guide.privacy_requests.how4": "Khi đã xử lý xong, đánh dấu Đã kiểm tra danh tính nếu bạn đã kiểm tra ai là người hỏi, ghi việc bạn đã làm vào Ghi chú kết quả, chọn Trạng thái rồi nhấn Lưu.",
     "guide.privacy_requests.wrong1": "Bạn không biết dữ liệu của khách là gì: mở lượt lưu trú của khách, hoặc Sổ khách lưu trú, để xem UbyHost đang giữ những gì.",
+    "guide.guest_guide.import1": "Trên trang hướng dẫn khách, bạn có thể dán liên kết trang công khai (ví dụ Notion) bên cạnh liên kết Booking.com và Airbnb.",
+    "guide.guest_guide.import2": "Thẻ đến dưới dạng bản nháp để bạn duyệt. Mã vào cửa và mật khẩu Wi-Fi được bỏ ra; thêm chúng ở mục Mã vào cửa và trong thẻ Wi-Fi.",
     "guide.setup.what": "Chỗ ở là một căn hộ hoặc ngôi nhà bạn cho thuê. UbyHost cần tên, địa chỉ và đơn vị vận hành của nó. Sau đó, thiết lập có hướng dẫn sẽ đưa bạn qua các phần còn lại.",
     "guide.setup.when": "Làm một lần cho mỗi chỗ ở, trước khi khách đầu tiên đến.",
     "guide.setup.add_title": "Thêm chỗ ở",

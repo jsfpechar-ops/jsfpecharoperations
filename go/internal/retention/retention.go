@@ -280,7 +280,7 @@ func (r *runner) cutoffs() map[string]string {
 		"entry_codes":          "entry_code_until or archived more than 1 day ago",
 		"cleaning":             "event or link expiry before " + isoDate(r.daysAgo(cleaningDays)),
 		"push":                 "alert queued over 30 days ago, or device unseen for 180 days",
-		"guide_imports": "listing text fetched before " + isoDate(r.daysAgo(guideRawDays)) +
+		"guide_imports": "listing or public page text fetched before " + isoDate(r.daysAgo(guideRawDays)) +
 			", failed request rows before " + isoDate(r.daysAgo(guideRowDays)),
 		"guest_chats":      "stay ended, or QR chat last used, before " + isoDate(r.daysAgo(leonRetentionDays)),
 		"legal_acceptance": "inactive account, last login before " + r.daysAgoISO(r.cfg.AuditDays),
