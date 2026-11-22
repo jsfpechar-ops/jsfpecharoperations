@@ -18,6 +18,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -28,6 +29,7 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/billingjob"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/clientip"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/headcount"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
 )
@@ -191,7 +193,7 @@ func (d stayClaimDeps) stayOverview(w http.ResponseWriter, r *http.Request) {
 			d.renderClaimPage(w, r, token, lang, aptRow, stay, row)
 			return
 		}
-		if !DeviceHoldsClaim(r, resID, row.tokenVersion) {
+		if !DeviceHoldsClaim(r, d.getenv, resID, row.tokenVersion) {
 			renderGuestPage(w, "assigned", lang, claimPage{Token: token, ResID: resID, Claim: row})
 			return
 		}
@@ -238,7 +240,7 @@ func (d stayClaimDeps) claimLanding(w http.ResponseWriter, r *http.Request) {
 		scError(w, err)
 		return
 	}
-	if DeviceHoldsClaim(r, resID, row.tokenVersion) {
+	if DeviceHoldsClaim(r, d.getenv, resID, row.tokenVersion) {
 		d.redirectLang(w, r, guestPath(token, resID)+langQuery(lang), lang)
 		return
 	}
@@ -304,8 +306,13 @@ func (d stayClaimDeps) claimConfirm(w http.ResponseWriter, r *http.Request) {
 	if _, err := ubyport.RefreshRegistrationCompletedAt(r.Context(), d.pool, resID, dec, d.now); err != nil {
 		log.Printf("stay_claim: refresh registration: %v", err)
 	}
+	row, err := EnsureClaimRow(r.Context(), d.pool, resID, isoNow(at))
+	if err != nil {
+		scError(w, err)
+		return
+	}
+	rememberClaim(w, r, d.getenv, resID, row.tokenVersion)
 	d.redirectLang(w, r, guestPath(token, resID)+langQuery(lang), lang)
-	rememberClaim(w, r, resID, 0)
 }
 
 type claimPage struct {
@@ -524,24 +531,50 @@ func GuestAccessOpen(status string, locked bool) bool {
 	return status == "active" && !locked
 }
 
-// DeviceHoldsClaim is guest.py _device_holds_claim. The guest claim cookie
-// (ubyhost_claim) is not written on this side yet (#1241 device gate), so a
-// device never holds the claim: the claim ask is shown, never skipped.
-
 // DeviceHoldsClaim is guest.py _device_holds_claim.
-func DeviceHoldsClaim(r *http.Request, resID, version int64) bool {
-	// ubyhost_claim cookie parity is brief 1720; fail closed for mail-on paths until then.
-	_ = r
-	_ = resID
-	_ = version
-	return false
+func DeviceHoldsClaim(r *http.Request, getenv func(string) string, resID, version int64) bool {
+	if r == nil || getenv == nil || resID <= 0 {
+		return false
+	}
+	gen, ok := claimedClaims(r, getenv)[resID]
+	return ok && gen == version
 }
 
-func rememberClaim(w http.ResponseWriter, r *http.Request, resID, version int64) {
-	_ = w
-	_ = r
-	_ = resID
-	_ = version
+func rememberClaim(w http.ResponseWriter, r *http.Request, getenv func(string) string, resID, version int64) {
+	if w == nil || getenv == nil || resID <= 0 {
+		return
+	}
+	held := claimedClaims(r, getenv)
+	held[resID] = version
+	keys := make([]int64, 0, len(held))
+	for id := range held {
+		keys = append(keys, id)
+	}
+	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
+	if len(keys) > 40 {
+		keys = keys[len(keys)-40:]
+	}
+	kept := make(map[string]int64, len(keys))
+	for _, id := range keys {
+		kept[strconv.FormatInt(id, 10)] = held[id]
+	}
+	secret, err := secure.LoadSecret(getenv)
+	if err != nil {
+		return
+	}
+	tok, err := urlSafeDumps(secret, claimCookieSalt, kept)
+	if err != nil {
+		return
+	}
+	http.SetCookie(w, &http.Cookie{
+		Name:     claimCookieName,
+		Value:    tok,
+		Path:     "/",
+		MaxAge:   60 * 60 * 24 * 60,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		Secure:   hostweb.SecureCookies(getenv),
+	})
 }
 
 func confirmClaim(ctx context.Context, pool *pgxpool.Pool, resID int64, secret string, apt *scApt, stay *scStay, at time.Time) (bool, error) {
@@ -582,7 +615,7 @@ func confirmClaim(ctx context.Context, pool *pgxpool.Pool, resID int64, secret s
 		if exp != nil && int(*exp) > target {
 			target = int(*exp)
 		}
-		if _, err := tx.Exec(ctx, `UPDATE reservation SET guest_count_declared = $1 WHERE id = $2`, target, resID); err != nil {
+		if _, err := tx.Exec(ctx, `UPDATE reservation SET declared_guests = $1 WHERE id = $2`, target, resID); err != nil {
 			return false, err
 		}
 	}

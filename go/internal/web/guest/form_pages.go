@@ -780,7 +780,7 @@ func (d formPageDeps) formPagesRequireClaim(w http.ResponseWriter, r *http.Reque
 		d.access().unavailable(w, r, lang, "stay_gone", http.StatusNotFound, token, 0, map[string]string{"Cache-Control": formPagesHardening})
 		return true
 	}
-	if !DeviceHoldsClaim(r, res.id, row.tokenVersion) {
+	if !DeviceHoldsClaim(r, d.getenv, res.id, row.tokenVersion) {
 		target := GuestLink(token, res.id, LangQuery(lang, ""))
 		w.Header().Set("Cache-Control", formPagesHardening)
 		WithLang(w, d.getenv, lang)
