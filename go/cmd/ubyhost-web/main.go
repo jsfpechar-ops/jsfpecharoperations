@@ -125,8 +125,15 @@ func healthz(pool *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-func notFound(w http.ResponseWriter, _ *http.Request) {
-	http.NotFound(w, nil)
+// notFound is the catch-all 404: the branded host page, as Python's error.html
+// (error_kind=not_found), not net/http's bare text. A guest link keeps the plain
+// 404 until the Go guest lane gets the guest lane's own error page.
+func notFound(w http.ResponseWriter, r *http.Request) {
+	if hostweb.GuestPath(r) {
+		http.NotFound(w, r)
+		return
+	}
+	hostweb.NotFoundPage(w, r)
 }
 
 func getenv(name, def string) string {
@@ -201,7 +208,9 @@ func run() int {
 		}
 		return h
 	}, mux)
-	srv := &http.Server{Addr: addr, Handler: handler, ReadHeaderTimeout: 5 * time.Second}
+	// CanonicalSlash first: the 307 sees the mux's route table, then the error
+	// page and the mux answer the request.
+	srv := &http.Server{Addr: addr, Handler: hostweb.CanonicalSlash(mux, handler), ReadHeaderTimeout: 5 * time.Second}
 	errCh := make(chan error, 1)
 	go func() { errCh <- srv.ListenAndServe() }()
 	slog.Info("listening", "addr", addr)
