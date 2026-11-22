@@ -10,10 +10,17 @@ never authenticates both.
     PARITY_ONLY=home-host,admin-home python3 scripts/e2e/page_parity_visual.py
     PARITY_WIDTHS=390 python3 scripts/e2e/page_parity_visual.py
 
+Run it with the audit's own interpreter and environment, the way the audit runs:
+
+    source ~/.local/parity/env.sh          # PSQL, PATH, UBYHOST_E2E_PG
+    cd App && .venv/bin/python ../scripts/e2e/page_parity_visual.py
+
 Needs a Postgres at $UBYHOST_E2E_PG with the audit's privileges (the seed drops
 and recreates parity_tpl / parity_run), Playwright with Chromium, and the Go
 toolchain. Artifacts land in $PARITY_OUT (default ~/.local/parity/visual).
 """
+from __future__ import annotations
+
 import json
 import os
 import shutil
