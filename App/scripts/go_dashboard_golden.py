@@ -14,6 +14,7 @@ import re
 import sys
 import tempfile
 import time
+from datetime import datetime
 from pathlib import Path
 
 APP = Path(__file__).resolve().parents[1]
@@ -106,12 +107,31 @@ def _seed(db) -> None:
             db.execute(f"INSERT INTO {table['table']} ({cols}) VALUES ({marks})", list(row))
 
 
+# The Go test renders at this instant (dashboard_test.go parses the same value), so
+# Python must render at it too: "today" reaches the header, the 14-day grid, the Today
+# table and the key rows, and a golden made from the real clock rots overnight.
+FIXED_NOW = datetime(2026, 6, 15, 12, 0, 0)
+
+
+def pin_clock() -> None:
+    """Freeze deadlines.local_now, the one clock the dashboard reads for "today"."""
+    from app import deadlines
+
+    real = deadlines.local_now
+
+    def local_now(now=None):
+        return real(now) if now is not None else FIXED_NOW
+
+    deadlines.local_now = local_now
+
+
 def render() -> str:
     from fastapi.testclient import TestClient
 
     from app import auth, config, db
     from app.main import app
 
+    pin_clock()
     db.init_db()
     _seed(db)
     config.PUBLIC_BASE_URL = PUBLIC
