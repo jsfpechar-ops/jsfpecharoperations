@@ -51,6 +51,9 @@ type pagesCatalog struct {
 	Guides  map[string]guideSet `json:"guides"`
 	Rates   map[string]any      `json:"rates"`
 	Icons   map[string]string   `json:"icons"`
+	// IconPaths is the same art without the <svg> wrapper, so a page can ask for
+	// the macro's other size (icon(name, size): 14 in rows, 32 on the receipt).
+	IconPaths map[string]string `json:"icon_paths"`
 }
 
 var pcat = loadPagesCatalog(pagesJSON)
@@ -125,6 +128,23 @@ func (p *pg) E(v string) string { return esc(v) }
 
 // Icon is {{ icon(name, 14) }}: the SVG text from the catalog (no outside text).
 func (p *pg) Icon(name string) string { return pcat.Icons[name] }
+
+// IconSized is {{ icon(name, size) }}: templates/_icons.html renders the same
+// paths with width/height = size and a stroke of 2 up to 16px, 1.75 above it.
+func (p *pg) IconSized(name string, size int) string {
+	body, ok := pcat.IconPaths[name]
+	if !ok {
+		return pcat.Icons[name]
+	}
+	stroke := "1.75"
+	if size <= 16 {
+		stroke = "2"
+	}
+	return `<svg class="ui-icon" width="` + strconv.Itoa(size) + `" height="` + strconv.Itoa(size) +
+		`" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="` + stroke +
+		`" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-icon="` +
+		name + `">` + body + `</svg>`
+}
 
 // Canonical is canonical_url, escaped.
 func (p *pg) Canonical() string { return esc(p.canonical) }

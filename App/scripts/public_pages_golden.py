@@ -80,6 +80,11 @@ def _icon(name: str) -> str:
     return str(env.from_string("{% from '_icons.html' import icon %}{{ icon('" + name + "', 14) }}").render())
 
 
+def _icon_body(name: str) -> str:
+    """The icon's paths alone: Go re-wraps them to honour a size (icon(name, size))."""
+    return _icon(name).split(">", 1)[1].rsplit("</svg>", 1)[0]
+
+
 def catalog() -> str:
     strings = {
         lang: {k: v for k, v in sorted(host_i18n.STRINGS[lang].items()) if k.startswith(KEY_PREFIXES)}
@@ -94,6 +99,7 @@ def catalog() -> str:
         "guides": guides,
         "rates": legal.PUBLIC_RATES,
         "icons": {"check": _icon("check"), "external-link": _icon("external-link")},
+        "icon_paths": {"check": _icon_body("check"), "external-link": _icon_body("external-link")},
     }
     return json.dumps(data, ensure_ascii=False, indent=1, sort_keys=True) + "\n"
 
