@@ -1,6 +1,6 @@
 # 2029: Retire payments (OFF in production, kept in repo), keep the guide
 
-Status: todo (draft, needs owner decisions in section 9 before step 1)
+Status: todo (draft, needs owner decisions in the Decisions list before step 1)
 Depends on: none | Base commit: b5127d006 | Branch: task/2029-retire-payments-<step>
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens. Each step in section 4 is its own session and its own draft PR.
 
@@ -21,7 +21,7 @@ Turn the payments area (Stripe Connect, host Payments pages, booking-site direct
 4. Shared helper: `go/internal/payments` `QRDataURI` is imported by `web/properties/apartment_detail.go`, `web/onboarding/wizard_data.go`, `web/stayfees/page_host.go`. Stay-fee QR must keep working, so the package cannot be removed or its init gated.
 5. Docs/legal promise Stripe: `App/app/templates/_booking_terms_{en,cs}.html`, `go/internal/web/booking/templates/terms_*.html`, `docs/privacy/ROPA.md`, `docs/privacy/RETENTION.md`, `docs/ENVIRONMENT.md`, `.env.example`, `README.md`, `docs/HOSTEX.md`, test-map rows, `docs/context/status.md` ("Stripe test", "Billing ON").
 
-**Not payments (must stay ON unless the owner says otherwise, see D1 in section 9):** host subscription billing / invoices (`billing_snapshot`, `/billing`, `go/internal/billing*`, `platform_invoice`, `bank_payment`). Per autopilot-agentic line 52, host subscription billing does not use Stripe (bank transfer + invoices). Stay-fee guest-pay panel (`stay_fee_*`, Revolut/cash rails) is also not Stripe. UbyPort (`go/internal/ubyport`, submit_state, filing jobs) shares no code with payments; step 5 proves it.
+**Not payments (must stay ON unless the owner says otherwise, see D1 in the Decisions list):** host subscription billing / invoices (`billing_snapshot`, `/billing`, `go/internal/billing*`, `platform_invoice`, `bank_payment`). Per autopilot-agentic line 52, host subscription billing does not use Stripe (bank transfer + invoices). Stay-fee guest-pay panel (`stay_fee_*`, Revolut/cash rails) is also not Stripe. UbyPort (`go/internal/ubyport`, submit_state, filing jobs) shares no code with payments; step 5 proves it.
 
 **Go-first** ([go-first](../context/go-first.md)): all code changes are Go-side (flag, jobs, Caddy). Python gets only the minimum mirror (config + job skip) while Python still serves. No new dependency. No schema change, no migration.
 
@@ -66,10 +66,14 @@ With `UBYHOST_PAYMENTS_RETIRED=1` run: `go test ./internal/ubyport/... ./interna
 ## 5. Do not touch
 `go/internal/ubyport`, `submit_state`, filing jobs, `go/internal/payments` package layout (QR helper is shared), any `App/migrations_pg/*`, any `DROP`/`DELETE` SQL, live `.env`, secrets. No code deletion (that is plan A6, after Python retires).
 
-## 6. Data and migration implications
+## 6. Commands
+
+Test commands are inside each step (test-map rows only, each ending `| tail -30`).
+
+### Data and migration implications
 No migration. Tables kept: `payment_request`, `stripe_webhook_events`, `site_booking*`, `stripe_account` columns, billing tables. No data purge; retention windows keep running via `retention.py` (harmless on empty tables). Revival = unset the flag plus restore the Stripe env values; nothing to restore in the DB.
 
-## 7. Owner steps (plain words, never paste secrets into chat or PRs)
+### Owner steps (plain words, never paste secrets into chat or PRs)
 1. On the server run one read-only count and send me only the numbers: open payment requests and direct bookings (expected 0; plan A2 says never used).
 2. In Stripe Dashboard (test mode is what production uses): Developers, Webhooks, open the UbyHost endpoint. Leave it enabled until step 3 is deployed (it then returns 200 and ignores events). After that you may disable the endpoint. Do NOT delete it or roll the signing secret if you want an easy revival.
 3. Connected accounts: Stripe Dashboard, Connect, note any test connected accounts. Nothing to do for production hosts (none).
@@ -77,24 +81,28 @@ No migration. Tables kept: `payment_request`, `stripe_webhook_events`, `site_boo
 5. Verify in a browser: `/payments` shows "Page not found", sidebar has no Payments or Booking sites, `/guide` works.
 6. Revive later: remove `UBYHOST_PAYMENTS_RETIRED`, set Stripe mode and secrets, re-enable the Stripe webhook.
 
-## 8. Risks
+### Risks
 - `/p/*` blocking removes public property pages and iCal feeds (`/p/{slug}/{file}`) that hosts may have given to Airbnb/Booking. If any host syncs a calendar from UbyHost, they break. Owner must confirm D2.
 - QR helper lives in `go/internal/payments`; do not gate package init.
 - Python is still alive for some routes; both stacks must read the flag or one stack leaks payment pages.
 - Legal text version bump re-triggers acceptance (A4); keep it separate and lawyer-led.
 - Stripe retries failed webhooks for days; step 3 must ship before the owner disables anything.
 
-## 9. Decisions needed from the owner (before step 1)
+### Decisions needed from the owner (before step 1)
 - D1: "Subscriptions / predplatne": keep host subscription billing and invoices ON (they do not use Stripe) or retire too? Default: keep ON.
 - D2: Retire the public property page and its iCal export (`/p/*`) too, or only the booking/payment parts? Default: retire all of `/p/*`.
 - D3: Replace booking terms with an "unavailable" note, or leave dormant text? Default: leave dormant, mark in docs.
 - D4: Keep the stay-fee guest-pay panel (not Stripe)? Default: keep.
 
-## 10. Acceptance
+## 7. Acceptance
 - [ ] With `UBYHOST_PAYMENTS_RETIRED=1`: listed paths 404 in Go (tests green); `/guide` and UbyPort tests green.
 - [ ] Without it: behaviour identical to today (existing tests unchanged).
 - [ ] No migration, no deleted file, no secret in any diff.
 - [ ] 390 px screenshots and per-page notes in step 7 PR.
 
-## 11. Stop and ask
+## 8. Stop and ask
 Any excerpt not found verbatim, any route prefix collision, any test needing a secret, or any step above 30 tool calls: stop and report.
+
+## 9. Report
+
+Per step: PR link, files changed, test output tail, screenshots (step 7), and any deviation.
