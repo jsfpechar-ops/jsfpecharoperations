@@ -5,6 +5,14 @@
     <h2>{{.T .TitleKey}}</h2>
     <p class="g-intro">{{.T .BodyKey}}</p>
     {{if .HostNote}}<p class="g-host-note" role="note" data-host-note>{{.HostNote}}</p>{{end}}
+    {{if .StayURL}}
+      <a class="g-btn" href="{{.StayURL}}" data-back-to-stay>{{.T "back_to_stay"}}</a>
+    {{end}}
+    {{if and .OfferMessageHost .HostMessageURL}}
+      <a class="g-btn ghost" href="{{.HostMessageURL}}" data-message-host>{{.T "message_host"}}</a>
+    {{else if .StayURL}}
+      <a class="g-btn ghost" href="#host-contact" data-contact-host>{{.T "contact_host_jump"}}</a>
+    {{end}}
     {{if .RestartURL}}
       <a class="g-btn ghost" href="{{.RestartURL}}">{{.T "start_over"}}</a>
     {{end}}

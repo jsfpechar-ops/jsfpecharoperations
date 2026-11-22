@@ -22,6 +22,8 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/envguard"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/jobs"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/session"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/auth/authpage"
 )
 
 var version = "dev"
@@ -190,7 +192,16 @@ func run() int {
 	m := &metrics{counts: map[key]int64{}}
 	mux := newMux(m, pool)
 
-	srv := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}
+	// Python's exception handler renders error.html for a failed HTML request;
+	// this gives every Go route the same page (brief 2012).
+	handler := authpage.ErrorPage(os.Getenv, time.Now, func(r *http.Request) *session.Host {
+		h, err := session.Load(r.Context(), pool, hostweb.Cookie(r, session.CookieName), time.Now(), os.Getenv)
+		if err != nil {
+			return nil
+		}
+		return h
+	}, mux)
+	srv := &http.Server{Addr: addr, Handler: handler, ReadHeaderTimeout: 5 * time.Second}
 	errCh := make(chan error, 1)
 	go func() { errCh <- srv.ListenAndServe() }()
 	slog.Info("listening", "addr", addr)

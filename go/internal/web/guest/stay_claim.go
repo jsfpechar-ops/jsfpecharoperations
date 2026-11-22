@@ -61,6 +61,7 @@ type scStay struct {
 	apartmentID int64
 	status      string
 	source      string
+	dateFrom    string
 	dateTo      string
 	override    *int64
 	declared    *int64
@@ -122,15 +123,15 @@ func (d stayClaimDeps) demoPreview(w http.ResponseWriter, r *http.Request) {
 	}
 	apt, stay, code := d.loadGuestStay(r.Context(), token, resID, false, true)
 	if code != 0 {
-		scWriteUnavailable(w, r, lang, token, code)
+		d.scWriteUnavailable(w, r, lang, token, code)
 		return
 	}
-	if !HostOwnsStay(r, apt.ownerID) {
-		scWriteUnavailable(w, r, lang, token, http.StatusNotFound)
+	if !d.access().hostOwns(r.Context(), r, apt.ownerID) {
+		d.scWriteUnavailable(w, r, lang, token, http.StatusNotFound)
 		return
 	}
 	if stay.source != "demo" {
-		scWriteUnavailable(w, r, lang, token, http.StatusNotFound)
+		d.scWriteUnavailable(w, r, lang, token, http.StatusNotFound)
 		return
 	}
 	// Brief 1720 owns the full PIN page; until then redirect through the hub path the tests expect.
@@ -151,7 +152,7 @@ func (d stayClaimDeps) stayOverview(w http.ResponseWriter, r *http.Request) {
 	}
 	apt, stay, code := d.loadGuestStay(r.Context(), token, resID, true, false)
 	if code != 0 {
-		scWriteUnavailable(w, r, lang, token, code)
+		d.scWriteUnavailable(w, r, lang, token, code)
 		return
 	}
 	row, err := EnsureClaimRow(r.Context(), d.pool, resID, isoNow(d.now()))
@@ -160,12 +161,17 @@ func (d stayClaimDeps) stayOverview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !GuestAccessOpen(stay.status, row.guestAccessLock) {
-		scWriteUnavailable(w, r, lang, token, http.StatusNotFound)
+		d.scWriteUnavailable(w, r, lang, token, http.StatusNotFound)
 		return
 	}
-	if billingjob.MailEnabled() && !HostOwnsStay(r, apt.ownerID) {
+	access := d.access()
+	aptRow, _, _, found := ResolveKey(r.Context(), d.pool, token)
+	if !found {
+		aptRow = nil
+	}
+	if billingjob.MailEnabled() && !access.hostOwns(r.Context(), r, apt.ownerID) {
 		if row.state != claimStateClaimed {
-			renderGuestPage(w, "claim", lang, claimPage{Token: token, ResID: resID, Claim: row})
+			d.renderClaimPage(w, r, token, lang, aptRow, stay, row)
 			return
 		}
 		if !DeviceHoldsClaim(r, resID, row.tokenVersion) {
@@ -196,7 +202,7 @@ func (d stayClaimDeps) claimLanding(w http.ResponseWriter, r *http.Request) {
 	}
 	apt, stay, code := d.loadClaimable(r.Context(), token, resID)
 	if code != 0 {
-		scWriteUnavailable(w, r, lang, token, code)
+		d.scWriteUnavailable(w, r, lang, token, code)
 		return
 	}
 	row, err := EnsureClaimRow(r.Context(), d.pool, resID, isoNow(d.now()))
@@ -209,8 +215,17 @@ func (d stayClaimDeps) claimLanding(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_ = apt
-	_ = stay
-	renderGuestPage(w, "confirm", lang, claimPage{Token: token, ResID: resID, ClaimError: r.URL.Query().Get("claim_error") == "1"})
+	aptRow, _, _, _ := ResolveKey(r.Context(), d.pool, token)
+	page := d.access().page(r.Context(), r, token, lang, aptRow)
+	view := confirmView{
+		Page:       page,
+		StayFrom:   stay.dateFrom,
+		StayTo:     stay.dateTo,
+		ClaimError: r.URL.Query().Get("claim_error") == "1",
+		CSRFToken:  formPagesCSRFToken(),
+		ActionURL:  guestPath(token, resID) + "/claim/confirm" + langQuery(lang),
+	}
+	d.access().renderPage(w, r, confirmSet, view, nil)
 }
 
 func (d stayClaimDeps) claimConfirm(w http.ResponseWriter, r *http.Request) {
@@ -228,7 +243,7 @@ func (d stayClaimDeps) claimConfirm(w http.ResponseWriter, r *http.Request) {
 	secret := strings.TrimSpace(r.FormValue("secret"))
 	apt, stay, code := d.loadClaimable(r.Context(), token, resID)
 	if code != 0 || stay == nil || apt == nil {
-		scWriteUnavailable(w, r, lang, token, code)
+		d.scWriteUnavailable(w, r, lang, token, code)
 		return
 	}
 	key := clientip.Key(r, d.getenv, "claim:"+apt.token)
@@ -237,7 +252,7 @@ func (d stayClaimDeps) claimConfirm(w http.ResponseWriter, r *http.Request) {
 		scError(w, err)
 		return
 	} else if blocked {
-		scWriteUnavailable(w, r, lang, token, http.StatusTooManyRequests)
+		d.scWriteUnavailable(w, r, lang, token, http.StatusTooManyRequests)
 		return
 	}
 	_ = rateRecord(r.Context(), d.pool, "claim_confirm", key, at)
@@ -283,10 +298,49 @@ func renderGuestPage(w http.ResponseWriter, name, lang string, data claimPage) {
 	}{Lang: lang, Data: data})
 }
 
-func scWriteUnavailable(w http.ResponseWriter, r *http.Request, lang, token string, status int) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(status)
-	_ = guestTemplates.ExecuteTemplate(w, "unavailable", struct{ Lang string }{Lang: lang})
+func (d stayClaimDeps) access() guestAccess {
+	return guestAccess{pool: d.pool, getenv: d.getenv, now: d.now}
+}
+
+// renderClaimPage is guest/claim.html with stay_overview's context: the guest
+// count ask and the e-mail the stay's link goes to.
+func (d stayClaimDeps) renderClaimPage(w http.ResponseWriter, r *http.Request, token, lang string, apt *Apartment, stay *scStay, row scClaim) {
+	page := d.access().page(r.Context(), r, token, lang, apt)
+	declared := int64(1)
+	if row.declaredGuests != nil && *row.declaredGuests > 0 {
+		declared = *row.declaredGuests
+	}
+	view := claimView{
+		Page:             page,
+		StayFrom:         stay.dateFrom,
+		StayTo:           stay.dateTo,
+		CanPickOther:     canPickOtherStays(r.Context(), d.pool, apt, d.now),
+		BackURL:          GuestLink(token, 0, "") + LangQuery(page.Lang, ""),
+		ClaimSent:        r.URL.Query().Get("claim_sent") == "1",
+		ClaimErrorText:   claimErrorText(page.Lang, r.URL.Query().Get("claim_error")),
+		ClaimEmailMasked: row.emailMasked,
+		DeclaredGuests:   declared,
+		CSRFToken:        formPagesCSRFToken(),
+		ActionURL:        guestPath(token, stay.id) + "/party" + langQuery(page.Lang),
+	}
+	d.access().renderPage(w, r, claimSet, view, map[string]string{"Cache-Control": "no-store"})
+}
+
+// scWriteUnavailable is guest.py _unavailable, chosen by the status the guard returned.
+func (d stayClaimDeps) scWriteUnavailable(w http.ResponseWriter, r *http.Request, lang, token string, status int) {
+	d.access().unavailable(w, r, lang, reasonForStatus(status), status, token, 0, nil)
+}
+
+// reasonForStatus maps a guard's status onto the reason whose words it shows.
+func reasonForStatus(status int) string {
+	switch status {
+	case http.StatusTooManyRequests:
+		return "rate_limited"
+	case http.StatusInternalServerError:
+		return "server_error"
+	default:
+		return "stay_gone"
+	}
 }
 
 func scError(w http.ResponseWriter, err error) {
@@ -339,7 +393,7 @@ func (d stayClaimDeps) pinRedirect(w http.ResponseWriter, r *http.Request, token
 	if err != nil || apt == nil {
 		return false
 	}
-	if HostOwnsStay(r, apt.ownerID) {
+	if d.access().hostOwns(r.Context(), r, apt.ownerID) {
 		return false
 	}
 	expected := strings.TrimSpace(apt.pin)
@@ -391,10 +445,10 @@ func scLoadApartment(ctx context.Context, pool *pgxpool.Pool, key string) (*scAp
 
 func loadReservation(ctx context.Context, pool *pgxpool.Pool, resID, aptID int64) (*scStay, error) {
 	var s scStay
-	err := pool.QueryRow(ctx, `SELECT id, apartment_id, status, COALESCE(source,''), COALESCE(date_to,''),
+	err := pool.QueryRow(ctx, `SELECT id, apartment_id, status, COALESCE(source,''), COALESCE(date_from::text,''), COALESCE(date_to::text,''),
 		expected_guests_override, declared_guests, lead_reduced_guests
 		FROM reservation WHERE id = $1 AND apartment_id = $2 AND archived_at IS NULL`,
-		resID, aptID).Scan(&s.id, &s.apartmentID, &s.status, &s.source, &s.dateTo, &s.override, &s.declared, &s.leadReduced)
+		resID, aptID).Scan(&s.id, &s.apartmentID, &s.status, &s.source, &s.dateFrom, &s.dateTo, &s.override, &s.declared, &s.leadReduced)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
@@ -434,13 +488,9 @@ func GuestAccessOpen(status string, locked bool) bool {
 	return status == "active" && !locked
 }
 
-// HostOwnsStay is guest.py _host_owns_apartment.
-func HostOwnsStay(r *http.Request, ownerID int64) bool {
-	// Host session parity is brief 1720/1500; without a pool login stub, always false.
-	_ = r
-	_ = ownerID
-	return false
-}
+// DeviceHoldsClaim is guest.py _device_holds_claim. The guest claim cookie
+// (ubyhost_claim) is not written on this side yet (#1241 device gate), so a
+// device never holds the claim: the claim ask is shown, never skipped.
 
 // DeviceHoldsClaim is guest.py _device_holds_claim.
 func DeviceHoldsClaim(r *http.Request, resID, version int64) bool {
@@ -529,11 +579,10 @@ func guestSaveDecrypter(getenv func(string) string) ubyport.FieldDecrypter {
 	}
 }
 
+// langFromRequest is guest.py _language: ?lang=, the guest cookie, then
+// Accept-Language, always a code the guest catalog speaks.
 func langFromRequest(r *http.Request) string {
-	if l := strings.TrimSpace(r.URL.Query().Get("lang")); l == "en" || l == "cs" {
-		return l
-	}
-	return "cs"
+	return Language(r)
 }
 
 func guestPath(token string, resID int64) string {

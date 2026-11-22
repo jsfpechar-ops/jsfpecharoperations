@@ -1,5 +1,5 @@
 {{/* Go twin of App/app/templates/booking_sites.html (brief 1710b). */}}
-{{define "booking_sites.title"}}{{end}}
+{{define "booking_sites.title"}}{{t "bsite.title"}}{{end}}
 {{define "booking_sites"}}
 {{if not .Allowed}}{{ui_banner "attention" (t "bsite.max_only") (t "bsite.max_cta") "/predplatne"}}{{end}}
 {{if .Rows}}

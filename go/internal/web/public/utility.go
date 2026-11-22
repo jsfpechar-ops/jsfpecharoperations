@@ -13,6 +13,7 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/deadlines"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ical"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/session"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/ai"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/auth/authpage"
 )
@@ -138,7 +139,7 @@ func swHandler(d DepsUtility) http.HandlerFunc {
 
 func offlineHandler(d DepsUtility) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		lang := resolveOfflineLang(r)
+		lang := authpage.Language(r, offlineSignedIn(d, r))
 		if asked := supportedLanguage(r.URL.Query().Get("lang")); asked != "" && hostweb.Cookie(r, langCookieName) != asked {
 			http.SetCookie(w, authpage.LanguageCookie(asked, d.Getenv))
 		}
@@ -159,14 +160,24 @@ func offlineHandler(d DepsUtility) http.HandlerFunc {
 	}
 }
 
-func resolveOfflineLang(r *http.Request) string {
-	if lang := supportedLanguage(r.URL.Query().Get("lang")); lang != "" {
-		return lang
+// offlineSignedIn is current_user(request) for the /offline language fallback:
+// the session cookie loads against the database. templating.render (App/app/
+// templating.py:713-718) falls back to English for a signed-in host and to
+// Czech for a visitor, so the page needs the session, not just the cookie.
+func offlineSignedIn(d DepsUtility, r *http.Request) bool {
+	if d.Pool == nil {
+		return false
 	}
-	if lang := supportedLanguage(hostweb.Cookie(r, langCookieName)); lang != "" {
-		return lang
+	token := hostweb.Cookie(r, session.CookieName)
+	if token == "" {
+		return false
 	}
-	return "cs"
+	now := d.Now
+	if now == nil {
+		now = time.Now
+	}
+	host, err := session.Load(r.Context(), d.Pool, token, now(), d.Getenv)
+	return err == nil && host != nil
 }
 
 func renderOfflineHTML(lang string, s map[string]string) []byte {

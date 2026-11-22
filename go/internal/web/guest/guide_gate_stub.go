@@ -22,9 +22,9 @@ func StayGate(r *http.Request, w http.ResponseWriter, pool *pgxpool.Pool, getenv
 	if requirePin(w, r, sh, link, lang, aptRow) {
 		return lang, nil, nil, true
 	}
-	stay, code := stayReservationForGuest(r, pool, aptRow, link, resID, true)
+	stay, code := stayReservationForGuest(r, pool, getenv, now, aptRow, link, resID, true)
 	if code != 0 {
-		WriteUnavailable(w, r, lang, "stay_gone", code, link, hardenedHeaders)
+		guestAccess{pool: pool, getenv: getenv, now: now}.unavailable(w, r, lang, "stay_gone", code, link, 0, hardenedHeaders)
 		return lang, nil, nil, true
 	}
 	row, err := EnsureClaimRow(r.Context(), pool, resID, isoNow(now()))
@@ -33,10 +33,10 @@ func StayGate(r *http.Request, w http.ResponseWriter, pool *pgxpool.Pool, getenv
 		return lang, nil, nil, true
 	}
 	if !GuestAccessOpen(stay.status, row.guestAccessLock) {
-		WriteUnavailable(w, r, lang, "stay_gone", http.StatusNotFound, link, hardenedHeaders)
+		guestAccess{pool: pool, getenv: getenv, now: now}.unavailable(w, r, lang, "stay_gone", http.StatusNotFound, link, 0, hardenedHeaders)
 		return lang, nil, nil, true
 	}
-	if billingjob.MailEnabled() && !HostOwnsStay(r, aptRow.OwnerUserID) {
+	if billingjob.MailEnabled() && !(guestAccess{pool: pool, getenv: getenv, now: now}).hostOwns(r.Context(), r, aptRow.OwnerUserID) {
 		if row.state != claimStateClaimed || !DeviceHoldsClaim(r, resID, row.tokenVersion) {
 			http.Redirect(w, r, stayHubURL(link, resID, lang), http.StatusSeeOther)
 			return lang, nil, nil, true
@@ -45,19 +45,19 @@ func StayGate(r *http.Request, w http.ResponseWriter, pool *pgxpool.Pool, getenv
 	gApt := &GuideApartment{ID: aptRow.ID, OwnerUserID: aptRow.OwnerUserID, Name: aptRow.InternalName}
 	gRes, err := guideReservationDates(r.Context(), pool, resID, aptRow.ID)
 	if err != nil || gRes == nil {
-		WriteUnavailable(w, r, lang, "stay_gone", http.StatusNotFound, link, hardenedHeaders)
+		guestAccess{pool: pool, getenv: getenv, now: now}.unavailable(w, r, lang, "stay_gone", http.StatusNotFound, link, 0, hardenedHeaders)
 		return lang, nil, nil, true
 	}
 	return lang, gApt, gRes, false
 }
 
 // stayReservationForGuest is guest.py _reservation_for_guest (permalink stay paths).
-func stayReservationForGuest(r *http.Request, pool *pgxpool.Pool, apt *Apartment, link string, resID int64, pinOk bool) (*scStay, int) {
+func stayReservationForGuest(r *http.Request, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, apt *Apartment, link string, resID int64, pinOk bool) (*scStay, int) {
 	_, stay, code := LoadGuestStay(r.Context(), pool, link, resID, pinOk, false)
 	if code != 0 {
 		return nil, code
 	}
-	if stay.source == "demo" && !HostOwnsStay(r, apt.OwnerUserID) {
+	if stay.source == "demo" && !(guestAccess{pool: pool, getenv: getenv, now: now}).hostOwns(r.Context(), r, apt.OwnerUserID) {
 		return nil, http.StatusNotFound
 	}
 	return stay, 0

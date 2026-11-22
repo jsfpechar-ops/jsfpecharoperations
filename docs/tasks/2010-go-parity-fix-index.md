@@ -73,3 +73,27 @@ Escalate to the owner any security or parity decision a child flags (notably 201
 ## 9. Report
 
 Orchestrator keeps this file as the running index; each child appends `docs/tasks/NNNN-report.md`. Update `docs/context/status.md` when the fail count changes.
+
+## 10. Outcome (2026-11-22)
+
+`{"paths": 137, "rows": 411, "pass": 302, "pass_soft": 7, "accepted": 102, "fail": 0}` — the
+49 rows this index opened with are closed, each at character-identical DOM text.
+
+| brief | rows | result |
+|---|---|---|
+| 2011 | 6 + the 10 that redirect to `/` | closed (`/offline` language fallback) |
+| 2012 | 3 | closed: `/` anon 2666/2666, host 659/659, admin 500/500 |
+| 2013 | 4 | closed (`/dev/ui` catalog, the 500 error page, palette dates, `booking_sites.title`) |
+| 2014 | 2 | closed (booking-site back label, questions header) |
+| 2015 | 1 | closed (`/guests/{id}`: 10851/10851) |
+| 2016 | 21 | closed (the hub, its claim ask, the guide, the host photo 404) |
+| 2017 | 3 | closed (booking shell carries palette + shortcuts) |
+| 2018 | 2 | closed (`/reservations` 2599/2599; the guest form 10269/10269) |
+
+Gates: `go_parity_check.py --all` 342/342, `diff_harness.py` 2733 cases / 0 hard,
+`context_lint.py` OK, `go build` + `gofmt` clean, `go_host_i18n.py --check` clean.
+
+No §8 stop condition was hit as a decision: the 2016 `/l/.../edit|remove` 200s are the claim
+ask (the PIN is off in the audit env), not a loosened ownership rule, and Go answers a
+non-owner exactly as before (403 `not_yours`). Open questions for the owner are listed in
+PR #1250.

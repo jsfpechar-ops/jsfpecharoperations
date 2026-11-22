@@ -10,11 +10,12 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
 )
 
+// formNoticeVersion is config.GUEST_NOTICE_VERSION.
 func formNoticeVersion(getenv func(string) string) string {
-	if v := strings.TrimSpace(getenv("UBYHOST_NOTICE_VERSION")); v != "" {
+	if v := strings.TrimSpace(getenv("UBYHOST_GUEST_NOTICE_VERSION")); v != "" {
 		return v
 	}
-	return "2026-05"
+	return "1.0"
 }
 
 func formGuestFieldMap(g *formGuestRow) map[string]string {
