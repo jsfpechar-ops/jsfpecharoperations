@@ -43,9 +43,9 @@ func TestPropertyPagePaymentsRetiredHidesBook(t *testing.T) {
 	pool := testPool(t)
 	seed(t, pool, g)
 	env := map[string]string{
-		"UBYHOST_SECRET_KEY":      g.Secret,
-		"UBYHOST_STRIPE_MODE":     "test",
-		"UBYHOST_PUBLIC_BASE_URL": "https://book.example.test/",
+		"UBYHOST_SECRET_KEY":       g.Secret,
+		"UBYHOST_STRIPE_MODE":      "test",
+		"UBYHOST_PUBLIC_BASE_URL":  "https://book.example.test/",
 		"UBYHOST_PAYMENTS_RETIRED": "1",
 	}
 	getenv := func(k string) string { return env[k] }
