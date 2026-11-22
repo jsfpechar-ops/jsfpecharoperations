@@ -30,6 +30,8 @@ gofmt -l (touched go files) — empty
 
 `form_save.go` one-line signature fix (not in brief §3; required after `buildFormView` gained `w`).
 
+CI fix: `party_claimed` GET uses `/claim` (overview has no `_csrf` when claim state is claimed).
+
 ## Questions
 
 None.
