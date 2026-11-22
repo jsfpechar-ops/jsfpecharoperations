@@ -29,6 +29,10 @@ New Go handler file(s) under `go/internal/web/guest/` (e.g. `leon_chat.go` + `le
 4. Prompt split per §2; make all Leon parity tests green.
 5. Tests: Go handler tests for every status and both chats (history GET, POST answer, POST entry-code question returns the fixed text and stores an open question for the host, gate closed returns 404, Leon off returns 404, cookie set on first QR POST). Keep 2037's tests green.
 
+## 5. Do not touch
+
+Python Leon (`App/app/leon.py`, `guest_leon.py`), production `UBYHOST_GO_PATHS` on the server.
+
 ## 6. Commands
 
 From `go/`: `gofmt -l . | tail -5` (empty), `go vet ./... 2>&1 | tail -10`, `go test ./internal/web/... ./cmd/ubyhost-web/ -count=1 2>&1 | tail -30` (needs `UBYHOST_TEST_DATABASE_URL`).
@@ -40,6 +44,10 @@ From `App/`: `.venv/bin/python -m pytest tests/test_go_ai_leon_try.py tests/test
 - [ ] Code question in the guest chat returns the fixed text in en and cs; no code value appears in Leon's system blocks.
 - [ ] All Leon parity tests and `test_go_ai_leon_try.py` pass; Python Leon untouched.
 - [ ] Go path list updated or owner step written.
+
+## 9. Report
+
+See `docs/tasks/2039-report.md`.
 
 ## 8. Stop and ask
 
