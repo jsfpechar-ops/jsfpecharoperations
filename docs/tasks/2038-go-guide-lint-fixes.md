@@ -43,6 +43,10 @@ From `go/`: `gofmt -l internal/web/ai/ && go vet ./internal/web/ai/ && go test .
 - [ ] Go tests green; `gofmt` clean.
 - [ ] Open `guide-390.png` and `guide-card-wifi-390.png`: the `?` sits beside "Leon (AI) for your guests"; the card form ends in one primary button.
 
+## 8. Stop and ask
+
+Stop if a third finding appears after the fix, if a Go DOM-parity test pins the two buttons, or if `nextOpen` needs a schema change.
+
 ## 9. Report
 
 `docs/tasks/2038-report.md` (≤400 tokens) with what the two 390 px screenshots show; `Status: review`.
