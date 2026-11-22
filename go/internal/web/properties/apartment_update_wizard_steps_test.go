@@ -64,14 +64,14 @@ func TestApartmentUpdateWizardSteps(t *testing.T) {
 		t.Errorf("wizard return_to: interim err flash")
 	}
 
-	// retired stay_fee still not-ported (re-render port pending).
+	// retired stay_fee (0884): saves nothing, redirect to /setup/done before not-ported.
 	before = apartmentUpdateRead(t, ctx, pool, g, 201)
 	code, loc, _ = post(map[string]string{"setup_step": "stay_fee", "stay_fee_rate_czk": "50"})
-	if code != http.StatusSeeOther || !strings.Contains(loc, "err=") {
-		t.Errorf("stay_fee interim: %d %q", code, loc)
+	if code != http.StatusSeeOther || loc != "/apartments/201/setup/done" {
+		t.Errorf("stay_fee retired: %d %q", code, loc)
 	}
 	if after := apartmentUpdateRead(t, ctx, pool, g, 201); !reflect.DeepEqual(after, before) {
-		t.Errorf("stay_fee interim: written")
+		t.Errorf("stay_fee retired: written")
 	}
 
 	// calendar_sync is not a step: ignored, normal save (no err flash).

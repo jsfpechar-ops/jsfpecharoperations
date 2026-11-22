@@ -329,12 +329,10 @@ func TestApartmentUpdateNotPorted(t *testing.T) {
 	ctx := context.Background()
 	base := g.Cases[3].Form
 	redirectCases := map[string]map[string]string{
-		"stay fee wizard step":  {"setup_step": "stay_fee"},
-		"door lock wizard step": {"setup_step": "door_lock"},
-		"guest pay block":       {"stay_fee_guest_form": "1"},
-		"Arabic-Indic PIN":      {"permalink_pin": "١٢٣٤٥٦"},
-		"superscript hour":      {"checkin_hour": "1²"},
-		"basic ISO rate day":    {"stay_fee_rate_from": "20261201"},
+		"guest pay block":    {"stay_fee_guest_form": "1"},
+		"Arabic-Indic PIN":   {"permalink_pin": "١٢٣٤٥٦"},
+		"superscript hour":   {"checkin_hour": "1²"},
+		"basic ISO rate day": {"stay_fee_rate_from": "20261201"},
 	}
 	for name, extra := range redirectCases {
 		form := map[string]string{}
