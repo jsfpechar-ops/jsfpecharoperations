@@ -65,7 +65,24 @@ func AfterSave(ctx context.Context, pool *pgxpool.Pool, getenv func(string) stri
 			return AfterSaveResult{}, err
 		}
 	}
-	if (step == "property" && PropertyDetailsComplete(setup)) || (step == "police" && c.Facts.ReportComplete) {
+	switch {
+	case step == "property" && PropertyDetailsComplete(setup):
+		if err := Mark(ctx, settings, id, step, "done"); err != nil {
+			return AfterSaveResult{}, err
+		}
+	case step == "police" && c.Facts.ReportComplete:
+		if err := Mark(ctx, settings, id, step, "done"); err != nil {
+			return AfterSaveResult{}, err
+		}
+	case step == "stay_fee" && setup.StayFeeRateCZK > 0:
+		if err := Mark(ctx, settings, id, step, "done"); err != nil {
+			return AfterSaveResult{}, err
+		}
+	case step == "door_lock" && setup.LockProvider == "ttlock":
+		if err := Mark(ctx, settings, id, step, "done"); err != nil {
+			return AfterSaveResult{}, err
+		}
+	case step == "automation":
 		if err := Mark(ctx, settings, id, step, "done"); err != nil {
 			return AfterSaveResult{}, err
 		}
