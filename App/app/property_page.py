@@ -398,6 +398,8 @@ def release_expired_holds() -> int:
 def widget_ready(apartment_id: int) -> bool:
     """The Book card shows when the page is published, priced and the host's
     Stripe account is complete (the charge goes to the host's account)."""
+    if _config.PAYMENTS_RETIRED:
+        return False
     from . import stripe_connect
 
     row = db.query_one(
