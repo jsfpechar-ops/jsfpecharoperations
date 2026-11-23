@@ -426,6 +426,10 @@ Workflow **Deploy production** pins the run to the current `main` revision, veri
 
 Without the host/key secrets, the job skips.
 
+### No personal access token
+
+The deploy uses no personal access token. The runner uses its own short-lived `GITHUB_TOKEN` (permissions `contents: read`, `checks: read`, `packages: write`) for the git fetch, the CI check and the GHCR push; git gets it as a request header, never in a URL. The server gets no token: the repo and the GHCR packages are public, so it runs `git fetch` and `docker pull` anonymously, `origin` stays `https://github.com/<owner>/<repo>.git`, and nothing is written to `/opt/ubyhost/.git/config` (the next deploy also overwrites a tokenised URL left by an older run). Before `git reset --hard` the deploy prints local drift from `git status --short`; it does not fail on it. The repo secret `GH_DEPLOY_TOKEN` is unused and can be deleted. In GitHub: Settings, Actions, General, Workflow permissions may stay on read-only (the workflow declares its own); each GHCR package (`<repo>` and `<repo>-go`) must be public.
+
 ## Migrating from Render
 
 1. On Render: download `ubyhost.db` from the persistent disk (Shell or backup).
