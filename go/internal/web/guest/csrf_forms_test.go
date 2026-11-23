@@ -88,12 +88,15 @@ func TestGuestFormCSRFRoundTrip(t *testing.T) {
 				VALUES ($1, $2, 'x', 'host', 1, $3) ON CONFLICT DO NOTHING`, userID, fmt.Sprintf("u%d@example.test", aptID), stamp)
 			mustExecGuest(t, ctx, pool, `INSERT INTO apartment (id, owner_user_id, internal_name, city_en, active, permalink_token, created_at)
 				VALUES ($1, $2, 'Flat', 'Prague', 1, $3, $4)`, aptID, userID, tok, stamp)
+			slug := fmt.Sprintf("party-%d-abc234", aptID)
+			mustExecGuest(t, ctx, pool, `INSERT INTO apartment_slug (slug, apartment_id, is_current, created_at)
+				VALUES ($1, $2, 1, $3)`, slug, aptID, stamp)
 			mustExecGuest(t, ctx, pool, `INSERT INTO reservation (id, apartment_id, uid, status, source, date_from, date_to, created_at, updated_at)
 				VALUES ($1, $2, $3, 'active', 'manual', $4, $5, $6, $6)`, resID, aptID, fmt.Sprintf("stay-%d", resID), "2026-06-10", "2026-06-12", stamp)
 			mustExecGuest(t, ctx, pool, `INSERT INTO reservation_claim (reservation_id, state, token_hash, token_version, created_at, updated_at)
 				VALUES ($1, $2, '', 1, $3, $3) ON CONFLICT (reservation_id) DO UPDATE SET state = EXCLUDED.state`, resID, string(st.state), stamp)
 
-			getPath := st.getPath(tok, resID)
+			getPath := st.getPath(slug, resID)
 			getReq := httptest.NewRequest(http.MethodGet, getPath, nil)
 			getRec := httptest.NewRecorder()
 			mux.ServeHTTP(getRec, getReq)
@@ -109,16 +112,20 @@ func TestGuestFormCSRFRoundTrip(t *testing.T) {
 				t.Fatal("missing ubyhost_csrf cookie")
 			}
 
-			postPath := fmt.Sprintf("/l/%s/%d/party?lang=en", tok, resID)
-			postBody := url.Values{"_csrf": {csrf}, "party_size": {"2"}}
-			postReq := httptest.NewRequest(http.MethodPost, postPath, strings.NewReader(postBody.Encode()))
-			postReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-			postReq.AddCookie(&http.Cookie{Name: "ubyhost_csrf", Value: cookie})
-			postRec := httptest.NewRecorder()
-			mux.ServeHTTP(postRec, postReq)
-			body, _ := io.ReadAll(postRec.Body)
-			if postRec.Code == http.StatusForbidden && strings.Contains(string(body), "Cross-site") {
-				t.Fatalf("POST party rejected CSRF: %s", body)
+			for _, key := range []string{slug, tok} {
+				postPath := fmt.Sprintf("/l/%s/%d/party?lang=en", key, resID)
+				postBody := url.Values{"_csrf": {csrf}, "party_size": {"2"}}
+				postReq := httptest.NewRequest(http.MethodPost, postPath, strings.NewReader(postBody.Encode()))
+				postReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+				postReq.AddCookie(&http.Cookie{Name: "ubyhost_csrf", Value: cookie})
+				postRec := httptest.NewRecorder()
+				mux.ServeHTTP(postRec, postReq)
+				if postRec.Code != http.StatusSeeOther {
+					t.Fatalf("party POST did not redirect: status %d", postRec.Code)
+				}
+				if location := postRec.Header().Get("Location"); !strings.HasPrefix(location, fmt.Sprintf("/l/%s/%d", key, resID)) {
+					t.Fatal("party POST did not redirect to the same guest stay")
+				}
 			}
 		})
 	}

@@ -1,6 +1,6 @@
 # Test map
 
-Run your row from `App/`: `-q --tb=short -x 2>&1 | tail -30`. Full suite: CI, unless the owner asks. Globs are under `tests/`; add yours.
+Run your row from `App/`: `-q --tb=short -x 2>&1 | tail -30`. Full suite: CI unless the owner asks.
 
 | Changed | Run |
 |---|---|
@@ -8,7 +8,7 @@ Run your row from `App/`: `-q --tb=short -x 2>&1 | tail -30`. Full suite: CI, un
 | Guest pages, guest templates | `test_guest_*.py test_guest_browser_e2e.py` (0 skipped) |
 | Host pages, templates, CSS | `test_host_*.py test_host_geometry.py`; Go: `test_go_pages_layout_lint_browser.py` (0 skipped) |
 | Login, 2FA, passkeys | `test_login_*.py test_auth_*.py test_two_factor_*.py test_passkeys.py test_remember_me_reissue.py test_security*.py` |
-| Filing, UbyPort, claim | `test_ubyport_*.py test_soap.py test_worker.py test_submission_*.py test_stale_submission.py test_filed_by_hand.py test_filing_watchdog.py test_police_*.py test_*deadline*.py test_claim_*.py test_endtoend.py` |
+| Filing, UbyPort, claim | `test_ubyport_*.py test_soap.py test_worker.py test_submission_*.py test_stale_submission.py test_filed_by_hand.py test_filing_watchdog.py test_police_*.py test_claim_*.py test_endtoend.py` |
 | Go filing alarms | in `go/`: `go test ./internal/{ubyport,calendar,mail,hostweb}/... 2>&1 \| tail -30`; DB tests need `UBYHOST_TEST_DATABASE_URL` |
 | Platform billing, subscription, trial | `test_billing_*.py` |
 | Invoices, stay fee | `test_invoice_*.py test_stay_fee*.py` |
@@ -16,7 +16,7 @@ Run your row from `App/`: `-q --tb=short -x 2>&1 | tail -30`. Full suite: CI, un
 | Door codes, TTLock | `test_door_code*.py test_ttlock*.py test_smart_locks_page.py` |
 | Cleaning | `test_cleaning*.py` |
 | Alerts | `test_alert*.py test_needs_you*.py test_host_alert_stack_browser.py test_design_alerts_phone.py` |
-| Havel (AI), Help & guide | `test_ai*.py test_havel*.py test_guide*.py` (browser: 0 skipped); UI: also host pages row |
+| Havel (AI), Help & guide | `test_ai*.py test_havel*.py test_guide*.py`; UI: host pages row |
 | Calendar, iCal | `test_icalsync.py test_ical_skip_unchanged.py test_feed_*.py test_dashboard_calendar*.py test_calendar_*.py test_sample_calendar.py` |
 | Mail, SES | `test_ses_mail.py test_mail_*.py test_*_mail.py test_lifecycle_mail.py test_notification_copy.py` |
 | Retention, privacy | `test_retention*.py test_privacy_*.py test_no_tracking.py test_cookie_inventory.py test_pii_encryption.py test_dsr_*.py test_data_keys.py` |
@@ -28,21 +28,22 @@ Run your row from `App/`: `-q --tb=short -x 2>&1 | tail -30`. Full suite: CI, un
 | Copy, translations | `test_*_i18n.py test_no_em_dashes.py test_copy_cleanup.py test_flash_literals.py` |
 | Guest guide | `test_guest_guide*.py` |
 | Onboarding, properties | `test_onboarding*.py test_property_*.py test_first_*.py` |
+| Go host pages (properties) | `go/` → `go test ./internal/web/properties/... ./internal/hostweb/... 2>&1 \| tail -30` |
 | Demo seed | `test_demo_*.py test_sample_calendar.py` |
 | Analytics, funnel, `/metrics` | `test_posthog_*.py test_umami_guard.py test_meta_capi.py test_admin_funnel.py test_metrics_0427.py` |
 | Design system, catalog, design lint | `test_design_*.py test_dev_ui*.py` |
 | Static files in `App/app/static`, cache keys | `test_static_versions.py test_wp07_cache_heartbeats.py` plus the page row |
 | Any host template, CSS or JS | test_design_guardrails_browser.py (0 skipped; MASTER 11.0) |
 | Public/app domain config | `test_app_domain.py test_env_guard.py test_passkeys.py test_pwa.py`, login, security, mail rows; Caddy in both TLS modes |
-| Operator customer dashboard | `test_admin_customers.py test_host_*.py test_design_guardrails_browser.py` (0 skipped) |
-| Direct payments, Stripe Connect, payments dashboard, rails | `test_payments_dashboard.py test_payment_request_model.py test_stripe_connect.py test_payment_links.py test_payment_qr.py test_payment_services.py` |
+| Operator customer dashboard | `test_admin_customers.py test_host_*.py test_design_guardrails_browser.py` |
+| Payments dashboard (d) | `test_payments_dashboard.py test_payment_request_model.py test_stripe_connect.py test_payment_links.py test_payment_qr.py test_payment_services.py` |
 | Public property pages | `test_property_slug.py test_property_page.py test_property_page_photos.py test_property_page_meta.py test_property_page_rules.py` |
 | v2 pages (`{% set v2 = true %}`) | `tests/test_0710_v2_mockup_match_browser.py` (browser, 0 skipped; geometry 320-1440 px) |
-| Page booking widget | `test_booking_widget.py test_property_page.py test_stripe_connect.py test_payment_request_model.py` |
-| Booking site (rules, checkout, webhook, iCal) | `test_booking_site.py test_property_page.py test_stripe_connect.py` |
-| Direct booking pay | `test_booking_direct_*.py test_booking_site.py test_host_i18n.py` |
+| Booking widget (d) | `test_booking_widget.py test_property_page.py test_stripe_connect.py test_payment_request_model.py` |
+| Booking site (d) | `test_booking_site.py test_property_page.py test_stripe_connect.py` |
+| Direct booking pay (d) | `test_booking_direct_*.py test_booking_site.py test_host_i18n.py` |
 | Deploy scripts, Caddyfile, compose | `shellcheck -S error deploy/lightsail/scripts/*.sh`; CI job `caddy` checks both Caddyfiles; `test_pg_*script*.py` |
 | A module with no row | `test_<module>*.py`, else `-k <module>` |
 | Read guard hook (`scripts/hooks/`, `.claude/settings.json`) | `test_read_guard_hook.py` |
 
-A wrong or missing row: the orchestrator fixes it in the same brief.
+(d) dormant; run only when reviving. Missing row: orchestrator fixes in the same brief.

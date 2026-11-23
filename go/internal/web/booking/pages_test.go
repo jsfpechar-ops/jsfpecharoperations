@@ -9,7 +9,7 @@ import (
 
 func pageMux() *http.ServeMux {
 	mux := http.NewServeMux()
-	mux.Handle("GET /terms/booking", TermsHandler())
+	mux.Handle("GET /terms/booking", TermsHandler(func(string) string { return "" }))
 	mux.Handle("GET /p/{slug}/thanks", ThanksHandler())
 	return mux
 }
@@ -44,6 +44,34 @@ func TestTermsLanguageOrder(t *testing.T) {
 		}
 		if strings.Count(body, `" aria-current="true">`) != 1 {
 			t.Errorf("%s: want exactly one aria-current", c.path)
+		}
+	}
+}
+
+func TestTermsRetiredNotice(t *testing.T) {
+	cases := []struct {
+		lang, notice, title string
+	}{
+		{"en", "Booking is currently unavailable.", "Booking terms"},
+		{"cs", "Rezervace momentálně nejsou dostupné.", "Podmínky rezervace"},
+	}
+	for _, tc := range cases {
+		for _, setting := range []string{"", "1"} {
+			getenv := func(key string) string {
+				if key == "UBYHOST_PAYMENTS_RETIRED" {
+					return setting
+				}
+				return ""
+			}
+			rec := httptest.NewRecorder()
+			TermsHandler(getenv).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/terms/booking?lang="+tc.lang, nil))
+			body := rec.Body.String()
+			if rec.Code != http.StatusOK || !strings.Contains(body, "<h1>"+tc.title+"</h1>") {
+				t.Fatalf("terms did not render for %s, retired=%q", tc.lang, setting)
+			}
+			if strings.Contains(body, tc.notice) != (setting == "1") {
+				t.Errorf("unexpected availability notice for %s, retired=%q", tc.lang, setting)
+			}
 		}
 	}
 }

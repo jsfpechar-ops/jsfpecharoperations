@@ -7,8 +7,8 @@ package properties
 // row Python writes (App/scripts/go_apartment_create_golden.py records it) and
 // redirects to the calendar step of the guided setup.
 //
-// The guest-pay block (stay_fee_guest_form) and unsupported numbers in an ID,
-// the rate, the postcode or the variable symbol receive a 501.
+// Unsupported numbers in an ID, the rate, the postcode or the variable symbol
+// receive a 404.
 //
 // Python writes the row, the rate, the guest link, the audit row and the
 // setup state one after another; here the row and its rate share one
@@ -74,7 +74,7 @@ var apartmentFeeTexts = []struct {
 var apartmentDataboxRE = regexp.MustCompile(`^[a-z0-9]{7}$`)
 
 // apartmentNotPortedFields are form keys whose branch this port does not take.
-var apartmentNotPortedFields = []string{"stay_fee_guest_form"}
+var apartmentNotPortedFields []string
 
 // stayFeeRateEpoch is stay_fee_rate.EPOCH: a first rate applies from the beginning.
 const stayFeeRateEpoch = "2000-01-01"
@@ -390,13 +390,14 @@ func (s *server) apartmentCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, key := range apartmentNotPortedFields {
 		if has(r, key) {
-			notPorted(w, "the form field "+key)
+			returnTo := formReturnTo(r, "/apartments/new", false)
+			q.back(w, r, returnTo, hostweb.Flash{}, smallPostsFlash(q, "flash.error.not_saved_here", nil))
 			return
 		}
 	}
 	p, ok := newApartmentPayload(r)
 	if !ok {
-		notPorted(w, "a non-ASCII digit or an integer past 64 bits in the form")
+		hostweb.NotFoundPage(w, r)
 		return
 	}
 	if has(r, "operator_refresh") {
@@ -416,7 +417,7 @@ func (s *server) apartmentCreate(w http.ResponseWriter, r *http.Request) {
 		s.refuseApartmentCreate(w, r, q, p, operatorError, nameError, addressErrors)
 		return
 	}
-	id, err := s.insertApartment(ctx, q, p, email)
+	id, err := s.insertApartment(ctx, q, p, email, r)
 	if err != nil {
 		fail(w, err)
 		return
@@ -455,8 +456,9 @@ func applyPoliceDefaults(p apartmentPayload, operatorEmail string) []column {
 
 // insertApartment applies the police defaults and the create-only rules, then
 // writes the row and, when the fee was posted, its first dated rate.
-func (s *server) insertApartment(ctx context.Context, q *request, p apartmentPayload, operatorEmail string) (int64, error) {
+func (s *server) insertApartment(ctx context.Context, q *request, p apartmentPayload, operatorEmail string, r *http.Request) (int64, error) {
 	cols := applyPoliceDefaults(p, operatorEmail)
+	cols = prepareGuestPayCreate(r, s.getenv, cols)
 	if pyStrip(p.text["guest_message"]) == "" {
 		cols = setColumn(cols, "guest_message", apartmentCreateStrings.T(q.lang, "apartment.form.guest_message.default", nil))
 	}
