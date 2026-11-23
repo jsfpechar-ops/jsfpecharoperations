@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/appconfig"
 )
 
 const scopeProperty = "property_page"
@@ -128,7 +130,7 @@ func (d Deps) RenderPage(w http.ResponseWriter, r *http.Request, set *template.T
 		serverError(w, "widget", err)
 		return
 	}
-	pg.Bookable = ready
+	pg.Bookable = ready && !appconfig.PaymentsRetired(d.Getenv)
 	pg.BookError = bookErr
 	if pg.BookError == "" {
 		pg.BookError = get("book")
