@@ -1,0 +1,7 @@
+{{/* Host page for branches not ported to Go yet (501, brief 2029 follow-on). */}}
+{{define "not_ported.title"}}{{.Title}} · UbyHost{{end}}
+{{define "not_ported"}}
+<div class="head"><h1 class="big">{{.Title}}</h1></div>
+<p class="lede">{{.Body}}</p>
+<p><a class="ui-btn ui-btn-primary" href="/settings">{{.Settings}}</a></p>
+{{end}}

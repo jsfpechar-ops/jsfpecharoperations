@@ -143,12 +143,28 @@ func TestWizardDateFilters(t *testing.T) {
 }
 
 func TestWizardStepWithoutPageIs501(t *testing.T) {
-	s := &wizardServer{getenv: func(string) string { return "" }}
+	s := &wizardServer{getenv: func(k string) string {
+		if k == "UBYHOST_SECRET_KEY" {
+			return "wizard-notported-test-secret-0123456789ab"
+		}
+		return ""
+	}}
 	rec := httptest.NewRecorder()
-	s.wizardRender(rec, httptest.NewRequest(http.MethodGet, "/apartments/1/setup/x", nil), nil, testNow, 0,
-		&wizardView{Step: "not-a-page", Apt: &wizardApt{}})
+	req := httptest.NewRequest(http.MethodGet, "/apartments/1/setup/x", nil)
+	req.Header.Set("Accept", "text/html")
+	s.wizardRender(rec, req, nil, testNow, 0, &wizardView{Step: "not-a-page", Apt: &wizardApt{}})
 	if rec.Code != http.StatusNotImplemented {
 		t.Fatalf("status %d", rec.Code)
+	}
+	if rec.Header().Get("X-Ubyhost-Not-Ported") != "1" {
+		t.Fatal("expected Not-Ported header")
+	}
+	body := rec.Body.String()
+	if !strings.Contains(body, "This action is not available yet") || !strings.Contains(body, "support@ubyhost.com") {
+		t.Fatalf("unexpected body: %.200s", body)
+	}
+	if strings.Contains(body, "Not implemented in Go yet") {
+		t.Fatal("raw 501 text leaked")
 	}
 }
 

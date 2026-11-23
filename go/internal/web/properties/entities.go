@@ -24,6 +24,7 @@ import (
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/billing"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb/layout"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/stayfeemail"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
@@ -41,7 +42,7 @@ func RegisterEntities(mux *http.ServeMux, wrap Wrap, pool *pgxpool.Pool, getenv 
 // own file; until then the button answers 501 like the other branches that are
 // not ported yet.
 var fillFromRegister = func(s *server, w http.ResponseWriter, r *http.Request, q *request, edit *entityEdit) {
-	notPorted(w, "the ARES lookup (Fill from register)")
+	notPorted(w, r, layout.Env{Pool: s.pool, Getenv: s.getenv, Now: q.at}, q.host, "the ARES lookup (Fill from register)")
 }
 
 // entityEdit is the stored row an update starts from (nil for a new entity).
