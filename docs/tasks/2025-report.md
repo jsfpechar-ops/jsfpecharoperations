@@ -42,7 +42,7 @@ Not captured: Go paths need `UBYHOST_TEST_DATABASE_URL` + owner `UBYHOST_GO_PATH
 ## Deviations
 
 - Parity audit not run (no psql).
-- Booking package suite has pre-existing `TestTermsRetiredNotice` failure.
+- Extra CI fix: `terms_en.html` / `terms_cs.html` dropped always-on unavailable copy; `terms.tmpl` uses `eq .Data true`.
 
 ## Questions
 
