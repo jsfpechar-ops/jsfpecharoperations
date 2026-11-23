@@ -450,27 +450,27 @@
   ]
  },
  "pages_block": {
-  "en": "<pages>\nid | label | what it is for\ndashboard | Dashboard | what needs you, upcoming arrivals\nstays | Stays | all stays\nadd_stay | Add stay | the normal Add stay form\nreports | Police reports | police reports (UbyPort)\nhousebook | Guest register | guest register and export\nstay_fees | Stay fees | stay fees\ninvoices | Invoices | invoices\nproperties | Properties | properties list\nproperty | Properties | one property\nproperty_details | Property details | name, address, basics\nproperty_reporting | Police reporting | UbyPort login, automation, stay fee rate\nproperty_guests | Guest links | guest link, PIN, messages\nproperty_lock | Digital door lock | door code settings\nproperty_calendars | Connected calendars | calendar links (iCal)\nbusiness | Business & legal details | business and operator details\ncleaning | Cleaning | cleaning schedule\ncleaning_properties | Cleaning | cleaning settings per property\nsmart_locks | Door lock account | TTLock connection\nsettings | Settings | account settings\nsecurity | Security | passkeys, two-factor\ndata | Data & archive | retention, export\narchive | Archive | archived records\nprivacy_requests | Data requests | guests' data requests\nguide | Help | Help & guide\nguide_overview | Dashboard | Help & guide: overview\nguide_statuses | What the colours mean | Help & guide: statuses\nguide_setup | First-time setup | Help & guide: setup\nguide_stays | Stays & calendars | Help & guide: stays\nguide_guests | Guest check-in | Help & guide: guests\nguide_reporting | Police reporting | Help & guide: reporting\nguide_manual_filing | If UbyHost cannot file in time | Help & guide: manual-filing\nguide_ubyport_credentials | Where to find your credentials | Help & guide: ubyport-credentials\nguide_filters | Filters on Stay fees and Invoices | Help & guide: filters\nguide_housebook | Guest register | Help & guide: housebook\nguide_stay_fee | Stay fees | Help & guide: stay_fee\nguide_invoices | Invoices | Help & guide: invoices\nguide_settings | Settings & security | Help & guide: settings\nguide_door_codes | Digital door lock (TTLock) | Help & guide: door-codes\nguide_faster | Faster work | Help & guide: faster\nguide_faq | Common questions | Help & guide: faq\nguide_legal | Your legal duties | Help & guide: legal\nguide_finding | Finding your way | Help & guide: finding\nguide_glossary | Words we use | Help & guide: glossary\nguide_cleaning | Cleaning | Help & guide: cleaning\nguide_guest_links | Guest links and PIN | Help & guide: guest_links\nguide_business | Business details | Help & guide: business\nguide_archive | Archive | Help & guide: archive\nguide_privacy_requests | Data requests | Help & guide: privacy_requests\nguide_payments | Payments | Help & guide: payments\nguide_add_property | Add a property | Help & guide: add-property\nguide_setup_guide | The guided setup | Help & guide: setup-guide\nguide_connect_calendar | Connect a calendar (Airbnb, Booking.com) | Help & guide: connect-calendar\nguide_add_stay | Add a stay by hand | Help & guide: add-stay\nguide_stay_fee_setup | Set it up for a property | Help & guide: stay-fee-setup\nguide_stay_fee_pay | Report and pay a period | Help & guide: stay-fee-pay\nguide_leon_terms | Leon (AI) terms | Help & guide: leon-terms\n</pages>",
-  "cs": "<pages>\nid | label | what it is for\ndashboard | Přehled | what needs you, upcoming arrivals\nstays | Pobyty | all stays\nadd_stay | Přidat pobyt | the normal Add stay form\nreports | Hlášení policii | police reports (UbyPort)\nhousebook | Kniha hostů | guest register and export\nstay_fees | Poplatky z pobytu | stay fees\ninvoices | Faktury | invoices\nproperties | Ubytování | properties list\nproperty | Ubytování | one property\nproperty_details | Údaje ubytování | name, address, basics\nproperty_reporting | Hlášení policii | UbyPort login, automation, stay fee rate\nproperty_guests | Odkazy pro hosty | guest link, PIN, messages\nproperty_lock | Digitální zámek | door code settings\nproperty_calendars | Připojené kalendáře | calendar links (iCal)\nbusiness | Firma a právní údaje | business and operator details\ncleaning | Úklid | cleaning schedule\ncleaning_properties | Úklid | cleaning settings per property\nsmart_locks | Účet digitálního zámku | TTLock connection\nsettings | Nastavení | account settings\nsecurity | Zabezpečení | passkeys, two-factor\ndata | Data a archiv | retention, export\narchive | Archiv | archived records\nprivacy_requests | Žádosti o údaje | guests' data requests\nguide | Nápověda | Help & guide\nguide_overview | Přehled | Help & guide: overview\nguide_statuses | Co znamenají barvy | Help & guide: statuses\nguide_setup | První nastavení | Help & guide: setup\nguide_stays | Pobyty a kalendáře | Help & guide: stays\nguide_guests | Registrace hostů | Help & guide: guests\nguide_reporting | Hlášení policii | Help & guide: reporting\nguide_manual_filing | Když UbyHost nestihne hlášení podat | Help & guide: manual-filing\nguide_ubyport_credentials | Kde najdete přihlašovací údaje | Help & guide: ubyport-credentials\nguide_filters | Filtry v poplatcích a fakturách | Help & guide: filters\nguide_housebook | Kniha hostů | Help & guide: housebook\nguide_stay_fee | Poplatky z pobytu | Help & guide: stay_fee\nguide_invoices | Faktury | Help & guide: invoices\nguide_settings | Nastavení a zabezpečení | Help & guide: settings\nguide_door_codes | Digitální zámek (TTLock) | Help & guide: door-codes\nguide_faster | Rychlejší práce | Help & guide: faster\nguide_faq | Časté otázky | Help & guide: faq\nguide_legal | Vaše zákonné povinnosti | Help & guide: legal\nguide_finding | Jak se tu vyznat | Help & guide: finding\nguide_glossary | Slovníček | Help & guide: glossary\nguide_cleaning | Úklid | Help & guide: cleaning\nguide_guest_links | Odkaz pro hosty a PIN | Help & guide: guest_links\nguide_business | Firemní údaje | Help & guide: business\nguide_archive | Archiv | Help & guide: archive\nguide_privacy_requests | Žádosti o údaje | Help & guide: privacy_requests\nguide_payments | Platby | Help & guide: payments\nguide_add_property | Přidat ubytování | Help & guide: add-property\nguide_setup_guide | Průvodce nastavením | Help & guide: setup-guide\nguide_connect_calendar | Připojit kalendář (Airbnb, Booking.com) | Help & guide: connect-calendar\nguide_add_stay | Přidat pobyt ručně | Help & guide: add-stay\nguide_stay_fee_setup | Nastavit ho pro ubytování | Help & guide: stay-fee-setup\nguide_stay_fee_pay | Nahlásit a zaplatit období | Help & guide: stay-fee-pay\nguide_leon_terms | Podmínky pro Leona (AI) | Help & guide: leon-terms\n</pages>",
-  "vi": "<pages>\nid | label | what it is for\ndashboard | Tổng quan | what needs you, upcoming arrivals\nstays | Lưu trú | all stays\nadd_stay | Thêm lượt lưu trú | the normal Add stay form\nreports | Khai báo cảnh sát | police reports (UbyPort)\nhousebook | Sổ khách lưu trú | guest register and export\nstay_fees | Phí lưu trú | stay fees\ninvoices | Hóa đơn | invoices\nproperties | Chỗ ở | properties list\nproperty | Chỗ ở | one property\nproperty_details | Thông tin chỗ ở | name, address, basics\nproperty_reporting | Khai báo cảnh sát | UbyPort login, automation, stay fee rate\nproperty_guests | Liên kết cho khách | guest link, PIN, messages\nproperty_lock | Khóa cửa điện tử | door code settings\nproperty_calendars | Lịch đã kết nối | calendar links (iCal)\nbusiness | Thông tin doanh nghiệp và pháp lý | business and operator details\ncleaning | Dọn dẹp | cleaning schedule\ncleaning_properties | Dọn dẹp | cleaning settings per property\nsmart_locks | Tài khoản khóa cửa | TTLock connection\nsettings | Cài đặt | account settings\nsecurity | Bảo mật | passkeys, two-factor\ndata | Dữ liệu & lưu trữ | retention, export\narchive | Lưu trữ | archived records\nprivacy_requests | Yêu cầu về dữ liệu | guests' data requests\nguide | Trợ giúp | Help & guide\nguide_overview | Tổng quan | Help & guide: overview\nguide_statuses | Ý nghĩa các màu | Help & guide: statuses\nguide_setup | Thiết lập lần đầu | Help & guide: setup\nguide_stays | Lưu trú và lịch | Help & guide: stays\nguide_guests | Khách nhận phòng | Help & guide: guests\nguide_reporting | Khai báo cảnh sát | Help & guide: reporting\nguide_manual_filing | Nếu UbyHost không thể khai báo kịp | Help & guide: manual-filing\nguide_ubyport_credentials | Tìm thông tin đăng nhập ở đâu | Help & guide: ubyport-credentials\nguide_filters | Bộ lọc ở Phí lưu trú và Hóa đơn | Help & guide: filters\nguide_housebook | Sổ khách lưu trú | Help & guide: housebook\nguide_stay_fee | Phí lưu trú | Help & guide: stay_fee\nguide_invoices | Hóa đơn | Help & guide: invoices\nguide_settings | Cài đặt và bảo mật | Help & guide: settings\nguide_door_codes | Khóa cửa điện tử (TTLock) | Help & guide: door-codes\nguide_faster | Làm việc nhanh hơn | Help & guide: faster\nguide_faq | Câu hỏi thường gặp | Help & guide: faq\nguide_legal | Nghĩa vụ pháp lý của bạn | Help & guide: legal\nguide_finding | Tìm đường trong UbyHost | Help & guide: finding\nguide_glossary | Thuật ngữ | Help & guide: glossary\nguide_cleaning | Dọn dẹp | Help & guide: cleaning\nguide_guest_links | Liên kết cho khách và PIN | Help & guide: guest_links\nguide_business | Thông tin doanh nghiệp | Help & guide: business\nguide_archive | Lưu trữ | Help & guide: archive\nguide_privacy_requests | Yêu cầu về dữ liệu | Help & guide: privacy_requests\nguide_payments | Thanh toán | Help & guide: payments\nguide_add_property | Thêm chỗ ở | Help & guide: add-property\nguide_setup_guide | Thiết lập có hướng dẫn | Help & guide: setup-guide\nguide_connect_calendar | Kết nối lịch (Airbnb, Booking.com) | Help & guide: connect-calendar\nguide_add_stay | Thêm lượt lưu trú bằng tay | Help & guide: add-stay\nguide_stay_fee_setup | Thiết lập cho một chỗ ở | Help & guide: stay-fee-setup\nguide_stay_fee_pay | Báo cáo và nộp cho một kỳ | Help & guide: stay-fee-pay\nguide_leon_terms | Điều khoản Leon (AI) | Help & guide: leon-terms\n</pages>",
-  "de": "<pages>\nid | label | what it is for\ndashboard | Dashboard | what needs you, upcoming arrivals\nstays | Stays | all stays\nadd_stay | Add stay | the normal Add stay form\nreports | Police reports | police reports (UbyPort)\nhousebook | Guest register | guest register and export\nstay_fees | Stay fees | stay fees\ninvoices | Invoices | invoices\nproperties | Properties | properties list\nproperty | Properties | one property\nproperty_details | Property details | name, address, basics\nproperty_reporting | Police reporting | UbyPort login, automation, stay fee rate\nproperty_guests | Guest links | guest link, PIN, messages\nproperty_lock | Digital door lock | door code settings\nproperty_calendars | Connected calendars | calendar links (iCal)\nbusiness | Business & legal details | business and operator details\ncleaning | Cleaning | cleaning schedule\ncleaning_properties | Cleaning | cleaning settings per property\nsmart_locks | Door lock account | TTLock connection\nsettings | Settings | account settings\nsecurity | Security | passkeys, two-factor\ndata | Data & archive | retention, export\narchive | Archive | archived records\nprivacy_requests | Data requests | guests' data requests\nguide | Help | Help & guide\nguide_overview | Dashboard | Help & guide: overview\nguide_statuses | What the colours mean | Help & guide: statuses\nguide_setup | First-time setup | Help & guide: setup\nguide_stays | Stays & calendars | Help & guide: stays\nguide_guests | Guest check-in | Help & guide: guests\nguide_reporting | Police reporting | Help & guide: reporting\nguide_manual_filing | If UbyHost cannot file in time | Help & guide: manual-filing\nguide_ubyport_credentials | Where to find your credentials | Help & guide: ubyport-credentials\nguide_filters | Filters on Stay fees and Invoices | Help & guide: filters\nguide_housebook | Guest register | Help & guide: housebook\nguide_stay_fee | Stay fees | Help & guide: stay_fee\nguide_invoices | Invoices | Help & guide: invoices\nguide_settings | Settings & security | Help & guide: settings\nguide_door_codes | Digital door lock (TTLock) | Help & guide: door-codes\nguide_faster | Faster work | Help & guide: faster\nguide_faq | Common questions | Help & guide: faq\nguide_legal | Your legal duties | Help & guide: legal\nguide_finding | Finding your way | Help & guide: finding\nguide_glossary | Words we use | Help & guide: glossary\nguide_cleaning | Cleaning | Help & guide: cleaning\nguide_guest_links | Guest links and PIN | Help & guide: guest_links\nguide_business | Business details | Help & guide: business\nguide_archive | Archive | Help & guide: archive\nguide_privacy_requests | Data requests | Help & guide: privacy_requests\nguide_payments | Payments | Help & guide: payments\nguide_add_property | Add a property | Help & guide: add-property\nguide_setup_guide | The guided setup | Help & guide: setup-guide\nguide_connect_calendar | Connect a calendar (Airbnb, Booking.com) | Help & guide: connect-calendar\nguide_add_stay | Add a stay by hand | Help & guide: add-stay\nguide_stay_fee_setup | Set it up for a property | Help & guide: stay-fee-setup\nguide_stay_fee_pay | Report and pay a period | Help & guide: stay-fee-pay\nguide_leon_terms | Leon (AI) terms | Help & guide: leon-terms\n</pages>"
+  "en": "<pages>\nid | label | what it is for\ndashboard | Dashboard | what needs you, upcoming arrivals\nstays | Stays | all stays\nadd_stay | Add stay | the normal Add stay form\nreports | Police reports | police reports (UbyPort)\nhousebook | Guest register | guest register and export\nstay_fees | Stay fees | stay fees\ninvoices | Invoices | invoices\nproperties | Properties | properties list\nproperty | Properties | one property\nproperty_details | Property details | name, address, basics\nproperty_reporting | Police reporting | UbyPort login, automation, stay fee rate\nproperty_guests | Guest links | guest link, PIN, messages\nproperty_lock | Digital door lock | door code settings\nproperty_calendars | Connected calendars | calendar links (iCal)\nbusiness | Business & legal details | business and operator details\ncleaning | Cleaning | cleaning schedule\ncleaning_properties | Cleaning | cleaning settings per property\nsmart_locks | Door lock account | TTLock connection\nsettings | Settings | account settings\nsecurity | Security | passkeys, two-factor\ndata | Data & archive | retention, export\narchive | Archive | archived records\nprivacy_requests | Data requests | guests' data requests\nguide | Help | Help & guide\nguide_overview | Dashboard | Help & guide: overview\nguide_statuses | What the colours mean | Help & guide: statuses\nguide_setup | First-time setup | Help & guide: setup\nguide_stays | Stays & calendars | Help & guide: stays\nguide_guests | Guest check-in | Help & guide: guests\nguide_reporting | Police reporting | Help & guide: reporting\nguide_manual_filing | If UbyHost cannot file in time | Help & guide: manual-filing\nguide_ubyport_credentials | Where to find your credentials | Help & guide: ubyport-credentials\nguide_filters | Filters on Stay fees and Invoices | Help & guide: filters\nguide_housebook | Guest register | Help & guide: housebook\nguide_stay_fee | Stay fees | Help & guide: stay_fee\nguide_invoices | Invoices | Help & guide: invoices\nguide_settings | Settings & security | Help & guide: settings\nguide_entry_codes | Entry codes | Help & guide: entry-codes\nguide_door_codes | Digital door lock (TTLock) | Help & guide: door-codes\nguide_faster | Faster work | Help & guide: faster\nguide_faq | Common questions | Help & guide: faq\nguide_legal | Your legal duties | Help & guide: legal\nguide_finding | Finding your way | Help & guide: finding\nguide_glossary | Words we use | Help & guide: glossary\nguide_cleaning | Cleaning | Help & guide: cleaning\nguide_guest_links | Guest links and PIN | Help & guide: guest_links\nguide_business | Business details | Help & guide: business\nguide_archive | Archive | Help & guide: archive\nguide_privacy_requests | Data requests | Help & guide: privacy_requests\nguide_payments | Payments | Help & guide: payments\nguide_add_property | Add a property | Help & guide: add-property\nguide_setup_guide | The guided setup | Help & guide: setup-guide\nguide_connect_calendar | Connect a calendar (Airbnb, Booking.com) | Help & guide: connect-calendar\nguide_add_stay | Add a stay by hand | Help & guide: add-stay\nguide_stay_fee_setup | Set it up for a property | Help & guide: stay-fee-setup\nguide_stay_fee_pay | Report and pay a period | Help & guide: stay-fee-pay\nguide_leon_terms | Leon (AI) terms | Help & guide: leon-terms\n</pages>",
+  "cs": "<pages>\nid | label | what it is for\ndashboard | Přehled | what needs you, upcoming arrivals\nstays | Pobyty | all stays\nadd_stay | Přidat pobyt | the normal Add stay form\nreports | Hlášení policii | police reports (UbyPort)\nhousebook | Kniha hostů | guest register and export\nstay_fees | Poplatky z pobytu | stay fees\ninvoices | Faktury | invoices\nproperties | Ubytování | properties list\nproperty | Ubytování | one property\nproperty_details | Údaje ubytování | name, address, basics\nproperty_reporting | Hlášení policii | UbyPort login, automation, stay fee rate\nproperty_guests | Odkazy pro hosty | guest link, PIN, messages\nproperty_lock | Digitální zámek | door code settings\nproperty_calendars | Připojené kalendáře | calendar links (iCal)\nbusiness | Firma a právní údaje | business and operator details\ncleaning | Úklid | cleaning schedule\ncleaning_properties | Úklid | cleaning settings per property\nsmart_locks | Účet digitálního zámku | TTLock connection\nsettings | Nastavení | account settings\nsecurity | Zabezpečení | passkeys, two-factor\ndata | Data a archiv | retention, export\narchive | Archiv | archived records\nprivacy_requests | Žádosti o údaje | guests' data requests\nguide | Nápověda | Help & guide\nguide_overview | Přehled | Help & guide: overview\nguide_statuses | Co znamenají barvy | Help & guide: statuses\nguide_setup | První nastavení | Help & guide: setup\nguide_stays | Pobyty a kalendáře | Help & guide: stays\nguide_guests | Registrace hostů | Help & guide: guests\nguide_reporting | Hlášení policii | Help & guide: reporting\nguide_manual_filing | Když UbyHost nestihne hlášení podat | Help & guide: manual-filing\nguide_ubyport_credentials | Kde najdete přihlašovací údaje | Help & guide: ubyport-credentials\nguide_filters | Filtry v poplatcích a fakturách | Help & guide: filters\nguide_housebook | Kniha hostů | Help & guide: housebook\nguide_stay_fee | Poplatky z pobytu | Help & guide: stay_fee\nguide_invoices | Faktury | Help & guide: invoices\nguide_settings | Nastavení a zabezpečení | Help & guide: settings\nguide_entry_codes | Vstupní kódy | Help & guide: entry-codes\nguide_door_codes | Digitální zámek (TTLock) | Help & guide: door-codes\nguide_faster | Rychlejší práce | Help & guide: faster\nguide_faq | Časté otázky | Help & guide: faq\nguide_legal | Vaše zákonné povinnosti | Help & guide: legal\nguide_finding | Jak se tu vyznat | Help & guide: finding\nguide_glossary | Slovníček | Help & guide: glossary\nguide_cleaning | Úklid | Help & guide: cleaning\nguide_guest_links | Odkaz pro hosty a PIN | Help & guide: guest_links\nguide_business | Firemní údaje | Help & guide: business\nguide_archive | Archiv | Help & guide: archive\nguide_privacy_requests | Žádosti o údaje | Help & guide: privacy_requests\nguide_payments | Platby | Help & guide: payments\nguide_add_property | Přidat ubytování | Help & guide: add-property\nguide_setup_guide | Průvodce nastavením | Help & guide: setup-guide\nguide_connect_calendar | Připojit kalendář (Airbnb, Booking.com) | Help & guide: connect-calendar\nguide_add_stay | Přidat pobyt ručně | Help & guide: add-stay\nguide_stay_fee_setup | Nastavit ho pro ubytování | Help & guide: stay-fee-setup\nguide_stay_fee_pay | Nahlásit a zaplatit období | Help & guide: stay-fee-pay\nguide_leon_terms | Podmínky pro Leona (AI) | Help & guide: leon-terms\n</pages>",
+  "vi": "<pages>\nid | label | what it is for\ndashboard | Tổng quan | what needs you, upcoming arrivals\nstays | Lưu trú | all stays\nadd_stay | Thêm lượt lưu trú | the normal Add stay form\nreports | Khai báo cảnh sát | police reports (UbyPort)\nhousebook | Sổ khách lưu trú | guest register and export\nstay_fees | Phí lưu trú | stay fees\ninvoices | Hóa đơn | invoices\nproperties | Chỗ ở | properties list\nproperty | Chỗ ở | one property\nproperty_details | Thông tin chỗ ở | name, address, basics\nproperty_reporting | Khai báo cảnh sát | UbyPort login, automation, stay fee rate\nproperty_guests | Liên kết cho khách | guest link, PIN, messages\nproperty_lock | Khóa cửa điện tử | door code settings\nproperty_calendars | Lịch đã kết nối | calendar links (iCal)\nbusiness | Thông tin doanh nghiệp và pháp lý | business and operator details\ncleaning | Dọn dẹp | cleaning schedule\ncleaning_properties | Dọn dẹp | cleaning settings per property\nsmart_locks | Tài khoản khóa cửa | TTLock connection\nsettings | Cài đặt | account settings\nsecurity | Bảo mật | passkeys, two-factor\ndata | Dữ liệu & lưu trữ | retention, export\narchive | Lưu trữ | archived records\nprivacy_requests | Yêu cầu về dữ liệu | guests' data requests\nguide | Trợ giúp | Help & guide\nguide_overview | Tổng quan | Help & guide: overview\nguide_statuses | Ý nghĩa các màu | Help & guide: statuses\nguide_setup | Thiết lập lần đầu | Help & guide: setup\nguide_stays | Lưu trú và lịch | Help & guide: stays\nguide_guests | Khách nhận phòng | Help & guide: guests\nguide_reporting | Khai báo cảnh sát | Help & guide: reporting\nguide_manual_filing | Nếu UbyHost không thể khai báo kịp | Help & guide: manual-filing\nguide_ubyport_credentials | Tìm thông tin đăng nhập ở đâu | Help & guide: ubyport-credentials\nguide_filters | Bộ lọc ở Phí lưu trú và Hóa đơn | Help & guide: filters\nguide_housebook | Sổ khách lưu trú | Help & guide: housebook\nguide_stay_fee | Phí lưu trú | Help & guide: stay_fee\nguide_invoices | Hóa đơn | Help & guide: invoices\nguide_settings | Cài đặt và bảo mật | Help & guide: settings\nguide_entry_codes | Mã vào cửa | Help & guide: entry-codes\nguide_door_codes | Khóa cửa điện tử (TTLock) | Help & guide: door-codes\nguide_faster | Làm việc nhanh hơn | Help & guide: faster\nguide_faq | Câu hỏi thường gặp | Help & guide: faq\nguide_legal | Nghĩa vụ pháp lý của bạn | Help & guide: legal\nguide_finding | Tìm đường trong UbyHost | Help & guide: finding\nguide_glossary | Thuật ngữ | Help & guide: glossary\nguide_cleaning | Dọn dẹp | Help & guide: cleaning\nguide_guest_links | Liên kết cho khách và PIN | Help & guide: guest_links\nguide_business | Thông tin doanh nghiệp | Help & guide: business\nguide_archive | Lưu trữ | Help & guide: archive\nguide_privacy_requests | Yêu cầu về dữ liệu | Help & guide: privacy_requests\nguide_payments | Thanh toán | Help & guide: payments\nguide_add_property | Thêm chỗ ở | Help & guide: add-property\nguide_setup_guide | Thiết lập có hướng dẫn | Help & guide: setup-guide\nguide_connect_calendar | Kết nối lịch (Airbnb, Booking.com) | Help & guide: connect-calendar\nguide_add_stay | Thêm lượt lưu trú bằng tay | Help & guide: add-stay\nguide_stay_fee_setup | Thiết lập cho một chỗ ở | Help & guide: stay-fee-setup\nguide_stay_fee_pay | Báo cáo và nộp cho một kỳ | Help & guide: stay-fee-pay\nguide_leon_terms | Điều khoản Leon (AI) | Help & guide: leon-terms\n</pages>",
+  "de": "<pages>\nid | label | what it is for\ndashboard | Dashboard | what needs you, upcoming arrivals\nstays | Stays | all stays\nadd_stay | Add stay | the normal Add stay form\nreports | Police reports | police reports (UbyPort)\nhousebook | Guest register | guest register and export\nstay_fees | Stay fees | stay fees\ninvoices | Invoices | invoices\nproperties | Properties | properties list\nproperty | Properties | one property\nproperty_details | Property details | name, address, basics\nproperty_reporting | Police reporting | UbyPort login, automation, stay fee rate\nproperty_guests | Guest links | guest link, PIN, messages\nproperty_lock | Digital door lock | door code settings\nproperty_calendars | Connected calendars | calendar links (iCal)\nbusiness | Business & legal details | business and operator details\ncleaning | Cleaning | cleaning schedule\ncleaning_properties | Cleaning | cleaning settings per property\nsmart_locks | Door lock account | TTLock connection\nsettings | Settings | account settings\nsecurity | Security | passkeys, two-factor\ndata | Data & archive | retention, export\narchive | Archive | archived records\nprivacy_requests | Data requests | guests' data requests\nguide | Help | Help & guide\nguide_overview | Dashboard | Help & guide: overview\nguide_statuses | What the colours mean | Help & guide: statuses\nguide_setup | First-time setup | Help & guide: setup\nguide_stays | Stays & calendars | Help & guide: stays\nguide_guests | Guest check-in | Help & guide: guests\nguide_reporting | Police reporting | Help & guide: reporting\nguide_manual_filing | If UbyHost cannot file in time | Help & guide: manual-filing\nguide_ubyport_credentials | Where to find your credentials | Help & guide: ubyport-credentials\nguide_filters | Filters on Stay fees and Invoices | Help & guide: filters\nguide_housebook | Guest register | Help & guide: housebook\nguide_stay_fee | Stay fees | Help & guide: stay_fee\nguide_invoices | Invoices | Help & guide: invoices\nguide_settings | Settings & security | Help & guide: settings\nguide_entry_codes | Entry codes | Help & guide: entry-codes\nguide_door_codes | Digital door lock (TTLock) | Help & guide: door-codes\nguide_faster | Faster work | Help & guide: faster\nguide_faq | Common questions | Help & guide: faq\nguide_legal | Your legal duties | Help & guide: legal\nguide_finding | Finding your way | Help & guide: finding\nguide_glossary | Words we use | Help & guide: glossary\nguide_cleaning | Cleaning | Help & guide: cleaning\nguide_guest_links | Guest links and PIN | Help & guide: guest_links\nguide_business | Business details | Help & guide: business\nguide_archive | Archive | Help & guide: archive\nguide_privacy_requests | Data requests | Help & guide: privacy_requests\nguide_payments | Payments | Help & guide: payments\nguide_add_property | Add a property | Help & guide: add-property\nguide_setup_guide | The guided setup | Help & guide: setup-guide\nguide_connect_calendar | Connect a calendar (Airbnb, Booking.com) | Help & guide: connect-calendar\nguide_add_stay | Add a stay by hand | Help & guide: add-stay\nguide_stay_fee_setup | Set it up for a property | Help & guide: stay-fee-setup\nguide_stay_fee_pay | Report and pay a period | Help & guide: stay-fee-pay\nguide_leon_terms | Leon (AI) terms | Help & guide: leon-terms\n</pages>"
  },
  "guide_block_sha": {
   "en": [
-   "db9f1b3c6985775b5325287be92585c55fc2b27a3eb5e8f61d5bce246c49921d",
-   50065
+   "d5f896612b7a6a35b57f90a93cd94f355e28c74a04dc7eb99d12c94168b2f645",
+   50286
   ],
   "cs": [
-   "51e868b13d47cde70fdf6285c853e1af72e4b37a4debc0067c7ace5676a94935",
-   50573
+   "52b600cfdf11d8bd5c3288a7662f40d2205198b9c5363ca7d96d4d257860b422",
+   50792
   ],
   "vi": [
-   "95fbfeccdaef4d4ec0d112b2c4f18538d772c57a809e0db84be3fe3a4659a721",
-   49183
+   "19584ee36f80e4cece6d99bd4505e88152bc1a79d41b6361e54bc81eca071897",
+   49375
   ],
   "de": [
-   "db9f1b3c6985775b5325287be92585c55fc2b27a3eb5e8f61d5bce246c49921d",
-   50065
+   "d5f896612b7a6a35b57f90a93cd94f355e28c74a04dc7eb99d12c94168b2f645",
+   50286
   ]
  },
  "prompt_sha": "b95ac095d14746e21d473b9d8c832b3dd6feacab8ae3a889d1488e7e2d146a04",
@@ -512,6 +512,7 @@
   "guide_stay_fee",
   "guide_invoices",
   "guide_settings",
+  "guide_entry_codes",
   "guide_door_codes",
   "guide_faster",
   "guide_faq",
@@ -5231,13 +5232,13 @@
      "feature": "havel",
      "system_sha": [
       "b95ac095d14746e21d473b9d8c832b3dd6feacab8ae3a889d1488e7e2d146a04",
-      "db9f1b3c6985775b5325287be92585c55fc2b27a3eb5e8f61d5bce246c49921d",
-      "af0a71e06d416a28a66adecb053c231c181b27298c7907ba7342899491ffe114"
+      "d5f896612b7a6a35b57f90a93cd94f355e28c74a04dc7eb99d12c94168b2f645",
+      "614589908358bd21b230292fbf9956d5d430409b47f1efd5f5bf1fe5fc5a8db9"
      ],
      "system_len": [
       15744,
-      50065,
-      3220
+      50286,
+      3280
      ],
      "messages": [
       {
@@ -5343,6 +5344,7 @@
             "guide_stay_fee",
             "guide_invoices",
             "guide_settings",
+            "guide_entry_codes",
             "guide_door_codes",
             "guide_faster",
             "guide_faq",
@@ -5541,13 +5543,13 @@
      "feature": "havel",
      "system_sha": [
       "b95ac095d14746e21d473b9d8c832b3dd6feacab8ae3a889d1488e7e2d146a04",
-      "db9f1b3c6985775b5325287be92585c55fc2b27a3eb5e8f61d5bce246c49921d",
-      "af0a71e06d416a28a66adecb053c231c181b27298c7907ba7342899491ffe114"
+      "d5f896612b7a6a35b57f90a93cd94f355e28c74a04dc7eb99d12c94168b2f645",
+      "614589908358bd21b230292fbf9956d5d430409b47f1efd5f5bf1fe5fc5a8db9"
      ],
      "system_len": [
       15744,
-      50065,
-      3220
+      50286,
+      3280
      ],
      "messages": [
       {
@@ -5653,6 +5655,7 @@
             "guide_stay_fee",
             "guide_invoices",
             "guide_settings",
+            "guide_entry_codes",
             "guide_door_codes",
             "guide_faster",
             "guide_faq",
@@ -5782,13 +5785,13 @@
      "feature": "havel",
      "system_sha": [
       "b95ac095d14746e21d473b9d8c832b3dd6feacab8ae3a889d1488e7e2d146a04",
-      "db9f1b3c6985775b5325287be92585c55fc2b27a3eb5e8f61d5bce246c49921d",
-      "af0a71e06d416a28a66adecb053c231c181b27298c7907ba7342899491ffe114"
+      "d5f896612b7a6a35b57f90a93cd94f355e28c74a04dc7eb99d12c94168b2f645",
+      "614589908358bd21b230292fbf9956d5d430409b47f1efd5f5bf1fe5fc5a8db9"
      ],
      "system_len": [
       15744,
-      50065,
-      3220
+      50286,
+      3280
      ],
      "messages": [
       {
@@ -5886,6 +5889,7 @@
             "guide_stay_fee",
             "guide_invoices",
             "guide_settings",
+            "guide_entry_codes",
             "guide_door_codes",
             "guide_faster",
             "guide_faq",
@@ -6077,13 +6081,13 @@
      "feature": "havel",
      "system_sha": [
       "b95ac095d14746e21d473b9d8c832b3dd6feacab8ae3a889d1488e7e2d146a04",
-      "db9f1b3c6985775b5325287be92585c55fc2b27a3eb5e8f61d5bce246c49921d",
-      "af0a71e06d416a28a66adecb053c231c181b27298c7907ba7342899491ffe114"
+      "d5f896612b7a6a35b57f90a93cd94f355e28c74a04dc7eb99d12c94168b2f645",
+      "614589908358bd21b230292fbf9956d5d430409b47f1efd5f5bf1fe5fc5a8db9"
      ],
      "system_len": [
       15744,
-      50065,
-      3220
+      50286,
+      3280
      ],
      "messages": [
       {
@@ -6189,6 +6193,7 @@
             "guide_stay_fee",
             "guide_invoices",
             "guide_settings",
+            "guide_entry_codes",
             "guide_door_codes",
             "guide_faster",
             "guide_faq",
@@ -6318,13 +6323,13 @@
      "feature": "havel",
      "system_sha": [
       "b95ac095d14746e21d473b9d8c832b3dd6feacab8ae3a889d1488e7e2d146a04",
-      "db9f1b3c6985775b5325287be92585c55fc2b27a3eb5e8f61d5bce246c49921d",
-      "af0a71e06d416a28a66adecb053c231c181b27298c7907ba7342899491ffe114"
+      "d5f896612b7a6a35b57f90a93cd94f355e28c74a04dc7eb99d12c94168b2f645",
+      "614589908358bd21b230292fbf9956d5d430409b47f1efd5f5bf1fe5fc5a8db9"
      ],
      "system_len": [
       15744,
-      50065,
-      3220
+      50286,
+      3280
      ],
      "messages": [
       {
@@ -6422,6 +6427,7 @@
             "guide_stay_fee",
             "guide_invoices",
             "guide_settings",
+            "guide_entry_codes",
             "guide_door_codes",
             "guide_faster",
             "guide_faq",
@@ -6595,13 +6601,13 @@
      "feature": "havel",
      "system_sha": [
       "b95ac095d14746e21d473b9d8c832b3dd6feacab8ae3a889d1488e7e2d146a04",
-      "51e868b13d47cde70fdf6285c853e1af72e4b37a4debc0067c7ace5676a94935",
-      "a2365c88bd6339aa6c081411804ddd07e69a15bfd2a534f453dd26097b0cdb92"
+      "52b600cfdf11d8bd5c3288a7662f40d2205198b9c5363ca7d96d4d257860b422",
+      "a2e717ba1aaeb289615ae0b45bb1b6a40c385ceb169334738d18b88be9755c2f"
      ],
      "system_len": [
       15744,
-      50573,
-      3249
+      50792,
+      3310
      ],
      "messages": [
       {
@@ -6691,6 +6697,7 @@
             "guide_stay_fee",
             "guide_invoices",
             "guide_settings",
+            "guide_entry_codes",
             "guide_door_codes",
             "guide_faster",
             "guide_faq",
@@ -6867,13 +6874,13 @@
      "feature": "havel",
      "system_sha": [
       "b95ac095d14746e21d473b9d8c832b3dd6feacab8ae3a889d1488e7e2d146a04",
-      "db9f1b3c6985775b5325287be92585c55fc2b27a3eb5e8f61d5bce246c49921d",
-      "af0a71e06d416a28a66adecb053c231c181b27298c7907ba7342899491ffe114"
+      "d5f896612b7a6a35b57f90a93cd94f355e28c74a04dc7eb99d12c94168b2f645",
+      "614589908358bd21b230292fbf9956d5d430409b47f1efd5f5bf1fe5fc5a8db9"
      ],
      "system_len": [
       15744,
-      50065,
-      3220
+      50286,
+      3280
      ],
      "messages": [
       {
@@ -6963,6 +6970,7 @@
             "guide_stay_fee",
             "guide_invoices",
             "guide_settings",
+            "guide_entry_codes",
             "guide_door_codes",
             "guide_faster",
             "guide_faq",
@@ -7139,13 +7147,13 @@
      "feature": "havel",
      "system_sha": [
       "b95ac095d14746e21d473b9d8c832b3dd6feacab8ae3a889d1488e7e2d146a04",
-      "db9f1b3c6985775b5325287be92585c55fc2b27a3eb5e8f61d5bce246c49921d",
-      "af0a71e06d416a28a66adecb053c231c181b27298c7907ba7342899491ffe114"
+      "d5f896612b7a6a35b57f90a93cd94f355e28c74a04dc7eb99d12c94168b2f645",
+      "614589908358bd21b230292fbf9956d5d430409b47f1efd5f5bf1fe5fc5a8db9"
      ],
      "system_len": [
       15744,
-      50065,
-      3220
+      50286,
+      3280
      ],
      "messages": [
       {
@@ -7235,6 +7243,7 @@
             "guide_stay_fee",
             "guide_invoices",
             "guide_settings",
+            "guide_entry_codes",
             "guide_door_codes",
             "guide_faster",
             "guide_faq",
@@ -7400,13 +7409,13 @@
      "feature": "havel",
      "system_sha": [
       "b95ac095d14746e21d473b9d8c832b3dd6feacab8ae3a889d1488e7e2d146a04",
-      "db9f1b3c6985775b5325287be92585c55fc2b27a3eb5e8f61d5bce246c49921d",
-      "af0a71e06d416a28a66adecb053c231c181b27298c7907ba7342899491ffe114"
+      "d5f896612b7a6a35b57f90a93cd94f355e28c74a04dc7eb99d12c94168b2f645",
+      "614589908358bd21b230292fbf9956d5d430409b47f1efd5f5bf1fe5fc5a8db9"
      ],
      "system_len": [
       15744,
-      50065,
-      3220
+      50286,
+      3280
      ],
      "messages": [
       {
@@ -7496,6 +7505,7 @@
             "guide_stay_fee",
             "guide_invoices",
             "guide_settings",
+            "guide_entry_codes",
             "guide_door_codes",
             "guide_faster",
             "guide_faq",
@@ -7651,13 +7661,13 @@
      "feature": "havel",
      "system_sha": [
       "b95ac095d14746e21d473b9d8c832b3dd6feacab8ae3a889d1488e7e2d146a04",
-      "95fbfeccdaef4d4ec0d112b2c4f18538d772c57a809e0db84be3fe3a4659a721",
-      "e6f023d8ecaf6ce7554bb4925bfe4c9884412997c5756a194598bade48676868"
+      "19584ee36f80e4cece6d99bd4505e88152bc1a79d41b6361e54bc81eca071897",
+      "0979c72f8d49d392fd454ef20607641ab47ab8ca5159b1802e80475e01a2ccd5"
      ],
      "system_len": [
       15744,
-      49183,
-      3293
+      49375,
+      3352
      ],
      "messages": [
       {
@@ -7747,6 +7757,7 @@
             "guide_stay_fee",
             "guide_invoices",
             "guide_settings",
+            "guide_entry_codes",
             "guide_door_codes",
             "guide_faster",
             "guide_faq",
@@ -7920,13 +7931,13 @@
      "feature": "havel",
      "system_sha": [
       "b95ac095d14746e21d473b9d8c832b3dd6feacab8ae3a889d1488e7e2d146a04",
-      "db9f1b3c6985775b5325287be92585c55fc2b27a3eb5e8f61d5bce246c49921d",
-      "af0a71e06d416a28a66adecb053c231c181b27298c7907ba7342899491ffe114"
+      "d5f896612b7a6a35b57f90a93cd94f355e28c74a04dc7eb99d12c94168b2f645",
+      "614589908358bd21b230292fbf9956d5d430409b47f1efd5f5bf1fe5fc5a8db9"
      ],
      "system_len": [
       15744,
-      50065,
-      3220
+      50286,
+      3280
      ],
      "messages": [
       {
@@ -8016,6 +8027,7 @@
             "guide_stay_fee",
             "guide_invoices",
             "guide_settings",
+            "guide_entry_codes",
             "guide_door_codes",
             "guide_faster",
             "guide_faq",
@@ -8239,6 +8251,7 @@
         "guide_stay_fee",
         "guide_invoices",
         "guide_settings",
+        "guide_entry_codes",
         "guide_door_codes",
         "guide_faster",
         "guide_faq",
@@ -8361,7 +8374,7 @@
    }
   }
  },
- "schema_compact": "{\"type\":\"object\",\"additionalProperties\":false,\"required\":[\"kind\",\"reply\",\"sources\",\"links\",\"action\",\"support_summary\",\"next\"],\"properties\":{\"kind\":{\"type\":\"string\",\"enum\":[\"answer\",\"clarify\",\"action\",\"escalate\",\"refuse\"]},\"reply\":{\"type\":\"string\"},\"sources\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"links\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"additionalProperties\":false,\"required\":[\"page\",\"property_id\"],\"properties\":{\"page\":{\"type\":\"string\",\"enum\":[\"dashboard\",\"stays\",\"add_stay\",\"reports\",\"housebook\",\"stay_fees\",\"invoices\",\"properties\",\"property\",\"property_details\",\"property_reporting\",\"property_guests\",\"property_lock\",\"property_calendars\",\"business\",\"cleaning\",\"cleaning_properties\",\"smart_locks\",\"settings\",\"security\",\"data\",\"archive\",\"privacy_requests\",\"guide\",\"guide_overview\",\"guide_statuses\",\"guide_setup\",\"guide_stays\",\"guide_guests\",\"guide_reporting\",\"guide_manual_filing\",\"guide_ubyport_credentials\",\"guide_filters\",\"guide_housebook\",\"guide_stay_fee\",\"guide_invoices\",\"guide_settings\",\"guide_door_codes\",\"guide_faster\",\"guide_faq\",\"guide_legal\",\"guide_finding\",\"guide_glossary\",\"guide_cleaning\",\"guide_guest_links\",\"guide_business\",\"guide_archive\",\"guide_privacy_requests\",\"guide_payments\",\"guide_add_property\",\"guide_setup_guide\",\"guide_connect_calendar\",\"guide_add_stay\",\"guide_stay_fee_setup\",\"guide_stay_fee_pay\",\"guide_leon_terms\"]},\"property_id\":{\"type\":[\"integer\",\"null\"]}}}},\"action\":{\"type\":[\"object\",\"null\"],\"additionalProperties\":false,\"required\":[\"type\",\"property_id\",\"date_from\",\"date_to\",\"guests\",\"guest_email\",\"start_time\",\"end_time\",\"note\"],\"properties\":{\"type\":{\"type\":\"string\",\"enum\":[\"show_guest_link\",\"create_stay\",\"create_cleaning\",\"sync_calendars\",\"new_pin\"]},\"property_id\":{\"type\":[\"integer\",\"null\"]},\"date_from\":{\"type\":[\"string\",\"null\"]},\"date_to\":{\"type\":[\"string\",\"null\"]},\"guests\":{\"type\":[\"integer\",\"null\"]},\"guest_email\":{\"type\":[\"string\",\"null\"]},\"start_time\":{\"type\":[\"string\",\"null\"]},\"end_time\":{\"type\":[\"string\",\"null\"]},\"note\":{\"type\":[\"string\",\"null\"]}}},\"support_summary\":{\"type\":[\"string\",\"null\"]},\"next\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}}}",
+ "schema_compact": "{\"type\":\"object\",\"additionalProperties\":false,\"required\":[\"kind\",\"reply\",\"sources\",\"links\",\"action\",\"support_summary\",\"next\"],\"properties\":{\"kind\":{\"type\":\"string\",\"enum\":[\"answer\",\"clarify\",\"action\",\"escalate\",\"refuse\"]},\"reply\":{\"type\":\"string\"},\"sources\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"links\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"additionalProperties\":false,\"required\":[\"page\",\"property_id\"],\"properties\":{\"page\":{\"type\":\"string\",\"enum\":[\"dashboard\",\"stays\",\"add_stay\",\"reports\",\"housebook\",\"stay_fees\",\"invoices\",\"properties\",\"property\",\"property_details\",\"property_reporting\",\"property_guests\",\"property_lock\",\"property_calendars\",\"business\",\"cleaning\",\"cleaning_properties\",\"smart_locks\",\"settings\",\"security\",\"data\",\"archive\",\"privacy_requests\",\"guide\",\"guide_overview\",\"guide_statuses\",\"guide_setup\",\"guide_stays\",\"guide_guests\",\"guide_reporting\",\"guide_manual_filing\",\"guide_ubyport_credentials\",\"guide_filters\",\"guide_housebook\",\"guide_stay_fee\",\"guide_invoices\",\"guide_settings\",\"guide_entry_codes\",\"guide_door_codes\",\"guide_faster\",\"guide_faq\",\"guide_legal\",\"guide_finding\",\"guide_glossary\",\"guide_cleaning\",\"guide_guest_links\",\"guide_business\",\"guide_archive\",\"guide_privacy_requests\",\"guide_payments\",\"guide_add_property\",\"guide_setup_guide\",\"guide_connect_calendar\",\"guide_add_stay\",\"guide_stay_fee_setup\",\"guide_stay_fee_pay\",\"guide_leon_terms\"]},\"property_id\":{\"type\":[\"integer\",\"null\"]}}}},\"action\":{\"type\":[\"object\",\"null\"],\"additionalProperties\":false,\"required\":[\"type\",\"property_id\",\"date_from\",\"date_to\",\"guests\",\"guest_email\",\"start_time\",\"end_time\",\"note\"],\"properties\":{\"type\":{\"type\":\"string\",\"enum\":[\"show_guest_link\",\"create_stay\",\"create_cleaning\",\"sync_calendars\",\"new_pin\"]},\"property_id\":{\"type\":[\"integer\",\"null\"]},\"date_from\":{\"type\":[\"string\",\"null\"]},\"date_to\":{\"type\":[\"string\",\"null\"]},\"guests\":{\"type\":[\"integer\",\"null\"]},\"guest_email\":{\"type\":[\"string\",\"null\"]},\"start_time\":{\"type\":[\"string\",\"null\"]},\"end_time\":{\"type\":[\"string\",\"null\"]},\"note\":{\"type\":[\"string\",\"null\"]}}},\"support_summary\":{\"type\":[\"string\",\"null\"]},\"next\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}}}",
  "limits": {
   "max_tokens": 2500,
   "max_message": 600,

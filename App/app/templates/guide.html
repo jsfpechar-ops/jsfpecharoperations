@@ -293,6 +293,12 @@
       <ol>{% for n in range(1, 10) %}<li>{{ t('guide.door_codes.terms' ~ n) }}</li>{% endfor %}</ol>
     </details>
 
+
+    <details class="guide-section card ui-section ui-section-plain guide-topic" id="entry-codes">
+      <summary><h2>{{ t('guide.nav.entry_codes') }}</h2></summary>
+      <p>{{ t('guide.entry_codes.lede') }}</p>
+    </details>
+
     <details class="guide-section card ui-section ui-section-plain guide-topic" id="leon-terms">
       <summary><h2>{{ t('guide.leon_terms.title') }}</h2></summary>
       <p class="ui-sub">{{ t('guide.leon_terms.version', version='2026-10-25') }}</p>

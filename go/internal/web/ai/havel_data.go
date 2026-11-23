@@ -124,6 +124,7 @@ var havelGuideAnchors = [][2]string{
 	{"stay_fee", "guide.nav.stay_fee"},
 	{"invoices", "guide.nav.invoices"},
 	{"settings", "guide.nav.settings"},
+	{"entry-codes", "guide.nav.entry_codes"},
 	{"door-codes", "guide.nav.door-codes"},
 	{"faster", "guide.nav.faster"},
 	{"faq", "guide.nav.faq"},

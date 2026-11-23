@@ -83,6 +83,10 @@ def _seed(conn: psycopg.Connection) -> tuple[int, int]:
             (username, f"{username}@example.test"),
         )
         host_id = cur.fetchone()[0]
+        cur.execute(
+            "UPDATE user_account SET two_factor_prompted_at = '2026-01-01T00:00:00+00:00' WHERE id = %s",
+            (host_id,),
+        )
         for doc, version in (("terms", "t1"), ("privacy", "p1"), ("dpa", "d1")):
             cur.execute(
                 """INSERT INTO legal_acceptance (user_account_id, document, version, accepted_at, method)
@@ -255,6 +259,7 @@ def lint_go_paths(
     cookie: str,
     *,
     extra: dict[str, Callable[[Any], None]] | None = None,
+    after: dict[str, Callable[[Any], None]] | None = None,
     shot_labels: dict[str, str] | None = None,
 ) -> list[dict[str, Any]]:
     """Run layout lint at 390/768/1280 for each named Go path."""
@@ -289,6 +294,9 @@ def lint_go_paths(
                 status = response.status if response else 599
                 assert status < 400, f"{name}/{width}: HTTP {status}"
                 page.wait_for_load_state("networkidle")
+                if after and name in after:
+                    after[name](page)
+                    page.wait_for_load_state("networkidle")
                 settle_motion(page)
                 page.evaluate("window.scrollTo(0, 0)")
                 for item in page.evaluate(LINT):

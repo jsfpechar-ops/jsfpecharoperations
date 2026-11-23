@@ -27,3 +27,6 @@ flash.error.leon_terms
 leon_page.*
 common.optional
 common.back
+access_page.*
+flash.access_page.*
+flash.error.access_page.*

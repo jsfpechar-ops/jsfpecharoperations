@@ -231,3 +231,99 @@ def test_go_harness_rejects_a_signed_out_request(go_web):
         assert status in (200, 302, 303, 307, 308)
         return
     assert status in (401, 403), f"expected auth failure, got {status} url={final_url}"
+
+
+def _access_enc(plain: str) -> str:
+    os.environ["UBYHOST_SECRET_KEY"] = "harness-fixture-secret-012345678901234567"
+    from app import db
+
+    return db.encrypt_field(plain)
+
+
+def _access_clear(cur, apt: int) -> None:
+    cur.execute("DELETE FROM apartment_entry_code WHERE apartment_id = %s", (apt,))
+    cur.execute("UPDATE apartment SET lock_id = NULL, guide_external_url = NULL WHERE id = %s", (apt,))
+
+
+def _access_seed(cur, apt: int, rows: list[tuple]) -> None:
+    for pos, code_type, label, plain, until in rows:
+        cur.execute(
+            """INSERT INTO apartment_entry_code
+               (apartment_id, position, code_type, custom_label, code_enc, valid_until, created_at, updated_at)
+               VALUES (%s, %s, %s, %s, %s, %s, '2026-01-01T00:00:00+00:00', '2026-01-01T00:00:00+00:00')""",
+            (apt, pos, code_type, label, _access_enc(plain), until),
+        )
+
+
+def test_go_access_page_states_pass_the_layout_lint(go_web, go_cookie):
+    apt = go_web["apartment_id"]
+    base_path = f"/apartments/{apt}/access"
+    long_label = "A" * 30 + " " + "B" * 29
+    setups: dict[str, tuple[str, list[tuple]]] = {
+        "access-empty": ("", []),
+        "access-one": ("", [(1, "gate", None, "1234", None)]),
+        "access-three": (
+            "",
+            [
+                (1, "gate", None, "1001", None),
+                (2, "building_entrance", None, "2002", None),
+                (3, "garage", None, "3003", None),
+            ],
+        ),
+        "access-other": ("?edit=1", [(1, "other", long_label, "9999", None)]),
+        "access-expired": ("", [(1, "gate", None, "1234", "2020-01-01")]),
+        "access-error": ("?add=1", []),
+        "access-replaced": ("?edit=1", [(1, "gate", None, "1234", None)]),
+        "access-preview-lock": ("", [(1, "gate", None, "4321", None)]),
+        "access-preview-nolock": ("", [(1, "bike_room", None, "5555", None)]),
+    }
+    def _access_replace(page) -> None:
+        page.locator('form#access-form input[name="code"]').fill("5678")
+        page.locator('form#access-form button[type="submit"]').click()
+
+    after = {"access-replaced": _access_replace}
+    all_findings: list[dict] = []
+    with psycopg.connect(go_web["database_url"]) as conn, conn.cursor() as cur:
+        for name, (suffix, rows) in setups.items():
+            _access_clear(cur, apt)
+            if name == "access-preview-lock":
+                cur.execute("UPDATE apartment SET lock_id = 'lint-lock' WHERE id = %s", (apt,))
+            if name == "access-other":
+                cur.execute(
+                    "UPDATE apartment SET guide_external_url = %s WHERE id = %s",
+                    ("https://www.notion.so/page", apt),
+                )
+            if rows:
+                _access_seed(cur, apt, rows)
+            conn.commit()
+            paths = {name: base_path + suffix}
+            all_findings.extend(
+                lint_go_paths(go_web, paths, go_cookie, shot_labels={name: name}, after=after)
+            )
+    assert_no_layout_findings(all_findings)
+
+    base = go_web["base_url"]
+    with psycopg.connect(go_web["database_url"]) as conn, conn.cursor() as cur:
+        _access_clear(cur, apt)
+        conn.commit()
+    with sync_api.sync_playwright() as playwright:
+        browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        context = browser.new_context(java_script_enabled=False, viewport={"width": 390, "height": 900})
+        register_static_routes(context)
+        context.add_cookies(
+            [
+                {"name": "ubyhost_session", "value": go_cookie, "url": base + "/"},
+                {"name": "ubyhost_lang", "value": "en", "url": base + "/"},
+            ]
+        )
+        page = context.new_page()
+        page.goto(f"{base}{base_path}?add=1")
+        page.wait_for_selector("form#access-form, form[action$='/access']")
+        page.select_option("select[name=code_type]", "other")
+        page.fill('input[name="code"]', "n1")
+        page.locator("form#access-form button[type=submit], form[action$='/access'] button[type=submit]").first.click()
+        page.wait_for_load_state("networkidle")
+        assert "Add a name for Other" in page.inner_text("body") or "other_label" in page.url
+        assert page.locator('input[name="custom_label"]').count() == 1
+        browser.close()
+

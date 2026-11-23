@@ -1578,8 +1578,9 @@ body.v2 .guide-page .quick-choice-option input:focus-visible+span{box-shadow:0 0
 body.v2 .guide-page dl.ui-facts{display:grid;gap:12px;margin:0}
 body.v2 .guide-page dl.ui-facts>div{display:grid;grid-template-columns:minmax(0,200px) minmax(0,1fr);gap:4px 16px;padding-top:12px;border-top:1px solid var(--line)}
 body.v2 .guide-page dl.ui-facts>div:first-child{padding-top:0;border-top:0}
-body.v2 .guide-page dl.ui-facts dt{font-size:14px;color:var(--ink3)}
+body.v2 .guide-page dl.ui-facts dt{font-size:14px;color:var(--ink3);min-width:0;overflow-wrap:anywhere}
 body.v2 .guide-page dl.ui-facts dd{margin:0;font-size:16px;line-height:1.5;white-space:pre-line;overflow-wrap:anywhere}
+body.v2 .guide-page #guest-preview dl.ui-facts>div{grid-template-columns:minmax(0,1fr)}
 body.v2 .guide-page .guide-photos{list-style:none;margin:0 0 16px;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
 body.v2 .guide-page .guide-photo{margin:0;display:flex;flex-direction:column;gap:6px;min-width:0}
 body.v2 .guide-page .guide-photo img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
