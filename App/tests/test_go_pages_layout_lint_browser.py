@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
 os.environ.setdefault("UBYHOST_APIFY_TOKEN", "harness-apify-token")
 
@@ -18,9 +19,12 @@ else:
 
 from tests.browser_support import chromium_launch_kwargs
 from tests.go_web_harness import (
+    LINT,
+    SHOT_WIDTHS,
     assert_no_layout_findings,
     lint_go_paths,
     register_static_routes,
+    settle_motion,
 )
 
 GO_PATHS = {
@@ -152,6 +156,63 @@ def test_go_guide_import_public_url_states_pass_the_lint(go_web, go_cookie):
                 shot_labels={label: f"guide-import-url-{label}"},
             )
         )
+    assert_no_layout_findings(findings)
+
+
+def test_go_guide_external_link_states_pass_the_lint(go_web, go_cookie):
+    apt = go_web["apartment_id"]
+    base = go_web["base_url"]
+    guide = f"/apartments/{apt}/guide"
+    guide_hash = guide + "#external"
+    findings: list[dict] = []
+    out = Path(os.environ.get("UBYHOST_SHOTS_DIR", "/tmp/shots1664")) / "layout-lint"
+    out.mkdir(parents=True, exist_ok=True)
+
+    def run_lint(page, label: str) -> None:
+        page.wait_for_load_state("networkidle")
+        settle_motion(page)
+        page.evaluate("window.scrollTo(0, 0)")
+        for item in page.evaluate(LINT):
+            findings.append({"route": label, "width": page.viewport_size["width"], "finding": item})
+        width = page.viewport_size["width"]
+        page.screenshot(path=str(out / f"guide-external-{label}-{width}.png"), full_page=True)
+
+    with sync_api.sync_playwright() as playwright:
+        browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        for width in SHOT_WIDTHS:
+            context = browser.new_context(viewport={"width": width, "height": 1200})
+            register_static_routes(context)
+            context.add_cookies(
+                [
+                    {"name": "ubyhost_session", "value": go_cookie, "url": base + "/"},
+                    {"name": "ubyhost_lang", "value": "en", "url": base + "/"},
+                ]
+            )
+            page = context.new_page()
+            with psycopg.connect(go_web["database_url"]) as conn, conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE apartment SET guide_external_url = NULL WHERE id = %s", (apt,)
+                )
+                conn.commit()
+            response = page.goto(f"{base}{guide_hash}")
+            assert response and response.status < 400
+            run_lint(page, "empty")
+
+            page.goto(f"{base}{guide}")
+            page.fill('input[name="guide_external_url"]', "https://www.notion.so/page")
+            page.locator("#external form button.ui-btn-secondary").click()
+            page.wait_for_load_state("networkidle")
+            response = page.goto(f"{base}{guide_hash}")
+            assert response and response.status < 400
+            run_lint(page, "saved")
+
+            page.goto(f"{base}{guide_hash}")
+            page.fill('input[name="guide_external_url"]', "https://h.cz:8443")
+            page.locator("#external form button.ui-btn-secondary").click()
+            page.wait_for_load_state("networkidle")
+            run_lint(page, "error")
+            context.close()
+        browser.close()
     assert_no_layout_findings(findings)
 
 

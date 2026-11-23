@@ -61,6 +61,14 @@
 <div class="ui-form-actions">{{ui_button (t "guest_guide.leon.open") "secondary" (kv "href" (printf "/apartments/%d/leon" .Apartment.ID))}}</div>
 {{guide_section_close}}
 {{end}}
+{{guide_section_open "external" (t "guest_guide.external.title") (help_tip "guide-external-help" (t "guest_guide.external.help"))}}
+{{if .ExternalHost}}<p class="ui-sub" data-guide-external>{{t "guest_guide.external.current" "host" .ExternalHost}}</p>{{end}}
+<form method="post" action="{{.Base}}/external">
+<input type="hidden" name="_csrf" value="{{csrf}}">
+{{ui_field "guide-external-url" (t "guest_guide.external.label") (kv "name" "guide_external_url" "type" "url" "value" .ExternalURL "placeholder" "https://" "attrs" (safe `maxlength="2048" inputmode="url"`))}}
+<div class="ui-form-actions">{{ui_button (t "guest_guide.external.save") "secondary" (kv "type" "submit")}}{{if .ExternalHost}}{{ui_button (t "guest_guide.external.clear") "quiet" (kv "type" "submit" "attrs" (safe `name="action" value="clear"`))}}{{end}}</div>
+</form>
+{{guide_section_close}}
 {{if not .ImportFirst}}{{template "guide.import_section" .}}{{end}}
 
 {{guide_section_open "add-card" (t "guest_guide.add.title") ""}}
