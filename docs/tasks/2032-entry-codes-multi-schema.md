@@ -131,7 +131,7 @@ Stop if: 00023 is already taken; the schema golden changes anything but the new 
 
 ## 9. Report
 
-`docs/tasks/2032-report.md` (≤600 tokens), `Status: review`, one PR.
+`docs/tasks/2032-entry-codes-multi-schema-report.md` (≤600 tokens), `Status: review`, one PR.
 
 ## Risk list (for the reviewer)
 
