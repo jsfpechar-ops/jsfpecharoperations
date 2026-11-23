@@ -349,11 +349,33 @@ STRIPE_MONTHLY_API_CALLS = int(os.environ.get("UBYHOST_STRIPE_MONTHLY_API_CALLS"
 # set to 1. While on, host nav and routes for /payments* and booking-site setup
 # answer 404; mail expire_requests and stripe_sweep stop. Data and
 # POST /webhooks/stripe are unchanged.
-PAYMENTS_HIDDEN = os.environ.get("UBYHOST_PAYMENTS_HIDDEN", "0").strip().lower() in (
+PAYMENTS_RETIRED = os.environ.get("UBYHOST_PAYMENTS_RETIRED", "0").strip().lower() in (
     "1",
     "true",
     "yes",
 )
+PAYMENTS_HIDDEN = PAYMENTS_RETIRED or os.environ.get(
+    "UBYHOST_PAYMENTS_HIDDEN", "0"
+).strip().lower() in (
+    "1",
+    "true",
+    "yes",
+)
+
+
+def _payments_retired_booking_path_blocked(path: str) -> bool:
+    if not path.startswith("/p/"):
+        return False
+    rest = path[3:]
+    if not rest:
+        return False
+    slash = rest.find("/")
+    if slash < 0:
+        return False
+    suffix = rest[slash:]
+    if suffix in ("/book", "/checkout", "/thanks"):
+        return True
+    return suffix.startswith("/b/")
 
 
 def payments_host_path_blocked(path: str) -> bool:
@@ -366,6 +388,11 @@ def payments_host_path_blocked(path: str) -> bool:
         return True
     if path.startswith("/apartments/") and "/booking-site" in path:
         return True
+    if PAYMENTS_RETIRED:
+        if path.startswith("/pay/"):
+            return True
+        if _payments_retired_booking_path_blocked(path):
+            return True
     return False
 
 
