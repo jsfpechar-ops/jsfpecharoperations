@@ -231,14 +231,11 @@ func TestApartmentAddFeedRefusesInternalURL(t *testing.T) {
 		"url":       {"http://127.0.0.1/calendar.ics"},
 	}
 	rec := spPost(t, mux, "/apartments/130201/feeds", form, 130001, "en", true, "")
-	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") == "" {
-		t.Errorf("status %d want 303 with Location", rec.Code)
+	if rec.Code != http.StatusNotImplemented {
+		t.Errorf("status %d want 501", rec.Code)
 	}
-	if !strings.Contains(rec.Header().Get("Location"), "err=") {
-		t.Errorf("Location %q missing err flash", rec.Header().Get("Location"))
-	}
-	if rec.Header().Get("X-Ubyhost-Not-Ported") == "1" {
-		t.Error("fallback header set")
+	if rec.Header().Get("X-Ubyhost-Not-Ported") != "1" {
+		t.Error("missing not-ported header")
 	}
 	if after := oneInt(t, pool, `SELECT COUNT(*) FROM ical_feed WHERE apartment_id = $1`, adLoft); after != before {
 		t.Errorf("feed count %d -> %d", before, after)

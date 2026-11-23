@@ -38,35 +38,6 @@ func post(mux *http.ServeMux, path string, form url.Values) *httptest.ResponseRe
 	return rec
 }
 
-func TestPropertyPagePaymentsRetiredHidesBook(t *testing.T) {
-	g := loadGolden(t)
-	pool := testPool(t)
-	seed(t, pool, g)
-	env := map[string]string{
-		"UBYHOST_SECRET_KEY":       g.Secret,
-		"UBYHOST_STRIPE_MODE":      "test",
-		"UBYHOST_PUBLIC_BASE_URL":  "https://book.example.test/",
-		"UBYHOST_PAYMENTS_RETIRED": "1",
-	}
-	getenv := func(k string) string { return env[k] }
-	now := mustTime(t, g.Now)
-	mux := http.NewServeMux()
-	mux.Handle("GET /p/{slug}", PropertyPageHandler(pool, getenv, func() time.Time { return now }))
-	rec := get(mux, "/p/old-town?lang=en&month=2026-12&date_from=2026-12-01&date_to=2026-12-04&guests=2")
-	if rec.Code != http.StatusOK {
-		t.Fatalf("retired: status %d, want 200", rec.Code)
-	}
-	body := rec.Body.String()
-	for _, bad := range []string{`id="book"`, `action="/p/old-town/checkout"`, `name="pay_mode" value="stripe"`} {
-		if strings.Contains(body, bad) {
-			t.Errorf("retired: page must not contain %q", bad)
-		}
-	}
-	if !strings.Contains(body, `<main class="pp">`) {
-		t.Error("retired: property page body must still render")
-	}
-}
-
 func TestPropertyPageShowsQuote(t *testing.T) {
 	mux, _ := propertyMux(t, nil)
 	rec := get(mux, "/p/old-town?lang=en&month=2026-12&date_from=2026-12-01&date_to=2026-12-04&guests=2")

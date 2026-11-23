@@ -10,7 +10,6 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/appconfig"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/calendar"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/palette"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/payments"
@@ -20,14 +19,7 @@ import (
 
 // registerWeb registers the web routes on mux.
 func registerWeb(mux *http.ServeMux, m *metrics, pool *pgxpool.Pool) {
-	stripeWebhook := payments.WebhookHandler(pool, os.Getenv, time.Now)
-	mux.Handle("POST /webhooks/stripe", m.wrap("/webhooks/stripe", func(w http.ResponseWriter, r *http.Request) {
-		if appconfig.PaymentsRetired(os.Getenv) {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-		stripeWebhook(w, r)
-	}))
+	mux.Handle("POST /webhooks/stripe", m.wrap("/webhooks/stripe", payments.WebhookHandler(pool, os.Getenv, time.Now)))
 	onboarder := payments.NewStripeOnboarder(pool, os.Getenv, time.Now)
 	mux.Handle("GET /payments/connect/start", m.wrap("/payments/connect/start", payments.ConnectStartHandler(pool, os.Getenv, time.Now, onboarder)))
 	mux.Handle("POST /payments/connect/start", m.wrap("/payments/connect/start", payments.ConnectStartHandler(pool, os.Getenv, time.Now, onboarder)))

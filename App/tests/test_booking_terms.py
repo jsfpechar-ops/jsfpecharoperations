@@ -75,14 +75,15 @@ def test_terms_english_sets_no_cookie():
     assert 'lang="en"' in response.text
 
 
-@pytest.mark.parametrize("lang, note", [
-    ("cs", "Rezervace je momentálně nedostupná"),
-    ("en", "Booking is currently unavailable"),
+@pytest.mark.parametrize("lang, names", [
+    ("cs", ("Nevratná", "Flexibilní", "Střední")),
+    ("en", ("Non-refundable", "Flexible", "Moderate")),
 ])
-def test_terms_show_unavailable_note(lang, note):
+def test_terms_name_all_three_policies(lang, names):
     response = TestClient(app).get(f"/terms/booking?lang={lang}")
     assert response.status_code == 200
-    assert note in response.text
+    for name in names:
+        assert name in response.text
 
 
 def test_checkout_page_links_to_terms(published):

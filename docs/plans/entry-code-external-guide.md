@@ -28,19 +28,18 @@ Goal: a host-typed building/gate entry code and an optional external (e.g. Notio
 | [1660](../tasks/1660-schema-check-goose-only-columns.md) | Schema checks accept goose-only columns | done (#1094) | none | A |
 | [1661](../tasks/1661-entry-code-schema.md) | Goose 00022 columns + export guard | done (#1095) | 1660 | A |
 | [1662](../tasks/1662-entry-code-retention.md) | Retention step `entry_codes` (Go + Python twin for the golden) | done (#1095) | 1661 | A |
-| [1663](../tasks/1663-go-mail-entry-code-marker.md) | Go mail indexed markers `{{entry_code_1..3}}` | review (#1278) | none | B |
-| [1668](../tasks/1668-go-pages-layout-lint-harness.md) | Browser harness: layout lint + 390/768/1280 screenshots on Go pages (local Go binary, no staging) | in progress: harness done, findings fixed by 2038 | none | B |
-| [2038](../tasks/2038-go-guide-lint-fixes.md) | Fix the 1668 findings: Leon help tip, one save button on the card | in progress (1668 branch) | 1668 | B |
+| [1663](../tasks/1663-go-mail-entry-code-marker.md) | Go mail indexed markers `{{entry_code_1..3}}` | **todo, runnable now** | none | B |
+| [1668](../tasks/1668-go-pages-layout-lint-harness.md) | Browser harness: layout lint + 390/768/1280 screenshots on Go pages (local Go binary, no staging) | **todo, runnable now** | none | B |
 | [1664](../tasks/1664-go-guide-external-url.md) | Go guide editor: external link field | todo after 1661 and 1668 | 1661, 1668 | B |
 | [1665](../tasks/1665-host-ui-entry-code-field.md) | Settings-page entry codes | replaced by 2036 | none | none |
 | [1666](../tasks/1666-stay-page-access-guide-blocks.md) | Go stay page blocks | blocked | 1661, 2032, 2036, 1664, 1668 (guest paths), guest registration port | B |
 | [1667](../tasks/1667-completion-receipt-entry-code-guide.md) | Go completion receipt | blocked | 1661, 2032, 2036, 1663, 1664, guest registration port, Go `mail` job live | B |
-| [2032](../tasks/2032-entry-codes-multi-schema.md) | Goose 00023 `apartment_entry_code` (3 codes), retention, guard | review (#1281) | 1661, 1662 | A |
+| [2032](../tasks/2032-entry-codes-multi-schema.md) | Goose 00023 `apartment_entry_code` (3 codes), retention, guard | **todo, runnable now** | 1661, 1662 | A |
 | [2033](../tasks/2033-guest-finish-guide-block.md) | Guest post-submit "Your guide" block | blocked | 1664, 1668, guest registration port | B |
-| [2035](../tasks/2035-guide-import-code-filter.md) | Code filter for imported guide text | review (#1280) | none | B |
+| [2035](../tasks/2035-guide-import-code-filter.md) | Code filter for imported guide text | **todo, runnable now** | none | B |
 | [2034](../tasks/2034-guide-import-public-url.md) | Guide import from a public URL (Notion), drafts, codes left out | todo after 2035 | 2035, 1668 | B |
 | [2036](../tasks/2036-go-apartment-access-page.md) | Go page `/apartments/{id}/access`: entry codes, guest preview, door-code status | todo after 2032, 1668 | 2032, 1668 | B |
-| [2037](../tasks/2037-leon-entry-code-pointer.md) | Leon: code questions go to host, fixed email/stay-page text, no code in prompt | blocked: guest Leon port (draft #1282) | 2035 | B |
+| [2037](../tasks/2037-leon-entry-code-pointer.md) | Leon: code questions go to host, fixed email/stay-page text, no code in prompt | todo after 2035 | 2035 | B |
 
 ## Proof it looks good (owner 2026-11-14)
 

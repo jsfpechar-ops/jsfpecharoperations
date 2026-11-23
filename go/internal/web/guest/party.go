@@ -370,18 +370,8 @@ func partySizeHandler(d partyDeps) http.HandlerFunc {
 		if !ok {
 			return
 		}
-		lang := langFromRequest(r)
-		apartment, link, early := OpenLink(r, d.pool, token, lang)
-		if early != nil {
-			early.ServeHTTP(w, r)
-			return
-		}
-		token = link
-		gate := stayClaimDeps{pool: d.pool, getenv: d.getenv, now: d.now}
-		if gate.pinRedirect(w, r, token, lang, resID) {
-			return
-		}
-		stay, found, err := d.loadPartyStay(r.Context(), apartment.PermalinkToken, resID)
+		lang := r.URL.Query().Get("lang")
+		stay, found, err := d.loadPartyStay(r.Context(), token, resID)
 		if err != nil {
 			http.Error(w, "server error", http.StatusInternalServerError)
 			return
