@@ -70,3 +70,21 @@ func TestNoticeValueSameDay(t *testing.T) {
 		t.Fatalf("%q", got)
 	}
 }
+
+func TestBookingSiteSetupTemplateChrome(t *testing.T) {
+	raw, err := os.ReadFile("templates/booking_site_setup.tmpl")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(raw)
+	for _, bad := range []string{`define "booking_site_setup.head"`, `<p class="sub">{{.Apartment}}</p>`} {
+		if strings.Contains(s, bad) {
+			t.Fatalf("still has %q", bad)
+		}
+	}
+	for _, want := range []string{`define "booking_site_setup.meta"`, `ui_banner "attention"`} {
+		if !strings.Contains(s, want) {
+			t.Fatalf("missing %q", want)
+		}
+	}
+}

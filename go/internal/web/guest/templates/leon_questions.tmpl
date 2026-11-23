@@ -1,0 +1,56 @@
+{{define "guest_questions.html.title"}}{{end}}
+{{define "guest_questions.html"}}
+<div class="settings-lane">
+<div class="airbnb-header">
+  <a class="airbnb-back" href="/apartments/{{.ApartmentID}}/guide" aria-label="{{lqT .Lang "common.back"}}">{{icon "arrow-left" 20}}</a>
+  <h1 class="airbnb-title">{{lqT .Lang "guest_questions.title"}}</h1>
+</div>
+{{if not .Questions}}
+{{ui_empty (lqT .Lang "guest_questions.empty.title") (lqT .Lang "guest_questions.empty.body") (lqT .Lang "guest_guide.title") (printf "/apartments/%d/guide" .ApartmentID)}}
+{{else}}
+<div class="settings-value-card">
+  <span class="settings-value-label">{{lqT .Lang "guest_questions.title"}}</span>
+  <strong class="settings-value">{{if gt .OpenCount 0}}{{lqT .Lang "guest_questions.open" "n" .OpenCount}}{{else}}{{lqT .Lang "guest_questions.none_open"}}{{end}}</strong>
+</div>
+<table class="ui-table" aria-label="{{lqT .Lang "guest_questions.title"}}">
+<thead><tr><th>{{lqT .Lang "guest_questions.col.question"}}</th><th>{{lqT .Lang "guest_questions.col.state"}}</th></tr></thead>
+<tbody>{{range .Questions}}
+<tr class="ui-row clickable-row" data-href="{{$.Base}}/{{.ID}}" tabindex="0" role="link">
+  <td><a href="{{$.Base}}/{{.ID}}">{{if .Summary}}{{.Summary}}{{else}}{{.Question}}{{end}}</a></td>
+  <td>{{if eq .Door "qr"}}{{lqT $.Lang "guest_questions.door.qr"}}{{else}}{{lqT $.Lang "guest_questions.door.stay"}}{{end}} · {{lqT $.Lang (printf "guest_questions.state.%s" .Status)}}</td>
+</tr>
+{{end}}</tbody>
+</table>
+{{end}}
+</div>
+{{end}}
+{{define "guest_question.html.title"}}{{end}}
+{{define "guest_question.html"}}
+<div class="settings-lane">
+<div class="airbnb-header">
+  <a class="airbnb-back" href="{{.Base}}" aria-label="{{lqT .Lang "common.back"}}">{{icon "arrow-left" 20}}</a>
+  <h1 class="airbnb-title">{{lqT .Lang "guest_question.title"}}</h1>
+</div>
+{{if .Error}}{{ui_banner "attention" (lqT .Lang .Error)}}{{end}}
+<p class="ui-sub">{{lqT .Lang "guest_question.asked"}}</p>
+<blockquote class="guest-q">{{.QuestionText}}</blockquote>
+{{if .Summary}}<p><strong>{{lqT .Lang "guest_question.summary"}}</strong> {{.Summary}}</p>{{end}}
+<form method="post" action="{{.Base}}/{{.QuestionID}}">
+<input type="hidden" name="_csrf" value="{{csrf}}">
+<label class="ui-field" for="answer"><span>{{lqT .Lang "guest_question.your_answer"}}</span>
+<textarea class="ui-input" id="answer" name="answer" rows="6" maxlength="{{.MaxChars}}" placeholder="{{lqT .Lang "guest_question.answer_placeholder"}}">{{.AnswerDraft}}</textarea></label>
+<div class="ui-form-actions">
+<button class="ui-btn ui-btn-primary" type="submit">{{lqT .Lang "guest_question.send"}}</button>
+<button class="ui-btn ui-btn-secondary" formaction="{{.Base}}/{{.QuestionID}}/dismiss" formmethod="post">{{lqT .Lang "guest_question.dismiss"}}</button>
+</div>
+</form>
+{{if .Answered}}
+<form method="post" action="{{.Base}}/{{.QuestionID}}/card">
+<input type="hidden" name="_csrf" value="{{csrf}}">
+<label class="ui-field" for="topic"><span>{{lqT .Lang "guest_question.topic"}}</span>
+<select class="ui-input" id="topic" name="topic">{{range .Topics}}<option value="{{.}}">{{.}}</option>{{end}}</select></label>
+<div class="ui-form-actions"><button class="ui-btn ui-btn-secondary" type="submit">{{lqT .Lang "guest_question.add_to_guide"}}</button></div>
+</form>
+{{end}}
+</div>
+{{end}}

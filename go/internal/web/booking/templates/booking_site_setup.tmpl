@@ -1,11 +1,9 @@
 {{define "booking_site_setup.back_label"}}{{t "payments.page.title"}}{{end}}
-{{define "booking_site_setup.head"}}<p class="sub">{{.Apartment}}</p>{{end}}
+{{define "booking_site_setup.title"}}{{t "bsite.title"}}{{end}}
+{{define "booking_site_setup.meta"}}{{.Apartment}}{{end}}
 {{define "booking_site_setup"}}
 {{if not .Allowed}}
-<div class="ui-banner ui-banner-attention" data-tone="attention">
-  <p>{{t "bsite.max_only"}}</p>
-  <p><a class="ui-btn ui-btn-primary" href="/predplatne">{{t "bsite.max_cta"}}</a></p>
-</div>
+{{ui_banner "attention" (t "bsite.max_only") (t "bsite.max_cta") "/predplatne"}}
 {{else}}
 <div class="ui-section">
   <h2>{{.StepsTitle}}</h2>
