@@ -20,6 +20,13 @@ func TestPartyStartClaimMailOn(t *testing.T) {
 		return
 	}
 	secret := strings.Repeat("k", 32)
+	t.Setenv("UBYHOST_SECRET_KEY", secret)
+	t.Setenv("UBYHOST_GUEST_PIN", "0")
+	t.Setenv("UBYHOST_MAIL_BACKEND", "console")
+	t.Setenv("UBYHOST_PUBLIC_BASE_URL", "https://ubyhost.example")
+	dataKey := base64.URLEncoding.EncodeToString(bytes.Repeat([]byte{7}, 32))
+	t.Setenv("UBYHOST_DATA_KEYS", dataKey)
+	t.Setenv("UBYHOST_DATA_KEY_LEGACY", "0")
 	getenv := func(k string) string {
 		switch k {
 		case "UBYHOST_SECRET_KEY":
