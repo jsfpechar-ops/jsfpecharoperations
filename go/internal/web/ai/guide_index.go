@@ -11,6 +11,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -223,6 +224,8 @@ type guideIndexData struct {
 	QuestionsOpen int64
 	Usage         guideUsage
 	UsageLangs    string
+	ExternalURL   string
+	ExternalHost  string
 }
 
 // index is GET /apartments/{id}/guide.
@@ -253,6 +256,14 @@ func (s *guideServer) buildIndex(w http.ResponseWriter, r *http.Request, q *guid
 		return err
 	}
 	d := guideIndexData{Apartment: a, Base: q.base(), Progress: guideProgressOf(rows), NextID: guideNextOpen(rows, 0)}
+	if err := s.pool.QueryRow(ctx, `SELECT COALESCE(guide_external_url, '') FROM apartment WHERE id = $1`, a.ID).Scan(&d.ExternalURL); err != nil {
+		return err
+	}
+	if d.ExternalURL != "" {
+		if u, err := url.Parse(d.ExternalURL); err == nil {
+			d.ExternalHost = strings.ToLower(u.Hostname())
+		}
+	}
 	for _, topic := range guideTopics {
 		var cards []guideRow
 		for _, row := range rows {
