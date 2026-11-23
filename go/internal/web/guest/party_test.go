@@ -56,6 +56,32 @@ func loadPartyGolden(t *testing.T) partyGolden {
 	return g
 }
 
+func TestPartyMailEnabled(t *testing.T) {
+	env := map[string]string{}
+	lookup := func(k string) string { return env[k] }
+	if partyMailEnabled(lookup) {
+		t.Fatal("empty off")
+	}
+	env["UBYHOST_MAIL_BACKEND"] = "ses"
+	env["UBYHOST_SES_REGION"] = "eu-central-1"
+	if !partyMailEnabled(lookup) {
+		t.Fatal("ses backend on")
+	}
+	delete(env, "UBYHOST_MAIL_BACKEND")
+	env["AWS_SES_REGION"] = "eu-central-1"
+	if partyMailEnabled(lookup) {
+		t.Fatal("legacy AWS_SES_REGION alone must not enable")
+	}
+	env["UBYHOST_MAIL_BACKEND"] = "console"
+	if !partyMailEnabled(lookup) {
+		t.Fatal("console on")
+	}
+	env["UBYHOST_MAIL_ENABLED"] = "off"
+	if partyMailEnabled(lookup) {
+		t.Fatal("UBYHOST_MAIL_ENABLED off")
+	}
+}
+
 func TestHeadcountLeadLiveEnv(t *testing.T) {
 	if headcountLeadLive(func(string) string { return "" }) {
 		t.Fatal("empty off")

@@ -73,7 +73,7 @@ func partyMailEnabled(getenv func(string) string) bool {
 	if v == "0" || v == "false" || v == "no" || v == "off" {
 		return false
 	}
-	return getenv("UBYHOST_SMTP_HOST") != "" || getenv("AWS_SES_REGION") != ""
+	return mailEnabled(getenv)
 }
 
 // redirectGuest is guest.py _with_lang(RedirectResponse(...)): the language
