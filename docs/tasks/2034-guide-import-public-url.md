@@ -114,7 +114,7 @@ Stop if: 2035 is not on main; the next migration number is taken; Python branche
 
 ## 9. Report
 
-`docs/tasks/2034-report.md` (≤600 tokens), `Status: review`, one PR. State plainly that the Notion fetch was not run against real Apify.
+`docs/tasks/2034-guide-import-public-url-report.md` (≤600 tokens), `Status: review`, one PR. State plainly that the Notion fetch was not run against real Apify.
 
 ## Risk list (for the reviewer)
 
