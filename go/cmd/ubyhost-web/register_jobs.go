@@ -13,7 +13,6 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/appconfig"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/billing"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/calendar"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ical"
@@ -23,19 +22,6 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/posthog"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/pushsend"
 )
-
-const paymentsRetiredSkipMsg = "job skipped: payments retired"
-
-// paymentJobKinds are not enqueued or run when UBYHOST_PAYMENTS_RETIRED is set.
-var paymentJobKinds = map[string]bool{"stripe_sweep": true}
-
-func skipPaymentJobIfRetired(getenv func(string) string, kind string) bool {
-	if !paymentJobKinds[kind] || !appconfig.PaymentsRetired(getenv) {
-		return false
-	}
-	slog.Info(paymentsRetiredSkipMsg, "job", kind)
-	return true
-}
 
 // jobIntervals are the schedule intervals (minutes) that cap a retry backoff.
 var jobIntervals = map[string]int{"billing_snapshot": 24 * 60, "stripe_sweep": 24 * 60, "ical": 60, "push": 1, "posthog": 15, "meta_capi": 10, "deadlines": 30}
@@ -47,9 +33,6 @@ func jobHandlers(pool *pgxpool.Pool) map[string]jobs.Handler {
 			return billing.WriteMonthSnapshot(ctx, pool, time.Now().UTC().Format("2006-01"), jobs.Now(0))
 		},
 		"stripe_sweep": func(ctx context.Context) (int, error) {
-			if skipPaymentJobIfRetired(os.Getenv, "stripe_sweep") {
-				return 0, nil
-			}
 			expired, deleted, err := payments.Sweep(ctx, pool, time.Now().UTC(), jobs.Now(0))
 			return expired + deleted, err
 		},

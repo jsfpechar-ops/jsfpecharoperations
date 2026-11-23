@@ -439,9 +439,6 @@ def _job_billing_snapshot() -> None:
 
 def _job_stripe_sweep() -> None:
     """Expire stale payment requests and prune webhook dedupe rows (0437)."""
-    if config.PAYMENTS_RETIRED:
-        log.info("job skipped: payments retired")
-        return
     if config.PAYMENTS_HIDDEN:
         return
     import datetime

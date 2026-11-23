@@ -966,9 +966,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "flash.error.connection_failed": (
             "The connection test failed. Check the web-service login and try again."
         ),
-        "flash.error.not_saved_here": (
-            "This change could not be saved from here. Reload the page and try again."
-        ),
         "flash.error.entity_has_properties": (
             "Detach or archive the properties linked to this operator first."
         ),
@@ -3181,9 +3178,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "flash.error.letter_test_unreachable": "Uloženo. Policejní služba teď není dostupná, přihlášení se neověřilo. Otestujte později.",
         "flash.error.connection_failed": (
             "Test spojení se nezdařil. Zkontrolujte přihlašovací údaje k webové službě a zkuste to znovu."
-        ),
-        "flash.error.not_saved_here": (
-            "Tuto změnu se odsud nepodařilo uložit. Načtěte stránku znovu a zkuste to znovu."
         ),
         "flash.error.entity_has_properties": (
             "Nejprve odpojte nebo archivujte ubytování přiřazená tomuto provozovateli."

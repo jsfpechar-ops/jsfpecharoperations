@@ -76,7 +76,6 @@ func apartmentNewWorld(t *testing.T, pool *pgxpool.Pool) {
 
 func apartmentNewGet(mux http.Handler, query string, user, workspace int64, lang string) *httptest.ResponseRecorder {
 	req := httptest.NewRequest(http.MethodGet, "/apartments/new"+query, nil)
-	req.Header.Set("Accept", "text/html")
 	apartmentNewSignIn(req, user, workspace, lang)
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
@@ -149,14 +148,14 @@ func TestApartmentNewPage(t *testing.T) {
 			[]string{`<input type="hidden" name="copy_from" value="130203">`, `Copied from Old archived.`}, nil},
 		{"copy with operator override", 130001, 0, "en", "?copy_from=130201&legal_entity_id=130102", 200,
 			[]string{`<option value="130102" selected>Beta &amp; Sons &lt;s.r.o.&gt;</option>`}, []string{`<option value="130101" selected>`}},
-		{"copy from another host", 130001, 0, "en", "?copy_from=130204", 404, []string{`<h1 class="big">Page not found</h1>`, `href="/"`}, []string{`Other host`}},
-		{"copy from a missing id", 130001, 0, "en", "?copy_from=999999", 404, []string{`<h1 class="big">Page not found</h1>`, `href="/"`}, nil},
+		{"copy from another host", 130001, 0, "en", "?copy_from=130204", 404, []string{`Not found.`}, []string{`Other host`}},
+		{"copy from a missing id", 130001, 0, "en", "?copy_from=999999", 404, []string{`Not found.`}, nil},
 		{"copy id not a number", 130001, 0, "en", "?copy_from=abc", 200, nil, []string{`name="copy_from" value=`}},
 		{"copy id zero", 130001, 0, "en", "?copy_from=0", 200, nil, []string{`name="copy_from" value=`}},
-		{"copy id past 64 bits", 130001, 0, "en", "?copy_from=99999999999999999999", 404, []string{"Page not found"}, nil},
+		{"copy id past 64 bits", 130001, 0, "en", "?copy_from=99999999999999999999", 501, nil, nil},
 		{"admin previews host A", 130003, 130001, "en", "?copy_from=130201", 200,
 			[]string{`<input type="hidden" name="copy_from" value="130201">`, `<option value="130101" selected>Alpha Co</option>`}, nil},
-		{"admin previews host B", 130003, 130002, "en", "?copy_from=130201", 404, []string{`<h1 class="big">Page not found</h1>`, `href="/"`}, nil},
+		{"admin previews host B", 130003, 130002, "en", "?copy_from=130201", 404, []string{`Not found.`}, nil},
 		{"admin previews host B list", 130003, 130002, "en", "", 200,
 			[]string{`<option value="130104" selected>Other Co</option>`, `<option value="130204">Other host</option>`}, []string{`Alpha Co`, `Loft`}},
 		{"host B sees only its own", 130002, 0, "en", "", 200,
@@ -182,6 +181,14 @@ func TestApartmentNewPage(t *testing.T) {
 		case 303:
 			if got := rec.Header().Get("Location"); !strings.HasPrefix(got, "/login") {
 				t.Errorf("%s: Location %q", c.name, got)
+			}
+		case 404:
+			if body != "Not found." {
+				t.Errorf("%s: 404 body %q", c.name, body)
+			}
+		case 501:
+			if rec.Header().Get("X-Ubyhost-Not-Ported") != "1" {
+				t.Errorf("%s: no X-Ubyhost-Not-Ported header", c.name)
 			}
 		case 200:
 			// the create form carries its own _csrf input right after the form tag

@@ -1,6 +1,7 @@
 # 2034: Guide import from a public URL (Notion first) — drafts only, codes left out
 
 Status: review
+Report: docs/tasks/2034-guide-import-public-url-report.md
 Depends on: 2035, 1668 | Base commit: fill from `git rev-parse --short HEAD` | Branch: task/2034-guide-import-public-url
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B (host page + outbound request + migration, so read the diff twice)
 
@@ -114,7 +115,7 @@ Stop if: 2035 is not on main; the next migration number is taken; Python branche
 
 ## 9. Report
 
-`docs/tasks/2034-guide-import-public-url-report.md` (≤600 tokens), `Status: review`, one PR. State plainly that the Notion fetch was not run against real Apify.
+`docs/tasks/2034-report.md` (≤600 tokens), `Status: review`, one PR. State plainly that the Notion fetch was not run against real Apify.
 
 ## Risk list (for the reviewer)
 

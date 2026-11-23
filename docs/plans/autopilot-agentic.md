@@ -62,7 +62,7 @@ Tier is the brief risk tier from [workflow](../context/workflow.md#roles-and-mod
 | Step | Deliverable | Done when |
 |---|---|---|
 | A1 | Go cutover finished ([remaining](go-full-move-remaining.md), [final](go-sqlite-final.md)) | Python serves no production route |
-| A2 (done 2026-11-22, brief 2029) | `UBYHOST_PAYMENTS_RETIRED`: payments/booking off; property page + iCal stay; webhook 2xx; jobs stop; billing stays; data kept | Owner flag after merge; guide + UbyPort unchanged |
+| A2 | Payments and Booking sites hidden: menu items removed (sidebar and tab bar), host routes `/payments*`, `/booking-sites`, `/apartments/{id}/booking-site*`, `/apartments/{id}/page*` and public `/pay/*`, property-page and booking routes answer 404 in Python and Go; `/webhooks/stripe` keeps answering 2xx so Stripe does not retry forever; scheduler jobs for bookings and payment requests stop; data kept | Both menu items gone at 390 and 1280 px; listed routes 404; guide and check-in unchanged; test-map rows for the touched pages green |
 | A3 | Real UbyPort test-service proof: NTLM, TLS, WS-Addressing, one accepted record, one duplicate, one rejected record | Receipts stored in the report; mock updated to match any difference found |
 | A4 | Legal copy shortened: Terms, DPA, subprocessors, guest notice lose Payments and booking text; Stripe leaves the subprocessor list if nothing else uses it | Lawyer pass; version bump triggers re-acceptance |
 | A5 | `docs/limitations.md` refreshed (it still says SQLite only, no Go) | Lint green |

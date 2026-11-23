@@ -12,10 +12,12 @@ package properties
 //     value that is not a step: no wizard form posts them here), and a save
 //     without setup_step whose return_to is under /apartments/{id}/setup/
 //     (refuse_fee_save draws the retired stay_fee wizard page for it);
-//   - stay_fee and door_lock wizard saves that refuse and re-render (2031);
+//   - the guest-pay block (as POST /apartments);
 //   - a non-ASCII digit or a 64-bit overflow in a number, and a
 //     stay_fee_rate_from that is set but not YYYY-MM-DD (Python's int(),
 //     str.isdigit() and date.fromisoformat() read more than this port does);
+//   - a refused council account posted with stay_fee_guest_operator_account
+//     (the guest-pay draft of refuse_fee_save).
 //
 // A refusal Python answers by drawing the page again (_refuse_apartment_save,
 // refuse_fee_save, operator_refresh) is refuseApartmentSave (brief 1702c2).
@@ -116,6 +118,10 @@ func (s *server) refuseApartmentSave(w http.ResponseWriter, r *http.Request, q *
 	legal, _ := apartmentFormInt(r, "legal_entity_id") // read once already: never refused here
 	controller, _ := apartmentFormInt(r, "data_controller_entity_id")
 	if ref.feeAccountError {
+		if has(r, "stay_fee_guest_operator_account") {
+			notPorted(w, "a refused council account with the guest-pay operator account (refuse_fee_save draft_account)")
+			return
+		}
 		// refuse_fee_save: the operator and controller only when posted, then fee_form_values.
 		if has(r, "legal_entity_id") {
 			draft.LegalEntityID = int64Of(legal)
@@ -219,8 +225,11 @@ func detailDraftField(a *detailApt, name string) *string {
 // Python, or "".
 func apartmentUpdateNotPorted(r *http.Request, id int64) string {
 	switch step := formStr(r, "setup_step"); {
-	case step == "stay_fee", step == "door_lock":
-		return "a setup_step that re-renders on refusal"
+	case step == "property" || step == "police":
+	case step != "":
+		return "a setup_step other than property or police"
+	case apartmentWizardReturn(r, id):
+		return "a return_to inside the setup wizard without setup_step"
 	}
 	for _, key := range apartmentNotPortedFields {
 		if has(r, key) {
@@ -320,22 +329,17 @@ func (s *server) apartmentUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if what := apartmentUpdateNotPorted(r, a.ID); what != "" {
-		returnTo := formReturnTo(r, fmt.Sprintf("/apartments/%d", a.ID), false)
-		q.back(w, r, returnTo, hostweb.Flash{}, smallPostsFlash(q, "flash.error.not_saved_here", nil))
+		notPorted(w, what)
 		return
 	}
 	apartmentLockTabHours(r, a)
 	pay, ok := newApartmentPayload(r)
 	if !ok {
-		hostweb.NotFoundPage(w, r)
+		notPorted(w, "a non-ASCII digit or an integer past 64 bits in the form")
 		return
 	}
-	switch step := wizardSetupStep(r); step {
-	case "property", "police":
+	if step := formStr(r, "setup_step"); step != "" {
 		s.apartmentWizardSave(w, r, q, p, a, step, pay)
-		return
-	case "calendar", "guest_link":
-		s.apartmentWizardStepSave(w, r, q, p, a, step, pay)
 		return
 	}
 	// _property_hour_changes: only the hours this form posted; "" is NULL.
@@ -452,15 +456,6 @@ func (s *server) apartmentUpdate(w http.ResponseWriter, r *http.Request) {
 			s.refuseApartmentSave(w, r, q, a, apartmentRefusal{feeAccountError: true})
 			return
 		}
-	}
-	cols, guestRef, err := s.validateGuestPaySave(ctx, r, q, a, cols)
-	if err != nil {
-		fail(w, err)
-		return
-	}
-	if guestRef != nil {
-		s.refuseGuestFeeSave(w, r, q, a, *guestRef)
-		return
 	}
 	// AR-18: only new credentials lift the refused-login pause.
 	credentialsChanged := pay.password != "" || pay.text["uby_ws_user"] != a.UbyWSUser

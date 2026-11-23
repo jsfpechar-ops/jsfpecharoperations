@@ -227,7 +227,7 @@ func (s *Pages) apartmentDetail(w http.ResponseWriter, r *http.Request) {
 	now := s.now()
 	id, valid := parseID(r.PathValue("id"))
 	if !valid {
-		hostweb.NotFoundPage(w, r)
+		notPorted(w, "a path id that is not a number")
 		return
 	}
 	host, err := hostweb.Login(w, r, s.pool, s.getenv, now)
@@ -240,7 +240,7 @@ func (s *Pages) apartmentDetail(w http.ResponseWriter, r *http.Request) {
 	}
 	copyID, ok := apartmentNewQueryInt(r, "copy_from")
 	if !ok {
-		hostweb.NotFoundPage(w, r)
+		notPorted(w, "a non-ASCII or oversized number in the query")
 		return
 	}
 	ctx := r.Context()
@@ -254,7 +254,8 @@ func (s *Pages) apartmentDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if a == nil {
-		hostweb.NotFoundPage(w, r)
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = w.Write([]byte("Not found."))
 		return
 	}
 	view := &detailView{Base: "/apartments/" + strconv.FormatInt(a.ID, 10), CopyFromID: copyID, CopyOpen: queryLast(r, "copy") == "choose"}
@@ -278,7 +279,8 @@ func (s *Pages) apartmentDetail(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if src == nil {
-			hostweb.NotFoundPage(w, r)
+			w.WriteHeader(http.StatusNotFound) // Response("Not found.", status_code=404)
+			_, _ = w.Write([]byte("Not found."))
 			return
 		}
 		view.CopiedName = src.InternalName

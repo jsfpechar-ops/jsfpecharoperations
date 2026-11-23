@@ -43,9 +43,10 @@ func RegisterLists(mux *http.ServeMux, wrap Wrap, pool *pgxpool.Pool, getenv fun
 	}
 }
 
-// notPorted answers a branch Go does not render yet with a plain 501; Caddy has
-// no Python fallback, so every call is user-visible (brief 2029).
+// notPorted answers a branch this package does not render yet (see the top).
+// The header X-Ubyhost-Not-Ported lets Caddy fall back to Python (brief 1630).
 func notPorted(w http.ResponseWriter, what string) {
+	// Caddy re-sends a GET/HEAD that carries this header to Python (brief 1630).
 	w.Header().Set("X-Ubyhost-Not-Ported", "1")
 	http.Error(w, "not served by Go yet: "+what, http.StatusNotImplemented)
 }
@@ -215,7 +216,7 @@ func (s *Pages) entities(w http.ResponseWriter, r *http.Request) {
 	edit := queryLast(r, "edit")
 	if editAsked(edit) && !allDigits(edit) {
 		// int() of a non-ASCII digit string is not reproduced.
-		hostweb.NotFoundPage(w, r)
+		notPorted(w, "the business editor (?edit= with a non-ASCII number)")
 		return
 	}
 	ctx := r.Context()
