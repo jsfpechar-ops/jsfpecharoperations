@@ -14,7 +14,7 @@
 #   scripts/merge-pr-on-green.sh <pr-number> [--merge|--squash|--rebase]
 #
 # Env: MERGE_GUARD_TIMEOUT (seconds, default 1800).
-# Env: MERGE_GUARD_MIN_CHECKS (default 12) — refuse to merge while gh shows
+# Env: MERGE_GUARD_MIN_CHECKS (default 13) — refuse to merge while gh shows
 #      fewer checks (stale partial list after force-push; see #1144).
 # Env: MERGE_GUARD_REQUIRED — space-separated required check names (default: go).
 set -euo pipefail
@@ -26,7 +26,7 @@ case "${METHOD}" in
   *) echo "unknown merge method: ${METHOD}" >&2; exit 2 ;;
 esac
 TIMEOUT="${MERGE_GUARD_TIMEOUT:-1800}"
-MIN_CHECKS="${MERGE_GUARD_MIN_CHECKS:-12}"
+MIN_CHECKS="${MERGE_GUARD_MIN_CHECKS:-13}"
 REQUIRED_CHECKS="${MERGE_GUARD_REQUIRED:-go}"
 
 command -v gh >/dev/null 2>&1 || { echo "gh is not installed" >&2; exit 2; }

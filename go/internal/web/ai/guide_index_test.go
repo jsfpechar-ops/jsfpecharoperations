@@ -167,3 +167,28 @@ func TestGuideIndexSwitchesAndCounts(t *testing.T) {
 		t.Error("the usage line is missing")
 	}
 }
+
+func TestGuideIndexLeonHelpInSectionHeading(t *testing.T) {
+	pool := guideTestPool(t)
+	owner := guideSeedUser(t, pool, "host1", "host")
+	apt := guideSeedApartment(t, pool, owner, "Flat")
+	on := map[string]string{"UBYHOST_APIFY_TOKEN": "t", "UBYHOST_AI_FEATURES": "leon", "UBYHOST_ANTHROPIC_API_KEY": "k"}
+	mux := guideTestMux(pool, on)
+	body := guideTestDo(t, mux, "GET", "/apartments/"+itoa64(apt)+"/guide", owner, nil).Body.String()
+	i := strings.Index(body, `id="leon"`)
+	if i < 0 {
+		t.Fatal("no leon section")
+	}
+	section := body[i:]
+	if j := strings.Index(section, "</section>"); j >= 0 {
+		section = section[:j]
+	}
+	h2end := strings.Index(section, "</h2>")
+	if h2end < 0 {
+		t.Fatal("Leon section has no h2")
+	}
+	h2 := section[:h2end]
+	if !strings.Contains(h2, `id="guide-leon-help"`) {
+		t.Error("guide-leon-help is not inside the Leon section heading")
+	}
+}

@@ -46,6 +46,7 @@ type guideCardData struct {
 	CardTitle string
 	DraftFrom string
 	Base      string
+	HasNext   bool
 }
 
 // guideCardTitle is card_title of the template.
@@ -68,8 +69,12 @@ func (s *guideServer) card(w http.ResponseWriter, q *guideReq, a *guideApartment
 		draft = item.Source
 	}
 	title := guideCardTitle(q.lang, item)
+	hasNext := false
+	if n, err := s.nextOpen(q.r.Context(), a.ID, item.ID); err == nil && n != 0 {
+		hasNext = true
+	}
 	data := guideCardData{Apartment: a, Item: item, Values: values, Error: errKey, Photos: photos, MaxPhotos: guideMaxPhotos,
-		FromLeon: fromLeon, Custom: item.Kind == "custom", CardTitle: title, DraftFrom: draft, Base: q.base()}
+		FromLeon: fromLeon, Custom: item.Kind == "custom", CardTitle: title, DraftFrom: draft, Base: q.base(), HasNext: hasNext}
 	page := layout.Page{
 		Title:    title + " · " + guideCatalog.T(q.lang, "guest_guide.title", nil) + " · UbyHost",
 		BodyKind: "form", V2: true, BackURL: q.base(),

@@ -44,8 +44,7 @@
 {{ui_field "guide-video" (t "guest_guide.field.video") (kv "name" "video_url" "value" .Values.VideoURL "type" "url" "help" (t "guest_guide.field.video_help") "optional" true "attrs" (safe `maxlength="500" inputmode="url"`))}}
 {{ui_select "guide-visibility" (t "guest_guide.field.visibility") (guide_pairs "everyone" (t "guest_guide.visibility.everyone") "booked" (t "guest_guide.visibility.booked") "host" (t "guest_guide.visibility.host")) (kv "selected" .Values.Visibility "name" "visibility" "help" (t "guest_guide.field.visibility_help"))}}
 <div class="ui-form-actions">
-{{ui_button (t "guest_guide.save_next") "primary" (kv "type" "submit" "attrs" (safe `name="then" value="next"`))}}
-{{ui_button (t "guest_guide.save") "secondary" (kv "type" "submit")}}
+{{if .HasNext}}{{ui_button (t "guest_guide.save_next") "primary" (kv "type" "submit" "attrs" (safe `name="then" value="next"`))}}{{else}}{{ui_button (t "guest_guide.save") "primary" (kv "type" "submit")}}{{end}}
 </div>
 </form>
 </section>
