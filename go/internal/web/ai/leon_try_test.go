@@ -255,7 +255,7 @@ func TestLeonGuestCardsAndPromptMatchPython(t *testing.T) {
 		leonSeedOwner(t, pool)
 		seedLeon(t, pool, sc.Rows, sc.Facts)
 		store := LeonStore{HavelStore{Pool: pool, Env: havelMapEnv(nil)}}
-		cards, err := store.GuestCards(context.Background(), 11)
+		cards, err := store.GuestCards(context.Background(), 11, "booked")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -278,8 +278,12 @@ func TestLeonGuestCardsAndPromptMatchPython(t *testing.T) {
 			continue
 		}
 		blocks := LeonSystemBlocks(cards, `Flat "A" <b>`)
-		if blocks[1] != sc.Block || havelSha(blocks[0]) != sc.Sha[0] || havelSha(blocks[1]) != sc.Sha[1] {
+		// blocks[0] includes Go-only ACCESS CODES; parity is on the Python base prompt only.
+		if blocks[1] != sc.Block || havelSha(leonCharacter) != sc.Sha[0] || havelSha(blocks[1]) != sc.Sha[1] {
 			t.Errorf("%s: system blocks differ from Python", sc.Name)
+		}
+		if !strings.Contains(blocks[0], "ACCESS CODES") {
+			t.Errorf("%s: live character must include ACCESS CODES (Go-only until Python is removed)", sc.Name)
 		}
 		for lang, want := range sc.Emergency {
 			if got := LeonEmergencyText(lang, cards); got != want {
@@ -357,7 +361,17 @@ func TestLeonTryReplyMatchesPython(t *testing.T) {
 				t.Errorf("%s call %d differs from Python: %+v", c.Name, i, call)
 			}
 			for j, b := range call.system {
-				if havelSha(b) != wc.SystemSha[j] {
+				wantSha := wc.SystemSha[j]
+				if j == 0 {
+					if havelSha(leonCharacter) != wantSha {
+						t.Errorf("%s call %d: base prompt block 0 differs from Python", c.Name, i)
+					}
+					if !strings.Contains(b, "ACCESS CODES") {
+						t.Errorf("%s call %d: live block 0 must include ACCESS CODES (Go-only)", c.Name, i)
+					}
+					continue
+				}
+				if havelSha(b) != wantSha {
 					t.Errorf("%s call %d: system block %d differs", c.Name, i, j)
 				}
 			}

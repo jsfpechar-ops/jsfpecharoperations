@@ -67,10 +67,6 @@ func TestLeonQuestionsSignedOutGolden(t *testing.T) {
 	}
 }
 
-func TestLeonGoneWithoutLiveGuide(t *testing.T) {
-	t.Skip("JSON gate parity is exercised when UBYHOST_TEST_DATABASE_URL is set in executor step 5")
-}
-
 func TestLeonQuestionsTemplateChrome(t *testing.T) {
 	raw, err := leonQuestionsFS.ReadFile("templates/leon_questions.tmpl")
 	if err != nil {

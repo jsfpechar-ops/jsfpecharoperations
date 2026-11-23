@@ -9,7 +9,7 @@ import (
 
 // serveGuidePhoto returns true when a JPEG was written.
 func (h *GuideHandlers) serveGuidePhoto(w http.ResponseWriter, r *http.Request, aptID int64, level string, itemID, photoID int64) bool {
-	items, err := h.store.GuestCards(r.Context(), aptID)
+	items, err := h.store.GuestCards(r.Context(), aptID, level)
 	if err != nil {
 		return false
 	}

@@ -43,7 +43,7 @@ func (h *GuideHandlers) renderGuidePage(w http.ResponseWriter, r *http.Request, 
 		LeonURL:  leonURL,
 	}
 	if live {
-		cards, err := h.store.GuestCards(r.Context(), apt.ID)
+		cards, err := h.store.GuestCards(r.Context(), apt.ID, level)
 		if err != nil {
 			access.unavailable(w, r, lang, "bad_link", http.StatusNotFound, "", 0, hardenedHeaders)
 			return

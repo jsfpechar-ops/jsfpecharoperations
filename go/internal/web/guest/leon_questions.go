@@ -21,6 +21,7 @@ import (
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/anthropic"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/clientip"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/guesthandoff"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb/layout"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/session"
@@ -42,7 +43,7 @@ var leonHarden = map[string]string{
 }
 
 var lqPathID = regexp.MustCompile(`^([+-]?[0-9]+(?:_[0-9]+)*)(?:\.0+)?$`)
-var lqClientID = regexp.MustCompile(`^[a-zA-Z0-9_-]{8,64}$`)
+var lqClientID = leonClientID
 
 // LeonQuestionRoute is one registered pattern.
 type LeonQuestionRoute struct {
@@ -408,22 +409,7 @@ func (s *lqServer) handoffGet(ctx context.Context, apt, qid int64) (*handoffRow,
 }
 
 func (s *lqServer) handoffRefreshAlert(ctx context.Context, apt int64) error {
-	var n, urg int64
-	err := s.pool.QueryRow(ctx, `SELECT COUNT(*), COALESCE(SUM(urgent),0) FROM guest_question WHERE apartment_id = $1 AND status = 'open'`, apt).Scan(&n, &urg)
-	if err != nil {
-		return err
-	}
-	if n == 0 {
-		_, err = s.pool.Exec(ctx, `UPDATE alert SET status = 'resolved' WHERE dedupe_key = $1 AND status != 'resolved'`, fmt.Sprintf("guest_question:%d", apt))
-		return err
-	}
-	level := "warning"
-	if urg > 0 {
-		level = "critical"
-	}
-	_, err = s.pool.Exec(ctx, `INSERT INTO alert (level, kind, title, detail, dedupe_key, apartment_id, created_at, status)
-		VALUES ($1, 'guest_question', 'guest questions', '', $2, $3, $4, 'open')
-		ON CONFLICT (dedupe_key) DO UPDATE SET level = EXCLUDED.level, status = 'open'`, level, fmt.Sprintf("guest_question:%d", apt), apt, s.stamp(s.now()))
+	_, err := guesthandoff.RefreshAlert(ctx, s.pool, s.getenv, s.now, apt)
 	return err
 }
 
@@ -660,42 +646,56 @@ func (s *lqServer) conversation(ctx context.Context, chatID int64) (map[string]a
 func (s *lqServer) stayLeonGet(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	resID, _ := lqParseID(r.PathValue("reservation_id"))
-	apt, lang, ok := s.stayGate(ctx, r.PathValue("token"), resID)
-	if !ok {
+	lang, apt, res, ok := leonStayReady(r, s.pool, s.getenv, s.now, r.PathValue("token"), resID)
+	if !ok || apt == nil {
 		s.leonGone(w)
 		return
 	}
 	live, err := s.guideLive(ctx, apt.ID)
-	if err != nil || !live || !s.leonOn(*apt) {
+	if err != nil || !live {
+		s.leonGone(w)
+		return
+	}
+	la, _, _ := s.leonApartment(ctx, apt.ID)
+	on, err := s.leonSwitched(ctx, la)
+	if err != nil || !on {
 		s.leonGone(w)
 		return
 	}
 	var chatID int64
-	_ = s.pool.QueryRow(ctx, `SELECT id FROM guest_chat WHERE door = 'stay' AND reservation_id = $1`, resID).Scan(&chatID)
+	_ = s.pool.QueryRow(ctx, `SELECT id FROM guest_chat WHERE door = 'stay' AND reservation_id = $1`, res.ID).Scan(&chatID)
 	body, err := s.conversation(ctx, chatID)
 	if err != nil {
 		lqFail(w, err)
 		return
 	}
 	_ = lang
+	_ = res
 	s.leonJSON(w, body, http.StatusOK)
 }
 
 func (s *lqServer) stayLeonPost(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	resID, _ := lqParseID(r.PathValue("reservation_id"))
-	apt, lang, ok := s.stayGate(ctx, r.PathValue("token"), resID)
-	if !ok {
+	lang, apt, res, ok := leonStayReady(r, s.pool, s.getenv, s.now, r.PathValue("token"), resID)
+	if !ok || apt == nil {
 		s.leonGone(w)
 		return
 	}
 	live, err := s.guideLive(ctx, apt.ID)
-	if err != nil || !live || !s.leonOn(*apt) {
+	if err != nil || !live {
+		s.leonGone(w)
+		return
+	}
+	la, _, _ := s.leonApartment(ctx, apt.ID)
+	on, err := s.leonSwitched(ctx, la)
+	if err != nil || !on {
 		s.leonGone(w)
 		return
 	}
 	_ = r.ParseForm()
-	body, err := s.guestLeonPost(ctx, apt, "stay", resID, "", lang, r.FormValue("message"), r.FormValue("client_id"), clientip.Key(r, s.getenv, "leon"))
+	level := BookedLevel(res.DateFrom, res.DateTo, PragueToday(s.now))
+	body, err := s.guestLeonPost(ctx, apt.ID, "stay", res.ID, "", lang, r.FormValue("message"), r.FormValue("client_id"), clientip.Key(r, s.getenv, "leon"), level, apt.Name)
 	if err != nil {
 		lqFail(w, err)
 		return
@@ -705,27 +705,31 @@ func (s *lqServer) stayLeonPost(w http.ResponseWriter, r *http.Request) {
 
 func (s *lqServer) qrLeonGet(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	apt, lang, ok := s.qrGate(ctx, r.PathValue("token"))
-	if !ok {
+	token := r.PathValue("token")
+	lang, apt, ok := s.leonQRReady(r, token)
+	if !ok || apt == nil {
 		s.leonGone(w)
 		return
 	}
 	live, err := s.guideLive(ctx, apt.ID)
-	if err != nil || !live || !s.leonOn(*apt) {
+	if err != nil || !live {
 		s.leonGone(w)
 		return
 	}
-	token := r.PathValue("token")
-	cookie := r.Cookies()
-	var cid string
-	for _, c := range cookie {
+	la, _, _ := s.leonApartment(ctx, apt.ID)
+	on, err := s.leonSwitched(ctx, la)
+	if err != nil || !on {
+		s.leonGone(w)
+		return
+	}
+	cid := ""
+	for _, c := range r.Cookies() {
 		if c.Name == leonCookieName {
 			cid = c.Value
-			break
 		}
 	}
 	var chatID int64
-	if cid != "" && lqClientID.MatchString(cid) {
+	if cid != "" && leonClientID.MatchString(cid) {
 		_ = s.pool.QueryRow(ctx, `SELECT id FROM guest_chat WHERE door = 'qr' AND apartment_id = $1 AND cookie_id = $2`, apt.ID, cid).Scan(&chatID)
 	}
 	body, err := s.conversation(ctx, chatID)
@@ -734,24 +738,29 @@ func (s *lqServer) qrLeonGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_ = lang
-	_ = token
 	s.leonJSON(w, body, http.StatusOK)
 }
 
 func (s *lqServer) qrLeonPost(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	token := r.PathValue("token")
-	apt, lang, ok := s.qrGate(ctx, token)
-	if !ok {
+	lang, apt, ok := s.leonQRReady(r, token)
+	if !ok || apt == nil {
 		s.leonGone(w)
 		return
 	}
 	live, err := s.guideLive(ctx, apt.ID)
-	if err != nil || !live || !s.leonOn(*apt) {
+	if err != nil || !live {
 		s.leonGone(w)
 		return
 	}
-	_ = s.qrRateRecord(ctx, clientip.Key(r, s.getenv, "guide_qr"))
+	la, _, _ := s.leonApartment(ctx, apt.ID)
+	on, err := s.leonSwitched(ctx, la)
+	if err != nil || !on {
+		s.leonGone(w)
+		return
+	}
+	RateRecord(ctx, s.pool, "guide_qr", clientip.Key(r, s.getenv, "guide_qr"), s.now())
 	_ = r.ParseForm()
 	cid := ""
 	for _, c := range r.Cookies() {
@@ -759,11 +768,11 @@ func (s *lqServer) qrLeonPost(w http.ResponseWriter, r *http.Request) {
 			cid = c.Value
 		}
 	}
-	fresh := cid == "" || !lqClientID.MatchString(cid)
+	fresh := cid == "" || !leonClientID.MatchString(cid)
 	if fresh {
-		cid = newLeonCookieID()
+		cid = leonNewCookieID()
 	}
-	body, err := s.guestLeonPost(ctx, apt, "qr", 0, cid, lang, r.FormValue("message"), r.FormValue("client_id"), clientip.Key(r, s.getenv, "leon"))
+	body, err := s.guestLeonPost(ctx, apt.ID, "qr", 0, cid, lang, r.FormValue("message"), r.FormValue("client_id"), clientip.Key(r, s.getenv, "leon"), "everyone", apt.Name)
 	if err != nil {
 		lqFail(w, err)
 		return
@@ -775,93 +784,4 @@ func (s *lqServer) qrLeonPost(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	s.leonJSON(w, body, http.StatusOK)
-}
-
-func newLeonCookieID() string {
-	return fmt.Sprintf("lq%x", time.Now().UnixNano())
-}
-
-func (s *lqServer) qrRateRecord(ctx context.Context, key string) error {
-	store := ai.HavelStore{Pool: s.pool}
-	return store.Record(ctx, "guide_qr", key, s.now())
-}
-
-func (s *lqServer) guestLeonPost(ctx context.Context, apt *leonApt, door string, resID int64, cookie, lang, message, clientID, addrKey string) (map[string]any, error) {
-	chatID, err := s.ensureChat(ctx, apt.ID, door, resID, cookie, lang)
-	if err != nil {
-		return nil, err
-	}
-	ls := ai.LeonStore{HavelStore: ai.HavelStore{Pool: s.pool, Env: s.lookupEnv}}
-	host := ""
-	var hostName string
-	_ = s.pool.QueryRow(ctx, `SELECT COALESCE(le.name,'') FROM apartment a LEFT JOIN legal_entity le ON le.id = a.legal_entity_id WHERE a.id = $1`, apt.ID).Scan(&hostName)
-	_ = host
-	la := ai.LeonApartment{ID: apt.ID, Name: apt.Name, Enabled: apt.LeonEnabled, TermsVersion: apt.LeonTermsVer}
-	level := "everyone"
-	if door == "stay" {
-		level = "booked"
-	}
-	res, err := ls.TryReply(ctx, s.model, la, message, lang, hostName, s.now())
-	if err != nil {
-		return nil, err
-	}
-	out := map[string]any{"kind": res.Kind, "text": res.Text, "asked_host": res.WouldAsk}
-	if message == "" || len(message) > leonMaxMsg {
-		return map[string]any{"kind": "too_long", "text": "Message too long.", "asked_host": false}, nil
-	}
-	if res.Kind == "too_long" || res.Kind == "smalltalk" || res.Kind == "unclear" {
-		return out, nil
-	}
-	if res.Kind == "cap" || res.Kind == "no_guide" || res.Text == "" {
-		out["text"] = res.Text
-		if res.Kind == "passed" || res.WouldAsk {
-			out["asked_host"] = true
-		}
-		return out, nil
-	}
-	// store guest + leon turn when we would on the live server
-	stamp := s.stamp(s.now())
-	_, _ = s.pool.Exec(ctx, `INSERT INTO guest_chat_message (chat_id, role, kind, text, sources, created_at, client_id) VALUES ($1, 'guest', '', $2, '', $3, $4)`, chatID, ai.LeonRedact(message), stamp, clientID)
-	_, _ = s.pool.Exec(ctx, `INSERT INTO guest_chat_message (chat_id, role, kind, text, sources, created_at) VALUES ($1, 'leon', $2, $3, '', $4)`, chatID, res.Kind, res.Text, stamp)
-	_ = level
-	return out, nil
-}
-
-func (s *lqServer) ensureChat(ctx context.Context, apt int64, door string, resID int64, cookie, lang string) (int64, error) {
-	var id int64
-	if door == "stay" {
-		err := s.pool.QueryRow(ctx, `SELECT id FROM guest_chat WHERE door = 'stay' AND reservation_id = $1`, resID).Scan(&id)
-		if err == nil {
-			return id, nil
-		}
-		if !errors.Is(err, pgx.ErrNoRows) {
-			return 0, err
-		}
-	} else {
-		err := s.pool.QueryRow(ctx, `SELECT id FROM guest_chat WHERE door = 'qr' AND apartment_id = $1 AND cookie_id = $2`, apt, cookie).Scan(&id)
-		if err == nil {
-			return id, nil
-		}
-		if !errors.Is(err, pgx.ErrNoRows) {
-			return 0, err
-		}
-	}
-	stamp := s.stamp(s.now())
-	err := s.pool.QueryRow(ctx, `INSERT INTO guest_chat (apartment_id, door, reservation_id, cookie_id, lang, created_at, last_message_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $6) RETURNING id`, apt, door, sqlNullInt(resID), sqlNullStr(cookie), lang, stamp).Scan(&id)
-	return id, err
-}
-
-func sqlNullInt(v int64) any {
-	if v == 0 {
-		return nil
-	}
-	return v
-}
-
-func sqlNullStr(v string) any {
-	if v == "" {
-		return nil
-	}
-	return v
 }

@@ -40,7 +40,8 @@ Goal: a host-typed building/gate entry code and an optional external (e.g. Notio
 | [2035](../tasks/2035-guide-import-code-filter.md) | Code filter for imported guide text | review (#1280) | none | B |
 | [2034](../tasks/2034-guide-import-public-url.md) | Guide import from a public URL (Notion), drafts, codes left out | todo after 2035 | 2035, 1668 | B |
 | [2036](../tasks/2036-go-apartment-access-page.md) | Go page `/apartments/{id}/access`: entry codes, guest preview, door-code status | todo after 2032, 1668 | 2032, 1668 | B |
-| [2037](../tasks/2037-leon-entry-code-pointer.md) | Leon: code questions go to host, fixed email/stay-page text, no code in prompt | blocked: guest Leon port (draft #1282) | 2035 | B |
+| [2037](../tasks/2037-leon-entry-code-pointer.md) | Leon: code questions go to host, fixed email/stay-page text, no code in prompt | review (Go prompt) | 2035 | B |
+| [2039](../tasks/2039-go-guest-leon.md) | Port guest Leon JSON (4 routes) to Go; entry-code pointer in guest i18n | review | 2037 | B |
 
 ## Proof it looks good (owner 2026-11-14)
 

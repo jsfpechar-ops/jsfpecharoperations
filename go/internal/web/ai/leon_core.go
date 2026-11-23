@@ -19,20 +19,39 @@ import (
 
 	"golang.org/x/text/cases"
 
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/guideimport"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 )
 
 //go:embed leon_prompt.txt
 var leonCharacter string
 
+//go:embed leon_prompt_access.txt
+var leonPromptAccess string
+
+// leonCharacterLive is the model character: Python bytes plus a Go-only ACCESS CODES
+// paragraph until guest Leon is fully on Go and Python CHARACTER can diverge (brief 2039).
+func leonCharacterLive() string {
+	extra := strings.TrimSpace(leonPromptAccess)
+	if extra == "" {
+		return leonCharacter
+	}
+	return leonCharacter + "\n\n" + extra
+}
+
 //go:embed leon_guest_i18n.json
 var leonGuestJSON []byte
+
+//go:embed leon_guest_entry_code_i18n.json
+var leonEntryCodeGuestJSON []byte
 
 //go:embed leon_facts_catalog.json
 var leonFactsJSON []byte
 
 // leonGuest holds the guest strings (i18n.py) Leon's fixed replies read.
 var leonGuest = hostweb.Load(leonGuestJSON)
+
+var leonEntryCodeGuest = hostweb.Load(leonEntryCodeGuestJSON)
 
 // Limits (leon.py lines 31-36).
 const (
@@ -185,7 +204,12 @@ func leonHostFirstName(name string) string {
 }
 
 // leonFixed is leon._fixed: a guest string in the guest's language.
-func leonFixed(lang, key string, params map[string]any) string { return leonGuest.T(lang, key, params) }
+func leonFixed(lang, key string, params map[string]any) string {
+	if key == "leon_entry_code_pointer" {
+		return leonEntryCodeGuest.T(lang, key, params)
+	}
+	return leonGuest.T(lang, key, params)
+}
 
 // leonNamed is leon._named: key with the host's first name, or key+"_plain".
 func leonNamed(lang, key, hostName string) string {
@@ -277,7 +301,7 @@ func LeonGuideBlock(cards []LeonCard, propertyName string) string {
 
 // LeonSystemBlocks is leon.system_blocks: the character and the guide.
 func LeonSystemBlocks(cards []LeonCard, propertyName string) []string {
-	return []string{leonCharacter, LeonGuideBlock(cards, propertyName)}
+	return []string{leonCharacterLive(), LeonGuideBlock(cards, propertyName)}
 }
 
 // LeonUserTurn is leon.user_turn: the only per-request text the model gets.
@@ -358,7 +382,11 @@ func LeonValidate(data map[string]any, cards []LeonCard, guestText string) LeonV
 		return LeonVerdict{Kind: kind, Summary: summary, Upset: true, Reason: "model"}
 	case "answer":
 	default:
-		return LeonVerdict{Kind: "ask_host", Summary: summary, Upset: upset, Reason: "model"}
+		reason := "model"
+		if guideimport.AsksForCode(guestText) && strings.EqualFold(strings.TrimSpace(summary), "Guest asked for an entry code") {
+			reason = "entry_code"
+		}
+		return LeonVerdict{Kind: "ask_host", Summary: summary, Upset: upset, Reason: reason}
 	}
 	known := map[int64]bool{}
 	for _, c := range cards {
