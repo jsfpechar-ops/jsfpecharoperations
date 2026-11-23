@@ -33,6 +33,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/appconfig"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/jobs"
 )
 
@@ -113,7 +114,7 @@ func Plan(lookup func(string) (string, bool)) ([]Trigger, error) {
 		return nil, err
 	}
 	m := time.Minute
-	return []Trigger{
+	plan := []Trigger{
 		{Kind: "ical", Every: time.Duration(ical) * m, FirstAfter: soon},
 		{Kind: "submit", Every: time.Duration(submit) * m},
 		{Kind: "deadlines", Every: 30 * m},
@@ -129,7 +130,21 @@ func Plan(lookup func(string) (string, bool)) ([]Trigger, error) {
 		{Kind: "posthog", Every: 15 * m},
 		{Kind: "push", Every: 1 * m},
 		{Kind: "guide_import", Every: 60 * m},
-	}, nil
+	}
+	getenv := func(k string) string {
+		v, _ := lookup(k)
+		return v
+	}
+	if appconfig.PaymentsHidden(getenv) {
+		filtered := plan[:0]
+		for _, tr := range plan {
+			if tr.Kind != "stripe_sweep" {
+				filtered = append(filtered, tr)
+			}
+		}
+		plan = filtered
+	}
+	return plan, nil
 }
 
 // CheckQueued makes sure every planned kind is in UBYHOST_JOB_QUEUE_KINDS.
