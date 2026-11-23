@@ -1,6 +1,7 @@
 # 2034: Guide import from a public URL (Notion first) — drafts only, codes left out
 
 Status: review
+Report: docs/tasks/2034-guide-import-public-url-report.md
 Depends on: 2035, 1668 | Base commit: fill from `git rev-parse --short HEAD` | Branch: task/2034-guide-import-public-url
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B (host page + outbound request + migration, so read the diff twice)
 
