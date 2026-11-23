@@ -83,9 +83,9 @@ Statuses: `todo → in-progress → review → done`, plus `blocked` (with the r
 
 ## UX gate
 Owner decision 2026-11-03: the thread that changes UX checks it with Chromium.
-1. From `App/` (`UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/shots`): `.venv/bin/python -m pytest tests/test_layout_lint_browser.py -q -x 2>&1 | tail -30`, 0 skipped. Host pages: zero findings; guest and public: report-only.
-2. Read `/tmp/shots/layout-lint/<page>-{390,768,1280}.png` for each touched page and look for what rules miss.
-3. A new check goes in `tests/layout_lint.js` plus a line in `test_the_lint_catches_the_known_regressions`.
+1. From `App/` (`UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/shots`): `.venv/bin/python -m pytest tests/test_layout_lint_browser.py -q -x` (Go: `test_go_pages_layout_lint_browser.py`), 0 skipped. Host pages: zero findings; guest and public: report-only.
+2. Open `/tmp/shots/layout-lint/<page>-{390,768,1280}.png` per touched page; look for what rules miss.
+3. New check: `tests/layout_lint.js` plus a line in `test_the_lint_catches_the_known_regressions`.
 4. PR body: per page "390: ...; 768: ...; 1280: ...". CI links the screenshots in the job summary.
 
 ## Update triggers

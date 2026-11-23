@@ -54,8 +54,7 @@
 {{end}}
 
 {{if .LeonOffer}}
-{{guide_section_open "leon" (t "guest_guide.leon.title") ""}}
-{{help_tip "guide-leon-help" (t "guest_guide.leon.help")}}
+{{guide_section_open "leon" (t "guest_guide.leon.title") (help_tip "guide-leon-help" (t "guest_guide.leon.help"))}}
 <p class="ui-sub">{{t (printf "leon_page.card.%s" .LeonState)}}</p>
 <div class="ui-form-actions">{{ui_button (t "guest_guide.leon.open") "secondary" (kv "href" (printf "/apartments/%d/leon" .Apartment.ID))}}</div>
 {{guide_section_close}}

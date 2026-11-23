@@ -1,5 +1,7 @@
 # 2037: Leon never knows entry codes; one fixed pointer line, plus a test that no code reaches the prompt
 
+Report: docs/tasks/2037-leon-entry-code-pointer-report.md
+
 Status: blocked — guest Leon (`guest_leon.py`, 4 routes, 0 in Go) still serves guests and go-first allows no Python change here; the Go prompt change breaks the three Go-vs-Python Leon parity tests until the guest Leon port lands. Resume after that port.
 Depends on: 2035 (for `guideimport.AsksForCode`; the test seeds codes through 2032's table when it is on main; until then it seeds `apartment.entry_code_enc`, which 1661 added) | Base commit: fill from `git rev-parse --short HEAD` | Branch: task/2037-leon-entry-code-pointer
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B (guest-facing AI prompt; the byte-pinned prompt is shared with Python)
@@ -62,7 +64,7 @@ Stop if: the schema cannot express the fixed answer (step 1); the golden fails f
 
 ## 9. Report
 
-`docs/tasks/2037-report.md` (≤600 tokens), `Status: review`, one PR.
+`docs/tasks/2037-leon-entry-code-pointer-report.md` (≤600 tokens), `Status: review`, one PR.
 
 ## Risk list (for the reviewer)
 

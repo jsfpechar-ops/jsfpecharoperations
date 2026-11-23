@@ -4,6 +4,7 @@ package guest
 
 import (
 	"context"
+	"embed"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,7 +14,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"testing/fstest"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -138,9 +138,8 @@ var lqI18n = []byte(`{
   }
 }`)
 
-var lqTmpl = []byte(`{{define "guest_questions.html"}}<div class="ui-page" data-body-kind="list"><div class="ui-body ui-body-list"><div class="head"><div><h1 class="big"><a class="guide-back" href="/apartments/{{.ApartmentID}}">{{lqT .Lang "guest_questions.title"}}</a></h1>{{if gt .OpenCount 0}}<p class="sub">{{lqT .Lang "guest_questions.open" "n" .OpenCount}}</p>{{else if .Questions}}<p class="sub">{{lqT .Lang "guest_questions.none_open"}}</p>{{end}}</div></div>{{if not .Questions}}<p class="empty-hd">{{lqT .Lang "guest_questions.empty.title"}}</p><p>{{lqT .Lang "guest_questions.empty.body"}}</p><p><a class="btn" href="{{.Base}}">{{lqT .Lang "guest_guide.title"}}</a></p>{{else}}<table class="ui-table"><thead><tr><th>{{lqT .Lang "guest_questions.col.question"}}</th><th>{{lqT .Lang "guest_questions.col.state"}}</th></tr></thead><tbody>{{range .Questions}}<tr><td><a href="{{$.Base}}/{{.ID}}">{{if .Summary}}{{.Summary}}{{else}}{{.Question}}{{end}}</a></td><td>{{if eq .Door "qr"}}{{lqT $.Lang "guest_questions.door.qr"}}{{else}}{{lqT $.Lang "guest_questions.door.stay"}}{{end}} · {{lqT $.Lang (printf "guest_questions.state.%s" .Status)}}</td></tr>{{end}}</tbody></table>{{end}}</div></div>{{end}}
-{{define "guest_question.html"}}<div class="ui-page" data-body-kind="detail"><div class="ui-body ui-body-detail"><div class="head"><div><a class="guide-back" href="{{.Base}}">{{lqT .Lang "guest_questions.title"}}</a><h1 class="big">{{lqT .Lang "guest_question.title"}}</h1></div></div>{{if .Error}}<p class="form-error">{{lqT .Lang .Error}}</p>{{end}}<p class="sub">{{lqT .Lang "guest_question.asked"}}</p><blockquote class="guest-q">{{.QuestionText}}</blockquote>{{if .Summary}}<p><strong>{{lqT .Lang "guest_question.summary"}}</strong> {{.Summary}}</p>{{end}}<form method="post" action="{{.Base}}/{{.QuestionID}}" class="stack"><input type="hidden" name="_csrf" value="{{csrf}}"><label for="answer">{{lqT .Lang "guest_question.your_answer"}}</label><textarea class="ui-input" id="answer" name="answer" rows="6" maxlength="{{.MaxChars}}" placeholder="{{lqT .Lang "guest_question.answer_placeholder"}}">{{.AnswerDraft}}</textarea><div class="form-acts"><button class="btn" type="submit">{{lqT .Lang "guest_question.send"}}</button><button class="btn secondary" formaction="{{.Base}}/{{.QuestionID}}/dismiss" formmethod="post">{{lqT .Lang "guest_question.dismiss"}}</button></div></form>{{if .Answered}}<form method="post" action="{{.Base}}/{{.QuestionID}}/card" class="stack"><input type="hidden" name="_csrf" value="{{csrf}}"><label for="topic">{{lqT .Lang "guest_question.topic"}}</label><select id="topic" name="topic">{{range .Topics}}<option value="{{.}}">{{.}}</option>{{end}}</select><button class="btn secondary" type="submit">{{lqT .Lang "guest_question.add_to_guide"}}</button></form>{{end}}</div></div>{{end}}
-`)
+//go:embed templates/leon_questions.tmpl
+var leonQuestionsFS embed.FS
 
 var hostCatalog = hostweb.Load(lqI18n)
 
@@ -152,9 +151,13 @@ var lqPages = layout.MustParseFuncs(hostCatalog, template.FuncMap{
 				params[s] = kv[i+1]
 			}
 		}
-		return hostCatalog.T(lang, key, params)
+		text := hostCatalog.T(lang, key, params)
+		if text == key {
+			text = hostweb.HostStrings.T(lang, key, params)
+		}
+		return text
 	},
-}, fstest.MapFS{"lq_templates.tmpl": &fstest.MapFile{Data: lqTmpl}}, "lq_templates.tmpl")
+}, leonQuestionsFS, "templates/leon_questions.tmpl")
 
 // RegisterLeonQuestions wires all nine routes (dormant until UBYHOST_GO_PATHS).
 func RegisterLeonQuestions(mux *http.ServeMux, pool *pgxpool.Pool, getenv func(string) string, lookupEnv func(string) (string, bool), now func() time.Time, wrap func(string, http.HandlerFunc) http.Handler) {
@@ -474,8 +477,31 @@ func (s *lqServer) handoffAddGuide(ctx context.Context, apt, qid int64, topic st
 	return itemID, err
 }
 
+func (s *lqServer) lqPageTitle(lang, name, aptName string) string {
+	key := "guest_questions.title"
+	if name == "guest_question.html" {
+		key = "guest_question.title"
+	}
+	return hostCatalog.T(lang, key, nil) + " · " + aptName + " · UbyHost"
+}
+
+func (s *lqServer) lqBodyKind(name string) string {
+	if name == "guest_question.html" {
+		return "form"
+	}
+	return "list"
+}
+
 func (s *lqServer) renderHost(w http.ResponseWriter, r *http.Request, q *lqHostReq, name string, data map[string]any) {
-	p := layout.Page{Nav: "apartments", Status: http.StatusOK}
+	aptName, _ := data["ApartmentName"].(string)
+	if aptName == "" {
+		aptName = "…"
+	}
+	p := layout.Page{
+		Title: s.lqPageTitle(q.lang, name, aptName), Nav: "apartments",
+		BodyKind: s.lqBodyKind(name), V2: true, BackURL: fmt.Sprintf("/apartments/%d/page", q.apt),
+		Status: http.StatusOK,
+	}
 	w.Header().Set("Cache-Control", "no-store")
 	env := layout.Env{Pool: s.pool, Getenv: s.getenv, Now: q.at}
 	if err := layout.Render(w, r, env, q.host, p, lqPages, name, data); err != nil {
@@ -485,7 +511,8 @@ func (s *lqServer) renderHost(w http.ResponseWriter, r *http.Request, q *lqHostR
 
 func (s *lqServer) renderQuestion(w http.ResponseWriter, r *http.Request, q *lqHostReq, errKey string, status int) {
 	ctx := r.Context()
-	if _, err := s.hostApartment(ctx, q.host.Workspace.ID, q.apt); errors.Is(err, pgx.ErrNoRows) {
+	aptName, err := s.hostApartment(ctx, q.host.Workspace.ID, q.apt)
+	if errors.Is(err, pgx.ErrNoRows) {
 		http.NotFound(w, r)
 		return
 	} else if err != nil {
@@ -502,13 +529,17 @@ func (s *lqServer) renderQuestion(w http.ResponseWriter, r *http.Request, q *lqH
 		return
 	}
 	data := map[string]any{
-		"Lang": q.lang, "QuestionID": q.qid, "Base": fmt.Sprintf("/apartments/%d/guide/questions", q.apt),
+		"Lang": q.lang, "QuestionID": q.qid, "ApartmentName": aptName,
+		"Base":         fmt.Sprintf("/apartments/%d/guide/questions", q.apt),
 		"QuestionText": row.Question, "Summary": row.Summary, "AnswerDraft": r.FormValue("answer"),
 		"Error": errKey, "MaxChars": handoffAnswerMax,
 		"Answered": row.Status == "answered" && row.Answer != "",
 		"Topics":   []string{"arrival", "keys", "rules", "amenities", "checkout", "emergency", "other"},
 	}
-	p := layout.Page{Nav: "apartments", Status: status}
+	p := layout.Page{
+		Title: s.lqPageTitle(q.lang, "guest_question.html", aptName), Nav: "apartments",
+		BodyKind: "form", V2: true, BackURL: fmt.Sprintf("/apartments/%d/page", q.apt), Status: status,
+	}
 	w.Header().Set("Cache-Control", "no-store")
 	env := layout.Env{Pool: s.pool, Getenv: s.getenv, Now: q.at}
 	if err := layout.Render(w, r, env, q.host, p, lqPages, "guest_question.html", data); err != nil {

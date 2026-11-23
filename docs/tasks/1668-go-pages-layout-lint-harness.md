@@ -1,6 +1,6 @@
 # 1668: Browser harness that runs the layout lint on Go host pages (local Go binary, no staging)
 
-Status: todo
+Status: review
 Depends on: none | Base commit: bdfaa4d4 | Branch: task/1668-go-pages-layout-lint-harness
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B (test harness, no product code)
 

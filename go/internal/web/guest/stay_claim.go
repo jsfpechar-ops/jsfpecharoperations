@@ -41,9 +41,6 @@ const (
 
 	claimConfirmRateMax = 20
 	claimTokenBytes     = 24
-
-	// stayClaimDeviceGate tracks formPagesRequireClaim until claim UI lands (brief 1721).
-	stayClaimDeviceGate = false
 )
 
 type stayClaimDeps struct {

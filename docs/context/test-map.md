@@ -5,11 +5,11 @@ Run your row from `App/`: `-q --tb=short -x 2>&1 | tail -30`. Full suite: CI unl
 | Changed | Run |
 |---|---|
 | `scripts/ci_shard.py` | `test_ci_shard.py` |
-| Guest pages, guest templates | `test_guest_*.py` and `test_guest_browser_e2e.py` (0 skipped) |
-| Host pages, templates, CSS | `test_host_*.py` and `test_host_geometry.py` (0 skipped) |
+| Guest pages, guest templates | `test_guest_*.py test_guest_browser_e2e.py` (0 skipped) |
+| Host pages, templates, CSS | `test_host_*.py test_host_geometry.py`; Go: `test_go_pages_layout_lint_browser.py` (0 skipped) |
 | Login, 2FA, passkeys | `test_login_*.py test_auth_*.py test_two_factor_*.py test_passkeys.py test_remember_me_reissue.py test_security*.py` |
 | Filing, UbyPort, claim | `test_ubyport_*.py test_soap.py test_worker.py test_submission_*.py test_stale_submission.py test_filed_by_hand.py test_filing_watchdog.py test_police_*.py test_claim_*.py test_endtoend.py` |
-| Go filing alarms | in `go/`: `go test ./internal/{ubyport,calendar,mail,hostweb}/... 2>&1 \| tail -30`; DB tests skip without `UBYHOST_TEST_DATABASE_URL` |
+| Go filing alarms | in `go/`: `go test ./internal/{ubyport,calendar,mail,hostweb}/... 2>&1 \| tail -30`; DB tests need `UBYHOST_TEST_DATABASE_URL` |
 | Platform billing, subscription, trial | `test_billing_*.py` |
 | Invoices, stay fee | `test_invoice_*.py test_stay_fee*.py` |
 | Door-code access disclosure | `test_door_code_window*.py`; CI `door-code-access-review` (Chromium, WebKit; 0 skips; 390 px shots) |
@@ -43,7 +43,7 @@ Run your row from `App/`: `-q --tb=short -x 2>&1 | tail -30`. Full suite: CI unl
 | Booking site (d) | `test_booking_site.py test_property_page.py test_stripe_connect.py` |
 | Direct booking pay (d) | `test_booking_direct_*.py test_booking_site.py test_host_i18n.py` |
 | Deploy scripts, Caddyfile, compose | `shellcheck -S error deploy/lightsail/scripts/*.sh`; CI job `caddy` checks both Caddyfiles; `test_pg_*script*.py` |
-| A module with no row | `tests/test_<module name>*.py`; none exists: `-k <module name>` |
+| A module with no row | `test_<module>*.py`, else `-k <module>` |
 | Read guard hook (`scripts/hooks/`, `.claude/settings.json`) | `test_read_guard_hook.py` |
 
 (d) dormant; run only when reviving. Missing row: orchestrator fixes in the same brief.

@@ -529,6 +529,24 @@ def _entry_code_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -
             "UPDATE apartment SET entry_code_enc = NULL WHERE " + where,
             params,
         )
+    
+    new_where = (
+        "apartment_id IN (SELECT a.id FROM apartment a WHERE COALESCE(a.archived_at, '') <> '' AND a.archived_at < ?) "
+        "OR (COALESCE(valid_until, '') <> '' AND valid_until < ?)"
+    )
+    new_params = (cutoff, cutoff)
+    try:
+        new_count = _scalar(f"SELECT COUNT(*) AS n FROM apartment_entry_code WHERE {new_where}", new_params)
+        if not dry_run and new_count:
+            db.execute(
+                "DELETE FROM apartment_entry_code WHERE " + new_where,
+                new_params,
+            )
+        count += new_count
+    except Exception as e:
+        if "no such table" not in str(e):
+            raise
+    
     return count
 
 

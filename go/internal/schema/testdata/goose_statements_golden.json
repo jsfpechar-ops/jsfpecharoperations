@@ -352,6 +352,12 @@
     "648d3dc352b1980f0cc184390f403afc2da8fb97d3ed6cc6f17131af9a7503a7",
     "be13e7d1521099c55c128f57066af6c282f6f7e1fe9ee038ce71aee615ca2a19"
    ]
+  },
+  "00023_apartment_entry_code.sql": {
+   "ok": [
+    "2a872f4414daa6fd1216b66e14f3984cf3f55749887961ac17a4cc9f6aedb507",
+    "18c5466fccff98d270f222aff1e3f5d67bc9ab07eb0a48739af6f2bdc22872bc"
+   ]
   }
  },
  "goose": [
