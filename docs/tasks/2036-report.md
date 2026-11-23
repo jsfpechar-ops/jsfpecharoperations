@@ -1,66 +1,62 @@
-# 2036 report
+# 2036 report: Go guide workflow staging acceptance
 
-Status: review
+**Status: blocked** (host and guest sessions missing; §8)
 
-## Files changed
+**Staging build (owner-confirmed, not verified in-app):** `ffd8c17bc8193e6379fc7d6efda8f0dddd7bd51c`  
+**Brief base commit:** `bd961426570f07a214f9840bf165a0bca397b450`  
+**When:** 2026-11-23 UTC
 
-`guide_access.go`, `guide/templates/access.tmpl`, `guide_index.go` + `guide_index.tmpl`, `guide_access_test.go`, `guide_index_access_link_test.go`, `guide/i18n_keys.txt`, `guide/i18n.json`, `host_i18n.py`, `guide_i18n.py`, `guide.html`, `havel.py`, `havel_data.go`, `ENVIRONMENT.md`, `test_go_pages_layout_lint_browser.py`.
+## Commands
 
-## Design fix (guide-page shell @390)
-
-- `guide-page` + `guide_section_open/close` and `guide-form-card` (not `settings-lane`).
-- KV: `dl.ui-facts`; facts hidden while editing a row; preview uses custom label as `dt` for every type (guest parity).
-- `guideSectionOpen`: `&#160;` before `tip-nowrap` so flex h2 keeps “Entry codes” spaced (was “Entrycodes”).
-- `app2.css`: `dt` wrap in guide `ui-facts`; `#guest-preview` facts stack at all widths (long labels).
-- `BodyKind` `form`; help tips inline in h1/section titles like guide index.
-
-## Commands (tails)
-
-**Go** (`go test -count=1 ./internal/web/ai/ ./cmd/ubyhost-web/ ./internal/apartmententrycode/`):
-
-```
-ok  	github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/ai	24.722s
-ok  	github.com/jsfpechar-ops/jsfpecharoperations/go/cmd/ubyhost-web	2.495s
-ok  	github.com/jsfpechar-ops/jsfpecharoperations/go/internal/apartmententrycode	0.002s
+```text
+go test ./internal/web/ai -run 'TestGuideImportRoute' -count=1 -v
+--- SKIP: TestGuideImportRoute (0.00s)
+    guide_import_test.go:47: UBYHOST_TEST_DATABASE_URL is not set
+PASS
+ok  	.../go/internal/web/ai	0.015s
 ```
 
-**Browser** (`UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/shots2036d`):
+Code anchors present: POST import route in `guide_import.go`; `id="leon-setup-import"` in `leon_setup.tmpl`.
 
-```
-5 passed, 1 warning in 27.61s
-```
+## Staging checks (unauthenticated)
 
-**go_host_i18n --check**: exit 0
+| Check | Result | Evidence |
+|---|---|---|
+| Signup enabled | **PASS** | `GET /signup?lang=en` → 200 (was 404 on prior audit) |
+| Login email-only | **PASS** | Email field + “Send me a login link”; no `type="password"` |
+| GET `/apartments/1/guide/import` | **INFO** | HTTP **422** (POST-only; not an import completion test) |
+| GET `/apartments/1/guide` | **BLOCKED** | 303 → `/login?next=…` (no host session) |
+| GET `/apartments/1/leon/setup` | **BLOCKED** | 303 → login (route exists; eligibility unverified) |
+| Manual card CRUD | **BLOCKED** | Needs logged-in host on eligible property |
+| POST import via Leon form | **BLOCKED** | Needs host session + `guide_import` fixture |
+| Guest guide EN/CS | **BLOCKED** | Needs approved guest link/PIN (2033) |
 
-**context_lint**: `context lint: OK`
+Screenshots: `docs/tasks/media/2036/` (login/signup 390&1280, import GET 422, login redirects for guide/leon).
 
-## Acceptance (§7)
+## §7 acceptance
 
-- [x] Go access tests; no plaintext in responses/audit (covered in `TestAccessSaveTypesAndSecrecy`)
-- [x] Name input always rendered; no-JS POST proves server refuses Other without name
-- [x] Help section Entry codes (en, cs, vi); `test_guide_coverage.py` green
-- [x] Harness: 0 findings, 27 shots (`/opt/cursor/artifacts/2036d/`), 0 skipped
-- [x] Guide index link gated on `UBYHOST_GO_ACCESS_PAGE=1`
-
-## Screenshots (`/opt/cursor/artifacts/2036d/` — reviewed)
-
-- **access-three-390** — White cards; section title reads “Entry codes” with inline `?`; three code cards with stacked Type/Code; guest preview lists Gate, Building entrance, Garage with masked codes.
-- **access-other-390** — “Entry codes” heading spaced correctly; edit form (Other, long Name, empty Code); preview card shows full custom label wrapping above `••••9`; Host’s guide + notion Change line below.
-- **access-other-1280** — Form in left column; preview stacks long custom label (A… B…) over masked code; external host line unchanged.
-
-(Full harness under `/tmp/shots2036d/layout-lint/`.)
+- [ ] Manual card persisted — **BLOCKED**
+- [ ] Import via real form → drafts, unpublished — **BLOCKED**
+- [ ] Leon preview (eligible / ineligible) — **BLOCKED**
+- [ ] Authorized guest content — **BLOCKED**
 
 ## Deviations
 
-- `go/internal/web/ai/guide_common.go` + `App/app/static/app2.css`: section title nbsp and preview `ui-facts` wrap (orchestrator review; brief listed neither).
-- `App/app/havel.py` and `go/internal/web/ai/havel_data.go`: `entry-codes` anchor for `test_guide_coverage.py` (test header names these with guide edits).
-- Regenerated `go/internal/web/ai/testdata/havel_golden.json` via `App/scripts/havel_golden.py` after `entry-codes` anchor.
-- `go_web_harness._seed`: sets `two_factor_prompted_at` so security prompt does not cover lint shots.
+- `TestGuideImportRoute` skipped locally (no disposable DB URL).
+- No magic-link inbox or staging password; could not complete steps 1–3.
 
-## Questions
+## Follow-up (if host session available)
 
-None.
+- **Import:** `(*guideServer).importPost` — expect POST 303 + queued row; GET 422 is expected.
+- **Leon:** `leonEntry` — expect 200 with `leon-setup-import` when `leon` + provider eligible; 404/redirect otherwise.
 
 ## Owner steps
 
-Unchanged from brief §9 (list path in `UBYHOST_GO_PATHS`, then `UBYHOST_GO_ACCESS_PAGE=1`).
+1. Send a one-time login link for the synthetic property host (or enable `UBYHOST_STAGING_LOGIN_PASSWORD` and share non-secret test login).
+2. Confirm `UBYHOST_AI_FEATURES` lists `leon,guide_import` for that property and that a mocked provider fixture is approved.
+3. Share a redacted guest stay URL + PIN for published-card verification (after 2033 if claim-gated).
+4. On `/settings/help` or technical settings, confirm deployed git SHA matches `ffd8c17…`.
+
+## Questions
+
+None beyond the blocked preconditions above.
