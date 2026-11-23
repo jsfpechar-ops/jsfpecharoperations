@@ -195,3 +195,9 @@ UPDATE apartment SET entry_code_enc = 'gAAAA-fixture-expired', entry_code_until 
 UPDATE apartment SET entry_code_enc = 'gAAAA-fixture-open', entry_code_until = NULL WHERE id = 20;
 INSERT INTO apartment (id, internal_name, created_at, owner_user_id, archived_at, entry_code_enc) VALUES
  (30, 'Flat C archived', '2017-01-01T00:00:00+00:00', 1, '2020-01-01T00:00:00+00:00', 'gAAAA-fixture-archived');
+
+INSERT INTO apartment_entry_code (apartment_id, position, code_type, custom_label, code_enc, valid_until, created_at, updated_at) VALUES
+ (10, 1, 'building_entrance', NULL, 'gAAAA-table-expired', '2020-01-01', '2017-01-01T00:00:00+00:00', '2017-01-01T00:00:00+00:00'),
+ (30, 1, 'gate', NULL, 'gAAAA-table-archived', NULL, '2017-01-01T00:00:00+00:00', '2017-01-01T00:00:00+00:00'),
+ (20, 1, 'garage', NULL, 'gAAAA-table-future', '2030-01-01', '2017-01-01T00:00:00+00:00', '2017-01-01T00:00:00+00:00'),
+ (20, 2, 'bike_room', NULL, 'gAAAA-table-open', NULL, '2017-01-01T00:00:00+00:00', '2017-01-01T00:00:00+00:00');
