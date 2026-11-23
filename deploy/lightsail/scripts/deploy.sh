@@ -117,6 +117,10 @@ public_ok() {
 # modified until the next deploy's git reset.
 rollback() {
   echo "==> Rolling back to ${PREV_SHA:-the previous image and Caddyfile}" >&2
+  # shellcheck source=rollback-schema-prep.sh
+  # shellcheck disable=SC1091
+  source ./scripts/rollback-schema-prep.sh
+  rollback_drop_guide_import_00024 || true
   if [ -n "${PREV_SHA}" ]; then
     git checkout "${PREV_SHA}" -- docker-compose.yml caddy/Caddyfile.acme caddy/Caddyfile.cloudflare || true
   fi
@@ -408,9 +412,9 @@ if docker compose --profile go config --services | grep -qx 'ubyhost-go'; then
   # copy is not recreated and a stopped idle A cannot take Caddy traffic.
   go_pin_live_slot_image
   # shellcheck disable=SC2046
-  docker compose up -d --remove-orphans $(go_non_slot_services)
+  docker compose up -d $(go_non_slot_services)
 else
-  docker compose up -d --remove-orphans
+  docker compose up -d
 fi
 
 # 1830: two-copy deploy of ubyhost-go. The idle slot gets the new image and
@@ -459,6 +463,9 @@ if docker compose --profile go config --services | grep -qx 'ubyhost-go' \
   docker compose --profile go stop "$(go_svc "${LIVE_SLOT}")" || true
   echo "ubyhost-go now runs on slot ${NEW_SLOT}."
   fi
+  echo "==> Removing retired compose services"
+  # shellcheck disable=SC2046
+  docker compose up -d --remove-orphans $(go_non_slot_services) || true
 fi
 
 # Reload Caddy unconditionally, every deploy.
