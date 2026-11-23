@@ -55,8 +55,8 @@ func TestValidateJobConfigSchedulerMissingQueued(t *testing.T) {
 		t.Fatal(err)
 	}
 	err = validateJobConfig(kinds, schedGoGetenv, lookupMap(map[string]string{
-		"UBYHOST_JOB_QUEUE_KINDS":    queue,
-		"UBYHOST_SCHEDULER":          "go",
+		"UBYHOST_JOB_QUEUE_KINDS":      queue,
+		"UBYHOST_SCHEDULER":            "go",
 		"UBYHOST_SUBMIT_SWEEP_MINUTES": "10",
 	}))
 	if err == nil || !strings.Contains(err.Error(), "missing: push") {
@@ -71,9 +71,9 @@ func TestValidateJobConfigPaymentsRetiredPlan(t *testing.T) {
 		t.Fatal(err)
 	}
 	lookup := lookupMap(map[string]string{
-		"UBYHOST_JOB_QUEUE_KINDS":    queue,
-		"UBYHOST_SCHEDULER":          "go",
-		"UBYHOST_PAYMENTS_RETIRED":   "1",
+		"UBYHOST_JOB_QUEUE_KINDS":      queue,
+		"UBYHOST_SCHEDULER":            "go",
+		"UBYHOST_PAYMENTS_RETIRED":     "1",
 		"UBYHOST_SUBMIT_SWEEP_MINUTES": "10",
 	})
 	if err := validateJobConfig(kinds, schedGoGetenv, lookup); err != nil {
