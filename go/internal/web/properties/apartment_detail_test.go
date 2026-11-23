@@ -45,6 +45,7 @@ func adMux(pool *pgxpool.Pool, extra map[string]string) *http.ServeMux {
 
 func adGet(mux http.Handler, path string, user, workspace int64, lang string) *httptest.ResponseRecorder {
 	req := httptest.NewRequest(http.MethodGet, path, nil)
+	req.Header.Set("Accept", "text/html")
 	apartmentNewSignIn(req, user, workspace, lang)
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
@@ -147,18 +148,18 @@ func TestApartmentDetailAccess(t *testing.T) {
 	}{
 		{"signed out", "/apartments/130201", 0, 0, 303, false, nil, nil},
 		{"own property", "/apartments/130201", 130001, 0, 200, false, []string{`<h1 class="airbnb-title">Loft &lt;A&gt;</h1>`}, nil},
-		{"another host's property", "/apartments/130204", 130001, 0, 404, false, []string{`Not found.`}, nil},
-		{"host B asks for A", "/apartments/130201", 130002, 0, 404, false, []string{`Not found.`}, nil},
-		{"unknown id", "/apartments/999999", 130001, 0, 404, false, []string{`Not found.`}, nil},
-		{"id not a number", "/apartments/abc", 130001, 0, 501, true, nil, nil},
-		{"id past int64", "/apartments/99999999999999999999", 130001, 0, 501, true, nil, nil},
+		{"another host's property", "/apartments/130204", 130001, 0, 404, false, []string{`<h1 class="big">Page not found</h1>`, `href="/"`}, nil},
+		{"host B asks for A", "/apartments/130201", 130002, 0, 404, false, []string{`<h1 class="big">Page not found</h1>`, `href="/"`}, nil},
+		{"unknown id", "/apartments/999999", 130001, 0, 404, false, []string{`<h1 class="big">Page not found</h1>`, `href="/"`}, nil},
+		{"id not a number", "/apartments/abc", 130001, 0, 404, false, []string{"Page not found"}, nil},
+		{"id past int64", "/apartments/99999999999999999999", 130001, 0, 404, false, []string{"Page not found"}, nil},
 		{"id with sign and underscore", "/apartments/+130_201", 130001, 0, 200, false, []string{`Loft &lt;A&gt;`}, nil},
 		{"archived property", "/apartments/130203", 130001, 0, 200, false, []string{`Old archived`}, nil},
 		{"admin acting in host A", "/apartments/130201", 130003, 130001, 200, false, []string{`Loft &lt;A&gt;`}, []string{`Other host`}},
-		{"admin acting in host B asks for A", "/apartments/130201", 130003, 130002, 404, false, []string{`Not found.`}, nil},
-		{"copy_from of another host", "/apartments/130201?copy_from=130204", 130001, 0, 404, false, []string{`Not found.`}, nil},
-		{"copy_from unknown", "/apartments/130201?copy_from=999", 130001, 0, 404, false, []string{`Not found.`}, nil},
-		{"copy_from not ASCII", "/apartments/130201?copy_from=%D9%A1", 130001, 0, 501, true, nil, nil},
+		{"admin acting in host B asks for A", "/apartments/130201", 130003, 130002, 404, false, []string{`<h1 class="big">Page not found</h1>`, `href="/"`}, nil},
+		{"copy_from of another host", "/apartments/130201?copy_from=130204", 130001, 0, 404, false, []string{`<h1 class="big">Page not found</h1>`, `href="/"`}, nil},
+		{"copy_from unknown", "/apartments/130201?copy_from=999", 130001, 0, 404, false, []string{`<h1 class="big">Page not found</h1>`, `href="/"`}, nil},
+		{"copy_from not ASCII", "/apartments/130201?copy_from=%D9%A1", 130001, 0, 404, false, []string{"Page not found"}, nil},
 	} {
 		rec := adGet(mux, c.path, c.user, c.workspace, "en")
 		if rec.Code != c.status {

@@ -192,8 +192,10 @@ func TestEntityEditorPage(t *testing.T) {
 	if b = getAs(t, mux, "/entities?edit=99999999999999999999999", 130001, 0, nil).Body.String(); strings.Contains(b, "entity-edit") {
 		t.Error("an id past int64 opens nothing")
 	}
-	if rec := getAs(t, mux, "/entities?edit=%D9%A1", 130001, 0, nil); rec.Code != http.StatusNotImplemented {
+	if rec := getAs(t, mux, "/entities?edit=%D9%A1", 130001, 0, nil); rec.Code != http.StatusNotFound {
 		t.Errorf("non-ASCII digits: %d", rec.Code)
+	} else if !strings.Contains(rec.Body.String(), "Page not found") {
+		t.Error("non-ASCII digits: expected branded 404")
 	}
 }
 

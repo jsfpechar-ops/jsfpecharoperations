@@ -319,8 +319,47 @@ func TestApartmentUpdateMatchesPython(t *testing.T) {
 	}
 }
 
-// TestApartmentUpdateNotPorted: the branches left to Python (later briefs)
-// answer 501 with the fallback header and write nothing.
+// TestApartmentUpdateNotPorted: unported branches redirect with an interim flash or 404.
+
+func TestApartmentUpdateGuestPaySave(t *testing.T) {
+	g := loadApartmentUpdateGolden(t)
+	pool := testPool(t)
+	apartmentCreateSeed(t, pool, apartmentCreateGolden{Seed: g.Seed})
+	mux := http.NewServeMux()
+	getenv := func(k string) string {
+		if k == "UBYHOST_STAY_FEE_GUEST_PAY" {
+			return "on"
+		}
+		return apartmentUpdateGetenv(k)
+	}
+	RegisterApartmentUpdate(mux, noWrap, pool, getenv, testClock)
+	form := map[string]string{}
+	for k, v := range g.Cases[3].Form {
+		form[k] = v
+	}
+	form["stay_fee_guest_form"] = "1"
+	form["stay_fee_guest_rails"] = "cash"
+	form["stay_fee_guest_default_rail"] = "cash"
+	form["stay_fee_collect"] = "0"
+	ctx := context.Background()
+	before := apartmentUpdateRead(t, ctx, pool, g, 201)
+	rec := apartmentFormPost(t, mux, "/apartments/201", g.CSRFNonce, 2, 0, "en", true, form)
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("save guest pay: %d", rec.Code)
+	}
+	after := apartmentUpdateRead(t, ctx, pool, g, 201)
+	if reflect.DeepEqual(before, after) {
+		t.Fatal("guest pay columns unchanged")
+	}
+	var rails, def string
+	if err := pool.QueryRow(ctx, `SELECT COALESCE(stay_fee_guest_rails, ''), COALESCE(stay_fee_guest_default_rail, '') FROM apartment WHERE id = 201`).Scan(&rails, &def); err != nil {
+		t.Fatal(err)
+	}
+	if rails != "cash" || def != "cash" {
+		t.Errorf("guest pay: rails %q default %q", rails, def)
+	}
+}
+
 func TestApartmentUpdateNotPorted(t *testing.T) {
 	g := loadApartmentUpdateGolden(t)
 	pool := testPool(t)
@@ -328,18 +367,38 @@ func TestApartmentUpdateNotPorted(t *testing.T) {
 	mux := http.NewServeMux()
 	RegisterApartmentUpdate(mux, noWrap, pool, apartmentUpdateGetenv, testClock)
 	ctx := context.Background()
-	base := g.Cases[3].Form // the full save of property 201
+	base := g.Cases[3].Form
+	// Wizard setup_step saves live in TestApartmentUpdateWizardSteps (brief 2031).
+	redirectCases := map[string]map[string]string{
+		"Arabic-Indic PIN":   {"permalink_pin": "١٢٣٤٥٦"},
+		"superscript hour":   {"checkin_hour": "1²"},
+		"basic ISO rate day": {"stay_fee_rate_from": "20261201"},
+	}
+	for name, extra := range redirectCases {
+		form := map[string]string{}
+		for k, v := range base {
+			form[k] = v
+		}
+		for k, v := range extra {
+			form[k] = v
+		}
+		before := apartmentUpdateRead(t, ctx, pool, g, 201)
+		rec := apartmentFormPost(t, mux, "/apartments/201", g.CSRFNonce, 2, 0, "en", true, form)
+		if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") == "" {
+			t.Errorf("%s: %d, want 303 with Location", name, rec.Code)
+		}
+		if !strings.Contains(rec.Header().Get("Location"), "err=") {
+			t.Errorf("%s: Location %q missing err flash", name, rec.Header().Get("Location"))
+		}
+		if rec.Header().Get("X-Ubyhost-Not-Ported") == "1" {
+			t.Errorf("%s: fallback header set", name)
+		}
+		if after := apartmentUpdateRead(t, ctx, pool, g, 201); !reflect.DeepEqual(after, before) {
+			t.Errorf("%s: the property was written", name)
+		}
+	}
 	for name, extra := range map[string]map[string]string{
-		"calendar wizard step":   {"setup_step": "calendar"},
-		"guest link wizard step": {"setup_step": "guest_link"},
-		"not a wizard step":      {"setup_step": "calendar_sync"},
-		"wizard return_to":       {"return_to": "/apartments/201/setup/police"},
-		"quoted wizard return":   {"return_to": "%2Fapartments%2F201%2Fsetup%2Fpolice"},
-		"guest pay block":        {"stay_fee_guest_form": "1"},
-		"full-width operator":    {"legal_entity_id": "２１"},
-		"Arabic-Indic PIN":       {"permalink_pin": "١٢٣٤٥٦"},
-		"superscript hour":       {"checkin_hour": "1²"},
-		"basic ISO rate day":     {"stay_fee_rate_from": "20261201"},
+		"full-width operator": {"legal_entity_id": "２１"},
 	} {
 		form := map[string]string{}
 		for k, v := range base {
@@ -350,8 +409,14 @@ func TestApartmentUpdateNotPorted(t *testing.T) {
 		}
 		before := apartmentUpdateRead(t, ctx, pool, g, 201)
 		rec := apartmentFormPost(t, mux, "/apartments/201", g.CSRFNonce, 2, 0, "en", true, form)
-		if rec.Code != http.StatusNotImplemented || rec.Header().Get("X-Ubyhost-Not-Ported") != "1" {
-			t.Errorf("%s: %d, want 501 with the fallback header", name, rec.Code)
+		if rec.Code != http.StatusNotFound {
+			t.Errorf("%s: %d, want 404", name, rec.Code)
+		}
+		if !strings.Contains(rec.Body.String(), "Page not found") {
+			t.Errorf("%s: body lacks branded 404", name)
+		}
+		if rec.Header().Get("X-Ubyhost-Not-Ported") == "1" {
+			t.Errorf("%s: fallback header set", name)
 		}
 		if after := apartmentUpdateRead(t, ctx, pool, g, 201); !reflect.DeepEqual(after, before) {
 			t.Errorf("%s: the property was written", name)
@@ -452,16 +517,37 @@ func TestApartmentUpdateRefusedDraft(t *testing.T) {
 		"account_number": "124", "account_prefix": "", "stay_fee_authority_databox": " AbC1234 ",
 	})
 	adCheck(t, "refused fee draft", body, []string{`data-first-error="stay_fee_council_account"`, `value="abc1234"`}, []string{`name="fee_return_to"`, `fee-return-note`})
-	// The guest-pay draft of refuse_fee_save is not ported.
-	form := map[string]string{}
-	for k, v := range g.Cases[3].Form {
-		form[k] = v
+	muxGP := http.NewServeMux()
+	RegisterApartmentUpdate(muxGP, noWrap, pool, func(k string) string {
+		if k == "UBYHOST_STAY_FEE_GUEST_PAY" {
+			return "on"
+		}
+		return apartmentUpdateGetenv(k)
+	}, testClock)
+	postGP := func(extra map[string]string) string {
+		t.Helper()
+		form := map[string]string{}
+		for k, v := range g.Cases[3].Form {
+			form[k] = v
+		}
+		for k, v := range extra {
+			form[k] = v
+		}
+		before := apartmentUpdateRead(t, ctx, pool, g, 201)
+		rec := apartmentFormPost(t, muxGP, "/apartments/201", g.CSRFNonce, 2, 0, "en", true, form)
+		if rec.Code != http.StatusBadRequest {
+			t.Errorf("guest-pay draft: %d, want 400", rec.Code)
+		}
+		if after := apartmentUpdateRead(t, ctx, pool, g, 201); !reflect.DeepEqual(after, before) {
+			t.Errorf("guest-pay draft: the property was written")
+		}
+		return rec.Body.String()
 	}
-	form["account_number"], form["account_prefix"], form["stay_fee_guest_operator_account"] = "124", "", "19-2000145399/0800"
-	rec := apartmentFormPost(t, mux, "/apartments/201", g.CSRFNonce, 2, 0, "en", true, form)
-	if rec.Code != http.StatusNotImplemented || rec.Header().Get("X-Ubyhost-Not-Ported") != "1" {
-		t.Errorf("guest-pay draft: %d, want 501 with the fallback header", rec.Code)
-	}
+	body = postGP(map[string]string{
+		"stay_fee_guest_form": "1", "stay_fee_guest_rails": "iban", "stay_fee_collect": "1",
+		"stay_fee_guest_operator_account": "not-a-account",
+	})
+	adCheck(t, "guest-pay draft", body, []string{`data-first-error="stay_fee_guest_operator_account"`}, nil)
 }
 
 // TestApartmentUpdateSignatureFeeLetter (brief 1702d1): the tail of
