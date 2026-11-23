@@ -344,6 +344,8 @@ guide.setup.step4
 guide.setup.step4_title
 guide.setup.step5
 guide.setup.step5_title
+guide.guest_guide.import1
+guide.guest_guide.import2
 guide.setup.what
 guide.setup.when
 guide.setup.wizard1

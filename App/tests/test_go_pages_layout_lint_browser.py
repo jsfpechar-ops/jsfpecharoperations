@@ -4,6 +4,8 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+os.environ.setdefault("UBYHOST_APIFY_TOKEN", "harness-apify-token")
+
 import psycopg
 import pytest
 
@@ -104,6 +106,57 @@ def test_go_harness_signs_in_and_loads_css(go_web, go_cookie):
         )
         assert "times" not in serif and serif != "serif"
         browser.close()
+
+
+def _hide_security_prompt(go_web: dict) -> None:
+    with psycopg.connect(go_web["database_url"]) as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE user_account SET two_factor_prompted_at = '2026-01-01T00:00:00+00:00' WHERE id = %s",
+            (go_web["host_id"],),
+        )
+        conn.commit()
+
+
+def _seed_url_notice(go_web: dict, count: int) -> None:
+    apt = go_web["apartment_id"]
+    with psycopg.connect(go_web["database_url"]) as conn, conn.cursor() as cur:
+        cur.execute("DELETE FROM guide_import WHERE apartment_id = %s", (apt,))
+        cur.execute(
+            """INSERT INTO guide_import (apartment_id, source, url, status, codes_left_out, used_at, created_at)
+               VALUES (%s, 'url', 'https://www.notion.so/test/page', 'used', %s, '2026-01-02', '2026-01-01')""",
+            (apt, count),
+        )
+        conn.commit()
+
+
+def test_go_guide_import_public_url_states_pass_the_lint(go_web, go_cookie):
+    _hide_security_prompt(go_web)
+    apt = go_web["apartment_id"]
+    path = f"/apartments/{apt}/guide"
+    cases = [
+        ("empty", path, None),
+        ("notice", path, 3),
+        ("notice-one", path, 1),
+        ("error", path + "?err=flash.error.guide_import_public_url#import", None),
+        ("queued", path + "?msg=flash.guest_guide.import_queued#import", None),
+    ]
+    findings: list = []
+    for label, url, notice in cases:
+        if notice is not None:
+            _seed_url_notice(go_web, notice)
+        elif label == "empty":
+            with psycopg.connect(go_web["database_url"]) as conn, conn.cursor() as cur:
+                cur.execute("DELETE FROM guide_import WHERE apartment_id = %s", (apt,))
+                conn.commit()
+        findings.extend(
+            lint_go_paths(
+                go_web,
+                {label: url},
+                go_cookie,
+                shot_labels={label: f"guide-import-url-{label}"},
+            )
+        )
+    assert_no_layout_findings(findings)
 
 
 def test_go_guide_external_link_states_pass_the_lint(go_web, go_cookie):

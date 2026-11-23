@@ -13,6 +13,7 @@ flash.error.guide_import_link
 flash.error.guide_external_url
 flash.error.guide_import_off
 flash.error.guide_import_same
+flash.error.guide_import_public_url
 flash.error.guide_no_such_item
 flash.error.guide_photo_limit
 flash.error.guide_photo_size

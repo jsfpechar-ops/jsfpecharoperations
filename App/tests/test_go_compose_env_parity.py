@@ -64,6 +64,7 @@ def test_new_bare_keys_have_no_value_in_compose():
         "UBYHOST_AUDIT_RETENTION_DAYS",
         "UBYHOST_DEMO_ENABLED",
         "UBYHOST_GO_RETENTION_APPLY",
+        "UBYHOST_GO_ACCESS_PAGE",
         "UBYHOST_GUEST_LANGS",
         "UBYHOST_GUEST_NOTICE_VERSION",
         "UBYHOST_GUEST_PIN",
