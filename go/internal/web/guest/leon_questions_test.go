@@ -70,3 +70,22 @@ func TestLeonQuestionsSignedOutGolden(t *testing.T) {
 func TestLeonGoneWithoutLiveGuide(t *testing.T) {
 	t.Skip("JSON gate parity is exercised when UBYHOST_TEST_DATABASE_URL is set in executor step 5")
 }
+
+func TestLeonQuestionsTemplateChrome(t *testing.T) {
+	raw, err := leonQuestionsFS.ReadFile("templates/leon_questions.tmpl")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(raw)
+	if strings.Count(s, `class="airbnb-title"`) != 2 {
+		t.Fatalf("airbnb-title count %d", strings.Count(s, `class="airbnb-title"`))
+	}
+	for _, bad := range []string{"ui-page", "guide-back", `class="big"`, `<h1 class="big"`} {
+		if strings.Contains(s, bad) {
+			t.Fatalf("legacy chrome %q", bad)
+		}
+	}
+	if !strings.Contains(s, "settings-lane") {
+		t.Fatal("missing settings-lane")
+	}
+}
