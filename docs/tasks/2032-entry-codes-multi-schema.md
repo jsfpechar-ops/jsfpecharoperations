@@ -1,6 +1,7 @@
 # 2032: Goose 00023 — `apartment_entry_code` table (up to 3 extra codes), retention, export guard
 
 Status: review
+Report: docs/tasks/2032-entry-codes-multi-schema-report.md
 Depends on: 1661, 1662 | Base commit: fill from `git rev-parse --short HEAD` | Branch: task/2032-entry-codes-multi-schema
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier A (migration + retention of a secret): brief reviewed as exact diff
 
