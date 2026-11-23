@@ -141,10 +141,11 @@ func wizardBack(w http.ResponseWriter, r *http.Request, path string) {
 	hostweb.Back(w, r, path, hostweb.Flash{}, hostweb.Flash{})
 }
 
-// wizardNotPorted answers a branch whose Go port is still to come (501).
-func wizardNotPorted(w http.ResponseWriter, what string) {
-	w.Header().Set("Cache-Control", "no-store, private")
-	http.Error(w, "Not implemented in Go yet: "+what, http.StatusNotImplemented)
+// wizardNotPorted answers a branch whose Go port is still to come (501) with a
+// host page in the light-mode layout.
+func (s *wizardServer) wizardNotPorted(w http.ResponseWriter, r *http.Request, h *session.Host, at time.Time, what string) {
+	env := layout.Env{Pool: s.pool, Getenv: s.getenv, Now: at}
+	layout.NotPortedPage(w, r, env, h, "apartments", what)
 }
 
 // wizardRender is render_wizard: setup_wizard/<step>.html inside the host
@@ -152,7 +153,7 @@ func wizardNotPorted(w http.ResponseWriter, what string) {
 func (s *wizardServer) wizardRender(w http.ResponseWriter, r *http.Request, h *session.Host, at time.Time, status int, v *wizardView) {
 	tpl, ok := wizardPages[v.Step]
 	if !ok {
-		wizardNotPorted(w, "the "+v.Step+" step page")
+		s.wizardNotPorted(w, r, h, at, "the "+v.Step+" step page")
 		return
 	}
 	env := layout.Env{Pool: s.pool, Getenv: s.getenv, Now: at}
