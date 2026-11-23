@@ -69,7 +69,8 @@ func TestTermsRetiredNotice(t *testing.T) {
 			if rec.Code != http.StatusOK || !strings.Contains(body, "<h1>"+tc.title+"</h1>") {
 				t.Fatalf("terms did not render for %s, retired=%q", tc.lang, setting)
 			}
-			if strings.Contains(body, tc.notice) != (setting == "1") {
+			conditional := `<p role="note">` + tc.notice + `</p>`
+			if strings.Contains(body, conditional) != (setting == "1") {
 				t.Errorf("unexpected availability notice for %s, retired=%q", tc.lang, setting)
 			}
 		}
