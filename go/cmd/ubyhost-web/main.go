@@ -198,6 +198,10 @@ func run() int {
 		slog.Error(err.Error())
 		return 1
 	}
+	if err := validateJobConfig(goKinds, os.Getenv, os.LookupEnv); err != nil {
+		slog.Error(err.Error())
+		return 1
+	}
 	addr := getenv("UBYHOST_GO_ADDR", "127.0.0.1:8081")
 	migrations := getenv("UBYHOST_MIGRATIONS_DIR", "App/migrations_pg")
 
