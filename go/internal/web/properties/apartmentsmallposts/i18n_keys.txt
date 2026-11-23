@@ -3,6 +3,7 @@ flash.properties.timing_hours
 flash.properties.timing_invalid
 flash.apartments.connection_ok
 flash.error.connection_failed
+flash.error.not_saved_here
 flash.apartments.letter_new_login_no_password
 flash.apartments.codelists_refreshed
 flash.error.codelists_refresh

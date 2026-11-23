@@ -1,7 +1,6 @@
 # 2035: Code filter for imported guide text — pure Go function with table tests
 
 Status: review
-Report: docs/tasks/2035-guide-import-code-filter-report.md
 Depends on: none | Base commit: fill from `git rev-parse --short HEAD` | Branch: task/2035-guide-import-code-filter
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B (privacy filter, no UI)
 
@@ -74,7 +73,7 @@ Stop if: a required row cannot pass without breaking a kept row (report both, do
 
 ## 9. Report
 
-`docs/tasks/2035-report.md` (≤600 tokens), `Status: review`, one PR. List any row you changed and why.
+`docs/tasks/2035-guide-import-code-filter-report.md` (≤600 tokens), `Status: review`, one PR. List any row you changed and why.
 
 ## Risk list (for the reviewer)
 
