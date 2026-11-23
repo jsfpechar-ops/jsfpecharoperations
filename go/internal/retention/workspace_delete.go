@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 
@@ -69,11 +68,11 @@ func workspaceDeletionReminders(ctx context.Context, r *runner) error {
 	getenv := r.getenv()
 	for rows.Next() {
 		var id int64
-		var due time.Time
+		var due string
 		if err := rows.Scan(&id, &due); err != nil {
 			return err
 		}
-		if _, err := mail.QueueWorkspaceDeletion(ctx, r.pool, getenv, id, pyISO(due), mail.DeletionWeekBefore, r.now); err != nil {
+		if _, err := mail.QueueWorkspaceDeletion(ctx, r.pool, getenv, id, due, mail.DeletionWeekBefore, r.now); err != nil {
 			return err
 		}
 	}
