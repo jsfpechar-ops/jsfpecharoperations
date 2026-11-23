@@ -15,6 +15,7 @@ The worker (`App/app/scheduler.py`, `job_intervals()`) runs these jobs. The Oper
 | `guide_import` | 60 min | Processes queued guide imports. Imports are not time-critical, so hourly is enough. |
 | `photo_sweep` | 12 h | Cleans up passport photos on a schedule. |
 | `retention` | daily | Retention deletions run once a day. |
-| `stay_fee_mail`, `stripe_sweep`, `billing_snapshot` | daily | Billing jobs run once a day. |
+| `stay_fee_mail`, `billing_snapshot` | daily | Billing jobs run once a day. |
+| `stripe_sweep` | daily | Payment expiry and webhook dedupe; skipped (no schedule) when `UBYHOST_PAYMENTS_RETIRED=1`. `billing_snapshot` keeps running. |
 
 Change a value here and in `job_intervals()` together. `App/tests/test_scheduler.py` checks the three values set on 2026-10-31.

@@ -55,6 +55,7 @@ func seedHosts(t *testing.T, pool *pgxpool.Pool) {
 func getAs(t *testing.T, mux http.Handler, path string, uid, as int64, hdr map[string]string) *httptest.ResponseRecorder {
 	t.Helper()
 	req := httptest.NewRequest(http.MethodGet, path, nil)
+	req.Header.Set("Accept", "text/html")
 	req.AddCookie(&http.Cookie{Name: "ubyhost_lang", Value: "en"})
 	for k, v := range hdr {
 		req.Header.Set(k, v)
