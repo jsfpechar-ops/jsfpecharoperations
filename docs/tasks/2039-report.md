@@ -1,60 +1,61 @@
-# 2039 report
+# 2039 report: Go address lookup on staging
 
-Status: review
+**Status: blocked** · Staging SHA `ffd8c17bc8193e6379fc7d6efda8f0dddd7bd51c` (matches assignment). `origin/main` after fetch: `7b44a3b01eb1ff39662ba1293da5f201dfb69557`.
 
-## §7
+## Checks
 
-- [x] 4 routes on Go (`leon_chat.go` + `leon_questions.go`), JSON gates and POST via `leon_reply.go`
-- [x] `Reason: entry_code` → `leon_entry_code_pointer` in all 6 guest languages (Go-only i18n file)
-- [x] Leon parity tests green; Python Leon untouched; `leon_prompt.txt` restored from Python bytes
-- [x] `guest_handoff.on_new_question` ported (`guesthandoff.OnNewQuestion` after `openLeonQuestion`; alerts + batched host mail)
-- [x] DB integration: stay + QR entry-code POST, one host mail, no code in messages/system blocks
-- [x] Production paths: owner step (no repo `UBYHOST_GO_PATHS` list)
-
-## Files
-
-- `go/internal/web/ai/leon_prompt.txt` — restored from Python via `leon_try_golden.py`
-- `go/internal/web/ai/leon_prompt_access.txt` — ACCESS CODES paragraph (new)
-- `go/internal/web/ai/leon_core.go` — `leonCharacterLive`, entry-code i18n embed
-- `go/internal/web/ai/leon_reply.go` — `leon.reply` port + handoff hook; NULL-safe chat RETURNING
-- `go/internal/web/ai/leon_try.go` — `GuestCards(..., level)`
-- `go/internal/web/ai/leon_guest_entry_code_i18n.json` — pointer strings (new)
-- `go/internal/web/ai/leon_try_test.go`, `leon_entry_code_test.go` — parity / ACCESS CODES assertions
-- `go/internal/web/guest/leon_chat.go`, `leon_chat_test.go` — gates + POST wiring
-- `go/internal/web/guest/leon_questions.go` — stay/QR JSON handlers; `handoffRefreshAlert` → `guesthandoff`
-- `go/internal/web/guest/leon_entry_code_integration_test.go` — stay/QR + outbox (new)
-- `go/internal/guesthandoff/notify.go` — `OnNewQuestion`, `RefreshAlert`, `OpenCounts` (new)
-- `go/internal/mail/guest_question_host.go`, `guest_question_host_test.go` — host mail bytes vs Python (new)
-- `go/internal/web/guest/guide_page.go`, `guide_photo.go` — `GuestCards` level arg
-- `docs/plans/go-full-move-remaining.md`, `entry-code-external-guide.md`
-- `docs/tasks/2039-go-guest-leon.md` — lint sections
+| Check | Result | Evidence |
+|---|---|---|
+| `/healthz` version | PASS | `ffd8c17…` |
+| Auth profile (no `NO_LOGIN`) | PASS | `/login` email magic-link form EN/CS 200; `/signup` 200 (not 404) |
+| `GET /apartments/ruian-suggest` route | PARTIAL | Unauthenticated: HTTP **401**, body `[]` for Vinohradská, Václavské, no-match (Go `ruian_suggest.go`) |
+| Known address → suggestions | **BLOCKED** | Host session required; `/apartments/new` → `/login?next=/apartments/new` (0× `data-ruian-suggest`) |
+| Select + field fill + JS-off submit | **BLOCKED** | No magic-link redemption (no test-mail sink in executor) |
+| Discoverability (street label) | **BLOCKED** | Add-property form not reached |
+| `go test … Test.*Ruian` | PARTIAL | 3 PASS; 6 **SKIP** (`UBYHOST_TEST_DATABASE_URL` unset here) |
 
 ## Commands (last lines)
 
-`gofmt -l .`: (empty after `gofmt -w .`)
+```text
+curl /healthz → {"status":"ok","version":"ffd8c17bc8193e6379fc7d6efda8f0dddd7bd51c",…}
+go test ./internal/web/properties -run 'Test.*Ruian' → 6 SKIP, 3 PASS, ok
+curl /apartments/ruian-suggest?q=Vinohradská → 401 []
+Chromium: login/signup EN+CS @390/1280; /apartments/new → login redirect
+```
 
-`go vet ./internal/web/... ./internal/mail/... ./cmd/ubyhost-web/`: (empty)
+Screenshots (executor machine, not in repo): `/opt/cursor/artifacts/2039/login-{en,cs}-{390,1280}.png`, `signup-{en,cs}-{390,1280}.png`, `apartments-new-390.png`.
 
-`go test ./internal/web/... ./internal/mail/... ./cmd/ubyhost-web/ -count=1`: all PASS (as `postgres`, `UBYHOST_TEST_DATABASE_URL=postgresql:///ubyhost_c9?host=/var/run/postgresql`)
+## §7 acceptance
 
-`pytest tests/test_go_ai_leon_try.py tests/test_go_leon_questions_golden.py`: 2 passed
+- [ ] Known staged address + populate fields — **not run** (needs host cookie).
+- [ ] Manual entry / no-JS — **not run**.
+- [x] Blocked prerequisite documented — **yes** (session + optional RÚIAN rows).
 
-`context_lint.py`: OK
+Prior audit on older SHA (`2528d7db4`, `NO_LOGIN`): Vinohradská → **200, count 0** while authenticated bypass active. On `ffd8c17` with auth profile, authenticated lookup not re-tested.
 
-DB: `UBYHOST_TEST_DATABASE_URL=postgresql:///ubyhost_c9?host=/var/run/postgresql` as `postgres` user.
+## Failing fixture (for owner rerun)
+
+1. Sign in on staging (magic link via test sink).
+2. Open `/apartments/new?lang=en`, street field with `data-ruian-suggest`.
+3. Type owner-supplied address from staged `ruian_address`; record `GET /apartments/ruian-suggest?q=…` status and JSON length.
+4. Repeat `zzznomatch123` → expect 200 `[]` with manual fields visible.
+5. Owning handler: `go/internal/web/properties/ruian_suggest.go`; template: `apartmentnew/apartment_new.tmpl`; JS: `/static/ruian_suggest.js` (200 on staging).
 
 ## Deviations
 
-- Entry-code guest copy in `leon_guest_entry_code_i18n.json`, not Python `leon_guest_i18n.json` (golden parity).
-- Brief `test_guest_cookie*.py`: no matching files; privacy cookie tests unchanged.
-- `leon_reply.go` omits some `leon.py` log lines; behaviour matches JSON contract.
+**Done:** SHA verify, unauthenticated API probes, login/signup/page sweep, local Ruian tests, brief copy. **Left:** steps 1–4 authenticated UI, 768 px form shots, RÚIAN row confirmation.
 
-## Owner steps (production)
+## Questions (owner booleans only)
 
-1. On the server, add these two entries to `UBYHOST_GO_PATHS`: `/l/*/*/guide/leon /g/*/leon` (checked with `caddy_match`: they match `/l/<token>/<id>/guide/leon` and `/g/<token>/leon` and nothing else).
-2. Redeploy Go web after merge; smoke one stay Leon POST and one QR Leon POST on staging.
-3. Run `scripts/go_switch_preflight.sh` with the new path fragment before enabling on production.
+1. `UBYHOST_RUIAN_ENABLED` on staging (default on unless `off`)?
+2. `ruian_address` row count > 0 on staging DB?
+3. One public address guaranteed in that dataset?
+4. Test-mail sink window for magic-link session?
 
-## Go paths in repo
+## Owner steps
 
-None (dormant registration only; cutover is owner env).
+1. Confirm Go serves `GET /apartments/ruian-suggest` on `ffd8c17` (yes unauthenticated; 401 expected).
+2. Share row count + sample query that must hit.
+3. Grant test-mail access; executor reruns 2039 steps 1–4 on same SHA.
+
+**Files changed:** `docs/tasks/2039-go-address-lookup-staging.md`, `docs/tasks/2039-report.md`.

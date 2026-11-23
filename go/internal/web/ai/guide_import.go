@@ -40,6 +40,7 @@ var guideBookingHosts = map[string]bool{"booking.com": true, "www.booking.com": 
 type guideLink struct{ Source, URL string }
 
 const guideLinkErr = "flash.error.guide_import_link"
+const guidePublicURLErr = "flash.error.guide_import_public_url"
 
 // guideNormaliseURL is guest_guide_import.normalise_url: the link rebuilt from
 // the matched parts only (fixed scheme and host, matched path); anything else
@@ -105,6 +106,53 @@ func guideNormaliseURL(raw string) (guideLink, error) {
 	return guideLink{}, guideErr(guideLinkErr)
 }
 
+// guidePublicURL is guide_external_url (brief 1664): https only, no userinfo, no port,
+// ASCII, dotted host, not an IP; the stored URL is rebuilt from the matched parts only.
+func guidePublicURL(raw string) (guideLink, error) {
+	text := guidePyStrip(raw)
+	if text == "" || utf8Len(text) > guideMaxURLLength || !guideASCII(text) {
+		return guideLink{}, guideErr(guidePublicURLErr)
+	}
+	if strings.ContainsAny(text, `@\`) || strings.IndexFunc(text, guideIsPySpace) >= 0 {
+		return guideLink{}, guideErr(guidePublicURLErr)
+	}
+	text = strings.TrimLeft(text, "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f ")
+	scheme, rest, found := strings.Cut(text, ":")
+	if !found || strings.ToLower(scheme) != "https" || !strings.HasPrefix(rest, "//") {
+		return guideLink{}, guideErr(guidePublicURLErr)
+	}
+	rest = rest[2:]
+	netloc := rest
+	path := "/"
+	if i := strings.IndexAny(rest, "/?#"); i >= 0 {
+		netloc, rest = rest[:i], rest[i:]
+		if rest != "" {
+			path = rest
+			if j := strings.IndexAny(path, "?#"); j >= 0 {
+				path = path[:j]
+			}
+			if path == "" {
+				path = "/"
+			}
+		}
+	}
+	if strings.Contains(netloc, "@") || strings.ContainsAny(netloc, "[]") {
+		return guideLink{}, guideErr(guidePublicURLErr)
+	}
+	host, port, _ := strings.Cut(netloc, ":")
+	if port != "" {
+		n, err := strconv.Atoi(port)
+		if err != nil || n > 65535 || n != 0 {
+			return guideLink{}, guideErr(guidePublicURLErr)
+		}
+	}
+	host = strings.TrimRight(strings.ToLower(host), ".")
+	if host == "" || !strings.Contains(host, ".") || guideAllDigits(strings.ReplaceAll(host, ".", "")) {
+		return guideLink{}, guideErr(guidePublicURLErr)
+	}
+	return guideLink{"url", "https://" + host + path}, nil
+}
+
 func utf8Len(s string) int { return len([]rune(s)) }
 
 func guideASCII(s string) bool {
@@ -147,29 +195,15 @@ func (s *guideServer) runsThisMonth(ctx context.Context, at time.Time) (int, err
 // requestImports is guest_guide_import.request_imports: every check runs
 // before any row is written, so a refusal queues nothing. A flash key comes
 // back as a guideError.
-func (s *guideServer) requestImports(ctx context.Context, apt int64, urls []string, at time.Time) error {
+func (s *guideServer) requestImports(ctx context.Context, apt int64, links []guideLink, at time.Time) error {
 	cfg := guideimport.ConfigFromEnv(s.lookupEnv)
 	if cfg.Token == "" {
 		return guideErr("flash.error.guide_import_off")
 	}
-	var raws []string
-	for _, u := range urls {
-		if guidePyStrip(u) != "" {
-			raws = append(raws, u)
-		}
-	}
-	if len(raws) == 0 {
+	if len(links) == 0 {
 		return guideErr("flash.error.guide_import_empty")
 	}
-	var links []guideLink
 	seen := map[string]bool{}
-	for _, raw := range raws {
-		link, err := guideNormaliseURL(raw)
-		if err != nil {
-			return err
-		}
-		links = append(links, link)
-	}
 	for _, l := range links {
 		if seen[l.Source] {
 			return guideErr("flash.error.guide_import_same")
@@ -221,16 +255,31 @@ func (s *guideServer) importPost(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	var urls []string
-	for _, name := range []string{"booking_url", "airbnb_url", "url"} {
-		v, _ := guideFormValue(r, name)
-		urls = append(urls, guideTruncate(v, guideMaxURLLength))
-	}
 	target := q.base() + "#import"
+	var links []guideLink
+	for _, pair := range []struct {
+		name string
+		fn   func(string) (guideLink, error)
+	}{
+		{"booking_url", guideNormaliseURL},
+		{"airbnb_url", guideNormaliseURL},
+		{"public_url", guidePublicURL},
+	} {
+		v, _ := guideFormValue(r, pair.name)
+		if guidePyStrip(v) == "" {
+			continue
+		}
+		link, err := pair.fn(guideTruncate(v, guideMaxURLLength))
+		if err != nil {
+			q.back(w, target, hostweb.Flash{}, q.flash(guideErrKey(err), nil))
+			return
+		}
+		links = append(links, link)
+	}
 	if next, _ := guideFormValue(r, "next"); next == "leon" {
 		target = "/apartments/" + strconv.FormatInt(a.ID, 10) + "/leon/setup/import"
 	}
-	if err := s.requestImports(r.Context(), a.ID, urls, q.at); err != nil {
+	if err := s.requestImports(r.Context(), a.ID, links, q.at); err != nil {
 		if key := guideErrKey(err); key != "" {
 			q.back(w, target, hostweb.Flash{}, q.flash(key, nil))
 			return

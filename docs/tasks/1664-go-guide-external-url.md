@@ -1,6 +1,6 @@
 # 1664: Go guide editor — external guide link field (https only, domain shown)
 
-Status: todo (after 1661 merges)
+Status: review
 Depends on: 1661, 1668 | Base commit: bdfaa4d4 | Branch: task/1664-go-guide-external-url
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B (host UI)
 

@@ -27,6 +27,7 @@ const (
 var actors = map[string]string{
 	"booking": "voyager~booking-scraper",
 	"airbnb":  "tri_angle~airbnb-rooms-urls-scraper",
+	"url":     "apify~website-content-crawler",
 }
 
 // Error is a short failure code the import row stores (GuideImportError.key).
@@ -71,8 +72,11 @@ func NewApify(token string, timeoutSecs int) *Apify {
 // ActorBody is json.dumps(_actor_input(source, url)): Python's default separators.
 func ActorBody(source, url string) string {
 	s := `{"startUrls": [{"url": ` + anthropic.PyJSONString(url) + `}]`
-	if source == "booking" {
+	switch source {
+	case "booking":
 		s += `, "maxItems": 1, "language": "en-gb", "currency": "CZK"`
+	case "url":
+		s += `, "maxCrawlDepth": 0, "maxCrawlPages": 1, "crawlerType": "playwright:firefox"`
 	}
 	return s + "}"
 }

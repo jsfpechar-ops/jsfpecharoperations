@@ -10,7 +10,10 @@ package ai
 import (
 	"context"
 	"errors"
+	"html"
+	"html/template"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -32,7 +35,7 @@ const guideLeonTermsVersion = "2026-10-25"
 const guideLeonFeature = "leon"
 
 // guideImportSources is guest_guide_import.ACTORS, in the order of the form.
-var guideImportSources = []string{"booking", "airbnb"}
+var guideImportSources = []string{"booking", "airbnb", "url"}
 
 // importEnabled is guest_guide_import.enabled: an Apify token is set.
 func (s *guideServer) importEnabled() bool {
@@ -69,6 +72,23 @@ WHERE apartment_id = $1 ORDER BY id DESC LIMIT 10`, apt)
 
 // usedSources is guest_guide_import.used_sources: sources this property has
 // imported (a failed run does not use one up).
+func (s *guideServer) urlCodesLeftOut(ctx context.Context, apt int64) (int, error) {
+	var n *int
+	err := s.pool.QueryRow(ctx, `SELECT codes_left_out FROM guide_import
+WHERE apartment_id = $1 AND source = 'url' AND status = 'used' AND codes_left_out > 0
+ORDER BY id DESC LIMIT 1`, apt).Scan(&n)
+	if err == pgx.ErrNoRows {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, err
+	}
+	if n == nil {
+		return 0, nil
+	}
+	return *n, nil
+}
+
 func (s *guideServer) usedSources(ctx context.Context, apt int64) (map[string]bool, error) {
 	rows, err := s.pool.Query(ctx, `SELECT DISTINCT source FROM guide_import WHERE apartment_id = $1 AND status != 'failed'`, apt)
 	if err != nil {
@@ -203,26 +223,32 @@ type guideGroup struct {
 
 // guideIndexData is the context of guide_index.tmpl.
 type guideIndexData struct {
-	Apartment     *guideApartment
-	Base          string
-	Groups        []guideGroup
-	TopicOptions  [][]string
-	Progress      guideProgress
-	NextID        int64
-	QuickNext     string
-	LeonOffer     bool
-	LeonState     string
-	ImportOn      bool
-	ImportLeft    int
-	ImportBusy    bool
-	ImportFirst   bool
-	ImportDrafts  int64
-	WantBooking   bool
-	WantAirbnb    bool
-	Imports       []guideImportRow
-	QuestionsOpen int64
-	Usage         guideUsage
-	UsageLangs    string
+	Apartment        *guideApartment
+	Base             string
+	Groups           []guideGroup
+	TopicOptions     [][]string
+	Progress         guideProgress
+	NextID           int64
+	QuickNext        string
+	LeonOffer        bool
+	LeonState        string
+	ImportOn         bool
+	ImportLeft       int
+	ImportBusy       bool
+	ImportFirst      bool
+	ImportDrafts     int64
+	WantBooking      bool
+	WantAirbnb       bool
+	WantPublicURL    bool
+	CodesLeftOut     int
+	CodesLeftOutHTML template.HTML
+	GoAccessPage     bool
+	Imports          []guideImportRow
+	QuestionsOpen    int64
+	Usage            guideUsage
+	UsageLangs       string
+	ExternalURL      string
+	ExternalHost     string
 }
 
 // index is GET /apartments/{id}/guide.
@@ -253,6 +279,14 @@ func (s *guideServer) buildIndex(w http.ResponseWriter, r *http.Request, q *guid
 		return err
 	}
 	d := guideIndexData{Apartment: a, Base: q.base(), Progress: guideProgressOf(rows), NextID: guideNextOpen(rows, 0)}
+	if err := s.pool.QueryRow(ctx, `SELECT COALESCE(guide_external_url, '') FROM apartment WHERE id = $1`, a.ID).Scan(&d.ExternalURL); err != nil {
+		return err
+	}
+	if d.ExternalURL != "" {
+		if u, err := url.Parse(d.ExternalURL); err == nil {
+			d.ExternalHost = strings.ToLower(u.Hostname())
+		}
+	}
 	for _, topic := range guideTopics {
 		var cards []guideRow
 		for _, row := range rows {
@@ -277,7 +311,27 @@ func (s *guideServer) buildIndex(w http.ResponseWriter, r *http.Request, q *guid
 			d.ImportLeft++
 		}
 	}
-	d.WantBooking, d.WantAirbnb = !used["booking"], !used["airbnb"]
+	d.WantBooking, d.WantAirbnb, d.WantPublicURL = !used["booking"], !used["airbnb"], !used["url"]
+	if n, err := s.urlCodesLeftOut(ctx, a.ID); err != nil {
+		return err
+	} else {
+		d.CodesLeftOut = n
+	}
+	v, _ := s.lookupEnv("UBYHOST_GO_ACCESS_PAGE")
+	d.GoAccessPage = v == "1"
+	if d.CodesLeftOut > 0 {
+		before := guideCatalog.T(q.lang, "guest_guide.import.codes_left_out", map[string]any{"n": d.CodesLeftOut})
+		label := html.EscapeString(guideCatalog.T(q.lang, "guest_guide.import.entry_codes_link", nil))
+		var entry string
+		if d.GoAccessPage {
+			entry = `<a href="/apartments/` + strconv.FormatInt(a.ID, 10) + `/access#entry-codes">` + label + `</a>`
+		} else {
+			entry = label
+		}
+		mid := guideCatalog.T(q.lang, "guest_guide.import.codes_left_out_mid", nil)
+		end := guideCatalog.T(q.lang, "guest_guide.import.codes_left_out_end", nil)
+		d.CodesLeftOutHTML = template.HTML(before + mid + entry + end)
+	}
 	for _, row := range d.Imports {
 		if row.Status == "queued" || row.Status == "running" {
 			d.ImportBusy = true

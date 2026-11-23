@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html"
 	"strconv"
 	"strings"
 	"time"
@@ -26,11 +27,17 @@ const (
 	// ClaimSecretPayloadKey is the outbox payload field for an encrypted claim token.
 	ClaimSecretPayloadKey = "claim_secret_enc"
 	DoorCodeMarker        = "{{door_code}}"
+	EntryCodeMarker1      = "{{entry_code_1}}"
+	EntryCodeMarker2      = "{{entry_code_2}}"
+	EntryCodeMarker3      = "{{entry_code_3}}"
 	GuestDetailsMarker    = "{{guest_details}}"
 	ReceiptDetailsMarker  = "{{receipt_details}}"
 
 	claimSecretKey    = ClaimSecretPayloadKey
 	doorCodeKey       = "door_code_enc"
+	entryCodeKey1     = "entry_code_enc_1"
+	entryCodeKey2     = "entry_code_enc_2"
+	entryCodeKey3     = "entry_code_enc_3"
 	guestDetailsKey   = "guest_details_reservation_id"
 	receiptDetailsKey = "receipt_details_reservation_id"
 	stayFeeFilingKey  = "stay_fee_filing_id"
@@ -40,6 +47,34 @@ const (
 	// QRContentID is the cid the QR image is referenced by in the HTML.
 	QRContentID = "stayfeeqr"
 )
+
+// EntryCodePayloadKey is the outbox payload field for an encrypted entry code at position.
+func EntryCodePayloadKey(position int) string {
+	switch position {
+	case 1:
+		return entryCodeKey1
+	case 2:
+		return entryCodeKey2
+	case 3:
+		return entryCodeKey3
+	default:
+		return ""
+	}
+}
+
+// EntryCodeMarker is the send-time marker for an entry code at position.
+func EntryCodeMarker(position int) string {
+	switch position {
+	case 1:
+		return EntryCodeMarker1
+	case 2:
+		return EntryCodeMarker2
+	case 3:
+		return EntryCodeMarker3
+	default:
+		return ""
+	}
+}
 
 // DetailsRenderer fills {{guest_details}} and {{receipt_details}} from the
 // database when the mail is sent (mail_notify.render_guest_details and
@@ -161,6 +196,30 @@ func (c Config) withDoorCode(value string, p obPayload) (string, error) {
 	return strings.ReplaceAll(value, DoorCodeMarker, guestPinDisplay(pin)), nil
 }
 
+// withEntryCodes fills the extra entry codes: the host-typed value as stored,
+// escaped in the HTML part. A marker without its key fails the send. Never log a value.
+func (c Config) withEntryCodes(value string, p obPayload, asHTML bool) (string, error) {
+	for position := 1; position <= 3; position++ {
+		marker := EntryCodeMarker(position)
+		if !strings.Contains(value, marker) {
+			continue
+		}
+		token := p.str(EntryCodePayloadKey(position))
+		if token == "" {
+			return "", fmt.Errorf("%w: outbox payload has an entry code with no secret", ErrDecryption)
+		}
+		code, err := c.decrypt(token)
+		if err != nil {
+			return "", err
+		}
+		if asHTML {
+			code = html.EscapeString(code)
+		}
+		value = strings.ReplaceAll(value, marker, code)
+	}
+	return value, nil
+}
+
 func (c Config) withDetails(ctx context.Context, pool *pgxpool.Pool, value, marker, key string, p obPayload, asHTML, receipt bool) (string, error) {
 	if !strings.Contains(value, marker) {
 		return value, nil
@@ -201,6 +260,9 @@ func (c Config) delivery(ctx context.Context, pool *pgxpool.Pool, stored string,
 		return "", err
 	}
 	if v, err = c.withDoorCode(v, p); err != nil {
+		return "", err
+	}
+	if v, err = c.withEntryCodes(v, p, asHTML); err != nil {
 		return "", err
 	}
 	if v, err = c.withDetails(ctx, pool, v, GuestDetailsMarker, guestDetailsKey, p, asHTML, false); err != nil {

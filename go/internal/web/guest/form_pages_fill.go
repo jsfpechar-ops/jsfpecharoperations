@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/guestcontract"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
 )
 
@@ -26,6 +27,14 @@ func formGuestFieldMap(g *formGuestRow) map[string]string {
 		"first_name":  g.firstName,
 		"surname":     g.surname,
 		"nationality": g.nationality,
+		"birth_date":  g.birthDate,
+		"doc_number":  g.docNumber,
+		"visa_number": g.visaNumber,
+		"res_street":  g.resStreet,
+		"res_city":    g.resCity,
+		"res_country": g.resCountry,
+		"purpose":     g.purpose,
+		"note":        g.note,
 	}
 }
 
@@ -34,7 +43,7 @@ func formPagesFillU15(ctx context.Context, d formPageDeps, view *formView, res f
 	if guest != nil {
 		guestID = guest.id
 	}
-	signers, pending := formU15Lists(ctx, d.pool, res.id, guestID, formPagesOwnedIDs(r, d.getenv), d.getenv, d.now)
+	signers, pending := formU15Lists(ctx, d.pool, res.id, guestID, formPagesOwnedIDs(r, d.getenv), d.getenv, d.now, res.dateFrom)
 	view.PendingChildren = pending
 	if len(pending) > 0 {
 		names := make([]string, len(pending))
@@ -45,9 +54,15 @@ func formPagesFillU15(ctx context.Context, d formPageDeps, view *formView, res f
 	}
 	view.ChildSigners = signers
 	view.AdultSigner = len(signers) > 0
+	if guest != nil {
+		from, ok := validation.ParseISODate(res.dateFrom)
+		if ok {
+			view.Under15 = validation.CertainlyUnderAge(guest.birthDate, &from, guestcontract.UnderSignAge)
+		}
+	}
 }
 
-func formU15Lists(ctx context.Context, pool *pgxpool.Pool, resID, guestID int64, owned map[int64]bool, getenv func(string) string, now func() time.Time) (adults, pending []formChildEntry) {
+func formU15Lists(ctx context.Context, pool *pgxpool.Pool, resID, guestID int64, owned map[int64]bool, getenv func(string) string, now func() time.Time, stayFrom string) (adults, pending []formChildEntry) {
 	if len(owned) == 0 || pool == nil {
 		return nil, nil
 	}
@@ -86,25 +101,17 @@ func formU15Lists(ctx context.Context, pool *pgxpool.Pool, resID, guestID int64,
 			adults = append(adults, entry)
 			continue
 		}
-		if signedFor == 0 && formGuestUnder15(birth) {
+		if signedFor == 0 && formGuestUnder15OnStay(birth, stayFrom) {
 			pending = append(pending, entry)
 		}
 	}
 	return adults, pending
 }
 
-func formGuestUnder15(birth string) bool {
-	t, ok := validation.ParseISODate(birth)
-	if !ok {
-		// Police filing stores DDMMYYYY without punctuation too.
-		if len(birth) == 8 {
-			iso := birth[4:] + "-" + birth[2:4] + "-" + birth[0:2]
-			t, ok = validation.ParseISODate(iso)
-		}
-	}
+func formGuestUnder15OnStay(birth, stayFrom string) bool {
+	from, ok := validation.ParseISODate(stayFrom)
 	if !ok {
 		return false
 	}
-	age := time.Now().UTC().Year() - t.Year()
-	return age < 15
+	return validation.CertainlyUnderAge(birth, &from, guestcontract.UnderSignAge)
 }

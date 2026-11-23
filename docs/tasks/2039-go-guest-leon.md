@@ -1,5 +1,7 @@
 # 2039: Guest Leon chat in Go (4 routes), with the entry-code pointer
 
+Report: docs/tasks/2039-go-guest-leon-report.md
+
 Status: todo
 Depends on: 2037 (branch base), 2035 | Base commit: tip of `cursor/2037-leon-entry-codes-992e` | Branch: cursor/2039-go-guest-leon-992e
 Executor: Composer 2.5 (owner 2026-11-22: "composer instead of haiku", limit lifted) | Tier B (guest-facing AI)
@@ -19,7 +21,7 @@ Port the guest Leon chat (`App/app/routes/guest_leon.py`, 4 routes) to Go so the
 
 ## 3. Files
 
-New Go handler file(s) under `go/internal/web/guest/` (e.g. `leon_chat.go` + `leon_chat_test.go`), registration in `go/cmd/ubyhost-web/` (+ registration test), `go/internal/web/ai/leon_prompt.txt` (restore), `go/internal/web/ai/leon_prompt_access.txt` (new), `leon_core.go` (embed + join), the Go parity tests, `App/tests/test_go_ai_leon_try.py` only if needed for the split, `leon_guest_i18n.json` (+ keys file), Go path list files, `docs/plans/go-full-move-remaining.md` row for `guest_leon.py`, `docs/plans/entry-code-external-guide.md` rows 2037/2039, `docs/tasks/2039-report.md`. Nothing else.
+New Go handler file(s) under `go/internal/web/guest/` (e.g. `leon_chat.go` + `leon_chat_test.go`), registration in `go/cmd/ubyhost-web/` (+ registration test), `go/internal/web/ai/leon_prompt.txt` (restore), `go/internal/web/ai/leon_prompt_access.txt` (new), `leon_core.go` (embed + join), the Go parity tests, `App/tests/test_go_ai_leon_try.py` only if needed for the split, `leon_guest_i18n.json` (+ keys file), Go path list files, `docs/plans/go-full-move-remaining.md` row for `guest_leon.py`, `docs/plans/entry-code-external-guide.md` rows 2037/2039, `docs/tasks/2039-go-guest-leon-report.md`. Nothing else.
 
 ## 4. Steps
 
@@ -47,7 +49,7 @@ From `App/`: `.venv/bin/python -m pytest tests/test_go_ai_leon_try.py tests/test
 
 ## 9. Report
 
-See `docs/tasks/2039-report.md`.
+See `docs/tasks/2039-go-guest-leon-report.md`.
 
 ## 8. Stop and ask
 

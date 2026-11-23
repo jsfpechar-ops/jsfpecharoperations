@@ -165,6 +165,7 @@ INSERT INTO guide_import (id, apartment_id, source, url, status, raw_json, creat
  (2, 10, 'booking', 'https://example.test/2', 'failed', NULL, '2025-10-01T00:00:00+00:00'),
  (3, 10, 'booking', 'https://example.test/3', 'failed', NULL, '2025-12-01T00:00:00+00:00'),
  (4, 10, 'airbnb', 'https://example.test/4', 'queued', '{}', '2026-01-15T00:00:00+00:00'),
+ (6, 10, 'url', 'https://example.test/public', 'done', '{}', '2026-01-01T00:00:00+00:00'),
  (5, 20, 'airbnb', 'https://example.test/5', 'failed', '{}', '2025-09-01T00:00:00+00:00');
 
 INSERT INTO guest_chat (id, apartment_id, door, reservation_id, cookie_id, created_at, last_message_at) VALUES

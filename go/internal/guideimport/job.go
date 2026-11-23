@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/anthropic"
@@ -213,6 +214,16 @@ func (j *Job) runOne(ctx context.Context, row queuedRow) error {
 		return err
 	}
 	data, ferr := j.fetchTrimmed(ctx, row)
+	codesLeft := 0
+	if ferr == nil && row.source == "url" {
+		var n int
+		data, n = FilterTrimmed(data)
+		if !trimmedHasText(data) {
+			ferr = &Error{"empty"}
+		} else {
+			codesLeft = n
+		}
+	}
 	if ferr != nil {
 		var ie *Error
 		if !errors.As(ferr, &ie) {
@@ -234,7 +245,13 @@ func (j *Job) runOne(ctx context.Context, row queuedRow) error {
 		slog.Warn("guide import failed", "id", row.id, "source", row.source, "kind", ie.Key)
 		return nil
 	}
-	tag, err := j.Pool.Exec(ctx, "UPDATE guide_import SET status = 'done', raw_json = $1, finished_at = $2 WHERE id = $3 AND status = 'running'", data.JSON(), stamp(j.now()), row.id)
+	var tag pgconn.CommandTag
+	var err error
+	if row.source == "url" {
+		tag, err = j.Pool.Exec(ctx, "UPDATE guide_import SET status = 'done', raw_json = $1, finished_at = $2, codes_left_out = $3 WHERE id = $4 AND status = 'running'", data.JSON(), stamp(j.now()), nullIfZero(codesLeft), row.id)
+	} else {
+		tag, err = j.Pool.Exec(ctx, "UPDATE guide_import SET status = 'done', raw_json = $1, finished_at = $2 WHERE id = $3 AND status = 'running'", data.JSON(), stamp(j.now()), row.id)
+	}
 	if err != nil {
 		return err
 	}
@@ -365,6 +382,12 @@ func (j *Job) merge(ctx context.Context, r pendingRow, data map[string]any) erro
 	}
 	corpus := normalise(listingText(data) + "\n" + earlierText(earlier))
 	cards, dropped := clean(list, corpus)
+	extraCodes := 0
+	if r.source == "url" {
+		for i := range cards {
+			extraCodes += FilterCardFields(cards[i])
+		}
+	}
 	written := 0
 	for _, card := range cards {
 		ok, err := j.write(ctx, r.apartmentID, r.source, card)
@@ -375,7 +398,12 @@ func (j *Job) merge(ctx context.Context, r pendingRow, data map[string]any) erro
 			written++
 		}
 	}
-	if _, err := j.Pool.Exec(ctx, "UPDATE guide_import SET status = 'used', raw_json = NULL, used_at = $1 WHERE id = $2 AND status = 'done'", stamp(j.now()), r.id); err != nil {
+	if r.source == "url" && extraCodes > 0 {
+		_, err = j.Pool.Exec(ctx, "UPDATE guide_import SET status = 'used', raw_json = NULL, used_at = $1, codes_left_out = COALESCE(codes_left_out, 0) + $2 WHERE id = $3 AND status = 'done'", stamp(j.now()), extraCodes, r.id)
+	} else {
+		_, err = j.Pool.Exec(ctx, "UPDATE guide_import SET status = 'used', raw_json = NULL, used_at = $1 WHERE id = $2 AND status = 'done'", stamp(j.now()), r.id)
+	}
+	if err != nil {
 		return err
 	}
 	// Like Python json.dumps(dropped, sort_keys=True): encoding/json sorts map keys.
@@ -386,7 +414,7 @@ func (j *Job) merge(ctx context.Context, r pendingRow, data map[string]any) erro
 
 func (j *Job) importDrafts(ctx context.Context, apartmentID int64) ([]Card, error) {
 	rs, err := j.Pool.Query(ctx,
-		"SELECT id, kind, topic, title, location, steps, watch_out, source FROM guide_item WHERE apartment_id = $1 AND state = 'check' AND source IN ('booking', 'airbnb') ORDER BY id",
+		"SELECT id, kind, topic, title, location, steps, watch_out, source FROM guide_item WHERE apartment_id = $1 AND state = 'check' AND source IN ('booking', 'airbnb', 'url') ORDER BY id",
 		apartmentID)
 	if err != nil {
 		return nil, err
