@@ -43,6 +43,7 @@ type Config struct {
 	RateLimitHours int // UBYHOST_RATE_LIMIT_RETENTION_HOURS, default 24
 	NoticeDays     int // UBYHOST_RETENTION_NOTICE_DAYS, default 30
 	DataDir        string
+	Getenv         func(string) string // env for mail queue; nil uses os.Getenv
 }
 
 // ConfigFromEnv reads the same variables as config.py. DryRun is false only
@@ -66,6 +67,7 @@ func ConfigFromEnv(lookup func(string) (string, bool)) (Config, error) {
 	}
 	cfg := Config{DryRun: !(on("UBYHOST_RETENTION_AUTOPURGE") && on("UBYHOST_GO_RETENTION_APPLY"))}
 	cfg.DataDir, _ = lookup("UBYHOST_DATA_DIR")
+	cfg.Getenv = func(name string) string { v, _ := lookup(name); return v }
 	var err error
 	if cfg.AuditDays, err = num("UBYHOST_AUDIT_RETENTION_DAYS", 1095); err != nil {
 		return cfg, err

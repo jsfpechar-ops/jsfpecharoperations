@@ -8,7 +8,6 @@
   "2000.pdf.enc",
   "notes.txt"
  ],
- "patched": "workspaces: outside a dry run fails closed when a workspace is due or a reminder is due",
  "queries": {
   "guest": "SELECT id::text || '|' || COALESCE(filled_ip, '~') FROM guest ORDER BY id",
   "submission": "SELECT id::text FROM submission ORDER BY id",
@@ -960,7 +959,6 @@
    "name": "global_apply",
    "owner_user_id": null,
    "dry_run": false,
-   "error": "workspaces",
    "counts": [
     [
      "guests",
@@ -1045,6 +1043,10 @@
     [
      "legal_acceptance",
      1
+    ],
+    [
+     "workspaces",
+     1
     ]
    ],
    "photos": [
@@ -1128,7 +1130,8 @@
      "123|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"guide_imports\", \"count\": 5, \"cutoff\": \"listing text fetched before 2026-01-13, failed request rows before 2025-11-21\", \"dry_run\": false, \"owner_user_id\": null}|~|~|~",
      "124|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"guest_chats\", \"count\": 3, \"cutoff\": \"stay ended, or QR chat last used, before 2025-12-21\", \"dry_run\": false, \"owner_user_id\": null}|~|~|~",
      "125|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"legal_acceptance\", \"count\": 1, \"cutoff\": \"inactive account, last login before 2023-01-21T03:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": null}|~|~|~",
-     "126|2026-01-20T03:00:00+00:00|system|retention_run|{\"dry_run\": false, \"owner_user_id\": null, \"counts\": {\"guests\": 4, \"invoices\": 4, \"platform_invoices\": 2, \"claim_emails\": 2, \"reservation_contacts\": 4, \"submitter_ips\": 1, \"empty_reservations\": 5, \"stay_fee_records\": 3, \"audit_rows\": 4, \"alerts\": 2, \"rate_limit_events\": 2, \"havel_gap\": 1, \"login_tokens\": 1, \"webauthn_challenges\": 1, \"door_code_pins\": 1, \"entry_codes\": 4, \"cleaning\": 4, \"push\": 4, \"guide_imports\": 5, \"guest_chats\": 3, \"legal_acceptance\": 1}}|~|~|~"
+     "126|2026-01-20T03:00:00+00:00|system|retention_delete|{\"class\": \"workspaces\", \"count\": 1, \"cutoff\": \"deletion due on or before 2026-01-20T03:00:00+00:00\", \"dry_run\": false, \"owner_user_id\": null}|~|~|~",
+     "127|2026-01-20T03:00:00+00:00|system|retention_run|{\"dry_run\": false, \"owner_user_id\": null, \"counts\": {\"guests\": 4, \"invoices\": 4, \"platform_invoices\": 2, \"claim_emails\": 2, \"reservation_contacts\": 4, \"submitter_ips\": 1, \"empty_reservations\": 5, \"stay_fee_records\": 3, \"audit_rows\": 4, \"alerts\": 2, \"rate_limit_events\": 2, \"havel_gap\": 1, \"login_tokens\": 1, \"webauthn_challenges\": 1, \"door_code_pins\": 1, \"entry_codes\": 4, \"cleaning\": 4, \"push\": 4, \"guide_imports\": 5, \"guest_chats\": 3, \"legal_acceptance\": 1, \"workspaces\": 1}}|~|~|~"
     ],
     "alert": [
      "2|warning|x|1|~|~|x:2|m|~|~|2025-05-01T00:00:00+00:00|2025-06-01T00:00:00+00:00",
@@ -1198,14 +1201,13 @@
      "1",
      "2",
      "3",
-     "4",
      "5",
      "6",
      "7"
     ],
     "settings": [
      "invoice_purge_unlock=",
-     "retention_last_run={\"dry_run\": false, \"owner_user_id\": null, \"counts\": {\"guests\": 4, \"invoices\": 4, \"platform_invoices\": 2, \"claim_emails\": 2, \"reservation_contacts\": 4, \"submitter_ips\": 1, \"empty_reservations\": 5, \"stay_fee_records\": 3, \"audit_rows\": 4, \"alerts\": 2, \"rate_limit_events\": 2, \"havel_gap\": 1, \"login_tokens\": 1, \"webauthn_challenges\": 1, \"door_code_pins\": 1, \"entry_codes\": 4, \"cleaning\": 4, \"push\": 4, \"guide_imports\": 5, \"guest_chats\": 3, \"legal_acceptance\": 1}, \"at\": \"2026-01-20T03:00:00+00:00\"}"
+     "retention_last_run={\"dry_run\": false, \"owner_user_id\": null, \"counts\": {\"guests\": 4, \"invoices\": 4, \"platform_invoices\": 2, \"claim_emails\": 2, \"reservation_contacts\": 4, \"submitter_ips\": 1, \"empty_reservations\": 5, \"stay_fee_records\": 3, \"audit_rows\": 4, \"alerts\": 2, \"rate_limit_events\": 2, \"havel_gap\": 1, \"login_tokens\": 1, \"webauthn_challenges\": 1, \"door_code_pins\": 1, \"entry_codes\": 4, \"cleaning\": 4, \"push\": 4, \"guide_imports\": 5, \"guest_chats\": 3, \"legal_acceptance\": 1, \"workspaces\": 1}, \"at\": \"2026-01-20T03:00:00+00:00\"}"
     ],
     "email_outbox": [
      "0"

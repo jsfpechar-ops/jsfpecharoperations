@@ -3,7 +3,6 @@ package retention
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -90,9 +89,7 @@ func TestRunMatchesPythonGolden(t *testing.T) {
 			switch {
 			case sc.Error == nil && err != nil:
 				t.Fatalf("Run: %v, Python had no error", err)
-			case sc.Error != nil && *sc.Error == "workspaces" && !errors.Is(err, ErrWorkspacesNotPorted):
-				t.Fatalf("Run error %v, want ErrWorkspacesNotPorted", err)
-			case sc.Error != nil && *sc.Error != "workspaces":
+			case sc.Error != nil:
 				t.Fatalf("golden records Python error %s", *sc.Error)
 			}
 			var want, got []string
