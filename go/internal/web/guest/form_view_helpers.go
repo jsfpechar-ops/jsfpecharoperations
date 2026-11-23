@@ -87,14 +87,19 @@ func (v formView) ErrorIssues() []validation.Issue {
 	return out
 }
 
-// DisplayBirth formats YYYY-MM-DD as dd.mm.yyyy for the guest birth field.
-func (v formView) DisplayBirth(iso string) string {
-	iso = strings.TrimSpace(iso)
-	if len(iso) < 10 {
-		return iso
+// DisplayBirth formats YYYY-MM-DD or DDMMYYYY as dd.mm.yyyy for the guest birth field.
+func (v formView) DisplayBirth(raw string) string {
+	raw = strings.TrimSpace(raw)
+	if len(raw) == 8 {
+		for _, c := range raw {
+			if c < '0' || c > '9' {
+				return raw
+			}
+		}
+		return raw[:2] + "." + raw[2:4] + "." + raw[4:]
 	}
-	if iso[4] == '-' {
-		return iso[8:10] + "." + iso[5:7] + "." + iso[0:4]
+	if len(raw) >= 10 && raw[4] == '-' {
+		return raw[8:10] + "." + raw[5:7] + "." + raw[0:4]
 	}
-	return iso
+	return raw
 }
