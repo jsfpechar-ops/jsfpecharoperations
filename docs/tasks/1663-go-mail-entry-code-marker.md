@@ -1,6 +1,6 @@
 # 1663: Go mail — `{{entry_code_1}}` to `{{entry_code_3}}` send-time markers
 
-Status: todo (runnable now)
+Status: review
 Depends on: none | Base commit: fill from `git rev-parse --short HEAD` | Branch: task/1663-go-mail-entry-code-marker
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Tier B (mail secret)
 
