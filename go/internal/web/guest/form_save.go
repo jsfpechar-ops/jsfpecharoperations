@@ -232,8 +232,23 @@ func buildSavePayload(v validation.GuestRow, stayFrom, stayTo, sig string, child
 	if existing != nil && existing.submitState == "blocked" && strings.Contains(existing.lastErrors, "duplicate") {
 		delete(p, "submit_state")
 		delete(p, "last_errors")
+	} else if guestCorrectionResetsAttempts(existing) {
+		p["submit_attempts"] = int64(0)
 	}
 	return p
+}
+
+// guestCorrectionResetsAttempts mirrors reporting.guest_correction_resets_attempts.
+func guestCorrectionResetsAttempts(existing *guestSaveRow) bool {
+	if existing == nil {
+		return false
+	}
+	switch existing.submitState {
+	case "error", "blocked", "not_required":
+		return true
+	default:
+		return false
+	}
 }
 
 func loadGuestSaveRow(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, id, resID int64) (*guestSaveRow, error) {
