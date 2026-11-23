@@ -211,6 +211,11 @@ cd /opt/ubyhost && SHA=<full-sha> REPO=<owner/repo> && git fetch origin "$SHA" &
 
 The quicker undo of the last deploy is the automatic one: `deploy.sh` restores `ubyhost:previous` and `ubyhost-go:previous` by itself when a deploy fails its checks.
 
+**Go-only deploy downtime (brief 1782):** `deploy.sh` applies goose migrations, then runs `compose up` for Caddy and Postgres **without** `--remove-orphans` so any stopped Python containers keep serving until the new Go slot passes its health wait (about 5–60 seconds on a quiet host). Only then does it run `compose up --remove-orphans`, retire `ubyhost`/`worker`, and reload Caddy. Expect a short window where only the Go route set answers; there is no Python fallback in the Caddyfile after this release. Deploy in a quiet hour.
+
+**Rollback after migration 00024:** the column `guide_import.codes_left_out` makes older app images refuse to start. Automatic `deploy.sh` rollback drops that column before it restores `:previous` images. For a manual rollback use `./scripts/rollback-prod.sh` (dry-run by default) or `ROLLBACK_CONFIRM=yes ./scripts/rollback-prod.sh` from the repo root on the server. Leaving `apartment_entry_code` and widened CHECK constraints is safe for older code.
+
+
 Rollback **UbyPort target** (test ↔ prod): edit `.env` `UBYHOST_UBYPORT_ENV`, then `./scripts/deploy.sh`.
 
 ### Schema apply: Python or Go (`UBYHOST_SCHEMA_APPLY`)

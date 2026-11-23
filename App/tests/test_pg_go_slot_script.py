@@ -66,6 +66,13 @@ def test_deploy_internal_health_never_execs_python_without_ubyhost_service():
     assert health.index("elif running_python_app;") < health.index("docker compose exec -T ubyhost")
 
 
+def test_deploy_rollback_drops_guide_import_column_before_up():
+    text = DEPLOY.read_text(encoding="utf-8")
+    rollback = text.split("rollback() {", 1)[1].split("\n}\n", 1)[0]
+    assert "rollback_drop_guide_import_00024" in rollback
+    assert rollback.index("rollback_drop_guide_import_00024") < rollback.index("docker compose up -d")
+
+
 def test_deploy_seeds_slot_tags_before_schema_apply_and_up():
     text = DEPLOY.read_text(encoding="utf-8")
     assert "go_ensure_slot_images" in text

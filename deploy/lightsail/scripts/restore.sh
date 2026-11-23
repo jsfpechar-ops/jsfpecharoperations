@@ -11,6 +11,7 @@
 # the age private identity on the host, never on the volume. Legacy plaintext
 # snapshots (a bare `ubyhost.db`) still restore unchanged.
 #
+# On PostgreSQL deployments use pg-restore.sh instead of this script.
 # Always stop the app first so SQLite is not written during the copy.
 # Container files are owned by uid 10001 (see Dockerfile).
 set -euo pipefail
@@ -18,9 +19,18 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "${ROOT}"
 
+# shellcheck source=lib-docker.sh
+# shellcheck disable=SC1091
+source "${ROOT}/scripts/lib-docker.sh"
+
 if [ ! -f .env ]; then
   echo "Missing .env in ${ROOT}" >&2
   exit 1
+fi
+
+if grep -Eq '^UBYHOST_DATABASE_URL=' .env 2>/dev/null; then
+  echo "This server runs on PostgreSQL. Use ./scripts/pg-restore.sh with AGE_IDENTITY_FILE instead." >&2
+  exit 2
 fi
 
 STAMP="${1:-}"
@@ -28,7 +38,7 @@ CONFIRM="${RESTORE_CONFIRM:-}"
 IDENTITY="${AGE_IDENTITY_FILE:-}"
 
 list_stamps() {
-  docker compose run --rm --no-deps -T --entrypoint sh ubyhost -c 'ls -1 /data/backups 2>/dev/null | sort -r' || true
+  ubyhost_app_run_sh 'ls -1 /data/backups 2>/dev/null | sort -r' || true
 }
 
 if [ -z "${STAMP}" ]; then
@@ -49,7 +59,7 @@ if ! printf '%s' "${STAMP}" | grep -Eq '^[0-9]{8}T[0-9]{6}Z(-[0-9]+)?$'; then
 fi
 
 # What is in this stamp? Encrypted (age), legacy plaintext, or nothing.
-LAYOUT="$(docker compose run --rm --no-deps -T --entrypoint sh ubyhost -c "
+LAYOUT="$(ubyhost_app_run_sh "
   if [ -f /data/backups/${STAMP}/ubyhost-backup.tar.age ]; then echo encrypted;
   elif [ -f /data/backups/${STAMP}/ubyhost.db ]; then echo plaintext;
   else echo missing; fi
@@ -81,16 +91,33 @@ if [ "${CONFIRM}" != "yes" ]; then
   exit 1
 fi
 
-CONTAINER="$(docker compose ps -aq ubyhost)"
+CONTAINER="$(ubyhost_container_ref "${ROOT}" 2>/dev/null || true)"
 if [ -z "${CONTAINER}" ]; then
-  echo "Could not find the ubyhost container — run ./scripts/deploy.sh first." >&2
+  CONTAINER="$(docker compose ps -aq ubyhost 2>/dev/null | head -1 || true)"
+  CONTAINER="${CONTAINER:-$(docker compose --profile go ps -aq ubyhost-go 2>/dev/null | head -1 || true)}"
+fi
+if [ -z "${CONTAINER}" ]; then
+  echo "Could not find an app container — run ./scripts/deploy.sh first." >&2
   exit 1
 fi
 
-echo "==> Stopping worker and ubyhost (Caddy stays up and will 502 until restart)"
+RUN_SVC=ubyhost
+RUN_ARGS=()
+INSTALL_ARGS=(run --rm --user 0 --no-deps)
+if compose_has_go_app && ! compose_has_python_app; then
+  RUN_SVC=ubyhost-go
+  RUN_ARGS=(--profile go)
+  INSTALL_ARGS=(--profile go run --rm --user 0 --no-deps)
+fi
+
+echo "==> Stopping worker and app (Caddy stays up and will 502 until restart)"
 # WP06: the scheduler worker writes to the database too.
 docker compose stop worker 2>/dev/null || true
-docker compose stop ubyhost
+if [ "${RUN_SVC}" = ubyhost-go ]; then
+  docker compose --profile go stop ubyhost-go ubyhost-go-b 2>/dev/null || true
+else
+  docker compose stop ubyhost 2>/dev/null || true
+fi
 
 if [ "${LAYOUT}" = "encrypted" ]; then
   TMP="$(mktemp -d)"
@@ -105,10 +132,8 @@ if [ "${LAYOUT}" = "encrypted" ]; then
   rm -f "${TMP}/ubyhost-backup.tar" "${TMP}/ubyhost-backup.tar.age"
 
   echo "==> Installing the decrypted files into the volume"
-  # The mount is read-only; the plaintext never lands on the volume except as
-  # the database/secret the app needs. The host copy is removed by the trap.
-  docker compose run --rm --user 0 --no-deps -v "${TMP}:/restore:ro" \
-    --entrypoint bash ubyhost -lc "
+  docker compose "${INSTALL_ARGS[@]}" -v "${TMP}:/restore:ro" \
+    --entrypoint bash "${RUN_SVC}" -lc "
       set -euo pipefail
       if [ -f /data/ubyhost.db ]; then cp -a /data/ubyhost.db /data/ubyhost.db.before-restore-\$(date -u +%Y%m%dT%H%M%SZ); fi
       rm -f /data/ubyhost.db-wal /data/ubyhost.db-shm
@@ -124,7 +149,7 @@ if [ "${LAYOUT}" = "encrypted" ]; then
     "
 else
   echo "==> Restoring ${STAMP} (legacy plaintext)"
-  docker compose run --rm --user 0 --no-deps --entrypoint bash ubyhost -lc "
+  docker compose "${INSTALL_ARGS[@]}" --entrypoint bash "${RUN_SVC}" -lc "
     set -euo pipefail
     SRC=/data/backups/${STAMP}
     if [ ! -f \"\${SRC}/ubyhost.db\" ]; then
@@ -146,19 +171,21 @@ else
   "
 fi
 
-echo "==> Starting ubyhost and the worker"
-docker compose up -d ubyhost worker
+echo "==> Starting app and worker"
+if [ "${RUN_SVC}" = ubyhost-go ]; then
+  docker compose --profile go up -d ubyhost-go
+else
+  docker compose up -d ubyhost worker
+fi
 
 echo "==> Waiting for health"
 for _ in $(seq 1 30); do
-  if docker compose exec -T ubyhost python -c \
-    "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=3)" \
-    >/dev/null 2>&1; then
+  if ubyhost_app_healthz_ok; then
     echo "Restore complete. Sign in and open one stay to confirm data."
     exit 0
   fi
   sleep 2
 done
 
-echo "ubyhost did not become healthy — run ./scripts/logs.sh ubyhost" >&2
+echo "The app did not become healthy — run ./scripts/logs.sh" >&2
 exit 1
