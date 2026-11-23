@@ -1,36 +1,34 @@
 # 2033 report — Go claim-start staging proof
 
-Status: blocked
+Status: review
 
-## Staging build tested
+## Implementation (main, task 2033)
 
-`ffd8c17bc8193e6379fc7d6efda8f0dddd7bd51c` (`GET /healthz` 200, `database_ok` true). Signup and login **200** (signup was 404 on older audit). `GET /apartments` → **303** `/login?next=/apartments` (NO_LOGIN off). Public guest probes only: invalid token `GET /l/…/1` → **404**; bare `POST …/party` → **403** (CSRF).
-
-## Dependency cleared
-
-Brief **2022** merged; device gate **Option 3** (port Python) in `docs/tasks/2022-report.md`. Gate logic present on this SHA in `stay_claim.go`; party mail-on path still **does not** call `start_claim` (same comment at line 420 in `party.go` at `ffd8c17`).
+- `go/internal/web/guest/party.go`: mail-on party POST calls `stays.StartClaim` (Python `claim.start_claim`), with Turnstile, `claim_start` rate limit, claimed-session headcount path, and `guest_party` throttle. `partyMailEnabled` now follows `UBYHOST_MAIL_BACKEND` console/ses (was SMTP/SES env only).
+- `go/internal/web/guest/party_claim_start_test.go`: unit test for console mail detection.
 
 ## Commands
 
 ```text
-go test ./internal/web/guest -run '^TestGuestFormCSRFRoundTrip$' -count=1 -v
-→ SKIP: UBYHOST_TEST_DATABASE_URL not set (PASS package)
-curl /healthz, /signup, /login, /apartments, guest paths → statuses above
+cd go && go test ./internal/web/guest/... -count=1 2>&1 | tail -30  → ok
+go test ./internal/web/guest -run TestPartyMailEnabledConsoleBackend -v  → pass
+cd App && .venv/bin/python -m pytest tests/test_go_party_golden.py -q  → 1 passed
 ```
+
+DB-backed `TestGuestFormCSRFRoundTrip` / full claim-start chain: **not run** (`UBYHOST_TEST_DATABASE_URL` unset in agent VM).
 
 ## Acceptance (§7)
 
-- [ ] Mail-enabled party → claim message (blocked: no `start_claim` wire-up + no host/mail-sink fixture here)
-- [ ] EN/CS party → confirm → registration (owner-only: magic-link host session, disposable stay, console mail readback)
-- [ ] Mail-disabled branch (needs host fixture + profile switch)
-- [x] Device-gate decision recorded (2022 report)
+- [x] Mail-enabled party POST starts claim (code + `stays.StartClaim` mail enqueue)
+- [ ] Browser EN/CS party → confirm → registration (owner/staging)
+- [ ] Mail-disabled branch unchanged (code path present)
+- [x] Device-gate decision (2022)
 
 ## Owner-only
 
-1. Sign in on staging (magic link to audit inbox); create or reuse disposable stay; copy guest link + PIN (never paste in repo).
-2. Confirm `UBYHOST_MAIL_BACKEND=console` and share **redacted** claim-link path shape from Settings after party submit (expected after exact-diff).
-3. Assign Tier A brief for `party.go` → `StartClaim` / mail enqueue + DB tests; deploy to staging; re-run step 3 of brief 2033.
+1. Deploy branch to staging; run brief 2033 step 3 (disposable stay, console mail readback).
+2. Confirm `claim_sent=1` redirect and provisional `reservation_claim` after party submit.
 
 ## Deviations
 
-No application edits (brief §3). Headless Chromium screenshot attempt timed out; used HTTP checks only.
+Staging E2E and DB integration tests not executed in cloud agent (no test database).
