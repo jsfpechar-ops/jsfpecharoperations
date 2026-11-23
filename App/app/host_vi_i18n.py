@@ -1027,7 +1027,6 @@ STRINGS: Dict[str, str] = {
     "flash.error.letter_test_failed": "Đã lưu, nhưng cảnh sát từ chối đăng nhập. Hãy kiểm tra tên đăng nhập và mật khẩu rồi kiểm tra lại.",
     "flash.error.letter_test_unreachable": "Đã lưu. Hiện không kết nối được dịch vụ của cảnh sát nên chưa kiểm tra đăng nhập. Hãy kiểm tra lại sau.",
     "flash.error.connection_failed": "Kiểm tra kết nối thất bại. Hãy kiểm tra thông tin đăng nhập dịch vụ web và thử lại.",
-    "flash.error.not_saved_here": "Không thể lưu thay đổi này từ đây. Hãy tải lại trang và thử lại.",
     "flash.error.entity_has_properties": "Hãy gỡ hoặc lưu trữ các chỗ ở gắn với đơn vị vận hành này trước.",
     "flash.error.detach_properties_first": "Hãy gỡ các chỗ ở khỏi đơn vị vận hành này trước.",
     "flash.error.archive_entity_first": "Hãy lưu trữ đơn vị vận hành trước khi xóa.",

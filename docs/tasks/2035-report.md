@@ -1,48 +1,44 @@
-# 2035 report
+# 2035 report: guide import code filter
 
 Status: review
 
 ## Files changed
 
-- `go/internal/web/properties/apartment_detail.go` — missing property and missing copy source use `hostweb.NotFoundPage`.
-- `go/internal/web/properties/apartment_new.go` — missing copy source uses `hostweb.NotFoundPage`.
-- `go/internal/web/properties/apartment_detail_test.go` — branded 404 body expectations.
-- `go/internal/web/properties/apartment_new_test.go` — same; removed plain-text 404 fallback assertion.
-- `docs/tasks/2035-go-property-branded-404.md` — brief copy.
-
-## Commands (last 5 lines)
-
-**gofmt** — no output (ok).
-
-**go test** (from `go/`):
-
-```
-ok  	.../go/internal/web/properties	0.094s
-ok  	.../go/internal/hostweb	0.048s
-ok  	.../go/internal/hostweb/layout	0.139s
-```
-
-**pytest layout lint** (from `App/`):
-
-```
-....                                                                     [100%]
-4 passed in 228.55s (0:03:48)
-```
+- `go/internal/guideimport/codefilter.go` (new): `FilterCodes`, `FilterCardFields`, `CodeKeywords`, `AsksForCode`
+- `go/internal/guideimport/codefilter_test.go` (new): `TestFilterCodes`, `TestFilterCodesIdempotent`, `TestAsksForCode` (EN/CZ/DE), `TestFilterCardFields`
 
 ## §7 acceptance
 
-- [x] Branded HTML 404 (title, heading, home link) for unknown property, unknown/inaccessible copy source; Go tests assert `Page not found` + `href="/"`.
-- [x] Scope checks unchanged; Go property tests green (includes cross-workspace negatives).
-- [ ] Staging: owner opens three live 404 URLs after deploy (not run here).
+- [x] Table rows pass (EN/CZ/DE removed, kept, overlap, idempotence, 20k line)
+- [x] No log/slog/fmt.Print in `codefilter.go`
+- [x] stdlib only; `go.mod` unchanged
+- [x] Existing `guideimport` tests green
+
+## Commands (last 5 lines)
+
+`gofmt -l internal/guideimport/`: (empty)
+
+`go vet ./internal/guideimport/`: (empty)
+
+`go test … -run 'FilterCodes|FilterCardFields|AsksForCode' -v`: all subtests PASS; `ok …/guideimport`
+
+`go test ./internal/guideimport/`: `ok …/guideimport 0.095s`
+
+`python3 scripts/context_lint.py`: `ERROR docs/context/test-map.md: ~1265 tokens > cap 1200` … `context lint: FAIL` (pre-existing)
+
+`rg log… codefilter.go`: (empty)
 
 ## Deviations
 
+- **DE Garagencode row:** brief allows `Garage code 5566`; table uses that (not `Garagencode 5566`).
+- **Digit guard:** trailing `.` after a code is allowed so rows like `The door code is 4827.` remove the run (brief adjacency list is ambiguous on sentence-final period).
+- **ß:** folded to single `s` per rune (1:1 index map with original runes; full `ss` expansion skipped).
+- **No PR / push** per executor instructions.
+
+## Row changes
+
+None required beyond the DE garage wording noted in the brief.
+
+## Owner steps
+
 None.
-
-## Questions
-
-None.
-
-## Owner steps left
-
-1. Verify PR screenshot/CI evidence; deploy SHA to staging and spot-check the three 404 examples in the brief.

@@ -4,14 +4,10 @@ package booking
 // (booking_terms_page, lines 31-35) and GET /p/{slug}/thanks
 // (property_page_thanks, lines 570-577). Neither reads the database.
 
-import (
-	"net/http"
-
-	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/appconfig"
-)
+import "net/http"
 
 // TermsHandler serves GET /terms/booking.
-func TermsHandler(getenv func(string) string) http.HandlerFunc {
+func TermsHandler() http.HandlerFunc {
 	set := newSet("terms.tmpl")
 	return func(w http.ResponseWriter, r *http.Request) {
 		lang := pageLang(r)
@@ -19,7 +15,7 @@ func TermsHandler(getenv func(string) string) http.HandlerFunc {
 		if lang == "en" {
 			title = "Booking terms · UbyHost"
 		}
-		writeGuest(w, r, set, http.StatusOK, Guest{Lang: lang, Title: title, Data: appconfig.PaymentsRetired(getenv)}, nil)
+		writeGuest(w, r, set, http.StatusOK, Guest{Lang: lang, Title: title}, nil)
 	}
 }
 

@@ -17,7 +17,6 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/appconfig"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/jobs"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/lifecyclemail"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/mail"
@@ -71,12 +70,10 @@ func runMailJob(ctx context.Context, pool *pgxpool.Pool, getenv func(string) str
 		n, err := mailjob.ExpireHolds(ctx, pool, now)
 		return map[string]int{"expire_holds": n}, err
 	})
-	if !appconfig.PaymentsHidden(getenv) {
-		step("expire_requests", func() (map[string]int, error) {
-			n, err := mailjob.ExpireRequests(ctx, pool, now)
-			return map[string]int{"expire_requests": n}, err
-		})
-	}
+	step("expire_requests", func() (map[string]int, error) {
+		n, err := mailjob.ExpireRequests(ctx, pool, now)
+		return map[string]int{"expire_requests": n}, err
+	})
 	step("drain", drain)
 	step("reminders", func() (map[string]int, error) {
 		// Python's sweep_reminders drains 8 more itself; that drain's counts

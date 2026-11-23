@@ -111,8 +111,7 @@ func (s *server) apartmentAutomationTiming(w http.ResponseWriter, r *http.Reques
 			return
 		}
 		if formStr(r, "setup_step") == "automation" {
-			returnTo := formReturnTo(r, onboarding.WizardURL(a.ID, "automation"), false)
-			q.back(w, r, returnTo, hostweb.Flash{}, smallPostsFlash(q, "flash.error.not_saved_here", nil))
+			notPorted(w, "automation wizard re-render on timing save")
 			return
 		}
 		q.back(w, r, propertySummaries, hostweb.Flash{}, msg)
@@ -259,7 +258,11 @@ func (s *server) apartmentAddFeed(w http.ResponseWriter, r *http.Request, fetch 
 	returnTo := formReturnTo(r, fmt.Sprintf("/apartments/%d?view=bookings#calendars", a.ID), false)
 	wizardPrefix := fmt.Sprintf("/apartments/%d/setup/", a.ID)
 	if len(fieldErrors) > 0 {
-		q.back(w, r, returnTo, hostweb.Flash{}, smallPostsFlash(q, "flash.error.not_saved_here", nil))
+		if strings.HasPrefix(returnTo, wizardPrefix) {
+			notPorted(w, "wizard calendar step re-render on feed validation error")
+		} else {
+			notPorted(w, "property bookings view re-render on feed validation error")
+		}
 		return
 	}
 	dup, err := feedAlreadyAdded(ctx, s.pool, a.ID, url)
@@ -318,7 +321,7 @@ func apartmentPostedCredentials(r *http.Request) bool {
 func (s *server) testConnectionSave(ctx context.Context, w http.ResponseWriter, r *http.Request, q *request, p *Pages, a *detailApt) (*detailApt, bool) {
 	pay, ok := newApartmentPayload(r)
 	if !ok {
-		hostweb.NotFoundPage(w, r)
+		notPorted(w, "a non-ASCII digit or an integer past 64 bits in the form")
 		return nil, false
 	}
 	var names []string
@@ -541,12 +544,10 @@ func (s *server) apartmentPoliceLetter(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if formStr(r, "setup_step") == "police" {
-		returnTo := formReturnTo(r, onboarding.WizardURL(a.ID, "police"), false)
-		q.back(w, r, returnTo, hostweb.Flash{}, smallPostsFlash(q, "flash.error.not_saved_here", nil))
+		notPorted(w, "wizard police step re-render on police-letter read")
 		return
 	}
-	returnTo := formReturnTo(r, fmt.Sprintf("/apartments/%d", a.ID), false)
-	q.back(w, r, returnTo, hostweb.Flash{}, smallPostsFlash(q, "flash.error.not_saved_here", nil))
+	notPorted(w, "property settings re-render on police-letter read")
 }
 
 func (s *server) apartmentRefreshCodelists(w http.ResponseWriter, r *http.Request) {
