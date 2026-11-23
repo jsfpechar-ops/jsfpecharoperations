@@ -87,7 +87,7 @@ QUERIES = {
         "SELECT id::text || '|' || COALESCE(pin_enc, '~') || '|' || updated_at FROM door_code ORDER BY id"
     ),
     "apartment_entry_code": (
-        "SELECT id::text || '|' || COALESCE(entry_code_enc, '~') FROM apartment ORDER BY id"
+        "SELECT apartment_id::text || '|' || position::text || '|' || code_enc FROM apartment_entry_code ORDER BY id"
     ),
     "cleaning_event": "SELECT id::text || '|' || COALESCE(notes_enc, '~') FROM cleaning_event ORDER BY id",
     "cleaning_share": "SELECT id::text FROM cleaning_share ORDER BY id",

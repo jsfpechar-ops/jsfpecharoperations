@@ -426,11 +426,27 @@ func stepEntryCodes(ctx context.Context, r *runner) (int, error) {
 		(COALESCE(entry_code_until, '') <> '' AND entry_code_until < $1)
 		OR (COALESCE(archived_at, '') <> '' AND archived_at < $1))`
 	n, err := r.scalar(ctx, `SELECT COUNT(*) FROM apartment WHERE `+where, cutoff)
-	if err != nil || r.dry || n == 0 {
+	if err != nil {
 		return n, err
 	}
-	_, err = r.exec(ctx, `UPDATE apartment SET entry_code_enc = NULL WHERE `+where, cutoff)
-	return n, err
+	if !r.dry && n > 0 {
+		if _, err := r.exec(ctx, `UPDATE apartment SET entry_code_enc = NULL WHERE `+where, cutoff); err != nil {
+			return n, err
+		}
+	}
+
+	newWhere := `apartment_id IN (SELECT a.id FROM apartment a WHERE COALESCE(a.archived_at, '') <> '' AND a.archived_at < $1)
+		OR (COALESCE(valid_until, '') <> '' AND valid_until < $1)`
+	m, err := r.scalar(ctx, `SELECT COUNT(*) FROM apartment_entry_code WHERE `+newWhere, cutoff)
+	if err != nil {
+		return n, err
+	}
+	if !r.dry && m > 0 {
+		if _, err := r.exec(ctx, `DELETE FROM apartment_entry_code WHERE `+newWhere, cutoff); err != nil {
+			return n + m, err
+		}
+	}
+	return n + m, nil
 }
 
 // stepCleaning is cleaning.purge: outside a dry run both statements run even
