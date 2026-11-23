@@ -1,9 +1,9 @@
 package guest
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
-	"bytes"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
