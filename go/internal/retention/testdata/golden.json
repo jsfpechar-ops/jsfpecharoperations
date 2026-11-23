@@ -959,6 +959,7 @@
    "name": "global_apply",
    "owner_user_id": null,
    "dry_run": false,
+   "error": null,
    "counts": [
     [
      "guests",
