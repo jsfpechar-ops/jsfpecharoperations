@@ -69,6 +69,14 @@ func setSetting(ctx context.Context, pool *pgxpool.Pool, key, value string) erro
 	return err
 }
 
+// Forget drops last_seen_* and welcome_back_* settings with the workspace
+// (welcome_back.forget).
+func Forget(ctx context.Context, tx pgx.Tx, userID int64) error {
+	seenKey, lineKey := KeysFor(userID)
+	_, err := tx.Exec(ctx, `DELETE FROM settings WHERE key IN ($1, $2)`, seenKey, lineKey)
+	return err
+}
+
 func parseDate(raw string) *time.Time {
 	raw = strings.TrimSpace(raw)
 	if len(raw) < 10 {
