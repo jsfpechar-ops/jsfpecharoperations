@@ -103,6 +103,14 @@ type formGuestRow struct {
 	surname      string
 	signaturePNG string
 	nationality  string
+	birthDate    string
+	docNumber    string
+	visaNumber   string
+	resStreet    string
+	resCity      string
+	resCountry   string
+	purpose      string
+	note         string
 }
 
 type formCountryOption struct {
@@ -645,6 +653,9 @@ func buildFormView(ctx context.Context, d formPageDeps, w http.ResponseWriter, r
 	if guest != nil {
 		view.GuestFields = formGuestFieldMap(guest)
 		view.SignatureValue = guest.signaturePNG
+		if p := strings.TrimSpace(guest.purpose); p != "" {
+			view.SelectedPurpose = p
+		}
 	}
 	formPagesFillU15(ctx, d, &view, res, guest, r)
 	view.SaveActionLabel = view.T(saveKey)
@@ -696,26 +707,44 @@ func writeRemovePage(w http.ResponseWriter, r *http.Request, v formView) {
 
 func loadFormGuest(ctx context.Context, pool *pgxpool.Pool, id, resID int64, getenv func(string) string, now func() time.Time) (*formGuestRow, error) {
 	var g formGuestRow
-	var birthEnc, docEnc, visaEnc, streetEnc, cityEnc, sigEnc string
+	var birthEnc, birthPlain, docEnc, docPlain, visaEnc, visaPlain string
+	var streetEnc, streetPlain, cityEnc, cityPlain, sigEnc string
 	err := pool.QueryRow(ctx, `SELECT id, COALESCE(submit_state,''), COALESCE(restricted_at::text,''),
 		COALESCE(stay_from,''), COALESCE(stay_to,''), COALESCE(first_name,''), COALESCE(surname,''),
 		COALESCE(signature_png,''), COALESCE(signature_png_enc,''), COALESCE(nationality,''),
-		COALESCE(birth_date_enc,''), COALESCE(doc_number_enc,''), COALESCE(visa_number_enc,''),
-		COALESCE(res_street_enc,''), COALESCE(res_city_enc,'')
+		COALESCE(birth_date,''), COALESCE(birth_date_enc,''),
+		COALESCE(doc_number,''), COALESCE(doc_number_enc,''),
+		COALESCE(visa_number,''), COALESCE(visa_number_enc,''),
+		COALESCE(res_street,''), COALESCE(res_street_enc,''),
+		COALESCE(res_city,''), COALESCE(res_city_enc,''),
+		COALESCE(res_country,''), COALESCE(purpose,''), COALESCE(note,'')
 		FROM guest WHERE id = $1 AND reservation_id = $2 AND archived_at IS NULL`, id, resID).
 		Scan(&g.id, &g.submitState, &g.restrictedAt, &g.stayFrom, &g.stayTo, &g.firstName, &g.surname,
-			&g.signaturePNG, &sigEnc, &g.nationality, &birthEnc, &docEnc, &visaEnc, &streetEnc, &cityEnc)
+			&g.signaturePNG, &sigEnc, &g.nationality,
+			&birthPlain, &birthEnc, &docPlain, &docEnc, &visaPlain, &visaEnc,
+			&streetPlain, &streetEnc, &cityPlain, &cityEnc,
+			&g.resCountry, &g.purpose, &g.note)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	_ = birthEnc
-	_ = docEnc
-	_ = visaEnc
-	_ = streetEnc
-	_ = cityEnc
+	if g.birthDate, err = decryptGuestField(getenv, now, birthEnc, birthPlain); err != nil {
+		return nil, err
+	}
+	if g.docNumber, err = decryptGuestField(getenv, now, docEnc, docPlain); err != nil {
+		return nil, err
+	}
+	if g.visaNumber, err = decryptGuestField(getenv, now, visaEnc, visaPlain); err != nil {
+		return nil, err
+	}
+	if g.resStreet, err = decryptGuestField(getenv, now, streetEnc, streetPlain); err != nil {
+		return nil, err
+	}
+	if g.resCity, err = decryptGuestField(getenv, now, cityEnc, cityPlain); err != nil {
+		return nil, err
+	}
 	plain, err := decryptGuestField(getenv, now, sigEnc, g.signaturePNG)
 	if err != nil {
 		return nil, err
