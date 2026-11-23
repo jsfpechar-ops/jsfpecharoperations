@@ -2,6 +2,8 @@ package guest
 
 import (
 	"context"
+	"encoding/base64"
+	"bytes"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -28,6 +30,10 @@ func TestPartyStartClaimMailOn(t *testing.T) {
 			return "console"
 		case "UBYHOST_PUBLIC_BASE_URL":
 			return "https://ubyhost.example"
+		case "UBYHOST_DATA_KEYS":
+			return base64.URLEncoding.EncodeToString(bytes.Repeat([]byte{7}, 32))
+		case "UBYHOST_DATA_KEY_LEGACY":
+			return "0"
 		}
 		if v := os.Getenv(k); v != "" {
 			return v
@@ -37,9 +43,11 @@ func TestPartyStartClaimMailOn(t *testing.T) {
 	now := func() time.Time { return time.Date(2026, 6, 15, 12, 0, 0, 0, time.UTC) }
 	ctx := context.Background()
 	stamp := "2026-01-01T00:00:00Z"
+	wrap := func(_ string, h http.HandlerFunc) http.Handler { return h }
 
 	mux := http.NewServeMux()
-	RegisterParty(mux, pool, getenv, now, func(_ string, h http.HandlerFunc) http.Handler { return h })
+	RegisterStayClaim(mux, pool, getenv, now, wrap)
+	RegisterParty(mux, pool, getenv, now, wrap)
 
 	aptID := time.Now().UnixNano()%8000000000 + 7000000
 	userID := aptID
@@ -52,14 +60,31 @@ func TestPartyStartClaimMailOn(t *testing.T) {
 	mustExecGuest(t, ctx, pool, `INSERT INTO reservation (id, apartment_id, uid, status, source, date_from, date_to, created_at, updated_at)
 		VALUES ($1, $2, $3, 'active', 'manual', $4, $5, $6, $6)`, resID, aptID, fmt.Sprintf("stay-%d", resID), "2026-06-10", "2026-06-12", stamp)
 
+	getPath := fmt.Sprintf("/l/%s/%d?lang=en", tok, resID)
+	getReq := httptest.NewRequest(http.MethodGet, getPath, nil)
+	getRec := httptest.NewRecorder()
+	mux.ServeHTTP(getRec, getReq)
+	if getRec.Code != http.StatusOK {
+		t.Fatalf("GET status %d", getRec.Code)
+	}
+	csrf := extractPageCSRF(getRec.Body.String())
+	if csrf == "" {
+		t.Fatal("missing page csrf")
+	}
+	csrfCookieVal := csrfCookie(getRec.Result().Cookies())
+	if csrfCookieVal == "" {
+		t.Fatal("missing ubyhost_csrf cookie")
+	}
+
 	postPath := fmt.Sprintf("/l/%s/%d/party?lang=en", tok, resID)
-	body := url.Values{"party_size": {"2"}, "guest_email": {"guest@example.test"}}
+	body := url.Values{"_csrf": {csrf}, "party_size": {"2"}, "guest_email": {"guest@example.test"}}
 	req := httptest.NewRequest(http.MethodPost, postPath, strings.NewReader(body.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.AddCookie(&http.Cookie{Name: "ubyhost_csrf", Value: csrfCookieVal})
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 	if rec.Code != http.StatusSeeOther {
-		t.Fatalf("status %d", rec.Code)
+		t.Fatalf("status %d body %q", rec.Code, rec.Body.String())
 	}
 	loc := rec.Header().Get("Location")
 	if !strings.Contains(loc, "claim_sent=1") {
