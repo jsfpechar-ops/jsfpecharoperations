@@ -2172,6 +2172,11 @@
     "name": "used_at",
     "not_null": false,
     "type": "text"
+   },
+   {
+    "name": "codes_left_out",
+    "not_null": false,
+    "type": "bigint"
    }
   ],
   "guide_item": [

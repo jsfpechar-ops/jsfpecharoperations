@@ -19,11 +19,13 @@ const (
 var textFields = map[string][]string{
 	"booking": {"name", "description", "checkIn", "checkOut"},
 	"airbnb":  {"title", "description", "subDescription", "propertyType", "roomType"},
+	"url":     {"text"},
 }
 
 var listFields = map[string][]string{
 	"booking": {},
 	"airbnb":  {"amenities", "houseRules", "locationDescriptions", "highlights"},
+	"url":     {},
 }
 
 // Entry is one key of the trimmed listing: Value is a string or a []string.
