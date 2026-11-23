@@ -59,6 +59,10 @@ case "${SCHEMA_APPLY}" in
     ;;
 esac
 
+# shellcheck source=lib-docker.sh
+# shellcheck disable=SC1091
+source ./scripts/lib-docker.sh
+
 compose_has_go_service() {
   docker compose --profile go config --services 2>/dev/null | grep -qx ubyhost-go
 }
@@ -86,13 +90,7 @@ running_python_app() {
 }
 
 app_data_exec() {
-  if compose_has_go_service && docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .; then
-    docker compose --profile go exec -T ubyhost-go sh -c "$1"
-  elif docker compose config --services 2>/dev/null | grep -qx ubyhost     && docker compose ps -q --status running ubyhost 2>/dev/null | grep -q .; then
-    docker compose exec -T ubyhost sh -c "$1"
-  else
-    return 1
-  fi
+  ubyhost_app_exec sh -c "$1"
 }
 
 pg_count() {
@@ -226,8 +224,8 @@ chmod +x scripts/*.sh
 # without one would be locked out by this release, so refuse to deploy until
 # every active account has one (admin > Users shows them).
 # UBYHOST_ALLOW_MISSING_EMAIL=1 deploys anyway.
-if compose_has_go_service && docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .; then
-  MISSING_EMAIL="$(docker compose --profile go exec -T ubyhost-go ubyhost-web list-accounts-without-email 2>/dev/null \
+if compose_has_go_service && GO_APP_SVC="$(ubyhost_app_service)" && [ "${GO_APP_SVC}" != ubyhost ]; then
+  MISSING_EMAIL="$(docker compose --profile go exec -T "${GO_APP_SVC}" ubyhost-web list-accounts-without-email 2>/dev/null \
     | awk -F': ' '/active accounts without a login e-mail:/{print $2; exit}' || true)"
   [ -n "${MISSING_EMAIL}" ] || MISSING_EMAIL="?"
 elif running_python_app; then
@@ -244,12 +242,12 @@ BACKUP_STAMP=""
 TABLES=(user_account legal_entity apartment reservation guest submission)
 declare -A BEFORE_COUNTS
 if [ "${UBYHOST_DEPLOYMENT:-}" = "production" ] && compose_has_go_service; then
-  if ! docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .; then
+  if ! { ubyhost_app_service | grep -qx 'ubyhost-go\(-b\)\?'; }; then
     echo "Refusing deploy: ubyhost-go must be running for mandatory pre-deploy backup on the Go-only stack." >&2
     exit 1
   fi
 fi
-if (compose_has_go_service && docker compose --profile go ps -q --status running ubyhost-go 2>/dev/null | grep -q .)   || (docker compose config --services 2>/dev/null | grep -qx ubyhost     && docker compose ps -q --status running ubyhost 2>/dev/null | grep -q .); then
+if ubyhost_app_service >/dev/null; then
   echo "==> Mandatory pre-deploy backup"
   ./scripts/backup.sh
   BACKUP_STAMP="$(app_data_exec 'ls -1 /data/backups 2>/dev/null | sort -r | sed -n "1p"')"
