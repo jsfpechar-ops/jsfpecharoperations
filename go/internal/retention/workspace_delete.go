@@ -113,7 +113,7 @@ func deleteWorkspace(ctx context.Context, r *runner, ownerID int64) ([]int64, er
 			{`DELETE FROM invoice WHERE owner_user_id = $1 AND corrects_invoice_id IS NOT NULL`, []any{ownerID}},
 			{`DELETE FROM invoice WHERE owner_user_id = $1`, []any{ownerID}},
 			{`UPDATE settings SET value = '' WHERE key = 'invoice_purge_unlock'`, nil},
-			{`DELETE FROM email_outbox WHERE owner_user_id = $1 OR apartment_id IN ` + apt, []any{ownerID, ownerID}},
+			{`DELETE FROM email_outbox WHERE owner_user_id = $1 OR apartment_id IN ` + apt, []any{ownerID}},
 			{`DELETE FROM apartment_slug WHERE apartment_id IN ` + apt, []any{ownerID}},
 			{`DELETE FROM apartment WHERE owner_user_id = $1`, []any{ownerID}},
 			{`DELETE FROM invoice_sequence WHERE legal_entity_id IN (SELECT id FROM legal_entity WHERE owner_user_id = $1)`, []any{ownerID}},
