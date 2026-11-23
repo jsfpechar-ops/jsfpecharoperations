@@ -23,7 +23,7 @@
 
 | Area | Files |
 |---|---|
-| Go port (G1) | `go/cmd/ubyhost-web/` (healthz, metrics, goose at start), `go/internal/secure/` (Fernet, itsdangerous, digests; Python parity), `go/internal/schema/` (goose, pending state), `go/internal/imgproc/` (passport q90 + guide 1600px; `x/image`), `go/internal/passportphotos/` (encrypted save; 1597b) |
+| Go port (G1) | `go/cmd/ubyhost-web/` (healthz, metrics, goose, jobs), `go/internal/secure/` (Fernet, itsdangerous, digests; Python parity), `go/internal/schema/` (goose, pending state), `go/internal/imgproc/` (passport q90 + guide 1600px; `x/image`), `go/internal/passportphotos/` (encrypted save; 1597b), `go/internal/guideimport/` (`guide_import` job) |
 | App + routes | `App/app/main.py` (routers), `App/app/routes/` (guest, admin, admin_accounts, admin_customers, invoices, stay_fees, exports, signup, legal, privacy_requests, onboarding, onboarding_wizard, api, mail_unsubscribe) |
 | Police filing | `App/app/ubyport/` (SOAP client, errors), `App/app/reporting.py` (batches, sweep, state), `App/app/deadlines.py`, `App/app/filing_watchdog.py` |
 | Stays and guests | `App/app/icalsync.py` (feeds), `App/app/claim.py` (guest claim), `App/app/housebook.py`, `App/app/validation.py`, `App/app/passport_photos.py` |
@@ -31,7 +31,7 @@
 | Data | `App/app/db.py`, `App/app/migrations/`, `App/app/retention.py`, `App/app/dsr.py`, `App/app/workspace_export.py` |
 | Money | `App/app/invoices.py`, `App/app/invoice_pdf.py`, `App/app/stay_fee*.py`, `App/app/payment_request.py`, `App/app/payment_services.py`, `App/app/payment_links.py`, `App/app/routes/payments.py` |
 | Mail | `App/app/mail.py` (SES and outbox), `App/app/mail_notify.py`, `App/app/lifecycle_mail.py` |
-| AI | `App/app/ai.py` (the one door to the model API: structured call, usage ledger per day, feature and key, per-feature monthly budget, daily share and per-key cap; nothing else imports the SDK) |
+| AI | `App/app/ai.py` (one model API door: structured call, usage ledger, feature/key budgets; nothing else imports the SDK) |
 | Scheduler | `App/app/scheduler.py`, `App/app/worker.py`, `App/app/alerts.py` |
 | Copy (i18n) | `App/app/i18n.py` (guest), `App/app/host_i18n.py` (host, 357 KB: grep it, never read it whole), `App/app/landing_i18n.py`, and the legal `*_i18n.py` files |
 | UI | `App/app/contact_phone.py`, `App/app/templates/` (`guest/`; host list filters), `App/app/static/` (`app.js`, host/guest CSS, `vendor/turbo-8.0.13.js`) |
