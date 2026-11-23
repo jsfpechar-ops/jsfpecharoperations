@@ -5,6 +5,7 @@ package main
 
 import (
 	"net/http"
+	"os"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -13,7 +14,7 @@ import (
 
 func init() {
 	registerRoutes(func(mux *http.ServeMux, m *metrics, _ *pgxpool.Pool) {
-		mux.Handle("GET /terms/booking", m.wrap("/terms/booking", booking.TermsHandler()))
+		mux.Handle("GET /terms/booking", m.wrap("/terms/booking", booking.TermsHandler(os.Getenv)))
 		// More specific than GET /p/{slug}/{file} (register_web_booking.go): no conflict.
 		mux.Handle("GET /p/{slug}/thanks", m.wrap("/p/{slug}/thanks", booking.ThanksHandler()))
 	})
