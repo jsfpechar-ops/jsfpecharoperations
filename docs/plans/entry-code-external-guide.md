@@ -13,19 +13,34 @@ Goal: a host-typed building/gate entry code and an optional external (e.g. Notio
 - Secret handling copies the door code: encrypted at rest, ciphertext in the outbox payload, `{{entry_code}}` filled at send, missing secret fails the send. Not behind the TTLock gate: every host sees the field.
 - External guide URL: https only, no userinfo, no port, domain shown.
 
+## Decisions (owner, 2026-11-22)
+
+- D1: up to 3 extra entry codes per apartment, besides the TTLock door code (table `apartment_entry_code`, 2032).
+- D2: each code has a type (building_entrance, gate, garage, bike_room, other; `other` needs a label of 60 characters at most); guests see `<Type label>: <code>`; secrecy rules unchanged.
+- D3: the post-submit guest screen gets one "Your guide" block (our guide first, else the host's link, no codes); blocked on the guest port (2033). Submit redirects to the stay page with `saved=1` (`guest.py:2770`), so the block lives there; 2033 and 1666 must share one guide block, not two.
+- D5 (later 22nd): guest order = arrival order: gate, building entrance, apartment door, garage, bike room, other. Leon: code questions go to the host (`ask_host`), guest sees a fixed text pointing to the confirmation email and stay page (2037). No automatic re-send on code change.
+- D4: guide import gains a public-URL source (Notion first) with a code filter before and after the model; drafts only; host sees a count (2034, 2035).
+
 ## Briefs
 
 | # | Title | Status | Depends on | Tier |
 |---|---|---|---|---|
-| [1660](../tasks/1660-schema-check-goose-only-columns.md) | Schema checks accept goose-only columns | todo (owner approved exception 1, 2026-11-14) | none | A |
-| [1661](../tasks/1661-entry-code-schema.md) | Goose 00018 columns + export guard | blocked on 1660 | 1660 | A |
-| [1662](../tasks/1662-entry-code-retention.md) | Retention step `entry_codes` (Go + Python twin for the golden) | todo after 1661 | 1661 | A |
-| [1663](../tasks/1663-go-mail-entry-code-marker.md) | Go mail `{{entry_code}}` marker | **todo, runnable now** | none | B |
-| [1668](../tasks/1668-go-pages-layout-lint-harness.md) | Browser harness: layout lint + 390/768/1280 screenshots on Go pages (local Go binary, no staging) | **todo, runnable now** | none | B |
+| [1660](../tasks/1660-schema-check-goose-only-columns.md) | Schema checks accept goose-only columns | done (#1094) | none | A |
+| [1661](../tasks/1661-entry-code-schema.md) | Goose 00022 columns + export guard | done (#1095) | 1660 | A |
+| [1662](../tasks/1662-entry-code-retention.md) | Retention step `entry_codes` (Go + Python twin for the golden) | done (#1095) | 1661 | A |
+| [1663](../tasks/1663-go-mail-entry-code-marker.md) | Go mail indexed markers `{{entry_code_1..3}}` | review (#1278) | none | B |
+| [1668](../tasks/1668-go-pages-layout-lint-harness.md) | Browser harness: layout lint + 390/768/1280 screenshots on Go pages (local Go binary, no staging) | in progress: harness done, findings fixed by 2038 | none | B |
+| [2038](../tasks/2038-go-guide-lint-fixes.md) | Fix the 1668 findings: Leon help tip, one save button on the card | in progress (1668 branch) | 1668 | B |
 | [1664](../tasks/1664-go-guide-external-url.md) | Go guide editor: external link field | todo after 1661 and 1668 | 1661, 1668 | B |
-| [1665](../tasks/1665-host-ui-entry-code-field.md) | Go apartment settings: entry code section | blocked | 1661, 1668, property settings port (no brief yet) | B |
-| [1666](../tasks/1666-stay-page-access-guide-blocks.md) | Go stay page blocks | blocked | 1661, 1664, 1668 (guest paths), guest registration port | B |
-| [1667](../tasks/1667-completion-receipt-entry-code-guide.md) | Go completion receipt | blocked | 1661, 1663, 1664, guest registration port, Go `mail` job live | B |
+| [1665](../tasks/1665-host-ui-entry-code-field.md) | Settings-page entry codes | replaced by 2036 | none | none |
+| [1666](../tasks/1666-stay-page-access-guide-blocks.md) | Go stay page blocks | blocked | 1661, 2032, 2036, 1664, 1668 (guest paths), guest registration port | B |
+| [1667](../tasks/1667-completion-receipt-entry-code-guide.md) | Go completion receipt | blocked | 1661, 2032, 2036, 1663, 1664, guest registration port, Go `mail` job live | B |
+| [2032](../tasks/2032-entry-codes-multi-schema.md) | Goose 00023 `apartment_entry_code` (3 codes), retention, guard | review (#1281) | 1661, 1662 | A |
+| [2033](../tasks/2033-guest-finish-guide-block.md) | Guest post-submit "Your guide" block | blocked | 1664, 1668, guest registration port | B |
+| [2035](../tasks/2035-guide-import-code-filter.md) | Code filter for imported guide text | review (#1280) | none | B |
+| [2034](../tasks/2034-guide-import-public-url.md) | Guide import from a public URL (Notion), drafts, codes left out | todo after 2035 | 2035, 1668 | B |
+| [2036](../tasks/2036-go-apartment-access-page.md) | Go page `/apartments/{id}/access`: entry codes, guest preview, door-code status | todo after 2032, 1668 | 2032, 1668 | B |
+| [2037](../tasks/2037-leon-entry-code-pointer.md) | Leon: code questions go to host, fixed email/stay-page text, no code in prompt | blocked: guest Leon port (draft #1282) | 2035 | B |
 
 ## Proof it looks good (owner 2026-11-14)
 
@@ -37,4 +52,4 @@ No PR merges with "screenshots pending". 1668 starts the Go web binary locally a
 
 ## Reach production
 
-1663 and 1664 are dormant until the Go `mail` job and the Go guide-editor paths are switched on (owner steps in the briefs; Go host pages get their UX gate from the 1668 harness, so brief 1412 no longer needs a staging server). Guests see nothing until 1666 and 1667, which wait for the guest registration port.
+1663 and 1664 are dormant until the Go `mail` job and the Go guide-editor paths are switched on. Hosts enter codes only on the new page of 2036: after it deploys the owner adds `/apartments/*/access` to `UBYHOST_GO_PATHS`, then sets `UBYHOST_GO_ACCESS_PAGE=1` so the guide index links to it (a link before the path is listed would 404). Guests see codes only after 1666 and 1667, which wait for the guest registration port; 2033 (post-submit guide block) waits for it too. 2037 (Leon pointer) and 2035 can run now. 2034 needs a real Apify check of a Notion page before it is enabled.
