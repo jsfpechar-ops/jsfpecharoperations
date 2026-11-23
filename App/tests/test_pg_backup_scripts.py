@@ -28,7 +28,8 @@ case "$*" in
     else
       echo ubyhost; echo worker; [ "${GO_PROFILE:-0}" = 1 ] && echo ubyhost-go
     fi ;;
-  *"ps -q --status running ubyhost-go"*) [ "${GO_ONLY:-0}" = 1 ] && [ "${GO_NOT_RUNNING:-0}" != 1 ] && echo goid ;;
+  *"ps -q --status running ubyhost-go-b"*) [ "${GO_ONLY:-0}" = 1 ] && [ "${GO_NOT_RUNNING:-0}" != 1 ] && [ "${GO_SLOT:-a}" = b ] && echo gobid ;;
+  *"ps -q --status running ubyhost-go"*) [ "${GO_ONLY:-0}" = 1 ] && [ "${GO_NOT_RUNNING:-0}" != 1 ] && [ "${GO_SLOT:-a}" = a ] && echo goid ;;
   *"ps -q --status running ubyhost"*) [ "${GO_ONLY:-0}" != 1 ] && echo ubyid ;;
   *"test -e"*) exit 1 ;;
     *"pg_dump"*) echo DUMP ;;
@@ -52,7 +53,7 @@ def make_tree(tmp_path, env_text):
     """Copy the scripts into a throwaway tree with its own .env and stub binaries."""
     root = tmp_path / "deploy" / "lightsail"
     (root / "scripts").mkdir(parents=True)
-    for name in ("backup.sh", "backup_snapshot.sh", "pg-restore.sh", "filing-guard.sh"):
+    for name in ("backup.sh", "backup_snapshot.sh", "lib-docker.sh", "pg-restore.sh", "filing-guard.sh"):
         shutil.copy(SCRIPTS / name, root / "scripts" / name)
     (root / ".env").write_text(env_text)
     bindir = tmp_path / "bin"
@@ -523,12 +524,58 @@ def test_go_only_backup_refuses_without_ubyhost_go(tmp_path):
         root,
         bindir,
         log,
-        extra_env={"PG_RUNNING": "1", "GO_ONLY": "1", "GO_NOT_RUNNING": "1"},
+        extra_env={"PG_RUNNING": "1", "GO_ONLY": "1", "GO_NOT_RUNNING": "1", "UBYHOST_BACKUP_WAIT_SECONDS": "0"},
     )
     assert result.returncode != 0
-    assert "ubyhost-go must be running" in result.stderr
+    assert "no app container is running" in result.stderr
     recorded = calls(log)
     assert "exec -T ubyhost sh" not in "\n".join(recorded)
+
+
+@pytest.mark.parametrize("slot, service", [("a", "ubyhost-go"), ("b", "ubyhost-go-b")])
+def test_go_only_backup_runs_on_either_blue_green_slot(tmp_path, slot, service):
+    """Staging backup cron: the live Go slot may be B, so the check uses service names."""
+    root, bindir, log = make_tree(tmp_path, PROD_ENV + PG_ENV)
+    add_curl_stub(bindir)
+    result = run_script(
+        "backup.sh", root, bindir, log,
+        extra_env={"PG_RUNNING": "1", "GO_ONLY": "1", "GO_SLOT": slot},
+    )
+    assert result.returncode == 0, result.stderr
+    recorded = calls(log)
+    assert f"exec -T {service} sh" in recorded
+    assert "pg_dump" in recorded
+    assert "Refusing backup" not in result.stderr
+
+
+def test_backup_waits_for_a_transient_gap_then_succeeds(tmp_path):
+    root, bindir, log = make_tree(tmp_path, PROD_ENV + PG_ENV)
+    add_curl_stub(bindir)
+    (bindir / "docker").write_text(
+        DOCKER_STUB.replace(
+            '*"ps -q --status running ubyhost-go-b"*)',
+            '*"ps -q --status running ubyhost-go-b"*) [ "${GO_SLOT:-a}" = b ] \\\n'
+            '    && { n=$(cat "$STUB_LOG.n" 2>/dev/null || echo 0); echo $((n+1)) > "$STUB_LOG.n"; '
+            '[ "$n" -ge 2 ] && echo gobid; } ;;\n  *"NEVERMATCH"*)',
+        )
+    )
+    result = run_script(
+        "backup.sh", root, bindir, log,
+        extra_env={"PG_RUNNING": "1", "GO_ONLY": "1", "GO_SLOT": "b", "UBYHOST_BACKUP_WAIT_SECONDS": "0"},
+    )
+    assert result.returncode == 0, result.stderr
+    assert "retrying in 0s" in result.stderr
+
+
+def test_go_only_backup_refuses_when_neither_slot_runs(tmp_path):
+    root, bindir, log = make_tree(tmp_path, PROD_ENV + PG_ENV)
+    add_curl_stub(bindir)
+    result = run_script(
+        "backup.sh", root, bindir, log,
+        extra_env={"PG_RUNNING": "1", "GO_ONLY": "1", "GO_NOT_RUNNING": "1", "GO_SLOT": "b", "UBYHOST_BACKUP_WAIT_SECONDS": "0"},
+    )
+    assert result.returncode != 0
+    assert "no app container is running" in result.stderr
 
 
 def test_backup_fails_in_production_when_postgres_not_running_before_any_snapshot(tmp_path):
