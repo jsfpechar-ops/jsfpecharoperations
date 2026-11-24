@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/guideimport"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/session"
 )
 
@@ -97,6 +98,13 @@ func TestHandoffAddGuideThenCardLinkFindsSameCard(t *testing.T) {
 	itemID, err := s.handoffAddGuide(ctx, 78, 7902, "rules")
 	if err != nil || itemID == 0 {
 		t.Fatalf("add to guide: id %d err %v", itemID, err)
+	}
+	var sortOrder int64
+	if err := s.pool.QueryRow(ctx, `SELECT sort_order FROM guide_item WHERE id = $1`, itemID).Scan(&sortOrder); err != nil {
+		t.Fatal(err)
+	}
+	if want := int64(len(guideimport.Kinds) + 1); sortOrder != want {
+		t.Fatalf("sort_order %d, want %d (len(Kinds)+1)", sortOrder, want)
 	}
 	row, err := s.handoffGet(ctx, 78, 7902)
 	if err != nil {

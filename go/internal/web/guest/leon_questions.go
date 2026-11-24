@@ -22,6 +22,7 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/anthropic"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/clientip"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/guesthandoff"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/guideimport"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb/layout"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/session"
@@ -566,8 +567,8 @@ func (s *lqServer) handoffAddGuide(ctx context.Context, apt, qid int64, topic st
 	}
 	var itemID int64
 	// The card text lives in guide_item.steps (there is no guide_card table).
-	err = s.pool.QueryRow(ctx, `INSERT INTO guide_item (apartment_id, kind, topic, title, steps, state, visibility, source, created_at, updated_at)
-		VALUES ($1, 'custom', $2, $3, $4, 'done', $5, 'host', $6, $6) RETURNING id`, apt, topic, title, row.Answer, vis, s.stamp(s.now())).Scan(&itemID)
+	err = s.pool.QueryRow(ctx, `INSERT INTO guide_item (apartment_id, kind, topic, title, steps, state, visibility, source, created_at, updated_at, sort_order)
+		VALUES ($1, 'custom', $2, $3, $4, 'done', $5, 'host', $6, $6, $7) RETURNING id`, apt, topic, title, row.Answer, vis, s.stamp(s.now()), int64(len(guideimport.Kinds)+1)).Scan(&itemID)
 	return itemID, err
 }
 
