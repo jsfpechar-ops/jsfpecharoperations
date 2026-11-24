@@ -60,3 +60,16 @@ Commits: `9c5467e 2055 step 2` (i18n keys), `ecca932 2055 step 3` (stay.tmpl, as
 
 - Decide whether door-code, dup-warning and guide-link ports go to a follow-up brief.
 - Confirm the three skipped Go tests run on the migrated DB.
+
+## Follow-up 2 (run 3, brief section 11)
+
+- Merge of `origin/claude/nice-hawking-fw98ct`: commit `4f52d54`. Conflicts in `go/internal/web/guest/i18n.json` resolved by keeping both sides' keys. JSON valid, no duplicate keys in any object.
+- Item 6 (completeness and parity): commit `d27fb41`. Go `validateResidence` now emits the non-Latin message when the raw street or city was typed but cleaned to nothing, as Python `validate_residence` does. Test `residence_raw_test.go` passes. `go test ./internal/validation/` ok.
+  - Python `validate_guest` checks: surname, first_name (incl. warning), birth_date, nationality, doc_number (note when INPASS, czech child rule), visa_number, residence (street, city, country), purpose, forbidden characters in 7 fields, note length, stay_to after stay_from; plus signature via `guest_signature_issue`.
+  - Go `validateGuest` checks: the same list. Only the residence raw-input message differed (fixed).
+  - Not ported: Python's "Home address is too long" branch. It is unreachable because the composed value is cut to 255.
+  - Still open: the Go stay page builds `complete` from the fields the query loads (signature not loaded). Python `guest_is_complete` may differ for some guests. Birth-date display formatting vs Python filter not checked.
+- Item 1 (door-code card): NOT DONE. Findings: Go `doorcodes.Service.ViewForStay` (`go/internal/doorcodes/view_stay.go`) exists and is used by `go/internal/web/staydetail`. The guest `stayClaimDeps` (`go/internal/web/guest/stay_claim.go:46`, constructed at `stay_claim.go:81` and `party.go:409`) has no door-code dependency. Wiring needs a DoorCodes field and a constructor parameter from `go/cmd/ubyhost-web`. `stay.tmpl` has no `#door-code` block. Needs its own run.
+- Items 2, 3, 4, 5, 7, 8: NOT DONE (budget). Not started.
+- Tests run: `go test ./internal/validation/` ok. Guest DB tests and layout lint not re-run in this run. The 3 skipped guest DB tests from run 2 are still open.
+- Screenshots: none taken in this run.
