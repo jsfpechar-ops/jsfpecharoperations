@@ -80,12 +80,6 @@ func guestFormSaveHandler(d saveDeps) http.HandlerFunc {
 	}
 }
 
-// English texts match guestcontract.CheckNewGuest; the form localises them by field.
-const (
-	guestPartySizeMessage = "Please enter how many people are staying (1–60)."
-	guestLegalAckMessage  = "Please confirm that you have read the legal information."
-)
-
 func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter, r *http.Request) error {
 	if d.pool == nil {
 		return errors.New("guest form save: nil pool")
@@ -157,7 +151,7 @@ func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter,
 	// guest.py:2462 — a new guest with no expected total gives a party size of 1–60.
 	if existing == nil && headcount.Expected(res.overrideGuests, res.declaredGuests, res.reducedGuests) == nil {
 		if n, err := strconv.Atoi(validation.Strip(form["party_size"])); err != nil || n < 1 || n > 60 {
-			issues = append(issues, validation.Issue{Field: "party_size", Message: guestPartySizeMessage, Severity: "error"})
+			issues = append(issues, validation.Issue{Field: "party_size", Message: stringsCatalog.T(lang, "error_party_size", nil), Severity: "error"})
 		}
 	}
 	if si := validation.GuestFormSignatureIssue(sig, child); si != nil {
@@ -165,7 +159,7 @@ func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter,
 	}
 	// guest.py:2480 — the guest must confirm the legal notice.
 	if form["legal_ack"] == "" {
-		issues = append(issues, validation.Issue{Field: "legal_ack", Message: guestLegalAckMessage, Severity: "error"})
+		issues = append(issues, validation.Issue{Field: "legal_ack", Message: stringsCatalog.T(lang, "legal_ack_missing", nil), Severity: "error"})
 	}
 	// guest.py:2518 — name the field that holds another alphabet, then word every
 	// sentence for the guest. Both passes run before the refusal is tested, so a
