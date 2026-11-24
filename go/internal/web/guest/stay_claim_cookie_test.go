@@ -147,7 +147,7 @@ func TestStayOverviewMailOnHonorsClaimCookie(t *testing.T) {
 	bare.SetPathValue("reservation_id", fmt.Sprintf("%d", resID))
 	assigned := httptest.NewRecorder()
 	d.stayOverview(assigned, bare)
-	if assigned.Code != http.StatusOK || !strings.Contains(assigned.Body.String(), "guest-assigned") {
+	if assigned.Code != http.StatusOK || !strings.Contains(assigned.Body.String(), "g-assigned-stay") {
 		t.Fatalf("without cookie: status %d body %q", assigned.Code, assigned.Body.String())
 	}
 
