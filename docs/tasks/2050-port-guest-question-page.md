@@ -95,3 +95,11 @@ Checklist (tick in the report):
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_014N5J8NCpdqN2TbR61gYRQf
 ```
+
+## 10. Follow-up (orchestrator review of the first run)
+
+Run in the same worktree, on top of commit af55109.
+1. Title cut parity. Read Python `card_title` and `card_for` in `App/app/guest_handoff.py` (~232-262; grep `def card_title`, `def card_for`). Python slices `str` (characters). In `go/internal/web/guest/leon_questions.go`, the existing `handoffAddGuide` cuts 120 **bytes** (`title[:120]`, ~line 561): this can split a UTF-8 Czech character and makes the new `handoffCardID` lookup (120 runes, ~line 471) miss the card. Make both use one helper that matches `card_title` exactly (runes, same trim/whitespace rules as Python). Add a Go unit test with a Czech title over 120 characters containing diacritics: add-to-guide then card lookup finds the same card.
+2. Card link. Python's "open card" button is `base_url ~ '/' ~ card_id` (App/app/templates/guest_question.html ~34); find `base_url` for that page in Python (grep `base_url` in App/app/routes/guest_guide.py or the question route) and make Go's href identical.
+3. DB-backed tests: rerun `go test ./internal/web/guest/...` with `UBYHOST_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:5433/layout_test`; 0 skipped for the files you touched. Write the DB-backed tests the brief's step 4 asked for (answered question shows answer + shown_to_guest; open urgent shows the banner and badge; dismissed shows the dismissed banner; card done shows the open-card link).
+4. Layout lint browser test green, 0 skipped; screenshots of the Go question detail page (open urgent, answered, dismissed) at 390/768/1280, viewed and described per width.
