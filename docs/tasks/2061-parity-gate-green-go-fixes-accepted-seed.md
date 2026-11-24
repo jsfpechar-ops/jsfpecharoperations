@@ -1,6 +1,6 @@
 # 2061: Parity gate to green: Go needs-you fix, guest check-mark, ACCEPTED rows, door-code seed
 
-Status: ready
+Status: todo
 Depends on: 2060 | Branch: claude/nice-hawking-fw98ct | Executor: Haiku 5.5 | 30 tool calls | Tier: B (Go templates, harness, seed)
 Run order: 2061 first. 2062 (g-hub-claimed fix and the one full gate) is written after step 6 of this brief reports its finding.
 
