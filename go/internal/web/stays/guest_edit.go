@@ -17,7 +17,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
-	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/scheduler"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/session"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/stayfee"
@@ -748,16 +747,7 @@ func nullIfEmpty(s string) any {
 }
 
 func guestSubmitStayIfComplete(ctx context.Context, d guestEditDeps, apartmentID, reservationID int64) error {
-	var mode string
-	err := d.pool.QueryRow(ctx, `SELECT COALESCE(automation_mode,'') FROM apartment WHERE id = $1`, apartmentID).Scan(&mode)
-	if err != nil {
-		return err
-	}
-	completed, err := ubyport.RefreshRegistrationCompletedAt(ctx, d.pool, reservationID, guestSaveDecrypter(d.getenv), d.now)
-	if err != nil || completed == nil || mode != "immediate" {
-		return err
-	}
-	_, err = scheduler.Enqueue(ctx, d.pool, "submit")
+	_, err := ubyport.SubmitCompletedStay(ctx, d.pool, d.getenv, d.now, apartmentID, reservationID, nil)
 	return err
 }
 

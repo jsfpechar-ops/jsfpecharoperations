@@ -21,8 +21,6 @@ import (
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/headcount"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
-	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/scheduler"
-	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/ai"
 )
@@ -189,64 +187,13 @@ func editKeepLeadReduction(st *editStay, expected *int64) (cols []string, vals [
 }
 
 func editSubmitStayIfComplete(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, apartmentID, reservationID int64) error {
-	var mode string
-	err := pool.QueryRow(ctx,
-		`SELECT COALESCE(automation_mode, '') FROM apartment WHERE id = $1`, apartmentID).Scan(&mode)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	completed, err := ubyport.RefreshRegistrationCompletedAt(ctx, pool, reservationID, editSaveDecrypter(getenv), now)
-	if err != nil {
-		return err
-	}
-	if completed == nil || mode != "immediate" {
-		return nil
-	}
-	paused, err := ubyport.OpenAlert(ctx, pool, fmt.Sprintf("ubyport_auth_failed:%d", apartmentID))
-	if err != nil || paused {
-		return err
-	}
-	var status string
-	err = pool.QueryRow(ctx, `SELECT COALESCE(status, '') FROM reservation WHERE id = $1`, reservationID).Scan(&status)
-	if errors.Is(err, pgx.ErrNoRows) || status != "active" {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	if _, err := scheduler.Enqueue(ctx, pool, "submit"); err != nil {
-		log.Printf("edit_posts: submit enqueue apartment_id=%d: %v", apartmentID, err)
-		var name string
-		_ = pool.QueryRow(ctx, `SELECT COALESCE(internal_name,'') FROM apartment WHERE id = $1`, apartmentID).Scan(&name)
-		return ubyport.RaiseAlert(ctx, pool, "warning", "submission_immediate",
-			name+": automatic send failed after registration completed.", err.Error(),
-			fmt.Sprintf("submission_immediate:%d", apartmentID), &apartmentID, nil, nil,
-			ubyport.AlertParams{"property": name, "error": err.Error()})
-	}
-	return nil
+	_, err := ubyport.SubmitCompletedStay(ctx, pool, getenv, now, apartmentID, reservationID, nil)
+	return err
 }
 
 func headcountLeadLive(getenv func(string) string) bool {
 	v := strings.ToLower(strings.TrimSpace(getenv("UBYHOST_HEADCOUNT_LEAD_LIVE")))
 	return v == "1" || v == "true" || v == "yes"
-}
-
-func editSaveDecrypter(getenv func(string) string) ubyport.FieldDecrypter {
-	var keys *secure.MultiFernet
-	return func(token string) (string, error) {
-		if keys == nil {
-			k, err := secure.LoadDataKeys(getenv)
-			if err != nil {
-				return "", err
-			}
-			keys = k
-		}
-		b, err := keys.Decrypt(token, 0, time.Now())
-		return string(b), err
-	}
 }
 
 // QuickEditHandler is POST /reservations/{reservation_id}/quick-edit.

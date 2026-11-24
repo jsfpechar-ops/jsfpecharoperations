@@ -18,7 +18,6 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/guestcontract"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/headcount"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/passportphotos"
-	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/scheduler"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
@@ -921,25 +920,6 @@ func parseDatePtr(s string) *time.Time {
 }
 
 func guestFormSubmitStayIfComplete(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, apartmentID, reservationID int64) error {
-	var mode string
-	if err := pool.QueryRow(ctx, `SELECT COALESCE(automation_mode,'') FROM apartment WHERE id = $1`, apartmentID).Scan(&mode); err != nil {
-		return err
-	}
-	dec := func(token string) (string, error) {
-		if token == "" {
-			return "", nil
-		}
-		k, err := secure.LoadDataKeys(getenv)
-		if err != nil {
-			return "", err
-		}
-		b, err := k.Decrypt(token, 0, now())
-		return string(b), err
-	}
-	completed, err := ubyport.RefreshRegistrationCompletedAt(ctx, pool, reservationID, dec, now)
-	if err != nil || completed == nil || mode != "immediate" {
-		return err
-	}
-	_, err = scheduler.Enqueue(ctx, pool, "submit")
+	_, err := ubyport.SubmitCompletedStay(ctx, pool, getenv, now, apartmentID, reservationID, nil)
 	return err
 }
