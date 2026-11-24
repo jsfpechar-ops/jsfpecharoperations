@@ -15,9 +15,9 @@
 <table class="ui-table" aria-label="{{lqT .Lang "guest_questions.title"}}">
 <thead><tr><th>{{lqT .Lang "guest_questions.col.question"}}</th><th>{{lqT .Lang "guest_questions.col.state"}}</th></tr></thead>
 <tbody>{{range .Questions}}
-<tr class="ui-row clickable-row" data-href="{{$.Base}}/{{.ID}}" tabindex="0" role="link">
-  <td><a href="{{$.Base}}/{{.ID}}">{{if .Summary}}{{.Summary}}{{else}}{{.Question}}{{end}}</a></td>
-  <td>{{if eq .Door "qr"}}{{lqT $.Lang "guest_questions.door.qr"}}{{else}}{{lqT $.Lang "guest_questions.door.stay"}}{{end}} · {{lqT $.Lang (printf "guest_questions.state.%s" .Status)}}</td>
+<tr class="ui-row clickable-row" data-href="{{$.Base}}/{{.ID}}" tabindex="0" role="link" aria-label="{{.Question}}">
+  <td class="ui-cell-first" data-card="primary"><a href="{{$.Base}}/{{.ID}}">{{.Question}}</a><span class="ui-sub"> {{.Day}} · {{if eq .Door "qr"}}{{lqT $.Lang "guest_questions.door.qr"}}{{else}}{{lqT $.Lang "guest_questions.door.stay"}}{{end}}</span></td>
+  <td data-card="badge">{{if and (eq .Status "open") (gt .Urgent 0)}}{{ui_badge "attention" (lqT $.Lang "guest_questions.badge.urgent")}} {{end}}{{if and (eq .Status "open") (eq .Triaged 0)}}{{ui_badge "neutral" (lqT $.Lang "guest_questions.badge.unread")}} {{end}}{{if eq .Status "open"}}{{ui_badge "action" (lqT $.Lang "guest_questions.state.open")}}{{else if eq .Status "answered"}}{{ui_badge "done" (lqT $.Lang "guest_questions.state.answered")}}{{else}}{{ui_badge "neutral" (lqT $.Lang "guest_questions.state.dismissed")}}{{end}}</td>
 </tr>
 {{end}}</tbody>
 </table>
