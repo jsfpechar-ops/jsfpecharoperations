@@ -83,7 +83,7 @@ func (h *GuideHandlers) qrGuide(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	RateRecord(r.Context(), h.pool, "guide_qr", key, h.now())
-	h.renderGuidePage(w, r, lang, apt, nil, "everyone", "qr", token, "", "")
+	h.renderGuidePage(w, r, lang, apt, nil, "everyone", "qr", token, "", "/g/"+token+"/leon")
 }
 
 func (h *GuideHandlers) qrGuidePhoto(w http.ResponseWriter, r *http.Request) {
