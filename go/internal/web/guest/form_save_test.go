@@ -665,13 +665,14 @@ func TestGuestSavePassportPhotoHTTP(t *testing.T) {
 		file                             []byte
 		wantStatus, wantRows             int
 		wantPhoto, wantHook              bool
+		wantBodySub                      string
 	}{
-		{"required, no file", "required_foreign", "DEU", "", nil, http.StatusUnprocessableEntity, 0, false, false},
-		{"required, text file", "required_foreign", "DEU", "text/plain", []byte("not a photo"), http.StatusUnprocessableEntity, 0, false, false},
-		{"required, oversized jpeg", "required_foreign", "DEU", "image/jpeg", oversized, http.StatusUnprocessableEntity, 0, false, false},
-		{"required, valid jpeg", "required_foreign", "DEU", "image/jpeg", jpg, http.StatusSeeOther, 1, true, true},
-		{"off, file ignored", "off", "DEU", "image/jpeg", jpg, http.StatusSeeOther, 1, false, true},
-		{"czech, no file", "required_foreign", "CZE", "", nil, http.StatusSeeOther, 1, false, true},
+		{"required, no file", "required_foreign", "DEU", "", nil, http.StatusUnprocessableEntity, 0, false, false, stringsCatalog.T("en", "passport_photo_missing", nil)},
+		{"required, text file", "required_foreign", "DEU", "text/plain", []byte("not a photo"), http.StatusUnprocessableEntity, 0, false, false, passportUploadText("en", "Upload a JPEG, PNG, or WebP photo of your passport ID page, or a PDF (for example a registration form with up to 11 guests).")},
+		{"required, oversized jpeg", "required_foreign", "DEU", "image/jpeg", oversized, http.StatusUnprocessableEntity, 0, false, false, passportUploadText("en", "The photo is too large. Use a file under 5 MB.")},
+		{"required, valid jpeg", "required_foreign", "DEU", "image/jpeg", jpg, http.StatusSeeOther, 1, true, true, ""},
+		{"off, file ignored", "off", "DEU", "image/jpeg", jpg, http.StatusSeeOther, 1, false, true, ""},
+		{"czech, no file", "required_foreign", "CZE", "", nil, http.StatusSeeOther, 1, false, true, ""},
 	}
 	for i, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -750,7 +751,14 @@ func TestGuestSavePassportPhotoHTTP(t *testing.T) {
 			rec := httptest.NewRecorder()
 			mux.ServeHTTP(rec, req)
 			if rec.Code != c.wantStatus {
-				t.Fatalf("status = %d, want %d; body: %s", rec.Code, c.wantStatus, rec.Body.String())
+				body := rec.Body.String()
+				if len(body) > 200 {
+					body = body[:200] + "..."
+				}
+				t.Fatalf("status = %d, want %d; body: %s", rec.Code, c.wantStatus, body)
+			}
+			if c.wantBodySub != "" && !strings.Contains(rec.Body.String(), c.wantBodySub) {
+				t.Fatalf("response body missing expected refusal %q", c.wantBodySub)
 			}
 			var rows, guestID int64
 			var stampAt string
@@ -767,6 +775,21 @@ func TestGuestSavePassportPhotoHTTP(t *testing.T) {
 				t.Fatalf("photo on disk = %v, want %v", !c.wantPhoto, c.wantPhoto)
 			}
 			if c.wantPhoto {
+				encPath := filepath.Join(passportphotos.PhotosDir(dir), fmt.Sprintf("%d.jpg.enc", guestID))
+				fi, err := os.Stat(encPath)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if fi.Mode().Perm() != 0o600 {
+					t.Fatalf("photo file mode = %04o, want 0600", fi.Mode().Perm())
+				}
+				diskBytes, err := os.ReadFile(encPath)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if bytes.HasPrefix(diskBytes, []byte{0xFF, 0xD8, 0xFF}) {
+					t.Fatal("stored photo on disk has plaintext JPEG header")
+				}
 				plain, _, ok := passportphotos.Read(dir, keys, guestID)
 				if !ok || !bytes.HasPrefix(plain, []byte{0xFF, 0xD8, 0xFF}) {
 					t.Fatalf("stored photo does not decrypt to a JPEG (ok=%v)", ok)
