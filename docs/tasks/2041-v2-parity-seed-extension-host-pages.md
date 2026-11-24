@@ -1,13 +1,13 @@
 # 2041: V2 visual parity, part 2: seed the missing host-side data, compare the pages that need it
 
 Status: todo
-Depends on: 2040 (its `parity_env.sh`, `parity_cases.py`, the harness changes) | Base commit: HEAD | Branch: current
+Depends on: 2040 (its `parity_env.sh`, `parity_cases.py`, the harness changes) and 2045 (harness fixes: modal off via `PRE_SQL`, Leon env, error capture, QR masking, `ACCEPTED` list; run 2045 first, use its `page_parity_visual.py`) | Base commit: HEAD | Branch: current
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 100k tokens (stop at 25 calls; see section 8)
 
 ## 1. Objective
 
 2040 compared every host/admin page the seed already feeds, mostly in empty states. This brief
-adds the data those pages need (guide items, questions, Leon, payment requests, booking site,
+adds the data those pages need (guide items, questions, Leon,
 cleaning, Havel, privacy requests, submission, account invite, a property-detail variant) and
 compares them populated and in the important tab states, cs and en, at 390/768/1280 px.
 **Do not fix any visible difference.** Only tooling, seed, run, report. Guest and token-link
@@ -26,13 +26,11 @@ pages for non-hosts are brief 2042.
   No real data: names `Parity Guest`, mail `*@e2e.test`, every text is lorem-style or `E2E ...`.
 - Helpers (verified by grep): `guest_guide.add_kind(apartment_id, kind, source=)`,
   `guest_guide.save(apartment_id, item_id, fields)`, `guest_guide.add_custom(apartment_id, topic, title)`,
-  `guide_facts.STEPS` (quick-answer step names), `payment_request.create(...)` (line 42),
-  `payment_request.guest_token(row)`, `cleaning.save_event(apartment_id, values)`,
+  `guide_facts.STEPS` (quick-answer step names), `cleaning.save_event(apartment_id, values)`,
   `cleaning.new_share(owner_id, property_ids)`, `havel.record_gap(lang, page, kind, question)`,
   `havel.record_stat(kind)`, `property_page.save_page(apartment_id, description=, amenities=, ...)`,
   `lifecycle_mail.unsubscribe_token(user_id, address)`.
-  Tables without a helper (`guest_question`, `submission`, privacy request, account invite, booking
-  site config, Leon config): copy the column list from `App/migrations_pg/00001_baseline.sql`
+  Tables without a helper (`guest_question`, `submission`, privacy request, account invite, Leon config): copy the column list from `App/migrations_pg/00001_baseline.sql`
   (`grep -n 'CREATE TABLE public.guest_question' ...`, read 25 lines) and use `db.insert`.
 
 ## 3. Files
@@ -46,14 +44,14 @@ pages for non-hosts are brief 2042.
 
 Never touch `App/app/**`, `go/**`, `scripts/e2e/seed.py`.
 
+Use the 2045 harness as is (modal off, Leon env, error capture with both statuses, QR masking, `ACCEPTED`). If a 2045 file or symbol (`MODAL_CASES`, `ACCEPTED`, `run_case2`) is missing, stop.
+
 ## 4. Steps
 
 1. Environment: `cd /home/user/jsfpecharoperations && source scripts/e2e/parity_env.sh 2>&1 | tail -3; git log --oneline -3 | tail -3; ls scripts/e2e/parity_cases.py`.
    If `parity_cases.py` is missing, stop (2040 not merged into this branch).
 2. Find each helper's signature, one grep per group, 40 lines max each (examples):
-   `grep -n -A22 '^def create' App/app/payment_request.py | head -45`;
    `grep -n -A12 '^def save_event' App/app/cleaning.py | head -25`;
-   `grep -n -B1 -A6 'booking_site' App/app/routes/payments.py | sed -n 1,40p` (which table/columns the `/booking-sites` and `/apartments/{id}/booking-site` pages read: grep `FROM booking_site\|FROM \w*site`);
    `grep -n -A12 'privacy_request' App/app/routes/privacy_requests.py | head -40`;
    `grep -rn 'account_invite\|pending_invite' App/app/routes/admin_accounts.py | head -8`.
    Rule: a helper that needs more than 2 greps to understand is replaced by `db.insert` with the
@@ -74,8 +72,7 @@ def main():
     # 1 guide: 4 items in different states (missing, check, done, skipped), 2 quick answers
     # 2 guest_question: 2 questions (one open, one answered) for apt
     # 3 Leon: settings row for apt (enabled) so /leon and /leon/setup/* render configured
-    # 4 payment_request: 3 requests (open, paid, expired) -> out["pay_open"], out["pay_paid"]
-    # 5 booking site: config for apt + 1 booking_hold/booking in 'requested' state -> out["booking_id"]
+    # (4 payment requests and 5 booking site: RETIRED by owner decision 2026-11-24, not seeded)
     # 6 cleaning: 3 events over next 7 days for apt, 1 share -> out["cleaning_event"], out["share_token"]
     # 7 havel: 3 gaps, a few stats -> shows /havel populated
     # 8 privacy_request: 2 rows (open, closed)
@@ -89,7 +86,7 @@ main()
 ```
    Check: `cd App && .venv/bin/python -m py_compile ../scripts/e2e/seed_parity_extra.py && echo ok | tail -3`.
 4. Hook it in `scripts/e2e/page_parity_visual.py` (anchor `seed, refs = audit.seed_db()`): immediately after it,
-   run `subprocess.run([sys.executable, str(ROOT/"scripts/e2e/seed_parity_extra.py"), str(seed["h1"]["id"]), refs["apartment_id"], refs["reservation_id"]], cwd=APP, env={**os.environ, **audit.ENV, "UBYHOST_DATABASE_URL": f"{audit.PG}/parity_run"}, capture_output=True, text=True, check=True)`, parse stdout JSON into `extra`, and pass `extra` to `fill()` (2040) so that the placeholders `{pay_open} {pay_paid} {booking_id} {cleaning_event} {share_token} {submission_id} {property_id} {invite_token} {unsub_token}` resolve. Cases whose placeholder is missing from `extra` are skipped and listed as `SKIPPED (seed block missing)` in the report, never silently dropped.
+   run `subprocess.run([sys.executable, str(ROOT/"scripts/e2e/seed_parity_extra.py"), str(seed["h1"]["id"]), refs["apartment_id"], refs["reservation_id"]], cwd=APP, env={**os.environ, **audit.ENV, "UBYHOST_DATABASE_URL": f"{audit.PG}/parity_run"}, capture_output=True, text=True, check=True)`, parse stdout JSON into `extra`, and pass `extra` to `fill()` (2040) so that the placeholders `{cleaning_event} {share_token} {submission_id} {property_id} {invite_token} {unsub_token}` resolve. Cases whose placeholder is missing from `extra` are skipped and listed as `SKIPPED (seed block missing)` in the report, never silently dropped.
 5. Append to `scripts/e2e/parity_cases.py` an `EXTRA_CASES` list (same tuple shape, `fill` handles it; `page_parity_visual.table_cases` iterates `CASES + EXTRA_CASES`):
 ```
 EXTRA_CASES = [
@@ -99,12 +96,6 @@ EXTRA_CASES = [
     ("cleaning-shares-full", "/cleaning/shares", "host", "E"),
     ("havel-full", "/havel", "host", "E"),
     ("privacy-requests-full", "/privacy-requests", "admin", "E"),
-    ("payments-full", "/payments", "host", "E"),
-    ("payment-share", "/payments/requests/{pay_open}/share", "host", "E"),
-    ("payment-qr-open", "/payments/qr/{pay_open}", "host", "E"),
-    ("payment-qr-paid", "/payments/qr/{pay_paid}", "host", "E"),
-    ("booking-sites-full", "/booking-sites", "host", "E"),
-    ("booking-site-setup-full", "/apartments/{apt}/booking-site", "host", "E"),
     ("submissions-full", "/submissions", "host", "E"),
     ("submission-draft", "/submissions/{submission_id}", "host", "E"),
     ("submission-sent", "/submissions/{submission_sent}", "host", "E"),
@@ -119,7 +110,6 @@ EXTRA_CASES = [
     ("guide-quick-done", "/apartments/{apt}/guide/quick/done", "host", "F"),
     ("leon-settings-full", "/apartments/{apt}/leon", "host", "F"),
     ("leon-setup-cards-full", "/apartments/{apt}/leon/setup/cards", "host", "F"),
-    ("property-page-review-full", "/apartments/{apt}/page", "host", "F"),
 ] + [
     (f"guide-quick-{s}", f"/apartments/{{apt}}/guide/quick/{s}", "host", "F")
     for s in GUIDE_QUICK_STEPS
@@ -168,6 +158,7 @@ python3 scripts/context_lint.py 2>&1 | tail -3
 - 25 tool calls used: stop, commit, report which groups are missing.
 - A seed block that violates a DB constraint after two tries: skip it (rule in step 3), report it.
 - Do not fix visible rows. Do not edit seed.py.
+- Retired features (booking site, public bookings, payment requests, `/pay`, payments consent, Stripe) are never seeded or compared; do not add them back (owner decision 2026-11-24). Rows marked `accepted` by the 2045 `ACCEPTED` list are reported separately, not as failures.
 
 ## 9. Report
 

@@ -1,14 +1,14 @@
 # 2042: V2 visual parity, part 3: guest and token-link pages, and the pre-deploy gate command
 
 Status: todo
-Depends on: 2040, 2041 | Base commit: HEAD | Branch: current
+Depends on: 2040, 2041, 2045 (harness fixes: modal off, Leon env, error capture, QR masking, `ACCEPTED` list; use its `page_parity_visual.py`) | Base commit: HEAD | Branch: current
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 100k tokens (stop at 25 calls; see section 8)
 
 ## 1. Objective
 
 Compare every page a guest sees through a token link (stay hub, claim steps, guest form, guide,
-Leon, PIN page, payment QR) plus the other token-link pages that need no login (cleaner share,
-booking manage, mail unsubscribe), cs and en, 390/768/1280 px, each state with the cookies a real
+Leon, PIN page) plus the other token-link pages that need no login (cleaner share,
+mail unsubscribe), cs and en, 390/768/1280 px, each state with the cookies a real
 visitor would have. Then document one aggregate command that fails on any visible difference, for
 use as a pre-deploy gate. **Do not fix visible differences.** Tooling, seed, run, report.
 Fully anonymous pages (landing, login, legal, signup, public guides) stay out of scope.
@@ -27,9 +27,8 @@ Fully anonymous pages (landing, login, legal, signup, public guides) stay out of
   `extra_cookies` list (same for both stacks).
 - The PIN page appears only with `UBYHOST_GUEST_PIN=1`, read once at import (`audit.PIN_ENV`), so it
   needs its own run with its own servers (`PARITY_PIN=1`).
-- Tokens: apartment `permalink_token` (`refs["token"]`), `payment_request.guest_token(row)`,
-  `cleaning.new_share(...)` token, `lifecycle_mail.unsubscribe_token(...)`, booking manage token
-  (grep `booking_manage` in `App/app/routes/property_page.py:503` for how the token is built).
+- Tokens: apartment `permalink_token` (`refs["token"]`), `cleaning.new_share(...)` token, `lifecycle_mail.unsubscribe_token(...)`.
+- RETIRED, never seeded or compared (owner decision 2026-11-24): booking site, public bookings, booking manage links, payment requests, `/pay`, payments consent, Stripe.
 - Every guest page runs under a fresh DB state: claim state changes must be set by SQL before the run
   and must not be changed by the page render (the pages are GET only; the form POSTs are not exercised).
   Reading `/l/{tok}/{res}/claim` may spend a secret: use a fresh secret per stack (see step 4).
@@ -70,9 +69,9 @@ Never touch `App/app/**`, `go/**`, `scripts/e2e/seed.py`.
    | `res_claimed` | `state='claimed'`, `claimed_at=db.utcnow()`, token_version 1, `declared_guests=2`, 1 guest row complete (`first_name`, `surname`, `birth_date`, `nationality`, signature) and 1 incomplete -> out["guest_complete"], out["guest_partial"] |
    | `res_locked` | claimed and `guest_access_locked_at` set (the "locked" page) |
    | `res_gone` | `status='cancelled'` (the unavailable page) |
-   Also: 4 guide items visible to guests (reuse the 2041 seed if the 2041 seed ran; else call `guest_guide.add_kind`/`save`), a Leon config row, a payment request (`payment_request.create`, then `payment_request.guest_token`), a cleaning share token (`cleaning.new_share`), a booking in 'requested' state (as 2041 item 5, reuse its code), an unsubscribe token. Print everything as JSON: ids, tokens, and `claim_cookie` = `URLSafeSerializer(config.secret_key(), salt="ubyhost-guest-claim").dumps({str(res_claimed): 1, str(res_locked): 1})` computed with the audit env, and `owned_cookie` for the guest rows (find how `_owned_*` is dumped: `grep -n 'ubyhost-guest-owned' -B3 -A12 App/app/routes/guest.py | head -40`).
+   Also: 4 guide items visible to guests (reuse the 2041 seed if the 2041 seed ran; else call `guest_guide.add_kind`/`save`), a Leon config row, a cleaning share token (`cleaning.new_share`), an unsubscribe token. Print everything as JSON: ids, tokens, and `claim_cookie` = `URLSafeSerializer(config.secret_key(), salt="ubyhost-guest-claim").dumps({str(res_claimed): 1, str(res_locked): 1})` computed with the audit env, and `owned_cookie` for the guest rows (find how `_owned_*` is dumped: `grep -n 'ubyhost-guest-owned' -B3 -A12 App/app/routes/guest.py | head -40`).
    Check: `cd App && .venv/bin/python -m py_compile ../scripts/e2e/seed_parity_guest.py && echo ok | tail -3`.
-5. Append to `scripts/e2e/parity_cases.py`: `GUEST_CASES`, rows `(name, path, cookies, group)` where `cookies` is `[]` or a list of cookie keys `["claim"]`, `["claim","owned"]` and persona `guest`. Placeholders `{tok} {res_unclaimed} {res_provisional} {res_claimed} {res_locked} {res_gone} {guest_complete} {guest_partial} {pay_open} {pay_paid} {share_token} {booking_id} {unsub_token}` (and `{apt}` `{booking_slug}`):
+5. Append to `scripts/e2e/parity_cases.py`: `GUEST_CASES`, rows `(name, path, cookies, group)` where `cookies` is `[]` or a list of cookie keys `["claim"]`, `["claim","owned"]` and persona `guest`. Placeholders `{tok} {res_unclaimed} {res_provisional} {res_claimed} {res_locked} {res_gone} {guest_complete} {guest_partial} {share_token} {unsub_token}` (and `{apt}`):
 ```
 GUEST_CASES = [
     # H1: hub and stay states (no cookie = a stranger with the link)
@@ -97,10 +96,7 @@ GUEST_CASES = [
     ("g-leon-apt", "/g/{tok}/leon", [], "H"),
     ("g-leon-stay", "/l/{tok}/{res_claimed}/guide/leon", ["claim"], "H"),
     # H4: other token links (no login)
-    ("t-pay-open", "/pay/{pay_open}/{pay_open_token}", [], "H"),
-    ("t-pay-paid", "/pay/{pay_paid}/{pay_paid_token}", [], "H"),
     ("t-cleaner-share", "/cleaning/shared/{share_token}", [], "H"),
-    ("t-booking-manage", "/p/{booking_slug}/b/{booking_id}/{booking_token}", [], "H"),
     ("t-unsubscribe", "/mail/unsubscribe/{unsub_token}", [], "H"),
 ]
 PIN_CASES = [
