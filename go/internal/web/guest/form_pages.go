@@ -24,6 +24,7 @@ import (
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/billingjob"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/headcount"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/passportphotos"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ruian"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
@@ -362,8 +363,8 @@ func handleRemovePost(ctx context.Context, d formPageDeps, w http.ResponseWriter
 	_, _ = d.pool.Exec(ctx, `UPDATE guest SET signed_for_guest_id = NULL, signed_for_role = NULL,
 		signed_for_at = NULL, signed_for_wording = NULL WHERE signed_for_guest_id = $1 AND reservation_id = $2`,
 		guestID, resID)
-	if err := formPagesDeletePhoto(ctx, d.pool, guestID); err != nil {
-		return err
+	if err := formPagesDeletePhoto(d.getenv, guestID); err != nil {
+		log.Printf("guest remove: delete photo guest=%d: %v", guestID, err)
 	}
 	_, _ = d.pool.Exec(ctx, `INSERT INTO audit (at, actor, action, detail, owner_user_id) VALUES ($1,$2,$3,$4,$5)`,
 		d.now().UTC(), "guest", "guest_removed_by_guest", fmt.Sprintf("guest=%d reservation=%d", guestID, resID), apt.ID)
@@ -939,7 +940,12 @@ func formPagesDateLabel(iso, lang string) string {
 // formPagesNights is nights_label.
 func formPagesNights(from, to, lang string) string { return pickNightsLabel(lang, from, to) }
 
-func formPagesDeletePhoto(ctx context.Context, pool *pgxpool.Pool, guestID int64) error { return nil }
+func formPagesDeletePhoto(getenv func(string) string, guestID int64) error {
+	if getenv == nil {
+		getenv = func(string) string { return "" }
+	}
+	return passportphotos.DeletePhoto(guestDataDir(getenv), guestID)
+}
 
 func formPagesSubmitStayIfComplete(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, aptID, resID int64) error {
 	return nil
