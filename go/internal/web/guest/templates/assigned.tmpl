@@ -39,10 +39,14 @@
         </div>
       </details>
     </div>
+    {{if and .RequireTurnstile .TurnstileSiteKey}}
+      <div class="cf-turnstile" data-sitekey="{{.TurnstileSiteKey}}" data-action="guest_claim"></div>
+    {{end}}
     <button class="g-btn" type="submit">{{.T "assigned_resend"}}</button>
   </form>
 </div>
 {{if .CanPickOther}}
 <a class="g-btn ghost" href="{{.NotMineURL}}">{{.T "assigned_not_mine"}}</a>
 {{end}}
+{{if and .RequireTurnstile .TurnstileSiteKey}}<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>{{end}}
 {{end}}

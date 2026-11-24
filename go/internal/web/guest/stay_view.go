@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/headcount"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/turnstile"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validationi18n"
@@ -200,6 +201,8 @@ type assignedView struct {
 	EmailMasked      string
 	DeclaredGuests   int64
 	ActionURL        string
+	RequireTurnstile bool
+	TurnstileSiteKey string
 }
 
 func (v assignedView) GetLang() string { return v.Lang }
@@ -219,16 +222,18 @@ func (d stayClaimDeps) renderAssignedPage(w http.ResponseWriter, r *http.Request
 		declared = *row.declaredGuests
 	}
 	view := assignedView{
-		Page:           page,
-		StayFrom:       stay.dateFrom,
-		StayTo:         stay.dateTo,
-		CanPickOther:   canPickOtherStays(ctx, d.pool, apt, d.now),
-		BackURL:        GuestLink(token, 0, "") + LangQuery(lang, ""),
-		NotMineURL:     GuestLink(token, 0, "") + LangQuery(lang, ""),
-		ClaimErrorText: claimErrorText(lang, r.URL.Query().Get("claim_error")),
-		EmailMasked:    row.emailMasked,
-		DeclaredGuests: declared,
-		ActionURL:      guestPath(token, stay.id) + "/party" + langQuery(lang),
+		Page:             page,
+		StayFrom:         stay.dateFrom,
+		StayTo:           stay.dateTo,
+		CanPickOther:     canPickOtherStays(ctx, d.pool, apt, d.now),
+		BackURL:          GuestLink(token, 0, "") + LangQuery(lang, ""),
+		NotMineURL:       GuestLink(token, 0, "") + LangQuery(lang, ""),
+		ClaimErrorText:   claimErrorText(lang, r.URL.Query().Get("claim_error")),
+		EmailMasked:      row.emailMasked,
+		DeclaredGuests:   declared,
+		ActionURL:        guestPath(token, stay.id) + "/party" + langQuery(lang),
+		RequireTurnstile: turnstile.Required(d.getenv),
+		TurnstileSiteKey: turnstile.PageSiteKey(d.getenv),
 	}
 	if apt != nil {
 		view.City = apt.CityEn
