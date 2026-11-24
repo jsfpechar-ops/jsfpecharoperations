@@ -74,6 +74,7 @@ MODAL_CASES = [
 # Deliberate differences, kept as Go has them. Key = case name without "-cs"/"-en". Reported separately, not failures.
 ACCEPTED = {
     "apt-guide": "Go keeps the newer External guide link card (Link (https) / Save link) above the Booking or Airbnb import; Python lacks it. Python import-title spacing differs as a consequence.",
+    "dev-ui": "dev_ui is not ported; it is deleted with Python (docs/plans/go-full-move.md). The only diff is a CSS spinner frame.",
 }
 
 # Cases with a QR image: its pixels are masked, and its payload text is compared separately.
