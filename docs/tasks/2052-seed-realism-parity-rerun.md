@@ -106,3 +106,11 @@ Claude-Session: https://claude.ai/code/session_014N5J8NCpdqN2TbR61gYRQf
 ## Note from the orchestrator (before the run)
 
 Do not edit the ACCEPTED dict. In the report, classify `guide-item` (cs and en) as ACCEPTED with the reason "Go keeps one Save per form (design-system rule 5); Python shows Save and next card plus Save; see brief 2051 section 11", and the `apt-guide-full` Leon help placement as ACCEPTED (brief 2051 section 10). Every other difference on those pages is still reported.
+
+## 10. Follow-up (orchestrator, after the first run)
+
+The `submission` block skipped: its guest query (`scripts/e2e/seed_parity_extra.py` ~102, `WHERE r.apartment_id = ?`) looks only at the parity apartment, which has no guests. The base seed (`scripts/e2e/seed.py` ~119) creates guests on other apartments of the same host.
+1. Change the block to pick the first apartment of the same owner that has guests: `SELECT r.apartment_id, g.id FROM guest g JOIN reservation r ON r.id = g.reservation_id JOIN apartment a ON a.id = r.apartment_id WHERE a.owner_user_id = ? ORDER BY r.apartment_id, g.id` (use the owner id the block already has, or look it up from the parity apartment), take the first apartment_id and up to 2 of its guest ids, and insert all submissions with that apartment_id. Keep the RuntimeError if even that finds nothing. Commit "2052 follow-up step 1".
+2. Rerun only the submission cases (`PARITY_ONLY` with every `submission-*` and `submissions-*` case, all widths, cs and en). Expected: Go answers 200 for every row, including `submission-legacy-null` (proves brief 2051).
+3. For every submission row: open the side PNG (1280 en first; one narrower width if it differs) and write per page what Python shows, what Go shows, and every difference in fields, statuses, buttons, downloads, dates and numbers. Copy visible side PNGs to `/var/tmp/parity-visual/_visible-2052/`.
+4. Update `docs/tasks/2052-report.md` with a "Follow-up" section and commit.
