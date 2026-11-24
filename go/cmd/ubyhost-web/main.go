@@ -16,6 +16,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/appconfig"
@@ -109,15 +110,35 @@ type health struct {
 	DatabaseOK      bool   `json:"database_ok"`
 }
 
-func healthz(pool *pgxpool.Pool) http.HandlerFunc {
+type healthQueryer interface {
+	QueryRow(context.Context, string, ...any) pgx.Row
+}
+
+func healthz(pool healthQueryer) http.HandlerFunc {
+	return healthzAt(pool, getenv("UBYHOST_DATA_DIR", "data"))
+}
+
+func dataDirectoryWritable(dataDir string) bool {
+	f, err := os.CreateTemp(dataDir, ".ubyhost-health-*")
+	if err != nil {
+		return false
+	}
+	name := f.Name()
+	closeErr := f.Close()
+	removeErr := os.Remove(name)
+	return closeErr == nil && removeErr == nil
+}
+
+func healthzAt(pool healthQueryer, dataDir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 		defer cancel()
 		var one int
 		dbOK := pool.QueryRow(ctx, "SELECT 1").Scan(&one) == nil
-		h := health{Status: "ok", Version: version, DataDirWritable: true, DatabaseOK: dbOK}
+		dataWritable := dataDirectoryWritable(dataDir)
+		h := health{Status: "ok", Version: version, DataDirWritable: dataWritable, DatabaseOK: dbOK}
 		code := http.StatusOK
-		if !dbOK {
+		if !dataWritable || !dbOK {
 			h.Status = "degraded"
 			code = http.StatusServiceUnavailable
 		}
