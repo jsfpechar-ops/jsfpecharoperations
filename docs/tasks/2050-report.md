@@ -1,6 +1,6 @@
 # 2050 report: guest-question page elements in Go
 
-Status: blocked (partial, follow-up steps 1-3 done; step 4 not run). Executor stopped at the 30-call cap before the browser lint run, screenshots and parity seed step.
+Status: blocked (follow-up 2 step 2: screenshots not taken, executor call cap)
 
 ## Files changed
 - go/internal/web/guest/leon_questions.go: 24 strings (en and cs) added to lqI18n; handoffRow.CreatedAt; handoffCardID; lqTopics (11); lqTopicOptions; lqDay; lqLines; renderQuestion data (Status, Urgent, Triaged, Door, CreatedDay, AnswerText, CardID, QuestionLines, SummaryLines, AnswerLines, SummaryDiffers, TopicOptions, ApartmentID).
@@ -49,3 +49,10 @@ Status: blocked (partial, follow-up steps 1-3 done; step 4 not run). Executor st
 - Guest package with DB: ok, 3 SKIP (TestConfirmClaimAppliesDeclaredGuests, TestStayOverviewMailOnHonorsClaimCookie, TestConfirmClaimRace; none from the files touched).
 - Step 4 not run: layout lint browser test and 390/768/1280 screenshots were not run (executor call cap).
 - Owner: step 4 still open. Run `test_layout_lint_browser.py` and screenshot the question detail page (open urgent, answered, dismissed).
+
+## Follow-up 2 (brief section 11)
+
+- Step 1 (dcbb909): handoff add-to-guide sets `guide_item.sort_order = len(Kinds)+1` (25), same value as Python `add_custom` and the Go custom-card paths. Go `guide_data.go` `addCustom` uses the unexported `guideKinds` (24 entries), so the guest package uses exported `guideimport.Kinds` (24 entries, same count). DB test asserts sort_order. `go test -run TestHandoff ./internal/web/guest/` passes (4 DB tests + 1 unit test, 0 skipped).
+- Step 2: `test_layout_lint_browser.py`: 4 passed, 0 skipped (230.9 s).
+- Step 2 screenshots (390/768/1280 for open urgent, answered, dismissed): NOT taken. The executor call cap was reached before seeding the rows and viewing the shots. Owner or next executor: seed the three questions in layout_test and take the nine shots.
+
