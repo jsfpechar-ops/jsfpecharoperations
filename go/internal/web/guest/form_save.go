@@ -17,6 +17,7 @@ import (
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/guestcontract"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/headcount"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/passportphotos"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/scheduler"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
@@ -54,6 +55,11 @@ type guestSaveRow struct {
 	lastErrors   string
 	stayFrom     string
 	stayTo       string
+	nationality  string
+	enteredBy    string
+	// identityVerifiedAt and passportPhotoAt are stored timestamps ("" when unset).
+	identityVerifiedAt string
+	passportPhotoAt    string
 }
 
 // guestResMeta is loaded by brief 1721 stay helpers.
@@ -172,6 +178,34 @@ func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter,
 	if form["legal_ack"] == "" {
 		issues = append(issues, validation.Issue{Field: "legal_ack", Message: stringsCatalog.T(lang, "legal_ack_missing", nil), Severity: "error"})
 	}
+	// guest.py:2483 — a required-photo property needs a passport photo from a foreign guest.
+	// The file is read and validated before anything is written; a valid upload is stored after the row.
+	var photoBody []byte
+	var photoExt string
+	storedNat, storedBy, storedVerified := values.Nationality, "guest", ""
+	if existing != nil {
+		storedNat, storedBy, storedVerified = existing.nationality, existing.enteredBy, existing.identityVerifiedAt
+	}
+	if passportRequired(apt.PassportPhotoPolicy, storedNat, storedBy, storedVerified) {
+		hasExisting := existing != nil && existing.passportPhotoAt != "" && passportphotos.Has(guestDataDir(d.getenv), existing.id)
+		file, hdr, ferr := r.FormFile("passport_photo")
+		present := ferr == nil && hdr != nil && !(hdr.Size == 0 && hdr.Filename == "")
+		if present {
+			raw, rerr := readUploadLimited(file)
+			_ = file.Close()
+			if rerr != nil {
+				return rerr
+			}
+			body, ext, perr := passportphotos.Prepare(raw, hdr.Header.Get("Content-Type"))
+			if perr != nil {
+				issues = append(issues, validation.Issue{Field: "passport_photo", Message: passportUploadText(lang, perr.Error()), Severity: "error"})
+			} else {
+				photoBody, photoExt = body, ext
+			}
+		} else if !hasExisting {
+			issues = append(issues, validation.Issue{Field: "passport_photo", Message: stringsCatalog.T(lang, "passport_photo_missing", nil), Severity: "error"})
+		}
+	}
 	// guest.py:2518 — name the field that holds another alphabet, then word every
 	// sentence for the guest. Both passes run before the refusal is tested, so a
 	// translated sentence is what the page shows and what the log counts.
@@ -212,6 +246,19 @@ func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter,
 			WithLang(w, d.getenv, lang)
 			http.Redirect(w, r, GuestLink(token, resID, LangQuery(lang, "")), http.StatusSeeOther)
 			return nil
+		}
+	}
+	// guest.py:2709 — store the prepared photo and stamp it only after the file is durable.
+	if photoBody != nil {
+		keys, kerr := secure.LoadDataKeys(d.getenv)
+		if kerr != nil {
+			return kerr
+		}
+		if err := passportphotos.SavePrepared(guestDataDir(d.getenv), keys, savedID, photoBody, photoExt); err != nil {
+			return err
+		}
+		if _, err := d.pool.Exec(ctx, `UPDATE guest SET passport_photo_at = $1, updated_at = $1 WHERE id = $2 AND reservation_id = $3`, nowS, savedID, resID); err != nil {
+			return err
 		}
 	}
 	if err := auditGuestFormSaved(ctx, d.pool, savedID, resID, cfg.ownerUserID, lang, d.now); err != nil {
@@ -366,9 +413,11 @@ func loadGuestSaveRow(ctx context.Context, pool *pgxpool.Pool, getenv func(strin
 	var g guestSaveRow
 	var sigEnc string
 	err := pool.QueryRow(ctx, `SELECT id, submit_state, COALESCE(restricted_at::text,''), COALESCE(signature_png,''),
-		COALESCE(signature_png_enc,''), COALESCE(last_errors,''), COALESCE(stay_from,''), COALESCE(stay_to,'')
+		COALESCE(signature_png_enc,''), COALESCE(last_errors,''), COALESCE(stay_from,''), COALESCE(stay_to,''),
+		COALESCE(nationality,''), COALESCE(entered_by,''), COALESCE(identity_verified_at::text,''), COALESCE(passport_photo_at::text,'')
 		FROM guest WHERE id = $1 AND reservation_id = $2`, id, resID).
-		Scan(&g.id, &g.submitState, &g.restrictedAt, &g.signaturePNG, &sigEnc, &g.lastErrors, &g.stayFrom, &g.stayTo)
+		Scan(&g.id, &g.submitState, &g.restrictedAt, &g.signaturePNG, &sigEnc, &g.lastErrors, &g.stayFrom, &g.stayTo,
+			&g.nationality, &g.enteredBy, &g.identityVerifiedAt, &g.passportPhotoAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}

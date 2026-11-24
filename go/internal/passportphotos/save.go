@@ -71,18 +71,60 @@ func SavePrepared(dataDir string, keys *secure.MultiFernet, guestID int64, body 
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return fmt.Errorf("passportphotos: create directory: %w", err)
 	}
-	if err := DeletePhoto(dataDir, guestID); err != nil {
-		return err
-	}
 	token, err := keys.Encrypt(body)
 	if err != nil {
 		return fmt.Errorf("passportphotos: encrypt: %w", err)
 	}
-	target := filepath.Join(dir, strconv.FormatInt(guestID, 10)+storeExt+encSuffix)
-	if err := os.WriteFile(target, []byte(token), 0o600); err != nil {
+	id := strconv.FormatInt(guestID, 10)
+	target := filepath.Join(dir, id+storeExt+encSuffix)
+	// Write beside the target and rename over it, so a failed write keeps the prior photo.
+	tmp := target + ".tmp"
+	f, err := os.OpenFile(tmp, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o600)
+	if err != nil {
 		return fmt.Errorf("passportphotos: write %s: %w", filepath.Base(target), err)
 	}
+	if _, err := f.WriteString(token); err != nil {
+		_ = f.Close()
+		_ = os.Remove(tmp)
+		return fmt.Errorf("passportphotos: write %s: %w", filepath.Base(target), err)
+	}
+	if err := f.Close(); err != nil {
+		_ = os.Remove(tmp)
+		return fmt.Errorf("passportphotos: write %s: %w", filepath.Base(target), err)
+	}
+	if err := os.Rename(tmp, target); err != nil {
+		_ = os.Remove(tmp)
+		return fmt.Errorf("passportphotos: replace %s: %w", filepath.Base(target), err)
+	}
+	// Remove the other extensions' files for this guest, and any legacy plaintext of this one.
+	for _, ext := range AllExtensions {
+		for _, name := range []string{id + ext + encSuffix, id + ext} {
+			if name == id+storeExt+encSuffix {
+				continue
+			}
+			p := filepath.Join(dir, name)
+			if info, err := os.Stat(p); err == nil && info.Mode().IsRegular() {
+				if err := os.Remove(p); err != nil && !os.IsNotExist(err) {
+					return err
+				}
+			}
+		}
+	}
 	return nil
+}
+
+// Has is passport_photos.has_photo: true when any stored file for the guest exists.
+func Has(dataDir string, guestID int64) bool {
+	dir := PhotosDir(dataDir)
+	id := strconv.FormatInt(guestID, 10)
+	for _, ext := range AllExtensions {
+		for _, name := range []string{id + ext + encSuffix, id + ext} {
+			if info, err := os.Stat(filepath.Join(dir, name)); err == nil && info.Mode().IsRegular() {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // DeletePhoto is passport_photos.delete_photo.
