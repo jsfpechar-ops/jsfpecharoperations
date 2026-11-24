@@ -1,6 +1,7 @@
 # 2068: Go mail send-time renderer, part 2: `{{guest_details}}`
 
-Status: not needed (owner decision 1630, 2026-11-14: guest_details_host mail stopped; {{guest_details}} has no producer left)
+Status: replaced
+Reason: not needed. Owner decision 1630 (2026-11-14) stopped the guest_details_host mail, so `{{guest_details}}` has no producer left.
 Depends on: 2067 (the package `go/internal/maildetails`, the golden pattern and the wiring) | Executor: Haiku 5.5, 30 tool calls
 Trailers on every commit: `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` and `Claude-Session: https://claude.ai/code/session_014N5J8NCpdqN2TbR61gYRQf`
 
