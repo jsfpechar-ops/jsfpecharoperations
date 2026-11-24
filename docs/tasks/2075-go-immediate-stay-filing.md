@@ -1,6 +1,6 @@
 # 2075: File the completed stay immediately
 
-Status: todo
+Status: review
 Depends on: 2074 | Base commit: 90edebb7280252deaf23ad33ec13e60b54f0679c | Branch: task/2075-go-immediate-stay-filing
 Executor: Gemini 4 Neon (medium) | Fits one session: 30 tool calls, 60k tokens
 
