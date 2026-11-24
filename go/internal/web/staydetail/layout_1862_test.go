@@ -24,6 +24,8 @@ func TestLayout1862Both(t *testing.T) {
 			`<a class="row-menu-item ph-hide" href="/guide#guests"`,
 			`class="card stay-rows"`,
 			`action="/reservations/7/submit"`,
+			`<a class="btn ghost ph-hide" href="/invoices/new?reservation_id=7">`,
+			`<a class="row-menu-item ph-only" href="/invoices/new?reservation_id=7"`,
 		} {
 			if !strings.Contains(out, want) {
 				t.Errorf("archived=%v: missing %s", archived, want)
