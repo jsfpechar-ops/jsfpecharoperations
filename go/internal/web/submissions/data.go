@@ -14,7 +14,7 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
 )
 
-const listSQL = `SELECT s.id, s.created_at, s.apartment_id, s.mode, s.guest_ids, s.state,
+const listSQL = `SELECT s.id, s.created_at, s.apartment_id, COALESCE(s.mode, ''), COALESCE(s.guest_ids, ''), s.state,
        s.pseudo_stamp,
        (s.receipt_pdf IS NOT NULL AND TRIM(s.receipt_pdf) != '') AS has_receipt,
        a.internal_name
