@@ -26,7 +26,7 @@ rollback_drop_guide_import_00024() {
     echo "Would run: BEGIN; ALTER TABLE guide_import DROP COLUMN IF EXISTS codes_left_out; DELETE FROM goose_db_version WHERE version_id = 24; COMMIT;"
     return 0
   fi
-  echo "==> Dropping guide_import.codes_left_out (migration 00024) so the previous release can start"
+  echo "==> Dropping guide_import.codes_left_out and goose version 24 (migration 00024) so the previous release can start and the next deploy re-applies it"
   docker compose exec -T postgres psql -U ubyhost -d ubyhost -v ON_ERROR_STOP=1 \
-    -c "ALTER TABLE guide_import DROP COLUMN IF EXISTS codes_left_out;"
+    -c "BEGIN; ALTER TABLE guide_import DROP COLUMN IF EXISTS codes_left_out; DELETE FROM goose_db_version WHERE version_id = 24; COMMIT;"
 }
