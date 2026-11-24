@@ -151,7 +151,7 @@ func (h *GuideHandlers) apartmentByGuideToken(ctx context.Context, token string)
 		return nil, nil
 	}
 	var row GuideApartment
-	err := h.pool.QueryRow(ctx, `SELECT id, owner_user_id, internal_name FROM apartment WHERE guide_token = $1 AND active = 1`, token).
+	err := h.pool.QueryRow(ctx, `SELECT id, owner_user_id, internal_name FROM apartment WHERE guide_token = $1 AND active = 1 AND archived_at IS NULL`, token).
 		Scan(&row.ID, &row.OwnerUserID, &row.Name)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
