@@ -27,3 +27,4 @@ if ! App/.venv/bin/python -c "import playwright, uvicorn, psycopg, httpx" 2>/dev
   App/.venv/bin/pip install -q -r App/requirements-dev.txt
   App/.venv/bin/pip install -q playwright==1.63.0
 fi
+export UBYHOST_AI_FEATURES=leon UBYHOST_ANTHROPIC_API_KEY=parity-fake-key-not-used
