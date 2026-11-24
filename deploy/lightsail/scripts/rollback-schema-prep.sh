@@ -11,7 +11,7 @@ rollback_drop_guide_import_00024() {
     echo "WARNING: UBYHOST_DATABASE_URL is unset; skipping the schema rollback (guide_import.codes_left_out and goose version 24 stay). The old release may not start." >&2
     return 0
   fi
-  if ! docker compose ps -q --status running postgres 2>/dev/null | grep -q .; then
+  if ! docker compose ps -q --status running postgres 2>/dev/null | grep . >/dev/null; then
     echo "WARNING: postgres is not running; cannot drop guide_import.codes_left_out for rollback." >&2
     return 1
   fi
