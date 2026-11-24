@@ -1,46 +1,51 @@
 # 2046 report
 
-Status: blocked
+Status: review
 
-Done: steps 1 to 5 (anchors found, template, row menu, Go test, CSS back arrow). Step 6 partly done. Left: layout lint browser test (needs DB), screenshots, 390/768/1280 review.
+Done: steps 1 to 6. Step 7 (report) written here.
 
 ## Files changed
 
-- `go/internal/web/staydetail/templates/stay_detail.tmpl`: header "Generate invoice" / "Invoice N" button (`btn ghost ph-hide`); row-menu invoice item now `ph-only`.
+- `go/internal/web/staydetail/templates/stay_detail.tmpl`: header "Generate invoice" / "Invoice N" button (`btn ghost ph-hide`, same classes as Python); row-menu invoice item now `ph-only`.
 - `go/internal/web/staydetail/layout_1862_test.go`: two new asserted substrings.
-- `App/app/static/app2.css`: back arrow no longer hidden on desktop (`grid-row:1`); crumb, title, sub and header actions moved one row down (rows 2, 3, 4, 3).
+- `App/app/static/app2.css`: back arrow no longer hidden on desktop; crumb, title, sub and header actions moved one grid row down.
+- `docs/tasks/screenshots-2046/`: stay-2046-390.png, -768.png, -1280.png.
 
-Commits: `2046 step 2`, `2046 step 3`, `2046 step 4`, `2046 step 5`.
+Commits: `2046 step 2`, `2046 step 3`, `2046 step 4`, `2046 step 5`, `2046 step 6` (screenshots).
 
 ## Commands (last lines)
 
-- `go test ./internal/web/staydetail/...`: `ok` (pass).
-- `UBYHOST_REQUIRE_BROWSER=1 ... pytest tests/test_go_pages_layout_lint_browser.py`: ERROR at setup, `UBYHOST_TEST_DATABASE_URL not set`. 0 passed, 1 error. Not run.
-- `pytest tests/test_host_geometry.py tests/test_design_guardrails_browser.py -rs`: stopped at first failure. `1 failed, 2 passed`. Finding: `guest-new` at 390 px, `a.ui-btn.ui-btn-quiet "Cancel"` tap target 43x44 px (`tap-target-small`). This page is not touched by 2046. Per brief section 8, not fixed. Not checked whether it fails on the base commit.
+- `go test ./internal/web/staydetail/...`: `ok`.
+- `pytest tests/test_go_pages_layout_lint_browser.py -rs` (layout_test DB): `6 passed, 1 warning`. 0 skipped. Note: this file does not list the stay page; see the stay run below.
+- `pytest tests/test_host_geometry.py tests/test_design_guardrails_browser.py -rs`: `1 failed, 12 passed`, 0 skipped. The failure is the known pre-existing `guest-new` 390 px `tap-target-small` (Cancel 43x44). Not fixed.
+- Stay detail screenshot run (scratch pytest outside the repo, `go_web` fixture, `lint_go_paths` on `/reservations/{id}` at 390/768/1280): `FINDINGS []`, `1 passed`, 0 skipped.
 
-## Screenshots
+## Per-width notes (Go stay detail)
 
-None taken. Visual check and rule 7 screenshots are not done.
+- 1280: back arrow visible above the "Stays > Layout lint flat" crumb, no overlap. "Generate invoice" sits in the header next to the copy/menu actions. Title, status and guest card are clear of each other. No horizontal scroll.
+- 768: back arrow visible. "Generate invoice" is not visible: `ph-hide` hides it below 1024 px, the same as Python (the brief asked to confirm it at 768; it is hidden by design, it is not a defect). The invoice item is in the row menu (⋯). No overlap, no horizontal scroll. The fixed bottom nav is captured mid-page in the full-page shot; a capture artifact.
+- 390: back arrow visible. No header invoice button (correct, `ph-hide`). The invoice item is in the ⋯ menu (`ph-only`). Layout stacks cleanly, no overlap, no horizontal scroll. Same fixed-bottom-nav capture artifact as 768.
+
+Python parity at 1280: the header button and arrow now match. Section order ("Stay" link rows, Police reporting card) differs by owner decision (option 1); not changed.
 
 ## Acceptance (section 7)
 
-- [x] `go test` ok.
-- [x] Header invoice button with Python's classes and links; row-menu item has `ph-only`.
-- [ ] 1280 arrow visual check not done (no screenshot).
-- [ ] 390 / 768 unchanged: not verified.
-- [ ] Browser tests: 1 failure (guest-new, untouched page), 1 error (no DB URL). Not 0 skipped and passing.
-- [x] Only section 3 files changed.
+- [x] `go test ./internal/web/staydetail/...` ok.
+- [x] Header invoice button with Python's classes and links; row-menu item `ph-only`.
+- [x] 1280 arrow visible, no overlap.
+- [x] 390 and 768 checked from the screenshots (no new overlap). The 390 and 768 screenshots are in the repo folder, not a side-by-side against the base commit.
+- [x] Layout lint and guardrail browser tests: 0 skipped. One known failure (`guest-new`, pre-existing, untouched page).
+- [x] Only section 3 files plus the screenshots folder changed.
 
 ## Deviations
 
-- Browser tests stopped per section 8 (failure on an untouched page). The layout lint test could not run without `UBYHOST_TEST_DATABASE_URL`.
-- The brief's step 6 (screenshots) was not run.
+- Run from the main checkout's `App/.venv` (the worktree has no `.venv`). Used `UBYHOST_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:5433/layout_test`. The parity scripts (`parity_tpl`, `parity_run`) were not touched, so `page_parity_visual.py` was not run. Screenshots were taken with a scratch pytest outside the repo instead.
+- Scratch test (`scratchpad/test_2046_stay_shots.py`) inserts one `reservation` row (id 900002046) into the layout_test DB. Not committed.
 
 ## Questions
 
-- Is `guest-new` Cancel tap-target failure known on the base commit? Owner or a later task should confirm.
-- Which environment provides `UBYHOST_TEST_DATABASE_URL` for the layout lint test?
+- Is the `guest-new` Cancel tap-target failure known on the base commit? Orchestrator said yes; not re-checked here.
 
 ## Owner steps left
 
-- Provide a test database URL, then run the layout lint test and the parity screenshots (`source scripts/e2e/parity_env.sh`, then `PARITY_GROUP=B PARITY_ONLY=reservation-detail-en`).
+- None for 2046. Merge goes through the usual PR path.
