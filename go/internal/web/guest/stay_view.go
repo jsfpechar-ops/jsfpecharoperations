@@ -101,7 +101,7 @@ func (d stayClaimDeps) stayPeople(ctx context.Context, r *http.Request, stay *sc
 			}
 			p.Summary = &stayPersonSummary{
 				Nationality: ubyport.CountryName(nat, lang),
-				BirthDate:   birth,
+				BirthDate:   validation.DisplayBirthDate(birth, today),
 				DocNumber:   docOut,
 				Purpose:     validationi18n.PurposeLabel(purpose, lang),
 				Residence:   joinNonEmpty(", ", street, city, country),
