@@ -73,7 +73,7 @@ From `go/`: `UBYHOST_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:5433/gues
 - [ ] Redirect equals Python for all five shapes.
 - [ ] No new global state, no new dependency, no template change.
 
-## 8. Stop conditions
+## 8. Stop and ask
 
 An anchor is missing; `LangQuery` cannot express `&saved=1`; `LiveConfirmations` panics with nil `Doors`; Postgres cannot start; a test fails twice.
 

@@ -50,7 +50,7 @@ Postgres check as in 2065 section 6. From `go/`: `UBYHOST_TEST_DATABASE_URL=post
 - [ ] Host and lead-in tests pass, 0 skipped; same order and `force=false` as Python.
 - [ ] Missing lowered/restored audit rows (if any) are listed in the report, not fixed.
 
-## 8. Stop conditions
+## 8. Stop and ask
 
 An anchor is missing; 2065 is not merged; `changeByLead` cannot tell a real change from unchanged; a test fails twice.
 
