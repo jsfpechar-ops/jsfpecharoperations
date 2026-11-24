@@ -119,3 +119,7 @@ Any anchor missing, step 3 not feasible without a signature change, or a Go test
 
 ## 10. For the owner (report only, no code here)
 Python bug: `App/app/door_codes.py:210-213` `_stay_checkin_label` crashes (TypeError, HTTP 500 on the guest stay page and the host stay page) when an apartment with an issued door code has NULL `checkin_hour` or `checkout_hour`. Production runs door codes, and hours are nullable; new codes require both hours (`door_codes.py:193`), so exposure is limited to a host who clears the hours after a code was issued. Ask for a separate Python brief: fall back to the code's `valid_from/valid_to` or hide the times when an hour is NULL.
+
+## 12. Orchestrator decision (after run 1)
+
+Step 3: change the signatures. `registrationComplete` (go/internal/web/guest/pick_data.go ~143) and `completeFormGuests` (go/internal/web/guest/form_pages.go ~575) take a `getenv func(string) string` (or the same decrypt helper type stayPeople uses) as a new first parameter; thread it from their callers, which already hold `getenv` in their handler structs (grep the call sites). Internal package only; no exported API changes. Then continue with steps 4-7 and 11. Step 5 must include a DB test that inserts a guest the way Python stores it (personal fields only in *_enc columns, plain columns empty) and asserts stayPeople, registrationComplete and completeFormGuests all say complete.
