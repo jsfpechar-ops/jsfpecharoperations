@@ -649,8 +649,9 @@ def test_backup_waits_for_a_transient_gap_then_succeeds(tmp_path):
         DOCKER_STUB.replace(
             '*"ps -q --status running ubyhost-go-b"*)',
             '*"ps -q --status running ubyhost-go-b"*) [ "${GO_SLOT:-a}" = b ] \\\n'
-            '    && { n=$(cat "$STUB_LOG.n" 2>/dev/null || echo 0); echo $((n+1)) > "$STUB_LOG.n"; '
-            '[ "$n" -ge 2 ] && echo gobid; } ;;\n  *"NEVERMATCH"*)',
+            '    && { [ -e "$STUB_LOG.up" ] || { n=$(cat "$STUB_LOG.n" 2>/dev/null || echo 0); '
+            'echo $((n+1)) > "$STUB_LOG.n"; [ "$n" -ge 2 ] && : > "$STUB_LOG.up"; }; '
+            '[ -e "$STUB_LOG.up" ] && echo gobid; } ;;\n  *"NEVERMATCH"*)',
         )
     )
     result = run_script(
