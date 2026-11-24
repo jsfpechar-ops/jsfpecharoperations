@@ -191,7 +191,7 @@ func (d stayClaimDeps) stayOverview(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if !DeviceHoldsClaim(r, d.getenv, resID, row.tokenVersion) {
-			renderGuestPage(w, "assigned", lang, claimPage{Token: token, ResID: resID, Claim: row})
+			d.renderAssignedPage(w, r, token, lang, aptRow, stay, row)
 			return
 		}
 	}
@@ -205,7 +205,7 @@ func (d stayClaimDeps) stayOverview(w http.ResponseWriter, r *http.Request) {
 		d.redirectLang(w, r, target, lang)
 		return
 	}
-	renderGuestPage(w, "stay", lang, claimPage{Token: token, ResID: resID, Stay: stay, Claim: row})
+	d.renderStayPage(w, r, token, lang, aptRow, stay, row, billingjob.MailEnabled())
 }
 
 func (d stayClaimDeps) claimLanding(w http.ResponseWriter, r *http.Request) {
@@ -327,8 +327,6 @@ type claimPage struct {
 
 var guestTemplates = template.Must(template.New("guest").Parse(
 	`{{define "claim"}}<!doctype html><html lang="{{.Lang}}"><head><title>claim</title></head><body class="guest-claim"></body></html>{{end}}` +
-		`{{define "assigned"}}<!doctype html><html lang="{{.Lang}}"><head><title>assigned</title></head><body class="guest-assigned"></body></html>{{end}}` +
-		`{{define "stay"}}<!doctype html><html lang="{{.Lang}}"><head><title>stay</title></head><body class="guest-stay"></body></html>{{end}}` +
 		`{{define "confirm"}}<!doctype html><html lang="{{.Lang}}"><head><title>confirm</title></head><body class="guest-confirm"></body></html>{{end}}` +
 		`{{define "unavailable"}}<!doctype html><html lang="{{.Lang}}"><head><title>unavailable</title></head><body class="guest-unavailable"></body></html>{{end}}`,
 ))
