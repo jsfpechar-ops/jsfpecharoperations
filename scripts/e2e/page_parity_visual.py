@@ -94,6 +94,18 @@ def run_extra_seed(seed: dict, refs: dict) -> dict:
     return json.loads(r.stdout.strip().splitlines()[-1])
 
 
+def run_guest_seed(seed: dict, refs: dict) -> dict:
+    """Guest pages: claim and owned cookie values plus guest, stay and token keys (seed_parity_guest.py)."""
+    env = {**os.environ, **audit.ENV, "UBYHOST_DATABASE_URL": f"{audit.PG}/parity_run"}
+    r = subprocess.run(
+        [sys.executable, str(ROOT / "scripts/e2e/seed_parity_guest.py"), str(seed["h1"]["id"]), str(refs["apartment_id"])],
+        cwd=APP, env=env, capture_output=True, text=True, check=True,
+    )
+    for line in r.stderr.splitlines():
+        print(line)
+    return json.loads(r.stdout.strip().splitlines()[-1])
+
+
 def table_cases(refs: dict, seed: dict, py: dict, go: dict, extra: dict | None = None):
     for name, path, persona, group in parity_cases.CASES + parity_cases.EXTRA_CASES:
         try:
@@ -215,16 +227,37 @@ def main() -> int:
     audit.PIN_ENV.update(AI_ENV)
     seed, refs = audit.seed_db()
     extra = run_extra_seed(seed, refs)
+    extra.update(run_guest_seed(seed, refs))
     py_port, go_port = free_port(), free_port()
     db_url = f"{audit.PG}/parity_run"
     public = f"http://127.0.0.1:{py_port}"
-    _, py_base = audit.start_py(py_port, db_url, public)
-    go_proc, go_base = audit.start_go(go_port, db_url, public)
+    pin = os.environ.get("PARITY_PIN") == "1"
+    if pin:
+        groups = {"P"}
+        py_proc, py_base = audit.start_py_process(py_port, db_url, public, audit.PIN_ENV)
+        go_proc, go_base = audit.start_go(go_port, db_url, public, audit.PIN_ENV)
+    else:
+        _, py_base = audit.start_py(py_port, db_url, public)
+        go_proc, go_base = audit.start_go(go_port, db_url, public)
     try:
         py, go = audit.py_persona_sessions(seed), audit.go_persona_sessions(seed)
 
         jobs = [(name, path, py_c, go_c, "L") for name, path, py_c, go_c in legacy_cases(refs, py, go)]
         jobs += list(table_cases(refs, seed, py, go, extra))
+        for name, path, keys, group in parity_cases.GUEST_CASES + parity_cases.PIN_CASES:
+            for lang in ("cs", "en"):
+                try:
+                    filled = fill(path, refs, seed, extra)
+                    ck = []
+                    if "claim" in keys:
+                        ck.append(("ubyhost_claim", extra["claim_cookie"]))
+                    if "owned" in keys:
+                        ck.append(("ubyhost_owned", extra["owned_cookie"]))
+                except KeyError as exc:
+                    print(f"SKIPPED (seed block missing): {name} needs {exc}")
+                    continue
+                sep = "&" if "?" in filled else "?"
+                jobs.append((f"{name}-{lang}", f"{filled}{sep}lang={lang}", None, None, group, ck))
         for name, path, persona, group in parity_cases.MODAL_CASES:
             for lang in ("cs", "en"):
                 filled = fill(path, refs, seed)
@@ -232,8 +265,9 @@ def main() -> int:
                 pc, gc = (py["host"], go["h1"]) if persona == "host" else (py["admin"], go["admin"])
                 jobs.append((f"{name}-{lang}", f"{filled}{sep}lang={lang}", pc, gc, group))
 
+        jobs = [j if len(j) == 6 else (*j, []) for j in jobs]
         rows = []
-        for name, path, py_cookie, go_cookie, group in jobs:
+        for name, path, py_cookie, go_cookie, group, ck in jobs:
             if group not in groups or not selected(name):
                 continue
             out_dir = OUT / name
@@ -241,7 +275,7 @@ def main() -> int:
                 shutil.rmtree(out_dir)
             base_name = name.rsplit("-", 1)[0]
             pre = PRE_SQL_MODAL if name.startswith("two-factor-modal") else PRE_SQL
-            for r in run_case2(name, base_name, path, out_dir, py_base, go_base, widths, py_cookie, go_cookie, pre):
+            for r in run_case2(name, base_name, path, out_dir, py_base, go_base, widths, py_cookie, go_cookie, pre, extra_cookies=ck):
                 verdict = r["verdict"]
                 accepted = verdict == "visible" and base_name in parity_cases.ACCEPTED
                 if accepted:
@@ -293,6 +327,12 @@ def main() -> int:
             go_proc.wait(timeout=10)
         except subprocess.TimeoutExpired:
             go_proc.kill()
+        if pin:
+            py_proc.terminate()
+            try:
+                py_proc.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                py_proc.kill()
 
 
 if __name__ == "__main__":
