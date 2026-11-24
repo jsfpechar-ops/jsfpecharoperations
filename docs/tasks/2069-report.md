@@ -15,7 +15,7 @@ Status: blocked
 ## Acceptance evidence
 
 - The handler now applies the visible picker path and the reachback fallback before processing the posted form, and requires the existing claim gate after throttling.
-- The synthetic missing-claim refusal leaves guest rows untouched. Other requested access cases and the 390 px screenshot remain unverified.
+- Synthetic checks cover missing claim refusal with no guest write, wrong apartment, locked access, outsider demo, unknown stay, past reachback and the inclusive reachback boundary. The remaining requested cases and 390 px screenshot remain unverified.
 
 ## Deviations and owner steps
 

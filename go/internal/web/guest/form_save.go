@@ -235,7 +235,7 @@ func guestSaveReservation(ctx context.Context, d saveDeps, r *http.Request, apt 
 	var cfg guestFormCfg
 	var res guestResMeta
 	var status, source string
-	var locked *time.Time
+	var locked *string
 	err = d.pool.QueryRow(ctx, `SELECT r.apartment_id, a.owner_user_id, r.date_from::text, r.date_to::text,
 		r.declared_guests, r.expected_guests_override, r.lead_reduced_guests, r.status, COALESCE(r.source,''), c.guest_access_locked_at, COALESCE(a.default_purpose,'')
 		FROM reservation r JOIN apartment a ON a.id = r.apartment_id LEFT JOIN reservation_claim c ON c.reservation_id = r.id
@@ -250,14 +250,14 @@ func guestSaveReservation(ctx context.Context, d saveDeps, r *http.Request, apt 
 	}
 	owner := (formPageDeps{pool: d.pool, getenv: d.getenv, now: d.now}).access().hostOwns(ctx, r, cfg.ownerUserID)
 	if source == "demo" {
-		if !owner || !GuestAccessOpen(status, locked != nil) {
+		if !owner || !GuestAccessOpen(status, locked != nil && *locked != "") {
 			return guestFormCfg{}, guestResMeta{}, "", false, nil
 		}
 	} else if !eligible {
 		rd := pa.ReachbackDays
 		reach := validation.NormaliseReachbackDays(&rd)
 		cutoff := today.AddDate(0, 0, -int(reach)).Format("2006-01-02")
-		if locked != nil || res.dateTo < cutoff {
+		if (locked != nil && *locked != "") || res.dateTo < cutoff {
 			return guestFormCfg{}, guestResMeta{}, "", false, nil
 		}
 		if registrationComplete(ctx, d.pool, d.getenv, d.now, pickReservation{ID: resID, DateFrom: res.dateFrom, DateTo: res.dateTo}, today) {

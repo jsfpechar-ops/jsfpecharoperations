@@ -104,6 +104,35 @@ func TestFormSaveAccess(t *testing.T) {
 	if guestRows != 0 {
 		t.Fatalf("claim refusal wrote %d guest rows", guestRows)
 	}
+
+	newStay := func(id int64, from, to, source string) {
+		t.Helper()
+		mustExecGuest(t, ctx, pool, `INSERT INTO reservation (id, apartment_id, uid, status, source, date_from, date_to, declared_guests, created_at, updated_at)
+			VALUES ($1, $2, $3, 'active', $4, $5, $6, 1, $7, $7)`, id, aptID, fmt.Sprintf("save-%d", id), source, from, to, stamp)
+	}
+	newStay(resID+1, "2026-06-20", "2026-06-22", "manual")
+	mustExecGuest(t, ctx, pool, `INSERT INTO reservation_claim (reservation_id, state, token_version, guest_access_locked_at, created_at, updated_at)
+		VALUES ($1, 'unclaimed', 0, $2, $3, $3)`, resID+1, stamp, stamp)
+	newStay(resID+2, "2026-06-20", "2026-06-22", "demo")
+	newStay(resID+3, "2025-06-10", "2025-06-14", "manual")
+	newStay(resID+4, "2025-06-10", "2025-06-15", "manual")
+	otherApt := aptID + 20
+	mustExecGuest(t, ctx, pool, `INSERT INTO apartment (id, owner_user_id, internal_name, city_en, active, permalink_token, created_at)
+		VALUES ($1, $2, 'Other', 'Prague', 1, $3, $4)`, otherApt, userID, fmt.Sprintf("other%d", aptID), stamp)
+	newStay(resID+5, "2026-06-20", "2026-06-22", "manual")
+	mustExecGuest(t, ctx, pool, `UPDATE reservation SET apartment_id = $1 WHERE id = $2`, otherApt, resID+5)
+	for name, id := range map[string]int64{"wrong apartment": resID + 5, "locked access": resID + 1, "outsider demo": resID + 2, "past reachback": resID + 3, "unknown stay": resID + 99} {
+		_, _, _, ok, err := guestSaveReservation(ctx, d, req, &Apartment{ID: aptID, PermalinkToken: tok}, id, tok)
+		if err != nil {
+			t.Fatalf("%s lookup: %v", name, err)
+		}
+		if ok {
+			t.Errorf("%s was eligible", name)
+		}
+	}
+	if _, _, _, ok, err := guestSaveReservation(ctx, d, req, &Apartment{ID: aptID, PermalinkToken: tok}, resID+4, tok); err != nil || !ok {
+		t.Errorf("inclusive reachback boundary: ok=%v err=%v", ok, err)
+	}
 }
 
 func mustRequest(method, target string) *http.Request {
