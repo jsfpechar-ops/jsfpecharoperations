@@ -43,3 +43,23 @@ Status: blocked (executor tool-call checkpoint reached after step 7; verificatio
 - Reword 40bce67 trailers.
 - Merge via `scripts/merge-pr-on-green.sh` after review.
 - Stuck marker on a server: `rm deploy/lightsail/.deploy-in-progress`.
+
+## Step 8
+
+Status: done. Code commit `2d097c2` ("2044 step 8").
+
+8.1 Deleted the early `git rev-parse HEAD > .deploy-in-progress` after the KEEP_ROLLBACK_COPIES block.
+8.2 Inserted the marker write after the `ubyhost-go:local` to `ubyhost-go:previous` block (with the 2044 comment).
+8.3 `grep -n 'deploy-in-progress' deploy/lightsail/scripts/deploy.sh | tail -10`:
+```
+176:# 2044: .deploy-in-progress exists only while a deploy has not finished. If it is
+179:if [ -f .deploy-in-progress ]; then
+327:git rev-parse HEAD > .deploy-in-progress
+617:rm -f .deploy-in-progress
+```
+The write (327) is after the tag blocks (322-325) and the `Caddyfile.previous` copy (186).
+
+Checks: `bash -n deploy/lightsail/scripts/deploy.sh` exit 0.
+Tests (from App/): `tests/test_pg_go_slot_script.py tests/test_pg_backup_scripts.py`: 106 passed, 0 failed. `test_backup_waits_for_a_transient_gap_then_succeeds` passed on the first run, so no rerun was needed.
+
+Deviation: step 4 asked to add an "after" assertion. The existing assertion `marker < index("cp caddy/Caddyfile.active caddy/Caddyfile.previous")` became false, so I flipped it to `marker >` and added `marker > index("docker tag ubyhost-go:local ubyhost-go:previous")`.
