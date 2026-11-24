@@ -54,3 +54,21 @@ Invisible: `cleaning-edit-cs`, `cleaning-edit-en` at 390.
 
 1. Which guest ids should the submission block use? The parity apartment has no guest rows under its reservations. Please check the seed in `scripts/e2e/seed.py` for how guests are linked, or give a reservation with guests.
 2. Confirm the `ACCEPTED` classification for `guide-item` cs/en and `apt-guide-full` (brief 2052 note) after someone has looked at the PNGs.
+
+## Follow-up
+
+Step 1: `submission()` in `scripts/e2e/seed_parity_extra.py` now picks the first apartment of the owner that has guests, takes up to 2 guest ids from it, and inserts all submission rows there (commit "2052 follow-up step 1").
+
+Step 2: `PARITY_ONLY='submission*' PARITY_GROUP=B,E page_parity_visual.py` (group E is needed for the submission cases). 48 rows (8 cases x cs/en x 390/768/1280): 48 identical, 0 visible, 0 error. Go logged HTTP 200 for all 48 submission requests (12 `/submissions`, 36 `/submissions/{submission_id}`). The log line does not name the stack, so the 200s are not split by Python vs Go; identical pixels show both sides render the same page. `submission-legacy-null`: Go 200, same as Python. Note: a single-case rerun overwrote `probe.json` and `report-E.md`; the final full rerun restored them (`report-B-E.md`).
+
+Step 3 (per page, 1280 en; all widths identical, so no narrower check needed). Python and Go show the same content in every case:
+- `submission-draft` (Report #2): Rejected, "Open the stay to fix" button, stamp E2E-STAMP-0002, finished 2026-11-24 15:52:39, 2 guests. Guest 1 Rejected with the E2E record problem text; guest 2 Accepted. Not a true draft row.
+- `submission-sent` and `submission-ok` (Report #1): Accepted, "Download Doručenka (PDF)" button, stamp E2E-STAMP-0001, 2 guests both Accepted.
+- `submission-transport` (Report #3): Not delivered, yellow "Transport error E2E connection refused" banner, stamp shown as dash, guests both Accepted.
+- `submission-running` (Report #4): In progress, no stamp, no finished date, no button, guests both Accepted.
+- `submission-legacy-null` (Report #5): Accepted, no button, empty help-icon row under the outcome, stamp dash, guests 0, text "Nothing reached UbyPort, so no guest was processed." Go 200. Accepted with 0 guests is a realism oddity to review, not a Python/Go difference.
+- `submissions` and `submissions-full` (Police reports list): 5 rows (Accepted E2E-STAMP-0001, Rejected E2E-STAMP-0002, Not delivered, In progress, Accepted with 0 guests and no stamp); buttons "Guest register" and "Download Doručenka (ZIP)".
+
+PNG folder: `/var/tmp/parity-visual/_visible-2052/` (8 files, 1280 en side PNG per case). Full set: `/var/tmp/parity-visual/<case>-<lang>/`.
+
+Step 4: this section.
