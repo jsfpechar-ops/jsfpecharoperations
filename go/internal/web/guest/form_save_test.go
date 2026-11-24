@@ -1356,7 +1356,6 @@ func TestGuestSaveValidateIssuesPartySizeOnNew(t *testing.T) {
 	}
 }
 
-
 func TestCertainlyAtLeastAge(t *testing.T) {
 	arrival := time.Date(2026, 6, 20, 0, 0, 0, 0, time.UTC)
 	cases := []struct {

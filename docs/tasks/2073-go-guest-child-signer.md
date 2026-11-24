@@ -1,6 +1,6 @@
 # 2073: Preserve the under-15 signer relationship
 
-Status: todo
+Status: review
 Depends on: 2072 | Base commit: ab87118cde548fb9e5ddd441bc7cd3619f1e071c | Branch: task/2073-go-guest-child-signer
 Executor: Gemini 4 Neon (medium) | Fits one session: 30 tool calls, 60k tokens
 
