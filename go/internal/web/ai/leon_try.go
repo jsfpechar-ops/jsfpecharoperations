@@ -36,11 +36,31 @@ func (s LeonStore) answers(ctx context.Context, apartmentID int64) (map[string]s
 	return out, rows.Err()
 }
 
+// GuideCard is a guest card plus its guide topic. The topic lives outside
+// LeonCard so the Leon prompt, its payloads and the parity fixtures never see it.
+type GuideCard struct {
+	Card  LeonCard
+	Topic string
+}
+
 // GuestCards is guide_facts.for_guest(apartment_id, level, "en"): what a
 // guest at that door may read, empty until the guide is live. A built-in card the host
 // has not written yet reaches guests with its quick-answer lines only (a draft
 // is never shown).
 func (s LeonStore) GuestCards(ctx context.Context, apartmentID int64, level string) ([]LeonCard, error) {
+	gc, err := s.GuestGuideCards(ctx, apartmentID, level)
+	if err != nil || len(gc) == 0 {
+		return nil, err
+	}
+	out := make([]LeonCard, 0, len(gc))
+	for _, g := range gc {
+		out = append(out, g.Card)
+	}
+	return out, nil
+}
+
+// GuestGuideCards is GuestCards with each card's guide topic (guest guide page only).
+func (s LeonStore) GuestGuideCards(ctx context.Context, apartmentID int64, level string) ([]GuideCard, error) {
 	items, err := s.Items(ctx, apartmentID)
 	if err != nil || !LeonProgressOf(items).Live {
 		return nil, err
@@ -50,7 +70,7 @@ func (s LeonStore) GuestCards(ctx context.Context, apartmentID int64, level stri
 		return nil, err
 	}
 	lines := LeonFactLines(answers)
-	var out []LeonCard
+	var out []GuideCard
 	for _, it := range items {
 		if level == "booked" {
 			if it.Visibility != "everyone" && it.Visibility != "booked" {
@@ -63,7 +83,7 @@ func (s LeonStore) GuestCards(ctx context.Context, apartmentID int64, level stri
 		if it.Kind != "custom" {
 			mine = lines[it.Kind]
 		}
-		card := LeonCard{ID: it.ID, Kind: it.Kind, Title: it.Title, Topic: it.Topic, Photos: it.Photos, Facts: mine}
+		card := LeonCard{ID: it.ID, Kind: it.Kind, Title: it.Title, Photos: it.Photos, Facts: mine}
 		switch {
 		case it.State == "done":
 			card.Location, card.Steps, card.WatchOut, card.VideoURL = it.Location, it.Steps, it.WatchOut, it.VideoURL
@@ -71,7 +91,7 @@ func (s LeonStore) GuestCards(ctx context.Context, apartmentID int64, level stri
 		default:
 			continue
 		}
-		out = append(out, card)
+		out = append(out, GuideCard{Card: card, Topic: it.Topic})
 	}
 	return out, nil
 }

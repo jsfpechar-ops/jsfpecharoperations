@@ -226,7 +226,6 @@ func leonNamed(lang, key, hostName string) string {
 type LeonCard struct {
 	ID                           int64
 	Kind, Title, Location, Steps string
-	Topic                        string
 	WatchOut, VideoURL           string
 	Photos                       int64
 	Facts                        []string
