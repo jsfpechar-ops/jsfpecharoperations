@@ -22,6 +22,8 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/envguard"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/hostweb"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/jobs"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/mail"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/maildetails"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/session"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/auth/authpage"
 )
@@ -185,6 +187,7 @@ func main() {
 
 // run returns the process exit code. The database URL is never logged.
 func run() int {
+	mail.SetDefaultDetails(maildetails.Renderer{})
 	dbURL := os.Getenv("UBYHOST_DATABASE_URL")
 	if dbURL == "" {
 		slog.Error("UBYHOST_DATABASE_URL is required")
