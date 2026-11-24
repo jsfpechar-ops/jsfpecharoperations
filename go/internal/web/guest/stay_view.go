@@ -15,8 +15,7 @@ import (
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/web/ai"
 )
 
-// stayView is guest/stay.html (the claimed stay hub). The fee panel
-// (_fee_pay.html) is not ported: follow-up brief, only when UBYHOST_STAY_FEE_GUEST_PAY is on.
+// stayView is guest/stay.html (the claimed stay hub).
 type stayView struct {
 	Page
 	GuideLive        bool
@@ -32,6 +31,7 @@ type stayView struct {
 	Expected         int
 	Filled           int
 	HasRemaining     bool
+	FeePanel         *feePanel
 	DoorCode         *doorCodeCard
 	Remaining        int
 	Percent          int
@@ -230,6 +230,9 @@ func (d stayClaimDeps) renderStayPage(w http.ResponseWriter, r *http.Request, to
 		if view.Expected > 0 {
 			view.Percent = (200*filled + view.Expected) / (2 * view.Expected)
 		}
+	}
+	if view.HasRemaining && view.Remaining <= 0 {
+		view.FeePanel = d.loadFeePanel(ctx, stay.id, stay.apartmentID, page.T("fee_cash_default"))
 	}
 	if apt != nil {
 		view.HostMessageURL = hostMessageURL(apt, hostContact(ctx, d.pool, apt))

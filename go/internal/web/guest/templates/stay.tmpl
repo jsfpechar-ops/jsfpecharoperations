@@ -17,6 +17,7 @@
     <p class="g-intro" style="margin-bottom:0">{{.T "removed_ok"}}</p>
   </div>
 {{end}}
+{{if .FeePanel}}{{template "fee_pay" .}}{{end}}
 
 {{if not .HasExpected}}
   <div class="g-card g-question-card">
@@ -38,7 +39,7 @@
     <div class="g-big-ok">
       <div class="mark">&check;</div>
       <h2>{{.T "all_done_title"}}</h2>
-      <p class="g-intro">{{.T "all_done_body"}}</p>
+      <p class="g-intro">{{if .FeePanel}}{{.T "all_done_body_fee"}}{{else}}{{.T "all_done_body"}}{{end}}</p>
       {{if and .MailEnabled .ClaimEmailMasked}}
         <p class="g-intro">{{.T "all_done_receipt" "email" .ClaimEmailMasked}}</p>
       {{end}}
