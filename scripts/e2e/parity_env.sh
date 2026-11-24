@@ -19,6 +19,7 @@ if ! $PGBIN/pg_isready -q -h 127.0.0.1 -p 5433; then
 fi
 [ -x App/.venv/bin/python ] || python3 -m venv App/.venv
 if ! App/.venv/bin/python -c "import playwright, uvicorn, psycopg, httpx" 2>/dev/null; then
-  App/.venv/bin/pip install -q -r App/requirements.lock -r App/requirements-dev.txt
+  App/.venv/bin/pip install -q -r App/requirements.lock
+  App/.venv/bin/pip install -q -r App/requirements-dev.txt
   App/.venv/bin/pip install -q playwright==1.63.0
 fi
