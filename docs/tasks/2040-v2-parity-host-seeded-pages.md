@@ -208,3 +208,7 @@ python3 scripts/context_lint.py 2>&1 | tail -3
 - The venv install, Postgres start, or the step 2 smoke run fails: stop, report the last 15 lines.
 - 25 tool calls used: stop, commit what exists, write the report with the groups done and say which are missing (the next chat re-runs `PARITY_GROUP=<missing>`).
 - Never edit Python or Go to make a row identical. Never silence a row.
+
+## 9. Report
+
+`docs/tasks/2040-report.md`.

@@ -168,3 +168,7 @@ python3 scripts/context_lint.py 2>&1 | tail -3
 - 25 tool calls used: stop, commit, report which groups are missing.
 - A seed block that violates a DB constraint after two tries: skip it (rule in step 3), report it.
 - Do not fix visible rows. Do not edit seed.py.
+
+## 9. Report
+
+`docs/tasks/2041-report.md`.

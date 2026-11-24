@@ -161,3 +161,7 @@ bash scripts/e2e/parity_gate.sh 2>&1 | tail -15      # full gate, owner or CI on
 - Step 3 shows the claim landing needs mail you cannot fake in 2 tries: mark `g-claim-landing` SKIPPED and go on.
 - 25 tool calls used: stop, commit, report the missing parts.
 - Never edit Python or Go to fix a row. Never use real guest data.
+
+## 9. Report
+
+`docs/tasks/2042-report.md`.
