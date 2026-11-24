@@ -311,6 +311,7 @@ func handleRemoveConfirm(ctx context.Context, d formPageDeps, w http.ResponseWri
 			CSRFToken:     csrf,
 			GuestEndonyms: GuestEndonyms,
 			Host:          formPagesHost(ctx, d.pool, apt.ID),
+			PrivacyURL:    GuestLink(link, 0, "/privacy") + LangQuery(lang, ""),
 		},
 		ReservationID: res.id,
 		GuestID:       guest.id,
