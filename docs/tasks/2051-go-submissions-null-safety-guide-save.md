@@ -126,3 +126,8 @@ Commit trailers:
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_014N5J8NCpdqN2TbR61gYRQf
 ```
+
+## 10. Orchestrator decision (after part 1, Option 1)
+
+- **Step 4 (guide card Save buttons): do it.** Go renders one button chosen by HasNext, so a host on a card with a next card cannot save without advancing: a lost Python function. You may update `go/internal/web/ai/guide_cards_test.go` `TestGuideCardFormSaveButtons` (~line 217) so it asserts Python's behaviour (both buttons always, exact Python markup/classes/text) instead of the old single button. Then write the step 5 redirect test and run step 7 (layout lint browser test, screenshots of the guide card page at 390/768/1280, viewed).
+- **Step 6 (Leon help placement): do NOT do it.** `TestGuideIndexLeonHelpInSectionHeading` shows Go's placement is deliberate and no function is lost; record it in the report as ACCEPTED (Option 1, look-only).
