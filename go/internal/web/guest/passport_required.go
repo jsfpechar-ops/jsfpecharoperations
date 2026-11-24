@@ -54,6 +54,15 @@ var passportUploadMessages = map[string]map[string]string{
 		"The file does not look like a valid image.":                                 "El archivo no parece una imagen válida.",
 		"The photo has too many pixels. Take it again at the normal camera setting.": "La foto tiene demasiados píxeles. Vuelva a hacerla con la configuración normal de la cámara.",
 	},
+	"fr": {
+		"Upload a JPEG, PNG, or WebP photo of your passport ID page, or a PDF (for example a registration form with up to 11 guests).": "Téléversez une photo JPEG, PNG ou WebP de la page d'identité de votre passeport, ou un PDF (par exemple un formulaire d'enregistrement de 11 voyageurs maximum).",
+		"The uploaded file looks empty.":                                             "Le fichier téléversé semble vide.",
+		"The PDF is too large. Use a file under 15 MB.":                              "Le PDF est trop volumineux. Utilisez un fichier de moins de 15 Mo.",
+		"The file does not look like a valid PDF.":                                   "Le fichier ne semble pas être un PDF valide.",
+		"The photo is too large. Use a file under 5 MB.":                             "La photo est trop volumineuse. Utilisez un fichier de moins de 5 Mo.",
+		"The file does not look like a valid image.":                                 "Le fichier ne semble pas être une image valide.",
+		"The photo has too many pixels. Take it again at the normal camera setting.": "La photo comporte trop de pixels. Reprenez-la avec le réglage normal de l'appareil photo.",
+	},
 	"uk": {
 		"Upload a JPEG, PNG, or WebP photo of your passport ID page, or a PDF (for example a registration form with up to 11 guests).": "Завантажте фото сторінки паспорта з особистими даними у форматі JPEG, PNG або WebP чи PDF (наприклад, реєстраційну форму на 11 гостей максимум).",
 		"The uploaded file looks empty.":                                             "Завантажений файл, схоже, порожній.",
