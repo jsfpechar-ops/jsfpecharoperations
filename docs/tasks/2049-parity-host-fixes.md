@@ -4,7 +4,11 @@ Status: todo
 Executor: Haiku 5.5, alone. Limits: 100k tokens, 30 tool calls. Read only AGENTS.md, docs/context/executor.md, this brief and the files named below.
 Follows: 2045 (harness), 2046 (reservation-detail, merged). Branch: the branch you are on; do not push or merge.
 
-## 1. Why
+## 1. Objective
+
+Fix the real Go-vs-Python host differences and harness gaps from 2045; rerun parity.
+
+## 2. Context (verified in this checkout)
 
 Brief 2045 left 23 visible rows. Findings (orchestrator, read-only):
 
@@ -13,11 +17,11 @@ Brief 2045 left 23 visible rows. Findings (orchestrator, read-only):
 - **admin-customer: REAL, tiny.** The only differing pixels are the back arrow (14x14 px at 1280, x 269-283, y 113-127). Python `App/app/templates/admin_customer.html:14` overrides `ph_back` with `icon('arrow-left', 20)` (stroke 1.75); the Go shell `go/internal/hostweb/layout/shell.html:265` hard-codes `icon "arrow-left" 16` (stroke 2, smaller). The page template `go/internal/web/customers/templates/admin_customer.tmpl` has no override.
 - **dev-ui: HARNESS.** The diff is a CSS spinner caught at a different frame (not anti-aliasing). `dev_ui` is not ported and is deleted with Python (`docs/plans/go-full-move.md:146`). Mark ACCEPTED.
 
-## 2. Files you may touch
+## 3. Files (you may touch only these)
 
 `go/internal/web/guest/leon_questions.go`, `go/internal/hostweb/layout/layout.go`, `go/internal/hostweb/layout/shell.html`, `go/internal/web/customers/detail.go`, `scripts/e2e/page_parity_visual.py`, `scripts/e2e/parity_cases.py`, `docs/tasks/2049-report.md`.
 
-## 3. Steps (one commit each: `2049 step k`)
+## 4. Steps (one commit each: `2049 step k`)
 
 ### Step 1: Czech and English copy (file `go/internal/web/guest/leon_questions.go`)
 For each line, `grep -nF '<anchor>' file` first; replace only the value. Not found: STOP.
@@ -71,13 +75,23 @@ Check: `python3 -m py_compile scripts/e2e/parity_cases.py 2>&1 | tail -5`.
 (2045 form; add `PARITY_GROUP=<letter>` as 2045 did if the script requires it; the groups of these cases are in `scripts/e2e/parity_cases.py`.) Expect 27 rows at 390/768/1280: all `identical` or `invisible`, except `dev-ui` rows `accepted`. Any other `visible`: open that one side PNG (max 2 reads), report it, STOP.
 This is a template change (rule 7 and 10). Also run from `App/`: `UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/shots .venv/bin/python -m pytest tests/test_go_pages_layout_lint_browser.py -q -x -rs 2>&1 | tail -30` (0 skipped, zero findings). Then open `/tmp/shots/layout-lint/` PNGs for the admin customer page at 390, 768, 1280 (3 reads) or, if the names differ, the parity `-go.png` files in `/var/tmp/parity-visual/admin-customer-en/`. Write per width one line in the report: "390: ...; 768: ...; 1280: ...".
 
-## 4. Do not touch
+## 5. Do not touch
+
+(Commands: see each step.)
+
+## 6. Commands
+
+Each step ends with its command; step 5 is the parity rerun and lint.
+
+## 7. Acceptance
+
+See the checklist at the end of section 8 and the parity rows in step 5.
 Anything under `App/app`, `deploy/`, other Go packages, other templates, goldens (except the one string in step 1), dependencies, secrets. No push, no merge.
 
-## 5. Stop and ask
+## 8. Stop and ask
 Anchor not found; golden diff; a test fails twice; a parity row other than the ones above is visible; `go build` fails after step 2.
 
-## 6. Checklist (tick in the report)
+Checklist (tick in the report):
 - [ ] 12 strings in step 1 changed, no keys added
 - [ ] `go test ./internal/web/guest/...` green
 - [ ] layout and customers Go tests green, goldens untouched
@@ -85,7 +99,7 @@ Anchor not found; golden diff; a test fails twice; a parity row other than the o
 - [ ] parity: 27 rows identical/invisible (dev-ui accepted), reservation-detail confirms 2046
 - [ ] layout lint browser test green, 0 skipped; 390/768/1280 lines written
 
-## 7. Report
+## 9. Report
 `docs/tasks/2049-report.md`, 600 tokens at most: files changed, each command with its last 5 lines, checklist, Deviations, Questions (missing Python keys), `Status: review`. Commit trailers:
 ```
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
