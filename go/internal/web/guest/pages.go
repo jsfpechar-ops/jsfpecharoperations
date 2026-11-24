@@ -99,6 +99,14 @@ func (g guestAccess) unavailableNote(w http.ResponseWriter, r *http.Request, lan
 	g.render(w, r, unavailSet, view, status, extra, false)
 }
 
+// WriteBadLinkPage renders the localized bad_link view for a guest-path 404 or
+// 405 from the Go catch-all. It takes no token and no pool, so it makes no
+// database or provider call and builds no stay or restart link. The language
+// comes from the request, as Python's guest error page does.
+func WriteBadLinkPage(w http.ResponseWriter, r *http.Request, status int) {
+	guestAccess{}.unavailableNote(w, r, Language(r), "bad_link", status, "", 0, "", nil)
+}
+
 // renderPage writes one guest page with the guest language cookie.
 func (g guestAccess) renderPage(w http.ResponseWriter, r *http.Request, set *template.Template, view any, extra map[string]string) {
 	g.render(w, r, set, view, http.StatusOK, extra, true)
