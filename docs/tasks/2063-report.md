@@ -1,6 +1,6 @@
 # 2063 report
 
-Status: review
+Status: blocked (acceptance incomplete: DB render and key tests, browser tests, screenshot; commands green)
 Done: steps 1 to 5 (step 5 partly). Left: step 5 DB render test and key test, step 6 PR and screenshots.
 
 ## Commits
