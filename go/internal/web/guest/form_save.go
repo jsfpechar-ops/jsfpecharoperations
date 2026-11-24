@@ -84,7 +84,18 @@ func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter,
 	if d.pool == nil {
 		return errors.New("guest form save: nil pool")
 	}
-	if err := r.ParseForm(); err != nil {
+	if strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data") {
+		if r.MultipartForm == nil {
+			if err := r.ParseMultipartForm(maxPDFBytes + 1024); err != nil {
+				return err
+			}
+		}
+		defer func() {
+			if r.MultipartForm != nil {
+				_ = r.MultipartForm.RemoveAll()
+			}
+		}()
+	} else if err := r.ParseForm(); err != nil {
 		return err
 	}
 	token := r.PathValue("token")
