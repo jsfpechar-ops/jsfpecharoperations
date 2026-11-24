@@ -108,6 +108,7 @@ def issued(out, owner, apt):
     out["res_issued"] = stay(apt, "e2e-guest-issued")
     set_claim(out["res_issued"], state="claimed", claimed_at=now, token_version=1, declared_guests=1,
               token_hash=None, updated_at=now)
+    db.execute("UPDATE reservation SET declared_guests = 1 WHERE id = ?", (out["res_issued"],))
     db.insert("guest", {
         "reservation_id": out["res_issued"], "first_name": "Parity", "surname": "Issued",
         "birth_date": "01011990", "nationality": "DEU", "signature_png": SIG,
@@ -124,7 +125,7 @@ def issued(out, owner, apt):
     set_claim(out["res_issued_done"], state="claimed", claimed_at=now, token_version=1, declared_guests=1,
               token_hash=None, updated_at=now)
     db.execute("UPDATE apartment SET lock_provider = 'ttlock', checkin_hour = 14, checkout_hour = 11 WHERE id = ?", (apt,))
-    db.execute("UPDATE reservation SET registration_completed_at = ? WHERE id = ?", (now, out["res_issued_done"]))
+    db.execute("UPDATE reservation SET registration_completed_at = ?, declared_guests = 1 WHERE id = ?", (now, out["res_issued_done"]))
     gid = db.insert("guest", {
         "reservation_id": out["res_issued_done"], "first_name": "Parity", "surname": "Done",
         "birth_date": "01011990", "nationality": "DEU", "signature_png": sig_png(),
