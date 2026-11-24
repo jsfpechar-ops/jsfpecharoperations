@@ -94,14 +94,39 @@ def issued(out, owner, apt):
     out["door_code_issued"] = db.insert("door_code", {
         "reservation_id": out["res_issued"], "apartment_id": apt, "lock_id": "e2e-lock-parity",
         "code_kind": "random", "state": "issued", "attempts": 0, "issued_at": now,
+        "pin_enc": db.encrypt_field("246810"),
         "valid_from": now, "valid_to": now, "next_attempt_at": now, "created_at": now, "updated_at": now,
     })
+
+    out["res_issued_done"] = stay(apt, "e2e-guest-issued-done")
+    set_claim(out["res_issued_done"], state="claimed", claimed_at=now, token_version=1, declared_guests=1,
+              token_hash=None, updated_at=now)
+    db.execute("UPDATE apartment SET lock_provider = 'ttlock' WHERE id = ?", (apt,))
+    db.execute("UPDATE reservation SET registration_completed_at = ? WHERE id = ?", (now, out["res_issued_done"]))
+    gid = db.insert("guest", {
+        "reservation_id": out["res_issued_done"], "first_name": "Parity", "surname": "Done",
+        "birth_date": "01011990", "nationality": "DEU", "signature_png": SIG,
+        "created_at": now, "updated_at": now,
+    })
+    today = datetime.date.today()
+    d_from = (today + datetime.timedelta(days=10)).isoformat()
+    d_to = (today + datetime.timedelta(days=13)).isoformat()
+    db.insert("door_code", {
+        "reservation_id": out["res_issued_done"], "apartment_id": apt, "lock_id": "e2e-lock-parity",
+        "code_kind": "random", "state": "issued", "attempts": 0, "issued_at": now, "pin_enc": db.encrypt_field("246810"),
+        "valid_from": f"{d_from}T14:00:00", "valid_to": f"{d_to}T11:00:00",
+        "next_attempt_at": now, "created_at": now, "updated_at": now,
+    })
+    from app import reporting  # debug: lists what still blocks the guest (no guest data printed)
+    row = db.query_one("SELECT * FROM guest WHERE id = ?", (gid,))
+    res = db.query_one("SELECT * FROM reservation WHERE id = ?", (out["res_issued_done"],))
+    print(json.dumps({"issued_done_issues": [str(i)[:80] for i in reporting.guest_issues(row, res)]}), file=sys.stderr)
 
 
 def cookies(out, owner, apt):
     secret = config.secret_key()
     out["claim_cookie"] = URLSafeSerializer(secret, salt="ubyhost-guest-claim").dumps(
-        {str(out["res_claimed"]): 1, str(out["res_locked"]): 1, str(out["res_issued"]): 1})
+        {str(out["res_claimed"]): 1, str(out["res_locked"]): 1, str(out["res_issued"]): 1, str(out["res_issued_done"]): 1})
     out["owned_cookie"] = URLSafeSerializer(secret, salt="ubyhost-guest-owned").dumps(
         [out["guest_complete"], out["guest_partial"]])
 
