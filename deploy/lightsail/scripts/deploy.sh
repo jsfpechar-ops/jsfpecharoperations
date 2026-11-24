@@ -101,6 +101,14 @@ pg_count() {
 # before the first one, ORIG_HEAD is the commit the workflow reset away from.
 PREV_SHA="$(cat .deployed-sha 2>/dev/null || git rev-parse -q --verify ORIG_HEAD 2>/dev/null || true)"
 
+# 2044: after the Go slot switch the site runs the new release. No automatic
+# rollback (owner decision); tell the operator exactly what to do.
+fail_after_switch() {
+  echo "$1" >&2
+  echo "DEPLOY FAILED AFTER SWITCH: the site runs the new release. Do not re-run the workflow. To go back run: ROLLBACK_CONFIRM=yes ./scripts/rollback-prod.sh" >&2
+  exit 1
+}
+
 # 0710: the site as visitors reach it (Cloudflare, Caddy, app). About 60 s.
 public_ok() {
   for _ in $(seq 1 12); do
@@ -167,8 +175,16 @@ if [ "${UBYHOST_PUBLIC_BASE_URL#https://}" = "${UBYHOST_PUBLIC_BASE_URL}" ]; the
   echo "WARNING: UBYHOST_PUBLIC_BASE_URL should use https:// in production." >&2
 fi
 
+# 2044: .deploy-in-progress exists only while a deploy has not finished. If it is
+# already there, the last run failed part-way: keep the rollback copies it made.
+KEEP_ROLLBACK_COPIES=0
+if [ -f .deploy-in-progress ]; then
+  KEEP_ROLLBACK_COPIES=1
+  echo "NOTE: previous deploy did not finish; keeping existing rollback copies" >&2
+fi
+
 # 0710: keep the running Caddyfile for rollback.
-if [ -f caddy/Caddyfile.active ]; then
+if [ "${KEEP_ROLLBACK_COPIES}" != "1" ] && [ -f caddy/Caddyfile.active ]; then
   cp caddy/Caddyfile.active caddy/Caddyfile.previous
 fi
 
@@ -300,14 +316,17 @@ if ubyhost_app_service >/dev/null; then
   echo "Backup ${BACKUP_STAMP} is valid; live row counts recorded."
 fi
 
-if docker image inspect ubyhost:local >/dev/null 2>&1; then
+if [ "${KEEP_ROLLBACK_COPIES}" != "1" ] && docker image inspect ubyhost:local >/dev/null 2>&1; then
   docker tag ubyhost:local ubyhost:previous
   echo "Kept the running image as ubyhost:previous for rollback."
 fi
-if docker image inspect ubyhost-go:local >/dev/null 2>&1; then
+if [ "${KEEP_ROLLBACK_COPIES}" != "1" ] && docker image inspect ubyhost-go:local >/dev/null 2>&1; then
   docker tag ubyhost-go:local ubyhost-go:previous
   echo "Kept the running Go image as ubyhost-go:previous for rollback."
 fi
+# 2044: the rollback copies now hold the running release; from here a failed run
+# must not overwrite them, so mark the deploy as in progress.
+git rev-parse HEAD > .deploy-in-progress
 
 # 0422: the GitHub deploy builds the image from the commit CI passed, pushes it
 # to GHCR and passes it here as UBYHOST_IMAGE, so the server only pulls. A
@@ -545,8 +564,7 @@ fi
 
 echo "==> Backfilling legal acceptance evidence"
 if ! go_exec ubyhost-web backfill-legal-acceptance; then
-  echo "Legal acceptance backfill failed." >&2
-  exit 1
+  fail_after_switch "Legal acceptance backfill failed."
 fi
 
 # BE-11: encrypt any travel-document numbers still sitting in the plaintext
@@ -555,12 +573,10 @@ fi
 echo "==> Document-number backfill (counts only)"
 go_exec ubyhost-web migrate-encrypt-doc-fields --check || true
 if ! go_exec ubyhost-web migrate-encrypt-doc-fields; then
-  echo "Document-number backfill failed." >&2
-  exit 1
+  fail_after_switch "Document-number backfill failed."
 fi
 if ! go_exec ubyhost-web migrate-encrypt-doc-fields --check; then
-  echo "Plaintext document numbers remain after the backfill." >&2
-  exit 1
+  fail_after_switch "Plaintext document numbers remain after the backfill."
 fi
 if [ -n "${BACKUP_STAMP}" ]; then
   echo ""
@@ -568,8 +584,7 @@ if [ -n "${BACKUP_STAMP}" ]; then
   if [ "${PG_MODE}" != "1" ]; then
     LIVE_OK="$(docker compose exec -T ubyhost sqlite3 /data/ubyhost.db "PRAGMA integrity_check;")"
     if [ "${LIVE_OK}" != "ok" ]; then
-      echo "Live database integrity check failed: ${LIVE_OK}" >&2
-      exit 1
+      fail_after_switch "Live database integrity check failed: ${LIVE_OK}"
     fi
   fi
   for table in "${TABLES[@]}"; do
@@ -580,8 +595,7 @@ if [ -n "${BACKUP_STAMP}" ]; then
         "from app import db; print(db.query_one('SELECT COUNT(*) AS n FROM ${table}')['n'])")"
     fi
     if [ "${after}" -lt "${BEFORE_COUNTS[${table}]}" ]; then
-      echo "${table} row count fell from ${BEFORE_COUNTS[${table}]} to ${after}." >&2
-      exit 1
+      fail_after_switch "${table} row count fell from ${BEFORE_COUNTS[${table}]} to ${after}."
     fi
     echo "  ${table}: ${BEFORE_COUNTS[${table}]} -> ${after}"
   done
@@ -596,13 +610,13 @@ if [ "${SKIP_PUBLIC_SMOKE:-0}" != "1" ]; then
   echo ""
   echo "==> Public smoke (set SKIP_PUBLIC_SMOKE=1 to skip)"
   if ! ./scripts/smoke-remote.sh; then
-    echo "ERROR: public smoke failed (DNS/TLS/Cloudflare?). Internal healthz passed, the new version is running; check the public site now." >&2
-    exit 1
+    fail_after_switch "ERROR: public smoke failed (DNS/TLS/Cloudflare?). Internal healthz passed, the new version is running; check the public site now."
   fi
 fi
 
 # 0710: this commit is now the rollback target.
 git rev-parse HEAD > .deployed-sha
+rm -f .deploy-in-progress
 
 # 0962: success is final. Drop dangling images (the old ubyhost:local of each
 # deploy) and all build cache of this deploy. Never -a: it would delete

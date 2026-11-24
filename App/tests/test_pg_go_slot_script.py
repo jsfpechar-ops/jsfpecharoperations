@@ -330,3 +330,22 @@ def test_rollback_prep_deletes_goose_row_in_one_transaction():
     rollback = deploy.split("rollback() {", 1)[1].split("\n}\n", 1)[0]
     assert "ERROR: schema rollback prep failed; old release may not start" in rollback
     assert "rollback_drop_guide_import_00024 || true" not in rollback
+
+
+def test_deploy_keeps_rollback_copies_after_unfinished_deploy():
+    text = DEPLOY.read_text(encoding="utf-8")
+    assert "previous deploy did not finish; keeping existing rollback copies" in text
+    marker = text.index("git rev-parse HEAD > .deploy-in-progress")
+    assert marker > text.index("cp caddy/Caddyfile.active caddy/Caddyfile.previous")
+    assert marker > text.index("docker tag ubyhost-go:local ubyhost-go:previous")
+    assert text.count('"${KEEP_ROLLBACK_COPIES}" != "1"') == 3
+    assert text.index("git rev-parse HEAD > .deployed-sha\nrm -f .deploy-in-progress") > marker
+    assert ".deploy-in-progress" in (ROOT / "deploy/lightsail/.gitignore").read_text(encoding="utf-8")
+
+
+def test_deploy_failures_after_switch_print_the_rollback_command():
+    text = DEPLOY.read_text(encoding="utf-8")
+    assert "ROLLBACK_CONFIRM=yes ./scripts/rollback-prod.sh" in text
+    assert "DEPLOY FAILED AFTER SWITCH: the site runs the new release. Do not re-run the workflow." in text
+    tail = text.split('echo "==> Removing retired compose services"', 1)[1]
+    assert tail.count("fail_after_switch ") == 6
