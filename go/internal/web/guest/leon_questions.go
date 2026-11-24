@@ -565,12 +565,9 @@ func (s *lqServer) handoffAddGuide(ctx context.Context, apt, qid int64, topic st
 		vis = "everyone"
 	}
 	var itemID int64
-	err = s.pool.QueryRow(ctx, `INSERT INTO guide_item (apartment_id, kind, topic, title, state, visibility, source, created_at, updated_at)
-		VALUES ($1, 'custom', $2, $3, 'done', $4, 'host', $5, $5) RETURNING id`, apt, topic, title, vis, s.stamp(s.now())).Scan(&itemID)
-	if err != nil {
-		return 0, err
-	}
-	_, err = s.pool.Exec(ctx, `INSERT INTO guide_card (item_id, steps) VALUES ($1, $2) ON CONFLICT (item_id) DO UPDATE SET steps = EXCLUDED.steps`, itemID, row.Answer)
+	// The card text lives in guide_item.steps (there is no guide_card table).
+	err = s.pool.QueryRow(ctx, `INSERT INTO guide_item (apartment_id, kind, topic, title, steps, state, visibility, source, created_at, updated_at)
+		VALUES ($1, 'custom', $2, $3, $4, 'done', $5, 'host', $6, $6) RETURNING id`, apt, topic, title, row.Answer, vis, s.stamp(s.now())).Scan(&itemID)
 	return itemID, err
 }
 
