@@ -22,6 +22,7 @@
   <p class="g-intro">{{.T "assigned_body"}}</p>
   <div class="g-private-link-note">
     <strong>{{.EmailMasked}}</strong>
+    {{if .ClaimLastSent}}<small>{{.T "assigned_last_sent" "date" (date_cz .ClaimLastSent)}}</small>{{end}}
   </div>
   <form method="post" action="{{.ActionURL}}">
     <input type="hidden" name="_csrf" value="{{.CSRFToken}}">

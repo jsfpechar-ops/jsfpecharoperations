@@ -207,6 +207,7 @@ type assignedView struct {
 	ActionURL        string
 	RequireTurnstile bool
 	TurnstileSiteKey string
+	ClaimLastSent    string
 }
 
 func (v assignedView) GetLang() string { return v.Lang }
@@ -226,6 +227,7 @@ func (d stayClaimDeps) renderAssignedPage(w http.ResponseWriter, r *http.Request
 		declared = *row.declaredGuests
 	}
 	view := assignedView{
+		ClaimLastSent:    d.claimLastSent(ctx, stay.id),
 		Page:             page,
 		StayFrom:         stay.dateFrom,
 		StayTo:           stay.dateTo,
@@ -280,4 +282,16 @@ func (d stayClaimDeps) guideLive(ctx context.Context, apt *Apartment) bool {
 		return false
 	}
 	return ai.LeonProgressOf(items).Live
+}
+
+// claimLastSent is the day the assigned page shows as the last claim mail sent
+// to this stay (guest.py assigned: MAX(sent_at) over the claim kinds). Empty when none.
+func (d stayClaimDeps) claimLastSent(ctx context.Context, stayID int64) string {
+	var day *string
+	err := d.pool.QueryRow(ctx, `SELECT MAX(sent_at)::date::text FROM email_outbox
+		WHERE reservation_id = $1 AND kind IN ('claim', 'claim_resend') AND sent_at IS NOT NULL`, stayID).Scan(&day)
+	if err != nil || day == nil {
+		return ""
+	}
+	return *day
 }
