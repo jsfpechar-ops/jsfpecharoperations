@@ -86,12 +86,17 @@ func guestFormSaveHandler(d saveDeps) http.HandlerFunc {
 	}
 }
 
+// guestMaxMultipart mirrors hostweb csrfMaxMultipart (a 10 MiB photo plus the
+// form fields). Keep the two values equal.
+const guestMaxMultipart = 11 << 20
+
 func handleGuestFormSave(ctx context.Context, d saveDeps, w http.ResponseWriter, r *http.Request) error {
 	if d.pool == nil {
 		return errors.New("guest form save: nil pool")
 	}
 	if strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data") {
 		if r.MultipartForm == nil {
+			r.Body = http.MaxBytesReader(w, r.Body, guestMaxMultipart)
 			if err := r.ParseMultipartForm(maxPDFBytes + 1024); err != nil {
 				return err
 			}
