@@ -94,7 +94,7 @@
         {{if .ClaimResend}}<form method="post" action="/reservations/{{$id}}/resend-claim" class="row-menu-form ph-only"><input type="hidden" name="_csrf" value="{{csrf}}"><button class="row-menu-item" type="submit" role="menuitem">{{t "stay.claim.resend"}}</button></form>{{end}}
         {{if and (not $inactive) (not $.PaymentsHidden)}}<a class="row-menu-item ph-only" href="/payments?reservation_id={{$id}}#new-request" role="menuitem">{{t "stays.row.request_payment"}}</a>{{end}}
         <a class="row-menu-item" href="/reservations/{{$id}}/guests/new" role="menuitem">{{t "stay.detail.cta.add_guest"}}</a>
-        {{if .StayInvoice}}<a class="row-menu-item" href="/invoices/{{.StayInvoice.ID}}" role="menuitem">{{t "invoice.stay.open" "number" .StayInvoice.Number}}</a>{{else}}<a class="row-menu-item" href="/invoices/new?reservation_id={{$id}}" role="menuitem">{{t "invoice.new"}}</a>{{end}}
+        {{if .StayInvoice}}<a class="row-menu-item ph-only" href="/invoices/{{.StayInvoice.ID}}" role="menuitem">{{t "invoice.stay.open" "number" .StayInvoice.Number}}</a>{{else}}<a class="row-menu-item ph-only" href="/invoices/new?reservation_id={{$id}}" role="menuitem">{{t "invoice.new"}}</a>{{end}}
         {{if .Reservation.PermalinkToken}}
         <a class="row-menu-item" href="{{.GuestLink}}" target="_blank" rel="noopener" role="menuitem">{{t "stay.detail.menu.open_guest_form"}}</a>
         {{end}}
