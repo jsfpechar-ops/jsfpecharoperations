@@ -145,6 +145,21 @@ def issued(out, owner, apt):
     row = db.query_one("SELECT * FROM guest WHERE id = ?", (gid,))
     res = db.query_one("SELECT * FROM reservation WHERE id = ?", (out["res_issued_done"],))
     print(json.dumps({"issued_done_issues": [str(i)[:80] for i in reporting.guest_issues(row, res)]}), file=sys.stderr)
+    # door card diagnostics: states and counts only, no guest data
+    from app import door_codes
+    apt_row = db.query_one("SELECT * FROM apartment WHERE id = ?", (apt,))
+    door_row = db.query_one("SELECT state FROM door_code WHERE reservation_id = ?", (out["res_issued_done"],))
+    try:
+        shown = door_codes.view(res, apt_row)
+        view_state = shown.get("state", "shown") if shown else "none"
+    except Exception as exc:
+        view_state = f"error:{type(exc).__name__}"
+    print(json.dumps({
+        "lock_provider": apt_row["lock_provider"] if apt_row else None,
+        "checkin_hour": apt_row["checkin_hour"] if apt_row else None,
+        "door_code_state": door_row["state"] if door_row else "none",
+        "view_state": view_state,
+    }), file=sys.stderr)
 
 
 def cookies(out, owner, apt):
