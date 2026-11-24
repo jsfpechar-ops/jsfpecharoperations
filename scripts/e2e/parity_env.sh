@@ -17,7 +17,8 @@ if ! $PGBIN/pg_isready -q -h 127.0.0.1 -p 5433; then
   runuser -u postgres -- $PGBIN/pg_ctl -D "$PARITY_PG_DIR/data" -w -l "$PARITY_PG_DIR/pg.log" \
     -o "-p 5433 -c listen_addresses=127.0.0.1 -c fsync=off -c unix_socket_directories=$PARITY_PG_DIR" start >/dev/null
 fi
-if [ ! -x App/.venv/bin/python ]; then
-  python3 -m venv App/.venv && App/.venv/bin/pip install -q \
-    -r App/requirements.lock -r App/requirements-dev.txt playwright==1.63.0
+[ -x App/.venv/bin/python ] || python3 -m venv App/.venv
+if ! App/.venv/bin/python -c "import playwright, uvicorn, psycopg, httpx" 2>/dev/null; then
+  App/.venv/bin/pip install -q -r App/requirements.lock -r App/requirements-dev.txt
+  App/.venv/bin/pip install -q playwright==1.63.0
 fi
