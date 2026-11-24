@@ -273,20 +273,52 @@ func saveWant303(t *testing.T, rec *httptest.ResponseRecorder, prefix string) {
 
 var saveActive = map[string]string{"guest_email": "", "host_note": "", "status": "active"}
 
-// The Python save calls submit_for_apartment here; Go asks for the submit sweep.
-func TestSaveCompleteImmediateStayEnqueuesSubmit(t *testing.T) {
+// The save runs immediate stay-scoped filing rather than enqueuing a global sweep.
+func TestSaveCompleteImmediateStayFilesScoped(t *testing.T) {
 	pool := saveDBPool(t)
 	f := saveSeed(t, pool, "immediate", 1, 1, 0)
+	var guestID int64
+	if err := pool.QueryRow(context.Background(), `SELECT id FROM guest WHERE reservation_id = $1`, f.res).Scan(&guestID); err != nil {
+		t.Fatal(err)
+	}
+	var calls int
+	var gotApt int64
+	var gotMode string
+	var gotOpts ubyport.CollectOptions
+	saved := submitCompletedStayOpts
+	submitCompletedStayOpts = &ubyport.SubmitCompletedStayOptions{
+		Submit: func(_ context.Context, _ ubyport.SweepDeps, aptID int64, o ubyport.CollectOptions, mode string) ([]ubyport.BatchResult, error) {
+			calls++
+			gotApt = aptID
+			gotOpts = o
+			gotMode = mode
+			return nil, nil
+		},
+	}
+	t.Cleanup(func() { submitCompletedStayOpts = saved })
+
 	saveWant303(t, savePost(t, pool, f.owner, f.res, saveActive), fmt.Sprintf("/reservations/%d?msg=", f.res))
 	if !saveCompleted(t, pool, f.res) {
 		t.Error("registration_completed_at not stamped")
 	}
-	if n := saveOpenSubmitJobs(t, pool); n != 1 {
-		t.Errorf("open submit jobs %d, want 1", n)
+	if n := saveOpenSubmitJobs(t, pool); n != 0 {
+		t.Errorf("open submit jobs %d, want 0", n)
+	}
+	if calls != 1 {
+		t.Fatalf("scoped submit calls = %d, want 1", calls)
+	}
+	if gotApt != f.apt || gotMode != "completion_immediate" {
+		t.Errorf("got apt=%d mode=%q, want apt=%d mode=completion_immediate", gotApt, gotMode, f.apt)
+	}
+	if gotOpts.IgnoreSchedule == nil || !*gotOpts.IgnoreSchedule {
+		t.Errorf("IgnoreSchedule = %v, want true", gotOpts.IgnoreSchedule)
+	}
+	if len(gotOpts.OnlyGuestIDs) != 1 || gotOpts.OnlyGuestIDs[0] != guestID {
+		t.Errorf("OnlyGuestIDs = %v, want [%d]", gotOpts.OnlyGuestIDs, guestID)
 	}
 }
 
-func TestSaveDoesNotEnqueueSubmit(t *testing.T) {
+func TestSaveDoesNotFileWhenGated(t *testing.T) {
 	cases := []struct {
 		name          string
 		mode          string
@@ -310,9 +342,22 @@ func TestSaveDoesNotEnqueueSubmit(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
+			var calls int
+			saved := submitCompletedStayOpts
+			submitCompletedStayOpts = &ubyport.SubmitCompletedStayOptions{
+				Submit: func(context.Context, ubyport.SweepDeps, int64, ubyport.CollectOptions, string) ([]ubyport.BatchResult, error) {
+					calls++
+					return nil, nil
+				},
+			}
+			t.Cleanup(func() { submitCompletedStayOpts = saved })
+
 			saveWant303(t, savePost(t, pool, f.owner, f.res, saveActive), fmt.Sprintf("/reservations/%d?msg=", f.res))
 			if got := saveCompleted(t, pool, f.res); got != c.wantCompleted {
 				t.Errorf("completed %v, want %v", got, c.wantCompleted)
+			}
+			if calls != 0 {
+				t.Errorf("scoped submit calls = %d, want 0", calls)
 			}
 			if n := saveOpenSubmitJobs(t, pool); n != 0 {
 				t.Errorf("open submit jobs %d, want 0", n)
@@ -321,13 +366,21 @@ func TestSaveDoesNotEnqueueSubmit(t *testing.T) {
 	}
 }
 
-func TestSaveEnqueueFailureRaisesAlert(t *testing.T) {
+func TestSaveFilingFailureRaisesAlert(t *testing.T) {
 	pool := saveDBPool(t)
 	f := saveSeed(t, pool, "immediate", 1, 1, 0)
-	saved := enqueueJob
-	enqueueJob = func(context.Context, *pgxpool.Pool, string) (bool, error) { return false, errors.New("queue down") }
-	t.Cleanup(func() { enqueueJob = saved })
+	saved := submitCompletedStayOpts
+	submitCompletedStayOpts = &ubyport.SubmitCompletedStayOptions{
+		Submit: func(context.Context, ubyport.SweepDeps, int64, ubyport.CollectOptions, string) ([]ubyport.BatchResult, error) {
+			return nil, errors.New("filing down")
+		},
+	}
+	t.Cleanup(func() { submitCompletedStayOpts = saved })
+
 	saveWant303(t, savePost(t, pool, f.owner, f.res, saveActive), fmt.Sprintf("/reservations/%d?msg=", f.res))
+	if n := saveOpenSubmitJobs(t, pool); n != 0 {
+		t.Errorf("open submit jobs %d, want 0", n)
+	}
 	open, err := ubyport.OpenAlert(context.Background(), pool, fmt.Sprintf("submission_immediate:%d", f.apt))
 	if err != nil || !open {
 		t.Fatalf("submission_immediate alert open=%v err=%v", open, err)
