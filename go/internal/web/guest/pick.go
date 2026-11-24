@@ -135,7 +135,7 @@ func (d shellDeps) pickStay(w http.ResponseWriter, r *http.Request) {
 		if _, ok := visible[claimedID]; ok {
 			continue
 		}
-		extra, err := reservationForGuestExtra(r.Context(), d.pool, papt, claimedID, now)
+		extra, err := reservationForGuestExtra(r.Context(), d.pool, d.getenv, d.now, papt, claimedID, now)
 		if err != nil || extra == nil {
 			continue
 		}

@@ -129,7 +129,7 @@ func TestPersonNumberFixes2056CountsCompleteGuestsOnly(t *testing.T) {
 			VALUES ($1, $2, $3, $3, 'Partial', 'CZE')`, resID*10+i, resID, stamp)
 	}
 	res := formResRow{id: resID, dateFrom: "2026-06-10", dateTo: "2026-06-12"}
-	if n := completeFormGuests(ctx, pool, res, time.Date(2026, 6, 15, 12, 0, 0, 0, time.UTC)); n != 0 {
+	if n := completeFormGuests(ctx, pool, func(string) string { return "" }, time.Now, res, time.Date(2026, 6, 15, 12, 0, 0, 0, time.UTC)); n != 0 {
 		t.Fatalf("two partial guests: complete count %d want 0", n)
 	}
 }

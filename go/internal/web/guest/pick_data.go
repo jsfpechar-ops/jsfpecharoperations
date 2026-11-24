@@ -2,6 +2,7 @@ package guest
 
 import (
 	"context"
+	"log"
 	"strings"
 	"time"
 
@@ -100,7 +101,7 @@ func visibleReservations(ctx context.Context, pool *pgxpool.Pool, apt pickApartm
 	return out, rows.Err()
 }
 
-func reservationForGuestExtra(ctx context.Context, pool *pgxpool.Pool, apt pickApartment, resID int64, today time.Time) (*pickReservation, error) {
+func reservationForGuestExtra(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, apt pickApartment, resID int64, today time.Time) (*pickReservation, error) {
 	for _, r := range mustVisible(ctx, pool, apt, today) {
 		if r.ID == resID {
 			return &r, nil
@@ -127,7 +128,7 @@ func reservationForGuestExtra(ctx context.Context, pool *pgxpool.Pool, apt pickA
 	if locked != nil || r.DateTo < cutoff {
 		return nil, nil
 	}
-	if registrationComplete(ctx, pool, r, today) {
+	if registrationComplete(ctx, pool, getenv, now, r, today) {
 		return nil, nil
 	}
 	return &r, nil
@@ -141,7 +142,7 @@ func mustVisible(ctx context.Context, pool *pgxpool.Pool, apt pickApartment, tod
 	return out
 }
 
-func registrationComplete(ctx context.Context, pool *pgxpool.Pool, res pickReservation, today time.Time) bool {
+func registrationComplete(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, res pickReservation, today time.Time) bool {
 	var override, declared, reduced *int64
 	err := pool.QueryRow(ctx,
 		`SELECT declared_guests, guest_count_override, guest_count_reduced FROM reservation WHERE id = $1`,
@@ -150,14 +151,7 @@ func registrationComplete(ctx context.Context, pool *pgxpool.Pool, res pickReser
 		return false
 	}
 	expected := headcount.Expected(override, declared, reduced)
-	rows, err := pool.Query(ctx, `
-		SELECT COALESCE(nationality,''), submit_state, COALESCE(manual_filed_at,''),
-		       COALESCE(first_name,''), COALESCE(surname,''), COALESCE(birth_date,''),
-		       COALESCE(doc_number,''), COALESCE(visa_number,''),
-		       COALESCE(res_street,''), COALESCE(res_city,''), COALESCE(res_country,''),
-		       COALESCE(purpose,''), COALESCE(note,''), COALESCE(stay_from,''), COALESCE(stay_to,''),
-		       COALESCE(signature_png,'')
-		FROM guest WHERE reservation_id = $1 AND archived_at IS NULL`, res.ID)
+	rows, err := pool.Query(ctx, "SELECT "+stayGuestSelect+", COALESCE(manual_filed_at,'') FROM guest WHERE reservation_id = $1 AND archived_at IS NULL", res.ID)
 	if err != nil {
 		return false
 	}
@@ -165,15 +159,18 @@ func registrationComplete(ctx context.Context, pool *pgxpool.Pool, res pickReser
 	incomplete := 0
 	filled := 0
 	for rows.Next() {
-		var g validation.GuestRow
-		var nat, state, manual string
-		if err := rows.Scan(&nat, &state, &manual,
-			&g.FirstName, &g.Surname, &g.BirthDate, &g.DocNumber, &g.VisaNumber,
-			&g.ResStreet, &g.ResCity, &g.ResCountry, &g.Purpose, &g.Note, &g.StayFrom, &g.StayTo, &g.SignaturePNG); err != nil {
+		var c stayGuestCols
+		var manual string
+		if err := rows.Scan(append(c.scanArgs(), &manual)...); err != nil {
 			return false
 		}
-		g.Nationality = nat
-		done := (state == "sent" && manual != "") || validation.GuestIsComplete(g, res.DateFrom, res.DateTo, today)
+		g, err := c.validationRow(getenv, now)
+		if err != nil {
+			log.Printf("registrationComplete: guest %d not decrypted: %v", c.ID, err)
+			incomplete++
+			continue
+		}
+		done := (c.Submit == "sent" && manual != "") || validation.GuestIsComplete(g, res.DateFrom, res.DateTo, today)
 		if done {
 			filled++
 		} else {
