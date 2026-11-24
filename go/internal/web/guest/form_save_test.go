@@ -6,13 +6,19 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"image"
+	"image/jpeg"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/passportphotos"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/secure"
 )
 
 type formSaveGolden struct {
@@ -500,5 +506,89 @@ func TestDecryptGuestFieldEmptyUsesPlain(t *testing.T) {
 	plain, err := decryptGuestField(testDataEnv, time.Now, tok, "")
 	if err != nil || plain != "data:image/png;base64,AAAA" {
 		t.Fatalf("round-trip %q err %v", plain, err)
+	}
+}
+
+// synthJPEG is a synthetic 64x64 JPEG; no real passport image is used.
+func synthJPEG(t *testing.T) []byte {
+	t.Helper()
+	img := image.NewRGBA(image.Rect(0, 0, 64, 64))
+	for i := range img.Pix {
+		img.Pix[i] = uint8(i * 7)
+	}
+	var buf bytes.Buffer
+	if err := jpeg.Encode(&buf, img, &jpeg.Options{Quality: 80}); err != nil {
+		t.Fatal(err)
+	}
+	return buf.Bytes()
+}
+
+func TestPassportRequired(t *testing.T) {
+	cases := []struct {
+		name, policy, nationality, enteredBy, verifiedAt string
+		want                                             bool
+	}{
+		{"policy off", "off", "DEU", "guest", "", false},
+		{"empty policy", "", "DEU", "guest", "", false},
+		{"case and space", " Required_Foreign ", "DEU", "guest", "", true},
+		{"czech", "required_foreign", "CZE", "guest", "", false},
+		{"czech lower case", "required_foreign", "cze", "guest", "", false},
+		{"empty nationality", "required_foreign", "", "guest", "", false},
+		{"host entered", "required_foreign", "DEU", "host", "", false},
+		{"empty entered_by counts as guest", "required_foreign", "DEU", "", "", true},
+		{"identity verified", "required_foreign", "DEU", "guest", "2026-01-01T00:00:00Z", false},
+		{"new guest foreign", "required_foreign", "DEU", "guest", "", true},
+	}
+	for _, c := range cases {
+		if got := passportRequired(c.policy, c.nationality, c.enteredBy, c.verifiedAt); got != c.want {
+			t.Errorf("%s: passportRequired = %v, want %v", c.name, got, c.want)
+		}
+	}
+}
+
+func TestGuestSavePassportPhoto(t *testing.T) {
+	keys, err := secure.LoadDataKeys(testDataEnv)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := t.TempDir()
+	body, ext, err := passportphotos.Prepare(synthJPEG(t), "image/jpeg")
+	if err != nil {
+		t.Fatalf("prepare: %v", err)
+	}
+	if err := passportphotos.SavePrepared(dir, keys, 4242, body, ext); err != nil {
+		t.Fatalf("save: %v", err)
+	}
+	encPath := filepath.Join(passportphotos.PhotosDir(dir), "4242"+ext+".enc")
+	info, err := os.Stat(encPath)
+	if err != nil {
+		t.Fatalf("stat encrypted file: %v", err)
+	}
+	if info.Mode().Perm() != 0o600 {
+		t.Fatalf("mode = %v, want 0600", info.Mode().Perm())
+	}
+	raw, err := os.ReadFile(encPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bytes.HasPrefix(raw, []byte{0xFF, 0xD8, 0xFF}) {
+		t.Fatal("stored file is a plaintext JPEG")
+	}
+	plain, _, ok := passportphotos.Read(dir, keys, 4242)
+	if !ok || !bytes.HasPrefix(plain, []byte{0xFF, 0xD8, 0xFF}) {
+		t.Fatalf("decrypt: ok=%v", ok)
+	}
+	if !passportphotos.Has(dir, 4242) || passportphotos.Has(dir, 4243) {
+		t.Fatal("Has: want true for 4242 and false for 4243")
+	}
+	// A replacement that cannot be written keeps the prior photo (temp path blocked by a directory).
+	if err := os.Mkdir(filepath.Join(passportphotos.PhotosDir(dir), "4242"+ext+".enc.tmp"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := passportphotos.SavePrepared(dir, keys, 4242, body, ext); err == nil {
+		t.Fatal("replacement with blocked temp path: want error")
+	}
+	if _, _, ok := passportphotos.Read(dir, keys, 4242); !ok {
+		t.Fatal("prior photo lost after failed replacement")
 	}
 }
