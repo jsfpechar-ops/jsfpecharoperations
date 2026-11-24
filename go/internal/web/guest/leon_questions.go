@@ -457,20 +457,25 @@ func (s *lqServer) handoffGet(ctx context.Context, apt, qid int64) (*handoffRow,
 	return &row, nil
 }
 
+// handoffCardTitle mirrors Python card_title: the summary, else the question,
+// whitespace collapsed, cut to 120 characters (runes, not bytes), stripped.
+func handoffCardTitle(summary, question string) string {
+	text := summary
+	if text == "" {
+		text = question
+	}
+	text = strings.Join(strings.Fields(text), " ")
+	if text == "" {
+		text = "Guest question"
+	}
+	if r := []rune(text); len(r) > 120 {
+		text = string(r[:120])
+	}
+	return strings.TrimSpace(text)
+}
+
 func (s *lqServer) handoffCardID(ctx context.Context, apt int64, row *handoffRow) (int64, error) {
-	title := ""
-	for _, text := range []string{row.Summary, row.Question} {
-		if f := strings.Fields(text); len(f) > 0 {
-			title = strings.Join(f, " ")
-			break
-		}
-	}
-	if title == "" {
-		title = "Guest question"
-	}
-	if r := []rune(title); len(r) > 120 {
-		title = strings.TrimSpace(string(r[:120]))
-	}
+	title := handoffCardTitle(row.Summary, row.Question)
 	var id int64
 	err := s.pool.QueryRow(ctx, `SELECT id FROM guide_item WHERE apartment_id = $1 AND kind = 'custom' AND title = $2 ORDER BY id DESC LIMIT 1`, apt, title).Scan(&id)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -554,13 +559,7 @@ func (s *lqServer) handoffAddGuide(ctx context.Context, apt, qid int64, topic st
 	if row.Status != "answered" || row.Answer == "" {
 		return 0, errHandoffNotAnswered
 	}
-	title := row.Summary
-	if title == "" {
-		title = row.Question
-	}
-	if len(title) > 120 {
-		title = title[:120]
-	}
+	title := handoffCardTitle(row.Summary, row.Question)
 	vis := "booked"
 	if row.Door == "qr" {
 		vis = "everyone"

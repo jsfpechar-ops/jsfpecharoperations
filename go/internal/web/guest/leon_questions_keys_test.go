@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"strings"
 	"testing"
+	"unicode/utf8"
 )
 
 func TestLeonQuestionPageKeysAndSections(t *testing.T) {
@@ -34,5 +35,26 @@ func TestLeonQuestionPageKeysAndSections(t *testing.T) {
 		if !strings.Contains(s, want) {
 			t.Errorf("template missing %s", want)
 		}
+	}
+}
+
+func TestHandoffCardTitleMatchesPythonCardTitle(t *testing.T) {
+	// 130 Czech characters with diacritics: a byte cut at 120 would split one.
+	long := strings.Repeat("Příliš žluťoučký kůň ", 10)
+	got := handoffCardTitle("", long)
+	if !utf8.ValidString(got) {
+		t.Fatalf("title is not valid UTF-8: %q", got)
+	}
+	if n := utf8.RuneCountInString(got); n != 120 {
+		t.Fatalf("want 120 runes, got %d", n)
+	}
+	if want := strings.TrimSpace(string([]rune(long)[:120])); got != want {
+		t.Fatalf("title = %q, want %q", got, want)
+	}
+	if got := handoffCardTitle("  Summary\n\ttext  ", "q"); got != "Summary text" {
+		t.Fatalf("whitespace not collapsed: %q", got)
+	}
+	if got := handoffCardTitle(" \t", "  "); got != "Guest question" {
+		t.Fatalf("empty fallback: %q", got)
 	}
 }
