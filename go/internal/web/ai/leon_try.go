@@ -63,7 +63,7 @@ func (s LeonStore) GuestCards(ctx context.Context, apartmentID int64, level stri
 		if it.Kind != "custom" {
 			mine = lines[it.Kind]
 		}
-		card := LeonCard{ID: it.ID, Kind: it.Kind, Title: it.Title, Photos: it.Photos, Facts: mine}
+		card := LeonCard{ID: it.ID, Kind: it.Kind, Title: it.Title, Topic: it.Topic, Photos: it.Photos, Facts: mine}
 		switch {
 		case it.State == "done":
 			card.Location, card.Steps, card.WatchOut, card.VideoURL = it.Location, it.Steps, it.WatchOut, it.VideoURL

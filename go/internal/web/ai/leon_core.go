@@ -226,6 +226,7 @@ func leonNamed(lang, key, hostName string) string {
 type LeonCard struct {
 	ID                           int64
 	Kind, Title, Location, Steps string
+	Topic                        string
 	WatchOut, VideoURL           string
 	Photos                       int64
 	Facts                        []string
@@ -247,6 +248,36 @@ func LeonCardTitle(c LeonCard) string {
 	}
 	return leonStrings.T("en", "guest_guide.kind."+c.Kind+".title", nil)
 }
+
+// copyLang is guest_guide_view._copy_lang: card and topic titles are host copy in cs and en; other guest languages read English.
+func copyLang(lang string) string {
+	if lang == "cs" {
+		return "cs"
+	}
+	return "en"
+}
+
+// LeonCardTitleIn is the card title in the page language (guest_guide_view._cards).
+func LeonCardTitleIn(c LeonCard, lang string) string {
+	if c.Kind == "custom" {
+		return leonClean(c.Title)
+	}
+	return leonStrings.T(copyLang(lang), "guest_guide.kind."+c.Kind+".title", nil)
+}
+
+// GuideTopicTitle is host_i18n guest_guide.topic.<topic> in the page language (guest_guide_view._groups).
+func GuideTopicTitle(topic, lang string) string {
+	return guideCatalog.T(copyLang(lang), "guest_guide.topic."+topic, nil)
+}
+
+// GuideTopics is guest_guide.TOPICS in guest order.
+func GuideTopics() []string { return append([]string(nil), guideTopics...) }
+
+// GuideTopicIndex is the position of a topic in GuideTopics.
+func GuideTopicIndex(topic string) int { return guideTopicIndex(topic) }
+
+// LeonHostFirstName is leon.host_first_name.
+func LeonHostFirstName(name string) string { return leonHostFirstName(name) }
 
 func leonSorted(cards []LeonCard) []LeonCard {
 	out := append([]LeonCard(nil), cards...)
