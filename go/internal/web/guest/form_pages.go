@@ -24,6 +24,7 @@ import (
 
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/billingjob"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/headcount"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/passportphotos"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ruian"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/ubyport"
 	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
@@ -347,7 +348,7 @@ func handleRemovePost(ctx context.Context, d formPageDeps, w http.ResponseWriter
 	lang := formRequestLanguage(r)
 	guestID := guest.id
 	resID := res.id
-	cutoff := float64(d.now().Unix()) - float64(ubyport.SubmissionClaimTTL)
+	cutoff := float64(d.now().Unix()) - ubyport.SubmissionClaimTTL.Seconds()
 	tag, err := d.pool.Exec(ctx, `DELETE FROM guest WHERE id = $1 AND reservation_id = $2
 		AND COALESCE(submit_state,'') <> $3 AND restricted_at IS NULL
 		AND NOT EXISTS (SELECT 1 FROM submission_claim WHERE guest_id = $1 AND claimed_at >= $4)`,
@@ -359,15 +360,21 @@ func handleRemovePost(ctx context.Context, d formPageDeps, w http.ResponseWriter
 		d.formWriteUnavailable(w, r, lang, "already_filed", http.StatusForbidden, link, nil)
 		return nil
 	}
-	_, _ = d.pool.Exec(ctx, `UPDATE guest SET signed_for_guest_id = NULL, signed_for_role = NULL,
+	if _, err := d.pool.Exec(ctx, `UPDATE guest SET signed_for_guest_id = NULL, signed_for_role = NULL,
 		signed_for_at = NULL, signed_for_wording = NULL WHERE signed_for_guest_id = $1 AND reservation_id = $2`,
-		guestID, resID)
-	if err := formPagesDeletePhoto(ctx, d.pool, guestID); err != nil {
-		return err
+		guestID, resID); err != nil {
+		log.Printf("guest remove: clear child signer guest=%d reservation=%d: %v", guestID, resID, err)
 	}
-	_, _ = d.pool.Exec(ctx, `INSERT INTO audit (at, actor, action, detail, owner_user_id) VALUES ($1,$2,$3,$4,$5)`,
-		d.now().UTC(), "guest", "guest_removed_by_guest", fmt.Sprintf("guest=%d reservation=%d", guestID, resID), apt.ID)
-	_ = formPagesSubmitStayIfComplete(ctx, d.pool, d.getenv, d.now, apt.ID, resID)
+	if err := formPagesDeletePhoto(d.getenv, guestID); err != nil {
+		log.Printf("guest remove: delete photo guest=%d: %v", guestID, err)
+	}
+	if _, err := d.pool.Exec(ctx, `INSERT INTO audit (at, actor, action, detail, owner_user_id) VALUES ($1,$2,$3,$4,$5)`,
+		d.now().UTC(), "guest", "guest_removed_by_guest", fmt.Sprintf("guest=%d reservation=%d", guestID, resID), apt.OwnerUserID); err != nil {
+		log.Printf("guest remove: audit guest=%d reservation=%d: %v", guestID, resID, err)
+	}
+	if err := formPagesSubmitStayIfComplete(ctx, d.pool, d.getenv, d.now, apt.ID, resID); err != nil {
+		log.Printf("guest remove: submit stay apartment=%d reservation=%d: %v", apt.ID, resID, err)
+	}
 	owned := formPagesOwnedIDs(r, d.getenv)
 	delete(owned, guestID)
 	ids := make([]int64, 0, len(owned))
@@ -939,10 +946,20 @@ func formPagesDateLabel(iso, lang string) string {
 // formPagesNights is nights_label.
 func formPagesNights(from, to, lang string) string { return pickNightsLabel(lang, from, to) }
 
-func formPagesDeletePhoto(ctx context.Context, pool *pgxpool.Pool, guestID int64) error { return nil }
+func formPagesDeletePhoto(getenv func(string) string, guestID int64) error {
+	if getenv == nil {
+		getenv = func(string) string { return "" }
+	}
+	return passportphotos.DeletePhoto(guestDataDir(getenv), guestID)
+}
+
+// formPagesSubmitCompletedStayOpts lets tests inject a fake submitter/sender
+// without bypassing the gate logic inside ubyport.SubmitCompletedStay.
+var formPagesSubmitCompletedStayOpts *ubyport.SubmitCompletedStayOptions
 
 func formPagesSubmitStayIfComplete(ctx context.Context, pool *pgxpool.Pool, getenv func(string) string, now func() time.Time, aptID, resID int64) error {
-	return nil
+	_, err := ubyport.SubmitCompletedStay(ctx, pool, getenv, now, aptID, resID, formPagesSubmitCompletedStayOpts)
+	return err
 }
 
 func legalTodayForm(now func() time.Time) time.Time {
