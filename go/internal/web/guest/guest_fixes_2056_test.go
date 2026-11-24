@@ -107,3 +107,29 @@ func TestHubPageFixes2056ShowsHostCard(t *testing.T) {
 		}
 	}
 }
+
+func TestPersonNumberFixes2056CountsCompleteGuestsOnly(t *testing.T) {
+	pool := testPoolOptional(t)
+	if pool == nil {
+		return
+	}
+	ctx := t.Context()
+	stamp := "2026-01-01T00:00:00Z"
+	aptID := int64(80000000 + time.Now().UnixNano()%1000000)
+	resID := aptID + 1
+	mustExecGuest(t, ctx, pool, `INSERT INTO user_account (id, username, password_hash, role, active, created_at)
+		VALUES ($1, $2, 'x', 'host', 1, $3) ON CONFLICT DO NOTHING`, aptID, fmt.Sprintf("p%d@example.test", aptID), stamp)
+	mustExecGuest(t, ctx, pool, `INSERT INTO apartment (id, owner_user_id, internal_name, city_en, active, permalink_token, permalink_pin, created_at)
+		VALUES ($1, $1, 'Flat', 'Prague', 1, $2, '123456', $3)`, aptID, fmt.Sprintf("person2056%d", aptID), stamp)
+	mustExecGuest(t, ctx, pool, `INSERT INTO reservation (id, apartment_id, uid, status, source, date_from, date_to, created_at, updated_at)
+		VALUES ($1, $2, $3, 'active', 'manual', $4, $5, $6, $6)`, resID, aptID, fmt.Sprintf("pn-%d", resID), "2026-06-10", "2026-06-12", stamp)
+	// Two partial guests: no complete guest, so the next person is number 1.
+	for i := int64(1); i <= 2; i++ {
+		mustExecGuest(t, ctx, pool, `INSERT INTO guest (id, reservation_id, created_at, updated_at, first_name, nationality)
+			VALUES ($1, $2, $3, $3, 'Partial', 'CZE')`, resID*10+i, resID, stamp)
+	}
+	res := formResRow{id: resID, dateFrom: "2026-06-10", dateTo: "2026-06-12"}
+	if n := completeFormGuests(ctx, pool, res, time.Date(2026, 6, 15, 12, 0, 0, 0, time.UTC)); n != 0 {
+		t.Fatalf("two partial guests: complete count %d want 0", n)
+	}
+}
