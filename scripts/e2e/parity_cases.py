@@ -75,6 +75,10 @@ MODAL_CASES = [
 ACCEPTED = {
     "apt-guide": "Go keeps the newer External guide link card (Link (https) / Save link) above the Booking or Airbnb import; Python lacks it. Python import-title spacing differs as a consequence.",
     "dev-ui": "dev_ui is not ported; it is deleted with Python (docs/plans/go-full-move.md). The only diff is a CSS spinner frame.",
+    "apt-guide-full": "Go keeps the External guide card (2045) and the Leon help mark in the section heading (2051 section 10, accepted); Python lacks the card and has the title spacing quirk (see apt-guide-qr).",
+    "apt-guide-qr": "Section title spacing: Python's flex h2 drops the space (New link shown as one word); Go keeps it with a no-break space on purpose (brief 2036, go/internal/web/ai/guide_common.go).",
+    "guide-item": "Go has one Save per form (Save and next card, or Save on the last card): design-system rule 5; Python shows two buttons (brief 2051 section 11, accepted).",
+    "reservation-detail": "Go-only desktop stay page layout at 1024 px and up (brief 1862, owner decisions 2026-11-19; decisions.md line 66). The back arrow and Generate invoice button already match (brief 2046).",
 }
 
 # Cases with a QR image: its pixels are masked, and its payload text is compared separately.
