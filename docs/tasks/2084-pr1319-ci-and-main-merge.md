@@ -1,6 +1,6 @@
 # 2084: PR 1319, merge origin/main and close the Go and Python CI reds
 
-Status: todo
+Status: done
 Depends on: 2071 (merged on this branch) | Base commit: df1244e227eb5a7845e40a1c70aa3056bcfd8647 | Branch: claude/nice-hawking-fw98ct (work in a worktree of it)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
