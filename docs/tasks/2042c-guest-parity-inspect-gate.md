@@ -1,6 +1,6 @@
 # 2042c: V2 visual parity, guest pages: inspect differences, gate command
 
-Status: todo
+Status: replaced by 2057
 Depends on: 2042b (done and merged or on this branch) | Base commit: HEAD | Branch: current
 Executor: Haiku 5.5 | Fits one session: 30 tool calls (stop at 25)
 
