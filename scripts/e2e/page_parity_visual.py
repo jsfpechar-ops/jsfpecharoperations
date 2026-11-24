@@ -128,7 +128,7 @@ def _capture(playwright, base, path, width, dest, cookie, mask, texts, extra_coo
     """One screenshot. Returns dict(status, error, texts). Never raises on HTTP >= 400; masks QR images."""
     from tests.browser_support import chromium_launch_kwargs, settle_motion
 
-    out = {"status": None, "error": "", "texts": {}, "shot": False, "body": ""}
+    out = {"status": None, "error": "", "texts": {}, "shot": False, "body": "", "json": None}
     browser = playwright.chromium.launch(**chromium_launch_kwargs())
     try:
         context = browser.new_context(viewport={"width": width, "height": 900})
@@ -140,6 +140,12 @@ def _capture(playwright, base, path, width, dest, cookie, mask, texts, extra_coo
         try:
             response = page.goto(base.rstrip("/") + path, wait_until="networkidle")
             out["status"] = response.status if response else None
+            ctype = (response.headers.get("content-type", "") if response else "")
+            if "json" in ctype:
+                try:
+                    out["json"] = json.loads(page.inner_text("body"))
+                except Exception:
+                    out["json"] = None
             if out["status"] and out["status"] >= 400:
                 out["error"] = (page.inner_text("body") or "")[:200].replace("\n", " ")
             settle_motion(page)
@@ -154,6 +160,7 @@ def _capture(playwright, base, path, width, dest, cookie, mask, texts, extra_coo
                         value = (el.get_attribute(attr) if attr else el.inner_text()) or ""
                         break
                 out["texts"][spec] = re.sub(r"https?://127\.0\.0\.1:\d+", "<BASE>", value.replace(base, "<BASE>")).strip()
+            page.evaluate("document.activeElement && document.activeElement.blur && document.activeElement.blur()")
             page.evaluate("window.scrollTo(0, 0)")
             page.screenshot(path=str(dest), full_page=True)
             out["shot"] = True
@@ -199,6 +206,11 @@ def run_case2(name, base_name, path, out_dir, py_base, go_base, widths, py_cooki
                 verdict, max_delta, diff_px, note = ("error", None, None, "no screenshot on either side")
                 if one:
                     verdict, note = "visible", "one side failed to load"
+            if a["json"] is not None and b["json"] is not None and (sa or 0) < 400 and (sb or 0) < 400:
+                if a["json"] == b["json"]:
+                    verdict, note = "identical", "JSON equal after parsing (key order ignored)"
+                else:
+                    verdict, note = "visible", "JSON differs after parsing"
             if (sa or 0) >= 400 or (sb or 0) >= 400 or not a["shot"] or not b["shot"]:
                 if sa != sb:                      # error on one side only: a status mismatch, always a visible row
                     verdict = "visible" if (a["shot"] or b["shot"]) else "error"
