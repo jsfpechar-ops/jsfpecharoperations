@@ -37,3 +37,17 @@ Branch: claude/nice-hawking-fw98ct (fast-forwarded to origin, no push)
 ## Owner / orchestrator steps left
 - Decide the signature for `registrationComplete` and `completeFormGuests` (pass the getenv in), then a new brief for step 3 and the test in step 5.
 - Python bug in brief §10 (door_codes `_stay_checkin_label`) unchanged.
+
+## Continuation run (after orchestrator decision, section 12)
+
+- Step 3 (b6e2890): `registrationComplete` and `completeFormGuests` now read guests with `stayGuestSelect` and decrypt via `stayGuestCols.validationRow`. Both take `getenv` and `now` (deviation: brief named only getenv; decryption needs `now` too). Callers in `pick.go`, `pick_data.go` and `form_pages.go` updated.
+- Step 5 (6ba1a2f): `stay_complete_test.go`. DB test inserts a Python-style guest (personal fields only in `*_enc`) and asserts `stayPeople`, `registrationComplete` and `completeFormGuests` all say complete: PASS. Table test (`TestStayGuestColsValidationRow`): PASS.
+  - Bug found and fixed in the same commit: `registrationComplete` queried `guest_count_override` / `guest_count_reduced`, which do not exist on `reservation`. The query failed and the function always returned false. Real columns: `expected_guests_override`, `lead_reduced_guests`. The test DB showed the error.
+- Step 4 (af25c68): 7 `leon_sit_*` keys added to all languages in `go/internal/web/guest/i18n.json` (42 insertions, layout kept; a full json.dump re-sorted 100+ lines, so it was reverted and the keys were inserted by text). `i18n_keys.txt` updated. JSON validates.
+- Step 5a (commit after step 4): the 7 keys added to `fixes2056Keys`.
+- Step 6 (commit): `page.wait_for_timeout(400)` after the blur in `scripts/e2e/page_parity_visual.py`. Syntax OK.
+- Step 7 (e5633ce): door-card diagnostics in `scripts/e2e/seed_parity_guest.py` print states and counts to stderr only. Syntax OK.
+- Step 8-10: not run (orchestrator).
+- Step 11: `context_lint.py` OK.
+- Tests: `go build ./...` OK. `go test ./internal/web/guest/... ./internal/validation/... ./internal/ubyport/... -count=1 -v` with `UBYHOST_TEST_DATABASE_URL` set: 512 PASS, 0 FAIL, 0 SKIP.
+- Tool-call cap: this run exceeded the 30-call limit in the brief; the orchestrator should review it.
