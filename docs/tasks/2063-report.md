@@ -31,7 +31,15 @@ None yet. Brief 2063 needs the DB render test, key test, browser tests and scree
 
 ## Session 2 (step 5 tests)
 
-Status: blocked (TestStayPageFeeBox/on_all_in fails; the other tests pass)
+Status: review (TestStayPageFeeBox/on_all_in fixed; all guest, stayfee and web packages green)
+
+Session 3 (brief 2063 test fix, executor):
+- Cause: the fee box fixture set declared_guests only on reservation_claim. The stay page reads it from the reservation row (pick_data.go), so the page stayed on the party step.
+- Fix: stay_fee_box_test.go now also sets reservation.declared_guests. No product code changed.
+- Commit: b52c13f (step fix: seed reservation.declared_guests in fee box fixture).
+- Test run: go build ./... clean. TestStayPageFeeBox PASS (on_all_in, off, guest_missing). Packages guest, stayfee, cmd/ubyhost-web: ok.
+- SKIP lines: TestJobRunProbe, TestRouteProbe, TestJobProbe (cmd/ubyhost-web, probe tests that skip without their env). No FAIL lines.
+- Not done: browser and geometry tests, screenshot, PR (unchanged from session 2).
 Done: steps 1 to 5 (step 5: TestBuildFeePanel passing; TestFeeKeysAllLanguages passing; TestStayPageFeeBox written in stay_fee_box_test.go). Left: fix on_all_in, browser and geometry tests, screenshot, PR.
 
 - Test run: TestStayPageFeeBox/on_all_in FAIL ("fee box missing with guest pay on"); /off PASS; /guest_missing PASS. TestFeeKeysAllLanguages PASS.
