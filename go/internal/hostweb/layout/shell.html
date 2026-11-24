@@ -262,7 +262,7 @@
   {{if .H1}}
   <header class="ui-ph" data-list-title-row>
     <div class="ui-ph-main">
-      {{if .BackURL}}<a class="ui-ph-back airbnb-back" href="{{.BackURL}}">{{icon "arrow-left" 16}}<span>{{.BackLabel}}</span></a>{{end}}
+      {{if .BackURL}}<a class="ui-ph-back airbnb-back" href="{{.BackURL}}">{{icon "arrow-left" .BackIconPx}}<span>{{.BackLabel}}</span></a>{{end}}
       <div class="ui-ph-title-row">
         <h1>{{.H1}}</h1>
         {{if .HowKey}}{{page_help .HowKey}}{{end}}
