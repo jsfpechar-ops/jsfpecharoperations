@@ -292,7 +292,6 @@ func guestSaveClaimVersion(ctx context.Context, pool *pgxpool.Pool, resID int64)
 	return claim.tokenVersion
 }
 
-
 // guestSaveValidateIssues is the save route's database-free checks, in the
 // order of guest.py: the form, the signature, then the legal acknowledgement.
 // The two sentences owned by this function are worded in the guest's language.

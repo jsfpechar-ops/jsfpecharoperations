@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -13,8 +14,6 @@ import (
 	"sync"
 	"testing"
 	"time"
-
-	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/validation"
 )
 
 type formSaveGolden struct {
@@ -533,8 +532,8 @@ func TestGuestSaveValidateIssuesPartySizeOnNew(t *testing.T) {
 	}
 	raw := validation.GuestFormRaw(form, cfg.defaultPurpose)
 	values := validation.NormaliseGuest(raw, time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC))
-	issues := guestSaveValidateIssues(form, cfg, res, values, raw, "2026-06-01", "2026-06-05", form["signature"], false, nil, time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC))
 	issues := guestSaveValidateIssues(form, res, values, raw, "2026-06-01", "2026-06-05", form["signature"], false, nil, time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC), "en")
+	found := false
 	for _, i := range issues {
 		if i.Field == "party_size" {
 			found = true
