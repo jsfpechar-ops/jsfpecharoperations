@@ -53,6 +53,21 @@
       </form>
     {{end}}
   </div>
+  {{with .DoorCode}}
+    <div class="g-card" id="door-code">
+      <h2>{{$.T "door_code_title"}}</h2>
+      {{if eq .State "issued"}}
+        <p class="g-door-code" aria-label="{{$.T "door_code_title"}}">{{.PIN}}</p>
+        <p class="g-intro">{{$.T "door_code_times" "checkin" .Checkin "checkout" .Checkout}}</p>
+        {{if .FirstUseBy}}<p class="g-intro">{{$.T "door_code_first_use" "deadline" .FirstUseBy}}</p>{{end}}
+        {{if $.ClaimEmailMasked}}<p class="g-intro">{{$.T "door_code_sent" "email" $.ClaimEmailMasked}}</p>{{end}}
+      {{else if eq .State "failed"}}
+        <p class="g-intro">{{$.T "door_code_failed"}}</p>
+      {{else}}
+        <p class="g-intro">{{$.T "door_code_preparing"}}</p>
+      {{end}}
+    </div>
+  {{end}}
 {{else}}
   {{if .JustSaved}}
     <div class="g-card g-saved">

@@ -212,7 +212,16 @@ func (d stayClaimDeps) stayOverview(w http.ResponseWriter, r *http.Request) {
 		d.redirectLang(w, r, target, lang)
 		return
 	}
-	d.renderStayPage(w, r, token, lang, aptRow, stay, row, billingjob.MailEnabled())
+	var door *doorcodes.Shown
+	if d.doorCodes != nil {
+		shown, err := d.doorCodes.ViewForStay(r.Context(), resID, apt.id)
+		if err != nil {
+			log.Printf("door_code_view_failed reservation=%d err=%v", resID, err)
+		} else {
+			door = shown
+		}
+	}
+	d.renderStayPage(w, r, token, lang, aptRow, stay, row, billingjob.MailEnabled(), door)
 }
 
 func (d stayClaimDeps) claimLanding(w http.ResponseWriter, r *http.Request) {

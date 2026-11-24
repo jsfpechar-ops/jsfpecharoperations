@@ -60,7 +60,7 @@ func TestGuestFormCSRFRoundTrip(t *testing.T) {
 	stamp := "2026-01-01T00:00:00Z"
 
 	mux := http.NewServeMux()
-	RegisterStayClaim(mux, pool, getenv, now, func(_ string, h http.HandlerFunc) http.Handler { return h })
+	RegisterStayClaim(mux, pool, getenv, now, func(_ string, h http.HandlerFunc) http.Handler { return h }, nil)
 	RegisterParty(mux, pool, getenv, now, func(_ string, h http.HandlerFunc) http.Handler { return h })
 
 	type claimState string

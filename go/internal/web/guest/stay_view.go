@@ -2,6 +2,7 @@ package guest
 
 import (
 	"context"
+	"github.com/jsfpechar-ops/jsfpecharoperations/go/internal/doorcodes"
 	"net/http"
 	"strings"
 
@@ -26,6 +27,7 @@ type stayView struct {
 	Expected         int
 	Filled           int
 	HasRemaining     bool
+	DoorCode         *doorCodeCard
 	Remaining        int
 	Percent          int
 	CanRaiseParty    bool
@@ -123,7 +125,7 @@ func joinNonEmpty(sep string, parts ...string) string {
 }
 
 // renderStayPage writes guest/stay.html for a claimed stay (stay_overview).
-func (d stayClaimDeps) renderStayPage(w http.ResponseWriter, r *http.Request, token, lang string, apt *Apartment, stay *scStay, row scClaim, mailEnabled bool) {
+func (d stayClaimDeps) renderStayPage(w http.ResponseWriter, r *http.Request, token, lang string, apt *Apartment, stay *scStay, row scClaim, mailEnabled bool, door *doorcodes.Shown) {
 	ctx := r.Context()
 	page := d.access().page(ctx, r, token, lang, apt)
 	people, filled, err := d.stayPeople(ctx, r, stay, lang)
@@ -169,6 +171,7 @@ func (d stayClaimDeps) renderStayPage(w http.ResponseWriter, r *http.Request, to
 		}
 	}
 	view.JustReported = view.JustSaved && anySent
+	view.DoorCode = doorCodeCardFrom(door)
 	if exp := headcount.Expected(stay.override, stay.declared, stay.leadReduced); exp != nil {
 		view.HasExpected = true
 		view.Expected = int(*exp)
@@ -231,4 +234,27 @@ func (d stayClaimDeps) renderAssignedPage(w http.ResponseWriter, r *http.Request
 		view.City = apt.CityEn
 	}
 	d.access().renderPage(w, r, assignedSet, view, map[string]string{"Cache-Control": "no-store"})
+}
+
+// doorCodeCard is what the #door-code card shows (Python door_codes.view).
+// State is issued, failed or preparing; waiting and delayed show the preparing text.
+type doorCodeCard struct {
+	State      string
+	PIN        string
+	Checkin    string
+	Checkout   string
+	FirstUseBy string
+}
+
+func doorCodeCardFrom(s *doorcodes.Shown) *doorCodeCard {
+	if s == nil {
+		return nil
+	}
+	switch s.State {
+	case "issued":
+		return &doorCodeCard{State: "issued", PIN: s.PIN, Checkin: s.Checkin, Checkout: s.Checkout, FirstUseBy: s.FirstUseBy}
+	case "failed":
+		return &doorCodeCard{State: "failed"}
+	}
+	return &doorCodeCard{State: "preparing"}
 }
